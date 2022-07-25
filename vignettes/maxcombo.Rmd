@@ -1,0 +1,156 @@
+---
+title: "Power Calculation Using Max-Combo Tests"
+author: "Kaifeng Lu"
+date: "12/15/2021"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Power Calculation Using Max-Combo Tests}
+  \usepackage[utf8]{inputenc}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  markdown: 
+    wrap: 72
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This R Markdown document illustrates the power calculation using the
+maximum of weighted log-rank statistics in a group sequential analysis
+for the delayed effect example from @prior2020. The hazards in both arms
+are 0.25 per month for the first 1.5 months, and the hazard of the
+active arm drops to 0.125 per month thereafter, while the hazard of the
+placebo arm remains at 0.25 per month. Assume that there is no
+censoring. The enrollment rate is 25 patients per month, and the total
+number of patients to enroll is 100. Suppose also that an interim
+analysis occurs after observing 50 events and the final analysis takes
+place after all 100 events have been observed. The conventional log-rank
+test will be used for the interim analysis, and the maximum of the
+standardized weighted log-rank test statistics of FH(0,0) and FH(0,1)
+will be used at the final analysis. For a total one-sided 2.5%
+significance level with an interim alpha of 0.0015, @prior2020 reports
+that the resulting power is abut 73%. We now verify this through
+analytic calculation and simulation.
+
+First, we derive the critical values at the interim and final analyses.
+For the interim analysis, only one log-rank test will be used, hence the
+critical value is $u_1 = \Phi^{-1}(1-0.0015) = 2.968$. For the final
+analysis, the critical value $u_2$ satisfies $$
+  P_0(Z_{1,1} < u_1, \max(Z_{1,2}, Z_{2,2}) < u_2) = 1 - 0.025
+$$ which is the same as $$
+  P_0(Z_{1,1} < u_1, Z_{1,2} < u_2, Z_{2,2} < u_2) = 0.975 \; 
+    (Eq. 1)
+$$ Let $U_{FH(p,q),i}$ denote the numerator of the FH(p,q) weighted
+log-rank test statistic at analysis $i$, and $V_{FH(p,q),i}$ its
+variance. Then $W_{FH(p,q),i} = U_{FH(p,q),i}/{V_{FH(p,q),i}^{1/2}}$.
+In addition, similar to @karrison2016, we can show that $$
+  Cov(U_{FH(p_1,q_1),1}, U_{FH(p_2,q_2),2}) = 
+  V_{FH\left(\frac{p_1+p_2}{2},\frac{q_1+q_2}{2}\right),1}
+$$
+
+First, we find the time when 50 and 99.9 events are expected to have
+occurred.
+
+```{r}
+library(lrstat)
+(time = caltime(nevents=c(50, 99.9), accrualIntensity=25,
+                piecewiseSurvivalTime=c(0, 1.5), 
+                lambda1=c(0.25, 0.125), lambda2=c(0.25, 0.25), 
+                accrualDuration=4, followupTime=60))
+```
+
+Then, we obtain the the means and variances of weighted log-rank test
+statistics at the interim and final analyses for relevant FH weights.
+
+```{r}
+(lr00 = lrstat(time=c(5.363, 50.324), accrualIntensity=25,
+               piecewiseSurvivalTime=c(0, 1.5), 
+               lambda1=c(0.25, 0.125), lambda2=c(0.25, 0.25), 
+               accrualDuration=4, followupTime=60, 
+               rho1=0, rho2=0, numSubintervals=10000))
+
+(lr01 = lrstat(time=c(5.363, 50.324), accrualIntensity=25,
+               piecewiseSurvivalTime=c(0, 1.5), 
+               lambda1=c(0.25, 0.125), lambda2=c(0.25, 0.25), 
+               accrualDuration=4, followupTime=60, 
+               rho1=0, rho2=1, numSubintervals=10000))
+
+(lr0h = lrstat(time=c(5.363, 50.324), accrualIntensity=25,
+               piecewiseSurvivalTime=c(0, 1.5), 
+               lambda1=c(0.25, 0.125), lambda2=c(0.25, 0.25), 
+               accrualDuration=4, followupTime=60, 
+               rho1=0, rho2=0.5, numSubintervals=10000))
+```
+
+It follows that the mean of $\mathbf{Z}=(Z_{1,1}, Z_{1,2}, Z_{2,2})$ is
+$$
+  \left(\frac{3.179}{\sqrt{12.464}}, \frac{10.540}{\sqrt{22.271}}, 
+  \frac{6.604}{\sqrt{6.158}} \right) = (0.900, 2.233, 2.661)
+$$ and the covariance matrix of $\mathbf{Z}$ is $$
+  \left(\begin{array}{ccc} 1 & \sqrt{\frac{12.464}{22.271}} & \frac{3.241}{\sqrt{12.464\times 6.158}} \\
+  \sqrt{\frac{12.464}{22.271}} & 1 & \frac{10.077}{\sqrt{22.271\times 6.158}} \\ 
+  \frac{3.241}{\sqrt{12.464\times 6.158}}  & \frac{10.077}{\sqrt{22.271\times 6.158}} & 1 \end{array} \right) = \left(\begin{array}{ccc} 1 & 0.748 &  0.370 \\ 
+  0.748 & 1 & 0.860 \\ 0.370 & 0.860 & 1 \end{array} \right)
+$$ Now, we obtain the critical value $u_2$ by solving equation (1).
+
+```{r}
+library(mvtnorm)
+mu = c(0.900, 2.233, 2.661)
+sigma = matrix(c(1, 0.748, 0.370, 0.748, 1, 0.860, 0.370, 0.860, 1), 3, 3)
+u1 = 2.968
+alpha = 0.025
+f <- function(u2, u1, sigma, alpha) {
+  1 - pmvnorm(upper=c(u1, u2, u2), corr=sigma, algorithm="Miwa") - alpha
+}
+(u2 = uniroot(f, c(1,3), u1, sigma, alpha)$root)
+```
+
+The power can be estimated by plugging in the mean under the alternative
+hypothesis.
+
+```{r}
+1 - pmvnorm(upper=c(u1, u2, u2), corr=sigma, mean=mu, algorithm="Miwa")
+```
+
+For the simulation study, we use very large critical values for the
+FH(0,0) and FH(0,1) log-rank statistics at the interim and final
+analyses for each iteration, and then construct the maximum combo test
+statistic at the final analysis. Finally, we tally the rejections across
+iterations to estimate the power. The same seed should be used to
+produce identical simulated data.
+
+```{r}
+sim1 = lrsim(kMax = 2, informationTime = c(0.5, 1),
+             criticalValues = c(6, 6),
+             accrualIntensity = 25, 
+             piecewiseSurvivalTime = c(0, 1.5),
+             lambda1 = c(0.25, 0.125), lambda2 = c(0.25, 0.25),
+             accrualDuration = 4,
+             rho1 = 0, rho2 = 0,
+             plannedEvents = c(50, 100), 
+             maxNumberOfIterations = 1000,
+             seed = 314159)
+
+sim2 = lrsim(kMax = 2, informationTime = c(0.5, 1),
+             criticalValues = c(6, 6),
+             accrualIntensity = 25,
+             piecewiseSurvivalTime = c(0, 1.5),
+             lambda1 = c(0.25, 0.125), lambda2 = c(0.25, 0.25),
+             accrualDuration = 4,
+             rho1 = 0, rho2 = 1, 
+             plannedEvents = c(50, 100),
+             maxNumberOfIterations = 1000,
+             seed = 314159)
+
+w1max = subset(-sim1$sumdata$logRankStatistic, sim1$sumdata$stageNumber==1)
+
+w2max = pmax(-sim1$sumdata$logRankStatistic, -sim2$sumdata$logRankStatistic) 
+w2max = subset(w2max, sim1$sumdata$stageNumber==2)
+
+mean((w1max > u1) | (w2max > u2))
+```
+
+Both the analytic and simulation methods yield a power of about 72%,
+close to that reported by @prior2020.

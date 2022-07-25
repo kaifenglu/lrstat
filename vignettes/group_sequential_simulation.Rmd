@@ -1,0 +1,68 @@
+---
+title: "Simulation for Group Sequential Trials"
+author: "Kaifeng Lu"
+date: "12/15/2021"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Simulation for Group Sequential Trials}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This R Markdown document illustrates the simulation tool for group sequential survival trials. This is useful for validating the analytic calculation, which might be inaccurate when the allocation ratio is not 1:1 or the hazard ratio is far from 1.  
+```{r}
+library(lrstat)
+```
+
+Consider a three-stage O'Brien-Fleming group sequential design with two interim looks conducted at 50% and 75% of the target total number of events. The first interim is for futility only, and the second interim is for efficacy only. The hazard rate of the control group is 0.95 per year. The hazard ratio of the experimental group to the control group is 0.3. The experimental versus control group randomization ratio is 3:1. The enrollment rate is 5 patients per month. The 2-year drop-out rate is 10%. The study uses a fixed follow-up design and each patient is to be followed up for 26 weeks. If we use an enrollment duration of 32 months, then the maximum number of events is expected to be 32.8. 
+```{r}
+lrstat(time=c(20, 25, 30, 35, 38.5), allocationRatioPlanned = 3, 
+       accrualIntensity = 5, 
+       lambda2 = 0.95/12, lambda1 = 0.3*0.95/12, 
+       gamma1 = -log(1-0.1)/24, gamma2 = -log(1-0.1)/24, 
+       accrualDuration = 32, followupTime = 6.5, fixedFollowup = TRUE)
+```
+
+Suppose we run the trial for a target maximum number of 32 events. The trial will stop once 32 events have been observed or the trial is stopped early for futility or efficacy. Due to the fixed follow-up design, there might be situations where a total of 160 patients with each followed-up for 6.5 month do not yield 32 events, in which case, the trial will stop and we allocate all remaining alpha to the final look. The simulation below demonstrates that the study has the target power of 90% under the alternative hypothesis.  
+```{r}
+lrsim(kMax = 3, informationTime = c(0.5, 0.75, 1), 
+      criticalValues = c(6, 2.34, 2.012), 
+      futilityBounds = c(0.282, -6), 
+      allocation1 = 3, allocation2 = 1,
+      accrualTime = 0, accrualIntensity = 5, 
+      piecewiseSurvivalTime = 0, 
+      stratumFraction = 1, 
+      lambda1 = 0.3*0.95/12, lambda2 = 0.95/12, 
+      gamma1 = -log(1-0.1)/24, gamma2 = -log(1-0.1)/24, 
+      accrualDuration = 34, followupTime = 6.5, 
+      fixedFollowup = TRUE, 
+      rho1 = 0, rho2 = 0, 
+      plannedEvents = c(16, 24, 32), 
+      maxNumberOfIterations = 1000, 
+      maxNumberOfRawDatasetsPerStage = 0, 
+      seed = 12345)
+```
+
+The simulation below shows that the probability of futility stopping under the null hypothesis is 62%. 
+```{r}
+lrsim(kMax = 3, informationTime = c(0.5, 0.75, 1), 
+      criticalValues = c(6, 2.34, 2.012), 
+      futilityBounds = c(0.282, -6), 
+      allocation1 = 3, allocation2 = 1,
+      accrualTime = 0, accrualIntensity = 5, 
+      piecewiseSurvivalTime = 0, 
+      stratumFraction = 1, 
+      lambda1 = 0.95/12, lambda2 = 0.95/12, 
+      gamma1 = -log(1-0.1)/24, gamma2 = -log(1-0.1)/24, 
+      accrualDuration = 34, followupTime = 6.5, 
+      fixedFollowup = TRUE, 
+      rho1 = 0, rho2 = 0, 
+      plannedEvents = c(16, 24, 32), 
+      maxNumberOfIterations = 1000, 
+      maxNumberOfRawDatasetsPerStage = 0, 
+      seed = 12345)
+```
