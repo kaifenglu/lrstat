@@ -117,30 +117,6 @@ using namespace Rcpp;
 //' # summary for each simulated data set
 //' head(sim2$sumdata)
 //' 
-//' 
-//' \dontrun{
-//' # Example 3: Non-inferiority trial with fixed follow-up and 
-//' # superiority alternative
-//' 
-//' sim3 = lrsim(kMax = 3, 
-//'              criticalValues = c(3.711, 2.512, 1.993),
-//'              hazardRatioH0 = 1.1,
-//'              accrualTime = c(0, 6),
-//'              accrualIntensity = c(1000, 1500),
-//'              lambda1 = log(2)/48*0.95,
-//'              lambda2 = log(2)/48,
-//'              gamma1 = -log(1-0.08)/12,
-//'              gamma2 = -log(1-0.08)/12,
-//'              accrualDuration = 8.25,
-//'              followupTime = 18,
-//'              fixedFollowup = 1,
-//'              plannedEvents = c(659, 1318, 1977),
-//'              maxNumberOfIterations = 1000,
-//'              maxNumberOfRawDatasetsPerStage = 1,
-//'              seed = 314159)              
-//' sim3
-//' }
-//' 
 //' @export
 // [[Rcpp::export]]
 List lrsim(const int kMax = NA_INTEGER,

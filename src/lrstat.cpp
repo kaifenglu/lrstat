@@ -1178,12 +1178,15 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
               rho1, rho2, numSubintervals, 
               predictEventOnly](double beta)->double {
                 double hazardRatio = exp(beta);
-                DataFrame df = lrstat1(time1, hazardRatio, allocationRatioPlanned,
+                DataFrame df = lrstat1(time1, hazardRatio, 
+                                       allocationRatioPlanned,
                                        accrualTime, accrualIntensity,
                                        piecewiseSurvivalTime, stratumFraction,
                                        lambda1x, lambda2x, gamma1x, gamma2x,
-                                       accrualDuration, followupTime, fixedFollowup,
-                                       rho1, rho2, numSubintervals, predictEventOnly);
+                                       accrualDuration, followupTime, 
+                                       fixedFollowup,
+                                       rho1, rho2, numSubintervals, 
+                                       predictEventOnly);
                 
                 return sum(NumericVector(df[9]));
               };
@@ -1785,6 +1788,7 @@ NumericVector getCumAlphaSpent(
 //' @inheritParams param_rho2
 //' @inheritParams param_numSubintervals
 //' @inheritParams param_estimateHazardRatio
+//' @inheritParams param_typeOfComputation
 //' 
 //' @return A list of S3 class \code{lrpower} with 3 components:
 //'
@@ -1857,7 +1861,8 @@ List lrpower(const int kMax = NA_INTEGER,
              const double rho1 = 0,
              const double rho2 = 0,
              const int numSubintervals = 300,
-             const bool estimateHazardRatio = 1) {
+             const bool estimateHazardRatio = 1,
+             const String typeOfComputation = "direct") {
   
   NumericVector informationRates1 = clone(informationRates);
   LogicalVector efficacyStopping1 = clone(efficacyStopping);
@@ -2102,24 +2107,77 @@ List lrpower(const int kMax = NA_INTEGER,
   }
   
   
-  if (is_true(any(is_na(criticalValues)))) {
-    criticalValues1 = getCriticalValues(
-      kMax, informationRates1, efficacyStopping1,
-      alpha, asf, asfpar, userAlphaSpending, hazardRatioH0,
+  if (typeOfComputation != "direct" && typeOfComputation != "Schoenfeld") {
+    stop("typeOfComputation must be direct or Schoenfeld");
+  }
+  
+  if (typeOfComputation == "Schoenfeld" && (rho1 != 0 || rho2 != 0)) {
+    stop("Schoenfeld method can only be used for conventional log-rank test");
+  }
+  
+  double hazardRatio;
+  if (typeOfComputation == "Schoenfeld") {
+    NumericVector lambda1x = rep(lambda1, nsi/lambda1.size());
+    NumericVector lambda2x = rep(lambda2, nsi/lambda2.size());
+    NumericVector hrx = lambda1x / lambda2x;
+    
+    bool proportionalHazards = 1;
+    for (int i=1; i<nsi; i++) {
+      if (fabs(hrx[i] - hrx[0]) > 1e-8) {
+        proportionalHazards = 0;
+        break;
+      }
+    }
+    
+    if (!proportionalHazards) {
+      stop("Schoenfeld method can only be used for proportional hazards");
+    } else {
+      hazardRatio = hrx[0];
+    }
+  }
+  
+  
+  NumericVector cumAlphaSpent(kMax);
+  if (typeOfComputation == "direct") {
+    if (is_true(any(is_na(criticalValues)))) {
+      criticalValues1 = getCriticalValues(
+        kMax, informationRates1, efficacyStopping1,
+        alpha, asf, asfpar, userAlphaSpending, hazardRatioH0,
+        allocationRatioPlanned, accrualTime, accrualIntensity,
+        piecewiseSurvivalTime, stratumFraction,
+        lambda2, gamma1, gamma2, accrualDuration,
+        followupTime, fixedFollowup,
+        rho1, rho2, numSubintervals);
+    }
+    
+    cumAlphaSpent = getCumAlphaSpent(
+      kMax, informationRates1, criticalValues1, hazardRatioH0,
+      allocationRatioPlanned, accrualTime, accrualIntensity,
+      piecewiseSurvivalTime, stratumFraction,
+      lambda2, gamma1, gamma2, accrualDuration,
+      followupTime, fixedFollowup,
+      rho1, rho2, numSubintervals);
+    
+  } else if (typeOfComputation == "Schoenfeld") {
+    if (is_true(any(is_na(criticalValues)))) {
+      criticalValues1 = getCriticalValues(
+        kMax, informationRates1, efficacyStopping1,
+        alpha, asf, asfpar, userAlphaSpending, 1,
+        allocationRatioPlanned, accrualTime, accrualIntensity,
+        piecewiseSurvivalTime, stratumFraction,
+        lambda2, gamma1, gamma2, accrualDuration,
+        followupTime, fixedFollowup,
+        rho1, rho2, numSubintervals);
+    }
+    
+    cumAlphaSpent = getCumAlphaSpent(
+      kMax, informationRates1, criticalValues1, 1,
       allocationRatioPlanned, accrualTime, accrualIntensity,
       piecewiseSurvivalTime, stratumFraction,
       lambda2, gamma1, gamma2, accrualDuration,
       followupTime, fixedFollowup,
       rho1, rho2, numSubintervals);
   }
-  
-  NumericVector cumAlphaSpent = getCumAlphaSpent(
-    kMax, informationRates1, criticalValues1, hazardRatioH0,
-    allocationRatioPlanned, accrualTime, accrualIntensity,
-    piecewiseSurvivalTime, stratumFraction,
-    lambda2, gamma1, gamma2, accrualDuration,
-    followupTime, fixedFollowup,
-    rho1, rho2, numSubintervals);
   
   
   bool missingFutilityBounds = is_true(any(is_na(futilityBounds)));
@@ -2163,41 +2221,63 @@ List lrpower(const int kMax = NA_INTEGER,
                  lambda1, lambda2, gamma1, gamma2,
                  accrualDuration, followupTime, fixedFollowup,
                  numSubintervals);
-  
+
   // obtain the mean and variance of log-rank test score statistic at
   // each stage
-  if (estimateHazardRatio) {
+  NumericVector theta(kMax), vscore(kMax);
+  
+  if (typeOfComputation == "Schoenfeld") {
+    theta = rep(-log(hazardRatio/hazardRatioH0), kMax);
+    double r1 = allocationRatioPlanned/(allocationRatioPlanned+1);
+    vscore = r1*(1-r1)*e0;
+    
+    if (estimateHazardRatio) {
+      HR = rep(hazardRatio, kMax);
+      vlogHR = 1/vscore;
+    }
+    
     lr = lrstat(time, hazardRatioH0, allocationRatioPlanned,
                 accrualTime, accrualIntensity,
                 piecewiseSurvivalTime, stratumFraction,
                 lambda1, lambda2, gamma1, gamma2,
                 accrualDuration, followupTime, fixedFollowup,
-                rho1, rho2, numSubintervals, 2);
-  } else {
-    lr = lrstat(time, hazardRatioH0, allocationRatioPlanned,
-                accrualTime, accrualIntensity,
-                piecewiseSurvivalTime, stratumFraction,
-                lambda1, lambda2, gamma1, gamma2,
-                accrualDuration, followupTime, fixedFollowup,
-                rho1, rho2, numSubintervals, 0);
+                rho1, rho2, numSubintervals, 1);
+  } else{
+    if (estimateHazardRatio) {
+      lr = lrstat(time, hazardRatioH0, allocationRatioPlanned,
+                  accrualTime, accrualIntensity,
+                  piecewiseSurvivalTime, stratumFraction,
+                  lambda1, lambda2, gamma1, gamma2,
+                  accrualDuration, followupTime, fixedFollowup,
+                  rho1, rho2, numSubintervals, 2);
+    } else {
+      lr = lrstat(time, hazardRatioH0, allocationRatioPlanned,
+                  accrualTime, accrualIntensity,
+                  piecewiseSurvivalTime, stratumFraction,
+                  lambda1, lambda2, gamma1, gamma2,
+                  accrualDuration, followupTime, fixedFollowup,
+                  rho1, rho2, numSubintervals, 0);
+    }
+    
+    if (estimateHazardRatio) {
+      HR = NumericVector(lr[12]);
+      vlogHR = NumericVector(lr[13]);
+    }
+    
+    NumericVector uscore = NumericVector(lr[8]);
+    vscore = NumericVector(lr[9]);
+    theta = -uscore/vscore;
   }
   
   NumericVector nsubjects = NumericVector(lr[1]);
   NumericVector nevents = NumericVector(lr[2]);
   NumericVector ndropouts = NumericVector(lr[5]);
-  NumericVector uscore = NumericVector(lr[8]);
-  NumericVector vscore = NumericVector(lr[9]);
-  
-  if (estimateHazardRatio) {
-    HR = NumericVector(lr[12]);
-    vlogHR = NumericVector(lr[13]);
-  }
-  
-  // compute the stagewise exit probabilities for efficacy and futility
-  NumericVector theta = -uscore/vscore;
+
   
   // information time
   NumericVector t = vscore / (vscore[kMax - 1]);
+  
+  // compute the stagewise exit probabilities for efficacy and futility
   
   List probs;
   if (!missingFutilityBounds || bsf=="none" || kMax==1) {
@@ -2235,7 +2315,8 @@ List lrpower(const int kMax = NA_INTEGER,
                             l[k] = aval;
                             
                             IntegerVector idx = Range(0,k);
-                            List probs = exitprob(u, l, theta[idx], vscore[idx]);
+                            List probs = exitprob(u, l, theta[idx], 
+                                                  vscore[idx]);
                             NumericVector cpl = cumsum(NumericVector(probs[1]));
                             return cpl[k] - cumBetaSpent;
                           };
@@ -2251,7 +2332,8 @@ List lrpower(const int kMax = NA_INTEGER,
                     if (g(-6.0) > 0) { // no beta spent at current visit
                       futilityBounds1[k] = -6.0;
                     } else if (epsilon > 0) {
-                      futilityBounds1[k] = brent(g, -6.0, criticalValues1[k], 1e-6);
+                      futilityBounds1[k] = brent(g, -6.0, criticalValues1[k], 
+                                                 1e-6);
                     } else if (k < kMax-1) {
                       return -1.0;
                     }
@@ -2380,7 +2462,8 @@ List lrpower(const int kMax = NA_INTEGER,
     _["allocationRatioPlanned"] = allocationRatioPlanned,
     _["kMax"] = kMax,
     _["hazardRatioH0"] = hazardRatioH0,
-    _["estimateHazardRatio"] = estimateHazardRatio);
+    _["estimateHazardRatio"] = estimateHazardRatio,
+    _["typeOfComputation"] = typeOfComputation);
   
   List settings = List::create(
     _["typeAlphaSpending"] = typeAlphaSpending,
@@ -2446,6 +2529,7 @@ List lrpower(const int kMax = NA_INTEGER,
 //' @inheritParams param_rho2
 //' @inheritParams param_numSubintervals
 //' @inheritParams param_estimateHazardRatio
+//' @inheritParams param_typeOfComputation
 //' @param interval The interval to search for the solution of
 //' accrualDuration or followupDuration. Defaults to \code{c(0.001, 240)}.
 //' Adjustment may be needed for non-monotone relationship with study power.
@@ -2561,6 +2645,7 @@ List lrsamplesize(const double beta = 0.2,
                   const double rho2 = 0,
                   const int numSubintervals = 300,
                   const bool estimateHazardRatio = 1,
+                  const String typeOfComputation = "direct",
                   const NumericVector& interval =
                     NumericVector::create(0.001, 240)) {
   
@@ -2824,6 +2909,37 @@ List lrsamplesize(const double beta = 0.2,
     stop("numSubintervals must be positive");
   }
   
+  
+  if (typeOfComputation != "direct" && typeOfComputation != "Schoenfeld") {
+    stop("typeOfComputation must be direct or Schoenfeld");
+  }
+  
+  if (typeOfComputation == "Schoenfeld" && (rho1 != 0 || rho2 != 0)) {
+    stop("Schoenfeld method can only be used for conventional log-rank test");
+  }
+  
+  double hazardRatio = 1;
+  if (typeOfComputation == "Schoenfeld") {
+    NumericVector lambda1x = rep(lambda1, nsi/lambda1.size());
+    NumericVector lambda2x = rep(lambda2, nsi/lambda2.size());
+    NumericVector hrx = lambda1x / lambda2x;
+    
+    bool proportionalHazards = 1;
+    for (int i=1; i<nsi; i++) {
+      if (fabs(hrx[i] - hrx[0]) > 1e-8) {
+        proportionalHazards = 0;
+        break;
+      }
+    }
+    
+    if (!proportionalHazards) {
+      stop("Schoenfeld method can only be used for proportional hazards");
+    } else {
+      hazardRatio = hrx[0];
+    }
+  }
+  
+  
   if (interval.size() != 2) {
     stop("interval must have 2 elements");
   }
@@ -2861,7 +2977,8 @@ List lrsamplesize(const double beta = 0.2,
             allocationRatioPlanned, accrualTime, accrualIntensity,
             piecewiseSurvivalTime, stratumFraction, lambda1, lambda2,
             gamma1, gamma2, accrualDuration, followupTime,
-            fixedFollowup, rho1, rho2, numSubintervals,
+            fixedFollowup, rho1, rho2, numSubintervals, 
+            typeOfComputation, hazardRatio, 
             nstrata, unknown, missingCriticalValues,
             missingFutilityBounds](double aval)->double {
               
@@ -2881,12 +2998,23 @@ List lrsamplesize(const double beta = 0.2,
               }
               
               if (missingCriticalValues) {
-                criticalValues1 = getCriticalValues(
-                  kMax, informationRates1, efficacyStopping1,
-                  alpha, asf, asfpar, userAlphaSpending, hazardRatioH0,
-                  allocationRatioPlanned, accrualTime, accrualIntensity1,
-                  piecewiseSurvivalTime, stratumFraction, lambda2, gamma1, gamma2,
-                  dur1, dur2, fixedFollowup, rho1, rho2, numSubintervals);
+                if (typeOfComputation == "direct") {
+                  criticalValues1 = getCriticalValues(
+                    kMax, informationRates1, efficacyStopping1,
+                    alpha, asf, asfpar, userAlphaSpending, hazardRatioH0,
+                    allocationRatioPlanned, accrualTime, accrualIntensity1,
+                    piecewiseSurvivalTime, stratumFraction, 
+                    lambda2, gamma1, gamma2,
+                    dur1, dur2, fixedFollowup, rho1, rho2, numSubintervals);
+                } else if (typeOfComputation == "Schoenfeld") {
+                  criticalValues1 = getCriticalValues(
+                    kMax, informationRates1, efficacyStopping1,
+                    alpha, asf, asfpar, userAlphaSpending, 1,
+                    allocationRatioPlanned, accrualTime, accrualIntensity1,
+                    piecewiseSurvivalTime, stratumFraction, 
+                    lambda2, gamma1, gamma2,
+                    dur1, dur2, fixedFollowup, rho1, rho2, numSubintervals);
+                }
               }
               
               
@@ -2894,9 +3022,11 @@ List lrsamplesize(const double beta = 0.2,
                 if (missingFutilityBounds && bsf=="none") {
                   futilityBounds1 = rep(-6.0, kMax);
                   futilityBounds1[kMax-1] = criticalValues1[kMax-1];
-                } else if (!missingFutilityBounds && futilityBounds1.size() == kMax-1) {
+                } else if (!missingFutilityBounds && futilityBounds1.size() == 
+                  kMax-1) {
                   futilityBounds1.push_back(criticalValues1[kMax-1]);
-                } else if (!missingFutilityBounds && futilityBounds1.size() < kMax-1) {
+                } else if (!missingFutilityBounds && futilityBounds1.size() < 
+                  kMax-1) {
                   stop("Insufficient length of futilityBounds");
                 }
               } else {
@@ -2921,31 +3051,44 @@ List lrsamplesize(const double beta = 0.2,
               
               // obtain the timing of interim analysis
               e0 = sum(NumericVector(lr[2]))*informationRates1;
-              time = caltime(e0, allocationRatioPlanned, accrualTime, accrualIntensity1,
+              time = caltime(e0, allocationRatioPlanned, 
+                             accrualTime, accrualIntensity1,
                              piecewiseSurvivalTime, stratumFraction,
                              lambda1, lambda2, gamma1, gamma2,
                              dur1, dur2, fixedFollowup);
               
-              // obtain the mean and variance of log-rank test score statistic at
-              // each stage
-              lr = lrstat(time, hazardRatioH0, allocationRatioPlanned,
-                          accrualTime, accrualIntensity1,
-                          piecewiseSurvivalTime, stratumFraction,
-                          lambda1, lambda2, gamma1, gamma2,
-                          dur1, dur2, fixedFollowup,
-                          rho1, rho2, numSubintervals, 0);
+
+              // obtain the mean and variance of log-rank test score statistic 
+              // at each stage
+              NumericVector theta(kMax), vscore(kMax);
               
-              NumericVector uscore = NumericVector(lr[8]);
-              NumericVector vscore = NumericVector(lr[9]);
+              if (typeOfComputation == "Schoenfeld") {
+                theta = rep(-log(hazardRatio/hazardRatioH0), kMax);
+                double r1 = allocationRatioPlanned/(allocationRatioPlanned+1);
+                vscore = r1*(1-r1)*e0;
+              } else {
+                lr = lrstat(time, hazardRatioH0, allocationRatioPlanned,
+                            accrualTime, accrualIntensity1,
+                            piecewiseSurvivalTime, stratumFraction,
+                            lambda1, lambda2, gamma1, gamma2,
+                            dur1, dur2, fixedFollowup,
+                            rho1, rho2, numSubintervals, 0);
+                
+                NumericVector uscore = NumericVector(lr[8]);
+                vscore = NumericVector(lr[9]);
+                theta = -uscore/vscore;
+              }
               
-              // compute the stagewise exit probabilities for efficacy and futility
-              NumericVector theta = -uscore/vscore;
-              
+
               // information time
               NumericVector t = vscore / (vscore[kMax - 1]);
               
+              // compute the stagewise exit probabilities for efficacy and 
+              // futility
+              
               if (!missingFutilityBounds || bsf=="none" || kMax==1) {
-                List probs = exitprob(criticalValues1, futilityBounds1, theta, vscore);
+                List probs = exitprob(criticalValues1, futilityBounds1, theta, 
+                                      vscore);
                 NumericVector pu = NumericVector(probs[0]);
                 double overallReject = sum(pu);
                 return overallReject - (1-beta);
@@ -2987,7 +3130,8 @@ List lrsamplesize(const double beta = 0.2,
                             l[k] = aval;
                             
                             IntegerVector idx = Range(0,k);
-                            List probs = exitprob(u, l, theta[idx], vscore[idx]);
+                            List probs = exitprob(u, l, theta[idx], 
+                                                  vscore[idx]);
                             NumericVector cpl = cumsum(NumericVector(probs[1]));
                             return cpl[k] - cumBetaSpent;
                           };
@@ -3008,7 +3152,8 @@ List lrsamplesize(const double beta = 0.2,
                     if (g(-6.0) > 0) { // no beta spent at the current visit
                       futilityBounds1[k] = -6.0;
                     } else if (epsilon > 0) {
-                      futilityBounds1[k] = brent(g, -6.0, criticalValues1[k], 1e-6);
+                      futilityBounds1[k] = brent(g, -6.0, criticalValues1[k], 
+                                                 1e-6);
                     } else if (k < kMax-1) {
                       return -1.0;
                     }
@@ -3044,6 +3189,7 @@ List lrsamplesize(const double beta = 0.2,
                         piecewiseSurvivalTime, stratumFraction,
                         lambda1, lambda2, gamma1, gamma2,
                         accrualDuration, followupTime, fixedFollowup,
-                        rho1, rho2, numSubintervals, estimateHazardRatio);
+                        rho1, rho2, numSubintervals, estimateHazardRatio,
+                        typeOfComputation);
   return result;
 }

@@ -1,12 +1,11 @@
 # lrstat 0.1.6
 
-New features
-
 - Add capability for performing noninferiority tests in lrpower, lrsamplesize, and lrsim.
 - Add capability for simulating analyses based on calendar times in lrsim.
 - Adjust the critical value at the final look if the observed total number of events is less than the planned total number of events in lrsim.
 - Retain summary statistics for all stages even after crossing the efficacy and futility boundaries in lrsim.
 - Add number of dropouts 
+- Add Schoenfeld method for proportional hazards and conventional log-rank test in lrpower and lrsamplesize
 
 # lrstat 0.1.5
 

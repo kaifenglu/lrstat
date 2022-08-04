@@ -291,3 +291,11 @@ NULL
 #' @keywords internal
 NULL
 
+#' Parameter Description: typeOfComputation
+#' @param typeOfComputation Whether to use the direct approximation method 
+#'   or the Schoenfeld method. Defaults to "direct". Can use "Schoenfeld" 
+#'   under proportional hazards and conventional log-rank test. 
+#' @name param_typeOfComputation
+#' @keywords internal
+NULL
+
