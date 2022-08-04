@@ -33,7 +33,8 @@ lrpower(
   rho1 = 0,
   rho2 = 0,
   numSubintervals = 300L,
-  estimateHazardRatio = 1L
+  estimateHazardRatio = 1L,
+  typeOfComputation = "direct"
 )
 }
 \arguments{
@@ -139,6 +140,10 @@ Defaults to 300. Specify a larger number for better approximation.}
 \item{estimateHazardRatio}{Whether to estimate the hazard ratio from 
 weighted Cox regression model and report the stopping boundaries on 
 the hazard ratio scale.}
+
+\item{typeOfComputation}{Whether to use the direct approximation method 
+or the Schoenfeld method. Defaults to "direct". Can use "Schoenfeld" 
+under proportional hazards and conventional log-rank test.}
 }
 \value{
 A list of S3 class \code{lrpower} with 3 components:

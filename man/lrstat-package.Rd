@@ -17,8 +17,7 @@ the calendar time plays a key role in determining the mean and
 variance of the log-rank test score statistic. It requires an
 iterative algorithm to find the calendar time at which the
 targeted number of events will be reached for each interim
-analysis. The lrstat package uses the discrete state nonstationary
-Markov process method from Lakatos (1986) and further developed
+analysis. The lrstat package uses the analytic method 
 in Lu (2021) to find the mean and variance of the weighted
 log-rank test score statistic at each interim analysis. In
 addition, the package approximates the variance and covariance
@@ -48,7 +47,7 @@ self-explanatory. We have used the same names whenever appropriate
 so that users familiar with the rpact package can learn the
 lrstat package quickly. However, there are notable differences:
 \itemize{
-  \item lrstat uses the Lakatos method, while rpact uses the Schoenfeld
+  \item lrstat uses direct approximation, while rpact uses the Schoenfeld
     method for log-rank test power and sample size calculation.
   \item lrstat uses \code{accrualDuration} to explicitly set the end of
     accrual period, while rpact incorporates the end of accrual period
@@ -74,17 +73,13 @@ Anastasios A. Tsiatis. Repeated significance testing for a general class
 of statistics used in censored survival analysis. J Am Stat Assoc.
 1982;77:855-861. \doi{10.1080/01621459.1982.10477898}
 
-Edward Lakatos. Sample size determination in clinical trials with
-time-dependent rates of losses and noncompliance. Control Clin Trials.
-1986;7:189-199. \doi{10.1016/0197-2456(86)90047-4}
-
 Christopher Jennison, Bruce W. Turnbull. Group Sequential Methods with
 Applications to Clinical Trials. Chapman & Hall/CRC: Boca Raton, 2000,
 ISBN:0849303168
 
 Kaifeng Lu. Sample size calculation for logrank test and prediction of
 number of events over time. Pharm Stat. 2021;20:229-244.
-\doi{doi:10.1002/pst.2069}
+\doi{10.1002/pst.2069}
 }
 \seealso{
 rpact, gsDesign

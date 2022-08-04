@@ -1,0 +1,53 @@
+---
+title: "Comparing Direct Approximation and Schoenfeld Methods"
+author: "Kaifeng Lu"
+date: "12/15/2021"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Comparing Direct Approximation and Schoenfeld Methods}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This R Markdown document compares the direct approximation method for sample size calculation of survival trials as implemented in the lrstat package with the Schoenfeld method for sample size calculation of survival trials. First we load the lrstat package. 
+```{r}
+library(lrstat)
+```
+
+Consider a fixed design with $\pi_1=0.2$ for the active treatment group and $\pi_2=0.4$ for the control group at month 12, an enrollment period lasting 12 months to enroll 200 patients, and a target number of events of 40.
+
+First, we find the follow-up time at which 40 events will be observed. This can be accomplished by the caltime function using a large upper bound of the follow-up time for bracketed search: 
+```{r}
+caltime(nevents = 40, accrualDuration = 12, accrualIntensity = 200/12,
+        lambda1 = -log(1-0.2)/12, lambda2 = -log(1-0.4)/12, 
+        followupTime = 100)
+```
+
+Therefore the followup time for the last enrolled patient is 13.63 - 12 = 1.63 months. Next we use the lrpower function to estimate the power. 
+```{r}
+lrpower(kMax = 1, criticalValues = 1.96, accrualDuration = 12, 
+        accrualIntensity = 200/12, lambda1 = -log(1-0.2)/12, 
+        lambda2 = -log(1-0.4)/12,  followupTime = 1.63)
+```
+
+Therefore, the power is estimated to be 71.3%. In comparison, the Schoenfeld formula yields a power of 74.5%. 
+```{r}
+hazardRatio = log(1-0.2)/log(1-0.4)
+pnorm(abs(log(hazardRatio))*sqrt(40/4) - qnorm(0.975))
+```
+
+To see which method yields a more accurate power estimate, we run a lrsim function, which reports a power of 71.2% with 10000 replications. 
+```{r}
+lrsim(kMax = 1, criticalValues = 1.96, 
+      accrualIntensity = 200/12, 
+      lambda1 = -log(1-0.2)/12, lambda2 = -log(1-0.4)/12,
+      accrualDuration = 12, 
+      plannedEvents = 40, 
+      maxNumberOfIterations = 10000, seed = 314159)
+```
+
+Therefore, the direct approximation method yields a more accurate power estimate than the Schoenfeld method in this case. The reason for this discrepancy is due to the hazard ratio being 0.437, which is rather far away from the null hazard ratio of 1. It is well-known that the Schoenfeld method yields an optimistic power estimate with equal randomization in this case. 

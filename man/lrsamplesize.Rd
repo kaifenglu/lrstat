@@ -36,6 +36,7 @@ lrsamplesize(
   rho2 = 0,
   numSubintervals = 300L,
   estimateHazardRatio = 1L,
+  typeOfComputation = "direct",
   interval = as.numeric(c(0.001, 240))
 )
 }
@@ -148,6 +149,10 @@ Defaults to 300. Specify a larger number for better approximation.}
 \item{estimateHazardRatio}{Whether to estimate the hazard ratio from 
 weighted Cox regression model and report the stopping boundaries on 
 the hazard ratio scale.}
+
+\item{typeOfComputation}{Whether to use the direct approximation method 
+or the Schoenfeld method. Defaults to "direct". Can use "Schoenfeld" 
+under proportional hazards and conventional log-rank test.}
 
 \item{interval}{The interval to search for the solution of
 accrualDuration or followupDuration. Defaults to \code{c(0.001, 240)}.
