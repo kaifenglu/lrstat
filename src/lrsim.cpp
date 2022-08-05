@@ -57,7 +57,7 @@ using namespace Rcpp;
 //' by stage, overall rejection probability, overall expected number of
 //' events, number of dropouts, number of subjects, and study duration,
 //' the hazard ratio under H0, and whether the analyses are planned 
-//' based on the number of events or calendar time
+//' based on the number of events or calendar time.
 //'
 //' * \code{sumdata} is a data frame of summary data by stage for each
 //' iteration, containing at which stage the trial stops, whether the target
@@ -66,7 +66,7 @@ using namespace Rcpp;
 //' treatment group, number of dropouts overall and by treatment group,
 //' numerator and variance of weighted log-rank score statistic, log-rank
 //' test Z-statistic, and whether the trial stops for efficacy or futility
-//' at the stage
+//' at the stage.
 //'
 //'
 //' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
@@ -74,7 +74,7 @@ using namespace Rcpp;
 //' replications, containing the subject number, arrival time, stratum,
 //' treatment group, survival time, dropout time, observation time when
 //' the trial stops, time under observation, and event and dropout
-//' indicators
+//' indicators.
 //'
 //' @examples
 //' # Example 1: analyses based on number of events
@@ -256,12 +256,12 @@ List lrsim(const int kMax = NA_INTEGER,
     stop("hazardRatioH0 must be positive");
   }
   
-  if (allocation1 <= 0) {
-    stop("allocation1 must be positive");
+  if (allocation1 < 1) {
+    stop("allocation1 must be a positive integer");
   }
   
-  if (allocation2 <= 0) {
-    stop("allocation2 must be positive");
+  if (allocation2 < 1) {
+    stop("allocation2 must be a positive integer");
   }
   
   if (accrualTime[0] != 0) {
@@ -381,12 +381,12 @@ List lrsim(const int kMax = NA_INTEGER,
   
   
   
-  if (maxNumberOfIterations <= 0) {
-    stop("maxNumberOfIterations must be positive");
+  if (maxNumberOfIterations < 1) {
+    stop("maxNumberOfIterations must be a positive integer");
   }
   
   if (maxNumberOfRawDatasetsPerStage < 0) {
-    stop("maxNumberOfRawDatasetsPerStage must be non-negative");
+    stop("maxNumberOfRawDatasetsPerStage must be a non-negative integer");
   }
   
   

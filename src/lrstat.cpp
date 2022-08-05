@@ -1798,7 +1798,7 @@ NumericVector getCumAlphaSpent(
 //' of subjects, maximum and expected study duration, along with
 //' input parameters including accrual duration, followup duration,
 //' whether a fixed follow-up is used, parameters for the FH weights,
-//' allocation ratio, number of stages, and hazard ratio under H0
+//' allocation ratio, number of stages, and hazard ratio under H0.
 //'
 //' * \code{byStageResults} containing information rates, efficacy
 //' and futility boundaries on the Z-scale, probability for efficacy
@@ -1808,7 +1808,7 @@ NumericVector getCumAlphaSpent(
 //' and expected study time, efficacy and futility boundaries on
 //' the HR scale and on the p-value scale, information for weighted
 //' log-rank test, hazard ratio from weighted Cox regression, and
-//' where efficacy and futility stopping are allowed by stage
+//' where efficacy and futility stopping are allowed by stage.
 //'
 //' * \code{settings} containing input parameters such as
 //' alpha and beta spending function and parameter values,
