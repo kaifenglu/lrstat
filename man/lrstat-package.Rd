@@ -71,7 +71,7 @@ lrpower(kMax = 2, informationRates = c(0.8, 1),
 \references{
 Anastasios A. Tsiatis. Repeated significance testing for a general class
 of statistics used in censored survival analysis. J Am Stat Assoc.
-1982;77:855-861. \doi{10.1080/01621459.1982.10477898}
+1982;77:855-861. 
 
 Christopher Jennison, Bruce W. Turnbull. Group Sequential Methods with
 Applications to Clinical Trials. Chapman & Hall/CRC: Boca Raton, 2000,
@@ -79,7 +79,6 @@ ISBN:0849303168
 
 Kaifeng Lu. Sample size calculation for logrank test and prediction of
 number of events over time. Pharm Stat. 2021;20:229-244.
-\doi{10.1002/pst.2069}
 }
 \seealso{
 rpact, gsDesign

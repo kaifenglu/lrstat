@@ -129,7 +129,7 @@ of events, number of dropouts, number of subjects, and analysis time
 by stage, overall rejection probability, overall expected number of
 events, number of dropouts, number of subjects, and study duration,
 the hazard ratio under H0, and whether the analyses are planned 
-based on the number of events or calendar time
+based on the number of events or calendar time.
 
 * \code{sumdata} is a data frame of summary data by stage for each
 iteration, containing at which stage the trial stops, whether the target
@@ -138,7 +138,7 @@ subjects overall and by treatment group, number of events overall and by
 treatment group, number of dropouts overall and by treatment group,
 numerator and variance of weighted log-rank score statistic, log-rank
 test Z-statistic, and whether the trial stops for efficacy or futility
-at the stage
+at the stage.
 
 
 * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
@@ -146,7 +146,7 @@ positive integer) is a data frame for subject-level data for selected
 replications, containing the subject number, arrival time, stratum,
 treatment group, survival time, dropout time, observation time when
 the trial stops, time under observation, and event and dropout
-indicators
+indicators.
 }
 \description{
 Performs simulation for two-arm group sequential
