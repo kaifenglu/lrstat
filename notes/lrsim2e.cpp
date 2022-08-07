@@ -120,25 +120,20 @@ List lrsim2e(const int kMax = NA_INTEGER,
              const int maxNumberOfRawDatasetsPerStage = 0,
              int seed = NA_INTEGER) {
   
+  // check input parameters
   int kMaxe1x = kMaxe1;
-  int i, iter, j, k, h, nsub;
+  
   int nstrata = stratumFraction.size();
   int nintervals = piecewiseSurvivalTime.size();
   int nsi = nstrata*nintervals;
-
+  
   NumericVector lambda1e1x(nsi), lambda2e1x(nsi), lambda3e1x(nsi), 
   lambda1e2x(nsi), lambda2e2x(nsi), lambda3e2x(nsi), 
   gamma1e1x(nsi), gamma2e1x(nsi), gamma3e1x(nsi), 
   gamma1e2x(nsi), gamma2e2x(nsi), gamma3e2x(nsi),
   lambda1e1d(nsi), lambda2e1d(nsi), lambda3e1d(nsi), 
   gamma1e1d(nsi), gamma2e1d(nsi), gamma3e1d(nsi);
-  
-  double enrollt, u, u1, u2;
 
-  // b1, b2, b3 are the available slots for the three treatments in a block
-  IntegerVector b1(nstrata);
-  IntegerVector b2(nstrata);
-  IntegerVector b3(nstrata);
   
   if (R_isnancpp(kMax)) {
     stop("kMax must be provided");
@@ -284,7 +279,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda2e1");
   }
-
+  
   if (lambda3e1.size() == 1) {
     lambda3e1x = rep(lambda3e1, nsi);
   } else if (lambda3e1.size() == nintervals) {
@@ -295,7 +290,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
     stop("Invalid length for lambda3e1");
   }
   
-
+  
   if (lambda1e2.size() == 1) {
     lambda1e2x = rep(lambda1e2, nsi);
   } else if (lambda1e2.size() == nintervals) {
@@ -396,28 +391,28 @@ List lrsim2e(const int kMax = NA_INTEGER,
   gamma2e1d = gamma2e1x - gamma2e2x;
   gamma3e1d = gamma3e1x - gamma3e2x;
   
-  if (is_true(any(lambda1e1d <= 0))) {
-    stop("lambda1e1 must be greater than lambda1e2");
+  if (is_true(any(lambda1e1d < 0))) {
+    stop("lambda1e1 must be greater than or equal to lambda1e2");
   }
   
-  if (is_true(any(lambda2e1d <= 0))) {
-    stop("lambda2e1 must be greater than lambda2e2");
+  if (is_true(any(lambda2e1d < 0))) {
+    stop("lambda2e1 must be greater than or equal to lambda2e2");
   }
   
-  if (is_true(any(lambda3e1d <= 0))) {
-    stop("lambda3e1 must be greater than lambda3e2");
+  if (is_true(any(lambda3e1d < 0))) {
+    stop("lambda3e1 must be greater than or equal to lambda3e2");
   }
   
-  if (is_true(any(gamma1e1d <= 0))) {
-    stop("gamma1e1 must be greater than gamma1e2");
+  if (is_true(any(gamma1e1d < 0))) {
+    stop("gamma1e1 must be greater than or equal to gamma1e2");
   }
   
-  if (is_true(any(gamma2e1d <= 0))) {
-    stop("gamma2e1 must be greater than gamma2e2");
+  if (is_true(any(gamma2e1d < 0))) {
+    stop("gamma2e1 must be greater than or equal to gamma2e2");
   }
   
-  if (is_true(any(gamma3e1d <= 0))) {
-    stop("gamma3e1 must be greater than gamma3e2");
+  if (is_true(any(gamma3e1d < 0))) {
+    stop("gamma3e1 must be greater than or equal to gamma3e2");
   }
   
   
@@ -429,7 +424,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
     stop("accrualDuration must be positive");
   }
   
-
+  
   
   if (plannedEvents.size() != kMax) {
     stop("Invalid length for plannedEvents");
@@ -464,9 +459,30 @@ List lrsim2e(const int kMax = NA_INTEGER,
   }
   
   
+  // declare variables 
+  int i, m, n, iter, j, k, nstages, h, index1=0, index2=0, nsub, 
+  accruals1, accruals2, accruals3, totalAccruals, 
+  events1e1, events2e1, events3e1, totalEventse1, 
+  events1e2, events2e2, events3e2, totalEventse2, 
+  dropouts1e1, dropouts2e1, dropouts3e1, totalDropoutse1, 
+  dropouts1e2, dropouts2e2, dropouts3e2, totalDropoutse2;
+  
+  double s, enrollt, u, u1, u2, time, uscore13, uscore23, uscore12, 
+  vscore13, vscore23, vscore12;
+  
+  
+  // stratum information 
+  IntegerVector b1(nstrata), b2(nstrata), b3(nstrata), 
+  n1x(nstrata), n2x(nstrata), n3x(nstrata), 
+  n1(nstrata), n2(nstrata), n3(nstrata), 
+  nt13(nstrata), nt23(nstrata), nt12(nstrata);
+  
+  NumericVector cumStratumFraction = cumsum(stratumFraction);
+
+  
   // maximum number of subjects to enroll
-  int m = accrualTime.size();
-  double s = 0;
+  m = accrualTime.size();
+  s = 0;
   for (i=0; i<m; i++) {
     if (i<m-1 && accrualTime[i+1] < accrualDuration) {
       s += accrualIntensity[i]*(accrualTime[i+1] - accrualTime[i]);
@@ -475,50 +491,37 @@ List lrsim2e(const int kMax = NA_INTEGER,
       break;
     }
   }
-  int n = floor(s + 0.5);
+  n = floor(s + 0.5);
   
   
-  IntegerVector stratum(n), treatmentGroup(n);
+  // subject-level raw data set for one simulation
+  IntegerVector stratum(n), treatmentGroup(n), sortedIndex(n), 
+  stratumSorted(n), treatmentGroupSorted(n);
   
   NumericVector arrivalTime(n), survivalTime1(n), survivalTime2(n), 
-  dropoutTime1(n), dropoutTime2(n), observationTime(n), 
-  timeUnderObservation1(n), timeUnderObservation2(n), 
-  totalTime1(n), totalTime2(n), totalt1(n), totalt2(n);
+  dropoutTime1(n), dropoutTime2(n), timeUnderObservation1(n), 
+  timeUnderObservation2(n), totalTime1(n), totalTime2(n), 
+  totalt1(n), totalt2(n), observationTime(n), timeUnderObservationSorted(n);
   
-  LogicalVector event1(n), event2(n), dropoutEvent1(n), dropoutEvent2(n);
+  LogicalVector event1(n), event2(n), dropoutEvent1(n), dropoutEvent2(n), 
+  event1ac(n), event2ac(n), sub(n), eventSorted(n);
   
-  NumericVector cumStratumFraction = cumsum(stratumFraction);
-  
+
+  // within-stratum hazard rates
   IntegerVector jj(nintervals);  
-  NumericVector lam1e1(nintervals), lam2e1(nintervals), lam3e1(nintervals);
-  NumericVector lam1e2(nintervals), lam2e2(nintervals), lam3e2(nintervals);
-  NumericVector gam1e1(nintervals), gam2e1(nintervals), gam3e1(nintervals);
-  NumericVector gam1e2(nintervals), gam2e2(nintervals), gam3e2(nintervals);
   
+  NumericVector lam1e1(nintervals), lam2e1(nintervals), lam3e1(nintervals), 
+  lam1e2(nintervals), lam2e2(nintervals), lam3e2(nintervals), 
+  gam1e1(nintervals), gam2e1(nintervals), gam3e1(nintervals),
+  gam1e2(nintervals), gam2e2(nintervals), gam3e2(nintervals);
+  
+  
+  // stage-wise information
+  IntegerVector niter(kMax);
   NumericVector analysisTime(kMax);
-  
-  int accruals1, accruals2, accruals3, totalAccruals, 
-  events1e1, events2e1, events3e1, totalEventse1, 
-  events1e2, events2e2, events3e2, totalEventse2, 
-  dropouts1e1, dropouts2e1, dropouts3e1, totalDropoutse1, 
-  dropouts1e2, dropouts2e2, dropouts3e2, totalDropoutse2;
-  
-  
-  NumericVector timeUnderObservationSorted(n);
-  IntegerVector sortedIndex(n), stratumSorted(n), treatmentGroupSorted(n);
-  LogicalVector eventSorted(n);
-  
-  double uscore13, vscore13, uscore23, vscore23, uscore12, vscore12;
-  
-  LogicalVector sub(n);
-  
-  IntegerVector n1x(nstrata), n2x(nstrata), n3x(nstrata), 
-  n1(nstrata), n2(nstrata), n3(nstrata), 
-  nt13(nstrata), nt23(nstrata), nt12(nstrata);
+ 
   
   // cache for the number of raw data sets per stage to extract
-  IntegerVector niter(kMax);
-  
   int nrow1 = n*kMax*maxNumberOfRawDatasetsPerStage;
   
   IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
@@ -539,6 +542,8 @@ List lrsim2e(const int kMax = NA_INTEGER,
   LogicalVector dropoutEvent1x = LogicalVector(nrow1, NA_LOGICAL);
   LogicalVector dropoutEvent2x = LogicalVector(nrow1, NA_LOGICAL);
   
+  
+  // cache for the summary data sets to extract
   int nrow2 = kMax*maxNumberOfIterations*2;
   
   IntegerVector iterationNumbery = IntegerVector(nrow2, NA_INTEGER);
@@ -562,11 +567,6 @@ List lrsim2e(const int kMax = NA_INTEGER,
   NumericVector logRankStatistic12y = NumericVector(nrow2, NA_REAL);
   
   
-  // observed number of events by stage
-  int index1=0, index2=0;
-  double time;
- 
-  
   // set up random seed
   if (seed==NA_INTEGER) {
     set_seed(std::time(0));
@@ -575,11 +575,12 @@ List lrsim2e(const int kMax = NA_INTEGER,
   }
   
   
+  // simulation 
   for (iter=0; iter<maxNumberOfIterations; iter++) {
 
     b1.fill(allocation1);
     b2.fill(allocation2);
-    b3.fill(allocation2);
+    b3.fill(allocation3);
     
     enrollt = 0;
     for (i=0; i<n; i++) {
@@ -704,27 +705,46 @@ List lrsim2e(const int kMax = NA_INTEGER,
     
     
     // find the analysis time for each stage based on Arm A vs. Arm C
-    LogicalVector event1ac = event1 & (treatmentGroup==1 | treatmentGroup==3);
+    event1ac = event1 & ((treatmentGroup==1) | (treatmentGroup==3));
     totalt1 = stl_sort(totalTime1[event1ac]);
     
-    LogicalVector event2ac = event2 & (treatmentGroup==1 | treatmentGroup==3);
+    event2ac = event2 & ((treatmentGroup==1) | (treatmentGroup==3));
     totalt2 = stl_sort(totalTime2[event2ac]);
     
-    for (k=0; k<kMax; k++) {
-      if (k<kMaxe1x) { // use PFS events
-        analysisTime[k] = totalt1[plannedEvents[k]-1] + 1e-12;
-      } else { // use OS events
-        analysisTime[k] = totalt2[plannedEvents[k]-1] + 1e-12;
-      }
+
+
+    
+    // PFS looks
+    for (k=0; k<kMaxe1x; k++) {
+      analysisTime[k] = totalt1[plannedEvents[k]-1] + 1e-12;
     }
     
-    if (is_true(any(diff(analysisTime) <= 0))) {
-      stop("plannedEvents should ensure increasing analysisTime");
+    if (kMax > kMaxe1x) {
+      // planned OS looks after the PFS looks
+      NumericVector analysisTime2(kMax - kMaxe1x);
+      for (k=kMaxe1x; k<kMax; k++) {
+        analysisTime2[k-kMaxe1x] = totalt2[plannedEvents[k]-1] + 1e-12;
+      }
+      
+      
+      // whether the planned OS looks occur after the PFS looks
+      if (analysisTime2[kMax-kMaxe1x-1] > analysisTime[kMaxe1x-1]) {
+        int l = which_max(analysisTime2 > analysisTime[kMaxe1x-1]);
+        for (k=kMaxe1x; k<kMax-l; k++) {
+          analysisTime[k] = analysisTime2[k-kMaxe1x+l];
+        }
+        nstages = kMax-l;
+      } else {
+        nstages = kMaxe1x;
+      }
+    } else {
+      nstages = kMax;
     }
+    
     
     
     // construct the log-rank test statistic at each stage
-    for (k=0; k<kMax; k++) {
+    for (k=0; k<nstages; k++) {
       time = analysisTime[k];
       
       n1x.fill(0);  // number of subjects in each stratum by treatment
@@ -871,12 +891,14 @@ List lrsim2e(const int kMax = NA_INTEGER,
         // order the data by time under observation
         if (endpoint == 1) {
           timeUnderObservationSorted = stl_sort(timeUnderObservation1);
-          sortedIndex = match(timeUnderObservationSorted, timeUnderObservation1);
+          sortedIndex = match(timeUnderObservationSorted, 
+                              timeUnderObservation1);
           sortedIndex = sortedIndex - 1;
           eventSorted = event1[sortedIndex];
         } else {
           timeUnderObservationSorted = stl_sort(timeUnderObservation2);
-          sortedIndex = match(timeUnderObservationSorted, timeUnderObservation2);
+          sortedIndex = match(timeUnderObservationSorted, 
+                              timeUnderObservation2);
           sortedIndex = sortedIndex - 1;
           eventSorted = event2[sortedIndex];
         }
@@ -975,7 +997,28 @@ List lrsim2e(const int kMax = NA_INTEGER,
   } // end of iteration
   
   
-  // simulation datasets
+  // simulation summary datasets
+  LogicalVector sub2 = !is_na(iterationNumbery);
+  iterationNumbery = iterationNumbery[sub2];
+  stageNumbery = stageNumbery[sub2];
+  analysisTimey = analysisTimey[sub2];
+  accruals1y = accruals1y[sub2];
+  accruals2y = accruals2y[sub2];
+  accruals3y = accruals3y[sub2];
+  totalAccrualsy = totalAccrualsy[sub2];
+  endpointy = endpointy[sub2];
+  events1y = events1y[sub2];
+  events2y = events2y[sub2];
+  events3y = events3y[sub2];
+  totalEventsy = totalEventsy[sub2];
+  dropouts1y = dropouts1y[sub2];
+  dropouts2y = dropouts2y[sub2];
+  dropouts3y = dropouts3y[sub2];
+  totalDropoutsy = totalDropoutsy[sub2];
+  logRankStatistic13y = logRankStatistic13y[sub2];
+  logRankStatistic23y = logRankStatistic23y[sub2];
+  logRankStatistic12y = logRankStatistic12y[sub2];
+  
   DataFrame sumdata = DataFrame::create(
     _["iterationNumber"] = iterationNumbery,
     _["stageNumber"] = stageNumbery,
@@ -1001,7 +1044,25 @@ List lrsim2e(const int kMax = NA_INTEGER,
   List result;
   
   if (maxNumberOfRawDatasetsPerStage > 0) {
-
+    LogicalVector sub1 = !is_na(iterationNumberx);
+    iterationNumberx = iterationNumberx[sub1];
+    stageNumberx = stageNumberx[sub1];
+    subjectIdx = subjectIdx[sub1];
+    arrivalTimex = arrivalTimex[sub1];
+    stratumx = stratumx[sub1];
+    treatmentGroupx = treatmentGroupx[sub1];
+    observationTimex = observationTimex[sub1];
+    survivalTime1x = survivalTime1x[sub1];
+    dropoutTime1x = dropoutTime1x[sub1];
+    timeUnderObservation1x = timeUnderObservation1x[sub1];
+    event1x = event1x[sub1];
+    dropoutEvent1x = dropoutEvent1x[sub1];
+    survivalTime2x = survivalTime2x[sub1];
+    dropoutTime2x = dropoutTime2x[sub1];
+    timeUnderObservation2x = timeUnderObservation2x[sub1];
+    event2x = event2x[sub1];
+    dropoutEvent2x = dropoutEvent2x[sub1];
+    
     DataFrame rawdata = DataFrame::create(
       _["iterationNumber"] = iterationNumberx,
       _["stageNumber"] = stageNumberx,
