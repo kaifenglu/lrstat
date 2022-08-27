@@ -1,3 +1,8 @@
+# lrstat 0.1.7
+Bug fixes 
+
+- Fix unicode character (U+2264) in documentation
+
 # lrstat 0.1.6
 
 - Add capability for performing noninferiority tests in lrpower, lrsamplesize, and lrsim.
