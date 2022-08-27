@@ -37,7 +37,7 @@ print.design <- function(x, ...) {
                         t$alpha,
                         s$efficacyBounds,
                         s$efficacyP,
-                        s$drift))
+                        t$drift))
 
     colnames(df) <- NA
   }
