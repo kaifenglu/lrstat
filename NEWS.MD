@@ -1,7 +1,5 @@
 # lrstat 0.1.7
-Bug fixes 
-
-- Fix unicode character (U+2264) in documentation
+- Add getDesign for creating a generic group sequential design with constant treatment effect over time
 
 # lrstat 0.1.6
 
