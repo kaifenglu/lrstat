@@ -206,7 +206,7 @@ double brent(const std::function<double(double)>& f,
 //' probabilities.
 //'
 //' @examples
-//' exitprob(b = c(3.471, 2.454, 2.004), a = rep(-6, 3),
+//' exitprob(b = c(3.471, 2.454, 2.004), a = NA,
 //'          theta = -log(0.6), I = c(50, 100, 150)/4)
 //'
 //' @export
