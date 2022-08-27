@@ -3405,6 +3405,7 @@ List getDesign(const double beta = 0.2,
   bool missingFutilityBounds = is_true(any(is_na(futilityBounds)));
   
   if (missingCriticalValues) {
+    criticalValues1 = rep(6.0, kMax);
     
     NumericVector theta(kMax); // mean values under H0, initialized to zero
     NumericVector t = clone(informationRates1); // information time
@@ -3435,8 +3436,8 @@ List getDesign(const double beta = 0.2,
                    }
                    
                    List probs = exitprob(u, l, theta, t);
-                   NumericVector pu = NumericVector(probs[0]);
-                   return sum(pu) - alpha;
+                   double cpu = sum(NumericVector(probs[0]));
+                   return cpu - alpha;
                  };
       
       double cwt = brent(f, 0, 10, 1e-6);
@@ -3505,7 +3506,7 @@ List getDesign(const double beta = 0.2,
     
   }
   
-  
+
   
   auto f = [beta, kMax, informationRates1, futilityStopping1,
             criticalValues1, &futilityBounds1, 
@@ -3643,8 +3644,11 @@ List getDesign(const double beta = 0.2,
   NumericVector cpu = cumsum(pu);
   NumericVector cpl = cumsum(pl);
   
-  probs = exitprob(criticalValues1, NA_REAL, 0, t);
-  NumericVector cumAlphaSpent = cumsum(NumericVector(probs[0]));
+  NumericVector futilityBounds0 = rep(-6.0, kMax);
+  futilityBounds0[kMax-1] = criticalValues1[kMax-1];
+  NumericVector theta0(kMax);
+  List probs0 = exitprob(criticalValues1, futilityBounds0, theta0, t);
+  NumericVector cumAlphaSpent = cumsum(NumericVector(probs0[0]));
 
   IntegerVector stageNumber = seq_len(kMax);
   
