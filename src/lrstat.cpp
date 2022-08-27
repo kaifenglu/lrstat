@@ -2221,7 +2221,7 @@ List lrpower(const int kMax = NA_INTEGER,
                  lambda1, lambda2, gamma1, gamma2,
                  accrualDuration, followupTime, fixedFollowup,
                  numSubintervals);
-
+  
   // obtain the mean and variance of log-rank test score statistic at
   // each stage
   NumericVector theta(kMax), vscore(kMax);
@@ -2272,7 +2272,7 @@ List lrpower(const int kMax = NA_INTEGER,
   NumericVector nsubjects = NumericVector(lr[1]);
   NumericVector nevents = NumericVector(lr[2]);
   NumericVector ndropouts = NumericVector(lr[5]);
-
+  
   
   // information time
   NumericVector t = vscore / (vscore[kMax - 1]);
@@ -3057,7 +3057,7 @@ List lrsamplesize(const double beta = 0.2,
                              lambda1, lambda2, gamma1, gamma2,
                              dur1, dur2, fixedFollowup);
               
-
+              
               // obtain the mean and variance of log-rank test score statistic 
               // at each stage
               NumericVector theta(kMax), vscore(kMax);
@@ -3079,7 +3079,7 @@ List lrsamplesize(const double beta = 0.2,
                 theta = -uscore/vscore;
               }
               
-
+              
               // information time
               NumericVector t = vscore / (vscore[kMax - 1]);
               
