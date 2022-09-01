@@ -67,6 +67,9 @@ using namespace Rcpp;
 //'   Look 1 to Look kMaxe1 for Arms A and C combined and the planned 
 //'   cumulative total number of OS events at Look kMaxe1+1 to Look kMax 
 //'   for Arms A and C combined.
+//' @param plannedTime The planned analysis time for each stage needed for  
+//'   analyses planned at calendar times, in which case, plannedEvents should 
+//'   be missing.
 //' @param maxNumberOfIterations The number of simulation iterations.
 //'   Defaults to 1000.
 //' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per stage
@@ -116,6 +119,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
              const NumericVector& gamma3e2 = 0,
              const double accrualDuration = NA_REAL,
              const IntegerVector& plannedEvents = NA_INTEGER,
+             const NumericVector& plannedTime = NA_REAL,
              const int maxNumberOfIterations = 1000,
              const int maxNumberOfRawDatasetsPerStage = 0,
              int seed = NA_INTEGER) {
@@ -134,6 +138,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
   lambda1e1d(nsi), lambda2e1d(nsi), lambda3e1d(nsi), 
   gamma1e1d(nsi), gamma2e1d(nsi), gamma3e1d(nsi);
 
+  bool useEvents;
   
   if (R_isnancpp(kMax)) {
     stop("kMax must be provided");
@@ -424,29 +429,46 @@ List lrsim2e(const int kMax = NA_INTEGER,
     stop("accrualDuration must be positive");
   }
   
-  
-  
-  if (plannedEvents.size() != kMax) {
-    stop("Invalid length for plannedEvents");
-  }
-  
-  if (plannedEvents[0] <= 0) {
-    stop("Elements of plannedEvents must be positive");
-  }
-  
-  
-  if (kMaxe1x > 1) {
-    IntegerVector plannedEvents1 = plannedEvents[Range(0,kMaxe1x-1)];
-    if (is_true(any(diff(plannedEvents1) <= 0))) {
-      stop("plannedEvents for endpoint 1 must be increasing");
+  // whether to plan the analyses based on events or calender time
+  if (is_false(any(is_na(plannedEvents)))) {
+    useEvents = 1;
+    
+    if (plannedEvents.size() != kMax) {
+      stop("Invalid length for plannedEvents");
     }
-  }
-  
-  if (kMax - kMaxe1x > 1) {
-    IntegerVector plannedEvents2 = plannedEvents[Range(kMaxe1x, kMax-1)];
-    if (is_true(any(diff(plannedEvents2) <= 0))) {
-      stop("plannedEvents for endpoint 2 must be increasing");
+    
+    if (plannedEvents[0] <= 0) {
+      stop("Elements of plannedEvents must be positive");
     }
+    
+    if (kMaxe1x > 1) {
+      IntegerVector plannedEvents1 = plannedEvents[Range(0,kMaxe1x-1)];
+      if (is_true(any(diff(plannedEvents1) <= 0))) {
+        stop("plannedEvents for endpoint 1 must be increasing");
+      }
+    }
+    
+    if (kMax - kMaxe1x > 1) {
+      IntegerVector plannedEvents2 = plannedEvents[Range(kMaxe1x, kMax-1)];
+      if (is_true(any(diff(plannedEvents2) <= 0))) {
+        stop("plannedEvents for endpoint 2 must be increasing");
+      }
+    }
+  } else if (is_false(any(is_na(plannedTime)))) {
+    useEvents = 0;
+    if (plannedTime[0] <= 0) {
+      stop("Elements of plannedTime must be positive");
+    }
+    
+    if (plannedTime.size() != kMax) {
+      stop("Invalid length for plannedTime");
+    }
+    
+    if (is_true(any(diff(plannedTime) <= 0))) {
+      stop("Elements of plannedTime must be increasing");
+    }
+  } else {
+    stop("Either plannedEvents or plannedTime must be given");
   }
   
   
@@ -473,8 +495,8 @@ List lrsim2e(const int kMax = NA_INTEGER,
   
   // stratum information 
   IntegerVector b1(nstrata), b2(nstrata), b3(nstrata), 
-  n1x(nstrata), n2x(nstrata), n3x(nstrata), 
   n1(nstrata), n2(nstrata), n3(nstrata), 
+  n1x(nstrata), n2x(nstrata), n3x(nstrata), 
   nt13(nstrata), nt23(nstrata), nt12(nstrata);
   
   NumericVector cumStratumFraction = cumsum(stratumFraction);
@@ -712,33 +734,36 @@ List lrsim2e(const int kMax = NA_INTEGER,
     totalt2 = stl_sort(totalTime2[event2ac]);
     
 
-
-    
-    // PFS looks
-    for (k=0; k<kMaxe1x; k++) {
-      analysisTime[k] = totalt1[plannedEvents[k]-1] + 1e-12;
-    }
-    
-    if (kMax > kMaxe1x) {
-      // planned OS looks after the PFS looks
-      NumericVector analysisTime2(kMax - kMaxe1x);
-      for (k=kMaxe1x; k<kMax; k++) {
-        analysisTime2[k-kMaxe1x] = totalt2[plannedEvents[k]-1] + 1e-12;
+    // find the analysis time for each stage
+    if (useEvents) {
+      // PFS looks
+      for (k=0; k<kMaxe1x; k++) {
+        analysisTime[k] = totalt1[plannedEvents[k]-1] + 1e-12;
       }
       
-      
-      // whether the planned OS looks occur after the PFS looks
-      if (analysisTime2[kMax-kMaxe1x-1] > analysisTime[kMaxe1x-1]) {
-        int l = which_max(analysisTime2 > analysisTime[kMaxe1x-1]);
-        for (k=kMaxe1x; k<kMax-l; k++) {
-          analysisTime[k] = analysisTime2[k-kMaxe1x+l];
+      if (kMax > kMaxe1x) {
+        // planned OS looks after the PFS looks
+        NumericVector analysisTime2(kMax - kMaxe1x);
+        for (k=kMaxe1x; k<kMax; k++) {
+          analysisTime2[k-kMaxe1x] = totalt2[plannedEvents[k]-1] + 1e-12;
         }
-        nstages = kMax-l;
+        
+        // whether the planned OS looks occur after the PFS looks
+        if (analysisTime2[kMax-kMaxe1x-1] > analysisTime[kMaxe1x-1]) {
+          int l = which_min(analysisTime2 > analysisTime[kMaxe1x-1]);
+          for (k=kMaxe1x; k<kMax-l; k++) {
+            analysisTime[k] = analysisTime2[k-kMaxe1x+l];
+          }
+          nstages = kMax-l;
+        } else {
+          nstages = kMaxe1x;
+        }
       } else {
-        nstages = kMaxe1x;
+        nstages = kMax;
       }
     } else {
       nstages = kMax;
+      analysisTime = clone(plannedTime);
     }
     
     
@@ -997,7 +1022,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
   } // end of iteration
   
   
-  // simulation summary datasets
+  // simulation summary data set
   LogicalVector sub2 = !is_na(iterationNumbery);
   iterationNumbery = iterationNumbery[sub2];
   stageNumbery = stageNumbery[sub2];
