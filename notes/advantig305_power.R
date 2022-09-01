@@ -125,8 +125,7 @@ lr12e2 <- lrstat(
 
 
 
-
-
+# simulated log-rank test statistics
 lr <- lrsim2e(
   kMax = 3,
   kMaxe1 = 2,
@@ -153,22 +152,7 @@ lr <- lrsim2e(
   accrualDuration = 30.143,
   plannedEvents = c(186, 259, 183),
   maxNumberOfIterations = 1000,
-  maxNumberOfRawDatasetsPerStage = 2,
+  maxNumberOfRawDatasetsPerStage = 1,
   seed = 314159)
 
-raw1 <- lr$rawdata
 sum1 <- lr$sumdata
-
-
-f1 <- function(iteration, stage, treatments) {
-  data1 <- raw1 %>% filter(iterationNumber==iteration & stageNumber==stage & 
-                             treatmentGroup %in% treatments)
-  fit1 <- survdiff(Surv(timeUnderObservation1, event1) ~ treatmentGroup, data1)
-  fit2 <- survdiff(Surv(timeUnderObservation2, event2) ~ treatmentGroup, data1)
-  list(iteration=iteration, stage=stage, treatments=treatments, 
-       lrstat1=-sqrt(fit1$chisq), lrstat2=-sqrt(fit2$chisq))
-}
-
-f1(2, 3, c(1,3))
-f1(2, 3, c(2,3))
-f1(2, 3, c(1,2))
