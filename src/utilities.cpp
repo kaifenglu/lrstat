@@ -180,6 +180,65 @@ double brent(const std::function<double(double)>& f,
 }
 
 
+//' @title Error spending functions
+//' @description Obtains the error spent at the given information fraction
+//' for the specified error spending function.
+//'
+//' @param t Information fraction for the interim look.
+//' @param error Total error to spend.
+//' @param sf Spending function. One of the following: "sfOF" for
+//'  O'Brien-Fleming type spending function, "sfP" for Pocock type spending
+//'  function, "sfKD" for Kim & DeMets spending function, and "sfHSD" for
+//'  Hwang, Shi & DeCani spending function.
+//' @param sfpar Parameter for the spending function. Corresponds to rho for
+//'  "sfKD" and gamma for "sfHSD".
+//'
+//' @return A number for the error spent up to the interim look.
+//'
+//' @keywords internal
+//'
+//' @examples
+//' errorSpent(t = 0.5, error = 0.025, sf = "sfHSD", sfpar = -4)
+//'
+//' @export
+// [[Rcpp::export]]
+double errorSpent(const double t, const double error,
+                  const String sf, const double sfpar) {
+  if (error <= 0 || error >= 1) {
+    stop("error must be a number between 0 and 1");
+  }
+  if (t <= 0 || t > 1) {
+    stop("t must be a number between 0 and 1");
+  }
+  
+  double aval;
+  if (sf == "sfP") {
+    aval = error*log(1 + (exp(1) - 1)*t);
+  } else if (sf == "sfOF") {
+    aval = R::qnorm(1-error/2, 0, 1, 1, 0);
+    aval = 2*(1 - R::pnorm(aval/sqrt(t), 0, 1, 1, 0));
+  } else if (sf == "sfKD") {
+    if (R_isnancpp(sfpar)) {
+      stop("Parameter sfpar is missing for sfKD");
+    } else if (sfpar <= 0) {
+      stop ("sfpar must be positive for sfKD");
+    } else {
+      aval = error*pow(t, sfpar);
+    }
+  } else if (sf == "sfHSD") {
+    if (R_isnancpp(sfpar)) {
+      stop("Parameter sfpar is missing for sfHSD");
+    } else if (sfpar == 0) {
+      aval = error*t;
+    } else {
+      aval = error*(1 - exp(-sfpar*t))/(1 - exp(-sfpar));
+    }
+  } else {
+    stop("Invalid spending function");
+  }
+  return aval;
+}
+
 
 //' @title Stagewise exit probabilities
 //' @description Obtains the stagewise exit probabilities for both efficacy and
