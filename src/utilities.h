@@ -14,6 +14,11 @@ IntegerVector findInterval2(NumericVector x,
 double brent(const std::function<double(double)>& f,
              double x1, double x2, double tol);
 
+double errorSpent(const double t, 
+                  const double error,
+                  const String sf, 
+                  const double sfpar);
+
 List exitprob(const NumericVector& b,
               NumericVector a,
               NumericVector theta,
