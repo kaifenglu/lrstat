@@ -195,8 +195,6 @@ double brent(const std::function<double(double)>& f,
 //'
 //' @return A number for the error spent up to the interim look.
 //'
-//' @keywords internal
-//'
 //' @examples
 //' errorSpent(t = 0.5, error = 0.025, sf = "sfHSD", sfpar = -4)
 //'
@@ -491,8 +489,6 @@ List exitprob(const NumericVector& b,
 //' @return The quantile x such that
 //' P(X > x | X > lowerBound) = 1 - probability.
 //'
-//' @keywords internal
-//'
 //' @examples
 //' qtpwexp(probability = 0.3, piecewiseSurvivalTime = c(0, 6, 9, 15),
 //'         lambda = c(0.025, 0.04, 0.015, 0.007), lowerBound = 0)
@@ -542,4 +538,89 @@ double qtpwexp(const double probability,
   
   return q;
 }
+
+
+//' @title Update graph for graphical approaches
+//' @description Updates the weights and transition matrix for graphical 
+//' approaches.
+//'
+//' @param w The current vector of weights for elementary hypotheses.
+//' @param G The current transition matrix.
+//' @param I The set of indices for yet to be rejected hypotheses.
+//' @param j The hypothesis to remove from index set I.
+//'
+//' @return A list containing the new vector of weights and the new 
+//' transition matrix for the graph, and the new set of indices of yet 
+//' to be rejected hypotheses.
+//'
+//' @examples
+//' updateGraph(w = c(0.5, 0.5, 0, 0), 
+//'             G = matrix(c(0, 0.5, 0.5, 0,  0.5, 0, 0, 0.5,  
+//'                          0, 1, 0, 0,  1, 0, 0, 0), 
+//'                        nrow=4, ncol=4, byrow=TRUE), 
+//'             I = c(1, 2, 3, 4), 
+//'             j = 1)
+//'
+//' @export
+// [[Rcpp::export]]
+List updateGraph(const NumericVector& w, const NumericMatrix& G, 
+                 const IntegerVector& I, const int j) {
+  int i, k, l, m = w.size();
+  
+  if (G.nrow() != m || G.ncol() != m) {
+    stop("Invalid dimension for G");
+  }
+  
+  if (min(I) < 1 || max(I) > m) {
+    stop("Elements of I must be integers between 1 and m");
+  }
+  
+  if (is_true(any(duplicated(I)))) {
+    stop("The index set I must not contain duplicates");
+  }
+    
+  if (std::find(I.begin(), I.end(), j) == I.end()) {
+    stop("j must be in I");
+  }
+  
+  int j1 = j-1;
+  IntegerVector I1 = I-1;
+  
+  LogicalVector r(m);
+  r.fill(1);
+  r[I1] = 0;
+  r(j1) = 1;
+  
+  // update weights
+  NumericVector wx = clone(w);
+  for (l=0; l<m; l++) {
+    if (r(l) == 0) {
+      wx(l) = wx(l) + wx(j1)*G(j1,l);
+    }
+  }
+  wx(j1) = 0.0;
+  
+  // update transition matrix
+  NumericMatrix g(m,m);
+  for (l=0; l<m; l++) {
+    if (r[l] == 0) {
+      for (k=0; k<m; k++) {
+        if ((r[k] == 0) && (l != k) && (G(l,j1)*G(j1,l) < 1.0 - 1.0e-12)) {
+          g(l,k) = (G(l,k) + G(l,j1)*G(j1,k))/(1.0 - G(l,j1)*G(j1,l));
+        }
+      }
+    }
+  }
+
+  List result = List::create(
+    _["w"] = wx,
+    _["G"] = g,
+    _["I"] = I[I!=j]);
+  
+  return result;
+  
+}
+
+
+
 
