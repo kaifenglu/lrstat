@@ -1,3 +1,6 @@
+# lrstat 0.1.8
+- Add getBound, lrsim2e2a, lrsim2e3a, fadjpbon, fseqbon, and updateGraph functions
+
 # lrstat 0.1.7
 - Add getDesign for creating a generic group sequential design with constant treatment effect over time
 

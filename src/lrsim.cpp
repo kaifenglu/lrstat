@@ -162,9 +162,6 @@ List lrsim(const int kMax = NA_INTEGER,
   IntegerVector b1(nstrata);
   IntegerVector b2(nstrata);
   
-  if (R_isnancpp(kMax)) {
-    stop("kMax must be provided");
-  }
   
   if (kMax < 1) {
     stop("kMax must be a positive integer");
