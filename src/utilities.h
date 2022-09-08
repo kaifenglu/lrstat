@@ -24,10 +24,14 @@ List exitprob(const NumericVector& b,
               NumericVector theta,
               const NumericVector& I);
 
-
 double qtpwexp(const double probability,
                const NumericVector& piecewiseSurvivalTime,
                const NumericVector& lambda,
                const double lowerBound);
+
+List updateGraph(const NumericVector& w, 
+                 const NumericMatrix& G, 
+                 const IntegerVector& I, 
+                 const int j);
 
 #endif // __UTILITIES__
