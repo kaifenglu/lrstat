@@ -252,7 +252,7 @@ NULL
 
 #' Parameter Description: futilityBounds
 #' @param futilityBounds Lower boundaries on the z-test statistic scale
-#'   for stopping for futility at stages 1, ..., kMax-1. Defaults to
+#'   for stopping for futility at stages 1, ..., \code{kMax-1}. Defaults to
 #'   \code{rep(-6, kMax-1)} if left unspecified.
 #' @name param_futilityBounds
 #' @keywords internal
