@@ -1,8 +1,25 @@
+# lrstat 0.1.9
+
+- Add fwgtmat and fadjpsim to calculate the adjusted p-values for Simes-based graphical approaches.
+- update the print method for design, lrpower, and lrsim.
+
 # lrstat 0.1.8
-- Add getBound, lrsim2e2a, lrsim2e3a, fadjpbon, fseqbon, and updateGraph functions
+
+- Add spendingTime to getDesign, lrpower, and lrsamplesize to allow the error spending time to be different from the information time.
+- Rewrite lrsamplesize to simplify and accelerate the computation for typeOfComputation == "Schoenfeld".
+- Add getBound to obtain the efficacy stopping boundaries for a group sequential design allowing the error spending time to be different from the information time.
+- Add fadjpbon to obtain the adjusted p-values for graphical approaches using weighted Bonferroni tests for fixed design.
+- Add updateGraph to update the weights and transition matrix after removing a hypothesis from the set of indices of yet to be rejected null hypotheses. 
+- Add repeatedPValue to Obtain the repeated p-values for a group sequential design based on a given alpha spending function.
+- Add fseqbon to obtain the test results for group sequential trials using graphical approaches based on weighted Bonferroni tests with the option to provide repeated p-values for each hypothesis over time.
+- Add lrsim3a to perform simulation for three-arm group sequential trials based on weighted log-rank test. The looks are driven by the total number of events in Arm A and Arm C combined.
+- Add lrsim2e to perform simulation for two-endpoint two-arm group sequential trials based on weighted log-rank test. The first few looks are driven by the total number of PFS events in two arms combined, and the subsequent looks are driven by the total number of OS events in two arms combined.
+- Add lrsim2e3a to perform simulation for two-endpoint three-arm group sequential trials based on weighted log-rank test. The first few looks are driven by the total number of PFS events in Arm A and Arm C combined, and the subsequent looks are driven by the total number of OS events in Arm A and Arm C combined.
+
 
 # lrstat 0.1.7
-- Add getDesign for creating a generic group sequential design with constant treatment effect over time
+
+- Add getDesign for creating a generic group sequential design with constant treatment effect over time.
 
 # lrstat 0.1.6
 
@@ -10,8 +27,8 @@
 - Add capability for simulating analyses based on calendar times in lrsim.
 - Adjust the critical value at the final look if the observed total number of events is less than the planned total number of events in lrsim.
 - Retain summary statistics for all stages even after crossing the efficacy and futility boundaries in lrsim.
-- Add number of dropouts 
-- Add Schoenfeld method for proportional hazards and conventional log-rank test in lrpower and lrsamplesize
+- Add number of dropouts to lrpower/lrsamplesize and lrsim output.
+- Add Schoenfeld method for proportional hazards and conventional log-rank test in lrpower and lrsamplesize.
 
 # lrstat 0.1.5
 
@@ -57,9 +74,9 @@ Bug fixes
 # lrstat 0.1.1
 
 
-- Fix hyperlinks
+- Fix hyperlinks.
 
 
 # lrstat 0.1.0
 
-- Initial release
+- Initial release.
