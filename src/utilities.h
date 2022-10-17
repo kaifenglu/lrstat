@@ -6,7 +6,7 @@ using namespace Rcpp;
 
 void set_seed(int seed);
 
-NumericVector stl_sort(NumericVector x);
+NumericVector stl_sort(const NumericVector& x);
 
 IntegerVector findInterval2(NumericVector x,
                             NumericVector breaks);
@@ -14,24 +14,20 @@ IntegerVector findInterval2(NumericVector x,
 double brent(const std::function<double(double)>& f,
              double x1, double x2, double tol);
 
-double errorSpent(const double t, 
-                  const double error,
-                  const String sf, 
-                  const double sfpar);
+double errorSpentcpp(const double t, 
+                     const double error,
+                     const String sf, 
+                     const double sfpar);
 
-List exitprob(const NumericVector& b,
-              NumericVector a,
-              NumericVector theta,
-              const NumericVector& I);
+List exitprobcpp(const NumericVector& b,
+                 const NumericVector& a,
+                 const NumericVector& theta,
+                 const NumericVector& I);
 
-double qtpwexp(const double probability,
-               const NumericVector& piecewiseSurvivalTime,
-               const NumericVector& lambda,
-               const double lowerBound);
+double qtpwexpcpp(const double probability,
+                  const NumericVector& piecewiseSurvivalTime,
+                  const NumericVector& lambda,
+                  const double lowerBound);
 
-List updateGraph(const NumericVector& w, 
-                 const NumericMatrix& G, 
-                 const IntegerVector& I, 
-                 const int j);
 
 #endif // __UTILITIES__
