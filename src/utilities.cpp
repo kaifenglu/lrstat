@@ -3,18 +3,7 @@
 
 using namespace Rcpp;
 
-//' @title Set seed
-//' @description Sets the R seed in the cpp program based on set.seed() in R.
-//'
-//' @param seed The seed to use for generating random numbers.
-//' @return No return value, called for side effects.
-//'
-//' @keywords internal
-//'
-//' @examples
-//' set_seed(123)
-//'
-//' @export
+
 // [[Rcpp::export]]
 void set_seed(int seed) {
   Environment base_env("package:base");
@@ -23,20 +12,8 @@ void set_seed(int seed) {
 }
 
 
-//' @title Sort a numeric vector
-//' @description Sorts a numeric vector in the cpp program.
-//'
-//' @param x The numeric vector to sort.
-//' @return A vector obtained after sorting the input vector.
-//'
-//' @keywords internal
-//'
-//' @examples
-//' stl_sort(c(3, 4.2, 1))
-//'
-//' @export
 // [[Rcpp::export]]
-NumericVector stl_sort(NumericVector x) {
+NumericVector stl_sort(const NumericVector& x) {
   NumericVector y = clone(x);
   std::sort(y.begin(), y.end());
   return y;
@@ -104,6 +81,7 @@ IntegerVector findInterval2(NumericVector x, NumericVector v) {
 //' @examples
 //' brent(sin, -1, 1, 0.0001)
 //' @export
+//' 
 // [[Rcpp::plugins(cpp11)]]
 double brent(const std::function<double(double)>& f,
              double x1, double x2, double tol) {
@@ -180,28 +158,10 @@ double brent(const std::function<double(double)>& f,
 }
 
 
-//' @title Error spending functions
-//' @description Obtains the error spent at the given information fraction
-//' for the specified error spending function.
-//'
-//' @param t Information fraction for the interim look.
-//' @param error Total error to spend.
-//' @param sf Spending function. One of the following: "sfOF" for
-//'  O'Brien-Fleming type spending function, "sfP" for Pocock type spending
-//'  function, "sfKD" for Kim & DeMets spending function, and "sfHSD" for
-//'  Hwang, Shi & DeCani spending function.
-//' @param sfpar Parameter for the spending function. Corresponds to rho for
-//'  "sfKD" and gamma for "sfHSD".
-//'
-//' @return A number for the error spent up to the interim look.
-//'
-//' @examples
-//' errorSpent(t = 0.5, error = 0.025, sf = "sfHSD", sfpar = -4)
-//'
-//' @export
+
 // [[Rcpp::export]]
-double errorSpent(const double t, const double error,
-                  const String sf, const double sfpar) {
+double errorSpentcpp(const double t, const double error,
+                     const String sf, const double sfpar) {
   if (error <= 0 || error >= 1) {
     stop("error must be a number between 0 and 1");
   }
@@ -238,40 +198,16 @@ double errorSpent(const double t, const double error,
 }
 
 
-//' @title Stagewise exit probabilities
-//' @description Obtains the stagewise exit probabilities for both efficacy and
-//' futility stopping.
-//'
-//' @param b Upper boundaries on the z-test statistic scale.
-//' @param a Lower boundaries on the z-test statistic scale. Defaults to
-//' \code{c(rep(-6.0, kMax-1), b[kMax])} if left unspecified, where
-//' \code{kMax = length(b)}.
-//' @param theta Stagewise parameter of interest, e.g., \code{-U/V} for
-//' weighted log-rank test, where \code{U} is the mean and \code{V} is
-//' the variance of the weighted log-rank test score statistic at each stage.
-//' For proportional hazards and conventional log-rank test, use the
-//' scalar input, \code{theta = -log(HR)}.
-//' @param I Stagewise cumulative information, e.g., \code{V}, the variance
-//' of the weighted log-rank test score statistic at each stage. For
-//' conventional log-rank test, information can be approximated by
-//' \code{phi*(1-phi)*D}, where \code{phi} is the probability of being
-//' allocated to the active arm, and \code{D} is the total number of events at
-//' each stage.
-//'
-//' @return A list of stagewise exit probabilities: one vector for efficacy
-//' stopping probabilities, and the other vector for futility stopping
-//' probabilities.
-//'
-//' @examples
-//' exitprob(b = c(3.471, 2.454, 2.004), a = NA,
-//'          theta = -log(0.6), I = c(50, 100, 150)/4)
-//'
-//' @export
+
 // [[Rcpp::export]]
-List exitprob(const NumericVector& b,
-              NumericVector a,
-              NumericVector theta,
-              const NumericVector& I) {
+List exitprobcpp(const NumericVector& b,
+                 const NumericVector& a,
+                 const NumericVector& theta,
+                 const NumericVector& I) {
+  
+  NumericVector a1 = clone(a);
+  NumericVector theta1 = clone(theta);
+  NumericVector I1 = clone(I);
   
   // Integer value controlling grid for numerical integration as in
   // Jennison and Turnbull (2000)
@@ -290,7 +226,11 @@ List exitprob(const NumericVector& b,
   shift(r1), x1(r1), x(r1), z0(r2), z(r2), w(r2), h0(r2), h(r2);
   
   // set default parameter values
-  if (is_true(any(is_na(a)))) {
+  if (is_false(any(is_na(a)))) {
+    if (a.size() != kMax) {
+      stop("Invalid length for a");
+    }
+  } else {
     NumericVector tem(kMax);
     for (i=0; i<kMax; i++) {
       if (i<kMax-1) {
@@ -299,32 +239,45 @@ List exitprob(const NumericVector& b,
         tem[i] = b[i];
       }
     }
-    a = tem;
+    a1 = tem;
   }
   
-  
-  
-  if (theta.size()==1) {
-    theta = rep(theta, kMax);
-  }
-  
-  if (a.size()!=kMax || theta.size()!=kMax || I.size()!=kMax) {
-    stop("The input parameters must have the same length");
-  }
-  
-  // edit check
+  // edit check of boundaries
   for (i=0; i<kMax; i++) {
-    if (a[i] > b[i]) {
+    if (a1[i] > b[i]) {
       stop("Lower bounds (a) must be less than upper bounds (b)");
     }
   }
   
-  if (I[0] <= 0) {
-    stop("Elements of I must be positive");
-  } else if (kMax > 1 && is_true(any(diff(I) <= 0))) {
-    stop("Elements of I must be increasing");
+  
+  if (is_false(any(is_na(theta)))) {
+    if (theta.size() == 1) {
+      theta1 = rep(theta, kMax);
+    } else if (theta.size() != kMax) {
+      stop("Invalid length for theta");
+    } 
+  } else {
+    theta1 = rep(0, kMax);
   }
   
+  
+  if (is_false(any(is_na(I)))) {
+    if (I.size() != kMax) {
+      stop("Invalid length for I");
+    } else if (I[0] <= 0) {
+      stop("Elements of I must be positive");
+    } else if (kMax > 1 && is_true(any(diff(I) <= 0))) {
+      stop("Elements of I must be increasing");
+    }
+  } else {
+    IntegerVector tem = seq_len(kMax);
+    I1 = as<NumericVector>(tem);
+  }
+  
+  
+  
+
+
   // constant shifts relative to the means, use floating point computation
   for (i=0; i<r1; i++) {
     if (i < r-1) {
@@ -339,14 +292,14 @@ List exitprob(const NumericVector& b,
   
   // obtain various vectors associated with theta and I
   for (j=0; j<kMax; j++) {
-    sqrtI[j] = sqrt(I[j]);
-    thetaSqrtI[j] = theta[j]*sqrtI[j];
-    thetaI[j] = theta[j]*I[j];
+    sqrtI[j] = sqrt(I1[j]);
+    thetaSqrtI[j] = theta1[j]*sqrtI[j];
+    thetaI[j] = theta1[j]*I1[j];
     if (j==0) {
-      dI[j] = I[j];
+      dI[j] = I1[j];
       dThetaI[j] = thetaI[j];
     } else {
-      dI[j] = I[j] - I[j-1];
+      dI[j] = I1[j] - I1[j-1];
       dThetaI[j] = thetaI[j] - thetaI[j-1];
     }
   }
@@ -361,13 +314,13 @@ List exitprob(const NumericVector& b,
     
     // trim off x values outside (a[j], b[j])
     // trim from below
-    if (a[j] >= x1[0]) {
+    if (a1[j] >= x1[0]) {
       i1 = 0;
-      while (x1[i1] <= a[j]) {
+      while (x1[i1] <= a1[j]) {
         i1++;
       }
       i1--;
-      xlower = a[j]; // lower bound on x
+      xlower = a1[j]; // lower bound on x
     } else {
       i1 = 0;
       xlower = x1[0];
@@ -428,7 +381,7 @@ List exitprob(const NumericVector& b,
     if (j==0) {
       // exit probabilities
       exitProbUpper[j] = R::pnorm(-b[j] + thetaSqrtI[j], 0.0, 1.0, 1, 0);
-      exitProbLower[j] = R::pnorm(a[j] - thetaSqrtI[j], 0.0, 1.0, 1, 0);
+      exitProbLower[j] = R::pnorm(a1[j] - thetaSqrtI[j], 0.0, 1.0, 1, 0);
       
       // prepare h0, m0, z0 for the next stage
       if (kMax > 1) {
@@ -444,7 +397,7 @@ List exitprob(const NumericVector& b,
       // calculate exit probabilities using h0 from the previous stage
       for (i0=0; i0<m0; i0++) {
         tupper = (z0[i0]*sqrtI[j-1] - b[j]*sqrtI[j] + dThetaI[j])/sqrt(dI[j]);
-        tlower = (-z0[i0]*sqrtI[j-1] + a[j]*sqrtI[j] - dThetaI[j])/sqrt(dI[j]);
+        tlower = (-z0[i0]*sqrtI[j-1] + a1[j]*sqrtI[j] -dThetaI[j])/sqrt(dI[j]);
         exitProbUpper[j] += h0[i0]*R::pnorm(tupper, 0.0, 1.0, 1, 0);
         exitProbLower[j] += h0[i0]*R::pnorm(tlower, 0.0, 1.0, 1, 0);
       }
@@ -457,7 +410,7 @@ List exitprob(const NumericVector& b,
             t = (z[i]*sqrtI[j] - z0[i0]*sqrtI[j-1] - dThetaI[j])/sqrt(dI[j]);
             h[i] += h0[i0]*R::dnorm(t, 0.0, 1.0, 0);
           }
-          h[i] *= w[i]*sqrt(I[j]/dI[j]); // factors invariant to i0
+          h[i] *= w[i]*sqrt(I1[j]/dI[j]); // factors invariant to i0
         }
         
         h0 = h+0.0; // adding 0.0 to avoid passing by reference
@@ -476,29 +429,12 @@ List exitprob(const NumericVector& b,
 
 
 
-//' @title Quantile function of truncated piecewise exponential distribution
-//' @description Obtains the quantile of a piecewise expoenential distribution
-//' given that it exceeds a specified lower bound.
-//'
-//' @param probability The scalar probability corresponding to the quantile.
-//' @inheritParams param_piecewiseSurvivalTime
-//' @inheritParams param_lambda
-//' @param lowerBound The left truncation time point for the survival time.
-//' Defaults to 0 for no truncation.
-//'
-//' @return The quantile x such that
-//' P(X > x | X > lowerBound) = 1 - probability.
-//'
-//' @examples
-//' qtpwexp(probability = 0.3, piecewiseSurvivalTime = c(0, 6, 9, 15),
-//'         lambda = c(0.025, 0.04, 0.015, 0.007), lowerBound = 0)
-//'
-//' @export
+
 // [[Rcpp::export]]
-double qtpwexp(const double probability,
-               const NumericVector& piecewiseSurvivalTime,
-               const NumericVector& lambda,
-               const double lowerBound) {
+double qtpwexpcpp(const double probability,
+                  const NumericVector& piecewiseSurvivalTime,
+                  const NumericVector& lambda,
+                  const double lowerBound) {
   
   int j, j1, m;
   double q, v, v1;
@@ -538,89 +474,5 @@ double qtpwexp(const double probability,
   
   return q;
 }
-
-
-//' @title Update graph for graphical approaches
-//' @description Updates the weights and transition matrix for graphical 
-//' approaches.
-//'
-//' @param w The current vector of weights for elementary hypotheses.
-//' @param G The current transition matrix.
-//' @param I The set of indices for yet to be rejected hypotheses.
-//' @param j The hypothesis to remove from index set I.
-//'
-//' @return A list containing the new vector of weights and the new 
-//' transition matrix for the graph, and the new set of indices of yet 
-//' to be rejected hypotheses.
-//'
-//' @examples
-//' updateGraph(w = c(0.5, 0.5, 0, 0), 
-//'             G = matrix(c(0, 0.5, 0.5, 0,  0.5, 0, 0, 0.5,  
-//'                          0, 1, 0, 0,  1, 0, 0, 0), 
-//'                        nrow=4, ncol=4, byrow=TRUE), 
-//'             I = c(1, 2, 3, 4), 
-//'             j = 1)
-//'
-//' @export
-// [[Rcpp::export]]
-List updateGraph(const NumericVector& w, const NumericMatrix& G, 
-                 const IntegerVector& I, const int j) {
-  int i, k, l, m = w.size();
-  
-  if (G.nrow() != m || G.ncol() != m) {
-    stop("Invalid dimension for G");
-  }
-  
-  if (min(I) < 1 || max(I) > m) {
-    stop("Elements of I must be integers between 1 and m");
-  }
-  
-  if (is_true(any(duplicated(I)))) {
-    stop("The index set I must not contain duplicates");
-  }
-    
-  if (std::find(I.begin(), I.end(), j) == I.end()) {
-    stop("j must be in I");
-  }
-  
-  int j1 = j-1;
-  IntegerVector I1 = I-1;
-  
-  LogicalVector r(m);
-  r.fill(1);
-  r[I1] = 0;
-  r(j1) = 1;
-  
-  // update weights
-  NumericVector wx = clone(w);
-  for (l=0; l<m; l++) {
-    if (r(l) == 0) {
-      wx(l) = wx(l) + wx(j1)*G(j1,l);
-    }
-  }
-  wx(j1) = 0.0;
-  
-  // update transition matrix
-  NumericMatrix g(m,m);
-  for (l=0; l<m; l++) {
-    if (r[l] == 0) {
-      for (k=0; k<m; k++) {
-        if ((r[k] == 0) && (l != k) && (G(l,j1)*G(j1,l) < 1.0 - 1.0e-12)) {
-          g(l,k) = (G(l,k) + G(l,j1)*G(j1,k))/(1.0 - G(l,j1)*G(j1,l));
-        }
-      }
-    }
-  }
-
-  List result = List::create(
-    _["w"] = wx,
-    _["G"] = g,
-    _["I"] = I[I!=j]);
-  
-  return result;
-  
-}
-
-
 
 
