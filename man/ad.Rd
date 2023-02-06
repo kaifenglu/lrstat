@@ -24,20 +24,20 @@ of patients having an event.}
 
 \item{u2}{Upper bound of the accrual time interval.}
 
-\item{accrualTime}{Accrual time intervals, must start with 0, e.g.,
+\item{accrualTime}{Accrual time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 [0, 3) and [3, Inf).}
 
-\item{accrualIntensity}{A vector of accrual intensities, one for
+\item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
 \item{piecewiseSurvivalTime}{A vector that specifies the time intervals for
-the piecewise exponential survival distribution, must start with 0, e.g.,
+the piecewise exponential survival distribution. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
 Defaults to 0 for exponential distribution.}
 
-\item{lambda}{A vector of hazard rates for the event, one for
+\item{lambda}{A vector of hazard rates for the event. One for
 each analysis time interval.}
 
 \item{gamma}{The hazard rate for exponential dropout or a vector of hazard

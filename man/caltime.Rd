@@ -17,8 +17,7 @@ caltime(
   gamma2 = 0L,
   accrualDuration = NA_real_,
   followupTime = NA_real_,
-  fixedFollowup = 0L,
-  numSubintervals = 300L
+  fixedFollowup = 0L
 )
 }
 \arguments{
@@ -27,15 +26,15 @@ caltime(
 \item{allocationRatioPlanned}{Allocation ratio for the active treatment
 versus control. Defaults to 1 for equal randomization.}
 
-\item{accrualTime}{Accrual time intervals, must start with 0, e.g.,
+\item{accrualTime}{Accrual time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 [0, 3) and [3, Inf).}
 
-\item{accrualIntensity}{A vector of accrual intensities, one for
+\item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
 \item{piecewiseSurvivalTime}{A vector that specifies the time intervals for
-the piecewise exponential survival distribution, must start with 0, e.g.,
+the piecewise exponential survival distribution. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
 Defaults to 0 for exponential distribution.}
@@ -49,12 +48,12 @@ time interval by stratum for the active treatment group.}
 \item{lambda2}{A vector of hazard rates for the event in each analysis
 time interval by stratum for the control group.}
 
-\item{gamma1}{The hazard rate for exponential dropout, a vector of hazard
+\item{gamma1}{The hazard rate for exponential dropout. A vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the active treatment group.}
 
-\item{gamma2}{The hazard rate for exponential dropout, a vector of hazard
+\item{gamma2}{The hazard rate for exponential dropout. A vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the control group.}
@@ -65,10 +64,6 @@ by stratum for the control group.}
 
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
 Defaults to 0 for variable follow-up.}
-
-\item{numSubintervals}{Number of sub-intervals to approximate the mean
-and variance of the weighted log-rank test score statistic.
-Defaults to 300. Specify a larger number for better approximation.}
 }
 \value{
 A vector of calendar times expected to yield the target

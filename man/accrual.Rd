@@ -15,11 +15,11 @@ accrual(
 \item{time}{A vector of calendar times at which to calculate the number
 of enrolled subjects.}
 
-\item{accrualTime}{Accrual time intervals, must start with 0, e.g.,
+\item{accrualTime}{Accrual time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 [0, 3) and [3, Inf).}
 
-\item{accrualIntensity}{A vector of accrual intensities, one for
+\item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
 \item{accrualDuration}{Duration of the enrollment period.}

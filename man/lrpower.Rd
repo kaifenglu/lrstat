@@ -5,7 +5,7 @@
 \title{Log-rank test power}
 \usage{
 lrpower(
-  kMax = NA_integer_,
+  kMax = 1L,
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
   futilityStopping = NA_integer_,
@@ -34,7 +34,8 @@ lrpower(
   rho2 = 0,
   numSubintervals = 300L,
   estimateHazardRatio = 1L,
-  typeOfComputation = "direct"
+  typeOfComputation = "direct",
+  spendingTime = NA_real_
 )
 }
 \arguments{
@@ -70,7 +71,7 @@ Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".}
 spent up to each stage.}
 
 \item{futilityBounds}{Lower boundaries on the z-test statistic scale
-for stopping for futility at stages 1, ..., kMax-1. Defaults to
+for stopping for futility at stages 1, ..., \code{kMax-1}. Defaults to
 \code{rep(-6, kMax-1)} if left unspecified.}
 
 \item{typeBetaSpending}{The type of beta spending. One of the following:
@@ -88,15 +89,15 @@ treatment versus control. Defaults to 1 for superiority test.}
 \item{allocationRatioPlanned}{Allocation ratio for the active treatment
 versus control. Defaults to 1 for equal randomization.}
 
-\item{accrualTime}{Accrual time intervals, must start with 0, e.g.,
+\item{accrualTime}{Accrual time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 [0, 3) and [3, Inf).}
 
-\item{accrualIntensity}{A vector of accrual intensities, one for
+\item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
 \item{piecewiseSurvivalTime}{A vector that specifies the time intervals for
-the piecewise exponential survival distribution, must start with 0, e.g.,
+the piecewise exponential survival distribution. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
 Defaults to 0 for exponential distribution.}
@@ -110,12 +111,12 @@ time interval by stratum for the active treatment group.}
 \item{lambda2}{A vector of hazard rates for the event in each analysis
 time interval by stratum for the control group.}
 
-\item{gamma1}{The hazard rate for exponential dropout, a vector of hazard
+\item{gamma1}{The hazard rate for exponential dropout. A vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the active treatment group.}
 
-\item{gamma2}{The hazard rate for exponential dropout, a vector of hazard
+\item{gamma2}{The hazard rate for exponential dropout. A vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the control group.}
@@ -127,11 +128,11 @@ by stratum for the control group.}
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
 Defaults to 0 for variable follow-up.}
 
-\item{rho1}{First parameter of the Fleming-Harrington family of weighted
-log-rank test. Defaults to 0 for conventional log-rank test.}
+\item{rho1}{The first parameter of the Fleming-Harrington family of 
+weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
-\item{rho2}{Second parameter of the Fleming-Harrington family of weighted
-log-rank test. Defaults to 0 for conventional log-rank test.}
+\item{rho2}{The second parameter of the Fleming-Harrington family of 
+weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
 \item{numSubintervals}{Number of sub-intervals to approximate the mean
 and variance of the weighted log-rank test score statistic.
@@ -144,6 +145,10 @@ the hazard ratio scale.}
 \item{typeOfComputation}{Whether to use the direct approximation method 
 or the Schoenfeld method. Defaults to "direct". Can use "Schoenfeld" 
 under proportional hazards and conventional log-rank test.}
+
+\item{spendingTime}{A vector of length \code{kMax} for the error spending 
+time at each analysis. Defaults to missing, in which case, it is the 
+same as \code{informationRates}.}
 }
 \value{
 A list of S3 class \code{lrpower} with 3 components:
@@ -152,7 +157,7 @@ A list of S3 class \code{lrpower} with 3 components:
 overall significance level, maximum and expected number of events,
 maximum and expected number of dropouts, total and expected number
 of subjects, maximum and expected study duration, along with
-input parameters including accrual duration, followup duration,
+input parameters including accrual duration, follow-up duration,
 whether a fixed follow-up is used, parameters for the FH weights,
 allocation ratio, number of stages, and hazard ratio under H0.
 
@@ -164,7 +169,7 @@ expected number of events, number of dropouts, number of subjects,
 and expected study time, efficacy and futility boundaries on
 the HR scale and on the p-value scale, information for weighted
 log-rank test, hazard ratio from weighted Cox regression, and
-where efficacy and futility stopping are allowed by stage.
+whether efficacy and futility stopping are allowed by stage.
 
 * \code{settings} containing input parameters such as
 alpha and beta spending function and parameter values,
@@ -176,7 +181,7 @@ Estimates the power, stopping probabilities, and expected
 sample size in a two-group survival design.
 }
 \examples{
-# Piecewise accrual, piecewise exponential survivals, and 5\% dropout by
+# Piecewise accrual, piecewise exponential survival, and 5\% dropout by
 # the end of 1 year.
 
 lrpower(kMax = 2, informationRates = c(0.8, 1),

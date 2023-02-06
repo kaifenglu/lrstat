@@ -4,7 +4,7 @@
 \alias{param_accrualTime}
 \title{Parameter Description: accrualTime}
 \arguments{
-\item{accrualTime}{Accrual time intervals, must start with 0, e.g.,
+\item{accrualTime}{Accrual time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 [0, 3) and [3, Inf).}
 }

@@ -5,7 +5,7 @@
 \title{Parameter Description: piecewiseSurvivalTime}
 \arguments{
 \item{piecewiseSurvivalTime}{A vector that specifies the time intervals for
-the piecewise exponential survival distribution, must start with 0, e.g.,
+the piecewise exponential survival distribution. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
 Defaults to 0 for exponential distribution.}

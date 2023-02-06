@@ -4,7 +4,7 @@
 \alias{param_accrualIntensity}
 \title{Parameter Description: accrualIntensity}
 \arguments{
-\item{accrualIntensity}{A vector of accrual intensities, one for
+\item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 }
 \description{

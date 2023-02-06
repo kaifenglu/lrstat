@@ -6,7 +6,7 @@
 \usage{
 lrsamplesize(
   beta = 0.2,
-  kMax = NA_integer_,
+  kMax = 1L,
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
   futilityStopping = NA_integer_,
@@ -37,7 +37,8 @@ lrsamplesize(
   numSubintervals = 300L,
   estimateHazardRatio = 1L,
   typeOfComputation = "direct",
-  interval = as.numeric(c(0.001, 240))
+  interval = as.numeric(c(0.001, 240)),
+  spendingTime = NA_real_
 )
 }
 \arguments{
@@ -75,7 +76,7 @@ Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".}
 spent up to each stage.}
 
 \item{futilityBounds}{Lower boundaries on the z-test statistic scale
-for stopping for futility at stages 1, ..., kMax-1. Defaults to
+for stopping for futility at stages 1, ..., \code{kMax-1}. Defaults to
 \code{rep(-6, kMax-1)} if left unspecified.}
 
 \item{typeBetaSpending}{The type of beta spending. One of the following:
@@ -97,15 +98,15 @@ treatment versus control. Defaults to 1 for superiority test.}
 \item{allocationRatioPlanned}{Allocation ratio for the active treatment
 versus control. Defaults to 1 for equal randomization.}
 
-\item{accrualTime}{Accrual time intervals, must start with 0, e.g.,
+\item{accrualTime}{Accrual time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 [0, 3) and [3, Inf).}
 
-\item{accrualIntensity}{A vector of accrual intensities, one for
+\item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
 \item{piecewiseSurvivalTime}{A vector that specifies the time intervals for
-the piecewise exponential survival distribution, must start with 0, e.g.,
+the piecewise exponential survival distribution. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
 Defaults to 0 for exponential distribution.}
@@ -119,12 +120,12 @@ time interval by stratum for the active treatment group.}
 \item{lambda2}{A vector of hazard rates for the event in each analysis
 time interval by stratum for the control group.}
 
-\item{gamma1}{The hazard rate for exponential dropout, a vector of hazard
+\item{gamma1}{The hazard rate for exponential dropout. A vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the active treatment group.}
 
-\item{gamma2}{The hazard rate for exponential dropout, a vector of hazard
+\item{gamma2}{The hazard rate for exponential dropout. A vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the control group.}
@@ -136,11 +137,11 @@ by stratum for the control group.}
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
 Defaults to 0 for variable follow-up.}
 
-\item{rho1}{First parameter of the Fleming-Harrington family of weighted
-log-rank test. Defaults to 0 for conventional log-rank test.}
+\item{rho1}{The first parameter of the Fleming-Harrington family of 
+weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
-\item{rho2}{Second parameter of the Fleming-Harrington family of weighted
-log-rank test. Defaults to 0 for conventional log-rank test.}
+\item{rho2}{The second parameter of the Fleming-Harrington family of 
+weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
 \item{numSubintervals}{Number of sub-intervals to approximate the mean
 and variance of the weighted log-rank test score statistic.
@@ -157,6 +158,10 @@ under proportional hazards and conventional log-rank test.}
 \item{interval}{The interval to search for the solution of
 accrualDuration or followupDuration. Defaults to \code{c(0.001, 240)}.
 Adjustment may be needed for non-monotone relationship with study power.}
+
+\item{spendingTime}{A vector of length \code{kMax} for the error spending 
+time at each analysis. Defaults to missing, in which case, it is the 
+same as \code{informationRates}.}
 }
 \value{
 A list of S3 class \code{lrpower}.
@@ -169,7 +174,7 @@ power, accrual duration, follow-up duration, and relative accrual
 rates in a two-group survival design.
 }
 \examples{
-# Piecewise accrual, piecewise exponential survivals, and 5\% dropout by
+# Piecewise accrual, piecewise exponential survival, and 5\% dropout by
 # the end of 1 year.
 
 # Example 1: Obtains accrual duration given power and follow-up duration
@@ -227,21 +232,22 @@ lrsamplesize(beta = 0.2, kMax = 2,
 # Example 4: Non-inferiority trial with fixed follow-up and 
 # superiority alternative
 
-lr <- lrsamplesize(beta = 0.1, 
-                   kMax = 3, 
-                   alpha = 0.025,
-                   typeAlphaSpending = "sfOF",
-                   hazardRatioH0 = 1.1,
-                   accrualTime = c(0, 6),
-                   accrualIntensity = c(1000, 1500),
-                   lambda1 = log(2)/48*0.95,
-                   lambda2 = log(2)/48,
-                   gamma1 = -log(1-0.08)/12,
-                   gamma2 = -log(1-0.08)/12,
-                   accrualDuration = NA,
-                   followupTime = 18,
-                   fixedFollowup = 1)
+lrsamplesize(beta = 0.1, 
+             kMax = 3, 
+             alpha = 0.025,
+             typeAlphaSpending = "sfOF",
+             hazardRatioH0 = 1.1,
+             accrualTime = c(0, 6),
+             accrualIntensity = c(1000, 1500),
+             lambda1 = log(2)/48*0.95,
+             lambda2 = log(2)/48,
+             gamma1 = -log(1-0.08)/12,
+             gamma2 = -log(1-0.08)/12,
+             accrualDuration = NA,
+             followupTime = 18,
+             fixedFollowup = 1, 
+             typeOfComputation = "Schoenfeld")
                    
-lr
+
 
 }

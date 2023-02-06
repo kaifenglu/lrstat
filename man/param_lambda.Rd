@@ -4,7 +4,7 @@
 \alias{param_lambda}
 \title{Parameter Description: lambda}
 \arguments{
-\item{lambda}{A vector of hazard rates for the event, one for
+\item{lambda}{A vector of hazard rates for the event. One for
 each analysis time interval.}
 }
 \description{

@@ -4,8 +4,8 @@
 \alias{param_rho1}
 \title{Parameter Description: rho1}
 \arguments{
-\item{rho1}{First parameter of the Fleming-Harrington family of weighted
-log-rank test. Defaults to 0 for conventional log-rank test.}
+\item{rho1}{The first parameter of the Fleming-Harrington family of 
+weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 }
 \description{
 Parameter Description: rho1

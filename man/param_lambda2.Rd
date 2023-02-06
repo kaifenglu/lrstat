@@ -5,7 +5,7 @@
 \title{Parameter Description: lambda2}
 \arguments{
 \item{lambda2}{A vector of hazard rates for the event for the
-control group, one for each analysis time interval.}
+control group. One for each analysis time interval.}
 }
 \description{
 Parameter Description: lambda2

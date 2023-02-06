@@ -37,17 +37,18 @@ lrsim(
 
 \item{informationTime}{Information time in terms of variance of
 weighted log-rank test score statistic under the null hypothesis.
-Same as informationRates in terms of number of events for
+Same as \code{informationRates} in terms of number of events for
 the conventional log-rank test. Use \code{caltime} and \code{lrstat}
 to derive the information time for weighted log-rank tests.
-Fixed prior to the trial. Defaults to
-\code{plannedEvents / sum(plannedEvents)} if left unspecified.}
+Fixed prior to the trial. If left unspecified, it defaults to
+\code{plannedEvents / plannedEvents[kMax]} when \code{plannedEvents} 
+is provided and to \code{plannedTime / plannedTime[kMax]} otherwise.}
 
 \item{criticalValues}{Upper boundaries on the z-test statistic scale
 for stopping for efficacy.}
 
 \item{futilityBounds}{Lower boundaries on the z-test statistic scale
-for stopping for futility at stages 1, ..., kMax-1. Defaults to
+for stopping for futility at stages 1, ..., \code{kMax-1}. Defaults to
 \code{rep(-6, kMax-1)} if left unspecified.}
 
 \item{hazardRatioH0}{Hazard ratio under the null hypothesis for the active
@@ -59,15 +60,15 @@ a randomization block. Defaults to 1 for equal randomization.}
 \item{allocation2}{Number of subjects in the control group in
 a randomization block. Defaults to 1 for equal randomization.}
 
-\item{accrualTime}{Accrual time intervals, must start with 0, e.g.,
+\item{accrualTime}{Accrual time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 [0, 3) and [3, Inf).}
 
-\item{accrualIntensity}{A vector of accrual intensities, one for
+\item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
 \item{piecewiseSurvivalTime}{A vector that specifies the time intervals for
-the piecewise exponential survival distribution, must start with 0, e.g.,
+the piecewise exponential survival distribution. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
 Defaults to 0 for exponential distribution.}
@@ -81,12 +82,12 @@ time interval by stratum for the active treatment group.}
 \item{lambda2}{A vector of hazard rates for the event in each analysis
 time interval by stratum for the control group.}
 
-\item{gamma1}{The hazard rate for exponential dropout, a vector of hazard
+\item{gamma1}{The hazard rate for exponential dropout. A vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the active treatment group.}
 
-\item{gamma2}{The hazard rate for exponential dropout, a vector of hazard
+\item{gamma2}{The hazard rate for exponential dropout. A vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the control group.}
@@ -98,18 +99,17 @@ by stratum for the control group.}
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
 Defaults to 0 for variable follow-up.}
 
-\item{rho1}{First parameter of the Fleming-Harrington family of weighted
-log-rank test. Defaults to 0 for conventional log-rank test.}
+\item{rho1}{The first parameter of the Fleming-Harrington family of 
+weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
-\item{rho2}{Second parameter of the Fleming-Harrington family of weighted
-log-rank test. Defaults to 0 for conventional log-rank test.}
+\item{rho2}{The second parameter of the Fleming-Harrington family of 
+weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
 \item{plannedEvents}{The planned cumulative total number of events at each
 stage.}
 
-\item{plannedTime}{The planned analysis time for each stage needed for
-analyses planned at calendar times, in which case, plannedEvents should 
-be missing.}
+\item{plannedTime}{The calendar times for the analyses. To use calendar
+time to plan the analyses, \code{plannedEvents} should be missing.}
 
 \item{maxNumberOfIterations}{The number of simulation iterations.
 Defaults to 1000.}
@@ -123,12 +123,12 @@ The computer clock will be used if left unspecified,}
 \value{
 A list of S3 class \code{lrsim} with 3 components:
 
-* \code{overview} is a list of containing incremental and cumulative
+* \code{overview} is a list containing incremental and cumulative
 efficacy and futility stopping probabilities by stage, expected number
-of events, number of dropouts, number of subjects, and analysis time
+of events, number of dropouts, number of subjects, analysis time
 by stage, overall rejection probability, overall expected number of
-events, number of dropouts, number of subjects, and study duration,
-the hazard ratio under H0, and whether the analyses are planned 
+events, number of dropouts, number of subjects, study duration,
+hazard ratio under H0, and whether the analyses are planned 
 based on the number of events or calendar time.
 
 * \code{sumdata} is a data frame of summary data by stage for each

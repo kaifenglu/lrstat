@@ -5,7 +5,7 @@
 \title{Parameter Description: lambda1}
 \arguments{
 \item{lambda1}{A vector of hazard rates for the event for the
-active treatment group, one for each analysis time interval.}
+active treatment group. One for each analysis time interval.}
 }
 \description{
 Parameter Description: lambda1
