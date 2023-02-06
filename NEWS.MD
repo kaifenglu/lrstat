@@ -1,3 +1,11 @@
+# lrstat 0.1.10
+
+- Add drift parameter to the getDesign function to compute power given the drift parameter.
+- Update the repeatedPValue function to respect the range of repeated p-values and to allow matrix input of raw p-values.
+- Remove repeatedPValueFlag from the fseqbon function.
+- Remove numSubintervals from the caltime function.
+- Update the description of selected functions, parameters, and output.
+
 # lrstat 0.1.9
 
 - Add fwgtmat and fadjpsim to calculate the adjusted p-values for Simes-based graphical approaches.
