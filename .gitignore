@@ -1,3 +1,8 @@
 inst/doc
 .Rproj.user
 notes
+NAMESPACE
+R/RcppExports.R
+src/RcppExports.cpp
+src/*.o
+src/*.dll
