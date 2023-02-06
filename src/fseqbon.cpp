@@ -465,14 +465,14 @@ NumericMatrix fadjpsimcpp(const NumericMatrix& wgtmat,
 //' sequential design.
 //'
 //' @param k Look number for the current analysis.
-//' @param informationRates Information rates up to the current look, must be
+//' @param informationRates Information rates up to the current look. Must be
 //'   increasing and less than or equal to 1.
 //' @inheritParams param_alpha
 //' @inheritParams param_typeAlphaSpending
 //' @inheritParams param_parameterAlphaSpending
 //' @inheritParams param_userAlphaSpending
 //' @param spendingTime A vector of length \code{k} for the error spending  
-//'   time at each analysis, must be increasing and less than or equal to 1. 
+//'   time at each analysis. Must be increasing and less than or equal to 1. 
 //'   Defaults to missing, in which case, it is the same as 
 //'   \code{informationRates}.
 //'
@@ -650,73 +650,32 @@ NumericVector getBound(
   return criticalValues;
 }
 
-//' @title Repeated p-values for group sequential design
-//' @description Obtains the repeated p-values for a group sequential design.
-//'
-//' @param k Look number for the current analysis.
-//' @param informationRates Information rates up to the current look, must be
-//'   increasing and less than or equal to 1.
-//' @param p The raw p-values at look 1 to look \code{k}. 
-//' @inheritParams param_typeAlphaSpending
-//' @inheritParams param_parameterAlphaSpending
-//' @param spendingTime A vector of length \code{k} for the error spending  
-//'   time at each analysis, must be increasing and less than or equal to 1. 
-//'   Defaults to missing, in which case, it is the same as 
-//'   \code{informationRates}.
-//'
-//' @return The repeated p-values at look 1 to look \code{k}.
-//'
-//' @examples
-//'
-//' repeatedPValue(k = 3, informationRates = c(529, 700, 800)/800,
-//'                p = c(0.2, 0.15, 0.1), typeAlphaSpending = "sfOF",
-//'                spendingTime = c(0.6271186, 0.8305085, 1))
-//'
-//' @export
+
 // [[Rcpp::export]]
-NumericVector repeatedPValue(
-    const int k = NA_INTEGER,
-    const NumericVector& informationRates = NA_REAL,
-    const NumericVector& p = NA_REAL,
+NumericVector repeatedPValuecpp(
+    const int kMax = NA_INTEGER,
     const String typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
-    const NumericVector& spendingTime = NA_REAL) {
+    const double maxInformation = 1,
+    const NumericMatrix& p = NA_REAL,
+    const NumericMatrix& information = NA_REAL,
+    const NumericMatrix& spendingTime = NumericMatrix(0,1,1)) {
   
-  NumericVector informationRates1 = clone(informationRates);
-  NumericVector spendingTime1 = clone(spendingTime);
+  int iter, i, j, l, L;
+  int B = p.nrow(), k = p.ncol();
   
-  if (is_false(any(is_na(informationRates)))) {
-    if (informationRates.size() != k) {
-      stop("Invalid length for informationRates");
-    } else if (informationRates[0] <= 0) {
-      stop("Elements of informationRates must be positive");
-    } else if (k > 1 && is_true(any(diff(informationRates) <= 0))) {
-      stop("Elements of informationRates must be increasing");
-    } else if (informationRates[k-1] > 1) {
-      stop("informationRates must not exceed 1");
-    }
-  } else {
-    IntegerVector tem = seq_len(k);
-    informationRates1 = as<NumericVector>(tem)/(k+0.0);
+  if (kMax <= 0) {
+    stop("kMax must be a positive integer");
   }
-  
-  if (is_false(any(is_na(spendingTime)))) {
-    if (spendingTime.size() != k) {
-      stop("Invalid length for spendingTime");
-    } else if (spendingTime[0] <= 0) {
-      stop("Elements of spendingTime must be positive");
-    } else if (k > 1 && is_true(any(diff(spendingTime) <= 0))) {
-      stop("Elements of spendingTime must be increasing");
-    } else if (spendingTime[k-1] > 1) {
-      stop("spendingTime must not exceed 1");
-    }
-  } else {
-    spendingTime1 = clone(informationRates1);
-  }
-  
   
   String asf = typeAlphaSpending;
   double asfpar = parameterAlphaSpending;
+  
+  if (!(asf=="OF" || asf=="P" || asf=="WT" || 
+      asf=="sfOF" || asf=="sfP" || asf=="sfKD" ||
+      asf=="sfHSD" || asf=="none")) {
+    stop("Invalid type for typeAlphaSpending");
+  }
   
   if (asf=="WT" && R_isnancpp(asfpar)) {
     stop("Missing parameter for WT");
@@ -735,127 +694,180 @@ NumericVector repeatedPValue(
   }
   
   
-  NumericVector repp(k);
+  if (maxInformation <= 0) {
+    stop("maxInformation must be positive");
+  }
+  
+  
+  NumericMatrix info(B, k);
+  
+  if (information.ncol() != k) {
+    stop("Invalid number of columns for information");
+  } else if (information.nrow() != 1 && information.nrow() != B) {
+    stop("Invalid number of rows for information");
+  } else if (information.nrow() == 1 && B > 1) {
+    for (iter=0; iter<B; iter++) {
+      info(iter, _) = information(0, _);
+    }
+  } else {
+    info = information;
+  }
+  
+  for (iter=0; iter<B; iter++) {
+    if (info(iter,0) <= 0) {
+      stop("Elements of information must be positive");
+    } else if (k>1 && is_true(any(diff(info(iter,_)) <= 0))) {
+      stop("Elements of information must be increasing over time");
+    }
+  }
+  
+  
+  NumericMatrix st(B, k);
+  
+  if (spendingTime.nrow()==1 && spendingTime.ncol()==1 
+        && spendingTime(0,0)==0) {
+    st.fill(NA_REAL);
+  } else if (spendingTime.ncol() != k) {
+    stop("Invalid number of columns for spendingTime");
+  } else if (spendingTime.nrow() != 1 && spendingTime.nrow() != B) {
+    stop("Invalid number of rows for spendingTime");
+  } else if (spendingTime.nrow() == 1 && B > 1) {
+    for (iter=0; iter<B; iter++) {
+      st(iter, _) = spendingTime(0, _);
+    }
+  } else {
+    st = spendingTime;
+  }
+  
+  for (iter=0; iter<B; iter++) {
+    if (is_false(all(is_na(st(iter,_))))) {
+      if (st(iter,0) <= 0) {
+        stop("Elements of spendingTime must be positive");
+      } else if (k>1 && is_true(any(diff(st(iter,_)) <= 0))) {
+        stop("Elements of spendingTime must be increasing over time");
+      } else if (st(iter,k-1) > 1) {
+        stop("spendingTime must be less than or equal to 1");
+      }
+    }
+  }
+  
+  
+  NumericMatrix repp(B, k);
+  repp.fill(NA_REAL);
 
-  for (int i=0; i<k; i++) {
-    NumericVector t(i+1), s(i+1);
-    for (int j=0; j<=i; j++) {
-      t(j) = informationRates1(j);
-      s(j) = spendingTime1(j);
+  for (iter=0; iter<B; iter++) {
+    if (is_true(all(is_na(st(iter,_))))) { // use information rates
+      LogicalVector qq = (info(iter,_) >= maxInformation);
+      if (is_false(any(qq))) { // all observed info < maxinfo
+        L = k-1;
+      } else { // find index of first look with observed info >= maxinfo
+        L = which_max(qq);
+      } 
+    } else { // use spending time
+      L = k-1;
     }
     
-    double pvalue = p(i);
-    auto f = [i, t, asf, asfpar, s, pvalue](double aval)->double {
-      NumericVector u = getBound(i+1, t, aval, asf, asfpar, 0, s);  
-      return 1.0 - R::pnorm(u(i), 0, 1, 1, 0) - pvalue;
-    };
-    repp(i) = brent(f, 0.000001, 0.999999, 1.0e-6);
+    // information time for forming covariance matrix of test statistics
+    NumericVector t1(L+1);
+    for (l=0; l<=L; l++) {
+      t1(l) = info(iter,l)/info(iter,L);
+    }
+    
+    // spending time for error spending
+    NumericVector s1(L+1);
+    if (is_true(all(is_na(st(iter,_))))) { // use information rates
+      for (l=0; l<=L; l++) {
+        if (l == kMax-1 || info(iter,l) >= maxInformation) {
+          s1(l) = 1.0;
+        } else {
+          s1(l) = info(iter,l)/maxInformation;
+        }
+      }
+    } else { // using spending time
+      for (l=0; l<=L; l++) {
+        s1(l) = st(iter,l);
+      }
+    }
+    
+    
+    for (i=0; i<=L; i++) {
+      NumericVector t(i+1), s(i+1);
+      for (j=0; j<=i; j++) {
+        t(j) = t1(j);
+        s(j) = s1(j);
+      }
+      
+      double pvalue = p(iter,i);
+      
+      auto f = [i, t, asf, asfpar, s, pvalue](double aval)->double {
+        NumericVector u = getBound(i+1, t, aval, asf, asfpar, 0, s);  
+        return 1.0 - R::pnorm(u(i), 0, 1, 1, 0) - pvalue;
+      };
+      
+      if (f(0.000001) > 0) {
+        repp(iter,i) = 0.000001;
+      } else if (f(0.999999) < 0) {
+        repp(iter,i) = 0.999999;
+      } else {
+        repp(iter,i) = brent(f, 0.000001, 0.999999, 1.0e-6);
+      }
+    }
   }
   
   return repp;
 }
 
 
-//' @title Group sequential trials using Bonferroni-based graphical 
-//' approaches
-//' 
-//' @description Obtains the test results for group sequential trials using 
-//' graphical approaches based on weighted Bonferroni tests.
-//'
-//' @param w The vector of initial weights for elementary hypotheses.
-//' @param G The initial transition matrix.
-//' @param alpha The significance level. Defaults to 0.025.
-//' @param typeAlphaSpending The vector of alpha spending functions. 
-//'   Each element is one of the following: 
-//'   "OF" for O'Brien-Fleming boundaries, 
-//'   "P" for Pocock boundaries, "WT" for Wang & Tsiatis boundaries, 
-//'   "sfOF" for O'Brien-Fleming type spending function, 
-//'   "sfP" for Pocock type spending function,
-//'   "sfKD" for Kim & DeMets spending function, 
-//'   "sfHSD" for Hwang, Shi & DeCani spending function, 
-//'   and "none" for no early efficacy stopping.
-//' @param parameterAlphaSpending The vector of parameter values for the 
-//'   alpha spending functions. Each element corresponds to the value of 
-//'   Delta for "WT", rho for "sfKD", or gamma for "sfHSD".
-//' @param incidenceMatrix The incidence matrix indicating whether the 
-//'   specific hypothesis will be tested at the given look.
-//' @param maxInformation The vector of targeted maximum information for each 
-//'   hypothesis.
-//' @param information The matrix of observed information for each hypothesis 
-//'   by look.
-//' @param p The matrix of raw p-values for each hypothesis by look. 
-//' @param spendingTime The spending time for alpha spending. Defaults to 
-//'   missing, in which case, it is the same as \code{informationRates} 
-//'   calculated from \code{information} and \code{maxInformation}.
-//' @param repeatedPValueFlag Flag for whether to report the repeated 
-//'   p-values. Defaults to FALSE.
-//' 
-//' @return A list with a component vector to indicate the first look the 
-//'   specific hypothesis rejected (0 if the hypothesis is not rejected) and,  
-//'   if \code{reppfl = 1}, a component matrix for the repeated p-values for 
-//'   each hypothesis over time. 
-//'
-//' @references
-//' Willi Maurer and Frank Bretz. Multiple testing in group sequential
-//' trials using graphical approaches. Statistics in Biopharmaceutical 
-//' Research. 2013;5:311-320. \doi{10.1080/19466315.2013.807748}
-//'
-//' @examples
-//' 
-//' # Case study from Maurer & Bretz (2013) 
-//' 
-//' fseqbon(
-//'   w = c(0.5, 0.5, 0, 0),
-//'   G = matrix(c(0, 0.5, 0.5, 0,  0.5, 0, 0, 0.5,  
-//'                0, 1, 0, 0,  1, 0, 0, 0), 
-//'              nrow=4, ncol=4, byrow=TRUE),
-//'   alpha = 0.025,
-//'   typeAlphaSpending = rep("sfOF", 4),
-//'   incidenceMatrix = matrix(1, nrow=4, ncol=3),
-//'   maxInformation = rep(1,4),
-//'   information = matrix(c(rep(1/3, 4), rep(2/3, 4)), nrow=4, ncol=2),
-//'   p = matrix(c(0.0062, 0.017, 0.009, 0.13, 
-//'                0.0002, 0.0035, 0.002, 0.06), 
-//'              nrow=4, ncol=2),
-//'   repeatedPValueFlag = 1)
-//' 
-//'
-//' @export
 // [[Rcpp::export]]
-List fseqbon(const NumericVector& w, 
-             const NumericMatrix& G, 
-             const double alpha = 0.025,
-             const StringVector& typeAlphaSpending = NA_STRING, 
-             const NumericVector& parameterAlphaSpending = NA_REAL, 
-             const LogicalMatrix& incidenceMatrix = NA_LOGICAL, 
-             const NumericVector& maxInformation = NA_REAL, 
-             const NumericMatrix& information = NA_REAL, 
-             const NumericMatrix& p = NA_REAL,
-             const NumericMatrix& spendingTime = NumericMatrix(0,1,1),
-             const bool repeatedPValueFlag = 0) {
+IntegerVector fseqboncpp(
+    const NumericVector& w,
+    const NumericMatrix& G,
+    const double alpha = 0.025,
+    const int kMax = NA_INTEGER,
+    const StringVector& typeAlphaSpending = NA_STRING, 
+    const NumericVector& parameterAlphaSpending = NA_REAL, 
+    const LogicalMatrix& incidenceMatrix = NA_LOGICAL, 
+    const NumericVector& maxInformation = NA_REAL, 
+    const NumericMatrix& p = NA_REAL,
+    const NumericMatrix& information = NA_REAL, 
+    const NumericMatrix& spendingTime = NA_REAL) {
   
-  // alias shorter variable names
+  // alias (shorter variable names)
   StringVector asf = typeAlphaSpending;
-  NumericVector asfpar = parameterAlphaSpending;
+  NumericVector asfpar = clone(parameterAlphaSpending);
   LogicalMatrix incid = incidenceMatrix;
   NumericVector maxinfo = maxInformation;
-  NumericMatrix info = information;
-  NumericMatrix sTime = spendingTime;
-  bool reppfl = repeatedPValueFlag;
+  NumericMatrix rawp = clone(p);
   
-  int i, j, k, l, m = w.size(), K = incid.ncol(), B = info.nrow()/m;
+  int m = w.size();
+  
+  if (incid.ncol() != kMax) {
+    stop("Invalid number of columns for incidenceMatrix");
+  };
+  
+  if (p.nrow() % m != 0) {
+    stop("Invalid number of rows for p");
+  }
+  
+  int k1 = p.ncol();
+  
+  if (k1 > kMax) {
+    stop("Invalid number of columns for p");
+  }
+  
+  
+  int B = p.nrow()/m;
+  
+  int iter, i, j, k, l;
   IntegerVector reject(B*m);  // first look when the hypothesis is rejected
-  NumericMatrix repp(B*m, K);  // repeated p-values
-  repp.fill(NA_REAL);
-  
-  NumericMatrix st(B*m, K);  // matrix of spending time
+
+  NumericMatrix info(B*m, k1); // matrix of observed information
+  NumericMatrix st(B*m, k1);  // matrix of spending time
   
   NumericVector wx(m);    // dynamic weights
   NumericMatrix g(m,m);   // dynamic transition matrix
   NumericMatrix g1(m,m);  // temporary transition matrix 
   
-  
-  NumericVector asfpars = clone(asfpar);
   
   if (is_true(any(w < 0.0))) {
     stop("w must be nonnegative");
@@ -888,10 +900,10 @@ List fseqbon(const NumericVector& w,
   }
   
   if (is_true(any(is_na(asfpar))) && asfpar.size()==1) {
-    asfpars = rep(NA_REAL, m);
+    asfpar = rep(NA_REAL, m);
   }
   
-  if (asfpars.size() != m) {
+  if (asfpar.size() != m) {
     stop("Invalid length for parameterAlphaSpending");
   }
   
@@ -902,19 +914,19 @@ List fseqbon(const NumericVector& w,
       stop("Invalid type for typeAlphaSpending");
     }
     
-    if (asf(i)=="WT" && R_isnancpp(asfpars(i))) {
+    if (asf(i)=="WT" && R_isnancpp(asfpar(i))) {
       stop("Missing parameter for WT");
     }
     
-    if (asf(i)=="sfKD" && R_isnancpp(asfpars(i))) {
+    if (asf(i)=="sfKD" && R_isnancpp(asfpar(i))) {
       stop("Missing parameter for sfKD");
     }
     
-    if (asf(i)=="sfHSD" && R_isnancpp(asfpars(i))) {
+    if (asf(i)=="sfHSD" && R_isnancpp(asfpar(i))) {
       stop("Missing parameter for sfHSD");
     }
     
-    if (asf(i)=="sfKD" && asfpars(i) <= 0) {
+    if (asf(i)=="sfKD" && asfpar(i) <= 0) {
       stop ("asfpar must be positive for sfKD");
     }
   }
@@ -931,49 +943,72 @@ List fseqbon(const NumericVector& w,
     stop("maxInformation must be positive");
   }
   
-  if (info.nrow() % m != 0) {
-    stop("Invalid number of rows for information");
-  }
   
-  if (info.ncol() > K) {
-    stop("Invalid number of columns for information");
-  }
-  
-  if (p.nrow() % m != 0) {
-    stop("Invalid number of rows for p");
-  }
-  
-  if (p.ncol() > K) {
-    stop("Invalid number of columns for p");
-  }
-  
-  if (info.nrow() != p.nrow()) {
-    stop("information and p must have the same number of rows");
-  }
-  
-  if (info.ncol() != p.ncol()) {
+  if (information.ncol() != k1) {
     stop("information and p must have the same number of columns");
-  }
-  
-  
-  if (sTime.nrow()==1 && sTime.ncol()==1 && sTime(0,0)==0) {
-    st.fill(NA_REAL);
-  } else if (sTime.nrow() != p.nrow()) {
-    stop("spendingTime and p must have the same number of rows");
-  } else if (sTime.ncol() != p.ncol()) {
-    stop("spendingTime and p must have the same number of columns");
+  } else if (information.nrow() != m && information.nrow() != B*m) {
+    stop("Invalid number of rows for information");    
+  } else if (information.nrow() == m && B > 1) {
+    for (iter=0; iter<B; iter++) {
+      for (j=0; j<m; j++) {
+        info(iter*m+j, _) = information(j, _);  
+      }
+    }
   } else {
-    st = clone(sTime);
+    info = information;
+  }
+  
+  for (iter=0; iter<B*m; iter++) {
+    if (info(iter,0) <= 0) {
+      stop("Elements of information must be positive");
+    } else if (k1>1 && is_true(any(diff(info(iter,_)) <= 0))) {
+      stop("Elements of information must be increasing over time");
+    }
   }
   
   
-  IntegerVector K0 = rowSums(incid); // maximum number or stages
+  if (spendingTime.nrow()==1 && spendingTime.ncol()==1 
+        && spendingTime(0,0)==0) {
+    st.fill(NA_REAL);
+  } else if (spendingTime.ncol() != k1) {
+    stop("spendingTime and p must have the same number of columns");
+  } else if (spendingTime.nrow() != m && spendingTime.nrow() != B*m) {
+    stop("Invalid number of rows for spendingTime");
+  } else if (spendingTime.nrow() == m && B > 1) {
+    for (iter=0; iter<B; iter++) {
+      for (j=0; j<m; j++) {
+        st(iter*m+j, _) = spendingTime(j, _);  
+      }
+    }
+  } else {
+    st = spendingTime;
+  }
   
-  IntegerMatrix idx1(m, K); // study look
-  IntegerMatrix idx2(m, K); // hypothesis look
+  
+  
+  // set information, p values, and spending time to missing at a study look
+  // if the hypothesis is not to be tested at the study look
+  for (j=0; j<m; j++) {
+    for (k=0; k<k1; k++) {
+      if (!incid(j,k)) {
+        for (iter=0; iter<B; iter++) {
+          info(iter*m+j,k) = NA_REAL;
+          rawp(iter*m+j,k) = NA_REAL;
+          st(iter*m+j,k) = NA_REAL;
+        }
+      }
+    }
+  }
+  
+  
+  
+  IntegerVector K0 = rowSums(incid); // maximum number of stages
+  
+  IntegerMatrix idx1(m, kMax); // study look
+  IntegerMatrix idx2(m, kMax); // hypothesis look
   for (j=0; j<m; j++) {
     l = 0;
-    for (k=0; k<K; k++) {
+    for (k=0; k<kMax; k++) {
       if (incid(j,k)==1) {
         idx1(j,l) = k;
         idx2(j,k) = l;
@@ -982,48 +1017,45 @@ List fseqbon(const NumericVector& w,
         idx2(j,k) = NA_INTEGER;
       }
     }
-    for (k=l; k<K; k++) {
+    for (k=l; k<kMax; k++) {
       idx1(j,k) = NA_INTEGER;
     }
   }
   
   
-  int step, kj;
+  int step;
   double alphastar, asfpar1;
   String asf1;
   int K3, K4 = 0;
   
-  NumericMatrix info1(m, K), p1(m, K), st1(m, K);
-  IntegerVector K1(m), K2(m);
+  NumericMatrix info1(m, k1), p1(m, k1), st1(m, k1), t1(m, k1), s1(m, k1);
+  IntegerVector K1(m), K2(m), L(m);
   LogicalVector r(m);
-  LogicalVector done(m);
-  LogicalMatrix visited(m, K);
+
   
-  for (int iter=0; iter<B; iter++) {
+  for (iter=0; iter<B; iter++) {
     wx = clone(w);  // reset
     g = clone(G); 
     r.fill(0);
-    done.fill(0);
-    visited.fill(0);
-    
+
     // extract iteration specific information, p-values, and spending time
     for (j=0; j<m; j++) {
       NumericVector irow = info.row(iter*m+j);
-      NumericVector prow = p.row(iter*m+j);
+      NumericVector prow = rawp.row(iter*m+j);
       
       irow = irow[!is_na(irow)]; // exclude missing values
       prow = prow[!is_na(prow)];
       
+      K1(j) = prow.size();
+      K2(j) = idx1(j, K1(j)-1) + 1;  // last study look for hypothesis j
+      
       if (irow.size() != prow.size()) {
         stop("information & p must have the same # of nonmissing elements");
+      } else if (irow(0) <= 0) {
+        stop("Elements of information must be positive");
+      } else if (K1(j)>1 && is_true(any(diff(irow) <= 0))) {
+        stop("Elements of information must be increasing over time");
       }
-      
-      K1(j) = irow.size();
-      if (K1(j) > K0(j)) {
-        K1(j) = K0(j); // truncated number of looks for hypothesis j 
-      }
-      
-      K2(j) = idx1(j, K1(j)-1) + 1;  // last study look for hypothesis j
       
       info1(j, _) = irow;
       p1(j, _) = prow;
@@ -1033,146 +1065,125 @@ List fseqbon(const NumericVector& w,
         strow = strow[!is_na(strow)];
         if (strow.size() != prow.size()) {
           stop("spendingTime & p must have the same # of nonmissing elements");
+        } else if (strow(0) <= 0) {
+          stop("Elements of spendingTime must be positive");
+        } else if (K1(j)>1 && is_true(any(diff(strow) <= 0))) {
+          stop("Elements of spendingTime must be increasing over time");
+        } else if (strow(K1(j)) > 1) {
+          stop("spendingTime must be less than or equal to 1");
         }
+        
         st1(j, _) = strow;
       } else {
         st1(j, _) = strow;
       }
-    }
-    
-    K3 = max(K2);           // maximum look for the iteration 
-    K4 = std::max(K3, K4);  // maximum look overall 
-    
-    for (step=0; step<K3; step++) {  // loop over study look
-      for (j=0; j<m; j++) {
-        if (incid(j, step) && !done(j)) { // testable hypotheses
-          kj = idx2(j, step);  // index of current look for hypothesis j
-          NumericVector t(kj+1);  // information time
-          NumericVector s(kj+1);  // spending time
-          
-          if ((reppfl && !visited(j, kj)) || (!r(j) && wx(j) > 1.0e-4)) {
-            for (i=0; i<=kj; i++) {
-              t(i) = info1(j, i)/info1(j, kj);
-            }
-            
-            if (is_true(all(is_na(st1(j, _))))) { // use information rates
-              if (kj < K0(j)-1 && info1(j, kj) < maxinfo(j)) {
-                for (i=0; i<=kj; i++) {
-                  s(i) = info1(j, i)/maxinfo(j);
-                }
-              } else {
-                for (i=0; i<=kj; i++) {
-                  s(i) = i < kj ? info1(j, i)/maxinfo(j) : 1.0;
-                }
-              }
-            } else { // use spending time
-              for (i=0; i<=kj; i++) {
-                s(i) = st1(j, i);
-              }
-            }
-          }
-          
-          
-          if (reppfl && !visited(j, kj)) { // generate repeated p-values
-            asf1 = Rcpp::String(asf(j));
-            asfpar1 = asfpars(j);
-            
-            double pvalue = p1(j, kj);
-            auto f = [kj, t, asf1, asfpar1, s, pvalue](double aval)->double {
-              NumericVector u = getBound(kj+1, t, aval, asf1, asfpar1, 0, s);  
-              return 1.0 - R::pnorm(u(kj), 0, 1, 1, 0) - pvalue;
-            };
-            
-            double root;
-            if (f(0.000001) > 0) {
-              root = 0.000001;
-            } else if (f(0.999999) < 0) {
-              root = 0.999999;
-            } else {
-              root = brent(f, 0.000001, 0.999999, 1.0e-6);
-            }
-            repp(iter*m+j, step) = root;
-            
-            visited(j,kj) = 1;
-          }
-          
-          
-          if (!r(j) && wx(j) > 1.0e-4) {
-            asf1 = Rcpp::String(asf(j));
-            asfpar1 = asfpars(j);
-            
-            double alphaj = wx(j)*alpha;
-            NumericVector u = getBound(kj+1, t, alphaj, asf1, asfpar1, 0, s);  
-            alphastar = 1.0 - R::pnorm(u(kj), 0, 1, 1, 0);
-            
-            if (p1(j, kj) < alphastar) {
-              // reject Hypothesis j
-              r(j) = 1;
-              reject(iter*m+j) = step+1;
-              
-              // update weights
-              for (l=0; l<m; l++) {
-                if (r(l) == 0) {
-                  wx(l) = wx(l) + wx(j)*g(j,l);
-                }
-              }
-              wx(j) = 0.0;
-              
-              // update transition matrix
-              g1.fill(0.0);
-              for (l=0; l<m; l++) {
-                if (r[l] == 0) {
-                  for (k=0; k<m; k++) {
-                    if ((r[k] == 0) && (l != k) && 
-                        (g(l,j)*g(j,l) < 1.0 - 1.0e-12)) {
-                      g1(l,k) = (g(l,k) + g(l,j)*g(j,k))/(1.0 - g(l,j)*g(j,l));
-                    }
-                  }
-                }
-              }
-              g = clone(g1);
-              
-              j = -1;  // restart the loop over the index set 
-            }
-          }
+      
+      // index of the last look for each hypothesis
+      if (is_true(all(is_na(st1(j, _))))) { // use information rates
+        LogicalVector qq = (irow >= maxinfo(j));
+        if (is_false(any(qq))) { // all observed info < maxinfo
+          L(j) = K1(j) - 1;
+        } else { // find index of first look with observed info >= maxinfo
+          L(j) = which_max(qq);
         }
+      } else { // use spending time
+        L(j) = K1(j) - 1;
       }
       
       
-      // done with a hypothesis if the max step or info has been reached
-      for (j=0; j<m; j++) {
-        if (incid(j, step) && !done(j)) {
-          kj = idx2(j, step);  // index of current look for hypothesis j
-          
-          if (is_true(all(is_na(st1(j, _))))) {
-            if (kj == K0(j)-1 || info1(j, kj) >= maxinfo(j)) {
-              done(j) = 1; // current look is the last look
-            }
+      // information time for forming covariance matrix of test statistics
+      for (l=0; l<=L(j); l++) {
+        t1(j,l) = irow(l)/irow(L(j));
+      }
+      
+      // spending time for error spending
+      if (is_true(all(is_na(st1(j, _))))) { // use information rates
+        for (l=0; l<=L(j); l++) {
+          if (l == K0(j)-1 || irow(l) >= maxinfo(j)) {
+            s1(j,l) = 1.0;
           } else {
-            if (kj == K0(j)-1) {
-              done(j) = 1; // current look is the last look
+            s1(j,l) = irow(l)/maxinfo(j);
+          }
+        }
+      } else { // use spending time
+        for (l=0; l<=L(j); l++) {
+          s1(j,l) = st1(j,l);
+        }
+      }
+    }
+    
+    K3 = max(K2);           // maximum look for the iteration 
+    K4 = std::max(K3, K4);  // maximum look overall
+    
+    for (step=0; step<K3; step++) {  // loop over study look
+      for (i=0; i<m; i++) {
+        // find a hypothesis that can be rejected
+        bool done = 1;
+        for (j=0; j<m; j++) {
+          if (incid(j, step) && wx(j) > 1.0e-4) {
+            k = idx2(j, step);
+            if (k <= L(j)) {
+              NumericVector t(k+1);
+              NumericVector s(k+1);
+              for (l=0; l<=k; l++) {
+                t(l) = t1(j,l);
+                s(l) = s1(j,l);
+              }
+              
+              asf1 = Rcpp::String(asf(j));
+              asfpar1 = asfpar(j);
+              
+              double alp = wx(j)*alpha;
+              NumericVector u = getBound(k+1, t, alp, asf1, asfpar1, 0, s);
+              alphastar = 1.0 - R::pnorm(u(k), 0, 1, 1, 0);
+              
+              if (p1(j,k) < alphastar) {
+                done = 0;
+                break;
+              }
             }
           }
+        }
+        
+        
+        if (!done) {
+          // reject Hypothesis j
+          r(j) = 1;
+          reject(iter*m+j) = step+1;
+          
+          // update weights
+          for (l=0; l<m; l++) {
+            if (r(l) == 0) {
+              wx(l) = wx(l) + wx(j)*g(j,l);
+            }
+          }
+          wx(j) = 0.0;
+          
+          // update transition matrix
+          g1.fill(0.0);
+          for (l=0; l<m; l++) {
+            if (r[l] == 0) {
+              for (k=0; k<m; k++) {
+                if ((r[k] == 0) && (l != k) && 
+                    (g(l,j)*g(j,l) < 1.0 - 1.0e-12)) {
+                  g1(l,k) = (g(l,k) + g(l,j)*g(j,k))/(1.0 - g(l,j)*g(j,l));
+                }
+              }
+            }
+          }
+          g = clone(g1);
+        } else { // no more hypothesis to reject at this look
+          break;
         }
       }
       
       // stop if all hypotheses have been rejected
       if (sum(r) == m) {
-        step = K3;
+        break;
       }
     }
   }
   
-  
-  List result;
-  
-  if (reppfl) {
-    result = List::create(_["rejectFirstLook"] = reject, 
-                          _["repeatedPValues"] = repp(_, Range(0, K4-1)));
-  } else {
-    result = List::create(_["rejectFirstLook"] = reject);
-  }
-  
-  return result;
+  return reject;
 }
 
