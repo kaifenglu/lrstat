@@ -1,5 +1,5 @@
 #' Parameter Description: accrualTime
-#' @param accrualTime Accrual time intervals, must start with 0, e.g.,
+#' @param accrualTime Accrual time intervals. Must start with 0, e.g.,
 #'   \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 #'   [0, 3) and [3, Inf).
 #' @name param_accrualTime
@@ -7,7 +7,7 @@
 NULL
 
 #' Parameter Description: accrualIntensity
-#' @param accrualIntensity A vector of accrual intensities, one for
+#' @param accrualIntensity A vector of accrual intensities. One for
 #'   each accrual time interval.
 #' @name param_accrualIntensity
 #' @keywords internal
@@ -21,7 +21,7 @@ NULL
 
 #' Parameter Description: piecewiseSurvivalTime
 #' @param piecewiseSurvivalTime A vector that specifies the time intervals for
-#'   the piecewise exponential survival distribution, must start with 0, e.g.,
+#'   the piecewise exponential survival distribution. Must start with 0, e.g.,
 #'   \code{c(0, 6)} breaks the time axis into 2 event intervals:
 #'   [0, 6) and [6, Inf).
 #'   Defaults to 0 for exponential distribution.
@@ -52,7 +52,7 @@ NULL
 NULL
 
 #' Parameter Description: lambda
-#' @param lambda A vector of hazard rates for the event, one for
+#' @param lambda A vector of hazard rates for the event. One for
 #'   each analysis time interval.
 #' @name param_lambda
 #' @keywords internal
@@ -60,14 +60,14 @@ NULL
 
 #' Parameter Description: lambda1
 #' @param lambda1 A vector of hazard rates for the event for the
-#'   active treatment group, one for each analysis time interval.
+#'   active treatment group. One for each analysis time interval.
 #' @name param_lambda1
 #' @keywords internal
 NULL
 
 #' Parameter Description: lambda2
 #' @param lambda2 A vector of hazard rates for the event for the
-#'   control group, one for each analysis time interval.
+#'   control group. One for each analysis time interval.
 #' @name param_lambda2
 #' @keywords internal
 NULL
@@ -110,7 +110,7 @@ NULL
 NULL
 
 #' Parameter Description: gamma1_stratified
-#' @param gamma1 The hazard rate for exponential dropout, a vector of hazard
+#' @param gamma1 The hazard rate for exponential dropout. A vector of hazard
 #'   rates for piecewise exponential dropout applicable for all strata, or a
 #'   vector of hazard rates for dropout in each analysis time interval
 #'   by stratum for the active treatment group.
@@ -120,7 +120,7 @@ NULL
 NULL
 
 #' Parameter Description: gamma2_stratified
-#' @param gamma2 The hazard rate for exponential dropout, a vector of hazard
+#' @param gamma2 The hazard rate for exponential dropout. A vector of hazard
 #'   rates for piecewise exponential dropout applicable for all strata, or a
 #'   vector of hazard rates for dropout in each analysis time interval
 #'   by stratum for the control group.
@@ -159,15 +159,15 @@ NULL
 NULL
 
 #' Parameter Description: rho1
-#' @param rho1 First parameter of the Fleming-Harrington family of weighted
-#'   log-rank test. Defaults to 0 for conventional log-rank test.
+#' @param rho1 The first parameter of the Fleming-Harrington family of 
+#'   weighted log-rank test. Defaults to 0 for conventional log-rank test.
 #' @name param_rho1
 #' @keywords internal
 NULL
 
 #' Parameter Description: rho2
-#' @param rho2 Second parameter of the Fleming-Harrington family of weighted
-#'   log-rank test. Defaults to 0 for conventional log-rank test.
+#' @param rho2 The second parameter of the Fleming-Harrington family of 
+#'   weighted log-rank test. Defaults to 0 for conventional log-rank test.
 #' @name param_rho2
 #' @keywords internal
 NULL
