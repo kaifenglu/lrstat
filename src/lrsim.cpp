@@ -11,7 +11,7 @@ using namespace Rcpp;
 //' @inheritParams param_kMax
 //' @param informationTime Information time in terms of variance of
 //'   weighted log-rank test score statistic under the null hypothesis.
-//'   Same as informationRates in terms of number of events for
+//'   Same as \code{informationRates} in terms of number of events for
 //'   the conventional log-rank test. Use \code{caltime} and \code{lrstat}
 //'   to derive the information time for weighted log-rank tests.
 //'   Fixed prior to the trial. If left unspecified, it defaults to
@@ -39,9 +39,8 @@ using namespace Rcpp;
 //' @inheritParams param_rho2
 //' @param plannedEvents The planned cumulative total number of events at each
 //'   stage.
-//' @param plannedTime The planned analysis time for each stage needed for  
-//'   analyses planned at calendar times, in which case, \code{plannedEvents}
-//'   should be missing.
+//' @param plannedTime The calendar times for the analyses. To use calendar  
+//'   time to plan the analyses, \code{plannedEvents} should be missing.
 //' @param maxNumberOfIterations The number of simulation iterations.
 //'   Defaults to 1000.
 //' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per stage
@@ -51,12 +50,12 @@ using namespace Rcpp;
 //'
 //' @return A list of S3 class \code{lrsim} with 3 components:
 //'
-//' * \code{overview} is a list of containing incremental and cumulative
+//' * \code{overview} is a list containing incremental and cumulative
 //' efficacy and futility stopping probabilities by stage, expected number
-//' of events, number of dropouts, number of subjects, and analysis time
+//' of events, number of dropouts, number of subjects, analysis time
 //' by stage, overall rejection probability, overall expected number of
-//' events, number of dropouts, number of subjects, and study duration,
-//' the hazard ratio under H0, and whether the analyses are planned 
+//' events, number of dropouts, number of subjects, study duration,
+//' hazard ratio under H0, and whether the analyses are planned 
 //' based on the number of events or calendar time.
 //'
 //' * \code{sumdata} is a data frame of summary data by stage for each
@@ -1056,10 +1055,10 @@ List lrsim(const int kMax = NA_INTEGER,
 
 
 //' @title Log-rank test simulation for three arms
-//' @description Performs simulation for three-arm group 
-//' sequential trials based on weighted log-rank test. The  
-//' looks are driven by the total number of events in Arm A 
-//' and Arm C combined. 
+//' @description Performs simulation for three-arm group sequential trials 
+//' based on weighted log-rank test. The looks are driven by the total 
+//' number of events in Arm A and Arm C combined. Alternatively, 
+//' the analyses can be planned to occur at specified calendar times.
 //' 
 //' @inheritParams param_kMax
 //' @param hazardRatioH013 Hazard ratio under the null hypothesis for arm 1
@@ -1084,15 +1083,15 @@ List lrsim(const int kMax = NA_INTEGER,
 //'   time interval by stratum for arm 2.
 //' @param lambda3 A vector of hazard rates for the event in each analysis  
 //'   time interval by stratum for arm 3.
-//' @param gamma1 The hazard rate for exponential dropout, a vector of 
+//' @param gamma1 The hazard rate for exponential dropout. A vector of 
 //'   hazard rates for piecewise exponential dropout applicable for all 
 //'   strata, or a vector of hazard rates for dropout in each analysis time 
 //'   interval by stratum for arm 1.
-//' @param gamma2 The hazard rate for exponential dropout, a vector of 
+//' @param gamma2 The hazard rate for exponential dropout. A vector of 
 //'   hazard rates for piecewise exponential dropout applicable for all 
 //'   strata, or a vector of hazard rates for dropout in each analysis time 
 //'   interval by stratum for arm 2.
-//' @param gamma3 The hazard rate for exponential dropout, a vector of 
+//' @param gamma3 The hazard rate for exponential dropout. A vector of 
 //'   hazard rates for piecewise exponential dropout applicable for all 
 //'   strata, or a vector of hazard rates for dropout in each analysis time 
 //'   interval by stratum for arm 3.
@@ -1103,9 +1102,8 @@ List lrsim(const int kMax = NA_INTEGER,
 //' @inheritParams param_rho2
 //' @param plannedEvents The planned cumulative total number of events at 
 //'   Look 1 to Look \code{kMax} for Arms A and C combined.
-//' @param plannedTime The planned analysis time for each stage needed for  
-//'   analyses planned at calendar times, in which case, \code{plannedEvents} 
-//'   should be missing.
+//' @param plannedTime The calendar times for the analyses. To use calendar  
+//'   time to plan the analyses, \code{plannedEvents} should be missing.
 //' @param maxNumberOfIterations The number of simulation iterations.
 //'   Defaults to 1000.
 //' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per stage
@@ -1117,15 +1115,15 @@ List lrsim(const int kMax = NA_INTEGER,
 //'
 //' * \code{sumdata} is a data frame of summary data by stage for each
 //' iteration, containing the analysis time, number of accrued subjects 
-//' overall and by treatment group, and number of events overall and 
+//' overall and by treatment group, number of events overall and 
 //' by treatment group, number of dropouts overall and by treatment group, 
 //' and log-rank test statistic for each comparison.
 //'
 //' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
 //' positive integer) is a data frame for subject-level data for selected
 //' replications, containing the stage number, subject number, arrival time, 
-//' stratum, treatment group, observation time, and survival time, 
-//' dropout time, time under observation, event and dropout indicators.
+//' stratum, treatment group, observation time, survival time, 
+//' dropout time, time under observation, and event and dropout indicators.
 //' 
 //' @examples
 //' 
@@ -1993,7 +1991,8 @@ List lrsim3a(const int kMax = NA_INTEGER,
 //' sequential trials based on weighted log-rank test. The first \code{kMaxe1} 
 //' looks are driven by the total number of PFS events in two arms 
 //' combined, and the subsequent looks are driven by the total 
-//' number of OS events in two arms combined. 
+//' number of OS events in two arms combined. Alternatively, 
+//' the analyses can be planned to occur at specified calendar times.
 //' 
 //' @inheritParams param_kMax
 //' @param kMaxe1 Number of stages with timing determined by PFS events. 
@@ -2047,9 +2046,8 @@ List lrsim3a(const int kMax = NA_INTEGER,
 //' @param plannedEvents The planned cumulative total number of PFS events at 
 //'   Look 1 to Look kMaxe1 and the planned cumulative total number of OS 
 //'   events at Look kMaxe1+1 to Look kMax.
-//' @param plannedTime The planned analysis time for each stage needed for  
-//'   analyses planned at calendar times, in which case, \code{plannedEvents} 
-//'   should be missing.
+//' @param plannedTime The calendar times for the analyses. To use calendar  
+//'   time to plan the analyses, \code{plannedEvents} should be missing.
 //' @param maxNumberOfIterations The number of simulation iterations.
 //'   Defaults to 1000.
 //' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per stage
@@ -2069,7 +2067,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
 //' positive integer) is a data frame for subject-level data for selected
 //' replications, containing the stage number, subject number, arrival time, 
 //' stratum, treatment group, observation time, and survival time, 
-//' dropout time, time under observation, event and dropout indicators 
+//' dropout time, time under observation, and event and dropout indicators 
 //' for each endpoint.
 //' 
 //' @examples
@@ -3188,7 +3186,8 @@ List lrsim2e(const int kMax = NA_INTEGER,
 //' sequential trials based on weighted log-rank test. The first \code{kMaxe1} 
 //' looks are driven by the total number of PFS events in Arm A 
 //' and Arm C combined, and the subsequent looks are driven by the total 
-//' number of OS events in Arm A and Arm C combined. 
+//' number of OS events in Arm A and Arm C combined. Alternatively, 
+//' the analyses can be planned to occur at specified calendar times. 
 //' 
 //' @inheritParams param_kMax
 //' @param kMaxe1 Number of stages with timing determined by PFS events. 
@@ -3230,27 +3229,27 @@ List lrsim2e(const int kMax = NA_INTEGER,
 //'   time interval by stratum for arm 2 and endpoint 2 (OS).
 //' @param lambda3e2 A vector of hazard rates for the event in each analysis  
 //'   time interval by stratum for arm 3 and endpoint 2 (OS).
-//' @param gamma1e1 The hazard rate for exponential dropout, a vector of 
+//' @param gamma1e1 The hazard rate for exponential dropout. A vector of 
 //'   hazard rates for piecewise exponential dropout applicable for all 
 //'   strata, or a vector of hazard rates for dropout in each analysis time 
 //'   interval by stratum for arm 1 and endpoint 1 (PFS).
-//' @param gamma2e1 The hazard rate for exponential dropout, a vector of 
+//' @param gamma2e1 The hazard rate for exponential dropout. A vector of 
 //'   hazard rates for piecewise exponential dropout applicable for all 
 //'   strata, or a vector of hazard rates for dropout in each analysis time 
 //'   interval by stratum for arm 2 and endpoint 1 (PFS).
-//' @param gamma3e1 The hazard rate for exponential dropout, a vector of 
+//' @param gamma3e1 The hazard rate for exponential dropout. A vector of 
 //'   hazard rates for piecewise exponential dropout applicable for all 
 //'   strata, or a vector of hazard rates for dropout in each analysis time 
 //'   interval by stratum for arm 3 and endpoint 1 (PFS).
-//' @param gamma1e2 The hazard rate for exponential dropout, a vector of 
+//' @param gamma1e2 The hazard rate for exponential dropout. A vector of 
 //'   hazard rates for piecewise exponential dropout applicable for all 
 //'   strata, or a vector of hazard rates for dropout in each analysis time 
 //'   interval by stratum for arm 1 and endpoint 2 (OS).
-//' @param gamma2e2 The hazard rate for exponential dropout, a vector of 
+//' @param gamma2e2 The hazard rate for exponential dropout. A vector of 
 //'   hazard rates for piecewise exponential dropout applicable for all 
 //'   strata, or a vector of hazard rates for dropout in each analysis time 
 //'   interval by stratum for arm 2 and endpoint 2 (OS).
-//' @param gamma3e2 The hazard rate for exponential dropout, a vector of 
+//' @param gamma3e2 The hazard rate for exponential dropout. A vector of 
 //'   hazard rates for piecewise exponential dropout applicable for all 
 //'   strata, or a vector of hazard rates for dropout in each analysis time 
 //'   interval by stratum for arm 3 and endpoint 2 (OS).
@@ -3263,9 +3262,8 @@ List lrsim2e(const int kMax = NA_INTEGER,
 //'   Look 1 to Look kMaxe1 for Arms A and C combined and the planned 
 //'   cumulative total number of OS events at Look kMaxe1+1 to Look kMax 
 //'   for Arms A and C combined.
-//' @param plannedTime The planned analysis time for each stage needed for  
-//'   analyses planned at calendar times, in which case, \code{plannedEvents} 
-//'   should be missing.
+//' @param plannedTime The calendar times for the analyses. To use calendar  
+//'   time to plan the analyses, \code{plannedEvents} should be missing.
 //' @param maxNumberOfIterations The number of simulation iterations.
 //'   Defaults to 1000.
 //' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per stage
@@ -3277,15 +3275,15 @@ List lrsim2e(const int kMax = NA_INTEGER,
 //'
 //' * \code{sumdata} is a data frame of summary data by stage for each
 //' iteration, containing the analysis time, number of accrued subjects 
-//' overall and by treatment group, and number of events overall and 
+//' overall and by treatment group, number of events overall and 
 //' by treatment group, number of dropouts overall and by treatment group, 
 //' and log-rank test statistic for each comparison by endpoint.
 //'
 //' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
 //' positive integer) is a data frame for subject-level data for selected
 //' replications, containing the stage number, subject number, arrival time, 
-//' stratum, treatment group, observation time, and survival time, 
-//' dropout time, time under observation, event and dropout indicators 
+//' stratum, treatment group, observation time, survival time, 
+//' dropout time, time under observation, and event and dropout indicators 
 //' for each endpoint.
 //' 
 //' @examples
