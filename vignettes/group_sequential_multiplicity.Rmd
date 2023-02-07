@@ -1,10 +1,10 @@
 ---
-title: "Multiplicity adjustment for group sequential design"
+title: "Multiplicity Adjustment for Group Sequential Designs"
 author: "Kaifeng Lu"
 date: "2023-02-06"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Multiplicity adjustment for group sequential design}
+  %\VignetteIndexEntry{Multiplicity Adjustment for Group Sequential Designs}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
