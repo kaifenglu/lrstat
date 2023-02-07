@@ -4,7 +4,7 @@ author: "Kaifeng Lu"
 date: "2023-02-06"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Simulation for Group Sequential Trials}
+  %\VignetteIndexEntry{Multiplicity adjustment for group sequential design}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
