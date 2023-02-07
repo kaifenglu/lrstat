@@ -2,7 +2,11 @@
 title: "Sample Size Calculation Under Non-Proportional Hazards"
 author: "Kaifeng Lu"
 date: "12/15/2021"
-output: html_document
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Sample Size Calculation Under Non-Proportional Hazards}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
 ---
 
 ```{r setup, include=FALSE}
