@@ -78,14 +78,13 @@ Defaults to 300. Specify a larger number for better approximation.}
 \value{
 A data frame of the number of subjects enrolled, stratified 
   estimate of milestone survival for each treatment group, 
-  difference in milestone survival, the associated variance, 
+  difference in milestone survival, the associated variances, 
   and the Z test statistic at the specified calendar times.
 }
 \description{
 Obtains the stratified Kaplan-Meier estimate of 
-  milestone survival probabilities, difference in milestone survival
-  and variance of milestone survival difference at given calendar times
-  and milestone time.
+  milestone survival probabilities and difference in milestone 
+  survival at given calendar times and milestone time.
 }
 \examples{
 # Piecewise accrual, piecewise exponential survivals, and 5\% dropout by
