@@ -1256,6 +1256,482 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
 }
 
 
+
+//' @title Kaplan-Meier estimate of milestone survival
+//' 
+//' @description Obtains the Kaplan-Meier estimate of milestone survival 
+//' probability and associated variance estimate using the Greenwood formula
+//' by treatment group and by stratum at given analysis time.
+//'
+//' @param time The calendar time for data cut.  
+//' @param milestone The milestone time at which to calculate the 
+//'   Kaplan-Meier estimate of survival probability.
+//' @inheritParams param_allocationRatioPlanned
+//' @inheritParams param_accrualTime
+//' @inheritParams param_accrualIntensity
+//' @inheritParams param_piecewiseSurvivalTime
+//' @inheritParams param_stratumFraction
+//' @inheritParams param_lambda1_stratified
+//' @inheritParams param_lambda2_stratified
+//' @inheritParams param_gamma1_stratified
+//' @inheritParams param_gamma2_stratified
+//' @inheritParams param_accrualDuration
+//' @inheritParams param_followupTime
+//' @inheritParams param_fixedFollowup
+//' @inheritParams param_numSubintervals
+//'
+//' @return A data frame of the number of subjects, survival probability 
+//' and variance estimate in each group, difference in survival probability 
+//' and variance estimate at the specified time by stratum.
+//'
+//' @keywords internal
+//'
+//' @examples
+//' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
+//' # the end of 1 year.
+//'
+//' kmest1(time = 40, 
+//'        milestone = 18, 
+//'        allocationRatioPlanned = 1,
+//'        accrualTime = seq(0, 9),
+//'        accrualIntensity = c(26/9*seq(1, 9), 26),
+//'        piecewiseSurvivalTime = c(0, 6),
+//'        stratumFraction = c(0.2, 0.8),
+//'        lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
+//'        lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+//'        gamma1 = -log(1-0.05)/12,
+//'        gamma2 = -log(1-0.05)/12,
+//'        accrualDuration = 22,
+//'        followupTime = 18, fixedFollowup = FALSE)
+//'
+//' @export
+// [[Rcpp::export]]
+DataFrame kmest1(const double time = NA_REAL,
+                 const double milestone = NA_REAL,
+                 const double allocationRatioPlanned = 1,
+                 const NumericVector& accrualTime = 0,
+                 const NumericVector& accrualIntensity = NA_REAL,
+                 const NumericVector& piecewiseSurvivalTime = 0,
+                 const NumericVector& stratumFraction = 1,
+                 const NumericVector& lambda1 = NA_REAL,
+                 const NumericVector& lambda2 = NA_REAL,
+                 const NumericVector& gamma1 = 0,
+                 const NumericVector& gamma2 = 0,
+                 const double accrualDuration = NA_REAL,
+                 const double followupTime = NA_REAL,
+                 const bool fixedFollowup = 0,
+                 const int numSubintervals = 300) {
+  
+  int nstrata = stratumFraction.size();
+  int nintervals = piecewiseSurvivalTime.size();
+  int nsi = nstrata*nintervals;
+  NumericVector lambda1x(nsi), lambda2x(nsi), gamma1x(nsi), gamma2x(nsi);
+  
+  
+  if (lambda1.size() == 1) {
+    lambda1x = rep(lambda1, nsi);
+  } else if (lambda1.size() == nintervals) {
+    lambda1x = rep(lambda1, nstrata);
+  } else if (lambda1.size() == nsi) {
+    lambda1x = lambda1;
+  } else {
+    stop("Invalid length for lambda1");
+  }
+  
+  if (lambda2.size() == 1) {
+    lambda2x = rep(lambda2, nsi);
+  } else if (lambda2.size() == nintervals) {
+    lambda2x = rep(lambda2, nstrata);
+  } else if (lambda2.size() == nsi) {
+    lambda2x = lambda2;
+  } else {
+    stop("Invalid length for lambda2");
+  }
+  
+  if (gamma1.size() == 1) {
+    gamma1x = rep(gamma1, nsi);
+  } else if (gamma1.size() == nintervals) {
+    gamma1x = rep(gamma1, nstrata);
+  } else if (gamma1.size() == nsi) {
+    gamma1x = gamma1;
+  } else {
+    stop("Invalid length for gamma1");
+  }
+  
+  if (gamma2.size() == 1) {
+    gamma2x = rep(gamma2, nsi);
+  } else if (gamma2.size() == nintervals) {
+    gamma2x = rep(gamma2, nstrata);
+  } else if (gamma2.size() == nsi) {
+    gamma2x = gamma2;
+  } else {
+    stop("Invalid length for gamma2");
+  }
+  
+  
+  double minFollowupTime = followupTime;
+  double maxFollowupTime;
+  
+  // obtain the follow-up time for the first enrolled subject
+  if (fixedFollowup) {
+    maxFollowupTime = minFollowupTime;
+  } else {
+    maxFollowupTime = accrualDuration + minFollowupTime;
+  }
+  
+  IntegerVector l1 = Range(0, nintervals-1);
+  IntegerVector q = Range(0, numSubintervals);
+  NumericVector q1 = as<NumericVector>(q);
+  Range q2 = Range(0, numSubintervals-1), c0 = Range(0,0), c1 = Range(1,1);
+  
+  double s = std::min(time, accrualDuration + minFollowupTime);
+  NumericVector s1 = NumericVector::create(s);
+  double a = accrual(s1, accrualTime, accrualIntensity, accrualDuration)[0];
+  
+  // modify the study design at the calendar time of interest
+  double accrualDuration0 = std::min(s, accrualDuration);
+  double minFollowupTime0 = std::max(s - accrualDuration, 0.0);
+  double maxFollowupTime0 = std::min(s, maxFollowupTime);
+  
+  // partition the follow-up period into small sub-intervals
+  double maxTime = std::min(milestone, maxFollowupTime0);
+  double inc = maxTime/numSubintervals;
+  NumericVector t = q1*inc;
+  
+  int h, i;
+  double frac, km1, km2, vm1, vm2;
+  IntegerVector l(nintervals);
+  NumericVector lam1(nintervals), lam2(nintervals);
+  NumericVector gam1(nintervals), gam2(nintervals);
+  NumericVector nsubjects(nstrata);
+  NumericMatrix xatrisk(numSubintervals+1, 2);
+  NumericMatrix xevent(numSubintervals+1, 2);
+  NumericVector atrisk1(numSubintervals), atrisk2(numSubintervals), 
+                event1(numSubintervals), event2(numSubintervals);
+  NumericVector surv1(nstrata), surv2(nstrata), survdiff(nstrata);
+  NumericVector vsurv1(nstrata), vsurv2(nstrata), vsurvdiff(nstrata);
+  IntegerVector stratum(nstrata);
+  NumericVector calTime(nstrata), mileTime(nstrata);
+  DataFrame df;
+  
+  
+  for (h=0; h<nstrata; h++) {
+    frac = stratumFraction[h];
+    l = h*nintervals + l1;
+    lam1 = lambda1x[l];
+    lam2 = lambda2x[l];
+    gam1 = gamma1x[l];
+    gam2 = gamma2x[l];
+    
+    // obtain number of enrolled subjects 
+    nsubjects[h] = frac*a;
+    
+    
+    // obtain number of subjects at risk and the number of subjects having
+    // an event at each analysis time point
+    xatrisk = natrisk(t, allocationRatioPlanned,
+                      accrualTime, frac*accrualIntensity,
+                      piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
+                      accrualDuration0, minFollowupTime0, maxFollowupTime0);
+    
+    xevent = nevent(t, allocationRatioPlanned,
+                    accrualTime, frac*accrualIntensity,
+                    piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
+                    accrualDuration0, minFollowupTime0, maxFollowupTime0);
+    
+    // number of subjects at risk at start of each analysis time interval
+    atrisk1 = xatrisk(q2, c0);
+    atrisk2 = xatrisk(q2, c1);
+    
+    // number of subjects having an event in each analysis time interval
+    event1 = diff(xevent(_, 0));
+    event2 = diff(xevent(_, 1));
+    
+    // Kaplan-Meier estimates of survival probabilities
+    km1 = 1;
+    km2 = 1;
+    for (i=0; i<numSubintervals; i++) {
+      km1 = km1*(1 - event1[i]/atrisk1[i]);
+      km2 = km2*(1 - event2[i]/atrisk2[i]);
+    }
+    
+    vm1 = 0;
+    vm2 = 0;
+    for (i=0; i<numSubintervals; i++) {
+      vm1 = vm1 + event1[i]/(atrisk1[i]*(atrisk1[i] - event1[i]));
+      vm2 = vm2 + event2[i]/(atrisk2[i]*(atrisk2[i] - event2[i]));
+    }
+    
+    surv1[h] = km1;
+    surv2[h] = km2;
+    vsurv1[h] = km1*km1*vm1;
+    vsurv2[h] = km2*km2*vm2;
+    survdiff[h] = surv1[h] - surv2[h];
+    vsurvdiff[h] = vsurv1[h] + vsurv2[h]; 
+  }
+  
+  // stratum and time
+  for (h=0; h<nstrata; h++) {
+    stratum[h] = h+1;
+    calTime[h] = s;
+    mileTime[h] = maxTime;
+  }
+  
+  
+  // output the requested information
+  df = DataFrame::create(_["stratum"] = stratum,
+                         _["time"] = calTime,
+                         _["subjects"] = nsubjects,
+                         _["milestone"] = maxTime,
+                         _["surv1"] = surv1,
+                         _["surv2"] = surv2,
+                         _["vsurv1"] = vsurv1,
+                         _["vsurv2"] = vsurv2,
+                         _["survdiff"] = survdiff,
+                         _["vsurvdiff"] = vsurvdiff);
+  
+  return df;
+}
+
+
+//' @title Stratified difference in milestone survival
+//' @description Obtains the stratified Kaplan-Meier estimate of 
+//'   milestone survival probabilities, difference in milestone survival
+//'   and variance of milestone survival difference at given calendar times
+//'   and milestone time.
+//'
+//' @param time A vector of calendar times at which to calculate the 
+//'   milestone survival.
+//' @param milestone The milestone time at which to calculate the 
+//'   Kaplan-Meier estimate of survival probability.
+//' @inheritParams param_allocationRatioPlanned
+//' @inheritParams param_accrualTime
+//' @inheritParams param_accrualIntensity
+//' @inheritParams param_piecewiseSurvivalTime
+//' @inheritParams param_stratumFraction
+//' @inheritParams param_lambda1_stratified
+//' @inheritParams param_lambda2_stratified
+//' @inheritParams param_gamma1_stratified
+//' @inheritParams param_gamma2_stratified
+//' @inheritParams param_accrualDuration
+//' @inheritParams param_followupTime
+//' @inheritParams param_fixedFollowup
+//' @inheritParams param_numSubintervals
+//' 
+//' @return A data frame of the number of subjects enrolled, stratified 
+//'   estimate of milestone survival for each treatment group, 
+//'   difference in milestone survival, the associated variance, 
+//'   and the Z test statistic at the specified calendar times.
+//'
+//' @examples
+//' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
+//' # the end of 1 year.
+//'
+//' kmest(time = c(22, 40), 
+//'       milestone = 18, 
+//'       allocationRatioPlanned = 1,
+//'       accrualTime = seq(0, 9),
+//'       accrualIntensity = c(26/9*seq(1, 9), 26),
+//'       piecewiseSurvivalTime = c(0, 6),
+//'       stratumFraction = c(0.2, 0.8),
+//'       lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
+//'       lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+//'       gamma1 = -log(1-0.05)/12,
+//'       gamma2 = -log(1-0.05)/12,
+//'       accrualDuration = 22,
+//'       followupTime = 18, fixedFollowup = FALSE)
+//'
+//' @export
+// [[Rcpp::export]]
+DataFrame kmest(const NumericVector& time = NA_REAL,
+                const double milestone = NA_REAL,
+                const double allocationRatioPlanned = 1,
+                const NumericVector& accrualTime = 0,
+                const NumericVector& accrualIntensity = NA_REAL,
+                const NumericVector& piecewiseSurvivalTime = 0,
+                const NumericVector& stratumFraction = 1,
+                const NumericVector& lambda1 = NA_REAL,
+                const NumericVector& lambda2 = NA_REAL,
+                const NumericVector& gamma1 = 0,
+                const NumericVector& gamma2 = 0,
+                const double accrualDuration = NA_REAL,
+                const double followupTime = NA_REAL,
+                const bool fixedFollowup = 0,
+                const int numSubintervals = 300) {
+  
+  int nstrata = stratumFraction.size();
+  int nintervals = piecewiseSurvivalTime.size();
+  int nsi = nstrata*nintervals;
+  NumericVector lambda1x(nsi), lambda2x(nsi), gamma1x(nsi), gamma2x(nsi);
+  
+  if (is_true(any(time <= 0))) {
+    stop("time must be positive");
+  }
+  
+  if (milestone <= 0) {
+    stop("milestone must be positive");
+  }
+  
+  if (allocationRatioPlanned <= 0) {
+    stop("allocationRatioPlanned must be positive");
+  }
+  
+  if (accrualTime[0] != 0) {
+    stop("accrualTime must start with 0");
+  }
+  
+  if (accrualTime.size() > 1 && is_true(any(diff(accrualTime) <= 0))) {
+    stop("accrualTime should be increasing");
+  }
+  
+  if (accrualTime.size() != accrualIntensity.size()) {
+    stop("accrualTime must have the same length as accrualIntensity");
+  }
+  
+  if (is_true(any(accrualIntensity < 0))) {
+    stop("accrualIntensity must be non-negative");
+  }
+  
+  if (piecewiseSurvivalTime[0] != 0) {
+    stop("piecewiseSurvivalTime must start with 0");
+  }
+  
+  if (nintervals > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
+    stop("piecewiseSurvivalTime should be increasing");
+  }
+  
+  if (is_true(any(stratumFraction <= 0))) {
+    stop("stratumFraction must be positive");
+  }
+  
+  if (sum(stratumFraction) != 1) {
+    stop("stratumFraction must sum to 1");
+  }
+  
+  if (is_true(any(lambda1 < 0))) {
+    stop("lambda1 must be non-negative");
+  }
+  
+  if (is_true(any(lambda2 < 0))) {
+    stop("lambda2 must be non-negative");
+  }
+  
+  if (is_true(any(gamma1 < 0))) {
+    stop("gamma1 must be non-negative");
+  }
+  
+  if (is_true(any(gamma2 < 0))) {
+    stop("gamma2 must be non-negative");
+  }
+  
+  if (lambda1.size() == 1) {
+    lambda1x = rep(lambda1, nsi);
+  } else if (lambda1.size() == nintervals) {
+    lambda1x = rep(lambda1, nstrata);
+  } else if (lambda1.size() == nsi) {
+    lambda1x = lambda1;
+  } else {
+    stop("Invalid length for lambda1");
+  }
+  
+  if (lambda2.size() == 1) {
+    lambda2x = rep(lambda2, nsi);
+  } else if (lambda2.size() == nintervals) {
+    lambda2x = rep(lambda2, nstrata);
+  } else if (lambda2.size() == nsi) {
+    lambda2x = lambda2;
+  } else {
+    stop("Invalid length for lambda2");
+  }
+  
+  if (gamma1.size() == 1) {
+    gamma1x = rep(gamma1, nsi);
+  } else if (gamma1.size() == nintervals) {
+    gamma1x = rep(gamma1, nstrata);
+  } else if (gamma1.size() == nsi) {
+    gamma1x = gamma1;
+  } else {
+    stop("Invalid length for gamma1");
+  }
+  
+  if (gamma2.size() == 1) {
+    gamma2x = rep(gamma2, nsi);
+  } else if (gamma2.size() == nintervals) {
+    gamma2x = rep(gamma2, nstrata);
+  } else if (gamma2.size() == nsi) {
+    gamma2x = gamma2;
+  } else {
+    stop("Invalid length for gamma2");
+  }
+  
+  if (R_isnancpp(accrualDuration)) {
+    stop("accrualDuration must be provided");
+  }
+  
+  if (accrualDuration <= 0) {
+    stop("accrualDuration must be positive");
+  }
+  
+  if (R_isnancpp(followupTime)) {
+    stop("followupTime must be provided");
+  }
+  
+  if (fixedFollowup && followupTime <= 0) {
+    stop("followupTime must be positive for fixed follow-up");
+  }
+  
+  if (!fixedFollowup && followupTime < 0) {
+    stop("followupTime must be non-negative for variable follow-up");
+  }
+  
+  
+  if (numSubintervals <= 0) {
+    stop("numSubintervals must be positive");
+  }
+  
+  
+  int k = time.size();
+  
+  DataFrame df;
+  
+  NumericVector calTime(k), mileTime(k), subjects(k), 
+                surv1(k), surv2(k), survdiff(k), 
+                vsurvdiff(k), survdiffZ(k);
+
+  for (int j=0; j<k; j++) {
+    df = kmest1(time[j], milestone, allocationRatioPlanned,
+                accrualTime, accrualIntensity,
+                piecewiseSurvivalTime, stratumFraction,
+                lambda1x, lambda2x, gamma1x, gamma2x,
+                accrualDuration, followupTime, fixedFollowup,
+                numSubintervals);
+    
+    calTime[j] = max(NumericVector(df[1]));
+    subjects[j] = sum(NumericVector(df[2]));
+    mileTime[j] = max(NumericVector(df[3]));
+    surv1[j] = sum(stratumFraction*NumericVector(df[4]));
+    surv2[j] = sum(stratumFraction*NumericVector(df[5]));
+    survdiff[j] = sum(stratumFraction*NumericVector(df[8]));
+    vsurvdiff[j] = sum(stratumFraction*stratumFraction*NumericVector(df[9]));
+    survdiffZ[j] = survdiff[j]/sqrt(vsurvdiff[j]);
+  }
+  
+  
+  df = DataFrame::create(_["time"] = calTime,
+                         _["subjects"] = subjects,
+                         _["milestone"] = mileTime,
+                         _["surv1"] = surv1,
+                         _["surv2"] = surv2,
+                         _["survdiff"] = survdiff,
+                         _["vsurvdiff"] = vsurvdiff,
+                         _["survdiffZ"] = survdiffZ);
+  
+  return df;
+  
+}
+
+
+
 //' @title Calendar times for target number of events
 //' @description Obtains the calendar times to reach the target number of
 //' subjects having an event.

@@ -1,3 +1,8 @@
+# lrstat 0.1.11
+
+- Add Kaplan-Meier estimate of milestone survival, Greendwood variance estimate, difference in milestone survival, and Z test statistic for survival difference.
+
+
 # lrstat 0.1.10
 
 - Add drift parameter to the getDesign function to compute power given the drift parameter.
