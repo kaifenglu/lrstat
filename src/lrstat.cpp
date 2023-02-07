@@ -1496,9 +1496,8 @@ DataFrame kmest1(const double time = NA_REAL,
 
 //' @title Stratified difference in milestone survival
 //' @description Obtains the stratified Kaplan-Meier estimate of 
-//'   milestone survival probabilities, difference in milestone survival
-//'   and variance of milestone survival difference at given calendar times
-//'   and milestone time.
+//'   milestone survival probabilities and difference in milestone 
+//'   survival at given calendar times and milestone time.
 //'
 //' @param time A vector of calendar times at which to calculate the 
 //'   milestone survival.
@@ -1520,7 +1519,7 @@ DataFrame kmest1(const double time = NA_REAL,
 //' 
 //' @return A data frame of the number of subjects enrolled, stratified 
 //'   estimate of milestone survival for each treatment group, 
-//'   difference in milestone survival, the associated variance, 
+//'   difference in milestone survival, the associated variances, 
 //'   and the Z test statistic at the specified calendar times.
 //'
 //' @examples
@@ -1695,8 +1694,8 @@ DataFrame kmest(const NumericVector& time = NA_REAL,
   DataFrame df;
   
   NumericVector calTime(k), mileTime(k), subjects(k), 
-                surv1(k), surv2(k), survdiff(k), 
-                vsurvdiff(k), survdiffZ(k);
+                surv1(k), surv2(k), vsurv1(k), vsurv2(k), 
+                survdiff(k), vsurvdiff(k), survdiffZ(k);
 
   for (int j=0; j<k; j++) {
     df = kmest1(time[j], milestone, allocationRatioPlanned,
@@ -1711,6 +1710,8 @@ DataFrame kmest(const NumericVector& time = NA_REAL,
     mileTime[j] = max(NumericVector(df[3]));
     surv1[j] = sum(stratumFraction*NumericVector(df[4]));
     surv2[j] = sum(stratumFraction*NumericVector(df[5]));
+    vsurv1[j] = sum(stratumFraction*stratumFraction*NumericVector(df[6]));
+    vsurv2[j] = sum(stratumFraction*stratumFraction*NumericVector(df[7]));
     survdiff[j] = sum(stratumFraction*NumericVector(df[8]));
     vsurvdiff[j] = sum(stratumFraction*stratumFraction*NumericVector(df[9]));
     survdiffZ[j] = survdiff[j]/sqrt(vsurvdiff[j]);
@@ -1722,6 +1723,8 @@ DataFrame kmest(const NumericVector& time = NA_REAL,
                          _["milestone"] = mileTime,
                          _["surv1"] = surv1,
                          _["surv2"] = surv2,
+                         _["vsurv1"] = vsurv1,
+                         _["vsurv2"] = vsurv2,
                          _["survdiff"] = survdiff,
                          _["vsurvdiff"] = vsurvdiff,
                          _["survdiffZ"] = survdiffZ);
