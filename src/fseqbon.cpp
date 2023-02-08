@@ -725,7 +725,7 @@ NumericVector repeatedPValuecpp(
   NumericMatrix st(B, k);
   
   if (spendingTime.nrow()==1 && spendingTime.ncol()==1 
-        && R_isnancpp(spendingTime(0,0))) {
+        && spendingTime(0,0)==0) {
     st.fill(NA_REAL);
   } else if (spendingTime.ncol() != k) {
     stop("Invalid number of columns for spendingTime");
@@ -967,8 +967,9 @@ IntegerVector fseqboncpp(
   }
   
   
+  
   if (spendingTime.nrow()==1 && spendingTime.ncol()==1 
-        && R_isnancpp(spendingTime(0,0))) {
+        && spendingTime(0,0)==0) {
     st.fill(NA_REAL);
   } else if (spendingTime.ncol() != k1) {
     stop("spendingTime and p must have the same number of columns");
