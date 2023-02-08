@@ -4167,8 +4167,7 @@ List lrsamplesize(const double beta = 0.2,
               piecewiseSurvivalTime, stratumFraction, lambda1, lambda2,
               gamma1, gamma2, accrualDuration, followupTime,
               fixedFollowup, rho1, rho2, numSubintervals, 
-              su, hazardRatio, spendingTime, 
-              nstrata, unknown, missingCriticalValues,
+              su, spendingTime, unknown, missingCriticalValues,
               missingFutilityBounds](double aval)->double {
                 
                 double dur1=0, dur2=0;
