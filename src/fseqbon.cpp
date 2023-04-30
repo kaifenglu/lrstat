@@ -527,7 +527,11 @@ NumericVector getBound(
   }
   
   
-  String asf = typeAlphaSpending;
+  std::string asf = typeAlphaSpending;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
   double asfpar = parameterAlphaSpending;
   
   if (asf=="user") {
@@ -545,19 +549,19 @@ NumericVector getBound(
   }
   
   
-  if (asf=="WT" && R_isnancpp(asfpar)) {
+  if (asf=="wt" && R_isnancpp(asfpar)) {
     stop("Missing parameter for WT");
   }
   
-  if (asf=="sfKD" && R_isnancpp(asfpar)) {
+  if (asf=="sfkd" && R_isnancpp(asfpar)) {
     stop("Missing parameter for sfKD");
   }
   
-  if (asf=="sfHSD" && R_isnancpp(asfpar)) {
+  if (asf=="sfhsd" && R_isnancpp(asfpar)) {
     stop("Missing parameter for sfHSD");
   }
   
-  if (asf=="sfKD" && asfpar <= 0) {
+  if (asf=="sfkd" && asfpar <= 0) {
     stop ("asfpar must be positive for sfKD");
   }
   
@@ -571,11 +575,11 @@ NumericVector getBound(
       criticalValues[i] = 6.0;
     }
     criticalValues[k-1] = R::qnorm(1-alpha, 0, 1, 1, 0);
-  } else if (asf == "OF" || asf == "P" || asf == "WT") {
+  } else if (asf == "of" || asf == "p" || asf == "wt") {
     double Delta;
-    if (asf == "OF") {
+    if (asf == "of") {
       Delta = 0;
-    } else if (asf == "P") {
+    } else if (asf == "p") {
       Delta = 0.5;
     } else {
       Delta = asfpar;
@@ -597,8 +601,8 @@ NumericVector getBound(
     for (int i=0; i<k; i++) {
       criticalValues[i] = cwt*pow(t[i], Delta-0.5);
     }
-  } else if (asf == "sfOF" || asf == "sfP" || asf == "sfKD" ||
-    asf == "sfHSD" || asf == "user") {
+  } else if (asf == "sfof" || asf == "sfp" || asf == "sfkd" ||
+    asf == "sfhsd" || asf == "user") {
     
     // stage 1
     double cumAlphaSpent;
@@ -668,28 +672,32 @@ NumericVector repeatedPValuecpp(
     stop("kMax must be a positive integer");
   }
   
-  String asf = typeAlphaSpending;
+  std::string asf = typeAlphaSpending;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
   double asfpar = parameterAlphaSpending;
   
-  if (!(asf=="OF" || asf=="P" || asf=="WT" || 
-      asf=="sfOF" || asf=="sfP" || asf=="sfKD" ||
-      asf=="sfHSD" || asf=="none")) {
+  if (!(asf=="of" || asf=="p" || asf=="wt" || 
+      asf=="sfof" || asf=="sfp" || asf=="sfkd" ||
+      asf=="sfhsd" || asf=="none")) {
     stop("Invalid type for typeAlphaSpending");
   }
   
-  if (asf=="WT" && R_isnancpp(asfpar)) {
+  if (asf=="wt" && R_isnancpp(asfpar)) {
     stop("Missing parameter for WT");
   }
   
-  if (asf=="sfKD" && R_isnancpp(asfpar)) {
+  if (asf=="sfkd" && R_isnancpp(asfpar)) {
     stop("Missing parameter for sfKD");
   }
   
-  if (asf=="sfHSD" && R_isnancpp(asfpar)) {
+  if (asf=="sfhsd" && R_isnancpp(asfpar)) {
     stop("Missing parameter for sfHSD");
   }
   
-  if (asf=="sfKD" && asfpar <= 0) {
+  if (asf=="sfkd" && asfpar <= 0) {
     stop ("asfpar must be positive for sfKD");
   }
   
@@ -833,7 +841,11 @@ IntegerVector fseqboncpp(
     const NumericMatrix& spendingTime = NA_REAL) {
   
   // alias (shorter variable names)
-  StringVector asf = typeAlphaSpending;
+  std::string asf = typeAlphaSpending;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
   NumericVector asfpar = clone(parameterAlphaSpending);
   LogicalMatrix incid = incidenceMatrix;
   NumericVector maxinfo = maxInformation;
@@ -908,25 +920,25 @@ IntegerVector fseqboncpp(
   }
   
   for (i=0; i<m; i++) {
-    if (!(asf(i)=="OF" || asf(i)=="P" || asf(i)=="WT" || 
-        asf(i)=="sfOF" || asf(i)=="sfP" || asf(i)=="sfKD" || 
-        asf(i)=="sfHSD" || asf(i)=="none")) {
+    if (!(asf(i)=="of" || asf(i)=="p" || asf(i)=="wt" || 
+        asf(i)=="sfof" || asf(i)=="sfp" || asf(i)=="sfkd" || 
+        asf(i)=="sfhsd" || asf(i)=="none")) {
       stop("Invalid type for typeAlphaSpending");
     }
     
-    if (asf(i)=="WT" && R_isnancpp(asfpar(i))) {
+    if (asf(i)=="wt" && R_isnancpp(asfpar(i))) {
       stop("Missing parameter for WT");
     }
     
-    if (asf(i)=="sfKD" && R_isnancpp(asfpar(i))) {
+    if (asf(i)=="sfkd" && R_isnancpp(asfpar(i))) {
       stop("Missing parameter for sfKD");
     }
     
-    if (asf(i)=="sfHSD" && R_isnancpp(asfpar(i))) {
+    if (asf(i)=="sfhsd" && R_isnancpp(asfpar(i))) {
       stop("Missing parameter for sfHSD");
     }
     
-    if (asf(i)=="sfKD" && asfpar(i) <= 0) {
+    if (asf(i)=="sfkd" && asfpar(i) <= 0) {
       stop ("asfpar must be positive for sfKD");
     }
   }
