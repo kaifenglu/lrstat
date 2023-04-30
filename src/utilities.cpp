@@ -169,13 +169,18 @@ double errorSpentcpp(const double t, const double error,
     stop("t must be a number between 0 and 1");
   }
   
+  std::string asf = sf;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
   double aval;
-  if (sf == "sfP") {
+  if (asf == "sfp") {
     aval = error*log(1 + (exp(1) - 1)*t);
-  } else if (sf == "sfOF") {
+  } else if (asf == "sfof") {
     aval = R::qnorm(1-error/2, 0, 1, 1, 0);
     aval = 2*(1 - R::pnorm(aval/sqrt(t), 0, 1, 1, 0));
-  } else if (sf == "sfKD") {
+  } else if (asf == "sfkd") {
     if (R_isnancpp(sfpar)) {
       stop("Parameter sfpar is missing for sfKD");
     } else if (sfpar <= 0) {
@@ -183,7 +188,7 @@ double errorSpentcpp(const double t, const double error,
     } else {
       aval = error*pow(t, sfpar);
     }
-  } else if (sf == "sfHSD") {
+  } else if (asf == "sfhsd") {
     if (R_isnancpp(sfpar)) {
       stop("Parameter sfpar is missing for sfHSD");
     } else if (sfpar == 0) {
