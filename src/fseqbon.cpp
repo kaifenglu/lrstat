@@ -841,11 +841,7 @@ IntegerVector fseqboncpp(
     const NumericMatrix& spendingTime = NA_REAL) {
   
   // alias (shorter variable names)
-  std::string asf = typeAlphaSpending;
-  std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
-  });
-  
+  StringVector asf = typeAlphaSpending;
   NumericVector asfpar = clone(parameterAlphaSpending);
   LogicalMatrix incid = incidenceMatrix;
   NumericVector maxinfo = maxInformation;
@@ -920,25 +916,30 @@ IntegerVector fseqboncpp(
   }
   
   for (i=0; i<m; i++) {
-    if (!(asf(i)=="of" || asf(i)=="p" || asf(i)=="wt" || 
-        asf(i)=="sfof" || asf(i)=="sfp" || asf(i)=="sfkd" || 
-        asf(i)=="sfhsd" || asf(i)=="none")) {
+    std::string asfi = Rcpp::as<std::string>(asf(i));
+    std::for_each(asfi.begin(), asfi.end(), [](char & c) {
+      c = std::tolower(c);
+    });
+    
+    if (!(asfi=="of" || asfi=="p" || asfi=="wt" || 
+        asfi=="sfof" || asfi=="sfp" || asfi=="sfkd" || 
+        asfi=="sfhsd" || asfi=="none")) {
       stop("Invalid type for typeAlphaSpending");
     }
     
-    if (asf(i)=="wt" && R_isnancpp(asfpar(i))) {
+    if (asfi=="wt" && R_isnancpp(asfpar(i))) {
       stop("Missing parameter for WT");
     }
     
-    if (asf(i)=="sfkd" && R_isnancpp(asfpar(i))) {
+    if (asfi=="sfkd" && R_isnancpp(asfpar(i))) {
       stop("Missing parameter for sfKD");
     }
     
-    if (asf(i)=="sfhsd" && R_isnancpp(asfpar(i))) {
+    if (asfi=="sfhsd" && R_isnancpp(asfpar(i))) {
       stop("Missing parameter for sfHSD");
     }
     
-    if (asf(i)=="sfkd" && asfpar(i) <= 0) {
+    if (asfi=="sfkd" && asfpar(i) <= 0) {
       stop ("asfpar must be positive for sfKD");
     }
   }
