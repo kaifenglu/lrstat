@@ -1,3 +1,7 @@
+# lrstat 0.1.12
+
+- use tolower to make typeAlphaSpending and typeBetaSpending into case insensitive inputs.
+
 # lrstat 0.1.11
 
 - Add Kaplan-Meier estimate of milestone survival, Greendwood variance estimate, difference in milestone survival, and Z test statistic for survival difference.
