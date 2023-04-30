@@ -2001,7 +2001,11 @@ NumericVector getCriticalValues(
   }
   
   
-  String asf = typeAlphaSpending;
+  std::string asf = typeAlphaSpending;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
   double asfpar = parameterAlphaSpending;
   
   if (asf == "none") {
@@ -2009,11 +2013,11 @@ NumericVector getCriticalValues(
       criticalValues[i] = 6.0;
     }
     criticalValues[kMax-1] = R::qnorm(1-alpha, 0, 1, 1, 0);
-  } else if (asf == "OF" || asf == "P" || asf == "WT") {
+  } else if (asf == "of" || asf == "p" || asf == "wt") {
     double Delta;
-    if (asf == "OF") {
+    if (asf == "of") {
       Delta = 0;
-    } else if (asf == "P") {
+    } else if (asf == "p") {
       Delta = 0.5;
     } else {
       Delta = asfpar;
@@ -2038,8 +2042,8 @@ NumericVector getCriticalValues(
       criticalValues[i] = cwt*pow(t[i], Delta-0.5);
       if (!efficacyStopping[i]) criticalValues[i] = 6.0;
     }
-  } else if (asf == "sfOF" || asf == "sfP" || asf == "sfKD" ||
-    asf == "sfHSD" || asf == "user") {
+  } else if (asf == "sfof" || asf == "sfp" || asf == "sfkd" ||
+    asf == "sfhsd" || asf == "user") {
     
     // stage 1
     double cumAlphaSpent;
@@ -2291,10 +2295,18 @@ List lrpower(const int kMax = 1,
   NumericVector futilityBounds1 = clone(futilityBounds);
   NumericVector st = clone(spendingTime);
   
-  String asf = typeAlphaSpending;
-  double asfpar = parameterAlphaSpending;
+  std::string asf = typeAlphaSpending;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
   
-  String bsf = typeBetaSpending;
+  double asfpar = parameterAlphaSpending;
+
+  std::string bsf = typeBetaSpending;
+  std::for_each(bsf.begin(), bsf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
   double bsfpar = parameterBetaSpending;
   
   int nstrata = stratumFraction.size();
@@ -2354,17 +2366,17 @@ List lrpower(const int kMax = 1,
     }
   }
   
-  if (is_true(any(is_na(criticalValues))) && !(asf=="OF" || asf=="P" ||
-      asf=="WT" || asf=="sfOF" || asf=="sfP" ||
-      asf=="sfKD" || asf=="sfHSD" || asf=="user" || asf=="none")) {
+  if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
+      asf=="wt" || asf=="sfof" || asf=="sfp" ||
+      asf=="sfkd" || asf=="sfhsd" || asf=="user" || asf=="none")) {
     stop("Invalid type for alpha spending");
   }
   
-  if ((asf=="WT" || asf=="sfKD" || asf=="sfHSD") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
     stop("Missing parameter for the alpha spending function");
   }
   
-  if (asf=="sfKD" && asfpar <= 0) {
+  if (asf=="sfkd" && asfpar <= 0) {
     stop ("parameterAlphaSpending must be positive for sfKD");
   }
   
@@ -2403,16 +2415,16 @@ List lrpower(const int kMax = 1,
     }
   }
   
-  if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfOF" || bsf=="sfP" ||
-      bsf=="sfKD" || bsf=="sfHSD" || bsf=="none")) {
+  if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfof" || bsf=="sfp" ||
+      bsf=="sfkd" || bsf=="sfhsd" || bsf=="none")) {
     stop("Invalid type for beta spending");
   }
   
-  if ((bsf=="sfKD" || bsf=="sfHSD") && R_isnancpp(bsfpar)) {
+  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
     stop("Missing parameter for the beta spending function");
   }
   
-  if (bsf=="sfKD" && bsfpar <= 0) {
+  if (bsf=="sfkd" && bsfpar <= 0) {
     stop ("parameterBetaSpending must be positive for sfKD");
   }
   
@@ -2526,19 +2538,19 @@ List lrpower(const int kMax = 1,
   
   std::string su = typeOfComputation;
   std::for_each(su.begin(), su.end(), [](char & c) {
-    c = std::toupper(c);
+    c = std::tolower(c);
   });
   
-  if (su != "DIRECT" && su != "SCHOENFELD") {
+  if (su != "direct" && su != "schoenfeld") {
     stop("typeOfComputation must be direct or Schoenfeld");
   }
   
-  if (su == "SCHOENFELD" && (rho1 != 0 || rho2 != 0)) {
+  if (su == "schoenfeld" && (rho1 != 0 || rho2 != 0)) {
     stop("Schoenfeld method can only be used for conventional log-rank test");
   }
   
   double hazardRatio;
-  if (su == "SCHOENFELD") {
+  if (su == "schoenfeld") {
     NumericVector lambda1x = rep(lambda1, nsi/lambda1.size());
     NumericVector lambda2x = rep(lambda2, nsi/lambda2.size());
     NumericVector hrx = lambda1x / lambda2x;
@@ -2560,7 +2572,7 @@ List lrpower(const int kMax = 1,
   
   
   NumericVector cumAlphaSpent(kMax);
-  if (su == "DIRECT") {
+  if (su == "direct") {
     if (is_true(any(is_na(criticalValues)))) {
       criticalValues1 = getCriticalValues(
         kMax, informationRates1, efficacyStopping1,
@@ -2580,7 +2592,7 @@ List lrpower(const int kMax = 1,
       followupTime, fixedFollowup,
       rho1, rho2, numSubintervals);
     
-  } else if (su == "SCHOENFELD") {
+  } else if (su == "schoenfeld") {
     if (is_true(any(is_na(criticalValues)))) {
       criticalValues1 = getCriticalValues(
         kMax, informationRates1, efficacyStopping1,
@@ -2647,7 +2659,7 @@ List lrpower(const int kMax = 1,
   // each stage
   NumericVector theta(kMax), vscore(kMax);
   
-  if (su == "SCHOENFELD") {
+  if (su == "schoenfeld") {
     theta = rep(-log(hazardRatio/hazardRatioH0), kMax);
     double r1 = allocationRatioPlanned/(allocationRatioPlanned+1);
     vscore = r1*(1-r1)*e0;
@@ -3030,10 +3042,18 @@ List getDesign(const double beta = 0.2,
   double drift1 = drift;
   double inflationFactor;
   
-  String asf = typeAlphaSpending;
+  std::string asf = typeAlphaSpending;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
   double asfpar = parameterAlphaSpending;
   
-  String bsf = typeBetaSpending;
+  std::string bsf = typeBetaSpending;
+  std::for_each(bsf.begin(), bsf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
   double bsfpar = parameterBetaSpending;
   
   NumericVector spendingTime1 = clone(spendingTime);
@@ -3119,17 +3139,17 @@ List getDesign(const double beta = 0.2,
     }
   }
   
-  if (is_true(any(is_na(criticalValues))) && !(asf=="OF" || asf=="P" ||
-      asf=="WT" || asf=="sfOF" || asf=="sfP" ||
-      asf=="sfKD" || asf=="sfHSD" || asf=="user" || asf=="none")) {
+  if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
+      asf=="wt" || asf=="sfof" || asf=="sfp" ||
+      asf=="sfkd" || asf=="sfhsd" || asf=="user" || asf=="none")) {
     stop("Invalid type for alpha spending");
   }
   
-  if ((asf=="WT" || asf=="sfKD" || asf=="sfHSD") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
     stop("Missing parameter for the alpha spending function");
   }
   
-  if (asf=="sfKD" && asfpar <= 0) {
+  if (asf=="sfkd" && asfpar <= 0) {
     stop ("parameterAlphaSpending must be positive for sfKD");
   }
   
@@ -3170,23 +3190,23 @@ List getDesign(const double beta = 0.2,
   
 
   if (unknown == "drift") {
-    if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfOF" || bsf=="sfP" ||
-        bsf=="sfKD" || bsf=="sfHSD" || bsf=="user" || bsf=="none")) {
+    if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfof" || bsf=="sfp" ||
+        bsf=="sfkd" || bsf=="sfhsd" || bsf=="user" || bsf=="none")) {
       stop("Invalid type for beta spending");
     }
   } else {
-    if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfOF" || bsf=="sfP" ||
-        bsf=="sfKD" || bsf=="sfHSD" || bsf=="none")) {
+    if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfof" || bsf=="sfp" ||
+        bsf=="sfkd" || bsf=="sfhsd" || bsf=="none")) {
       stop("Invalid type for beta spending");
     }
   }
   
   
-  if ((bsf=="sfKD" || bsf=="sfHSD") && R_isnancpp(bsfpar)) {
+  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
     stop("Missing parameter for the beta spending function");
   }
   
-  if (bsf=="sfKD" && bsfpar <= 0) {
+  if (bsf=="sfkd" && bsfpar <= 0) {
     stop ("parameterBetaSpending must be positive for sfKD");
   }
   
@@ -3223,11 +3243,11 @@ List getDesign(const double beta = 0.2,
         criticalValues1[i] = 6.0;
       }
       criticalValues1[kMax-1] = R::qnorm(1-alpha, 0, 1, 1, 0);
-    } else if (asf == "OF" || asf == "P" || asf == "WT") {
+    } else if (asf == "of" || asf == "p" || asf == "wt") {
       double Delta;
-      if (asf == "OF") {
+      if (asf == "of") {
         Delta = 0;
-      } else if (asf == "P") {
+      } else if (asf == "p") {
         Delta = 0.5;
       } else {
         Delta = asfpar;
@@ -3252,8 +3272,8 @@ List getDesign(const double beta = 0.2,
         criticalValues1[i] = cwt*pow(t[i], Delta-0.5);
         if (!efficacyStopping1[i]) criticalValues1[i] = 6.0;
       }
-    } else if (asf == "sfOF" || asf == "sfP" || asf == "sfKD" ||
-      asf == "sfHSD" || asf == "user") {
+    } else if (asf == "sfof" || asf == "sfp" || asf == "sfkd" ||
+      asf == "sfhsd" || asf == "user") {
       
       // stage 1
       double cumAlphaSpent;
@@ -3771,10 +3791,18 @@ List lrsamplesize(const double beta = 0.2,
   NumericVector criticalValues1 = clone(criticalValues);
   NumericVector futilityBounds1 = clone(futilityBounds);
   
-  String asf = typeAlphaSpending;
+  std::string asf = typeAlphaSpending;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
   double asfpar = parameterAlphaSpending;
   
-  String bsf = typeBetaSpending;
+  std::string bsf = typeBetaSpending;
+  std::for_each(bsf.begin(), bsf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
   double bsfpar = parameterBetaSpending;
   
   int nstrata = stratumFraction.size();
@@ -3842,17 +3870,17 @@ List lrsamplesize(const double beta = 0.2,
     }
   }
   
-  if (is_true(any(is_na(criticalValues))) && !(asf=="OF" || asf=="P" ||
-      asf=="WT" || asf=="sfOF" || asf=="sfP" ||
-      asf=="sfKD" || asf=="sfHSD" || asf=="user" || asf=="none")) {
+  if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
+      asf=="wt" || asf=="sfof" || asf=="sfp" ||
+      asf=="sfkd" || asf=="sfhsd" || asf=="user" || asf=="none")) {
     stop("Invalid type for alpha spending");
   }
   
-  if ((asf=="WT" || asf=="sfKD" || asf=="sfHSD") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
     stop("Missing parameter for the alpha spending function");
   }
   
-  if (asf=="sfKD" && asfpar <= 0) {
+  if (asf=="sfkd" && asfpar <= 0) {
     stop ("parameterAlphaSpending must be positive for sfKD");
   }
   
@@ -3891,16 +3919,16 @@ List lrsamplesize(const double beta = 0.2,
     }
   }
   
-  if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfOF" || bsf=="sfP" ||
-      bsf=="sfKD" || bsf=="sfHSD" || bsf=="user" || bsf=="none")) {
+  if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfof" || bsf=="sfp" ||
+      bsf=="sfkd" || bsf=="sfhsd" || bsf=="user" || bsf=="none")) {
     stop("Invalid type for beta spending");
   }
   
-  if ((bsf=="sfKD" || bsf=="sfHSD") && R_isnancpp(bsfpar)) {
+  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
     stop("Missing parameter for the beta spending function");
   }
   
-  if (bsf=="sfKD" && bsfpar <= 0) {
+  if (bsf=="sfkd" && bsfpar <= 0) {
     stop ("parameterBetaSpending must be positive for sfKD");
   }
   
@@ -4024,19 +4052,19 @@ List lrsamplesize(const double beta = 0.2,
   
   std::string su = typeOfComputation;
   std::for_each(su.begin(), su.end(), [](char & c) {
-    c = std::toupper(c);
+    c = std::tolower(c);
   });
   
-  if (su != "DIRECT" && su != "SCHOENFELD") {
+  if (su != "direct" && su != "schoenfeld") {
     stop("typeOfComputation must be direct or Schoenfeld");
   }
   
-  if (su == "SCHOENFELD" && (rho1 != 0 || rho2 != 0)) {
+  if (su == "schoenfeld" && (rho1 != 0 || rho2 != 0)) {
     stop("Schoenfeld method can only be used for conventional log-rank test");
   }
   
   double hazardRatio = 1;
-  if (su == "SCHOENFELD") {
+  if (su == "schoenfeld") {
     NumericVector lambda1x = rep(lambda1, nsi/lambda1.size());
     NumericVector lambda2x = rep(lambda2, nsi/lambda2.size());
     NumericVector hrx = lambda1x / lambda2x;
@@ -4100,7 +4128,7 @@ List lrsamplesize(const double beta = 0.2,
     }
   }
   
-  if (su == "SCHOENFELD") {
+  if (su == "schoenfeld") {
     List design = getDesign(beta, NA_REAL, kMax, informationRates1, 
                             efficacyStopping1, 
                             futilityStopping1, criticalValues1, alpha, 
