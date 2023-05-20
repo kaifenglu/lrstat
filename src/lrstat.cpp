@@ -4402,7 +4402,7 @@ List lrsamplesize(const double beta = 0.2,
                           piecewiseSurvivalTime, stratumFraction,
                           lambda1, lambda2, gamma1, gamma2,
                           accrualDuration, followupTime, fixedFollowup, 
-                          0, 0, numSubintervals, 1);
+                          0, 0, 1, 1);
     
     // round up total number of subjects and number of events
     double n = sum(NumericVector(lr[1]));
@@ -4437,7 +4437,7 @@ List lrsamplesize(const double beta = 0.2,
                   return ns[0] - n;
                 };
       
-      double aval = brent(h, 1, 1.1, 0.0001);
+      double aval = brent(h, 1, 1.01, 1e-6);
       accrualIntensity1 = aval*accrualIntensity1;
     } else {
       auto h = [accrualDuration, accrualTime, accrualIntensity1, 
@@ -4449,20 +4449,43 @@ List lrsamplesize(const double beta = 0.2,
                   return ns[0] - n;
                 };
       
-      double aval = brent(h, 1, 1.1, 0.0001);
+      double aval = brent(h, 1, 1.01, 1e-6);
       accrualDuration = aval*accrualDuration;
     }
     
     // adjust follow-up time to obtain int number of events
     NumericVector d(1);
     d[0] = D;
-    NumericVector t = caltime(d, allocationRatioPlanned, 
-                              accrualTime, accrualIntensity1, 
-                              piecewiseSurvivalTime, stratumFraction,
-                              lambda1, lambda2, gamma1, gamma2,
-                              accrualDuration, 10000,
-                              fixedFollowup);
-    followupTime = t[0] - accrualDuration;
+    
+    if (!fixedFollowup) {
+      NumericVector t = caltime(d, allocationRatioPlanned, 
+                                accrualTime, accrualIntensity1, 
+                                piecewiseSurvivalTime, stratumFraction,
+                                lambda1, lambda2, gamma1, gamma2,
+                                accrualDuration, 10000,
+                                fixedFollowup);
+      
+      followupTime = t[0] - accrualDuration;
+    } else {
+      auto h = [hazardRatioH0, allocationRatioPlanned, accrualTime, 
+                accrualIntensity1, piecewiseSurvivalTime, stratumFraction,
+                lambda1, lambda2, gamma1, gamma2, accrualDuration, 
+                followupTime, fixedFollowup, D](double aval)->double {
+                  NumericVector u(1);
+                  u[0] = accrualDuration + aval*followupTime;
+                  DataFrame lr = lrstat(
+                    u, hazardRatioH0, allocationRatioPlanned, 
+                    accrualTime, accrualIntensity1, 
+                    piecewiseSurvivalTime, stratumFraction,
+                    lambda1, lambda2, gamma1, gamma2,
+                    accrualDuration, aval*followupTime, 
+                    fixedFollowup, 0, 0, 1, 1);     
+                  return sum(NumericVector(lr[2])) - D;
+                };
+      
+      double aval = brent(h, 0.99, 1.01, 1e-6);
+      followupTime = aval*followupTime;
+    }
     
     // recalculate boundaries
     result = lrpower(kMax, informationRates1,
