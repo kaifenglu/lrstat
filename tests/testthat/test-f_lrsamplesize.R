@@ -16,7 +16,7 @@ test_that("accrual duration with specified critical values, unweighted", {
                    rho1 = 0, rho2 = 0,
                    numSubintervals = 300)
   
-  expect_equal(round(l$overallResults$accrualDuration, 4), 23.6849)
+  expect_equal(round(l$resultsUnderH1$overallResults$accrualDuration, 4), 23.6849)
 })
 
 test_that("accrual duration with specified critical values, weighted", {
@@ -37,7 +37,7 @@ test_that("accrual duration with specified critical values, weighted", {
                    rho1 = 0, rho2 = 1,
                    numSubintervals = 300)
   
-  expect_equal(round(l$overallResults$accrualDuration, 4), 16.7737)
+  expect_equal(round(l$resultsUnderH1$overallResults$accrualDuration, 4), 16.7737)
 })
 
 test_that("accrual duration with alpha-spending, weighted", {
@@ -59,7 +59,7 @@ test_that("accrual duration with alpha-spending, weighted", {
                    rho1 = 0, rho2 = 1,
                    numSubintervals = 300)
   
-  expect_equal(round(l$overallResults$accrualDuration, 4), 17.1406)
+  expect_equal(round(l$resultsUnderH1$overallResults$accrualDuration, 4), 17.1406)
 })
 
 
@@ -84,7 +84,7 @@ test_that("accrual duration with beta-spending, weighted", {
                    rho1 = 0, rho2 = 1,
                    numSubintervals = 300)
   
-  expect_equal(round(l$overallResults$accrualDuration, 4), 18.0483)
+  expect_equal(round(l$resultsUnderH1$overallResults$accrualDuration, 4), 18.0483)
 })
 
 
@@ -106,7 +106,7 @@ test_that("accrual duration with user-specified alpha and beta spending", {
                    rho1 = 0, rho2 = 0,
                    numSubintervals = 300)
   
-  expect_equal(round(l$overallResults$accrualDuration, 4), 26.2029)
+  expect_equal(round(l$resultsUnderH1$overallResults$accrualDuration, 4), 26.2029)
 })
 
 
@@ -128,7 +128,7 @@ test_that("follow-up duration with specified critical values, unweighted", {
                    rho1 = 0, rho2 = 0,
                    numSubintervals = 300)
   
-  expect_equal(round(l$overallResults$followupTime, 4), 21.7556)
+  expect_equal(round(l$resultsUnderH1$overallResults$followupTime, 4), 21.7556)
 })
 
 test_that("follow-up duration with specified critical values, weighted", {
@@ -149,7 +149,7 @@ test_that("follow-up duration with specified critical values, weighted", {
                    rho1 = 0, rho2 = 1,
                    numSubintervals = 300)
   
-  expect_equal(round(l$overallResults$followupTime, 4), 9.2239)
+  expect_equal(round(l$resultsUnderH1$overallResults$followupTime, 4), 9.2239)
 })
 
 
@@ -173,7 +173,7 @@ test_that("follow-up duration with alpha-spending, weighted", {
                    rho1 = 0, rho2 = 1,
                    numSubintervals = 300)
   
-  expect_equal(round(l$overallResults$followupTime, 4), 9.5753)
+  expect_equal(round(l$resultsUnderH1$overallResults$followupTime, 4), 9.5753)
 })
 
 test_that("follow-up duration with alpha and beta spending, weighted", {
@@ -197,7 +197,7 @@ test_that("follow-up duration with alpha and beta spending, weighted", {
                    rho1 = 0, rho2 = 1,
                    numSubintervals = 300)
   
-  expect_equal(round(l$overallResults$followupTime, 4), 11.9385)
+  expect_equal(round(l$resultsUnderH1$overallResults$followupTime, 4), 11.9385)
 })
 
 
