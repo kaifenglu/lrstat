@@ -34,7 +34,7 @@ lrsamplesize(beta = 0.2, kMax = 2,
              lambda1 = c(log(2)/13, 0.58*log(2)/13),
              gamma1 = -log(1-0.05)/12, 
              gamma2 = -log(1-0.05)/12,
-             accrualDuration = 22, followupTime = NA)
+             accrualDuration = 22, followupTime = NA)$resultsUnderH1
 ```
 
 Thus we need to observe 315 events with 468 subjects, and the maximum study duration is 41.5 months with an expected study duration of 37 months.

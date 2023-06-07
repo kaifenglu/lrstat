@@ -82,7 +82,7 @@ The following code calculates the sample size for the PFS A/C comparison. Of not
   accrualTime = c(0,8), accrualIntensity = c(10,28)*3/5, 
   lambda1 = log(2)/22, lambda2 = log(2)/12, 
   accrualDuration = 30.143, followupTime = NA, 
-  typeOfComputation = "Schoenfeld"))
+  typeOfComputation = "Schoenfeld")$resultsUnderH1)
 
 ```
 
@@ -117,7 +117,7 @@ Look 3 is planned to have 90% power for the OS A/C comparison at 1-sided alpha o
     accrualIntensity = c(10,28)*3/5, 
     lambda1 = log(2)/50, lambda2 = log(2)/30, 
     accrualDuration = 30.143, followupTime = NA, 
-    typeOfComputation = "Schoenfeld")
+    typeOfComputation = "Schoenfeld")$resultsUnderH1
   lr$overallResults$numberOfEvents - d}, 
   c(138,300))$root) 
 ```
@@ -134,7 +134,7 @@ In summary, the OS A/C power calculation is as follows:
   accrualTime = c(0,8), accrualIntensity = c(10,28)*3/5, 
   lambda1 = log(2)/50, lambda2 = log(2)/30,
   accrualDuration = 30.143, followupTime = NA, 
-  typeOfComputation = "Schoenfeld"))
+  typeOfComputation = "Schoenfeld")$resultsUnderH1)
 ```
 
 
