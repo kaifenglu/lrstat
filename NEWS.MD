@@ -1,3 +1,16 @@
+# lrstat 0.1.14
+
+- add the getAccrualDuration function to obtain the accrual duration to enroll the target number of subjects.
+- add the getDuration function to obtain a range of accrual duration to reach the target number of events.
+- allow studyDuration < accrualDuration + followupTime for fixed follow-up
+- update the handling of rounding for fixed follow-up design
+
+# lrstat 0.1.13
+
+- add a rounding argument to lrsamplesize to round up the total sample size and events at each stage.
+- add by treatment counts of events, counts, and subjects to lrpower output.
+- add results under H0 to lrsamplesize output.
+
 # lrstat 0.1.12
 
 - use tolower to make typeAlphaSpending and typeBetaSpending into case insensitive inputs.
