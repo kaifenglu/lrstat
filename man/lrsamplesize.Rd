@@ -38,7 +38,8 @@ lrsamplesize(
   estimateHazardRatio = 1L,
   typeOfComputation = "direct",
   interval = as.numeric(c(0.001, 240)),
-  spendingTime = NA_real_
+  spendingTime = NA_real_,
+  rounding = 1L
 )
 }
 \arguments{
@@ -156,12 +157,16 @@ or the Schoenfeld method. Defaults to "direct". Can use "Schoenfeld"
 under proportional hazards and conventional log-rank test.}
 
 \item{interval}{The interval to search for the solution of
-accrualDuration or followupDuration. Defaults to \code{c(0.001, 240)}.
+accrualDuration, followupDuration, or the proportionality constant 
+of accrualIntensity. Defaults to \code{c(0.001, 240)}.
 Adjustment may be needed for non-monotone relationship with study power.}
 
 \item{spendingTime}{A vector of length \code{kMax} for the error spending 
 time at each analysis. Defaults to missing, in which case, it is the 
 same as \code{informationRates}.}
+
+\item{rounding}{Whether to round up sample size and events. 
+Defaults to 1 for sample size rounding.}
 }
 \value{
 A list of S3 class \code{lrpower}.

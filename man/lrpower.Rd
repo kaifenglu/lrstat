@@ -35,7 +35,8 @@ lrpower(
   numSubintervals = 300L,
   estimateHazardRatio = 1L,
   typeOfComputation = "direct",
-  spendingTime = NA_real_
+  spendingTime = NA_real_,
+  studyDuration = NA_real_
 )
 }
 \arguments{
@@ -149,6 +150,12 @@ under proportional hazards and conventional log-rank test.}
 \item{spendingTime}{A vector of length \code{kMax} for the error spending 
 time at each analysis. Defaults to missing, in which case, it is the 
 same as \code{informationRates}.}
+
+\item{studyDuration}{Study duration for fixed follow-up design. 
+Defaults to missing, which is to be replaced with the sum of 
+\code{accrualDuration} and \code{followupTime}. If provided, 
+the value is allowed to be less than the sum of \code{accrualDuration} 
+and \code{followupTime}.}
 }
 \value{
 A list of S3 class \code{lrpower} with 3 components:
