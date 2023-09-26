@@ -94,5 +94,5 @@ fseqbon(
 \references{
 Willi Maurer and Frank Bretz. Multiple testing in group sequential
 trials using graphical approaches. Statistics in Biopharmaceutical 
-Research. 2013;5:311-320. \doi{10.1080/19466315.2013.807748}
+Research. 2013; 5:311-320.
 }

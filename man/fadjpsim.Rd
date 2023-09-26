@@ -37,8 +37,8 @@ fadjpsim(wgtmat, pvalues, family)
 Frank Bretz, Martin Posch, Ekkehard Glimm, Florian Klinglmueller, 
 Willi Maurer, and Kornelius Rohmeyer. Graphical approach for multiple
 comparison procedures using weighted Bonferroni, Simes, or 
-parameter tests. Biometrical Journal. 2011;53:894-913.
+parameter tests. Biometrical Journal. 2011; 53:894-913.
 
 Kaifeng Lu. Graphical approaches using a Bonferroni mixture of weighted 
-Simes tests. Statistics in Medicine. 2016;35:4041-4055.
+Simes tests. Statistics in Medicine. 2016; 35:4041-4055.
 }
