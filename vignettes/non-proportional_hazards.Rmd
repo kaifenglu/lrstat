@@ -37,7 +37,7 @@ lrsamplesize(beta = 0.2, kMax = 2,
              accrualDuration = 22, followupTime = NA)$resultsUnderH1
 ```
 
-Thus we need to observe 315 events with 468 subjects, and the maximum study duration is 41.5 months with an expected study duration of 37 months.
+Thus we need to observe 316 events with 468 subjects, and the maximum study duration is 41.7 months with an expected study duration of 37 months.
 
 To verify this requirement, we resort to the lrsim function.
 ```{r}
@@ -50,7 +50,7 @@ lrsim(kMax = 2, criticalValues = c(2.250, 2.025),
       gamma1 = -log(1-0.05)/12, 
       gamma2 = -log(1-0.05)/12,
       accrualDuration = 22,
-      plannedEvents = c(252, 315), 
+      plannedEvents = c(253, 316), 
       maxNumberOfIterations = 10000, seed = 314159)
 ```
 

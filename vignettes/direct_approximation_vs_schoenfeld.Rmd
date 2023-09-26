@@ -40,7 +40,7 @@ hazardRatio = log(1-0.2)/log(1-0.4)
 pnorm(abs(log(hazardRatio))*sqrt(40/4) - qnorm(0.975))
 ```
 
-To see which method yields a more accurate power estimate, we run a lrsim function, which reports a power of 71.2% with 10000 replications. 
+To see which method yields a more accurate power estimate, we run a lrsim function, which reports a power of 72.2% with 10000 replications. 
 ```{r}
 lrsim(kMax = 1, criticalValues = 1.96, 
       accrualIntensity = 200/12, 

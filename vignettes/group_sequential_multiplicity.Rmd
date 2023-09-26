@@ -86,7 +86,7 @@ The following code calculates the sample size for the PFS A/C comparison. Of not
 
 ```
 
-It can be seen that Look 1 and Look 2 are expected to take place at months 33.4 and 41.5, respectively, with the target number of events for Arm A and Arm C combined of 185 and 247 at the two looks, respectively.
+It can be seen that Look 1 and Look 2 are expected to take place at months 33.4 and 41.5, respectively, with the target number of events for Arm A and Arm C combined of 186 and 248 at the two looks, respectively.
 
 We can now calculate the expected number of OS events for Arm A and Arm C combined at Look 1 and Look 2, respectively.
 
@@ -106,7 +106,7 @@ Look 3 is planned to have 90% power for the OS A/C comparison at 1-sided alpha o
 
 ```{r required number of OS events at look 3 for 90% power}
 
-(d_os <- uniroot(function(d) {
+(d_os <- ceiling(uniroot(function(d) {
   lr <- lrsamplesize(
     beta = 0.1, kMax = 3, 
     informationRates = c(lr2a$nevents, d)/d,
@@ -117,28 +117,39 @@ Look 3 is planned to have 90% power for the OS A/C comparison at 1-sided alpha o
     accrualIntensity = c(10,28)*3/5, 
     lambda1 = log(2)/50, lambda2 = log(2)/30, 
     accrualDuration = 30.143, followupTime = NA, 
-    typeOfComputation = "Schoenfeld")$resultsUnderH1
+    typeOfComputation = "Schoenfeld",
+    rounding = 0)$resultsUnderH1
   lr$overallResults$numberOfEvents - d}, 
-  c(138,300))$root) 
+  c(137,300))$root))
+
+(studyDuration = caltime(
+  nevents = d_os, 
+  allocationRatioPlanned = 2, 
+  accrualTime = c(0,8), 
+  accrualIntensity = c(10,28)*3/5, 
+  lambda1 = log(2)/50, lambda2 = log(2)/30,
+  accrualDuration = 30.143, followupTime = 1000))
+
 ```
 
 In summary, the OS A/C power calculation is as follows:
 
 ```{r OS sample size}
-(lr2 <- lrsamplesize(
-  beta = 0.1, kMax = 3, 
+(lr2 <- lrpower(
+  kMax = 3, 
   informationRates = c(lr2a$nevents, d_os)/d_os, 
   alpha = 0.020, typeAlphaSpending = "sfHSD", 
   parameterAlphaSpending = -4, 
   allocationRatioPlanned = 2, 
-  accrualTime = c(0,8), accrualIntensity = c(10,28)*3/5, 
+  accrualTime = c(0,8), 
+  accrualIntensity = c(10,28)*3/5, 
   lambda1 = log(2)/50, lambda2 = log(2)/30,
-  accrualDuration = 30.143, followupTime = NA, 
-  typeOfComputation = "Schoenfeld")$resultsUnderH1)
+  accrualDuration = 30.143, followupTime = 25.586, 
+  typeOfComputation = "Schoenfeld"))
 ```
 
 
-Therefore, Look 3 is expected to take place at month 55.5. Based on the timing of the three looks, we obtain the expected number of events for the other four comparisons:
+Therefore, Look 3 is expected to take place at month 55.7. Based on the timing of the three looks, we obtain the expected number of events for the other four comparisons:
 
 ```{r expected number of events for other comparisons}
 
@@ -147,7 +158,7 @@ Therefore, Look 3 is expected to take place at month 55.5. Based on the timing o
   allocationRatioPlanned = 2,
   accrualTime = c(0,8), accrualIntensity = c(10,28)*3/5, 
   lambda1 = log(2)/17, lambda2 = log(2)/12,
-  accrualDuration = 30.143, followupTime = 100,
+  accrualDuration = 30.143, followupTime = 1000,
   predictEventOnly = 1))
 
 
@@ -156,7 +167,7 @@ Therefore, Look 3 is expected to take place at month 55.5. Based on the timing o
   allocationRatioPlanned = 2,
   accrualTime = c(0,8), accrualIntensity = c(10,28)*3/5, 
   lambda1 = log(2)/40, lambda2 = log(2)/30,
-  accrualDuration = 30.143, followupTime = 100,
+  accrualDuration = 30.143, followupTime = 1000,
   predictEventOnly = 1))
 
 
@@ -165,7 +176,7 @@ Therefore, Look 3 is expected to take place at month 55.5. Based on the timing o
   allocationRatioPlanned = 1,
   accrualTime = c(0,8), accrualIntensity = c(10,28)*4/5, 
   lambda1 = log(2)/22, lambda2 = log(2)/17,
-  accrualDuration = 30.143, followupTime = 100,
+  accrualDuration = 30.143, followupTime = 1000,
   predictEventOnly = 1))
 
 
@@ -174,7 +185,7 @@ Therefore, Look 3 is expected to take place at month 55.5. Based on the timing o
   allocationRatioPlanned = 1,
   accrualTime = c(0,8), accrualIntensity = c(10,28)*4/5, 
   lambda1 = log(2)/50, lambda2 = log(2)/40,
-  accrualDuration = 30.143, followupTime = 100,
+  accrualDuration = 30.143, followupTime = 1000,
   predictEventOnly = 1))
 
 
@@ -184,7 +195,7 @@ The power calculation for PFS A/C and OS A/C assumes no alpha recycling between 
 
 ## Simulation and empirical power
 
-First we simulate 1000 trials, with the first 2 looks planned at 185 and 247 events for endpoint 1 and the final look planned at 195 events for endpoint 2, i.e., kMaxe1 = 2 and plannedEvents = c(185, 247, 195).
+First we simulate 500 trials, with the first 2 looks planned at 186 and 248 events for endpoint 1 and the final look planned at 196 events for endpoint 2, i.e., kMaxe1 = 2 and plannedEvents = c(186, 248, 196).
 
 ```{r simulation}
 
@@ -203,8 +214,8 @@ sim1 = lrsim2e3a(
   lambda2e2 = log(2)/40,
   lambda3e2 = log(2)/30,
   accrualDuration = 30.143,
-  plannedEvents = c(185, 247, 195),
-  maxNumberOfIterations = 1000,
+  plannedEvents = c(186, 248, 196),
+  maxNumberOfIterations = 500,
   maxNumberOfRawDatasetsPerStage = 1,
   seed = 314159)
 ```
@@ -277,11 +288,11 @@ rejStage = fseqbon(
   incidenceMatrix = matrix(
     c(1,1,0, 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1), 
     nrow=6, ncol=3, byrow=TRUE),
-  maxInformation = c(247, 195, 341, 215, 411, 248),
-  p = matrix(dfp$p, 6000, 3, byrow=TRUE),
-  information = matrix(dfinfo$events, 6000, 3, byrow=TRUE))
+  maxInformation = c(248, 196, 342, 216, 413, 249),
+  p = matrix(dfp$p, 3000, 3, byrow=TRUE),
+  information = matrix(dfinfo$events, 3000, 3, byrow=TRUE))
 
-reject2a = matrix(rejStage>0, nrow=1000, ncol=6, byrow=TRUE)
+reject2a = matrix(rejStage>0, nrow=500, ncol=6, byrow=TRUE)
 (power2 = apply(reject2a, 2, mean))
 
 
