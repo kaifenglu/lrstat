@@ -1,9 +1,17 @@
+# lrstat 0.1.15
+
+- add fstp2seq for stepwise gatekeeping procedures with or without retesting for multiplicity problems involving two sequences of hypotheses.
+- add fstdmix to obtain adjusted p-values for standard mixture gatekeeping procedures
+- add fmodmix to obtain adjusted p-values for modified mixture gatekeeping procedures
+
 # lrstat 0.1.14
 
 - add the getAccrualDuration function to obtain the accrual duration to enroll the target number of subjects.
-- add the getDuration function to obtain a range of accrual duration to reach the target number of events.
-- allow studyDuration < accrualDuration + followupTime for fixed follow-up
-- update the handling of rounding for fixed follow-up design
+- add the getDurationFromNevents function to obtain a range of accrual duration to reach the target number of events.
+- add the getNeventsFromHazardRatio function to obtain the required number of events given the hazard ratios under the null and alternative hypotheses for a group sequential design.
+- allow studyDuration < accrualDuration + followupTime for fixed follow-up in lrpower
+- update the handling of rounding for fixed follow-up design in lrsamplesize
+- update the handling of null hypothesis for fixed follow-up design
 
 # lrstat 0.1.13
 
