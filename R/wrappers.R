@@ -102,7 +102,7 @@ exitprob <- function(b, a = NA, theta = 0, I = NA) {
 #' @references
 #' Frank Bretz, Willi Maurer, Werner Brannath and Martin Posch. A 
 #' graphical approach to sequentially rejective multiple test 
-#' procedures. Statistics in Medicine. 2009;28:586-604. 
+#' procedures. Statistics in Medicine. 2009; 28:586-604. 
 #' 
 #' @examples
 #'
@@ -143,10 +143,10 @@ fadjpbon <- function(w, G, p) {
 #' Frank Bretz, Martin Posch, Ekkehard Glimm, Florian Klinglmueller, 
 #' Willi Maurer, and Kornelius Rohmeyer. Graphical approach for multiple
 #' comparison procedures using weighted Bonferroni, Simes, or 
-#' parameter tests. Biometrical Journal. 2011;53:894-913.
+#' parameter tests. Biometrical Journal. 2011; 53:894-913.
 #' 
 #' Kaifeng Lu. Graphical approaches using a Bonferroni mixture of weighted 
-#' Simes tests. Statistics in Medicine. 2016;35:4041-4055.
+#' Simes tests. Statistics in Medicine. 2016; 35:4041-4055.
 #' 
 #' @examples
 #'
@@ -299,7 +299,7 @@ repeatedPValue <- function(kMax,
 #' @references
 #' Willi Maurer and Frank Bretz. Multiple testing in group sequential
 #' trials using graphical approaches. Statistics in Biopharmaceutical 
-#' Research. 2013;5:311-320. \doi{10.1080/19466315.2013.807748}
+#' Research. 2013; 5:311-320.
 #'
 #' @examples
 #' 
@@ -355,4 +355,253 @@ fseqbon <- function(w, G, alpha = 0.025, kMax,
              parameterAlphaSpending, 
              incidenceMatrix, maxInformation, 
              p, information, spendingTime)
+}
+
+
+#' @title Adjusted p-values for stepwise testing procedures for two sequences
+#' @description Obtains the adjusted p-values for the stepwise gatekeeping 
+#' procedures for multiplicity problems involving two sequences of hypotheses.
+#'
+#' @param p The raw p-values for elementary hypotheses.
+#' @param gamma The truncation parameters for each family.
+#' @param test The component multiple testing procedure. It is either "Holm"
+#'   or "Hochberg", and it defaults to "Hochberg".
+#' @param retest Whether to allow retesting. It defaults to TRUE.
+#'
+#' @return A matrix of adjusted p-values.
+#' 
+#' @examples
+#'
+#' p = c(0.0194, 0.0068, 0.0271, 0.0088, 0.0370, 0.0018, 0.0814, 0.0066)
+#' gamma = c(0.6, 0.6, 0.6, 1)
+#' fstp2seq(p, gamma, test="hochberg", retest=1)
+#'
+#' @export
+fstp2seq <- function(p, gamma, test="hochberg", retest=TRUE) {
+  if (!is.matrix(p)) {
+    p = matrix(p, nrow=1)
+  }
+  
+  if (!all(gamma >=0 & gamma <= 1)) {
+    stop("gamma must lie between 0 and 1");
+  }
+  
+  if (length(gamma) != ncol(p)/2) {
+    stop("The number of families must be half of the number of hypotheses")
+  }
+  
+  if (!(tolower(test) %in% c("holm", "hochberg"))) {
+    stop("test must be either Holm or Hochberg")
+  }
+  
+  x = fstp2seqcpp(p, gamma, test, retest)
+  if (nrow(x) == 1) {
+    x = as.vector(x)
+  }
+  x
+}
+
+#' @title Adjusted p-values for standard mixture gatekeeping procedures
+#' @description Obtains the adjusted p-values for the standard gatekeeping 
+#' procedures for multiplicity problems involving serial and parallel
+#' logical restrictions.
+#'
+#' @param p The raw p-values for elementary hypotheses.
+#' @param family The matrix of family indicators for the hypotheses.
+#' @param serial The matrix of serial rejection set for the hypotheses.
+#' @param parallel The matrix of parallel rejection set for the hypotheses.
+#' @param gamma The truncation parameters for each family.
+#' @param test The component multiple testing procedure. It is either "Holm"
+#'   or "Hochberg", and it defaults to "Hochberg".
+#' @param exhaust Whether to use alpha-exhausting component testing procedure
+#'   for the last family with active hypotheses. It defaults to TRUE.
+#'
+#' @return A matrix of adjusted p-values.
+#' 
+#' @references
+#' Alex Dmitrienko and Ajit C Tamhane. Mixtures of multiple testing 
+#' procedures for gatekeeping applications in clinical trials. 
+#' Statistics in Medicine. 2011; 30(13):1473–1488.
+#' 
+#' @examples
+#'
+#' p = c(0.0194, 0.0068, 0.0271, 0.0088, 0.0370, 0.0018, 0.0814, 0.0066)
+#' family = matrix(c(1, 1, 0, 0, 0, 0, 0, 0, 
+#'                   0, 0, 1, 1, 0, 0, 0, 0, 
+#'                   0, 0, 0, 0, 1, 1, 0, 0, 
+#'                   0, 0, 0, 0, 0, 0, 1, 1), 
+#'                 nrow=4, byrow=TRUE)
+#' 
+#' serial = matrix(c(0, 0, 0, 0, 0, 0, 0, 0,
+#'                   0, 0, 0, 0, 0, 0, 0, 0,
+#'                   1, 0, 0, 0, 0, 0, 0, 0,
+#'                   0, 1, 0, 0, 0, 0, 0, 0,
+#'                   0, 0, 1, 0, 0, 0, 0, 0,
+#'                   0, 0, 0, 1, 0, 0, 0, 0,
+#'                   0, 0, 0, 0, 1, 0, 0, 0,
+#'                   0, 0, 0, 0, 0, 1, 0, 0), 
+#'                 nrow=8, byrow=TRUE)
+#'  
+#' parallel = matrix(0, 8, 8)
+#' gamma = c(0.6, 0.6, 0.6, 1)
+#' fstdmix(p, family, serial, parallel, gamma, "hommel", 0)
+#'
+#' @export
+fstdmix <- function(p, family, serial, parallel, 
+                    gamma, test = "hommel", exhaust = 1) {
+  if (!is.matrix(p)) {
+    p = matrix(p, nrow=1)
+  }
+  m = ncol(p)
+  
+  if (ncol(family) != m) {
+    stop("number of columns of family must be the number of hypotheses")
+  }
+  if (any(family != 0 & family != 1)) {
+    stop("elements of family must be 0 or 1")
+  }
+  if (any(colSums(family) != 1)) {
+    stop("elements of family must sum to 1 for each column")
+  }
+  
+  if (nrow(serial) != m || ncol(serial) != m) {
+    stop(paste("serial must be a square matrix with the number of",
+               "rows/columns equal to the number of hypotheses"))
+  }
+  if (any(serial != 0 & serial != 1)) {
+    stop("elements of serial must be 0 or 1")
+  }
+  
+  if (nrow(parallel) != m || ncol(parallel) != m) {
+    stop(paste("parallel must be a square matrix with the number of",
+               "rows/columns equal to the number of hypotheses"))
+  }
+  if (any(parallel != 0 & parallel != 1)) {
+    stop("elements of parallel must be 0 or 1")
+  }
+  
+  
+  if (!all(gamma >=0 & gamma <= 1)) {
+    stop("gamma must lie between 0 and 1");
+  }
+  
+  if (length(gamma) != ncol(p)/2) {
+    stop("The number of families must be half of the number of hypotheses")
+  }
+  
+  if (!(tolower(test) %in% c("holm", "hochberg", "hommel"))) {
+    stop("test must be either Holm, Hochberg, or Hommel")
+  }
+  
+  x = fstdmixcpp(p, family, serial, parallel, gamma, test, exhaust)
+  if (nrow(x) == 1) {
+    x = as.vector(x)
+  }
+  x
+}
+
+
+#' @title Adjusted p-values for modified mixture gatekeeping procedures
+#' @description Obtains the adjusted p-values for the modified gatekeeping 
+#' procedures for multiplicity problems involving serial and parallel
+#' logical restrictions.
+#'
+#' @param p The raw p-values for elementary hypotheses.
+#' @param family The matrix of family indicators for the hypotheses.
+#' @param serial The matrix of serial rejection set for the hypotheses.
+#' @param parallel The matrix of parallel rejection set for the hypotheses.
+#' @param gamma The truncation parameters for each family.
+#' @param test The component multiple testing procedure. It is either "Holm"
+#'   or "Hochberg", and it defaults to "Hochberg".
+#' @param exhaust Whether to use alpha-exhausting component testing procedure
+#'   for the last family with active hypotheses. It defaults to TRUE.
+#'
+#' @return A matrix of adjusted p-values.
+#' 
+#' @references
+#' Alex Dmitrienko, George Kordzakhia, and Thomas Brechenmacher. 
+#' Mixture-based gatekeeping procedures for multiplicity problems with 
+#' multiple sequences of hypotheses. Journal of Biopharmaceutical
+#' Statistics. 2016; 26(4):758–780.
+#' 
+#' George Kordzakhia, Thomas Brechenmacher, Eiji Ishida, Alex Dmitrienko, 
+#' Winston Wenxiang Zheng, and David Fuyuan Li. An enhanced mixture method 
+#' for constructing gatekeeping procedures in clinical trials. 
+#' Journal of Biopharmaceutical Statistics. 2018; 28(1):113–128.
+#'
+#' @examples
+#'
+#' p = c(0.0194, 0.0068, 0.0271, 0.0088, 0.0370, 0.0018, 0.0814, 0.0066)
+#' family = matrix(c(1, 1, 0, 0, 0, 0, 0, 0, 
+#'                   0, 0, 1, 1, 0, 0, 0, 0, 
+#'                   0, 0, 0, 0, 1, 1, 0, 0, 
+#'                   0, 0, 0, 0, 0, 0, 1, 1), 
+#'                 nrow=4, byrow=TRUE)
+#' 
+#' serial = matrix(c(0, 0, 0, 0, 0, 0, 0, 0,
+#'                   0, 0, 0, 0, 0, 0, 0, 0,
+#'                   1, 0, 0, 0, 0, 0, 0, 0,
+#'                   0, 1, 0, 0, 0, 0, 0, 0,
+#'                   0, 0, 1, 0, 0, 0, 0, 0,
+#'                   0, 0, 0, 1, 0, 0, 0, 0,
+#'                   0, 0, 0, 0, 1, 0, 0, 0,
+#'                   0, 0, 0, 0, 0, 1, 0, 0), 
+#'                 nrow=8, byrow=TRUE)
+#'  
+#' parallel = matrix(0, 8, 8)
+#' gamma = c(0.6, 0.6, 0.6, 1)
+#' fmodmix(p, family, serial, parallel, gamma, "hommel", 1)
+#'
+#' @export
+fmodmix <- function(p, family, serial, parallel, 
+                    gamma, test = "hommel", exhaust = 1) {
+  if (!is.matrix(p)) {
+    p = matrix(p, nrow=1)
+  }
+  m = ncol(p)
+  
+  if (ncol(family) != m) {
+    stop("number of columns of family must be the number of hypotheses")
+  }
+  if (any(family != 0 & family != 1)) {
+    stop("elements of family must be 0 or 1")
+  }
+  if (any(colSums(family) != 1)) {
+    stop("elements of family must sum to 1 for each column")
+  }
+  
+  if (nrow(serial) != m || ncol(serial) != m) {
+    stop(paste("serial must be a square matrix with the number of",
+               "rows/columns equal to the number of hypotheses"))
+  }
+  if (any(serial != 0 & serial != 1)) {
+    stop("elements of serial must be 0 or 1")
+  }
+  
+  if (nrow(parallel) != m || ncol(parallel) != m) {
+    stop(paste("parallel must be a square matrix with the number of",
+               "rows/columns equal to the number of hypotheses"))
+  }
+  if (any(parallel != 0 & parallel != 1)) {
+    stop("elements of parallel must be 0 or 1")
+  }
+  
+  
+  if (!all(gamma >=0 & gamma <= 1)) {
+    stop("gamma must lie between 0 and 1");
+  }
+  
+  if (length(gamma) != ncol(p)/2) {
+    stop("The number of families must be half of the number of hypotheses")
+  }
+  
+  if (!(tolower(test) %in% c("holm", "hochberg", "hommel"))) {
+    stop("test must be either Holm, Hochberg, or Hommel")
+  }
+  
+  x = fmodmixcpp(p, family, serial, parallel, gamma, test, exhaust)
+  if (nrow(x) == 1) {
+    x = as.vector(x)
+  }
+  x
 }
