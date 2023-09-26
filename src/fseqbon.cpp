@@ -1201,3 +1201,725 @@ IntegerVector fseqboncpp(
   return reject;
 }
 
+
+// [[Rcpp::export]]
+NumericMatrix fstp2seqcpp(const NumericMatrix& p,
+                          const NumericVector& gamma,
+                          const String test = "hochberg",
+                          const bool retest = 1) {
+  
+  std::string test1 = test;
+  std::for_each(test1.begin(), test1.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  int nreps = p.nrow();
+  int n = p.ncol();
+  NumericMatrix padj(nreps, n);
+  int m = n/2;
+  
+  int iter, i, j, s;
+  
+  NumericMatrix a(nreps, m);
+  for (iter=0; iter<nreps; iter++) {
+    for (j=0; j<m; j++) {
+      double x1 = p(iter, 2*j);
+      double x2 = p(iter, 2*j+1);
+      
+      a(iter,j) = 2*std::max(x1,x2)/(1+gamma[j]);
+      if (test1=="holm") {
+        a(iter,j) = std::max(a(iter,j), 2*std::min(x1,x2));
+      }
+    }
+  }
+  
+  NumericMatrix d(m, m);
+  for (s=0; s<m; s++) {
+    double gmax = 0;
+    for (j=s; j<m; j++) {
+      if (j>s) gmax = std::max(gmax, gamma[j-1]);
+      d(s,j) = std::max((1-gmax)/2, 1e-12);
+    }
+  }
+  
+  
+  for (iter=0; iter<nreps; iter++) {
+    NumericVector a1 = a(iter, _);
+    for (i=0; i<m; i++) {
+      double t1 = max(a1[Range(0,i)]);
+      
+      double t2 = 1;
+      for (s=0; s<=i; s++) {
+        double lhs = 0;
+        
+        if (s>0) {
+          double y = max(a1[Range(0, s-1)]);
+          lhs = std::max(lhs, y);
+        }
+        
+        for (j=s; j<=i; j++) {
+          lhs = std::max(lhs, p(iter,2*j)/d(s,j));
+        }
+        
+        double rhs = 2*p(iter,2*s+1)/(1+gamma[s]);
+        
+        if (lhs < rhs) {
+          t2 = std::min(t2, lhs);
+        }
+      }
+      
+      if (retest && m>1) {
+        double t3 = 1;
+        for (s=0; s<=std::min(i,m-2); s++) {
+          double lhs = 0;
+          
+          if (s>0) {
+            double y = max(a1[Range(0, s-1)]);
+            lhs = std::max(lhs, y);
+          }
+          
+          for (j=s; j<m; j++) {
+            lhs = std::max(lhs, p(iter,2*j+1)/d(s,j));
+          }
+          
+          for (j=s; j<=i; j++) {
+            lhs = std::max(lhs, p(iter,2*j));
+          }
+          
+          double rhs = 2*p(iter,2*s)/(1+gamma[s]);
+            
+          if (lhs < rhs) {
+            t2 = std::min(t3, lhs);
+          }
+        }
+        
+        padj(iter,2*i) = std::min(t1, std::min(t2, t3));
+      } else {
+        padj(iter,2*i) = std::min(t1, t2);
+      }
+      
+      
+      t2 = 1;
+      for (s=0; s<=i; s++) {
+        double lhs = 0;
+        
+        if (s>0) {
+          double y = max(a1[Range(0, s-1)]);
+          lhs = std::max(lhs, y);
+        }
+        
+        for (j=s; j<=i; j++) {
+          lhs = std::max(lhs, p(iter,2*j+1)/d(s,j));
+        }
+        
+        double rhs = 2*p(iter,2*s)/(1+gamma[s]);
+        
+        if (lhs < rhs) {
+          t2 = std::min(t2, lhs);
+        }
+      }
+      
+      if (retest && m>1) {
+        double t3 = 1;
+        for (s=0; s<=std::min(i,m-2); s++) {
+          double lhs = 0;
+          
+          if (s>0) {
+            double y = max(a1[Range(0, s-1)]);
+            lhs = std::max(lhs, y);                    
+          }
+          
+          for (j=s; j<m; j++) {
+            lhs = std::max(lhs, p(iter,2*j)/d(s,j));
+          }
+          
+          for (j=s; j<=i; j++) {
+            lhs = std::max(lhs, p(iter,2*j+1));
+          }
+          
+          double rhs = 2*p(iter,2*s+1)/(1+gamma[s]);
+
+          if (lhs < rhs) {
+            t3 = std::min(t3, lhs);
+          }
+        }
+        
+        padj(iter, 2*i+1) = std::min(t1, std::min(t2, t3));
+      } else {
+        padj(iter, 2*i+1) = std::min(t1, t2);
+      }
+    }
+  }
+  
+  return padj;
+}
+
+
+// Function to find the indices of all TRUE elements in a logical vector
+IntegerVector which(LogicalVector vector) {
+  IntegerVector true_indices;
+  for (int i = 0; i < vector.size(); i++) {
+    if (vector[i]) {
+      true_indices.push_back(i);
+    }
+  }
+  return true_indices;
+}
+
+// [[Rcpp::export]]
+NumericMatrix fstdmixcpp(const NumericMatrix& p,
+                         const LogicalMatrix& family,
+                         const LogicalMatrix& serial,
+                         const LogicalMatrix& parallel,
+                         const NumericVector& gamma,
+                         const String test = "hommel",
+                         const bool exhaust = 1) {
+  
+  std::string test1 = test;
+  std::for_each(test1.begin(), test1.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  // initialize various quantities
+  int nreps = p.nrow();
+  int m = p.ncol();
+  int ntests = pow(2,m) - 1;
+  int nfamily = family.nrow();
+  IntegerVector nhyps = rowSums(family);
+  
+  // to store local p-values for the intersection tests
+  NumericMatrix pinter(nreps, ntests);
+  
+  // incidence matrix for the elementary hypotheses
+  NumericMatrix incid(ntests, m);
+  
+  
+  for (int i=0; i<ntests; i++) {
+    // expand to binary representations of the intersection hypothesis
+    int number = ntests - i;
+    LogicalVector cc(m);
+    for (int j=0; j<m; j++) {
+      cc[j] = (number/(int)std::pow(2, m-1-j)) % 2;
+    }
+    
+    // indicator of active hyp in each family
+    LogicalMatrix family0(nfamily, m);
+    for (int j=0; j<nfamily; j++) {
+      family0(j, _) = family(j, _) * cc;
+    }
+    
+    // number of active hyp in each family
+    IntegerVector nhyps0 = rowSums(family0);
+    
+    
+    // determine restricted index set for each family
+    LogicalVector cc1(m);
+    for (int j=0; j<m; j++) {
+      cc1[j] = 1;
+    }
+    
+    for (int j=0; j<m; j++) {
+      if (sum(serial(j,_))>0) {
+        
+        for (int k=0; k<m; k++) {
+          if (serial(j,k) && cc[k]) cc1[j] = 0;
+        }
+        
+        for (int k=0; k<m; k++) {
+          if (serial(j,k) && !cc1[k]) cc1[j] = 0;
+        }
+      }
+      
+      if (sum(parallel(j,_))>0) {
+        bool hit = 1;
+        for (int k=0; k<m; k++) {
+          if (parallel(j,k) && !cc[k]) hit = 0;
+        }
+        if (hit) cc1[j] = 0;
+        
+        hit = 1;
+        for (int k=0; k<m; k++) {
+          if (parallel(j,k) && cc1[k]) hit = 0;
+        }
+        if (hit) cc1[j] = 0;
+      }
+    }
+    
+    cc1 = cc1 * cc;
+    
+    
+    // error rate function divided by alpha
+    NumericVector errf(nfamily);
+    for (int j=0; j<nfamily; j++) {
+      errf[j] = nhyps0[j]>0 ? gamma[j] + (1-gamma[j])*nhyps0[j]/nhyps[j] : 0;
+    }
+    
+    
+    // allocated fraction of alpha for each family
+    NumericVector coef(nfamily);
+    coef[0] = 1;
+    for (int j=1; j<nfamily; j++) {
+      coef[j] = coef[j-1]*(1 - errf[j-1]);
+    }
+    
+    int kmax = max(which(coef > 0));
+    
+    
+    LogicalMatrix family1(kmax+1, m);
+    for (int j=0; j<=kmax; j++) {
+      family1(j, _) = family(j, _) * cc1;
+    }
+    
+    // number of active hyp in each family
+    IntegerVector nhyps1 = rowSums(family1);
+    
+    // index of active families
+    IntegerVector sub = which(nhyps1 > 0);
+    
+    // active families;
+    int nfamily2 = sub.size();
+    
+    // active families
+    LogicalMatrix family2(nfamily2, m);
+    for (int j=0; j<nfamily2; j++) {
+      family2(j, _) = family1(sub[j], _);
+    }
+    
+    // number of active hyp in active families
+    IntegerVector nhyps2 = nhyps1[sub];
+    
+    // family indicators for active hypotheses
+    IntegerVector fam, hyps2;
+    for (int j=0; j<nfamily2; j++) {
+      for (int k=0; k<m; k++) {
+        if (family2(j,k)) {
+          fam.push_back(j);
+          hyps2.push_back(k);
+        }
+      }
+    }
+    
+    // number of elementary hyp in the intersection
+    int n = hyps2.size();
+    
+    
+    
+    // incidence matrix to ensure active hypotheses are clustered by family
+    LogicalMatrix dup(nfamily2, n);
+    for (int j=0; j<nfamily2; j++) {
+      for (int k=0; k<n; k++) {
+        if (fam[k] == j) {
+          dup(j,k) = 1;
+        } 
+      }
+    }
+    
+    
+    // relative importance for active families in the intersection
+    NumericVector c(n), coef1=coef[sub];
+    for (int k=0; k<n; k++) {
+      c[k] = 0;
+      for (int j=0; j<nfamily2; j++) {
+        c[k] += coef1[j] * dup(j,k);
+      }
+    }
+    
+    // weights for ordered p-values within each family
+    NumericVector w(n);
+    
+    // truncation parameters for each family
+    // use regular nonseparable procedure for last family
+    NumericVector gam2 = gamma[sub];
+    if (exhaust) gam2[nfamily2-1] = 1;
+    
+    // Bonferroni part of the weights
+    NumericVector tbon(n);
+    for (int j=0; j<nfamily2; j++) {
+      coef1[j] = (1-gam2[j])/nhyps[sub[j]];
+    }
+    
+    for (int k=0; k<n; k++) {
+      tbon[k] = 0;
+      for (int j=0; j<nfamily2; j++) {
+        tbon[k] += coef1[j] * dup(j,k);
+      }
+    }
+    
+    
+    // cumulative number of active hypotheses by family
+    NumericVector ck(nfamily2+1);
+    for (int j=1; j<=nfamily2; j++) {
+      ck[j] = ck[j-1] + nhyps2[j-1];
+    }
+    
+    // denominator weight for the ordered p-values in each family
+    if (test1 == "hommel") {
+      for (int k=0; k<n; k++) {
+        // index of the hypothesis within a family
+        int l = fam[k];
+        int j = (k+1) - ck[l];
+        w[k] = j * gam2[l]/nhyps2[l] + tbon[k];
+      }
+    } else if (test1 == "hochberg") {
+      for (int k=0; k<n; k++) {
+        int l = fam[k];
+        int j = (k+1) - ck[l];
+        w[k] = gam2[l]/(nhyps2[l] - j + 1) + tbon[k];
+      }
+    } else if (test1 == "holm") {
+      for (int k=0; k<n; k++) {
+        int l = fam[k];
+        w[k] = gam2[l]/nhyps2[l] + tbon[k];
+      }
+    }
+    
+    
+    for (int iter=0; iter<nreps; iter++) {
+      // raw p-values
+      NumericVector p1(n);
+      for (int k=0; k<n; k++) {
+        p1[k] = p(iter, hyps2[k]);
+      }
+      
+      // order the p-values within each family 
+      NumericVector p2(n);
+      for (int j=0; j<nfamily2; j++) {
+        Range indices = Range(ck[j], ck[j+1]-1);
+        NumericVector p1s = p1[indices];
+        p2[indices] = stl_sort(p1s);
+      }
+      
+      NumericVector q = p2 / (w*c);
+      double x = min(q);
+      
+      pinter(iter, i) = x;
+    }
+    
+    incid(i, _) = cc;
+  }
+  
+  // obtain the adjusted p-values for the elementary hypotheses
+  NumericMatrix padj(nreps, m);
+  for (int j=0; j<m; j++) {
+    for (int iter=0; iter<nreps; iter++) {
+      padj(iter,j) = 0;
+      for (int i=0; i<ntests; i++) {
+        if (incid(i,j)) {
+          padj(iter,j) = std::max(padj(iter,j), pinter(iter,i));
+        }
+      }
+      padj(iter,j) = std::min(padj(iter,j), 1.0);
+    }
+  }
+  
+  // modify the adjusted p-values to conform with the logical restrictions
+  for (int j=0; j<m; j++) {
+    if (sum(serial(j,_)) > 0) {
+      for (int iter=0; iter<nreps; iter++) {
+        double pre = 0;
+        for (int k=0; k<m; k++) {
+          if (serial(j,k)) {
+            pre = std::max(pre, padj(iter,k));
+          }
+        }
+        padj(iter,j) = std::max(padj(iter,j), pre);
+      }
+    }
+    
+    if (sum(parallel(j,_)) > 0) {
+      for (int iter=0; iter<nreps; iter++) {
+        double pre = 1;
+        for (int k=0; k<m; k++) {
+          if (parallel(j,k)) {
+            pre = std::min(pre, padj(iter,k));
+          }
+        }
+        padj(iter,j) = std::max(padj(iter,j), pre);
+      }
+    }
+  }
+  
+  return(padj);
+}
+
+
+// [[Rcpp::export]]
+NumericMatrix fmodmixcpp(const NumericMatrix& p,
+                         const LogicalMatrix& family,
+                         const LogicalMatrix& serial,
+                         const LogicalMatrix& parallel,
+                         const NumericVector& gamma,
+                         const String test = "hommel",
+                         const bool exhaust = 1) {
+  
+  std::string test1 = test;
+  std::for_each(test1.begin(), test1.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  // initialize various quantities
+  int nreps = p.nrow();
+  int m = p.ncol();
+  int ntests = pow(2,m) - 1;
+  int nfamily = family.nrow();
+  IntegerVector nhyps = rowSums(family);
+
+  // to store local p-values for the intersection tests
+  NumericMatrix pinter(nreps, ntests);
+  
+  // incidence matrix for the elementary hypotheses
+  NumericMatrix incid(ntests, m);
+  
+  
+  for (int i=0; i<ntests; i++) {
+    // expand to binary representations of the intersection hypothesis
+    int number = ntests - i;
+    LogicalVector cc(m);
+    for (int j=0; j<m; j++) {
+      cc[j] = (number/(int)std::pow(2, m-1-j)) % 2;
+    }
+    
+    // indicator of active hyp in each family
+    LogicalMatrix family0(nfamily, m);
+    for (int j=0; j<nfamily; j++) {
+      family0(j, _) = family(j, _) * cc;
+    }
+    
+    // number of active hyp in each family
+    IntegerVector nhyps0 = rowSums(family0);
+    
+    
+    // determine restricted index set for each family
+    LogicalVector cc1(m);
+    for (int j=0; j<m; j++) {
+      cc1[j] = 1;
+    }
+    
+    for (int j=0; j<m; j++) {
+      if (sum(serial(j,_))>0) {
+        
+        for (int k=0; k<m; k++) {
+          if (serial(j,k) && cc[k]) cc1[j] = 0;
+        }
+        
+        for (int k=0; k<m; k++) {
+          if (serial(j,k) && !cc1[k]) cc1[j] = 0;
+        }
+      }
+      
+      if (sum(parallel(j,_))>0) {
+        bool hit = 1;
+        for (int k=0; k<m; k++) {
+          if (parallel(j,k) && !cc[k]) hit = 0;
+        }
+        if (hit) cc1[j] = 0;
+        
+        hit = 1;
+        for (int k=0; k<m; k++) {
+          if (parallel(j,k) && cc1[k]) hit = 0;
+        }
+        if (hit) cc1[j] = 0;
+      }
+    }
+    
+    LogicalVector cc2 = clone(cc1);  // denominator, Nstar
+    cc1 = cc1 * cc;  // numerator, Istar
+    
+    
+    // error rate function divided by alpha
+    IntegerVector kstar(nfamily), nstar(nfamily);
+    NumericVector errf(nfamily);
+    for (int j=0; j<nfamily; j++) {
+      kstar[j] = sum(family(j,_) * cc1);
+      nstar[j] = sum(family(j,_) * cc2);
+      errf[j] = kstar[j]>0 ? gamma[j] + (1-gamma[j])*kstar[j]/nstar[j] : 0;
+    }
+    
+    
+    // allocated fraction of alpha for each family
+    NumericVector coef(nfamily);
+    coef[0] = 1;
+    for (int j=1; j<nfamily; j++) {
+      coef[j] = coef[j-1]*(1 - errf[j-1]);
+    }
+    
+    int kmax = max(which(coef > 0));
+    
+    
+    LogicalMatrix family1(kmax+1, m);
+    for (int j=0; j<=kmax; j++) {
+      family1(j, _) = family(j, _) * cc1;
+    }
+    
+    // number of active hyp in each family
+    IntegerVector nhyps1 = rowSums(family1);
+    
+    // index of active families
+    IntegerVector sub = which(nhyps1 > 0);
+    
+    // active families;
+    int nfamily2 = sub.size();
+    
+    // active families
+    LogicalMatrix family2(nfamily2, m);
+    for (int j=0; j<nfamily2; j++) {
+      family2(j, _) = family1(sub[j], _);
+    }
+    
+    // number of active hyp in active families
+    IntegerVector nhyps2 = nhyps1[sub];
+    
+    // family indicators for active hypotheses
+    IntegerVector fam, hyps2;
+    for (int j=0; j<nfamily2; j++) {
+      for (int k=0; k<m; k++) {
+        if (family2(j,k)) {
+          fam.push_back(j);
+          hyps2.push_back(k);
+        }
+      }
+    }
+    
+    // number of elementary hyp in the intersection
+    int n = hyps2.size();
+    
+    
+    
+    // incidence matrix to ensure active hypotheses are clustered by family
+    LogicalMatrix dup(nfamily2, n);
+    for (int j=0; j<nfamily2; j++) {
+      for (int k=0; k<n; k++) {
+        if (fam[k] == j) {
+          dup(j,k) = 1;
+        } 
+      }
+    }
+    
+    
+    // relative importance for active families in the intersection
+    NumericVector c(n), coef1=coef[sub];
+    for (int k=0; k<n; k++) {
+      c[k] = 0;
+      for (int j=0; j<nfamily2; j++) {
+        c[k] += coef1[j] * dup(j,k);
+      }
+    }
+    
+    // weights for ordered p-values within each family
+    NumericVector w(n);
+    
+    // truncation parameters for each family
+    // use regular nonseparable procedure for last family
+    NumericVector gam2 = gamma[sub];
+    if (exhaust) gam2[nfamily2-1] = 1;
+    
+    // Bonferroni part of the weights
+    NumericVector tbon(n);
+    for (int j=0; j<nfamily2; j++) {
+      coef1[j] = (1-gam2[j])/nstar[j];
+    }
+    
+    for (int k=0; k<n; k++) {
+      tbon[k] = 0;
+      for (int j=0; j<nfamily2; j++) {
+        tbon[k] += coef1[j] * dup(j,k);
+      }
+    }
+    
+    
+    // cumulative number of active hypotheses by family
+    NumericVector ck(nfamily2+1);
+    for (int j=1; j<=nfamily2; j++) {
+      ck[j] = ck[j-1] + nhyps2[j-1];
+    }
+    
+    // denominator weight for the ordered p-values in each family
+    if (test1 == "hommel") {
+      for (int k=0; k<n; k++) {
+        // index of the hypothesis within a family
+        int l = fam[k];
+        int j = (k+1) - ck[l];
+        w[k] = j * gam2[l]/nhyps2[l] + tbon[k];
+      }
+    } else if (test1 == "hochberg") {
+      for (int k=0; k<n; k++) {
+        int l = fam[k];
+        int j = (k+1) - ck[l];
+        w[k] = gam2[l]/(nhyps2[l] - j + 1) + tbon[k];
+      }
+    } else if (test1 == "holm") {
+      for (int k=0; k<n; k++) {
+        int l = fam[k];
+        w[k] = gam2[l]/nhyps2[l] + tbon[k];
+      }
+    }
+    
+    
+    for (int iter=0; iter<nreps; iter++) {
+      // raw p-values
+      NumericVector p1(n);
+      for (int k=0; k<n; k++) {
+        p1[k] = p(iter, hyps2[k]);
+      }
+      
+      // order the p-values within each family 
+      NumericVector p2(n);
+      for (int j=0; j<nfamily2; j++) {
+        Range indices = Range(ck[j], ck[j+1]-1);
+        NumericVector p1s = p1[indices];
+        p2[indices] = stl_sort(p1s);
+      }
+      
+      NumericVector q = p2 / (w*c);
+      double x = min(q);
+      
+      pinter(iter, i) = x;
+    }
+    
+    incid(i, _) = cc;
+  }
+  
+  // obtain the adjusted p-values for the elementary hypotheses
+  NumericMatrix padj(nreps, m);
+  for (int j=0; j<m; j++) {
+    for (int iter=0; iter<nreps; iter++) {
+      padj(iter,j) = 0;
+      for (int i=0; i<ntests; i++) {
+        if (incid(i,j)) {
+          padj(iter,j) = std::max(padj(iter,j), pinter(iter,i));
+        }
+      }
+      padj(iter,j) = std::min(padj(iter,j), 1.0);
+    }
+  }
+  
+  // modify the adjusted p-values to conform with the logical restrictions
+  for (int j=0; j<m; j++) {
+    if (sum(serial(j,_)) > 0) {
+      for (int iter=0; iter<nreps; iter++) {
+        double pre = 0;
+        for (int k=0; k<m; k++) {
+          if (serial(j,k)) {
+            pre = std::max(pre, padj(iter,k));
+          }
+        }
+        padj(iter,j) = std::max(padj(iter,j), pre);
+      }
+    }
+    
+    if (sum(parallel(j,_)) > 0) {
+      for (int iter=0; iter<nreps; iter++) {
+        double pre = 1;
+        for (int k=0; k<m; k++) {
+          if (parallel(j,k)) {
+            pre = std::min(pre, padj(iter,k));
+          }
+        }
+        padj(iter,j) = std::max(padj(iter,j), pre);
+      }
+    }
+  }
+  
+  return(padj);
+}
+
