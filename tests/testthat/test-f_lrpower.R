@@ -76,6 +76,7 @@ test_that("power for stratified analysis", {
   p2 = c(0.28, 0.72);
   p3 = c(0.43, 0.37, 0.2);
   stratumFraction = p1 %x% p2 %x% p3;
+  stratumFraction = stratumFraction/sum(stratumFraction);
   theta1 = c(1, 2.127, 0.528, 0.413);
   theta2 = c(1, 0.438);
   theta3 = c(1, 0.614, 0.159);

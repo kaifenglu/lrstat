@@ -1,3 +1,6 @@
+# lrstat 0.2.0
+- add fadjpdun to calculate the adjusted p-values for Dunnett-based graphical approaches. 
+
 # lrstat 0.1.15
 
 - add fstp2seq for stepwise gatekeeping procedures with or without retesting for multiplicity problems involving two sequences of hypotheses.

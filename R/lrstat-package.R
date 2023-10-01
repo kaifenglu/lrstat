@@ -84,6 +84,8 @@
 #'
 #' @useDynLib lrstat, .registration = TRUE
 #' @importFrom Rcpp evalCpp
+#' @importFrom mvtnorm pmvnorm
+#' @importFrom stats qnorm
 #'
 NULL
 

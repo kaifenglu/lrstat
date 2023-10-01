@@ -10,6 +10,161 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// updateGraph
+List updateGraph(const NumericVector& w, const NumericMatrix& G, const IntegerVector& I, const int j);
+RcppExport SEXP _lrstat_updateGraph(SEXP wSEXP, SEXP GSEXP, SEXP ISEXP, SEXP jSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type G(GSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type I(ISEXP);
+    Rcpp::traits::input_parameter< const int >::type j(jSEXP);
+    rcpp_result_gen = Rcpp::wrap(updateGraph(w, G, I, j));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fadjpboncpp
+NumericMatrix fadjpboncpp(const NumericVector& w, const NumericMatrix& G, const NumericMatrix& p);
+RcppExport SEXP _lrstat_fadjpboncpp(SEXP wSEXP, SEXP GSEXP, SEXP pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type G(GSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type p(pSEXP);
+    rcpp_result_gen = Rcpp::wrap(fadjpboncpp(w, G, p));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fwgtmat
+NumericMatrix fwgtmat(const NumericVector& w, const NumericMatrix& G);
+RcppExport SEXP _lrstat_fwgtmat(SEXP wSEXP, SEXP GSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type G(GSEXP);
+    rcpp_result_gen = Rcpp::wrap(fwgtmat(w, G));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fadjpsimcpp
+NumericMatrix fadjpsimcpp(const NumericMatrix& wgtmat, const NumericMatrix& p, const LogicalMatrix& family);
+RcppExport SEXP _lrstat_fadjpsimcpp(SEXP wgtmatSEXP, SEXP pSEXP, SEXP familySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type wgtmat(wgtmatSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type p(pSEXP);
+    Rcpp::traits::input_parameter< const LogicalMatrix& >::type family(familySEXP);
+    rcpp_result_gen = Rcpp::wrap(fadjpsimcpp(wgtmat, p, family));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getBound
+NumericVector getBound(const int k, const NumericVector& informationRates, const double alpha, const String typeAlphaSpending, const double parameterAlphaSpending, const NumericVector& userAlphaSpending, const NumericVector& spendingTime);
+RcppExport SEXP _lrstat_getBound(SEXP kSEXP, SEXP informationRatesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP spendingTimeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type informationRates(informationRatesSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const String >::type typeAlphaSpending(typeAlphaSpendingSEXP);
+    Rcpp::traits::input_parameter< const double >::type parameterAlphaSpending(parameterAlphaSpendingSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type userAlphaSpending(userAlphaSpendingSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type spendingTime(spendingTimeSEXP);
+    rcpp_result_gen = Rcpp::wrap(getBound(k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime));
+    return rcpp_result_gen;
+END_RCPP
+}
+// repeatedPValuecpp
+NumericVector repeatedPValuecpp(const int kMax, const String typeAlphaSpending, const double parameterAlphaSpending, const double maxInformation, const NumericMatrix& p, const NumericMatrix& information, const NumericMatrix& spendingTime);
+RcppExport SEXP _lrstat_repeatedPValuecpp(SEXP kMaxSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP maxInformationSEXP, SEXP pSEXP, SEXP informationSEXP, SEXP spendingTimeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int >::type kMax(kMaxSEXP);
+    Rcpp::traits::input_parameter< const String >::type typeAlphaSpending(typeAlphaSpendingSEXP);
+    Rcpp::traits::input_parameter< const double >::type parameterAlphaSpending(parameterAlphaSpendingSEXP);
+    Rcpp::traits::input_parameter< const double >::type maxInformation(maxInformationSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type p(pSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type information(informationSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type spendingTime(spendingTimeSEXP);
+    rcpp_result_gen = Rcpp::wrap(repeatedPValuecpp(kMax, typeAlphaSpending, parameterAlphaSpending, maxInformation, p, information, spendingTime));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fseqboncpp
+IntegerVector fseqboncpp(const NumericVector& w, const NumericMatrix& G, const double alpha, const int kMax, const StringVector& typeAlphaSpending, const NumericVector& parameterAlphaSpending, const LogicalMatrix& incidenceMatrix, const NumericVector& maxInformation, const NumericMatrix& p, const NumericMatrix& information, const NumericMatrix& spendingTime);
+RcppExport SEXP _lrstat_fseqboncpp(SEXP wSEXP, SEXP GSEXP, SEXP alphaSEXP, SEXP kMaxSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP incidenceMatrixSEXP, SEXP maxInformationSEXP, SEXP pSEXP, SEXP informationSEXP, SEXP spendingTimeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type G(GSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const int >::type kMax(kMaxSEXP);
+    Rcpp::traits::input_parameter< const StringVector& >::type typeAlphaSpending(typeAlphaSpendingSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type parameterAlphaSpending(parameterAlphaSpendingSEXP);
+    Rcpp::traits::input_parameter< const LogicalMatrix& >::type incidenceMatrix(incidenceMatrixSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type maxInformation(maxInformationSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type p(pSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type information(informationSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type spendingTime(spendingTimeSEXP);
+    rcpp_result_gen = Rcpp::wrap(fseqboncpp(w, G, alpha, kMax, typeAlphaSpending, parameterAlphaSpending, incidenceMatrix, maxInformation, p, information, spendingTime));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fstp2seqcpp
+NumericMatrix fstp2seqcpp(const NumericMatrix& p, const NumericVector& gamma, const String test, const bool retest);
+RcppExport SEXP _lrstat_fstp2seqcpp(SEXP pSEXP, SEXP gammaSEXP, SEXP testSEXP, SEXP retestSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type p(pSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< const String >::type test(testSEXP);
+    Rcpp::traits::input_parameter< const bool >::type retest(retestSEXP);
+    rcpp_result_gen = Rcpp::wrap(fstp2seqcpp(p, gamma, test, retest));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fstdmixcpp
+NumericMatrix fstdmixcpp(const NumericMatrix& p, const LogicalMatrix& family, const LogicalMatrix& serial, const LogicalMatrix& parallel, const NumericVector& gamma, const String test, const bool exhaust);
+RcppExport SEXP _lrstat_fstdmixcpp(SEXP pSEXP, SEXP familySEXP, SEXP serialSEXP, SEXP parallelSEXP, SEXP gammaSEXP, SEXP testSEXP, SEXP exhaustSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type p(pSEXP);
+    Rcpp::traits::input_parameter< const LogicalMatrix& >::type family(familySEXP);
+    Rcpp::traits::input_parameter< const LogicalMatrix& >::type serial(serialSEXP);
+    Rcpp::traits::input_parameter< const LogicalMatrix& >::type parallel(parallelSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< const String >::type test(testSEXP);
+    Rcpp::traits::input_parameter< const bool >::type exhaust(exhaustSEXP);
+    rcpp_result_gen = Rcpp::wrap(fstdmixcpp(p, family, serial, parallel, gamma, test, exhaust));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fmodmixcpp
+NumericMatrix fmodmixcpp(const NumericMatrix& p, const LogicalMatrix& family, const LogicalMatrix& serial, const LogicalMatrix& parallel, const NumericVector& gamma, const String test, const bool exhaust);
+RcppExport SEXP _lrstat_fmodmixcpp(SEXP pSEXP, SEXP familySEXP, SEXP serialSEXP, SEXP parallelSEXP, SEXP gammaSEXP, SEXP testSEXP, SEXP exhaustSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type p(pSEXP);
+    Rcpp::traits::input_parameter< const LogicalMatrix& >::type family(familySEXP);
+    Rcpp::traits::input_parameter< const LogicalMatrix& >::type serial(serialSEXP);
+    Rcpp::traits::input_parameter< const LogicalMatrix& >::type parallel(parallelSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< const String >::type test(testSEXP);
+    Rcpp::traits::input_parameter< const bool >::type exhaust(exhaustSEXP);
+    rcpp_result_gen = Rcpp::wrap(fmodmixcpp(p, family, serial, parallel, gamma, test, exhaust));
+    return rcpp_result_gen;
+END_RCPP
+}
 // lrsim
 List lrsim(const int kMax, const NumericVector& informationTime, const NumericVector& criticalValues, const NumericVector& futilityBounds, const double hazardRatioH0, const int allocation1, const int allocation2, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const NumericVector& piecewiseSurvivalTime, const NumericVector& stratumFraction, const NumericVector& lambda1, const NumericVector& lambda2, const NumericVector& gamma1, const NumericVector& gamma2, const double accrualDuration, const double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const IntegerVector& plannedEvents, const NumericVector& plannedTime, const int maxNumberOfIterations, const int maxNumberOfRawDatasetsPerStage, int seed);
 RcppExport SEXP _lrstat_lrsim(SEXP kMaxSEXP, SEXP informationTimeSEXP, SEXP criticalValuesSEXP, SEXP futilityBoundsSEXP, SEXP hazardRatioH0SEXP, SEXP allocation1SEXP, SEXP allocation2SEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP accrualDurationSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP plannedEventsSEXP, SEXP plannedTimeSEXP, SEXP maxNumberOfIterationsSEXP, SEXP maxNumberOfRawDatasetsPerStageSEXP, SEXP seedSEXP) {
@@ -45,6 +200,130 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// lrsim3a
+List lrsim3a(const int kMax, const double hazardRatioH013, const double hazardRatioH023, const double hazardRatioH012, const int allocation1, const int allocation2, const int allocation3, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const NumericVector& piecewiseSurvivalTime, const NumericVector& stratumFraction, const NumericVector& lambda1, const NumericVector& lambda2, const NumericVector& lambda3, const NumericVector& gamma1, const NumericVector& gamma2, const NumericVector& gamma3, const double accrualDuration, const double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const IntegerVector& plannedEvents, const NumericVector& plannedTime, const int maxNumberOfIterations, const int maxNumberOfRawDatasetsPerStage, int seed);
+RcppExport SEXP _lrstat_lrsim3a(SEXP kMaxSEXP, SEXP hazardRatioH013SEXP, SEXP hazardRatioH023SEXP, SEXP hazardRatioH012SEXP, SEXP allocation1SEXP, SEXP allocation2SEXP, SEXP allocation3SEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP lambda3SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP gamma3SEXP, SEXP accrualDurationSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP plannedEventsSEXP, SEXP plannedTimeSEXP, SEXP maxNumberOfIterationsSEXP, SEXP maxNumberOfRawDatasetsPerStageSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int >::type kMax(kMaxSEXP);
+    Rcpp::traits::input_parameter< const double >::type hazardRatioH013(hazardRatioH013SEXP);
+    Rcpp::traits::input_parameter< const double >::type hazardRatioH023(hazardRatioH023SEXP);
+    Rcpp::traits::input_parameter< const double >::type hazardRatioH012(hazardRatioH012SEXP);
+    Rcpp::traits::input_parameter< const int >::type allocation1(allocation1SEXP);
+    Rcpp::traits::input_parameter< const int >::type allocation2(allocation2SEXP);
+    Rcpp::traits::input_parameter< const int >::type allocation3(allocation3SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type accrualTime(accrualTimeSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type accrualIntensity(accrualIntensitySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type piecewiseSurvivalTime(piecewiseSurvivalTimeSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type stratumFraction(stratumFractionSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda1(lambda1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda2(lambda2SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda3(lambda3SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma1(gamma1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma2(gamma2SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma3(gamma3SEXP);
+    Rcpp::traits::input_parameter< const double >::type accrualDuration(accrualDurationSEXP);
+    Rcpp::traits::input_parameter< const double >::type followupTime(followupTimeSEXP);
+    Rcpp::traits::input_parameter< const bool >::type fixedFollowup(fixedFollowupSEXP);
+    Rcpp::traits::input_parameter< const double >::type rho1(rho1SEXP);
+    Rcpp::traits::input_parameter< const double >::type rho2(rho2SEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type plannedEvents(plannedEventsSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type plannedTime(plannedTimeSEXP);
+    Rcpp::traits::input_parameter< const int >::type maxNumberOfIterations(maxNumberOfIterationsSEXP);
+    Rcpp::traits::input_parameter< const int >::type maxNumberOfRawDatasetsPerStage(maxNumberOfRawDatasetsPerStageSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(lrsim3a(kMax, hazardRatioH013, hazardRatioH023, hazardRatioH012, allocation1, allocation2, allocation3, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, lambda3, gamma1, gamma2, gamma3, accrualDuration, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
+// lrsim2e
+List lrsim2e(const int kMax, const int kMaxe1, const double hazardRatioH0e1, const double hazardRatioH0e2, const int allocation1, const int allocation2, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const NumericVector& piecewiseSurvivalTime, const NumericVector& stratumFraction, const double rho, const NumericVector& lambda1e1, const NumericVector& lambda2e1, const NumericVector& lambda1e2, const NumericVector& lambda2e2, const NumericVector& gamma1e1, const NumericVector& gamma2e1, const NumericVector& gamma1e2, const NumericVector& gamma2e2, const double accrualDuration, const double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const IntegerVector& plannedEvents, const NumericVector& plannedTime, const int maxNumberOfIterations, const int maxNumberOfRawDatasetsPerStage, int seed);
+RcppExport SEXP _lrstat_lrsim2e(SEXP kMaxSEXP, SEXP kMaxe1SEXP, SEXP hazardRatioH0e1SEXP, SEXP hazardRatioH0e2SEXP, SEXP allocation1SEXP, SEXP allocation2SEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP rhoSEXP, SEXP lambda1e1SEXP, SEXP lambda2e1SEXP, SEXP lambda1e2SEXP, SEXP lambda2e2SEXP, SEXP gamma1e1SEXP, SEXP gamma2e1SEXP, SEXP gamma1e2SEXP, SEXP gamma2e2SEXP, SEXP accrualDurationSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP plannedEventsSEXP, SEXP plannedTimeSEXP, SEXP maxNumberOfIterationsSEXP, SEXP maxNumberOfRawDatasetsPerStageSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int >::type kMax(kMaxSEXP);
+    Rcpp::traits::input_parameter< const int >::type kMaxe1(kMaxe1SEXP);
+    Rcpp::traits::input_parameter< const double >::type hazardRatioH0e1(hazardRatioH0e1SEXP);
+    Rcpp::traits::input_parameter< const double >::type hazardRatioH0e2(hazardRatioH0e2SEXP);
+    Rcpp::traits::input_parameter< const int >::type allocation1(allocation1SEXP);
+    Rcpp::traits::input_parameter< const int >::type allocation2(allocation2SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type accrualTime(accrualTimeSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type accrualIntensity(accrualIntensitySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type piecewiseSurvivalTime(piecewiseSurvivalTimeSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type stratumFraction(stratumFractionSEXP);
+    Rcpp::traits::input_parameter< const double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda1e1(lambda1e1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda2e1(lambda2e1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda1e2(lambda1e2SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda2e2(lambda2e2SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma1e1(gamma1e1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma2e1(gamma2e1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma1e2(gamma1e2SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma2e2(gamma2e2SEXP);
+    Rcpp::traits::input_parameter< const double >::type accrualDuration(accrualDurationSEXP);
+    Rcpp::traits::input_parameter< const double >::type followupTime(followupTimeSEXP);
+    Rcpp::traits::input_parameter< const bool >::type fixedFollowup(fixedFollowupSEXP);
+    Rcpp::traits::input_parameter< const double >::type rho1(rho1SEXP);
+    Rcpp::traits::input_parameter< const double >::type rho2(rho2SEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type plannedEvents(plannedEventsSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type plannedTime(plannedTimeSEXP);
+    Rcpp::traits::input_parameter< const int >::type maxNumberOfIterations(maxNumberOfIterationsSEXP);
+    Rcpp::traits::input_parameter< const int >::type maxNumberOfRawDatasetsPerStage(maxNumberOfRawDatasetsPerStageSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(lrsim2e(kMax, kMaxe1, hazardRatioH0e1, hazardRatioH0e2, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, rho, lambda1e1, lambda2e1, lambda1e2, lambda2e2, gamma1e1, gamma2e1, gamma1e2, gamma2e2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
+// lrsim2e3a
+List lrsim2e3a(const int kMax, const int kMaxe1, const double hazardRatioH013e1, const double hazardRatioH023e1, const double hazardRatioH012e1, const double hazardRatioH013e2, const double hazardRatioH023e2, const double hazardRatioH012e2, const int allocation1, const int allocation2, const int allocation3, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const NumericVector& piecewiseSurvivalTime, const NumericVector& stratumFraction, const double rho, const NumericVector& lambda1e1, const NumericVector& lambda2e1, const NumericVector& lambda3e1, const NumericVector& lambda1e2, const NumericVector& lambda2e2, const NumericVector& lambda3e2, const NumericVector& gamma1e1, const NumericVector& gamma2e1, const NumericVector& gamma3e1, const NumericVector& gamma1e2, const NumericVector& gamma2e2, const NumericVector& gamma3e2, const double accrualDuration, const double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const IntegerVector& plannedEvents, const NumericVector& plannedTime, const int maxNumberOfIterations, const int maxNumberOfRawDatasetsPerStage, int seed);
+RcppExport SEXP _lrstat_lrsim2e3a(SEXP kMaxSEXP, SEXP kMaxe1SEXP, SEXP hazardRatioH013e1SEXP, SEXP hazardRatioH023e1SEXP, SEXP hazardRatioH012e1SEXP, SEXP hazardRatioH013e2SEXP, SEXP hazardRatioH023e2SEXP, SEXP hazardRatioH012e2SEXP, SEXP allocation1SEXP, SEXP allocation2SEXP, SEXP allocation3SEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP rhoSEXP, SEXP lambda1e1SEXP, SEXP lambda2e1SEXP, SEXP lambda3e1SEXP, SEXP lambda1e2SEXP, SEXP lambda2e2SEXP, SEXP lambda3e2SEXP, SEXP gamma1e1SEXP, SEXP gamma2e1SEXP, SEXP gamma3e1SEXP, SEXP gamma1e2SEXP, SEXP gamma2e2SEXP, SEXP gamma3e2SEXP, SEXP accrualDurationSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP plannedEventsSEXP, SEXP plannedTimeSEXP, SEXP maxNumberOfIterationsSEXP, SEXP maxNumberOfRawDatasetsPerStageSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int >::type kMax(kMaxSEXP);
+    Rcpp::traits::input_parameter< const int >::type kMaxe1(kMaxe1SEXP);
+    Rcpp::traits::input_parameter< const double >::type hazardRatioH013e1(hazardRatioH013e1SEXP);
+    Rcpp::traits::input_parameter< const double >::type hazardRatioH023e1(hazardRatioH023e1SEXP);
+    Rcpp::traits::input_parameter< const double >::type hazardRatioH012e1(hazardRatioH012e1SEXP);
+    Rcpp::traits::input_parameter< const double >::type hazardRatioH013e2(hazardRatioH013e2SEXP);
+    Rcpp::traits::input_parameter< const double >::type hazardRatioH023e2(hazardRatioH023e2SEXP);
+    Rcpp::traits::input_parameter< const double >::type hazardRatioH012e2(hazardRatioH012e2SEXP);
+    Rcpp::traits::input_parameter< const int >::type allocation1(allocation1SEXP);
+    Rcpp::traits::input_parameter< const int >::type allocation2(allocation2SEXP);
+    Rcpp::traits::input_parameter< const int >::type allocation3(allocation3SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type accrualTime(accrualTimeSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type accrualIntensity(accrualIntensitySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type piecewiseSurvivalTime(piecewiseSurvivalTimeSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type stratumFraction(stratumFractionSEXP);
+    Rcpp::traits::input_parameter< const double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda1e1(lambda1e1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda2e1(lambda2e1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda3e1(lambda3e1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda1e2(lambda1e2SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda2e2(lambda2e2SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda3e2(lambda3e2SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma1e1(gamma1e1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma2e1(gamma2e1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma3e1(gamma3e1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma1e2(gamma1e2SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma2e2(gamma2e2SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma3e2(gamma3e2SEXP);
+    Rcpp::traits::input_parameter< const double >::type accrualDuration(accrualDurationSEXP);
+    Rcpp::traits::input_parameter< const double >::type followupTime(followupTimeSEXP);
+    Rcpp::traits::input_parameter< const bool >::type fixedFollowup(fixedFollowupSEXP);
+    Rcpp::traits::input_parameter< const double >::type rho1(rho1SEXP);
+    Rcpp::traits::input_parameter< const double >::type rho2(rho2SEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type plannedEvents(plannedEventsSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type plannedTime(plannedTimeSEXP);
+    Rcpp::traits::input_parameter< const int >::type maxNumberOfIterations(maxNumberOfIterationsSEXP);
+    Rcpp::traits::input_parameter< const int >::type maxNumberOfRawDatasetsPerStage(maxNumberOfRawDatasetsPerStageSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(lrsim2e3a(kMax, kMaxe1, hazardRatioH013e1, hazardRatioH023e1, hazardRatioH012e1, hazardRatioH013e2, hazardRatioH023e2, hazardRatioH012e2, allocation1, allocation2, allocation3, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, rho, lambda1e1, lambda2e1, lambda3e1, lambda1e2, lambda2e2, lambda3e2, gamma1e1, gamma2e1, gamma3e1, gamma1e2, gamma2e2, gamma3e2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
 // accrual
 NumericVector accrual(const NumericVector& time, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const double accrualDuration);
 RcppExport SEXP _lrstat_accrual(SEXP timeSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP accrualDurationSEXP) {
@@ -56,6 +335,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector& >::type accrualIntensity(accrualIntensitySEXP);
     Rcpp::traits::input_parameter< const double >::type accrualDuration(accrualDurationSEXP);
     rcpp_result_gen = Rcpp::wrap(accrual(time, accrualTime, accrualIntensity, accrualDuration));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getAccrualDuration
+NumericVector getAccrualDuration(const NumericVector& nsubjects, const NumericVector& accrualTime, const NumericVector& accrualIntensity);
+RcppExport SEXP _lrstat_getAccrualDuration(SEXP nsubjectsSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type nsubjects(nsubjectsSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type accrualTime(accrualTimeSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type accrualIntensity(accrualIntensitySEXP);
+    rcpp_result_gen = Rcpp::wrap(getAccrualDuration(nsubjects, accrualTime, accrualIntensity));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -258,9 +550,59 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// kmest1
+DataFrame kmest1(const double time, const double milestone, const double allocationRatioPlanned, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const NumericVector& piecewiseSurvivalTime, const NumericVector& stratumFraction, const NumericVector& lambda1, const NumericVector& lambda2, const NumericVector& gamma1, const NumericVector& gamma2, const double accrualDuration, const double followupTime, const bool fixedFollowup, const int numSubintervals);
+RcppExport SEXP _lrstat_kmest1(SEXP timeSEXP, SEXP milestoneSEXP, SEXP allocationRatioPlannedSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP accrualDurationSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP numSubintervalsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double >::type time(timeSEXP);
+    Rcpp::traits::input_parameter< const double >::type milestone(milestoneSEXP);
+    Rcpp::traits::input_parameter< const double >::type allocationRatioPlanned(allocationRatioPlannedSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type accrualTime(accrualTimeSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type accrualIntensity(accrualIntensitySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type piecewiseSurvivalTime(piecewiseSurvivalTimeSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type stratumFraction(stratumFractionSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda1(lambda1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda2(lambda2SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma1(gamma1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma2(gamma2SEXP);
+    Rcpp::traits::input_parameter< const double >::type accrualDuration(accrualDurationSEXP);
+    Rcpp::traits::input_parameter< const double >::type followupTime(followupTimeSEXP);
+    Rcpp::traits::input_parameter< const bool >::type fixedFollowup(fixedFollowupSEXP);
+    Rcpp::traits::input_parameter< const int >::type numSubintervals(numSubintervalsSEXP);
+    rcpp_result_gen = Rcpp::wrap(kmest1(time, milestone, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, numSubintervals));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kmest
+DataFrame kmest(const NumericVector& time, const double milestone, const double allocationRatioPlanned, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const NumericVector& piecewiseSurvivalTime, const NumericVector& stratumFraction, const NumericVector& lambda1, const NumericVector& lambda2, const NumericVector& gamma1, const NumericVector& gamma2, const double accrualDuration, const double followupTime, const bool fixedFollowup, const int numSubintervals);
+RcppExport SEXP _lrstat_kmest(SEXP timeSEXP, SEXP milestoneSEXP, SEXP allocationRatioPlannedSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP accrualDurationSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP numSubintervalsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type time(timeSEXP);
+    Rcpp::traits::input_parameter< const double >::type milestone(milestoneSEXP);
+    Rcpp::traits::input_parameter< const double >::type allocationRatioPlanned(allocationRatioPlannedSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type accrualTime(accrualTimeSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type accrualIntensity(accrualIntensitySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type piecewiseSurvivalTime(piecewiseSurvivalTimeSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type stratumFraction(stratumFractionSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda1(lambda1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda2(lambda2SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma1(gamma1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma2(gamma2SEXP);
+    Rcpp::traits::input_parameter< const double >::type accrualDuration(accrualDurationSEXP);
+    Rcpp::traits::input_parameter< const double >::type followupTime(followupTimeSEXP);
+    Rcpp::traits::input_parameter< const bool >::type fixedFollowup(fixedFollowupSEXP);
+    Rcpp::traits::input_parameter< const int >::type numSubintervals(numSubintervalsSEXP);
+    rcpp_result_gen = Rcpp::wrap(kmest(time, milestone, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, numSubintervals));
+    return rcpp_result_gen;
+END_RCPP
+}
 // caltime
-NumericVector caltime(const NumericVector& nevents, const double allocationRatioPlanned, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const NumericVector& piecewiseSurvivalTime, const NumericVector& stratumFraction, const NumericVector& lambda1, const NumericVector& lambda2, const NumericVector& gamma1, const NumericVector& gamma2, const double accrualDuration, const double followupTime, const bool fixedFollowup, const int numSubintervals);
-RcppExport SEXP _lrstat_caltime(SEXP neventsSEXP, SEXP allocationRatioPlannedSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP accrualDurationSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP numSubintervalsSEXP) {
+NumericVector caltime(const NumericVector& nevents, const double allocationRatioPlanned, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const NumericVector& piecewiseSurvivalTime, const NumericVector& stratumFraction, const NumericVector& lambda1, const NumericVector& lambda2, const NumericVector& gamma1, const NumericVector& gamma2, const double accrualDuration, const double followupTime, const bool fixedFollowup);
+RcppExport SEXP _lrstat_caltime(SEXP neventsSEXP, SEXP allocationRatioPlannedSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP accrualDurationSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -277,28 +619,37 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type accrualDuration(accrualDurationSEXP);
     Rcpp::traits::input_parameter< const double >::type followupTime(followupTimeSEXP);
     Rcpp::traits::input_parameter< const bool >::type fixedFollowup(fixedFollowupSEXP);
-    Rcpp::traits::input_parameter< const int >::type numSubintervals(numSubintervalsSEXP);
-    rcpp_result_gen = Rcpp::wrap(caltime(nevents, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, numSubintervals));
+    rcpp_result_gen = Rcpp::wrap(caltime(nevents, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup));
     return rcpp_result_gen;
 END_RCPP
 }
-// errorSpent
-double errorSpent(const double t, const double error, const String sf, const double sfpar);
-RcppExport SEXP _lrstat_errorSpent(SEXP tSEXP, SEXP errorSEXP, SEXP sfSEXP, SEXP sfparSEXP) {
+// getDurationFromNevents
+DataFrame getDurationFromNevents(const double nevents, const double allocationRatioPlanned, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const NumericVector& piecewiseSurvivalTime, const NumericVector& stratumFraction, const NumericVector& lambda1, const NumericVector& lambda2, const NumericVector& gamma1, const NumericVector& gamma2, const double followupTime, const bool fixedFollowup, const int npoints, const NumericVector& interval);
+RcppExport SEXP _lrstat_getDurationFromNevents(SEXP neventsSEXP, SEXP allocationRatioPlannedSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP npointsSEXP, SEXP intervalSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const double >::type t(tSEXP);
-    Rcpp::traits::input_parameter< const double >::type error(errorSEXP);
-    Rcpp::traits::input_parameter< const String >::type sf(sfSEXP);
-    Rcpp::traits::input_parameter< const double >::type sfpar(sfparSEXP);
-    rcpp_result_gen = Rcpp::wrap(errorSpent(t, error, sf, sfpar));
+    Rcpp::traits::input_parameter< const double >::type nevents(neventsSEXP);
+    Rcpp::traits::input_parameter< const double >::type allocationRatioPlanned(allocationRatioPlannedSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type accrualTime(accrualTimeSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type accrualIntensity(accrualIntensitySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type piecewiseSurvivalTime(piecewiseSurvivalTimeSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type stratumFraction(stratumFractionSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda1(lambda1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type lambda2(lambda2SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma1(gamma1SEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma2(gamma2SEXP);
+    Rcpp::traits::input_parameter< const double >::type followupTime(followupTimeSEXP);
+    Rcpp::traits::input_parameter< const bool >::type fixedFollowup(fixedFollowupSEXP);
+    Rcpp::traits::input_parameter< const int >::type npoints(npointsSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type interval(intervalSEXP);
+    rcpp_result_gen = Rcpp::wrap(getDurationFromNevents(nevents, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, followupTime, fixedFollowup, npoints, interval));
     return rcpp_result_gen;
 END_RCPP
 }
 // getCriticalValues
-NumericVector getCriticalValues(const int kMax, const NumericVector& informationRates, const LogicalVector& efficacyStopping, const double alpha, const String typeAlphaSpending, const double parameterAlphaSpending, const NumericVector& userAlphaSpending, const double hazardRatioH0, const double allocationRatioPlanned, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const NumericVector& piecewiseSurvivalTime, const NumericVector& stratumFraction, const NumericVector& lambda2, const NumericVector& gamma1, const NumericVector& gamma2, const double accrualDuration, const double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const int numSubintervals);
-RcppExport SEXP _lrstat_getCriticalValues(SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP hazardRatioH0SEXP, SEXP allocationRatioPlannedSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda2SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP accrualDurationSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP numSubintervalsSEXP) {
+NumericVector getCriticalValues(const int kMax, const NumericVector& informationRates, const LogicalVector& efficacyStopping, const double alpha, const String typeAlphaSpending, const double parameterAlphaSpending, const NumericVector& userAlphaSpending, const double hazardRatioH0, const double allocationRatioPlanned, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const NumericVector& piecewiseSurvivalTime, const NumericVector& stratumFraction, const NumericVector& lambda2, const NumericVector& gamma1, const NumericVector& gamma2, const double accrualDuration, const double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const int numSubintervals, const NumericVector& spendingTime);
+RcppExport SEXP _lrstat_getCriticalValues(SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP hazardRatioH0SEXP, SEXP allocationRatioPlannedSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda2SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP accrualDurationSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP numSubintervalsSEXP, SEXP spendingTimeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -324,7 +675,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type rho1(rho1SEXP);
     Rcpp::traits::input_parameter< const double >::type rho2(rho2SEXP);
     Rcpp::traits::input_parameter< const int >::type numSubintervals(numSubintervalsSEXP);
-    rcpp_result_gen = Rcpp::wrap(getCriticalValues(kMax, informationRates, efficacyStopping, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals));
+    Rcpp::traits::input_parameter< const NumericVector& >::type spendingTime(spendingTimeSEXP);
+    rcpp_result_gen = Rcpp::wrap(getCriticalValues(kMax, informationRates, efficacyStopping, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals, spendingTime));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -357,8 +709,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // lrpower
-List lrpower(const int kMax, const NumericVector& informationRates, const LogicalVector& efficacyStopping, const LogicalVector& futilityStopping, const NumericVector& criticalValues, const double alpha, const String typeAlphaSpending, const double parameterAlphaSpending, const NumericVector& userAlphaSpending, const NumericVector& futilityBounds, const String typeBetaSpending, const double parameterBetaSpending, const double hazardRatioH0, const double allocationRatioPlanned, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const NumericVector& piecewiseSurvivalTime, const NumericVector& stratumFraction, const NumericVector& lambda1, const NumericVector& lambda2, const NumericVector& gamma1, const NumericVector& gamma2, const double accrualDuration, const double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const int numSubintervals, const bool estimateHazardRatio);
-RcppExport SEXP _lrstat_lrpower(SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP typeBetaSpendingSEXP, SEXP parameterBetaSpendingSEXP, SEXP hazardRatioH0SEXP, SEXP allocationRatioPlannedSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP accrualDurationSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP numSubintervalsSEXP, SEXP estimateHazardRatioSEXP) {
+List lrpower(const int kMax, const NumericVector& informationRates, const LogicalVector& efficacyStopping, const LogicalVector& futilityStopping, const NumericVector& criticalValues, const double alpha, const String typeAlphaSpending, const double parameterAlphaSpending, const NumericVector& userAlphaSpending, const NumericVector& futilityBounds, const String typeBetaSpending, const double parameterBetaSpending, const double hazardRatioH0, const double allocationRatioPlanned, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const NumericVector& piecewiseSurvivalTime, const NumericVector& stratumFraction, const NumericVector& lambda1, const NumericVector& lambda2, const NumericVector& gamma1, const NumericVector& gamma2, const double accrualDuration, const double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const int numSubintervals, const bool estimateHazardRatio, const String typeOfComputation, const NumericVector& spendingTime, const double studyDuration);
+RcppExport SEXP _lrstat_lrpower(SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP typeBetaSpendingSEXP, SEXP parameterBetaSpendingSEXP, SEXP hazardRatioH0SEXP, SEXP allocationRatioPlannedSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP accrualDurationSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP numSubintervalsSEXP, SEXP estimateHazardRatioSEXP, SEXP typeOfComputationSEXP, SEXP spendingTimeSEXP, SEXP studyDurationSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -391,13 +743,71 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type rho2(rho2SEXP);
     Rcpp::traits::input_parameter< const int >::type numSubintervals(numSubintervalsSEXP);
     Rcpp::traits::input_parameter< const bool >::type estimateHazardRatio(estimateHazardRatioSEXP);
-    rcpp_result_gen = Rcpp::wrap(lrpower(kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals, estimateHazardRatio));
+    Rcpp::traits::input_parameter< const String >::type typeOfComputation(typeOfComputationSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type spendingTime(spendingTimeSEXP);
+    Rcpp::traits::input_parameter< const double >::type studyDuration(studyDurationSEXP);
+    rcpp_result_gen = Rcpp::wrap(lrpower(kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals, estimateHazardRatio, typeOfComputation, spendingTime, studyDuration));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getDesign
+List getDesign(const double beta, const double drift, const int kMax, const NumericVector& informationRates, const LogicalVector& efficacyStopping, const LogicalVector& futilityStopping, const NumericVector& criticalValues, const double alpha, const String typeAlphaSpending, const double parameterAlphaSpending, const NumericVector& userAlphaSpending, const NumericVector& futilityBounds, const String typeBetaSpending, const double parameterBetaSpending, const NumericVector& userBetaSpending, const NumericVector& spendingTime);
+RcppExport SEXP _lrstat_getDesign(SEXP betaSEXP, SEXP driftSEXP, SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP typeBetaSpendingSEXP, SEXP parameterBetaSpendingSEXP, SEXP userBetaSpendingSEXP, SEXP spendingTimeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< const double >::type drift(driftSEXP);
+    Rcpp::traits::input_parameter< const int >::type kMax(kMaxSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type informationRates(informationRatesSEXP);
+    Rcpp::traits::input_parameter< const LogicalVector& >::type efficacyStopping(efficacyStoppingSEXP);
+    Rcpp::traits::input_parameter< const LogicalVector& >::type futilityStopping(futilityStoppingSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type criticalValues(criticalValuesSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const String >::type typeAlphaSpending(typeAlphaSpendingSEXP);
+    Rcpp::traits::input_parameter< const double >::type parameterAlphaSpending(parameterAlphaSpendingSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type userAlphaSpending(userAlphaSpendingSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type futilityBounds(futilityBoundsSEXP);
+    Rcpp::traits::input_parameter< const String >::type typeBetaSpending(typeBetaSpendingSEXP);
+    Rcpp::traits::input_parameter< const double >::type parameterBetaSpending(parameterBetaSpendingSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type userBetaSpending(userBetaSpendingSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type spendingTime(spendingTimeSEXP);
+    rcpp_result_gen = Rcpp::wrap(getDesign(beta, drift, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getNeventsFromHazardRatio
+double getNeventsFromHazardRatio(const double beta, const int kMax, const NumericVector& informationRates, const LogicalVector& efficacyStopping, const LogicalVector& futilityStopping, const NumericVector& criticalValues, const double alpha, const String typeAlphaSpending, const double parameterAlphaSpending, const NumericVector& userAlphaSpending, const NumericVector& futilityBounds, const String typeBetaSpending, const double parameterBetaSpending, const NumericVector& userBetaSpending, const NumericVector& spendingTime, const double hazardRatioH0, const double hazardRatio, const double allocationRatioPlanned, const bool rounding);
+RcppExport SEXP _lrstat_getNeventsFromHazardRatio(SEXP betaSEXP, SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP typeBetaSpendingSEXP, SEXP parameterBetaSpendingSEXP, SEXP userBetaSpendingSEXP, SEXP spendingTimeSEXP, SEXP hazardRatioH0SEXP, SEXP hazardRatioSEXP, SEXP allocationRatioPlannedSEXP, SEXP roundingSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< const int >::type kMax(kMaxSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type informationRates(informationRatesSEXP);
+    Rcpp::traits::input_parameter< const LogicalVector& >::type efficacyStopping(efficacyStoppingSEXP);
+    Rcpp::traits::input_parameter< const LogicalVector& >::type futilityStopping(futilityStoppingSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type criticalValues(criticalValuesSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const String >::type typeAlphaSpending(typeAlphaSpendingSEXP);
+    Rcpp::traits::input_parameter< const double >::type parameterAlphaSpending(parameterAlphaSpendingSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type userAlphaSpending(userAlphaSpendingSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type futilityBounds(futilityBoundsSEXP);
+    Rcpp::traits::input_parameter< const String >::type typeBetaSpending(typeBetaSpendingSEXP);
+    Rcpp::traits::input_parameter< const double >::type parameterBetaSpending(parameterBetaSpendingSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type userBetaSpending(userBetaSpendingSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type spendingTime(spendingTimeSEXP);
+    Rcpp::traits::input_parameter< const double >::type hazardRatioH0(hazardRatioH0SEXP);
+    Rcpp::traits::input_parameter< const double >::type hazardRatio(hazardRatioSEXP);
+    Rcpp::traits::input_parameter< const double >::type allocationRatioPlanned(allocationRatioPlannedSEXP);
+    Rcpp::traits::input_parameter< const bool >::type rounding(roundingSEXP);
+    rcpp_result_gen = Rcpp::wrap(getNeventsFromHazardRatio(beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime, hazardRatioH0, hazardRatio, allocationRatioPlanned, rounding));
     return rcpp_result_gen;
 END_RCPP
 }
 // lrsamplesize
-List lrsamplesize(const double beta, const int kMax, const NumericVector& informationRates, const LogicalVector& efficacyStopping, const LogicalVector& futilityStopping, const NumericVector& criticalValues, const double alpha, const String typeAlphaSpending, const double parameterAlphaSpending, const NumericVector& userAlphaSpending, const NumericVector& futilityBounds, const String typeBetaSpending, const double parameterBetaSpending, const NumericVector& userBetaSpending, const double hazardRatioH0, const double allocationRatioPlanned, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const NumericVector& piecewiseSurvivalTime, const NumericVector& stratumFraction, const NumericVector& lambda1, const NumericVector& lambda2, const NumericVector& gamma1, const NumericVector& gamma2, double accrualDuration, double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const int numSubintervals, const bool estimateHazardRatio, const NumericVector& interval);
-RcppExport SEXP _lrstat_lrsamplesize(SEXP betaSEXP, SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP typeBetaSpendingSEXP, SEXP parameterBetaSpendingSEXP, SEXP userBetaSpendingSEXP, SEXP hazardRatioH0SEXP, SEXP allocationRatioPlannedSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP accrualDurationSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP numSubintervalsSEXP, SEXP estimateHazardRatioSEXP, SEXP intervalSEXP) {
+List lrsamplesize(const double beta, const int kMax, const NumericVector& informationRates, const LogicalVector& efficacyStopping, const LogicalVector& futilityStopping, const NumericVector& criticalValues, const double alpha, const String typeAlphaSpending, const double parameterAlphaSpending, const NumericVector& userAlphaSpending, const NumericVector& futilityBounds, const String typeBetaSpending, const double parameterBetaSpending, const NumericVector& userBetaSpending, const double hazardRatioH0, const double allocationRatioPlanned, const NumericVector& accrualTime, const NumericVector& accrualIntensity, const NumericVector& piecewiseSurvivalTime, const NumericVector& stratumFraction, const NumericVector& lambda1, const NumericVector& lambda2, const NumericVector& gamma1, const NumericVector& gamma2, double accrualDuration, double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const int numSubintervals, const bool estimateHazardRatio, const String typeOfComputation, const NumericVector& interval, const NumericVector& spendingTime, const bool rounding);
+RcppExport SEXP _lrstat_lrsamplesize(SEXP betaSEXP, SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP typeBetaSpendingSEXP, SEXP parameterBetaSpendingSEXP, SEXP userBetaSpendingSEXP, SEXP hazardRatioH0SEXP, SEXP allocationRatioPlannedSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP accrualDurationSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP numSubintervalsSEXP, SEXP estimateHazardRatioSEXP, SEXP typeOfComputationSEXP, SEXP intervalSEXP, SEXP spendingTimeSEXP, SEXP roundingSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -432,8 +842,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type rho2(rho2SEXP);
     Rcpp::traits::input_parameter< const int >::type numSubintervals(numSubintervalsSEXP);
     Rcpp::traits::input_parameter< const bool >::type estimateHazardRatio(estimateHazardRatioSEXP);
+    Rcpp::traits::input_parameter< const String >::type typeOfComputation(typeOfComputationSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type interval(intervalSEXP);
-    rcpp_result_gen = Rcpp::wrap(lrsamplesize(beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals, estimateHazardRatio, interval));
+    Rcpp::traits::input_parameter< const NumericVector& >::type spendingTime(spendingTimeSEXP);
+    Rcpp::traits::input_parameter< const bool >::type rounding(roundingSEXP);
+    rcpp_result_gen = Rcpp::wrap(lrsamplesize(beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals, estimateHazardRatio, typeOfComputation, interval, spendingTime, rounding));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -448,12 +861,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // stl_sort
-NumericVector stl_sort(NumericVector x);
+NumericVector stl_sort(const NumericVector& x);
 RcppExport SEXP _lrstat_stl_sort(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type x(xSEXP);
     rcpp_result_gen = Rcpp::wrap(stl_sort(x));
     return rcpp_result_gen;
 END_RCPP
@@ -470,23 +883,37 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// exitprob
-List exitprob(const NumericVector& b, NumericVector a, NumericVector theta, const NumericVector& I);
-RcppExport SEXP _lrstat_exitprob(SEXP bSEXP, SEXP aSEXP, SEXP thetaSEXP, SEXP ISEXP) {
+// errorSpentcpp
+double errorSpentcpp(const double t, const double error, const String sf, const double sfpar);
+RcppExport SEXP _lrstat_errorSpentcpp(SEXP tSEXP, SEXP errorSEXP, SEXP sfSEXP, SEXP sfparSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double >::type t(tSEXP);
+    Rcpp::traits::input_parameter< const double >::type error(errorSEXP);
+    Rcpp::traits::input_parameter< const String >::type sf(sfSEXP);
+    Rcpp::traits::input_parameter< const double >::type sfpar(sfparSEXP);
+    rcpp_result_gen = Rcpp::wrap(errorSpentcpp(t, error, sf, sfpar));
+    return rcpp_result_gen;
+END_RCPP
+}
+// exitprobcpp
+List exitprobcpp(const NumericVector& b, const NumericVector& a, const NumericVector& theta, const NumericVector& I);
+RcppExport SEXP _lrstat_exitprobcpp(SEXP bSEXP, SEXP aSEXP, SEXP thetaSEXP, SEXP ISEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type b(bSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type a(aSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type a(aSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type I(ISEXP);
-    rcpp_result_gen = Rcpp::wrap(exitprob(b, a, theta, I));
+    rcpp_result_gen = Rcpp::wrap(exitprobcpp(b, a, theta, I));
     return rcpp_result_gen;
 END_RCPP
 }
-// qtpwexp
-double qtpwexp(const double probability, const NumericVector& piecewiseSurvivalTime, const NumericVector& lambda, const double lowerBound);
-RcppExport SEXP _lrstat_qtpwexp(SEXP probabilitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP lambdaSEXP, SEXP lowerBoundSEXP) {
+// qtpwexpcpp
+double qtpwexpcpp(const double probability, const NumericVector& piecewiseSurvivalTime, const NumericVector& lambda, const double lowerBound);
+RcppExport SEXP _lrstat_qtpwexpcpp(SEXP probabilitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP lambdaSEXP, SEXP lowerBoundSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -494,14 +921,28 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector& >::type piecewiseSurvivalTime(piecewiseSurvivalTimeSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< const double >::type lowerBound(lowerBoundSEXP);
-    rcpp_result_gen = Rcpp::wrap(qtpwexp(probability, piecewiseSurvivalTime, lambda, lowerBound));
+    rcpp_result_gen = Rcpp::wrap(qtpwexpcpp(probability, piecewiseSurvivalTime, lambda, lowerBound));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_lrstat_updateGraph", (DL_FUNC) &_lrstat_updateGraph, 4},
+    {"_lrstat_fadjpboncpp", (DL_FUNC) &_lrstat_fadjpboncpp, 3},
+    {"_lrstat_fwgtmat", (DL_FUNC) &_lrstat_fwgtmat, 2},
+    {"_lrstat_fadjpsimcpp", (DL_FUNC) &_lrstat_fadjpsimcpp, 3},
+    {"_lrstat_getBound", (DL_FUNC) &_lrstat_getBound, 7},
+    {"_lrstat_repeatedPValuecpp", (DL_FUNC) &_lrstat_repeatedPValuecpp, 7},
+    {"_lrstat_fseqboncpp", (DL_FUNC) &_lrstat_fseqboncpp, 11},
+    {"_lrstat_fstp2seqcpp", (DL_FUNC) &_lrstat_fstp2seqcpp, 4},
+    {"_lrstat_fstdmixcpp", (DL_FUNC) &_lrstat_fstdmixcpp, 7},
+    {"_lrstat_fmodmixcpp", (DL_FUNC) &_lrstat_fmodmixcpp, 7},
     {"_lrstat_lrsim", (DL_FUNC) &_lrstat_lrsim, 25},
+    {"_lrstat_lrsim3a", (DL_FUNC) &_lrstat_lrsim3a, 27},
+    {"_lrstat_lrsim2e", (DL_FUNC) &_lrstat_lrsim2e, 29},
+    {"_lrstat_lrsim2e3a", (DL_FUNC) &_lrstat_lrsim2e3a, 38},
     {"_lrstat_accrual", (DL_FUNC) &_lrstat_accrual, 4},
+    {"_lrstat_getAccrualDuration", (DL_FUNC) &_lrstat_getAccrualDuration, 3},
     {"_lrstat_patrisk", (DL_FUNC) &_lrstat_patrisk, 4},
     {"_lrstat_pevent", (DL_FUNC) &_lrstat_pevent, 4},
     {"_lrstat_hd", (DL_FUNC) &_lrstat_hd, 6},
@@ -512,17 +953,22 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lrstat_nevent2", (DL_FUNC) &_lrstat_nevent2, 12},
     {"_lrstat_lrstat1", (DL_FUNC) &_lrstat_lrstat1, 18},
     {"_lrstat_lrstat", (DL_FUNC) &_lrstat_lrstat, 18},
-    {"_lrstat_caltime", (DL_FUNC) &_lrstat_caltime, 14},
-    {"_lrstat_errorSpent", (DL_FUNC) &_lrstat_errorSpent, 4},
-    {"_lrstat_getCriticalValues", (DL_FUNC) &_lrstat_getCriticalValues, 22},
+    {"_lrstat_kmest1", (DL_FUNC) &_lrstat_kmest1, 15},
+    {"_lrstat_kmest", (DL_FUNC) &_lrstat_kmest, 15},
+    {"_lrstat_caltime", (DL_FUNC) &_lrstat_caltime, 13},
+    {"_lrstat_getDurationFromNevents", (DL_FUNC) &_lrstat_getDurationFromNevents, 14},
+    {"_lrstat_getCriticalValues", (DL_FUNC) &_lrstat_getCriticalValues, 23},
     {"_lrstat_getCumAlphaSpent", (DL_FUNC) &_lrstat_getCumAlphaSpent, 18},
-    {"_lrstat_lrpower", (DL_FUNC) &_lrstat_lrpower, 29},
-    {"_lrstat_lrsamplesize", (DL_FUNC) &_lrstat_lrsamplesize, 32},
+    {"_lrstat_lrpower", (DL_FUNC) &_lrstat_lrpower, 32},
+    {"_lrstat_getDesign", (DL_FUNC) &_lrstat_getDesign, 16},
+    {"_lrstat_getNeventsFromHazardRatio", (DL_FUNC) &_lrstat_getNeventsFromHazardRatio, 19},
+    {"_lrstat_lrsamplesize", (DL_FUNC) &_lrstat_lrsamplesize, 35},
     {"_lrstat_set_seed", (DL_FUNC) &_lrstat_set_seed, 1},
     {"_lrstat_stl_sort", (DL_FUNC) &_lrstat_stl_sort, 1},
     {"_lrstat_findInterval2", (DL_FUNC) &_lrstat_findInterval2, 2},
-    {"_lrstat_exitprob", (DL_FUNC) &_lrstat_exitprob, 4},
-    {"_lrstat_qtpwexp", (DL_FUNC) &_lrstat_qtpwexp, 4},
+    {"_lrstat_errorSpentcpp", (DL_FUNC) &_lrstat_errorSpentcpp, 4},
+    {"_lrstat_exitprobcpp", (DL_FUNC) &_lrstat_exitprobcpp, 4},
+    {"_lrstat_qtpwexpcpp", (DL_FUNC) &_lrstat_qtpwexpcpp, 4},
     {NULL, NULL, 0}
 };
 

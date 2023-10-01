@@ -129,6 +129,105 @@ fadjpbon <- function(w, G, p) {
 }
 
 
+#' @title Adjusted p-values for Dunnett-based graphical approaches
+#' @description Obtains the adjusted p-values for graphical approaches 
+#' using weighted Dunnett tests.
+#'
+#' @param wgtmat The weight matrix for intersection hypotheses.
+#' @param p The raw p-values for elementary hypotheses.
+#' @param family The matrix of family indicators for elementary hypotheses.
+#' @param corr The correlation matrix that should be used for the parametric 
+#'   test. Can contain NAs for unknown correlations between families.
+#'
+#' @return A matrix of adjusted p-values.
+#'
+#' @references
+#' Frank Bretz, Martin Posch, Ekkehard Glimm, Florian Klinglmueller, 
+#' Willi Maurer, and Kornelius Rohmeyer. Graphical approach for multiple
+#' comparison procedures using weighted Bonferroni, Simes, or 
+#' parameter tests. Biometrical Journal. 2011; 53:894-913.
+#' 
+#' @examples
+#'
+#' pvalues <- matrix(c(0.01,0.005,0.015,0.022, 0.02,0.015,0.010,0.023),
+#'                   nrow=2, ncol=4, byrow=TRUE)
+#' w <- c(0.5,0.5,0,0)
+#' g <- matrix(c(0,0,1,0,0,0,0,1,0,1,0,0,1,0,0,0), 
+#'             nrow=4, ncol=4, byrow=TRUE)
+#' wgtmat = fwgtmat(w,g)
+#' 
+#' family = matrix(c(1,1,0,0,0,0,1,1), nrow=2, ncol=4, byrow=TRUE)
+#' corr = matrix(c(1,0.5,NA,NA, 0.5,1,NA,NA,
+#'                 NA,NA,1,0.5, NA,NA,0.5,1), 
+#'               nrow = 4, byrow = TRUE)
+#' fadjpdun(wgtmat, pvalues, family, corr)
+#'
+#' @export
+fadjpdun <- function(wgtmat, p, family, corr) {
+  ntests = nrow(wgtmat)
+  m = ncol(wgtmat)
+  
+  if (!is.matrix(p)) {
+    p = matrix(p, ncol=m)
+  }
+  
+  r = nrow(p)
+  
+  pinter = matrix(0, r, ntests)
+  incid = matrix(0, ntests, m)
+  for (i in 1:ntests) {
+    number = ntests - i + 1
+    cc = floor(number/2^(m - (1:m))) %% 2 
+    w = wgtmat[i,]
+    
+    J = which(cc == 1)
+    J1 = intersect(J, which(w > 0))
+    l = nrow(family)
+    
+    if (length(J1) > 1) {
+      if (r > 1) {
+        q = apply(p[,J1]/w[J1], 1, min)
+      } else {
+        q = min(p[,J1]/w[J1])
+      }
+    } else {
+      q = p[,J1]/w[J1]
+    }
+    
+    for (k in 1:r) {
+      aval = 0
+      for (h in 1:l) {
+        I_h = which(family[h,] == 1)
+        J_h = intersect(J1, I_h)
+        if (length(J_h) > 0) {
+          sigma = corr[J_h, J_h]
+          upper = qnorm(1 - w[J_h]*q[k])
+          v = pmvnorm(upper = upper, sigma = sigma, algorithm = "Miwa")
+          aval = aval + (1 - v)
+        }
+      }
+      pinter[k,i] = aval
+    }
+    
+    incid[i,] = cc
+  }
+  
+  
+  x = matrix(0, r, m)
+  for (j in 1:m) {
+    ind = matrix(rep(incid[,j], each=r), nrow=r)
+    x[,j] = apply(pinter*ind, 1, max)
+  }
+  x[x > 1] = 1
+  x
+  
+  if (nrow(x) == 1) {
+    x = as.vector(x)
+  }
+  x
+}
+
+
 #' @title Adjusted p-values for Simes-based graphical approaches
 #' @description Obtains the adjusted p-values for graphical approaches 
 #' using weighted Simes tests.
