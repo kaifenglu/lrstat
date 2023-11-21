@@ -1,5 +1,6 @@
 inst/doc
 .Rproj.user
+man
 notes
 NAMESPACE
 R/RcppExports.R
