@@ -566,7 +566,7 @@ NumericVector getBound(
   }
   
   NumericVector theta(k); // mean values under H0, initialized to zero
-  NumericVector t = clone(informationRates1); // information time for test stat
+  NumericVector t = clone(informationRates1); // info time for test stat
   NumericVector s = clone(spendingTime1); // spending time for alpha-spending
   NumericVector criticalValues(k);
   
@@ -1078,7 +1078,7 @@ IntegerVector fseqboncpp(
       if (is_false(all(is_na(strow)))) {
         strow = strow[!is_na(strow)];
         if (strow.size() != prow.size()) {
-          stop("spendingTime & p must have the same # of nonmissing elements");
+          stop("spendingTime & p must have equal # of nonmissing elements");
         } else if (strow(0) <= 0) {
           stop("Elements of spendingTime must be positive");
         } else if (K1(j)>1 && is_true(any(diff(strow) <= 0))) {

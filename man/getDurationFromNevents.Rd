@@ -27,15 +27,16 @@ getDurationFromNevents(
 \item{allocationRatioPlanned}{Allocation ratio for the active treatment
 versus control. Defaults to 1 for equal randomization.}
 
-\item{accrualTime}{Accrual time intervals. Must start with 0, e.g.,
+\item{accrualTime}{A vector that specifies the starting time of
+piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 [0, 3) and [3, Inf).}
 
 \item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
-\item{piecewiseSurvivalTime}{A vector that specifies the time intervals for
-the piecewise exponential survival distribution. Must start with 0, e.g.,
+\item{piecewiseSurvivalTime}{A vector that specifies the starting times of
+piecewise exponential survival time intervals. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
 Defaults to 0 for exponential distribution.}
@@ -64,18 +65,24 @@ by stratum for the control group.}
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
 Defaults to 0 for variable follow-up.}
 
-\item{npoints}{The number of accrual duration time points. 
+\item{npoints}{The number of accrual duration time points.
 Defaults to 23.}
 
 \item{interval}{The interval to search for the solution of
 accrualDuration. Defaults to \code{c(0.001, 240)}.}
 }
 \value{
-A data frame of enrollment duration, sample size, and study 
-duration to yield the target number of events.
+A data frame of the following variables:
+\itemize{
+\item \code{nevents}: The target number of events.
+\item \code{fixedFollowup}: Whether a fixed follow-up design is used.
+\item \code{accrualDuration}: The accrual duration.
+\item \code{subjects}: The total number of subjects.
+\item \code{studyDuration}: The study duration.
+}
 }
 \description{
-Obtains a range of accrual duration to reach the 
+Obtains a range of accrual duration to reach the
 target number of events.
 }
 \examples{

@@ -27,7 +27,7 @@ for the last family with active hypotheses. It defaults to TRUE.}
 A matrix of adjusted p-values.
 }
 \description{
-Obtains the adjusted p-values for the modified gatekeeping 
+Obtains the adjusted p-values for the modified gatekeeping
 procedures for multiplicity problems involving serial and parallel
 logical restrictions.
 }
@@ -56,13 +56,13 @@ fmodmix(p, family, serial, parallel, gamma, "hommel", 1)
 
 }
 \references{
-Alex Dmitrienko, George Kordzakhia, and Thomas Brechenmacher. 
-Mixture-based gatekeeping procedures for multiplicity problems with 
+Alex Dmitrienko, George Kordzakhia, and Thomas Brechenmacher.
+Mixture-based gatekeeping procedures for multiplicity problems with
 multiple sequences of hypotheses. Journal of Biopharmaceutical
 Statistics. 2016; 26(4):758–780.
 
-George Kordzakhia, Thomas Brechenmacher, Eiji Ishida, Alex Dmitrienko, 
-Winston Wenxiang Zheng, and David Fuyuan Li. An enhanced mixture method 
-for constructing gatekeeping procedures in clinical trials. 
+George Kordzakhia, Thomas Brechenmacher, Eiji Ishida, Alex Dmitrienko,
+Winston Wenxiang Zheng, and David Fuyuan Li. An enhanced mixture method
+for constructing gatekeeping procedures in clinical trials.
 Journal of Biopharmaceutical Statistics. 2018; 28(1):113–128.
 }

@@ -35,15 +35,16 @@ treatment versus control. Defaults to 1 for superiority test.}
 \item{allocationRatioPlanned}{Allocation ratio for the active treatment
 versus control. Defaults to 1 for equal randomization.}
 
-\item{accrualTime}{Accrual time intervals. Must start with 0, e.g.,
+\item{accrualTime}{A vector that specifies the starting time of
+piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 [0, 3) and [3, Inf).}
 
 \item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
-\item{piecewiseSurvivalTime}{A vector that specifies the time intervals for
-the piecewise exponential survival distribution. Must start with 0, e.g.,
+\item{piecewiseSurvivalTime}{A vector that specifies the starting times of
+piecewise exponential survival time intervals. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
 Defaults to 0 for exponential distribution.}
@@ -74,10 +75,10 @@ by stratum for the control group.}
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
 Defaults to 0 for variable follow-up.}
 
-\item{rho1}{The first parameter of the Fleming-Harrington family of 
+\item{rho1}{The first parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
-\item{rho2}{The second parameter of the Fleming-Harrington family of 
+\item{rho2}{The second parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
 \item{numSubintervals}{Number of sub-intervals to approximate the mean
@@ -92,12 +93,35 @@ calculating the mean and variance of log-rank score statistic, and
 calculating the estimated hazard ratio and variance of log hazard ratio.}
 }
 \value{
-A data frame of the number of subjects enrolled, the number of
-subjects having an event overall and in each group, the number of subjects
-who drop out overall and in each group, the mean and variance of weighted
-log-rank score statistic, the estimated hazard ratio from weighted Cox
-regression, and variance of the log hazard ratio estimate at the
-specified calendar times.
+A data frame containing the following variables if
+\code{predictEventOnly = 1}:
+\itemize{
+\item \code{time}: The analysis time since trial start.
+\item \code{subjects}: The number of enrolled subjects.
+\item \code{nevents}: The total number of events.
+\item \code{nevents1}: The number of events in the active treatment group.
+\item \code{nevents2}: The number of events in the control group.
+\item \code{ndropouts}: The total number of dropouts.
+\item \code{ndropouts1}: The number of events for the active treatment group.
+\item \code{ndropouts2}: The number of events for the control group.
+}
+
+If \code{predictEventOnly = 0}, the following variables will also
+be included:
+\itemize{
+\item \code{uscore}: The numerator of the log-rank test statistic.
+\item \code{vscore}: The variance of the log-rank score test statistic.
+\item \code{logRankZ}: The log-rank test statistic on the Z-scale.
+\item \code{hazardRatioH0}: The hazard ratio under the null hypothesis.
+}
+
+Furthermore, if \code{predictEventOnly = 2}, the following additional
+variables will also be included:
+\itemize{
+\item \code{HR}: The average hazard ratio from weighted Cox regression.
+\item \code{vlogHR}: The variance of log hazard ratio.
+\item \code{zlogHR}: The Z-statistic for log hazard ratio.
+}
 }
 \description{
 Obtains the number of subjects accrued, number of events and

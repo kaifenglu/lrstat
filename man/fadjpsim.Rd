@@ -17,7 +17,7 @@ fadjpsim(wgtmat, p, family)
 A matrix of adjusted p-values.
 }
 \description{
-Obtains the adjusted p-values for graphical approaches 
+Obtains the adjusted p-values for graphical approaches
 using weighted Simes tests.
 }
 \examples{
@@ -34,11 +34,11 @@ fadjpsim(wgtmat, pvalues, family)
 
 }
 \references{
-Frank Bretz, Martin Posch, Ekkehard Glimm, Florian Klinglmueller, 
+Frank Bretz, Martin Posch, Ekkehard Glimm, Florian Klinglmueller,
 Willi Maurer, and Kornelius Rohmeyer. Graphical approach for multiple
-comparison procedures using weighted Bonferroni, Simes, or 
+comparison procedures using weighted Bonferroni, Simes, or
 parameter tests. Biometrical Journal. 2011; 53:894-913.
 
-Kaifeng Lu. Graphical approaches using a Bonferroni mixture of weighted 
+Kaifeng Lu. Graphical approaches using a Bonferroni mixture of weighted
 Simes tests. Statistics in Medicine. 2016; 35:4041-4055.
 }

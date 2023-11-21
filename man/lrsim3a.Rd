@@ -55,15 +55,16 @@ a randomization block. Defaults to 1 for equal randomization.}
 \item{allocation3}{Number of subjects in Arm C in
 a randomization block. Defaults to 1 for equal randomization.}
 
-\item{accrualTime}{Accrual time intervals. Must start with 0, e.g.,
+\item{accrualTime}{A vector that specifies the starting time of
+piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 [0, 3) and [3, Inf).}
 
 \item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
-\item{piecewiseSurvivalTime}{A vector that specifies the time intervals for
-the piecewise exponential survival distribution. Must start with 0, e.g.,
+\item{piecewiseSurvivalTime}{A vector that specifies the starting times of
+piecewise exponential survival time intervals. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
 Defaults to 0 for exponential distribution.}
@@ -80,19 +81,19 @@ time interval by stratum for arm 2.}
 \item{lambda3}{A vector of hazard rates for the event in each analysis
 time interval by stratum for arm 3.}
 
-\item{gamma1}{The hazard rate for exponential dropout. A vector of 
-hazard rates for piecewise exponential dropout applicable for all 
-strata, or a vector of hazard rates for dropout in each analysis time 
+\item{gamma1}{The hazard rate for exponential dropout. A vector of
+hazard rates for piecewise exponential dropout applicable for all
+strata, or a vector of hazard rates for dropout in each analysis time
 interval by stratum for arm 1.}
 
-\item{gamma2}{The hazard rate for exponential dropout. A vector of 
-hazard rates for piecewise exponential dropout applicable for all 
-strata, or a vector of hazard rates for dropout in each analysis time 
+\item{gamma2}{The hazard rate for exponential dropout. A vector of
+hazard rates for piecewise exponential dropout applicable for all
+strata, or a vector of hazard rates for dropout in each analysis time
 interval by stratum for arm 2.}
 
-\item{gamma3}{The hazard rate for exponential dropout. A vector of 
-hazard rates for piecewise exponential dropout applicable for all 
-strata, or a vector of hazard rates for dropout in each analysis time 
+\item{gamma3}{The hazard rate for exponential dropout. A vector of
+hazard rates for piecewise exponential dropout applicable for all
+strata, or a vector of hazard rates for dropout in each analysis time
 interval by stratum for arm 3.}
 
 \item{accrualDuration}{Duration of the enrollment period.}
@@ -102,13 +103,13 @@ interval by stratum for arm 3.}
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
 Defaults to 0 for variable follow-up.}
 
-\item{rho1}{The first parameter of the Fleming-Harrington family of 
+\item{rho1}{The first parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
-\item{rho2}{The second parameter of the Fleming-Harrington family of 
+\item{rho2}{The second parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
-\item{plannedEvents}{The planned cumulative total number of events at 
+\item{plannedEvents}{The planned cumulative total number of events at
 Look 1 to Look \code{kMax} for Arms A and C combined.}
 
 \item{plannedTime}{The calendar times for the analyses. To use calendar
@@ -125,23 +126,69 @@ The computer clock will be used if left unspecified,}
 }
 \value{
 A list with 2 components:
-
-* \code{sumdata} is a data frame of summary data by stage for each
-iteration, containing the analysis time, number of accrued subjects 
-overall and by treatment group, number of events overall and 
-by treatment group, number of dropouts overall and by treatment group, 
-and log-rank test statistic for each comparison.
-
-* \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-positive integer) is a data frame for subject-level data for selected
-replications, containing the stage number, subject number, arrival time, 
-stratum, treatment group, observation time, survival time, 
-dropout time, time under observation, and event and dropout indicators.
+\itemize{
+\item \code{sumdata}: A data frame of summary data by iteration and stage:
+\itemize{
+\item \code{iterationNumber}: The iteration number.
+\item \code{eventsNotAchieved}: Whether the target number of events
+is not achieved for the iteration.
+\item \code{stageNumber}: The stage number, covering all stages even if
+the trial stops at an interim look.
+\item \code{analysisTime}: The time for the stage since trial start.
+\item \code{accruals1}: The number of subjects enrolled at the stage for
+the active treatment 1 group.
+\item \code{accruals2}: The number of subjects enrolled at the stage for
+the active treatment 2 group.
+\item \code{accruals3}: The number of subjects enrolled at the stage for
+the control group.
+\item \code{totalAccruals}: The total number of subjects enrolled at
+the stage.
+\item \code{events1}: The number of events at the stage for
+the active treatment 1 group.
+\item \code{events2}: The number of events at the stage for
+the active treatment 2 group.
+\item \code{events3}: The number of events at the stage for
+the control group.
+\item \code{totalEvents}: The total number of events at the stage.
+\item \code{dropouts1}: The number of dropouts at the stage for
+the active treatment 1 group.
+\item \code{dropouts2}: The number of dropouts at the stage for
+the active treatment 2 group.
+\item \code{dropouts3}: The number of dropouts at the stage for
+the control group.
+\item \code{totalDropouts}: The total number of dropouts at the stage.
+\item \code{logRankStatistic13}: The log-rank test Z-statistic
+comparing the active treatment 1 to the control.
+\item \code{logRankStatistic23}: The log-rank test Z-statistic
+comparing the active treatment 2 to the control.
+\item \code{logRankStatistic12}: The log-rank test Z-statistic
+comparing the active treatment 1 to the active treatment 2.
+}
+\item \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
+positive integer): A data frame for subject-level data for selected
+replications, containing the following variables:
+\itemize{
+\item \code{iterationNumber}: The iteration number.
+\item \code{stageNumber}: The stage under consideration.
+\item \code{analysisTime}: The time for the stage since trial start.
+\item \code{subjectId}: The subject ID.
+\item \code{arrivalTime}: The enrollment time for the subject.
+\item \code{stratum}: The stratum for the subject.
+\item \code{treatmentGroup}: The treatment group (1, 2, or 3) for
+the subject.
+\item \code{survivalTime}: The underlying survival time for the subject.
+\item \code{dropoutTime}: The underlying dropout time for the subject.
+\item \code{timeUnderObservation}: The time under observation since
+since randomization for the subject.
+\item \code{event} Whether the subject experienced the event.
+\item \code{dropoutEvent} Whether the subject dropped out.
+}
+}
 }
 \description{
-Performs simulation for three-arm group sequential trials 
-based on weighted log-rank test. The looks are driven by the total 
-number of events in Arm A and Arm C combined. Alternatively, 
+Performs simulation for three-arm group sequential trials
+based on weighted log-rank test. The looks are driven by the total
+number of events in Arm A and Arm C combined. Alternatively,
 the analyses can be planned to occur at specified calendar times.
 }
 \examples{

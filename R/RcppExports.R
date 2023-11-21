@@ -146,32 +146,138 @@ fmodmixcpp <- function(p, family, serial, parallel, gamma, test = "hommel", exha
 #' @param seed The seed to reproduce the simulation results.
 #'   The computer clock will be used if left unspecified,
 #'
-#' @return A list of S3 class \code{lrsim} with 3 components:
+#' @return An S3 class \code{lrsim} object with 3 components:
 #'
-#' * \code{overview} is a list containing incremental and cumulative
-#' efficacy and futility stopping probabilities by stage, expected number
-#' of events, number of dropouts, number of subjects, analysis time
-#' by stage, overall rejection probability, overall expected number of
-#' events, number of dropouts, number of subjects, study duration,
-#' hazard ratio under H0, and whether the analyses are planned 
-#' based on the number of events or calendar time.
+#' * \code{overview}: A list containing the following information:
+#' 
+#'   - \code{rejectPerStage}: The efficacy stopping probability by stage.
+#'   
+#'   - \code{futilityPerStage}: The futility stopping probability by stage.
+#'   
+#'   - \code{cumulativeRejection}: Cumulative efficacy stopping 
+#'   probability by stage.
+#'   
+#'   - \code{cumulativeFutility}: The cumulative futility stopping 
+#'   probability by stage.
+#'   
+#'   - \code{numberOfEvents}: The average number of events by stage.
+#'   
+#'   - \code{numberOfDropouts}: The average number of dropouts by stage.
+#'   
+#'   - \code{numberOfSubjects}: The average number of subjects by stage.
+#'   
+#'   - \code{analysisTime}: The average analysis time by stage.
+#'   
+#'   - \code{overallReject}: The overall rejection probability. 
+#'   
+#'   - \code{expectedNumberOfEvents}: The expected number of events for 
+#'   the overall study.
+#'   
+#'   - \code{expectedNumberOfDropouts}: The expected number of dropouts for
+#'   the overall study.
+#'   
+#'   - \code{expectedNumberOfSubjects}: The expected number of subjects for 
+#'   the overall study. 
+#'   
+#'   - \code{expectedStudyDuration}: The expected study duration.
+#'   
+#'   - \code{hazardRatioH0}: Hazard ratio under the null hypothesis for 
+#'   the active treatment versus control.
+#'   
+#'   - \code{useEvents}: whether the analyses are planned 
+#'   based on the number of events or calendar time. 
+#'   
+#'   - \code{accrualDuration}: Duration of the enrollment period.
+#'   
+#'   - \code{fixedFollowup}: Whether a fixed follow-up design is used.
+#'   
+#'   - \code{rho1}: The first parameter of the Fleming-Harrington family 
+#'   of weighted log-rank test. Defaults to 0 for conventional log-rank test.
+#'   
+#'   - \code{rho2}: The second parameter of the Fleming-Harrington family 
+#'   of weighted log-rank test. Defaults to 0 for conventional log-rank test.
+#'   
+#'   - \code{kMax}: The maximum number of stages.
 #'
-#' * \code{sumdata} is a data frame of summary data by stage for each
-#' iteration, containing at which stage the trial stops, whether the target
-#' number of events is achieved, the analysis time, number of accrued
-#' subjects overall and by treatment group, number of events overall and by
-#' treatment group, number of dropouts overall and by treatment group,
-#' numerator and variance of weighted log-rank score statistic, log-rank
-#' test Z-statistic, and whether the trial stops for efficacy or futility
-#' at the stage.
-#'
+#' * \code{sumdata}: A data frame of summary data by iteration and stage: 
+#' 
+#'   - \code{iterationNumber}: The iteration number.
+#'   
+#'   - \code{stopStage}: The stage at which the trial stops.
+#'   
+#'   - \code{eventsNotAchieved}: Whether the target number of events 
+#'   is not achieved for the iteration.
+#'   
+#'   - \code{stageNumber}: The stage number, covering all stages even if 
+#'   the trial stops at an interim look.
+#'   
+#'   - \code{analysisTime}: The time for the stage since trial start.
+#'   
+#'   - \code{accruals1}: The number of subjects enrolled at the stage for
+#'   the treatment group.
+#'   
+#'   - \code{accruals2}: The number of subjects enrolled at the stage for
+#'   the control group.
+#'   
+#'   - \code{totalAccruals}: The total number of subjects enrolled at 
+#'   the stage.
+#'   
+#'   - \code{events1}: The number of events at the stage for 
+#'   the treatment group.
+#'   
+#'   - \code{events2}: The number of events at the stage for 
+#'   the control group.
+#'   
+#'   - \code{totalEvents}: The total number of events at the stage.
+#'   
+#'   - \code{dropouts1}: The number of dropouts at the stage for 
+#'   the treatment group. 
+#'   
+#'   - \code{dropouts2}: The number of dropouts at the stage for 
+#'   the control group.
+#'   
+#'   - \code{totalDropouts}: The total number of dropouts at the stage.
+#'   
+#'   - \code{uscore}: The numerator of the log-rank test statistic. 
+#'   
+#'   - \code{vscore}: The variance of the log-rank test statistic.
+#'   
+#'   - \code{logRankStatistic}: The log-rank test Z-statistic.
+#'   
+#'   - \code{rejectPerStage}: Whether to reject the null hypothesis 
+#'   at the stage.
+#'   
+#'   - \code{futilityPerStage}: Whether to stop the trial for futility  
+#'   at the stage.
 #'
 #' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-#' positive integer) is a data frame for subject-level data for selected
-#' replications, containing the subject number, arrival time, stratum,
-#' treatment group, survival time, dropout time, observation time when
-#' the trial stops, time under observation, and event and dropout
-#' indicators.
+#' positive integer): A data frame for subject-level data for selected
+#' replications, containing the following variables:
+#' 
+#'   - \code{iterationNumber}: The iteration number.
+#'   
+#'   - \code{stopStage}: The stage at which the trial stops.
+#'   
+#'   - \code{analysisTime}: The time for the stage since trial start.
+#'   
+#'   - \code{subjectId}: The subject ID.
+#'   
+#'   - \code{arrivalTime}: The enrollment time for the subject.
+#'   
+#'   - \code{stratum}: The stratum for the subject.
+#'   
+#'   - \code{treatmentGroup}: The treatment group (1 or 2) for the subject.
+#'   
+#'   - \code{survivalTime}: The underlying survival time for the subject.
+#'   
+#'   - \code{dropoutTime}: The underlying dropout time for the subject.
+#'   
+#'   - \code{timeUnderObservation}: The time under observation since    
+#'   since randomization.
+#'   
+#'   - \code{event} Whether the subject experienced the event.
+#'   
+#'   - \code{dropoutEvent} Whether the subject dropped out.
 #'
 #' @examples
 #' # Example 1: analyses based on number of events
@@ -278,17 +384,90 @@ lrsim <- function(kMax = NA_integer_, informationTime = NA_real_, criticalValues
 #'
 #' @return A list with 2 components:
 #'
-#' * \code{sumdata} is a data frame of summary data by stage for each
-#' iteration, containing the analysis time, number of accrued subjects 
-#' overall and by treatment group, number of events overall and 
-#' by treatment group, number of dropouts overall and by treatment group, 
-#' and log-rank test statistic for each comparison.
-#'
+#' * \code{sumdata}: A data frame of summary data by iteration and stage: 
+#' 
+#'   - \code{iterationNumber}: The iteration number.
+#'   
+#'   - \code{eventsNotAchieved}: Whether the target number of events 
+#'   is not achieved for the iteration.
+#'   
+#'   - \code{stageNumber}: The stage number, covering all stages even if 
+#'   the trial stops at an interim look.
+#'   
+#'   - \code{analysisTime}: The time for the stage since trial start.
+#'   
+#'   - \code{accruals1}: The number of subjects enrolled at the stage for
+#'   the active treatment 1 group.
+#'   
+#'   - \code{accruals2}: The number of subjects enrolled at the stage for
+#'   the active treatment 2 group.
+#'   
+#'   - \code{accruals3}: The number of subjects enrolled at the stage for
+#'   the control group.
+#'   
+#'   - \code{totalAccruals}: The total number of subjects enrolled at 
+#'   the stage.
+#'   
+#'   - \code{events1}: The number of events at the stage for 
+#'   the active treatment 1 group.
+#'   
+#'   - \code{events2}: The number of events at the stage for 
+#'   the active treatment 2 group.
+#'   
+#'   - \code{events3}: The number of events at the stage for 
+#'   the control group.
+#'   
+#'   - \code{totalEvents}: The total number of events at the stage.
+#'   
+#'   - \code{dropouts1}: The number of dropouts at the stage for 
+#'   the active treatment 1 group. 
+#'   
+#'   - \code{dropouts2}: The number of dropouts at the stage for 
+#'   the active treatment 2 group.
+#'   
+#'   - \code{dropouts3}: The number of dropouts at the stage for 
+#'   the control group.
+#'   
+#'   - \code{totalDropouts}: The total number of dropouts at the stage.
+#'   
+#'   - \code{logRankStatistic13}: The log-rank test Z-statistic 
+#'   comparing the active treatment 1 to the control.
+#'   
+#'   - \code{logRankStatistic23}: The log-rank test Z-statistic 
+#'   comparing the active treatment 2 to the control.
+#'   
+#'   - \code{logRankStatistic12}: The log-rank test Z-statistic 
+#'   comparing the active treatment 1 to the active treatment 2.
+#'   
 #' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-#' positive integer) is a data frame for subject-level data for selected
-#' replications, containing the stage number, subject number, arrival time, 
-#' stratum, treatment group, observation time, survival time, 
-#' dropout time, time under observation, and event and dropout indicators.
+#' positive integer): A data frame for subject-level data for selected
+#' replications, containing the following variables:
+#' 
+#'   - \code{iterationNumber}: The iteration number.
+#'   
+#'   - \code{stageNumber}: The stage under consideration.
+#'   
+#'   - \code{analysisTime}: The time for the stage since trial start.
+#'   
+#'   - \code{subjectId}: The subject ID.
+#'   
+#'   - \code{arrivalTime}: The enrollment time for the subject.
+#'   
+#'   - \code{stratum}: The stratum for the subject.
+#'   
+#'   - \code{treatmentGroup}: The treatment group (1, 2, or 3) for 
+#'   the subject.
+#'   
+#'   - \code{survivalTime}: The underlying survival time for the subject.
+#'   
+#'   - \code{dropoutTime}: The underlying dropout time for the subject.
+#'   
+#'   - \code{timeUnderObservation}: The time under observation since 
+#'   since randomization for the subject.
+#'   
+#'   - \code{event} Whether the subject experienced the event.
+#'   
+#'   - \code{dropoutEvent} Whether the subject dropped out. 
 #' 
 #' @examples
 #' 
@@ -388,18 +567,93 @@ lrsim3a <- function(kMax = NA_integer_, hazardRatioH013 = 1, hazardRatioH023 = 1
 #'
 #' @return A list with 2 components:
 #'
-#' * \code{sumdata} is a data frame of summary data by stage for each
-#' iteration, containing the analysis time, number of accrued subjects 
-#' overall and by treatment group, and number of events overall and 
-#' by treatment group, number of dropouts overall and by treatment group, 
-#' and log-rank test statistic by endpoint.
+#' * \code{sumdata}: A data frame of summary data by iteration and stage: 
+#' 
+#'   - \code{iterationNumber}: The iteration number.
+#'   
+#'   - \code{eventsNotAchieved}: Whether the target number of events 
+#'   is not achieved for the iteration.
+#'   
+#'   - \code{stageNumber}: The stage number, covering all stages even if 
+#'   the trial stops at an interim look.
+#'   
+#'   - \code{analysisTime}: The time for the stage since trial start.
+#'   
+#'   - \code{accruals1}: The number of subjects enrolled at the stage for
+#'   the treatment group.
+#'   
+#'   - \code{accruals2}: The number of subjects enrolled at the stage for
+#'   the control group.
+#'   
+#'   - \code{totalAccruals}: The total number of subjects enrolled at 
+#'   the stage.
+#'   
+#'   - \code{endpoint}: The endpoint (1 or 2) under consideration.
+#'   
+#'   - \code{events1}: The number of events at the stage for 
+#'   the treatment group.
+#'   
+#'   - \code{events2}: The number of events at the stage for 
+#'   the control group.
+#'   
+#'   - \code{totalEvents}: The total number of events at the stage.
+#'   
+#'   - \code{dropouts1}: The number of dropouts at the stage for 
+#'   the treatment group. 
+#'   
+#'   - \code{dropouts2}: The number of dropouts at the stage for 
+#'   the control group.
+#'   
+#'   - \code{totalDropouts}: The total number of dropouts at the stage.
+#'   
+#'   - \code{logRankStatistic}: The log-rank test Z-statistic for 
+#'   the endpoint.
 #'
 #' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-#' positive integer) is a data frame for subject-level data for selected
-#' replications, containing the stage number, subject number, arrival time, 
-#' stratum, treatment group, observation time, and survival time, 
-#' dropout time, time under observation, and event and dropout indicators 
-#' for each endpoint.
+#' positive integer): A data frame for subject-level data for selected
+#' replications, containing the following variables:
+#' 
+#'   - \code{iterationNumber}: The iteration number.
+#'   
+#'   - \code{stageNumber}: The stage under consideration.
+#'   
+#'   - \code{analysisTime}: The time for the stage since trial start.
+#'   
+#'   - \code{subjectId}: The subject ID.
+#'   
+#'   - \code{arrivalTime}: The enrollment time for the subject.
+#'   
+#'   - \code{stratum}: The stratum for the subject.
+#'   
+#'   - \code{treatmentGroup}: The treatment group (1 or 2) for the subject.
+#'   
+#'   - \code{survivalTime1}: The underlying survival time for 
+#'   event endpoint 1 for the subject.
+#'   
+#'   - \code{dropoutTime1}: The underlying dropout time for 
+#'   event endpoint 1 for the subject.
+#'   
+#'   - \code{timeUnderObservation1}: The time under observation since 
+#'   since randomization for event endpoint 1 for the subject.
+#'   
+#'   - \code{event1} Whether the subject experienced event endpoint 1.
+#'   
+#'   - \code{dropoutEvent1} Whether the subject dropped out for 
+#'   endpoint 1.
+#'   
+#'   - \code{survivalTime2}: The underlying survival time for 
+#'   event endpoint 2 for the subject.
+#'   
+#'   - \code{dropoutTime2}: The underlying dropout time for 
+#'   event endpoint 2 for the subject.
+#'   
+#'   - \code{timeUnderObservation2}: The time under observation since 
+#'   since randomization for event endpoint 2 for the subject.
+#'   
+#'   - \code{event2} Whether the subject experienced event endpoint 2.
+#'   
+#'   - \code{dropoutEvent2} Whether the subject dropped out for 
+#'   endpoint 2.
 #' 
 #' @examples
 #' 
@@ -522,18 +776,110 @@ lrsim2e <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH0e1 = 
 #'
 #' @return A list with 2 components:
 #'
-#' * \code{sumdata} is a data frame of summary data by stage for each
-#' iteration, containing the analysis time, number of accrued subjects 
-#' overall and by treatment group, number of events overall and 
-#' by treatment group, number of dropouts overall and by treatment group, 
-#' and log-rank test statistic for each comparison by endpoint.
-#'
+#' * \code{sumdata}: A data frame of summary data by iteration and stage: 
+#' 
+#'   - \code{iterationNumber}: The iteration number.
+#'   
+#'   - \code{eventsNotAchieved}: Whether the target number of events 
+#'   is not achieved for the iteration.
+#'   
+#'   - \code{stageNumber}: The stage number, covering all stages even if 
+#'   the trial stops at an interim look.
+#'   
+#'   - \code{analysisTime}: The time for the stage since trial start.
+#'   
+#'   - \code{accruals1}: The number of subjects enrolled at the stage for
+#'   the active treatment 1 group.
+#'   
+#'   - \code{accruals2}: The number of subjects enrolled at the stage for
+#'   the active treatment 2 group.
+#'   
+#'   - \code{accruals3}: The number of subjects enrolled at the stage for
+#'   the control group.
+#'   
+#'   - \code{totalAccruals}: The total number of subjects enrolled at 
+#'   the stage.
+#'   
+#'   - \code{endpoint}: The endpoint (1 or 2) under consideration.
+#'   
+#'   - \code{events1}: The number of events at the stage for 
+#'   the active treatment 1 group.
+#'   
+#'   - \code{events2}: The number of events at the stage for 
+#'   the active treatment 2 group.
+#'   
+#'   - \code{events3}: The number of events at the stage for 
+#'   the control group.
+#'   
+#'   - \code{totalEvents}: The total number of events at the stage.
+#'   
+#'   - \code{dropouts1}: The number of dropouts at the stage for 
+#'   the active treatment 1 group. 
+#'   
+#'   - \code{dropouts2}: The number of dropouts at the stage for 
+#'   the active treatment 2 group.
+#'   
+#'   - \code{dropouts3}: The number of dropouts at the stage for 
+#'   the control group.
+#'   
+#'   - \code{totalDropouts}: The total number of dropouts at the stage.
+#'   
+#'   - \code{logRankStatistic13}: The log-rank test Z-statistic 
+#'   comparing the active treatment 1 to the control for the endpoint.
+#'   
+#'   - \code{logRankStatistic23}: The log-rank test Z-statistic 
+#'   comparing the active treatment 2 to the control for the endpoint.
+#'   
+#'   - \code{logRankStatistic12}: The log-rank test Z-statistic 
+#'   comparing the active treatment 1 to the active treatment 2 
+#'   for the endpoint.
+#'   
 #' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-#' positive integer) is a data frame for subject-level data for selected
-#' replications, containing the stage number, subject number, arrival time, 
-#' stratum, treatment group, observation time, survival time, 
-#' dropout time, time under observation, and event and dropout indicators 
-#' for each endpoint.
+#' positive integer): A data frame for subject-level data for selected
+#' replications, containing the following variables:
+#' 
+#'   - \code{iterationNumber}: The iteration number.
+#'   
+#'   - \code{stageNumber}: The stage under consideration.
+#'   
+#'   - \code{analysisTime}: The time for the stage since trial start.
+#'   
+#'   - \code{subjectId}: The subject ID.
+#'   
+#'   - \code{arrivalTime}: The enrollment time for the subject.
+#'   
+#'   - \code{stratum}: The stratum for the subject.
+#'   
+#'   - \code{treatmentGroup}: The treatment group (1, 2, or 3) for 
+#'   the subject.
+#'   
+#'   - \code{survivalTime1}: The underlying survival time for 
+#'   event endpoint 1 for the subject.
+#'   
+#'   - \code{dropoutTime1}: The underlying dropout time for 
+#'   event endpoint 1 for the subject.
+#'   
+#'   - \code{timeUnderObservation1}: The time under observation since 
+#'   since randomization for event endpoint 1 for the subject.
+#'   
+#'   - \code{event1} Whether the subject experienced event endpoint 1.
+#'   
+#'   - \code{dropoutEvent1} Whether the subject dropped out for 
+#'   endpoint 1.
+#'   
+#'   - \code{survivalTime2}: The underlying survival time for 
+#'   event endpoint 2 for the subject.
+#'   
+#'   - \code{dropoutTime2}: The underlying dropout time for 
+#'   event endpoint 2 for the subject.
+#'   
+#'   - \code{timeUnderObservation2}: The time under observation since 
+#'   since randomization for event endpoint 2 for the subject.
+#'   
+#'   - \code{event2} Whether the subject experienced event endpoint 2.
+#'   
+#'   - \code{dropoutEvent2} Whether the subject dropped out for 
+#'   endpoint 2.
 #' 
 #' @examples
 #' 
@@ -607,15 +953,15 @@ accrual <- function(time = NA_real_, accrualTime = 0L, accrualIntensity = NA_rea
 #' @inheritParams param_accrualTime
 #' @inheritParams param_accrualIntensity
 #'
-#' @return The vector of accrual duration.
+#' @return A vector of accrual durations.
 #'
 #' @examples
-#' getAccrualDuration(nsubjects = c(20, 150), accrualTime = c(0, 3),
-#'                    accrualIntensity = c(10, 20))
+#' getAccrualDurationFromN(nsubjects = c(20, 150), accrualTime = c(0, 3),
+#'                         accrualIntensity = c(10, 20))
 #'
 #' @export
-getAccrualDuration <- function(nsubjects = NA_real_, accrualTime = 0L, accrualIntensity = NA_real_) {
-    .Call(`_lrstat_getAccrualDuration`, nsubjects, accrualTime, accrualIntensity)
+getAccrualDurationFromN <- function(nsubjects = NA_real_, accrualTime = 0L, accrualIntensity = NA_real_) {
+    .Call(`_lrstat_getAccrualDurationFromN`, nsubjects, accrualTime, accrualIntensity)
 }
 
 #' @title Probability of being at risk
@@ -920,11 +1266,37 @@ nevent2 <- function(time = NA_real_, allocationRatioPlanned = 1, accrualTime = 0
 #'  Defaults to 0 for obtaining log-rank test score statistic mean
 #'  and variance.
 #'
-#' @return A data frame of the number of subjects enrolled, the number of
-#' subjects having an event overall and in each group, the number of
-#' subjects who drop out overall and in each group, the mean and
-#' variance of weighted log-rank score statistic at the specified
-#' calendar time by stratum.
+#' @return A data frame of the following variables if 
+#' \code{predictEventOnly = 1}:
+#' 
+#' * \code{stratum}: The stratum number.
+#' 
+#' * \code{time}: The analysis time since trial start.
+#' 
+#' * \code{subjects}: The number of enrolled subjects.
+#' 
+#' * \code{nevents}: The total number of events. 
+#' 
+#' * \code{nevents1}: The number of events in the active treatment group.
+#' 
+#' * \code{nevents2}: The number of events in the control group.
+#' 
+#' * \code{ndropouts}: The total number of dropouts.
+#' 
+#' * \code{ndropouts1}: The number of events for the active treatment group.
+#' 
+#' * \code{ndropouts2}: The number of events for the control group.
+#' 
+#' If \code{predictEventOnly = 0}, the following variables will also 
+#' be included:
+#' 
+#' * \code{uscore}: The numerator of the weighted log-rank test statistic.
+#' 
+#' * \code{vscore}: The variance of the weighted log-rank score statistic 
+#' with weight squared.
+#' 
+#' * \code{iscore}: The Fisher information of the weighted log-rank score 
+#' statistic. 
 #'
 #' @keywords internal
 #'
@@ -981,12 +1353,44 @@ lrstat1 <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned =
 #' calculating the mean and variance of log-rank score statistic, and
 #' calculating the estimated hazard ratio and variance of log hazard ratio.
 #'
-#' @return A data frame of the number of subjects enrolled, the number of
-#' subjects having an event overall and in each group, the number of subjects
-#' who drop out overall and in each group, the mean and variance of weighted
-#' log-rank score statistic, the estimated hazard ratio from weighted Cox
-#' regression, and variance of the log hazard ratio estimate at the
-#' specified calendar times.
+#' @return A data frame containing the following variables if 
+#' \code{predictEventOnly = 1}: 
+#' 
+#' * \code{time}: The analysis time since trial start.
+#' 
+#' * \code{subjects}: The number of enrolled subjects.
+#' 
+#' * \code{nevents}: The total number of events. 
+#' 
+#' * \code{nevents1}: The number of events in the active treatment group.
+#' 
+#' * \code{nevents2}: The number of events in the control group.
+#' 
+#' * \code{ndropouts}: The total number of dropouts.
+#' 
+#' * \code{ndropouts1}: The number of events for the active treatment group.
+#' 
+#' * \code{ndropouts2}: The number of events for the control group.
+#' 
+#' If \code{predictEventOnly = 0}, the following variables will also 
+#' be included:
+#' 
+#' * \code{uscore}: The numerator of the log-rank test statistic.
+#' 
+#' * \code{vscore}: The variance of the log-rank score test statistic.
+#' 
+#' * \code{logRankZ}: The log-rank test statistic on the Z-scale. 
+#' 
+#' * \code{hazardRatioH0}: The hazard ratio under the null hypothesis. 
+#' 
+#' Furthermore, if \code{predictEventOnly = 2}, the following additional 
+#' variables will also be included:
+#' 
+#' * \code{HR}: The average hazard ratio from weighted Cox regression.
+#' 
+#' * \code{vlogHR}: The variance of log hazard ratio.
+#' 
+#' * \code{zlogHR}: The Z-statistic for log hazard ratio. 
 #'
 #' @examples
 #' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
@@ -1032,9 +1436,29 @@ lrstat <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_numSubintervals
 #'
-#' @return A data frame of the number of subjects, survival probability 
-#' and variance estimate in each group, difference in survival probability 
-#' and variance estimate at the specified time by stratum.
+#' @return A data frame containing the following variables: 
+#' 
+#' * \code{stratum}: The stratum.
+#' 
+#' * \code{time}: The calendar time since trial start.
+#' 
+#' * \code{subjects}: The enrolled number of subjects. 
+#' 
+#' * \code{milestone}: The milestone time relative to randomization. 
+#' 
+#' * \code{surv1}: The milestone survival probability for the treatment group.
+#' 
+#' * \code{surv2}: The milestone survival probability for the control group.
+#' 
+#' * \code{vsurv1}: The variance for \code{surv1}.
+#' 
+#' * \code{vsurv2}: The variance for \code{surv2}.
+#' 
+#' * \code{survdiff}: The difference in milestone survival probabilities, 
+#' i.e., \code{surv1 - surv2}.
+#' 
+#' * \code{vsurvdiff}: The variance for \code{survdiff}.
+#' 
 #'
 #' @keywords internal
 #'
@@ -1084,10 +1508,30 @@ kmest1 <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_numSubintervals
 #' 
-#' @return A data frame of the number of subjects enrolled, stratified 
-#'   estimate of milestone survival for each treatment group, 
-#'   difference in milestone survival, the associated variances, 
-#'   and the Z test statistic at the specified calendar times.
+#' @return A data frame containing the following variables: 
+#' 
+#' * \code{time}: The calendar time at which to calculate the milestone 
+#' survival.
+#' 
+#' * \code{subjects}: The enrolled number of subjects. 
+#' 
+#' * \code{milestone}: The milestone time relative to randomization. 
+#' 
+#' * \code{surv1}: The milestone survival probability for the treatment group.
+#' 
+#' * \code{surv2}: The milestone survival probability for the control group.
+#' 
+#' * \code{vsurv1}: The variance for \code{surv1}.
+#' 
+#' * \code{vsurv2}: The variance for \code{surv2}.
+#' 
+#' * \code{survdiff}: The difference in milestone survival probabilities, 
+#' i.e., \code{surv1 - surv2}.
+#' 
+#' * \code{vsurvdiff}: The variance for \code{survdiff}.
+#' 
+#' * \code{survdiffZ}: The Z-statistic value, i.e., 
+#' \code{survdiff/sqrt(vsurvdiff)}.
 #'
 #' @examples
 #' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
@@ -1175,8 +1619,17 @@ caltime <- function(nevents = NA_real_, allocationRatioPlanned = 1, accrualTime 
 #' @param interval The interval to search for the solution of
 #'   accrualDuration. Defaults to \code{c(0.001, 240)}.
 #' 
-#' @return A data frame of enrollment duration, sample size, and study 
-#' duration to yield the target number of events.
+#' @return A data frame of the following variables: 
+#' 
+#' * \code{nevents}: The target number of events.
+#' 
+#' * \code{fixedFollowup}: Whether a fixed follow-up design is used.
+#' 
+#' * \code{accrualDuration}: The accrual duration.
+#' 
+#' * \code{subjects}: The total number of subjects.
+#' 
+#' * \code{studyDuration}: The study duration. 
 #'
 #' @examples
 #' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
@@ -1255,31 +1708,147 @@ getCumAlphaSpent <- function(kMax = NA_integer_, informationRates = NA_real_, cr
 #'   and \code{followupTime}.
 #' 
 #'   
-#' @return A list of S3 class \code{lrpower} with 3 components:
+#' @return An S3 class \code{lrpower} object with 4 components:
 #'
-#' * \code{overallResults} containing the overall rejection probability,
-#' overall significance level, maximum and expected number of events,
-#' maximum and expected number of dropouts, total and expected number
-#' of subjects, maximum and expected study duration, along with
-#' input parameters including accrual duration, follow-up duration,
-#' whether a fixed follow-up is used, parameters for the FH weights,
-#' allocation ratio, number of stages, and hazard ratio under H0.
+#'* \code{overallResults}: A data frame containing the following variables: 
 #'
-#' * \code{byStageResults} containing information rates, efficacy
-#' and futility boundaries on the Z-scale, probability for efficacy
-#' and futility stopping at the stage, cumulative probability for
-#' efficacy and futility stopping by the stage, cumulative alpha spent,
-#' expected number of events, number of dropouts, number of subjects,
-#' and expected study time, efficacy and futility boundaries on
-#' the HR scale and on the p-value scale, information for weighted
-#' log-rank test, hazard ratio from weighted Cox regression, and
-#' whether efficacy and futility stopping are allowed by stage.
+#'   - \code{overallReject}: The overall rejection probability.
+#'   
+#'   - \code{alpha}: The overall significance level.
+#'   
+#'   - \code{numberOfEvents}: The total number of events. 
+#'   
+#'   - \code{numberOfDropouts}: The total number of dropouts. 
+#'   
+#'   - \code{numbeOfSubjects}: The total number of subjects.
+#'   
+#'   - \code{studyDuration}: The total study duration. 
+#'   
+#'   - \code{expectedNumberOfEvents}: The expected number of events.
+#'   
+#'   - \code{expectedNumberOfDropouts}: The expected number of dropouts. 
+#'   
+#'   - \code{expectedNumberOfSubjects}: The expected number of subjects.
+#'   
+#'   - \code{expectedStudyDuration}: The expected study duration.
+#'   
+#'   - \code{accrualDuration}: The accrual duration.
+#'   
+#'   - \code{followupTime}: The follow-up duration. 
+#'   
+#'   - \code{fixedFollowup}: Whether a fixed follow-up design is used.
+#'   
+#'   - \code{rho1}: The first parameter of the Fleming-Harrington family 
+#'   of weighted log-rank test.
+#'   
+#'   - \code{rho2}: The second parameter of the Fleming-Harrington family 
+#'   of weighted log-rank test.
+#'   
+#'   - \code{allocationRatioPlanned}: Allocation ratio for the active 
+#'   treatment versus control. 
+#'   
+#'   - \code{kMax}: The number of stages.
+#'   
+#'   - \code{hazardRatioH0}: The hazard ratio under the null hypothesis.
+#'   
+#'   - \code{etimateHazardRatio}: Whether to estimate the hazard ratio.
+#'   
+#'   - \code{typeOfComputation}: The type of computation, 
+#'   either "direct" for the direct approximation method, 
+#'   or "schoenfeld" for the Schoenfeld method.
 #'
-#' * \code{settings} containing input parameters such as
-#' alpha and beta spending function and parameter values,
-#' accrual time, accrual intensity, piecewise survival time, stratum
-#' fraction, and hazard rates for survival and dropout by group.
+#' * \code{byStageResults}: A data frame containing the following variables:
+#' 
+#'   - \code{informationRates}: The information rates.
+#'   
+#'   - \code{efficacyBounds}: The efficacy boundaries on the Z-scale.
+#'   
+#'   - \code{futilityBounds}: The futility boundaries on the Z-scale.
+#'   
+#'   - \code{rejectPerStage}: The probability for efficacy stopping.
+#'   
+#'   - \code{futilityPerStage}: The probability for futility stopping.
+#'   
+#'   - \code{cumulativeRejection}: The cumulative probability for efficacy 
+#'   stopping.
+#'   
+#'   - \code{cumulativeFutility}: The cumulative probability for futility 
+#'   stopping.
+#'   
+#'   - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
+#'   
+#'   - \code{numberOfEvents}: The number of events.
+#'   
+#'   - \code{numberOfDropouts}: The number of dropouts.
+#'   
+#'   - \code{numberOfSubjects}: The number of subjects.
+#'   
+#'   - \code{analysisTime}: The average time since trial start.
+#'   
+#'   - \code{efficacyHR}: The efficacy boundaries on the hazard ratio scale.
+#'   
+#'   - \code{futilityHR}: The futility boundaries on the hazard ratio scale.
+#'   
+#'   - \code{efficacyP}: The efficacy boundaries on the p-value scale.
+#'   
+#'   - \code{futilityP}: The futility boundaries on the p-value scale.
+#'   
+#'   - \code{information}: The cumulative information.
+#'   
+#'   - \code{HR}: The average hazard ratio. 
+#'   
+#'   - \code{efficacyStopping}: Whether to allow efficacy stopping.
+#'   
+#'   - \code{futilityStopping}: Whether to allow futility stopping.
 #'
+#' * \code{settings} A list containing the following input parameters: 
+#'   \code{typeAlphaSpending}, \code{parameterAlphaSpending},
+#'   \code{userAlphaSpending}, \code{typeBetaSpending},
+#'   \code{parameterBetaSpending}, \code{userBetaSpending},
+#'   \code{accrualTime}, \code{accuralIntensity},
+#'   \code{piecewiseSurvivalTime}, \code{stratumFraction},
+#'   \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2}, and
+#'   \code{spendingTime}.
+#'
+#' * \code{byTreatmentCounts} A list containing the following counts by 
+#' treatment group:
+#' 
+#'   - \code{numberOfEvents1}: The number of events by stage for 
+#'   the treatment group.
+#'   
+#'   - \code{numberOfDropouts1}: The number of dropouts by stage for 
+#'   the treatment group.
+#'   
+#'   - \code{numberOfSubjects1}: The number of subjects by stage for 
+#'   the treatment group.
+#'   
+#'   - \code{numberOfEvents2}: The number of events by stage for 
+#'   the control group.
+#'   
+#'   - \code{numberOfDropouts2}: The number of dropouts by stage for 
+#'   the control group.
+#'   
+#'   - \code{numberOfSubjects2}: The number of subjects by stage for 
+#'   the control group.   
+#'   
+#'   - \code{expectedNumberOfEvents1}: The expected number of events for 
+#'   the treatment group.
+#'   
+#'   - \code{expectedNumberOfDropouts1}: The expected number of dropouts for 
+#'   the treatment group.
+#'   
+#'   - \code{expectedNumberOfSubjects1}: The expected number of subjects for 
+#'   the treatment group.
+#'   
+#'   - \code{expectedNumberOfEvents2}: The expected number of events for 
+#'   control group.
+#'   
+#'   - \code{expectedNumberOfDropouts2}: The expected number of dropouts for 
+#'   the control group.
+#'   
+#'   - \code{expectedNumberOfSubjects2}: The expected number of subjects for 
+#'   the control group.
+#' 
 #' @examples
 #' # Piecewise accrual, piecewise exponential survival, and 5% dropout by
 #' # the end of 1 year.
@@ -1302,16 +1871,18 @@ lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 }
 
 #' @title Get group sequential design
-#' @description Obtains the drift parameter and stopping boundaries for a
-#' generic group sequential design assuming a constant treatment effect, 
-#' or obtains the power given the drift parameter and stopping boundaries.
+#' @description Obtains the maximum information and stopping boundaries 
+#' for a generic group sequential design assuming a constant treatment 
+#' effect, or obtains the power given the maximum information and 
+#' stopping boundaries.
 #'
-#' @param beta Type II error. Defaults to 0.2.
-#' @param drift Drift parameter, i.e., \code{(theta-theta0)*sqrt(Imax)}.  
-#' If \code{drift} is provided, then the input \code{beta} will be ignored 
-#' and power will be calculated.
+#' @param beta The type II error.
+#' @param Imax The maximum information. If \code{Imax} is provided, then 
+#'   the input \code{beta} will be ignored and power will be calculated.
+#' @param theta The parameter value.
 #' @inheritParams param_kMax
-#' @inheritParams param_informationRates
+#' @param informationRates The information rates. Fixed prior to the trial. 
+#'   Defaults to (1:kMax) / kMax if left unspecified.
 #' @inheritParams param_efficacyStopping
 #' @inheritParams param_futilityStopping
 #' @inheritParams param_criticalValues
@@ -1327,45 +1898,220 @@ lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #'   time at each analysis. Defaults to missing, in which case, it is the 
 #'   same as \code{informationRates}.
 #'
-#' @return A list of S3 class \code{design} with three components:
+#' @return An S3 class \code{design} object with three components:
 #' 
-#' * \code{overallResults} containing the overall rejection probability,
-#' overall significance level, number of stages, drift parameter, 
-#' and inflation factor (relative to fixed design).
+#' * \code{overallResults}: A data frame containing the following variables:
+#' 
+#'   - \code{overallReject}: The overall rejection probability.
+#'   
+#'   - \code{alpha}: The overall significance level.
+#'   
+#'   - \code{kMax}: The number of stages.
+#'   
+#'   - \code{theta}: The parameter value.
+#'   
+#'   - \code{maxInformation}: The maximum information.
+#'   
+#'   - \code{expectedInformation}: The expected information.
+#'   
+#'   - \code{drift}: The drift parameter, equal to 
+#'   \code{theta*sqrt(maxInformation)}.
+#'   
+#'   - \code{inflationFactor}: The inflation factor (relative to the 
+#'   fixed design).
 #'
-#' * \code{byStageResults} containing information rates, efficacy
-#' and futility boundaries on the Z-scale, probability for efficacy
-#' and futility stopping at the stage, cumulative probability for
-#' efficacy and futility stopping by the stage, cumulative alpha spent,
-#' efficacy and futility boundaries on the p-value scale, 
-#' and whether efficacy and futility stopping are allowed by stage.
+#' * \code{byStageResults}: A data frame containing the following variables:
+#' 
+#'   - \code{informationRates}: The information rates.
+#'   
+#'   - \code{efficacyBounds}: The efficacy boundaries on the Z-scale.
+#'   
+#'   - \code{futilityBounds}: The futility boundaries on the Z-scale.
+#'   
+#'   - \code{rejectPerStage}: The probability for efficacy stopping.
+#'   
+#'   - \code{futilityPerStage}: The probability for futility stopping.
+#'   
+#'   - \code{cumulativeRejection}: The cumulative probability for efficacy 
+#'   stopping.
+#'   
+#'   - \code{cumulativeFutility}: The cumulative probability for futility 
+#'   stopping.
+#'   
+#'   - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
+#'   
+#'   - \code{efficacyTheta}: The efficacy boundaries on the parameter scale.
+#'   
+#'   - \code{futilityTheta}: The futility boundaries on the parameter scale.
+#'   
+#'   - \code{efficacyP}: The efficacy boundaries on the p-value scale.
+#'   
+#'   - \code{futilityP}: The futility boundaries on the p-value scale.
+#'   
+#'   - \code{information}: The cumulative information.
+#'   
+#'   - \code{efficacyStopping}: Whether to allow efficacy stopping.
+#'   
+#'   - \code{futilityStopping}: Whether to allow futility stopping.
 #'
-#' * \code{settings} containing input parameters such as
-#' alpha and beta spending function and parameter values, spendingTime, 
-#' and calculation target.
+#' * \code{settings} A list containing the following input parameters: 
+#' 
+#'   - \code{typeAlphaSpending}: The type of alpha spending. 
+#'   
+#'   - \code{parameterAlphaSpending}: The parameter value for alpha spending.
+#'   
+#'   - \code{userAlphaSpending}: The user defined alpha spending. 
+#'   
+#'   - \code{typeBetaSpending}: The type of beta spending. 
+#'   
+#'   - \code{parameterBetaSpending}: The parameter value for beta spending. 
+#'   
+#'   - \code{userBetaSpending}: The user defined beta spending.
+#'   
+#'   - \code{spendingTime}: The error spending time at each analysis. 
+#'   
+#'   - \code{calculationTarget}: The calculation target, \code{beta} or 
+#'   \code{INew}.
 #'
 #' @examples
 #'
-#' # Example 1: obtain the drift parameter given power
-#' getDesign(beta = 0.2,
-#'           kMax = 2,
-#'           informationRates = c(0.5,1),
-#'           alpha = 0.025,
-#'           typeAlphaSpending = "sfOF",
+#' # Example 1: obtain the maximum information given power
+#' getDesign(beta = 0.2, theta = -log(0.7),
+#'           kMax = 2, informationRates = c(0.5,1),
+#'           alpha = 0.025, typeAlphaSpending = "sfOF",
 #'           typeBetaSpending = "sfP")
 #'           
 #' 
-#' # Example 2: obtain power given the drift parameter
-#' getDesign(drift = 3.026,
-#'           kMax = 3,
-#'           informationRates = c(0.5, 0.75, 1),
-#'           alpha = 0.025,
-#'           typeAlphaSpending = "sfOF",
+#' # Example 2: obtain power given the maximum information
+#' getDesign(Imax = 72.5, theta = -log(0.7),
+#'           kMax = 3, informationRates = c(0.5, 0.75, 1),
+#'           alpha = 0.025, typeAlphaSpending = "sfOF",
 #'           typeBetaSpending = "sfP")
 #'
 #' @export
-getDesign <- function(beta = 0.2, drift = NA_real_, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_) {
-    .Call(`_lrstat_getDesign`, beta, drift, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime)
+getDesign <- function(beta = NA_real_, Imax = NA_real_, theta = NA_real_, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_) {
+    .Call(`_lrstat_getDesign`, beta, Imax, theta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime)
+}
+
+#' @title Adaptive design at an interim look
+#' @description Obtains the conditional power for specified incremental 
+#' information given the interim results, parameter value, and data-dependent 
+#' changes in the error spending function and the number and spacing of 
+#' interim looks. Conversely, obtain the incremental information needed 
+#' to attain a specified conditional power given the interim results,
+#' parameter value, and data-dependent changes in the error spending 
+#' function and the number and spacing of interim looks.
+#'
+#' @param beta The conditional type II error.
+#' @param INew The incremental information.
+#' @param L The interim look.
+#' @param zL The Z test statistic at the interim look.
+#' @param theta The parameter value.
+#' @param kMax The maximum number of stages of the original design.
+#' @param informationRates The information rates of the original design.
+#' @param criticalValues The upper boundaries on the Z-test statistic scale
+#'   for efficacy stopping for the original design.
+#' @param futilityBounds The lower boundaries on the Z-test statistic scale
+#'   for futility stopping for the original design.
+#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
+#'   for trial adaptation.
+#' @param kNew The number of future looks.
+#' @param tNew The spacing of future looks in terms of information rates.
+#' @param efficacyStopping The indicators of whether efficacy stopping is 
+#'   allowed at each future look. Defaults to true if left unspecified.
+#' @param futilityStopping The indicators of whether futility stopping is 
+#'   allowed at each future look. Defaults to true if left unspecified.
+#' @param typeAlphaSpending The type of alpha spending for future looks. 
+#'   One of the following: 
+#'   "OF" for O'Brien-Fleming boundaries, 
+#'   "P" for Pocock boundaries, 
+#'   "WT" for Wang & Tsiatis boundaries, 
+#'   "sfOF" for O'Brien-Fleming type spending function, 
+#'   "sfP" for Pocock type spending function, 
+#'   "sfKD" for Kim & DeMets spending function, 
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
+#'   "none" for no early efficacy stopping. 
+#'   Defaults to "sfOF".
+#' @param parameterAlphaSpending The parameter value for the alpha 
+#'   spending for future looks. 
+#'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
+#' @param typeBetaSpending The type of beta spending for future looks. 
+#'   One of the following: 
+#'   "sfOF" for O'Brien-Fleming type spending function, 
+#'   "sfP" for Pocock type spending function, 
+#'   "sfKD" for Kim & DeMets spending function, 
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, 
+#'   "user" for user defined spending, and 
+#'   "none" for no early futility stopping. 
+#'   Defaults to "none".
+#' @param parameterBetaSpending The parameter value for the beta spending 
+#'   for future looks. 
+#'   Corresponds to rho for "sfKD", and gamma for "sfHSD".
+#' @param userBetaSpending The user defined cumulative beta spent at 
+#'   future looks.
+#' @param spendingTime A vector of length \code{kNew} for the error spending 
+#'   time at future looks. Defaults to missing, in which case, it is the 
+#'   same as \code{tNew}.
+#'
+#' @return An \code{adaptDesign} object with two list components: 
+#' 
+#' * \code{primaryTrial} selected information for the primary trial,
+#' including \code{L}, \code{zL}, \code{theta}, \code{kMax}, 
+#' \code{informationRates}, \code{efficacyBounds}, \code{futilityBounds},
+#' and \code{MullerSchafer}.
+#'  
+#' * \code{secondaryTrial} a \code{design} object for the secondary trial.
+#'
+#' @seealso \code{\link{getDesign}}
+#' 
+#' @examples
+#'
+#' # original group sequential design with 90% power to detect delta = 6
+#' delta = 6
+#' sigma = 17
+#' n = 282
+#' (des1 = getDesign(Imax = n/(4*sigma^2), theta = delta, kMax = 3, 
+#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#'                   parameterAlphaSpending = -4))
+#' 
+#' # interim look results
+#' L = 1
+#' n1 = n/3
+#' delta1 = 4.5
+#' sigma1 = 20
+#' zL = delta1/sqrt(4/n1*sigma1^2)
+#' 
+#' # conditional power for original design at estimated parameter value
+#' (des2 = adaptDesign(
+#'   beta = NA, INew = (n-n1)/(4*sigma1^2), L, zL, theta = delta1, 
+#'   kMax = des1$overallResults$kMax, 
+#'   informationRates = des1$byStageResults$informationRates,
+#'   criticalValues = des1$byStageResults$efficacyBounds))
+#' 
+#' # conditional power with sample size increase
+#' (des2 = adaptDesign(
+#'   beta = NA, INew = 420/(4*sigma1^2), L, zL, theta = delta1, 
+#'   kMax = des1$overallResults$kMax, 
+#'   informationRates = des1$byStageResults$informationRates,
+#'   criticalValues = des1$byStageResults$efficacyBounds))
+#' 
+#' # Muller & Schafer (2001) method to design the secondary trial: 
+#' # 3-look gamma(-2) spending with equal spacing, 84% power at delta = 4.5
+#' (des2 = adaptDesign(
+#'   beta = 0.16, INew = NA, L, zL, theta = delta1,
+#'   kMax = des1$overallResults$kMax, 
+#'   informationRates = des1$byStageResults$informationRates,
+#'   criticalValues = des1$byStageResults$efficacyBounds,
+#'   MullerSchafer = TRUE,
+#'   kNew = 3, typeAlphaSpending = "sfHSD", 
+#'   parameterAlphaSpending = -2))
+#'   
+#' # incremental sample size for sigma = 20
+#' (nNew = 4*sigma1^2*des2$overallResults$maxInformation)
+#'
+#' @export
+adaptDesign <- function(beta = NA_real_, INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, kMax = NA_integer_, informationRates = NA_real_, criticalValues = NA_real_, futilityBounds = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, tNew = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_) {
+    .Call(`_lrstat_adaptDesign`, beta, INew, L, zL, theta, kMax, informationRates, criticalValues, futilityBounds, MullerSchafer, kNew, tNew, efficacyStopping, futilityStopping, typeAlphaSpending, parameterAlphaSpending, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime)
 }
 
 #' @title Get the required number of events from hazard ratios
@@ -1462,7 +2208,15 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #' @param rounding Whether to round up sample size and events. 
 #'   Defaults to 1 for sample size rounding.
 #' 
-#' @return A list of S3 class \code{lrpower}.
+#' @return A list of two components: 
+#' 
+#' * \code{resultsUnderH1}: The S3 class \code{lrpower} object under the 
+#' alternative hypothesis.
+#' 
+#' * \code{resultsUnderH0}: The S3 class \code{lrpower} object under the 
+#' null hypothesis.
+#'
+#' @seealso \code{\link{lrpower}}
 #'
 #' @examples
 #' # Piecewise accrual, piecewise exponential survival, and 5% dropout by
@@ -1559,8 +2313,8 @@ stl_sort <- function(x) {
 #' R by Hadley Wickham. Given a vector of non-decreasing breakpoints in v,
 #' find the interval containing each element of x; i.e., if
 #' \code{i <- findInterval2(x,v)}, for each index \code{j} in \code{x},
-#' v[i[j]] <= x[j] < v[i[j] + 1]
-#' where v[0] := -Inf, v[N+1] := +Inf, and \code{N = length(v)}.
+#' \code{v[i[j]] <= x[j] < v[i[j] + 1]}, where \code{v[0] := -Inf}, 
+#' \code{v[N+1] := +Inf}, and \code{N = length(v)}.
 #'
 #' @param x The numeric vector of interest.
 #' @param v The vector of break points.

@@ -90,15 +90,16 @@ treatment versus control. Defaults to 1 for superiority test.}
 \item{allocationRatioPlanned}{Allocation ratio for the active treatment
 versus control. Defaults to 1 for equal randomization.}
 
-\item{accrualTime}{Accrual time intervals. Must start with 0, e.g.,
+\item{accrualTime}{A vector that specifies the starting time of
+piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 [0, 3) and [3, Inf).}
 
 \item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
-\item{piecewiseSurvivalTime}{A vector that specifies the time intervals for
-the piecewise exponential survival distribution. Must start with 0, e.g.,
+\item{piecewiseSurvivalTime}{A vector that specifies the starting times of
+piecewise exponential survival time intervals. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
 Defaults to 0 for exponential distribution.}
@@ -129,59 +130,129 @@ by stratum for the control group.}
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
 Defaults to 0 for variable follow-up.}
 
-\item{rho1}{The first parameter of the Fleming-Harrington family of 
+\item{rho1}{The first parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
-\item{rho2}{The second parameter of the Fleming-Harrington family of 
+\item{rho2}{The second parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
 \item{numSubintervals}{Number of sub-intervals to approximate the mean
 and variance of the weighted log-rank test score statistic.
 Defaults to 300. Specify a larger number for better approximation.}
 
-\item{estimateHazardRatio}{Whether to estimate the hazard ratio from 
-weighted Cox regression model and report the stopping boundaries on 
+\item{estimateHazardRatio}{Whether to estimate the hazard ratio from
+weighted Cox regression model and report the stopping boundaries on
 the hazard ratio scale.}
 
-\item{typeOfComputation}{Whether to use the direct approximation method 
-or the Schoenfeld method. Defaults to "direct". Can use "Schoenfeld" 
+\item{typeOfComputation}{The type of computation,
+either "direct" for the direct approximation method,
+or "schoenfeld" for the Schoenfeld method.
+Defaults to "direct". Can use "Schoenfeld"
 under proportional hazards and conventional log-rank test.}
 
-\item{spendingTime}{A vector of length \code{kMax} for the error spending 
-time at each analysis. Defaults to missing, in which case, it is the 
+\item{spendingTime}{A vector of length \code{kMax} for the error spending
+time at each analysis. Defaults to missing, in which case, it is the
 same as \code{informationRates}.}
 
-\item{studyDuration}{Study duration for fixed follow-up design. 
-Defaults to missing, which is to be replaced with the sum of 
-\code{accrualDuration} and \code{followupTime}. If provided, 
-the value is allowed to be less than the sum of \code{accrualDuration} 
+\item{studyDuration}{Study duration for fixed follow-up design.
+Defaults to missing, which is to be replaced with the sum of
+\code{accrualDuration} and \code{followupTime}. If provided,
+the value is allowed to be less than the sum of \code{accrualDuration}
 and \code{followupTime}.}
 }
 \value{
-A list of S3 class \code{lrpower} with 3 components:
-
-* \code{overallResults} containing the overall rejection probability,
-overall significance level, maximum and expected number of events,
-maximum and expected number of dropouts, total and expected number
-of subjects, maximum and expected study duration, along with
-input parameters including accrual duration, follow-up duration,
-whether a fixed follow-up is used, parameters for the FH weights,
-allocation ratio, number of stages, and hazard ratio under H0.
-
-* \code{byStageResults} containing information rates, efficacy
-and futility boundaries on the Z-scale, probability for efficacy
-and futility stopping at the stage, cumulative probability for
-efficacy and futility stopping by the stage, cumulative alpha spent,
-expected number of events, number of dropouts, number of subjects,
-and expected study time, efficacy and futility boundaries on
-the HR scale and on the p-value scale, information for weighted
-log-rank test, hazard ratio from weighted Cox regression, and
-whether efficacy and futility stopping are allowed by stage.
-
-* \code{settings} containing input parameters such as
-alpha and beta spending function and parameter values,
-accrual time, accrual intensity, piecewise survival time, stratum
-fraction, and hazard rates for survival and dropout by group.
+An S3 class \code{lrpower} object with 4 components:
+\itemize{
+\item \code{overallResults}: A data frame containing the following variables:
+\itemize{
+\item \code{overallReject}: The overall rejection probability.
+\item \code{alpha}: The overall significance level.
+\item \code{numberOfEvents}: The total number of events.
+\item \code{numberOfDropouts}: The total number of dropouts.
+\item \code{numbeOfSubjects}: The total number of subjects.
+\item \code{studyDuration}: The total study duration.
+\item \code{expectedNumberOfEvents}: The expected number of events.
+\item \code{expectedNumberOfDropouts}: The expected number of dropouts.
+\item \code{expectedNumberOfSubjects}: The expected number of subjects.
+\item \code{expectedStudyDuration}: The expected study duration.
+\item \code{accrualDuration}: The accrual duration.
+\item \code{followupTime}: The follow-up duration.
+\item \code{fixedFollowup}: Whether a fixed follow-up design is used.
+\item \code{rho1}: The first parameter of the Fleming-Harrington family
+of weighted log-rank test.
+\item \code{rho2}: The second parameter of the Fleming-Harrington family
+of weighted log-rank test.
+\item \code{allocationRatioPlanned}: Allocation ratio for the active
+treatment versus control.
+\item \code{kMax}: The number of stages.
+\item \code{hazardRatioH0}: The hazard ratio under the null hypothesis.
+\item \code{etimateHazardRatio}: Whether to estimate the hazard ratio.
+\item \code{typeOfComputation}: The type of computation,
+either "direct" for the direct approximation method,
+or "schoenfeld" for the Schoenfeld method.
+}
+\item \code{byStageResults}: A data frame containing the following variables:
+\itemize{
+\item \code{informationRates}: The information rates.
+\item \code{efficacyBounds}: The efficacy boundaries on the Z-scale.
+\item \code{futilityBounds}: The futility boundaries on the Z-scale.
+\item \code{rejectPerStage}: The probability for efficacy stopping.
+\item \code{futilityPerStage}: The probability for futility stopping.
+\item \code{cumulativeRejection}: The cumulative probability for efficacy
+stopping.
+\item \code{cumulativeFutility}: The cumulative probability for futility
+stopping.
+\item \code{cumulativeAlphaSpent}: The cumulative alpha spent.
+\item \code{numberOfEvents}: The number of events.
+\item \code{numberOfDropouts}: The number of dropouts.
+\item \code{numberOfSubjects}: The number of subjects.
+\item \code{analysisTime}: The average time since trial start.
+\item \code{efficacyHR}: The efficacy boundaries on the hazard ratio scale.
+\item \code{futilityHR}: The futility boundaries on the hazard ratio scale.
+\item \code{efficacyP}: The efficacy boundaries on the p-value scale.
+\item \code{futilityP}: The futility boundaries on the p-value scale.
+\item \code{information}: The cumulative information.
+\item \code{HR}: The average hazard ratio.
+\item \code{efficacyStopping}: Whether to allow efficacy stopping.
+\item \code{futilityStopping}: Whether to allow futility stopping.
+}
+\item \code{settings} A list containing the following input parameters:
+\code{typeAlphaSpending}, \code{parameterAlphaSpending},
+\code{userAlphaSpending}, \code{typeBetaSpending},
+\code{parameterBetaSpending}, \code{userBetaSpending},
+\code{accrualTime}, \code{accuralIntensity},
+\code{piecewiseSurvivalTime}, \code{stratumFraction},
+\code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2}, and
+\code{spendingTime}.
+\item \code{byTreatmentCounts} A list containing the following counts by
+treatment group:
+\itemize{
+\item \code{numberOfEvents1}: The number of events by stage for
+the treatment group.
+\item \code{numberOfDropouts1}: The number of dropouts by stage for
+the treatment group.
+\item \code{numberOfSubjects1}: The number of subjects by stage for
+the treatment group.
+\item \code{numberOfEvents2}: The number of events by stage for
+the control group.
+\item \code{numberOfDropouts2}: The number of dropouts by stage for
+the control group.
+\item \code{numberOfSubjects2}: The number of subjects by stage for
+the control group.
+\item \code{expectedNumberOfEvents1}: The expected number of events for
+the treatment group.
+\item \code{expectedNumberOfDropouts1}: The expected number of dropouts for
+the treatment group.
+\item \code{expectedNumberOfSubjects1}: The expected number of subjects for
+the treatment group.
+\item \code{expectedNumberOfEvents2}: The expected number of events for
+control group.
+\item \code{expectedNumberOfDropouts2}: The expected number of dropouts for
+the control group.
+\item \code{expectedNumberOfSubjects2}: The expected number of subjects for
+the control group.
+}
+}
 }
 \description{
 Estimates the power, stopping probabilities, and expected

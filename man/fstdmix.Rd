@@ -27,7 +27,7 @@ for the last family with active hypotheses. It defaults to TRUE.}
 A matrix of adjusted p-values.
 }
 \description{
-Obtains the adjusted p-values for the standard gatekeeping 
+Obtains the adjusted p-values for the standard gatekeeping
 procedures for multiplicity problems involving serial and parallel
 logical restrictions.
 }
@@ -56,7 +56,7 @@ fstdmix(p, family, serial, parallel, gamma, "hommel", 0)
 
 }
 \references{
-Alex Dmitrienko and Ajit C Tamhane. Mixtures of multiple testing 
-procedures for gatekeeping applications in clinical trials. 
+Alex Dmitrienko and Ajit C Tamhane. Mixtures of multiple testing
+procedures for gatekeeping applications in clinical trials.
 Statistics in Medicine. 2011; 30(13):1473–1488.
 }

@@ -28,19 +28,19 @@ and "none" for no early efficacy stopping. Defaults to "sfOF".}
 \item{parameterAlphaSpending}{The parameter value for the alpha spending.
 Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".}
 
-\item{maxInformation}{The target maximum information. Defaults to 1, 
+\item{maxInformation}{The target maximum information. Defaults to 1,
 in which case, \code{information} represents \code{informationRates}.}
 
-\item{p}{The raw p-values at look 1 to look \code{k}. It can be a matrix 
+\item{p}{The raw p-values at look 1 to look \code{k}. It can be a matrix
 with \code{k} columns for \code{k <= kMax}.}
 
-\item{information}{The observed information by look. It can be a matrix 
+\item{information}{The observed information by look. It can be a matrix
 with \code{k} columns.}
 
-\item{spendingTime}{The error spending time at each analysis, must be 
-increasing and less than or equal to 1. Defaults to NULL, 
-in which case, it is the same as \code{informationRates} derived from 
-\code{information} and \code{maxInformation}. It can be a matrix with 
+\item{spendingTime}{The error spending time at each analysis, must be
+increasing and less than or equal to 1. Defaults to NULL,
+in which case, it is the same as \code{informationRates} derived from
+\code{information} and \code{maxInformation}. It can be a matrix with
 \code{k} columns.}
 }
 \value{

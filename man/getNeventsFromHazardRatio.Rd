@@ -77,28 +77,28 @@ Corresponds to rho for "sfKD", and gamma for "sfHSD".}
 \item{userBetaSpending}{The user defined beta spending. Cumulative beta
 spent up to each stage.}
 
-\item{spendingTime}{A vector of length \code{kMax} for the error spending 
-time at each analysis. Defaults to missing, in which case, it is the 
+\item{spendingTime}{A vector of length \code{kMax} for the error spending
+time at each analysis. Defaults to missing, in which case, it is the
 same as \code{informationRates}.}
 
 \item{hazardRatioH0}{Hazard ratio under the null hypothesis for the active
 treatment versus control. Defaults to 1 for superiority test.}
 
-\item{hazardRatio}{Hazard ratio under the alternative hypothesis 
+\item{hazardRatio}{Hazard ratio under the alternative hypothesis
 for the active treatment versus control. Defaults to 0.5.}
 
 \item{allocationRatioPlanned}{Allocation ratio for the active treatment
 versus control. Defaults to 1 for equal randomization.}
 
-\item{rounding}{Whether to round up the number of events. 
+\item{rounding}{Whether to round up the number of events.
 Defaults to 1 for rounding.}
 }
 \value{
 The required number of events.
 }
 \description{
-Obtains the required number of events given the hazard 
-ratios under the null and alternative hypotheses for a group 
+Obtains the required number of events given the hazard
+ratios under the null and alternative hypotheses for a group
 sequential design.
 }
 \examples{

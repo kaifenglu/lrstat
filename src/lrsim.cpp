@@ -48,32 +48,138 @@ using namespace Rcpp;
 //' @param seed The seed to reproduce the simulation results.
 //'   The computer clock will be used if left unspecified,
 //'
-//' @return A list of S3 class \code{lrsim} with 3 components:
+//' @return An S3 class \code{lrsim} object with 3 components:
 //'
-//' * \code{overview} is a list containing incremental and cumulative
-//' efficacy and futility stopping probabilities by stage, expected number
-//' of events, number of dropouts, number of subjects, analysis time
-//' by stage, overall rejection probability, overall expected number of
-//' events, number of dropouts, number of subjects, study duration,
-//' hazard ratio under H0, and whether the analyses are planned 
-//' based on the number of events or calendar time.
+//' * \code{overview}: A list containing the following information:
+//' 
+//'   - \code{rejectPerStage}: The efficacy stopping probability by stage.
+//'   
+//'   - \code{futilityPerStage}: The futility stopping probability by stage.
+//'   
+//'   - \code{cumulativeRejection}: Cumulative efficacy stopping 
+//'   probability by stage.
+//'   
+//'   - \code{cumulativeFutility}: The cumulative futility stopping 
+//'   probability by stage.
+//'   
+//'   - \code{numberOfEvents}: The average number of events by stage.
+//'   
+//'   - \code{numberOfDropouts}: The average number of dropouts by stage.
+//'   
+//'   - \code{numberOfSubjects}: The average number of subjects by stage.
+//'   
+//'   - \code{analysisTime}: The average analysis time by stage.
+//'   
+//'   - \code{overallReject}: The overall rejection probability. 
+//'   
+//'   - \code{expectedNumberOfEvents}: The expected number of events for 
+//'   the overall study.
+//'   
+//'   - \code{expectedNumberOfDropouts}: The expected number of dropouts for
+//'   the overall study.
+//'   
+//'   - \code{expectedNumberOfSubjects}: The expected number of subjects for 
+//'   the overall study. 
+//'   
+//'   - \code{expectedStudyDuration}: The expected study duration.
+//'   
+//'   - \code{hazardRatioH0}: Hazard ratio under the null hypothesis for 
+//'   the active treatment versus control.
+//'   
+//'   - \code{useEvents}: whether the analyses are planned 
+//'   based on the number of events or calendar time. 
+//'   
+//'   - \code{accrualDuration}: Duration of the enrollment period.
+//'   
+//'   - \code{fixedFollowup}: Whether a fixed follow-up design is used.
+//'   
+//'   - \code{rho1}: The first parameter of the Fleming-Harrington family 
+//'   of weighted log-rank test. Defaults to 0 for conventional log-rank test.
+//'   
+//'   - \code{rho2}: The second parameter of the Fleming-Harrington family 
+//'   of weighted log-rank test. Defaults to 0 for conventional log-rank test.
+//'   
+//'   - \code{kMax}: The maximum number of stages.
 //'
-//' * \code{sumdata} is a data frame of summary data by stage for each
-//' iteration, containing at which stage the trial stops, whether the target
-//' number of events is achieved, the analysis time, number of accrued
-//' subjects overall and by treatment group, number of events overall and by
-//' treatment group, number of dropouts overall and by treatment group,
-//' numerator and variance of weighted log-rank score statistic, log-rank
-//' test Z-statistic, and whether the trial stops for efficacy or futility
-//' at the stage.
-//'
+//' * \code{sumdata}: A data frame of summary data by iteration and stage: 
+//' 
+//'   - \code{iterationNumber}: The iteration number.
+//'   
+//'   - \code{stopStage}: The stage at which the trial stops.
+//'   
+//'   - \code{eventsNotAchieved}: Whether the target number of events 
+//'   is not achieved for the iteration.
+//'   
+//'   - \code{stageNumber}: The stage number, covering all stages even if 
+//'   the trial stops at an interim look.
+//'   
+//'   - \code{analysisTime}: The time for the stage since trial start.
+//'   
+//'   - \code{accruals1}: The number of subjects enrolled at the stage for
+//'   the treatment group.
+//'   
+//'   - \code{accruals2}: The number of subjects enrolled at the stage for
+//'   the control group.
+//'   
+//'   - \code{totalAccruals}: The total number of subjects enrolled at 
+//'   the stage.
+//'   
+//'   - \code{events1}: The number of events at the stage for 
+//'   the treatment group.
+//'   
+//'   - \code{events2}: The number of events at the stage for 
+//'   the control group.
+//'   
+//'   - \code{totalEvents}: The total number of events at the stage.
+//'   
+//'   - \code{dropouts1}: The number of dropouts at the stage for 
+//'   the treatment group. 
+//'   
+//'   - \code{dropouts2}: The number of dropouts at the stage for 
+//'   the control group.
+//'   
+//'   - \code{totalDropouts}: The total number of dropouts at the stage.
+//'   
+//'   - \code{uscore}: The numerator of the log-rank test statistic. 
+//'   
+//'   - \code{vscore}: The variance of the log-rank test statistic.
+//'   
+//'   - \code{logRankStatistic}: The log-rank test Z-statistic.
+//'   
+//'   - \code{rejectPerStage}: Whether to reject the null hypothesis 
+//'   at the stage.
+//'   
+//'   - \code{futilityPerStage}: Whether to stop the trial for futility  
+//'   at the stage.
 //'
 //' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-//' positive integer) is a data frame for subject-level data for selected
-//' replications, containing the subject number, arrival time, stratum,
-//' treatment group, survival time, dropout time, observation time when
-//' the trial stops, time under observation, and event and dropout
-//' indicators.
+//' positive integer): A data frame for subject-level data for selected
+//' replications, containing the following variables:
+//' 
+//'   - \code{iterationNumber}: The iteration number.
+//'   
+//'   - \code{stopStage}: The stage at which the trial stops.
+//'   
+//'   - \code{analysisTime}: The time for the stage since trial start.
+//'   
+//'   - \code{subjectId}: The subject ID.
+//'   
+//'   - \code{arrivalTime}: The enrollment time for the subject.
+//'   
+//'   - \code{stratum}: The stratum for the subject.
+//'   
+//'   - \code{treatmentGroup}: The treatment group (1 or 2) for the subject.
+//'   
+//'   - \code{survivalTime}: The underlying survival time for the subject.
+//'   
+//'   - \code{dropoutTime}: The underlying dropout time for the subject.
+//'   
+//'   - \code{timeUnderObservation}: The time under observation since    
+//'   since randomization.
+//'   
+//'   - \code{event}: Whether the subject experienced the event.
+//'   
+//'   - \code{dropoutEvent}: Whether the subject dropped out.
 //'
 //' @examples
 //' # Example 1: analyses based on number of events
@@ -1113,17 +1219,90 @@ List lrsim(const int kMax = NA_INTEGER,
 //'
 //' @return A list with 2 components:
 //'
-//' * \code{sumdata} is a data frame of summary data by stage for each
-//' iteration, containing the analysis time, number of accrued subjects 
-//' overall and by treatment group, number of events overall and 
-//' by treatment group, number of dropouts overall and by treatment group, 
-//' and log-rank test statistic for each comparison.
-//'
+//' * \code{sumdata}: A data frame of summary data by iteration and stage: 
+//' 
+//'   - \code{iterationNumber}: The iteration number.
+//'   
+//'   - \code{eventsNotAchieved}: Whether the target number of events 
+//'   is not achieved for the iteration.
+//'   
+//'   - \code{stageNumber}: The stage number, covering all stages even if 
+//'   the trial stops at an interim look.
+//'   
+//'   - \code{analysisTime}: The time for the stage since trial start.
+//'   
+//'   - \code{accruals1}: The number of subjects enrolled at the stage for
+//'   the active treatment 1 group.
+//'   
+//'   - \code{accruals2}: The number of subjects enrolled at the stage for
+//'   the active treatment 2 group.
+//'   
+//'   - \code{accruals3}: The number of subjects enrolled at the stage for
+//'   the control group.
+//'   
+//'   - \code{totalAccruals}: The total number of subjects enrolled at 
+//'   the stage.
+//'   
+//'   - \code{events1}: The number of events at the stage for 
+//'   the active treatment 1 group.
+//'   
+//'   - \code{events2}: The number of events at the stage for 
+//'   the active treatment 2 group.
+//'   
+//'   - \code{events3}: The number of events at the stage for 
+//'   the control group.
+//'   
+//'   - \code{totalEvents}: The total number of events at the stage.
+//'   
+//'   - \code{dropouts1}: The number of dropouts at the stage for 
+//'   the active treatment 1 group. 
+//'   
+//'   - \code{dropouts2}: The number of dropouts at the stage for 
+//'   the active treatment 2 group.
+//'   
+//'   - \code{dropouts3}: The number of dropouts at the stage for 
+//'   the control group.
+//'   
+//'   - \code{totalDropouts}: The total number of dropouts at the stage.
+//'   
+//'   - \code{logRankStatistic13}: The log-rank test Z-statistic 
+//'   comparing the active treatment 1 to the control.
+//'   
+//'   - \code{logRankStatistic23}: The log-rank test Z-statistic 
+//'   comparing the active treatment 2 to the control.
+//'   
+//'   - \code{logRankStatistic12}: The log-rank test Z-statistic 
+//'   comparing the active treatment 1 to the active treatment 2.
+//'   
 //' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-//' positive integer) is a data frame for subject-level data for selected
-//' replications, containing the stage number, subject number, arrival time, 
-//' stratum, treatment group, observation time, survival time, 
-//' dropout time, time under observation, and event and dropout indicators.
+//' positive integer): A data frame for subject-level data for selected
+//' replications, containing the following variables:
+//' 
+//'   - \code{iterationNumber}: The iteration number.
+//'   
+//'   - \code{stageNumber}: The stage under consideration.
+//'   
+//'   - \code{analysisTime}: The time for the stage since trial start.
+//'   
+//'   - \code{subjectId}: The subject ID.
+//'   
+//'   - \code{arrivalTime}: The enrollment time for the subject.
+//'   
+//'   - \code{stratum}: The stratum for the subject.
+//'   
+//'   - \code{treatmentGroup}: The treatment group (1, 2, or 3) for 
+//'   the subject.
+//'   
+//'   - \code{survivalTime}: The underlying survival time for the subject.
+//'   
+//'   - \code{dropoutTime}: The underlying dropout time for the subject.
+//'   
+//'   - \code{timeUnderObservation}: The time under observation since 
+//'   since randomization for the subject.
+//'   
+//'   - \code{event}: Whether the subject experienced the event.
+//'   
+//'   - \code{dropoutEvent}: Whether the subject dropped out. 
 //' 
 //' @examples
 //' 
@@ -2057,18 +2236,93 @@ List lrsim3a(const int kMax = NA_INTEGER,
 //'
 //' @return A list with 2 components:
 //'
-//' * \code{sumdata} is a data frame of summary data by stage for each
-//' iteration, containing the analysis time, number of accrued subjects 
-//' overall and by treatment group, and number of events overall and 
-//' by treatment group, number of dropouts overall and by treatment group, 
-//' and log-rank test statistic by endpoint.
+//' * \code{sumdata}: A data frame of summary data by iteration and stage: 
+//' 
+//'   - \code{iterationNumber}: The iteration number.
+//'   
+//'   - \code{eventsNotAchieved}: Whether the target number of events 
+//'   is not achieved for the iteration.
+//'   
+//'   - \code{stageNumber}: The stage number, covering all stages even if 
+//'   the trial stops at an interim look.
+//'   
+//'   - \code{analysisTime}: The time for the stage since trial start.
+//'   
+//'   - \code{accruals1}: The number of subjects enrolled at the stage for
+//'   the treatment group.
+//'   
+//'   - \code{accruals2}: The number of subjects enrolled at the stage for
+//'   the control group.
+//'   
+//'   - \code{totalAccruals}: The total number of subjects enrolled at 
+//'   the stage.
+//'   
+//'   - \code{endpoint}: The endpoint (1 or 2) under consideration.
+//'   
+//'   - \code{events1}: The number of events at the stage for 
+//'   the treatment group.
+//'   
+//'   - \code{events2}: The number of events at the stage for 
+//'   the control group.
+//'   
+//'   - \code{totalEvents}: The total number of events at the stage.
+//'   
+//'   - \code{dropouts1}: The number of dropouts at the stage for 
+//'   the treatment group. 
+//'   
+//'   - \code{dropouts2}: The number of dropouts at the stage for 
+//'   the control group.
+//'   
+//'   - \code{totalDropouts}: The total number of dropouts at the stage.
+//'   
+//'   - \code{logRankStatistic}: The log-rank test Z-statistic for 
+//'   the endpoint.
 //'
 //' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-//' positive integer) is a data frame for subject-level data for selected
-//' replications, containing the stage number, subject number, arrival time, 
-//' stratum, treatment group, observation time, and survival time, 
-//' dropout time, time under observation, and event and dropout indicators 
-//' for each endpoint.
+//' positive integer): A data frame for subject-level data for selected
+//' replications, containing the following variables:
+//' 
+//'   - \code{iterationNumber}: The iteration number.
+//'   
+//'   - \code{stageNumber}: The stage under consideration.
+//'   
+//'   - \code{analysisTime}: The time for the stage since trial start.
+//'   
+//'   - \code{subjectId}: The subject ID.
+//'   
+//'   - \code{arrivalTime}: The enrollment time for the subject.
+//'   
+//'   - \code{stratum}: The stratum for the subject.
+//'   
+//'   - \code{treatmentGroup}: The treatment group (1 or 2) for the subject.
+//'   
+//'   - \code{survivalTime1}: The underlying survival time for 
+//'   event endpoint 1 for the subject.
+//'   
+//'   - \code{dropoutTime1}: The underlying dropout time for 
+//'   event endpoint 1 for the subject.
+//'   
+//'   - \code{timeUnderObservation1}: The time under observation since 
+//'   since randomization for event endpoint 1 for the subject.
+//'   
+//'   - \code{event1}: Whether the subject experienced event endpoint 1.
+//'   
+//'   - \code{dropoutEvent1}: Whether the subject dropped out for 
+//'   endpoint 1.
+//'   
+//'   - \code{survivalTime2}: The underlying survival time for 
+//'   event endpoint 2 for the subject.
+//'   
+//'   - \code{dropoutTime2}: The underlying dropout time for 
+//'   event endpoint 2 for the subject.
+//'   
+//'   - \code{timeUnderObservation2}: The time under observation since 
+//'   since randomization for event endpoint 2 for the subject.
+//'   
+//'   - \code{event2}: Whether the subject experienced event endpoint 2.
+//'   
+//'   - \code{dropoutEvent2}: Whether the subject dropped out for 
+//'   endpoint 2.
 //' 
 //' @examples
 //' 
@@ -3273,18 +3527,110 @@ List lrsim2e(const int kMax = NA_INTEGER,
 //'
 //' @return A list with 2 components:
 //'
-//' * \code{sumdata} is a data frame of summary data by stage for each
-//' iteration, containing the analysis time, number of accrued subjects 
-//' overall and by treatment group, number of events overall and 
-//' by treatment group, number of dropouts overall and by treatment group, 
-//' and log-rank test statistic for each comparison by endpoint.
-//'
+//' * \code{sumdata}: A data frame of summary data by iteration and stage: 
+//' 
+//'   - \code{iterationNumber}: The iteration number.
+//'   
+//'   - \code{eventsNotAchieved}: Whether the target number of events 
+//'   is not achieved for the iteration.
+//'   
+//'   - \code{stageNumber}: The stage number, covering all stages even if 
+//'   the trial stops at an interim look.
+//'   
+//'   - \code{analysisTime}: The time for the stage since trial start.
+//'   
+//'   - \code{accruals1}: The number of subjects enrolled at the stage for
+//'   the active treatment 1 group.
+//'   
+//'   - \code{accruals2}: The number of subjects enrolled at the stage for
+//'   the active treatment 2 group.
+//'   
+//'   - \code{accruals3}: The number of subjects enrolled at the stage for
+//'   the control group.
+//'   
+//'   - \code{totalAccruals}: The total number of subjects enrolled at 
+//'   the stage.
+//'   
+//'   - \code{endpoint}: The endpoint (1 or 2) under consideration.
+//'   
+//'   - \code{events1}: The number of events at the stage for 
+//'   the active treatment 1 group.
+//'   
+//'   - \code{events2}: The number of events at the stage for 
+//'   the active treatment 2 group.
+//'   
+//'   - \code{events3}: The number of events at the stage for 
+//'   the control group.
+//'   
+//'   - \code{totalEvents}: The total number of events at the stage.
+//'   
+//'   - \code{dropouts1}: The number of dropouts at the stage for 
+//'   the active treatment 1 group. 
+//'   
+//'   - \code{dropouts2}: The number of dropouts at the stage for 
+//'   the active treatment 2 group.
+//'   
+//'   - \code{dropouts3}: The number of dropouts at the stage for 
+//'   the control group.
+//'   
+//'   - \code{totalDropouts}: The total number of dropouts at the stage.
+//'   
+//'   - \code{logRankStatistic13}: The log-rank test Z-statistic 
+//'   comparing the active treatment 1 to the control for the endpoint.
+//'   
+//'   - \code{logRankStatistic23}: The log-rank test Z-statistic 
+//'   comparing the active treatment 2 to the control for the endpoint.
+//'   
+//'   - \code{logRankStatistic12}: The log-rank test Z-statistic 
+//'   comparing the active treatment 1 to the active treatment 2 
+//'   for the endpoint.
+//'   
 //' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-//' positive integer) is a data frame for subject-level data for selected
-//' replications, containing the stage number, subject number, arrival time, 
-//' stratum, treatment group, observation time, survival time, 
-//' dropout time, time under observation, and event and dropout indicators 
-//' for each endpoint.
+//' positive integer): A data frame for subject-level data for selected
+//' replications, containing the following variables:
+//' 
+//'   - \code{iterationNumber}: The iteration number.
+//'   
+//'   - \code{stageNumber}: The stage under consideration.
+//'   
+//'   - \code{analysisTime}: The time for the stage since trial start.
+//'   
+//'   - \code{subjectId}: The subject ID.
+//'   
+//'   - \code{arrivalTime}: The enrollment time for the subject.
+//'   
+//'   - \code{stratum}: The stratum for the subject.
+//'   
+//'   - \code{treatmentGroup}: The treatment group (1, 2, or 3) for 
+//'   the subject.
+//'   
+//'   - \code{survivalTime1}: The underlying survival time for 
+//'   event endpoint 1 for the subject.
+//'   
+//'   - \code{dropoutTime1}: The underlying dropout time for 
+//'   event endpoint 1 for the subject.
+//'   
+//'   - \code{timeUnderObservation1}: The time under observation since 
+//'   since randomization for event endpoint 1 for the subject.
+//'   
+//'   - \code{event1}: Whether the subject experienced event endpoint 1.
+//'   
+//'   - \code{dropoutEvent1}: Whether the subject dropped out for 
+//'   endpoint 1.
+//'   
+//'   - \code{survivalTime2}: The underlying survival time for 
+//'   event endpoint 2 for the subject.
+//'   
+//'   - \code{dropoutTime2}: The underlying dropout time for 
+//'   event endpoint 2 for the subject.
+//'   
+//'   - \code{timeUnderObservation2}: The time under observation since 
+//'   since randomization for event endpoint 2 for the subject.
+//'   
+//'   - \code{event2}: Whether the subject experienced event endpoint 2.
+//'   
+//'   - \code{dropoutEvent2}: Whether the subject dropped out for 
+//'   endpoint 2.
 //' 
 //' @examples
 //' 

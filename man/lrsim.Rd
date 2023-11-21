@@ -41,7 +41,7 @@ Same as \code{informationRates} in terms of number of events for
 the conventional log-rank test. Use \code{caltime} and \code{lrstat}
 to derive the information time for weighted log-rank tests.
 Fixed prior to the trial. If left unspecified, it defaults to
-\code{plannedEvents / plannedEvents[kMax]} when \code{plannedEvents} 
+\code{plannedEvents / plannedEvents[kMax]} when \code{plannedEvents}
 is provided and to \code{plannedTime / plannedTime[kMax]} otherwise.}
 
 \item{criticalValues}{Upper boundaries on the z-test statistic scale
@@ -60,15 +60,16 @@ a randomization block. Defaults to 1 for equal randomization.}
 \item{allocation2}{Number of subjects in the control group in
 a randomization block. Defaults to 1 for equal randomization.}
 
-\item{accrualTime}{Accrual time intervals. Must start with 0, e.g.,
+\item{accrualTime}{A vector that specifies the starting time of
+piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 [0, 3) and [3, Inf).}
 
 \item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
-\item{piecewiseSurvivalTime}{A vector that specifies the time intervals for
-the piecewise exponential survival distribution. Must start with 0, e.g.,
+\item{piecewiseSurvivalTime}{A vector that specifies the starting times of
+piecewise exponential survival time intervals. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
 Defaults to 0 for exponential distribution.}
@@ -99,10 +100,10 @@ by stratum for the control group.}
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
 Defaults to 0 for variable follow-up.}
 
-\item{rho1}{The first parameter of the Fleming-Harrington family of 
+\item{rho1}{The first parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
-\item{rho2}{The second parameter of the Fleming-Harrington family of 
+\item{rho2}{The second parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
 \item{plannedEvents}{The planned cumulative total number of events at each
@@ -121,32 +122,92 @@ to extract. Defaults to 1.}
 The computer clock will be used if left unspecified,}
 }
 \value{
-A list of S3 class \code{lrsim} with 3 components:
-
-* \code{overview} is a list containing incremental and cumulative
-efficacy and futility stopping probabilities by stage, expected number
-of events, number of dropouts, number of subjects, analysis time
-by stage, overall rejection probability, overall expected number of
-events, number of dropouts, number of subjects, study duration,
-hazard ratio under H0, and whether the analyses are planned 
+An S3 class \code{lrsim} object with 3 components:
+\itemize{
+\item \code{overview}: A list containing the following information:
+\itemize{
+\item \code{rejectPerStage}: The efficacy stopping probability by stage.
+\item \code{futilityPerStage}: The futility stopping probability by stage.
+\item \code{cumulativeRejection}: Cumulative efficacy stopping
+probability by stage.
+\item \code{cumulativeFutility}: The cumulative futility stopping
+probability by stage.
+\item \code{numberOfEvents}: The average number of events by stage.
+\item \code{numberOfDropouts}: The average number of dropouts by stage.
+\item \code{numberOfSubjects}: The average number of subjects by stage.
+\item \code{analysisTime}: The average analysis time by stage.
+\item \code{overallReject}: The overall rejection probability.
+\item \code{expectedNumberOfEvents}: The expected number of events for
+the overall study.
+\item \code{expectedNumberOfDropouts}: The expected number of dropouts for
+the overall study.
+\item \code{expectedNumberOfSubjects}: The expected number of subjects for
+the overall study.
+\item \code{expectedStudyDuration}: The expected study duration.
+\item \code{hazardRatioH0}: Hazard ratio under the null hypothesis for
+the active treatment versus control.
+\item \code{useEvents}: whether the analyses are planned
 based on the number of events or calendar time.
-
-* \code{sumdata} is a data frame of summary data by stage for each
-iteration, containing at which stage the trial stops, whether the target
-number of events is achieved, the analysis time, number of accrued
-subjects overall and by treatment group, number of events overall and by
-treatment group, number of dropouts overall and by treatment group,
-numerator and variance of weighted log-rank score statistic, log-rank
-test Z-statistic, and whether the trial stops for efficacy or futility
+\item \code{accrualDuration}: Duration of the enrollment period.
+\item \code{fixedFollowup}: Whether a fixed follow-up design is used.
+\item \code{rho1}: The first parameter of the Fleming-Harrington family
+of weighted log-rank test. Defaults to 0 for conventional log-rank test.
+\item \code{rho2}: The second parameter of the Fleming-Harrington family
+of weighted log-rank test. Defaults to 0 for conventional log-rank test.
+\item \code{kMax}: The maximum number of stages.
+}
+\item \code{sumdata}: A data frame of summary data by iteration and stage:
+\itemize{
+\item \code{iterationNumber}: The iteration number.
+\item \code{stopStage}: The stage at which the trial stops.
+\item \code{eventsNotAchieved}: Whether the target number of events
+is not achieved for the iteration.
+\item \code{stageNumber}: The stage number, covering all stages even if
+the trial stops at an interim look.
+\item \code{analysisTime}: The time for the stage since trial start.
+\item \code{accruals1}: The number of subjects enrolled at the stage for
+the treatment group.
+\item \code{accruals2}: The number of subjects enrolled at the stage for
+the control group.
+\item \code{totalAccruals}: The total number of subjects enrolled at
+the stage.
+\item \code{events1}: The number of events at the stage for
+the treatment group.
+\item \code{events2}: The number of events at the stage for
+the control group.
+\item \code{totalEvents}: The total number of events at the stage.
+\item \code{dropouts1}: The number of dropouts at the stage for
+the treatment group.
+\item \code{dropouts2}: The number of dropouts at the stage for
+the control group.
+\item \code{totalDropouts}: The total number of dropouts at the stage.
+\item \code{uscore}: The numerator of the log-rank test statistic.
+\item \code{vscore}: The variance of the log-rank test statistic.
+\item \code{logRankStatistic}: The log-rank test Z-statistic.
+\item \code{rejectPerStage}: Whether to reject the null hypothesis
 at the stage.
-
-
-* \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-positive integer) is a data frame for subject-level data for selected
-replications, containing the subject number, arrival time, stratum,
-treatment group, survival time, dropout time, observation time when
-the trial stops, time under observation, and event and dropout
-indicators.
+\item \code{futilityPerStage}: Whether to stop the trial for futility
+at the stage.
+}
+\item \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
+positive integer): A data frame for subject-level data for selected
+replications, containing the following variables:
+\itemize{
+\item \code{iterationNumber}: The iteration number.
+\item \code{stopStage}: The stage at which the trial stops.
+\item \code{analysisTime}: The time for the stage since trial start.
+\item \code{subjectId}: The subject ID.
+\item \code{arrivalTime}: The enrollment time for the subject.
+\item \code{stratum}: The stratum for the subject.
+\item \code{treatmentGroup}: The treatment group (1 or 2) for the subject.
+\item \code{survivalTime}: The underlying survival time for the subject.
+\item \code{dropoutTime}: The underlying dropout time for the subject.
+\item \code{timeUnderObservation}: The time under observation since
+since randomization.
+\item \code{event} Whether the subject experienced the event.
+\item \code{dropoutEvent} Whether the subject dropped out.
+}
+}
 }
 \description{
 Performs simulation for two-arm group sequential

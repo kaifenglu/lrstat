@@ -39,15 +39,15 @@ lrsim2e(
 \arguments{
 \item{kMax}{The maximum number of stages.}
 
-\item{kMaxe1}{Number of stages with timing determined by PFS events. 
+\item{kMaxe1}{Number of stages with timing determined by PFS events.
 Ranges from 0 (none) to \code{kMax}.}
 
-\item{hazardRatioH0e1}{Hazard ratio under the null hypothesis for the 
-active treatment vs control for endpoint 1 (PFS). Defaults to 1 for 
+\item{hazardRatioH0e1}{Hazard ratio under the null hypothesis for the
+active treatment vs control for endpoint 1 (PFS). Defaults to 1 for
 superiority test.}
 
-\item{hazardRatioH0e2}{Hazard ratio under the null hypothesis for the 
-active treatment vs control for endpoint 2 (OS). Defaults to 1 for 
+\item{hazardRatioH0e2}{Hazard ratio under the null hypothesis for the
+active treatment vs control for endpoint 2 (OS). Defaults to 1 for
 superiority test.}
 
 \item{allocation1}{Number of subjects in the treatment group in
@@ -56,15 +56,16 @@ a randomization block. Defaults to 1 for equal randomization.}
 \item{allocation2}{Number of subjects in the control group in
 a randomization block. Defaults to 1 for equal randomization.}
 
-\item{accrualTime}{Accrual time intervals. Must start with 0, e.g.,
+\item{accrualTime}{A vector that specifies the starting time of
+piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 [0, 3) and [3, Inf).}
 
 \item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
-\item{piecewiseSurvivalTime}{A vector that specifies the time intervals for
-the piecewise exponential survival distribution. Must start with 0, e.g.,
+\item{piecewiseSurvivalTime}{A vector that specifies the starting times of
+piecewise exponential survival time intervals. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
 Defaults to 0 for exponential distribution.}
@@ -73,7 +74,7 @@ Defaults to 0 for exponential distribution.}
 Defaults to 1 for no stratification.}
 
 \item{rho}{The correlation coefficient for the standard bivariate normal
-random variables used to generate time to disease progression and time 
+random variables used to generate time to disease progression and time
 to death using the inverse CDF method.}
 
 \item{lambda1e1}{A vector of hazard rates for the event in each analysis
@@ -88,24 +89,24 @@ time interval by stratum for the treatment group and endpoint 2 (OS).}
 \item{lambda2e2}{A vector of hazard rates for the event in each analysis
 time interval by stratum for the control group and endpoint 2 (OS).}
 
-\item{gamma1e1}{The hazard rate for exponential dropout, a vector of 
-hazard rates for piecewise exponential dropout applicable for all 
-strata, or a vector of hazard rates for dropout in each analysis time 
+\item{gamma1e1}{The hazard rate for exponential dropout, a vector of
+hazard rates for piecewise exponential dropout applicable for all
+strata, or a vector of hazard rates for dropout in each analysis time
 interval by stratum for the treatment group and endpoint 1 (PFS).}
 
-\item{gamma2e1}{The hazard rate for exponential dropout, a vector of 
-hazard rates for piecewise exponential dropout applicable for all 
-strata, or a vector of hazard rates for dropout in each analysis time 
+\item{gamma2e1}{The hazard rate for exponential dropout, a vector of
+hazard rates for piecewise exponential dropout applicable for all
+strata, or a vector of hazard rates for dropout in each analysis time
 interval by stratum for the control group and endpoint 1 (PFS).}
 
-\item{gamma1e2}{The hazard rate for exponential dropout, a vector of 
-hazard rates for piecewise exponential dropout applicable for all 
-strata, or a vector of hazard rates for dropout in each analysis time 
+\item{gamma1e2}{The hazard rate for exponential dropout, a vector of
+hazard rates for piecewise exponential dropout applicable for all
+strata, or a vector of hazard rates for dropout in each analysis time
 interval by stratum for the treatment group and endpoint 2 (OS).}
 
-\item{gamma2e2}{The hazard rate for exponential dropout, a vector of 
-hazard rates for piecewise exponential dropout applicable for all 
-strata, or a vector of hazard rates for dropout in each analysis time 
+\item{gamma2e2}{The hazard rate for exponential dropout, a vector of
+hazard rates for piecewise exponential dropout applicable for all
+strata, or a vector of hazard rates for dropout in each analysis time
 interval by stratum for the control group and endpoint 2 (OS).}
 
 \item{accrualDuration}{Duration of the enrollment period.}
@@ -115,14 +116,14 @@ interval by stratum for the control group and endpoint 2 (OS).}
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
 Defaults to 0 for variable follow-up.}
 
-\item{rho1}{The first parameter of the Fleming-Harrington family of 
+\item{rho1}{The first parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
-\item{rho2}{The second parameter of the Fleming-Harrington family of 
+\item{rho2}{The second parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
-\item{plannedEvents}{The planned cumulative total number of PFS events at 
-Look 1 to Look kMaxe1 and the planned cumulative total number of OS 
+\item{plannedEvents}{The planned cumulative total number of PFS events at
+Look 1 to Look kMaxe1 and the planned cumulative total number of OS
 events at Look kMaxe1+1 to Look kMax.}
 
 \item{plannedTime}{The calendar times for the analyses. To use calendar
@@ -139,26 +140,73 @@ The computer clock will be used if left unspecified,}
 }
 \value{
 A list with 2 components:
-
-* \code{sumdata} is a data frame of summary data by stage for each
-iteration, containing the analysis time, number of accrued subjects 
-overall and by treatment group, and number of events overall and 
-by treatment group, number of dropouts overall and by treatment group, 
-and log-rank test statistic by endpoint.
-
-* \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-positive integer) is a data frame for subject-level data for selected
-replications, containing the stage number, subject number, arrival time, 
-stratum, treatment group, observation time, and survival time, 
-dropout time, time under observation, and event and dropout indicators 
-for each endpoint.
+\itemize{
+\item \code{sumdata}: A data frame of summary data by iteration and stage:
+\itemize{
+\item \code{iterationNumber}: The iteration number.
+\item \code{eventsNotAchieved}: Whether the target number of events
+is not achieved for the iteration.
+\item \code{stageNumber}: The stage number, covering all stages even if
+the trial stops at an interim look.
+\item \code{analysisTime}: The time for the stage since trial start.
+\item \code{accruals1}: The number of subjects enrolled at the stage for
+the treatment group.
+\item \code{accruals2}: The number of subjects enrolled at the stage for
+the control group.
+\item \code{totalAccruals}: The total number of subjects enrolled at
+the stage.
+\item \code{endpoint}: The endpoint (1 or 2) under consideration.
+\item \code{events1}: The number of events at the stage for
+the treatment group.
+\item \code{events2}: The number of events at the stage for
+the control group.
+\item \code{totalEvents}: The total number of events at the stage.
+\item \code{dropouts1}: The number of dropouts at the stage for
+the treatment group.
+\item \code{dropouts2}: The number of dropouts at the stage for
+the control group.
+\item \code{totalDropouts}: The total number of dropouts at the stage.
+\item \code{logRankStatistic}: The log-rank test Z-statistic for
+the endpoint.
+}
+\item \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
+positive integer): A data frame for subject-level data for selected
+replications, containing the following variables:
+\itemize{
+\item \code{iterationNumber}: The iteration number.
+\item \code{stageNumber}: The stage under consideration.
+\item \code{analysisTime}: The time for the stage since trial start.
+\item \code{subjectId}: The subject ID.
+\item \code{arrivalTime}: The enrollment time for the subject.
+\item \code{stratum}: The stratum for the subject.
+\item \code{treatmentGroup}: The treatment group (1 or 2) for the subject.
+\item \code{survivalTime1}: The underlying survival time for
+event endpoint 1 for the subject.
+\item \code{dropoutTime1}: The underlying dropout time for
+event endpoint 1 for the subject.
+\item \code{timeUnderObservation1}: The time under observation since
+since randomization for event endpoint 1 for the subject.
+\item \code{event1} Whether the subject experienced event endpoint 1.
+\item \code{dropoutEvent1} Whether the subject dropped out for
+endpoint 1.
+\item \code{survivalTime2}: The underlying survival time for
+event endpoint 2 for the subject.
+\item \code{dropoutTime2}: The underlying dropout time for
+event endpoint 2 for the subject.
+\item \code{timeUnderObservation2}: The time under observation since
+since randomization for event endpoint 2 for the subject.
+\item \code{event2} Whether the subject experienced event endpoint 2.
+\item \code{dropoutEvent2} Whether the subject dropped out for
+endpoint 2.
+}
+}
 }
 \description{
-Performs simulation for two-endpoint two-arm group 
-sequential trials based on weighted log-rank test. The first \code{kMaxe1} 
-looks are driven by the total number of PFS events in two arms 
-combined, and the subsequent looks are driven by the total 
-number of OS events in two arms combined. Alternatively, 
+Performs simulation for two-endpoint two-arm group
+sequential trials based on weighted log-rank test. The first \code{kMaxe1}
+looks are driven by the total number of PFS events in two arms
+combined, and the subsequent looks are driven by the total
+number of OS events in two arms combined. Alternatively,
 the analyses can be planned to occur at specified calendar times.
 }
 \examples{

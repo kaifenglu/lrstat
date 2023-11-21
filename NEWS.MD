@@ -1,4 +1,13 @@
+# lrstat 0.2.1
+
+- rename getAccrualDuration to getAccrualDurationFromN
+- replace the drift parameter with Imax and theta parameters in the getDesign function
+- calculate alpha when critical values are not missing for the getDesign and lrpower functions
+- add the adaptDesign function for sample size re-estimation and conditional power calculation
+- use markdown for Roxygen documentations
+
 # lrstat 0.2.0
+
 - add fadjpdun to calculate the adjusted p-values for Dunnett-based graphical approaches. 
 
 # lrstat 0.1.15

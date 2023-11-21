@@ -17,20 +17,22 @@ exitprob(b, a = NA, theta = 0, I = NA)
 weighted log-rank test, where \code{U} is the mean and \code{V} is
 the variance of the weighted log-rank test score statistic at each stage.
 For proportional hazards and conventional log-rank test, use the
-scalar input, \code{theta = -log(HR)}. Defaults to 0 corresponding to 
+scalar input, \code{theta = -log(HR)}. Defaults to 0 corresponding to
 the null hypothesis.}
 
 \item{I}{Stagewise cumulative information, e.g., \code{V}, the variance
 of the weighted log-rank test score statistic at each stage. For
 conventional log-rank test, information can be approximated by
 \code{phi*(1-phi)*D}, where \code{phi} is the probability of being
-allocated to the active arm, and \code{D} is the total number of events 
+allocated to the active arm, and \code{D} is the total number of events
 at each stage. Defaults to \code{seq(1, kMax)} if left unspecified.}
 }
 \value{
-A list of stagewise exit probabilities: one vector for efficacy
-stopping probabilities, and the other vector for futility stopping
-probabilities.
+A list of stagewise exit probabilities:
+\itemize{
+\item \code{exitProbUpper}: The vector of efficacy stopping probabilities
+\item \code{exitProbLower}: The vector of futility stopping probabilities.
+}
 }
 \description{
 Obtains the stagewise exit probabilities for both efficacy and

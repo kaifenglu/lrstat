@@ -338,16 +338,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// getAccrualDuration
-NumericVector getAccrualDuration(const NumericVector& nsubjects, const NumericVector& accrualTime, const NumericVector& accrualIntensity);
-RcppExport SEXP _lrstat_getAccrualDuration(SEXP nsubjectsSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP) {
+// getAccrualDurationFromN
+NumericVector getAccrualDurationFromN(const NumericVector& nsubjects, const NumericVector& accrualTime, const NumericVector& accrualIntensity);
+RcppExport SEXP _lrstat_getAccrualDurationFromN(SEXP nsubjectsSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type nsubjects(nsubjectsSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type accrualTime(accrualTimeSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type accrualIntensity(accrualIntensitySEXP);
-    rcpp_result_gen = Rcpp::wrap(getAccrualDuration(nsubjects, accrualTime, accrualIntensity));
+    rcpp_result_gen = Rcpp::wrap(getAccrualDurationFromN(nsubjects, accrualTime, accrualIntensity));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -751,13 +751,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // getDesign
-List getDesign(const double beta, const double drift, const int kMax, const NumericVector& informationRates, const LogicalVector& efficacyStopping, const LogicalVector& futilityStopping, const NumericVector& criticalValues, const double alpha, const String typeAlphaSpending, const double parameterAlphaSpending, const NumericVector& userAlphaSpending, const NumericVector& futilityBounds, const String typeBetaSpending, const double parameterBetaSpending, const NumericVector& userBetaSpending, const NumericVector& spendingTime);
-RcppExport SEXP _lrstat_getDesign(SEXP betaSEXP, SEXP driftSEXP, SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP typeBetaSpendingSEXP, SEXP parameterBetaSpendingSEXP, SEXP userBetaSpendingSEXP, SEXP spendingTimeSEXP) {
+List getDesign(const double beta, const double Imax, const double theta, const int kMax, const NumericVector& informationRates, const LogicalVector& efficacyStopping, const LogicalVector& futilityStopping, const NumericVector& criticalValues, const double alpha, const String typeAlphaSpending, const double parameterAlphaSpending, const NumericVector& userAlphaSpending, const NumericVector& futilityBounds, const String typeBetaSpending, const double parameterBetaSpending, const NumericVector& userBetaSpending, const NumericVector& spendingTime);
+RcppExport SEXP _lrstat_getDesign(SEXP betaSEXP, SEXP ImaxSEXP, SEXP thetaSEXP, SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP typeBetaSpendingSEXP, SEXP parameterBetaSpendingSEXP, SEXP userBetaSpendingSEXP, SEXP spendingTimeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const double >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< const double >::type drift(driftSEXP);
+    Rcpp::traits::input_parameter< const double >::type Imax(ImaxSEXP);
+    Rcpp::traits::input_parameter< const double >::type theta(thetaSEXP);
     Rcpp::traits::input_parameter< const int >::type kMax(kMaxSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type informationRates(informationRatesSEXP);
     Rcpp::traits::input_parameter< const LogicalVector& >::type efficacyStopping(efficacyStoppingSEXP);
@@ -772,7 +773,37 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type parameterBetaSpending(parameterBetaSpendingSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type userBetaSpending(userBetaSpendingSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type spendingTime(spendingTimeSEXP);
-    rcpp_result_gen = Rcpp::wrap(getDesign(beta, drift, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime));
+    rcpp_result_gen = Rcpp::wrap(getDesign(beta, Imax, theta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime));
+    return rcpp_result_gen;
+END_RCPP
+}
+// adaptDesign
+List adaptDesign(double beta, double INew, const int L, const double zL, const double theta, const int kMax, const NumericVector& informationRates, const NumericVector& criticalValues, const NumericVector& futilityBounds, const bool MullerSchafer, const int kNew, const NumericVector& tNew, const LogicalVector& efficacyStopping, const LogicalVector& futilityStopping, const String typeAlphaSpending, const double parameterAlphaSpending, const String typeBetaSpending, const double parameterBetaSpending, const NumericVector& userBetaSpending, const NumericVector& spendingTime);
+RcppExport SEXP _lrstat_adaptDesign(SEXP betaSEXP, SEXP INewSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP thetaSEXP, SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP criticalValuesSEXP, SEXP futilityBoundsSEXP, SEXP MullerSchaferSEXP, SEXP kNewSEXP, SEXP tNewSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP typeBetaSpendingSEXP, SEXP parameterBetaSpendingSEXP, SEXP userBetaSpendingSEXP, SEXP spendingTimeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double >::type INew(INewSEXP);
+    Rcpp::traits::input_parameter< const int >::type L(LSEXP);
+    Rcpp::traits::input_parameter< const double >::type zL(zLSEXP);
+    Rcpp::traits::input_parameter< const double >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const int >::type kMax(kMaxSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type informationRates(informationRatesSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type criticalValues(criticalValuesSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type futilityBounds(futilityBoundsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type MullerSchafer(MullerSchaferSEXP);
+    Rcpp::traits::input_parameter< const int >::type kNew(kNewSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type tNew(tNewSEXP);
+    Rcpp::traits::input_parameter< const LogicalVector& >::type efficacyStopping(efficacyStoppingSEXP);
+    Rcpp::traits::input_parameter< const LogicalVector& >::type futilityStopping(futilityStoppingSEXP);
+    Rcpp::traits::input_parameter< const String >::type typeAlphaSpending(typeAlphaSpendingSEXP);
+    Rcpp::traits::input_parameter< const double >::type parameterAlphaSpending(parameterAlphaSpendingSEXP);
+    Rcpp::traits::input_parameter< const String >::type typeBetaSpending(typeBetaSpendingSEXP);
+    Rcpp::traits::input_parameter< const double >::type parameterBetaSpending(parameterBetaSpendingSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type userBetaSpending(userBetaSpendingSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type spendingTime(spendingTimeSEXP);
+    rcpp_result_gen = Rcpp::wrap(adaptDesign(beta, INew, L, zL, theta, kMax, informationRates, criticalValues, futilityBounds, MullerSchafer, kNew, tNew, efficacyStopping, futilityStopping, typeAlphaSpending, parameterAlphaSpending, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -942,7 +973,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lrstat_lrsim2e", (DL_FUNC) &_lrstat_lrsim2e, 29},
     {"_lrstat_lrsim2e3a", (DL_FUNC) &_lrstat_lrsim2e3a, 38},
     {"_lrstat_accrual", (DL_FUNC) &_lrstat_accrual, 4},
-    {"_lrstat_getAccrualDuration", (DL_FUNC) &_lrstat_getAccrualDuration, 3},
+    {"_lrstat_getAccrualDurationFromN", (DL_FUNC) &_lrstat_getAccrualDurationFromN, 3},
     {"_lrstat_patrisk", (DL_FUNC) &_lrstat_patrisk, 4},
     {"_lrstat_pevent", (DL_FUNC) &_lrstat_pevent, 4},
     {"_lrstat_hd", (DL_FUNC) &_lrstat_hd, 6},
@@ -960,7 +991,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lrstat_getCriticalValues", (DL_FUNC) &_lrstat_getCriticalValues, 23},
     {"_lrstat_getCumAlphaSpent", (DL_FUNC) &_lrstat_getCumAlphaSpent, 18},
     {"_lrstat_lrpower", (DL_FUNC) &_lrstat_lrpower, 32},
-    {"_lrstat_getDesign", (DL_FUNC) &_lrstat_getDesign, 16},
+    {"_lrstat_getDesign", (DL_FUNC) &_lrstat_getDesign, 17},
+    {"_lrstat_adaptDesign", (DL_FUNC) &_lrstat_adaptDesign, 20},
     {"_lrstat_getNeventsFromHazardRatio", (DL_FUNC) &_lrstat_getNeventsFromHazardRatio, 19},
     {"_lrstat_lrsamplesize", (DL_FUNC) &_lrstat_lrsamplesize, 35},
     {"_lrstat_set_seed", (DL_FUNC) &_lrstat_set_seed, 1},

@@ -70,9 +70,11 @@ qtpwexp <- function(probability, piecewiseSurvivalTime = 0,
 #'   allocated to the active arm, and \code{D} is the total number of events 
 #'   at each stage. Defaults to \code{seq(1, kMax)} if left unspecified. 
 #'
-#' @return A list of stagewise exit probabilities: one vector for efficacy
-#' stopping probabilities, and the other vector for futility stopping
-#' probabilities.
+#' @return A list of stagewise exit probabilities: 
+#' 
+#' * \code{exitProbUpper}: The vector of efficacy stopping probabilities
+#' 
+#' * \code{exitProbLower}: The vector of futility stopping probabilities.
 #'
 #' @examples
 #' exitprob(b = c(3.471, 2.454, 2.004), theta = -log(0.6), 

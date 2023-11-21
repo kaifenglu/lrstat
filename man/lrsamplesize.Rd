@@ -99,15 +99,16 @@ treatment versus control. Defaults to 1 for superiority test.}
 \item{allocationRatioPlanned}{Allocation ratio for the active treatment
 versus control. Defaults to 1 for equal randomization.}
 
-\item{accrualTime}{Accrual time intervals. Must start with 0, e.g.,
+\item{accrualTime}{A vector that specifies the starting time of
+piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 [0, 3) and [3, Inf).}
 
 \item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
-\item{piecewiseSurvivalTime}{A vector that specifies the time intervals for
-the piecewise exponential survival distribution. Must start with 0, e.g.,
+\item{piecewiseSurvivalTime}{A vector that specifies the starting times of
+piecewise exponential survival time intervals. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
 Defaults to 0 for exponential distribution.}
@@ -138,38 +139,46 @@ by stratum for the control group.}
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
 Defaults to 0 for variable follow-up.}
 
-\item{rho1}{The first parameter of the Fleming-Harrington family of 
+\item{rho1}{The first parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
-\item{rho2}{The second parameter of the Fleming-Harrington family of 
+\item{rho2}{The second parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
 \item{numSubintervals}{Number of sub-intervals to approximate the mean
 and variance of the weighted log-rank test score statistic.
 Defaults to 300. Specify a larger number for better approximation.}
 
-\item{estimateHazardRatio}{Whether to estimate the hazard ratio from 
-weighted Cox regression model and report the stopping boundaries on 
+\item{estimateHazardRatio}{Whether to estimate the hazard ratio from
+weighted Cox regression model and report the stopping boundaries on
 the hazard ratio scale.}
 
-\item{typeOfComputation}{Whether to use the direct approximation method 
-or the Schoenfeld method. Defaults to "direct". Can use "Schoenfeld" 
+\item{typeOfComputation}{The type of computation,
+either "direct" for the direct approximation method,
+or "schoenfeld" for the Schoenfeld method.
+Defaults to "direct". Can use "Schoenfeld"
 under proportional hazards and conventional log-rank test.}
 
 \item{interval}{The interval to search for the solution of
-accrualDuration, followupDuration, or the proportionality constant 
+accrualDuration, followupDuration, or the proportionality constant
 of accrualIntensity. Defaults to \code{c(0.001, 240)}.
 Adjustment may be needed for non-monotone relationship with study power.}
 
-\item{spendingTime}{A vector of length \code{kMax} for the error spending 
-time at each analysis. Defaults to missing, in which case, it is the 
+\item{spendingTime}{A vector of length \code{kMax} for the error spending
+time at each analysis. Defaults to missing, in which case, it is the
 same as \code{informationRates}.}
 
-\item{rounding}{Whether to round up sample size and events. 
+\item{rounding}{Whether to round up sample size and events.
 Defaults to 1 for sample size rounding.}
 }
 \value{
-A list of S3 class \code{lrpower}.
+A list of two components:
+\itemize{
+\item \code{resultsUnderH1}: The S3 class \code{lrpower} object under the
+alternative hypothesis.
+\item \code{resultsUnderH0}: The S3 class \code{lrpower} object under the
+null hypothesis.
+}
 }
 \description{
 Obtains the needed accrual duration given power and
@@ -255,4 +264,7 @@ lrsamplesize(beta = 0.1,
                    
 
 
+}
+\seealso{
+\code{\link{lrpower}}
 }

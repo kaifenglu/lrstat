@@ -2,7 +2,7 @@
 % Please edit documentation in R/wrappers.R
 \name{fseqbon}
 \alias{fseqbon}
-\title{Group sequential trials using Bonferroni-based graphical 
+\title{Group sequential trials using Bonferroni-based graphical
 approaches}
 \usage{
 fseqbon(
@@ -28,46 +28,46 @@ fseqbon(
 
 \item{kMax}{The maximum number of stages.}
 
-\item{typeAlphaSpending}{The vector of alpha spending functions. 
-Each element is one of the following: 
-"OF" for O'Brien-Fleming boundaries, 
-"P" for Pocock boundaries, "WT" for Wang & Tsiatis boundaries, 
-"sfOF" for O'Brien-Fleming type spending function, 
+\item{typeAlphaSpending}{The vector of alpha spending functions.
+Each element is one of the following:
+"OF" for O'Brien-Fleming boundaries,
+"P" for Pocock boundaries, "WT" for Wang & Tsiatis boundaries,
+"sfOF" for O'Brien-Fleming type spending function,
 "sfP" for Pocock type spending function,
-"sfKD" for Kim & DeMets spending function, 
-"sfHSD" for Hwang, Shi & DeCani spending function, 
+"sfKD" for Kim & DeMets spending function,
+"sfHSD" for Hwang, Shi & DeCani spending function,
 and "none" for no early efficacy stopping.
 Defaults to "sfOF" if not provided.}
 
-\item{parameterAlphaSpending}{The vector of parameter values for the 
-alpha spending functions. Each element corresponds to the value of 
+\item{parameterAlphaSpending}{The vector of parameter values for the
+alpha spending functions. Each element corresponds to the value of
 Delta for "WT", rho for "sfKD", or gamma for "sfHSD".
 Defaults to missing if not provided.}
 
-\item{incidenceMatrix}{The incidence matrix indicating whether the 
-specific hypothesis will be tested at the given look. The number of 
-columns of incidenceMatrix must be equal to the maximum number of 
-study looks (\code{kMax}). If not provided, defaults to testing each 
+\item{incidenceMatrix}{The incidence matrix indicating whether the
+specific hypothesis will be tested at the given look. The number of
+columns of incidenceMatrix must be equal to the maximum number of
+study looks (\code{kMax}). If not provided, defaults to testing each
 hypothesis at all study looks.}
 
-\item{maxInformation}{The vector of target maximum information for each 
+\item{maxInformation}{The vector of target maximum information for each
 hypothesis. Defaults to a vector of 1s if not provided.}
 
 \item{p}{The matrix of raw p-values for each hypothesis by study look.}
 
-\item{information}{The matrix of observed information for each hypothesis 
+\item{information}{The matrix of observed information for each hypothesis
 by study look.}
 
-\item{spendingTime}{The spending time for alpha spending by study look. 
-If not provided, it is the same as \code{informationRates} calculated 
+\item{spendingTime}{The spending time for alpha spending by study look.
+If not provided, it is the same as \code{informationRates} calculated
 from \code{information} and \code{maxInformation}.}
 }
 \value{
-A vector to indicate the first look the specific hypothesis is 
-  rejected (0 if the hypothesis is not rejected).
+A vector to indicate the first look the specific hypothesis is
+rejected (0 if the hypothesis is not rejected).
 }
 \description{
-Obtains the test results for group sequential trials using 
+Obtains the test results for group sequential trials using
 graphical approaches based on weighted Bonferroni tests.
 }
 \examples{
@@ -93,6 +93,6 @@ fseqbon(
 }
 \references{
 Willi Maurer and Frank Bretz. Multiple testing in group sequential
-trials using graphical approaches. Statistics in Biopharmaceutical 
+trials using graphical approaches. Statistics in Biopharmaceutical
 Research. 2013; 5:311-320.
 }

@@ -20,7 +20,7 @@ or "Hochberg", and it defaults to "Hochberg".}
 A matrix of adjusted p-values.
 }
 \description{
-Obtains the adjusted p-values for the stepwise gatekeeping 
+Obtains the adjusted p-values for the stepwise gatekeeping
 procedures for multiplicity problems involving two sequences of hypotheses.
 }
 \examples{

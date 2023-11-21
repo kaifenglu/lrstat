@@ -1,5 +1,6 @@
 #' Parameter Description: accrualTime
-#' @param accrualTime Accrual time intervals. Must start with 0, e.g.,
+#' @param accrualTime A vector that specifies the starting time of 
+#'   piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 #'   \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 #'   [0, 3) and [3, Inf).
 #' @name param_accrualTime
@@ -20,8 +21,8 @@ NULL
 NULL
 
 #' Parameter Description: piecewiseSurvivalTime
-#' @param piecewiseSurvivalTime A vector that specifies the time intervals for
-#'   the piecewise exponential survival distribution. Must start with 0, e.g.,
+#' @param piecewiseSurvivalTime A vector that specifies the starting time of
+#'   piecewise exponential survival time intervals. Must start with 0, e.g.,
 #'   \code{c(0, 6)} breaks the time axis into 2 event intervals:
 #'   [0, 6) and [6, Inf).
 #'   Defaults to 0 for exponential distribution.
@@ -292,8 +293,10 @@ NULL
 NULL
 
 #' Parameter Description: typeOfComputation
-#' @param typeOfComputation Whether to use the direct approximation method 
-#'   or the Schoenfeld method. Defaults to "direct". Can use "Schoenfeld" 
+#' @param typeOfComputation The type of computation, 
+#'   either "direct" for the direct approximation method, 
+#'   or "schoenfeld" for the Schoenfeld method.  
+#'   Defaults to "direct". Can use "Schoenfeld" 
 #'   under proportional hazards and conventional log-rank test. 
 #' @name param_typeOfComputation
 #' @keywords internal

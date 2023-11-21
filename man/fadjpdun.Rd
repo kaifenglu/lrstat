@@ -13,14 +13,14 @@ fadjpdun(wgtmat, p, family, corr)
 
 \item{family}{The matrix of family indicators for elementary hypotheses.}
 
-\item{corr}{The correlation matrix that should be used for the parametric 
+\item{corr}{The correlation matrix that should be used for the parametric
 test. Can contain NAs for unknown correlations between families.}
 }
 \value{
 A matrix of adjusted p-values.
 }
 \description{
-Obtains the adjusted p-values for graphical approaches 
+Obtains the adjusted p-values for graphical approaches
 using weighted Dunnett tests.
 }
 \examples{
@@ -40,8 +40,8 @@ fadjpdun(wgtmat, pvalues, family, corr)
 
 }
 \references{
-Frank Bretz, Martin Posch, Ekkehard Glimm, Florian Klinglmueller, 
+Frank Bretz, Martin Posch, Ekkehard Glimm, Florian Klinglmueller,
 Willi Maurer, and Kornelius Rohmeyer. Graphical approach for multiple
-comparison procedures using weighted Bonferroni, Simes, or 
+comparison procedures using weighted Bonferroni, Simes, or
 parameter tests. Biometrical Journal. 2011; 53:894-913.
 }

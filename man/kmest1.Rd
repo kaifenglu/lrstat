@@ -25,21 +25,22 @@ kmest1(
 \arguments{
 \item{time}{The calendar time for data cut.}
 
-\item{milestone}{The milestone time at which to calculate the 
+\item{milestone}{The milestone time at which to calculate the
 Kaplan-Meier estimate of survival probability.}
 
 \item{allocationRatioPlanned}{Allocation ratio for the active treatment
 versus control. Defaults to 1 for equal randomization.}
 
-\item{accrualTime}{Accrual time intervals. Must start with 0, e.g.,
+\item{accrualTime}{A vector that specifies the starting time of
+piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 [0, 3) and [3, Inf).}
 
 \item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
-\item{piecewiseSurvivalTime}{A vector that specifies the time intervals for
-the piecewise exponential survival distribution. Must start with 0, e.g.,
+\item{piecewiseSurvivalTime}{A vector that specifies the starting times of
+piecewise exponential survival time intervals. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
 Defaults to 0 for exponential distribution.}
@@ -75,12 +76,23 @@ and variance of the weighted log-rank test score statistic.
 Defaults to 300. Specify a larger number for better approximation.}
 }
 \value{
-A data frame of the number of subjects, survival probability 
-and variance estimate in each group, difference in survival probability 
-and variance estimate at the specified time by stratum.
+A data frame containing the following variables:
+\itemize{
+\item \code{stratum}: The stratum.
+\item \code{time}: The calendar time since trial start.
+\item \code{subjects}: The enrolled number of subjects.
+\item \code{milestone}: The milestone time relative to randomization.
+\item \code{surv1}: The milestone survival probability for the treatment group.
+\item \code{surv2}: The milestone survival probability for the control group.
+\item \code{vsurv1}: The variance for \code{surv1}.
+\item \code{vsurv2}: The variance for \code{surv2}.
+\item \code{survdiff}: The difference in milestone survival probabilities,
+i.e., \code{surv1 - surv2}.
+\item \code{vsurvdiff}: The variance for \code{survdiff}.
+}
 }
 \description{
-Obtains the Kaplan-Meier estimate of milestone survival 
+Obtains the Kaplan-Meier estimate of milestone survival
 probability and associated variance estimate using the Greenwood formula
 by treatment group and by stratum at given analysis time.
 }

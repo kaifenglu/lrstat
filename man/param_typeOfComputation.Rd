@@ -4,8 +4,10 @@
 \alias{param_typeOfComputation}
 \title{Parameter Description: typeOfComputation}
 \arguments{
-\item{typeOfComputation}{Whether to use the direct approximation method 
-or the Schoenfeld method. Defaults to "direct". Can use "Schoenfeld" 
+\item{typeOfComputation}{The type of computation,
+either "direct" for the direct approximation method,
+or "schoenfeld" for the Schoenfeld method.
+Defaults to "direct". Can use "Schoenfeld"
 under proportional hazards and conventional log-rank test.}
 }
 \description{

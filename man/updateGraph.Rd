@@ -16,12 +16,12 @@ updateGraph(w, G, I, j)
 \item{j}{The hypothesis to remove from index set \code{I}.}
 }
 \value{
-A list containing the new vector of weights and the new 
-transition matrix for the graph, and the new set of indices of yet 
+A list containing the new vector of weights and the new
+transition matrix for the graph, and the new set of indices of yet
 to be rejected hypotheses.
 }
 \description{
-Updates the weights and transition matrix for graphical 
+Updates the weights and transition matrix for graphical
 approaches.
 }
 \examples{

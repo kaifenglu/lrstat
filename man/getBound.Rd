@@ -37,8 +37,8 @@ Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".}
 spent up to each stage.}
 
 \item{spendingTime}{A vector of length \code{k} for the error spending
-time at each analysis. Must be increasing and less than or equal to 1. 
-Defaults to missing, in which case, it is the same as 
+time at each analysis. Must be increasing and less than or equal to 1.
+Defaults to missing, in which case, it is the same as
 \code{informationRates}.}
 }
 \value{

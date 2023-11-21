@@ -1,8 +1,8 @@
 Package: lrstat
 Type: Package
 Title: Power and Sample Size Calculation for Non-Proportional Hazards
-Version: 0.2.0
-Date: 2023-10-01
+Version: 0.2.1
+Date: 2023-11-21
 Author: Kaifeng Lu
 Maintainer: Kaifeng Lu <kaifenglu@gmail.com>
 Description: Performs power and sample size calculation for non-proportional 
@@ -27,6 +27,7 @@ Suggests:
     tidyr
 VignetteBuilder: knitr
 RoxygenNote: 7.2.3
+Roxygen: list(markdown = TRUE)
 Encoding: UTF-8
 NeedsCompilation: yes
 
