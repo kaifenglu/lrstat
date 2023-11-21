@@ -86,7 +86,7 @@ piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 \item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
-\item{piecewiseSurvivalTime}{A vector that specifies the starting times of
+\item{piecewiseSurvivalTime}{A vector that specifies the starting time of
 piecewise exponential survival time intervals. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
@@ -237,8 +237,8 @@ event endpoint 1 for the subject.
 event endpoint 1 for the subject.
 \item \code{timeUnderObservation1}: The time under observation since
 since randomization for event endpoint 1 for the subject.
-\item \code{event1} Whether the subject experienced event endpoint 1.
-\item \code{dropoutEvent1} Whether the subject dropped out for
+\item \code{event1}: Whether the subject experienced event endpoint 1.
+\item \code{dropoutEvent1}: Whether the subject dropped out for
 endpoint 1.
 \item \code{survivalTime2}: The underlying survival time for
 event endpoint 2 for the subject.
@@ -246,8 +246,8 @@ event endpoint 2 for the subject.
 event endpoint 2 for the subject.
 \item \code{timeUnderObservation2}: The time under observation since
 since randomization for event endpoint 2 for the subject.
-\item \code{event2} Whether the subject experienced event endpoint 2.
-\item \code{dropoutEvent2} Whether the subject dropped out for
+\item \code{event2}: Whether the subject experienced event endpoint 2.
+\item \code{dropoutEvent2}: Whether the subject dropped out for
 endpoint 2.
 }
 }

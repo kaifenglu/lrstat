@@ -129,7 +129,7 @@ stopping.
 \item \code{userBetaSpending}: The user defined beta spending.
 \item \code{spendingTime}: The error spending time at each analysis.
 \item \code{calculationTarget}: The calculation target, \code{beta} or
-\code{INew}.
+\code{Imax}.
 }
 }
 }

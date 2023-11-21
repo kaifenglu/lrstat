@@ -275,9 +275,9 @@ fmodmixcpp <- function(p, family, serial, parallel, gamma, test = "hommel", exha
 #'   - \code{timeUnderObservation}: The time under observation since    
 #'   since randomization.
 #'   
-#'   - \code{event} Whether the subject experienced the event.
+#'   - \code{event}: Whether the subject experienced the event.
 #'   
-#'   - \code{dropoutEvent} Whether the subject dropped out.
+#'   - \code{dropoutEvent}: Whether the subject dropped out.
 #'
 #' @examples
 #' # Example 1: analyses based on number of events
@@ -465,9 +465,9 @@ lrsim <- function(kMax = NA_integer_, informationTime = NA_real_, criticalValues
 #'   - \code{timeUnderObservation}: The time under observation since 
 #'   since randomization for the subject.
 #'   
-#'   - \code{event} Whether the subject experienced the event.
+#'   - \code{event}: Whether the subject experienced the event.
 #'   
-#'   - \code{dropoutEvent} Whether the subject dropped out. 
+#'   - \code{dropoutEvent}: Whether the subject dropped out. 
 #' 
 #' @examples
 #' 
@@ -636,9 +636,9 @@ lrsim3a <- function(kMax = NA_integer_, hazardRatioH013 = 1, hazardRatioH023 = 1
 #'   - \code{timeUnderObservation1}: The time under observation since 
 #'   since randomization for event endpoint 1 for the subject.
 #'   
-#'   - \code{event1} Whether the subject experienced event endpoint 1.
+#'   - \code{event1}: Whether the subject experienced event endpoint 1.
 #'   
-#'   - \code{dropoutEvent1} Whether the subject dropped out for 
+#'   - \code{dropoutEvent1}: Whether the subject dropped out for 
 #'   endpoint 1.
 #'   
 #'   - \code{survivalTime2}: The underlying survival time for 
@@ -650,9 +650,9 @@ lrsim3a <- function(kMax = NA_integer_, hazardRatioH013 = 1, hazardRatioH023 = 1
 #'   - \code{timeUnderObservation2}: The time under observation since 
 #'   since randomization for event endpoint 2 for the subject.
 #'   
-#'   - \code{event2} Whether the subject experienced event endpoint 2.
+#'   - \code{event2}: Whether the subject experienced event endpoint 2.
 #'   
-#'   - \code{dropoutEvent2} Whether the subject dropped out for 
+#'   - \code{dropoutEvent2}: Whether the subject dropped out for 
 #'   endpoint 2.
 #' 
 #' @examples
@@ -862,9 +862,9 @@ lrsim2e <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH0e1 = 
 #'   - \code{timeUnderObservation1}: The time under observation since 
 #'   since randomization for event endpoint 1 for the subject.
 #'   
-#'   - \code{event1} Whether the subject experienced event endpoint 1.
+#'   - \code{event1}: Whether the subject experienced event endpoint 1.
 #'   
-#'   - \code{dropoutEvent1} Whether the subject dropped out for 
+#'   - \code{dropoutEvent1}: Whether the subject dropped out for 
 #'   endpoint 1.
 #'   
 #'   - \code{survivalTime2}: The underlying survival time for 
@@ -876,9 +876,9 @@ lrsim2e <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH0e1 = 
 #'   - \code{timeUnderObservation2}: The time under observation since 
 #'   since randomization for event endpoint 2 for the subject.
 #'   
-#'   - \code{event2} Whether the subject experienced event endpoint 2.
+#'   - \code{event2}: Whether the subject experienced event endpoint 2.
 #'   
-#'   - \code{dropoutEvent2} Whether the subject dropped out for 
+#'   - \code{dropoutEvent2}: Whether the subject dropped out for 
 #'   endpoint 2.
 #' 
 #' @examples
@@ -1801,7 +1801,7 @@ getCumAlphaSpent <- function(kMax = NA_integer_, informationRates = NA_real_, cr
 #'   
 #'   - \code{futilityStopping}: Whether to allow futility stopping.
 #'
-#' * \code{settings} A list containing the following input parameters: 
+#' * \code{settings}: A list containing the following input parameters: 
 #'   \code{typeAlphaSpending}, \code{parameterAlphaSpending},
 #'   \code{userAlphaSpending}, \code{typeBetaSpending},
 #'   \code{parameterBetaSpending}, \code{userBetaSpending},
@@ -1810,7 +1810,7 @@ getCumAlphaSpent <- function(kMax = NA_integer_, informationRates = NA_real_, cr
 #'   \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2}, and
 #'   \code{spendingTime}.
 #'
-#' * \code{byTreatmentCounts} A list containing the following counts by 
+#' * \code{byTreatmentCounts}: A list containing the following counts by 
 #' treatment group:
 #' 
 #'   - \code{numberOfEvents1}: The number of events by stage for 
@@ -1971,7 +1971,7 @@ lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #'   - \code{spendingTime}: The error spending time at each analysis. 
 #'   
 #'   - \code{calculationTarget}: The calculation target, \code{beta} or 
-#'   \code{INew}.
+#'   \code{Imax}.
 #'
 #' @examples
 #'
@@ -2055,12 +2055,12 @@ getDesign <- function(beta = NA_real_, Imax = NA_real_, theta = NA_real_, kMax =
 #'
 #' @return An \code{adaptDesign} object with two list components: 
 #' 
-#' * \code{primaryTrial} selected information for the primary trial,
-#' including \code{L}, \code{zL}, \code{theta}, \code{kMax}, 
+#' * \code{primaryTrial}: A list of selected information for the primary 
+#' trial, including \code{L}, \code{zL}, \code{theta}, \code{kMax}, 
 #' \code{informationRates}, \code{efficacyBounds}, \code{futilityBounds},
 #' and \code{MullerSchafer}.
 #'  
-#' * \code{secondaryTrial} a \code{design} object for the secondary trial.
+#' * \code{secondaryTrial}: A \code{design} object for the secondary trial.
 #'
 #' @seealso \code{\link{getDesign}}
 #' 
@@ -2210,10 +2210,10 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #' 
 #' @return A list of two components: 
 #' 
-#' * \code{resultsUnderH1}: The S3 class \code{lrpower} object under the 
+#' * \code{resultsUnderH1}: An S3 class \code{lrpower} object under the 
 #' alternative hypothesis.
 #' 
-#' * \code{resultsUnderH0}: The S3 class \code{lrpower} object under the 
+#' * \code{resultsUnderH0}: An S3 class \code{lrpower} object under the 
 #' null hypothesis.
 #'
 #' @seealso \code{\link{lrpower}}

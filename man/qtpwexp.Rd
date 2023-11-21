@@ -14,7 +14,7 @@ qtpwexp(
 \arguments{
 \item{probability}{The scalar probability corresponding to the quantile.}
 
-\item{piecewiseSurvivalTime}{A vector that specifies the starting times of
+\item{piecewiseSurvivalTime}{A vector that specifies the starting time of
 piecewise exponential survival time intervals. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).

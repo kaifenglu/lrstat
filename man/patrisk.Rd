@@ -15,7 +15,7 @@ patrisk(
 \item{time}{A vector of analysis times at which to calculate the
 probability of being at risk.}
 
-\item{piecewiseSurvivalTime}{A vector that specifies the starting times of
+\item{piecewiseSurvivalTime}{A vector that specifies the starting time of
 piecewise exponential survival time intervals. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).

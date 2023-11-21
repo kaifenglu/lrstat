@@ -98,7 +98,7 @@ piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 \item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
 
-\item{piecewiseSurvivalTime}{A vector that specifies the starting times of
+\item{piecewiseSurvivalTime}{A vector that specifies the starting time of
 piecewise exponential survival time intervals. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
 [0, 6) and [6, Inf).
@@ -216,7 +216,7 @@ stopping.
 \item \code{efficacyStopping}: Whether to allow efficacy stopping.
 \item \code{futilityStopping}: Whether to allow futility stopping.
 }
-\item \code{settings} A list containing the following input parameters:
+\item \code{settings}: A list containing the following input parameters:
 \code{typeAlphaSpending}, \code{parameterAlphaSpending},
 \code{userAlphaSpending}, \code{typeBetaSpending},
 \code{parameterBetaSpending}, \code{userBetaSpending},
@@ -224,7 +224,7 @@ stopping.
 \code{piecewiseSurvivalTime}, \code{stratumFraction},
 \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2}, and
 \code{spendingTime}.
-\item \code{byTreatmentCounts} A list containing the following counts by
+\item \code{byTreatmentCounts}: A list containing the following counts by
 treatment group:
 \itemize{
 \item \code{numberOfEvents1}: The number of events by stage for

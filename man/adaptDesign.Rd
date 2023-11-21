@@ -101,11 +101,11 @@ same as \code{tNew}.}
 \value{
 An \code{adaptDesign} object with two list components:
 \itemize{
-\item \code{primaryTrial} selected information for the primary trial,
-including \code{L}, \code{zL}, \code{theta}, \code{kMax},
+\item \code{primaryTrial}: A list of selected information for the primary
+trial, including \code{L}, \code{zL}, \code{theta}, \code{kMax},
 \code{informationRates}, \code{efficacyBounds}, \code{futilityBounds},
 and \code{MullerSchafer}.
-\item \code{secondaryTrial} a \code{design} object for the secondary trial.
+\item \code{secondaryTrial}: A \code{design} object for the secondary trial.
 }
 }
 \description{
