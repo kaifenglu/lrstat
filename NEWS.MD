@@ -1,10 +1,13 @@
 # lrstat 0.2.1
 
+- use markdown for Roxygen documentations
 - rename getAccrualDuration to getAccrualDurationFromN
 - replace the drift parameter with Imax and theta parameters in the getDesign function
 - calculate alpha when critical values are not missing for the getDesign and lrpower functions
+- add the getCI function for parameter estimation after termination of a group sequential trial
 - add the adaptDesign function for sample size re-estimation and conditional power calculation
-- use markdown for Roxygen documentations
+- add the getBWCI function for parameter estimation using the backward image method after termination of an adaptive group sequential trial
+- add the getCP function to calculate the conditional power when the parameter value varies over time
 
 # lrstat 0.2.0
 

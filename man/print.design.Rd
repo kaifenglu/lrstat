@@ -18,4 +18,7 @@ A tabular printout of the design elements.
 Prints the stopping boundaries and information inflation
 factor for group sequential design.
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}
 \keyword{internal}

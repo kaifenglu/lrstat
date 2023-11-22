@@ -30,3 +30,6 @@ gamma = c(0.6, 0.6, 0.6, 1)
 fstp2seq(p, gamma, test="hochberg", retest=1)
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

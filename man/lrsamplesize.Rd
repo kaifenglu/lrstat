@@ -268,3 +268,6 @@ lrsamplesize(beta = 0.1,
 \seealso{
 \code{\link{lrpower}}
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

@@ -275,3 +275,6 @@ lrpower(kMax = 2, informationRates = c(0.8, 1),
         followupTime = 18, fixedFollowup = FALSE)
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

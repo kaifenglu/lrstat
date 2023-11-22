@@ -66,3 +66,6 @@ Winston Wenxiang Zheng, and David Fuyuan Li. An enhanced mixture method
 for constructing gatekeeping procedures in clinical trials.
 Journal of Biopharmaceutical Statistics. 2018; 28(1):113–128.
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

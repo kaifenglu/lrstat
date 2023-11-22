@@ -102,3 +102,6 @@ getDurationFromNevents(
   fixedFollowup = FALSE)
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

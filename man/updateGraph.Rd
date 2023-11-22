@@ -33,3 +33,6 @@ updateGraph(w = c(0.5, 0.5, 0, 0),
             j = 1)
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

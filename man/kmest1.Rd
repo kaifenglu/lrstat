@@ -115,4 +115,7 @@ kmest1(time = 40,
        followupTime = 18, fixedFollowup = FALSE)
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}
 \keyword{internal}

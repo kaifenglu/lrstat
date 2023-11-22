@@ -6,7 +6,7 @@
 \usage{
 getDesign(
   beta = NA_real_,
-  Imax = NA_real_,
+  IMax = NA_real_,
   theta = NA_real_,
   kMax = 1L,
   informationRates = NA_real_,
@@ -27,7 +27,7 @@ getDesign(
 \arguments{
 \item{beta}{The type II error.}
 
-\item{Imax}{The maximum information. If \code{Imax} is provided, then
+\item{IMax}{The maximum information. If \code{IMax} is provided, then
 the input \code{beta} will be ignored and power will be calculated.}
 
 \item{theta}{The parameter value.}
@@ -129,7 +129,7 @@ stopping.
 \item \code{userBetaSpending}: The user defined beta spending.
 \item \code{spendingTime}: The error spending time at each analysis.
 \item \code{calculationTarget}: The calculation target, \code{beta} or
-\code{Imax}.
+\code{IMax}.
 }
 }
 }
@@ -149,9 +149,12 @@ getDesign(beta = 0.2, theta = -log(0.7),
           
 
 # Example 2: obtain power given the maximum information
-getDesign(Imax = 72.5, theta = -log(0.7),
+getDesign(IMax = 72.5, theta = -log(0.7),
           kMax = 3, informationRates = c(0.5, 0.75, 1),
           alpha = 0.025, typeAlphaSpending = "sfOF",
           typeBetaSpending = "sfP")
 
+}
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
 }

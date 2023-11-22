@@ -17,4 +17,7 @@ A tabular printout of the summary statistics from simulation runs.
 \description{
 Prints the summary statistics from simulation.
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}
 \keyword{internal}

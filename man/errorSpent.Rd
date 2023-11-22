@@ -31,3 +31,6 @@ errorSpent(t = 0.5, error = 0.025, sf = "sfOF")
 errorSpent(t = c(0.5, 0.75, 1), error = 0.025, sf = "sfHSD", sfpar = -4)
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

@@ -45,3 +45,6 @@ Willi Maurer, and Kornelius Rohmeyer. Graphical approach for multiple
 comparison procedures using weighted Bonferroni, Simes, or
 parameter tests. Biometrical Journal. 2011; 53:894-913.
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

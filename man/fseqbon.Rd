@@ -96,3 +96,6 @@ Willi Maurer and Frank Bretz. Multiple testing in group sequential
 trials using graphical approaches. Statistics in Biopharmaceutical
 Research. 2013; 5:311-320.
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

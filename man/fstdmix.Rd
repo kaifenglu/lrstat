@@ -60,3 +60,6 @@ Alex Dmitrienko and Ajit C Tamhane. Mixtures of multiple testing
 procedures for gatekeeping applications in clinical trials.
 Statistics in Medicine. 2011; 30(13):1473–1488.
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

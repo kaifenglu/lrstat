@@ -66,3 +66,6 @@ repeatedPValue(kMax = 3, typeAlphaSpending = "sfOF",
                information = c(1/3, 2/3))
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

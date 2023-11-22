@@ -29,4 +29,7 @@ v <- c(5, 10, 15) # create two bins [5,10) and [10,15)
 cbind(x, findInterval2(x, v))
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}
 \keyword{internal}

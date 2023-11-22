@@ -13,6 +13,8 @@
 #'
 #' @return A vector of errors spent up to the interim look.
 #'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
 #' @examples
 #' errorSpent(t = 0.5, error = 0.025, sf = "sfOF")
 #' errorSpent(t = c(0.5, 0.75, 1), error = 0.025, sf = "sfHSD", sfpar = -4)
@@ -36,6 +38,8 @@ errorSpent <- function(t, error, sf = "sfOF", sfpar = NA) {
 #'
 #' @return The quantile x such that
 #' P(X > x | X > lowerBound) = 1 - probability.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
 #' qtpwexp(probability = c(0.3, 0.5), piecewiseSurvivalTime = c(0, 6, 9, 15),
@@ -76,6 +80,8 @@ qtpwexp <- function(probability, piecewiseSurvivalTime = 0,
 #' 
 #' * \code{exitProbLower}: The vector of futility stopping probabilities.
 #'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#' 
 #' @examples
 #' exitprob(b = c(3.471, 2.454, 2.004), theta = -log(0.6), 
 #'          I = c(50, 100, 150)/4)
@@ -105,6 +111,8 @@ exitprob <- function(b, a = NA, theta = 0, I = NA) {
 #' Frank Bretz, Willi Maurer, Werner Brannath and Martin Posch. A 
 #' graphical approach to sequentially rejective multiple test 
 #' procedures. Statistics in Medicine. 2009; 28:586-604. 
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #' 
 #' @examples
 #'
@@ -148,6 +156,8 @@ fadjpbon <- function(w, G, p) {
 #' Willi Maurer, and Kornelius Rohmeyer. Graphical approach for multiple
 #' comparison procedures using weighted Bonferroni, Simes, or 
 #' parameter tests. Biometrical Journal. 2011; 53:894-913.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #' 
 #' @examples
 #'
@@ -248,6 +258,8 @@ fadjpdun <- function(wgtmat, p, family, corr) {
 #' 
 #' Kaifeng Lu. Graphical approaches using a Bonferroni mixture of weighted 
 #' Simes tests. Statistics in Medicine. 2016; 35:4041-4055.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #' 
 #' @examples
 #'
@@ -297,6 +309,8 @@ fadjpsim <- function(wgtmat, p, family) {
 #'   \code{k} columns.
 #'
 #' @return The repeated p-values at look 1 to look \code{k}.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
 #'
@@ -402,6 +416,8 @@ repeatedPValue <- function(kMax,
 #' trials using graphical approaches. Statistics in Biopharmaceutical 
 #' Research. 2013; 5:311-320.
 #'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
 #' @examples
 #' 
 #' # Case study from Maurer & Bretz (2013) 
@@ -471,6 +487,8 @@ fseqbon <- function(w, G, alpha = 0.025, kMax,
 #'
 #' @return A matrix of adjusted p-values.
 #' 
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#' 
 #' @examples
 #'
 #' p = c(0.0194, 0.0068, 0.0271, 0.0088, 0.0370, 0.0018, 0.0814, 0.0066)
@@ -523,6 +541,8 @@ fstp2seq <- function(p, gamma, test="hochberg", retest=TRUE) {
 #' Alex Dmitrienko and Ajit C Tamhane. Mixtures of multiple testing 
 #' procedures for gatekeeping applications in clinical trials. 
 #' Statistics in Medicine. 2011; 30(13):1473–1488.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #' 
 #' @examples
 #'
@@ -629,6 +649,8 @@ fstdmix <- function(p, family, serial, parallel,
 #' Winston Wenxiang Zheng, and David Fuyuan Li. An enhanced mixture method 
 #' for constructing gatekeeping procedures in clinical trials. 
 #' Journal of Biopharmaceutical Statistics. 2018; 28(1):113–128.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
 #'

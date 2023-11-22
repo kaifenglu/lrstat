@@ -111,3 +111,6 @@ getNeventsFromHazardRatio(
   hazardRatio = 0.673)
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

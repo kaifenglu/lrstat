@@ -39,3 +39,6 @@ qtpwexp(probability = c(0.3, 0.5), piecewiseSurvivalTime = c(0, 6, 9, 15),
         lambda = c(0.025, 0.04, 0.015, 0.007))
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

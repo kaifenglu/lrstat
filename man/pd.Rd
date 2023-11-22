@@ -47,4 +47,7 @@ pd(t1 = 1, t2 = 8, piecewiseSurvivalTime = c(0, 6),
    lambda = c(0.0533, 0.0309), gamma = -log(1-0.05)/12)
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}
 \keyword{internal}

@@ -34,6 +34,8 @@ NumericVector stl_sort(const NumericVector& x) {
 //'
 //' @keywords internal
 //'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
 //' @examples
 //' x <- 2:18
 //' v <- c(5, 10, 15) # create two bins [5,10) and [10,15)
@@ -77,6 +79,8 @@ IntegerVector findInterval2(NumericVector x, NumericVector v) {
 //' @param tol The tolerance limit for stopping the iteration.
 //'
 //' @return The root x between x1 and x2 such that f(x) = 0.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
 //' @examples
 //' brent(sin, -1, 1, 0.0001)

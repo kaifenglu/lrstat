@@ -48,3 +48,6 @@ exitprob(b = c(2.963, 2.359, 2.014),
          I = c(81, 121, 160))
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

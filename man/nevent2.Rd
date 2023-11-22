@@ -83,4 +83,7 @@ nevent2(time = c(9, 24), allocationRatioPlanned = 1,
         maxFollowupTime = 30)
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}
 \keyword{internal}

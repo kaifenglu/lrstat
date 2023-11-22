@@ -33,3 +33,6 @@ getAccrualDurationFromN(nsubjects = c(20, 150), accrualTime = c(0, 3),
                         accrualIntensity = c(10, 20))
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

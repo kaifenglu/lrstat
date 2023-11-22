@@ -24,3 +24,6 @@ g = matrix(c(0,0,1,0,0,0,0,1,0,1,0,0,1,0,0,0), nrow=4, ncol=4, byrow=TRUE)
 (wgtmat = fwgtmat(w,g))
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

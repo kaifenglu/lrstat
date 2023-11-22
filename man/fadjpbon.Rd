@@ -35,3 +35,6 @@ Frank Bretz, Willi Maurer, Werner Brannath and Martin Posch. A
 graphical approach to sequentially rejective multiple test
 procedures. Statistics in Medicine. 2009; 28:586-604.
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

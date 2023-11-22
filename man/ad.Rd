@@ -67,4 +67,7 @@ ad(time = c(9, 15), u1 = 1, u2 = 8, accrualTime = c(0, 3),
    lambda = c(0.0533, 0.0309), gamma = -log(1-0.05)/12)
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}
 \keyword{internal}

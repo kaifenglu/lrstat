@@ -17,4 +17,7 @@ A tabular printout of the summary statistics from power calculation.
 \description{
 Prints the summary statistics from power calculation.
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}
 \keyword{internal}

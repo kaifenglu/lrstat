@@ -17,6 +17,8 @@ using namespace Rcpp;
 //' transition matrix for the graph, and the new set of indices of yet 
 //' to be rejected hypotheses.
 //'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
 //' @examples
 //' updateGraph(w = c(0.5, 0.5, 0, 0), 
 //'             G = matrix(c(0, 0.5, 0.5, 0,  0.5, 0, 0, 0.5,  
@@ -200,6 +202,8 @@ NumericMatrix fadjpboncpp(const NumericVector& w,
 //' @param G The transition matrix.
 //'
 //' @return The weight matrix starting with the global null hypothesis.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
 //' @examples
 //'
@@ -478,6 +482,8 @@ NumericMatrix fadjpsimcpp(const NumericMatrix& wgtmat,
 //'
 //' @return A numeric vector of critical values up to the current look.
 //'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
 //' @examples
 //'
 //' getBound(k = 2, informationRates = c(0.5,1),
@@ -496,6 +502,10 @@ NumericVector getBound(
   
   NumericVector informationRates1 = clone(informationRates);
   NumericVector spendingTime1 = clone(spendingTime);
+  
+  if (R_isnancpp(k)) {
+    stop("k must be provided");
+  }
   
   if (is_false(any(is_na(informationRates)))) {
     if (informationRates.size() != k) {

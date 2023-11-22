@@ -18,4 +18,7 @@ A tabular printout of the design elements.
 Prints the primary and second trial information for
 an adaptive group sequential design.
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}
 \keyword{internal}

@@ -255,3 +255,6 @@ sim2
 head(sim2$sumdata)
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

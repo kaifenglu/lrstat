@@ -138,4 +138,7 @@ lrstat1(time = 22, hazardRatioH0 = 1,
         followupTime = 18, fixedFollowup = FALSE)
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}
 \keyword{internal}

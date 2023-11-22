@@ -54,3 +54,6 @@ getBound(k = 2, informationRates = c(0.5,1),
          alpha = 0.025, typeAlphaSpending = "sfOF")
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

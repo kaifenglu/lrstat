@@ -181,6 +181,8 @@ using namespace Rcpp;
 //'   
 //'   - \code{dropoutEvent}: Whether the subject dropped out.
 //'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
 //' @examples
 //' # Example 1: analyses based on number of events
 //' 
@@ -1303,6 +1305,8 @@ List lrsim(const int kMax = NA_INTEGER,
 //'   - \code{event}: Whether the subject experienced the event.
 //'   
 //'   - \code{dropoutEvent}: Whether the subject dropped out. 
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //' 
 //' @examples
 //' 
@@ -2323,6 +2327,8 @@ List lrsim3a(const int kMax = NA_INTEGER,
 //'   
 //'   - \code{dropoutEvent2}: Whether the subject dropped out for 
 //'   endpoint 2.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //' 
 //' @examples
 //' 
@@ -3631,6 +3637,8 @@ List lrsim2e(const int kMax = NA_INTEGER,
 //'   
 //'   - \code{dropoutEvent2}: Whether the subject dropped out for 
 //'   endpoint 2.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //' 
 //' @examples
 //' 

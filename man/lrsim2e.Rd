@@ -234,3 +234,6 @@ head(sim1$sumdata)
 head(sim1$rawdata)
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}

@@ -123,7 +123,7 @@ function and the number and spacing of interim looks.
 delta = 6
 sigma = 17
 n = 282
-(des1 = getDesign(Imax = n/(4*sigma^2), theta = delta, kMax = 3, 
+(des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
                   parameterAlphaSpending = -4))
 
@@ -149,7 +149,7 @@ zL = delta1/sqrt(4/n1*sigma1^2)
   criticalValues = des1$byStageResults$efficacyBounds))
 
 # Muller & Schafer (2001) method to design the secondary trial: 
-# 3-look gamma(-2) spending with equal spacing, 84\% power at delta = 4.5
+# 3-look gamma(-2) spending with 84\% power at delta = 4.5 and sigma = 20
 (des2 = adaptDesign(
   beta = 0.16, INew = NA, L, zL, theta = delta1,
   kMax = des1$overallResults$kMax, 
@@ -160,9 +160,12 @@ zL = delta1/sqrt(4/n1*sigma1^2)
   parameterAlphaSpending = -2))
   
 # incremental sample size for sigma = 20
-(nNew = 4*sigma1^2*des2$overallResults$maxInformation)
+(nNew = 4*sigma1^2*des2$secondaryTrial$overallResults$maxInformation)
 
 }
 \seealso{
 \code{\link{getDesign}}
+}
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
 }

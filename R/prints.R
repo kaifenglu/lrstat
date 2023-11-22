@@ -9,6 +9,8 @@
 #'
 #' @keywords internal
 #'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#' 
 #' @export
 print.design <- function(x, ...) {
   a = x$overallResults;
@@ -119,6 +121,8 @@ print.design <- function(x, ...) {
 #' @return A tabular printout of the design elements.
 #'
 #' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @export
 print.adaptDesign <- function(x, ...) {
@@ -261,6 +265,8 @@ print.adaptDesign <- function(x, ...) {
 #' @return A tabular printout of the summary statistics from power calculation.
 #'
 #' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @export
 print.lrpower <- function(x, ...) {
@@ -495,6 +501,8 @@ print.lrpower <- function(x, ...) {
 #' @return A tabular printout of the summary statistics from simulation runs.
 #'
 #' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @export
 print.lrsim <- function(x, ...) {

@@ -146,3 +146,6 @@ lrstat(time = c(22, 40), allocationRatioPlanned = 1,
        followupTime = 18, fixedFollowup = FALSE)
 
 }
+\author{
+Kaifeng Lu, \email{kaifenglu@gmail.com}
+}
