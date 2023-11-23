@@ -2757,28 +2757,6 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #'              gamma2 = -log(1-0.05)/12,
 #'              accrualDuration = 22,
 #'              followupTime = 18, fixedFollowup = FALSE)
-#'              
-#'
-#' # Example 4: Non-inferiority trial with fixed follow-up and 
-#' # superiority alternative
-#' 
-#' lrsamplesize(beta = 0.1, 
-#'              kMax = 3, 
-#'              alpha = 0.025,
-#'              typeAlphaSpending = "sfOF",
-#'              hazardRatioH0 = 1.1,
-#'              accrualTime = c(0, 6),
-#'              accrualIntensity = c(1000, 1500),
-#'              lambda1 = log(2)/48*0.95,
-#'              lambda2 = log(2)/48,
-#'              gamma1 = -log(1-0.08)/12,
-#'              gamma2 = -log(1-0.08)/12,
-#'              accrualDuration = NA,
-#'              followupTime = 18,
-#'              fixedFollowup = 1, 
-#'              typeOfComputation = "Schoenfeld")
-#'                    
-#' 
 #'
 #' @export
 lrsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = 20L, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = 0.0309, lambda2 = 0.0533, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = 18, fixedFollowup = 0L, rho1 = 0, rho2 = 0, numSubintervals = 300L, estimateHazardRatio = 1L, typeOfComputation = "direct", interval = as.numeric( c(0.001, 240)), spendingTime = NA_real_, rounding = 1L) {

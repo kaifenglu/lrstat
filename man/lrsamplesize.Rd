@@ -241,28 +241,6 @@ lrsamplesize(beta = 0.2, kMax = 2,
              gamma2 = -log(1-0.05)/12,
              accrualDuration = 22,
              followupTime = 18, fixedFollowup = FALSE)
-             
-
-# Example 4: Non-inferiority trial with fixed follow-up and 
-# superiority alternative
-
-lrsamplesize(beta = 0.1, 
-             kMax = 3, 
-             alpha = 0.025,
-             typeAlphaSpending = "sfOF",
-             hazardRatioH0 = 1.1,
-             accrualTime = c(0, 6),
-             accrualIntensity = c(1000, 1500),
-             lambda1 = log(2)/48*0.95,
-             lambda2 = log(2)/48,
-             gamma1 = -log(1-0.08)/12,
-             gamma2 = -log(1-0.08)/12,
-             accrualDuration = NA,
-             followupTime = 18,
-             fixedFollowup = 1, 
-             typeOfComputation = "Schoenfeld")
-                   
-
 
 }
 \seealso{

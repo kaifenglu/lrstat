@@ -4164,7 +4164,7 @@ List getCI(const NumericVector& b = NA_REAL,
   int kMax = b.size();
   NumericVector a(kMax, -6.0), zero(kMax); 
   List probs = exitprobcpp(b, a, zero, I);
-  double cilevel = 1 - sum(NumericVector(probs[0]));
+  double cilevel = 1 - 2*sum(NumericVector(probs[0]));
   
   NumericVector interval(2);
   interval[0] = (zL - 6)/sqrt(I[L-1]);
@@ -4962,7 +4962,7 @@ List getBWCI(const int kMax = NA_INTEGER,
   
   NumericVector a(kMax, -6.0), zero(kMax); 
   List probs = exitprobcpp(b, a, zero, I);
-  double cilevel = 1 - sum(NumericVector(probs[0]));
+  double cilevel = 1 - 2*sum(NumericVector(probs[0]));
   
   int K = kMax;
   double pvalue = f_bwpvalue(0, K, b, I, L, zL, b2, I2, L2, zL2);
@@ -5993,28 +5993,6 @@ double getNeventsFromHazardRatio(
 //'              gamma2 = -log(1-0.05)/12,
 //'              accrualDuration = 22,
 //'              followupTime = 18, fixedFollowup = FALSE)
-//'              
-//'
-//' # Example 4: Non-inferiority trial with fixed follow-up and 
-//' # superiority alternative
-//' 
-//' lrsamplesize(beta = 0.1, 
-//'              kMax = 3, 
-//'              alpha = 0.025,
-//'              typeAlphaSpending = "sfOF",
-//'              hazardRatioH0 = 1.1,
-//'              accrualTime = c(0, 6),
-//'              accrualIntensity = c(1000, 1500),
-//'              lambda1 = log(2)/48*0.95,
-//'              lambda2 = log(2)/48,
-//'              gamma1 = -log(1-0.08)/12,
-//'              gamma2 = -log(1-0.08)/12,
-//'              accrualDuration = NA,
-//'              followupTime = 18,
-//'              fixedFollowup = 1, 
-//'              typeOfComputation = "Schoenfeld")
-//'                    
-//' 
 //'
 //' @export
 // [[Rcpp::export]]
