@@ -119,7 +119,7 @@ stopping.
 \item \code{efficacyStopping}: Whether to allow efficacy stopping.
 \item \code{futilityStopping}: Whether to allow futility stopping.
 }
-\item \code{settings} A list containing the following input parameters:
+\item \code{settings}: A list containing the following input parameters:
 \itemize{
 \item \code{typeAlphaSpending}: The type of alpha spending.
 \item \code{parameterAlphaSpending}: The parameter value for alpha spending.

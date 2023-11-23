@@ -56,6 +56,26 @@
 #'   \item the \code{lrsim} function uses the variance of the log-rank
 #'     test score statistic as the information.
 #' }
+#' 
+#' In addition to the log-rank test power and sample size calculations, 
+#' the lrstat package can also be used for the following tasks:
+#' \itemize{
+#'   \item design generic group sequential trials for continuous, binary,
+#'     or other endpoints.
+#'   \item design adaptive group sequential trials for changes in sample 
+#'     size, error spending function, number and spacing or future looks.
+#'   \item calculate the terminating and repeated confidence intervals for 
+#'     standard and adaptive group sequential trials.
+#'   \item calculate the conditional power for non-proportional hazards 
+#'     with or without design changes.
+#'   \item perform multiplicity adjustment based on graphical approaches 
+#'     using weighted Bonferroni tests, Bonferroni mixture of weighted 
+#'     Simes test, and Bonferroni mixture of Dunnett test as well as
+#'     group sequential trials with multiple hypotheses.
+#'   \item perform multiplicity adjustment using stepwise gatekeeping 
+#'     procedures for two sequences of hypotheses and the standard or 
+#'     modified mixture gatekeeping procedures in the general case.
+#' }
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'

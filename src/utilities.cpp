@@ -485,3 +485,289 @@ double qtpwexpcpp(const double probability,
 }
 
 
+// [[Rcpp::export]]
+NumericVector getBoundcpp(const int k,
+                          const NumericVector& informationRates,
+                          const double alpha,
+                          const String typeAlphaSpending,
+                          const double parameterAlphaSpending,
+                          const NumericVector& userAlphaSpending,
+                          const NumericVector& spendingTime,
+                          const LogicalVector& efficacyStopping) {
+  
+  NumericVector informationRates1 = clone(informationRates);
+  NumericVector spendingTime1 = clone(spendingTime);
+  LogicalVector efficacyStopping1 = clone(efficacyStopping);
+  
+  if (R_isnancpp(k)) {
+    stop("k must be provided");
+  }
+  
+  if (is_false(any(is_na(informationRates)))) {
+    if (informationRates.size() != k) {
+      stop("Invalid length for informationRates");
+    } else if (informationRates[0] <= 0) {
+      stop("Elements of informationRates must be positive");
+    } else if (k > 1 && is_true(any(diff(informationRates) <= 0))) {
+      stop("Elements of informationRates must be increasing");
+    } else if (informationRates[k-1] > 1) {
+      stop("informationRates must not exceed 1");
+    }
+  } else {
+    IntegerVector tem = seq_len(k);
+    informationRates1 = as<NumericVector>(tem)/(k+0.0);
+  }
+  
+  if (is_false(any(is_na(spendingTime)))) {
+    if (spendingTime.size() != k) {
+      stop("Invalid length for spendingTime");
+    } else if (spendingTime[0] <= 0) {
+      stop("Elements of spendingTime must be positive");
+    } else if (k > 1 && is_true(any(diff(spendingTime) <= 0))) {
+      stop("Elements of spendingTime must be increasing");
+    } else if (spendingTime[k-1] > 1) {
+      stop("spendingTime must not exceed 1");
+    }
+  } else {
+    spendingTime1 = clone(informationRates1);
+  }
+  
+  if (is_false(any(is_na(efficacyStopping)))) {
+    if (efficacyStopping.size() != k) {
+      stop("Invalid length for efficacyStopping");
+    } else if (efficacyStopping[k-1] != 1) {
+      stop("efficacyStopping must end with 1");
+    } else if (is_false(all((efficacyStopping == 1) | 
+      (efficacyStopping == 0)))) {
+      stop("Elements of efficacyStopping must be 1 or 0");
+    } 
+  } else {
+    efficacyStopping1 = rep(1, k);
+  }
+  
+  std::string asf = typeAlphaSpending;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  double asfpar = parameterAlphaSpending;
+  
+  if (asf=="user") {
+    if (is_true(any(is_na(userAlphaSpending)))) {
+      stop("userAlphaSpending must be specified");
+    } else if (userAlphaSpending.size() < k) {
+      stop("Insufficient length of userAlphaSpending");
+    } else if (userAlphaSpending[0] < 0) {
+      stop("Elements of userAlphaSpending must be nonnegnative");
+    } else if (k > 1 && is_true(any(diff(userAlphaSpending) < 0))) {
+      stop("Elements of userAlphaSpending must be nondecreasing");
+    } else if (userAlphaSpending[k-1] > alpha) {
+      stop("userAlphaSpending must not exceed the specified alpha");
+    }
+  }
+  
+  
+  if (asf=="wt" && R_isnancpp(asfpar)) {
+    stop("Missing parameter for WT");
+  }
+  
+  if (asf=="sfkd" && R_isnancpp(asfpar)) {
+    stop("Missing parameter for sfKD");
+  }
+  
+  if (asf=="sfhsd" && R_isnancpp(asfpar)) {
+    stop("Missing parameter for sfHSD");
+  }
+  
+  if (asf=="sfkd" && asfpar <= 0) {
+    stop ("asfpar must be positive for sfKD");
+  }
+  
+  NumericVector theta(k); // mean values under H0, initialized to zero
+  NumericVector t = clone(informationRates1); // info time for test stat
+  NumericVector s = clone(spendingTime1); // spending time for alpha-spending
+  NumericVector criticalValues(k);
+  
+  if (asf == "none") {
+    for (int i=0; i<k-1; i++) {
+      criticalValues[i] = 6.0;
+    }
+    criticalValues[k-1] = R::qnorm(1-alpha, 0, 1, 1, 0);
+  } else if (asf == "of" || asf == "p" || asf == "wt") {
+    double Delta;
+    if (asf == "of") {
+      Delta = 0;
+    } else if (asf == "p") {
+      Delta = 0.5;
+    } else {
+      Delta = asfpar;
+    }
+    
+    auto f = [k, alpha, Delta, theta, t, 
+              efficacyStopping1] (double aval)->double {
+      NumericVector u(k), l(k);
+      for (int i=0; i<k; i++) {
+        u[i] = aval*pow(t[i], Delta-0.5);
+        if (!efficacyStopping1[i]) u[i] = 6.0;
+        l[i] = -6.0;
+      }
+      
+      List probs = exitprobcpp(u, l, theta, t);
+      double cpu = sum(NumericVector(probs[0]));
+      return cpu - alpha;
+    };
+    
+    double cwt = brent(f, 0.0, 10.0, 1e-6);
+    for (int i=0; i<k; i++) {
+      criticalValues[i] = cwt*pow(t[i], Delta-0.5);
+      if (!efficacyStopping1[i]) criticalValues[i] = 6.0;
+    }
+  } else if (asf == "sfof" || asf == "sfp" || asf == "sfkd" ||
+    asf == "sfhsd" || asf == "user") {
+    
+    // stage 1
+    double cumAlphaSpent;
+    if (asf == "user") {
+      cumAlphaSpent = userAlphaSpending[0];
+    } else {
+      cumAlphaSpent = errorSpentcpp(s[0], alpha, asf, asfpar);
+    }
+    
+    if (!efficacyStopping1[0]) {
+      criticalValues[0] = 6.0;
+    } else {
+      criticalValues[0] = R::qnorm(1 - cumAlphaSpent, 0, 1, 1, 0);
+    }
+    
+    
+    // lambda expression for finding the critical Values at stage k
+    int k1=0;
+    auto f = [&k1, &cumAlphaSpent, &criticalValues,
+              theta, t](double aval)->double {
+                NumericVector u(k1+1), l(k1+1);
+                for (int i=0; i<k1; i++) {
+                  u[i] = criticalValues[i];
+                  l[i] = -6.0;
+                }
+                u[k1] = aval;
+                l[k1] = -6.0;
+                
+                IntegerVector idx = Range(0,k1);
+                List probs = exitprobcpp(u, l, theta[idx], t[idx]);
+                double cpu = sum(NumericVector(probs[0]));
+                return cpu - cumAlphaSpent;
+              };
+    
+    // subsequent stages
+    for (k1=1; k1<k; k1++) {
+      if (asf == "user") {
+        cumAlphaSpent = userAlphaSpending[k1];
+      } else {
+        cumAlphaSpent = errorSpentcpp(s[k1], alpha, asf, asfpar);
+      }
+      
+      if (!efficacyStopping1[k1]) {
+        criticalValues[k1] = 6.0;
+      } else {
+        if (f(6.0) > 0) { // no alpha spent at current visit
+          criticalValues[k1] = 6.0;
+        } else {
+          criticalValues[k1] = brent(f, -5.0, 6.0, 1.0e-6);
+        }
+      }
+    }
+  } else {
+    stop("Invalid type of alpha spending");
+  }
+  
+  return criticalValues;
+}
+
+
+// [[Rcpp::export]]
+List getPower(const double alpha, 
+              const int kMax,
+              const NumericVector& b,
+              const NumericVector& theta,
+              const NumericVector& I,
+              const std::string bsf,
+              const double bsfpar,
+              const NumericVector& st,
+              const LogicalVector& futilityStopping) {
+  
+  double beta;
+  NumericVector a(kMax);
+  List probs;
+  auto f = [kMax, b, futilityStopping, &a, 
+            bsf, bsfpar, theta, I, st](double beta)->double {
+              // initialize futility bound to be updated
+              a = NumericVector(kMax);
+              double eps;
+              
+              // first stage
+              int k = 0;
+              double cb = errorSpentcpp(st[0], beta, bsf, bsfpar);
+              if (!futilityStopping[0]) {
+                a[0] = -6.0;
+              } else {
+                eps = R::pnorm(b[0] - theta[0]*sqrt(I[0]), 0, 1, 1, 0) - cb;
+                if (eps < 0) return -1.0; // to decrease beta
+                a[0] = R::qnorm(cb, 0, 1, 1, 0) + theta[0]*sqrt(I[0]);
+              }
+              
+              // lambda expression for finding futility bound at stage k
+              auto g = [&k, &cb, b, &a, theta, I](double aval)->double {
+                NumericVector u(k+1), l(k+1);
+                for (int i=0; i<k; i++) {
+                  u[i] = b[i];
+                  l[i] = a[i];
+                }
+                u[k] = 6.0;
+                l[k] = aval;
+                
+                IntegerVector idx = Range(0,k);
+                List probs = exitprobcpp(u, l, theta[idx], I[idx]);
+                double cpl = sum(NumericVector(probs[1]));
+                return cpl - cb;
+              };
+              
+              for (k=1; k<kMax; k++) {
+                cb = errorSpentcpp(st[k], beta, bsf, bsfpar);
+                
+                if (!futilityStopping[k]) {
+                  a[k] = -6.0;
+                } else {
+                  eps = g(b[k]);
+                  
+                  if (g(-6.0) > 0) { // no beta spent at current visit
+                    a[k] = -6.0;
+                  } else if (eps > 0) {
+                    a[k] = brent(g, -6.0, b[k], 1e-6);
+                  } else if (k < kMax-1) {
+                    return -1.0;
+                  }
+                }
+              }
+              
+              return eps;
+            };
+  
+  double v1 = f(0.0001), v2 = f(1-alpha);
+  
+  if (v1 == -1.0 || (v1 < 0 && a[kMax-1] == 0)) {
+    stop("Power must be less than 0.9999 to use beta spending");
+  } else if (v2 > 0) {
+    stop("Power must be greater than alpha to use beta spending");
+  } else {
+    beta = brent(f, 0.0001, 1-alpha, 1e-6);
+    a[kMax-1] = b[kMax-1];
+    probs = exitprobcpp(b, a, theta, I);
+  }
+  
+  List result = List::create(
+    _["beta"] = beta,
+    _["futilityBounds"] = a,
+    _["probs"] = probs);
+  
+  return result;
+}

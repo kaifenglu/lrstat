@@ -14,6 +14,8 @@
 #' transition matrix for the graph, and the new set of indices of yet 
 #' to be rejected hypotheses.
 #'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
 #' @examples
 #' updateGraph(w = c(0.5, 0.5, 0, 0), 
 #'             G = matrix(c(0, 0.5, 0.5, 0,  0.5, 0, 0, 0.5,  
@@ -39,6 +41,8 @@ fadjpboncpp <- function(w, G, p) {
 #'
 #' @return The weight matrix starting with the global null hypothesis.
 #'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
 #' @examples
 #'
 #' w = c(0.5,0.5,0,0)
@@ -52,34 +56,6 @@ fwgtmat <- function(w, G) {
 
 fadjpsimcpp <- function(wgtmat, p, family) {
     .Call(`_lrstat_fadjpsimcpp`, wgtmat, p, family)
-}
-
-#' @title Get efficacy boundaries for group sequential design
-#' @description Obtains the efficacy stopping boundaries for a group
-#' sequential design.
-#'
-#' @param k Look number for the current analysis.
-#' @param informationRates Information rates up to the current look. Must be
-#'   increasing and less than or equal to 1.
-#' @inheritParams param_alpha
-#' @inheritParams param_typeAlphaSpending
-#' @inheritParams param_parameterAlphaSpending
-#' @inheritParams param_userAlphaSpending
-#' @param spendingTime A vector of length \code{k} for the error spending  
-#'   time at each analysis. Must be increasing and less than or equal to 1. 
-#'   Defaults to missing, in which case, it is the same as 
-#'   \code{informationRates}.
-#'
-#' @return A numeric vector of critical values up to the current look.
-#'
-#' @examples
-#'
-#' getBound(k = 2, informationRates = c(0.5,1),
-#'          alpha = 0.025, typeAlphaSpending = "sfOF")
-#'
-#' @export
-getBound <- function(k = NA_integer_, informationRates = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_) {
-    .Call(`_lrstat_getBound`, k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime)
 }
 
 repeatedPValuecpp <- function(kMax = NA_integer_, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, maxInformation = 1, p = NA_real_, information = NA_real_, spendingTime = NA_real_) {
@@ -279,6 +255,8 @@ fmodmixcpp <- function(p, family, serial, parallel, gamma, test = "hommel", exha
 #'   
 #'   - \code{dropoutEvent}: Whether the subject dropped out.
 #'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
 #' @examples
 #' # Example 1: analyses based on number of events
 #' 
@@ -468,6 +446,8 @@ lrsim <- function(kMax = NA_integer_, informationTime = NA_real_, criticalValues
 #'   - \code{event}: Whether the subject experienced the event.
 #'   
 #'   - \code{dropoutEvent}: Whether the subject dropped out. 
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #' 
 #' @examples
 #' 
@@ -654,6 +634,8 @@ lrsim3a <- function(kMax = NA_integer_, hazardRatioH013 = 1, hazardRatioH023 = 1
 #'   
 #'   - \code{dropoutEvent2}: Whether the subject dropped out for 
 #'   endpoint 2.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #' 
 #' @examples
 #' 
@@ -880,6 +862,8 @@ lrsim2e <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH0e1 = 
 #'   
 #'   - \code{dropoutEvent2}: Whether the subject dropped out for 
 #'   endpoint 2.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #' 
 #' @examples
 #' 
@@ -926,6 +910,8 @@ lrsim2e3a <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH013e
 #' @return A vector of total number of subjects enrolled by the
 #' specified calendar times.
 #'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#' 
 #' @examples
 #' # Example 1: Uniform enrollment with 20 patients per month for 12 months.
 #'
@@ -955,6 +941,8 @@ accrual <- function(time = NA_real_, accrualTime = 0L, accrualIntensity = NA_rea
 #'
 #' @return A vector of accrual durations.
 #'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
 #' @examples
 #' getAccrualDurationFromN(nsubjects = c(20, 150), accrualTime = c(0, 3),
 #'                         accrualIntensity = c(10, 20))
@@ -979,6 +967,8 @@ getAccrualDurationFromN <- function(nsubjects = NA_real_, accrualTime = 0L, accr
 #' specified piecewise exponential survival and dropout distributions.
 #'
 #' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #' 
 #' @examples
 #' # Piecewise exponential survival with hazard 0.0533 in the first 6 months,
@@ -1007,6 +997,8 @@ patrisk <- function(time = NA_real_, piecewiseSurvivalTime = 0L, lambda = NA_rea
 #' specified piecewise exponential survival and dropout distributions.
 #'
 #' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
 #' # Piecewise exponential survival with hazard 0.0533 in the first 6 months,
@@ -1038,6 +1030,8 @@ pevent <- function(time = NA_real_, piecewiseSurvivalTime = 0L, lambda = NA_real
 #'
 #' @keywords internal
 #'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
 #' @examples
 #' # Piecewise exponential survival with hazard 0.0533 in the first 6 months,
 #' # and hazard 0.0309 thereafter, and 5% dropout by the end of 1 year.
@@ -1066,6 +1060,8 @@ hd <- function(j = NA_integer_, t1 = NA_real_, t2 = NA_real_, piecewiseSurvivalT
 #' piecewise exponential survival and dropout distributions.
 #'
 #' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
 #' # Piecewise exponential survival with hazard 0.0533 in the first 6 months,
@@ -1102,6 +1098,8 @@ pd <- function(t1 = NA_real_, t2 = NA_real_, piecewiseSurvivalTime = 0L, lambda 
 #' \code{time >= u2}.
 #'
 #' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
 #' # Piecewise accrual, 10 patients per month for the first 3 months, and
@@ -1140,6 +1138,8 @@ ad <- function(time = NA_real_, u1 = NA_real_, u2 = NA_real_, accrualTime = 0L, 
 #' analysis times (row) for each treatment group (column).
 #'
 #' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #' 
 #' @examples
 #' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
@@ -1181,6 +1181,8 @@ natrisk <- function(time = NA_real_, allocationRatioPlanned = 1, accrualTime = 0
 #'
 #' @keywords internal
 #'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
 #' @examples
 #' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
 #' # the end of 1 year.
@@ -1220,6 +1222,8 @@ nevent <- function(time = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L
 #' calendar times (row) for each treatment group (column).
 #'
 #' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
 #' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
@@ -1300,6 +1304,8 @@ nevent2 <- function(time = NA_real_, allocationRatioPlanned = 1, accrualTime = 0
 #'
 #' @keywords internal
 #'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
 #' @examples
 #' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
 #' # the end of 1 year.
@@ -1346,15 +1352,16 @@ lrstat1 <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned =
 #' @inheritParams param_rho1
 #' @inheritParams param_rho2
 #' @inheritParams param_numSubintervals
-#' @param predictEventOnly Whether to predict the number of events only.
-#' Defaults to 0 for obtaining log-rank score statistic mean and variance.
-#' Set \code{predictEventOnly = 1} for predicting the number of events only.
-#' Set \code{predictEventOnly = 2} for predicting the number of events,
-#' calculating the mean and variance of log-rank score statistic, and
-#' calculating the estimated hazard ratio and variance of log hazard ratio.
+#' @param predictTarget The target of prediction. 
+#' Set \code{predictTarget = 1} to predict the number of events only.
+#' Set \code{predictTarget = 2} (default) to predict the umber of events 
+#' and log-rank score statistic mean and variance.
+#' Set \code{predictTarget = 3} to predict the number of events,
+#' log-rank score statistic mean and variance, and
+#' hazard ratio and variance of log hazard ratio.
 #'
 #' @return A data frame containing the following variables if 
-#' \code{predictEventOnly = 1}: 
+#' \code{predictTarget = 1}: 
 #' 
 #' * \code{time}: The analysis time since trial start.
 #' 
@@ -1372,7 +1379,7 @@ lrstat1 <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned =
 #' 
 #' * \code{ndropouts2}: The number of events for the control group.
 #' 
-#' If \code{predictEventOnly = 0}, the following variables will also 
+#' If \code{predictTarget = 2}, the following variables will also 
 #' be included:
 #' 
 #' * \code{uscore}: The numerator of the log-rank test statistic.
@@ -1383,7 +1390,7 @@ lrstat1 <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned =
 #' 
 #' * \code{hazardRatioH0}: The hazard ratio under the null hypothesis. 
 #' 
-#' Furthermore, if \code{predictEventOnly = 2}, the following additional 
+#' Furthermore, if \code{predictTarget = 3}, the following additional 
 #' variables will also be included:
 #' 
 #' * \code{HR}: The average hazard ratio from weighted Cox regression.
@@ -1391,6 +1398,8 @@ lrstat1 <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned =
 #' * \code{vlogHR}: The variance of log hazard ratio.
 #' 
 #' * \code{zlogHR}: The Z-statistic for log hazard ratio. 
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
 #' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
@@ -1409,8 +1418,8 @@ lrstat1 <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned =
 #'        followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-lrstat <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, numSubintervals = 300L, predictEventOnly = 0L) {
-    .Call(`_lrstat_lrstat`, time, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals, predictEventOnly)
+lrstat <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, numSubintervals = 300L, predictTarget = 2L) {
+    .Call(`_lrstat_lrstat`, time, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals, predictTarget)
 }
 
 #' @title Kaplan-Meier estimate of milestone survival
@@ -1461,6 +1470,8 @@ lrstat <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 
 #' 
 #'
 #' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
 #' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
@@ -1533,6 +1544,8 @@ kmest1 <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #' * \code{survdiffZ}: The Z-statistic value, i.e., 
 #' \code{survdiff/sqrt(vsurvdiff)}.
 #'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
 #' @examples
 #' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
 #' # the end of 1 year.
@@ -1576,6 +1589,8 @@ kmest <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned 
 #'
 #' @return A vector of calendar times expected to yield the target
 #' number of events.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
 #' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
@@ -1630,6 +1645,8 @@ caltime <- function(nevents = NA_real_, allocationRatioPlanned = 1, accrualTime 
 #' * \code{subjects}: The total number of subjects.
 #' 
 #' * \code{studyDuration}: The study duration. 
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
 #' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
@@ -1848,6 +1865,8 @@ getCumAlphaSpent <- function(kMax = NA_integer_, informationRates = NA_real_, cr
 #'   
 #'   - \code{expectedNumberOfSubjects2}: The expected number of subjects for 
 #'   the control group.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #' 
 #' @examples
 #' # Piecewise accrual, piecewise exponential survival, and 5% dropout by
@@ -1877,7 +1896,7 @@ lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #' stopping boundaries.
 #'
 #' @param beta The type II error.
-#' @param Imax The maximum information. If \code{Imax} is provided, then 
+#' @param IMax The maximum information. If \code{IMax} is provided, then 
 #'   the input \code{beta} will be ignored and power will be calculated.
 #' @param theta The parameter value.
 #' @inheritParams param_kMax
@@ -1954,7 +1973,7 @@ lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #'   
 #'   - \code{futilityStopping}: Whether to allow futility stopping.
 #'
-#' * \code{settings} A list containing the following input parameters: 
+#' * \code{settings}: A list containing the following input parameters: 
 #' 
 #'   - \code{typeAlphaSpending}: The type of alpha spending. 
 #'   
@@ -1971,7 +1990,9 @@ lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #'   - \code{spendingTime}: The error spending time at each analysis. 
 #'   
 #'   - \code{calculationTarget}: The calculation target, \code{beta} or 
-#'   \code{Imax}.
+#'   \code{IMax}.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
 #'
@@ -1983,14 +2004,120 @@ lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #'           
 #' 
 #' # Example 2: obtain power given the maximum information
-#' getDesign(Imax = 72.5, theta = -log(0.7),
+#' getDesign(IMax = 72.5, theta = -log(0.7),
 #'           kMax = 3, informationRates = c(0.5, 0.75, 1),
 #'           alpha = 0.025, typeAlphaSpending = "sfOF",
 #'           typeBetaSpending = "sfP")
 #'
 #' @export
-getDesign <- function(beta = NA_real_, Imax = NA_real_, theta = NA_real_, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_) {
-    .Call(`_lrstat_getDesign`, beta, Imax, theta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime)
+getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_) {
+    .Call(`_lrstat_getDesign`, beta, IMax, theta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime)
+}
+
+f_pvalue <- function(theta, b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_) {
+    .Call(`_lrstat_f_pvalue`, theta, b, I, L, zL)
+}
+
+#' @title Confidence interval after trial termination
+#' @description Obtains the p-value, median unbiased point estimate, and 
+#' confidence interval after the end of a group sequential trial.
+#'
+#' @param b The upper boundaries on the Z-test statistic scale
+#'   for efficacy stopping for the primary trial.
+#' @param I The vector of cumulative information of the primary trial.
+#' @param L The interim look of the primary trial.
+#' @param zL The Z test statistic at the interim look of the primary trial.
+#'
+#' @return A list with the following components: 
+#' 
+#' * \code{pvalue}: The p-value for rejecting the null hypothesis.
+#'  
+#' * \code{thetahat}: The median unbiased point estimate of the parameter.
+#' 
+#' * \code{cilevel}: The confidence interval level.
+#' 
+#' * \code{lower}: The lower bound of the confidence interval.
+#' 
+#' * \code{upper}: The upper bound of the confidence interval.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' # group sequential design with 90% power to detect delta = 6
+#' delta = 6
+#' sigma = 17
+#' n = 282
+#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
+#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#'                   parameterAlphaSpending = -4))
+#' 
+#' # crossed the boundary at the second look
+#' L = 2
+#' n1 = n*2/3
+#' delta1 = 7
+#' sigma1 = 20
+#' zL = delta1/sqrt(4/n1*sigma1^2)
+#' 
+#' # information based on estimated nuisance parameter
+#' b = des1$byStageResults$efficacyBounds
+#' t = des1$byStageResults$informationRates
+#' I = n*t/(4*sigma1^2)
+#' 
+#' # p-value, point estimate, and confidence interval
+#' getCI(b, I, L, zL) 
+#' 
+#' @export
+getCI <- function(b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_) {
+    .Call(`_lrstat_getCI`, b, I, L, zL)
+}
+
+#' @title Repeated confidence interval for group sequential design
+#' @description Obtains the repeated confidence interval 
+#' for a group sequential trial.
+#'
+#' @param b The upper boundaries on the Z-test statistic scale
+#'   for efficacy stopping for the primary trial.
+#' @param I The vector of cumulative information of the primary trial.
+#' @param L The interim look of the primary trial.
+#' @param zL The Z test statistic at the interim look of the primary trial.
+#'
+#' @return A list with the following components: 
+#' 
+#' * \code{lower}: The lower bound of the repeated confidence interval.
+#' 
+#' * \code{upper}: The upper bound of the repeated confidence interval.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' # group sequential design with 90% power to detect delta = 6
+#' delta = 6
+#' sigma = 17
+#' n = 282
+#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
+#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#'                   parameterAlphaSpending = -4))
+#' 
+#' # results at the second look
+#' L = 2
+#' n1 = n*2/3
+#' delta1 = 7
+#' sigma1 = 20
+#' zL = delta1/sqrt(4/n1*sigma1^2)
+#' 
+#' # information based on estimated nuisance parameter
+#' b = des1$byStageResults$efficacyBounds
+#' t = des1$byStageResults$informationRates
+#' I = n*t/(4*sigma1^2)
+#' 
+#' # repeated confidence interval
+#' getRCI(b, I, L, zL) 
+#' 
+#' @export
+getRCI <- function(b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_) {
+    .Call(`_lrstat_getRCI`, b, I, L, zL)
 }
 
 #' @title Adaptive design at an interim look
@@ -2062,6 +2189,8 @@ getDesign <- function(beta = NA_real_, Imax = NA_real_, theta = NA_real_, kMax =
 #'  
 #' * \code{secondaryTrial}: A \code{design} object for the secondary trial.
 #'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
 #' @seealso \code{\link{getDesign}}
 #' 
 #' @examples
@@ -2070,7 +2199,7 @@ getDesign <- function(beta = NA_real_, Imax = NA_real_, theta = NA_real_, kMax =
 #' delta = 6
 #' sigma = 17
 #' n = 282
-#' (des1 = getDesign(Imax = n/(4*sigma^2), theta = delta, kMax = 3, 
+#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
 #'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
 #'                   parameterAlphaSpending = -4))
 #' 
@@ -2096,7 +2225,7 @@ getDesign <- function(beta = NA_real_, Imax = NA_real_, theta = NA_real_, kMax =
 #'   criticalValues = des1$byStageResults$efficacyBounds))
 #' 
 #' # Muller & Schafer (2001) method to design the secondary trial: 
-#' # 3-look gamma(-2) spending with equal spacing, 84% power at delta = 4.5
+#' # 3-look gamma(-2) spending with 84% power at delta = 4.5 and sigma = 20
 #' (des2 = adaptDesign(
 #'   beta = 0.16, INew = NA, L, zL, theta = delta1,
 #'   kMax = des1$overallResults$kMax, 
@@ -2107,11 +2236,363 @@ getDesign <- function(beta = NA_real_, Imax = NA_real_, theta = NA_real_, kMax =
 #'   parameterAlphaSpending = -2))
 #'   
 #' # incremental sample size for sigma = 20
-#' (nNew = 4*sigma1^2*des2$overallResults$maxInformation)
+#' (nNew = 4*sigma1^2*des2$secondaryTrial$overallResults$maxInformation)
 #'
 #' @export
 adaptDesign <- function(beta = NA_real_, INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, kMax = NA_integer_, informationRates = NA_real_, criticalValues = NA_real_, futilityBounds = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, tNew = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_) {
     .Call(`_lrstat_adaptDesign`, beta, INew, L, zL, theta, kMax, informationRates, criticalValues, futilityBounds, MullerSchafer, kNew, tNew, efficacyStopping, futilityStopping, typeAlphaSpending, parameterAlphaSpending, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime)
+}
+
+f_astar <- function(theta, b2, I2, L2, zL2) {
+    .Call(`_lrstat_f_astar`, theta, b2, I2, L2, zL2)
+}
+
+f_bwimage <- function(theta, kMax, b, I, L, zL, b2, I2, L2, zL2) {
+    .Call(`_lrstat_f_bwimage`, theta, kMax, b, I, L, zL, b2, I2, L2, zL2)
+}
+
+f_bwpvalue <- function(theta, kMax = NA_integer_, b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_, b2 = NA_real_, I2 = NA_real_, L2 = NA_integer_, zL2 = NA_real_) {
+    .Call(`_lrstat_f_bwpvalue`, theta, kMax, b, I, L, zL, b2, I2, L2, zL2)
+}
+
+#' @title Backward image confidence interval after adaptation
+#' @description Obtains the p-value, median unbiased point estimate, and 
+#' confidence interval using the backward image method after the end of 
+#' an adaptive trial.
+#'
+#' @param kMax The maximum number of stages of the original design.
+#' @param b The upper boundaries on the Z-test statistic scale
+#'   for efficacy stopping for the primary trial.
+#' @param I The vector of cumulative information of the primary trial.
+#' @param L The interim look of the primary trial.
+#' @param zL The Z test statistic at the interim look of the primary trial.
+#' @param b2 The upper boundaries on the Z-test statistic scale
+#'   for efficacy stopping for the secondary trial.
+#' @param I2 The vector of cumulative information of the secondary trial.
+#' @param L2 The termination look of the secondary trial.
+#' @param zL2 The Z test statistic at the termination look of the 
+#'   secondary trial.
+#'
+#' @return A list with the following components: 
+#' 
+#' * \code{pvalue}: The p-value for rejecting the null hypothesis.
+#'  
+#' * \code{thetahat}: The median unbiased point estimate of the parameter.
+#' 
+#' * \code{cilevel}: The confidence interval level.
+#' 
+#' * \code{lower}: The lower bound of the backward image confidence interval.
+#' 
+#' * \code{upper}: The upper bound of the backward image confidence interval.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @seealso \code{\link{adaptDesign}}
+#' 
+#' @examples
+#'
+#' # original group sequential design with 90% power to detect delta = 6
+#' delta = 6
+#' sigma = 17
+#' n = 282
+#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
+#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#'                   parameterAlphaSpending = -4))
+#' 
+#' # interim look results
+#' L = 1
+#' n1 = n/3
+#' delta1 = 4.5
+#' sigma1 = 20
+#' zL = delta1/sqrt(4/n1*sigma1^2)
+#' 
+#' kMax = des1$overallResults$kMax
+#' b = des1$byStageResults$efficacyBounds
+#' t = des1$byStageResults$informationRates
+#' I = n*t/(4*sigma1^2)  # information based on estimated nuisance parameter
+#' 
+#' # Muller & Schafer (2001) method to design the secondary trial: 
+#' # 3-look gamma(-2) spending with 84% power at delta = 4.5, sigma = 17
+#' n2 = 300
+#' (des2 = adaptDesign(
+#'   beta = NA, INew = n2/(4*sigma^2), L, zL, theta = delta1,
+#'   kMax = des1$overallResults$kMax, 
+#'   informationRates = des1$byStageResults$informationRates,
+#'   criticalValues = des1$byStageResults$efficacyBounds,
+#'   MullerSchafer = TRUE,
+#'   kNew = 3, typeAlphaSpending = "sfHSD", 
+#'   parameterAlphaSpending = -2))
+#'   
+#' # termination at the second look of the secondary trial
+#' L2 = 2
+#' theta2 = 6.6
+#' sigma2 = 19.5
+#' zL2 = theta2/sqrt(4*sigma2^2/200)
+#'  
+#' b2 = des2$secondaryTrial$byStageResults$efficacyBounds
+#' t2 = des2$secondaryTrial$byStageResults$informationRates
+#' I2 = n2*t2/(4*sigma2^2)
+#' 
+#' # p-value, point estimate, and confidence interval
+#' getBWCI(kMax, b, I, L, zL, b2, I2, L2, zL2)
+#' 
+#' @export
+getBWCI <- function(kMax = NA_integer_, b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_, b2 = NA_real_, I2 = NA_real_, L2 = NA_integer_, zL2 = NA_real_) {
+    .Call(`_lrstat_getBWCI`, kMax, b, I, L, zL, b2, I2, L2, zL2)
+}
+
+#' @title Backward image repeated confidence interval after adaptation
+#' @description Obtains the repeated confidence interval using the 
+#' backward image method after the end of an adaptive trial.
+#' 
+#' @param INew The incremental information.
+#' @param L The interim look.
+#' @param zL The Z test statistic at the interim look.
+#' @param kMax The maximum number of stages of the original design.
+#' @param IMax The maximum information of the original design.
+#' @param informationRates The information rates of the original design.
+#' @param criticalValues The upper boundaries on the Z-test statistic scale
+#'   for efficacy stopping for the original design.
+#' @param L2 The termination look of the secondary trial.
+#' @param zL2 The Z test statistic at the termination look of the 
+#'   secondary trial.
+#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
+#'   for trial adaptation.
+#' @param kNew The number of future looks.
+#' @param tNew The spacing of future looks in terms of information rates.
+#' @param efficacyStopping The indicators of whether efficacy stopping is 
+#'   allowed at each future look. Defaults to true if left unspecified.
+#' @param typeAlphaSpending The type of alpha spending for future looks. 
+#'   One of the following: 
+#'   "OF" for O'Brien-Fleming boundaries, 
+#'   "P" for Pocock boundaries, 
+#'   "WT" for Wang & Tsiatis boundaries, 
+#'   "sfOF" for O'Brien-Fleming type spending function, 
+#'   "sfP" for Pocock type spending function, 
+#'   "sfKD" for Kim & DeMets spending function, 
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
+#'   "none" for no early efficacy stopping. 
+#'   Defaults to "sfOF".
+#' @param parameterAlphaSpending The parameter value for the alpha 
+#'   spending for future looks. 
+#'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
+#' @param spendingTime A vector of length \code{kNew} for the error spending 
+#'   time at future looks. Defaults to missing, in which case, it is the 
+#'   same as \code{tNew}.
+#'
+#' @return A list with the following components: 
+#' 
+#' * \code{lower}: The lower bound of the backward image repeated 
+#' confidence interval.
+#' 
+#' * \code{upper}: The upper bound of the backward image repeated 
+#' confidence interval.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @seealso \code{\link{adaptDesign}}
+#' 
+#' @examples
+#'
+#' # original group sequential design with 90% power to detect delta = 6
+#' delta = 6
+#' sigma = 17
+#' n = 282
+#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
+#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#'                   parameterAlphaSpending = -4))
+#' 
+#' # interim look results
+#' L = 1
+#' n1 = n/3
+#' delta1 = 4.5
+#' sigma1 = 20
+#' zL = delta1/sqrt(4/n1*sigma1^2)
+#' 
+#' kMax = des1$overallResults$kMax
+#' b = des1$byStageResults$efficacyBounds
+#' t = des1$byStageResults$informationRates
+#' I = n*t/(4*sigma1^2)  # information based on estimated nuisance parameter
+#' 
+#' # Muller & Schafer (2001) method to design the secondary trial: 
+#' # 3-look gamma(-2) spending with 84% power at delta = 4.5, sigma = 17
+#' n2 = 300
+#' (des2 = adaptDesign(
+#'   beta = NA, INew = n2/(4*sigma^2), L, zL, theta = delta1,
+#'   kMax = des1$overallResults$kMax, 
+#'   informationRates = des1$byStageResults$informationRates,
+#'   criticalValues = des1$byStageResults$efficacyBounds,
+#'   MullerSchafer = TRUE,
+#'   kNew = 3, typeAlphaSpending = "sfHSD", 
+#'   parameterAlphaSpending = -2))
+#'   
+#' # termination at the second look of the secondary trial
+#' L2 = 2
+#' theta2 = 6.6
+#' sigma2 = 19.5
+#' zL2 = theta2/sqrt(4*sigma2^2/200)
+#'  
+#' b2 = des2$secondaryTrial$byStageResults$efficacyBounds
+#' t2 = des2$secondaryTrial$byStageResults$informationRates
+#' I2 = n2*t2/(4*sigma2^2)
+#' 
+#' # repeated confidence interval
+#' getBWRCI(INew = n2/(4*sigma2^2), L = L, zL = zL, 
+#'          kMax = 3, IMax = n/(4*sigma1^2), 
+#'          informationRates = t, criticalValues = b, 
+#'          L2, zL2, MullerSchafer = TRUE, 
+#'          kNew = 3, typeAlphaSpending = "sfHSD", 
+#'          parameterAlphaSpending = -2)
+#' 
+#' @export
+getBWRCI <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, kMax = NA_integer_, IMax = NA_real_, informationRates = NA_real_, criticalValues = NA_real_, L2 = NA_integer_, zL2 = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, tNew = NA_real_, efficacyStopping = NA_integer_, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_) {
+    .Call(`_lrstat_getBWRCI`, INew, L, zL, kMax, IMax, informationRates, criticalValues, L2, zL2, MullerSchafer, kNew, tNew, efficacyStopping, typeAlphaSpending, parameterAlphaSpending, spendingTime)
+}
+
+#' @title Conditional power allowing for varying parameter values
+#' @description Obtains the conditional power for specified incremental 
+#' information given the interim results, parameter values, and 
+#' data-dependent changes in the error spending function and the 
+#' number and spacing of interim looks. 
+#'
+#' @param INew The incremental information.
+#' @param L The interim look.
+#' @param zL The Z test statistic at the interim look.
+#' @param theta A scalar or a vector of parameter values of 
+#'   length \code{1 + kMax - L} if \code{MullerSchafer = FALSE} or 
+#'   length \code{1 + kNew} if \code{MullerSchafer = TRUE}.
+#' @param kMax The maximum number of stages of the original design.
+#' @param IMax The maximum information of the original design.
+#' @param informationRates The information rates of the original design.
+#' @param criticalValues The upper boundaries on the Z-test statistic scale
+#'   for efficacy stopping for the original design.
+#' @param futilityBounds The lower boundaries on the Z-test statistic scale
+#'   for futility stopping for the original design.
+#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
+#'   for trial adaptation.
+#' @param kNew The number of future looks.
+#' @param tNew The spacing of future looks in terms of information rates.
+#' @param efficacyStopping The indicators of whether efficacy stopping is 
+#'   allowed at each future look. Defaults to true if left unspecified.
+#' @param futilityStopping The indicators of whether futility stopping is 
+#'   allowed at each future look. Defaults to true if left unspecified.
+#' @param typeAlphaSpending The type of alpha spending for future looks. 
+#'   One of the following: 
+#'   "OF" for O'Brien-Fleming boundaries, 
+#'   "P" for Pocock boundaries, 
+#'   "WT" for Wang & Tsiatis boundaries, 
+#'   "sfOF" for O'Brien-Fleming type spending function, 
+#'   "sfP" for Pocock type spending function, 
+#'   "sfKD" for Kim & DeMets spending function, 
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
+#'   "none" for no early efficacy stopping. 
+#'   Defaults to "sfOF".
+#' @param parameterAlphaSpending The parameter value for the alpha 
+#'   spending for future looks. 
+#'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
+#' @param typeBetaSpending The type of beta spending for future looks. 
+#'   One of the following: 
+#'   "sfOF" for O'Brien-Fleming type spending function, 
+#'   "sfP" for Pocock type spending function, 
+#'   "sfKD" for Kim & DeMets spending function, 
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, 
+#'   "user" for user defined spending, and 
+#'   "none" for no early futility stopping. 
+#'   Defaults to "none".
+#' @param parameterBetaSpending The parameter value for the beta spending 
+#'   for future looks. 
+#'   Corresponds to rho for "sfKD", and gamma for "sfHSD".
+#' @param spendingTime A vector of length \code{kNew} for the error spending 
+#'   time at future looks. Defaults to missing, in which case, it is the 
+#'   same as \code{tNew}.
+#'
+#' @return The conditional power given the interim results, parameter 
+#' values, and data-dependent design changes.
+#' 
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @seealso \code{\link{getDesign}}
+#' 
+#' @examples
+#' 
+#' # Conditional power calculation with delayed treatment effect
+#' 
+#' # Two interim analyses have occurred with 179 and 266 events, respectively
+#' # The observed hazard ratio at the second interim look is 0.81
+#' 
+#' trialsdt = as.Date("2020-03-04")                       # trial start date
+#' iadt = c(as.Date("2022-02-01"), as.Date("2022-11-01")) # interim dates
+#' mo1 = as.numeric(iadt - trialsdt + 1)/30.4375          # interim months
+#' 
+#' # Assume a piecewise Poisson enrollment process with a 8-month ramp-up and
+#' # 521 patients were enrolled after 17.94 months
+#' N = 521                   # total number of patients
+#' Ta = 17.94                # enrollment duration
+#' Ta1 = 8                   # assumed end of enrollment ramp-up
+#' enrate = N / (Ta - Ta1/2) # enrollment rate after ramp-up
+#' 
+#' # Assume a median survival of 16.7 months for the control group, a 5-month
+#' # delay in treatment effect, and a hazard ratio of 0.7 after the delay
+#' lam1 = log(2)/16.7  # control group hazard of exponential distribution
+#' t1 = 5              # months of delay in treatment effect
+#' hr = 0.7            # hazard ratio after delay
+#' lam2 = hr*lam1      # treatment group hazard after delay
+#' 
+#' # Assume an annual dropout rate of 5%
+#' pc = 0.05           # annual dropout rate
+#' gam = -log(1-pc)/12 # hazard for dropout
+#' 
+#' 
+#' # The original target number of events was 298 and the new target is 3335
+#' mo2 <- caltime(
+#'   nevents = c(298, 335),
+#'   allocationRatioPlanned = 1,
+#'   accrualTime = seq(0, Ta1), 
+#'   accrualIntensity = enrate*seq(1, Ta1+1)/(Ta1+1),
+#'   piecewiseSurvivalTime = c(0, t1),
+#'   lambda1 = c(lam1, lam2),
+#'   lambda2 = c(lam1, lam1),
+#'   gamma1 = gam,
+#'   gamma2 = gam,
+#'   accrualDuration = Ta,
+#'   followupTime = 1000)
+#' 
+#' # expected number of events and average hazard ratios
+#' (lr1 <- lrstat(
+#'   time = c(mo1, mo2),
+#'   accrualTime = seq(0, Ta1), 
+#'   accrualIntensity = enrate*seq(1, Ta1+1)/(Ta1+1),
+#'   piecewiseSurvivalTime = c(0, t1),
+#'   lambda1 = c(lam1, lam2),
+#'   lambda2 = c(lam1, lam1),
+#'   gamma1 = gam,
+#'   gamma2 = gam,
+#'   accrualDuration = Ta,
+#'   followupTime = 1000,
+#'   predictTarget = 3))
+#' 
+#' 
+#' hr2 = 0.81                    # observed hazard ratio at interim 2
+#' z2 = (-log(hr2))*sqrt(266/4)  # corresponding Z-test statistic value
+#' 
+#' # Assume that the number of events is increased based on unblinded data
+#' # Use boundaries based on the original sample size for the CHW statistics
+#' b = getBound(k = 3, informationRates = c(179, 266, 298)/298,
+#'              alpha = 0.025, typeAlphaSpending = "sfOF")
+#' 
+#' # expected mean of -log(HR) at interim and final for the new sample size
+#' theta = -log(lr1$HR[c(2,4)])
+#' 
+#' # conditional power for the CHW statistic to cross the boundary at final
+#' getCP(INew = (335 - 266)/4, 
+#'       L = 2, zL = z2, theta = theta,
+#'       kMax = 3, IMax = 298/4, 
+#'       informationRates = c(179, 266, 298)/298,
+#'       criticalValues = b)
+#'
+#' @export
+getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, kMax = NA_integer_, IMax = NA_real_, informationRates = NA_real_, criticalValues = NA_real_, futilityBounds = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, tNew = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, spendingTime = NA_real_) {
+    .Call(`_lrstat_getCP`, INew, L, zL, theta, kMax, IMax, informationRates, criticalValues, futilityBounds, MullerSchafer, kNew, tNew, efficacyStopping, futilityStopping, typeAlphaSpending, parameterAlphaSpending, typeBetaSpending, parameterBetaSpending, spendingTime)
 }
 
 #' @title Get the required number of events from hazard ratios
@@ -2144,6 +2625,8 @@ adaptDesign <- function(beta = NA_real_, INew = NA_real_, L = NA_integer_, zL = 
 #'   Defaults to 1 for rounding.
 #'
 #' @return The required number of events.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
 #'
@@ -2215,6 +2698,8 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #' 
 #' * \code{resultsUnderH0}: An S3 class \code{lrpower} object under the 
 #' null hypothesis.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @seealso \code{\link{lrpower}}
 #'
@@ -2323,6 +2808,8 @@ stl_sort <- function(x) {
 #'
 #' @keywords internal
 #'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
 #' @examples
 #' x <- 2:18
 #' v <- c(5, 10, 15) # create two bins [5,10) and [10,15)
@@ -2343,5 +2830,13 @@ exitprobcpp <- function(b, a, theta, I) {
 
 qtpwexpcpp <- function(probability, piecewiseSurvivalTime, lambda, lowerBound) {
     .Call(`_lrstat_qtpwexpcpp`, probability, piecewiseSurvivalTime, lambda, lowerBound)
+}
+
+getBoundcpp <- function(k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, efficacyStopping) {
+    .Call(`_lrstat_getBoundcpp`, k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, efficacyStopping)
+}
+
+getPower <- function(alpha, kMax, b, theta, I, bsf, bsfpar, st, futilityStopping) {
+    .Call(`_lrstat_getPower`, alpha, kMax, b, theta, I, bsf, bsfpar, st, futilityStopping)
 }
 

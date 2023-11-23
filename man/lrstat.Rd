@@ -22,7 +22,7 @@ lrstat(
   rho1 = 0,
   rho2 = 0,
   numSubintervals = 300L,
-  predictEventOnly = 0L
+  predictTarget = 2L
 )
 }
 \arguments{
@@ -85,16 +85,17 @@ weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 and variance of the weighted log-rank test score statistic.
 Defaults to 300. Specify a larger number for better approximation.}
 
-\item{predictEventOnly}{Whether to predict the number of events only.
-Defaults to 0 for obtaining log-rank score statistic mean and variance.
-Set \code{predictEventOnly = 1} for predicting the number of events only.
-Set \code{predictEventOnly = 2} for predicting the number of events,
-calculating the mean and variance of log-rank score statistic, and
-calculating the estimated hazard ratio and variance of log hazard ratio.}
+\item{predictTarget}{The target of prediction.
+Set \code{predictTarget = 1} to predict the number of events only.
+Set \code{predictTarget = 2} (default) to predict the umber of events
+and log-rank score statistic mean and variance.
+Set \code{predictTarget = 3} to predict the number of events,
+log-rank score statistic mean and variance, and
+hazard ratio and variance of log hazard ratio.}
 }
 \value{
 A data frame containing the following variables if
-\code{predictEventOnly = 1}:
+\code{predictTarget = 1}:
 \itemize{
 \item \code{time}: The analysis time since trial start.
 \item \code{subjects}: The number of enrolled subjects.
@@ -106,7 +107,7 @@ A data frame containing the following variables if
 \item \code{ndropouts2}: The number of events for the control group.
 }
 
-If \code{predictEventOnly = 0}, the following variables will also
+If \code{predictTarget = 2}, the following variables will also
 be included:
 \itemize{
 \item \code{uscore}: The numerator of the log-rank test statistic.
@@ -115,7 +116,7 @@ be included:
 \item \code{hazardRatioH0}: The hazard ratio under the null hypothesis.
 }
 
-Furthermore, if \code{predictEventOnly = 2}, the following additional
+Furthermore, if \code{predictTarget = 3}, the following additional
 variables will also be included:
 \itemize{
 \item \code{HR}: The average hazard ratio from weighted Cox regression.

@@ -462,209 +462,6 @@ NumericMatrix fadjpsimcpp(const NumericMatrix& wgtmat,
 }
 
 
-
-
-//' @title Get efficacy boundaries for group sequential design
-//' @description Obtains the efficacy stopping boundaries for a group
-//' sequential design.
-//'
-//' @param k Look number for the current analysis.
-//' @param informationRates Information rates up to the current look. Must be
-//'   increasing and less than or equal to 1.
-//' @inheritParams param_alpha
-//' @inheritParams param_typeAlphaSpending
-//' @inheritParams param_parameterAlphaSpending
-//' @inheritParams param_userAlphaSpending
-//' @param spendingTime A vector of length \code{k} for the error spending  
-//'   time at each analysis. Must be increasing and less than or equal to 1. 
-//'   Defaults to missing, in which case, it is the same as 
-//'   \code{informationRates}.
-//'
-//' @return A numeric vector of critical values up to the current look.
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @examples
-//'
-//' getBound(k = 2, informationRates = c(0.5,1),
-//'          alpha = 0.025, typeAlphaSpending = "sfOF")
-//'
-//' @export
-// [[Rcpp::export]]
-NumericVector getBound(
-    const int k = NA_INTEGER,
-    const NumericVector& informationRates = NA_REAL,
-    const double alpha = 0.025,
-    const String typeAlphaSpending = "sfOF",
-    const double parameterAlphaSpending = NA_REAL,
-    const NumericVector& userAlphaSpending = NA_REAL,
-    const NumericVector& spendingTime = NA_REAL) {
-  
-  NumericVector informationRates1 = clone(informationRates);
-  NumericVector spendingTime1 = clone(spendingTime);
-  
-  if (R_isnancpp(k)) {
-    stop("k must be provided");
-  }
-  
-  if (is_false(any(is_na(informationRates)))) {
-    if (informationRates.size() != k) {
-      stop("Invalid length for informationRates");
-    } else if (informationRates[0] <= 0) {
-      stop("Elements of informationRates must be positive");
-    } else if (k > 1 && is_true(any(diff(informationRates) <= 0))) {
-      stop("Elements of informationRates must be increasing");
-    } else if (informationRates[k-1] > 1) {
-      stop("informationRates must not exceed 1");
-    }
-  } else {
-    IntegerVector tem = seq_len(k);
-    informationRates1 = as<NumericVector>(tem)/(k+0.0);
-  }
-  
-  if (is_false(any(is_na(spendingTime)))) {
-    if (spendingTime.size() != k) {
-      stop("Invalid length for spendingTime");
-    } else if (spendingTime[0] <= 0) {
-      stop("Elements of spendingTime must be positive");
-    } else if (k > 1 && is_true(any(diff(spendingTime) <= 0))) {
-      stop("Elements of spendingTime must be increasing");
-    } else if (spendingTime[k-1] > 1) {
-      stop("spendingTime must not exceed 1");
-    }
-  } else {
-    spendingTime1 = clone(informationRates1);
-  }
-  
-  
-  std::string asf = typeAlphaSpending;
-  std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
-  });
-  
-  double asfpar = parameterAlphaSpending;
-  
-  if (asf=="user") {
-    if (is_true(any(is_na(userAlphaSpending)))) {
-      stop("userAlphaSpending must be specified");
-    } else if (userAlphaSpending.size() < k) {
-      stop("Insufficient length of userAlphaSpending");
-    } else if (userAlphaSpending[0] < 0) {
-      stop("Elements of userAlphaSpending must be nonnegnative");
-    } else if (k > 1 && is_true(any(diff(userAlphaSpending) < 0))) {
-      stop("Elements of userAlphaSpending must be nondecreasing");
-    } else if (userAlphaSpending[k-1] > alpha) {
-      stop("userAlphaSpending must not exceed the specified alpha");
-    }
-  }
-  
-  
-  if (asf=="wt" && R_isnancpp(asfpar)) {
-    stop("Missing parameter for WT");
-  }
-  
-  if (asf=="sfkd" && R_isnancpp(asfpar)) {
-    stop("Missing parameter for sfKD");
-  }
-  
-  if (asf=="sfhsd" && R_isnancpp(asfpar)) {
-    stop("Missing parameter for sfHSD");
-  }
-  
-  if (asf=="sfkd" && asfpar <= 0) {
-    stop ("asfpar must be positive for sfKD");
-  }
-  
-  NumericVector theta(k); // mean values under H0, initialized to zero
-  NumericVector t = clone(informationRates1); // info time for test stat
-  NumericVector s = clone(spendingTime1); // spending time for alpha-spending
-  NumericVector criticalValues(k);
-  
-  if (asf == "none") {
-    for (int i=0; i<k-1; i++) {
-      criticalValues[i] = 6.0;
-    }
-    criticalValues[k-1] = R::qnorm(1-alpha, 0, 1, 1, 0);
-  } else if (asf == "of" || asf == "p" || asf == "wt") {
-    double Delta;
-    if (asf == "of") {
-      Delta = 0;
-    } else if (asf == "p") {
-      Delta = 0.5;
-    } else {
-      Delta = asfpar;
-    }
-    
-    auto f = [k, alpha, Delta, theta, t] (double aval)->double {
-      NumericVector u(k), l(k);
-      for (int i=0; i<k; i++) {
-        u[i] = aval*pow(t[i], Delta-0.5);
-        l[i] = -6.0;
-      }
-      
-      List probs = exitprobcpp(u, l, theta, t);
-      double cpu = sum(NumericVector(probs[0]));
-      return cpu - alpha;
-    };
-    
-    double cwt = brent(f, 0.0, 10.0, 1e-6);
-    for (int i=0; i<k; i++) {
-      criticalValues[i] = cwt*pow(t[i], Delta-0.5);
-    }
-  } else if (asf == "sfof" || asf == "sfp" || asf == "sfkd" ||
-    asf == "sfhsd" || asf == "user") {
-    
-    // stage 1
-    double cumAlphaSpent;
-    if (asf == "user") {
-      cumAlphaSpent = userAlphaSpending[0];
-    } else {
-      cumAlphaSpent = errorSpentcpp(s[0], alpha, asf, asfpar);
-    }
-    
-    criticalValues[0] = R::qnorm(1 - cumAlphaSpent, 0, 1, 1, 0);
-    
-    
-    // lambda expression for finding the critical Values at stage k
-    int k1=0;
-    auto f = [&k1, &cumAlphaSpent, &criticalValues,
-              theta, t](double aval)->double {
-                NumericVector u(k1+1), l(k1+1);
-                for (int i=0; i<k1; i++) {
-                  u[i] = criticalValues[i];
-                  l[i] = -6.0;
-                }
-                u[k1] = aval;
-                l[k1] = -6.0;
-                
-                IntegerVector idx = Range(0,k1);
-                List probs = exitprobcpp(u, l, theta[idx], t[idx]);
-                double cpu = sum(NumericVector(probs[0]));
-                return cpu - cumAlphaSpent;
-              };
-    
-    // subsequent stages
-    for (k1=1; k1<k; k1++) {
-      if (asf == "user") {
-        cumAlphaSpent = userAlphaSpending[k1];
-      } else {
-        cumAlphaSpent = errorSpentcpp(s[k1], alpha, asf, asfpar);
-      }
-      
-      if (f(6.0) > 0) { // no alpha spent at current visit
-        criticalValues[k1] = 6.0;
-      } else {
-        criticalValues[k1] = brent(f, -5.0, 6.0, 1.0e-6);
-      }
-    }
-  } else {
-    stop("Invalid type of alpha spending");
-  }
-  
-  return criticalValues;
-}
-
-
 // [[Rcpp::export]]
 NumericVector repeatedPValuecpp(
     const int kMax = NA_INTEGER,
@@ -814,11 +611,13 @@ NumericVector repeatedPValuecpp(
         t(j) = t1(j);
         s(j) = s1(j);
       }
+      LogicalVector x(i+1);
+      x.fill(1);
       
       double pvalue = p(iter,i);
       
-      auto f = [i, t, asf, asfpar, s, pvalue](double aval)->double {
-        NumericVector u = getBound(i+1, t, aval, asf, asfpar, 0, s);  
+      auto f = [i, t, asf, asfpar, s, x, pvalue](double aval)->double {
+        NumericVector u = getBoundcpp(i+1, t, aval, asf, asfpar, 0, s, x);  
         return 1.0 - R::pnorm(u(i), 0, 1, 1, 0) - pvalue;
       };
       
@@ -1154,11 +953,15 @@ IntegerVector fseqboncpp(
                 s(l) = s1(j,l);
               }
               
+              LogicalVector x(k+1);
+              x.fill(1);
+              
               asf1 = Rcpp::String(asf(j));
               asfpar1 = asfpar(j);
               
               double alp = wx(j)*alpha;
-              NumericVector u = getBound(k+1, t, alp, asf1, asfpar1, 0, s);
+              NumericVector u = getBoundcpp(k+1, t, alp, asf1, asfpar1, 0, 
+                                            s, x);
               alphastar = 1.0 - R::pnorm(u(k), 0, 1, 1, 0);
               
               if (p1(j,k) < alphastar) {

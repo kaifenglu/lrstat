@@ -728,3 +728,42 @@ fmodmix <- function(p, family, serial, parallel,
   }
   x
 }
+
+
+
+#' @title Get efficacy boundaries for group sequential design
+#' @description Obtains the efficacy stopping boundaries for a group
+#' sequential design.
+#'
+#' @param k Look number for the current analysis.
+#' @param informationRates Information rates up to the current look. Must be
+#'   increasing and less than or equal to 1.
+#' @inheritParams param_alpha
+#' @inheritParams param_typeAlphaSpending
+#' @inheritParams param_parameterAlphaSpending
+#' @inheritParams param_userAlphaSpending
+#' @param spendingTime A vector of length \code{k} for the error spending  
+#'   time at each analysis. Must be increasing and less than or equal to 1. 
+#'   Defaults to missing, in which case, it is the same as 
+#'   \code{informationRates}.
+#' @inheritParams param_efficacyStopping
+#'
+#' @return A numeric vector of critical values up to the current look.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' getBound(k = 2, informationRates = c(0.5,1),
+#'          alpha = 0.025, typeAlphaSpending = "sfOF")
+#'
+#' @export
+getBound <- function(k = NA, informationRates = NA, alpha = 0.025, 
+                     typeAlphaSpending = "sfOF", parameterAlphaSpending = NA, 
+                     userAlphaSpending = NA, spendingTime = NA, 
+                     efficacyStopping = NA) {
+  getBoundcpp(k, informationRates, alpha, 
+              typeAlphaSpending, parameterAlphaSpending, 
+              userAlphaSpending, spendingTime, 
+              efficacyStopping)
+}

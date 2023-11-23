@@ -29,5 +29,23 @@ double qtpwexpcpp(const double probability,
                   const NumericVector& lambda,
                   const double lowerBound);
 
+NumericVector getBoundcpp(const int k,
+                          const NumericVector& informationRates,
+                          const double alpha,
+                          const String typeAlphaSpending,
+                          const double parameterAlphaSpending,
+                          const NumericVector& userAlphaSpending,
+                          const NumericVector& spendingTime,
+                          const LogicalVector& efficacyStopping);
+
+List getPower(const double alpha, 
+              const int kMax,
+              const NumericVector& b,
+              const NumericVector& theta,
+              const NumericVector& I,
+              const std::string bsf,
+              const double bsfpar,
+              const NumericVector& st,
+              const LogicalVector& futilityStopping);
 
 #endif // __UTILITIES__
