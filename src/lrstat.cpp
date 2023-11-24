@@ -3453,8 +3453,8 @@ List lrpower(const int kMax = 1,
 //' stopping boundaries.
 //'
 //' @param beta The type II error.
-//' @param IMax The maximum information. If \code{IMax} is provided, then 
-//'   the input \code{beta} will be ignored and power will be calculated.
+//' @param IMax The maximum information. Either \code{beta} or \code{IMax} 
+//' should be provided while the other one should be missing.
 //' @param theta The parameter value.
 //' @inheritParams param_kMax
 //' @param informationRates The information rates. Fixed prior to the trial. 
@@ -3488,7 +3488,9 @@ List lrpower(const int kMax = 1,
 //'   
 //'   - \code{maxInformation}: The maximum information.
 //'   
-//'   - \code{expectedInformation}: The expected information.
+//'   - \code{expectedInformationH1}: The expected information under H1.
+//'   
+//'   - \code{expectedInformationH0}: The expected information under H0.
 //'   
 //'   - \code{drift}: The drift parameter, equal to 
 //'   \code{theta*sqrt(maxInformation)}.
@@ -3591,45 +3593,38 @@ List getDesign(const double beta = NA_REAL,
   LogicalVector futilityStopping1 = clone(futilityStopping);
   NumericVector criticalValues1 = clone(criticalValues);
   NumericVector futilityBounds1 = clone(futilityBounds);
+  NumericVector spendingTime1 = clone(spendingTime);
   
   double alpha1 = alpha;
   double beta1 = beta;
   double IMax1 = IMax;
   double drift, inflationFactor;
   
-  if (kMax < 1) {
-    stop("kMax must be a positive integer");
-  }
-  
-  std::string asf = typeAlphaSpending;
-  std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
-  });
-  
-  double asfpar = parameterAlphaSpending;
-  
-  std::string bsf = typeBetaSpending;
-  std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = std::tolower(c);
-  });
-  
-  double bsfpar = parameterBetaSpending;
-  
-  NumericVector spendingTime1 = clone(spendingTime);
-  
   String unknown;
   
-  // search for the solution according to the input
+  if (R_isnancpp(beta) && R_isnancpp(IMax)) {
+    stop("beta and IMax cannot be both missing");
+  }
+  
+  if (!R_isnancpp(beta) && !R_isnancpp(IMax)) {
+    stop("Only one of beta and IMax should be provided");
+  }
+  
   if (!R_isnancpp(IMax)) {
+    if (IMax <= 0) {
+      stop("IMax must be positive");
+    }
     unknown = "beta";
   } else if (!R_isnancpp(beta)) {
     unknown = "IMax";
-  } else {
-    stop("beta and IMax cannot be both missing");
   }
   
   if (R_isnancpp(theta)) {
     stop("theta must be provided");
+  }
+  
+  if (R_isnancpp(kMax)) {
+    stop("kMax must be provided");
   }
   
   if (kMax < 1) {
@@ -3650,21 +3645,6 @@ List getDesign(const double beta = NA_REAL,
     IntegerVector tem = seq_len(kMax);
     informationRates1 = as<NumericVector>(tem)/(kMax+0.0);
   }
-  
-  if (is_false(any(is_na(spendingTime)))) {
-    if (spendingTime.size() != kMax) {
-      stop("Invalid length for spendingTime");
-    } else if (spendingTime[0] <= 0) {
-      stop("Elements of spendingTime must be positive");
-    } else if (kMax > 1 && is_true(any(diff(spendingTime) <= 0))) {
-      stop("Elements of spendingTime must be increasing");
-    } else if (spendingTime[kMax-1] != 1) {
-      stop("spendingTime must end with 1");
-    }
-  } else {
-    spendingTime1 = clone(informationRates1);
-  }
-  
   
   if (is_false(any(is_na(efficacyStopping)))) {
     if (efficacyStopping.size() != kMax) {
@@ -3697,28 +3677,35 @@ List getDesign(const double beta = NA_REAL,
       stop("Invalid length for criticalValues");
     }
     
-    NumericVector u(kMax), l(kMax), theta0(kMax);
+    NumericVector u(kMax), l(kMax, -6.0), theta0(kMax);
     for (int i=0; i<kMax; i++) {
       u[i] = criticalValues[i];
       if (!efficacyStopping1[i]) u[i] = 6.0;
-      l[i] = -6.0;
-      theta0[i] = 0;
     }
     
     List probs = exitprobcpp(u, l, theta0, informationRates1);
     alpha1 = sum(NumericVector(probs[0]));
   }
   
-  
   if (!R_isnancpp(alpha1)) {
     if (alpha1 < 0.00001 || alpha1 >= 0.5) {
       stop("alpha must lie in [0.00001, 0.5)");
     }
+  } else {
+    stop("alpha must be provided for missing criticalValues");
   }
   
   if ((unknown == "IMax") && (beta >= 1-alpha1 || beta < 0.0001)) {
     stop("beta must lie in [0.0001, 1-alpha)");
   }
+  
+  
+  std::string asf = typeAlphaSpending;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  double asfpar = parameterAlphaSpending;
   
   if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
       asf=="wt" || asf=="sfof" || asf=="sfp" ||
@@ -3769,7 +3756,13 @@ List getDesign(const double beta = NA_REAL,
     }
   }
   
-
+  std::string bsf = typeBetaSpending;
+  std::for_each(bsf.begin(), bsf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  double bsfpar = parameterBetaSpending;
+  
   if (unknown == "IMax") {
     if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfof" || bsf=="sfp" ||
         bsf=="sfkd" || bsf=="sfhsd" || bsf=="user" || bsf=="none")) {
@@ -3782,7 +3775,6 @@ List getDesign(const double beta = NA_REAL,
     }
   }
   
-  
   if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
     stop("Missing parameter for the beta spending function");
   }
@@ -3790,7 +3782,6 @@ List getDesign(const double beta = NA_REAL,
   if (bsf=="sfkd" && bsfpar <= 0) {
     stop ("parameterBetaSpending must be positive for sfKD");
   }
-  
   
   if (unknown=="IMax" && bsf=="user") {
     if (is_true(any(is_na(userBetaSpending)))) {
@@ -3806,16 +3797,27 @@ List getDesign(const double beta = NA_REAL,
     }
   }
   
-  bool missingCriticalValues = is_true(any(is_na(criticalValues)));
-  bool missingFutilityBounds = is_true(any(is_na(futilityBounds)));
+  if (is_false(any(is_na(spendingTime)))) {
+    if (spendingTime.size() != kMax) {
+      stop("Invalid length for spendingTime");
+    } else if (spendingTime[0] <= 0) {
+      stop("Elements of spendingTime must be positive");
+    } else if (kMax > 1 && is_true(any(diff(spendingTime) <= 0))) {
+      stop("Elements of spendingTime must be increasing");
+    } else if (spendingTime[kMax-1] != 1) {
+      stop("spendingTime must end with 1");
+    }
+  } else {
+    spendingTime1 = clone(informationRates1);
+  }
   
-  if (missingCriticalValues) {
+  if (is_true(any(is_na(criticalValues)))) {
     criticalValues1 = getBoundcpp(kMax, informationRates1, alpha1, 
                                   asf, asfpar, userAlphaSpending, 
                                   spendingTime1, efficacyStopping1);
   }
   
-  
+  bool missingFutilityBounds = is_true(any(is_na(futilityBounds)));
   if (kMax > 1) {
     if (missingFutilityBounds && bsf=="none") {
       futilityBounds1 = rep(-6.0, kMax);
@@ -3823,9 +3825,6 @@ List getDesign(const double beta = NA_REAL,
     } else if (!missingFutilityBounds && 
       futilityBounds1.size() == kMax-1) {
       futilityBounds1.push_back(criticalValues1[kMax-1]);
-    } else if (!missingFutilityBounds && 
-      futilityBounds1.size() < kMax-1) {
-      stop("Insufficient length of futilityBounds");
     }
   } else {
     if (missingFutilityBounds) {
@@ -3833,10 +3832,10 @@ List getDesign(const double beta = NA_REAL,
     }
   }
   
-
+  
   List probs;
-  NumericVector t = clone(informationRates1);
-  NumericVector st = clone(spendingTime1);
+  NumericVector t = informationRates1;
+  NumericVector st = spendingTime1;
   NumericVector theta1(kMax);
   if (unknown == "IMax") {
     auto f = [beta, kMax, t, futilityStopping1,
@@ -3848,8 +3847,8 @@ List getDesign(const double beta = NA_REAL,
 
                 // compute stagewise exit probabilities
                 if (!missingFutilityBounds || bsf=="none" || kMax==1) {
-                  List probs = exitprobcpp(criticalValues1, futilityBounds1, 
-                                           theta1, t);
+                  List probs = exitprobcpp(
+                    criticalValues1, futilityBounds1, theta1, t);
                   NumericVector pu = NumericVector(probs[0]);
                   double overallReject = sum(pu);
                   return overallReject - (1-beta);
@@ -3880,8 +3879,7 @@ List getDesign(const double beta = NA_REAL,
                   
                   // lambda expression for finding futility bound at stage k
                   auto g = [&k, &cumBetaSpent, criticalValues1, 
-                            &futilityBounds1, theta1, t](double aval) -> 
-                              double {
+                            &futilityBounds1, theta1, t](double aval)->double {
                               NumericVector u(k+1), l(k+1);
                               for (int i=0; i<k; i++) {
                                 u[i] = criticalValues1[i];
@@ -3891,8 +3889,8 @@ List getDesign(const double beta = NA_REAL,
                               l[k] = aval;
                               
                               IntegerVector idx = Range(0,k);
-                              List probs = exitprobcpp(u, l, theta1[idx], 
-                                                       t[idx]);
+                              List probs = exitprobcpp(
+                                u, l, theta1[idx], t[idx]);
                               double cpl = sum(NumericVector(probs[1]));
                               return cpl - cumBetaSpent;
                             };
@@ -3918,12 +3916,10 @@ List getDesign(const double beta = NA_REAL,
                       } else if (k < kMax-1) {
                         return -1.0;
                       }
-                      
                     }
                   }
                   
                   return epsilon;
-                  
                 }
               };
     
@@ -3949,8 +3945,7 @@ List getDesign(const double beta = NA_REAL,
     }
   }
   
-  
-  double driftf = R::qnorm(1-alpha1, 0, 1, 1, 0) + 
+  double driftf = R::qnorm(1-alpha1, 0, 1, 1, 0) +
     R::qnorm(1-beta1, 0, 1, 1, 0);
   inflationFactor = pow(drift/driftf, 2);
   
@@ -3969,32 +3964,35 @@ List getDesign(const double beta = NA_REAL,
     futilityP[i] = 1 - R::pnorm(futilityBounds1[i], 0, 1, 1, 0);
   }
   
-  
-  // stagewise total exit probabilities
+  // stagewise exit probabilities under H1
   NumericVector pu(kMax), pl(kMax), ptotal(kMax);
   pu = NumericVector(probs[0]);
   pl = NumericVector(probs[1]);
   ptotal = pu + pl;
   
-  double expectedInformation = sum(ptotal*information);
+  double expectedInformationH1 = sum(ptotal*information);
   
   double overallReject = sum(pu);
   NumericVector cpu = cumsum(pu);
   NumericVector cpl = cumsum(pl);
   
-  NumericVector futilityBounds0 = rep(-6.0, kMax);
-  futilityBounds0[kMax-1] = criticalValues1[kMax-1];
+  // stagewise exit probabilities under H0
   NumericVector theta0(kMax);
-  List probs0 = exitprobcpp(criticalValues1, futilityBounds0, theta0, t);
+  List probs0 = exitprobcpp(criticalValues1, futilityBounds1, theta0, t);
   NumericVector cumAlphaSpent = cumsum(NumericVector(probs0[0]));
   
-  IntegerVector stageNumber = seq_len(kMax);
+  NumericVector pu0(kMax), pl0(kMax), ptotal0(kMax);
+  pu0 = NumericVector(probs0[0]);
+  pl0 = NumericVector(probs0[1]);
+  ptotal0 = pu0 + pl0;
   
+  double expectedInformationH0 = sum(ptotal0*information);
+  
+  IntegerVector stageNumber = seq_len(kMax);
   for (int i=0; i<kMax; i++) {
     if (criticalValues1[i] == 6) {
       efficacyStopping1[i] = 0;
     }
-    
     if (futilityBounds1[i] == -6) {
       futilityStopping1[i] = 0;
     }
@@ -4024,7 +4022,8 @@ List getDesign(const double beta = NA_REAL,
     _["kMax"] = kMax,
     _["theta"] = theta,
     _["maxInformation"] = IMax1,
-    _["expectedInformation"] = expectedInformation,
+    _["expectedInformationH1"] = expectedInformationH1,
+    _["expectedInformationH0"] = expectedInformationH0,
     _["drift"] = drift,
     _["inflationFactor"] = inflationFactor);
   
@@ -4058,8 +4057,10 @@ List getDesign(const double beta = NA_REAL,
 //' parameter value, and data-dependent changes in the error spending 
 //' function and the number and spacing of interim looks.
 //'
-//' @param beta The type II error for the secondary trial.
-//' @param INew The maximum information for the secondary trial.
+//' @param betaNew The type II error for the secondary trial.
+//' @param INew The maximum information for the secondary trial. Either 
+//' \code{betaNew} or \code{INew} should be provided while the other one 
+//' should be missing.
 //' @param L The interim look of the primary trial.
 //' @param zL The Z-test statistic at the interim look of the primary trial.
 //' @param theta The parameter value.
@@ -4144,14 +4145,14 @@ List getDesign(const double beta = NA_REAL,
 //' 
 //' # conditional power for original design at estimated parameter value
 //' (des2 = adaptDesign(
-//'   beta = NA, INew = (n-n1)/(4*sigma1^2), L, zL, theta = delta1, 
+//'   betaNew = NA, INew = (n-n1)/(4*sigma1^2), L, zL, theta = delta1, 
 //'   kMax = des1$overallResults$kMax, 
 //'   informationRates = des1$byStageResults$informationRates,
 //'   criticalValues = des1$byStageResults$efficacyBounds))
 //' 
 //' # conditional power with sample size increase
 //' (des2 = adaptDesign(
-//'   beta = NA, INew = 420/(4*sigma1^2), L, zL, theta = delta1, 
+//'   betaNew = NA, INew = 420/(4*sigma1^2), L, zL, theta = delta1, 
 //'   kMax = des1$overallResults$kMax, 
 //'   informationRates = des1$byStageResults$informationRates,
 //'   criticalValues = des1$byStageResults$efficacyBounds))
@@ -4159,7 +4160,7 @@ List getDesign(const double beta = NA_REAL,
 //' # Muller & Schafer (2001) method to design the secondary trial: 
 //' # 3-look gamma(-2) spending with 84% power at delta = 4.5 and sigma = 20
 //' (des2 = adaptDesign(
-//'   beta = 0.16, INew = NA, L, zL, theta = delta1,
+//'   betaNew = 0.16, INew = NA, L, zL, theta = delta1,
 //'   kMax = des1$overallResults$kMax, 
 //'   informationRates = des1$byStageResults$informationRates,
 //'   criticalValues = des1$byStageResults$efficacyBounds,
@@ -4172,7 +4173,7 @@ List getDesign(const double beta = NA_REAL,
 //'
 //' @export
 // [[Rcpp::export]]
-List adaptDesign(double beta = NA_REAL, 
+List adaptDesign(double betaNew = NA_REAL, 
                  double INew = NA_REAL, 
                  const int L = NA_INTEGER, 
                  const double zL = NA_REAL, 
@@ -4195,55 +4196,51 @@ List adaptDesign(double beta = NA_REAL,
   
   NumericVector t = clone(informationRates);
   NumericVector futilityBounds1 = clone(futilityBounds);
-  double kNew1 = kNew;
   NumericVector tNew1 = clone(tNew);
   LogicalVector efficacyStopping1 = clone(efficacyStoppingNew);
   LogicalVector futilityStopping1 = clone(futilityStoppingNew);
   NumericVector spendingTime1 = clone(spendingTimeNew);
+  double kNew1 = kNew;
   
-  std::string asf = typeAlphaSpendingNew;
-  std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
-  });
-  
-  double asfpar = parameterAlphaSpendingNew;
-  
-  std::string bsf = typeBetaSpendingNew;
-  std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = std::tolower(c);
-  });
-  
-  double bsfpar = parameterBetaSpendingNew;
-  
-  
-  if (R_isnancpp(beta) && R_isnancpp(INew)) {
-    stop("beta and INew cannot be both missing");
+  if (R_isnancpp(betaNew) && R_isnancpp(INew)) {
+    stop("betaNew and INew cannot be both missing");
   }
   
-  if (!R_isnancpp(beta) && beta < 0.0001 && beta >= 1) {
-    stop("beta must be greater than or equal to 0.0001 and less than 1");
+  if (!R_isnancpp(betaNew) && !R_isnancpp(INew)) {
+    stop("Only one of betaNew and INew should be provided");
+  }
+  
+  if (!R_isnancpp(betaNew) && betaNew < 0.0001 && betaNew >= 1) {
+    stop("betaNew must be greater than or equal to 0.0001 and less than 1");
   }
   
   if (!R_isnancpp(INew) && INew <= 0) {
     stop("INew must be positive");
   }
   
-  if (R_isnancpp(L) || R_isnancpp(zL) || R_isnancpp(theta)) {
-    stop("L, zL, and theta must be provided");
+  if (R_isnancpp(L)) {
+    stop("L must be provided");
   }
   
-  if (L <= 0) {
+  if (L < 1) {
     stop("L must be a positive integer");
   }
   
-  if (R_isnancpp(kMax) || is_true(any(is_na(criticalValues)))) {
-    stop("kMax and criticalValues must be provided");
+  if (R_isnancpp(zL)) {
+    stop("zL must be provided");
+  }
+  
+  if (R_isnancpp(theta)) {
+    stop("theta must be provided");
+  }
+  
+  if (R_isnancpp(kMax)) {
+    stop("kMax must be provided");
   }
   
   if (kMax <= L) {
     stop("kMax must be a positive integer greater than L");
   }
-  
   
   if (is_false(any(is_na(informationRates)))) {
     if (informationRates.size() != kMax) {
@@ -4260,10 +4257,10 @@ List adaptDesign(double beta = NA_REAL,
     t = as<NumericVector>(tem)/(kMax+0.0);
   }
   
-  if (is_false(any(is_na(criticalValues)))) {
-    if (criticalValues.size() != kMax) {
-      stop("Invalid length for criticalValues");
-    }
+  if (is_true(any(is_na(criticalValues)))) {
+    stop("criticalValues must be provided");
+  } else if (criticalValues.size() != kMax) {
+    stop("Invalid length for criticalValues");
   }
   
   if (is_false(any(is_na(futilityBounds)))) {
@@ -4290,6 +4287,19 @@ List adaptDesign(double beta = NA_REAL,
     }
   }
   
+  std::string asf = typeAlphaSpendingNew;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  double asfpar = parameterAlphaSpendingNew;
+  
+  std::string bsf = typeBetaSpendingNew;
+  std::for_each(bsf.begin(), bsf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  double bsfpar = parameterBetaSpendingNew;
   
   if (MullerSchafer) {
     if (R_isnancpp(kNew)) {
@@ -4310,7 +4320,6 @@ List adaptDesign(double beta = NA_REAL,
       IntegerVector tem = seq_len(kNew1);
       tNew1 = as<NumericVector>(tem)/(kNew1+0.0);
     }
-    
     
     if (is_false(any(is_na(efficacyStoppingNew)))) {
       if (efficacyStoppingNew.size() != kNew1) {
@@ -4338,7 +4347,6 @@ List adaptDesign(double beta = NA_REAL,
       futilityStopping1 = rep(1, kNew1);
     }
     
-    
     if (!(asf=="of" || asf=="p" || asf=="wt" || 
         asf=="sfof" || asf=="sfp" ||
         asf=="sfkd" || asf=="sfhsd" || asf=="none")) {
@@ -4351,7 +4359,7 @@ List adaptDesign(double beta = NA_REAL,
     }
     
     if (asf=="sfkd" && asfpar <= 0) {
-      stop ("asfpar must be positive for sfKD");
+      stop ("parameterAlphaSpendingNew must be positive for sfKD");
     }
     
     if (R_isnancpp(INew) && !(bsf=="sfof" || bsf=="sfp" || bsf=="sfkd" || 
@@ -4379,8 +4387,8 @@ List adaptDesign(double beta = NA_REAL,
         stop("Elements of userBetaSpendingNew must be nonnegnative");
       } else if (kNew1 > 1 && is_true(any(diff(userBetaSpendingNew) < 0))) {
         stop("Elements of userBetaSpendingNew must be nondecreasing");
-      } else if (userBetaSpendingNew[kNew1] != beta) {
-        stop("userBetaSpendingNew must end with specified beta");
+      } else if (userBetaSpendingNew[kNew1] != betaNew) {
+        stop("userBetaSpendingNew must end with specified betaNew");
       }
     }
     
@@ -4399,9 +4407,6 @@ List adaptDesign(double beta = NA_REAL,
     }
   }
   
-  int k1 = kMax - L;
-  NumericVector t1(k1), b1(k1), a1(k1);
-  NumericVector userAlphaSpendingNew(k1, NA_REAL);
   
   List des1 = List::create(
     _["L"] = L,
@@ -4415,55 +4420,46 @@ List adaptDesign(double beta = NA_REAL,
   
   
   List des2;
+  int k1 = kMax - L;
+  NumericVector t1(k1), r1(k1), b1(k1), a1(k1, -6.0), theta0(k1);
+  for (int l=0; l<k1; l++) {
+    t1[l] = (t[l+L] - t[L-1])/(1 - t[L-1]);
+    r1[l] = t[L-1]/t[l+L];
+    b1[l] = (criticalValues[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
+  }
   
   if (!MullerSchafer) {
     for (int l=0; l<k1; l++) {
-      t1[l] = (t[l+L] - t[L-1])/(1 - t[L-1]);
-      double r = t[L-1]/t[l+L];
-      b1[l] = (criticalValues[l+L] - sqrt(r)*zL)/sqrt(1 - r);
-      a1[l] = (futilityBounds1[l+L] - sqrt(r)*zL)/sqrt(1 - r);
+      a1[l] = (futilityBounds1[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
     }
     
-    LogicalVector efficacyStopping1(k1), futilityStopping1(k1);
-    efficacyStopping1 = rep(1, k1);
-    futilityStopping1 = rep(1, k1);
-
-    des2 = getDesign(beta, INew, theta, k1, t1, 
+    LogicalVector efficacyStopping1(k1, 1), futilityStopping1(k1, 1);
+    
+    des2 = getDesign(betaNew, INew, theta, k1, t1, 
                      efficacyStopping1, futilityStopping1,
                      b1, NA_REAL, typeAlphaSpendingNew, 
-                     parameterAlphaSpendingNew, 
-                     userAlphaSpendingNew, a1, typeBetaSpendingNew, 
-                     parameterBetaSpendingNew, userBetaSpendingNew, 
-                     spendingTime1);
+                     parameterAlphaSpendingNew, 0,
+                     a1, typeBetaSpendingNew, 
+                     parameterBetaSpendingNew, 
+                     userBetaSpendingNew, spendingTime1);
   } else {
-    NumericVector theta0(k1);
-    for (int l=0; l<k1; l++) {
-      t1[l] = (t[l+L] - t[L-1])/(1 - t[L-1]);
-      double r = t[L-1]/t[l+L];
-      b1[l] = (criticalValues[l+L] - sqrt(r)*zL)/sqrt(1 - r);
-      a1[l] = -6; // non-binding futility
-      theta0[l] = 0;
-    }
-    
     List probs = exitprobcpp(b1, a1, theta0, t1);
-    double alpha = sum(NumericVector(probs[0]));
+    double alphaNew = sum(NumericVector(probs[0]));
     
-    if (!R_isnancpp(beta) && beta >= 1-alpha) {
-      stop("beta must be less than 1 minus conditional type I error");
+    if (!R_isnancpp(betaNew) && betaNew >= 1-alphaNew) {
+      stop("betaNew must be less than 1 minus conditional type I error");
     }
     
-    for (int l=0; l<k1; l++) {
-      b1[l] = NA_REAL;
-      a1[l] = NA_REAL;
-    }
+    b1.fill(NA_REAL);
+    a1.fill(NA_REAL);
     
-    des2 = getDesign(beta, INew, theta, kNew1, tNew1, 
+    des2 = getDesign(betaNew, INew, theta, kNew1, tNew1, 
                      efficacyStopping1, futilityStopping1, 
-                     b1, alpha, typeAlphaSpendingNew, 
-                     parameterAlphaSpendingNew, 
-                     userAlphaSpendingNew, a1, typeBetaSpendingNew, 
-                     parameterBetaSpendingNew, userBetaSpendingNew, 
-                     spendingTime1);
+                     b1, alphaNew, typeAlphaSpendingNew, 
+                     parameterAlphaSpendingNew, 0,
+                     a1, typeBetaSpendingNew, 
+                     parameterBetaSpendingNew, 
+                     userBetaSpendingNew, spendingTime1);
   }
   
   List result = List::create(
@@ -4756,7 +4752,6 @@ List lrsamplesize(const double beta = 0.2,
   int nintervals = piecewiseSurvivalTime.size();
   int nsi = nstrata*nintervals;
   
-  
   if (R_isnancpp(beta)) {
     stop("beta must be provided");
   }
@@ -4783,7 +4778,6 @@ List lrsamplesize(const double beta = 0.2,
     IntegerVector tem = seq_len(kMax);
     informationRates1 = as<NumericVector>(tem)/(kMax+0.0);
   }
-  
   
   if (is_false(any(is_na(efficacyStopping)))) {
     if (efficacyStopping.size() != kMax) {
@@ -5037,7 +5031,6 @@ List lrsamplesize(const double beta = 0.2,
     }
   }
   
-  
   if (interval.size() != 2) {
     stop("interval must have 2 elements");
   }
@@ -5049,7 +5042,6 @@ List lrsamplesize(const double beta = 0.2,
   if (interval[0] >= interval[1]) {
     stop("upper limit must be greater than lower limit for interval");
   }
-  
   
   bool missingCriticalValues = is_true(any(is_na(criticalValues)));
   bool missingFutilityBounds = is_true(any(is_na(futilityBounds)));
@@ -5139,7 +5131,6 @@ List lrsamplesize(const double beta = 0.2,
       accrualIntensity1 = aval*accrualIntensity;
     }
   } else {
-    
     auto f = [beta, kMax, informationRates1,
               efficacyStopping1, futilityStopping1,
               &criticalValues1, alpha, asf, asfpar, userAlphaSpending,
@@ -5177,7 +5168,6 @@ List lrsamplesize(const double beta = 0.2,
                     numSubintervals, spendingTime);
                 }
                 
-                
                 if (kMax > 1) {
                   if (missingFutilityBounds && bsf=="none") {
                     futilityBounds1 = rep(-6.0, kMax);
@@ -5208,7 +5198,6 @@ List lrsamplesize(const double beta = 0.2,
                             dur1, dur2, fixedFollowup,
                             rho1, rho2, numSubintervals, 1);
                 
-                
                 // obtain the timing of interim analysis
                 e0 = sum(NumericVector(lr[2]))*informationRates1;
                 time = caltime(e0, allocationRatioPlanned, 
@@ -5231,7 +5220,6 @@ List lrsamplesize(const double beta = 0.2,
                 NumericVector uscore = NumericVector(lr[8]);
                 vscore = NumericVector(lr[9]);
                 theta = -uscore/vscore;
-                
                 
                 // information time
                 NumericVector t = vscore / (vscore[kMax - 1]);
@@ -5272,7 +5260,6 @@ List lrsamplesize(const double beta = 0.2,
                       theta[0]*sqrt(vscore[0]);
                   }
                   
-                  
                   // lambda expression for finding futility bound at stage k
                   auto g = [&k, &cumBetaSpent, criticalValues1, 
                             &futilityBounds1, theta, 
@@ -5291,7 +5278,6 @@ List lrsamplesize(const double beta = 0.2,
                               double cpl = sum(NumericVector(probs[1]));
                               return cpl - cumBetaSpent;
                             };
-                  
                   
                   for (k=1; k<kMax; k++) {
                     if (bsf == "user") {
@@ -5322,7 +5308,6 @@ List lrsamplesize(const double beta = 0.2,
                 }
               };
     
-    
     if (unknown == "accrualDuration") {
       accrualDuration = brent(f, interval[0], interval[1], 0.0001);
     } else if (unknown == "followupTime") {
@@ -5331,9 +5316,7 @@ List lrsamplesize(const double beta = 0.2,
       double aval = brent(f, interval[0], interval[1], 0.0001);
       accrualIntensity1 = aval*accrualIntensity;
     }
-    
   }
-  
   
   futilityBounds1[kMax-1] = criticalValues1[kMax-1];
   
@@ -5393,7 +5376,6 @@ List lrsamplesize(const double beta = 0.2,
     } else {
       n = sum(NumericVector(lr[1]));
     }
-
   
     // round up the sample size
     NumericVector frac = NumericVector::create(

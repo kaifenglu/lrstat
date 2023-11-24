@@ -35,7 +35,10 @@ print.design <- function(x, ...) {
                  "inflation factor: ", round(a$inflationFactor, 3))
   
   if (k>1) {
-    str5 <- paste0("Expected information: ", round(a$expectedInformation, 2))
+    str5 <- paste0("Expected information under H1: ", 
+                   round(a$expectedInformationH1, 2), ", ",
+                   "expected information under H0: ", 
+                   round(a$expectedInformationH0, 2))
     df1 = data.frame(x = rep("", 6))
     colnames(df1) = NULL
     rownames(df1) = c(str1, str2, str3, str4, str5, "")
@@ -177,7 +180,10 @@ print.adaptDesign <- function(x, ...) {
                  "inflation factor: ", round(a$inflationFactor, 3))
   
   if (k>1) {
-    str6 <- paste0("Expected information: ", round(a$expectedInformation, 2))
+    str6 <- paste0("Expected information under H1: ", 
+                   round(a$expectedInformationH1, 2), ", ", 
+                   "Expected information under H0: ", 
+                   round(a$expectedInformationH0, 2))
     df2a = data.frame(x = rep("", 7))
     colnames(df2a) = NULL
     rownames(df2a) = c(str1, str2, str3, str4, str5, str6, "")
