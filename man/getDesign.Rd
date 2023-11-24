@@ -27,8 +27,8 @@ getDesign(
 \arguments{
 \item{beta}{The type II error.}
 
-\item{IMax}{The maximum information. If \code{IMax} is provided, then
-the input \code{beta} will be ignored and power will be calculated.}
+\item{IMax}{The maximum information. Either \code{beta} or \code{IMax}
+should be provided while the other one should be missing.}
 
 \item{theta}{The parameter value.}
 
@@ -93,7 +93,8 @@ An S3 class \code{design} object with three components:
 \item \code{kMax}: The number of stages.
 \item \code{theta}: The parameter value.
 \item \code{maxInformation}: The maximum information.
-\item \code{expectedInformation}: The expected information.
+\item \code{expectedInformationH1}: The expected information under H1.
+\item \code{expectedInformationH0}: The expected information under H0.
 \item \code{drift}: The drift parameter, equal to
 \code{theta*sqrt(maxInformation)}.
 \item \code{inflationFactor}: The inflation factor (relative to the

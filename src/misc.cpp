@@ -86,7 +86,6 @@ List updateGraph(const NumericVector& w, const NumericMatrix& G,
 }
 
 
-
 // [[Rcpp::export]]
 NumericMatrix fadjpboncpp(const NumericVector& w, 
                           const NumericMatrix& G, 
@@ -324,7 +323,6 @@ NumericMatrix fwgtmat(const NumericVector& w,
 }
 
 
-
 // [[Rcpp::export]]
 NumericMatrix fadjpsimcpp(const NumericMatrix& wgtmat,
                           const NumericMatrix& p,
@@ -484,26 +482,17 @@ NumericVector repeatedPValuecpp(
   
   double asfpar = parameterAlphaSpending;
   
-  if (!(asf=="of" || asf=="p" || asf=="wt" || 
-      asf=="sfof" || asf=="sfp" || asf=="sfkd" ||
-      asf=="sfhsd" || asf=="none")) {
-    stop("Invalid type for typeAlphaSpending");
+  if (!(asf=="of" || asf=="p" || asf=="wt" || asf=="sfof" || asf=="sfp" || 
+      asf=="sfkd" || asf=="sfhsd" || asf=="none")) {
+    stop("Invalid value for typeAlphaSpending");
   }
   
-  if (asf=="wt" && R_isnancpp(asfpar)) {
-    stop("Missing parameter for WT");
-  }
-  
-  if (asf=="sfkd" && R_isnancpp(asfpar)) {
-    stop("Missing parameter for sfKD");
-  }
-  
-  if (asf=="sfhsd" && R_isnancpp(asfpar)) {
-    stop("Missing parameter for sfHSD");
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+    stop("Missing value for parameterAlphaSpending");
   }
   
   if (asf=="sfkd" && asfpar <= 0) {
-    stop ("asfpar must be positive for sfKD");
+    stop ("parameterAlphaSpending must be positive for sfKD");
   }
   
   
@@ -567,7 +556,7 @@ NumericVector repeatedPValuecpp(
   
   NumericMatrix repp(B, k);
   repp.fill(NA_REAL);
-
+  
   for (iter=0; iter<B; iter++) {
     if (is_true(all(is_na(st(iter,_))))) { // use information rates
       LogicalVector qq = (info(iter,_) >= maxInformation);
@@ -674,7 +663,7 @@ IntegerVector fseqboncpp(
   
   int iter, i, j, k, l;
   IntegerVector reject(B*m);  // first look when the hypothesis is rejected
-
+  
   NumericMatrix info(B*m, k1); // matrix of observed information
   NumericMatrix st(B*m, k1);  // matrix of spending time
   
@@ -730,23 +719,16 @@ IntegerVector fseqboncpp(
     if (!(asfi=="of" || asfi=="p" || asfi=="wt" || 
         asfi=="sfof" || asfi=="sfp" || asfi=="sfkd" || 
         asfi=="sfhsd" || asfi=="none")) {
-      stop("Invalid type for typeAlphaSpending");
+      stop("Invalid value for typeAlphaSpending");
     }
     
-    if (asfi=="wt" && R_isnancpp(asfpar(i))) {
-      stop("Missing parameter for WT");
-    }
-    
-    if (asfi=="sfkd" && R_isnancpp(asfpar(i))) {
-      stop("Missing parameter for sfKD");
-    }
-    
-    if (asfi=="sfhsd" && R_isnancpp(asfpar(i))) {
-      stop("Missing parameter for sfHSD");
+    if ((asfi=="wt" || asfi=="sfkd" || asfi=="sfhsd") && 
+        R_isnancpp(asfpar(i))) {
+      stop("Missing value for parameterAlphaSpending");
     }
     
     if (asfi=="sfkd" && asfpar(i) <= 0) {
-      stop ("asfpar must be positive for sfKD");
+      stop ("parameterAlphaSpending must be positive for sfKD");
     }
   }
   
@@ -851,13 +833,13 @@ IntegerVector fseqboncpp(
   NumericMatrix info1(m, k1), p1(m, k1), st1(m, k1), t1(m, k1), s1(m, k1);
   IntegerVector K1(m), K2(m), L(m);
   LogicalVector r(m);
-
+  
   
   for (iter=0; iter<B; iter++) {
     wx = clone(w);  // reset
     g = clone(G); 
     r.fill(0);
-
+    
     // extract iteration specific information, p-values, and spending time
     for (j=0; j<m; j++) {
       NumericVector irow = info.row(iter*m+j);
@@ -1096,7 +1078,7 @@ NumericMatrix fstp2seqcpp(const NumericMatrix& p,
           }
           
           double rhs = 2*p(iter,2*s)/(1+gamma[s]);
-            
+          
           if (lhs < rhs) {
             t2 = std::min(t3, lhs);
           }
@@ -1147,7 +1129,7 @@ NumericMatrix fstp2seqcpp(const NumericMatrix& p,
           }
           
           double rhs = 2*p(iter,2*s+1)/(1+gamma[s]);
-
+          
           if (lhs < rhs) {
             t3 = std::min(t3, lhs);
           }
@@ -1174,6 +1156,7 @@ IntegerVector which(LogicalVector vector) {
   }
   return true_indices;
 }
+
 
 // [[Rcpp::export]]
 NumericMatrix fstdmixcpp(const NumericMatrix& p,
@@ -1472,7 +1455,7 @@ NumericMatrix fmodmixcpp(const NumericMatrix& p,
   int ntests = pow(2,m) - 1;
   int nfamily = family.nrow();
   IntegerVector nhyps = rowSums(family);
-
+  
   // to store local p-values for the intersection tests
   NumericMatrix pinter(nreps, ntests);
   
@@ -1812,8 +1795,12 @@ List getCI(const NumericVector& b = NA_REAL,
            const int L = NA_INTEGER, 
            const double zL = NA_REAL) {
   
-  if (is_true(any(is_na(b))) || is_true(any(is_na(I)))) {
-    stop("b and I must be provided");
+  if (is_true(any(is_na(b)))) {
+    stop("b must be provided");
+  }
+  
+  if (is_true(any(is_na(I)))) {
+    stop("I must be provided");
   }
   
   if (b.size() < L) {
@@ -1828,12 +1815,15 @@ List getCI(const NumericVector& b = NA_REAL,
     stop("Elements of I must be increasing");
   }
   
-  
-  if (R_isnancpp(L) || R_isnancpp(zL)) {
-    stop("L and zL must be provided");
+  if (R_isnancpp(L)) {
+    stop("L must be provided");
   }
   
-  if (L <= 0) {
+  if (R_isnancpp(zL)) {
+    stop("zL must be provided");
+  }
+  
+  if (L < 1) {
     stop("L must be a positive integer");
   }
   
@@ -1995,11 +1985,11 @@ List getRCI(const double IMax = NA_REAL,
   
   if (!(asf=="of" || asf=="p" || asf=="wt" || asf=="sfof" || asf=="sfp" ||
       asf=="sfkd" || asf=="sfhsd" || asf=="none")) {
-    stop("Invalid type for alpha spending");
+    stop("Invalid value for typeAlphaSpending");
   }
   
   if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
-    stop("Missing parameter for the alpha spending function");
+    stop("Missing value for parameterAlphaSpending");
   }
   
   if (asf=="sfkd" && asfpar <= 0) {
@@ -2036,23 +2026,24 @@ List getRCI(const double IMax = NA_REAL,
     stop("kMax must be greater than or equal to L");
   }
   
+  
   NumericVector I = IMax*t;
   LogicalVector x(kMax, 1);
-  NumericVector b = getBoundcpp(kMax, t, alpha, asf, asfpar, 0, s, x);
+  IntegerVector i = Range(0, L-1);
+  NumericVector b = getBoundcpp(L, t[i], alpha, asf, asfpar, 0, s[i], x[i]);
   
   // repeated confidence interval
   double lower = (zL - b[L-1])/sqrt(I[L-1]);
   double upper = (zL + b[L-1])/sqrt(I[L-1]);
   
   // point estimate is the lower bound for alpha = 0.5
-  IntegerVector i = Range(0, L-1);
   NumericVector u = getBoundcpp(L, t[i], 0.5, asf, asfpar, 0, s[i], x[i]);
   double thetahat = (zL - u[L-1])/sqrt(I[L-1]);
   
   // repeated p-value is alpha for which the lower bound of theta is zero
   auto f = [L, zL, t, asf, asfpar, s, x, i](double aval)->double {
     NumericVector u = getBoundcpp(L, t[i], aval, asf, asfpar, 0, s[i], x[i]);  
-    return zL - u(L-1);
+    return zL - u[L-1];
   };
   
   double pvalue;
@@ -2081,12 +2072,16 @@ double f_astar(const double theta,
                const int L2, 
                const double zL2) {
   
-  IntegerVector l = Range(0, L2-1);
-  NumericVector upper = b2[l];
-  upper[L2-1] = zL2;
-  NumericVector information = I2[l];
+  NumericVector upper(L2), lower(L2, -6.0), mu(L2, theta), information(L2);
   
-  NumericVector lower(L2, -6.0), mu(L2, theta);
+  for (int l=0; l<L2-1; l++) {
+    upper[l] = b2[l];
+  }
+  upper[L2-1] = zL2;
+  
+  for (int l=0; l<L2; l++) {
+    information[l] = I2[l];
+  }
   
   List probs = exitprobcpp(upper, lower, mu, information);
   return sum(NumericVector(probs[0]));
@@ -2107,13 +2102,11 @@ List f_bwimage(const double theta,
   double astar = f_astar(theta, b2, I2, L2, zL2);
   int k1 = kMax - L;
   
-  NumericVector b1(k1), I1(k1);
+  NumericVector b1(k1), a1(k1, -6.0), mu(k1, theta), I1(k1);
   for (int l=0; l<k1; l++) {
     b1[l] = (b[l+L] - sqrt(I[L-1]/I[l+L])*zL)/sqrt(1 - I[L-1]/I[l+L]);
     I1[l] = I[l+L] - I[L-1];
   }
-  
-  NumericVector a1(k1, -6.0), mu(k1, theta);
   
   List probs = exitprobcpp(b1, a1, mu, I1);
   NumericVector pu = NumericVector(probs[0]);
@@ -2124,8 +2117,7 @@ List f_bwimage(const double theta,
     p[l+1] = p[l] + pu[l];
   }
   
-  NumericVector astars(1);
-  astars[0] = astar;
+  NumericVector astars(1, astar);
   IntegerVector js = findInterval2(astars, p);
   int j = js[0];
   
@@ -2134,16 +2126,20 @@ List f_bwimage(const double theta,
     z1j = R::qnorm(1 - astar, 0, 1, 1, 0);
   } else {
     auto f = [j, b1, I1, theta, astar](double z)->double {
-      IntegerVector l = Range(0, j-1);
-      NumericVector upper = b1[l];
+      NumericVector upper(j), lower(j, -6.0), mu(j, theta), information(j);
+      
+      for (int l=0; l<j-1; l++) {
+        upper[l] = b1[l];
+      }
       upper[j-1] = z;
       
-      NumericVector lower(j, -6.0), mu(j, theta);
-      NumericVector information = I1[l];
-      List probs = exitprobcpp(upper, lower, mu, information);
-      NumericVector pu = NumericVector(probs[0]);
+      for (int l=0; l<j; l++) {
+        information[l] = I1[l];
+      }
       
-      return sum(pu) - astar;
+      List probs = exitprobcpp(upper, lower, mu, information);
+      
+      return sum(NumericVector(probs[0])) - astar;
     };
     
     z1j = brent(f, -6, 6, 0.0001);
@@ -2286,8 +2282,20 @@ List getADCI(const int kMax = NA_INTEGER,
              const int L2 = NA_INTEGER, 
              const double zL2 = NA_REAL) {
   
-  if (R_isnancpp(kMax) || is_true(any(is_na(b))) || is_true(any(is_na(I)))) {
-    stop("kMax, b and I must be provided");
+  if (R_isnancpp(kMax)) {
+    stop("kMax must be provided");
+  }
+  
+  if (kMax < 1) {
+    stop("kMax must be a positive integer");
+  }
+  
+  if (is_true(any(is_na(b)))) {
+    stop("b must be provided");
+  }
+  
+  if (is_true(any(is_na(I)))) {
+    stop("I must be provided");
   }
   
   if (I.size() != kMax) {
@@ -2298,22 +2306,28 @@ List getADCI(const int kMax = NA_INTEGER,
     stop("Elements of I must be increasing");
   }
   
-  
-  if (R_isnancpp(L) || R_isnancpp(zL)) {
-    stop("L and zL must be provided");
+  if (R_isnancpp(L)) {
+    stop("L must be provided");
   }
   
-  if (L <= 0) {
+  if (R_isnancpp(zL)) {
+    stop("zL must be provided");
+  }
+  
+  if (L < 1) {
     stop("L must be a positive integer");
   }
   
   if (kMax <= L) {
-    stop("kMax must be a positive integer greater than L");
+    stop("kMax must be greater than L");
   }
   
+  if (is_true(any(is_na(b2)))) {
+    stop("b2 must be provided");
+  }
   
-  if (is_true(any(is_na(b2))) || is_true(any(is_na(I2)))) {
-    stop("b2 and I2 must be provided");
+  if (is_true(any(is_na(I2)))) {
+    stop("I2 must be provided");
   }
   
   if (I2[0] <= 0) {
@@ -2322,12 +2336,15 @@ List getADCI(const int kMax = NA_INTEGER,
     stop("Elements of I2 must be increasing");
   }
   
-  
-  if (R_isnancpp(L2) || R_isnancpp(zL2)) {
-    stop("L2 and zL2 must be provided");
+  if (R_isnancpp(L2)) {
+    stop("L2 must be provided");
   }
   
-  if (L2 <= 0) {
+  if (R_isnancpp(zL2)) {
+    stop("zL2 must be provided");
+  }
+  
+  if (L2 < 1) {
     stop("L2 must be a positive integer");
   }
   
@@ -2405,8 +2422,7 @@ List getADCI(const int kMax = NA_INTEGER,
 //' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
 //'   for trial adaptation.
 //' @param kNew The number of looks of the secondary trial.
-//' @param tNew The spacing of looks in terms of information rates of 
-//'   the secondary trial.
+//' @param informationRatesNew The spacing of looks of the secondary trial.
 //' @param typeAlphaSpendingNew The type of alpha spending for the secondary 
 //'   trial. One of the following: 
 //'   "OF" for O'Brien-Fleming boundaries, 
@@ -2423,7 +2439,8 @@ List getADCI(const int kMax = NA_INTEGER,
 //'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
 //' @param spendingTimeNew A vector of length \code{kNew} for the error 
 //'   spending time at each analysis of the secondary trial. 
-//'   Defaults to missing, in which case, it is the same as \code{tNew}.
+//'   Defaults to missing, in which case, it is the same as 
+//'   \code{informationRatesNew}.
 //'
 //' @return A list with the following components: 
 //' 
@@ -2494,7 +2511,7 @@ List getADCI(const int kMax = NA_INTEGER,
 //'          INew = n2/(4*sigma2^2), 
 //'          L2 = L2, zL2 = zL2, 
 //'          MullerSchafer = TRUE, 
-//'          kNew = 3, tNew = t2, 
+//'          kNew = 3, informationRatesNew = t2, 
 //'          typeAlphaSpendingNew = "sfHSD", 
 //'          parameterAlphaSpendingNew = -2)
 //' 
@@ -2514,14 +2531,13 @@ List getADRCI(const double IMax = NA_REAL,
               const double zL2 = NA_REAL, 
               const bool MullerSchafer = 0,
               const int kNew = NA_INTEGER, 
-              const NumericVector& tNew = NA_REAL, 
+              const NumericVector& informationRatesNew = NA_REAL, 
               const String typeAlphaSpendingNew = "sfOF",
               const double parameterAlphaSpendingNew = NA_REAL, 
               const NumericVector& spendingTimeNew = NA_REAL) {
   
-  double kNew1 = kNew;
   NumericVector t = clone(informationRates);
-  NumericVector t2 = clone(tNew);
+  NumericVector t2 = clone(informationRatesNew);
   NumericVector s = clone(spendingTime);
   NumericVector s2 = clone(spendingTimeNew);
   
@@ -2571,15 +2587,13 @@ List getADRCI(const double IMax = NA_REAL,
   
   double asfpar = parameterAlphaSpending;
   
-  if (!(asf=="of" || asf=="p" || asf=="wt" || 
-      asf=="sfof" || asf=="sfp" ||
+  if (!(asf=="of" || asf=="p" || asf=="wt" || asf=="sfof" || asf=="sfp" ||
       asf=="sfkd" || asf=="sfhsd" || asf=="none")) {
-    stop("Invalid type for alpha spending");
+    stop("Invalid value for typeAlphaSpending");
   }
   
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && 
-      R_isnancpp(asfpar)) {
-    stop("Missing parameter for the alpha spending function");
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+    stop("Missing value for parameterAlphaSpending");
   }
   
   if (asf=="sfkd" && asfpar <= 0) {
@@ -2609,7 +2623,7 @@ List getADRCI(const double IMax = NA_REAL,
   }
   
   if (kMax <= L) {
-    stop("kMax must be a positive integer greater than L");
+    stop("kMax must be greater than L");
   }
   
   if (R_isnancpp(zL)) {
@@ -2645,24 +2659,24 @@ List getADRCI(const double IMax = NA_REAL,
   
   if (MullerSchafer) {
     if (R_isnancpp(kNew)) {
-      kNew1 = kMax - L;
+      stop("kNew must be provided");
     } else if (kNew < 1) {
       stop("kNew must be a positive integer");
     }
     
-    if (is_false(any(is_na(tNew)))) {
-      if (tNew.size() != kNew1) {
-        stop("Invalid length for tNew");
-      } else if (tNew[0] <= 0) {
-        stop("Elements of tNew must be positive");
-      } else if (kNew1 > 1 && is_true(any(diff(tNew) <= 0))) {
-        stop("Elements of tNew must be increasing");
-      } else if (tNew[kNew1-1] != 1) {
-        stop("tNew must end with 1");
+    if (is_false(any(is_na(informationRatesNew)))) {
+      if (informationRatesNew.size() != kNew) {
+        stop("Invalid length for informationRatesNew");
+      } else if (informationRatesNew[0] <= 0) {
+        stop("Elements of informationRatesNew must be positive");
+      } else if (kNew > 1 && is_true(any(diff(informationRatesNew) <= 0))) {
+        stop("Elements of informationRatesNew must be increasing");
+      } else if (informationRatesNew[kNew-1] != 1) {
+        stop("informationRatesNew must end with 1");
       }
     } else {
-      IntegerVector tem = seq_len(kNew1);
-      t2 = as<NumericVector>(tem)/(kNew1+0.0);
+      IntegerVector tem = seq_len(kNew);
+      t2 = as<NumericVector>(tem)/(kNew+0.0);
     }
     
     if (!(asf2=="of" || asf2=="p" || asf2=="wt" || 
@@ -2672,7 +2686,7 @@ List getADRCI(const double IMax = NA_REAL,
     }
     
     if ((asf2=="wt" || asf2=="sfkd" || asf2=="sfhsd") && 
-        R_isnancpp(asfpar)) {
+        R_isnancpp(asfpar2)) {
       stop("Missing value for parameterAlphaSpendingNew");
     }
     
@@ -2681,13 +2695,13 @@ List getADRCI(const double IMax = NA_REAL,
     }
     
     if (is_false(any(is_na(spendingTimeNew)))) {
-      if (spendingTimeNew.size() != kNew1) {
+      if (spendingTimeNew.size() != kNew) {
         stop("Invalid length for spendingTimeNew");
       } else if (spendingTimeNew[0] <= 0) {
         stop("Elements of spendingTimeNew must be positive");
-      } else if (kNew1 > 1 && is_true(any(diff(spendingTimeNew) <= 0))) {
+      } else if (kNew > 1 && is_true(any(diff(spendingTimeNew) <= 0))) {
         stop("Elements of spendingTimeNew must be increasing");
-      } else if (spendingTimeNew[kNew1-1] != 1) {
+      } else if (spendingTimeNew[kNew-1] != 1) {
         stop("spendingTimeNew must end with 1");
       }
     } else {
@@ -2697,28 +2711,31 @@ List getADRCI(const double IMax = NA_REAL,
   
   NumericVector I = IMax*t;
   LogicalVector x(kMax, 1);
-  NumericVector b = getBoundcpp(kMax, t, alpha, asf, asfpar, 0, s, x);
+  int J = L+L2;
+  IntegerVector i = Range(0, J-1);
+  NumericVector b = getBoundcpp(J, t[i], alpha, asf, asfpar, 0, s[i], x[i]);
   
   double lower, upper, thetahat, pvalue;
   if (!MullerSchafer) {
     double I1 = IMax*t[L-1];
-    double I2 = INew*(t[L+L2-1] - t[L-1])/(1 - t[L-1]);
+    double I2 = INew*(t[J-1] - t[L-1])/(1 - t[L-1]);
     
-    double r = t[L-1]/t[L+L2-1];
+    double r = t[L-1]/t[J-1];
     double c1 = sqrt(r)*zL + sqrt(1-r)*zL2;
     double c2 = sqrt(r)*sqrt(I1) + sqrt(1-r)*sqrt(I2);
     
-    lower = (c1 - b[L+L2-1])/c2;
-    upper = (c1 + b[L+L2-1])/c2;
+    lower = (c1 - b[J-1])/c2;
+    upper = (c1 + b[J-1])/c2;
     
     // point estimate is the lower bound for alpha = 0.5
-    NumericVector u = getBoundcpp(kMax, t, 0.5, asf, asfpar, 0, s, x);
-    thetahat = (c1 - u[L+L2-1])/c2;
+    NumericVector u = getBoundcpp(J, t[i], 0.5, asf, asfpar, 0, s[i], x[i]);
+    thetahat = (c1 - u[J-1])/c2;
     
     // repeated p-value is alpha for which the lower bound of theta is zero
-    auto f = [kMax, L, L2, c1, t, asf, asfpar, s, x](double aval)->double {
-      NumericVector u = getBoundcpp(kMax, t, aval, asf, asfpar, 0, s, x);
-      return c1 - u[L+L2-1];
+    auto f = [J, c1, t, asf, asfpar, s, x, i](double aval)->double {
+      NumericVector u = getBoundcpp(J, t[i], aval, asf, asfpar, 0, 
+                                    s[i], x[i]);
+      return c1 - u[J-1];
     };
     
     if (f(0.000001) > 0) {
@@ -2744,10 +2761,10 @@ List getADRCI(const double IMax = NA_REAL,
     interval[1] = (zL + b[L-1])/sqrt(I1);
     double tol = 0.0001;
     
-    LogicalVector x2(kNew1, 1);
-
+    LogicalVector x2(kNew, 1);
+    IntegerVector j = Range(0, L2-1);
     auto f1 = [L, zL, I1, k1, t1, r1, a1, &b, 
-               L2, zL2, I2, kNew1, t2, asf2, asfpar2, s2, x2, 
+               L2, zL2, I2, t2, asf2, asfpar2, s2, x2, j,
                theta0](double theta)->double {
                  
                  // conditional type I error under shifted null
@@ -2758,19 +2775,19 @@ List getADRCI(const double IMax = NA_REAL,
                  }
                  
                  List probs = exitprobcpp(b1, a1, theta0, t1);
-                 double alpha = sum(NumericVector(probs[0]));
+                 double alphaNew = sum(NumericVector(probs[0]));
                  
                  // efficacy boundaries for the secondary trial
                  NumericVector b2 = getBoundcpp(
-                   kNew1, t2, alpha, asf2, asfpar2, 0, s2, x2);
+                   L2, t2[j], alphaNew, asf2, asfpar2, 0, s2[j], x2[j]);
                  
                  return zL2 - theta*sqrt(I2) - b2[L2-1];
                };
     
     lower = brent(f1, interval[0], interval[1], tol);
-
+    
     auto f2 = [L, zL, I1, k1, t1, r1, a1, &b, 
-               L2, zL2, I2, kNew1, t2, asf2, asfpar2, s2, x2, 
+               L2, zL2, I2, t2, asf2, asfpar2, s2, x2, j,
                theta0](double theta)->double {
                  
                  // conditional type I error under shifted null
@@ -2781,12 +2798,12 @@ List getADRCI(const double IMax = NA_REAL,
                  }
                  
                  List probs = exitprobcpp(b1, a1, theta0, t1);
-                 double alpha = sum(NumericVector(probs[0]));
+                 double alphaNew = sum(NumericVector(probs[0]));
                  
                  
                  // efficacy boundaries for the secondary trial
                  NumericVector b2 = getBoundcpp(
-                   kNew1, t2, alpha, asf2, asfpar2, 0, s2, x2);
+                   L2, t2[j], alphaNew, asf2, asfpar2, 0, s2[j], x2[j]);
                  
                  return -zL2 + theta*sqrt(I2) - b2[L2-1];
                };
@@ -2794,33 +2811,35 @@ List getADRCI(const double IMax = NA_REAL,
     upper = brent(f2, interval[0], interval[1], tol);
     
     // point estimate is the lower bound for alpha = 0.5
-    b = getBoundcpp(kMax, t, 0.5, asf, asfpar, 0, s, x);
+    b = getBoundcpp(J, t[i], 0.5, asf, asfpar, 0, s[i], x[i]);
     thetahat = brent(f1, lower, upper, tol);
-   
+    
     // repeated p-value is alpha for which the lower bound of theta is zero
-    auto f = [kMax, t, asf, asfpar, s, x, L, zL, I1, k1, t1, r1, a1, 
-              L2, zL2, I2, kNew1, t2, asf2, asfpar2, s2, x2,
+    auto f = [J, t, asf, asfpar, s, x, i, L, zL, I1, k1, t1, r1, a1,
+              L2, zL2, I2, kNew, t2, asf2, asfpar2, s2, x2, j,
               theta0, interval, tol](double aval)->double {
                 NumericVector u = getBoundcpp(
-                  kMax, t, aval, asf, asfpar, 0, s, x);
+                  J, t[i], aval, asf, asfpar, 0, s[i], x[i]);
                 
                 auto g = [L, zL, I1, k1, t1, r1, a1, &u, 
-                          L2, zL2, I2, kNew1, t2, asf2, asfpar2, s2, x2,  
+                          L2, zL2, I2, t2, asf2, asfpar2, s2, x2, j, 
                           theta0](double theta)->double {
                             
                             // conditional type I error under shifted null
                             double zL1 = zL - theta*sqrt(I1);
                             NumericVector b1(k1);
                             for (int l=0; l<k1; l++) {
-                              b1[l] = (u[l+L] - sqrt(r1[l])*zL1)/sqrt(1-r1[l]);
+                              b1[l] = (u[l+L] - sqrt(r1[l])*zL1)/
+                                sqrt(1 - r1[l]);
                             }
                             
                             List probs = exitprobcpp(b1, a1, theta0, t1);
-                            double alpha = sum(NumericVector(probs[0]));
+                            double alphaNew = sum(NumericVector(probs[0]));
                             
                             // efficacy boundaries for the secondary trial
                             NumericVector b2 = getBoundcpp(
-                              kNew1, t2, alpha, asf2, asfpar2, 0, s2, x2);
+                              L2, t2[j], alphaNew, asf2, asfpar2, 0, 
+                              s2[j], x2[j]);
                             
                             return zL2 - theta*sqrt(I2) - b2[L2-1];
                           };
@@ -2880,8 +2899,7 @@ List getADRCI(const double IMax = NA_REAL,
 //' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
 //'   for trial adaptation.
 //' @param kNew The number of looks of the secondary trial.
-//' @param tNew The spacing of looks in terms of information rates of the 
-//'   secondary trial.
+//' @param informationRatesNew The spacing of looks of the secondary trial.
 //' @param efficacyStoppingNew The indicators of whether efficacy stopping is 
 //'   allowed at each look of the secondary trial. 
 //'   Defaults to true if left unspecified.
@@ -2916,7 +2934,8 @@ List getADRCI(const double IMax = NA_REAL,
 //'   Corresponds to rho for "sfKD", and gamma for "sfHSD".
 //' @param spendingTimeNew A vector of length \code{kNew} for the error 
 //'   spending time at each analysis of the secondary trial. 
-//'   Defaults to missing, in which case, it is the same as \code{tNew}.
+//'   Defaults to missing, in which case, it is the same as 
+//'   \code{informationRatesNew}.
 //'
 //' @return The conditional power given the interim results, parameter 
 //' values, and data-dependent design changes.
@@ -3015,7 +3034,7 @@ double getCP(double INew = NA_REAL,
              const NumericVector& futilityBounds = NA_REAL,
              const bool MullerSchafer = 0, 
              const int kNew = NA_INTEGER, 
-             const NumericVector& tNew = NA_REAL, 
+             const NumericVector& informationRatesNew = NA_REAL, 
              const LogicalVector& efficacyStoppingNew = NA_LOGICAL, 
              const LogicalVector& futilityStoppingNew = NA_LOGICAL,
              const String typeAlphaSpendingNew = "sfOF", 
@@ -3026,8 +3045,7 @@ double getCP(double INew = NA_REAL,
   
   NumericVector t = clone(informationRates);
   NumericVector futilityBounds1 = clone(futilityBounds);
-  int kNew1 = kNew;
-  NumericVector tNew1 = clone(tNew);
+  NumericVector tNew = clone(informationRatesNew);
   LogicalVector efficacyStopping1 = clone(efficacyStoppingNew);
   LogicalVector futilityStopping1 = clone(futilityStoppingNew);
   NumericVector spendingTime1 = clone(spendingTimeNew);
@@ -3046,7 +3064,6 @@ double getCP(double INew = NA_REAL,
   
   double bsfpar = parameterBetaSpendingNew;
   
-  
   if (R_isnancpp(INew)) {
     stop("INew must be provided");
   }
@@ -3055,27 +3072,37 @@ double getCP(double INew = NA_REAL,
     stop("INew must be positive");
   }
   
-  if (R_isnancpp(L) || R_isnancpp(zL)) {
-    stop("L and zL must be provided");
+  if (R_isnancpp(L)) {
+    stop("L must be provided");
+  }
+  
+  if (R_isnancpp(zL)) {
+    stop("zL must be provided");
   }
   
   if (L <= 0) {
     stop("L must be a positive integer");
   }
   
-  if (R_isnancpp(kMax) || R_isnancpp(IMax) || 
-      is_true(any(is_na(criticalValues)))) {
-    stop("kMax, IMax, and criticalValues must be provided");
+  if (is_true(any(is_na(theta)))) {
+    stop("theta must be provided");
+  }
+  
+  if (R_isnancpp(kMax)) {
+    stop("kMax must be provided");
+  }
+  
+  if (kMax <= L) {
+    stop("kMax must be greater than L");
+  }
+
+  if (R_isnancpp(IMax)) {
+    stop("IMax must be provided");
   }
   
   if (IMax <= 0) {
     stop("IMax must be positive");
   }
-  
-  if (kMax <= L) {
-    stop("kMax must be a positive integer greater than L");
-  }
-  
   
   if (is_false(any(is_na(informationRates)))) {
     if (informationRates.size() != kMax) {
@@ -3092,10 +3119,10 @@ double getCP(double INew = NA_REAL,
     t = as<NumericVector>(tem)/(kMax+0.0);
   }
   
-  if (is_false(any(is_na(criticalValues)))) {
-    if (criticalValues.size() != kMax) {
-      stop("Invalid length for criticalValues");
-    }
+  if (is_true(any(is_na(criticalValues)))) {
+    stop("criticalValues must be provided");
+  } else if (criticalValues.size() != kMax) {
+    stop("Invalid length for criticalValues");
   }
   
   if (is_false(any(is_na(futilityBounds)))) {
@@ -3122,63 +3149,58 @@ double getCP(double INew = NA_REAL,
     }
   }
   
-  
   if (MullerSchafer) {
     if (R_isnancpp(kNew)) {
-      kNew1 = kMax - L;
+      stop("kNew must be provided");
     }
     
-    if (is_false(any(is_na(tNew)))) {
-      if (tNew.size() != kNew1) {
-        stop("Invalid length for tNew");
-      } else if (tNew[0] <= 0) {
-        stop("Elements of tNew must be positive");
-      } else if (kNew1 > 1 && is_true(any(diff(tNew) <= 0))) {
-        stop("Elements of tNew must be increasing");
-      } else if (tNew[kNew1-1] != 1) {
-        stop("tNew must end with 1");
+    if (is_false(any(is_na(informationRatesNew)))) {
+      if (informationRatesNew.size() != kNew) {
+        stop("Invalid length for informationRatesNew");
+      } else if (informationRatesNew[0] <= 0) {
+        stop("Elements of informationRatesNew must be positive");
+      } else if (kNew > 1 && is_true(any(diff(informationRatesNew) <= 0))) {
+        stop("Elements of informationRatesNew must be increasing");
+      } else if (informationRatesNew[kNew-1] != 1) {
+        stop("informationRatesNew must end with 1");
       }
     } else {
-      IntegerVector tem = seq_len(kNew1);
-      tNew1 = as<NumericVector>(tem)/(kNew1+0.0);
+      IntegerVector tem = seq_len(kNew);
+      tNew = as<NumericVector>(tem)/(kNew+0.0);
     }
     
-    
     if (is_false(any(is_na(efficacyStoppingNew)))) {
-      if (efficacyStoppingNew.size() != kNew1) {
+      if (efficacyStoppingNew.size() != kNew) {
         stop("Invalid length for efficacyStoppingNew");
-      } else if (efficacyStoppingNew[kNew1-1] != 1) {
+      } else if (efficacyStoppingNew[kNew-1] != 1) {
         stop("efficacyStoppingNew must end with 1");
       } else if (is_false(all((efficacyStoppingNew == 1) | 
         (efficacyStoppingNew == 0)))) {
         stop("Elements of efficacyStoppingNew must be 1 or 0");
       }
     } else {
-      efficacyStopping1 = rep(1, kNew1);
+      efficacyStopping1 = rep(1, kNew);
     }
     
     if (is_false(any(is_na(futilityStoppingNew)))) {
-      if (futilityStoppingNew.size() != kNew1) {
+      if (futilityStoppingNew.size() != kNew) {
         stop("Invalid length for futilityStoppingNew");
-      } else if (futilityStoppingNew[kNew1-1] != 1) {
+      } else if (futilityStoppingNew[kNew-1] != 1) {
         stop("futilityStoppingNew must end with 1");
       } else if (is_false(all((futilityStoppingNew == 1) | 
         (futilityStoppingNew == 0)))) {
         stop("Elements of futilityStoppingNew must be 1 or 0");
       }
     } else {
-      futilityStopping1 = rep(1, kNew1);
+      futilityStopping1 = rep(1, kNew);
     }
     
-    
-    if (!(asf=="of" || asf=="p" || asf=="wt" || 
-        asf=="sfof" || asf=="sfp" ||
+    if (!(asf=="of" || asf=="p" || asf=="wt" || asf=="sfof" || asf=="sfp" ||
         asf=="sfkd" || asf=="sfhsd" || asf=="none")) {
       stop("Invalid value for typeAlphaSpendingNew");
     }
     
-    if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && 
-        R_isnancpp(asfpar)) {
+    if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
       stop("Missing value for parameterAlphaSpendingNew");
     }
     
@@ -3186,11 +3208,8 @@ double getCP(double INew = NA_REAL,
       stop ("parameterAlphaSpendingNew must be positive for sfKD");
     }
     
-    if (R_isnancpp(INew) && !(bsf=="sfof" || bsf=="sfp" || bsf=="sfkd" || 
-        bsf=="sfhsd" || bsf=="user" || bsf=="none")) {
-      stop("Invalid value for typeBetaSpendingNew");
-    } else if (!(bsf=="sfof" || bsf=="sfp" || bsf=="sfkd" || 
-      bsf=="sfhsd" || bsf=="none")) {
+    if (!(bsf=="sfof" || bsf=="sfp" || bsf=="sfkd" || 
+        bsf=="sfhsd" || bsf=="none")) {
       stop("Invalid value for typeBetaSpendingNew");
     }
     
@@ -3203,101 +3222,81 @@ double getCP(double INew = NA_REAL,
     }
     
     if (is_false(any(is_na(spendingTimeNew)))) {
-      if (spendingTimeNew.size() != kNew1) {
+      if (spendingTimeNew.size() != kNew) {
         stop("Invalid length for spendingTimeNew");
       } else if (spendingTimeNew[0] <= 0) {
         stop("Elements of spendingTimeNew must be positive");
-      } else if (kNew1 > 1 && is_true(any(diff(spendingTimeNew) <= 0))) {
+      } else if (kNew > 1 && is_true(any(diff(spendingTimeNew) <= 0))) {
         stop("Elements of spendingTimeNew must be increasing");
-      } else if (spendingTimeNew[kNew1-1] != 1) {
+      } else if (spendingTimeNew[kNew-1] != 1) {
         stop("spendingTimeNew must end with 1");
       }
     } else {
-      spendingTime1 = clone(tNew1);
+      spendingTime1 = clone(tNew);
     }
   }
   
+  int k1 = kMax - L;
+  NumericVector t1(k1), r1(k1), b1(k1), a1(k1, -6.0), zero(k1);
+  for (int l=0; l<k1; l++) {
+    t1[l] = (t[l+L] - t[L-1])/(1 - t[L-1]);
+    r1[l] = t[L-1]/t[l+L];
+    b1[l] = (criticalValues[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
+  }
   
   double result;
   if (!MullerSchafer) {
-    int k1 = kMax - L;
-    NumericVector t1(k1), b1(k1), a1(k1), mu1(k1), I1(k1);
-    
-    NumericVector mu(k1 + 1);
+    NumericVector theta1(k1+1);
     if (theta.size() == 1) {
-      mu.fill(theta[0]);
-    } else if (theta.size() == k1 + 1) {
-      mu = clone(theta);
+      theta1.fill(theta[0]);
+    } else if (theta.size() == k1+1){
+      theta1 = clone(theta);
     } else {
-      stop("Invalid length for theta");
+      stop("Invalid length for theta"); 
     }
     
     for (int l=0; l<k1; l++) {
-      t1[l] = (t[l+L] - t[L-1])/(1 - t[L-1]);
-      
-      double r = t[L-1]/t[l+L];
-      b1[l] = (criticalValues[l+L] - sqrt(r)*zL)/sqrt(1 - r);
-      a1[l] = (futilityBounds1[l+L] - sqrt(r)*zL)/sqrt(1 - r);
-      
-      double r1 = IMax*t[L-1]/(IMax*t[L-1] + INew*t1[l]);
-      mu1[l] = (mu[l+1] - r1*mu[0])/(1 - r1);
-      I1[l] = INew*t1[l];
+      a1[l] = (futilityBounds1[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
     }
     
-    List probs = exitprobcpp(b1, a1, mu1, I1);
+    NumericVector mu(k1), I2(k1);
+    for (int l=0; l<k1; l++) {
+      double r = IMax*t[L-1]/(IMax*t[L-1] + INew*t1[l]);
+      mu[l] = (theta1[l+1] - r*theta1[0])/(1 - r);
+      I2[l] = INew*t1[l];
+    }
+    
+    List probs = exitprobcpp(b1, a1, mu, I2);
     result = sum(NumericVector(probs[0]));
   } else {
-    int k1 = kMax - L;
-    NumericVector t1(k1), b1(k1), a1(k1, -6.0), zero(k1);
-    
-    for (int l=0; l<k1; l++) {
-      t1[l] = (t[l+L] - t[L-1])/(1 - t[L-1]);
-      
-      double r = t[L-1]/t[l+L];
-      b1[l] = (criticalValues[l+L] - sqrt(r)*zL)/sqrt(1 - r);
-    }
-    
-    List probs = exitprobcpp(b1, a1, zero, t1);
-    double alpha = sum(NumericVector(probs[0]));
-    
-    
-    NumericVector mu(kNew1 + 1);
+    NumericVector theta1(kNew+1);
     if (theta.size() == 1) {
-      mu.fill(theta[0]);
-    } else if (theta.size() == kNew1 + 1) {
-      mu = clone(theta);
+      theta1.fill(theta[0]);
+    } else if (theta.size() == kNew+1) {
+      theta1 = clone(theta);
     } else {
       stop("Invalid length for theta");
     }
     
+    // conditional type I error
+    List probs = exitprobcpp(b1, a1, zero, t1);
+    double alphaNew = sum(NumericVector(probs[0]));
+    
     // obtain the efficacy boundaries for the secondary trial
-    NumericVector b2 = getBoundcpp(kNew1, tNew1, alpha, asf, asfpar, 
+    NumericVector b2 = getBoundcpp(kNew, tNew, alphaNew, asf, asfpar, 
                                    0, spendingTime1, efficacyStopping1);
     
-    // obtain the futility boundaries for the secondary trial;
-    NumericVector a2(kNew1);
-    
-    if (bsf=="none") {
-      a2.fill(-6.0);
-      a2[kNew1-1] = b2[kNew1-1];
+    // obtain the conditional power
+    NumericVector mu(kNew), I2(kNew);
+    for (int l=0; l<kNew; l++) {
+      double r = IMax*t[L-1]/(IMax*t[L-1] + INew*tNew[l]);
+      mu[l] = (theta1[l+1] - r*theta1[0])/(1 - r);
+      I2[l] = INew*tNew[l];
     }
     
-    NumericVector mu1(kNew1), I2(kNew1);
-    
-    for (int l=0; l<kNew1; l++) {
-      double r1 = IMax*t[L-1]/(IMax*t[L-1] + INew*tNew1[l]);
-      mu1[l] = (mu[l+1] - r1*mu[0])/(1 - r1);
-      I2[l] = INew*tNew1[l];
-    }
-    
-    if (bsf=="none" || kNew1==1) {
-      probs = exitprobcpp(b2, a2, mu1, I2);
-      result = sum(NumericVector(probs[0]));
-    } else {
-      List out = getPower(alpha, kNew1, b2, mu1, I2, 
-                          bsf, bsfpar, spendingTime1, futilityStopping1);
-      result = out[0];  
-    }
+    List out = getPower(alphaNew, kNew, b2, mu, I2, bsf, bsfpar, 
+                        spendingTime1, futilityStopping1);
+    result = out[0];
   }
   
   return result;

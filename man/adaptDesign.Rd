@@ -5,7 +5,7 @@
 \title{Adaptive design at an interim look}
 \usage{
 adaptDesign(
-  beta = NA_real_,
+  betaNew = NA_real_,
   INew = NA_real_,
   L = NA_integer_,
   zL = NA_real_,
@@ -16,7 +16,7 @@ adaptDesign(
   futilityBounds = NA_real_,
   MullerSchafer = 0L,
   kNew = NA_integer_,
-  tNew = NA_real_,
+  informationRatesNew = NA_real_,
   efficacyStoppingNew = NA_integer_,
   futilityStoppingNew = NA_integer_,
   typeAlphaSpendingNew = "sfOF",
@@ -28,9 +28,11 @@ adaptDesign(
 )
 }
 \arguments{
-\item{beta}{The type II error for the secondary trial.}
+\item{betaNew}{The type II error for the secondary trial.}
 
-\item{INew}{The maximum information for the secondary trial.}
+\item{INew}{The maximum information for the secondary trial. Either
+\code{betaNew} or \code{INew} should be provided while the other one
+should be missing.}
 
 \item{L}{The interim look of the primary trial.}
 
@@ -53,8 +55,7 @@ for trial adaptation.}
 
 \item{kNew}{The number of looks of the secondary trial.}
 
-\item{tNew}{The spacing of looks in terms of information rates of the
-secondary trial.}
+\item{informationRatesNew}{The spacing of looks of the secondary trial.}
 
 \item{efficacyStoppingNew}{The indicators of whether efficacy stopping is
 allowed at each look of the secondary trial.
@@ -99,7 +100,8 @@ Cumulative beta spent up to each stage of the secondary trial.}
 
 \item{spendingTimeNew}{A vector of length \code{kNew} for the error
 spending time at each analysis of the secondary trial.
-Defaults to missing, in which case, it is the same as \code{tNew}.}
+Defaults to missing, in which case, it is the same as
+\code{informationRatesNew}.}
 }
 \value{
 An \code{adaptDesign} object with two list components:
@@ -139,14 +141,14 @@ zL = delta1/sqrt(4/n1*sigma1^2)
 
 # conditional power for original design at estimated parameter value
 (des2 = adaptDesign(
-  beta = NA, INew = (n-n1)/(4*sigma1^2), L, zL, theta = delta1, 
+  betaNew = NA, INew = (n-n1)/(4*sigma1^2), L, zL, theta = delta1, 
   kMax = des1$overallResults$kMax, 
   informationRates = des1$byStageResults$informationRates,
   criticalValues = des1$byStageResults$efficacyBounds))
 
 # conditional power with sample size increase
 (des2 = adaptDesign(
-  beta = NA, INew = 420/(4*sigma1^2), L, zL, theta = delta1, 
+  betaNew = NA, INew = 420/(4*sigma1^2), L, zL, theta = delta1, 
   kMax = des1$overallResults$kMax, 
   informationRates = des1$byStageResults$informationRates,
   criticalValues = des1$byStageResults$efficacyBounds))
@@ -154,7 +156,7 @@ zL = delta1/sqrt(4/n1*sigma1^2)
 # Muller & Schafer (2001) method to design the secondary trial: 
 # 3-look gamma(-2) spending with 84\% power at delta = 4.5 and sigma = 20
 (des2 = adaptDesign(
-  beta = 0.16, INew = NA, L, zL, theta = delta1,
+  betaNew = 0.16, INew = NA, L, zL, theta = delta1,
   kMax = des1$overallResults$kMax, 
   informationRates = des1$byStageResults$informationRates,
   criticalValues = des1$byStageResults$efficacyBounds,

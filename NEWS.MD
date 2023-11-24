@@ -7,7 +7,6 @@
 - add the getPower utility function to improve coding efficiency
 - replace the drift parameter with Imax and theta parameters in the getDesign function
 - calculate alpha when critical values are not missing for the getDesign and lrpower functions
-- calculated cumulative alpha spent considering futility stopping in the getDesign function
 - add expected information under H0 to the getDesign function output
 - add the getCI function for parameter estimation after termination of a group sequential trial
 - add the getRCI function to calculate repeated confidence intervals of a group sequential trial

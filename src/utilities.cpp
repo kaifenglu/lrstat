@@ -566,21 +566,12 @@ NumericVector getBoundcpp(const int k,
     }
   }
   
-  
-  if (asf=="wt" && R_isnancpp(asfpar)) {
-    stop("Missing parameter for WT");
-  }
-  
-  if (asf=="sfkd" && R_isnancpp(asfpar)) {
-    stop("Missing parameter for sfKD");
-  }
-  
-  if (asf=="sfhsd" && R_isnancpp(asfpar)) {
-    stop("Missing parameter for sfHSD");
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+    stop("Missing value for parameterAlphaSpending");
   }
   
   if (asf=="sfkd" && asfpar <= 0) {
-    stop ("asfpar must be positive for sfKD");
+    stop ("parameterAlphaSpending must be positive for sfKD");
   }
   
   NumericVector theta(k); // mean values under H0, initialized to zero
@@ -677,7 +668,7 @@ NumericVector getBoundcpp(const int k,
       }
     }
   } else {
-    stop("Invalid type of alpha spending");
+    stop("Invalid value for typeAlphaSpending");
   }
   
   return criticalValues;

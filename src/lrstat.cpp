@@ -2885,17 +2885,16 @@ List lrpower(const int kMax = 1,
   if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
       asf=="wt" || asf=="sfof" || asf=="sfp" ||
       asf=="sfkd" || asf=="sfhsd" || asf=="user" || asf=="none")) {
-    stop("Invalid type for alpha spending");
+    stop("Invalid value for typeAlphaSpending");
   }
   
   if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
-    stop("Missing parameter for the alpha spending function");
+    stop("Missing value for parameterAlphaSpending");
   }
   
   if (asf=="sfkd" && asfpar <= 0) {
     stop ("parameterAlphaSpending must be positive for sfKD");
   }
-  
   
   if (is_false(any(is_na(futilityBounds)))) {
     if (!(futilityBounds.size() == kMax-1 ||
@@ -2920,11 +2919,11 @@ List lrpower(const int kMax = 1,
   
   if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfof" || bsf=="sfp" ||
       bsf=="sfkd" || bsf=="sfhsd" || bsf=="none")) {
-    stop("Invalid type for beta spending");
+    stop("Invalid value for typeBetaSpending");
   }
   
   if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
-    stop("Missing parameter for the beta spending function");
+    stop("Missing value for parameterBetaSpending");
   }
   
   if (bsf=="sfkd" && bsfpar <= 0) {
@@ -3710,11 +3709,11 @@ List getDesign(const double beta = NA_REAL,
   if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
       asf=="wt" || asf=="sfof" || asf=="sfp" ||
       asf=="sfkd" || asf=="sfhsd" || asf=="user" || asf=="none")) {
-    stop("Invalid type for alpha spending");
+    stop("Invalid value for typeAlphaSpending");
   }
   
   if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
-    stop("Missing parameter for the alpha spending function");
+    stop("Missing value for parameterAlphaSpending");
   }
   
   if (asf=="sfkd" && asfpar <= 0) {
@@ -3766,17 +3765,17 @@ List getDesign(const double beta = NA_REAL,
   if (unknown == "IMax") {
     if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfof" || bsf=="sfp" ||
         bsf=="sfkd" || bsf=="sfhsd" || bsf=="user" || bsf=="none")) {
-      stop("Invalid type for beta spending");
+      stop("Invalid value for typeBetaSpending");
     }
   } else {
     if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfof" || bsf=="sfp" ||
         bsf=="sfkd" || bsf=="sfhsd" || bsf=="none")) {
-      stop("Invalid type for beta spending");
+      stop("Invalid value for typeBetaSpending");
     }
   }
   
   if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
-    stop("Missing parameter for the beta spending function");
+    stop("Missing value for parameterBetaSpending");
   }
   
   if (bsf=="sfkd" && bsfpar <= 0) {
@@ -3976,11 +3975,13 @@ List getDesign(const double beta = NA_REAL,
   NumericVector cpu = cumsum(pu);
   NumericVector cpl = cumsum(pl);
   
-  // stagewise exit probabilities under H0
-  NumericVector theta0(kMax);
-  List probs0 = exitprobcpp(criticalValues1, futilityBounds1, theta0, t);
+  // cumulative alpha spent under H0 with non-binding futility
+  NumericVector futilityBounds0(kMax, -6.0), theta0(kMax);
+  List probs0 = exitprobcpp(criticalValues1, futilityBounds0, theta0, t);
   NumericVector cumAlphaSpent = cumsum(NumericVector(probs0[0]));
   
+  // stagewise exit probabilities under H0 with binding futility 
+  probs0 = exitprobcpp(criticalValues1, futilityBounds1, theta0, t);
   NumericVector pu0(kMax), pl0(kMax), ptotal0(kMax);
   pu0 = NumericVector(probs0[0]);
   pl0 = NumericVector(probs0[1]);
@@ -4073,8 +4074,7 @@ List getDesign(const double beta = NA_REAL,
 //' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
 //'   for trial adaptation.
 //' @param kNew The number of looks of the secondary trial.
-//' @param tNew The spacing of looks in terms of information rates of the 
-//'   secondary trial.
+//' @param informationRatesNew The spacing of looks of the secondary trial.
 //' @param efficacyStoppingNew The indicators of whether efficacy stopping is 
 //'   allowed at each look of the secondary trial. 
 //'   Defaults to true if left unspecified.
@@ -4111,7 +4111,8 @@ List getDesign(const double beta = NA_REAL,
 //'   Cumulative beta spent up to each stage of the secondary trial.
 //' @param spendingTimeNew A vector of length \code{kNew} for the error 
 //'   spending time at each analysis of the secondary trial. 
-//'   Defaults to missing, in which case, it is the same as \code{tNew}.
+//'   Defaults to missing, in which case, it is the same as 
+//'   \code{informationRatesNew}.
 //'
 //' @return An \code{adaptDesign} object with two list components: 
 //' 
@@ -4184,7 +4185,7 @@ List adaptDesign(double betaNew = NA_REAL,
                  const NumericVector& futilityBounds = NA_REAL,
                  const bool MullerSchafer = 0, 
                  const int kNew = NA_INTEGER, 
-                 const NumericVector& tNew = NA_REAL, 
+                 const NumericVector& informationRatesNew = NA_REAL, 
                  const LogicalVector& efficacyStoppingNew = NA_LOGICAL, 
                  const LogicalVector& futilityStoppingNew = NA_LOGICAL,
                  const String typeAlphaSpendingNew = "sfOF", 
@@ -4196,11 +4197,10 @@ List adaptDesign(double betaNew = NA_REAL,
   
   NumericVector t = clone(informationRates);
   NumericVector futilityBounds1 = clone(futilityBounds);
-  NumericVector tNew1 = clone(tNew);
+  NumericVector tNew = clone(informationRatesNew);
   LogicalVector efficacyStopping1 = clone(efficacyStoppingNew);
   LogicalVector futilityStopping1 = clone(futilityStoppingNew);
   NumericVector spendingTime1 = clone(spendingTimeNew);
-  double kNew1 = kNew;
   
   if (R_isnancpp(betaNew) && R_isnancpp(INew)) {
     stop("betaNew and INew cannot be both missing");
@@ -4303,48 +4303,48 @@ List adaptDesign(double betaNew = NA_REAL,
   
   if (MullerSchafer) {
     if (R_isnancpp(kNew)) {
-      kNew1 = kMax - L;
+      stop("kNew must be provided");
     }
     
-    if (is_false(any(is_na(tNew)))) {
-      if (tNew.size() != kNew1) {
-        stop("Invalid length for tNew");
-      } else if (tNew[0] <= 0) {
-        stop("Elements of tNew must be positive");
-      } else if (kNew1 > 1 && is_true(any(diff(tNew) <= 0))) {
-        stop("Elements of tNew must be increasing");
-      } else if (tNew[kNew1-1] != 1) {
-        stop("tNew must end with 1");
+    if (is_false(any(is_na(informationRatesNew)))) {
+      if (informationRatesNew.size() != kNew) {
+        stop("Invalid length for informationRatesNew");
+      } else if (informationRatesNew[0] <= 0) {
+        stop("Elements of informationRatesNew must be positive");
+      } else if (kNew > 1 && is_true(any(diff(informationRatesNew) <= 0))) {
+        stop("Elements of informationRatesNew must be increasing");
+      } else if (informationRatesNew[kNew-1] != 1) {
+        stop("informationRatesNew must end with 1");
       }
     } else {
-      IntegerVector tem = seq_len(kNew1);
-      tNew1 = as<NumericVector>(tem)/(kNew1+0.0);
+      IntegerVector tem = seq_len(kNew);
+      tNew = as<NumericVector>(tem)/(kNew+0.0);
     }
     
     if (is_false(any(is_na(efficacyStoppingNew)))) {
-      if (efficacyStoppingNew.size() != kNew1) {
+      if (efficacyStoppingNew.size() != kNew) {
         stop("Invalid length for efficacyStoppingNew");
-      } else if (efficacyStoppingNew[kNew1-1] != 1) {
+      } else if (efficacyStoppingNew[kNew-1] != 1) {
         stop("efficacyStoppingNew must end with 1");
       } else if (is_false(all((efficacyStoppingNew == 1) | 
         (efficacyStoppingNew == 0)))) {
         stop("Elements of efficacyStoppingNew must be 1 or 0");
       }
     } else {
-      efficacyStopping1 = rep(1, kNew1);
+      efficacyStopping1 = rep(1, kNew);
     }
     
     if (is_false(any(is_na(futilityStoppingNew)))) {
-      if (futilityStoppingNew.size() != kNew1) {
+      if (futilityStoppingNew.size() != kNew) {
         stop("Invalid length for futilityStoppingNew");
-      } else if (futilityStoppingNew[kNew1-1] != 1) {
+      } else if (futilityStoppingNew[kNew-1] != 1) {
         stop("futilityStoppingNew must end with 1");
       } else if (is_false(all((futilityStoppingNew == 1) | 
         (futilityStoppingNew == 0)))) {
         stop("Elements of futilityStoppingNew must be 1 or 0");
       }
     } else {
-      futilityStopping1 = rep(1, kNew1);
+      futilityStopping1 = rep(1, kNew);
     }
     
     if (!(asf=="of" || asf=="p" || asf=="wt" || 
@@ -4364,7 +4364,7 @@ List adaptDesign(double betaNew = NA_REAL,
     
     if (R_isnancpp(INew) && !(bsf=="sfof" || bsf=="sfp" || bsf=="sfkd" || 
         bsf=="sfhsd" || bsf=="user" || bsf=="none")) {
-      stop("Invalid type for typeBetaSpendingNew");
+      stop("Invalid value for typeBetaSpendingNew");
     } else if (!(bsf=="sfof" || bsf=="sfp" || bsf=="sfkd" || 
       bsf=="sfhsd" || bsf=="none")) {
       stop("Invalid value for typeBetaSpendingNew");
@@ -4381,29 +4381,29 @@ List adaptDesign(double betaNew = NA_REAL,
     if (R_isnancpp(INew) && bsf=="user") {
       if (is_true(any(is_na(userBetaSpendingNew)))) {
         stop("userBetaSpendingNew must be specified");
-      } else if (userBetaSpendingNew.size() < kNew1) {
+      } else if (userBetaSpendingNew.size() < kNew) {
         stop("Insufficient length of userBetaSpendingNew");
       } else if (userBetaSpendingNew[0] < 0) {
         stop("Elements of userBetaSpendingNew must be nonnegnative");
-      } else if (kNew1 > 1 && is_true(any(diff(userBetaSpendingNew) < 0))) {
+      } else if (kNew > 1 && is_true(any(diff(userBetaSpendingNew) < 0))) {
         stop("Elements of userBetaSpendingNew must be nondecreasing");
-      } else if (userBetaSpendingNew[kNew1] != betaNew) {
+      } else if (userBetaSpendingNew[kNew] != betaNew) {
         stop("userBetaSpendingNew must end with specified betaNew");
       }
     }
     
     if (is_false(any(is_na(spendingTimeNew)))) {
-      if (spendingTimeNew.size() != kNew1) {
+      if (spendingTimeNew.size() != kNew) {
         stop("Invalid length for spendingTimeNew");
       } else if (spendingTimeNew[0] <= 0) {
         stop("Elements of spendingTimeNew must be positive");
-      } else if (kNew1 > 1 && is_true(any(diff(spendingTimeNew) <= 0))) {
+      } else if (kNew > 1 && is_true(any(diff(spendingTimeNew) <= 0))) {
         stop("Elements of spendingTimeNew must be increasing");
-      } else if (spendingTimeNew[kNew1-1] != 1) {
+      } else if (spendingTimeNew[kNew-1] != 1) {
         stop("spendingTimeNew must end with 1");
       }
     } else {
-      spendingTime1 = clone(tNew1);
+      spendingTime1 = clone(tNew);
     }
   }
   
@@ -4453,7 +4453,7 @@ List adaptDesign(double betaNew = NA_REAL,
     b1.fill(NA_REAL);
     a1.fill(NA_REAL);
     
-    des2 = getDesign(betaNew, INew, theta, kNew1, tNew1, 
+    des2 = getDesign(betaNew, INew, theta, kNew, tNew, 
                      efficacyStopping1, futilityStopping1, 
                      b1, alphaNew, typeAlphaSpendingNew, 
                      parameterAlphaSpendingNew, 0,
@@ -4820,11 +4820,11 @@ List lrsamplesize(const double beta = 0.2,
   if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
       asf=="wt" || asf=="sfof" || asf=="sfp" ||
       asf=="sfkd" || asf=="sfhsd" || asf=="user" || asf=="none")) {
-    stop("Invalid type for alpha spending");
+    stop("Invalid value for typeAlphaSpending");
   }
   
   if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
-    stop("Missing parameter for the alpha spending function");
+    stop("Missing value for parameterAlphaSpending");
   }
   
   if (asf=="sfkd" && asfpar <= 0) {
@@ -4868,11 +4868,11 @@ List lrsamplesize(const double beta = 0.2,
   
   if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfof" || bsf=="sfp" ||
       bsf=="sfkd" || bsf=="sfhsd" || bsf=="user" || bsf=="none")) {
-    stop("Invalid type for beta spending");
+    stop("Invalid value for typeBetaSpending");
   }
   
   if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
-    stop("Missing parameter for the beta spending function");
+    stop("Missing value for parameterBetaSpending");
   }
   
   if (bsf=="sfkd" && bsfpar <= 0) {
