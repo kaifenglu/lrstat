@@ -78,6 +78,491 @@ fmodmixcpp <- function(p, family, serial, parallel, gamma, test = "hommel", exha
     .Call(`_lrstat_fmodmixcpp`, p, family, serial, parallel, gamma, test, exhaust)
 }
 
+#' @title Confidence interval after trial termination
+#' @description Obtains the p-value, median unbiased point estimate, and 
+#' confidence interval after the end of a group sequential trial.
+#'
+#' @param b The upper boundaries on the Z-test statistic scale
+#'   for efficacy stopping.
+#' @param I The vector of cumulative information.
+#' @param L The interim look.
+#' @param zL The Z test statistic at the interim look.
+#'
+#' @return A list with the following components: 
+#' 
+#' * \code{pvalue}: p-value for rejecting the null hypothesis.
+#'  
+#' * \code{thetahat}: Median unbiased point estimate of the parameter.
+#' 
+#' * \code{cilevel}: Confidence interval level.
+#' 
+#' * \code{lower}: Lower bound of confidence interval.
+#' 
+#' * \code{upper}: Upper bound of confidence interval.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' # group sequential design with 90% power to detect delta = 6
+#' delta = 6
+#' sigma = 17
+#' n = 282
+#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
+#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#'                   parameterAlphaSpending = -4))
+#' 
+#' # crossed the boundary at the second look
+#' L = 2
+#' n1 = n*2/3
+#' delta1 = 7
+#' sigma1 = 20
+#' zL = delta1/sqrt(4/n1*sigma1^2)
+#' 
+#' # information based on estimated nuisance parameter
+#' b = des1$byStageResults$efficacyBounds
+#' t = des1$byStageResults$informationRates
+#' I = n*t/(4*sigma1^2)
+#' 
+#' # p-value, point estimate, and confidence interval
+#' getCI(b, I, L, zL) 
+#' 
+#' @export
+getCI <- function(b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_) {
+    .Call(`_lrstat_getCI`, b, I, L, zL)
+}
+
+#' @title Repeated confidence interval for group sequential design
+#' @description Obtains the repeated confidence interval 
+#' for a group sequential trial.
+#'
+#' @param IMax The maximum information.
+#' @inheritParams param_kMax
+#' @param informationRates The information rates.
+#' @inheritParams param_alpha
+#' @inheritParams param_typeAlphaSpending
+#' @inheritParams param_parameterAlphaSpending
+#' @param spendingTime A vector of length \code{kMax} for the error spending 
+#'   time at each analysis. Defaults to missing, in which case, it is the 
+#'   same as \code{informationRates}.
+#' @param L The interim look.
+#' @param zL The Z test statistic at the interim look.
+#'
+#' @return A list with the following components: 
+#' 
+#' * \code{pvalue}: Repeated p-value for rejecting the null hypothesis.
+#'  
+#' * \code{thetahat}: Point estimate of the parameter.
+#' 
+#' * \code{cilevel}: Confidence interval level.
+#' 
+#' * \code{lower}: Lower bound of repeated confidence interval.
+#' 
+#' * \code{upper}: Upper bound of repeated confidence interval.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' # group sequential design with 90% power to detect delta = 6
+#' delta = 6
+#' sigma = 17
+#' n = 282
+#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
+#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#'                   parameterAlphaSpending = -4))
+#' 
+#' # results at the second look
+#' L = 2
+#' n1 = n*2/3
+#' delta1 = 7
+#' sigma1 = 20
+#' zL = delta1/sqrt(4/n1*sigma1^2)
+#' 
+#' # information based on estimated nuisance parameter
+#' b = des1$byStageResults$efficacyBounds
+#' t = des1$byStageResults$informationRates
+#' I = n*t/(4*sigma1^2)
+#' 
+#' # repeated confidence interval
+#' getRCI(IMax = n/(4*sigma1^2), kMax = 3, alpha = 0.05, 
+#'        typeAlphaSpending = "sfHSD", parameterAlphaSpending = -4, 
+#'        L = L, zL = zL)
+#' 
+#' @export
+getRCI <- function(IMax = NA_real_, kMax = NA_real_, informationRates = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, L = NA_integer_, zL = NA_real_) {
+    .Call(`_lrstat_getRCI`, IMax, kMax, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, L, zL)
+}
+
+#' @title Confidence interval after adaptation
+#' @description Obtains the p-value, median unbiased point estimate, and 
+#' confidence interval using the backward image method after the end of 
+#' an adaptive trial.
+#'
+#' @param kMax The maximum number of stages for the primary trial.
+#' @param b The upper boundaries on the Z-test statistic scale
+#'   for efficacy stopping for the primary trial.
+#' @param I The vector of cumulative information for the primary trial.
+#' @param L The interim look of the primary trial.
+#' @param zL The Z test statistic at the interim look of the primary trial.
+#' @param b2 The upper boundaries on the Z-test statistic scale
+#'   for efficacy stopping for the secondary trial.
+#' @param I2 The vector of cumulative information for the secondary trial.
+#' @param L2 The interim look of the secondary trial.
+#' @param zL2 The Z test statistic at the interim look of the 
+#'   secondary trial.
+#'
+#' @return A list with the following components: 
+#' 
+#' * \code{pvalue}: p-value for rejecting the null hypothesis.
+#'  
+#' * \code{thetahat}: Median unbiased point estimate of the parameter.
+#' 
+#' * \code{cilevel}: Confidence interval level.
+#' 
+#' * \code{lower}: Lower bound of confidence interval.
+#' 
+#' * \code{upper}: Upper bound of confidence interval.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @seealso \code{\link{adaptDesign}}
+#' 
+#' @examples
+#'
+#' # original group sequential design with 90% power to detect delta = 6
+#' delta = 6
+#' sigma = 17
+#' n = 282
+#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
+#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#'                   parameterAlphaSpending = -4))
+#' 
+#' # interim look results
+#' L = 1
+#' n1 = n/3
+#' delta1 = 4.5
+#' sigma1 = 20
+#' zL = delta1/sqrt(4/n1*sigma1^2)
+#' 
+#' kMax = des1$overallResults$kMax
+#' b = des1$byStageResults$efficacyBounds
+#' t = des1$byStageResults$informationRates
+#' I = n*t/(4*sigma1^2)  # information based on estimated nuisance parameter
+#' 
+#' # Muller & Schafer (2001) method to design the secondary trial: 
+#' # 3-look gamma(-2) spending with 84% power at delta = 4.5, sigma = 17
+#' n2 = 300
+#' (des2 = adaptDesign(
+#'   beta = NA, INew = n2/(4*sigma^2), L, zL, theta = delta1,
+#'   kMax = des1$overallResults$kMax, 
+#'   informationRates = des1$byStageResults$informationRates,
+#'   criticalValues = des1$byStageResults$efficacyBounds,
+#'   MullerSchafer = TRUE,
+#'   kNew = 3, typeAlphaSpending = "sfHSD", 
+#'   parameterAlphaSpending = -2))
+#'   
+#' # termination at the second look of the secondary trial
+#' L2 = 2
+#' theta2 = 6.6
+#' sigma2 = 19.5
+#' zL2 = theta2/sqrt(4*sigma2^2/200)
+#'  
+#' b2 = des2$secondaryTrial$byStageResults$efficacyBounds
+#' t2 = des2$secondaryTrial$byStageResults$informationRates
+#' I2 = n2*t2/(4*sigma2^2)
+#' 
+#' # p-value, point estimate, and confidence interval
+#' getADCI(kMax, b, I, L, zL, b2, I2, L2, zL2)
+#' 
+#' @export
+getADCI <- function(kMax = NA_integer_, b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_, b2 = NA_real_, I2 = NA_real_, L2 = NA_integer_, zL2 = NA_real_) {
+    .Call(`_lrstat_getADCI`, kMax, b, I, L, zL, b2, I2, L2, zL2)
+}
+
+#' @title Repeated confidence interval after adaptation
+#' @description Obtains the repeated p-value, point estimate, and 
+#' repeated confidence interval for an adaptive group sequential trial.
+#' 
+#' @param IMax The maximum information of the primary trial.
+#' @param kMax The maximum number of stages for the primary trial.
+#' @param informationRates The information rates of the primary trial.
+#' @param alpha The significance level for the primary trial. 
+#'   Defaults to 0.025.
+#' @param typeAlphaSpending The type of alpha spending for the primary trial. 
+#'   One of the following: 
+#'   "OF" for O'Brien-Fleming boundaries, 
+#'   "P" for Pocock boundaries, 
+#'   "WT" for Wang & Tsiatis boundaries, 
+#'   "sfOF" for O'Brien-Fleming type spending function, 
+#'   "sfP" for Pocock type spending function, 
+#'   "sfKD" for Kim & DeMets spending function, 
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
+#'   "none" for no early efficacy stopping. 
+#'   Defaults to "sfOF".
+#' @param parameterAlphaSpending The parameter value for the alpha 
+#'   spending for the primary trial. 
+#'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
+#' @param spendingTime A vector of length \code{kMax} for the error 
+#'   spending time at each analysis of the primary trial. 
+#'   Defaults to missing, in which case, it is the same as 
+#'   \code{informationRates}.
+#' @param L The interim look of the primary trial.
+#' @param zL The Z test statistic at the interim look of the primary trial.
+#' @param INew The maximum information for the secondary trial.
+#' @param L2 The interim look of the secondary trial.
+#' @param zL2 The Z test statistic at the interim look of the 
+#'   secondary trial.
+#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
+#'   for trial adaptation.
+#' @param kNew The number of looks of the secondary trial.
+#' @param tNew The spacing of looks in terms of information rates of 
+#'   the secondary trial.
+#' @param typeAlphaSpendingNew The type of alpha spending for the secondary 
+#'   trial. One of the following: 
+#'   "OF" for O'Brien-Fleming boundaries, 
+#'   "P" for Pocock boundaries, 
+#'   "WT" for Wang & Tsiatis boundaries, 
+#'   "sfOF" for O'Brien-Fleming type spending function, 
+#'   "sfP" for Pocock type spending function, 
+#'   "sfKD" for Kim & DeMets spending function, 
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
+#'   "none" for no early efficacy stopping. 
+#'   Defaults to "sfOF".
+#' @param parameterAlphaSpendingNew The parameter value for the alpha 
+#'   spending for the secondary trial. 
+#'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
+#' @param spendingTimeNew A vector of length \code{kNew} for the error 
+#'   spending time at each analysis of the secondary trial. 
+#'   Defaults to missing, in which case, it is the same as \code{tNew}.
+#'
+#' @return A list with the following components: 
+#' 
+#' * \code{pvalue}: Repeated p-value for rejecting the null hypothesis.
+#'  
+#' * \code{thetahat}: Point estimate of the parameter.
+#' 
+#' * \code{cilevel}: Confidence interval level.
+#' 
+#' * \code{lower}: Lower bound of repeated confidence interval.
+#' 
+#' * \code{upper}: Upper bound of repeated confidence interval.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @seealso \code{\link{adaptDesign}}
+#' 
+#' @examples
+#'
+#' # original group sequential design with 90% power to detect delta = 6
+#' delta = 6
+#' sigma = 17
+#' n = 282
+#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
+#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#'                   parameterAlphaSpending = -4))
+#' 
+#' # interim look results
+#' L = 1
+#' n1 = n/3
+#' delta1 = 4.5
+#' sigma1 = 20
+#' zL = delta1/sqrt(4/n1*sigma1^2)
+#' 
+#' kMax = des1$overallResults$kMax
+#' b = des1$byStageResults$efficacyBounds
+#' t = des1$byStageResults$informationRates
+#' I = n*t/(4*sigma1^2)  # information based on estimated nuisance parameter
+#' 
+#' # Muller & Schafer (2001) method to design the secondary trial: 
+#' # 3-look gamma(-2) spending with 84% power at delta = 4.5, sigma = 17
+#' n2 = 300
+#' (des2 = adaptDesign(
+#'   beta = NA, INew = n2/(4*sigma^2), L, zL, theta = delta1,
+#'   kMax = des1$overallResults$kMax, 
+#'   informationRates = des1$byStageResults$informationRates,
+#'   criticalValues = des1$byStageResults$efficacyBounds,
+#'   MullerSchafer = TRUE,
+#'   kNew = 3, typeAlphaSpending = "sfHSD", 
+#'   parameterAlphaSpending = -2))
+#'   
+#' # termination at the second look of the secondary trial
+#' L2 = 2
+#' theta2 = 6.6
+#' sigma2 = 19.5
+#' zL2 = theta2/sqrt(4*sigma2^2/200)
+#'  
+#' b2 = des2$secondaryTrial$byStageResults$efficacyBounds
+#' t2 = des2$secondaryTrial$byStageResults$informationRates
+#' I2 = n2*t2/(4*sigma2^2)
+#' 
+#' # repeated confidence interval
+#' getADRCI(IMax = n/(4*sigma1^2), kMax = 3, 
+#'          informationRates = t,
+#'          alpha = 0.05,  typeAlphaSpending = "sfHSD", 
+#'          parameterAlphaSpending = -4,
+#'          L = L, zL = zL, 
+#'          INew = n2/(4*sigma2^2), 
+#'          L2 = L2, zL2 = zL2, 
+#'          MullerSchafer = TRUE, 
+#'          kNew = 3, tNew = t2, 
+#'          typeAlphaSpendingNew = "sfHSD", 
+#'          parameterAlphaSpendingNew = -2)
+#' 
+#' @export
+getADRCI <- function(IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, alpha = 0.25, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, L = NA_integer_, zL = NA_real_, INew = NA_real_, L2 = NA_integer_, zL2 = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, tNew = NA_real_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+    .Call(`_lrstat_getADRCI`, IMax, kMax, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, L, zL, INew, L2, zL2, MullerSchafer, kNew, tNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
+}
+
+#' @title Conditional power allowing for varying parameter values
+#' @description Obtains the conditional power for specified incremental 
+#' information given the interim results, parameter values, and 
+#' data-dependent changes in the error spending function and the 
+#' number and spacing of interim looks. 
+#'
+#' @param INew The maximum information for the secondary trial.
+#' @param L The interim look of the primary trial.
+#' @param zL The Z test statistic at the interim look of the primary trial.
+#' @param theta A scalar or a vector of parameter values of 
+#'   length \code{1 + kMax - L} if \code{MullerSchafer = FALSE} or 
+#'   length \code{1 + kNew} if \code{MullerSchafer = TRUE}.
+#' @param kMax The maximum number of stages for the primary trial.
+#' @param IMax The maximum information of the primary trial.
+#' @param informationRates The information rates of the primary trial.
+#' @param criticalValues The upper boundaries on the Z-test statistic scale
+#'   for efficacy stopping for the primary trial.
+#' @param futilityBounds The lower boundaries on the Z-test statistic scale
+#'   for futility stopping for the primary trial.
+#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
+#'   for trial adaptation.
+#' @param kNew The number of looks of the secondary trial.
+#' @param tNew The spacing of looks in terms of information rates of the 
+#'   secondary trial.
+#' @param efficacyStoppingNew The indicators of whether efficacy stopping is 
+#'   allowed at each look of the secondary trial. 
+#'   Defaults to true if left unspecified.
+#' @param futilityStoppingNew The indicators of whether futility stopping is 
+#'   allowed at each look of the secondary trial. 
+#'   Defaults to true if left unspecified.
+#' @param typeAlphaSpendingNew The type of alpha spending for the secondary
+#'   trial. One of the following: 
+#'   "OF" for O'Brien-Fleming boundaries, 
+#'   "P" for Pocock boundaries, 
+#'   "WT" for Wang & Tsiatis boundaries, 
+#'   "sfOF" for O'Brien-Fleming type spending function, 
+#'   "sfP" for Pocock type spending function, 
+#'   "sfKD" for Kim & DeMets spending function, 
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
+#'   "none" for no early efficacy stopping. 
+#'   Defaults to "sfOF".
+#' @param parameterAlphaSpendingNew The parameter value for the alpha 
+#'   spending for the secondary trial. 
+#'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
+#' @param typeBetaSpendingNew The type of beta spending for the secondary 
+#'   trial. One of the following: 
+#'   "sfOF" for O'Brien-Fleming type spending function, 
+#'   "sfP" for Pocock type spending function, 
+#'   "sfKD" for Kim & DeMets spending function, 
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, 
+#'   "user" for user defined spending, and 
+#'   "none" for no early futility stopping. 
+#'   Defaults to "none".
+#' @param parameterBetaSpendingNew The parameter value for the beta 
+#'   spending for the secondary trial. 
+#'   Corresponds to rho for "sfKD", and gamma for "sfHSD".
+#' @param spendingTimeNew A vector of length \code{kNew} for the error 
+#'   spending time at each analysis of the secondary trial. 
+#'   Defaults to missing, in which case, it is the same as \code{tNew}.
+#'
+#' @return The conditional power given the interim results, parameter 
+#' values, and data-dependent design changes.
+#' 
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @seealso \code{\link{getDesign}}
+#' 
+#' @examples
+#' 
+#' # Conditional power calculation with delayed treatment effect
+#' 
+#' # Two interim analyses have occurred with 179 and 266 events, respectively
+#' # The observed hazard ratio at the second interim look is 0.81
+#' 
+#' trialsdt = as.Date("2020-03-04")                       # trial start date
+#' iadt = c(as.Date("2022-02-01"), as.Date("2022-11-01")) # interim dates
+#' mo1 = as.numeric(iadt - trialsdt + 1)/30.4375          # interim months
+#' 
+#' # Assume a piecewise Poisson enrollment process with a 8-month ramp-up and
+#' # 521 patients were enrolled after 17.94 months
+#' N = 521                   # total number of patients
+#' Ta = 17.94                # enrollment duration
+#' Ta1 = 8                   # assumed end of enrollment ramp-up
+#' enrate = N / (Ta - Ta1/2) # enrollment rate after ramp-up
+#' 
+#' # Assume a median survival of 16.7 months for the control group, a 5-month
+#' # delay in treatment effect, and a hazard ratio of 0.7 after the delay
+#' lam1 = log(2)/16.7  # control group hazard of exponential distribution
+#' t1 = 5              # months of delay in treatment effect
+#' hr = 0.7            # hazard ratio after delay
+#' lam2 = hr*lam1      # treatment group hazard after delay
+#' 
+#' # Assume an annual dropout rate of 5%
+#' pc = 0.05           # annual dropout rate
+#' gam = -log(1-pc)/12 # hazard for dropout
+#' 
+#' 
+#' # The original target number of events was 298 and the new target is 3335
+#' mo2 <- caltime(
+#'   nevents = c(298, 335),
+#'   allocationRatioPlanned = 1,
+#'   accrualTime = seq(0, Ta1), 
+#'   accrualIntensity = enrate*seq(1, Ta1+1)/(Ta1+1),
+#'   piecewiseSurvivalTime = c(0, t1),
+#'   lambda1 = c(lam1, lam2),
+#'   lambda2 = c(lam1, lam1),
+#'   gamma1 = gam,
+#'   gamma2 = gam,
+#'   accrualDuration = Ta,
+#'   followupTime = 1000)
+#' 
+#' # expected number of events and average hazard ratios
+#' (lr1 <- lrstat(
+#'   time = c(mo1, mo2),
+#'   accrualTime = seq(0, Ta1), 
+#'   accrualIntensity = enrate*seq(1, Ta1+1)/(Ta1+1),
+#'   piecewiseSurvivalTime = c(0, t1),
+#'   lambda1 = c(lam1, lam2),
+#'   lambda2 = c(lam1, lam1),
+#'   gamma1 = gam,
+#'   gamma2 = gam,
+#'   accrualDuration = Ta,
+#'   followupTime = 1000,
+#'   predictTarget = 3))
+#' 
+#' 
+#' hr2 = 0.81                    # observed hazard ratio at interim 2
+#' z2 = (-log(hr2))*sqrt(266/4)  # corresponding Z-test statistic value
+#' 
+#' # Assume that the number of events is increased based on unblinded data
+#' # Use boundaries based on the original sample size for the CHW statistics
+#' b = getBound(k = 3, informationRates = c(179, 266, 298)/298,
+#'              alpha = 0.025, typeAlphaSpending = "sfOF")
+#' 
+#' # expected mean of -log(HR) at interim and final for the new sample size
+#' theta = -log(lr1$HR[c(2,4)])
+#' 
+#' # conditional power for the CHW statistic to cross the boundary at final
+#' getCP(INew = (335 - 266)/4, 
+#'       L = 2, zL = z2, theta = theta,
+#'       kMax = 3, IMax = 298/4, 
+#'       informationRates = c(179, 266, 298)/298,
+#'       criticalValues = b)
+#'
+#' @export
+getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, kMax = NA_integer_, IMax = NA_real_, informationRates = NA_real_, criticalValues = NA_real_, futilityBounds = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, tNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+    .Call(`_lrstat_getCP`, INew, L, zL, theta, kMax, IMax, informationRates, criticalValues, futilityBounds, MullerSchafer, kNew, tNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, typeBetaSpendingNew, parameterBetaSpendingNew, spendingTimeNew)
+}
+
 #' @title Log-rank test simulation
 #' @description Performs simulation for two-arm group sequential
 #' trials based on weighted log-rank test.
@@ -1901,7 +2386,7 @@ lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #' @param theta The parameter value.
 #' @inheritParams param_kMax
 #' @param informationRates The information rates. Fixed prior to the trial. 
-#'   Defaults to (1:kMax) / kMax if left unspecified.
+#'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
 #' @inheritParams param_efficacyStopping
 #' @inheritParams param_futilityStopping
 #' @inheritParams param_criticalValues
@@ -2014,112 +2499,6 @@ getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax =
     .Call(`_lrstat_getDesign`, beta, IMax, theta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime)
 }
 
-f_pvalue <- function(theta, b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_) {
-    .Call(`_lrstat_f_pvalue`, theta, b, I, L, zL)
-}
-
-#' @title Confidence interval after trial termination
-#' @description Obtains the p-value, median unbiased point estimate, and 
-#' confidence interval after the end of a group sequential trial.
-#'
-#' @param b The upper boundaries on the Z-test statistic scale
-#'   for efficacy stopping for the primary trial.
-#' @param I The vector of cumulative information of the primary trial.
-#' @param L The interim look of the primary trial.
-#' @param zL The Z test statistic at the interim look of the primary trial.
-#'
-#' @return A list with the following components: 
-#' 
-#' * \code{pvalue}: The p-value for rejecting the null hypothesis.
-#'  
-#' * \code{thetahat}: The median unbiased point estimate of the parameter.
-#' 
-#' * \code{cilevel}: The confidence interval level.
-#' 
-#' * \code{lower}: The lower bound of the confidence interval.
-#' 
-#' * \code{upper}: The upper bound of the confidence interval.
-#'
-#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#'
-#' @examples
-#'
-#' # group sequential design with 90% power to detect delta = 6
-#' delta = 6
-#' sigma = 17
-#' n = 282
-#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
-#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
-#'                   parameterAlphaSpending = -4))
-#' 
-#' # crossed the boundary at the second look
-#' L = 2
-#' n1 = n*2/3
-#' delta1 = 7
-#' sigma1 = 20
-#' zL = delta1/sqrt(4/n1*sigma1^2)
-#' 
-#' # information based on estimated nuisance parameter
-#' b = des1$byStageResults$efficacyBounds
-#' t = des1$byStageResults$informationRates
-#' I = n*t/(4*sigma1^2)
-#' 
-#' # p-value, point estimate, and confidence interval
-#' getCI(b, I, L, zL) 
-#' 
-#' @export
-getCI <- function(b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_) {
-    .Call(`_lrstat_getCI`, b, I, L, zL)
-}
-
-#' @title Repeated confidence interval for group sequential design
-#' @description Obtains the repeated confidence interval 
-#' for a group sequential trial.
-#'
-#' @param b The upper boundaries on the Z-test statistic scale
-#'   for efficacy stopping for the primary trial.
-#' @param I The vector of cumulative information of the primary trial.
-#' @param L The interim look of the primary trial.
-#' @param zL The Z test statistic at the interim look of the primary trial.
-#'
-#' @return A list with the following components: 
-#' 
-#' * \code{lower}: The lower bound of the repeated confidence interval.
-#' 
-#' * \code{upper}: The upper bound of the repeated confidence interval.
-#'
-#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#'
-#' @examples
-#'
-#' # group sequential design with 90% power to detect delta = 6
-#' delta = 6
-#' sigma = 17
-#' n = 282
-#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
-#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
-#'                   parameterAlphaSpending = -4))
-#' 
-#' # results at the second look
-#' L = 2
-#' n1 = n*2/3
-#' delta1 = 7
-#' sigma1 = 20
-#' zL = delta1/sqrt(4/n1*sigma1^2)
-#' 
-#' # information based on estimated nuisance parameter
-#' b = des1$byStageResults$efficacyBounds
-#' t = des1$byStageResults$informationRates
-#' I = n*t/(4*sigma1^2)
-#' 
-#' # repeated confidence interval
-#' getRCI(b, I, L, zL) 
-#' 
-#' @export
-getRCI <- function(b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_) {
-    .Call(`_lrstat_getRCI`, b, I, L, zL)
-}
-
 #' @title Adaptive design at an interim look
 #' @description Obtains the conditional power for specified incremental 
 #' information given the interim results, parameter value, and data-dependent 
@@ -2129,27 +2508,30 @@ getRCI <- function(b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_) {
 #' parameter value, and data-dependent changes in the error spending 
 #' function and the number and spacing of interim looks.
 #'
-#' @param beta The conditional type II error.
-#' @param INew The incremental information.
-#' @param L The interim look.
-#' @param zL The Z test statistic at the interim look.
+#' @param beta The type II error for the secondary trial.
+#' @param INew The maximum information for the secondary trial.
+#' @param L The interim look of the primary trial.
+#' @param zL The Z test statistic at the interim look of the primary trial.
 #' @param theta The parameter value.
-#' @param kMax The maximum number of stages of the original design.
-#' @param informationRates The information rates of the original design.
+#' @param kMax The maximum number of stages for the primary trial.
+#' @param informationRates The information rates of the primary trial.
 #' @param criticalValues The upper boundaries on the Z-test statistic scale
-#'   for efficacy stopping for the original design.
+#'   for efficacy stopping for the primary trial.
 #' @param futilityBounds The lower boundaries on the Z-test statistic scale
-#'   for futility stopping for the original design.
+#'   for futility stopping for the primary trial.
 #' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
 #'   for trial adaptation.
-#' @param kNew The number of future looks.
-#' @param tNew The spacing of future looks in terms of information rates.
-#' @param efficacyStopping The indicators of whether efficacy stopping is 
-#'   allowed at each future look. Defaults to true if left unspecified.
-#' @param futilityStopping The indicators of whether futility stopping is 
-#'   allowed at each future look. Defaults to true if left unspecified.
-#' @param typeAlphaSpending The type of alpha spending for future looks. 
-#'   One of the following: 
+#' @param kNew The number of looks of the secondary trial.
+#' @param tNew The spacing of looks in terms of information rates of the 
+#'   secondary trial.
+#' @param efficacyStoppingNew The indicators of whether efficacy stopping is 
+#'   allowed at each look of the secondary trial. 
+#'   Defaults to true if left unspecified.
+#' @param futilityStoppingNew The indicators of whether futility stopping is 
+#'   allowed at each look of the secondary trial. 
+#'   Defaults to true if left unspecified.
+#' @param typeAlphaSpendingNew The type of alpha spending for the secondary
+#'   trial. One of the following: 
 #'   "OF" for O'Brien-Fleming boundaries, 
 #'   "P" for Pocock boundaries, 
 #'   "WT" for Wang & Tsiatis boundaries, 
@@ -2159,11 +2541,11 @@ getRCI <- function(b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_) {
 #'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
 #'   "none" for no early efficacy stopping. 
 #'   Defaults to "sfOF".
-#' @param parameterAlphaSpending The parameter value for the alpha 
-#'   spending for future looks. 
+#' @param parameterAlphaSpendingNew The parameter value for the alpha 
+#'   spending for the secondary trial. 
 #'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
-#' @param typeBetaSpending The type of beta spending for future looks. 
-#'   One of the following: 
+#' @param typeBetaSpendingNew The type of beta spending for the secondary
+#'   trial. One of the following: 
 #'   "sfOF" for O'Brien-Fleming type spending function, 
 #'   "sfP" for Pocock type spending function, 
 #'   "sfKD" for Kim & DeMets spending function, 
@@ -2171,14 +2553,14 @@ getRCI <- function(b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_) {
 #'   "user" for user defined spending, and 
 #'   "none" for no early futility stopping. 
 #'   Defaults to "none".
-#' @param parameterBetaSpending The parameter value for the beta spending 
-#'   for future looks. 
+#' @param parameterBetaSpendingNew The parameter value for the beta spending 
+#'   for the secondary trial. 
 #'   Corresponds to rho for "sfKD", and gamma for "sfHSD".
-#' @param userBetaSpending The user defined cumulative beta spent at 
-#'   future looks.
-#' @param spendingTime A vector of length \code{kNew} for the error spending 
-#'   time at future looks. Defaults to missing, in which case, it is the 
-#'   same as \code{tNew}.
+#' @param userBetaSpendingNew The user defined cumulative beta spending. 
+#'   Cumulative beta spent up to each stage of the secondary trial.
+#' @param spendingTimeNew A vector of length \code{kNew} for the error 
+#'   spending time at each analysis of the secondary trial. 
+#'   Defaults to missing, in which case, it is the same as \code{tNew}.
 #'
 #' @return An \code{adaptDesign} object with two list components: 
 #' 
@@ -2232,367 +2614,15 @@ getRCI <- function(b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_) {
 #'   informationRates = des1$byStageResults$informationRates,
 #'   criticalValues = des1$byStageResults$efficacyBounds,
 #'   MullerSchafer = TRUE,
-#'   kNew = 3, typeAlphaSpending = "sfHSD", 
-#'   parameterAlphaSpending = -2))
+#'   kNew = 3, typeAlphaSpendingNew = "sfHSD", 
+#'   parameterAlphaSpendingNew = -2))
 #'   
 #' # incremental sample size for sigma = 20
 #' (nNew = 4*sigma1^2*des2$secondaryTrial$overallResults$maxInformation)
 #'
 #' @export
-adaptDesign <- function(beta = NA_real_, INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, kMax = NA_integer_, informationRates = NA_real_, criticalValues = NA_real_, futilityBounds = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, tNew = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_) {
-    .Call(`_lrstat_adaptDesign`, beta, INew, L, zL, theta, kMax, informationRates, criticalValues, futilityBounds, MullerSchafer, kNew, tNew, efficacyStopping, futilityStopping, typeAlphaSpending, parameterAlphaSpending, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime)
-}
-
-f_astar <- function(theta, b2, I2, L2, zL2) {
-    .Call(`_lrstat_f_astar`, theta, b2, I2, L2, zL2)
-}
-
-f_bwimage <- function(theta, kMax, b, I, L, zL, b2, I2, L2, zL2) {
-    .Call(`_lrstat_f_bwimage`, theta, kMax, b, I, L, zL, b2, I2, L2, zL2)
-}
-
-f_bwpvalue <- function(theta, kMax = NA_integer_, b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_, b2 = NA_real_, I2 = NA_real_, L2 = NA_integer_, zL2 = NA_real_) {
-    .Call(`_lrstat_f_bwpvalue`, theta, kMax, b, I, L, zL, b2, I2, L2, zL2)
-}
-
-#' @title Backward image confidence interval after adaptation
-#' @description Obtains the p-value, median unbiased point estimate, and 
-#' confidence interval using the backward image method after the end of 
-#' an adaptive trial.
-#'
-#' @param kMax The maximum number of stages of the original design.
-#' @param b The upper boundaries on the Z-test statistic scale
-#'   for efficacy stopping for the primary trial.
-#' @param I The vector of cumulative information of the primary trial.
-#' @param L The interim look of the primary trial.
-#' @param zL The Z test statistic at the interim look of the primary trial.
-#' @param b2 The upper boundaries on the Z-test statistic scale
-#'   for efficacy stopping for the secondary trial.
-#' @param I2 The vector of cumulative information of the secondary trial.
-#' @param L2 The termination look of the secondary trial.
-#' @param zL2 The Z test statistic at the termination look of the 
-#'   secondary trial.
-#'
-#' @return A list with the following components: 
-#' 
-#' * \code{pvalue}: The p-value for rejecting the null hypothesis.
-#'  
-#' * \code{thetahat}: The median unbiased point estimate of the parameter.
-#' 
-#' * \code{cilevel}: The confidence interval level.
-#' 
-#' * \code{lower}: The lower bound of the backward image confidence interval.
-#' 
-#' * \code{upper}: The upper bound of the backward image confidence interval.
-#'
-#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#'
-#' @seealso \code{\link{adaptDesign}}
-#' 
-#' @examples
-#'
-#' # original group sequential design with 90% power to detect delta = 6
-#' delta = 6
-#' sigma = 17
-#' n = 282
-#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
-#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
-#'                   parameterAlphaSpending = -4))
-#' 
-#' # interim look results
-#' L = 1
-#' n1 = n/3
-#' delta1 = 4.5
-#' sigma1 = 20
-#' zL = delta1/sqrt(4/n1*sigma1^2)
-#' 
-#' kMax = des1$overallResults$kMax
-#' b = des1$byStageResults$efficacyBounds
-#' t = des1$byStageResults$informationRates
-#' I = n*t/(4*sigma1^2)  # information based on estimated nuisance parameter
-#' 
-#' # Muller & Schafer (2001) method to design the secondary trial: 
-#' # 3-look gamma(-2) spending with 84% power at delta = 4.5, sigma = 17
-#' n2 = 300
-#' (des2 = adaptDesign(
-#'   beta = NA, INew = n2/(4*sigma^2), L, zL, theta = delta1,
-#'   kMax = des1$overallResults$kMax, 
-#'   informationRates = des1$byStageResults$informationRates,
-#'   criticalValues = des1$byStageResults$efficacyBounds,
-#'   MullerSchafer = TRUE,
-#'   kNew = 3, typeAlphaSpending = "sfHSD", 
-#'   parameterAlphaSpending = -2))
-#'   
-#' # termination at the second look of the secondary trial
-#' L2 = 2
-#' theta2 = 6.6
-#' sigma2 = 19.5
-#' zL2 = theta2/sqrt(4*sigma2^2/200)
-#'  
-#' b2 = des2$secondaryTrial$byStageResults$efficacyBounds
-#' t2 = des2$secondaryTrial$byStageResults$informationRates
-#' I2 = n2*t2/(4*sigma2^2)
-#' 
-#' # p-value, point estimate, and confidence interval
-#' getBWCI(kMax, b, I, L, zL, b2, I2, L2, zL2)
-#' 
-#' @export
-getBWCI <- function(kMax = NA_integer_, b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_, b2 = NA_real_, I2 = NA_real_, L2 = NA_integer_, zL2 = NA_real_) {
-    .Call(`_lrstat_getBWCI`, kMax, b, I, L, zL, b2, I2, L2, zL2)
-}
-
-#' @title Backward image repeated confidence interval after adaptation
-#' @description Obtains the repeated confidence interval using the 
-#' backward image method after the end of an adaptive trial.
-#' 
-#' @param INew The incremental information.
-#' @param L The interim look.
-#' @param zL The Z test statistic at the interim look.
-#' @param kMax The maximum number of stages of the original design.
-#' @param IMax The maximum information of the original design.
-#' @param informationRates The information rates of the original design.
-#' @param criticalValues The upper boundaries on the Z-test statistic scale
-#'   for efficacy stopping for the original design.
-#' @param L2 The termination look of the secondary trial.
-#' @param zL2 The Z test statistic at the termination look of the 
-#'   secondary trial.
-#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
-#'   for trial adaptation.
-#' @param kNew The number of future looks.
-#' @param tNew The spacing of future looks in terms of information rates.
-#' @param efficacyStopping The indicators of whether efficacy stopping is 
-#'   allowed at each future look. Defaults to true if left unspecified.
-#' @param typeAlphaSpending The type of alpha spending for future looks. 
-#'   One of the following: 
-#'   "OF" for O'Brien-Fleming boundaries, 
-#'   "P" for Pocock boundaries, 
-#'   "WT" for Wang & Tsiatis boundaries, 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
-#'   "none" for no early efficacy stopping. 
-#'   Defaults to "sfOF".
-#' @param parameterAlphaSpending The parameter value for the alpha 
-#'   spending for future looks. 
-#'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
-#' @param spendingTime A vector of length \code{kNew} for the error spending 
-#'   time at future looks. Defaults to missing, in which case, it is the 
-#'   same as \code{tNew}.
-#'
-#' @return A list with the following components: 
-#' 
-#' * \code{lower}: The lower bound of the backward image repeated 
-#' confidence interval.
-#' 
-#' * \code{upper}: The upper bound of the backward image repeated 
-#' confidence interval.
-#'
-#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#'
-#' @seealso \code{\link{adaptDesign}}
-#' 
-#' @examples
-#'
-#' # original group sequential design with 90% power to detect delta = 6
-#' delta = 6
-#' sigma = 17
-#' n = 282
-#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
-#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
-#'                   parameterAlphaSpending = -4))
-#' 
-#' # interim look results
-#' L = 1
-#' n1 = n/3
-#' delta1 = 4.5
-#' sigma1 = 20
-#' zL = delta1/sqrt(4/n1*sigma1^2)
-#' 
-#' kMax = des1$overallResults$kMax
-#' b = des1$byStageResults$efficacyBounds
-#' t = des1$byStageResults$informationRates
-#' I = n*t/(4*sigma1^2)  # information based on estimated nuisance parameter
-#' 
-#' # Muller & Schafer (2001) method to design the secondary trial: 
-#' # 3-look gamma(-2) spending with 84% power at delta = 4.5, sigma = 17
-#' n2 = 300
-#' (des2 = adaptDesign(
-#'   beta = NA, INew = n2/(4*sigma^2), L, zL, theta = delta1,
-#'   kMax = des1$overallResults$kMax, 
-#'   informationRates = des1$byStageResults$informationRates,
-#'   criticalValues = des1$byStageResults$efficacyBounds,
-#'   MullerSchafer = TRUE,
-#'   kNew = 3, typeAlphaSpending = "sfHSD", 
-#'   parameterAlphaSpending = -2))
-#'   
-#' # termination at the second look of the secondary trial
-#' L2 = 2
-#' theta2 = 6.6
-#' sigma2 = 19.5
-#' zL2 = theta2/sqrt(4*sigma2^2/200)
-#'  
-#' b2 = des2$secondaryTrial$byStageResults$efficacyBounds
-#' t2 = des2$secondaryTrial$byStageResults$informationRates
-#' I2 = n2*t2/(4*sigma2^2)
-#' 
-#' # repeated confidence interval
-#' getBWRCI(INew = n2/(4*sigma2^2), L = L, zL = zL, 
-#'          kMax = 3, IMax = n/(4*sigma1^2), 
-#'          informationRates = t, criticalValues = b, 
-#'          L2, zL2, MullerSchafer = TRUE, 
-#'          kNew = 3, typeAlphaSpending = "sfHSD", 
-#'          parameterAlphaSpending = -2)
-#' 
-#' @export
-getBWRCI <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, kMax = NA_integer_, IMax = NA_real_, informationRates = NA_real_, criticalValues = NA_real_, L2 = NA_integer_, zL2 = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, tNew = NA_real_, efficacyStopping = NA_integer_, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_) {
-    .Call(`_lrstat_getBWRCI`, INew, L, zL, kMax, IMax, informationRates, criticalValues, L2, zL2, MullerSchafer, kNew, tNew, efficacyStopping, typeAlphaSpending, parameterAlphaSpending, spendingTime)
-}
-
-#' @title Conditional power allowing for varying parameter values
-#' @description Obtains the conditional power for specified incremental 
-#' information given the interim results, parameter values, and 
-#' data-dependent changes in the error spending function and the 
-#' number and spacing of interim looks. 
-#'
-#' @param INew The incremental information.
-#' @param L The interim look.
-#' @param zL The Z test statistic at the interim look.
-#' @param theta A scalar or a vector of parameter values of 
-#'   length \code{1 + kMax - L} if \code{MullerSchafer = FALSE} or 
-#'   length \code{1 + kNew} if \code{MullerSchafer = TRUE}.
-#' @param kMax The maximum number of stages of the original design.
-#' @param IMax The maximum information of the original design.
-#' @param informationRates The information rates of the original design.
-#' @param criticalValues The upper boundaries on the Z-test statistic scale
-#'   for efficacy stopping for the original design.
-#' @param futilityBounds The lower boundaries on the Z-test statistic scale
-#'   for futility stopping for the original design.
-#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
-#'   for trial adaptation.
-#' @param kNew The number of future looks.
-#' @param tNew The spacing of future looks in terms of information rates.
-#' @param efficacyStopping The indicators of whether efficacy stopping is 
-#'   allowed at each future look. Defaults to true if left unspecified.
-#' @param futilityStopping The indicators of whether futility stopping is 
-#'   allowed at each future look. Defaults to true if left unspecified.
-#' @param typeAlphaSpending The type of alpha spending for future looks. 
-#'   One of the following: 
-#'   "OF" for O'Brien-Fleming boundaries, 
-#'   "P" for Pocock boundaries, 
-#'   "WT" for Wang & Tsiatis boundaries, 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
-#'   "none" for no early efficacy stopping. 
-#'   Defaults to "sfOF".
-#' @param parameterAlphaSpending The parameter value for the alpha 
-#'   spending for future looks. 
-#'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
-#' @param typeBetaSpending The type of beta spending for future looks. 
-#'   One of the following: 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, 
-#'   "user" for user defined spending, and 
-#'   "none" for no early futility stopping. 
-#'   Defaults to "none".
-#' @param parameterBetaSpending The parameter value for the beta spending 
-#'   for future looks. 
-#'   Corresponds to rho for "sfKD", and gamma for "sfHSD".
-#' @param spendingTime A vector of length \code{kNew} for the error spending 
-#'   time at future looks. Defaults to missing, in which case, it is the 
-#'   same as \code{tNew}.
-#'
-#' @return The conditional power given the interim results, parameter 
-#' values, and data-dependent design changes.
-#' 
-#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#'
-#' @seealso \code{\link{getDesign}}
-#' 
-#' @examples
-#' 
-#' # Conditional power calculation with delayed treatment effect
-#' 
-#' # Two interim analyses have occurred with 179 and 266 events, respectively
-#' # The observed hazard ratio at the second interim look is 0.81
-#' 
-#' trialsdt = as.Date("2020-03-04")                       # trial start date
-#' iadt = c(as.Date("2022-02-01"), as.Date("2022-11-01")) # interim dates
-#' mo1 = as.numeric(iadt - trialsdt + 1)/30.4375          # interim months
-#' 
-#' # Assume a piecewise Poisson enrollment process with a 8-month ramp-up and
-#' # 521 patients were enrolled after 17.94 months
-#' N = 521                   # total number of patients
-#' Ta = 17.94                # enrollment duration
-#' Ta1 = 8                   # assumed end of enrollment ramp-up
-#' enrate = N / (Ta - Ta1/2) # enrollment rate after ramp-up
-#' 
-#' # Assume a median survival of 16.7 months for the control group, a 5-month
-#' # delay in treatment effect, and a hazard ratio of 0.7 after the delay
-#' lam1 = log(2)/16.7  # control group hazard of exponential distribution
-#' t1 = 5              # months of delay in treatment effect
-#' hr = 0.7            # hazard ratio after delay
-#' lam2 = hr*lam1      # treatment group hazard after delay
-#' 
-#' # Assume an annual dropout rate of 5%
-#' pc = 0.05           # annual dropout rate
-#' gam = -log(1-pc)/12 # hazard for dropout
-#' 
-#' 
-#' # The original target number of events was 298 and the new target is 3335
-#' mo2 <- caltime(
-#'   nevents = c(298, 335),
-#'   allocationRatioPlanned = 1,
-#'   accrualTime = seq(0, Ta1), 
-#'   accrualIntensity = enrate*seq(1, Ta1+1)/(Ta1+1),
-#'   piecewiseSurvivalTime = c(0, t1),
-#'   lambda1 = c(lam1, lam2),
-#'   lambda2 = c(lam1, lam1),
-#'   gamma1 = gam,
-#'   gamma2 = gam,
-#'   accrualDuration = Ta,
-#'   followupTime = 1000)
-#' 
-#' # expected number of events and average hazard ratios
-#' (lr1 <- lrstat(
-#'   time = c(mo1, mo2),
-#'   accrualTime = seq(0, Ta1), 
-#'   accrualIntensity = enrate*seq(1, Ta1+1)/(Ta1+1),
-#'   piecewiseSurvivalTime = c(0, t1),
-#'   lambda1 = c(lam1, lam2),
-#'   lambda2 = c(lam1, lam1),
-#'   gamma1 = gam,
-#'   gamma2 = gam,
-#'   accrualDuration = Ta,
-#'   followupTime = 1000,
-#'   predictTarget = 3))
-#' 
-#' 
-#' hr2 = 0.81                    # observed hazard ratio at interim 2
-#' z2 = (-log(hr2))*sqrt(266/4)  # corresponding Z-test statistic value
-#' 
-#' # Assume that the number of events is increased based on unblinded data
-#' # Use boundaries based on the original sample size for the CHW statistics
-#' b = getBound(k = 3, informationRates = c(179, 266, 298)/298,
-#'              alpha = 0.025, typeAlphaSpending = "sfOF")
-#' 
-#' # expected mean of -log(HR) at interim and final for the new sample size
-#' theta = -log(lr1$HR[c(2,4)])
-#' 
-#' # conditional power for the CHW statistic to cross the boundary at final
-#' getCP(INew = (335 - 266)/4, 
-#'       L = 2, zL = z2, theta = theta,
-#'       kMax = 3, IMax = 298/4, 
-#'       informationRates = c(179, 266, 298)/298,
-#'       criticalValues = b)
-#'
-#' @export
-getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, kMax = NA_integer_, IMax = NA_real_, informationRates = NA_real_, criticalValues = NA_real_, futilityBounds = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, tNew = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, spendingTime = NA_real_) {
-    .Call(`_lrstat_getCP`, INew, L, zL, theta, kMax, IMax, informationRates, criticalValues, futilityBounds, MullerSchafer, kNew, tNew, efficacyStopping, futilityStopping, typeAlphaSpending, parameterAlphaSpending, typeBetaSpending, parameterBetaSpending, spendingTime)
+adaptDesign <- function(beta = NA_real_, INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, kMax = NA_integer_, informationRates = NA_real_, criticalValues = NA_real_, futilityBounds = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, tNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, userBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+    .Call(`_lrstat_adaptDesign`, beta, INew, L, zL, theta, kMax, informationRates, criticalValues, futilityBounds, MullerSchafer, kNew, tNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaSpendingNew, spendingTimeNew)
 }
 
 #' @title Get the required number of events from hazard ratios

@@ -3,7 +3,6 @@
 
 using namespace Rcpp;
 
-
 //' @title Log-rank test simulation
 //' @description Performs simulation for two-arm group sequential
 //' trials based on weighted log-rank test.
@@ -1158,10 +1157,6 @@ List lrsim(const int kMax = NA_INTEGER,
 }
 
 
-
-
-
-
 //' @title Log-rank test simulation for three arms
 //' @description Performs simulation for three-arm group sequential trials 
 //' based on weighted log-rank test. The looks are driven by the total 
@@ -2164,9 +2159,6 @@ List lrsim3a(const int kMax = NA_INTEGER,
   
   return result;
 }
-
-
-
 
 
 //' @title Log-rank test simulation for two endpoints and two arms
@@ -3438,7 +3430,6 @@ List lrsim2e(const int kMax = NA_INTEGER,
   
   return result;
 }
-
 
 
 //' @title Log-rank test simulation for two endpoints and three arms
@@ -4941,7 +4932,3 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   
   return result;
 }
-
-
-
-

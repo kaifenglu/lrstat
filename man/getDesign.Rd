@@ -35,7 +35,7 @@ the input \code{beta} will be ignored and power will be calculated.}
 \item{kMax}{The maximum number of stages.}
 
 \item{informationRates}{The information rates. Fixed prior to the trial.
-Defaults to (1:kMax) / kMax if left unspecified.}
+Defaults to \code{(1:kMax) / kMax} if left unspecified.}
 
 \item{efficacyStopping}{Indicators of whether efficacy stopping is allowed
 at each stage. Defaults to true if left unspecified.}
