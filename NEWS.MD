@@ -2,17 +2,17 @@
 
 - use markdown for Roxygen documentations
 - rename getAccrualDuration to getAccrualDurationFromN
-- replace the predictEventOnly argument with the predictTarget argument for the lrstat function
-- add the efficacyStopping argument to the getBoundcpp utility function to improve the coding efficiency
-- add the getPower utility function to improve the coding efficiency
+- replace predictEventOnly with predictTarget for the lrstat function
+- add efficacyStopping to the getBoundcpp function to improve coding efficiency
+- add the getPower utility function to improve coding efficiency
 - replace the drift parameter with Imax and theta parameters in the getDesign function
 - calculate alpha when critical values are not missing for the getDesign and lrpower functions
 - add the getCI function for parameter estimation after termination of a group sequential trial
 - add the getRCI function to calculate repeated confidence intervals of a group sequential trial
 - add the adaptDesign function for sample size re-estimation and conditional power calculation
-- add the getBWCI function for parameter estimation using the backward image method after termination of an adaptive group sequential trial
-- add the getBWRCI function to calculate repeated confidence intervals using the backward image method after termination of an adpaptive group sequential trial
-- add the getCP function to calculate the conditional power when the parameter value varies over time
+- add the getADCI function for parameter estimation using the backward image method after termination of an adaptive group sequential trial
+- add the getADRCI function to calculate repeated confidence intervals for an adpaptive group sequential trial
+- add the getCP function to calculate the conditional power when the parameter value may vary over time
 
 # lrstat 0.2.0
 

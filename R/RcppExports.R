@@ -86,7 +86,7 @@ fmodmixcpp <- function(p, family, serial, parallel, gamma, test = "hommel", exha
 #'   for efficacy stopping.
 #' @param I The vector of cumulative information.
 #' @param L The interim look.
-#' @param zL The Z test statistic at the interim look.
+#' @param zL The Z-test statistic at the interim look.
 #'
 #' @return A list with the following components: 
 #' 
@@ -146,7 +146,7 @@ getCI <- function(b = NA_real_, I = NA_real_, L = NA_integer_, zL = NA_real_) {
 #'   time at each analysis. Defaults to missing, in which case, it is the 
 #'   same as \code{informationRates}.
 #' @param L The interim look.
-#' @param zL The Z test statistic at the interim look.
+#' @param zL The Z-test statistic at the interim look.
 #'
 #' @return A list with the following components: 
 #' 
@@ -204,12 +204,12 @@ getRCI <- function(IMax = NA_real_, kMax = NA_real_, informationRates = NA_real_
 #'   for efficacy stopping for the primary trial.
 #' @param I The vector of cumulative information for the primary trial.
 #' @param L The interim look of the primary trial.
-#' @param zL The Z test statistic at the interim look of the primary trial.
+#' @param zL The Z-test statistic at the interim look of the primary trial.
 #' @param b2 The upper boundaries on the Z-test statistic scale
 #'   for efficacy stopping for the secondary trial.
 #' @param I2 The vector of cumulative information for the secondary trial.
 #' @param L2 The interim look of the secondary trial.
-#' @param zL2 The Z test statistic at the interim look of the 
+#' @param zL2 The Z-test statistic at the interim look of the 
 #'   secondary trial.
 #'
 #' @return A list with the following components: 
@@ -308,10 +308,10 @@ getADCI <- function(kMax = NA_integer_, b = NA_real_, I = NA_real_, L = NA_integ
 #'   Defaults to missing, in which case, it is the same as 
 #'   \code{informationRates}.
 #' @param L The interim look of the primary trial.
-#' @param zL The Z test statistic at the interim look of the primary trial.
+#' @param zL The Z-test statistic at the interim look of the primary trial.
 #' @param INew The maximum information for the secondary trial.
 #' @param L2 The interim look of the secondary trial.
-#' @param zL2 The Z test statistic at the interim look of the 
+#' @param zL2 The Z-test statistic at the interim look of the 
 #'   secondary trial.
 #' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
 #'   for trial adaptation.
@@ -422,7 +422,7 @@ getADRCI <- function(IMax = NA_real_, kMax = NA_integer_, informationRates = NA_
 #'
 #' @param INew The maximum information for the secondary trial.
 #' @param L The interim look of the primary trial.
-#' @param zL The Z test statistic at the interim look of the primary trial.
+#' @param zL The Z-test statistic at the interim look of the primary trial.
 #' @param theta A scalar or a vector of parameter values of 
 #'   length \code{1 + kMax - L} if \code{MullerSchafer = FALSE} or 
 #'   length \code{1 + kNew} if \code{MullerSchafer = TRUE}.
@@ -2511,7 +2511,7 @@ getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax =
 #' @param beta The type II error for the secondary trial.
 #' @param INew The maximum information for the secondary trial.
 #' @param L The interim look of the primary trial.
-#' @param zL The Z test statistic at the interim look of the primary trial.
+#' @param zL The Z-test statistic at the interim look of the primary trial.
 #' @param theta The parameter value.
 #' @param kMax The maximum number of stages for the primary trial.
 #' @param informationRates The information rates of the primary trial.

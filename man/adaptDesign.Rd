@@ -34,7 +34,7 @@ adaptDesign(
 
 \item{L}{The interim look of the primary trial.}
 
-\item{zL}{The Z test statistic at the interim look of the primary trial.}
+\item{zL}{The Z-test statistic at the interim look of the primary trial.}
 
 \item{theta}{The parameter value.}
 
