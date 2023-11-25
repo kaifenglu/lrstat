@@ -156,6 +156,11 @@ getDesign(IMax = 72.5, theta = -log(0.7),
           typeBetaSpending = "sfP")
 
 }
+\references{
+Christopher Jennison, Bruce W. Turnbull. Group Sequential Methods with
+Applications to Clinical Trials. Chapman & Hall/CRC: Boca Raton, 2000,
+ISBN:0849303168
+}
 \author{
 Kaifeng Lu, \email{kaifenglu@gmail.com}
 }

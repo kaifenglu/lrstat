@@ -3142,7 +3142,7 @@ List lrpower(const int kMax = 1,
       stop("Elements of userAlphaSpending must be nonnegnative");
     } else if (kMax > 1 && is_true(any(diff(userAlphaSpending) < 0))) { 
       stop("Elements of userAlphaSpending must be nondecreasing");
-    } else if (fabs(userAlphaSpending[kMax-1] - alpha1) > 1e-8) { 
+    } else if (userAlphaSpending[kMax-1] != alpha) { 
       stop("userAlphaSpending must end with specified alpha");
     }
   }
@@ -3551,6 +3551,11 @@ List lrpower(const int kMax = 1,
 //'   \code{IMax}.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//' 
+//' @references 
+//' Christopher Jennison, Bruce W. Turnbull. Group Sequential Methods with
+//' Applications to Clinical Trials. Chapman & Hall/CRC: Boca Raton, 2000,
+//' ISBN:0849303168
 //'
 //' @examples
 //'
@@ -3729,7 +3734,7 @@ List getDesign(const double beta = NA_REAL,
       stop("Elements of userAlphaSpending must be nonnegnative");
     } else if (kMax > 1 && is_true(any(diff(userAlphaSpending) < 0))) {
       stop("Elements of userAlphaSpending must be nondecreasing");
-    } else if (fabs(userAlphaSpending[kMax-1] - alpha1) > 1e-8) {
+    } else if (userAlphaSpending[kMax-1] != alpha) {
       stop("userAlphaSpending must end with specified alpha");
     }
   }
@@ -4059,28 +4064,72 @@ List getDesign(const double beta = NA_REAL,
 //' function and the number and spacing of interim looks.
 //'
 //' @param betaNew The type II error for the secondary trial.
-//' @param INew The maximum information for the secondary trial. Either 
+//' @param INew The maximum information of the secondary trial. Either 
 //' \code{betaNew} or \code{INew} should be provided while the other one 
 //' should be missing.
-//' @param L The interim look of the primary trial.
-//' @param zL The Z-test statistic at the interim look of the primary trial.
+//' @param L The interim adaptation look of the primary trial.
+//' @param zL The z-test statistic at the interim adaptation look of 
+//'   the primary trial.
 //' @param theta The parameter value.
-//' @param kMax The maximum number of stages for the primary trial.
+//' @param IMax The maximum information of the primary trial. Must be 
+//'   provided if \code{futilityBounds} is missing and 
+//'   \code{typeBetaSpending} is not equal to "none".
+//' @param kMax The maximum number of stages of the primary trial.
 //' @param informationRates The information rates of the primary trial.
-//' @param criticalValues The upper boundaries on the Z-test statistic scale
+//' @param efficacyStopping Indicators of whether efficacy stopping is 
+//'   allowed at each stage of the primary trial. Defaults to true 
+//'   if left unspecified.
+//' @param futilityStopping Indicators of whether futility stopping is 
+//'   allowed at each stage of the primary trial. Defaults to true 
+//'   if left unspecified.
+//' @param criticalValues The upper boundaries on the z-test statistic scale
 //'   for efficacy stopping for the primary trial.
-//' @param futilityBounds The lower boundaries on the Z-test statistic scale
-//'   for futility stopping for the primary trial.
+//' @param alpha The significance level of the primary trial. 
+//'   Defaults to 0.025.
+//' @param typeAlphaSpending The type of alpha spending for the primary 
+//'   trial. One of the following: 
+//'   "OF" for O'Brien-Fleming boundaries, 
+//'   "P" for Pocock boundaries, 
+//'   "WT" for Wang & Tsiatis boundaries, 
+//'   "sfOF" for O'Brien-Fleming type spending function, 
+//'   "sfP" for Pocock type spending function, 
+//'   "sfKD" for Kim & DeMets spending function, 
+//'   "sfHSD" for Hwang, Shi & DeCani spending function, 
+//'   "user" for user defined spending, and 
+//'   "none" for no early efficacy stopping. 
+//'   Defaults to "sfOF".
+//' @param parameterAlphaSpending The parameter value of alpha spending
+//'   for the primary trial. Corresponds to Delta for "WT", rho for "sfKD", 
+//'   and gamma for "sfHSD".
+//' @param userAlphaSpending The user defined alpha spending for the primary 
+//'   trial. Cumulative alpha spent up to each stage.
+//' @param futilityBounds The lower boundaries on the z-test statistic scale 
+//'   for futility stopping for the primary trial. Defaults to 
+//'   \code{rep(-6, kMax-1)} if left unspecified.
+//' @param typeBetaSpending The type of beta spending for the primary trial. 
+//'   One of the following: 
+//'   "sfOF" for O'Brien-Fleming type spending function, 
+//'   "sfP" for Pocock type spending function, 
+//'   "sfKD" for Kim & DeMets spending function, 
+//'   "sfHSD" for Hwang, Shi & DeCani spending function, and
+//'   "none" for no early futility stopping. 
+//'   Defaults to "none".
+//' @param parameterBetaSpending The parameter value of beta spending 
+//'   for the primary trial. Corresponds to rho for "sfKD", 
+//'   and gamma for "sfHSD".
+//' @param spendingTime The error spending time of the primary trial. 
+//'   Defaults to missing, in which case, it is the same as 
+//'   \code{informationRates}.
 //' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
 //'   for trial adaptation.
 //' @param kNew The number of looks of the secondary trial.
 //' @param informationRatesNew The spacing of looks of the secondary trial.
 //' @param efficacyStoppingNew The indicators of whether efficacy stopping is 
-//'   allowed at each look of the secondary trial. 
-//'   Defaults to true if left unspecified.
+//'   allowed at each look of the secondary trial. Defaults to true 
+//'   if left unspecified.
 //' @param futilityStoppingNew The indicators of whether futility stopping is 
-//'   allowed at each look of the secondary trial. 
-//'   Defaults to true if left unspecified.
+//'   allowed at each look of the secondary trial. Defaults to true 
+//'   if left unspecified.
 //' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 //'   trial. One of the following: 
 //'   "OF" for O'Brien-Fleming boundaries, 
@@ -4092,9 +4141,9 @@ List getDesign(const double beta = NA_REAL,
 //'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
 //'   "none" for no early efficacy stopping. 
 //'   Defaults to "sfOF".
-//' @param parameterAlphaSpendingNew The parameter value for the alpha 
-//'   spending for the secondary trial. 
-//'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
+//' @param parameterAlphaSpendingNew The parameter value of alpha spending 
+//'   for the secondary trial. Corresponds to Delta for "WT", rho for "sfKD", 
+//'   and gamma for "sfHSD".
 //' @param typeBetaSpendingNew The type of beta spending for the secondary
 //'   trial. One of the following: 
 //'   "sfOF" for O'Brien-Fleming type spending function, 
@@ -4104,13 +4153,12 @@ List getDesign(const double beta = NA_REAL,
 //'   "user" for user defined spending, and 
 //'   "none" for no early futility stopping. 
 //'   Defaults to "none".
-//' @param parameterBetaSpendingNew The parameter value for the beta spending 
-//'   for the secondary trial. 
-//'   Corresponds to rho for "sfKD", and gamma for "sfHSD".
+//' @param parameterBetaSpendingNew The parameter value of beta spending 
+//'   for the secondary trial. Corresponds to rho for "sfKD", 
+//'   and gamma for "sfHSD".
 //' @param userBetaSpendingNew The user defined cumulative beta spending. 
 //'   Cumulative beta spent up to each stage of the secondary trial.
-//' @param spendingTimeNew A vector of length \code{kNew} for the error 
-//'   spending time at each analysis of the secondary trial. 
+//' @param spendingTimeNew The error spending time of the secondary trial. 
 //'   Defaults to missing, in which case, it is the same as 
 //'   \code{informationRatesNew}.
 //'
@@ -4125,6 +4173,17 @@ List getDesign(const double beta = NA_REAL,
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
+//' @references 
+//' Lu Chi, H. M. James Hung, and Sue-Jane Wang. 
+//' Modification of Sample Size in Group Sequential Clinical Trials.
+//' Biometrics 1999;55:853-857.
+//' 
+//' Hans-Helge Muller and Helmut Schafer. 
+//' Adaptive group sequential designs for clinical trials:
+//' Combining the advantages of adaptive and of
+//' classical group sequential approaches. 
+//' Biometrics 2001;57:886-891.
+//' 
 //' @seealso \code{\link{getDesign}}
 //' 
 //' @examples
@@ -4179,10 +4238,20 @@ List adaptDesign(double betaNew = NA_REAL,
                  const int L = NA_INTEGER, 
                  const double zL = NA_REAL, 
                  const double theta = NA_REAL, 
+                 const double IMax = NA_REAL,
                  const int kMax = NA_INTEGER, 
-                 const NumericVector& informationRates = NA_REAL, 
-                 const NumericVector& criticalValues = NA_REAL, 
+                 const NumericVector& informationRates = NA_REAL,
+                 const LogicalVector& efficacyStopping = NA_LOGICAL,
+                 const LogicalVector& futilityStopping = NA_LOGICAL,
+                 const NumericVector& criticalValues = NA_REAL,
+                 const double alpha = 0.025,
+                 const String typeAlphaSpending = "sfOF",
+                 const double parameterAlphaSpending = NA_REAL,
+                 const NumericVector& userAlphaSpending = NA_REAL,
                  const NumericVector& futilityBounds = NA_REAL,
+                 const String typeBetaSpending = "none",
+                 const double parameterBetaSpending = NA_REAL,
+                 const NumericVector& spendingTime = NA_REAL,
                  const bool MullerSchafer = 0, 
                  const int kNew = NA_INTEGER, 
                  const NumericVector& informationRatesNew = NA_REAL, 
@@ -4196,11 +4265,46 @@ List adaptDesign(double betaNew = NA_REAL,
                  const NumericVector& spendingTimeNew = NA_REAL) {
   
   NumericVector t = clone(informationRates);
-  NumericVector futilityBounds1 = clone(futilityBounds);
+  LogicalVector es = clone(efficacyStopping);
+  LogicalVector fs = clone(futilityStopping);
+  NumericVector b = clone(criticalValues);
+  NumericVector a = clone(futilityBounds);
+  NumericVector st = clone(spendingTime);
+  
   NumericVector tNew = clone(informationRatesNew);
-  LogicalVector efficacyStopping1 = clone(efficacyStoppingNew);
-  LogicalVector futilityStopping1 = clone(futilityStoppingNew);
-  NumericVector spendingTime1 = clone(spendingTimeNew);
+  LogicalVector esNew = clone(efficacyStoppingNew);
+  LogicalVector fsNew = clone(futilityStoppingNew);
+  NumericVector stNew = clone(spendingTimeNew);
+  
+  double alpha1 = alpha;
+  
+  std::string asf = typeAlphaSpending;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  double asfpar = parameterAlphaSpending;
+  
+  std::string bsf = typeBetaSpending;
+  std::for_each(bsf.begin(), bsf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  double bsfpar = parameterBetaSpending;
+  
+  std::string asfNew = typeAlphaSpendingNew;
+  std::for_each(asfNew.begin(), asfNew.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  double asfparNew = parameterAlphaSpendingNew;
+  
+  std::string bsfNew = typeBetaSpendingNew;
+  std::for_each(bsfNew.begin(), bsfNew.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  double bsfparNew = parameterBetaSpendingNew;
   
   if (R_isnancpp(betaNew) && R_isnancpp(INew)) {
     stop("betaNew and INew cannot be both missing");
@@ -4239,7 +4343,7 @@ List adaptDesign(double betaNew = NA_REAL,
   }
   
   if (kMax <= L) {
-    stop("kMax must be a positive integer greater than L");
+    stop("kMax must be greater than L");
   }
   
   if (is_false(any(is_na(informationRates)))) {
@@ -4257,10 +4361,81 @@ List adaptDesign(double betaNew = NA_REAL,
     t = as<NumericVector>(tem)/(kMax+0.0);
   }
   
-  if (is_true(any(is_na(criticalValues)))) {
-    stop("criticalValues must be provided");
-  } else if (criticalValues.size() != kMax) {
-    stop("Invalid length for criticalValues");
+  if (is_false(any(is_na(efficacyStopping)))) {
+    if (efficacyStopping.size() != kMax) {
+      stop("Invalid length for efficacyStopping");
+    } else if (efficacyStopping[kMax-1] != 1) {
+      stop("efficacyStopping must end with 1");
+    } else if (is_false(all((efficacyStopping == 1) | 
+      (efficacyStopping == 0)))) {
+      stop("Elements of efficacyStopping must be 1 or 0");
+    }
+  } else {
+    es = rep(1, kMax);
+  }
+  
+  if (is_false(any(is_na(futilityStopping)))) {
+    if (futilityStopping.size() != kMax) {
+      stop("Invalid length for futilityStopping");
+    } else if (futilityStopping[kMax-1] != 1) {
+      stop("futilityStopping must end with 1");
+    } else if (is_false(all((futilityStopping == 1) | 
+      (futilityStopping == 0)))) {
+      stop("Elements of futilityStopping must be 1 or 0");
+    }
+  } else {
+    fs = rep(1, kMax);
+  }
+  
+  if (is_false(any(is_na(criticalValues)))) {
+    if (criticalValues.size() != kMax) {
+      stop("Invalid length for criticalValues");
+    }
+    
+    NumericVector u(kMax), l(kMax, -6.0), theta0(kMax);
+    for (int i=0; i<kMax; i++) {
+      u[i] = criticalValues[i];
+      if (!es[i]) u[i] = 6.0;
+    }
+    
+    List probs = exitprobcpp(u, l, theta0, t);
+    alpha1 = sum(NumericVector(probs[0]));
+  }
+  
+  if (!R_isnancpp(alpha1)) {
+    if (alpha1 < 0.00001 || alpha1 >= 0.5) {
+      stop("alpha must lie in [0.00001, 0.5)");
+    }
+  } else {
+    stop("alpha must be provided for missing criticalValues");
+  }
+  
+  if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
+      asf=="wt" || asf=="sfof" || asf=="sfp" ||
+      asf=="sfkd" || asf=="sfhsd" || asf=="user" || asf=="none")) {
+    stop("Invalid value for typeAlphaSpending");
+  }
+  
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+    stop("Missing value for parameterAlphaSpending");
+  }
+  
+  if (asf=="sfkd" && asfpar <= 0) {
+    stop ("parameterAlphaSpending must be positive for sfKD");
+  }
+  
+  if (is_true(any(is_na(criticalValues))) && asf=="user") {
+    if (is_true(any(is_na(userAlphaSpending)))) {
+      stop("userAlphaSpending must be specified");
+    } else if (userAlphaSpending.size() < kMax) {
+      stop("Insufficient length of userAlphaSpending");
+    } else if (userAlphaSpending[0] < 0) {
+      stop("Elements of userAlphaSpending must be nonnegnative");
+    } else if (kMax > 1 && is_true(any(diff(userAlphaSpending) < 0))) {
+      stop("Elements of userAlphaSpending must be nondecreasing");
+    } else if (userAlphaSpending[kMax-1] != alpha) {
+      stop("userAlphaSpending must end with specified alpha");
+    }
   }
   
   if (is_false(any(is_na(futilityBounds)))) {
@@ -4268,9 +4443,6 @@ List adaptDesign(double betaNew = NA_REAL,
         futilityBounds.size() == kMax)) {
       stop("Invalid length for futilityBounds");
     }
-  } else {
-    futilityBounds1 = rep(-6.0, kMax);
-    futilityBounds1[kMax-1] = criticalValues[kMax-1];
   }
   
   if (is_false(any(is_na(criticalValues))) &&
@@ -4287,19 +4459,33 @@ List adaptDesign(double betaNew = NA_REAL,
     }
   }
   
-  std::string asf = typeAlphaSpendingNew;
-  std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
-  });
+  if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfof" || bsf=="sfp" ||
+      bsf=="sfkd" || bsf=="sfhsd" || bsf=="none")) {
+    stop("Invalid value for typeBetaSpending");
+  }
   
-  double asfpar = parameterAlphaSpendingNew;
+  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
+    stop("Missing value for parameterBetaSpending");
+  }
   
-  std::string bsf = typeBetaSpendingNew;
-  std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = std::tolower(c);
-  });
+  if (bsf=="sfkd" && bsfpar <= 0) {
+    stop ("parameterBetaSpending must be positive for sfKD");
+  }
   
-  double bsfpar = parameterBetaSpendingNew;
+  if (is_false(any(is_na(spendingTime)))) {
+    if (spendingTime.size() != kMax) {
+      stop("Invalid length for spendingTime");
+    } else if (spendingTime[0] <= 0) {
+      stop("Elements of spendingTime must be positive");
+    } else if (kMax > 1 && is_true(any(diff(spendingTime) <= 0))) {
+      stop("Elements of spendingTime must be increasing");
+    } else if (spendingTime[kMax-1] != 1) {
+      stop("spendingTime must end with 1");
+    }
+  } else {
+    st = clone(t);
+  }
+  
   
   if (MullerSchafer) {
     if (R_isnancpp(kNew)) {
@@ -4331,7 +4517,7 @@ List adaptDesign(double betaNew = NA_REAL,
         stop("Elements of efficacyStoppingNew must be 1 or 0");
       }
     } else {
-      efficacyStopping1 = rep(1, kNew);
+      esNew = rep(1, kNew);
     }
     
     if (is_false(any(is_na(futilityStoppingNew)))) {
@@ -4344,41 +4530,42 @@ List adaptDesign(double betaNew = NA_REAL,
         stop("Elements of futilityStoppingNew must be 1 or 0");
       }
     } else {
-      futilityStopping1 = rep(1, kNew);
+      fsNew = rep(1, kNew);
     }
     
-    if (!(asf=="of" || asf=="p" || asf=="wt" || 
-        asf=="sfof" || asf=="sfp" ||
-        asf=="sfkd" || asf=="sfhsd" || asf=="none")) {
+    if (!(asfNew=="of" || asfNew=="p" || asfNew=="wt" || 
+        asfNew=="sfof" || asfNew=="sfp" ||
+        asfNew=="sfkd" || asfNew=="sfhsd" || asfNew=="none")) {
       stop("Invalid value for typeAlphaSpendingNew");
     }
     
-    if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && 
-        R_isnancpp(asfpar)) {
+    if ((asfNew=="wt" || asfNew=="sfkd" || asfNew=="sfhsd") && 
+        R_isnancpp(asfparNew)) {
       stop("Missing value for parameterAlphaSpendingNew");
     }
     
-    if (asf=="sfkd" && asfpar <= 0) {
+    if (asfNew=="sfkd" && asfparNew <= 0) {
       stop ("parameterAlphaSpendingNew must be positive for sfKD");
     }
     
-    if (R_isnancpp(INew) && !(bsf=="sfof" || bsf=="sfp" || bsf=="sfkd" || 
-        bsf=="sfhsd" || bsf=="user" || bsf=="none")) {
+    if (R_isnancpp(INew) && !(bsfNew=="sfof" || bsfNew=="sfp" || 
+        bsfNew=="sfkd" || bsfNew=="sfhsd" || 
+        bsfNew=="user" || bsfNew=="none")) {
       stop("Invalid value for typeBetaSpendingNew");
-    } else if (!(bsf=="sfof" || bsf=="sfp" || bsf=="sfkd" || 
-      bsf=="sfhsd" || bsf=="none")) {
+    } else if (!(bsfNew=="sfof" || bsfNew=="sfp" || bsfNew=="sfkd" || 
+      bsfNew=="sfhsd" || bsfNew=="none")) {
       stop("Invalid value for typeBetaSpendingNew");
     }
     
-    if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
+    if ((bsfNew=="sfkd" || bsfNew=="sfhsd") && R_isnancpp(bsfparNew)) {
       stop("Missing value for parameterBetaSpendingNew");
     }
     
-    if (bsf=="sfkd" && bsfpar <= 0) {
+    if (bsfNew=="sfkd" && bsfparNew <= 0) {
       stop ("parameterBetaSpendingNew must be positive for sfKD");
     }
     
-    if (R_isnancpp(INew) && bsf=="user") {
+    if (R_isnancpp(INew) && bsfNew=="user") {
       if (is_true(any(is_na(userBetaSpendingNew)))) {
         stop("userBetaSpendingNew must be specified");
       } else if (userBetaSpendingNew.size() < kNew) {
@@ -4403,8 +4590,43 @@ List adaptDesign(double betaNew = NA_REAL,
         stop("spendingTimeNew must end with 1");
       }
     } else {
-      spendingTime1 = clone(tNew);
+      stNew = clone(tNew);
     }
+  }
+  
+  
+  // obtain critical values for the primary trial
+  if (is_true(any(is_na(criticalValues)))) {
+    b = getBoundcpp(kMax, t, alpha1, asf, asfpar, userAlphaSpending, st, es);
+  }
+  
+  // obtain futility bounds for the primary trial
+  if (kMax > 1) {
+    if (is_true(any(is_na(futilityBounds))) && bsf=="none") {
+      a = rep(-6.0, kMax);
+      a[kMax-1] = b[kMax-1];
+    } else if (is_false(any(is_na(futilityBounds))) && 
+      a.size() == kMax-1) {
+      a.push_back(b[kMax-1]);
+    }
+  } else {
+    if (is_true(any(is_na(futilityBounds)))) {
+      a = b[kMax-1];
+    }
+  }
+  
+  if (is_true(any(is_na(a)))) {
+    if (R_isnancpp(IMax)) {
+      stop("IMax must be provided");
+    }
+    
+    if (IMax <= 0) {
+      stop("IMax must be positive");
+    }
+    
+    NumericVector theta1(kMax, theta);
+    List out = getPower(alpha1, kMax, b, theta1, IMax*t, bsf, bsfpar, st, fs);
+    a = out[1];
   }
   
   
@@ -4414,8 +4636,8 @@ List adaptDesign(double betaNew = NA_REAL,
     _["theta"] = theta,
     _["kMax"] = kMax,
     _["informationRates"] = t,
-    _["efficacyBounds"] = criticalValues,
-    _["futilityBounds"] = futilityBounds1,
+    _["efficacyBounds"] = b,
+    _["futilityBounds"] = a,
     _["MullerSchafer"] = MullerSchafer);
   
   
@@ -4425,23 +4647,25 @@ List adaptDesign(double betaNew = NA_REAL,
   for (int l=0; l<k1; l++) {
     t1[l] = (t[l+L] - t[L-1])/(1 - t[L-1]);
     r1[l] = t[L-1]/t[l+L];
-    b1[l] = (criticalValues[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
+    b1[l] = (b[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
+    if (!es[l+L]) b1[l] = 6.0;
   }
   
   if (!MullerSchafer) {
     for (int l=0; l<k1; l++) {
-      a1[l] = (futilityBounds1[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
+      a1[l] = (a[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
+      if (!fs[l+L]) a1[l] = -6.0;
     }
     
-    LogicalVector efficacyStopping1(k1, 1), futilityStopping1(k1, 1);
+    IntegerVector idx = Range(L, kMax-1);
+    LogicalVector esNew = es[idx];
+    LogicalVector fsNew = fs[idx];
     
-    des2 = getDesign(betaNew, INew, theta, k1, t1, 
-                     efficacyStopping1, futilityStopping1,
+    des2 = getDesign(betaNew, INew, theta, k1, t1, esNew, fsNew, 
                      b1, NA_REAL, typeAlphaSpendingNew, 
                      parameterAlphaSpendingNew, 0,
-                     a1, typeBetaSpendingNew, 
-                     parameterBetaSpendingNew, 
-                     userBetaSpendingNew, spendingTime1);
+                     a1, typeBetaSpendingNew, parameterBetaSpendingNew, 
+                     userBetaSpendingNew, stNew);
   } else {
     List probs = exitprobcpp(b1, a1, theta0, t1);
     double alphaNew = sum(NumericVector(probs[0]));
@@ -4450,16 +4674,13 @@ List adaptDesign(double betaNew = NA_REAL,
       stop("betaNew must be less than 1 minus conditional type I error");
     }
     
-    b1.fill(NA_REAL);
-    a1.fill(NA_REAL);
+    NumericVector b1New(kNew, NA_REAL), a1New(kNew, NA_REAL);
     
-    des2 = getDesign(betaNew, INew, theta, kNew, tNew, 
-                     efficacyStopping1, futilityStopping1, 
-                     b1, alphaNew, typeAlphaSpendingNew, 
+    des2 = getDesign(betaNew, INew, theta, kNew, tNew, esNew, fsNew, 
+                     b1New, alphaNew, typeAlphaSpendingNew, 
                      parameterAlphaSpendingNew, 0,
-                     a1, typeBetaSpendingNew, 
-                     parameterBetaSpendingNew, 
-                     userBetaSpendingNew, spendingTime1);
+                     a1New, typeBetaSpendingNew, parameterBetaSpendingNew, 
+                     userBetaSpendingNew, stNew);
   }
   
   List result = List::create(

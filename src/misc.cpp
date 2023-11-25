@@ -1716,11 +1716,11 @@ NumericMatrix fmodmixcpp(const NumericMatrix& p,
 }
 
 
-double f_pvalue(const double theta, 
-                const NumericVector& b = NA_REAL, 
-                const NumericVector& I = NA_REAL,
-                const int L = NA_INTEGER, 
-                const double zL = NA_REAL) {
+double f_pvalue(const double theta,
+                const int L = NA_INTEGER,
+                const double zL = NA_REAL,
+                const NumericVector& b = NA_REAL,
+                const NumericVector& I = NA_REAL) {
   
   NumericVector upper(L), lower(L, -6.0), mu(L, theta), information(L);
   
@@ -1743,11 +1743,32 @@ double f_pvalue(const double theta,
 //' @description Obtains the p-value, median unbiased point estimate, and 
 //' confidence interval after the end of a group sequential trial.
 //'
-//' @param b The upper boundaries on the Z-test statistic scale
-//'   for efficacy stopping.
-//' @param I The vector of cumulative information.
-//' @param L The interim look.
-//' @param zL The Z-test statistic at the interim look.
+//' @param L The termination look.
+//' @param zL The z-test statistic at the termination look.
+//' @param IMax The maximum information of the trial.
+//' @param informationRates The information rates up to look \code{L}.
+//' @param efficacyStopping Indicators of whether efficacy stopping is 
+//'   allowed at each stage up to look \code{L}. 
+//'   Defaults to true if left unspecified.
+//' @param criticalValues The upper boundaries on the z-test statistic scale
+//'   for efficacy stopping up to look \code{L}.
+//' @inheritParams param_alpha
+//' @param typeAlphaSpending The type of alpha spending. 
+//'   One of the following: 
+//'   "OF" for O'Brien-Fleming boundaries, 
+//'   "P" for Pocock boundaries, 
+//'   "WT" for Wang & Tsiatis boundaries, 
+//'   "sfOF" for O'Brien-Fleming type spending function, 
+//'   "sfP" for Pocock type spending function, 
+//'   "sfKD" for Kim & DeMets spending function, 
+//'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
+//'   "none" for no early efficacy stopping. 
+//'   Defaults to "sfOF".
+//' @param parameterAlphaSpending The parameter value of alpha spending. 
+//'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
+//' @param spendingTime The error spending time up to look \code{L}. 
+//'   Defaults to missing, in which case, it is the same as 
+//'   \code{informationRates}.
 //'
 //' @return A list with the following components: 
 //' 
@@ -1762,7 +1783,12 @@ double f_pvalue(const double theta,
 //' * \code{upper}: Upper bound of confidence interval.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
+//' 
+//' @references 
+//' Anastasios A. Tsiatis, Gary L. Rosner and Cyrus R. Mehta. 
+//' Exact confidence intervals following a group sequential test. 
+//' Biometrics 1984;40:797-03.
+//' 
 //' @examples
 //'
 //' # group sequential design with 90% power to detect delta = 6
@@ -1780,77 +1806,153 @@ double f_pvalue(const double theta,
 //' sigma1 = 20
 //' zL = delta1/sqrt(4/n1*sigma1^2)
 //' 
-//' # information based on estimated nuisance parameter
-//' b = des1$byStageResults$efficacyBounds
-//' t = des1$byStageResults$informationRates
-//' I = n*t/(4*sigma1^2)
-//' 
-//' # p-value, point estimate, and confidence interval
-//' getCI(b, I, L, zL) 
+//' # confidence interval
+//' getCI(L = L, zL = zL, IMax = n/(4*sigma1^2), 
+//'       informationRates = c(1/3, 2/3), alpha = 0.05, 
+//'       typeAlphaSpending = "sfHSD", parameterAlphaSpending = -4)
 //' 
 //' @export
 // [[Rcpp::export]]
-List getCI(const NumericVector& b = NA_REAL, 
-           const NumericVector& I = NA_REAL,
-           const int L = NA_INTEGER, 
-           const double zL = NA_REAL) {
+List getCI(const int L = NA_INTEGER,
+           const double zL = NA_REAL,
+           const double IMax = NA_REAL,
+           const NumericVector& informationRates = NA_REAL,
+           const LogicalVector& efficacyStopping = NA_LOGICAL,
+           const NumericVector& criticalValues = NA_REAL,
+           const double alpha = 0.025,
+           const String typeAlphaSpending = "sfOF",
+           const double parameterAlphaSpending = NA_REAL,
+           const NumericVector& spendingTime = NA_REAL) {
   
-  if (is_true(any(is_na(b)))) {
-    stop("b must be provided");
-  }
-  
-  if (is_true(any(is_na(I)))) {
-    stop("I must be provided");
-  }
-  
-  if (b.size() < L) {
-    stop("Invalid length for b");
-  }
-  
-  if (I.size() < L) {
-    stop("Invalid length for I");
-  } else if (I[0] <= 0) {
-    stop("Elements of I must be positive");
-  } else if (I.size() > 1 && is_true(any(diff(I) <= 0))) {
-    stop("Elements of I must be increasing");
-  }
-  
+  NumericVector t = clone(informationRates);
+  LogicalVector es = clone(efficacyStopping);
+  NumericVector b = clone(criticalValues);
+  NumericVector st = clone(spendingTime);
+
   if (R_isnancpp(L)) {
     stop("L must be provided");
-  }
-  
-  if (R_isnancpp(zL)) {
-    stop("zL must be provided");
   }
   
   if (L < 1) {
     stop("L must be a positive integer");
   }
   
-  double pvalue = f_pvalue(0, b, I, L, zL);
+  if (R_isnancpp(zL)) {
+    stop("zL must be provided");
+  }
   
-  int kMax = b.size();
-  NumericVector a(kMax, -6.0), zero(kMax); 
-  List probs = exitprobcpp(b, a, zero, I);
-  double cilevel = 1 - 2*sum(NumericVector(probs[0]));
+  if (R_isnancpp(IMax)) {
+    stop("IMax must be provided");
+  }
+  
+  if (IMax <= 0) {
+    stop("IMax must be positive");
+  }
+  
+  if (is_false(any(is_na(informationRates)))) {
+    if (informationRates.size() != L) {
+      stop("Invalid length for informationRates");
+    } else if (informationRates[0] <= 0) {
+      stop("Elements of informationRates must be positive");
+    } else if (L > 1 && is_true(any(diff(informationRates) <= 0))) {
+      stop("Elements of informationRates must be increasing");
+    } else if (informationRates[L-1] > 1) {
+      stop("informationRates must not exceed 1");
+    }
+  } else {
+    stop("informationRates must be provided");
+  }
+  
+  if (is_false(any(is_na(efficacyStopping)))) {
+    if (efficacyStopping.size() != L) {
+      stop("Invalid length for efficacyStopping");
+    } else if (efficacyStopping[L-1] != 1) {
+      stop("efficacyStopping must end with 1");
+    } else if (is_false(all((efficacyStopping == 1) | 
+      (efficacyStopping == 0)))) {
+      stop("Elements of efficacyStopping must be 1 or 0");
+    }
+  } else {
+    es = rep(1, L);
+  }
+  
+  
+  if (is_false(any(is_na(criticalValues)))) {
+    if (criticalValues.size() != L) {
+      stop("Invalid length for criticalValues");
+    }
+  }
+  
+  if (R_isnancpp(alpha)) {
+    stop("alpha must be provided");
+  }
+  
+  if (alpha < 0.00001 || alpha >= 0.5) {
+    stop("alpha must lie in [0.00001, 0.5)");
+  }
+  
+  std::string asf = typeAlphaSpending;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  double asfpar = parameterAlphaSpending;
+  
+  if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
+      asf=="wt" || asf=="sfof" || asf=="sfp" ||
+      asf=="sfkd" || asf=="sfhsd" || asf=="none")) {
+    stop("Invalid value for typeAlphaSpending");
+  }
+  
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+    stop("Missing value for parameterAlphaSpending");
+  }
+  
+  if (asf=="sfkd" && asfpar <= 0) {
+    stop ("parameterAlphaSpending must be positive for sfKD");
+  }
+  
+  if (is_false(any(is_na(spendingTime)))) {
+    if (spendingTime.size() != L) {
+      stop("Invalid length for spendingTime");
+    } else if (spendingTime[0] <= 0) {
+      stop("Elements of spendingTime must be positive");
+    } else if (L > 1 && is_true(any(diff(spendingTime) <= 0))) {
+      stop("Elements of spendingTime must be increasing");
+    } else if (spendingTime[L-1] > 1) {
+      stop("spendingTime must not exceed 1");
+    }
+  } else {
+    st = clone(t);
+  }
+  
+  if (is_true(any(is_na(criticalValues)))) {
+    b = getBoundcpp(L, t, alpha, asf, asfpar, 0, st, es);
+  }
+  
+  NumericVector I = IMax*t;
+  
+  double pvalue = f_pvalue(0, L, zL, b, I);
+  
+  double cilevel = 1-2*alpha;
   
   NumericVector interval(2);
   interval[0] = (zL - 6)/sqrt(I[L-1]);
   interval[1] = (zL + 6)/sqrt(I[L-1]);
   double tol = 0.0001;
   
-  auto f = [b, I, L, zL](double theta)->double {
-    return f_pvalue(theta, b, I, L, zL) - 0.5;
+  auto f = [L, zL, b, I](double theta)->double {
+    return f_pvalue(theta, L, zL, b, I) - 0.5;
   };
   double thetahat = brent(f, interval[0], interval[1], tol);
   
-  auto f1 = [b, I, L, zL, cilevel](double theta)->double {
-    return f_pvalue(theta, b, I, L, zL) - (1-cilevel)/2;
+  auto f1 = [L, zL, b, I, cilevel](double theta)->double {
+    return f_pvalue(theta, L, zL, b, I) - (1-cilevel)/2;
   };
   double lower = brent(f1, interval[0], thetahat, tol);
   
-  auto f2 = [b, I, L, zL, cilevel](double theta)->double {
-    return f_pvalue(theta, b, I, L, zL) - (1+cilevel)/2;
+  auto f2 = [L, zL, b, I, cilevel](double theta)->double {
+    return f_pvalue(theta, L, zL, b, I) - (1+cilevel)/2;
   };
   double upper = brent(f2, thetahat, interval[1], tol);
   
@@ -1869,17 +1971,32 @@ List getCI(const NumericVector& b = NA_REAL,
 //' @description Obtains the repeated confidence interval 
 //' for a group sequential trial.
 //'
-//' @param IMax The maximum information.
-//' @inheritParams param_kMax
-//' @param informationRates The information rates.
+//' @param L The look of interest.
+//' @param zL The z-test statistic at the look.
+//' @param IMax The maximum information of the trial.
+//' @param informationRates The information rates up to look \code{L}.
+//' @param efficacyStopping Indicators of whether efficacy stopping is 
+//'   allowed at each stage up to look \code{L}. Defaults to true 
+//'   if left unspecified.
+//' @param criticalValues The upper boundaries on the z-test statistic scale
+//'   for efficacy stopping up to look \code{L}.
 //' @inheritParams param_alpha
-//' @inheritParams param_typeAlphaSpending
-//' @inheritParams param_parameterAlphaSpending
-//' @param spendingTime A vector of length \code{kMax} for the error spending 
-//'   time at each analysis. Defaults to missing, in which case, it is the 
-//'   same as \code{informationRates}.
-//' @param L The interim look.
-//' @param zL The Z-test statistic at the interim look.
+//' @param typeAlphaSpending The type of alpha spending. 
+//'   One of the following: 
+//'   "OF" for O'Brien-Fleming boundaries, 
+//'   "P" for Pocock boundaries, 
+//'   "WT" for Wang & Tsiatis boundaries, 
+//'   "sfOF" for O'Brien-Fleming type spending function, 
+//'   "sfP" for Pocock type spending function, 
+//'   "sfKD" for Kim & DeMets spending function, 
+//'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
+//'   "none" for no early efficacy stopping. 
+//'   Defaults to "sfOF".
+//' @param parameterAlphaSpending The parameter value of alpha spending. 
+//'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
+//' @param spendingTime The error spending time up to look \code{L}. 
+//'   Defaults to missing, in which case, it is the same as 
+//'   \code{informationRates}.
 //'
 //' @return A list with the following components: 
 //' 
@@ -1894,7 +2011,13 @@ List getCI(const NumericVector& b = NA_REAL,
 //' * \code{upper}: Upper bound of repeated confidence interval.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
+//' 
+//' @references 
+//' Christopher Jennison and Bruce W. Turnbull. 
+//' Interim analyses: the repeated confidence interval approach 
+//' (with discussion). 
+//' J R Stat Soc Series B. 1989;51:305-361.
+//' 
 //' @examples
 //'
 //' # group sequential design with 90% power to detect delta = 6
@@ -1912,30 +2035,40 @@ List getCI(const NumericVector& b = NA_REAL,
 //' sigma1 = 20
 //' zL = delta1/sqrt(4/n1*sigma1^2)
 //' 
-//' # information based on estimated nuisance parameter
-//' b = des1$byStageResults$efficacyBounds
-//' t = des1$byStageResults$informationRates
-//' I = n*t/(4*sigma1^2)
-//' 
-//' # repeated confidence interval
-//' getRCI(IMax = n/(4*sigma1^2), kMax = 3, alpha = 0.05, 
-//'        typeAlphaSpending = "sfHSD", parameterAlphaSpending = -4, 
-//'        L = L, zL = zL)
+//' # confidence interval
+//' getRCI(L = L, zL = zL, IMax = n/(4*sigma1^2), 
+//'        informationRates = c(1/3, 2/3), alpha = 0.05, 
+//'        typeAlphaSpending = "sfHSD", parameterAlphaSpending = -4)
 //' 
 //' @export
 // [[Rcpp::export]]
-List getRCI(const double IMax = NA_REAL,
-            const int kMax = NA_REAL,
+List getRCI(const int L = NA_INTEGER,
+            const double zL = NA_REAL,
+            const double IMax = NA_REAL,
             const NumericVector& informationRates = NA_REAL,
+            const LogicalVector& efficacyStopping = NA_LOGICAL,
+            const NumericVector& criticalValues = NA_REAL,
             const double alpha = 0.025,
             const String typeAlphaSpending = "sfOF",
             const double parameterAlphaSpending = NA_REAL,
-            const NumericVector spendingTime = NA_REAL,
-            const int L = NA_INTEGER, 
-            const double zL = NA_REAL) {
+            const NumericVector& spendingTime = NA_REAL) {
   
   NumericVector t = clone(informationRates);
-  NumericVector s = clone(spendingTime);
+  LogicalVector es = clone(efficacyStopping);
+  NumericVector b = clone(criticalValues);
+  NumericVector st = clone(spendingTime);
+  
+  if (R_isnancpp(L)) {
+    stop("L must be provided");
+  }
+  
+  if (L < 1) {
+    stop("L must be a positive integer");
+  }
+  
+  if (R_isnancpp(zL)) {
+    stop("zL must be provided");
+  }
   
   if (R_isnancpp(IMax)) {
     stop("IMax must be provided");
@@ -1945,27 +2078,38 @@ List getRCI(const double IMax = NA_REAL,
     stop("IMax must be positive");
   }
   
-  if (R_isnancpp(kMax)) {
-    stop("kMax must be provided");
-  }
-  
-  if (kMax < 1) {
-    stop("kMax must be a positive integer");
-  }
-  
   if (is_false(any(is_na(informationRates)))) {
-    if (informationRates.size() != kMax) {
+    if (informationRates.size() != L) {
       stop("Invalid length for informationRates");
     } else if (informationRates[0] <= 0) {
       stop("Elements of informationRates must be positive");
-    } else if (kMax > 1 && is_true(any(diff(informationRates) <= 0))) {
+    } else if (L > 1 && is_true(any(diff(informationRates) <= 0))) {
       stop("Elements of informationRates must be increasing");
-    } else if (informationRates[kMax-1] != 1) {
-      stop("informationRates must end with 1");
+    } else if (informationRates[L-1] > 1) {
+      stop("informationRates must not exceed 1");
     }
   } else {
-    IntegerVector tem = seq_len(kMax);
-    t = as<NumericVector>(tem)/(kMax+0.0);
+    stop("informationRates must be provided");
+  }
+  
+  if (is_false(any(is_na(efficacyStopping)))) {
+    if (efficacyStopping.size() != L) {
+      stop("Invalid length for efficacyStopping");
+    } else if (efficacyStopping[L-1] != 1) {
+      stop("efficacyStopping must end with 1");
+    } else if (is_false(all((efficacyStopping == 1) | 
+      (efficacyStopping == 0)))) {
+      stop("Elements of efficacyStopping must be 1 or 0");
+    }
+  } else {
+    es = rep(1, L);
+  }
+  
+  
+  if (is_false(any(is_na(criticalValues)))) {
+    if (criticalValues.size() != L) {
+      stop("Invalid length for criticalValues");
+    }
   }
   
   if (R_isnancpp(alpha)) {
@@ -1983,7 +2127,8 @@ List getRCI(const double IMax = NA_REAL,
   
   double asfpar = parameterAlphaSpending;
   
-  if (!(asf=="of" || asf=="p" || asf=="wt" || asf=="sfof" || asf=="sfp" ||
+  if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
+      asf=="wt" || asf=="sfof" || asf=="sfp" ||
       asf=="sfkd" || asf=="sfhsd" || asf=="none")) {
     stop("Invalid value for typeAlphaSpending");
   }
@@ -1997,52 +2142,36 @@ List getRCI(const double IMax = NA_REAL,
   }
   
   if (is_false(any(is_na(spendingTime)))) {
-    if (spendingTime.size() != kMax) {
+    if (spendingTime.size() != L) {
       stop("Invalid length for spendingTime");
     } else if (spendingTime[0] <= 0) {
       stop("Elements of spendingTime must be positive");
-    } else if (kMax > 1 && is_true(any(diff(spendingTime) <= 0))) {
+    } else if (L > 1 && is_true(any(diff(spendingTime) <= 0))) {
       stop("Elements of spendingTime must be increasing");
-    } else if (spendingTime[kMax-1] != 1) {
-      stop("spendingTime must end with 1");
+    } else if (spendingTime[L-1] > 1) {
+      stop("spendingTime must not exceed 1");
     }
   } else {
-    s = clone(t);
+    st = clone(t);
   }
   
-  if (R_isnancpp(L)) {
-    stop("L must be provided");
+  if (is_true(any(is_na(criticalValues)))) {
+    b = getBoundcpp(L, t, alpha, asf, asfpar, 0, st, es);
   }
-  
-  if (R_isnancpp(zL)) {
-    stop("zL must be provided");
-  }
-  
-  if (L < 1) {
-    stop("L must be a positive integer");
-  }
-  
-  if (kMax < L) {
-    stop("kMax must be greater than or equal to L");
-  }
-  
   
   NumericVector I = IMax*t;
-  LogicalVector x(kMax, 1);
-  IntegerVector i = Range(0, L-1);
-  NumericVector b = getBoundcpp(L, t[i], alpha, asf, asfpar, 0, s[i], x[i]);
   
   // repeated confidence interval
   double lower = (zL - b[L-1])/sqrt(I[L-1]);
   double upper = (zL + b[L-1])/sqrt(I[L-1]);
   
   // point estimate is the lower bound for alpha = 0.5
-  NumericVector u = getBoundcpp(L, t[i], 0.5, asf, asfpar, 0, s[i], x[i]);
+  NumericVector u = getBoundcpp(L, t, 0.5, asf, asfpar, 0, st, es);
   double thetahat = (zL - u[L-1])/sqrt(I[L-1]);
   
   // repeated p-value is alpha for which the lower bound of theta is zero
-  auto f = [L, zL, t, asf, asfpar, s, x, i](double aval)->double {
-    NumericVector u = getBoundcpp(L, t[i], aval, asf, asfpar, 0, s[i], x[i]);  
+  auto f = [L, zL, t, asf, asfpar, st, es](double aval)->double {
+    NumericVector u = getBoundcpp(L, t, aval, asf, asfpar, 0, st, es);  
     return zL - u[L-1];
   };
   
@@ -2066,11 +2195,11 @@ List getRCI(const double IMax = NA_REAL,
 }
 
 
-double f_astar(const double theta, 
-               const NumericVector& b2, 
-               const NumericVector& I2, 
-               const int L2, 
-               const double zL2) {
+double f_astar(const double theta,
+               const int L2,
+               const double zL2,
+               const NumericVector& b2,
+               const NumericVector& I2) {
   
   NumericVector upper(L2), lower(L2, -6.0), mu(L2, theta), information(L2);
   
@@ -2088,18 +2217,18 @@ double f_astar(const double theta,
 }
 
 
-List f_bwimage(const double theta, 
-               const int kMax, 
-               const NumericVector& b, 
-               const NumericVector& I, 
-               const int L, 
-               const double zL, 
-               const NumericVector& b2, 
-               const NumericVector& I2, 
-               const int L2, 
-               const double zL2) {
+List f_bwimage(const double theta,
+               const int kMax,
+               const int L,
+               const double zL,
+               const NumericVector& b,
+               const NumericVector& I,
+               const int L2,
+               const double zL2,
+               const NumericVector& b2,
+               const NumericVector& I2) {
   
-  double astar = f_astar(theta, b2, I2, L2, zL2);
+  double astar = f_astar(theta, L2, zL2, b2, I2);
   int k1 = kMax - L;
   
   NumericVector b1(k1), a1(k1, -6.0), mu(k1, theta), I1(k1);
@@ -2111,6 +2240,8 @@ List f_bwimage(const double theta,
   List probs = exitprobcpp(b1, a1, mu, I1);
   NumericVector pu = NumericVector(probs[0]);
   
+  // find the interval that contains the rejection probability 
+  // in the secondary trial under the shift null
   NumericVector p(k1+1);
   p[0] = 0;
   for (int l=0; l<k1; l++) {
@@ -2121,6 +2252,7 @@ List f_bwimage(const double theta,
   IntegerVector js = findInterval2(astars, p);
   int j = js[0];
   
+  // find the z-test statistic value yielding the rejection probability
   double z1j;
   if (j==1) {
     z1j = R::qnorm(1 - astar, 0, 1, 1, 0);
@@ -2156,21 +2288,21 @@ List f_bwimage(const double theta,
 }
 
 
-double f_bwpvalue(const double theta, 
-                  const int kMax = NA_INTEGER, 
-                  const NumericVector& b = NA_REAL, 
+double f_bwpvalue(const double theta,
+                  const int kMax = NA_INTEGER,
+                  const int L = NA_INTEGER,
+                  const double zL = NA_REAL,
+                  const NumericVector& b = NA_REAL,
                   const NumericVector& I = NA_REAL,
-                  const int L = NA_INTEGER, 
-                  const double zL = NA_REAL, 
-                  const NumericVector& b2 = NA_REAL, 
-                  const NumericVector& I2 = NA_REAL,
-                  const int L2 = NA_INTEGER, 
-                  const double zL2 = NA_REAL) {
+                  const int L2 = NA_INTEGER,
+                  const double zL2 = NA_REAL,
+                  const NumericVector& b2 = NA_REAL,
+                  const NumericVector& I2 = NA_REAL) {
   
-  List a = f_bwimage(theta, kMax, b, I, L, zL, b2, I2, L2, zL2);
+  List bw = f_bwimage(theta, kMax, L, zL, b, I, L2, zL2, b2, I2);
   
-  int J = a[0];
-  double zJ = a[1];
+  int J = bw[0];
+  double zJ = bw[1];
   
   NumericVector upper(J), lower(J, -6.0), mu(J, theta), information(J);
   
@@ -2191,22 +2323,67 @@ double f_bwpvalue(const double theta,
 
 //' @title Confidence interval after adaptation
 //' @description Obtains the p-value, median unbiased point estimate, and 
-//' confidence interval using the backward image method after the end of 
-//' an adaptive trial.
+//' confidence interval after the end of an adaptive trial.
 //'
-//' @param kMax The maximum number of stages for the primary trial.
-//' @param b The upper boundaries on the Z-test statistic scale
+//' @param L The interim adaptation look of the primary trial.
+//' @param zL The z-test statistic at the interim adaptation look of 
+//'   the primary trial.
+//' @param IMax The maximum information of the primary trial.
+//' @param kMax The maximum number of stages of the primary trial.
+//' @param informationRates The information rates of the primary trial.
+//' @param efficacyStopping Indicators of whether efficacy stopping is 
+//'   allowed at each stage of the primary trial. Defaults to true 
+//'   if left unspecified.
+//' @param criticalValues The upper boundaries on the z-test statistic scale
 //'   for efficacy stopping for the primary trial.
-//' @param I The vector of cumulative information for the primary trial.
-//' @param L The interim look of the primary trial.
-//' @param zL The Z-test statistic at the interim look of the primary trial.
-//' @param b2 The upper boundaries on the Z-test statistic scale
-//'   for efficacy stopping for the secondary trial.
-//' @param I2 The vector of cumulative information for the secondary trial.
-//' @param L2 The interim look of the secondary trial.
-//' @param zL2 The Z-test statistic at the interim look of the 
+//' @param alpha The significance level of the primary trial. 
+//'   Defaults to 0.025.
+//' @param typeAlphaSpending The type of alpha spending for the primary trial. 
+//'   One of the following: 
+//'   "OF" for O'Brien-Fleming boundaries, 
+//'   "P" for Pocock boundaries, 
+//'   "WT" for Wang & Tsiatis boundaries, 
+//'   "sfOF" for O'Brien-Fleming type spending function, 
+//'   "sfP" for Pocock type spending function, 
+//'   "sfKD" for Kim & DeMets spending function, 
+//'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
+//'   "none" for no early efficacy stopping. 
+//'   Defaults to "sfOF".
+//' @param parameterAlphaSpending The parameter value of alpha spending 
+//'   for the primary trial. Corresponds to Delta for "WT", rho for "sfKD", 
+//'   and gamma for "sfHSD".
+//' @param spendingTime The error spending time of the primary trial. 
+//'   Defaults to missing, in which case, it is the same as 
+//'   \code{informationRates}.
+//' @param L2 The termination look of the secondary trial.
+//' @param zL2 The z-test statistic at the termination look of the 
 //'   secondary trial.
-//'
+//' @param INew The maximum information of the secondary trial.
+//' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
+//'   for trial adaptation.
+//' @param informationRatesNew The spacing of looks of the secondary trial
+//'   up to look \code{L2}.
+//' @param efficacyStoppingNew The indicators of whether efficacy stopping is 
+//'   allowed at each look of the secondary trial up to look \code{L2}. 
+//'   Defaults to true if left unspecified.
+//' @param typeAlphaSpendingNew The type of alpha spending for the secondary 
+//'   trial. One of the following: 
+//'   "OF" for O'Brien-Fleming boundaries, 
+//'   "P" for Pocock boundaries, 
+//'   "WT" for Wang & Tsiatis boundaries, 
+//'   "sfOF" for O'Brien-Fleming type spending function, 
+//'   "sfP" for Pocock type spending function, 
+//'   "sfKD" for Kim & DeMets spending function, 
+//'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
+//'   "none" for no early efficacy stopping. 
+//'   Defaults to "sfOF".
+//' @param parameterAlphaSpendingNew The parameter value of alpha spending 
+//'   for the secondary trial. Corresponds to Delta for "WT", 
+//'   rho for "sfKD", and gamma for "sfHSD".
+//' @param spendingTimeNew The error spending time of the secondary trial
+//'   up to look \code{L2}. Defaults to missing, in which case, it is 
+//'   the same as \code{informationRatesNew}.
+//' 
 //' @return A list with the following components: 
 //' 
 //' * \code{pvalue}: p-value for rejecting the null hypothesis.
@@ -2220,6 +2397,11 @@ double f_bwpvalue(const double theta,
 //' * \code{upper}: Upper bound of confidence interval.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//' 
+//' @references
+//' Ping Gao, Lingyun Liu and Cyrus Mehta. 
+//' Exact inference for adaptive group sequential designs. 
+//' Stat Med. 2013;32(23):3991-4005.
 //'
 //' @seealso \code{\link{adaptDesign}}
 //' 
@@ -2263,283 +2445,78 @@ double f_bwpvalue(const double theta,
 //' sigma2 = 19.5
 //' zL2 = theta2/sqrt(4*sigma2^2/200)
 //'  
-//' b2 = des2$secondaryTrial$byStageResults$efficacyBounds
-//' t2 = des2$secondaryTrial$byStageResults$informationRates
-//' I2 = n2*t2/(4*sigma2^2)
+//' t2 = des2$secondaryTrial$byStageResults$informationRates[1:L2]
 //' 
-//' # p-value, point estimate, and confidence interval
-//' getADCI(kMax, b, I, L, zL, b2, I2, L2, zL2)
+//' # repeated confidence interval
+//' getADCI(L = L, zL = zL,
+//'         IMax = n/(4*sigma1^2), kMax = 3,
+//'         informationRates = t,
+//'         alpha = 0.05, typeAlphaSpending = "sfHSD",
+//'         parameterAlphaSpending = -4,
+//'         L2 = L2, zL2 = zL2,
+//'         INew = n2/(4*sigma2^2),
+//'         MullerSchafer = TRUE,
+//'         informationRatesNew = t2, 
+//'         typeAlphaSpendingNew = "sfHSD",
+//'         parameterAlphaSpendingNew = -2)
 //' 
 //' @export
 // [[Rcpp::export]]
-List getADCI(const int kMax = NA_INTEGER, 
-             const NumericVector& b = NA_REAL, 
-             const NumericVector& I = NA_REAL,
-             const int L = NA_INTEGER, 
-             const double zL = NA_REAL, 
-             const NumericVector& b2 = NA_REAL, 
-             const NumericVector& I2 = NA_REAL,
-             const int L2 = NA_INTEGER, 
-             const double zL2 = NA_REAL) {
+List getADCI(const int L = NA_INTEGER,
+             const double zL = NA_REAL,
+             const double IMax = NA_REAL,
+             const int kMax = NA_INTEGER,
+             const NumericVector& informationRates = NA_REAL,
+             const LogicalVector& efficacyStopping = NA_LOGICAL,
+             const NumericVector& criticalValues = NA_REAL,
+             const double alpha = 0.25,
+             const String typeAlphaSpending = "sfOF",
+             const double parameterAlphaSpending = NA_REAL,
+             const NumericVector& spendingTime = NA_REAL,
+             const int L2 = NA_INTEGER,
+             const double zL2 = NA_REAL,
+             const double INew = NA_REAL,
+             const bool MullerSchafer = 0,
+             const NumericVector& informationRatesNew = NA_REAL,
+             const LogicalVector& efficacyStoppingNew = NA_LOGICAL,
+             const String typeAlphaSpendingNew = "sfOF",
+             const double parameterAlphaSpendingNew = NA_REAL,
+             const NumericVector& spendingTimeNew = NA_REAL) {
   
-  if (R_isnancpp(kMax)) {
-    stop("kMax must be provided");
-  }
+  NumericVector t = clone(informationRates);
+  LogicalVector es = clone(efficacyStopping);
+  NumericVector b = clone(criticalValues);
+  NumericVector st = clone(spendingTime);
+  NumericVector tNew = clone(informationRatesNew);
+  LogicalVector esNew = clone(efficacyStoppingNew);
+  NumericVector stNew = clone(spendingTimeNew);
+  double alpha1 = alpha;
   
-  if (kMax < 1) {
-    stop("kMax must be a positive integer");
-  }
+  std::string asf = typeAlphaSpending;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
   
-  if (is_true(any(is_na(b)))) {
-    stop("b must be provided");
-  }
+  double asfpar = parameterAlphaSpending;
   
-  if (is_true(any(is_na(I)))) {
-    stop("I must be provided");
-  }
+  std::string asfNew = typeAlphaSpendingNew;
+  std::for_each(asfNew.begin(), asfNew.end(), [](char & c) {
+    c = std::tolower(c);
+  });
   
-  if (I.size() != kMax) {
-    stop("Invalid length for I");
-  } else if (I[0] <= 0) {
-    stop("Elements of I must be positive");
-  } else if (I.size() > 1 && is_true(any(diff(I) <= 0))) {
-    stop("Elements of I must be increasing");
-  }
+  double asfparNew = parameterAlphaSpendingNew;
   
   if (R_isnancpp(L)) {
     stop("L must be provided");
-  }
-  
-  if (R_isnancpp(zL)) {
-    stop("zL must be provided");
   }
   
   if (L < 1) {
     stop("L must be a positive integer");
   }
   
-  if (kMax <= L) {
-    stop("kMax must be greater than L");
+  if (R_isnancpp(zL)) {
+    stop("zL must be provided");
   }
-  
-  if (is_true(any(is_na(b2)))) {
-    stop("b2 must be provided");
-  }
-  
-  if (is_true(any(is_na(I2)))) {
-    stop("I2 must be provided");
-  }
-  
-  if (I2[0] <= 0) {
-    stop("Elements of I2 must be positive");
-  } else if (I2.size() > 1 && is_true(any(diff(I2) <= 0))) {
-    stop("Elements of I2 must be increasing");
-  }
-  
-  if (R_isnancpp(L2)) {
-    stop("L2 must be provided");
-  }
-  
-  if (R_isnancpp(zL2)) {
-    stop("zL2 must be provided");
-  }
-  
-  if (L2 < 1) {
-    stop("L2 must be a positive integer");
-  }
-  
-  NumericVector a(kMax, -6.0), zero(kMax); 
-  List probs = exitprobcpp(b, a, zero, I);
-  double cilevel = 1 - 2*sum(NumericVector(probs[0]));
-  
-  int K = kMax;
-  double pvalue = f_bwpvalue(0, K, b, I, L, zL, b2, I2, L2, zL2);
-  
-  NumericVector interval(2);
-  interval[0] = (zL - b[L-1])/sqrt(I[L-1]);
-  interval[1] = (zL + b[L-1])/sqrt(I[L-1]);
-  double tol = 0.0001;
-  
-  auto f = [K, b, I, L, zL, b2, I2, L2, zL2](double theta)->double {
-    return f_bwpvalue(theta, K, b, I, L, zL, b2, I2, L2, zL2) - 0.5;
-  };
-  double thetahat = brent(f, interval[0], interval[1], tol);
-  
-  auto f1 = [K, b, I, L, zL, b2, I2, L2, zL2, cilevel](double theta)->double {
-    return f_bwpvalue(theta, K, b, I, L, zL, b2, I2, L2, zL2) - (1-cilevel)/2;
-  };
-  double lower = brent(f1, interval[0], thetahat, tol);
-  
-  auto f2 = [K, b, I, L, zL, b2, I2, L2, zL2, cilevel](double theta)->double {
-    return f_bwpvalue(theta, K, b, I, L, zL, b2, I2, L2, zL2) - (1+cilevel)/2;
-  };
-  double upper = brent(f2, thetahat, interval[1], tol);
-  
-  List result = List::create(
-    _["pvalue"] = pvalue,
-    _["thetahat"] = thetahat,
-    _["cilevel"] = cilevel,
-    _["lower"] = lower,
-    _["upper"] = upper);
-  
-  return result;
-}
-
-
-//' @title Repeated confidence interval after adaptation
-//' @description Obtains the repeated p-value, point estimate, and 
-//' repeated confidence interval for an adaptive group sequential trial.
-//' 
-//' @param IMax The maximum information of the primary trial.
-//' @param kMax The maximum number of stages for the primary trial.
-//' @param informationRates The information rates of the primary trial.
-//' @param alpha The significance level for the primary trial. 
-//'   Defaults to 0.025.
-//' @param typeAlphaSpending The type of alpha spending for the primary trial. 
-//'   One of the following: 
-//'   "OF" for O'Brien-Fleming boundaries, 
-//'   "P" for Pocock boundaries, 
-//'   "WT" for Wang & Tsiatis boundaries, 
-//'   "sfOF" for O'Brien-Fleming type spending function, 
-//'   "sfP" for Pocock type spending function, 
-//'   "sfKD" for Kim & DeMets spending function, 
-//'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
-//'   "none" for no early efficacy stopping. 
-//'   Defaults to "sfOF".
-//' @param parameterAlphaSpending The parameter value for the alpha 
-//'   spending for the primary trial. 
-//'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
-//' @param spendingTime A vector of length \code{kMax} for the error 
-//'   spending time at each analysis of the primary trial. 
-//'   Defaults to missing, in which case, it is the same as 
-//'   \code{informationRates}.
-//' @param L The interim look of the primary trial.
-//' @param zL The Z-test statistic at the interim look of the primary trial.
-//' @param INew The maximum information for the secondary trial.
-//' @param L2 The interim look of the secondary trial.
-//' @param zL2 The Z-test statistic at the interim look of the 
-//'   secondary trial.
-//' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
-//'   for trial adaptation.
-//' @param kNew The number of looks of the secondary trial.
-//' @param informationRatesNew The spacing of looks of the secondary trial.
-//' @param typeAlphaSpendingNew The type of alpha spending for the secondary 
-//'   trial. One of the following: 
-//'   "OF" for O'Brien-Fleming boundaries, 
-//'   "P" for Pocock boundaries, 
-//'   "WT" for Wang & Tsiatis boundaries, 
-//'   "sfOF" for O'Brien-Fleming type spending function, 
-//'   "sfP" for Pocock type spending function, 
-//'   "sfKD" for Kim & DeMets spending function, 
-//'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
-//'   "none" for no early efficacy stopping. 
-//'   Defaults to "sfOF".
-//' @param parameterAlphaSpendingNew The parameter value for the alpha 
-//'   spending for the secondary trial. 
-//'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
-//' @param spendingTimeNew A vector of length \code{kNew} for the error 
-//'   spending time at each analysis of the secondary trial. 
-//'   Defaults to missing, in which case, it is the same as 
-//'   \code{informationRatesNew}.
-//'
-//' @return A list with the following components: 
-//' 
-//' * \code{pvalue}: Repeated p-value for rejecting the null hypothesis.
-//'  
-//' * \code{thetahat}: Point estimate of the parameter.
-//' 
-//' * \code{cilevel}: Confidence interval level.
-//' 
-//' * \code{lower}: Lower bound of repeated confidence interval.
-//' 
-//' * \code{upper}: Upper bound of repeated confidence interval.
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @seealso \code{\link{adaptDesign}}
-//' 
-//' @examples
-//'
-//' # original group sequential design with 90% power to detect delta = 6
-//' delta = 6
-//' sigma = 17
-//' n = 282
-//' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
-//'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
-//'                   parameterAlphaSpending = -4))
-//' 
-//' # interim look results
-//' L = 1
-//' n1 = n/3
-//' delta1 = 4.5
-//' sigma1 = 20
-//' zL = delta1/sqrt(4/n1*sigma1^2)
-//' 
-//' kMax = des1$overallResults$kMax
-//' b = des1$byStageResults$efficacyBounds
-//' t = des1$byStageResults$informationRates
-//' I = n*t/(4*sigma1^2)  # information based on estimated nuisance parameter
-//' 
-//' # Muller & Schafer (2001) method to design the secondary trial: 
-//' # 3-look gamma(-2) spending with 84% power at delta = 4.5, sigma = 17
-//' n2 = 300
-//' (des2 = adaptDesign(
-//'   beta = NA, INew = n2/(4*sigma^2), L, zL, theta = delta1,
-//'   kMax = des1$overallResults$kMax, 
-//'   informationRates = des1$byStageResults$informationRates,
-//'   criticalValues = des1$byStageResults$efficacyBounds,
-//'   MullerSchafer = TRUE,
-//'   kNew = 3, typeAlphaSpending = "sfHSD", 
-//'   parameterAlphaSpending = -2))
-//'   
-//' # termination at the second look of the secondary trial
-//' L2 = 2
-//' theta2 = 6.6
-//' sigma2 = 19.5
-//' zL2 = theta2/sqrt(4*sigma2^2/200)
-//'  
-//' b2 = des2$secondaryTrial$byStageResults$efficacyBounds
-//' t2 = des2$secondaryTrial$byStageResults$informationRates
-//' I2 = n2*t2/(4*sigma2^2)
-//' 
-//' # repeated confidence interval
-//' getADRCI(IMax = n/(4*sigma1^2), kMax = 3, 
-//'          informationRates = t,
-//'          alpha = 0.05,  typeAlphaSpending = "sfHSD", 
-//'          parameterAlphaSpending = -4,
-//'          L = L, zL = zL, 
-//'          INew = n2/(4*sigma2^2), 
-//'          L2 = L2, zL2 = zL2, 
-//'          MullerSchafer = TRUE, 
-//'          kNew = 3, informationRatesNew = t2, 
-//'          typeAlphaSpendingNew = "sfHSD", 
-//'          parameterAlphaSpendingNew = -2)
-//' 
-//' @export
-// [[Rcpp::export]]
-List getADRCI(const double IMax = NA_REAL,
-              const int kMax = NA_INTEGER,
-              const NumericVector& informationRates = NA_REAL, 
-              const double alpha = 0.25,
-              const String typeAlphaSpending = "sfOF",
-              const double parameterAlphaSpending = NA_REAL, 
-              const NumericVector& spendingTime = NA_REAL,
-              const int L = NA_INTEGER, 
-              const double zL = NA_REAL, 
-              const double INew = NA_REAL, 
-              const int L2 = NA_INTEGER, 
-              const double zL2 = NA_REAL, 
-              const bool MullerSchafer = 0,
-              const int kNew = NA_INTEGER, 
-              const NumericVector& informationRatesNew = NA_REAL, 
-              const String typeAlphaSpendingNew = "sfOF",
-              const double parameterAlphaSpendingNew = NA_REAL, 
-              const NumericVector& spendingTimeNew = NA_REAL) {
-  
-  NumericVector t = clone(informationRates);
-  NumericVector t2 = clone(informationRatesNew);
-  NumericVector s = clone(spendingTime);
-  NumericVector s2 = clone(spendingTimeNew);
   
   if (R_isnancpp(IMax)) {
     stop("IMax must be provided");
@@ -2553,8 +2530,8 @@ List getADRCI(const double IMax = NA_REAL,
     stop("kMax must be provided");
   }
   
-  if (kMax < 1) {
-    stop("kMax must be a positive integer");
+  if (kMax <= L) {
+    stop("kMax must be greater than L");
   }
   
   if (is_false(any(is_na(informationRates)))) {
@@ -2572,22 +2549,44 @@ List getADRCI(const double IMax = NA_REAL,
     t = as<NumericVector>(tem)/(kMax+0.0);
   }
   
-  if (R_isnancpp(alpha)) {
-    stop("alpha must be provided");
+  if (is_false(any(is_na(efficacyStopping)))) {
+    if (efficacyStopping.size() != kMax) {
+      stop("Invalid length for efficacyStopping");
+    } else if (efficacyStopping[kMax-1] != 1) {
+      stop("efficacyStopping must end with 1");
+    } else if (is_false(all((efficacyStopping == 1) | 
+      (efficacyStopping == 0)))) {
+      stop("Elements of efficacyStopping must be 1 or 0");
+    }
+  } else {
+    es = rep(1, kMax);
   }
   
-  if (alpha < 0.00001 || alpha >= 0.5) {
-    stop("alpha must lie in [0.00001, 0.5)");
+  if (is_false(any(is_na(criticalValues)))) {
+    if (criticalValues.size() != kMax) {
+      stop("Invalid length for criticalValues");
+    }
+    
+    NumericVector u(kMax), l(kMax, -6.0), theta0(kMax);
+    for (int i=0; i<kMax; i++) {
+      u[i] = criticalValues[i];
+      if (!es[i]) u[i] = 6.0;
+    }
+    
+    List probs = exitprobcpp(u, l, theta0, t);
+    alpha1 = sum(NumericVector(probs[0]));
   }
   
-  std::string asf = typeAlphaSpending;
-  std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
-  });
+  if (!R_isnancpp(alpha1)) {
+    if (alpha1 < 0.00001 || alpha1 >= 0.5) {
+      stop("alpha must lie in [0.00001, 0.5)");
+    }
+  } else {
+    stop("alpha must be provided for missing criticalValues");
+  }
   
-  double asfpar = parameterAlphaSpending;
-  
-  if (!(asf=="of" || asf=="p" || asf=="wt" || asf=="sfof" || asf=="sfp" ||
+  if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
+      asf=="wt" || asf=="sfof" || asf=="sfp" ||
       asf=="sfkd" || asf=="sfhsd" || asf=="none")) {
     stop("Invalid value for typeAlphaSpending");
   }
@@ -2611,31 +2610,7 @@ List getADRCI(const double IMax = NA_REAL,
       stop("spendingTime must end with 1");
     }
   } else {
-    s = clone(t);
-  }
-  
-  if (R_isnancpp(L)) {
-    stop("L must be provided");
-  }
-  
-  if (L < 1) {
-    stop("L must be a positive integer");
-  }
-  
-  if (kMax <= L) {
-    stop("kMax must be greater than L");
-  }
-  
-  if (R_isnancpp(zL)) {
-    stop("zL must be provided");
-  }
-  
-  if (R_isnancpp(INew)) {
-    stop("INew must be provided");
-  }
-  
-  if (INew <= 0) {
-    stop("INew must be positive");
+    st = clone(t);
   }
   
   if (R_isnancpp(L2)) {
@@ -2650,91 +2625,546 @@ List getADRCI(const double IMax = NA_REAL,
     stop("zL2 must be provided");
   }
   
-  std::string asf2 = typeAlphaSpendingNew;
-  std::for_each(asf2.begin(), asf2.end(), [](char & c) {
-    c = std::tolower(c);
-  });
+  if (R_isnancpp(INew)) {
+    stop("INew must be provided");
+  }
   
-  double asfpar2 = parameterAlphaSpendingNew;
+  if (INew <= 0) {
+    stop("INew must be positive");
+  }
+  
   
   if (MullerSchafer) {
-    if (R_isnancpp(kNew)) {
-      stop("kNew must be provided");
-    } else if (kNew < 1) {
-      stop("kNew must be a positive integer");
-    }
-    
     if (is_false(any(is_na(informationRatesNew)))) {
-      if (informationRatesNew.size() != kNew) {
+      if (informationRatesNew.size() != L2) {
         stop("Invalid length for informationRatesNew");
       } else if (informationRatesNew[0] <= 0) {
         stop("Elements of informationRatesNew must be positive");
-      } else if (kNew > 1 && is_true(any(diff(informationRatesNew) <= 0))) {
+      } else if (L2 > 1 && is_true(any(diff(informationRatesNew) <= 0))) {
         stop("Elements of informationRatesNew must be increasing");
-      } else if (informationRatesNew[kNew-1] != 1) {
-        stop("informationRatesNew must end with 1");
+      } else if (informationRatesNew[L2-1] > 1) {
+        stop("informationRatesNew must not exceed 1");
       }
     } else {
-      IntegerVector tem = seq_len(kNew);
-      t2 = as<NumericVector>(tem)/(kNew+0.0);
+      stop("informationRatesNew must be provided");
     }
     
-    if (!(asf2=="of" || asf2=="p" || asf2=="wt" || 
-        asf2=="sfof" || asf2=="sfp" ||
-        asf2=="sfkd" || asf2=="sfhsd" || asf2=="none")) {
+    if (is_false(any(is_na(efficacyStoppingNew)))) {
+      if (efficacyStoppingNew.size() != L2) {
+        stop("Invalid length for efficacyStoppingNew");
+      } else if (efficacyStoppingNew[L2-1] != 1) {
+        stop("efficacyStoppingNew must end with 1");
+      } else if (is_false(all((efficacyStoppingNew == 1) | 
+        (efficacyStoppingNew == 0)))) {
+        stop("Elements of efficacyStoppingNew must be 1 or 0");
+      }
+    } else {
+      esNew = rep(1, L2);
+    }
+    
+    if (!(asfNew=="of" || asfNew=="p" || asfNew=="wt" || 
+        asfNew=="sfof" || asfNew=="sfp" ||
+        asfNew=="sfkd" || asfNew=="sfhsd" || asfNew=="none")) {
       stop("Invalid value for typeAlphaSpendingNew");
     }
     
-    if ((asf2=="wt" || asf2=="sfkd" || asf2=="sfhsd") && 
-        R_isnancpp(asfpar2)) {
+    if ((asfNew=="wt" || asfNew=="sfkd" || asfNew=="sfhsd") && 
+        R_isnancpp(asfparNew)) {
       stop("Missing value for parameterAlphaSpendingNew");
     }
     
-    if (asf2=="sfkd" && asfpar2 <= 0) {
+    if (asfNew=="sfkd" && asfparNew <= 0) {
       stop ("parameterAlphaSpendingNew must be positive for sfKD");
     }
     
     if (is_false(any(is_na(spendingTimeNew)))) {
-      if (spendingTimeNew.size() != kNew) {
+      if (spendingTimeNew.size() != L2) {
         stop("Invalid length for spendingTimeNew");
       } else if (spendingTimeNew[0] <= 0) {
         stop("Elements of spendingTimeNew must be positive");
-      } else if (kNew > 1 && is_true(any(diff(spendingTimeNew) <= 0))) {
+      } else if (L2 > 1 && is_true(any(diff(spendingTimeNew) <= 0))) {
         stop("Elements of spendingTimeNew must be increasing");
-      } else if (spendingTimeNew[kNew-1] != 1) {
-        stop("spendingTimeNew must end with 1");
+      } else if (spendingTimeNew[L2-1] > 1) {
+        stop("spendingTimeNew must not exceed 1");
       }
     } else {
-      s2 = clone(t2);
+      stNew = clone(tNew);
     }
   }
   
+  // efficacy boundaries for the primary trial
+  if (is_true(any(is_na(criticalValues)))) {
+    b = getBoundcpp(kMax, t, alpha1, asf, asfpar, 0, st, es);
+  }
+  
   NumericVector I = IMax*t;
-  LogicalVector x(kMax, 1);
-  int J = L+L2;
-  IntegerVector i = Range(0, J-1);
-  NumericVector b = getBoundcpp(J, t[i], alpha, asf, asfpar, 0, s[i], x[i]);
+  
+  NumericVector b2(L2), I2(L2);
+  if (!MullerSchafer) {
+    NumericVector t1(L2), r1(L2);
+    for (int l=0; l<L2; l++) {
+      t1[l] = (t[l+L] - t[L-1])/(1 - t[L-1]);
+      r1[l] = t[L-1]/t[l+L];
+      b2[l] = (b[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
+      if (!es[l+L]) b2[l] = 6.0;
+      I2[l] = INew*t1[l];
+    }
+  } else {
+    // conditional type I error
+    int k1 = kMax - L;
+    NumericVector t1(k1), r1(k1), b1(k1), a1(k1, -6.0), theta0(k1);
+    for (int l=0; l<k1; l++) {
+      t1[l] = (t[l+L] - t[L-1])/(1 - t[L-1]);
+      r1[l] = t[L-1]/t[l+L];
+      b1[l] = (b[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
+      if (!es[l+L]) b1[l] = 6.0;
+    }
+    
+    List probs = exitprobcpp(b1, a1, theta0, t1);
+    double alphaNew = sum(NumericVector(probs[0]));
+    
+    // efficacy boundaries for the secondary trial
+    b2 = getBoundcpp(L2, tNew, alphaNew, asfNew, asfparNew, 0, stNew, esNew);
+    
+    for (int l=0; l<L2; l++) {
+      I2[l] = INew*tNew[l];
+    }
+  }
+  
+  double cilevel = 1 - 2*alpha1;
+  
+  int K = kMax;
+  double pvalue = f_bwpvalue(0, K, L, zL, b, I, L2, zL2, b2, I2);
+  
+  NumericVector interval(2);
+  interval[0] = (zL - b[L-1])/sqrt(I[L-1]);
+  interval[1] = (zL + b[L-1])/sqrt(I[L-1]);
+  double tol = 0.0001;
+  
+  auto f = [K, L, zL, b, I, L2, zL2, b2, I2](double theta)->double {
+    return f_bwpvalue(theta, K, L, zL, b, I, L2, zL2, b2, I2) - 0.5;
+  };
+  double thetahat = brent(f, interval[0], interval[1], tol);
+  
+  auto f1 = [K, L, zL, b, I, L2, zL2, b2, I2, cilevel](double theta)->double {
+    return f_bwpvalue(theta, K, L, zL, b, I, L2, zL2, b2, I2) - (1-cilevel)/2;
+  };
+  double lower = brent(f1, interval[0], thetahat, tol);
+  
+  auto f2 = [K, L, zL, b, I, L2, zL2, b2, I2, cilevel](double theta)->double {
+    return f_bwpvalue(theta, K, L, zL, b, I, L2, zL2, b2, I2) - (1+cilevel)/2;
+  };
+  double upper = brent(f2, thetahat, interval[1], tol);
+  
+  List result = List::create(
+    _["pvalue"] = pvalue,
+    _["thetahat"] = thetahat,
+    _["cilevel"] = cilevel,
+    _["lower"] = lower,
+    _["upper"] = upper);
+  
+  return result;
+}
+
+
+//' @title Repeated confidence interval after adaptation
+//' @description Obtains the repeated p-value, conservative point estimate, 
+//' and repeated confidence interval for an adaptive group sequential trial.
+//' 
+//' @param L The interim adaptation look of the primary trial.
+//' @param zL The z-test statistic at the interim adaptation look of 
+//'   the primary trial.
+//' @param IMax The maximum information of the primary trial.
+//' @param kMax The maximum number of stages of the primary trial.
+//' @param informationRates The information rates of the primary trial.
+//' @param efficacyStopping Indicators of whether efficacy stopping is 
+//'   allowed at each stage of the primary trial. Defaults to true 
+//'   if left unspecified.
+//' @param criticalValues The upper boundaries on the z-test statistic scale
+//'   for efficacy stopping for the primary trial.
+//' @param alpha The significance level of the primary trial. 
+//'   Defaults to 0.025.
+//' @param typeAlphaSpending The type of alpha spending for the primary trial. 
+//'   One of the following: 
+//'   "OF" for O'Brien-Fleming boundaries, 
+//'   "P" for Pocock boundaries, 
+//'   "WT" for Wang & Tsiatis boundaries, 
+//'   "sfOF" for O'Brien-Fleming type spending function, 
+//'   "sfP" for Pocock type spending function, 
+//'   "sfKD" for Kim & DeMets spending function, 
+//'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
+//'   "none" for no early efficacy stopping. 
+//'   Defaults to "sfOF".
+//' @param parameterAlphaSpending The parameter value of alpha spending 
+//'   for the primary trial. Corresponds to Delta for "WT", rho for "sfKD", 
+//'   and gamma for "sfHSD".
+//' @param spendingTime The error spending time of the primary trial. 
+//'   Defaults to missing, in which case, it is the same as 
+//'   \code{informationRates}.
+//' @param L2 The look of interest in the secondary trial.
+//' @param zL2 The z-test statistic at the look of the secondary trial.
+//' @param INew The maximum information of the secondary trial.
+//' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
+//'   for trial adaptation.
+//' @param informationRatesNew The spacing of looks of the secondary trial.
+//' @param efficacyStoppingNew The indicators of whether efficacy stopping is 
+//'   allowed at each look of the secondary trial up to look \code{L2}. 
+//'   Defaults to true if left unspecified.
+//' @param typeAlphaSpendingNew The type of alpha spending for the secondary 
+//'   trial. One of the following: 
+//'   "OF" for O'Brien-Fleming boundaries, 
+//'   "P" for Pocock boundaries, 
+//'   "WT" for Wang & Tsiatis boundaries, 
+//'   "sfOF" for O'Brien-Fleming type spending function, 
+//'   "sfP" for Pocock type spending function, 
+//'   "sfKD" for Kim & DeMets spending function, 
+//'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
+//'   "none" for no early efficacy stopping. 
+//'   Defaults to "sfOF".
+//' @param parameterAlphaSpendingNew The parameter value of alpha spending 
+//'   for the secondary trial. Corresponds to Delta for "WT", 
+//'   rho for "sfKD", and gamma for "sfHSD".
+//' @param spendingTimeNew The error spending time of the secondary trial. 
+//'   up to look \code{L2}. Defaults to missing, in which case, it is 
+//'   the same as \code{informationRatesNew}.
+//' 
+//' @return A list with the following components: 
+//' 
+//' * \code{pvalue}: Repeated p-value for rejecting the null hypothesis.
+//'  
+//' * \code{thetahat}: Point estimate of the parameter.
+//' 
+//' * \code{cilevel}: Confidence interval level.
+//' 
+//' * \code{lower}: Lower bound of repeated confidence interval.
+//' 
+//' * \code{upper}: Upper bound of repeated confidence interval.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//' 
+//' @references
+//' Cyrus R. Mehta, Peter Bauer, Martin Posch and Werner Brannath.
+//' Repeated confidence intervals for adaptive group sequential trials.
+//' Stat Med. 2007;26:5422–5433.
+//'
+//' @seealso \code{\link{adaptDesign}}
+//' 
+//' @examples
+//'
+//' # original group sequential design with 90% power to detect delta = 6
+//' delta = 6
+//' sigma = 17
+//' n = 282
+//' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
+//'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+//'                   parameterAlphaSpending = -4))
+//' 
+//' # interim look results
+//' L = 1
+//' n1 = n/3
+//' delta1 = 4.5
+//' sigma1 = 20
+//' zL = delta1/sqrt(4/n1*sigma1^2)
+//' 
+//' kMax = des1$overallResults$kMax
+//' b = des1$byStageResults$efficacyBounds
+//' t = des1$byStageResults$informationRates
+//' I = n*t/(4*sigma1^2)  # information based on estimated nuisance parameter
+//' 
+//' # Muller & Schafer (2001) method to design the secondary trial: 
+//' # 3-look gamma(-2) spending with 84% power at delta = 4.5, sigma = 17
+//' n2 = 300
+//' (des2 = adaptDesign(
+//'   beta = NA, INew = n2/(4*sigma^2), L, zL, theta = delta1,
+//'   kMax = des1$overallResults$kMax, 
+//'   informationRates = des1$byStageResults$informationRates,
+//'   criticalValues = des1$byStageResults$efficacyBounds,
+//'   MullerSchafer = TRUE,
+//'   kNew = 3, typeAlphaSpending = "sfHSD", 
+//'   parameterAlphaSpending = -2))
+//'   
+//' # termination at the second look of the secondary trial
+//' L2 = 2
+//' theta2 = 6.6
+//' sigma2 = 19.5
+//' zL2 = theta2/sqrt(4*sigma2^2/200)
+//'  
+//' t2 = des2$secondaryTrial$byStageResults$informationRates[1:L2]
+//' 
+//' # repeated confidence interval
+//' getADRCI(L = L, zL = zL,
+//'          IMax = n/(4*sigma1^2), kMax = 3,
+//'          informationRates = t,
+//'          alpha = 0.05, typeAlphaSpending = "sfHSD",
+//'          parameterAlphaSpending = -4,
+//'          L2 = L2, zL2 = zL2,
+//'          INew = n2/(4*sigma2^2),
+//'          MullerSchafer = TRUE,
+//'          informationRatesNew = t2, 
+//'          typeAlphaSpendingNew = "sfHSD",
+//'          parameterAlphaSpendingNew = -2)
+//' 
+//' @export
+// [[Rcpp::export]]
+List getADRCI(const int L = NA_INTEGER,
+              const double zL = NA_REAL,
+              const double IMax = NA_REAL,
+              const int kMax = NA_INTEGER,
+              const NumericVector& informationRates = NA_REAL,
+              const LogicalVector& efficacyStopping = NA_LOGICAL,
+              const NumericVector& criticalValues = NA_REAL,
+              const double alpha = 0.25,
+              const String typeAlphaSpending = "sfOF",
+              const double parameterAlphaSpending = NA_REAL,
+              const NumericVector& spendingTime = NA_REAL,
+              const int L2 = NA_INTEGER,
+              const double zL2 = NA_REAL,
+              const double INew = NA_REAL,
+              const bool MullerSchafer = 0,
+              const NumericVector& informationRatesNew = NA_REAL,
+              const LogicalVector& efficacyStoppingNew = NA_LOGICAL,
+              const String typeAlphaSpendingNew = "sfOF",
+              const double parameterAlphaSpendingNew = NA_REAL,
+              const NumericVector& spendingTimeNew = NA_REAL) {
+  
+  NumericVector t = clone(informationRates);
+  LogicalVector es = clone(efficacyStopping);
+  NumericVector b = clone(criticalValues);
+  NumericVector st = clone(spendingTime);
+  NumericVector tNew = clone(informationRatesNew);
+  LogicalVector esNew = clone(efficacyStoppingNew);
+  NumericVector stNew = clone(spendingTimeNew);
+  double alpha1 = alpha;
+  
+  std::string asf = typeAlphaSpending;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  double asfpar = parameterAlphaSpending;
+  
+  std::string asfNew = typeAlphaSpendingNew;
+  std::for_each(asfNew.begin(), asfNew.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  double asfparNew = parameterAlphaSpendingNew;
+  
+  if (R_isnancpp(L)) {
+    stop("L must be provided");
+  }
+  
+  if (L < 1) {
+    stop("L must be a positive integer");
+  }
+  
+  if (R_isnancpp(zL)) {
+    stop("zL must be provided");
+  }
+  
+  if (R_isnancpp(IMax)) {
+    stop("IMax must be provided");
+  }
+  
+  if (IMax <= 0) {
+    stop("IMax must be positive");
+  }
+  
+  if (R_isnancpp(kMax)) {
+    stop("kMax must be provided");
+  }
+  
+  if (kMax <= L) {
+    stop("kMax must be greater than L");
+  }
+  
+  if (is_false(any(is_na(informationRates)))) {
+    if (informationRates.size() != kMax) {
+      stop("Invalid length for informationRates");
+    } else if (informationRates[0] <= 0) {
+      stop("Elements of informationRates must be positive");
+    } else if (kMax > 1 && is_true(any(diff(informationRates) <= 0))) {
+      stop("Elements of informationRates must be increasing");
+    } else if (informationRates[kMax-1] != 1) {
+      stop("informationRates must end with 1");
+    }
+  } else {
+    IntegerVector tem = seq_len(kMax);
+    t = as<NumericVector>(tem)/(kMax+0.0);
+  }
+  
+  if (is_false(any(is_na(efficacyStopping)))) {
+    if (efficacyStopping.size() != kMax) {
+      stop("Invalid length for efficacyStopping");
+    } else if (efficacyStopping[kMax-1] != 1) {
+      stop("efficacyStopping must end with 1");
+    } else if (is_false(all((efficacyStopping == 1) | 
+      (efficacyStopping == 0)))) {
+      stop("Elements of efficacyStopping must be 1 or 0");
+    }
+  } else {
+    es = rep(1, kMax);
+  }
+  
+  if (is_false(any(is_na(criticalValues)))) {
+    if (criticalValues.size() != kMax) {
+      stop("Invalid length for criticalValues");
+    }
+    
+    NumericVector u(kMax), l(kMax, -6.0), theta0(kMax);
+    for (int i=0; i<kMax; i++) {
+      u[i] = criticalValues[i];
+      if (!es[i]) u[i] = 6.0;
+    }
+    
+    List probs = exitprobcpp(u, l, theta0, t);
+    alpha1 = sum(NumericVector(probs[0]));
+  }
+  
+  if (!R_isnancpp(alpha1)) {
+    if (alpha1 < 0.00001 || alpha1 >= 0.5) {
+      stop("alpha must lie in [0.00001, 0.5)");
+    }
+  } else {
+    stop("alpha must be provided for missing criticalValues");
+  }
+  
+  if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
+      asf=="wt" || asf=="sfof" || asf=="sfp" ||
+      asf=="sfkd" || asf=="sfhsd" || asf=="none")) {
+    stop("Invalid value for typeAlphaSpending");
+  }
+  
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+    stop("Missing value for parameterAlphaSpending");
+  }
+  
+  if (asf=="sfkd" && asfpar <= 0) {
+    stop ("parameterAlphaSpending must be positive for sfKD");
+  }
+  
+  if (is_false(any(is_na(spendingTime)))) {
+    if (spendingTime.size() != kMax) {
+      stop("Invalid length for spendingTime");
+    } else if (spendingTime[0] <= 0) {
+      stop("Elements of spendingTime must be positive");
+    } else if (kMax > 1 && is_true(any(diff(spendingTime) <= 0))) {
+      stop("Elements of spendingTime must be increasing");
+    } else if (spendingTime[kMax-1] != 1) {
+      stop("spendingTime must end with 1");
+    }
+  } else {
+    st = clone(t);
+  }
+  
+  if (R_isnancpp(L2)) {
+    stop("L2 must be provided");
+  }
+  
+  if (L2 < 1) {
+    stop("L2 must be a positive integer");
+  }
+  
+  if (R_isnancpp(zL2)) {
+    stop("zL2 must be provided");
+  }
+  
+  if (R_isnancpp(INew)) {
+    stop("INew must be provided");
+  }
+  
+  if (INew <= 0) {
+    stop("INew must be positive");
+  }
+  
+  
+  if (MullerSchafer) {
+    if (is_false(any(is_na(informationRatesNew)))) {
+      if (informationRatesNew.size() != L2) {
+        stop("Invalid length for informationRatesNew");
+      } else if (informationRatesNew[0] <= 0) {
+        stop("Elements of informationRatesNew must be positive");
+      } else if (L2 > 1 && is_true(any(diff(informationRatesNew) <= 0))) {
+        stop("Elements of informationRatesNew must be increasing");
+      } else if (informationRatesNew[L2-1] > 1) {
+        stop("informationRatesNew must not exceed 1");
+      }
+    } else {
+      stop("informationRatesNew must be provided");
+    }
+    
+    if (is_false(any(is_na(efficacyStoppingNew)))) {
+      if (efficacyStoppingNew.size() != L2) {
+        stop("Invalid length for efficacyStoppingNew");
+      } else if (efficacyStoppingNew[L2-1] != 1) {
+        stop("efficacyStoppingNew must end with 1");
+      } else if (is_false(all((efficacyStoppingNew == 1) | 
+        (efficacyStoppingNew == 0)))) {
+        stop("Elements of efficacyStoppingNew must be 1 or 0");
+      }
+    } else {
+      esNew = rep(1, L2);
+    }
+    
+    if (!(asfNew=="of" || asfNew=="p" || asfNew=="wt" || 
+        asfNew=="sfof" || asfNew=="sfp" ||
+        asfNew=="sfkd" || asfNew=="sfhsd" || asfNew=="none")) {
+      stop("Invalid value for typeAlphaSpendingNew");
+    }
+    
+    if ((asfNew=="wt" || asfNew=="sfkd" || asfNew=="sfhsd") && 
+        R_isnancpp(asfparNew)) {
+      stop("Missing value for parameterAlphaSpendingNew");
+    }
+    
+    if (asfNew=="sfkd" && asfparNew <= 0) {
+      stop ("parameterAlphaSpendingNew must be positive for sfKD");
+    }
+    
+    if (is_false(any(is_na(spendingTimeNew)))) {
+      if (spendingTimeNew.size() != L2) {
+        stop("Invalid length for spendingTimeNew");
+      } else if (spendingTimeNew[0] <= 0) {
+        stop("Elements of spendingTimeNew must be positive");
+      } else if (L2 > 1 && is_true(any(diff(spendingTimeNew) <= 0))) {
+        stop("Elements of spendingTimeNew must be increasing");
+      } else if (spendingTimeNew[L2-1] > 1) {
+        stop("spendingTimeNew must not exceed 1");
+      }
+    } else {
+      stNew = clone(tNew);
+    }
+  }
+  
+  // efficacy boundaries for the primary trial
+  if (is_true(any(is_na(criticalValues)))) {
+    b = getBoundcpp(kMax, t, alpha1, asf, asfpar, 0, st, es);
+  }
+  
+  NumericVector I = IMax*t;
   
   double lower, upper, thetahat, pvalue;
   if (!MullerSchafer) {
     double I1 = IMax*t[L-1];
-    double I2 = INew*(t[J-1] - t[L-1])/(1 - t[L-1]);
+    double I2 = INew*(t[L+L2-1] - t[L-1])/(1 - t[L-1]);
     
-    double r = t[L-1]/t[J-1];
-    double c1 = sqrt(r)*zL + sqrt(1-r)*zL2;
-    double c2 = sqrt(r)*sqrt(I1) + sqrt(1-r)*sqrt(I2);
+    double r1 = t[L-1]/t[L+L2-1];
+    double c1 = sqrt(r1)*zL + sqrt(1-r1)*zL2;
+    double c2 = sqrt(r1)*sqrt(I1) + sqrt(1-r1)*sqrt(I2);
     
-    lower = (c1 - b[J-1])/c2;
-    upper = (c1 + b[J-1])/c2;
+    lower = (c1 - b[L+L2-1])/c2;
+    upper = (c1 + b[L+L2-1])/c2;
     
     // point estimate is the lower bound for alpha = 0.5
-    NumericVector u = getBoundcpp(J, t[i], 0.5, asf, asfpar, 0, s[i], x[i]);
+    int J = L+L2;
+    IntegerVector i = Range(0, J-1);
+    NumericVector u = getBoundcpp(J, t[i], 0.5, asf, asfpar, 0, st[i], es[i]);
     thetahat = (c1 - u[J-1])/c2;
     
     // repeated p-value is alpha for which the lower bound of theta is zero
-    auto f = [J, c1, t, asf, asfpar, s, x, i](double aval)->double {
-      NumericVector u = getBoundcpp(J, t[i], aval, asf, asfpar, 0, 
-                                    s[i], x[i]);
+    auto f = [J, c1, t, asf, asfpar, st, es, i](double aval)->double {
+      NumericVector u = getBoundcpp(
+        J, t[i], aval, asf, asfpar, 0, st[i], es[i]);
       return c1 - u[J-1];
     };
     
@@ -2747,7 +3177,7 @@ List getADRCI(const double IMax = NA_REAL,
     }
   } else {
     double I1 = IMax*t[L-1];
-    double I2 = INew*t2[L2-1];
+    double I2 = INew*tNew[L2-1];
     int k1 = kMax - L;
     
     NumericVector t1(k1), r1(k1), a1(k1, -6.0), theta0(k1);
@@ -2761,17 +3191,43 @@ List getADRCI(const double IMax = NA_REAL,
     interval[1] = (zL + b[L-1])/sqrt(I1);
     double tol = 0.0001;
     
-    LogicalVector x2(kNew, 1);
-    IntegerVector j = Range(0, L2-1);
-    auto f1 = [L, zL, I1, k1, t1, r1, a1, &b, 
-               L2, zL2, I2, t2, asf2, asfpar2, s2, x2, j,
-               theta0](double theta)->double {
+    // point estimate is the lower bound for alpha = 0.5
+    NumericVector u = getBoundcpp(kMax, t, 0.5, asf, asfpar, 0, st, es);
+    
+    auto f0 = [L, zL, I1, k1, t1, r1, u, es, a1, theta0, 
+               L2, zL2, I2, tNew, asfNew, asfparNew, stNew, 
+               esNew](double theta)->double {
+                 
+                 // conditional type I error under shifted null
+                 double zL1 = zL - theta*sqrt(I1);
+                 NumericVector b1(k1);
+                 for (int l=0; l<k1; l++) {
+                   b1[l] = (u[l+L] - sqrt(r1[l])*zL1)/sqrt(1 - r1[l]);
+                   if (!es[l+L]) b1[l] = 6.0;
+                 }
+                 
+                 List probs = exitprobcpp(b1, a1, theta0, t1);
+                 double alphaNew = sum(NumericVector(probs[0]));
+                 
+                 // efficacy boundaries for the secondary trial
+                 NumericVector b2 = getBoundcpp(
+                   L2, tNew, alphaNew, asfNew, asfparNew, 0, stNew, esNew);
+                 
+                 return zL2 - theta*sqrt(I2) - b2[L2-1];
+               };
+    
+    thetahat = brent(f0, interval[0], interval[1], tol);
+
+    auto f1 = [L, zL, I1, k1, t1, r1, b, es, a1, theta0, 
+               L2, zL2, I2, tNew, asfNew, asfparNew, stNew, 
+               esNew](double theta)->double {
                  
                  // conditional type I error under shifted null
                  double zL1 = zL - theta*sqrt(I1);
                  NumericVector b1(k1);
                  for (int l=0; l<k1; l++) {
                    b1[l] = (b[l+L] - sqrt(r1[l])*zL1)/sqrt(1 - r1[l]);
+                   if (!es[l+L]) b1[l] = 6.0;
                  }
                  
                  List probs = exitprobcpp(b1, a1, theta0, t1);
@@ -2779,51 +3235,48 @@ List getADRCI(const double IMax = NA_REAL,
                  
                  // efficacy boundaries for the secondary trial
                  NumericVector b2 = getBoundcpp(
-                   L2, t2[j], alphaNew, asf2, asfpar2, 0, s2[j], x2[j]);
+                   L2, tNew, alphaNew, asfNew, asfparNew, 0, stNew, esNew);
                  
                  return zL2 - theta*sqrt(I2) - b2[L2-1];
                };
     
-    lower = brent(f1, interval[0], interval[1], tol);
-    
-    auto f2 = [L, zL, I1, k1, t1, r1, a1, &b, 
-               L2, zL2, I2, t2, asf2, asfpar2, s2, x2, j,
-               theta0](double theta)->double {
+    lower = brent(f1, interval[0], thetahat, tol);
+
+    auto f2 = [L, zL, I1, k1, t1, r1, b, es, a1, theta0, 
+               L2, zL2, I2, tNew, asfNew, asfparNew, stNew, 
+               esNew](double theta)->double {
                  
                  // conditional type I error under shifted null
                  double zL1 = -zL + theta*sqrt(I1);
                  NumericVector b1(k1);
                  for (int l=0; l<k1; l++) {
                    b1[l] = (b[l+L] - sqrt(r1[l])*zL1)/sqrt(1 - r1[l]);
+                   if (!es[l+L]) b1[l] = 6.0;
                  }
                  
                  List probs = exitprobcpp(b1, a1, theta0, t1);
                  double alphaNew = sum(NumericVector(probs[0]));
                  
-                 
                  // efficacy boundaries for the secondary trial
                  NumericVector b2 = getBoundcpp(
-                   L2, t2[j], alphaNew, asf2, asfpar2, 0, s2[j], x2[j]);
+                   L2, tNew, alphaNew, asfNew, asfparNew, 0, stNew, esNew);
                  
                  return -zL2 + theta*sqrt(I2) - b2[L2-1];
                };
     
-    upper = brent(f2, interval[0], interval[1], tol);
-    
-    // point estimate is the lower bound for alpha = 0.5
-    b = getBoundcpp(J, t[i], 0.5, asf, asfpar, 0, s[i], x[i]);
-    thetahat = brent(f1, lower, upper, tol);
-    
+    upper = brent(f2, thetahat, interval[1], tol);
+
     // repeated p-value is alpha for which the lower bound of theta is zero
-    auto f = [J, t, asf, asfpar, s, x, i, L, zL, I1, k1, t1, r1, a1,
-              L2, zL2, I2, kNew, t2, asf2, asfpar2, s2, x2, j,
-              theta0, interval, tol](double aval)->double {
+    auto f = [kMax, t, asf, asfpar, st, es, 
+              L, zL, I1, k1, t1, r1, a1, theta0,
+              L2, zL2, I2, tNew, asfNew, asfparNew, stNew, esNew, 
+              interval, tol](double aval)->double {
                 NumericVector u = getBoundcpp(
-                  J, t[i], aval, asf, asfpar, 0, s[i], x[i]);
+                  kMax, t, aval, asf, asfpar, 0, st, es);
                 
-                auto g = [L, zL, I1, k1, t1, r1, a1, &u, 
-                          L2, zL2, I2, t2, asf2, asfpar2, s2, x2, j, 
-                          theta0](double theta)->double {
+                auto g = [L, zL, I1, k1, t1, r1, u, es, a1, theta0, 
+                          L2, zL2, I2, tNew, asfNew, asfparNew, stNew, 
+                          esNew](double theta)->double {
                             
                             // conditional type I error under shifted null
                             double zL1 = zL - theta*sqrt(I1);
@@ -2831,6 +3284,7 @@ List getADRCI(const double IMax = NA_REAL,
                             for (int l=0; l<k1; l++) {
                               b1[l] = (u[l+L] - sqrt(r1[l])*zL1)/
                                 sqrt(1 - r1[l]);
+                              if (!es[l+L]) b1[l] = 6.0;
                             }
                             
                             List probs = exitprobcpp(b1, a1, theta0, t1);
@@ -2838,8 +3292,8 @@ List getADRCI(const double IMax = NA_REAL,
                             
                             // efficacy boundaries for the secondary trial
                             NumericVector b2 = getBoundcpp(
-                              L2, t2[j], alphaNew, asf2, asfpar2, 0, 
-                              s2[j], x2[j]);
+                              L2, tNew, alphaNew, asfNew, asfparNew, 0, stNew,
+                              esNew);
                             
                             return zL2 - theta*sqrt(I2) - b2[L2-1];
                           };
@@ -2865,7 +3319,7 @@ List getADRCI(const double IMax = NA_REAL,
       }
     }
   }
-  
+
   List result = List::create(
     _["pvalue"] = pvalue,
     _["thetahat"] = thetahat,
@@ -2883,29 +3337,70 @@ List getADRCI(const double IMax = NA_REAL,
 //' data-dependent changes in the error spending function and the 
 //' number and spacing of interim looks. 
 //'
-//' @param INew The maximum information for the secondary trial.
-//' @param L The interim look of the primary trial.
-//' @param zL The Z-test statistic at the interim look of the primary trial.
+//' @param INew The maximum information of the secondary trial.
+//' @param L The interim adaptation look of the primary trial.
+//' @param zL The z-test statistic at the interim adaptation look of 
+//'   the primary trial.
 //' @param theta A scalar or a vector of parameter values of 
-//'   length \code{1 + kMax - L} if \code{MullerSchafer = FALSE} or 
-//'   length \code{1 + kNew} if \code{MullerSchafer = TRUE}.
-//' @param kMax The maximum number of stages for the primary trial.
+//'   length \code{kMax + kMax - L} if \code{MullerSchafer = FALSE} or 
+//'   length \code{kMax + kNew} if \code{MullerSchafer = TRUE}.
 //' @param IMax The maximum information of the primary trial.
+//' @param kMax The maximum number of stages of the primary trial.
 //' @param informationRates The information rates of the primary trial.
-//' @param criticalValues The upper boundaries on the Z-test statistic scale
+//' @param efficacyStopping Indicators of whether efficacy stopping is 
+//'   allowed at each stage of the primary trial. Defaults to true 
+//'   if left unspecified.
+//' @param futilityStopping Indicators of whether futility stopping is 
+//'   allowed at each stage of the primary trial. Defaults to true 
+//'   if left unspecified.
+//' @param criticalValues The upper boundaries on the z-test statistic scale
 //'   for efficacy stopping for the primary trial.
-//' @param futilityBounds The lower boundaries on the Z-test statistic scale
-//'   for futility stopping for the primary trial.
+//' @param alpha The significance level of the primary trial. 
+//'   Defaults to 0.025.
+//' @param typeAlphaSpending The type of alpha spending for the primary 
+//'   trial. One of the following: 
+//'   "OF" for O'Brien-Fleming boundaries, 
+//'   "P" for Pocock boundaries, 
+//'   "WT" for Wang & Tsiatis boundaries, 
+//'   "sfOF" for O'Brien-Fleming type spending function, 
+//'   "sfP" for Pocock type spending function, 
+//'   "sfKD" for Kim & DeMets spending function, 
+//'   "sfHSD" for Hwang, Shi & DeCani spending function, 
+//'   "user" for user defined spending, and 
+//'   "none" for no early efficacy stopping. 
+//'   Defaults to "sfOF".
+//' @param parameterAlphaSpending The parameter value of alpha spending
+//'   for the primary trial. Corresponds to Delta for "WT", rho for "sfKD", 
+//'   and gamma for "sfHSD".
+//' @param userAlphaSpending The user defined alpha spending for the primary 
+//'   trial. Cumulative alpha spent up to each stage.
+//' @param futilityBounds	The lower boundaries on the z-test statistic scale 
+//'   for futility stopping for the primary trial. Defaults to 
+//'   \code{rep(-6, kMax-1)} if left unspecified.
+//' @param typeBetaSpending The type of beta spending for the primary trial. 
+//'   One of the following: 
+//'   "sfOF" for O'Brien-Fleming type spending function, 
+//'   "sfP" for Pocock type spending function, 
+//'   "sfKD" for Kim & DeMets spending function, 
+//'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
+//'   "none" for no early futility stopping. 
+//'   Defaults to "none".
+//' @param parameterBetaSpending The parameter value of beta spending 
+//'   for the primary trial. Corresponds to rho for "sfKD", 
+//'   and gamma for "sfHSD".
+//' @param spendingTime The error spending time of the primary trial. 
+//'   Defaults to missing, in which case, it is the same as 
+//'   \code{informationRates}.
 //' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
 //'   for trial adaptation.
 //' @param kNew The number of looks of the secondary trial.
 //' @param informationRatesNew The spacing of looks of the secondary trial.
 //' @param efficacyStoppingNew The indicators of whether efficacy stopping is 
-//'   allowed at each look of the secondary trial. 
-//'   Defaults to true if left unspecified.
+//'   allowed at each look of the secondary trial. Defaults to true 
+//'   if left unspecified.
 //' @param futilityStoppingNew The indicators of whether futility stopping is 
-//'   allowed at each look of the secondary trial. 
-//'   Defaults to true if left unspecified.
+//'   allowed at each look of the secondary trial. Defaults to true 
+//'   if left unspecified.
 //' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 //'   trial. One of the following: 
 //'   "OF" for O'Brien-Fleming boundaries, 
@@ -2917,23 +3412,21 @@ List getADRCI(const double IMax = NA_REAL,
 //'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
 //'   "none" for no early efficacy stopping. 
 //'   Defaults to "sfOF".
-//' @param parameterAlphaSpendingNew The parameter value for the alpha 
-//'   spending for the secondary trial. 
-//'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
+//' @param parameterAlphaSpendingNew The parameter value of alpha spending 
+//'   for the secondary trial. Corresponds to Delta for "WT", rho for "sfKD", 
+//'   and gamma for "sfHSD".
 //' @param typeBetaSpendingNew The type of beta spending for the secondary 
 //'   trial. One of the following: 
 //'   "sfOF" for O'Brien-Fleming type spending function, 
 //'   "sfP" for Pocock type spending function, 
 //'   "sfKD" for Kim & DeMets spending function, 
-//'   "sfHSD" for Hwang, Shi & DeCani spending function, 
-//'   "user" for user defined spending, and 
+//'   "sfHSD" for Hwang, Shi & DeCani spending function, and
 //'   "none" for no early futility stopping. 
 //'   Defaults to "none".
-//' @param parameterBetaSpendingNew The parameter value for the beta 
-//'   spending for the secondary trial. 
-//'   Corresponds to rho for "sfKD", and gamma for "sfHSD".
-//' @param spendingTimeNew A vector of length \code{kNew} for the error 
-//'   spending time at each analysis of the secondary trial. 
+//' @param parameterBetaSpendingNew The parameter value of beta spending 
+//'   for the secondary trial. Corresponds to rho for "sfKD", 
+//'   and gamma for "sfHSD".
+//' @param spendingTimeNew The error spending time of the secondary trial. 
 //'   Defaults to missing, in which case, it is the same as 
 //'   \code{informationRatesNew}.
 //'
@@ -2941,6 +3434,12 @@ List getADRCI(const double IMax = NA_REAL,
 //' values, and data-dependent design changes.
 //' 
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//' 
+//' @references 
+//' Cyrus R. Mehta and Stuart J. Pocock. 
+//' Adaptive increase in sample size when interim results are promising: 
+//' A practical guide with examples.
+//' Stat Med. 2011;30:3267–3284.
 //'
 //' @seealso \code{\link{getDesign}}
 //' 
@@ -3004,71 +3503,99 @@ List getADRCI(const double IMax = NA_REAL,
 //' 
 //' 
 //' hr2 = 0.81                    # observed hazard ratio at interim 2
-//' z2 = (-log(hr2))*sqrt(266/4)  # corresponding Z-test statistic value
+//' z2 = (-log(hr2))*sqrt(266/4)  # corresponding z-test statistic value
 //' 
 //' # Assume that the number of events is increased based on unblinded data
 //' # Use boundaries based on the original sample size for the CHW statistics
 //' b = getBound(k = 3, informationRates = c(179, 266, 298)/298,
 //'              alpha = 0.025, typeAlphaSpending = "sfOF")
 //' 
-//' # expected mean of -log(HR) at interim and final for the new sample size
-//' theta = -log(lr1$HR[c(2,4)])
+//' # expected mean of -log(HR) at the original looks and the new final look
+//' theta = -log(lr1$HR[c(1,2,3,4)])
 //' 
 //' # conditional power for the CHW statistic to cross the boundary at final
 //' getCP(INew = (335 - 266)/4, 
 //'       L = 2, zL = z2, theta = theta,
 //'       kMax = 3, IMax = 298/4, 
 //'       informationRates = c(179, 266, 298)/298,
-//'       criticalValues = b)
+//'       alpha = 0.025, typeAlphaSpending = "sfOF")
 //'
 //' @export
 // [[Rcpp::export]]
-double getCP(double INew = NA_REAL, 
-             const int L = NA_INTEGER, 
-             const double zL = NA_REAL, 
-             const NumericVector& theta = NA_REAL, 
-             const int kMax = NA_INTEGER, 
+double getCP(double INew = NA_REAL,
+             const int L = NA_INTEGER,
+             const double zL = NA_REAL,
+             const NumericVector& theta = NA_REAL,
              const double IMax = NA_REAL,
-             const NumericVector& informationRates = NA_REAL, 
-             const NumericVector& criticalValues = NA_REAL, 
+             const int kMax = NA_INTEGER,
+             const NumericVector& informationRates = NA_REAL,
+             const LogicalVector& efficacyStopping = NA_LOGICAL,
+             const LogicalVector& futilityStopping = NA_LOGICAL,
+             const NumericVector& criticalValues = NA_REAL,
+             const double alpha = 0.025,
+             const String typeAlphaSpending = "sfOF",
+             const double parameterAlphaSpending = NA_REAL,
+             const NumericVector& userAlphaSpending = NA_REAL,
              const NumericVector& futilityBounds = NA_REAL,
-             const bool MullerSchafer = 0, 
-             const int kNew = NA_INTEGER, 
-             const NumericVector& informationRatesNew = NA_REAL, 
-             const LogicalVector& efficacyStoppingNew = NA_LOGICAL, 
+             const String typeBetaSpending = "none",
+             const double parameterBetaSpending = NA_REAL,
+             const NumericVector& spendingTime = NA_REAL,
+             const bool MullerSchafer = 0,
+             const int kNew = NA_INTEGER,
+             const NumericVector& informationRatesNew = NA_REAL,
+             const LogicalVector& efficacyStoppingNew = NA_LOGICAL,
              const LogicalVector& futilityStoppingNew = NA_LOGICAL,
-             const String typeAlphaSpendingNew = "sfOF", 
-             const double parameterAlphaSpendingNew = NA_REAL, 
-             const String typeBetaSpendingNew = "none", 
-             const double parameterBetaSpendingNew = NA_REAL, 
+             const String typeAlphaSpendingNew = "sfOF",
+             const double parameterAlphaSpendingNew = NA_REAL,
+             const String typeBetaSpendingNew = "none",
+             const double parameterBetaSpendingNew = NA_REAL,
              const NumericVector& spendingTimeNew = NA_REAL) {
   
   NumericVector t = clone(informationRates);
-  NumericVector futilityBounds1 = clone(futilityBounds);
+  LogicalVector es = clone(efficacyStopping);
+  LogicalVector fs = clone(futilityStopping);
+  NumericVector b = clone(criticalValues);
+  NumericVector a = clone(futilityBounds);
+  NumericVector st = clone(spendingTime);
   NumericVector tNew = clone(informationRatesNew);
-  LogicalVector efficacyStopping1 = clone(efficacyStoppingNew);
-  LogicalVector futilityStopping1 = clone(futilityStoppingNew);
-  NumericVector spendingTime1 = clone(spendingTimeNew);
+  LogicalVector esNew = clone(efficacyStoppingNew);
+  LogicalVector fsNew = clone(futilityStoppingNew);
+  NumericVector stNew = clone(spendingTimeNew);
+  double alpha1 = alpha;
   
-  std::string asf = typeAlphaSpendingNew;
+  std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
     c = std::tolower(c);
   });
   
-  double asfpar = parameterAlphaSpendingNew;
+  double asfpar = parameterAlphaSpending;
   
-  std::string bsf = typeBetaSpendingNew;
+  std::string bsf = typeBetaSpending;
   std::for_each(bsf.begin(), bsf.end(), [](char & c) {
     c = std::tolower(c);
   });
   
-  double bsfpar = parameterBetaSpendingNew;
+  double bsfpar = parameterBetaSpending;
+  
+  std::string asfNew = typeAlphaSpendingNew;
+  std::for_each(asfNew.begin(), asfNew.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  double asfparNew = parameterAlphaSpendingNew;
+  
+  std::string bsfNew = typeBetaSpendingNew;
+  std::for_each(bsfNew.begin(), bsfNew.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  double bsfparNew = parameterBetaSpendingNew;
   
   if (R_isnancpp(INew)) {
     stop("INew must be provided");
   }
   
-  if (!R_isnancpp(INew) && INew <= 0) {
+  if (INew <= 0) {
     stop("INew must be positive");
   }
   
@@ -3076,16 +3603,24 @@ double getCP(double INew = NA_REAL,
     stop("L must be provided");
   }
   
-  if (R_isnancpp(zL)) {
-    stop("zL must be provided");
-  }
-  
   if (L <= 0) {
     stop("L must be a positive integer");
   }
   
+  if (R_isnancpp(zL)) {
+    stop("zL must be provided");
+  }
+  
   if (is_true(any(is_na(theta)))) {
     stop("theta must be provided");
+  }
+  
+  if (R_isnancpp(IMax)) {
+    stop("IMax must be provided");
+  }
+  
+  if (IMax <= 0) {
+    stop("IMax must be positive");
   }
   
   if (R_isnancpp(kMax)) {
@@ -3094,14 +3629,6 @@ double getCP(double INew = NA_REAL,
   
   if (kMax <= L) {
     stop("kMax must be greater than L");
-  }
-
-  if (R_isnancpp(IMax)) {
-    stop("IMax must be provided");
-  }
-  
-  if (IMax <= 0) {
-    stop("IMax must be positive");
   }
   
   if (is_false(any(is_na(informationRates)))) {
@@ -3119,10 +3646,81 @@ double getCP(double INew = NA_REAL,
     t = as<NumericVector>(tem)/(kMax+0.0);
   }
   
-  if (is_true(any(is_na(criticalValues)))) {
-    stop("criticalValues must be provided");
-  } else if (criticalValues.size() != kMax) {
-    stop("Invalid length for criticalValues");
+  if (is_false(any(is_na(efficacyStopping)))) {
+    if (efficacyStopping.size() != kMax) {
+      stop("Invalid length for efficacyStopping");
+    } else if (efficacyStopping[kMax-1] != 1) {
+      stop("efficacyStopping must end with 1");
+    } else if (is_false(all((efficacyStopping == 1) | 
+      (efficacyStopping == 0)))) {
+      stop("Elements of efficacyStopping must be 1 or 0");
+    }
+  } else {
+    es = rep(1, kMax);
+  }
+  
+  if (is_false(any(is_na(futilityStopping)))) {
+    if (futilityStopping.size() != kMax) {
+      stop("Invalid length for futilityStopping");
+    } else if (futilityStopping[kMax-1] != 1) {
+      stop("futilityStopping must end with 1");
+    } else if (is_false(all((futilityStopping == 1) | 
+      (futilityStopping == 0)))) {
+      stop("Elements of futilityStopping must be 1 or 0");
+    }
+  } else {
+    fs = rep(1, kMax);
+  }
+  
+  if (is_false(any(is_na(criticalValues)))) {
+    if (criticalValues.size() != kMax) {
+      stop("Invalid length for criticalValues");
+    }
+    
+    NumericVector u(kMax), l(kMax, -6.0), theta0(kMax);
+    for (int i=0; i<kMax; i++) {
+      u[i] = criticalValues[i];
+      if (!es[i]) u[i] = 6.0;
+    }
+    
+    List probs = exitprobcpp(u, l, theta0, t);
+    alpha1 = sum(NumericVector(probs[0]));
+  }
+  
+  if (!R_isnancpp(alpha1)) {
+    if (alpha1 < 0.00001 || alpha1 >= 0.5) {
+      stop("alpha must lie in [0.00001, 0.5)");
+    }
+  } else {
+    stop("alpha must be provided for missing criticalValues");
+  }
+  
+  if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
+      asf=="wt" || asf=="sfof" || asf=="sfp" ||
+      asf=="sfkd" || asf=="sfhsd" || asf=="user" || asf=="none")) {
+    stop("Invalid value for typeAlphaSpending");
+  }
+  
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+    stop("Missing value for parameterAlphaSpending");
+  }
+  
+  if (asf=="sfkd" && asfpar <= 0) {
+    stop ("parameterAlphaSpending must be positive for sfKD");
+  }
+  
+  if (is_true(any(is_na(criticalValues))) && asf=="user") {
+    if (is_true(any(is_na(userAlphaSpending)))) {
+      stop("userAlphaSpending must be specified");
+    } else if (userAlphaSpending.size() < kMax) {
+      stop("Insufficient length of userAlphaSpending");
+    } else if (userAlphaSpending[0] < 0) {
+      stop("Elements of userAlphaSpending must be nonnegnative");
+    } else if (kMax > 1 && is_true(any(diff(userAlphaSpending) < 0))) {
+      stop("Elements of userAlphaSpending must be nondecreasing");
+    } else if (userAlphaSpending[kMax-1] != alpha) {
+      stop("userAlphaSpending must end with specified alpha");
+    }
   }
   
   if (is_false(any(is_na(futilityBounds)))) {
@@ -3130,9 +3728,6 @@ double getCP(double INew = NA_REAL,
         futilityBounds.size() == kMax)) {
       stop("Invalid length for futilityBounds");
     }
-  } else {
-    futilityBounds1 = rep(-6.0, kMax);
-    futilityBounds1[kMax-1] = criticalValues[kMax-1];
   }
   
   if (is_false(any(is_na(criticalValues))) &&
@@ -3147,6 +3742,33 @@ double getCP(double INew = NA_REAL,
         futilityBounds[kMax-1] != criticalValues[kMax-1]) {
       stop("futilityBounds and criticalValues must meet at final analysis");
     }
+  }
+  
+  if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfof" || bsf=="sfp" ||
+      bsf=="sfkd" || bsf=="sfhsd" || bsf=="none")) {
+    stop("Invalid value for typeBetaSpending");
+  }
+  
+  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
+    stop("Missing value for parameterBetaSpending");
+  }
+  
+  if (bsf=="sfkd" && bsfpar <= 0) {
+    stop ("parameterBetaSpending must be positive for sfKD");
+  }
+  
+  if (is_false(any(is_na(spendingTime)))) {
+    if (spendingTime.size() != kMax) {
+      stop("Invalid length for spendingTime");
+    } else if (spendingTime[0] <= 0) {
+      stop("Elements of spendingTime must be positive");
+    } else if (kMax > 1 && is_true(any(diff(spendingTime) <= 0))) {
+      stop("Elements of spendingTime must be increasing");
+    } else if (spendingTime[kMax-1] != 1) {
+      stop("spendingTime must end with 1");
+    }
+  } else {
+    st = clone(t);
   }
   
   if (MullerSchafer) {
@@ -3179,7 +3801,7 @@ double getCP(double INew = NA_REAL,
         stop("Elements of efficacyStoppingNew must be 1 or 0");
       }
     } else {
-      efficacyStopping1 = rep(1, kNew);
+      esNew = rep(1, kNew);
     }
     
     if (is_false(any(is_na(futilityStoppingNew)))) {
@@ -3192,32 +3814,34 @@ double getCP(double INew = NA_REAL,
         stop("Elements of futilityStoppingNew must be 1 or 0");
       }
     } else {
-      futilityStopping1 = rep(1, kNew);
+      fsNew = rep(1, kNew);
     }
     
-    if (!(asf=="of" || asf=="p" || asf=="wt" || asf=="sfof" || asf=="sfp" ||
-        asf=="sfkd" || asf=="sfhsd" || asf=="none")) {
+    if (!(asfNew=="of" || asfNew=="p" || asfNew=="wt" || 
+        asfNew=="sfof" || asfNew=="sfp" ||
+        asfNew=="sfkd" || asfNew=="sfhsd" || asfNew=="none")) {
       stop("Invalid value for typeAlphaSpendingNew");
     }
     
-    if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+    if ((asfNew=="wt" || asfNew=="sfkd" || asfNew=="sfhsd") && 
+        R_isnancpp(asfparNew)) {
       stop("Missing value for parameterAlphaSpendingNew");
     }
     
-    if (asf=="sfkd" && asfpar <= 0) {
+    if (asfNew=="sfkd" && asfparNew <= 0) {
       stop ("parameterAlphaSpendingNew must be positive for sfKD");
     }
     
-    if (!(bsf=="sfof" || bsf=="sfp" || bsf=="sfkd" || 
-        bsf=="sfhsd" || bsf=="none")) {
+    if (!(bsfNew=="sfof" || bsfNew=="sfp" || bsfNew=="sfkd" || 
+        bsfNew=="sfhsd" || bsfNew=="none")) {
       stop("Invalid value for typeBetaSpendingNew");
     }
     
-    if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
+    if ((bsfNew=="sfkd" || bsfNew=="sfhsd") && R_isnancpp(bsfparNew)) {
       stop("Missing value for parameterBetaSpendingNew");
     }
     
-    if (bsf=="sfkd" && bsfpar <= 0) {
+    if (bsfNew=="sfkd" && bsfparNew <= 0) {
       stop ("parameterBetaSpendingNew must be positive for sfKD");
     }
     
@@ -3232,16 +3856,54 @@ double getCP(double INew = NA_REAL,
         stop("spendingTimeNew must end with 1");
       }
     } else {
-      spendingTime1 = clone(tNew);
+      stNew = clone(tNew);
     }
   }
   
+  
+  // obtain critical values for the primary trial
+  if (is_true(any(is_na(criticalValues)))) {
+    b = getBoundcpp(kMax, t, alpha1, asf, asfpar, userAlphaSpending, st, es);
+  }
+  
+  // obtain futility bounds for the primary trial
+  if (kMax > 1) {
+    if (is_true(any(is_na(futilityBounds))) && bsf=="none") {
+      a = rep(-6.0, kMax);
+      a[kMax-1] = b[kMax-1];
+    } else if (is_false(any(is_na(futilityBounds))) && 
+      a.size() == kMax-1) {
+      a.push_back(b[kMax-1]);
+    }
+  } else {
+    if (is_true(any(is_na(futilityBounds)))) {
+      a = b[kMax-1];
+    }
+  }
+  
+  if (is_true(any(is_na(a)))) {
+    NumericVector theta1(kMax);
+    if (theta.size() == 1) {
+      theta1.fill(theta[0]);
+    } else if (theta.size() > kMax) {
+      IntegerVector idx = Range(0, kMax-1);
+      theta1 = theta[idx];
+    } else {
+      stop("Invalid length for theta");
+    }
+    
+    List out = getPower(alpha1, kMax, b, theta1, IMax*t, bsf, bsfpar, st, fs);
+    a = out[1];
+  }
+  
+
   int k1 = kMax - L;
   NumericVector t1(k1), r1(k1), b1(k1), a1(k1, -6.0), zero(k1);
   for (int l=0; l<k1; l++) {
     t1[l] = (t[l+L] - t[L-1])/(1 - t[L-1]);
     r1[l] = t[L-1]/t[l+L];
-    b1[l] = (criticalValues[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
+    b1[l] = (b[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
+    if (!es[l+L]) b1[l] = 6.0;
   }
   
   double result;
@@ -3249,14 +3911,18 @@ double getCP(double INew = NA_REAL,
     NumericVector theta1(k1+1);
     if (theta.size() == 1) {
       theta1.fill(theta[0]);
-    } else if (theta.size() == k1+1){
-      theta1 = clone(theta);
+    } else if (theta.size() == kMax+k1){
+      theta1[0] = theta[L-1];
+      for (int l=0; l<k1; l++) {
+        theta1[l+1] = theta[kMax+l];
+      }
     } else {
       stop("Invalid length for theta"); 
     }
     
     for (int l=0; l<k1; l++) {
-      a1[l] = (futilityBounds1[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
+      a1[l] = (a[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
+      if (!fs[l+L]) a1[l] = -6.0;
     }
     
     NumericVector mu(k1), I2(k1);
@@ -3272,21 +3938,24 @@ double getCP(double INew = NA_REAL,
     NumericVector theta1(kNew+1);
     if (theta.size() == 1) {
       theta1.fill(theta[0]);
-    } else if (theta.size() == kNew+1) {
-      theta1 = clone(theta);
+    } else if (theta.size() == kMax+kNew) {
+      theta1[0] = theta[L-1];
+      for (int l=0; l<kNew; l++) {
+        theta1[l+1] = theta[kMax+l];
+      }
     } else {
       stop("Invalid length for theta");
     }
     
-    // conditional type I error
+    // obtain conditional type I error
     List probs = exitprobcpp(b1, a1, zero, t1);
     double alphaNew = sum(NumericVector(probs[0]));
     
-    // obtain the efficacy boundaries for the secondary trial
-    NumericVector b2 = getBoundcpp(kNew, tNew, alphaNew, asf, asfpar, 
-                                   0, spendingTime1, efficacyStopping1);
+    // obtain efficacy boundaries for the secondary trial
+    NumericVector b2 = getBoundcpp(
+      kNew, tNew, alphaNew, asfNew, asfparNew, 0, stNew, esNew);
     
-    // obtain the conditional power
+    // obtain conditional power
     NumericVector mu(kNew), I2(kNew);
     for (int l=0; l<kNew; l++) {
       double r = IMax*t[L-1]/(IMax*t[L-1] + INew*tNew[l]);
@@ -3294,11 +3963,11 @@ double getCP(double INew = NA_REAL,
       I2[l] = INew*tNew[l];
     }
     
-    List out = getPower(alphaNew, kNew, b2, mu, I2, bsf, bsfpar, 
-                        spendingTime1, futilityStopping1);
+    List out = getPower(
+      alphaNew, kNew, b2, mu, I2, bsfNew, bsfparNew, stNew, fsNew);
+    
     result = out[0];
   }
   
   return result;
 }
-

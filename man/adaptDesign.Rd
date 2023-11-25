@@ -10,10 +10,20 @@ adaptDesign(
   L = NA_integer_,
   zL = NA_real_,
   theta = NA_real_,
+  IMax = NA_real_,
   kMax = NA_integer_,
   informationRates = NA_real_,
+  efficacyStopping = NA_integer_,
+  futilityStopping = NA_integer_,
   criticalValues = NA_real_,
+  alpha = 0.025,
+  typeAlphaSpending = "sfOF",
+  parameterAlphaSpending = NA_real_,
+  userAlphaSpending = NA_real_,
   futilityBounds = NA_real_,
+  typeBetaSpending = "none",
+  parameterBetaSpending = NA_real_,
+  spendingTime = NA_real_,
   MullerSchafer = 0L,
   kNew = NA_integer_,
   informationRatesNew = NA_real_,
@@ -30,25 +40,79 @@ adaptDesign(
 \arguments{
 \item{betaNew}{The type II error for the secondary trial.}
 
-\item{INew}{The maximum information for the secondary trial. Either
+\item{INew}{The maximum information of the secondary trial. Either
 \code{betaNew} or \code{INew} should be provided while the other one
 should be missing.}
 
-\item{L}{The interim look of the primary trial.}
+\item{L}{The interim adaptation look of the primary trial.}
 
-\item{zL}{The Z-test statistic at the interim look of the primary trial.}
+\item{zL}{The z-test statistic at the interim adaptation look of
+the primary trial.}
 
 \item{theta}{The parameter value.}
 
-\item{kMax}{The maximum number of stages for the primary trial.}
+\item{IMax}{The maximum information of the primary trial. Must be
+provided if \code{futilityBounds} is missing and
+\code{typeBetaSpending} is not equal to "none".}
+
+\item{kMax}{The maximum number of stages of the primary trial.}
 
 \item{informationRates}{The information rates of the primary trial.}
 
-\item{criticalValues}{The upper boundaries on the Z-test statistic scale
+\item{efficacyStopping}{Indicators of whether efficacy stopping is
+allowed at each stage of the primary trial. Defaults to true
+if left unspecified.}
+
+\item{futilityStopping}{Indicators of whether futility stopping is
+allowed at each stage of the primary trial. Defaults to true
+if left unspecified.}
+
+\item{criticalValues}{The upper boundaries on the z-test statistic scale
 for efficacy stopping for the primary trial.}
 
-\item{futilityBounds}{The lower boundaries on the Z-test statistic scale
-for futility stopping for the primary trial.}
+\item{alpha}{The significance level of the primary trial.
+Defaults to 0.025.}
+
+\item{typeAlphaSpending}{The type of alpha spending for the primary
+trial. One of the following:
+"OF" for O'Brien-Fleming boundaries,
+"P" for Pocock boundaries,
+"WT" for Wang & Tsiatis boundaries,
+"sfOF" for O'Brien-Fleming type spending function,
+"sfP" for Pocock type spending function,
+"sfKD" for Kim & DeMets spending function,
+"sfHSD" for Hwang, Shi & DeCani spending function,
+"user" for user defined spending, and
+"none" for no early efficacy stopping.
+Defaults to "sfOF".}
+
+\item{parameterAlphaSpending}{The parameter value of alpha spending
+for the primary trial. Corresponds to Delta for "WT", rho for "sfKD",
+and gamma for "sfHSD".}
+
+\item{userAlphaSpending}{The user defined alpha spending for the primary
+trial. Cumulative alpha spent up to each stage.}
+
+\item{futilityBounds}{The lower boundaries on the z-test statistic scale
+for futility stopping for the primary trial. Defaults to
+\code{rep(-6, kMax-1)} if left unspecified.}
+
+\item{typeBetaSpending}{The type of beta spending for the primary trial.
+One of the following:
+"sfOF" for O'Brien-Fleming type spending function,
+"sfP" for Pocock type spending function,
+"sfKD" for Kim & DeMets spending function,
+"sfHSD" for Hwang, Shi & DeCani spending function, and
+"none" for no early futility stopping.
+Defaults to "none".}
+
+\item{parameterBetaSpending}{The parameter value of beta spending
+for the primary trial. Corresponds to rho for "sfKD",
+and gamma for "sfHSD".}
+
+\item{spendingTime}{The error spending time of the primary trial.
+Defaults to missing, in which case, it is the same as
+\code{informationRates}.}
 
 \item{MullerSchafer}{Whether to use the Muller and Schafer (2001) method
 for trial adaptation.}
@@ -58,12 +122,12 @@ for trial adaptation.}
 \item{informationRatesNew}{The spacing of looks of the secondary trial.}
 
 \item{efficacyStoppingNew}{The indicators of whether efficacy stopping is
-allowed at each look of the secondary trial.
-Defaults to true if left unspecified.}
+allowed at each look of the secondary trial. Defaults to true
+if left unspecified.}
 
 \item{futilityStoppingNew}{The indicators of whether futility stopping is
-allowed at each look of the secondary trial.
-Defaults to true if left unspecified.}
+allowed at each look of the secondary trial. Defaults to true
+if left unspecified.}
 
 \item{typeAlphaSpendingNew}{The type of alpha spending for the secondary
 trial. One of the following:
@@ -77,9 +141,9 @@ trial. One of the following:
 "none" for no early efficacy stopping.
 Defaults to "sfOF".}
 
-\item{parameterAlphaSpendingNew}{The parameter value for the alpha
-spending for the secondary trial.
-Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".}
+\item{parameterAlphaSpendingNew}{The parameter value of alpha spending
+for the secondary trial. Corresponds to Delta for "WT", rho for "sfKD",
+and gamma for "sfHSD".}
 
 \item{typeBetaSpendingNew}{The type of beta spending for the secondary
 trial. One of the following:
@@ -91,15 +155,14 @@ trial. One of the following:
 "none" for no early futility stopping.
 Defaults to "none".}
 
-\item{parameterBetaSpendingNew}{The parameter value for the beta spending
-for the secondary trial.
-Corresponds to rho for "sfKD", and gamma for "sfHSD".}
+\item{parameterBetaSpendingNew}{The parameter value of beta spending
+for the secondary trial. Corresponds to rho for "sfKD",
+and gamma for "sfHSD".}
 
 \item{userBetaSpendingNew}{The user defined cumulative beta spending.
 Cumulative beta spent up to each stage of the secondary trial.}
 
-\item{spendingTimeNew}{A vector of length \code{kNew} for the error
-spending time at each analysis of the secondary trial.
+\item{spendingTimeNew}{The error spending time of the secondary trial.
 Defaults to missing, in which case, it is the same as
 \code{informationRatesNew}.}
 }
@@ -167,6 +230,17 @@ zL = delta1/sqrt(4/n1*sigma1^2)
 # incremental sample size for sigma = 20
 (nNew = 4*sigma1^2*des2$secondaryTrial$overallResults$maxInformation)
 
+}
+\references{
+Lu Chi, H. M. James Hung, and Sue-Jane Wang.
+Modification of Sample Size in Group Sequential Clinical Trials.
+Biometrics 1999;55:853-857.
+
+Hans-Helge Muller and Helmut Schafer.
+Adaptive group sequential designs for clinical trials:
+Combining the advantages of adaptive and of
+classical group sequential approaches.
+Biometrics 2001;57:886-891.
 }
 \seealso{
 \code{\link{getDesign}}
