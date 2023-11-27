@@ -103,6 +103,11 @@ A data frame of the following variables if
 \item \code{ndropouts}: The total number of dropouts.
 \item \code{ndropouts1}: The number of events for the active treatment group.
 \item \code{ndropouts2}: The number of events for the control group.
+\item \code{nfmax}: The total number of subjects reaching maximum follow-up.
+\item \code{nfmax1}: The number of subjects reaching maximum follow-up in
+the active treatment group.
+\item \code{nfmax2}: The number of subjects reaching maximum follow-up in
+the control group.
 }
 
 If \code{predictEventOnly = 0}, the following variables will also

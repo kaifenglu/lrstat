@@ -3,6 +3,7 @@
 - use markdown for Roxygen documentations
 - rename getAccrualDuration to getAccrualDurationFromN
 - replace predictEventOnly with predictTarget for the lrstat function
+- add number of subjects reaching the maximum follow-up for fixed follow-up design for the lrstat function
 - add efficacyStopping to the getBoundcpp function to improve coding efficiency
 - add the getPower utility function to improve coding efficiency
 - replace the drift parameter with Imax and theta parameters in the getDesign function

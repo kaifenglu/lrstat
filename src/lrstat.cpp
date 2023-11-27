@@ -740,6 +740,14 @@ NumericMatrix nevent2(const NumericVector& time = NA_REAL,
 //' 
 //' * \code{ndropouts2}: The number of events for the control group.
 //' 
+//' * \code{nfmax}: The total number of subjects reaching maximum follow-up.
+//' 
+//' * \code{nfmax1}: The number of subjects reaching maximum follow-up in 
+//' the active treatment group. 
+//' 
+//' * \code{nfmax2}: The number of subjects reaching maximum follow-up in 
+//' the control group. 
+//' 
 //' If \code{predictEventOnly = 0}, the following variables will also 
 //' be included:
 //' 
@@ -880,6 +888,11 @@ DataFrame lrstat1(const double time = NA_REAL,
   NumericVector times(nstrata);
   DataFrame df;
   
+  double phi = allocationRatioPlanned/(1+allocationRatioPlanned);
+  NumericVector maxFU = NumericVector::create(maxFollowupTime);
+  NumericVector s2 = NumericVector::create(s - maxFollowupTime);
+  double a2 = accrual(s2, accrualTime, accrualIntensity, accrualDuration)[0];
+  NumericVector nfmax1(nstrata), nfmax2(nstrata), nfmax(nstrata);
   
   for (h=0; h<nstrata; h++) {
     frac = stratumFraction[h];
@@ -888,7 +901,6 @@ DataFrame lrstat1(const double time = NA_REAL,
     lam2 = lambda2x[l];
     gam1 = gamma1x[l];
     gam2 = gamma2x[l];
-    
     
     // number of events in the stratum at the specified calendar time
     x = nevent2(s1, allocationRatioPlanned, accrualTime,
@@ -905,6 +917,14 @@ DataFrame lrstat1(const double time = NA_REAL,
     nsubjects[h] = frac*a;
     nevents(h, _) = x.row(0);
     ndropouts(h, _) = y.row(0);
+    
+    // obtain number of subjects censored due to reaching the max follow-up
+    double ncom = frac*a2;
+    double p1 = patrisk(maxFU, piecewiseSurvivalTime, lam1, gam1)[0];
+    double p2 = patrisk(maxFU, piecewiseSurvivalTime, lam2, gam2)[0];
+    nfmax1[h] = phi*ncom*p1;
+    nfmax2[h] = (1-phi)*ncom*p2;
+    nfmax[h] = nfmax1[h] + nfmax2[h];
     
     // approximate the mean and variance of weighted log-rank test
     // score statistic
@@ -990,7 +1010,10 @@ DataFrame lrstat1(const double time = NA_REAL,
                            _["nevents2"] = nevents2,
                            _["ndropouts"] = ndropoutst,
                            _["ndropouts1"] = ndropouts1,
-                           _["ndropouts2"] = ndropouts2);
+                           _["ndropouts2"] = ndropouts2,
+                           _["nfmax"] = nfmax,
+                           _["nfmax1"] = nfmax1,
+                           _["nfmax2"] = nfmax2);
   } else {
     df = DataFrame::create(_["stratum"] = stratum,
                            _["time"] = times,
@@ -1001,6 +1024,9 @@ DataFrame lrstat1(const double time = NA_REAL,
                            _["ndropouts"] = ndropoutst,
                            _["ndropouts1"] = ndropouts1,
                            _["ndropouts2"] = ndropouts2,
+                           _["nfmax"] = nfmax,
+                           _["nfmax1"] = nfmax1,
+                           _["nfmax2"] = nfmax2,
                            _["uscore"] = uscore,
                            _["vscore"] = vscore,
                            _["iscore"] = iscore);
@@ -1011,8 +1037,9 @@ DataFrame lrstat1(const double time = NA_REAL,
 
 
 //' @title Number of subjects having an event and log-rank statistics
-//' @description Obtains the number of subjects accrued, number of events and
-//' number of dropouts in each group, mean and variance of weighted log-rank
+//' @description Obtains the number of subjects accrued, number of events,
+//' number of dropouts, and number of subjects reaching the maximum 
+//' follow-up in each group, mean and variance of weighted log-rank
 //' score statistic, estimated hazard ratio from weighted Cox regression
 //' and variance of log hazard ratio estimate at given calendar times.
 //'
@@ -1060,6 +1087,14 @@ DataFrame lrstat1(const double time = NA_REAL,
 //' * \code{ndropouts1}: The number of events for the active treatment group.
 //' 
 //' * \code{ndropouts2}: The number of events for the control group.
+//' 
+//' * \code{nfmax}: The total number of subjects reaching maximum follow-up.
+//' 
+//' * \code{nfmax1}: The number of subjects reaching maximum follow-up in 
+//' the active treatment group. 
+//' 
+//' * \code{nfmax2}: The number of subjects reaching maximum follow-up in 
+//' the control group. 
 //' 
 //' If \code{predictTarget = 2}, the following variables will also 
 //' be included:
@@ -1264,6 +1299,7 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
   
   NumericVector subjects(k), nevents(k), nevents1(k), nevents2(k);
   NumericVector ndropouts(k), ndropouts1(k), ndropouts2(k);
+  NumericVector nfmax(k), nfmax1(k), nfmax2(k);
   NumericVector uscore(k), vscore(k), logRankZ(k);
   NumericVector logHR(k), HR(k), vlogHR(k), zlogHR(k);
   
@@ -1288,10 +1324,13 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
     ndropouts[j] = sum(NumericVector(df[6]));
     ndropouts1[j] = sum(NumericVector(df[7]));
     ndropouts2[j] = sum(NumericVector(df[8]));
+    nfmax[j] = sum(NumericVector(df[9]));
+    nfmax1[j] = sum(NumericVector(df[10]));
+    nfmax2[j] = sum(NumericVector(df[11]));
     
     if (predictTarget > 1) {
-      uscore[j] = sum(NumericVector(df[9]));
-      vscore[j] = sum(NumericVector(df[10]));
+      uscore[j] = sum(NumericVector(df[12]));
+      vscore[j] = sum(NumericVector(df[13]));
       logRankZ[j] = uscore[j]/sqrt(vscore[j]);
     }
   }
@@ -1318,7 +1357,7 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
                                        rho1, rho2, numSubintervals, 
                                        predictEventOnly);
                 
-                return sum(NumericVector(df[9]));
+                return sum(NumericVector(df[12]));
               };
     
     
@@ -1334,8 +1373,8 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
                              accrualDuration, followupTime, fixedFollowup,
                              rho1, rho2, numSubintervals, predictEventOnly);
       
-      double vscore1 = sum(NumericVector(df[10]));
-      double iscore1 = sum(NumericVector(df[11]));
+      double vscore1 = sum(NumericVector(df[13]));
+      double iscore1 = sum(NumericVector(df[14]));
       
       vlogHR[j] = vscore1/(iscore1*iscore1);
       zlogHR[j] = (logHR[j] - log(hazardRatioH0))/sqrt(vlogHR[j]);
@@ -1349,6 +1388,9 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
                            _["ndropouts"] = ndropouts,
                            _["ndropouts1"] = ndropouts1,
                            _["ndropouts2"] = ndropouts2,
+                           _["nfmax"] = nfmax,
+                           _["nfmax1"] = nfmax1,
+                           _["nfmax2"] = nfmax2,
                            _["uscore"] = uscore,
                            _["vscore"] = vscore,
                            _["logRankZ"] = logRankZ,
@@ -1364,7 +1406,10 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
                            _["nevents2"] = nevents2,
                            _["ndropouts"] = ndropouts,
                            _["ndropouts1"] = ndropouts1,
-                           _["ndropouts2"] = ndropouts2);
+                           _["ndropouts2"] = ndropouts2,
+                           _["nfmax"] = nfmax,
+                           _["nfmax1"] = nfmax1,
+                           _["nfmax2"] = nfmax2);
   } else {
     df = DataFrame::create(_["time"] = time,
                            _["subjects"] = subjects,
@@ -1374,6 +1419,9 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
                            _["ndropouts"] = ndropouts,
                            _["ndropouts1"] = ndropouts1,
                            _["ndropouts2"] = ndropouts2,
+                           _["nfmax"] = nfmax,
+                           _["nfmax1"] = nfmax1,
+                           _["nfmax2"] = nfmax2,
                            _["uscore"] = uscore,
                            _["vscore"] = vscore,
                            _["logRankZ"] = logRankZ,
@@ -2474,7 +2522,7 @@ NumericVector getCriticalValues(
               accrualDuration, followupTime, fixedFollowup,
               rho1, rho2, numSubintervals, 2);
   
-  NumericVector vscore = NumericVector(lr[9]);
+  NumericVector vscore = NumericVector(lr[12]);
   
   NumericVector theta(kMax); // mean values under H0, initialized to zero
   
@@ -2549,7 +2597,7 @@ NumericVector getCumAlphaSpent(
               accrualDuration, followupTime, fixedFollowup,
               rho1, rho2, numSubintervals, 2);
   
-  NumericVector vscore = NumericVector(lr[9]);
+  NumericVector vscore = NumericVector(lr[12]);
   
   NumericVector theta(kMax); // mean values under H0, initialized to zero
   NumericVector l = rep(-6.0, kMax);
@@ -3232,12 +3280,12 @@ List lrpower(const int kMax = 1,
     }
     
     if (estimateHazardRatio) {
-      HR = NumericVector(lr[12]);
-      vlogHR = NumericVector(lr[13]);
+      HR = NumericVector(lr[15]);
+      vlogHR = NumericVector(lr[16]);
     }
     
-    NumericVector uscore = NumericVector(lr[8]);
-    vscore = NumericVector(lr[9]);
+    NumericVector uscore = NumericVector(lr[11]);
+    vscore = NumericVector(lr[12]);
     theta = -uscore/vscore;
   }
   
@@ -5438,8 +5486,8 @@ List lrsamplesize(const double beta = 0.2,
                             dur1, dur2, fixedFollowup,
                             rho1, rho2, numSubintervals, 2);
                 
-                NumericVector uscore = NumericVector(lr[8]);
-                vscore = NumericVector(lr[9]);
+                NumericVector uscore = NumericVector(lr[11]);
+                vscore = NumericVector(lr[12]);
                 theta = -uscore/vscore;
                 
                 // information time

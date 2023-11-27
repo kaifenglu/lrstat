@@ -1214,6 +1214,14 @@ nevent2 <- function(time = NA_real_, allocationRatioPlanned = 1, accrualTime = 0
 #' 
 #' * \code{ndropouts2}: The number of events for the control group.
 #' 
+#' * \code{nfmax}: The total number of subjects reaching maximum follow-up.
+#' 
+#' * \code{nfmax1}: The number of subjects reaching maximum follow-up in 
+#' the active treatment group. 
+#' 
+#' * \code{nfmax2}: The number of subjects reaching maximum follow-up in 
+#' the control group. 
+#' 
 #' If \code{predictEventOnly = 0}, the following variables will also 
 #' be included:
 #' 
@@ -1252,8 +1260,9 @@ lrstat1 <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned =
 }
 
 #' @title Number of subjects having an event and log-rank statistics
-#' @description Obtains the number of subjects accrued, number of events and
-#' number of dropouts in each group, mean and variance of weighted log-rank
+#' @description Obtains the number of subjects accrued, number of events,
+#' number of dropouts, and number of subjects reaching the maximum 
+#' follow-up in each group, mean and variance of weighted log-rank
 #' score statistic, estimated hazard ratio from weighted Cox regression
 #' and variance of log hazard ratio estimate at given calendar times.
 #'
@@ -1301,6 +1310,14 @@ lrstat1 <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned =
 #' * \code{ndropouts1}: The number of events for the active treatment group.
 #' 
 #' * \code{ndropouts2}: The number of events for the control group.
+#' 
+#' * \code{nfmax}: The total number of subjects reaching maximum follow-up.
+#' 
+#' * \code{nfmax1}: The number of subjects reaching maximum follow-up in 
+#' the active treatment group. 
+#' 
+#' * \code{nfmax2}: The number of subjects reaching maximum follow-up in 
+#' the control group. 
 #' 
 #' If \code{predictTarget = 2}, the following variables will also 
 #' be included:

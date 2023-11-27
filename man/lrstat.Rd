@@ -105,6 +105,11 @@ A data frame containing the following variables if
 \item \code{ndropouts}: The total number of dropouts.
 \item \code{ndropouts1}: The number of events for the active treatment group.
 \item \code{ndropouts2}: The number of events for the control group.
+\item \code{nfmax}: The total number of subjects reaching maximum follow-up.
+\item \code{nfmax1}: The number of subjects reaching maximum follow-up in
+the active treatment group.
+\item \code{nfmax2}: The number of subjects reaching maximum follow-up in
+the control group.
 }
 
 If \code{predictTarget = 2}, the following variables will also
@@ -125,8 +130,9 @@ variables will also be included:
 }
 }
 \description{
-Obtains the number of subjects accrued, number of events and
-number of dropouts in each group, mean and variance of weighted log-rank
+Obtains the number of subjects accrued, number of events,
+number of dropouts, and number of subjects reaching the maximum
+follow-up in each group, mean and variance of weighted log-rank
 score statistic, estimated hazard ratio from weighted Cox regression
 and variance of log hazard ratio estimate at given calendar times.
 }
