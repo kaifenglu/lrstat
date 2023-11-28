@@ -52,6 +52,10 @@ A numeric vector of critical values up to the current look.
 Obtains the efficacy stopping boundaries for a group
 sequential design.
 }
+\details{
+If \code{typeAlphaSpending} is "OF", "P", or "WT", then the boundaries
+will be based on equally spaced looks.
+}
 \examples{
 
 getBound(k = 2, informationRates = c(0.5,1),

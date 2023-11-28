@@ -4042,6 +4042,10 @@ List getDesign(const double beta = NA_REAL,
   
   double expectedInformationH0 = sum(ptotal0*information);
   
+  double overallRejectH0 = sum(pu0);
+  NumericVector cpu0 = cumsum(pu0);
+  NumericVector cpl0 = cumsum(pl0);
+  
   IntegerVector stageNumber = seq_len(kMax);
   for (int i=0; i<kMax; i++) {
     if (criticalValues1[i] == 6) {
@@ -4068,11 +4072,16 @@ List getDesign(const double beta = NA_REAL,
     _["futilityP"] = futilityP,
     _["information"] = information,
     _["efficacyStopping"] = efficacyStopping1,
-    _["futilityStopping"] = futilityStopping1);
+    _["futilityStopping"] = futilityStopping1,
+    _["rejectPerStageH0"] = pu0,
+    _["futilityPerStageH0"] = pl0,
+    _["cumulativeRejectionH0"] = cpu0,
+    _["cumulativeFutilityH0"] = cpl0);
   
   DataFrame overallResults = DataFrame::create(
     _["overallReject"] = overallReject,
     _["alpha"] = (cumAlphaSpent[kMax-1]),
+    _["attainedAlpha"] = overallRejectH0,
     _["kMax"] = kMax,
     _["theta"] = theta,
     _["maxInformation"] = IMax1,
@@ -4223,7 +4232,7 @@ List getDesign(const double beta = NA_REAL,
 //'
 //' @references 
 //' Lu Chi, H. M. James Hung, and Sue-Jane Wang. 
-//' Modification of Sample Size in Group Sequential Clinical Trials.
+//' Modification of sample size in group sequential clinical trials.
 //' Biometrics 1999;55:853-857.
 //' 
 //' Hans-Helge Muller and Helmut Schafer. 
@@ -4251,27 +4260,32 @@ List getDesign(const double beta = NA_REAL,
 //' sigma1 = 20
 //' zL = delta1/sqrt(4/n1*sigma1^2)
 //' 
+//' t = des1$byStageResults$informationRates
+//' 
 //' # conditional power for original design at estimated parameter value
 //' (des2 = adaptDesign(
-//'   betaNew = NA, INew = (n-n1)/(4*sigma1^2), L, zL, theta = delta1, 
-//'   kMax = des1$overallResults$kMax, 
-//'   informationRates = des1$byStageResults$informationRates,
-//'   criticalValues = des1$byStageResults$efficacyBounds))
+//'   betaNew = NA, INew = (n-n1)/(4*sigma1^2), 
+//'   L, zL, theta = delta1, 
+//'   kMax = 3, informationRates = t,
+//'   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+//'   parameterAlphaSpending = -4))
 //' 
 //' # conditional power with sample size increase
 //' (des2 = adaptDesign(
-//'   betaNew = NA, INew = 420/(4*sigma1^2), L, zL, theta = delta1, 
-//'   kMax = des1$overallResults$kMax, 
-//'   informationRates = des1$byStageResults$informationRates,
-//'   criticalValues = des1$byStageResults$efficacyBounds))
+//'   betaNew = NA, INew = 420/(4*sigma1^2), 
+//'   L, zL, theta = delta1, 
+//'   kMax = 3, informationRates = t,
+//'   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+//'   parameterAlphaSpending = -4))
 //' 
 //' # Muller & Schafer (2001) method to design the secondary trial: 
 //' # 3-look gamma(-2) spending with 84% power at delta = 4.5 and sigma = 20
 //' (des2 = adaptDesign(
-//'   betaNew = 0.16, INew = NA, L, zL, theta = delta1,
-//'   kMax = des1$overallResults$kMax, 
-//'   informationRates = des1$byStageResults$informationRates,
-//'   criticalValues = des1$byStageResults$efficacyBounds,
+//'   betaNew = 0.16, INew = NA, 
+//'   L, zL, theta = delta1,
+//'   kMax = 3, informationRates = t,
+//'   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+//'   parameterAlphaSpending = -4,
 //'   MullerSchafer = TRUE,
 //'   kNew = 3, typeAlphaSpendingNew = "sfHSD", 
 //'   parameterAlphaSpendingNew = -2))

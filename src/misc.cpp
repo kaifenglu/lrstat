@@ -1787,7 +1787,7 @@ double f_pvalue(const double theta,
 //' @references 
 //' Anastasios A. Tsiatis, Gary L. Rosner and Cyrus R. Mehta. 
 //' Exact confidence intervals following a group sequential test. 
-//' Biometrics 1984;40:797-03.
+//' Biometrics 1984;40:797-803.
 //' 
 //' @examples
 //'
@@ -2035,7 +2035,7 @@ List getCI(const int L = NA_INTEGER,
 //' sigma1 = 20
 //' zL = delta1/sqrt(4/n1*sigma1^2)
 //' 
-//' # confidence interval
+//' # repeated confidence interval
 //' getRCI(L = L, zL = zL, IMax = n/(4*sigma1^2), 
 //'        informationRates = c(1/3, 2/3), alpha = 0.05, 
 //'        typeAlphaSpending = "sfHSD", parameterAlphaSpending = -4)
@@ -2422,32 +2422,39 @@ double f_bwpvalue(const double theta,
 //' sigma1 = 20
 //' zL = delta1/sqrt(4/n1*sigma1^2)
 //' 
-//' kMax = des1$overallResults$kMax
-//' b = des1$byStageResults$efficacyBounds
 //' t = des1$byStageResults$informationRates
-//' I = n*t/(4*sigma1^2)  # information based on estimated nuisance parameter
 //' 
 //' # Muller & Schafer (2001) method to design the secondary trial: 
-//' # 3-look gamma(-2) spending with 84% power at delta = 4.5, sigma = 17
-//' n2 = 300
-//' (des2 = adaptDesign(
-//'   beta = NA, INew = n2/(4*sigma^2), L, zL, theta = delta1,
-//'   kMax = des1$overallResults$kMax, 
-//'   informationRates = des1$byStageResults$informationRates,
-//'   criticalValues = des1$byStageResults$efficacyBounds,
+//' des2 = adaptDesign(
+//'   betaNew = 0.2, L = L, zL = zL, theta = 5,
+//'   kMax = 3, informationRates = t,
+//'   alpha = 0.05, typeAlphaSpending = "sfHSD",
+//'   parameterAlphaSpending = -4,
 //'   MullerSchafer = TRUE,
-//'   kNew = 3, typeAlphaSpending = "sfHSD", 
-//'   parameterAlphaSpending = -2))
-//'   
+//'   kNew = 3, typeAlphaSpendingNew = "sfHSD", 
+//'   parameterAlphaSpendingNew = -2)
+//' 
+//' n2 = ceiling(des2$secondaryTrial$overallResults$maxInformation*4*20^2)
+//' ns = round(n2*(1:3)/3)
+//'  (des2 = adaptDesign(
+//'    INew = n2/(4*20^2), L = L, zL = zL, theta = 5,
+//'    kMax = 3, informationRates = t,
+//'    alpha = 0.05, typeAlphaSpending = "sfHSD",
+//'    parameterAlphaSpending = -4,
+//'    MullerSchafer = TRUE,
+//'    kNew = 3, informationRatesNew = ns/n2,
+//'    typeAlphaSpendingNew = "sfHSD",
+//'    parameterAlphaSpendingNew = -2))
+//' 
 //' # termination at the second look of the secondary trial
 //' L2 = 2
-//' theta2 = 6.6
-//' sigma2 = 19.5
-//' zL2 = theta2/sqrt(4*sigma2^2/200)
-//'  
+//' delta2 = 6.86
+//' sigma2 = 21.77
+//' zL2 = delta2/sqrt(4/197*sigma2^2)
+//' 
 //' t2 = des2$secondaryTrial$byStageResults$informationRates[1:L2]
 //' 
-//' # repeated confidence interval
+//' # confidence interval
 //' getADCI(L = L, zL = zL,
 //'         IMax = n/(4*sigma1^2), kMax = 3,
 //'         informationRates = t,
@@ -2866,29 +2873,36 @@ List getADCI(const int L = NA_INTEGER,
 //' sigma1 = 20
 //' zL = delta1/sqrt(4/n1*sigma1^2)
 //' 
-//' kMax = des1$overallResults$kMax
-//' b = des1$byStageResults$efficacyBounds
 //' t = des1$byStageResults$informationRates
-//' I = n*t/(4*sigma1^2)  # information based on estimated nuisance parameter
 //' 
 //' # Muller & Schafer (2001) method to design the secondary trial: 
-//' # 3-look gamma(-2) spending with 84% power at delta = 4.5, sigma = 17
-//' n2 = 300
-//' (des2 = adaptDesign(
-//'   beta = NA, INew = n2/(4*sigma^2), L, zL, theta = delta1,
-//'   kMax = des1$overallResults$kMax, 
-//'   informationRates = des1$byStageResults$informationRates,
-//'   criticalValues = des1$byStageResults$efficacyBounds,
+//' des2 = adaptDesign(
+//'   betaNew = 0.2, L = L, zL = zL, theta = 5,
+//'   kMax = 3, informationRates = t,
+//'   alpha = 0.05, typeAlphaSpending = "sfHSD",
+//'   parameterAlphaSpending = -4,
 //'   MullerSchafer = TRUE,
-//'   kNew = 3, typeAlphaSpending = "sfHSD", 
-//'   parameterAlphaSpending = -2))
-//'   
+//'   kNew = 3, typeAlphaSpendingNew = "sfHSD", 
+//'   parameterAlphaSpendingNew = -2)
+//' 
+//' n2 = ceiling(des2$secondaryTrial$overallResults$maxInformation*4*20^2)
+//' ns = round(n2*(1:3)/3)
+//' (des2 = adaptDesign(
+//'   INew = n2/(4*20^2), L = L, zL = zL, theta = 5,
+//'   kMax = 3, informationRates = t,
+//'   alpha = 0.05, typeAlphaSpending = "sfHSD",
+//'   parameterAlphaSpending = -4,
+//'   MullerSchafer = TRUE,
+//'   kNew = 3, informationRatesNew = ns/n2,
+//'   typeAlphaSpendingNew = "sfHSD",
+//'   parameterAlphaSpendingNew = -2))
+//' 
 //' # termination at the second look of the secondary trial
 //' L2 = 2
-//' theta2 = 6.6
-//' sigma2 = 19.5
-//' zL2 = theta2/sqrt(4*sigma2^2/200)
-//'  
+//' delta2 = 6.86
+//' sigma2 = 21.77
+//' zL2 = delta2/sqrt(4/197*sigma2^2)
+//' 
 //' t2 = des2$secondaryTrial$byStageResults$informationRates[1:L2]
 //' 
 //' # repeated confidence interval
@@ -3469,11 +3483,9 @@ List getADRCI(const int L = NA_INTEGER,
 //' lam2 = hr*lam1      # treatment group hazard after delay
 //' 
 //' # Assume an annual dropout rate of 5%
-//' pc = 0.05           # annual dropout rate
-//' gam = -log(1-pc)/12 # hazard for dropout
+//' gam = -log(1-0.05)/12  # hazard for dropout
 //' 
-//' 
-//' # The original target number of events was 298 and the new target is 3335
+//' # The original target number of events was 298 and the new target is 335
 //' mo2 <- caltime(
 //'   nevents = c(298, 335),
 //'   allocationRatioPlanned = 1,
@@ -3504,19 +3516,14 @@ List getADRCI(const int L = NA_INTEGER,
 //' 
 //' hr2 = 0.81                    # observed hazard ratio at interim 2
 //' z2 = (-log(hr2))*sqrt(266/4)  # corresponding z-test statistic value
-//' 
-//' # Assume that the number of events is increased based on unblinded data
-//' # Use boundaries based on the original sample size for the CHW statistics
-//' b = getBound(k = 3, informationRates = c(179, 266, 298)/298,
-//'              alpha = 0.025, typeAlphaSpending = "sfOF")
-//' 
+//'  
 //' # expected mean of -log(HR) at the original looks and the new final look
 //' theta = -log(lr1$HR[c(1,2,3,4)])
 //' 
-//' # conditional power for the CHW statistic to cross the boundary at final
+//' # conditional power with sample size increase
 //' getCP(INew = (335 - 266)/4, 
 //'       L = 2, zL = z2, theta = theta,
-//'       kMax = 3, IMax = 298/4, 
+//'       IMax = 298/4, kMax = 3, 
 //'       informationRates = c(179, 266, 298)/298,
 //'       alpha = 0.025, typeAlphaSpending = "sfOF")
 //'

@@ -25,8 +25,13 @@ print.design <- function(x, ...) {
   
   str2 <- paste0("Overall power: ",
                  round(a$overallReject, 3), ", ",
-                 "overall significance level (1-sided): ",
+                 "overall alpha (1-sided): ",
                  round(a$alpha, 4))
+  
+  if (x$settings$typeBetaSpending != 'none') {
+      str2 <- paste0(str2, ", ", 
+                     "attained alpha: ", round(a$attainedAlpha, 4))
+  }
   
   str3 <- paste0("theta: ", round(a$theta, 3), ", ", 
                  "maximum information: ", round(a$maxInformation, 2))
@@ -53,11 +58,12 @@ print.design <- function(x, ...) {
     b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
                "cumulativeRejection", "cumulativeFutility",
                "cumulativeAlphaSpent", "efficacyTheta", "futilityTheta", 
-               "efficacyP", "futilityP", "information")]
+               "efficacyP", "futilityP", "information", 
+               "cumulativeRejectionH0", "cumulativeFutilityH0")]
     
     # format number of digits after decimal for each column
     j2 <- 11
-    j3 <- c(1,2,3,4,5,7,8)
+    j3 <- c(1,2,3,4,5,7,8,12,13)
     j4 <- c(6,9,10)
     
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -76,7 +82,9 @@ print.design <- function(x, ...) {
                        "Futility boundary (theta-scale)",
                        "Efficacy boundary (p-scale)",
                        "Futility boundary (p-scale)",
-                       "Information")
+                       "Information", 
+                       "Cumulative rejection under H0",
+                       "Cumulative futility under H0")
       
     } else {
       df = t(b[,c(1,2,4,6,7,9,11)])
@@ -133,8 +141,8 @@ print.adaptDesign <- function(x, ...) {
   
   str1 = "Primary trial:"
   str2 = paste0("Group-sequential design with ", des1$kMax, " stages")
-  str3 = paste0("Interim look: ",  des1$L, ", ", 
-                "Z-statistic value: ", round(des1$zL, 3))
+  str3 = paste0("Interim adaptation look: ",  des1$L, ", ", 
+                "z-statistic value: ", round(des1$zL, 3))
   str4 = paste0("Muller & Schafer method for secondary trial: ", 
                 des1$MullerSchafer)
   
@@ -147,11 +155,18 @@ print.adaptDesign <- function(x, ...) {
                   futilityBounds = des1$futilityBounds)
   
   b[1:3] <- lapply(b[1:3], formatC, format = "f", digits = 3)
+
+  if (!all(des1$futilityBounds[1:(des1$kMax-1)] == -6)) {
+    df1b = t(b)
+    rownames(df1b) = c("Information rate",
+                       "Efficacy boundary (Z-scale)",
+                       "Futility boundary (Z-scale)")
+  } else {
+    df1b = t(b[1:2])
+    rownames(df1b) = c("Information rate",
+                       "Efficacy boundary (Z-scale)")
+  }
   
-  df1b = t(b)
-  rownames(df1b) = c("Information rate",
-                     "Efficacy boundary (Z-scale)",
-                     "Futility boundary (Z-scale)")
   colnames(df1b) <- paste("Stage", seq_len(ncol(df1b)), sep=" ")
   
   

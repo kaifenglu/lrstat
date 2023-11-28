@@ -748,8 +748,12 @@ fmodmix <- function(p, family, serial, parallel,
 #'   \code{informationRates}.
 #' @inheritParams param_efficacyStopping
 #'
-#' @return A numeric vector of critical values up to the current look.
+#' @details
+#' If \code{typeAlphaSpending} is "OF", "P", or "WT", then the boundaries 
+#' will be based on equally spaced looks.
 #'
+#' @return A numeric vector of critical values up to the current look.
+#' 
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples

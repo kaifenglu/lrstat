@@ -575,6 +575,8 @@ NumericVector getBoundcpp(const int k,
   }
   
   NumericVector theta(k); // mean values under H0, initialized to zero
+  IntegerVector tem = seq_len(k);
+  NumericVector I = as<NumericVector>(tem);
   NumericVector t = clone(informationRates1); // info time for test stat
   NumericVector s = clone(spendingTime1); // spending time for alpha-spending
   NumericVector criticalValues(k);
@@ -594,23 +596,23 @@ NumericVector getBoundcpp(const int k,
       Delta = asfpar;
     }
     
-    auto f = [k, alpha, Delta, theta, t, 
+    auto f = [k, alpha, Delta, theta, I,
               efficacyStopping1] (double aval)->double {
       NumericVector u(k), l(k);
       for (int i=0; i<k; i++) {
-        u[i] = aval*pow(t[i], Delta-0.5);
+        u[i] = aval*pow((i+1.0)/k, Delta-0.5);
         if (!efficacyStopping1[i]) u[i] = 6.0;
         l[i] = -6.0;
       }
       
-      List probs = exitprobcpp(u, l, theta, t);
+      List probs = exitprobcpp(u, l, theta, I);
       double cpu = sum(NumericVector(probs[0]));
       return cpu - alpha;
     };
     
     double cwt = brent(f, 0.0, 10.0, 1e-6);
     for (int i=0; i<k; i++) {
-      criticalValues[i] = cwt*pow(t[i], Delta-0.5);
+      criticalValues[i] = cwt*pow((i+1.0)/k, Delta-0.5);
       if (!efficacyStopping1[i]) criticalValues[i] = 6.0;
     }
   } else if (asf == "sfof" || asf == "sfp" || asf == "sfkd" ||
