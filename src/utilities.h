@@ -48,4 +48,7 @@ List getPower(const double alpha,
               const NumericVector& st,
               const LogicalVector& futilityStopping);
 
+double intnorm(const std::function<double(double)>& f,
+               double mu, double sigma, double a, double b);
+
 #endif // __UTILITIES__

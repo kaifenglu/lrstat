@@ -1,3 +1,17 @@
+# lrstat 0.2.2
+
+- add the intnorm utility function to integrate a function with respect to a normal density
+- add predictive power calculation to adaptDesign
+- add the ftrunc function to calculate the adjusted p-values for truncated Holm, Hochberg, or Hommel procedures
+- reuse the efficacy and futility stopping boundaries calculated under H1 for H0 in lrsamplesize
+- add capabilities to calculate Haybittle & Peto boundaries in getDesign, lrpower, and lrsamplesize
+- use informationRates as event fractions for conventional log-rank test and information fractions for weighted log-rank tests in lrpower and lrsamplesize
+- match the number of events under H0 with the number of events under H1 for conventional log-rank test and match the information under H0 with the information under H1 for weighted log-rank tests
+- remove getCriticalValues and getCumAlphaSpent function in lrstat.cpp
+- adjust test-f_lrpower and test-f_lrsamplesize to reflect changes to the definition of informationRates
+- rename informationTime to informationRates in lrsim for consistency
+
+
 # lrstat 0.2.1
 
 - use markdown for Roxygen documentations

@@ -47,7 +47,7 @@ test_that("power with alpha-spending, weighted", {
               followupTime = 18, fixedFollowup = FALSE,
               rho1 = 0, rho2 = 1,
               numSubintervals = 300)
-  expect_equal(round(l$overallResults$overallReject, 4), 0.9323)
+  expect_equal(round(l$overallResults$overallReject, 4), 0.9300)
   
 })
 
@@ -67,7 +67,7 @@ test_that("power with beta-spending, weighted", {
               followupTime = 18, fixedFollowup = FALSE,
               rho1 = 0, rho2 = 1,
               numSubintervals = 300)
-  expect_equal(round(l$byStageResults$futilityBounds[1], 4), 0.9048)
+  expect_equal(round(l$byStageResults$futilityBounds[1], 4), 1.6670)
 })
 
 

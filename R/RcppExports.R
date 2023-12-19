@@ -1609,20 +1609,15 @@ getDurationFromNevents <- function(nevents = NA_real_, allocationRatioPlanned = 
     .Call(`_lrstat_getDurationFromNevents`, nevents, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, followupTime, fixedFollowup, npoints, interval)
 }
 
-getCriticalValues <- function(kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = 20L, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda2 = 0.0533, gamma1 = 0L, gamma2 = 0L, accrualDuration = 11.6, followupTime = 18, fixedFollowup = 0L, rho1 = 0, rho2 = 0, numSubintervals = 300L, spendingTime = NA_real_) {
-    .Call(`_lrstat_getCriticalValues`, kMax, informationRates, efficacyStopping, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals, spendingTime)
-}
-
-getCumAlphaSpent <- function(kMax = NA_integer_, informationRates = NA_real_, criticalValues = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = 20L, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda2 = 0.0533, gamma1 = 0L, gamma2 = 0L, accrualDuration = 11.6, followupTime = 18, fixedFollowup = 0L, rho1 = 0, rho2 = 0, numSubintervals = 300L) {
-    .Call(`_lrstat_getCumAlphaSpent`, kMax, informationRates, criticalValues, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals)
-}
-
 #' @title Log-rank test power
 #' @description Estimates the power, stopping probabilities, and expected
 #' sample size in a two-group survival design.
 #'
 #' @inheritParams param_kMax
-#' @inheritParams param_informationRates
+#' @param informationRates The information rates in terms of number 
+#'   of events for the conventional log-rank test and in terms of 
+#'   the actual information for weighted log-rank tests. 
+#'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
 #' @inheritParams param_efficacyStopping
 #' @inheritParams param_futilityStopping
 #' @inheritParams param_criticalValues
@@ -2082,7 +2077,7 @@ getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax =
 #'
 #' @references 
 #' Lu Chi, H. M. James Hung, and Sue-Jane Wang. 
-#' Modification of Sample Size in Group Sequential Clinical Trials.
+#' Modification of sample size in group sequential clinical trials.
 #' Biometrics 1999;55:853-857.
 #' 
 #' Hans-Helge Muller and Helmut Schafer. 
@@ -2110,27 +2105,24 @@ getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax =
 #' sigma1 = 20
 #' zL = delta1/sqrt(4/n1*sigma1^2)
 #' 
-#' # conditional power for original design at estimated parameter value
-#' (des2 = adaptDesign(
-#'   betaNew = NA, INew = (n-n1)/(4*sigma1^2), L, zL, theta = delta1, 
-#'   kMax = des1$overallResults$kMax, 
-#'   informationRates = des1$byStageResults$informationRates,
-#'   criticalValues = des1$byStageResults$efficacyBounds))
+#' t = des1$byStageResults$informationRates
 #' 
 #' # conditional power with sample size increase
 #' (des2 = adaptDesign(
-#'   betaNew = NA, INew = 420/(4*sigma1^2), L, zL, theta = delta1, 
-#'   kMax = des1$overallResults$kMax, 
-#'   informationRates = des1$byStageResults$informationRates,
-#'   criticalValues = des1$byStageResults$efficacyBounds))
+#'   betaNew = NA, INew = 420/(4*sigma1^2), 
+#'   L, zL, theta = delta1, 
+#'   IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
+#'   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#'   parameterAlphaSpending = -4))
 #' 
 #' # Muller & Schafer (2001) method to design the secondary trial: 
 #' # 3-look gamma(-2) spending with 84% power at delta = 4.5 and sigma = 20
 #' (des2 = adaptDesign(
-#'   betaNew = 0.16, INew = NA, L, zL, theta = delta1,
-#'   kMax = des1$overallResults$kMax, 
-#'   informationRates = des1$byStageResults$informationRates,
-#'   criticalValues = des1$byStageResults$efficacyBounds,
+#'   betaNew = 0.16, INew = NA, 
+#'   L, zL, theta = delta1,
+#'   IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
+#'   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#'   parameterAlphaSpending = -4,
 #'   MullerSchafer = TRUE,
 #'   kNew = 3, typeAlphaSpendingNew = "sfHSD", 
 #'   parameterAlphaSpendingNew = -2))
@@ -2199,7 +2191,10 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #'
 #' @param beta Type II error. Defaults to 0.2.
 #' @inheritParams param_kMax
-#' @inheritParams param_informationRates
+#' @param informationRates The information rates in terms of number 
+#'   of events for the conventional log-rank test and in terms of 
+#'   the actual information for weighted log-rank tests. 
+#'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
 #' @inheritParams param_efficacyStopping
 #' @inheritParams param_futilityStopping
 #' @inheritParams param_criticalValues
@@ -2307,7 +2302,7 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #'              followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-lrsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = 20L, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = 0.0309, lambda2 = 0.0533, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = 18, fixedFollowup = 0L, rho1 = 0, rho2 = 0, numSubintervals = 300L, estimateHazardRatio = 1L, typeOfComputation = "direct", interval = as.numeric( c(0.001, 240)), spendingTime = NA_real_, rounding = 1L) {
+lrsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = 20L, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = 0.0309, lambda2 = 0.0533, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, numSubintervals = 300L, estimateHazardRatio = 1L, typeOfComputation = "direct", interval = as.numeric( c(0.001, 240)), spendingTime = NA_real_, rounding = 1L) {
     .Call(`_lrstat_lrsamplesize`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals, estimateHazardRatio, typeOfComputation, interval, spendingTime, rounding)
 }
 
@@ -2436,7 +2431,7 @@ fmodmixcpp <- function(p, family, serial, parallel, gamma, test = "hommel", exha
 #' @references 
 #' Anastasios A. Tsiatis, Gary L. Rosner and Cyrus R. Mehta. 
 #' Exact confidence intervals following a group sequential test. 
-#' Biometrics 1984;40:797-03.
+#' Biometrics 1984;40:797-803.
 #' 
 #' @examples
 #'
@@ -2533,7 +2528,7 @@ getCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationRa
 #' sigma1 = 20
 #' zL = delta1/sqrt(4/n1*sigma1^2)
 #' 
-#' # confidence interval
+#' # repeated confidence interval
 #' getRCI(L = L, zL = zL, IMax = n/(4*sigma1^2), 
 #'        informationRates = c(1/3, 2/3), alpha = 0.05, 
 #'        typeAlphaSpending = "sfHSD", parameterAlphaSpending = -4)
@@ -2644,32 +2639,39 @@ getRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationR
 #' sigma1 = 20
 #' zL = delta1/sqrt(4/n1*sigma1^2)
 #' 
-#' kMax = des1$overallResults$kMax
-#' b = des1$byStageResults$efficacyBounds
 #' t = des1$byStageResults$informationRates
-#' I = n*t/(4*sigma1^2)  # information based on estimated nuisance parameter
 #' 
 #' # Muller & Schafer (2001) method to design the secondary trial: 
-#' # 3-look gamma(-2) spending with 84% power at delta = 4.5, sigma = 17
-#' n2 = 300
-#' (des2 = adaptDesign(
-#'   beta = NA, INew = n2/(4*sigma^2), L, zL, theta = delta1,
-#'   kMax = des1$overallResults$kMax, 
-#'   informationRates = des1$byStageResults$informationRates,
-#'   criticalValues = des1$byStageResults$efficacyBounds,
+#' des2 = adaptDesign(
+#'   betaNew = 0.2, L = L, zL = zL, theta = 5,
+#'   kMax = 3, informationRates = t,
+#'   alpha = 0.05, typeAlphaSpending = "sfHSD",
+#'   parameterAlphaSpending = -4,
 #'   MullerSchafer = TRUE,
-#'   kNew = 3, typeAlphaSpending = "sfHSD", 
-#'   parameterAlphaSpending = -2))
-#'   
+#'   kNew = 3, typeAlphaSpendingNew = "sfHSD", 
+#'   parameterAlphaSpendingNew = -2)
+#' 
+#' n2 = ceiling(des2$secondaryTrial$overallResults$maxInformation*4*20^2)
+#' ns = round(n2*(1:3)/3)
+#'  (des2 = adaptDesign(
+#'    INew = n2/(4*20^2), L = L, zL = zL, theta = 5,
+#'    kMax = 3, informationRates = t,
+#'    alpha = 0.05, typeAlphaSpending = "sfHSD",
+#'    parameterAlphaSpending = -4,
+#'    MullerSchafer = TRUE,
+#'    kNew = 3, informationRatesNew = ns/n2,
+#'    typeAlphaSpendingNew = "sfHSD",
+#'    parameterAlphaSpendingNew = -2))
+#' 
 #' # termination at the second look of the secondary trial
 #' L2 = 2
-#' theta2 = 6.6
-#' sigma2 = 19.5
-#' zL2 = theta2/sqrt(4*sigma2^2/200)
-#'  
+#' delta2 = 6.86
+#' sigma2 = 21.77
+#' zL2 = delta2/sqrt(4/197*sigma2^2)
+#' 
 #' t2 = des2$secondaryTrial$byStageResults$informationRates[1:L2]
 #' 
-#' # repeated confidence interval
+#' # confidence interval
 #' getADCI(L = L, zL = zL,
 #'         IMax = n/(4*sigma1^2), kMax = 3,
 #'         informationRates = t,
@@ -2786,29 +2788,36 @@ getADCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_i
 #' sigma1 = 20
 #' zL = delta1/sqrt(4/n1*sigma1^2)
 #' 
-#' kMax = des1$overallResults$kMax
-#' b = des1$byStageResults$efficacyBounds
 #' t = des1$byStageResults$informationRates
-#' I = n*t/(4*sigma1^2)  # information based on estimated nuisance parameter
 #' 
 #' # Muller & Schafer (2001) method to design the secondary trial: 
-#' # 3-look gamma(-2) spending with 84% power at delta = 4.5, sigma = 17
-#' n2 = 300
-#' (des2 = adaptDesign(
-#'   beta = NA, INew = n2/(4*sigma^2), L, zL, theta = delta1,
-#'   kMax = des1$overallResults$kMax, 
-#'   informationRates = des1$byStageResults$informationRates,
-#'   criticalValues = des1$byStageResults$efficacyBounds,
+#' des2 = adaptDesign(
+#'   betaNew = 0.2, L = L, zL = zL, theta = 5,
+#'   kMax = 3, informationRates = t,
+#'   alpha = 0.05, typeAlphaSpending = "sfHSD",
+#'   parameterAlphaSpending = -4,
 #'   MullerSchafer = TRUE,
-#'   kNew = 3, typeAlphaSpending = "sfHSD", 
-#'   parameterAlphaSpending = -2))
-#'   
+#'   kNew = 3, typeAlphaSpendingNew = "sfHSD", 
+#'   parameterAlphaSpendingNew = -2)
+#' 
+#' n2 = ceiling(des2$secondaryTrial$overallResults$maxInformation*4*20^2)
+#' ns = round(n2*(1:3)/3)
+#' (des2 = adaptDesign(
+#'   INew = n2/(4*20^2), L = L, zL = zL, theta = 5,
+#'   kMax = 3, informationRates = t,
+#'   alpha = 0.05, typeAlphaSpending = "sfHSD",
+#'   parameterAlphaSpending = -4,
+#'   MullerSchafer = TRUE,
+#'   kNew = 3, informationRatesNew = ns/n2,
+#'   typeAlphaSpendingNew = "sfHSD",
+#'   parameterAlphaSpendingNew = -2))
+#' 
 #' # termination at the second look of the secondary trial
 #' L2 = 2
-#' theta2 = 6.6
-#' sigma2 = 19.5
-#' zL2 = theta2/sqrt(4*sigma2^2/200)
-#'  
+#' delta2 = 6.86
+#' sigma2 = 21.77
+#' zL2 = delta2/sqrt(4/197*sigma2^2)
+#' 
 #' t2 = des2$secondaryTrial$byStageResults$informationRates[1:L2]
 #' 
 #' # repeated confidence interval
@@ -2967,11 +2976,9 @@ getADRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_
 #' lam2 = hr*lam1      # treatment group hazard after delay
 #' 
 #' # Assume an annual dropout rate of 5%
-#' pc = 0.05           # annual dropout rate
-#' gam = -log(1-pc)/12 # hazard for dropout
+#' gam = -log(1-0.05)/12  # hazard for dropout
 #' 
-#' 
-#' # The original target number of events was 298 and the new target is 3335
+#' # The original target number of events was 298 and the new target is 335
 #' mo2 <- caltime(
 #'   nevents = c(298, 335),
 #'   allocationRatioPlanned = 1,
@@ -3002,25 +3009,24 @@ getADRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_
 #' 
 #' hr2 = 0.81                    # observed hazard ratio at interim 2
 #' z2 = (-log(hr2))*sqrt(266/4)  # corresponding z-test statistic value
-#' 
-#' # Assume that the number of events is increased based on unblinded data
-#' # Use boundaries based on the original sample size for the CHW statistics
-#' b = getBound(k = 3, informationRates = c(179, 266, 298)/298,
-#'              alpha = 0.025, typeAlphaSpending = "sfOF")
-#' 
+#'  
 #' # expected mean of -log(HR) at the original looks and the new final look
 #' theta = -log(lr1$HR[c(1,2,3,4)])
 #' 
-#' # conditional power for the CHW statistic to cross the boundary at final
+#' # conditional power with sample size increase
 #' getCP(INew = (335 - 266)/4, 
 #'       L = 2, zL = z2, theta = theta,
-#'       kMax = 3, IMax = 298/4, 
+#'       IMax = 298/4, kMax = 3, 
 #'       informationRates = c(179, 266, 298)/298,
 #'       alpha = 0.025, typeAlphaSpending = "sfOF")
 #'
 #' @export
 getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
     .Call(`_lrstat_getCP`, INew, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, typeBetaSpendingNew, parameterBetaSpendingNew, spendingTimeNew)
+}
+
+ftrunccpp <- function(p, test, gamma) {
+    .Call(`_lrstat_ftrunccpp`, p, test, gamma)
 }
 
 set_seed <- function(seed) {

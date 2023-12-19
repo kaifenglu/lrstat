@@ -4,7 +4,7 @@
 \alias{fadjpdun}
 \title{Adjusted p-values for Dunnett-based graphical approaches}
 \usage{
-fadjpdun(wgtmat, p, family, corr)
+fadjpdun(wgtmat, p, family = NULL, corr = NULL)
 }
 \arguments{
 \item{wgtmat}{The weight matrix for intersection hypotheses.}

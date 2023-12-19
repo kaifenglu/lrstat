@@ -8,11 +8,9 @@ using namespace Rcpp;
 //' trials based on weighted log-rank test.
 //'
 //' @inheritParams param_kMax
-//' @param informationTime Information time in terms of variance of
-//'   weighted log-rank test score statistic under the null hypothesis.
-//'   Same as \code{informationRates} in terms of number of events for
-//'   the conventional log-rank test. Use \code{caltime} and \code{lrstat}
-//'   to derive the information time for weighted log-rank tests.
+//' @param informationRates The information rates in terms of number 
+//'   of events for the conventional log-rank test and in terms of 
+//'   the actual information for weighted log-rank tests.   
 //'   Fixed prior to the trial. If left unspecified, it defaults to
 //'   \code{plannedEvents / plannedEvents[kMax]} when \code{plannedEvents} 
 //'   is provided and to \code{plannedTime / plannedTime[kMax]} otherwise.
@@ -185,7 +183,7 @@ using namespace Rcpp;
 //' @examples
 //' # Example 1: analyses based on number of events
 //' 
-//' sim1 = lrsim(kMax = 2, informationTime = c(0.5, 1),
+//' sim1 = lrsim(kMax = 2, informationRates = c(0.5, 1),
 //'              criticalValues = c(2.797, 1.977),
 //'              accrualIntensity = 11,
 //'              lambda1 = 0.018, lambda2 = 0.030,
@@ -207,7 +205,7 @@ using namespace Rcpp;
 //'
 //' # Example 2: analyses based on calendar time have similar power
 //'
-//' sim2 = lrsim(kMax = 2, informationTime = c(0.5, 1),
+//' sim2 = lrsim(kMax = 2, informationRates = c(0.5, 1),
 //'              criticalValues = c(2.797, 1.977),
 //'              accrualIntensity = 11,
 //'              lambda1 = 0.018, lambda2 = 0.030,
@@ -226,7 +224,7 @@ using namespace Rcpp;
 //' @export
 // [[Rcpp::export]]
 List lrsim(const int kMax = NA_INTEGER,
-           const NumericVector& informationTime = NA_REAL,
+           const NumericVector& informationRates = NA_REAL,
            const NumericVector& criticalValues = NA_REAL,
            const NumericVector& futilityBounds = NA_REAL,
            const double hazardRatioH0 = 1,
@@ -258,7 +256,7 @@ List lrsim(const int kMax = NA_INTEGER,
   NumericVector gamma1x(nsi), gamma2x(nsi);
   
   bool useEvents, eventsNotAchieved;
-  NumericVector informationTime1 = clone(informationTime);
+  NumericVector informationRates1 = clone(informationRates);
   NumericVector futilityBounds1 = clone(futilityBounds);
   
   
@@ -298,22 +296,22 @@ List lrsim(const int kMax = NA_INTEGER,
   }
   
   
-  // set default informationTime
-  if (is_false(any(is_na(informationTime)))) {
-    if (informationTime.size() != kMax) {
-      stop("Invalid length for informationTime");
-    } else if (informationTime[0] <= 0) {
-      stop("Elements of informationTime must be positive");
-    } else if (kMax > 1 && is_true(any(diff(informationTime) <= 0))) {
-      stop("Elements of informationTime must be increasing");
-    } else if (informationTime[kMax-1] != 1) {
-      stop("informationTime must end with 1");
+  // set default informationRates
+  if (is_false(any(is_na(informationRates)))) {
+    if (informationRates.size() != kMax) {
+      stop("Invalid length for informationRates");
+    } else if (informationRates[0] <= 0) {
+      stop("Elements of informationRates must be positive");
+    } else if (kMax > 1 && is_true(any(diff(informationRates) <= 0))) {
+      stop("Elements of informationRates must be increasing");
+    } else if (informationRates[kMax-1] != 1) {
+      stop("informationRates must end with 1");
     }
   } else if (useEvents) {
-    informationTime1 = as<NumericVector>(plannedEvents)/
+    informationRates1 = as<NumericVector>(plannedEvents)/
       (plannedEvents[kMax-1]+0.0);
   } else {
-    informationTime1 = plannedTime/plannedTime[kMax-1];
+    informationRates1 = plannedTime/plannedTime[kMax-1];
   }
   
   
@@ -579,9 +577,9 @@ List lrsim(const int kMax = NA_INTEGER,
   
   
   // total alpha to adjust the critical value at the final stage
-  NumericVector lb = rep(-6.0, kMax);
-  NumericVector theta = rep(0.0, kMax);
-  List p1 = exitprobcpp(criticalValues, lb, theta, informationTime1);
+  NumericVector lb(kMax, -6.0);
+  NumericVector theta(kMax);
+  List p1 = exitprobcpp(criticalValues, lb, theta, informationRates1);
   double alpha = sum(NumericVector(p1[0]));
   
   

@@ -4,7 +4,15 @@
 \alias{fstdmix}
 \title{Adjusted p-values for standard mixture gatekeeping procedures}
 \usage{
-fstdmix(p, family, serial, parallel, gamma, test = "hommel", exhaust = 1)
+fstdmix(
+  p,
+  family = NULL,
+  serial,
+  parallel,
+  gamma,
+  test = "hommel",
+  exhaust = 1
+)
 }
 \arguments{
 \item{p}{The raw p-values for elementary hypotheses.}

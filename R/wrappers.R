@@ -175,7 +175,7 @@ fadjpbon <- function(w, G, p) {
 #' fadjpdun(wgtmat, pvalues, family, corr)
 #'
 #' @export
-fadjpdun <- function(wgtmat, p, family, corr) {
+fadjpdun <- function(wgtmat, p, family = NULL, corr = NULL) {
   ntests = nrow(wgtmat)
   m = ncol(wgtmat)
   
@@ -184,6 +184,16 @@ fadjpdun <- function(wgtmat, p, family, corr) {
   }
   
   r = nrow(p)
+  
+  if (is.null(family)) {
+    family = matrix(1, 1, m)
+  } else if (!is.matrix(family)) {
+    family = matrix(family, ncol = m)
+  }
+  
+  if (is.null(corr)) {
+    corr = 0.5*diag(m) + 0.5
+  }
   
   pinter = matrix(0, r, ntests)
   incid = matrix(0, ntests, m)
@@ -274,11 +284,17 @@ fadjpdun <- function(wgtmat, p, family, corr) {
 #' fadjpsim(wgtmat, pvalues, family)
 #'
 #' @export
-fadjpsim <- function(wgtmat, p, family) {
+fadjpsim <- function(wgtmat, p, family = NULL) {
   m = ncol(wgtmat)
   
   if (!is.matrix(p)) {
     p = matrix(p, ncol=m)
+  }
+  
+  if (is.null(family)) {
+    family = matrix(1, 1, m)
+  } else if (!is.matrix(family)) {
+    family = matrix(family, ncol = m)
   }
   
   x = fadjpsimcpp(wgtmat, p, family)
@@ -288,6 +304,52 @@ fadjpsim <- function(wgtmat, p, family) {
   x
 }
 
+
+#' @title Adjusted p-values for Holm, Hochberg, or Hommel procedures
+#' @description Obtains the adjusted p-values for possibly truncated
+#' Holm, Hochberg, or Hommel procedures.
+#'
+#' @param p The raw p-values for elementary hypotheses.
+#' @param test The test to use, e.g., "holm", "hochberg", or 
+#'   "hommel" (default).
+#' @param gamma The value of the truncation parameter. Defaults to 1 
+#'   for the regular Holm, Hochberg, or Hommel procedure. 
+#'
+#' @return A matrix of adjusted p-values.
+#'
+#' @references
+#' Alex Dmitrienko, Ajit C. Tamhane, and Brian L. Wiens. 
+#' General multistage gatekeeping procedures. 
+#' Biometrical Journal. 2008; 5:667-677.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#' 
+#' @examples
+#'
+#' pvalues <- matrix(c(0.01,0.005,0.015,0.022, 0.02,0.015,0.010,0.023),
+#'                   nrow=2, ncol=4, byrow=TRUE)
+#' ftrunc(pvalues, "hochberg")
+#'
+#' @export
+ftrunc <- function(p, test = "hommel", gamma = 1) {
+  if (!(test == "holm" || test == "hochberg" || test == "hommel")) {
+    stop("test must be Holm, Hochberg, or Hommel");
+  }
+  
+  if (gamma < 0 || gamma > 1) {
+    stop("gamma must be within [0, 1]");
+  }
+  
+  if (!is.matrix(p)) {
+    p = matrix(p, nrow=1)
+  }
+  
+  x = ftrunccpp(p, test, gamma)
+  if (nrow(x) == 1) {
+    x = as.vector(x)
+  }
+  x
+}
 
 
 #' @title Repeated p-values for group sequential design
@@ -568,12 +630,18 @@ fstp2seq <- function(p, gamma, test="hochberg", retest=TRUE) {
 #' fstdmix(p, family, serial, parallel, gamma, "hommel", 0)
 #'
 #' @export
-fstdmix <- function(p, family, serial, parallel, 
+fstdmix <- function(p, family = NULL, serial, parallel, 
                     gamma, test = "hommel", exhaust = 1) {
   if (!is.matrix(p)) {
     p = matrix(p, nrow=1)
   }
   m = ncol(p)
+  
+  if (is.null(family)) {
+    family = matrix(1, 1, m)
+  } else if (!is.matrix(family)) {
+    family = matrix(family, ncol = m)
+  }
   
   if (ncol(family) != m) {
     stop("number of columns of family must be the number of hypotheses")
@@ -676,12 +744,18 @@ fstdmix <- function(p, family, serial, parallel,
 #' fmodmix(p, family, serial, parallel, gamma, "hommel", 1)
 #'
 #' @export
-fmodmix <- function(p, family, serial, parallel, 
+fmodmix <- function(p, family = NULL, serial, parallel, 
                     gamma, test = "hommel", exhaust = 1) {
   if (!is.matrix(p)) {
     p = matrix(p, nrow=1)
   }
   m = ncol(p)
+  
+  if (is.null(family)) {
+    family = matrix(1, 1, m)
+  } else if (!is.matrix(family)) {
+    family = matrix(family, ncol = m)
+  }
   
   if (ncol(family) != m) {
     stop("number of columns of family must be the number of hypotheses")

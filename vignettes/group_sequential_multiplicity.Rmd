@@ -120,7 +120,7 @@ Look 3 is planned to have 90% power for the OS A/C comparison at 1-sided alpha o
     typeOfComputation = "Schoenfeld",
     rounding = 0)$resultsUnderH1
   lr$overallResults$numberOfEvents - d}, 
-  c(137,300))$root))
+  c(138,300))$root))
 
 (studyDuration = caltime(
   nevents = d_os, 

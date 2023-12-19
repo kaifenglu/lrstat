@@ -122,6 +122,7 @@ print.design <- function(x, ...) {
   invisible(x)
 }
 
+
 #' @title Print adaptive group sequential design
 #' @description Prints the primary and second trial information for 
 #' an adaptive group sequential design.
@@ -143,19 +144,33 @@ print.adaptDesign <- function(x, ...) {
   str2 = paste0("Group-sequential design with ", des1$kMax, " stages")
   str3 = paste0("Interim adaptation look: ",  des1$L, ", ", 
                 "z-statistic value: ", round(des1$zL, 3))
-  str4 = paste0("Muller & Schafer method for secondary trial: ", 
-                des1$MullerSchafer)
   
-  df1a = data.frame(x = rep("", 5))
-  colnames(df1a) = NULL
-  rownames(df1a) = c(str1, str2, str3, str4, "")
+  str4 = paste0("Conditional type I error: ", round(des1$conditionalAlpha, 4))
+  if (!is.na(des1$conditionalPower)) {
+    str5 = paste0("Conditional power: ", round(des1$conditionalPower, 3), 
+                  ", ", "predictive power: ", round(des1$predictivePower, 3))
+    
+    str6 = paste0("Muller & Schafer method for secondary trial: ", 
+                  des1$MullerSchafer)
+    
+    df1a = data.frame(x = rep("", 7))
+    colnames(df1a) = NULL
+    rownames(df1a) = c(str1, str2, str3, str4, str5, str6, "")
+  } else {
+    str5 = paste0("Muller & Schafer method for secondary trial: ", 
+                  des1$MullerSchafer)
+    
+    df1a = data.frame(x = rep("", 6))
+    colnames(df1a) = NULL
+    rownames(df1a) = c(str1, str2, str3, str4, str5, "")
+  }
   
   b <- data.frame(informationRates = des1$informationRates,
                   efficacyBounds = des1$efficacyBounds,
                   futilityBounds = des1$futilityBounds)
   
   b[1:3] <- lapply(b[1:3], formatC, format = "f", digits = 3)
-
+  
   if (!all(des1$futilityBounds[1:(des1$kMax-1)] == -6)) {
     df1b = t(b)
     rownames(df1b) = c("Information rate",
@@ -262,7 +277,7 @@ print.adaptDesign <- function(x, ...) {
     
     df2b = t(b)
     
-    rownames(df2a) = c("Efficacy boundary (Z-scale)",
+    rownames(df2b) = c("Efficacy boundary (Z-scale)",
                        "Efficacy boundary (theta-scale)",
                        "Efficacy boundary (p-scale)")
     

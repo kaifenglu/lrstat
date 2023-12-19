@@ -30,7 +30,7 @@ lrsamplesize(
   gamma1 = 0L,
   gamma2 = 0L,
   accrualDuration = NA_real_,
-  followupTime = 18,
+  followupTime = NA_real_,
   fixedFollowup = 0L,
   rho1 = 0,
   rho2 = 0,
@@ -47,9 +47,10 @@ lrsamplesize(
 
 \item{kMax}{The maximum number of stages.}
 
-\item{informationRates}{The information rates in terms of number of events.
-Fixed prior to the trial. Defaults to \code{(1:kMax) / kMax} if left
-unspecified.}
+\item{informationRates}{The information rates in terms of number
+of events for the conventional log-rank test and in terms of
+the actual information for weighted log-rank tests.
+Defaults to \code{(1:kMax) / kMax} if left unspecified.}
 
 \item{efficacyStopping}{Indicators of whether efficacy stopping is allowed
 at each stage. Defaults to true if left unspecified.}

@@ -3978,3 +3978,77 @@ double getCP(double INew = NA_REAL,
   
   return result;
 }
+
+
+// [[Rcpp::export]]
+NumericMatrix ftrunccpp(const NumericMatrix& p,
+                        const String test,
+                        const double gamma) {
+  std::string test1 = test;
+  std::for_each(test1.begin(), test1.end(), [](char & c) {
+    c = std::tolower(c);
+  });
+  
+  int niters = p.nrow();
+  int m = p.ncol();
+  int ntests = pow(2, m) - 1;
+  int i, j, k, iter;
+  LogicalMatrix incid(ntests, m);
+  NumericMatrix pinter(niters, ntests);
+  NumericMatrix padj(niters, m);
+  
+  for (i=0; i<ntests; i++) {
+    int number = ntests - i;
+    
+    // binary representation of elementary hypotheses in the intersection
+    LogicalVector cc(m);
+    for (j=0; j<m; j++) {
+      cc(j) = (number/(1 << (m - 1 - j))) % 2;
+    }
+    
+    incid(i, _) = cc;
+    
+    // hypotheses included in the intersection
+    k = sum(cc);
+    IntegerVector hyp = which(cc);
+    
+    for (iter=0; iter<niters; iter++) {
+      NumericVector p1(k);
+      for (j=0; j<k; j++) {
+        p1(j) = p(iter, hyp(j));
+      }
+      
+      NumericVector p2 = stl_sort(p1);
+      
+      double q = 1.0, w;
+      for (j=0; j<k; j++) {
+        if (test == "hommel") {
+          w = (j+1)*gamma/k + (1-gamma)/m;
+        } else if (test == "hochberg") {
+          w = gamma/(k - j) + (1-gamma)/m;
+        } else { // holm
+          w = gamma/k + (1-gamma)/m;
+        }
+        
+        q = std::min(q, p2(j)/w);
+      }
+      
+      pinter(iter, i) = q;
+    }
+  }
+  
+  // obtain the adjusted p-values for individual hypotheses
+  for (iter=0; iter<niters; iter++) {
+    for (j=0; j<m; j++) {
+      padj(iter,j) = 0;
+      for (i=0; i<ntests; i++) {
+        if (incid(i,j) && pinter(iter, i) > padj(iter,j)) {
+          padj(iter,j) = pinter(iter, i);
+        }
+      }
+    }
+  }
+  
+  return padj;
+}
+

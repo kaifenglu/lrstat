@@ -4,7 +4,15 @@
 \alias{fmodmix}
 \title{Adjusted p-values for modified mixture gatekeeping procedures}
 \usage{
-fmodmix(p, family, serial, parallel, gamma, test = "hommel", exhaust = 1)
+fmodmix(
+  p,
+  family = NULL,
+  serial,
+  parallel,
+  gamma,
+  test = "hommel",
+  exhaust = 1
+)
 }
 \arguments{
 \item{p}{The raw p-values for elementary hypotheses.}

@@ -204,19 +204,11 @@ zL = delta1/sqrt(4/n1*sigma1^2)
 
 t = des1$byStageResults$informationRates
 
-# conditional power for original design at estimated parameter value
-(des2 = adaptDesign(
-  betaNew = NA, INew = (n-n1)/(4*sigma1^2), 
-  L, zL, theta = delta1, 
-  kMax = 3, informationRates = t,
-  alpha = 0.05, typeAlphaSpending = "sfHSD", 
-  parameterAlphaSpending = -4))
-
 # conditional power with sample size increase
 (des2 = adaptDesign(
   betaNew = NA, INew = 420/(4*sigma1^2), 
   L, zL, theta = delta1, 
-  kMax = 3, informationRates = t,
+  IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
   alpha = 0.05, typeAlphaSpending = "sfHSD", 
   parameterAlphaSpending = -4))
 
@@ -225,7 +217,7 @@ t = des1$byStageResults$informationRates
 (des2 = adaptDesign(
   betaNew = 0.16, INew = NA, 
   L, zL, theta = delta1,
-  kMax = 3, informationRates = t,
+  IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
   alpha = 0.05, typeAlphaSpending = "sfHSD", 
   parameterAlphaSpending = -4,
   MullerSchafer = TRUE,

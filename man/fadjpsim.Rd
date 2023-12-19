@@ -4,7 +4,7 @@
 \alias{fadjpsim}
 \title{Adjusted p-values for Simes-based graphical approaches}
 \usage{
-fadjpsim(wgtmat, p, family)
+fadjpsim(wgtmat, p, family = NULL)
 }
 \arguments{
 \item{wgtmat}{The weight matrix for intersection hypotheses.}

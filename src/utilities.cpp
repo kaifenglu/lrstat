@@ -764,3 +764,116 @@ List getPower(const double alpha,
   
   return result;
 }
+
+
+//' @title Integration with respect to a normal density
+//' @description Integrate a function f(theta) with respect to a normal 
+//' density of theta.
+//'
+//' @param f Name of the univariate objective function.
+//' @param mu The mean of the normal distribution for theta.
+//' @param sigma The standard deviation of the normal distribution for theta.
+//' @param a One end of the interval bracket.
+//' @param b The other end of the interval bracket.
+//'
+//' @return The value of the integration: 
+//'   integrate(function(theta) f(theta)*dnorm(theta, mu, sigma), a, b)/
+//'   (pnorm(b, mu, sigma) - pnorm(a, mu, sigma)).
+//' 
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//' 
+//' @export
+//' 
+// [[Rcpp::plugins(cpp11)]]
+double intnorm(const std::function<double(double)>& f,
+               double mu, double sigma, double a, double b) {
+  
+  int r=18, r1=6*r-1, r2=12*r-3, i, i0, i1=0, i2=r1-1, m=r2, m1=r1;
+  double a1=(a-mu)/sigma , b1=(b-mu)/sigma, xlower, xupper, aval;
+  NumericVector x1(r1), x(r1), z(r2), w(r2);
+  
+  for (i=0; i<r1; i++) {
+    if (i < r-1) {
+      x1[i] = -3 - 4*log(r/(i+1.0));
+    } else if (i < 5*r) {
+      x1[i] = -3 + 3*(i+1.0-r)/(2*r);
+    } else {
+      x1[i] = 3 + 4*log(r/(6*r-i-1.0));
+    }
+  }
+  
+  // trim off x values outside (a1, b1)
+  // trim from below
+  if (a1 >= x1[0]) {
+    i1 = 0;
+    while (x1[i1] <= a1) {
+      i1++;
+    }
+    i1--;
+    xlower = a1; // lower bound on x
+  } else {
+    i1 = 0;
+    xlower = x1[0];
+  }
+  
+  // trim from above
+  if (b1 <= x1[r1-1]) {
+    i2 = r1-1;
+    while (x1[i2] >= b1) {
+      i2--;
+    }
+    i2++;
+    xupper = b1; // upper bound on x
+  } else {
+    i2 = r1-1;
+    xupper = x1[r1-1];
+  }
+  
+  // save the trimmed portion to x
+  m1 = i2 - i1 + 1;
+  x[0] = xlower;
+  x[m1-1] = xupper;
+  for (i=1; i<m1-1; i++) {
+    x[i] = x1[i+i1];
+  }
+  
+  // derive the grid points for z
+  m = 2*m1 - 1;
+  
+  // odd grid points;
+  for (i=0; i<m1; i++) {
+    z[2*i] = x[i];
+  }
+  
+  // even grid points;
+  for (i=0; i<m1-1; i++) {
+    z[2*i+1] = (z[2*i] + z[2*i+2])/2;
+  }
+  
+  
+  // derive the weights
+  w[0] = 1.0/6*(z[2] - z[0]);
+  
+  for (i0=1; i0<=m1-2; i0++) {
+    i = 2*i0;
+    w[i] = 1.0/6*(z[i+2] - z[i-2]);
+  }
+  
+  for (i0=1; i0<=m1-1; i0++) {
+    i = 2*i0-1;
+    w[i] = 4.0/6*(z[i+1] - z[i-1]);
+  }
+  
+  w[m-1] = 1.0/6*(z[m-1] - z[m-3]);
+  
+  
+  // integrate
+  aval = 0;
+  for (i=0; i<m; i++) {
+    aval += w[i]*f(mu + sigma*z[i])*R::dnorm(z[i], 0, 1, 0);
+  }
+  
+  double denom = R::pnorm(b1, 0, 1, 1, 0) - R::pnorm(a1, 0, 1, 1, 0);
+  
+  return aval/denom;
+}
