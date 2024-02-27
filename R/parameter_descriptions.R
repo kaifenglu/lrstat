@@ -1,5 +1,5 @@
 #' Parameter Description: accrualTime
-#' @param accrualTime A vector that specifies the starting time of 
+#' @param accrualTime A vector that specifies the starting time of
 #'   piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 #'   \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
 #'   [0, 3) and [3, Inf).
@@ -88,30 +88,31 @@ NULL
 NULL
 
 #' Parameter Description: gamma
-#' @param gamma The hazard rate for exponential dropout or a vector of hazard
-#'   rates for piecewise exponential dropout. Defaults to 0 for no dropout.
+#' @param gamma The hazard rate for exponential dropout, or a vector of
+#'   hazard rates for piecewise exponential dropout. Defaults to 0 for
+#'   no dropout.
 #' @name param_gamma
 #' @keywords internal
 NULL
 
 #' Parameter Description: gamma1
-#' @param gamma1 The hazard rate for exponential dropout or a vector of hazard
-#'   rates for piecewise exponential dropout for the active treatment group.
-#'   Defaults to 0 for no dropout.
+#' @param gamma1 The hazard rate for exponential dropout, or a vector of
+#'   hazard rates for piecewise exponential dropout for the active
+#'   treatment group. Defaults to 0 for no dropout.
 #' @name param_gamma1
 #' @keywords internal
 NULL
 
 #' Parameter Description: gamma2
-#' @param gamma2 The hazard rate for exponential dropout or a vector of hazard
-#'   rates for piecewise exponential dropout for the control group.
+#' @param gamma2 The hazard rate for exponential dropout, or a vector of
+#'   hazard rates for piecewise exponential dropout for the control group.
 #'   Defaults to 0 for no dropout.
 #' @name param_gamma2
 #' @keywords internal
 NULL
 
 #' Parameter Description: gamma1_stratified
-#' @param gamma1 The hazard rate for exponential dropout. A vector of hazard
+#' @param gamma1 The hazard rate for exponential dropout, a vector of hazard
 #'   rates for piecewise exponential dropout applicable for all strata, or a
 #'   vector of hazard rates for dropout in each analysis time interval
 #'   by stratum for the active treatment group.
@@ -121,7 +122,7 @@ NULL
 NULL
 
 #' Parameter Description: gamma2_stratified
-#' @param gamma2 The hazard rate for exponential dropout. A vector of hazard
+#' @param gamma2 The hazard rate for exponential dropout, a vector of hazard
 #'   rates for piecewise exponential dropout applicable for all strata, or a
 #'   vector of hazard rates for dropout in each analysis time interval
 #'   by stratum for the control group.
@@ -160,14 +161,14 @@ NULL
 NULL
 
 #' Parameter Description: rho1
-#' @param rho1 The first parameter of the Fleming-Harrington family of 
+#' @param rho1 The first parameter of the Fleming-Harrington family of
 #'   weighted log-rank test. Defaults to 0 for conventional log-rank test.
 #' @name param_rho1
 #' @keywords internal
 NULL
 
 #' Parameter Description: rho2
-#' @param rho2 The second parameter of the Fleming-Harrington family of 
+#' @param rho2 The second parameter of the Fleming-Harrington family of
 #'   weighted log-rank test. Defaults to 0 for conventional log-rank test.
 #' @name param_rho2
 #' @keywords internal
@@ -188,9 +189,9 @@ NULL
 NULL
 
 #' Parameter Description: informationRates
-#' @param informationRates The information rates in terms of number of events.
-#'   Fixed prior to the trial. Defaults to \code{(1:kMax) / kMax} if left
-#'   unspecified.
+#' @param informationRates The information rates in terms of number of
+#'   events. Fixed prior to the trial. Defaults to \code{(1:kMax) / kMax}
+#'   if left unspecified.
 #' @name param_informationRates
 #' @keywords internal
 NULL
@@ -285,19 +286,19 @@ NULL
 NULL
 
 #' Parameter Description: estimateHazardRatio
-#' @param estimateHazardRatio Whether to estimate the hazard ratio from 
-#'   weighted Cox regression model and report the stopping boundaries on 
+#' @param estimateHazardRatio Whether to estimate the hazard ratio from
+#'   weighted Cox regression model and report the stopping boundaries on
 #'   the hazard ratio scale.
 #' @name param_estimateHazardRatio
 #' @keywords internal
 NULL
 
 #' Parameter Description: typeOfComputation
-#' @param typeOfComputation The type of computation, 
-#'   either "direct" for the direct approximation method, 
-#'   or "schoenfeld" for the Schoenfeld method.  
-#'   Defaults to "direct". Can use "Schoenfeld" 
-#'   under proportional hazards and conventional log-rank test. 
+#' @param typeOfComputation The type of computation,
+#'   either "direct" for the direct approximation method,
+#'   or "schoenfeld" for the Schoenfeld method.
+#'   Defaults to "direct". Can use "Schoenfeld"
+#'   under proportional hazards and conventional log-rank test.
 #' @name param_typeOfComputation
 #' @keywords internal
 NULL

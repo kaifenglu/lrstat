@@ -1,3 +1,82 @@
+# lrstat 0.2.3
+
+- issue a warning message when unequal spacing is used with O'Brien-Fleming, Pocock, or Wang-Tsiatis boundaries in getBound
+- rename maxInformation to information in the overallResults data frame of the getDesign function output
+- add simon2stage for Simon's two-stage design
+- add nbstat to calculate the number of events and information for negative binomial rate ratio 
+- add nbpower to calculate the power for negative binomial rate ratio test
+- add nbpower1s to calculate the power for one-sample negative binomial rate
+- add nbpowerequiv to calculate the power for equivalence in negative binomial rate ratio
+- add nbsamplesize to calculate the sample size for negative binomial rate ratio
+- add nbsamplesize1s to calculate the sample size for one-sample negative binomial rate
+- add nbsamplesizeequiv to calculate the sample size for equivalence in negative binomial rate ratio
+- add runShinyApp to run a Shiny app for power and sample size calculation for log-rank tests
+- add getDesignOneMean for group sequential design for one-sample mean
+- add getDesignPairedMeanDiff for group sequential design for paired mean difference
+- add getDesignPairedMeanRatio for group sequential design for paired mean ratio
+- add getDesignMeanDiff for group sequential design for two-sample mean difference
+- add getDesignMeanRatio for group sequential design for two-sample mean ratio
+- add getDesignMeanDiffXO for group sequential design for mean difference in 2x2 crossover
+- add getDesignMeanRatioXO for group sequential design for mean ratio in 2x2 crossover
+- add getDesignPairedMeanDiffEquiv for group sequential design for equivalence in paired mean difference
+- add getDesignPairedMeanRatioEquiv for group sequential design for equivalence in paired mean ratio
+- add getDesignMeanDiffEquiv for group sequential design for equivalence in two-sample mean difference
+- add getDesignMeanRatioEquiv for group sequential design for equivalence in two-sample mean ratio
+- add getDesignMeanDiffXOEquiv for group sequential design for equivalence in mean difference in 2x2 crossover
+- add getDesignMeanRatioXOEquiv for group sequential design for equivalence in mean ratio in 2x2 crossover
+- add getDesignWilcoxon for group sequential design for two-sample Wilcoxon test
+- add getDesignMeanDiffMMRM for two-sample mean difference at the last time point from the MMRM model
+- add getDesignMeanDiffCarryover for direct treatment effects in crossover trials accounting for the carryover effects
+- add getDesignANOVA for one-way analysis of variance
+- add getDesignANOVAContrast for one-way analysis of variance contrast
+- add getDesignRepeatedANOVA for one-way repeated analysis of variance
+- add getDesignRepeatedANOVAContrast for one-way repeated analysis of variance contrast
+- add getDesignTwoWayANOVA for two-way analysis of variance
+- add getDesignOneSlope for group sequential design for one-sample slope
+- add getDesignSlopeDiff for group sequential design for two-sample slope difference
+- add getDesignSlopeDiffMMRM for two-sample slope difference from the MMRM model
+- add getDesignOneProportion for group sequential design for one-sample proportion
+- add getDesignPairedPropMcNemar for group sequential design for McNemar's test for paired proportions
+- add getDesignRiskDiff for group sequential design for two-sample risk difference
+- add getDesignRiskDiffExact for exact unconditional test for risk difference
+- add getDesignRiskRatio for group sequential design for two-sample risk ratio
+- add getDesignRiskRatioFM for the Farrington-Manning score test for risk ratio
+- add getDesignRiskRatioExact for exact unconditional test for risk ratio
+- add getDesignOddsRatio for group sequential design for two-sample odds ratio
+- add getDesignRiskDiffEquiv for group sequential design for equivalence in two-sample risk difference
+- add getDesignRiskDiffExactEquiv for exact unconditional test for equivalence in risk difference
+- add getDesignRiskRatioEquiv for group sequential design for equivalence in two-sample risk ratio
+- add getDesignRiskRatioExactEquiv for exact unconditional test for equivalence in risk ratio
+- add getDesignOddsRatioEquiv for group sequential design for equivalence in two-sample odds ratio
+- add getDesignFisherExact for Fisher's exact conditional test for two proportions
+- add ClopperPearsonCI for Clopper-Pearson confidence interval for one-sample proportion
+- add survQuantile for Brookmeyer-Crowley confidence interval of quantiles of right-censored time-to-event data
+- add mTPI2Table for mTPI-2 decision table
+- add BOINTable for BOIN decision table
+- add mnRiskDiffCI for the Miettinen-Nurminen score confidence interval for two-sample risk difference
+- add mnRiskRatioCI for the Miettinen-Nurminen score confidence interval for two-sample risk ratio
+- add mnOddsRatioCI for the Miettinen-Nurminen score confidence interval for two-sample odds ratio
+- add mnRateDiffCI for the Miettinen-Nurminen score confidence interval for two-sample rate difference
+- add mnRateRatioCI for the Miettinen-Nurminen score confidence interval for two-sample rate ratio
+- add getDesignOneMultinom for one-sample multinomial response
+- add getDesignTwoMultinom for difference in two-sample multinomial response
+- add getDesignTwoOrdinal for Wilcoxon test for two-sample ordinal response
+- add getDesignOrderedBinom for Cochran-Armitage trend test for ordered multi-sample binomial response
+- add getDesignUnorderedBinom for unordered multi-sample binomial response
+- add getDesignUnorderedMultinom for unordered multi-sample multinomial response
+- add getDesignLogistic for logistic regression
+- add getDesignAgreement for Cohen's kappa agreement coefficient
+- add getDesignOneRateExact for exact test of one-sample Poisson rate
+- add ptpwexp for distribution function of truncated piecewise exponential distribution
+- add rtpwexp for random number generation of truncated piecewise exponential distribution
+- add hedgesg for Hedges' g effect size estimate and confidence interval
+- add getDesignEquiv for a generic group sequential equivalence design
+- add remlRiskDiff for REML estimates of individual proportions with specified risk difference
+- add remlRiskRatio for REML estimates of individual proportions with specified risk ratio
+- add remlOddsRatio for	REML estimates of individual proportions with specified odds ratio
+- add remlRateDiff for REML estimates of individual rates with specified rate difference
+- add remlRateRatio for REML estimates of individual rates with specified rate ratio
+
 # lrstat 0.2.2
 
 - add the intnorm utility function to integrate a function with respect to a normal density

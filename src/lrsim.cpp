@@ -8,11 +8,11 @@ using namespace Rcpp;
 //' trials based on weighted log-rank test.
 //'
 //' @inheritParams param_kMax
-//' @param informationRates The information rates in terms of number 
-//'   of events for the conventional log-rank test and in terms of 
-//'   the actual information for weighted log-rank tests.   
+//' @param informationRates The information rates in terms of number
+//'   of events for the conventional log-rank test and in terms of
+//'   the actual information for weighted log-rank tests.
 //'   Fixed prior to the trial. If left unspecified, it defaults to
-//'   \code{plannedEvents / plannedEvents[kMax]} when \code{plannedEvents} 
+//'   \code{plannedEvents / plannedEvents[kMax]} when \code{plannedEvents}
 //'   is provided and to \code{plannedTime / plannedTime[kMax]} otherwise.
 //' @inheritParams param_criticalValues
 //' @inheritParams param_futilityBounds
@@ -34,155 +34,159 @@ using namespace Rcpp;
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_rho1
 //' @inheritParams param_rho2
-//' @param plannedEvents The planned cumulative total number of events at each
-//'   stage.
-//' @param plannedTime The calendar times for the analyses. To use calendar  
+//' @param plannedEvents The planned cumulative total number of events at
+//'   each stage.
+//' @param plannedTime The calendar times for the analyses. To use calendar
 //'   time to plan the analyses, \code{plannedEvents} should be missing.
 //' @param maxNumberOfIterations The number of simulation iterations.
 //'   Defaults to 1000.
-//' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per stage
-//'   to extract. Defaults to 1.
+//' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
+//'   stage to extract. Defaults to 1.
 //' @param seed The seed to reproduce the simulation results.
-//'   The computer clock will be used if left unspecified,
+//'   The seed from the environment will be used if left unspecified,
 //'
 //' @return An S3 class \code{lrsim} object with 3 components:
 //'
 //' * \code{overview}: A list containing the following information:
-//' 
-//'   - \code{rejectPerStage}: The efficacy stopping probability by stage.
-//'   
-//'   - \code{futilityPerStage}: The futility stopping probability by stage.
-//'   
-//'   - \code{cumulativeRejection}: Cumulative efficacy stopping 
-//'   probability by stage.
-//'   
-//'   - \code{cumulativeFutility}: The cumulative futility stopping 
-//'   probability by stage.
-//'   
-//'   - \code{numberOfEvents}: The average number of events by stage.
-//'   
-//'   - \code{numberOfDropouts}: The average number of dropouts by stage.
-//'   
-//'   - \code{numberOfSubjects}: The average number of subjects by stage.
-//'   
-//'   - \code{analysisTime}: The average analysis time by stage.
-//'   
-//'   - \code{overallReject}: The overall rejection probability. 
-//'   
-//'   - \code{expectedNumberOfEvents}: The expected number of events for 
-//'   the overall study.
-//'   
-//'   - \code{expectedNumberOfDropouts}: The expected number of dropouts for
-//'   the overall study.
-//'   
-//'   - \code{expectedNumberOfSubjects}: The expected number of subjects for 
-//'   the overall study. 
-//'   
-//'   - \code{expectedStudyDuration}: The expected study duration.
-//'   
-//'   - \code{hazardRatioH0}: Hazard ratio under the null hypothesis for 
-//'   the active treatment versus control.
-//'   
-//'   - \code{useEvents}: whether the analyses are planned 
-//'   based on the number of events or calendar time. 
-//'   
-//'   - \code{accrualDuration}: Duration of the enrollment period.
-//'   
-//'   - \code{fixedFollowup}: Whether a fixed follow-up design is used.
-//'   
-//'   - \code{rho1}: The first parameter of the Fleming-Harrington family 
-//'   of weighted log-rank test. Defaults to 0 for conventional log-rank test.
-//'   
-//'   - \code{rho2}: The second parameter of the Fleming-Harrington family 
-//'   of weighted log-rank test. Defaults to 0 for conventional log-rank test.
-//'   
-//'   - \code{kMax}: The maximum number of stages.
 //'
-//' * \code{sumdata}: A data frame of summary data by iteration and stage: 
-//' 
-//'   - \code{iterationNumber}: The iteration number.
-//'   
-//'   - \code{stopStage}: The stage at which the trial stops.
-//'   
-//'   - \code{eventsNotAchieved}: Whether the target number of events 
-//'   is not achieved for the iteration.
-//'   
-//'   - \code{stageNumber}: The stage number, covering all stages even if 
-//'   the trial stops at an interim look.
-//'   
-//'   - \code{analysisTime}: The time for the stage since trial start.
-//'   
-//'   - \code{accruals1}: The number of subjects enrolled at the stage for
-//'   the treatment group.
-//'   
-//'   - \code{accruals2}: The number of subjects enrolled at the stage for
-//'   the control group.
-//'   
-//'   - \code{totalAccruals}: The total number of subjects enrolled at 
-//'   the stage.
-//'   
-//'   - \code{events1}: The number of events at the stage for 
-//'   the treatment group.
-//'   
-//'   - \code{events2}: The number of events at the stage for 
-//'   the control group.
-//'   
-//'   - \code{totalEvents}: The total number of events at the stage.
-//'   
-//'   - \code{dropouts1}: The number of dropouts at the stage for 
-//'   the treatment group. 
-//'   
-//'   - \code{dropouts2}: The number of dropouts at the stage for 
-//'   the control group.
-//'   
-//'   - \code{totalDropouts}: The total number of dropouts at the stage.
-//'   
-//'   - \code{uscore}: The numerator of the log-rank test statistic. 
-//'   
-//'   - \code{vscore}: The variance of the log-rank test statistic.
-//'   
-//'   - \code{logRankStatistic}: The log-rank test Z-statistic.
-//'   
-//'   - \code{rejectPerStage}: Whether to reject the null hypothesis 
-//'   at the stage.
-//'   
-//'   - \code{futilityPerStage}: Whether to stop the trial for futility  
-//'   at the stage.
+//'     - \code{rejectPerStage}: The efficacy stopping probability by stage.
+//'
+//'     - \code{futilityPerStage}: The futility stopping probability by
+//'       stage.
+//'
+//'     - \code{cumulativeRejection}: Cumulative efficacy stopping
+//'       probability by stage.
+//'
+//'     - \code{cumulativeFutility}: The cumulative futility stopping
+//'       probability by stage.
+//'
+//'     - \code{numberOfEvents}: The average number of events by stage.
+//'
+//'     - \code{numberOfDropouts}: The average number of dropouts by stage.
+//'
+//'     - \code{numberOfSubjects}: The average number of subjects by stage.
+//'
+//'     - \code{analysisTime}: The average analysis time by stage.
+//'
+//'     - \code{overallReject}: The overall rejection probability.
+//'
+//'     - \code{expectedNumberOfEvents}: The expected number of events for
+//'       the overall study.
+//'
+//'     - \code{expectedNumberOfDropouts}: The expected number of dropouts
+//'       for the overall study.
+//'
+//'     - \code{expectedNumberOfSubjects}: The expected number of subjects
+//'       for the overall study.
+//'
+//'     - \code{expectedStudyDuration}: The expected study duration.
+//'
+//'     - \code{hazardRatioH0}: Hazard ratio under the null hypothesis for
+//'       the active treatment versus control.
+//'
+//'     - \code{useEvents}: whether the analyses are planned
+//'       based on the number of events or calendar time.
+//'
+//'     - \code{accrualDuration}: Duration of the enrollment period.
+//'
+//'     - \code{fixedFollowup}: Whether a fixed follow-up design is used.
+//'
+//'     - \code{rho1}: The first parameter of the Fleming-Harrington family
+//'       of weighted log-rank test. Defaults to 0 for conventional log-rank
+//'       test.
+//'
+//'     - \code{rho2}: The second parameter of the Fleming-Harrington family
+//'       of weighted log-rank test. Defaults to 0 for conventional log-rank
+//'       test.
+//'
+//'     - \code{kMax}: The maximum number of stages.
+//'
+//' * \code{sumdata}: A data frame of summary data by iteration and stage:
+//'
+//'     - \code{iterationNumber}: The iteration number.
+//'
+//'     - \code{stopStage}: The stage at which the trial stops.
+//'
+//'     - \code{eventsNotAchieved}: Whether the target number of events
+//'       is not achieved for the iteration.
+//'
+//'     - \code{stageNumber}: The stage number, covering all stages even if
+//'       the trial stops at an interim look.
+//'
+//'     - \code{analysisTime}: The time for the stage since trial start.
+//'
+//'     - \code{accruals1}: The number of subjects enrolled at the stage for
+//'       the treatment group.
+//'
+//'     - \code{accruals2}: The number of subjects enrolled at the stage for
+//'       the control group.
+//'
+//'     - \code{totalAccruals}: The total number of subjects enrolled at
+//'       the stage.
+//'
+//'     - \code{events1}: The number of events at the stage for
+//'       the treatment group.
+//'
+//'     - \code{events2}: The number of events at the stage for
+//'       the control group.
+//'
+//'     - \code{totalEvents}: The total number of events at the stage.
+//'
+//'     - \code{dropouts1}: The number of dropouts at the stage for
+//'       the treatment group.
+//'
+//'     - \code{dropouts2}: The number of dropouts at the stage for
+//'       the control group.
+//'
+//'     - \code{totalDropouts}: The total number of dropouts at the stage.
+//'
+//'     - \code{uscore}: The numerator of the log-rank test statistic.
+//'
+//'     - \code{vscore}: The variance of the log-rank test statistic.
+//'
+//'     - \code{logRankStatistic}: The log-rank test Z-statistic.
+//'
+//'     - \code{rejectPerStage}: Whether to reject the null hypothesis
+//'       at the stage.
+//'
+//'     - \code{futilityPerStage}: Whether to stop the trial for futility
+//'       at the stage.
 //'
 //' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-//' positive integer): A data frame for subject-level data for selected
-//' replications, containing the following variables:
-//' 
-//'   - \code{iterationNumber}: The iteration number.
-//'   
-//'   - \code{stopStage}: The stage at which the trial stops.
-//'   
-//'   - \code{analysisTime}: The time for the stage since trial start.
-//'   
-//'   - \code{subjectId}: The subject ID.
-//'   
-//'   - \code{arrivalTime}: The enrollment time for the subject.
-//'   
-//'   - \code{stratum}: The stratum for the subject.
-//'   
-//'   - \code{treatmentGroup}: The treatment group (1 or 2) for the subject.
-//'   
-//'   - \code{survivalTime}: The underlying survival time for the subject.
-//'   
-//'   - \code{dropoutTime}: The underlying dropout time for the subject.
-//'   
-//'   - \code{timeUnderObservation}: The time under observation since    
-//'   since randomization.
-//'   
-//'   - \code{event}: Whether the subject experienced the event.
-//'   
-//'   - \code{dropoutEvent}: Whether the subject dropped out.
+//'   positive integer): A data frame for subject-level data for selected
+//'   replications, containing the following variables:
+//'
+//'     - \code{iterationNumber}: The iteration number.
+//'
+//'     - \code{stopStage}: The stage at which the trial stops.
+//'
+//'     - \code{analysisTime}: The time for the stage since trial start.
+//'
+//'     - \code{subjectId}: The subject ID.
+//'
+//'     - \code{arrivalTime}: The enrollment time for the subject.
+//'
+//'     - \code{stratum}: The stratum for the subject.
+//'
+//'     - \code{treatmentGroup}: The treatment group (1 or 2) for the
+//'       subject.
+//'
+//'     - \code{survivalTime}: The underlying survival time for the subject.
+//'
+//'     - \code{dropoutTime}: The underlying dropout time for the subject.
+//'
+//'     - \code{timeUnderObservation}: The time under observation
+//'       since randomization.
+//'
+//'     - \code{event}: Whether the subject experienced the event.
+//'
+//'     - \code{dropoutEvent}: Whether the subject dropped out.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
 //' @examples
 //' # Example 1: analyses based on number of events
-//' 
+//'
 //' sim1 = lrsim(kMax = 2, informationRates = c(0.5, 1),
 //'              criticalValues = c(2.797, 1.977),
 //'              accrualIntensity = 11,
@@ -220,7 +224,7 @@ using namespace Rcpp;
 //'
 //' # summary for each simulated data set
 //' head(sim2$sumdata)
-//' 
+//'
 //' @export
 // [[Rcpp::export]]
 List lrsim(const int kMax = NA_INTEGER,
@@ -248,33 +252,33 @@ List lrsim(const int kMax = NA_INTEGER,
            const int maxNumberOfIterations = 1000,
            const int maxNumberOfRawDatasetsPerStage = 0,
            int seed = NA_INTEGER) {
-  
+
   int nstrata = stratumFraction.size();
   int nintervals = piecewiseSurvivalTime.size();
   int nsi = nstrata*nintervals;
   NumericVector lambda1x(nsi), lambda2x(nsi);
   NumericVector gamma1x(nsi), gamma2x(nsi);
-  
+
   bool useEvents, eventsNotAchieved;
   NumericVector informationRates1 = clone(informationRates);
   NumericVector futilityBounds1 = clone(futilityBounds);
-  
-  
+
+
   if (kMax < 1) {
     stop("kMax must be a positive integer");
   }
-  
-  // whether to plan the analyses based on events or calender time
+
+  // whether to plan the analyses based on events or calendar time
   if (is_false(any(is_na(plannedEvents)))) {
     useEvents = 1;
     if (plannedEvents[0] <= 0) {
       stop("Elements of plannedEvents must be positive");
     }
-    
+
     if (plannedEvents.size() != kMax) {
       stop("Invalid length for plannedEvents");
     }
-    
+
     if (kMax > 1 && is_true(any(diff(plannedEvents) <= 0))) {
       stop("Elements of plannedEvents must be increasing");
     }
@@ -283,19 +287,19 @@ List lrsim(const int kMax = NA_INTEGER,
     if (plannedTime[0] <= 0) {
       stop("Elements of plannedTime must be positive");
     }
-    
+
     if (plannedTime.size() != kMax) {
       stop("Invalid length for plannedTime");
     }
-    
+
     if (kMax > 1 && is_true(any(diff(plannedTime) <= 0))) {
       stop("Elements of plannedTime must be increasing");
     }
   } else {
     stop("Either plannedEvents or plannedTime must be given");
   }
-  
-  
+
+
   // set default informationRates
   if (is_false(any(is_na(informationRates)))) {
     if (informationRates.size() != kMax) {
@@ -313,27 +317,27 @@ List lrsim(const int kMax = NA_INTEGER,
   } else {
     informationRates1 = plannedTime/plannedTime[kMax-1];
   }
-  
-  
+
+
   if (is_true(any(is_na(criticalValues)))) {
     stop("criticalValues must be provided");
   }
-  
+
   if (criticalValues.size() != kMax) {
     stop("Invalid length for criticalValues");
   }
-  
-  
+
+
   if (kMax > 1 && is_true(any(is_na(futilityBounds)))) {
     futilityBounds1 = rep(-6.0, kMax-1);
   }
-  
+
   if (is_false(any(is_na(futilityBounds1)))) {
     if (futilityBounds1.size() < kMax-1) {
       stop("Invalid length for futilityBounds");
     }
   }
-  
+
   if (is_false(any(is_na(criticalValues))) &&
       is_false(any(is_na(futilityBounds1)))) {
     for (int i=0; i<kMax-1; i++) {
@@ -342,68 +346,68 @@ List lrsim(const int kMax = NA_INTEGER,
       }
     }
   }
-  
+
   if (hazardRatioH0 <= 0) {
     stop("hazardRatioH0 must be positive");
   }
-  
+
   if (allocation1 < 1) {
     stop("allocation1 must be a positive integer");
   }
-  
+
   if (allocation2 < 1) {
     stop("allocation2 must be a positive integer");
   }
-  
+
   if (accrualTime[0] != 0) {
     stop("accrualTime must start with 0");
   }
-  
+
   if (accrualTime.size() > 1 && is_true(any(diff(accrualTime) <= 0))) {
     stop("accrualTime should be increasing");
   }
-  
+
   if (accrualTime.size() != accrualIntensity.size()) {
     stop("accrualTime must have the same length as accrualIntensity");
   }
-  
+
   if (is_true(any(accrualIntensity < 0))) {
     stop("accrualIntensity must be non-negative");
   }
-  
+
   if (piecewiseSurvivalTime[0] != 0) {
     stop("piecewiseSurvivalTime must start with 0");
   }
-  
+
   if (nintervals > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
     stop("piecewiseSurvivalTime should be increasing");
   }
-  
+
   if (is_true(any(stratumFraction <= 0))) {
     stop("stratumFraction must be positive");
   }
-  
+
   if (sum(stratumFraction) != 1) {
     stop("stratumFraction must sum to 1");
   }
-  
+
   if (is_true(any(lambda1 < 0))) {
     stop("lambda1 must be non-negative");
   }
-  
+
   if (is_true(any(lambda2 < 0))) {
     stop("lambda2 must be non-negative");
   }
-  
+
   if (is_true(any(gamma1 < 0))) {
     stop("gamma1 must be non-negative");
   }
-  
+
   if (is_true(any(gamma2 < 0))) {
     stop("gamma2 must be non-negative");
   }
-  
-  
+
+
   if (lambda1.size() == 1) {
     lambda1x = rep(lambda1, nsi);
   } else if (lambda1.size() == nintervals) {
@@ -413,7 +417,7 @@ List lrsim(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda1");
   }
-  
+
   if (lambda2.size() == 1) {
     lambda2x = rep(lambda2, nsi);
   } else if (lambda2.size() == nintervals) {
@@ -423,7 +427,7 @@ List lrsim(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda2");
   }
-  
+
   if (gamma1.size() == 1) {
     gamma1x = rep(gamma1, nsi);
   } else if (gamma1.size() == nintervals) {
@@ -433,7 +437,7 @@ List lrsim(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for gamma1");
   }
-  
+
   if (gamma2.size() == 1) {
     gamma2x = rep(gamma2, nsi);
   } else if (gamma2.size() == nintervals) {
@@ -443,49 +447,49 @@ List lrsim(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for gamma2");
   }
-  
+
   if (R_isnancpp(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
-  
+
   if (accrualDuration <= 0) {
     stop("accrualDuration must be positive");
   }
-  
+
   if (fixedFollowup) {
     if (R_isnancpp(followupTime)) {
       stop("followupTime must be provided for fixed follow-up");
     }
-    
+
     if (followupTime <= 0) {
       stop("followupTime must be positive for fixed follow-up");
     }
   }
-  
+
   if (rho1 < 0) {
     stop("rho1 must be non-negative");
   }
-  
+
   if (rho2 < 0) {
     stop("rho2 must be non-negative");
   }
-  
+
   if (maxNumberOfIterations < 1) {
     stop("maxNumberOfIterations must be a positive integer");
   }
-  
+
   if (maxNumberOfRawDatasetsPerStage < 0) {
     stop("maxNumberOfRawDatasetsPerStage must be a non-negative integer");
   }
-  
-  
-  // declare variables 
+
+
+  // declare variables
   int i, iter, j, k, h, nevents, nstages, stopStage, nsub;
   int index1=0, index2=0;
-  
+
   double u, enrollt, time, uscore1, vscore1;
-  
-  
+
+
   // maximum number of subjects to enroll
   int m = accrualTime.size();
   double s = 0;
@@ -498,47 +502,47 @@ List lrsim(const int kMax = NA_INTEGER,
     }
   }
   int n = floor(s + 0.5);
-  
-  
+
+
   // subject-level raw data set for one simulation
-  IntegerVector stratum(n), treatmentGroup(n), sortedIndex(n), 
+  IntegerVector stratum(n), treatmentGroup(n), sortedIndex(n),
   stratumSorted(n), treatmentGroupSorted(n);
-  
+
   NumericVector arrivalTime(n), survivalTime(n), dropoutTime(n),
-  timeUnderObservation(n), totalTime(n), totalt(n), 
+  timeUnderObservation(n), totalTime(n), totalt(n),
   observationTime(n), timeUnderObservationSorted(n);
-  
+
   LogicalVector event(n), dropoutEvent(n), sub(n), eventSorted(n);
-  
-  
-  // stratum information 
-  IntegerVector b1(nstrata), b2(nstrata), n1(nstrata), n1x(nstrata), 
-  n2(nstrata), nt(nstrata), ntx(nstrata); 
-  
+
+
+  // stratum information
+  IntegerVector b1(nstrata), b2(nstrata), n1(nstrata), n1x(nstrata),
+  n2(nstrata), nt(nstrata), ntx(nstrata);
+
   NumericVector km(nstrata), w(nstrata);
   NumericVector cumStratumFraction = cumsum(stratumFraction);
 
-  
-  // within-stratum hazard rates 
-  NumericVector lam1(nintervals), lam2(nintervals); 
+
+  // within-stratum hazard rates
+  NumericVector lam1(nintervals), lam2(nintervals);
   NumericVector gam1(nintervals), gam2(nintervals);
-  
+
   // stage-wise information
   IntegerVector accruals1(kMax), accruals2(kMax), totalAccruals(kMax),
   events1(kMax), events2(kMax), totalEvents(kMax),
   dropouts1(kMax), dropouts2(kMax), totalDropouts(kMax),
   niter(kMax), obsEvents(kMax);
-  
-  NumericVector analysisTime(kMax), uscore(kMax), vscore(kMax), 
+
+  NumericVector analysisTime(kMax), uscore(kMax), vscore(kMax),
   lrstat(kMax), adjCriticalValues(kMax);
-  
+
   LogicalVector rejectPerStage(kMax), futilityPerStage(kMax);
-  
-  
+
+
   // cache for the patient-level raw data to extract
   int nrow1 = std::min(n*kMax*maxNumberOfRawDatasetsPerStage,
                        n*maxNumberOfIterations);
-  
+
   IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
   IntegerVector stopStagex = IntegerVector(nrow1, NA_INTEGER);
   IntegerVector subjectIdx = IntegerVector(nrow1, NA_INTEGER);
@@ -551,10 +555,10 @@ List lrsim(const int kMax = NA_INTEGER,
   NumericVector timeUnderObservationx = NumericVector(nrow1, NA_REAL);
   LogicalVector eventx = LogicalVector(nrow1, NA_LOGICAL);
   LogicalVector dropoutEventx = LogicalVector(nrow1, NA_LOGICAL);
-  
+
   // cache for the simulation-level summary data to extract
   int nrow2 = kMax*maxNumberOfIterations;
-  
+
   IntegerVector iterationNumbery = IntegerVector(nrow2, NA_INTEGER);
   IntegerVector stopStagey = IntegerVector(nrow2, NA_INTEGER);
   LogicalVector eventsNotAchievedy = LogicalVector(nrow2, NA_LOGICAL);
@@ -574,37 +578,35 @@ List lrsim(const int kMax = NA_INTEGER,
   NumericVector logRankStatisticy = NumericVector(nrow2, NA_REAL);
   LogicalVector rejectPerStagey = LogicalVector(nrow2, NA_LOGICAL);
   LogicalVector futilityPerStagey = LogicalVector(nrow2, NA_LOGICAL);
-  
-  
+
+
   // total alpha to adjust the critical value at the final stage
   NumericVector lb(kMax, -6.0);
   NumericVector theta(kMax);
   List p1 = exitprobcpp(criticalValues, lb, theta, informationRates1);
   double alpha = sum(NumericVector(p1[0]));
-  
-  
+
+
   // set up random seed
-  if (seed==NA_INTEGER) {
-    set_seed(std::time(0));
-  } else {
+  if (seed != NA_INTEGER) {
     set_seed(seed);
   }
-  
-  
+
+
   for (iter=0; iter<maxNumberOfIterations; iter++) {
     int nstops = 0;
-    
+
     b1.fill(allocation1);
     b2.fill(allocation2);
-    
+
     enrollt = 0;
     for (i=0; i<n; i++) {
-      
+
       // generate accrual time
       u = R::runif(0,1);
-      enrollt = qtpwexpcpp(u, accrualTime, accrualIntensity, enrollt);
+      enrollt = qtpwexpcpp1(u, accrualTime, accrualIntensity, enrollt);
       arrivalTime[i] = enrollt;
-      
+
       // generate stratum information
       u = R::runif(0,1);
       for (j=0; j<nstrata; j++) {
@@ -613,7 +615,7 @@ List lrsim(const int kMax = NA_INTEGER,
           break;
         }
       }
-      
+
       // stratified block randomization
       u = R::runif(0,1);
       if (u <= b1[j]/(b1[j]+b2[j]+0.0)) {
@@ -623,37 +625,37 @@ List lrsim(const int kMax = NA_INTEGER,
         treatmentGroup[i] = 2;
         b2[j]--;
       }
-      
+
       // start a new block after depleting the current block
       if (b1[j]+b2[j]==0) {
         b1[j] = allocation1;
         b2[j] = allocation2;
       }
 
-      // stratum-specific hazard rates for event and dropout      
+      // stratum-specific hazard rates for event and dropout
       Range jj = Range(j*nintervals, (j+1)*nintervals-1);
-      
+
       lam1 = lambda1x[jj];
       lam2 = lambda2x[jj];
       gam1 = gamma1x[jj];
       gam2 = gamma2x[jj];
-      
+
       // generate survival time
       u = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        survivalTime[i] = qtpwexpcpp(u, piecewiseSurvivalTime, lam1, 0);
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam1, 0);
       } else {
-        survivalTime[i] = qtpwexpcpp(u, piecewiseSurvivalTime, lam2, 0);
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam2, 0);
       }
-      
+
       // generate dropout time
       u = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        dropoutTime[i] = qtpwexpcpp(u, piecewiseSurvivalTime, gam1, 0);
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam1, 0);
       } else {
-        dropoutTime[i] = qtpwexpcpp(u, piecewiseSurvivalTime, gam2, 0);
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam2, 0);
       }
-      
+
       // initial observed time and event indicator
       if (fixedFollowup) { // fixed follow-up design
         if (survivalTime[i] < dropoutTime[i] &&
@@ -682,26 +684,26 @@ List lrsim(const int kMax = NA_INTEGER,
           dropoutEvent[i] = 1;
         }
       }
-      
+
       totalTime[i] = arrivalTime[i] + timeUnderObservation[i];
-      
+
     }
-    
-    
+
+
     // find the analysis time for each stage
     if (useEvents) {
       nevents = sum(event);
       totalt = stl_sort(totalTime[event]);
       nstages = kMax;
-      
+
       for (j=0; j<kMax; j++) {
         if (plannedEvents[j] >= nevents) {
           nstages = j+1;
           break;
         }
       }
-      
-      
+
+
       if (j==kMax) { // total number of events exceeds planned
         for (k=0; k<nstages; k++) {
           analysisTime[k] = totalt[plannedEvents[k]-1] + 1e-12;
@@ -718,7 +720,7 @@ List lrsim(const int kMax = NA_INTEGER,
           }
         }
       }
-      
+
       // observed total number of events less than planned
       eventsNotAchieved = (nevents < plannedEvents[kMax-1]);
     } else {
@@ -726,20 +728,20 @@ List lrsim(const int kMax = NA_INTEGER,
       analysisTime = clone(plannedTime);
       eventsNotAchieved = 0;
     }
-    
-    
+
+
     // construct the log-rank test statistic at each stage
     stopStage = nstages;
     for (k=0; k<nstages; k++) {
       time = analysisTime[k];
-      
+
       n1.fill(0);  // number of subjects in each stratum by treatment
       n2.fill(0);
       events1[k] = 0;
       events2[k] = 0;
       dropouts1[k] = 0;
       dropouts2[k] = 0;
-      
+
       // censor at analysis time
       for (i=0; i<n; i++) {
         h = stratum[i]-1;
@@ -754,9 +756,9 @@ List lrsim(const int kMax = NA_INTEGER,
           } else if (treatmentGroup[i]==2) {
             n2[h]++;
           }
-          
+
           if (fixedFollowup) {
-            // the first three cases correspond to arrivalTime[i] + 
+            // the first three cases correspond to arrivalTime[i] +
             // min(survivalTime[i], dropoutTime[i], followupTime) < time
             if (arrivalTime[i] + survivalTime[i] < time &&
                 survivalTime[i] < dropoutTime[i] &&
@@ -798,22 +800,22 @@ List lrsim(const int kMax = NA_INTEGER,
               dropoutEvent[i] = 0;
             }
           }
-          
+
           if (treatmentGroup[i]==1 && event[i]) events1[k]++;
           if (treatmentGroup[i]==2 && event[i]) events2[k]++;
           if (treatmentGroup[i]==1 && dropoutEvent[i]) dropouts1[k]++;
           if (treatmentGroup[i]==2 && dropoutEvent[i]) dropouts2[k]++;
         }
       }
-      
+
       // number of accrued patients and total number of events
       accruals1[k] = sum(n1);
       accruals2[k] = sum(n2);
       totalAccruals[k] = accruals1[k] + accruals2[k];
-      
+
       totalEvents[k] = events1[k] + events2[k];
       totalDropouts[k] = dropouts1[k] + dropouts2[k];
-      
+
       // order the data by time under observation
       timeUnderObservationSorted = stl_sort(timeUnderObservation);
       sortedIndex = match(timeUnderObservationSorted, timeUnderObservation);
@@ -826,7 +828,7 @@ List lrsim(const int kMax = NA_INTEGER,
       stratumSorted = stratumSorted[sub];
       treatmentGroupSorted = treatmentGroupSorted[sub];
       nsub = eventSorted.size();
-      
+
       // calculate the stratified log-rank test
       uscore1 = 0;
       vscore1 = 0;
@@ -836,14 +838,14 @@ List lrsim(const int kMax = NA_INTEGER,
         n1x[h] = n1[h]*hazardRatioH0;
         nt[h] = n1[h] + n2[h];
         ntx[h] = n1x[h] + n2[h];
-        
+
         if (eventSorted[i]) { // at most 1 event can occur at a given time
           w[h] = pow(km[h], rho1)*pow(1-km[h], rho2);
           uscore1 += w[h]*((treatmentGroupSorted[i]==1)-n1x[h]/(ntx[h]+0.0));
           vscore1 += w[h]*w[h]*n1x[h]*n2[h]/(ntx[h]*ntx[h]+0.0);
           km[h] *= (1-1/(nt[h]+0.0)); // update km estimate
         }
-        
+
         // reduce the risk set
         if (treatmentGroupSorted[i]==1) {
           n1[h]--;
@@ -851,17 +853,17 @@ List lrsim(const int kMax = NA_INTEGER,
           n2[h]--;
         }
       }
-      
+
       uscore[k] = uscore1;
       vscore[k] = vscore1;
-      
+
       // log-rank z statistic
       lrstat[k] = uscore1/sqrt(vscore1);
-      
+
       if (useEvents) {
         // adjust the critical value at the final stage if the planned total
         // number of events is not achieved
-        if (k < nstages-1 || !eventsNotAchieved) { 
+        if (k < nstages-1 || !eventsNotAchieved) {
           // no change to the critical
           // values at earlier stages, or at the final stage if the planned
           // total number of events is achieved (the number of stages is also
@@ -869,7 +871,7 @@ List lrsim(const int kMax = NA_INTEGER,
           adjCriticalValues[k] = criticalValues[k];
         } else { // assign all remaining alpha to the final stage
           if (rho1 == 0 && rho2 == 0) { // conventional log-rank test
-            auto f = [criticalValues, alpha, &obsEvents, 
+            auto f = [criticalValues, alpha, &obsEvents,
                       &nstages](double aval)->double {
                         NumericVector u(nstages);
                         for (int i=0; i<nstages-1; i++) {
@@ -883,10 +885,10 @@ List lrsim(const int kMax = NA_INTEGER,
                         List p2 = exitprobcpp(u, l, theta, I);
                         return sum(NumericVector(p2[0])) - alpha;
                       };
-            
+
             adjCriticalValues[nstages-1] = brent(f, 0, 6, 1e-6);
           } else { // weighted log-rank test
-            auto f = [criticalValues, alpha, &vscore, 
+            auto f = [criticalValues, alpha, &vscore,
                       &nstages](double aval)->double {
                         NumericVector u(nstages);
                         for (int i=0; i<nstages-1; i++) {
@@ -899,16 +901,16 @@ List lrsim(const int kMax = NA_INTEGER,
                         List p2 = exitprobcpp(u, l, theta, I);
                         return sum(NumericVector(p2[0])) - alpha;
                       };
-            
+
             adjCriticalValues[nstages-1] = brent(f, 0, 6, 1e-6);
           }
         }
-        
+
       } else {
         adjCriticalValues[k] = criticalValues[k];
       }
-      
-      
+
+
       // compare to the critical values to make decisions
       rejectPerStage[k] = 0;
       futilityPerStage[k] = 0;
@@ -918,14 +920,13 @@ List lrsim(const int kMax = NA_INTEGER,
                    || (k == nstages-1))  {
         futilityPerStage[k] = 1;
       }
-      
-      
-      
+
+
       if (rejectPerStage[k]==1 || futilityPerStage[k]==1) {
         nstops++;
-        
+
         if (nstops == 1) { // extract at most one raw data set per iteration
-          
+
           // add raw data to output
           if (niter[k] < maxNumberOfRawDatasetsPerStage) {
             for (i=0; i<n; i++) {
@@ -943,19 +944,19 @@ List lrsim(const int kMax = NA_INTEGER,
               dropoutEventx[index1] = dropoutEvent[i];
               index1++;
             }
-            
+
             // update the number of stage k dataset to extract
             niter[k]++;
           }
-          
+
           stopStage = k+1;
-          
+
         }
-        
+
       }
-      
+
     }
-    
+
     // add summary data to output
     for (k=0; k<nstages; k++) {
       iterationNumbery[index2] = iter+1;
@@ -979,10 +980,10 @@ List lrsim(const int kMax = NA_INTEGER,
       futilityPerStagey[index2] = futilityPerStage[k];
       index2++;
     }
-    
-    
+
+
   }
-  
+
   // only keep nonmissing records
   LogicalVector sub2 = !is_na(iterationNumbery);
   iterationNumbery = iterationNumbery[sub2];
@@ -1004,33 +1005,33 @@ List lrsim(const int kMax = NA_INTEGER,
   logRankStatisticy = logRankStatisticy[sub2];
   rejectPerStagey = rejectPerStagey[sub2];
   futilityPerStagey = futilityPerStagey[sub2];
-  
-  
-  
+
+
+
   // simulation results on power and expected sample size
-  
+
   NumericVector pRejectPerStage(kMax), pFutilityPerStage(kMax),
   nEventsPerStage(kMax), nDropoutsPerStage(kMax), nSubjectsPerStage(kMax),
   analysisTimePerStage(kMax);
-  
-  
+
+
   // number of observations in the summary dataset
   int nrow3 = stageNumbery.size();
-  
+
   for (i=0; i<nrow3; i++) {
     k = stageNumbery[i] - 1;
     if (stageNumbery[i] == stopStagey[i]) {
       pRejectPerStage[k] += rejectPerStagey[i];
       pFutilityPerStage[k] += futilityPerStagey[i];
     }
-    
+
     nEventsPerStage[k] += totalEventsy[i];
     nDropoutsPerStage[k] += totalDropoutsy[i];
     nSubjectsPerStage[k] += totalAccrualsy[i];
     analysisTimePerStage[k] += analysisTimey[i];
   }
-  
-  
+
+
   for (k=0; k<kMax; k++) {
     pRejectPerStage[k] /= maxNumberOfIterations;
     pFutilityPerStage[k] /= maxNumberOfIterations;
@@ -1039,15 +1040,15 @@ List lrsim(const int kMax = NA_INTEGER,
     nSubjectsPerStage[k] /= maxNumberOfIterations;
     analysisTimePerStage[k] /= maxNumberOfIterations;
   }
-  
+
   NumericVector cpu = cumsum(pRejectPerStage);
   NumericVector cpl = cumsum(pFutilityPerStage);
-  
+
   double pOverallReject = sum(pRejectPerStage);
-  
+
   double expectedNumberOfEvents=0, expectedNumberOfDropouts=0,
     expectedNumberOfSubjects=0, expectedStudyDuration=0;
-  
+
   for (i=0; i<nrow3; i++) {
     if (stageNumbery[i] == stopStagey[i]) {
       expectedNumberOfEvents += totalEventsy[i];
@@ -1056,12 +1057,12 @@ List lrsim(const int kMax = NA_INTEGER,
       expectedStudyDuration += analysisTimey[i];
     }
   }
-  
+
   expectedNumberOfEvents /= maxNumberOfIterations;
   expectedNumberOfDropouts /= maxNumberOfIterations;
   expectedNumberOfSubjects /= maxNumberOfIterations;
   expectedStudyDuration /= maxNumberOfIterations;
-  
+
   List overview = List::create(
     _["rejectPerStage"] = pRejectPerStage,
     _["futilityPerStage"] = pFutilityPerStage,
@@ -1083,9 +1084,9 @@ List lrsim(const int kMax = NA_INTEGER,
     _["rho1"] = rho1,
     _["rho2"] = rho2,
     _["kMax"] = kMax);
-  
-  
-  
+
+
+
   // simulation datasets
   DataFrame sumdata = DataFrame::create(
     _["iterationNumber"] = iterationNumbery,
@@ -1107,10 +1108,10 @@ List lrsim(const int kMax = NA_INTEGER,
     _["logRankStatistic"] = logRankStatisticy,
     _["rejectPerStage"] = rejectPerStagey,
     _["futilityPerStage"] = futilityPerStagey);
-  
-  
+
+
   List result;
-  
+
   if (maxNumberOfRawDatasetsPerStage > 0) {
     LogicalVector sub1 = !is_na(iterationNumberx);
     iterationNumberx = iterationNumberx[sub1];
@@ -1125,7 +1126,7 @@ List lrsim(const int kMax = NA_INTEGER,
     timeUnderObservationx = timeUnderObservationx[sub1];
     eventx = eventx[sub1];
     dropoutEventx = dropoutEventx[sub1];
-    
+
     DataFrame rawdata = DataFrame::create(
       _["iterationNumber"] = iterationNumberx,
       _["stopStage"] = stopStagex,
@@ -1139,7 +1140,7 @@ List lrsim(const int kMax = NA_INTEGER,
       _["timeUnderObservation"] = timeUnderObservationx,
       _["event"] = eventx,
       _["dropoutEvent"] = dropoutEventx);
-    
+
     result = List::create(_["overview"] = overview,
                           _["sumdata"] = sumdata,
                           _["rawdata"] = rawdata);
@@ -1147,20 +1148,20 @@ List lrsim(const int kMax = NA_INTEGER,
     result = List::create(_["overview"] = overview,
                           _["sumdata"] = sumdata);
   }
-  
+
   result.attr("class") = "lrsim";
-  
-  
+
+
   return result;
 }
 
 
 //' @title Log-rank test simulation for three arms
-//' @description Performs simulation for three-arm group sequential trials 
-//' based on weighted log-rank test. The looks are driven by the total 
-//' number of events in Arm A and Arm C combined. Alternatively, 
+//' @description Performs simulation for three-arm group sequential trials
+//' based on weighted log-rank test. The looks are driven by the total
+//' number of events in Arm A and Arm C combined. Alternatively,
 //' the analyses can be planned to occur at specified calendar times.
-//' 
+//'
 //' @inheritParams param_kMax
 //' @param hazardRatioH013 Hazard ratio under the null hypothesis for arm 1
 //'   versus arm 3. Defaults to 1 for superiority test.
@@ -1178,139 +1179,139 @@ List lrsim(const int kMax = NA_INTEGER,
 //' @inheritParams param_accrualIntensity
 //' @inheritParams param_piecewiseSurvivalTime
 //' @inheritParams param_stratumFraction
-//' @param lambda1 A vector of hazard rates for the event in each analysis  
+//' @param lambda1 A vector of hazard rates for the event in each analysis
 //'   time interval by stratum for arm 1.
-//' @param lambda2 A vector of hazard rates for the event in each analysis  
+//' @param lambda2 A vector of hazard rates for the event in each analysis
 //'   time interval by stratum for arm 2.
-//' @param lambda3 A vector of hazard rates for the event in each analysis  
+//' @param lambda3 A vector of hazard rates for the event in each analysis
 //'   time interval by stratum for arm 3.
-//' @param gamma1 The hazard rate for exponential dropout. A vector of 
-//'   hazard rates for piecewise exponential dropout applicable for all 
-//'   strata, or a vector of hazard rates for dropout in each analysis time 
+//' @param gamma1 The hazard rate for exponential dropout. A vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for arm 1.
-//' @param gamma2 The hazard rate for exponential dropout. A vector of 
-//'   hazard rates for piecewise exponential dropout applicable for all 
-//'   strata, or a vector of hazard rates for dropout in each analysis time 
+//' @param gamma2 The hazard rate for exponential dropout. A vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for arm 2.
-//' @param gamma3 The hazard rate for exponential dropout. A vector of 
-//'   hazard rates for piecewise exponential dropout applicable for all 
-//'   strata, or a vector of hazard rates for dropout in each analysis time 
+//' @param gamma3 The hazard rate for exponential dropout. A vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for arm 3.
 //' @inheritParams param_accrualDuration
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_rho1
 //' @inheritParams param_rho2
-//' @param plannedEvents The planned cumulative total number of events at 
+//' @param plannedEvents The planned cumulative total number of events at
 //'   Look 1 to Look \code{kMax} for Arms A and C combined.
-//' @param plannedTime The calendar times for the analyses. To use calendar  
+//' @param plannedTime The calendar times for the analyses. To use calendar
 //'   time to plan the analyses, \code{plannedEvents} should be missing.
 //' @param maxNumberOfIterations The number of simulation iterations.
 //'   Defaults to 1000.
-//' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per stage
-//'   to extract. Defaults to 1.
+//' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
+//'   stage to extract. Defaults to 1.
 //' @param seed The seed to reproduce the simulation results.
-//'   The computer clock will be used if left unspecified,
+//'   The seed from the environment will be used if left unspecified,
 //'
 //' @return A list with 2 components:
 //'
-//' * \code{sumdata}: A data frame of summary data by iteration and stage: 
-//' 
-//'   - \code{iterationNumber}: The iteration number.
-//'   
-//'   - \code{eventsNotAchieved}: Whether the target number of events 
-//'   is not achieved for the iteration.
-//'   
-//'   - \code{stageNumber}: The stage number, covering all stages even if 
-//'   the trial stops at an interim look.
-//'   
-//'   - \code{analysisTime}: The time for the stage since trial start.
-//'   
-//'   - \code{accruals1}: The number of subjects enrolled at the stage for
-//'   the active treatment 1 group.
-//'   
-//'   - \code{accruals2}: The number of subjects enrolled at the stage for
-//'   the active treatment 2 group.
-//'   
-//'   - \code{accruals3}: The number of subjects enrolled at the stage for
-//'   the control group.
-//'   
-//'   - \code{totalAccruals}: The total number of subjects enrolled at 
-//'   the stage.
-//'   
-//'   - \code{events1}: The number of events at the stage for 
-//'   the active treatment 1 group.
-//'   
-//'   - \code{events2}: The number of events at the stage for 
-//'   the active treatment 2 group.
-//'   
-//'   - \code{events3}: The number of events at the stage for 
-//'   the control group.
-//'   
-//'   - \code{totalEvents}: The total number of events at the stage.
-//'   
-//'   - \code{dropouts1}: The number of dropouts at the stage for 
-//'   the active treatment 1 group. 
-//'   
-//'   - \code{dropouts2}: The number of dropouts at the stage for 
-//'   the active treatment 2 group.
-//'   
-//'   - \code{dropouts3}: The number of dropouts at the stage for 
-//'   the control group.
-//'   
-//'   - \code{totalDropouts}: The total number of dropouts at the stage.
-//'   
-//'   - \code{logRankStatistic13}: The log-rank test Z-statistic 
-//'   comparing the active treatment 1 to the control.
-//'   
-//'   - \code{logRankStatistic23}: The log-rank test Z-statistic 
-//'   comparing the active treatment 2 to the control.
-//'   
-//'   - \code{logRankStatistic12}: The log-rank test Z-statistic 
-//'   comparing the active treatment 1 to the active treatment 2.
-//'   
+//' * \code{sumdata}: A data frame of summary data by iteration and stage:
+//'
+//'     - \code{iterationNumber}: The iteration number.
+//'
+//'     - \code{eventsNotAchieved}: Whether the target number of events
+//'       is not achieved for the iteration.
+//'
+//'     - \code{stageNumber}: The stage number, covering all stages even if
+//'       the trial stops at an interim look.
+//'
+//'     - \code{analysisTime}: The time for the stage since trial start.
+//'
+//'     - \code{accruals1}: The number of subjects enrolled at the stage for
+//'       the active treatment 1 group.
+//'
+//'     - \code{accruals2}: The number of subjects enrolled at the stage for
+//'       the active treatment 2 group.
+//'
+//'     - \code{accruals3}: The number of subjects enrolled at the stage for
+//'       the control group.
+//'
+//'     - \code{totalAccruals}: The total number of subjects enrolled at
+//'       the stage.
+//'
+//'     - \code{events1}: The number of events at the stage for
+//'       the active treatment 1 group.
+//'
+//'     - \code{events2}: The number of events at the stage for
+//'       the active treatment 2 group.
+//'
+//'     - \code{events3}: The number of events at the stage for
+//'       the control group.
+//'
+//'     - \code{totalEvents}: The total number of events at the stage.
+//'
+//'     - \code{dropouts1}: The number of dropouts at the stage for
+//'       the active treatment 1 group.
+//'
+//'     - \code{dropouts2}: The number of dropouts at the stage for
+//'       the active treatment 2 group.
+//'
+//'     - \code{dropouts3}: The number of dropouts at the stage for
+//'       the control group.
+//'
+//'     - \code{totalDropouts}: The total number of dropouts at the stage.
+//'
+//'     - \code{logRankStatistic13}: The log-rank test Z-statistic
+//'       comparing the active treatment 1 to the control.
+//'
+//'     - \code{logRankStatistic23}: The log-rank test Z-statistic
+//'       comparing the active treatment 2 to the control.
+//'
+//'     - \code{logRankStatistic12}: The log-rank test Z-statistic
+//'       comparing the active treatment 1 to the active treatment 2.
+//'
 //' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-//' positive integer): A data frame for subject-level data for selected
-//' replications, containing the following variables:
-//' 
-//'   - \code{iterationNumber}: The iteration number.
-//'   
-//'   - \code{stageNumber}: The stage under consideration.
-//'   
-//'   - \code{analysisTime}: The time for the stage since trial start.
-//'   
-//'   - \code{subjectId}: The subject ID.
-//'   
-//'   - \code{arrivalTime}: The enrollment time for the subject.
-//'   
-//'   - \code{stratum}: The stratum for the subject.
-//'   
-//'   - \code{treatmentGroup}: The treatment group (1, 2, or 3) for 
-//'   the subject.
-//'   
-//'   - \code{survivalTime}: The underlying survival time for the subject.
-//'   
-//'   - \code{dropoutTime}: The underlying dropout time for the subject.
-//'   
-//'   - \code{timeUnderObservation}: The time under observation since 
-//'   since randomization for the subject.
-//'   
-//'   - \code{event}: Whether the subject experienced the event.
-//'   
-//'   - \code{dropoutEvent}: Whether the subject dropped out. 
+//'   positive integer): A data frame for subject-level data for selected
+//'   replications, containing the following variables:
+//'
+//'     - \code{iterationNumber}: The iteration number.
+//'
+//'     - \code{stageNumber}: The stage under consideration.
+//'
+//'     - \code{analysisTime}: The time for the stage since trial start.
+//'
+//'     - \code{subjectId}: The subject ID.
+//'
+//'     - \code{arrivalTime}: The enrollment time for the subject.
+//'
+//'     - \code{stratum}: The stratum for the subject.
+//'
+//'     - \code{treatmentGroup}: The treatment group (1, 2, or 3) for
+//'       the subject.
+//'
+//'     - \code{survivalTime}: The underlying survival time for the subject.
+//'
+//'     - \code{dropoutTime}: The underlying dropout time for the subject.
+//'
+//'     - \code{timeUnderObservation}: The time under observation
+//'       since randomization for the subject.
+//'
+//'     - \code{event}: Whether the subject experienced the event.
+//'
+//'     - \code{dropoutEvent}: Whether the subject dropped out.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//' 
+//'
 //' @examples
-//' 
+//'
 //' sim1 = lrsim3a(
-//'   kMax = 3, 
-//'   allocation1 = 2, 
-//'   allocation2 = 2, 
+//'   kMax = 3,
+//'   allocation1 = 2,
+//'   allocation2 = 2,
 //'   allocation3 = 1,
-//'   accrualTime = c(0, 8), 
+//'   accrualTime = c(0, 8),
 //'   accrualIntensity = c(10, 28),
-//'   piecewiseSurvivalTime = 0, 
+//'   piecewiseSurvivalTime = 0,
 //'   lambda1 = log(2)/12*0.60,
 //'   lambda2 = log(2)/12*0.70,
 //'   lambda3 = log(2)/12,
@@ -1319,10 +1320,10 @@ List lrsim(const int kMax = NA_INTEGER,
 //'   maxNumberOfIterations = 1000,
 //'   maxNumberOfRawDatasetsPerStage = 1,
 //'   seed = 314159)
-//'   
+//'
 //' head(sim1$sumdata)
 //' head(sim1$rawdata)
-//' 
+//'
 //' @export
 // [[Rcpp::export]]
 List lrsim3a(const int kMax = NA_INTEGER,
@@ -1352,33 +1353,33 @@ List lrsim3a(const int kMax = NA_INTEGER,
              const int maxNumberOfIterations = 1000,
              const int maxNumberOfRawDatasetsPerStage = 0,
              int seed = NA_INTEGER) {
-  
+
   // check input parameters
   int nstrata = stratumFraction.size();
   int nintervals = piecewiseSurvivalTime.size();
   int nsi = nstrata*nintervals;
-  
+
   NumericVector lambda1x(nsi), lambda2x(nsi), lambda3x(nsi);
   NumericVector gamma1x(nsi), gamma2x(nsi), gamma3x(nsi);
-  
+
   bool useEvents, eventsNotAchieved;
-  
-  
+
+
   if (kMax < 1) {
     stop("kMax must be a positive integer");
   }
-  
-  // whether to plan the analyses based on events or calender time
+
+  // whether to plan the analyses based on events or calendar time
   if (is_false(any(is_na(plannedEvents)))) {
     useEvents = 1;
     if (plannedEvents[0] <= 0) {
       stop("Elements of plannedEvents must be positive");
     }
-    
+
     if (plannedEvents.size() != kMax) {
       stop("Invalid length for plannedEvents");
     }
-    
+
     if (kMax > 1 && is_true(any(diff(plannedEvents) <= 0))) {
       stop("Elements of plannedEvents must be increasing");
     }
@@ -1387,106 +1388,106 @@ List lrsim3a(const int kMax = NA_INTEGER,
     if (plannedTime[0] <= 0) {
       stop("Elements of plannedTime must be positive");
     }
-    
+
     if (plannedTime.size() != kMax) {
       stop("Invalid length for plannedTime");
     }
-    
+
     if (kMax > 1 && is_true(any(diff(plannedTime) <= 0))) {
       stop("Elements of plannedTime must be increasing");
     }
   } else {
     stop("Either plannedEvents or plannedTime must be given");
   }
-  
+
   if (hazardRatioH013 <= 0) {
     stop("hazardRatioH013 must be positive");
   }
-  
+
   if (hazardRatioH023 <= 0) {
     stop("hazardRatioH023 must be positive");
   }
-  
+
   if (hazardRatioH012 <= 0) {
     stop("hazardRatioH012 must be positive");
   }
-  
+
   if (allocation1 < 1) {
     stop("allocation1 must be a positive integer");
   }
-  
+
   if (allocation2 < 1) {
     stop("allocation2 must be a positive integer");
   }
-  
+
   if (allocation3 < 1) {
     stop("allocation3 must be a positive integer");
   }
-  
-  
+
+
   if (accrualTime[0] != 0) {
     stop("accrualTime must start with 0");
   }
-  
+
   if (accrualTime.size() > 1 && is_true(any(diff(accrualTime) <= 0))) {
     stop("accrualTime should be increasing");
   }
-  
-  
+
+
   if (accrualTime.size() != accrualIntensity.size()) {
     stop("accrualTime must have the same length as accrualIntensity");
   }
-  
+
   if (is_true(any(accrualIntensity < 0))) {
     stop("accrualIntensity must be non-negative");
   }
-  
-  
+
+
   if (piecewiseSurvivalTime[0] != 0) {
     stop("piecewiseSurvivalTime must start with 0");
   }
-  
+
   if (nintervals > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
     stop("piecewiseSurvivalTime should be increasing");
   }
-  
-  
+
+
   if (is_true(any(stratumFraction <= 0))) {
     stop("stratumFraction must be positive");
   }
-  
+
   if (sum(stratumFraction) != 1) {
     stop("stratumFraction must sum to 1");
   }
-  
-  
+
+
   if (is_true(any(lambda1 < 0))) {
     stop("lambda1 must be non-negative");
   }
-  
+
   if (is_true(any(lambda2 < 0))) {
     stop("lambda2 must be non-negative");
   }
-  
+
   if (is_true(any(lambda3 < 0))) {
     stop("lambda3 must be non-negative");
   }
-  
-  
+
+
   if (is_true(any(gamma1 < 0))) {
     stop("gamma1 must be non-negative");
   }
-  
+
   if (is_true(any(gamma2 < 0))) {
     stop("gamma2 must be non-negative");
   }
-  
+
   if (is_true(any(gamma3 < 0))) {
     stop("gamma3 must be non-negative");
   }
-  
-  
-  
+
+
+
   if (lambda1.size() == 1) {
     lambda1x = rep(lambda1, nsi);
   } else if (lambda1.size() == nintervals) {
@@ -1496,8 +1497,8 @@ List lrsim3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda1");
   }
-  
-  
+
+
   if (lambda2.size() == 1) {
     lambda2x = rep(lambda2, nsi);
   } else if (lambda2.size() == nintervals) {
@@ -1507,8 +1508,8 @@ List lrsim3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda2");
   }
-  
-  
+
+
   if (lambda3.size() == 1) {
     lambda3x = rep(lambda3, nsi);
   } else if (lambda3.size() == nintervals) {
@@ -1518,9 +1519,9 @@ List lrsim3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda3");
   }
-  
-  
-  
+
+
+
   if (gamma1.size() == 1) {
     gamma1x = rep(gamma1, nsi);
   } else if (gamma1.size() == nintervals) {
@@ -1530,8 +1531,8 @@ List lrsim3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for gamma1");
   }
-  
-  
+
+
   if (gamma2.size() == 1) {
     gamma2x = rep(gamma2, nsi);
   } else if (gamma2.size() == nintervals) {
@@ -1541,8 +1542,8 @@ List lrsim3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for gamma2");
   }
-  
-  
+
+
   if (gamma3.size() == 1) {
     gamma3x = rep(gamma3, nsi);
   } else if (gamma3.size() == nintervals) {
@@ -1552,56 +1553,56 @@ List lrsim3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for gamma3");
   }
-  
-  
-  
+
+
+
   if (R_isnancpp(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
-  
+
   if (accrualDuration <= 0) {
     stop("accrualDuration must be positive");
   }
-  
+
   if (fixedFollowup) {
     if (R_isnancpp(followupTime)) {
       stop("followupTime must be provided for fixed follow-up");
     }
-    
+
     if (followupTime <= 0) {
       stop("followupTime must be positive for fixed follow-up");
     }
   }
-  
+
   if (rho1 < 0) {
     stop("rho1 must be non-negative");
   }
-  
+
   if (rho2 < 0) {
     stop("rho2 must be non-negative");
   }
-  
+
   if (maxNumberOfIterations < 1) {
     stop("maxNumberOfIterations must be a positive integer");
   }
-  
+
   if (maxNumberOfRawDatasetsPerStage < 0) {
     stop("maxNumberOfRawDatasetsPerStage must be a non-negative integer");
   }
-  
-  
-  // declare variables 
+
+
+  // declare variables
   int i, iter, j, k, h, nevents, nstages, nsub;
-  int accruals1, accruals2, accruals3, totalAccruals; 
+  int accruals1, accruals2, accruals3, totalAccruals;
   int events1, events2, events3, totalEvents;
   int dropouts1, dropouts2, dropouts3, totalDropouts;
   int index1=0, index2=0;
-  
+
   double enrollt, u, time;
   double uscore13, uscore23, uscore12;
   double vscore13, vscore23, vscore12;
-  
-  
+
+
   // maximum number of subjects to enroll
   int m = accrualTime.size();
   double s = 0;
@@ -1614,43 +1615,44 @@ List lrsim3a(const int kMax = NA_INTEGER,
     }
   }
   int n = floor(s + 0.5);
-  
-  
+
+
   // subject-level raw data set for one simulation
-  IntegerVector stratum(n), treatmentGroup(n), sortedIndex(n), 
+  IntegerVector stratum(n), treatmentGroup(n), sortedIndex(n),
   stratumSorted(n), treatmentGroupSorted(n);
-  
-  NumericVector arrivalTime(n), survivalTime(n), dropoutTime(n), 
-  timeUnderObservation(n), totalTime(n), totalt(n), 
+
+  NumericVector arrivalTime(n), survivalTime(n), dropoutTime(n),
+  timeUnderObservation(n), totalTime(n), totalt(n),
   observationTime(n), timeUnderObservationSorted(n);
-  
-  LogicalVector event(n), dropoutEvent(n), eventac(n), sub(n), eventSorted(n);
-  
-  
-  // stratum information 
+
+  LogicalVector event(n), dropoutEvent(n), eventac(n), sub(n),
+  eventSorted(n);
+
+
+  // stratum information
   IntegerVector b1(nstrata), b2(nstrata), b3(nstrata);
   IntegerVector n1(nstrata), n2(nstrata), n3(nstrata);
   IntegerVector nt13(nstrata), nt23(nstrata), nt12(nstrata);
   IntegerVector n13a(nstrata), n23a(nstrata), n12a(nstrata);
   IntegerVector nt13a(nstrata), nt23a(nstrata), nt12a(nstrata);
-  
+
   NumericVector km13(nstrata), km23(nstrata), km12(nstrata);
   NumericVector w13(nstrata), w23(nstrata), w12(nstrata);
   NumericVector cumStratumFraction = cumsum(stratumFraction);
-  
+
   // within-stratum hazard rates
-  NumericVector lam1(nintervals), lam2(nintervals), lam3(nintervals); 
+  NumericVector lam1(nintervals), lam2(nintervals), lam3(nintervals);
   NumericVector gam1(nintervals), gam2(nintervals), gam3(nintervals);
-  
-  
+
+
   // stage-wise information
   IntegerVector niter(kMax);
   NumericVector analysisTime(kMax);
-  
-  
+
+
   // cache for the patient-level raw data to extract
   int nrow1 = n*kMax*maxNumberOfRawDatasetsPerStage;
-  
+
   IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
   IntegerVector stageNumberx = IntegerVector(nrow1, NA_INTEGER);
   IntegerVector subjectIdx = IntegerVector(nrow1, NA_INTEGER);
@@ -1663,10 +1665,10 @@ List lrsim3a(const int kMax = NA_INTEGER,
   NumericVector timeUnderObservationx = NumericVector(nrow1, NA_REAL);
   LogicalVector eventx = LogicalVector(nrow1, NA_LOGICAL);
   LogicalVector dropoutEventx = LogicalVector(nrow1, NA_LOGICAL);
-  
+
   // cache for the simulation-level summary data to extract
   int nrow2 = kMax*maxNumberOfIterations*2;
-  
+
   IntegerVector iterationNumbery = IntegerVector(nrow2, NA_INTEGER);
   LogicalVector eventsNotAchievedy = LogicalVector(nrow2, NA_LOGICAL);
   IntegerVector stageNumbery = IntegerVector(nrow2, NA_INTEGER);
@@ -1686,30 +1688,28 @@ List lrsim3a(const int kMax = NA_INTEGER,
   NumericVector logRankStatistic13y = NumericVector(nrow2, NA_REAL);
   NumericVector logRankStatistic23y = NumericVector(nrow2, NA_REAL);
   NumericVector logRankStatistic12y = NumericVector(nrow2, NA_REAL);
-  
-  
+
+
   // set up random seed
-  if (seed==NA_INTEGER) {
-    set_seed(std::time(0));
-  } else {
+  if (seed != NA_INTEGER) {
     set_seed(seed);
   }
-  
+
 
   for (iter=0; iter<maxNumberOfIterations; iter++) {
-    
+
     b1.fill(allocation1);
     b2.fill(allocation2);
     b3.fill(allocation3);
-    
+
     enrollt = 0;
     for (i=0; i<n; i++) {
-      
+
       // generate accrual time
       u = R::runif(0,1);
-      enrollt = qtpwexpcpp(u, accrualTime, accrualIntensity, enrollt);
+      enrollt = qtpwexpcpp1(u, accrualTime, accrualIntensity, enrollt);
       arrivalTime[i] = enrollt;
-      
+
       // generate stratum information
       u = R::runif(0,1);
       for (j=0; j<nstrata; j++) {
@@ -1718,7 +1718,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
           break;
         }
       }
-      
+
       // stratified block randomization
       u = R::runif(0,1);
       if (u <= b1[j]/(b1[j]+b2[j]+b3[j]+0.0)) {
@@ -1731,48 +1731,48 @@ List lrsim3a(const int kMax = NA_INTEGER,
         treatmentGroup[i] = 3;
         b3[j]--;
       }
-      
+
       // start a new block after depleting the current block
       if (b1[j]+b2[j]+b3[j]==0) {
         b1[j] = allocation1;
         b2[j] = allocation2;
         b3[j] = allocation3;
       }
-      
+
       // stratum-specific hazard rates for event and dropout
       Range jj = Range(j*nintervals, (j+1)*nintervals-1);
-      
+
       lam1 = lambda1x[jj];
       lam2 = lambda2x[jj];
       lam3 = lambda3x[jj];
-      
+
       gam1 = gamma1x[jj];
       gam2 = gamma2x[jj];
       gam3 = gamma3x[jj];
-      
-      
+
+
       // generate survival time
       u = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        survivalTime[i] = qtpwexpcpp(u, piecewiseSurvivalTime, lam1, 0);
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam1, 0);
       } else if (treatmentGroup[i]==2) {
-        survivalTime[i] = qtpwexpcpp(u, piecewiseSurvivalTime, lam2, 0);
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam2, 0);
       } else {
-        survivalTime[i] = qtpwexpcpp(u, piecewiseSurvivalTime, lam3, 0);
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam3, 0);
       }
-      
-      
+
+
       // generate dropout time
       u = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        dropoutTime[i] = qtpwexpcpp(u, piecewiseSurvivalTime, gam1, 0);
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam1, 0);
       } else if (treatmentGroup[i]==2) {
-        dropoutTime[i] = qtpwexpcpp(u, piecewiseSurvivalTime, gam2, 0);
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam2, 0);
       } else {
-        dropoutTime[i] = qtpwexpcpp(u, piecewiseSurvivalTime, gam3, 0);
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam3, 0);
       }
-      
-      
+
+
       // initial observed time and event indicator
       if (fixedFollowup) { // fixed follow-up design
         if (survivalTime[i] < dropoutTime[i] &&
@@ -1800,27 +1800,27 @@ List lrsim3a(const int kMax = NA_INTEGER,
           event[i] = 0;
           dropoutEvent[i] = 1;
         }
-      }      
-      
+      }
+
       totalTime[i] = arrivalTime[i] + timeUnderObservation[i];
-      
+
     }
-    
-    
+
+
     // find the analysis time for each stage based on Arm A vs. Arm C
     if (useEvents) {
       eventac = event & ((treatmentGroup==1) | (treatmentGroup==3));
       nevents = sum(eventac);
       totalt = stl_sort(totalTime[eventac]);
       nstages = kMax;
-      
+
       for (j=0; j<kMax; j++) {
         if (plannedEvents[j] >= nevents) {
           nstages = j+1;
           break;
         }
       }
-      
+
       if (j==kMax) { // total number of events exceeds planned
         for (k=0; k<nstages; k++) {
           analysisTime[k] = totalt[plannedEvents[k]-1] + 1e-12;
@@ -1834,7 +1834,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
           }
         }
       }
-      
+
       // observed total number of events less than planned
       eventsNotAchieved = (nevents < plannedEvents[kMax-1]);
     } else {
@@ -1842,24 +1842,24 @@ List lrsim3a(const int kMax = NA_INTEGER,
       analysisTime = clone(plannedTime);
       eventsNotAchieved = 0;
     }
-    
-    
+
+
     // construct the log-rank test statistic at each stage
     for (k=0; k<nstages; k++) {
       time = analysisTime[k];
-      
+
       n1.fill(0);  // number of subjects in each stratum by treatment
       n2.fill(0);
       n3.fill(0);
-      
+
       events1 = 0;
       events2 = 0;
       events3 = 0;
-      
+
       dropouts1 = 0;
       dropouts2 = 0;
       dropouts3 = 0;
-      
+
       // censor at analysis time
       for (i=0; i<n; i++) {
         h = stratum[i]-1;
@@ -1876,9 +1876,9 @@ List lrsim3a(const int kMax = NA_INTEGER,
           } else {
             n3[h]++;
           }
-          
+
           if (fixedFollowup) {
-            // the first three cases correspond to arrivalTime[i] + 
+            // the first three cases correspond to arrivalTime[i] +
             // min(survivalTime[i], dropoutTime[i], followupTime) < time
             if (arrivalTime[i] + survivalTime[i] < time &&
                 survivalTime[i] < dropoutTime[i] &&
@@ -1920,7 +1920,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
               dropoutEvent[i] = 0;
             }
           }
-          
+
           if (treatmentGroup[i]==1 && event[i]) events1++;
           if (treatmentGroup[i]==2 && event[i]) events2++;
           if (treatmentGroup[i]==3 && event[i]) events3++;
@@ -1929,8 +1929,8 @@ List lrsim3a(const int kMax = NA_INTEGER,
           if (treatmentGroup[i]==3 && dropoutEvent[i]) dropouts3++;
         }
       }
-      
-      
+
+
       // add raw data to output
       if (niter[k] < maxNumberOfRawDatasetsPerStage) {
         for (i=0; i<n; i++) {
@@ -1941,31 +1941,31 @@ List lrsim3a(const int kMax = NA_INTEGER,
           stratumx[index1] = stratum[i];
           treatmentGroupx[index1] = treatmentGroup[i];
           observationTimex[index1] = observationTime[i];
-          
+
           survivalTimex[index1] = survivalTime[i];
           dropoutTimex[index1] = dropoutTime[i];
           timeUnderObservationx[index1] = timeUnderObservation[i];
           eventx[index1] = event[i];
           dropoutEventx[index1] = dropoutEvent[i];
-          
+
           index1++;
         }
-        
+
         // update the number of stage k dataset to extract
         niter[k]++;
       }
-      
-      
+
+
       // number of accrued patients and total number of events
       accruals1 = sum(n1);
       accruals2 = sum(n2);
       accruals3 = sum(n3);
       totalAccruals = accruals1 + accruals2 + accruals3;
-      
+
       totalEvents = events1 + events2 + events3;
       totalDropouts = dropouts1 + dropouts2 + dropouts3;
-      
-      
+
+
       // order the data by time under observation
       timeUnderObservationSorted = stl_sort(timeUnderObservation);
       sortedIndex = match(timeUnderObservationSorted, timeUnderObservation);
@@ -1978,7 +1978,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
       stratumSorted = stratumSorted[sub];
       treatmentGroupSorted = treatmentGroupSorted[sub];
       nsub = eventSorted.size();
-      
+
       // calculate the stratified log-rank test
       uscore13 = 0;
       vscore13 = 0;
@@ -1998,39 +1998,39 @@ List lrsim3a(const int kMax = NA_INTEGER,
         n13a[h] = n1[h]*hazardRatioH013;
         n23a[h] = n2[h]*hazardRatioH023;
         n12a[h] = n1[h]*hazardRatioH012;
-        
+
         nt13a[h] = n13a[h] + n3[h];
         nt23a[h] = n23a[h] + n3[h];
         nt12a[h] = n12a[h] + n2[h];
-        
-        
-        if (eventSorted[i] && (treatmentGroupSorted[i]==1 || 
-            treatmentGroupSorted[i]==3)) { 
+
+
+        if (eventSorted[i] && (treatmentGroupSorted[i]==1 ||
+            treatmentGroupSorted[i]==3)) {
           w13[h] = pow(km13[h], rho1)*pow(1-km13[h], rho2);
-          uscore13 += w13[h]*((treatmentGroupSorted[i]==1) 
+          uscore13 += w13[h]*((treatmentGroupSorted[i]==1)
                                 - n13a[h]/(nt13a[h]+0.0));
           vscore13 += w13[h]*w13[h]*n13a[h]*n3[h]/(nt13a[h]*nt13a[h]+0.0);
           km13[h] *= (1-1/(nt13[h]+0.0)); // update km estimate
         }
-        
-        if (eventSorted[i] && (treatmentGroupSorted[i]==2 || 
-            treatmentGroupSorted[i]==3)) { 
+
+        if (eventSorted[i] && (treatmentGroupSorted[i]==2 ||
+            treatmentGroupSorted[i]==3)) {
           w23[h] = pow(km23[h], rho1)*pow(1-km23[h], rho2);
-          uscore23 += w23[h]*((treatmentGroupSorted[i]==2) 
+          uscore23 += w23[h]*((treatmentGroupSorted[i]==2)
                                 - n23a[h]/(nt23a[h]+0.0));
           vscore23 += w23[h]*w23[h]*n23a[h]*n3[h]/(nt23a[h]*nt23a[h]+0.0);
           km23[h] *= (1-1/(nt23[h]+0.0)); // update km estimate
         }
-        
-        if (eventSorted[i] && (treatmentGroupSorted[i]==1 || 
-            treatmentGroupSorted[i]==2)) { 
+
+        if (eventSorted[i] && (treatmentGroupSorted[i]==1 ||
+            treatmentGroupSorted[i]==2)) {
           w12[h] = pow(km12[h], rho1)*pow(1-km12[h], rho2);
-          uscore12 += w12[h]*((treatmentGroupSorted[i]==1) 
+          uscore12 += w12[h]*((treatmentGroupSorted[i]==1)
                                 - n12a[h]/(nt12a[h]+0.0));
           vscore12 += w12[h]*w12[h]*n12a[h]*n2[h]/(nt12a[h]*nt12a[h]+0.0);
           km12[h] *= (1-1/(nt12[h]+0.0)); // update km estimate
         }
-        
+
         // reduce the risk set
         if (treatmentGroupSorted[i]==1) {
           n1[h]--;
@@ -2040,10 +2040,10 @@ List lrsim3a(const int kMax = NA_INTEGER,
           n3[h]--;
         }
       }
-      
-      
-      
-      // add summary data to output  
+
+
+
+      // add summary data to output
       iterationNumbery[index2] = iter+1;
       eventsNotAchievedy[index2] = eventsNotAchieved;
       stageNumbery[index2] = k+1;
@@ -2052,7 +2052,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
       accruals2y[index2] = accruals2;
       accruals3y[index2] = accruals3;
       totalAccrualsy[index2] = totalAccruals;
-      
+
       events1y[index2] = events1;
       events2y[index2] = events2;
       events3y[index2] = events3;
@@ -2061,19 +2061,19 @@ List lrsim3a(const int kMax = NA_INTEGER,
       dropouts2y[index2] = dropouts2;
       dropouts3y[index2] = dropouts3;
       totalDropoutsy[index2] = totalDropouts;
-      
+
       logRankStatistic13y[index2] = uscore13/sqrt(vscore13);
       logRankStatistic23y[index2] = uscore23/sqrt(vscore23);
       logRankStatistic12y[index2] = uscore12/sqrt(vscore12);
-      
+
       index2++;
-      
-      
+
+
     } // end of stage
-    
+
   } // end of iteration
-  
-  
+
+
   // only keep nonmissing records
   LogicalVector sub2 = !is_na(iterationNumbery);
   iterationNumbery = iterationNumbery[sub2];
@@ -2095,7 +2095,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
   logRankStatistic13y = logRankStatistic13y[sub2];
   logRankStatistic23y = logRankStatistic23y[sub2];
   logRankStatistic12y = logRankStatistic12y[sub2];
-  
+
   DataFrame sumdata = DataFrame::create(
     _["iterationNumber"] = iterationNumbery,
     _["eventsNotAchieved"] = eventsNotAchievedy,
@@ -2116,10 +2116,10 @@ List lrsim3a(const int kMax = NA_INTEGER,
     _["logRankStatistic13"] = logRankStatistic13y,
     _["logRankStatistic23"] = logRankStatistic23y,
     _["logRankStatistic12"] = logRankStatistic12y);
-  
-  
+
+
   List result;
-  
+
   if (maxNumberOfRawDatasetsPerStage > 0) {
     LogicalVector sub1 = !is_na(iterationNumberx);
     iterationNumberx = iterationNumberx[sub1];
@@ -2134,7 +2134,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
     timeUnderObservationx = timeUnderObservationx[sub1];
     eventx = eventx[sub1];
     dropoutEventx = dropoutEventx[sub1];
-    
+
     DataFrame rawdata = DataFrame::create(
       _["iterationNumber"] = iterationNumberx,
       _["stageNumber"] = stageNumberx,
@@ -2148,33 +2148,33 @@ List lrsim3a(const int kMax = NA_INTEGER,
       _["timeUnderObservation"] = timeUnderObservationx,
       _["event"] = eventx,
       _["dropoutEvent"] = dropoutEventx);
-    
+
     result = List::create(_["sumdata"] = sumdata,
                           _["rawdata"] = rawdata);
   } else {
     result = List::create(_["sumdata"] = sumdata);
   }
-  
+
   return result;
 }
 
 
-//' @title Log-rank test simulation for two endpoints and two arms
-//' @description Performs simulation for two-endpoint two-arm group 
-//' sequential trials based on weighted log-rank test. The first \code{kMaxe1} 
-//' looks are driven by the total number of PFS events in two arms 
-//' combined, and the subsequent looks are driven by the total 
-//' number of OS events in two arms combined. Alternatively, 
+//' @title Log-rank test simulation for two endpoints
+//' @description Performs simulation for two-endpoint two-arm group
+//' sequential trials based on weighted log-rank test. The first
+//' \code{kMaxe1} looks are driven by the total number of PFS events in
+//' two arms combined, and the subsequent looks are driven by the total
+//' number of OS events in two arms combined. Alternatively,
 //' the analyses can be planned to occur at specified calendar times.
-//' 
+//'
 //' @inheritParams param_kMax
-//' @param kMaxe1 Number of stages with timing determined by PFS events. 
-//'   Ranges from 0 (none) to \code{kMax}. 
-//' @param hazardRatioH0e1 Hazard ratio under the null hypothesis for the 
-//'   active treatment vs control for endpoint 1 (PFS). Defaults to 1 for 
+//' @param kMaxe1 Number of stages with timing determined by PFS events.
+//'   Ranges from 0 (none) to \code{kMax}.
+//' @param hazardRatioH0e1 Hazard ratio under the null hypothesis for the
+//'   active treatment vs control for endpoint 1 (PFS). Defaults to 1 for
 //'   superiority test.
-//' @param hazardRatioH0e2 Hazard ratio under the null hypothesis for the 
-//'   active treatment vs control for endpoint 2 (OS). Defaults to 1 for 
+//' @param hazardRatioH0e2 Hazard ratio under the null hypothesis for the
+//'   active treatment vs control for endpoint 2 (OS). Defaults to 1 for
 //'   superiority test.
 //' @param allocation1 Number of subjects in the treatment group in
 //'   a randomization block. Defaults to 1 for equal randomization.
@@ -2185,165 +2185,166 @@ List lrsim3a(const int kMax = NA_INTEGER,
 //' @inheritParams param_piecewiseSurvivalTime
 //' @inheritParams param_stratumFraction
 //' @param rho The correlation coefficient for the standard bivariate normal
-//'   random variables used to generate time to disease progression and time 
+//'   random variables used to generate time to disease progression and time
 //'   to death using the inverse CDF method.
-//' @param lambda1e1 A vector of hazard rates for the event in each analysis  
+//' @param lambda1e1 A vector of hazard rates for the event in each analysis
 //'   time interval by stratum for the treatment group and endpoint 1 (PFS).
-//' @param lambda2e1 A vector of hazard rates for the event in each analysis  
+//' @param lambda2e1 A vector of hazard rates for the event in each analysis
 //'   time interval by stratum for the control group and endpoint 1 (PFS).
-//' @param lambda1e2 A vector of hazard rates for the event in each analysis  
+//' @param lambda1e2 A vector of hazard rates for the event in each analysis
 //'   time interval by stratum for the treatment group and endpoint 2 (OS).
-//' @param lambda2e2 A vector of hazard rates for the event in each analysis  
+//' @param lambda2e2 A vector of hazard rates for the event in each analysis
 //'   time interval by stratum for the control group and endpoint 2 (OS).
-//' @param gamma1e1 The hazard rate for exponential dropout, a vector of 
-//'   hazard rates for piecewise exponential dropout applicable for all 
-//'   strata, or a vector of hazard rates for dropout in each analysis time 
+//' @param gamma1e1 The hazard rate for exponential dropout, a vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for the treatment group and endpoint 1 (PFS).
-//' @param gamma2e1 The hazard rate for exponential dropout, a vector of 
-//'   hazard rates for piecewise exponential dropout applicable for all 
-//'   strata, or a vector of hazard rates for dropout in each analysis time 
+//' @param gamma2e1 The hazard rate for exponential dropout, a vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for the control group and endpoint 1 (PFS).
-//' @param gamma1e2 The hazard rate for exponential dropout, a vector of 
-//'   hazard rates for piecewise exponential dropout applicable for all 
-//'   strata, or a vector of hazard rates for dropout in each analysis time 
+//' @param gamma1e2 The hazard rate for exponential dropout, a vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for the treatment group and endpoint 2 (OS).
-//' @param gamma2e2 The hazard rate for exponential dropout, a vector of 
-//'   hazard rates for piecewise exponential dropout applicable for all 
-//'   strata, or a vector of hazard rates for dropout in each analysis time 
+//' @param gamma2e2 The hazard rate for exponential dropout, a vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for the control group and endpoint 2 (OS).
 //' @inheritParams param_accrualDuration
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_rho1
 //' @inheritParams param_rho2
-//' @param plannedEvents The planned cumulative total number of PFS events at 
-//'   Look 1 to Look kMaxe1 and the planned cumulative total number of OS 
-//'   events at Look kMaxe1+1 to Look kMax.
-//' @param plannedTime The calendar times for the analyses. To use calendar  
+//' @param plannedEvents The planned cumulative total number of PFS events at
+//'   Look 1 to Look \code{kMaxe1} and the planned cumulative total number
+//'   of OS events at Look \code{kMaxe1+1} to Look \code{kMax}.
+//' @param plannedTime The calendar times for the analyses. To use calendar
 //'   time to plan the analyses, \code{plannedEvents} should be missing.
 //' @param maxNumberOfIterations The number of simulation iterations.
 //'   Defaults to 1000.
-//' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per stage
-//'   to extract. Defaults to 1.
+//' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
+//'   stage to extract. Defaults to 1.
 //' @param seed The seed to reproduce the simulation results.
-//'   The computer clock will be used if left unspecified,
+//'   The seed from the environment will be used if left unspecified,
 //'
 //' @return A list with 2 components:
 //'
-//' * \code{sumdata}: A data frame of summary data by iteration and stage: 
-//' 
-//'   - \code{iterationNumber}: The iteration number.
-//'   
-//'   - \code{eventsNotAchieved}: Whether the target number of events 
-//'   is not achieved for the iteration.
-//'   
-//'   - \code{stageNumber}: The stage number, covering all stages even if 
-//'   the trial stops at an interim look.
-//'   
-//'   - \code{analysisTime}: The time for the stage since trial start.
-//'   
-//'   - \code{accruals1}: The number of subjects enrolled at the stage for
-//'   the treatment group.
-//'   
-//'   - \code{accruals2}: The number of subjects enrolled at the stage for
-//'   the control group.
-//'   
-//'   - \code{totalAccruals}: The total number of subjects enrolled at 
-//'   the stage.
-//'   
-//'   - \code{endpoint}: The endpoint (1 or 2) under consideration.
-//'   
-//'   - \code{events1}: The number of events at the stage for 
-//'   the treatment group.
-//'   
-//'   - \code{events2}: The number of events at the stage for 
-//'   the control group.
-//'   
-//'   - \code{totalEvents}: The total number of events at the stage.
-//'   
-//'   - \code{dropouts1}: The number of dropouts at the stage for 
-//'   the treatment group. 
-//'   
-//'   - \code{dropouts2}: The number of dropouts at the stage for 
-//'   the control group.
-//'   
-//'   - \code{totalDropouts}: The total number of dropouts at the stage.
-//'   
-//'   - \code{logRankStatistic}: The log-rank test Z-statistic for 
-//'   the endpoint.
+//' * \code{sumdata}: A data frame of summary data by iteration and stage:
+//'
+//'     - \code{iterationNumber}: The iteration number.
+//'
+//'     - \code{eventsNotAchieved}: Whether the target number of events
+//'       is not achieved for the iteration.
+//'
+//'     - \code{stageNumber}: The stage number, covering all stages even if
+//'       the trial stops at an interim look.
+//'
+//'     - \code{analysisTime}: The time for the stage since trial start.
+//'
+//'     - \code{accruals1}: The number of subjects enrolled at the stage for
+//'       the treatment group.
+//'
+//'     - \code{accruals2}: The number of subjects enrolled at the stage for
+//'       the control group.
+//'
+//'     - \code{totalAccruals}: The total number of subjects enrolled at
+//'       the stage.
+//'
+//'     - \code{endpoint}: The endpoint (1 or 2) under consideration.
+//'
+//'     - \code{events1}: The number of events at the stage for
+//'       the treatment group.
+//'
+//'     - \code{events2}: The number of events at the stage for
+//'       the control group.
+//'
+//'     - \code{totalEvents}: The total number of events at the stage.
+//'
+//'     - \code{dropouts1}: The number of dropouts at the stage for
+//'       the treatment group.
+//'
+//'     - \code{dropouts2}: The number of dropouts at the stage for
+//'       the control group.
+//'
+//'     - \code{totalDropouts}: The total number of dropouts at the stage.
+//'
+//'     - \code{logRankStatistic}: The log-rank test Z-statistic for
+//'       the endpoint.
 //'
 //' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-//' positive integer): A data frame for subject-level data for selected
-//' replications, containing the following variables:
-//' 
-//'   - \code{iterationNumber}: The iteration number.
-//'   
-//'   - \code{stageNumber}: The stage under consideration.
-//'   
-//'   - \code{analysisTime}: The time for the stage since trial start.
-//'   
-//'   - \code{subjectId}: The subject ID.
-//'   
-//'   - \code{arrivalTime}: The enrollment time for the subject.
-//'   
-//'   - \code{stratum}: The stratum for the subject.
-//'   
-//'   - \code{treatmentGroup}: The treatment group (1 or 2) for the subject.
-//'   
-//'   - \code{survivalTime1}: The underlying survival time for 
-//'   event endpoint 1 for the subject.
-//'   
-//'   - \code{dropoutTime1}: The underlying dropout time for 
-//'   event endpoint 1 for the subject.
-//'   
-//'   - \code{timeUnderObservation1}: The time under observation since 
-//'   since randomization for event endpoint 1 for the subject.
-//'   
-//'   - \code{event1}: Whether the subject experienced event endpoint 1.
-//'   
-//'   - \code{dropoutEvent1}: Whether the subject dropped out for 
-//'   endpoint 1.
-//'   
-//'   - \code{survivalTime2}: The underlying survival time for 
-//'   event endpoint 2 for the subject.
-//'   
-//'   - \code{dropoutTime2}: The underlying dropout time for 
-//'   event endpoint 2 for the subject.
-//'   
-//'   - \code{timeUnderObservation2}: The time under observation since 
-//'   since randomization for event endpoint 2 for the subject.
-//'   
-//'   - \code{event2}: Whether the subject experienced event endpoint 2.
-//'   
-//'   - \code{dropoutEvent2}: Whether the subject dropped out for 
-//'   endpoint 2.
+//'   positive integer): A data frame for subject-level data for selected
+//'   replications, containing the following variables:
+//'
+//'     - \code{iterationNumber}: The iteration number.
+//'
+//'     - \code{stageNumber}: The stage under consideration.
+//'
+//'     - \code{analysisTime}: The time for the stage since trial start.
+//'
+//'     - \code{subjectId}: The subject ID.
+//'
+//'     - \code{arrivalTime}: The enrollment time for the subject.
+//'
+//'     - \code{stratum}: The stratum for the subject.
+//'
+//'     - \code{treatmentGroup}: The treatment group (1 or 2) for the
+//'       subject.
+//'
+//'     - \code{survivalTime1}: The underlying survival time for
+//'       event endpoint 1 for the subject.
+//'
+//'     - \code{dropoutTime1}: The underlying dropout time for
+//'       event endpoint 1 for the subject.
+//'
+//'     - \code{timeUnderObservation1}: The time under observation
+//'       since randomization for event endpoint 1 for the subject.
+//'
+//'     - \code{event1}: Whether the subject experienced event endpoint 1.
+//'
+//'     - \code{dropoutEvent1}: Whether the subject dropped out for
+//'       endpoint 1.
+//'
+//'     - \code{survivalTime2}: The underlying survival time for
+//'       event endpoint 2 for the subject.
+//'
+//'     - \code{dropoutTime2}: The underlying dropout time for
+//'       event endpoint 2 for the subject.
+//'
+//'     - \code{timeUnderObservation2}: The time under observation
+//'       since randomization for event endpoint 2 for the subject.
+//'
+//'     - \code{event2}: Whether the subject experienced event endpoint 2.
+//'
+//'     - \code{dropoutEvent2}: Whether the subject dropped out for
+//'       endpoint 2.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//' 
+//'
 //' @examples
-//' 
+//'
 //' sim1 = lrsim2e(
-//'   kMax = 3, 
+//'   kMax = 3,
 //'   kMaxe1 = 2,
-//'   allocation1 = 2, 
-//'   allocation2 = 1, 
-//'   accrualTime = c(0, 8), 
+//'   allocation1 = 2,
+//'   allocation2 = 1,
+//'   accrualTime = c(0, 8),
 //'   accrualIntensity = c(10, 28),
-//'   piecewiseSurvivalTime = 0, 
+//'   piecewiseSurvivalTime = 0,
 //'   rho = 0,
 //'   lambda1e1 = log(2)/12*0.60,
 //'   lambda2e1 = log(2)/12,
-//'   lambda1e2 = log(2)/30*0.65, 
+//'   lambda1e2 = log(2)/30*0.65,
 //'   lambda2e2 = log(2)/30,
 //'   accrualDuration = 20.143,
 //'   plannedEvents = c(186, 259, 183),
 //'   maxNumberOfIterations = 1000,
 //'   maxNumberOfRawDatasetsPerStage = 1,
 //'   seed = 314159)
-//'  
+//'
 //' head(sim1$sumdata)
 //' head(sim1$rawdata)
-//' 
+//'
 //' @export
 // [[Rcpp::export]]
 List lrsim2e(const int kMax = NA_INTEGER,
@@ -2356,7 +2357,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
              const NumericVector& accrualIntensity = NA_REAL,
              const NumericVector& piecewiseSurvivalTime = 0,
              const NumericVector& stratumFraction = 1,
-             const double rho = 0, 
+             const double rho = 0,
              const NumericVector& lambda1e1 = NA_REAL,
              const NumericVector& lambda2e1 = NA_REAL,
              const NumericVector& lambda1e2 = NA_REAL,
@@ -2375,55 +2376,55 @@ List lrsim2e(const int kMax = NA_INTEGER,
              const int maxNumberOfIterations = 1000,
              const int maxNumberOfRawDatasetsPerStage = 0,
              int seed = NA_INTEGER) {
-  
+
   // check input parameters
   int kMaxe1x = kMaxe1;
-  
+
   int nstrata = stratumFraction.size();
   int nintervals = piecewiseSurvivalTime.size();
   int nsi = nstrata*nintervals;
-  
+
   NumericVector lambda1e1x(nsi), lambda2e1x(nsi);
   NumericVector lambda1e2x(nsi), lambda2e2x(nsi);
   NumericVector gamma1e1x(nsi), gamma2e1x(nsi);
   NumericVector gamma1e2x(nsi), gamma2e2x(nsi);
   NumericVector lambda1e1d(nsi), lambda2e1d(nsi);
   NumericVector gamma1e1d(nsi), gamma2e1d(nsi);
-  
+
   bool useEvents, eventsNotAchieved;
-  
-  
+
+
   if (kMax < 1) {
     stop("kMax must be a positive integer");
   }
-  
+
   if (kMaxe1 < 0) {
     kMaxe1x = kMax;
   }
-  
+
   if (kMaxe1x > kMax) {
     stop("kMaxe1 must be less than or equal to kMax");
   }
-  
-  // whether to plan the analyses based on events or calender time
+
+  // whether to plan the analyses based on events or calendar time
   if (is_false(any(is_na(plannedEvents)))) {
     useEvents = 1;
-    
+
     if (plannedEvents[0] <= 0) {
       stop("Elements of plannedEvents must be positive");
     }
-    
+
     if (plannedEvents.size() != kMax) {
       stop("Invalid length for plannedEvents");
     }
-    
+
     if (kMaxe1x > 1) {
       IntegerVector plannedEvents1 = plannedEvents[Range(0,kMaxe1x-1)];
       if (is_true(any(diff(plannedEvents1) <= 0))) {
         stop("plannedEvents for endpoint 1 must be increasing");
       }
     }
-    
+
     if (kMax - kMaxe1x > 1) {
       IntegerVector plannedEvents2 = plannedEvents[Range(kMaxe1x, kMax-1)];
       if (is_true(any(diff(plannedEvents2) <= 0))) {
@@ -2435,112 +2436,112 @@ List lrsim2e(const int kMax = NA_INTEGER,
     if (plannedTime[0] <= 0) {
       stop("Elements of plannedTime must be positive");
     }
-    
+
     if (plannedTime.size() != kMax) {
       stop("Invalid length for plannedTime");
     }
-    
+
     if (kMax > 1 && is_true(any(diff(plannedTime) <= 0))) {
       stop("Elements of plannedTime must be increasing");
     }
   } else {
     stop("Either plannedEvents or plannedTime must be given");
   }
-  
-  
+
+
   if (hazardRatioH0e1 <= 0) {
     stop("hazardRatioH0e1 must be positive");
   }
-  
+
   if (hazardRatioH0e2 <= 0) {
     stop("hazardRatioH0e2 must be positive");
   }
-  
-  
+
+
   if (allocation1 < 1) {
     stop("allocation1 must be a positive integer");
   }
-  
+
   if (allocation2 < 1) {
     stop("allocation2 must be a positive integer");
   }
-  
-  
+
+
   if (accrualTime[0] != 0) {
     stop("accrualTime must start with 0");
   }
-  
+
   if (accrualTime.size() > 1 && is_true(any(diff(accrualTime) <= 0))) {
     stop("accrualTime should be increasing");
   }
-  
-  
+
+
   if (accrualTime.size() != accrualIntensity.size()) {
     stop("accrualTime must have the same length as accrualIntensity");
   }
-  
+
   if (is_true(any(accrualIntensity < 0))) {
     stop("accrualIntensity must be non-negative");
   }
-  
-  
+
+
   if (piecewiseSurvivalTime[0] != 0) {
     stop("piecewiseSurvivalTime must start with 0");
   }
-  
+
   if (nintervals > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
     stop("piecewiseSurvivalTime should be increasing");
   }
-  
-  
+
+
   if (is_true(any(stratumFraction <= 0))) {
     stop("stratumFraction must be positive");
   }
-  
+
   if (sum(stratumFraction) != 1) {
     stop("stratumFraction must sum to 1");
   }
-  
-  
+
+
   if (rho <= -1 || rho >= 1) {
     stop("rho must lie in (-1, 1)");
   }
-  
-  
+
+
   if (is_true(any(lambda1e1 < 0))) {
     stop("lambda1e1 must be non-negative");
   }
-  
+
   if (is_true(any(lambda2e1 < 0))) {
     stop("lambda2e1 must be non-negative");
   }
-  
+
   if (is_true(any(lambda1e2 < 0))) {
     stop("lambda1e2 must be non-negative");
   }
-  
+
   if (is_true(any(lambda2e2 < 0))) {
     stop("lambda2e2 must be non-negative");
   }
-  
-  
+
+
   if (is_true(any(gamma1e1 < 0))) {
     stop("gamma1e1 must be non-negative");
   }
-  
+
   if (is_true(any(gamma2e1 < 0))) {
     stop("gamma2e1 must be non-negative");
   }
-  
+
   if (is_true(any(gamma1e2 < 0))) {
     stop("gamma1e2 must be non-negative");
   }
-  
+
   if (is_true(any(gamma2e2 < 0))) {
     stop("gamma2e2 must be non-negative");
   }
-  
-  
+
+
   if (lambda1e1.size() == 1) {
     lambda1e1x = rep(lambda1e1, nsi);
   } else if (lambda1e1.size() == nintervals) {
@@ -2550,7 +2551,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda1e1");
   }
-  
+
   if (lambda2e1.size() == 1) {
     lambda2e1x = rep(lambda2e1, nsi);
   } else if (lambda2e1.size() == nintervals) {
@@ -2560,9 +2561,9 @@ List lrsim2e(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda2e1");
   }
-  
-  
-  
+
+
+
   if (lambda1e2.size() == 1) {
     lambda1e2x = rep(lambda1e2, nsi);
   } else if (lambda1e2.size() == nintervals) {
@@ -2572,7 +2573,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda1e2");
   }
-  
+
   if (lambda2e2.size() == 1) {
     lambda2e2x = rep(lambda2e2, nsi);
   } else if (lambda2e2.size() == nintervals) {
@@ -2582,9 +2583,9 @@ List lrsim2e(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda2e2");
   }
-  
-  
-  
+
+
+
   if (gamma1e1.size() == 1) {
     gamma1e1x = rep(gamma1e1, nsi);
   } else if (gamma1e1.size() == nintervals) {
@@ -2594,7 +2595,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for gamma1e1");
   }
-  
+
   if (gamma2e1.size() == 1) {
     gamma2e1x = rep(gamma2e1, nsi);
   } else if (gamma2e1.size() == nintervals) {
@@ -2604,8 +2605,8 @@ List lrsim2e(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for gamma2e1");
   }
-  
-  
+
+
   if (gamma1e2.size() == 1) {
     gamma1e2x = rep(gamma1e2, nsi);
   } else if (gamma1e2.size() == nintervals) {
@@ -2615,7 +2616,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for gamma1e2");
   }
-  
+
   if (gamma2e2.size() == 1) {
     gamma2e2x = rep(gamma2e2, nsi);
   } else if (gamma2e2.size() == nintervals) {
@@ -2625,69 +2626,69 @@ List lrsim2e(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for gamma2e2");
   }
-  
-  
-  
+
+
+
   lambda1e1d = lambda1e1x - lambda1e2x;
   lambda2e1d = lambda2e1x - lambda2e2x;
   gamma1e1d = gamma1e1x - gamma1e2x;
   gamma2e1d = gamma2e1x - gamma2e2x;
-  
+
   if (is_true(any(lambda1e1d < 0))) {
     stop("lambda1e1 must be greater than or equal to lambda1e2");
   }
-  
+
   if (is_true(any(lambda2e1d < 0))) {
     stop("lambda2e1 must be greater than or equal to lambda2e2");
   }
-  
-  
+
+
   if (is_true(any(gamma1e1d < 0))) {
     stop("gamma1e1 must be greater than or equal to gamma1e2");
   }
-  
+
   if (is_true(any(gamma2e1d < 0))) {
     stop("gamma2e1 must be greater than or equal to gamma2e2");
   }
-  
-  
-  
+
+
+
   if (R_isnancpp(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
-  
+
   if (accrualDuration <= 0) {
     stop("accrualDuration must be positive");
   }
-  
+
   if (fixedFollowup) {
     if (R_isnancpp(followupTime)) {
       stop("followupTime must be provided for fixed follow-up");
     }
-    
+
     if (followupTime <= 0) {
       stop("followupTime must be positive for fixed follow-up");
     }
   }
-  
+
   if (rho1 < 0) {
     stop("rho1 must be non-negative");
   }
-  
+
   if (rho2 < 0) {
     stop("rho2 must be non-negative");
   }
-  
+
   if (maxNumberOfIterations < 1) {
     stop("maxNumberOfIterations must be a positive integer");
   }
-  
+
   if (maxNumberOfRawDatasetsPerStage < 0) {
     stop("maxNumberOfRawDatasetsPerStage must be a non-negative integer");
   }
-  
-  
-  // declare variables 
+
+
+  // declare variables
   int i, iter, j, k, h, nevents1, nevents2, nstages, nsub;
   int accruals1, accruals2, totalAccruals;
   int events1e1, events2e1, totalEventse1;
@@ -2695,10 +2696,10 @@ List lrsim2e(const int kMax = NA_INTEGER,
   int dropouts1e1, dropouts2e1, totalDropoutse1;
   int dropouts1e2, dropouts2e2, totalDropoutse2;
   int index1=0, index2=0;
-  
+
   double enrollt, u, u1, u2, time, uscore, vscore;
-  
-  
+
+
   // maximum number of subjects to enroll
   int m = accrualTime.size();
   double s = 0;
@@ -2711,50 +2712,50 @@ List lrsim2e(const int kMax = NA_INTEGER,
     }
   }
   int n = floor(s + 0.5);
-  
-  
+
+
   // subject-level raw data set for one simulation
-  IntegerVector stratum(n), treatmentGroup(n), sortedIndex(n), 
+  IntegerVector stratum(n), treatmentGroup(n), sortedIndex(n),
   stratumSorted(n), treatmentGroupSorted(n);
-  
-  NumericVector arrivalTime(n), survivalTime1(n), survivalTime2(n), 
-  dropoutTime1(n), dropoutTime2(n), timeUnderObservation1(n), 
-  timeUnderObservation2(n), totalTime1(n), totalTime2(n), 
+
+  NumericVector arrivalTime(n), survivalTime1(n), survivalTime2(n),
+  dropoutTime1(n), dropoutTime2(n), timeUnderObservation1(n),
+  timeUnderObservation2(n), totalTime1(n), totalTime2(n),
   totalt1(n), totalt2(n), observationTime(n), timeUnderObservationSorted(n);
-  
-  LogicalVector event1(n), event2(n), dropoutEvent1(n), dropoutEvent2(n), 
+
+  LogicalVector event1(n), event2(n), dropoutEvent1(n), dropoutEvent2(n),
   event1ac(n), event2ac(n), sub(n), eventSorted(n);
-  
-  
-  // stratum information 
-  IntegerVector b1(nstrata), b2(nstrata); 
+
+
+  // stratum information
+  IntegerVector b1(nstrata), b2(nstrata);
   IntegerVector n1(nstrata), n2(nstrata), nt(nstrata);
-  
+
   // original copy of n1 and n2 when looping over the endpoints
-  IntegerVector n1x(nstrata), n2x(nstrata);  
-  
+  IntegerVector n1x(nstrata), n2x(nstrata);
+
   // hazardRatioH0 adjusted n1 and nt for calculating the log-rank statistic
   IntegerVector n1a(nstrata), nta(nstrata);
 
   NumericVector km(nstrata), w(nstrata);
   NumericVector cumStratumFraction = cumsum(stratumFraction);
-  
-  
+
+
   // within-stratum hazard rates
-  NumericVector lam1e1(nintervals), lam2e1(nintervals); 
-  NumericVector lam1e2(nintervals), lam2e2(nintervals); 
-  NumericVector gam1e1(nintervals), gam2e1(nintervals); 
+  NumericVector lam1e1(nintervals), lam2e1(nintervals);
+  NumericVector lam1e2(nintervals), lam2e2(nintervals);
+  NumericVector gam1e1(nintervals), gam2e1(nintervals);
   NumericVector gam1e2(nintervals), gam2e2(nintervals);
-  
-  
+
+
   // stage-wise information
   IntegerVector niter(kMax);
   NumericVector analysisTime(kMax);
-  
-  
+
+
   // cache for the patient-level raw data to extract
   int nrow1 = n*kMax*maxNumberOfRawDatasetsPerStage;
-  
+
   IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
   IntegerVector stageNumberx = IntegerVector(nrow1, NA_INTEGER);
   IntegerVector subjectIdx = IntegerVector(nrow1, NA_INTEGER);
@@ -2772,11 +2773,11 @@ List lrsim2e(const int kMax = NA_INTEGER,
   LogicalVector event2x = LogicalVector(nrow1, NA_LOGICAL);
   LogicalVector dropoutEvent1x = LogicalVector(nrow1, NA_LOGICAL);
   LogicalVector dropoutEvent2x = LogicalVector(nrow1, NA_LOGICAL);
-  
-  
+
+
   // cache for the simulation-level summary data to extract
   int nrow2 = kMax*maxNumberOfIterations*2;
-  
+
   IntegerVector iterationNumbery = IntegerVector(nrow2, NA_INTEGER);
   LogicalVector eventsNotAchievedy = LogicalVector(nrow2, NA_LOGICAL);
   IntegerVector stageNumbery = IntegerVector(nrow2, NA_INTEGER);
@@ -2784,7 +2785,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
   IntegerVector accruals1y = IntegerVector(nrow2, NA_INTEGER);
   IntegerVector accruals2y = IntegerVector(nrow2, NA_INTEGER);
   IntegerVector totalAccrualsy = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector endpointy = IntegerVector(nrow2, NA_INTEGER);  
+  IntegerVector endpointy = IntegerVector(nrow2, NA_INTEGER);
   IntegerVector events1y = IntegerVector(nrow2, NA_INTEGER);
   IntegerVector events2y = IntegerVector(nrow2, NA_INTEGER);
   IntegerVector totalEventsy = IntegerVector(nrow2, NA_INTEGER);
@@ -2792,30 +2793,28 @@ List lrsim2e(const int kMax = NA_INTEGER,
   IntegerVector dropouts2y = IntegerVector(nrow2, NA_INTEGER);
   IntegerVector totalDropoutsy = IntegerVector(nrow2, NA_INTEGER);
   NumericVector logRankStatisticy = NumericVector(nrow2, NA_REAL);
-  
-  
+
+
   // set up random seed
-  if (seed==NA_INTEGER) {
-    set_seed(std::time(0));
-  } else {
+  if (seed != NA_INTEGER) {
     set_seed(seed);
   }
-  
-  
-  // simulation 
+
+
+  // simulation
   for (iter=0; iter<maxNumberOfIterations; iter++) {
-    
+
     b1.fill(allocation1);
     b2.fill(allocation2);
-    
+
     enrollt = 0;
     for (i=0; i<n; i++) {
-      
+
       // generate accrual time
       u = R::runif(0,1);
-      enrollt = qtpwexpcpp(u, accrualTime, accrualIntensity, enrollt);
+      enrollt = qtpwexpcpp1(u, accrualTime, accrualIntensity, enrollt);
       arrivalTime[i] = enrollt;
-      
+
       // generate stratum information
       u = R::runif(0,1);
       for (j=0; j<nstrata; j++) {
@@ -2824,7 +2823,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
           break;
         }
       }
-      
+
       // stratified block randomization
       u = R::runif(0,1);
       if (u <= b1[j]/(b1[j]+b2[j]+0.0)) {
@@ -2834,62 +2833,62 @@ List lrsim2e(const int kMax = NA_INTEGER,
         treatmentGroup[i] = 2;
         b2[j]--;
       }
-      
+
       // start a new block after depleting the current block
       if (b1[j]+b2[j]==0) {
         b1[j] = allocation1;
         b2[j] = allocation2;
       }
-      
+
       // stratum-specific hazard rates for event and dropout
       Range jj = Range(j*nintervals, (j+1)*nintervals-1);
-      
+
       lam1e1 = lambda1e1d[jj];
       lam2e1 = lambda2e1d[jj];
-      
+
       lam1e2 = lambda1e2x[jj];
       lam2e2 = lambda2e2x[jj];
-      
+
       gam1e1 = gamma1e1d[jj];
       gam2e1 = gamma2e1d[jj];
-      
+
       gam1e2 = gamma1e2x[jj];
       gam2e2 = gamma2e2x[jj];
-      
+
       // standard bivariate normal with correlation rho
       u1 = R::rnorm(0,1);
       u2 = R::rnorm(rho*u1, sqrt(1-rho*rho));
-      
+
       // transform to uniform
       u1 = R::pnorm(u1, 0, 1, 1, 0);
       u2 = R::pnorm(u2, 0, 1, 1, 0);
-      
+
       // generate survival times
       if (treatmentGroup[i]==1) {
-        survivalTime1[i] = qtpwexpcpp(u1, piecewiseSurvivalTime, lam1e1, 0);
-        survivalTime2[i] = qtpwexpcpp(u2, piecewiseSurvivalTime, lam1e2, 0);
+        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam1e1, 0);
+        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam1e2, 0);
       } else {
-        survivalTime1[i] = qtpwexpcpp(u1, piecewiseSurvivalTime, lam2e1, 0);
-        survivalTime2[i] = qtpwexpcpp(u2, piecewiseSurvivalTime, lam2e2, 0);
+        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam2e1, 0);
+        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam2e2, 0);
       }
       // PFS includes death
       survivalTime1[i] = std::min(survivalTime1[i], survivalTime2[i]);
-      
-      
+
+
       // generate dropout times
       u1 = R::runif(0,1);
       u2 = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        dropoutTime1[i] = qtpwexpcpp(u1, piecewiseSurvivalTime, gam1e1, 0);
-        dropoutTime2[i] = qtpwexpcpp(u2, piecewiseSurvivalTime, gam1e2, 0);
+        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam1e1, 0);
+        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam1e2, 0);
       } else {
-        dropoutTime1[i] = qtpwexpcpp(u1, piecewiseSurvivalTime, gam2e1, 0);
-        dropoutTime2[i] = qtpwexpcpp(u2, piecewiseSurvivalTime, gam2e2, 0);
+        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam2e1, 0);
+        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam2e2, 0);
       }
-      // whatever censors OS will also censors PFS
+      // whatever censors OS will also censor PFS
       dropoutTime1[i] = std::min(dropoutTime1[i], dropoutTime2[i]);
-      
-      
+
+
       // initial observed time and event indicator
       if (fixedFollowup) { // fixed follow-up design
         if (survivalTime1[i] < dropoutTime1[i] &&
@@ -2918,10 +2917,10 @@ List lrsim2e(const int kMax = NA_INTEGER,
           dropoutEvent1[i] = 1;
         }
       }
-      
+
       totalTime1[i] = arrivalTime[i] + timeUnderObservation1[i];
-      
-      
+
+
       if (fixedFollowup) { // fixed follow-up design
         if (survivalTime2[i] < dropoutTime2[i] &&
             survivalTime2[i] < followupTime) {
@@ -2949,21 +2948,21 @@ List lrsim2e(const int kMax = NA_INTEGER,
           dropoutEvent2[i] = 1;
         }
       }
-      
+
       totalTime2[i] = arrivalTime[i] + timeUnderObservation2[i];
-      
+
     }
-    
-    
+
+
     // find the analysis time for each stage
     if (useEvents) {
       nevents1 = sum(event1);
       nevents2 = sum(event2);
       totalt1 = stl_sort(totalTime1[event1]);
       totalt2 = stl_sort(totalTime2[event2]);
-      
+
       int j1 = kMaxe1x, j2 = kMax - kMaxe1x;
-      
+
       // PFS looks
       if (kMaxe1x > 0) {
         for (j1=0; j1<kMaxe1x; j1++) {
@@ -2971,7 +2970,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
             break;
           }
         }
-        
+
         if (j1==kMaxe1x) { // total number of PFS events exceeds planned
           for (k=0; k<kMaxe1x; k++) {
             analysisTime[k] = totalt1[plannedEvents[k]-1] + 1e-12;
@@ -2986,17 +2985,17 @@ List lrsim2e(const int kMax = NA_INTEGER,
           }
         }
       }
-      
+
       // OS looks
       NumericVector analysisTime2(kMax - kMaxe1x);
-      
+
       if (kMax > kMaxe1x) {
         for (j2=0; j2<kMax-kMaxe1x; j2++) {
           if (plannedEvents[kMaxe1x+j2] >= nevents2) {
             break;
           }
         }
-        
+
         if (j2==kMax-kMaxe1x) { // total number of OS events exceeds planned
           for (k=0; k<kMax-kMaxe1x; k++) {
             analysisTime2[k] = totalt2[plannedEvents[kMaxe1x+k]-1] + 1e-12;
@@ -3011,7 +3010,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
           }
         }
       }
-      
+
       // determine the number of looks and timing of the looks
       if (kMaxe1x == 0) { // all looks based on OS events
         if (j2 == kMax - kMaxe1x) {
@@ -3019,7 +3018,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
         } else {
           nstages = j2 + 1;
         }
-        
+
         for (k=0; k<nstages; k++) {
           analysisTime[k] = analysisTime2[k];
         }
@@ -3045,7 +3044,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
           }
         }
       }
-      
+
       // whether the target PFS and OS events are achieved
       if (kMaxe1x > 0 && nevents1 < plannedEvents[kMaxe1x-1]) {
         eventsNotAchieved = 1;
@@ -3059,28 +3058,28 @@ List lrsim2e(const int kMax = NA_INTEGER,
       analysisTime = clone(plannedTime);
       eventsNotAchieved = 0;
     }
-    
-    
-    
+
+
+
     // construct the log-rank test statistic at each stage
     for (k=0; k<nstages; k++) {
       time = analysisTime[k];
-      
+
       n1x.fill(0);  // number of subjects in each stratum by treatment
       n2x.fill(0);
-      
+
       events1e1 = 0;
       events2e1 = 0;
-      
+
       dropouts1e1 = 0;
       dropouts2e1 = 0;
-      
+
       events1e2 = 0;
       events2e2 = 0;
-      
+
       dropouts1e2 = 0;
       dropouts2e2 = 0;
-      
+
       // censor at analysis time
       for (i=0; i<n; i++) {
         h = stratum[i]-1;
@@ -3089,7 +3088,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
           timeUnderObservation1[i] = time - arrivalTime[i];
           event1[i] = 0;
           dropoutEvent1[i] = 0;
-          
+
           timeUnderObservation2[i] = time - arrivalTime[i];
           event2[i] = 0;
           dropoutEvent2[i] = 0;
@@ -3099,8 +3098,8 @@ List lrsim2e(const int kMax = NA_INTEGER,
           } else {
             n2x[h]++;
           }
-          
-          
+
+
           // censored time for endpoint 1
           if (fixedFollowup) {
             if (arrivalTime[i] + survivalTime1[i] < time &&
@@ -3143,13 +3142,13 @@ List lrsim2e(const int kMax = NA_INTEGER,
               dropoutEvent1[i] = 0;
             }
           }
-          
+
           if (treatmentGroup[i]==1 && event1[i]) events1e1++;
           if (treatmentGroup[i]==2 && event1[i]) events2e1++;
           if (treatmentGroup[i]==1 && dropoutEvent1[i]) dropouts1e1++;
           if (treatmentGroup[i]==2 && dropoutEvent1[i]) dropouts2e1++;
-          
-          
+
+
           // censored time for endpoint 2
           if (fixedFollowup) {
             if (arrivalTime[i] + survivalTime2[i] < time &&
@@ -3192,15 +3191,15 @@ List lrsim2e(const int kMax = NA_INTEGER,
               dropoutEvent2[i] = 0;
             }
           }
-          
+
           if (treatmentGroup[i]==1 && event2[i]) events1e2++;
           if (treatmentGroup[i]==2 && event2[i]) events2e2++;
           if (treatmentGroup[i]==1 && dropoutEvent2[i]) dropouts1e2++;
           if (treatmentGroup[i]==2 && dropoutEvent2[i]) dropouts2e2++;
         }
       }
-      
-      
+
+
       // add raw data to output
       if (niter[k] < maxNumberOfRawDatasetsPerStage) {
         for (i=0; i<n; i++) {
@@ -3211,65 +3210,65 @@ List lrsim2e(const int kMax = NA_INTEGER,
           stratumx[index1] = stratum[i];
           treatmentGroupx[index1] = treatmentGroup[i];
           observationTimex[index1] = observationTime[i];
-          
+
           survivalTime1x[index1] = survivalTime1[i];
           dropoutTime1x[index1] = dropoutTime1[i];
           timeUnderObservation1x[index1] = timeUnderObservation1[i];
           event1x[index1] = event1[i];
           dropoutEvent1x[index1] = dropoutEvent1[i];
-          
+
           survivalTime2x[index1] = survivalTime2[i];
           dropoutTime2x[index1] = dropoutTime2[i];
           timeUnderObservation2x[index1] = timeUnderObservation2[i];
           event2x[index1] = event2[i];
           dropoutEvent2x[index1] = dropoutEvent2[i];
-          
+
           index1++;
         }
-        
+
         // update the number of stage k dataset to extract
         niter[k]++;
       }
-      
-      
+
+
       // number of accrued patients and total number of events
       accruals1 = sum(n1x);
       accruals2 = sum(n2x);
       totalAccruals = accruals1 + accruals2;
-      
+
       totalEventse1 = events1e1 + events2e1;
       totalDropoutse1 = dropouts1e1 + dropouts2e1;
-      
+
       totalEventse2 = events1e2 + events2e2;
       totalDropoutse2 = dropouts1e2 + dropouts2e2;
-      
-      
+
+
       for (int endpoint=1; endpoint<=2; endpoint++) {
         n1 = clone(n1x);
         n2 = clone(n2x);
-        
+
         double hazardRatioH0;
         if (endpoint == 1) {
           hazardRatioH0 = hazardRatioH0e1;
         } else {
           hazardRatioH0 = hazardRatioH0e2;
         }
-        
+
         // order the data by time under observation
         if (endpoint == 1) {
           timeUnderObservationSorted = stl_sort(timeUnderObservation1);
-          sortedIndex = match(timeUnderObservationSorted, 
+          sortedIndex = match(timeUnderObservationSorted,
                               timeUnderObservation1);
           sortedIndex = sortedIndex - 1;
           eventSorted = event1[sortedIndex];
         } else {
           timeUnderObservationSorted = stl_sort(timeUnderObservation2);
-          sortedIndex = match(timeUnderObservationSorted, 
+          sortedIndex = match(timeUnderObservationSorted,
                               timeUnderObservation2);
           sortedIndex = sortedIndex - 1;
           eventSorted = event2[sortedIndex];
         }
-        
+
         stratumSorted = stratum[sortedIndex];
         treatmentGroupSorted = treatmentGroup[sortedIndex];
         sub = (timeUnderObservationSorted > 0);
@@ -3277,7 +3276,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
         stratumSorted = stratumSorted[sub];
         treatmentGroupSorted = treatmentGroupSorted[sub];
         nsub = eventSorted.size();
-        
+
         // calculate the stratified log-rank test
         uscore = 0;
         vscore = 0;
@@ -3285,18 +3284,18 @@ List lrsim2e(const int kMax = NA_INTEGER,
         for (i=0; i<nsub; i++) {
           h = stratumSorted[i] - 1;
           nt[h] = n1[h] + n2[h];
-          
+
           n1a[h] = n1[h]*hazardRatioH0;
           nta[h] = n1a[h] + n2[h];
-          
-          if (eventSorted[i]) { 
+
+          if (eventSorted[i]) {
             w[h] = pow(km[h], rho1)*pow(1-km[h], rho2);
-            uscore += w[h]*((treatmentGroupSorted[i]==1) 
+            uscore += w[h]*((treatmentGroupSorted[i]==1)
                               - n1a[h]/(nta[h]+0.0));
             vscore += w[h]*w[h]*n1a[h]*n2[h]/(nta[h]*nta[h]+0.0);
             km[h] *= (1-1/(nt[h]+0.0)); // update km estimate
           }
-          
+
           // reduce the risk set
           if (treatmentGroupSorted[i]==1) {
             n1[h]--;
@@ -3304,10 +3303,10 @@ List lrsim2e(const int kMax = NA_INTEGER,
             n2[h]--;
           }
         }
-        
-        
-        
-        // add summary data to output  
+
+
+
+        // add summary data to output
         iterationNumbery[index2] = iter+1;
         eventsNotAchievedy[index2] = eventsNotAchieved;
         stageNumbery[index2] = k+1;
@@ -3316,7 +3315,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
         accruals2y[index2] = accruals2;
         totalAccrualsy[index2] = totalAccruals;
         endpointy[index2] = endpoint;
-        
+
         if (endpoint == 1) {
           events1y[index2] = events1e1;
           events2y[index2] = events2e1;
@@ -3332,17 +3331,17 @@ List lrsim2e(const int kMax = NA_INTEGER,
           dropouts2y[index2] = dropouts2e2;
           totalDropoutsy[index2] = totalDropoutse2;
         }
-        
+
         logRankStatisticy[index2] = uscore/sqrt(vscore);
         index2++;
-        
+
       } // end of endpoint
-      
+
     } // end of stage
-    
+
   } // end of iteration
-  
-  
+
+
   // simulation summary data set
   LogicalVector sub2 = !is_na(iterationNumbery);
   iterationNumbery = iterationNumbery[sub2];
@@ -3360,7 +3359,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
   dropouts2y = dropouts2y[sub2];
   totalDropoutsy = totalDropoutsy[sub2];
   logRankStatisticy = logRankStatisticy[sub2];
-  
+
   DataFrame sumdata = DataFrame::create(
     _["iterationNumber"] = iterationNumbery,
     _["eventsNotAchieved"] = eventsNotAchievedy,
@@ -3377,10 +3376,10 @@ List lrsim2e(const int kMax = NA_INTEGER,
     _["dropouts2"] = dropouts2y,
     _["totalDropouts"] = totalDropoutsy,
     _["logRankStatistic"] = logRankStatisticy);
-  
-  
+
+
   List result;
-  
+
   if (maxNumberOfRawDatasetsPerStage > 0) {
     LogicalVector sub1 = !is_na(iterationNumberx);
     iterationNumberx = iterationNumberx[sub1];
@@ -3400,7 +3399,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
     timeUnderObservation2x = timeUnderObservation2x[sub1];
     event2x = event2x[sub1];
     dropoutEvent2x = dropoutEvent2x[sub1];
-    
+
     DataFrame rawdata = DataFrame::create(
       _["iterationNumber"] = iterationNumberx,
       _["stageNumber"] = stageNumberx,
@@ -3419,39 +3418,39 @@ List lrsim2e(const int kMax = NA_INTEGER,
       _["timeUnderObservation2"] = timeUnderObservation2x,
       _["event2"] = event2x,
       _["dropoutEvent2"] = dropoutEvent2x);
-    
+
     result = List::create(_["sumdata"] = sumdata,
                           _["rawdata"] = rawdata);
   } else {
     result = List::create(_["sumdata"] = sumdata);
   }
-  
+
   return result;
 }
 
 
 //' @title Log-rank test simulation for two endpoints and three arms
-//' @description Performs simulation for two-endpoint three-arm group 
-//' sequential trials based on weighted log-rank test. The first \code{kMaxe1} 
-//' looks are driven by the total number of PFS events in Arm A 
-//' and Arm C combined, and the subsequent looks are driven by the total 
-//' number of OS events in Arm A and Arm C combined. Alternatively, 
-//' the analyses can be planned to occur at specified calendar times. 
-//' 
+//' @description Performs simulation for two-endpoint three-arm group
+//' sequential trials based on weighted log-rank test. The first
+//' \code{kMaxe1} looks are driven by the total number of PFS events in Arm A
+//' and Arm C combined, and the subsequent looks are driven by the total
+//' number of OS events in Arm A and Arm C combined. Alternatively,
+//' the analyses can be planned to occur at specified calendar times.
+//'
 //' @inheritParams param_kMax
-//' @param kMaxe1 Number of stages with timing determined by PFS events. 
-//'   Ranges from 0 (none) to \code{kMax}. 
-//' @param hazardRatioH013e1 Hazard ratio under the null hypothesis for arm 1 
+//' @param kMaxe1 Number of stages with timing determined by PFS events.
+//'   Ranges from 0 (none) to \code{kMax}.
+//' @param hazardRatioH013e1 Hazard ratio under the null hypothesis for arm 1
 //'   vs arm 3 for endpoint 1 (PFS). Defaults to 1 for superiority test.
-//' @param hazardRatioH023e1 Hazard ratio under the null hypothesis for arm 2 
+//' @param hazardRatioH023e1 Hazard ratio under the null hypothesis for arm 2
 //'   vs arm 3 for endpoint 1 (PFS). Defaults to 1 for superiority test.
-//' @param hazardRatioH012e1 Hazard ratio under the null hypothesis for arm 1 
+//' @param hazardRatioH012e1 Hazard ratio under the null hypothesis for arm 1
 //'   vs arm 2 for endpoint 1 (PFS). Defaults to 1 for superiority test.
-//' @param hazardRatioH013e2 Hazard ratio under the null hypothesis for arm 1 
+//' @param hazardRatioH013e2 Hazard ratio under the null hypothesis for arm 1
 //'   vs arm 3 for endpoint 2 (OS). Defaults to 1 for superiority test.
-//' @param hazardRatioH023e2 Hazard ratio under the null hypothesis for arm 2 
+//' @param hazardRatioH023e2 Hazard ratio under the null hypothesis for arm 2
 //'   vs arm 3 for endpoint 2 (OS). Defaults to 1 for superiority test.
-//' @param hazardRatioH012e2 Hazard ratio under the null hypothesis for arm 1 
+//' @param hazardRatioH012e2 Hazard ratio under the null hypothesis for arm 1
 //'   vs arm 2 for endpoint 2 (OS). Defaults to 1 for superiority test.
 //' @param allocation1 Number of subjects in Arm A in
 //'   a randomization block. Defaults to 1 for equal randomization.
@@ -3464,187 +3463,187 @@ List lrsim2e(const int kMax = NA_INTEGER,
 //' @inheritParams param_piecewiseSurvivalTime
 //' @inheritParams param_stratumFraction
 //' @param rho The correlation coefficient for the standard bivariate normal
-//'   random variables used to generate time to disease progression and time 
+//'   random variables used to generate time to disease progression and time
 //'   to death using the inverse CDF method.
-//' @param lambda1e1 A vector of hazard rates for the event in each analysis  
+//' @param lambda1e1 A vector of hazard rates for the event in each analysis
 //'   time interval by stratum for arm 1 and endpoint 1 (PFS).
-//' @param lambda2e1 A vector of hazard rates for the event in each analysis  
+//' @param lambda2e1 A vector of hazard rates for the event in each analysis
 //'   time interval by stratum for arm 2 and endpoint 1 (PFS).
-//' @param lambda3e1 A vector of hazard rates for the event in each analysis  
+//' @param lambda3e1 A vector of hazard rates for the event in each analysis
 //'   time interval by stratum for arm 3 and endpoint 1 (PFS).
-//' @param lambda1e2 A vector of hazard rates for the event in each analysis  
+//' @param lambda1e2 A vector of hazard rates for the event in each analysis
 //'   time interval by stratum for arm 1 and endpoint 2 (OS).
-//' @param lambda2e2 A vector of hazard rates for the event in each analysis  
+//' @param lambda2e2 A vector of hazard rates for the event in each analysis
 //'   time interval by stratum for arm 2 and endpoint 2 (OS).
-//' @param lambda3e2 A vector of hazard rates for the event in each analysis  
+//' @param lambda3e2 A vector of hazard rates for the event in each analysis
 //'   time interval by stratum for arm 3 and endpoint 2 (OS).
-//' @param gamma1e1 The hazard rate for exponential dropout. A vector of 
-//'   hazard rates for piecewise exponential dropout applicable for all 
-//'   strata, or a vector of hazard rates for dropout in each analysis time 
+//' @param gamma1e1 The hazard rate for exponential dropout. A vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for arm 1 and endpoint 1 (PFS).
-//' @param gamma2e1 The hazard rate for exponential dropout. A vector of 
-//'   hazard rates for piecewise exponential dropout applicable for all 
-//'   strata, or a vector of hazard rates for dropout in each analysis time 
+//' @param gamma2e1 The hazard rate for exponential dropout. A vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for arm 2 and endpoint 1 (PFS).
-//' @param gamma3e1 The hazard rate for exponential dropout. A vector of 
-//'   hazard rates for piecewise exponential dropout applicable for all 
-//'   strata, or a vector of hazard rates for dropout in each analysis time 
+//' @param gamma3e1 The hazard rate for exponential dropout. A vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for arm 3 and endpoint 1 (PFS).
-//' @param gamma1e2 The hazard rate for exponential dropout. A vector of 
-//'   hazard rates for piecewise exponential dropout applicable for all 
-//'   strata, or a vector of hazard rates for dropout in each analysis time 
+//' @param gamma1e2 The hazard rate for exponential dropout. A vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for arm 1 and endpoint 2 (OS).
-//' @param gamma2e2 The hazard rate for exponential dropout. A vector of 
-//'   hazard rates for piecewise exponential dropout applicable for all 
-//'   strata, or a vector of hazard rates for dropout in each analysis time 
+//' @param gamma2e2 The hazard rate for exponential dropout. A vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for arm 2 and endpoint 2 (OS).
-//' @param gamma3e2 The hazard rate for exponential dropout. A vector of 
-//'   hazard rates for piecewise exponential dropout applicable for all 
-//'   strata, or a vector of hazard rates for dropout in each analysis time 
+//' @param gamma3e2 The hazard rate for exponential dropout. A vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for arm 3 and endpoint 2 (OS).
 //' @inheritParams param_accrualDuration
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_rho1
 //' @inheritParams param_rho2
-//' @param plannedEvents The planned cumulative total number of PFS events at 
-//'   Look 1 to Look kMaxe1 for Arms A and C combined and the planned 
-//'   cumulative total number of OS events at Look kMaxe1+1 to Look kMax 
-//'   for Arms A and C combined.
-//' @param plannedTime The calendar times for the analyses. To use calendar  
+//' @param plannedEvents The planned cumulative total number of PFS events at
+//'   Look 1 to Look \code{kMaxe1} for Arms A and C combined and the planned
+//'   cumulative total number of OS events at Look \code{kMaxe1+1} to Look
+//'   \code{kMax} for Arms A and C combined.
+//' @param plannedTime The calendar times for the analyses. To use calendar
 //'   time to plan the analyses, \code{plannedEvents} should be missing.
 //' @param maxNumberOfIterations The number of simulation iterations.
 //'   Defaults to 1000.
-//' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per stage
-//'   to extract. Defaults to 1.
+//' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
+//'   stage to extract. Defaults to 1.
 //' @param seed The seed to reproduce the simulation results.
-//'   The computer clock will be used if left unspecified,
+//'   The seed from the environment will be used if left unspecified,
 //'
 //' @return A list with 2 components:
 //'
-//' * \code{sumdata}: A data frame of summary data by iteration and stage: 
-//' 
-//'   - \code{iterationNumber}: The iteration number.
-//'   
-//'   - \code{eventsNotAchieved}: Whether the target number of events 
-//'   is not achieved for the iteration.
-//'   
-//'   - \code{stageNumber}: The stage number, covering all stages even if 
-//'   the trial stops at an interim look.
-//'   
-//'   - \code{analysisTime}: The time for the stage since trial start.
-//'   
-//'   - \code{accruals1}: The number of subjects enrolled at the stage for
-//'   the active treatment 1 group.
-//'   
-//'   - \code{accruals2}: The number of subjects enrolled at the stage for
-//'   the active treatment 2 group.
-//'   
-//'   - \code{accruals3}: The number of subjects enrolled at the stage for
-//'   the control group.
-//'   
-//'   - \code{totalAccruals}: The total number of subjects enrolled at 
-//'   the stage.
-//'   
-//'   - \code{endpoint}: The endpoint (1 or 2) under consideration.
-//'   
-//'   - \code{events1}: The number of events at the stage for 
-//'   the active treatment 1 group.
-//'   
-//'   - \code{events2}: The number of events at the stage for 
-//'   the active treatment 2 group.
-//'   
-//'   - \code{events3}: The number of events at the stage for 
-//'   the control group.
-//'   
-//'   - \code{totalEvents}: The total number of events at the stage.
-//'   
-//'   - \code{dropouts1}: The number of dropouts at the stage for 
-//'   the active treatment 1 group. 
-//'   
-//'   - \code{dropouts2}: The number of dropouts at the stage for 
-//'   the active treatment 2 group.
-//'   
-//'   - \code{dropouts3}: The number of dropouts at the stage for 
-//'   the control group.
-//'   
-//'   - \code{totalDropouts}: The total number of dropouts at the stage.
-//'   
-//'   - \code{logRankStatistic13}: The log-rank test Z-statistic 
-//'   comparing the active treatment 1 to the control for the endpoint.
-//'   
-//'   - \code{logRankStatistic23}: The log-rank test Z-statistic 
-//'   comparing the active treatment 2 to the control for the endpoint.
-//'   
-//'   - \code{logRankStatistic12}: The log-rank test Z-statistic 
-//'   comparing the active treatment 1 to the active treatment 2 
-//'   for the endpoint.
-//'   
+//' * \code{sumdata}: A data frame of summary data by iteration and stage:
+//'
+//'     - \code{iterationNumber}: The iteration number.
+//'
+//'     - \code{eventsNotAchieved}: Whether the target number of events
+//'       is not achieved for the iteration.
+//'
+//'     - \code{stageNumber}: The stage number, covering all stages even if
+//'       the trial stops at an interim look.
+//'
+//'     - \code{analysisTime}: The time for the stage since trial start.
+//'
+//'     - \code{accruals1}: The number of subjects enrolled at the stage for
+//'       the active treatment 1 group.
+//'
+//'     - \code{accruals2}: The number of subjects enrolled at the stage for
+//'       the active treatment 2 group.
+//'
+//'     - \code{accruals3}: The number of subjects enrolled at the stage for
+//'       the control group.
+//'
+//'     - \code{totalAccruals}: The total number of subjects enrolled at
+//'       the stage.
+//'
+//'     - \code{endpoint}: The endpoint (1 or 2) under consideration.
+//'
+//'     - \code{events1}: The number of events at the stage for
+//'       the active treatment 1 group.
+//'
+//'     - \code{events2}: The number of events at the stage for
+//'       the active treatment 2 group.
+//'
+//'     - \code{events3}: The number of events at the stage for
+//'       the control group.
+//'
+//'     - \code{totalEvents}: The total number of events at the stage.
+//'
+//'     - \code{dropouts1}: The number of dropouts at the stage for
+//'       the active treatment 1 group.
+//'
+//'     - \code{dropouts2}: The number of dropouts at the stage for
+//'       the active treatment 2 group.
+//'
+//'     - \code{dropouts3}: The number of dropouts at the stage for
+//'       the control group.
+//'
+//'     - \code{totalDropouts}: The total number of dropouts at the stage.
+//'
+//'     - \code{logRankStatistic13}: The log-rank test Z-statistic
+//'       comparing the active treatment 1 to the control for the endpoint.
+//'
+//'     - \code{logRankStatistic23}: The log-rank test Z-statistic
+//'       comparing the active treatment 2 to the control for the endpoint.
+//'
+//'     - \code{logRankStatistic12}: The log-rank test Z-statistic
+//'       comparing the active treatment 1 to the active treatment 2
+//'       for the endpoint.
+//'
 //' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-//' positive integer): A data frame for subject-level data for selected
-//' replications, containing the following variables:
-//' 
-//'   - \code{iterationNumber}: The iteration number.
-//'   
-//'   - \code{stageNumber}: The stage under consideration.
-//'   
-//'   - \code{analysisTime}: The time for the stage since trial start.
-//'   
-//'   - \code{subjectId}: The subject ID.
-//'   
-//'   - \code{arrivalTime}: The enrollment time for the subject.
-//'   
-//'   - \code{stratum}: The stratum for the subject.
-//'   
-//'   - \code{treatmentGroup}: The treatment group (1, 2, or 3) for 
-//'   the subject.
-//'   
-//'   - \code{survivalTime1}: The underlying survival time for 
-//'   event endpoint 1 for the subject.
-//'   
-//'   - \code{dropoutTime1}: The underlying dropout time for 
-//'   event endpoint 1 for the subject.
-//'   
-//'   - \code{timeUnderObservation1}: The time under observation since 
-//'   since randomization for event endpoint 1 for the subject.
-//'   
-//'   - \code{event1}: Whether the subject experienced event endpoint 1.
-//'   
-//'   - \code{dropoutEvent1}: Whether the subject dropped out for 
-//'   endpoint 1.
-//'   
-//'   - \code{survivalTime2}: The underlying survival time for 
-//'   event endpoint 2 for the subject.
-//'   
-//'   - \code{dropoutTime2}: The underlying dropout time for 
-//'   event endpoint 2 for the subject.
-//'   
-//'   - \code{timeUnderObservation2}: The time under observation since 
-//'   since randomization for event endpoint 2 for the subject.
-//'   
-//'   - \code{event2}: Whether the subject experienced event endpoint 2.
-//'   
-//'   - \code{dropoutEvent2}: Whether the subject dropped out for 
-//'   endpoint 2.
+//'   positive integer): A data frame for subject-level data for selected
+//'   replications, containing the following variables:
+//'
+//'     - \code{iterationNumber}: The iteration number.
+//'
+//'     - \code{stageNumber}: The stage under consideration.
+//'
+//'     - \code{analysisTime}: The time for the stage since trial start.
+//'
+//'     - \code{subjectId}: The subject ID.
+//'
+//'     - \code{arrivalTime}: The enrollment time for the subject.
+//'
+//'     - \code{stratum}: The stratum for the subject.
+//'
+//'     - \code{treatmentGroup}: The treatment group (1, 2, or 3) for
+//'       the subject.
+//'
+//'     - \code{survivalTime1}: The underlying survival time for
+//'       event endpoint 1 for the subject.
+//'
+//'     - \code{dropoutTime1}: The underlying dropout time for
+//'       event endpoint 1 for the subject.
+//'
+//'     - \code{timeUnderObservation1}: The time under observation
+//'       since randomization for event endpoint 1 for the subject.
+//'
+//'     - \code{event1}: Whether the subject experienced event endpoint 1.
+//'
+//'     - \code{dropoutEvent1}: Whether the subject dropped out for
+//'       endpoint 1.
+//'
+//'     - \code{survivalTime2}: The underlying survival time for
+//'       event endpoint 2 for the subject.
+//'
+//'     - \code{dropoutTime2}: The underlying dropout time for
+//'       event endpoint 2 for the subject.
+//'
+//'     - \code{timeUnderObservation2}: The time under observation
+//'       since randomization for event endpoint 2 for the subject.
+//'
+//'     - \code{event2}: Whether the subject experienced event endpoint 2.
+//'
+//'     - \code{dropoutEvent2}: Whether the subject dropped out for
+//'       endpoint 2.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//' 
+//'
 //' @examples
-//' 
+//'
 //' sim1 = lrsim2e3a(
-//'   kMax = 3, 
+//'   kMax = 3,
 //'   kMaxe1 = 2,
-//'   allocation1 = 2, 
-//'   allocation2 = 2, 
+//'   allocation1 = 2,
+//'   allocation2 = 2,
 //'   allocation3 = 1,
-//'   accrualTime = c(0, 8), 
+//'   accrualTime = c(0, 8),
 //'   accrualIntensity = c(10, 28),
-//'   piecewiseSurvivalTime = 0, 
+//'   piecewiseSurvivalTime = 0,
 //'   rho = 0,
 //'   lambda1e1 = log(2)/12*0.60,
 //'   lambda2e1 = log(2)/12*0.70,
 //'   lambda3e1 = log(2)/12,
-//'   lambda1e2 = log(2)/30*0.65, 
+//'   lambda1e2 = log(2)/30*0.65,
 //'   lambda2e2 = log(2)/30*0.75,
 //'   lambda3e2 = log(2)/30,
 //'   accrualDuration = 30.143,
@@ -3652,10 +3651,10 @@ List lrsim2e(const int kMax = NA_INTEGER,
 //'   maxNumberOfIterations = 1000,
 //'   maxNumberOfRawDatasetsPerStage = 1,
 //'   seed = 314159)
-//'  
+//'
 //' head(sim1$sumdata)
 //' head(sim1$rawdata)
-//'  
+//'
 //' @export
 // [[Rcpp::export]]
 List lrsim2e3a(const int kMax = NA_INTEGER,
@@ -3673,7 +3672,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
                const NumericVector& accrualIntensity = NA_REAL,
                const NumericVector& piecewiseSurvivalTime = 0,
                const NumericVector& stratumFraction = 1,
-               const double rho = 0, 
+               const double rho = 0,
                const NumericVector& lambda1e1 = NA_REAL,
                const NumericVector& lambda2e1 = NA_REAL,
                const NumericVector& lambda3e1 = NA_REAL,
@@ -3696,56 +3695,56 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
                const int maxNumberOfIterations = 1000,
                const int maxNumberOfRawDatasetsPerStage = 0,
                int seed = NA_INTEGER) {
-  
+
   // check input parameters
   int kMaxe1x = kMaxe1;
-  
+
   int nstrata = stratumFraction.size();
   int nintervals = piecewiseSurvivalTime.size();
   int nsi = nstrata*nintervals;
-  
-  NumericVector lambda1e1x(nsi), lambda2e1x(nsi), lambda3e1x(nsi); 
-  NumericVector lambda1e2x(nsi), lambda2e2x(nsi), lambda3e2x(nsi); 
+
+  NumericVector lambda1e1x(nsi), lambda2e1x(nsi), lambda3e1x(nsi);
+  NumericVector lambda1e2x(nsi), lambda2e2x(nsi), lambda3e2x(nsi);
   NumericVector gamma1e1x(nsi), gamma2e1x(nsi), gamma3e1x(nsi);
   NumericVector gamma1e2x(nsi), gamma2e2x(nsi), gamma3e2x(nsi);
-  NumericVector lambda1e1d(nsi), lambda2e1d(nsi), lambda3e1d(nsi); 
+  NumericVector lambda1e1d(nsi), lambda2e1d(nsi), lambda3e1d(nsi);
   NumericVector gamma1e1d(nsi), gamma2e1d(nsi), gamma3e1d(nsi);
-  
+
   bool useEvents, eventsNotAchieved;
-  
-  
+
+
   if (kMax < 1) {
     stop("kMax must be a positive integer");
   }
-  
+
   if (kMaxe1 < 0) {
     kMaxe1x = kMax;
   }
-  
+
   if (kMaxe1x > kMax) {
     stop("kMaxe1 must be less than or equal to kMax");
   }
-  
-  
-  // whether to plan the analyses based on events or calender time
+
+
+  // whether to plan the analyses based on events or calendar time
   if (is_false(any(is_na(plannedEvents)))) {
     useEvents = 1;
-    
+
     if (plannedEvents[0] <= 0) {
       stop("Elements of plannedEvents must be positive");
     }
-    
+
     if (plannedEvents.size() != kMax) {
       stop("Invalid length for plannedEvents");
     }
-    
+
     if (kMaxe1x > 1) {
       IntegerVector plannedEvents1 = plannedEvents[Range(0,kMaxe1x-1)];
       if (is_true(any(diff(plannedEvents1) <= 0))) {
         stop("plannedEvents for endpoint 1 must be increasing");
       }
     }
-    
+
     if (kMax - kMaxe1x > 1) {
       IntegerVector plannedEvents2 = plannedEvents[Range(kMaxe1x, kMax-1)];
       if (is_true(any(diff(plannedEvents2) <= 0))) {
@@ -3757,146 +3756,146 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
     if (plannedTime[0] <= 0) {
       stop("Elements of plannedTime must be positive");
     }
-    
+
     if (plannedTime.size() != kMax) {
       stop("Invalid length for plannedTime");
     }
-    
+
     if (kMax > 1 && is_true(any(diff(plannedTime) <= 0))) {
       stop("Elements of plannedTime must be increasing");
     }
   } else {
     stop("Either plannedEvents or plannedTime must be given");
   }
-  
+
   if (hazardRatioH013e1 <= 0) {
     stop("hazardRatioH013e1 must be positive");
   }
-  
+
   if (hazardRatioH023e1 <= 0) {
     stop("hazardRatioH023e1 must be positive");
   }
-  
+
   if (hazardRatioH012e1 <= 0) {
     stop("hazardRatioH012e1 must be positive");
   }
-  
+
   if (hazardRatioH013e2 <= 0) {
     stop("hazardRatioH013e2 must be positive");
   }
-  
+
   if (hazardRatioH023e2 <= 0) {
     stop("hazardRatioH023e2 must be positive");
   }
-  
+
   if (hazardRatioH012e2 <= 0) {
     stop("hazardRatioH012e2 must be positive");
   }
-  
+
   if (allocation1 < 1) {
     stop("allocation1 must be a positive integer");
   }
-  
+
   if (allocation2 < 1) {
     stop("allocation2 must be a positive integer");
   }
-  
+
   if (allocation3 < 1) {
     stop("allocation3 must be a positive integer");
   }
-  
-  
+
+
   if (accrualTime[0] != 0) {
     stop("accrualTime must start with 0");
   }
-  
+
   if (accrualTime.size() > 1 && is_true(any(diff(accrualTime) <= 0))) {
     stop("accrualTime should be increasing");
   }
-  
-  
+
+
   if (accrualTime.size() != accrualIntensity.size()) {
     stop("accrualTime must have the same length as accrualIntensity");
   }
-  
+
   if (is_true(any(accrualIntensity < 0))) {
     stop("accrualIntensity must be non-negative");
   }
-  
-  
+
+
   if (piecewiseSurvivalTime[0] != 0) {
     stop("piecewiseSurvivalTime must start with 0");
   }
-  
+
   if (nintervals > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
     stop("piecewiseSurvivalTime should be increasing");
   }
-  
-  
+
+
   if (is_true(any(stratumFraction <= 0))) {
     stop("stratumFraction must be positive");
   }
-  
+
   if (sum(stratumFraction) != 1) {
     stop("stratumFraction must sum to 1");
   }
-  
-  
+
+
   if (rho <= -1 || rho >= 1) {
     stop("rho must lie in (-1, 1)");
   }
-  
-  
+
+
   if (is_true(any(lambda1e1 < 0))) {
     stop("lambda1e1 must be non-negative");
   }
-  
+
   if (is_true(any(lambda2e1 < 0))) {
     stop("lambda2e1 must be non-negative");
   }
-  
+
   if (is_true(any(lambda3e1 < 0))) {
     stop("lambda3e1 must be non-negative");
   }
-  
+
   if (is_true(any(lambda1e2 < 0))) {
     stop("lambda1e2 must be non-negative");
   }
-  
+
   if (is_true(any(lambda2e2 < 0))) {
     stop("lambda2e2 must be non-negative");
   }
-  
+
   if (is_true(any(lambda3e2 < 0))) {
     stop("lambda3e2 must be non-negative");
   }
-  
-  
+
+
   if (is_true(any(gamma1e1 < 0))) {
     stop("gamma1e1 must be non-negative");
   }
-  
+
   if (is_true(any(gamma2e1 < 0))) {
     stop("gamma2e1 must be non-negative");
   }
-  
+
   if (is_true(any(gamma3e1 < 0))) {
     stop("gamma3e1 must be non-negative");
   }
-  
+
   if (is_true(any(gamma1e2 < 0))) {
     stop("gamma1e2 must be non-negative");
   }
-  
+
   if (is_true(any(gamma2e2 < 0))) {
     stop("gamma2e2 must be non-negative");
   }
-  
+
   if (is_true(any(gamma3e2 < 0))) {
     stop("gamma3e2 must be non-negative");
-  }  
-  
-  
+  }
+
+
   if (lambda1e1.size() == 1) {
     lambda1e1x = rep(lambda1e1, nsi);
   } else if (lambda1e1.size() == nintervals) {
@@ -3906,7 +3905,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda1e1");
   }
-  
+
   if (lambda2e1.size() == 1) {
     lambda2e1x = rep(lambda2e1, nsi);
   } else if (lambda2e1.size() == nintervals) {
@@ -3916,7 +3915,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda2e1");
   }
-  
+
   if (lambda3e1.size() == 1) {
     lambda3e1x = rep(lambda3e1, nsi);
   } else if (lambda3e1.size() == nintervals) {
@@ -3926,8 +3925,8 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda3e1");
   }
-  
-  
+
+
   if (lambda1e2.size() == 1) {
     lambda1e2x = rep(lambda1e2, nsi);
   } else if (lambda1e2.size() == nintervals) {
@@ -3937,7 +3936,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda1e2");
   }
-  
+
   if (lambda2e2.size() == 1) {
     lambda2e2x = rep(lambda2e2, nsi);
   } else if (lambda2e2.size() == nintervals) {
@@ -3947,7 +3946,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda2e2");
   }
-  
+
   if (lambda3e2.size() == 1) {
     lambda3e2x = rep(lambda3e2, nsi);
   } else if (lambda3e2.size() == nintervals) {
@@ -3957,8 +3956,8 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda3e2");
   }
-  
-  
+
+
   if (gamma1e1.size() == 1) {
     gamma1e1x = rep(gamma1e1, nsi);
   } else if (gamma1e1.size() == nintervals) {
@@ -3968,7 +3967,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for gamma1e1");
   }
-  
+
   if (gamma2e1.size() == 1) {
     gamma2e1x = rep(gamma2e1, nsi);
   } else if (gamma2e1.size() == nintervals) {
@@ -3978,7 +3977,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for gamma2e1");
   }
-  
+
   if (gamma3e1.size() == 1) {
     gamma3e1x = rep(gamma3e1, nsi);
   } else if (gamma3e1.size() == nintervals) {
@@ -3988,8 +3987,8 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for gamma3e1");
   }
-  
-  
+
+
   if (gamma1e2.size() == 1) {
     gamma1e2x = rep(gamma1e2, nsi);
   } else if (gamma1e2.size() == nintervals) {
@@ -3999,7 +3998,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for gamma1e2");
   }
-  
+
   if (gamma2e2.size() == 1) {
     gamma2e2x = rep(gamma2e2, nsi);
   } else if (gamma2e2.size() == nintervals) {
@@ -4009,7 +4008,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for gamma2e2");
   }
-  
+
   if (gamma3e2.size() == 1) {
     gamma3e2x = rep(gamma3e2, nsi);
   } else if (gamma3e2.size() == nintervals) {
@@ -4019,90 +4018,90 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for gamma3e2");
   }
-  
-  
+
+
   lambda1e1d = lambda1e1x - lambda1e2x;
   lambda2e1d = lambda2e1x - lambda2e2x;
   lambda3e1d = lambda3e1x - lambda3e2x;
   gamma1e1d = gamma1e1x - gamma1e2x;
   gamma2e1d = gamma2e1x - gamma2e2x;
   gamma3e1d = gamma3e1x - gamma3e2x;
-  
+
   if (is_true(any(lambda1e1d < 0))) {
     stop("lambda1e1 must be greater than or equal to lambda1e2");
   }
-  
+
   if (is_true(any(lambda2e1d < 0))) {
     stop("lambda2e1 must be greater than or equal to lambda2e2");
   }
-  
+
   if (is_true(any(lambda3e1d < 0))) {
     stop("lambda3e1 must be greater than or equal to lambda3e2");
   }
-  
+
   if (is_true(any(gamma1e1d < 0))) {
     stop("gamma1e1 must be greater than or equal to gamma1e2");
   }
-  
+
   if (is_true(any(gamma2e1d < 0))) {
     stop("gamma2e1 must be greater than or equal to gamma2e2");
   }
-  
+
   if (is_true(any(gamma3e1d < 0))) {
     stop("gamma3e1 must be greater than or equal to gamma3e2");
   }
-  
-  
+
+
   if (R_isnancpp(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
-  
+
   if (accrualDuration <= 0) {
     stop("accrualDuration must be positive");
   }
-  
+
   if (fixedFollowup) {
     if (R_isnancpp(followupTime)) {
       stop("followupTime must be provided for fixed follow-up");
     }
-    
+
     if (followupTime <= 0) {
       stop("followupTime must be positive for fixed follow-up");
     }
   }
-  
+
   if (rho1 < 0) {
     stop("rho1 must be non-negative");
   }
-  
+
   if (rho2 < 0) {
     stop("rho2 must be non-negative");
   }
-  
-  
+
+
   if (maxNumberOfIterations < 1) {
     stop("maxNumberOfIterations must be a positive integer");
   }
-  
+
   if (maxNumberOfRawDatasetsPerStage < 0) {
     stop("maxNumberOfRawDatasetsPerStage must be a non-negative integer");
   }
-  
-  
-  // declare variables 
-  int i, iter, j, k, h, nevents1, nevents2, nstages, nsub; 
-  int accruals1, accruals2, accruals3, totalAccruals; 
-  int events1e1, events2e1, events3e1, totalEventse1; 
-  int events1e2, events2e2, events3e2, totalEventse2; 
+
+
+  // declare variables
+  int i, iter, j, k, h, nevents1, nevents2, nstages, nsub;
+  int accruals1, accruals2, accruals3, totalAccruals;
+  int events1e1, events2e1, events3e1, totalEventse1;
+  int events1e2, events2e2, events3e2, totalEventse2;
   int dropouts1e1, dropouts2e1, dropouts3e1, totalDropoutse1;
   int dropouts1e2, dropouts2e2, dropouts3e2, totalDropoutse2;
   int index1=0, index2=0;
-  
+
   double enrollt, u, u1, u2, time;
-  double uscore13, uscore23, uscore12; 
+  double uscore13, uscore23, uscore12;
   double vscore13, vscore23, vscore12;
-  
-  
+
+
   // maximum number of subjects to enroll
   int m = accrualTime.size();
   double s = 0;
@@ -4115,52 +4114,52 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
     }
   }
   int n = floor(s + 0.5);
-  
-  
+
+
   // subject-level raw data set for one simulation
-  IntegerVector stratum(n), treatmentGroup(n), sortedIndex(n), 
+  IntegerVector stratum(n), treatmentGroup(n), sortedIndex(n),
   stratumSorted(n), treatmentGroupSorted(n);
-  
-  NumericVector arrivalTime(n), survivalTime1(n), survivalTime2(n), 
-  dropoutTime1(n), dropoutTime2(n), timeUnderObservation1(n), 
-  timeUnderObservation2(n), totalTime1(n), totalTime2(n), 
+
+  NumericVector arrivalTime(n), survivalTime1(n), survivalTime2(n),
+  dropoutTime1(n), dropoutTime2(n), timeUnderObservation1(n),
+  timeUnderObservation2(n), totalTime1(n), totalTime2(n),
   totalt1(n), totalt2(n), observationTime(n), timeUnderObservationSorted(n);
-  
-  LogicalVector event1(n), event2(n), dropoutEvent1(n), dropoutEvent2(n), 
+
+  LogicalVector event1(n), event2(n), dropoutEvent1(n), dropoutEvent2(n),
   event1ac(n), event2ac(n), sub(n), eventSorted(n);
-  
-  
-  // stratum information 
-  IntegerVector b1(nstrata), b2(nstrata), b3(nstrata); 
-  IntegerVector n1(nstrata), n2(nstrata), n3(nstrata); 
+
+
+  // stratum information
+  IntegerVector b1(nstrata), b2(nstrata), b3(nstrata);
+  IntegerVector n1(nstrata), n2(nstrata), n3(nstrata);
   IntegerVector nt13(nstrata), nt23(nstrata), nt12(nstrata);
 
   // original copy of n1 and n2 when looping over the endpoints
-  IntegerVector n1x(nstrata), n2x(nstrata), n3x(nstrata); 
+  IntegerVector n1x(nstrata), n2x(nstrata), n3x(nstrata);
 
   // hazardRatioH0 adjusted at risk for calculating the log-rank statistic
   IntegerVector n13a(nstrata), n23a(nstrata), n12a(nstrata);
   IntegerVector nt13a(nstrata), nt23a(nstrata), nt12a(nstrata);
-  
+
   NumericVector km13(nstrata), km23(nstrata), km12(nstrata);
   NumericVector w13(nstrata), w23(nstrata), w12(nstrata);
   NumericVector cumStratumFraction = cumsum(stratumFraction);
-  
+
   // within-stratum hazard rates
-  NumericVector lam1e1(nintervals), lam2e1(nintervals), lam3e1(nintervals); 
-  NumericVector lam1e2(nintervals), lam2e2(nintervals), lam3e2(nintervals); 
+  NumericVector lam1e1(nintervals), lam2e1(nintervals), lam3e1(nintervals);
+  NumericVector lam1e2(nintervals), lam2e2(nintervals), lam3e2(nintervals);
   NumericVector gam1e1(nintervals), gam2e1(nintervals), gam3e1(nintervals);
   NumericVector gam1e2(nintervals), gam2e2(nintervals), gam3e2(nintervals);
-  
-  
+
+
   // stage-wise information
   IntegerVector niter(kMax);
   NumericVector analysisTime(kMax);
-  
-  
+
+
   // cache for the patient-level raw data to extract
   int nrow1 = n*kMax*maxNumberOfRawDatasetsPerStage;
-  
+
   IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
   IntegerVector stageNumberx = IntegerVector(nrow1, NA_INTEGER);
   IntegerVector subjectIdx = IntegerVector(nrow1, NA_INTEGER);
@@ -4178,11 +4177,11 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   LogicalVector event2x = LogicalVector(nrow1, NA_LOGICAL);
   LogicalVector dropoutEvent1x = LogicalVector(nrow1, NA_LOGICAL);
   LogicalVector dropoutEvent2x = LogicalVector(nrow1, NA_LOGICAL);
-  
-  
+
+
   // cache for the simulation-level summary data to extract
   int nrow2 = kMax*maxNumberOfIterations*2;
-  
+
   IntegerVector iterationNumbery = IntegerVector(nrow2, NA_INTEGER);
   LogicalVector eventsNotAchievedy = LogicalVector(nrow2, NA_LOGICAL);
   IntegerVector stageNumbery = IntegerVector(nrow2, NA_INTEGER);
@@ -4191,7 +4190,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   IntegerVector accruals2y = IntegerVector(nrow2, NA_INTEGER);
   IntegerVector accruals3y = IntegerVector(nrow2, NA_INTEGER);
   IntegerVector totalAccrualsy = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector endpointy = IntegerVector(nrow2, NA_INTEGER);  
+  IntegerVector endpointy = IntegerVector(nrow2, NA_INTEGER);
   IntegerVector events1y = IntegerVector(nrow2, NA_INTEGER);
   IntegerVector events2y = IntegerVector(nrow2, NA_INTEGER);
   IntegerVector events3y = IntegerVector(nrow2, NA_INTEGER);
@@ -4203,31 +4202,29 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   NumericVector logRankStatistic13y = NumericVector(nrow2, NA_REAL);
   NumericVector logRankStatistic23y = NumericVector(nrow2, NA_REAL);
   NumericVector logRankStatistic12y = NumericVector(nrow2, NA_REAL);
-  
-  
+
+
   // set up random seed
-  if (seed==NA_INTEGER) {
-    set_seed(std::time(0));
-  } else {
+  if (seed != NA_INTEGER) {
     set_seed(seed);
   }
-  
-  
-  // simulation 
+
+
+  // simulation
   for (iter=0; iter<maxNumberOfIterations; iter++) {
-    
+
     b1.fill(allocation1);
     b2.fill(allocation2);
     b3.fill(allocation3);
-    
+
     enrollt = 0;
     for (i=0; i<n; i++) {
-      
+
       // generate accrual time
       u = R::runif(0,1);
-      enrollt = qtpwexpcpp(u, accrualTime, accrualIntensity, enrollt);
+      enrollt = qtpwexpcpp1(u, accrualTime, accrualIntensity, enrollt);
       arrivalTime[i] = enrollt;
-      
+
       // generate stratum information
       u = R::runif(0,1);
       for (j=0; j<nstrata; j++) {
@@ -4236,7 +4233,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           break;
         }
       }
-      
+
       // stratified block randomization
       u = R::runif(0,1);
       if (u <= b1[j]/(b1[j]+b2[j]+b3[j]+0.0)) {
@@ -4249,73 +4246,73 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
         treatmentGroup[i] = 3;
         b3[j]--;
       }
-      
+
       // start a new block after depleting the current block
       if (b1[j]+b2[j]+b3[j]==0) {
         b1[j] = allocation1;
         b2[j] = allocation2;
         b3[j] = allocation3;
       }
-      
+
       // stratum-specific hazard rates for event and dropout
       Range jj = Range(j*nintervals, (j+1)*nintervals-1);
-      
+
       lam1e1 = lambda1e1d[jj];
       lam2e1 = lambda2e1d[jj];
       lam3e1 = lambda3e1d[jj];
-      
+
       lam1e2 = lambda1e2x[jj];
       lam2e2 = lambda2e2x[jj];
       lam3e2 = lambda3e2x[jj];
-      
+
       gam1e1 = gamma1e1d[jj];
       gam2e1 = gamma2e1d[jj];
       gam3e1 = gamma3e1d[jj];
-      
+
       gam1e2 = gamma1e2x[jj];
       gam2e2 = gamma2e2x[jj];
       gam3e2 = gamma3e2x[jj];
-      
+
       // standard bivariate normal with correlation rho
       u1 = R::rnorm(0,1);
       u2 = R::rnorm(rho*u1, sqrt(1-rho*rho));
-      
+
       // transform to uniform
       u1 = R::pnorm(u1, 0, 1, 1, 0);
       u2 = R::pnorm(u2, 0, 1, 1, 0);
-      
+
       // generate survival times
       if (treatmentGroup[i]==1) {
-        survivalTime1[i] = qtpwexpcpp(u1, piecewiseSurvivalTime, lam1e1, 0);
-        survivalTime2[i] = qtpwexpcpp(u2, piecewiseSurvivalTime, lam1e2, 0);
+        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam1e1, 0);
+        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam1e2, 0);
       } else if (treatmentGroup[i]==2) {
-        survivalTime1[i] = qtpwexpcpp(u1, piecewiseSurvivalTime, lam2e1, 0);
-        survivalTime2[i] = qtpwexpcpp(u2, piecewiseSurvivalTime, lam2e2, 0);
+        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam2e1, 0);
+        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam2e2, 0);
       } else {
-        survivalTime1[i] = qtpwexpcpp(u1, piecewiseSurvivalTime, lam3e1, 0);
-        survivalTime2[i] = qtpwexpcpp(u2, piecewiseSurvivalTime, lam3e2, 0);
+        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam3e1, 0);
+        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam3e2, 0);
       }
       // PFS includes death
       survivalTime1[i] = std::min(survivalTime1[i], survivalTime2[i]);
-      
-      
+
+
       // generate dropout times
       u1 = R::runif(0,1);
       u2 = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        dropoutTime1[i] = qtpwexpcpp(u1, piecewiseSurvivalTime, gam1e1, 0);
-        dropoutTime2[i] = qtpwexpcpp(u2, piecewiseSurvivalTime, gam1e2, 0);
+        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam1e1, 0);
+        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam1e2, 0);
       } else if (treatmentGroup[i]==2) {
-        dropoutTime1[i] = qtpwexpcpp(u1, piecewiseSurvivalTime, gam2e1, 0);
-        dropoutTime2[i] = qtpwexpcpp(u2, piecewiseSurvivalTime, gam2e2, 0);
+        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam2e1, 0);
+        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam2e2, 0);
       } else {
-        dropoutTime1[i] = qtpwexpcpp(u1, piecewiseSurvivalTime, gam3e1, 0);
-        dropoutTime2[i] = qtpwexpcpp(u2, piecewiseSurvivalTime, gam3e2, 0);
+        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam3e1, 0);
+        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam3e2, 0);
       }
-      // whatever censors OS will also censors PFS
+      // whatever censors OS will also censor PFS
       dropoutTime1[i] = std::min(dropoutTime1[i], dropoutTime2[i]);
-      
-      
+
+
       // initial observed time and event indicator
       if (fixedFollowup) { // fixed follow-up design
         if (survivalTime1[i] < dropoutTime1[i] &&
@@ -4344,10 +4341,10 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           dropoutEvent1[i] = 1;
         }
       }
-      
+
       totalTime1[i] = arrivalTime[i] + timeUnderObservation1[i];
-      
-      
+
+
       if (fixedFollowup) { // fixed follow-up design
         if (survivalTime2[i] < dropoutTime2[i] &&
             survivalTime2[i] < followupTime) {
@@ -4375,26 +4372,26 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           dropoutEvent2[i] = 1;
         }
       }
-      
+
       totalTime2[i] = arrivalTime[i] + timeUnderObservation2[i];
-      
+
     }
-    
-    
-    
-    
+
+
+
+
     // find the analysis time for each stage
     if (useEvents) {
       event1ac = event1 & ((treatmentGroup==1) | (treatmentGroup==3));
       nevents1 = sum(event1ac);
       totalt1 = stl_sort(totalTime1[event1ac]);
-      
+
       event2ac = event2 & ((treatmentGroup==1) | (treatmentGroup==3));
       nevents2 = sum(event2ac);
       totalt2 = stl_sort(totalTime2[event2ac]);
-      
+
       int j1 = kMaxe1x, j2 = kMax - kMaxe1x;
-      
+
       // PFS looks
       if (kMaxe1x > 0) {
         for (j1=0; j1<kMaxe1x; j1++) {
@@ -4402,7 +4399,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
             break;
           }
         }
-        
+
         if (j1==kMaxe1x) { // total number of PFS events exceeds planned
           for (k=0; k<kMaxe1x; k++) {
             analysisTime[k] = totalt1[plannedEvents[k]-1] + 1e-12;
@@ -4417,17 +4414,17 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           }
         }
       }
-      
+
       // OS looks
       NumericVector analysisTime2(kMax - kMaxe1x);
-      
+
       if (kMax > kMaxe1x) {
         for (j2=0; j2<kMax-kMaxe1x; j2++) {
           if (plannedEvents[kMaxe1x+j2] >= nevents2) {
             break;
           }
         }
-        
+
         if (j2==kMax-kMaxe1x) { // total number of OS events exceeds planned
           for (k=0; k<kMax-kMaxe1x; k++) {
             analysisTime2[k] = totalt2[plannedEvents[kMaxe1x+k]-1] + 1e-12;
@@ -4442,7 +4439,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           }
         }
       }
-      
+
       // determine the number of looks and timing of the looks
       if (kMaxe1x == 0) { // all looks based on OS events
         if (j2 == kMax - kMaxe1x) {
@@ -4450,7 +4447,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
         } else {
           nstages = j2 + 1;
         }
-        
+
         for (k=0; k<nstages; k++) {
           analysisTime[k] = analysisTime2[k];
         }
@@ -4476,7 +4473,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           }
         }
       }
-      
+
       // whether the target PFS and OS events are achieved
       if (kMaxe1x > 0 && nevents1 < plannedEvents[kMaxe1x-1]) {
         eventsNotAchieved = 1;
@@ -4490,33 +4487,33 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
       analysisTime = clone(plannedTime);
       eventsNotAchieved = 0;
     }
-    
-    
-    
+
+
+
     // construct the log-rank test statistic at each stage
     for (k=0; k<nstages; k++) {
       time = analysisTime[k];
-      
+
       n1x.fill(0);  // number of subjects in each stratum by treatment
       n2x.fill(0);
       n3x.fill(0);
-      
+
       events1e1 = 0;
       events2e1 = 0;
       events3e1 = 0;
-      
+
       dropouts1e1 = 0;
       dropouts2e1 = 0;
       dropouts3e1 = 0;
-      
+
       events1e2 = 0;
       events2e2 = 0;
       events3e2 = 0;
-      
+
       dropouts1e2 = 0;
       dropouts2e2 = 0;
       dropouts3e2 = 0;
-      
+
       // censor at analysis time
       for (i=0; i<n; i++) {
         h = stratum[i]-1;
@@ -4525,7 +4522,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           timeUnderObservation1[i] = time - arrivalTime[i];
           event1[i] = 0;
           dropoutEvent1[i] = 0;
-          
+
           timeUnderObservation2[i] = time - arrivalTime[i];
           event2[i] = 0;
           dropoutEvent2[i] = 0;
@@ -4537,8 +4534,8 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           } else {
             n3x[h]++;
           }
-          
-          
+
+
           // censored time for endpoint 1
           if (fixedFollowup) {
             if (arrivalTime[i] + survivalTime1[i] < time &&
@@ -4581,15 +4578,15 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
               dropoutEvent1[i] = 0;
             }
           }
-          
+
           if (treatmentGroup[i]==1 && event1[i]) events1e1++;
           if (treatmentGroup[i]==2 && event1[i]) events2e1++;
           if (treatmentGroup[i]==3 && event1[i]) events3e1++;
           if (treatmentGroup[i]==1 && dropoutEvent1[i]) dropouts1e1++;
           if (treatmentGroup[i]==2 && dropoutEvent1[i]) dropouts2e1++;
           if (treatmentGroup[i]==3 && dropoutEvent1[i]) dropouts3e1++;
-          
-          
+
+
           // censored time for endpoint 2
           if (fixedFollowup) {
             if (arrivalTime[i] + survivalTime2[i] < time &&
@@ -4632,7 +4629,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
               dropoutEvent2[i] = 0;
             }
           }
-          
+
           if (treatmentGroup[i]==1 && event2[i]) events1e2++;
           if (treatmentGroup[i]==2 && event2[i]) events2e2++;
           if (treatmentGroup[i]==3 && event2[i]) events3e2++;
@@ -4641,8 +4638,8 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           if (treatmentGroup[i]==3 && dropoutEvent2[i]) dropouts3e2++;
         }
       }
-      
-      
+
+
       // add raw data to output
       if (niter[k] < maxNumberOfRawDatasetsPerStage) {
         for (i=0; i<n; i++) {
@@ -4653,45 +4650,45 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           stratumx[index1] = stratum[i];
           treatmentGroupx[index1] = treatmentGroup[i];
           observationTimex[index1] = observationTime[i];
-          
+
           survivalTime1x[index1] = survivalTime1[i];
           dropoutTime1x[index1] = dropoutTime1[i];
           timeUnderObservation1x[index1] = timeUnderObservation1[i];
           event1x[index1] = event1[i];
           dropoutEvent1x[index1] = dropoutEvent1[i];
-          
+
           survivalTime2x[index1] = survivalTime2[i];
           dropoutTime2x[index1] = dropoutTime2[i];
           timeUnderObservation2x[index1] = timeUnderObservation2[i];
           event2x[index1] = event2[i];
           dropoutEvent2x[index1] = dropoutEvent2[i];
-          
+
           index1++;
         }
-        
+
         // update the number of stage k dataset to extract
         niter[k]++;
       }
-      
-      
+
+
       // number of accrued patients and total number of events
       accruals1 = sum(n1x);
       accruals2 = sum(n2x);
       accruals3 = sum(n3x);
       totalAccruals = accruals1 + accruals2 + accruals3;
-      
+
       totalEventse1 = events1e1 + events2e1 + events3e1;
       totalDropoutse1 = dropouts1e1 + dropouts2e1 + dropouts3e1;
-      
+
       totalEventse2 = events1e2 + events2e2 + events3e2;
       totalDropoutse2 = dropouts1e2 + dropouts2e2 + dropouts3e2;
-      
-      
+
+
       for (int endpoint=1; endpoint<=2; endpoint++) {
         n1 = clone(n1x);
         n2 = clone(n2x);
         n3 = clone(n3x);
-        
+
         double hazardRatioH013, hazardRatioH023, hazardRatioH012;
         if (endpoint == 1) {
           hazardRatioH013 = hazardRatioH013e1;
@@ -4702,23 +4699,23 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           hazardRatioH023 = hazardRatioH023e2;
           hazardRatioH012 = hazardRatioH012e2;
         }
-        
-        
+
+
         // order the data by time under observation
         if (endpoint == 1) {
           timeUnderObservationSorted = stl_sort(timeUnderObservation1);
-          sortedIndex = match(timeUnderObservationSorted, 
+          sortedIndex = match(timeUnderObservationSorted,
                               timeUnderObservation1);
           sortedIndex = sortedIndex - 1;
           eventSorted = event1[sortedIndex];
         } else {
           timeUnderObservationSorted = stl_sort(timeUnderObservation2);
-          sortedIndex = match(timeUnderObservationSorted, 
+          sortedIndex = match(timeUnderObservationSorted,
                               timeUnderObservation2);
           sortedIndex = sortedIndex - 1;
           eventSorted = event2[sortedIndex];
         }
-        
+
         stratumSorted = stratum[sortedIndex];
         treatmentGroupSorted = treatmentGroup[sortedIndex];
         sub = (timeUnderObservationSorted > 0);
@@ -4726,7 +4723,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
         stratumSorted = stratumSorted[sub];
         treatmentGroupSorted = treatmentGroupSorted[sub];
         nsub = eventSorted.size();
-        
+
         // calculate the stratified log-rank test
         uscore13 = 0;
         vscore13 = 0;
@@ -4742,43 +4739,43 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           nt13[h] = n1[h] + n3[h];
           nt23[h] = n2[h] + n3[h];
           nt12[h] = n1[h] + n2[h];
-          
+
           n13a[h] = n1[h]*hazardRatioH013;
           n23a[h] = n2[h]*hazardRatioH023;
           n12a[h] = n1[h]*hazardRatioH012;
-          
+
           nt13a[h] = n13a[h] + n3[h];
           nt23a[h] = n23a[h] + n3[h];
           nt12a[h] = n12a[h] + n2[h];
-          
-          
-          if (eventSorted[i] && (treatmentGroupSorted[i]==1 || 
-              treatmentGroupSorted[i]==3)) { 
+
+
+          if (eventSorted[i] && (treatmentGroupSorted[i]==1 ||
+              treatmentGroupSorted[i]==3)) {
             w13[h] = pow(km13[h], rho1)*pow(1-km13[h], rho2);
-            uscore13 += w13[h]*((treatmentGroupSorted[i]==1) 
+            uscore13 += w13[h]*((treatmentGroupSorted[i]==1)
                                   - n13a[h]/(nt13a[h]+0.0));
             vscore13 += w13[h]*w13[h]*n13a[h]*n3[h]/(nt13a[h]*nt13a[h]+0.0);
             km13[h] *= (1-1/(nt13[h]+0.0)); // update km estimate
           }
-          
-          if (eventSorted[i] && (treatmentGroupSorted[i]==2 || 
-              treatmentGroupSorted[i]==3)) { 
+
+          if (eventSorted[i] && (treatmentGroupSorted[i]==2 ||
+              treatmentGroupSorted[i]==3)) {
             w23[h] = pow(km23[h], rho1)*pow(1-km23[h], rho2);
-            uscore23 += w23[h]*((treatmentGroupSorted[i]==2) 
+            uscore23 += w23[h]*((treatmentGroupSorted[i]==2)
                                   - n23a[h]/(nt23a[h]+0.0));
             vscore23 += w23[h]*w23[h]*n23a[h]*n3[h]/(nt23a[h]*nt23a[h]+0.0);
             km23[h] *= (1-1/(nt23[h]+0.0)); // update km estimate
           }
-          
-          if (eventSorted[i] && (treatmentGroupSorted[i]==1 || 
-              treatmentGroupSorted[i]==2)) { 
+
+          if (eventSorted[i] && (treatmentGroupSorted[i]==1 ||
+              treatmentGroupSorted[i]==2)) {
             w12[h] = pow(km12[h], rho1)*pow(1-km12[h], rho2);
-            uscore12 += w12[h]*((treatmentGroupSorted[i]==1) 
+            uscore12 += w12[h]*((treatmentGroupSorted[i]==1)
                                   - n12a[h]/(nt12a[h]+0.0));
             vscore12 += w12[h]*w12[h]*n12a[h]*n2[h]/(nt12a[h]*nt12a[h]+0.0);
             km12[h] *= (1-1/(nt12[h]+0.0)); // update km estimate
           }
-          
+
           // reduce the risk set
           if (treatmentGroupSorted[i]==1) {
             n1[h]--;
@@ -4788,10 +4785,10 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
             n3[h]--;
           }
         }
-        
-        
-        
-        // add summary data to output  
+
+
+
+        // add summary data to output
         iterationNumbery[index2] = iter+1;
         eventsNotAchievedy[index2] = eventsNotAchieved;
         stageNumbery[index2] = k+1;
@@ -4801,7 +4798,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
         accruals3y[index2] = accruals3;
         totalAccrualsy[index2] = totalAccruals;
         endpointy[index2] = endpoint;
-        
+
         if (endpoint == 1) {
           events1y[index2] = events1e1;
           events2y[index2] = events2e1;
@@ -4821,20 +4818,20 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           dropouts3y[index2] = dropouts3e2;
           totalDropoutsy[index2] = totalDropoutse2;
         }
-        
+
         logRankStatistic13y[index2] = uscore13/sqrt(vscore13);
         logRankStatistic23y[index2] = uscore23/sqrt(vscore23);
         logRankStatistic12y[index2] = uscore12/sqrt(vscore12);
-        
+
         index2++;
-        
+
       } // end of endpoint
-      
+
     } // end of stage
-    
+
   } // end of iteration
-  
-  
+
+
   // simulation summary data set
   LogicalVector sub2 = !is_na(iterationNumbery);
   iterationNumbery = iterationNumbery[sub2];
@@ -4857,7 +4854,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   logRankStatistic13y = logRankStatistic13y[sub2];
   logRankStatistic23y = logRankStatistic23y[sub2];
   logRankStatistic12y = logRankStatistic12y[sub2];
-  
+
   DataFrame sumdata = DataFrame::create(
     _["iterationNumber"] = iterationNumbery,
     _["eventsNotAchieved"] = eventsNotAchievedy,
@@ -4879,10 +4876,10 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
     _["logRankStatistic13"] = logRankStatistic13y,
     _["logRankStatistic23"] = logRankStatistic23y,
     _["logRankStatistic12"] = logRankStatistic12y);
-  
-  
+
+
   List result;
-  
+
   if (maxNumberOfRawDatasetsPerStage > 0) {
     LogicalVector sub1 = !is_na(iterationNumberx);
     iterationNumberx = iterationNumberx[sub1];
@@ -4902,7 +4899,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
     timeUnderObservation2x = timeUnderObservation2x[sub1];
     event2x = event2x[sub1];
     dropoutEvent2x = dropoutEvent2x[sub1];
-    
+
     DataFrame rawdata = DataFrame::create(
       _["iterationNumber"] = iterationNumberx,
       _["stageNumber"] = stageNumberx,
@@ -4921,12 +4918,12 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
       _["timeUnderObservation2"] = timeUnderObservation2x,
       _["event2"] = event2x,
       _["dropoutEvent2"] = dropoutEvent2x);
-    
+
     result = List::create(_["sumdata"] = sumdata,
                           _["rawdata"] = rawdata);
   } else {
     result = List::create(_["sumdata"] = sumdata);
   }
-  
+
   return result;
 }
