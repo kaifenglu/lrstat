@@ -9,14 +9,18 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
 ```
 
-This R Markdown document compares the direct approximation method for sample size calculation of survival trials as implemented in the lrstat package with the Schoenfeld method for sample size calculation of survival trials. First we load the lrstat package. 
-```{r}
+```{r setup}
 library(lrstat)
 ```
+
+This R Markdown document compares the direct approximation method for sample size calculation of survival trials as implemented in the lrstat package with the Schoenfeld method for sample size calculation of survival trials. 
 
 Consider a fixed design with $\pi_1=0.2$ for the active treatment group and $\pi_2=0.4$ for the control group at month 12, an enrollment period lasting 12 months to enroll 200 patients, and a target number of events of 40.
 
@@ -40,7 +44,7 @@ hazardRatio = log(1-0.2)/log(1-0.4)
 pnorm(abs(log(hazardRatio))*sqrt(40/4) - qnorm(0.975))
 ```
 
-To see which method yields a more accurate power estimate, we run a lrsim function, which reports a power of 72.2% with 10000 replications. 
+To see which method yields a more accurate power estimate, we run a lrsim function, which reports a power of 71.2% with 10000 replications. 
 ```{r}
 lrsim(kMax = 1, criticalValues = 1.96, 
       accrualIntensity = 200/12, 

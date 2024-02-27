@@ -9,18 +9,22 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(lrstat)
 ```
 
 This R Markdown document illustrates the sample size calculation for a delayed effect model using the lrsamplesize function from lrstat and verifies the result using the simulation tool.
 
 Suppose that the survival distribution of the control group is exponential with a median survival time of 13 months. The survival distribution of the active treatment group is piecewise exponential with the same hazard rate as the control group for the first 6 months and with a hazard ratio of 0.58 afterwards. The accrual has a ramp-up period of 9 months to reach 26 patients per months thereafter, and the total duration of the enrollment is 22 months. In addition, the annual drop rate is 5% for each treatment group.
 
-We would like to know the total number of events needed to achieve 80% power for a two-stage group sequential trial with O'Brien-Fleming spending function and with the interim analysis to be conducted after observing 80% of the target total number of events. First we load the lrstat package:
-```{r}
-library(lrstat)
-```
+We would like to know the total number of events needed to achieve 80% power for a two-stage group sequential trial with O'Brien-Fleming spending function and with the interim analysis to be conducted after observing 80% of the target total number of events.
 
 We use the lrsamplesize function to obtain the follow-up time and the target number of events.
 ```{r}
@@ -37,7 +41,7 @@ lrsamplesize(beta = 0.2, kMax = 2,
              accrualDuration = 22, followupTime = NA)$resultsUnderH1
 ```
 
-Thus we need to observe 316 events with 468 subjects, and the maximum study duration is 41.7 months with an expected study duration of 37 months.
+Thus we need to observe 315 events with 468 subjects, and the maximum study duration is 41.5 months with an expected study duration of 37 months.
 
 To verify this requirement, we resort to the lrsim function.
 ```{r}
@@ -50,7 +54,7 @@ lrsim(kMax = 2, criticalValues = c(2.250, 2.025),
       gamma1 = -log(1-0.05)/12, 
       gamma2 = -log(1-0.05)/12,
       accrualDuration = 22,
-      plannedEvents = c(253, 316), 
+      plannedEvents = c(252, 315), 
       maxNumberOfIterations = 10000, seed = 314159)
 ```
 

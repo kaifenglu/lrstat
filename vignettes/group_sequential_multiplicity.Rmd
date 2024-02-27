@@ -9,8 +9,15 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(lrstat)
 ```
 
 ## Background
@@ -28,7 +35,6 @@ This strategy ensures that the A/B comparison will be performed for a given endp
 The weights along the edges are chosen to ensure that (1) about 20% of alpha will be allocated to PFS and 80% of alpha will be allocated to OS once the two hypotheses in the preceding family are rejected, and (2) if the PFS hypothesis is rejected, the majority of alpha will be passed to the OS hypothesis in the same family. This can be verified using the code below:
 
 ```{r updategraph}
-library(lrstat)
 
 alpha = 0.025
 x = list(
