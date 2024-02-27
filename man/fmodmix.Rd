@@ -23,10 +23,11 @@ fmodmix(
 
 \item{parallel}{The matrix of parallel rejection set for the hypotheses.}
 
-\item{gamma}{The truncation parameters for each family.}
+\item{gamma}{The truncation parameters for each family. The truncation
+parameter for the last family is automatically set to 1.}
 
-\item{test}{The component multiple testing procedure. It is either "Holm"
-or "Hochberg", and it defaults to "Hochberg".}
+\item{test}{The component multiple testing procedure. Options include
+"holm", "hochberg", or "hommel". Defaults to "hommel".}
 
 \item{exhaust}{Whether to use alpha-exhausting component testing procedure
 for the last family with active hypotheses. It defaults to TRUE.}
@@ -42,10 +43,10 @@ logical restrictions.
 \examples{
 
 p = c(0.0194, 0.0068, 0.0271, 0.0088, 0.0370, 0.0018, 0.0814, 0.0066)
-family = matrix(c(1, 1, 0, 0, 0, 0, 0, 0, 
-                  0, 0, 1, 1, 0, 0, 0, 0, 
-                  0, 0, 0, 0, 1, 1, 0, 0, 
-                  0, 0, 0, 0, 0, 0, 1, 1), 
+family = matrix(c(1, 1, 0, 0, 0, 0, 0, 0,
+                  0, 0, 1, 1, 0, 0, 0, 0,
+                  0, 0, 0, 0, 1, 1, 0, 0,
+                  0, 0, 0, 0, 0, 0, 1, 1),
                 nrow=4, byrow=TRUE)
 
 serial = matrix(c(0, 0, 0, 0, 0, 0, 0, 0,
@@ -55,12 +56,12 @@ serial = matrix(c(0, 0, 0, 0, 0, 0, 0, 0,
                   0, 0, 1, 0, 0, 0, 0, 0,
                   0, 0, 0, 1, 0, 0, 0, 0,
                   0, 0, 0, 0, 1, 0, 0, 0,
-                  0, 0, 0, 0, 0, 1, 0, 0), 
+                  0, 0, 0, 0, 0, 1, 0, 0),
                 nrow=8, byrow=TRUE)
- 
+
 parallel = matrix(0, 8, 8)
 gamma = c(0.6, 0.6, 0.6, 1)
-fmodmix(p, family, serial, parallel, gamma, "hommel", 1)
+fmodmix(p, family, serial, parallel, gamma, test = "hommel", exhaust = 1)
 
 }
 \references{

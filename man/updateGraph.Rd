@@ -16,7 +16,7 @@ updateGraph(w, G, I, j)
 \item{j}{The hypothesis to remove from index set \code{I}.}
 }
 \value{
-A list containing the new vector of weights and the new
+A list containing the new vector of weights, the new
 transition matrix for the graph, and the new set of indices of yet
 to be rejected hypotheses.
 }
@@ -25,11 +25,11 @@ Updates the weights and transition matrix for graphical
 approaches.
 }
 \examples{
-updateGraph(w = c(0.5, 0.5, 0, 0), 
-            G = matrix(c(0, 0.5, 0.5, 0,  0.5, 0, 0, 0.5,  
-                         0, 1, 0, 0,  1, 0, 0, 0), 
-                       nrow=4, ncol=4, byrow=TRUE), 
-            I = c(1, 2, 3, 4), 
+updateGraph(w = c(0.5, 0.5, 0, 0),
+            G = matrix(c(0, 0.5, 0.5, 0,  0.5, 0, 0, 0.5,
+                         0, 1, 0, 0,  1, 0, 0, 0),
+                       nrow=4, ncol=4, byrow=TRUE),
+            I = c(1, 2, 3, 4),
             j = 1)
 
 }

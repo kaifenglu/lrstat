@@ -58,12 +58,12 @@ time interval by stratum for the active treatment group.}
 \item{lambda2}{A vector of hazard rates for the event in each analysis
 time interval by stratum for the control group.}
 
-\item{gamma1}{The hazard rate for exponential dropout. A vector of hazard
+\item{gamma1}{The hazard rate for exponential dropout, a vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the active treatment group.}
 
-\item{gamma2}{The hazard rate for exponential dropout. A vector of hazard
+\item{gamma2}{The hazard rate for exponential dropout, a vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the control group.}
@@ -87,7 +87,7 @@ Defaults to 300. Specify a larger number for better approximation.}
 
 \item{predictTarget}{The target of prediction.
 Set \code{predictTarget = 1} to predict the number of events only.
-Set \code{predictTarget = 2} (default) to predict the umber of events
+Set \code{predictTarget = 2} (default) to predict the number of events
 and log-rank score statistic mean and variance.
 Set \code{predictTarget = 3} to predict the number of events,
 log-rank score statistic mean and variance, and
@@ -103,8 +103,9 @@ A data frame containing the following variables if
 \item \code{nevents1}: The number of events in the active treatment group.
 \item \code{nevents2}: The number of events in the control group.
 \item \code{ndropouts}: The total number of dropouts.
-\item \code{ndropouts1}: The number of events for the active treatment group.
-\item \code{ndropouts2}: The number of events for the control group.
+\item \code{ndropouts1}: The number of dropouts in the active treatment
+group.
+\item \code{ndropouts2}: The number of dropouts in the control group.
 \item \code{nfmax}: The total number of subjects reaching maximum follow-up.
 \item \code{nfmax1}: The number of subjects reaching maximum follow-up in
 the active treatment group.
@@ -141,8 +142,8 @@ and variance of log hazard ratio estimate at given calendar times.
 # the end of 1 year.
 
 lrstat(time = c(22, 40), allocationRatioPlanned = 1,
-       accrualTime = seq(0, 9),
-       accrualIntensity = c(26/9*seq(1, 9), 26),
+       accrualTime = seq(0, 8),
+       accrualIntensity = 26/9*seq(1, 9),
        piecewiseSurvivalTime = c(0, 6),
        stratumFraction = c(0.2, 0.8),
        lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),

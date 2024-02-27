@@ -34,7 +34,8 @@ adaptDesign(
   typeBetaSpendingNew = "none",
   parameterBetaSpendingNew = NA_real_,
   userBetaSpendingNew = NA_real_,
-  spendingTimeNew = NA_real_
+  spendingTimeNew = NA_real_,
+  varianceRatio = 1
 )
 }
 \arguments{
@@ -53,7 +54,8 @@ the primary trial.}
 
 \item{IMax}{The maximum information of the primary trial. Must be
 provided if \code{futilityBounds} is missing and
-\code{typeBetaSpending} is not equal to "none".}
+\code{typeBetaSpending} is not equal to "none", or
+if conditional power calculation is desired.}
 
 \item{kMax}{The maximum number of stages of the primary trial.}
 
@@ -165,6 +167,9 @@ Cumulative beta spent up to each stage of the secondary trial.}
 \item{spendingTimeNew}{The error spending time of the secondary trial.
 Defaults to missing, in which case, it is the same as
 \code{informationRatesNew}.}
+
+\item{varianceRatio}{The ratio of the variance under H0 to the
+variance under H1.}
 }
 \value{
 An \code{adaptDesign} object with two list components:
@@ -178,12 +183,13 @@ and \code{MullerSchafer}.
 }
 \description{
 Obtains the conditional power for specified incremental
-information given the interim results, parameter value, and data-dependent
-changes in the error spending function and the number and spacing of
-interim looks. Conversely, obtain the incremental information needed
-to attain a specified conditional power given the interim results,
-parameter value, and data-dependent changes in the error spending
-function and the number and spacing of interim looks.
+information given the interim results, parameter value, and
+data-dependent changes in the error spending function, and the number
+and spacing of interim looks. Conversely, obtains the incremental
+information needed to attain a specified conditional power given
+the interim results, parameter value, and data-dependent changes
+in the error spending function, and the number and spacing of
+interim looks.
 }
 \examples{
 
@@ -191,8 +197,8 @@ function and the number and spacing of interim looks.
 delta = 6
 sigma = 17
 n = 282
-(des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
-                  alpha = 0.05, typeAlphaSpending = "sfHSD", 
+(des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
+                  alpha = 0.05, typeAlphaSpending = "sfHSD",
                   parameterAlphaSpending = -4))
 
 # interim look results
@@ -206,26 +212,26 @@ t = des1$byStageResults$informationRates
 
 # conditional power with sample size increase
 (des2 = adaptDesign(
-  betaNew = NA, INew = 420/(4*sigma1^2), 
-  L, zL, theta = delta1, 
-  IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
-  alpha = 0.05, typeAlphaSpending = "sfHSD", 
-  parameterAlphaSpending = -4))
-
-# Muller & Schafer (2001) method to design the secondary trial: 
-# 3-look gamma(-2) spending with 84\% power at delta = 4.5 and sigma = 20
-(des2 = adaptDesign(
-  betaNew = 0.16, INew = NA, 
+  betaNew = NA, INew = 420/(4*sigma1^2),
   L, zL, theta = delta1,
   IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
-  alpha = 0.05, typeAlphaSpending = "sfHSD", 
+  alpha = 0.05, typeAlphaSpending = "sfHSD",
+  parameterAlphaSpending = -4))
+
+# Muller & Schafer (2001) method to design the secondary trial:
+# 3-look gamma(-2) spending with 84\% power at delta = 4.5 and sigma = 20
+(des2 = adaptDesign(
+  betaNew = 0.16, INew = NA,
+  L, zL, theta = delta1,
+  IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
+  alpha = 0.05, typeAlphaSpending = "sfHSD",
   parameterAlphaSpending = -4,
   MullerSchafer = TRUE,
-  kNew = 3, typeAlphaSpendingNew = "sfHSD", 
+  kNew = 3, typeAlphaSpendingNew = "sfHSD",
   parameterAlphaSpendingNew = -2))
-  
+
 # incremental sample size for sigma = 20
-(nNew = 4*sigma1^2*des2$secondaryTrial$overallResults$maxInformation)
+(nNew = 4*sigma1^2*des2$secondaryTrial$overallResults$information)
 
 }
 \references{

@@ -26,8 +26,9 @@ Defaults to 0 for exponential distribution.}
 \item{lambda}{A vector of hazard rates for the event. One for
 each analysis time interval.}
 
-\item{gamma}{The hazard rate for exponential dropout or a vector of hazard
-rates for piecewise exponential dropout. Defaults to 0 for no dropout.}
+\item{gamma}{The hazard rate for exponential dropout, or a vector of
+hazard rates for piecewise exponential dropout. Defaults to 0 for
+no dropout.}
 }
 \value{
 A value for the integrated probability of having an event
@@ -35,13 +36,14 @@ during an interval for a treatment group with specified
 piecewise exponential survival and dropout distributions.
 }
 \description{
-Obtains the integration of the probability of having an event
-during an interval. The specified analysis time interval can span more
-than one analysis time interval with constant hazard.
+Obtains the integration of the probability of having an
+event during an interval. The specified analysis time interval can span
+more than one analysis time interval with constant hazard.
 }
 \examples{
-# Piecewise exponential survival with hazard 0.0533 in the first 6 months,
-# and hazard 0.0309 thereafter, and 5\% dropout by the end of 1 year.
+# Piecewise exponential survival with hazard 0.0533 in the first 6
+# months, and hazard 0.0309 thereafter, and 5\% dropout by the end of
+# 1 year.
 
 pd(t1 = 1, t2 = 8, piecewiseSurvivalTime = c(0, 6),
    lambda = c(0.0533, 0.0309), gamma = -log(1-0.05)/12)

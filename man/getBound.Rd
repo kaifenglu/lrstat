@@ -2,7 +2,7 @@
 % Please edit documentation in R/wrappers.R
 \name{getBound}
 \alias{getBound}
-\title{Get efficacy boundaries for group sequential design}
+\title{Efficacy boundaries for group sequential design}
 \usage{
 getBound(
   k = NA,

@@ -72,21 +72,21 @@ graphical approaches based on weighted Bonferroni tests.
 }
 \examples{
 
-# Case study from Maurer & Bretz (2013) 
+# Case study from Maurer & Bretz (2013)
 
 fseqbon(
   w = c(0.5, 0.5, 0, 0),
-  G = matrix(c(0, 0.5, 0.5, 0,  0.5, 0, 0, 0.5,  
-               0, 1, 0, 0,  1, 0, 0, 0), 
+  G = matrix(c(0, 0.5, 0.5, 0,  0.5, 0, 0, 0.5,
+               0, 1, 0, 0,  1, 0, 0, 0),
              nrow=4, ncol=4, byrow=TRUE),
   alpha = 0.025,
   kMax = 3,
   typeAlphaSpending = rep("sfOF", 4),
   maxInformation = rep(1, 4),
-  p = matrix(c(0.0062, 0.017, 0.009, 0.13, 
-               0.0002, 0.0035, 0.002, 0.06), 
+  p = matrix(c(0.0062, 0.017, 0.009, 0.13,
+               0.0002, 0.0035, 0.002, 0.06),
              nrow=4, ncol=2),
-  information = matrix(c(rep(1/3, 4), rep(2/3, 4)), 
+  information = matrix(c(rep(1/3, 4), rep(2/3, 4)),
                        nrow=4, ncol=2))
 
 

@@ -52,16 +52,18 @@ Obtains the repeated p-values for a group sequential design.
 \examples{
 
 # Example 1: informationRates different from spendingTime
-repeatedPValue(kMax = 3, typeAlphaSpending = "sfOF", 
-               maxInformation = 800, 
+repeatedPValue(kMax = 3, typeAlphaSpending = "sfOF",
+               maxInformation = 800,
                p = c(0.2, 0.15, 0.1),
                information = c(529, 700, 800),
                spendingTime = c(0.6271186, 0.8305085, 1))
-               
+
 # Example 2: Maurer & Bretz (2013), current look is not the last look
-repeatedPValue(kMax = 3, typeAlphaSpending = "sfOF", 
-               p = matrix(c(0.0062, 0.017, 0.009, 0.13,
-                            0.0002, 0.0035, 0.002, 0.06), 
+repeatedPValue(kMax = 3, typeAlphaSpending = "sfOF",
+               p = matrix(c(0.0062, 0.017,
+                            0.009, 0.13,
+                            0.0002, 0.0035,
+                            0.002, 0.06),
                           nrow=4, ncol=2),
                information = c(1/3, 2/3))
 

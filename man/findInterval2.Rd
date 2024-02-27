@@ -16,10 +16,10 @@ A vector of \code{length(x)} with values in \code{0:N} where
 \code{N = length(v)}.
 }
 \description{
-The implementation of \code{findInterval()} in R from Advanced
-R by Hadley Wickham. Given a vector of non-decreasing breakpoints in v,
-find the interval containing each element of x; i.e., if
-\code{i <- findInterval2(x,v)}, for each index \code{j} in \code{x},
+The implementation of \code{findInterval()} in R from
+Advanced R by Hadley Wickham. Given a vector of non-decreasing
+breakpoints in v, find the interval containing each element of x; i.e.,
+if \code{i <- findInterval2(x,v)}, for each index \code{j} in \code{x},
 \code{v[i[j]] <= x[j] < v[i[j] + 1]}, where \code{v[0] := -Inf},
 \code{v[N+1] := +Inf}, and \code{N = length(v)}.
 }

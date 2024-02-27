@@ -2,28 +2,29 @@
 % Please edit documentation in R/wrappers.R
 \name{errorSpent}
 \alias{errorSpent}
-\title{Error spending functions}
+\title{Error spending}
 \usage{
 errorSpent(t, error, sf = "sfOF", sfpar = NA)
 }
 \arguments{
-\item{t}{A vector of information fractions.}
+\item{t}{A vector of spending times, typically equal to information
+fractions.}
 
-\item{error}{Total error to spend.}
+\item{error}{The total error to spend.}
 
-\item{sf}{Spending function. One of the following: "sfOF" for
+\item{sf}{The spending function. One of the following: "sfOF" for
 O'Brien-Fleming type spending function, "sfP" for Pocock type spending
 function, "sfKD" for Kim & DeMets spending function, and "sfHSD" for
 Hwang, Shi & DeCani spending function. Defaults to "sfOF".}
 
-\item{sfpar}{Parameter for the spending function. Corresponds to rho for
-"sfKD" and gamma for "sfHSD".}
+\item{sfpar}{The parameter for the spending function. Corresponds to
+rho for "sfKD" and gamma for "sfHSD".}
 }
 \value{
 A vector of errors spent up to the interim look.
 }
 \description{
-Obtains the error spent at the given information fractions
+Obtains the error spent at given spending times
 for the specified error spending function.
 }
 \examples{

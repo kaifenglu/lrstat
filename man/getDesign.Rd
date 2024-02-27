@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getDesign}
 \alias{getDesign}
-\title{Get group sequential design}
+\title{Power and sample size for a generic group sequential design}
 \usage{
 getDesign(
   beta = NA_real_,
@@ -21,7 +21,8 @@ getDesign(
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   userBetaSpending = NA_real_,
-  spendingTime = NA_real_
+  spendingTime = NA_real_,
+  varianceRatio = 1
 )
 }
 \arguments{
@@ -82,6 +83,9 @@ spent up to each stage.}
 \item{spendingTime}{A vector of length \code{kMax} for the error spending
 time at each analysis. Defaults to missing, in which case, it is the
 same as \code{informationRates}.}
+
+\item{varianceRatio}{The ratio of the variance under H0 to the
+variance under H1. Defaults to 1.}
 }
 \value{
 An S3 class \code{design} object with three components:
@@ -90,13 +94,16 @@ An S3 class \code{design} object with three components:
 \itemize{
 \item \code{overallReject}: The overall rejection probability.
 \item \code{alpha}: The overall significance level.
+\item \code{attainedAlpha}: The attained significance level, which is
+different from the overall significance level in the presence of
+futility stopping.
 \item \code{kMax}: The number of stages.
 \item \code{theta}: The parameter value.
-\item \code{maxInformation}: The maximum information.
+\item \code{information}: The maximum information.
 \item \code{expectedInformationH1}: The expected information under H1.
 \item \code{expectedInformationH0}: The expected information under H0.
 \item \code{drift}: The drift parameter, equal to
-\code{theta*sqrt(maxInformation)}.
+\code{theta*sqrt(information)}.
 \item \code{inflationFactor}: The inflation factor (relative to the
 fixed design).
 }
@@ -112,23 +119,37 @@ stopping.
 \item \code{cumulativeFutility}: The cumulative probability for futility
 stopping.
 \item \code{cumulativeAlphaSpent}: The cumulative alpha spent.
-\item \code{efficacyTheta}: The efficacy boundaries on the parameter scale.
-\item \code{futilityTheta}: The futility boundaries on the parameter scale.
+\item \code{efficacyTheta}: The efficacy boundaries on the parameter
+scale.
+\item \code{futilityTheta}: The futility boundaries on the parameter
+scale.
 \item \code{efficacyP}: The efficacy boundaries on the p-value scale.
 \item \code{futilityP}: The futility boundaries on the p-value scale.
 \item \code{information}: The cumulative information.
 \item \code{efficacyStopping}: Whether to allow efficacy stopping.
 \item \code{futilityStopping}: Whether to allow futility stopping.
+\item \code{rejectPerStageH0}: The probability for efficacy stopping
+under H0.
+\item \code{futilityPerStageH0}: The probability for futility stopping
+under H0.
+\item \code{cumulativeRejectionH0}: The cumulative probability for
+efficacy stopping under H0.
+\item \code{cumulativeFutilityH0}: The cumulative probability for
+futility stopping under H0.
 }
 \item \code{settings}: A list containing the following input parameters:
 \itemize{
 \item \code{typeAlphaSpending}: The type of alpha spending.
-\item \code{parameterAlphaSpending}: The parameter value for alpha spending.
+\item \code{parameterAlphaSpending}: The parameter value for alpha
+spending.
 \item \code{userAlphaSpending}: The user defined alpha spending.
 \item \code{typeBetaSpending}: The type of beta spending.
-\item \code{parameterBetaSpending}: The parameter value for beta spending.
+\item \code{parameterBetaSpending}: The parameter value for beta
+spending.
 \item \code{userBetaSpending}: The user defined beta spending.
 \item \code{spendingTime}: The error spending time at each analysis.
+\item \code{varianceRatio}: The ratio of the variance under H0
+to the variance under H1.
 \item \code{calculationTarget}: The calculation target, \code{beta} or
 \code{IMax}.
 }
@@ -143,17 +164,18 @@ stopping boundaries.
 \examples{
 
 # Example 1: obtain the maximum information given power
-getDesign(beta = 0.2, theta = -log(0.7),
-          kMax = 2, informationRates = c(0.5,1),
-          alpha = 0.025, typeAlphaSpending = "sfOF",
-          typeBetaSpending = "sfP")
-          
+(design1 <- getDesign(
+  beta = 0.2, theta = -log(0.7),
+  kMax = 2, informationRates = c(0.5,1),
+  alpha = 0.025, typeAlphaSpending = "sfOF",
+  typeBetaSpending = "sfP"))
 
 # Example 2: obtain power given the maximum information
-getDesign(IMax = 72.5, theta = -log(0.7),
-          kMax = 3, informationRates = c(0.5, 0.75, 1),
-          alpha = 0.025, typeAlphaSpending = "sfOF",
-          typeBetaSpending = "sfP")
+(design2 <- getDesign(
+  IMax = 72.5, theta = -log(0.7),
+  kMax = 3, informationRates = c(0.5, 0.75, 1),
+  alpha = 0.025, typeAlphaSpending = "sfOF",
+  typeBetaSpending = "sfP"))
 
 }
 \references{

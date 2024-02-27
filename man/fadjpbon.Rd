@@ -25,7 +25,7 @@ using weighted Bonferroni tests.
 pvalues <- matrix(c(0.01,0.005,0.015,0.022, 0.02,0.015,0.010,0.023),
                   nrow=2, ncol=4, byrow=TRUE)
 w <- c(0.5,0.5,0,0)
-g <- matrix(c(0,0,1,0,0,0,0,1,0,1,0,0,1,0,0,0), 
+g <- matrix(c(0,0,1,0,0,0,0,1,0,1,0,0,1,0,0,0),
             nrow=4, ncol=4, byrow=TRUE)
 fadjpbon(w, g, pvalues)
 

@@ -77,8 +77,8 @@ for stopping for futility at stages 1, ..., \code{kMax-1}. Defaults to
 \code{rep(-6, kMax-1)} if left unspecified.}
 
 \item{typeBetaSpending}{The type of beta spending. One of the following:
-"sfOF" for O'Brien-Fleming type spending function, "sfP" for Pocock type
-spending function, "sfKD" for Kim & DeMets spending function,
+"sfOF" for O'Brien-Fleming type spending function, "sfP" for Pocock
+type spending function, "sfKD" for Kim & DeMets spending function,
 "sfHSD" for Hwang, Shi & DeCani spending function, and "none" for no
 early futility stopping. Defaults to "none".}
 
@@ -114,12 +114,12 @@ time interval by stratum for the active treatment group.}
 \item{lambda2}{A vector of hazard rates for the event in each analysis
 time interval by stratum for the control group.}
 
-\item{gamma1}{The hazard rate for exponential dropout. A vector of hazard
+\item{gamma1}{The hazard rate for exponential dropout, a vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the active treatment group.}
 
-\item{gamma2}{The hazard rate for exponential dropout. A vector of hazard
+\item{gamma2}{The hazard rate for exponential dropout, a vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the control group.}
@@ -172,10 +172,12 @@ An S3 class \code{lrpower} object with 4 components:
 \item \code{numberOfDropouts}: The total number of dropouts.
 \item \code{numbeOfSubjects}: The total number of subjects.
 \item \code{studyDuration}: The total study duration.
+\item \code{information}: The maximum information.
 \item \code{expectedNumberOfEvents}: The expected number of events.
 \item \code{expectedNumberOfDropouts}: The expected number of dropouts.
 \item \code{expectedNumberOfSubjects}: The expected number of subjects.
 \item \code{expectedStudyDuration}: The expected study duration.
+\item \code{expectedInformation}: The expected information.
 \item \code{accrualDuration}: The accrual duration.
 \item \code{followupTime}: The follow-up duration.
 \item \code{fixedFollowup}: Whether a fixed follow-up design is used.
@@ -183,11 +185,8 @@ An S3 class \code{lrpower} object with 4 components:
 of weighted log-rank test.
 \item \code{rho2}: The second parameter of the Fleming-Harrington family
 of weighted log-rank test.
-\item \code{allocationRatioPlanned}: Allocation ratio for the active
-treatment versus control.
 \item \code{kMax}: The number of stages.
 \item \code{hazardRatioH0}: The hazard ratio under the null hypothesis.
-\item \code{etimateHazardRatio}: Whether to estimate the hazard ratio.
 \item \code{typeOfComputation}: The type of computation,
 either "direct" for the direct approximation method,
 or "schoenfeld" for the Schoenfeld method.
@@ -208,8 +207,10 @@ stopping.
 \item \code{numberOfDropouts}: The number of dropouts.
 \item \code{numberOfSubjects}: The number of subjects.
 \item \code{analysisTime}: The average time since trial start.
-\item \code{efficacyHR}: The efficacy boundaries on the hazard ratio scale.
-\item \code{futilityHR}: The futility boundaries on the hazard ratio scale.
+\item \code{efficacyHR}: The efficacy boundaries on the hazard ratio
+scale if \code{estimateHazardRatio}.
+\item \code{futilityHR}: The futility boundaries on the hazard ratio
+scale if \code{estimateHazardRatio}.
 \item \code{efficacyP}: The efficacy boundaries on the p-value scale.
 \item \code{futilityP}: The futility boundaries on the p-value scale.
 \item \code{information}: The cumulative information.
@@ -220,11 +221,11 @@ stopping.
 \item \code{settings}: A list containing the following input parameters:
 \code{typeAlphaSpending}, \code{parameterAlphaSpending},
 \code{userAlphaSpending}, \code{typeBetaSpending},
-\code{parameterBetaSpending}, \code{userBetaSpending},
+\code{parameterBetaSpending}, \code{allocationRatioPlanned},
 \code{accrualTime}, \code{accuralIntensity},
 \code{piecewiseSurvivalTime}, \code{stratumFraction},
-\code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2}, and
-\code{spendingTime}.
+\code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2},
+\code{estimateHazardRatio}, and \code{spendingTime}.
 \item \code{byTreatmentCounts}: A list containing the following counts by
 treatment group:
 \itemize{
@@ -242,16 +243,16 @@ the control group.
 the control group.
 \item \code{expectedNumberOfEvents1}: The expected number of events for
 the treatment group.
-\item \code{expectedNumberOfDropouts1}: The expected number of dropouts for
-the treatment group.
-\item \code{expectedNumberOfSubjects1}: The expected number of subjects for
-the treatment group.
+\item \code{expectedNumberOfDropouts1}: The expected number of dropouts
+for the treatment group.
+\item \code{expectedNumberOfSubjects1}: The expected number of subjects
+for the treatment group.
 \item \code{expectedNumberOfEvents2}: The expected number of events for
 control group.
-\item \code{expectedNumberOfDropouts2}: The expected number of dropouts for
-the control group.
-\item \code{expectedNumberOfSubjects2}: The expected number of subjects for
-the control group.
+\item \code{expectedNumberOfDropouts2}: The expected number of dropouts
+for the control group.
+\item \code{expectedNumberOfSubjects2}: The expected number of subjects
+for the control group.
 }
 }
 }
@@ -265,8 +266,8 @@ sample size in a two-group survival design.
 
 lrpower(kMax = 2, informationRates = c(0.8, 1),
         alpha = 0.025, typeAlphaSpending = "sfOF",
-        allocationRatioPlanned = 1, accrualTime = seq(0, 9),
-        accrualIntensity = c(26/9*seq(1, 9), 26),
+        allocationRatioPlanned = 1, accrualTime = seq(0, 8),
+        accrualIntensity = 26/9*seq(1, 9),
         piecewiseSurvivalTime = c(0, 6),
         stratumFraction = c(0.2, 0.8),
         lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),

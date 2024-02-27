@@ -123,12 +123,12 @@ time interval by stratum for the active treatment group.}
 \item{lambda2}{A vector of hazard rates for the event in each analysis
 time interval by stratum for the control group.}
 
-\item{gamma1}{The hazard rate for exponential dropout. A vector of hazard
+\item{gamma1}{The hazard rate for exponential dropout, a vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the active treatment group.}
 
-\item{gamma2}{The hazard rate for exponential dropout. A vector of hazard
+\item{gamma2}{The hazard rate for exponential dropout, a vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the control group.}
@@ -161,9 +161,9 @@ Defaults to "direct". Can use "Schoenfeld"
 under proportional hazards and conventional log-rank test.}
 
 \item{interval}{The interval to search for the solution of
-accrualDuration, followupDuration, or the proportionality constant
-of accrualIntensity. Defaults to \code{c(0.001, 240)}.
-Adjustment may be needed for non-monotone relationship with study power.}
+accrualDuration, followupTime, or the proportionality constant
+of accrualIntensity. Defaults to \code{c(0.001, 240)}. Adjustment
+may be needed for non-monotone relationship with study power.}
 
 \item{spendingTime}{A vector of length \code{kMax} for the error spending
 time at each analysis. Defaults to missing, in which case, it is the
@@ -197,8 +197,8 @@ rates in a two-group survival design.
 lrsamplesize(beta = 0.2, kMax = 2,
              informationRates = c(0.8, 1),
              alpha = 0.025, typeAlphaSpending = "sfOF",
-             accrualTime = seq(0, 9),
-             accrualIntensity = c(26/9*seq(1, 9), 26),
+             accrualTime = seq(0, 8),
+             accrualIntensity = 26/9*seq(1, 9),
              piecewiseSurvivalTime = c(0, 6),
              stratumFraction = c(0.2, 0.8),
              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
@@ -214,8 +214,8 @@ lrsamplesize(beta = 0.2, kMax = 2,
 lrsamplesize(beta = 0.2, kMax = 2,
              informationRates = c(0.8, 1),
              alpha = 0.025, typeAlphaSpending = "sfOF",
-             accrualTime = seq(0, 9),
-             accrualIntensity = c(26/9*seq(1, 9), 26),
+             accrualTime = seq(0, 8),
+             accrualIntensity = 26/9*seq(1, 9),
              piecewiseSurvivalTime = c(0, 6),
              stratumFraction = c(0.2, 0.8),
              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
@@ -232,8 +232,8 @@ lrsamplesize(beta = 0.2, kMax = 2,
 lrsamplesize(beta = 0.2, kMax = 2,
              informationRates = c(0.8, 1),
              alpha = 0.025, typeAlphaSpending = "sfOF",
-             accrualTime = seq(0, 9),
-             accrualIntensity = c(26/9*seq(1, 9), 26),
+             accrualTime = seq(0, 8),
+             accrualIntensity = 26/9*seq(1, 9),
              piecewiseSurvivalTime = c(0, 6),
              stratumFraction = c(0.2, 0.8),
              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),

@@ -46,12 +46,12 @@ active treatment group. One for each analysis time interval.}
 \item{lambda2}{A vector of hazard rates for the event for the
 control group. One for each analysis time interval.}
 
-\item{gamma1}{The hazard rate for exponential dropout or a vector of hazard
-rates for piecewise exponential dropout for the active treatment group.
-Defaults to 0 for no dropout.}
+\item{gamma1}{The hazard rate for exponential dropout, or a vector of
+hazard rates for piecewise exponential dropout for the active
+treatment group. Defaults to 0 for no dropout.}
 
-\item{gamma2}{The hazard rate for exponential dropout or a vector of hazard
-rates for piecewise exponential dropout for the control group.
+\item{gamma2}{The hazard rate for exponential dropout, or a vector of
+hazard rates for piecewise exponential dropout for the control group.
 Defaults to 0 for no dropout.}
 
 \item{accrualDuration}{Duration of the enrollment period.}
@@ -64,8 +64,8 @@ For variable followup,
 \code{maxFollowupTime = accrualDuration + minFollowupTime}.}
 }
 \value{
-A matrix of the number of patients having an event at the specified
-analysis times (row) for each treatment group (column).
+A matrix of the number of patients having an event at the
+specified analysis times (row) for each treatment group (column).
 }
 \description{
 Obtains the number of subjects having an event by given

@@ -24,8 +24,9 @@ Defaults to 0 for exponential distribution.}
 \item{lambda}{A vector of hazard rates for the event. One for
 each analysis time interval.}
 
-\item{gamma}{The hazard rate for exponential dropout or a vector of hazard
-rates for piecewise exponential dropout. Defaults to 0 for no dropout.}
+\item{gamma}{The hazard rate for exponential dropout, or a vector of
+hazard rates for piecewise exponential dropout. Defaults to 0 for
+no dropout.}
 }
 \value{
 A vector of probabilities of having an event at the specified
@@ -37,8 +38,9 @@ Obtains the probability of having an event at given analysis
 times.
 }
 \examples{
-# Piecewise exponential survival with hazard 0.0533 in the first 6 months,
-# and hazard 0.0309 thereafter, and 5\% dropout by the end of 1 year.
+# Piecewise exponential survival with hazard 0.0533 in the first 6
+# months, and hazard 0.0309 thereafter, and 5\% dropout by the end of
+# 1 year.
 
 pevent(time = c(3, 9), piecewiseSurvivalTime = c(0, 6),
        lambda = c(0.0533, 0.0309), gamma = -log(1-0.05)/12)

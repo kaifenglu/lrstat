@@ -4,15 +4,10 @@
 \alias{qtpwexp}
 \title{Quantile function of truncated piecewise exponential distribution}
 \usage{
-qtpwexp(
-  probability,
-  piecewiseSurvivalTime = 0,
-  lambda = 0.0578,
-  lowerBound = 0
-)
+qtpwexp(p, piecewiseSurvivalTime = 0, lambda = 0.0578, lowerBound = 0)
 }
 \arguments{
-\item{probability}{The scalar probability corresponding to the quantile.}
+\item{p}{The vector of probabilities.}
 
 \item{piecewiseSurvivalTime}{A vector that specifies the starting time of
 piecewise exponential survival time intervals. Must start with 0, e.g.,
@@ -27,15 +22,15 @@ each analysis time interval.}
 Defaults to 0 for no truncation.}
 }
 \value{
-The quantile x such that
-P(X > x | X > lowerBound) = 1 - probability.
+The quantile q such that
+P(X > q | X > lowerBound) = 1 - p.
 }
 \description{
-Obtains the quantile of a piecewise expoenential distribution
-given that it exceeds a specified lower bound.
+Obtains the quantile of a truncated piecewise exponential
+distribution.
 }
 \examples{
-qtpwexp(probability = c(0.3, 0.5), piecewiseSurvivalTime = c(0, 6, 9, 15),
+qtpwexp(p = c(0.205, 0.317), piecewiseSurvivalTime = c(0, 6, 9, 15),
         lambda = c(0.025, 0.04, 0.015, 0.007))
 
 }
