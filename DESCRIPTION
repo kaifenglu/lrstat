@@ -28,6 +28,8 @@ Description: Performs power and sample size calculation for non-proportional
   number and spacing or future looks. Finally, it offers various options for 
   adjusted p-values, including graphical and gatekeeping procedures.
 License: GPL (>= 2)
+URL: https://github.com/kaifenglu/lrstat
+BugReports: https://github.com/kaifenglu/lrstat/issues
 Imports: 
     Rcpp (>= 1.0.9), 
     mvtnorm (>= 1.1-3),
