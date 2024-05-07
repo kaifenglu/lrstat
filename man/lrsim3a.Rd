@@ -118,11 +118,11 @@ time to plan the analyses, \code{plannedEvents} should be missing.}
 \item{maxNumberOfIterations}{The number of simulation iterations.
 Defaults to 1000.}
 
-\item{maxNumberOfRawDatasetsPerStage}{The number of raw datasets per stage
-to extract. Defaults to 1.}
+\item{maxNumberOfRawDatasetsPerStage}{The number of raw datasets per
+stage to extract. Defaults to 1.}
 
 \item{seed}{The seed to reproduce the simulation results.
-The computer clock will be used if left unspecified,}
+The seed from the environment will be used if left unspecified,}
 }
 \value{
 A list with 2 components:
@@ -178,7 +178,7 @@ replications, containing the following variables:
 the subject.
 \item \code{survivalTime}: The underlying survival time for the subject.
 \item \code{dropoutTime}: The underlying dropout time for the subject.
-\item \code{timeUnderObservation}: The time under observation since
+\item \code{timeUnderObservation}: The time under observation
 since randomization for the subject.
 \item \code{event}: Whether the subject experienced the event.
 \item \code{dropoutEvent}: Whether the subject dropped out.
@@ -194,13 +194,13 @@ the analyses can be planned to occur at specified calendar times.
 \examples{
 
 sim1 = lrsim3a(
-  kMax = 3, 
-  allocation1 = 2, 
-  allocation2 = 2, 
+  kMax = 3,
+  allocation1 = 2,
+  allocation2 = 2,
   allocation3 = 1,
-  accrualTime = c(0, 8), 
+  accrualTime = c(0, 8),
   accrualIntensity = c(10, 28),
-  piecewiseSurvivalTime = 0, 
+  piecewiseSurvivalTime = 0,
   lambda1 = log(2)/12*0.60,
   lambda2 = log(2)/12*0.70,
   lambda3 = log(2)/12,
@@ -209,7 +209,7 @@ sim1 = lrsim3a(
   maxNumberOfIterations = 1000,
   maxNumberOfRawDatasetsPerStage = 1,
   seed = 314159)
-  
+
 head(sim1$sumdata)
 head(sim1$rawdata)
 

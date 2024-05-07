@@ -161,9 +161,9 @@ weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
 \item{plannedEvents}{The planned cumulative total number of PFS events at
-Look 1 to Look kMaxe1 for Arms A and C combined and the planned
-cumulative total number of OS events at Look kMaxe1+1 to Look kMax
-for Arms A and C combined.}
+Look 1 to Look \code{kMaxe1} for Arms A and C combined and the planned
+cumulative total number of OS events at Look \code{kMaxe1+1} to Look
+\code{kMax} for Arms A and C combined.}
 
 \item{plannedTime}{The calendar times for the analyses. To use calendar
 time to plan the analyses, \code{plannedEvents} should be missing.}
@@ -171,11 +171,11 @@ time to plan the analyses, \code{plannedEvents} should be missing.}
 \item{maxNumberOfIterations}{The number of simulation iterations.
 Defaults to 1000.}
 
-\item{maxNumberOfRawDatasetsPerStage}{The number of raw datasets per stage
-to extract. Defaults to 1.}
+\item{maxNumberOfRawDatasetsPerStage}{The number of raw datasets per
+stage to extract. Defaults to 1.}
 
 \item{seed}{The seed to reproduce the simulation results.
-The computer clock will be used if left unspecified,}
+The seed from the environment will be used if left unspecified,}
 }
 \value{
 A list with 2 components:
@@ -235,7 +235,7 @@ the subject.
 event endpoint 1 for the subject.
 \item \code{dropoutTime1}: The underlying dropout time for
 event endpoint 1 for the subject.
-\item \code{timeUnderObservation1}: The time under observation since
+\item \code{timeUnderObservation1}: The time under observation
 since randomization for event endpoint 1 for the subject.
 \item \code{event1}: Whether the subject experienced event endpoint 1.
 \item \code{dropoutEvent1}: Whether the subject dropped out for
@@ -244,7 +244,7 @@ endpoint 1.
 event endpoint 2 for the subject.
 \item \code{dropoutTime2}: The underlying dropout time for
 event endpoint 2 for the subject.
-\item \code{timeUnderObservation2}: The time under observation since
+\item \code{timeUnderObservation2}: The time under observation
 since randomization for event endpoint 2 for the subject.
 \item \code{event2}: Whether the subject experienced event endpoint 2.
 \item \code{dropoutEvent2}: Whether the subject dropped out for
@@ -254,8 +254,8 @@ endpoint 2.
 }
 \description{
 Performs simulation for two-endpoint three-arm group
-sequential trials based on weighted log-rank test. The first \code{kMaxe1}
-looks are driven by the total number of PFS events in Arm A
+sequential trials based on weighted log-rank test. The first
+\code{kMaxe1} looks are driven by the total number of PFS events in Arm A
 and Arm C combined, and the subsequent looks are driven by the total
 number of OS events in Arm A and Arm C combined. Alternatively,
 the analyses can be planned to occur at specified calendar times.
@@ -263,19 +263,19 @@ the analyses can be planned to occur at specified calendar times.
 \examples{
 
 sim1 = lrsim2e3a(
-  kMax = 3, 
+  kMax = 3,
   kMaxe1 = 2,
-  allocation1 = 2, 
-  allocation2 = 2, 
+  allocation1 = 2,
+  allocation2 = 2,
   allocation3 = 1,
-  accrualTime = c(0, 8), 
+  accrualTime = c(0, 8),
   accrualIntensity = c(10, 28),
-  piecewiseSurvivalTime = 0, 
+  piecewiseSurvivalTime = 0,
   rho = 0,
   lambda1e1 = log(2)/12*0.60,
   lambda2e1 = log(2)/12*0.70,
   lambda3e1 = log(2)/12,
-  lambda1e2 = log(2)/30*0.65, 
+  lambda1e2 = log(2)/30*0.65,
   lambda2e2 = log(2)/30*0.75,
   lambda3e2 = log(2)/30,
   accrualDuration = 30.143,
@@ -283,10 +283,10 @@ sim1 = lrsim2e3a(
   maxNumberOfIterations = 1000,
   maxNumberOfRawDatasetsPerStage = 1,
   seed = 314159)
- 
+
 head(sim1$sumdata)
 head(sim1$rawdata)
- 
+
 }
 \author{
 Kaifeng Lu, \email{kaifenglu@gmail.com}

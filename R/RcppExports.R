@@ -6,13 +6,11 @@
 #' trials based on weighted log-rank test.
 #'
 #' @inheritParams param_kMax
-#' @param informationTime Information time in terms of variance of
-#'   weighted log-rank test score statistic under the null hypothesis.
-#'   Same as \code{informationRates} in terms of number of events for
-#'   the conventional log-rank test. Use \code{caltime} and \code{lrstat}
-#'   to derive the information time for weighted log-rank tests.
+#' @param informationRates The information rates in terms of number
+#'   of events for the conventional log-rank test and in terms of
+#'   the actual information for weighted log-rank tests.
 #'   Fixed prior to the trial. If left unspecified, it defaults to
-#'   \code{plannedEvents / plannedEvents[kMax]} when \code{plannedEvents} 
+#'   \code{plannedEvents / plannedEvents[kMax]} when \code{plannedEvents}
 #'   is provided and to \code{plannedTime / plannedTime[kMax]} otherwise.
 #' @inheritParams param_criticalValues
 #' @inheritParams param_futilityBounds
@@ -34,156 +32,160 @@
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_rho1
 #' @inheritParams param_rho2
-#' @param plannedEvents The planned cumulative total number of events at each
-#'   stage.
-#' @param plannedTime The calendar times for the analyses. To use calendar  
+#' @param plannedEvents The planned cumulative total number of events at
+#'   each stage.
+#' @param plannedTime The calendar times for the analyses. To use calendar
 #'   time to plan the analyses, \code{plannedEvents} should be missing.
 #' @param maxNumberOfIterations The number of simulation iterations.
 #'   Defaults to 1000.
-#' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per stage
-#'   to extract. Defaults to 1.
+#' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
+#'   stage to extract. Defaults to 1.
 #' @param seed The seed to reproduce the simulation results.
-#'   The computer clock will be used if left unspecified,
+#'   The seed from the environment will be used if left unspecified,
 #'
 #' @return An S3 class \code{lrsim} object with 3 components:
 #'
 #' * \code{overview}: A list containing the following information:
-#' 
-#'   - \code{rejectPerStage}: The efficacy stopping probability by stage.
-#'   
-#'   - \code{futilityPerStage}: The futility stopping probability by stage.
-#'   
-#'   - \code{cumulativeRejection}: Cumulative efficacy stopping 
-#'   probability by stage.
-#'   
-#'   - \code{cumulativeFutility}: The cumulative futility stopping 
-#'   probability by stage.
-#'   
-#'   - \code{numberOfEvents}: The average number of events by stage.
-#'   
-#'   - \code{numberOfDropouts}: The average number of dropouts by stage.
-#'   
-#'   - \code{numberOfSubjects}: The average number of subjects by stage.
-#'   
-#'   - \code{analysisTime}: The average analysis time by stage.
-#'   
-#'   - \code{overallReject}: The overall rejection probability. 
-#'   
-#'   - \code{expectedNumberOfEvents}: The expected number of events for 
-#'   the overall study.
-#'   
-#'   - \code{expectedNumberOfDropouts}: The expected number of dropouts for
-#'   the overall study.
-#'   
-#'   - \code{expectedNumberOfSubjects}: The expected number of subjects for 
-#'   the overall study. 
-#'   
-#'   - \code{expectedStudyDuration}: The expected study duration.
-#'   
-#'   - \code{hazardRatioH0}: Hazard ratio under the null hypothesis for 
-#'   the active treatment versus control.
-#'   
-#'   - \code{useEvents}: whether the analyses are planned 
-#'   based on the number of events or calendar time. 
-#'   
-#'   - \code{accrualDuration}: Duration of the enrollment period.
-#'   
-#'   - \code{fixedFollowup}: Whether a fixed follow-up design is used.
-#'   
-#'   - \code{rho1}: The first parameter of the Fleming-Harrington family 
-#'   of weighted log-rank test. Defaults to 0 for conventional log-rank test.
-#'   
-#'   - \code{rho2}: The second parameter of the Fleming-Harrington family 
-#'   of weighted log-rank test. Defaults to 0 for conventional log-rank test.
-#'   
-#'   - \code{kMax}: The maximum number of stages.
 #'
-#' * \code{sumdata}: A data frame of summary data by iteration and stage: 
-#' 
-#'   - \code{iterationNumber}: The iteration number.
-#'   
-#'   - \code{stopStage}: The stage at which the trial stops.
-#'   
-#'   - \code{eventsNotAchieved}: Whether the target number of events 
-#'   is not achieved for the iteration.
-#'   
-#'   - \code{stageNumber}: The stage number, covering all stages even if 
-#'   the trial stops at an interim look.
-#'   
-#'   - \code{analysisTime}: The time for the stage since trial start.
-#'   
-#'   - \code{accruals1}: The number of subjects enrolled at the stage for
-#'   the treatment group.
-#'   
-#'   - \code{accruals2}: The number of subjects enrolled at the stage for
-#'   the control group.
-#'   
-#'   - \code{totalAccruals}: The total number of subjects enrolled at 
-#'   the stage.
-#'   
-#'   - \code{events1}: The number of events at the stage for 
-#'   the treatment group.
-#'   
-#'   - \code{events2}: The number of events at the stage for 
-#'   the control group.
-#'   
-#'   - \code{totalEvents}: The total number of events at the stage.
-#'   
-#'   - \code{dropouts1}: The number of dropouts at the stage for 
-#'   the treatment group. 
-#'   
-#'   - \code{dropouts2}: The number of dropouts at the stage for 
-#'   the control group.
-#'   
-#'   - \code{totalDropouts}: The total number of dropouts at the stage.
-#'   
-#'   - \code{uscore}: The numerator of the log-rank test statistic. 
-#'   
-#'   - \code{vscore}: The variance of the log-rank test statistic.
-#'   
-#'   - \code{logRankStatistic}: The log-rank test Z-statistic.
-#'   
-#'   - \code{rejectPerStage}: Whether to reject the null hypothesis 
-#'   at the stage.
-#'   
-#'   - \code{futilityPerStage}: Whether to stop the trial for futility  
-#'   at the stage.
+#'     - \code{rejectPerStage}: The efficacy stopping probability by stage.
+#'
+#'     - \code{futilityPerStage}: The futility stopping probability by
+#'       stage.
+#'
+#'     - \code{cumulativeRejection}: Cumulative efficacy stopping
+#'       probability by stage.
+#'
+#'     - \code{cumulativeFutility}: The cumulative futility stopping
+#'       probability by stage.
+#'
+#'     - \code{numberOfEvents}: The average number of events by stage.
+#'
+#'     - \code{numberOfDropouts}: The average number of dropouts by stage.
+#'
+#'     - \code{numberOfSubjects}: The average number of subjects by stage.
+#'
+#'     - \code{analysisTime}: The average analysis time by stage.
+#'
+#'     - \code{overallReject}: The overall rejection probability.
+#'
+#'     - \code{expectedNumberOfEvents}: The expected number of events for
+#'       the overall study.
+#'
+#'     - \code{expectedNumberOfDropouts}: The expected number of dropouts
+#'       for the overall study.
+#'
+#'     - \code{expectedNumberOfSubjects}: The expected number of subjects
+#'       for the overall study.
+#'
+#'     - \code{expectedStudyDuration}: The expected study duration.
+#'
+#'     - \code{hazardRatioH0}: Hazard ratio under the null hypothesis for
+#'       the active treatment versus control.
+#'
+#'     - \code{useEvents}: whether the analyses are planned
+#'       based on the number of events or calendar time.
+#'
+#'     - \code{accrualDuration}: Duration of the enrollment period.
+#'
+#'     - \code{fixedFollowup}: Whether a fixed follow-up design is used.
+#'
+#'     - \code{rho1}: The first parameter of the Fleming-Harrington family
+#'       of weighted log-rank test. Defaults to 0 for conventional log-rank
+#'       test.
+#'
+#'     - \code{rho2}: The second parameter of the Fleming-Harrington family
+#'       of weighted log-rank test. Defaults to 0 for conventional log-rank
+#'       test.
+#'
+#'     - \code{kMax}: The maximum number of stages.
+#'
+#' * \code{sumdata}: A data frame of summary data by iteration and stage:
+#'
+#'     - \code{iterationNumber}: The iteration number.
+#'
+#'     - \code{stopStage}: The stage at which the trial stops.
+#'
+#'     - \code{eventsNotAchieved}: Whether the target number of events
+#'       is not achieved for the iteration.
+#'
+#'     - \code{stageNumber}: The stage number, covering all stages even if
+#'       the trial stops at an interim look.
+#'
+#'     - \code{analysisTime}: The time for the stage since trial start.
+#'
+#'     - \code{accruals1}: The number of subjects enrolled at the stage for
+#'       the treatment group.
+#'
+#'     - \code{accruals2}: The number of subjects enrolled at the stage for
+#'       the control group.
+#'
+#'     - \code{totalAccruals}: The total number of subjects enrolled at
+#'       the stage.
+#'
+#'     - \code{events1}: The number of events at the stage for
+#'       the treatment group.
+#'
+#'     - \code{events2}: The number of events at the stage for
+#'       the control group.
+#'
+#'     - \code{totalEvents}: The total number of events at the stage.
+#'
+#'     - \code{dropouts1}: The number of dropouts at the stage for
+#'       the treatment group.
+#'
+#'     - \code{dropouts2}: The number of dropouts at the stage for
+#'       the control group.
+#'
+#'     - \code{totalDropouts}: The total number of dropouts at the stage.
+#'
+#'     - \code{uscore}: The numerator of the log-rank test statistic.
+#'
+#'     - \code{vscore}: The variance of the log-rank test statistic.
+#'
+#'     - \code{logRankStatistic}: The log-rank test Z-statistic.
+#'
+#'     - \code{rejectPerStage}: Whether to reject the null hypothesis
+#'       at the stage.
+#'
+#'     - \code{futilityPerStage}: Whether to stop the trial for futility
+#'       at the stage.
 #'
 #' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-#' positive integer): A data frame for subject-level data for selected
-#' replications, containing the following variables:
-#' 
-#'   - \code{iterationNumber}: The iteration number.
-#'   
-#'   - \code{stopStage}: The stage at which the trial stops.
-#'   
-#'   - \code{analysisTime}: The time for the stage since trial start.
-#'   
-#'   - \code{subjectId}: The subject ID.
-#'   
-#'   - \code{arrivalTime}: The enrollment time for the subject.
-#'   
-#'   - \code{stratum}: The stratum for the subject.
-#'   
-#'   - \code{treatmentGroup}: The treatment group (1 or 2) for the subject.
-#'   
-#'   - \code{survivalTime}: The underlying survival time for the subject.
-#'   
-#'   - \code{dropoutTime}: The underlying dropout time for the subject.
-#'   
-#'   - \code{timeUnderObservation}: The time under observation since    
-#'   since randomization.
-#'   
-#'   - \code{event}: Whether the subject experienced the event.
-#'   
-#'   - \code{dropoutEvent}: Whether the subject dropped out.
+#'   positive integer): A data frame for subject-level data for selected
+#'   replications, containing the following variables:
+#'
+#'     - \code{iterationNumber}: The iteration number.
+#'
+#'     - \code{stopStage}: The stage at which the trial stops.
+#'
+#'     - \code{analysisTime}: The time for the stage since trial start.
+#'
+#'     - \code{subjectId}: The subject ID.
+#'
+#'     - \code{arrivalTime}: The enrollment time for the subject.
+#'
+#'     - \code{stratum}: The stratum for the subject.
+#'
+#'     - \code{treatmentGroup}: The treatment group (1 or 2) for the
+#'       subject.
+#'
+#'     - \code{survivalTime}: The underlying survival time for the subject.
+#'
+#'     - \code{dropoutTime}: The underlying dropout time for the subject.
+#'
+#'     - \code{timeUnderObservation}: The time under observation
+#'       since randomization.
+#'
+#'     - \code{event}: Whether the subject experienced the event.
+#'
+#'     - \code{dropoutEvent}: Whether the subject dropped out.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
 #' # Example 1: analyses based on number of events
-#' 
-#' sim1 = lrsim(kMax = 2, informationTime = c(0.5, 1),
+#'
+#' sim1 = lrsim(kMax = 2, informationRates = c(0.5, 1),
 #'              criticalValues = c(2.797, 1.977),
 #'              accrualIntensity = 11,
 #'              lambda1 = 0.018, lambda2 = 0.030,
@@ -205,7 +207,7 @@
 #'
 #' # Example 2: analyses based on calendar time have similar power
 #'
-#' sim2 = lrsim(kMax = 2, informationTime = c(0.5, 1),
+#' sim2 = lrsim(kMax = 2, informationRates = c(0.5, 1),
 #'              criticalValues = c(2.797, 1.977),
 #'              accrualIntensity = 11,
 #'              lambda1 = 0.018, lambda2 = 0.030,
@@ -220,18 +222,18 @@
 #'
 #' # summary for each simulated data set
 #' head(sim2$sumdata)
-#' 
+#'
 #' @export
-lrsim <- function(kMax = NA_integer_, informationTime = NA_real_, criticalValues = NA_real_, futilityBounds = NA_real_, hazardRatioH0 = 1, allocation1 = 1L, allocation2 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
-    .Call(`_lrstat_lrsim`, kMax, informationTime, criticalValues, futilityBounds, hazardRatioH0, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
+lrsim <- function(kMax = NA_integer_, informationRates = NA_real_, criticalValues = NA_real_, futilityBounds = NA_real_, hazardRatioH0 = 1, allocation1 = 1L, allocation2 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
+    .Call(`_lrstat_lrsim`, kMax, informationRates, criticalValues, futilityBounds, hazardRatioH0, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
 
 #' @title Log-rank test simulation for three arms
-#' @description Performs simulation for three-arm group sequential trials 
-#' based on weighted log-rank test. The looks are driven by the total 
-#' number of events in Arm A and Arm C combined. Alternatively, 
+#' @description Performs simulation for three-arm group sequential trials
+#' based on weighted log-rank test. The looks are driven by the total
+#' number of events in Arm A and Arm C combined. Alternatively,
 #' the analyses can be planned to occur at specified calendar times.
-#' 
+#'
 #' @inheritParams param_kMax
 #' @param hazardRatioH013 Hazard ratio under the null hypothesis for arm 1
 #'   versus arm 3. Defaults to 1 for superiority test.
@@ -249,139 +251,139 @@ lrsim <- function(kMax = NA_integer_, informationTime = NA_real_, criticalValues
 #' @inheritParams param_accrualIntensity
 #' @inheritParams param_piecewiseSurvivalTime
 #' @inheritParams param_stratumFraction
-#' @param lambda1 A vector of hazard rates for the event in each analysis  
+#' @param lambda1 A vector of hazard rates for the event in each analysis
 #'   time interval by stratum for arm 1.
-#' @param lambda2 A vector of hazard rates for the event in each analysis  
+#' @param lambda2 A vector of hazard rates for the event in each analysis
 #'   time interval by stratum for arm 2.
-#' @param lambda3 A vector of hazard rates for the event in each analysis  
+#' @param lambda3 A vector of hazard rates for the event in each analysis
 #'   time interval by stratum for arm 3.
-#' @param gamma1 The hazard rate for exponential dropout. A vector of 
-#'   hazard rates for piecewise exponential dropout applicable for all 
-#'   strata, or a vector of hazard rates for dropout in each analysis time 
+#' @param gamma1 The hazard rate for exponential dropout. A vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for arm 1.
-#' @param gamma2 The hazard rate for exponential dropout. A vector of 
-#'   hazard rates for piecewise exponential dropout applicable for all 
-#'   strata, or a vector of hazard rates for dropout in each analysis time 
+#' @param gamma2 The hazard rate for exponential dropout. A vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for arm 2.
-#' @param gamma3 The hazard rate for exponential dropout. A vector of 
-#'   hazard rates for piecewise exponential dropout applicable for all 
-#'   strata, or a vector of hazard rates for dropout in each analysis time 
+#' @param gamma3 The hazard rate for exponential dropout. A vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for arm 3.
 #' @inheritParams param_accrualDuration
 #' @inheritParams param_followupTime
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_rho1
 #' @inheritParams param_rho2
-#' @param plannedEvents The planned cumulative total number of events at 
+#' @param plannedEvents The planned cumulative total number of events at
 #'   Look 1 to Look \code{kMax} for Arms A and C combined.
-#' @param plannedTime The calendar times for the analyses. To use calendar  
+#' @param plannedTime The calendar times for the analyses. To use calendar
 #'   time to plan the analyses, \code{plannedEvents} should be missing.
 #' @param maxNumberOfIterations The number of simulation iterations.
 #'   Defaults to 1000.
-#' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per stage
-#'   to extract. Defaults to 1.
+#' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
+#'   stage to extract. Defaults to 1.
 #' @param seed The seed to reproduce the simulation results.
-#'   The computer clock will be used if left unspecified,
+#'   The seed from the environment will be used if left unspecified,
 #'
 #' @return A list with 2 components:
 #'
-#' * \code{sumdata}: A data frame of summary data by iteration and stage: 
-#' 
-#'   - \code{iterationNumber}: The iteration number.
-#'   
-#'   - \code{eventsNotAchieved}: Whether the target number of events 
-#'   is not achieved for the iteration.
-#'   
-#'   - \code{stageNumber}: The stage number, covering all stages even if 
-#'   the trial stops at an interim look.
-#'   
-#'   - \code{analysisTime}: The time for the stage since trial start.
-#'   
-#'   - \code{accruals1}: The number of subjects enrolled at the stage for
-#'   the active treatment 1 group.
-#'   
-#'   - \code{accruals2}: The number of subjects enrolled at the stage for
-#'   the active treatment 2 group.
-#'   
-#'   - \code{accruals3}: The number of subjects enrolled at the stage for
-#'   the control group.
-#'   
-#'   - \code{totalAccruals}: The total number of subjects enrolled at 
-#'   the stage.
-#'   
-#'   - \code{events1}: The number of events at the stage for 
-#'   the active treatment 1 group.
-#'   
-#'   - \code{events2}: The number of events at the stage for 
-#'   the active treatment 2 group.
-#'   
-#'   - \code{events3}: The number of events at the stage for 
-#'   the control group.
-#'   
-#'   - \code{totalEvents}: The total number of events at the stage.
-#'   
-#'   - \code{dropouts1}: The number of dropouts at the stage for 
-#'   the active treatment 1 group. 
-#'   
-#'   - \code{dropouts2}: The number of dropouts at the stage for 
-#'   the active treatment 2 group.
-#'   
-#'   - \code{dropouts3}: The number of dropouts at the stage for 
-#'   the control group.
-#'   
-#'   - \code{totalDropouts}: The total number of dropouts at the stage.
-#'   
-#'   - \code{logRankStatistic13}: The log-rank test Z-statistic 
-#'   comparing the active treatment 1 to the control.
-#'   
-#'   - \code{logRankStatistic23}: The log-rank test Z-statistic 
-#'   comparing the active treatment 2 to the control.
-#'   
-#'   - \code{logRankStatistic12}: The log-rank test Z-statistic 
-#'   comparing the active treatment 1 to the active treatment 2.
-#'   
+#' * \code{sumdata}: A data frame of summary data by iteration and stage:
+#'
+#'     - \code{iterationNumber}: The iteration number.
+#'
+#'     - \code{eventsNotAchieved}: Whether the target number of events
+#'       is not achieved for the iteration.
+#'
+#'     - \code{stageNumber}: The stage number, covering all stages even if
+#'       the trial stops at an interim look.
+#'
+#'     - \code{analysisTime}: The time for the stage since trial start.
+#'
+#'     - \code{accruals1}: The number of subjects enrolled at the stage for
+#'       the active treatment 1 group.
+#'
+#'     - \code{accruals2}: The number of subjects enrolled at the stage for
+#'       the active treatment 2 group.
+#'
+#'     - \code{accruals3}: The number of subjects enrolled at the stage for
+#'       the control group.
+#'
+#'     - \code{totalAccruals}: The total number of subjects enrolled at
+#'       the stage.
+#'
+#'     - \code{events1}: The number of events at the stage for
+#'       the active treatment 1 group.
+#'
+#'     - \code{events2}: The number of events at the stage for
+#'       the active treatment 2 group.
+#'
+#'     - \code{events3}: The number of events at the stage for
+#'       the control group.
+#'
+#'     - \code{totalEvents}: The total number of events at the stage.
+#'
+#'     - \code{dropouts1}: The number of dropouts at the stage for
+#'       the active treatment 1 group.
+#'
+#'     - \code{dropouts2}: The number of dropouts at the stage for
+#'       the active treatment 2 group.
+#'
+#'     - \code{dropouts3}: The number of dropouts at the stage for
+#'       the control group.
+#'
+#'     - \code{totalDropouts}: The total number of dropouts at the stage.
+#'
+#'     - \code{logRankStatistic13}: The log-rank test Z-statistic
+#'       comparing the active treatment 1 to the control.
+#'
+#'     - \code{logRankStatistic23}: The log-rank test Z-statistic
+#'       comparing the active treatment 2 to the control.
+#'
+#'     - \code{logRankStatistic12}: The log-rank test Z-statistic
+#'       comparing the active treatment 1 to the active treatment 2.
+#'
 #' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-#' positive integer): A data frame for subject-level data for selected
-#' replications, containing the following variables:
-#' 
-#'   - \code{iterationNumber}: The iteration number.
-#'   
-#'   - \code{stageNumber}: The stage under consideration.
-#'   
-#'   - \code{analysisTime}: The time for the stage since trial start.
-#'   
-#'   - \code{subjectId}: The subject ID.
-#'   
-#'   - \code{arrivalTime}: The enrollment time for the subject.
-#'   
-#'   - \code{stratum}: The stratum for the subject.
-#'   
-#'   - \code{treatmentGroup}: The treatment group (1, 2, or 3) for 
-#'   the subject.
-#'   
-#'   - \code{survivalTime}: The underlying survival time for the subject.
-#'   
-#'   - \code{dropoutTime}: The underlying dropout time for the subject.
-#'   
-#'   - \code{timeUnderObservation}: The time under observation since 
-#'   since randomization for the subject.
-#'   
-#'   - \code{event}: Whether the subject experienced the event.
-#'   
-#'   - \code{dropoutEvent}: Whether the subject dropped out. 
+#'   positive integer): A data frame for subject-level data for selected
+#'   replications, containing the following variables:
+#'
+#'     - \code{iterationNumber}: The iteration number.
+#'
+#'     - \code{stageNumber}: The stage under consideration.
+#'
+#'     - \code{analysisTime}: The time for the stage since trial start.
+#'
+#'     - \code{subjectId}: The subject ID.
+#'
+#'     - \code{arrivalTime}: The enrollment time for the subject.
+#'
+#'     - \code{stratum}: The stratum for the subject.
+#'
+#'     - \code{treatmentGroup}: The treatment group (1, 2, or 3) for
+#'       the subject.
+#'
+#'     - \code{survivalTime}: The underlying survival time for the subject.
+#'
+#'     - \code{dropoutTime}: The underlying dropout time for the subject.
+#'
+#'     - \code{timeUnderObservation}: The time under observation
+#'       since randomization for the subject.
+#'
+#'     - \code{event}: Whether the subject experienced the event.
+#'
+#'     - \code{dropoutEvent}: Whether the subject dropped out.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#' 
+#'
 #' @examples
-#' 
+#'
 #' sim1 = lrsim3a(
-#'   kMax = 3, 
-#'   allocation1 = 2, 
-#'   allocation2 = 2, 
+#'   kMax = 3,
+#'   allocation1 = 2,
+#'   allocation2 = 2,
 #'   allocation3 = 1,
-#'   accrualTime = c(0, 8), 
+#'   accrualTime = c(0, 8),
 #'   accrualIntensity = c(10, 28),
-#'   piecewiseSurvivalTime = 0, 
+#'   piecewiseSurvivalTime = 0,
 #'   lambda1 = log(2)/12*0.60,
 #'   lambda2 = log(2)/12*0.70,
 #'   lambda3 = log(2)/12,
@@ -390,31 +392,31 @@ lrsim <- function(kMax = NA_integer_, informationTime = NA_real_, criticalValues
 #'   maxNumberOfIterations = 1000,
 #'   maxNumberOfRawDatasetsPerStage = 1,
 #'   seed = 314159)
-#'   
+#'
 #' head(sim1$sumdata)
 #' head(sim1$rawdata)
-#' 
+#'
 #' @export
 lrsim3a <- function(kMax = NA_integer_, hazardRatioH013 = 1, hazardRatioH023 = 1, hazardRatioH012 = 1, allocation1 = 1L, allocation2 = 1L, allocation3 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, lambda3 = NA_real_, gamma1 = 0L, gamma2 = 0L, gamma3 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
     .Call(`_lrstat_lrsim3a`, kMax, hazardRatioH013, hazardRatioH023, hazardRatioH012, allocation1, allocation2, allocation3, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, lambda3, gamma1, gamma2, gamma3, accrualDuration, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
 
-#' @title Log-rank test simulation for two endpoints and two arms
-#' @description Performs simulation for two-endpoint two-arm group 
-#' sequential trials based on weighted log-rank test. The first \code{kMaxe1} 
-#' looks are driven by the total number of PFS events in two arms 
-#' combined, and the subsequent looks are driven by the total 
-#' number of OS events in two arms combined. Alternatively, 
+#' @title Log-rank test simulation for two endpoints
+#' @description Performs simulation for two-endpoint two-arm group
+#' sequential trials based on weighted log-rank test. The first
+#' \code{kMaxe1} looks are driven by the total number of PFS events in
+#' two arms combined, and the subsequent looks are driven by the total
+#' number of OS events in two arms combined. Alternatively,
 #' the analyses can be planned to occur at specified calendar times.
-#' 
+#'
 #' @inheritParams param_kMax
-#' @param kMaxe1 Number of stages with timing determined by PFS events. 
-#'   Ranges from 0 (none) to \code{kMax}. 
-#' @param hazardRatioH0e1 Hazard ratio under the null hypothesis for the 
-#'   active treatment vs control for endpoint 1 (PFS). Defaults to 1 for 
+#' @param kMaxe1 Number of stages with timing determined by PFS events.
+#'   Ranges from 0 (none) to \code{kMax}.
+#' @param hazardRatioH0e1 Hazard ratio under the null hypothesis for the
+#'   active treatment vs control for endpoint 1 (PFS). Defaults to 1 for
 #'   superiority test.
-#' @param hazardRatioH0e2 Hazard ratio under the null hypothesis for the 
-#'   active treatment vs control for endpoint 2 (OS). Defaults to 1 for 
+#' @param hazardRatioH0e2 Hazard ratio under the null hypothesis for the
+#'   active treatment vs control for endpoint 2 (OS). Defaults to 1 for
 #'   superiority test.
 #' @param allocation1 Number of subjects in the treatment group in
 #'   a randomization block. Defaults to 1 for equal randomization.
@@ -425,192 +427,193 @@ lrsim3a <- function(kMax = NA_integer_, hazardRatioH013 = 1, hazardRatioH023 = 1
 #' @inheritParams param_piecewiseSurvivalTime
 #' @inheritParams param_stratumFraction
 #' @param rho The correlation coefficient for the standard bivariate normal
-#'   random variables used to generate time to disease progression and time 
+#'   random variables used to generate time to disease progression and time
 #'   to death using the inverse CDF method.
-#' @param lambda1e1 A vector of hazard rates for the event in each analysis  
+#' @param lambda1e1 A vector of hazard rates for the event in each analysis
 #'   time interval by stratum for the treatment group and endpoint 1 (PFS).
-#' @param lambda2e1 A vector of hazard rates for the event in each analysis  
+#' @param lambda2e1 A vector of hazard rates for the event in each analysis
 #'   time interval by stratum for the control group and endpoint 1 (PFS).
-#' @param lambda1e2 A vector of hazard rates for the event in each analysis  
+#' @param lambda1e2 A vector of hazard rates for the event in each analysis
 #'   time interval by stratum for the treatment group and endpoint 2 (OS).
-#' @param lambda2e2 A vector of hazard rates for the event in each analysis  
+#' @param lambda2e2 A vector of hazard rates for the event in each analysis
 #'   time interval by stratum for the control group and endpoint 2 (OS).
-#' @param gamma1e1 The hazard rate for exponential dropout, a vector of 
-#'   hazard rates for piecewise exponential dropout applicable for all 
-#'   strata, or a vector of hazard rates for dropout in each analysis time 
+#' @param gamma1e1 The hazard rate for exponential dropout, a vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for the treatment group and endpoint 1 (PFS).
-#' @param gamma2e1 The hazard rate for exponential dropout, a vector of 
-#'   hazard rates for piecewise exponential dropout applicable for all 
-#'   strata, or a vector of hazard rates for dropout in each analysis time 
+#' @param gamma2e1 The hazard rate for exponential dropout, a vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for the control group and endpoint 1 (PFS).
-#' @param gamma1e2 The hazard rate for exponential dropout, a vector of 
-#'   hazard rates for piecewise exponential dropout applicable for all 
-#'   strata, or a vector of hazard rates for dropout in each analysis time 
+#' @param gamma1e2 The hazard rate for exponential dropout, a vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for the treatment group and endpoint 2 (OS).
-#' @param gamma2e2 The hazard rate for exponential dropout, a vector of 
-#'   hazard rates for piecewise exponential dropout applicable for all 
-#'   strata, or a vector of hazard rates for dropout in each analysis time 
+#' @param gamma2e2 The hazard rate for exponential dropout, a vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for the control group and endpoint 2 (OS).
 #' @inheritParams param_accrualDuration
 #' @inheritParams param_followupTime
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_rho1
 #' @inheritParams param_rho2
-#' @param plannedEvents The planned cumulative total number of PFS events at 
-#'   Look 1 to Look kMaxe1 and the planned cumulative total number of OS 
-#'   events at Look kMaxe1+1 to Look kMax.
-#' @param plannedTime The calendar times for the analyses. To use calendar  
+#' @param plannedEvents The planned cumulative total number of PFS events at
+#'   Look 1 to Look \code{kMaxe1} and the planned cumulative total number
+#'   of OS events at Look \code{kMaxe1+1} to Look \code{kMax}.
+#' @param plannedTime The calendar times for the analyses. To use calendar
 #'   time to plan the analyses, \code{plannedEvents} should be missing.
 #' @param maxNumberOfIterations The number of simulation iterations.
 #'   Defaults to 1000.
-#' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per stage
-#'   to extract. Defaults to 1.
+#' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
+#'   stage to extract. Defaults to 1.
 #' @param seed The seed to reproduce the simulation results.
-#'   The computer clock will be used if left unspecified,
+#'   The seed from the environment will be used if left unspecified,
 #'
 #' @return A list with 2 components:
 #'
-#' * \code{sumdata}: A data frame of summary data by iteration and stage: 
-#' 
-#'   - \code{iterationNumber}: The iteration number.
-#'   
-#'   - \code{eventsNotAchieved}: Whether the target number of events 
-#'   is not achieved for the iteration.
-#'   
-#'   - \code{stageNumber}: The stage number, covering all stages even if 
-#'   the trial stops at an interim look.
-#'   
-#'   - \code{analysisTime}: The time for the stage since trial start.
-#'   
-#'   - \code{accruals1}: The number of subjects enrolled at the stage for
-#'   the treatment group.
-#'   
-#'   - \code{accruals2}: The number of subjects enrolled at the stage for
-#'   the control group.
-#'   
-#'   - \code{totalAccruals}: The total number of subjects enrolled at 
-#'   the stage.
-#'   
-#'   - \code{endpoint}: The endpoint (1 or 2) under consideration.
-#'   
-#'   - \code{events1}: The number of events at the stage for 
-#'   the treatment group.
-#'   
-#'   - \code{events2}: The number of events at the stage for 
-#'   the control group.
-#'   
-#'   - \code{totalEvents}: The total number of events at the stage.
-#'   
-#'   - \code{dropouts1}: The number of dropouts at the stage for 
-#'   the treatment group. 
-#'   
-#'   - \code{dropouts2}: The number of dropouts at the stage for 
-#'   the control group.
-#'   
-#'   - \code{totalDropouts}: The total number of dropouts at the stage.
-#'   
-#'   - \code{logRankStatistic}: The log-rank test Z-statistic for 
-#'   the endpoint.
+#' * \code{sumdata}: A data frame of summary data by iteration and stage:
+#'
+#'     - \code{iterationNumber}: The iteration number.
+#'
+#'     - \code{eventsNotAchieved}: Whether the target number of events
+#'       is not achieved for the iteration.
+#'
+#'     - \code{stageNumber}: The stage number, covering all stages even if
+#'       the trial stops at an interim look.
+#'
+#'     - \code{analysisTime}: The time for the stage since trial start.
+#'
+#'     - \code{accruals1}: The number of subjects enrolled at the stage for
+#'       the treatment group.
+#'
+#'     - \code{accruals2}: The number of subjects enrolled at the stage for
+#'       the control group.
+#'
+#'     - \code{totalAccruals}: The total number of subjects enrolled at
+#'       the stage.
+#'
+#'     - \code{endpoint}: The endpoint (1 or 2) under consideration.
+#'
+#'     - \code{events1}: The number of events at the stage for
+#'       the treatment group.
+#'
+#'     - \code{events2}: The number of events at the stage for
+#'       the control group.
+#'
+#'     - \code{totalEvents}: The total number of events at the stage.
+#'
+#'     - \code{dropouts1}: The number of dropouts at the stage for
+#'       the treatment group.
+#'
+#'     - \code{dropouts2}: The number of dropouts at the stage for
+#'       the control group.
+#'
+#'     - \code{totalDropouts}: The total number of dropouts at the stage.
+#'
+#'     - \code{logRankStatistic}: The log-rank test Z-statistic for
+#'       the endpoint.
 #'
 #' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-#' positive integer): A data frame for subject-level data for selected
-#' replications, containing the following variables:
-#' 
-#'   - \code{iterationNumber}: The iteration number.
-#'   
-#'   - \code{stageNumber}: The stage under consideration.
-#'   
-#'   - \code{analysisTime}: The time for the stage since trial start.
-#'   
-#'   - \code{subjectId}: The subject ID.
-#'   
-#'   - \code{arrivalTime}: The enrollment time for the subject.
-#'   
-#'   - \code{stratum}: The stratum for the subject.
-#'   
-#'   - \code{treatmentGroup}: The treatment group (1 or 2) for the subject.
-#'   
-#'   - \code{survivalTime1}: The underlying survival time for 
-#'   event endpoint 1 for the subject.
-#'   
-#'   - \code{dropoutTime1}: The underlying dropout time for 
-#'   event endpoint 1 for the subject.
-#'   
-#'   - \code{timeUnderObservation1}: The time under observation since 
-#'   since randomization for event endpoint 1 for the subject.
-#'   
-#'   - \code{event1}: Whether the subject experienced event endpoint 1.
-#'   
-#'   - \code{dropoutEvent1}: Whether the subject dropped out for 
-#'   endpoint 1.
-#'   
-#'   - \code{survivalTime2}: The underlying survival time for 
-#'   event endpoint 2 for the subject.
-#'   
-#'   - \code{dropoutTime2}: The underlying dropout time for 
-#'   event endpoint 2 for the subject.
-#'   
-#'   - \code{timeUnderObservation2}: The time under observation since 
-#'   since randomization for event endpoint 2 for the subject.
-#'   
-#'   - \code{event2}: Whether the subject experienced event endpoint 2.
-#'   
-#'   - \code{dropoutEvent2}: Whether the subject dropped out for 
-#'   endpoint 2.
+#'   positive integer): A data frame for subject-level data for selected
+#'   replications, containing the following variables:
+#'
+#'     - \code{iterationNumber}: The iteration number.
+#'
+#'     - \code{stageNumber}: The stage under consideration.
+#'
+#'     - \code{analysisTime}: The time for the stage since trial start.
+#'
+#'     - \code{subjectId}: The subject ID.
+#'
+#'     - \code{arrivalTime}: The enrollment time for the subject.
+#'
+#'     - \code{stratum}: The stratum for the subject.
+#'
+#'     - \code{treatmentGroup}: The treatment group (1 or 2) for the
+#'       subject.
+#'
+#'     - \code{survivalTime1}: The underlying survival time for
+#'       event endpoint 1 for the subject.
+#'
+#'     - \code{dropoutTime1}: The underlying dropout time for
+#'       event endpoint 1 for the subject.
+#'
+#'     - \code{timeUnderObservation1}: The time under observation
+#'       since randomization for event endpoint 1 for the subject.
+#'
+#'     - \code{event1}: Whether the subject experienced event endpoint 1.
+#'
+#'     - \code{dropoutEvent1}: Whether the subject dropped out for
+#'       endpoint 1.
+#'
+#'     - \code{survivalTime2}: The underlying survival time for
+#'       event endpoint 2 for the subject.
+#'
+#'     - \code{dropoutTime2}: The underlying dropout time for
+#'       event endpoint 2 for the subject.
+#'
+#'     - \code{timeUnderObservation2}: The time under observation
+#'       since randomization for event endpoint 2 for the subject.
+#'
+#'     - \code{event2}: Whether the subject experienced event endpoint 2.
+#'
+#'     - \code{dropoutEvent2}: Whether the subject dropped out for
+#'       endpoint 2.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#' 
+#'
 #' @examples
-#' 
+#'
 #' sim1 = lrsim2e(
-#'   kMax = 3, 
+#'   kMax = 3,
 #'   kMaxe1 = 2,
-#'   allocation1 = 2, 
-#'   allocation2 = 1, 
-#'   accrualTime = c(0, 8), 
+#'   allocation1 = 2,
+#'   allocation2 = 1,
+#'   accrualTime = c(0, 8),
 #'   accrualIntensity = c(10, 28),
-#'   piecewiseSurvivalTime = 0, 
+#'   piecewiseSurvivalTime = 0,
 #'   rho = 0,
 #'   lambda1e1 = log(2)/12*0.60,
 #'   lambda2e1 = log(2)/12,
-#'   lambda1e2 = log(2)/30*0.65, 
+#'   lambda1e2 = log(2)/30*0.65,
 #'   lambda2e2 = log(2)/30,
 #'   accrualDuration = 20.143,
 #'   plannedEvents = c(186, 259, 183),
 #'   maxNumberOfIterations = 1000,
 #'   maxNumberOfRawDatasetsPerStage = 1,
 #'   seed = 314159)
-#'  
+#'
 #' head(sim1$sumdata)
 #' head(sim1$rawdata)
-#' 
+#'
 #' @export
 lrsim2e <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH0e1 = 1, hazardRatioH0e2 = 1, allocation1 = 1L, allocation2 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, rho = 0, lambda1e1 = NA_real_, lambda2e1 = NA_real_, lambda1e2 = NA_real_, lambda2e2 = NA_real_, gamma1e1 = 0L, gamma2e1 = 0L, gamma1e2 = 0L, gamma2e2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
     .Call(`_lrstat_lrsim2e`, kMax, kMaxe1, hazardRatioH0e1, hazardRatioH0e2, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, rho, lambda1e1, lambda2e1, lambda1e2, lambda2e2, gamma1e1, gamma2e1, gamma1e2, gamma2e2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
 
 #' @title Log-rank test simulation for two endpoints and three arms
-#' @description Performs simulation for two-endpoint three-arm group 
-#' sequential trials based on weighted log-rank test. The first \code{kMaxe1} 
-#' looks are driven by the total number of PFS events in Arm A 
-#' and Arm C combined, and the subsequent looks are driven by the total 
-#' number of OS events in Arm A and Arm C combined. Alternatively, 
-#' the analyses can be planned to occur at specified calendar times. 
-#' 
+#' @description Performs simulation for two-endpoint three-arm group
+#' sequential trials based on weighted log-rank test. The first
+#' \code{kMaxe1} looks are driven by the total number of PFS events in Arm A
+#' and Arm C combined, and the subsequent looks are driven by the total
+#' number of OS events in Arm A and Arm C combined. Alternatively,
+#' the analyses can be planned to occur at specified calendar times.
+#'
 #' @inheritParams param_kMax
-#' @param kMaxe1 Number of stages with timing determined by PFS events. 
-#'   Ranges from 0 (none) to \code{kMax}. 
-#' @param hazardRatioH013e1 Hazard ratio under the null hypothesis for arm 1 
+#' @param kMaxe1 Number of stages with timing determined by PFS events.
+#'   Ranges from 0 (none) to \code{kMax}.
+#' @param hazardRatioH013e1 Hazard ratio under the null hypothesis for arm 1
 #'   vs arm 3 for endpoint 1 (PFS). Defaults to 1 for superiority test.
-#' @param hazardRatioH023e1 Hazard ratio under the null hypothesis for arm 2 
+#' @param hazardRatioH023e1 Hazard ratio under the null hypothesis for arm 2
 #'   vs arm 3 for endpoint 1 (PFS). Defaults to 1 for superiority test.
-#' @param hazardRatioH012e1 Hazard ratio under the null hypothesis for arm 1 
+#' @param hazardRatioH012e1 Hazard ratio under the null hypothesis for arm 1
 #'   vs arm 2 for endpoint 1 (PFS). Defaults to 1 for superiority test.
-#' @param hazardRatioH013e2 Hazard ratio under the null hypothesis for arm 1 
+#' @param hazardRatioH013e2 Hazard ratio under the null hypothesis for arm 1
 #'   vs arm 3 for endpoint 2 (OS). Defaults to 1 for superiority test.
-#' @param hazardRatioH023e2 Hazard ratio under the null hypothesis for arm 2 
+#' @param hazardRatioH023e2 Hazard ratio under the null hypothesis for arm 2
 #'   vs arm 3 for endpoint 2 (OS). Defaults to 1 for superiority test.
-#' @param hazardRatioH012e2 Hazard ratio under the null hypothesis for arm 1 
+#' @param hazardRatioH012e2 Hazard ratio under the null hypothesis for arm 1
 #'   vs arm 2 for endpoint 2 (OS). Defaults to 1 for superiority test.
 #' @param allocation1 Number of subjects in Arm A in
 #'   a randomization block. Defaults to 1 for equal randomization.
@@ -623,187 +626,187 @@ lrsim2e <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH0e1 = 
 #' @inheritParams param_piecewiseSurvivalTime
 #' @inheritParams param_stratumFraction
 #' @param rho The correlation coefficient for the standard bivariate normal
-#'   random variables used to generate time to disease progression and time 
+#'   random variables used to generate time to disease progression and time
 #'   to death using the inverse CDF method.
-#' @param lambda1e1 A vector of hazard rates for the event in each analysis  
+#' @param lambda1e1 A vector of hazard rates for the event in each analysis
 #'   time interval by stratum for arm 1 and endpoint 1 (PFS).
-#' @param lambda2e1 A vector of hazard rates for the event in each analysis  
+#' @param lambda2e1 A vector of hazard rates for the event in each analysis
 #'   time interval by stratum for arm 2 and endpoint 1 (PFS).
-#' @param lambda3e1 A vector of hazard rates for the event in each analysis  
+#' @param lambda3e1 A vector of hazard rates for the event in each analysis
 #'   time interval by stratum for arm 3 and endpoint 1 (PFS).
-#' @param lambda1e2 A vector of hazard rates for the event in each analysis  
+#' @param lambda1e2 A vector of hazard rates for the event in each analysis
 #'   time interval by stratum for arm 1 and endpoint 2 (OS).
-#' @param lambda2e2 A vector of hazard rates for the event in each analysis  
+#' @param lambda2e2 A vector of hazard rates for the event in each analysis
 #'   time interval by stratum for arm 2 and endpoint 2 (OS).
-#' @param lambda3e2 A vector of hazard rates for the event in each analysis  
+#' @param lambda3e2 A vector of hazard rates for the event in each analysis
 #'   time interval by stratum for arm 3 and endpoint 2 (OS).
-#' @param gamma1e1 The hazard rate for exponential dropout. A vector of 
-#'   hazard rates for piecewise exponential dropout applicable for all 
-#'   strata, or a vector of hazard rates for dropout in each analysis time 
+#' @param gamma1e1 The hazard rate for exponential dropout. A vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for arm 1 and endpoint 1 (PFS).
-#' @param gamma2e1 The hazard rate for exponential dropout. A vector of 
-#'   hazard rates for piecewise exponential dropout applicable for all 
-#'   strata, or a vector of hazard rates for dropout in each analysis time 
+#' @param gamma2e1 The hazard rate for exponential dropout. A vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for arm 2 and endpoint 1 (PFS).
-#' @param gamma3e1 The hazard rate for exponential dropout. A vector of 
-#'   hazard rates for piecewise exponential dropout applicable for all 
-#'   strata, or a vector of hazard rates for dropout in each analysis time 
+#' @param gamma3e1 The hazard rate for exponential dropout. A vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for arm 3 and endpoint 1 (PFS).
-#' @param gamma1e2 The hazard rate for exponential dropout. A vector of 
-#'   hazard rates for piecewise exponential dropout applicable for all 
-#'   strata, or a vector of hazard rates for dropout in each analysis time 
+#' @param gamma1e2 The hazard rate for exponential dropout. A vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for arm 1 and endpoint 2 (OS).
-#' @param gamma2e2 The hazard rate for exponential dropout. A vector of 
-#'   hazard rates for piecewise exponential dropout applicable for all 
-#'   strata, or a vector of hazard rates for dropout in each analysis time 
+#' @param gamma2e2 The hazard rate for exponential dropout. A vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for arm 2 and endpoint 2 (OS).
-#' @param gamma3e2 The hazard rate for exponential dropout. A vector of 
-#'   hazard rates for piecewise exponential dropout applicable for all 
-#'   strata, or a vector of hazard rates for dropout in each analysis time 
+#' @param gamma3e2 The hazard rate for exponential dropout. A vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for arm 3 and endpoint 2 (OS).
 #' @inheritParams param_accrualDuration
 #' @inheritParams param_followupTime
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_rho1
 #' @inheritParams param_rho2
-#' @param plannedEvents The planned cumulative total number of PFS events at 
-#'   Look 1 to Look kMaxe1 for Arms A and C combined and the planned 
-#'   cumulative total number of OS events at Look kMaxe1+1 to Look kMax 
-#'   for Arms A and C combined.
-#' @param plannedTime The calendar times for the analyses. To use calendar  
+#' @param plannedEvents The planned cumulative total number of PFS events at
+#'   Look 1 to Look \code{kMaxe1} for Arms A and C combined and the planned
+#'   cumulative total number of OS events at Look \code{kMaxe1+1} to Look
+#'   \code{kMax} for Arms A and C combined.
+#' @param plannedTime The calendar times for the analyses. To use calendar
 #'   time to plan the analyses, \code{plannedEvents} should be missing.
 #' @param maxNumberOfIterations The number of simulation iterations.
 #'   Defaults to 1000.
-#' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per stage
-#'   to extract. Defaults to 1.
+#' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
+#'   stage to extract. Defaults to 1.
 #' @param seed The seed to reproduce the simulation results.
-#'   The computer clock will be used if left unspecified,
+#'   The seed from the environment will be used if left unspecified,
 #'
 #' @return A list with 2 components:
 #'
-#' * \code{sumdata}: A data frame of summary data by iteration and stage: 
-#' 
-#'   - \code{iterationNumber}: The iteration number.
-#'   
-#'   - \code{eventsNotAchieved}: Whether the target number of events 
-#'   is not achieved for the iteration.
-#'   
-#'   - \code{stageNumber}: The stage number, covering all stages even if 
-#'   the trial stops at an interim look.
-#'   
-#'   - \code{analysisTime}: The time for the stage since trial start.
-#'   
-#'   - \code{accruals1}: The number of subjects enrolled at the stage for
-#'   the active treatment 1 group.
-#'   
-#'   - \code{accruals2}: The number of subjects enrolled at the stage for
-#'   the active treatment 2 group.
-#'   
-#'   - \code{accruals3}: The number of subjects enrolled at the stage for
-#'   the control group.
-#'   
-#'   - \code{totalAccruals}: The total number of subjects enrolled at 
-#'   the stage.
-#'   
-#'   - \code{endpoint}: The endpoint (1 or 2) under consideration.
-#'   
-#'   - \code{events1}: The number of events at the stage for 
-#'   the active treatment 1 group.
-#'   
-#'   - \code{events2}: The number of events at the stage for 
-#'   the active treatment 2 group.
-#'   
-#'   - \code{events3}: The number of events at the stage for 
-#'   the control group.
-#'   
-#'   - \code{totalEvents}: The total number of events at the stage.
-#'   
-#'   - \code{dropouts1}: The number of dropouts at the stage for 
-#'   the active treatment 1 group. 
-#'   
-#'   - \code{dropouts2}: The number of dropouts at the stage for 
-#'   the active treatment 2 group.
-#'   
-#'   - \code{dropouts3}: The number of dropouts at the stage for 
-#'   the control group.
-#'   
-#'   - \code{totalDropouts}: The total number of dropouts at the stage.
-#'   
-#'   - \code{logRankStatistic13}: The log-rank test Z-statistic 
-#'   comparing the active treatment 1 to the control for the endpoint.
-#'   
-#'   - \code{logRankStatistic23}: The log-rank test Z-statistic 
-#'   comparing the active treatment 2 to the control for the endpoint.
-#'   
-#'   - \code{logRankStatistic12}: The log-rank test Z-statistic 
-#'   comparing the active treatment 1 to the active treatment 2 
-#'   for the endpoint.
-#'   
+#' * \code{sumdata}: A data frame of summary data by iteration and stage:
+#'
+#'     - \code{iterationNumber}: The iteration number.
+#'
+#'     - \code{eventsNotAchieved}: Whether the target number of events
+#'       is not achieved for the iteration.
+#'
+#'     - \code{stageNumber}: The stage number, covering all stages even if
+#'       the trial stops at an interim look.
+#'
+#'     - \code{analysisTime}: The time for the stage since trial start.
+#'
+#'     - \code{accruals1}: The number of subjects enrolled at the stage for
+#'       the active treatment 1 group.
+#'
+#'     - \code{accruals2}: The number of subjects enrolled at the stage for
+#'       the active treatment 2 group.
+#'
+#'     - \code{accruals3}: The number of subjects enrolled at the stage for
+#'       the control group.
+#'
+#'     - \code{totalAccruals}: The total number of subjects enrolled at
+#'       the stage.
+#'
+#'     - \code{endpoint}: The endpoint (1 or 2) under consideration.
+#'
+#'     - \code{events1}: The number of events at the stage for
+#'       the active treatment 1 group.
+#'
+#'     - \code{events2}: The number of events at the stage for
+#'       the active treatment 2 group.
+#'
+#'     - \code{events3}: The number of events at the stage for
+#'       the control group.
+#'
+#'     - \code{totalEvents}: The total number of events at the stage.
+#'
+#'     - \code{dropouts1}: The number of dropouts at the stage for
+#'       the active treatment 1 group.
+#'
+#'     - \code{dropouts2}: The number of dropouts at the stage for
+#'       the active treatment 2 group.
+#'
+#'     - \code{dropouts3}: The number of dropouts at the stage for
+#'       the control group.
+#'
+#'     - \code{totalDropouts}: The total number of dropouts at the stage.
+#'
+#'     - \code{logRankStatistic13}: The log-rank test Z-statistic
+#'       comparing the active treatment 1 to the control for the endpoint.
+#'
+#'     - \code{logRankStatistic23}: The log-rank test Z-statistic
+#'       comparing the active treatment 2 to the control for the endpoint.
+#'
+#'     - \code{logRankStatistic12}: The log-rank test Z-statistic
+#'       comparing the active treatment 1 to the active treatment 2
+#'       for the endpoint.
+#'
 #' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-#' positive integer): A data frame for subject-level data for selected
-#' replications, containing the following variables:
-#' 
-#'   - \code{iterationNumber}: The iteration number.
-#'   
-#'   - \code{stageNumber}: The stage under consideration.
-#'   
-#'   - \code{analysisTime}: The time for the stage since trial start.
-#'   
-#'   - \code{subjectId}: The subject ID.
-#'   
-#'   - \code{arrivalTime}: The enrollment time for the subject.
-#'   
-#'   - \code{stratum}: The stratum for the subject.
-#'   
-#'   - \code{treatmentGroup}: The treatment group (1, 2, or 3) for 
-#'   the subject.
-#'   
-#'   - \code{survivalTime1}: The underlying survival time for 
-#'   event endpoint 1 for the subject.
-#'   
-#'   - \code{dropoutTime1}: The underlying dropout time for 
-#'   event endpoint 1 for the subject.
-#'   
-#'   - \code{timeUnderObservation1}: The time under observation since 
-#'   since randomization for event endpoint 1 for the subject.
-#'   
-#'   - \code{event1}: Whether the subject experienced event endpoint 1.
-#'   
-#'   - \code{dropoutEvent1}: Whether the subject dropped out for 
-#'   endpoint 1.
-#'   
-#'   - \code{survivalTime2}: The underlying survival time for 
-#'   event endpoint 2 for the subject.
-#'   
-#'   - \code{dropoutTime2}: The underlying dropout time for 
-#'   event endpoint 2 for the subject.
-#'   
-#'   - \code{timeUnderObservation2}: The time under observation since 
-#'   since randomization for event endpoint 2 for the subject.
-#'   
-#'   - \code{event2}: Whether the subject experienced event endpoint 2.
-#'   
-#'   - \code{dropoutEvent2}: Whether the subject dropped out for 
-#'   endpoint 2.
+#'   positive integer): A data frame for subject-level data for selected
+#'   replications, containing the following variables:
+#'
+#'     - \code{iterationNumber}: The iteration number.
+#'
+#'     - \code{stageNumber}: The stage under consideration.
+#'
+#'     - \code{analysisTime}: The time for the stage since trial start.
+#'
+#'     - \code{subjectId}: The subject ID.
+#'
+#'     - \code{arrivalTime}: The enrollment time for the subject.
+#'
+#'     - \code{stratum}: The stratum for the subject.
+#'
+#'     - \code{treatmentGroup}: The treatment group (1, 2, or 3) for
+#'       the subject.
+#'
+#'     - \code{survivalTime1}: The underlying survival time for
+#'       event endpoint 1 for the subject.
+#'
+#'     - \code{dropoutTime1}: The underlying dropout time for
+#'       event endpoint 1 for the subject.
+#'
+#'     - \code{timeUnderObservation1}: The time under observation
+#'       since randomization for event endpoint 1 for the subject.
+#'
+#'     - \code{event1}: Whether the subject experienced event endpoint 1.
+#'
+#'     - \code{dropoutEvent1}: Whether the subject dropped out for
+#'       endpoint 1.
+#'
+#'     - \code{survivalTime2}: The underlying survival time for
+#'       event endpoint 2 for the subject.
+#'
+#'     - \code{dropoutTime2}: The underlying dropout time for
+#'       event endpoint 2 for the subject.
+#'
+#'     - \code{timeUnderObservation2}: The time under observation
+#'       since randomization for event endpoint 2 for the subject.
+#'
+#'     - \code{event2}: Whether the subject experienced event endpoint 2.
+#'
+#'     - \code{dropoutEvent2}: Whether the subject dropped out for
+#'       endpoint 2.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#' 
+#'
 #' @examples
-#' 
+#'
 #' sim1 = lrsim2e3a(
-#'   kMax = 3, 
+#'   kMax = 3,
 #'   kMaxe1 = 2,
-#'   allocation1 = 2, 
-#'   allocation2 = 2, 
+#'   allocation1 = 2,
+#'   allocation2 = 2,
 #'   allocation3 = 1,
-#'   accrualTime = c(0, 8), 
+#'   accrualTime = c(0, 8),
 #'   accrualIntensity = c(10, 28),
-#'   piecewiseSurvivalTime = 0, 
+#'   piecewiseSurvivalTime = 0,
 #'   rho = 0,
 #'   lambda1e1 = log(2)/12*0.60,
 #'   lambda2e1 = log(2)/12*0.70,
 #'   lambda3e1 = log(2)/12,
-#'   lambda1e2 = log(2)/30*0.65, 
+#'   lambda1e2 = log(2)/30*0.65,
 #'   lambda2e2 = log(2)/30*0.75,
 #'   lambda3e2 = log(2)/30,
 #'   accrualDuration = 30.143,
@@ -811,10 +814,10 @@ lrsim2e <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH0e1 = 
 #'   maxNumberOfIterations = 1000,
 #'   maxNumberOfRawDatasetsPerStage = 1,
 #'   seed = 314159)
-#'  
+#'
 #' head(sim1$sumdata)
 #' head(sim1$rawdata)
-#'  
+#'
 #' @export
 lrsim2e3a <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH013e1 = 1, hazardRatioH023e1 = 1, hazardRatioH012e1 = 1, hazardRatioH013e2 = 1, hazardRatioH023e2 = 1, hazardRatioH012e2 = 1, allocation1 = 1L, allocation2 = 1L, allocation3 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, rho = 0, lambda1e1 = NA_real_, lambda2e1 = NA_real_, lambda3e1 = NA_real_, lambda1e2 = NA_real_, lambda2e2 = NA_real_, lambda3e2 = NA_real_, gamma1e1 = 0L, gamma2e1 = 0L, gamma3e1 = 0L, gamma1e2 = 0L, gamma2e2 = 0L, gamma3e2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
     .Call(`_lrstat_lrsim2e3a`, kMax, kMaxe1, hazardRatioH013e1, hazardRatioH023e1, hazardRatioH012e1, hazardRatioH013e2, hazardRatioH023e2, hazardRatioH012e2, allocation1, allocation2, allocation3, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, rho, lambda1e1, lambda2e1, lambda3e1, lambda1e2, lambda2e2, lambda3e2, gamma1e1, gamma2e1, gamma3e1, gamma1e2, gamma2e2, gamma3e2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
@@ -825,7 +828,7 @@ lrsim2e3a <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH013e
 #' times.
 #'
 #' @param time A vector of calendar times at which to calculate the number
-#' of enrolled subjects.
+#'   of enrolled subjects.
 #' @inheritParams param_accrualTime
 #' @inheritParams param_accrualIntensity
 #' @inheritParams param_accrualDuration
@@ -834,7 +837,7 @@ lrsim2e3a <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH013e
 #' specified calendar times.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#' 
+#'
 #' @examples
 #' # Example 1: Uniform enrollment with 20 patients per month for 12 months.
 #'
@@ -855,7 +858,7 @@ accrual <- function(time = NA_real_, accrualTime = 0L, accrualIntensity = NA_rea
 }
 
 #' @title Accrual duration to enroll target number of subjects
-#' @description Obtains the accrual duration to enroll the target number 
+#' @description Obtains the accrual duration to enroll the target number
 #' of subjects.
 #'
 #' @param nsubjects The vector of target number of subjects.
@@ -880,7 +883,7 @@ getAccrualDurationFromN <- function(nsubjects = NA_real_, accrualTime = 0L, accr
 #' times.
 #'
 #' @param time A vector of analysis times at which to calculate the
-#' probability of being at risk.
+#'   probability of being at risk.
 #' @inheritParams param_piecewiseSurvivalTime
 #' @inheritParams param_lambda
 #' @inheritParams param_gamma
@@ -892,10 +895,11 @@ getAccrualDurationFromN <- function(nsubjects = NA_real_, accrualTime = 0L, accr
 #' @keywords internal
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#' 
+#'
 #' @examples
-#' # Piecewise exponential survival with hazard 0.0533 in the first 6 months,
-#' # and hazard 0.0309 thereafter, and 5% dropout by the end of 1 year.
+#' # Piecewise exponential survival with hazard 0.0533 in the first 6
+#' # months, and hazard 0.0309 thereafter, and 5% dropout by the end of
+#' # 1 year.
 #'
 #' patrisk(time = c(3, 9), piecewiseSurvivalTime = c(0, 6),
 #'         lambda = c(0.0533, 0.0309), gamma = -log(1-0.05)/12)
@@ -910,7 +914,7 @@ patrisk <- function(time = NA_real_, piecewiseSurvivalTime = 0L, lambda = NA_rea
 #' times.
 #'
 #' @param time A vector of analysis times at which to calculate the
-#' probability of having an event.
+#'   probability of having an event.
 #' @inheritParams param_piecewiseSurvivalTime
 #' @inheritParams param_lambda
 #' @inheritParams param_gamma
@@ -924,8 +928,9 @@ patrisk <- function(time = NA_real_, piecewiseSurvivalTime = 0L, lambda = NA_rea
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
-#' # Piecewise exponential survival with hazard 0.0533 in the first 6 months,
-#' # and hazard 0.0309 thereafter, and 5% dropout by the end of 1 year.
+#' # Piecewise exponential survival with hazard 0.0533 in the first 6
+#' # months, and hazard 0.0309 thereafter, and 5% dropout by the end of
+#' # 1 year.
 #'
 #' pevent(time = c(3, 9), piecewiseSurvivalTime = c(0, 6),
 #'        lambda = c(0.0533, 0.0309), gamma = -log(1-0.05)/12)
@@ -956,8 +961,9 @@ pevent <- function(time = NA_real_, piecewiseSurvivalTime = 0L, lambda = NA_real
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
-#' # Piecewise exponential survival with hazard 0.0533 in the first 6 months,
-#' # and hazard 0.0309 thereafter, and 5% dropout by the end of 1 year.
+#' # Piecewise exponential survival with hazard 0.0533 in the first 6
+#' # months, and hazard 0.0309 thereafter, and 5% dropout by the end of
+#' # 1 year.
 #'
 #' hd(j = 1, t1 = 1, t2 = 3, piecewiseSurvivalTime = c(0, 6),
 #'    lambda = c(0.0533, 0.0309), gamma = -log(1-0.05)/12)
@@ -968,9 +974,9 @@ hd <- function(j = NA_integer_, t1 = NA_real_, t2 = NA_real_, piecewiseSurvivalT
 }
 
 #' @title Integrated event probability over an interval
-#' @description Obtains the integration of the probability of having an event
-#' during an interval. The specified analysis time interval can span more
-#' than one analysis time interval with constant hazard.
+#' @description Obtains the integration of the probability of having an
+#' event during an interval. The specified analysis time interval can span
+#' more than one analysis time interval with constant hazard.
 #'
 #' @param t1 Lower bound of the analysis time interval.
 #' @param t2 Upper bound of the analysis time interval.
@@ -987,8 +993,9 @@ hd <- function(j = NA_integer_, t1 = NA_real_, t2 = NA_real_, piecewiseSurvivalT
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
-#' # Piecewise exponential survival with hazard 0.0533 in the first 6 months,
-#' # and hazard 0.0309 thereafter, and 5% dropout by the end of 1 year.
+#' # Piecewise exponential survival with hazard 0.0533 in the first 6
+#' # months, and hazard 0.0309 thereafter, and 5% dropout by the end of
+#' # 1 year.
 #'
 #' pd(t1 = 1, t2 = 8, piecewiseSurvivalTime = c(0, 6),
 #'    lambda = c(0.0533, 0.0309), gamma = -log(1-0.05)/12)
@@ -1005,7 +1012,7 @@ pd <- function(t1 = NA_real_, t2 = NA_real_, piecewiseSurvivalTime = 0L, lambda 
 #' calendar times.
 #'
 #' @param time A vector of calendar times at which to calculate the number
-#' of patients having an event.
+#'   of patients having an event.
 #' @param u1 Lower bound of the accrual time interval.
 #' @param u2 Upper bound of the accrual time interval.
 #' @inheritParams param_accrualTime
@@ -1044,7 +1051,7 @@ ad <- function(time = NA_real_, u1 = NA_real_, u2 = NA_real_, accrualTime = 0L, 
 #' times for each treatment group.
 #'
 #' @param time A vector of analysis times at which to calculate the number
-#' of patients at risk.
+#'   of patients at risk.
 #' @inheritParams param_allocationRatioPlanned
 #' @inheritParams param_accrualTime
 #' @inheritParams param_accrualIntensity
@@ -1063,7 +1070,7 @@ ad <- function(time = NA_real_, u1 = NA_real_, u2 = NA_real_, accrualTime = 0L, 
 #' @keywords internal
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#' 
+#'
 #' @examples
 #' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
 #' # the end of 1 year.
@@ -1086,7 +1093,7 @@ natrisk <- function(time = NA_real_, allocationRatioPlanned = 1, accrualTime = 0
 #' analysis times for each treatment group.
 #'
 #' @param time A vector of analysis times at which to calculate the number
-#' of patients having an event.
+#'   of patients having an event.
 #' @inheritParams param_allocationRatioPlanned
 #' @inheritParams param_accrualTime
 #' @inheritParams param_accrualIntensity
@@ -1099,8 +1106,8 @@ natrisk <- function(time = NA_real_, allocationRatioPlanned = 1, accrualTime = 0
 #' @inheritParams param_minFollowupTime
 #' @inheritParams param_maxFollowupTime
 #'
-#' @return A matrix of the number of patients having an event at the specified
-#' analysis times (row) for each treatment group (column).
+#' @return A matrix of the number of patients having an event at the
+#' specified analysis times (row) for each treatment group (column).
 #'
 #' @keywords internal
 #'
@@ -1128,7 +1135,7 @@ nevent <- function(time = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L
 #' calendar times for each treatment group.
 #'
 #' @param time A vector of calendar times at which to calculate the number
-#' of patients having an event.
+#'   of patients having an event.
 #' @inheritParams param_allocationRatioPlanned
 #' @inheritParams param_accrualTime
 #' @inheritParams param_accrualIntensity
@@ -1141,8 +1148,8 @@ nevent <- function(time = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L
 #' @inheritParams param_minFollowupTime
 #' @inheritParams param_maxFollowupTime
 #'
-#' @return A matrix of the number of patients having an event at the specified
-#' calendar times (row) for each treatment group (column).
+#' @return A matrix of the number of patients having an event at the
+#' specified calendar times (row) for each treatment group (column).
 #'
 #' @keywords internal
 #'
@@ -1172,7 +1179,7 @@ nevent2 <- function(time = NA_real_, allocationRatioPlanned = 1, accrualTime = 0
 #' score statistic for a hypothesized hazard ratio at a given calendar time.
 #'
 #' @param time The calendar time at which to calculate the number
-#'  of events and the mean and variance of log-rank test score statistic.
+#'   of events and the mean and variance of log-rank test score statistic.
 #' @inheritParams param_hazardRatioH0
 #' @inheritParams param_allocationRatioPlanned
 #' @inheritParams param_accrualTime
@@ -1190,48 +1197,49 @@ nevent2 <- function(time = NA_real_, allocationRatioPlanned = 1, accrualTime = 0
 #' @inheritParams param_rho2
 #' @inheritParams param_numSubintervals
 #' @param predictEventOnly Whether to predict the number of events only.
-#'  Defaults to 0 for obtaining log-rank test score statistic mean
-#'  and variance.
+#'   Defaults to 0 for obtaining log-rank test score statistic mean
+#'   and variance.
 #'
-#' @return A data frame of the following variables if 
+#' @return A data frame of the following variables if
 #' \code{predictEventOnly = 1}:
-#' 
+#'
 #' * \code{stratum}: The stratum number.
-#' 
+#'
 #' * \code{time}: The analysis time since trial start.
-#' 
+#'
 #' * \code{subjects}: The number of enrolled subjects.
-#' 
-#' * \code{nevents}: The total number of events. 
-#' 
+#'
+#' * \code{nevents}: The total number of events.
+#'
 #' * \code{nevents1}: The number of events in the active treatment group.
-#' 
+#'
 #' * \code{nevents2}: The number of events in the control group.
-#' 
+#'
 #' * \code{ndropouts}: The total number of dropouts.
-#' 
-#' * \code{ndropouts1}: The number of events for the active treatment group.
-#' 
-#' * \code{ndropouts2}: The number of events for the control group.
-#' 
+#'
+#' * \code{ndropouts1}: The number of dropouts in the active treatment
+#'   group.
+#'
+#' * \code{ndropouts2}: The number of dropouts in the control group.
+#'
 #' * \code{nfmax}: The total number of subjects reaching maximum follow-up.
-#' 
-#' * \code{nfmax1}: The number of subjects reaching maximum follow-up in 
-#' the active treatment group. 
-#' 
-#' * \code{nfmax2}: The number of subjects reaching maximum follow-up in 
-#' the control group. 
-#' 
-#' If \code{predictEventOnly = 0}, the following variables will also 
+#'
+#' * \code{nfmax1}: The number of subjects reaching maximum follow-up in
+#'   the active treatment group.
+#'
+#' * \code{nfmax2}: The number of subjects reaching maximum follow-up in
+#'   the control group.
+#'
+#' If \code{predictEventOnly = 0}, the following variables will also
 #' be included:
-#' 
+#'
 #' * \code{uscore}: The numerator of the weighted log-rank test statistic.
-#' 
-#' * \code{vscore}: The variance of the weighted log-rank score statistic 
-#' with weight squared.
-#' 
-#' * \code{iscore}: The Fisher information of the weighted log-rank score 
-#' statistic. 
+#'
+#' * \code{vscore}: The variance of the weighted log-rank score statistic
+#'   with weight squared.
+#'
+#' * \code{iscore}: The Fisher information of the weighted log-rank score
+#'   statistic.
 #'
 #' @keywords internal
 #'
@@ -1243,8 +1251,8 @@ nevent2 <- function(time = NA_real_, allocationRatioPlanned = 1, accrualTime = 0
 #'
 #' lrstat1(time = 22, hazardRatioH0 = 1,
 #'         allocationRatioPlanned = 1,
-#'         accrualTime = seq(0, 9),
-#'         accrualIntensity = c(26/9*seq(1, 9), 26),
+#'         accrualTime = seq(0, 8),
+#'         accrualIntensity = 26/9*seq(1, 9),
 #'         piecewiseSurvivalTime = c(0, 6),
 #'         stratumFraction = c(0.2, 0.8),
 #'         lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
@@ -1261,13 +1269,13 @@ lrstat1 <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned =
 
 #' @title Number of subjects having an event and log-rank statistics
 #' @description Obtains the number of subjects accrued, number of events,
-#' number of dropouts, and number of subjects reaching the maximum 
+#' number of dropouts, and number of subjects reaching the maximum
 #' follow-up in each group, mean and variance of weighted log-rank
 #' score statistic, estimated hazard ratio from weighted Cox regression
 #' and variance of log hazard ratio estimate at given calendar times.
 #'
 #' @param time A vector of calendar times at which to calculate the number
-#'  of events and the mean and variance of log-rank test score statistic.
+#'   of events and the mean and variance of log-rank test score statistic.
 #' @inheritParams param_hazardRatioH0
 #' @inheritParams param_allocationRatioPlanned
 #' @inheritParams param_accrualTime
@@ -1284,60 +1292,61 @@ lrstat1 <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned =
 #' @inheritParams param_rho1
 #' @inheritParams param_rho2
 #' @inheritParams param_numSubintervals
-#' @param predictTarget The target of prediction. 
-#' Set \code{predictTarget = 1} to predict the number of events only.
-#' Set \code{predictTarget = 2} (default) to predict the umber of events 
-#' and log-rank score statistic mean and variance.
-#' Set \code{predictTarget = 3} to predict the number of events,
-#' log-rank score statistic mean and variance, and
-#' hazard ratio and variance of log hazard ratio.
+#' @param predictTarget The target of prediction.
+#'   Set \code{predictTarget = 1} to predict the number of events only.
+#'   Set \code{predictTarget = 2} (default) to predict the number of events
+#'   and log-rank score statistic mean and variance.
+#'   Set \code{predictTarget = 3} to predict the number of events,
+#'   log-rank score statistic mean and variance, and
+#'   hazard ratio and variance of log hazard ratio.
 #'
-#' @return A data frame containing the following variables if 
-#' \code{predictTarget = 1}: 
-#' 
+#' @return A data frame containing the following variables if
+#' \code{predictTarget = 1}:
+#'
 #' * \code{time}: The analysis time since trial start.
-#' 
+#'
 #' * \code{subjects}: The number of enrolled subjects.
-#' 
-#' * \code{nevents}: The total number of events. 
-#' 
+#'
+#' * \code{nevents}: The total number of events.
+#'
 #' * \code{nevents1}: The number of events in the active treatment group.
-#' 
+#'
 #' * \code{nevents2}: The number of events in the control group.
-#' 
+#'
 #' * \code{ndropouts}: The total number of dropouts.
-#' 
-#' * \code{ndropouts1}: The number of events for the active treatment group.
-#' 
-#' * \code{ndropouts2}: The number of events for the control group.
-#' 
+#'
+#' * \code{ndropouts1}: The number of dropouts in the active treatment
+#'   group.
+#'
+#' * \code{ndropouts2}: The number of dropouts in the control group.
+#'
 #' * \code{nfmax}: The total number of subjects reaching maximum follow-up.
-#' 
-#' * \code{nfmax1}: The number of subjects reaching maximum follow-up in 
-#' the active treatment group. 
-#' 
-#' * \code{nfmax2}: The number of subjects reaching maximum follow-up in 
-#' the control group. 
-#' 
-#' If \code{predictTarget = 2}, the following variables will also 
+#'
+#' * \code{nfmax1}: The number of subjects reaching maximum follow-up in
+#'   the active treatment group.
+#'
+#' * \code{nfmax2}: The number of subjects reaching maximum follow-up in
+#'   the control group.
+#'
+#' If \code{predictTarget = 2}, the following variables will also
 #' be included:
-#' 
+#'
 #' * \code{uscore}: The numerator of the log-rank test statistic.
-#' 
+#'
 #' * \code{vscore}: The variance of the log-rank score test statistic.
-#' 
-#' * \code{logRankZ}: The log-rank test statistic on the Z-scale. 
-#' 
-#' * \code{hazardRatioH0}: The hazard ratio under the null hypothesis. 
-#' 
-#' Furthermore, if \code{predictTarget = 3}, the following additional 
+#'
+#' * \code{logRankZ}: The log-rank test statistic on the Z-scale.
+#'
+#' * \code{hazardRatioH0}: The hazard ratio under the null hypothesis.
+#'
+#' Furthermore, if \code{predictTarget = 3}, the following additional
 #' variables will also be included:
-#' 
+#'
 #' * \code{HR}: The average hazard ratio from weighted Cox regression.
-#' 
+#'
 #' * \code{vlogHR}: The variance of log hazard ratio.
-#' 
-#' * \code{zlogHR}: The Z-statistic for log hazard ratio. 
+#'
+#' * \code{zlogHR}: The Z-statistic for log hazard ratio.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -1346,8 +1355,8 @@ lrstat1 <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned =
 #' # the end of 1 year.
 #'
 #' lrstat(time = c(22, 40), allocationRatioPlanned = 1,
-#'        accrualTime = seq(0, 9),
-#'        accrualIntensity = c(26/9*seq(1, 9), 26),
+#'        accrualTime = seq(0, 8),
+#'        accrualIntensity = 26/9*seq(1, 9),
 #'        piecewiseSurvivalTime = c(0, 6),
 #'        stratumFraction = c(0.2, 0.8),
 #'        lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
@@ -1363,13 +1372,13 @@ lrstat <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 
 }
 
 #' @title Kaplan-Meier estimate of milestone survival
-#' 
-#' @description Obtains the Kaplan-Meier estimate of milestone survival 
+#'
+#' @description Obtains the Kaplan-Meier estimate of milestone survival
 #' probability and associated variance estimate using the Greenwood formula
 #' by treatment group and by stratum at given analysis time.
 #'
-#' @param time The calendar time for data cut.  
-#' @param milestone The milestone time at which to calculate the 
+#' @param time The calendar time for data cut.
+#' @param milestone The milestone time at which to calculate the
 #'   Kaplan-Meier estimate of survival probability.
 #' @inheritParams param_allocationRatioPlanned
 #' @inheritParams param_accrualTime
@@ -1385,29 +1394,30 @@ lrstat <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_numSubintervals
 #'
-#' @return A data frame containing the following variables: 
-#' 
+#' @return A data frame containing the following variables:
+#'
 #' * \code{stratum}: The stratum.
-#' 
+#'
 #' * \code{time}: The calendar time since trial start.
-#' 
-#' * \code{subjects}: The enrolled number of subjects. 
-#' 
-#' * \code{milestone}: The milestone time relative to randomization. 
-#' 
-#' * \code{surv1}: The milestone survival probability for the treatment group.
-#' 
+#'
+#' * \code{subjects}: The enrolled number of subjects.
+#'
+#' * \code{milestone}: The milestone time relative to randomization.
+#'
+#' * \code{surv1}: The milestone survival probability for the treatment
+#'   group.
+#'
 #' * \code{surv2}: The milestone survival probability for the control group.
-#' 
+#'
 #' * \code{vsurv1}: The variance for \code{surv1}.
-#' 
+#'
 #' * \code{vsurv2}: The variance for \code{surv2}.
-#' 
-#' * \code{survdiff}: The difference in milestone survival probabilities, 
-#' i.e., \code{surv1 - surv2}.
-#' 
+#'
+#' * \code{survdiff}: The difference in milestone survival probabilities,
+#'   i.e., \code{surv1 - surv2}.
+#'
 #' * \code{vsurvdiff}: The variance for \code{survdiff}.
-#' 
+#'
 #'
 #' @keywords internal
 #'
@@ -1417,11 +1427,11 @@ lrstat <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 
 #' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
 #' # the end of 1 year.
 #'
-#' kmest1(time = 40, 
-#'        milestone = 18, 
+#' kmest1(time = 40,
+#'        milestone = 18,
 #'        allocationRatioPlanned = 1,
-#'        accrualTime = seq(0, 9),
-#'        accrualIntensity = c(26/9*seq(1, 9), 26),
+#'        accrualTime = seq(0, 8),
+#'        accrualIntensity = 26/9*seq(1, 9),
 #'        piecewiseSurvivalTime = c(0, 6),
 #'        stratumFraction = c(0.2, 0.8),
 #'        lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
@@ -1437,13 +1447,13 @@ kmest1 <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 }
 
 #' @title Stratified difference in milestone survival
-#' @description Obtains the stratified Kaplan-Meier estimate of 
-#'   milestone survival probabilities and difference in milestone 
+#' @description Obtains the stratified Kaplan-Meier estimate of
+#'   milestone survival probabilities and difference in milestone
 #'   survival at given calendar times and milestone time.
 #'
-#' @param time A vector of calendar times at which to calculate the 
+#' @param time A vector of calendar times at which to calculate the
 #'   milestone survival.
-#' @param milestone The milestone time at which to calculate the 
+#' @param milestone The milestone time at which to calculate the
 #'   Kaplan-Meier estimate of survival probability.
 #' @inheritParams param_allocationRatioPlanned
 #' @inheritParams param_accrualTime
@@ -1458,31 +1468,32 @@ kmest1 <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #' @inheritParams param_followupTime
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_numSubintervals
-#' 
-#' @return A data frame containing the following variables: 
-#' 
-#' * \code{time}: The calendar time at which to calculate the milestone 
-#' survival.
-#' 
-#' * \code{subjects}: The enrolled number of subjects. 
-#' 
-#' * \code{milestone}: The milestone time relative to randomization. 
-#' 
-#' * \code{surv1}: The milestone survival probability for the treatment group.
-#' 
+#'
+#' @return A data frame containing the following variables:
+#'
+#' * \code{time}: The calendar time at which to calculate the milestone
+#'   survival.
+#'
+#' * \code{subjects}: The enrolled number of subjects.
+#'
+#' * \code{milestone}: The milestone time relative to randomization.
+#'
+#' * \code{surv1}: The milestone survival probability for the treatment
+#'   group.
+#'
 #' * \code{surv2}: The milestone survival probability for the control group.
-#' 
+#'
 #' * \code{vsurv1}: The variance for \code{surv1}.
-#' 
+#'
 #' * \code{vsurv2}: The variance for \code{surv2}.
-#' 
-#' * \code{survdiff}: The difference in milestone survival probabilities, 
-#' i.e., \code{surv1 - surv2}.
-#' 
+#'
+#' * \code{survdiff}: The difference in milestone survival probabilities,
+#'   i.e., \code{surv1 - surv2}.
+#'
 #' * \code{vsurvdiff}: The variance for \code{survdiff}.
-#' 
-#' * \code{survdiffZ}: The Z-statistic value, i.e., 
-#' \code{survdiff/sqrt(vsurvdiff)}.
+#'
+#' * \code{survdiffZ}: The Z-statistic value, i.e.,
+#'   \code{survdiff/sqrt(vsurvdiff)}.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -1490,11 +1501,11 @@ kmest1 <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
 #' # the end of 1 year.
 #'
-#' kmest(time = c(22, 40), 
-#'       milestone = 18, 
+#' kmest(time = c(22, 40),
+#'       milestone = 18,
 #'       allocationRatioPlanned = 1,
-#'       accrualTime = seq(0, 9),
-#'       accrualIntensity = c(26/9*seq(1, 9), 26),
+#'       accrualTime = seq(0, 8),
+#'       accrualIntensity = 26/9*seq(1, 9),
 #'       piecewiseSurvivalTime = c(0, 6),
 #'       stratumFraction = c(0.2, 0.8),
 #'       lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
@@ -1510,8 +1521,8 @@ kmest <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned 
 }
 
 #' @title Calendar times for target number of events
-#' @description Obtains the calendar times to reach the target number of
-#' subjects having an event.
+#' @description Obtains the calendar times needed to reach the target
+#' number of subjects experiencing an event.
 #'
 #' @param nevents A vector of target number of events.
 #' @inheritParams param_allocationRatioPlanned
@@ -1537,8 +1548,8 @@ kmest <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned 
 #' # the end of 1 year.
 #'
 #' caltime(nevents = c(24, 80), allocationRatioPlanned = 1,
-#'         accrualTime = seq(0, 9),
-#'         accrualIntensity = c(26/9*seq(1, 9), 26),
+#'         accrualTime = seq(0, 8),
+#'         accrualIntensity = 26/9*seq(1, 9),
 #'         piecewiseSurvivalTime = c(0, 6),
 #'         stratumFraction = c(0.2, 0.8),
 #'         lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
@@ -1554,7 +1565,7 @@ caltime <- function(nevents = NA_real_, allocationRatioPlanned = 1, accrualTime 
 }
 
 #' @title Range of accrual duration for target number of events
-#' @description Obtains a range of accrual duration to reach the 
+#' @description Obtains a range of accrual duration to reach the
 #' target number of events.
 #'
 #' @param nevents The target number of events.
@@ -1569,22 +1580,22 @@ caltime <- function(nevents = NA_real_, allocationRatioPlanned = 1, accrualTime 
 #' @inheritParams param_gamma2_stratified
 #' @inheritParams param_followupTime
 #' @inheritParams param_fixedFollowup
-#' @param npoints The number of accrual duration time points. 
+#' @param npoints The number of accrual duration time points.
 #'   Defaults to 23.
 #' @param interval The interval to search for the solution of
 #'   accrualDuration. Defaults to \code{c(0.001, 240)}.
-#' 
-#' @return A data frame of the following variables: 
-#' 
+#'
+#' @return A data frame of the following variables:
+#'
 #' * \code{nevents}: The target number of events.
-#' 
+#'
 #' * \code{fixedFollowup}: Whether a fixed follow-up design is used.
-#' 
+#'
 #' * \code{accrualDuration}: The accrual duration.
-#' 
+#'
 #' * \code{subjects}: The total number of subjects.
-#' 
-#' * \code{studyDuration}: The study duration. 
+#'
+#' * \code{studyDuration}: The study duration.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -1614,9 +1625,9 @@ getDurationFromNevents <- function(nevents = NA_real_, allocationRatioPlanned = 
 #' sample size in a two-group survival design.
 #'
 #' @inheritParams param_kMax
-#' @param informationRates The information rates in terms of number 
-#'   of events for the conventional log-rank test and in terms of 
-#'   the actual information for weighted log-rank tests. 
+#' @param informationRates The information rates in terms of number
+#'   of events for the conventional log-rank test and in terms of
+#'   the actual information for weighted log-rank tests.
 #'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
 #' @inheritParams param_efficacyStopping
 #' @inheritParams param_futilityStopping
@@ -1627,10 +1638,10 @@ getDurationFromNevents <- function(nevents = NA_real_, allocationRatioPlanned = 
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
 #' @param typeBetaSpending The type of beta spending. One of the following:
-#'  "sfOF" for O'Brien-Fleming type spending function, "sfP" for Pocock type
-#'  spending function, "sfKD" for Kim & DeMets spending function,
-#'  "sfHSD" for Hwang, Shi & DeCani spending function, and "none" for no
-#'  early futility stopping. Defaults to "none".
+#'   "sfOF" for O'Brien-Fleming type spending function, "sfP" for Pocock
+#'   type spending function, "sfKD" for Kim & DeMets spending function,
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and "none" for no
+#'   early futility stopping. Defaults to "none".
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_hazardRatioH0
 #' @inheritParams param_allocationRatioPlanned
@@ -1650,167 +1661,167 @@ getDurationFromNevents <- function(nevents = NA_real_, allocationRatioPlanned = 
 #' @inheritParams param_numSubintervals
 #' @inheritParams param_estimateHazardRatio
 #' @inheritParams param_typeOfComputation
-#' @param spendingTime A vector of length \code{kMax} for the error spending 
-#'   time at each analysis. Defaults to missing, in which case, it is the 
+#' @param spendingTime A vector of length \code{kMax} for the error spending
+#'   time at each analysis. Defaults to missing, in which case, it is the
 #'   same as \code{informationRates}.
-#' @param studyDuration Study duration for fixed follow-up design. 
-#'   Defaults to missing, which is to be replaced with the sum of 
-#'   \code{accrualDuration} and \code{followupTime}. If provided, 
-#'   the value is allowed to be less than the sum of \code{accrualDuration} 
+#' @param studyDuration Study duration for fixed follow-up design.
+#'   Defaults to missing, which is to be replaced with the sum of
+#'   \code{accrualDuration} and \code{followupTime}. If provided,
+#'   the value is allowed to be less than the sum of \code{accrualDuration}
 #'   and \code{followupTime}.
-#' 
-#'   
+#'
 #' @return An S3 class \code{lrpower} object with 4 components:
 #'
-#'* \code{overallResults}: A data frame containing the following variables: 
+#' * \code{overallResults}: A data frame containing the following variables:
 #'
-#'   - \code{overallReject}: The overall rejection probability.
-#'   
-#'   - \code{alpha}: The overall significance level.
-#'   
-#'   - \code{numberOfEvents}: The total number of events. 
-#'   
-#'   - \code{numberOfDropouts}: The total number of dropouts. 
-#'   
-#'   - \code{numbeOfSubjects}: The total number of subjects.
-#'   
-#'   - \code{studyDuration}: The total study duration. 
-#'   
-#'   - \code{expectedNumberOfEvents}: The expected number of events.
-#'   
-#'   - \code{expectedNumberOfDropouts}: The expected number of dropouts. 
-#'   
-#'   - \code{expectedNumberOfSubjects}: The expected number of subjects.
-#'   
-#'   - \code{expectedStudyDuration}: The expected study duration.
-#'   
-#'   - \code{accrualDuration}: The accrual duration.
-#'   
-#'   - \code{followupTime}: The follow-up duration. 
-#'   
-#'   - \code{fixedFollowup}: Whether a fixed follow-up design is used.
-#'   
-#'   - \code{rho1}: The first parameter of the Fleming-Harrington family 
-#'   of weighted log-rank test.
-#'   
-#'   - \code{rho2}: The second parameter of the Fleming-Harrington family 
-#'   of weighted log-rank test.
-#'   
-#'   - \code{allocationRatioPlanned}: Allocation ratio for the active 
-#'   treatment versus control. 
-#'   
-#'   - \code{kMax}: The number of stages.
-#'   
-#'   - \code{hazardRatioH0}: The hazard ratio under the null hypothesis.
-#'   
-#'   - \code{etimateHazardRatio}: Whether to estimate the hazard ratio.
-#'   
-#'   - \code{typeOfComputation}: The type of computation, 
-#'   either "direct" for the direct approximation method, 
-#'   or "schoenfeld" for the Schoenfeld method.
+#'     - \code{overallReject}: The overall rejection probability.
+#'
+#'     - \code{alpha}: The overall significance level.
+#'
+#'     - \code{numberOfEvents}: The total number of events.
+#'
+#'     - \code{numberOfDropouts}: The total number of dropouts.
+#'
+#'     - \code{numbeOfSubjects}: The total number of subjects.
+#'
+#'     - \code{studyDuration}: The total study duration.
+#'
+#'     - \code{information}: The maximum information.
+#'
+#'     - \code{expectedNumberOfEvents}: The expected number of events.
+#'
+#'     - \code{expectedNumberOfDropouts}: The expected number of dropouts.
+#'
+#'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
+#'
+#'     - \code{expectedStudyDuration}: The expected study duration.
+#'
+#'     - \code{expectedInformation}: The expected information.
+#'
+#'     - \code{accrualDuration}: The accrual duration.
+#'
+#'     - \code{followupTime}: The follow-up duration.
+#'
+#'     - \code{fixedFollowup}: Whether a fixed follow-up design is used.
+#'
+#'     - \code{rho1}: The first parameter of the Fleming-Harrington family
+#'       of weighted log-rank test.
+#'
+#'     - \code{rho2}: The second parameter of the Fleming-Harrington family
+#'       of weighted log-rank test.
+#'
+#'     - \code{kMax}: The number of stages.
+#'
+#'     - \code{hazardRatioH0}: The hazard ratio under the null hypothesis.
+#'
+#'     - \code{typeOfComputation}: The type of computation,
+#'       either "direct" for the direct approximation method,
+#'       or "schoenfeld" for the Schoenfeld method.
 #'
 #' * \code{byStageResults}: A data frame containing the following variables:
-#' 
-#'   - \code{informationRates}: The information rates.
-#'   
-#'   - \code{efficacyBounds}: The efficacy boundaries on the Z-scale.
-#'   
-#'   - \code{futilityBounds}: The futility boundaries on the Z-scale.
-#'   
-#'   - \code{rejectPerStage}: The probability for efficacy stopping.
-#'   
-#'   - \code{futilityPerStage}: The probability for futility stopping.
-#'   
-#'   - \code{cumulativeRejection}: The cumulative probability for efficacy 
-#'   stopping.
-#'   
-#'   - \code{cumulativeFutility}: The cumulative probability for futility 
-#'   stopping.
-#'   
-#'   - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
-#'   
-#'   - \code{numberOfEvents}: The number of events.
-#'   
-#'   - \code{numberOfDropouts}: The number of dropouts.
-#'   
-#'   - \code{numberOfSubjects}: The number of subjects.
-#'   
-#'   - \code{analysisTime}: The average time since trial start.
-#'   
-#'   - \code{efficacyHR}: The efficacy boundaries on the hazard ratio scale.
-#'   
-#'   - \code{futilityHR}: The futility boundaries on the hazard ratio scale.
-#'   
-#'   - \code{efficacyP}: The efficacy boundaries on the p-value scale.
-#'   
-#'   - \code{futilityP}: The futility boundaries on the p-value scale.
-#'   
-#'   - \code{information}: The cumulative information.
-#'   
-#'   - \code{HR}: The average hazard ratio. 
-#'   
-#'   - \code{efficacyStopping}: Whether to allow efficacy stopping.
-#'   
-#'   - \code{futilityStopping}: Whether to allow futility stopping.
 #'
-#' * \code{settings}: A list containing the following input parameters: 
+#'     - \code{informationRates}: The information rates.
+#'
+#'     - \code{efficacyBounds}: The efficacy boundaries on the Z-scale.
+#'
+#'     - \code{futilityBounds}: The futility boundaries on the Z-scale.
+#'
+#'     - \code{rejectPerStage}: The probability for efficacy stopping.
+#'
+#'     - \code{futilityPerStage}: The probability for futility stopping.
+#'
+#'     - \code{cumulativeRejection}: The cumulative probability for efficacy
+#'       stopping.
+#'
+#'     - \code{cumulativeFutility}: The cumulative probability for futility
+#'       stopping.
+#'
+#'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
+#'
+#'     - \code{numberOfEvents}: The number of events.
+#'
+#'     - \code{numberOfDropouts}: The number of dropouts.
+#'
+#'     - \code{numberOfSubjects}: The number of subjects.
+#'
+#'     - \code{analysisTime}: The average time since trial start.
+#'
+#'     - \code{efficacyHR}: The efficacy boundaries on the hazard ratio
+#'       scale if \code{estimateHazardRatio}.
+#'
+#'     - \code{futilityHR}: The futility boundaries on the hazard ratio
+#'       scale if \code{estimateHazardRatio}.
+#'
+#'     - \code{efficacyP}: The efficacy boundaries on the p-value scale.
+#'
+#'     - \code{futilityP}: The futility boundaries on the p-value scale.
+#'
+#'     - \code{information}: The cumulative information.
+#'
+#'     - \code{HR}: The average hazard ratio.
+#'
+#'     - \code{efficacyStopping}: Whether to allow efficacy stopping.
+#'
+#'     - \code{futilityStopping}: Whether to allow futility stopping.
+#'
+#' * \code{settings}: A list containing the following input parameters:
 #'   \code{typeAlphaSpending}, \code{parameterAlphaSpending},
 #'   \code{userAlphaSpending}, \code{typeBetaSpending},
-#'   \code{parameterBetaSpending}, \code{userBetaSpending},
+#'   \code{parameterBetaSpending}, \code{allocationRatioPlanned},
 #'   \code{accrualTime}, \code{accuralIntensity},
 #'   \code{piecewiseSurvivalTime}, \code{stratumFraction},
-#'   \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2}, and
-#'   \code{spendingTime}.
+#'   \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2},
+#'   \code{estimateHazardRatio}, and \code{spendingTime}.
 #'
-#' * \code{byTreatmentCounts}: A list containing the following counts by 
-#' treatment group:
-#' 
-#'   - \code{numberOfEvents1}: The number of events by stage for 
-#'   the treatment group.
-#'   
-#'   - \code{numberOfDropouts1}: The number of dropouts by stage for 
-#'   the treatment group.
-#'   
-#'   - \code{numberOfSubjects1}: The number of subjects by stage for 
-#'   the treatment group.
-#'   
-#'   - \code{numberOfEvents2}: The number of events by stage for 
-#'   the control group.
-#'   
-#'   - \code{numberOfDropouts2}: The number of dropouts by stage for 
-#'   the control group.
-#'   
-#'   - \code{numberOfSubjects2}: The number of subjects by stage for 
-#'   the control group.   
-#'   
-#'   - \code{expectedNumberOfEvents1}: The expected number of events for 
-#'   the treatment group.
-#'   
-#'   - \code{expectedNumberOfDropouts1}: The expected number of dropouts for 
-#'   the treatment group.
-#'   
-#'   - \code{expectedNumberOfSubjects1}: The expected number of subjects for 
-#'   the treatment group.
-#'   
-#'   - \code{expectedNumberOfEvents2}: The expected number of events for 
-#'   control group.
-#'   
-#'   - \code{expectedNumberOfDropouts2}: The expected number of dropouts for 
-#'   the control group.
-#'   
-#'   - \code{expectedNumberOfSubjects2}: The expected number of subjects for 
-#'   the control group.
+#' * \code{byTreatmentCounts}: A list containing the following counts by
+#'   treatment group:
+#'
+#'     - \code{numberOfEvents1}: The number of events by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfDropouts1}: The number of dropouts by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfSubjects1}: The number of subjects by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfEvents2}: The number of events by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfDropouts2}: The number of dropouts by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfSubjects2}: The number of subjects by stage for
+#'       the control group.
+#'
+#'     - \code{expectedNumberOfEvents1}: The expected number of events for
+#'       the treatment group.
+#'
+#'     - \code{expectedNumberOfDropouts1}: The expected number of dropouts
+#'       for the treatment group.
+#'
+#'     - \code{expectedNumberOfSubjects1}: The expected number of subjects
+#'       for the treatment group.
+#'
+#'     - \code{expectedNumberOfEvents2}: The expected number of events for
+#'       control group.
+#'
+#'     - \code{expectedNumberOfDropouts2}: The expected number of dropouts
+#'       for the control group.
+#'
+#'     - \code{expectedNumberOfSubjects2}: The expected number of subjects
+#'       for the control group.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#' 
+#'
 #' @examples
 #' # Piecewise accrual, piecewise exponential survival, and 5% dropout by
 #' # the end of 1 year.
 #'
 #' lrpower(kMax = 2, informationRates = c(0.8, 1),
 #'         alpha = 0.025, typeAlphaSpending = "sfOF",
-#'         allocationRatioPlanned = 1, accrualTime = seq(0, 9),
-#'         accrualIntensity = c(26/9*seq(1, 9), 26),
+#'         allocationRatioPlanned = 1, accrualTime = seq(0, 8),
+#'         accrualIntensity = 26/9*seq(1, 9),
 #'         piecewiseSurvivalTime = c(0, 6),
 #'         stratumFraction = c(0.2, 0.8),
 #'         lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
@@ -1824,18 +1835,18 @@ lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
     .Call(`_lrstat_lrpower`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals, estimateHazardRatio, typeOfComputation, spendingTime, studyDuration)
 }
 
-#' @title Get group sequential design
-#' @description Obtains the maximum information and stopping boundaries 
-#' for a generic group sequential design assuming a constant treatment 
-#' effect, or obtains the power given the maximum information and 
+#' @title Power and sample size for a generic group sequential design
+#' @description Obtains the maximum information and stopping boundaries
+#' for a generic group sequential design assuming a constant treatment
+#' effect, or obtains the power given the maximum information and
 #' stopping boundaries.
 #'
 #' @param beta The type II error.
-#' @param IMax The maximum information. Either \code{beta} or \code{IMax} 
-#' should be provided while the other one should be missing.
+#' @param IMax The maximum information. Either \code{beta} or \code{IMax}
+#'   should be provided while the other one should be missing.
 #' @param theta The parameter value.
 #' @inheritParams param_kMax
-#' @param informationRates The information rates. Fixed prior to the trial. 
+#' @param informationRates The information rates. Fixed prior to the trial.
 #'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
 #' @inheritParams param_efficacyStopping
 #' @inheritParams param_futilityStopping
@@ -1848,90 +1859,115 @@ lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
-#' @param spendingTime A vector of length \code{kMax} for the error spending 
-#'   time at each analysis. Defaults to missing, in which case, it is the 
+#' @param spendingTime A vector of length \code{kMax} for the error spending
+#'   time at each analysis. Defaults to missing, in which case, it is the
 #'   same as \code{informationRates}.
+#' @param varianceRatio The ratio of the variance under H0 to the
+#'   variance under H1. Defaults to 1.
 #'
 #' @return An S3 class \code{design} object with three components:
-#' 
+#'
 #' * \code{overallResults}: A data frame containing the following variables:
-#' 
-#'   - \code{overallReject}: The overall rejection probability.
-#'   
-#'   - \code{alpha}: The overall significance level.
-#'   
-#'   - \code{kMax}: The number of stages.
-#'   
-#'   - \code{theta}: The parameter value.
-#'   
-#'   - \code{maxInformation}: The maximum information.
-#'   
-#'   - \code{expectedInformationH1}: The expected information under H1.
-#'   
-#'   - \code{expectedInformationH0}: The expected information under H0.
-#'   
-#'   - \code{drift}: The drift parameter, equal to 
-#'   \code{theta*sqrt(maxInformation)}.
-#'   
-#'   - \code{inflationFactor}: The inflation factor (relative to the 
-#'   fixed design).
+#'
+#'     - \code{overallReject}: The overall rejection probability.
+#'
+#'     - \code{alpha}: The overall significance level.
+#'
+#'     - \code{attainedAlpha}: The attained significance level, which is
+#'       different from the overall significance level in the presence of
+#'       futility stopping.
+#'
+#'     - \code{kMax}: The number of stages.
+#'
+#'     - \code{theta}: The parameter value.
+#'
+#'     - \code{information}: The maximum information.
+#'
+#'     - \code{expectedInformationH1}: The expected information under H1.
+#'
+#'     - \code{expectedInformationH0}: The expected information under H0.
+#'
+#'     - \code{drift}: The drift parameter, equal to
+#'       \code{theta*sqrt(information)}.
+#'
+#'     - \code{inflationFactor}: The inflation factor (relative to the
+#'       fixed design).
 #'
 #' * \code{byStageResults}: A data frame containing the following variables:
-#' 
-#'   - \code{informationRates}: The information rates.
-#'   
-#'   - \code{efficacyBounds}: The efficacy boundaries on the Z-scale.
-#'   
-#'   - \code{futilityBounds}: The futility boundaries on the Z-scale.
-#'   
-#'   - \code{rejectPerStage}: The probability for efficacy stopping.
-#'   
-#'   - \code{futilityPerStage}: The probability for futility stopping.
-#'   
-#'   - \code{cumulativeRejection}: The cumulative probability for efficacy 
-#'   stopping.
-#'   
-#'   - \code{cumulativeFutility}: The cumulative probability for futility 
-#'   stopping.
-#'   
-#'   - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
-#'   
-#'   - \code{efficacyTheta}: The efficacy boundaries on the parameter scale.
-#'   
-#'   - \code{futilityTheta}: The futility boundaries on the parameter scale.
-#'   
-#'   - \code{efficacyP}: The efficacy boundaries on the p-value scale.
-#'   
-#'   - \code{futilityP}: The futility boundaries on the p-value scale.
-#'   
-#'   - \code{information}: The cumulative information.
-#'   
-#'   - \code{efficacyStopping}: Whether to allow efficacy stopping.
-#'   
-#'   - \code{futilityStopping}: Whether to allow futility stopping.
 #'
-#' * \code{settings}: A list containing the following input parameters: 
-#' 
-#'   - \code{typeAlphaSpending}: The type of alpha spending. 
-#'   
-#'   - \code{parameterAlphaSpending}: The parameter value for alpha spending.
-#'   
-#'   - \code{userAlphaSpending}: The user defined alpha spending. 
-#'   
-#'   - \code{typeBetaSpending}: The type of beta spending. 
-#'   
-#'   - \code{parameterBetaSpending}: The parameter value for beta spending. 
-#'   
-#'   - \code{userBetaSpending}: The user defined beta spending.
-#'   
-#'   - \code{spendingTime}: The error spending time at each analysis. 
-#'   
-#'   - \code{calculationTarget}: The calculation target, \code{beta} or 
-#'   \code{IMax}.
+#'     - \code{informationRates}: The information rates.
+#'
+#'     - \code{efficacyBounds}: The efficacy boundaries on the Z-scale.
+#'
+#'     - \code{futilityBounds}: The futility boundaries on the Z-scale.
+#'
+#'     - \code{rejectPerStage}: The probability for efficacy stopping.
+#'
+#'     - \code{futilityPerStage}: The probability for futility stopping.
+#'
+#'     - \code{cumulativeRejection}: The cumulative probability for efficacy
+#'       stopping.
+#'
+#'     - \code{cumulativeFutility}: The cumulative probability for futility
+#'       stopping.
+#'
+#'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
+#'
+#'     - \code{efficacyTheta}: The efficacy boundaries on the parameter
+#'       scale.
+#'
+#'     - \code{futilityTheta}: The futility boundaries on the parameter
+#'       scale.
+#'
+#'     - \code{efficacyP}: The efficacy boundaries on the p-value scale.
+#'
+#'     - \code{futilityP}: The futility boundaries on the p-value scale.
+#'
+#'     - \code{information}: The cumulative information.
+#'
+#'     - \code{efficacyStopping}: Whether to allow efficacy stopping.
+#'
+#'     - \code{futilityStopping}: Whether to allow futility stopping.
+#'
+#'     - \code{rejectPerStageH0}: The probability for efficacy stopping
+#'       under H0.
+#'
+#'     - \code{futilityPerStageH0}: The probability for futility stopping
+#'       under H0.
+#'
+#'     - \code{cumulativeRejectionH0}: The cumulative probability for
+#'       efficacy stopping under H0.
+#'
+#'     - \code{cumulativeFutilityH0}: The cumulative probability for
+#'       futility stopping under H0.
+#'
+#' * \code{settings}: A list containing the following input parameters:
+#'
+#'     - \code{typeAlphaSpending}: The type of alpha spending.
+#'
+#'     - \code{parameterAlphaSpending}: The parameter value for alpha
+#'       spending.
+#'
+#'     - \code{userAlphaSpending}: The user defined alpha spending.
+#'
+#'     - \code{typeBetaSpending}: The type of beta spending.
+#'
+#'     - \code{parameterBetaSpending}: The parameter value for beta
+#'       spending.
+#'
+#'     - \code{userBetaSpending}: The user defined beta spending.
+#'
+#'     - \code{spendingTime}: The error spending time at each analysis.
+#'
+#'     - \code{varianceRatio}: The ratio of the variance under H0
+#'       to the variance under H1.
+#'
+#'     - \code{calculationTarget}: The calculation target, \code{beta} or
+#'       \code{IMax}.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#' 
-#' @references 
+#'
+#' @references
 #' Christopher Jennison, Bruce W. Turnbull. Group Sequential Methods with
 #' Applications to Clinical Trials. Chapman & Hall/CRC: Boca Raton, 2000,
 #' ISBN:0849303168
@@ -1939,205 +1975,483 @@ lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #' @examples
 #'
 #' # Example 1: obtain the maximum information given power
-#' getDesign(beta = 0.2, theta = -log(0.7),
-#'           kMax = 2, informationRates = c(0.5,1),
-#'           alpha = 0.025, typeAlphaSpending = "sfOF",
-#'           typeBetaSpending = "sfP")
-#'           
-#' 
+#' (design1 <- getDesign(
+#'   beta = 0.2, theta = -log(0.7),
+#'   kMax = 2, informationRates = c(0.5,1),
+#'   alpha = 0.025, typeAlphaSpending = "sfOF",
+#'   typeBetaSpending = "sfP"))
+#'
 #' # Example 2: obtain power given the maximum information
-#' getDesign(IMax = 72.5, theta = -log(0.7),
-#'           kMax = 3, informationRates = c(0.5, 0.75, 1),
-#'           alpha = 0.025, typeAlphaSpending = "sfOF",
-#'           typeBetaSpending = "sfP")
+#' (design2 <- getDesign(
+#'   IMax = 72.5, theta = -log(0.7),
+#'   kMax = 3, informationRates = c(0.5, 0.75, 1),
+#'   alpha = 0.025, typeAlphaSpending = "sfOF",
+#'   typeBetaSpending = "sfP"))
 #'
 #' @export
-getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_) {
-    .Call(`_lrstat_getDesign`, beta, IMax, theta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime)
+getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_, varianceRatio = 1) {
+    .Call(`_lrstat_getDesign`, beta, IMax, theta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime, varianceRatio)
+}
+
+#' @title Power and sample size for a generic group sequential equivalence
+#' design
+#'
+#' @description Obtains the maximum information and stopping boundaries
+#' for a generic group sequential equivalence design assuming a constant
+#' treatment effect, or obtains the power given the maximum information
+#' and stopping boundaries.
+#'
+#' @param beta The type II error.
+#' @param IMax The maximum information. Either \code{beta} or \code{IMax}
+#'   should be provided while the other one should be missing.
+#' @param thetaLower The parameter value at the lower equivalence limit.
+#' @param thetaUpper The parameter value at the upper equivalence limit.
+#' @param theta The parameter value under the alternative hypothesis.
+#' @inheritParams param_kMax
+#' @param informationRates The information rates. Fixed prior to the trial.
+#'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
+#' @inheritParams param_criticalValues
+#' @param alpha The significance level for each of the two one-sided
+#'   tests. Defaults to 0.05.
+#' @inheritParams param_typeAlphaSpending
+#' @inheritParams param_parameterAlphaSpending
+#' @inheritParams param_userAlphaSpending
+#' @param spendingTime A vector of length \code{kMax} for the error spending
+#'   time at each analysis. Defaults to missing, in which case, it is the
+#'   same as \code{informationRates}.
+#' @param varianceRatioH10 The ratio of the variance under H10 to
+#'   the variance under H1. Defaults to 1.
+#' @param varianceRatioH20 The ratio of the variance under H20 to
+#'   the variance under H1. Defaults to 1.
+#' @param varianceRatioH12 The ratio of the variance under H10 to
+#'   the variance under H20. Defaults to 1.
+#' @param varianceRatioH21 The ratio of the variance under H20 to
+#'   the variance under H10. Defaults to 1.
+#'
+#' @details
+#' Consider the equivalence design with two one-sided hypotheses:
+#' \deqn{H_{10}: \theta \leq \theta_{10},}
+#' \deqn{H_{20}: \theta \geq \theta_{20}.}
+#' We reject \eqn{H_{10}} at or before look \eqn{k} if
+#' \deqn{Z_{1j} = (\hat{\theta}_j - \theta_{10})\sqrt{\frac{n_j}{v_{10}}}
+#' \geq b_j}
+#' for some \eqn{j=1,\ldots,k}, where \eqn{\{b_j:j=1,\ldots,K\}} are the
+#' critical values associated with the specified alpha-spending function,
+#' and \eqn{v_{10}} is the null variance of
+#' \eqn{\hat{\theta}} based on the restricted maximum likelihood (reml)
+#' estimate of model parameters subject to the constraint imposed by
+#' \eqn{H_{10}} for one sampling unit drawn from \eqn{H_1}. For example,
+#' for estimating the risk difference \eqn{\theta = \pi_1 - \pi_2},
+#' the asymptotic limits of the
+#' reml estimates of \eqn{\pi_1} and \eqn{\pi_2} subject to the constraint
+#' imposed by \eqn{H_{10}} are given by
+#' \deqn{(\tilde{\pi}_1, \tilde{\pi}_2) = f(\theta_{10}, r, r\pi_1,
+#' 1-r, (1-r)\pi_2),}
+#' where \eqn{f(\theta_0, n_1, y_1, n_2, y_2)} is the function to obtain
+#' the reml of \eqn{\pi_1} and \eqn{\pi_2} subject to the constraint that
+#' \eqn{\pi_1-\pi_2 = \theta_0} with observed data
+#' \eqn{(n_1, y_1, n_2, y_2)} for the number of subjects and number of
+#' responses in the active treatment and control groups,
+#' \eqn{r} is the randomization probability for the active treatment
+#' group, and \deqn{v_{10} = \frac{\tilde{\pi}_1 (1-\tilde{\pi}_1)}{r} +
+#' \frac{\tilde{\pi}_2 (1-\tilde{\pi}_2)}{1-r}.}
+#'
+#' Let \eqn{I_j = n_j/v_1} denote the information for \eqn{\theta} at the
+#' \eqn{j}th look, where
+#' \deqn{v_{1} = \frac{\pi_1 (1-\pi_1)}{r} + \frac{\pi_2 (1-\pi_2)}{1-r}}
+#' denotes the variance of \eqn{\hat{\theta}} under \eqn{H_1} for one
+#' sampling unit. It follows that
+#' \deqn{(Z_{1j} \geq b_j) = (Z_j \geq w_{10} b_j +
+#' (\theta_{10}-\theta)\sqrt{I_j}),}
+#' where \eqn{Z_j = (\hat{\theta}_j - \theta)\sqrt{I_j}}, and
+#' \eqn{w_{10} = \sqrt{v_{10}/v_1}}.
+#'
+#' Similarly, we reject \eqn{H_{20}} at or before look \eqn{k} if
+#' \deqn{Z_{2j} = (\hat{\theta}_j - \theta_{20})\sqrt{\frac{n_j}{v_{20}}}
+#' \leq -b_j} for some \eqn{j=1,\ldots,k}, where \eqn{v_{20}} is the null
+#' variance of \eqn{\hat{\theta}} based on the reml estimate of model
+#' parameters subject to the constraint imposed by \eqn{H_{20}} for
+#' one sampling unit drawn from \eqn{H_1}. We have
+#' \deqn{(Z_{2j} \leq -b_j) = (Z_j \leq -w_{20} b_j +
+#' (\theta_{20}-\theta)\sqrt{I_j}),}
+#' where \eqn{w_{20} = \sqrt{v_{20}/v_1}}.
+#'
+#' Let \eqn{l_j = w_{10}b_j + (\theta_{10}-\theta)\sqrt{I_j}},
+#' and \eqn{u_j = -w_{20}b_j + (\theta_{20}-\theta)\sqrt{I_j}}.
+#' The cumulative probability to reject \eqn{H_0 = H_{10} \cup H_{20}} at
+#' or before look \eqn{k} under the alternative hypothesis \eqn{H_1} is
+#' given by
+#' \deqn{P_\theta\left(\cup_{j=1}^{k} (Z_{1j} \geq b_j) \cap
+#' \cup_{j=1}^{k} (Z_{2j} \leq -b_j)\right) = p_1 + p_2 + p_{12},}
+#' where
+#' \deqn{p_1 = P_\theta\left(\cup_{j=1}^{k} (Z_{1j} \geq b_j)\right)
+#' = P_\theta\left(\cup_{j=1}^{k} (Z_j \geq l_j)\right),}
+#' \deqn{p_2 = P_\theta\left(\cup_{j=1}^{k} (Z_{2j} \leq -b_j)\right)
+#' = P_\theta\left(\cup_{j=1}^{k} (Z_j \leq u_j)\right),}
+#' and
+#' \deqn{p_{12} = P_\theta\left(\cup_{j=1}^{k} \{(Z_j \geq l_j) \cup
+#' (Z_j \leq u_j)\}\right).}
+#' Of note, both \eqn{p_1} and \eqn{p_2} can be evaluated using
+#' one-sided exit probabilities for group sequential designs.
+#' If there exists \eqn{j\leq k} such that \eqn{l_j \leq u_j}, then
+#' \eqn{p_{12} = 1}. Otherwise, \eqn{p_{12}} can be evaluated using
+#' two-sided exit probabilities for group sequential designs.
+#'
+#' To evaluate the type I error of the equivalence trial under
+#' \eqn{H_{10}}, we first match the information under \eqn{H_{10}}
+#' with the information under \eqn{H_1}. For example, for estimating
+#' the risk difference for two independent samples, the sample size
+#' \eqn{n_{10}} under \eqn{H_{10}} must satisfy
+#' \deqn{\frac{1}{n_{10}}\left(\frac{(\pi_2 + \theta_{10})
+#' (1 - \pi_2 - \theta_{10})}{r} + \frac{\pi_2 (1-\pi_2)}{1-r}\right)
+#' = \frac{1}{n}\left(\frac{\pi_1(1-\pi_1)}{r} +
+#' \frac{\pi_2 (1-\pi_2)}{1-r}\right).}
+#' Then we obtain the reml estimates of \eqn{\pi_1} and \eqn{\pi_2}
+#' subject to the constraint imposed by \eqn{H_{20}} for one sampling
+#' unit drawn from \eqn{H_{10}},
+#' \deqn{(\tilde{\pi}_{10}, \tilde{\pi}_{20}) = f(\theta_{20}, r,
+#' r(\pi_2 + \theta_{10}), 1-r, (1-r)\pi_2).}
+#' Let \eqn{t_j} denote the information fraction at look \eqn{j}.
+#' Define \deqn{\tilde{v}_1 = \frac{(\pi_2 + \theta_{10})
+#' (1-\pi_2 -\theta_{10})}{r} + \frac{\pi_2 (1-\pi_2)}{1-r},} and
+#' \deqn{\tilde{v}_{20} = \frac{\tilde{\pi}_{10}(1-\tilde{\pi}_{10})}{r} +
+#' \frac{\tilde{\pi}_{20} (1-\tilde{\pi}_{20})}{1-r}.}
+#'
+#' The cumulative rejection probability under \eqn{H_{10}} at or before
+#' look \eqn{k} is given by
+#' \deqn{P_{\theta_{10}}\left(\cup_{j=1}^{k} \{(\hat{\theta}_j - \theta_{10})
+#' \sqrt{n_{10} t_j/\tilde{v}_1} \geq b_j\} \cap
+#' \cup_{j=1}^{k} \{(\hat{\theta}_j - \theta_{20})
+#' \sqrt{n_{10} t_j/\tilde{v}_{20}} \leq -b_j\}\right) =
+#' q_1 + q_2 + q_{12},}
+#' where
+#' \deqn{q_1 = P_{\theta_{10}}\left(\cup_{j=1}^{k}
+#' \{(\hat{\theta}_j - \theta_{10})
+#' \sqrt{n_{10} t_j/\tilde{v}_1} \geq b_j\}\right) =
+#' P_{\theta_{10}}\left(\cup_{j=1}^{k} (Z_j \geq b_j)\right),}
+#' \deqn{q_2 = P_{\theta_{10}}\left(\cup_{j=1}^{k}
+#' \{(\hat{\theta}_j - \theta_{20})
+#' \sqrt{n_{10} t_j/\tilde{v}_{20}} \leq -b_j\}\right) =
+#' P_{\theta_{10}}\left(\cup_{j=1}^{k} (Z_j \leq -b_j w_{21} +
+#' (\theta_{20} - \theta_{10})\sqrt{I_j})\right),}
+#' and
+#' \deqn{q_{12} = P_{\theta_{10}}\left(\cup_{j=1}^{k}
+#' \{(Z_j \geq b_j) \cup (Z_j \leq -w_{21} b_j +
+#' (\theta_{20} - \theta_{10})\sqrt{I_j})\}\right).}
+#' Here \eqn{Z_j = (\hat{\theta}_j - \theta_{10}) \sqrt{I_j}}, and
+#' \eqn{w_{21} = \sqrt{\tilde{v}_{20}/\tilde{v}_1}}.
+#' Of note, \eqn{q_1}, \eqn{q_2}, and \eqn{q_{12}}
+#' can be evaluated using group sequential exit probabilities.
+#' Similarly, we can define \eqn{\tilde{v}_2}, \eqn{\tilde{v}_{10}},
+#' and \eqn{w_{12} = \sqrt{\tilde{v}_{10}/\tilde{v}_2}}, and
+#' evaluate the type I error under \eqn{H_{20}}.
+#'
+#' The variance ratios correspond to
+#' \deqn{\text{varianceRatioH10} = v_{10}/v_1,}
+#' \deqn{\text{varianceRatioH20} = v_{20}/v_1,}
+#' \deqn{\text{varianceRatioH12} = \tilde{v}_{10}/\tilde{v}_2,}
+#' \deqn{\text{varianceRatioH21} = \tilde{v}_{20}/\tilde{v}_1.}
+#' If the alternative variance is used, then the variance ratios
+#' are all equal to 1.
+#'
+#' @return An S3 class \code{designEquiv} object with three components:
+#'
+#' * \code{overallResults}: A data frame containing the following variables:
+#'
+#'     - \code{overallReject}: The overall rejection probability.
+#'
+#'     - \code{alpha}: The overall significance level.
+#'
+#'     - \code{attainedAlphaH10}: The attained significance level under H10.
+#'
+#'     - \code{attainedAlphaH20}: The attained significance level under H20.
+#'
+#'     - \code{kMax}: The number of stages.
+#'
+#'     - \code{thetaLower}: The parameter value at the lower equivalence
+#'       limit.
+#'
+#'     - \code{thetaUpper}: The parameter value at the upper equivalence
+#'       limit.
+#'
+#'     - \code{theta}: The parameter value under the alternative hypothesis.
+#'
+#'     - \code{information}: The maximum information.
+#'
+#'     - \code{expectedInformationH1}: The expected information under H1.
+#'
+#'     - \code{expectedInformationH10}: The expected information under H10.
+#'
+#'     - \code{expectedInformationH20}: The expected information under H20.
+#'
+#' * \code{byStageResults}: A data frame containing the following variables:
+#'
+#'     - \code{informationRates}: The information rates.
+#'
+#'     - \code{efficacyBounds}: The efficacy boundaries on the Z-scale for
+#'       each of the two one-sided tests.
+#'
+#'     - \code{rejectPerStage}: The probability for efficacy stopping.
+#'
+#'     - \code{cumulativeRejection}: The cumulative probability for efficacy
+#'       stopping.
+#'
+#'     - \code{cumulativeAlphaSpent}: The cumulative alpha for each of
+#'       the two one-sided tests.
+#'
+#'     - \code{cumulativeAttainedAlphaH10}: The cumulative probability for
+#'       efficacy stopping under H10.
+#'
+#'     - \code{cumulativeAttainedAlphaH20}: The cumulative probability for
+#'       efficacy stopping under H20.
+#'
+#'     - \code{efficacyThetaLower}: The efficacy boundaries on the
+#'       parameter scale for the one-sided null hypothesis at the
+#'       lower equivalence limit.
+#'
+#'     - \code{efficacyThetaUpper}: The efficacy boundaries on the
+#'       parameter scale for the one-sided null hypothesis at the
+#'       upper equivalence limit.
+#'
+#'     - \code{efficacyP}: The efficacy bounds on the p-value scale for
+#'       each of the two one-sided tests.
+#'
+#'     - \code{information}: The cumulative information.
+#'
+#' * \code{settings}: A list containing the following components:
+#'
+#'     - \code{typeAlphaSpending}: The type of alpha spending.
+#'
+#'     - \code{parameterAlphaSpending}: The parameter value for alpha
+#'       spending.
+#'
+#'     - \code{userAlphaSpending}: The user defined alpha spending.
+#'
+#'     - \code{spendingTime}: The error spending time at each analysis.
+#'
+#'     - \code{varianceRatioH10}: The ratio of the variance under H10 to
+#'       the variance under H1.
+#'
+#'     - \code{varianceRatioH20}: The ratio of the variance under H20 to
+#'       the variance under H1.
+#'
+#'     - \code{varianceRatioH12}: The ratio of the variance under H10 to
+#'       the variance under H20.
+#'
+#'     - \code{varianceRatioH21}: The ratio of the variance under H20 to
+#'       the variance under H10.
+#'
+#'     - \code{calculationTarget}: The calculation target, \code{beta} or
+#'       \code{IMax}.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' # Example 1: obtain the maximum information given power
+#' (design1 <- getDesignEquiv(
+#'   beta = 0.2, thetaLower = log(0.8), thetaUpper = log(1.25),
+#'   kMax = 2, informationRates = c(0.5, 1),
+#'   alpha = 0.05, typeAlphaSpending = "sfOF"))
+#'
+#'
+#' # Example 2: obtain power given the maximum information
+#' (design2 <- getDesignEquiv(
+#'   IMax = 72.5, thetaLower = log(0.7), thetaUpper = -log(0.7),
+#'   kMax = 3, informationRates = c(0.5, 0.75, 1),
+#'   alpha = 0.05, typeAlphaSpending = "sfOF"))
+#'
+#' @export
+getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_real_, thetaUpper = NA_real_, theta = 0, kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, varianceRatioH10 = 1, varianceRatioH20 = 1, varianceRatioH12 = 1, varianceRatioH21 = 1) {
+    .Call(`_lrstat_getDesignEquiv`, beta, IMax, thetaLower, thetaUpper, theta, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, varianceRatioH10, varianceRatioH20, varianceRatioH12, varianceRatioH21)
 }
 
 #' @title Adaptive design at an interim look
-#' @description Obtains the conditional power for specified incremental 
-#' information given the interim results, parameter value, and data-dependent 
-#' changes in the error spending function and the number and spacing of 
-#' interim looks. Conversely, obtain the incremental information needed 
-#' to attain a specified conditional power given the interim results,
-#' parameter value, and data-dependent changes in the error spending 
-#' function and the number and spacing of interim looks.
+#' @description Obtains the conditional power for specified incremental
+#' information given the interim results, parameter value, and
+#' data-dependent changes in the error spending function, and the number
+#' and spacing of interim looks. Conversely, obtains the incremental
+#' information needed to attain a specified conditional power given
+#' the interim results, parameter value, and data-dependent changes
+#' in the error spending function, and the number and spacing of
+#' interim looks.
 #'
 #' @param betaNew The type II error for the secondary trial.
-#' @param INew The maximum information of the secondary trial. Either 
-#' \code{betaNew} or \code{INew} should be provided while the other one 
-#' should be missing.
+#' @param INew The maximum information of the secondary trial. Either
+#'   \code{betaNew} or \code{INew} should be provided while the other one
+#'   should be missing.
 #' @param L The interim adaptation look of the primary trial.
-#' @param zL The z-test statistic at the interim adaptation look of 
+#' @param zL The z-test statistic at the interim adaptation look of
 #'   the primary trial.
 #' @param theta The parameter value.
-#' @param IMax The maximum information of the primary trial. Must be 
-#'   provided if \code{futilityBounds} is missing and 
-#'   \code{typeBetaSpending} is not equal to "none".
+#' @param IMax The maximum information of the primary trial. Must be
+#'   provided if \code{futilityBounds} is missing and
+#'   \code{typeBetaSpending} is not equal to "none", or
+#'   if conditional power calculation is desired.
 #' @param kMax The maximum number of stages of the primary trial.
 #' @param informationRates The information rates of the primary trial.
-#' @param efficacyStopping Indicators of whether efficacy stopping is 
-#'   allowed at each stage of the primary trial. Defaults to true 
+#' @param efficacyStopping Indicators of whether efficacy stopping is
+#'   allowed at each stage of the primary trial. Defaults to true
 #'   if left unspecified.
-#' @param futilityStopping Indicators of whether futility stopping is 
-#'   allowed at each stage of the primary trial. Defaults to true 
+#' @param futilityStopping Indicators of whether futility stopping is
+#'   allowed at each stage of the primary trial. Defaults to true
 #'   if left unspecified.
 #' @param criticalValues The upper boundaries on the z-test statistic scale
 #'   for efficacy stopping for the primary trial.
-#' @param alpha The significance level of the primary trial. 
+#' @param alpha The significance level of the primary trial.
 #'   Defaults to 0.025.
-#' @param typeAlphaSpending The type of alpha spending for the primary 
-#'   trial. One of the following: 
-#'   "OF" for O'Brien-Fleming boundaries, 
-#'   "P" for Pocock boundaries, 
-#'   "WT" for Wang & Tsiatis boundaries, 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, 
-#'   "user" for user defined spending, and 
-#'   "none" for no early efficacy stopping. 
+#' @param typeAlphaSpending The type of alpha spending for the primary
+#'   trial. One of the following:
+#'   "OF" for O'Brien-Fleming boundaries,
+#'   "P" for Pocock boundaries,
+#'   "WT" for Wang & Tsiatis boundaries,
+#'   "sfOF" for O'Brien-Fleming type spending function,
+#'   "sfP" for Pocock type spending function,
+#'   "sfKD" for Kim & DeMets spending function,
+#'   "sfHSD" for Hwang, Shi & DeCani spending function,
+#'   "user" for user defined spending, and
+#'   "none" for no early efficacy stopping.
 #'   Defaults to "sfOF".
 #' @param parameterAlphaSpending The parameter value of alpha spending
-#'   for the primary trial. Corresponds to Delta for "WT", rho for "sfKD", 
+#'   for the primary trial. Corresponds to Delta for "WT", rho for "sfKD",
 #'   and gamma for "sfHSD".
-#' @param userAlphaSpending The user defined alpha spending for the primary 
+#' @param userAlphaSpending The user defined alpha spending for the primary
 #'   trial. Cumulative alpha spent up to each stage.
-#' @param futilityBounds The lower boundaries on the z-test statistic scale 
-#'   for futility stopping for the primary trial. Defaults to 
+#' @param futilityBounds The lower boundaries on the z-test statistic scale
+#'   for futility stopping for the primary trial. Defaults to
 #'   \code{rep(-6, kMax-1)} if left unspecified.
-#' @param typeBetaSpending The type of beta spending for the primary trial. 
-#'   One of the following: 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
+#' @param typeBetaSpending The type of beta spending for the primary trial.
+#'   One of the following:
+#'   "sfOF" for O'Brien-Fleming type spending function,
+#'   "sfP" for Pocock type spending function,
+#'   "sfKD" for Kim & DeMets spending function,
 #'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-#'   "none" for no early futility stopping. 
+#'   "none" for no early futility stopping.
 #'   Defaults to "none".
-#' @param parameterBetaSpending The parameter value of beta spending 
-#'   for the primary trial. Corresponds to rho for "sfKD", 
+#' @param parameterBetaSpending The parameter value of beta spending
+#'   for the primary trial. Corresponds to rho for "sfKD",
 #'   and gamma for "sfHSD".
-#' @param spendingTime The error spending time of the primary trial. 
-#'   Defaults to missing, in which case, it is the same as 
+#' @param spendingTime The error spending time of the primary trial.
+#'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRates}.
-#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
+#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
 #'   for trial adaptation.
 #' @param kNew The number of looks of the secondary trial.
 #' @param informationRatesNew The spacing of looks of the secondary trial.
-#' @param efficacyStoppingNew The indicators of whether efficacy stopping is 
-#'   allowed at each look of the secondary trial. Defaults to true 
+#' @param efficacyStoppingNew The indicators of whether efficacy stopping is
+#'   allowed at each look of the secondary trial. Defaults to true
 #'   if left unspecified.
-#' @param futilityStoppingNew The indicators of whether futility stopping is 
-#'   allowed at each look of the secondary trial. Defaults to true 
+#' @param futilityStoppingNew The indicators of whether futility stopping is
+#'   allowed at each look of the secondary trial. Defaults to true
 #'   if left unspecified.
 #' @param typeAlphaSpendingNew The type of alpha spending for the secondary
-#'   trial. One of the following: 
-#'   "OF" for O'Brien-Fleming boundaries, 
-#'   "P" for Pocock boundaries, 
-#'   "WT" for Wang & Tsiatis boundaries, 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
-#'   "none" for no early efficacy stopping. 
+#'   trial. One of the following:
+#'   "OF" for O'Brien-Fleming boundaries,
+#'   "P" for Pocock boundaries,
+#'   "WT" for Wang & Tsiatis boundaries,
+#'   "sfOF" for O'Brien-Fleming type spending function,
+#'   "sfP" for Pocock type spending function,
+#'   "sfKD" for Kim & DeMets spending function,
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
+#'   "none" for no early efficacy stopping.
 #'   Defaults to "sfOF".
-#' @param parameterAlphaSpendingNew The parameter value of alpha spending 
-#'   for the secondary trial. Corresponds to Delta for "WT", rho for "sfKD", 
+#' @param parameterAlphaSpendingNew The parameter value of alpha spending
+#'   for the secondary trial. Corresponds to Delta for "WT", rho for "sfKD",
 #'   and gamma for "sfHSD".
 #' @param typeBetaSpendingNew The type of beta spending for the secondary
-#'   trial. One of the following: 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, 
-#'   "user" for user defined spending, and 
-#'   "none" for no early futility stopping. 
+#'   trial. One of the following:
+#'   "sfOF" for O'Brien-Fleming type spending function,
+#'   "sfP" for Pocock type spending function,
+#'   "sfKD" for Kim & DeMets spending function,
+#'   "sfHSD" for Hwang, Shi & DeCani spending function,
+#'   "user" for user defined spending, and
+#'   "none" for no early futility stopping.
 #'   Defaults to "none".
-#' @param parameterBetaSpendingNew The parameter value of beta spending 
-#'   for the secondary trial. Corresponds to rho for "sfKD", 
+#' @param parameterBetaSpendingNew The parameter value of beta spending
+#'   for the secondary trial. Corresponds to rho for "sfKD",
 #'   and gamma for "sfHSD".
-#' @param userBetaSpendingNew The user defined cumulative beta spending. 
+#' @param userBetaSpendingNew The user defined cumulative beta spending.
 #'   Cumulative beta spent up to each stage of the secondary trial.
-#' @param spendingTimeNew The error spending time of the secondary trial. 
-#'   Defaults to missing, in which case, it is the same as 
+#' @param spendingTimeNew The error spending time of the secondary trial.
+#'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRatesNew}.
+#' @param varianceRatio The ratio of the variance under H0 to the
+#'   variance under H1.
 #'
-#' @return An \code{adaptDesign} object with two list components: 
-#' 
-#' * \code{primaryTrial}: A list of selected information for the primary 
-#' trial, including \code{L}, \code{zL}, \code{theta}, \code{kMax}, 
-#' \code{informationRates}, \code{efficacyBounds}, \code{futilityBounds},
-#' and \code{MullerSchafer}.
-#'  
+#' @return An \code{adaptDesign} object with two list components:
+#'
+#' * \code{primaryTrial}: A list of selected information for the primary
+#'   trial, including \code{L}, \code{zL}, \code{theta}, \code{kMax},
+#'   \code{informationRates}, \code{efficacyBounds}, \code{futilityBounds},
+#'   and \code{MullerSchafer}.
+#'
 #' * \code{secondaryTrial}: A \code{design} object for the secondary trial.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
-#' @references 
-#' Lu Chi, H. M. James Hung, and Sue-Jane Wang. 
+#' @references
+#' Lu Chi, H. M. James Hung, and Sue-Jane Wang.
 #' Modification of sample size in group sequential clinical trials.
 #' Biometrics 1999;55:853-857.
-#' 
-#' Hans-Helge Muller and Helmut Schafer. 
+#'
+#' Hans-Helge Muller and Helmut Schafer.
 #' Adaptive group sequential designs for clinical trials:
 #' Combining the advantages of adaptive and of
-#' classical group sequential approaches. 
+#' classical group sequential approaches.
 #' Biometrics 2001;57:886-891.
-#' 
+#'
 #' @seealso \code{\link{getDesign}}
-#' 
+#'
 #' @examples
 #'
 #' # original group sequential design with 90% power to detect delta = 6
 #' delta = 6
 #' sigma = 17
 #' n = 282
-#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
-#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
+#'                   alpha = 0.05, typeAlphaSpending = "sfHSD",
 #'                   parameterAlphaSpending = -4))
-#' 
+#'
 #' # interim look results
 #' L = 1
 #' n1 = n/3
 #' delta1 = 4.5
 #' sigma1 = 20
 #' zL = delta1/sqrt(4/n1*sigma1^2)
-#' 
+#'
 #' t = des1$byStageResults$informationRates
-#' 
+#'
 #' # conditional power with sample size increase
 #' (des2 = adaptDesign(
-#'   betaNew = NA, INew = 420/(4*sigma1^2), 
-#'   L, zL, theta = delta1, 
-#'   IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
-#'   alpha = 0.05, typeAlphaSpending = "sfHSD", 
-#'   parameterAlphaSpending = -4))
-#' 
-#' # Muller & Schafer (2001) method to design the secondary trial: 
-#' # 3-look gamma(-2) spending with 84% power at delta = 4.5 and sigma = 20
-#' (des2 = adaptDesign(
-#'   betaNew = 0.16, INew = NA, 
+#'   betaNew = NA, INew = 420/(4*sigma1^2),
 #'   L, zL, theta = delta1,
 #'   IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
-#'   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#'   alpha = 0.05, typeAlphaSpending = "sfHSD",
+#'   parameterAlphaSpending = -4))
+#'
+#' # Muller & Schafer (2001) method to design the secondary trial:
+#' # 3-look gamma(-2) spending with 84% power at delta = 4.5 and sigma = 20
+#' (des2 = adaptDesign(
+#'   betaNew = 0.16, INew = NA,
+#'   L, zL, theta = delta1,
+#'   IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
+#'   alpha = 0.05, typeAlphaSpending = "sfHSD",
 #'   parameterAlphaSpending = -4,
 #'   MullerSchafer = TRUE,
-#'   kNew = 3, typeAlphaSpendingNew = "sfHSD", 
+#'   kNew = 3, typeAlphaSpendingNew = "sfHSD",
 #'   parameterAlphaSpendingNew = -2))
-#'   
+#'
 #' # incremental sample size for sigma = 20
-#' (nNew = 4*sigma1^2*des2$secondaryTrial$overallResults$maxInformation)
+#' (nNew = 4*sigma1^2*des2$secondaryTrial$overallResults$information)
 #'
 #' @export
-adaptDesign <- function(betaNew = NA_real_, INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, userBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
-    .Call(`_lrstat_adaptDesign`, betaNew, INew, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaSpendingNew, spendingTimeNew)
+adaptDesign <- function(betaNew = NA_real_, INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, userBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_, varianceRatio = 1) {
+    .Call(`_lrstat_adaptDesign`, betaNew, INew, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaSpendingNew, spendingTimeNew, varianceRatio)
 }
 
-#' @title Get the required number of events from hazard ratios
-#' @description Obtains the required number of events given the hazard 
-#' ratios under the null and alternative hypotheses for a group 
+#' @title Get the required number of events given hazard ratio
+#' @description Obtains the required number of events given the hazard
+#' ratios under the null and alternative hypotheses for a group
 #' sequential design.
 #'
 #' @param beta Type II error. Defaults to 0.2.
@@ -2154,14 +2468,14 @@ adaptDesign <- function(betaNew = NA_real_, INew = NA_real_, L = NA_integer_, zL
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
-#' @param spendingTime A vector of length \code{kMax} for the error spending 
-#'   time at each analysis. Defaults to missing, in which case, it is the 
+#' @param spendingTime A vector of length \code{kMax} for the error spending
+#'   time at each analysis. Defaults to missing, in which case, it is the
 #'   same as \code{informationRates}.
 #' @inheritParams param_hazardRatioH0
-#' @param hazardRatio Hazard ratio under the alternative hypothesis 
+#' @param hazardRatio Hazard ratio under the alternative hypothesis
 #'   for the active treatment versus control. Defaults to 0.5.
 #' @inheritParams param_allocationRatioPlanned
-#' @param rounding Whether to round up the number of events. 
+#' @param rounding Whether to round up the number of events.
 #'   Defaults to 1 for rounding.
 #'
 #' @return The required number of events.
@@ -2171,12 +2485,12 @@ adaptDesign <- function(betaNew = NA_real_, INew = NA_real_, L = NA_integer_, zL
 #' @examples
 #'
 #' getNeventsFromHazardRatio(
-#'   beta = 0.2, kMax = 2, 
-#'   informationRates = c(0.5,1), 
+#'   beta = 0.2, kMax = 2,
+#'   informationRates = c(0.5,1),
 #'   alpha = 0.025, typeAlphaSpending = "sfOF",
-#'   typeBetaSpending = "sfP", 
+#'   typeBetaSpending = "sfP",
 #'   hazardRatio = 0.673)
-#' 
+#'
 #' @export
 getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_, hazardRatioH0 = 1, hazardRatio = 0.5, allocationRatioPlanned = 1, rounding = 1L) {
     .Call(`_lrstat_getNeventsFromHazardRatio`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime, hazardRatioH0, hazardRatio, allocationRatioPlanned, rounding)
@@ -2191,9 +2505,9 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #'
 #' @param beta Type II error. Defaults to 0.2.
 #' @inheritParams param_kMax
-#' @param informationRates The information rates in terms of number 
-#'   of events for the conventional log-rank test and in terms of 
-#'   the actual information for weighted log-rank tests. 
+#' @param informationRates The information rates in terms of number
+#'   of events for the conventional log-rank test and in terms of
+#'   the actual information for weighted log-rank tests.
 #'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
 #' @inheritParams param_efficacyStopping
 #' @inheritParams param_futilityStopping
@@ -2225,21 +2539,21 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #' @inheritParams param_estimateHazardRatio
 #' @inheritParams param_typeOfComputation
 #' @param interval The interval to search for the solution of
-#' accrualDuration, followupDuration, or the proportionality constant 
-#' of accrualIntensity. Defaults to \code{c(0.001, 240)}.
-#' Adjustment may be needed for non-monotone relationship with study power.
-#' @param spendingTime A vector of length \code{kMax} for the error spending 
-#'   time at each analysis. Defaults to missing, in which case, it is the 
+#'   accrualDuration, followupTime, or the proportionality constant
+#'   of accrualIntensity. Defaults to \code{c(0.001, 240)}. Adjustment
+#'   may be needed for non-monotone relationship with study power.
+#' @param spendingTime A vector of length \code{kMax} for the error spending
+#'   time at each analysis. Defaults to missing, in which case, it is the
 #'   same as \code{informationRates}.
-#' @param rounding Whether to round up sample size and events. 
+#' @param rounding Whether to round up sample size and events.
 #'   Defaults to 1 for sample size rounding.
-#' 
-#' @return A list of two components: 
-#' 
-#' * \code{resultsUnderH1}: An S3 class \code{lrpower} object under the 
+#'
+#' @return A list of two components:
+#'
+#' * \code{resultsUnderH1}: An S3 class \code{lrpower} object under the
 #' alternative hypothesis.
-#' 
-#' * \code{resultsUnderH0}: An S3 class \code{lrpower} object under the 
+#'
+#' * \code{resultsUnderH0}: An S3 class \code{lrpower} object under the
 #' null hypothesis.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
@@ -2255,8 +2569,8 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #' lrsamplesize(beta = 0.2, kMax = 2,
 #'              informationRates = c(0.8, 1),
 #'              alpha = 0.025, typeAlphaSpending = "sfOF",
-#'              accrualTime = seq(0, 9),
-#'              accrualIntensity = c(26/9*seq(1, 9), 26),
+#'              accrualTime = seq(0, 8),
+#'              accrualIntensity = 26/9*seq(1, 9),
 #'              piecewiseSurvivalTime = c(0, 6),
 #'              stratumFraction = c(0.2, 0.8),
 #'              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
@@ -2272,8 +2586,8 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #' lrsamplesize(beta = 0.2, kMax = 2,
 #'              informationRates = c(0.8, 1),
 #'              alpha = 0.025, typeAlphaSpending = "sfOF",
-#'              accrualTime = seq(0, 9),
-#'              accrualIntensity = c(26/9*seq(1, 9), 26),
+#'              accrualTime = seq(0, 8),
+#'              accrualIntensity = 26/9*seq(1, 9),
 #'              piecewiseSurvivalTime = c(0, 6),
 #'              stratumFraction = c(0.2, 0.8),
 #'              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
@@ -2290,8 +2604,8 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #' lrsamplesize(beta = 0.2, kMax = 2,
 #'              informationRates = c(0.8, 1),
 #'              alpha = 0.025, typeAlphaSpending = "sfOF",
-#'              accrualTime = seq(0, 9),
-#'              accrualIntensity = c(26/9*seq(1, 9), 26),
+#'              accrualTime = seq(0, 8),
+#'              accrualIntensity = 26/9*seq(1, 9),
 #'              piecewiseSurvivalTime = c(0, 6),
 #'              stratumFraction = c(0.2, 0.8),
 #'              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
@@ -2306,8 +2620,1169 @@ lrsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, eff
     .Call(`_lrstat_lrsamplesize`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals, estimateHazardRatio, typeOfComputation, interval, spendingTime, rounding)
 }
 
+#' @title Number of events and information for negative binomial rate ratio
+#' @description Obtains the number of subjects accrued, number of events,
+#' number of dropouts, number of subjects reaching the maximum
+#' follow-up, total exposure, and information for log rate in each group,
+#' rate ratio, variance, information, and Wald test statistic of
+#' log rate ratio at given calendar times.
+#'
+#' @param time A vector of calendar times at which to calculate the number
+#'   of events and the Wald test statistic.
+#' @param rateRatioH0 Rate ratio under the null hypothesis.
+#' @inheritParams param_allocationRatioPlanned
+#' @inheritParams param_accrualTime
+#' @inheritParams param_accrualIntensity
+#' @inheritParams param_piecewiseSurvivalTime
+#' @param kappa1 The dispersion parameter (reciprocal of the shape parameter
+#'   of the gamma mixing distribution) for the active treatment group.
+#' @param kappa2 The dispersion parameter (reciprocal of the shape parameter
+#'   of the gamma mixing distribution) for the control group.
+#' @param lambda1 The rate parameter of the negative binomial distribution
+#'   for the active treatment group.
+#' @param lambda2 The rate parameter of the negative binomial distribution
+#'   for the control group.
+#' @inheritParams param_gamma1
+#' @inheritParams param_gamma2
+#' @inheritParams param_accrualDuration
+#' @inheritParams param_followupTime
+#' @inheritParams param_fixedFollowup
+#' @param nullVariance Whether to calculate the variance for log rate ratio
+#'   under the null hypothesis.
+#'
+#' @details
+#' The probability mass function for a negative binomial distribution with
+#' dispersion parameter \eqn{\kappa_i} and rate parameter \eqn{\lambda_i}
+#' is given by
+#' \deqn{P(Y_{ij} = y) = \frac{\Gamma(y+1/\kappa_i)}{\Gamma(1/\kappa_i) y!}
+#' \left(\frac{1}{1 + \kappa_i \lambda_i t_{ij}}\right)^{1/\kappa_i}
+#' \left(\frac{\kappa_i \lambda_i t_{ij}}
+#' {1 + \kappa_i \lambda_i t_{ij}}\right)^{y},}
+#' where \eqn{Y_{ij}} is the event count for subject \eqn{j} in
+#' treatment group \eqn{i}, and \eqn{t_{ij}} is the exposure time for
+#' the subject. If \eqn{\kappa_i=0}, the negative binomial distribution
+#' reduces to the Poisson distribution.
+#'
+#' For treatment group \eqn{i}, let \eqn{\beta_i = \log(\lambda_i)}.
+#' The likelihood for \eqn{\{(\kappa_i, \beta_i):i=1,2\}} can be written as
+#' \deqn{l = \sum_{i=1}^{2}\sum_{j=1}^{n_{i}}
+#' \{\log \Gamma(y_{ij} + 1/\kappa_i) - \log \Gamma(1/\kappa_i) + y_{ij}
+#' (\log(\kappa_i) + \beta_i) - (y_{ij} + 1/\kappa_i)
+#' \log(1+ \kappa_i \exp(\beta_i) t_{ij})\}.}
+#' It follows that
+#' \deqn{\frac{\partial l}{\partial \beta_i} = \sum_{j=1}^{n_i}
+#' \left\{y_{ij} - (y_{ij} + 1/\kappa_i)
+#' \frac{\kappa_i \exp(\beta_i) t_{ij}}
+#' {1 + \kappa_i \exp(\beta_i)t_{ij}}\right\},}
+#' and
+#' \deqn{-\frac{\partial^2 l}{\partial \beta_i^2} =
+#' \sum_{j=1}^{n_i} (y_{ij} + 1/\kappa_i) \frac{\kappa_i \lambda_i t_{ij}}
+#' {(1 + \kappa_i \lambda_i t_{ij})^2}.}
+#' The Fisher information for \eqn{\beta_i} is
+#' \deqn{E\left(-\frac{\partial^2 l}{\partial \beta_i^2}\right)
+#' = n_i E\left(\frac{\lambda_i t_{ij}}
+#' {1 + \kappa_i \lambda_i t_{ij}}\right).}
+#' In addition, we can show that
+#' \deqn{E\left(-\frac{\partial^2 l}
+#' {\partial \beta_i \partial \kappa_i}\right) = 0.}
+#' Therefore, the variance of \eqn{\hat{\beta}_i} is
+#' \deqn{Var(\hat{\beta}_i) = \frac{1}{n_i} \left\{
+#' E\left(\frac{\lambda_i t_{ij}}{1 + \kappa_i \lambda_i t_{ij}}\right)
+#' \right\}^{-1}.}
+#'
+#' To evaluate the integral, we need to obtain the distribution of the
+#' exposure time,
+#' \deqn{t_{ij} = \min(\tau - W_{ij}, C_{ij}, T_{fmax}),}
+#' where \eqn{\tau} denotes the calendar time since trial start,
+#' \eqn{W_{ij}} denotes the enrollment time for subject \eqn{j}
+#' in treatment group \eqn{i}, \eqn{C_{ij}} denotes the time to dropout
+#' after enrollment for subject \eqn{j} in treatment group \eqn{i}, and
+#' \eqn{T_{fmax}} denotes the maximum follow-up time for
+#' all subjects. Therefore,
+#' \deqn{P(t_{ij} \geq t) = P(W_{ij} \leq \tau - t)P(C_{ij} \geq t)
+#' I(t\leq T_{fmax}).}
+#' Let \eqn{H} denote the distribution function of the enrollment time,
+#' and \eqn{G_i} denote the survival function of the dropout time for
+#' treatment group \eqn{i}. By the change of variables, we have
+#' \deqn{E\left(\frac{\lambda_i t_{ij}}{1 + \kappa_i \lambda_i t_{ij}}
+#' \right) = \int_{0}^{\tau \wedge T_{fmax}}
+#' \frac{\lambda_i}{(1 + \kappa_i \lambda_i t)^2} H(\tau - t) G_i(t) dt.}
+#' A numerical integration algorithm for a univariate function can be
+#' used to evaluate the above integral.
+#'
+#' For the restricted maximum likelihood (reml) estimate of
+#' \eqn{(\beta_1,\beta_2)} subject to the
+#' constraint that \eqn{\beta_1 - \beta_2 = \Delta}, we express the
+#' log-likelihood in terms of \eqn{(\beta_2,\Delta,\kappa_1,\kappa_2)},
+#' and takes the derivative of the log-likelihood function with respect
+#' to \eqn{\beta_2}. The resulting score equation has asymptotic limit
+#' \deqn{E\left(\frac{\partial l}{\partial \beta_2}\right) = s_1 + s_2,}
+#' where
+#' \deqn{s_1 = n r E\left\{\lambda1_1 t_{1j} - \left(\lambda_1t_{1j}
+#' + \frac{1}{\kappa_1}\right) \frac{\kappa_1 e^{\tilde{\beta}_2 +
+#' \Delta}t_{1j}}{1 + \kappa_1 e^{\tilde{\beta}_2 +\Delta}t_{1j}}\right\},}
+#' and
+#' \deqn{s_2 = n (1-r) E\left\{\lambda_2 t_{2j} -
+#' \left(\lambda_2 t_{2j} + \frac{1}{\kappa_2}\right)
+#' \frac{\kappa_2 e^{\tilde{\beta}_2} t_{2j}}
+#' {1 + \kappa_2 e^{\tilde{\beta}_2}t_{2j}}\right\}.}
+#' Here \eqn{r} is the randomization probability for the active
+#' treatment group. The asymptotic limit of the reml of \eqn{\beta_2}
+#' is the solution \eqn{\tilde{\beta}_2} to
+#' \eqn{E\left(\frac{\partial l}{\partial \beta_2}\right) = 0.}
+#'
+#' @return A list with two components:
+#'
+#' * \code{resultsUnderH1}: A data frame containing the following variables:
+#'
+#'     - \code{time}: The analysis time since trial start.
+#'
+#'     - \code{subjects}: The number of enrolled subjects.
+#'
+#'     - \code{nevents}: The total number of events.
+#'
+#'     - \code{nevents1}: The number of events in the active treatment
+#'       group.
+#'
+#'     - \code{nevents2}: The number of events in the control group.
+#'
+#'     - \code{ndropouts}: The total number of dropouts.
+#'
+#'     - \code{ndropouts1}: The number of dropouts in the active treatment
+#'       group.
+#'
+#'     - \code{ndropouts2}: The number of dropouts in the control group.
+#'
+#'     - \code{nfmax}: The total number of subjects reaching maximum
+#'       follow-up.
+#'
+#'     - \code{nfmax1}: The number of subjects reaching maximum follow-up
+#'       in the active treatment group.
+#'
+#'     - \code{nfmax2}: The number of subjects reaching maximum follow-up
+#'       in the control group.
+#'
+#'     - \code{exposure}: The total exposure time.
+#'
+#'     - \code{exposure1}: The exposure time for the active treatment group.
+#'
+#'     - \code{exposure2}: The exposure time for the control group.
+#'
+#'     - \code{information1}: The Fisher information for the log rate
+#'       parameter for the active treatment group.
+#'
+#'     - \code{information2}: The Fisher information for the log rate
+#'       parameter for the control group.
+#'
+#'     - \code{rateRatio}: The rate ratio of the active treatment group
+#'       versus the control group.
+#'
+#'     - \code{vlogRR}: The variance of log rate ratio.
+#'
+#'     - \code{information}: The information of log rate ratio.
+#'
+#'     - \code{zlogRR}: The Z-statistic for log rate ratio.
+#'
+#' * \code{resultsUnderH0} when \code{nullVariance = TRUE}: A data frame
+#'   with the following variables:
+#'
+#'     - \code{time}: The analysis time since trial start.
+#'
+#'     - \code{lambda1H0}: The restricted maximum likelihood estimate
+#'       of the event rate for the active treatment group.
+#'
+#'     - \code{lambda2H0}: The restricted maximum likelihood estimate
+#'       of the event rate for the control group.
+#'
+#'     - \code{information1H0}: The Fisher information for the log rate
+#'       parameter for the active treatment group under H0.
+#'
+#'     - \code{information2H0}: The Fisher information for the log rate
+#'       parameter for the control group under H0.
+#'
+#'     - \code{vlogRRH0}: The variance of log rate ratio under H0.
+#'
+#'     - \code{informationH0}: The information of log rate ratio under H0.
+#'
+#'     - \code{zlogRRH0}: The Z-statistic for log rate ratio under H0.
+#'
+#'     - \code{varianceRatio}: The ratio of the variance under H0 versus
+#'       the variance under H1.
+#'
+#'     - \code{rateRatioH0}: The rate ratio under H0.
+#'
+#'     - \code{lambda1}: The true event rate for the active treatment group.
+#'
+#'     - \code{lambda2}: The true event rate for the control group.
+#'
+#'     - \code{rateRatio}: The true rate ratio.
+#'
+#' * \code{resultsUnderH0} when \code{nullVariance = FALSE}: A data frame
+#'   with the following variables:
+#'
+#'     - \code{time}: The analysis time since trial start.
+#'
+#'     - \code{varianceRatio}: Equal to 1.
+#'
+#'     - \code{rateRatioH0}: The rate ratio under H0.
+#'
+#'     - \code{lambda1}: The true event rate for the active treatment group.
+#'
+#'     - \code{lambda2}: The true event rate for the control group.
+#'
+#'     - \code{rateRatio}: The true rate ratio.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#' # Example 1: Variable follow-up design
+#'
+#' nbstat(time = c(1, 1.25, 2, 3, 4),
+#'        accrualIntensity = 1956/1.25,
+#'        kappa1 = 5,
+#'        kappa2 = 5,
+#'        lambda1 = 0.7*0.125,
+#'        lambda2 = 0.125,
+#'        gamma1 = 0,
+#'        gamma2 = 0,
+#'        accrualDuration = 1.25,
+#'        followupTime = 2.75)
+#'
+#' # Example 2: Fixed follow-up design
+#'
+#' nbstat(time = c(0.5, 1, 1.5, 2),
+#'        accrualIntensity = 220/1.5,
+#'        kappa1 = 3,
+#'        kappa2 = 3,
+#'        lambda1 = 0.5*8.4,
+#'        lambda2 = 8.4,
+#'        gamma1 = 0,
+#'        gamma2 = 0,
+#'        accrualDuration = 1.5,
+#'        followupTime = 0.5,
+#'        fixedFollowup = 1,
+#'        nullVariance = 1)
+#'
+#' @export
+nbstat <- function(time = NA_real_, rateRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, kappa1 = NA_real_, kappa2 = NA_real_, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, nullVariance = 0L) {
+    .Call(`_lrstat_nbstat`, time, rateRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, kappa1, kappa2, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, nullVariance)
+}
+
+#' @title Negative binomial rate ratio power
+#' @description Estimates the power for negative binomial rate ratio test.
+#'
+#' @inheritParams param_kMax
+#' @param informationRates The information rates.
+#'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
+#' @inheritParams param_efficacyStopping
+#' @inheritParams param_futilityStopping
+#' @inheritParams param_criticalValues
+#' @inheritParams param_alpha
+#' @inheritParams param_typeAlphaSpending
+#' @inheritParams param_parameterAlphaSpending
+#' @inheritParams param_userAlphaSpending
+#' @inheritParams param_futilityBounds
+#' @param typeBetaSpending The type of beta spending. One of the following:
+#'   "sfOF" for O'Brien-Fleming type spending function, "sfP" for Pocock
+#'   type spending function, "sfKD" for Kim & DeMets spending function,
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and "none" for no
+#'   early futility stopping. Defaults to "none".
+#' @inheritParams param_parameterBetaSpending
+#' @param rateRatioH0 Rate ratio under the null hypothesis.
+#' @inheritParams param_allocationRatioPlanned
+#' @inheritParams param_accrualTime
+#' @inheritParams param_accrualIntensity
+#' @inheritParams param_piecewiseSurvivalTime
+#' @param kappa1 The dispersion parameter (reciprocal of the shape parameter
+#'   of the gamma mixing distribution) for the active treatment group.
+#' @param kappa2 The dispersion parameter (reciprocal of the shape parameter
+#'   of the gamma mixing distribution) for the control group.
+#' @param lambda1 The rate parameter of the negative binomial distribution
+#'   for the active treatment group.
+#' @param lambda2 The rate parameter of the negative binomial distribution
+#'   for the control group.
+#' @inheritParams param_gamma1
+#' @inheritParams param_gamma2
+#' @inheritParams param_accrualDuration
+#' @inheritParams param_followupTime
+#' @inheritParams param_fixedFollowup
+#' @param spendingTime A vector of length \code{kMax} for the error spending
+#'   time at each analysis. Defaults to missing, in which case, it is the
+#'   same as \code{informationRates}.
+#' @param studyDuration Study duration for fixed follow-up design.
+#'   Defaults to missing, which is to be replaced with the sum of
+#'   \code{accrualDuration} and \code{followupTime}. If provided,
+#'   the value is allowed to be less than the sum of \code{accrualDuration}
+#'   and \code{followupTime}.
+#' @param nullVariance Whether to calculate the variance for log rate ratio
+#'   under the null hypothesis.
+#'
+#' @return An S3 class \code{nbpower} object with 4 components:
+#'
+#' * \code{overallResults}: A data frame containing the following variables:
+#'
+#'     - \code{overallReject}: The overall rejection probability.
+#'
+#'     - \code{alpha}: The overall significance level.
+#'
+#'     - \code{numberOfEvents}: The total number of events.
+#'
+#'     - \code{numberOfDropouts}: The total number of dropouts.
+#'
+#'     - \code{numbeOfSubjects}: The total number of subjects.
+#'
+#'     - \code{exposure}: The total exposure.
+#'
+#'     - \code{studyDuration}: The total study duration.
+#'
+#'     - \code{information}: The maximum information.
+#'
+#'     - \code{expectedNumberOfEvents}: The expected number of events.
+#'
+#'     - \code{expectedNumberOfDropouts}: The expected number of dropouts.
+#'
+#'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
+#'
+#'     - \code{expectedExposure}: The expected exposure.
+#'
+#'     - \code{expectedStudyDuration}: The expected study duration.
+#'
+#'     - \code{expectedInformation}: The expected information.
+#'
+#'     - \code{kMax}: The number of stages.
+#'
+#'     - \code{rateRatioH0}: The rate ratio under the null hypothesis.
+#'
+#'     - \code{rateRatio}: The rate ratio.
+#'
+#' * \code{byStageResults}: A data frame containing the following variables:
+#'
+#'     - \code{informationRates}: The information rates.
+#'
+#'     - \code{efficacyBounds}: The efficacy boundaries on the Z-scale.
+#'
+#'     - \code{futilityBounds}: The futility boundaries on the Z-scale.
+#'
+#'     - \code{rejectPerStage}: The probability for efficacy stopping.
+#'
+#'     - \code{futilityPerStage}: The probability for futility stopping.
+#'
+#'     - \code{cumulativeRejection}: The cumulative probability for efficacy
+#'       stopping.
+#'
+#'     - \code{cumulativeFutility}: The cumulative probability for futility
+#'       stopping.
+#'
+#'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
+#'
+#'     - \code{numberOfEvents}: The number of events.
+#'
+#'     - \code{numberOfDropouts}: The number of dropouts.
+#'
+#'     - \code{numberOfSubjects}: The number of subjects.
+#'
+#'     - \code{exposure}: The exposure.
+#'
+#'     - \code{analysisTime}: The average time since trial start.
+#'
+#'     - \code{efficacyRateRatio}: The efficacy boundaries on the rate
+#'       ratio scale.
+#'
+#'     - \code{futilityRateRatio}: The futility boundaries on the rate
+#'       ratio scale.
+#'
+#'     - \code{efficacyP}: The efficacy boundaries on the p-value scale.
+#'
+#'     - \code{futilityP}: The futility boundaries on the p-value scale.
+#'
+#'     - \code{information}: The cumulative information.
+#'
+#'     - \code{efficacyStopping}: Whether to allow efficacy stopping.
+#'
+#'     - \code{futilityStopping}: Whether to allow futility stopping.
+#'
+#' * \code{settings}: A list containing the following input parameters:
+#'   \code{typeAlphaSpending}, \code{parameterAlphaSpending},
+#'   \code{userAlphaSpending}, \code{typeBetaSpending},
+#'   \code{parameterBetaSpending}, \code{allocationRatioPlanned},
+#'   \code{accrualTime}, \code{accuralIntensity},
+#'   \code{piecewiseSurvivalTime}, \code{kappa1}, \code{kappa2},
+#'   \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2},
+#'   \code{accrualDuration}, \code{followupTime}, \code{fixedFollowup},
+#'   \code{spendingTime}, and \code{nullVariance}.
+#'
+#' * \code{byTreatmentCounts}: A list containing the following counts by
+#'   treatment group:
+#'
+#'     - \code{numberOfEvents1}: The number of events by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfDropouts1}: The number of dropouts by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfSubjects1}: The number of subjects by stage for
+#'       the treatment group.
+#'
+#'     - \code{exposure1}: The exposure by stage for the treatment group.
+#'
+#'     - \code{numberOfEvents2}: The number of events by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfDropouts2}: The number of dropouts by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfSubjects2}: The number of subjects by stage for
+#'       the control group.
+#'
+#'     - \code{exposure2}: The exposure by stage for the control group.
+#'
+#'     - \code{expectedNumberOfEvents1}: The expected number of events for
+#'       the treatment group.
+#'
+#'     - \code{expectedNumberOfDropouts1}: The expected number of dropouts
+#'       for the treatment group.
+#'
+#'     - \code{expectedNumberOfSubjects1}: The expected number of subjects
+#'       for the treatment group.
+#'
+#'     - \code{expectedExposure1}: The expected exposure for the treatment
+#'       group.
+#'
+#'     - \code{expectedNumberOfEvents2}: The expected number of events for
+#'       control group.
+#'
+#'     - \code{expectedNumberOfDropouts2}: The expected number of dropouts
+#'       for the control group.
+#'
+#'     - \code{expectedNumberOfSubjects2}: The expected number of subjects
+#'       for the control group.
+#'
+#'     - \code{expectedExposure2}: The expected exposure for the control
+#'       group.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @seealso \code{\link{nbstat}}
+#'
+#' @examples
+#' # Example 1: Variable follow-up design
+#'
+#' nbpower(kMax = 2, informationRates = c(0.5, 1),
+#'         alpha = 0.025, typeAlphaSpending = "sfOF",
+#'         accrualIntensity = 1956/1.25,
+#'         kappa1 = 5, kappa2 = 5,
+#'         lambda1 = 0.0875, lambda2 = 0.125,
+#'         gamma1 = 0, gamma2 = 0,
+#'         accrualDuration = 1.25,
+#'         followupTime = 2.75, fixedFollowup = FALSE,
+#'         nullVariance = 1)
+#'
+#' # Example 2: Fixed follow-up design
+#'
+#' nbpower(kMax = 2, informationRates = c(0.5, 1),
+#'         alpha = 0.025, typeAlphaSpending = "sfOF",
+#'         accrualIntensity = 220/1.5,
+#'         kappa1 = 3, kappa2 = 3,
+#'         lambda1 = 0.5*8.4, lambda2 = 8.4,
+#'         gamma1 = 0, gamma2 = 0,
+#'         accrualDuration = 1.5,
+#'         followupTime = 0.5, fixedFollowup = TRUE)
+#'
+#' @export
+nbpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, rateRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = 1500L, piecewiseSurvivalTime = 0L, kappa1 = 5, kappa2 = 5, lambda1 = 0.0875, lambda2 = 0.125, gamma1 = 0L, gamma2 = 0L, accrualDuration = 1.25, followupTime = 2.75, fixedFollowup = 0L, spendingTime = NA_real_, studyDuration = NA_real_, nullVariance = 0L) {
+    .Call(`_lrstat_nbpower`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, rateRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, kappa1, kappa2, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration, nullVariance)
+}
+
+#' @title Negative binomial rate ratio sample size
+#' @description Obtains the needed accrual duration given power and
+#' follow-up time, the needed follow-up time given power and
+#' accrual duration, or the needed absolute accrual rates given
+#' power, accrual duration, follow-up duration, and relative accrual
+#' rates in a two-group negative binomial design.
+#'
+#' @param beta Type II error. Defaults to 0.2.
+#' @inheritParams param_kMax
+#' @param informationRates The information rates.
+#'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
+#' @inheritParams param_efficacyStopping
+#' @inheritParams param_futilityStopping
+#' @inheritParams param_criticalValues
+#' @inheritParams param_alpha
+#' @inheritParams param_typeAlphaSpending
+#' @inheritParams param_parameterAlphaSpending
+#' @inheritParams param_userAlphaSpending
+#' @inheritParams param_futilityBounds
+#' @inheritParams param_typeBetaSpending
+#' @inheritParams param_parameterBetaSpending
+#' @inheritParams param_userBetaSpending
+#' @param rateRatioH0 Rate ratio under the null hypothesis.
+#' @inheritParams param_allocationRatioPlanned
+#' @inheritParams param_accrualTime
+#' @inheritParams param_accrualIntensity
+#' @inheritParams param_piecewiseSurvivalTime
+#' @param kappa1 The dispersion parameter (reciprocal of the shape parameter
+#'   of the gamma mixing distribution) for the active treatment group.
+#' @param kappa2 The dispersion parameter (reciprocal of the shape parameter
+#'   of the gamma mixing distribution) for the control group.
+#' @param lambda1 The rate parameter of the negative binomial distribution
+#'   for the active treatment group.
+#' @param lambda2 The rate parameter of the negative binomial distribution
+#'   for the control group.
+#' @inheritParams param_gamma1
+#' @inheritParams param_gamma2
+#' @inheritParams param_accrualDuration
+#' @inheritParams param_followupTime
+#' @inheritParams param_fixedFollowup
+#' @param interval The interval to search for the solution of
+#'   accrualDuration, followupDuration, or the proportionality constant
+#'   of accrualIntensity. Defaults to \code{c(0.001, 240)}. Adjustment
+#'   may be needed for non-monotone relationship with study power.
+#' @param spendingTime A vector of length \code{kMax} for the error spending
+#'   time at each analysis. Defaults to missing, in which case, it is the
+#'   same as \code{informationRates}.
+#' @param rounding Whether to round up sample size.
+#'   Defaults to 1 for sample size rounding.
+#' @param nullVariance Whether to calculate the variance for log rate ratio
+#'   under the null hypothesis.
+#'
+#' @return A list of two components:
+#'
+#' * \code{resultsUnderH1}: An S3 class \code{nbpower} object under the
+#'   alternative hypothesis.
+#'
+#' * \code{resultsUnderH0}: An S3 class \code{nbpower} object under the
+#'   null hypothesis.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @seealso \code{\link{nbpower}}
+#'
+#' @examples
+#' # Example 1: Obtains follow-up duration given power, accrual intensity,
+#' # and accrual duration for variable follow-up
+#'
+#' nbsamplesize(beta = 0.2, kMax = 2,
+#'              informationRates = c(0.5, 1),
+#'              alpha = 0.025, typeAlphaSpending = "sfOF",
+#'              accrualIntensity = 1956/1.25,
+#'              kappa1 = 5, kappa2 = 5,
+#'              lambda1 = 0.0875, lambda2 = 0.125,
+#'              gamma1 = 0, gamma2 = 0,
+#'              accrualDuration = 1.25,
+#'              followupTime = NA, fixedFollowup = FALSE)
+#'
+#' # Example 2: Obtains accrual intensity given power, accrual duration, and
+#' # follow-up duration for variable follow-up
+#'
+#' nbsamplesize(beta = 0.2, kMax = 2,
+#'              informationRates = c(0.5, 1),
+#'              alpha = 0.025, typeAlphaSpending = "sfOF",
+#'              kappa1 = 5, kappa2 = 5,
+#'              lambda1 = 0.0875, lambda2 = 0.125,
+#'              gamma1 = 0, gamma2 = 0,
+#'              accrualDuration = 1.25,
+#'              followupTime = 2.25, fixedFollowup = FALSE)
+#'
+#'
+#' # Example 3: Obtains accrual duration given power, accrual intensity, and
+#' # follow-up duration for fixed follow-up
+#'
+#' nbsamplesize(beta = 0.2, kMax = 2,
+#'              informationRates = c(0.5, 1),
+#'              alpha = 0.025, typeAlphaSpending = "sfOF",
+#'              accrualIntensity = 1667,
+#'              kappa1 = 5, kappa2 = 5,
+#'              lambda1 = 0.0875, lambda2 = 0.125,
+#'              gamma1 = 0, gamma2 = 0,
+#'              accrualDuration = NA,
+#'              followupTime = 0.5, fixedFollowup = TRUE)
+#'
+#' @export
+nbsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, rateRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = 1500L, piecewiseSurvivalTime = 0L, kappa1 = 5, kappa2 = 5, lambda1 = 0.0875, lambda2 = 0.125, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, interval = as.numeric( c(0.001, 240)), spendingTime = NA_real_, rounding = 1L, nullVariance = 0L) {
+    .Call(`_lrstat_nbsamplesize`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, rateRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, kappa1, kappa2, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, interval, spendingTime, rounding, nullVariance)
+}
+
+#' @title One-sample negative binomial rate power
+#' @description Estimates the power, stopping probabilities, and expected
+#' sample size in a one-group negative binomial design.
+#'
+#' @inheritParams param_kMax
+#' @param informationRates The information rates.
+#'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
+#' @inheritParams param_efficacyStopping
+#' @inheritParams param_futilityStopping
+#' @inheritParams param_criticalValues
+#' @inheritParams param_alpha
+#' @inheritParams param_typeAlphaSpending
+#' @inheritParams param_parameterAlphaSpending
+#' @inheritParams param_userAlphaSpending
+#' @inheritParams param_futilityBounds
+#' @param typeBetaSpending The type of beta spending. One of the following:
+#'   "sfOF" for O'Brien-Fleming type spending function, "sfP" for Pocock
+#'   type spending function, "sfKD" for Kim & DeMets spending function,
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and "none" for no
+#'   early futility stopping. Defaults to "none".
+#' @inheritParams param_parameterBetaSpending
+#' @inheritParams param_accrualTime
+#' @inheritParams param_accrualIntensity
+#' @inheritParams param_piecewiseSurvivalTime
+#' @param kappa The dispersion parameter (reciprocal of the shape parameter
+#'   of the gamma mixing distribution) of the negative binomial
+#'   distribution.
+#' @param lambdaH0 The rate parameter of the negative binomial distribution
+#'   under the null hypothesis.
+#' @param lambda The rate parameter of the negative binomial distribution
+#'   under the alternative hypothesis.
+#' @param gamma The hazard rate for exponential dropout or a vector of
+#'   hazard rates for piecewise exponential dropout. Defaults to 0 for
+#'   no dropout.
+#' @inheritParams param_accrualDuration
+#' @inheritParams param_followupTime
+#' @inheritParams param_fixedFollowup
+#' @param spendingTime A vector of length \code{kMax} for the error spending
+#'   time at each analysis. Defaults to missing, in which case, it is the
+#'   same as \code{informationRates}.
+#' @param studyDuration Study duration for fixed follow-up design.
+#'   Defaults to missing, which is to be replaced with the sum of
+#'   \code{accrualDuration} and \code{followupTime}. If provided,
+#'   the value is allowed to be less than the sum of \code{accrualDuration}
+#'   and \code{followupTime}.
+#'
+#' @return An S3 class \code{nbpower1s} object with 3 components:
+#'
+#' * \code{overallResults}: A data frame containing the following variables:
+#'
+#'     - \code{overallReject}: The overall rejection probability.
+#'
+#'     - \code{alpha}: The overall significance level.
+#'
+#'     - \code{numberOfEvents}: The total number of events.
+#'
+#'     - \code{numberOfDropouts}: The total number of dropouts.
+#'
+#'     - \code{numbeOfSubjects}: The total number of subjects.
+#'
+#'     - \code{exposure}: The total exposure.
+#'
+#'     - \code{studyDuration}: The total study duration.
+#'
+#'     - \code{information}: The maximum information.
+#'
+#'     - \code{expectedNumberOfEvents}: The expected number of events.
+#'
+#'     - \code{expectedNumberOfDropouts}: The expected number of dropouts.
+#'
+#'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
+#'
+#'     - \code{expectedExposure}: The expected exposure.
+#'
+#'     - \code{expectedStudyDuration}: The expected study duration.
+#'
+#'     - \code{expectedInformation}: The expected information.
+#'
+#'     - \code{kMax}: The number of stages.
+#'
+#' * \code{byStageResults}: A data frame containing the following variables:
+#'
+#'     - \code{informationRates}: The information rates.
+#'
+#'     - \code{efficacyBounds}: The efficacy boundaries on the Z-scale.
+#'
+#'     - \code{futilityBounds}: The futility boundaries on the Z-scale.
+#'
+#'     - \code{rejectPerStage}: The probability for efficacy stopping.
+#'
+#'     - \code{futilityPerStage}: The probability for futility stopping.
+#'
+#'     - \code{cumulativeRejection}: The cumulative probability for efficacy
+#'       stopping.
+#'
+#'     - \code{cumulativeFutility}: The cumulative probability for futility
+#'       stopping.
+#'
+#'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
+#'
+#'     - \code{numberOfEvents}: The number of events.
+#'
+#'     - \code{numberOfDropouts}: The number of dropouts.
+#'
+#'     - \code{numberOfSubjects}: The number of subjects.
+#'
+#'     - \code{exposure}: The exposure.
+#'
+#'     - \code{analysisTime}: The average time since trial start.
+#'
+#'     - \code{efficacyRate}: The efficacy boundaries on the rate scale.
+#'
+#'     - \code{futilityRate}: The futility boundaries on the rate scale.
+#'
+#'     - \code{efficacyP}: The efficacy boundaries on the p-value scale.
+#'
+#'     - \code{futilityP}: The futility boundaries on the p-value scale.
+#'
+#'     - \code{information}: The cumulative information.
+#'
+#'     - \code{efficacyStopping}: Whether to allow efficacy stopping.
+#'
+#'     - \code{futilityStopping}: Whether to allow futility stopping.
+#'
+#' * \code{settings}: A list containing the following input parameters:
+#'   \code{typeAlphaSpending}, \code{parameterAlphaSpending},
+#'   \code{userAlphaSpending}, \code{typeBetaSpending},
+#'   \code{parameterBetaSpending}, \code{accrualTime},
+#'   \code{accuralIntensity}, \code{piecewiseSurvivalTime},
+#'   \code{kappa}, \code{lambdaH0}, \code{lambda}, \code{gamma},
+#'   \code{accrualDuration}, \code{followupTime}, \code{fixedFollowup},
+#'   and \code{spendingTime}.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @seealso \code{\link{nbstat}}
+#'
+#' @examples
+#' # Example 1: Variable follow-up design
+#'
+#' nbpower1s(kMax = 2, informationRates = c(0.5, 1),
+#'           alpha = 0.025, typeAlphaSpending = "sfOF",
+#'           accrualIntensity = 500,
+#'           kappa = 5, lambdaH0 = 0.125, lambda = 0.0875,
+#'           gamma = 0, accrualDuration = 1.25,
+#'           followupTime = 2.75, fixedFollowup = FALSE)
+#'
+#' # Example 2: Fixed follow-up design
+#'
+#' nbpower1s(kMax = 2, informationRates = c(0.5, 1),
+#'           alpha = 0.025, typeAlphaSpending = "sfOF",
+#'           accrualIntensity = 40,
+#'           kappa = 3, lambdaH0 = 8.4, lambda = 0.5*8.4,
+#'           gamma = 0, accrualDuration = 1.5,
+#'           followupTime = 0.5, fixedFollowup = TRUE)
+#'
+#' @export
+nbpower1s <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, accrualTime = 0L, accrualIntensity = 1500L, piecewiseSurvivalTime = 0L, kappa = 5, lambdaH0 = 0.125, lambda = 0.0875, gamma = 0L, accrualDuration = 1.25, followupTime = 2.75, fixedFollowup = 0L, spendingTime = NA_real_, studyDuration = NA_real_) {
+    .Call(`_lrstat_nbpower1s`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, accrualTime, accrualIntensity, piecewiseSurvivalTime, kappa, lambdaH0, lambda, gamma, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration)
+}
+
+#' @title One-sample negative binomial rate sample size
+#' @description Obtains the needed accrual duration given power and
+#' follow-up time, the needed follow-up time given power and
+#' accrual duration, or the needed absolute accrual rates given
+#' power, accrual duration, follow-up duration, and relative accrual
+#' rates in a one-group negative binomial design.
+#'
+#' @param beta Type II error. Defaults to 0.2.
+#' @inheritParams param_kMax
+#' @param informationRates The information rates.
+#'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
+#' @inheritParams param_efficacyStopping
+#' @inheritParams param_futilityStopping
+#' @inheritParams param_criticalValues
+#' @inheritParams param_alpha
+#' @inheritParams param_typeAlphaSpending
+#' @inheritParams param_parameterAlphaSpending
+#' @inheritParams param_userAlphaSpending
+#' @inheritParams param_futilityBounds
+#' @inheritParams param_typeBetaSpending
+#' @inheritParams param_parameterBetaSpending
+#' @inheritParams param_userBetaSpending
+#' @inheritParams param_allocationRatioPlanned
+#' @inheritParams param_accrualTime
+#' @inheritParams param_accrualIntensity
+#' @inheritParams param_piecewiseSurvivalTime
+#' @param kappa The dispersion parameter (reciprocal of the shape parameter
+#'   of the gamma mixing distribution) of the negative binomial
+#'   distribution.
+#' @param lambdaH0 The rate parameter of the negative binomial distribution
+#'   under the null hypothesis.
+#' @param lambda The rate parameter of the negative binomial distribution
+#'   under the alternative hypothesis.
+#' @param gamma The hazard rate for exponential dropout or a vector of
+#'   hazard rates for piecewise exponential dropout. Defaults to 0 for
+#'   no dropout.
+#' @inheritParams param_accrualDuration
+#' @inheritParams param_followupTime
+#' @inheritParams param_fixedFollowup
+#' @param interval The interval to search for the solution of
+#'   accrualDuration, followupDuration, or the proportionality constant
+#'   of accrualIntensity. Defaults to \code{c(0.001, 240)}. Adjustment
+#'   may be needed for non-monotone relationship with study power.
+#' @param spendingTime A vector of length \code{kMax} for the error spending
+#'   time at each analysis. Defaults to missing, in which case, it is the
+#'   same as \code{informationRates}.
+#' @param rounding Whether to round up sample size.
+#'   Defaults to 1 for sample size rounding.
+#'
+#' @return A list of two components:
+#'
+#' * \code{resultsUnderH1}: An S3 class \code{nbpower1s} object under the
+#'   alternative hypothesis.
+#'
+#' * \code{resultsUnderH0}: An S3 class \code{nbpower1s} object under the
+#'   null hypothesis.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @seealso \code{\link{nbpower1s}}
+#'
+#' @examples
+#' # Example 1: Obtains follow-up duration given power, accrual intensity,
+#' # and accrual duration for variable follow-up
+#'
+#' nbsamplesize1s(beta = 0.2, kMax = 2,
+#'                informationRates = c(0.5, 1),
+#'                alpha = 0.025, typeAlphaSpending = "sfOF",
+#'                accrualIntensity = 500,
+#'                kappa = 5, lambdaH0 = 0.125, lambda = 0.0875,
+#'                gamma = 0, accrualDuration = 1.25,
+#'                followupTime = NA, fixedFollowup = FALSE)
+#'
+#' # Example 2: Obtains accrual intensity given power, accrual duration, and
+#' # follow-up duration for variable follow-up
+#'
+#' nbsamplesize1s(beta = 0.2, kMax = 2,
+#'                informationRates = c(0.5, 1),
+#'                alpha = 0.025, typeAlphaSpending = "sfOF",
+#'                kappa = 5, lambdaH0 = 0.125, lambda = 0.0875,
+#'                gamma = 0, accrualDuration = 1.25,
+#'                followupTime = 2.25, fixedFollowup = FALSE)
+#'
+#'
+#' # Example 3: Obtains accrual duration given power, accrual intensity, and
+#' # follow-up duration for fixed follow-up
+#'
+#' nbsamplesize1s(beta = 0.2, kMax = 2,
+#'                informationRates = c(0.5, 1),
+#'                alpha = 0.025, typeAlphaSpending = "sfOF",
+#'                accrualIntensity = 40,
+#'                kappa = 3, lambdaH0 = 8.4, lambda = 4.2,
+#'                gamma = 0, accrualDuration = NA,
+#'                followupTime = 0.5, fixedFollowup = TRUE)
+#'
+#' @export
+nbsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, accrualTime = 0L, accrualIntensity = 1500L, piecewiseSurvivalTime = 0L, kappa = 5, lambdaH0 = 0.125, lambda = 0.0875, gamma = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, interval = as.numeric( c(0.001, 240)), spendingTime = NA_real_, rounding = 1L) {
+    .Call(`_lrstat_nbsamplesize1s`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, accrualTime, accrualIntensity, piecewiseSurvivalTime, kappa, lambdaH0, lambda, gamma, accrualDuration, followupTime, fixedFollowup, interval, spendingTime, rounding)
+}
+
+#' @title Power for equivalence in negative binomial rate ratio
+#' @description Obtains the power for equivalence in negative binomial
+#' rate ratio.
+#'
+#' @inheritParams param_kMax
+#' @param informationRates The information rates.
+#'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
+#' @inheritParams param_criticalValues
+#' @param alpha The significance level for each of the two one-sided
+#'   tests. Defaults to 0.05.
+#' @inheritParams param_typeAlphaSpending
+#' @inheritParams param_parameterAlphaSpending
+#' @inheritParams param_userAlphaSpending
+#' @param rateRatioLower The lower equivalence limit of rate ratio.
+#' @param rateRatioUpper The upper equivalence limit of rate ratio.
+#' @inheritParams param_allocationRatioPlanned
+#' @inheritParams param_accrualTime
+#' @inheritParams param_accrualIntensity
+#' @inheritParams param_piecewiseSurvivalTime
+#' @param kappa1 The dispersion parameter (reciprocal of the shape parameter
+#'   of the gamma mixing distribution) for the active treatment group.
+#' @param kappa2 The dispersion parameter (reciprocal of the shape parameter
+#'   of the gamma mixing distribution) for the control group.
+#' @param lambda1 The rate parameter of the negative binomial distribution
+#'   for the active treatment group.
+#' @param lambda2 The rate parameter of the negative binomial distribution
+#'   for the control group.
+#' @inheritParams param_gamma1
+#' @inheritParams param_gamma2
+#' @inheritParams param_accrualDuration
+#' @inheritParams param_followupTime
+#' @inheritParams param_fixedFollowup
+#' @param spendingTime A vector of length \code{kMax} for the error spending
+#'   time at each analysis. Defaults to missing, in which case, it is the
+#'   same as \code{informationRates}.
+#' @param studyDuration Study duration for fixed follow-up design.
+#'   Defaults to missing, which is to be replaced with the sum of
+#'   \code{accrualDuration} and \code{followupTime}. If provided,
+#'   the value is allowed to be less than the sum of \code{accrualDuration}
+#'   and \code{followupTime}.
+#' @param nullVariance Whether to calculate the variance for log rate ratio
+#'   under the null hypothesis.
+#'
+#' @return An S3 class \code{nbpowerequiv} object with 4 components:
+#'
+#' * \code{overallResults}: A data frame containing the following variables:
+#'
+#'     - \code{overallReject}: The overall rejection probability.
+#'
+#'     - \code{alpha}: The overall significance level.
+#'
+#'     - \code{attainedAlphaH10}: The attained significance level under H10.
+#'
+#'     - \code{attainedAlphaH20}: The attained significance level under H20.
+#'
+#'     - \code{numberOfEvents}: The total number of events.
+#'
+#'     - \code{numberOfDropouts}: The total number of dropouts.
+#'
+#'     - \code{numbeOfSubjects}: The total number of subjects.
+#'
+#'     - \code{exposure}: The total exposure.
+#'
+#'     - \code{studyDuration}: The total study duration.
+#'
+#'     - \code{information}: The maximum information.
+#'
+#'     - \code{expectedNumberOfEvents}: The expected number of events.
+#'
+#'     - \code{expectedNumberOfDropouts}: The expected number of dropouts.
+#'
+#'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
+#'
+#'     - \code{expectedExposure}: The expected exposure.
+#'
+#'     - \code{expectedStudyDuration}: The expected study duration.
+#'
+#'     - \code{expectedInformation}: The expected information.
+#'
+#'     - \code{kMax}: The number of stages.
+#'
+#'     - \code{rateRatioLower}: The lower equivalence limit of rate ratio.
+#'
+#'     - \code{rateRatioUpper}: The upper equivalence limit of rate ratio.
+#'
+#'     - \code{rateRatio}: The rate ratio.
+#'
+#' * \code{byStageResults}: A data frame containing the following variables:
+#'
+#'     - \code{informationRates}: The information rates.
+#'
+#'     - \code{efficacyBounds}: The efficacy boundaries on the Z-scale for
+#'       each of the two one-sided tests.
+#'
+#'     - \code{rejectPerStage}: The probability for efficacy stopping.
+#'
+#'     - \code{cumulativeRejection}: The cumulative probability for efficacy
+#'       stopping.
+#'
+#'     - \code{cumulativeAlphaSpent}: The cumulative alpha for each of
+#'       the two one-sided tests.
+#'
+#'     - \code{cumulativeAttainedAlphaH10}: The cumulative alpha attained
+#'       under \code{H10}.
+#'
+#'     - \code{cumulativeAttainedAlphaH20}: The cumulative alpha attained
+#'       under \code{H20}.
+#'
+#'     - \code{numberOfEvents}: The number of events.
+#'
+#'     - \code{numberOfDropouts}: The number of dropouts.
+#'
+#'     - \code{numberOfSubjects}: The number of subjects.
+#'
+#'     - \code{exposure}: The exposure.
+#'
+#'     - \code{analysisTime}: The average time since trial start.
+#'
+#'     - \code{efficacyRateRatioLower}: The efficacy boundaries on the
+#'       rate ratio scale for the one-sided null hypothesis at the
+#'       lower equivalence limit.
+#'
+#'     - \code{efficacyRateRatioUpper}: The efficacy boundaries on the
+#'       rate ratio scale for the one-sided null hypothesis at the
+#'       upper equivalence limit.
+#'
+#'     - \code{efficacyP}: The efficacy bounds on the p-value scale for
+#'       each of the two one-sided tests.
+#'
+#'     - \code{information}: The cumulative information.
+#'
+#' * \code{settings}: A list containing the following input parameters:
+#'   \code{typeAlphaSpending}, \code{parameterAlphaSpending},
+#'   \code{userAlphaSpending}, \code{allocationRatioPlanned},
+#'   \code{accrualTime}, \code{accuralIntensity},
+#'   \code{piecewiseSurvivalTime}, \code{kappa1}, \code{kappa2},
+#'   \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2},
+#'   \code{accrualDuration}, \code{followupTime}, \code{fixedFollowup},
+#'   \code{spendingTime}, \code{nullVariance}, and \code{varianceRatios}.
+#'   The \code{varianceRatios} is a data frame with the following
+#'   variables:
+#'
+#'     - \code{varianceRatioH10}: The ratio of the variance under
+#'       \code{H10} to the variance under \code{H1}.
+#'
+#'     - \code{varianceRatioH20}: The ratio of the variance under
+#'       \code{H20} to the variance under \code{H1}.
+#'
+#'     - \code{varianceRatioH12}: The ratio of the variance under
+#'       \code{H10} to the variance under \code{H20}.
+#'
+#'     - \code{varianceRatioH21}: The ratio of the variance under
+#'       \code{H20} to the variance under \code{H10}.//'
+#'
+#' * \code{byTreatmentCounts}: A list containing the following counts by
+#'   treatment group:
+#'
+#'     - \code{numberOfEvents1}: The number of events by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfDropouts1}: The number of dropouts by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfSubjects1}: The number of subjects by stage for
+#'       the treatment group.
+#'
+#'     - \code{exposure1}: The exposure by stage for the treatment group.
+#'
+#'     - \code{numberOfEvents2}: The number of events by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfDropouts2}: The number of dropouts by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfSubjects2}: The number of subjects by stage for
+#'       the control group.
+#'
+#'     - \code{exposure2}: The exposure by stage for the control group.
+#'
+#'     - \code{expectedNumberOfEvents1}: The expected number of events for
+#'       the treatment group.
+#'
+#'     - \code{expectedNumberOfDropouts1}: The expected number of dropouts
+#'       for the treatment group.
+#'
+#'     - \code{expectedNumberOfSubjects1}: The expected number of subjects
+#'       for the treatment group.
+#'
+#'     - \code{expectedExposure1}: The expected exposure for the treatment
+#'       group.
+#'
+#'     - \code{expectedNumberOfEvents2}: The expected number of events for
+#'       control group.
+#'
+#'     - \code{expectedNumberOfDropouts2}: The expected number of dropouts
+#'       for the control group.
+#'
+#'     - \code{expectedNumberOfSubjects2}: The expected number of subjects
+#'       for the control group.
+#'
+#'     - \code{expectedExposure2}: The expected exposure for the control
+#'       group.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @seealso \code{\link{nbstat}}
+#'
+#' @examples
+#'
+#' # Example 1: Variable follow-up design
+#' nbpowerequiv(kMax = 2, informationRates = c(0.5, 1),
+#'              alpha = 0.05, typeAlphaSpending = "sfOF",
+#'              rateRatioLower = 2/3, rateRatioUpper = 3/2,
+#'              accrualIntensity = 1956/1.25,
+#'              kappa1 = 5, kappa2 = 5,
+#'              lambda1 = 0.125, lambda2 = 0.125,
+#'              gamma1 = 0, gamma2 = 0,
+#'              accrualDuration = 1.25,
+#'              followupTime = 2.75, fixedFollowup = FALSE,
+#'              nullVariance = 1)
+#'
+#' # Example 2: Fixed follow-up design
+#' nbpowerequiv(kMax = 2, informationRates = c(0.5, 1),
+#'              alpha = 0.05, typeAlphaSpending = "sfOF",
+#'              rateRatioLower = 0.5, rateRatioUpper = 2,
+#'              accrualIntensity = 220/1.5,
+#'              kappa1 = 3, kappa2 = 3,
+#'              lambda1 = 8.4, lambda2 = 8.4,
+#'              gamma1 = 0, gamma2 = 0,
+#'              accrualDuration = 1.5,
+#'              followupTime = 0.5, fixedFollowup = TRUE)
+#'
+#' @export
+nbpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, rateRatioLower = NA_real_, rateRatioUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = 1500L, piecewiseSurvivalTime = 0L, kappa1 = 5, kappa2 = 5, lambda1 = 0.125, lambda2 = 0.125, gamma1 = 0L, gamma2 = 0L, accrualDuration = 1.25, followupTime = 2.75, fixedFollowup = 0L, spendingTime = NA_real_, studyDuration = NA_real_, nullVariance = 0L) {
+    .Call(`_lrstat_nbpowerequiv`, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, rateRatioLower, rateRatioUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, kappa1, kappa2, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration, nullVariance)
+}
+
+#' @title Sample size for equivalence in negative binomial rate ratio
+#' @description Obtains the sample size for equivalence in negative binomial
+#' rate ratio.
+#'
+#' @param beta The type II error.
+#' @inheritParams param_kMax
+#' @param informationRates The information rates.
+#'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
+#' @inheritParams param_criticalValues
+#' @param alpha The significance level for each of the two one-sided
+#'   tests. Defaults to 0.05.
+#' @inheritParams param_typeAlphaSpending
+#' @inheritParams param_parameterAlphaSpending
+#' @inheritParams param_userAlphaSpending
+#' @param rateRatioLower The lower equivalence limit of rate ratio.
+#' @param rateRatioUpper The upper equivalence limit of rate ratio.
+#' @inheritParams param_allocationRatioPlanned
+#' @inheritParams param_accrualTime
+#' @inheritParams param_accrualIntensity
+#' @inheritParams param_piecewiseSurvivalTime
+#' @param kappa1 The dispersion parameter (reciprocal of the shape parameter
+#'   of the gamma mixing distribution) for the active treatment group.
+#' @param kappa2 The dispersion parameter (reciprocal of the shape parameter
+#'   of the gamma mixing distribution) for the control group.
+#' @param lambda1 The rate parameter of the negative binomial distribution
+#'   for the active treatment group.
+#' @param lambda2 The rate parameter of the negative binomial distribution
+#'   for the control group.
+#' @inheritParams param_gamma1
+#' @inheritParams param_gamma2
+#' @inheritParams param_accrualDuration
+#' @inheritParams param_followupTime
+#' @inheritParams param_fixedFollowup
+#' @param interval The interval to search for the solution of
+#'   accrualDuration, followupDuration, or the proportionality constant
+#'   of accrualIntensity. Defaults to \code{c(0.001, 240)}. Adjustment
+#'   may be needed for non-monotone relationship with study power.
+#' @param spendingTime A vector of length \code{kMax} for the error spending
+#'   time at each analysis. Defaults to missing, in which case, it is the
+#'   same as \code{informationRates}.
+#' @param rounding Whether to round up sample size.
+#'   Defaults to 1 for sample size rounding.
+#' @param nullVariance Whether to calculate the variance for log rate ratio
+#'   under the null hypothesis.
+#'
+#' @return An S3 class \code{nbpowerequiv} object
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @seealso \code{\link{nbpowerequiv}}
+#'
+#' @examples
+#'
+#' # Example 1: Variable follow-up design and solve for follow-up time
+#' nbsamplesizeequiv(beta = 0.1, kMax = 2, informationRates = c(0.5, 1),
+#'                   alpha = 0.05, typeAlphaSpending = "sfOF",
+#'                   rateRatioLower = 2/3, rateRatioUpper = 3/2,
+#'                   accrualIntensity = 1956/1.25,
+#'                   kappa1 = 5, kappa2 = 5,
+#'                   lambda1 = 0.125, lambda2 = 0.125,
+#'                   gamma1 = 0, gamma2 = 0,
+#'                   accrualDuration = 1.25,
+#'                   followupTime = NA, fixedFollowup = FALSE,
+#'                   nullVariance = 1)
+#'
+#' # Example 2: Fixed follow-up design and solve for accrual duration
+#' nbsamplesizeequiv(beta = 0.2, kMax = 2, informationRates = c(0.5, 1),
+#'                   alpha = 0.05, typeAlphaSpending = "sfOF",
+#'                   rateRatioLower = 0.5, rateRatioUpper = 2,
+#'                   accrualIntensity = 220/1.5,
+#'                   kappa1 = 3, kappa2 = 3,
+#'                   lambda1 = 8.4, lambda2 = 8.4,
+#'                   gamma1 = 0, gamma2 = 0,
+#'                   accrualDuration = NA,
+#'                   followupTime = 0.5, fixedFollowup = TRUE)
+#'
+#' @export
+nbsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, rateRatioLower = NA_real_, rateRatioUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = 1500L, piecewiseSurvivalTime = 0L, kappa1 = 5, kappa2 = 5, lambda1 = 0.125, lambda2 = 0.125, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, interval = as.numeric( c(0.001, 240)), spendingTime = NA_real_, rounding = 1L, nullVariance = 0L) {
+    .Call(`_lrstat_nbsamplesizeequiv`, beta, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, rateRatioLower, rateRatioUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, kappa1, kappa2, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, interval, spendingTime, rounding, nullVariance)
+}
+
 #' @title Update graph for graphical approaches
-#' @description Updates the weights and transition matrix for graphical 
+#' @description Updates the weights and transition matrix for graphical
 #' approaches.
 #'
 #' @param w The current vector of weights for elementary hypotheses.
@@ -2315,18 +3790,18 @@ lrsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, eff
 #' @param I The set of indices for yet to be rejected hypotheses.
 #' @param j The hypothesis to remove from index set \code{I}.
 #'
-#' @return A list containing the new vector of weights and the new 
-#' transition matrix for the graph, and the new set of indices of yet 
+#' @return A list containing the new vector of weights, the new
+#' transition matrix for the graph, and the new set of indices of yet
 #' to be rejected hypotheses.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
-#' updateGraph(w = c(0.5, 0.5, 0, 0), 
-#'             G = matrix(c(0, 0.5, 0.5, 0,  0.5, 0, 0, 0.5,  
-#'                          0, 1, 0, 0,  1, 0, 0, 0), 
-#'                        nrow=4, ncol=4, byrow=TRUE), 
-#'             I = c(1, 2, 3, 4), 
+#' updateGraph(w = c(0.5, 0.5, 0, 0),
+#'             G = matrix(c(0, 0.5, 0.5, 0,  0.5, 0, 0, 0.5,
+#'                          0, 1, 0, 0,  1, 0, 0, 0),
+#'                        nrow=4, ncol=4, byrow=TRUE),
+#'             I = c(1, 2, 3, 4),
 #'             j = 1)
 #'
 #' @export
@@ -2351,7 +3826,8 @@ fadjpboncpp <- function(w, G, p) {
 #' @examples
 #'
 #' w = c(0.5,0.5,0,0)
-#' g = matrix(c(0,0,1,0,0,0,0,1,0,1,0,0,1,0,0,0), nrow=4, ncol=4, byrow=TRUE)
+#' g = matrix(c(0,0,1,0, 0,0,0,1, 0,1,0,0, 1,0,0,0),
+#'            nrow=4, ncol=4, byrow=TRUE)
 #' (wgtmat = fwgtmat(w,g))
 #'
 #' @export
@@ -2384,274 +3860,274 @@ fmodmixcpp <- function(p, family, serial, parallel, gamma, test = "hommel", exha
 }
 
 #' @title Confidence interval after trial termination
-#' @description Obtains the p-value, median unbiased point estimate, and 
+#' @description Obtains the p-value, median unbiased point estimate, and
 #' confidence interval after the end of a group sequential trial.
 #'
 #' @param L The termination look.
 #' @param zL The z-test statistic at the termination look.
 #' @param IMax The maximum information of the trial.
 #' @param informationRates The information rates up to look \code{L}.
-#' @param efficacyStopping Indicators of whether efficacy stopping is 
-#'   allowed at each stage up to look \code{L}. 
+#' @param efficacyStopping Indicators of whether efficacy stopping is
+#'   allowed at each stage up to look \code{L}.
 #'   Defaults to true if left unspecified.
 #' @param criticalValues The upper boundaries on the z-test statistic scale
 #'   for efficacy stopping up to look \code{L}.
 #' @inheritParams param_alpha
-#' @param typeAlphaSpending The type of alpha spending. 
-#'   One of the following: 
-#'   "OF" for O'Brien-Fleming boundaries, 
-#'   "P" for Pocock boundaries, 
-#'   "WT" for Wang & Tsiatis boundaries, 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
-#'   "none" for no early efficacy stopping. 
+#' @param typeAlphaSpending The type of alpha spending.
+#'   One of the following:
+#'   "OF" for O'Brien-Fleming boundaries,
+#'   "P" for Pocock boundaries,
+#'   "WT" for Wang & Tsiatis boundaries,
+#'   "sfOF" for O'Brien-Fleming type spending function,
+#'   "sfP" for Pocock type spending function,
+#'   "sfKD" for Kim & DeMets spending function,
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
+#'   "none" for no early efficacy stopping.
 #'   Defaults to "sfOF".
-#' @param parameterAlphaSpending The parameter value of alpha spending. 
+#' @param parameterAlphaSpending The parameter value of alpha spending.
 #'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
-#' @param spendingTime The error spending time up to look \code{L}. 
-#'   Defaults to missing, in which case, it is the same as 
+#' @param spendingTime The error spending time up to look \code{L}.
+#'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRates}.
 #'
-#' @return A list with the following components: 
-#' 
+#' @return A data frame with the following components:
+#'
 #' * \code{pvalue}: p-value for rejecting the null hypothesis.
-#'  
+#'
 #' * \code{thetahat}: Median unbiased point estimate of the parameter.
-#' 
+#'
 #' * \code{cilevel}: Confidence interval level.
-#' 
+#'
 #' * \code{lower}: Lower bound of confidence interval.
-#' 
+#'
 #' * \code{upper}: Upper bound of confidence interval.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#' 
-#' @references 
-#' Anastasios A. Tsiatis, Gary L. Rosner and Cyrus R. Mehta. 
-#' Exact confidence intervals following a group sequential test. 
+#'
+#' @references
+#' Anastasios A. Tsiatis, Gary L. Rosner and Cyrus R. Mehta.
+#' Exact confidence intervals following a group sequential test.
 #' Biometrics 1984;40:797-803.
-#' 
+#'
 #' @examples
 #'
 #' # group sequential design with 90% power to detect delta = 6
 #' delta = 6
 #' sigma = 17
 #' n = 282
-#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
-#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
+#'                   alpha = 0.05, typeAlphaSpending = "sfHSD",
 #'                   parameterAlphaSpending = -4))
-#' 
+#'
 #' # crossed the boundary at the second look
 #' L = 2
 #' n1 = n*2/3
 #' delta1 = 7
 #' sigma1 = 20
 #' zL = delta1/sqrt(4/n1*sigma1^2)
-#' 
+#'
 #' # confidence interval
-#' getCI(L = L, zL = zL, IMax = n/(4*sigma1^2), 
-#'       informationRates = c(1/3, 2/3), alpha = 0.05, 
+#' getCI(L = L, zL = zL, IMax = n/(4*sigma1^2),
+#'       informationRates = c(1/3, 2/3), alpha = 0.05,
 #'       typeAlphaSpending = "sfHSD", parameterAlphaSpending = -4)
-#' 
+#'
 #' @export
 getCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_) {
     .Call(`_lrstat_getCI`, L, zL, IMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime)
 }
 
 #' @title Repeated confidence interval for group sequential design
-#' @description Obtains the repeated confidence interval 
+#' @description Obtains the repeated confidence interval
 #' for a group sequential trial.
 #'
 #' @param L The look of interest.
 #' @param zL The z-test statistic at the look.
 #' @param IMax The maximum information of the trial.
 #' @param informationRates The information rates up to look \code{L}.
-#' @param efficacyStopping Indicators of whether efficacy stopping is 
-#'   allowed at each stage up to look \code{L}. Defaults to true 
+#' @param efficacyStopping Indicators of whether efficacy stopping is
+#'   allowed at each stage up to look \code{L}. Defaults to true
 #'   if left unspecified.
 #' @param criticalValues The upper boundaries on the z-test statistic scale
 #'   for efficacy stopping up to look \code{L}.
 #' @inheritParams param_alpha
-#' @param typeAlphaSpending The type of alpha spending. 
-#'   One of the following: 
-#'   "OF" for O'Brien-Fleming boundaries, 
-#'   "P" for Pocock boundaries, 
-#'   "WT" for Wang & Tsiatis boundaries, 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
-#'   "none" for no early efficacy stopping. 
+#' @param typeAlphaSpending The type of alpha spending.
+#'   One of the following:
+#'   "OF" for O'Brien-Fleming boundaries,
+#'   "P" for Pocock boundaries,
+#'   "WT" for Wang & Tsiatis boundaries,
+#'   "sfOF" for O'Brien-Fleming type spending function,
+#'   "sfP" for Pocock type spending function,
+#'   "sfKD" for Kim & DeMets spending function,
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
+#'   "none" for no early efficacy stopping.
 #'   Defaults to "sfOF".
-#' @param parameterAlphaSpending The parameter value of alpha spending. 
+#' @param parameterAlphaSpending The parameter value of alpha spending.
 #'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
-#' @param spendingTime The error spending time up to look \code{L}. 
-#'   Defaults to missing, in which case, it is the same as 
+#' @param spendingTime The error spending time up to look \code{L}.
+#'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRates}.
 #'
-#' @return A list with the following components: 
-#' 
+#' @return A data frame with the following components:
+#'
 #' * \code{pvalue}: Repeated p-value for rejecting the null hypothesis.
-#'  
+#'
 #' * \code{thetahat}: Point estimate of the parameter.
-#' 
+#'
 #' * \code{cilevel}: Confidence interval level.
-#' 
+#'
 #' * \code{lower}: Lower bound of repeated confidence interval.
-#' 
+#'
 #' * \code{upper}: Upper bound of repeated confidence interval.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#' 
-#' @references 
-#' Christopher Jennison and Bruce W. Turnbull. 
-#' Interim analyses: the repeated confidence interval approach 
-#' (with discussion). 
+#'
+#' @references
+#' Christopher Jennison and Bruce W. Turnbull.
+#' Interim analyses: the repeated confidence interval approach
+#' (with discussion).
 #' J R Stat Soc Series B. 1989;51:305-361.
-#' 
+#'
 #' @examples
 #'
 #' # group sequential design with 90% power to detect delta = 6
 #' delta = 6
 #' sigma = 17
 #' n = 282
-#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
-#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
+#'                   alpha = 0.05, typeAlphaSpending = "sfHSD",
 #'                   parameterAlphaSpending = -4))
-#' 
+#'
 #' # results at the second look
 #' L = 2
 #' n1 = n*2/3
 #' delta1 = 7
 #' sigma1 = 20
 #' zL = delta1/sqrt(4/n1*sigma1^2)
-#' 
+#'
 #' # repeated confidence interval
-#' getRCI(L = L, zL = zL, IMax = n/(4*sigma1^2), 
-#'        informationRates = c(1/3, 2/3), alpha = 0.05, 
+#' getRCI(L = L, zL = zL, IMax = n/(4*sigma1^2),
+#'        informationRates = c(1/3, 2/3), alpha = 0.05,
 #'        typeAlphaSpending = "sfHSD", parameterAlphaSpending = -4)
-#' 
+#'
 #' @export
 getRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_) {
     .Call(`_lrstat_getRCI`, L, zL, IMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime)
 }
 
 #' @title Confidence interval after adaptation
-#' @description Obtains the p-value, median unbiased point estimate, and 
+#' @description Obtains the p-value, median unbiased point estimate, and
 #' confidence interval after the end of an adaptive trial.
 #'
 #' @param L The interim adaptation look of the primary trial.
-#' @param zL The z-test statistic at the interim adaptation look of 
+#' @param zL The z-test statistic at the interim adaptation look of
 #'   the primary trial.
 #' @param IMax The maximum information of the primary trial.
 #' @param kMax The maximum number of stages of the primary trial.
 #' @param informationRates The information rates of the primary trial.
-#' @param efficacyStopping Indicators of whether efficacy stopping is 
-#'   allowed at each stage of the primary trial. Defaults to true 
+#' @param efficacyStopping Indicators of whether efficacy stopping is
+#'   allowed at each stage of the primary trial. Defaults to true
 #'   if left unspecified.
 #' @param criticalValues The upper boundaries on the z-test statistic scale
 #'   for efficacy stopping for the primary trial.
-#' @param alpha The significance level of the primary trial. 
+#' @param alpha The significance level of the primary trial.
 #'   Defaults to 0.025.
-#' @param typeAlphaSpending The type of alpha spending for the primary trial. 
-#'   One of the following: 
-#'   "OF" for O'Brien-Fleming boundaries, 
-#'   "P" for Pocock boundaries, 
-#'   "WT" for Wang & Tsiatis boundaries, 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
-#'   "none" for no early efficacy stopping. 
+#' @param typeAlphaSpending The type of alpha spending for the primary
+#'   trial. One of the following:
+#'   "OF" for O'Brien-Fleming boundaries,
+#'   "P" for Pocock boundaries,
+#'   "WT" for Wang & Tsiatis boundaries,
+#'   "sfOF" for O'Brien-Fleming type spending function,
+#'   "sfP" for Pocock type spending function,
+#'   "sfKD" for Kim & DeMets spending function,
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
+#'   "none" for no early efficacy stopping.
 #'   Defaults to "sfOF".
-#' @param parameterAlphaSpending The parameter value of alpha spending 
-#'   for the primary trial. Corresponds to Delta for "WT", rho for "sfKD", 
+#' @param parameterAlphaSpending The parameter value of alpha spending
+#'   for the primary trial. Corresponds to Delta for "WT", rho for "sfKD",
 #'   and gamma for "sfHSD".
-#' @param spendingTime The error spending time of the primary trial. 
-#'   Defaults to missing, in which case, it is the same as 
+#' @param spendingTime The error spending time of the primary trial.
+#'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRates}.
 #' @param L2 The termination look of the secondary trial.
-#' @param zL2 The z-test statistic at the termination look of the 
+#' @param zL2 The z-test statistic at the termination look of the
 #'   secondary trial.
 #' @param INew The maximum information of the secondary trial.
-#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
+#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
 #'   for trial adaptation.
 #' @param informationRatesNew The spacing of looks of the secondary trial
 #'   up to look \code{L2}.
-#' @param efficacyStoppingNew The indicators of whether efficacy stopping is 
-#'   allowed at each look of the secondary trial up to look \code{L2}. 
+#' @param efficacyStoppingNew The indicators of whether efficacy stopping is
+#'   allowed at each look of the secondary trial up to look \code{L2}.
 #'   Defaults to true if left unspecified.
-#' @param typeAlphaSpendingNew The type of alpha spending for the secondary 
-#'   trial. One of the following: 
-#'   "OF" for O'Brien-Fleming boundaries, 
-#'   "P" for Pocock boundaries, 
-#'   "WT" for Wang & Tsiatis boundaries, 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
-#'   "none" for no early efficacy stopping. 
+#' @param typeAlphaSpendingNew The type of alpha spending for the secondary
+#'   trial. One of the following:
+#'   "OF" for O'Brien-Fleming boundaries,
+#'   "P" for Pocock boundaries,
+#'   "WT" for Wang & Tsiatis boundaries,
+#'   "sfOF" for O'Brien-Fleming type spending function,
+#'   "sfP" for Pocock type spending function,
+#'   "sfKD" for Kim & DeMets spending function,
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
+#'   "none" for no early efficacy stopping.
 #'   Defaults to "sfOF".
-#' @param parameterAlphaSpendingNew The parameter value of alpha spending 
-#'   for the secondary trial. Corresponds to Delta for "WT", 
+#' @param parameterAlphaSpendingNew The parameter value of alpha spending
+#'   for the secondary trial. Corresponds to Delta for "WT",
 #'   rho for "sfKD", and gamma for "sfHSD".
 #' @param spendingTimeNew The error spending time of the secondary trial
-#'   up to look \code{L2}. Defaults to missing, in which case, it is 
+#'   up to look \code{L2}. Defaults to missing, in which case, it is
 #'   the same as \code{informationRatesNew}.
-#' 
-#' @return A list with the following components: 
-#' 
+#'
+#' @return A data frame with the following variables:
+#'
 #' * \code{pvalue}: p-value for rejecting the null hypothesis.
-#'  
+#'
 #' * \code{thetahat}: Median unbiased point estimate of the parameter.
-#' 
+#'
 #' * \code{cilevel}: Confidence interval level.
-#' 
+#'
 #' * \code{lower}: Lower bound of confidence interval.
-#' 
+#'
 #' * \code{upper}: Upper bound of confidence interval.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#' 
+#'
 #' @references
-#' Ping Gao, Lingyun Liu and Cyrus Mehta. 
-#' Exact inference for adaptive group sequential designs. 
+#' Ping Gao, Lingyun Liu and Cyrus Mehta.
+#' Exact inference for adaptive group sequential designs.
 #' Stat Med. 2013;32(23):3991-4005.
 #'
 #' @seealso \code{\link{adaptDesign}}
-#' 
+#'
 #' @examples
 #'
 #' # original group sequential design with 90% power to detect delta = 6
 #' delta = 6
 #' sigma = 17
 #' n = 282
-#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
-#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
+#'                   alpha = 0.05, typeAlphaSpending = "sfHSD",
 #'                   parameterAlphaSpending = -4))
-#' 
+#'
 #' # interim look results
 #' L = 1
 #' n1 = n/3
 #' delta1 = 4.5
 #' sigma1 = 20
 #' zL = delta1/sqrt(4/n1*sigma1^2)
-#' 
+#'
 #' t = des1$byStageResults$informationRates
-#' 
-#' # Muller & Schafer (2001) method to design the secondary trial: 
+#'
+#' # Muller & Schafer (2001) method to design the secondary trial:
 #' des2 = adaptDesign(
 #'   betaNew = 0.2, L = L, zL = zL, theta = 5,
 #'   kMax = 3, informationRates = t,
 #'   alpha = 0.05, typeAlphaSpending = "sfHSD",
 #'   parameterAlphaSpending = -4,
 #'   MullerSchafer = TRUE,
-#'   kNew = 3, typeAlphaSpendingNew = "sfHSD", 
+#'   kNew = 3, typeAlphaSpendingNew = "sfHSD",
 #'   parameterAlphaSpendingNew = -2)
-#' 
-#' n2 = ceiling(des2$secondaryTrial$overallResults$maxInformation*4*20^2)
+#'
+#' n2 = ceiling(des2$secondaryTrial$overallResults$information*4*20^2)
 #' ns = round(n2*(1:3)/3)
 #'  (des2 = adaptDesign(
 #'    INew = n2/(4*20^2), L = L, zL = zL, theta = 5,
@@ -2662,15 +4138,15 @@ getRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationR
 #'    kNew = 3, informationRatesNew = ns/n2,
 #'    typeAlphaSpendingNew = "sfHSD",
 #'    parameterAlphaSpendingNew = -2))
-#' 
+#'
 #' # termination at the second look of the secondary trial
 #' L2 = 2
 #' delta2 = 6.86
 #' sigma2 = 21.77
 #' zL2 = delta2/sqrt(4/197*sigma2^2)
-#' 
+#'
 #' t2 = des2$secondaryTrial$byStageResults$informationRates[1:L2]
-#' 
+#'
 #' # confidence interval
 #' getADCI(L = L, zL = zL,
 #'         IMax = n/(4*sigma1^2), kMax = 3,
@@ -2680,127 +4156,127 @@ getRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationR
 #'         L2 = L2, zL2 = zL2,
 #'         INew = n2/(4*sigma2^2),
 #'         MullerSchafer = TRUE,
-#'         informationRatesNew = t2, 
+#'         informationRatesNew = t2,
 #'         typeAlphaSpendingNew = "sfHSD",
 #'         parameterAlphaSpendingNew = -2)
-#' 
+#'
 #' @export
 getADCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.25, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, L2 = NA_integer_, zL2 = NA_real_, INew = NA_real_, MullerSchafer = 0L, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
     .Call(`_lrstat_getADCI`, L, zL, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, L2, zL2, INew, MullerSchafer, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
 }
 
 #' @title Repeated confidence interval after adaptation
-#' @description Obtains the repeated p-value, conservative point estimate, 
+#' @description Obtains the repeated p-value, conservative point estimate,
 #' and repeated confidence interval for an adaptive group sequential trial.
-#' 
+#'
 #' @param L The interim adaptation look of the primary trial.
-#' @param zL The z-test statistic at the interim adaptation look of 
+#' @param zL The z-test statistic at the interim adaptation look of
 #'   the primary trial.
 #' @param IMax The maximum information of the primary trial.
 #' @param kMax The maximum number of stages of the primary trial.
 #' @param informationRates The information rates of the primary trial.
-#' @param efficacyStopping Indicators of whether efficacy stopping is 
-#'   allowed at each stage of the primary trial. Defaults to true 
+#' @param efficacyStopping Indicators of whether efficacy stopping is
+#'   allowed at each stage of the primary trial. Defaults to true
 #'   if left unspecified.
 #' @param criticalValues The upper boundaries on the z-test statistic scale
 #'   for efficacy stopping for the primary trial.
-#' @param alpha The significance level of the primary trial. 
+#' @param alpha The significance level of the primary trial.
 #'   Defaults to 0.025.
-#' @param typeAlphaSpending The type of alpha spending for the primary trial. 
-#'   One of the following: 
-#'   "OF" for O'Brien-Fleming boundaries, 
-#'   "P" for Pocock boundaries, 
-#'   "WT" for Wang & Tsiatis boundaries, 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
-#'   "none" for no early efficacy stopping. 
+#' @param typeAlphaSpending The type of alpha spending for the primary
+#'   trial. One of the following:
+#'   "OF" for O'Brien-Fleming boundaries,
+#'   "P" for Pocock boundaries,
+#'   "WT" for Wang & Tsiatis boundaries,
+#'   "sfOF" for O'Brien-Fleming type spending function,
+#'   "sfP" for Pocock type spending function,
+#'   "sfKD" for Kim & DeMets spending function,
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
+#'   "none" for no early efficacy stopping.
 #'   Defaults to "sfOF".
-#' @param parameterAlphaSpending The parameter value of alpha spending 
-#'   for the primary trial. Corresponds to Delta for "WT", rho for "sfKD", 
+#' @param parameterAlphaSpending The parameter value of alpha spending
+#'   for the primary trial. Corresponds to Delta for "WT", rho for "sfKD",
 #'   and gamma for "sfHSD".
-#' @param spendingTime The error spending time of the primary trial. 
-#'   Defaults to missing, in which case, it is the same as 
+#' @param spendingTime The error spending time of the primary trial.
+#'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRates}.
 #' @param L2 The look of interest in the secondary trial.
 #' @param zL2 The z-test statistic at the look of the secondary trial.
 #' @param INew The maximum information of the secondary trial.
-#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
+#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
 #'   for trial adaptation.
 #' @param informationRatesNew The spacing of looks of the secondary trial.
-#' @param efficacyStoppingNew The indicators of whether efficacy stopping is 
-#'   allowed at each look of the secondary trial up to look \code{L2}. 
+#' @param efficacyStoppingNew The indicators of whether efficacy stopping is
+#'   allowed at each look of the secondary trial up to look \code{L2}.
 #'   Defaults to true if left unspecified.
-#' @param typeAlphaSpendingNew The type of alpha spending for the secondary 
-#'   trial. One of the following: 
-#'   "OF" for O'Brien-Fleming boundaries, 
-#'   "P" for Pocock boundaries, 
-#'   "WT" for Wang & Tsiatis boundaries, 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
-#'   "none" for no early efficacy stopping. 
+#' @param typeAlphaSpendingNew The type of alpha spending for the secondary
+#'   trial. One of the following:
+#'   "OF" for O'Brien-Fleming boundaries,
+#'   "P" for Pocock boundaries,
+#'   "WT" for Wang & Tsiatis boundaries,
+#'   "sfOF" for O'Brien-Fleming type spending function,
+#'   "sfP" for Pocock type spending function,
+#'   "sfKD" for Kim & DeMets spending function,
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
+#'   "none" for no early efficacy stopping.
 #'   Defaults to "sfOF".
-#' @param parameterAlphaSpendingNew The parameter value of alpha spending 
-#'   for the secondary trial. Corresponds to Delta for "WT", 
+#' @param parameterAlphaSpendingNew The parameter value of alpha spending
+#'   for the secondary trial. Corresponds to Delta for "WT",
 #'   rho for "sfKD", and gamma for "sfHSD".
-#' @param spendingTimeNew The error spending time of the secondary trial. 
-#'   up to look \code{L2}. Defaults to missing, in which case, it is 
+#' @param spendingTimeNew The error spending time of the secondary trial.
+#'   up to look \code{L2}. Defaults to missing, in which case, it is
 #'   the same as \code{informationRatesNew}.
-#' 
-#' @return A list with the following components: 
-#' 
+#'
+#' @return A data frame with the following variables:
+#'
 #' * \code{pvalue}: Repeated p-value for rejecting the null hypothesis.
-#'  
+#'
 #' * \code{thetahat}: Point estimate of the parameter.
-#' 
+#'
 #' * \code{cilevel}: Confidence interval level.
-#' 
+#'
 #' * \code{lower}: Lower bound of repeated confidence interval.
-#' 
+#'
 #' * \code{upper}: Upper bound of repeated confidence interval.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#' 
+#'
 #' @references
 #' Cyrus R. Mehta, Peter Bauer, Martin Posch and Werner Brannath.
 #' Repeated confidence intervals for adaptive group sequential trials.
 #' Stat Med. 2007;26:5422–5433.
 #'
 #' @seealso \code{\link{adaptDesign}}
-#' 
+#'
 #' @examples
 #'
 #' # original group sequential design with 90% power to detect delta = 6
 #' delta = 6
 #' sigma = 17
 #' n = 282
-#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3, 
-#'                   alpha = 0.05, typeAlphaSpending = "sfHSD", 
+#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
+#'                   alpha = 0.05, typeAlphaSpending = "sfHSD",
 #'                   parameterAlphaSpending = -4))
-#' 
+#'
 #' # interim look results
 #' L = 1
 #' n1 = n/3
 #' delta1 = 4.5
 #' sigma1 = 20
 #' zL = delta1/sqrt(4/n1*sigma1^2)
-#' 
+#'
 #' t = des1$byStageResults$informationRates
-#' 
-#' # Muller & Schafer (2001) method to design the secondary trial: 
+#'
+#' # Muller & Schafer (2001) method to design the secondary trial:
 #' des2 = adaptDesign(
 #'   betaNew = 0.2, L = L, zL = zL, theta = 5,
 #'   kMax = 3, informationRates = t,
 #'   alpha = 0.05, typeAlphaSpending = "sfHSD",
 #'   parameterAlphaSpending = -4,
 #'   MullerSchafer = TRUE,
-#'   kNew = 3, typeAlphaSpendingNew = "sfHSD", 
+#'   kNew = 3, typeAlphaSpendingNew = "sfHSD",
 #'   parameterAlphaSpendingNew = -2)
-#' 
-#' n2 = ceiling(des2$secondaryTrial$overallResults$maxInformation*4*20^2)
+#'
+#' n2 = ceiling(des2$secondaryTrial$overallResults$information*4*20^2)
 #' ns = round(n2*(1:3)/3)
 #' (des2 = adaptDesign(
 #'   INew = n2/(4*20^2), L = L, zL = zL, theta = 5,
@@ -2811,15 +4287,15 @@ getADCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_i
 #'   kNew = 3, informationRatesNew = ns/n2,
 #'   typeAlphaSpendingNew = "sfHSD",
 #'   parameterAlphaSpendingNew = -2))
-#' 
+#'
 #' # termination at the second look of the secondary trial
 #' L2 = 2
 #' delta2 = 6.86
 #' sigma2 = 21.77
 #' zL2 = delta2/sqrt(4/197*sigma2^2)
-#' 
+#'
 #' t2 = des2$secondaryTrial$byStageResults$informationRates[1:L2]
-#' 
+#'
 #' # repeated confidence interval
 #' getADRCI(L = L, zL = zL,
 #'          IMax = n/(4*sigma1^2), kMax = 3,
@@ -2829,160 +4305,164 @@ getADCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_i
 #'          L2 = L2, zL2 = zL2,
 #'          INew = n2/(4*sigma2^2),
 #'          MullerSchafer = TRUE,
-#'          informationRatesNew = t2, 
+#'          informationRatesNew = t2,
 #'          typeAlphaSpendingNew = "sfHSD",
 #'          parameterAlphaSpendingNew = -2)
-#' 
+#'
 #' @export
-getADRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.25, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, L2 = NA_integer_, zL2 = NA_real_, INew = NA_real_, MullerSchafer = 0L, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+getADRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, L2 = NA_integer_, zL2 = NA_real_, INew = NA_real_, MullerSchafer = 0L, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
     .Call(`_lrstat_getADRCI`, L, zL, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, L2, zL2, INew, MullerSchafer, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
 }
 
 #' @title Conditional power allowing for varying parameter values
-#' @description Obtains the conditional power for specified incremental 
-#' information given the interim results, parameter values, and 
-#' data-dependent changes in the error spending function and the 
-#' number and spacing of interim looks. 
+#' @description Obtains the conditional power for specified incremental
+#' information given the interim results, parameter values, and
+#' data-dependent changes in the error spending function, as well as the
+#' number and spacing of interim looks.
 #'
 #' @param INew The maximum information of the secondary trial.
 #' @param L The interim adaptation look of the primary trial.
-#' @param zL The z-test statistic at the interim adaptation look of 
+#' @param zL The z-test statistic at the interim adaptation look of
 #'   the primary trial.
-#' @param theta A scalar or a vector of parameter values of 
-#'   length \code{kMax + kMax - L} if \code{MullerSchafer = FALSE} or 
+#' @param theta A scalar or a vector of parameter values of
+#'   length \code{kMax + kMax - L} if \code{MullerSchafer = FALSE} or
 #'   length \code{kMax + kNew} if \code{MullerSchafer = TRUE}.
 #' @param IMax The maximum information of the primary trial.
 #' @param kMax The maximum number of stages of the primary trial.
 #' @param informationRates The information rates of the primary trial.
-#' @param efficacyStopping Indicators of whether efficacy stopping is 
-#'   allowed at each stage of the primary trial. Defaults to true 
+#' @param efficacyStopping Indicators of whether efficacy stopping is
+#'   allowed at each stage of the primary trial. Defaults to true
 #'   if left unspecified.
-#' @param futilityStopping Indicators of whether futility stopping is 
-#'   allowed at each stage of the primary trial. Defaults to true 
+#' @param futilityStopping Indicators of whether futility stopping is
+#'   allowed at each stage of the primary trial. Defaults to true
 #'   if left unspecified.
 #' @param criticalValues The upper boundaries on the z-test statistic scale
 #'   for efficacy stopping for the primary trial.
-#' @param alpha The significance level of the primary trial. 
+#' @param alpha The significance level of the primary trial.
 #'   Defaults to 0.025.
-#' @param typeAlphaSpending The type of alpha spending for the primary 
-#'   trial. One of the following: 
-#'   "OF" for O'Brien-Fleming boundaries, 
-#'   "P" for Pocock boundaries, 
-#'   "WT" for Wang & Tsiatis boundaries, 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, 
-#'   "user" for user defined spending, and 
-#'   "none" for no early efficacy stopping. 
+#' @param typeAlphaSpending The type of alpha spending for the primary
+#'   trial. One of the following:
+#'   "OF" for O'Brien-Fleming boundaries,
+#'   "P" for Pocock boundaries,
+#'   "WT" for Wang & Tsiatis boundaries,
+#'   "sfOF" for O'Brien-Fleming type spending function,
+#'   "sfP" for Pocock type spending function,
+#'   "sfKD" for Kim & DeMets spending function,
+#'   "sfHSD" for Hwang, Shi & DeCani spending function,
+#'   "user" for user defined spending, and
+#'   "none" for no early efficacy stopping.
 #'   Defaults to "sfOF".
 #' @param parameterAlphaSpending The parameter value of alpha spending
-#'   for the primary trial. Corresponds to Delta for "WT", rho for "sfKD", 
+#'   for the primary trial. Corresponds to Delta for "WT", rho for "sfKD",
 #'   and gamma for "sfHSD".
-#' @param userAlphaSpending The user defined alpha spending for the primary 
+#' @param userAlphaSpending The user defined alpha spending for the primary
 #'   trial. Cumulative alpha spent up to each stage.
-#' @param futilityBounds	The lower boundaries on the z-test statistic scale 
-#'   for futility stopping for the primary trial. Defaults to 
+#' @param futilityBounds	The lower boundaries on the z-test statistic scale
+#'   for futility stopping for the primary trial. Defaults to
 #'   \code{rep(-6, kMax-1)} if left unspecified.
-#' @param typeBetaSpending The type of beta spending for the primary trial. 
-#'   One of the following: 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
-#'   "none" for no early futility stopping. 
+#' @param typeBetaSpending The type of beta spending for the primary trial.
+#'   One of the following:
+#'   "sfOF" for O'Brien-Fleming type spending function,
+#'   "sfP" for Pocock type spending function,
+#'   "sfKD" for Kim & DeMets spending function,
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
+#'   "none" for no early futility stopping.
 #'   Defaults to "none".
-#' @param parameterBetaSpending The parameter value of beta spending 
-#'   for the primary trial. Corresponds to rho for "sfKD", 
+#' @param parameterBetaSpending The parameter value of beta spending
+#'   for the primary trial. Corresponds to rho for "sfKD",
 #'   and gamma for "sfHSD".
-#' @param spendingTime The error spending time of the primary trial. 
-#'   Defaults to missing, in which case, it is the same as 
+#' @param spendingTime The error spending time of the primary trial.
+#'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRates}.
-#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method 
+#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
 #'   for trial adaptation.
 #' @param kNew The number of looks of the secondary trial.
 #' @param informationRatesNew The spacing of looks of the secondary trial.
-#' @param efficacyStoppingNew The indicators of whether efficacy stopping is 
-#'   allowed at each look of the secondary trial. Defaults to true 
+#' @param efficacyStoppingNew The indicators of whether efficacy stopping is
+#'   allowed at each look of the secondary trial. Defaults to true
 #'   if left unspecified.
-#' @param futilityStoppingNew The indicators of whether futility stopping is 
-#'   allowed at each look of the secondary trial. Defaults to true 
+#' @param futilityStoppingNew The indicators of whether futility stopping is
+#'   allowed at each look of the secondary trial. Defaults to true
 #'   if left unspecified.
 #' @param typeAlphaSpendingNew The type of alpha spending for the secondary
-#'   trial. One of the following: 
-#'   "OF" for O'Brien-Fleming boundaries, 
-#'   "P" for Pocock boundaries, 
-#'   "WT" for Wang & Tsiatis boundaries, 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and 
-#'   "none" for no early efficacy stopping. 
-#'   Defaults to "sfOF".
-#' @param parameterAlphaSpendingNew The parameter value of alpha spending 
-#'   for the secondary trial. Corresponds to Delta for "WT", rho for "sfKD", 
-#'   and gamma for "sfHSD".
-#' @param typeBetaSpendingNew The type of beta spending for the secondary 
-#'   trial. One of the following: 
-#'   "sfOF" for O'Brien-Fleming type spending function, 
-#'   "sfP" for Pocock type spending function, 
-#'   "sfKD" for Kim & DeMets spending function, 
+#'   trial. One of the following:
+#'   "OF" for O'Brien-Fleming boundaries,
+#'   "P" for Pocock boundaries,
+#'   "WT" for Wang & Tsiatis boundaries,
+#'   "sfOF" for O'Brien-Fleming type spending function,
+#'   "sfP" for Pocock type spending function,
+#'   "sfKD" for Kim & DeMets spending function,
 #'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-#'   "none" for no early futility stopping. 
-#'   Defaults to "none".
-#' @param parameterBetaSpendingNew The parameter value of beta spending 
-#'   for the secondary trial. Corresponds to rho for "sfKD", 
+#'   "none" for no early efficacy stopping.
+#'   Defaults to "sfOF".
+#' @param parameterAlphaSpendingNew The parameter value of alpha spending
+#'   for the secondary trial. Corresponds to Delta for "WT", rho for "sfKD",
 #'   and gamma for "sfHSD".
-#' @param spendingTimeNew The error spending time of the secondary trial. 
-#'   Defaults to missing, in which case, it is the same as 
+#' @param typeBetaSpendingNew The type of beta spending for the secondary
+#'   trial. One of the following:
+#'   "sfOF" for O'Brien-Fleming type spending function,
+#'   "sfP" for Pocock type spending function,
+#'   "sfKD" for Kim & DeMets spending function,
+#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
+#'   "none" for no early futility stopping.
+#'   Defaults to "none".
+#' @param parameterBetaSpendingNew The parameter value of beta spending
+#'   for the secondary trial. Corresponds to rho for "sfKD",
+#'   and gamma for "sfHSD".
+#' @param spendingTimeNew The error spending time of the secondary trial.
+#'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRatesNew}.
+#' @param varianceRatio The ratio of the variance under H0 to the variance
+#'   under H1.
 #'
-#' @return The conditional power given the interim results, parameter 
+#' @return The conditional power given the interim results, parameter
 #' values, and data-dependent design changes.
-#' 
+#'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#' 
-#' @references 
-#' Cyrus R. Mehta and Stuart J. Pocock. 
-#' Adaptive increase in sample size when interim results are promising: 
+#'
+#' @references
+#' Cyrus R. Mehta and Stuart J. Pocock.
+#' Adaptive increase in sample size when interim results are promising:
 #' A practical guide with examples.
 #' Stat Med. 2011;30:3267–3284.
 #'
 #' @seealso \code{\link{getDesign}}
-#' 
+#'
 #' @examples
-#' 
+#'
 #' # Conditional power calculation with delayed treatment effect
-#' 
-#' # Two interim analyses have occurred with 179 and 266 events, respectively
-#' # The observed hazard ratio at the second interim look is 0.81
-#' 
+#'
+#' # Two interim analyses have occurred with 179 and 266 events,
+#' # respectively. The observed hazard ratio at the second interim
+#' # look is 0.81.
+#'
 #' trialsdt = as.Date("2020-03-04")                       # trial start date
 #' iadt = c(as.Date("2022-02-01"), as.Date("2022-11-01")) # interim dates
 #' mo1 = as.numeric(iadt - trialsdt + 1)/30.4375          # interim months
-#' 
-#' # Assume a piecewise Poisson enrollment process with a 8-month ramp-up and
-#' # 521 patients were enrolled after 17.94 months
+#'
+#' # Assume a piecewise Poisson enrollment process with a 8-month ramp-up
+#' # and 521 patients were enrolled after 17.94 months
 #' N = 521                   # total number of patients
 #' Ta = 17.94                # enrollment duration
 #' Ta1 = 8                   # assumed end of enrollment ramp-up
 #' enrate = N / (Ta - Ta1/2) # enrollment rate after ramp-up
-#' 
-#' # Assume a median survival of 16.7 months for the control group, a 5-month
-#' # delay in treatment effect, and a hazard ratio of 0.7 after the delay
+#'
+#' # Assume a median survival of 16.7 months for the control group, a
+#' # 5-month delay in treatment effect, and a hazard ratio of 0.7 after
+#' # the delay
 #' lam1 = log(2)/16.7  # control group hazard of exponential distribution
 #' t1 = 5              # months of delay in treatment effect
 #' hr = 0.7            # hazard ratio after delay
 #' lam2 = hr*lam1      # treatment group hazard after delay
-#' 
+#'
 #' # Assume an annual dropout rate of 5%
 #' gam = -log(1-0.05)/12  # hazard for dropout
-#' 
+#'
 #' # The original target number of events was 298 and the new target is 335
 #' mo2 <- caltime(
 #'   nevents = c(298, 335),
 #'   allocationRatioPlanned = 1,
-#'   accrualTime = seq(0, Ta1), 
+#'   accrualTime = seq(0, Ta1),
 #'   accrualIntensity = enrate*seq(1, Ta1+1)/(Ta1+1),
 #'   piecewiseSurvivalTime = c(0, t1),
 #'   lambda1 = c(lam1, lam2),
@@ -2991,11 +4471,11 @@ getADRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_
 #'   gamma2 = gam,
 #'   accrualDuration = Ta,
 #'   followupTime = 1000)
-#' 
+#'
 #' # expected number of events and average hazard ratios
 #' (lr1 <- lrstat(
 #'   time = c(mo1, mo2),
-#'   accrualTime = seq(0, Ta1), 
+#'   accrualTime = seq(0, Ta1),
 #'   accrualIntensity = enrate*seq(1, Ta1+1)/(Ta1+1),
 #'   piecewiseSurvivalTime = c(0, t1),
 #'   lambda1 = c(lam1, lam2),
@@ -3005,28 +4485,1162 @@ getADRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_
 #'   accrualDuration = Ta,
 #'   followupTime = 1000,
 #'   predictTarget = 3))
-#' 
-#' 
+#'
+#'
 #' hr2 = 0.81                    # observed hazard ratio at interim 2
 #' z2 = (-log(hr2))*sqrt(266/4)  # corresponding z-test statistic value
-#'  
+#'
 #' # expected mean of -log(HR) at the original looks and the new final look
 #' theta = -log(lr1$HR[c(1,2,3,4)])
-#' 
+#'
 #' # conditional power with sample size increase
-#' getCP(INew = (335 - 266)/4, 
+#' getCP(INew = (335 - 266)/4,
 #'       L = 2, zL = z2, theta = theta,
-#'       IMax = 298/4, kMax = 3, 
+#'       IMax = 298/4, kMax = 3,
 #'       informationRates = c(179, 266, 298)/298,
 #'       alpha = 0.025, typeAlphaSpending = "sfOF")
 #'
 #' @export
-getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
-    .Call(`_lrstat_getCP`, INew, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, typeBetaSpendingNew, parameterBetaSpendingNew, spendingTimeNew)
+getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_, varianceRatio = 1) {
+    .Call(`_lrstat_getCP`, INew, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, typeBetaSpendingNew, parameterBetaSpendingNew, spendingTimeNew, varianceRatio)
 }
 
 ftrunccpp <- function(p, test, gamma) {
     .Call(`_lrstat_ftrunccpp`, p, test, gamma)
+}
+
+#' @title Simon's two-stage design
+#' @description Obtains Simon's two-stage minimax, admissible, and
+#' optimal designs.
+#'
+#' @param alpha Type I error rate (one-sided).
+#' @param beta Type II error rate (1-power).
+#' @param piH0 Response probability under the null hypothesis.
+#' @param pi Response probability under the alternative hypothesis.
+#' @param n_max Upper limit for sample size, defaults to 110.
+#'
+#' @return A data frame containing the following variables:
+#'
+#' * \code{piH0}: Response probability under the null hypothesis.
+#'
+#' * \code{pi}: Response probability under the alternative hypothesis.
+#'
+#' * \code{alpha}: The specified one-sided significance level.
+#'
+#' * \code{beta}: The specified type II error.
+#'
+#' * \code{n}: Total sample size.
+#'
+#' * \code{n1}: Stage 1 sample size.
+#'
+#' * \code{r1}: Futility boundary for stage 1.
+#'
+#' * \code{r}: Futility boundary for stage 2.
+#'
+#' * \code{EN0}: Expected sample size under the null hypothesis.
+#'
+#' * \code{attainedAlpha}: Attained type 1 error.
+#'
+#' * \code{power}: Attained power.
+#'
+#' * \code{PET0}: Probability of early stopping under the null hypothesis.
+#'
+#' * \code{w_lower}: Lower bound of the interval for \code{w}.
+#'
+#' * \code{w_upper}: Upper bound of the interval for \code{w}.
+#'
+#' * \code{design}: Description of the design, e.g., minimax, admissible,
+#'   or optimal.
+#'
+#' Here \code{w} is the weight in the objective function:
+#' \code{w*n + (1-w)*EN0}.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#' simon2stage(0.05, 0.15, 0.1, 0.3)
+#'
+#' @export
+simon2stage <- function(alpha, beta, piH0, pi, n_max = 110L) {
+    .Call(`_lrstat_simon2stage`, alpha, beta, piH0, pi, n_max)
+}
+
+#' @title Power for binomial one-sample exact test
+#' @description Obtains the power for binomial one-sample exact test.
+#'
+#' @param n The sample size.
+#' @param piH0 The response probability under the null hypothesis.
+#' @param pi The response probability under the alternative hypothesis.
+#' @param alpha The one-sided significance level. Defaults to 0.025.
+#'
+#' @return A data frame containing the critical value of the number of
+#' responses for rejecting the null hypothesis, the attained type I
+#' error, the power for the exact test, the sample size, the
+#' response probabilities under the null and alternative hypotheses,
+#' and the direction of the alternative.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#' powerOnePropExact(n = 110, piH0 = 0.15, pi = 0.25, alpha = 0.05)
+#'
+#' @export
+powerOnePropExact <- function(n = NA_real_, piH0 = NA_real_, pi = NA_real_, alpha = 0.025) {
+    .Call(`_lrstat_powerOnePropExact`, n, piH0, pi, alpha)
+}
+
+#' @title Sample size for binomial one-sample exact test
+#' @description Obtains the sample size for binomial one-sample exact test.
+#'
+#' @param beta The type II error.
+#' @param piH0 The response probability under the null hypothesis.
+#' @param pi The response probability under the alternative hypothesis.
+#' @param alpha The one-sided significance level. Defaults to 0.025.
+#'
+#' @return A data frame containing the critical value of the number of
+#' responses for rejecting the null hypothesis, the attained type I
+#' error, the power for the exact test, the sample size, the
+#' response probabilities under the null and alternative hypotheses,
+#' and the direction of the alternative.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#' samplesizeOnePropExact(beta = 0.2, piH0 = 0.15, pi = 0.25, alpha = 0.025)
+#'
+#' @export
+samplesizeOnePropExact <- function(beta = 0.2, piH0 = NA_real_, pi = NA_real_, alpha = 0.025) {
+    .Call(`_lrstat_samplesizeOnePropExact`, beta, piH0, pi, alpha)
+}
+
+#' @title Power for Poisson one-sample exact test
+#' @description Obtains the power for Poisson one-sample exact test.
+#'
+#' @param n The sample size.
+#' @param lambdaH0 The Poisson rate under the null hypothesis.
+#' @param lambda The Poisson rate under the alternative hypothesis.
+#' @param D The average exposure per subject.
+#' @param alpha The one-sided significance level. Defaults to 0.025.
+#'
+#' @return A data frame containing the critical value of the number of
+#' events for rejecting the null hypothesis, the attained type I
+#' error, the power for the exact test, the sample size,
+#' the Poisson rates under the null and alternative hypotheses,
+#' the average exposure, and the direction of the alternative.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#' powerOneRateExact(n = 525, lambdaH0 = 0.049, lambda = 0.012,
+#'                   D = 0.5, alpha = 0.025)
+#'
+#' @export
+powerOneRateExact <- function(n = NA_real_, lambdaH0 = NA_real_, lambda = NA_real_, D = 1, alpha = 0.025) {
+    .Call(`_lrstat_powerOneRateExact`, n, lambdaH0, lambda, D, alpha)
+}
+
+#' @title Sample size for Poisson one-sample exact test
+#' @description Obtains the sample size for Poisson one-sample exact test.
+#'
+#' @param beta The type II error.
+#' @param lambdaH0 The Poisson rate under the null hypothesis.
+#' @param lambda The Poisson rate under the alternative hypothesis.
+#' @param D The average exposure per subject.
+#' @param alpha The one-sided significance level. Defaults to 0.025.
+#'
+#' @return A data frame containing the critical value of the number of
+#' events for rejecting the null hypothesis, the attained type I
+#' error, the power for the exact test, the sample size,
+#' the Poisson rates under the null and alternative hypotheses,
+#' the average exposure, and the direction of the alternative.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#' samplesizeOneRateExact(beta = 0.2, lambdaH0 = 0.2, lambda = 0.3,
+#'                        D = 1, alpha = 0.05)
+#'
+#' @export
+samplesizeOneRateExact <- function(beta = 0.2, lambdaH0 = NA_real_, lambda = NA_real_, D = 1, alpha = 0.025) {
+    .Call(`_lrstat_samplesizeOneRateExact`, beta, lambdaH0, lambda, D, alpha)
+}
+
+#' @title Power for Fisher's exact test for two proportions
+#' @description Obtains the power given sample size for Fisher's exact
+#' test for two proportions.
+#'
+#' @param n The total sample size.
+#' @param pi1 The assumed probability for the active treatment group.
+#' @param pi2 The assumed probability for the control group.
+#' @param allocationRatioPlanned Allocation ratio for the active treatment
+#'   versus control. Defaults to 1 for equal randomization.
+#' @param alpha The two-sided significance level. Defaults to 0.05.
+#'
+#' @return A data frame with the following variables:
+#'
+#' * \code{alpha}: The two-sided significance level.
+#'
+#' * \code{power}: The power.
+#'
+#' * \code{n}: The sample size.
+#'
+#' * \code{pi1}: The assumed probability for the active treatment group.
+#'
+#' * \code{pi2}: The assumed probability for the control group.
+#'
+#' * \code{allocationRatioPlanned}: Allocation ratio for the active
+#'   treatment versus control.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @keywords internal
+#'
+#' @examples
+#'
+#' (design1 <- powerFisherExact(
+#'   n = 136, pi1 = 0.25, pi2 = 0.05, alpha = 0.05))
+#'
+#' @export
+powerFisherExact <- function(n, pi1, pi2, allocationRatioPlanned = 1, alpha = 0.05) {
+    .Call(`_lrstat_powerFisherExact`, n, pi1, pi2, allocationRatioPlanned, alpha)
+}
+
+#' @title Sample size for Fisher's exact test for two proportions
+#' @description Obtains the sample size given power for Fisher's exact
+#' test for two proportions.
+#'
+#' @param beta The type II error.
+#' @param pi1 The assumed probability for the active treatment group.
+#' @param pi2 The assumed probability for the control group.
+#' @param allocationRatioPlanned Allocation ratio for the active treatment
+#'   versus control. Defaults to 1 for equal randomization.
+#' @param alpha The two-sided significance level. Defaults to 0.05.
+#'
+#' @return A data frame with the following variables:
+#'
+#' * \code{alpha}: The two-sided significance level.
+#'
+#' * \code{power}: The power.
+#'
+#' * \code{n}: The sample size.
+#'
+#' * \code{pi1}: The assumed probability for the active treatment group.
+#'
+#' * \code{pi2}: The assumed probability for the control group.
+#'
+#' * \code{allocationRatioPlanned}: Allocation ratio for the active
+#'   treatment versus control.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @keywords internal
+#'
+#' @examples
+#'
+#' (design1 <- samplesizeFisherExact(
+#'   beta = 0.1, pi1 = 0.25, pi2 = 0.05, alpha = 0.05))
+#'
+#' @export
+samplesizeFisherExact <- function(beta, pi1, pi2, allocationRatioPlanned = 1, alpha = 0.05) {
+    .Call(`_lrstat_samplesizeFisherExact`, beta, pi1, pi2, allocationRatioPlanned, alpha)
+}
+
+#' @title REML estimates of individual proportions with specified risk
+#' difference
+#' @description Obtains the restricted maximum likelihood estimates of
+#' individual proportions with specified risk difference.
+#'
+#' @param riskDiffH0 The specified risk difference.
+#' @param n1 The sample size for the active treatment group.
+#' @param y1 The number of responses for the active treatment group.
+#' @param n2 The sample size for the control group.
+#' @param y2 The number of responses for the control group.
+#'
+#' @return A vector of the restricted maximum likelihood estimates
+#' of the response probabilities for the two treatment groups.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' remlRiskDiff(riskDiffH0 = 0.1, n1 = 10, y1 = 4, n2 = 20, y2 = 0)
+#'
+#' @export
+#'
+remlRiskDiff <- function(riskDiffH0, n1, y1, n2, y2) {
+    .Call(`_lrstat_remlRiskDiff`, riskDiffH0, n1, y1, n2, y2)
+}
+
+remlRiskDiff2 <- function(riskDiffH0, n1, y1, n2, y2) {
+    .Call(`_lrstat_remlRiskDiff2`, riskDiffH0, n1, y1, n2, y2)
+}
+
+zstatRiskDiff <- function(riskDiffH0, n1, y1, n2, y2) {
+    .Call(`_lrstat_zstatRiskDiff`, riskDiffH0, n1, y1, n2, y2)
+}
+
+#' @title Miettinen-Nurminen score confidence interval for
+#' two-sample risk difference
+#' @description Obtains the Miettinen-Nurminen score confidence
+#' interval for two-sample risk difference possibly with
+#' stratification.
+#'
+#' @param n1 The sample size for the active treatment group.
+#' @param y1 The number of responses for the active treatment group.
+#' @param n2 The sample size for the control group.
+#' @param y2 The number of responses for the control group.
+#' @param cilevel The confidence interval level.
+#'
+#' @details
+#' The Mantel-Haenszel sample size weights are used for stratified
+#' samples.
+#'
+#' @return A list with two components:
+#'
+#' * \code{data} A data frame containing the input sample size
+#'   and number of responses for each treatment group.
+#'   It has the following variables:
+#'
+#'     - \code{n1}: The sample size for the active treatment group.
+#'
+#'     - \code{y1}: The number of responses for the active treatment group.
+#'
+#'     - \code{n2}: The sample size for the control group.
+#'
+#'     - \code{y2}: The number of responses for the control group.
+#'
+#' * \code{estimates}: A data frame containing the point estimate
+#'   and confidence interval for risk difference. It has the following
+#'   variables:
+#'
+#'     - \code{scale}: The scale of treatment effect.
+#'
+#'     - \code{estimate}: The point estimate.
+#'
+#'     - \code{lower}: The lower limit of the confidence interval.
+#'
+#'     - \code{upper}: The upper limit of the confidence interval.
+#'
+#'     - \code{cilevel}: The confidence interval level.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' mnRiskDiffCI(n1 = c(10,10), y1 = c(4,3), n2 = c(20,10), y2 = c(2,0))
+#'
+#' @export
+#'
+mnRiskDiffCI <- function(n1, y1, n2, y2, cilevel = 0.95) {
+    .Call(`_lrstat_mnRiskDiffCI`, n1, y1, n2, y2, cilevel)
+}
+
+#' @title REML estimates of individual proportions with specified risk
+#' ratio
+#' @description Obtains the restricted maximum likelihood estimates of
+#' individual proportions with specified risk ratio.
+#'
+#' @param riskRatioH0 The specified risk ratio.
+#' @param n1 The sample size for the active treatment group.
+#' @param y1 The number of responses for the active treatment group.
+#' @param n2 The sample size for the control group.
+#' @param y2 The number of responses for the control group.
+#'
+#' @return A vector of the restricted maximum likelihood estimates
+#' of the response probabilities for the two treatment groups.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' remlRiskRatio(riskRatioH0 = 1.2, n1 = 10, y1 = 4, n2 = 20, y2 = 2)
+#'
+#' @export
+#'
+remlRiskRatio <- function(riskRatioH0, n1, y1, n2, y2) {
+    .Call(`_lrstat_remlRiskRatio`, riskRatioH0, n1, y1, n2, y2)
+}
+
+remlRiskRatio2 <- function(riskRatioH0, n1, y1, n2, y2) {
+    .Call(`_lrstat_remlRiskRatio2`, riskRatioH0, n1, y1, n2, y2)
+}
+
+zstatRiskRatio <- function(riskRatioH0, n1, y1, n2, y2) {
+    .Call(`_lrstat_zstatRiskRatio`, riskRatioH0, n1, y1, n2, y2)
+}
+
+#' @title Miettinen-Nurminen score confidence interval for
+#' two-sample risk ratio
+#' @description Obtains the Miettinen-Nurminen score confidence
+#' interval for two-sample risk ratio possibly with
+#' stratification.
+#'
+#' @param n1 The sample size for the active treatment group.
+#' @param y1 The number of responses for the active treatment group.
+#' @param n2 The sample size for the control group.
+#' @param y2 The number of responses for the control group.
+#' @param cilevel The confidence interval level.
+#'
+#' @details
+#' The Mantel-Haenszel sample size weights are used for stratified
+#' samples.
+#'
+#' @return A list with two components:
+#'
+#' * \code{data} A data frame containing the input sample size
+#'   and number of responses for each treatment group.
+#'   It has the following variables:
+#'
+#'     - \code{n1}: The sample size for the active treatment group.
+#'
+#'     - \code{y1}: The number of responses for the active treatment group.
+#'
+#'     - \code{n2}: The sample size for the control group.
+#'
+#'     - \code{y2}: The number of responses for the control group.
+#'
+#' * \code{estimates}: A data frame containing the point estimate
+#'   and confidence interval for risk ratio. It has the following
+#'   variables:
+#'
+#'     - \code{scale}: The scale of treatment effect.
+#'
+#'     - \code{estimate}: The point estimate.
+#'
+#'     - \code{lower}: The lower limit of the confidence interval.
+#'
+#'     - \code{upper}: The upper limit of the confidence interval.
+#'
+#'     - \code{cilevel}: The confidence interval level.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' mnRiskRatioCI(n1 = c(10,10), y1 = c(4,3), n2 = c(20,10), y2 = c(2,0))
+#'
+#' @export
+#'
+mnRiskRatioCI <- function(n1, y1, n2, y2, cilevel = 0.95) {
+    .Call(`_lrstat_mnRiskRatioCI`, n1, y1, n2, y2, cilevel)
+}
+
+#' @title REML estimates of individual proportions with specified odds
+#' ratio
+#' @description Obtains the restricted maximum likelihood estimates of
+#' individual proportions with specified odds ratio.
+#'
+#' @param oddsRatioH0 The specified odds ratio.
+#' @param n1 The sample size for the active treatment group.
+#' @param y1 The number of responses for the active treatment group.
+#' @param n2 The sample size for the control group.
+#' @param y2 The number of responses for the control group.
+#'
+#' @return A vector of the restricted maximum likelihood estimates
+#' of the response probabilities for the two treatment groups.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' remlOddsRatio(oddsRatioH0 = 1.25, n1 = 10, y1 = 4, n2 = 20, y2 = 2)
+#'
+#' @export
+#'
+remlOddsRatio <- function(oddsRatioH0, n1, y1, n2, y2) {
+    .Call(`_lrstat_remlOddsRatio`, oddsRatioH0, n1, y1, n2, y2)
+}
+
+remlOddsRatio2 <- function(oddsRatioH0, n1, y1, n2, y2) {
+    .Call(`_lrstat_remlOddsRatio2`, oddsRatioH0, n1, y1, n2, y2)
+}
+
+zstatOddsRatio <- function(oddsRatioH0, n1, y1, n2, y2) {
+    .Call(`_lrstat_zstatOddsRatio`, oddsRatioH0, n1, y1, n2, y2)
+}
+
+#' @title Miettinen-Nurminen score confidence interval for
+#' two-sample odds ratio
+#' @description Obtains the Miettinen-Nurminen score confidence
+#' interval for two-sample odds ratio possibly with
+#' stratification.
+#'
+#' @param n1 The sample size for the active treatment group.
+#' @param y1 The number of responses for the active treatment group.
+#' @param n2 The sample size for the control group.
+#' @param y2 The number of responses for the control group.
+#' @param cilevel The confidence interval level.
+#'
+#' @details
+#' The Mantel-Haenszel sample size weights are used for stratified
+#' samples.
+#'
+#' @return A list with two components:
+#'
+#' * \code{data} A data frame containing the input sample size
+#'   and number of responses for each treatment group.
+#'   It has the following variables:
+#'
+#'     - \code{n1}: The sample size for the active treatment group.
+#'
+#'     - \code{y1}: The number of responses for the active treatment group.
+#'
+#'     - \code{n2}: The sample size for the control group.
+#'
+#'     - \code{y2}: The number of responses for the control group.
+#'
+#' * \code{estimates}: A data frame containing the point estimate
+#'   and confidence interval for odds ratio. It has the following
+#'   variables:
+#'
+#'     - \code{scale}: The scale of treatment effect.
+#'
+#'     - \code{estimate}: The point estimate.
+#'
+#'     - \code{lower}: The lower limit of the confidence interval.
+#'
+#'     - \code{upper}: The upper limit of the confidence interval.
+#'
+#'     - \code{cilevel}: The confidence interval level.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' mnOddsRatioCI(n1 = c(10,10), y1 = c(4,3), n2 = c(20,10), y2 = c(2,0))
+#'
+#' @export
+#'
+mnOddsRatioCI <- function(n1, y1, n2, y2, cilevel = 0.95) {
+    .Call(`_lrstat_mnOddsRatioCI`, n1, y1, n2, y2, cilevel)
+}
+
+#' @title REML estimates of individual rates with specified rate
+#' difference
+#' @description Obtains the restricted maximum likelihood estimates of
+#' individual proportions with specified rate difference.
+#'
+#' @param rateDiffH0 The specified rate difference.
+#' @param t1 The exposure for the active treatment group.
+#' @param y1 The number of events for the active treatment group.
+#' @param t2 The exposure for the control group.
+#' @param y2 The number of events for the control group.
+#'
+#' @return A vector of the restricted maximum likelihood estimates
+#' of the incidence rates for the two treatment groups.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' remlRateDiff(rateDiffH0 = 0.1, t1 = 10, y1 = 4, t2 = 20, y2 = 2)
+#'
+#' @export
+#'
+remlRateDiff <- function(rateDiffH0, t1, y1, t2, y2) {
+    .Call(`_lrstat_remlRateDiff`, rateDiffH0, t1, y1, t2, y2)
+}
+
+remlRateDiff2 <- function(rateDiffH0, t1, y1, t2, y2) {
+    .Call(`_lrstat_remlRateDiff2`, rateDiffH0, t1, y1, t2, y2)
+}
+
+zstatRateDiff <- function(rateDiffH0, t1, y1, t2, y2) {
+    .Call(`_lrstat_zstatRateDiff`, rateDiffH0, t1, y1, t2, y2)
+}
+
+#' @title Miettinen-Nurminen score confidence interval for
+#' two-sample rate difference
+#' @description Obtains the Miettinen-Nurminen score confidence
+#' interval for two-sample rate difference possibly with
+#' stratification.
+#'
+#' @param t1 The exposure for the active treatment group.
+#' @param y1 The number of events for the active treatment group.
+#' @param t2 The exposure for the control group.
+#' @param y2 The number of events for the control group.
+#' @param cilevel The confidence interval level.
+#'
+#' @details
+#' The Mantel-Haenszel weights are used for stratified samples.
+#'
+#' @return A list with two components:
+#'
+#' * \code{data} A data frame containing the input exposure
+#'   and number of events for each treatment group.
+#'   It has the following variables:
+#'
+#'     - \code{t1}: The exposure for the active treatment group.
+#'
+#'     - \code{y1}: The number of events for the active treatment group.
+#'
+#'     - \code{t2}: The exposure for the control group.
+#'
+#'     - \code{y2}: The number of events for the control group.
+#'
+#' * \code{estimates}: A data frame containing the point estimate
+#'   and confidence interval for rate difference. It has the following
+#'   variables:
+#'
+#'     - \code{scale}: The scale of treatment effect.
+#'
+#'     - \code{estimate}: The point estimate.
+#'
+#'     - \code{lower}: The lower limit of the confidence interval.
+#'
+#'     - \code{upper}: The upper limit of the confidence interval.
+#'
+#'     - \code{cilevel}: The confidence interval level.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' mnRateDiffCI(t1 = c(10,10), y1 = c(4,3), t2 = c(20,10), y2 = c(2,0))
+#'
+#' @export
+#'
+mnRateDiffCI <- function(t1, y1, t2, y2, cilevel = 0.95) {
+    .Call(`_lrstat_mnRateDiffCI`, t1, y1, t2, y2, cilevel)
+}
+
+#' @title REML estimates of individual rates with specified rate
+#' ratio
+#' @description Obtains the restricted maximum likelihood estimates of
+#' individual proportions with specified rate ratio.
+#'
+#' @param rateRatioH0 The specified rate ratio.
+#' @param t1 The exposure for the active treatment group.
+#' @param y1 The number of events for the active treatment group.
+#' @param t2 The exposure for the control group.
+#' @param y2 The number of events for the control group.
+#'
+#' @return A vector of the restricted maximum likelihood estimates
+#' of the incidence rates for the two treatment groups.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' remlRateRatio(rateRatioH0 = 1.1, t1 = 10, y1 = 4, t2 = 20, y2 = 2)
+#'
+#' @export
+#'
+remlRateRatio <- function(rateRatioH0, t1, y1, t2, y2) {
+    .Call(`_lrstat_remlRateRatio`, rateRatioH0, t1, y1, t2, y2)
+}
+
+remlRateRatio2 <- function(rateRatioH0, t1, y1, t2, y2) {
+    .Call(`_lrstat_remlRateRatio2`, rateRatioH0, t1, y1, t2, y2)
+}
+
+zstatRateRatio <- function(rateRatioH0, t1, y1, t2, y2) {
+    .Call(`_lrstat_zstatRateRatio`, rateRatioH0, t1, y1, t2, y2)
+}
+
+#' @title Miettinen-Nurminen score confidence interval for
+#' two-sample rate ratio
+#' @description Obtains the Miettinen-Nurminen score confidence
+#' interval for two-sample rate ratio possibly with
+#' stratification.
+#'
+#' @param t1 The exposure for the active treatment group.
+#' @param y1 The number of events for the active treatment group.
+#' @param t2 The exposure for the control group.
+#' @param y2 The number of events for the control group.
+#' @param cilevel The confidence interval level.
+#'
+#' @details
+#' The Mantel-Haenszel weights are used for stratified samples.
+#'
+#' @return A list with two components:
+#'
+#' * \code{data} A data frame containing the input exposure
+#'   and number of events for each treatment group.
+#'   It has the following variables:
+#'
+#'     - \code{t1}: The exposure for the active treatment group.
+#'
+#'     - \code{y1}: The number of events for the active treatment group.
+#'
+#'     - \code{t2}: The exposure for the control group.
+#'
+#'     - \code{y2}: The number of events for the control group.
+#'
+#' * \code{estimates}: A data frame containing the point estimate
+#'   and confidence interval for rate ratio. It has the following
+#'   variables:
+#'
+#'     - \code{scale}: The scale of treatment effect.
+#'
+#'     - \code{estimate}: The point estimate.
+#'
+#'     - \code{lower}: The lower limit of the confidence interval.
+#'
+#'     - \code{upper}: The upper limit of the confidence interval.
+#'
+#'     - \code{cilevel}: The confidence interval level.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' mnRateRatioCI(t1 = c(10,10), y1 = c(4,3), t2 = c(20,10), y2 = c(2,0))
+#'
+#' @export
+#'
+mnRateRatioCI <- function(t1, y1, t2, y2, cilevel = 0.95) {
+    .Call(`_lrstat_mnRateRatioCI`, t1, y1, t2, y2, cilevel)
+}
+
+#' @title Power for exact unconditional test of risk difference
+#' @description Obtains the power given sample size for exact unconditional
+#' test of risk difference.
+#'
+#' @param n The total sample size.
+#' @param riskDiffH0 The risk difference under the null hypothesis.
+#'   Defaults to 0.
+#' @param pi1 The assumed probability for the active treatment group.
+#' @param pi2 The assumed probability for the control group.
+#' @param allocationRatioPlanned Allocation ratio for the active treatment
+#'   versus control. Defaults to 1 for equal randomization.
+#' @param alpha The one-sided significance level. Defaults to 0.025.
+#'
+#' @return A data frame with the following variables:
+#'
+#' * \code{alpha}: The specified one-sided significance level.
+#'
+#' * \code{attainedAlpha}: The attained one-sided significance level.
+#'
+#' * \code{power}: The power.
+#'
+#' * \code{n}: The sample size.
+#'
+#' * \code{riskDiffH0}: The risk difference under the null hypothesis.
+#'
+#' * \code{pi1}: The assumed probability for the active treatment group.
+#'
+#' * \code{pi2}: The assumed probability for the control group.
+#'
+#' * \code{allocationRatioPlanned}: Allocation ratio for the active
+#'   treatment versus control.
+#'
+#' * \code{zstatRiskDiffBound}: The critical value on the scale of
+#'   score test statistic for risk difference.
+#'
+#' * \code{pi2star}: The response probability in the control group
+#'   at which the critical value of the test statistic is attained.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' powerRiskDiffExact(n = 68, pi1 = 0.6, pi2 = 0.25, alpha = 0.05)
+#'
+#' @export
+powerRiskDiffExact <- function(n = NA_real_, riskDiffH0 = 0, pi1 = NA_real_, pi2 = NA_real_, allocationRatioPlanned = 1, alpha = 0.025) {
+    .Call(`_lrstat_powerRiskDiffExact`, n, riskDiffH0, pi1, pi2, allocationRatioPlanned, alpha)
+}
+
+#' @title Sample size for exact unconditional test of risk difference
+#' @description Obtains the sample size given power for exact unconditional
+#' test of risk difference.
+#'
+#' @param beta The type II error.
+#' @param riskDiffH0 The risk difference under the null hypothesis.
+#'   Defaults to 0.
+#' @param pi1 The assumed probability for the active treatment group.
+#' @param pi2 The assumed probability for the control group.
+#' @param allocationRatioPlanned Allocation ratio for the active treatment
+#'   versus control. Defaults to 1 for equal randomization.
+#' @param alpha The one-sided significance level.
+#'
+#' @return A data frame with the following variables:
+#'
+#' * \code{alpha}: The specified one-sided significance level.
+#'
+#' * \code{attainedAlpha}: The attained one-sided significance level.
+#'
+#' * \code{power}: The power.
+#'
+#' * \code{n}: The sample size.
+#'
+#' * \code{riskDiffH0}: The risk difference under the null hypothesis.
+#'
+#' * \code{pi1}: The assumed probability for the active treatment group.
+#'
+#' * \code{pi2}: The assumed probability for the control group.
+#'
+#' * \code{allocationRatioPlanned}: Allocation ratio for the active
+#'   treatment versus control.
+#'
+#' * \code{zstatRiskDiffBound}: The critical value on the scale of
+#'   score test statistic for risk difference.
+#'
+#' * \code{pi2star}: The response probability in the control group
+#'   at which the critical value of the test statistic is attained.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' samplesizeRiskDiffExact(beta = 0.2, riskDiffH0 = -0.2,
+#'                         pi1 = 0.8, pi2 = 0.8, alpha = 0.025)
+#'
+#' @export
+samplesizeRiskDiffExact <- function(beta = NA_real_, riskDiffH0 = 0, pi1 = NA_real_, pi2 = NA_real_, allocationRatioPlanned = 1, alpha = 0.025) {
+    .Call(`_lrstat_samplesizeRiskDiffExact`, beta, riskDiffH0, pi1, pi2, allocationRatioPlanned, alpha)
+}
+
+#' @title Power for exact unconditional test of risk ratio
+#' @description Obtains the power given sample size for exact unconditional
+#' test of risk ratio.
+#'
+#' @param n The total sample size.
+#' @param riskRatioH0 The risk ratio under the null hypothesis.
+#'   Defaults to 1.
+#' @param pi1 The assumed probability for the active treatment group.
+#' @param pi2 The assumed probability for the control group.
+#' @param allocationRatioPlanned Allocation ratio for the active treatment
+#'   versus control. Defaults to 1 for equal randomization.
+#' @param alpha The one-sided significance level. Defaults to 0.025.
+#'
+#' @return A data frame with the following variables:
+#'
+#' * \code{alpha}: The specified one-sided significance level.
+#'
+#' * \code{attainedAlpha}: The attained one-sided significance level.
+#'
+#' * \code{power}: The power.
+#'
+#' * \code{n}: The sample size.
+#'
+#' * \code{riskRatioH0}: The risk ratio under the null hypothesis.
+#'
+#' * \code{pi1}: The assumed probability for the active treatment group.
+#'
+#' * \code{pi2}: The assumed probability for the control group.
+#'
+#' * \code{allocationRatioPlanned}: Allocation ratio for the active
+#'   treatment versus control.
+#'
+#' * \code{zstatRiskRatioBound}: The critical value on the scale of
+#'   score test statistic for risk ratio.
+#'
+#' * \code{pi2star}: The response probability in the control group
+#'   at which the critical value of the test statistic is attained.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' powerRiskRatioExact(n = 68, pi1 = 0.6, pi2 = 0.25, alpha = 0.05)
+#'
+#' @export
+powerRiskRatioExact <- function(n = NA_real_, riskRatioH0 = 1, pi1 = NA_real_, pi2 = NA_real_, allocationRatioPlanned = 1, alpha = 0.025) {
+    .Call(`_lrstat_powerRiskRatioExact`, n, riskRatioH0, pi1, pi2, allocationRatioPlanned, alpha)
+}
+
+#' @title Sample size for exact unconditional test of risk ratio
+#' @description Obtains the sample size given power for exact unconditional
+#' test of risk ratio.
+#'
+#' @param beta The type II error.
+#' @param riskRatioH0 The risk ratio under the null hypothesis.
+#'   Defaults to 1.
+#' @param pi1 The assumed probability for the active treatment group.
+#' @param pi2 The assumed probability for the control group.
+#' @param allocationRatioPlanned Allocation ratio for the active treatment
+#'   versus control. Defaults to 1 for equal randomization.
+#' @param alpha The one-sided significance level.
+#'
+#' @return A data frame with the following variables:
+#'
+#' * \code{alpha}: The specified one-sided significance level.
+#'
+#' * \code{attainedAlpha}: The attained one-sided significance level.
+#'
+#' * \code{power}: The power.
+#'
+#' * \code{n}: The sample size.
+#'
+#' * \code{riskRatioH0}: The risk ratio under the null hypothesis.
+#'
+#' * \code{pi1}: The assumed probability for the active treatment group.
+#'
+#' * \code{pi2}: The assumed probability for the control group.
+#'
+#' * \code{allocationRatioPlanned}: Allocation ratio for the active
+#'   treatment versus control.
+#'
+#' * \code{zstatRiskRatioBound}: The critical value on the scale of
+#'   score test statistic for risk ratio.
+#'
+#' * \code{pi2star}: The response probability in the control group
+#'   at which the critical value of the test statistic is attained.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' samplesizeRiskRatioExact(beta = 0.2, riskRatioH0 = 0.833,
+#'                          pi1 = 0.9, pi2 = 0.9, alpha = 0.05)
+#'
+#' @export
+samplesizeRiskRatioExact <- function(beta = NA_real_, riskRatioH0 = 1, pi1 = NA_real_, pi2 = NA_real_, allocationRatioPlanned = 1, alpha = 0.025) {
+    .Call(`_lrstat_samplesizeRiskRatioExact`, beta, riskRatioH0, pi1, pi2, allocationRatioPlanned, alpha)
+}
+
+#' @title Power for exact unconditional test of equivalence in risk
+#' difference
+#' @description Obtains the power given sample size for exact unconditional
+#' test of equivalence in risk difference.
+#'
+#' @param n The total sample size.
+#' @param riskDiffLower The lower equivalence limit of risk difference.
+#' @param riskDiffUpper The upper equivalence limit of risk difference.
+#' @param pi1 The assumed probability for the active treatment group.
+#' @param pi2 The assumed probability for the control group.
+#' @param allocationRatioPlanned Allocation ratio for the active treatment
+#'   versus control. Defaults to 1 for equal randomization.
+#' @param alpha The significance level for each of the two one-sided
+#'   tests. Defaults to 0.05.
+#' @return A data frame with the following variables:
+#'
+#' * \code{alpha}: The specified significance level for each of the two
+#'   one-sided tests.
+#'
+#' * \code{attainedAlpha}: The attained significance level.
+#'
+#' * \code{power}: The power.
+#'
+#' * \code{n}: The sample size.
+#'
+#' * \code{riskDiffLower}: The lower equivalence limit of risk difference.
+#'
+#' * \code{riskDiffUpper}: The upper equivalence limit of risk difference.
+#'
+#' * \code{pi1}: The assumed probability for the active treatment group.
+#'
+#' * \code{pi2}: The assumed probability for the control group.
+#'
+#' * \code{allocationRatioPlanned}: Allocation ratio for the active
+#'   treatment versus control.
+#'
+#' * \code{zstatRiskDiffLower}: The efficacy boundaries on the
+#'   z-test statistic scale for the one-sided null hypothesis on the
+#'   lower equivalence limit.
+#'
+#' * \code{zstatRiskDiffUpper}: The efficacy boundaries on the
+#'   z-test statistic scale for the one-sided null hypothesis on the
+#'   upper equivalence limit.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' powerRiskDiffExactEquiv(
+#'   n = 200, riskDiffLower = -0.2, riskDiffUpper = 0.2,
+#'   pi1 = 0.775, pi2 = 0.775, alpha = 0.05)
+#'
+#' @export
+powerRiskDiffExactEquiv <- function(n = NA_real_, riskDiffLower = NA_real_, riskDiffUpper = NA_real_, pi1 = NA_real_, pi2 = NA_real_, allocationRatioPlanned = 1, alpha = 0.05) {
+    .Call(`_lrstat_powerRiskDiffExactEquiv`, n, riskDiffLower, riskDiffUpper, pi1, pi2, allocationRatioPlanned, alpha)
+}
+
+#' @title Sample size for exact unconditional test of equivalence in risk
+#' difference
+#' @description Obtains the sample size given power for exact unconditional
+#' test of equivalence in risk difference.
+#'
+#' @param beta The type II error.
+#' @param riskDiffLower The lower equivalence limit of risk difference.
+#' @param riskDiffUpper The upper equivalence limit of risk difference.
+#' @param pi1 The assumed probability for the active treatment group.
+#' @param pi2 The assumed probability for the control group.
+#' @param allocationRatioPlanned Allocation ratio for the active treatment
+#'   versus control. Defaults to 1 for equal randomization.
+#' @param alpha The significance level for each of the two one-sided
+#'   tests. Defaults to 0.05.
+#' @return A data frame with the following variables:
+#'
+#' * \code{alpha}: The specified significance level for each of the two
+#'   one-sided tests.
+#'
+#' * \code{attainedAlpha}: The attained significance level.
+#'
+#' * \code{power}: The power.
+#'
+#' * \code{n}: The sample size.
+#'
+#' * \code{riskDiffLower}: The lower equivalence limit of risk difference.
+#'
+#' * \code{riskDiffUpper}: The upper equivalence limit of risk difference.
+#'
+#' * \code{pi1}: The assumed probability for the active treatment group.
+#'
+#' * \code{pi2}: The assumed probability for the control group.
+#'
+#' * \code{allocationRatioPlanned}: Allocation ratio for the active
+#'   treatment versus control.
+#'
+#' * \code{zstatRiskDiffLower}: The efficacy boundaries on the
+#'   z-test statistic scale for the one-sided null hypothesis on the
+#'   lower equivalence limit.
+#'
+#' * \code{zstatRiskDiffUpper}: The efficacy boundaries on the
+#'   z-test statistic scale for the one-sided null hypothesis on the
+#'   upper equivalence limit.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' samplesizeRiskDiffExactEquiv(
+#'   beta = 0.2, riskDiffLower = -0.3, riskDiffUpper = 0.3,
+#'   pi1 = 0.85, pi2 = 0.85, alpha = 0.05)
+#'
+#' @export
+samplesizeRiskDiffExactEquiv <- function(beta = NA_real_, riskDiffLower = NA_real_, riskDiffUpper = NA_real_, pi1 = NA_real_, pi2 = NA_real_, allocationRatioPlanned = 1, alpha = 0.05) {
+    .Call(`_lrstat_samplesizeRiskDiffExactEquiv`, beta, riskDiffLower, riskDiffUpper, pi1, pi2, allocationRatioPlanned, alpha)
+}
+
+#' @title Power for exact unconditional test of equivalence in risk
+#' ratio
+#' @description Obtains the power given sample size for exact unconditional
+#' test of equivalence in risk ratio.
+#'
+#' @param n The total sample size.
+#' @param riskRatioLower The lower equivalence limit of risk ratio.
+#' @param riskRatioUpper The upper equivalence limit of risk ratio.
+#' @param pi1 The assumed probability for the active treatment group.
+#' @param pi2 The assumed probability for the control group.
+#' @param allocationRatioPlanned Allocation ratio for the active treatment
+#'   versus control. Defaults to 1 for equal randomization.
+#' @param alpha The significance level for each of the two one-sided
+#'   tests. Defaults to 0.05.
+#' @return A data frame with the following variables:
+#'
+#' * \code{alpha}: The specified significance level for each of the two
+#'   one-sided tests.
+#'
+#' * \code{attainedAlpha}: The attained significance level.
+#'
+#' * \code{power}: The power.
+#'
+#' * \code{n}: The sample size.
+#'
+#' * \code{riskRatioLower}: The lower equivalence limit of risk ratio.
+#'
+#' * \code{riskRatioUpper}: The upper equivalence limit of risk ratio.
+#'
+#' * \code{pi1}: The assumed probability for the active treatment group.
+#'
+#' * \code{pi2}: The assumed probability for the control group.
+#'
+#' * \code{allocationRatioPlanned}: Allocation ratio for the active
+#'   treatment versus control.
+#'
+#' * \code{zstatRiskRatioLower}: The efficacy boundaries on the
+#'   z-test statistic scale for the one-sided null hypothesis on the
+#'   lower equivalence limit.
+#'
+#' * \code{zstatRiskRatioUpper}: The efficacy boundaries on the
+#'   z-test statistic scale for the one-sided null hypothesis on the
+#'   upper equivalence limit.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' powerRiskRatioExactEquiv(
+#'   n = 200, riskRatioLower = 0.8, riskRatioUpper = 1.25,
+#'   pi1 = 0.775, pi2 = 0.775, alpha = 0.05)
+#'
+#' @export
+powerRiskRatioExactEquiv <- function(n = NA_real_, riskRatioLower = NA_real_, riskRatioUpper = NA_real_, pi1 = NA_real_, pi2 = NA_real_, allocationRatioPlanned = 1, alpha = 0.05) {
+    .Call(`_lrstat_powerRiskRatioExactEquiv`, n, riskRatioLower, riskRatioUpper, pi1, pi2, allocationRatioPlanned, alpha)
+}
+
+#' @title Sample size for exact unconditional test of equivalence in risk
+#' ratio
+#' @description Obtains the sample size given power for exact unconditional
+#' test of equivalence in risk ratio.
+#'
+#' @param beta The type II error.
+#' @param riskRatioLower The lower equivalence limit of risk ratio.
+#' @param riskRatioUpper The upper equivalence limit of risk ratio.
+#' @param pi1 The assumed probability for the active treatment group.
+#' @param pi2 The assumed probability for the control group.
+#' @param allocationRatioPlanned Allocation ratio for the active treatment
+#'   versus control. Defaults to 1 for equal randomization.
+#' @param alpha The significance level for each of the two one-sided
+#'   tests. Defaults to 0.05.
+#' @return A data frame with the following variables:
+#'
+#' * \code{alpha}: The specified significance level for each of the two
+#'   one-sided tests.
+#'
+#' * \code{attainedAlpha}: The attained significance level.
+#'
+#' * \code{power}: The power.
+#'
+#' * \code{n}: The sample size.
+#'
+#' * \code{riskRatioLower}: The lower equivalence limit of risk ratio.
+#'
+#' * \code{riskRatioUpper}: The upper equivalence limit of risk ratio.
+#'
+#' * \code{pi1}: The assumed probability for the active treatment group.
+#'
+#' * \code{pi2}: The assumed probability for the control group.
+#'
+#' * \code{allocationRatioPlanned}: Allocation ratio for the active
+#'   treatment versus control.
+#'
+#' * \code{zstatRiskRatioLower}: The efficacy boundaries on the
+#'   z-test statistic scale for the one-sided null hypothesis on the
+#'   lower equivalence limit.
+#'
+#' * \code{zstatRiskRatioUpper}: The efficacy boundaries on the
+#'   z-test statistic scale for the one-sided null hypothesis on the
+#'   upper equivalence limit.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' samplesizeRiskRatioExactEquiv(
+#'   beta = 0.2, riskRatioLower = 0.7, riskRatioUpper = 1/0.7,
+#'   pi1 = 0.85, pi2 = 0.85, alpha = 0.05)
+#'
+#' @export
+samplesizeRiskRatioExactEquiv <- function(beta = NA_real_, riskRatioLower = NA_real_, riskRatioUpper = NA_real_, pi1 = NA_real_, pi2 = NA_real_, allocationRatioPlanned = 1, alpha = 0.05) {
+    .Call(`_lrstat_samplesizeRiskRatioExactEquiv`, beta, riskRatioLower, riskRatioUpper, pi1, pi2, allocationRatioPlanned, alpha)
 }
 
 set_seed <- function(seed) {
@@ -3038,11 +5652,11 @@ stl_sort <- function(x) {
 }
 
 #' @title Find interval numbers of indices
-#' @description The implementation of \code{findInterval()} in R from Advanced
-#' R by Hadley Wickham. Given a vector of non-decreasing breakpoints in v,
-#' find the interval containing each element of x; i.e., if
-#' \code{i <- findInterval2(x,v)}, for each index \code{j} in \code{x},
-#' \code{v[i[j]] <= x[j] < v[i[j] + 1]}, where \code{v[0] := -Inf}, 
+#' @description The implementation of \code{findInterval()} in R from
+#' Advanced R by Hadley Wickham. Given a vector of non-decreasing
+#' breakpoints in v, find the interval containing each element of x; i.e.,
+#' if \code{i <- findInterval2(x,v)}, for each index \code{j} in \code{x},
+#' \code{v[i[j]] <= x[j] < v[i[j] + 1]}, where \code{v[0] := -Inf},
 #' \code{v[N+1] := +Inf}, and \code{N = length(v)}.
 #'
 #' @param x The numeric vector of interest.
@@ -3072,15 +5686,31 @@ exitprobcpp <- function(b, a, theta, I) {
     .Call(`_lrstat_exitprobcpp`, b, a, theta, I)
 }
 
-qtpwexpcpp <- function(probability, piecewiseSurvivalTime, lambda, lowerBound) {
-    .Call(`_lrstat_qtpwexpcpp`, probability, piecewiseSurvivalTime, lambda, lowerBound)
+ptpwexpcpp <- function(q, piecewiseSurvivalTime, lambda, lowerBound) {
+    .Call(`_lrstat_ptpwexpcpp`, q, piecewiseSurvivalTime, lambda, lowerBound)
+}
+
+qtpwexpcpp1 <- function(p, piecewiseSurvivalTime, lambda, lowerBound) {
+    .Call(`_lrstat_qtpwexpcpp1`, p, piecewiseSurvivalTime, lambda, lowerBound)
+}
+
+qtpwexpcpp <- function(p, piecewiseSurvivalTime, lambda, lowerBound) {
+    .Call(`_lrstat_qtpwexpcpp`, p, piecewiseSurvivalTime, lambda, lowerBound)
+}
+
+rtpwexpcpp <- function(n, piecewiseSurvivalTime, lambda, lowerBound) {
+    .Call(`_lrstat_rtpwexpcpp`, n, piecewiseSurvivalTime, lambda, lowerBound)
 }
 
 getBoundcpp <- function(k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, efficacyStopping) {
     .Call(`_lrstat_getBoundcpp`, k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, efficacyStopping)
 }
 
-getPower <- function(alpha, kMax, b, theta, I, bsf, bsfpar, st, futilityStopping) {
-    .Call(`_lrstat_getPower`, alpha, kMax, b, theta, I, bsf, bsfpar, st, futilityStopping)
+getPower <- function(alpha, kMax, b, theta, I, bsf, bsfpar, st, futilityStopping, w) {
+    .Call(`_lrstat_getPower`, alpha, kMax, b, theta, I, bsf, bsfpar, st, futilityStopping, w)
+}
+
+polint <- function(xa, ya, n, x) {
+    .Call(`_lrstat_polint`, xa, ya, n, x)
 }
 

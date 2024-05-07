@@ -6,7 +6,7 @@
 \usage{
 lrsim(
   kMax = NA_integer_,
-  informationTime = NA_real_,
+  informationRates = NA_real_,
   criticalValues = NA_real_,
   futilityBounds = NA_real_,
   hazardRatioH0 = 1,
@@ -35,11 +35,9 @@ lrsim(
 \arguments{
 \item{kMax}{The maximum number of stages.}
 
-\item{informationTime}{Information time in terms of variance of
-weighted log-rank test score statistic under the null hypothesis.
-Same as \code{informationRates} in terms of number of events for
-the conventional log-rank test. Use \code{caltime} and \code{lrstat}
-to derive the information time for weighted log-rank tests.
+\item{informationRates}{The information rates in terms of number
+of events for the conventional log-rank test and in terms of
+the actual information for weighted log-rank tests.
 Fixed prior to the trial. If left unspecified, it defaults to
 \code{plannedEvents / plannedEvents[kMax]} when \code{plannedEvents}
 is provided and to \code{plannedTime / plannedTime[kMax]} otherwise.}
@@ -49,7 +47,8 @@ for stopping for efficacy.}
 
 \item{futilityBounds}{Lower boundaries on the z-test statistic scale
 for stopping for futility at stages 1, ..., \code{kMax-1}. Defaults to
-\code{rep(-6, kMax-1)} if left unspecified.}
+\code{rep(-6, kMax-1)} if left unspecified. The futility bounds are
+non-binding for the calculation of critical values.}
 
 \item{hazardRatioH0}{Hazard ratio under the null hypothesis for the active
 treatment versus control. Defaults to 1 for superiority test.}
@@ -83,12 +82,12 @@ time interval by stratum for the active treatment group.}
 \item{lambda2}{A vector of hazard rates for the event in each analysis
 time interval by stratum for the control group.}
 
-\item{gamma1}{The hazard rate for exponential dropout. A vector of hazard
+\item{gamma1}{The hazard rate for exponential dropout, a vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the active treatment group.}
 
-\item{gamma2}{The hazard rate for exponential dropout. A vector of hazard
+\item{gamma2}{The hazard rate for exponential dropout, a vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the control group.}
@@ -106,8 +105,8 @@ weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 \item{rho2}{The second parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
-\item{plannedEvents}{The planned cumulative total number of events at each
-stage.}
+\item{plannedEvents}{The planned cumulative total number of events at
+each stage.}
 
 \item{plannedTime}{The calendar times for the analyses. To use calendar
 time to plan the analyses, \code{plannedEvents} should be missing.}
@@ -115,11 +114,11 @@ time to plan the analyses, \code{plannedEvents} should be missing.}
 \item{maxNumberOfIterations}{The number of simulation iterations.
 Defaults to 1000.}
 
-\item{maxNumberOfRawDatasetsPerStage}{The number of raw datasets per stage
-to extract. Defaults to 1.}
+\item{maxNumberOfRawDatasetsPerStage}{The number of raw datasets per
+stage to extract. Defaults to 1.}
 
 \item{seed}{The seed to reproduce the simulation results.
-The computer clock will be used if left unspecified,}
+The seed from the environment will be used if left unspecified,}
 }
 \value{
 An S3 class \code{lrsim} object with 3 components:
@@ -127,7 +126,8 @@ An S3 class \code{lrsim} object with 3 components:
 \item \code{overview}: A list containing the following information:
 \itemize{
 \item \code{rejectPerStage}: The efficacy stopping probability by stage.
-\item \code{futilityPerStage}: The futility stopping probability by stage.
+\item \code{futilityPerStage}: The futility stopping probability by
+stage.
 \item \code{cumulativeRejection}: Cumulative efficacy stopping
 probability by stage.
 \item \code{cumulativeFutility}: The cumulative futility stopping
@@ -139,10 +139,10 @@ probability by stage.
 \item \code{overallReject}: The overall rejection probability.
 \item \code{expectedNumberOfEvents}: The expected number of events for
 the overall study.
-\item \code{expectedNumberOfDropouts}: The expected number of dropouts for
-the overall study.
-\item \code{expectedNumberOfSubjects}: The expected number of subjects for
-the overall study.
+\item \code{expectedNumberOfDropouts}: The expected number of dropouts
+for the overall study.
+\item \code{expectedNumberOfSubjects}: The expected number of subjects
+for the overall study.
 \item \code{expectedStudyDuration}: The expected study duration.
 \item \code{hazardRatioH0}: Hazard ratio under the null hypothesis for
 the active treatment versus control.
@@ -151,9 +151,11 @@ based on the number of events or calendar time.
 \item \code{accrualDuration}: Duration of the enrollment period.
 \item \code{fixedFollowup}: Whether a fixed follow-up design is used.
 \item \code{rho1}: The first parameter of the Fleming-Harrington family
-of weighted log-rank test. Defaults to 0 for conventional log-rank test.
+of weighted log-rank test. Defaults to 0 for conventional log-rank
+test.
 \item \code{rho2}: The second parameter of the Fleming-Harrington family
-of weighted log-rank test. Defaults to 0 for conventional log-rank test.
+of weighted log-rank test. Defaults to 0 for conventional log-rank
+test.
 \item \code{kMax}: The maximum number of stages.
 }
 \item \code{sumdata}: A data frame of summary data by iteration and stage:
@@ -199,10 +201,11 @@ replications, containing the following variables:
 \item \code{subjectId}: The subject ID.
 \item \code{arrivalTime}: The enrollment time for the subject.
 \item \code{stratum}: The stratum for the subject.
-\item \code{treatmentGroup}: The treatment group (1 or 2) for the subject.
+\item \code{treatmentGroup}: The treatment group (1 or 2) for the
+subject.
 \item \code{survivalTime}: The underlying survival time for the subject.
 \item \code{dropoutTime}: The underlying dropout time for the subject.
-\item \code{timeUnderObservation}: The time under observation since
+\item \code{timeUnderObservation}: The time under observation
 since randomization.
 \item \code{event}: Whether the subject experienced the event.
 \item \code{dropoutEvent}: Whether the subject dropped out.
@@ -216,7 +219,7 @@ trials based on weighted log-rank test.
 \examples{
 # Example 1: analyses based on number of events
 
-sim1 = lrsim(kMax = 2, informationTime = c(0.5, 1),
+sim1 = lrsim(kMax = 2, informationRates = c(0.5, 1),
              criticalValues = c(2.797, 1.977),
              accrualIntensity = 11,
              lambda1 = 0.018, lambda2 = 0.030,
@@ -238,7 +241,7 @@ head(sim1$rawdata)
 
 # Example 2: analyses based on calendar time have similar power
 
-sim2 = lrsim(kMax = 2, informationTime = c(0.5, 1),
+sim2 = lrsim(kMax = 2, informationRates = c(0.5, 1),
              criticalValues = c(2.797, 1.977),
              accrualIntensity = 11,
              lambda1 = 0.018, lambda2 = 0.030,

@@ -9,7 +9,8 @@ fstp2seq(p, gamma, test = "hochberg", retest = TRUE)
 \arguments{
 \item{p}{The raw p-values for elementary hypotheses.}
 
-\item{gamma}{The truncation parameters for each family.}
+\item{gamma}{The truncation parameters for each family. The truncation
+parameter for the last family is automatically set to 1.}
 
 \item{test}{The component multiple testing procedure. It is either "Holm"
 or "Hochberg", and it defaults to "Hochberg".}
@@ -21,7 +22,8 @@ A matrix of adjusted p-values.
 }
 \description{
 Obtains the adjusted p-values for the stepwise gatekeeping
-procedures for multiplicity problems involving two sequences of hypotheses.
+procedures for multiplicity problems involving two sequences of
+hypotheses.
 }
 \examples{
 

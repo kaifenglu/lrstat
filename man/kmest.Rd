@@ -2,120 +2,67 @@
 % Please edit documentation in R/RcppExports.R
 \name{kmest}
 \alias{kmest}
-\title{Stratified difference in milestone survival}
+\title{Kaplan-Meier estimates of the survival curve}
 \usage{
 kmest(
-  time = NA_real_,
-  milestone = NA_real_,
-  allocationRatioPlanned = 1,
-  accrualTime = 0L,
-  accrualIntensity = NA_real_,
-  piecewiseSurvivalTime = 0L,
-  stratumFraction = 1L,
-  lambda1 = NA_real_,
-  lambda2 = NA_real_,
-  gamma1 = 0L,
-  gamma2 = 0L,
-  accrualDuration = NA_real_,
-  followupTime = NA_real_,
-  fixedFollowup = 0L,
-  numSubintervals = 300L
+  data,
+  rep = "rep",
+  stratum = "stratum",
+  time = "time",
+  event = "event",
+  conftype = "log-log",
+  confint = 0.95
 )
 }
 \arguments{
-\item{time}{A vector of calendar times at which to calculate the
-milestone survival.}
+\item{data}{The input data frame that contains the following variables:
+\itemize{
+\item \code{rep}: The replication for by-group processing.
+\item \code{stratum}: The stratum.
+\item \code{time}: The possibly right-censored survival time.
+\item \code{event}: The event indicator.
+}}
 
-\item{milestone}{The milestone time at which to calculate the
-Kaplan-Meier estimate of survival probability.}
+\item{rep}{The name of the replication variable in the input data.}
 
-\item{allocationRatioPlanned}{Allocation ratio for the active treatment
-versus control. Defaults to 1 for equal randomization.}
+\item{stratum}{The name of the stratum variable in the input data.}
 
-\item{accrualTime}{A vector that specifies the starting time of
-piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
-\code{c(0, 3)} breaks the time axis into 2 accrual intervals:
-[0, 3) and [3, Inf).}
+\item{time}{The name of the time variable in the input data.}
 
-\item{accrualIntensity}{A vector of accrual intensities. One for
-each accrual time interval.}
+\item{event}{The name of the event variable in the input data.}
 
-\item{piecewiseSurvivalTime}{A vector that specifies the starting time of
-piecewise exponential survival time intervals. Must start with 0, e.g.,
-\code{c(0, 6)} breaks the time axis into 2 event intervals:
-[0, 6) and [6, Inf).
-Defaults to 0 for exponential distribution.}
+\item{conftype}{The type of confidence interval. One of "none",
+"plain", "log", "log-log" (the default), or "arcsin".
+The arcsin option bases the intervals on asin(sqrt(survival)).}
 
-\item{stratumFraction}{A vector of stratum fractions that sum to 1.
-Defaults to 1 for no stratification.}
-
-\item{lambda1}{A vector of hazard rates for the event in each analysis
-time interval by stratum for the active treatment group.}
-
-\item{lambda2}{A vector of hazard rates for the event in each analysis
-time interval by stratum for the control group.}
-
-\item{gamma1}{The hazard rate for exponential dropout. A vector of hazard
-rates for piecewise exponential dropout applicable for all strata, or a
-vector of hazard rates for dropout in each analysis time interval
-by stratum for the active treatment group.}
-
-\item{gamma2}{The hazard rate for exponential dropout. A vector of hazard
-rates for piecewise exponential dropout applicable for all strata, or a
-vector of hazard rates for dropout in each analysis time interval
-by stratum for the control group.}
-
-\item{accrualDuration}{Duration of the enrollment period.}
-
-\item{followupTime}{Follow-up time for the last enrolled subject.}
-
-\item{fixedFollowup}{Whether a fixed follow-up design is used.
-Defaults to 0 for variable follow-up.}
-
-\item{numSubintervals}{Number of sub-intervals to approximate the mean
-and variance of the weighted log-rank test score statistic.
-Defaults to 300. Specify a larger number for better approximation.}
+\item{confint}{The level of the two-sided confidence interval for
+the survival probabilities. Defaults to 0.95.}
 }
 \value{
-A data frame containing the following variables:
+A data frame with the following variables:
 \itemize{
-\item \code{time}: The calendar time at which to calculate the milestone
-survival.
-\item \code{subjects}: The enrolled number of subjects.
-\item \code{milestone}: The milestone time relative to randomization.
-\item \code{surv1}: The milestone survival probability for the treatment group.
-\item \code{surv2}: The milestone survival probability for the control group.
-\item \code{vsurv1}: The variance for \code{surv1}.
-\item \code{vsurv2}: The variance for \code{surv2}.
-\item \code{survdiff}: The difference in milestone survival probabilities,
-i.e., \code{surv1 - surv2}.
-\item \code{vsurvdiff}: The variance for \code{survdiff}.
-\item \code{survdiffZ}: The Z-statistic value, i.e.,
-\code{survdiff/sqrt(vsurvdiff)}.
+\item \code{rep}: The replication.
+\item \code{stratum}: The stratum.
+\item \code{size}: The number of subjects in the stratum.
+\item \code{time}: The event time.
+\item \code{nrisk}: The number of subjects at risk.
+\item \code{nevent}: The number of subjects having the event.
+\item \code{survival}: The Kaplan-Meier estimate of the survival probability.
+\item \code{stderr}: The standard error of the estimated survival
+probability based on the Greendwood formula.
+\item \code{lower}: The lower bound of confidence interval if requested.
+\item \code{upper}: The upper bound of confidence interval if requested.
+\item \code{confint}: The level of confidence interval if requested.
+\item \code{conftype}: The type of confidence interval if requested.
 }
 }
 \description{
-Obtains the stratified Kaplan-Meier estimate of
-milestone survival probabilities and difference in milestone
-survival at given calendar times and milestone time.
+Obtains the Kaplan-Meier estimates of the survival curve.
 }
 \examples{
-# Piecewise accrual, piecewise exponential survivals, and 5\% dropout by
-# the end of 1 year.
 
-kmest(time = c(22, 40), 
-      milestone = 18, 
-      allocationRatioPlanned = 1,
-      accrualTime = seq(0, 9),
-      accrualIntensity = c(26/9*seq(1, 9), 26),
-      piecewiseSurvivalTime = c(0, 6),
-      stratumFraction = c(0.2, 0.8),
-      lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
-      lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
-      gamma1 = -log(1-0.05)/12,
-      gamma2 = -log(1-0.05)/12,
-      accrualDuration = 22,
-      followupTime = 18, fixedFollowup = FALSE)
+kmest(data = survival::aml, stratum = "x",
+      time = "time", event = "status")
 
 }
 \author{

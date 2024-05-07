@@ -15,8 +15,8 @@ exitprob(b, a = NA, theta = 0, I = NA)
 
 \item{theta}{Stagewise parameter of interest, e.g., \code{-U/V} for
 weighted log-rank test, where \code{U} is the mean and \code{V} is
-the variance of the weighted log-rank test score statistic at each stage.
-For proportional hazards and conventional log-rank test, use the
+the variance of the weighted log-rank test score statistic at each
+stage. For proportional hazards and conventional log-rank test, use the
 scalar input, \code{theta = -log(HR)}. Defaults to 0 corresponding to
 the null hypothesis.}
 
@@ -35,16 +35,16 @@ A list of stagewise exit probabilities:
 }
 }
 \description{
-Obtains the stagewise exit probabilities for both efficacy and
-futility stopping.
+Obtains the stagewise exit probabilities for both efficacy
+and futility stopping.
 }
 \examples{
-exitprob(b = c(3.471, 2.454, 2.004), theta = -log(0.6), 
+exitprob(b = c(3.471, 2.454, 2.004), theta = -log(0.6),
          I = c(50, 100, 150)/4)
-         
-exitprob(b = c(2.963, 2.359, 2.014), 
-         a = c(-0.264, 0.599, 2.014), 
-         theta = c(0.141, 0.204, 0.289), 
+
+exitprob(b = c(2.963, 2.359, 2.014),
+         a = c(-0.264, 0.599, 2.014),
+         theta = c(0.141, 0.204, 0.289),
          I = c(81, 121, 160))
 
 }

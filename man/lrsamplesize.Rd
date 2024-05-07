@@ -22,11 +22,11 @@ lrsamplesize(
   hazardRatioH0 = 1,
   allocationRatioPlanned = 1,
   accrualTime = 0L,
-  accrualIntensity = 20L,
+  accrualIntensity = NA_real_,
   piecewiseSurvivalTime = 0L,
   stratumFraction = 1L,
-  lambda1 = 0.0309,
-  lambda2 = 0.0533,
+  lambda1 = NA_real_,
+  lambda2 = NA_real_,
   gamma1 = 0L,
   gamma2 = 0L,
   accrualDuration = NA_real_,
@@ -79,7 +79,8 @@ spent up to each stage.}
 
 \item{futilityBounds}{Lower boundaries on the z-test statistic scale
 for stopping for futility at stages 1, ..., \code{kMax-1}. Defaults to
-\code{rep(-6, kMax-1)} if left unspecified.}
+\code{rep(-6, kMax-1)} if left unspecified. The futility bounds are
+non-binding for the calculation of critical values.}
 
 \item{typeBetaSpending}{The type of beta spending. One of the following:
 "sfOF" for O'Brien-Fleming type spending function, "sfP" for Pocock type
@@ -123,12 +124,12 @@ time interval by stratum for the active treatment group.}
 \item{lambda2}{A vector of hazard rates for the event in each analysis
 time interval by stratum for the control group.}
 
-\item{gamma1}{The hazard rate for exponential dropout. A vector of hazard
+\item{gamma1}{The hazard rate for exponential dropout, a vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the active treatment group.}
 
-\item{gamma2}{The hazard rate for exponential dropout. A vector of hazard
+\item{gamma2}{The hazard rate for exponential dropout, a vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the control group.}
@@ -161,9 +162,9 @@ Defaults to "direct". Can use "Schoenfeld"
 under proportional hazards and conventional log-rank test.}
 
 \item{interval}{The interval to search for the solution of
-accrualDuration, followupDuration, or the proportionality constant
-of accrualIntensity. Defaults to \code{c(0.001, 240)}.
-Adjustment may be needed for non-monotone relationship with study power.}
+accrualDuration, followupTime, or the proportionality constant
+of accrualIntensity. Defaults to \code{c(0.001, 240)}. Adjustment
+may be needed for non-monotone relationship with study power.}
 
 \item{spendingTime}{A vector of length \code{kMax} for the error spending
 time at each analysis. Defaults to missing, in which case, it is the
@@ -185,20 +186,20 @@ null hypothesis.
 Obtains the needed accrual duration given power and
 follow-up time, the needed follow-up time given power and
 accrual duration, or the needed absolute accrual rates given
-power, accrual duration, follow-up duration, and relative accrual
+power, accrual duration, follow-up time, and relative accrual
 rates in a two-group survival design.
 }
 \examples{
 # Piecewise accrual, piecewise exponential survival, and 5\% dropout by
 # the end of 1 year.
 
-# Example 1: Obtains accrual duration given power and follow-up duration
+# Example 1: Obtains accrual duration given power and follow-up time
 
 lrsamplesize(beta = 0.2, kMax = 2,
              informationRates = c(0.8, 1),
              alpha = 0.025, typeAlphaSpending = "sfOF",
-             accrualTime = seq(0, 9),
-             accrualIntensity = c(26/9*seq(1, 9), 26),
+             accrualTime = seq(0, 8),
+             accrualIntensity = 26/9*seq(1, 9),
              piecewiseSurvivalTime = c(0, 6),
              stratumFraction = c(0.2, 0.8),
              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
@@ -209,13 +210,13 @@ lrsamplesize(beta = 0.2, kMax = 2,
              followupTime = 18, fixedFollowup = FALSE)
 
 
-# Example 2: Obtains follow-up duration given power and accrual duration
+# Example 2: Obtains follow-up time given power and accrual duration
 
 lrsamplesize(beta = 0.2, kMax = 2,
              informationRates = c(0.8, 1),
              alpha = 0.025, typeAlphaSpending = "sfOF",
-             accrualTime = seq(0, 9),
-             accrualIntensity = c(26/9*seq(1, 9), 26),
+             accrualTime = seq(0, 8),
+             accrualIntensity = 26/9*seq(1, 9),
              piecewiseSurvivalTime = c(0, 6),
              stratumFraction = c(0.2, 0.8),
              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
@@ -227,13 +228,13 @@ lrsamplesize(beta = 0.2, kMax = 2,
 
 
 # Example 3: Obtains absolute accrual intensity given power,
-# accrual duration, follow-up duration, and relative accrual intensity
+# accrual duration, follow-up time, and relative accrual intensity
 
 lrsamplesize(beta = 0.2, kMax = 2,
              informationRates = c(0.8, 1),
              alpha = 0.025, typeAlphaSpending = "sfOF",
-             accrualTime = seq(0, 9),
-             accrualIntensity = c(26/9*seq(1, 9), 26),
+             accrualTime = seq(0, 8),
+             accrualIntensity = 26/9*seq(1, 9),
              piecewiseSurvivalTime = c(0, 6),
              stratumFraction = c(0.2, 0.8),
              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),

@@ -9,8 +9,15 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(lrstat)
 ```
 
 This R Markdown document illustrates the power calculation in the presence of stratification variables. This example is taken from EAST 6.4 section 56.7 on lung cancer patients comparing two treatment groups in a target patient population with some prior therapy. There are three stratification variables: 
@@ -27,6 +34,7 @@ p1 = c(0.28, 0.13, 0.25, 0.34)
 p2 = c(0.28, 0.72)
 p3 = c(0.43, 0.37, 0.2)
 stratumFraction = p1 %x% p2 %x% p3
+stratumFraction = stratumFraction/sum(stratumFraction)
 ```
 
 Using the small cancer cell, age <=50, and performance status score <=50 as the reference stratum, the hazard ratios are
@@ -47,7 +55,6 @@ In addition, we assume an enrollment period of 24 months with a constant enrollm
 
 First we obtain the calendar time at which 66 events will occur. 
 ```{r}
-library(lrstat)
 caltime(nevents = 66, accrualDuration = 24, accrualIntensity = 12,
         stratumFraction = stratumFraction, 
         lambda1 = 0.4466*lambda2, lambda2 = lambda2, 
@@ -70,8 +77,8 @@ lrpower(kMax = 3,
 Therefore, the overall power is about 88% for the stratified analysis. This is confirmed by the simulation below. 
 ```{r}
 lrsim(kMax = 3, 
-      informationTime = c(0.333, 0.667, 1), 
-      criticalValues = c(3.710, 2.511, 1.993), 
+      informationRates = c(0.333, 0.667, 1), 
+      criticalValues = c(3.712, 2.511, 1.993), 
       accrualIntensity = 12,
       stratumFraction = stratumFraction,
       lambda1 = 0.4466*lambda2, 

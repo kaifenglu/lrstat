@@ -4,9 +4,9 @@
 \alias{param_informationRates}
 \title{Parameter Description: informationRates}
 \arguments{
-\item{informationRates}{The information rates in terms of number of events.
-Fixed prior to the trial. Defaults to \code{(1:kMax) / kMax} if left
-unspecified.}
+\item{informationRates}{The information rates in terms of number of
+events. Fixed prior to the trial. Defaults to \code{(1:kMax) / kMax}
+if left unspecified.}
 }
 \description{
 Parameter Description: informationRates

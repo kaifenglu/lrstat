@@ -2,7 +2,7 @@
 % Please edit documentation in R/prints.R
 \name{print.lrsim}
 \alias{print.lrsim}
-\title{Print simulation results}
+\title{Print simulation results for log-rank tests}
 \usage{
 \method{print}{lrsim}(x, ...)
 }

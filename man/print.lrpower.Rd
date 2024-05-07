@@ -2,7 +2,7 @@
 % Please edit documentation in R/prints.R
 \name{print.lrpower}
 \alias{print.lrpower}
-\title{Print power and sample size results}
+\title{Print power and sample size results for log-rank tests}
 \usage{
 \method{print}{lrpower}(x, ...)
 }
@@ -12,7 +12,8 @@
 \item{...}{Ensures that all arguments starting from "..." are named.}
 }
 \value{
-A tabular printout of the summary statistics from power calculation.
+A tabular printout of the summary statistics from power
+calculation.
 }
 \description{
 Prints the summary statistics from power calculation.

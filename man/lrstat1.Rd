@@ -59,12 +59,12 @@ time interval by stratum for the active treatment group.}
 \item{lambda2}{A vector of hazard rates for the event in each analysis
 time interval by stratum for the control group.}
 
-\item{gamma1}{The hazard rate for exponential dropout. A vector of hazard
+\item{gamma1}{The hazard rate for exponential dropout, a vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the active treatment group.}
 
-\item{gamma2}{The hazard rate for exponential dropout. A vector of hazard
+\item{gamma2}{The hazard rate for exponential dropout, a vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the control group.}
@@ -101,8 +101,9 @@ A data frame of the following variables if
 \item \code{nevents1}: The number of events in the active treatment group.
 \item \code{nevents2}: The number of events in the control group.
 \item \code{ndropouts}: The total number of dropouts.
-\item \code{ndropouts1}: The number of events for the active treatment group.
-\item \code{ndropouts2}: The number of events for the control group.
+\item \code{ndropouts1}: The number of dropouts in the active treatment
+group.
+\item \code{ndropouts2}: The number of dropouts in the control group.
 \item \code{nfmax}: The total number of subjects reaching maximum follow-up.
 \item \code{nfmax1}: The number of subjects reaching maximum follow-up in
 the active treatment group.
@@ -131,8 +132,8 @@ score statistic for a hypothesized hazard ratio at a given calendar time.
 
 lrstat1(time = 22, hazardRatioH0 = 1,
         allocationRatioPlanned = 1,
-        accrualTime = seq(0, 9),
-        accrualIntensity = c(26/9*seq(1, 9), 26),
+        accrualTime = seq(0, 8),
+        accrualIntensity = 26/9*seq(1, 9),
         piecewiseSurvivalTime = c(0, 6),
         stratumFraction = c(0.2, 0.8),
         lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),

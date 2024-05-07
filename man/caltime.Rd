@@ -49,12 +49,12 @@ time interval by stratum for the active treatment group.}
 \item{lambda2}{A vector of hazard rates for the event in each analysis
 time interval by stratum for the control group.}
 
-\item{gamma1}{The hazard rate for exponential dropout. A vector of hazard
+\item{gamma1}{The hazard rate for exponential dropout, a vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the active treatment group.}
 
-\item{gamma2}{The hazard rate for exponential dropout. A vector of hazard
+\item{gamma2}{The hazard rate for exponential dropout, a vector of hazard
 rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the control group.}
@@ -71,16 +71,16 @@ A vector of calendar times expected to yield the target
 number of events.
 }
 \description{
-Obtains the calendar times to reach the target number of
-subjects having an event.
+Obtains the calendar times needed to reach the target
+number of subjects experiencing an event.
 }
 \examples{
 # Piecewise accrual, piecewise exponential survivals, and 5\% dropout by
 # the end of 1 year.
 
 caltime(nevents = c(24, 80), allocationRatioPlanned = 1,
-        accrualTime = seq(0, 9),
-        accrualIntensity = c(26/9*seq(1, 9), 26),
+        accrualTime = seq(0, 8),
+        accrualIntensity = 26/9*seq(1, 9),
         piecewiseSurvivalTime = c(0, 6),
         stratumFraction = c(0.2, 0.8),
         lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
