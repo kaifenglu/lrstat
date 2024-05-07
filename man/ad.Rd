@@ -42,8 +42,7 @@ Defaults to 0 for exponential distribution.}
 each analysis time interval.}
 
 \item{gamma}{The hazard rate for exponential dropout, or a vector of
-hazard rates for piecewise exponential dropout. Defaults to 0 for
-no dropout.}
+hazard rates for piecewise exponential dropout.}
 }
 \value{
 A vector of number of patients who are enrolled during a

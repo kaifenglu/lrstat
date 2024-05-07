@@ -4,7 +4,7 @@
 \alias{updateGraph}
 \title{Update graph for graphical approaches}
 \usage{
-updateGraph(w, G, I, j)
+updateGraph(w = NA_real_, G = NA_real_, I = NA_integer_, j = NA_integer_)
 }
 \arguments{
 \item{w}{The current vector of weights for elementary hypotheses.}

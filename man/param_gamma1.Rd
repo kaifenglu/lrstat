@@ -6,7 +6,7 @@
 \arguments{
 \item{gamma1}{The hazard rate for exponential dropout, or a vector of
 hazard rates for piecewise exponential dropout for the active
-treatment group. Defaults to 0 for no dropout.}
+treatment group.}
 }
 \description{
 Parameter Description: gamma1

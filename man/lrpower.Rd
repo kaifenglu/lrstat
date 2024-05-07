@@ -20,15 +20,15 @@ lrpower(
   hazardRatioH0 = 1,
   allocationRatioPlanned = 1,
   accrualTime = 0L,
-  accrualIntensity = 20L,
+  accrualIntensity = NA_real_,
   piecewiseSurvivalTime = 0L,
   stratumFraction = 1L,
-  lambda1 = 0.0309,
-  lambda2 = 0.0533,
+  lambda1 = NA_real_,
+  lambda2 = NA_real_,
   gamma1 = 0L,
   gamma2 = 0L,
-  accrualDuration = 11.6,
-  followupTime = 18,
+  accrualDuration = NA_real_,
+  followupTime = NA_real_,
   fixedFollowup = 0L,
   rho1 = 0,
   rho2 = 0,
@@ -74,7 +74,8 @@ spent up to each stage.}
 
 \item{futilityBounds}{Lower boundaries on the z-test statistic scale
 for stopping for futility at stages 1, ..., \code{kMax-1}. Defaults to
-\code{rep(-6, kMax-1)} if left unspecified.}
+\code{rep(-6, kMax-1)} if left unspecified. The futility bounds are
+non-binding for the calculation of critical values.}
 
 \item{typeBetaSpending}{The type of beta spending. One of the following:
 "sfOF" for O'Brien-Fleming type spending function, "sfP" for Pocock
@@ -179,7 +180,7 @@ An S3 class \code{lrpower} object with 4 components:
 \item \code{expectedStudyDuration}: The expected study duration.
 \item \code{expectedInformation}: The expected information.
 \item \code{accrualDuration}: The accrual duration.
-\item \code{followupTime}: The follow-up duration.
+\item \code{followupTime}: The follow-up time.
 \item \code{fixedFollowup}: Whether a fixed follow-up design is used.
 \item \code{rho1}: The first parameter of the Fleming-Harrington family
 of weighted log-rank test.

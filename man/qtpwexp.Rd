@@ -4,7 +4,14 @@
 \alias{qtpwexp}
 \title{Quantile function of truncated piecewise exponential distribution}
 \usage{
-qtpwexp(p, piecewiseSurvivalTime = 0, lambda = 0.0578, lowerBound = 0)
+qtpwexp(
+  p,
+  piecewiseSurvivalTime = 0,
+  lambda = 0.0578,
+  lowerBound = 0,
+  lower.tail = TRUE,
+  log.p = FALSE
+)
 }
 \arguments{
 \item{p}{The vector of probabilities.}
@@ -20,6 +27,11 @@ each analysis time interval.}
 
 \item{lowerBound}{The left truncation time point for the survival time.
 Defaults to 0 for no truncation.}
+
+\item{lower.tail}{Logical; if TRUE (default), probabilities are P(X <= x),
+otherwise, P(X > x).}
+
+\item{log.p}{Logical; if TRUE, probabilities p are given as log(p).}
 }
 \value{
 The quantile q such that

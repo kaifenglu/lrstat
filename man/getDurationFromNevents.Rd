@@ -15,7 +15,7 @@ getDurationFromNevents(
   lambda2 = NA_real_,
   gamma1 = 0L,
   gamma2 = 0L,
-  followupTime = 18,
+  followupTime = NA_real_,
   fixedFollowup = 0L,
   npoints = 23L,
   interval = as.numeric(c(0.001, 240))
@@ -60,7 +60,8 @@ rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the control group.}
 
-\item{followupTime}{Follow-up time for the last enrolled subject.}
+\item{followupTime}{Follow-up time for the last enrolled subjects.
+Must be provided for fixed follow-up design.}
 
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
 Defaults to 0 for variable follow-up.}
@@ -78,6 +79,7 @@ A data frame of the following variables:
 \item \code{fixedFollowup}: Whether a fixed follow-up design is used.
 \item \code{accrualDuration}: The accrual duration.
 \item \code{subjects}: The total number of subjects.
+\item \code{followupTime}: The follow-up time for the last enrolled subject.
 \item \code{studyDuration}: The study duration.
 }
 }

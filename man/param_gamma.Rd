@@ -5,8 +5,7 @@
 \title{Parameter Description: gamma}
 \arguments{
 \item{gamma}{The hazard rate for exponential dropout, or a vector of
-hazard rates for piecewise exponential dropout. Defaults to 0 for
-no dropout.}
+hazard rates for piecewise exponential dropout.}
 }
 \description{
 Parameter Description: gamma

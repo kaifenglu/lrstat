@@ -48,11 +48,10 @@ control group. One for each analysis time interval.}
 
 \item{gamma1}{The hazard rate for exponential dropout, or a vector of
 hazard rates for piecewise exponential dropout for the active
-treatment group. Defaults to 0 for no dropout.}
+treatment group.}
 
 \item{gamma2}{The hazard rate for exponential dropout, or a vector of
-hazard rates for piecewise exponential dropout for the control group.
-Defaults to 0 for no dropout.}
+hazard rates for piecewise exponential dropout for the control group.}
 
 \item{accrualDuration}{Duration of the enrollment period.}
 

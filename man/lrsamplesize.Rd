@@ -22,11 +22,11 @@ lrsamplesize(
   hazardRatioH0 = 1,
   allocationRatioPlanned = 1,
   accrualTime = 0L,
-  accrualIntensity = 20L,
+  accrualIntensity = NA_real_,
   piecewiseSurvivalTime = 0L,
   stratumFraction = 1L,
-  lambda1 = 0.0309,
-  lambda2 = 0.0533,
+  lambda1 = NA_real_,
+  lambda2 = NA_real_,
   gamma1 = 0L,
   gamma2 = 0L,
   accrualDuration = NA_real_,
@@ -79,7 +79,8 @@ spent up to each stage.}
 
 \item{futilityBounds}{Lower boundaries on the z-test statistic scale
 for stopping for futility at stages 1, ..., \code{kMax-1}. Defaults to
-\code{rep(-6, kMax-1)} if left unspecified.}
+\code{rep(-6, kMax-1)} if left unspecified. The futility bounds are
+non-binding for the calculation of critical values.}
 
 \item{typeBetaSpending}{The type of beta spending. One of the following:
 "sfOF" for O'Brien-Fleming type spending function, "sfP" for Pocock type
@@ -185,14 +186,14 @@ null hypothesis.
 Obtains the needed accrual duration given power and
 follow-up time, the needed follow-up time given power and
 accrual duration, or the needed absolute accrual rates given
-power, accrual duration, follow-up duration, and relative accrual
+power, accrual duration, follow-up time, and relative accrual
 rates in a two-group survival design.
 }
 \examples{
 # Piecewise accrual, piecewise exponential survival, and 5\% dropout by
 # the end of 1 year.
 
-# Example 1: Obtains accrual duration given power and follow-up duration
+# Example 1: Obtains accrual duration given power and follow-up time
 
 lrsamplesize(beta = 0.2, kMax = 2,
              informationRates = c(0.8, 1),
@@ -209,7 +210,7 @@ lrsamplesize(beta = 0.2, kMax = 2,
              followupTime = 18, fixedFollowup = FALSE)
 
 
-# Example 2: Obtains follow-up duration given power and accrual duration
+# Example 2: Obtains follow-up time given power and accrual duration
 
 lrsamplesize(beta = 0.2, kMax = 2,
              informationRates = c(0.8, 1),
@@ -227,7 +228,7 @@ lrsamplesize(beta = 0.2, kMax = 2,
 
 
 # Example 3: Obtains absolute accrual intensity given power,
-# accrual duration, follow-up duration, and relative accrual intensity
+# accrual duration, follow-up time, and relative accrual intensity
 
 lrsamplesize(beta = 0.2, kMax = 2,
              informationRates = c(0.8, 1),
