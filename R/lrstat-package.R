@@ -134,8 +134,8 @@
 #' @useDynLib lrstat, .registration = TRUE
 #' @importFrom Rcpp evalCpp
 #' @importFrom mvtnorm pmvnorm
-#' @importFrom stats dgamma integrate pbeta pchisq pf plogis pnorm pt qbeta
-#' qchisq qf qlogis qnorm qt uniroot var
+#' @importFrom stats dgamma integrate optimize pbeta pchisq pf plogis pnorm 
+#' pt qbeta qchisq qf qlogis qnorm qt uniroot var
 #' @importFrom lpSolve lp
 #' @importFrom shiny shinyAppDir
 #'
