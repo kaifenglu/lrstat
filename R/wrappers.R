@@ -36,7 +36,10 @@ errorSpent <- function(t, error, sf = "sfOF", sfpar = NA) {
 #' @inheritParams param_lambda
 #' @param lowerBound The left truncation time point for the survival time.
 #'   Defaults to 0 for no truncation.
-#'
+#' @param lower.tail Logical; if TRUE (default), probabilities are P(X <= x), 
+#'   otherwise, P(X > x).
+#' @param log.p Logical; if TRUE, probabilities p are given as log(p).
+
 #' @return The probability p such that
 #' P(X > q | X > lowerBound) = 1 - p.
 #'
@@ -48,7 +51,7 @@ errorSpent <- function(t, error, sf = "sfOF", sfpar = NA) {
 #'
 #' @export
 ptpwexp <- function(q, piecewiseSurvivalTime = 0, lambda = 0.0578,
-                    lowerBound = 0) {
+                    lowerBound = 0, lower.tail = TRUE, log.p = FALSE) {
 
   if (any(q < 0)) {
     stop("q must be nonnegative")
@@ -75,7 +78,7 @@ ptpwexp <- function(q, piecewiseSurvivalTime = 0, lambda = 0.0578,
     stop("lowerBound must be nonnegative")
   }
 
-  ptpwexpcpp(q, piecewiseSurvivalTime, lambda, lowerBound)
+  ptpwexpcpp(q, piecewiseSurvivalTime, lambda, lowerBound, lower.tail, log.p)
 }
 
 
@@ -88,6 +91,9 @@ ptpwexp <- function(q, piecewiseSurvivalTime = 0, lambda = 0.0578,
 #' @inheritParams param_lambda
 #' @param lowerBound The left truncation time point for the survival time.
 #'   Defaults to 0 for no truncation.
+#' @param lower.tail Logical; if TRUE (default), probabilities are P(X <= x), 
+#'   otherwise, P(X > x).
+#' @param log.p Logical; if TRUE, probabilities p are given as log(p).
 #'
 #' @return The quantile q such that
 #' P(X > q | X > lowerBound) = 1 - p.
@@ -100,7 +106,7 @@ ptpwexp <- function(q, piecewiseSurvivalTime = 0, lambda = 0.0578,
 #'
 #' @export
 qtpwexp <- function(p, piecewiseSurvivalTime = 0, lambda = 0.0578,
-                    lowerBound = 0) {
+                    lowerBound = 0, lower.tail = TRUE, log.p = FALSE) {
   if (any(p < 0 | p > 1)) {
     stop("p must lie between 0 and 1")
   }
@@ -126,7 +132,7 @@ qtpwexp <- function(p, piecewiseSurvivalTime = 0, lambda = 0.0578,
     stop("lowerBound must be nonnegative")
   }
 
-  qtpwexpcpp(p, piecewiseSurvivalTime, lambda, lowerBound)
+  qtpwexpcpp(p, piecewiseSurvivalTime, lambda, lowerBound, lower.tail, log.p)
 }
 
 
