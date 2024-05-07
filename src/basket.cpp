@@ -304,7 +304,7 @@ List simonBayesSim(
     const NumericVector& p = NA_REAL,
     const NumericVector& accrualTime = 0,
     const NumericVector& accrualIntensity = NA_REAL,
-    const NumericVector& stratumFraction = NA_INTEGER,
+    const NumericVector& stratumFraction = 1,
     const double lambda = NA_REAL,
     const double gamma = NA_REAL,
     const double phi = NA_REAL,
