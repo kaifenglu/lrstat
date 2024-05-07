@@ -38,13 +38,13 @@ lrpower(kMax = 1, criticalValues = 1.96, accrualDuration = 12,
         lambda2 = -log(1-0.4)/12,  followupTime = 1.63)
 ```
 
-Therefore, the power is estimated to be 71.3%. In comparison, the Schoenfeld formula yields a power of 74.5%. 
+Therefore, the power is estimated to be 71.4%. In comparison, the Schoenfeld formula yields a power of 74.5%. 
 ```{r}
 hazardRatio = log(1-0.2)/log(1-0.4)
 pnorm(abs(log(hazardRatio))*sqrt(40/4) - qnorm(0.975))
 ```
 
-To see which method yields a more accurate power estimate, we run a lrsim function, which reports a power of 71.2% with 10000 replications. 
+To see which method yields a more accurate power estimate, we run a lrsim function, which reports a power of 72.2% with 10000 replications. 
 ```{r}
 lrsim(kMax = 1, criticalValues = 1.96, 
       accrualIntensity = 200/12, 

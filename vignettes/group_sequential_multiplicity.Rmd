@@ -92,7 +92,7 @@ The following code calculates the sample size for the PFS A/C comparison. Of not
 
 ```
 
-It can be seen that Look 1 and Look 2 are expected to take place at months 33.4 and 41.5, respectively, with the target number of events for Arm A and Arm C combined of 186 and 248 at the two looks, respectively.
+It can be seen that Look 1 and Look 2 are expected to take place at months 33.5 and 41.6, respectively, with the target number of events for Arm A and Arm C combined of 186 and 248 at the two looks, respectively.
 
 We can now calculate the expected number of OS events for Arm A and Arm C combined at Look 1 and Look 2, respectively.
 

@@ -92,19 +92,19 @@ statistics at the interim and final analyses for relevant FH weights.
 
 It follows that the mean of $\mathbf{Z}=(Z_{1,1}, Z_{1,2}, Z_{2,2})$ is
 $$
-  \left(\frac{3.179}{\sqrt{12.464}}, \frac{10.540}{\sqrt{22.271}}, 
-  \frac{6.604}{\sqrt{6.158}} \right) = (0.900, 2.233, 2.661)
+  \left(\frac{3.179}{\sqrt{12.464}}, \frac{10.545}{\sqrt{22.270}}, 
+  \frac{6.608}{\sqrt{6.161}} \right) = (0.900, 2.234, 2.662)
 $$ and the covariance matrix of $\mathbf{Z}$ is $$
-  \left(\begin{array}{ccc} 1 & \sqrt{\frac{12.464}{22.271}} & \frac{3.241}{\sqrt{12.464\times 6.158}} \\
-  \sqrt{\frac{12.464}{22.271}} & 1 & \frac{10.077}{\sqrt{22.271\times 6.158}} \\ 
-  \frac{3.241}{\sqrt{12.464\times 6.158}}  & \frac{10.077}{\sqrt{22.271\times 6.158}} & 1 \end{array} \right) = \left(\begin{array}{ccc} 1 & 0.748 &  0.370 \\ 
-  0.748 & 1 & 0.860 \\ 0.370 & 0.860 & 1 \end{array} \right)
+  \left(\begin{array}{ccc} 1 & \sqrt{\frac{12.464}{22.270}} & \frac{3.241}{\sqrt{12.464\times 6.161}} \\
+  \sqrt{\frac{12.464}{22.270}} & 1 & \frac{10.083}{\sqrt{22.270\times 6.161}} \\ 
+  \frac{3.241}{\sqrt{12.464\times 6.161}}  & \frac{10.083}{\sqrt{22.270\times 6.161}} & 1 \end{array} \right) = \left(\begin{array}{ccc} 1 & 0.748 &  0.370 \\ 
+  0.748 & 1 & 0.861 \\ 0.370 & 0.861 & 1 \end{array} \right)
 $$ Now, we obtain the critical value $u_2$ by solving equation (1).
 
 ```{r}
 library(mvtnorm)
-mu = c(0.900, 2.233, 2.661)
-sigma = matrix(c(1, 0.748, 0.370, 0.748, 1, 0.860, 0.370, 0.860, 1), 3, 3)
+mu = c(0.900, 2.234, 2.662)
+sigma = matrix(c(1, 0.748, 0.370, 0.748, 1, 0.861, 0.370, 0.861, 1), 3, 3)
 u1 = 2.968
 alpha = 0.025
 f <- function(u2, u1, sigma, alpha) {
@@ -136,7 +136,7 @@ sim1 = lrsim(kMax = 2, informationRates = c(0.5, 1),
              accrualDuration = 4,
              rho1 = 0, rho2 = 0,
              plannedEvents = c(50, 100), 
-             maxNumberOfIterations = 1000,
+             maxNumberOfIterations = 10000,
              seed = 314159)
 
 sim2 = lrsim(kMax = 2, informationRates = c(0.5, 1),
@@ -147,7 +147,7 @@ sim2 = lrsim(kMax = 2, informationRates = c(0.5, 1),
              accrualDuration = 4,
              rho1 = 0, rho2 = 1, 
              plannedEvents = c(50, 100),
-             maxNumberOfIterations = 1000,
+             maxNumberOfIterations = 10000,
              seed = 314159)
 
 w1max = subset(-sim1$sumdata$logRankStatistic, sim1$sumdata$stageNumber==1)
@@ -158,5 +158,5 @@ w2max = subset(w2max, sim1$sumdata$stageNumber==2)
 mean((w1max > u1) | (w2max > u2))
 ```
 
-Both the analytic and simulation methods yield a power of about 72%,
-close to that reported by @prior2020.
+The analytic method yielded a power of about 72%, while the simulation method 
+yielded a power of about 73%, both are close to that reported by @prior2020.
