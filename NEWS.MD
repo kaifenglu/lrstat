@@ -1,3 +1,45 @@
+# lrstat 0.2.6
+
+- replace "R_isnancpp(x)" with "x == NA_INTEGER" for integer parameter x
+- replace "!all.equal(x$settings$spendingTime, s$informationRates)" with "!all(x$settings$spendingTime == s$informationRates)" in prints.R
+
+# lrstat 0.2.5
+
+- update survQuantile in getDesignMeans.R to handle new censoring and inestimable quantiles
+- update simon2stage to increase the search space of sample size
+- add simonBayesAnalysis and simonBayesSim for Simon's Bayesian analysis of basket discovery trials
+- add zstatRiskDiff, zstatRiskRatio, zstatOddsRatio, zstatRateDiff, zstatRateRatio for the score test of two-sample crude rates and exposure-adjusted incidence rates
+- add mini for minimization of a univariate function over a finite interval
+- update powerRiskDiffExact, samplesizeRiskDiffExact, powerRiskRatioExact, samplesizeRiskRatioExact, powerRiskDiffExactEquiv, samplesizeRiskDiffExactEquiv, powerRiskRatioExactEquiv, and samplesizeRiskRatioExactEquiv to divide the interval of the response rate in the control group into 100 subintervals and obtain the minimum value within each subinterval in order to obtain the global minimum. This replaces the random draw of 500 values of the control group response rate for global minimum. In addition, the attained alpha calculation is updated to use the global maximum
+- add riskDiffExactPValue, riskDiffExactCI, riskRatioExactPValue, and riskRatioExactCI for exact unconditional test and confidence limits based on the Miettinen & Nurminen score statistics
+- add rawdata to be used as an input data frame to test survival analysis functions
+- add kmest and kmdiff for Kaplan-Meier estimates of survival curves and milestone survival difference
+- add lrtest for log-rank test using the Fleming-Harrington family of weights
+- add rmest and rmdiff for estimates of restricted mean survival times and restricted mean survival time difference
+- add lower.tail and log.p arguments to ptpwexp and qtpwexp functions
+- add the fquantile function to obtain the quantiles of a survival function
+- add the pwexploglik function to obtain the profile log-likelihood function for the change points in the piecewise exponential approximation to a survival function
+- add the pwexpcuts function to obtain a piecewise exponential distribution that approximates a survival distribution
+- update getDesignMeanDiffMMRM and getDesignSlopeDiffMMRM to add accrual and dropout information
+
+# lrstat 0.2.4
+
+- update the check for pconfigs of getDesignLogistic to avoid an error on macOS
+- replace which_min with which_max in lrsim2e and lrsim2e3a
+- replace qromb with quad for numerical integration
+- use numerical integration for lrstat
+- rename kmest to kmstat and use numerical integration
+- add kmpower and kmsamplesize for power and sample size calculation for difference in milestone survival probability
+- add kmpower1s and kmsamplesize1s for power and sample size calculation for one-sample milestone survival probability
+- add rmst, covrmst, and rmstat for restricted mean survival time analysis
+- add rmpower and rmsamplesize for power and sample size calculation for difference in restricted mean survival time
+- add rmpower1s and rmsamplesize1s for power and sample size calculation for one-sample restricted mean survival time
+- update rmstat, rmpower, rmsamplesize, rmpower1s, and rmsamplesize1s to account for stratification
+- add lrpowerequiv and lrsamplesizeequiv for power and sample size calculation for equivalence in hazard ratio
+- add kmpowerequiv and kmsamplesizeequiv for power and sample size calculation for equivalence in milestone survival probability difference
+- add rmpowerequiv and rmsamplesizeequiv for power and sample size calculation for equivalence in restricted mean survival time difference
+
+
 # lrstat 0.2.3
 
 - issue a warning message when unequal spacing is used with O'Brien-Fleming, Pocock, or Wang-Tsiatis boundaries in getBound
