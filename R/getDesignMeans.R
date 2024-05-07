@@ -140,9 +140,6 @@
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
 #'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
-#'
 #'     - \code{normalApproximation}: The type of computation of the p-values.
 #'       If \code{TRUE}, the variance is assumed to be known, otherwise
 #'       the calculations are performed with the t distribution.
@@ -382,7 +379,6 @@ getDesignOneMean <- function(
   des$byStageResults$numberOfSubjects =
     des$byStageResults$informationRates*n
 
-  des$settings$calculationTarget = ifelse(is.na(beta), "beta", "n")
   des$settings$normalApproximation = normalApproximation
   des$settings$rounding = rounding
   des$settings$varianceRatio = NULL
@@ -539,9 +535,6 @@ getDesignOneMean <- function(
 #'     - \code{userBetaSpending}: The user defined beta spending.
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
-#'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
 #'
 #'     - \code{normalApproximation}: The type of computation of the p-values.
 #'       If \code{TRUE}, the variance is assumed to be known, otherwise
@@ -757,9 +750,6 @@ getDesignPairedMeanDiff <- function(
 #'     - \code{userBetaSpending}: The user defined beta spending.
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
-#'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
 #'
 #'     - \code{normalApproximation}: The type of computation of the p-values.
 #'       If \code{TRUE}, the variance is assumed to be known, otherwise
@@ -1001,9 +991,6 @@ getDesignPairedMeanRatio <- function(
 #'     - \code{userBetaSpending}: The user defined beta spending.
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
-#'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
 #'
 #'     - \code{allocationRatioPlanned}: Allocation ratio for the active
 #'       treatment versus control.
@@ -1256,7 +1243,6 @@ getDesignMeanDiff <- function(
   des$byStageResults$numberOfSubjects =
     des$byStageResults$informationRates*n
 
-  des$settings$calculationTarget = ifelse(is.na(beta), "beta", "n")
   des$settings$allocationRatioPlanned = allocationRatioPlanned
   des$settings$normalApproximation = normalApproximation
   des$settings$rounding = rounding
@@ -1415,9 +1401,6 @@ getDesignMeanDiff <- function(
 #'     - \code{userBetaSpending}: The user defined beta spending.
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
-#'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
 #'
 #'     - \code{allocationRatioPlanned}: Allocation ratio for the active
 #'       treatment versus control.
@@ -1667,9 +1650,6 @@ getDesignMeanRatio <- function(
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
 #'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
-#'
 #'     - \code{allocationRatioPlanned}: Allocation ratio for sequence A/B
 #'       versus sequence B/A.
 #'
@@ -1914,7 +1894,6 @@ getDesignMeanDiffXO <- function(
   des$byStageResults$numberOfSubjects =
     des$byStageResults$informationRates*n
 
-  des$settings$calculationTarget = ifelse(is.na(beta), "beta", "n")
   des$settings$allocationRatioPlanned = allocationRatioPlanned
   des$settings$normalApproximation = normalApproximation
   des$settings$rounding = rounding
@@ -2073,9 +2052,6 @@ getDesignMeanDiffXO <- function(
 #'     - \code{userBetaSpending}: The user defined beta spending.
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
-#'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
 #'
 #'     - \code{allocationRatioPlanned}: Allocation ratio for sequence A/B
 #'       versus sequence B/A.
@@ -2291,9 +2267,6 @@ getDesignMeanRatioXO <- function(
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
 #'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
-#'
 #'     - \code{normalApproximation}: The type of computation of the p-values.
 #'       If \code{TRUE}, the variance is assumed to be known, otherwise
 #'       the calculations are performed with the t distribution. The exact
@@ -2494,14 +2467,12 @@ getDesignPairedMeanDiffEquiv <- function(
                            "efficacyPairedDiffUpper", "efficacyP",
                            "information", "numberOfSubjects")]
 
-  des$settings$calculationTarget = ifelse(is.na(beta), "beta", "n")
   des$settings$normalApproximation = normalApproximation
   des$settings$rounding = rounding
   des$settings <-
     des$settings[c("typeAlphaSpending", "parameterAlphaSpending",
                    "userAlphaSpending", "spendingTime",
-                   "calculationTarget", "normalApproximation",
-                   "rounding")]
+                   "normalApproximation", "rounding")]
 
   attr(des, "class") = "designPairedMeanDiffEquiv"
 
@@ -2623,9 +2594,6 @@ getDesignPairedMeanDiffEquiv <- function(
 #'     - \code{userAlphaSpending}: The user defined alpha spending.
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
-#'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
 #'
 #'     - \code{normalApproximation}: The type of computation of the p-values.
 #'       If \code{TRUE}, the variance is assumed to be known, otherwise
@@ -2851,9 +2819,6 @@ getDesignPairedMeanRatioEquiv <- function(
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
 #'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
-#'
 #'     - \code{allocationRatioPlanned}: Allocation ratio for the active
 #'       treatment versus control.
 #'
@@ -3064,14 +3029,13 @@ getDesignMeanDiffEquiv <- function(
                            "efficacyMeanDiffUpper", "efficacyP",
                            "information", "numberOfSubjects")]
 
-  des$settings$calculationTarget = ifelse(is.na(beta), "beta", "n")
   des$settings$allocationRatioPlanned = allocationRatioPlanned
   des$settings$normalApproximation = normalApproximation
   des$settings$rounding = rounding
   des$settings <-
     des$settings[c("typeAlphaSpending", "parameterAlphaSpending",
                    "userAlphaSpending", "spendingTime",
-                   "calculationTarget", "allocationRatioPlanned",
+                   "allocationRatioPlanned",
                    "normalApproximation", "rounding")]
 
   attr(des, "class") = "designMeanDiffEquiv"
@@ -3193,9 +3157,6 @@ getDesignMeanDiffEquiv <- function(
 #'     - \code{userAlphaSpending}: The user defined alpha spending.
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
-#'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
 #'
 #'     - \code{allocationRatioPlanned}: Allocation ratio for the active
 #'       treatment versus control.
@@ -3430,9 +3391,6 @@ getDesignMeanRatioEquiv <- function(
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
 #'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
-#'
 #'     - \code{allocationRatioPlanned}: Allocation ratio for sequence A/B
 #'       versus sequence B/A.
 #'
@@ -3643,14 +3601,13 @@ getDesignMeanDiffXOEquiv <- function(
                            "efficacyMeanDiffUpper", "efficacyP",
                            "information", "numberOfSubjects")]
 
-  des$settings$calculationTarget = ifelse(is.na(beta), "beta", "n")
   des$settings$allocationRatioPlanned = allocationRatioPlanned
   des$settings$normalApproximation = normalApproximation
   des$settings$rounding = rounding
   des$settings <-
     des$settings[c("typeAlphaSpending", "parameterAlphaSpending",
                    "userAlphaSpending", "spendingTime",
-                   "calculationTarget", "allocationRatioPlanned",
+                   "allocationRatioPlanned",
                    "normalApproximation", "rounding")]
 
   attr(des, "class") = "designMeanDiffXOEquiv"
@@ -3771,9 +3728,6 @@ getDesignMeanDiffXOEquiv <- function(
 #'     - \code{userAlphaSpending}: The user defined alpha spending.
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
-#'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
 #'
 #'     - \code{allocationRatioPlanned}: Allocation ratio for sequence A/B
 #'       versus sequence B/A.
@@ -4032,9 +3986,6 @@ getDesignMeanRatioXOEquiv <- function(
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
 #'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
-#'
 #'     - \code{allocationRatioPlanned}: Allocation ratio for the active
 #'       treatment versus control.
 #'
@@ -4187,7 +4138,6 @@ getDesignWilcoxon <- function(
   des$byStageResults$numberOfSubjects =
     des$byStageResults$informationRates*n
 
-  des$settings$calculationTarget = ifelse(is.na(beta), "beta", "n")
   des$settings$allocationRatioPlanned = allocationRatioPlanned
   des$settings$rounding = rounding
   des$settings$varianceRatio = NULL
@@ -4198,85 +4148,216 @@ getDesignWilcoxon <- function(
 }
 
 
-#' @title Power and sample size for two-sample mean difference
-#' at the last time point from the MMRM model
+#' @title Group sequential design for two-sample mean difference from the
+#' MMRM model
 #' @description Obtains the power and sample size for two-sample
 #' mean difference at the last time point from the mixed-model
 #' for repeated measures (MMRM) model.
 #'
 #' @param beta The type II error.
-#' @param n The total sample size.
 #' @param meanDiffH0 The mean difference at the last time point
 #'   under the null hypothesis. Defaults to 0.
 #' @param meanDiff The mean difference at the last time point
 #'   under the alternative hypothesis.
 #' @param k The number of postbaseline time points.
+#' @param t The postbaseline time points.
 #' @param covar1 The covariance matrix for the repeated measures
 #'   given baseline for the active treatment group.
 #' @param covar2 The covariance matrix for the repeated measures
 #'   given baseline for the control group. If missing, it will be
 #'   set equal to the covariance matrix for the active treatment group.
-#' @param cumdrop1 The cumulative dropout rate at the postbaseline
-#'   time points for the active treatment group.
-#' @param cumdrop2 The cumulative dropout rate at the postbaseline
-#'   time points for the control group. If missing, it will be set
-#'   equal to the cumulative dropout rate for the active treatment group.
-#' @param allocationRatioPlanned Allocation ratio for the active treatment
-#'   versus control. Defaults to 1 for equal randomization.
+#' @inheritParams param_accrualTime
+#' @inheritParams param_accrualIntensity
+#' @inheritParams param_piecewiseSurvivalTime
+#' @inheritParams param_gamma1
+#' @inheritParams param_gamma2
+#' @inheritParams param_accrualDuration
+#' @inheritParams param_allocationRatioPlanned
 #' @param normalApproximation The type of computation of the p-values.
 #'   If \code{TRUE}, the variance is assumed to be known, otherwise
 #'   the calculations are performed with the t distribution. The
 #'   degrees of freedom for the t-distribution is the total effective
-#'   sample size minus 2.
+#'   sample size minus 2.  The exact calculation using the t distribution
+#'   is only implemented for the fixed design.
 #' @param rounding Whether to round up sample size. Defaults to 1 for
 #'   sample size rounding.
-#' @param alpha The one-sided significance level. Defaults to 0.025.
+#' @inheritParams param_kMax
+#' @param informationRates The information rates. Defaults to
+#'   \code{(1:kMax) / kMax} if left unspecified.
+#' @inheritParams param_efficacyStopping
+#' @inheritParams param_futilityStopping
+#' @inheritParams param_criticalValues
+#' @inheritParams param_alpha
+#' @inheritParams param_typeAlphaSpending
+#' @inheritParams param_parameterAlphaSpending
+#' @inheritParams param_userAlphaSpending
+#' @inheritParams param_futilityBounds
+#' @inheritParams param_typeBetaSpending
+#' @inheritParams param_parameterBetaSpending
+#' @inheritParams param_userBetaSpending
+#' @param spendingTime A vector of length \code{kMax} for the error spending
+#'   time at each analysis. Defaults to missing, in which case, it is the
+#'   same as \code{informationRates}.
 #'
-#' @return An S3 class \code{designMeanDiffMMRM} object with the
-#' following components:
+#' @return An S3 class \code{designMeanDiffMMRM} object with three
+#' components:
 #'
-#' * \code{power}: The power to reject the null hypothesis.
+#' * \code{overallResults}: A data frame containing the following variables:
 #'
-#' * \code{alpha}: The one-sided significance level.
+#'     - \code{overallReject}: The overall rejection probability.
 #'
-#' * \code{numberOfSubjects}: The maximum number of subjects.
+#'     - \code{alpha}: The overall significance level.
 #'
-#' * \code{meanDiffH0}: The mean difference under the null hypothesis.
+#'     - \code{attainedAlpha}: The attained significance level, which is
+#'       different from the overall significance level in the presence of
+#'       futility stopping.
 #'
-#' * \code{meanDiff}: The mean difference under the alternative
-#'   hypothesis.
+#'     - \code{kMax}: The number of stages.
 #'
-#' * \code{k}: The number of postbaseline time points.
+#'     - \code{theta}: The parameter value.
 #'
-#' * \code{covar1}: The covariance matrix for the repeated measures
-#'   given baseline for the active treatment group.
+#'     - \code{information}: The maximum information.
 #'
-#' * \code{covar2}: The covariance matrix for the repeated measures
-#'   given baseline for the control group.
+#'     - \code{expectedInformationH1}: The expected information under H1.
 #'
-#' * \code{cumdrop1}: The cumulative dropout rate at the postbaseline
-#'   time points for the active treatment group.
+#'     - \code{expectedInformationH0}: The expected information under H0.
 #'
-#' * \code{cumdrop2}: The cumulative dropout rate at the postbaseline
-#'   time points for the control group.
+#'     - \code{drift}: The drift parameter, equal to
+#'       \code{theta*sqrt(information)}.
 #'
-#' * \code{inflation1}: The variance inflation factor for the active
-#'   treatment group.
+#'     - \code{inflationFactor}: The inflation factor (relative to the
+#'       fixed design).
 #'
-#' * \code{inflation2}: The variance inflation factor for the
-#'   control group.
+#'     - \code{numberOfSubjects}: The maximum number of subjects.
 #'
-#' * \code{calculationTarget}: The calculation target, \code{beta} or
-#'   \code{n}.
+#'     - \code{studyDuration}: The maximum study duration.
 #'
-#' * \code{allocationRatioPlanned}: Allocation ratio for the active
-#'   treatment versus control.
+#'     - \code{expectedNumberOfSubjectsH1}: The expected number of subjects
+#'       under H1.
 #'
-#' * \code{normalApproximation}: The type of computation of the p-values.
-#'   If \code{TRUE}, the variance is assumed to be known, otherwise
-#'   the calculations are performed with the t distribution.
+#'     - \code{expectedNumberOfSubjectsH0}: The expected number of subjects
+#'       under H0.
 #'
-#' * \code{rounding}: Whether to round up sample size.
+#'     - \code{expectedStudyDurationH1}: The expected study duration
+#'       under H1.
+#'
+#'     - \code{expectedStudyDurationH0}: The expected study duration
+#'       under H0.
+#'
+#'     - \code{accrualDuration}: The accrual duration.
+#'
+#'     - \code{followupTime}: The follow-up time.
+#'
+#'     - \code{fixedFollowup}: Whether a fixed follow-up design is used.
+#'
+#'     - \code{meanDiffH0}: The mean difference under H0.
+#'
+#'     - \code{meanDiff}: The mean difference under H1.
+#'
+#' * \code{byStageResults}: A data frame containing the following variables:
+#'
+#'     - \code{informationRates}: The information rates.
+#'
+#'     - \code{efficacyBounds}: The efficacy boundaries on the Z-scale.
+#'
+#'     - \code{futilityBounds}: The futility boundaries on the Z-scale.
+#'
+#'     - \code{rejectPerStage}: The probability for efficacy stopping.
+#'
+#'     - \code{futilityPerStage}: The probability for futility stopping.
+#'
+#'     - \code{cumulativeRejection}: The cumulative probability for efficacy
+#'       stopping.
+#'
+#'     - \code{cumulativeFutility}: The cumulative probability for futility
+#'       stopping.
+#'
+#'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
+#'
+#'     - \code{efficacyP}: The efficacy boundaries on the p-value scale.
+#'
+#'     - \code{futilityP}: The futility boundaries on the p-value scale.
+#'
+#'     - \code{information}: The cumulative information.
+#'
+#'     - \code{efficacyStopping}: Whether to allow efficacy stopping.
+#'
+#'     - \code{futilityStopping}: Whether to allow futility stopping.
+#'
+#'     - \code{rejectPerStageH0}: The probability for efficacy stopping
+#'       under H0.
+#'
+#'     - \code{futilityPerStageH0}: The probability for futility stopping
+#'       under H0.
+#'
+#'     - \code{cumulativeRejectionH0}: The cumulative probability for
+#'       efficacy stopping under H0.
+#'
+#'     - \code{cumulativeFutilityH0}: The cumulative probability for futility
+#'       stopping under H0.
+#'
+#'     - \code{efficacyMeanDiff}: The efficacy boundaries on the mean
+#'       difference scale.
+#'
+#'     - \code{futilityMeanDiff}: The futility boundaries on the mean
+#'       difference scale.
+#'
+#'     - \code{numberOfSubjects}: The number of subjects.
+#'
+#'     - \code{analysisTime}: The average time since trial start.
+#'
+#' * \code{settings}: A list containing the following input parameters:
+#'
+#'     - \code{typeAlphaSpending}: The type of alpha spending.
+#'
+#'     - \code{parameterAlphaSpending}: The parameter value for alpha
+#'       spending.
+#'
+#'     - \code{userAlphaSpending}: The user defined alpha spending.
+#'
+#'     - \code{typeBetaSpending}: The type of beta spending.
+#'
+#'     - \code{parameterBetaSpending}: The parameter value for beta spending.
+#'
+#'     - \code{userBetaSpending}: The user defined beta spending.
+#'
+#'     - \code{spendingTime}: The error spending time at each analysis.
+#'
+#'     - \code{allocationRatioPlanned}: The allocation ratio for the active
+#'       treatment versus control.
+#'
+#'     - \code{accrualTime}: A vector that specifies the starting time of
+#'       piecewise Poisson enrollment time intervals.
+#'
+#'     - \code{accrualIntensity}: A vector of accrual intensities.
+#'        One for each accrual time interval.
+#'
+#'     - \code{piecewiseSurvivalTime}: A vector that specifies the
+#'       starting time of piecewise exponential survival time intervals.
+#'
+#'     - \code{gamma1}: The hazard rate for exponential dropout or
+#'       a vector of hazard rates for piecewise exponential dropout
+#'       for the active treatment group.
+#'
+#'     - \code{gamma2}: The hazard rate for exponential dropout or
+#'       a vector of hazard rates for piecewise exponential dropout
+#'       for the control group.
+#'
+#'     - \code{k}: The number of postbaseline time points.
+#'
+#'     - \code{t}: The postbaseline time points.
+#'
+#'     - \code{covar1}: The covariance matrix for the repeated measures
+#'       given baseline for the active treatment group.
+#'
+#'     - \code{covar2}: The covariance matrix for the repeated measures
+#'       given baseline for the control group.
+#'
+#'     - \code{normalApproximation}: The type of computation of the p-values.
+#'       If \code{TRUE}, the variance is assumed to be known, otherwise
+#'       the calculations are performed with the t distribution.
+#'
+#'     - \code{rounding}: Whether to round up sample size.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -4284,63 +4365,82 @@ getDesignWilcoxon <- function(
 #'
 #' # function to generate the AR(1) correlation matrix
 #' ar1_cor <- function(n, corr) {
-#'   exponent <- abs(matrix(1:n - 1, n, n, byrow = TRUE) - (1:n - 1))
+#'   exponent <- abs(matrix((1:n) - 1, n, n, byrow = TRUE) - ((1:n) - 1))
 #'   corr^exponent
 #' }
 #'
-#' # function to generate the cumulative dropout rate
-#' exp_drop <- function(n, dropprob) {
-#'   1 - (1 - dropprob)^((1:n)/n)
-#' }
-#'
-#' (design1 <- getDesignMeanDiffMMRM(
+#' (design1 = getDesignMeanDiffMMRM(
 #'   beta = 0.2,
-#'   n = NA_real_,
 #'   meanDiffH0 = 0,
 #'   meanDiff = 0.5,
 #'   k = 4,
+#'   t = c(1,2,3,4),
 #'   covar1 = ar1_cor(4, 0.7),
-#'   cumdrop1 = exp_drop(4, 0.10),
+#'   accrualIntensity = 10,
+#'   gamma1 = 0.02634013,
+#'   gamma2 = 0.02634013,
+#'   accrualDuration = NA,
 #'   allocationRatioPlanned = 1,
-#'   normalApproximation = FALSE,
-#'   rounding = TRUE,
-#'   alpha = 0.025))
+#'   kMax = 3,
+#'   alpha = 0.025,
+#'   typeAlphaSpending = "sfOF"))
 #'
 #' @export
 #'
 getDesignMeanDiffMMRM <- function(
     beta = NA_real_,
-    n = NA_real_,
     meanDiffH0 = 0,
     meanDiff = 0.5,
     k = 1,
+    t = NA_real_,
     covar1 = diag(k),
     covar2 = NA_real_,
-    cumdrop1 = rep(0, k),
-    cumdrop2 = NA_real_,
+    accrualTime = 0,
+    accrualIntensity = NA_real_,
+    piecewiseSurvivalTime = 0,
+    gamma1 = 0,
+    gamma2 = 0,
+    accrualDuration = NA_real_,
     allocationRatioPlanned = 1,
-    normalApproximation = FALSE,
+    normalApproximation = TRUE,
     rounding = TRUE,
-    alpha = 0.025) {
+    kMax = 1L,
+    informationRates = NA_real_,
+    efficacyStopping = NA_integer_,
+    futilityStopping = NA_integer_,
+    criticalValues = NA_real_,
+    alpha = 0.025,
+    typeAlphaSpending = "sfOF",
+    parameterAlphaSpending = NA_real_,
+    userAlphaSpending = NA_real_,
+    futilityBounds = NA_real_,
+    typeBetaSpending = "none",
+    parameterBetaSpending = NA_real_,
+    userBetaSpending = NA_real_,
+    spendingTime = NA_real_) {
 
-  if (is.na(beta) && is.na(n)) {
-    stop("beta and n cannot be both missing")
-  }
+  nintervals = length(piecewiseSurvivalTime)
 
-  if (!is.na(beta) && !is.na(n)) {
-    stop("Only one of beta and n should be provided")
+  if (is.na(beta) && is.na(accrualDuration)) {
+    stop("beta and accrualDuration cannot be both missing")
   }
 
   if (!is.na(beta) && (beta >= 1-alpha || beta < 0.0001)) {
     stop("beta must lie in [0.0001, 1-alpha)")
   }
 
-  if (!is.na(n) && n <= 0) {
-    stop("n must be positive")
-  }
-
   if (k <= 0 || k != round(k)) {
     stop("k must be a positive integer")
+  }
+
+  if (any(is.na(t))) {
+    stop("t must be provided")
+  } else if (length(t) != k) {
+    stop("Invalid length for t")
+  } else if (any(t <= 0)) {
+    stop("Elements of t must be positive")
+  } else if (k > 1 && any(diff(t) <= 0)) {
+    stop("Elements of t must be increasing")
   }
 
   if (!all(eigen(covar1)$values > 0)) {
@@ -4353,22 +4453,60 @@ getDesignMeanDiffMMRM <- function(
     stop("covar2 must be positive definite")
   }
 
-  if (any(cumdrop1 < 0)) {
-    stop("Elements of cumdrop1 must be nonnegative")
-  } else if (k > 1 && any(diff(cumdrop1) < 0)) {
-    stop("Elements of cumdrop1 must be nondecreasing")
-  } else if (any(cumdrop1 >= 1)) {
-    stop("Elements of cumdrop1 must be less than 1")
+  if (accrualTime[1] != 0) {
+    stop("accrualTime must start with 0")
   }
 
-  if (any(is.na(cumdrop2))) {
-    cumdrop2 = cumdrop1
-  } else if (any(cumdrop2 < 0)) {
-    stop("Elements of cumdrop2 must be nonnegative")
-  } else if (k > 1 && any(diff(cumdrop2) < 0)) {
-    stop("Elements of cumdrop2 must be nondecreasing")
-  } else if (any(cumdrop2 >= 1)) {
-    stop("Elements of cumdrop2 must be less than 1")
+  if (length(accrualTime) > 1 && any(diff(accrualTime) <= 0)) {
+    stop("accrualTime should be increasing")
+  }
+
+  if (any(is.na(accrualIntensity))) {
+    stop("accrualIntensity must be provided")
+  }
+
+  if (length(accrualTime) != length(accrualIntensity)) {
+    stop("accrualTime and accrualIntensity must have the same length")
+  }
+
+  if (any(accrualIntensity < 0)) {
+    stop("accrualIntensity must be non-negative")
+  }
+
+  if (piecewiseSurvivalTime[1] != 0) {
+    stop("piecewiseSurvivalTime must start with 0")
+  }
+
+  if (nintervals > 1 && any(diff(piecewiseSurvivalTime) <= 0)) {
+    stop("piecewiseSurvivalTime should be increasing")
+  }
+
+  if (any(gamma1 < 0)) {
+    stop("gamma1 must be non-negative")
+  }
+
+  if (any(gamma2 < 0)) {
+    stop("gamma2 must be non-negative")
+  }
+
+  if (length(gamma1) != 1 && length(gamma1) != nintervals) {
+    stop("Invalid length for gamma1")
+  }
+
+  if (length(gamma2) != 1 && length(gamma2) != nintervals) {
+    stop("Invalid length for gamma2")
+  }
+
+  if (length(gamma1) == 1) {
+    gamma1 = rep(gamma1, nintervals)
+  }
+
+  if (length(gamma2) == 1) {
+    gamma2 = rep(gamma2, nintervals)
+  }
+
+  if (!is.na(accrualDuration) && accrualDuration <= 0) {
+    stop("accrualDuration must be positive")
   }
 
   if (allocationRatioPlanned <= 0) {
@@ -4377,6 +4515,10 @@ getDesignMeanDiffMMRM <- function(
 
   if (alpha < 0.00001 || alpha >= 1) {
     stop("alpha must lie in [0.00001, 1)")
+  }
+
+  if (any(is.na(informationRates))) {
+    informationRates = (1:kMax)/kMax
   }
 
 
@@ -4388,69 +4530,305 @@ getDesignMeanDiffMMRM <- function(
                  meanDiffH0 - meanDiff)
 
 
-  # observed data pattern probabilities
-  p1 = diff(c(cumdrop1, 1))
-  p2 = diff(c(cumdrop2, 1))
+  # function to obtain the info for mean difference
+  f_info <- function(tau, k, t, covar1, covar2, accrualTime,
+                     accrualIntensity, piecewiseSurvivalTime,
+                     gamma1, gamma2, accrualDuration, r) {
 
-  # information matrix per subject in each treatment group
-  I1 = 0
-  I2 = 0
-  I = matrix(0, k, k)
-  for (j in 1:k) {
-    I[1:j, 1:j] = solve(covar1[1:j, 1:j])
-    I1 = I1 + p1[j]*I
-    I[1:j, 1:j] = solve(covar2[1:j, 1:j])
-    I2 = I2 + p2[j]*I
+    # total number of enrolled subjects at interim analysis
+    n = accrual(tau, accrualTime, accrualIntensity, accrualDuration)
+
+    # total number of enrolled subjects at each time point
+    ns = accrual(tau - t, accrualTime, accrualIntensity, accrualDuration)
+
+    # probability of not dropping out at each time point by treatment
+    q1 = ptpwexp(t, piecewiseSurvivalTime, gamma1, lower.tail = FALSE)
+    q2 = ptpwexp(t, piecewiseSurvivalTime, gamma2, lower.tail = FALSE)
+
+    # number of subjects remaining at each time point by treatment
+    m1 = r*ns*q1
+    m2 = (1-r)*ns*q2
+
+    # number of subjects dropping out at each time point by treatment
+    n1 = c(-diff(m1), m1[k])
+    n2 = c(-diff(m2), m2[k])
+
+    # information matrix in each treatment group
+    I1 = 0
+    I2 = 0
+    I = matrix(0, k, k)
+    for (j in 1:k) {
+      I[1:j, 1:j] = solve(covar1[1:j, 1:j])
+      I1 = I1 + n1[j]*I
+      I[1:j, 1:j] = solve(covar2[1:j, 1:j])
+      I2 = I2 + n2[j]*I
+    }
+
+    # variance for the treatment mean at the last time point by treatment
+    V1 = solve(I1)
+    V2 = solve(I2)
+
+    # information for treatment difference
+    IMax = 1/(V1[k,k] + V2[k,k])
+
+    # variance for treatment difference for one sampling unit
+    v1 = (V1[k,k] + V2[k,k])*n
+
+    # inflation factors for each treatment
+    phi1 = V1[k,k]/(covar1[k,k]/(r*n))
+    phi2 = V2[k,k]/(covar2[k,k]/((1-r)*n))
+
+    # information for treatment mean difference at the last time point
+    list(IMax = IMax, v1 = v1, phi1 = phi1, phi2 = phi2)
   }
 
-  # variance for one sampling unit
-  V1 = solve(I1)
-  V2 = solve(I2)
-  v1 = 1/r*V1[k,k] + 1/(1-r)*V2[k,k]
 
-  # variance inflation factor for each treatment group
-  phi1 = V1[k,k]/covar1[k,k]
-  phi2 = V2[k,k]/covar2[k,k]
+  # power calculation
+  if (is.na(beta)) {
+    n = accrual(accrualDuration, accrualTime, accrualIntensity,
+                accrualDuration)
 
-  # power for t test
-  f = function(n) {
-    nu = n*r/phi1 + n*(1-r)/phi2 - 2
-    b = qt(1-alpha, nu)
-    ncp = theta*sqrt(n/v1)
-    pt(b, nu, ncp, lower.tail = FALSE)
-  }
+    if (rounding) {
+      n = ceiling(n)
+      accrualDuration = getAccrualDurationFromN(n, accrualTime,
+                                                accrualIntensity)
+    }
 
+    studyDuration = accrualDuration + t[k]
+    out = f_info(studyDuration, k, t, covar1, covar2, accrualTime,
+                 accrualIntensity, piecewiseSurvivalTime,
+                 gamma1, gamma2, accrualDuration, r)
+    IMax = out$IMax
+    phi1 = out$phi1
+    phi2 = out$phi2
 
-  if (is.na(n)) { # calculate the sample size
-    if (normalApproximation) {
-      n = (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
+    des = getDesign(
+      beta, IMax, theta,
+      kMax, informationRates,
+      efficacyStopping, futilityStopping,
+      criticalValues, alpha, typeAlphaSpending,
+      parameterAlphaSpending, userAlphaSpending,
+      futilityBounds, typeBetaSpending,
+      parameterBetaSpending, userBetaSpending,
+      spendingTime)
+
+    if (kMax == 1 && !normalApproximation) { # t-test for fixed design
+      if (!any(is.na(criticalValues))) {
+        alpha = 1 - pnorm(criticalValues)
+      }
+
+      nu = n*r/phi1 + n*(1-r)/phi2 - 2
+      b = qt(1-alpha, nu)
+      ncp = theta*sqrt(IMax)
+      power = pt(b, nu, ncp, lower.tail = FALSE)
+
+      des$overallResults$overallReject = power
+      des$byStageResults$rejectPerStage = power
+      des$byStageResults$futilityPerStage = 1 - power
+      des$byStageResults$cumulativeRejection = power
+      des$byStageResults$cumulativeFutility = 1 - power
+      des$byStageResults$efficacyBounds = b
+      des$byStageResults$futilityBounds = b
+
+      delta = b/sqrt(IMax)
+      if (directionUpper) {
+        des$byStageResults$efficacyMeanDiff = delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff = delta + meanDiffH0
+      } else {
+        des$byStageResults$efficacyMeanDiff = -delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff = -delta + meanDiffH0
+      }
     } else {
-      n0 = (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
-      n = uniroot(function(n) f(n) - (1-beta), c(0.5*n0, 1.5*n0))$root
+      if (directionUpper) {
+        des$byStageResults$efficacyMeanDiff =
+          des$byStageResults$efficacyTheta + meanDiffH0
+        des$byStageResults$futilityMeanDiff =
+          des$byStageResults$futilityTheta + meanDiffH0
+      } else {
+        des$byStageResults$efficacyMeanDiff =
+          -des$byStageResults$efficacyTheta + meanDiffH0
+        des$byStageResults$futilityMeanDiff =
+          -des$byStageResults$futilityTheta + meanDiffH0
+      }
+    }
+  } else { # sample size calculation
+    des = getDesign(
+      beta, NA, theta,
+      kMax, informationRates,
+      efficacyStopping, futilityStopping,
+      criticalValues, alpha, typeAlphaSpending,
+      parameterAlphaSpending, userAlphaSpending,
+      futilityBounds, typeBetaSpending,
+      parameterBetaSpending, userBetaSpending,
+      spendingTime)
+
+    IMax = des$overallResults$information
+
+
+    out = f_info(1 + t[k], k, t, covar1, covar2, accrualTime,
+                 accrualIntensity, piecewiseSurvivalTime,
+                 gamma1, gamma2, 1, r)
+    v1 = out$v1
+    phi1 = out$phi1
+    phi2 = out$phi2
+
+    n = IMax*v1
+
+    if (kMax == 1 && !normalApproximation) { # t-test for fixed design
+      if (!any(is.na(criticalValues))) {
+        alpha = 1 - pnorm(criticalValues)
+      }
+
+      # power for t-test
+      f = function(n, r, phi1, phi2, alpha, theta, v1) {
+        nu = n*r/phi1 + n*(1-r)/phi2 - 2
+        b = qt(1-alpha, nu)
+        ncp = theta*sqrt(n/v1)
+        pt(b, nu, ncp, lower.tail = FALSE)
+      }
+
+      n = uniroot(function(n) {
+        f(n, r, phi1, phi2, alpha, theta, v1) - (1-beta)
+      }, c(0.5*n, 1.5*n))$root
+
+      if (rounding) {
+        n = ceiling(n)
+      }
+
+      if (is.na(accrualDuration)) {
+        accrualDuration = getAccrualDurationFromN(n, accrualTime,
+                                                  accrualIntensity)
+      } else { # calculate accrualIntensity
+        accrualIntensity = uniroot(function(x) {
+          accrual(accrualDuration, accrualTime, x*accrualIntensity,
+                  accrualDuration) - n
+        }, c(0.001, 240))$root*accrualIntensity
+      }
+
+      # final maximum information
+      IMax = n/v1
+
+      nu = n*r/phi1 + n*(1-r)/phi2 - 2
+      b = qt(1-alpha, nu)
+      ncp = theta*sqrt(n/v1)
+      power = pt(b, nu, ncp, lower.tail = FALSE)
+
+      des$overallResults$overallReject = power
+      des$byStageResults$rejectPerStage = power
+      des$byStageResults$futilityPerStage = 1 - power
+      des$byStageResults$cumulativeRejection = power
+      des$byStageResults$cumulativeFutility = 1 - power
+      des$byStageResults$efficacyBounds = b
+      des$byStageResults$futilityBounds = b
+
+      delta = b/sqrt(IMax)
+      if (directionUpper) {
+        des$byStageResults$efficacyMeanDiff = delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff = delta + meanDiffH0
+      } else {
+        des$byStageResults$efficacyMeanDiff = -delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff = -delta + meanDiffH0
+      }
+    } else {
+      if (rounding) {
+        n = ceiling(n)
+      }
+
+      if (is.na(accrualDuration)) {
+        accrualDuration = getAccrualDurationFromN(n, accrualTime,
+                                                  accrualIntensity)
+      } else { # calculate accrualIntensity
+        accrualIntensity = uniroot(function(x) {
+          accrual(accrualDuration, accrualTime, x*accrualIntensity,
+                  accrualDuration) - n
+        }, c(0.001, 240))$root*accrualIntensity
+      }
+
+      # final maximum information
+      IMax = n/v1
+
+      des = getDesign(
+        NA, IMax, theta,
+        kMax, informationRates,
+        efficacyStopping, futilityStopping,
+        criticalValues, alpha, typeAlphaSpending,
+        parameterAlphaSpending, userAlphaSpending,
+        futilityBounds, typeBetaSpending,
+        parameterBetaSpending, userBetaSpending,
+        spendingTime)
+
+      if (directionUpper) {
+        des$byStageResults$efficacyMeanDiff =
+          des$byStageResults$efficacyTheta + meanDiffH0
+        des$byStageResults$futilityMeanDiff =
+          des$byStageResults$futilityTheta + meanDiffH0
+      } else {
+        des$byStageResults$efficacyMeanDiff =
+          -des$byStageResults$efficacyTheta + meanDiffH0
+        des$byStageResults$futilityMeanDiff =
+          -des$byStageResults$futilityTheta + meanDiffH0
+      }
     }
   }
 
-  if (rounding) {
-    n = ceiling(n)
+
+  # timing of interim analysis
+  studyDuration = accrualDuration + t[k]
+  information = IMax*informationRates
+  analysisTime = rep(0, kMax)
+
+  if (kMax > 1) {
+    for (i in 1:(kMax-1)) {
+      analysisTime[i] = uniroot(function(tau) {
+        out = f_info(tau, k, t, covar1, covar2, accrualTime,
+                     accrualIntensity, piecewiseSurvivalTime,
+                     gamma1, gamma2, accrualDuration, r)
+        out$IMax - information[i]
+      }, c(t[k]+0.001, studyDuration))$root
+    }
   }
 
-  if (normalApproximation) {
-    power = pnorm(theta*sqrt(n/v1) - qnorm(1-alpha))
-  } else {
-    power = f(n)
-  }
+  analysisTime[kMax] = studyDuration
 
+  numberOfSubjects = accrual(analysisTime, accrualTime, accrualIntensity,
+                             accrualDuration)
 
-  des = list(
-    power = power, alpha = alpha, numberOfSubjects = n,
-    meanDiffH0 = meanDiffH0, meanDiff = meanDiff, k = k,
-    covar1 = covar1, covar2 = covar2,
-    cumdrop1 = cumdrop1, cumdrop2 = cumdrop2,
-    inflation1 = phi1, inflation2 = phi2,
-    calculationTarget = ifelse(is.na(beta), "beta", "n"),
-    allocationRatioPlanned = allocationRatioPlanned,
-    normalApproximation = normalApproximation,
-    rounding = rounding)
+  p = des$byStageResults$rejectPerStage +
+    des$byStageResults$futilityPerStage
+
+  pH0 = des$byStageResults$rejectPerStageH0 +
+    des$byStageResults$futilityPerStageH0
+
+  des$overallResults$numberOfSubjects = n
+  des$overallResults$studyDuration = studyDuration
+  des$overallResults$expectedNumberOfSubjectsH1 = sum(p*numberOfSubjects)
+  des$overallResults$expectedNumberOfSubjectsH0 = sum(pH0*numberOfSubjects)
+  des$overallResults$expectedStudyDurationH1 = sum(p*analysisTime)
+  des$overallResults$expectedStudyDurationH0 = sum(pH0*analysisTime)
+  des$overallResults$accrualDuration = accrualDuration
+  des$overallResults$followupTime = t[k]
+  des$overallResults$fixedFollowup = TRUE
+  des$overallResults$meanDiffH0 = meanDiffH0
+  des$overallResults$meanDiff = meanDiff
+
+  des$byStageResults$numberOfSubjects = numberOfSubjects
+  des$byStageResults$analysisTime = analysisTime
+  des$byStageResults$efficacyTheta = NULL
+  des$byStageResults$futilityTheta = NULL
+
+  des$settings$allocationRatioPlanned = allocationRatioPlanned
+  des$settings$accrualTime = accrualTime
+  des$settings$accrualIntensity = accrualIntensity
+  des$settings$piecewiseSurvivalTime = piecewiseSurvivalTime
+  des$settings$gamma1 = gamma1
+  des$settings$gamma2 = gamma2
+  des$settings$k = k
+  des$settings$t = t
+  des$settings$covar1 = covar1
+  des$settings$covar2 = covar2
+  des$settings$normalApproximation = normalApproximation
+  des$settings$rounding = rounding
+  des$settings$varianceRatio = NULL
 
   attr(des, "class") = "designMeanDiffMMRM"
 
@@ -4576,9 +4954,6 @@ getDesignMeanDiffMMRM <- function(
 #' * \code{releff_carry}: The relative efficiency of the design
 #'   for estimating carryover effects. This is equal to
 #'   \code{v_direct_only/v_carry}.
-#'
-#' * \code{calculationTarget}: The calculation target, \code{beta} or
-#'   \code{n}.
 #'
 #' * \code{allocationRatioPlanned}: Allocation ratio for the sequences.
 #'
@@ -4856,7 +5231,6 @@ getDesignMeanDiffCarryover <- function(
     v_carry = V[m+1,m+1]/n,
     releff_direct = V0[l,l]/V[l,l],
     releff_carry = V0[l,l]/V[m+1,m+1],
-    calculationTarget = ifelse(is.na(beta), "beta", "n"),
     allocationRatioPlanned = allocationRatioPlanned,
     normalApproximation = normalApproximation,
     rounding = rounding)
@@ -4914,9 +5288,6 @@ getDesignMeanDiffCarryover <- function(
 #' * \code{stDev}: The common standard deviation.
 #'
 #' * \code{effectsize}: The effect size.
-#'
-#' * \code{calculationTarget}: The calculation target, \code{beta} or
-#'   \code{n}.
 #'
 #' * \code{allocationRatioPlanned}: Allocation ratio for the treatment
 #'   groups.
@@ -5020,7 +5391,6 @@ getDesignANOVA <- function(
     power = power, alpha = alpha, n = n,
     ngroups = ngroups, means = means, stDev = stDev,
     effectsize = vmu/stDev^2,
-    calculationTarget = ifelse(is.na(beta), "beta", "n"),
     allocationRatioPlanned = allocationRatioPlanned,
     rounding = rounding)
 
@@ -5064,9 +5434,6 @@ getDesignANOVA <- function(
 #'
 #' * \code{effectsizeAB}: The effect size for Factor A and Factor B
 #'   interaction.
-#'
-#' * \code{calculationTarget}: The calculation target, \code{beta} or
-#'   \code{n}.
 #'
 #' * \code{rounding}: Whether to round up sample size.
 #'
@@ -5226,7 +5593,6 @@ getDesignTwoWayANOVA <- function(
     nlevelsB = nlevelsB, means = means, stDev = stDev,
     effectsizeA = effectsizeA, effectsizeB = effectsizeB,
     effectsizeAB = effectsizeAB,
-    calculationTarget = ifelse(is.na(beta), "beta", "n"),
     rounding = rounding,
     powerdf = powerdf)
 
@@ -5281,9 +5647,6 @@ getDesignTwoWayANOVA <- function(
 #'   hypothesis.
 #'
 #' * \code{effectsize}: The effect size.
-#'
-#' * \code{calculationTarget}: The calculation target, \code{beta} or
-#'   \code{n}.
 #'
 #' * \code{allocationRatioPlanned}: Allocation ratio for the treatment
 #'   groups.
@@ -5402,7 +5765,6 @@ getDesignANOVAContrast <- function(
     ngroups = ngroups, means = means, stDev = stDev,
     contrast = contrast, meanContrastH0 = meanContrastH0,
     meanContrast = meanContrast, effectsize = theta^2/v1,
-    calculationTarget = ifelse(is.na(beta), "beta", "n"),
     allocationRatioPlanned = allocationRatioPlanned,
     rounding = rounding)
 
@@ -5435,7 +5797,7 @@ getDesignANOVAContrast <- function(
 #' and \eqn{e_{ij} \sim N(0, \sigma_e^2)} denotes the within-subject
 #' residual. If we set \eqn{\beta_k = 0}, then \eqn{\alpha} is the
 #' mean of the last treatment (control), and \eqn{\beta_j} is the
-#' difference in mean between the \eqn{j}th treatment and the control
+#' difference in means between the \eqn{j}th treatment and the control
 #' for \eqn{j=1,\ldots,k-1}.
 #'
 #' The repeated measures have a compound symmetry covariance structure.
@@ -5474,9 +5836,6 @@ getDesignANOVAContrast <- function(
 #' * \code{corr}: The correlation among the repeated measures.
 #'
 #' * \code{effectsize}: The effect size.
-#'
-#' * \code{calculationTarget}: The calculation target, \code{beta} or
-#'   \code{n}.
 #'
 #' * \code{rounding}: Whether to round up sample size.
 #'
@@ -5560,7 +5919,6 @@ getDesignRepeatedANOVA <- function(
     power = power, alpha = alpha, n = n,
     ngroups = ngroups, means = means, stDev = stDev,
     corr = corr, effectsize = ngroups*vmu/(stDev^2*(1-corr)),
-    calculationTarget = ifelse(is.na(beta), "beta", "n"),
     rounding = rounding)
 
   attr(des, "class") = "designRepeatedANOVA"
@@ -5613,9 +5971,6 @@ getDesignRepeatedANOVA <- function(
 #'   hypothesis.
 #'
 #' * \code{effectsize}: The effect size.
-#'
-#' * \code{calculationTarget}: The calculation target, \code{beta} or
-#'   \code{n}.
 #'
 #' * \code{rounding}: Whether to round up sample size.
 #'
@@ -5714,7 +6069,6 @@ getDesignRepeatedANOVAContrast <- function(
     ngroups = ngroups, means = means, stDev = stDev, corr = corr,
     contrast = contrast, meanContrastH0 = meanContrastH0,
     meanContrast = meanContrast, effectsize = theta^2/v1,
-    calculationTarget = ifelse(is.na(beta), "beta", "n"),
     rounding = rounding)
 
   attr(des, "class") = "designRepeatedANOVAContrast"
@@ -5867,9 +6221,6 @@ getDesignRepeatedANOVAContrast <- function(
 #'     - \code{userBetaSpending}: The user defined beta spending.
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
-#'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
 #'
 #'     - \code{normalApproximation}: The type of computation of the p-values.
 #'       If \code{TRUE}, the variance is assumed to be known, otherwise
@@ -6112,7 +6463,6 @@ getDesignOneSlope <- function(
   des$byStageResults$numberOfSubjects =
     des$byStageResults$informationRates*n
 
-  des$settings$calculationTarget = ifelse(is.na(beta), "beta", "n")
   des$settings$normalApproximation = normalApproximation
   des$settings$rounding = rounding
   des$settings$varianceRatio = NULL
@@ -6273,9 +6623,6 @@ getDesignOneSlope <- function(
 #'     - \code{userBetaSpending}: The user defined beta spending.
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
-#'
-#'     - \code{calculationTarget}: The calculation target, \code{beta} or
-#'       \code{n}.
 #'
 #'     - \code{allocationRatioPlanned}: Allocation ratio for the active
 #'       treatment versus control.
@@ -6524,7 +6871,6 @@ getDesignSlopeDiff <- function(
   des$byStageResults$numberOfSubjects =
     des$byStageResults$informationRates*n
 
-  des$settings$calculationTarget = ifelse(is.na(beta), "beta", "n")
   des$settings$allocationRatioPlanned = allocationRatioPlanned
   des$settings$normalApproximation = normalApproximation
   des$settings$rounding = rounding
@@ -6536,14 +6882,13 @@ getDesignSlopeDiff <- function(
 }
 
 
-#' @title Power and sample for two-sample slope difference
+#' @title Group sequential design for two-sample slope difference
 #' from the MMRM model
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for two-sample slope difference from the growth curve
 #' MMRM model.
 #'
 #' @param beta The type II error.
-#' @param n The total sample size.
 #' @param slopeDiffH0 The slope difference under the null hypothesis.
 #'   Defaults to 0.
 #' @param slopeDiff The slope difference under the alternative
@@ -6553,23 +6898,43 @@ getDesignSlopeDiff <- function(
 #' @param stDevSlope The standard deviation of the random slope.
 #' @param corrInterceptSlope The correlation between the random
 #'   intercept and random slope.
-#' @param k The number of time points including the baseline.
-#' @param t The time points. It should have \code{k} elements,
-#'   start with 0 corresponding to the baseline time point, and
-#'   be increasing.
-#' @param cumdrop1 The cumulative dropout rate at the given
-#'   time points for the active treatment group.
-#' @param cumdrop2 The cumulative dropout rate at the given
-#'   time points for the control group. If missing, it will be set
-#'   equal to the cumulative dropout rate for the active treatment group.
-#' @param allocationRatioPlanned Allocation ratio for the active
-#'   treatment versus control. Defaults to 1 for equal randomization.
+#' @param w The number of time units per measurement visit in a period.
+#' @param N The number of measurement visits in a period.
+#' @inheritParams param_accrualTime
+#' @inheritParams param_accrualIntensity
+#' @inheritParams param_piecewiseSurvivalTime
+#' @inheritParams param_gamma1
+#' @inheritParams param_gamma2
+#' @inheritParams param_accrualDuration
+#' @inheritParams param_followupTime
+#' @inheritParams param_allocationRatioPlanned
 #' @param normalApproximation The type of computation of the p-values.
 #'   If \code{TRUE}, the variance is assumed to be known, otherwise
-#'   the calculations are performed with the t distribution.
+#'   the calculations are performed with the t distribution. The
+#'   degrees of freedom for the t-distribution for testing the slope
+#'   difference is calculated using the containment method, and
+#'   is equal to the total number of observations minus two times
+#'   the total number of subjects. The exact calculation using the
+#'   t distribution is only implemented for the fixed design.
 #' @param rounding Whether to round up sample size. Defaults to 1 for
 #'   sample size rounding.
-#' @param alpha The one-sided significance level. Defaults to 0.025.
+#' @inheritParams param_kMax
+#' @param informationRates The information rates. Defaults to
+#'   \code{(1:kMax) / kMax} if left unspecified.
+#' @inheritParams param_efficacyStopping
+#' @inheritParams param_futilityStopping
+#' @inheritParams param_criticalValues
+#' @inheritParams param_alpha
+#' @inheritParams param_typeAlphaSpending
+#' @inheritParams param_parameterAlphaSpending
+#' @inheritParams param_userAlphaSpending
+#' @inheritParams param_futilityBounds
+#' @inheritParams param_typeBetaSpending
+#' @inheritParams param_parameterBetaSpending
+#' @inheritParams param_userBetaSpending
+#' @param spendingTime A vector of length \code{kMax} for the error spending
+#'   time at each analysis. Defaults to missing, in which case, it is the
+#'   same as \code{informationRates}.
 #'
 #' @details
 #'
@@ -6582,7 +6947,7 @@ getDesignSlopeDiff <- function(
 #'
 #' * \eqn{\beta}: slope for the control group
 #'
-#' * \eqn{\gamma}: difference in slope between the active treatment and
+#' * \eqn{\gamma}: difference in slopes between the active treatment and
 #'   control groups
 #'
 #' * \eqn{x_i}: treatment indicator for subject \eqn{i},
@@ -6598,99 +6963,266 @@ getDesignSlopeDiff <- function(
 #' * \eqn{e_{ij}}: within-subject residual with variance \eqn{\sigma_e^2}
 #'
 #' By accounting for randomization, we improve the efficiency for
-#' estimating the difference in slope. We also allow for non-equal
+#' estimating the difference in slopes. We also allow for non-equal
 #' spacing of the time points and missing data due to dropouts.
 #'
-#' @return An S3 class \code{designSlopeDiffMMRM} object with the following
+#' @return An S3 class \code{designSlopeDiffMMRM} object with three
 #' components:
 #'
-#' * \code{power}: The power to reject the null hypothesis.
+#' * \code{overallResults}: A data frame containing the following variables:
 #'
-#' * \code{alpha}: The one-sided significance level.
+#'     - \code{overallReject}: The overall rejection probability.
 #'
-#' * \code{numberOfSubjects}: The maximum number of subjects.
+#'     - \code{alpha}: The overall significance level.
 #'
-#' * \code{slopeDiffH0}: The slope difference under the null hypothesis.
+#'     - \code{attainedAlpha}: The attained significance level, which is
+#'       different from the overall significance level in the presence of
+#'       futility stopping.
 #'
-#' * \code{slopeDiff}: The slope difference under the alternative
-#'   hypothesis.
+#'     - \code{kMax}: The number of stages.
 #'
-#' * \code{stDev}: The standard deviation of the residual.
+#'     - \code{theta}: The parameter value.
 #'
-#' * \code{stDevIntercept}: The standard deviation of the random
-#'   intercept.
+#'     - \code{information}: The maximum information.
 #'
-#' * \code{stDevSlope}: The standard deviation of the random slope.
+#'     - \code{expectedInformationH1}: The expected information under H1.
 #'
-#' * \code{corrInterceptSlope}: The correlation between the random
-#'   intercept and random slope.
+#'     - \code{expectedInformationH0}: The expected information under H0.
 #'
-#' * \code{k}: The number of time points including the baseline.
+#'     - \code{drift}: The drift parameter, equal to
+#'       \code{theta*sqrt(information)}.
 #'
-#' * \code{t}: The time points.
+#'     - \code{inflationFactor}: The inflation factor (relative to the
+#'       fixed design).
 #'
-#' * \code{cumdrop1}: The cumulative dropout rate at the given
-#'   time points for the active treatment group.
+#'     - \code{numberOfSubjects}: The maximum number of subjects.
 #'
-#' * \code{cumdrop2}: The cumulative dropout rate at the given
-#'   time points for the control group.
+#'     - \code{studyDuration}: The maximum study duration.
 #'
-#' * \code{calculationTarget}: The calculation target, \code{beta} or
-#'   \code{n}.
+#'     - \code{expectedNumberOfSubjectsH1}: The expected number of subjects
+#'       under H1.
 #'
-#' * \code{allocationRatioPlanned}: Allocation ratio for the active
-#'   treatment versus control.
+#'     - \code{expectedNumberOfSubjectsH0}: The expected number of subjects
+#'       under H0.
 #'
-#' * \code{normalApproximation}: The type of computation of the p-values.
-#'   If \code{TRUE}, the variance is assumed to be known, otherwise
-#'   the calculations are performed with the t distribution.
+#'     - \code{expectedStudyDurationH1}: The expected study duration
+#'       under H1.
 #'
-#' * \code{rounding}: Whether to round up sample size.
+#'     - \code{expectedStudyDurationH0}: The expected study duration
+#'       under H0.
+#'
+#'     - \code{accrualDuration}: The accrual duration.
+#'
+#'     - \code{followupTime}: The follow-up time.
+#'
+#'     - \code{fixedFollowup}: Whether a fixed follow-up design is used.
+#'
+#'     - \code{slopeDiffH0}: The slope difference under H0.
+#'
+#'     - \code{slopeDiff}: The slope difference under H1.
+#'
+#' * \code{byStageResults}: A data frame containing the following variables:
+#'
+#'     - \code{informationRates}: The information rates.
+#'
+#'     - \code{efficacyBounds}: The efficacy boundaries on the Z-scale.
+#'
+#'     - \code{futilityBounds}: The futility boundaries on the Z-scale.
+#'
+#'     - \code{rejectPerStage}: The probability for efficacy stopping.
+#'
+#'     - \code{futilityPerStage}: The probability for futility stopping.
+#'
+#'     - \code{cumulativeRejection}: The cumulative probability for efficacy
+#'       stopping.
+#'
+#'     - \code{cumulativeFutility}: The cumulative probability for futility
+#'       stopping.
+#'
+#'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
+#'
+#'     - \code{efficacyP}: The efficacy boundaries on the p-value scale.
+#'
+#'     - \code{futilityP}: The futility boundaries on the p-value scale.
+#'
+#'     - \code{information}: The cumulative information.
+#'
+#'     - \code{efficacyStopping}: Whether to allow efficacy stopping.
+#'
+#'     - \code{futilityStopping}: Whether to allow futility stopping.
+#'
+#'     - \code{rejectPerStageH0}: The probability for efficacy stopping
+#'       under H0.
+#'
+#'     - \code{futilityPerStageH0}: The probability for futility stopping
+#'       under H0.
+#'
+#'     - \code{cumulativeRejectionH0}: The cumulative probability for
+#'       efficacy stopping under H0.
+#'
+#'     - \code{cumulativeFutilityH0}: The cumulative probability for futility
+#'       stopping under H0.
+#'
+#'     - \code{efficacySlopeDiff}: The efficacy boundaries on the slope
+#'       difference scale.
+#'
+#'     - \code{futilitySlopeDiff}: The futility boundaries on the slope
+#'       difference scale.
+#'
+#'     - \code{numberOfSubjects}: The number of subjects.
+#'
+#'     - \code{analysisTime}: The average time since trial start.
+#'
+#' * \code{settings}: A list containing the following input parameters:
+#'
+#'     - \code{typeAlphaSpending}: The type of alpha spending.
+#'
+#'     - \code{parameterAlphaSpending}: The parameter value for alpha
+#'       spending.
+#'
+#'     - \code{userAlphaSpending}: The user defined alpha spending.
+#'
+#'     - \code{typeBetaSpending}: The type of beta spending.
+#'
+#'     - \code{parameterBetaSpending}: The parameter value for beta spending.
+#'
+#'     - \code{userBetaSpending}: The user defined beta spending.
+#'
+#'     - \code{spendingTime}: The error spending time at each analysis.
+#'
+#'     - \code{allocationRatioPlanned}: The allocation ratio for the active
+#'       treatment versus control.
+#'
+#'     - \code{accrualTime}: A vector that specifies the starting time of
+#'       piecewise Poisson enrollment time intervals.
+#'
+#'     - \code{accrualIntensity}: A vector of accrual intensities.
+#'        One for each accrual time interval.
+#'
+#'     - \code{piecewiseSurvivalTime}: A vector that specifies the
+#'       starting time of piecewise exponential survival time intervals.
+#'
+#'     - \code{gamma1}: The hazard rate for exponential dropout or
+#'       a vector of hazard rates for piecewise exponential dropout
+#'       for the active treatment group.
+#'
+#'     - \code{gamma2}: The hazard rate for exponential dropout or
+#'       a vector of hazard rates for piecewise exponential dropout
+#'       for the control group.
+#'
+#'     - \code{w}: The number of time units per measurement visit in a
+#'       period.
+#'
+#'     - \code{N}: The number of measurement visits in a period.
+#'
+#'     - \code{stdDev}: The standard deviation of the residual.
+#'
+#'     - \code{G}: The covariance matrix for the random intercept and
+#'       random slope.
+#'
+#'     - \code{normalApproximation}: The type of computation of the p-values.
+#'       If \code{TRUE}, the variance is assumed to be known, otherwise
+#'       the calculations are performed with the t distribution.
+#'
+#'     - \code{rounding}: Whether to round up sample size.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#'
+#' Daniel O. Scharfstein, Anastasios A. Tsiatis, and James M. Robins.
+#' Semiparametric efficiency and its implication on the
+#' design and analysis of group-sequential studies.
+#' Journal of the American Statistical Association 1997; 92:1342-1350.
 #'
 #' @examples
 #'
 #' (design1 <- getDesignSlopeDiffMMRM(
-#'   beta = 0.1, n = NA, slopeDiff = -1,
-#'   stDev = 4, stDevIntercept = 10,
-#'   stDevSlope = 6, corrInterceptSlope = 0.5,
-#'   k = 7, t = seq(0, 6),
-#'   normalApproximation = TRUE, alpha = 0.025))
+#'   beta = 0.2, slopeDiff = log(1.15)/52,
+#'   stDev = sqrt(.182),
+#'   stDevIntercept = sqrt(.238960),
+#'   stDevSlope = sqrt(.000057),
+#'   corrInterceptSlope = .003688/sqrt(.238960*.000057),
+#'   w = 8,
+#'   N = 10000,
+#'   accrualIntensity = 15,
+#'   gamma1 = 1/(4.48*52),
+#'   gamma2 = 1/(4.48*52),
+#'   accrualDuration = NA,
+#'   followupTime = 8,
+#'   alpha = 0.025))
 #'
 #' @export
 getDesignSlopeDiffMMRM <- function(
     beta = NA_real_,
-    n = NA_real_,
     slopeDiffH0 = 0,
     slopeDiff = 0.5,
     stDev = 1,
     stDevIntercept = 1,
     stDevSlope = 1,
     corrInterceptSlope = 0.5,
-    k = NA_integer_,
-    t = NA_real_,
-    cumdrop1 = rep(0, k),
-    cumdrop2 = NA_real_,
+    w = NA_real_,
+    N = NA_real_,
+    accrualTime = 0,
+    accrualIntensity = NA_real_,
+    piecewiseSurvivalTime = 0,
+    gamma1 = 0,
+    gamma2 = 0,
+    accrualDuration = NA_real_,
+    followupTime = NA_real_,
     allocationRatioPlanned = 1,
     normalApproximation = TRUE,
     rounding = TRUE,
-    alpha = 0.025) {
+    kMax = 1L,
+    informationRates = NA_real_,
+    efficacyStopping = NA_integer_,
+    futilityStopping = NA_integer_,
+    criticalValues = NA_real_,
+    alpha = 0.025,
+    typeAlphaSpending = "sfOF",
+    parameterAlphaSpending = NA_real_,
+    userAlphaSpending = NA_real_,
+    futilityBounds = NA_real_,
+    typeBetaSpending = "none",
+    parameterBetaSpending = NA_real_,
+    userBetaSpending = NA_real_,
+    spendingTime = NA_real_) {
 
-  if (is.na(beta) && is.na(n)) {
-    stop("beta and n cannot be both missing")
+  m = length(w)
+  cumN = c(0, cumsum(N))
+  cumwN = c(0, cumsum(w*N))
+
+  nintervals = length(piecewiseSurvivalTime)
+
+  if (is.na(beta) + is.na(accrualDuration) + is.na(followupTime) > 1) {
+    stop(paste("At most one can be missing among beta, accrualDuration,",
+               "and followupTime"))
   }
 
-  if (!is.na(beta) && !is.na(n)) {
-    stop("Only one of beta and n should be provided")
+  if (is.na(beta)) {
+    unknown = "beta"
+  } else if (is.na(accrualDuration)) {
+    unknown = "accrualDuration"
+  } else if (is.na(followupTime)) {
+    unknown = "followupTime"
+  } else {
+    unknown = "accrualIntensity"
   }
 
   if (!is.na(beta) && (beta >= 1-alpha || beta < 0.0001)) {
     stop("beta must lie in [0.0001, 1-alpha)")
   }
 
-  if (!is.na(n) && n <= 0) {
-    stop("n must be positive")
+  if (any(w <= 0)) {
+    stop("Elements of w must be positive")
+  }
+
+  if (length(N) != m) {
+    stop("w and N must have the same length")
+  }
+
+  if (any(N <= 0)) {
+    stop("Elements of N must be positive")
   }
 
   if (stDev <= 0) {
@@ -6709,48 +7241,65 @@ getDesignSlopeDiffMMRM <- function(
     stop("corrInterceptSlope must lie between -1 and 1")
   }
 
-  if (is.na(k)) {
-    stop("k must be provided")
+  if (accrualTime[1] != 0) {
+    stop("accrualTime must start with 0")
   }
 
-  if (k < 2 || k != round(k)) {
-    stop("k must be a positive integer >= 2")
+  if (length(accrualTime) > 1 && any(diff(accrualTime) <= 0)) {
+    stop("accrualTime should be increasing")
   }
 
-  if (any(is.na(t))) {
-    stop("t must be provided")
+  if (any(is.na(accrualIntensity))) {
+    stop("accrualIntensity must be provided")
   }
 
-  if (length(t) != k) {
-    stop(paste("t must have length", k))
+  if (length(accrualTime) != length(accrualIntensity)) {
+    stop("accrualTime and accrualIntensity must have the same length")
   }
 
-  if (t[1] != 0) {
-    stop("t must start with 0")
+  if (any(accrualIntensity < 0)) {
+    stop("accrualIntensity must be non-negative")
   }
 
-  if (any(diff(t) <= 0)) {
-    stop("t must be increasing")
+  if (piecewiseSurvivalTime[1] != 0) {
+    stop("piecewiseSurvivalTime must start with 0")
   }
 
-  if (any(cumdrop1 < 0)) {
-    stop("Elements of cumdrop1 must be nonnegative")
-  } else if (k > 1 && any(diff(cumdrop1) < 0)) {
-    stop("Elements of cumdrop1 must be nondecreasing")
-  } else if (any(cumdrop1 >= 1)) {
-    stop("Elements of cumdrop1 must be less than 1")
+  if (nintervals > 1 && any(diff(piecewiseSurvivalTime) <= 0)) {
+    stop("piecewiseSurvivalTime should be increasing")
   }
 
-  if (any(is.na(cumdrop2))) {
-    cumdrop2 = cumdrop1
-  } else if (any(cumdrop2 < 0)) {
-    stop("Elements of cumdrop2 must be nonnegative")
-  } else if (k > 1 && any(diff(cumdrop2) < 0)) {
-    stop("Elements of cumdrop2 must be nondecreasing")
-  } else if (any(cumdrop2 >= 1)) {
-    stop("Elements of cumdrop2 must be less than 1")
+  if (any(gamma1 < 0)) {
+    stop("gamma1 must be non-negative")
   }
 
+  if (any(gamma2 < 0)) {
+    stop("gamma2 must be non-negative")
+  }
+
+  if (length(gamma1) != 1 && length(gamma1) != nintervals) {
+    stop("Invalid length for gamma1")
+  }
+
+  if (length(gamma2) != 1 && length(gamma2) != nintervals) {
+    stop("Invalid length for gamma2")
+  }
+
+  if (length(gamma1) == 1) {
+    gamma1 = rep(gamma1, nintervals)
+  }
+
+  if (length(gamma2) == 1) {
+    gamma2 = rep(gamma2, nintervals)
+  }
+
+  if (!is.na(accrualDuration) && accrualDuration <= 0) {
+    stop("accrualDuration must be positive")
+  }
+
+  if (!is.na(followupTime) && followupTime < 0) {
+    stop("followupTime must be nonnegative")
+  }
 
   if (allocationRatioPlanned <= 0) {
     stop("allocationRatioPlanned must be positive")
@@ -6758,6 +7307,10 @@ getDesignSlopeDiffMMRM <- function(
 
   if (alpha < 0.00001 || alpha >= 1) {
     stop("alpha must lie in [0.00001, 1)")
+  }
+
+  if (any(is.na(informationRates))) {
+    informationRates = (1:kMax)/kMax
   }
 
 
@@ -6768,80 +7321,427 @@ getDesignSlopeDiffMMRM <- function(
   theta = ifelse(directionUpper, slopeDiff - slopeDiffH0,
                  slopeDiffH0 - slopeDiff)
 
-  # observed data pattern probabilities
-  p1 = diff(c(cumdrop1, 1))
-  p2 = diff(c(cumdrop2, 1))
 
-  # covariance matrix of the repeated measures within a subject
   v11 = stDevIntercept^2
   v12 = corrInterceptSlope*stDevIntercept*stDevSlope
   v22 = stDevSlope^2
-  covar = v11 + v12*matrix(t, k, k, byrow = TRUE) +
-    v12*matrix(t, k, k) + v22*outer(t, t) + stDev^2*diag(k)
 
-  X1 = matrix(c(rep(1,k), t, t), k, 3)
-  X2 = matrix(c(rep(1,k), t, rep(0,k)), k, 3)
+  G = matrix(c(v11, v12, v12, v22), 2, 2)
 
-  # information matrix per subject
-  I1 = 0
-  I2 = 0
-  for (j in 1:k) {
-    if (j==1) {
-      x1 = t(as.matrix(X1[1:j,]))
-      x2 = t(as.matrix(X2[1:j,]))
-    } else {
-      x1 = X1[1:j,]
-      x2 = X2[1:j,]
+  # function to obtain the info for slope difference
+  f_info <- function(tau, w, m, cumN, cumwN, stDev, G,
+                     accrualTime, accrualIntensity,
+                     piecewiseSurvivalTime, gamma1, gamma2,
+                     accrualDuration, r) {
+
+    # total number of enrolled subjects at interim analysis
+    n = accrual(tau, accrualTime, accrualIntensity, accrualDuration)
+
+    i = findInterval(tau, cumwN)
+    k = floor((tau - cumwN[i])/w[i]) + cumN[i] + 1
+
+    j = 1:k
+    i = pmax(findInterval(j-2, cumN), 1)
+    t = cumwN[i] + (j - cumN[i] - 1)*w[i]
+
+    # total number of enrolled subjects at each time point
+    ns = accrual(tau - t, accrualTime, accrualIntensity, accrualDuration)
+
+    # probability of not dropping out at each time point by treatment
+    q1 = ptpwexp(t, piecewiseSurvivalTime, gamma1, lower.tail = FALSE)
+    q2 = ptpwexp(t, piecewiseSurvivalTime, gamma2, lower.tail = FALSE)
+
+    # number of subjects remaining at each time point by treatment
+    m1 = r*ns*q1
+    m2 = (1-r)*ns*q2
+
+    # number of subjects dropping out at each time point by treatment
+    n1 = c(-diff(m1), m1[k])
+    n2 = c(-diff(m2), m2[k])
+
+    Z = matrix(c(rep(1,k), t), k, 2)
+    covar = Z %*% G %*% t(Z) + stDev^2*diag(k)
+
+    X1 = matrix(c(rep(1,k), t, t), k, 3)
+    X2 = matrix(c(rep(1,k), t, rep(0,k)), k, 3)
+
+    # information matrix per subject
+    I1 = 0
+    I2 = 0
+    for (j in 1:k) {
+      if (j==1) {
+        x1 = t(as.matrix(X1[1:j,]))
+        x2 = t(as.matrix(X2[1:j,]))
+      } else {
+        x1 = X1[1:j,]
+        x2 = X2[1:j,]
+      }
+
+      I = solve(covar[1:j, 1:j])
+      I1 = I1 + n1[j]*t(x1) %*% I %*% x1
+      I2 = I2 + n2[j]*t(x2) %*% I %*% x2
     }
 
-    I = solve(covar[1:j, 1:j])
-    I1 = I1 + p1[j]*t(x1) %*% I %*% x1
-    I2 = I2 + p2[j]*t(x2) %*% I %*% x2
-  }
+    # variance for common intercept, control slope, and slope difference
+    V = solve(I1 + I2)
 
-  # variance for one sampling unit
-  v1 = solve(r*I1 + (1-r)*I2)[3,3]
+    # information for slope difference
+    IMax = 1/V[3,3]
 
-  # power for t test
-  f = function(n) {
-    nu = n - 1
-    b = qt(1-alpha, nu)
-    ncp = theta*sqrt(n/v1)
-    pt(b, nu, ncp, lower.tail = FALSE)
+    # residual degrees of freedom
+    nu = sum((n1 + n2)*(1:k)) - 2*n
+
+    list(IMax = IMax, nu = nu)
   }
 
 
-  if (is.na(n)) { # calculate the sample size
-    if (normalApproximation) {
-      n = (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
+  # power calculation
+  if (is.na(beta)) {
+    n = accrual(accrualDuration, accrualTime, accrualIntensity,
+                accrualDuration)
+
+    if (rounding) {
+      n = ceiling(n)
+      accrualDuration = getAccrualDurationFromN(n, accrualTime,
+                                                accrualIntensity)
+    }
+
+    studyDuration = accrualDuration + followupTime
+    out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                 accrualTime, accrualIntensity,
+                 piecewiseSurvivalTime, gamma1, gamma2,
+                 accrualDuration, r)
+
+    IMax = out$IMax
+    nu = out$nu
+
+    des = getDesign(
+      beta, IMax, theta,
+      kMax, informationRates,
+      efficacyStopping, futilityStopping,
+      criticalValues, alpha, typeAlphaSpending,
+      parameterAlphaSpending, userAlphaSpending,
+      futilityBounds, typeBetaSpending,
+      parameterBetaSpending, userBetaSpending,
+      spendingTime)
+
+    if (kMax == 1 && !normalApproximation) { # t-test for fixed design
+      if (!any(is.na(criticalValues))) {
+        alpha = 1 - pnorm(criticalValues)
+      }
+
+      b = qt(1-alpha, nu)
+      ncp = theta*sqrt(IMax)
+      power = pt(b, nu, ncp, lower.tail = FALSE)
+
+      des$overallResults$overallReject = power
+      des$byStageResults$rejectPerStage = power
+      des$byStageResults$futilityPerStage = 1 - power
+      des$byStageResults$cumulativeRejection = power
+      des$byStageResults$cumulativeFutility = 1 - power
+      des$byStageResults$efficacyBounds = b
+      des$byStageResults$futilityBounds = b
+
+      delta = b/sqrt(IMax)
+      if (directionUpper) {
+        des$byStageResults$efficacySlopeDiff = delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff = delta + slopeDiffH0
+      } else {
+        des$byStageResults$efficacySlopeDiff = -delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff = -delta + slopeDiffH0
+      }
     } else {
-      n0 = (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
-      n = uniroot(function(n) f(n) - (1-beta), c(n0, 2*n0))$root
+      if (directionUpper) {
+        des$byStageResults$efficacySlopeDiff =
+          des$byStageResults$efficacyTheta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff =
+          des$byStageResults$futilityTheta + slopeDiffH0
+      } else {
+        des$byStageResults$efficacySlopeDiff =
+          -des$byStageResults$efficacyTheta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff =
+          -des$byStageResults$futilityTheta + slopeDiffH0
+      }
+    }
+  } else { # sample size calculation
+    des = getDesign(
+      beta, NA, theta,
+      kMax, informationRates,
+      efficacyStopping, futilityStopping,
+      criticalValues, alpha, typeAlphaSpending,
+      parameterAlphaSpending, userAlphaSpending,
+      futilityBounds, typeBetaSpending,
+      parameterBetaSpending, userBetaSpending,
+      spendingTime)
+
+    IMax = des$overallResults$information
+
+    if (kMax == 1 && !normalApproximation) { # t-test for fixed design
+      if (unknown == "accrualDuration") {
+        accrualDuration = uniroot(function(x) {
+          studyDuration = x + followupTime
+          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                       accrualTime, accrualIntensity,
+                       piecewiseSurvivalTime, gamma1, gamma2,
+                       x, r)
+          out$IMax - IMax
+        }, c(0.001, 240))$root
+      } else if (unknown == "followupTime") {
+        followupTime = uniroot(function(x) {
+          studyDuration = accrualDuration + x
+          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                       accrualTime, accrualIntensity,
+                       piecewiseSurvivalTime, gamma1, gamma2,
+                       accrualDuration, r)
+          out$IMax - IMax
+        }, c(0.001, 240))$root
+      } else {
+        accrualIntensity = uniroot(function(x) {
+          studyDuration = accrualDuration + followupTime
+          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                       accrualTime, x*accrualIntensity,
+                       piecewiseSurvivalTime, gamma1, gamma2,
+                       accrualDuration, r)
+          out$IMax - IMax
+        }, c(0.001, 240))$root*accrualIntensity
+      }
+
+      studyDuration = accrualDuration + followupTime
+      out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                   accrualTime, accrualIntensity,
+                   piecewiseSurvivalTime, gamma1, gamma2,
+                   accrualDuration, r)
+
+      nu = out$nu # this serves as the lower bound for degrees of freedom
+
+      if (!any(is.na(criticalValues))) {
+        alpha = 1 - pnorm(criticalValues)
+      }
+
+      # power for t-test
+      b = qt(1-alpha, nu)
+
+      info = uniroot(function(info) {
+        ncp = theta*sqrt(info)
+        pt(b, nu, ncp, lower.tail = FALSE) - (1-beta)
+      }, c(0.5*IMax, 1.5*IMax))$root
+
+
+      if (unknown == "accrualDuration") {
+        accrualDuration = uniroot(function(x) {
+          studyDuration = x + followupTime
+          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                       accrualTime, accrualIntensity,
+                       piecewiseSurvivalTime, gamma1, gamma2,
+                       x, r)
+          out$IMax - info
+        }, c(0.5*accrualDuration, 1.5*accrualDuration))$root
+      } else if (unknown == "followupTime") {
+        followupTime = uniroot(function(x) {
+          studyDuration = accrualDuration + x
+          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                       accrualTime, accrualIntensity,
+                       piecewiseSurvivalTime, gamma1, gamma2,
+                       accrualDuration, r)
+          out$IMax - info
+        }, c(0.5*followupTime, 1.5*followupTime))$root
+      } else {
+        accrualIntensity = uniroot(function(x) {
+          studyDuration = accrualDuration + followupTime
+          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                       accrualTime, x*accrualIntensity,
+                       piecewiseSurvivalTime, gamma1, gamma2,
+                       accrualDuration, r)
+          out$IMax - info
+        }, c(0.5, 1.5))$root*accrualIntensity
+      }
+
+      n = accrual(accrualDuration, accrualTime, accrualIntensity,
+                  accrualDuration)
+
+      if (rounding) {
+        n = ceiling(n)
+
+        if (unknown == "accrualDuration" || unknown == "followupTime") {
+          accrualDuration = getAccrualDurationFromN(n, accrualTime,
+                                                    accrualIntensity)
+        } else {
+          accrualIntensity = uniroot(function(x) {
+            accrual(accrualDuration, accrualTime, x*accrualIntensity,
+                    accrualDuration) - n
+          }, c(0.5, 1.5))$root*accrualIntensity
+        }
+      }
+
+      # update maximum information and degrees of freedom
+      studyDuration = accrualDuration + followupTime
+      out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                   accrualTime, accrualIntensity,
+                   piecewiseSurvivalTime, gamma1, gamma2,
+                   accrualDuration, r)
+
+      IMax = out$IMax
+      nu = out$nu
+      b = qt(1-alpha, nu)
+      ncp = theta*sqrt(IMax)
+      power = pt(b, nu, ncp, lower.tail = FALSE)
+
+      des$overallResults$overallReject = power
+      des$byStageResults$rejectPerStage = power
+      des$byStageResults$futilityPerStage = 1 - power
+      des$byStageResults$cumulativeRejection = power
+      des$byStageResults$cumulativeFutility = 1 - power
+      des$byStageResults$efficacyBounds = b
+      des$byStageResults$futilityBounds = b
+
+      delta = b/sqrt(IMax)
+      if (directionUpper) {
+        des$byStageResults$efficacySlopeDiff = delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff = delta + slopeDiffH0
+      } else {
+        des$byStageResults$efficacySlopeDiff = -delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff = -delta + slopeDiffH0
+      }
+    } else {
+      if (unknown == "accrualDuration") {
+        accrualDuration = uniroot(function(x) {
+          studyDuration = x + followupTime
+          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                       accrualTime, accrualIntensity,
+                       piecewiseSurvivalTime, gamma1, gamma2,
+                       x, r)
+          out$IMax - IMax
+        }, c(0.001, 240))$root
+      } else if (unknown == "followupTime") {
+        followupTime = uniroot(function(x) {
+          studyDuration = accrualDuration + x
+          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                       accrualTime, accrualIntensity,
+                       piecewiseSurvivalTime, gamma1, gamma2,
+                       accrualDuration, r)
+          out$IMax - IMax
+        }, c(0.001, 240))$root
+      } else {
+        accrualIntensity = uniroot(function(x) {
+          studyDuration = accrualDuration + followupTime
+          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                       accrualTime, x*accrualIntensity,
+                       piecewiseSurvivalTime, gamma1, gamma2,
+                       accrualDuration, r)
+          out$IMax - IMax
+        }, c(0.001, 240))$root*accrualIntensity
+      }
+
+      n = accrual(accrualDuration, accrualTime, accrualIntensity,
+                  accrualDuration)
+
+      if (rounding) {
+        n = ceiling(n)
+
+        if (unknown == "accrualDuration" || unknown == "followupTime") {
+          accrualDuration = getAccrualDurationFromN(n, accrualTime,
+                                                    accrualIntensity)
+        } else {
+          accrualIntensity = uniroot(function(x) {
+            accrual(accrualDuration, accrualTime, x*accrualIntensity,
+                    accrualDuration) - n
+          }, c(0.5, 1.5))$root*accrualIntensity
+        }
+
+
+        # final maximum information
+        studyDuration = accrualDuration + followupTime
+        out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                     accrualTime, accrualIntensity,
+                     piecewiseSurvivalTime, gamma1, gamma2,
+                     accrualDuration, r)
+
+        IMax = out$IMax
+
+        des = getDesign(
+          NA, IMax, theta,
+          kMax, informationRates,
+          efficacyStopping, futilityStopping,
+          criticalValues, alpha, typeAlphaSpending,
+          parameterAlphaSpending, userAlphaSpending,
+          futilityBounds, typeBetaSpending,
+          parameterBetaSpending, userBetaSpending,
+          spendingTime)
+      }
+
+      if (directionUpper) {
+        des$byStageResults$efficacySlopeDiff =
+          des$byStageResults$efficacyTheta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff =
+          des$byStageResults$futilityTheta + slopeDiffH0
+      } else {
+        des$byStageResults$efficacySlopeDiff =
+          -des$byStageResults$efficacyTheta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff =
+          -des$byStageResults$futilityTheta + slopeDiffH0
+      }
     }
   }
 
-  if (rounding) {
-    n = ceiling(n)
+
+  # timing of interim analysis
+  studyDuration = accrualDuration + followupTime
+  information = IMax*informationRates
+  analysisTime = rep(0, kMax)
+
+  if (kMax > 1) {
+    for (i in 1:(kMax-1)) {
+      analysisTime[i] = uniroot(function(tau) {
+        out = f_info(tau, w, m, cumN, cumwN, stDev, G,
+                     accrualTime, accrualIntensity,
+                     piecewiseSurvivalTime, gamma1, gamma2,
+                     accrualDuration, r)
+        out$IMax - information[i]
+      }, c(w[1]+0.001, studyDuration))$root
+    }
   }
 
-  if (normalApproximation) {
-    power = pnorm(theta*sqrt(n/v1) - qnorm(1-alpha))
-  } else {
-    power = f(n)
-  }
+  analysisTime[kMax] = studyDuration
 
-  des = list(
-    power = power, alpha = alpha, numberOfSubjects = n,
-    slopeDiffH0 = slopeDiffH0, slopeDiff = slopeDiff,
-    stDev = stDev, stDevIntercept = stDevIntercept,
-    stDevSlope = stDevSlope,
-    corrInterceptSlope = corrInterceptSlope,
-    k = k, t = t,
-    cumdrop1 = cumdrop1, cumdrop2 = cumdrop2,
-    calculationTarget = ifelse(is.na(beta), "beta", "n"),
-    allocationRatioPlanned = allocationRatioPlanned,
-    normalApproximation = normalApproximation,
-    rounding = rounding)
+  numberOfSubjects = accrual(analysisTime, accrualTime, accrualIntensity,
+                             accrualDuration)
+
+  p = des$byStageResults$rejectPerStage +
+    des$byStageResults$futilityPerStage
+
+  pH0 = des$byStageResults$rejectPerStageH0 +
+    des$byStageResults$futilityPerStageH0
+
+  des$overallResults$numberOfSubjects = n
+  des$overallResults$studyDuration = studyDuration
+  des$overallResults$expectedNumberOfSubjectsH1 = sum(p*numberOfSubjects)
+  des$overallResults$expectedNumberOfSubjectsH0 = sum(pH0*numberOfSubjects)
+  des$overallResults$expectedStudyDurationH1 = sum(p*analysisTime)
+  des$overallResults$expectedStudyDurationH0 = sum(pH0*analysisTime)
+  des$overallResults$accrualDuration = accrualDuration
+  des$overallResults$followupTime = followupTime
+  des$overallResults$fixedFollowup = FALSE
+  des$overallResults$slopeDiffH0 = slopeDiffH0
+  des$overallResults$slopeDiff = slopeDiff
+
+  des$byStageResults$numberOfSubjects = numberOfSubjects
+  des$byStageResults$analysisTime = analysisTime
+  des$byStageResults$efficacyTheta = NULL
+  des$byStageResults$futilityTheta = NULL
+
+  des$settings$allocationRatioPlanned = allocationRatioPlanned
+  des$settings$accrualTime = accrualTime
+  des$settings$accrualIntensity = accrualIntensity
+  des$settings$piecewiseSurvivalTime = piecewiseSurvivalTime
+  des$settings$gamma1 = gamma1
+  des$settings$gamma2 = gamma2
+  des$settings$w = w
+  des$settings$N = N
+  des$settings$stDev = stDev
+  des$settings$G = G
+  des$settings$normalApproximation = normalApproximation
+  des$settings$rounding = rounding
+  des$settings$varianceRatio = NULL
 
   attr(des, "class") = "designSlopeDiffMMRM"
 
@@ -6873,7 +7773,7 @@ getDesignSlopeDiffMMRM <- function(
 #' \deqn{c(m) = 1 - \frac{3}{4m-1}.}
 #' Since \eqn{c(m) < 1}, Cohen's \eqn{d} overestimates the true effect size.
 #' \eqn{\delta = (\mu_1 - \mu_2)/\sigma.}
-#' Since \deqn{t = \sqrt{\tilde{n} d},} we have
+#' Since \deqn{t = \sqrt{\tilde{n}} d,} we have
 #' \deqn{g = \frac{c(m)}{\sqrt{\tilde{n}}} t,} where \eqn{t}
 #' has a noncentral \eqn{t} distribution with \eqn{m} degrees of freedom
 #' and noncentrality parameter \eqn{\sqrt{\tilde{n}} \delta}.
@@ -7045,7 +7945,8 @@ survQuantile <- function(
                df1$event[i-1] == 1 &&
                df1$time[i] == df1$time[i-1]) { # tied event
       nevent = nevent + 1
-    } else if (df1$event[i] == 0 && df1$event[i-1] == 1) { # new censoring
+    } else if (i >= 2 && df1$event[i] == 0 && df1$event[i-1] == 1) {
+      # new censoring
       # add the info for the previous event
       df2 = rbind(df2, data.frame(time = t, nrisk = nrisk,
                                   nevent = nevent))
@@ -7071,11 +7972,6 @@ survQuantile <- function(
 
   # obtain the quantile estimate and confidence interval
   a = lapply(probs, function(p) {
-    # point estimate of the quantile
-    if (any(df2$surv < 1 - p)) {
-      q = df2$time[min(which(df2$surv < 1 - p))]
-    }
-
     # Brookmeyer & Crowley confidence interval for quantile
     if (transform == "linear") {
       z = (df2$surv - (1-p))/df2$sesurv
@@ -7107,9 +8003,13 @@ survQuantile <- function(
       }
     }
 
-    data.frame(prob = p, quantile = q, lower = lower, upper = upper)
+    if (any(df2$surv < 1 - p)) {
+      q = df2$time[min(which(df2$surv < 1 - p))]
+      data.frame(prob = p, quantile = q, lower = lower, upper = upper)
+    } else {
+      data.frame(prob = p, quantile = NA, lower = lower, upper = upper)
+    }
   })
-
 
   b = do.call("rbind", a)
   b$cilevel = cilevel
