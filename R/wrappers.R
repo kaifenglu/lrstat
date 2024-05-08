@@ -36,7 +36,7 @@ errorSpent <- function(t, error, sf = "sfOF", sfpar = NA) {
 #' @inheritParams param_lambda
 #' @param lowerBound The left truncation time point for the survival time.
 #'   Defaults to 0 for no truncation.
-#' @param lower.tail Logical; if TRUE (default), probabilities are P(X <= x), 
+#' @param lower.tail Logical; if TRUE (default), probabilities are P(X <= x),
 #'   otherwise, P(X > x).
 #' @param log.p Logical; if TRUE, probabilities p are given as log(p).
 
@@ -91,7 +91,7 @@ ptpwexp <- function(q, piecewiseSurvivalTime = 0, lambda = 0.0578,
 #' @inheritParams param_lambda
 #' @param lowerBound The left truncation time point for the survival time.
 #'   Defaults to 0 for no truncation.
-#' @param lower.tail Logical; if TRUE (default), probabilities are P(X <= x), 
+#' @param lower.tail Logical; if TRUE (default), probabilities are P(X <= x),
 #'   otherwise, P(X > x).
 #' @param log.p Logical; if TRUE, probabilities p are given as log(p).
 #'
@@ -146,6 +146,9 @@ qtpwexp <- function(p, piecewiseSurvivalTime = 0, lambda = 0.0578,
 #' @inheritParams param_lambda
 #' @param lowerBound The left truncation time point for the survival time.
 #'   Defaults to 0 for no truncation.
+#'
+#' @return The random numbers from truncated piecewise exponential
+#' distribution.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
