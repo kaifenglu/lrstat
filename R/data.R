@@ -12,3 +12,14 @@
 #'   \item{\code{dropoutEvent}}{Whether the subject dropped out}
 #' }
 "rawdata"
+
+#' Acute myelogenous leukemia survival data
+#'
+#' Survival in patients with acute myelogenous leukemia.
+#' \describe{
+#'   \item{\code{time}}{Survival or censoring time}
+#'   \item{\code{status}}{censoring status}
+#'   \item{\code{x}}{maintenance chemotherapy given or not}
+#' }
+"aml"
+

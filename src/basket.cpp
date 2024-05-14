@@ -505,7 +505,8 @@ List simonBayesSim(
       if (open[j]) {
         arrivalTime[k] = enrollt;
         stratum[k] = j+1;
-        y[k] = R::rbinom(1, p[j]);
+        u = R::runif(0,1);
+        y[k] = u < p[j] ? 1 : 0;
 
         // update the number of subjects and responders in the stratum
         n[j] = n[j] + 1;
@@ -566,7 +567,7 @@ List simonBayesSim(
 
 
         // stop the trial if all strata are closed or max subjects reached
-        if (is_true(all(open==0)) || (k == maxSubjects)) {
+        if (is_true(all(open == 0)) || (k == maxSubjects)) {
           iterationNumber[iter] = iter+1;
           N[iter] = k;
           nact[iter] = nactive;

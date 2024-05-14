@@ -5283,7 +5283,7 @@ List rmsamplesizeequiv(const double beta = 0.2,
 //'
 //' @examples
 //'
-//' rmest(data = survival::aml, stratum = "x",
+//' rmest(data = aml, stratum = "x",
 //'       time = "time", event = "status", milestone = 24)
 //'
 //' @export

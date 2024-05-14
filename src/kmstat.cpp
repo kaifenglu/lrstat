@@ -5072,7 +5072,7 @@ List kmsamplesizeequiv(const double beta = 0.2,
 //'
 //' @examples
 //'
-//' kmest(data = survival::aml, stratum = "x",
+//' kmest(data = aml, stratum = "x",
 //'       time = "time", event = "status")
 //'
 //' @export

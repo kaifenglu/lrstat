@@ -4357,7 +4357,7 @@ DataFrame simon2stage(const double alpha = NA_REAL,
 //'
 //' @export
 // [[Rcpp::export]]
-DataFrame powerOnePropExact(const int n = NA_REAL,
+DataFrame powerOnePropExact(const int n = NA_INTEGER,
                             const double piH0 = NA_REAL,
                             const double pi = NA_REAL,
                             const double alpha = 0.025) {
@@ -4478,7 +4478,7 @@ DataFrame samplesizeOnePropExact(const double beta = 0.2,
 //'
 //' @export
 // [[Rcpp::export]]
-DataFrame powerOneRateExact(const int n = NA_REAL,
+DataFrame powerOneRateExact(const int n = NA_INTEGER,
                             const double lambdaH0 = NA_REAL,
                             const double lambda = NA_REAL,
                             const double D = 1,
@@ -4615,7 +4615,7 @@ DataFrame samplesizeOneRateExact(const double beta = 0.2,
 //'
 //' @export
 // [[Rcpp::export]]
-DataFrame powerFisherExact(const int n = NA_REAL,
+DataFrame powerFisherExact(const int n = NA_INTEGER,
                            const double pi1 = NA_REAL,
                            const double pi2 = NA_REAL,
                            const double allocationRatioPlanned = 1,
@@ -6134,7 +6134,7 @@ List mnRateRatioCI(const NumericVector& t1, const NumericVector& y1,
 //' @export
 // [[Rcpp::export]]
 DataFrame powerRiskDiffExact(
-    const int n = NA_REAL,
+    const int n = NA_INTEGER,
     const double riskDiffH0 = 0,
     const double pi1 = NA_REAL,
     const double pi2 = NA_REAL,
@@ -6512,7 +6512,7 @@ DataFrame samplesizeRiskDiffExact(
 //' @export
 // [[Rcpp::export]]
 DataFrame powerRiskRatioExact(
-    const int n = NA_REAL,
+    const int n = NA_INTEGER,
     const double riskRatioH0 = 1,
     const double pi1 = NA_REAL,
     const double pi2 = NA_REAL,
@@ -6904,7 +6904,7 @@ DataFrame samplesizeRiskRatioExact(
 //' @export
 // [[Rcpp::export]]
 DataFrame powerRiskDiffExactEquiv(
-    const int n = NA_REAL,
+    const int n = NA_INTEGER,
     const double riskDiffLower = NA_REAL,
     const double riskDiffUpper = NA_REAL,
     const double pi1 = NA_REAL,
@@ -7404,7 +7404,7 @@ DataFrame samplesizeRiskDiffExactEquiv(
 //' @export
 // [[Rcpp::export]]
 DataFrame powerRiskRatioExactEquiv(
-    const int n = NA_REAL,
+    const int n = NA_INTEGER,
     const double riskRatioLower = NA_REAL,
     const double riskRatioUpper = NA_REAL,
     const double pi1 = NA_REAL,
@@ -7880,10 +7880,10 @@ DataFrame samplesizeRiskRatioExactEquiv(
 DataFrame riskDiffExactPValue(
     const double riskDiffH0 = 0,
     bool directionUpper = 1,
-    const int n1 = NA_REAL,
-    const int y1 = NA_REAL,
-    const int n2 = NA_REAL,
-    const int y2 = NA_REAL) {
+    const int n1 = NA_INTEGER,
+    const int y1 = NA_INTEGER,
+    const int n2 = NA_INTEGER,
+    const int y2 = NA_INTEGER) {
 
   int i, k = (n1+1)*(n2+1);
 
@@ -7994,10 +7994,10 @@ DataFrame riskDiffExactPValue(
 //' @export
 // [[Rcpp::export]]
 DataFrame riskDiffExactCI(
-    const int n1 = NA_REAL,
-    const int y1 = NA_REAL,
-    const int n2 = NA_REAL,
-    const int y2 = NA_REAL,
+    const int n1 = NA_INTEGER,
+    const int y1 = NA_INTEGER,
+    const int n2 = NA_INTEGER,
+    const int y2 = NA_INTEGER,
     const double cilevel = 0.95) {
 
   double estimate = y1/(n1+0.0) - y2/(n2+0.0);
@@ -8070,10 +8070,10 @@ DataFrame riskDiffExactCI(
 DataFrame riskRatioExactPValue(
     const double riskRatioH0 = 1,
     bool directionUpper = 1,
-    const int n1 = NA_REAL,
-    const int y1 = NA_REAL,
-    const int n2 = NA_REAL,
-    const int y2 = NA_REAL) {
+    const int n1 = NA_INTEGER,
+    const int y1 = NA_INTEGER,
+    const int n2 = NA_INTEGER,
+    const int y2 = NA_INTEGER) {
 
   int i, k = (n1+1)*(n2+1);
 
@@ -8184,10 +8184,10 @@ DataFrame riskRatioExactPValue(
 //' @export
 // [[Rcpp::export]]
 DataFrame riskRatioExactCI(
-    const int n1 = NA_REAL,
-    const int y1 = NA_REAL,
-    const int n2 = NA_REAL,
-    const int y2 = NA_REAL,
+    const int n1 = NA_INTEGER,
+    const int y1 = NA_INTEGER,
+    const int n2 = NA_INTEGER,
+    const int y2 = NA_INTEGER,
     const double cilevel = 0.95) {
 
   double estimate = y2 > 0 ? (y1/(n1+0.0)) / (y2/(n2+0.0)) : R_PosInf;
