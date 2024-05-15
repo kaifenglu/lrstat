@@ -1092,6 +1092,9 @@ NumericVector quad(integr_fn f, void *ex, double lower, double upper,
            &neval, &ier, &limit, &lenw, &last, iwork, work);
   }
 
+  delete[] iwork;
+  delete[] work;
+
   return NumericVector::create(Named("value") = value,
                                Named("abserr") = abserr,
                                Named("neval") = neval,
