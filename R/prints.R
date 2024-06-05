@@ -5697,15 +5697,16 @@ print.designSlopeDiffMMRM <- function(x, ...) {
     b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
                "cumulativeRejection", "cumulativeFutility",
                "cumulativeAlphaSpent", "numberOfSubjects",
+               "analysisTime",
                "efficacySlopeDiff", "futilitySlopeDiff",
                "efficacyP", "futilityP", "information",
                "cumulativeRejectionH0", "cumulativeFutilityH0")]
 
     # format number of digits after decimal for each column
-    j1 <- 7
-    j2 <- 12
-    j3 <- c(1,2,3,4,8,9,14)
-    j4 <- c(5,6,10,11,13)
+    j1 <- c(7,8)
+    j2 <- 13
+    j3 <- c(1,2,3,4,9,10,15)
+    j4 <- c(5,6,11,12,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -5722,6 +5723,7 @@ print.designSlopeDiffMMRM <- function(x, ...) {
                        "Cumulative futility",
                        "Cumulative alpha spent",
                        "Number of subjects",
+                       "Analysis time",
                        "Efficacy boundary (slope diff)",
                        "Futility boundary (slope diff)",
                        "Efficacy boundary (p)",
@@ -5731,12 +5733,13 @@ print.designSlopeDiffMMRM <- function(x, ...) {
                        "Cumulative futility under H0")
 
     } else {
-      df = t(b[,c(1,2,4,6,7,8,10,12)])
+      df = t(b[,c(1,2,4,6,7,8,9,11,13)])
       rownames(df) = c("Information rate",
                        "Efficacy boundary (Z)",
                        "Cumulative rejection",
                        "Cumulative alpha spent",
                        "Number of subjects",
+                       "Analysis time",
                        "Efficacy boundary (slope diff)",
                        "Efficacy boundary (p)",
                        "Information")
