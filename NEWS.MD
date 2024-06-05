@@ -1,3 +1,14 @@
+# lrstat 0.2.7
+
+- add the aml and heart datasets
+- in basket.cpp, replace y[k] = R::rbinom(1, p[j]) with u = R::runif(0,1); y[k] = u < p[j] ? 1 : 0;
+- in misc.cpp, replace const in x = NA_REAL with const int x = NA_INTEGER for x = n, n1, y1, n2, y2
+- add delete[] for iwork and work pointers in the quad function
+- add the hrest function to estimate the treatment hazard ratio from the Cox model based on Efron's approximate likelihood 
+- add simonBayesAnalysis and simonBayesSim for Simon's Bayesian analysis of basket discovery trials
+- add bmini for optimization and invsympd for inverting symmetric and positive defined matrices to utilities.cpp
+- add coxhr to estimate hazard ratios from the Cox model for right-censored or counting process data with robust variance
+
 # lrstat 0.2.6
 
 - replace "R_isnancpp(x)" with "x == NA_INTEGER" for integer parameter x
@@ -7,7 +18,6 @@
 
 - update survQuantile in getDesignMeans.R to handle new censoring and inestimable quantiles
 - update simon2stage to increase the search space of sample size
-- add simonBayesAnalysis and simonBayesSim for Simon's Bayesian analysis of basket discovery trials
 - add zstatRiskDiff, zstatRiskRatio, zstatOddsRatio, zstatRateDiff, zstatRateRatio for the score test of two-sample crude rates and exposure-adjusted incidence rates
 - add mini for minimization of a univariate function over a finite interval
 - update powerRiskDiffExact, samplesizeRiskDiffExact, powerRiskRatioExact, samplesizeRiskRatioExact, powerRiskDiffExactEquiv, samplesizeRiskDiffExactEquiv, powerRiskRatioExactEquiv, and samplesizeRiskRatioExactEquiv to divide the interval of the response rate in the control group into 100 subintervals and obtain the minimum value within each subinterval in order to obtain the global minimum. This replaces the random draw of 500 values of the control group response rate for global minimum. In addition, the attained alpha calculation is updated to use the global maximum
