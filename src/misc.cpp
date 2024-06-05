@@ -5985,8 +5985,10 @@ double zstatRateRatio(const double rateRatioH0 = 1.0,
 //' @export
 //'
 // [[Rcpp::export]]
-List mnRateRatioCI(const NumericVector& t1, const NumericVector& y1,
-                   const NumericVector& t2, const NumericVector& y2,
+List mnRateRatioCI(const NumericVector& t1,
+                   const NumericVector& y1,
+                   const NumericVector& t2,
+                   const NumericVector& y2,
                    const double cilevel = 0.95) {
   if (is_true(any(t1 <= 0))) {
     stop("Each element of t1 must be positive");

@@ -5084,7 +5084,6 @@ DataFrame kmest(const DataFrame data,
                 const std::string event = "event",
                 const std::string conftype = "log-log",
                 const double confint = 0.95) {
-
   int h, i, j, n = data.nrows();
 
   bool has_rep = hasVariable(data, rep);
@@ -5114,148 +5113,56 @@ DataFrame kmest(const DataFrame data,
 
   // create the numeric rep variable
   IntegerVector repn(n);
-  IntegerVector repwn;
+  IntegerVector repwi;
+  NumericVector repwn;
   CharacterVector repwc;
   if (!has_rep) {
     repn.fill(1);
   } else {
     if (TYPEOF(data[rep]) == INTSXP) {
       IntegerVector repv = data[rep];
-      IntegerVector repw(n);
-
-      // sort the rep variable
-      IntegerVector order = seq(0, n-1);
-      std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return repv[i] < repv[j];
-      });
-
-      repw = repv[order];
-
-      // identify the locations of the unique values
-      IntegerVector idx(1,0);
-      for (i=1; i<n; i++) {
-        if (repw[i] != repw[i-1]) {
-          idx.push_back(i);
-        }
-      }
-
-      repwn = repw[idx]; // unique numeric values
-
-      // code the rep variable
-      for (i=0; i<n; i++) {
-        for (j=0; j<idx.size(); j++) {
-          if (repv[i] == repwn[j]) {
-            repn[i] = j+1;
-            break;
-          }
-        }
-      }
+      repwi = unique(repv);  // Get unique levels
+      std::sort(repwi.begin(), repwi.end());
+      repn = match(repv, repwi);  // Map codes to levels
+    } else if (TYPEOF(data[rep]) == REALSXP) {
+      NumericVector repv = data[rep];
+      repwn = unique(repv);
+      std::sort(repwn.begin(), repwn.end());
+      repn = match(repv, repwn);
     } else if (TYPEOF(data[rep]) == STRSXP) {
       CharacterVector repv = data[rep];
-      CharacterVector repw(n);
-
-      // sort the rep variable
-      IntegerVector order = seq(0, n-1);
-      std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return repv[i] < repv[j];
-      });
-
-      repw = repv[order];
-
-      // identify the locations of the unique values
-      IntegerVector idx(1,0);
-      for (i=1; i<n; i++) {
-        if (repw[i] != repw[i-1]) {
-          idx.push_back(i);
-        }
-      }
-
-      repwc = repw[idx]; // unique character values
-
-      // code the rep variable
-      for (i=0; i<n; i++) {
-        for (j=0; j<idx.size(); j++) {
-          if (repv[i] == repwc[j]) {
-            repn[i] = j+1;
-            break;
-          }
-        }
-      }
+      repwc = unique(repv);
+      std::sort(repwc.begin(), repwc.end());
+      repn = match(repv, repwc);
     } else {
-      stop("incorrect type for the replication variable in the input data");
+      stop("incorrect type for the rep variable in the input data");
     }
   }
 
 
   // create the numeric stratum variable
   IntegerVector stratumn(n);
-  IntegerVector stratumwn;
+  IntegerVector stratumwi;
+  NumericVector stratumwn;
   CharacterVector stratumwc;
   if (!has_stratum) {
     stratumn.fill(1);
   } else {
     if (TYPEOF(data[stratum]) == INTSXP) {
       IntegerVector stratumv = data[stratum];
-      IntegerVector stratumw(n);
-
-      // sort the stratum variable
-      IntegerVector order = seq(0, n-1);
-      std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return stratumv[i] < stratumv[j];
-      });
-
-      stratumw = stratumv[order];
-
-      // identify the locations of the unique values
-      IntegerVector idx(1,0);
-      for (i=1; i<n; i++) {
-        if (stratumw[i] != stratumw[i-1]) {
-          idx.push_back(i);
-        }
-      }
-
-      stratumwn = stratumw[idx]; // unique numeric values
-
-      // code the stratum variable
-      for (i=0; i<n; i++) {
-        for (j=0; j<idx.size(); j++) {
-          if (stratumv[i] == stratumwn[j]) {
-            stratumn[i] = j+1;
-            break;
-          }
-        }
-      }
+      stratumwi = unique(stratumv);  // Get unique levels
+      std::sort(stratumwi.begin(), stratumwi.end());
+      stratumn = match(stratumv, stratumwi);  // Map codes to levels
+    } else if (TYPEOF(data[stratum]) == REALSXP) {
+      NumericVector stratumv = data[stratum];
+      stratumwn = unique(stratumv);
+      std::sort(stratumwn.begin(), stratumwn.end());
+      stratumn = match(stratumv, stratumwn);
     } else if (TYPEOF(data[stratum]) == STRSXP) {
       CharacterVector stratumv = data[stratum];
-      CharacterVector stratumw(n);
-
-      // sort the stratum variable
-      IntegerVector order = seq(0, n-1);
-      std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return stratumv[i] < stratumv[j];
-      });
-
-      stratumw = stratumv[order];
-
-      // identify the locations of the unique values
-      IntegerVector idx(1,0);
-      for (i=1; i<n; i++) {
-        if (stratumw[i] != stratumw[i-1]) {
-          idx.push_back(i);
-        }
-      }
-
-      stratumwc = stratumw[idx]; // unique character values
-
-      // code the stratum variable
-      for (i=0; i<n; i++) {
-        for (j=0; j<idx.size(); j++) {
-          if (stratumv[i] == stratumwc[j]) {
-            stratumn[i] = j+1;
-            break;
-          }
-        }
-      }
+      stratumwc = unique(stratumv);
+      std::sort(stratumwc.begin(), stratumwc.end());
+      stratumn = match(stratumv, stratumwc);
     } else {
       stop("incorrect type for the stratum variable in the input data");
     }
@@ -5309,7 +5216,6 @@ DataFrame kmest(const DataFrame data,
 
     return NumericVector::create(lower, upper);
   };
-
 
   // sort the data by rep
   IntegerVector order = seq(0, n-1);
@@ -5500,275 +5406,39 @@ DataFrame kmest(const DataFrame data,
   surv0 = surv0[sub];
   sesurv0 = sesurv0[sub];
 
+  DataFrame result = DataFrame::create(
+    _["size"] = size0,
+    _["time"] = time0,
+    _["nrisk"] = nrisk0,
+    _["nevent"] = nevent0,
+    _["survival"] = surv0,
+    _["stderr"] = sesurv0);
 
-  DataFrame result;
 
   if (ct != "none") {
-    lower0 = lower0[sub];
-    upper0 = upper0[sub];
+    result.push_back(lower0[sub], "lower");
+    result.push_back(upper0[sub], "upper");
+    result.push_back(confint, "confint");
+    result.push_back(conftype, "conftype");
+  }
 
-    if (!has_rep) {
-      if (!has_stratum) {
-        result = DataFrame::create(
-          _[rep] = rep0,
-          _[stratum] = stratum0,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0,
-          _["lower"] = lower0,
-          _["upper"] = upper0,
-          _["confint"] = confint,
-          _["conftype"] = conftype);
-      } else if (TYPEOF(data[stratum]) == INTSXP) {
-        IntegerVector stratum0n = stratumwn[stratum0-1];
-
-        result = DataFrame::create(
-          _[rep] = rep0,
-          _[stratum] = stratum0n,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0,
-          _["lower"] = lower0,
-          _["upper"] = upper0,
-          _["confint"] = confint,
-          _["conftype"] = conftype);
-      } else if (TYPEOF(data[stratum]) == STRSXP) {
-        CharacterVector stratum0c = stratumwc[stratum0-1];
-
-        result = DataFrame::create(
-          _[rep] = rep0,
-          _[stratum] = stratum0c,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0,
-          _["lower"] = lower0,
-          _["upper"] = upper0,
-          _["confint"] = confint,
-          _["conftype"] = conftype);
-      }
-    } else if (TYPEOF(data[rep]) == INTSXP) {
-      IntegerVector rep0n = repwn[rep0-1];
-
-      if (!has_stratum) {
-        result = DataFrame::create(
-          _[rep] = rep0n,
-          _[stratum] = stratum0,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0,
-          _["lower"] = lower0,
-          _["upper"] = upper0,
-          _["confint"] = confint,
-          _["conftype"] = conftype);
-      } else if (TYPEOF(data[stratum]) == INTSXP) {
-        IntegerVector stratum0n = stratumwn[stratum0-1];
-
-        result = DataFrame::create(
-          _[rep] = rep0n,
-          _[stratum] = stratum0n,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0,
-          _["lower"] = lower0,
-          _["upper"] = upper0,
-          _["confint"] = confint,
-          _["conftype"] = conftype);
-      } else if (TYPEOF(data[stratum]) == STRSXP) {
-        CharacterVector stratum0c = stratumwc[stratum0-1];
-
-        result = DataFrame::create(
-          _[rep] = rep0n,
-          _[stratum] = stratum0c,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0,
-          _["lower"] = lower0,
-          _["upper"] = upper0,
-          _["confint"] = confint,
-          _["conftype"] = conftype);
-      }
+  if (has_rep) {
+    if (TYPEOF(data[rep]) == INTSXP) {
+      result.push_back(repwi[rep0-1], rep);
+    } else if (TYPEOF(data[rep]) == REALSXP) {
+      result.push_back(repwn[rep0-1], rep);
     } else if (TYPEOF(data[rep]) == STRSXP) {
-      CharacterVector rep0c = repwc[rep0-1];
-
-      if (!has_stratum) {
-        result = DataFrame::create(
-          _[rep] = rep0c,
-          _[stratum] = stratum0,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0,
-          _["lower"] = lower0,
-          _["upper"] = upper0,
-          _["confint"] = confint,
-          _["conftype"] = conftype);
-      } else if (TYPEOF(data[stratum]) == INTSXP) {
-        IntegerVector stratum0n = stratumwn[stratum0-1];
-
-        result = DataFrame::create(
-          _[rep] = rep0c,
-          _[stratum] = stratum0n,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0,
-          _["lower"] = lower0,
-          _["upper"] = upper0,
-          _["confint"] = confint,
-          _["conftype"] = conftype);
-      } else if (TYPEOF(data[stratum]) == STRSXP) {
-        CharacterVector stratum0c = stratumwc[stratum0-1];
-
-        result = DataFrame::create(
-          _[rep] = rep0c,
-          _[stratum] = stratum0c,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0,
-          _["lower"] = lower0,
-          _["upper"] = upper0,
-          _["confint"] = confint,
-          _["conftype"] = conftype);
-      }
+      result.push_back(repwc[rep0-1], rep);
     }
-  } else {
-    if (!has_rep) {
-      if (!has_stratum) {
-        result = DataFrame::create(
-          _[rep] = rep0,
-          _[stratum] = stratum0,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0);
-      } else if (TYPEOF(data[stratum]) == INTSXP) {
-        IntegerVector stratum0n = stratumwn[stratum0-1];
+  }
 
-        result = DataFrame::create(
-          _[rep] = rep0,
-          _[stratum] = stratum0n,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0);
-      } else if (TYPEOF(data[stratum]) == STRSXP) {
-        CharacterVector stratum0c = stratumwc[stratum0-1];
-
-        result = DataFrame::create(
-          _[rep] = rep0,
-          _[stratum] = stratum0c,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0);
-      }
-    } else if (TYPEOF(data[rep]) == INTSXP) {
-      IntegerVector rep0n = repwn[rep0-1];
-
-      if (!has_stratum) {
-        result = DataFrame::create(
-          _[rep] = rep0n,
-          _[stratum] = stratum0,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0);
-      } else if (TYPEOF(data[stratum]) == INTSXP) {
-        IntegerVector stratum0n = stratumwn[stratum0-1];
-
-        result = DataFrame::create(
-          _[rep] = rep0n,
-          _[stratum] = stratum0n,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0);
-      } else if (TYPEOF(data[stratum]) == STRSXP) {
-        CharacterVector stratum0c = stratumwc[stratum0-1];
-
-        result = DataFrame::create(
-          _[rep] = rep0n,
-          _[stratum] = stratum0c,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0);
-      }
-    } else if (TYPEOF(data[rep]) == STRSXP) {
-      CharacterVector rep0c = repwc[rep0-1];
-
-      if (!has_stratum) {
-        result = DataFrame::create(
-          _[rep] = rep0c,
-          _[stratum] = stratum0,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0);
-      } else if (TYPEOF(data[stratum]) == INTSXP) {
-        IntegerVector stratum0n = stratumwn[stratum0-1];
-
-        result = DataFrame::create(
-          _[rep] = rep0c,
-          _[stratum] = stratum0n,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0);
-      } else if (TYPEOF(data[stratum]) == STRSXP) {
-        CharacterVector stratum0c = stratumwc[stratum0-1];
-
-        result = DataFrame::create(
-          _[rep] = rep0c,
-          _[stratum] = stratum0c,
-          _["size"] = size0,
-          _["time"] = time0,
-          _["nrisk"] = nrisk0,
-          _["nevent"] = nevent0,
-          _["survival"] = surv0,
-          _["stderr"] = sesurv0);
-      }
+  if (has_stratum) {
+    if (TYPEOF(data[stratum]) == INTSXP) {
+      result.push_back(stratumwi[stratum0-1], stratum);
+    } else if (TYPEOF(data[stratum]) == REALSXP) {
+      result.push_back(stratumwn[stratum0-1], stratum);
+    } else if (TYPEOF(data[stratum]) == STRSXP) {
+      result.push_back(stratumwc[stratum0-1], stratum);
     }
   }
 
@@ -5859,7 +5529,6 @@ DataFrame kmdiff(const DataFrame data,
                  const double milestone = NA_REAL,
                  const double survDiffH0 = 0,
                  const double confint = 0.95) {
-
   int h, i, j, k, n = data.nrows();
 
   bool has_rep = hasVariable(data, rep);
@@ -5881,86 +5550,53 @@ DataFrame kmdiff(const DataFrame data,
   }
 
 
-  // create the numeric treatment variable
+  // create the numeric treat variable
   IntegerVector treatn(n);
-  IntegerVector treatwn;
+  IntegerVector treatwi;
+  NumericVector treatwn;
   CharacterVector treatwc;
   if (TYPEOF(data[treat]) == LGLSXP) {
     LogicalVector treatv = data[treat];
     treatn = 2 - treatv;
-    treatwn = IntegerVector::create(1,0);
+    treatwi = unique(treatn);
+    if (treatwi.size() != 2) {
+      stop("treat must have two and only two distinct values");
+    }
+    treatwi = 2 - treatwi;
   } else if (TYPEOF(data[treat]) == INTSXP) {
     IntegerVector treatv = data[treat];
-    IntegerVector treatw(n);
-
-    // sort the treatment variable
-    IntegerVector order = seq(0, n-1);
-    std::sort(order.begin(), order.end(), [&](int i, int j) {
-      return treatv[i] < treatv[j];
-    });
-
-    treatw = treatv[order];
-
-    // identify the locations of the unique values
-    IntegerVector idx(1,0);
-    for (i=1; i<n; i++) {
-      if (treatw[i] != treatw[i-1]) {
-        idx.push_back(i);
-      }
-    }
-
-    treatwn = treatw[idx]; // unique numeric values
-
-    // check whether there are only two treatment values
-    if (idx.size() != 2) {
+    treatwi = unique(treatv);  // Get unique levels
+    if (treatwi.size() != 2) {
       stop("treat must have two and only two distinct values");
     }
-
-    // code the treatment variable
-    for (i=0; i<n; i++) {
-      treatn[i] = treatv[i] == treatw[idx[0]] ? 1 : 2;
+    std::sort(treatwi.begin(), treatwi.end());
+    treatn = match(treatv, treatwi);  // Map codes to levels
+  } else if (TYPEOF(data[treat]) == REALSXP) {
+    NumericVector treatv = data[treat];
+    treatwn = unique(treatv);
+    if (treatwn.size() != 2) {
+      stop("treat must have two and only two distinct values");
     }
+    std::sort(treatwn.begin(), treatwn.end());
+    treatn = match(treatv, treatwn);
   } else if (TYPEOF(data[treat]) == STRSXP) {
     CharacterVector treatv = data[treat];
-    CharacterVector treatw(n);
-
-    // sort the treatment variable
-    IntegerVector order = seq(0, n-1);
-    std::sort(order.begin(), order.end(), [&](int i, int j) {
-      return treatv[i] < treatv[j];
-    });
-
-    treatw = treatv[order];
-
-    // identify the locations of the unique values
-    IntegerVector idx(1,0);
-    for (i=1; i<n; i++) {
-      if (treatw[i] != treatw[i-1]) {
-        idx.push_back(i);
-      }
-    }
-
-    treatwc = treatw[idx]; // unique numeric values
-
-    // check whether there are only two treatment values
-    if (idx.size() != 2) {
+    treatwc = unique(treatv);
+    if (treatwc.size() != 2) {
       stop("treat must have two and only two distinct values");
     }
-
-    // code the treatment variable
-    for (i=0; i<n; i++) {
-      treatn[i] = treatv[i] == treatw[idx[0]] ? 1 : 2;
-    }
+    std::sort(treatwc.begin(), treatwc.end());
+    treatn = match(treatv, treatwc);
   } else {
-    stop("incorrect type for the treatment variable in the input data");
+    stop("incorrect type for the treat variable in the input data");
   }
 
 
   NumericVector timen = data[time];
   NumericVector eventn = data[event];
 
-  if (is_true(any(timen <= 0))) {
-    stop("time must be positive for each subject");
+  if (is_true(any(timen < 0))) {
+    stop("time must be nonnegative for each subject");
   }
 
   if (is_true(any((eventn != 1) & (eventn != 0)))) {
@@ -5970,148 +5606,56 @@ DataFrame kmdiff(const DataFrame data,
 
   // create the numeric rep variable
   IntegerVector repn(n);
-  IntegerVector repwn;
+  IntegerVector repwi;
+  NumericVector repwn;
   CharacterVector repwc;
   if (!has_rep) {
     repn.fill(1);
   } else {
     if (TYPEOF(data[rep]) == INTSXP) {
       IntegerVector repv = data[rep];
-      IntegerVector repw(n);
-
-      // sort the rep variable
-      IntegerVector order = seq(0, n-1);
-      std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return repv[i] < repv[j];
-      });
-
-      repw = repv[order];
-
-      // identify the locations of the unique values
-      IntegerVector idx(1,0);
-      for (i=1; i<n; i++) {
-        if (repw[i] != repw[i-1]) {
-          idx.push_back(i);
-        }
-      }
-
-      repwn = repw[idx]; // unique numeric values
-
-      // code the rep variable
-      for (i=0; i<n; i++) {
-        for (j=0; j<idx.size(); j++) {
-          if (repv[i] == repwn[j]) {
-            repn[i] = j+1;
-            break;
-          }
-        }
-      }
+      repwi = unique(repv);  // Get unique levels
+      std::sort(repwi.begin(), repwi.end());
+      repn = match(repv, repwi);  // Map codes to levels
+    } else if (TYPEOF(data[rep]) == REALSXP) {
+      NumericVector repv = data[rep];
+      repwn = unique(repv);
+      std::sort(repwn.begin(), repwn.end());
+      repn = match(repv, repwn);
     } else if (TYPEOF(data[rep]) == STRSXP) {
       CharacterVector repv = data[rep];
-      CharacterVector repw(n);
-
-      // sort the rep variable
-      IntegerVector order = seq(0, n-1);
-      std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return repv[i] < repv[j];
-      });
-
-      repw = repv[order];
-
-      // identify the locations of the unique values
-      IntegerVector idx(1,0);
-      for (i=1; i<n; i++) {
-        if (repw[i] != repw[i-1]) {
-          idx.push_back(i);
-        }
-      }
-
-      repwc = repw[idx]; // unique character values
-
-      // code the rep variable
-      for (i=0; i<n; i++) {
-        for (j=0; j<idx.size(); j++) {
-          if (repv[i] == repwc[j]) {
-            repn[i] = j+1;
-            break;
-          }
-        }
-      }
+      repwc = unique(repv);
+      std::sort(repwc.begin(), repwc.end());
+      repn = match(repv, repwc);
     } else {
-      stop("incorrect type for the replication variable in the input data");
+      stop("incorrect type for the rep variable in the input data");
     }
   }
 
 
   // create the numeric stratum variable
   IntegerVector stratumn(n);
-  IntegerVector stratumwn;
+  IntegerVector stratumwi;
+  NumericVector stratumwn;
   CharacterVector stratumwc;
   if (!has_stratum) {
     stratumn.fill(1);
   } else {
     if (TYPEOF(data[stratum]) == INTSXP) {
       IntegerVector stratumv = data[stratum];
-      IntegerVector stratumw(n);
-
-      // sort the stratum variable
-      IntegerVector order = seq(0, n-1);
-      std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return stratumv[i] < stratumv[j];
-      });
-
-      stratumw = stratumv[order];
-
-      // identify the locations of the unique values
-      IntegerVector idx(1,0);
-      for (i=1; i<n; i++) {
-        if (stratumw[i] != stratumw[i-1]) {
-          idx.push_back(i);
-        }
-      }
-
-      stratumwn = stratumw[idx]; // unique numeric values
-
-      // code the stratum variable
-      for (i=0; i<n; i++) {
-        for (j=0; j<idx.size(); j++) {
-          if (stratumv[i] == stratumwn[j]) {
-            stratumn[i] = j+1;
-            break;
-          }
-        }
-      }
+      stratumwi = unique(stratumv);  // Get unique levels
+      std::sort(stratumwi.begin(), stratumwi.end());
+      stratumn = match(stratumv, stratumwi);  // Map codes to levels
+    } else if (TYPEOF(data[stratum]) == REALSXP) {
+      NumericVector stratumv = data[stratum];
+      stratumwn = unique(stratumv);
+      std::sort(stratumwn.begin(), stratumwn.end());
+      stratumn = match(stratumv, stratumwn);
     } else if (TYPEOF(data[stratum]) == STRSXP) {
       CharacterVector stratumv = data[stratum];
-      CharacterVector stratumw(n);
-
-      // sort the stratum variable
-      IntegerVector order = seq(0, n-1);
-      std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return stratumv[i] < stratumv[j];
-      });
-
-      stratumw = stratumv[order];
-
-      // identify the locations of the unique values
-      IntegerVector idx(1,0);
-      for (i=1; i<n; i++) {
-        if (stratumw[i] != stratumw[i-1]) {
-          idx.push_back(i);
-        }
-      }
-
-      stratumwc = stratumw[idx]; // unique character values
-
-      // code the stratum variable
-      for (i=0; i<n; i++) {
-        for (j=0; j<idx.size(); j++) {
-          if (stratumv[i] == stratumwc[j]) {
-            stratumn[i] = j+1;
-            break;
-          }
-        }
-      }
+      stratumwc = unique(stratumv);
+      std::sort(stratumwc.begin(), stratumwc.end());
+      stratumn = match(stratumv, stratumwc);
     } else {
       stop("incorrect type for the stratum variable in the input data");
     }
@@ -6213,6 +5757,8 @@ DataFrame kmdiff(const DataFrame data,
         if (!has_rep) {
           reperr = "";
         } else if (TYPEOF(data[rep]) == INTSXP) {
+          reperr = " " + rep + " = " + std::to_string(repwi[repn[idx[h]]-1]);
+        } else if (TYPEOF(data[rep]) == REALSXP) {
           reperr = " " + rep + " = " + std::to_string(repwn[repn[idx[h]]-1]);
         } else {
           reperr = " " + rep + " = " + repwc[repn[idx[h]]-1];
@@ -6222,6 +5768,9 @@ DataFrame kmdiff(const DataFrame data,
         if (!has_stratum) {
           stratumerr = "";
         } else if (TYPEOF(data[stratum]) == INTSXP) {
+          stratumerr = " " + stratum + " = " +
+            std::to_string(stratumwi[stratum1[idx1[i]]-1]);
+        } else if (TYPEOF(data[stratum]) == REALSXP) {
           stratumerr = " " + stratum + " = " +
             std::to_string(stratumwn[stratum1[idx1[i]]-1]);
         } else {
@@ -6233,6 +5782,8 @@ DataFrame kmdiff(const DataFrame data,
         std::string treaterr;
         if ((TYPEOF(data[treat]) == LGLSXP) ||
             (TYPEOF(data[treat]) == INTSXP)) {
+          treaterr = " " + treat + " = " + std::to_string(treatwi[k]);
+        } else if (TYPEOF(data[treat]) == REALSXP) {
           treaterr = " " + treat + " = " + std::to_string(treatwn[k]);
         } else {
           treaterr = " " + treat + " = " + treatwc[k];
@@ -6258,7 +5809,6 @@ DataFrame kmdiff(const DataFrame data,
 
     // skip the replication if there is a stratum with max time < milestone
     if (skip) continue;
-
 
     DataFrame dfin = DataFrame::create(
       _["stratum"] = stratum1,
@@ -6296,6 +5846,8 @@ DataFrame kmdiff(const DataFrame data,
         if (!has_rep) {
           reperr = "";
         } else if (TYPEOF(data[rep]) == INTSXP) {
+          reperr = " " + rep + " = " + std::to_string(repwi[repn[idx[h]]-1]);
+        } else if (TYPEOF(data[rep]) == REALSXP) {
           reperr = " " + rep + " = " + std::to_string(repwn[repn[idx[h]]-1]);
         } else {
           reperr = " " + rep + " = " + repwc[repn[idx[h]]-1];
@@ -6306,6 +5858,9 @@ DataFrame kmdiff(const DataFrame data,
           stratumerr = "";
         } else if (TYPEOF(data[stratum]) == INTSXP) {
           stratumerr = " " + stratum + " = " +
+            std::to_string(stratumwi[stratum2[j1]-1]);
+        } else if (TYPEOF(data[stratum]) == REALSXP) {
+          stratumerr = " " + stratum + " = " +
             std::to_string(stratumwn[stratum2[j1]-1]);
         } else {
           stratumerr = " " + stratum + " = " + stratumwc[stratum2[j1]-1];
@@ -6315,6 +5870,8 @@ DataFrame kmdiff(const DataFrame data,
         std::string treaterr;
         if ((TYPEOF(data[treat]) == LGLSXP) ||
             (TYPEOF(data[treat]) == INTSXP)) {
+          treaterr = " " + treat + " = " + std::to_string(treatwi[k]);
+        } else if (TYPEOF(data[treat]) == REALSXP) {
           treaterr = " " + treat + " = " + std::to_string(treatwn[k]);
         } else {
           treaterr = " " + treat + " = " + treatwc[k];
@@ -6341,7 +5898,6 @@ DataFrame kmdiff(const DataFrame data,
 
     // skip the replication if there is a stratum without both treatments
     if (skip) continue;
-
 
     double M = sum(m);
     NumericVector p(nstrata);
@@ -6384,7 +5940,6 @@ DataFrame kmdiff(const DataFrame data,
       vsurv2 += pow(p[i],2)*vsurv[1];
     }
 
-
     rep0[index] = repn[idx[h]];
     surv10[index] = surv1;
     surv20[index] = surv2;
@@ -6419,61 +5974,29 @@ DataFrame kmdiff(const DataFrame data,
   lower0 = lower0[sub];
   upper0 = upper0[sub];
 
+  DataFrame result = DataFrame::create(
+    _["milestone"] = milestone,
+    _["survDiffH0"] = survDiffH0,
+    _["surv1"] = surv10,
+    _["surv2"] = surv20,
+    _["survDiff"] = survDiff0,
+    _["vsurv1"] = vsurv10,
+    _["vsurv2"] = vsurv20,
+    _["vsurvDiff"] = vsurvDiff0,
+    _["survDiffZ"] = survDiffZ0,
+    _["survDiffPValue"] = survDiffPValue0,
+    _["lower"] = lower0,
+    _["upper"] = upper0,
+    _["confint"] = confint);
 
-  DataFrame result;
-
-  if (!has_rep) {
-    result = DataFrame::create(
-      _[rep] = rep0,
-      _["milestone"] = milestone,
-      _["survDiffH0"] = survDiffH0,
-      _["surv1"] = surv10,
-      _["surv2"] = surv20,
-      _["survDiff"] = survDiff0,
-      _["vsurv1"] = vsurv10,
-      _["vsurv2"] = vsurv20,
-      _["vsurvDiff"] = vsurvDiff0,
-      _["survDiffZ"] = survDiffZ0,
-      _["survDiffPValue"] = survDiffPValue0,
-      _["lower"] = lower0,
-      _["upper"] = upper0,
-      _["confint"] = confint);
-  } else if (TYPEOF(data[rep]) == INTSXP) {
-    IntegerVector rep0n = repwn[rep0-1];
-
-    result = DataFrame::create(
-      _[rep] = rep0n,
-      _["milestone"] = milestone,
-      _["survDiffH0"] = survDiffH0,
-      _["surv1"] = surv10,
-      _["surv2"] = surv20,
-      _["survDiff"] = survDiff0,
-      _["vsurv1"] = vsurv10,
-      _["vsurv2"] = vsurv20,
-      _["vsurvDiff"] = vsurvDiff0,
-      _["survDiffZ"] = survDiffZ0,
-      _["survDiffPValue"] = survDiffPValue0,
-      _["lower"] = lower0,
-      _["upper"] = upper0,
-      _["confint"] = confint);
-  } else if (TYPEOF(data[rep]) == STRSXP) {
-    CharacterVector rep0c = repwc[rep0-1];
-
-    result = DataFrame::create(
-      _[rep] = rep0c,
-      _["milestone"] = milestone,
-      _["survDiffH0"] = survDiffH0,
-      _["surv1"] = surv10,
-      _["surv2"] = surv20,
-      _["survDiff"] = survDiff0,
-      _["vsurv1"] = vsurv10,
-      _["vsurv2"] = vsurv20,
-      _["vsurvDiff"] = vsurvDiff0,
-      _["survDiffZ"] = survDiffZ0,
-      _["survDiffPValue"] = survDiffPValue0,
-      _["lower"] = lower0,
-      _["upper"] = upper0,
-      _["confint"] = confint);
+  if (has_rep) {
+    if (TYPEOF(data[rep]) == INTSXP) {
+      result.push_back(repwi[rep0-1], rep);
+    } else if (TYPEOF(data[rep]) == REALSXP) {
+      result.push_back(repwn[rep0-1], rep);
+    } else if (TYPEOF(data[rep]) == STRSXP) {
+      result.push_back(repwc[rep0-1], rep);
+    }
   }
 
   return result;
