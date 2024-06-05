@@ -61,7 +61,7 @@ Obtains the Kaplan-Meier estimates of the survival curve.
 }
 \examples{
 
-kmest(data = survival::aml, stratum = "x",
+kmest(data = aml, stratum = "x",
       time = "time", event = "status")
 
 }
