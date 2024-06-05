@@ -7225,6 +7225,10 @@ getDesignSlopeDiffMMRM <- function(
     stop("Elements of N must be positive")
   }
 
+  if (sum(N) < 10000) {
+    stop("The max # of measurements must be >=10000 to enable root finding")
+  }
+
   if (stDev <= 0) {
     stop("stDev must be positive")
   }
@@ -7341,8 +7345,8 @@ getDesignSlopeDiffMMRM <- function(
     k = floor((tau - cumwN[i])/w[i]) + cumN[i] + 1
 
     j = 1:k
-    i = pmax(findInterval(j-2, cumN), 1)
-    t = cumwN[i] + (j - cumN[i] - 1)*w[i]
+    i = pmax(findInterval(j-2, cumN), 1)   # period indicators
+    t = cumwN[i] + (j - cumN[i] - 1)*w[i]  # time points
 
     # total number of enrolled subjects at each time point
     ns = accrual(tau - t, accrualTime, accrualIntensity, accrualDuration)
@@ -7369,14 +7373,8 @@ getDesignSlopeDiffMMRM <- function(
     I1 = 0
     I2 = 0
     for (j in 1:k) {
-      if (j==1) {
-        x1 = t(as.matrix(X1[1:j,]))
-        x2 = t(as.matrix(X2[1:j,]))
-      } else {
-        x1 = X1[1:j,]
-        x2 = X2[1:j,]
-      }
-
+      x1 = X1[1:j, , drop=FALSE]
+      x2 = X2[1:j, , drop=FALSE]
       I = solve(covar[1:j, 1:j])
       I1 = I1 + n1[j]*t(x1) %*% I %*% x1
       I2 = I2 + n2[j]*t(x2) %*% I %*% x2
