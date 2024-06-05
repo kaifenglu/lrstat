@@ -1102,6 +1102,37 @@ NumericVector quad(integr_fn f, void *ex, double lower, double upper,
 }
 
 
+// Wrapper function for vmmin
+List bmini(NumericVector x0, optimfn fn, optimgr gr = nullptr,
+           void *ex = nullptr, double eps = 1e-8) {
+
+  int maxit = 100;
+  int trace = 0;
+  double abstol = eps, reltol = eps;
+  int nREPORT = 10;
+
+  int n = x0.size();
+  double Fmin;
+  int fncount = 0, grcount = 0, fail = 0;
+  IntegerVector mask(n, 1);  // All parameters are free
+
+  // Convert NumericVector to standard double array
+  std::vector<double> x(x0.begin(), x0.end());
+
+  // Call vmmin function
+  vmmin(n, x.data(), &Fmin, fn, gr, maxit, trace,
+        mask.begin(), abstol, reltol, nREPORT,
+        ex, &fncount, &grcount, &fail);
+
+  // Return results as a list
+  return List::create(Named("par") = NumericVector(x.begin(), x.end()),
+                      Named("value") = Fmin,
+                      Named("fncount") = fncount,
+                      Named("grcount") = grcount,
+                      Named("fail") = fail);
+}
+
+
 //' @title Number of enrolled subjects
 //' @description Obtains the number of subjects enrolled by given calendar
 //' times.
@@ -3880,4 +3911,49 @@ bool hasVariable(DataFrame df, std::string varName) {
     }
   }
   return false;
+}
+
+
+// [[Rcpp::export]]
+NumericMatrix invsympd(const NumericMatrix& a) {
+  int n = a.nrow();
+  if (a.ncol() != n) {
+    stop("a is not a symmetric matrix");
+  }
+
+  int i,j,k;
+  double sum;
+  NumericMatrix L(n,n);  // A = L*L^T
+  for (i=0; i<n; i++) {
+    for (j=i; j<n; j++) {
+      sum = a(i,j);
+      for (k=0; k<i; k++) sum -= L(i,k)*L(j,k);
+      if (i == j) {
+        if (sum <= 0.0) stop("a is not positve definite");
+        L(i,i) = sqrt(sum);
+      } else L(j,i) = sum/L(i,i);
+    }
+  }
+
+  NumericMatrix U(n,n); // U = L^-1
+  for (i=0; i<n; i++) {
+    U(i,i) = 1.0/L(i,i);
+    for (j=i-1; j>=0; j--) {
+      sum = 0.0;
+      for (k=j+1; k<=i; k++) sum -= U(i,k)*L(k,j);
+      U(i,j) = sum/L(j,j);
+    }
+  }
+
+  NumericMatrix b(n,n); // A^-1 = U^T*U
+  for (i=0; i<n; i++) {
+    for (j=i; j<n; j++) {
+      for (k=j; k<n; k++) {
+        b(i,j) += U(k,i)*U(k,j);
+      }
+      if (i<j) b(j,i) = b(i,j);
+    }
+  }
+
+  return b;
 }

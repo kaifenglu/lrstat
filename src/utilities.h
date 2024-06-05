@@ -83,6 +83,9 @@ NumericVector mini(const std::function<double(double)>& f,
 NumericVector quad(integr_fn f, void *ex, double lower, double upper,
                    double tol);
 
+List bmini(NumericVector x0, optimfn fn, optimgr gr,
+           void *ex, double eps);
+
 
 NumericVector accrual(const NumericVector& time,
                       const NumericVector& accrualTime,
@@ -235,5 +238,8 @@ List adaptDesign(double betaNew,
                  const double varianceRatio);
 
 bool hasVariable(DataFrame df, std::string varName);
+
+NumericMatrix invsympd(const NumericMatrix& a);
+
 
 #endif // __UTILITIES__
