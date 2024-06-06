@@ -8,6 +8,8 @@
 - add simonBayesAnalysis and simonBayesSim for Simon's Bayesian analysis of basket discovery trials
 - add bmini for optimization and invsympd for inverting symmetric and positive defined matrices to utilities.cpp
 - add coxhr to estimate hazard ratios from the Cox model for right-censored or counting process data with robust variance
+- update the algorithm for finding the backward image (J, zJ) in getADCI
+- update the initial values for finding the confidence interval in getADCI
 
 # lrstat 0.2.6
 
