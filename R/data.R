@@ -37,3 +37,13 @@
 #'   \item{\code{id}}{patient id}
 #' }
 "heart"
+
+#' Tobin's tobit data from the survival package
+#'
+#' Data from Tobin's original paper.
+#' \describe{
+#'   \item{\code{durable}}{Durable goods purchase}
+#'   \item{\code{age}}{Age in years}
+#'   \item{\code{quant}}{Liquidity ratio (x 1000)}
+#' }
+"tobin"

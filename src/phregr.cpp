@@ -1,4 +1,3 @@
-#include <Rcpp.h>
 #include "utilities.h"
 
 using namespace Rcpp;
@@ -18,7 +17,7 @@ typedef struct {
 
 
 // negative log likelihood
-double f_nllik(int p, double *par, void *ex) {
+double f_nllik_2(int p, double *par, void *ex) {
   coxparams *param = (coxparams *) ex;
   int i, k, person;
 
@@ -103,7 +102,7 @@ double f_nllik(int p, double *par, void *ex) {
 
 
 // negative score vector
-void f_nscore(int p, double *par, double *gr, void *ex) {
+void f_nscore_2(int p, double *par, double *gr, void *ex) {
   coxparams *param = (coxparams *) ex;
   int i, k, person;
 
@@ -206,7 +205,7 @@ void f_nscore(int p, double *par, double *gr, void *ex) {
 
 
 // observed information matrix
-NumericMatrix f_info(int p, double *par, void *ex) {
+NumericMatrix f_info_2(int p, double *par, void *ex) {
   coxparams *param = (coxparams *) ex;
   int i, j, k, person;
 
@@ -341,7 +340,7 @@ NumericMatrix f_info(int p, double *par, void *ex) {
 
 
 // score residual matrix
-NumericMatrix f_ressco(NumericVector beta, void *ex) {
+NumericMatrix f_ressco_2(NumericVector beta, void *ex) {
   coxparams *param = (coxparams *) ex;
   int i, j, k, person;
   int p = beta.size();
@@ -552,8 +551,6 @@ NumericMatrix f_ressco(NumericVector beta, void *ex) {
 //'
 //'     - \code{n}: The number of observations.
 //'
-//'     - \code{nused}: The number of observations used in the analysis.
-//'
 //'     - \code{nevents}: The number of events.
 //'
 //'     - \code{loglik0}: The log-likelihood under null.
@@ -593,29 +590,29 @@ NumericMatrix f_ressco(NumericVector beta, void *ex) {
 //' library(dplyr)
 //'
 //' # Example 1 with right-censored data
-//' coxhr(data = rawdata %>% mutate(treat = 1*(treatmentGroup == 1)),
-//'       rep = "iterationNumber", stratum = "stratum",
-//'       time = "timeUnderObservation", event = "event",
-//'       covariates = "treat")
+//' phregr(data = rawdata %>% mutate(treat = 1*(treatmentGroup == 1)),
+//'        rep = "iterationNumber", stratum = "stratum",
+//'        time = "timeUnderObservation", event = "event",
+//'        covariates = "treat")
 //'
 //' # Example 2 with counting process data and robust variance estimate
-//' coxhr(data = heart %>% mutate(rx = as.numeric(transplant) - 1),
-//'       time = "start", time2 = "stop", event = "event",
-//'       covariates = c("rx", "age"), id = "id", robust = 1)
+//' phregr(data = heart %>% mutate(rx = as.numeric(transplant) - 1),
+//'        time = "start", time2 = "stop", event = "event",
+//'        covariates = c("rx", "age"), id = "id", robust = 1)
 //'
 //' @export
 // [[Rcpp::export]]
-List coxhr(const DataFrame data,
-           const std::string rep = "rep",
-           const std::string stratum = "stratum",
-           const std::string time = "time",
-           const std::string time2 = "time2",
-           const std::string event = "event",
-           const StringVector& covariates = "treat",
-           const std::string weight = "weight",
-           const std::string id = "id",
-           const std::string ties = "efron",
-           bool robust = 0) {
+List phregr(const DataFrame data,
+            const std::string rep = "rep",
+            const std::string stratum = "stratum",
+            const std::string time = "time",
+            const std::string time2 = "time2",
+            const std::string event = "event",
+            const StringVector& covariates = "treat",
+            const std::string weight = "weight",
+            const std::string id = "id",
+            const std::string ties = "efron",
+            bool robust = 0) {
 
   int h, i, j, k, n = data.nrows(), p = covariates.size();
 
@@ -819,7 +816,7 @@ List coxhr(const DataFrame data,
 
   // variables in the output data sets
   IntegerVector rep01 = seq(1,nreps);
-  IntegerVector nobs(nreps), nused0(nreps), nevents(nreps);
+  IntegerVector nobs(nreps), nevents(nreps);
   NumericMatrix loglik(nreps,2);
   NumericVector scoretest(nreps);
 
@@ -874,11 +871,14 @@ List coxhr(const DataFrame data,
     IntegerVector index2 = findInterval3(tstop, etime);
     IntegerVector ignore1(n1);
     for (i=0; i<n1; i++) {
-      ignore1[i] = index1[i] == index2[i] ? 1 : 0;
+      if ((index1[i] == index2[i]) || is_true(any(is_na(z1(i,_))))) {
+        ignore1[i] = 1;
+      } else {
+        ignore1[i] = 0;
+      }
     }
 
     int nused = n1 - sum(ignore1);
-    nused0[h] = nused;
 
     // sort by descending stopping time within each stratum
     IntegerVector order2 = seq(0, n1-1);
@@ -917,16 +917,17 @@ List coxhr(const DataFrame data,
         (tstart[i] > tstart[j]));
     });
 
+
     // parameter estimates and standard errors
     coxparams param = {nused, stratum1, tstart, tstop, event1,
                        weight1, z1, order1, method};
 
     NumericVector b0(p);
-    List out = bmini(b0, f_nllik, f_nscore, &param, 1e-10);
+    List out = bmini(b0, f_nllik_2, f_nscore_2, &param, 1e-9);
     NumericVector b = out["par"];
 
     std::vector<double> parb(b.begin(), b.end());
-    NumericMatrix infob = f_info(p, parb.data(), &param);
+    NumericMatrix infob = f_info_2(p, parb.data(), &param);
     NumericMatrix vb = invsympd(infob);
 
     NumericVector seb(p);
@@ -944,15 +945,15 @@ List coxhr(const DataFrame data,
 
     // log-likelihoods and score test statistic
     std::vector<double> parb0(b0.begin(), b0.end());
-    loglik(h,0) = -f_nllik(p, parb0.data(), &param);
+    loglik(h,0) = -f_nllik_2(p, parb0.data(), &param);
     loglik(h,1) = -as<double>(out["value"]);
 
     NumericVector score(p);
     std::vector<double> pars(score.begin(), score.end());
-    f_nscore(p, parb0.data(), pars.data(), &param);
+    f_nscore_2(p, parb0.data(), pars.data(), &param);
     for (j=0; j<p; j++) score[j] = -pars[j];
 
-    NumericMatrix infob0 = f_info(p, parb0.data(), &param);
+    NumericMatrix infob0 = f_info_2(p, parb0.data(), &param);
     NumericMatrix vb0 = invsympd(infob0);
     for (i=0; i<p; i++) {
       for (j=0; j<p; j++) {
@@ -962,7 +963,7 @@ List coxhr(const DataFrame data,
 
     // robust variance estimates
     if (robust) {
-      NumericMatrix ressco = f_ressco(b, &param); // score residuals
+      NumericMatrix ressco = f_ressco_2(b, &param); // score residuals
 
       int nr; // number of rows in the score residual matrix
       if (!has_id) {
@@ -1041,7 +1042,6 @@ List coxhr(const DataFrame data,
 
   DataFrame sumstat = List::create(
     _["n"] = nobs,
-    _["nused"] = nused0,
     _["nevents"] = nevents,
     _["loglik0"] = loglik(_,0),
     _["loglik1"] = loglik(_,1),

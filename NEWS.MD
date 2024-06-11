@@ -1,15 +1,16 @@
 # lrstat 0.2.7
 
-- add the aml and heart datasets
+- add the aml, heart, and tobin datasets
 - in basket.cpp, replace y[k] = R::rbinom(1, p[j]) with u = R::runif(0,1); y[k] = u < p[j] ? 1 : 0;
 - in misc.cpp, replace const in x = NA_REAL with const int x = NA_INTEGER for x = n, n1, y1, n2, y2
 - add delete[] for iwork and work pointers in the quad function
 - add the hrest function to estimate the treatment hazard ratio from the Cox model based on Efron's approximate likelihood 
 - add simonBayesAnalysis and simonBayesSim for Simon's Bayesian analysis of basket discovery trials
-- add bmini for optimization and invsympd for inverting symmetric and positive defined matrices to utilities.cpp
-- add coxhr to estimate hazard ratios from the Cox model for right-censored or counting process data with robust variance
 - update the algorithm for finding the backward image (J, zJ) in getADCI
 - update the initial values for finding the confidence interval in getADCI
+- add bmini for optimization and invsympd for inverting symmetric and positive defined matrices to utilities.cpp
+- add phregr to estimate hazard ratios from the Cox model for right-censored or counting process data with robust variance
+- add liferegr for parametric regression of failure time data with uncensored, right censored, left censored, and interval censored data
 
 # lrstat 0.2.6
 
