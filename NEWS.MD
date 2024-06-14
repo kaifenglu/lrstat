@@ -1,10 +1,13 @@
+# lrstat 0.2.8
+
+- update std::sort handling for Rcpp character vectors
+
 # lrstat 0.2.7
 
 - add the aml, heart, and tobin datasets
 - in basket.cpp, replace y[k] = R::rbinom(1, p[j]) with u = R::runif(0,1); y[k] = u < p[j] ? 1 : 0;
 - in misc.cpp, replace const in x = NA_REAL with const int x = NA_INTEGER for x = n, n1, y1, n2, y2
 - add delete[] for iwork and work pointers in the quad function
-- add the hrest function to estimate the treatment hazard ratio from the Cox model based on Efron's approximate likelihood 
 - add simonBayesAnalysis and simonBayesSim for Simon's Bayesian analysis of basket discovery trials
 - update the algorithm for finding the backward image (J, zJ) in getADCI
 - update the initial values for finding the confidence interval in getADCI

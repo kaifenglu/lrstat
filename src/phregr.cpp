@@ -492,9 +492,9 @@ NumericMatrix f_ressco_2(NumericVector beta, void *ex) {
 }
 
 
-//' @title Hazard ratio estimate from the Cox model
-//' @description Obtains the hazard ratio estimate from the Cox model
-//' with right censored or counting process data.
+//' @title Proportional hazards regression model
+//' @description Obtains the hazard ratio estimates from the proportional
+//' hazards regression model with right censored or counting process data.
 //'
 //' @param data The input data frame that contains the following variables:
 //'
@@ -703,7 +703,11 @@ List phregr(const DataFrame data,
     } else if (TYPEOF(data[rep]) == STRSXP) {
       CharacterVector repv = data[rep];
       repwc = unique(repv);
-      std::sort(repwc.begin(), repwc.end());
+      IntegerVector order = seq(0, repwc.size()-1);
+      std::sort(order.begin(), order.end(), [&](int i, int j) {
+        return repv[i] < repv[j];
+      });
+      repwc = repwc[order];
       repn = match(repv, repwc);
     } else {
       stop("incorrect type for the rep variable in the input data");
@@ -727,9 +731,13 @@ List phregr(const DataFrame data,
       stratumn = match(stratumv, stratumw);
     } else if (TYPEOF(data[stratum]) == STRSXP) {
       CharacterVector stratumv = data[stratum];
-      CharacterVector stratumw = unique(stratumv);
-      std::sort(stratumw.begin(), stratumw.end());
-      stratumn = match(stratumv, stratumw);
+      CharacterVector stratumwc = unique(stratumv);
+      IntegerVector order = seq(0, stratumwc.size()-1);
+      std::sort(order.begin(), order.end(), [&](int i, int j) {
+        return stratumv[i] < stratumv[j];
+      });
+      stratumwc = stratumwc[order];
+      stratumn = match(stratumv, stratumwc);
     } else {
       stop("incorrect type for the stratum variable in the input data");
     }
@@ -752,9 +760,13 @@ List phregr(const DataFrame data,
       idn = match(idv, idw);
     } else if (TYPEOF(data[id]) == STRSXP) {
       CharacterVector idv = data[id];
-      CharacterVector idw = unique(idv);
-      std::sort(idw.begin(), idw.end());
-      idn = match(idv, idw);
+      CharacterVector idwc = unique(idv);
+      IntegerVector order = seq(0, idwc.size()-1);
+      std::sort(order.begin(), order.end(), [&](int i, int j) {
+        return idv[i] < idv[j];
+      });
+      idwc = idwc[order];
+      idn = match(idv, idwc);
     } else {
       stop("incorrect type for the id variable in the input data");
     }

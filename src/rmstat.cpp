@@ -5344,7 +5344,11 @@ DataFrame rmest(const DataFrame data,
     } else if (TYPEOF(data[rep]) == STRSXP) {
       CharacterVector repv = data[rep];
       repwc = unique(repv);
-      std::sort(repwc.begin(), repwc.end());
+      IntegerVector order = seq(0, repwc.size()-1);
+      std::sort(order.begin(), order.end(), [&](int i, int j) {
+        return repv[i] < repv[j];
+      });
+      repwc = repwc[order];
       repn = match(repv, repwc);
     } else {
       stop("incorrect type for the rep variable in the input data");
@@ -5373,7 +5377,11 @@ DataFrame rmest(const DataFrame data,
     } else if (TYPEOF(data[stratum]) == STRSXP) {
       CharacterVector stratumv = data[stratum];
       stratumwc = unique(stratumv);
-      std::sort(stratumwc.begin(), stratumwc.end());
+      IntegerVector order = seq(0, stratumwc.size()-1);
+      std::sort(order.begin(), order.end(), [&](int i, int j) {
+        return stratumv[i] < stratumv[j];
+      });
+      stratumwc = stratumwc[order];
       stratumn = match(stratumv, stratumwc);
     } else {
       stop("incorrect type for the stratum variable in the input data");
@@ -5876,7 +5884,11 @@ DataFrame rmdiff(const DataFrame data,
     if (treatwc.size() != 2) {
       stop("treat must have two and only two distinct values");
     }
-    std::sort(treatwc.begin(), treatwc.end());
+    IntegerVector order = seq(0, treatwc.size()-1);
+    std::sort(order.begin(), order.end(), [&](int i, int j) {
+      return treatv[i] < treatv[j];
+    });
+    treatwc = treatwc[order];
     treatn = match(treatv, treatwc);
   } else {
     stop("incorrect type for the treat variable in the input data");
@@ -5916,7 +5928,11 @@ DataFrame rmdiff(const DataFrame data,
     } else if (TYPEOF(data[rep]) == STRSXP) {
       CharacterVector repv = data[rep];
       repwc = unique(repv);
-      std::sort(repwc.begin(), repwc.end());
+      IntegerVector order = seq(0, repwc.size()-1);
+      std::sort(order.begin(), order.end(), [&](int i, int j) {
+        return repv[i] < repv[j];
+      });
+      repwc = repwc[order];
       repn = match(repv, repwc);
     } else {
       stop("incorrect type for the rep variable in the input data");
@@ -5945,7 +5961,11 @@ DataFrame rmdiff(const DataFrame data,
     } else if (TYPEOF(data[stratum]) == STRSXP) {
       CharacterVector stratumv = data[stratum];
       stratumwc = unique(stratumv);
-      std::sort(stratumwc.begin(), stratumwc.end());
+      IntegerVector order = seq(0, stratumwc.size()-1);
+      std::sort(order.begin(), order.end(), [&](int i, int j) {
+        return stratumv[i] < stratumv[j];
+      });
+      stratumwc = stratumwc[order];
       stratumn = match(stratumv, stratumwc);
     } else {
       stop("incorrect type for the stratum variable in the input data");

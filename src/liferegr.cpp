@@ -1025,7 +1025,7 @@ NumericMatrix f_ressco_1(NumericVector par, void *ex) {
 
 
 //' @title Parametric regression models for failure time data
-//' @description Obtains the parameter estimates from the parametric
+//' @description Obtains the parameter estimates from parametric
 //' regression models with uncensored, right censored, left censored, or
 //' interval censored data.
 //'
@@ -1036,26 +1036,23 @@ NumericMatrix f_ressco_1(NumericVector par, void *ex) {
 //'   * \code{stratum}: The stratum.
 //'
 //'   * \code{time}: The follow-up time for right censored data, or
-//'     the left end of each interval for counting process data.
+//'     the left end of each interval for interval censored data.
 //'
-//'   * \code{time2}: The right end of each interval for counting process
-//'     data only. Intervals are assumed to be open on the left
-//'     and closed on the right, and event indicates whether an event
-//'     occurred at the right end of each interval.
+//'   * \code{time2}: The right end of each interval for interval
+//'     censored data.
 //'
 //'   * \code{event}: The event indicator, normally 1=event, 0=no event.
 //'
-//'   * \code{covariates}: The values of baseline covariates (and
-//'     time-dependent covariates in each interval for counting
-//'     process data). This is the full-rank design matrix for the Cox
-//'     model, assuming that factor variables have already been
-//'     expanded into dummy variables. The intercept will be added
-//'     automatically.
+//'   * \code{covariates}: The values of baseline covariates.
+//'     This is the full-rank design matrix (excluding the intercept)
+//'     for the regression model, assuming that factor variables
+//'     have already been expanded into dummy variables.
+//'     The intercept will be added automatically.
 //'
 //'   * \code{weight}: The weight for each observation.
 //'
-//'   * \code{id}: The optional subject ID for counting process data
-//'     with time-dependent covariates.
+//'   * \code{id}: The optional subject ID to group the score residuals
+//'     in computing the robust sandwich variance.
 //'
 //' @param rep The name of the replication variable in the input data.
 //' @param stratum The name of the stratum variable in the input data.
@@ -1065,8 +1062,8 @@ NumericMatrix f_ressco_1(NumericVector par, void *ex) {
 //'   interval censored data in the input data.
 //' @param event The name of the event variable in the input data
 //'   for right censored data.
-//' @param covariates The vector of names of baseline and time-dependent
-//'   covariates in the input data.
+//' @param covariates The vector of names of baseline covariates
+//'   in the input data.
 //' @param weight The name of the weighting variable in the input data.
 //' @param id The name of the id variable in the input data.
 //' @param dist The assumed distribution for time to event. Options include
@@ -1084,8 +1081,9 @@ NumericMatrix f_ressco_1(NumericVector par, void *ex) {
 //' censored data through the time and time2 variables. For the second form,
 //' we follow the convention used in SAS PROC LIFEREG:
 //'
-//' * If lower is not missing, upper is not missing, and lower == upper,
-//'   then there is no censoring and the event occurred at time lower.
+//' * If lower is not missing, upper is not missing, and lower is equal
+//'   to upper, then there is no censoring and the event occurred at
+//'   time lower.
 //'
 //' * If lower is not missing, upper is not missing, and lower < upper,
 //'   then the event time is censored within the interval (lower, upper).
@@ -1124,11 +1122,11 @@ NumericMatrix f_ressco_1(NumericVector par, void *ex) {
 //'
 //'     - \code{param}: The name of the covariate for the parameter estimate.
 //'
-//'     - \code{beta}: The log hazard ratio estimate.
+//'     - \code{beta}: The parameter estimate.
 //'
-//'     - \code{sebeta}: The standard error of log hazard ratio estimate.
+//'     - \code{sebeta}: The standard error of parameter estimate.
 //'
-//'     - \code{z}: The Wald test statistic for log hazard ratio.
+//'     - \code{z}: The Wald test statistic.
 //'
 //'     - \code{expbeta}: The exponentiated parameter.
 //'
@@ -1238,7 +1236,7 @@ List liferegr(const DataFrame data,
     }
 
     if (is_true(all(eventn == 0))) {
-      stop("at least 1 event is needed to fit the Cox model");
+      stop("at least 1 event is needed to fit the parametric model");
     }
   }
 
@@ -1423,7 +1421,7 @@ List liferegr(const DataFrame data,
       }
     }
 
-    // unify right censored data with counting process data
+    // unify right censored data with interval censored data
     NumericVector tstart(n1), tstop(n1);
     if (!has_time2) {
       tstart = time1;
