@@ -1285,7 +1285,11 @@ List liferegr(const DataFrame data,
     } else if (TYPEOF(data[rep]) == STRSXP) {
       CharacterVector repv = data[rep];
       repwc = unique(repv);
-      std::sort(repwc.begin(), repwc.end());
+      IntegerVector order = seq(0, repwc.size()-1);
+      std::sort(order.begin(), order.end(), [&](int i, int j) {
+        return repwc[i] < repwc[j];
+      });
+      repwc = repwc[order];
       repn = match(repv, repwc);
     } else {
       stop("incorrect type for the rep variable in the input data");
@@ -1309,9 +1313,13 @@ List liferegr(const DataFrame data,
       stratumn = match(stratumv, stratumw);
     } else if (TYPEOF(data[stratum]) == STRSXP) {
       CharacterVector stratumv = data[stratum];
-      CharacterVector stratumw = unique(stratumv);
-      std::sort(stratumw.begin(), stratumw.end());
-      stratumn = match(stratumv, stratumw);
+      CharacterVector stratumwc = unique(stratumv);
+      IntegerVector order = seq(0, stratumwc.size()-1);
+      std::sort(order.begin(), order.end(), [&](int i, int j) {
+        return stratumwc[i] < stratumwc[j];
+      });
+      stratumwc = stratumwc[order];
+      stratumn = match(stratumv, stratumwc);
     } else {
       stop("incorrect type for the stratum variable in the input data");
     }
@@ -1338,9 +1346,13 @@ List liferegr(const DataFrame data,
       idn = match(idv, idw);
     } else if (TYPEOF(data[id]) == STRSXP) {
       CharacterVector idv = data[id];
-      CharacterVector idw = unique(idv);
-      std::sort(idw.begin(), idw.end());
-      idn = match(idv, idw);
+      CharacterVector idwc = unique(idv);
+      IntegerVector order = seq(0, idwc.size()-1);
+      std::sort(order.begin(), order.end(), [&](int i, int j) {
+        return idwc[i] < idwc[j];
+      });
+      idwc = idwc[order];
+      idn = match(idv, idwc);
     } else {
       stop("incorrect type for the id variable in the input data");
     }

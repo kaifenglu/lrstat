@@ -5346,7 +5346,7 @@ DataFrame rmest(const DataFrame data,
       repwc = unique(repv);
       IntegerVector order = seq(0, repwc.size()-1);
       std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return repv[i] < repv[j];
+        return repwc[i] < repwc[j];
       });
       repwc = repwc[order];
       repn = match(repv, repwc);
@@ -5379,7 +5379,7 @@ DataFrame rmest(const DataFrame data,
       stratumwc = unique(stratumv);
       IntegerVector order = seq(0, stratumwc.size()-1);
       std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return stratumv[i] < stratumv[j];
+        return stratumwc[i] < stratumwc[j];
       });
       stratumwc = stratumwc[order];
       stratumn = match(stratumv, stratumwc);
@@ -5886,7 +5886,7 @@ DataFrame rmdiff(const DataFrame data,
     }
     IntegerVector order = seq(0, treatwc.size()-1);
     std::sort(order.begin(), order.end(), [&](int i, int j) {
-      return treatv[i] < treatv[j];
+      return treatwc[i] < treatwc[j];
     });
     treatwc = treatwc[order];
     treatn = match(treatv, treatwc);
@@ -5930,7 +5930,7 @@ DataFrame rmdiff(const DataFrame data,
       repwc = unique(repv);
       IntegerVector order = seq(0, repwc.size()-1);
       std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return repv[i] < repv[j];
+        return repwc[i] < repwc[j];
       });
       repwc = repwc[order];
       repn = match(repv, repwc);
@@ -5963,7 +5963,7 @@ DataFrame rmdiff(const DataFrame data,
       stratumwc = unique(stratumv);
       IntegerVector order = seq(0, stratumwc.size()-1);
       std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return stratumv[i] < stratumv[j];
+        return stratumwc[i] < stratumwc[j];
       });
       stratumwc = stratumwc[order];
       stratumn = match(stratumv, stratumwc);
