@@ -1,8 +1,5 @@
-#include <Rcpp.h>
 #include "utilities.h"
-
 using namespace Rcpp;
-
 
 // define the integrand functions
 typedef struct {

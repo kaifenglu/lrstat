@@ -1,6 +1,4 @@
-#include <Rcpp.h>
 #include "utilities.h"
-
 using namespace Rcpp;
 
 //' @title Log-rank test simulation
@@ -643,20 +641,20 @@ List lrsim(const int kMax = NA_INTEGER,
       // generate survival time
       u = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam1, 0, 
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam1, 0,
                                       1, 0);
       } else {
-        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam2, 0, 
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam2, 0,
                                       1, 0);
       }
 
       // generate dropout time
       u = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam1, 0, 
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam1, 0,
                                      1, 0);
       } else {
-        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam2, 0, 
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam2, 0,
                                      1, 0);
       }
 
@@ -1758,13 +1756,13 @@ List lrsim3a(const int kMax = NA_INTEGER,
       // generate survival time
       u = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam1, 0, 
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam1, 0,
                                       1, 0);
       } else if (treatmentGroup[i]==2) {
-        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam2, 0, 
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam2, 0,
                                       1, 0);
       } else {
-        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam3, 0, 
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam3, 0,
                                       1, 0);
       }
 
@@ -1772,13 +1770,13 @@ List lrsim3a(const int kMax = NA_INTEGER,
       // generate dropout time
       u = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam1, 0, 
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam1, 0,
                                      1, 0);
       } else if (treatmentGroup[i]==2) {
-        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam2, 0, 
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam2, 0,
                                      1, 0);
       } else {
-        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam3, 0, 
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam3, 0,
                                      1, 0);
       }
 
@@ -2875,14 +2873,14 @@ List lrsim2e(const int kMax = NA_INTEGER,
 
       // generate survival times
       if (treatmentGroup[i]==1) {
-        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam1e1, 0, 
+        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam1e1, 0,
                                        1, 0);
-        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam1e2, 0, 
+        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam1e2, 0,
                                        1, 0);
       } else {
-        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam2e1, 0, 
+        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam2e1, 0,
                                        1, 0);
-        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam2e2, 0, 
+        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam2e2, 0,
                                        1, 0);
       }
       // PFS includes death
@@ -2893,14 +2891,14 @@ List lrsim2e(const int kMax = NA_INTEGER,
       u1 = R::runif(0,1);
       u2 = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam1e1, 0, 
+        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam1e1, 0,
                                       1, 0);
-        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam1e2, 0, 
+        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam1e2, 0,
                                       1, 0);
       } else {
-        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam2e1, 0, 
+        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam2e1, 0,
                                       1, 0);
-        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam2e2, 0, 
+        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam2e2, 0,
                                       1, 0);
       }
       // whatever censors OS will also censor PFS
@@ -4301,19 +4299,19 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
 
       // generate survival times
       if (treatmentGroup[i]==1) {
-        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam1e1, 0, 
+        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam1e1, 0,
                                        1, 0);
-        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam1e2, 0, 
+        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam1e2, 0,
                                        1, 0);
       } else if (treatmentGroup[i]==2) {
-        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam2e1, 0, 
+        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam2e1, 0,
                                        1, 0);
-        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam2e2, 0, 
+        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam2e2, 0,
                                        1, 0);
       } else {
-        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam3e1, 0, 
+        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam3e1, 0,
                                        1, 0);
-        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam3e2, 0, 
+        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam3e2, 0,
                                        1, 0);
       }
       // PFS includes death
@@ -4324,19 +4322,19 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
       u1 = R::runif(0,1);
       u2 = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam1e1, 0, 
+        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam1e1, 0,
                                       1, 0);
-        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam1e2, 0, 
+        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam1e2, 0,
                                       1, 0);
       } else if (treatmentGroup[i]==2) {
-        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam2e1, 0, 
+        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam2e1, 0,
                                       1, 0);
-        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam2e2, 0, 
+        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam2e2, 0,
                                       1, 0);
       } else {
-        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam3e1, 0, 
+        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam3e1, 0,
                                       1, 0);
-        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam3e2, 0, 
+        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam3e2, 0,
                                       1, 0);
       }
       // whatever censors OS will also censor PFS

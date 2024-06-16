@@ -1,6 +1,4 @@
-#include <Rcpp.h>
 #include "utilities.h"
-
 using namespace Rcpp;
 
 //' @title Analysis of Simon's Bayesian basket trials
@@ -677,5 +675,3 @@ List simonBayesSim(
 
   return result;
 }
-
-

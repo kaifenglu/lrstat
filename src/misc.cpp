@@ -1,6 +1,4 @@
-#include <Rcpp.h>
 #include "utilities.h"
-
 using namespace Rcpp;
 
 //' @title Update graph for graphical approaches
@@ -4302,7 +4300,7 @@ DataFrame simon2stage(const double alpha = NA_REAL,
     }
   }
 
-  CharacterVector design(m);
+  StringVector design(m);
   for (i=0; i<m; i++) {
     if (w1[i] == 0) {
       design[i] = "Optimal";
@@ -8219,5 +8217,3 @@ DataFrame riskRatioExactCI(
 
   return result;
 }
-
-

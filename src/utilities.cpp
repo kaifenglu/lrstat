@@ -1,9 +1,7 @@
 #include <Rcpp.h>
 #include "utilities.h"
 #include <R_ext/Applic.h>
-
 using namespace Rcpp;
-
 
 // [[Rcpp::export]]
 void set_seed(int seed) {
@@ -3904,7 +3902,7 @@ List adaptDesign(double betaNew = NA_REAL,
 
 // [[Rcpp::export]]
 bool hasVariable(DataFrame df, std::string varName) {
-  CharacterVector names = df.names();
+  StringVector names = df.names();
   for (int i = 0; i < names.size(); i++) {
     if (names[i] == varName) {
       return true;

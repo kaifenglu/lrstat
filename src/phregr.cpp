@@ -1,5 +1,4 @@
 #include "utilities.h"
-
 using namespace Rcpp;
 
 // define functions in likelihood inference, algorithms adapted from coxph
@@ -686,28 +685,24 @@ List phregr(const DataFrame data,
   IntegerVector repn(n);
   IntegerVector repwi;
   NumericVector repwn;
-  CharacterVector repwc;
+  StringVector repwc;
   if (!has_rep) {
     repn.fill(1);
   } else {
     if (TYPEOF(data[rep]) == INTSXP) {
       IntegerVector repv = data[rep];
-      repwi = unique(repv);  // Get unique levels
-      std::sort(repwi.begin(), repwi.end());
-      repn = match(repv, repwi);  // Map codes to levels
+      repwi = unique(repv);
+      repwi.sort();
+      repn = match(repv, repwi);
     } else if (TYPEOF(data[rep]) == REALSXP) {
       NumericVector repv = data[rep];
       repwn = unique(repv);
-      std::sort(repwn.begin(), repwn.end());
+      repwn.sort();
       repn = match(repv, repwn);
     } else if (TYPEOF(data[rep]) == STRSXP) {
-      CharacterVector repv = data[rep];
+      StringVector repv = data[rep];
       repwc = unique(repv);
-      IntegerVector order = seq(0, repwc.size()-1);
-      std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return repwc[i] < repwc[j];
-      });
-      repwc = repwc[order];
+      repwc.sort();
       repn = match(repv, repwc);
     } else {
       stop("incorrect type for the rep variable in the input data");
@@ -721,22 +716,18 @@ List phregr(const DataFrame data,
   } else {
     if (TYPEOF(data[stratum]) == INTSXP) {
       IntegerVector stratumv = data[stratum];
-      IntegerVector stratumw = unique(stratumv);  // Get unique levels
-      std::sort(stratumw.begin(), stratumw.end());
-      stratumn = match(stratumv, stratumw);  // Map codes to levels
+      IntegerVector stratumwi = unique(stratumv);
+      stratumwi.sort();
+      stratumn = match(stratumv, stratumwi);
     } else if (TYPEOF(data[stratum]) == REALSXP) {
       NumericVector stratumv = data[stratum];
-      NumericVector stratumw = unique(stratumv);
-      std::sort(stratumw.begin(), stratumw.end());
-      stratumn = match(stratumv, stratumw);
+      NumericVector stratumwn = unique(stratumv);
+      stratumwn.sort();
+      stratumn = match(stratumv, stratumwn);
     } else if (TYPEOF(data[stratum]) == STRSXP) {
-      CharacterVector stratumv = data[stratum];
-      CharacterVector stratumwc = unique(stratumv);
-      IntegerVector order = seq(0, stratumwc.size()-1);
-      std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return stratumwc[i] < stratumwc[j];
-      });
-      stratumwc = stratumwc[order];
+      StringVector stratumv = data[stratum];
+      StringVector stratumwc = unique(stratumv);
+      stratumwc.sort();
       stratumn = match(stratumv, stratumwc);
     } else {
       stop("incorrect type for the stratum variable in the input data");
@@ -750,22 +741,18 @@ List phregr(const DataFrame data,
   } else {
     if (TYPEOF(data[id]) == INTSXP) {
       IntegerVector idv = data[id];
-      IntegerVector idw = unique(idv);  // Get unique levels
-      std::sort(idw.begin(), idw.end());
-      idn = match(idv, idw);  // Map codes to levels
+      IntegerVector idwi = unique(idv);
+      idwi.sort();
+      idn = match(idv, idwi);
     } else if (TYPEOF(data[id]) == REALSXP) {
       NumericVector idv = data[id];
-      NumericVector idw = unique(idv);
-      std::sort(idw.begin(), idw.end());
-      idn = match(idv, idw);
+      NumericVector idwn = unique(idv);
+      idwn.sort();
+      idn = match(idv, idwn);
     } else if (TYPEOF(data[id]) == STRSXP) {
-      CharacterVector idv = data[id];
-      CharacterVector idwc = unique(idv);
-      IntegerVector order = seq(0, idwc.size()-1);
-      std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return idwc[i] < idwc[j];
-      });
-      idwc = idwc[order];
+      StringVector idv = data[id];
+      StringVector idwc = unique(idv);
+      idwc.sort();
       idn = match(idv, idwc);
     } else {
       stop("incorrect type for the id variable in the input data");
@@ -877,7 +864,7 @@ List phregr(const DataFrame data,
 
     NumericVector etime = tstop[event1==1];
     etime = unique(etime);
-    std::sort(etime.begin(), etime.end());
+    etime.sort();
 
     IntegerVector index1 = findInterval3(tstart, etime);
     IntegerVector index2 = findInterval3(tstop, etime);
