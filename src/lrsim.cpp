@@ -1,5 +1,7 @@
 #include "utilities.h"
+
 using namespace Rcpp;
+
 
 //' @title Log-rank test simulation
 //' @description Performs simulation for two-arm group sequential
@@ -39,7 +41,7 @@ using namespace Rcpp;
 //' @param maxNumberOfIterations The number of simulation iterations.
 //'   Defaults to 1000.
 //' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
-//'   stage to extract. Defaults to 1.
+//'   stage to extract.
 //' @param seed The seed to reproduce the simulation results.
 //'   The seed from the environment will be used if left unspecified,
 //'
@@ -225,7 +227,7 @@ using namespace Rcpp;
 //'
 //' @export
 // [[Rcpp::export]]
-List lrsim(const int kMax = NA_INTEGER,
+List lrsim(const int kMax = 1,
            const NumericVector& informationRates = NA_REAL,
            const NumericVector& criticalValues = NA_REAL,
            const NumericVector& futilityBounds = NA_REAL,
@@ -251,8 +253,8 @@ List lrsim(const int kMax = NA_INTEGER,
            const int maxNumberOfRawDatasetsPerStage = 0,
            const int seed = NA_INTEGER) {
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
   NumericVector lambda1x(nsi), lambda2x(nsi);
   NumericVector gamma1x(nsi), gamma2x(nsi);
@@ -365,6 +367,10 @@ List lrsim(const int kMax = NA_INTEGER,
     stop("accrualTime should be increasing");
   }
 
+  if (is_true(any(is_na(accrualIntensity)))) {
+    stop("accrualIntensity must be provided");
+  }
+
   if (accrualTime.size() != accrualIntensity.size()) {
     stop("accrualTime must have the same length as accrualIntensity");
   }
@@ -387,6 +393,14 @@ List lrsim(const int kMax = NA_INTEGER,
 
   if (sum(stratumFraction) != 1) {
     stop("stratumFraction must sum to 1");
+  }
+
+  if (is_true(any(is_na(lambda1)))) {
+    stop("lambda1 must be provided");
+  }
+
+  if (is_true(any(is_na(lambda2)))) {
+    stop("lambda2 must be provided");
   }
 
   if (is_true(any(lambda1 < 0))) {
@@ -489,7 +503,7 @@ List lrsim(const int kMax = NA_INTEGER,
 
 
   // maximum number of subjects to enroll
-  int m = accrualTime.size();
+  int m = static_cast<int>(accrualTime.size());
   double s = 0;
   for (i=0; i<m; i++) {
     if (i<m-1 && accrualTime[i+1] < accrualDuration) {
@@ -499,7 +513,7 @@ List lrsim(const int kMax = NA_INTEGER,
       break;
     }
   }
-  int n = floor(s + 0.5);
+  int n = static_cast<int>(floor(s + 0.5));
 
 
   // subject-level raw data set for one simulation
@@ -514,9 +528,9 @@ List lrsim(const int kMax = NA_INTEGER,
 
 
   // stratum information
-  IntegerVector b1(nstrata), b2(nstrata), n1(nstrata), n1x(nstrata),
-  n2(nstrata), nt(nstrata), ntx(nstrata);
-
+  IntegerVector b1(nstrata), b2(nstrata), n1(nstrata), n2(nstrata);
+  IntegerVector nt(nstrata);
+  NumericVector n1x(nstrata), ntx(nstrata);
   NumericVector km(nstrata), w(nstrata);
   NumericVector cumStratumFraction = cumsum(stratumFraction);
 
@@ -542,40 +556,40 @@ List lrsim(const int kMax = NA_INTEGER,
                        n*maxNumberOfIterations);
 
   IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector stopStagex = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector subjectIdx = IntegerVector(nrow1, NA_INTEGER);
-  NumericVector arrivalTimex = NumericVector(nrow1, NA_REAL);
-  IntegerVector stratumx = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector treatmentGroupx = IntegerVector(nrow1, NA_INTEGER);
-  NumericVector survivalTimex = NumericVector(nrow1, NA_REAL);
-  NumericVector dropoutTimex = NumericVector(nrow1, NA_REAL);
-  NumericVector observationTimex = NumericVector(nrow1, NA_REAL);
-  NumericVector timeUnderObservationx = NumericVector(nrow1, NA_REAL);
-  LogicalVector eventx = LogicalVector(nrow1, NA_LOGICAL);
-  LogicalVector dropoutEventx = LogicalVector(nrow1, NA_LOGICAL);
+  IntegerVector stopStagex(nrow1);
+  IntegerVector subjectIdx(nrow1);
+  NumericVector arrivalTimex(nrow1);
+  IntegerVector stratumx(nrow1);
+  IntegerVector treatmentGroupx(nrow1);
+  NumericVector survivalTimex(nrow1);
+  NumericVector dropoutTimex(nrow1);
+  NumericVector observationTimex(nrow1);
+  NumericVector timeUnderObservationx(nrow1);
+  LogicalVector eventx(nrow1);
+  LogicalVector dropoutEventx(nrow1);
 
   // cache for the simulation-level summary data to extract
   int nrow2 = kMax*maxNumberOfIterations;
 
   IntegerVector iterationNumbery = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector stopStagey = IntegerVector(nrow2, NA_INTEGER);
-  LogicalVector eventsNotAchievedy = LogicalVector(nrow2, NA_LOGICAL);
-  IntegerVector stageNumbery = IntegerVector(nrow2, NA_INTEGER);
-  NumericVector analysisTimey = NumericVector(nrow2, NA_REAL);
-  IntegerVector accruals1y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector accruals2y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector totalAccrualsy = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector events1y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector events2y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector totalEventsy = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector dropouts1y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector dropouts2y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector totalDropoutsy = IntegerVector(nrow2, NA_INTEGER);
-  NumericVector uscorey = NumericVector(nrow2, NA_REAL);
-  NumericVector vscorey = NumericVector(nrow2, NA_REAL);
-  NumericVector logRankStatisticy = NumericVector(nrow2, NA_REAL);
-  LogicalVector rejectPerStagey = LogicalVector(nrow2, NA_LOGICAL);
-  LogicalVector futilityPerStagey = LogicalVector(nrow2, NA_LOGICAL);
+  IntegerVector stopStagey(nrow2);
+  LogicalVector eventsNotAchievedy(nrow2);
+  IntegerVector stageNumbery(nrow2);
+  NumericVector analysisTimey(nrow2);
+  IntegerVector accruals1y(nrow2);
+  IntegerVector accruals2y(nrow2);
+  IntegerVector totalAccrualsy(nrow2);
+  IntegerVector events1y(nrow2);
+  IntegerVector events2y(nrow2);
+  IntegerVector totalEventsy(nrow2);
+  IntegerVector dropouts1y(nrow2);
+  IntegerVector dropouts2y(nrow2);
+  IntegerVector totalDropoutsy(nrow2);
+  NumericVector uscorey(nrow2);
+  NumericVector vscorey(nrow2);
+  NumericVector logRankStatisticy(nrow2);
+  LogicalVector rejectPerStagey(nrow2);
+  LogicalVector futilityPerStagey(nrow2);
 
 
   // total alpha to adjust the critical value at the final stage
@@ -829,7 +843,7 @@ List lrsim(const int kMax = NA_INTEGER,
       eventSorted = eventSorted[sub];
       stratumSorted = stratumSorted[sub];
       treatmentGroupSorted = treatmentGroupSorted[sub];
-      nsub = eventSorted.size();
+      nsub = static_cast<int>(eventSorted.size());
 
       // calculate the stratified log-rank test
       uscore1 = 0;
@@ -1018,7 +1032,7 @@ List lrsim(const int kMax = NA_INTEGER,
 
 
   // number of observations in the summary dataset
-  int nrow3 = stageNumbery.size();
+  int nrow3 = static_cast<int>(stageNumbery.size());
 
   for (i=0; i<nrow3; i++) {
     k = stageNumbery[i] - 1;
@@ -1211,7 +1225,7 @@ List lrsim(const int kMax = NA_INTEGER,
 //' @param maxNumberOfIterations The number of simulation iterations.
 //'   Defaults to 1000.
 //' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
-//'   stage to extract. Defaults to 1.
+//'   stage to extract.
 //' @param seed The seed to reproduce the simulation results.
 //'   The seed from the environment will be used if left unspecified,
 //'
@@ -1357,8 +1371,8 @@ List lrsim3a(const int kMax = NA_INTEGER,
              const int seed = NA_INTEGER) {
 
   // check input parameters
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
   NumericVector lambda1x(nsi), lambda2x(nsi), lambda3x(nsi);
@@ -1435,6 +1449,9 @@ List lrsim3a(const int kMax = NA_INTEGER,
     stop("accrualTime should be increasing");
   }
 
+  if (is_true(any(is_na(accrualIntensity)))) {
+    stop("accrualIntensity must be provided");
+  }
 
   if (accrualTime.size() != accrualIntensity.size()) {
     stop("accrualTime must have the same length as accrualIntensity");
@@ -1462,6 +1479,17 @@ List lrsim3a(const int kMax = NA_INTEGER,
     stop("stratumFraction must sum to 1");
   }
 
+  if (is_true(any(is_na(lambda1)))) {
+    stop("lambda1 must be provided");
+  }
+
+  if (is_true(any(is_na(lambda2)))) {
+    stop("lambda2 must be provided");
+  }
+
+  if (is_true(any(is_na(lambda3)))) {
+    stop("lambda3 must be provided");
+  }
 
   if (is_true(any(lambda1 < 0))) {
     stop("lambda1 must be non-negative");
@@ -1606,7 +1634,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
 
 
   // maximum number of subjects to enroll
-  int m = accrualTime.size();
+  int m = static_cast<int>(accrualTime.size());
   double s = 0;
   for (i=0; i<m; i++) {
     if (i<m-1 && accrualTime[i+1] < accrualDuration) {
@@ -1616,7 +1644,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
       break;
     }
   }
-  int n = floor(s + 0.5);
+  int n = static_cast<int>(floor(s + 0.5));
 
 
   // subject-level raw data set for one simulation
@@ -1635,8 +1663,8 @@ List lrsim3a(const int kMax = NA_INTEGER,
   IntegerVector b1(nstrata), b2(nstrata), b3(nstrata);
   IntegerVector n1(nstrata), n2(nstrata), n3(nstrata);
   IntegerVector nt13(nstrata), nt23(nstrata), nt12(nstrata);
-  IntegerVector n13a(nstrata), n23a(nstrata), n12a(nstrata);
-  IntegerVector nt13a(nstrata), nt23a(nstrata), nt12a(nstrata);
+  NumericVector n13a(nstrata), n23a(nstrata), n12a(nstrata);
+  NumericVector nt13a(nstrata), nt23a(nstrata), nt12a(nstrata);
 
   NumericVector km13(nstrata), km23(nstrata), km12(nstrata);
   NumericVector w13(nstrata), w23(nstrata), w12(nstrata);
@@ -1656,40 +1684,40 @@ List lrsim3a(const int kMax = NA_INTEGER,
   int nrow1 = n*kMax*maxNumberOfRawDatasetsPerStage;
 
   IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector stageNumberx = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector subjectIdx = IntegerVector(nrow1, NA_INTEGER);
-  NumericVector arrivalTimex = NumericVector(nrow1, NA_REAL);
-  IntegerVector stratumx = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector treatmentGroupx = IntegerVector(nrow1, NA_INTEGER);
-  NumericVector survivalTimex = NumericVector(nrow1, NA_REAL);
-  NumericVector dropoutTimex = NumericVector(nrow1, NA_REAL);
-  NumericVector observationTimex = NumericVector(nrow1, NA_REAL);
-  NumericVector timeUnderObservationx = NumericVector(nrow1, NA_REAL);
-  LogicalVector eventx = LogicalVector(nrow1, NA_LOGICAL);
-  LogicalVector dropoutEventx = LogicalVector(nrow1, NA_LOGICAL);
+  IntegerVector stageNumberx(nrow1);
+  IntegerVector subjectIdx(nrow1);
+  NumericVector arrivalTimex(nrow1);
+  IntegerVector stratumx(nrow1);
+  IntegerVector treatmentGroupx(nrow1);
+  NumericVector survivalTimex(nrow1);
+  NumericVector dropoutTimex(nrow1);
+  NumericVector observationTimex(nrow1);
+  NumericVector timeUnderObservationx(nrow1);
+  LogicalVector eventx(nrow1);
+  LogicalVector dropoutEventx(nrow1);
 
   // cache for the simulation-level summary data to extract
   int nrow2 = kMax*maxNumberOfIterations*2;
 
   IntegerVector iterationNumbery = IntegerVector(nrow2, NA_INTEGER);
-  LogicalVector eventsNotAchievedy = LogicalVector(nrow2, NA_LOGICAL);
-  IntegerVector stageNumbery = IntegerVector(nrow2, NA_INTEGER);
-  NumericVector analysisTimey = NumericVector(nrow2, NA_REAL);
-  IntegerVector accruals1y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector accruals2y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector accruals3y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector totalAccrualsy = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector events1y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector events2y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector events3y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector totalEventsy = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector dropouts1y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector dropouts2y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector dropouts3y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector totalDropoutsy = IntegerVector(nrow2, NA_INTEGER);
-  NumericVector logRankStatistic13y = NumericVector(nrow2, NA_REAL);
-  NumericVector logRankStatistic23y = NumericVector(nrow2, NA_REAL);
-  NumericVector logRankStatistic12y = NumericVector(nrow2, NA_REAL);
+  LogicalVector eventsNotAchievedy(nrow2);
+  IntegerVector stageNumbery(nrow2);
+  NumericVector analysisTimey(nrow2);
+  IntegerVector accruals1y(nrow2);
+  IntegerVector accruals2y(nrow2);
+  IntegerVector accruals3y(nrow2);
+  IntegerVector totalAccrualsy(nrow2);
+  IntegerVector events1y(nrow2);
+  IntegerVector events2y(nrow2);
+  IntegerVector events3y(nrow2);
+  IntegerVector totalEventsy(nrow2);
+  IntegerVector dropouts1y(nrow2);
+  IntegerVector dropouts2y(nrow2);
+  IntegerVector dropouts3y(nrow2);
+  IntegerVector totalDropoutsy(nrow2);
+  NumericVector logRankStatistic13y(nrow2);
+  NumericVector logRankStatistic23y(nrow2);
+  NumericVector logRankStatistic12y(nrow2);
 
 
   // set up random seed
@@ -1985,7 +2013,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
       eventSorted = eventSorted[sub];
       stratumSorted = stratumSorted[sub];
       treatmentGroupSorted = treatmentGroupSorted[sub];
-      nsub = eventSorted.size();
+      nsub = static_cast<int>(eventSorted.size());
 
       // calculate the stratified log-rank test
       uscore13 = 0;
@@ -2016,8 +2044,8 @@ List lrsim3a(const int kMax = NA_INTEGER,
             treatmentGroupSorted[i]==3)) {
           w13[h] = pow(km13[h], rho1)*pow(1-km13[h], rho2);
           uscore13 += w13[h]*((treatmentGroupSorted[i]==1)
-                                - n13a[h]/(nt13a[h]+0.0));
-          vscore13 += w13[h]*w13[h]*n13a[h]*n3[h]/(nt13a[h]*nt13a[h]+0.0);
+                                - n13a[h]/nt13a[h]);
+          vscore13 += w13[h]*w13[h]*n13a[h]*n3[h]/(nt13a[h]*nt13a[h]);
           km13[h] *= (1-1/(nt13[h]+0.0)); // update km estimate
         }
 
@@ -2025,8 +2053,8 @@ List lrsim3a(const int kMax = NA_INTEGER,
             treatmentGroupSorted[i]==3)) {
           w23[h] = pow(km23[h], rho1)*pow(1-km23[h], rho2);
           uscore23 += w23[h]*((treatmentGroupSorted[i]==2)
-                                - n23a[h]/(nt23a[h]+0.0));
-          vscore23 += w23[h]*w23[h]*n23a[h]*n3[h]/(nt23a[h]*nt23a[h]+0.0);
+                                - n23a[h]/nt23a[h]);
+          vscore23 += w23[h]*w23[h]*n23a[h]*n3[h]/(nt23a[h]*nt23a[h]);
           km23[h] *= (1-1/(nt23[h]+0.0)); // update km estimate
         }
 
@@ -2034,8 +2062,8 @@ List lrsim3a(const int kMax = NA_INTEGER,
             treatmentGroupSorted[i]==2)) {
           w12[h] = pow(km12[h], rho1)*pow(1-km12[h], rho2);
           uscore12 += w12[h]*((treatmentGroupSorted[i]==1)
-                                - n12a[h]/(nt12a[h]+0.0));
-          vscore12 += w12[h]*w12[h]*n12a[h]*n2[h]/(nt12a[h]*nt12a[h]+0.0);
+                                - n12a[h]/nt12a[h]);
+          vscore12 += w12[h]*w12[h]*n12a[h]*n2[h]/(nt12a[h]*nt12a[h]);
           km12[h] *= (1-1/(nt12[h]+0.0)); // update km estimate
         }
 
@@ -2232,7 +2260,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
 //' @param maxNumberOfIterations The number of simulation iterations.
 //'   Defaults to 1000.
 //' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
-//'   stage to extract. Defaults to 1.
+//'   stage to extract.
 //' @param seed The seed to reproduce the simulation results.
 //'   The seed from the environment will be used if left unspecified,
 //'
@@ -2388,8 +2416,8 @@ List lrsim2e(const int kMax = NA_INTEGER,
   // check input parameters
   int kMaxe1x = kMaxe1;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
   NumericVector lambda1e1x(nsi), lambda2e1x(nsi);
@@ -2483,6 +2511,9 @@ List lrsim2e(const int kMax = NA_INTEGER,
     stop("accrualTime should be increasing");
   }
 
+  if (is_true(any(is_na(accrualIntensity)))) {
+    stop("accrualIntensity must be provided");
+  }
 
   if (accrualTime.size() != accrualIntensity.size()) {
     stop("accrualTime must have the same length as accrualIntensity");
@@ -2515,6 +2546,22 @@ List lrsim2e(const int kMax = NA_INTEGER,
     stop("rho must lie in (-1, 1)");
   }
 
+
+  if (is_true(any(is_na(lambda1e1)))) {
+    stop("lambda1e1 must be provided");
+  }
+
+  if (is_true(any(is_na(lambda2e1)))) {
+    stop("lambda2e1 must be provided");
+  }
+
+  if (is_true(any(is_na(lambda1e2)))) {
+    stop("lambda1e2 must be provided");
+  }
+
+  if (is_true(any(is_na(lambda2e2)))) {
+    stop("lambda2e2 must be provided");
+  }
 
   if (is_true(any(lambda1e1 < 0))) {
     stop("lambda1e1 must be non-negative");
@@ -2709,7 +2756,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
 
 
   // maximum number of subjects to enroll
-  int m = accrualTime.size();
+  int m = static_cast<int>(accrualTime.size());
   double s = 0;
   for (i=0; i<m; i++) {
     if (i<m-1 && accrualTime[i+1] < accrualDuration) {
@@ -2719,7 +2766,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
       break;
     }
   }
-  int n = floor(s + 0.5);
+  int n = static_cast<int>(floor(s + 0.5));
 
 
   // subject-level raw data set for one simulation
@@ -2743,7 +2790,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
   IntegerVector n1x(nstrata), n2x(nstrata);
 
   // hazardRatioH0 adjusted n1 and nt for calculating the log-rank statistic
-  IntegerVector n1a(nstrata), nta(nstrata);
+  NumericVector n1a(nstrata), nta(nstrata);
 
   NumericVector km(nstrata), w(nstrata);
   NumericVector cumStratumFraction = cumsum(stratumFraction);
@@ -2765,42 +2812,42 @@ List lrsim2e(const int kMax = NA_INTEGER,
   int nrow1 = n*kMax*maxNumberOfRawDatasetsPerStage;
 
   IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector stageNumberx = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector subjectIdx = IntegerVector(nrow1, NA_INTEGER);
-  NumericVector arrivalTimex = NumericVector(nrow1, NA_REAL);
-  IntegerVector stratumx = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector treatmentGroupx = IntegerVector(nrow1, NA_INTEGER);
-  NumericVector survivalTime1x = NumericVector(nrow1, NA_REAL);
-  NumericVector survivalTime2x = NumericVector(nrow1, NA_REAL);
-  NumericVector dropoutTime1x = NumericVector(nrow1, NA_REAL);
-  NumericVector dropoutTime2x = NumericVector(nrow1, NA_REAL);
-  NumericVector observationTimex = NumericVector(nrow1, NA_REAL);
-  NumericVector timeUnderObservation1x = NumericVector(nrow1, NA_REAL);
-  NumericVector timeUnderObservation2x = NumericVector(nrow1, NA_REAL);
-  LogicalVector event1x = LogicalVector(nrow1, NA_LOGICAL);
-  LogicalVector event2x = LogicalVector(nrow1, NA_LOGICAL);
-  LogicalVector dropoutEvent1x = LogicalVector(nrow1, NA_LOGICAL);
-  LogicalVector dropoutEvent2x = LogicalVector(nrow1, NA_LOGICAL);
+  IntegerVector stageNumberx(nrow1);
+  IntegerVector subjectIdx(nrow1);
+  NumericVector arrivalTimex(nrow1);
+  IntegerVector stratumx(nrow1);
+  IntegerVector treatmentGroupx(nrow1);
+  NumericVector survivalTime1x(nrow1);
+  NumericVector survivalTime2x(nrow1);
+  NumericVector dropoutTime1x(nrow1);
+  NumericVector dropoutTime2x(nrow1);
+  NumericVector observationTimex(nrow1);
+  NumericVector timeUnderObservation1x(nrow1);
+  NumericVector timeUnderObservation2x(nrow1);
+  LogicalVector event1x(nrow1);
+  LogicalVector event2x(nrow1);
+  LogicalVector dropoutEvent1x(nrow1);
+  LogicalVector dropoutEvent2x(nrow1);
 
 
   // cache for the simulation-level summary data to extract
   int nrow2 = kMax*maxNumberOfIterations*2;
 
   IntegerVector iterationNumbery = IntegerVector(nrow2, NA_INTEGER);
-  LogicalVector eventsNotAchievedy = LogicalVector(nrow2, NA_LOGICAL);
-  IntegerVector stageNumbery = IntegerVector(nrow2, NA_INTEGER);
-  NumericVector analysisTimey = NumericVector(nrow2, NA_REAL);
-  IntegerVector accruals1y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector accruals2y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector totalAccrualsy = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector endpointy = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector events1y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector events2y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector totalEventsy = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector dropouts1y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector dropouts2y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector totalDropoutsy = IntegerVector(nrow2, NA_INTEGER);
-  NumericVector logRankStatisticy = NumericVector(nrow2, NA_REAL);
+  LogicalVector eventsNotAchievedy(nrow2);
+  IntegerVector stageNumbery(nrow2);
+  NumericVector analysisTimey(nrow2);
+  IntegerVector accruals1y(nrow2);
+  IntegerVector accruals2y(nrow2);
+  IntegerVector totalAccrualsy(nrow2);
+  IntegerVector endpointy(nrow2);
+  IntegerVector events1y(nrow2);
+  IntegerVector events2y(nrow2);
+  IntegerVector totalEventsy(nrow2);
+  IntegerVector dropouts1y(nrow2);
+  IntegerVector dropouts2y(nrow2);
+  IntegerVector totalDropoutsy(nrow2);
+  NumericVector logRankStatisticy(nrow2);
 
 
   // set up random seed
@@ -3047,7 +3094,8 @@ List lrsim2e(const int kMax = NA_INTEGER,
       } else {
         if (analysisTime2[kMax-kMaxe1x-1] > analysisTime[kMaxe1x-1]) {
           // only OS looks that occur after the last PFS look contribute
-          int l = which_max(analysisTime2 > analysisTime[kMaxe1x-1]);
+          int l = static_cast<int>(which_max(analysisTime2 >
+                                               analysisTime[kMaxe1x-1]));
           nstages = kMax-l;
           for (k=kMaxe1x; k<kMax-l; k++) {
             analysisTime[k] = analysisTime2[k-kMaxe1x+l];
@@ -3074,7 +3122,6 @@ List lrsim2e(const int kMax = NA_INTEGER,
       analysisTime = clone(plannedTime);
       eventsNotAchieved = 0;
     }
-
 
 
     // construct the log-rank test statistic at each stage
@@ -3291,7 +3338,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
         eventSorted = eventSorted[sub];
         stratumSorted = stratumSorted[sub];
         treatmentGroupSorted = treatmentGroupSorted[sub];
-        nsub = eventSorted.size();
+        nsub = static_cast<int>(eventSorted.size());
 
         // calculate the stratified log-rank test
         uscore = 0;
@@ -3306,9 +3353,8 @@ List lrsim2e(const int kMax = NA_INTEGER,
 
           if (eventSorted[i]) {
             w[h] = pow(km[h], rho1)*pow(1-km[h], rho2);
-            uscore += w[h]*((treatmentGroupSorted[i]==1)
-                              - n1a[h]/(nta[h]+0.0));
-            vscore += w[h]*w[h]*n1a[h]*n2[h]/(nta[h]*nta[h]+0.0);
+            uscore += w[h]*((treatmentGroupSorted[i]==1) - n1a[h]/nta[h]);
+            vscore += w[h]*w[h]*n1a[h]*n2[h]/(nta[h]*nta[h]);
             km[h] *= (1-1/(nt[h]+0.0)); // update km estimate
           }
 
@@ -3445,6 +3491,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
 }
 
 
+
 //' @title Log-rank test simulation for two endpoints and three arms
 //' @description Performs simulation for two-endpoint three-arm group
 //' sequential trials based on weighted log-rank test. The first
@@ -3531,7 +3578,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
 //' @param maxNumberOfIterations The number of simulation iterations.
 //'   Defaults to 1000.
 //' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
-//'   stage to extract. Defaults to 1.
+//'   stage to extract.
 //' @param seed The seed to reproduce the simulation results.
 //'   The seed from the environment will be used if left unspecified,
 //'
@@ -3715,8 +3762,8 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   // check input parameters
   int kMaxe1x = kMaxe1;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
   NumericVector lambda1e1x(nsi), lambda2e1x(nsi), lambda3e1x(nsi);
@@ -3829,6 +3876,9 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
     stop("accrualTime should be increasing");
   }
 
+  if (is_true(any(is_na(accrualIntensity)))) {
+    stop("accrualIntensity must be provided");
+  }
 
   if (accrualTime.size() != accrualIntensity.size()) {
     stop("accrualTime must have the same length as accrualIntensity");
@@ -3861,6 +3911,30 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
     stop("rho must lie in (-1, 1)");
   }
 
+
+  if (is_true(any(is_na(lambda1e1)))) {
+    stop("lambda1e1 must be provided");
+  }
+
+  if (is_true(any(is_na(lambda2e1)))) {
+    stop("lambda2e1 must be provided");
+  }
+
+  if (is_true(any(is_na(lambda3e1)))) {
+    stop("lambda3e1 must be provided");
+  }
+
+  if (is_true(any(is_na(lambda1e2)))) {
+    stop("lambda1e2 must be provided");
+  }
+
+  if (is_true(any(is_na(lambda2e2)))) {
+    stop("lambda2e2 must be provided");
+  }
+
+  if (is_true(any(is_na(lambda3e2)))) {
+    stop("lambda3e2 must be provided");
+  }
 
   if (is_true(any(lambda1e1 < 0))) {
     stop("lambda1e1 must be non-negative");
@@ -4119,7 +4193,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
 
 
   // maximum number of subjects to enroll
-  int m = accrualTime.size();
+  int m = static_cast<int>(accrualTime.size());
   double s = 0;
   for (i=0; i<m; i++) {
     if (i<m-1 && accrualTime[i+1] < accrualDuration) {
@@ -4129,7 +4203,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
       break;
     }
   }
-  int n = floor(s + 0.5);
+  int n = static_cast<int>(floor(s + 0.5));
 
 
   // subject-level raw data set for one simulation
@@ -4154,8 +4228,8 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   IntegerVector n1x(nstrata), n2x(nstrata), n3x(nstrata);
 
   // hazardRatioH0 adjusted at risk for calculating the log-rank statistic
-  IntegerVector n13a(nstrata), n23a(nstrata), n12a(nstrata);
-  IntegerVector nt13a(nstrata), nt23a(nstrata), nt12a(nstrata);
+  NumericVector n13a(nstrata), n23a(nstrata), n12a(nstrata);
+  NumericVector nt13a(nstrata), nt23a(nstrata), nt12a(nstrata);
 
   NumericVector km13(nstrata), km23(nstrata), km12(nstrata);
   NumericVector w13(nstrata), w23(nstrata), w12(nstrata);
@@ -4177,47 +4251,47 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   int nrow1 = n*kMax*maxNumberOfRawDatasetsPerStage;
 
   IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector stageNumberx = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector subjectIdx = IntegerVector(nrow1, NA_INTEGER);
-  NumericVector arrivalTimex = NumericVector(nrow1, NA_REAL);
-  IntegerVector stratumx = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector treatmentGroupx = IntegerVector(nrow1, NA_INTEGER);
-  NumericVector survivalTime1x = NumericVector(nrow1, NA_REAL);
-  NumericVector survivalTime2x = NumericVector(nrow1, NA_REAL);
-  NumericVector dropoutTime1x = NumericVector(nrow1, NA_REAL);
-  NumericVector dropoutTime2x = NumericVector(nrow1, NA_REAL);
-  NumericVector observationTimex = NumericVector(nrow1, NA_REAL);
-  NumericVector timeUnderObservation1x = NumericVector(nrow1, NA_REAL);
-  NumericVector timeUnderObservation2x = NumericVector(nrow1, NA_REAL);
-  LogicalVector event1x = LogicalVector(nrow1, NA_LOGICAL);
-  LogicalVector event2x = LogicalVector(nrow1, NA_LOGICAL);
-  LogicalVector dropoutEvent1x = LogicalVector(nrow1, NA_LOGICAL);
-  LogicalVector dropoutEvent2x = LogicalVector(nrow1, NA_LOGICAL);
+  IntegerVector stageNumberx(nrow1);
+  IntegerVector subjectIdx(nrow1);
+  NumericVector arrivalTimex(nrow1);
+  IntegerVector stratumx(nrow1);
+  IntegerVector treatmentGroupx(nrow1);
+  NumericVector survivalTime1x(nrow1);
+  NumericVector survivalTime2x(nrow1);
+  NumericVector dropoutTime1x(nrow1);
+  NumericVector dropoutTime2x(nrow1);
+  NumericVector observationTimex(nrow1);
+  NumericVector timeUnderObservation1x(nrow1);
+  NumericVector timeUnderObservation2x(nrow1);
+  LogicalVector event1x(nrow1);
+  LogicalVector event2x(nrow1);
+  LogicalVector dropoutEvent1x(nrow1);
+  LogicalVector dropoutEvent2x(nrow1);
 
 
   // cache for the simulation-level summary data to extract
   int nrow2 = kMax*maxNumberOfIterations*2;
 
   IntegerVector iterationNumbery = IntegerVector(nrow2, NA_INTEGER);
-  LogicalVector eventsNotAchievedy = LogicalVector(nrow2, NA_LOGICAL);
-  IntegerVector stageNumbery = IntegerVector(nrow2, NA_INTEGER);
-  NumericVector analysisTimey = NumericVector(nrow2, NA_REAL);
-  IntegerVector accruals1y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector accruals2y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector accruals3y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector totalAccrualsy = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector endpointy = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector events1y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector events2y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector events3y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector totalEventsy = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector dropouts1y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector dropouts2y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector dropouts3y = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector totalDropoutsy = IntegerVector(nrow2, NA_INTEGER);
-  NumericVector logRankStatistic13y = NumericVector(nrow2, NA_REAL);
-  NumericVector logRankStatistic23y = NumericVector(nrow2, NA_REAL);
-  NumericVector logRankStatistic12y = NumericVector(nrow2, NA_REAL);
+  LogicalVector eventsNotAchievedy(nrow2);
+  IntegerVector stageNumbery(nrow2);
+  NumericVector analysisTimey(nrow2);
+  IntegerVector accruals1y(nrow2);
+  IntegerVector accruals2y(nrow2);
+  IntegerVector accruals3y(nrow2);
+  IntegerVector totalAccrualsy(nrow2);
+  IntegerVector endpointy(nrow2);
+  IntegerVector events1y(nrow2);
+  IntegerVector events2y(nrow2);
+  IntegerVector events3y(nrow2);
+  IntegerVector totalEventsy(nrow2);
+  IntegerVector dropouts1y(nrow2);
+  IntegerVector dropouts2y(nrow2);
+  IntegerVector dropouts3y(nrow2);
+  IntegerVector totalDropoutsy(nrow2);
+  NumericVector logRankStatistic13y(nrow2);
+  NumericVector logRankStatistic23y(nrow2);
+  NumericVector logRankStatistic12y(nrow2);
 
 
   // set up random seed
@@ -4488,7 +4562,8 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
       } else {
         if (analysisTime2[kMax-kMaxe1x-1] > analysisTime[kMaxe1x-1]) {
           // only OS looks that occur after the last PFS look contribute
-          int l = which_max(analysisTime2 > analysisTime[kMaxe1x-1]);
+          int l = static_cast<int>(which_max(analysisTime2 >
+                                               analysisTime[kMaxe1x-1]));
           nstages = kMax-l;
           for (k=kMaxe1x; k<kMax-l; k++) {
             analysisTime[k] = analysisTime2[k-kMaxe1x+l];
@@ -4515,7 +4590,6 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
       analysisTime = clone(plannedTime);
       eventsNotAchieved = 0;
     }
-
 
 
     // construct the log-rank test statistic at each stage
@@ -4750,7 +4824,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
         eventSorted = eventSorted[sub];
         stratumSorted = stratumSorted[sub];
         treatmentGroupSorted = treatmentGroupSorted[sub];
-        nsub = eventSorted.size();
+        nsub = static_cast<int>(eventSorted.size());
 
         // calculate the stratified log-rank test
         uscore13 = 0;
@@ -4781,8 +4855,8 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
               treatmentGroupSorted[i]==3)) {
             w13[h] = pow(km13[h], rho1)*pow(1-km13[h], rho2);
             uscore13 += w13[h]*((treatmentGroupSorted[i]==1)
-                                  - n13a[h]/(nt13a[h]+0.0));
-            vscore13 += w13[h]*w13[h]*n13a[h]*n3[h]/(nt13a[h]*nt13a[h]+0.0);
+                                  - n13a[h]/nt13a[h]);
+            vscore13 += w13[h]*w13[h]*n13a[h]*n3[h]/(nt13a[h]*nt13a[h]);
             km13[h] *= (1-1/(nt13[h]+0.0)); // update km estimate
           }
 
@@ -4790,8 +4864,8 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
               treatmentGroupSorted[i]==3)) {
             w23[h] = pow(km23[h], rho1)*pow(1-km23[h], rho2);
             uscore23 += w23[h]*((treatmentGroupSorted[i]==2)
-                                  - n23a[h]/(nt23a[h]+0.0));
-            vscore23 += w23[h]*w23[h]*n23a[h]*n3[h]/(nt23a[h]*nt23a[h]+0.0);
+                                  - n23a[h]/nt23a[h]);
+            vscore23 += w23[h]*w23[h]*n23a[h]*n3[h]/(nt23a[h]*nt23a[h]);
             km23[h] *= (1-1/(nt23[h]+0.0)); // update km estimate
           }
 
@@ -4799,8 +4873,8 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
               treatmentGroupSorted[i]==2)) {
             w12[h] = pow(km12[h], rho1)*pow(1-km12[h], rho2);
             uscore12 += w12[h]*((treatmentGroupSorted[i]==1)
-                                  - n12a[h]/(nt12a[h]+0.0));
-            vscore12 += w12[h]*w12[h]*n12a[h]*n2[h]/(nt12a[h]*nt12a[h]+0.0);
+                                  - n12a[h]/nt12a[h]);
+            vscore12 += w12[h]*w12[h]*n12a[h]*n2[h]/(nt12a[h]*nt12a[h]);
             km12[h] *= (1-1/(nt12[h]+0.0)); // update km estimate
           }
 

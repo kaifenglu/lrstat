@@ -1,4 +1,5 @@
 #include "utilities.h"
+
 using namespace Rcpp;
 
 // define functions in likelihood inference
@@ -796,7 +797,7 @@ NumericMatrix f_ressco_1(NumericVector par, void *ex) {
   aftparams *param = (aftparams *) ex;
   int n = param->z.nrow();
   int nvar = param->z.ncol();
-  int p = par.size();
+  int p = static_cast<int>(par.size());
   int person, i, k;
 
   NumericVector eta(n);
@@ -1163,7 +1164,7 @@ List liferegr(const DataFrame data,
               bool robust = 0) {
   std::string dist1 = dist;
   std::for_each(dist1.begin(), dist1.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   if ((dist1 == "log-logistic") || (dist1 == "llogistic")) {
@@ -1184,7 +1185,7 @@ List liferegr(const DataFrame data,
   }
 
   int h, i, j, k, n = data.nrows();
-  int nvar = covariates.size() + 1;
+  int nvar = static_cast<int>(covariates.size()) + 1;
 
   bool has_rep = hasVariable(data, rep);
   bool has_stratum = hasVariable(data, stratum);
@@ -1317,7 +1318,7 @@ List liferegr(const DataFrame data,
   }
 
   IntegerVector stratumn1 = unique(stratumn);
-  int nstrata = stratumn1.size();
+  int nstrata = static_cast<int>(stratumn1.size());
   int p = dist1 == "exponential" ? nvar : (nvar+nstrata);
 
   // create the numeric id variable
@@ -1388,7 +1389,7 @@ List liferegr(const DataFrame data,
     }
   }
 
-  int nreps = idx.size();
+  int nreps = static_cast<int>(idx.size());
   idx.push_back(n);
 
   // variables in the output data sets
@@ -1404,7 +1405,7 @@ List liferegr(const DataFrame data,
 
   for (h=0; h<nreps; h++) {
     IntegerVector q1 = Range(idx[h], idx[h+1]-1);
-    int n1 = q1.size();
+    int n1 = static_cast<int>(q1.size());
 
     IntegerVector stratum1 = stratumn[q1];
     NumericVector time1 = timen[q1];
@@ -1609,7 +1610,7 @@ List liferegr(const DataFrame data,
           }
         }
 
-        int nids = idx.size();
+        int nids = static_cast<int>(idx.size());
         idx.push_back(nsub);
 
         NumericMatrix resid(nsub,p);

@@ -1,6 +1,15 @@
+# lrstat 0.2.9
+
+- fix the runtime error: nan is outside the range of representable values of type 'int'
+- add the binary_tte_sim function to simulate two endpoints with one being 
+  a binary endpoint and the other being a time-to-event endpoint
+
+
 # lrstat 0.2.8
 
 - update std::sort handling for Rcpp character vectors
+- use static cast to explicitly cast "long"" of the member function size() 
+  to "int" and cast "double" of the floor, ceil, round functions to "int"
 
 # lrstat 0.2.7
 

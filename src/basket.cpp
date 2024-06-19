@@ -127,14 +127,14 @@ List simonBayesAnalysis(
   NumericVector r1 = NumericVector(r);
   NumericVector n1 = NumericVector(n);
 
-  int ncases = (int)std::pow(2, nstrata);
+  int ncases = static_cast<int>(std::pow(2, nstrata));
   NumericMatrix incid(ncases, nstrata);
   NumericVector prior(ncases), like(ncases);
   for (int i=0; i<ncases; i++) {
     int number = ncases - i - 1;
     NumericVector cc(nstrata);
     for (int j=0; j<nstrata; j++) {
-      cc[j] = (number/(int)std::pow(2, nstrata-1-j)) % 2;
+      cc[j] = (number/static_cast<int>(std::pow(2, nstrata-1-j))) % 2;
     }
 
     if (is_true(all(cc==1)) || is_true(all(cc==0))) {
@@ -314,7 +314,7 @@ List simonBayesSim(
     const int maxNumberOfRawDatasets = 1,
     const int seed = NA_INTEGER) {
 
-  int nstrata = stratumFraction.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
 
   if (is_true(any(is_na(p)))) {
     stop("p must be provided");
@@ -428,7 +428,7 @@ List simonBayesSim(
 
   int iter, i, j, k, l, stage;
   double enrollt, u;
-  int kMax = plannedSubjects.size();
+  int kMax = static_cast<int>(plannedSubjects.size());
   int nreps = maxNumberOfIterations;
 
   LogicalVector act = (p == phi);
@@ -449,24 +449,24 @@ List simonBayesSim(
   // cache for the patient-level raw data to extract
   int nrow1 = kMax*maxNumberOfRawDatasets*maxSubjects;
   IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector stageNumberx = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector subjectIdx = IntegerVector(nrow1, NA_INTEGER);
-  NumericVector arrivalTimex = NumericVector(nrow1, NA_REAL);
-  IntegerVector stratumx = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector yx = IntegerVector(nrow1, NA_REAL);
+  IntegerVector stageNumberx(nrow1);
+  IntegerVector subjectIdx(nrow1);
+  NumericVector arrivalTimex(nrow1);
+  IntegerVector stratumx(nrow1);
+  IntegerVector yx(nrow1);
 
   // cache for the summary data to extract
   int nrow2 = kMax*maxNumberOfIterations*nstrata;
   IntegerVector iterationNumbery = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector stageNumbery = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector stratumy = IntegerVector(nrow2, NA_INTEGER);
-  LogicalVector activey = LogicalVector(nrow2, NA_LOGICAL);
-  IntegerVector ny = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector ry = IntegerVector(nrow2, NA_INTEGER);
-  NumericVector posty = NumericVector(nrow2, NA_REAL);
-  LogicalVector openy = LogicalVector(nrow2, NA_LOGICAL);
-  LogicalVector posy = LogicalVector(nrow2, NA_LOGICAL);
-  LogicalVector negy = LogicalVector(nrow2, NA_LOGICAL);
+  IntegerVector stageNumbery(nrow2);
+  IntegerVector stratumy(nrow2);
+  LogicalVector activey(nrow2);
+  IntegerVector ny(nrow2);
+  IntegerVector ry(nrow2);
+  NumericVector posty(nrow2);
+  LogicalVector openy(nrow2);
+  LogicalVector posy(nrow2);
+  LogicalVector negy(nrow2);
 
   int index1 = 0, index2 = 0;
 

@@ -1,6 +1,7 @@
 #include "utilities.h"
 using namespace Rcpp;
 
+
 // define functions in likelihood inference, algorithms adapted from coxph
 typedef struct {
   int nused;
@@ -341,10 +342,10 @@ NumericMatrix f_info_2(int p, double *par, void *ex) {
 // score residual matrix
 NumericMatrix f_ressco_2(NumericVector beta, void *ex) {
   coxparams *param = (coxparams *) ex;
-  int i, j, k, person;
-  int p = beta.size();
+  int i, j, k, person, n = static_cast<int>(param->tstart.size());
+  int p = static_cast<int>(beta.size());
 
-  NumericMatrix resid(param->tstart.size(), p);
+  NumericMatrix resid(n,p);
   double dtime;             // distinct time
   int ndead = 0;            // number of deaths at this time point
   double deadwt = 0;        // sum of weights for the deaths
@@ -613,7 +614,7 @@ List phregr(const DataFrame data,
             const std::string ties = "efron",
             bool robust = 0) {
 
-  int h, i, j, k, n = data.nrows(), p = covariates.size();
+  int h, i, j, k, n = data.nrows(), p = static_cast<int>(covariates.size());
 
   bool has_rep = hasVariable(data, rep);
   bool has_stratum = hasVariable(data, stratum);
@@ -676,7 +677,7 @@ List phregr(const DataFrame data,
 
   std::string meth = ties;
   std::for_each(meth.begin(), meth.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   int method = meth == "efron" ? 1 : 0;
@@ -810,7 +811,7 @@ List phregr(const DataFrame data,
     }
   }
 
-  int nreps = idx.size();
+  int nreps = static_cast<int>(idx.size());
   idx.push_back(n);
 
   // variables in the output data sets
@@ -826,7 +827,7 @@ List phregr(const DataFrame data,
 
   for (h=0; h<nreps; h++) {
     IntegerVector q1 = Range(idx[h], idx[h+1]-1);
-    int n1 = q1.size();
+    int n1 = static_cast<int>(q1.size());
 
     IntegerVector stratum1 = stratumn[q1];
     NumericVector time1 = timen[q1];
@@ -981,7 +982,7 @@ List phregr(const DataFrame data,
           }
         }
 
-        int nids = idx.size();
+        int nids = static_cast<int>(idx.size());
         idx.push_back(n1);
 
         NumericMatrix resid(n1,p);

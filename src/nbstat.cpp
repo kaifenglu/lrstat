@@ -1,5 +1,7 @@
 #include "utilities.h"
+
 using namespace Rcpp;
+
 
 // define the integrand functions
 typedef struct {
@@ -53,6 +55,7 @@ void f_info(double *x, int n, void *ex) {
     x[i] = u0[i];
   }
 }
+
 
 
 //' @title Negative binomial rate ratio by stratum
@@ -236,8 +239,8 @@ List nbstat1(const double time = NA_REAL,
              const bool fixedFollowup = 0,
              const bool nullVariance = 0) {
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
   NumericVector kappa1x(nstrata), kappa2x(nstrata);
   NumericVector lambda1x(nstrata), lambda2x(nstrata);
@@ -778,8 +781,8 @@ List nbstat(const NumericVector& time = NA_REAL,
             const bool fixedFollowup = 0,
             const bool nullVariance = 0) {
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
   NumericVector kappa1x(nstrata), kappa2x(nstrata);
   NumericVector lambda1x(nstrata), lambda2x(nstrata);
@@ -946,7 +949,7 @@ List nbstat(const NumericVector& time = NA_REAL,
   }
 
 
-  int k = time.size();
+  int k = static_cast<int>(time.size());
   NumericVector subjects(k);
   NumericVector nevents(k), nevents1(k), nevents2(k);
   NumericVector ndropouts(k), ndropouts1(k), ndropouts2(k);
@@ -1338,20 +1341,20 @@ List nbpower(const int kMax = 1,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
   std::string bsf = typeBetaSpending;
   std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double bsfpar = parameterBetaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
 
@@ -2065,20 +2068,20 @@ List nbsamplesize(const double beta = 0.2,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
   std::string bsf = typeBetaSpending;
   std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double bsfpar = parameterBetaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
   NumericVector lambda1x(nstrata), lambda2x(nstrata);
 
@@ -3114,20 +3117,20 @@ List nbpower1s(const int kMax = 1,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
   std::string bsf = typeBetaSpending;
   std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double bsfpar = parameterBetaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
 
@@ -3744,20 +3747,20 @@ List nbsamplesize1s(const double beta = 0.2,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
   std::string bsf = typeBetaSpending;
   std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double bsfpar = parameterBetaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
   NumericVector lambdax(nstrata);
 
@@ -4626,13 +4629,13 @@ List nbpowerequiv(const int kMax = 1,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
 
@@ -5574,13 +5577,13 @@ List nbsamplesizeequiv(const double beta = 0.2,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
   NumericVector lambda1x(nstrata), lambda2x(nstrata);
 

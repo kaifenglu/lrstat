@@ -1,7 +1,9 @@
 #include <Rcpp.h>
 #include "utilities.h"
 #include <R_ext/Applic.h>
+
 using namespace Rcpp;
+
 
 // [[Rcpp::export]]
 void set_seed(int seed) {
@@ -66,7 +68,7 @@ IntegerVector findInterval3(NumericVector x, NumericVector v) {
 
   for(it = x_begin, out_it = out.begin(); it != x_end; ++it, ++out_it) {
     pos = std::upper_bound(v_begin, v_end, *it);
-    *out_it = std::distance(v_begin, pos);
+    *out_it = static_cast<int>(std::distance(v_begin, pos));
   }
 
   return out;
@@ -189,7 +191,7 @@ double errorSpentcpp(const double t = NA_REAL,
 
   std::string asf = sf;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double aval;
@@ -240,8 +242,8 @@ List exitprobcpp(const NumericVector& b,
   // kMax is the total number of stages
   // m0, z0, h0 for the previous stage
   // m, z, h for the current stage
-  int kMax=b.size(), r1=6*r-1, r2=12*r-3, i0, i1=0, i2=r1-1, i, j,
-    m0=r2, m1=r1, m=r2;
+  int kMax=static_cast<int>(b.size());
+  int r1=6*r-1, r2=12*r-3, i0, i1=0, i2=r1-1, i, j, m0=r2, m1=r1, m=r2;
   double t, tlower, tupper, xlower, xupper;
 
   NumericVector sqrtI(kMax), thetaSqrtI(kMax), thetaI(kMax), dI(kMax),
@@ -455,7 +457,7 @@ NumericVector ptpwexpcpp(const NumericVector& q,
                          const double lowerBound,
                          const bool lowertail,
                          const bool logp) {
-  int n = q.size();
+  int n = static_cast<int>(q.size());
   NumericVector p(n);
   for (int h=0; h<n; h++) {
     if (q[h] <= lowerBound) {
@@ -492,7 +494,7 @@ double qtpwexpcpp1(const double p,
                    const double lowerBound,
                    const bool lowertail,
                    const bool logp) {
-  int j, j1, m = piecewiseSurvivalTime.size();
+  int j, j1, m = static_cast<int>(piecewiseSurvivalTime.size());
   double q, u = p, v, v1;
 
   // cumulative hazard from lowerBound until the quantile
@@ -542,7 +544,7 @@ NumericVector qtpwexpcpp(const NumericVector& p,
                          const double lowerBound,
                          const bool lowertail,
                          const bool logp) {
-  int n = p.size();
+  int n = static_cast<int>(p.size());
   NumericVector q(n);
   for (int h=0; h<n; h++) {
     q[h] = qtpwexpcpp1(p[h], piecewiseSurvivalTime, lambda, lowerBound,
@@ -632,7 +634,7 @@ NumericVector getBoundcpp(
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
@@ -1109,7 +1111,7 @@ List bmini(NumericVector x0, optimfn fn, optimgr gr = nullptr,
   double abstol = eps, reltol = eps;
   int nREPORT = 10;
 
-  int n = x0.size();
+  int n = static_cast<int>(x0.size());
   double Fmin;
   int fncount = 0, grcount = 0, fail = 0;
   IntegerVector mask(n, 1);  // All parameters are free
@@ -1167,7 +1169,7 @@ NumericVector accrual(const NumericVector& time = NA_REAL,
                       const NumericVector& accrualIntensity = NA_REAL,
                       const double accrualDuration = NA_REAL) {
 
-  int i, j, k = time.size();
+  int i, j, k = static_cast<int>(time.size());
   NumericVector n(k);
 
   // up to end of enrollment
@@ -1213,8 +1215,8 @@ NumericVector getAccrualDurationFromN(
     const NumericVector& nsubjects = NA_REAL,
     const NumericVector& accrualTime = 0,
     const NumericVector& accrualIntensity = NA_REAL) {
-
-  int i, j, I = nsubjects.size(), J = accrualTime.size();
+  int i, j, I = static_cast<int>(nsubjects.size());
+  int J = static_cast<int>(accrualTime.size());
   NumericVector t(I), p(J);
 
   p[0] = 0;
@@ -1268,8 +1270,8 @@ NumericVector patrisk(const NumericVector& time = NA_REAL,
 
   // identify the time interval containing the specified analysis time
   IntegerVector m = pmax(findInterval3(time, piecewiseSurvivalTime), 1);
-
-  int i, j, k = time.size(), J = lambda.size();
+  int i, j, k = static_cast<int>(time.size());
+  int J = static_cast<int>(lambda.size());
 
   // hazard for failure or dropout
   NumericVector lg(J);
@@ -1332,8 +1334,8 @@ NumericVector pevent(const NumericVector& time = NA_REAL,
 
   // identify the time interval containing the specified analysis time
   IntegerVector m = pmax(findInterval3(time, piecewiseSurvivalTime), 1);
-
-  int i, j, k = time.size(), J = lambda.size();
+  int i, j, k = static_cast<int>(time.size());
+  int J = static_cast<int>(lambda.size());
 
   // hazard for failure or dropout
   NumericVector lg(J);
@@ -1413,7 +1415,7 @@ double hd(const int j = NA_INTEGER,
   NumericVector d0 = pevent(t0, piecewiseSurvivalTime, lambda, gamma);
 
 
-  int J = lambda.size();
+  int J = static_cast<int>(lambda.size());
 
   // hazard for failure or dropout
   NumericVector lg(J);
@@ -1548,7 +1550,7 @@ NumericVector ad(const NumericVector& time = NA_REAL,
 
   NumericVector u = accrualTime;
 
-  int i, j, j1=j12[0], j2=j12[1], k=time.size();
+  int i, j, j1=j12[0], j2=j12[1], k=static_cast<int>(time.size());
 
   NumericVector a(k);
 
@@ -1640,7 +1642,7 @@ NumericMatrix natrisk(const NumericVector& time = NA_REAL,
   double phi = allocationRatioPlanned/(1+allocationRatioPlanned);
 
   // number of patients at risk in each treatment group
-  int k = time.size();
+  int k = static_cast<int>(time.size());
   NumericMatrix n(k, 2);
   n(_, 0) = phi*a*patrisk(t, piecewiseSurvivalTime, lambda1, gamma1);
   n(_, 1) = (1-phi)*a*patrisk(t, piecewiseSurvivalTime, lambda2, gamma2);
@@ -1718,7 +1720,7 @@ NumericMatrix nevent(const NumericVector& time = NA_REAL,
   NumericVector u1(1);
   u1[0] = accrualDuration + minFollowupTime;
 
-  int i, k = time.size();
+  int i, k = static_cast<int>(time.size());
   NumericMatrix d(k, 2);
 
   NumericVector d1(k), d2(k);
@@ -1806,7 +1808,7 @@ NumericMatrix nevent2(const NumericVector& time = NA_REAL,
   NumericVector s(1), v(1);
   s[0] = maxFollowupTime;
 
-  int i, k = time.size();
+  int i, k = static_cast<int>(time.size());
   NumericMatrix d(k, 2);
 
   NumericVector d1(k), d2(k);
@@ -2103,7 +2105,7 @@ List getDesign(const double beta = NA_REAL,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
@@ -2159,7 +2161,7 @@ List getDesign(const double beta = NA_REAL,
 
   std::string bsf = typeBetaSpending;
   std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double bsfpar = parameterBetaSpending;
@@ -2862,7 +2864,7 @@ List getDesignEquiv(const double beta = NA_REAL,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
@@ -3429,28 +3431,28 @@ List adaptDesign(double betaNew = NA_REAL,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
   std::string bsf = typeBetaSpending;
   std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double bsfpar = parameterBetaSpending;
 
   std::string asfNew = typeAlphaSpendingNew;
   std::for_each(asfNew.begin(), asfNew.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfparNew = parameterAlphaSpendingNew;
 
   std::string bsfNew = typeBetaSpendingNew;
   std::for_each(bsfNew.begin(), bsfNew.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double bsfparNew = parameterBetaSpendingNew;

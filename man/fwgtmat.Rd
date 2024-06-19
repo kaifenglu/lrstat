@@ -4,7 +4,7 @@
 \alias{fwgtmat}
 \title{Weight matrix for all intersection hypotheses}
 \usage{
-fwgtmat(w = NA_real_, G = NA_real_)
+fwgtmat(w, G)
 }
 \arguments{
 \item{w}{The vector of weights for elementary hypotheses.}

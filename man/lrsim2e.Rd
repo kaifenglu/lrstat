@@ -133,7 +133,7 @@ time to plan the analyses, \code{plannedEvents} should be missing.}
 Defaults to 1000.}
 
 \item{maxNumberOfRawDatasetsPerStage}{The number of raw datasets per
-stage to extract. Defaults to 1.}
+stage to extract.}
 
 \item{seed}{The seed to reproduce the simulation results.
 The seed from the environment will be used if left unspecified,}

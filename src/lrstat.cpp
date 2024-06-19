@@ -1,5 +1,7 @@
 #include "utilities.h"
+
 using namespace Rcpp;
+
 
 // define the integrand functions for lrstat1
 typedef struct {
@@ -133,6 +135,7 @@ void f_iscore(double *x, int n, void *ex) {
 }
 
 
+
 //' @title Number of subjects having an event and log-rank statistic
 //' for a hypothesized hazard ratio at a given calendar time
 //'
@@ -245,8 +248,8 @@ DataFrame lrstat1(const double time = NA_REAL,
                   const int numSubintervals = 300,
                   const bool predictEventOnly = 0) {
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
   NumericVector lambda1x(nsi), lambda2x(nsi), gamma1x(nsi), gamma2x(nsi);
 
@@ -617,8 +620,8 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
                  const int numSubintervals = 300,
                  const int predictTarget = 2) {
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
   NumericVector lambda1x(nsi), lambda2x(nsi), gamma1x(nsi), gamma2x(nsi);
 
@@ -770,7 +773,7 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
     stop("numSubintervals must be positive");
   }
 
-  int k = time.size();
+  int k = static_cast<int>(time.size());
   DataFrame df;
   NumericVector subjects(k), nevents(k), nevents1(k), nevents2(k);
   NumericVector ndropouts(k), ndropouts1(k), ndropouts2(k);
@@ -958,8 +961,8 @@ NumericVector caltime(const NumericVector& nevents = NA_REAL,
                       const double followupTime = NA_REAL,
                       const bool fixedFollowup = 0) {
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
   if (is_true(any(is_na(nevents)))) {
@@ -1093,7 +1096,7 @@ NumericVector caltime(const NumericVector& nevents = NA_REAL,
               return sum(NumericVector(lr[2])) - event;
             };
 
-  int i, k = nevents.size();
+  int i, k = static_cast<int>(nevents.size());
   double studyTime = accrualDuration + followupTime;
   NumericVector time(k);
 
@@ -1185,8 +1188,8 @@ DataFrame getDurationFromNevents(
     const NumericVector& interval =
       NumericVector::create(0.001, 240)) {
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
   if (R_isnancpp(nevents)) {
@@ -1680,20 +1683,20 @@ List lrpower(const int kMax = 1,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
   std::string bsf = typeBetaSpending;
   std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double bsfpar = parameterBetaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
 
@@ -1946,7 +1949,7 @@ List lrpower(const int kMax = 1,
 
   std::string su = typeOfComputation;
   std::for_each(su.begin(), su.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   if (su != "direct" && su != "schoenfeld") {
@@ -2615,20 +2618,20 @@ List lrsamplesize(const double beta = 0.2,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
   std::string bsf = typeBetaSpending;
   std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double bsfpar = parameterBetaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
 
@@ -2895,7 +2898,7 @@ List lrsamplesize(const double beta = 0.2,
 
   std::string su = typeOfComputation;
   std::for_each(su.begin(), su.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   if (su != "direct" && su != "schoenfeld") {
@@ -3933,13 +3936,13 @@ List lrpowerequiv(const int kMax = 1,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
   if (kMax < 1) {
@@ -4137,7 +4140,7 @@ List lrpowerequiv(const int kMax = 1,
 
   std::string su = typeOfComputation;
   std::for_each(su.begin(), su.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   if (su != "direct" && su != "schoenfeld") {
@@ -4594,13 +4597,13 @@ List lrsamplesizeequiv(const double beta = 0.2,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
 
@@ -4794,7 +4797,7 @@ List lrsamplesizeequiv(const double beta = 0.2,
 
   std::string su = typeOfComputation;
   std::for_each(su.begin(), su.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   if (su != "direct" && su != "schoenfeld") {
@@ -5404,7 +5407,7 @@ DataFrame lrtest(const DataFrame data,
     }
   }
 
-  int nreps = idx.size();
+  int nreps = static_cast<int>(idx.size());
   idx.push_back(n);
 
   IntegerVector rep0(nreps, NA_INTEGER);
@@ -5416,7 +5419,7 @@ DataFrame lrtest(const DataFrame data,
   for (h=0; h<nreps; h++) {
     bool skip = 0;
     IntegerVector q1 = Range(idx[h], idx[h+1]-1);
-    int n1 = q1.size();
+    int n1 = static_cast<int>(q1.size());
 
     IntegerVector stratum1 = stratumn[q1];
     IntegerVector treat1 = treatn[q1];
@@ -5445,7 +5448,7 @@ DataFrame lrtest(const DataFrame data,
       }
     }
 
-    int nstrata = idx1.size();
+    int nstrata = static_cast<int>(idx1.size());
     idx1.push_back(n1);
 
     double uscore = 0.0, vscore = 0.0;
@@ -5454,7 +5457,7 @@ DataFrame lrtest(const DataFrame data,
       IntegerVector treat2 = treat1[q];
       NumericVector time2 = time1[q];
       NumericVector event2 = event1[q];
-      int n2 = q.size();
+      int n2 = static_cast<int>(q.size());
 
       // running index of number of subjects at risk
       int nriskx = n2;

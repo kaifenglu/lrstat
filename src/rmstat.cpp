@@ -1,5 +1,7 @@
 #include "utilities.h"
+
 using namespace Rcpp;
+
 
 //' @title Restricted mean survival time
 //' @description Obtains the restricted mean survival time over an interval.
@@ -127,6 +129,7 @@ void f_rm(double *x, int n, void *ex) {
     x[i] = u0[i];
   }
 }
+
 
 
 //' @title Covariance between restricted mean survival times
@@ -377,8 +380,8 @@ DataFrame rmstat1(const double time = NA_REAL,
                   const double followupTime = NA_REAL,
                   const bool fixedFollowup = 0) {
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
   NumericVector lambda1x(nsi), lambda2x(nsi), gamma1x(nsi), gamma2x(nsi);
 
@@ -579,8 +582,8 @@ DataFrame rmstat(const NumericVector& time = NA_REAL,
                  const double followupTime = NA_REAL,
                  const bool fixedFollowup = 0) {
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
   NumericVector lambda1x(nsi), lambda2x(nsi), gamma1x(nsi), gamma2x(nsi);
 
@@ -737,7 +740,7 @@ DataFrame rmstat(const NumericVector& time = NA_REAL,
   }
 
 
-  int k = time.size();
+  int k = static_cast<int>(time.size());
   NumericVector calTime(k), mileTime(k), subjects(k),
   rmst1(k), rmst2(k), vrmst1(k), vrmst2(k),
   rmstDiff(k), vrmstDiff(k), information(k), rmstDiffZ(k);
@@ -982,20 +985,20 @@ List rmpower(const int kMax = 1,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
   std::string bsf = typeBetaSpending;
   std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double bsfpar = parameterBetaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
 
@@ -1642,20 +1645,20 @@ List rmsamplesize(const double beta = 0.2,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
   std::string bsf = typeBetaSpending;
   std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double bsfpar = parameterBetaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
   NumericVector lambda1x(nsi), lambda2x(nsi);
 
@@ -2591,20 +2594,20 @@ List rmpower1s(const int kMax = 1,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
   std::string bsf = typeBetaSpending;
   std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double bsfpar = parameterBetaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
 
@@ -3223,20 +3226,20 @@ List rmsamplesize1s(const double beta = 0.2,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
   std::string bsf = typeBetaSpending;
   std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double bsfpar = parameterBetaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
   NumericVector lambdax(nsi);
 
@@ -4135,13 +4138,13 @@ List rmpowerequiv(const int kMax = 1,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
 
@@ -4740,13 +4743,13 @@ List rmsamplesizeequiv(const double beta = 0.2,
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = std::tolower(c);
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
   double asfpar = parameterAlphaSpending;
 
-  int nstrata = stratumFraction.size();
-  int nintervals = piecewiseSurvivalTime.size();
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
   NumericVector lambda1x(nsi), lambda2x(nsi);
 
@@ -5410,7 +5413,7 @@ DataFrame rmest(const DataFrame data,
     }
   }
 
-  int nreps = idx.size();
+  int nreps = static_cast<int>(idx.size());
   idx.push_back(n);
 
   IntegerVector rep0(n, NA_INTEGER);
@@ -5424,7 +5427,7 @@ DataFrame rmest(const DataFrame data,
   int index = 0;
   for (h=0; h<nreps; h++) {
     IntegerVector q1 = Range(idx[h], idx[h+1]-1);
-    int n1 = q1.size();
+    int n1 = static_cast<int>(q1.size());
 
     IntegerVector stratum1 = stratumn[q1];
     NumericVector time1 = timen[q1];
@@ -5451,14 +5454,14 @@ DataFrame rmest(const DataFrame data,
       }
     }
 
-    int nstrata = idx1.size();
+    int nstrata = static_cast<int>(idx1.size());
     idx1.push_back(n1);
 
     for (i=0; i<nstrata; i++) {
       IntegerVector q2 = Range(idx1[i], idx1[i+1]-1);
       NumericVector time2 = time1[q2];
       NumericVector event2 = event1[q2];
-      int n2 = q2.size();
+      int n2 = static_cast<int>(q2.size());
 
       if (milestone > max(time2)) {
         std::string reperr;
@@ -5983,7 +5986,7 @@ DataFrame rmdiff(const DataFrame data,
     }
   }
 
-  int nreps = idx.size();
+  int nreps = static_cast<int>(idx.size());
   idx.push_back(n);
 
   IntegerVector rep0(nreps, NA_INTEGER);
@@ -6019,7 +6022,7 @@ DataFrame rmdiff(const DataFrame data,
     IntegerVector treatsize = dfout["size"];
     NumericVector rmstime2 = dfout["rmst"];
     NumericVector stderr2 = dfout["stderr"];
-    int n2 = stratum2.size();
+    int n2 = static_cast<int>(stratum2.size());
 
     // identify the locations of the unique values of stratum
     IntegerVector idx2(1,0);
@@ -6029,7 +6032,7 @@ DataFrame rmdiff(const DataFrame data,
       }
     }
 
-    int nstrata = idx2.size();
+    int nstrata = static_cast<int>(idx2.size());
     idx2.push_back(n2);
 
     IntegerVector m(nstrata, 0); // number of subjects in each stratum
@@ -6106,8 +6109,8 @@ DataFrame rmdiff(const DataFrame data,
 
       rmst1 += p[i]*rmst[0];
       rmst2 += p[i]*rmst[1];
-      vrmst1 += pow(p[i],2)*vrmst[0];
-      vrmst2 += pow(p[i],2)*vrmst[1];
+      vrmst1 += p[i]*p[i]*vrmst[0];
+      vrmst2 += p[i]*p[i]*vrmst[1];
     }
 
     rep0[index] = repn[idx[h]];
