@@ -1,5 +1,6 @@
 #include <Rcpp.h>
 #include <R_ext/Applic.h>
+
 using namespace Rcpp;
 
 #ifndef __UTILITIES__
@@ -239,5 +240,7 @@ List adaptDesign(double betaNew,
 bool hasVariable(DataFrame df, std::string varName);
 
 NumericMatrix invsympd(const NumericMatrix& a);
+
+double quantilecpp(const NumericVector& x, const double p);
 
 #endif // __UTILITIES__

@@ -1,6 +1,6 @@
 #include <Rcpp.h>
-#include "utilities.h"
 #include <R_ext/Applic.h>
+#include "utilities.h"
 
 using namespace Rcpp;
 
@@ -3956,4 +3956,17 @@ NumericMatrix invsympd(const NumericMatrix& a) {
   }
 
   return b;
+}
+
+
+// [[Rcpp::export]]
+double quantilecpp(const NumericVector& x, const double p) {
+  int n = static_cast<int>(x.size());
+  NumericVector y = clone(x);
+  y.sort();
+  double u = n*p + 1 - p;
+  int j = floor(u);
+  double g = u - j;
+  double result = (1-g)*y[j-1] + g*y[j];
+  return result;
 }

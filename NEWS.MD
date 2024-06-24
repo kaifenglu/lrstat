@@ -3,7 +3,7 @@
 - fix the runtime error: nan is outside the range of representable values of type 'int'
 - add the binary_tte_sim function to simulate two endpoints with one being 
   a binary endpoint and the other being a time-to-event endpoint
-
+- add the rpsft function to estimate hazard ratio using rank-preserving structured failure time model
 
 # lrstat 0.2.8
 

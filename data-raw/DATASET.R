@@ -38,9 +38,11 @@ rawdata <- sim1$rawdata %>%
 aml <- survival::aml
 heart <- survival::heart
 tobin <- survival::tobin
+immdef <- rpsftm::immdef
 
 # save to data/ folder
 usethis::use_data(rawdata, overwrite = TRUE)
 usethis::use_data(aml, overwrite = TRUE)
 usethis::use_data(heart, overwrite = TRUE)
 usethis::use_data(tobin, overwrite = TRUE)
+usethis::use_data(immdef, overwrite = TRUE)

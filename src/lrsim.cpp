@@ -655,21 +655,17 @@ List lrsim(const int kMax = 1,
       // generate survival time
       u = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam1, 0,
-                                      1, 0);
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam1, 0, 1, 0);
       } else {
-        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam2, 0,
-                                      1, 0);
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam2, 0, 1, 0);
       }
 
       // generate dropout time
       u = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam1, 0,
-                                     1, 0);
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam1, 0, 1, 0);
       } else {
-        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam2, 0,
-                                     1, 0);
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam2, 0, 1, 0);
       }
 
       // initial observed time and event indicator
@@ -1784,28 +1780,22 @@ List lrsim3a(const int kMax = NA_INTEGER,
       // generate survival time
       u = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam1, 0,
-                                      1, 0);
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam1, 0, 1, 0);
       } else if (treatmentGroup[i]==2) {
-        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam2, 0,
-                                      1, 0);
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam2, 0, 1, 0);
       } else {
-        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam3, 0,
-                                      1, 0);
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam3, 0, 1, 0);
       }
 
 
       // generate dropout time
       u = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam1, 0,
-                                     1, 0);
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam1, 0, 1, 0);
       } else if (treatmentGroup[i]==2) {
-        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam2, 0,
-                                     1, 0);
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam2, 0, 1, 0);
       } else {
-        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam3, 0,
-                                     1, 0);
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam3, 0, 1, 0);
       }
 
 

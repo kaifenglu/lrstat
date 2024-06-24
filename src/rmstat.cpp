@@ -92,7 +92,7 @@ double rmst(const double t1 = 0,
 
 
 // define the integrand function for covrmst
-typedef struct {
+struct rmparams {
   double time;
   double tau1;
   double tau2;
@@ -103,7 +103,7 @@ typedef struct {
   NumericVector lambda;
   NumericVector gamma;
   double accrualDuration;
-} rmparams;
+};
 
 
 void f_rm(double *x, int n, void *ex) {
@@ -5847,13 +5847,13 @@ DataFrame rmdiff(const DataFrame data,
   NumericVector treatwn;
   StringVector treatwc;
   if (TYPEOF(data[treat]) == LGLSXP) {
-    LogicalVector treatv = data[treat];
-    treatn = 2 - treatv;
-    treatwi = unique(treatn);
+    IntegerVector treatv = data[treat];
+    treatwi = unique(treatv);
     if (treatwi.size() != 2) {
       stop("treat must have two and only two distinct values");
     }
-    treatwi = 2 - treatwi;
+    treatwi = IntegerVector::create(1,0);
+    treatn = 2 - treatv;
   } else if (TYPEOF(data[treat]) == INTSXP) {
     IntegerVector treatv = data[treat];
     treatwi = unique(treatv);
@@ -5861,7 +5861,13 @@ DataFrame rmdiff(const DataFrame data,
       stop("treat must have two and only two distinct values");
     }
     treatwi.sort();
-    treatn = match(treatv, treatwi);
+    // special handling for 1/0 treatment coding
+    if (is_true(all((treatwi == 0) | (treatwi == 1)))) {
+      treatwi = IntegerVector::create(1,0);
+      treatn = 2 - treatv;
+    } else {
+      treatn = match(treatv, treatwi);
+    }
   } else if (TYPEOF(data[treat]) == REALSXP) {
     NumericVector treatv = data[treat];
     treatwn = unique(treatv);

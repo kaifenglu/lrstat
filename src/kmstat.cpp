@@ -1,10 +1,11 @@
 #include "utilities.h"
+#include "survival_analysis.h"
 
 using namespace Rcpp;
 
 
 // define the integrand function for kmstat1
-typedef struct {
+struct kmparams {
   double time;
   double phi;
   NumericVector accrualTime;
@@ -13,7 +14,7 @@ typedef struct {
   NumericVector lambda;
   NumericVector gamma;
   double accrualDuration;
-} kmparams;
+};
 
 
 
@@ -5018,434 +5019,6 @@ List kmsamplesizeequiv(const double beta = 0.2,
 }
 
 
-//' @title Kaplan-Meier estimates of the survival curve
-//' @description Obtains the Kaplan-Meier estimates of the survival curve.
-//'
-//' @param data The input data frame that contains the following variables:
-//'
-//'   * \code{rep}: The replication for by-group processing.
-//'
-//'   * \code{stratum}: The stratum.
-//'
-//'   * \code{time}: The possibly right-censored survival time.
-//'
-//'   * \code{event}: The event indicator.
-//'
-//' @param rep The name of the replication variable in the input data.
-//' @param stratum The name of the stratum variable in the input data.
-//' @param time The name of the time variable in the input data.
-//' @param event The name of the event variable in the input data.
-//' @param conftype The type of confidence interval. One of "none",
-//'   "plain", "log", "log-log" (the default), or "arcsin".
-//'   The arcsin option bases the intervals on asin(sqrt(survival)).
-//' @param confint The level of the two-sided confidence interval for
-//'   the survival probabilities. Defaults to 0.95.
-//'
-//' @return A data frame with the following variables:
-//'
-//' * \code{rep}: The replication.
-//'
-//' * \code{stratum}: The stratum.
-//'
-//' * \code{size}: The number of subjects in the stratum.
-//'
-//' * \code{time}: The event time.
-//'
-//' * \code{nrisk}: The number of subjects at risk.
-//'
-//' * \code{nevent}: The number of subjects having the event.
-//'
-//' * \code{survival}: The Kaplan-Meier estimate of the survival probability.
-//'
-//' * \code{stderr}: The standard error of the estimated survival
-//'   probability based on the Greendwood formula.
-//'
-//' * \code{lower}: The lower bound of confidence interval if requested.
-//'
-//' * \code{upper}: The upper bound of confidence interval if requested.
-//'
-//' * \code{confint}: The level of confidence interval if requested.
-//'
-//' * \code{conftype}: The type of confidence interval if requested.
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @examples
-//'
-//' kmest(data = aml, stratum = "x",
-//'       time = "time", event = "status")
-//'
-//' @export
-// [[Rcpp::export]]
-DataFrame kmest(const DataFrame data,
-                const std::string rep = "rep",
-                const std::string stratum = "stratum",
-                const std::string time = "time",
-                const std::string event = "event",
-                const std::string conftype = "log-log",
-                const double confint = 0.95) {
-  int h, i, j, n = data.nrows();
-
-  bool has_rep = hasVariable(data, rep);
-  bool has_stratum = hasVariable(data, stratum);
-  bool has_time = hasVariable(data, time);
-  bool has_event = hasVariable(data, event);
-
-  if (!has_time) {
-    stop("data must contain the time variable");
-  }
-
-  if (!has_event) {
-    stop("data must contain the event variable");
-  }
-
-  NumericVector timen = data[time];
-  NumericVector eventn = data[event];
-
-  if (is_true(any(timen <= 0))) {
-    stop("time must be positive for each subject");
-  }
-
-  if (is_true(any((eventn != 1) & (eventn != 0)))) {
-    stop("event must be 1 or 0 for each subject");
-  }
-
-
-  // create the numeric rep variable
-  IntegerVector repn(n);
-  IntegerVector repwi;
-  NumericVector repwn;
-  StringVector repwc;
-  if (!has_rep) {
-    repn.fill(1);
-  } else {
-    if (TYPEOF(data[rep]) == INTSXP) {
-      IntegerVector repv = data[rep];
-      repwi = unique(repv);
-      repwi.sort();
-      repn = match(repv, repwi);
-    } else if (TYPEOF(data[rep]) == REALSXP) {
-      NumericVector repv = data[rep];
-      repwn = unique(repv);
-      repwn.sort();
-      repn = match(repv, repwn);
-    } else if (TYPEOF(data[rep]) == STRSXP) {
-      StringVector repv = data[rep];
-      repwc = unique(repv);
-      repwc.sort();
-      repn = match(repv, repwc);
-    } else {
-      stop("incorrect type for the rep variable in the input data");
-    }
-  }
-
-
-  // create the numeric stratum variable
-  IntegerVector stratumn(n);
-  IntegerVector stratumwi;
-  NumericVector stratumwn;
-  StringVector stratumwc;
-  if (!has_stratum) {
-    stratumn.fill(1);
-  } else {
-    if (TYPEOF(data[stratum]) == INTSXP) {
-      IntegerVector stratumv = data[stratum];
-      stratumwi = unique(stratumv);
-      stratumwi.sort();
-      stratumn = match(stratumv, stratumwi);
-    } else if (TYPEOF(data[stratum]) == REALSXP) {
-      NumericVector stratumv = data[stratum];
-      stratumwn = unique(stratumv);
-      stratumwn.sort();
-      stratumn = match(stratumv, stratumwn);
-    } else if (TYPEOF(data[stratum]) == STRSXP) {
-      StringVector stratumv = data[stratum];
-      stratumwc = unique(stratumv);
-      stratumwc.sort();
-      stratumn = match(stratumv, stratumwc);
-    } else {
-      stop("incorrect type for the stratum variable in the input data");
-    }
-  }
-
-
-  std::string ct = conftype;
-  std::for_each(ct.begin(), ct.end(), [](char & c) {
-    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
-
-  if (!(ct=="none" || ct=="plain" || ct=="log" || ct=="log-log" ||
-      ct=="logit" || ct=="arcsin")) {
-    stop("conftype must be none, plain, log, log-log, logit, or arcsin");
-  }
-
-  if (confint <= 0 || confint >= 1) {
-    stop("confint must lie between 0 and 1");
-  }
-
-
-  // confidence interval for survival probability
-  double z = R::qnorm((1.0 + confint)/2.0, 0, 1, 1, 0);
-
-  auto f = [ct, z](double surv, double sesurv)->NumericVector {
-    double grad, hw, lower = NA_REAL, upper = NA_REAL;
-    if (ct == "plain") {
-      lower = std::max(surv - z*sesurv, 0.0);
-      upper = std::min(surv + z*sesurv, 1.0);
-    } else if (ct == "log") {
-      grad = 1.0/surv;
-      hw = z*grad*sesurv;
-      lower = exp(log(surv) - hw);
-      upper = std::min(exp(log(surv) + hw), 1.0);
-    } else if (ct == "log-log") {
-      grad = 1.0/(surv*log(surv));
-      hw = z*grad*sesurv;
-      lower = exp(-exp(log(-log(surv)) - hw));
-      upper = exp(-exp(log(-log(surv)) + hw));
-    } else if (ct == "logit") {
-      grad = 1.0/(surv*(1.0-surv));
-      hw = z*grad*sesurv;
-      lower = R::plogis(R::qlogis(surv, 0, 1, 1, 0) - hw, 0, 1, 1, 0);
-      upper = R::plogis(R::qlogis(surv, 0, 1, 1, 0) + hw, 0, 1, 1, 0);
-    } else if (ct == "arcsin") {
-      grad = 1.0/(2.0*sqrt(surv*(1.0 - surv)));
-      hw = z*grad*sesurv;
-      lower = pow(sin(asin(sqrt(surv)) - hw), 2);
-      upper = pow(sin(asin(sqrt(surv)) + hw), 2);
-    }
-
-    return NumericVector::create(lower, upper);
-  };
-
-  // sort the data by rep
-  IntegerVector order = seq(0, n-1);
-  std::sort(order.begin(), order.end(), [&](int i, int j) {
-    return repn[i] < repn[j];
-  });
-
-  repn = repn[order];
-  stratumn = stratumn[order];
-  timen = timen[order];
-  eventn = eventn[order];
-
-  // identify the locations of the unique values of rep
-  IntegerVector idx(1,0);
-  for (i=1; i<n; i++) {
-    if (repn[i] != repn[i-1]) {
-      idx.push_back(i);
-    }
-  }
-
-  int nreps = static_cast<int>(idx.size());
-  idx.push_back(n);
-
-  IntegerVector rep0(n, NA_INTEGER);
-  IntegerVector stratum0(n), size0(n);
-  NumericVector time0(n), nrisk0(n), nevent0(n);
-  NumericVector surv0(n), sesurv0(n);
-  NumericVector lower0(n), upper0(n);
-
-  int index = 0;
-  for (h=0; h<nreps; h++) {
-    IntegerVector q1 = Range(idx[h], idx[h+1]-1);
-    int n1 = static_cast<int>(q1.size());
-    int iter = repn[q1[0]];
-
-    IntegerVector stratum1 = stratumn[q1];
-    NumericVector time1 = timen[q1];
-    NumericVector event1 = eventn[q1];
-
-    // sort by stratum, time, and event with event in descending order
-    IntegerVector order1 = seq(0, n1-1);
-    std::sort(order1.begin(), order1.end(), [&](int i, int j) {
-      return (stratum1[i] < stratum1[j]) ||
-        ((stratum1[i] == stratum1[j]) && (time1[i] < time1[j])) ||
-        ((stratum1[i] == stratum1[j]) && (time1[i] == time1[j]) &&
-        (event1[i] > event1[j]));
-    });
-
-    stratum1 = stratum1[order1];
-    time1 = time1[order1];
-    event1 = event1[order1];
-
-    // identify the locations of the unique values of stratum
-    IntegerVector idx1(1,0);
-    for (i=1; i<n1; i++) {
-      if (stratum1[i] != stratum1[i-1]) {
-        idx1.push_back(i);
-      }
-    }
-
-    int nstrata = static_cast<int>(idx1.size());
-    idx1.push_back(n1);
-
-    for (i=0; i<nstrata; i++) {
-      IntegerVector q2 = Range(idx1[i], idx1[i+1]-1);
-      NumericVector time2 = time1[q2];
-      NumericVector event2 = event1[q2];
-
-      int s = stratum1[q2[0]], n2 = static_cast<int>(q2.size());
-      double t, nrisk, nevent, surv = 1, vcumhaz = 0, sesurv;
-      bool cache = 0;
-      for (j=0; j<n2; j++) {
-        if (((j == 0) && (event2[j] == 1)) ||
-            ((j >= 1) && (event2[j] == 1) && (time2[j] > time2[j-1]))) {
-          // new event
-          // add the info for the previous event
-          if (cache) {
-            surv = surv*(1.0 - nevent/nrisk);
-            if (nrisk > nevent) {
-              vcumhaz = vcumhaz + nevent/(nrisk*(nrisk - nevent));
-            } else {
-              vcumhaz = NA_REAL;
-            }
-            sesurv = surv*sqrt(vcumhaz);
-
-            rep0[index] = iter;
-            stratum0[index] = s;
-            size0[index] = n2;
-            time0[index] = t;
-            nrisk0[index] = nrisk;
-            nevent0[index] = nevent;
-            surv0[index] = surv;
-            sesurv0[index] = sesurv;
-
-            if (ct != "none") {
-              NumericVector ci = f(surv, sesurv);
-              lower0[index] = ci[0];
-              upper0[index] = ci[1];
-            }
-
-            index++;
-          }
-
-          // update the buffer for the current event time
-          t = time2[j];
-          nrisk = n2-j;
-          nevent = 1;
-
-          cache = 1;
-        } else if ((j >= 1) && (event2[j] == 1) && (event2[j-1] == 1) &&
-          (time2[j] == time2[j-1])) { // tied event
-          nevent = nevent + 1;
-        } else if ((j >= 1) && (event2[j] == 0) && (event2[j-1] == 1)) {
-          // new censoring
-          // add the info for the previous event
-          surv = surv*(1.0 - nevent/nrisk);
-          if (nrisk > nevent) {
-            vcumhaz = vcumhaz + nevent/(nrisk*(nrisk - nevent));
-          } else {
-            vcumhaz = NA_REAL;
-          }
-          sesurv = surv*sqrt(vcumhaz);
-
-          rep0[index] = iter;
-          stratum0[index] = s;
-          size0[index] = n2;
-          time0[index] = t;
-          nrisk0[index] = nrisk;
-          nevent0[index] = nevent;
-          surv0[index] = surv;
-          sesurv0[index] = sesurv;
-
-          if (ct != "none") {
-            NumericVector ci = f(surv, sesurv);
-            lower0[index] = ci[0];
-            upper0[index] = ci[1];
-          }
-
-          index++;
-
-          // empty the cache for the current event time
-          cache = 0;
-        }
-      }
-
-      // add the info for the last event
-      if (cache) {
-        surv = surv*(1.0 - nevent/nrisk);
-        if (nrisk > nevent) {
-          vcumhaz = vcumhaz + nevent/(nrisk*(nrisk - nevent));
-        } else {
-          vcumhaz = NA_REAL;
-        }
-        sesurv = surv*sqrt(vcumhaz);
-
-        rep0[index] = iter;
-        stratum0[index] = s;
-        size0[index] = n2;
-        time0[index] = t;
-        nrisk0[index] = nrisk;
-        nevent0[index] = nevent;
-        surv0[index] = surv;
-        sesurv0[index] = sesurv;
-
-        if (ct != "none") {
-          NumericVector ci = f(surv, sesurv);
-          lower0[index] = ci[0];
-          upper0[index] = ci[1];
-        }
-
-        index++;
-      }
-    }
-  }
-
-  // only keep nonmissing records
-  LogicalVector sub = !is_na(rep0);
-  if (is_false(any(sub))) {
-    stop("no replication enables valid inference");
-  }
-
-  rep0 = rep0[sub];
-  stratum0 = stratum0[sub];
-  size0 = size0[sub];
-  time0 = time0[sub];
-  nrisk0 = nrisk0[sub];
-  nevent0 = nevent0[sub];
-  surv0 = surv0[sub];
-  sesurv0 = sesurv0[sub];
-
-  DataFrame result = DataFrame::create(
-    _["size"] = size0,
-    _["time"] = time0,
-    _["nrisk"] = nrisk0,
-    _["nevent"] = nevent0,
-    _["survival"] = surv0,
-    _["stderr"] = sesurv0);
-
-
-  if (ct != "none") {
-    result.push_back(lower0[sub], "lower");
-    result.push_back(upper0[sub], "upper");
-    result.push_back(confint, "confint");
-    result.push_back(conftype, "conftype");
-  }
-
-  if (has_rep) {
-    if (TYPEOF(data[rep]) == INTSXP) {
-      result.push_back(repwi[rep0-1], rep);
-    } else if (TYPEOF(data[rep]) == REALSXP) {
-      result.push_back(repwn[rep0-1], rep);
-    } else if (TYPEOF(data[rep]) == STRSXP) {
-      result.push_back(repwc[rep0-1], rep);
-    }
-  }
-
-  if (has_stratum) {
-    if (TYPEOF(data[stratum]) == INTSXP) {
-      result.push_back(stratumwi[stratum0-1], stratum);
-    } else if (TYPEOF(data[stratum]) == REALSXP) {
-      result.push_back(stratumwn[stratum0-1], stratum);
-    } else if (TYPEOF(data[stratum]) == STRSXP) {
-      result.push_back(stratumwc[stratum0-1], stratum);
-    }
-  }
-
-  return result;
-}
-
-
 //' @title Estimate of milestone survival difference
 //' @description Obtains the estimate of milestone survival difference
 //' between two treatment groups.
@@ -5556,13 +5129,13 @@ DataFrame kmdiff(const DataFrame data,
   NumericVector treatwn;
   StringVector treatwc;
   if (TYPEOF(data[treat]) == LGLSXP) {
-    LogicalVector treatv = data[treat];
-    treatn = 2 - treatv;
-    treatwi = unique(treatn);
+    IntegerVector treatv = data[treat];
+    treatwi = unique(treatv);
     if (treatwi.size() != 2) {
       stop("treat must have two and only two distinct values");
     }
-    treatwi = 2 - treatwi;
+    treatwi = IntegerVector::create(1,0);
+    treatn = 2 - treatv;
   } else if (TYPEOF(data[treat]) == INTSXP) {
     IntegerVector treatv = data[treat];
     treatwi = unique(treatv);
@@ -5570,7 +5143,13 @@ DataFrame kmdiff(const DataFrame data,
       stop("treat must have two and only two distinct values");
     }
     treatwi.sort();
-    treatn = match(treatv, treatwi);
+    // special handling for 1/0 treatment coding
+    if (is_true(all((treatwi == 0) | (treatwi == 1)))) {
+      treatwi = IntegerVector::create(1,0);
+      treatn = 2 - treatv;
+    } else {
+      treatn = match(treatv, treatwi);
+    }
   } else if (TYPEOF(data[treat]) == REALSXP) {
     NumericVector treatv = data[treat];
     treatwn = unique(treatv);

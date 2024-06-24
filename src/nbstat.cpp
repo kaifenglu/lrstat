@@ -4,7 +4,7 @@ using namespace Rcpp;
 
 
 // define the integrand functions
-typedef struct {
+struct nbparams {
   double tau;
   double phi;
   NumericVector accrualTime;
@@ -15,7 +15,7 @@ typedef struct {
   NumericVector zero;
   NumericVector gam;
   double accrualDuration;
-} nbparams;
+};
 
 
 void f_ex(double *x, int n, void *ex) {
