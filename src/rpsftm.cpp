@@ -180,14 +180,14 @@ double est_eqn(
 //'
 //' data <- immdef %>% mutate(rx = 1-xoyrs/progyrs)
 //'
-//' fit <- rpsft(data, time = "progyrs", event = "prog", treat = "imm",
-//'              rx = "rx", censor_time = "censyrs", boot = 0)
+//' fit <- rpsftm(data, time = "progyrs", event = "prog", treat = "imm",
+//'               rx = "rx", censor_time = "censyrs", boot = 0)
 //'
 //' c(fit$hr, fit$hr_CI)
 //'
 //' @export
 // [[Rcpp::export]]
-List rpsft(
+List rpsftm(
     const DataFrame data,
     const std::string stratum = "stratum",
     const std::string time = "time",
@@ -513,16 +513,8 @@ List rpsft(
                     "event", covariates, "none", "none", "efron", 0);
 
   DataFrame parest = DataFrame(fit["parest"]);
-  StringVector param = parest["param"];
   NumericVector beta = parest["beta"];
-  double loghrhat = 0;
-  for (j=0; j<=p; j++) {
-    if (param[j] == "treat") {
-      loghrhat = beta[j];
-      break;
-    }
-  }
-
+  double loghrhat = beta[0];
   double hrhat = exp(loghrhat);
 
 
@@ -542,12 +534,41 @@ List rpsft(
     NumericVector timeb(n), rxb(n), censor_timeb(n);
     NumericMatrix zb(n,p+1);
 
+    // sort data by treatment group
+    IntegerVector order = seq(0, n-1);
+    std::sort(order.begin(), order.end(), [&](int i, int j) {
+      return treatn[i] < treatn[j];
+    });
+
+    stratumn = stratumn[order];
+    timen = timen[order];
+    eventn = eventn[order];
+    treatn = treatn[order];
+    rxn = rxn[order];
+    censor_timen = censor_timen[order];
+
+    NumericMatrix z(n,p+1);
+    for (i=0; i<n; i++) {
+      for (j=0; j<=p; j++) {
+        z(i,j) = zn(order[i], j);
+      }
+    }
+    zn = z;
+
+    // number of subjects in each treatment group
+    int n0 = sum(treatn == 0);
+    int n1 = sum(treatn == 1);
+
     for (k=0; k<n_boot; k++) {
 
-      // sample the data with replacement
+      // sample the data with replacement by treatment group
       for (i=0; i<n; i++) {
         double u = R::runif(0,1);
-        j = static_cast<int>(floor(u*n));
+        if (treatn[i] == 0) {
+          j = static_cast<int>(floor(u*n0));
+        } else {
+          j = n0 + static_cast<int>(floor(u*n1));
+        }
 
         stratumb[i] = stratumn[j];
         timeb[i] = timen[j];
@@ -638,17 +659,8 @@ List rpsft(
                         "event", covariates, "none", "none", "efron", 0);
 
       DataFrame parest = DataFrame(fit["parest"]);
-      StringVector param = parest["param"];
       NumericVector beta = parest["beta"];
-      double loghrhat = 0;
-      for (j=0; j<=p; j++) {
-        if (param[j] == "treat") {
-          loghrhat = beta[j];
-          break;
-        }
-      }
-
-      hrhats[k] = exp(loghrhat);
+      hrhats[k] = exp(beta[1]);
     }
 
 
