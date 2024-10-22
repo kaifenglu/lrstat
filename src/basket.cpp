@@ -1,7 +1,7 @@
 #include "utilities.h"
 using namespace Rcpp;
 
-//' @title Analysis of Simon's Bayesian basket trials
+//' @title Analysis of Simon's Bayesian Basket Trials
 //' @description Obtains the prior and posterior probabilities for
 //' Simon's Bayesian basket discovery trials.
 //'
@@ -49,8 +49,8 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List simonBayesAnalysis(
     const int nstrata = NA_INTEGER,
-    const IntegerVector& r = NA_INTEGER,
-    const IntegerVector& n = NA_INTEGER,
+    const NumericVector& r = NA_REAL,
+    const NumericVector& n = NA_REAL,
     const double lambda = NA_REAL,
     const double gamma = NA_REAL,
     const double phi = NA_REAL,
@@ -88,19 +88,19 @@ List simonBayesAnalysis(
     stop("r must be less than or equal to n");
   }
 
-  if (R_isnancpp(lambda)) {
+  if (std::isnan(lambda)) {
     stop("lambda must be provided");
   }
 
-  if (R_isnancpp(gamma)) {
+  if (std::isnan(gamma)) {
     stop("gamma must be provided");
   }
 
-  if (R_isnancpp(phi)) {
+  if (std::isnan(phi)) {
     stop("phi must be provided");
   }
 
-  if (R_isnancpp(plo)) {
+  if (std::isnan(plo)) {
     stop("plo must be provided");
   }
 
@@ -124,8 +124,6 @@ List simonBayesAnalysis(
     stop("plo must be less than phi");
   }
 
-  NumericVector r1 = NumericVector(r);
-  NumericVector n1 = NumericVector(n);
 
   int ncases = static_cast<int>(std::pow(2, nstrata));
   NumericMatrix incid(ncases, nstrata);
@@ -147,7 +145,7 @@ List simonBayesAnalysis(
     }
 
     NumericVector x = phi*cc + plo*(1-cc);
-    like[i] = exp(sum(r1*log(x) + (n1-r1)*log(1-x)));
+    like[i] = exp(sum(r*log(x) + (n-r)*log(1-x)));
     incid(i,_) = cc;
   }
   NumericVector post = prior*like;
@@ -169,7 +167,7 @@ List simonBayesAnalysis(
 
 
 
-//' @title Simulation of Simon's Bayesian basket trials
+//' @title Simulation of Simon's Bayesian Basket Trials
 //' @description Obtains the simulated raw and summary data for Simon's
 //' Bayesian basket discovery trials.
 //'
@@ -352,23 +350,23 @@ List simonBayesSim(
     stop("stratumFraction must sum to 1");
   }
 
-  if (R_isnancpp(lambda)) {
+  if (std::isnan(lambda)) {
     stop("lambda must be provided");
   }
 
-  if (R_isnancpp(gamma)) {
+  if (std::isnan(gamma)) {
     stop("gamma must be provided");
   }
 
-  if (R_isnancpp(phi)) {
+  if (std::isnan(phi)) {
     stop("phi must be provided");
   }
 
-  if (R_isnancpp(plo)) {
+  if (std::isnan(plo)) {
     stop("plo must be provided");
   }
 
-  if (R_isnancpp(T)) {
+  if (std::isnan(T)) {
     stop("T must be provided");
   }
 
@@ -436,7 +434,7 @@ List simonBayesSim(
 
   NumericVector cumStratumFraction = cumsum(stratumFraction);
   NumericVector post_stratum(nstrata);
-  IntegerVector n(nstrata), r(nstrata);
+  NumericVector n(nstrata), r(nstrata);
   LogicalVector open(nstrata), pos(nstrata), neg(nstrata);
   List bayes;
 

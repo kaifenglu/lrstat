@@ -1,4 +1,4 @@
-#' @title Print group sequential design
+#' @title Print Group Sequential Design
 #' @description Prints the stopping boundaries and information inflation
 #' factor for group sequential design.
 #'
@@ -186,7 +186,7 @@ print.design <- function(x, ...) {
 }
 
 
-#' @title Print group sequential equivalence design
+#' @title Print Group Sequential Equivalence Design
 #' @description Prints the stopping boundaries for group sequential
 #' equivalence design.
 #'
@@ -335,7 +335,7 @@ print.designEquiv <- function(x, ...) {
 }
 
 
-#' @title Print adaptive group sequential design
+#' @title Print Adaptive Group Sequential Design
 #' @description Prints the primary and second trial information for
 #' an adaptive group sequential design.
 #'
@@ -508,7 +508,7 @@ print.adaptDesign <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for log-rank tests
+#' @title Print Power and Sample Size Results for Log-Rank Tests
 #' @description Prints the summary statistics from power calculation.
 #'
 #' @param x The lrpower object to print.
@@ -819,7 +819,7 @@ print.lrpower <- function(x, ...) {
 }
 
 
-#' @title Print simulation results for log-rank tests
+#' @title Print Simulation Results for Log-Rank Tests
 #' @description Prints the summary statistics from simulation.
 #'
 #' @param x The lrsim object to print.
@@ -907,8 +907,8 @@ print.lrsim <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for negative binomial rate
-#' ratio
+#' @title Print Power and Sample Size Results for Negative Binomial Rate
+#' Ratio
 #' @description Prints the summary statistics from power calculation of
 #' negative binomial rate ratio.
 #'
@@ -1208,8 +1208,8 @@ print.nbpower <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for equivalence in negative
-#' binomial rate ratio
+#' @title Print Power and Sample Size Results for Equivalence in Negative
+#' Binomial Rate Ratio
 #' @description Prints the summary statistics from power calculation of
 #' equivalence in negative binomial rate ratio.
 #'
@@ -1473,8 +1473,8 @@ print.nbpowerequiv <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for one-sample negative
-#' binomial rate
+#' @title Print Power and Sample Size Results for One-Sample Negative
+#' Binomial Rate
 #' @description Prints the summary statistics from power calculation of
 #' one-sample negative binomial rate.
 #'
@@ -1736,7 +1736,7 @@ print.nbpower1s <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for one-sample mean
+#' @title Print Power and Sample Size Results for One-Sample Mean
 #' @description Prints the summary statistics from power calculation of
 #' one-sample mean.
 #'
@@ -1959,7 +1959,7 @@ print.designOneMean <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for paired mean difference
+#' @title Print Power and Sample Size Results for Paired Mean Difference
 #' @description Prints the summary statistics from power calculation of
 #' paired mean difference.
 #'
@@ -2181,7 +2181,7 @@ print.designPairedMeanDiff <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for paired mean ratio
+#' @title Print Power and Sample Size Results for Paired Mean Ratio
 #' @description Prints the summary statistics from power calculation of
 #' paired mean ratio.
 #'
@@ -2404,7 +2404,7 @@ print.designPairedMeanRatio <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for two-sample mean difference
+#' @title Print Power and Sample Size Results for Two-Sample Mean Difference
 #' @description Prints the summary statistics from power calculation of
 #' two-sample mean difference.
 #'
@@ -2629,7 +2629,7 @@ print.designMeanDiff <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for two-sample mean ratio
+#' @title Print Power and Sample Size Results for Two-Sample Mean Ratio
 #' @description Prints the summary statistics from power calculation of
 #' two-sample mean ratio.
 #'
@@ -2854,8 +2854,8 @@ print.designMeanRatio <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for mean difference in 2x2
-#' crossover
+#' @title Print Power and Sample Size Results for Mean Difference in 2x2
+#' Crossover
 #' @description Prints the summary statistics from power calculation of
 #' mean difference in 2x2 crossover.
 #'
@@ -3081,7 +3081,7 @@ print.designMeanDiffXO <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for mean ratio in 2x2 crossover
+#' @title Print Power and Sample Size Results for Mean Ratio in 2x2 Crossover
 #' @description Prints the summary statistics from power calculation of
 #' mean ratio in 2x2 crossover.
 #'
@@ -3306,8 +3306,8 @@ print.designMeanRatioXO <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for equivalence in paired
-#' mean difference
+#' @title Print Power and Sample Size Results for Equivalence in Paired
+#' Mean Difference
 #' @description Prints the summary statistics from power calculation of
 #' equivalence in paired mean difference.
 #'
@@ -3483,8 +3483,8 @@ print.designPairedMeanDiffEquiv <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for equivalence in paired
-#' mean ratio
+#' @title Print Power and Sample Size Results for Equivalence in Paired
+#' Mean Ratio
 #' @description Prints the summary statistics from power calculation of
 #' equivalence in paired mean ratio.
 #'
@@ -3660,8 +3660,8 @@ print.designPairedMeanRatioEquiv <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for equivalence in
-#' two-sample mean difference
+#' @title Print Power and Sample Size Results for Equivalence in
+#' Two-Sample Mean Difference
 #' @description Prints the summary statistics from power calculation of
 #' equivalence in two-sample mean difference.
 #'
@@ -3841,8 +3841,8 @@ print.designMeanDiffEquiv <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for equivalence in
-#' two-sample mean ratio
+#' @title Print Power and Sample Size Results for Equivalence in
+#' Two-Sample Mean Ratio
 #' @description Prints the summary statistics from power calculation of
 #' equivalence in two-sample mean ratio.
 #'
@@ -4022,8 +4022,8 @@ print.designMeanRatioEquiv <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for equivalence in
-#' mean difference in 2x2 crossover
+#' @title Print Power and Sample Size Results for Equivalence in
+#' Mean Difference in 2x2 Crossover
 #' @description Prints the summary statistics from power calculation of
 #' equivalence in mean difference in 2x2 crossover.
 #'
@@ -4204,8 +4204,8 @@ print.designMeanDiffXOEquiv <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for equivalence in
-#' mean ratio in 2x2 crossover
+#' @title Print Power and Sample Size Results for Equivalence in
+#' Mean Ratio in 2x2 Crossover
 #' @description Prints the summary statistics from power calculation of
 #' equivalence in mean ratio in 2x2 crossover.
 #'
@@ -4385,7 +4385,7 @@ print.designMeanRatioXOEquiv <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for two-sample Wilcoxon test
+#' @title Print Power and Sample Size Results for Two-Sample Wilcoxon Test
 #' @description Prints the summary statistics from power calculation of
 #' two-sample Wilcoxon test.
 #'
@@ -4601,8 +4601,8 @@ print.designWilcoxon <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for two-sample mean difference
-#' at the last time point from the MMRM model
+#' @title Print Power and Sample Size Results for Two-Sample Mean Difference
+#' at the Last Time Point From the MMRM Model
 #' @description Prints the summary statistics from power calculation of
 #' two-sample mean difference at the last time point from the MMRM model.
 #'
@@ -4852,8 +4852,8 @@ print.designMeanDiffMMRM <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for direct treatment effects
-#' in crossover trials accounting for carryover effects
+#' @title Print Power and Sample Size Results for Direct Treatment Effects
+#' in Crossover Trials Accounting for Carryover Effects
 #' @description Prints the summary statistics from power calculation of
 #' direct treatment effects in crossover trials accounting for
 #' carryover effects.
@@ -4930,7 +4930,7 @@ print.designMeanDiffCarryover <- function(x, ...) {
 }
 
 
-#' @title Print the power and sample size for one-way ANOVA
+#' @title Print Power and Sample Size Results for One-Way ANOVA
 #' @description Prints the power and sample size for one-way analysis
 #' of variance.
 #'
@@ -4954,8 +4954,8 @@ print.designANOVA <- function(x, ...) {
 }
 
 
-#' @title Print the power and sample size for a single contrast in
-#' one-way ANOVA
+#' @title Print Power and Sample Size Results for a Single Contrast in
+#' One-Way ANOVA
 #' @description Prints the power and sample size for a single contrast in
 #' one-way analysis of variance.
 #'
@@ -4981,7 +4981,8 @@ print.designANOVAContrast <- function(x, ...) {
 }
 
 
-#' @title Print the power and sample size for one-way repeated measures ANOVA
+#' @title Print Power and Sample Size Results for One-Way Repeated
+#' Measures ANOVA
 #' @description Prints the power and sample size for one-way repeated
 #' measures analysis of variance.
 #'
@@ -5006,8 +5007,8 @@ print.designRepeatedANOVA <- function(x, ...) {
 }
 
 
-#' @title Print the power and sample size for a single contrast in
-#' one-way repeated measures ANOVA
+#' @title Print Power and Sample Size Results for a Single Contrast in
+#' One-Way Repeated Measures ANOVA
 #' @description Prints the power and sample size for a single contrast in
 #' one-way repeated measures analysis of variance.
 #'
@@ -5034,7 +5035,7 @@ print.designRepeatedANOVAContrast <- function(x, ...) {
 }
 
 
-#' @title Print the power and sample size for two-way ANOVA
+#' @title Print Power and Sample Size Results for Two-Way ANOVA
 #' @description Prints the power and sample size for two-way analysis
 #' of variance.
 #'
@@ -5063,7 +5064,7 @@ print.designTwoWayANOVA <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for one-sample slope
+#' @title Print Power and Sample Size Results for One-Sample Slope
 #' @description Prints the summary statistics from power calculation of
 #' one-sample slope.
 #'
@@ -5290,7 +5291,7 @@ print.designOneSlope <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for two-sample slope difference
+#' @title Print Power and Sample Size Results for Two-Sample Slope Difference
 #' @description Prints the summary statistics from power calculation of
 #' two-sample slope difference.
 #'
@@ -5519,8 +5520,8 @@ print.designSlopeDiff <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for two-sample slope difference
-#' at the last time point from the MMRM model
+#' @title Print Power and Sample Size Results for Two-Sample Slope Difference
+#' at the Last Time Point From the MMRM Model
 #' @description Prints the summary statistics from power calculation of
 #' two-sample slope difference at the last time point from the MMRM model.
 #'
@@ -5777,7 +5778,7 @@ print.designSlopeDiffMMRM <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for one-sample proportion
+#' @title Print Power and Sample Size Results for One-Sample Proportion
 #' @description Prints the summary statistics from power calculation of
 #' one-sample proportion.
 #'
@@ -6005,8 +6006,8 @@ print.designOneProportion <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for McNemar's test for paired
-#' proportions
+#' @title Print Power and Sample Size Results for McNemar's Test for Paired
+#' Proportions
 #' @description Prints the summary statistics from power calculation of
 #' McNemar's test for paired proportions.
 #'
@@ -6222,7 +6223,7 @@ print.designPairedPropMcNemar <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for two-sample risk difference
+#' @title Print Power and Sample Size Results for Two-Sample Risk Difference
 #' @description Prints the summary statistics from power calculation of
 #' two-sample risk difference.
 #'
@@ -6441,7 +6442,7 @@ print.designRiskDiff <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for two-sample risk ratio
+#' @title Print Power and Sample Size Results for Two-Sample Risk Ratio
 #' @description Prints the summary statistics from power calculation of
 #' two-sample risk ratio.
 #'
@@ -6659,8 +6660,8 @@ print.designRiskRatio <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for two-sample risk ratio
-#' based on the Farrington-Manning score test
+#' @title Print Power and Sample Size Results for Two-Sample Risk Ratio
+#' Based on the Farrington-Manning Score Test
 #' @description Prints the summary statistics from power calculation of
 #' two-sample risk ratio based on the Farrington-Manning score test.
 #'
@@ -6878,7 +6879,7 @@ print.designRiskRatioFM <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for two-sample odds ratio
+#' @title Print Power and Sample Size Results for Two-Sample Odds Ratio
 #' @description Prints the summary statistics from power calculation of
 #' two-sample odds ratio.
 #'
@@ -7096,8 +7097,8 @@ print.designOddsRatio <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for equivalence in
-#' two-sample risk difference
+#' @title Print Power and Sample Size Results for Equivalence in
+#' Two-Sample Risk Difference
 #' @description Prints the summary statistics from power calculation of
 #' equivalence in two-sample risk difference.
 #'
@@ -7278,8 +7279,8 @@ print.designRiskDiffEquiv <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for equivalence in
-#' two-sample risk ratio
+#' @title Print Power and Sample Size Results for Equivalence in
+#' Two-Sample Risk Ratio
 #' @description Prints the summary statistics from power calculation of
 #' equivalence in two-sample risk ratio.
 #'
@@ -7460,8 +7461,8 @@ print.designRiskRatioEquiv <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for equivalence in
-#' two-sample odds ratio
+#' @title Print Power and Sample Size Results for Equivalence in
+#' Two-Sample Odds Ratio
 #' @description Prints the summary statistics from power calculation of
 #' equivalence in two-sample odds ratio.
 #'
@@ -7642,7 +7643,7 @@ print.designOddsRatioEquiv <- function(x, ...) {
 }
 
 
-#' @title Print the decision table for the mTPI-2 design
+#' @title Print the Decision Table for the mTPI-2 Design
 #' @description Prints the decision table of the modified toxicity
 #' probability-2 (mTPI-2) design for MTD finding.
 #'
@@ -7686,7 +7687,7 @@ print.mTPI2Table <- function(x, ...) {
 }
 
 
-#' @title Print the decision table for the BOIN design
+#' @title Print the Decision Table for the BOIN Design
 #' @description Prints the decision table of the Bayesian optimal interval
 #' design for MTD finding.
 #'
@@ -7732,7 +7733,7 @@ print.BOINTable <- function(x, ...) {
 }
 
 
-#' @title Print the point estimate and confidence interval
+#' @title Print the Point Estimate and Confidence Interval
 #' @description Prints the point estimate and confidence interval.
 #'
 #' @param x The estimateCI object to print.
@@ -7753,7 +7754,8 @@ print.estimateCI <- function(x, ...) {
 }
 
 
-#' @title Print the power and sample size for one-sample multinomial response
+#' @title Print Power and Sample Size Results for One-Sample Multinomial
+#' Response
 #' @description Prints the power and sample size for one-sample multinomial
 #' response.
 #'
@@ -7777,8 +7779,8 @@ print.designOneMultinom <- function(x, ...) {
 }
 
 
-#' @title Print the power and sample size for difference in two-sample
-#' multinomial response
+#' @title Print Power and Sample Size Results for Difference in Two-Sample
+#' Multinomial Response
 #' @description Prints the power and sample size for difference in
 #' two-sample multinomial response.
 #'
@@ -7802,8 +7804,8 @@ print.designTwoMultinom <- function(x, ...) {
 }
 
 
-#' @title Print the power and sample size for Wilcoxon test for two-sample
-#' ordinal response.
+#' @title Print Power and Sample Size Results for Wilcoxon Test for
+#' Two-Sample Ordinal Response.
 #' @description Prints the power and sample size for Wilcoxon test for
 #' two-sample ordinal response.
 #'
@@ -7828,8 +7830,8 @@ print.designTwoOrdinal <- function(x, ...) {
 }
 
 
-#' @title Print the power and sample size for Cochran-Armitage trend test
-#' for ordered multi-sample binomial response
+#' @title Print Power and Sample Size Results for Cochran-Armitage Trend Test
+#' for Ordered Multi-Sample Binomial Response
 #' @description Prints the power and sample size for Cochran-Armitage
 #' trend test for ordered multi-sample binomial response.
 #'
@@ -7853,8 +7855,8 @@ print.designOrderedBinom <- function(x, ...) {
 }
 
 
-#' @title Print the power and sample size for unordered multi-sample
-#' binomial response
+#' @title Print Power and Sample Size Results for Unordered Multi-Sample
+#' Binomial Response
 #' @description Prints the power and sample size for unordered multi-sample
 #' binomial response.
 #'
@@ -7878,8 +7880,8 @@ print.designUnorderedBinom <- function(x, ...) {
 }
 
 
-#' @title Print the power and sample size for unordered multi-sample
-#' multinomial response
+#' @title Print Power and Sample Size Results for Unordered Multi-Sample
+#' Multinomial Response
 #' @description Prints the power and sample size for unordered multi-sample
 #' multinomial response.
 #'
@@ -7903,7 +7905,7 @@ print.designUnorderedMultinom <- function(x, ...) {
 }
 
 
-#' @title Print the power and sample size for logistic regression
+#' @title Print Power and Sample Size Results for Logistic Regression
 #' @description Prints the power and sample size for logistic regression.
 #'
 #' @param x The designLogistic object to print.
@@ -7929,7 +7931,7 @@ print.designLogistic <- function(x, ...) {
 }
 
 
-#' @title Print the power and sample size for Cohen's kappa.
+#' @title Print Power and Sample Size Results for Cohen's kappa.
 #' @description Prints the power and sample size for Cohen's kappa.
 #'
 #' @param x The designAgreement object to print.
@@ -7952,8 +7954,8 @@ print.designAgreement <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for milestone survival
-#' difference
+#' @title Print Power and Sample Size Results for Milestone Survival
+#' Difference
 #' @description Prints the summary statistics from power calculation.
 #'
 #' @param x The kmpower object to print.
@@ -8179,8 +8181,8 @@ print.kmpower <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for restricted mean survival
-#' time difference
+#' @title Print Power and Sample Size Results for Restricted Mean Survival
+#' Time Difference
 #' @description Prints the summary statistics from power calculation.
 #'
 #' @param x The rmpower object to print.
@@ -8406,8 +8408,8 @@ print.rmpower <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for equivalence in milestone
-#' survival probability difference
+#' @title Print Power and Sample Size Results for Equivalence in Milestone
+#' Survival Probability Difference
 #' @description Prints the summary statistics from power calculation of
 #' equivalence in milestone survival probability difference.
 #'
@@ -8598,8 +8600,8 @@ print.kmpowerequiv <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for equivalence in restricted
-#' mean survival time difference
+#' @title Print Power and Sample Size Results for Equivalence in Restricted
+#' Mean Survival Time Difference
 #' @description Prints the summary statistics from power calculation of
 #' equivalence in restricted mean survival time difference.
 #'
@@ -8790,8 +8792,8 @@ print.rmpowerequiv <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for equivalence in hazard
-#' ratio
+#' @title Print Power and Sample Size Results for Equivalence in Hazard
+#' Ratio
 #' @description Prints the summary statistics from power calculation of
 #' equivalence in hazard ratio.
 #'
@@ -8995,8 +8997,8 @@ print.lrpowerequiv <- function(x, ...) {
 }
 
 
-#' @title Print power and sample size results for one-sample milestone
-#' survival probability
+#' @title Print Power and Sample Size Results for One-Sample Milestone
+#' Survival Probability
 #' @description Prints the summary statistics from power calculation of
 #' one-sample milestone survival probability.
 #'
@@ -9213,8 +9215,8 @@ print.kmpower1s <- function(x, ...) {
   invisible(x)
 }
 
-#' @title Print power and sample size results for one-sample restricted
-#' mean survival time
+#' @title Print Power and Sample Size Results for One-Sample Restricted
+#' Mean Survival Time
 #' @description Prints the summary statistics from power calculation of
 #' one-sample restricted mean survival time.
 #'
@@ -9431,3 +9433,372 @@ print.rmpower1s <- function(x, ...) {
   print(df, ..., na.print = "" , quote = FALSE )
   invisible(x)
 }
+
+
+#' @title Print liferegr Object
+#' @description Prints the concise information of liferegr fit.
+#'
+#' @param x The liferegr object to print.
+#' @param ... Ensures that all arguments starting from "..." are named.
+#'
+#' @return A printout from the fit of an accelerated failue time model.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @export
+print.liferegr <- function(x, ...) {
+  lrchisq = -2*(x$sumstat$loglik0 - x$sumstat$loglik1)
+  degrees = x$sumstat$nvar
+  pvalue = sapply(1:nrow(x$sumstat), function(i) {
+    ifelse(degrees[i] > 0,
+           pchisq(lrchisq[i], degrees[i], 0, lower.tail = FALSE),
+           NA)
+  })
+  df1 <- cbind(x$sumstat[, c("n", "nevents", "loglik0", "loglik1")],
+               lrchisq = lrchisq, df = degrees, pvalue = pvalue,
+               x$sumstat[, c("niter", "dist")])
+
+  p = x$p
+  if (p > 0) {
+    nreps = nrow(x$parest)/p
+
+    if (!x$robust) {
+      if (x$plci) {
+        df = data.frame(param = rep(x$param, nreps),
+                        coef = x$parest$beta,
+                        expcoef = x$parest$expbeta,
+                        se = x$parest$sebeta,
+                        z = x$parest$z,
+                        lower = x$parest$lower,
+                        upper = x$parest$upper,
+                        p = x$parest$p,
+                        method = x$parest$method)
+
+        if (nreps > 1) {
+          df = cbind(df, x$parest[, (p+10):ncol(x$parest)])
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)", "z",
+                            paste("lower", 1-x$alpha),
+                            paste("upper", 1-x$alpha), "p", "method",
+                            colnames(x$parest)[(p+10):ncol(x$parest)])
+        } else {
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)", "z",
+                            paste("lower", 1-x$alpha),
+                            paste("upper", 1-x$alpha), "p", "method")
+        }
+      } else {
+        df = data.frame(param = rep(x$param, nreps),
+                        coef = x$parest$beta,
+                        expcoef = x$parest$expbeta,
+                        se = x$parest$sebeta,
+                        z = x$parest$z,
+                        p = x$parest$p)
+
+        if (nreps > 1) {
+          df = cbind(df, x$parest[, (p+10):ncol(x$parest)])
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)", "z",
+                            "p", colnames(x$parest)[(p+10):ncol(x$parest)])
+        } else {
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)", "z",
+                            "p")
+        }
+      }
+    } else {
+      if (x$plci) {
+        df = data.frame(param = rep(x$param, nreps),
+                        coef = x$parest$beta,
+                        expcoef = x$parest$expbeta,
+                        nse = x$parest$sebeta_naive,
+                        se = x$parest$sebeta,
+                        z = x$parest$z,
+                        lower = x$parest$lower,
+                        upper = x$parest$upper,
+                        p = x$parest$p,
+                        method = x$parest$method)
+
+        if (nreps > 1) {
+          df = cbind(df, x$parest[, (2*p+11):ncol(x$parest)])
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)",
+                            "robust se", "z", paste("lower", 1-x$alpha),
+                            paste("upper", 1-x$alpha), "p", "method",
+                            colnames(x$parest)[(2*p+11):ncol(x$parest)])
+        } else {
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)",
+                            "robust se", "z", paste("lower", 1-x$alpha),
+                            paste("upper", 1-x$alpha), "p", "method")
+        }
+      } else {
+        df = data.frame(param = rep(x$param, nreps),
+                        coef = x$parest$beta,
+                        expcoef = x$parest$expbeta,
+                        nse = x$parest$sebeta_naive,
+                        se = x$parest$sebeta,
+                        z = x$parest$z,
+                        p = x$parest$p)
+
+        if (nreps > 1) {
+          df = cbind(df, x$parest[, (2*p+11):ncol(x$parest)])
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)",
+                            "robust se", "z", "p",
+                            colnames(x$parest)[(2*p+11):ncol(x$parest)])
+        } else {
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)",
+                            "robust se", "z", "p")
+        }
+      }
+    }
+  }
+
+  print(df1, ..., na.print = "" , quote = FALSE )
+  cat("\n")
+  print(df, ..., na.print = "" , quote = FALSE )
+  invisible(x)
+}
+
+
+#' @title Print phregr Object
+#' @description Prints the concise information of phregr fit.
+#'
+#' @param x The phregr object to print.
+#' @param ... Ensures that all arguments starting from "..." are named.
+#'
+#' @return A printout from the fit of a Cox proportional hazards model.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @export
+print.phregr <- function(x, ...) {
+  lrchisq = -2*(x$sumstat$loglik0 - x$sumstat$loglik1)
+  degrees = x$sumstat$p
+  pvalue = sapply(1:nrow(x$sumstat), function(i) {
+    ifelse(degrees[i] > 0,
+           pchisq(lrchisq[i], degrees[i], 0, lower.tail = FALSE),
+           NA)
+  })
+  df1 <- cbind(x$sumstat[, c("n", "nevents", "loglik0", "loglik1")],
+               lrchisq = lrchisq, df = degrees, pvalue = pvalue,
+               x$sumstat[, c("scoretest", "niter", "ties")])
+  print(df1, ..., na.print = "" , quote = FALSE )
+  cat("\n")
+
+  p = x$p
+  if (p > 0) {
+    nreps = nrow(x$parest)/p
+
+    if (!x$robust) {
+      if (x$plci) {
+        df = data.frame(param = rep(x$param, nreps),
+                        coef = x$parest$beta,
+                        expcoef = x$parest$expbeta,
+                        se = x$parest$sebeta,
+                        z = x$parest$z,
+                        lower = x$parest$lower,
+                        upper = x$parest$upper,
+                        p = x$parest$p,
+                        method = x$parest$method)
+
+        if (nreps > 1) {
+          df = cbind(df, x$parest[, (p+10):ncol(x$parest)])
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)", "z",
+                            paste("lower", 1-x$alpha),
+                            paste("upper", 1-x$alpha), "p", "method",
+                            colnames(x$parest)[(p+10):ncol(x$parest)])
+        } else {
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)", "z",
+                            paste("lower", 1-x$alpha),
+                            paste("upper", 1-x$alpha), "p", "method")
+        }
+      } else {
+        df = data.frame(param = rep(x$param, nreps),
+                        coef = x$parest$beta,
+                        expcoef = x$parest$expbeta,
+                        se = x$parest$sebeta,
+                        z = x$parest$z,
+                        p = x$parest$p)
+
+        if (nreps > 1) {
+          df = cbind(df, x$parest[, (p+10):ncol(x$parest)])
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)", "z",
+                            "p", colnames(x$parest)[(p+10):ncol(x$parest)])
+        } else {
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)", "z",
+                            "p")
+        }
+      }
+    } else {
+      if (x$plci) {
+        df = data.frame(param = rep(x$param, nreps),
+                        coef = x$parest$beta,
+                        expcoef = x$parest$expbeta,
+                        nse = x$parest$sebeta_naive,
+                        se = x$parest$sebeta,
+                        z = x$parest$z,
+                        lower = x$parest$lower,
+                        upper = x$parest$upper,
+                        p = x$parest$p,
+                        method = x$parest$method)
+
+        if (nreps > 1) {
+          df = cbind(df, x$parest[, (2*p+11):ncol(x$parest)])
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)",
+                            "robust se", "z", paste("lower", 1-x$alpha),
+                            paste("upper", 1-x$alpha), "p", "method",
+                            colnames(x$parest)[(2*p+11):ncol(x$parest)])
+        } else {
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)",
+                            "robust se", "z", paste("lower", 1-x$alpha),
+                            paste("upper", 1-x$alpha), "p", "method")
+        }
+      } else {
+        df = data.frame(param = rep(x$param, nreps),
+                        coef = x$parest$beta,
+                        expcoef = x$parest$expbeta,
+                        nse = x$parest$sebeta_naive,
+                        se = x$parest$sebeta,
+                        z = x$parest$z,
+                        p = x$parest$p)
+
+        if (nreps > 1) {
+          df = cbind(df, x$parest[, (2*p+11):ncol(x$parest)])
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)",
+                            "robust se", "z", "p",
+                            colnames(x$parest)[(2*p+11):ncol(x$parest)])
+        } else {
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)",
+                            "robust se", "z", "p")
+        }
+      }
+    }
+
+    print(df, ..., na.print = "" , quote = FALSE )
+  }
+
+  invisible(x)
+}
+
+
+#' @title Print logisregr Object
+#' @description Prints the concise information of logisregr fit.
+#'
+#' @param x The logisregr object to print.
+#' @param ... Ensures that all arguments starting from "..." are named.
+#'
+#' @return A printout from the fit of a logistic regression model.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @export
+print.logisregr <- function(x, ...) {
+  lrchisq = -2*(x$sumstat$loglik0 - x$sumstat$loglik1)
+  degrees = x$sumstat$p - 1
+  pvalue = sapply(1:nrow(x$sumstat), function(i) {
+    ifelse(degrees[i] > 0,
+           pchisq(lrchisq[i], degrees[i], 0, lower.tail = FALSE),
+           NA)
+  })
+  df1 <- cbind(x$sumstat[, c("n", "nevents", "loglik0", "loglik1")],
+               lrchisq = lrchisq, df = degrees, pvalue = pvalue,
+               x$sumstat[, c("niter", "firth", "flic")])
+
+  p = x$p
+  if (p > 0) {
+    nreps = nrow(x$parest)/p
+
+    if (!x$robust) {
+      if (x$plci) {
+        df = data.frame(param = rep(x$param, nreps),
+                        coef = x$parest$beta,
+                        expcoef = x$parest$expbeta,
+                        se = x$parest$sebeta,
+                        z = x$parest$z,
+                        lower = x$parest$lower,
+                        upper = x$parest$upper,
+                        p = x$parest$p,
+                        method = x$parest$method)
+
+        if (nreps > 1) {
+          df = cbind(df, x$parest[, (p+10):ncol(x$parest)])
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)", "z",
+                            paste("lower", 1-x$alpha),
+                            paste("upper", 1-x$alpha), "p", "method",
+                            colnames(x$parest)[(p+10):ncol(x$parest)])
+        } else {
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)", "z",
+                            paste("lower", 1-x$alpha),
+                            paste("upper", 1-x$alpha), "p", "method")
+        }
+      } else {
+        df = data.frame(param = rep(x$param, nreps),
+                        coef = x$parest$beta,
+                        expcoef = x$parest$expbeta,
+                        se = x$parest$sebeta,
+                        z = x$parest$z,
+                        p = x$parest$p)
+
+        if (nreps > 1) {
+          df = cbind(df, x$parest[, (p+10):ncol(x$parest)])
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)", "z",
+                            "p", colnames(x$parest)[(p+10):ncol(x$parest)])
+        } else {
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)", "z",
+                            "p")
+        }
+      }
+    } else {
+      if (x$plci) {
+        df = data.frame(param = rep(x$param, nreps),
+                        coef = x$parest$beta,
+                        expcoef = x$parest$expbeta,
+                        nse = x$parest$sebeta_naive,
+                        se = x$parest$sebeta,
+                        z = x$parest$z,
+                        lower = x$parest$lower,
+                        upper = x$parest$upper,
+                        p = x$parest$p,
+                        method = x$parest$method)
+
+        if (nreps > 1) {
+          df = cbind(df, x$parest[, (2*p+11):ncol(x$parest)])
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)",
+                            "robust se", "z", paste("lower", 1-x$alpha),
+                            paste("upper", 1-x$alpha), "p", "method",
+                            colnames(x$parest)[(2*p+11):ncol(x$parest)])
+        } else {
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)",
+                            "robust se", "z", paste("lower", 1-x$alpha),
+                            paste("upper", 1-x$alpha), "p", "method")
+        }
+      } else {
+        df = data.frame(param = rep(x$param, nreps),
+                        coef = x$parest$beta,
+                        expcoef = x$parest$expbeta,
+                        nse = x$parest$sebeta_naive,
+                        se = x$parest$sebeta,
+                        z = x$parest$z,
+                        p = x$parest$p)
+
+        if (nreps > 1) {
+          df = cbind(df, x$parest[, (2*p+11):ncol(x$parest)])
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)",
+                            "robust se", "z", "p",
+                            colnames(x$parest)[(2*p+11):ncol(x$parest)])
+        } else {
+          colnames(df) <- c("param", "coef", "exp(coef)", "se(coef)",
+                            "robust se", "z", "p")
+        }
+      }
+    }
+  }
+
+  print(df1, ..., na.print = "" , quote = FALSE )
+  cat("\n")
+  print(df, ..., na.print = "" , quote = FALSE )
+  invisible(x)
+}
+
+

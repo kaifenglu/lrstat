@@ -136,7 +136,7 @@ void f_iscore(double *x, int n, void *ex) {
 
 
 
-//' @title Number of subjects having an event and log-rank statistic
+//' @title Number of Subjects Having an Event and Log-Rank Statistic
 //' for a hypothesized hazard ratio at a given calendar time
 //'
 //' @description Obtains the number of subjects having an event in each
@@ -219,9 +219,8 @@ void f_iscore(double *x, int n, void *ex) {
 //'         accrualTime = seq(0, 8),
 //'         accrualIntensity = 26/9*seq(1, 9),
 //'         piecewiseSurvivalTime = c(0, 6),
-//'         stratumFraction = c(0.2, 0.8),
-//'         lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
-//'         lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+//'         lambda1 = c(0.0533, 0.0309),
+//'         lambda2 = c(0.0533, 0.0533),
 //'         gamma1 = -log(1-0.05)/12,
 //'         gamma2 = -log(1-0.05)/12,
 //'         accrualDuration = 22,
@@ -500,7 +499,7 @@ DataFrame lrstat1(const double time = NA_REAL,
 }
 
 
-//' @title Number of subjects having an event and log-rank statistics
+//' @title Number of Subjects Having an Event and Log-Rank Statistics
 //' @description Obtains the number of subjects accrued, number of events,
 //' number of dropouts, and number of subjects reaching the maximum
 //' follow-up in each group, mean and variance of weighted log-rank
@@ -591,9 +590,8 @@ DataFrame lrstat1(const double time = NA_REAL,
 //'        accrualTime = seq(0, 8),
 //'        accrualIntensity = 26/9*seq(1, 9),
 //'        piecewiseSurvivalTime = c(0, 6),
-//'        stratumFraction = c(0.2, 0.8),
-//'        lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
-//'        lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+//'        lambda1 = c(0.0533, 0.0309),
+//'        lambda2 = c(0.0533, 0.0533),
 //'        gamma1 = -log(1-0.05)/12,
 //'        gamma2 = -log(1-0.05)/12,
 //'        accrualDuration = 22,
@@ -741,7 +739,7 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
     stop("Invalid length for gamma2");
   }
 
-  if (R_isnancpp(accrualDuration)) {
+  if (std::isnan(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
 
@@ -749,7 +747,7 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
     stop("accrualDuration must be positive");
   }
 
-  if (R_isnancpp(followupTime)) {
+  if (std::isnan(followupTime)) {
     stop("followupTime must be provided");
   }
 
@@ -906,7 +904,7 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
 }
 
 
-//' @title Calendar times for target number of events
+//' @title Calendar Times for Target Number of Events
 //' @description Obtains the calendar times needed to reach the target
 //' number of subjects experiencing an event.
 //'
@@ -937,9 +935,8 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
 //'         accrualTime = seq(0, 8),
 //'         accrualIntensity = 26/9*seq(1, 9),
 //'         piecewiseSurvivalTime = c(0, 6),
-//'         stratumFraction = c(0.2, 0.8),
-//'         lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
-//'         lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+//'         lambda1 = c(0.0533, 0.0309),
+//'         lambda2 = c(0.0533, 0.0533),
 //'         gamma1 = -log(1-0.05)/12,
 //'         gamma2 = -log(1-0.05)/12,
 //'         accrualDuration = 22,
@@ -1057,7 +1054,7 @@ NumericVector caltime(const NumericVector& nevents = NA_REAL,
     stop("Invalid length for gamma2");
   }
 
-  if (R_isnancpp(accrualDuration)) {
+  if (std::isnan(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
 
@@ -1065,7 +1062,7 @@ NumericVector caltime(const NumericVector& nevents = NA_REAL,
     stop("accrualDuration must be positive");
   }
 
-  if (R_isnancpp(followupTime)) {
+  if (std::isnan(followupTime)) {
     stop("followupTime must be provided");
   }
 
@@ -1115,7 +1112,7 @@ NumericVector caltime(const NumericVector& nevents = NA_REAL,
 }
 
 
-//' @title Range of accrual duration for target number of events
+//' @title Range of Accrual Duration for Target Number of Events
 //' @description Obtains a range of accrual duration to reach the
 //' target number of events.
 //'
@@ -1162,9 +1159,8 @@ NumericVector caltime(const NumericVector& nevents = NA_REAL,
 //'   accrualTime = seq(0, 8),
 //'   accrualIntensity = 26/9*seq(1, 9),
 //'   piecewiseSurvivalTime = c(0, 6),
-//'   stratumFraction = c(0.2, 0.8),
-//'   lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
-//'   lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+//'   lambda1 = c(0.0533, 0.0309),
+//'   lambda2 = c(0.0533, 0.0533),
 //'   gamma1 = -log(1-0.05)/12,
 //'   gamma2 = -log(1-0.05)/12,
 //'   fixedFollowup = FALSE)
@@ -1192,7 +1188,7 @@ DataFrame getDurationFromNevents(
   int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
   int nsi = nstrata*nintervals;
 
-  if (R_isnancpp(nevents)) {
+  if (std::isnan(nevents)) {
     stop("nevents must be provided");
   }
 
@@ -1284,7 +1280,7 @@ DataFrame getDurationFromNevents(
     stop("Invalid length for gamma2");
   }
 
-  if (fixedFollowup && R_isnancpp(followupTime)) {
+  if (fixedFollowup && std::isnan(followupTime)) {
     stop("followupTime must be provided for fixed follow-up");
   }
 
@@ -1428,7 +1424,7 @@ DataFrame getDurationFromNevents(
 }
 
 
-//' @title Log-rank test power
+//' @title Log-Rank Test Power
 //' @description Estimates the power, stopping probabilities, and expected
 //' sample size in a two-group survival design.
 //'
@@ -1631,9 +1627,8 @@ DataFrame getDurationFromNevents(
 //'         allocationRatioPlanned = 1, accrualTime = seq(0, 8),
 //'         accrualIntensity = 26/9*seq(1, 9),
 //'         piecewiseSurvivalTime = c(0, 6),
-//'         stratumFraction = c(0.2, 0.8),
-//'         lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
-//'         lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+//'         lambda1 = c(0.0533, 0.0309),
+//'         lambda2 = c(0.0533, 0.0533),
 //'         gamma1 = -log(1-0.05)/12,
 //'         gamma2 = -log(1-0.05)/12, accrualDuration = 22,
 //'         followupTime = 18, fixedFollowup = FALSE)
@@ -1751,13 +1746,13 @@ List lrpower(const int kMax = 1,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -1767,7 +1762,7 @@ List lrpower(const int kMax = 1,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -1815,7 +1810,7 @@ List lrpower(const int kMax = 1,
     stop("Invalid value for typeBetaSpending");
   }
 
-  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
+  if ((bsf=="sfkd" || bsf=="sfhsd") && std::isnan(bsfpar)) {
     stop("Missing value for parameterBetaSpending");
   }
 
@@ -1911,7 +1906,7 @@ List lrpower(const int kMax = 1,
     stop("Invalid length for gamma2");
   }
 
-  if (R_isnancpp(accrualDuration)) {
+  if (std::isnan(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
 
@@ -1919,7 +1914,7 @@ List lrpower(const int kMax = 1,
     stop("accrualDuration must be positive");
   }
 
-  if (R_isnancpp(followupTime)) {
+  if (std::isnan(followupTime)) {
     stop("followupTime must be provided");
   }
 
@@ -1931,7 +1926,7 @@ List lrpower(const int kMax = 1,
     stop("followupTime must be non-negative for variable follow-up");
   }
 
-  if (fixedFollowup && R_isnancpp(followupTime)) {
+  if (fixedFollowup && std::isnan(followupTime)) {
     stop("followupTime must be provided for fixed follow-up");
   }
 
@@ -1952,16 +1947,18 @@ List lrpower(const int kMax = 1,
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
-  if (su != "direct" && su != "schoenfeld") {
-    stop("typeOfComputation must be direct or Schoenfeld");
+  char su1 = su[0];
+
+  if (su1 != 'd' && su1 != 's') {
+    stop("typeOfComputation must be direct or schoenfeld");
   }
 
-  if (su == "schoenfeld" && (rho1 != 0 || rho2 != 0)) {
-    stop("Schoenfeld method can only be used for ordinary log-rank test");
+  if (su1 == 's' && (rho1 != 0 || rho2 != 0)) {
+    stop("schoenfeld method can only be used for ordinary log-rank test");
   }
 
   double hazardRatio = 1;
-  if (su == "schoenfeld") {
+  if (su1 == 's') {
     NumericVector lambda1x = rep(lambda1, nsi/lambda1.size());
     NumericVector lambda2x = rep(lambda2, nsi/lambda2.size());
     NumericVector hrx = lambda1x / lambda2x;
@@ -1995,12 +1992,12 @@ List lrpower(const int kMax = 1,
     spendingTime1 = clone(informationRates1);
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration < accrualDuration) {
     stop("studyDuration must be greater than or equal to accrualDuration");
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration > accrualDuration + followupTime) {
     stop("studyDuration cannot exceed accrualDuration + followupTime");
   }
@@ -2009,7 +2006,7 @@ List lrpower(const int kMax = 1,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
@@ -2061,7 +2058,7 @@ List lrpower(const int kMax = 1,
 
   // obtain the study duration
   double studyDuration1 = studyDuration;
-  if (!fixedFollowup || R_isnancpp(studyDuration)) {
+  if (!fixedFollowup || std::isnan(studyDuration)) {
     studyDuration1 = accrualDuration + followupTime;
   }
   u0[0] = studyDuration1;
@@ -2123,7 +2120,7 @@ List lrpower(const int kMax = 1,
 
   double phi = allocationRatioPlanned/(allocationRatioPlanned+1);
 
-  if (su == "schoenfeld") {
+  if (su1 == 's') {
     theta = rep(-log(hazardRatio/hazardRatioH0), kMax);
 
     vscore = phi*(1-phi)*e0;
@@ -2345,7 +2342,7 @@ List lrpower(const int kMax = 1,
 }
 
 
-//' @title Get the required number of events given hazard ratio
+//' @title Required Number of Events Given Hazard Ratio
 //' @description Obtains the required number of events given the hazard
 //' ratios under the null and alternative hypotheses for a group
 //' sequential design.
@@ -2418,7 +2415,7 @@ double getNeventsFromHazardRatio(
     stop("hazardRatioH0 must be positive");
   }
 
-  if (R_isnancpp(hazardRatio)) {
+  if (std::isnan(hazardRatio)) {
     stop("hazardRatio must be provided");
   }
 
@@ -2444,12 +2441,12 @@ double getNeventsFromHazardRatio(
   double maxInformation = information[kMax-1];
   double phi = allocationRatioPlanned/(1+allocationRatioPlanned);
   double D = maxInformation/(phi*(1-phi));
-  if (rounding) D = std::ceil(D);
+  if (rounding) D = std::ceil(D - 1.0e-12);
   return D;
 }
 
 
-//' @title Log-rank test sample size
+//' @title Log-Rank Test Sample Size
 //' @description Obtains the needed accrual duration given power and
 //' follow-up time, the needed follow-up time given power and
 //' accrual duration, or the needed absolute accrual rates given
@@ -2525,9 +2522,8 @@ double getNeventsFromHazardRatio(
 //'              accrualTime = seq(0, 8),
 //'              accrualIntensity = 26/9*seq(1, 9),
 //'              piecewiseSurvivalTime = c(0, 6),
-//'              stratumFraction = c(0.2, 0.8),
-//'              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
-//'              lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+//'              lambda1 = c(0.0533, 0.0309),
+//'              lambda2 = c(0.0533, 0.0533),
 //'              gamma1 = -log(1-0.05)/12,
 //'              gamma2 = -log(1-0.05)/12,
 //'              accrualDuration = NA,
@@ -2542,9 +2538,8 @@ double getNeventsFromHazardRatio(
 //'              accrualTime = seq(0, 8),
 //'              accrualIntensity = 26/9*seq(1, 9),
 //'              piecewiseSurvivalTime = c(0, 6),
-//'              stratumFraction = c(0.2, 0.8),
-//'              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
-//'              lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+//'              lambda1 = c(0.0533, 0.0309),
+//'              lambda2 = c(0.0533, 0.0533),
 //'              gamma1 = -log(1-0.05)/12,
 //'              gamma2 = -log(1-0.05)/12,
 //'              accrualDuration = 22,
@@ -2560,9 +2555,8 @@ double getNeventsFromHazardRatio(
 //'              accrualTime = seq(0, 8),
 //'              accrualIntensity = 26/9*seq(1, 9),
 //'              piecewiseSurvivalTime = c(0, 6),
-//'              stratumFraction = c(0.2, 0.8),
-//'              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
-//'              lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+//'              lambda1 = c(0.0533, 0.0309),
+//'              lambda2 = c(0.0533, 0.0533),
 //'              gamma1 = -log(1-0.05)/12,
 //'              gamma2 = -log(1-0.05)/12,
 //'              accrualDuration = 22,
@@ -2690,13 +2684,13 @@ List lrsamplesize(const double beta = 0.2,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -2706,7 +2700,7 @@ List lrsamplesize(const double beta = 0.2,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -2754,7 +2748,7 @@ List lrsamplesize(const double beta = 0.2,
     stop("Invalid value for typeBetaSpending");
   }
 
-  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
+  if ((bsf=="sfkd" || bsf=="sfhsd") && std::isnan(bsfpar)) {
     stop("Missing value for parameterBetaSpending");
   }
 
@@ -2864,13 +2858,13 @@ List lrsamplesize(const double beta = 0.2,
     stop("Invalid length for gamma2");
   }
 
-  if (!R_isnancpp(accrualDuration)) {
+  if (!std::isnan(accrualDuration)) {
     if (accrualDuration <= 0) {
       stop("accrualDuration must be positive");
     }
   }
 
-  if (!R_isnancpp(followupTime)) {
+  if (!std::isnan(followupTime)) {
     if (fixedFollowup && followupTime <= 0) {
       stop("followupTime must be positive for fixed follow-up");
     }
@@ -2880,7 +2874,7 @@ List lrsamplesize(const double beta = 0.2,
     }
   }
 
-  if (fixedFollowup && R_isnancpp(followupTime)) {
+  if (fixedFollowup && std::isnan(followupTime)) {
     stop("followupTime must be provided for fixed follow-up");
   }
 
@@ -2901,16 +2895,18 @@ List lrsamplesize(const double beta = 0.2,
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
-  if (su != "direct" && su != "schoenfeld") {
-    stop("typeOfComputation must be direct or Schoenfeld");
+  char su1 = su[0];
+
+  if (su1 != 'd' && su1 != 's') {
+    stop("typeOfComputation must be direct or schoenfeld");
   }
 
-  if (su == "schoenfeld" && (rho1 != 0 || rho2 != 0)) {
-    stop("Schoenfeld method can only be used for ordinary log-rank test");
+  if (su1 == 's' && (rho1 != 0 || rho2 != 0)) {
+    stop("schoenfeld method can only be used for ordinary log-rank test");
   }
 
   double hazardRatio = 1;
-  if (su == "schoenfeld") {
+  if (su1 == 's') {
     NumericVector lambda1x = rep(lambda1, nsi/lambda1.size());
     NumericVector lambda2x = rep(lambda2, nsi/lambda2.size());
     NumericVector hrx = lambda1x / lambda2x;
@@ -2961,7 +2957,7 @@ List lrsamplesize(const double beta = 0.2,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
@@ -3008,17 +3004,17 @@ List lrsamplesize(const double beta = 0.2,
 
   std::string unknown;
   // search for the solution according to the input
-  if (R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  if (std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualDuration";
-  } else if (!R_isnancpp(accrualDuration) && R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && std::isnan(followupTime)) {
     unknown = "followupTime";
-  } else if (!R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualIntensity";
   } else {
     stop("accrualDuration and followupTime cannot be both missing");
   }
 
-  if (su == "schoenfeld") {
+  if (su1 == 's') {
     double delta = -log(hazardRatio/hazardRatioH0);
 
     List design = getDesign(
@@ -3285,13 +3281,13 @@ List lrsamplesize(const double beta = 0.2,
 
     // round up the total number of events
     double D0 = sum(NumericVector(lr[2]));
-    double D = std::ceil(D0);
+    double D = std::ceil(D0 - 1.0e-12);
 
     // adjust design parameters to obtain integer number of events
     double n0, n, studyDuration;
     if (!fixedFollowup) {
       n0 = sum(NumericVector(lr[1]));
-      n = std::ceil(n0);
+      n = std::ceil(n0 - 1.0e-12);
 
       // adjust accrual intensity or duration to obtain int # of subjects
       if (unknown == "accrualIntensity") {
@@ -3352,7 +3348,7 @@ List lrsamplesize(const double beta = 0.2,
       n0 = accrual(u0, accrualTime, accrualIntensity1, accrualDuration)[0];
 
       // round up the sample size
-      n = std::ceil(n0);
+      n = std::ceil(n0 - 1.0e-12);
 
       if (unknown == "accrualIntensity") {
         accrualIntensity1 = (n/n0)*accrualIntensity1;
@@ -3711,7 +3707,7 @@ List lrsamplesize(const double beta = 0.2,
 }
 
 
-//' @title Power for equivalence in hazard ratio
+//' @title Power for Equivalence in Hazard Ratio
 //' @description Obtains the power for equivalence in hazard ratio.
 //'
 //' @inheritParams param_kMax
@@ -3896,9 +3892,8 @@ List lrsamplesize(const double beta = 0.2,
 //'              allocationRatioPlanned = 1, accrualTime = seq(0, 8),
 //'              accrualIntensity = 100/9*seq(1, 9),
 //'              piecewiseSurvivalTime = c(0, 6),
-//'              stratumFraction = c(0.2, 0.8),
-//'              lambda1 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
-//'              lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+//'              lambda1 = c(0.0533, 0.0533),
+//'              lambda2 = c(0.0533, 0.0533),
 //'              gamma1 = -log(1-0.05)/12,
 //'              gamma2 = -log(1-0.05)/12, accrualDuration = 22,
 //'              followupTime = 18, fixedFollowup = FALSE)
@@ -3970,13 +3965,13 @@ List lrpowerequiv(const int kMax = 1,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -3986,7 +3981,7 @@ List lrpowerequiv(const int kMax = 1,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -4008,11 +4003,11 @@ List lrpowerequiv(const int kMax = 1,
     }
   }
 
-  if (R_isnancpp(hazardRatioLower)) {
+  if (std::isnan(hazardRatioLower)) {
     stop("hazardRatioLower must be provided");
   }
 
-  if (R_isnancpp(hazardRatioUpper)) {
+  if (std::isnan(hazardRatioUpper)) {
     stop("hazardRatioUpper must be provided");
   }
 
@@ -4108,7 +4103,7 @@ List lrpowerequiv(const int kMax = 1,
     stop("Invalid length for gamma2");
   }
 
-  if (R_isnancpp(accrualDuration)) {
+  if (std::isnan(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
 
@@ -4116,7 +4111,7 @@ List lrpowerequiv(const int kMax = 1,
     stop("accrualDuration must be positive");
   }
 
-  if (R_isnancpp(followupTime)) {
+  if (std::isnan(followupTime)) {
     stop("followupTime must be provided");
   }
 
@@ -4128,12 +4123,12 @@ List lrpowerequiv(const int kMax = 1,
     stop("followupTime must be non-negative for variable follow-up");
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration < accrualDuration) {
     stop("studyDuration must be greater than or equal to accrualDuration");
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration > accrualDuration + followupTime) {
     stop("studyDuration cannot exceed accrualDuration + followupTime");
   }
@@ -4143,12 +4138,14 @@ List lrpowerequiv(const int kMax = 1,
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
-  if (su != "direct" && su != "schoenfeld") {
+  char su1 = su[0];
+
+  if (su1 != 'd' && su1 != 's') {
     stop("typeOfComputation must be direct or Schoenfeld");
   }
 
   double hazardRatio = 1.0;
-  if (su == "schoenfeld") {
+  if (su1 == 's') {
     NumericVector lambda1x = rep(lambda1, nsi/lambda1.size());
     NumericVector lambda2x = rep(lambda2, nsi/lambda2.size());
     NumericVector hrx = lambda1x / lambda2x;
@@ -4182,12 +4179,12 @@ List lrpowerequiv(const int kMax = 1,
     spendingTime1 = clone(informationRates1);
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration < accrualDuration) {
     stop("studyDuration must be greater than or equal to accrualDuration");
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration > accrualDuration + followupTime) {
     stop("studyDuration cannot exceed accrualDuration + followupTime");
   }
@@ -4197,7 +4194,7 @@ List lrpowerequiv(const int kMax = 1,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1,
                 criticalValues, alpha](double aval)->double {
@@ -4232,7 +4229,7 @@ List lrpowerequiv(const int kMax = 1,
 
   // obtain the study duration
   double studyDuration1 = studyDuration;
-  if (!fixedFollowup || R_isnancpp(studyDuration)) {
+  if (!fixedFollowup || std::isnan(studyDuration)) {
     studyDuration1 = accrualDuration + followupTime;
   }
 
@@ -4256,7 +4253,7 @@ List lrpowerequiv(const int kMax = 1,
   double phi = allocationRatioPlanned/(1.0 + allocationRatioPlanned);
   NumericVector HR(kMax), theta(kMax), I(kMax);
 
-  if (su == "schoenfeld") {
+  if (su1 == 's') {
     HR = rep(hazardRatio, kMax);
     theta = log(HR);
     I = phi*(1-phi)*e0;
@@ -4502,7 +4499,7 @@ List lrpowerequiv(const int kMax = 1,
 }
 
 
-//' @title Sample size for equivalence in hazard ratio
+//' @title Sample Size for Equivalence in Hazard Ratio
 //' @description Obtains the sample size for equivalence in hazard ratio.
 //'
 //' @param beta The type II error.
@@ -4553,9 +4550,8 @@ List lrpowerequiv(const int kMax = 1,
 //'                   allocationRatioPlanned = 1, accrualTime = seq(0, 8),
 //'                   accrualIntensity = 26/9*seq(1, 9),
 //'                   piecewiseSurvivalTime = c(0, 6),
-//'                   stratumFraction = c(0.2, 0.8),
-//'                   lambda1 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
-//'                   lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+//'                   lambda1 = c(0.0533, 0.0533),
+//'                   lambda2 = c(0.0533, 0.0533),
 //'                   gamma1 = -log(1-0.05)/12,
 //'                   gamma2 = -log(1-0.05)/12, accrualDuration = NA,
 //'                   followupTime = 18, fixedFollowup = FALSE)
@@ -4636,13 +4632,13 @@ List lrsamplesizeequiv(const double beta = 0.2,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -4652,7 +4648,7 @@ List lrsamplesizeequiv(const double beta = 0.2,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -4674,11 +4670,11 @@ List lrsamplesizeequiv(const double beta = 0.2,
     }
   }
 
-  if (R_isnancpp(hazardRatioLower)) {
+  if (std::isnan(hazardRatioLower)) {
     stop("hazardRatioLower must be provided");
   }
 
-  if (R_isnancpp(hazardRatioUpper)) {
+  if (std::isnan(hazardRatioUpper)) {
     stop("hazardRatioUpper must be provided");
   }
 
@@ -4775,13 +4771,13 @@ List lrsamplesizeequiv(const double beta = 0.2,
   }
 
 
-  if (!R_isnancpp(accrualDuration)) {
+  if (!std::isnan(accrualDuration)) {
     if (accrualDuration <= 0) {
       stop("accrualDuration must be positive");
     }
   }
 
-  if (!R_isnancpp(followupTime)) {
+  if (!std::isnan(followupTime)) {
     if (fixedFollowup && followupTime <= 0) {
       stop("followupTime must be positive for fixed follow-up");
     }
@@ -4791,7 +4787,7 @@ List lrsamplesizeequiv(const double beta = 0.2,
     }
   }
 
-  if (fixedFollowup && R_isnancpp(followupTime)) {
+  if (fixedFollowup && std::isnan(followupTime)) {
     stop("followupTime must be provided for fixed follow-up");
   }
 
@@ -4800,12 +4796,14 @@ List lrsamplesizeequiv(const double beta = 0.2,
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
-  if (su != "direct" && su != "schoenfeld") {
+  char su1 = su[0];
+
+  if (su1 != 'd' && su1 != 's') {
     stop("typeOfComputation must be direct or Schoenfeld");
   }
 
   double hazardRatio = 1.0;
-  if (su == "schoenfeld") {
+  if (su1 == 's') {
     NumericVector lambda1x = rep(lambda1, nsi/lambda1.size());
     NumericVector lambda2x = rep(lambda2, nsi/lambda2.size());
     NumericVector hrx = lambda1x / lambda2x;
@@ -4856,7 +4854,7 @@ List lrsamplesizeequiv(const double beta = 0.2,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1,
                 criticalValues, alpha](double aval)->double {
@@ -4883,11 +4881,11 @@ List lrsamplesizeequiv(const double beta = 0.2,
 
   std::string unknown;
   // search for the solution according to the input
-  if (R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  if (std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualDuration";
-  } else if (!R_isnancpp(accrualDuration) && R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && std::isnan(followupTime)) {
     unknown = "followupTime";
-  } else if (!R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualIntensity";
   } else {
     stop("accrualDuration and followupTime cannot be both missing");
@@ -4899,7 +4897,7 @@ List lrsamplesizeequiv(const double beta = 0.2,
   NumericVector li(kMax, -6.0), ui(kMax, 6.0), zero(kMax);
   double theta10 = log(hazardRatioLower), theta20 = log(hazardRatioUpper);
 
-  if (su == "schoenfeld") {
+  if (su1 == 's') {
     List design = getDesignEquiv(
       beta, NA_REAL, theta10, theta20, log(hazardRatio),
       kMax, informationRates1, criticalValues1,
@@ -5053,13 +5051,13 @@ List lrsamplesizeequiv(const double beta = 0.2,
 
     // round up the total number of events
     double D0 = sum(NumericVector(lr[2]));
-    double D = std::ceil(D0);
+    double D = std::ceil(D0 - 1.0e-12);
 
     // adjust design parameters to obtain integer number of events
     double n0, n, studyDuration;
     if (!fixedFollowup) {
       n0 = sum(NumericVector(lr[1]));
-      n = std::ceil(n0);
+      n = std::ceil(n0 - 1.0e-12);
 
       // adjust accrual intensity or duration to obtain int # of subjects
       if (unknown == "accrualIntensity") {
@@ -5120,7 +5118,7 @@ List lrsamplesizeequiv(const double beta = 0.2,
       n0 = accrual(u0, accrualTime, accrualIntensity1, accrualDuration)[0];
 
       // round up the sample size
-      n = std::ceil(n0);
+      n = std::ceil(n0 - 1.0e-12);
 
       if (unknown == "accrualIntensity") {
         accrualIntensity1 = (n/n0)*accrualIntensity1;

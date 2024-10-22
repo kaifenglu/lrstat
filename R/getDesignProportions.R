@@ -1,4 +1,4 @@
-#' @title Group sequential design for one-sample proportion
+#' @title Group Sequential Design for One-Sample Proportion
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for one-sample proportion.
 #'
@@ -224,7 +224,7 @@ getDesignOneProportion <- function(
 
   if (!is.na(n)) { # power calculation
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = round(n*informationRates)/n
     }
 
@@ -348,7 +348,7 @@ getDesignOneProportion <- function(
       n = des$overallResults$information*v1
 
       if (rounding) {
-        n = ceiling(n)
+        n = ceiling(n - 1.0e-12)
         informationRates = des$byStageResults$informationRates
         informationRates = round(n*informationRates)/n
 
@@ -402,8 +402,8 @@ getDesignOneProportion <- function(
 }
 
 
-#' @title Group sequential design for McNemar's test for paired
-#' proportions
+#' @title Group Sequential Design for McNemar's Test for Paired
+#' Proportions
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for McNemar's test for
 #' paired proportions.
@@ -639,7 +639,7 @@ getDesignPairedPropMcNemar <- function(
 
   if (!is.na(n)) { # power calculation
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = round(n*informationRates)/n
     }
 
@@ -666,7 +666,7 @@ getDesignPairedPropMcNemar <- function(
     n = des$overallResults$information*v1
 
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = des$byStageResults$informationRates
       informationRates = round(n*informationRates)/n
 
@@ -715,7 +715,7 @@ getDesignPairedPropMcNemar <- function(
 }
 
 
-#' @title Group sequential design for two-sample risk difference
+#' @title Group Sequential Design for Two-Sample Risk Difference
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for two-sample risk
 #' difference.
@@ -968,7 +968,7 @@ getDesignRiskDiff <- function(
 
   if (!is.na(n)) { # power calculation
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = round(n*informationRates)/n
     }
 
@@ -995,7 +995,7 @@ getDesignRiskDiff <- function(
     n = des$overallResults$information*v1
 
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = des$byStageResults$informationRates
       informationRates = round(n*informationRates)/n
 
@@ -1049,7 +1049,7 @@ getDesignRiskDiff <- function(
 }
 
 
-#' @title Group sequential design for two-sample risk ratio
+#' @title Group Sequential Design for Two-Sample Risk Ratio
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for two-sample risk
 #' ratio.
@@ -1299,7 +1299,7 @@ getDesignRiskRatio <- function(
 
   if (!is.na(n)) { # power calculation
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = round(n*informationRates)/n
     }
 
@@ -1326,7 +1326,7 @@ getDesignRiskRatio <- function(
     n = des$overallResults$information*v1
 
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = des$byStageResults$informationRates
       informationRates = round(n*informationRates)/n
 
@@ -1379,8 +1379,8 @@ getDesignRiskRatio <- function(
 }
 
 
-#' @title Group sequential design for two-sample risk ratio based on
-#' the Farrington-Manning score test
+#' @title Group Sequential Design for Two-Sample Risk Ratio Based on
+#' the Farrington-Manning Score Test
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for two-sample risk
 #' ratio based on the Farrington-Manning score test
@@ -1632,7 +1632,7 @@ getDesignRiskRatioFM <- function(
 
   if (!is.na(n)) { # power calculation
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = round(n*informationRates)/n
     }
 
@@ -1659,7 +1659,7 @@ getDesignRiskRatioFM <- function(
     n = des$overallResults$information*v1
 
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = des$byStageResults$informationRates
       informationRates = round(n*informationRates)/n
 
@@ -1712,7 +1712,7 @@ getDesignRiskRatioFM <- function(
 }
 
 
-#' @title Group sequential design for two-sample odds ratio
+#' @title Group Sequential Design for Two-Sample Odds Ratio
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for two-sample odds
 #' ratio.
@@ -1963,7 +1963,7 @@ getDesignOddsRatio <- function(
 
   if (!is.na(n)) { # power calculation
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = round(n*informationRates)/n
     }
 
@@ -1990,7 +1990,7 @@ getDesignOddsRatio <- function(
     n = des$overallResults$information*v1
 
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = des$byStageResults$informationRates
       informationRates = round(n*informationRates)/n
 
@@ -2043,8 +2043,8 @@ getDesignOddsRatio <- function(
 }
 
 
-#' @title Group sequential design for equivalence in two-sample
-#' risk difference
+#' @title Group Sequential Design for Equivalence in Two-Sample
+#' Risk Difference
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for equivalence in
 #' two-sample risk difference.
@@ -2349,7 +2349,7 @@ getDesignRiskDiffEquiv <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
     informationRates = round(n*informationRates)/n
   }
 
@@ -2426,8 +2426,8 @@ getDesignRiskDiffEquiv <- function(
 }
 
 
-#' @title Group sequential design for equivalence in two-sample
-#' risk ratio
+#' @title Group Sequential Design for Equivalence in Two-Sample
+#' Risk Ratio
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for equivalence in
 #' two-sample risk ratio.
@@ -2724,7 +2724,7 @@ getDesignRiskRatioEquiv <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
     informationRates = round(n*informationRates)/n
   }
 
@@ -2801,8 +2801,8 @@ getDesignRiskRatioEquiv <- function(
 }
 
 
-#' @title Group sequential design for equivalence in two-sample
-#' odds ratio
+#' @title Group Sequential Design for Equivalence in Two-Sample
+#' Odds Ratio
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for equivalence in
 #' two-sample odds ratio.
@@ -3091,7 +3091,7 @@ getDesignOddsRatioEquiv <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
     informationRates = round(n*informationRates)/n
   }
 
@@ -3168,7 +3168,7 @@ getDesignOddsRatioEquiv <- function(
 }
 
 
-#' @title Power and sample size for Fisher's exact test for two proportions
+#' @title Power and Sample Size for Fisher's Exact Test for Two Proportions
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for Fisher's exact test for two proportions.
 #'
@@ -3253,7 +3253,7 @@ getDesignFisherExact <- function(
 }
 
 
-#' @title Clopper-Pearson confidence interval for one-sample proportion
+#' @title Clopper-Pearson Confidence Interval for One-Sample Proportion
 #' @description Obtains the Clopper-Pearson exact confidence interval for
 #' a one-sample proportion.
 #'
@@ -3307,7 +3307,7 @@ ClopperPearsonCI <- function(n, y, cilevel = 0.95) {
 }
 
 
-#' @title mTPI-2 decision table
+#' @title mTPI-2 Decision Table
 #' @description Obtains the decision table for the modified toxicity
 #' probability interval-2 (mTPI-2) design.
 #'
@@ -3468,7 +3468,7 @@ mTPI2Table <- function(
 }
 
 
-#' @title BOIN decision table
+#' @title BOIN Decision Table
 #' @description Obtains the decision table for the Bayesian optimal
 #' interval (BOIN) design.
 #'
@@ -3614,7 +3614,7 @@ BOINTable <- function(
 }
 
 
-#' @title Power and sample for one-sample multinomial response
+#' @title Power and Sample Size for One-Sample Multinomial Response
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for one-sample multinomial response.
 #'
@@ -3756,7 +3756,7 @@ getDesignOneMultinom <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
   }
 
   power = pchisq(b, nu, n*tau, lower.tail = FALSE)
@@ -3772,7 +3772,8 @@ getDesignOneMultinom <- function(
 }
 
 
-#' @title Power and sample for difference in two-sample multinomial responses
+#' @title Power and Sample Size for Difference in Two-Sample Multinomial
+#' Responses
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for difference in two-sample multinomial responses.
 #'
@@ -3926,7 +3927,7 @@ getDesignTwoMultinom <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
   }
 
   power = pchisq(b, nu, n*tau, lower.tail = FALSE)
@@ -3943,8 +3944,8 @@ getDesignTwoMultinom <- function(
 }
 
 
-#' @title Power and sample size for the Wilcoxon test for two-sample
-#' ordinal response
+#' @title Power and Sample Size for the Wilcoxon Test for Two-Sample
+#' Ordinal Response
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for the Wilcoxon test for two-sample ordinal response.
 #'
@@ -4107,7 +4108,7 @@ getDesignTwoOrdinal <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
   }
 
   power = pnorm((sqrt(n)*theta - qnorm(1-alpha)*sqrt(varH0))/sqrt(varH1))
@@ -4124,8 +4125,8 @@ getDesignTwoOrdinal <- function(
 }
 
 
-#' @title Power and sample size for Cochran-Armitage trend test for
-#' ordered multi-sample binomial response
+#' @title Power and Sample Size for Cochran-Armitage Trend Test for
+#' Ordered Multi-Sample Binomial Response
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for the Cochran-Armitage trend test for ordered
 #' multi-sample binomial response.
@@ -4265,7 +4266,7 @@ getDesignOrderedBinom <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
   }
 
   power = pnorm((sqrt(n)*abs(theta) - qnorm(1-alpha/2)*sqrt(varH0))/
@@ -4283,7 +4284,7 @@ getDesignOrderedBinom <- function(
 }
 
 
-#' @title Power and sample size for unordered multi-sample binomial response
+#' @title Power and Sample Size for Unordered Multi-Sample Binomial Response
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for the chi-square test for unordered multi-sample
 #' binomial response.
@@ -4410,7 +4411,7 @@ getDesignUnorderedBinom <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
   }
 
   power = pchisq(b, nu, n*tau, lower.tail = FALSE)
@@ -4427,8 +4428,8 @@ getDesignUnorderedBinom <- function(
 }
 
 
-#' @title Power and sample size for unordered multi-sample
-#' multinomial response
+#' @title Power and Sample Size for Unordered Multi-Sample Multinomial
+#' Response
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for the chi-square test for unordered multi-sample
 #' multinomial response.
@@ -4593,7 +4594,7 @@ getDesignUnorderedMultinom <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
   }
 
   power = pchisq(b, nu, n*tau, lower.tail = FALSE)
@@ -4610,7 +4611,7 @@ getDesignUnorderedMultinom <- function(
 }
 
 
-#' @title Power and sample size for logistic regression
+#' @title Power and Sample Size for Logistic Regression
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for logistic regression of a binary response given
 #' the covariate of interest and other covariates.
@@ -4891,7 +4892,7 @@ getDesignLogistic <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
   }
 
   power = pchisq(b, nu, n*tau, lower.tail = FALSE)
@@ -4909,7 +4910,7 @@ getDesignLogistic <- function(
 }
 
 
-#' @title Power and sample size for Cohen's kappa
+#' @title Power and Sample Size for Cohen's kappa
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for Cohen's kappa.
 #'
@@ -5186,7 +5187,7 @@ getDesignAgreement <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
   }
 
   power = pnorm((theta*sqrt(n) - qnorm(1-alpha)*sqrt(v1H0))/sqrt(v1))
@@ -5202,7 +5203,7 @@ getDesignAgreement <- function(
 }
 
 
-#' @title Power and sample size for one-sample Poisson rate exact test
+#' @title Power and Sample Size for One-Sample Poisson Rate Exact Test
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for one-sample Poisson rate.
 #'
@@ -5299,8 +5300,8 @@ getDesignOneRateExact <- function(
 }
 
 
-#' @title Power and sample size for exact unconditional test for risk
-#' difference
+#' @title Power and Sample Size for Exact Unconditional Test for Risk
+#' Difference
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for exact unconditional test of risk difference.
 #'
@@ -5350,8 +5351,8 @@ getDesignOneRateExact <- function(
 #'
 #' # Non-inferiority test
 #'
-#' getDesignRiskDiffExact(beta = 0.1, riskDiffH0 = -0.2,
-#'                        pi1 = 0.8, pi2 = 0.8, alpha = 0.025)
+#' getDesignRiskDiffExact(beta = 0.2, riskDiffH0 = -0.3,
+#'                        pi1 = 0.9, pi2 = 0.9, alpha = 0.025)
 #'
 #'
 #' @export
@@ -5413,8 +5414,8 @@ getDesignRiskDiffExact <- function(
 }
 
 
-#' @title Power and sample size for exact unconditional test for risk
-#' ratio
+#' @title Power and Sample Size for Exact Unconditional Test for Risk
+#' Ratio
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for exact unconditional test of risk ratio.
 #'
@@ -5459,8 +5460,8 @@ getDesignRiskDiffExact <- function(
 #'
 #' # Non-inferiority test
 #'
-#' getDesignRiskRatioExact(beta = 0.1, riskRatioH0 = 0.833,
-#'                         pi1 = 0.9, pi2 = 0.9, alpha = 0.025)
+#' getDesignRiskRatioExact(beta = 0.2, riskRatioH0 = 0.7,
+#'                         pi1 = 0.95, pi2 = 0.95, alpha = 0.025)
 #'
 #'
 #' @export
@@ -5522,8 +5523,8 @@ getDesignRiskRatioExact <- function(
 }
 
 
-#' @title Power and sample size for exact unconditional test for
-#' equivalence in risk difference
+#' @title Power and Sample Size for Exact Unconditional Test for
+#' Equivalence in Risk Difference
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for exact unconditional test of equivalence in risk
 #' difference.
@@ -5654,8 +5655,8 @@ getDesignRiskDiffExactEquiv <- function(
 }
 
 
-#' @title Power and sample size for exact unconditional test for
-#' equivalence in risk ratio
+#' @title Power and Sample Size for Exact Unconditional Test for
+#' Equivalence in Risk Ratio
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for exact unconditional test of equivalence in risk
 #' ratio.

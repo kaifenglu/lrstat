@@ -38,7 +38,7 @@ void f_km(double *x, int n, void *ex) {
 }
 
 
-//' @title Milestone survival probability by stratum
+//' @title Milestone Survival Probability by Stratum
 //'
 //' @description Obtains the milestone survival probability and associated
 //' variance by treatment group and by stratum at a given calendar time.
@@ -249,7 +249,7 @@ DataFrame kmstat1(const double time = NA_REAL,
 }
 
 
-//' @title Stratified difference in milestone survival probabilities
+//' @title Stratified Difference in Milestone Survival Probabilities
 //' @description Obtains the stratified milestone survival probabilities
 //' and difference in milestone survival probabilities at given
 //' calendar times.
@@ -348,7 +348,7 @@ DataFrame kmstat(const NumericVector& time = NA_REAL,
     stop("time must be positive");
   }
 
-  if (R_isnancpp(milestone)) {
+  if (std::isnan(milestone)) {
     stop("milestone must be provided");
   }
 
@@ -460,7 +460,7 @@ DataFrame kmstat(const NumericVector& time = NA_REAL,
     stop("Invalid length for gamma2");
   }
 
-  if (R_isnancpp(accrualDuration)) {
+  if (std::isnan(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
 
@@ -468,7 +468,7 @@ DataFrame kmstat(const NumericVector& time = NA_REAL,
     stop("accrualDuration must be positive");
   }
 
-  if (R_isnancpp(followupTime)) {
+  if (std::isnan(followupTime)) {
     stop("followupTime must be provided");
   }
 
@@ -535,7 +535,7 @@ DataFrame kmstat(const NumericVector& time = NA_REAL,
 }
 
 
-//' @title Power for difference in milestone survival probabilities
+//' @title Power for Difference in Milestone Survival Probabilities
 //' @description Estimates the power for testing the difference in
 //' milestone survival probabilities in a two-sample survival design.
 //'
@@ -806,13 +806,13 @@ List kmpower(const int kMax = 1,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -822,7 +822,7 @@ List kmpower(const int kMax = 1,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -870,7 +870,7 @@ List kmpower(const int kMax = 1,
     stop("Invalid value for typeBetaSpending");
   }
 
-  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
+  if ((bsf=="sfkd" || bsf=="sfhsd") && std::isnan(bsfpar)) {
     stop("Missing value for parameterBetaSpending");
   }
 
@@ -878,7 +878,7 @@ List kmpower(const int kMax = 1,
     stop("parameterBetaSpending must be positive for sfKD");
   }
 
-  if (R_isnancpp(milestone)) {
+  if (std::isnan(milestone)) {
     stop("milestone must be provided");
   }
 
@@ -974,7 +974,7 @@ List kmpower(const int kMax = 1,
     stop("Invalid length for gamma2");
   }
 
-  if (R_isnancpp(accrualDuration)) {
+  if (std::isnan(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
 
@@ -982,7 +982,7 @@ List kmpower(const int kMax = 1,
     stop("accrualDuration must be positive");
   }
 
-  if (R_isnancpp(followupTime)) {
+  if (std::isnan(followupTime)) {
     stop("followupTime must be provided");
   }
 
@@ -1008,12 +1008,12 @@ List kmpower(const int kMax = 1,
     spendingTime1 = clone(informationRates1);
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration < accrualDuration) {
     stop("studyDuration must be greater than or equal to accrualDuration");
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration > accrualDuration + followupTime) {
     stop("studyDuration cannot exceed accrualDuration + followupTime");
   }
@@ -1026,7 +1026,7 @@ List kmpower(const int kMax = 1,
     stop("milestone cannot exceed followupTime for fixed follow-up");
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       (milestone >= studyDuration)) {
     stop("milestone cannot exceed studyDuration for fixed follow-up");
   }
@@ -1036,7 +1036,7 @@ List kmpower(const int kMax = 1,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
@@ -1084,7 +1084,7 @@ List kmpower(const int kMax = 1,
 
   // obtain the study duration
   double studyDuration1 = studyDuration;
-  if (!fixedFollowup || R_isnancpp(studyDuration)) {
+  if (!fixedFollowup || std::isnan(studyDuration)) {
     studyDuration1 = accrualDuration + followupTime;
   }
 
@@ -1251,7 +1251,7 @@ List kmpower(const int kMax = 1,
 }
 
 
-//' @title Sample size for difference in milestone survival probabilities
+//' @title Sample Size for Difference in Milestone Survival Probabilities
 //' @description Obtains the needed accrual duration given power,
 //' accrual intensity, and follow-up time, the needed follow-up time
 //' given power, accrual intensity, and accrual duration, or the needed
@@ -1480,13 +1480,13 @@ List kmsamplesize(const double beta = 0.2,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -1496,7 +1496,7 @@ List kmsamplesize(const double beta = 0.2,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -1544,7 +1544,7 @@ List kmsamplesize(const double beta = 0.2,
     stop("Invalid value for typeBetaSpending");
   }
 
-  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
+  if ((bsf=="sfkd" || bsf=="sfhsd") && std::isnan(bsfpar)) {
     stop("Missing value for parameterBetaSpending");
   }
 
@@ -1566,7 +1566,7 @@ List kmsamplesize(const double beta = 0.2,
     }
   }
 
-  if (R_isnancpp(milestone)) {
+  if (std::isnan(milestone)) {
     stop("milestone must be provided");
   }
 
@@ -1672,13 +1672,13 @@ List kmsamplesize(const double beta = 0.2,
     stop("Invalid length for gamma2");
   }
 
-  if (!R_isnancpp(accrualDuration)) {
+  if (!std::isnan(accrualDuration)) {
     if (accrualDuration <= 0) {
       stop("accrualDuration must be positive");
     }
   }
 
-  if (!R_isnancpp(followupTime)) {
+  if (!std::isnan(followupTime)) {
     if (fixedFollowup && followupTime <= 0) {
       stop("followupTime must be positive for fixed follow-up");
     }
@@ -1688,11 +1688,11 @@ List kmsamplesize(const double beta = 0.2,
     }
   }
 
-  if (fixedFollowup && R_isnancpp(followupTime)) {
+  if (fixedFollowup && std::isnan(followupTime)) {
     stop("followupTime must be provided for fixed follow-up");
   }
 
-  if (!R_isnancpp(accrualDuration) && !R_isnancpp(followupTime) &&
+  if (!std::isnan(accrualDuration) && !std::isnan(followupTime) &&
       (milestone >= accrualDuration + followupTime)) {
     stop("milestone must be less than accrualDuration + followupTime");
   }
@@ -1732,7 +1732,7 @@ List kmsamplesize(const double beta = 0.2,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
@@ -1779,11 +1779,11 @@ List kmsamplesize(const double beta = 0.2,
 
   std::string unknown;
   // search for the solution according to the input
-  if (R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  if (std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualDuration";
-  } else if (!R_isnancpp(accrualDuration) && R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && std::isnan(followupTime)) {
     unknown = "followupTime";
-  } else if (!R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualIntensity";
   } else {
     stop("accrualDuration and followupTime cannot be both missing");
@@ -1925,7 +1925,7 @@ List kmsamplesize(const double beta = 0.2,
     NumericVector u0(1, studyDuration);
     double n0 = accrual(u0, accrualTime, accrualIntensity1,
                         accrualDuration)[0];
-    double n = std::ceil(n0);
+    double n = std::ceil(n0 - 1.0e-12);
 
     if (n - n0 > 1e-6) {
       // adjust accrual intensity or duration to obtain int # of subjects
@@ -2170,7 +2170,7 @@ List kmsamplesize(const double beta = 0.2,
 }
 
 
-//' @title Power for one-sample milestone survival probability
+//' @title Power for One-Sample Milestone Survival Probability
 //' @description Estimates the power, stopping probabilities, and expected
 //' sample size in a one-group survival design.
 //'
@@ -2431,13 +2431,13 @@ List kmpower1s(const int kMax = 1,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -2447,7 +2447,7 @@ List kmpower1s(const int kMax = 1,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -2495,7 +2495,7 @@ List kmpower1s(const int kMax = 1,
     stop("Invalid value for typeBetaSpending");
   }
 
-  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
+  if ((bsf=="sfkd" || bsf=="sfhsd") && std::isnan(bsfpar)) {
     stop("Missing value for parameterBetaSpending");
   }
 
@@ -2503,7 +2503,7 @@ List kmpower1s(const int kMax = 1,
     stop ("parameterBetaSpending must be positive for sfKD");
   }
 
-  if (R_isnancpp(milestone)) {
+  if (std::isnan(milestone)) {
     stop("milestone must be provided");
   }
 
@@ -2511,7 +2511,7 @@ List kmpower1s(const int kMax = 1,
     stop("milestone must be positive");
   }
 
-  if (R_isnancpp(survH0)) {
+  if (std::isnan(survH0)) {
     stop("survH0 must be provided");
   }
 
@@ -2576,7 +2576,7 @@ List kmpower1s(const int kMax = 1,
     stop("Invalid length for gamma");
   }
 
-  if (R_isnancpp(accrualDuration)) {
+  if (std::isnan(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
 
@@ -2584,7 +2584,7 @@ List kmpower1s(const int kMax = 1,
     stop("accrualDuration must be positive");
   }
 
-  if (R_isnancpp(followupTime)) {
+  if (std::isnan(followupTime)) {
     stop("followupTime must be provided");
   }
 
@@ -2610,12 +2610,12 @@ List kmpower1s(const int kMax = 1,
     spendingTime1 = clone(informationRates1);
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration < accrualDuration) {
     stop("studyDuration must be greater than or equal to accrualDuration");
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration > accrualDuration + followupTime) {
     stop("studyDuration cannot exceed accrualDuration + followupTime");
   }
@@ -2628,7 +2628,7 @@ List kmpower1s(const int kMax = 1,
     stop("milestone cannot exceed followupTime for fixed follow-up");
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       (milestone >= studyDuration)) {
     stop("milestone cannot exceed studyDuration for fixed follow-up");
   }
@@ -2638,7 +2638,7 @@ List kmpower1s(const int kMax = 1,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
@@ -2686,7 +2686,7 @@ List kmpower1s(const int kMax = 1,
 
   // obtain the study duration
   double studyDuration1 = studyDuration;
-  if (!fixedFollowup || R_isnancpp(studyDuration)) {
+  if (!fixedFollowup || std::isnan(studyDuration)) {
     studyDuration1 = accrualDuration + followupTime;
   }
 
@@ -2846,7 +2846,7 @@ List kmpower1s(const int kMax = 1,
 }
 
 
-//' @title Sample size for one-sample milestone survival probability
+//' @title Sample Size for One-Sample Milestone Survival Probability
 //' @description Obtains the needed accrual duration given power and
 //' follow-up time, the needed follow-up time given power and
 //' accrual duration, or the needed absolute accrual rates given
@@ -3068,13 +3068,13 @@ List kmsamplesize1s(const double beta = 0.2,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -3084,7 +3084,7 @@ List kmsamplesize1s(const double beta = 0.2,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -3132,7 +3132,7 @@ List kmsamplesize1s(const double beta = 0.2,
     stop("Invalid value for typeBetaSpending");
   }
 
-  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
+  if ((bsf=="sfkd" || bsf=="sfhsd") && std::isnan(bsfpar)) {
     stop("Missing value for parameterBetaSpending");
   }
 
@@ -3154,7 +3154,7 @@ List kmsamplesize1s(const double beta = 0.2,
     }
   }
 
-  if (R_isnancpp(milestone)) {
+  if (std::isnan(milestone)) {
     stop("milestone must be provided");
   }
 
@@ -3162,7 +3162,7 @@ List kmsamplesize1s(const double beta = 0.2,
     stop("milestone must be positive");
   }
 
-  if (R_isnancpp(survH0)) {
+  if (std::isnan(survH0)) {
     stop("survH0 must be provided");
   }
 
@@ -3237,13 +3237,13 @@ List kmsamplesize1s(const double beta = 0.2,
     stop("Invalid length for gamma");
   }
 
-  if (!R_isnancpp(accrualDuration)) {
+  if (!std::isnan(accrualDuration)) {
     if (accrualDuration <= 0) {
       stop("accrualDuration must be positive");
     }
   }
 
-  if (!R_isnancpp(followupTime)) {
+  if (!std::isnan(followupTime)) {
     if (fixedFollowup && followupTime <= 0) {
       stop("followupTime must be positive for fixed follow-up");
     }
@@ -3253,11 +3253,11 @@ List kmsamplesize1s(const double beta = 0.2,
     }
   }
 
-  if (fixedFollowup && R_isnancpp(followupTime)) {
+  if (fixedFollowup && std::isnan(followupTime)) {
     stop("followupTime must be provided for fixed follow-up");
   }
 
-  if (!R_isnancpp(accrualDuration) && !R_isnancpp(followupTime) &&
+  if (!std::isnan(accrualDuration) && !std::isnan(followupTime) &&
       (milestone >= accrualDuration + followupTime)) {
     stop("milestone must be less than accrualDuration + followupTime");
   }
@@ -3297,7 +3297,7 @@ List kmsamplesize1s(const double beta = 0.2,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
@@ -3344,11 +3344,11 @@ List kmsamplesize1s(const double beta = 0.2,
 
   std::string unknown;
   // search for the solution according to the input
-  if (R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  if (std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualDuration";
-  } else if (!R_isnancpp(accrualDuration) && R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && std::isnan(followupTime)) {
     unknown = "followupTime";
-  } else if (!R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualIntensity";
   } else {
     stop("accrualDuration and followupTime cannot be both missing");
@@ -3484,7 +3484,7 @@ List kmsamplesize1s(const double beta = 0.2,
     NumericVector u0(1, studyDuration);
     double n0 = accrual(u0, accrualTime, accrualIntensity1,
                         accrualDuration)[0];
-    double n = std::ceil(n0);
+    double n = std::ceil(n0 - 1.0e-12);
 
     if (n - n0 > 1e-6) {
       // adjust accrual intensity or duration to obtain int # of subjects
@@ -3722,7 +3722,7 @@ List kmsamplesize1s(const double beta = 0.2,
 
 
 
-//' @title Power for equivalence in milestone survival probability difference
+//' @title Power for Equivalence in Milestone Survival Probability Difference
 //' @description Obtains the power for equivalence in milestone survival
 //' probability difference.
 //'
@@ -3944,13 +3944,13 @@ List kmpowerequiv(const int kMax = 1,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -3960,7 +3960,7 @@ List kmpowerequiv(const int kMax = 1,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -3982,7 +3982,7 @@ List kmpowerequiv(const int kMax = 1,
     }
   }
 
-  if (R_isnancpp(milestone)) {
+  if (std::isnan(milestone)) {
     stop("milestone must be provided");
   }
 
@@ -3990,11 +3990,11 @@ List kmpowerequiv(const int kMax = 1,
     stop("milestone must be positive");
   }
 
-  if (R_isnancpp(survDiffLower)) {
+  if (std::isnan(survDiffLower)) {
     stop("survDiffLower must be provided");
   }
 
-  if (R_isnancpp(survDiffUpper)) {
+  if (std::isnan(survDiffUpper)) {
     stop("survDiffUpper must be provided");
   }
 
@@ -4094,7 +4094,7 @@ List kmpowerequiv(const int kMax = 1,
     stop("Invalid length for gamma2");
   }
 
-  if (R_isnancpp(accrualDuration)) {
+  if (std::isnan(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
 
@@ -4102,7 +4102,7 @@ List kmpowerequiv(const int kMax = 1,
     stop("accrualDuration must be positive");
   }
 
-  if (R_isnancpp(followupTime)) {
+  if (std::isnan(followupTime)) {
     stop("followupTime must be provided");
   }
 
@@ -4128,12 +4128,12 @@ List kmpowerequiv(const int kMax = 1,
     spendingTime1 = clone(informationRates1);
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration < accrualDuration) {
     stop("studyDuration must be greater than or equal to accrualDuration");
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration > accrualDuration + followupTime) {
     stop("studyDuration cannot exceed accrualDuration + followupTime");
   }
@@ -4146,7 +4146,7 @@ List kmpowerequiv(const int kMax = 1,
     stop("milestone cannot exceed followupTime for fixed follow-up");
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       (milestone >= studyDuration)) {
     stop("milestone cannot exceed studyDuration for fixed follow-up");
   }
@@ -4156,7 +4156,7 @@ List kmpowerequiv(const int kMax = 1,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1,
                 criticalValues, alpha](double aval)->double {
@@ -4191,7 +4191,7 @@ List kmpowerequiv(const int kMax = 1,
 
   // obtain the study duration
   double studyDuration1 = studyDuration;
-  if (!fixedFollowup || R_isnancpp(studyDuration)) {
+  if (!fixedFollowup || std::isnan(studyDuration)) {
     studyDuration1 = accrualDuration + followupTime;
   }
 
@@ -4421,8 +4421,8 @@ List kmpowerequiv(const int kMax = 1,
 }
 
 
-//' @title Sample size for equivalence in milestone survival probability
-//' difference
+//' @title Sample Size for Equivalence in Milestone Survival Probability
+//' Difference
 //' @description Obtains the sample size for equivalence in milestone
 //' survival probability difference.
 //'
@@ -4562,13 +4562,13 @@ List kmsamplesizeequiv(const double beta = 0.2,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -4578,7 +4578,7 @@ List kmsamplesizeequiv(const double beta = 0.2,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -4600,7 +4600,7 @@ List kmsamplesizeequiv(const double beta = 0.2,
     }
   }
 
-  if (R_isnancpp(milestone)) {
+  if (std::isnan(milestone)) {
     stop("milestone must be provided");
   }
 
@@ -4608,11 +4608,11 @@ List kmsamplesizeequiv(const double beta = 0.2,
     stop("milestone must be positive");
   }
 
-  if (R_isnancpp(survDiffLower)) {
+  if (std::isnan(survDiffLower)) {
     stop("survDiffLower must be provided");
   }
 
-  if (R_isnancpp(survDiffUpper)) {
+  if (std::isnan(survDiffUpper)) {
     stop("survDiffUpper must be provided");
   }
 
@@ -4722,13 +4722,13 @@ List kmsamplesizeequiv(const double beta = 0.2,
     stop("Invalid length for gamma2");
   }
 
-  if (!R_isnancpp(accrualDuration)) {
+  if (!std::isnan(accrualDuration)) {
     if (accrualDuration <= 0) {
       stop("accrualDuration must be positive");
     }
   }
 
-  if (!R_isnancpp(followupTime)) {
+  if (!std::isnan(followupTime)) {
     if (fixedFollowup && followupTime <= 0) {
       stop("followupTime must be positive for fixed follow-up");
     }
@@ -4738,7 +4738,7 @@ List kmsamplesizeequiv(const double beta = 0.2,
     }
   }
 
-  if (fixedFollowup && R_isnancpp(followupTime)) {
+  if (fixedFollowup && std::isnan(followupTime)) {
     stop("followupTime must be provided for fixed follow-up");
   }
 
@@ -4773,7 +4773,7 @@ List kmsamplesizeequiv(const double beta = 0.2,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1,
                 criticalValues, alpha](double aval)->double {
@@ -4800,11 +4800,11 @@ List kmsamplesizeequiv(const double beta = 0.2,
 
   std::string unknown;
   // search for the solution according to the input
-  if (R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  if (std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualDuration";
-  } else if (!R_isnancpp(accrualDuration) && R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && std::isnan(followupTime)) {
     unknown = "followupTime";
-  } else if (!R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualIntensity";
   } else {
     stop("accrualDuration and followupTime cannot be both missing");
@@ -4945,7 +4945,7 @@ List kmsamplesizeequiv(const double beta = 0.2,
     NumericVector u0(1, studyDuration);
     double n0 = accrual(u0, accrualTime, accrualIntensity1,
                         accrualDuration)[0];
-    double n = std::ceil(n0);
+    double n = std::ceil(n0 - 1.0e-12);
 
     if (n - n0 > 1e-6) {
       // adjust accrual intensity or duration to obtain int # of subjects
@@ -5019,7 +5019,7 @@ List kmsamplesizeequiv(const double beta = 0.2,
 }
 
 
-//' @title Estimate of milestone survival difference
+//' @title Estimate of Milestone Survival Difference
 //' @description Obtains the estimate of milestone survival difference
 //' between two treatment groups.
 //'
@@ -5044,7 +5044,7 @@ List kmsamplesizeequiv(const double beta = 0.2,
 //'   survival probability.
 //' @param survDiffH0 The difference in milestone survival probabilities
 //'   under the null hypothesis. Defaults to 0 for superiority test.
-//' @param confint The level of the two-sided confidence interval for
+//' @param conflev The level of the two-sided confidence interval for
 //'   the difference in milestone survival probabilities. Defaults to 0.95.
 //'
 //' @return A data frame with the following variables:
@@ -5079,7 +5079,7 @@ List kmsamplesizeequiv(const double beta = 0.2,
 //'
 //' * \code{upper}: The upper bound of confidence interval.
 //'
-//' * \code{confint}: The level of confidence interval.
+//' * \code{conflev}: The level of confidence interval.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
@@ -5094,18 +5094,45 @@ List kmsamplesizeequiv(const double beta = 0.2,
 //' @export
 // [[Rcpp::export]]
 DataFrame kmdiff(const DataFrame data,
-                 const std::string rep = "rep",
-                 const std::string stratum = "stratum",
+                 const StringVector& rep = "",
+                 const StringVector& stratum = "",
                  const std::string treat = "treat",
                  const std::string time = "time",
                  const std::string event = "event",
                  const double milestone = NA_REAL,
                  const double survDiffH0 = 0,
-                 const double confint = 0.95) {
+                 const double conflev = 0.95) {
   int h, i, j, k, n = data.nrows();
 
-  bool has_rep = hasVariable(data, rep);
-  bool has_stratum = hasVariable(data, stratum);
+  bool has_rep;
+  IntegerVector repn(n);
+  DataFrame u_rep;
+  int p_rep = static_cast<int>(rep.size());
+  if (p_rep == 1 && (rep[0] == "" || rep[0] == "none")) {
+    has_rep = 0;
+    repn.fill(1);
+  } else {
+    List out = bygroup(data, rep);
+    has_rep = 1;
+    repn = out["index"];
+    u_rep = DataFrame(out["lookup"]);
+  }
+
+  bool has_stratum;
+  IntegerVector stratumn(n);
+  DataFrame u_stratum;
+  int p_stratum = static_cast<int>(stratum.size());
+  if (p_stratum == 1 && (stratum[0] == "" || stratum[0] == "none")) {
+    has_stratum = 0;
+    stratumn.fill(1);
+  } else {
+    List out = bygroup(data, stratum);
+    has_stratum = 1;
+    stratumn = out["index"];
+    u_stratum = DataFrame(out["lookup"]);
+  }
+
+
   bool has_treat = hasVariable(data, treat);
   bool has_time = hasVariable(data, time);
   bool has_event = hasVariable(data, event);
@@ -5128,26 +5155,18 @@ DataFrame kmdiff(const DataFrame data,
   IntegerVector treatwi;
   NumericVector treatwn;
   StringVector treatwc;
-  if (TYPEOF(data[treat]) == LGLSXP) {
+  if (TYPEOF(data[treat]) == LGLSXP || TYPEOF(data[treat]) == INTSXP) {
     IntegerVector treatv = data[treat];
     treatwi = unique(treatv);
     if (treatwi.size() != 2) {
       stop("treat must have two and only two distinct values");
     }
-    treatwi = IntegerVector::create(1,0);
-    treatn = 2 - treatv;
-  } else if (TYPEOF(data[treat]) == INTSXP) {
-    IntegerVector treatv = data[treat];
-    treatwi = unique(treatv);
-    if (treatwi.size() != 2) {
-      stop("treat must have two and only two distinct values");
-    }
-    treatwi.sort();
     // special handling for 1/0 treatment coding
     if (is_true(all((treatwi == 0) | (treatwi == 1)))) {
       treatwi = IntegerVector::create(1,0);
       treatn = 2 - treatv;
     } else {
+      treatwi.sort();
       treatn = match(treatv, treatwi);
     }
   } else if (TYPEOF(data[treat]) == REALSXP) {
@@ -5156,8 +5175,14 @@ DataFrame kmdiff(const DataFrame data,
     if (treatwn.size() != 2) {
       stop("treat must have two and only two distinct values");
     }
-    treatwn.sort();
-    treatn = match(treatv, treatwn);
+    // special handling for 1/0 treatment coding
+    if (is_true(all((treatwn == 0) | (treatwn == 1)))) {
+      treatwn = NumericVector::create(1,0);
+      treatn = 2 - as<IntegerVector>(treatv);
+    } else {
+      treatwn.sort();
+      treatn = match(treatv, treatwn);
+    }
   } else if (TYPEOF(data[treat]) == STRSXP) {
     StringVector treatv = data[treat];
     treatwc = unique(treatv);
@@ -5170,9 +5195,10 @@ DataFrame kmdiff(const DataFrame data,
     stop("incorrect type for the treat variable in the input data");
   }
 
-
-  NumericVector timen = data[time];
-  NumericVector eventn = data[event];
+  NumericVector timenz = data[time];
+  NumericVector timen = clone(timenz);
+  IntegerVector eventnz = data[event];
+  IntegerVector eventn = clone(eventnz);
 
   if (is_true(any(timen < 0))) {
     stop("time must be nonnegative for each subject");
@@ -5183,65 +5209,7 @@ DataFrame kmdiff(const DataFrame data,
   }
 
 
-  // create the numeric rep variable
-  IntegerVector repn(n);
-  IntegerVector repwi;
-  NumericVector repwn;
-  StringVector repwc;
-  if (!has_rep) {
-    repn.fill(1);
-  } else {
-    if (TYPEOF(data[rep]) == INTSXP) {
-      IntegerVector repv = data[rep];
-      repwi = unique(repv);
-      repwi.sort();
-      repn = match(repv, repwi);
-    } else if (TYPEOF(data[rep]) == REALSXP) {
-      NumericVector repv = data[rep];
-      repwn = unique(repv);
-      repwn.sort();
-      repn = match(repv, repwn);
-    } else if (TYPEOF(data[rep]) == STRSXP) {
-      StringVector repv = data[rep];
-      repwc = unique(repv);
-      repwc.sort();
-      repn = match(repv, repwc);
-    } else {
-      stop("incorrect type for the rep variable in the input data");
-    }
-  }
-
-
-  // create the numeric stratum variable
-  IntegerVector stratumn(n);
-  IntegerVector stratumwi;
-  NumericVector stratumwn;
-  StringVector stratumwc;
-  if (!has_stratum) {
-    stratumn.fill(1);
-  } else {
-    if (TYPEOF(data[stratum]) == INTSXP) {
-      IntegerVector stratumv = data[stratum];
-      stratumwi = unique(stratumv);
-      stratumwi.sort();
-      stratumn = match(stratumv, stratumwi);
-    } else if (TYPEOF(data[stratum]) == REALSXP) {
-      NumericVector stratumv = data[stratum];
-      stratumwn = unique(stratumv);
-      stratumwn.sort();
-      stratumn = match(stratumv, stratumwn);
-    } else if (TYPEOF(data[stratum]) == STRSXP) {
-      StringVector stratumv = data[stratum];
-      stratumwc = unique(stratumv);
-      stratumwc.sort();
-      stratumn = match(stratumv, stratumwc);
-    } else {
-      stop("incorrect type for the stratum variable in the input data");
-    }
-  }
-
-
-  if (R_isnancpp(milestone)) {
+  if (std::isnan(milestone)) {
     stop("milestone must be provided");
   }
 
@@ -5253,14 +5221,14 @@ DataFrame kmdiff(const DataFrame data,
     stop("survDiffH0 must lie between -1 and 1");
   }
 
-  if (confint <= 0 || confint >= 1) {
-    stop("confint must lie between 0 and 1");
+  if (conflev <= 0 || conflev >= 1) {
+    stop("conflev must lie between 0 and 1");
   }
 
 
   // sort the data by rep
   IntegerVector order = seq(0, n-1);
-  std::sort(order.begin(), order.end(), [&](int i, int j) {
+  std::stable_sort(order.begin(), order.end(), [&](int i, int j) {
     return repn[i] < repn[j];
   });
 
@@ -5287,7 +5255,7 @@ DataFrame kmdiff(const DataFrame data,
   NumericVector survDiffZ0(nreps), survDiffPValue0(nreps);
   NumericVector lower0(nreps), upper0(nreps);
 
-  double z = R::qnorm((1.0 + confint)/2.0, 0, 1, 1, 0);
+  double z = R::qnorm((1.0 + conflev)/2.0, 0, 1, 1, 0);
 
   bool noerr = 1;
   int index = 0;
@@ -5299,7 +5267,7 @@ DataFrame kmdiff(const DataFrame data,
     IntegerVector stratum1 = stratumn[q1];
     IntegerVector treat1 = treatn[q1];
     NumericVector time1 = timen[q1];
-    NumericVector event1 = eventn[q1];
+    IntegerVector event1 = eventn[q1];
 
     // sort by stratum in descending order
     IntegerVector order1 = seq(0, n1-1);
@@ -5335,27 +5303,48 @@ DataFrame kmdiff(const DataFrame data,
         std::string reperr;
         if (!has_rep) {
           reperr = "";
-        } else if (TYPEOF(data[rep]) == INTSXP) {
-          reperr = " " + rep + " = " + std::to_string(repwi[repn[idx[h]]-1]);
-        } else if (TYPEOF(data[rep]) == REALSXP) {
-          reperr = " " + rep + " = " + std::to_string(repwn[repn[idx[h]]-1]);
         } else {
-          reperr = " " + rep + " = " + repwc[repn[idx[h]]-1];
+          for (j=0; j<p_rep; j++) {
+            std::string s = as<std::string>(rep[j]);
+            if (TYPEOF(data[s]) == INTSXP) {
+              IntegerVector repwi = u_rep[s];
+              reperr = reperr + " " + s + " = " +
+                std::to_string(repwi[repn[idx[h]]-1]);
+            } else if (TYPEOF(data[s]) == REALSXP) {
+              NumericVector repwn = u_rep[s];
+              reperr = reperr + " " + s + " = " +
+                std::to_string(repwn[repn[idx[h]]-1]);
+            } else {
+              StringVector repwc = u_rep[s];
+              reperr = reperr + " " + s + " = " +
+                repwc[repn[idx[h]]-1];
+            }
+          }
         }
+
 
         std::string stratumerr;
         if (!has_stratum) {
           stratumerr = "";
-        } else if (TYPEOF(data[stratum]) == INTSXP) {
-          stratumerr = " " + stratum + " = " +
-            std::to_string(stratumwi[stratum1[idx1[i]]-1]);
-        } else if (TYPEOF(data[stratum]) == REALSXP) {
-          stratumerr = " " + stratum + " = " +
-            std::to_string(stratumwn[stratum1[idx1[i]]-1]);
         } else {
-          stratumerr = " " + stratum + " = " +
-            stratumwc[stratum1[idx1[i]]-1];
+          for (j=0; j<p_stratum; j++) {
+            std::string s = as<std::string>(stratum[j]);
+            if (TYPEOF(data[s]) == INTSXP) {
+              IntegerVector stratumwi = u_stratum[s];
+              stratumerr = stratumerr + " " + s + " = " +
+                std::to_string(stratumwi[stratum1[idx1[i]]-1]);
+            } else if (TYPEOF(data[s]) == REALSXP) {
+              NumericVector stratumwn = u_stratum[s];
+              stratumerr = stratumerr + " " + s + " = " +
+                std::to_string(stratumwn[stratum1[idx1[i]]-1]);
+            } else {
+              StringVector stratumwc = u_stratum[s];
+              stratumerr = stratumerr + " " + s + " = " +
+                stratumwc[stratum1[idx1[i]]-1];
+            }
+          }
         }
+
 
         int k = milestone > max(time21) ? 0 : 1;
         std::string treaterr;
@@ -5424,26 +5413,48 @@ DataFrame kmdiff(const DataFrame data,
         std::string reperr;
         if (!has_rep) {
           reperr = "";
-        } else if (TYPEOF(data[rep]) == INTSXP) {
-          reperr = " " + rep + " = " + std::to_string(repwi[repn[idx[h]]-1]);
-        } else if (TYPEOF(data[rep]) == REALSXP) {
-          reperr = " " + rep + " = " + std::to_string(repwn[repn[idx[h]]-1]);
         } else {
-          reperr = " " + rep + " = " + repwc[repn[idx[h]]-1];
+          for (j=0; j<p_rep; j++) {
+            std::string s = as<std::string>(rep[j]);
+            if (TYPEOF(data[s]) == INTSXP) {
+              IntegerVector repwi = u_rep[s];
+              reperr = reperr + " " + s + " = " +
+                std::to_string(repwi[repn[idx[h]]-1]);
+            } else if (TYPEOF(data[s]) == REALSXP) {
+              NumericVector repwn = u_rep[s];
+              reperr = reperr + " " + s + " = " +
+                std::to_string(repwn[repn[idx[h]]-1]);
+            } else {
+              StringVector repwc = u_rep[s];
+              reperr = reperr + " " + s + " = " +
+                repwc[repn[idx[h]]-1];
+            }
+          }
         }
+
 
         std::string stratumerr;
         if (!has_stratum) {
           stratumerr = "";
-        } else if (TYPEOF(data[stratum]) == INTSXP) {
-          stratumerr = " " + stratum + " = " +
-            std::to_string(stratumwi[stratum2[j1]-1]);
-        } else if (TYPEOF(data[stratum]) == REALSXP) {
-          stratumerr = " " + stratum + " = " +
-            std::to_string(stratumwn[stratum2[j1]-1]);
         } else {
-          stratumerr = " " + stratum + " = " + stratumwc[stratum2[j1]-1];
+          for (j=0; j<p_stratum; j++) {
+            std::string s = as<std::string>(stratum[j]);
+            if (TYPEOF(data[s]) == INTSXP) {
+              IntegerVector stratumwi = u_stratum[s];
+              stratumerr = stratumerr + " " + s + " = " +
+                std::to_string(stratumwi[stratum2[j1]-1]);
+            } else if (TYPEOF(data[s]) == REALSXP) {
+              NumericVector stratumwn = u_stratum[s];
+              stratumerr = stratumerr + " " + s + " = " +
+                std::to_string(stratumwn[stratum2[j1]-1]);
+            } else {
+              StringVector stratumwc = u_stratum[s];
+              stratumerr = stratumerr + " " + s + " = " +
+                stratumwc[stratum2[j1]-1];
+            }
+          }
         }
+
 
         int k = treat2[j1] != 1 ? 0 : 1;
         std::string treaterr;
@@ -5566,15 +5577,21 @@ DataFrame kmdiff(const DataFrame data,
     _["survDiffPValue"] = survDiffPValue0,
     _["lower"] = lower0,
     _["upper"] = upper0,
-    _["confint"] = confint);
+    _["conflev"] = conflev);
 
   if (has_rep) {
-    if (TYPEOF(data[rep]) == INTSXP) {
-      result.push_back(repwi[rep0-1], rep);
-    } else if (TYPEOF(data[rep]) == REALSXP) {
-      result.push_back(repwn[rep0-1], rep);
-    } else if (TYPEOF(data[rep]) == STRSXP) {
-      result.push_back(repwc[rep0-1], rep);
+    for (i=0; i<p_rep; i++) {
+      String s = rep[i];
+      if (TYPEOF(data[s]) == INTSXP) {
+        IntegerVector repwi = u_rep[s];
+        result.push_back(repwi[rep0-1], s);
+      } else if (TYPEOF(data[s]) == REALSXP) {
+        NumericVector repwn = u_rep[s];
+        result.push_back(repwn[rep0-1], s);
+      } else if (TYPEOF(data[rep]) == STRSXP) {
+        StringVector repwc = u_rep[s];
+        result.push_back(repwc[rep0-1], s);
+      }
     }
   }
 

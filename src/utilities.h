@@ -49,19 +49,21 @@ NumericVector qtpwexpcpp(const NumericVector& p,
                          const bool lowertail,
                          const bool logp);
 
-NumericVector rtpwexpcpp(const int n,
-                         const NumericVector& piecewiseSurvivalTime,
-                         const NumericVector& lambda,
-                         const double lowerBound);
+NumericVector rtpwexpcpp(
+    const int n,
+    const NumericVector& piecewiseSurvivalTime,
+    const NumericVector& lambda,
+    const double lowerBound);
 
-NumericVector getBoundcpp(const int k,
-                          const NumericVector& informationRates,
-                          const double alpha,
-                          const String typeAlphaSpending,
-                          const double parameterAlphaSpending,
-                          const NumericVector& userAlphaSpending,
-                          const NumericVector& spendingTime,
-                          const LogicalVector& efficacyStopping);
+NumericVector getBoundcpp(
+    const int k,
+    const NumericVector& informationRates,
+    const double alpha,
+    const String typeAlphaSpending,
+    const double parameterAlphaSpending,
+    const NumericVector& userAlphaSpending,
+    const NumericVector& spendingTime,
+    const LogicalVector& efficacyStopping);
 
 List getPower(const double alpha,
               const int kMax,
@@ -83,9 +85,7 @@ NumericVector mini(const std::function<double(double)>& f,
 NumericVector quad(integr_fn f, void *ex, double lower, double upper,
                    double tol);
 
-List bmini(NumericVector x0, optimfn fn, optimgr gr,
-           void *ex, double eps);
-
+List bmini(NumericVector x0, optimfn fn, optimgr gr, void *ex, double eps);
 
 NumericVector accrual(const NumericVector& time,
                       const NumericVector& accrualTime,
@@ -239,8 +239,32 @@ List adaptDesign(double betaNew,
 
 bool hasVariable(DataFrame df, std::string varName);
 
-NumericMatrix invsympd(const NumericMatrix& a);
-
 double quantilecpp(const NumericVector& x, const double p);
+
+double squantilecpp(const std::function<double(double)>& S, double p);
+
+IntegerVector c_vectors_i(IntegerVector vec1, IntegerVector vec2);
+NumericVector c_vectors(NumericVector vec1, NumericVector vec2);
+NumericMatrix subset_matrix_by_row(NumericMatrix a, IntegerVector q);
+NumericMatrix c_matrices(NumericMatrix a1, NumericMatrix a2);
+
+List bygroup(DataFrame data, const StringVector& variables);
+
+int cholesky2(NumericMatrix matrix, int n, double toler);
+void chsolve2(NumericMatrix matrix, int n, NumericVector y);
+void chinv2(NumericMatrix matrix, int n);
+NumericMatrix invsympd(NumericMatrix matrix, int n, double toler);
+
+DataFrame survsplit(NumericVector tstart,
+                    NumericVector tstop,
+                    NumericVector cut);
+
+bool is_sorted(NumericVector x);
+
+NumericVector house(NumericVector x);
+void row_house(NumericMatrix A, NumericVector v);
+List qrcpp(NumericMatrix x, double tol);
+
+NumericMatrix rmvnorm(int n, NumericVector mean, NumericMatrix sigma);
 
 #endif // __UTILITIES__

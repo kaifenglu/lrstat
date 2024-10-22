@@ -3,7 +3,7 @@
 using namespace Rcpp;
 
 
-//' @title Update graph for graphical approaches
+//' @title Update Graph for Graphical Approaches
 //' @description Updates the weights and transition matrix for graphical
 //' approaches.
 //'
@@ -194,7 +194,7 @@ NumericMatrix fadjpboncpp(const NumericVector& w,
 }
 
 
-//' @title Weight matrix for all intersection hypotheses
+//' @title Weight Matrix for All Intersection Hypotheses
 //' @description Obtains the weight matrix for all intersection hypotheses.
 //'
 //' @param w The vector of weights for elementary hypotheses.
@@ -490,7 +490,7 @@ NumericVector repeatedPValuecpp(
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -726,7 +726,7 @@ IntegerVector fseqboncpp(
     }
 
     if ((asfi=="wt" || asfi=="sfkd" || asfi=="sfhsd") &&
-        R_isnancpp(asfpar(i))) {
+        std::isnan(asfpar(i))) {
       stop("Missing value for parameterAlphaSpending");
     }
 
@@ -1730,7 +1730,7 @@ double f_pvalue(const double theta,
 }
 
 
-//' @title Confidence interval after trial termination
+//' @title Confidence Interval After Trial Termination
 //' @description Obtains the p-value, median unbiased point estimate, and
 //' confidence interval after the end of a group sequential trial.
 //'
@@ -1828,11 +1828,11 @@ DataFrame getCI(const int L = NA_INTEGER,
     stop("L must be a positive integer");
   }
 
-  if (R_isnancpp(zL)) {
+  if (std::isnan(zL)) {
     stop("zL must be provided");
   }
 
-  if (R_isnancpp(IMax)) {
+  if (std::isnan(IMax)) {
     stop("IMax must be provided");
   }
 
@@ -1874,7 +1874,7 @@ DataFrame getCI(const int L = NA_INTEGER,
     }
   }
 
-  if (R_isnancpp(alpha)) {
+  if (std::isnan(alpha)) {
     stop("alpha must be provided");
   }
 
@@ -1895,7 +1895,7 @@ DataFrame getCI(const int L = NA_INTEGER,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -1958,7 +1958,7 @@ DataFrame getCI(const int L = NA_INTEGER,
 }
 
 
-//' @title Repeated confidence interval for group sequential design
+//' @title Repeated Confidence Interval for Group Sequential Design
 //' @description Obtains the repeated confidence interval
 //' for a group sequential trial.
 //'
@@ -2057,11 +2057,11 @@ DataFrame getRCI(const int L = NA_INTEGER,
     stop("L must be a positive integer");
   }
 
-  if (R_isnancpp(zL)) {
+  if (std::isnan(zL)) {
     stop("zL must be provided");
   }
 
-  if (R_isnancpp(IMax)) {
+  if (std::isnan(IMax)) {
     stop("IMax must be provided");
   }
 
@@ -2103,7 +2103,7 @@ DataFrame getRCI(const int L = NA_INTEGER,
     }
   }
 
-  if (R_isnancpp(alpha)) {
+  if (std::isnan(alpha)) {
     stop("alpha must be provided");
   }
 
@@ -2124,7 +2124,7 @@ DataFrame getRCI(const int L = NA_INTEGER,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -2312,7 +2312,7 @@ double f_bwpvalue(const double theta,
 }
 
 
-//' @title Confidence interval after adaptation
+//' @title Confidence Interval After Adaptation
 //' @description Obtains the p-value, median unbiased point estimate, and
 //' confidence interval after the end of an adaptive trial.
 //'
@@ -2512,11 +2512,11 @@ DataFrame getADCI(const int L = NA_INTEGER,
     stop("L must be a positive integer");
   }
 
-  if (R_isnancpp(zL)) {
+  if (std::isnan(zL)) {
     stop("zL must be provided");
   }
 
-  if (R_isnancpp(IMax)) {
+  if (std::isnan(IMax)) {
     stop("IMax must be provided");
   }
 
@@ -2575,7 +2575,7 @@ DataFrame getADCI(const int L = NA_INTEGER,
     alpha1 = sum(NumericVector(probs[0]));
   }
 
-  if (!R_isnancpp(alpha1)) {
+  if (!std::isnan(alpha1)) {
     if (alpha1 < 0.00001 || alpha1 >= 0.5) {
       stop("alpha must lie in [0.00001, 0.5)");
     }
@@ -2589,7 +2589,7 @@ DataFrame getADCI(const int L = NA_INTEGER,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -2619,11 +2619,11 @@ DataFrame getADCI(const int L = NA_INTEGER,
     stop("L2 must be a positive integer");
   }
 
-  if (R_isnancpp(zL2)) {
+  if (std::isnan(zL2)) {
     stop("zL2 must be provided");
   }
 
-  if (R_isnancpp(INew)) {
+  if (std::isnan(INew)) {
     stop("INew must be provided");
   }
 
@@ -2667,7 +2667,7 @@ DataFrame getADCI(const int L = NA_INTEGER,
     }
 
     if ((asfNew=="wt" || asfNew=="sfkd" || asfNew=="sfhsd") &&
-        R_isnancpp(asfparNew)) {
+        std::isnan(asfparNew)) {
       stop("Missing value for parameterAlphaSpendingNew");
     }
 
@@ -2765,7 +2765,7 @@ DataFrame getADCI(const int L = NA_INTEGER,
 }
 
 
-//' @title Repeated confidence interval after adaptation
+//' @title Repeated Confidence Interval After Adaptation
 //' @description Obtains the repeated p-value, conservative point estimate,
 //' and repeated confidence interval for an adaptive group sequential trial.
 //'
@@ -2963,11 +2963,11 @@ DataFrame getADRCI(const int L = NA_INTEGER,
     stop("L must be a positive integer");
   }
 
-  if (R_isnancpp(zL)) {
+  if (std::isnan(zL)) {
     stop("zL must be provided");
   }
 
-  if (R_isnancpp(IMax)) {
+  if (std::isnan(IMax)) {
     stop("IMax must be provided");
   }
 
@@ -3026,7 +3026,7 @@ DataFrame getADRCI(const int L = NA_INTEGER,
     alpha1 = sum(NumericVector(probs[0]));
   }
 
-  if (!R_isnancpp(alpha1)) {
+  if (!std::isnan(alpha1)) {
     if (alpha1 < 0.00001 || alpha1 >= 0.5) {
       stop("alpha must lie in [0.00001, 0.5)");
     }
@@ -3040,7 +3040,7 @@ DataFrame getADRCI(const int L = NA_INTEGER,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -3070,11 +3070,11 @@ DataFrame getADRCI(const int L = NA_INTEGER,
     stop("L2 must be a positive integer");
   }
 
-  if (R_isnancpp(zL2)) {
+  if (std::isnan(zL2)) {
     stop("zL2 must be provided");
   }
 
-  if (R_isnancpp(INew)) {
+  if (std::isnan(INew)) {
     stop("INew must be provided");
   }
 
@@ -3118,7 +3118,7 @@ DataFrame getADRCI(const int L = NA_INTEGER,
     }
 
     if ((asfNew=="wt" || asfNew=="sfkd" || asfNew=="sfhsd") &&
-        R_isnancpp(asfparNew)) {
+        std::isnan(asfparNew)) {
       stop("Missing value for parameterAlphaSpendingNew");
     }
 
@@ -3337,7 +3337,7 @@ DataFrame getADRCI(const int L = NA_INTEGER,
 }
 
 
-//' @title Conditional power allowing for varying parameter values
+//' @title Conditional Power Allowing for Varying Parameter Values
 //' @description Obtains the conditional power for specified incremental
 //' information given the interim results, parameter values, and
 //' data-dependent changes in the error spending function, as well as the
@@ -3595,7 +3595,7 @@ double getCP(double INew = NA_REAL,
 
   double bsfparNew = parameterBetaSpendingNew;
 
-  if (R_isnancpp(INew)) {
+  if (std::isnan(INew)) {
     stop("INew must be provided");
   }
 
@@ -3611,7 +3611,7 @@ double getCP(double INew = NA_REAL,
     stop("L must be a positive integer");
   }
 
-  if (R_isnancpp(zL)) {
+  if (std::isnan(zL)) {
     stop("zL must be provided");
   }
 
@@ -3619,7 +3619,7 @@ double getCP(double INew = NA_REAL,
     stop("theta must be provided");
   }
 
-  if (R_isnancpp(IMax)) {
+  if (std::isnan(IMax)) {
     stop("IMax must be provided");
   }
 
@@ -3691,7 +3691,7 @@ double getCP(double INew = NA_REAL,
     alpha1 = sum(NumericVector(probs[0]));
   }
 
-  if (!R_isnancpp(alpha1)) {
+  if (!std::isnan(alpha1)) {
     if (alpha1 < 0.00001 || alpha1 >= 0.5) {
       stop("alpha must lie in [0.00001, 0.5)");
     }
@@ -3705,7 +3705,7 @@ double getCP(double INew = NA_REAL,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -3753,7 +3753,7 @@ double getCP(double INew = NA_REAL,
     stop("Invalid value for typeBetaSpending");
   }
 
-  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
+  if ((bsf=="sfkd" || bsf=="sfhsd") && std::isnan(bsfpar)) {
     stop("Missing value for parameterBetaSpending");
   }
 
@@ -3828,7 +3828,7 @@ double getCP(double INew = NA_REAL,
     }
 
     if ((asfNew=="wt" || asfNew=="sfkd" || asfNew=="sfhsd") &&
-        R_isnancpp(asfparNew)) {
+        std::isnan(asfparNew)) {
       stop("Missing value for parameterAlphaSpendingNew");
     }
 
@@ -3841,7 +3841,7 @@ double getCP(double INew = NA_REAL,
       stop("Invalid value for typeBetaSpendingNew");
     }
 
-    if ((bsfNew=="sfkd" || bsfNew=="sfhsd") && R_isnancpp(bsfparNew)) {
+    if ((bsfNew=="sfkd" || bsfNew=="sfhsd") && std::isnan(bsfparNew)) {
       stop("Missing value for parameterBetaSpendingNew");
     }
 
@@ -4068,7 +4068,7 @@ double pfutile(double p, int n1, int n2, int r1, int r) {
 }
 
 
-//' @title Simon's two-stage design
+//' @title Simon's Two-Stage Design
 //' @description Obtains Simon's two-stage minimax, admissible, and
 //' optimal designs.
 //'
@@ -4117,7 +4117,7 @@ double pfutile(double p, int n1, int n2, int r1, int r) {
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
 //' @examples
-//' simon2stage(0.05, 0.15, 0.1, 0.3)
+//' simon2stage(0.05, 0.2, 0.1, 0.3)
 //'
 //' @export
 // [[Rcpp::export]]
@@ -4129,7 +4129,7 @@ DataFrame simon2stage(const double alpha = NA_REAL,
 
   int n1, n, r1, r;
 
-  if (R_isnancpp(alpha)) {
+  if (std::isnan(alpha)) {
     stop("alpha must be provided");
   }
 
@@ -4137,7 +4137,7 @@ DataFrame simon2stage(const double alpha = NA_REAL,
     stop("alpha must lie in [0.00001, 1)");
   }
 
-  if (R_isnancpp(beta)) {
+  if (std::isnan(beta)) {
     stop("beta must be provided");
   }
 
@@ -4145,7 +4145,7 @@ DataFrame simon2stage(const double alpha = NA_REAL,
     stop("beta must lie in [0.0001, 1-alpha)");
   }
 
-  if (R_isnancpp(piH0)) {
+  if (std::isnan(piH0)) {
     stop("piH0 must be provided");
   }
 
@@ -4153,7 +4153,7 @@ DataFrame simon2stage(const double alpha = NA_REAL,
     stop("piH0 must lie between 0 and 1");
   }
 
-  if (R_isnancpp(pi)) {
+  if (std::isnan(pi)) {
     stop("pi must be provided");
   }
 
@@ -4164,10 +4164,10 @@ DataFrame simon2stage(const double alpha = NA_REAL,
   double p = (piH0 + pi)/2;
   double z1 = R::qnorm(1-alpha, 0, 1, 1, 0);
   double z2 = R::qnorm(1-beta, 0, 1, 1, 0);
-  int n_min = static_cast<int>(floor(p*(1-p)*pow((z1+z2)/(pi-piH0), 2)));
-  int n_max1 = static_cast<int>(ceil(2.0*n_min));
+  int n_min = static_cast<int>(std::floor(p*(1-p)*pow((z1+z2)/(pi-piH0), 2)));
+  int n_max1 = static_cast<int>(std::ceil(2.0*n_min));
 
-  int n_lower = static_cast<int>(floor(0.5*n_min));
+  int n_lower = static_cast<int>(std::floor(0.5*n_min));
   int n_upper = std::min(n_max, n_max1);
   int m = n_upper - n_lower + 1;
 
@@ -4334,7 +4334,7 @@ DataFrame simon2stage(const double alpha = NA_REAL,
 }
 
 
-//' @title Power for binomial one-sample exact test
+//' @title Power for Binomial One-Sample Exact Test
 //' @description Obtains the power for binomial one-sample exact test.
 //'
 //' @param n The sample size.
@@ -4390,7 +4390,7 @@ DataFrame powerOnePropExact(const int n = NA_INTEGER,
 }
 
 
-//' @title Sample size for binomial one-sample exact test
+//' @title Sample Size for Binomial One-Sample Exact Test
 //' @description Obtains the sample size for binomial one-sample exact test.
 //'
 //' @param beta The type II error.
@@ -4421,10 +4421,10 @@ DataFrame samplesizeOnePropExact(const double beta = 0.2,
   double z1 = R::qnorm(1-alpha, 0, 1, 1, 0);
   double z2 = R::qnorm(1-beta, 0, 1, 1, 0);
   double tau = pow((z1 + z2)/(pi - piH0), 2);
-  int n_lower = static_cast<int>(floor(0.5*tau*std::min(piH0*(1-piH0),
-                                                        pi*(1-pi))));
-  int n_upper = static_cast<int>(ceil(2*tau*std::max(piH0*(1-piH0),
-                                                     pi*(1-pi))));
+  int n_lower = static_cast<int>(std::floor(0.5*tau*std::min(piH0*(1-piH0),
+                                                             pi*(1-pi))));
+  int n_upper = static_cast<int>(std::ceil(2*tau*std::max(piH0*(1-piH0),
+                                                          pi*(1-pi))));
   int n;
   DataFrame a, b;
   for (n=n_lower; n<=n_upper; n++) {
@@ -4454,7 +4454,7 @@ DataFrame samplesizeOnePropExact(const double beta = 0.2,
 }
 
 
-//' @title Power for Poisson one-sample exact test
+//' @title Power for Poisson One-Sample Exact Test
 //' @description Obtains the power for Poisson one-sample exact test.
 //'
 //' @param n The sample size.
@@ -4512,7 +4512,7 @@ DataFrame powerOneRateExact(const int n = NA_INTEGER,
 }
 
 
-//' @title Sample size for Poisson one-sample exact test
+//' @title Sample Size for Poisson One-Sample Exact Test
 //' @description Obtains the sample size for Poisson one-sample exact test.
 //'
 //' @param beta The type II error.
@@ -4546,10 +4546,10 @@ DataFrame samplesizeOneRateExact(const double beta = 0.2,
   double z1 = R::qnorm(1-alpha, 0, 1, 1, 0);
   double z2 = R::qnorm(1-beta, 0, 1, 1, 0);
   double tau = pow((z1 + z2)/log(lambda/lambdaH0), 2);
-  int n_lower = static_cast<int>(floor(0.5*tau/(std::max(lambdaH0,
-                                                         lambda)*D)));
-  int n_upper = static_cast<int>(ceil(2*tau/(std::min(lambdaH0,
-                                                      lambda)*D)));
+  int n_lower = static_cast<int>(std::floor(0.5*tau/(std::max(lambdaH0,
+                                                              lambda)*D)));
+  int n_upper = static_cast<int>(std::ceil(2*tau/(std::min(lambdaH0,
+                                                           lambda)*D)));
   int n;
   DataFrame a, b;
   for (n=n_lower; n<=n_upper; n++) {
@@ -4579,7 +4579,7 @@ DataFrame samplesizeOneRateExact(const double beta = 0.2,
 }
 
 
-//' @title Power for Fisher's exact test for two proportions
+//' @title Power for Fisher's Exact Test for Two Proportions
 //' @description Obtains the power given sample size for Fisher's exact
 //' test for two proportions.
 //'
@@ -4694,7 +4694,7 @@ DataFrame powerFisherExact(const int n = NA_INTEGER,
 }
 
 
-//' @title Sample size for Fisher's exact test for two proportions
+//' @title Sample Size for Fisher's Exact Test for Two Proportions
 //' @description Obtains the sample size given power for Fisher's exact
 //' test for two proportions.
 //'
@@ -4751,8 +4751,8 @@ DataFrame samplesizeFisherExact(const double beta = NA_REAL,
   double n0 = pow(R::qnorm(1-alpha, 0, 1, 1, 0) +
                   R::qnorm(1-beta, 0, 1, 1, 0), 2)*v1/pow(delta, 2);
   double n1 = brent(f, 0.5*n0, 2*n0, 1.0e-6);
-  int n_lower = static_cast<int>(floor(n1));
-  int n_upper = static_cast<int>(ceil(10*n1)), n;
+  int n_lower = static_cast<int>(std::floor(n1));
+  int n_upper = static_cast<int>(std::ceil(10*n1)), n;
 
   DataFrame a, b;
   a = powerFisherExact(n_lower, pi1, pi2, allocationRatioPlanned, alpha);
@@ -4788,7 +4788,7 @@ DataFrame samplesizeFisherExact(const double beta = NA_REAL,
 }
 
 
-//' @title REML estimates of individual proportions with specified risk
+//' @title REML Estimates of Individual Proportions With Specified Risk
 //' difference
 //' @description Obtains the restricted maximum likelihood estimates of
 //' individual proportions with specified risk difference.
@@ -4860,7 +4860,7 @@ DataFrame remlRiskDiff2(const double riskDiffH0 = 0.0,
 }
 
 
-//' @title Miettinen-Nurminen score test statistic for two-sample risk
+//' @title Miettinen-Nurminen Score Test Statistic for Two-Sample Risk
 //' difference
 //' @description Obtains the Miettinen-Nurminen score test statistic
 //' for two-sample risk difference possibly with stratification.
@@ -4912,8 +4912,8 @@ double zstatRiskDiff(const double riskDiffH0 = 0.0,
 }
 
 
-//' @title Miettinen-Nurminen score confidence interval for
-//' two-sample risk difference
+//' @title Miettinen-Nurminen Score Confidence Interval for
+//' Two-Sample Risk Difference
 //' @description Obtains the Miettinen-Nurminen score confidence
 //' interval for two-sample risk difference possibly with
 //' stratification.
@@ -5040,8 +5040,8 @@ List mnRiskDiffCI(const NumericVector& n1 = NA_REAL,
 }
 
 
-//' @title REML estimates of individual proportions with specified risk
-//' ratio
+//' @title REML Estimates of Individual Proportions With Specified Risk
+//' Ratio
 //' @description Obtains the restricted maximum likelihood estimates of
 //' individual proportions with specified risk ratio.
 //'
@@ -5106,7 +5106,7 @@ DataFrame remlRiskRatio2(const double riskRatioH0 = 1.0,
 }
 
 
-//' @title Miettinen-Nurminen score test statistic for two-sample risk ratio
+//' @title Miettinen-Nurminen Score Test Statistic for Two-Sample Risk Ratio
 //' @description Obtains the Miettinen-Nurminen score test statistic for
 //' two-sample risk ratio possibly with stratification.
 //'
@@ -5157,8 +5157,8 @@ double zstatRiskRatio(const double riskRatioH0 = 1.0,
 }
 
 
-//' @title Miettinen-Nurminen score confidence interval for
-//' two-sample risk ratio
+//' @title Miettinen-Nurminen Score Confidence Interval for
+//' Two-Sample Risk Ratio
 //' @description Obtains the Miettinen-Nurminen score confidence
 //' interval for two-sample risk ratio possibly with
 //' stratification.
@@ -5314,8 +5314,8 @@ List mnRiskRatioCI(const NumericVector& n1 = NA_REAL,
 }
 
 
-//' @title REML estimates of individual proportions with specified odds
-//' ratio
+//' @title REML Estimates of Individual Proportions With Specified Odds
+//' Ratio
 //' @description Obtains the restricted maximum likelihood estimates of
 //' individual proportions with specified odds ratio.
 //'
@@ -5379,7 +5379,7 @@ DataFrame remlOddsRatio2(const double oddsRatioH0 = 1.0,
 }
 
 
-//' @title Miettinen-Nurminen score test statistic for two-sample odds ratio
+//' @title Miettinen-Nurminen Score Test Statistic for Two-Sample Odds Ratio
 //' @description Obtains the Miettinen-Nurminen score test statistic for
 //' two-sample odds ratio possibly with stratification.
 //'
@@ -5431,8 +5431,8 @@ double zstatOddsRatio(const double oddsRatioH0 = 1.0,
 }
 
 
-//' @title Miettinen-Nurminen score confidence interval for
-//' two-sample odds ratio
+//' @title Miettinen-Nurminen Score Confidence Interval for
+//' Two-Sample Odds Ratio
 //' @description Obtains the Miettinen-Nurminen score confidence
 //' interval for two-sample odds ratio possibly with
 //' stratification.
@@ -5587,8 +5587,8 @@ List mnOddsRatioCI(const NumericVector& n1 = NA_REAL,
 }
 
 
-//' @title REML estimates of individual rates with specified rate
-//' difference
+//' @title REML Estimates of Individual Rates With Specified Rate
+//' Difference
 //' @description Obtains the restricted maximum likelihood estimates of
 //' individual proportions with specified rate difference.
 //'
@@ -5653,8 +5653,8 @@ DataFrame remlRateDiff2(const double rateDiffH0 = 0.0,
 }
 
 
-//' @title Miettinen-Nurminen score test statistic for two-sample rate
-//' difference
+//' @title Miettinen-Nurminen Score Test Statistic for Two-Sample Rate
+//' Difference
 //' @description Obtains the Miettinen-Nurminen score test statistic for
 //' two-sample rate difference possibly with stratification.
 //'
@@ -5704,8 +5704,8 @@ double zstatRateDiff(const double rateDiffH0 = 0.0,
 }
 
 
-//' @title Miettinen-Nurminen score confidence interval for
-//' two-sample rate difference
+//' @title Miettinen-Nurminen Score Confidence Interval for
+//' Two-Sample Rate Difference
 //' @description Obtains the Miettinen-Nurminen score confidence
 //' interval for two-sample rate difference possibly with
 //' stratification.
@@ -5829,8 +5829,7 @@ List mnRateDiffCI(const NumericVector& t1 = NA_REAL,
 }
 
 
-//' @title REML estimates of individual rates with specified rate
-//' ratio
+//' @title REML Estimates of Individual Rates With Specified Rate Ratio
 //' @description Obtains the restricted maximum likelihood estimates of
 //' individual proportions with specified rate ratio.
 //'
@@ -5882,7 +5881,7 @@ DataFrame remlRateRatio2(const double rateRatioH0 = 1.0,
 }
 
 
-//' @title Miettinen-Nurminen score test statistic for two-sample rate ratio
+//' @title Miettinen-Nurminen Score Test Statistic for Two-Sample Rate Ratio
 //' @description Obtains the Miettinen-Nurminen score test statistic for
 //' two-sample rate ratio possibly with stratification.
 //'
@@ -5933,8 +5932,8 @@ double zstatRateRatio(const double rateRatioH0 = 1.0,
 }
 
 
-//' @title Miettinen-Nurminen score confidence interval for
-//' two-sample rate ratio
+//' @title Miettinen-Nurminen Score Confidence Interval for
+//' Two-Sample Rate Ratio
 //' @description Obtains the Miettinen-Nurminen score confidence
 //' interval for two-sample rate ratio possibly with
 //' stratification.
@@ -6085,7 +6084,7 @@ List mnRateRatioCI(const NumericVector& t1,
 }
 
 
-//' @title Power for exact unconditional test of risk difference
+//' @title Power for Exact Unconditional Test of Risk Difference
 //' @description Obtains the power given sample size for exact unconditional
 //' test of risk difference.
 //'
@@ -6351,7 +6350,7 @@ DataFrame powerRiskDiffExact(
 }
 
 
-//' @title Sample size for exact unconditional test of risk difference
+//' @title Sample Size for Exact Unconditional Test of Risk Difference
 //' @description Obtains the sample size given power for exact unconditional
 //' test of risk difference.
 //'
@@ -6395,7 +6394,7 @@ DataFrame powerRiskDiffExact(
 //'
 //' @examples
 //'
-//' samplesizeRiskDiffExact(beta = 0.2, riskDiffH0 = -0.2,
+//' samplesizeRiskDiffExact(beta = 0.2, riskDiffH0 = -0.3,
 //'                         pi1 = 0.8, pi2 = 0.8, alpha = 0.025)
 //'
 //' @export
@@ -6418,8 +6417,8 @@ DataFrame samplesizeRiskDiffExact(
   double z1 = R::qnorm(1-beta, 0, 1, 1, 0);
   double theta = fabs(pi1 - pi2 - riskDiffH0);
   double n0 = pow(z0*sqrt(v0) + z1*sqrt(v1), 2)/pow(theta, 2);
-  int n_lower = static_cast<int>(floor(n0));
-  int n_upper = static_cast<int>(ceil(10*n0)), n;
+  int n_lower = static_cast<int>(std::floor(n0));
+  int n_upper = static_cast<int>(std::ceil(10*n0)), n;
 
   DataFrame a, b;
   a = powerRiskDiffExact(n_lower, riskDiffH0, pi1, pi2,
@@ -6463,7 +6462,7 @@ DataFrame samplesizeRiskDiffExact(
 }
 
 
-//' @title Power for exact unconditional test of risk ratio
+//' @title Power for Exact Unconditional Test of Risk Ratio
 //' @description Obtains the power given sample size for exact unconditional
 //' test of risk ratio.
 //'
@@ -6730,7 +6729,7 @@ DataFrame powerRiskRatioExact(
 }
 
 
-//' @title Sample size for exact unconditional test of risk ratio
+//' @title Sample Size for Exact Unconditional Test of Risk Ratio
 //' @description Obtains the sample size given power for exact unconditional
 //' test of risk ratio.
 //'
@@ -6774,8 +6773,8 @@ DataFrame powerRiskRatioExact(
 //'
 //' @examples
 //'
-//' samplesizeRiskRatioExact(beta = 0.2, riskRatioH0 = 0.833,
-//'                          pi1 = 0.9, pi2 = 0.9, alpha = 0.05)
+//' samplesizeRiskRatioExact(beta = 0.2, riskRatioH0 = 0.8,
+//'                          pi1 = 0.95, pi2 = 0.95, alpha = 0.05)
 //'
 //' @export
 // [[Rcpp::export]]
@@ -6797,8 +6796,8 @@ DataFrame samplesizeRiskRatioExact(
   double z1 = R::qnorm(1-beta, 0, 1, 1, 0);
   double theta = fabs(log(pi1/pi2)- log(riskRatioH0));
   double n0 = pow(z0*sqrt(v0) + z1*sqrt(v1), 2)/pow(theta, 2);
-  int n_lower = static_cast<int>(floor(n0));
-  int n_upper = static_cast<int>(ceil(10*n0)), n;
+  int n_lower = static_cast<int>(std::floor(n0));
+  int n_upper = static_cast<int>(std::ceil(10*n0)), n;
 
   DataFrame a, b;
   a = powerRiskRatioExact(n_lower, riskRatioH0, pi1, pi2,
@@ -6841,8 +6840,8 @@ DataFrame samplesizeRiskRatioExact(
 }
 
 
-//' @title Power for exact unconditional test of equivalence in risk
-//' difference
+//' @title Power for Exact Unconditional Test of Equivalence in Risk
+//' Difference
 //' @description Obtains the power given sample size for exact unconditional
 //' test of equivalence in risk difference.
 //'
@@ -7222,8 +7221,8 @@ DataFrame powerRiskDiffExactEquiv(
 }
 
 
-//' @title Sample size for exact unconditional test of equivalence in risk
-//' difference
+//' @title Sample Size for Exact Unconditional Test of Equivalence in Risk
+//' Difference
 //' @description Obtains the sample size given power for exact unconditional
 //' test of equivalence in risk difference.
 //'
@@ -7276,7 +7275,7 @@ DataFrame powerRiskDiffExactEquiv(
 //'
 //' samplesizeRiskDiffExactEquiv(
 //'   beta = 0.2, riskDiffLower = -0.3, riskDiffUpper = 0.3,
-//'   pi1 = 0.85, pi2 = 0.85, alpha = 0.05)
+//'   pi1 = 0.9, pi2 = 0.9, alpha = 0.05)
 //'
 //' @export
 // [[Rcpp::export]]
@@ -7297,8 +7296,8 @@ DataFrame samplesizeRiskDiffExactEquiv(
   double z0 = R::qnorm(1-alpha, 0, 1, 1, 0);
   double z1 = R::qnorm(1-beta, 0, 1, 1, 0);
   double n0 = pow(z0 + z1, 2)*v1/pow(theta, 2);
-  int n_lower = static_cast<int>(floor(n0));
-  int n_upper = static_cast<int>(ceil(10*n0)), n;
+  int n_lower = static_cast<int>(std::floor(n0));
+  int n_upper = static_cast<int>(std::ceil(10*n0)), n;
 
   DataFrame a, b;
   a = powerRiskDiffExactEquiv(n_lower, riskDiffLower, riskDiffUpper,
@@ -7341,8 +7340,8 @@ DataFrame samplesizeRiskDiffExactEquiv(
 }
 
 
-//' @title Power for exact unconditional test of equivalence in risk
-//' ratio
+//' @title Power for Exact Unconditional Test of Equivalence in Risk
+//' Ratio
 //' @description Obtains the power given sample size for exact unconditional
 //' test of equivalence in risk ratio.
 //'
@@ -7721,8 +7720,8 @@ DataFrame powerRiskRatioExactEquiv(
 }
 
 
-//' @title Sample size for exact unconditional test of equivalence in risk
-//' ratio
+//' @title Sample Size for Exact Unconditional Test of Equivalence in Risk
+//' Ratio
 //' @description Obtains the sample size given power for exact unconditional
 //' test of equivalence in risk ratio.
 //'
@@ -7775,7 +7774,7 @@ DataFrame powerRiskRatioExactEquiv(
 //'
 //' samplesizeRiskRatioExactEquiv(
 //'   beta = 0.2, riskRatioLower = 0.7, riskRatioUpper = 1/0.7,
-//'   pi1 = 0.85, pi2 = 0.85, alpha = 0.05)
+//'   pi1 = 0.95, pi2 = 0.95, alpha = 0.05)
 //'
 //' @export
 // [[Rcpp::export]]
@@ -7796,8 +7795,8 @@ DataFrame samplesizeRiskRatioExactEquiv(
   double z0 = R::qnorm(1-alpha, 0, 1, 1, 0);
   double z1 = R::qnorm(1-beta, 0, 1, 1, 0);
   double n0 = pow(z0 + z1, 2)*v1/pow(theta, 2);
-  int n_lower = static_cast<int>(floor(n0));
-  int n_upper = static_cast<int>(ceil(10*n0)), n;
+  int n_lower = static_cast<int>(std::floor(n0));
+  int n_upper = static_cast<int>(std::ceil(10*n0)), n;
 
   DataFrame a, b;
   a = powerRiskRatioExactEquiv(n_lower, riskRatioLower, riskRatioUpper,
@@ -7842,7 +7841,7 @@ DataFrame samplesizeRiskRatioExactEquiv(
 
 
 
-//' @title P-value for exact unconditional test of risk difference
+//' @title P-Value for Exact Unconditional Test of Risk Difference
 //' @description Obtains the p-value for exact unconditional
 //' test of risk difference.
 //'
@@ -7965,7 +7964,7 @@ DataFrame riskDiffExactPValue(
 
 
 
-//' @title Exact unconditional confidence interval for risk difference
+//' @title Exact Unconditional Confidence Interval for Risk Difference
 //' @description Obtains the exact unconditional confidence interval for
 //' risk difference based on the standardized score statistic.
 //'
@@ -7991,7 +7990,7 @@ DataFrame riskDiffExactPValue(
 //'
 //' @examples
 //'
-//' riskDiffExactCI(n1 = 68, y1 = 2, n2 = 65, y2 = 1, cilevel = 0.95)
+//' riskDiffExactCI(n1 = 30, y1 = 2, n2 = 30, y2 = 1, cilevel = 0.95)
 //'
 //' @export
 // [[Rcpp::export]]
@@ -8032,7 +8031,7 @@ DataFrame riskDiffExactCI(
 
 
 
-//' @title P-value for exact unconditional test of risk ratio
+//' @title P-Value for Exact Unconditional Test of Risk Ratio
 //' @description Obtains the p-value for exact unconditional
 //' test of risk ratio.
 //'
@@ -8155,7 +8154,7 @@ DataFrame riskRatioExactPValue(
 }
 
 
-//' @title Exact unconditional confidence interval for risk ratio
+//' @title Exact Unconditional Confidence Interval for Risk Ratio
 //' @description Obtains the exact unconditional confidence interval for
 //' risk ratio based on the standardized score statistic.
 //'
@@ -8181,7 +8180,7 @@ DataFrame riskRatioExactPValue(
 //'
 //' @examples
 //'
-//' riskRatioExactCI(n1 = 68, y1 = 2, n2 = 65, y2 = 1, cilevel = 0.95)
+//' riskRatioExactCI(n1 = 30, y1 = 2, n2 = 30, y2 = 1, cilevel = 0.95)
 //'
 //' @export
 // [[Rcpp::export]]

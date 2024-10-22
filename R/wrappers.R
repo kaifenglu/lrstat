@@ -1,4 +1,4 @@
-#' @title Error spending
+#' @title Error Spending
 #' @description Obtains the error spent at given spending times
 #' for the specified error spending function.
 #'
@@ -17,17 +17,19 @@
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
+#'
 #' errorSpent(t = 0.5, error = 0.025, sf = "sfOF")
+#'
 #' errorSpent(t = c(0.5, 0.75, 1), error = 0.025, sf = "sfHSD", sfpar = -4)
 #'
 #' @export
 errorSpent <- function(t, error, sf = "sfOF", sfpar = NA) {
-  sapply(t, errorSpentcpp, error, sf, sfpar)
+  sapply(t, errorSpentcpp, error = error, sf = sf, sfpar = sfpar)
 }
 
 
-#' @title Distribution function of truncated piecewise exponential
-#' distribution
+#' @title Distribution Function of Truncated Piecewise Exponential
+#' Distribution
 #' @description Obtains the probability of a truncated piecewise exponential
 #' distribution.
 #'
@@ -78,11 +80,13 @@ ptpwexp <- function(q, piecewiseSurvivalTime = 0, lambda = 0.0578,
     stop("lowerBound must be nonnegative")
   }
 
-  ptpwexpcpp(q, piecewiseSurvivalTime, lambda, lowerBound, lower.tail, log.p)
+  ptpwexpcpp(q = q, piecewiseSurvivalTime = piecewiseSurvivalTime,
+             lambda = lambda, lowerBound = lowerBound,
+             lowertail = lower.tail, logp = log.p)
 }
 
 
-#' @title Quantile function of truncated piecewise exponential distribution
+#' @title Quantile Function of Truncated Piecewise Exponential Distribution
 #' @description Obtains the quantile of a truncated piecewise exponential
 #' distribution.
 #'
@@ -132,12 +136,14 @@ qtpwexp <- function(p, piecewiseSurvivalTime = 0, lambda = 0.0578,
     stop("lowerBound must be nonnegative")
   }
 
-  qtpwexpcpp(p, piecewiseSurvivalTime, lambda, lowerBound, lower.tail, log.p)
+  qtpwexpcpp(p = p, piecewiseSurvivalTime = piecewiseSurvivalTime,
+             lambda = lambda, lowerBound = lowerBound,
+             lowertail = lower.tail, logp = log.p)
 }
 
 
-#' @title Random number generation function of truncated piecewise
-#' exponential distribution
+#' @title Random Number Generation Function of Truncated Piecewise
+#' Exponential Distribution
 #' @description Obtains random samples from a truncated piecewise
 #' exponential distribution.
 #'
@@ -184,11 +190,12 @@ rtpwexp <- function(n, piecewiseSurvivalTime = 0, lambda = 0.0578,
     stop("lowerBound must be nonnegative")
   }
 
-  rtpwexpcpp(n, piecewiseSurvivalTime, lambda, lowerBound)
+  rtpwexpcpp(n = n, piecewiseSurvivalTime = piecewiseSurvivalTime,
+             lambda = lambda, lowerBound = lowerBound)
 }
 
 
-#' @title Stagewise exit probabilities
+#' @title Stagewise Exit Probabilities
 #' @description Obtains the stagewise exit probabilities for both efficacy
 #' and futility stopping.
 #'
@@ -228,11 +235,11 @@ rtpwexp <- function(n, piecewiseSurvivalTime = 0, lambda = 0.0578,
 #'
 #' @export
 exitprob <- function(b, a = NA, theta = 0, I = NA) {
-  exitprobcpp(b, a, theta, I)
+  exitprobcpp(b = b, a = a, theta = theta, I = I)
 }
 
 
-#' @title Adjusted p-values for Bonferroni-based graphical approaches
+#' @title Adjusted p-Values for Bonferroni-Based Graphical Approaches
 #' @description Obtains the adjusted p-values for graphical approaches
 #' using weighted Bonferroni tests.
 #'
@@ -266,7 +273,7 @@ fadjpbon <- function(w, G, p) {
     p = matrix(p, ncol=m)
   }
 
-  x = fadjpboncpp(w, G, p)
+  x = fadjpboncpp(w = w, G = G, p = p)
   if (nrow(x) == 1) {
     x = as.vector(x)
   }
@@ -274,7 +281,7 @@ fadjpbon <- function(w, G, p) {
 }
 
 
-#' @title Adjusted p-values for Dunnett-based graphical approaches
+#' @title Adjusted p-Values for Dunnett-Based Graphical Approaches
 #' @description Obtains the adjusted p-values for graphical approaches
 #' using weighted Dunnett tests.
 #'
@@ -385,7 +392,7 @@ fadjpdun <- function(wgtmat, p, family = NULL, corr = NULL) {
 }
 
 
-#' @title Adjusted p-values for Simes-based graphical approaches
+#' @title Adjusted p-Values for Simes-Based Graphical Approaches
 #' @description Obtains the adjusted p-values for graphical approaches
 #' using weighted Simes tests.
 #'
@@ -432,7 +439,7 @@ fadjpsim <- function(wgtmat, p, family = NULL) {
     family = matrix(family, ncol = m)
   }
 
-  x = fadjpsimcpp(wgtmat, p, family)
+  x = fadjpsimcpp(wgtmat = wgtmat, p = p, family = family)
   if (nrow(x) == 1) {
     x = as.vector(x)
   }
@@ -440,7 +447,7 @@ fadjpsim <- function(wgtmat, p, family = NULL) {
 }
 
 
-#' @title Adjusted p-values for Holm, Hochberg, and Hommel procedures
+#' @title Adjusted p-Values for Holm, Hochberg, and Hommel Procedures
 #' @description Obtains the adjusted p-values for possibly truncated
 #' Holm, Hochberg, and Hommel procedures.
 #'
@@ -479,7 +486,7 @@ ftrunc <- function(p, test = "hommel", gamma = 1) {
     p = matrix(p, nrow=1)
   }
 
-  x = ftrunccpp(p, test, gamma)
+  x = ftrunccpp(p = p, test = test, gamma = gamma)
   if (nrow(x) == 1) {
     x = as.vector(x)
   }
@@ -487,7 +494,7 @@ ftrunc <- function(p, test = "hommel", gamma = 1) {
 }
 
 
-#' @title Repeated p-values for group sequential design
+#' @title Repeated p-Values for Group Sequential Design
 #' @description Obtains the repeated p-values for a group sequential design.
 #'
 #' @inheritParams param_kMax
@@ -500,7 +507,7 @@ ftrunc <- function(p, test = "hommel", gamma = 1) {
 #' @param information The observed information by look. It can be a matrix
 #'   with \code{k} columns.
 #' @param spendingTime The error spending time at each analysis, must be
-#'   increasing and less than or equal to 1. Defaults to NULL,
+#'   increasing and less than or equal to 1. Defaults to \code{NULL},
 #'   in which case, it is the same as \code{informationRates} derived from
 #'   \code{information} and \code{maxInformation}. It can be a matrix with
 #'   \code{k} columns.
@@ -556,8 +563,11 @@ repeatedPValue <- function(kMax,
     spendingTime1 = matrix(spendingTime, nrow=1)
   }
 
-  repp1 = repeatedPValuecpp(kMax, typeAlphaSpending, parameterAlphaSpending,
-                            maxInformation, p1, information1, spendingTime1)
+  repp1 = repeatedPValuecpp(
+    kMax = kMax, typeAlphaSpending = typeAlphaSpending,
+    parameterAlphaSpending = parameterAlphaSpending,
+    maxInformation = maxInformation, p = p1,
+    information = information1, spendingTime = spendingTime1)
 
   if (is.vector(p)) { # convert the result to a vector
     repp = c(repp1)
@@ -569,8 +579,8 @@ repeatedPValue <- function(kMax,
 }
 
 
-#' @title Group sequential trials using Bonferroni-based graphical
-#' approaches
+#' @title Group Sequential Trials Using Bonferroni-Based Graphical
+#' Approaches
 #'
 #' @description Obtains the test results for group sequential trials using
 #' graphical approaches based on weighted Bonferroni tests.
@@ -638,7 +648,6 @@ repeatedPValue <- function(kMax,
 #'
 #'
 #' @export
-# [[Rcpp::export]]
 fseqbon <- function(w, G, alpha = 0.025, kMax,
                     typeAlphaSpending = NULL,
                     parameterAlphaSpending = NULL,
@@ -667,14 +676,16 @@ fseqbon <- function(w, G, alpha = 0.025, kMax,
     spendingTime = matrix(0, 1, 1)
   }
 
-  fseqboncpp(w, G, alpha, kMax, typeAlphaSpending,
-             parameterAlphaSpending,
-             incidenceMatrix, maxInformation,
-             p, information, spendingTime)
+  fseqboncpp(w = w, G = G, alpha = alpha, kMax = kMax,
+             typeAlphaSpending = typeAlphaSpending,
+             parameterAlphaSpending = parameterAlphaSpending,
+             incidenceMatrix = incidenceMatrix,
+             maxInformation = maxInformation, p = p,
+             information = information, spendingTime = spendingTime)
 }
 
 
-#' @title Adjusted p-values for stepwise testing procedures for two sequences
+#' @title Adjusted p-Values for Stepwise Testing Procedures for Two Sequences
 #' @description Obtains the adjusted p-values for the stepwise gatekeeping
 #' procedures for multiplicity problems involving two sequences of
 #' hypotheses.
@@ -684,7 +695,7 @@ fseqbon <- function(w, G, alpha = 0.025, kMax,
 #'   parameter for the last family is automatically set to 1.
 #' @param test The component multiple testing procedure. It is either "Holm"
 #'   or "Hochberg", and it defaults to "Hochberg".
-#' @param retest Whether to allow retesting. It defaults to TRUE.
+#' @param retest Whether to allow retesting. It defaults to \code{TRUE}.
 #'
 #' @return A matrix of adjusted p-values.
 #'
@@ -725,14 +736,14 @@ fstp2seq <- function(p, gamma, test="hochberg", retest=TRUE) {
     stop("test must be either Holm or Hochberg")
   }
 
-  x = fstp2seqcpp(p, gamma, test, retest)
+  x = fstp2seqcpp(p = p, gamma = gamma, test = test, retest = retest)
   if (nrow(x) == 1) {
     x = as.vector(x)
   }
   x
 }
 
-#' @title Adjusted p-values for standard mixture gatekeeping procedures
+#' @title Adjusted p-Values for Standard Mixture Gatekeeping Procedures
 #' @description Obtains the adjusted p-values for the standard gatekeeping
 #' procedures for multiplicity problems involving serial and parallel
 #' logical restrictions.
@@ -746,7 +757,7 @@ fstp2seq <- function(p, gamma, test="hochberg", retest=TRUE) {
 #' @param test The component multiple testing procedure. Options include
 #'   "holm", "hochberg", or "hommel". Defaults to "hommel".
 #' @param exhaust Whether to use alpha-exhausting component testing procedure
-#'   for the last family with active hypotheses. It defaults to TRUE.
+#'   for the last family with active hypotheses. It defaults to \code{TRUE}.
 #'
 #' @return A matrix of adjusted p-values.
 #'
@@ -778,11 +789,12 @@ fstp2seq <- function(p, gamma, test="hochberg", retest=TRUE) {
 #'
 #' parallel = matrix(0, 8, 8)
 #' gamma = c(0.6, 0.6, 0.6, 1)
-#' fstdmix(p, family, serial, parallel, gamma, test = "hommel", exhaust = 0)
+#' fstdmix(p, family, serial, parallel, gamma, test = "hommel",
+#'         exhaust = FALSE)
 #'
 #' @export
 fstdmix <- function(p, family = NULL, serial, parallel,
-                    gamma, test = "hommel", exhaust = 1) {
+                    gamma, test = "hommel", exhaust = TRUE) {
   if (!is.matrix(p)) {
     p = matrix(p, nrow=1)
   }
@@ -839,7 +851,10 @@ fstdmix <- function(p, family = NULL, serial, parallel,
     stop("test must be either Holm, Hochberg, or Hommel")
   }
 
-  x = fstdmixcpp(p, family, serial, parallel, gamma, test, exhaust)
+  x = fstdmixcpp(p = p, family = family, serial = serial,
+                 parallel = parallel, gamma = gamma, test = test,
+                 exhaust = exhaust)
+
   if (nrow(x) == 1) {
     x = as.vector(x)
   }
@@ -847,7 +862,7 @@ fstdmix <- function(p, family = NULL, serial, parallel,
 }
 
 
-#' @title Adjusted p-values for modified mixture gatekeeping procedures
+#' @title Adjusted p-Values for Modified Mixture Gatekeeping Procedures
 #' @description Obtains the adjusted p-values for the modified gatekeeping
 #' procedures for multiplicity problems involving serial and parallel
 #' logical restrictions.
@@ -861,7 +876,7 @@ fstdmix <- function(p, family = NULL, serial, parallel,
 #' @param test The component multiple testing procedure. Options include
 #'   "holm", "hochberg", or "hommel". Defaults to "hommel".
 #' @param exhaust Whether to use alpha-exhausting component testing procedure
-#'   for the last family with active hypotheses. It defaults to TRUE.
+#'   for the last family with active hypotheses. It defaults to \code{TRUE}.
 #'
 #' @return A matrix of adjusted p-values.
 #'
@@ -899,11 +914,11 @@ fstdmix <- function(p, family = NULL, serial, parallel,
 #'
 #' parallel = matrix(0, 8, 8)
 #' gamma = c(0.6, 0.6, 0.6, 1)
-#' fmodmix(p, family, serial, parallel, gamma, test = "hommel", exhaust = 1)
+#' fmodmix(p, family, serial, parallel, gamma, test = "hommel", exhaust = TRUE)
 #'
 #' @export
 fmodmix <- function(p, family = NULL, serial, parallel,
-                    gamma, test = "hommel", exhaust = 1) {
+                    gamma, test = "hommel", exhaust = TRUE) {
   if (!is.matrix(p)) {
     p = matrix(p, nrow=1)
   }
@@ -960,7 +975,10 @@ fmodmix <- function(p, family = NULL, serial, parallel,
     stop("test must be either Holm, Hochberg, or Hommel")
   }
 
-  x = fmodmixcpp(p, family, serial, parallel, gamma, test, exhaust)
+  x = fmodmixcpp(p = p, family = family, serial = serial,
+                 parallel = parallel, gamma = gamma, test = test,
+                 exhaust = exhaust)
+
   if (nrow(x) == 1) {
     x = as.vector(x)
   }
@@ -969,7 +987,7 @@ fmodmix <- function(p, family = NULL, serial, parallel,
 
 
 
-#' @title Efficacy boundaries for group sequential design
+#' @title Efficacy Boundaries for Group Sequential Design
 #' @description Obtains the efficacy stopping boundaries for a group
 #' sequential design.
 #'
@@ -1004,8 +1022,1398 @@ getBound <- function(k = NA, informationRates = NA, alpha = 0.025,
                      typeAlphaSpending = "sfOF", parameterAlphaSpending = NA,
                      userAlphaSpending = NA, spendingTime = NA,
                      efficacyStopping = NA) {
-  getBoundcpp(k, informationRates, alpha,
-              typeAlphaSpending, parameterAlphaSpending,
-              userAlphaSpending, spendingTime,
-              efficacyStopping)
+  getBoundcpp(k = k, informationRates = informationRates, alpha = alpha,
+              typeAlphaSpending = typeAlphaSpending,
+              parameterAlphaSpending = parameterAlphaSpending,
+              userAlphaSpending = userAlphaSpending,
+              spendingTime = spendingTime,
+              efficacyStopping = efficacyStopping)
 }
+
+
+#' @title Parametric Regression Models for Failure Time Data
+#' @description Obtains the parameter estimates from parametric
+#' regression models with uncensored, right censored, left censored, or
+#' interval censored data.
+#'
+#' @param data The input data frame that contains the following variables:
+#'
+#'   * \code{rep}: The replication for by-group processing.
+#'
+#'   * \code{stratum}: The stratum.
+#'
+#'   * \code{time}: The follow-up time for right censored data, or
+#'     the left end of each interval for interval censored data.
+#'
+#'   * \code{time2}: The right end of each interval for interval
+#'     censored data.
+#'
+#'   * \code{event}: The event indicator, 1=event, 0=no event.
+#'
+#'   * \code{covariates}: The values of baseline covariates.
+#'
+#'   * \code{weight}: The weight for each observation.
+#'
+#'   * \code{offset}: The offset for each observation.
+#'
+#'   * \code{id}: The optional subject ID to group the score residuals
+#'     in computing the robust sandwich variance.
+#'
+#' @param rep The name(s) of the replication variable(s) in the input data.
+#' @param stratum The name(s) of the stratum variable(s) in the input data.
+#' @param time The name of the time variable or the left end of each
+#'   interval for interval censored data in the input data.
+#' @param time2 The name of the right end of each interval for
+#'   interval censored data in the input data.
+#' @param event The name of the event variable in the input data
+#'   for right censored data.
+#' @param covariates The vector of names of baseline covariates
+#'   in the input data.
+#' @param weight The name of the weight variable in the input data.
+#' @param offset The name of the offset variable in the input data.
+#' @param id The name of the id variable in the input data.
+#' @param dist The assumed distribution for time to event. Options include
+#'   "exponential", "weibull", "lognormal", and "loglogistic" to be
+#'   modeled on the log-scale, and "normal" and "logistic" to be modeled
+#'   on the original scale.
+#' @param robust Whether a robust sandwich variance estimate should be
+#'   computed. In the presence of the id variable, the score residuals
+#'   will be aggregated for each id when computing the robust sandwich
+#'   variance estimate.
+#' @param plci Whether to obtain profile likelihood confidence interval.
+#' @param alpha The two-sided significance level.
+#'
+#' @details There are two ways to specify the model, one for right censored
+#' data through the time and event variables, and the other for interval
+#' censored data through the time (lower) and time2 (upper) variables.
+#' For the second form, we follow the convention used in SAS PROC LIFEREG:
+#'
+#' * If lower is not missing, upper is not missing, and lower is equal
+#'   to upper, then there is no censoring and the event occurred at
+#'   time lower.
+#'
+#' * If lower is not missing, upper is not missing, and lower < upper,
+#'   then the event time is censored within the interval (lower, upper).
+#'
+#' * If lower is missing, but upper is not missing, then upper will be
+#'   used as the left censoring value.
+#'
+#' * If lower is not missing, but upper is missing, then lower will be
+#'   used as the right censoring value.
+#'
+#' * If lower is not missing, upper is not missing, but lower > upper,
+#'   or if both lower and upper are missing, then the observation will
+#'   not be used.
+#'
+#' @return A list with the following components:
+#'
+#' * \code{sumstat}: The data frame of summary statistics of model fit
+#'   with the following variables:
+#'
+#'     - \code{n}: The number of observations.
+#'
+#'     - \code{nevents}: The number of events.
+#'
+#'     - \code{loglik0}: The log-likelihood under null.
+#'
+#'     - \code{loglik1}: The maximum log-likelihood.
+#'
+#'     - \code{niter}: The number of Newton-Raphson iterations.
+#'
+#'     - \code{dist}: The assumed distribution.
+#'
+#'     - \code{p}: The number of parameters, including the intercept,
+#'       regression coefficients associated with the covariates, and
+#'       the log scale parameters for the strata.
+#'
+#'     - \code{nvar}: The number of regression coefficients associated
+#'       with the covariates (excluding the intercept).
+#'
+#'     - \code{robust}: Whether the robust sandwich variance estimate
+#'       is requested.
+#'
+#'     - \code{rep}: The replication.
+#'
+#' * \code{parest}: The data frame of parameter estimates with the
+#'   following variables:
+#'
+#'     - \code{param}: The name of the covariate for the parameter estimate.
+#'
+#'     - \code{beta}: The parameter estimate.
+#'
+#'     - \code{sebeta}: The standard error of parameter estimate.
+#'
+#'     - \code{z}: The Wald test statistic for the parameter.
+#'
+#'     - \code{expbeta}: The exponentiated parameter estimate.
+#'
+#'     - \code{vbeta}: The covariance matrix for parameter estimates.
+#'
+#'     - \code{lower}: The lower limit of confidence interval.
+#'
+#'     - \code{upper}: The upper limit of confidence interval.
+#'
+#'     - \code{p}: The p-value from the chi-square test.
+#'
+#'     - \code{method}: The method to compute the confidence interval and
+#'       p-value.
+#'
+#'     - \code{sebeta_naive}: The naive standard error of parameter estimate
+#'       if robust variance is requested.
+#'
+#'     - \code{vbeta_naive}: The naive covariance matrix for parameter
+#'       estimates if robust variance is requested.
+#'
+#'     - \code{rep}: The replication.
+#'
+#' * \code{p}: The number of parameters.
+#'
+#' * \code{nvar}: The number of columns of the design matrix excluding
+#'   the intercept.
+#'
+#' * \code{param}: The parameter names.
+#'
+#' * \code{beta}: The parameter estimate.
+#'
+#' * \code{vbeta}: The covariance matrix for parameter estimates.
+#'
+#' * \code{vbeta_naive}: The naive covariance matrix for parameter estimates.
+#'
+#' * \code{terms}: The terms object.
+#'
+#' * \code{xlevels}: A record of the levels of the factors used in fitting.
+#'
+#' * \code{data}: The input data.
+#'
+#' * \code{rep}: The name(s) of the replication variable(s).
+#'
+#' * \code{stratum}: The name(s) of the stratum variable(s).
+#'
+#' * \code{time}: The name of the time variable.
+#'
+#' * \code{time2}: The name of the time2 variable.
+#'
+#' * \code{event}: The name of the event variable.
+#'
+#' * \code{covariates}: The names of baseline covariates.
+#'
+#' * \code{weight}: The name of the weight variable.
+#'
+#' * \code{offset}: The name of the offset variable.
+#'
+#' * \code{id}: The name of the id variable.
+#'
+#' * \code{dist}: The assumed distribution for time to event.
+#'
+#' * \code{robust}: Whether a robust sandwich variance estimate should be
+#'   computed.
+#'
+#' * \code{plci}: Whether to obtain profile likelihood confidence interval.
+#'
+#' * \code{alpha}: The two-sided significance level.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#' John D. Kalbfleisch and Ross L. Prentice.
+#' The Statistical Analysis of Failure Time Data.
+#' Wiley: New York, 1980.
+#'
+#' @examples
+#'
+#' library(dplyr)
+#'
+#' # right censored data
+#' (fit1 <- liferegr(
+#'   data = rawdata %>% mutate(treat = 1*(treatmentGroup == 1)),
+#'   rep = "iterationNumber", stratum = "stratum",
+#'   time = "timeUnderObservation", event = "event",
+#'   covariates = "treat", dist = "weibull"))
+#'
+#' # tobit regression for left censored data
+#' (fit2 <- liferegr(
+#'   data = tobin %>% mutate(time = ifelse(durable>0, durable, NA)),
+#'   time = "time", time2 = "durable",
+#'   covariates = c("age", "quant"), dist = "normal"))
+#'
+#' @export
+liferegr <- function(data, rep = "", stratum = "",
+                     time = "time", time2 = "", event = "event",
+                     covariates = "", weight = "", offset = "",
+                     id = "", dist = "weibull", robust = FALSE,
+                     plci = FALSE, alpha = 0.05) {
+  rownames(data) = NULL
+
+  elements = c(rep, stratum, covariates, weight, offset, id)
+  elements = unique(elements[elements != "" & elements != "none"])
+  if (!(length(elements) == 0)) {
+    mf = model.frame(formula(paste("~", paste(elements, collapse = "+"))),
+                     data = data)
+  } else {
+    mf = model.frame(formula("~1"), data = data)
+  }
+
+  rownum = as.integer(rownames(mf))
+  df = data[rownum,]
+
+  nvar = length(covariates)
+  if (missing(covariates) || is.null(covariates) || (nvar == 1 && (
+    covariates[1] == "" || tolower(covariates[1]) == "none"))) {
+    t1 = terms(formula("~1"))
+    p = 0
+  } else {
+    t1 = terms(formula(paste("~", paste(covariates, collapse = "+"))))
+    t2 = attr(t1, "factors")
+    t3 = rownames(t2)
+    p = length(t3)
+  }
+
+  if (p >= 1) {
+    mf = model.frame(t1, df)
+    xlevels = mf$xlev
+    mm = model.matrix(t1, mf)
+    param = colnames(mm)
+    colnames(mm) = make.names(colnames(mm))
+    varnames = colnames(mm)[-1]
+    for (i in 1:length(varnames)) {
+      if (!(varnames[i] %in% names(df))) {
+        df[,varnames[i]] = mm[,varnames[i]]
+      }
+    }
+  } else {
+    xlevels = NULL
+    param = "(Intercept)"
+    varnames = ""
+  }
+
+  fit <- liferegcpp(data = df, rep = rep, stratum = stratum, time = time,
+                    time2 = time2, event = event, covariates = varnames,
+                    weight = weight, offset = offset, id = id, dist = dist,
+                    robust = robust, plci = plci, alpha = alpha)
+
+  fit$p <- fit$sumstat$p[1]
+  fit$nvar <- fit$sumstat$nvar[1]
+
+  if (fit$p > 0) {
+    par = fit$parest$param[1:fit$p]
+    if (length(par) > length(param)) {
+      fit$param = c(param, par[(1+length(param)):length(par)])
+    } else {
+      fit$param = param
+    }
+
+    fit$beta = fit$parest$beta
+    names(fit$beta) = rep(fit$param, length(fit$beta)/fit$p)
+
+    if (fit$p > 1) {
+      fit$vbeta = as.matrix(fit$parest[, paste0("vbeta.", 1:fit$p)])
+      if (robust) {
+        fit$vbeta_naive = as.matrix(fit$parest[, paste0("vbeta_naive.",
+                                                        1:fit$p)])
+      }
+    } else {
+      fit$vbeta = as.matrix(fit$parest[, "vbeta"])
+      if (robust) {
+        fit$vbeta_naive = as.matrix(fit$parest[, "vbeta_naive"])
+      }
+    }
+
+    dimnames(fit$vbeta) = list(names(fit$beta), fit$param)
+    if (robust) {
+      dimnames(fit$vbeta_naive) = list(names(fit$beta), fit$param)
+    }
+  }
+
+  fit$terms = t1
+  if (fit$p > 0) fit$xlevels = xlevels
+
+  fit$data = data
+  fit$rep = rep
+  fit$stratum = stratum
+  fit$time = time
+  fit$time2 = time2
+  fit$event = event
+  fit$covariates = covariates
+  fit$weight = weight
+  fit$offset = offset
+  fit$id = id
+  fit$dist = dist
+  fit$robust = robust
+  fit$plci = plci
+  fit$alpha = alpha
+
+  class(fit) = "liferegr"
+  fit
+}
+
+
+#' @title Proportional Hazards Regression Models
+#' @description Obtains the hazard ratio estimates from the proportional
+#' hazards regression model with right censored or counting process data.
+#'
+#' @param data The input data frame that contains the following variables:
+#'
+#'   * \code{rep}: The replication for by-group processing.
+#'
+#'   * \code{stratum}: The stratum.
+#'
+#'   * \code{time}: The follow-up time for right censored data, or
+#'     the left end of each interval for counting process data.
+#'
+#'   * \code{time2}: The right end of each interval for counting process
+#'     data. Intervals are assumed to be open on the left
+#'     and closed on the right, and event indicates whether an event
+#'     occurred at the right end of each interval.
+#'
+#'   * \code{event}: The event indicator, 1=event, 0=no event.
+#'
+#'   * \code{covariates}: The values of baseline covariates (and
+#'     time-dependent covariates in each interval for counting
+#'     process data).
+#'
+#'   * \code{weight}: The weight for each observation.
+#'
+#'   * \code{offset}: The offset for each observation.
+#'
+#'   * \code{id}: The optional subject ID for counting process data
+#'     with time-dependent covariates.
+#'
+#' @param rep The name(s) of the replication variable(s) in the input data.
+#' @param stratum The name(s) of the stratum variable(s) in the input data.
+#' @param time The name of the time variable or the left end of each
+#'   interval for counting process data in the input data.
+#' @param time2 The name of the right end of each interval for counting
+#'   process data in the input data.
+#' @param event The name of the event variable in the input data.
+#' @param covariates The vector of names of baseline and time-dependent
+#'   covariates in the input data.
+#' @param weight The name of the weight variable in the input data.
+#' @param offset The name of the offset variable in the input data.
+#' @param id The name of the id variable in the input data.
+#' @param ties The method for handling ties, either "breslow" or
+#'   "efron" (default).
+#' @param robust Whether a robust sandwich variance estimate should be
+#'   computed. In the presence of the id variable, the score residuals
+#'   will be aggregated for each id when computing the robust sandwich
+#'   variance estimate.
+#' @param est_basehaz Whether to estimate the baseline hazards.
+#'   Defaults to \code{TRUE}.
+#' @param est_resid Whether to estimate the martingale residuals.
+#'   Defaults to \code{TRUE}.
+#' @param firth Whether to use Firth’s penalized likelihood method.
+#'   Defaults to \code{FALSE}.
+#' @param plci Whether to obtain profile likelihood confidence interval.
+#' @param alpha The two-sided significance level.
+#'
+#' @return A list with the following components:
+#'
+#' * \code{sumstat}: The data frame of summary statistics of model fit
+#'   with the following variables:
+#'
+#'     - \code{n}: The number of observations.
+#'
+#'     - \code{nevents}: The number of events.
+#'
+#'     - \code{loglik0}: The (penalized) log-likelihood under null.
+#'
+#'     - \code{loglik1}: The maximum (penalized) log-likelihood.
+#'
+#'     - \code{scoretest}: The score test statistic.
+#'
+#'     - \code{niter}: The number of Newton-Raphson iterations.
+#'
+#'     - \code{ties}: The method for handling ties, either "breslow" or
+#'       "efron".
+#'
+#'     - \code{p}: The number of columns of the Cox model design matrix.
+#'
+#'     - \code{robust}: Whether to use the robust variance estimate.
+#'
+#'     - \code{firth}: Whether to use Firth's penalized likelihood method.
+#'
+#'     - \code{loglik0_unpenalized}: The unpenalized log-likelihood under null.
+#'
+#'     - \code{loglik1_unpenalized}: The maximum unpenalized log-likelihood.
+#'
+#'     - \code{rep}: The replication.
+#'
+#' * \code{parest}: The data frame of parameter estimates with the
+#'   following variables:
+#'
+#'     - \code{param}: The name of the covariate for the parameter estimate.
+#'
+#'     - \code{beta}: The log hazard ratio estimate.
+#'
+#'     - \code{sebeta}: The standard error of log hazard ratio estimate.
+#'
+#'     - \code{z}: The Wald test statistic for log hazard ratio.
+#'
+#'     - \code{expbeta}: The hazard ratio estimate.
+#'
+#'     - \code{vbeta}: The covariance matrix for parameter estimates.
+#'
+#'     - \code{lower}: The lower limit of confidence interval.
+#'
+#'     - \code{upper}: The upper limit of confidence interval.
+#'
+#'     - \code{p}: The p-value from the chi-square test.
+#'
+#'     - \code{method}: The method to compute the confidence interval and
+#'       p-value.
+#'
+#'     - \code{sebeta_naive}: The naive standard error of log hazard ratio
+#'       estimate if robust variance is requested.
+#'
+#'     - \code{vbeta_naive}: The naive covariance matrix for parameter
+#'       estimates if robust variance is requested.
+#'
+#'     - \code{rep}: The replication.
+#'
+#' * \code{basehaz}: The data frame of baseline hazards with the following
+#'   variables (if est_basehaz is TRUE):
+#'
+#'     - \code{time}: The observed event time.
+#'
+#'     - \code{nrisk}: The number of patients at risk at the time point.
+#'
+#'     - \code{nevent}: The number of events at the time point.
+#'
+#'     - \code{haz}: The baseline hazard at the time point.
+#'
+#'     - \code{varhaz}: The variance of the baseline hazard at the time point
+#'       assuming the parameter beta is known.
+#'
+#'     - \code{gradhaz}: The gradient of the baseline hazard with respect to
+#'       beta at the time point (in the presence of covariates).
+#'
+#'     - \code{stratum}: The stratum.
+#'
+#'     - \code{rep}: The replication.
+#'
+#' * \code{residuals}: The martingale residuals.
+#'
+#' * \code{p}: The number of parameters.
+#'
+#' * \code{param}: The parameter names.
+#'
+#' * \code{beta}: The parameter estimate.
+#'
+#' * \code{vbeta}: The covariance matrix for parameter estimates.
+#'
+#' * \code{vbeta_naive}: The naive covariance matrix for parameter estimates.
+#'
+#' * \code{terms}: The terms object.
+#'
+#' * \code{xlevels}: A record of the levels of the factors used in fitting.
+#'
+#' * \code{data}: The input data.
+#'
+#' * \code{rep}: The name(s) of the replication variable(s).
+#'
+#' * \code{stratum}: The name(s) of the stratum variable(s).
+#'
+#' * \code{time}: The name of the time varaible.
+#'
+#' * \code{time2}: The name of the time2 variable.
+#'
+#' * \code{event}: The name of the event variable.
+#'
+#' * \code{covariates}: The names of baseline covariates.
+#'
+#' * \code{weight}: The name of the weight variable.
+#'
+#' * \code{offset}: The name of the offset variable.
+#'
+#' * \code{id}: The name of the id variable.
+#'
+#' * \code{ties}: The method for handling ties.
+#'
+#' * \code{robust}: Whether a robust sandwich variance estimate should be
+#'   computed.
+#'
+#' * \code{est_basehaz}: Whether to estimate the baseline hazards.
+#'
+#' * \code{est_resid}: Whether to estimate the martingale residuals.
+#'
+#' * \code{firth}: Whether to use Firth's penalized likelihood method.
+#'
+#' * \code{plci}: Whether to obtain profile likelihood confidence interval.
+#'
+#' * \code{alpha}: The two-sided significance level.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#' Per K. Anderson and Richard D. Gill.
+#' Cox's regression model for counting processes, a large sample study.
+#' Annals of Statistics 1982; 10:1100-1120.
+#'
+#' Terry M. Therneau and Patricia M. Grambsch.
+#' Modeling Survival Data: Extending the Cox Model.
+#' Springer-Verlag, 2000.
+#'
+#' @examples
+#'
+#' library(dplyr)
+#'
+#' # Example 1 with right-censored data
+#' (fit1 <- phregr(
+#'   data = rawdata %>% mutate(treat = 1*(treatmentGroup == 1)),
+#'   rep = "iterationNumber", stratum = "stratum",
+#'   time = "timeUnderObservation", event = "event",
+#'   covariates = "treat", est_basehaz = FALSE, est_resid = FALSE))
+#'
+#' # Example 2 with counting process data and robust variance estimate
+#' (fit2 <- phregr(
+#'   data = heart %>% mutate(rx = as.numeric(transplant) - 1),
+#'   time = "start", time2 = "stop", event = "event",
+#'   covariates = c("rx", "age"), id = "id",
+#'   robust = TRUE, est_basehaz = TRUE, est_resid = TRUE))
+#'
+#' @export
+phregr <- function(data, rep = "", stratum = "",
+                   time = "time", time2 = "", event = "event",
+                   covariates = "", weight = "", offset = "",
+                   id = "", ties = "efron", robust = FALSE,
+                   est_basehaz = TRUE, est_resid = TRUE, firth = FALSE,
+                   plci = FALSE, alpha = 0.05) {
+
+  rownames(data) = NULL
+
+  elements = c(rep, stratum, time, event, covariates, weight, offset, id)
+  elements = unique(elements[elements != "" & elements != "none"])
+  mf = model.frame(formula(paste("~", paste(elements, collapse = "+"))),
+                   data = data)
+  rownum = as.integer(rownames(mf))
+  df = data[rownum,]
+
+  nvar = length(covariates)
+  if (missing(covariates) || is.null(covariates) || (nvar == 1 && (
+    covariates[1] == "" || tolower(covariates[1]) == "none"))) {
+    t1 = terms(formula("~1"))
+    p = 0
+  } else {
+    t1 = terms(formula(paste("~", paste(covariates, collapse = "+"))))
+    t2 = attr(t1, "factors")
+    t3 = rownames(t2)
+    p = length(t3)
+  }
+
+  if (p >= 1) {
+    mf = model.frame(t1, df)
+    xlevels = mf$xlev
+    mm = model.matrix(t1, mf)
+    param = colnames(mm)
+    colnames(mm) = make.names(colnames(mm))
+    varnames = colnames(mm)[-1]
+    for (i in 1:length(varnames)) {
+      if (!(varnames[i] %in% names(df))) {
+        df[,varnames[i]] = mm[,varnames[i]]
+      }
+    }
+  } else {
+    xlevels = NULL
+    param = "(Intercept)"
+    varnames = ""
+  }
+
+  fit <- phregcpp(data = df, rep = rep, stratum = stratum, time = time,
+                  time2 = time2, event = event, covariates = varnames,
+                  weight = weight, offset = offset, id = id, ties = ties,
+                  robust = robust, est_basehaz = est_basehaz,
+                  est_resid = est_resid, firth = firth,
+                  plci = plci, alpha = alpha)
+
+  fit$p = fit$sumstat$p[1]
+
+  if (fit$p > 0) {
+    fit$param = param[-1]
+    fit$beta = fit$parest$beta
+    names(fit$beta) = rep(fit$param, length(fit$beta)/fit$p)
+
+    if (fit$p > 1) {
+      fit$vbeta = as.matrix(fit$parest[, paste0("vbeta.", 1:fit$p)])
+      if (robust) {
+        fit$vbeta_naive = as.matrix(fit$parest[, paste0("vbeta_naive.",
+                                                        1:fit$p)])
+      }
+    } else {
+      fit$vbeta = as.matrix(fit$parest[, "vbeta"])
+      if (robust) {
+        fit$vbeta_naive = as.matrix(fit$parest[, "vbeta_naive"])
+      }
+    }
+
+    dimnames(fit$vbeta) = list(names(fit$beta), fit$param)
+    if (robust) {
+      dimnames(fit$vbeta_naive) = list(names(fit$beta), fit$param)
+    }
+  }
+
+  fit$terms = t1
+  if (fit$p > 0) fit$xlevels = xlevels
+
+  fit$data = data
+  fit$rep = rep
+  fit$stratum = stratum
+  fit$time = time
+  fit$time2 = time2
+  fit$event = event
+  fit$covariates = covariates
+  fit$weight = weight
+  fit$offset = offset
+  fit$id = id
+  fit$ties = ties
+  fit$robust = robust
+  fit$est_basehaz = est_basehaz
+  fit$est_resid = est_resid
+  fit$firth = firth
+  fit$plci = plci
+  fit$alpha = alpha
+
+  class(fit) = "phregr"
+  fit
+}
+
+
+#' @title Survival Curve for Proportional Hazards Regression Models
+#' @description Obtains the predicted survivor function for a proportional
+#' hazards regression model.
+#'
+#' @param fit_phregr The output from the \code{phregr} call.
+#' @param newdata A data frame with the same variable names as those that
+#'   appear in the \code{phregr} call. For right-censored data, one curve is
+#'   produced per row to represent a cohort whose covariates correspond to
+#'   the values in \code{newdata}. For counting-process data, one curve is
+#'   produced per \code{id} in \code{newdata} to present the survival curve
+#'   along the path of time-dependent covariates at the observed event
+#'   times in the data used to fit \code{phregr}.
+#' @param sefit Whether to compute the standard error of the survival
+#'   estimates.
+#' @param conftype The type of the confidence interval. One of \code{"none"},
+#'   \code{"plain"}, \code{"log"}, \code{"log-log"} (the default), or
+#'   \code{"arcsin"}. The \code{arcsin} option bases the intervals on
+#'   \code{asin(sqrt(surv))}.
+#' @param conflev The level of the two-sided confidence interval for
+#'   the survival probabilities. Defaults to 0.95.
+#'
+#' @details
+#' If \code{newdata} is not provided and there is no covariate, survival
+#' curves based on the \code{basehaz} data frame will be produced.
+#'
+#' @return A data frame with the following variables:
+#'
+#' * \code{id}: The id of the subject for counting-process data with
+#'   time-dependent covariates.
+#'
+#' * \code{time}: The observed times in the data used to fit
+#'   \code{phregr}.
+#'
+#' * \code{nrisk}: The number of patients at risk at the time point in the
+#'   data used to fit \code{phregr}.
+#'
+#' * \code{nevent}: The number of patients having event at the time point
+#'   in the data used to fit \code{phregr}.
+#'
+#' * \code{cumhaz}: The cumulative hazard at the time point.
+#'
+#' * \code{surv}: The estimated survival probability at the time point.
+#'
+#' * \code{sesurv}: The standard error of the estimated survival probability.
+#'
+#' * \code{lower}: The lower confidence limit for survival probability.
+#'
+#' * \code{upper}: The upper confidence limit for survival probability.
+#'
+#' * \code{conflev}: The level of the two-sided confidence interval.
+#'
+#' * \code{conftype}: The type of the confidence interval.
+#'
+#' * \code{covariates}: The values of covariates based on \code{newdata}.
+#'
+#' * \code{stratum}: The stratum of the subject.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#' Terry M. Therneau and Patricia M. Grambsch.
+#' Modeling Survival Data: Extending the Cox Model.
+#' Springer-Verlag, 2000.
+#'
+#' @examples
+#'
+#' library(dplyr)
+#'
+#' # Example 1 with right-censored data
+#' fit1 <- phregr(data = rawdata %>% filter(iterationNumber == 1) %>%
+#'                  mutate(treat = 1*(treatmentGroup == 1)),
+#'                stratum = "stratum",
+#'                time = "timeUnderObservation", event = "event",
+#'                covariates = "treat")
+#'
+#' surv1 <- survfit_phregr(fit1,
+#'                         newdata = data.frame(
+#'                           stratum = as.integer(c(1,1,2,2)),
+#'                           treat = c(1,0,1,0)))
+#'
+#' # Example 2 with counting process data and robust variance estimate
+#' fit2 <- phregr(data = heart %>% mutate(rx = as.numeric(transplant) - 1),
+#'                time = "start", time2 = "stop", event = "event",
+#'                covariates = c("rx", "age"), id = "id", robust = TRUE)
+#'
+#' surv2 <- survfit_phregr(fit2,
+#'                         newdata = data.frame(
+#'                           id = c(4,4,11,11),
+#'                           age = c(-7.737,-7.737,-0.019,-0.019),
+#'                           start = c(0,36,0,26),
+#'                           stop = c(36,39,26,153),
+#'                           rx = c(0,1,0,1)))
+#'
+#' @export
+survfit_phregr <- function(fit_phregr, newdata, sefit = TRUE,
+                           conftype = "log-log", conflev = 0.95) {
+
+  p = fit_phregr$p
+  if (p == 0) {
+    beta = 0
+    vbeta = 0
+  } else {
+    beta = fit_phregr$beta
+    vbeta = fit_phregr$vbeta
+  }
+
+  basehaz = fit_phregr$basehaz
+
+  covariates = fit_phregr$covariates
+  stratum = fit_phregr$stratum
+  offset = fit_phregr$offset
+  id = fit_phregr$id
+
+  if (id != "") {
+    tstart = fit_phregr$time
+    tstop = fit_phregr$time2
+  } else {
+    tstart = ""
+    tstop = ""
+  }
+
+  nvar = length(covariates)
+  if (missing(covariates) || is.null(covariates) || (nvar == 1 && (
+    covariates[1] == "" || tolower(covariates[1]) == "none"))) {
+    p3 = 0
+  } else {
+    t1 = terms(formula(paste("~", paste(covariates, collapse = "+"))))
+    t2 = attr(t1, "factors")
+    t3 = rownames(t2)
+    p3 = length(t3)
+  }
+
+  if (p >= 1 && p3 >= 1 && !(missing(newdata) || is.null(newdata))) {
+    df = newdata
+    mf = model.frame(t1, df, xlev = fit_phregr$xlevels)
+    mm = model.matrix(t1, mf)
+    colnames(mm) = make.names(colnames(mm))
+    varnames = colnames(mm)[-1]
+    for (i in 1:length(varnames)) {
+      if (!(varnames[i] %in% names(df))) {
+        df[,varnames[i]] = mm[,varnames[i]]
+      }
+    }
+  } else {
+    beta = NA
+    vbeta = NA
+    varnames = ""
+  }
+
+  if (!is.matrix(vbeta)) vbeta = as.matrix(vbeta)
+
+  if (missing(basehaz) || is.null(basehaz)) {
+    stop("basehaz must be provided")
+  }
+
+  if (missing(newdata) || is.null(newdata)) {
+    if (p > 0) {
+      stop("newdata must be provided for Cox models with covariates")
+    } else {
+      p_stratum = length(stratum);
+      if (p_stratum == 1 && (stratum[1] == "" || stratum[1] == "none")) {
+        df = data.frame(dummy_x_ = 0)
+      } else {
+        df = unique(basehaz[, stratum, drop = FALSE])
+      }
+    }
+  }
+
+  survfit_phregcpp(p = p, beta = beta, vbeta = vbeta, basehaz = basehaz,
+                   newdata = df, covariates = varnames,
+                   stratum = stratum, offset = offset, id = id,
+                   tstart = tstart, tstop = tstop, sefit = sefit,
+                   conftype = conftype, conflev = conflev)
+}
+
+
+#' @title Residuals for Proportional Hazards Regression Models
+#' @description Obtains the martingale, deviance, score, or Schoenfeld
+#' residuals for a proportional hazards regression model.
+#'
+#' @param fit_phregr The output from the \code{phregr} call.
+#' @param type The type of residuals desired, with options including
+#'   \code{"martingale"}, \code{"deviance"}, \code{"score"},
+#'   \code{"schoenfeld"}, \code{"dfbeta"}, \code{"dfbetas"}, and
+#'   \code{"scaledsch"}.
+#' @param collapse Whether to collapse the residuals by \code{id}.
+#'   This is not applicable for Schoenfeld type residuals.
+#' @param weighted Whether to compute weighted residuals.
+#'
+#' @details
+#' For score and Schoenfeld type residuals, the proportional hazards model
+#' must include at least one covariate. The algorithms for \code{deviance},
+#' \code{dfbeta}, \code{dfbetas}, and \code{scaledsch} residuals follow
+#' the \code{residuals.coxph} function in the \code{survival} package.
+#'
+#' @return For martingale and deviance residuals, the result is a vector
+#' with one element corresponding to each subject (without \code{collapse}).
+#' For score residuals, the result is a matrix where each row represents
+#' a subject and each column corresponds to a variable. The row order
+#' aligns with the input data used in the original fit. For Schoenfeld
+#' residuals, the result is a matrix with one row for each event and
+#' one column per variable. These rows are sorted by time within strata,
+#' with the attributes \code{stratum} and \code{time} included.
+#'
+#' Score residuals represent each individual's contribution to the score
+#' vector. Two commonly used transformations of this are \code{dfbeta},
+#' which represents the approximate change in the coefficient vector
+#' if the observation is excluded, and \code{dfbetas}, which gives the
+#' approximate change in the coefficients scaled by the standard error
+#' of the coefficients.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#' Terry M. Therneau, Patricia M. Grambsch, and Thomas M. Fleming.
+#' Martingale based residuals for survival models.
+#' Biometrika 1990; 77:147-160.
+#'
+#' Patricia M. Grambsch and Terry M. Therneau.
+#' Proportional hazards tests and diagnostics based on weighted residuals.
+#' Biometrika 1994; 81:515-26.
+#'
+#' @examples
+#'
+#' library(dplyr)
+#'
+#' # Example 1 with right-censored data
+#' fit1 <- phregr(data = rawdata %>% filter(iterationNumber == 1) %>%
+#'                  mutate(treat = 1*(treatmentGroup == 1)),
+#'                stratum = "stratum",
+#'                time = "timeUnderObservation", event = "event",
+#'                covariates = "treat")
+#'
+#' ressco <- residuals_phregr(fit1, type = "score")
+#'
+#' # Example 2 with counting process data
+#' fit2 <- phregr(data = heart %>% mutate(rx = as.numeric(transplant) - 1),
+#'                time = "start", time2 = "stop", event = "event",
+#'                covariates = c("rx", "age"), id = "id", robust = TRUE)
+#'
+#' resssch <- residuals_phregr(fit2, type = "scaledsch")
+#'
+#' @export
+residuals_phregr <- function(
+    fit_phregr, type=c("martingale", "deviance", "score", "schoenfeld",
+                       "dfbeta", "dfbetas", "scaledsch"),
+    collapse=FALSE, weighted=(type %in% c("dfbeta", "dfbetas"))) {
+
+  p = fit_phregr$p
+  beta = fit_phregr$beta
+  residuals = fit_phregr$residuals
+
+  data = fit_phregr$data
+  stratum = fit_phregr$stratum
+  time = fit_phregr$time
+  time2 = fit_phregr$time2
+  event = fit_phregr$event
+  covariates = fit_phregr$covariates
+  weight = fit_phregr$weight
+  offset = fit_phregr$offset
+  id = fit_phregr$id
+  ties = fit_phregr$ties
+  param = fit_phregr$param
+
+  rownames(data) = NULL
+
+  elements = c(stratum, time, event, covariates, weight, offset, id)
+  elements = unique(elements[elements != "" & elements != "none"])
+  mf = model.frame(formula(paste("~", paste(elements, collapse = "+"))),
+                   data = data)
+  rownum = as.integer(rownames(mf))
+  df = data[rownum,]
+
+  nvar = length(covariates)
+  if (missing(covariates) || is.null(covariates) || (nvar == 1 && (
+    covariates[1] == "" || tolower(covariates[1]) == "none"))) {
+    p3 = 0
+  } else {
+    t1 = terms(formula(paste("~", paste(covariates, collapse = "+"))))
+    t2 = attr(t1, "factors")
+    t3 = rownames(t2)
+    p3 = length(t3)
+  }
+
+  if (p >= 1 && p3 >= 1) {
+    mf = model.frame(t1, df)
+    mm = model.matrix(t1, mf)
+    colnames(mm) = make.names(colnames(mm))
+    varnames = colnames(mm)[-1]
+    for (i in 1:length(varnames)) {
+      if (!(varnames[i] %in% names(df))) {
+        df[,varnames[i]] = mm[,varnames[i]]
+      }
+    }
+  } else {
+    varnames = ""
+  }
+
+
+  type <- match.arg(type)
+  otype <- type
+  if (type=='dfbeta' || type=='dfbetas') {
+    type <- 'score'
+    if (missing(weighted))
+      weighted <- TRUE  # different default for this case
+  }
+  if (type=='scaledsch') type<-'schoenfeld'
+
+  n <- length(residuals)
+  rr <- residuals
+
+  vv <- drop(fit_phregr$vbeta_naive)
+  if (is.null(vv)) vv <- drop(fit_phregr$vbeta)
+
+  if (weight != "") {
+    weights <- df[[weight]]
+  } else {
+    weights <- rep(1,n)
+  }
+
+  if (id != "") {
+    idn <- df[[id]]
+  } else {
+    idn <- seq(1,n)
+  }
+
+
+  if (type == 'martingale') rr <- fit_phregr$residuals
+
+  if (type=='schoenfeld') {
+    if (p == 0) stop("covariates must be present for schoenfeld residuals")
+
+    temp = residuals_phregcpp(p = p,
+                              beta = beta,
+                              data = df,
+                              stratum = stratum,
+                              time = time,
+                              time2 = time2,
+                              event = event,
+                              covariates = varnames,
+                              weight = weight,
+                              offset = offset,
+                              id = id,
+                              ties = ties,
+                              type = "schoenfeld")
+
+    if (p==1) {
+      rr <- c(temp$resid)
+    } else {
+      rr <- temp$resid
+    }
+    if (weighted) rr <- rr * weights[temp$obs]
+    if (length(unique(temp$stratumn)) > 1) {
+      attr(rr, "stratum") <- temp$stratumn
+    }
+    attr(rr, "time") <- temp$time
+
+    if (otype=='scaledsch') {
+      ndead <- length(temp$obs)
+      if (nvar==1) {
+        rr <- rr * vv * ndead + beta
+      } else {
+        rr <- drop(rr %*% vv *ndead + rep(beta, each=nrow(rr)))
+      }
+    }
+
+    if (is.matrix(rr)) colnames(rr) <- param
+
+    return(rr)
+  }
+
+  if (type=='score') {
+    if (p == 0) stop("covariates must be present for score residuals")
+
+    temp = residuals_phregcpp(p = p,
+                              beta = beta,
+                              data = df,
+                              stratum = stratum,
+                              time = time,
+                              time2 = time2,
+                              event = event,
+                              covariates = varnames,
+                              weight = weight,
+                              offset = offset,
+                              id = id,
+                              ties = ties,
+                              type = "score")
+
+
+    if (p==1) {
+      rr <- c(temp$resid)
+    } else {
+      rr <- temp$resid
+    }
+
+    if (otype=='dfbeta') {
+      if (is.matrix(rr)) {
+        rr <- rr %*% vv
+      } else {
+        rr <- rr * vv
+      }
+    }
+    else if (otype=='dfbetas') {
+      if (is.matrix(rr)) {
+        rr <- (rr %*% vv) %*% diag(sqrt(1/diag(vv)))
+      } else {
+        rr <- rr * sqrt(vv)
+      }
+    }
+
+    if (is.matrix(rr)) colnames(rr) <- param
+  }
+
+  #
+  # Multiply up by case weights (which will be 1 for unweighted)
+  #
+  if (weighted) rr <- rr * weights
+
+  status <- df[[event]]
+
+  # Collapse if desired
+  if (collapse) {
+    rr <- drop(rowsum(rr, idn))
+    if (type=='deviance') status <- drop(rowsum(status, idn))
+  }
+
+  # Deviance residuals are computed after collapsing occurs
+  if (type=='deviance') {
+    sign(rr) *sqrt(-2* (rr+ ifelse(status==0, 0, status*log(status-rr))))
+  } else {
+    rr
+  }
+}
+
+
+#' @title Logistic Regression Models for Binary Data
+#' @description Obtains the parameter estimates from logistic regression
+#' models with binary data.
+#'
+#' @param data The input data frame that contains the following variables:
+#'
+#'   * \code{rep}: The replication for by-group processing.
+#'
+#'   * \code{event}: The event indicator, 1=event, 0=no event.
+#'
+#'   * \code{covariates}: The values of baseline covariates.
+#'
+#'   * \code{freq}: The frequency for each observation.
+#'
+#'   * \code{weight}: The weight for each observation.
+#'
+#'   * \code{offset}: The offset for each observation.
+#'
+#'   * \code{id}: The optional subject ID to group the score residuals
+#'     in computing the robust sandwich variance.
+#'
+#' @param rep The name(s) of the replication variable(s) in the input data.
+#' @param event The name of the event variable in the input data.
+#' @param covariates The vector of names of baseline covariates
+#'   in the input data.
+#' @param freq The name of the frequency variable in the input data.
+#'   The frequencies must be the same for all observations within each
+#'   cluster as indicated by the id. Thus freq is the cluster frequency.
+#' @param weight The name of the weight variable in the input data.
+#' @param offset The name of the offset variable in the input data.
+#' @param id The name of the id variable in the input data.
+#' @param robust Whether a robust sandwich variance estimate should be
+#'   computed. In the presence of the id variable, the score residuals
+#'   will be aggregated for each id when computing the robust sandwich
+#'   variance estimate.
+#' @param firth Whether the firth's bias reducing penalized likelihood
+#'   should be used. The default is \code{FALSE}.
+#' @param flic Whether to apply intercept correction to obtain more
+#'   accurate predicted probabilities. The default is \code{FALSE}.
+#' @param plci Whether to obtain profile likelihood confidence interval.
+#' @param alpha The two-sided significance level.
+#'
+#' @details
+#' Fitting a logistic regression model using Firth's bias reduction method
+#' is equivalent to penalization of the log-likelihood by the Jeffreys prior.
+#' Firth's penalized log-likelihood is given by
+#' \deqn{l(\beta) + \frac{1}{2} \log(\mbox{det}(I(\beta)))}
+#' and the components of the gradient \eqn{g(\beta)} are computed as
+#' \deqn{g(\beta_j) + \frac{1}{2} \mbox{trace}\left(I(\beta)^{-1}
+#' \frac{\partial I(\beta)}{\partial \beta_j}\right)}
+#' The Hessian matrix is not modified by this penalty.
+#'
+#' Firth's method reduces bias in maximum likelihood estimates of
+#' coefficients, but it introduces a bias toward one-half in the
+#' predicted probabilities.
+#'
+#' A straightforward modification to Firth’s logistic regression to
+#' achieve unbiased average predicted probabilities involves a post hoc
+#' adjustment of the intercept. This approach, known as Firth’s logistic
+#' regression with intercept correction (FLIC), preserves the
+#' bias-corrected effect estimates. By excluding the intercept from
+#' penalization, it ensures that we don't sacrifice the accuracy of
+#' effect estimates to improve the predictions.
+#'
+#' @return A list with the following components:
+#'
+#' * \code{sumstat}: The data frame of summary statistics of model fit
+#'   with the following variables:
+#'
+#'     - \code{n}: The number of subjects.
+#'
+#'     - \code{nevents}: The number of events.
+#'
+#'     - \code{loglik0}: The (penalized) log-likelihood under null.
+#'
+#'     - \code{loglik1}: The maximum (penalized) log-likelihood.
+#'
+#'     - \code{niter}: The number of Newton-Raphson iterations.
+#'
+#'     - \code{p}: The number of parameters, including the intercept,
+#'       and regression coefficients associated with the covariates.
+#'
+#'     - \code{robust}: Whether a robust sandwich variance estimate should
+#'       be computed.
+#'
+#'     - \code{firth}: Whether the firth's penalized likelihood is used.
+#'
+#'     - \code{flic}: Whether to apply intercept correction.
+#'
+#'     - \code{loglik0_unpenalized}: The unpenalized log-likelihood under null.
+#'
+#'     - \code{loglik1_unpenalized}: The maximum unpenalized log-likelihood.
+#'
+#'     - \code{rep}: The replication.
+#'
+#' * \code{parest}: The data frame of parameter estimates with the
+#'   following variables:
+#'
+#'     - \code{param}: The name of the covariate for the parameter estimate.
+#'
+#'     - \code{beta}: The parameter estimate.
+#'
+#'     - \code{sebeta}: The standard error of parameter estimate.
+#'
+#'     - \code{z}: The Wald test statistic for the parameter.
+#'
+#'     - \code{expbeta}: The exponentiated parameter estimate.
+#'
+#'     - \code{vbeta}: The covariance matrix for parameter estimates.
+#'
+#'     - \code{lower}: The lower limit of confidence interval.
+#'
+#'     - \code{upper}: The upper limit of confidence interval.
+#'
+#'     - \code{p}: The p-value from the chi-square test.
+#'
+#'     - \code{method}: The method to compute the confidence interval and
+#'       p-value.
+#'
+#'     - \code{sebeta_naive}: The naive standard error of parameter estimate.
+#'
+#'     - \code{vbeta_naive}: The naive covariance matrix of parameter
+#'       estimates.
+#'
+#'     - \code{rep}: The replication.
+#'
+#' * \code{fitted}: The data frame with the following variables:
+#'
+#'     - \code{linear_predictors}: The linear fit on the logit scale.
+#'
+#'     - \code{fitted_values}: The fitted probabilities of having an event,
+#'       obtained by transforming the linear predictors by the inverse of
+#'       the logit link.
+#'
+#'     - \code{rep}: The replication.
+#'
+#' * \code{p}: The number of parameters.
+#'
+#' * \code{param}: The parameter names.
+#'
+#' * \code{beta}: The parameter estimate.
+#'
+#' * \code{vbeta}: The covariance matrix for parameter estimates.
+#'
+#' * \code{vbeta_naive}: The naive covariance matrix for parameter estimates.
+#'
+#' * \code{linear_predictors}: The linear fit on the logit scale.
+#'
+#' * \code{fitted_values}: The fitted probabilities of having an event.
+#'
+#' * \code{terms}: The terms object.
+#'
+#' * \code{xlevels}: A record of the levels of the factors used in fitting.
+#'
+#' * \code{data}: The input data.
+#'
+#' * \code{rep}: The name(s) of the replication variable(s).
+#'
+#' * \code{event}: The name of the event variable.
+#'
+#' * \code{covariates}: The names of baseline covariates.
+#'
+#' * \code{freq}: The name of the freq variable.
+#'
+#' * \code{weight}: The name of the weight variable.
+#'
+#' * \code{offset}: The name of the offset variable.
+#'
+#' * \code{id}: The name of the id variable.
+#'
+#' * \code{robust}: Whether a robust sandwich variance estimate should be
+#'   computed.
+#'
+#' * \code{firth}: Whether to use the firth's bias reducing penalized
+#'   likelihood.
+#'
+#' * \code{flic}: Whether to apply intercept correction.
+#'
+#' * \code{plci}: Whether to obtain profile likelihood confidence interval.
+#'
+#' * \code{alpha}: The two-sided significance level.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#' David Firth.
+#' Bias Reduction of Maximum Likelihood Estimates.
+#' Biometrika 1993; 80:27–38.
+#'
+#' Georg Heinze and Michael Schemper.
+#' A solution to the problem of separation in logistic regression.
+#' Statistics in Medicine 2002;21:2409–2419.
+#'
+#' Rainer Puhr, Georg Heinze, Mariana Nold, Lara Lusa, and
+#' Angelika Geroldinger.
+#' Firth's logistic regression with rare events: accurate effect
+#' estimates and predictions?
+#' Statistics in Medicine 2017; 36:2302-2317.
+#'
+#' @examples
+#'
+#' (fit1 <- logisregr(
+#'   ingots, event = "NotReady", covariates = "Heat*Soak", freq = "Freq"))
+#'
+#' @export
+logisregr <- function(data, rep = "", event = "event", covariates = "",
+                      freq = "", weight = "", offset = "", id = "",
+                      robust = FALSE, firth = FALSE, flic = FALSE,
+                      plci = FALSE, alpha = 0.05) {
+
+  rownames(data) = NULL
+
+  elements = c(rep, event, covariates, freq, weight, offset)
+  elements = unique(elements[elements != "" & elements != "none"])
+  mf = model.frame(formula(paste("~", paste(elements, collapse = "+"))),
+                   data = data)
+
+  rownum = as.integer(rownames(mf))
+  df = data[rownum,]
+
+  nvar = length(covariates)
+  if (missing(covariates) || is.null(covariates) || (nvar == 1 && (
+    covariates[1] == "" || tolower(covariates[1]) == "none"))) {
+    t1 = terms(formula("~1"))
+    p = 0
+  } else {
+    t1 = terms(formula(paste("~", paste(covariates, collapse = "+"))))
+    t2 = attr(t1, "factors")
+    t3 = rownames(t2)
+    p = length(t3)
+  }
+
+  if (p >= 1) {
+    mf = model.frame(t1, df)
+    xlevels = mf$xlev
+    mm = model.matrix(t1, mf)
+    param = colnames(mm)
+    colnames(mm) = make.names(colnames(mm))
+    varnames = colnames(mm)[-1]
+    for (i in 1:length(varnames)) {
+      if (!(varnames[i] %in% names(df))) {
+        df[,varnames[i]] = mm[,varnames[i]]
+      }
+    }
+  } else {
+    xlevels = NULL
+    param = "(Intercept)"
+    varnames = ""
+  }
+
+  fit <- logisregcpp(data = df, rep = rep, event = event,
+                     covariates = varnames, freq = freq, weight = weight,
+                     offset = offset, id = id, robust = robust,
+                     firth = firth, flic = flic, plci = plci, alpha = alpha)
+
+  fit$p <- fit$sumstat$p[1]
+
+  if (fit$p > 0) {
+    fit$param = param
+    fit$beta = fit$parest$beta
+    names(fit$beta) = rep(fit$param, length(fit$beta)/fit$p)
+
+    if (fit$p > 1) {
+      fit$vbeta = as.matrix(fit$parest[, paste0("vbeta.", 1:fit$p)])
+      if (robust) {
+        fit$vbeta_naive = as.matrix(fit$parest[, paste0("vbeta_naive.",
+                                                        1:fit$p)])
+      }
+    } else {
+      fit$vbeta = as.matrix(fit$parest[, "vbeta"])
+      if (robust) {
+        fit$vbeta_naive = as.matrix(fit$parest[, "vbeta_naive"])
+      }
+    }
+
+    dimnames(fit$vbeta) = list(names(fit$beta), fit$param)
+    if (robust) {
+      dimnames(fit$vbeta_naive) = list(names(fit$beta), fit$param)
+    }
+  }
+
+  fit$linear_predictors = fit$fitted$linear_predictors
+  fit$fitted_values = fit$fitted$fitted_values
+
+  fit$terms = t1
+  if (fit$p > 0) fit$xlevels = xlevels
+
+  fit$data = data
+  fit$rep = rep
+  fit$event = event
+  fit$covariates = covariates
+  fit$freq = freq
+  fit$weight = weight
+  fit$offset = offset
+  fit$id = id
+  fit$robust = robust
+  fit$firth = firth
+  fit$flic = flic
+  fit$plci = plci
+  fit$alpha = alpha
+
+  class(fit) = "logisregr"
+  fit
+}
+
+

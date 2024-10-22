@@ -1,3 +1,14 @@
+# lrstat 0.2.10
+
+- use newton-raphson instead of the vmmin algorithm for liferegr and phregr
+- removed rpsft with all treatment switching functions moved to trtswitch package
+- add the survfit_phregr function to obtain the survivor curve estimates
+- add the residuals_phregr function to obtain the martingale, deviance, score, and schoenfeld residuals
+- add the shilong dataset
+- replace std::ceil(x) with std::ceil(x - 1.0e-12) to handle superficial precision in binary presentation of a double number
+- allow rep and stratum parameters to represent more than one character variables in the source data
+- add the logisregr function for logistic regression of a binary endpoint.
+
 # lrstat 0.2.9
 
 - fix the runtime error: nan is outside the range of representable values of type 'int'

@@ -1,7 +1,5 @@
 #' @name lrstat-package
 #' @aliases lrstat-package
-#' @keywords internal
-#' "_PACKAGE"
 #'
 #' @title Power and Sample Size Calculation for Non-Proportional Hazards
 #' and Beyond
@@ -134,8 +132,9 @@
 #' @useDynLib lrstat, .registration = TRUE
 #' @importFrom Rcpp evalCpp
 #' @importFrom mvtnorm pmvnorm
-#' @importFrom stats dgamma dlogis dnorm integrate optimize pbeta pchisq pf
-#' plogis pnorm pt qbeta qchisq qf qlogis qnorm qt uniroot var
+#' @importFrom stats dgamma dlogis dnorm formula integrate model.frame
+#' model.matrix optimize pbeta pchisq pf plogis pnorm pt qbeta qchisq
+#' qf qlogis qnorm qt terms uniroot var
 #' @importFrom lpSolve lp
 #' @importFrom shiny shinyAppDir
 #'

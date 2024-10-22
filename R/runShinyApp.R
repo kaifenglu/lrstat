@@ -1,4 +1,4 @@
-#' @title Run Shiny app
+#' @title Run Shiny App
 #' @description Runs the log-rank test power and sample size calculation
 #' Shiny app.
 #'

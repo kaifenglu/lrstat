@@ -58,7 +58,7 @@ void f_info(double *x, int n, void *ex) {
 
 
 
-//' @title Negative binomial rate ratio by stratum
+//' @title Negative Binomial Rate Ratio by Stratum
 //'
 //' @description Obtains the number of subjects accrued, number of events,
 //' number of dropouts, number of subjects reaching the maximum
@@ -514,7 +514,7 @@ List nbstat1(const double time = NA_REAL,
 }
 
 
-//' @title Negative binomial rate ratio
+//' @title Negative Binomial Rate Ratio
 //' @description Obtains the number of subjects accrued, number of events,
 //' number of dropouts, number of subjects reaching the maximum
 //' follow-up, total exposure, and variance for log rate in each group,
@@ -928,7 +928,7 @@ List nbstat(const NumericVector& time = NA_REAL,
     stop("Invalid length for gamma2");
   }
 
-  if (R_isnancpp(accrualDuration)) {
+  if (std::isnan(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
 
@@ -936,7 +936,7 @@ List nbstat(const NumericVector& time = NA_REAL,
     stop("accrualDuration must be positive");
   }
 
-  if (R_isnancpp(followupTime)) {
+  if (std::isnan(followupTime)) {
     stop("followupTime must be provided");
   }
 
@@ -1068,7 +1068,7 @@ List nbstat(const NumericVector& time = NA_REAL,
 }
 
 
-//' @title Power for negative binomial rate ratio
+//' @title Power for Negative Binomial Rate Ratio
 //' @description Estimates the power for negative binomial rate ratio test.
 //'
 //' @inheritParams param_kMax
@@ -1409,13 +1409,13 @@ List nbpower(const int kMax = 1,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -1425,7 +1425,7 @@ List nbpower(const int kMax = 1,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -1473,7 +1473,7 @@ List nbpower(const int kMax = 1,
     stop("Invalid value for typeBetaSpending");
   }
 
-  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
+  if ((bsf=="sfkd" || bsf=="sfhsd") && std::isnan(bsfpar)) {
     stop("Missing value for parameterBetaSpending");
   }
 
@@ -1591,7 +1591,7 @@ List nbpower(const int kMax = 1,
     stop("Invalid length for gamma2");
   }
 
-  if (R_isnancpp(accrualDuration)) {
+  if (std::isnan(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
 
@@ -1599,7 +1599,7 @@ List nbpower(const int kMax = 1,
     stop("accrualDuration must be positive");
   }
 
-  if (R_isnancpp(followupTime)) {
+  if (std::isnan(followupTime)) {
     stop("followupTime must be provided");
   }
 
@@ -1625,12 +1625,12 @@ List nbpower(const int kMax = 1,
     spendingTime1 = clone(informationRates1);
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration < accrualDuration) {
     stop("studyDuration must be greater than or equal to accrualDuration");
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration > accrualDuration + followupTime) {
     stop("studyDuration cannot exceed accrualDuration + followupTime");
   }
@@ -1640,7 +1640,7 @@ List nbpower(const int kMax = 1,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
@@ -1688,7 +1688,7 @@ List nbpower(const int kMax = 1,
 
   // obtain the study duration
   double studyDuration1 = studyDuration;
-  if (!fixedFollowup || R_isnancpp(studyDuration)) {
+  if (!fixedFollowup || std::isnan(studyDuration)) {
     studyDuration1 = accrualDuration + followupTime;
   }
 
@@ -1911,7 +1911,7 @@ List nbpower(const int kMax = 1,
 }
 
 
-//' @title Sample size for negative binomial rate ratio
+//' @title Sample Size for Negative Binomial Rate Ratio
 //' @description Obtains the needed accrual duration given power and
 //' follow-up time, the needed follow-up time given power and
 //' accrual duration, or the needed absolute accrual rates given
@@ -2140,13 +2140,13 @@ List nbsamplesize(const double beta = 0.2,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -2156,7 +2156,7 @@ List nbsamplesize(const double beta = 0.2,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -2204,7 +2204,7 @@ List nbsamplesize(const double beta = 0.2,
     stop("Invalid value for typeBetaSpending");
   }
 
-  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
+  if ((bsf=="sfkd" || bsf=="sfhsd") && std::isnan(bsfpar)) {
     stop("Missing value for parameterBetaSpending");
   }
 
@@ -2344,13 +2344,13 @@ List nbsamplesize(const double beta = 0.2,
     stop("Invalid length for gamma2");
   }
 
-  if (!R_isnancpp(accrualDuration)) {
+  if (!std::isnan(accrualDuration)) {
     if (accrualDuration <= 0) {
       stop("accrualDuration must be positive");
     }
   }
 
-  if (!R_isnancpp(followupTime)) {
+  if (!std::isnan(followupTime)) {
     if (fixedFollowup && followupTime <= 0) {
       stop("followupTime must be positive for fixed follow-up");
     }
@@ -2360,7 +2360,7 @@ List nbsamplesize(const double beta = 0.2,
     }
   }
 
-  if (fixedFollowup && R_isnancpp(followupTime)) {
+  if (fixedFollowup && std::isnan(followupTime)) {
     stop("followupTime must be provided for fixed follow-up");
   }
 
@@ -2395,7 +2395,7 @@ List nbsamplesize(const double beta = 0.2,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
@@ -2442,11 +2442,11 @@ List nbsamplesize(const double beta = 0.2,
 
   std::string unknown;
   // search for the solution according to the input
-  if (R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  if (std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualDuration";
-  } else if (!R_isnancpp(accrualDuration) && R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && std::isnan(followupTime)) {
     unknown = "followupTime";
-  } else if (!R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualIntensity";
   } else {
     stop("accrualDuration and followupTime cannot be both missing");
@@ -2698,7 +2698,7 @@ List nbsamplesize(const double beta = 0.2,
     NumericVector u0(1, studyDuration);
     double n0 = accrual(u0, accrualTime, accrualIntensity1,
                         accrualDuration)[0];
-    double n = std::ceil(n0);
+    double n = std::ceil(n0 - 1.0e-12);
 
     if (n - n0 > 1e-6) {
       // adjust accrual intensity or duration to obtain int # of subjects
@@ -2910,7 +2910,7 @@ List nbsamplesize(const double beta = 0.2,
 }
 
 
-//' @title Power for one-sample negative binomial rate
+//' @title Power for One-Sample Negative Binomial Rate
 //' @description Estimates the power, stopping probabilities, and expected
 //' sample size in a one-group negative binomial design.
 //'
@@ -3185,13 +3185,13 @@ List nbpower1s(const int kMax = 1,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -3201,7 +3201,7 @@ List nbpower1s(const int kMax = 1,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -3249,7 +3249,7 @@ List nbpower1s(const int kMax = 1,
     stop("Invalid value for typeBetaSpending");
   }
 
-  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
+  if ((bsf=="sfkd" || bsf=="sfhsd") && std::isnan(bsfpar)) {
     stop("Missing value for parameterBetaSpending");
   }
 
@@ -3257,7 +3257,7 @@ List nbpower1s(const int kMax = 1,
     stop ("parameterBetaSpending must be positive for sfKD");
   }
 
-  if (R_isnancpp(lambdaH0)) {
+  if (std::isnan(lambdaH0)) {
     stop("lambdaH0 must be provided");
   }
 
@@ -3334,7 +3334,7 @@ List nbpower1s(const int kMax = 1,
     stop("Invalid length for gamma");
   }
 
-  if (R_isnancpp(accrualDuration)) {
+  if (std::isnan(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
 
@@ -3342,7 +3342,7 @@ List nbpower1s(const int kMax = 1,
     stop("accrualDuration must be positive");
   }
 
-  if (R_isnancpp(followupTime)) {
+  if (std::isnan(followupTime)) {
     stop("followupTime must be provided");
   }
 
@@ -3368,12 +3368,12 @@ List nbpower1s(const int kMax = 1,
     spendingTime1 = clone(informationRates1);
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration < accrualDuration) {
     stop("studyDuration must be greater than or equal to accrualDuration");
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration > accrualDuration + followupTime) {
     stop("studyDuration cannot exceed accrualDuration + followupTime");
   }
@@ -3383,7 +3383,7 @@ List nbpower1s(const int kMax = 1,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
@@ -3431,7 +3431,7 @@ List nbpower1s(const int kMax = 1,
 
   // obtain the study duration
   double studyDuration1 = studyDuration;
-  if (!fixedFollowup || R_isnancpp(studyDuration)) {
+  if (!fixedFollowup || std::isnan(studyDuration)) {
     studyDuration1 = accrualDuration + followupTime;
   }
 
@@ -3607,7 +3607,7 @@ List nbpower1s(const int kMax = 1,
 }
 
 
-//' @title Sample size for one-sample negative binomial rate
+//' @title Sample Size for One-Sample Negative Binomial Rate
 //' @description Obtains the needed accrual duration given power and
 //' follow-up time, the needed follow-up time given power and
 //' accrual duration, or the needed absolute accrual rates given
@@ -3820,13 +3820,13 @@ List nbsamplesize1s(const double beta = 0.2,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -3836,7 +3836,7 @@ List nbsamplesize1s(const double beta = 0.2,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -3884,7 +3884,7 @@ List nbsamplesize1s(const double beta = 0.2,
     stop("Invalid value for typeBetaSpending");
   }
 
-  if ((bsf=="sfkd" || bsf=="sfhsd") && R_isnancpp(bsfpar)) {
+  if ((bsf=="sfkd" || bsf=="sfhsd") && std::isnan(bsfpar)) {
     stop("Missing value for parameterBetaSpending");
   }
 
@@ -3906,7 +3906,7 @@ List nbsamplesize1s(const double beta = 0.2,
     }
   }
 
-  if (R_isnancpp(lambdaH0)) {
+  if (std::isnan(lambdaH0)) {
     stop("lambdaH0 must be provided");
   }
 
@@ -3987,13 +3987,13 @@ List nbsamplesize1s(const double beta = 0.2,
     stop("Invalid length for gamma");
   }
 
-  if (!R_isnancpp(accrualDuration)) {
+  if (!std::isnan(accrualDuration)) {
     if (accrualDuration <= 0) {
       stop("accrualDuration must be positive");
     }
   }
 
-  if (!R_isnancpp(followupTime)) {
+  if (!std::isnan(followupTime)) {
     if (fixedFollowup && followupTime <= 0) {
       stop("followupTime must be positive for fixed follow-up");
     }
@@ -4003,7 +4003,7 @@ List nbsamplesize1s(const double beta = 0.2,
     }
   }
 
-  if (fixedFollowup && R_isnancpp(followupTime)) {
+  if (fixedFollowup && std::isnan(followupTime)) {
     stop("followupTime must be provided for fixed follow-up");
   }
 
@@ -4038,7 +4038,7 @@ List nbsamplesize1s(const double beta = 0.2,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
@@ -4085,11 +4085,11 @@ List nbsamplesize1s(const double beta = 0.2,
 
   std::string unknown;
   // search for the solution according to the input
-  if (R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  if (std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualDuration";
-  } else if (!R_isnancpp(accrualDuration) && R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && std::isnan(followupTime)) {
     unknown = "followupTime";
-  } else if (!R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualIntensity";
   } else {
     stop("accrualDuration and followupTime cannot be both missing");
@@ -4161,7 +4161,7 @@ List nbsamplesize1s(const double beta = 0.2,
     NumericVector u0(1, studyDuration);
     double n0 = accrual(u0, accrualTime, accrualIntensity1,
                         accrualDuration)[0];
-    double n = std::ceil(n0);
+    double n = std::ceil(n0 - 1.0e-12);
 
     if (n - n0 > 1e-6) {
       // adjust accrual intensity or duration to obtain int # of subjects
@@ -4357,7 +4357,7 @@ List nbsamplesize1s(const double beta = 0.2,
 }
 
 
-//' @title Power for equivalence in negative binomial rate ratio
+//' @title Power for Equivalence in Negative Binomial Rate Ratio
 //' @description Obtains the power for equivalence in negative binomial
 //' rate ratio.
 //'
@@ -4665,13 +4665,13 @@ List nbpowerequiv(const int kMax = 1,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -4681,7 +4681,7 @@ List nbpowerequiv(const int kMax = 1,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -4703,11 +4703,11 @@ List nbpowerequiv(const int kMax = 1,
     }
   }
 
-  if (R_isnancpp(rateRatioLower)) {
+  if (std::isnan(rateRatioLower)) {
     stop("rateRatioLower must be provided");
   }
 
-  if (R_isnancpp(rateRatioUpper)) {
+  if (std::isnan(rateRatioUpper)) {
     stop("rateRatioUpper must be provided");
   }
 
@@ -4825,7 +4825,7 @@ List nbpowerequiv(const int kMax = 1,
     stop("Invalid length for gamma2");
   }
 
-  if (R_isnancpp(accrualDuration)) {
+  if (std::isnan(accrualDuration)) {
     stop("accrualDuration must be provided");
   }
 
@@ -4833,7 +4833,7 @@ List nbpowerequiv(const int kMax = 1,
     stop("accrualDuration must be positive");
   }
 
-  if (R_isnancpp(followupTime)) {
+  if (std::isnan(followupTime)) {
     stop("followupTime must be provided");
   }
 
@@ -4859,12 +4859,12 @@ List nbpowerequiv(const int kMax = 1,
     spendingTime1 = clone(informationRates1);
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration < accrualDuration) {
     stop("studyDuration must be greater than or equal to accrualDuration");
   }
 
-  if (fixedFollowup && !R_isnancpp(studyDuration) &&
+  if (fixedFollowup && !std::isnan(studyDuration) &&
       studyDuration > accrualDuration + followupTime) {
     stop("studyDuration cannot exceed accrualDuration + followupTime");
   }
@@ -4874,7 +4874,7 @@ List nbpowerequiv(const int kMax = 1,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1,
                 criticalValues, alpha](double aval)->double {
@@ -4909,7 +4909,7 @@ List nbpowerequiv(const int kMax = 1,
 
   // obtain the study duration
   double studyDuration1 = studyDuration;
-  if (!fixedFollowup || R_isnancpp(studyDuration)) {
+  if (!fixedFollowup || std::isnan(studyDuration)) {
     studyDuration1 = accrualDuration + followupTime;
   }
 
@@ -5457,7 +5457,7 @@ List nbpowerequiv(const int kMax = 1,
 
 
 
-//' @title Sample size for equivalence in negative binomial rate ratio
+//' @title Sample Size for Equivalence in Negative Binomial Rate Ratio
 //' @description Obtains the sample size for equivalence in negative binomial
 //' rate ratio.
 //'
@@ -5618,13 +5618,13 @@ List nbsamplesizeequiv(const double beta = 0.2,
     }
   }
 
-  if (!R_isnancpp(alpha)) {
+  if (!std::isnan(alpha)) {
     if (alpha < 0.00001 || alpha >= 1) {
       stop("alpha must lie in [0.00001, 1)");
     }
   }
 
-  if (is_true(any(is_na(criticalValues))) && R_isnancpp(alpha)) {
+  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
     stop("alpha must be provided when criticalValues is missing");
   }
 
@@ -5634,7 +5634,7 @@ List nbsamplesizeequiv(const double beta = 0.2,
     stop("Invalid value for typeAlphaSpending");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && R_isnancpp(asfpar)) {
+  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
     stop("Missing value for parameterAlphaSpending");
   }
 
@@ -5656,11 +5656,11 @@ List nbsamplesizeequiv(const double beta = 0.2,
     }
   }
 
-  if (R_isnancpp(rateRatioLower)) {
+  if (std::isnan(rateRatioLower)) {
     stop("rateRatioLower must be provided");
   }
 
-  if (R_isnancpp(rateRatioUpper)) {
+  if (std::isnan(rateRatioUpper)) {
     stop("rateRatioUpper must be provided");
   }
 
@@ -5785,13 +5785,13 @@ List nbsamplesizeequiv(const double beta = 0.2,
     stop("Invalid length for gamma2");
   }
 
-  if (!R_isnancpp(accrualDuration)) {
+  if (!std::isnan(accrualDuration)) {
     if (accrualDuration <= 0) {
       stop("accrualDuration must be positive");
     }
   }
 
-  if (!R_isnancpp(followupTime)) {
+  if (!std::isnan(followupTime)) {
     if (fixedFollowup && followupTime <= 0) {
       stop("followupTime must be positive for fixed follow-up");
     }
@@ -5801,7 +5801,7 @@ List nbsamplesizeequiv(const double beta = 0.2,
     }
   }
 
-  if (fixedFollowup && R_isnancpp(followupTime)) {
+  if (fixedFollowup && std::isnan(followupTime)) {
     stop("followupTime must be provided for fixed follow-up");
   }
 
@@ -5836,7 +5836,7 @@ List nbsamplesizeequiv(const double beta = 0.2,
   if (is_true(any(is_na(criticalValues)))) {
     if (kMax > 1 && criticalValues.size() == kMax &&
         is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        R_isnancpp(criticalValues[kMax-1])) { // Haybittle & Peto
+        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
 
       auto f = [kMax, informationRates1,
                 criticalValues, alpha](double aval)->double {
@@ -5863,11 +5863,11 @@ List nbsamplesizeequiv(const double beta = 0.2,
 
   std::string unknown;
   // search for the solution according to the input
-  if (R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  if (std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualDuration";
-  } else if (!R_isnancpp(accrualDuration) && R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && std::isnan(followupTime)) {
     unknown = "followupTime";
-  } else if (!R_isnancpp(accrualDuration) && !R_isnancpp(followupTime)) {
+  } else if (!std::isnan(accrualDuration) && !std::isnan(followupTime)) {
     unknown = "accrualIntensity";
   } else {
     stop("accrualDuration and followupTime cannot be both missing");
@@ -6068,7 +6068,7 @@ List nbsamplesizeequiv(const double beta = 0.2,
     NumericVector u0(1, studyDuration);
     double n0 = accrual(u0, accrualTime, accrualIntensity1,
                         accrualDuration)[0];
-    double n = std::ceil(n0);
+    double n = std::ceil(n0 - 1.0e-12);
 
     if (n - n0 > 1e-6) {
       // adjust accrual intensity or duration to obtain int # of subjects

@@ -1,4 +1,4 @@
-#' @title Group sequential design for one-sample mean
+#' @title Group Sequential Design for One-Sample Mean
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for one-sample mean.
 #'
@@ -222,7 +222,7 @@ getDesignOneMean <- function(
 
   if (is.na(beta)) { # power calculation
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = round(n*informationRates)/n
     }
 
@@ -289,7 +289,7 @@ getDesignOneMean <- function(
         pt(b, n-1, ncp, lower.tail = FALSE) - (1 - beta)
       }, c(n0, 2*n0))$root
 
-      if (rounding) n = ceiling(n)
+      if (rounding) n = ceiling(n - 1.0e-12)
 
       des = getDesign(
         beta = NA, IMax = n/v1, theta,
@@ -335,7 +335,7 @@ getDesignOneMean <- function(
       n = des$overallResults$information*v1
 
       if (rounding) {
-        n = ceiling(n)
+        n = ceiling(n - 1.0e-12)
         informationRates = des$byStageResults$informationRates
         informationRates = round(n*informationRates)/n
 
@@ -388,7 +388,7 @@ getDesignOneMean <- function(
   des
 }
 
-#' @title Group sequential design for paired mean difference
+#' @title Group Sequential Design for Paired Mean Difference
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for paired mean
 #' difference.
@@ -605,7 +605,7 @@ getDesignPairedMeanDiff <- function(
 }
 
 
-#' @title Group sequential design for paired mean ratio
+#' @title Group Sequential Design for Paired Mean Ratio
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for paired mean ratio.
 #'
@@ -844,7 +844,7 @@ getDesignPairedMeanRatio <- function(
 }
 
 
-#' @title Group sequential design for two-sample mean difference
+#' @title Group Sequential Design for Two-Sample Mean Difference
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for two-sample mean
 #' difference.
@@ -1086,7 +1086,7 @@ getDesignMeanDiff <- function(
 
   if (is.na(beta)) { # power calculation
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = round(n*informationRates)/n
     }
 
@@ -1153,7 +1153,7 @@ getDesignMeanDiff <- function(
         pt(b, n-2, ncp, lower.tail = FALSE) - (1 - beta)
       }, c(n0, 2*n0))$root
 
-      if (rounding) n = ceiling(n)
+      if (rounding) n = ceiling(n - 1.0e-12)
 
       des = getDesign(
         beta = NA, IMax = n/v1, theta,
@@ -1199,7 +1199,7 @@ getDesignMeanDiff <- function(
       n = des$overallResults$information*v1
 
       if (rounding) {
-        n = ceiling(n)
+        n = ceiling(n - 1.0e-12)
         informationRates = des$byStageResults$informationRates
         informationRates = round(n*informationRates)/n
 
@@ -1254,7 +1254,7 @@ getDesignMeanDiff <- function(
 }
 
 
-#' @title Group sequential design for two-sample mean ratio
+#' @title Group Sequential Design for Two-Sample Mean Ratio
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for two-sample mean
 #' ratio.
@@ -1501,7 +1501,7 @@ getDesignMeanRatio <- function(
 }
 
 
-#' @title Group sequential design for mean difference in 2x2 crossover
+#' @title Group Sequential Design for Mean Difference in 2x2 Crossover
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for two-sample mean
 #' difference in 2x2 crossover.
@@ -1737,7 +1737,7 @@ getDesignMeanDiffXO <- function(
 
   if (is.na(beta)) { # power calculation
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = round(n*informationRates)/n
     }
 
@@ -1804,7 +1804,7 @@ getDesignMeanDiffXO <- function(
         pt(b, n-2, ncp, lower.tail = FALSE) - (1 - beta)
       }, c(n0, 2*n0))$root
 
-      if (rounding) n = ceiling(n)
+      if (rounding) n = ceiling(n - 1.0e-12)
 
       des = getDesign(
         beta = NA, IMax = n/v1, theta,
@@ -1850,7 +1850,7 @@ getDesignMeanDiffXO <- function(
       n = des$overallResults$information*v1
 
       if (rounding) {
-        n = ceiling(n)
+        n = ceiling(n - 1.0e-12)
         informationRates = des$byStageResults$informationRates
         informationRates = round(n*informationRates)/n
 
@@ -1905,7 +1905,7 @@ getDesignMeanDiffXO <- function(
 }
 
 
-#' @title Group sequential design for mean ratio in 2x2 crossover
+#' @title Group Sequential Design for Mean Ratio in 2x2 Crossover
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for two-sample mean
 #' ratio in 2x2 crossover.
@@ -2151,8 +2151,8 @@ getDesignMeanRatioXO <- function(
 }
 
 
-#' @title Group sequential design for equivalence in paired mean
-#' difference
+#' @title Group Sequential Design for Equivalence in Paired Mean
+#' Difference
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for equivalence in
 #' paired mean difference.
@@ -2385,7 +2385,7 @@ getDesignPairedMeanDiffEquiv <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
     informationRates = round(n*informationRates)/n
   }
 
@@ -2480,7 +2480,7 @@ getDesignPairedMeanDiffEquiv <- function(
 }
 
 
-#' @title Group sequential design for equivalence in paired mean ratio
+#' @title Group Sequential Design for Equivalence in Paired Mean Ratio
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for equivalence in
 #' paired mean ratio.
@@ -2701,8 +2701,8 @@ getDesignPairedMeanRatioEquiv <- function(
 }
 
 
-#' @title Group sequential design for equivalence in two-sample
-#' mean difference
+#' @title Group Sequential Design for Equivalence in Two-Sample
+#' Mean Difference
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for equivalence in
 #' two-sample mean difference.
@@ -2946,7 +2946,7 @@ getDesignMeanDiffEquiv <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
     informationRates = round(n*informationRates)/n
   }
 
@@ -3044,8 +3044,8 @@ getDesignMeanDiffEquiv <- function(
 }
 
 
-#' @title Group sequential design for equivalence in two-sample
-#' mean ratio
+#' @title Group Sequential Design for Equivalence in Two-Sample
+#' Mean Ratio
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for equivalence in
 #' two-sample mean ratio.
@@ -3273,8 +3273,8 @@ getDesignMeanRatioEquiv <- function(
 }
 
 
-#' @title Group sequential design for equivalence in mean difference
-#' in 2x2 crossover
+#' @title Group Sequential Design for Equivalence in Mean Difference
+#' in 2x2 Crossover
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for equivalence in
 #' mean difference in 2x2 crossover.
@@ -3518,7 +3518,7 @@ getDesignMeanDiffXOEquiv <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
     informationRates = round(n*informationRates)/n
   }
 
@@ -3616,8 +3616,8 @@ getDesignMeanDiffXOEquiv <- function(
 }
 
 
-#' @title Group sequential design for equivalence in mean ratio
-#' in 2x2 crossover
+#' @title Group Sequential Design for Equivalence in Mean Ratio
+#' in 2x2 Crossover
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for equivalence
 #' mean ratio in 2x2 crossover.
@@ -3844,7 +3844,7 @@ getDesignMeanRatioXOEquiv <- function(
 }
 
 
-#' @title Group sequential design for two-sample Wilcoxon test
+#' @title Group Sequential Design for Two-Sample Wilcoxon Test
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for two-sample
 #' Wilcoxon test.
@@ -4072,7 +4072,7 @@ getDesignWilcoxon <- function(
 
   if (is.na(beta)) { # power calculation
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = round(n*informationRates)/n
     }
 
@@ -4099,7 +4099,7 @@ getDesignWilcoxon <- function(
     n = des$overallResults$information*v1
 
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = des$byStageResults$informationRates
       informationRates = round(n*informationRates)/n
 
@@ -4148,8 +4148,8 @@ getDesignWilcoxon <- function(
 }
 
 
-#' @title Group sequential design for two-sample mean difference from the
-#' MMRM model
+#' @title Group Sequential Design for Two-Sample Mean Difference From the
+#' MMRM Model
 #' @description Obtains the power and sample size for two-sample
 #' mean difference at the last time point from the mixed-model
 #' for repeated measures (MMRM) model.
@@ -4589,7 +4589,7 @@ getDesignMeanDiffMMRM <- function(
                 accrualDuration)
 
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       accrualDuration = getAccrualDurationFromN(n, accrualTime,
                                                 accrualIntensity)
     }
@@ -4692,7 +4692,7 @@ getDesignMeanDiffMMRM <- function(
       }, c(0.5*n, 1.5*n))$root
 
       if (rounding) {
-        n = ceiling(n)
+        n = ceiling(n - 1.0e-12)
       }
 
       if (is.na(accrualDuration)) {
@@ -4731,7 +4731,7 @@ getDesignMeanDiffMMRM <- function(
       }
     } else {
       if (rounding) {
-        n = ceiling(n)
+        n = ceiling(n - 1.0e-12)
       }
 
       if (is.na(accrualDuration)) {
@@ -4836,8 +4836,8 @@ getDesignMeanDiffMMRM <- function(
 }
 
 
-#' @title Power and sample size for direct treatment effects in crossover
-#' trials accounting for carryover effects
+#' @title Power and Sample Size for Direct Treatment Effects in Crossover
+#' Trials Accounting for Carryover Effects
 #' @description Obtains the power and sample size for direct treatment
 #' effects in crossover trials accounting for carryover effects.
 #'
@@ -5206,7 +5206,7 @@ getDesignMeanDiffCarryover <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
   }
 
   if (normalApproximation) {
@@ -5241,7 +5241,7 @@ getDesignMeanDiffCarryover <- function(
 }
 
 
-#' @title Power and sample size for one-way ANOVA
+#' @title Power and Sample Size for One-Way ANOVA
 #' @description Obtains the power and sample size for one-way
 #' analysis of variance.
 #'
@@ -5382,7 +5382,7 @@ getDesignANOVA <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
   }
 
   power = f(n)
@@ -5400,7 +5400,7 @@ getDesignANOVA <- function(
 }
 
 
-#' @title Power and sample size for two-way ANOVA
+#' @title Power and Sample Size for Two-Way ANOVA
 #' @description Obtains the power and sample size for two-way
 #' analysis of variance.
 #'
@@ -5580,9 +5580,9 @@ getDesignTwoWayANOVA <- function(
   }
 
   if (rounding) {
-    nA = ceiling(nA)
-    nB = ceiling(nB)
-    nAB = ceiling(nAB)
+    nA = ceiling(nA - 1.0e-12)
+    nB = ceiling(nB - 1.0e-12)
+    nAB = ceiling(nAB - 1.0e-12)
   }
 
   m = unique(c(nA, nB, nAB))
@@ -5602,7 +5602,7 @@ getDesignTwoWayANOVA <- function(
 }
 
 
-#' @title Power and sample size for one-way ANOVA contrast
+#' @title Power and Sample Size for One-Way ANOVA Contrast
 #' @description Obtains the power and sample size for a single contrast
 #' in one-way analysis of variance.
 #'
@@ -5755,7 +5755,7 @@ getDesignANOVAContrast <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
   }
 
   power = f(n)
@@ -5774,7 +5774,7 @@ getDesignANOVAContrast <- function(
 }
 
 
-#' @title Power and sample size for repeated-measures ANOVA
+#' @title Power and Sample Size for Repeated-Measures ANOVA
 #' @description Obtains the power and sample size for one-way repeated
 #' measures analysis of variance. Each subject takes all treatments
 #' in the longitudinal study.
@@ -5910,7 +5910,7 @@ getDesignRepeatedANOVA <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
   }
 
   power = f(n)
@@ -5927,7 +5927,7 @@ getDesignRepeatedANOVA <- function(
 }
 
 
-#' @title Power and sample size for one-way repeated measures ANOVA contrast
+#' @title Power and Sample Size for One-Way Repeated Measures ANOVA Contrast
 #' @description Obtains the power and sample size for a single contrast
 #' in one-way repeated measures analysis of variance.
 #'
@@ -6059,7 +6059,7 @@ getDesignRepeatedANOVAContrast <- function(
   }
 
   if (rounding) {
-    n = ceiling(n)
+    n = ceiling(n - 1.0e-12)
   }
 
   power = f(n)
@@ -6077,7 +6077,7 @@ getDesignRepeatedANOVAContrast <- function(
 }
 
 
-#' @title Group sequential design for one-sample slope
+#' @title Group Sequential Design for One-Sample Slope
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for one-sample slope.
 #'
@@ -6304,7 +6304,7 @@ getDesignOneSlope <- function(
 
   if (is.na(beta)) { # power calculation
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = round(n*informationRates)/n
     }
 
@@ -6371,7 +6371,7 @@ getDesignOneSlope <- function(
         pt(b, n-2, ncp, lower.tail = FALSE) - (1 - beta)
       }, c(n0, 2*n0))$root
 
-      if (rounding) n = ceiling(n)
+      if (rounding) n = ceiling(n - 1.0e-12)
 
       des = getDesign(
         beta = NA, IMax = n/v1, theta,
@@ -6418,7 +6418,7 @@ getDesignOneSlope <- function(
       n = des$overallResults$information*v1
 
       if (rounding) {
-        n = ceiling(n)
+        n = ceiling(n - 1.0e-12)
         informationRates = des$byStageResults$informationRates
         informationRates = round(n*informationRates)/n
 
@@ -6473,7 +6473,7 @@ getDesignOneSlope <- function(
 }
 
 
-#' @title Group sequential design for two-sample slope difference
+#' @title Group Sequential Design for Two-Sample Slope Difference
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for a group sequential design for two-sample slope
 #' difference.
@@ -6713,7 +6713,7 @@ getDesignSlopeDiff <- function(
 
   if (is.na(beta)) { # power calculation
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       informationRates = round(n*informationRates)/n
     }
 
@@ -6780,7 +6780,7 @@ getDesignSlopeDiff <- function(
         pt(b, n-4, ncp, lower.tail = FALSE) - (1 - beta)
       }, c(n0, 2*n0))$root
 
-      if (rounding) n = ceiling(n)
+      if (rounding) n = ceiling(n - 1.0e-12)
 
       des = getDesign(
         beta = NA, IMax = n/v1, theta,
@@ -6826,7 +6826,7 @@ getDesignSlopeDiff <- function(
       n = des$overallResults$information*v1
 
       if (rounding) {
-        n = ceiling(n)
+        n = ceiling(n - 1.0e-12)
         informationRates = des$byStageResults$informationRates
         informationRates = round(n*informationRates)/n
 
@@ -6882,8 +6882,8 @@ getDesignSlopeDiff <- function(
 }
 
 
-#' @title Group sequential design for two-sample slope difference
-#' from the MMRM model
+#' @title Group Sequential Design for Two-Sample Slope Difference
+#' From the MMRM Model
 #' @description Obtains the power given sample size or obtains the sample
 #' size given power for two-sample slope difference from the growth curve
 #' MMRM model.
@@ -7399,7 +7399,7 @@ getDesignSlopeDiffMMRM <- function(
                 accrualDuration)
 
     if (rounding) {
-      n = ceiling(n)
+      n = ceiling(n - 1.0e-12)
       accrualDuration = getAccrualDurationFromN(n, accrualTime,
                                                 accrualIntensity)
     }
@@ -7558,7 +7558,7 @@ getDesignSlopeDiffMMRM <- function(
                   accrualDuration)
 
       if (rounding) {
-        n = ceiling(n)
+        n = ceiling(n - 1.0e-12)
 
         if (unknown == "accrualDuration" || unknown == "followupTime") {
           accrualDuration = getAccrualDurationFromN(n, accrualTime,
@@ -7634,7 +7634,7 @@ getDesignSlopeDiffMMRM <- function(
                   accrualDuration)
 
       if (rounding) {
-        n = ceiling(n)
+        n = ceiling(n - 1.0e-12)
 
         if (unknown == "accrualDuration" || unknown == "followupTime") {
           accrualDuration = getAccrualDurationFromN(n, accrualTime,
@@ -7747,7 +7747,7 @@ getDesignSlopeDiffMMRM <- function(
 }
 
 
-#' @title Hedges' g effect size
+#' @title Hedges' g Effect Size
 #' @description Obtains Hedges' g estimate and confidence interval of
 #' effect size.
 #'
@@ -7835,183 +7835,4 @@ hedgesg <- function(tstat, m, ntilde, cilevel = 0.95) {
   data.frame(tstat, m, ntilde, g, varg, lower, upper, cilevel)
 }
 
-
-#' @title Brookmeyer-Crowley confidence interval for quantiles of
-#' right-censored time-to-event data
-#' @description Obtains the Brookmeyer-Crowley confidence
-#' interval for quantiles of right-censored time-to-event data.
-#'
-#' @param time The vector of possibly right-censored survival times.
-#' @param event The vector of event indicators.
-#' @param cilevel The confidence interval level. Defaults to 0.95.
-#' @param transform The transformation of the survival function to use
-#'   to construct the confidence interval. Options include "linear",
-#'   "loglog", "log", "asinsqrt", and "logit". Defaults to "loglog".
-#' @param probs The vector of probabilities to calculate the quantiles.
-#'   Defaults to c(0.25, 0.5, 0.75).
-#'
-#' @return A data frame containing the estimated quantile and
-#' confidence interval corresponding to each specified probability.
-#' It includes the following variables:
-#'
-#' * \code{prob}: The probability to calculate the quantile.
-#'
-#' * \code{quantile}: The estimated quantile.
-#'
-#' * \code{lower}: The lower limit of the confidence interval.
-#'
-#' * \code{upper}: The upper limit of the confidence interval.
-#'
-#' * \code{cilevel}: The confidence interval level.
-#'
-#' * \code{transform}: The transformation of the survival function to use
-#'   to construct the confidence interval.
-#'
-#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#'
-#' @examples
-#'
-#' survQuantile(
-#'   time = c(33.7, 3.9, 10.5, 5.4, 19.5, 23.8, 7.9, 16.9, 16.6,
-#'            33.7, 17.1, 7.9, 10.5, 38),
-#'   event = c(0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1),
-#'   probs = c(0.25, 0.5, 0.75))
-#'
-#' @export
-#'
-survQuantile <- function(
-    time = NA_real_, event = NA_real_,
-    cilevel = 0.95, transform = "loglog",
-    probs = c(0.25, 0.5, 0.75)) {
-
-  if (any(is.na(time))) {
-    stop("time must be provided")
-  }
-
-  if (any(is.na(event))) {
-    stop("event must be provided")
-  }
-
-  if (any(time <= 0)) {
-    stop("time must be positive for each subject")
-  }
-
-  if (any(event != 1 & event != 0)) {
-    stop("event must be 1 or 0 for each subject")
-  }
-
-  if (cilevel <= 0 || cilevel >= 1) {
-    stop("cilevel must lie between 0 and 1")
-  }
-
-  transform = tolower(transform)
-  if (!(transform %in% c("linear", "loglog", "log", "asinsqrt", "logit"))) {
-    stop(paste("transform must be one of the options:",
-               "linear, loglog, log, asinsqrt, or logit"))
-  }
-
-  if (any(probs <= 0 | probs >= 1)) {
-    stop("Elements of probs must lie between 0 and 1")
-  }
-
-
-  data = data.frame(time = time, event = event)
-
-  # sort the data by time with event appearing before censoring for ties
-  df1 = data[order(data$time, -data$event),]
-  n = nrow(df1)
-
-  # construct the data for # at risk and # events at distinct event times
-  df2 = data.frame()
-  cache = 0 # buffer for the current event time
-  for (i in 1:n) {
-    if ((i == 1 && df1$event[i] == 1) ||
-        (i >= 2 && df1$event[i] == 1 &&
-         df1$time[i] > df1$time[i-1])) { # new event
-      # add the info for the previous event
-      if (cache) {
-        df2 = rbind(df2, data.frame(time = t, nrisk = nrisk,
-                                    nevent = nevent))
-      }
-
-      # update the buffer for the current event time
-      t = df1$time[i]
-      nrisk = n-i+1
-      nevent = 1
-      cache = 1
-    } else if (i >= 2 && df1$event[i] == 1 &&
-               df1$event[i-1] == 1 &&
-               df1$time[i] == df1$time[i-1]) { # tied event
-      nevent = nevent + 1
-    } else if (i >= 2 && df1$event[i] == 0 && df1$event[i-1] == 1) {
-      # new censoring
-      # add the info for the previous event
-      df2 = rbind(df2, data.frame(time = t, nrisk = nrisk,
-                                  nevent = nevent))
-
-      # empty the buffer for the current event time
-      cache = 0
-    }
-  }
-
-  # add the info for the last event
-  if (cache) {
-    df2 = rbind(df2, data.frame(time = t, nrisk = nrisk,
-                                nevent = nevent))
-  }
-
-
-  # construct the Kaplan-Meier estimates of survival probabilities
-  df2$surv = cumprod(1 - df2$nevent/df2$nrisk)
-
-  # obtain the Greenwood variance estimate of survival probabilities
-  vcumhaz = cumsum(df2$nevent/(df2$nrisk*(df2$nrisk-df2$nevent)))
-  df2$sesurv = df2$surv*sqrt(vcumhaz)
-
-  # obtain the quantile estimate and confidence interval
-  a = lapply(probs, function(p) {
-    # Brookmeyer & Crowley confidence interval for quantile
-    if (transform == "linear") {
-      z = (df2$surv - (1-p))/df2$sesurv
-    } else if (transform == "loglog") {
-      grad = 1/(df2$surv*log(df2$surv))
-      z = (log(-log(df2$surv)) - log(-log(1-p)))/(grad*df2$sesurv)
-    } else if (transform == "log") {
-      grad = 1/df2$surv
-      z = (log(df2$surv) - log(1-p))/(grad*df2$sesurv)
-    } else if (transform == "asinsqrt") {
-      grad = 1/(2*sqrt(df2$surv*(1-df2$surv)))
-      z = (asin(sqrt(df2$surv)) - asin(sqrt(1-p)))/(grad*df2$sesurv)
-    } else if (transform == "logit") {
-      grad = 1/(df2$surv*(1-df2$surv))
-      z = (qlogis(df2$surv) - qlogis(1-p))/(grad*df2$sesurv)
-    }
-
-    i = which(abs(z[!is.nan(z)]) <= qnorm((1+cilevel)/2))
-    if (length(i) == 0) {
-      lower = NA
-      upper = NA
-    } else {
-      lower = df2$time[min(i)]
-
-      if (max(i) <= nrow(df2)) {
-        upper = df2$time[max(i)+1]
-      } else {
-        upper = NA
-      }
-    }
-
-    if (any(df2$surv < 1 - p)) {
-      q = df2$time[min(which(df2$surv < 1 - p))]
-      data.frame(prob = p, quantile = q, lower = lower, upper = upper)
-    } else {
-      data.frame(prob = p, quantile = NA, lower = lower, upper = upper)
-    }
-  })
-
-  b = do.call("rbind", a)
-  b$cilevel = cilevel
-  b$transform = transform
-  b
-}
 
