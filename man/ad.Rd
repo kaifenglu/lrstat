@@ -2,8 +2,8 @@
 % Please edit documentation in R/RcppExports.R
 \name{ad}
 \alias{ad}
-\title{Number of patients enrolled during an interval and having an event
-by specified calendar times}
+\title{Number of Patients Enrolled During an Interval and Having an Event
+by Specified Calendar Times}
 \usage{
 ad(
   time = NA_real_,

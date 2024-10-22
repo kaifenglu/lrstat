@@ -133,5 +133,3 @@ rpact, gsDesign
 \author{
 Kaifeng Lu, \email{kaifenglu@gmail.com}
 }
-\keyword{"_PACKAGE"}
-\keyword{internal}

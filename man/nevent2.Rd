@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{nevent2}
 \alias{nevent2}
-\title{Number of subjects having an event by calendar time}
+\title{Number of Subjects Having an Event by Calendar Time}
 \usage{
 nevent2(
   time = NA_real_,

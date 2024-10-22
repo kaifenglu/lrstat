@@ -2,7 +2,7 @@
 % Please edit documentation in R/wrappers.R
 \name{fadjpdun}
 \alias{fadjpdun}
-\title{Adjusted p-values for Dunnett-based graphical approaches}
+\title{Adjusted p-Values for Dunnett-Based Graphical Approaches}
 \usage{
 fadjpdun(wgtmat, p, family = NULL, corr = NULL)
 }

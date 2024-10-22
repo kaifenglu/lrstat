@@ -2,7 +2,7 @@
 % Please edit documentation in R/wrappers.R
 \name{fadjpbon}
 \alias{fadjpbon}
-\title{Adjusted p-values for Bonferroni-based graphical approaches}
+\title{Adjusted p-Values for Bonferroni-Based Graphical Approaches}
 \usage{
 fadjpbon(w, G, p)
 }

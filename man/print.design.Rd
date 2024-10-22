@@ -2,7 +2,7 @@
 % Please edit documentation in R/prints.R
 \name{print.design}
 \alias{print.design}
-\title{Print group sequential design}
+\title{Print Group Sequential Design}
 \usage{
 \method{print}{design}(x, ...)
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{caltime}
 \alias{caltime}
-\title{Calendar times for target number of events}
+\title{Calendar Times for Target Number of Events}
 \usage{
 caltime(
   nevents = NA_real_,
@@ -82,9 +82,8 @@ caltime(nevents = c(24, 80), allocationRatioPlanned = 1,
         accrualTime = seq(0, 8),
         accrualIntensity = 26/9*seq(1, 9),
         piecewiseSurvivalTime = c(0, 6),
-        stratumFraction = c(0.2, 0.8),
-        lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
-        lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+        lambda1 = c(0.0533, 0.0309),
+        lambda2 = c(0.0533, 0.0533),
         gamma1 = -log(1-0.05)/12,
         gamma2 = -log(1-0.05)/12,
         accrualDuration = 22,

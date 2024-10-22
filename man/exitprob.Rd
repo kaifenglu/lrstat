@@ -2,7 +2,7 @@
 % Please edit documentation in R/wrappers.R
 \name{exitprob}
 \alias{exitprob}
-\title{Stagewise exit probabilities}
+\title{Stagewise Exit Probabilities}
 \usage{
 exitprob(b, a = NA, theta = 0, I = NA)
 }

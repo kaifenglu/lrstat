@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{lrsim3a}
 \alias{lrsim3a}
-\title{Log-rank test simulation for three arms}
+\title{Log-Rank Test Simulation for Three Arms}
 \usage{
 lrsim3a(
   kMax = NA_integer_,
@@ -122,7 +122,7 @@ Defaults to 1000.}
 stage to extract.}
 
 \item{seed}{The seed to reproduce the simulation results.
-The seed from the environment will be used if left unspecified,}
+The seed from the environment will be used if left unspecified.}
 }
 \value{
 A list with 2 components:

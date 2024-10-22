@@ -2,7 +2,7 @@
 % Please edit documentation in R/wrappers.R
 \name{qtpwexp}
 \alias{qtpwexp}
-\title{Quantile function of truncated piecewise exponential distribution}
+\title{Quantile Function of Truncated Piecewise Exponential Distribution}
 \usage{
 qtpwexp(
   p,

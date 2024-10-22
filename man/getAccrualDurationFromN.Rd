@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getAccrualDurationFromN}
 \alias{getAccrualDurationFromN}
-\title{Accrual duration to enroll target number of subjects}
+\title{Accrual Duration to Enroll Target Number of Subjects}
 \usage{
 getAccrualDurationFromN(
   nsubjects = NA_real_,

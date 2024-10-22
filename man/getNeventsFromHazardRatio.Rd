@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getNeventsFromHazardRatio}
 \alias{getNeventsFromHazardRatio}
-\title{Get the required number of events given hazard ratio}
+\title{Required Number of Events Given Hazard Ratio}
 \usage{
 getNeventsFromHazardRatio(
   beta = 0.2,

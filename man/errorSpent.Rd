@@ -2,7 +2,7 @@
 % Please edit documentation in R/wrappers.R
 \name{errorSpent}
 \alias{errorSpent}
-\title{Error spending}
+\title{Error Spending}
 \usage{
 errorSpent(t, error, sf = "sfOF", sfpar = NA)
 }
@@ -28,7 +28,9 @@ Obtains the error spent at given spending times
 for the specified error spending function.
 }
 \examples{
+
 errorSpent(t = 0.5, error = 0.025, sf = "sfOF")
+
 errorSpent(t = c(0.5, 0.75, 1), error = 0.025, sf = "sfHSD", sfpar = -4)
 
 }

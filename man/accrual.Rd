@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{accrual}
 \alias{accrual}
-\title{Number of enrolled subjects}
+\title{Number of Enrolled Subjects}
 \usage{
 accrual(
   time = NA_real_,

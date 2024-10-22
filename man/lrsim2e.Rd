@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{lrsim2e}
 \alias{lrsim2e}
-\title{Log-rank test simulation for two endpoints}
+\title{Log-Rank Test Simulation for Two Endpoints}
 \usage{
 lrsim2e(
   kMax = NA_integer_,
@@ -136,7 +136,7 @@ Defaults to 1000.}
 stage to extract.}
 
 \item{seed}{The seed to reproduce the simulation results.
-The seed from the environment will be used if left unspecified,}
+The seed from the environment will be used if left unspecified.}
 }
 \value{
 A list with 2 components:

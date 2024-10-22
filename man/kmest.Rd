@@ -2,16 +2,16 @@
 % Please edit documentation in R/RcppExports.R
 \name{kmest}
 \alias{kmest}
-\title{Kaplan-Meier estimates of the survival curve}
+\title{Kaplan-Meier Estimates of Survival Curve}
 \usage{
 kmest(
   data,
-  rep = "rep",
-  stratum = "stratum",
+  rep = "",
+  stratum = "",
   time = "time",
   event = "event",
   conftype = "log-log",
-  confint = 0.95
+  conflev = 0.95
 )
 }
 \arguments{
@@ -23,26 +23,24 @@ kmest(
 \item \code{event}: The event indicator.
 }}
 
-\item{rep}{The name of the replication variable in the input data.}
+\item{rep}{The name(s) of the replication variable(s) in the input data.}
 
-\item{stratum}{The name of the stratum variable in the input data.}
+\item{stratum}{The name(s) of the stratum variable(s) in the input data.}
 
 \item{time}{The name of the time variable in the input data.}
 
 \item{event}{The name of the event variable in the input data.}
 
-\item{conftype}{The type of confidence interval. One of "none",
+\item{conftype}{The type of the confidence interval. One of "none",
 "plain", "log", "log-log" (the default), or "arcsin".
 The arcsin option bases the intervals on asin(sqrt(survival)).}
 
-\item{confint}{The level of the two-sided confidence interval for
+\item{conflev}{The level of the two-sided confidence interval for
 the survival probabilities. Defaults to 0.95.}
 }
 \value{
 A data frame with the following variables:
 \itemize{
-\item \code{rep}: The replication.
-\item \code{stratum}: The stratum.
 \item \code{size}: The number of subjects in the stratum.
 \item \code{time}: The event time.
 \item \code{nrisk}: The number of subjects at risk.
@@ -52,8 +50,10 @@ A data frame with the following variables:
 probability based on the Greendwood formula.
 \item \code{lower}: The lower bound of confidence interval if requested.
 \item \code{upper}: The upper bound of confidence interval if requested.
-\item \code{confint}: The level of confidence interval if requested.
+\item \code{conflev}: The level of confidence interval if requested.
 \item \code{conftype}: The type of confidence interval if requested.
+\item \code{stratum}: The stratum.
+\item \code{rep}: The replication.
 }
 }
 \description{
@@ -61,8 +61,7 @@ Obtains the Kaplan-Meier estimates of the survival curve.
 }
 \examples{
 
-kmest(data = aml, stratum = "x",
-      time = "time", event = "status")
+kmest(data = aml, stratum = "x", time = "time", event = "status")
 
 }
 \author{

@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{hd}
 \alias{hd}
-\title{Integrated event probability over an interval with constant hazard}
+\title{Integrated Event Probability Over an Interval With Constant Hazard}
 \usage{
 hd(
   j = NA_integer_,

@@ -2,7 +2,7 @@
 % Please edit documentation in R/wrappers.R
 \name{fmodmix}
 \alias{fmodmix}
-\title{Adjusted p-values for modified mixture gatekeeping procedures}
+\title{Adjusted p-Values for Modified Mixture Gatekeeping Procedures}
 \usage{
 fmodmix(
   p,
@@ -11,7 +11,7 @@ fmodmix(
   parallel,
   gamma,
   test = "hommel",
-  exhaust = 1
+  exhaust = TRUE
 )
 }
 \arguments{
@@ -30,7 +30,7 @@ parameter for the last family is automatically set to 1.}
 "holm", "hochberg", or "hommel". Defaults to "hommel".}
 
 \item{exhaust}{Whether to use alpha-exhausting component testing procedure
-for the last family with active hypotheses. It defaults to TRUE.}
+for the last family with active hypotheses. It defaults to \code{TRUE}.}
 }
 \value{
 A matrix of adjusted p-values.
@@ -61,7 +61,7 @@ serial = matrix(c(0, 0, 0, 0, 0, 0, 0, 0,
 
 parallel = matrix(0, 8, 8)
 gamma = c(0.6, 0.6, 0.6, 1)
-fmodmix(p, family, serial, parallel, gamma, test = "hommel", exhaust = 1)
+fmodmix(p, family, serial, parallel, gamma, test = "hommel", exhaust = TRUE)
 
 }
 \references{

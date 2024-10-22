@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{patrisk}
 \alias{patrisk}
-\title{Probability of being at risk}
+\title{Probability of Being at Risk}
 \usage{
 patrisk(
   time = NA_real_,

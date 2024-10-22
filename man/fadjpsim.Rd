@@ -2,7 +2,7 @@
 % Please edit documentation in R/wrappers.R
 \name{fadjpsim}
 \alias{fadjpsim}
-\title{Adjusted p-values for Simes-based graphical approaches}
+\title{Adjusted p-Values for Simes-Based Graphical Approaches}
 \usage{
 fadjpsim(wgtmat, p, family = NULL)
 }

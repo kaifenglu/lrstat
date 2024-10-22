@@ -2,8 +2,8 @@
 % Please edit documentation in R/wrappers.R
 \name{fseqbon}
 \alias{fseqbon}
-\title{Group sequential trials using Bonferroni-based graphical
-approaches}
+\title{Group Sequential Trials Using Bonferroni-Based Graphical
+Approaches}
 \usage{
 fseqbon(
   w,

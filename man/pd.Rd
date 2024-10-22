@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{pd}
 \alias{pd}
-\title{Integrated event probability over an interval}
+\title{Integrated Event Probability Over an Interval}
 \usage{
 pd(
   t1 = NA_real_,

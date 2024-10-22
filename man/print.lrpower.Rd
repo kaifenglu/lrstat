@@ -2,7 +2,7 @@
 % Please edit documentation in R/prints.R
 \name{print.lrpower}
 \alias{print.lrpower}
-\title{Print power and sample size results for log-rank tests}
+\title{Print Power and Sample Size Results for Log-Rank Tests}
 \usage{
 \method{print}{lrpower}(x, ...)
 }

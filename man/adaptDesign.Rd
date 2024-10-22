@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{adaptDesign}
 \alias{adaptDesign}
-\title{Adaptive design at an interim look}
+\title{Adaptive Design at an Interim Look}
 \usage{
 adaptDesign(
   betaNew = NA_real_,

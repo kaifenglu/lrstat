@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{lrsim}
 \alias{lrsim}
-\title{Log-rank test simulation}
+\title{Log-Rank Test Simulation}
 \usage{
 lrsim(
   kMax = 1L,
@@ -118,7 +118,7 @@ Defaults to 1000.}
 stage to extract.}
 
 \item{seed}{The seed to reproduce the simulation results.
-The seed from the environment will be used if left unspecified,}
+The seed from the environment will be used if left unspecified.}
 }
 \value{
 An S3 class \code{lrsim} object with 3 components:

@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{natrisk}
 \alias{natrisk}
-\title{Number of subjects at risk}
+\title{Number of Subjects at Risk}
 \usage{
 natrisk(
   time = NA_real_,

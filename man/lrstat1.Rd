@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{lrstat1}
 \alias{lrstat1}
-\title{Number of subjects having an event and log-rank statistic
+\title{Number of Subjects Having an Event and Log-Rank Statistic
 for a hypothesized hazard ratio at a given calendar time}
 \usage{
 lrstat1(
@@ -135,9 +135,8 @@ lrstat1(time = 22, hazardRatioH0 = 1,
         accrualTime = seq(0, 8),
         accrualIntensity = 26/9*seq(1, 9),
         piecewiseSurvivalTime = c(0, 6),
-        stratumFraction = c(0.2, 0.8),
-        lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
-        lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+        lambda1 = c(0.0533, 0.0309),
+        lambda2 = c(0.0533, 0.0533),
         gamma1 = -log(1-0.05)/12,
         gamma2 = -log(1-0.05)/12,
         accrualDuration = 22,

@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{lrstat}
 \alias{lrstat}
-\title{Number of subjects having an event and log-rank statistics}
+\title{Number of Subjects Having an Event and Log-Rank Statistics}
 \usage{
 lrstat(
   time = NA_real_,
@@ -145,9 +145,8 @@ lrstat(time = c(22, 40), allocationRatioPlanned = 1,
        accrualTime = seq(0, 8),
        accrualIntensity = 26/9*seq(1, 9),
        piecewiseSurvivalTime = c(0, 6),
-       stratumFraction = c(0.2, 0.8),
-       lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
-       lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+       lambda1 = c(0.0533, 0.0309),
+       lambda2 = c(0.0533, 0.0533),
        gamma1 = -log(1-0.05)/12,
        gamma2 = -log(1-0.05)/12,
        accrualDuration = 22,

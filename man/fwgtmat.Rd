@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{fwgtmat}
 \alias{fwgtmat}
-\title{Weight matrix for all intersection hypotheses}
+\title{Weight Matrix for All Intersection Hypotheses}
 \usage{
 fwgtmat(w, G)
 }

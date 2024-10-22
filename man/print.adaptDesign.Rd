@@ -2,7 +2,7 @@
 % Please edit documentation in R/prints.R
 \name{print.adaptDesign}
 \alias{print.adaptDesign}
-\title{Print adaptive group sequential design}
+\title{Print Adaptive Group Sequential Design}
 \usage{
 \method{print}{adaptDesign}(x, ...)
 }

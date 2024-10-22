@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{lrsim2e3a}
 \alias{lrsim2e3a}
-\title{Log-rank test simulation for two endpoints and three arms}
+\title{Log-Rank Test Simulation for Two Endpoints and Three Arms}
 \usage{
 lrsim2e3a(
   kMax = NA_integer_,
@@ -175,7 +175,7 @@ Defaults to 1000.}
 stage to extract.}
 
 \item{seed}{The seed to reproduce the simulation results.
-The seed from the environment will be used if left unspecified,}
+The seed from the environment will be used if left unspecified.}
 }
 \value{
 A list with 2 components:
@@ -280,7 +280,7 @@ sim1 = lrsim2e3a(
   lambda3e2 = log(2)/30,
   accrualDuration = 30.143,
   plannedEvents = c(186, 259, 183),
-  maxNumberOfIterations = 1000,
+  maxNumberOfIterations = 500,
   maxNumberOfRawDatasetsPerStage = 1,
   seed = 314159)
 

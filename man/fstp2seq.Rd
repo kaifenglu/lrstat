@@ -2,7 +2,7 @@
 % Please edit documentation in R/wrappers.R
 \name{fstp2seq}
 \alias{fstp2seq}
-\title{Adjusted p-values for stepwise testing procedures for two sequences}
+\title{Adjusted p-Values for Stepwise Testing Procedures for Two Sequences}
 \usage{
 fstp2seq(p, gamma, test = "hochberg", retest = TRUE)
 }
@@ -15,7 +15,7 @@ parameter for the last family is automatically set to 1.}
 \item{test}{The component multiple testing procedure. It is either "Holm"
 or "Hochberg", and it defaults to "Hochberg".}
 
-\item{retest}{Whether to allow retesting. It defaults to TRUE.}
+\item{retest}{Whether to allow retesting. It defaults to \code{TRUE}.}
 }
 \value{
 A matrix of adjusted p-values.

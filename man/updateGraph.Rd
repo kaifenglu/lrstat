@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{updateGraph}
 \alias{updateGraph}
-\title{Update graph for graphical approaches}
+\title{Update Graph for Graphical Approaches}
 \usage{
 updateGraph(w, G, I, j)
 }

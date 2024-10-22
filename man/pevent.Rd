@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{pevent}
 \alias{pevent}
-\title{Probability of having an event}
+\title{Probability of Having an Event}
 \usage{
 pevent(
   time = NA_real_,

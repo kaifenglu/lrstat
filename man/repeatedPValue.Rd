@@ -2,7 +2,7 @@
 % Please edit documentation in R/wrappers.R
 \name{repeatedPValue}
 \alias{repeatedPValue}
-\title{Repeated p-values for group sequential design}
+\title{Repeated p-Values for Group Sequential Design}
 \usage{
 repeatedPValue(
   kMax,
@@ -38,7 +38,7 @@ with \code{k} columns for \code{k <= kMax}.}
 with \code{k} columns.}
 
 \item{spendingTime}{The error spending time at each analysis, must be
-increasing and less than or equal to 1. Defaults to NULL,
+increasing and less than or equal to 1. Defaults to \code{NULL},
 in which case, it is the same as \code{informationRates} derived from
 \code{information} and \code{maxInformation}. It can be a matrix with
 \code{k} columns.}
