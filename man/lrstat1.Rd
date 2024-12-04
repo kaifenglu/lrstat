@@ -22,7 +22,6 @@ lrstat1(
   fixedFollowup = 0L,
   rho1 = 0,
   rho2 = 0,
-  numSubintervals = 300L,
   predictEventOnly = 0L
 )
 }
@@ -81,10 +80,6 @@ weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
 \item{rho2}{The second parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
-
-\item{numSubintervals}{Number of sub-intervals to approximate the mean
-and variance of the weighted log-rank test score statistic.
-Defaults to 300. Specify a larger number for better approximation.}
 
 \item{predictEventOnly}{Whether to predict the number of events only.
 Defaults to 0 for obtaining log-rank test score statistic mean

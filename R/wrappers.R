@@ -2142,6 +2142,9 @@ residuals_phregr <- function(
 #' @param weight The name of the weight variable in the input data.
 #' @param offset The name of the offset variable in the input data.
 #' @param id The name of the id variable in the input data.
+#' @param link The link function linking the response probabilities to the
+#'   linear predictors. Options include "logit" (default), "probit", and
+#'   "cloglog" (complementary log-log).
 #' @param robust Whether a robust sandwich variance estimate should be
 #'   computed. In the presence of the id variable, the score residuals
 #'   will be aggregated for each id when computing the robust sandwich
@@ -2192,6 +2195,8 @@ residuals_phregr <- function(
 #'
 #'     - \code{p}: The number of parameters, including the intercept,
 #'       and regression coefficients associated with the covariates.
+#'
+#'     - \code{link}: The link function.
 #'
 #'     - \code{robust}: Whether a robust sandwich variance estimate should
 #'       be computed.
@@ -2248,6 +2253,8 @@ residuals_phregr <- function(
 #'     - \code{rep}: The replication.
 #'
 #' * \code{p}: The number of parameters.
+#'
+#' * \code{link}: The link function.
 #'
 #' * \code{param}: The parameter names.
 #'
@@ -2318,8 +2325,8 @@ residuals_phregr <- function(
 #' @export
 logisregr <- function(data, rep = "", event = "event", covariates = "",
                       freq = "", weight = "", offset = "", id = "",
-                      robust = FALSE, firth = FALSE, flic = FALSE,
-                      plci = FALSE, alpha = 0.05) {
+                      link = "logit", robust = FALSE, firth = FALSE,
+                      flic = FALSE, plci = FALSE, alpha = 0.05) {
 
   rownames(data) = NULL
 
@@ -2363,10 +2370,11 @@ logisregr <- function(data, rep = "", event = "event", covariates = "",
 
   fit <- logisregcpp(data = df, rep = rep, event = event,
                      covariates = varnames, freq = freq, weight = weight,
-                     offset = offset, id = id, robust = robust,
+                     offset = offset, id = id, link = link, robust = robust,
                      firth = firth, flic = flic, plci = plci, alpha = alpha)
 
   fit$p <- fit$sumstat$p[1]
+  fit$link <- fit$sumstat$link[1]
 
   if (fit$p > 0) {
     fit$param = param

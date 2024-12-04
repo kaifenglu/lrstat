@@ -172,14 +172,6 @@ NULL
 #' @keywords internal
 NULL
 
-#' Parameter Description: numSubintervals
-#' @param numSubintervals Number of sub-intervals to approximate the mean
-#'   and variance of the weighted log-rank test score statistic.
-#'   Defaults to 300. Specify a larger number for better approximation.
-#' @name param_numSubintervals
-#' @keywords internal
-NULL
-
 #' Parameter Description: kMax
 #' @param kMax The maximum number of stages.
 #' @name param_kMax

@@ -39,7 +39,7 @@ group with specified piecewise exponential survival and dropout
 distributions.
 }
 \description{
-Obtains the integration probability of having an event
+Obtains the integrated probability of having an event
 during an interval with constant hazard.
 }
 \examples{

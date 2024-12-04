@@ -75,19 +75,19 @@ statistics at the interim and final analyses for relevant FH weights.
                piecewiseSurvivalTime=c(0, 1.5), 
                lambda1=c(0.25, 0.125), lambda2=c(0.25, 0.25), 
                accrualDuration=4, followupTime=60, 
-               rho1=0, rho2=0, numSubintervals=10000))
+               rho1=0, rho2=0))
 
 (lr01 = lrstat(time=c(5.363, 50.324), accrualIntensity=25,
                piecewiseSurvivalTime=c(0, 1.5), 
                lambda1=c(0.25, 0.125), lambda2=c(0.25, 0.25), 
                accrualDuration=4, followupTime=60, 
-               rho1=0, rho2=1, numSubintervals=10000))
+               rho1=0, rho2=1))
 
 (lr0h = lrstat(time=c(5.363, 50.324), accrualIntensity=25,
                piecewiseSurvivalTime=c(0, 1.5), 
                lambda1=c(0.25, 0.125), lambda2=c(0.25, 0.25), 
                accrualDuration=4, followupTime=60, 
-               rho1=0, rho2=0.5, numSubintervals=10000))
+               rho1=0, rho2=0.5))
 ```
 
 It follows that the mean of $\mathbf{Z}=(Z_{1,1}, Z_{1,2}, Z_{2,2})$ is

@@ -3,6 +3,118 @@
 using namespace Rcpp;
 
 
+//' @title Kaplan-Meier Survival Probability Based on Pooled Sample
+//' @description Obtains the limit of Kaplan-Meier estimate of the survival
+//' probabilities based on the pooled sample.
+//'
+//' @param time A vector of analysis times at which to calculate the
+//'   Kaplan-Meier Survival Probability.
+//' @inheritParams param_allocationRatioPlanned
+//' @inheritParams param_piecewiseSurvivalTime
+//' @inheritParams param_lambda1
+//' @inheritParams param_lambda2
+//' @inheritParams param_gamma1
+//' @inheritParams param_gamma2
+//'
+//' @return A vector of Kaplan-Meier survival probabilities at the
+//' specified analysis times for piecewise exponential survival and
+//' dropout distributions.
+//'
+//' @keywords internal
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @examples
+//' # Piecewise exponential survivals, and 5% dropout by the end of
+//' # 1 year.
+//'
+//' kmsurv(t = c(2, 8), allocationRatioPlanned = 1,
+//'        piecewiseSurvivalTime = c(0, 6),
+//'        lambda1 = c(0.0533, 0.0309), lambda2 = c(0.0533, 0.0533),
+//'        gamma1 = -log(1-0.05)/12, gamma2 = -log(1-0.05)/12)
+//'
+//' @export
+// [[Rcpp::export]]
+NumericVector kmsurv(const NumericVector& time = NA_REAL,
+                     const double allocationRatioPlanned = 1,
+                     const NumericVector& piecewiseSurvivalTime = 0,
+                     const NumericVector& lambda1 = NA_REAL,
+                     const NumericVector& lambda2 = NA_REAL,
+                     const NumericVector& gamma1 = 0,
+                     const NumericVector& gamma2 = 0) {
+
+  int i, j;
+  int k = static_cast<int>(time.size());
+  int J = static_cast<int>(piecewiseSurvivalTime.size());
+
+  double phi = allocationRatioPlanned/(1+allocationRatioPlanned);
+
+  // identify the time interval containing the specified analysis time
+  IntegerVector m = pmax(findInterval3(time, piecewiseSurvivalTime), 1);
+  NumericVector t = piecewiseSurvivalTime;
+
+  // hazard for failure or dropout
+  NumericVector lambda1x(J), lambda2x(J), gamma1x(J), gamma2x(J);
+  if (lambda1.size() == 1) {
+    lambda1x = rep(lambda1, J);
+  } else if (lambda1.size() == J) {
+    lambda1x = lambda1;
+  } else {
+    stop("Invalid length for lambda1");
+  }
+
+  if (lambda2.size() == 1) {
+    lambda2x = rep(lambda2, J);
+  } else if (lambda2.size() == J) {
+    lambda2x = lambda2;
+  } else {
+    stop("Invalid length for lambda2");
+  }
+
+  if (gamma1.size() == 1) {
+    gamma1x = rep(gamma1, J);
+  } else if (gamma1.size() == J) {
+    gamma1x = gamma1;
+  } else {
+    stop("Invalid length for gamma1");
+  }
+
+  if (gamma2.size() == 1) {
+    gamma2x = rep(gamma2, J);
+  } else if (gamma2.size() == J) {
+    gamma2x = gamma2;
+  } else {
+    stop("Invalid length for gamma2");
+  }
+
+  NumericVector lamgam1 = lambda1x + gamma1x;
+  NumericVector lamgam2 = lambda2x + gamma2x;
+
+  NumericVector v(k);
+  NumericVector lagch1(J), lagch2(J);
+  for (i=0; i<k; i++) {
+    for (j=0; j<m[i]; j++) {
+      if (j>0) {
+        lagch1[j] = lagch1[j-1] + lamgam1[j-1]*(t[j] - t[j-1]);
+        lagch2[j] = lagch2[j-1] + lamgam2[j-1]*(t[j] - t[j-1]);
+      }
+
+      double b1 = phi*exp(-lagch1[j]), b2 = (1-phi)*exp(-lagch2[j]);
+      double a1 = b1*lambda1[j], a2 = b2*lambda2[j];
+
+      double u = j < m[i]-1 ? t[j+1]-t[j] : time[i]-t[j];
+      double d = lamgam1[j] - lamgam2[j];
+      double v1 = a2/b2*u;
+      double v2 = a1/b1 - a2/b2;
+      double v3 = d == 0 ? -b1*u/(b1+b2) : log((b2+b1*exp(-d*u))/(b1+b2))/d;
+      v[i] += v1 - v2*v3;
+    }
+  }
+
+  return exp(-v);
+}
+
+
 // define the integrand functions for lrstat1
 struct lrparams {
   double hazardRatioH0;
@@ -14,7 +126,6 @@ struct lrparams {
   NumericVector lambda2;
   NumericVector gamma1;
   NumericVector gamma2;
-  NumericVector zero;
   double rho1;
   double rho2;
   double phi;
@@ -40,12 +151,9 @@ void f_uscore(double *x, int n, void *ex) {
   IntegerVector j = findInterval3(u0, param->piecewiseSurvivalTime) - 1;
   NumericVector w(n), N(n), lam1(n), lam2(n), d(n);
   if (param->rho1 != 0.0 || param->rho2 != 0.0) {
-    NumericVector s1(n), s2(n), s(n);
-    s1 = patrisk(u0, param->piecewiseSurvivalTime, param->lambda1,
-                 param->zero);
-    s2 = patrisk(u0, param->piecewiseSurvivalTime, param->lambda2,
-                 param->zero);
-    s = (param->phi)*s1 + (1.0 - (param->phi))*s2;
+    NumericVector s = kmsurv(
+      u0, param->allocationRatioPlanned, param->piecewiseSurvivalTime,
+      param->lambda1, param->lambda2, param->gamma1, param->gamma2);
     w = pow(s, param->rho1)*pow(1.0-s, param->rho2);
   } else {
     w.fill(1.0);
@@ -77,12 +185,9 @@ void f_vscore(double *x, int n, void *ex) {
   IntegerVector j = findInterval3(u0, param->piecewiseSurvivalTime) - 1;
   NumericVector w(n), N(n), lam1(n), lam2(n), d(n);
   if (param->rho1 != 0.0 || param->rho2 != 0.0) {
-    NumericVector s1(n), s2(n), s(n);
-    s1 = patrisk(u0, param->piecewiseSurvivalTime, param->lambda1,
-                 param->zero);
-    s2 = patrisk(u0, param->piecewiseSurvivalTime, param->lambda2,
-                 param->zero);
-    s = (param->phi)*s1 + (1.0 - (param->phi))*s2;
+    NumericVector s = kmsurv(
+      u0, param->allocationRatioPlanned, param->piecewiseSurvivalTime,
+      param->lambda1, param->lambda2, param->gamma1, param->gamma2);
     w = pow(s, param->rho1)*pow(1.0-s, param->rho2);
   } else {
     w.fill(1.0);
@@ -114,12 +219,9 @@ void f_iscore(double *x, int n, void *ex) {
   IntegerVector j = findInterval3(u0, param->piecewiseSurvivalTime) - 1;
   NumericVector w(n), N(n), lam1(n), lam2(n), d(n);
   if (param->rho1 != 0.0 || param->rho2 != 0.0) {
-    NumericVector s1(n), s2(n), s(n);
-    s1 = patrisk(u0, param->piecewiseSurvivalTime, param->lambda1,
-                 param->zero);
-    s2 = patrisk(u0, param->piecewiseSurvivalTime, param->lambda2,
-                 param->zero);
-    s = (param->phi)*s1 + (1.0 - (param->phi))*s2;
+    NumericVector s = kmsurv(
+      u0, param->allocationRatioPlanned, param->piecewiseSurvivalTime,
+      param->lambda1, param->lambda2, param->gamma1, param->gamma2);
     w = pow(s, param->rho1)*pow(1.0-s, param->rho2);
   } else {
     w.fill(1.0);
@@ -160,7 +262,6 @@ void f_iscore(double *x, int n, void *ex) {
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_rho1
 //' @inheritParams param_rho2
-//' @inheritParams param_numSubintervals
 //' @param predictEventOnly Whether to predict the number of events only.
 //'   Defaults to 0 for obtaining log-rank test score statistic mean
 //'   and variance.
@@ -244,7 +345,6 @@ DataFrame lrstat1(const double time = NA_REAL,
                   const bool fixedFollowup = 0,
                   const double rho1 = 0,
                   const double rho2 = 0,
-                  const int numSubintervals = 300,
                   const bool predictEventOnly = 0) {
 
   int nstrata = static_cast<int>(stratumFraction.size());
@@ -301,16 +401,11 @@ DataFrame lrstat1(const double time = NA_REAL,
     maxFollowupTime = accrualDuration + followupTime;
   }
 
-  IntegerVector q = Range(0, numSubintervals);
-  NumericVector q1 = NumericVector(q);
-  Range q2 = Range(0, numSubintervals-1);
-  Range c0 = Range(0,0), c1 = Range(1,1);
-
   NumericVector ss(1, time);
   double a = accrual(ss, accrualTime, accrualIntensity, accrualDuration)[0];
   double phi = allocationRatioPlanned/(1+allocationRatioPlanned);
 
-  double frac, accrualDuration0, minFollowupTime0, maxFollowupTime0, inc;
+  double frac, accrualDuration0, minFollowupTime0, maxFollowupTime0;
   IntegerVector l1 = Range(0, nintervals-1);
   IntegerVector l(nintervals);
   NumericVector lam1(nintervals), lam2(nintervals);
@@ -318,14 +413,6 @@ DataFrame lrstat1(const double time = NA_REAL,
   NumericMatrix x(1,2), y(1,2);
   NumericVector nsubjects(nstrata);
   NumericMatrix nevents(nstrata, 2), ndropouts(nstrata, 2);
-  NumericMatrix xatrisk(numSubintervals+1, 2);
-  NumericMatrix xevent(numSubintervals+1, 2);
-  NumericVector atrisk1(numSubintervals), atrisk1x(numSubintervals);
-  NumericVector atrisk2(numSubintervals);
-  NumericVector atriskt(numSubintervals), atrisktx(numSubintervals);
-  NumericVector event1(numSubintervals), event2(numSubintervals);
-  NumericVector eventt(numSubintervals);
-  NumericVector km(numSubintervals), w(numSubintervals);
   NumericVector uscore(nstrata), vscore(nstrata), iscore(nstrata);
   NumericVector nevents1(nstrata), nevents2(nstrata), neventst(nstrata);
   NumericVector ndropouts1(nstrata), ndropouts2(nstrata);
@@ -339,7 +426,6 @@ DataFrame lrstat1(const double time = NA_REAL,
   double a2 = accrual(tt, accrualTime, accrualIntensity, accrualDuration)[0];
   NumericVector nfmax1(nstrata), nfmax2(nstrata), nfmax(nstrata);
 
-  bool dqagx = is_true(all(gamma1x == gamma2x)) || (rho1 == 0 && rho2 == 0);
   double tol = 1e-6;
 
   for (int h=0; h<nstrata; h++) {
@@ -385,72 +471,15 @@ DataFrame lrstat1(const double time = NA_REAL,
       accrualDuration0 = std::min(time, accrualDuration);
       minFollowupTime0 = std::max(time - accrualDuration, 0.0);
       maxFollowupTime0 = std::min(time, maxFollowupTime);
-
-      if (!dqagx) {
-        // partition the follow-up period into small sub-intervals
-        inc = maxFollowupTime0/numSubintervals;
-        NumericVector t = q1*inc;
-
-        // obtain number of subjects at risk and number of subjects having
-        // an event at each analysis time point
-        xatrisk = natrisk(t, allocationRatioPlanned,
-                          accrualTime, frac*accrualIntensity,
-                          piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
-                          accrualDuration0, minFollowupTime0,
-                          maxFollowupTime0);
-
-        xevent = nevent(t, allocationRatioPlanned,
+      lrparams param = {hazardRatioH0, allocationRatioPlanned,
                         accrualTime, frac*accrualIntensity,
                         piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
-                        accrualDuration0, minFollowupTime0,
-                        maxFollowupTime0);
+                        rho1, rho2, phi, accrualDuration0,
+                        minFollowupTime0, maxFollowupTime0};
 
-        // number of subjects at risk at start of each analysis time interval
-        atrisk1 = xatrisk(q2, c0);
-        atrisk2 = xatrisk(q2, c1);
-        atrisk1x = hazardRatioH0*atrisk1; // adjust with HR under H0
-        atriskt = atrisk1 + atrisk2;
-        atrisktx = atrisk1x + atrisk2;
-
-        // number of subjects having an event in each analysis time interval
-        event1 = diff(xevent(_, 0));
-        event2 = diff(xevent(_, 1));
-        eventt = event1 + event2;
-
-        // Kaplan-Meier estimates of survival probabilities at the start of
-        // each analysis time interval
-        if (!(rho1 == 0.0 && rho2 == 0.0)) {
-          km[0] = 1;
-          for (int i=1; i<numSubintervals; i++) {
-            km[i] = km[i-1]*(1 - eventt[i-1]/atriskt[i-1]);
-          }
-
-          // vector of Fleming-Harrington weights
-          w = pow(km,rho1)*pow(1-km,rho2);
-        } else {
-          w.fill(1.0);
-        }
-
-        // mean of the weighted log-rank test score statistic
-        uscore[h] = sum(w * (event1 - eventt*atrisk1x/atrisktx));
-
-        // variance of the weighted log-rank test score statistic
-        vscore[h] = sum(w*w * eventt*atrisk1x*atrisk2/pow(atrisktx,2));
-
-        // information of the weighted log-rank test score statistic
-        iscore[h] = sum(w * eventt*atrisk1x*atrisk2/pow(atrisktx,2));
-      } else {
-        NumericVector zero(nintervals);
-        lrparams param = {hazardRatioH0, allocationRatioPlanned,
-                          accrualTime, frac*accrualIntensity,
-                          piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
-                          zero, rho1, rho2, phi, accrualDuration0,
-                          minFollowupTime0, maxFollowupTime0};
-
-        uscore[h] = quad(f_uscore, &param, 0.0, maxFollowupTime0, tol)[0];
-        vscore[h] = quad(f_vscore, &param, 0.0, maxFollowupTime0, tol)[0];
-        iscore[h] = quad(f_iscore, &param, 0.0, maxFollowupTime0, tol)[0];
-      }
+      uscore[h] = quad(f_uscore, &param, 0.0, maxFollowupTime0, tol)[0];
+      vscore[h] = quad(f_vscore, &param, 0.0, maxFollowupTime0, tol)[0];
+      iscore[h] = quad(f_iscore, &param, 0.0, maxFollowupTime0, tol)[0];
     }
   }
 
@@ -523,7 +552,6 @@ DataFrame lrstat1(const double time = NA_REAL,
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_rho1
 //' @inheritParams param_rho2
-//' @inheritParams param_numSubintervals
 //' @param predictTarget The target of prediction.
 //'   Set \code{predictTarget = 1} to predict the number of events only.
 //'   Set \code{predictTarget = 2} (default) to predict the number of events
@@ -615,7 +643,6 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
                  const bool fixedFollowup = 0,
                  const double rho1 = 0,
                  const double rho2 = 0,
-                 const int numSubintervals = 300,
                  const int predictTarget = 2) {
 
   int nstrata = static_cast<int>(stratumFraction.size());
@@ -767,10 +794,6 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
     stop("rho2 must be non-negative");
   }
 
-  if (numSubintervals <= 0) {
-    stop("numSubintervals must be positive");
-  }
-
   int k = static_cast<int>(time.size());
   DataFrame df;
   NumericVector subjects(k), nevents(k), nevents1(k), nevents2(k);
@@ -791,7 +814,7 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
                  piecewiseSurvivalTime, stratumFraction,
                  lambda1x, lambda2x, gamma1x, gamma2x,
                  accrualDuration, followupTime, fixedFollowup,
-                 rho1, rho2, numSubintervals, predictEventOnly);
+                 rho1, rho2, predictEventOnly);
 
     subjects[j] = sum(NumericVector(df[2]));
     nevents[j] = sum(NumericVector(df[3]));
@@ -819,8 +842,7 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
               piecewiseSurvivalTime, stratumFraction,
               lambda1x, lambda2x, gamma1x, gamma2x,
               accrualDuration, followupTime, fixedFollowup,
-              rho1, rho2, numSubintervals,
-              predictEventOnly](double beta)->double {
+              rho1, rho2, predictEventOnly](double beta)->double {
                 double hazardRatio = exp(beta);
                 DataFrame df = lrstat1(
                   time1, hazardRatio, allocationRatioPlanned,
@@ -828,7 +850,7 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
                   piecewiseSurvivalTime, stratumFraction,
                   lambda1x, lambda2x, gamma1x, gamma2x,
                   accrualDuration, followupTime, fixedFollowup,
-                  rho1, rho2, numSubintervals, predictEventOnly);
+                  rho1, rho2, predictEventOnly);
 
                 return sum(NumericVector(df[12]));
               };
@@ -843,7 +865,7 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
                              piecewiseSurvivalTime, stratumFraction,
                              lambda1x, lambda2x, gamma1x, gamma2x,
                              accrualDuration, followupTime, fixedFollowup,
-                             rho1, rho2, numSubintervals, predictEventOnly);
+                             rho1, rho2, predictEventOnly);
 
       double vscore1 = sum(NumericVector(df[13]));
       double iscore1 = sum(NumericVector(df[14]));
@@ -1088,8 +1110,7 @@ NumericVector caltime(const NumericVector& nevents = NA_REAL,
                 t0, 1, allocationRatioPlanned, accrualTime,
                 accrualIntensity, piecewiseSurvivalTime, stratumFraction,
                 lambda1, lambda2, gamma1, gamma2,
-                accrualDuration, followupTime, fixedFollowup,
-                0, 0, 1, 1);
+                accrualDuration, followupTime, fixedFollowup, 0, 0, 1);
               return sum(NumericVector(lr[2])) - event;
             };
 
@@ -1319,7 +1340,7 @@ DataFrame getDurationFromNevents(
                      accrualTime, accrualIntensity,
                      piecewiseSurvivalTime, stratumFraction,
                      lambda1, lambda2, gamma1, gamma2,
-                     t, 1000, fixedFollowup, 0, 0, 1, 1);
+                     t, 1000, fixedFollowup, 0, 0, 1);
                    return sum(NumericVector(lr[2])) - nevents;
                  };
 
@@ -1335,7 +1356,7 @@ DataFrame getDurationFromNevents(
                      accrualTime, accrualIntensity,
                      piecewiseSurvivalTime, stratumFraction,
                      lambda1, lambda2, gamma1, gamma2,
-                     t, 0, fixedFollowup, 0, 0, 1, 1);
+                     t, 0, fixedFollowup, 0, 0, 1);
                    return sum(NumericVector(lr[2])) - nevents;
                  };
 
@@ -1351,7 +1372,7 @@ DataFrame getDurationFromNevents(
                      accrualTime, accrualIntensity,
                      piecewiseSurvivalTime, stratumFraction,
                      lambda1, lambda2, gamma1, gamma2,
-                     t, followupTime, fixedFollowup, 0, 0, 1, 1);
+                     t, followupTime, fixedFollowup, 0, 0, 1);
                    return sum(NumericVector(lr[2])) - nevents;
                  };
 
@@ -1367,7 +1388,7 @@ DataFrame getDurationFromNevents(
                      accrualTime, accrualIntensity,
                      piecewiseSurvivalTime, stratumFraction,
                      lambda1, lambda2, gamma1, gamma2,
-                     t, followupTime, fixedFollowup, 0, 0, 1, 1);
+                     t, followupTime, fixedFollowup, 0, 0, 1);
                    return sum(NumericVector(lr[2])) - nevents;
                  };
 
@@ -1462,7 +1483,6 @@ DataFrame getDurationFromNevents(
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_rho1
 //' @inheritParams param_rho2
-//' @inheritParams param_numSubintervals
 //' @inheritParams param_estimateHazardRatio
 //' @inheritParams param_typeOfComputation
 //' @param spendingTime A vector of length \code{kMax} for the error spending
@@ -1662,7 +1682,6 @@ List lrpower(const int kMax = 1,
              const bool fixedFollowup = 0,
              const double rho1 = 0,
              const double rho2 = 0,
-             const int numSubintervals = 300,
              const bool estimateHazardRatio = 1,
              const std::string typeOfComputation = "direct",
              const NumericVector& spendingTime = NA_REAL,
@@ -1938,10 +1957,6 @@ List lrpower(const int kMax = 1,
     stop("rho2 must be non-negative");
   }
 
-  if (numSubintervals <= 0) {
-    stop("numSubintervals must be positive");
-  }
-
   std::string su = typeOfComputation;
   std::for_each(su.begin(), su.end(), [](char & c) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
@@ -2070,7 +2085,7 @@ List lrpower(const int kMax = 1,
                 piecewiseSurvivalTime, stratumFraction,
                 lambda1, lambda2, gamma1, gamma2,
                 accrualDuration, followupTime, fixedFollowup,
-                rho1, rho2, numSubintervals, 1);
+                rho1, rho2, 1);
 
     e0 = sum(NumericVector(lr[2]))*informationRates1;
     time = caltime(e0, allocationRatioPlanned,
@@ -2084,7 +2099,7 @@ List lrpower(const int kMax = 1,
                 piecewiseSurvivalTime, stratumFraction,
                 lambda1, lambda2, gamma1, gamma2,
                 accrualDuration, followupTime, fixedFollowup,
-                rho1, rho2, numSubintervals, 2);
+                rho1, rho2, 2);
 
     double maxInformation = sum(NumericVector(lr[12]));
     double information1;
@@ -2094,8 +2109,7 @@ List lrpower(const int kMax = 1,
               piecewiseSurvivalTime, stratumFraction,
               lambda1, lambda2, gamma1, gamma2,
               accrualDuration, followupTime, fixedFollowup,
-              rho1, rho2, numSubintervals,
-              &information1](double aval)->double {
+              rho1, rho2, &information1](double aval)->double {
                 NumericVector u0(1, aval);
                 DataFrame lr = lrstat(
                   u0, hazardRatioH0, allocationRatioPlanned,
@@ -2103,7 +2117,7 @@ List lrpower(const int kMax = 1,
                   piecewiseSurvivalTime, stratumFraction,
                   lambda1, lambda2, gamma1, gamma2,
                   accrualDuration, followupTime, fixedFollowup,
-                  rho1, rho2, numSubintervals, 2);
+                  rho1, rho2, 2);
                 return sum(NumericVector(lr[12])) - information1;
               };
 
@@ -2135,7 +2149,7 @@ List lrpower(const int kMax = 1,
                 piecewiseSurvivalTime, stratumFraction,
                 lambda1, lambda2, gamma1, gamma2,
                 accrualDuration, followupTime, fixedFollowup,
-                rho1, rho2, numSubintervals, 1);
+                rho1, rho2, 1);
   } else {
     if (estimateHazardRatio) {
       lr = lrstat(time, hazardRatioH0, allocationRatioPlanned,
@@ -2143,14 +2157,14 @@ List lrpower(const int kMax = 1,
                   piecewiseSurvivalTime, stratumFraction,
                   lambda1, lambda2, gamma1, gamma2,
                   accrualDuration, followupTime, fixedFollowup,
-                  rho1, rho2, numSubintervals, 3);
+                  rho1, rho2, 3);
     } else {
       lr = lrstat(time, hazardRatioH0, allocationRatioPlanned,
                   accrualTime, accrualIntensity,
                   piecewiseSurvivalTime, stratumFraction,
                   lambda1, lambda2, gamma1, gamma2,
                   accrualDuration, followupTime, fixedFollowup,
-                  rho1, rho2, numSubintervals, 2);
+                  rho1, rho2, 2);
     }
 
     if (estimateHazardRatio) {
@@ -2485,7 +2499,6 @@ double getNeventsFromHazardRatio(
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_rho1
 //' @inheritParams param_rho2
-//' @inheritParams param_numSubintervals
 //' @inheritParams param_estimateHazardRatio
 //' @inheritParams param_typeOfComputation
 //' @param interval The interval to search for the solution of
@@ -2593,7 +2606,6 @@ List lrsamplesize(const double beta = 0.2,
                   const bool fixedFollowup = 0,
                   const double rho1 = 0,
                   const double rho2 = 0,
-                  const int numSubintervals = 300,
                   const bool estimateHazardRatio = 1,
                   const std::string typeOfComputation = "direct",
                   const NumericVector& interval =
@@ -2886,10 +2898,6 @@ List lrsamplesize(const double beta = 0.2,
     stop("rho2 must be non-negative");
   }
 
-  if (numSubintervals <= 0) {
-    stop("numSubintervals must be positive");
-  }
-
   std::string su = typeOfComputation;
   std::for_each(su.begin(), su.end(), [](char & c) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
@@ -3059,7 +3067,7 @@ List lrsamplesize(const double beta = 0.2,
                   accrualTime, accrualIntensity1,
                   piecewiseSurvivalTime, stratumFraction,
                   lambda1, lambda2, gamma1, gamma2,
-                  dur1, dur2, fixedFollowup, 0, 0, 1, 1);
+                  dur1, dur2, fixedFollowup, 0, 0, 1);
 
                 return sum(NumericVector(lr[2])) - D;
               };
@@ -3081,8 +3089,7 @@ List lrsamplesize(const double beta = 0.2,
               piecewiseSurvivalTime, stratumFraction,
               lambda1, lambda2, gamma1, gamma2,
               accrualDuration, followupTime, fixedFollowup,
-              rho1, rho2, numSubintervals,
-              spendingTime1, unknown,
+              rho1, rho2, spendingTime1, unknown,
               missingFutilityBounds](double aval)->double {
                 NumericVector accrualIntensity1 = clone(accrualIntensity);
                 double dur1=0, dur2=0;
@@ -3112,8 +3119,7 @@ List lrsamplesize(const double beta = 0.2,
                               accrualTime, accrualIntensity1,
                               piecewiseSurvivalTime, stratumFraction,
                               lambda1, lambda2, gamma1, gamma2,
-                              dur1, dur2, fixedFollowup,
-                              rho1, rho2, numSubintervals, 1);
+                              dur1, dur2, fixedFollowup, rho1, rho2, 1);
 
                   e0 = sum(NumericVector(lr[2]))*informationRates1;
                   time = caltime(e0, allocationRatioPlanned,
@@ -3126,8 +3132,7 @@ List lrsamplesize(const double beta = 0.2,
                               accrualTime, accrualIntensity1,
                               piecewiseSurvivalTime, stratumFraction,
                               lambda1, lambda2, gamma1, gamma2,
-                              dur1, dur2, fixedFollowup,
-                              rho1, rho2, numSubintervals, 2);
+                              dur1, dur2, fixedFollowup, rho1, rho2, 2);
 
                   double maxInformation = sum(NumericVector(lr[12]));
                   double information1;
@@ -3137,16 +3142,14 @@ List lrsamplesize(const double beta = 0.2,
                             piecewiseSurvivalTime, stratumFraction,
                             lambda1, lambda2, gamma1, gamma2,
                             dur1, dur2, fixedFollowup,
-                            rho1, rho2, numSubintervals,
-                            &information1](double aval)->double {
+                            rho1, rho2, &information1](double aval)->double {
                               NumericVector u0(1, aval);
                               DataFrame lr = lrstat(
                                 u0, hazardRatioH0, allocationRatioPlanned,
                                 accrualTime, accrualIntensity1,
                                 piecewiseSurvivalTime, stratumFraction,
                                 lambda1, lambda2, gamma1, gamma2,
-                                dur1, dur2, fixedFollowup,
-                                rho1, rho2, numSubintervals, 2);
+                                dur1, dur2, fixedFollowup, rho1, rho2, 2);
                               return sum(NumericVector(lr[12])) -
                                 information1;
                             };
@@ -3166,8 +3169,7 @@ List lrsamplesize(const double beta = 0.2,
                             accrualTime, accrualIntensity1,
                             piecewiseSurvivalTime, stratumFraction,
                             lambda1, lambda2, gamma1, gamma2,
-                            dur1, dur2, fixedFollowup,
-                            rho1, rho2, numSubintervals, 2);
+                            dur1, dur2, fixedFollowup, rho1, rho2, 2);
 
                 NumericVector uscore = NumericVector(lr[11]);
                 vscore = NumericVector(lr[12]);
@@ -3277,7 +3279,7 @@ List lrsamplesize(const double beta = 0.2,
                           piecewiseSurvivalTime, stratumFraction,
                           lambda1, lambda2, gamma1, gamma2,
                           accrualDuration, followupTime, fixedFollowup,
-                          0, 0, 1, 1);
+                          0, 0, 1);
 
     // round up the total number of events
     double D0 = sum(NumericVector(lr[2]));
@@ -3311,8 +3313,7 @@ List lrsamplesize(const double beta = 0.2,
                     accrualTime, accrualIntensity1,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda1, lambda2, gamma1, gamma2,
-                    accrualDuration, aval, fixedFollowup,
-                    0, 0, 1, 1);
+                    accrualDuration, aval, fixedFollowup, 0, 0, 1);
                   return sum(NumericVector(lr[2])) - D;
                 };
 
@@ -3335,8 +3336,7 @@ List lrsamplesize(const double beta = 0.2,
                       accrualTime, accrualIntensity1,
                       piecewiseSurvivalTime, stratumFraction,
                       lambda1, lambda2, gamma1, gamma2,
-                      aval, followupTime, fixedFollowup,
-                      0, 0, 1, 1);
+                      aval, followupTime, fixedFollowup, 0, 0, 1);
                     return sum(NumericVector(lr[2])) - D;
                   };
 
@@ -3371,8 +3371,7 @@ List lrsamplesize(const double beta = 0.2,
                     accrualTime, accrualIntensity1,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda1, lambda2, gamma1, gamma2,
-                    accrualDuration, followupTime, fixedFollowup,
-                    0, 0, 1, 1);
+                    accrualDuration, followupTime, fixedFollowup, 0, 0, 1);
                   return sum(NumericVector(lr[2])) - D;
                 };
 
@@ -3394,7 +3393,7 @@ List lrsamplesize(const double beta = 0.2,
                   piecewiseSurvivalTime, stratumFraction,
                   lambda1, lambda2, gamma1, gamma2,
                   accrualDuration, followupTime, fixedFollowup,
-                  rho1, rho2, numSubintervals, 2);
+                  rho1, rho2, 2);
 
       double maxInformation = sum(NumericVector(lr[12]));
       double information1;
@@ -3404,8 +3403,7 @@ List lrsamplesize(const double beta = 0.2,
                 piecewiseSurvivalTime, stratumFraction,
                 lambda1, lambda2, gamma1, gamma2,
                 accrualDuration, followupTime, fixedFollowup,
-                rho1, rho2, numSubintervals,
-                &information1](double aval)->double {
+                rho1, rho2, &information1](double aval)->double {
                   NumericVector u0(1, aval);
                   DataFrame lr = lrstat(
                     u0, hazardRatioH0, allocationRatioPlanned,
@@ -3413,7 +3411,7 @@ List lrsamplesize(const double beta = 0.2,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda1, lambda2, gamma1, gamma2,
                     accrualDuration, followupTime, fixedFollowup,
-                    rho1, rho2, numSubintervals, 2);
+                    rho1, rho2, 2);
                   return sum(NumericVector(lr[12])) - information1;
                 };
 
@@ -3428,7 +3426,7 @@ List lrsamplesize(const double beta = 0.2,
                   piecewiseSurvivalTime, stratumFraction,
                   lambda1, lambda2, gamma1, gamma2,
                   accrualDuration, followupTime, fixedFollowup,
-                  rho1, rho2, numSubintervals, 1);
+                  rho1, rho2, 1);
 
       nevents = floor(NumericVector(lr[2]) + 0.5); // round up events
       time = caltime(nevents, allocationRatioPlanned,
@@ -3442,7 +3440,7 @@ List lrsamplesize(const double beta = 0.2,
                   piecewiseSurvivalTime, stratumFraction,
                   lambda1, lambda2, gamma1, gamma2,
                   accrualDuration, followupTime, fixedFollowup,
-                  rho1, rho2, numSubintervals, 2);
+                  rho1, rho2, 2);
 
       information = NumericVector(lr[12]);
       informationRates1 = information/maxInformation;
@@ -3460,7 +3458,7 @@ List lrsamplesize(const double beta = 0.2,
         piecewiseSurvivalTime, stratumFraction,
         lambda1, lambda2, gamma1, gamma2,
         accrualDuration, followupTime, fixedFollowup,
-        rho1, rho2, numSubintervals, estimateHazardRatio,
+        rho1, rho2, estimateHazardRatio,
         typeOfComputation, spendingTime, studyDuration);
     } else {
       resultH1 = lrpower(
@@ -3473,7 +3471,7 @@ List lrsamplesize(const double beta = 0.2,
         piecewiseSurvivalTime, stratumFraction,
         lambda1, lambda2, gamma1, gamma2,
         accrualDuration, followupTime, fixedFollowup,
-        rho1, rho2, numSubintervals, estimateHazardRatio,
+        rho1, rho2, estimateHazardRatio,
         typeOfComputation, spendingTime, studyDuration);
     }
   } else {
@@ -3489,7 +3487,7 @@ List lrsamplesize(const double beta = 0.2,
       piecewiseSurvivalTime, stratumFraction,
       lambda1, lambda2, gamma1, gamma2,
       accrualDuration, followupTime, fixedFollowup,
-      rho1, rho2, numSubintervals, estimateHazardRatio,
+      rho1, rho2, estimateHazardRatio,
       typeOfComputation, spendingTime, studyDuration);
   }
 
@@ -3510,8 +3508,7 @@ List lrsamplesize(const double beta = 0.2,
               piecewiseSurvivalTime, stratumFraction,
               lambda2, gamma1, gamma2,
               accrualDuration, fixedFollowup,
-              rho1, rho2, numSubintervals,
-              D, maxInformation](double aval)->double {
+              rho1, rho2, D, maxInformation](double aval)->double {
                 NumericVector u0(1, accrualDuration + aval);
                 if (rho1 == 0 && rho2 == 0) {
                   DataFrame lr = lrstat(
@@ -3519,8 +3516,7 @@ List lrsamplesize(const double beta = 0.2,
                     accrualTime, accrualIntensity1,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda2*hazardRatioH0, lambda2, gamma1, gamma2,
-                    accrualDuration, aval, fixedFollowup,
-                    rho1, rho2, numSubintervals, 1);
+                    accrualDuration, aval, fixedFollowup, rho1, rho2, 1);
                   return sum(NumericVector(lr[2])) - D;
                 } else {
                   DataFrame lr = lrstat(
@@ -3528,8 +3524,7 @@ List lrsamplesize(const double beta = 0.2,
                     accrualTime, accrualIntensity1,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda2*hazardRatioH0, lambda2, gamma1, gamma2,
-                    accrualDuration, aval, fixedFollowup,
-                    rho1, rho2, numSubintervals, 2);
+                    accrualDuration, aval, fixedFollowup, rho1, rho2, 2);
                   return sum(NumericVector(lr[12])) - maxInformation;
                 }
               };
@@ -3546,10 +3541,8 @@ List lrsamplesize(const double beta = 0.2,
       auto g = [hazardRatioH0, allocationRatioPlanned,
                 accrualTime, accrualIntensity1,
                 piecewiseSurvivalTime, stratumFraction,
-                lambda2, gamma1, gamma2,
-                fixedFollowup,
-                rho1, rho2, numSubintervals,
-                D, maxInformation](double aval)->double {
+                lambda2, gamma1, gamma2, fixedFollowup,
+                rho1, rho2, D, maxInformation](double aval)->double {
                   NumericVector u0(1, aval);
                   if (rho1 == 0 && rho2 == 0) {
                     DataFrame lr = lrstat(
@@ -3557,8 +3550,7 @@ List lrsamplesize(const double beta = 0.2,
                       accrualTime, accrualIntensity1,
                       piecewiseSurvivalTime, stratumFraction,
                       lambda2*hazardRatioH0, lambda2, gamma1, gamma2,
-                      aval, 0, fixedFollowup,
-                      rho1, rho2, numSubintervals, 1);
+                      aval, 0, fixedFollowup, rho1, rho2, 1);
                     return sum(NumericVector(lr[2])) - D;
                   } else {
                     DataFrame lr = lrstat(
@@ -3566,8 +3558,7 @@ List lrsamplesize(const double beta = 0.2,
                       accrualTime, accrualIntensity1,
                       piecewiseSurvivalTime, stratumFraction,
                       lambda2*hazardRatioH0, lambda2, gamma1, gamma2,
-                      aval, 0, fixedFollowup,
-                      rho1, rho2, numSubintervals, 2);
+                      aval, 0, fixedFollowup, rho1, rho2, 2);
                     return sum(NumericVector(lr[12])) - maxInformation;
                   }
                 };
@@ -3582,8 +3573,7 @@ List lrsamplesize(const double beta = 0.2,
               piecewiseSurvivalTime, stratumFraction,
               lambda2, gamma1, gamma2,
               accrualDuration, followupTime, fixedFollowup,
-              rho1, rho2, numSubintervals,
-              D, maxInformation](double aval)->double {
+              rho1, rho2, D, maxInformation](double aval)->double {
                 NumericVector u0(1, accrualDuration + aval);
                 if (rho1 == 0 && rho2 == 0) {
                   DataFrame lr = lrstat(
@@ -3592,7 +3582,7 @@ List lrsamplesize(const double beta = 0.2,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda2*hazardRatioH0, lambda2, gamma1, gamma2,
                     accrualDuration, followupTime, fixedFollowup,
-                    rho1, rho2, numSubintervals, 1);
+                    rho1, rho2, 1);
                   return sum(NumericVector(lr[2])) - D;
                 } else {
                   DataFrame lr = lrstat(
@@ -3601,7 +3591,7 @@ List lrsamplesize(const double beta = 0.2,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda2*hazardRatioH0, lambda2, gamma1, gamma2,
                     accrualDuration, followupTime, fixedFollowup,
-                    rho1, rho2, numSubintervals, 2);
+                    rho1, rho2, 2);
                   return sum(NumericVector(lr[12])) - maxInformation;
                 }
               };
@@ -3610,10 +3600,8 @@ List lrsamplesize(const double beta = 0.2,
       auto g = [hazardRatioH0, allocationRatioPlanned,
                 accrualTime, accrualIntensity1,
                 piecewiseSurvivalTime, stratumFraction,
-                lambda2, gamma1, gamma2,
-                followupTime, fixedFollowup,
-                rho1, rho2, numSubintervals,
-                D, maxInformation](double aval)->double {
+                lambda2, gamma1, gamma2, followupTime, fixedFollowup,
+                rho1, rho2, D, maxInformation](double aval)->double {
                   NumericVector u0(1, aval + followupTime);
                   if (rho1 == 0 && rho2 == 0) {
                     DataFrame lr = lrstat(
@@ -3621,8 +3609,7 @@ List lrsamplesize(const double beta = 0.2,
                       accrualTime, accrualIntensity1,
                       piecewiseSurvivalTime, stratumFraction,
                       lambda2*hazardRatioH0, lambda2, gamma1, gamma2,
-                      aval, followupTime, fixedFollowup,
-                      rho1, rho2, numSubintervals, 1);
+                      aval, followupTime, fixedFollowup, rho1, rho2, 1);
                     return sum(NumericVector(lr[2])) - D;
                   } else {
                     DataFrame lr = lrstat(
@@ -3630,8 +3617,7 @@ List lrsamplesize(const double beta = 0.2,
                       accrualTime, accrualIntensity1,
                       piecewiseSurvivalTime, stratumFraction,
                       lambda2*hazardRatioH0, lambda2, gamma1, gamma2,
-                      aval, followupTime, fixedFollowup,
-                      rho1, rho2, numSubintervals, 2);
+                      aval, followupTime, fixedFollowup, rho1, rho2, 2);
                     return sum(NumericVector(lr[12])) - maxInformation;
                   }
                 };
@@ -3650,10 +3636,8 @@ List lrsamplesize(const double beta = 0.2,
       auto g = [hazardRatioH0, allocationRatioPlanned,
                 accrualTime, accrualIntensity1,
                 piecewiseSurvivalTime, stratumFraction,
-                lambda2, gamma1, gamma2,
-                followupTime, fixedFollowup,
-                rho1, rho2, numSubintervals,
-                D, maxInformation](double aval)->double {
+                lambda2, gamma1, gamma2, followupTime, fixedFollowup,
+                rho1, rho2, D, maxInformation](double aval)->double {
                   NumericVector u0(1, aval);
                   if (rho1 == 0 && rho2 == 0) {
                     DataFrame lr = lrstat(
@@ -3661,8 +3645,7 @@ List lrsamplesize(const double beta = 0.2,
                       accrualTime, accrualIntensity1,
                       piecewiseSurvivalTime, stratumFraction,
                       lambda2*hazardRatioH0, lambda2, gamma1, gamma2,
-                      aval, followupTime, fixedFollowup,
-                      rho1, rho2, numSubintervals, 1);
+                      aval, followupTime, fixedFollowup, rho1, rho2, 1);
                     return sum(NumericVector(lr[2])) - D;
                   } else {
                     DataFrame lr = lrstat(
@@ -3670,8 +3653,7 @@ List lrsamplesize(const double beta = 0.2,
                       accrualTime, accrualIntensity1,
                       piecewiseSurvivalTime, stratumFraction,
                       lambda2*hazardRatioH0, lambda2, gamma1, gamma2,
-                      aval, followupTime, fixedFollowup,
-                      rho1, rho2, numSubintervals, 2);
+                      aval, followupTime, fixedFollowup, rho1, rho2, 2);
                     return sum(NumericVector(lr[12])) - maxInformation;
                   }
                 };
@@ -3696,7 +3678,7 @@ List lrsamplesize(const double beta = 0.2,
     piecewiseSurvivalTime, stratumFraction,
     lambda2*hazardRatioH0, lambda2, gamma1, gamma2,
     accrualDuration, followupTime, fixedFollowup,
-    rho1, rho2, numSubintervals, estimateHazardRatio,
+    rho1, rho2, estimateHazardRatio,
     typeOfComputation, spendingTime, studyDuration);
 
   result = List::create(
@@ -4241,7 +4223,7 @@ List lrpowerequiv(const int kMax = 1,
                         piecewiseSurvivalTime, stratumFraction,
                         lambda1, lambda2, gamma1, gamma2,
                         accrualDuration, followupTime, fixedFollowup,
-                        0, 0, 1, 1);
+                        0, 0, 1);
 
   e0 = sum(NumericVector(lr[2]))*informationRates1;
   time = caltime(e0, allocationRatioPlanned,
@@ -4262,15 +4244,13 @@ List lrpowerequiv(const int kMax = 1,
                 accrualTime, accrualIntensity,
                 piecewiseSurvivalTime, stratumFraction,
                 lambda1, lambda2, gamma1, gamma2,
-                accrualDuration, followupTime, fixedFollowup,
-                0, 0, 1, 1);
+                accrualDuration, followupTime, fixedFollowup, 0, 0, 1);
   } else {
     lr = lrstat(time, 1, allocationRatioPlanned,
                 accrualTime, accrualIntensity,
                 piecewiseSurvivalTime, stratumFraction,
                 lambda1, lambda2, gamma1, gamma2,
-                accrualDuration, followupTime, fixedFollowup,
-                0, 0, 1, 3);
+                accrualDuration, followupTime, fixedFollowup, 0, 0, 3);
 
     HR = NumericVector(lr[15]);
     theta = log(HR);
@@ -4936,7 +4916,7 @@ List lrsamplesizeequiv(const double beta = 0.2,
                   accrualTime, accrualIntensity1,
                   piecewiseSurvivalTime, stratumFraction,
                   lambda1, lambda2, gamma1, gamma2,
-                  dur1, dur2, fixedFollowup, 0, 0, 1, 1);
+                  dur1, dur2, fixedFollowup, 0, 0, 1);
 
                 return sum(NumericVector(lr[2])) - D;
               };
@@ -4983,8 +4963,7 @@ List lrsamplesizeequiv(const double beta = 0.2,
                             accrualTime, accrualIntensity,
                             piecewiseSurvivalTime, stratumFraction,
                             lambda1, lambda2, gamma1, gamma2,
-                            dur1, dur2, fixedFollowup,
-                            0, 0, 1, 1);
+                            dur1, dur2, fixedFollowup, 0, 0, 1);
 
                 e0 = sum(NumericVector(lr[2]))*informationRates1;
                 time = caltime(e0, allocationRatioPlanned,
@@ -4998,8 +4977,7 @@ List lrsamplesizeequiv(const double beta = 0.2,
                             accrualTime, accrualIntensity1,
                             piecewiseSurvivalTime, stratumFraction,
                             lambda1, lambda2, gamma1, gamma2,
-                            dur1, dur2, fixedFollowup,
-                            0, 0, 1, 3);
+                            dur1, dur2, fixedFollowup, 0, 0, 3);
 
                 NumericVector HR = NumericVector(lr[15]);
                 NumericVector theta = log(HR);
@@ -5047,7 +5025,7 @@ List lrsamplesizeequiv(const double beta = 0.2,
                           piecewiseSurvivalTime, stratumFraction,
                           lambda1, lambda2, gamma1, gamma2,
                           accrualDuration, followupTime, fixedFollowup,
-                          0, 0, 1, 1);
+                          0, 0, 1);
 
     // round up the total number of events
     double D0 = sum(NumericVector(lr[2]));
@@ -5081,8 +5059,7 @@ List lrsamplesizeequiv(const double beta = 0.2,
                     accrualTime, accrualIntensity1,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda1, lambda2, gamma1, gamma2,
-                    accrualDuration, aval, fixedFollowup,
-                    0, 0, 1, 1);
+                    accrualDuration, aval, fixedFollowup, 0, 0, 1);
                   return sum(NumericVector(lr[2])) - D;
                 };
 
@@ -5105,8 +5082,7 @@ List lrsamplesizeequiv(const double beta = 0.2,
                       accrualTime, accrualIntensity1,
                       piecewiseSurvivalTime, stratumFraction,
                       lambda1, lambda2, gamma1, gamma2,
-                      aval, followupTime, fixedFollowup,
-                      0, 0, 1, 1);
+                      aval, followupTime, fixedFollowup, 0, 0, 1);
                     return sum(NumericVector(lr[2])) - D;
                   };
 
@@ -5141,8 +5117,7 @@ List lrsamplesizeequiv(const double beta = 0.2,
                     accrualTime, accrualIntensity1,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda1, lambda2, gamma1, gamma2,
-                    accrualDuration, followupTime, fixedFollowup,
-                    0, 0, 1, 1);
+                    accrualDuration, followupTime, fixedFollowup, 0, 0, 1);
                   return sum(NumericVector(lr[2])) - D;
                 };
 

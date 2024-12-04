@@ -1,3 +1,9 @@
+# lrstat 0.2.11
+
+- use numerical integration for lrstat for cases including unequal dropouts between treatment groups, hence removed the numSubintervals argument from lrstat1, lrstat, lrpower, lrsamplesize, lrpowerequiv, and lrsamplesizeequiv
+- update shiny app accordingly
+- add noncanonical parametrizations for logisregr
+
 # lrstat 0.2.10
 
 - use newton-raphson instead of the vmmin algorithm for liferegr and phregr
@@ -12,8 +18,7 @@
 # lrstat 0.2.9
 
 - fix the runtime error: nan is outside the range of representable values of type 'int'
-- add the binary_tte_sim function to simulate two endpoints with one being 
-  a binary endpoint and the other being a time-to-event endpoint
+- add the binary_tte_sim function to simulate two endpoints with one being a binary endpoint and the other being a time-to-event endpoint
 - add the rpsft function to estimate hazard ratio using rank-preserving structured failure time model
 
 # lrstat 0.2.8

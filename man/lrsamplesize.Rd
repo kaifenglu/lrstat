@@ -34,7 +34,6 @@ lrsamplesize(
   fixedFollowup = 0L,
   rho1 = 0,
   rho2 = 0,
-  numSubintervals = 300L,
   estimateHazardRatio = 1L,
   typeOfComputation = "direct",
   interval = as.numeric(c(0.001, 240)),
@@ -146,10 +145,6 @@ weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
 \item{rho2}{The second parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
-
-\item{numSubintervals}{Number of sub-intervals to approximate the mean
-and variance of the weighted log-rank test score statistic.
-Defaults to 300. Specify a larger number for better approximation.}
 
 \item{estimateHazardRatio}{Whether to estimate the hazard ratio from
 weighted Cox regression model and report the stopping boundaries on

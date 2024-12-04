@@ -8,6 +8,7 @@ using namespace Rcpp;
 
 struct logparams {
   int n;
+  std::string link;
   NumericVector y;
   NumericMatrix z;
   NumericVector freq;
@@ -44,6 +45,7 @@ List logisregcpp(const DataFrame data,
                  const std::string weight,
                  const std::string offset,
                  const std::string id,
+                 const std::string link,
                  const bool robust,
                  const bool firth,
                  const bool flic,

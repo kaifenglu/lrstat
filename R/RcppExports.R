@@ -1187,8 +1187,8 @@ kmdiff <- function(data, rep = "", stratum = "", treat = "treat", time = "time",
     .Call(`_lrstat_kmdiff`, data, rep, stratum, treat, time, event, milestone, survDiffH0, conflev)
 }
 
-logisregcpp <- function(data, rep = "", event = "event", covariates = "", freq = "", weight = "", offset = "", id = "", robust = 0L, firth = 0L, flic = 0L, plci = 0L, alpha = 0.05) {
-    .Call(`_lrstat_logisregcpp`, data, rep, event, covariates, freq, weight, offset, id, robust, firth, flic, plci, alpha)
+logisregcpp <- function(data, rep = "", event = "event", covariates = "", freq = "", weight = "", offset = "", id = "", link = "logit", robust = 0L, firth = 0L, flic = 0L, plci = 0L, alpha = 0.05) {
+    .Call(`_lrstat_logisregcpp`, data, rep, event, covariates, freq, weight, offset, id, link, robust, firth, flic, plci, alpha)
 }
 
 #' @title Log-Rank Test Simulation
@@ -2312,6 +2312,41 @@ binary_tte_sim <- function(kMax1 = 1L, kMax2 = 1L, riskDiffH0 = 0, hazardRatioH0
     .Call(`_lrstat_binary_tte_sim`, kMax1, kMax2, riskDiffH0, hazardRatioH0, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, globalOddsRatio, pi1, pi2, lambda1, lambda2, gamma1, gamma2, delta1, delta2, upper1, upper2, accrualDuration, plannedTime, plannedEvents, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
 
+#' @title Kaplan-Meier Survival Probability Based on Pooled Sample
+#' @description Obtains the limit of Kaplan-Meier estimate of the survival
+#' probabilities based on the pooled sample.
+#'
+#' @param time A vector of analysis times at which to calculate the
+#'   Kaplan-Meier Survival Probability.
+#' @inheritParams param_allocationRatioPlanned
+#' @inheritParams param_piecewiseSurvivalTime
+#' @inheritParams param_lambda1
+#' @inheritParams param_lambda2
+#' @inheritParams param_gamma1
+#' @inheritParams param_gamma2
+#'
+#' @return A vector of Kaplan-Meier survival probabilities at the
+#' specified analysis times for piecewise exponential survival and
+#' dropout distributions.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#' # Piecewise exponential survivals, and 5% dropout by the end of
+#' # 1 year.
+#'
+#' kmsurv(t = c(2, 8), allocationRatioPlanned = 1,
+#'        piecewiseSurvivalTime = c(0, 6),
+#'        lambda1 = c(0.0533, 0.0309), lambda2 = c(0.0533, 0.0533),
+#'        gamma1 = -log(1-0.05)/12, gamma2 = -log(1-0.05)/12)
+#'
+#' @export
+kmsurv <- function(time = NA_real_, allocationRatioPlanned = 1, piecewiseSurvivalTime = 0L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L) {
+    .Call(`_lrstat_kmsurv`, time, allocationRatioPlanned, piecewiseSurvivalTime, lambda1, lambda2, gamma1, gamma2)
+}
+
 #' @title Number of Subjects Having an Event and Log-Rank Statistic
 #' for a hypothesized hazard ratio at a given calendar time
 #'
@@ -2336,7 +2371,6 @@ binary_tte_sim <- function(kMax1 = 1L, kMax2 = 1L, riskDiffH0 = 0, hazardRatioH0
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_rho1
 #' @inheritParams param_rho2
-#' @inheritParams param_numSubintervals
 #' @param predictEventOnly Whether to predict the number of events only.
 #'   Defaults to 0 for obtaining log-rank test score statistic mean
 #'   and variance.
@@ -2403,8 +2437,8 @@ binary_tte_sim <- function(kMax1 = 1L, kMax2 = 1L, riskDiffH0 = 0, hazardRatioH0
 #'         followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-lrstat1 <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, numSubintervals = 300L, predictEventOnly = 0L) {
-    .Call(`_lrstat_lrstat1`, time, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals, predictEventOnly)
+lrstat1 <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, predictEventOnly = 0L) {
+    .Call(`_lrstat_lrstat1`, time, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, predictEventOnly)
 }
 
 #' @title Number of Subjects Having an Event and Log-Rank Statistics
@@ -2431,7 +2465,6 @@ lrstat1 <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned =
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_rho1
 #' @inheritParams param_rho2
-#' @inheritParams param_numSubintervals
 #' @param predictTarget The target of prediction.
 #'   Set \code{predictTarget = 1} to predict the number of events only.
 #'   Set \code{predictTarget = 2} (default) to predict the number of events
@@ -2506,8 +2539,8 @@ lrstat1 <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned =
 #'        followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-lrstat <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, numSubintervals = 300L, predictTarget = 2L) {
-    .Call(`_lrstat_lrstat`, time, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals, predictTarget)
+lrstat <- function(time = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, predictTarget = 2L) {
+    .Call(`_lrstat_lrstat`, time, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, predictTarget)
 }
 
 #' @title Calendar Times for Target Number of Events
@@ -2649,7 +2682,6 @@ getDurationFromNevents <- function(nevents = NA_real_, allocationRatioPlanned = 
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_rho1
 #' @inheritParams param_rho2
-#' @inheritParams param_numSubintervals
 #' @inheritParams param_estimateHazardRatio
 #' @inheritParams param_typeOfComputation
 #' @param spendingTime A vector of length \code{kMax} for the error spending
@@ -2821,8 +2853,8 @@ getDurationFromNevents <- function(nevents = NA_real_, allocationRatioPlanned = 
 #'         followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, numSubintervals = 300L, estimateHazardRatio = 1L, typeOfComputation = "direct", spendingTime = NA_real_, studyDuration = NA_real_) {
-    .Call(`_lrstat_lrpower`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals, estimateHazardRatio, typeOfComputation, spendingTime, studyDuration)
+lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, estimateHazardRatio = 1L, typeOfComputation = "direct", spendingTime = NA_real_, studyDuration = NA_real_) {
+    .Call(`_lrstat_lrpower`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, estimateHazardRatio, typeOfComputation, spendingTime, studyDuration)
 }
 
 #' @title Required Number of Events Given Hazard Ratio
@@ -2911,7 +2943,6 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_rho1
 #' @inheritParams param_rho2
-#' @inheritParams param_numSubintervals
 #' @inheritParams param_estimateHazardRatio
 #' @inheritParams param_typeOfComputation
 #' @param interval The interval to search for the solution of
@@ -2989,8 +3020,8 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #'              followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-lrsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, numSubintervals = 300L, estimateHazardRatio = 1L, typeOfComputation = "direct", interval = as.numeric( c(0.001, 240)), spendingTime = NA_real_, rounding = 1L) {
-    .Call(`_lrstat_lrsamplesize`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, numSubintervals, estimateHazardRatio, typeOfComputation, interval, spendingTime, rounding)
+lrsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, estimateHazardRatio = 1L, typeOfComputation = "direct", interval = as.numeric( c(0.001, 240)), spendingTime = NA_real_, rounding = 1L) {
+    .Call(`_lrstat_lrsamplesize`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, estimateHazardRatio, typeOfComputation, interval, spendingTime, rounding)
 }
 
 #' @title Power for Equivalence in Hazard Ratio
@@ -8236,7 +8267,7 @@ pevent <- function(time = NA_real_, piecewiseSurvivalTime = 0L, lambda = NA_real
 }
 
 #' @title Integrated Event Probability Over an Interval With Constant Hazard
-#' @description Obtains the integration probability of having an event
+#' @description Obtains the integrated probability of having an event
 #' during an interval with constant hazard.
 #'
 #' @param j The analysis time interval with constant hazard.

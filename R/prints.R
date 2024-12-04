@@ -9703,7 +9703,7 @@ print.logisregr <- function(x, ...) {
   })
   df1 <- cbind(x$sumstat[, c("n", "nevents", "loglik0", "loglik1")],
                lrchisq = lrchisq, df = degrees, pvalue = pvalue,
-               x$sumstat[, c("niter", "firth", "flic")])
+               x$sumstat[, c("niter", "link", "firth", "flic")])
 
   p = x$p
   if (p > 0) {

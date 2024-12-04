@@ -21,12 +21,33 @@ double f_llik_0(int p, NumericVector par, void *ex) {
   }
 
   double loglik = 0;
-  for (person = 0; person < n; person++) {
-    double f = param->freq[person];
-    double w = param->weight[person];
-    double y = param->y[person];
-    double v = eta[person]*y + R::plogis(eta[person], 0, 1, 0, 1);
-    loglik += f*w*v;
+  if (param->link == "logit") {
+    for (person = 0; person < n; person++) {
+      double f = param->freq[person];
+      double w = param->weight[person];
+      double y = param->y[person];
+      double r = R::plogis(eta[person], 0, 1, 1, 0);
+      double v = y*eta[person] + log(1-r);
+      loglik += f*w*v;
+    }
+  } else if (param->link == "probit") {
+    for (person = 0; person < n; person++) {
+      double f = param->freq[person];
+      double w = param->weight[person];
+      double y = param->y[person];
+      double r = R::pnorm(eta[person], 0, 1, 1, 0);
+      double v = y*log(r/(1-r)) + log(1-r);
+      loglik += f*w*v;
+    }
+  } else if (param->link == "cloglog") {
+    for (person = 0; person < n; person++) {
+      double f = param->freq[person];
+      double w = param->weight[person];
+      double y = param->y[person];
+      double r = 1 - exp(-exp(eta[person]));
+      double v = y*log(r/(1-r)) + log(1-r);
+      loglik += f*w*v;
+    }
   }
 
   return loglik;
@@ -48,13 +69,42 @@ NumericVector f_score_0(int p, NumericVector par, void *ex) {
   }
 
   NumericVector score(p);
-  for (person = 0; person < n; person++) {
-    double f = param->freq[person];
-    double w = param->weight[person];
-    double v = param->y[person] - R::plogis(eta[person], 0, 1, 1, 0);
-    NumericVector z = param->z(person, _);
-    for (i=0; i<p; i++) {
-      score[i] += f*w*v*z[i];
+  if (param->link == "logit") {
+    for (person = 0; person < n; person++) {
+      double f = param->freq[person];
+      double w = param->weight[person];
+      double r = R::plogis(eta[person], 0, 1, 1, 0);
+      double v = param->y[person] - r;
+      NumericVector z = param->z(person, _);
+      for (i=0; i<p; i++) {
+        score[i] += f*w*v*z[i];
+      }
+    }
+  } else if (param->link == "probit") {
+    for (person = 0; person < n; person++) {
+      double f = param->freq[person];
+      double w = param->weight[person];
+      double r = R::pnorm(eta[person], 0, 1, 1, 0);
+      double phi = R::dnorm(eta[person], 0, 1, 0);
+      double d = phi/(r*(1-r));
+      double v = param->y[person] - r;
+      NumericVector z = param->z(person, _);
+      for (i=0; i<p; i++) {
+        score[i] += f*w*v*d*z[i];
+      }
+    }
+  } else if (param->link == "cloglog") {
+    for (person = 0; person < n; person++) {
+      double f = param->freq[person];
+      double w = param->weight[person];
+      double r = 1 - exp(-exp(eta[person]));
+      double phi = exp(eta[person] - exp(eta[person]));
+      double d = phi/(r*(1-r));
+      double v = param->y[person] - r;
+      NumericVector z = param->z(person, _);
+      for (i=0; i<p; i++) {
+        score[i] += f*w*v*d*z[i];
+      }
     }
   }
 
@@ -77,14 +127,44 @@ NumericMatrix f_info_0(int p, NumericVector par, void *ex) {
   }
 
   NumericMatrix imat(p,p);
-  for (person = 0; person < n; person++) {
-    double f = param->freq[person];
-    double w = param->weight[person];
-    double v = R::dlogis(eta[person], 0, 1, 0);
-    NumericVector z = param->z(person, _);
-    for (i=0; i<p; i++) {
-      for (j=0; j<=i; j++) {
-        imat(i,j) += f*w*v*z[i]*z[j];
+  if (param->link == "logit") {
+    for (person = 0; person < n; person++) {
+      double f = param->freq[person];
+      double w = param->weight[person];
+      double v = R::dlogis(eta[person], 0, 1, 0);
+      NumericVector z = param->z(person, _);
+      for (i=0; i<p; i++) {
+        for (j=0; j<=i; j++) {
+          imat(i,j) += f*w*v*z[i]*z[j];
+        }
+      }
+    }
+  } else if (param->link == "probit") {
+    for (person = 0; person < n; person++) {
+      double f = param->freq[person];
+      double w = param->weight[person];
+      double r = R::pnorm(eta[person], 0, 1, 1, 0);
+      double phi = R::dnorm(eta[person], 0, 1, 0);
+      double v = phi*phi/(r*(1-r));
+      NumericVector z = param->z(person, _);
+      for (i=0; i<p; i++) {
+        for (j=0; j<=i; j++) {
+          imat(i,j) += f*w*v*z[i]*z[j];
+        }
+      }
+    }
+  } else if (param->link == "cloglog") {
+    for (person = 0; person < n; person++) {
+      double f = param->freq[person];
+      double w = param->weight[person];
+      double r = 1 - exp(-exp(eta[person]));
+      double phi = exp(eta[person] - exp(eta[person]));
+      double v = phi*phi/(r*(1-r));
+      NumericVector z = param->z(person, _);
+      for (i=0; i<p; i++) {
+        for (j=0; j<=i; j++) {
+          imat(i,j) += f*w*v*z[i]*z[j];
+        }
       }
     }
   }
@@ -132,51 +212,76 @@ NumericVector f_pen_score_0(int p, NumericVector par, void *ex) {
     }
   }
 
-  NumericVector pi(n);
-  for (person=0; person<n; person++) {
-    pi[person] = R::plogis(eta[person], 0, 1, 1, 0);
-  }
-
-  NumericMatrix xw2(p,n);  // X^T W^{1/2}
-  for (person=0; person<n; person++) {
-    double f = param->freq[person];
-    double w = param->weight[person];
-    double w2 = sqrt(f*w*pi[person]*(1-pi[person]));
-    for (i=0; i<p; i++) {
-      xw2(i,person) = param->z(person,i)*w2;
+  // pi = E(y), d = d theta/d eta, a = diagonal of W, b = d log(a)/d eta
+  NumericVector pi(n), d(n), a(n), b(n);
+  if (param->link == "logit") {
+    for (person = 0; person < n; person++) {
+      double r = R::plogis(eta[person], 0, 1, 1, 0);
+      pi[person] = r;
+      d[person] = 1;
+      a[person] = r*(1-r);
+      b[person] = 1-2*r;
+    }
+  } else if (param->link == "probit") {
+    for (person = 0; person < n; person++) {
+      double r = R::pnorm(eta[person], 0, 1, 1, 0);
+      double phi = R::dnorm(eta[person], 0, 1, 0);
+      double dphi = -eta[person];
+      pi[person] = r;
+      d[person] = phi/(r*(1-r));
+      a[person] = phi*phi/(r*(1-r));
+      b[person] = (2*r-1)*phi/(r*(1-r)) + 2*dphi;
+    }
+  } else if (param->link == "cloglog") {
+    for (person = 0; person < n; person++) {
+      double r = 1 - exp(-exp(eta[person]));
+      double phi = exp(eta[person] - exp(eta[person]));
+      double dphi = 1 - exp(eta[person]);
+      pi[person] = r;
+      d[person] = phi/(r*(1-r));
+      a[person] = phi*phi/(r*(1-r));
+      b[person] = (2*r-1)*phi/(r*(1-r)) + 2*dphi;
     }
   }
 
   NumericMatrix imat(p,p); // X^T W X
-  for (i=0; i<p; i++) {
-    for (j=0; j<p; j++) {
-      for (person=0; person<n; person++) {
-        imat(i,j) += xw2(i,person)*xw2(j,person);
+  for (person = 0; person < n; person++) {
+    double f = param->freq[person];
+    double w = param->weight[person];
+    NumericVector z = param->z(person, _);
+    for (i=0; i<p; i++) {
+      for (j=0; j<=i; j++) {
+        imat(i,j) += f*w*a[person]*z[i]*z[j];
       }
+    }
+  }
+
+  for (i=0; i<p-1; i++) {
+    for (j=i+1; j<p; j++) {
+      imat(i,j) = imat(j,i);
     }
   }
 
   double toler = 1e-12;
   NumericMatrix var = invsympd(imat, p, toler);
 
-  // diagonals of the hat matrix H = W^{1/2} X (X^T W X)^{-1} X^T W^{1/2}
-  NumericVector Hdiag(n);
-  for (person=0; person<n; person++) {
-    for (i=0; i<p; i++) {
-      for (j=0; j<p; j++) {
-        Hdiag[person] += xw2(i,person)*var(i,j)*xw2(j,person);
-      }
-    }
-  }
-
   NumericVector score(p);
   for (person = 0; person < n; person++) {
     double f = param->freq[person];
     double w = param->weight[person];
-    double v = param->y[person] - R::plogis(eta[person], 0, 1, 1, 0);
     NumericVector z = param->z(person, _);
+    double h = 0; // diagonal of H = W^{1/2}*X*inverse(X^T W X)*X^T W^{1/2}
     for (i=0; i<p; i++) {
-      score[i] += (f*w*v + Hdiag[person]*(0.5 - pi[person]))*z[i];
+      for (j=0; j<p; j++) {
+        h += var(i,j)*z[i]*z[j];
+      }
+    }
+    h *= f*w*a[person];
+
+    double resid = param->y[person] - pi[person];
+    double u = f*w*resid*d[person] + 0.5*b[person]*h;
+    for (i=0; i<p; i++) {
+      score[i] += u*z[i];
     }
   }
 
@@ -199,11 +304,36 @@ NumericMatrix f_ressco_0(int p, NumericVector par, void *ex) {
   }
 
   NumericMatrix resid(n, p);
-  for (person = 0; person < n; person++) {
-    double v = param->y[person] - R::plogis(eta[person], 0, 1, 1, 0);
-    NumericVector z = param->z(person, _);
-    for (i=0; i<p; i++) {
-      resid(person, i) = v*z[i];
+  if (param->link == "logit") {
+    for (person = 0; person < n; person++) {
+      double r = R::plogis(eta[person], 0, 1, 1, 0);
+      double v = param->y[person] - r;
+      NumericVector z = param->z(person, _);
+      for (i=0; i<p; i++) {
+        resid(person, i) = v*z[i];
+      }
+    }
+  } else if (param->link == "probit") {
+    for (person = 0; person < n; person++) {
+      double r = R::pnorm(eta[person], 0, 1, 1, 0);
+      double phi = R::dnorm(eta[person], 0, 1, 0);
+      double d = phi/(r*(1-r));
+      double v = param->y[person] - r;
+      NumericVector z = param->z(person, _);
+      for (i=0; i<p; i++) {
+        resid(person, i) = v*d*z[i];
+      }
+    }
+  } else if (param->link == "cloglog") {
+    for (person = 0; person < n; person++) {
+      double r = 1 - exp(-exp(eta[person]));
+      double phi = exp(eta[person] - exp(eta[person]));
+      double d = phi/(r*(1-r));
+      double v = param->y[person] - r;
+      NumericVector z = param->z(person, _);
+      for (i=0; i<p; i++) {
+        resid(person, i) = v*d*z[i];
+      }
     }
   }
 
@@ -470,6 +600,7 @@ List logisregcpp(const DataFrame data,
                  const std::string weight = "",
                  const std::string offset = "",
                  const std::string id = "",
+                 const std::string link = "logit",
                  const bool robust = 0,
                  const bool firth = 0,
                  const bool flic = 0,
@@ -586,6 +717,14 @@ List logisregcpp(const DataFrame data,
     }
   }
 
+  std::string link1 = link;
+  std::for_each(link1.begin(), link1.end(), [](char & c) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  });
+
+  if (!(link1=="logit" || link1=="probit" || link1=="cloglog")) {
+    stop("Invalid value for link");
+  }
 
   // sort the data by rep
   IntegerVector order = seq(0, n-1);
@@ -682,7 +821,7 @@ List logisregcpp(const DataFrame data,
     bint0[0] = R::qlogis(num/den, 0, 1, 1, 0);
 
     IntegerVector colfit0(1);
-    logparams param = {n1, event1, z1, freq1, weight1, offset1};
+    logparams param = {n1, link1, event1, z1, freq1, weight1, offset1};
     List outint = logisregloop(p, bint0, &param, 30, 1.0e-9, firth,
                                colfit0, 1);
 
@@ -707,14 +846,14 @@ List logisregcpp(const DataFrame data,
       // intercept correction
       if (flic) {
         NumericVector lp(n1);  // linear predictor excluding intercept
-        for (int person=0; person<n1; person++) {
+        for (int person = 0; person < n1; person++) {
           lp[person] = offset1[person];
           for (i=1; i<p; i++) {
             lp[person] += b[i]*z1(person,i);
           }
         }
 
-        logparams param0 = {n1, event1, z1, freq1, weight1, lp};
+        logparams param0 = {n1, link1, event1, z1, freq1, weight1, lp};
 
         NumericVector bint00(1, bint0[0]);
         outint = logisregloop(1, bint00, &param0, 30, 1.0e-9, 0, colfit0, 1);
@@ -785,25 +924,29 @@ List logisregcpp(const DataFrame data,
     // linear predictors and fitted values
     int person;
     NumericVector eta(n1);
-    for (person=0; person<n1; person++) {
+    for (person = 0; person < n1; person++) {
       eta[person] = offset1[person];
       for (i=0; i<p; i++) {
         eta[person] += b[i]*z1(person,i);
       }
-    }
-
-    NumericVector pi(n1);
-    for (person=0; person<n1; person++) {
-      pi[person] = R::plogis(eta[person], 0, 1, 1, 0);
-    }
-
-    for (person=0; person<n1; person++) {
       linear_predictors[N+person] = eta[person];
-      fitted_values[N+person] = pi[person];
+    }
+
+    if (link1 == "logit") {
+      for (person = 0; person < n1; person++) {
+        fitted_values[N+person] = R::plogis(eta[person], 0, 1, 1, 0);
+      }
+    } else if (link1 == "probit") {
+      for (person = 0; person < n1; person++) {
+        fitted_values[N+person] = R::pnorm(eta[person], 0, 1, 1, 0);
+      }
+    } else if (link1 == "cloglog") {
+      for (person = 0; person < n1; person++) {
+        fitted_values[N+person] = 1 - exp(-exp(eta[person]));
+      }
     }
 
     N += n1;
-
 
     niter[h] = out["iter"];
 
@@ -929,7 +1072,7 @@ List logisregcpp(const DataFrame data,
           prob[k] = R::pchisq(-2*(lmax0 - lmax), 1, 0, 0);
           clparm[k] = "PL";
         }
-      } else {
+      } else { // Wald CI for intercept and PL CI for slopes
         if (!robust) {
           lb[0] = b[0] - zcrit*seb[0];
           ub[0] = b[0] + zcrit*seb[0];
@@ -1008,6 +1151,7 @@ List logisregcpp(const DataFrame data,
     _["loglik1"] = loglik1,
     _["niter"] = niter,
     _["p"] = p,
+    _["link"] = link1,
     _["robust"] = robust,
     _["firth"] = firth,
     _["flic"] = flic);
@@ -1046,11 +1190,9 @@ List logisregcpp(const DataFrame data,
       _["vbeta_naive"] = vbeta0);
   }
 
-
   DataFrame fitted = DataFrame::create(
     Named("linear_predictors") = linear_predictors,
     Named("fitted_values") = fitted_values);
-
 
   if (has_rep) {
     for (i=0; i<p_rep; i++) {
@@ -1073,7 +1215,6 @@ List logisregcpp(const DataFrame data,
       }
     }
   }
-
 
   List result = List::create(
     _["sumstat"] = sumstat,

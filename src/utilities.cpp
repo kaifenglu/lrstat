@@ -1270,15 +1270,28 @@ NumericVector patrisk(const NumericVector& time = NA_REAL,
   // identify the time interval containing the specified analysis time
   IntegerVector m = pmax(findInterval3(time, piecewiseSurvivalTime), 1);
   int i, j, k = static_cast<int>(time.size());
-  int J = static_cast<int>(lambda.size());
+  int J = static_cast<int>(piecewiseSurvivalTime.size());
 
   // hazard for failure or dropout
-  NumericVector lg(J);
-  if (gamma.size() == 1) {
-    lg = lambda + gamma[0];
+  NumericVector lambdax(J), gammax(J);
+
+  if (lambda.size() == 1) {
+    lambdax = rep(lambda, J);
+  } else if (lambda.size() == J) {
+    lambdax = lambda;
   } else {
-    lg = lambda + gamma;
+    stop("Invalid length for lambda");
   }
+
+  if (gamma.size() == 1) {
+    gammax = rep(gamma, J);
+  } else if (gamma.size() == J) {
+    gammax = gamma;
+  } else {
+    stop("Invalid length for gamma");
+  }
+
+  NumericVector lamgam = lambdax + gammax;
 
   NumericVector t = piecewiseSurvivalTime;
 
@@ -1287,9 +1300,9 @@ NumericVector patrisk(const NumericVector& time = NA_REAL,
   for (i=0; i<k; i++) {
     for (j=0; j<m[i]; j++) {
       if (j<m[i]-1) {
-        a[i] += lg[j]*(t[j+1] - t[j]);
+        a[i] += lamgam[j]*(t[j+1] - t[j]);
       } else {
-        a[i] += lg[j]*(time[i] - t[j]);
+        a[i] += lamgam[j]*(time[i] - t[j]);
       }
     }
   }
@@ -1334,15 +1347,29 @@ NumericVector pevent(const NumericVector& time = NA_REAL,
   // identify the time interval containing the specified analysis time
   IntegerVector m = pmax(findInterval3(time, piecewiseSurvivalTime), 1);
   int i, j, k = static_cast<int>(time.size());
-  int J = static_cast<int>(lambda.size());
+
+  int J = static_cast<int>(piecewiseSurvivalTime.size());
 
   // hazard for failure or dropout
-  NumericVector lg(J);
-  if (gamma.size() == 1) {
-    lg = lambda + gamma[0];
+  NumericVector lambdax(J), gammax(J);
+
+  if (lambda.size() == 1) {
+    lambdax = rep(lambda, J);
+  } else if (lambda.size() == J) {
+    lambdax = lambda;
   } else {
-    lg = lambda + gamma;
+    stop("Invalid length for lambda");
   }
+
+  if (gamma.size() == 1) {
+    gammax = rep(gamma, J);
+  } else if (gamma.size() == J) {
+    gammax = gamma;
+  } else {
+    stop("Invalid length for gamma");
+  }
+
+  NumericVector lamgam = lambdax + gammax;
 
   // sum up cumulative hazard up to time
   NumericVector t = piecewiseSurvivalTime;
@@ -1353,9 +1380,9 @@ NumericVector pevent(const NumericVector& time = NA_REAL,
   for (i=0; i<k; i++) {
     for (j=0; j<m[i]; j++) {
       if (j<m[i]-1) {
-        p = lambda[j]/lg[j]*(1 - exp(-lg[j]*(t[j+1] - t[j])));
+        p = lambda[j]/lamgam[j]*(1 - exp(-lamgam[j]*(t[j+1] - t[j])));
       } else {
-        p = lambda[j]/lg[j]*(1 - exp(-lg[j]*(time[i] - t[j])));
+        p = lambda[j]/lamgam[j]*(1 - exp(-lamgam[j]*(time[i] - t[j])));
       }
       a[i] += n[j]*p;
     }
@@ -1366,7 +1393,7 @@ NumericVector pevent(const NumericVector& time = NA_REAL,
 
 
 //' @title Integrated Event Probability Over an Interval With Constant Hazard
-//' @description Obtains the integration probability of having an event
+//' @description Obtains the integrated probability of having an event
 //' during an interval with constant hazard.
 //'
 //' @param j The analysis time interval with constant hazard.
@@ -1413,21 +1440,34 @@ double hd(const int j = NA_INTEGER,
   // probability of having an event at the start of interval j
   NumericVector d0 = pevent(t0, piecewiseSurvivalTime, lambda, gamma);
 
-
-  int J = static_cast<int>(lambda.size());
+  int J = static_cast<int>(piecewiseSurvivalTime.size());
 
   // hazard for failure or dropout
-  NumericVector lg(J);
-  if (gamma.size() == 1) {
-    lg = lambda + gamma[0];
+  NumericVector lambdax(J), gammax(J);
+
+  if (lambda.size() == 1) {
+    lambdax = rep(lambda, J);
+  } else if (lambda.size() == J) {
+    lambdax = lambda;
   } else {
-    lg = lambda + gamma;
+    stop("Invalid length for lambda");
   }
+
+  if (gamma.size() == 1) {
+    gammax = rep(gamma, J);
+  } else if (gamma.size() == J) {
+    gammax = gamma;
+  } else {
+    stop("Invalid length for gamma");
+  }
+
+  NumericVector lamgam = lambdax + gammax;
 
   // integration of conditional probability of having an event over (t1,t2)
   // given survival at the start of interval j
-  double q1 = (exp(-lg[j1]*(t1-t0[0])) - exp(-lg[j1]*(t2-t0[0])))/lg[j1];
-  double q = lambda[j1]/lg[j1] * (t2-t1 - q1);
+  double q1 = (exp(-lamgam[j1]*(t1-t0[0])) -
+               exp(-lamgam[j1]*(t2-t0[0])))/lamgam[j1];
+  double q = lambda[j1]/lamgam[j1] * (t2-t1 - q1);
 
   // sum up the integration for the already failed and to-be-failed
   return d0[0]*(t2-t1) + n0[0]*q;

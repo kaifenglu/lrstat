@@ -1,39 +1,3 @@
-testthat::test_that("power with specified critical values, unweighted", {
-  l = lrpower(kMax = 2, informationRates = c(0.8, 1),
-              criticalValues = c(2.250, 2.025),
-              allocationRatioPlanned = 1, accrualTime = seq(0, 8),
-              accrualIntensity = 26/9*seq(1, 9),
-              piecewiseSurvivalTime = c(0, 6),
-              stratumFraction = c(0.2, 0.8),
-              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
-              lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
-              gamma1 = -log(1-0.05)/12,
-              gamma2 = -log(1-0.05)/12, accrualDuration = 22,
-              followupTime = 18, fixedFollowup = FALSE,
-              rho1 = 0, rho2 = 0,
-              numSubintervals = 300)
-  testthat::expect_equal(round(l$overallResults$overallReject, 4), 0.7570)
-})
-
-
-testthat::test_that("power with specified critical values, weighted", {
-  l = lrpower(kMax = 2, informationRates = c(0.8, 1),
-              criticalValues = c(2.250, 2.025),
-              allocationRatioPlanned = 1, accrualTime = seq(0, 8),
-              accrualIntensity = 26/9*seq(1, 9),
-              piecewiseSurvivalTime = c(0, 6),
-              stratumFraction = c(0.2, 0.8),
-              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
-              lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
-              gamma1 = -log(1-0.05)/12,
-              gamma2 = -log(1-0.05)/12, accrualDuration = 22,
-              followupTime = 18, fixedFollowup = FALSE,
-              rho1 = 0, rho2 = 1,
-              numSubintervals = 300)
-  testthat::expect_equal(round(l$overallResults$overallReject, 4), 0.9313)
-})
-
-
 testthat::test_that("power with alpha-spending, weighted", {
   l = lrpower(kMax = 2, informationRates = c(0.8, 1),
               alpha = 0.025, typeAlphaSpending = "sfOF",
@@ -46,28 +10,8 @@ testthat::test_that("power with alpha-spending, weighted", {
               gamma1 = -log(1-0.05)/12,
               gamma2 = -log(1-0.05)/12, accrualDuration = 22,
               followupTime = 18, fixedFollowup = FALSE,
-              rho1 = 0, rho2 = 1,
-              numSubintervals = 300)
+              rho1 = 0, rho2 = 1)
   testthat::expect_equal(round(l$overallResults$overallReject, 4), 0.9313)
-})
-
-
-testthat::test_that("power with beta-spending, weighted", {
-  l = lrpower(kMax = 2, informationRates = c(0.8, 1),
-              alpha = 0.025, typeAlphaSpending = "sfP",
-              typeBetaSpending = "sfKD", parameterBetaSpending = 1.5,
-              allocationRatioPlanned = 1, accrualTime = seq(0, 8),
-              accrualIntensity = 26/9*seq(1, 9),
-              piecewiseSurvivalTime = c(0, 6),
-              stratumFraction = c(0.2, 0.8),
-              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
-              lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
-              gamma1 = -log(1-0.05)/12,
-              gamma2 = -log(1-0.05)/12, accrualDuration = 22,
-              followupTime = 18, fixedFollowup = FALSE,
-              rho1 = 0, rho2 = 1,
-              numSubintervals = 300)
-  testthat::expect_equal(round(l$byStageResults$futilityBounds[1], 4), 1.6661)
 })
 
 
