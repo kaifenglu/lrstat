@@ -17,8 +17,7 @@ getDurationFromNevents(
   gamma2 = 0L,
   followupTime = NA_real_,
   fixedFollowup = 0L,
-  npoints = 23L,
-  interval = as.numeric(c(0.001, 240))
+  npoints = 23L
 )
 }
 \arguments{
@@ -68,9 +67,6 @@ Defaults to 0 for variable follow-up.}
 
 \item{npoints}{The number of accrual duration time points.
 Defaults to 23.}
-
-\item{interval}{The interval to search for the solution of
-accrualDuration. Defaults to \code{c(0.001, 240)}.}
 }
 \value{
 A data frame of the following variables:

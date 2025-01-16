@@ -325,7 +325,28 @@ NumericVector covrmst(const double t2 = NA_REAL,
 //'
 //' * \code{subjects}: The number of enrolled subjects.
 //'
+//' * \code{nevents}: The total number of events.
+//'
+//' * \code{nevents1}: The number of events in the active treatment group.
+//'
+//' * \code{nevents2}: The number of events in the control group.
+//'
+//' * \code{ndropouts}: The total number of dropouts.
+//'
+//' * \code{ndropouts1}: The number of dropouts in the active treatment
+//'   group.
+//'
+//' * \code{ndropouts2}: The number of dropouts in the control group.
+//'
 //' * \code{milestone}: The milestone time relative to randomization.
+//'
+//' * \code{nmilestone}: The total number of subjects reaching milestone.
+//'
+//' * \code{nmilestone1}: The number of subjects reaching milestone
+//'   in the active treatment group.
+//'
+//' * \code{nmiletone2}: The number of subjects reaching milestone
+//'   in the control group.
 //'
 //' * \code{rmst1}: The restricted mean survival time for the treatment
 //'   group.
@@ -426,9 +447,6 @@ DataFrame rmstat1(const double time = NA_REAL,
   }
 
 
-  NumericVector ss(1, time);
-  double a = accrual(ss, accrualTime, accrualIntensity, accrualDuration)[0];
-
   // obtain the follow-up time for the first enrolled subject
   double maxFollowupTime;
   if (fixedFollowup) {
@@ -437,17 +455,27 @@ DataFrame rmstat1(const double time = NA_REAL,
     maxFollowupTime = accrualDuration + followupTime;
   }
 
+  NumericVector ss(1, time);
+  double a = accrual(ss, accrualTime, accrualIntensity, accrualDuration)[0];
+  double phi = allocationRatioPlanned/(1 + allocationRatioPlanned);
 
   IntegerVector l1 = Range(0, nintervals-1);
   IntegerVector l(nintervals);
   NumericVector lam1(nintervals), lam2(nintervals);
   NumericVector gam1(nintervals), gam2(nintervals);
+  NumericMatrix x(1,2), y(1,2);
   NumericVector nsubjects(nstrata);
+  NumericMatrix nevents(nstrata, 2), ndropouts(nstrata, 2);
   NumericVector rmst1(nstrata), rmst2(nstrata), rmstDiff(nstrata);
   NumericVector vrmst1(nstrata), vrmst2(nstrata), vrmstDiff(nstrata);
   IntegerVector stratum(nstrata);
   NumericVector calTime(nstrata), mileTime(nstrata);
   DataFrame df;
+
+  NumericVector tt = NumericVector::create(time - milestone);
+  double a2 = accrual(tt, accrualTime, accrualIntensity, accrualDuration)[0];
+  NumericVector nmilestone1(nstrata), nmilestone2(nstrata);
+  NumericVector nmilestone(nstrata);
 
   for (int h=0; h<nstrata; h++) {
     stratum[h] = h+1;
@@ -461,8 +489,29 @@ DataFrame rmstat1(const double time = NA_REAL,
     gam1 = gamma1x[l];
     gam2 = gamma2x[l];
 
-    // obtain number of enrolled subjects
+    // number of events in the stratum at the specified calendar time
+    x = nevent2(ss, allocationRatioPlanned, accrualTime,
+                frac*accrualIntensity,
+                piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
+                accrualDuration, followupTime, maxFollowupTime);
+
+    y = nevent2(ss, allocationRatioPlanned, accrualTime,
+                frac*accrualIntensity,
+                piecewiseSurvivalTime, gam1, gam2, lam1, lam2,
+                accrualDuration, followupTime, maxFollowupTime);
+
+    // obtain number of enrolled subjects and subjects having an event
     nsubjects[h] = frac*a;
+    nevents(h, _) = x.row(0);
+    ndropouts(h, _) = y.row(0);
+
+    // obtain number of subjects censored due to reaching the max follow-up
+    double ncom = frac*a2;
+    double p1 = patrisk(milestone, piecewiseSurvivalTime, lam1, gam1)[0];
+    double p2 = patrisk(milestone, piecewiseSurvivalTime, lam2, gam2)[0];
+    nmilestone1[h] = phi*ncom*p1;
+    nmilestone2[h] = (1-phi)*ncom*p2;
+    nmilestone[h] = nmilestone1[h] + nmilestone2[h];
 
     rmst1[h] = rmst(0, milestone, piecewiseSurvivalTime, lam1);
     rmst2[h] = rmst(0, milestone, piecewiseSurvivalTime, lam2);
@@ -478,11 +527,29 @@ DataFrame rmstat1(const double time = NA_REAL,
     vrmstDiff[h] = v[0] + v[1];
   }
 
+  // number of subjects having an event in each treatment group and overall
+  NumericVector nevents1 = nevents(_, 0);
+  NumericVector nevents2 = nevents(_, 1);
+  NumericVector neventst = nevents1 + nevents2;
+
+  NumericVector ndropouts1 = ndropouts(_, 0);
+  NumericVector ndropouts2 = ndropouts(_, 1);
+  NumericVector ndropoutst = ndropouts1 + ndropouts2;
+
   // output the requested information
   df = DataFrame::create(_["stratum"] = stratum,
                          _["time"] = calTime,
                          _["subjects"] = nsubjects,
+                         _["nevents"] = neventst,
+                         _["nevents1"] = nevents1,
+                         _["nevents2"] = nevents2,
+                         _["ndropouts"] = ndropoutst,
+                         _["ndropouts1"] = ndropouts1,
+                         _["ndropouts2"] = ndropouts2,
                          _["milestone"] = mileTime,
+                         _["nmilestone"] = nmilestone,
+                         _["nmilestone1"] = nmilestone1,
+                         _["nmilestone2"] = nmilestone2,
                          _["rmst1"] = rmst1,
                          _["rmst2"] = rmst2,
                          _["rmstDiff"] = rmstDiff,
@@ -523,7 +590,28 @@ DataFrame rmstat1(const double time = NA_REAL,
 //'
 //' * \code{subjects}: The number of enrolled subjects.
 //'
+//' * \code{nevents}: The total number of events.
+//'
+//' * \code{nevents1}: The number of events in the active treatment group.
+//'
+//' * \code{nevents2}: The number of events in the control group.
+//'
+//' * \code{ndropouts}: The total number of dropouts.
+//'
+//' * \code{ndropouts1}: The number of dropouts in the active treatment
+//'   group.
+//'
+//' * \code{ndropouts2}: The number of dropouts in the control group.
+//'
 //' * \code{milestone}: The milestone time relative to randomization.
+//'
+//' * \code{nmilestone}: The total number of subjects reaching milestone.
+//'
+//' * \code{nmilestone1}: The number of subjects reaching milestone
+//'   in the active treatment group.
+//'
+//' * \code{nmiletone2}: The number of subjects reaching milestone
+//'   in the control group.
 //'
 //' * \code{rmst1}: The restricted mean survival time for the treatment
 //'   group.
@@ -742,6 +830,9 @@ DataFrame rmstat(const NumericVector& time = NA_REAL,
 
   int k = static_cast<int>(time.size());
   NumericVector calTime(k), mileTime(k), subjects(k),
+  nevents(k), nevents1(k), nevents2(k),
+  ndropouts(k), ndropouts1(k), ndropouts2(k),
+  nmilestone(k), nmilestone1(k), nmilestone2(k),
   rmst1(k), rmst2(k), vrmst1(k), vrmst2(k),
   rmstDiff(k), vrmstDiff(k), information(k), rmstDiffZ(k);
   DataFrame df;
@@ -755,20 +846,38 @@ DataFrame rmstat(const NumericVector& time = NA_REAL,
 
     calTime[j] = max(NumericVector(df[1]));
     subjects[j] = sum(NumericVector(df[2]));
-    mileTime[j] = max(NumericVector(df[3]));
-    rmst1[j] = sum(stratumFraction*NumericVector(df[4]));
-    rmst2[j] = sum(stratumFraction*NumericVector(df[5]));
-    rmstDiff[j] = sum(stratumFraction*NumericVector(df[6]));
-    vrmst1[j] = sum(stratumFraction*stratumFraction*NumericVector(df[7]));
-    vrmst2[j] = sum(stratumFraction*stratumFraction*NumericVector(df[8]));
-    vrmstDiff[j] = sum(stratumFraction*stratumFraction*NumericVector(df[9]));
+    nevents[j] = sum(NumericVector(df[3]));
+    nevents1[j] = sum(NumericVector(df[4]));
+    nevents2[j] = sum(NumericVector(df[5]));
+    ndropouts[j] = sum(NumericVector(df[6]));
+    ndropouts1[j] = sum(NumericVector(df[7]));
+    ndropouts2[j] = sum(NumericVector(df[8]));
+    mileTime[j] = max(NumericVector(df[9]));
+    nmilestone[j] = sum(NumericVector(df[10]));
+    nmilestone1[j] = sum(NumericVector(df[11]));
+    nmilestone2[j] = sum(NumericVector(df[12]));
+    rmst1[j] = sum(stratumFraction*NumericVector(df[13]));
+    rmst2[j] = sum(stratumFraction*NumericVector(df[14]));
+    rmstDiff[j] = sum(stratumFraction*NumericVector(df[15]));
+    vrmst1[j] = sum(stratumFraction*stratumFraction*NumericVector(df[16]));
+    vrmst2[j] = sum(stratumFraction*stratumFraction*NumericVector(df[17]));
+    vrmstDiff[j] = sum(stratumFraction*stratumFraction*NumericVector(df[18]));
     information[j] = 1.0/vrmstDiff[j];
     rmstDiffZ[j] = rmstDiff[j]/sqrt(vrmstDiff[j]);
   }
 
   df = DataFrame::create(_["time"] = calTime,
                          _["subjects"] = subjects,
+                         _["nevents"] = nevents,
+                         _["nevents1"] = nevents1,
+                         _["nevents2"] = nevents2,
+                         _["ndropouts"] = ndropouts,
+                         _["ndropouts1"] = ndropouts1,
+                         _["ndropouts2"] = ndropouts2,
                          _["milestone"] = mileTime,
+                         _["nmilestone"] = nmilestone,
+                         _["nmilestone1"] = nmilestone1,
+                         _["nmilestone2"] = nmilestone2,
                          _["rmst1"] = rmst1,
                          _["rmst2"] = rmst2,
                          _["rmstDiff"] = rmstDiff,
@@ -828,7 +937,7 @@ DataFrame rmstat(const NumericVector& time = NA_REAL,
 //'   the value is allowed to be less than the sum of \code{accrualDuration}
 //'   and \code{followupTime}.
 //'
-//' @return An S3 class \code{rmpower} object with 3 components:
+//' @return An S3 class \code{rmpower} object with 4 components:
 //'
 //' * \code{overallResults}: A data frame containing the following variables:
 //'
@@ -836,17 +945,15 @@ DataFrame rmstat(const NumericVector& time = NA_REAL,
 //'
 //'     - \code{alpha}: The overall significance level.
 //'
-//'     - \code{drift}: The drift parameter, equal to
-//'       \code{(rmstDiff - rmstDiffH0)*sqrt(information)}.
-//'
-//'     - \code{inflationFactor}: The inflation factor (relative to the
-//'       fixed design).
+//'     - \code{numberOfEvents}: The total number of events.
 //'
 //'     - \code{numbeOfSubjects}: The total number of subjects.
 //'
 //'     - \code{studyDuration}: The total study duration.
 //'
 //'     - \code{information}: The maximum information.
+//'
+//'     - \code{expectedNumberOfEvents}: The expected number of events.
 //'
 //'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
 //'
@@ -896,7 +1003,14 @@ DataFrame rmstat(const NumericVector& time = NA_REAL,
 //'
 //'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
 //'
+//'     - \code{numberOfEvents}: The number of events.
+//'
+//'     - \code{numberOfDropouts}: The number of dropouts.
+//'
 //'     - \code{numberOfSubjects}: The number of subjects.
+//'
+//'     - \code{numberOfMilestone}: The number of subjects reaching
+//'       milestone.
 //'
 //'     - \code{analysisTime}: The average time since trial start.
 //'
@@ -924,6 +1038,57 @@ DataFrame rmstat(const NumericVector& time = NA_REAL,
 //'   \code{piecewiseSurvivalTime}, \code{stratumFraction},
 //'   \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2},
 //'   and \code{spendingTime}.
+//'
+//' * \code{byTreatmentCounts}: A list containing the following counts by
+//'   treatment group:
+//'
+//'     - \code{numberOfEvents1}: The number of events by stage for
+//'       the treatment group.
+//'
+//'     - \code{numberOfDropouts1}: The number of dropouts by stage for
+//'       the treatment group.
+//'
+//'     - \code{numberOfSubjects1}: The number of subjects by stage for
+//'       the treatment group.
+//'
+//'     - \code{numberOfMilestone1}: The number of subjects reaching
+//'       milestone by stage for the active treatment group.
+//'
+//'     - \code{numberOfEvents2}: The number of events by stage for
+//'       the control group.
+//'
+//'     - \code{numberOfDropouts2}: The number of dropouts by stage for
+//'       the control group.
+//'
+//'     - \code{numberOfSubjects2}: The number of subjects by stage for
+//'       the control group.
+//'
+//'     - \code{numberOfMilestone2}: The number of subjects reaching
+//'       milestone by stage for the control group.
+//'
+//'     - \code{expectedNumberOfEvents1}: The expected number of events for
+//'       the treatment group.
+//'
+//'     - \code{expectedNumberOfDropouts1}: The expected number of dropouts
+//'       for the active treatment group.
+//'
+//'     - \code{expectedNumberOfSubjects1}: The expected number of subjects
+//'       for the active treatment group.
+//'
+//'     - \code{expectedNumberOfMilestone1}: The expected number of subjects
+//'       reaching milestone for the active treatment group.
+//'
+//'     - \code{expectedNumberOfEvents2}: The expected number of events for
+//'       control group.
+//'
+//'     - \code{expectedNumberOfDropouts2}: The expected number of dropouts
+//'       for the control group.
+//'
+//'     - \code{expectedNumberOfSubjects2}: The expected number of subjects
+//'       for the control group.
+//'
+//'     - \code{expectedNumberOfMilestone2}: The expected number of subjects
+//'       reaching milestone for the control group.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
@@ -1336,10 +1501,10 @@ List rmpower(const int kMax = 1,
               lambda1, lambda2, gamma1, gamma2,
               accrualDuration, followupTime, fixedFollowup);
 
-  double maxInformation = sum(NumericVector(rm[9]));
-  double rmst1 = sum(NumericVector(rm[3]));
-  double rmst2 = sum(NumericVector(rm[4]));
-  double rmstDiff = sum(NumericVector(rm[5]));
+  double maxInformation = sum(NumericVector(rm[18]));
+  double rmst1 = sum(NumericVector(rm[12]));
+  double rmst2 = sum(NumericVector(rm[13]));
+  double rmstDiff = sum(NumericVector(rm[14]));
   NumericVector theta(kMax, rmstDiff);
   NumericVector I = maxInformation*informationRates1;
 
@@ -1357,7 +1522,7 @@ List rmpower(const int kMax = 1,
                 piecewiseSurvivalTime, stratumFraction,
                 lambda1, lambda2, gamma1, gamma2,
                 accrualDuration, followupTime, fixedFollowup);
-              return sum(NumericVector(rm[9])) - information1;
+              return sum(NumericVector(rm[18])) - information1;
             };
 
   for (int i=0; i<kMax-1; i++) {
@@ -1366,8 +1531,25 @@ List rmpower(const int kMax = 1,
   };
   time[kMax-1] = studyDuration1;
 
-  NumericVector nsubjects = accrual(time, accrualTime, accrualIntensity,
-                                    accrualDuration);
+  rm = rmstat(time, milestone, allocationRatioPlanned,
+              accrualTime, accrualIntensity,
+              piecewiseSurvivalTime, stratumFraction,
+              lambda1, lambda2, gamma1, gamma2,
+              accrualDuration, followupTime, fixedFollowup);
+
+  double phi = allocationRatioPlanned/(allocationRatioPlanned+1);
+  NumericVector nsubjects = NumericVector(rm[1]);
+  NumericVector nsubjects1 = phi*nsubjects;
+  NumericVector nsubjects2 = (1-phi)*nsubjects;
+  NumericVector nevents = NumericVector(rm[2]);
+  NumericVector nevents1 = NumericVector(rm[3]);
+  NumericVector nevents2 = NumericVector(rm[4]);
+  NumericVector ndropouts = NumericVector(rm[5]);
+  NumericVector ndropouts1 = NumericVector(rm[6]);
+  NumericVector ndropouts2 = NumericVector(rm[7]);
+  NumericVector nmilestone = NumericVector(rm[9]);
+  NumericVector nmilestone1 = NumericVector(rm[10]);
+  NumericVector nmilestone2 = NumericVector(rm[11]);
 
   // compute the stagewise exit probabilities for efficacy and futility
   if (!missingFutilityBounds || bsf=="none" || kMax==1) {
@@ -1394,7 +1576,16 @@ List rmpower(const int kMax = 1,
   ptotal = pu + pl;
 
   double overallReject = sum(pu);
+  double expectedNumberOfEvents = sum(ptotal*nevents);
   double expectedNumberOfSubjects = sum(ptotal*nsubjects);
+  double expectedNumberOfEvents1 = sum(ptotal*nevents1);
+  double expectedNumberOfDropouts1 = sum(ptotal*ndropouts1);
+  double expectedNumberOfSubjects1 = sum(ptotal*nsubjects1);
+  double expectedNumberOfMilestone1 = sum(ptotal*nmilestone1);
+  double expectedNumberOfEvents2 = sum(ptotal*nevents2);
+  double expectedNumberOfDropouts2 = sum(ptotal*ndropouts2);
+  double expectedNumberOfSubjects2 = sum(ptotal*nsubjects2);
+  double expectedNumberOfMilestone2 = sum(ptotal*nmilestone2);
   double expectedStudyDuration = sum(ptotal*time);
   double expectedInformation = sum(ptotal*I);
   NumericVector cpu = cumsum(pu);
@@ -1415,11 +1606,6 @@ List rmpower(const int kMax = 1,
     }
   }
 
-  double drift = (rmstDiff - rmstDiffH0)*sqrt(maxInformation);
-  double driftf = R::qnorm(1-alpha1, 0, 1, 1, 0) +
-    R::qnorm(overallReject, 0, 1, 1, 0);
-  double inflationFactor = pow(drift/driftf, 2);
-
 
   DataFrame byStageResults = DataFrame::create(
     _["informationRates"] = informationRates1,
@@ -1430,7 +1616,10 @@ List rmpower(const int kMax = 1,
     _["cumulativeRejection"] = cpu,
     _["cumulativeFutility"] = cpl,
     _["cumulativeAlphaSpent"] = cumAlphaSpent,
+    _["numberOfEvents"] = nevents,
+    _["numberOfDropouts"] = ndropouts,
     _["numberOfSubjects"] = nsubjects,
+    _["numberOfMilestone"] = nmilestone,
     _["analysisTime"] = time,
     _["efficacyRmstDiff"] = rdu,
     _["futilityRmstDiff"] = rdl,
@@ -1443,11 +1632,11 @@ List rmpower(const int kMax = 1,
   DataFrame overallResults = DataFrame::create(
     _["overallReject"] = overallReject,
     _["alpha"] = (cumAlphaSpent[kMax-1]),
-    _["drift"] = drift,
-    _["inflationFactor"] = inflationFactor,
+    _["numberOfEvents"] = (nevents[kMax-1]),
     _["numberOfSubjects"] = (nsubjects[kMax-1]),
     _["studyDuration"] = (time[kMax-1]),
     _["information"] = maxInformation,
+    _["expectedNumberOfEvents"] = expectedNumberOfEvents,
     _["expectedNumberOfSubjects"] = expectedNumberOfSubjects,
     _["expectedStudyDuration"] = expectedStudyDuration,
     _["expectedInformation"] = expectedInformation,
@@ -1478,10 +1667,29 @@ List rmpower(const int kMax = 1,
     _["gamma2"] = gamma2,
     _["spendingTime"] = spendingTime);
 
+  List byTreatmentCounts = List::create(
+    _["numberOfEvents1"] = nevents1,
+    _["numberOfDropouts1"] = ndropouts1,
+    _["numberOfSubjects1"] = nsubjects1,
+    _["numberOfMilestone1"] = nmilestone1,
+    _["numberOfEvents2"] = nevents2,
+    _["numberOfDropouts2"] = ndropouts2,
+    _["numberOfSubjects2"] = nsubjects2,
+    _["numberOfMilestone2"] = nmilestone2,
+    _["expectedNumberOfEvents1"] = expectedNumberOfEvents1,
+    _["expectedNumberOfDropouts1"] = expectedNumberOfDropouts1,
+    _["expectedNumberOfSubjects1"] = expectedNumberOfSubjects1,
+    _["expectedNumberOfMilestone1"] = expectedNumberOfMilestone1,
+    _["expectedNumberOfEvents2"] = expectedNumberOfEvents2,
+    _["expectedNumberOfDropouts2"] = expectedNumberOfDropouts2,
+    _["expectedNumberOfSubjects2"] = expectedNumberOfSubjects2,
+    _["expectedNumberOfMilestone2"] = expectedNumberOfMilestone2);
+
   List result = List::create(
     _["byStageResults"] = byStageResults,
     _["overallResults"] = overallResults,
-    _["settings"] = settings);
+    _["settings"] = settings,
+    _["byTreatmentCounts"] = byTreatmentCounts);
 
   result.attr("class") = "rmpower";
 
@@ -2081,7 +2289,7 @@ List rmsamplesize(const double beta = 0.2,
                 piecewiseSurvivalTime, stratumFraction,
                 lambda1, lambda2, gamma1, gamma2,
                 dur1, dur2, fixedFollowup);
-              return sum(NumericVector(rm[9])) - maxInformation;
+              return sum(NumericVector(rm[18])) - maxInformation;
             };
 
   if (unknown == "accrualDuration") {
@@ -2111,7 +2319,7 @@ List rmsamplesize(const double beta = 0.2,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda1, lambda2, gamma1, gamma2,
                     aval, followupTime, fixedFollowup);
-                  return sum(NumericVector(rm[9])) - maxInformation;
+                  return sum(NumericVector(rm[18])) - maxInformation;
                 };
 
       accrualDuration = brent(g, accrualDuration, interval[1], 1.0e-6);
@@ -2136,7 +2344,7 @@ List rmsamplesize(const double beta = 0.2,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda1, lambda2, gamma1, gamma2,
                     accrualDuration, followupTime, fixedFollowup);
-                  return sum(NumericVector(rm[9])) - maxInformation;
+                  return sum(NumericVector(rm[18])) - maxInformation;
                 };
 
       double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
@@ -2184,7 +2392,7 @@ List rmsamplesize(const double beta = 0.2,
                       piecewiseSurvivalTime, stratumFraction,
                       lambda1, lambda2, gamma1, gamma2,
                       accrualDuration, aval, fixedFollowup);
-                    return sum(NumericVector(rm[9])) - maxInformation;
+                    return sum(NumericVector(rm[18])) - maxInformation;
                   };
 
         double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
@@ -2206,7 +2414,7 @@ List rmsamplesize(const double beta = 0.2,
                       piecewiseSurvivalTime, stratumFraction,
                       lambda1, lambda2, gamma1, gamma2,
                       accrualDuration, followupTime, fixedFollowup);
-                    return sum(NumericVector(rm[9])) - maxInformation;
+                    return sum(NumericVector(rm[18])) - maxInformation;
                   };
 
         double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
@@ -2251,7 +2459,12 @@ List rmsamplesize(const double beta = 0.2,
                   return rmst1 - rmst2 - rmstDiffH0;
                 };
 
-  double aval = brent(frmst, 0.1, 1.9, 1.0e-6);
+  double lower = 0.001, upper = 1.999;
+  while (frmst(upper) > 0) {
+    lower = upper;
+    upper = 2.0*upper;
+  }
+  double aval = brent(frmst, lower, upper, 1.0e-6);
   NumericVector lambda1H0 = aval*lambda2;
 
   if (!fixedFollowup) {
@@ -2268,7 +2481,7 @@ List rmsamplesize(const double beta = 0.2,
                   piecewiseSurvivalTime, stratumFraction,
                   lambda1H0, lambda2, gamma1, gamma2,
                   accrualDuration, aval, fixedFollowup);
-                return sum(NumericVector(rm[9])) - maxInformation;
+                return sum(NumericVector(rm[18])) - maxInformation;
               };
 
     if (h(milestone) < 0) {
@@ -2293,11 +2506,11 @@ List rmsamplesize(const double beta = 0.2,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda1H0, lambda2, gamma1, gamma2,
                     aval, followupTime, fixedFollowup);
-                  return sum(NumericVector(rm[9])) - maxInformation;
+                  return sum(NumericVector(rm[18])) - maxInformation;
                 };
 
-      double lower = accrualDuration, upper = 2.0*lower;
-      while (g(upper) <= 0) {
+      double lower = accrualDuration, upper = 2.0*accrualDuration;
+      while (g(upper) < 0) {
         lower = upper;
         upper = 2.0*upper;
       }
@@ -2321,7 +2534,7 @@ List rmsamplesize(const double beta = 0.2,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda1H0, lambda2, gamma1, gamma2,
                     aval, 0, fixedFollowup);
-                  return sum(NumericVector(rm[9])) - maxInformation;
+                  return sum(NumericVector(rm[18])) - maxInformation;
                 };
 
       double lower = milestone + 1.0e-6;
@@ -2344,12 +2557,12 @@ List rmsamplesize(const double beta = 0.2,
                   piecewiseSurvivalTime, stratumFraction,
                   lambda1H0, lambda2, gamma1, gamma2,
                   aval, followupTime, fixedFollowup);
-                return sum(NumericVector(rm[9])) - maxInformation;
+                return sum(NumericVector(rm[18])) - maxInformation;
               };
 
     if (h(accrualDuration) < 0) { // increase accrual duration
-      double lower = accrualDuration, upper = 2.0*lower;
-      while (h(upper) <= 0) {
+      double lower = accrualDuration, upper = 2.0*accrualDuration;
+      while (h(upper) < 0) {
         lower = upper;
         upper = 2.0*upper;
       }
@@ -2369,7 +2582,7 @@ List rmsamplesize(const double beta = 0.2,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda1H0, lambda2, gamma1, gamma2,
                     accrualDuration, followupTime, fixedFollowup);
-                  return sum(NumericVector(rm[9])) - maxInformation;
+                  return sum(NumericVector(rm[18])) - maxInformation;
                 };
 
       double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
@@ -2932,8 +3145,8 @@ List rmpower1s(const int kMax = 1,
               lambda, lambda, gamma, gamma,
               accrualDuration, followupTime, fixedFollowup);
 
-  double maxInformation = 2.0*sum(NumericVector(rm[9]));
-  double rmstH1 = sum(NumericVector(rm[3]));
+  double maxInformation = 2.0*sum(NumericVector(rm[18]));
+  double rmstH1 = sum(NumericVector(rm[12]));
   NumericVector theta = rep(rmstH1 - rmstH0, kMax);
   NumericVector I = maxInformation*informationRates1;
 
@@ -2950,7 +3163,7 @@ List rmpower1s(const int kMax = 1,
                 piecewiseSurvivalTime, stratumFraction,
                 lambda, lambda, gamma, gamma,
                 accrualDuration, followupTime, fixedFollowup);
-              return 2.0*sum(NumericVector(rm[9])) - information1;
+              return 2.0*sum(NumericVector(rm[18])) - information1;
             };
 
   for (int i=0; i<kMax-1; i++) {
@@ -3639,7 +3852,7 @@ List rmsamplesize1s(const double beta = 0.2,
                 piecewiseSurvivalTime, stratumFraction,
                 lambda, lambda, gamma, gamma,
                 dur1, dur2, fixedFollowup);
-              return 2.0*sum(NumericVector(rm[9])) - maxInformation;
+              return 2.0*sum(NumericVector(rm[18])) - maxInformation;
             };
 
   if (unknown == "accrualDuration") {
@@ -3668,7 +3881,7 @@ List rmsamplesize1s(const double beta = 0.2,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda, lambda, gamma, gamma,
                     aval, followupTime, fixedFollowup);
-                  return 2.0*sum(NumericVector(rm[9])) - maxInformation;
+                  return 2.0*sum(NumericVector(rm[18])) - maxInformation;
                 };
 
       accrualDuration = brent(g, accrualDuration, interval[1], 1.0e-6);
@@ -3692,7 +3905,7 @@ List rmsamplesize1s(const double beta = 0.2,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda, lambda, gamma, gamma,
                     accrualDuration, followupTime, fixedFollowup);
-                  return 2.0*sum(NumericVector(rm[9])) - maxInformation;
+                  return 2.0*sum(NumericVector(rm[18])) - maxInformation;
                 };
 
       double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
@@ -3739,7 +3952,7 @@ List rmsamplesize1s(const double beta = 0.2,
                       piecewiseSurvivalTime, stratumFraction,
                       lambda, lambda, gamma, gamma,
                       accrualDuration, aval, fixedFollowup);
-                    return 2.0*sum(NumericVector(rm[9])) - maxInformation;
+                    return 2.0*sum(NumericVector(rm[18])) - maxInformation;
                   };
 
         double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
@@ -3760,7 +3973,7 @@ List rmsamplesize1s(const double beta = 0.2,
                       piecewiseSurvivalTime, stratumFraction,
                       lambda, lambda, gamma, gamma,
                       accrualDuration, followupTime, fixedFollowup);
-                    return 2.0*sum(NumericVector(rm[9])) - maxInformation;
+                    return 2.0*sum(NumericVector(rm[18])) - maxInformation;
                   };
 
         double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
@@ -3791,7 +4004,7 @@ List rmsamplesize1s(const double beta = 0.2,
   // obtain results under H0 by matching the maximum information
   // first find the hazard rate that yields
   // the specified milestone survival probability under H0
-  auto fsurv = [milestone, piecewiseSurvivalTime, stratumFraction,
+  auto frmst = [milestone, piecewiseSurvivalTime, stratumFraction,
                 nintervals, nstrata, l1, lambdax,
                 rmstH0](double aval)-> double {
                   NumericVector rmsts(nstrata);
@@ -3805,7 +4018,12 @@ List rmsamplesize1s(const double beta = 0.2,
                   return rmstH1 - rmstH0;
                 };
 
-  double aval = brent(fsurv, 0.1, 1.9, 1.0e-6);
+  double lower = 0.001, upper = 1.999;
+  while (frmst(upper) > 0) {
+    lower = upper;
+    upper = 2.0*upper;
+  }
+  double aval = brent(frmst, lower, upper, 1.0e-6);
   NumericVector lambdaH0 = aval*lambda;
 
   if (!fixedFollowup) {
@@ -3821,7 +4039,7 @@ List rmsamplesize1s(const double beta = 0.2,
                   piecewiseSurvivalTime, stratumFraction,
                   lambdaH0, lambdaH0, gamma, gamma,
                   accrualDuration, aval, fixedFollowup);
-                return 2.0*sum(NumericVector(rm[9])) - maxInformation;
+                return 2.0*sum(NumericVector(rm[18])) - maxInformation;
               };
 
     if (h(milestone) < 0) {
@@ -3845,11 +4063,11 @@ List rmsamplesize1s(const double beta = 0.2,
                     piecewiseSurvivalTime, stratumFraction,
                     lambdaH0, lambdaH0, gamma, gamma,
                     aval, followupTime, fixedFollowup);
-                  return 2.0*sum(NumericVector(rm[9])) - maxInformation;
+                  return 2.0*sum(NumericVector(rm[18])) - maxInformation;
                 };
 
-      double lower = accrualDuration, upper = 2.0*lower;
-      while (g(upper) <= 0) {
+      double lower = accrualDuration, upper = 2.0*accrualDuration;
+      while (g(upper) < 0) {
         lower = upper;
         upper = 2.0*upper;
       }
@@ -3872,7 +4090,7 @@ List rmsamplesize1s(const double beta = 0.2,
                     piecewiseSurvivalTime, stratumFraction,
                     lambdaH0, lambdaH0, gamma, gamma,
                     aval, 0, fixedFollowup);
-                  return 2.0*sum(NumericVector(rm[9])) - maxInformation;
+                  return 2.0*sum(NumericVector(rm[18])) - maxInformation;
                 };
 
       double lower = milestone + 1.0e-6;
@@ -3894,12 +4112,12 @@ List rmsamplesize1s(const double beta = 0.2,
                   piecewiseSurvivalTime, stratumFraction,
                   lambdaH0, lambdaH0, gamma, gamma,
                   aval, followupTime, fixedFollowup);
-                return 2.0*sum(NumericVector(rm[9])) - maxInformation;
+                return 2.0*sum(NumericVector(rm[18])) - maxInformation;
               };
 
     if (h(accrualDuration) < 0) { // increase accrual duration
-      double lower = accrualDuration, upper = 2.0*lower;
-      while (h(upper) <= 0) {
+      double lower = accrualDuration, upper = 2.0*accrualDuration;
+      while (h(upper) < 0) {
         lower = upper;
         upper = 2.0*upper;
       }
@@ -3918,7 +4136,7 @@ List rmsamplesize1s(const double beta = 0.2,
                     piecewiseSurvivalTime, stratumFraction,
                     lambdaH0, lambdaH0, gamma, gamma,
                     accrualDuration, followupTime, fixedFollowup);
-                  return 2.0*sum(NumericVector(rm[9])) - maxInformation;
+                  return 2.0*sum(NumericVector(rm[18])) - maxInformation;
                 };
 
       double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
@@ -3991,7 +4209,7 @@ List rmsamplesize1s(const double beta = 0.2,
 //'   the value is allowed to be less than the sum of \code{accrualDuration}
 //'   and \code{followupTime}.
 //'
-//' @return An S3 class \code{rmpowerequiv} object with 3 components:
+//' @return An S3 class \code{rmpowerequiv} object with 4 components:
 //'
 //' * \code{overallResults}: A data frame containing the following variables:
 //'
@@ -3999,15 +4217,15 @@ List rmsamplesize1s(const double beta = 0.2,
 //'
 //'     - \code{alpha}: The overall significance level.
 //'
-//'     - \code{attainedAlphaH10}: The attained significance level under H10.
-//'
-//'     - \code{attainedAlphaH20}: The attained significance level under H20.
+//'     - \code{numberOfEvents}: The total number of events.
 //'
 //'     - \code{numbeOfSubjects}: The total number of subjects.
 //'
 //'     - \code{studyDuration}: The total study duration.
 //'
 //'     - \code{information}: The maximum information.
+//'
+//'     - \code{expectedNumberOfEvents}: The expected number of events.
 //'
 //'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
 //'
@@ -4060,7 +4278,14 @@ List rmsamplesize1s(const double beta = 0.2,
 //'     - \code{cumulativeAttainedAlphaH20}: The cumulative alpha attained
 //'       under \code{H20}.
 //'
+//'     - \code{numberOfEvents}: The number of events.
+//'
+//'     - \code{numberOfDropouts}: The number of dropouts.
+//'
 //'     - \code{numberOfSubjects}: The number of subjects.
+//'
+//'     - \code{numberOfMilestone}: The number of subjects reaching
+//'       milestone.
 //'
 //'     - \code{analysisTime}: The average time since trial start.
 //'
@@ -4084,6 +4309,57 @@ List rmsamplesize1s(const double beta = 0.2,
 //'   \code{piecewiseSurvivalTime}, \code{stratumFraction},
 //'   \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2},
 //'   and \code{spendingTime}.
+//'
+//' * \code{byTreatmentCounts}: A list containing the following counts by
+//'   treatment group:
+//'
+//'     - \code{numberOfEvents1}: The number of events by stage for
+//'       the treatment group.
+//'
+//'     - \code{numberOfDropouts1}: The number of dropouts by stage for
+//'       the treatment group.
+//'
+//'     - \code{numberOfSubjects1}: The number of subjects by stage for
+//'       the treatment group.
+//'
+//'     - \code{numberOfMilestone1}: The number of subjects reaching
+//'       milestone by stage for the active treatment group.
+//'
+//'     - \code{numberOfEvents2}: The number of events by stage for
+//'       the control group.
+//'
+//'     - \code{numberOfDropouts2}: The number of dropouts by stage for
+//'       the control group.
+//'
+//'     - \code{numberOfSubjects2}: The number of subjects by stage for
+//'       the control group.
+//'
+//'     - \code{numberOfMilestone2}: The number of subjects reaching
+//'       milestone by stage for the control group.
+//'
+//'     - \code{expectedNumberOfEvents1}: The expected number of events for
+//'       the treatment group.
+//'
+//'     - \code{expectedNumberOfDropouts1}: The expected number of dropouts
+//'       for the active treatment group.
+//'
+//'     - \code{expectedNumberOfSubjects1}: The expected number of subjects
+//'       for the active treatment group.
+//'
+//'     - \code{expectedNumberOfMilestone1}: The expected number of subjects
+//'       reaching milestone for the active treatment group.
+//'
+//'     - \code{expectedNumberOfEvents2}: The expected number of events for
+//'       control group.
+//'
+//'     - \code{expectedNumberOfDropouts2}: The expected number of dropouts
+//'       for the control group.
+//'
+//'     - \code{expectedNumberOfSubjects2}: The expected number of subjects
+//'       for the control group.
+//'
+//'     - \code{expectedNumberOfMilestone2}: The expected number of subjects
+//'       reaching milestone for the control group.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
@@ -4425,11 +4701,11 @@ List rmpowerequiv(const int kMax = 1,
                         lambda1, lambda2, gamma1, gamma2,
                         accrualDuration, followupTime, fixedFollowup);
 
-  double rmst1 = sum(NumericVector(rm[3]));
-  double rmst2 = sum(NumericVector(rm[4]));
-  double rmstDiff = sum(NumericVector(rm[5]));
+  double rmst1 = sum(NumericVector(rm[12]));
+  double rmst2 = sum(NumericVector(rm[13]));
+  double rmstDiff = sum(NumericVector(rm[14]));
   NumericVector theta(kMax, rmstDiff);
-  double maxInformation = sum(NumericVector(rm[9]));
+  double maxInformation = sum(NumericVector(rm[18]));
   NumericVector I = maxInformation*informationRates1;
   double information1;
 
@@ -4446,7 +4722,7 @@ List rmpowerequiv(const int kMax = 1,
                 piecewiseSurvivalTime, stratumFraction,
                 lambda1, lambda2, gamma1, gamma2,
                 accrualDuration, followupTime, fixedFollowup);
-              return sum(NumericVector(rm[9])) - information1;
+              return sum(NumericVector(rm[18])) - information1;
             };
 
   for (int i=0; i<kMax-1; i++) {
@@ -4455,8 +4731,29 @@ List rmpowerequiv(const int kMax = 1,
   };
   time[kMax-1] = studyDuration1;
 
+  rm = rmstat(time, milestone, allocationRatioPlanned,
+              accrualTime, accrualIntensity,
+              piecewiseSurvivalTime, stratumFraction,
+              lambda1, lambda2, gamma1, gamma2,
+              accrualDuration, followupTime, fixedFollowup);
+
+  double phi = allocationRatioPlanned/(allocationRatioPlanned+1);
+  NumericVector nsubjects = NumericVector(rm[1]);
+  NumericVector nsubjects1 = phi*nsubjects;
+  NumericVector nsubjects2 = (1-phi)*nsubjects;
+  NumericVector nevents = NumericVector(rm[2]);
+  NumericVector nevents1 = NumericVector(rm[3]);
+  NumericVector nevents2 = NumericVector(rm[4]);
+  NumericVector ndropouts = NumericVector(rm[5]);
+  NumericVector ndropouts1 = NumericVector(rm[6]);
+  NumericVector ndropouts2 = NumericVector(rm[7]);
+  NumericVector nmilestone = NumericVector(rm[9]);
+  NumericVector nmilestone1 = NumericVector(rm[10]);
+  NumericVector nmilestone2 = NumericVector(rm[11]);
+
   // calculate cumulative rejection probability under H1
-  double theta10 = rmstDiffLower, theta20 = rmstDiffUpper;
+  NumericVector theta10 = rep(rmstDiffLower, kMax);
+  NumericVector theta20 = rep(rmstDiffUpper, kMax);
   NumericVector b = criticalValues1;
   NumericVector l = b + theta10*sqrt(I);
   NumericVector u = -b + theta20*sqrt(I);
@@ -4513,27 +4810,24 @@ List rmpowerequiv(const int kMax = 1,
   NumericVector efficacyRmstDiffUpper = theta20 - b/sqrt(I);
 
   // calculate cumulative rejection under H10
-  NumericVector bH10 = -b + (theta20 - theta10)*sqrt(I);
-  List probsH10 = exitprobcpp(ui, pmin(bH10, ui), zero, I);
+  List probs2H10 = exitprobcpp(ui, pmin(u, ui), theta10, I);
 
-  NumericVector cplH10 = cumsum(NumericVector(probsH10[1]));
-  NumericVector cpuH10 = cumAlphaSpent;
+  NumericVector cplH10 = cumAlphaSpent;
+  NumericVector cpuH10 = cumsum(NumericVector(probs2H10[1]));
 
-  // identify the last look with b[k] > bH10[k] if it exists
-  IntegerVector kH10 = which(b > bH10);
   NumericVector cpH10(kMax);
-  if (kH10.size() == 0) {
+  if (k.size() == 0) {
     cpH10 = cplH10 + cpuH10 - 1;
   } else {
-    int K = max(kH10);
+    int K = max(k);
     IntegerVector idx = Range(0, K);
-    List aH10 = exitprobcpp(b[idx], bH10[idx], zero[idx], I[idx]);
-    NumericVector caH10 = cumsum(NumericVector(aH10[0]) +
-      NumericVector(aH10[1]));
+    List a = exitprobcpp(l[idx], u[idx], theta10[idx], I[idx]);
+    NumericVector ca = cumsum(NumericVector(a[0]) +
+      NumericVector(a[1]));
 
     for (int i=0; i<kMax; i++) {
       if (i <= K) {
-        cpH10[i] = cplH10[i] + cpuH10[i] - caH10[i];
+        cpH10[i] = cplH10[i] + cpuH10[i] - ca[i];
       } else {
         cpH10[i] = cplH10[i] + cpuH10[i] - 1;
       }
@@ -4541,52 +4835,53 @@ List rmpowerequiv(const int kMax = 1,
   }
 
   // calculate cumulative rejection under H20
-  NumericVector bH20 = b + (theta10 - theta20)*sqrt(I);
-  List probsH20 = exitprobcpp(pmax(bH20, li), li, zero, I);
+  List probs1H20 = exitprobcpp(pmax(l, li), li, theta20, I);
 
-  NumericVector cpuH20 = cumsum(NumericVector(probsH20[0]));
-  NumericVector cplH20 = cumAlphaSpent;
+  NumericVector cplH20 = cumsum(NumericVector(probs1H20[0]));
+  NumericVector cpuH20 = cumAlphaSpent;
 
-  // identify the last look with bH20[k] >= -b[k] if it exists
-  IntegerVector kH20 = which(bH20 > -b);
   NumericVector cpH20(kMax);
-  if (kH20.size() == 0) {
+  if (k.size() == 0) {
     cpH20 = cplH20 + cpuH20 - 1;
   } else {
-    int K = max(kH20);
+    int K = max(k);
     IntegerVector idx = Range(0, K);
     NumericVector uH20 = -b;
-    List aH20 = exitprobcpp(bH20[idx], uH20[idx], zero[idx], I[idx]);
-    NumericVector caH20 = cumsum(NumericVector(aH20[0]) +
-      NumericVector(aH20[1]));
+    List a = exitprobcpp(l[idx], u[idx], theta20[idx], I[idx]);
+    NumericVector ca = cumsum(NumericVector(a[0]) +
+      NumericVector(a[1]));
 
     for (int i=0; i<kMax; i++) {
       if (i <= K) {
-        cpH20[i] = cplH20[i] + cpuH20[i] - caH20[i];
+        cpH20[i] = cplH20[i] + cpuH20[i] - ca[i];
       } else {
         cpH20[i] = cplH20[i] + cpuH20[i] - 1;
       }
     }
   }
 
-  NumericVector nsubjects = accrual(time, accrualTime, accrualIntensity,
-                                    accrualDuration);
-
   double overallReject = cp[kMax-1];
-  double attainedAlphaH10 = cpH10[kMax-1];
-  double attainedAlphaH20 = cpH20[kMax-1];
+  double expectedNumberOfEvents = sum(q*nevents);
   double expectedNumberOfSubjects = sum(q*nsubjects);
+  double expectedNumberOfEvents1 = sum(q*nevents1);
+  double expectedNumberOfDropouts1 = sum(q*ndropouts1);
+  double expectedNumberOfSubjects1 = sum(q*nsubjects1);
+  double expectedNumberOfMilestone1 = sum(q*nmilestone1);
+  double expectedNumberOfEvents2 = sum(q*nevents2);
+  double expectedNumberOfDropouts2 = sum(q*ndropouts2);
+  double expectedNumberOfSubjects2 = sum(q*nsubjects2);
+  double expectedNumberOfMilestone2 = sum(q*nmilestone2);
   double expectedStudyDuration = sum(q*time);
   double expectedInformation = sum(q*I);
 
   DataFrame overallResults = DataFrame::create(
     _["overallReject"] = overallReject,
     _["alpha"] = alpha,
-    _["attainedAlphaH10"] = attainedAlphaH10,
-    _["attainedAlphaH20"] = attainedAlphaH20,
+    _["numberOfEvents"] = (nevents[kMax-1]),
     _["numberOfSubjects"] = (nsubjects[kMax-1]),
     _["studyDuration"] = (time[kMax-1]),
     _["information"] = maxInformation,
+    _["expectedNumberOfEvents"] = expectedNumberOfEvents,
     _["expectedNumberOfSubjects"] = expectedNumberOfSubjects,
     _["expectedStudyDuration"] = expectedStudyDuration,
     _["expectedInformation"] = expectedInformation,
@@ -4609,7 +4904,10 @@ List rmpowerequiv(const int kMax = 1,
     _["cumulativeAlphaSpent"] = cumAlphaSpent,
     _["cumulativeAttainedAlphaH10"] = cpH10,
     _["cumulativeAttainedAlphaH20"] = cpH20,
+    _["numberOfEvents"] = nevents,
+    _["numberOfDropouts"] = ndropouts,
     _["numberOfSubjects"] = nsubjects,
+    _["numberOfMilestone"] = nmilestone,
     _["analysisTime"] = time,
     _["efficacyRmstDiffLower"] = efficacyRmstDiffLower,
     _["efficacyRmstDiffUpper"] = efficacyRmstDiffUpper,
@@ -4631,10 +4929,29 @@ List rmpowerequiv(const int kMax = 1,
     _["gamma2"] = gamma2,
     _["spendingTime"] = spendingTime);
 
+  List byTreatmentCounts = List::create(
+    _["numberOfEvents1"] = nevents1,
+    _["numberOfDropouts1"] = ndropouts1,
+    _["numberOfSubjects1"] = nsubjects1,
+    _["numberOfMilestone1"] = nmilestone1,
+    _["numberOfEvents2"] = nevents2,
+    _["numberOfDropouts2"] = ndropouts2,
+    _["numberOfSubjects2"] = nsubjects2,
+    _["numberOfMilestone2"] = nmilestone2,
+    _["expectedNumberOfEvents1"] = expectedNumberOfEvents1,
+    _["expectedNumberOfDropouts1"] = expectedNumberOfDropouts1,
+    _["expectedNumberOfSubjects1"] = expectedNumberOfSubjects1,
+    _["expectedNumberOfMilestone1"] = expectedNumberOfMilestone1,
+    _["expectedNumberOfEvents2"] = expectedNumberOfEvents2,
+    _["expectedNumberOfDropouts2"] = expectedNumberOfDropouts2,
+    _["expectedNumberOfSubjects2"] = expectedNumberOfSubjects2,
+    _["expectedNumberOfMilestone2"] = expectedNumberOfMilestone2);
+
   List result = List::create(
     _["byStageResults"] = byStageResults,
     _["overallResults"] = overallResults,
-    _["settings"] = settings);
+    _["settings"] = settings,
+    _["byTreatmentCounts"] = byTreatmentCounts);
 
   result.attr("class") = "rmpowerequiv";
 
@@ -5047,8 +5364,7 @@ List rmsamplesizeequiv(const double beta = 0.2,
   List design = getDesignEquiv(
     beta, NA_REAL, theta10, theta20, rmstDiff,
     kMax, informationRates1, criticalValues1,
-    alpha, asf, asfpar, userAlphaSpending, spendingTime1,
-    1, 1, 1, 1);
+    alpha, asf, asfpar, userAlphaSpending, spendingTime1);
 
   DataFrame overallResults = DataFrame(design["overallResults"]);
   double maxInformation = overallResults["information"];
@@ -5083,7 +5399,7 @@ List rmsamplesizeequiv(const double beta = 0.2,
                 piecewiseSurvivalTime, stratumFraction,
                 lambda1, lambda2, gamma1, gamma2,
                 dur1, dur2, fixedFollowup);
-              return sum(NumericVector(rm[9])) - maxInformation;
+              return sum(NumericVector(rm[18])) - maxInformation;
             };
 
   if (unknown == "accrualDuration") {
@@ -5113,7 +5429,7 @@ List rmsamplesizeequiv(const double beta = 0.2,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda1, lambda2, gamma1, gamma2,
                     aval, followupTime, fixedFollowup);
-                  return sum(NumericVector(rm[9])) - maxInformation;
+                  return sum(NumericVector(rm[18])) - maxInformation;
                 };
 
       accrualDuration = brent(g, accrualDuration, interval[1], 1.0e-6);
@@ -5138,7 +5454,7 @@ List rmsamplesizeequiv(const double beta = 0.2,
                     piecewiseSurvivalTime, stratumFraction,
                     lambda1, lambda2, gamma1, gamma2,
                     accrualDuration, followupTime, fixedFollowup);
-                  return sum(NumericVector(rm[9])) - maxInformation;
+                  return sum(NumericVector(rm[18])) - maxInformation;
                 };
 
       double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
@@ -5184,7 +5500,7 @@ List rmsamplesizeequiv(const double beta = 0.2,
                       piecewiseSurvivalTime, stratumFraction,
                       lambda1, lambda2, gamma1, gamma2,
                       accrualDuration, aval, fixedFollowup);
-                    return sum(NumericVector(rm[9])) - maxInformation;
+                    return sum(NumericVector(rm[18])) - maxInformation;
                   };
 
         double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
@@ -5206,7 +5522,7 @@ List rmsamplesizeequiv(const double beta = 0.2,
                       piecewiseSurvivalTime, stratumFraction,
                       lambda1, lambda2, gamma1, gamma2,
                       accrualDuration, followupTime, fixedFollowup);
-                    return sum(NumericVector(rm[9])) - maxInformation;
+                    return sum(NumericVector(rm[18])) - maxInformation;
                   };
 
         double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;

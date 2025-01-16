@@ -2055,8 +2055,6 @@ getDesignOddsRatio <- function(
 #' @param riskDiffUpper The upper equivalence limit of risk difference.
 #' @param pi1 The assumed probability for the active treatment group.
 #' @param pi2 The assumed probability for the control group.
-#' @param nullVariance Whether to use the variance under the null or
-#'   the empirical variance under the alternative.
 #' @param allocationRatioPlanned Allocation ratio for the active treatment
 #'   versus control. Defaults to 1 for equal randomization.
 #' @param rounding Whether to round up sample size. Defaults to 1 for
@@ -2168,21 +2166,6 @@ getDesignOddsRatio <- function(
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
 #'
-#'     - \code{nullVariance}: Whether to use the variance under the null or
-#'       the empirical variance under the alternative.
-#'
-#'     - \code{varianceRatioH10}: The ratio of the variance under H10 to
-#'       the variance under H1.
-#'
-#'     - \code{varianceRatioH20}: The ratio of the variance under H20 to
-#'       the variance under H1.
-#'
-#'     - \code{varianceRatioH12}: The ratio of the variance under H10 to
-#'       the variance under H20.
-#'
-#'     - \code{varianceRatioH21}: The ratio of the variance under H20 to
-#'       the variance under H10.
-#'
 #'     - \code{allocationRatioPlanned}: Allocation ratio for the active
 #'       treatment versus control.
 #'
@@ -2195,7 +2178,6 @@ getDesignOddsRatio <- function(
 #' (design1 <- getDesignRiskDiffEquiv(
 #'   beta = 0.2, n = NA, riskDiffLower = -0.1,
 #'   riskDiffUpper = 0.1, pi1 = 0.12, pi2 = 0.12,
-#'   nullVariance = 1,
 #'   kMax = 3, alpha = 0.05, typeAlphaSpending = "sfOF"))
 #'
 #' @export
@@ -2206,7 +2188,6 @@ getDesignRiskDiffEquiv <- function(
     riskDiffUpper = NA_real_,
     pi1 = NA_real_,
     pi2 = NA_real_,
-    nullVariance = FALSE,
     allocationRatioPlanned = 1,
     rounding = TRUE,
     kMax = 1L,
@@ -2294,42 +2275,6 @@ getDesignRiskDiffEquiv <- function(
   # variance for one sampling unit under H1
   vH1 = pi1*(1-pi1)/r + pi2*(1-pi2)/(1-r)
 
-  if (nullVariance) {
-    # variance for one sampling unit under H10
-    pi1H10 = pi2 + riskDiffLower
-    vH10 = pi1H10*(1-pi1H10)/r + pi2*(1-pi2)/(1-r)
-
-    # variance for one sampling unit under H20
-    pi1H20 = pi2 + riskDiffUpper
-    vH20 = pi1H20*(1-pi1H20)/r + pi2*(1-pi2)/(1-r)
-
-    # restricted maximum likelihood estimates under H10 w.r.t. H1
-    mr = remlRiskDiff(riskDiffLower, r, r*pi1, 1-r, (1-r)*pi2)
-    vH10H1 = mr[1]*(1-mr[1])/r + mr[2]*(1-mr[2])/(1-r)
-
-    # restricted maximum likelihood estimates under H20 w.r.t. H1
-    mr = remlRiskDiff(riskDiffUpper, r, r*pi1, 1-r, (1-r)*pi2)
-    vH20H1 = mr[1]*(1-mr[1])/r + mr[2]*(1-mr[2])/(1-r)
-
-    # restricted maximum likelihood estimates under H10 w.r.t. H20
-    mr = remlRiskDiff(riskDiffLower, r, r*pi1H20, 1-r, (1-r)*pi2)
-    vH10H20 = mr[1]*(1-mr[1])/r + mr[2]*(1-mr[2])/(1-r)
-
-    # restricted maximum likelihood estimates under H20 w.r.t. H10
-    mr = remlRiskDiff(riskDiffUpper, r, r*pi1H10, 1-r, (1-r)*pi2)
-    vH20H10 = mr[1]*(1-mr[1])/r + mr[2]*(1-mr[2])/(1-r)
-
-    # calculate the variance ratios
-    varianceRatioH10 = vH10H1/vH1
-    varianceRatioH20 = vH20H1/vH1
-    varianceRatioH12 = vH10H20/vH20
-    varianceRatioH21 = vH20H10/vH10
-  } else {
-    varianceRatioH10 = varianceRatioH20 = 1
-    varianceRatioH12 = varianceRatioH21 = 1
-  }
-
-
   # sample size calculation
   if (is.na(n)) {
     des = getDesignEquiv(
@@ -2339,11 +2284,7 @@ getDesignRiskDiffEquiv <- function(
       alpha = alpha, typeAlphaSpending = typeAlphaSpending,
       parameterAlphaSpending = parameterAlphaSpending,
       userAlphaSpending = userAlphaSpending,
-      spendingTime = spendingTime,
-      varianceRatioH10 = varianceRatioH10,
-      varianceRatioH20 = varianceRatioH20,
-      varianceRatioH12 = varianceRatioH12,
-      varianceRatioH21 = varianceRatioH21)
+      spendingTime = spendingTime)
 
     n = des$overallResults$information*vH1
   }
@@ -2361,11 +2302,7 @@ getDesignRiskDiffEquiv <- function(
       alpha = alpha, typeAlphaSpending = typeAlphaSpending,
       parameterAlphaSpending = parameterAlphaSpending,
       userAlphaSpending = userAlphaSpending,
-      spendingTime = spendingTime,
-      varianceRatioH10 = varianceRatioH10,
-      varianceRatioH20 = varianceRatioH20,
-      varianceRatioH12 = varianceRatioH12,
-      varianceRatioH21 = varianceRatioH21)
+      spendingTime = spendingTime)
   }
 
   des$overallResults$numberOfSubjects = n
@@ -2409,15 +2346,11 @@ getDesignRiskDiffEquiv <- function(
                            "efficacyRiskDiffUpper", "efficacyP",
                            "information", "numberOfSubjects")]
 
-  des$settings$nullVariance = nullVariance
   des$settings$allocationRatioPlanned = allocationRatioPlanned
   des$settings$rounding = rounding
   des$settings <-
     des$settings[c("typeAlphaSpending", "parameterAlphaSpending",
                    "userAlphaSpending", "spendingTime",
-                   "nullVariance",
-                   "varianceRatioH10", "varianceRatioH20",
-                   "varianceRatioH12", "varianceRatioH21",
                    "allocationRatioPlanned", "rounding")]
 
   attr(des, "class") = "designRiskDiffEquiv"
@@ -2438,8 +2371,6 @@ getDesignRiskDiffEquiv <- function(
 #' @param riskRatioUpper The upper equivalence limit of risk ratio.
 #' @param pi1 The assumed probability for the active treatment group.
 #' @param pi2 The assumed probability for the control group.
-#' @param nullVariance Whether to use the variance under the null or
-#'   the empirical variance under the alternative.
 #' @param allocationRatioPlanned Allocation ratio for the active treatment
 #'   versus control. Defaults to 1 for equal randomization.
 #' @param rounding Whether to round up sample size. Defaults to 1 for
@@ -2549,21 +2480,6 @@ getDesignRiskDiffEquiv <- function(
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
 #'
-#'     - \code{nullVariance}: Whether to use the variance under the null or
-#'       the empirical variance under the alternative.
-#'
-#'     - \code{varianceRatioH10}: The ratio of the variance under H10 to
-#'       the variance under H1.
-#'
-#'     - \code{varianceRatioH20}: The ratio of the variance under H20 to
-#'       the variance under H1.
-#'
-#'     - \code{varianceRatioH12}: The ratio of the variance under H10 to
-#'       the variance under H20.
-#'
-#'     - \code{varianceRatioH21}: The ratio of the variance under H20 to
-#'       the variance under H10.
-#'
 #'     - \code{allocationRatioPlanned}: Allocation ratio for the active
 #'       treatment versus control.
 #'
@@ -2586,7 +2502,6 @@ getDesignRiskRatioEquiv <- function(
     riskRatioUpper = NA_real_,
     pi1 = NA_real_,
     pi2 = NA_real_,
-    nullVariance = FALSE,
     allocationRatioPlanned = 1,
     rounding = TRUE,
     kMax = 1L,
@@ -2670,41 +2585,6 @@ getDesignRiskRatioEquiv <- function(
   # variance for one sampling unit
   vH1 = (1-pi1)/(r*pi1) + (1-pi2)/((1-r)*pi2)
 
-  if (nullVariance) {
-    # variance for one sampling unit under H10
-    pi1H10 = pi2*riskRatioLower
-    vH10 = (1-pi1H10)/(r*pi1H10) + (1-pi2)/((1-r)*pi2)
-
-    # variance for one sampling unit under H20
-    pi1H20 = pi2*riskRatioUpper
-    vH20 = (1-pi1H20)/(r*pi1H20) + (1-pi2)/((1-r)*pi2)
-
-    # restricted maximum likelihood estimates under H10 w.r.t. H1
-    mr = remlRiskRatio(riskRatioLower, r, r*pi1, 1-r, (1-r)*pi2)
-    vH10H1 = (1-mr[1])/(r*mr[1]) + (1-mr[2])/((1-r)*mr[2])
-
-    # restricted maximum likelihood estimates under H20 w.r.t. H1
-    mr = remlRiskRatio(riskRatioUpper, r, r*pi1, 1-r, (1-r)*pi2)
-    vH20H1 = (1-mr[1])/(r*mr[1]) + (1-mr[2])/((1-r)*mr[2])
-
-    # restricted maximum likelihood estimates under H10 w.r.t. H20
-    mr = remlRiskRatio(riskRatioLower, r, r*pi1H20, 1-r, (1-r)*pi2)
-    vH10H20 = (1-mr[1])/(r*mr[1]) + (1-mr[2])/((1-r)*mr[2])
-
-    # restricted maximum likelihood estimates under H20 w.r.t. H10
-    mr = remlRiskRatio(riskRatioUpper, r, r*pi1H10, 1-r, (1-r)*pi2)
-    vH20H10 = (1-mr[1])/(r*mr[1]) + (1-mr[2])/((1-r)*mr[2])
-
-    # calculate the variance ratios
-    varianceRatioH10 = vH10H1/vH1
-    varianceRatioH20 = vH20H1/vH1
-    varianceRatioH12 = vH10H20/vH20
-    varianceRatioH21 = vH20H10/vH10
-  } else {
-    varianceRatioH10 = varianceRatioH20 = 1
-    varianceRatioH12 = varianceRatioH21 = 1
-  }
-
   # sample size calculation
   if (is.na(n)) {
     des = getDesignEquiv(
@@ -2714,11 +2594,7 @@ getDesignRiskRatioEquiv <- function(
       alpha = alpha, typeAlphaSpending = typeAlphaSpending,
       parameterAlphaSpending = parameterAlphaSpending,
       userAlphaSpending = userAlphaSpending,
-      spendingTime = spendingTime,
-      varianceRatioH10 = varianceRatioH10,
-      varianceRatioH20 = varianceRatioH20,
-      varianceRatioH12 = varianceRatioH12,
-      varianceRatioH21 = varianceRatioH21)
+      spendingTime = spendingTime)
 
     n = des$overallResults$information*vH1
   }
@@ -2736,11 +2612,7 @@ getDesignRiskRatioEquiv <- function(
       alpha = alpha, typeAlphaSpending = typeAlphaSpending,
       parameterAlphaSpending = parameterAlphaSpending,
       userAlphaSpending = userAlphaSpending,
-      spendingTime = spendingTime,
-      varianceRatioH10 = varianceRatioH10,
-      varianceRatioH20 = varianceRatioH20,
-      varianceRatioH12 = varianceRatioH12,
-      varianceRatioH21 = varianceRatioH21)
+      spendingTime = spendingTime)
   }
 
   des$overallResults$numberOfSubjects = n
@@ -2784,15 +2656,11 @@ getDesignRiskRatioEquiv <- function(
                            "efficacyRiskRatioUpper", "efficacyP",
                            "information", "numberOfSubjects")]
 
-  des$settings$nullVariance = nullVariance
   des$settings$allocationRatioPlanned = allocationRatioPlanned
   des$settings$rounding = rounding
   des$settings <-
     des$settings[c("typeAlphaSpending", "parameterAlphaSpending",
                    "userAlphaSpending", "spendingTime",
-                   "nullVariance",
-                   "varianceRatioH10", "varianceRatioH20",
-                   "varianceRatioH12", "varianceRatioH21",
                    "allocationRatioPlanned", "rounding")]
 
   attr(des, "class") = "designRiskRatioEquiv"
@@ -2813,8 +2681,6 @@ getDesignRiskRatioEquiv <- function(
 #' @param oddsRatioUpper The upper equivalence limit of odds ratio.
 #' @param pi1 The assumed probability for the active treatment group.
 #' @param pi2 The assumed probability for the control group.
-#' @param nullVariance Whether to use the variance under the null
-#'   or the empirical variance under the alternative.
 #' @param allocationRatioPlanned Allocation ratio for the active treatment
 #'   versus control. Defaults to 1 for equal randomization.
 #' @param rounding Whether to round up sample size. Defaults to 1 for
@@ -2924,21 +2790,6 @@ getDesignRiskRatioEquiv <- function(
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
 #'
-#'     - \code{nullVariance}: Whether to use the variance under the null
-#'       or the empirical variance under the alternative.
-#'
-#'     - \code{varianceRatioH10}: The ratio of the variance under H10 to
-#'       the variance under H1.
-#'
-#'     - \code{varianceRatioH20}: The ratio of the variance under H20 to
-#'       the variance under H1.
-#'
-#'     - \code{varianceRatioH12}: The ratio of the variance under H10 to
-#'       the variance under H20.
-#'
-#'     - \code{varianceRatioH21}: The ratio of the variance under H20 to
-#'       the variance under H10.
-#'
 #'     - \code{allocationRatioPlanned}: Allocation ratio for the active
 #'       treatment versus control.
 #'
@@ -2961,7 +2812,6 @@ getDesignOddsRatioEquiv <- function(
     oddsRatioUpper = NA_real_,
     pi1 = NA_real_,
     pi2 = NA_real_,
-    nullVariance = FALSE,
     allocationRatioPlanned = 1,
     rounding = TRUE,
     kMax = 1L,
@@ -3037,41 +2887,6 @@ getDesignOddsRatioEquiv <- function(
   # variance for one sampling unit
   vH1 = 1/(r*pi1*(1-pi1)) + 1/((1-r)*pi2*(1-pi2))
 
-  if (nullVariance) {
-    # variance for one sampling unit under H10
-    pi1H10 = pi2*oddsRatioLower/(1 + pi2*(oddsRatioLower - 1))
-    vH10 = 1/(r*pi1H10*(1-pi1H10)) + 1/((1-r)*pi2*(1-pi2))
-
-    # variance for one sampling unit under H20
-    pi1H20 = pi2*oddsRatioUpper/(1 + pi2*(oddsRatioUpper - 1))
-    vH20 = 1/(r*pi1H20*(1-pi1H20)) + 1/((1-r)*pi2*(1-pi2))
-
-    # restricted maximum likelihood estimates under H10 w.r.t. H1
-    mr = remlOddsRatio(oddsRatioLower, r, r*pi1, 1-r, (1-r)*pi2)
-    vH10H1 = 1/(r*mr[1]*(1-mr[1])) + 1/((1-r)*mr[2]*(1-mr[2]))
-
-    # restricted maximum likelihood estimates under H20 w.r.t. H1
-    mr = remlOddsRatio(oddsRatioUpper, r, r*pi1, 1-r, (1-r)*pi2)
-    vH20H1 = 1/(r*mr[1]*(1-mr[1])) + 1/((1-r)*mr[2]*(1-mr[2]))
-
-    # restricted maximum likelihood estimates under H10 w.r.t. H20
-    mr = remlOddsRatio(oddsRatioLower, r, r*pi1H20, 1-r, (1-r)*pi2)
-    vH10H20 = 1/(r*mr[1]*(1-mr[1])) + 1/((1-r)*mr[2]*(1-mr[2]))
-
-    # restricted maximum likelihood estimates under H20 w.r.t. H10
-    mr = remlOddsRatio(oddsRatioUpper, r, r*pi1H10, 1-r, (1-r)*pi2)
-    vH20H10 = 1/(r*mr[1]*(1-mr[1])) + 1/((1-r)*mr[2]*(1-mr[2]))
-
-    # calculate the variance ratios
-    varianceRatioH10 = vH10H1/vH1
-    varianceRatioH20 = vH20H1/vH1
-    varianceRatioH12 = vH10H20/vH20
-    varianceRatioH21 = vH20H10/vH10
-  } else {
-    varianceRatioH10 = varianceRatioH20 = 1
-    varianceRatioH12 = varianceRatioH21 = 1
-  }
-
   # sample size calculation
   if (is.na(n)) {
     des = getDesignEquiv(
@@ -3081,11 +2896,7 @@ getDesignOddsRatioEquiv <- function(
       alpha = alpha, typeAlphaSpending = typeAlphaSpending,
       parameterAlphaSpending = parameterAlphaSpending,
       userAlphaSpending = userAlphaSpending,
-      spendingTime = spendingTime,
-      varianceRatioH10 = varianceRatioH10,
-      varianceRatioH20 = varianceRatioH20,
-      varianceRatioH12 = varianceRatioH12,
-      varianceRatioH21 = varianceRatioH21)
+      spendingTime = spendingTime)
 
     n = des$overallResults$information*vH1
   }
@@ -3103,11 +2914,7 @@ getDesignOddsRatioEquiv <- function(
       alpha = alpha, typeAlphaSpending = typeAlphaSpending,
       parameterAlphaSpending = parameterAlphaSpending,
       userAlphaSpending = userAlphaSpending,
-      spendingTime = spendingTime,
-      varianceRatioH10 = varianceRatioH10,
-      varianceRatioH20 = varianceRatioH20,
-      varianceRatioH12 = varianceRatioH12,
-      varianceRatioH21 = varianceRatioH21)
+      spendingTime = spendingTime)
   }
 
   des$overallResults$numberOfSubjects = n
@@ -3151,15 +2958,11 @@ getDesignOddsRatioEquiv <- function(
                            "efficacyOddsRatioUpper", "efficacyP",
                            "information", "numberOfSubjects")]
 
-  des$settings$nullVariance = nullVariance
   des$settings$allocationRatioPlanned = allocationRatioPlanned
   des$settings$rounding = rounding
   des$settings <-
     des$settings[c("typeAlphaSpending", "parameterAlphaSpending",
                    "userAlphaSpending", "spendingTime",
-                   "nullVariance",
-                   "varianceRatioH10", "varianceRatioH20",
-                   "varianceRatioH12", "varianceRatioH21",
                    "allocationRatioPlanned", "rounding")]
 
   attr(des, "class") = "designOddsRatioEquiv"

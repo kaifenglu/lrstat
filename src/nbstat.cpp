@@ -44,7 +44,8 @@ void f_info(double *x, int n, void *ex) {
   }
   NumericVector p = patrisk(u0, param->piecewiseSurvivalTime, param->zero,
                             param->gam);
-  NumericVector u = 1.0/pow(1.0 + (param->kappa)*(param->lambda)*u0, 2);
+  NumericVector u = param->lambda/pow(1.0 +
+    (param->kappa)*(param->lambda)*u0, 2);
 
   u0 = param->tau - u0;
   NumericVector N = accrual(u0, param->accrualTime, param->accrualIntensity,
@@ -380,8 +381,8 @@ List nbstat1(const double time = NA_REAL,
     exposure2[h] = quad(f_ex, &param2, 0.0, upper, tol)[0];
     exposure[h] = exposure1[h] + exposure2[h];
 
-    information1[h] = lam1*quad(f_info, &param1, 0.0, upper, tol)[0];
-    information2[h] = lam2*quad(f_info, &param2, 0.0, upper, tol)[0];
+    information1[h] = quad(f_info, &param1, 0.0, upper, tol)[0];
+    information2[h] = quad(f_info, &param2, 0.0, upper, tol)[0];
 
     nevents1[h] = lam1*exposure1[h];
     nevents2[h] = lam2*exposure2[h];
@@ -418,8 +419,8 @@ List nbstat1(const double time = NA_REAL,
   if (!nullVariance) {
     resultsUnderH0 = DataFrame::create(
       _["stratum"] = stratum,
-      _["time"] = rep(time, nstrata),
-      _["rateRatioH0"] = rep(rateRatioH0, nstrata),
+      _["time"] = time,
+      _["rateRatioH0"] = rateRatioH0,
       _["lambda1"] = lambda1x,
       _["lambda2"] = lambda2x,
       _["rateRatio"] = rateRatio);
@@ -446,8 +447,8 @@ List nbstat1(const double time = NA_REAL,
                 double a1 = quad(f_info, &param1, 0.0, upper, tol)[0];
                 double a2 = quad(f_info, &param2, 0.0, upper, tol)[0];
 
-                return phi*(lam1 - aval*rateRatioH0)*a1 +
-                  (1-phi)*(lam2 - aval)*a2;
+                return phi*(lam1/(aval*rateRatioH0) - 1.0)*a1 +
+                  (1-phi)*(lam2/aval - 1.0)*a2;
               };
 
     for (int h=0; h<nstrata; h++) {
@@ -461,7 +462,8 @@ List nbstat1(const double time = NA_REAL,
       gam1 = gamma1x[l];
       gam2 = gamma2x[l];
 
-      double t1 = exposure1[h], t2 = exposure2[h];
+      double t1 = exposure1[h]/(frac*a*phi);
+      double t2 = exposure2[h]/(frac*a*(1-phi));
       double a = (phi*k2 + (1-phi)*k1)*rateRatioH0*t1*t2;
       double b = -(phi*t1*(k2*lam1*t2 - rateRatioH0) +
                    (1-phi)*t2*(k1*lam2*rateRatioH0*t1 - 1));
@@ -484,10 +486,8 @@ List nbstat1(const double time = NA_REAL,
                          t, k2, lambda2H0[h], zero, gam2,
                          accrualDuration};
 
-      information1H0[h] = lambda1H0[h]*
-        quad(f_info, &param1, 0.0, upper, tol)[0];
-      information2H0[h] = lambda2H0[h]*
-        quad(f_info, &param2, 0.0, upper, tol)[0];
+      information1H0[h] = quad(f_info, &param1, 0.0, upper, tol)[0];
+      information2H0[h] = quad(f_info, &param2, 0.0, upper, tol)[0];
     }
 
     NumericVector vlogRate1H0 = 1.0/information1H0;
@@ -496,10 +496,10 @@ List nbstat1(const double time = NA_REAL,
 
     resultsUnderH0 = DataFrame::create(
       _["stratum"] = stratum,
-      _["time"] = rep(time, nstrata),
+      _["time"] = time,
       _["lambda1H0"] = lambda1H0,
       _["lambda2H0"] = lambda2H0,
-      _["rateRatioH0"] = rep(rateRatioH0, nstrata),
+      _["rateRatioH0"] = rateRatioH0,
       _["vlogRate1H0"] = vlogRate1H0,
       _["vlogRate2H0"] = vlogRate2H0,
       _["vlogRRH0"] = vlogRRH0,
@@ -560,7 +560,8 @@ List nbstat1(const double time = NA_REAL,
 //' reduces to the Poisson distribution.
 //'
 //' For treatment group \eqn{i}, let \eqn{\beta_i = \log(\lambda_i)}.
-//' The likelihood for \eqn{\{(\kappa_i, \beta_i):i=1,2\}} can be written as
+//' The log-likelihood for \eqn{\{(\kappa_i, \beta_i):i=1,2\}}
+//' can be written as
 //' \deqn{l = \sum_{i=1}^{2}\sum_{j=1}^{n_{i}}
 //' \{\log \Gamma(y_{ij} + 1/\kappa_i) - \log \Gamma(1/\kappa_i) + y_{ij}
 //' (\log(\kappa_i) + \beta_i) - (y_{ij} + 1/\kappa_i)
@@ -614,7 +615,7 @@ List nbstat1(const double time = NA_REAL,
 //' to \eqn{\beta_2}. The resulting score equation has asymptotic limit
 //' \deqn{E\left(\frac{\partial l}{\partial \beta_2}\right) = s_1 + s_2,}
 //' where
-//' \deqn{s_1 = n r E\left\{\lambda1_1 t_{1j} - \left(\lambda_1t_{1j}
+//' \deqn{s_1 = n r E\left\{\lambda_1 t_{1j} - \left(\lambda_1t_{1j}
 //' + \frac{1}{\kappa_1}\right) \frac{\kappa_1 e^{\tilde{\beta}_2 +
 //' \Delta}t_{1j}}{1 + \kappa_1 e^{\tilde{\beta}_2 +\Delta}t_{1j}}\right\},}
 //' and
@@ -971,7 +972,7 @@ List nbstat(const NumericVector& time = NA_REAL,
       time[j], rateRatioH0, allocationRatioPlanned,
       accrualTime, accrualIntensity,
       piecewiseSurvivalTime, stratumFraction,
-      kappa1, kappa2, lambda1, lambda2, gamma1, gamma2,
+      kappa1x, kappa2x, lambda1x, lambda2x, gamma1x, gamma2x,
       accrualDuration, followupTime, fixedFollowup, nullVariance);
 
     dfH1 = DataFrame(results["resultsUnderH1"]);
@@ -1040,7 +1041,7 @@ List nbstat(const NumericVector& time = NA_REAL,
   if (!nullVariance) {
     resultsUnderH0 = DataFrame::create(
       _["time"] = time,
-      _["rateRatioH0"] = rep(rateRatioH0, k),
+      _["rateRatioH0"] = rateRatioH0,
       _["varianceRatio"] = varianceRatio,
       _["lambda1"] = lam1,
       _["lambda2"] = lam2,
@@ -1050,7 +1051,7 @@ List nbstat(const NumericVector& time = NA_REAL,
       _["time"] = time,
       _["lambda1H0"] = lam1H0,
       _["lambda2H0"] = lam2H0,
-      _["rateRatioH0"] = rep(rateRatioH0, k),
+      _["rateRatioH0"] = rateRatioH0,
       _["vlogRate1H0"] = vlogRate1H0,
       _["vlogRate2H0"] = vlogRate2H0,
       _["vlogRRH0"] = vlogRRH0,
@@ -2728,7 +2729,12 @@ List nbsamplesize(const double beta = 0.2,
                     return sum(NumericVector(nb[18])) - maxInformation;
                   };
 
-        followupTime = brent(h, 0.0, 1.1*followupTime, 1.0e-6);
+        double lower = 0.0, upper = 1.1*followupTime;
+        while (h(upper) < 0) {
+          lower = upper;
+          upper = 2.0*upper;
+        }
+        followupTime = brent(h, lower, upper, 1.0e-6);
         studyDuration = accrualDuration + followupTime;
       } else {
         // adjust study duration to obtain the target maximum information
@@ -2854,7 +2860,7 @@ List nbsamplesize(const double beta = 0.2,
                   return sum(NumericVector(nb[18])) - maxInformation;
                 };
 
-      double lower = accrualDuration, upper = 2.0*lower;
+      double lower = accrualDuration, upper = 2.0*accrualDuration;
       while (g(upper) < 0) {
         lower = upper;
         upper = 2.0*upper;
@@ -4190,7 +4196,12 @@ List nbsamplesize1s(const double beta = 0.2,
                     return 2.0*sum(NumericVector(nb[18])) - maxInformation;
                   };
 
-        followupTime = brent(h, 0.0, 1.1*followupTime, 1.0e-6);
+        double lower = 0.0, upper = 1.1*followupTime;
+        while (h(upper) < 0) {
+          lower = upper;
+          upper = 2.0*upper;
+        }
+        followupTime = brent(h, lower, upper, 1.0e-6);
         studyDuration = accrualDuration + followupTime;
       } else {
         // adjust study duration to obtain the target maximum information
@@ -4305,7 +4316,7 @@ List nbsamplesize1s(const double beta = 0.2,
                   return 2.0*sum(NumericVector(nb[18])) - maxInformation;
                 };
 
-      double lower = accrualDuration, upper = 2.0*lower;
+      double lower = accrualDuration, upper = 2.0*accrualDuration;
       while (g(upper) < 0) {
         lower = upper;
         upper = 2.0*upper;
@@ -4399,8 +4410,6 @@ List nbsamplesize1s(const double beta = 0.2,
 //'   \code{accrualDuration} and \code{followupTime}. If provided,
 //'   the value is allowed to be less than the sum of \code{accrualDuration}
 //'   and \code{followupTime}.
-//' @param nullVariance Whether to calculate the variance for log rate ratio
-//'   under the null hypothesis.
 //'
 //' @return An S3 class \code{nbpowerequiv} object with 4 components:
 //'
@@ -4410,13 +4419,7 @@ List nbsamplesize1s(const double beta = 0.2,
 //'
 //'     - \code{alpha}: The overall significance level.
 //'
-//'     - \code{attainedAlphaH10}: The attained significance level under H10.
-//'
-//'     - \code{attainedAlphaH20}: The attained significance level under H20.
-//'
 //'     - \code{numberOfEvents}: The total number of events.
-//'
-//'     - \code{numberOfDropouts}: The total number of dropouts.
 //'
 //'     - \code{numbeOfSubjects}: The total number of subjects.
 //'
@@ -4427,8 +4430,6 @@ List nbsamplesize1s(const double beta = 0.2,
 //'     - \code{information}: The maximum information.
 //'
 //'     - \code{expectedNumberOfEvents}: The expected number of events.
-//'
-//'     - \code{expectedNumberOfDropouts}: The expected number of dropouts.
 //'
 //'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
 //'
@@ -4445,6 +4446,12 @@ List nbsamplesize1s(const double beta = 0.2,
 //'     - \code{rateRatioUpper}: The upper equivalence limit of rate ratio.
 //'
 //'     - \code{rateRatio}: The rate ratio.
+//'
+//'     - \code{accrualDuration}: The accrual duration.
+//'
+//'     - \code{followupTime}: The follow-up duration.
+//'
+//'     - \code{fixedFollowup}: Whether a fixed follow-up design is used.
 //'
 //' * \code{byStageResults}: A data frame containing the following variables:
 //'
@@ -4497,22 +4504,7 @@ List nbsamplesize1s(const double beta = 0.2,
 //'   \code{piecewiseSurvivalTime}, \code{stratumFraction},
 //'   \code{kappa1}, \code{kappa2},
 //'   \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2},
-//'   \code{accrualDuration}, \code{followupTime}, \code{fixedFollowup},
-//'   \code{spendingTime}, \code{nullVariance}, and \code{varianceRatios}.
-//'   The \code{varianceRatios} is a data frame with the following
-//'   variables:
-//'
-//'     - \code{varianceRatioH10}: The ratio of the variance under
-//'       \code{H10} to the variance under \code{H1}.
-//'
-//'     - \code{varianceRatioH20}: The ratio of the variance under
-//'       \code{H20} to the variance under \code{H1}.
-//'
-//'     - \code{varianceRatioH12}: The ratio of the variance under
-//'       \code{H10} to the variance under \code{H20}.
-//'
-//'     - \code{varianceRatioH21}: The ratio of the variance under
-//'       \code{H20} to the variance under \code{H10}.
+//'   \code{spendingTime}.
 //'
 //' * \code{byTreatmentCounts}: A list containing the following counts by
 //'   treatment group:
@@ -4578,8 +4570,7 @@ List nbsamplesize1s(const double beta = 0.2,
 //'              lambda1 = 0.125, lambda2 = 0.125,
 //'              gamma1 = 0, gamma2 = 0,
 //'              accrualDuration = 1.25,
-//'              followupTime = 2.75, fixedFollowup = FALSE,
-//'              nullVariance = 1)
+//'              followupTime = 2.75, fixedFollowup = FALSE)
 //'
 //' # Example 2: Fixed follow-up design
 //' nbpowerequiv(kMax = 2, informationRates = c(0.5, 1),
@@ -4620,8 +4611,7 @@ List nbpowerequiv(const int kMax = 1,
                   const double followupTime = NA_REAL,
                   const bool fixedFollowup = 0,
                   const NumericVector& spendingTime = NA_REAL,
-                  const double studyDuration = NA_REAL,
-                  const bool nullVariance = 0) {
+                  const double studyDuration = NA_REAL) {
 
   NumericVector informationRates1 = clone(informationRates);
   NumericVector criticalValues1 = clone(criticalValues);
@@ -4930,7 +4920,6 @@ List nbpowerequiv(const int kMax = 1,
   double theta1 = log(rateRatio);
   NumericVector theta(kMax, theta1);
   NumericVector I = maxInformation*informationRates1;
-  double theta10 = log(rateRatioLower), theta20 = log(rateRatioUpper);
 
   double information1;
   auto f = [allocationRatioPlanned, accrualTime, accrualIntensity,
@@ -4956,33 +4945,33 @@ List nbpowerequiv(const int kMax = 1,
   }
   time[kMax-1] = studyDuration1;
 
-
-  // obtain the variance ratio for the lower equivalence limit
-  na = nbstat(time, rateRatioLower, allocationRatioPlanned,
+  na = nbstat(time, 1, allocationRatioPlanned,
               accrualTime, accrualIntensity,
               piecewiseSurvivalTime, stratumFraction,
               kappa1, kappa2, lambda1, lambda2, gamma1, gamma2,
-              accrualDuration, followupTime, fixedFollowup, nullVariance);
+              accrualDuration, followupTime, fixedFollowup, 0);
   nb = DataFrame(na["resultsUnderH1"]);
-  nc = DataFrame(na["resultsUnderH0"]);
-  NumericVector varianceRatioH10 = as<NumericVector>(nc["varianceRatio"]);
 
-  // obtain the variance ratio for the upper equivalence limit
-  na = nbstat(time, rateRatioUpper, allocationRatioPlanned,
-              accrualTime, accrualIntensity,
-              piecewiseSurvivalTime, stratumFraction,
-              kappa1, kappa2, lambda1, lambda2, gamma1, gamma2,
-              accrualDuration, followupTime, fixedFollowup, nullVariance);
-  nc = DataFrame(na["resultsUnderH0"]);
-  NumericVector varianceRatioH20 = as<NumericVector>(nc["varianceRatio"]);
-  NumericVector wH10 = sqrt(varianceRatioH10);
-  NumericVector wH20 = sqrt(varianceRatioH20);
-
+  double phi = allocationRatioPlanned/(allocationRatioPlanned+1);
+  NumericVector nsubjects = NumericVector(nb[1]);
+  NumericVector nsubjects1 = phi*nsubjects;
+  NumericVector nsubjects2 = (1-phi)*nsubjects;
+  NumericVector nevents = NumericVector(nb[2]);
+  NumericVector nevents1 = NumericVector(nb[3]);
+  NumericVector nevents2 = NumericVector(nb[4]);
+  NumericVector ndropouts = NumericVector(nb[5]);
+  NumericVector ndropouts1 = NumericVector(nb[6]);
+  NumericVector ndropouts2 = NumericVector(nb[7]);
+  NumericVector exposure = NumericVector(nb[11]);
+  NumericVector exposure1 = NumericVector(nb[12]);
+  NumericVector exposure2 = NumericVector(nb[13]);
 
   // calculate cumulative rejection probability under H1
+  NumericVector theta10 = rep(log(rateRatioLower), kMax);
+  NumericVector theta20 = rep(log(rateRatioUpper), kMax);
   NumericVector b = criticalValues1;
-  NumericVector l = b*wH10 + theta10*sqrt(I);
-  NumericVector u = -b*wH20 + theta20*sqrt(I);
+  NumericVector l = b + theta10*sqrt(I);
+  NumericVector u = -b + theta20*sqrt(I);
 
   List probs1 = exitprobcpp(pmax(l, li), li, theta, I);
   List probs2 = exitprobcpp(ui, pmin(u, ui), theta, I);
@@ -5032,128 +5021,28 @@ List nbpowerequiv(const int kMax = 1,
     }
   }
 
-  NumericVector efficacyRateRatioLower = exp(theta10 + b/sqrt(I)*wH10);
-  NumericVector efficacyRateRatioUpper = exp(theta20 - b/sqrt(I)*wH20);
+  NumericVector efficacyRateRatioLower = exp(theta10 + b/sqrt(I));
+  NumericVector efficacyRateRatioUpper = exp(theta20 - b/sqrt(I));
 
   // calculate cumulative rejection under H10
-  // match the maximum information under H10 with that under H1
-  double accrualDurationH10, followupTimeH10, studyDurationH10;
-  if (!fixedFollowup) { // increase follow-up time
-    auto h = [rateRatioLower, allocationRatioPlanned,
-              accrualTime, accrualIntensity,
-              piecewiseSurvivalTime, stratumFraction,
-              kappa1, kappa2, lambda2, gamma1, gamma2,
-              accrualDuration, fixedFollowup,
-              maxInformation](double aval)->double {
-                NumericVector u0(1, accrualDuration + aval);
-                List na = nbstat(
-                  u0, 1, allocationRatioPlanned,
-                  accrualTime, accrualIntensity,
-                  piecewiseSurvivalTime, stratumFraction,
-                  kappa1, kappa2, lambda2*rateRatioLower, lambda2,
-                  gamma1, gamma2, accrualDuration, aval, fixedFollowup, 0);
-                DataFrame nb = DataFrame(na["resultsUnderH1"]);
-                return sum(NumericVector(nb[18])) - maxInformation;
-              };
+  List probs2H10 = exitprobcpp(ui, pmin(u, ui), theta10, I);
 
-    double lower = followupTime, upper = 2.0*lower;
-    while (h(upper) < 0) {
-      lower = upper;
-      upper = 2.0*upper;
-    }
-    followupTimeH10 = brent(h, lower, upper, 1.0e-6);
-    accrualDurationH10 = accrualDuration;
-    studyDurationH10 = accrualDurationH10 + followupTimeH10;
-  } else { // fixed follow-up
-    auto h = [rateRatioLower, allocationRatioPlanned,
-              accrualTime, accrualIntensity,
-              piecewiseSurvivalTime, stratumFraction,
-              kappa1, kappa2, lambda2, gamma1, gamma2,
-              followupTime, fixedFollowup,
-              maxInformation](double aval)->double {
-                NumericVector u0(1, aval + followupTime);
-                List na = nbstat(
-                  u0, 1, allocationRatioPlanned,
-                  accrualTime, accrualIntensity,
-                  piecewiseSurvivalTime, stratumFraction,
-                  kappa1, kappa2, lambda2*rateRatioLower, lambda2,
-                  gamma1, gamma2, aval, followupTime, fixedFollowup, 0);
-                DataFrame nb = DataFrame(na["resultsUnderH1"]);
-                return sum(NumericVector(nb[18])) - maxInformation;
-              };
+  NumericVector cplH10 = cumAlphaSpent;
+  NumericVector cpuH10 = cumsum(NumericVector(probs2H10[1]));
 
-    double lower = accrualDuration, upper = 2.0*lower;
-    while (h(upper) < 0) {
-      lower = upper;
-      upper = 2.0*upper;
-    }
-    accrualDurationH10 = brent(h, lower, upper, 1.0e-6);
-    followupTimeH10 = followupTime;
-    studyDurationH10 = accrualDurationH10 + followupTimeH10;
-  }
-
-  // obtain the timing of interim analysis under H10
-  auto fH10 = [rateRatioLower, allocationRatioPlanned,
-               accrualTime, accrualIntensity,
-               piecewiseSurvivalTime, stratumFraction,
-               kappa1, kappa2, lambda2, gamma1, gamma2,
-               accrualDurationH10, followupTimeH10, fixedFollowup,
-               &information1](double t)->double {
-                 NumericVector u0(1, t);
-                 List na = nbstat(
-                   u0, 1, allocationRatioPlanned,
-                   accrualTime, accrualIntensity,
-                   piecewiseSurvivalTime, stratumFraction,
-                   kappa1, kappa2, lambda2*rateRatioLower, lambda2,
-                   gamma1, gamma2,
-                   accrualDurationH10, followupTimeH10, fixedFollowup, 0);
-                 DataFrame nb = DataFrame(na["resultsUnderH1"]);
-                 return sum(NumericVector(nb[18])) - information1;
-               };
-
-  NumericVector timeH10(kMax);
-  for (int i=0; i<kMax-1; i++) {
-    // match the predicted information to the target
-    information1 = std::max(I[i], 0.0);
-    timeH10[i] = brent(fH10, 1.0e-6, studyDurationH10, 1.0e-6);
-  }
-  timeH10[kMax-1] = studyDurationH10;
-
-
-  // obtain the variance ratio for H20 with respect to H10
-  List naH21 = nbstat(timeH10, rateRatioUpper, allocationRatioPlanned,
-                      accrualTime, accrualIntensity,
-                      piecewiseSurvivalTime, stratumFraction,
-                      kappa1, kappa2, lambda2*rateRatioLower, lambda2,
-                      gamma1, gamma2,
-                      accrualDurationH10, followupTimeH10, fixedFollowup,
-                      nullVariance);
-
-  DataFrame ncH21 = DataFrame(naH21["resultsUnderH0"]);
-  NumericVector varianceRatioH21 = as<NumericVector>(ncH21["varianceRatio"]);
-  NumericVector wH21 = sqrt(varianceRatioH21);
-
-  NumericVector bH10 = -b*wH21 + (theta20 - theta10)*sqrt(I);
-  List probsH10 = exitprobcpp(ui, pmin(bH10, ui), zero, I);
-
-  NumericVector cplH10 = cumsum(NumericVector(probsH10[1]));
-  NumericVector cpuH10 = cumAlphaSpent;
-
-  // identify the last look with b[k] > bH10[k] if it exists
-  IntegerVector kH10 = which(b > bH10);
   NumericVector cpH10(kMax);
-  if (kH10.size() == 0) {
+  if (k.size() == 0) {
     cpH10 = cplH10 + cpuH10 - 1;
   } else {
-    int K = max(kH10);
+    int K = max(k);
     IntegerVector idx = Range(0, K);
-    List aH10 = exitprobcpp(b[idx], bH10[idx], zero[idx], I[idx]);
-    NumericVector caH10 = cumsum(NumericVector(aH10[0]) +
-      NumericVector(aH10[1]));
+    List a = exitprobcpp(l[idx], u[idx], theta10[idx], I[idx]);
+    NumericVector ca = cumsum(NumericVector(a[0]) +
+      NumericVector(a[1]));
 
     for (int i=0; i<kMax; i++) {
       if (i <= K) {
-        cpH10[i] = cplH10[i] + cpuH10[i] - caH10[i];
+        cpH10[i] = cplH10[i] + cpuH10[i] - ca[i];
       } else {
         cpH10[i] = cplH10[i] + cpuH10[i] - 1;
       }
@@ -5162,198 +5051,41 @@ List nbpowerequiv(const int kMax = 1,
 
 
   // calculate cumulative rejection under H20
-  // match the maximum information under H20 with that under H1
-  double accrualDurationH20, followupTimeH20, studyDurationH20;
-  if (!fixedFollowup) {
-    auto h = [rateRatioUpper, allocationRatioPlanned,
-              accrualTime, accrualIntensity,
-              piecewiseSurvivalTime, stratumFraction,
-              kappa1, kappa2, lambda2, gamma1, gamma2,
-              accrualDuration, fixedFollowup,
-              maxInformation](double aval)->double {
-                NumericVector u0(1, accrualDuration + aval);
-                List na = nbstat(
-                  u0, 1, allocationRatioPlanned,
-                  accrualTime, accrualIntensity,
-                  piecewiseSurvivalTime, stratumFraction,
-                  kappa1, kappa2, lambda2*rateRatioUpper, lambda2,
-                  gamma1, gamma2, accrualDuration, aval, fixedFollowup, 0);
-                DataFrame nb = DataFrame(na["resultsUnderH1"]);
-                return sum(NumericVector(nb[18])) - maxInformation;
-              };
+  List probs1H20 = exitprobcpp(pmax(l, li), li, theta20, I);
 
-    if (h(0) < 0) { // adjust the follow-up time
-      followupTimeH20 = brent(h, 0.0, followupTime, 1.0e-6);
-      accrualDurationH20 = accrualDuration;
-      studyDurationH20 = accrualDurationH20 + followupTimeH20;
-    } else { // adjust the accrual duration
-      auto g = [rateRatioUpper, allocationRatioPlanned,
-                accrualTime, accrualIntensity,
-                piecewiseSurvivalTime, stratumFraction,
-                kappa1, kappa2, lambda2, gamma1, gamma2,
-                fixedFollowup, maxInformation](double aval)->double {
-                  NumericVector u0(1, aval);
-                  List na = nbstat(
-                    u0, 1, allocationRatioPlanned,
-                    accrualTime, accrualIntensity,
-                    piecewiseSurvivalTime, stratumFraction,
-                    kappa1, kappa2, lambda2*rateRatioUpper, lambda2,
-                    gamma1, gamma2, aval, 0, fixedFollowup, 0);
-                  DataFrame nb = DataFrame(na["resultsUnderH1"]);
-                  return sum(NumericVector(nb[18])) - maxInformation;
-                };
+  NumericVector cplH20 = cumsum(NumericVector(probs1H20[0]));
+  NumericVector cpuH20 = cumAlphaSpent;
 
-      accrualDurationH20 = brent(g, 1.0e-6, accrualDuration, 1.0e-6);
-      followupTimeH20 = 0;
-      studyDurationH20 = accrualDurationH20 + followupTimeH20;
-    }
-  } else { // fixed follow-up
-    auto h = [rateRatioUpper, allocationRatioPlanned,
-              accrualTime, accrualIntensity,
-              piecewiseSurvivalTime, stratumFraction,
-              kappa1, kappa2, lambda2, gamma1, gamma2,
-              accrualDuration, followupTime, fixedFollowup,
-              maxInformation](double aval)->double {
-                NumericVector u0(1, accrualDuration + aval);
-                List na = nbstat(
-                  u0, 1, allocationRatioPlanned,
-                  accrualTime, accrualIntensity,
-                  piecewiseSurvivalTime, stratumFraction,
-                  kappa1, kappa2, lambda2*rateRatioUpper, lambda2,
-                  gamma1, gamma2,
-                  accrualDuration, followupTime, fixedFollowup, 0);
-                DataFrame nb = DataFrame(na["resultsUnderH1"]);
-                return sum(NumericVector(nb[18])) - maxInformation;
-              };
-
-    if (h(0) < 0) { // adjust the study duration
-      double aval = brent(h, 0.0, followupTime, 1.0e-6);
-      accrualDurationH20 = accrualDuration;
-      followupTimeH20 = followupTime;
-      studyDurationH20 = accrualDurationH20 + aval;
-    } else { // adjust the accrual duration
-      auto g = [rateRatioUpper, allocationRatioPlanned,
-                accrualTime, accrualIntensity,
-                piecewiseSurvivalTime, stratumFraction,
-                kappa1, kappa2, lambda2, gamma1, gamma2,
-                followupTime, fixedFollowup,
-                maxInformation](double aval)->double {
-                  NumericVector u0(1, aval);
-                  List na = nbstat(
-                    u0, 1, allocationRatioPlanned,
-                    accrualTime, accrualIntensity,
-                    piecewiseSurvivalTime, stratumFraction,
-                    kappa1, kappa2, lambda2*rateRatioUpper, lambda2,
-                    gamma1, gamma2, aval, followupTime, fixedFollowup, 0);
-                  DataFrame nb = DataFrame(na["resultsUnderH1"]);
-                  return sum(NumericVector(nb[18])) - maxInformation;
-                };
-
-      accrualDurationH20 = brent(g, 1.0e-6, accrualDuration, 1.0e-6);
-      followupTimeH20 = followupTime;
-      studyDurationH20 = accrualDurationH20;
-    }
-  }
-
-  // obtain the timing of interim analysis under H20
-  auto fH20 = [rateRatioUpper, allocationRatioPlanned,
-               accrualTime, accrualIntensity,
-               piecewiseSurvivalTime, stratumFraction,
-               kappa1, kappa2, lambda2, gamma1, gamma2,
-               accrualDurationH20, followupTimeH20, fixedFollowup,
-               &information1](double t)->double {
-                 NumericVector u0(1, t);
-                 List na = nbstat(
-                   u0, 1, allocationRatioPlanned,
-                   accrualTime, accrualIntensity,
-                   piecewiseSurvivalTime, stratumFraction,
-                   kappa1, kappa2, lambda2*rateRatioUpper, lambda2,
-                   gamma1, gamma2,
-                   accrualDurationH20, followupTimeH20, fixedFollowup, 0);
-                 DataFrame nb = DataFrame(na["resultsUnderH1"]);
-                 return sum(NumericVector(nb[18])) - information1;
-               };
-
-  NumericVector timeH20(kMax);
-  for (int i=0; i<kMax-1; i++) {
-    // match the predicted information to the target
-    information1 = std::max(I[i], 0.0);
-    timeH20[i] = brent(fH20, 1.0e-6, studyDurationH20, 1.0e-6);
-  }
-  timeH20[kMax-1] = studyDurationH20;
-
-
-  // obtain the variance ratio for H10 with respect to H20
-  List naH12 = nbstat(timeH20, rateRatioLower, allocationRatioPlanned,
-                      accrualTime, accrualIntensity,
-                      piecewiseSurvivalTime, stratumFraction,
-                      kappa1, kappa2, lambda2*rateRatioUpper, lambda2,
-                      gamma1, gamma2,
-                      accrualDurationH20, followupTimeH20, fixedFollowup,
-                      nullVariance);
-
-  DataFrame ncH12 = DataFrame(naH12["resultsUnderH0"]);
-  NumericVector varianceRatioH12 = as<NumericVector>(ncH12["varianceRatio"]);
-  NumericVector wH12 = sqrt(varianceRatioH12);
-
-  NumericVector bH20 = b*wH12 + (theta10 - theta20)*sqrt(I);
-  List probsH20 = exitprobcpp(pmax(bH20, li), li, zero, I);
-
-  NumericVector cpuH20 = cumsum(NumericVector(probsH20[0]));
-  NumericVector cplH20 = cumAlphaSpent;
-
-  // identify the last look with bH20[k] >= -b[k] if it exists
-  IntegerVector kH20 = which(bH20 > -b);
   NumericVector cpH20(kMax);
-  if (kH20.size() == 0) {
+  if (k.size() == 0) {
     cpH20 = cplH20 + cpuH20 - 1;
   } else {
-    int K = max(kH20);
+    int K = max(k);
     IntegerVector idx = Range(0, K);
-    NumericVector uH20 = -b;
-    List aH20 = exitprobcpp(bH20[idx], uH20[idx], zero[idx], I[idx]);
-    NumericVector caH20 = cumsum(NumericVector(aH20[0]) +
-      NumericVector(aH20[1]));
+    List a = exitprobcpp(l[idx], u[idx], theta20[idx], I[idx]);
+    NumericVector ca = cumsum(NumericVector(a[0]) +
+      NumericVector(a[1]));
 
     for (int i=0; i<kMax; i++) {
       if (i <= K) {
-        cpH20[i] = cplH20[i] + cpuH20[i] - caH20[i];
+        cpH20[i] = cplH20[i] + cpuH20[i] - ca[i];
       } else {
         cpH20[i] = cplH20[i] + cpuH20[i] - 1;
       }
     }
   }
 
-
-  double phi = allocationRatioPlanned/(1+allocationRatioPlanned);
-
-  NumericVector nsubjects = NumericVector(nb[1]);
-  NumericVector nsubjects1 = phi*nsubjects;
-  NumericVector nsubjects2 = (1-phi)*nsubjects;
-  NumericVector nevents = NumericVector(nb[2]);
-  NumericVector nevents1 = NumericVector(nb[3]);
-  NumericVector nevents2 = NumericVector(nb[4]);
-  NumericVector ndropouts = NumericVector(nb[5]);
-  NumericVector ndropouts1 = NumericVector(nb[6]);
-  NumericVector ndropouts2 = NumericVector(nb[7]);
-  NumericVector exposure = NumericVector(nb[11]);
-  NumericVector exposure1 = NumericVector(nb[12]);
-  NumericVector exposure2 = NumericVector(nb[13]);
-
   double overallReject = cp[kMax-1];
-  double attainedAlphaH10 = cpH10[kMax-1];
-  double attainedAlphaH20 = cpH20[kMax-1];
   double expectedNumberOfEvents = sum(q*nevents);
-  double expectedNumberOfEvents1 = sum(q*nevents1);
-  double expectedNumberOfEvents2 = sum(q*nevents2);
-  double expectedNumberOfDropouts = sum(q*ndropouts);
-  double expectedNumberOfDropouts1 = sum(q*ndropouts1);
-  double expectedNumberOfDropouts2 = sum(q*ndropouts2);
   double expectedNumberOfSubjects = sum(q*nsubjects);
-  double expectedNumberOfSubjects1 = sum(q*nsubjects1);
-  double expectedNumberOfSubjects2 = sum(q*nsubjects2);
   double expectedExposure = sum(q*exposure);
+  double expectedNumberOfEvents1 = sum(q*nevents1);
+  double expectedNumberOfDropouts1 = sum(q*ndropouts1);
+  double expectedNumberOfSubjects1 = sum(q*nsubjects1);
   double expectedExposure1 = sum(q*exposure1);
+  double expectedNumberOfEvents2 = sum(q*nevents2);
+  double expectedNumberOfDropouts2 = sum(q*ndropouts2);
+  double expectedNumberOfSubjects2 = sum(q*nsubjects2);
   double expectedExposure2 = sum(q*exposure2);
   double expectedStudyDuration = sum(q*time);
   double expectedInformation = sum(q*I);
@@ -5361,16 +5093,12 @@ List nbpowerequiv(const int kMax = 1,
   DataFrame overallResults = DataFrame::create(
     _["overallReject"] = overallReject,
     _["alpha"] = alpha,
-    _["attainedAlphaH10"] = attainedAlphaH10,
-    _["attainedAlphaH20"] = attainedAlphaH20,
     _["numberOfEvents"] = (nevents[kMax-1]),
-    _["numberOfDropouts"] = (ndropouts[kMax-1]),
     _["numberOfSubjects"] = (nsubjects[kMax-1]),
     _["exposure"] = (exposure[kMax-1]),
     _["studyDuration"] = (time[kMax-1]),
     _["information"] = maxInformation,
     _["expectedNumberOfEvents"] = expectedNumberOfEvents,
-    _["expectedNumberOfDropouts"] = expectedNumberOfDropouts,
     _["expectedNumberOfSubjects"] = expectedNumberOfSubjects,
     _["expectedExposure"] = expectedExposure,
     _["expectedStudyDuration"] = expectedStudyDuration,
@@ -5378,7 +5106,10 @@ List nbpowerequiv(const int kMax = 1,
     _["kMax"] = kMax,
     _["rateRatioLower"] = rateRatioLower,
     _["rateRatioUpper"] = rateRatioUpper,
-    _["rateRatio"] = rateRatio);
+    _["rateRatio"] = rateRatio,
+    _["accrualDuration"] = accrualDuration,
+    _["followupTime"] = followupTime,
+    _["fixedFollowup"] = fixedFollowup);
 
   DataFrame byStageResults = DataFrame::create(
     _["informationRates"] = informationRates1,
@@ -5398,12 +5129,6 @@ List nbpowerequiv(const int kMax = 1,
     _["efficacyP"] = efficacyP,
     _["information"] = I);
 
-  DataFrame varianceRatios = DataFrame::create(
-    _["varianceRatioH10"] = varianceRatioH10,
-    _["varianceRatioH20"] = varianceRatioH20,
-    _["varianceRatioH12"] = varianceRatioH12,
-    _["varianceRatioH21"] = varianceRatioH21);
-
   List settings = List::create(
     _["typeAlphaSpending"] = typeAlphaSpending,
     _["parameterAlphaSpending"] = parameterAlphaSpending,
@@ -5419,12 +5144,7 @@ List nbpowerequiv(const int kMax = 1,
     _["lambda2"] = lambda2,
     _["gamma1"] = gamma1,
     _["gamma2"] = gamma2,
-    _["accrualDuration"] = accrualDuration,
-    _["followupTime"] = followupTime,
-    _["fixedFollowup"] = fixedFollowup,
-    _["spendingTime"] = spendingTime,
-    _["nullVariance"] = nullVariance,
-    _["varianceRatios"] = varianceRatios);
+    _["spendingTime"] = spendingTime);
 
   List byTreatmentCounts = List::create(
     _["numberOfEvents1"] = nevents1,
@@ -5454,7 +5174,6 @@ List nbpowerequiv(const int kMax = 1,
 
   return result;
 }
-
 
 
 //' @title Sample Size for Equivalence in Negative Binomial Rate Ratio
@@ -5500,8 +5219,6 @@ List nbpowerequiv(const int kMax = 1,
 //'   same as \code{informationRates}.
 //' @param rounding Whether to round up sample size.
 //'   Defaults to 1 for sample size rounding.
-//' @param nullVariance Whether to calculate the variance for log rate ratio
-//'   under the null hypothesis.
 //'
 //' @return An S3 class \code{nbpowerequiv} object
 //'
@@ -5524,8 +5241,7 @@ List nbpowerequiv(const int kMax = 1,
 //'                   gamma1 = -log(1-0.05),
 //'                   gamma2 = -log(1-0.10),
 //'                   accrualDuration = 1.25,
-//'                   followupTime = NA, fixedFollowup = FALSE,
-//'                   nullVariance = 1)
+//'                   followupTime = NA, fixedFollowup = FALSE)
 //'
 //' # Example 2: Fixed follow-up design and solve for accrual duration
 //' nbsamplesizeequiv(beta = 0.2, kMax = 2, informationRates = c(0.5, 1),
@@ -5567,8 +5283,7 @@ List nbsamplesizeequiv(const double beta = 0.2,
                        const NumericVector& interval =
                          NumericVector::create(0.001, 240),
                          const NumericVector& spendingTime = NA_REAL,
-                         const bool rounding = 1,
-                         const bool nullVariance = 0) {
+                         const bool rounding = 1) {
 
   NumericVector informationRates1 = clone(informationRates);
   NumericVector criticalValues1 = clone(criticalValues);
@@ -5882,182 +5597,53 @@ List nbsamplesizeequiv(const double beta = 0.2,
   NumericVector theta(kMax, theta1);
   double maxInformation;
 
-  if (!nullVariance) {
-    List design = getDesignEquiv(
-      beta, NA_REAL, theta10, theta20, theta1,
-      kMax, informationRates1, criticalValues1,
-      alpha, asf, asfpar, userAlphaSpending, spendingTime1,
-      1, 1, 1, 1);
+  List design = getDesignEquiv(
+    beta, NA_REAL, theta10, theta20, theta1,
+    kMax, informationRates1, criticalValues1,
+    alpha, asf, asfpar, userAlphaSpending, spendingTime1);
 
-    DataFrame overallResults = DataFrame(design["overallResults"]);
-    maxInformation = overallResults["information"];
+  DataFrame overallResults = DataFrame(design["overallResults"]);
+  maxInformation = overallResults["information"];
 
-    auto f = [allocationRatioPlanned, accrualTime, accrualIntensity,
-              piecewiseSurvivalTime, stratumFraction,
-              kappa1, kappa2, lambda1, lambda2, gamma1, gamma2,
-              accrualDuration, followupTime, fixedFollowup,
-              unknown, maxInformation](double aval)-> double{
-                NumericVector accrualIntensity1 = clone(accrualIntensity);
-                double dur1=0, dur2=0;
+  auto f = [allocationRatioPlanned, accrualTime, accrualIntensity,
+            piecewiseSurvivalTime, stratumFraction,
+            kappa1, kappa2, lambda1, lambda2, gamma1, gamma2,
+            accrualDuration, followupTime, fixedFollowup,
+            unknown, maxInformation](double aval)-> double{
+              NumericVector accrualIntensity1 = clone(accrualIntensity);
+              double dur1=0, dur2=0;
 
-                if (unknown == "accrualDuration") {
-                  dur1 = aval;
-                  dur2 = followupTime;
-                } else if (unknown == "followupTime") {
-                  dur1 = accrualDuration;
-                  dur2 = aval;
-                } else if (unknown == "accrualIntensity") {
-                  dur1 = accrualDuration;
-                  dur2 = followupTime;
-                  accrualIntensity1 = aval*accrualIntensity;
-                }
+              if (unknown == "accrualDuration") {
+                dur1 = aval;
+                dur2 = followupTime;
+              } else if (unknown == "followupTime") {
+                dur1 = accrualDuration;
+                dur2 = aval;
+              } else if (unknown == "accrualIntensity") {
+                dur1 = accrualDuration;
+                dur2 = followupTime;
+                accrualIntensity1 = aval*accrualIntensity;
+              }
 
-                // obtain the maximum information at study end
-                NumericVector u0(1, dur1 + dur2);
-                List na = nbstat(
-                  u0, 1, allocationRatioPlanned,
-                  accrualTime, accrualIntensity1,
-                  piecewiseSurvivalTime, stratumFraction,
-                  kappa1, kappa2, lambda1, lambda2, gamma1, gamma2,
-                  dur1, dur2, fixedFollowup, 0);
-                DataFrame nb = DataFrame(na["resultsUnderH1"]);
-                return sum(NumericVector(nb[18])) - maxInformation;
-              };
+              // obtain the maximum information at study end
+              NumericVector u0(1, dur1 + dur2);
+              List na = nbstat(
+                u0, 1, allocationRatioPlanned,
+                accrualTime, accrualIntensity1,
+                piecewiseSurvivalTime, stratumFraction,
+                kappa1, kappa2, lambda1, lambda2, gamma1, gamma2,
+                dur1, dur2, fixedFollowup, 0);
+              DataFrame nb = DataFrame(na["resultsUnderH1"]);
+              return sum(NumericVector(nb[18])) - maxInformation;
+            };
 
-    if (unknown == "accrualDuration") {
-      accrualDuration = brent(f, interval[0], interval[1], 1.0e-6);
-    } else if (unknown == "followupTime") {
-      followupTime = brent(f, interval[0], interval[1], 1.0e-6);
-    } else if (unknown == "accrualIntensity") {
-      double aval = brent(f, interval[0], interval[1], 1.0e-6);
-      accrualIntensity1 = aval*accrualIntensity;
-    }
-  } else {
-    auto f = [beta, kMax, informationRates1, b,
-              rateRatioLower, rateRatioUpper, theta10, theta20, theta,
-              allocationRatioPlanned, accrualTime, accrualIntensity,
-              piecewiseSurvivalTime, stratumFraction,
-              kappa1, kappa2, lambda1, lambda2, gamma1, gamma2,
-              accrualDuration, followupTime, fixedFollowup,
-              nullVariance, unknown, li, ui](double aval)-> double{
-                NumericVector accrualIntensity1 = clone(accrualIntensity);
-                double dur1=0, dur2=0;
-
-                if (unknown == "accrualDuration") {
-                  dur1 = aval;
-                  dur2 = followupTime;
-                } else if (unknown == "followupTime") {
-                  dur1 = accrualDuration;
-                  dur2 = aval;
-                } else if (unknown == "accrualIntensity") {
-                  dur1 = accrualDuration;
-                  dur2 = followupTime;
-                  accrualIntensity1 = aval*accrualIntensity;
-                }
-
-                double studyDuration = dur1 + dur2;
-
-                // obtain the timing of interim analysis
-                NumericVector time(kMax);
-                NumericVector u0(1, studyDuration);
-                List na = nbstat(u0, 1, allocationRatioPlanned,
-                                 accrualTime, accrualIntensity1,
-                                 piecewiseSurvivalTime, stratumFraction,
-                                 kappa1, kappa2, lambda1, lambda2,
-                                 gamma1, gamma2,
-                                 dur1, dur2, fixedFollowup, 0);
-                DataFrame nb = DataFrame(na["resultsUnderH1"]);
-                double maxInformation = sum(NumericVector(nb[18]));
-                NumericVector I = maxInformation*informationRates1;
-                double information1;
-
-                auto g = [allocationRatioPlanned,
-                          accrualTime, accrualIntensity1,
-                          piecewiseSurvivalTime, stratumFraction,
-                          kappa1, kappa2, lambda1, lambda2, gamma1, gamma2,
-                          dur1, dur2, fixedFollowup,
-                          &information1](double t)->double {
-                            NumericVector u0(1,t);
-                            List na = nbstat(
-                              u0, 1, allocationRatioPlanned,
-                              accrualTime, accrualIntensity1,
-                              piecewiseSurvivalTime, stratumFraction,
-                              kappa1, kappa2, lambda1, lambda2,
-                              gamma1, gamma2, dur1, dur2, fixedFollowup, 0);
-                            DataFrame nb = DataFrame(na["resultsUnderH1"]);
-                            return sum(NumericVector(nb[18])) - information1;
-                          };
-
-                for (int i=0; i<kMax-1; i++) {
-                  // match the predicted information to the target
-                  information1 = std::max(I[i], 0.0);
-                  time[i] = brent(g, 1.0e-6, studyDuration, 1.0e-6);
-                }
-                time[kMax-1] = studyDuration;
-
-
-                // obtain the variance ratio for the lower equivalence limit
-                na = nbstat(time, rateRatioLower, allocationRatioPlanned,
-                            accrualTime, accrualIntensity1,
-                            piecewiseSurvivalTime, stratumFraction,
-                            kappa1, kappa2, lambda1, lambda2, gamma1, gamma2,
-                            dur1, dur2, fixedFollowup, nullVariance);
-                DataFrame nc = DataFrame(na["resultsUnderH0"]);
-                NumericVector varianceRatioH10 =
-                  as<NumericVector>(nc["varianceRatio"]);
-
-                // obtain the variance ratio for the upper equivalence limit
-                na = nbstat(time, rateRatioUpper, allocationRatioPlanned,
-                            accrualTime, accrualIntensity1,
-                            piecewiseSurvivalTime, stratumFraction,
-                            kappa1, kappa2, lambda1, lambda2, gamma1, gamma2,
-                            dur1, dur2, fixedFollowup, nullVariance);
-                nc = DataFrame(na["resultsUnderH0"]);
-                NumericVector varianceRatioH20 =
-                  as<NumericVector>(nc["varianceRatio"]);
-
-                NumericVector wH10 = sqrt(varianceRatioH10);
-                NumericVector wH20 = sqrt(varianceRatioH20);
-
-                // calculate cumulative rejection probability under H1
-                NumericVector l = b*wH10 + theta10*sqrt(I);
-                NumericVector u = -b*wH20 + theta20*sqrt(I);
-
-                List probs1 = exitprobcpp(pmax(l, li), li, theta, I);
-                List probs2 = exitprobcpp(ui, pmin(u, ui), theta, I);
-
-                double cpl = sum(NumericVector(probs1[0]));
-                double cpu = sum(NumericVector(probs2[1]));
-
-                double power;
-                if (is_true(any(l <= u))) {
-                  power = cpl + cpu - 1;
-                } else {
-                  List a = exitprobcpp(l, u, theta, I);
-                  double p = sum(NumericVector(a[0]) + NumericVector(a[1]));
-                  power = cpl + cpu - p;
-                }
-
-                return power - (1-beta);
-              };
-
-    if (unknown == "accrualDuration") {
-      accrualDuration = brent(f, interval[0], interval[1], 1.0e-6);
-    } else if (unknown == "followupTime") {
-      followupTime = brent(f, interval[0], interval[1], 1.0e-6);
-    } else if (unknown == "accrualIntensity") {
-      double aval = brent(f, interval[0], interval[1], 1.0e-6);
-      accrualIntensity1 = aval*accrualIntensity;
-    }
-
-    NumericVector u0(1, accrualDuration + followupTime);
-    List na = nbstat(u0, 1, allocationRatioPlanned,
-                     accrualTime, accrualIntensity1,
-                     piecewiseSurvivalTime, stratumFraction,
-                     kappa1, kappa2, lambda1, lambda2, gamma1, gamma2,
-                     accrualDuration, followupTime, fixedFollowup, 0);
-    DataFrame nb = DataFrame(na["resultsUnderH1"]);
-    maxInformation = sum(NumericVector(nb[18]));
+  if (unknown == "accrualDuration") {
+    accrualDuration = brent(f, interval[0], interval[1], 1.0e-6);
+  } else if (unknown == "followupTime") {
+    followupTime = brent(f, interval[0], interval[1], 1.0e-6);
+  } else if (unknown == "accrualIntensity") {
+    double aval = brent(f, interval[0], interval[1], 1.0e-6);
+    accrualIntensity1 = aval*accrualIntensity;
   }
 
   double studyDuration = accrualDuration + followupTime;
@@ -6098,7 +5684,12 @@ List nbsamplesizeequiv(const double beta = 0.2,
                     return sum(NumericVector(nb[18])) - maxInformation;
                   };
 
-        followupTime = brent(h, 0.0, 1.1*followupTime, 1.0e-6);
+        double lower = 0.0, upper = 1.1*followupTime;
+        while (h(upper) < 0) {
+          lower = upper;
+          upper = 2.0*upper;
+        }
+        followupTime = brent(h, lower, upper, 1.0e-6);
         studyDuration = accrualDuration + followupTime;
       } else {
         // adjust study duration to obtain the target maximum information
@@ -6132,7 +5723,7 @@ List nbsamplesizeequiv(const double beta = 0.2,
     piecewiseSurvivalTime, stratumFraction,
     kappa1, kappa2, lambda1, lambda2, gamma1, gamma2,
     accrualDuration, followupTime, fixedFollowup,
-    spendingTime, studyDuration, nullVariance);
+    spendingTime, studyDuration);
 
   return result;
 }

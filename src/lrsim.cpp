@@ -5094,7 +5094,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
 //'   binary endpoint and endpoint 2 being a time-to-event endpoint.
 //'   The analyses of endpoint 1 will be based on calendar times, while
 //'   the analyses of endpoint 2 will be based on the number of events.
-//'   Therefor the analyses of the two endpoints are not at the same
+//'   Therefore the analyses of the two endpoints are not at the same
 //'   time points. The correlation between the two endpoints is
 //'   characterized by the global odds ratio of the Plackett copula.
 //'   In addition, the time-to-event endpoint will render the binary

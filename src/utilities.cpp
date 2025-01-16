@@ -2557,65 +2557,35 @@ List getDesign(const double beta = NA_REAL,
 //' @param spendingTime A vector of length \code{kMax} for the error spending
 //'   time at each analysis. Defaults to missing, in which case, it is the
 //'   same as \code{informationRates}.
-//' @param varianceRatioH10 The ratio of the variance under H10 to
-//'   the variance under H1.
-//' @param varianceRatioH20 The ratio of the variance under H20 to
-//'   the variance under H1.
-//' @param varianceRatioH12 The ratio of the variance under H10 to
-//'   the variance under H20.
-//' @param varianceRatioH21 The ratio of the variance under H20 to
-//'   the variance under H10.
 //'
 //' @details
 //' Consider the equivalence design with two one-sided hypotheses:
 //' \deqn{H_{10}: \theta \leq \theta_{10},}
 //' \deqn{H_{20}: \theta \geq \theta_{20}.}
 //' We reject \eqn{H_{10}} at or before look \eqn{k} if
-//' \deqn{Z_{1j} = (\hat{\theta}_j - \theta_{10})\sqrt{\frac{n_j}{v_{10}}}
+//' \deqn{Z_{1j} = (\hat{\theta}_j - \theta_{10})\sqrt{I_j}
 //' \geq b_j}
 //' for some \eqn{j=1,\ldots,k}, where \eqn{\{b_j:j=1,\ldots,K\}} are the
 //' critical values associated with the specified alpha-spending function,
-//' and \eqn{v_{10}} is the null variance of
-//' \eqn{\hat{\theta}} based on the restricted maximum likelihood (reml)
-//' estimate of model parameters subject to the constraint imposed by
-//' \eqn{H_{10}} for one sampling unit drawn from \eqn{H_1}. For example,
+//' and \eqn{I_j} is the information for \eqn{\theta} (inverse variance of
+//' \eqn{\hat{\theta}} under the alternative hypothesis) at the
+//' \eqn{j}th look. For example,
 //' for estimating the risk difference \eqn{\theta = \pi_1 - \pi_2},
-//' the asymptotic limits of the
-//' reml estimates of \eqn{\pi_1} and \eqn{\pi_2} subject to the constraint
-//' imposed by \eqn{H_{10}} are given by
-//' \deqn{(\tilde{\pi}_1, \tilde{\pi}_2) = f(\theta_{10}, r, r\pi_1,
-//' 1-r, (1-r)\pi_2),}
-//' where \eqn{f(\theta_0, n_1, y_1, n_2, y_2)} is the function to obtain
-//' the reml of \eqn{\pi_1} and \eqn{\pi_2} subject to the constraint that
-//' \eqn{\pi_1-\pi_2 = \theta_0} with observed data
-//' \eqn{(n_1, y_1, n_2, y_2)} for the number of subjects and number of
-//' responses in the active treatment and control groups,
-//' \eqn{r} is the randomization probability for the active treatment
-//' group, and \deqn{v_{10} = \frac{\tilde{\pi}_1 (1-\tilde{\pi}_1)}{r} +
-//' \frac{\tilde{\pi}_2 (1-\tilde{\pi}_2)}{1-r}.}
-//'
-//' Let \eqn{I_j = n_j/v_1} denote the information for \eqn{\theta} at the
-//' \eqn{j}th look, where
-//' \deqn{v_{1} = \frac{\pi_1 (1-\pi_1)}{r} + \frac{\pi_2 (1-\pi_2)}{1-r}}
-//' denotes the variance of \eqn{\hat{\theta}} under \eqn{H_1} for one
-//' sampling unit. It follows that
-//' \deqn{(Z_{1j} \geq b_j) = (Z_j \geq w_{10} b_j +
+//' \deqn{I_j = \left\{\frac{\pi_1 (1-\pi_1)}{n_{1j}} +
+//' \frac{\pi_2(1-\pi_2)}{n_2j}\right\}^{-1}.}
+//' It follows that
+//' \deqn{(Z_{1j} \geq b_j) = (Z_j \geq b_j +
 //' (\theta_{10}-\theta)\sqrt{I_j}),}
-//' where \eqn{Z_j = (\hat{\theta}_j - \theta)\sqrt{I_j}}, and
-//' \eqn{w_{10} = \sqrt{v_{10}/v_1}}.
+//' where \eqn{Z_j = (\hat{\theta}_j - \theta)\sqrt{I_j}}.
 //'
 //' Similarly, we reject \eqn{H_{20}} at or before look \eqn{k} if
-//' \deqn{Z_{2j} = (\hat{\theta}_j - \theta_{20})\sqrt{\frac{n_j}{v_{20}}}
-//' \leq -b_j} for some \eqn{j=1,\ldots,k}, where \eqn{v_{20}} is the null
-//' variance of \eqn{\hat{\theta}} based on the reml estimate of model
-//' parameters subject to the constraint imposed by \eqn{H_{20}} for
-//' one sampling unit drawn from \eqn{H_1}. We have
-//' \deqn{(Z_{2j} \leq -b_j) = (Z_j \leq -w_{20} b_j +
-//' (\theta_{20}-\theta)\sqrt{I_j}),}
-//' where \eqn{w_{20} = \sqrt{v_{20}/v_1}}.
+//' \deqn{Z_{2j} = (\hat{\theta}_j - \theta_{20})\sqrt{I_j}
+//' \leq -b_j} for some \eqn{j=1,\ldots,k}. We have
+//' \deqn{(Z_{2j} \leq -b_j) = (Z_j \leq - b_j +
+//' (\theta_{20}-\theta)\sqrt{I_j}).}
 //'
-//' Let \eqn{l_j = w_{10}b_j + (\theta_{10}-\theta)\sqrt{I_j}},
-//' and \eqn{u_j = -w_{20}b_j + (\theta_{20}-\theta)\sqrt{I_j}}.
+//' Let \eqn{l_j = b_j + (\theta_{10}-\theta)\sqrt{I_j}},
+//' and \eqn{u_j = -b_j + (\theta_{20}-\theta)\sqrt{I_j}}.
 //' The cumulative probability to reject \eqn{H_0 = H_{10} \cup H_{20}} at
 //' or before look \eqn{k} under the alternative hypothesis \eqn{H_1} is
 //' given by
@@ -2635,62 +2605,12 @@ List getDesign(const double beta = NA_REAL,
 //' \eqn{p_{12} = 1}. Otherwise, \eqn{p_{12}} can be evaluated using
 //' two-sided exit probabilities for group sequential designs.
 //'
-//' To evaluate the type I error of the equivalence trial under
-//' \eqn{H_{10}}, we first match the information under \eqn{H_{10}}
-//' with the information under \eqn{H_1}. For example, for estimating
-//' the risk difference for two independent samples, the sample size
-//' \eqn{n_{10}} under \eqn{H_{10}} must satisfy
-//' \deqn{\frac{1}{n_{10}}\left(\frac{(\pi_2 + \theta_{10})
-//' (1 - \pi_2 - \theta_{10})}{r} + \frac{\pi_2 (1-\pi_2)}{1-r}\right)
-//' = \frac{1}{n}\left(\frac{\pi_1(1-\pi_1)}{r} +
-//' \frac{\pi_2 (1-\pi_2)}{1-r}\right).}
-//' Then we obtain the reml estimates of \eqn{\pi_1} and \eqn{\pi_2}
-//' subject to the constraint imposed by \eqn{H_{20}} for one sampling
-//' unit drawn from \eqn{H_{10}},
-//' \deqn{(\tilde{\pi}_{10}, \tilde{\pi}_{20}) = f(\theta_{20}, r,
-//' r(\pi_2 + \theta_{10}), 1-r, (1-r)\pi_2).}
-//' Let \eqn{t_j} denote the information fraction at look \eqn{j}.
-//' Define \deqn{\tilde{v}_1 = \frac{(\pi_2 + \theta_{10})
-//' (1-\pi_2 -\theta_{10})}{r} + \frac{\pi_2 (1-\pi_2)}{1-r},} and
-//' \deqn{\tilde{v}_{20} = \frac{\tilde{\pi}_{10}(1-\tilde{\pi}_{10})}{r} +
-//' \frac{\tilde{\pi}_{20} (1-\tilde{\pi}_{20})}{1-r}.}
-//'
-//' The cumulative rejection probability under \eqn{H_{10}} at or before
-//' look \eqn{k} is given by
-//' \deqn{P_{\theta_{10}}\left(\cup_{j=1}^{k} \{(\hat{\theta}_j - \theta_{10})
-//' \sqrt{n_{10} t_j/\tilde{v}_1} \geq b_j\} \cap
-//' \cup_{j=1}^{k} \{(\hat{\theta}_j - \theta_{20})
-//' \sqrt{n_{10} t_j/\tilde{v}_{20}} \leq -b_j\}\right) =
-//' q_1 + q_2 + q_{12},}
-//' where
-//' \deqn{q_1 = P_{\theta_{10}}\left(\cup_{j=1}^{k}
-//' \{(\hat{\theta}_j - \theta_{10})
-//' \sqrt{n_{10} t_j/\tilde{v}_1} \geq b_j\}\right) =
-//' P_{\theta_{10}}\left(\cup_{j=1}^{k} (Z_j \geq b_j)\right),}
-//' \deqn{q_2 = P_{\theta_{10}}\left(\cup_{j=1}^{k}
-//' \{(\hat{\theta}_j - \theta_{20})
-//' \sqrt{n_{10} t_j/\tilde{v}_{20}} \leq -b_j\}\right) =
-//' P_{\theta_{10}}\left(\cup_{j=1}^{k} (Z_j \leq -b_j w_{21} +
-//' (\theta_{20} - \theta_{10})\sqrt{I_j})\right),}
-//' and
-//' \deqn{q_{12} = P_{\theta_{10}}\left(\cup_{j=1}^{k}
-//' \{(Z_j \geq b_j) \cup (Z_j \leq -w_{21} b_j +
-//' (\theta_{20} - \theta_{10})\sqrt{I_j})\}\right).}
-//' Here \eqn{Z_j = (\hat{\theta}_j - \theta_{10}) \sqrt{I_j}}, and
-//' \eqn{w_{21} = \sqrt{\tilde{v}_{20}/\tilde{v}_1}}.
-//' Of note, \eqn{q_1}, \eqn{q_2}, and \eqn{q_{12}}
-//' can be evaluated using group sequential exit probabilities.
-//' Similarly, we can define \eqn{\tilde{v}_2}, \eqn{\tilde{v}_{10}},
-//' and \eqn{w_{12} = \sqrt{\tilde{v}_{10}/\tilde{v}_2}}, and
-//' evaluate the type I error under \eqn{H_{20}}.
-//'
-//' The variance ratios correspond to
-//' \deqn{\text{varianceRatioH10} = v_{10}/v_1,}
-//' \deqn{\text{varianceRatioH20} = v_{20}/v_1,}
-//' \deqn{\text{varianceRatioH12} = \tilde{v}_{10}/\tilde{v}_2,}
-//' \deqn{\text{varianceRatioH21} = \tilde{v}_{20}/\tilde{v}_1.}
-//' If the alternative variance is used, then the variance ratios
-//' are all equal to 1.
+//' Since the equivalent hypothesis is tested using two one-sided tests,
+//' the type I error is controlled. To evaluate the attained type I error
+//' of the equivalence trial under \eqn{H_{10}} (or \eqn{H_{20}}),
+//' we simply fix the control group parameter, update the active
+//' treatment group parameter according to the null hypothesis, and
+//' use the parameters in the power calculation outlined above.
 //'
 //' @return An S3 class \code{designEquiv} object with three components:
 //'
@@ -2767,18 +2687,6 @@ List getDesign(const double beta = NA_REAL,
 //'
 //'     - \code{spendingTime}: The error spending time at each analysis.
 //'
-//'     - \code{varianceRatioH10}: The ratio of the variance under H10 to
-//'       the variance under H1.
-//'
-//'     - \code{varianceRatioH20}: The ratio of the variance under H20 to
-//'       the variance under H1.
-//'
-//'     - \code{varianceRatioH12}: The ratio of the variance under H10 to
-//'       the variance under H20.
-//'
-//'     - \code{varianceRatioH21}: The ratio of the variance under H20 to
-//'       the variance under H10.
-//'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
 //' @examples
@@ -2810,11 +2718,7 @@ List getDesignEquiv(const double beta = NA_REAL,
                     const std::string typeAlphaSpending = "sfOF",
                     const double parameterAlphaSpending = NA_REAL,
                     const NumericVector& userAlphaSpending = NA_REAL,
-                    const NumericVector& spendingTime = NA_REAL,
-                    const double varianceRatioH10 = 1,
-                    const double varianceRatioH20 = 1,
-                    const double varianceRatioH12 = 1,
-                    const double varianceRatioH21 = 1) {
+                    const NumericVector& spendingTime = NA_REAL) {
 
   NumericVector informationRates1 = clone(informationRates);
   NumericVector criticalValues1 = clone(criticalValues);
@@ -2950,22 +2854,6 @@ List getDesignEquiv(const double beta = NA_REAL,
     spendingTime1 = clone(informationRates1);
   }
 
-  if (varianceRatioH10 <= 0) {
-    stop("varianceRatioH10 must be positive");
-  }
-
-  if (varianceRatioH20 <= 0) {
-    stop("varianceRatioH20 must be positive");
-  }
-
-  if (varianceRatioH12 <= 0) {
-    stop("varianceRatioH12 must be positive");
-  }
-
-  if (varianceRatioH21 <= 0) {
-    stop("varianceRatioH21 must be positive");
-  }
-
 
   // obtain criticalValues
   if (is_true(any(is_na(criticalValues)))) {
@@ -3004,9 +2892,6 @@ List getDesignEquiv(const double beta = NA_REAL,
     efficacyP[i] = 1 - R::pnorm(criticalValues1[i], 0, 1, 1, 0);
   }
 
-  double wH10 = sqrt(varianceRatioH10), wH20 = sqrt(varianceRatioH20);
-  double wH12 = sqrt(varianceRatioH12), wH21 = sqrt(varianceRatioH21);
-
   // calculate cumulative rejection probability under H1
   NumericVector t = informationRates1;
   NumericVector b = criticalValues1;
@@ -3015,11 +2900,11 @@ List getDesignEquiv(const double beta = NA_REAL,
 
   // obtain IMax if needed
   if (unknown == "IMax") {
-    auto f = [beta, t, b, wH10, wH20, deltaLower, deltaUpper,
+    auto f = [beta, t, b, deltaLower, deltaUpper,
               li, ui, zero](double aval)->double {
                 NumericVector I = t*aval;
-                NumericVector l = b*wH10 + deltaLower*sqrt(I);
-                NumericVector u = -b*wH20 + deltaUpper*sqrt(I);
+                NumericVector l = b + deltaLower*sqrt(I);
+                NumericVector u = -b + deltaUpper*sqrt(I);
 
                 List probs1 = exitprobcpp(pmax(l, li), li, zero, I);
                 List probs2 = exitprobcpp(ui, pmin(u, ui), zero, I);
@@ -3041,17 +2926,16 @@ List getDesignEquiv(const double beta = NA_REAL,
 
     double z0 = R::qnorm(1-alpha, 0, 1, 1, 0);
     double z1 = R::qnorm(1-beta, 0, 1, 1, 0);
-    double IMax10 = pow((z0*wH10 + z1)/deltaLower, 2);
-    double IMax20 = pow((z0*wH20 + z1)/deltaUpper, 2);
-    double IMaxLower = 0.5*std::min(IMax10, IMax20);
-    double IMaxUpper = 1.5*std::max(IMax10, IMax20);
+    double IMax0 = pow((z0 + z1)/deltaLower, 2);
+    double IMaxLower = 0.5*IMax0;
+    double IMaxUpper = 1.5*IMax0;
     IMax1 = brent(f, IMaxLower, IMaxUpper, 1.0e-6);
   }
 
   // obtain cumulative rejection probabilities under H1
   NumericVector I = t*IMax1;
-  NumericVector l = b*wH10 + deltaLower*sqrt(I);
-  NumericVector u = -b*wH20 + deltaUpper*sqrt(I);
+  NumericVector l = b + deltaLower*sqrt(I);
+  NumericVector u = -b + deltaUpper*sqrt(I);
 
   List probs1 = exitprobcpp(pmax(l, li), li, zero, I);
   List probs2 = exitprobcpp(ui, pmin(u, ui), zero, I);
@@ -3103,31 +2987,31 @@ List getDesignEquiv(const double beta = NA_REAL,
   double overallReject = cp[kMax-1];
   double expectedInformationH1 = sum(q*I);
 
-  NumericVector efficacyThetaLower = b/sqrt(I)*wH10 + thetaLower;
-  NumericVector efficacyThetaUpper = -b/sqrt(I)*wH20 + thetaUpper;
+  NumericVector efficacyThetaLower = b/sqrt(I) + thetaLower;
+  NumericVector efficacyThetaUpper = -b/sqrt(I) + thetaUpper;
 
+
+  NumericVector theta10 = rep(deltaLower, kMax);
+  NumericVector theta20 = rep(deltaUpper, kMax);
 
   // cumulative rejection probability under H10
-  NumericVector lH10 = b;
-  NumericVector uH10 = -b*wH21 + (thetaUpper - thetaLower)*sqrt(I);
-  List probs2H10 = exitprobcpp(ui, pmin(uH10, ui), zero, I);
-  NumericVector cpuH10 = cumsum(NumericVector(probs2H10[1]));
+  List probs2H10 = exitprobcpp(ui, pmin(u, ui), theta10, I);
   NumericVector cplH10 = cumAlphaSpent;
+  NumericVector cpuH10 = cumsum(NumericVector(probs2H10[1]));
 
-  IntegerVector kH10 = which(lH10 >= uH10);
   NumericVector cpH10(kMax);
-  if (kH10.size() == 0) {
+  if (k.size() == 0) {
     cpH10 = cplH10 + cpuH10 - 1;
   } else {
-    int K = max(kH10);
+    int K = max(k);
     IntegerVector idx = Range(0, K);
-    List aH10 = exitprobcpp(lH10[idx], uH10[idx], zero[idx], I[idx]);
-    NumericVector caH10 = cumsum(NumericVector(aH10[0]) +
-      NumericVector(aH10[1]));
+    List a = exitprobcpp(l[idx], u[idx], theta10[idx], I[idx]);
+    NumericVector ca = cumsum(NumericVector(a[0]) +
+      NumericVector(a[1]));
 
     for (int i=0; i<kMax; i++) {
       if (i <= K) {
-        cpH10[i] = cplH10[i] + cpuH10[i] - caH10[i];
+        cpH10[i] = cplH10[i] + cpuH10[i] - ca[i];
       } else {
         cpH10[i] = cplH10[i] + cpuH10[i] - 1;
       }
@@ -3151,26 +3035,23 @@ List getDesignEquiv(const double beta = NA_REAL,
 
 
   // cumulative rejection probability under H20
-  NumericVector lH20 = b*wH12 + (thetaLower - thetaUpper)*sqrt(I);
-  NumericVector uH20 = -b;
-  List probs1H20 = exitprobcpp(pmax(lH20, li), li, zero, I);
+  List probs1H20 = exitprobcpp(pmax(l, li), li, theta20, I);
   NumericVector cplH20 = cumsum(NumericVector(probs1H20[0]));
   NumericVector cpuH20 = cumAlphaSpent;
 
-  IntegerVector kH20 = which(lH20 >= uH20);
   NumericVector cpH20(kMax);
-  if (kH20.size() == 0) {
+  if (k.size() == 0) {
     cpH20 = cplH20 + cpuH20 - 1;
   } else {
-    int K = max(kH20);
+    int K = max(k);
     IntegerVector idx = Range(0, K);
-    List aH20 = exitprobcpp(lH20[idx], uH20[idx], zero[idx], I[idx]);
-    NumericVector caH20 = cumsum(NumericVector(aH20[0]) +
-      NumericVector(aH20[1]));
+    List a = exitprobcpp(l[idx], u[idx], theta20[idx], I[idx]);
+    NumericVector ca = cumsum(NumericVector(a[0]) +
+      NumericVector(a[1]));
 
     for (int i=0; i<kMax; i++) {
       if (i <= K) {
-        cpH20[i] = cplH20[i] + cpuH20[i] - caH20[i];
+        cpH20[i] = cplH20[i] + cpuH20[i] - ca[i];
       } else {
         cpH20[i] = cplH20[i] + cpuH20[i] - 1;
       }
@@ -3224,11 +3105,7 @@ List getDesignEquiv(const double beta = NA_REAL,
     _["typeAlphaSpending"] = typeAlphaSpending,
     _["parameterAlphaSpending"] = parameterAlphaSpending,
     _["userAlphaSpending"] = userAlphaSpending,
-    _["spendingTime"] = spendingTime,
-    _["varianceRatioH10"] = varianceRatioH10,
-    _["varianceRatioH20"] = varianceRatioH20,
-    _["varianceRatioH12"] = varianceRatioH12,
-    _["varianceRatioH21"] = varianceRatioH21);
+    _["spendingTime"] = spendingTime);
 
   List result = List::create(
     _["byStageResults"] = byStageResults,
@@ -4299,15 +4176,15 @@ bool is_sorted(NumericVector x) {
 }
 
 
-// Householder vector: Given an n-vector x, this function computes
-// an n-vector v with v(1)=1 such that (I - 2v*v^T / v^T*v) x is zero
-// in all but the first component.
+// Householder vector
+// Given an n-vector x, this function computes an n-vector v with v(1) = 1
+// such that (I - 2*v*t(v)/t(v)*v)*x is zero in all but the first component.
 // [[Rcpp::export]]
-NumericVector house(NumericVector x) {
+NumericVector house(const NumericVector& x) {
   int n = static_cast<int>(x.size());
   double mu = sqrt(sum(x*x));
   NumericVector v = clone(x);
-  if (mu > 0) {
+  if (mu > 0.0) {
     double beta = x[0] + std::copysign(1.0, x[0])*mu;
     for (int i=1; i<n; i++) {
       v[i] /= beta;
@@ -4318,25 +4195,65 @@ NumericVector house(NumericVector x) {
 }
 
 
-// Householder pre-multiplication: Given an m-by-n matrix A and a
-// nonzero m-vector v with v(1) = 1, the following algorithm overwrites
-// A with PA where P = I - 2v*v^T/v^T*v.
+// Householder pre-multiplication
+// Given an m-by-n matrix A and a nonzero m-vector v with v(1) = 1,
+// the following algorithm overwrites A with P*A where
+// P = I - 2*v*t(v)/t(v)*v.
 // [[Rcpp::export]]
-void row_house(NumericMatrix A, NumericVector v) {
-  int m = A.nrow(), n = A.ncol();
-  int i, j;
+void row_house(NumericMatrix& A, const int i1, const int i2,
+               const int j1, const int j2, const NumericVector& v) {
+  if (i1 < 0 || i1 > i2 || i2 >= A.nrow()) {
+    stop("Invalid row indices i1 and i2");
+  }
+  if (j1 < 0 || j1 > j2 || j2 >= A.ncol()) {
+    stop("Invalid column indices j1 and j2");
+  }
+
+  int i, j, m = i2-i1+1, n = j2-j1+1;
   double beta = -2.0/sum(v*v);
   NumericVector w(n);
   for (j=0; j<n; j++) {
     for (i=0; i<m; i++) {
-      w[j] += A(i,j)*v[i];
+      w[j] += A(i+i1,j+j1)*v[i];
     }
     w[j] *= beta;
   }
 
   for (i=0; i<m; i++) {
     for (j=0; j<n; j++) {
-      A(i,j) += v[i]*w[j];
+      A(i+i1,j+j1) += v[i]*w[j];
+    }
+  }
+}
+
+
+// Householder post-multiplication
+// Given an m-by-n matrix A and a nonzero n-vector v with v(1) = 1,
+// the following algorithm overwrites A with A*P where
+// P = I - 2*v*t(v)/t(v)*v.
+// [[Rcpp::export]]
+void col_house(NumericMatrix& A, const int i1, const int i2,
+               const int j1, const int j2, const NumericVector& v) {
+  if (i1 < 0 || i1 > i2 || i2 >= A.nrow()) {
+    stop("Invalid row indices i1 and i2");
+  }
+  if (j1 < 0 || j1 > j2 || j2 >= A.ncol()) {
+    stop("Invalid column indices j1 and j2");
+  }
+
+  int i, j, m = i2-i1+1, n = j2-j1+1;
+  double beta = -2.0/sum(v*v);
+  NumericVector w(m);
+  for (i=0; i<m; i++) {
+    for (j=0; j<n; j++) {
+      w[i] += A(i+i1,j+j1)*v[j];
+    }
+    w[i] *= beta;
+  }
+
+  for (i=0; i<m; i++) {
+    for (j=0; j<n; j++) {
+      A(i+i1,j+j1) += w[i]*v[j];
     }
   }
 }
@@ -4345,9 +4262,9 @@ void row_house(NumericMatrix A, NumericVector v) {
 //' @title QR Decomposition of a Matrix
 //' @description Computes the QR decomposition of a matrix.
 //'
-//' @param x A numeric matrix whose QR decomposition is to be computed.
+//' @param X A numeric matrix whose QR decomposition is to be computed.
 //' @param tol The tolerance for detecting linear dependencies in the
-//'   columns of \code{x}.
+//'   columns of \code{X}.
 //'
 //' @details
 //' This function performs Householder QR with column pivoting:
@@ -4397,10 +4314,9 @@ void row_house(NumericMatrix A, NumericVector v) {
 //'
 //' @export
 // [[Rcpp::export]]
-List qrcpp(NumericMatrix x, double tol = 1e-12) {
-  int m = x.nrow(), n = x.ncol();
-  int i, j, k, l;
-  NumericMatrix A = clone(x);
+List qrcpp(const NumericMatrix& X, double tol = 1e-12) {
+  int i, j, k, l, m = X.nrow(), n = X.ncol();
+  NumericMatrix A = clone(X);
   NumericVector c(n);
   for (j=0; j<n; j++) {
     c[j] = sum(A(_,j)*A(_,j));
@@ -4435,22 +4351,16 @@ List qrcpp(NumericMatrix x, double tol = 1e-12) {
     // find the Householder vector
     NumericVector v(m-r);
     for (i=0; i<m-r; i++) {
-      v[i] = A(r+i,r);
+      v[i] = A(i+r,r);
     }
     v = house(v);
 
     // pre-multiply by the Householder matrix
-    NumericMatrix B = A(Range(r,m-1), Range(r,n-1));
-    row_house(B,v);
-    for (i=0; i<m-r; i++) {
-      for (j=0; j<n-r; j++) {
-        A(r+i,r+j) = B(i,j);
-      }
-    }
+    row_house(A, r, m-1, r, n-1, v);
 
     // update the sub-diagonal elements of column r
     for (i=1; i<m-r; i++) {
-      A(r+i,r) = v[i];
+      A(i+r,r) = v[i];
     }
 
     // go to the next column and update the squared norm
@@ -4465,7 +4375,7 @@ List qrcpp(NumericMatrix x, double tol = 1e-12) {
         if (c[k] > tol) break;
       }
     } else {
-      tau = 0;
+      tau = 0.0;
     }
   }
 
@@ -4475,16 +4385,10 @@ List qrcpp(NumericMatrix x, double tol = 1e-12) {
     NumericVector v(m-k);
     v[0] = 1.0;
     for (i=1; i<m-k; i++) {
-      v[i] = A(k+i,k);
+      v[i] = A(i+k,k);
     }
 
-    NumericMatrix B = Q(Range(k,m-1), Range(k,m-1));
-    row_house(B,v);
-    for (i=0; i<m-k; i++) {
-      for (j=0; j<m-k; j++) {
-        Q(k+i,k+j) = B(i,j);
-      }
-    }
+    row_house(Q, k, m-1, k, m-1, v);
   }
 
   // recover the R matrix
@@ -4504,6 +4408,500 @@ List qrcpp(NumericMatrix x, double tol = 1e-12) {
   );
 
   return result;
+}
+
+
+// Given scalars a and b, this function computes
+// c = cos(theta) and s = sin(theta) so that
+//               |  c   s  |^T | a |  =  | r |
+//               | -s   c  |   | b |     | 0 |
+// [[Rcpp::export]]
+NumericVector givens(const double a, const double b) {
+  double c, s, tau;
+
+  if (b == 0.0) {
+    c = 1.0; s = 0.0;
+  } else {
+    if (fabs(b) > fabs(a)) {
+      double d = -std::copysign(1.0, b);
+      tau = -a/b; s = d*1.0/sqrt(1.0 + tau*tau); c = s*tau;
+    } else {
+      double d = std::copysign(1.0, a);
+      tau = -b/a; c = d*1.0/sqrt(1.0 + tau*tau); s = c*tau;
+    }
+  }
+
+  return NumericVector::create(c,s);
+}
+
+
+// Given A in R^(2xq), c = cos(theta), and s = sin(theta),
+// the following algorithm overwrites A with the matrix
+//               |  c   s  |^T  A
+//               | -s   c  |
+// [[Rcpp::export]]
+void row_rot(NumericMatrix& A, const int i1, const int i2,
+             const int j1, const int j2,
+             const double c, const double s) {
+  if (i1 < 0 || i1 >= i2 || i2 >= A.nrow()) {
+    stop("Invalid row indices i1 and i2");
+  }
+  if (j1 < 0 || j1 > j2 || j2 >= A.ncol()) {
+    stop("Invalid column indices j1 and j2");
+  }
+
+  int q = j2-j1+1;
+  for (int j=0; j<q; j++) {
+    double tau1 = A(i1,j+j1);
+    double tau2 = A(i2,j+j1);
+    A(i1,j+j1) = c*tau1 - s*tau2;
+    A(i2,j+j1) = s*tau1 + c*tau2;
+  }
+}
+
+
+// Given A in R^(qx2), c = cos(theta), and s = sin(theta),
+// the following algorithm overwrites A with the matrix
+//               A  |  c   s  |
+//                  | -s   c  |
+// [[Rcpp::export]]
+void col_rot(NumericMatrix& A, const int i1, const int i2,
+             const int j1, const int j2,
+             const double c, const double s) {
+  if (i1 < 0 || i1 > i2 || i2 >= A.nrow()) {
+    stop("Invalid row indices i1 and i2");
+  }
+  if (j1 < 0 || j1 >= j2 || j2 >= A.ncol()) {
+    stop("Invalid column indices j1 and j2");
+  }
+
+  int q = i2-i1+1;
+  for (int i=0; i<q; i++) {
+    double tau1 = A(i+i1,j1);
+    double tau2 = A(i+i1,j2);
+    A(i+i1,j1) = c*tau1 - s*tau2;
+    A(i+i1,j2) = s*tau1 + c*tau2;
+  }
+}
+
+
+// Householder Bidiagonalization
+// Given A in R^(mxn) with m>=n, the following algorithm overwrites
+// the upper bidiagonal part of A with the upper bidiagonal part of
+// t(U)*A*V = B, where B is upper bidiagonal and U = U_1 ... U_n and
+// V = V_1 ... V_{n-2}. The essential part of U_j's Householder vector
+// is stored in A((j+1):m, j), while the essential part of V_j's
+// Householder vector is stored in A(j, (j+2):n).
+// [[Rcpp::export]]
+List house_bidiag(NumericMatrix& A, const bool outtransform = 1) {
+  int i, j, m = A.nrow(), n = A.ncol();
+  if (m < n) {
+    stop("The input matrix must have number of rows >= number of columns");
+  }
+  double tol = 1e-12;
+  NumericMatrix B(n,n);
+  NumericMatrix U = NumericMatrix::diag(m, 1.0);
+  NumericMatrix V = NumericMatrix::diag(n, 1.0);
+
+  bool bidiag = 1;
+  for (i=0; i<n-2; i++) {
+    for (j=i+2; j<n; j++) {
+      if (fabs(A(i,j)) > tol) {
+        bidiag = 0;
+        break;
+      }
+    }
+  }
+  for (i=1; i<n; i++) {
+    for (j=0; j<i; j++) {
+      if (fabs(A(i,j)) > tol) {
+        bidiag = 0;
+        break;
+      }
+    }
+  }
+  for (i=n; i<m-1; i++) {
+    for (j=0; j<n; j++) {
+      if (fabs(A(i,j)) > tol) {
+        bidiag = 0;
+        break;
+      }
+    }
+  }
+
+  if (bidiag) {
+    B = clone(A);
+  } else {
+    for (j=0; j<n; j++) {
+      NumericVector v(m-j);
+      for (i=0; i<m-j; i++) {
+        v[i] = A(i+j,j);
+      }
+      v = house(v);
+
+      row_house(A, j, m-1, j, n-1, v);
+
+      // update the sub-diagonal elements of column j
+      for (i=1; i<m-j; i++) {
+        A(i+j,j) = v[i];
+      }
+
+      if (j < n-2) {
+        NumericVector v(n-j-1);
+        for (i=0; i<n-j-1; i++) {
+          v[i] = A(j,i+j+1);
+        }
+        v = house(v);
+
+        col_house(A, j, m-1, j+1, n-1, v);
+
+        // update the elements of row j
+        for (i=1; i<n-j-1; i++) {
+          A(j,i+j+1) = v[i];
+        }
+      }
+    }
+
+    if (outtransform) {
+      for (j=n-1; j>=0; j--) {
+        NumericVector v(m-j);
+        v[0] = 1.0;
+        for (i=1; i<m-j; i++) {
+          v[i] = A(i+j,j);
+        }
+
+        row_house(U, j, m-1, j, m-1, v);
+      }
+
+      for (j=n-3; j>=0; j--) {
+        NumericVector v(n-j-1);
+        v[0] = 1.0;
+        for (i=1; i<n-j-1; i++) {
+          v[i] = A(j,i+j+1);
+        }
+
+        row_house(V, j+1, n-1, j+1, n-1, v);
+      }
+    }
+
+    for (j=0; j<n; j++) {
+      B(j,j) = A(j,j);
+      if (j<n-1) {
+        B(j,j+1) = A(j,j+1);
+      }
+    }
+  }
+
+  if (outtransform) {
+    return List::create(
+      Named("B") = B,
+      Named("U") = U,
+      Named("V") = V
+    );
+  } else {
+    return List::create(
+      Named("B") = B
+    );
+  }
+}
+
+
+// Given a bidiagonal matrix with a zero diagonal, premultiplication
+// by a sequence of Givens transformations to zero the entire row
+// [[Rcpp::export]]
+List zero_diagonal(NumericMatrix& B, const int k,
+                   const bool outtransform = 1) {
+  int j, n = B.nrow();
+  if (B.ncol() != n) {
+    stop("The input matrix must be a square matrix");
+  }
+  if (k < 0 || k >= n-1) {
+    stop("Invalid value for index k");
+  }
+  NumericMatrix U = NumericMatrix::diag(n, 1.0);
+
+  for (j=k+1; j<n; j++) {
+    NumericVector v = givens(B(k,j), B(j,j));
+    double w = v[0];
+    v[0] = -v[1]; v[1] = w;
+    int j1 = j < n-1 ? j+1 : n-1;
+    row_rot(B, k, j, j, j1, v[0], v[1]);
+    if (outtransform) col_rot(U, k, j, k, j, v[0], v[1]);
+  }
+
+  if (outtransform) {
+    return List::create(
+      Named("B") = B,
+      Named("U") = U
+    );
+  } else {
+    return List::create(
+      Named("B") = B
+    );
+  }
+}
+
+
+// Golub-Kahan SVD Step
+// Given a bidiagonal matrix B having no zeros on its diagonal or
+// superdiagonal, the following algorithm overwrites B with the
+// bidiagonal matrix t(U)*B*V, where U and V are orthogonal and V
+// is essentially the orthogonal matrix that would be obtained by
+// applying Algorithm 8.2.2 in Golub and Van Loan (1989) to T = t(B)*B.
+// [[Rcpp:export]]
+List svd_step(NumericMatrix& B, const bool outtransform = 1) {
+  int k, n = B.ncol();
+  NumericMatrix U = NumericMatrix::diag(n, 1.0);
+  NumericMatrix V = NumericMatrix::diag(n, 1.0);
+
+  double f1 = B(n-3,n-2), f2 = B(n-2,n-1);
+  double d1 = B(n-2,n-2), d2 = B(n-1,n-1);
+  double a1 = f1*f1 + d1*d1, a2 = f2*f2 + d2*d2, b1 = f2*d1;
+  double d = 0.5*(a1-a2);
+  double mu = a2 + d - std::copysign(1.0, d)*sqrt(d*d + b1*b1);
+  double y = B(0,0)*B(0,0) - mu;
+  double z = B(0,0)*B(0,1);
+  NumericVector v(2);
+  for (k=0; k<n-1; k++) {
+    v = givens(y,z);
+    int k1 = k > 0 ? k-1 : 0;
+    col_rot(B, k1, k+1, k, k+1, v[0], v[1]);
+    if (outtransform) col_rot(V, 0, k+1, k, k+1, v[0], v[1]);
+
+    y = B(k,k);
+    z = B(k+1,k);
+    v = givens(y,z);
+    int k2 = k < n-2 ? k+2 : n-1;
+    row_rot(B, k, k+1, k, k2, v[0], v[1]);
+    if (outtransform) col_rot(U, 0, k+1, k, k+1, v[0], v[1]);
+
+    if (k < n-2) {
+      y = B(k,k+1);
+      z = B(k,k+2);
+    }
+  }
+
+  if (outtransform) {
+    return List::create(
+      Named("B") = B,
+      Named("U") = U,
+      Named("V") = V
+    );
+  } else {
+    return List::create(
+      Named("B") = B
+    );
+  }
+}
+
+
+//' @title Singular Value Decomposition of a Matrix
+//' @description Computes the singular-value decomposition of a
+//' rectangular matrix.
+//'
+//' @param X A numeric matrix whose SVD decomposition is to be computed.
+//' @param outtransform Whether the orthogonal matrices composing of the
+//'   left and right singular vectors are to be computed.
+//' @param decreasing Whether the singular values should be sorted in
+//'   decreasing order and the corresponding singular vectors rearranged
+//'   accordingly.
+//'
+//' @details
+//' Given \eqn{A \in R^{m\times n} (m \geq n)}, the following algorithm
+//' overwrites \eqn{A} with \eqn{U^T A V = D}, where
+//' \eqn{U\in R^{m\times m}} is orthogonal, \eqn{V \in R^{n\times n}} is
+//' orthogonal, and \eqn{D \in R^{m\times n}} is diagonal.
+//'
+//' @return A list with the following components:
+//'
+//' * \code{d}: A vector containing the singular values of \eqn{X}.
+//'
+//' * \code{U}: A matrix whose columns contain the left singular vectors
+//'   of \eqn{X}.
+//'
+//' * \code{V}: A matrix whose columns contain the right singular vectors
+//'   of \eqn{X}.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @references
+//' Gene N. Golub and Charles F. Van Loan.
+//' Matrix Computations, second edition. Baltimore, Maryland:
+//' The John Hopkins University Press, 1989, p.434.
+//'
+//' @examples
+//'
+//' A <- matrix(c(1,0,0,0, 1,2,0,0, 0,1,3,0, 0,0,1,4), 4, 4)
+//' svdcpp(A)
+//'
+//' @export
+// [[Rcpp::export]]
+List svdcpp(const NumericMatrix& X, const bool outtransform = 1,
+            const bool decreasing = 1) {
+  int i, j, k, l, m1 = X.nrow(), n1 = X.ncol(), m, n;
+  if (m1 >= n1) {
+    m = m1; n = n1;
+  } else {
+    m = n1; n = m1;
+  }
+  NumericMatrix Y(m,n);
+  NumericMatrix U = NumericMatrix::diag(m, 1.0);
+  NumericMatrix V = NumericMatrix::diag(n, 1.0);
+  if (m1 >= n1) {
+    Y = clone(X);
+  } else {
+    Y = clone(transpose(X));
+  }
+  double tol = 1e-12;
+
+  List a = house_bidiag(Y, outtransform);
+  NumericMatrix B = a["B"];
+  if (outtransform) {
+    U = as<NumericMatrix>(a["U"]);
+    V = as<NumericMatrix>(a["V"]);
+  }
+
+  int p, q = 0;
+  while (q < n) {
+    for (i=1; i<n; i++) {
+      if (fabs(B(i-1,i)) <= tol*(fabs(B(i-1,i-1)) + fabs(B(i,i)))) {
+        B(i-1,i) = 0.0;
+      }
+    }
+
+    // find the largest non-negative q and the smallest non-negative p
+    // such that
+    //               |  B11   0    0   |   p
+    //           B = |   0   B22   0   |   n-p-q
+    //               |   0    0   B33  |   q
+    //                   p  n-p-q  q
+    // where B33 is diagonal and B22 has nonzero superdiagonal
+    q = n;
+    for (i=n-1; i>=1; i--) {
+      if (B(i-1,i) != 0.0) {
+        q = n-i-1;
+        break;
+      }
+    }
+
+    p = 0;
+    for (i=n-q-2; i>=1; i--) {
+      if (B(i-1,i) == 0.0) {
+        p = i;
+        break;
+      }
+    }
+
+    if (q < n) {
+      // if any diagonal entry in B22 is zero, then zero the superdiagonal
+      // entry in the same row
+      NumericMatrix B22 = B(Range(p,n-q-1), Range(p,n-q-1));
+      for (i=0; i<n-p-q-1; i++) {
+        if (fabs(B22(i,i)) < tol) {
+          List b = zero_diagonal(B22, i, outtransform);
+          if (outtransform) {
+            NumericMatrix Z = b["U"];
+            NumericMatrix W = U(Range(0,m-1), Range(p,n-q-1));
+            for (j=0; j<m; j++) {
+              for (k=0; k<n-p-q; k++) {
+                U(j,k+p) = 0.0;
+                for (l=0; l<n-p-q; l++) {
+                  U(j,k+p) += W(j,l)*Z(l,k);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // apply Algorithm 8.3.1 to B22
+      List c = svd_step(B22, outtransform);
+
+      // update B22
+      for (i=0; i<n-p-q; i++) {
+        for (j=0; j<n-p-q; j++) {
+          B(i+p,j+p) = B22(i,j);
+        }
+      }
+
+      if (outtransform) {
+        NumericMatrix Z1 = c["U"];
+        NumericMatrix W1 = U(Range(0,m-1), Range(p,n-q-1));
+        for (i=0; i<m; i++) {
+          for (j=0; j<n-p-q; j++) {
+            U(i,j+p) = 0.0;
+            for (k=0; k<n-p-q; k++) {
+              U(i,j+p) += W1(i,k)*Z1(k,j);
+            }
+          }
+        }
+
+        NumericMatrix Z2 = c["V"];
+        NumericMatrix W2 = V(Range(0,n-1), Range(p,n-q-1));
+        for (i=0; i<n; i++) {
+          for (j=0; j<n-p-q; j++) {
+            V(i,j+p) = 0.0;
+            for (k=0; k<n-p-q; k++) {
+              V(i,j+p) += W2(i,k)*Z2(k,j);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  NumericVector d(n);
+  for (i=0; i<n; i++) {
+    d[i] = B(i,i);
+  }
+
+  // ensure the singular values are positive
+  for (i=0; i<n; i++) {
+    if (d[i] < 0.0) {
+      d[i] = -d[i];
+      V(_,i) = -V(_,i);
+    }
+  }
+
+  if (decreasing) {
+    // order the singular values from the largest to the smallest
+    // and the arrange the associated vectors accordingly
+    IntegerVector order = seq(0, n-1);
+    std::sort(order.begin(), order.end(), [&](int i, int j) {
+      return d[i] > d[j];
+    });
+    d = d[order];
+    if (outtransform) {
+      NumericMatrix Z = clone(U);
+      NumericMatrix W = clone(V);
+      for (i=0; i<n; i++) {
+        U(_,i) = Z(_,order[i]);
+        V(_,i) = W(_,order[i]);
+      }
+    }
+  }
+
+  // switch U and V if m1 < n1
+  NumericMatrix U1(m1,m1), V1(n1,n1);
+  if (m1 >= n1) {
+    U1 = U;
+    V1 = V;
+  } else {
+    U1 = V;
+    V1 = U;
+  }
+
+  if (outtransform) {
+    return List::create(
+      Named("d") = d,
+      Named("U") = U1,
+      Named("V") = V1
+    );
+  } else {
+    return List::create(
+      Named("d") = d
+    );
+  }
 }
 
 
@@ -4539,4 +4937,55 @@ NumericMatrix rmvnorm(int n, NumericVector mean, NumericMatrix sigma) {
   }
 
   return result;
+}
+
+
+// algorithm from http://stackoverflow.com/a/5128558/221955
+// [[Rcpp::export]]
+NumericVector float_to_fraction(const double x, const double tol=0.000001) {
+  NumericVector v(2);
+  double x1 = x;
+  double n = std::floor(x1);
+  x1 = x1 - n;
+  if (x1 < tol) {
+    v[0] = n;
+    v[1] = 1;
+  } else if (1 - tol < x1) {
+    v[0] = n+1;
+    v[1] = 1;
+  } else {
+    // The lower fraction is 0/1
+    double lower_n = 0;
+    double lower_d = 1;
+
+    // The upper fraction is 1/1
+    double upper_n = 1;
+    double upper_d = 1;
+
+    bool cond = 1;
+    while (cond) {
+      // The middle fraction is (lower_n + upper_n) / (lower_d + upper_d)
+      double middle_n = lower_n + upper_n;
+      double middle_d = lower_d + upper_d;
+
+      // If x + tol < middle
+      if (middle_d * (x1 + tol) < middle_n) {
+        // middle is our new upper
+        upper_n = middle_n;
+        upper_d = middle_d;
+      } else if (middle_n < (x1 - tol) * middle_d) {
+        // Else If middle < x - tol
+        // middle is our new lower
+        lower_n = middle_n;
+        lower_d = middle_d;
+      } else {
+        // Else middle is our best fraction
+        v[0] = n * middle_d + middle_n;
+        v[1] = middle_d;
+        cond = 0;
+      }
+    }
+  }
+
+  return v;
 }

@@ -150,8 +150,8 @@ DataFrame kmest(const DataFrame data,
   IntegerVector eventnz = data[event];
   IntegerVector eventn = clone(eventnz);
 
-  if (is_true(any(timen <= 0))) {
-    stop("time must be positive for each subject");
+  if (is_true(any(timen < 0))) {
+    stop("time must be nonnegative for each subject");
   }
 
   if (is_true(any((eventn != 1) & (eventn != 0)))) {
@@ -567,8 +567,8 @@ DataFrame lrtest(const DataFrame data,
   IntegerVector eventnz = data[event];
   IntegerVector eventn = clone(eventnz);
 
-  if (is_true(any(timen <= 0))) {
-    stop("time must be positive for each subject");
+  if (is_true(any(timen < 0))) {
+    stop("time must be nonnegative for each subject");
   }
 
   if (is_true(any((eventn != 1) & (eventn != 0)))) {
@@ -1018,8 +1018,8 @@ DataFrame rmest(const DataFrame data,
   IntegerVector eventnz = data[event];
   IntegerVector eventn = clone(eventnz);
 
-  if (is_true(any(timen <= 0))) {
-    stop("time must be positive for each subject");
+  if (is_true(any(timen < 0))) {
+    stop("time must be nonnegative for each subject");
   }
 
   if (is_true(any((eventn != 1) & (eventn != 0)))) {
@@ -1617,8 +1617,8 @@ DataFrame rmdiff(const DataFrame data,
   IntegerVector eventnz = data[event];
   IntegerVector eventn = clone(eventnz);
 
-  if (is_true(any(timen <= 0))) {
-    stop("time must be positive for each subject");
+  if (is_true(any(timen < 0))) {
+    stop("time must be nonnegative for each subject");
   }
 
   if (is_true(any((eventn != 1) & (eventn != 0)))) {

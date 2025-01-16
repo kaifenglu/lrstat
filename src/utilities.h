@@ -199,11 +199,7 @@ List getDesignEquiv(const double beta,
                     const std::string typeAlphaSpending,
                     const double parameterAlphaSpending,
                     const NumericVector& userAlphaSpending,
-                    const NumericVector& spendingTime,
-                    const double varianceRatioH10,
-                    const double varianceRatioH20,
-                    const double varianceRatioH12,
-                    const double varianceRatioH21);
+                    const NumericVector& spendingTime);
 
 List adaptDesign(double betaNew,
                  double INew,
@@ -261,10 +257,29 @@ DataFrame survsplit(NumericVector tstart,
 
 bool is_sorted(NumericVector x);
 
-NumericVector house(NumericVector x);
-void row_house(NumericMatrix A, NumericVector v);
-List qrcpp(NumericMatrix x, double tol);
+NumericVector house(const NumericVector& x);
+void row_house(NumericMatrix& A, const int i1, const int i2,
+               const int j1, const int j2, const NumericVector& v);
+void col_house(NumericMatrix& A, const int i1, const int i2,
+               const int j1, const int j2, const NumericVector& v);
+List qrcpp(const NumericMatrix& X, double tol);
+
+NumericVector givens(const double a, const double b);
+void row_rot(NumericMatrix& A, const int i1, const int i2,
+             const int j1, const int j2,
+             const double c, const double s);
+void col_rot(NumericMatrix& A, const int i1, const int i2,
+             const int j1, const int j2,
+             const double c, const double s);
+List house_bidiag(NumericMatrix& A, const bool outtransform);
+List zero_diagonal(NumericMatrix& B, const int k,
+                   const bool outtransform);
+List svd_step(NumericMatrix& B, const bool outtransform);
+List svdcpp(const NumericMatrix& X, const bool outtransform,
+            const bool decreasing);
 
 NumericMatrix rmvnorm(int n, NumericVector mean, NumericMatrix sigma);
+
+NumericVector float_to_fraction(const double x, const double tol);
 
 #endif // __UTILITIES__

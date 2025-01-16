@@ -1269,11 +1269,7 @@ print.nbpowerequiv <- function(x, ...) {
   str5 <- paste0("Overall power: ",
                  round(a$overallReject, 3), ", ",
                  "overall alpha: ",
-                 round(a$alpha, 4), ", ",
-                 "attained under H10: ",
-                 round(a$attainedAlphaH10, 4), ", ",
-                 "under H20: ",
-                 round(a$attainedAlphaH20, 4))
+                 round(a$alpha, 4))
 
   if (k>1) {
     str6 <- paste0("Maximum # events: ",
@@ -1281,27 +1277,22 @@ print.nbpowerequiv <- function(x, ...) {
                    "expected # events: ",
                    round(a$expectedNumberOfEvents, 1))
 
-    str7 <- paste0("Maximum # dropouts: ",
-                   round(a$numberOfDropouts, 1), ", ",
-                   "expected # dropouts: ",
-                   round(a$expectedNumberOfDropouts, 1))
-
-    str8 <- paste0("Maximum # subjects: ",
+    str7 <- paste0("Maximum # subjects: ",
                    round(a$numberOfSubjects, 1), ", ",
                    "expected # subjects: ",
                    round(a$expectedNumberOfSubjects, 1))
 
-    str9 <- paste0("Maximum exposure: ",
+    str8 <- paste0("Maximum exposure: ",
                    round(a$exposure, 1), ", ",
                    "expected exposure: ",
                    round(a$expectedExposure, 1))
 
-    str10 <- paste0("Maximum information: ",
+    str9 <- paste0("Maximum information: ",
                     round(a$information, 2), ", ",
                     "expected information: ",
                     round(a$expectedInformation, 2))
 
-    str11 <- paste0("Total study duration: ",
+    str10 <- paste0("Total study duration: ",
                     round(a$studyDuration, 1), ", ",
                     "expected study duration: ",
                     round(a$expectedStudyDuration, 1))
@@ -1309,32 +1300,27 @@ print.nbpowerequiv <- function(x, ...) {
     str6 <- paste0("Number of events: ",
                    round(a$numberOfEvents, 1))
 
-    str7 <- paste0("Number of dropouts: ",
-                   round(a$numberOfDropouts, 1))
-
-    str8 <- paste0("Number of subjects: ",
+    str7 <- paste0("Number of subjects: ",
                    round(a$numberOfSubjects, 1))
 
-    str9 <- paste0("Exposure: ",
+    str8 <- paste0("Exposure: ",
                    round(a$exposure, 1))
 
-    str10 <- paste0("Information: ",
+    str9 <- paste0("Information: ",
                     round(a$information, 2))
 
-    str11 <- paste0("Study duration: ",
+    str10 <- paste0("Study duration: ",
                     round(a$studyDuration, 1))
   }
 
-  str12 <- paste0("Accrual duration: ",
-                  round(x$settings$accrualDuration, 1), ", ",
+  str11 <- paste0("Accrual duration: ",
+                  round(a$accrualDuration, 1), ", ",
                   "follow-up duration: ",
-                  round(x$settings$followupTime, 1), ", ",
-                  "fixed follow-up: ", x$settings$fixedFollowup)
+                  round(a$followupTime, 1), ", ",
+                  "fixed follow-up: ", a$fixedFollowup)
 
-  str13 <- paste0("Allocation ratio: ",
-                  round(x$settings$allocationRatioPlanned, 3), ", ",
-                  "variance of standardized test statistic: ",
-                  ifelse(x$settings$nullVariance, "under H0", "under H1"))
+  str12 <- paste0("Allocation ratio: ",
+                  round(x$settings$allocationRatioPlanned, 3))
 
   if (k > 1) {
     asf = tolower(x$settings$typeAlphaSpending)
@@ -1342,44 +1328,30 @@ print.nbpowerequiv <- function(x, ...) {
     asfuser = round(x$settings$userAlphaSpending, 4)
 
     if (asf == "of") {
-      str14 = paste0("Alpha spending: O'Brien-Fleming")
+      str13 = paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str14 = paste0("Alpha spending: Pocock")
+      str13 = paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str14 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str13 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str14 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str13 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str14 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str13 = paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str14 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str13 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str14 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str13 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str14 = paste0("Alpha spending: User defined(",
+      str13 = paste0("Alpha spending: User defined(",
                      paste(asfuser, collapse = ","), ")")
     } else {
-      str14 = "Alpha spending: None"
+      str13 = "Alpha spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str15 = paste0("Spending time: ",
+      str14 = paste0("Spending time: ",
                      paste(round(x$settings$spendingTime, 3), collapse = ","))
-      if (length(x$settings$stratumFraction) > 1) {
-        df1 = data.frame(x = rep("", 17))
-        colnames(df1) = NULL
-        rownames(df1) = c(str1, str2, str3a, str3, str4, str5, str6, str7,
-                          str8, str9, str10, str11, str12,
-                          str13, str14, str15, "")
-      } else {
-        df1 = data.frame(x = rep("", 16))
-        colnames(df1) = NULL
-        rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                          str8, str9, str10, str11, str12,
-                          str13, str14, str15, "")
-      }
-    } else {
       if (length(x$settings$stratumFraction) > 1) {
         df1 = data.frame(x = rep("", 16))
         colnames(df1) = NULL
@@ -1393,18 +1365,32 @@ print.nbpowerequiv <- function(x, ...) {
                           str8, str9, str10, str11, str12,
                           str13, str14, "")
       }
+    } else {
+      if (length(x$settings$stratumFraction) > 1) {
+        df1 = data.frame(x = rep("", 15))
+        colnames(df1) = NULL
+        rownames(df1) = c(str1, str2, str3a, str3, str4, str5, str6, str7,
+                          str8, str9, str10, str11, str12,
+                          str13, "")
+      } else {
+        df1 = data.frame(x = rep("", 14))
+        colnames(df1) = NULL
+        rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
+                          str8, str9, str10, str11, str12,
+                          str13, "")
+      }
     }
   } else {
     if (length(x$settings$stratumFraction) > 1) {
-      df1 = data.frame(x = rep("", 15))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3a, str3, str4, str5, str6, str7,
-                        str8, str9, str10, str11, str12, str13, "")
-    } else {
       df1 = data.frame(x = rep("", 14))
       colnames(df1) = NULL
+      rownames(df1) = c(str1, str2, str3a, str3, str4, str5, str6, str7,
+                        str8, str9, str10, str11, str12, "")
+    } else {
+      df1 = data.frame(x = rep("", 13))
+      colnames(df1) = NULL
       rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, str11, str12, str13, "")
+                        str8, str9, str10, str11, str12, "")
     }
   }
 
@@ -7995,10 +7981,12 @@ print.kmpower <- function(x, ...) {
                  "overall significance level (1-sided): ",
                  round(a$alpha, 4))
 
-  str5 <- paste0("Drift parameter: ", round(a$drift, 3), ", ",
-                 "inflation factor: ", round(a$inflationFactor, 3))
-
   if (k>1) {
+    str5 <- paste0("Maximum # events: ",
+                   round(a$numberOfEvents, 1), ", ",
+                   "expected # events: ",
+                   round(a$expectedNumberOfEvents, 1))
+
     str6 <- paste0("Maximum # subjects: ",
                    round(a$numberOfSubjects, 1), ", ",
                    "expected # subjects: ",
@@ -8015,6 +8003,9 @@ print.kmpower <- function(x, ...) {
                    round(a$expectedStudyDuration, 1))
 
   } else {
+    str5 <- paste0("Number of events: ",
+                   round(a$numberOfEvents, 1))
+
     str6 <- paste0("Number of subjects: ",
                    round(a$numberOfSubjects, 1))
 
@@ -8109,15 +8100,16 @@ print.kmpower <- function(x, ...) {
   if (k>1) {
     b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
                "cumulativeRejection", "cumulativeFutility",
-               "cumulativeAlphaSpent", "numberOfSubjects",
+               "cumulativeAlphaSpent", "numberOfEvents",
+               "numberOfDropouts", "numberOfSubjects", "numberOfMilestone",
                "analysisTime", "efficacySurvDiff", "futilitySurvDiff",
                "efficacyP", "futilityP", "information")]
 
     # format number of digits after decimal for each column
-    j1 <- c(7,8)
-    j2 <- 13
-    j3 <- c(1,2,3,9,10)
-    j4 <- c(4,5,6,11,12)
+    j1 <- c(7,8,9,10,11)
+    j2 <- 16
+    j3 <- c(1,2,3,12,13)
+    j4 <- c(4,5,6,14,15)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -8133,7 +8125,10 @@ print.kmpower <- function(x, ...) {
                        "Cumulative rejection",
                        "Cumulative futility",
                        "Cumulative alpha spent",
+                       "Number of events",
+                       "Number of dropouts",
                        "Number of subjects",
+                       "Number of milestone subjects",
                        "Analysis time",
                        "Efficacy boundary (surv diff)",
                        "Futility boundary (surv diff)",
@@ -8142,12 +8137,15 @@ print.kmpower <- function(x, ...) {
                        "Information")
 
     } else {
-      df = t(b[,c(1,2,4,6,7,8,9,11,13)])
+      df = t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
       rownames(df) = c("Information rate",
                        "Efficacy boundary (Z)",
                        "Cumulative rejection",
                        "Cumulative alpha spent",
+                       "Number of events",
+                       "Number of dropouts",
                        "Number of subjects",
+                       "Number of milestone subjects",
                        "Analysis time",
                        "Efficacy boundary (surv diff)",
                        "Efficacy boundary (p)",
@@ -8222,10 +8220,12 @@ print.rmpower <- function(x, ...) {
                  "overall significance level (1-sided): ",
                  round(a$alpha, 4))
 
-  str5 <- paste0("Drift parameter: ", round(a$drift, 3), ", ",
-                 "inflation factor: ", round(a$inflationFactor, 3))
-
   if (k>1) {
+    str5 <- paste0("Maximum # events: ",
+                   round(a$numberOfEvents, 1), ", ",
+                   "expected # events: ",
+                   round(a$expectedNumberOfEvents, 1))
+
     str6 <- paste0("Maximum # subjects: ",
                    round(a$numberOfSubjects, 1), ", ",
                    "expected # subjects: ",
@@ -8242,6 +8242,9 @@ print.rmpower <- function(x, ...) {
                    round(a$expectedStudyDuration, 1))
 
   } else {
+    str5 <- paste0("Number of events: ",
+                   round(a$numberOfEvents, 1))
+
     str6 <- paste0("Number of subjects: ",
                    round(a$numberOfSubjects, 1))
 
@@ -8336,15 +8339,16 @@ print.rmpower <- function(x, ...) {
   if (k>1) {
     b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
                "cumulativeRejection", "cumulativeFutility",
-               "cumulativeAlphaSpent", "numberOfSubjects",
+               "cumulativeAlphaSpent", "numberOfEvents",
+               "numberOfDropouts", "numberOfSubjects", "numberOfMilestone",
                "analysisTime", "efficacyRmstDiff", "futilityRmstDiff",
                "efficacyP", "futilityP", "information")]
 
     # format number of digits after decimal for each column
-    j1 <- c(7,8)
-    j2 <- 13
-    j3 <- c(1,2,3,9,10)
-    j4 <- c(4,5,6,11,12)
+    j1 <- c(7,8,9,10,11)
+    j2 <- 16
+    j3 <- c(1,2,3,12,13)
+    j4 <- c(4,5,6,14,15)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -8360,7 +8364,10 @@ print.rmpower <- function(x, ...) {
                        "Cumulative rejection",
                        "Cumulative futility",
                        "Cumulative alpha spent",
+                       "Number of events",
+                       "Number of dropouts",
                        "Number of subjects",
+                       "Number of milestone subjects",
                        "Analysis time",
                        "Efficacy boundary (rmst diff)",
                        "Futility boundary (rmst diff)",
@@ -8369,12 +8376,15 @@ print.rmpower <- function(x, ...) {
                        "Information")
 
     } else {
-      df = t(b[,c(1,2,4,6,7,8,9,11,13)])
+      df = t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
       rownames(df) = c("Information rate",
                        "Efficacy boundary (Z)",
                        "Cumulative rejection",
                        "Cumulative alpha spent",
+                       "Number of events",
+                       "Number of dropouts",
                        "Number of subjects",
+                       "Number of milestone subjects",
                        "Analysis time",
                        "Efficacy boundary (rmst diff)",
                        "Efficacy boundary (p)",
@@ -8451,45 +8461,49 @@ print.kmpowerequiv <- function(x, ...) {
   str4 <- paste0("Overall power: ",
                  round(a$overallReject, 3), ", ",
                  "overall alpha: ",
-                 round(a$alpha, 4), ", ",
-                 "attained under H10: ",
-                 round(a$attainedAlphaH10, 4), ", ",
-                 "under H20: ",
-                 round(a$attainedAlphaH20, 4))
+                 round(a$alpha, 4))
 
   if (k>1) {
-    str5 <- paste0("Maximum # subjects: ",
+    str5 <- paste0("Maximum # events: ",
+                   round(a$numberOfEvents, 1), ", ",
+                   "expected # events: ",
+                   round(a$expectedNumberOfEvents, 1))
+
+    str6 <- paste0("Maximum # subjects: ",
                    round(a$numberOfSubjects, 1), ", ",
                    "expected # subjects: ",
                    round(a$expectedNumberOfSubjects, 1))
 
-    str6 <- paste0("Maximum information: ",
+    str7 <- paste0("Maximum information: ",
                    round(a$information, 2), ", ",
                    "expected information: ",
                    round(a$expectedInformation, 2))
 
-    str7 <- paste0("Total study duration: ",
+    str8 <- paste0("Total study duration: ",
                    round(a$studyDuration, 1), ", ",
                    "expected study duration: ",
                    round(a$expectedStudyDuration, 1))
   } else {
-    str5 <- paste0("Number of subjects: ",
+    str5 <- paste0("Number of events: ",
+                   round(a$numberOfEvents, 1))
+
+    str6 <- paste0("Number of subjects: ",
                    round(a$numberOfSubjects, 1))
 
-    str6 <- paste0("Information: ",
+    str7 <- paste0("Information: ",
                    round(a$information, 2))
 
-    str7 <- paste0("Study duration: ",
+    str8 <- paste0("Study duration: ",
                    round(a$studyDuration, 1))
   }
 
-  str8 <- paste0("Accrual duration: ",
+  str9 <- paste0("Accrual duration: ",
                  round(a$accrualDuration, 1), ", ",
                  "follow-up duration: ",
                  round(a$followupTime, 1), ", ",
                  "fixed follow-up: ", a$fixedFollowup)
 
-  str9 <- paste0("Allocation ratio: ",
+  str10 <- paste0("Allocation ratio: ",
                  round(x$settings$allocationRatioPlanned, 3))
 
   if (k > 1) {
@@ -8498,61 +8512,62 @@ print.kmpowerequiv <- function(x, ...) {
     asfuser = round(x$settings$userAlphaSpending, 4)
 
     if (asf == "of") {
-      str10 = paste0("Alpha spending: O'Brien-Fleming")
+      str11 = paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str10 = paste0("Alpha spending: Pocock")
+      str11 = paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str10 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str11 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str10 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str11 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str10 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str11 = paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str10 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str11 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str10 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str11 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str10 = paste0("Alpha spending: User defined(",
+      str11 = paste0("Alpha spending: User defined(",
                      paste(asfuser, collapse = ","), ")")
     } else {
-      str10 = "Alpha spending: None"
+      str11 = "Alpha spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str11 = paste0("Spending time: ",
+      str12 = paste0("Spending time: ",
                      paste(round(x$settings$spendingTime, 3), collapse = ","))
+      df1 = data.frame(x = rep("", 13))
+      colnames(df1) = NULL
+      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
+                        str8, str9, str10, str11, str12, "")
+    } else {
       df1 = data.frame(x = rep("", 12))
       colnames(df1) = NULL
       rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
                         str8, str9, str10, str11, "")
-    } else {
-      df1 = data.frame(x = rep("", 11))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, "")
     }
   } else {
-    df1 = data.frame(x = rep("", 10))
+    df1 = data.frame(x = rep("", 11))
     colnames(df1) = NULL
     rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                      str8, str9, "")
+                      str8, str9, str10, "")
   }
 
   if (k>1) {
     b <- s[, c("informationRates", "efficacyBounds",
                "cumulativeRejection", "cumulativeAlphaSpent",
                "cumulativeAttainedAlphaH10",
-               "cumulativeAttainedAlphaH20",
-               "numberOfSubjects", "analysisTime",
+               "cumulativeAttainedAlphaH20", "numberOfEvents",
+               "numberOfDropouts", "numberOfSubjects",
+               "numberOfMilestone", "analysisTime",
                "efficacySurvDiffLower", "efficacySurvDiffUpper",
                "efficacyP", "information")]
 
     # format number of digits after decimal for each column
-    j1 <- c(7,8)
-    j2 <- 12
-    j3 <- c(1,2,3,9,10)
-    j4 <- c(4,5,6,11)
+    j1 <- c(7,8,9,10,11)
+    j2 <- 15
+    j3 <- c(1,2,3,12,13)
+    j4 <- c(4,5,6,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -8566,7 +8581,10 @@ print.kmpowerequiv <- function(x, ...) {
                      "Cumulative alpha for each 1-sided test",
                      "Cumulative alpha attained under H10",
                      "Cumulative alpha attained under H20",
+                     "Number of events",
+                     "Number of dropouts",
                      "Number of subjects",
+                     "Number of milestone subjects",
                      "Analysis time",
                      "Boundary for lower limit (surv diff)",
                      "Boundary for upper limit (surv diff)",
@@ -8643,46 +8661,50 @@ print.rmpowerequiv <- function(x, ...) {
   str4 <- paste0("Overall power: ",
                  round(a$overallReject, 3), ", ",
                  "overall alpha: ",
-                 round(a$alpha, 4), ", ",
-                 "attained under H10: ",
-                 round(a$attainedAlphaH10, 4), ", ",
-                 "under H20: ",
-                 round(a$attainedAlphaH20, 4))
+                 round(a$alpha, 4))
 
   if (k>1) {
-    str5 <- paste0("Maximum # subjects: ",
+    str5 <- paste0("Maximum # events: ",
+                   round(a$numberOfEvents, 1), ", ",
+                   "expected # events: ",
+                   round(a$expectedNumberOfEvents, 1))
+
+    str6 <- paste0("Maximum # subjects: ",
                    round(a$numberOfSubjects, 1), ", ",
                    "expected # subjects: ",
                    round(a$expectedNumberOfSubjects, 1))
 
-    str6 <- paste0("Maximum information: ",
+    str7 <- paste0("Maximum information: ",
                    round(a$information, 2), ", ",
                    "expected information: ",
                    round(a$expectedInformation, 2))
 
-    str7 <- paste0("Total study duration: ",
+    str8 <- paste0("Total study duration: ",
                    round(a$studyDuration, 1), ", ",
                    "expected study duration: ",
                    round(a$expectedStudyDuration, 1))
   } else {
-    str5 <- paste0("Number of subjects: ",
+    str5 <- paste0("Number of events: ",
+                   round(a$numberOfEvents, 1))
+
+    str6 <- paste0("Number of subjects: ",
                    round(a$numberOfSubjects, 1))
 
-    str6 <- paste0("Information: ",
+    str7 <- paste0("Information: ",
                    round(a$information, 2))
 
-    str7 <- paste0("Study duration: ",
+    str8 <- paste0("Study duration: ",
                    round(a$studyDuration, 1))
   }
 
-  str8 <- paste0("Accrual duration: ",
+  str9 <- paste0("Accrual duration: ",
                  round(a$accrualDuration, 1), ", ",
                  "follow-up duration: ",
                  round(a$followupTime, 1), ", ",
                  "fixed follow-up: ", a$fixedFollowup)
 
-  str9 <- paste0("Allocation ratio: ",
-                 round(x$settings$allocationRatioPlanned, 3))
+  str10 <- paste0("Allocation ratio: ",
+                  round(x$settings$allocationRatioPlanned, 3))
 
   if (k > 1) {
     asf = tolower(x$settings$typeAlphaSpending)
@@ -8690,61 +8712,62 @@ print.rmpowerequiv <- function(x, ...) {
     asfuser = round(x$settings$userAlphaSpending, 4)
 
     if (asf == "of") {
-      str10 = paste0("Alpha spending: O'Brien-Fleming")
+      str11 = paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str10 = paste0("Alpha spending: Pocock")
+      str11 = paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str10 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str11 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str10 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str11 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str10 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str11 = paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str10 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str11 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str10 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str11 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str10 = paste0("Alpha spending: User defined(",
+      str11 = paste0("Alpha spending: User defined(",
                      paste(asfuser, collapse = ","), ")")
     } else {
-      str10 = "Alpha spending: None"
+      str11 = "Alpha spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str11 = paste0("Spending time: ",
+      str12 = paste0("Spending time: ",
                      paste(round(x$settings$spendingTime, 3), collapse = ","))
+      df1 = data.frame(x = rep("", 13))
+      colnames(df1) = NULL
+      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
+                        str8, str9, str10, str11, str12, "")
+    } else {
       df1 = data.frame(x = rep("", 12))
       colnames(df1) = NULL
       rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
                         str8, str9, str10, str11, "")
-    } else {
-      df1 = data.frame(x = rep("", 11))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, "")
     }
   } else {
-    df1 = data.frame(x = rep("", 10))
+    df1 = data.frame(x = rep("", 11))
     colnames(df1) = NULL
     rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                      str8, str9, "")
+                      str8, str9, str10, "")
   }
 
   if (k>1) {
     b <- s[, c("informationRates", "efficacyBounds",
                "cumulativeRejection", "cumulativeAlphaSpent",
                "cumulativeAttainedAlphaH10",
-               "cumulativeAttainedAlphaH20",
-               "numberOfSubjects", "analysisTime",
+               "cumulativeAttainedAlphaH20", "numberOfEvents",
+               "numberOfDropouts", "numberOfSubjects",
+               "numberOfMilestone", "analysisTime",
                "efficacyRmstDiffLower", "efficacyRmstDiffUpper",
                "efficacyP", "information")]
 
     # format number of digits after decimal for each column
-    j1 <- c(7,8)
-    j2 <- 12
-    j3 <- c(1,2,3,9,10)
-    j4 <- c(4,5,6,11)
+    j1 <- c(7,8,9,10,11)
+    j2 <- 15
+    j3 <- c(1,2,3,12,13)
+    j4 <- c(4,5,6,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -8758,7 +8781,10 @@ print.rmpowerequiv <- function(x, ...) {
                      "Cumulative alpha for each 1-sided test",
                      "Cumulative alpha attained under H10",
                      "Cumulative alpha attained under H20",
+                     "Number of events",
+                     "Number of dropouts",
                      "Number of subjects",
+                     "Number of milestone subjects",
                      "Analysis time",
                      "Boundary for lower limit (rmst diff)",
                      "Boundary for upper limit (rmst diff)",
@@ -8829,11 +8855,7 @@ print.lrpowerequiv <- function(x, ...) {
   str3 <- paste0("Overall power: ",
                  round(a$overallReject, 3), ", ",
                  "overall alpha: ",
-                 round(a$alpha, 4), ", ",
-                 "attained under H10: ",
-                 round(a$attainedAlphaH10, 4), ", ",
-                 "under H20: ",
-                 round(a$attainedAlphaH20, 4))
+                 round(a$alpha, 4))
 
   if (k>1) {
     str4 <- paste0("Maximum # events: ",

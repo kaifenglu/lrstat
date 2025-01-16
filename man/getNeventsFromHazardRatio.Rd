@@ -86,7 +86,7 @@ same as \code{informationRates}.}
 treatment versus control. Defaults to 1 for superiority test.}
 
 \item{hazardRatio}{Hazard ratio under the alternative hypothesis
-for the active treatment versus control. Defaults to 0.5.}
+for the active treatment versus control.}
 
 \item{allocationRatioPlanned}{Allocation ratio for the active treatment
 versus control. Defaults to 1 for equal randomization.}

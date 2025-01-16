@@ -211,7 +211,28 @@ simonBayesSim <- function(p = NA_real_, accrualTime = 0L, accrualIntensity = NA_
 #'
 #' * \code{subjects}: The number of enrolled subjects.
 #'
+#' * \code{nevents}: The total number of events.
+#'
+#' * \code{nevents1}: The number of events in the active treatment group.
+#'
+#' * \code{nevents2}: The number of events in the control group.
+#'
+#' * \code{ndropouts}: The total number of dropouts.
+#'
+#' * \code{ndropouts1}: The number of dropouts in the active treatment
+#'   group.
+#'
+#' * \code{ndropouts2}: The number of dropouts in the control group.
+#'
 #' * \code{milestone}: The milestone time relative to randomization.
+#'
+#' * \code{nmilestone}: The total number of subjects reaching milestone.
+#'
+#' * \code{nmilestone1}: The number of subjects reaching milestone
+#'   in the active treatment group.
+#'
+#' * \code{nmiletone2}: The number of subjects reaching milestone
+#'   in the control group.
 #'
 #' * \code{surv1}: The milestone survival probability for the treatment
 #'   group.
@@ -282,7 +303,28 @@ kmstat1 <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanne
 #'
 #' * \code{subjects}: The number of enrolled subjects.
 #'
+#' * \code{nevents}: The total number of events.
+#'
+#' * \code{nevents1}: The number of events in the active treatment group.
+#'
+#' * \code{nevents2}: The number of events in the control group.
+#'
+#' * \code{ndropouts}: The total number of dropouts.
+#'
+#' * \code{ndropouts1}: The number of dropouts in the active treatment
+#'   group.
+#'
+#' * \code{ndropouts2}: The number of dropouts in the control group.
+#'
 #' * \code{milestone}: The milestone time relative to randomization.
+#'
+#' * \code{nmilestone}: The total number of subjects reaching milestone.
+#'
+#' * \code{nmilestone1}: The number of subjects reaching milestone
+#'   in the active treatment group.
+#'
+#' * \code{nmiletone2}: The number of subjects reaching milestone
+#'   in the control group.
 #'
 #' * \code{surv1}: The milestone survival probability for the treatment
 #'   group.
@@ -375,7 +417,7 @@ kmstat <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #'   the value is allowed to be less than the sum of \code{accrualDuration}
 #'   and \code{followupTime}.
 #'
-#' @return An S3 class \code{kmpower} object with 3 components:
+#' @return An S3 class \code{kmpower} object with 4 components:
 #'
 #' * \code{overallResults}: A data frame containing the following variables:
 #'
@@ -383,17 +425,15 @@ kmstat <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #'
 #'     - \code{alpha}: The overall significance level.
 #'
-#'     - \code{drift}: The drift parameter, equal to
-#'       \code{(survDiff - survDiffH0)*sqrt(information)}.
-#'
-#'     - \code{inflationFactor}: The inflation factor (relative to the
-#'       fixed design).
+#'     - \code{numberOfEvents}: The total number of events.
 #'
 #'     - \code{numbeOfSubjects}: The total number of subjects.
 #'
 #'     - \code{studyDuration}: The total study duration.
 #'
 #'     - \code{information}: The maximum information.
+#'
+#'     - \code{expectedNumberOfEvents}: The expected number of events.
 #'
 #'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
 #'
@@ -443,7 +483,14 @@ kmstat <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #'
 #'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
 #'
+#'     - \code{numberOfEvents}: The number of events.
+#'
+#'     - \code{numberOfDropouts}: The number of dropouts.
+#'
 #'     - \code{numberOfSubjects}: The number of subjects.
+#'
+#'     - \code{numberOfMilestone}: The number of subjects reaching
+#'       milestone.
 #'
 #'     - \code{analysisTime}: The average time since trial start.
 #'
@@ -471,6 +518,57 @@ kmstat <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #'   \code{piecewiseSurvivalTime}, \code{stratumFraction},
 #'   \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2},
 #'   and \code{spendingTime}.
+#'
+#' * \code{byTreatmentCounts}: A list containing the following counts by
+#'   treatment group:
+#'
+#'     - \code{numberOfEvents1}: The number of events by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfDropouts1}: The number of dropouts by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfSubjects1}: The number of subjects by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfMilestone1}: The number of subjects reaching
+#'       milestone by stage for the active treatment group.
+#'
+#'     - \code{numberOfEvents2}: The number of events by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfDropouts2}: The number of dropouts by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfSubjects2}: The number of subjects by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfMilestone2}: The number of subjects reaching
+#'       milestone by stage for the control group.
+#'
+#'     - \code{expectedNumberOfEvents1}: The expected number of events for
+#'       the treatment group.
+#'
+#'     - \code{expectedNumberOfDropouts1}: The expected number of dropouts
+#'       for the active treatment group.
+#'
+#'     - \code{expectedNumberOfSubjects1}: The expected number of subjects
+#'       for the active treatment group.
+#'
+#'     - \code{expectedNumberOfMilestone1}: The expected number of subjects
+#'       reaching milestone for the active treatment group.
+#'
+#'     - \code{expectedNumberOfEvents2}: The expected number of events for
+#'       control group.
+#'
+#'     - \code{expectedNumberOfDropouts2}: The expected number of dropouts
+#'       for the control group.
+#'
+#'     - \code{expectedNumberOfSubjects2}: The expected number of subjects
+#'       for the control group.
+#'
+#'     - \code{expectedNumberOfMilestone2}: The expected number of subjects
+#'       reaching milestone for the control group.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -922,7 +1020,7 @@ kmsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'   the value is allowed to be less than the sum of \code{accrualDuration}
 #'   and \code{followupTime}.
 #'
-#' @return An S3 class \code{kmpowerequiv} object with 3 components:
+#' @return An S3 class \code{kmpowerequiv} object with 4 components:
 #'
 #' * \code{overallResults}: A data frame containing the following variables:
 #'
@@ -930,15 +1028,15 @@ kmsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'
 #'     - \code{alpha}: The overall significance level.
 #'
-#'     - \code{attainedAlphaH10}: The attained significance level under H10.
-#'
-#'     - \code{attainedAlphaH20}: The attained significance level under H20.
+#'     - \code{numbeOfEvents}: The total number of events.
 #'
 #'     - \code{numbeOfSubjects}: The total number of subjects.
 #'
 #'     - \code{studyDuration}: The total study duration.
 #'
 #'     - \code{information}: The maximum information.
+#'
+#'     - \code{expectedNumberOfEvents}: The expected number of events.
 #'
 #'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
 #'
@@ -991,7 +1089,14 @@ kmsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'     - \code{cumulativeAttainedAlphaH20}: The cumulative alpha attained
 #'       under \code{H20}.
 #'
+#'     - \code{numberOfEvents}: The number of events.
+#'
+#'     - \code{numberOfDropouts}: The number of dropouts.
+#'
 #'     - \code{numberOfSubjects}: The number of subjects.
+#'
+#'     - \code{numberOfMilestone}: The number of subjects reaching
+#'       milestone.
 #'
 #'     - \code{analysisTime}: The average time since trial start.
 #'
@@ -1015,6 +1120,57 @@ kmsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'   \code{piecewiseSurvivalTime}, \code{stratumFraction},
 #'   \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2},
 #'   and \code{spendingTime}.
+#'
+#' * \code{byTreatmentCounts}: A list containing the following counts by
+#'   treatment group:
+#'
+#'     - \code{numberOfEvents1}: The number of events by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfDropouts1}: The number of dropouts by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfSubjects1}: The number of subjects by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfMilestone1}: The number of subjects reaching
+#'       milestone by stage for the active treatment group.
+#'
+#'     - \code{numberOfEvents2}: The number of events by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfDropouts2}: The number of dropouts by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfSubjects2}: The number of subjects by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfMilestone2}: The number of subjects reaching
+#'       milestone by stage for the control group.
+#'
+#'     - \code{expectedNumberOfEvents1}: The expected number of events for
+#'       the treatment group.
+#'
+#'     - \code{expectedNumberOfDropouts1}: The expected number of dropouts
+#'       for the active treatment group.
+#'
+#'     - \code{expectedNumberOfSubjects1}: The expected number of subjects
+#'       for the active treatment group.
+#'
+#'     - \code{expectedNumberOfMilestone1}: The expected number of subjects
+#'       reaching milestone for the active treatment group.
+#'
+#'     - \code{expectedNumberOfEvents2}: The expected number of events for
+#'       control group.
+#'
+#'     - \code{expectedNumberOfDropouts2}: The expected number of dropouts
+#'       for the control group.
+#'
+#'     - \code{expectedNumberOfSubjects2}: The expected number of subjects
+#'       for the control group.
+#'
+#'     - \code{expectedNumberOfMilestone2}: The expected number of subjects
+#'       reaching milestone for the control group.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -1187,8 +1343,8 @@ kmdiff <- function(data, rep = "", stratum = "", treat = "treat", time = "time",
     .Call(`_lrstat_kmdiff`, data, rep, stratum, treat, time, event, milestone, survDiffH0, conflev)
 }
 
-logisregcpp <- function(data, rep = "", event = "event", covariates = "", freq = "", weight = "", offset = "", id = "", link = "logit", robust = 0L, firth = 0L, flic = 0L, plci = 0L, alpha = 0.05) {
-    .Call(`_lrstat_logisregcpp`, data, rep, event, covariates, freq, weight, offset, id, link, robust, firth, flic, plci, alpha)
+logisregcpp <- function(data, rep = "", event = "event", covariates = "", freq = "", weight = "", offset = "", id = "", link = "logit", robust = 0L, firth = 0L, bc = 0L, flic = 0L, plci = 0L, alpha = 0.05) {
+    .Call(`_lrstat_logisregcpp`, data, rep, event, covariates, freq, weight, offset, id, link, robust, firth, bc, flic, plci, alpha)
 }
 
 #' @title Log-Rank Test Simulation
@@ -2605,8 +2761,6 @@ caltime <- function(nevents = NA_real_, allocationRatioPlanned = 1, accrualTime 
 #' @inheritParams param_fixedFollowup
 #' @param npoints The number of accrual duration time points.
 #'   Defaults to 23.
-#' @param interval The interval to search for the solution of
-#'   accrualDuration. Defaults to \code{c(0.001, 240)}.
 #'
 #' @return A data frame of the following variables:
 #'
@@ -2640,8 +2794,8 @@ caltime <- function(nevents = NA_real_, allocationRatioPlanned = 1, accrualTime 
 #'   fixedFollowup = FALSE)
 #'
 #' @export
-getDurationFromNevents <- function(nevents = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, followupTime = NA_real_, fixedFollowup = 0L, npoints = 23L, interval = as.numeric( c(0.001, 240))) {
-    .Call(`_lrstat_getDurationFromNevents`, nevents, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, followupTime, fixedFollowup, npoints, interval)
+getDurationFromNevents <- function(nevents = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, followupTime = NA_real_, fixedFollowup = 0L, npoints = 23L) {
+    .Call(`_lrstat_getDurationFromNevents`, nevents, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, followupTime, fixedFollowup, npoints)
 }
 
 #' @title Log-Rank Test Power
@@ -2881,7 +3035,7 @@ lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #'   same as \code{informationRates}.
 #' @inheritParams param_hazardRatioH0
 #' @param hazardRatio Hazard ratio under the alternative hypothesis
-#'   for the active treatment versus control. Defaults to 0.5.
+#'   for the active treatment versus control.
 #' @inheritParams param_allocationRatioPlanned
 #' @param rounding Whether to round up the number of events.
 #'   Defaults to 1 for rounding.
@@ -3067,10 +3221,6 @@ lrsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, eff
 #'     - \code{overallReject}: The overall rejection probability.
 #'
 #'     - \code{alpha}: The overall significance level.
-#'
-#'     - \code{attainedAlphaH10}: The attained significance level under H10.
-#'
-#'     - \code{attainedAlphaH20}: The attained significance level under H20.
 #'
 #'     - \code{numberOfEvents}: The total number of events.
 #'
@@ -5655,7 +5805,8 @@ nbstat1 <- function(time = NA_real_, rateRatioH0 = 1, allocationRatioPlanned = 1
 #' reduces to the Poisson distribution.
 #'
 #' For treatment group \eqn{i}, let \eqn{\beta_i = \log(\lambda_i)}.
-#' The likelihood for \eqn{\{(\kappa_i, \beta_i):i=1,2\}} can be written as
+#' The log-likelihood for \eqn{\{(\kappa_i, \beta_i):i=1,2\}}
+#' can be written as
 #' \deqn{l = \sum_{i=1}^{2}\sum_{j=1}^{n_{i}}
 #' \{\log \Gamma(y_{ij} + 1/\kappa_i) - \log \Gamma(1/\kappa_i) + y_{ij}
 #' (\log(\kappa_i) + \beta_i) - (y_{ij} + 1/\kappa_i)
@@ -5709,7 +5860,7 @@ nbstat1 <- function(time = NA_real_, rateRatioH0 = 1, allocationRatioPlanned = 1
 #' to \eqn{\beta_2}. The resulting score equation has asymptotic limit
 #' \deqn{E\left(\frac{\partial l}{\partial \beta_2}\right) = s_1 + s_2,}
 #' where
-#' \deqn{s_1 = n r E\left\{\lambda1_1 t_{1j} - \left(\lambda_1t_{1j}
+#' \deqn{s_1 = n r E\left\{\lambda_1 t_{1j} - \left(\lambda_1t_{1j}
 #' + \frac{1}{\kappa_1}\right) \frac{\kappa_1 e^{\tilde{\beta}_2 +
 #' \Delta}t_{1j}}{1 + \kappa_1 e^{\tilde{\beta}_2 +\Delta}t_{1j}}\right\},}
 #' and
@@ -6528,8 +6679,6 @@ nbsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'   \code{accrualDuration} and \code{followupTime}. If provided,
 #'   the value is allowed to be less than the sum of \code{accrualDuration}
 #'   and \code{followupTime}.
-#' @param nullVariance Whether to calculate the variance for log rate ratio
-#'   under the null hypothesis.
 #'
 #' @return An S3 class \code{nbpowerequiv} object with 4 components:
 #'
@@ -6539,13 +6688,7 @@ nbsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'
 #'     - \code{alpha}: The overall significance level.
 #'
-#'     - \code{attainedAlphaH10}: The attained significance level under H10.
-#'
-#'     - \code{attainedAlphaH20}: The attained significance level under H20.
-#'
 #'     - \code{numberOfEvents}: The total number of events.
-#'
-#'     - \code{numberOfDropouts}: The total number of dropouts.
 #'
 #'     - \code{numbeOfSubjects}: The total number of subjects.
 #'
@@ -6556,8 +6699,6 @@ nbsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'     - \code{information}: The maximum information.
 #'
 #'     - \code{expectedNumberOfEvents}: The expected number of events.
-#'
-#'     - \code{expectedNumberOfDropouts}: The expected number of dropouts.
 #'
 #'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
 #'
@@ -6574,6 +6715,12 @@ nbsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'     - \code{rateRatioUpper}: The upper equivalence limit of rate ratio.
 #'
 #'     - \code{rateRatio}: The rate ratio.
+#'
+#'     - \code{accrualDuration}: The accrual duration.
+#'
+#'     - \code{followupTime}: The follow-up duration.
+#'
+#'     - \code{fixedFollowup}: Whether a fixed follow-up design is used.
 #'
 #' * \code{byStageResults}: A data frame containing the following variables:
 #'
@@ -6626,22 +6773,7 @@ nbsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'   \code{piecewiseSurvivalTime}, \code{stratumFraction},
 #'   \code{kappa1}, \code{kappa2},
 #'   \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2},
-#'   \code{accrualDuration}, \code{followupTime}, \code{fixedFollowup},
-#'   \code{spendingTime}, \code{nullVariance}, and \code{varianceRatios}.
-#'   The \code{varianceRatios} is a data frame with the following
-#'   variables:
-#'
-#'     - \code{varianceRatioH10}: The ratio of the variance under
-#'       \code{H10} to the variance under \code{H1}.
-#'
-#'     - \code{varianceRatioH20}: The ratio of the variance under
-#'       \code{H20} to the variance under \code{H1}.
-#'
-#'     - \code{varianceRatioH12}: The ratio of the variance under
-#'       \code{H10} to the variance under \code{H20}.
-#'
-#'     - \code{varianceRatioH21}: The ratio of the variance under
-#'       \code{H20} to the variance under \code{H10}.
+#'   \code{spendingTime}.
 #'
 #' * \code{byTreatmentCounts}: A list containing the following counts by
 #'   treatment group:
@@ -6707,8 +6839,7 @@ nbsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'              lambda1 = 0.125, lambda2 = 0.125,
 #'              gamma1 = 0, gamma2 = 0,
 #'              accrualDuration = 1.25,
-#'              followupTime = 2.75, fixedFollowup = FALSE,
-#'              nullVariance = 1)
+#'              followupTime = 2.75, fixedFollowup = FALSE)
 #'
 #' # Example 2: Fixed follow-up design
 #' nbpowerequiv(kMax = 2, informationRates = c(0.5, 1),
@@ -6724,8 +6855,8 @@ nbsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'              followupTime = 0.5, fixedFollowup = TRUE)
 #'
 #' @export
-nbpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, rateRatioLower = NA_real_, rateRatioUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa1 = NA_real_, kappa2 = NA_real_, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, spendingTime = NA_real_, studyDuration = NA_real_, nullVariance = 0L) {
-    .Call(`_lrstat_nbpowerequiv`, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, rateRatioLower, rateRatioUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, kappa1, kappa2, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration, nullVariance)
+nbpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, rateRatioLower = NA_real_, rateRatioUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa1 = NA_real_, kappa2 = NA_real_, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, spendingTime = NA_real_, studyDuration = NA_real_) {
+    .Call(`_lrstat_nbpowerequiv`, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, rateRatioLower, rateRatioUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, kappa1, kappa2, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration)
 }
 
 #' @title Sample Size for Equivalence in Negative Binomial Rate Ratio
@@ -6771,8 +6902,6 @@ nbpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues 
 #'   same as \code{informationRates}.
 #' @param rounding Whether to round up sample size.
 #'   Defaults to 1 for sample size rounding.
-#' @param nullVariance Whether to calculate the variance for log rate ratio
-#'   under the null hypothesis.
 #'
 #' @return An S3 class \code{nbpowerequiv} object
 #'
@@ -6795,8 +6924,7 @@ nbpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues 
 #'                   gamma1 = -log(1-0.05),
 #'                   gamma2 = -log(1-0.10),
 #'                   accrualDuration = 1.25,
-#'                   followupTime = NA, fixedFollowup = FALSE,
-#'                   nullVariance = 1)
+#'                   followupTime = NA, fixedFollowup = FALSE)
 #'
 #' # Example 2: Fixed follow-up design and solve for accrual duration
 #' nbsamplesizeequiv(beta = 0.2, kMax = 2, informationRates = c(0.5, 1),
@@ -6810,8 +6938,8 @@ nbpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues 
 #'                   followupTime = 0.5, fixedFollowup = TRUE)
 #'
 #' @export
-nbsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, rateRatioLower = NA_real_, rateRatioUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa1 = NA_real_, kappa2 = NA_real_, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, interval = as.numeric( c(0.001, 240)), spendingTime = NA_real_, rounding = 1L, nullVariance = 0L) {
-    .Call(`_lrstat_nbsamplesizeequiv`, beta, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, rateRatioLower, rateRatioUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, kappa1, kappa2, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, interval, spendingTime, rounding, nullVariance)
+nbsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, rateRatioLower = NA_real_, rateRatioUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa1 = NA_real_, kappa2 = NA_real_, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, interval = as.numeric( c(0.001, 240)), spendingTime = NA_real_, rounding = 1L) {
+    .Call(`_lrstat_nbsamplesizeequiv`, beta, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, rateRatioLower, rateRatioUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, kappa1, kappa2, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, interval, spendingTime, rounding)
 }
 
 #' @title Restricted Mean Survival Time
@@ -6902,7 +7030,28 @@ covrmst <- function(t2 = NA_real_, tau1 = NA_real_, tau2 = NA_real_, allocationR
 #'
 #' * \code{subjects}: The number of enrolled subjects.
 #'
+#' * \code{nevents}: The total number of events.
+#'
+#' * \code{nevents1}: The number of events in the active treatment group.
+#'
+#' * \code{nevents2}: The number of events in the control group.
+#'
+#' * \code{ndropouts}: The total number of dropouts.
+#'
+#' * \code{ndropouts1}: The number of dropouts in the active treatment
+#'   group.
+#'
+#' * \code{ndropouts2}: The number of dropouts in the control group.
+#'
 #' * \code{milestone}: The milestone time relative to randomization.
+#'
+#' * \code{nmilestone}: The total number of subjects reaching milestone.
+#'
+#' * \code{nmilestone1}: The number of subjects reaching milestone
+#'   in the active treatment group.
+#'
+#' * \code{nmiletone2}: The number of subjects reaching milestone
+#'   in the control group.
 #'
 #' * \code{rmst1}: The restricted mean survival time for the treatment
 #'   group.
@@ -6974,7 +7123,28 @@ rmstat1 <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanne
 #'
 #' * \code{subjects}: The number of enrolled subjects.
 #'
+#' * \code{nevents}: The total number of events.
+#'
+#' * \code{nevents1}: The number of events in the active treatment group.
+#'
+#' * \code{nevents2}: The number of events in the control group.
+#'
+#' * \code{ndropouts}: The total number of dropouts.
+#'
+#' * \code{ndropouts1}: The number of dropouts in the active treatment
+#'   group.
+#'
+#' * \code{ndropouts2}: The number of dropouts in the control group.
+#'
 #' * \code{milestone}: The milestone time relative to randomization.
+#'
+#' * \code{nmilestone}: The total number of subjects reaching milestone.
+#'
+#' * \code{nmilestone1}: The number of subjects reaching milestone
+#'   in the active treatment group.
+#'
+#' * \code{nmiletone2}: The number of subjects reaching milestone
+#'   in the control group.
 #'
 #' * \code{rmst1}: The restricted mean survival time for the treatment
 #'   group.
@@ -7067,7 +7237,7 @@ rmstat <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #'   the value is allowed to be less than the sum of \code{accrualDuration}
 #'   and \code{followupTime}.
 #'
-#' @return An S3 class \code{rmpower} object with 3 components:
+#' @return An S3 class \code{rmpower} object with 4 components:
 #'
 #' * \code{overallResults}: A data frame containing the following variables:
 #'
@@ -7075,17 +7245,15 @@ rmstat <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #'
 #'     - \code{alpha}: The overall significance level.
 #'
-#'     - \code{drift}: The drift parameter, equal to
-#'       \code{(rmstDiff - rmstDiffH0)*sqrt(information)}.
-#'
-#'     - \code{inflationFactor}: The inflation factor (relative to the
-#'       fixed design).
+#'     - \code{numberOfEvents}: The total number of events.
 #'
 #'     - \code{numbeOfSubjects}: The total number of subjects.
 #'
 #'     - \code{studyDuration}: The total study duration.
 #'
 #'     - \code{information}: The maximum information.
+#'
+#'     - \code{expectedNumberOfEvents}: The expected number of events.
 #'
 #'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
 #'
@@ -7135,7 +7303,14 @@ rmstat <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #'
 #'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
 #'
+#'     - \code{numberOfEvents}: The number of events.
+#'
+#'     - \code{numberOfDropouts}: The number of dropouts.
+#'
 #'     - \code{numberOfSubjects}: The number of subjects.
+#'
+#'     - \code{numberOfMilestone}: The number of subjects reaching
+#'       milestone.
 #'
 #'     - \code{analysisTime}: The average time since trial start.
 #'
@@ -7163,6 +7338,57 @@ rmstat <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #'   \code{piecewiseSurvivalTime}, \code{stratumFraction},
 #'   \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2},
 #'   and \code{spendingTime}.
+#'
+#' * \code{byTreatmentCounts}: A list containing the following counts by
+#'   treatment group:
+#'
+#'     - \code{numberOfEvents1}: The number of events by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfDropouts1}: The number of dropouts by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfSubjects1}: The number of subjects by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfMilestone1}: The number of subjects reaching
+#'       milestone by stage for the active treatment group.
+#'
+#'     - \code{numberOfEvents2}: The number of events by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfDropouts2}: The number of dropouts by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfSubjects2}: The number of subjects by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfMilestone2}: The number of subjects reaching
+#'       milestone by stage for the control group.
+#'
+#'     - \code{expectedNumberOfEvents1}: The expected number of events for
+#'       the treatment group.
+#'
+#'     - \code{expectedNumberOfDropouts1}: The expected number of dropouts
+#'       for the active treatment group.
+#'
+#'     - \code{expectedNumberOfSubjects1}: The expected number of subjects
+#'       for the active treatment group.
+#'
+#'     - \code{expectedNumberOfMilestone1}: The expected number of subjects
+#'       reaching milestone for the active treatment group.
+#'
+#'     - \code{expectedNumberOfEvents2}: The expected number of events for
+#'       control group.
+#'
+#'     - \code{expectedNumberOfDropouts2}: The expected number of dropouts
+#'       for the control group.
+#'
+#'     - \code{expectedNumberOfSubjects2}: The expected number of subjects
+#'       for the control group.
+#'
+#'     - \code{expectedNumberOfMilestone2}: The expected number of subjects
+#'       reaching milestone for the control group.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -7613,7 +7839,7 @@ rmsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'   the value is allowed to be less than the sum of \code{accrualDuration}
 #'   and \code{followupTime}.
 #'
-#' @return An S3 class \code{rmpowerequiv} object with 3 components:
+#' @return An S3 class \code{rmpowerequiv} object with 4 components:
 #'
 #' * \code{overallResults}: A data frame containing the following variables:
 #'
@@ -7621,15 +7847,15 @@ rmsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'
 #'     - \code{alpha}: The overall significance level.
 #'
-#'     - \code{attainedAlphaH10}: The attained significance level under H10.
-#'
-#'     - \code{attainedAlphaH20}: The attained significance level under H20.
+#'     - \code{numberOfEvents}: The total number of events.
 #'
 #'     - \code{numbeOfSubjects}: The total number of subjects.
 #'
 #'     - \code{studyDuration}: The total study duration.
 #'
 #'     - \code{information}: The maximum information.
+#'
+#'     - \code{expectedNumberOfEvents}: The expected number of events.
 #'
 #'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
 #'
@@ -7682,7 +7908,14 @@ rmsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'     - \code{cumulativeAttainedAlphaH20}: The cumulative alpha attained
 #'       under \code{H20}.
 #'
+#'     - \code{numberOfEvents}: The number of events.
+#'
+#'     - \code{numberOfDropouts}: The number of dropouts.
+#'
 #'     - \code{numberOfSubjects}: The number of subjects.
+#'
+#'     - \code{numberOfMilestone}: The number of subjects reaching
+#'       milestone.
 #'
 #'     - \code{analysisTime}: The average time since trial start.
 #'
@@ -7706,6 +7939,57 @@ rmsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'   \code{piecewiseSurvivalTime}, \code{stratumFraction},
 #'   \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2},
 #'   and \code{spendingTime}.
+#'
+#' * \code{byTreatmentCounts}: A list containing the following counts by
+#'   treatment group:
+#'
+#'     - \code{numberOfEvents1}: The number of events by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfDropouts1}: The number of dropouts by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfSubjects1}: The number of subjects by stage for
+#'       the treatment group.
+#'
+#'     - \code{numberOfMilestone1}: The number of subjects reaching
+#'       milestone by stage for the active treatment group.
+#'
+#'     - \code{numberOfEvents2}: The number of events by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfDropouts2}: The number of dropouts by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfSubjects2}: The number of subjects by stage for
+#'       the control group.
+#'
+#'     - \code{numberOfMilestone2}: The number of subjects reaching
+#'       milestone by stage for the control group.
+#'
+#'     - \code{expectedNumberOfEvents1}: The expected number of events for
+#'       the treatment group.
+#'
+#'     - \code{expectedNumberOfDropouts1}: The expected number of dropouts
+#'       for the active treatment group.
+#'
+#'     - \code{expectedNumberOfSubjects1}: The expected number of subjects
+#'       for the active treatment group.
+#'
+#'     - \code{expectedNumberOfMilestone1}: The expected number of subjects
+#'       reaching milestone for the active treatment group.
+#'
+#'     - \code{expectedNumberOfEvents2}: The expected number of events for
+#'       control group.
+#'
+#'     - \code{expectedNumberOfDropouts2}: The expected number of dropouts
+#'       for the control group.
+#'
+#'     - \code{expectedNumberOfSubjects2}: The expected number of subjects
+#'       for the control group.
+#'
+#'     - \code{expectedNumberOfMilestone2}: The expected number of subjects
+#'       reaching milestone for the control group.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -8678,65 +8962,35 @@ getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax =
 #' @param spendingTime A vector of length \code{kMax} for the error spending
 #'   time at each analysis. Defaults to missing, in which case, it is the
 #'   same as \code{informationRates}.
-#' @param varianceRatioH10 The ratio of the variance under H10 to
-#'   the variance under H1.
-#' @param varianceRatioH20 The ratio of the variance under H20 to
-#'   the variance under H1.
-#' @param varianceRatioH12 The ratio of the variance under H10 to
-#'   the variance under H20.
-#' @param varianceRatioH21 The ratio of the variance under H20 to
-#'   the variance under H10.
 #'
 #' @details
 #' Consider the equivalence design with two one-sided hypotheses:
 #' \deqn{H_{10}: \theta \leq \theta_{10},}
 #' \deqn{H_{20}: \theta \geq \theta_{20}.}
 #' We reject \eqn{H_{10}} at or before look \eqn{k} if
-#' \deqn{Z_{1j} = (\hat{\theta}_j - \theta_{10})\sqrt{\frac{n_j}{v_{10}}}
+#' \deqn{Z_{1j} = (\hat{\theta}_j - \theta_{10})\sqrt{I_j}
 #' \geq b_j}
 #' for some \eqn{j=1,\ldots,k}, where \eqn{\{b_j:j=1,\ldots,K\}} are the
 #' critical values associated with the specified alpha-spending function,
-#' and \eqn{v_{10}} is the null variance of
-#' \eqn{\hat{\theta}} based on the restricted maximum likelihood (reml)
-#' estimate of model parameters subject to the constraint imposed by
-#' \eqn{H_{10}} for one sampling unit drawn from \eqn{H_1}. For example,
+#' and \eqn{I_j} is the information for \eqn{\theta} (inverse variance of
+#' \eqn{\hat{\theta}} under the alternative hypothesis) at the
+#' \eqn{j}th look. For example,
 #' for estimating the risk difference \eqn{\theta = \pi_1 - \pi_2},
-#' the asymptotic limits of the
-#' reml estimates of \eqn{\pi_1} and \eqn{\pi_2} subject to the constraint
-#' imposed by \eqn{H_{10}} are given by
-#' \deqn{(\tilde{\pi}_1, \tilde{\pi}_2) = f(\theta_{10}, r, r\pi_1,
-#' 1-r, (1-r)\pi_2),}
-#' where \eqn{f(\theta_0, n_1, y_1, n_2, y_2)} is the function to obtain
-#' the reml of \eqn{\pi_1} and \eqn{\pi_2} subject to the constraint that
-#' \eqn{\pi_1-\pi_2 = \theta_0} with observed data
-#' \eqn{(n_1, y_1, n_2, y_2)} for the number of subjects and number of
-#' responses in the active treatment and control groups,
-#' \eqn{r} is the randomization probability for the active treatment
-#' group, and \deqn{v_{10} = \frac{\tilde{\pi}_1 (1-\tilde{\pi}_1)}{r} +
-#' \frac{\tilde{\pi}_2 (1-\tilde{\pi}_2)}{1-r}.}
-#'
-#' Let \eqn{I_j = n_j/v_1} denote the information for \eqn{\theta} at the
-#' \eqn{j}th look, where
-#' \deqn{v_{1} = \frac{\pi_1 (1-\pi_1)}{r} + \frac{\pi_2 (1-\pi_2)}{1-r}}
-#' denotes the variance of \eqn{\hat{\theta}} under \eqn{H_1} for one
-#' sampling unit. It follows that
-#' \deqn{(Z_{1j} \geq b_j) = (Z_j \geq w_{10} b_j +
+#' \deqn{I_j = \left\{\frac{\pi_1 (1-\pi_1)}{n_{1j}} +
+#' \frac{\pi_2(1-\pi_2)}{n_2j}\right\}^{-1}.}
+#' It follows that
+#' \deqn{(Z_{1j} \geq b_j) = (Z_j \geq b_j +
 #' (\theta_{10}-\theta)\sqrt{I_j}),}
-#' where \eqn{Z_j = (\hat{\theta}_j - \theta)\sqrt{I_j}}, and
-#' \eqn{w_{10} = \sqrt{v_{10}/v_1}}.
+#' where \eqn{Z_j = (\hat{\theta}_j - \theta)\sqrt{I_j}}.
 #'
 #' Similarly, we reject \eqn{H_{20}} at or before look \eqn{k} if
-#' \deqn{Z_{2j} = (\hat{\theta}_j - \theta_{20})\sqrt{\frac{n_j}{v_{20}}}
-#' \leq -b_j} for some \eqn{j=1,\ldots,k}, where \eqn{v_{20}} is the null
-#' variance of \eqn{\hat{\theta}} based on the reml estimate of model
-#' parameters subject to the constraint imposed by \eqn{H_{20}} for
-#' one sampling unit drawn from \eqn{H_1}. We have
-#' \deqn{(Z_{2j} \leq -b_j) = (Z_j \leq -w_{20} b_j +
-#' (\theta_{20}-\theta)\sqrt{I_j}),}
-#' where \eqn{w_{20} = \sqrt{v_{20}/v_1}}.
+#' \deqn{Z_{2j} = (\hat{\theta}_j - \theta_{20})\sqrt{I_j}
+#' \leq -b_j} for some \eqn{j=1,\ldots,k}. We have
+#' \deqn{(Z_{2j} \leq -b_j) = (Z_j \leq - b_j +
+#' (\theta_{20}-\theta)\sqrt{I_j}).}
 #'
-#' Let \eqn{l_j = w_{10}b_j + (\theta_{10}-\theta)\sqrt{I_j}},
-#' and \eqn{u_j = -w_{20}b_j + (\theta_{20}-\theta)\sqrt{I_j}}.
+#' Let \eqn{l_j = b_j + (\theta_{10}-\theta)\sqrt{I_j}},
+#' and \eqn{u_j = -b_j + (\theta_{20}-\theta)\sqrt{I_j}}.
 #' The cumulative probability to reject \eqn{H_0 = H_{10} \cup H_{20}} at
 #' or before look \eqn{k} under the alternative hypothesis \eqn{H_1} is
 #' given by
@@ -8756,62 +9010,12 @@ getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax =
 #' \eqn{p_{12} = 1}. Otherwise, \eqn{p_{12}} can be evaluated using
 #' two-sided exit probabilities for group sequential designs.
 #'
-#' To evaluate the type I error of the equivalence trial under
-#' \eqn{H_{10}}, we first match the information under \eqn{H_{10}}
-#' with the information under \eqn{H_1}. For example, for estimating
-#' the risk difference for two independent samples, the sample size
-#' \eqn{n_{10}} under \eqn{H_{10}} must satisfy
-#' \deqn{\frac{1}{n_{10}}\left(\frac{(\pi_2 + \theta_{10})
-#' (1 - \pi_2 - \theta_{10})}{r} + \frac{\pi_2 (1-\pi_2)}{1-r}\right)
-#' = \frac{1}{n}\left(\frac{\pi_1(1-\pi_1)}{r} +
-#' \frac{\pi_2 (1-\pi_2)}{1-r}\right).}
-#' Then we obtain the reml estimates of \eqn{\pi_1} and \eqn{\pi_2}
-#' subject to the constraint imposed by \eqn{H_{20}} for one sampling
-#' unit drawn from \eqn{H_{10}},
-#' \deqn{(\tilde{\pi}_{10}, \tilde{\pi}_{20}) = f(\theta_{20}, r,
-#' r(\pi_2 + \theta_{10}), 1-r, (1-r)\pi_2).}
-#' Let \eqn{t_j} denote the information fraction at look \eqn{j}.
-#' Define \deqn{\tilde{v}_1 = \frac{(\pi_2 + \theta_{10})
-#' (1-\pi_2 -\theta_{10})}{r} + \frac{\pi_2 (1-\pi_2)}{1-r},} and
-#' \deqn{\tilde{v}_{20} = \frac{\tilde{\pi}_{10}(1-\tilde{\pi}_{10})}{r} +
-#' \frac{\tilde{\pi}_{20} (1-\tilde{\pi}_{20})}{1-r}.}
-#'
-#' The cumulative rejection probability under \eqn{H_{10}} at or before
-#' look \eqn{k} is given by
-#' \deqn{P_{\theta_{10}}\left(\cup_{j=1}^{k} \{(\hat{\theta}_j - \theta_{10})
-#' \sqrt{n_{10} t_j/\tilde{v}_1} \geq b_j\} \cap
-#' \cup_{j=1}^{k} \{(\hat{\theta}_j - \theta_{20})
-#' \sqrt{n_{10} t_j/\tilde{v}_{20}} \leq -b_j\}\right) =
-#' q_1 + q_2 + q_{12},}
-#' where
-#' \deqn{q_1 = P_{\theta_{10}}\left(\cup_{j=1}^{k}
-#' \{(\hat{\theta}_j - \theta_{10})
-#' \sqrt{n_{10} t_j/\tilde{v}_1} \geq b_j\}\right) =
-#' P_{\theta_{10}}\left(\cup_{j=1}^{k} (Z_j \geq b_j)\right),}
-#' \deqn{q_2 = P_{\theta_{10}}\left(\cup_{j=1}^{k}
-#' \{(\hat{\theta}_j - \theta_{20})
-#' \sqrt{n_{10} t_j/\tilde{v}_{20}} \leq -b_j\}\right) =
-#' P_{\theta_{10}}\left(\cup_{j=1}^{k} (Z_j \leq -b_j w_{21} +
-#' (\theta_{20} - \theta_{10})\sqrt{I_j})\right),}
-#' and
-#' \deqn{q_{12} = P_{\theta_{10}}\left(\cup_{j=1}^{k}
-#' \{(Z_j \geq b_j) \cup (Z_j \leq -w_{21} b_j +
-#' (\theta_{20} - \theta_{10})\sqrt{I_j})\}\right).}
-#' Here \eqn{Z_j = (\hat{\theta}_j - \theta_{10}) \sqrt{I_j}}, and
-#' \eqn{w_{21} = \sqrt{\tilde{v}_{20}/\tilde{v}_1}}.
-#' Of note, \eqn{q_1}, \eqn{q_2}, and \eqn{q_{12}}
-#' can be evaluated using group sequential exit probabilities.
-#' Similarly, we can define \eqn{\tilde{v}_2}, \eqn{\tilde{v}_{10}},
-#' and \eqn{w_{12} = \sqrt{\tilde{v}_{10}/\tilde{v}_2}}, and
-#' evaluate the type I error under \eqn{H_{20}}.
-#'
-#' The variance ratios correspond to
-#' \deqn{\text{varianceRatioH10} = v_{10}/v_1,}
-#' \deqn{\text{varianceRatioH20} = v_{20}/v_1,}
-#' \deqn{\text{varianceRatioH12} = \tilde{v}_{10}/\tilde{v}_2,}
-#' \deqn{\text{varianceRatioH21} = \tilde{v}_{20}/\tilde{v}_1.}
-#' If the alternative variance is used, then the variance ratios
-#' are all equal to 1.
+#' Since the equivalent hypothesis is tested using two one-sided tests,
+#' the type I error is controlled. To evaluate the attained type I error
+#' of the equivalence trial under \eqn{H_{10}} (or \eqn{H_{20}}),
+#' we simply fix the control group parameter, update the active
+#' treatment group parameter according to the null hypothesis, and
+#' use the parameters in the power calculation outlined above.
 #'
 #' @return An S3 class \code{designEquiv} object with three components:
 #'
@@ -8888,18 +9092,6 @@ getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax =
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
 #'
-#'     - \code{varianceRatioH10}: The ratio of the variance under H10 to
-#'       the variance under H1.
-#'
-#'     - \code{varianceRatioH20}: The ratio of the variance under H20 to
-#'       the variance under H1.
-#'
-#'     - \code{varianceRatioH12}: The ratio of the variance under H10 to
-#'       the variance under H20.
-#'
-#'     - \code{varianceRatioH21}: The ratio of the variance under H20 to
-#'       the variance under H10.
-#'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
@@ -8918,8 +9110,8 @@ getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax =
 #'   alpha = 0.05, typeAlphaSpending = "sfOF"))
 #'
 #' @export
-getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_real_, thetaUpper = NA_real_, theta = 0, kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, varianceRatioH10 = 1, varianceRatioH20 = 1, varianceRatioH12 = 1, varianceRatioH21 = 1) {
-    .Call(`_lrstat_getDesignEquiv`, beta, IMax, thetaLower, thetaUpper, theta, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, varianceRatioH10, varianceRatioH20, varianceRatioH12, varianceRatioH21)
+getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_real_, thetaUpper = NA_real_, theta = 0, kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_) {
+    .Call(`_lrstat_getDesignEquiv`, beta, IMax, thetaLower, thetaUpper, theta, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime)
 }
 
 #' @title Adaptive Design at an Interim Look
@@ -9161,16 +9353,20 @@ house <- function(x) {
     .Call(`_lrstat_house`, x)
 }
 
-row_house <- function(A, v) {
-    invisible(.Call(`_lrstat_row_house`, A, v))
+row_house <- function(A, i1, i2, j1, j2, v) {
+    invisible(.Call(`_lrstat_row_house`, A, i1, i2, j1, j2, v))
+}
+
+col_house <- function(A, i1, i2, j1, j2, v) {
+    invisible(.Call(`_lrstat_col_house`, A, i1, i2, j1, j2, v))
 }
 
 #' @title QR Decomposition of a Matrix
 #' @description Computes the QR decomposition of a matrix.
 #'
-#' @param x A numeric matrix whose QR decomposition is to be computed.
+#' @param X A numeric matrix whose QR decomposition is to be computed.
 #' @param tol The tolerance for detecting linear dependencies in the
-#'   columns of \code{x}.
+#'   columns of \code{X}.
 #'
 #' @details
 #' This function performs Householder QR with column pivoting:
@@ -9219,11 +9415,79 @@ row_house <- function(A, v) {
 #' qrcpp(h9)
 #'
 #' @export
-qrcpp <- function(x, tol = 1e-12) {
-    .Call(`_lrstat_qrcpp`, x, tol)
+qrcpp <- function(X, tol = 1e-12) {
+    .Call(`_lrstat_qrcpp`, X, tol)
+}
+
+givens <- function(a, b) {
+    .Call(`_lrstat_givens`, a, b)
+}
+
+row_rot <- function(A, i1, i2, j1, j2, c, s) {
+    invisible(.Call(`_lrstat_row_rot`, A, i1, i2, j1, j2, c, s))
+}
+
+col_rot <- function(A, i1, i2, j1, j2, c, s) {
+    invisible(.Call(`_lrstat_col_rot`, A, i1, i2, j1, j2, c, s))
+}
+
+house_bidiag <- function(A, outtransform = 1L) {
+    .Call(`_lrstat_house_bidiag`, A, outtransform)
+}
+
+zero_diagonal <- function(B, k, outtransform = 1L) {
+    .Call(`_lrstat_zero_diagonal`, B, k, outtransform)
+}
+
+#' @title Singular Value Decomposition of a Matrix
+#' @description Computes the singular-value decomposition of a
+#' rectangular matrix.
+#'
+#' @param X A numeric matrix whose SVD decomposition is to be computed.
+#' @param outtransform Whether the orthogonal matrices composing of the
+#'   left and right singular vectors are to be computed.
+#' @param decreasing Whether the singular values should be sorted in
+#'   decreasing order and the corresponding singular vectors rearranged
+#'   accordingly.
+#'
+#' @details
+#' Given \eqn{A \in R^{m\times n} (m \geq n)}, the following algorithm
+#' overwrites \eqn{A} with \eqn{U^T A V = D}, where
+#' \eqn{U\in R^{m\times m}} is orthogonal, \eqn{V \in R^{n\times n}} is
+#' orthogonal, and \eqn{D \in R^{m\times n}} is diagonal.
+#'
+#' @return A list with the following components:
+#'
+#' * \code{d}: A vector containing the singular values of \eqn{X}.
+#'
+#' * \code{U}: A matrix whose columns contain the left singular vectors
+#'   of \eqn{X}.
+#'
+#' * \code{V}: A matrix whose columns contain the right singular vectors
+#'   of \eqn{X}.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#' Gene N. Golub and Charles F. Van Loan.
+#' Matrix Computations, second edition. Baltimore, Maryland:
+#' The John Hopkins University Press, 1989, p.434.
+#'
+#' @examples
+#'
+#' A <- matrix(c(1,0,0,0, 1,2,0,0, 0,1,3,0, 0,0,1,4), 4, 4)
+#' svdcpp(A)
+#'
+#' @export
+svdcpp <- function(X, outtransform = 1L, decreasing = 1L) {
+    .Call(`_lrstat_svdcpp`, X, outtransform, decreasing)
 }
 
 rmvnorm <- function(n, mean, sigma) {
     .Call(`_lrstat_rmvnorm`, n, mean, sigma)
+}
+
+float_to_fraction <- function(x, tol = 0.000001) {
+    .Call(`_lrstat_float_to_fraction`, x, tol)
 }
 

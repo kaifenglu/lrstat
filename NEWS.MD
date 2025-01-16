@@ -1,3 +1,17 @@
+# lrstat 0.2.12
+
+- allow time to take zero values in kmest, lrtest, rmest, and rmdiff
+- add the bc parameter for bias correction for noncanonical parameterization and weighted logistic regression
+- add loop to look for appropriate bracketing interval for the brent algorithm in lrstat, kmstat, rmstat, and nbstat
+- update f_info nbstat to calculate the information directly
+- update the mean exposure calculations in nbstat for starting values for reml 
+- add svdcpp for singular value decomposition of a rectangular matrix
+- add number of events, number of dropouts and number of milestone subjects to kmstat and kmpower
+- add number of events, number of dropouts and number of milestone subjects to rmstat and rmpower
+- remove variance ratios for equivalence trials assuming Wald test statistics with variance of parameter estimator evaluated under the alternative hypothesis
+- remove the interval argument from getDurationFromNevents
+- add lrschoenfeld for sample size calculation using the Schoenfeld formula under proportional hazards
+
 # lrstat 0.2.11
 
 - use numerical integration for lrstat for cases including unequal dropouts between treatment groups, hence removed the numSubintervals argument from lrstat1, lrstat, lrpower, lrsamplesize, lrpowerequiv, and lrsamplesizeequiv
