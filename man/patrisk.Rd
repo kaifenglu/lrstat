@@ -48,4 +48,3 @@ patrisk(time = c(3, 9), piecewiseSurvivalTime = c(0, 6),
 \author{
 Kaifeng Lu, \email{kaifenglu@gmail.com}
 }
-\keyword{internal}

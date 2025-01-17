@@ -514,7 +514,7 @@ lrschoenfeld <- function(
       accrualTime, accrualIntensity,
       piecewiseSurvivalTime, stratumFraction,
       lambda1, lambda2, gamma1, gamma2,
-      accrualDuration, followupTime,
+      NA, followupTime,
       fixedFollowup, 0, 0, 0, "schoenfeld",
       interval, spendingTime, rounding)
 
@@ -577,7 +577,12 @@ lrschoenfeld <- function(
       accrualDuration <- getAccrualDurationFromN(
         nsubjects, accrualTime, accrualIntensity)
 
-      studyDuration <- accrualDuration + followupTime
+      studyDuration <- caltime(
+        d, allocationRatioPlanned,
+        accrualTime, accrualIntensity,
+        piecewiseSurvivalTime, stratumFraction,
+        lambda1, lambda2, gamma1, gamma2,
+        accrualDuration, followupTime, fixedFollowup)
     }
 
     lrp1 <- lrpower(

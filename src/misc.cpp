@@ -4842,7 +4842,6 @@ NumericVector remlRiskDiff(const double riskDiffH0 = 0.0,
 }
 
 
-// [[Rcpp::export]]
 DataFrame remlRiskDiff2(const double riskDiffH0 = 0.0,
                         const NumericVector& n1 = NA_REAL,
                         const NumericVector& y1 = NA_REAL,
@@ -5088,7 +5087,6 @@ NumericVector remlRiskRatio(const double riskRatioH0 = 1.0,
 }
 
 
-// [[Rcpp::export]]
 DataFrame remlRiskRatio2(const double riskRatioH0 = 1.0,
                          const NumericVector& n1 = NA_REAL,
                          const NumericVector& y1 = NA_REAL,
@@ -5361,7 +5359,6 @@ NumericVector remlOddsRatio(const double oddsRatioH0 = 1.0,
 }
 
 
-// [[Rcpp::export]]
 DataFrame remlOddsRatio2(const double oddsRatioH0 = 1.0,
                          const NumericVector& n1 = NA_REAL,
                          const NumericVector& y1 = NA_REAL,
@@ -5635,7 +5632,6 @@ NumericVector remlRateDiff(const double rateDiffH0 = 0.0,
 }
 
 
-// [[Rcpp::export]]
 DataFrame remlRateDiff2(const double rateDiffH0 = 0.0,
                         const NumericVector& t1 = NA_REAL,
                         const NumericVector& y1 = NA_REAL,
@@ -5863,7 +5859,6 @@ NumericVector remlRateRatio(const double rateRatioH0 = 1.0,
 }
 
 
-// [[Rcpp::export]]
 DataFrame remlRateRatio2(const double rateRatioH0 = 1.0,
                          const NumericVector& t1 = NA_REAL,
                          const NumericVector& y1 = NA_REAL,

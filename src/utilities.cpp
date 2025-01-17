@@ -5,7 +5,6 @@
 using namespace Rcpp;
 
 
-// [[Rcpp::export]]
 void set_seed(int seed) {
   Environment base_env("package:base");
   Function set_seed_r = base_env["set.seed"];
@@ -13,7 +12,6 @@ void set_seed(int seed) {
 }
 
 
-// [[Rcpp::export]]
 NumericVector stl_sort(const NumericVector& x) {
   NumericVector y = clone(x);
   std::sort(y.begin(), y.end());
@@ -772,7 +770,6 @@ NumericVector getBoundcpp(
 }
 
 
-// [[Rcpp::export]]
 List getPower(const double alpha,
               const int kMax,
               const NumericVector& b,
@@ -1104,7 +1101,6 @@ NumericVector quad(integr_fn f, void *ex, double lower, double upper,
 
 // Wrapper function for vmmin
 List bmini(NumericVector x0, optimfn fn, optimgr gr, void *ex, double eps) {
-
   int maxit = 100;
   int trace = 0;
   double abstol = eps, reltol = eps;
@@ -1248,8 +1244,6 @@ NumericVector getAccrualDurationFromN(
 //' analysis times after enrollment for a patient in a treatment group with
 //' specified piecewise exponential survival and dropout distributions.
 //'
-//' @keywords internal
-//'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
 //' @examples
@@ -1324,8 +1318,6 @@ NumericVector patrisk(const NumericVector& time = NA_REAL,
 //' @return A vector of probabilities of having an event at the specified
 //' analysis times after enrollment for a patient in a treatment group with
 //' specified piecewise exponential survival and dropout distributions.
-//'
-//' @keywords internal
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
@@ -1636,8 +1628,6 @@ NumericVector ad(const NumericVector& time = NA_REAL,
 //' @return A matrix of the number of patients at risk at the specified
 //' analysis times (row) for each treatment group (column).
 //'
-//' @keywords internal
-//'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
 //' @examples
@@ -1710,8 +1700,6 @@ NumericMatrix natrisk(const NumericVector& time = NA_REAL,
 //'
 //' @return A matrix of the number of patients having an event at the
 //' specified analysis times (row) for each treatment group (column).
-//'
-//' @keywords internal
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
@@ -1798,8 +1786,6 @@ NumericMatrix nevent(const NumericVector& time = NA_REAL,
 //'
 //' @return A matrix of the number of patients having an event at the
 //' specified calendar times (row) for each treatment group (column).
-//'
-//' @keywords internal
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
@@ -2572,7 +2558,7 @@ List getDesign(const double beta = NA_REAL,
 //' \eqn{j}th look. For example,
 //' for estimating the risk difference \eqn{\theta = \pi_1 - \pi_2},
 //' \deqn{I_j = \left\{\frac{\pi_1 (1-\pi_1)}{n_{1j}} +
-//' \frac{\pi_2(1-\pi_2)}{n_2j}\right\}^{-1}.}
+//' \frac{\pi_2(1-\pi_2)}{n_{2j}}\right\}^{-1}.}
 //' It follows that
 //' \deqn{(Z_{1j} \geq b_j) = (Z_j \geq b_j +
 //' (\theta_{10}-\theta)\sqrt{I_j}),}
@@ -2597,8 +2583,8 @@ List getDesign(const double beta = NA_REAL,
 //' \deqn{p_2 = P_\theta\left(\cup_{j=1}^{k} (Z_{2j} \leq -b_j)\right)
 //' = P_\theta\left(\cup_{j=1}^{k} (Z_j \leq u_j)\right),}
 //' and
-//' \deqn{p_{12} = P_\theta\left(\cup_{j=1}^{k} \{(Z_j \geq l_j) \cup
-//' (Z_j \leq u_j)\}\right).}
+//' \deqn{p_{12} = P_\theta\left(\cup_{j=1}^{k} (Z_j \geq l_j) \cup
+//' (Z_j \leq u_j)\right).}
 //' Of note, both \eqn{p_1} and \eqn{p_2} can be evaluated using
 //' one-sided exit probabilities for group sequential designs.
 //' If there exists \eqn{j\leq k} such that \eqn{l_j \leq u_j}, then
@@ -2608,8 +2594,8 @@ List getDesign(const double beta = NA_REAL,
 //' Since the equivalent hypothesis is tested using two one-sided tests,
 //' the type I error is controlled. To evaluate the attained type I error
 //' of the equivalence trial under \eqn{H_{10}} (or \eqn{H_{20}}),
-//' we simply fix the control group parameter, update the active
-//' treatment group parameter according to the null hypothesis, and
+//' we simply fix the control group parameters, update the active
+//' treatment group parameters according to the null hypothesis, and
 //' use the parameters in the power calculation outlined above.
 //'
 //' @return An S3 class \code{designEquiv} object with three components:
@@ -3830,7 +3816,6 @@ bool hasVariable(DataFrame df, std::string varName) {
 }
 
 
-// [[Rcpp::export]]
 double quantilecpp(const NumericVector& x, const double p) {
   int n = static_cast<int>(x.size());
   NumericVector y = clone(x);
@@ -3860,7 +3845,6 @@ double squantilecpp(const std::function<double(double)>& S, double p) {
 }
 
 
-// [[Rcpp::export]]
 IntegerVector c_vectors_i(IntegerVector vec1, IntegerVector vec2) {
   IntegerVector result(vec1.size() + vec2.size());
   std::copy(vec1.begin(), vec1.end(), result.begin());
@@ -3869,7 +3853,6 @@ IntegerVector c_vectors_i(IntegerVector vec1, IntegerVector vec2) {
 }
 
 
-// [[Rcpp::export]]
 NumericVector c_vectors(NumericVector vec1, NumericVector vec2) {
   NumericVector result(vec1.size() + vec2.size());
   std::copy(vec1.begin(), vec1.end(), result.begin());
@@ -3878,7 +3861,6 @@ NumericVector c_vectors(NumericVector vec1, NumericVector vec2) {
 }
 
 
-// [[Rcpp::export]]
 NumericMatrix subset_matrix_by_row(NumericMatrix a, IntegerVector q) {
   int i, j, n = static_cast<int>(q.size()), p = a.ncol();
   NumericMatrix b(n,p);
@@ -3891,7 +3873,6 @@ NumericMatrix subset_matrix_by_row(NumericMatrix a, IntegerVector q) {
 }
 
 
-// [[Rcpp::export]]
 NumericMatrix c_matrices(NumericMatrix a1, NumericMatrix a2) {
   int h, i, j, n1 = a1.nrow(), n2 = a2.nrow(), p = a1.ncol();
   NumericMatrix b(n1+n2, p);
@@ -3912,7 +3893,6 @@ NumericMatrix c_matrices(NumericMatrix a1, NumericMatrix a2) {
 }
 
 
-// [[Rcpp::export]]
 List bygroup(DataFrame data, const StringVector& variables) {
   int i;
   int n = data.nrows();
@@ -3989,7 +3969,6 @@ List bygroup(DataFrame data, const StringVector& variables) {
 
 
 // The following three utilities functions are from the survival package
-// [[Rcpp::export]]
 int cholesky2(NumericMatrix matrix, int n, double toler) {
   double temp;
   int i, j, k;
@@ -4027,7 +4006,6 @@ int cholesky2(NumericMatrix matrix, int n, double toler) {
 }
 
 
-// [[Rcpp::export]]
 void chsolve2(NumericMatrix matrix, int n, NumericVector y) {
   int i, j;
   double temp;
@@ -4051,7 +4029,6 @@ void chsolve2(NumericMatrix matrix, int n, NumericVector y) {
 }
 
 
-// [[Rcpp::export]]
 void chinv2(NumericMatrix matrix, int n) {
   double temp;
   int i, j, k;
@@ -4084,7 +4061,6 @@ void chinv2(NumericMatrix matrix, int n) {
 }
 
 
-// [[Rcpp::export]]
 NumericMatrix invsympd(NumericMatrix matrix, int n, double toler) {
   int i, j;
   NumericMatrix v = clone(matrix);
@@ -4101,7 +4077,6 @@ NumericMatrix invsympd(NumericMatrix matrix, int n, double toler) {
 
 
 // adapt from survsplit.c in the survival package
-// [[Rcpp::export]]
 DataFrame survsplit(NumericVector tstart,
                     NumericVector tstop,
                     NumericVector cut) {
@@ -4161,7 +4136,6 @@ DataFrame survsplit(NumericVector tstart,
 }
 
 
-// [[Rcpp::export]]
 bool is_sorted(NumericVector x) {
   int n = x.size();
 
@@ -4179,7 +4153,6 @@ bool is_sorted(NumericVector x) {
 // Householder vector
 // Given an n-vector x, this function computes an n-vector v with v(1) = 1
 // such that (I - 2*v*t(v)/t(v)*v)*x is zero in all but the first component.
-// [[Rcpp::export]]
 NumericVector house(const NumericVector& x) {
   int n = static_cast<int>(x.size());
   double mu = sqrt(sum(x*x));
@@ -4199,7 +4172,6 @@ NumericVector house(const NumericVector& x) {
 // Given an m-by-n matrix A and a nonzero m-vector v with v(1) = 1,
 // the following algorithm overwrites A with P*A where
 // P = I - 2*v*t(v)/t(v)*v.
-// [[Rcpp::export]]
 void row_house(NumericMatrix& A, const int i1, const int i2,
                const int j1, const int j2, const NumericVector& v) {
   if (i1 < 0 || i1 > i2 || i2 >= A.nrow()) {
@@ -4231,7 +4203,6 @@ void row_house(NumericMatrix& A, const int i1, const int i2,
 // Given an m-by-n matrix A and a nonzero n-vector v with v(1) = 1,
 // the following algorithm overwrites A with A*P where
 // P = I - 2*v*t(v)/t(v)*v.
-// [[Rcpp::export]]
 void col_house(NumericMatrix& A, const int i1, const int i2,
                const int j1, const int j2, const NumericVector& v) {
   if (i1 < 0 || i1 > i2 || i2 >= A.nrow()) {
@@ -4285,11 +4256,11 @@ void col_house(NumericMatrix& A, const int i1, const int i2,
 //'
 //' @return A list with the following components:
 //'
-//' * \code{qr}: A matrix with the same dimensions as \code{x}. The upper
+//' * \code{qr}: A matrix with the same dimensions as \code{X}. The upper
 //'   triangle contains the \code{R} of the decomposition and the lower
 //'   triangle contains Householder vectors (stored in compact form).
 //'
-//' * \code{rank}: The rank of \code{x} as computed by the decomposition.
+//' * \code{rank}: The rank of \code{X} as computed by the decomposition.
 //'
 //' * \code{pivot}: The column permutation for the pivoting strategy used
 //'   during the decomposition.
@@ -4415,7 +4386,6 @@ List qrcpp(const NumericMatrix& X, double tol = 1e-12) {
 // c = cos(theta) and s = sin(theta) so that
 //               |  c   s  |^T | a |  =  | r |
 //               | -s   c  |   | b |     | 0 |
-// [[Rcpp::export]]
 NumericVector givens(const double a, const double b) {
   double c, s, tau;
 
@@ -4439,7 +4409,6 @@ NumericVector givens(const double a, const double b) {
 // the following algorithm overwrites A with the matrix
 //               |  c   s  |^T  A
 //               | -s   c  |
-// [[Rcpp::export]]
 void row_rot(NumericMatrix& A, const int i1, const int i2,
              const int j1, const int j2,
              const double c, const double s) {
@@ -4464,7 +4433,6 @@ void row_rot(NumericMatrix& A, const int i1, const int i2,
 // the following algorithm overwrites A with the matrix
 //               A  |  c   s  |
 //                  | -s   c  |
-// [[Rcpp::export]]
 void col_rot(NumericMatrix& A, const int i1, const int i2,
              const int j1, const int j2,
              const double c, const double s) {
@@ -4492,7 +4460,6 @@ void col_rot(NumericMatrix& A, const int i1, const int i2,
 // V = V_1 ... V_{n-2}. The essential part of U_j's Householder vector
 // is stored in A((j+1):m, j), while the essential part of V_j's
 // Householder vector is stored in A(j, (j+2):n).
-// [[Rcpp::export]]
 List house_bidiag(NumericMatrix& A, const bool outtransform = 1) {
   int i, j, m = A.nrow(), n = A.ncol();
   if (m < n) {
@@ -4608,7 +4575,6 @@ List house_bidiag(NumericMatrix& A, const bool outtransform = 1) {
 
 // Given a bidiagonal matrix with a zero diagonal, premultiplication
 // by a sequence of Givens transformations to zero the entire row
-// [[Rcpp::export]]
 List zero_diagonal(NumericMatrix& B, const int k,
                    const bool outtransform = 1) {
   int j, n = B.nrow();
@@ -4648,7 +4614,6 @@ List zero_diagonal(NumericMatrix& B, const int k,
 // bidiagonal matrix t(U)*B*V, where U and V are orthogonal and V
 // is essentially the orthogonal matrix that would be obtained by
 // applying Algorithm 8.2.2 in Golub and Van Loan (1989) to T = t(B)*B.
-// [[Rcpp:export]]
 List svd_step(NumericMatrix& B, const bool outtransform = 1) {
   int k, n = B.ncol();
   NumericMatrix U = NumericMatrix::diag(n, 1.0);
@@ -4905,7 +4870,6 @@ List svdcpp(const NumericMatrix& X, const bool outtransform = 1,
 }
 
 
-// [[Rcpp::export]]
 NumericMatrix rmvnorm(int n, NumericVector mean, NumericMatrix sigma) {
   int i,j,k;
   int p = static_cast<int>(mean.size());
@@ -4940,7 +4904,20 @@ NumericMatrix rmvnorm(int n, NumericVector mean, NumericMatrix sigma) {
 }
 
 
-// algorithm from http://stackoverflow.com/a/5128558/221955
+//' @title Converting a decimal to a fraction
+//' @description Converts a decimal to a fraction based on the algorithm
+//' from http://stackoverflow.com/a/5128558/221955.
+//'
+//' @param x The fraction in decimal form.
+//' @param tol The tolerance level for the conversion error.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @examples
+//'
+//' float_to_fraction(5/3)
+//'
+//' @export
 // [[Rcpp::export]]
 NumericVector float_to_fraction(const double x, const double tol=0.000001) {
   NumericVector v(2);

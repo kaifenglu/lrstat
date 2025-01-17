@@ -86,4 +86,3 @@ nevent(time = c(9, 24), allocationRatioPlanned = 1,
 \author{
 Kaifeng Lu, \email{kaifenglu@gmail.com}
 }
-\keyword{internal}

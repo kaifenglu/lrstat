@@ -16,16 +16,13 @@ struct logparams {
   NumericVector offset;
 };
 
-
 double f_llik_0(int p, NumericVector par, void *ex);
-
 NumericVector f_score_0(int p, NumericVector par, void *ex);
-
 NumericMatrix f_info_0(int p, NumericVector par, void *ex);
 
 double f_pen_llik_0(int p, NumericVector par, void *ex);
-
 NumericVector f_pen_score_0(int p, NumericVector par, void *ex);
+NumericVector f_firth_score_0(int p, NumericVector par, void *ex);
 
 NumericMatrix f_ressco_0(int p, NumericVector par, void *ex);
 

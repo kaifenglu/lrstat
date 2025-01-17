@@ -6,7 +6,6 @@
 using namespace Rcpp;
 
 
-// [[Rcpp::export]]
 NumericVector fsurvci(double surv, double sesurv, String ct, double z) {
   double grad, hw, lower = NA_REAL, upper = NA_REAL;
   if (ct == "plain") {
@@ -395,6 +394,586 @@ DataFrame kmest(const DataFrame data,
       }
     }
   }
+
+  if (has_rep) {
+    for (i=0; i<p_rep; i++) {
+      String s = rep[i];
+      if (TYPEOF(data[s]) == INTSXP) {
+        IntegerVector repwi = u_rep[s];
+        result.push_back(repwi[rep0-1], s);
+      } else if (TYPEOF(data[s]) == REALSXP) {
+        NumericVector repwn = u_rep[s];
+        result.push_back(repwn[rep0-1], s);
+      } else if (TYPEOF(data[rep]) == STRSXP) {
+        StringVector repwc = u_rep[s];
+        result.push_back(repwc[rep0-1], s);
+      }
+    }
+  }
+
+  return result;
+}
+
+
+//' @title Estimate of Milestone Survival Difference
+//' @description Obtains the estimate of milestone survival difference
+//' between two treatment groups.
+//'
+//' @param data The input data frame that contains the following variables:
+//'
+//'   * \code{rep}: The replication for by-group processing.
+//'
+//'   * \code{stratum}: The stratum.
+//'
+//'   * \code{treat}: The treatment.
+//'
+//'   * \code{time}: The possibly right-censored survival time.
+//'
+//'   * \code{event}: The event indicator.
+//'
+//' @param rep The name of the replication variable in the input data.
+//' @param stratum The name of the stratum variable in the input data.
+//' @param treat The name of the treatment variable in the input data.
+//' @param time The name of the time variable in the input data.
+//' @param event The name of the event variable in the input data.
+//' @param milestone The milestone time at which to calculate the
+//'   survival probability.
+//' @param survDiffH0 The difference in milestone survival probabilities
+//'   under the null hypothesis. Defaults to 0 for superiority test.
+//' @param conflev The level of the two-sided confidence interval for
+//'   the difference in milestone survival probabilities. Defaults to 0.95.
+//'
+//' @return A data frame with the following variables:
+//'
+//' * \code{rep}: The replication.
+//'
+//' * \code{milestone}: The milestone time relative to randomization.
+//'
+//' * \code{survDiffH0}: The difference in milestone survival probabilities
+//'   under the null hypothesis.
+//'
+//' * \code{surv1}: The estimated milestone survival probability for
+//'   the treatment group.
+//'
+//' * \code{surv2}: The estimated milestone survival probability for
+//'   the control group.
+//'
+//' * \code{survDiff}: The estimated difference in milestone survival
+//'   probabilities.
+//'
+//' * \code{vsurv1}: The variance for surv1.
+//'
+//' * \code{vsurv2}: The variance for surv2.
+//'
+//' * \code{vsurvDiff}: The variance for survDiff.
+//'
+//' * \code{survDiffZ}: The Z-statistic value.
+//'
+//' * \code{survDiffPValue}: The one-sided p-value.
+//'
+//' * \code{lower}: The lower bound of confidence interval.
+//'
+//' * \code{upper}: The upper bound of confidence interval.
+//'
+//' * \code{conflev}: The level of confidence interval.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @examples
+//'
+//' df <- kmdiff(data = rawdata, rep = "iterationNumber",
+//'              stratum = "stratum", treat = "treatmentGroup",
+//'              time = "timeUnderObservation", event = "event",
+//'              milestone = 12)
+//' head(df)
+//'
+//' @export
+// [[Rcpp::export]]
+DataFrame kmdiff(const DataFrame data,
+                 const StringVector& rep = "",
+                 const StringVector& stratum = "",
+                 const std::string treat = "treat",
+                 const std::string time = "time",
+                 const std::string event = "event",
+                 const double milestone = NA_REAL,
+                 const double survDiffH0 = 0,
+                 const double conflev = 0.95) {
+  int h, i, j, k, n = data.nrows();
+
+  bool has_rep;
+  IntegerVector repn(n);
+  DataFrame u_rep;
+  int p_rep = static_cast<int>(rep.size());
+  if (p_rep == 1 && (rep[0] == "" || rep[0] == "none")) {
+    has_rep = 0;
+    repn.fill(1);
+  } else {
+    List out = bygroup(data, rep);
+    has_rep = 1;
+    repn = out["index"];
+    u_rep = DataFrame(out["lookup"]);
+  }
+
+  bool has_stratum;
+  IntegerVector stratumn(n);
+  DataFrame u_stratum;
+  int p_stratum = static_cast<int>(stratum.size());
+  if (p_stratum == 1 && (stratum[0] == "" || stratum[0] == "none")) {
+    has_stratum = 0;
+    stratumn.fill(1);
+  } else {
+    List out = bygroup(data, stratum);
+    has_stratum = 1;
+    stratumn = out["index"];
+    u_stratum = DataFrame(out["lookup"]);
+  }
+
+
+  bool has_treat = hasVariable(data, treat);
+  bool has_time = hasVariable(data, time);
+  bool has_event = hasVariable(data, event);
+
+  if (!has_treat) {
+    stop("data must contain the treat variable");
+  }
+
+  if (!has_time) {
+    stop("data must contain the time variable");
+  }
+
+  if (!has_event) {
+    stop("data must contain the event variable");
+  }
+
+
+  // create the numeric treat variable
+  IntegerVector treatn(n);
+  IntegerVector treatwi;
+  NumericVector treatwn;
+  StringVector treatwc;
+  if (TYPEOF(data[treat]) == LGLSXP || TYPEOF(data[treat]) == INTSXP) {
+    IntegerVector treatv = data[treat];
+    treatwi = unique(treatv);
+    if (treatwi.size() != 2) {
+      stop("treat must have two and only two distinct values");
+    }
+    // special handling for 1/0 treatment coding
+    if (is_true(all((treatwi == 0) | (treatwi == 1)))) {
+      treatwi = IntegerVector::create(1,0);
+      treatn = 2 - treatv;
+    } else {
+      treatwi.sort();
+      treatn = match(treatv, treatwi);
+    }
+  } else if (TYPEOF(data[treat]) == REALSXP) {
+    NumericVector treatv = data[treat];
+    treatwn = unique(treatv);
+    if (treatwn.size() != 2) {
+      stop("treat must have two and only two distinct values");
+    }
+    // special handling for 1/0 treatment coding
+    if (is_true(all((treatwn == 0) | (treatwn == 1)))) {
+      treatwn = NumericVector::create(1,0);
+      treatn = 2 - as<IntegerVector>(treatv);
+    } else {
+      treatwn.sort();
+      treatn = match(treatv, treatwn);
+    }
+  } else if (TYPEOF(data[treat]) == STRSXP) {
+    StringVector treatv = data[treat];
+    treatwc = unique(treatv);
+    if (treatwc.size() != 2) {
+      stop("treat must have two and only two distinct values");
+    }
+    treatwc.sort();
+    treatn = match(treatv, treatwc);
+  } else {
+    stop("incorrect type for the treat variable in the input data");
+  }
+
+  NumericVector timenz = data[time];
+  NumericVector timen = clone(timenz);
+  IntegerVector eventnz = data[event];
+  IntegerVector eventn = clone(eventnz);
+
+  if (is_true(any(timen < 0))) {
+    stop("time must be nonnegative for each subject");
+  }
+
+  if (is_true(any((eventn != 1) & (eventn != 0)))) {
+    stop("event must be 1 or 0 for each subject");
+  }
+
+
+  if (std::isnan(milestone)) {
+    stop("milestone must be provided");
+  }
+
+  if (milestone <= 0) {
+    stop("milestone must be positive");
+  }
+
+  if (survDiffH0 <= -1 || survDiffH0 >= 1) {
+    stop("survDiffH0 must lie between -1 and 1");
+  }
+
+  if (conflev <= 0 || conflev >= 1) {
+    stop("conflev must lie between 0 and 1");
+  }
+
+
+  // sort the data by rep
+  IntegerVector order = seq(0, n-1);
+  std::stable_sort(order.begin(), order.end(), [&](int i, int j) {
+    return repn[i] < repn[j];
+  });
+
+  repn = repn[order];
+  stratumn = stratumn[order];
+  treatn = treatn[order];
+  timen = timen[order];
+  eventn = eventn[order];
+
+  // identify the locations of the unique values of rep
+  IntegerVector idx(1,0);
+  for (i=1; i<n; i++) {
+    if (repn[i] != repn[i-1]) {
+      idx.push_back(i);
+    }
+  }
+
+  int nreps = static_cast<int>(idx.size());
+  idx.push_back(n);
+
+  IntegerVector rep0(nreps, NA_INTEGER);
+  NumericVector surv10(nreps), surv20(nreps), survDiff0(nreps);
+  NumericVector vsurv10(nreps), vsurv20(nreps), vsurvDiff0(nreps);
+  NumericVector survDiffZ0(nreps), survDiffPValue0(nreps);
+  NumericVector lower0(nreps), upper0(nreps);
+
+  double z = R::qnorm((1.0 + conflev)/2.0, 0, 1, 1, 0);
+
+  bool noerr = 1;
+  int index = 0;
+  for (h=0; h<nreps; h++) {
+    bool skip = 0;
+    IntegerVector q1 = Range(idx[h], idx[h+1]-1);
+    int n1 = static_cast<int>(q1.size());
+
+    IntegerVector stratum1 = stratumn[q1];
+    IntegerVector treat1 = treatn[q1];
+    NumericVector time1 = timen[q1];
+    IntegerVector event1 = eventn[q1];
+
+    // sort by stratum in descending order
+    IntegerVector order1 = seq(0, n1-1);
+    std::sort(order1.begin(), order1.end(), [&](int i, int j) {
+      return stratum1[i] < stratum1[j];
+    });
+
+    stratum1 = stratum1[order1];
+    treat1 = treat1[order1];
+    time1 = time1[order1];
+    event1 = event1[order1];
+
+    // identify the locations of the unique values of stratum
+    IntegerVector idx1(1,0);
+    for (i=1; i<n1; i++) {
+      if (stratum1[i] != stratum1[i-1]) {
+        idx1.push_back(i);
+      }
+    }
+
+    int nstrata = static_cast<int>(idx1.size());
+    idx1.push_back(n1);
+
+    // whether the milestone exceeds the largest observed time
+    for (i=0; i<nstrata; i++) {
+      IntegerVector q2 = Range(idx1[i], idx1[i+1]-1);
+      IntegerVector treat2 = treat1[q2];
+      NumericVector time2 = time1[q2];
+      NumericVector time21 = time2[treat2==1];
+      NumericVector time22 = time2[treat2==2];
+
+      if (milestone > std::min(max(time21), max(time22))) {
+        std::string reperr;
+        if (!has_rep) {
+          reperr = "";
+        } else {
+          for (j=0; j<p_rep; j++) {
+            std::string s = as<std::string>(rep[j]);
+            if (TYPEOF(data[s]) == INTSXP) {
+              IntegerVector repwi = u_rep[s];
+              reperr = reperr + " " + s + " = " +
+                std::to_string(repwi[repn[idx[h]]-1]);
+            } else if (TYPEOF(data[s]) == REALSXP) {
+              NumericVector repwn = u_rep[s];
+              reperr = reperr + " " + s + " = " +
+                std::to_string(repwn[repn[idx[h]]-1]);
+            } else {
+              StringVector repwc = u_rep[s];
+              reperr = reperr + " " + s + " = " +
+                repwc[repn[idx[h]]-1];
+            }
+          }
+        }
+
+
+        std::string stratumerr;
+        if (!has_stratum) {
+          stratumerr = "";
+        } else {
+          for (j=0; j<p_stratum; j++) {
+            std::string s = as<std::string>(stratum[j]);
+            if (TYPEOF(data[s]) == INTSXP) {
+              IntegerVector stratumwi = u_stratum[s];
+              stratumerr = stratumerr + " " + s + " = " +
+                std::to_string(stratumwi[stratum1[idx1[i]]-1]);
+            } else if (TYPEOF(data[s]) == REALSXP) {
+              NumericVector stratumwn = u_stratum[s];
+              stratumerr = stratumerr + " " + s + " = " +
+                std::to_string(stratumwn[stratum1[idx1[i]]-1]);
+            } else {
+              StringVector stratumwc = u_stratum[s];
+              stratumerr = stratumerr + " " + s + " = " +
+                stratumwc[stratum1[idx1[i]]-1];
+            }
+          }
+        }
+
+
+        int k = milestone > max(time21) ? 0 : 1;
+        std::string treaterr;
+        if ((TYPEOF(data[treat]) == LGLSXP) ||
+            (TYPEOF(data[treat]) == INTSXP)) {
+          treaterr = " " + treat + " = " + std::to_string(treatwi[k]);
+        } else if (TYPEOF(data[treat]) == REALSXP) {
+          treaterr = " " + treat + " = " + std::to_string(treatwn[k]);
+        } else {
+          treaterr = " " + treat + " = " + treatwc[k];
+        }
+
+        std::string str1 = "The milestone is larger than";
+        std::string str2 = "the largest observed time for";
+        std::string errmsg = str1 + " " + str2 + treaterr;
+        if (!reperr.empty() || !stratumerr.empty()) {
+          errmsg = errmsg + ":" + reperr + stratumerr;
+        }
+
+        if (noerr) {
+          Rcout << errmsg << "\n";
+          Rcout << "Additional warning messages are suppressed" << "\n";
+          noerr = 0;
+        }
+
+        skip = 1;
+        break;
+      }
+    }
+
+    // skip the replication if there is a stratum with max time < milestone
+    if (skip) continue;
+
+    DataFrame dfin = DataFrame::create(
+      _["stratum"] = stratum1,
+      _["treat"] = treat1,
+      _["time"] = time1,
+      _["event"] = event1);
+
+    DataFrame dfout = kmest(dfin, "stratum", "treat", "time", "event",
+                            "none", 0.95);
+
+    IntegerVector stratum2 = dfout["stratum"];
+    IntegerVector treat2 = dfout["treat"];
+    IntegerVector treatsize = dfout["size"];
+    NumericVector time2 = dfout["time"];
+    NumericVector survival2 = dfout["survival"];
+    NumericVector stderr2 = dfout["stderr"];
+
+    int n2 = static_cast<int>(stratum2.size());
+
+    // identify the locations of the unique values of stratum
+    IntegerVector idx2(1,0);
+    for (i=1; i<n2; i++) {
+      if (stratum2[i] != stratum2[i-1]) {
+        idx2.push_back(i);
+      }
+    }
+
+    idx2.push_back(n2);
+
+    IntegerVector m(nstrata, 0); // number of subjects in each stratum
+    for (i=0; i<nstrata; i++) {
+      int j1 = idx2[i], j2 = idx2[i+1] - 1;
+      if ((treat2[j1] != 1) || (treat2[j2] != 2)) {
+        std::string reperr;
+        if (!has_rep) {
+          reperr = "";
+        } else {
+          for (j=0; j<p_rep; j++) {
+            std::string s = as<std::string>(rep[j]);
+            if (TYPEOF(data[s]) == INTSXP) {
+              IntegerVector repwi = u_rep[s];
+              reperr = reperr + " " + s + " = " +
+                std::to_string(repwi[repn[idx[h]]-1]);
+            } else if (TYPEOF(data[s]) == REALSXP) {
+              NumericVector repwn = u_rep[s];
+              reperr = reperr + " " + s + " = " +
+                std::to_string(repwn[repn[idx[h]]-1]);
+            } else {
+              StringVector repwc = u_rep[s];
+              reperr = reperr + " " + s + " = " +
+                repwc[repn[idx[h]]-1];
+            }
+          }
+        }
+
+
+        std::string stratumerr;
+        if (!has_stratum) {
+          stratumerr = "";
+        } else {
+          for (j=0; j<p_stratum; j++) {
+            std::string s = as<std::string>(stratum[j]);
+            if (TYPEOF(data[s]) == INTSXP) {
+              IntegerVector stratumwi = u_stratum[s];
+              stratumerr = stratumerr + " " + s + " = " +
+                std::to_string(stratumwi[stratum2[j1]-1]);
+            } else if (TYPEOF(data[s]) == REALSXP) {
+              NumericVector stratumwn = u_stratum[s];
+              stratumerr = stratumerr + " " + s + " = " +
+                std::to_string(stratumwn[stratum2[j1]-1]);
+            } else {
+              StringVector stratumwc = u_stratum[s];
+              stratumerr = stratumerr + " " + s + " = " +
+                stratumwc[stratum2[j1]-1];
+            }
+          }
+        }
+
+
+        int k = treat2[j1] != 1 ? 0 : 1;
+        std::string treaterr;
+        if ((TYPEOF(data[treat]) == LGLSXP) ||
+            (TYPEOF(data[treat]) == INTSXP)) {
+          treaterr = " " + treat + " = " + std::to_string(treatwi[k]);
+        } else if (TYPEOF(data[treat]) == REALSXP) {
+          treaterr = " " + treat + " = " + std::to_string(treatwn[k]);
+        } else {
+          treaterr = " " + treat + " = " + treatwc[k];
+        }
+
+        std::string str1 = "The data set does not contain";
+        std::string errmsg = str1 + treaterr;
+        if (!reperr.empty() || !stratumerr.empty()) {
+          errmsg = errmsg + ":" + reperr + stratumerr;
+        }
+
+        if (noerr) {
+          Rcout << errmsg << "\n";
+          Rcout << "Additional warning messages are suppressed" << "\n";
+          noerr = 0;
+        }
+
+        skip = 1;
+        break;
+      }
+
+      m[i] += treatsize[j1] + treatsize[j2];
+    }
+
+    // skip the replication if there is a stratum without both treatments
+    if (skip) continue;
+
+    double M = sum(m);
+    NumericVector p(nstrata);
+
+    double surv1 = 0.0, surv2 = 0.0, vsurv1 = 0.0, vsurv2 = 0.0;
+    for (i=0; i<nstrata; i++) {
+      p[i] = m[i]/M; // fraction of subjects in the stratum
+      IntegerVector q = Range(idx2[i], idx2[i+1]-1);
+      IntegerVector treatx = treat2[q];
+      NumericVector timex = time2[q];
+      NumericVector survivalx = survival2[q];
+      NumericVector stderrx = stderr2[q];
+
+      NumericVector surv(2), vsurv(2);
+      for (j=0; j<2; j++) {
+        LogicalVector sub = (treatx == j+1);
+        NumericVector time0 = timex[sub];
+        NumericVector survival0 = survivalx[sub];
+        NumericVector stderr0 = stderrx[sub];
+        int K = sum(sub);
+
+        // find the latest event time before milestone for each treat
+        for (k = 0; k < K; k++) {
+          if (time0[k] > milestone) break;
+        }
+
+        if (k == 0) {
+          surv[j] = 1;
+          vsurv[j] = 0;
+        } else {
+          k--;
+          surv[j] = survival0[k];
+          vsurv[j] = stderr0[k]*stderr0[k];
+        }
+      }
+
+      surv1 += p[i]*surv[0];
+      surv2 += p[i]*surv[1];
+      vsurv1 += p[i]*p[i]*vsurv[0];
+      vsurv2 += p[i]*p[i]*vsurv[1];
+    }
+
+    rep0[index] = repn[idx[h]];
+    surv10[index] = surv1;
+    surv20[index] = surv2;
+    vsurv10[index] = vsurv1;
+    vsurv20[index] = vsurv2;
+    survDiff0[index] = surv1 - surv2;
+    vsurvDiff0[index] = vsurv1 + vsurv2;
+    double sesurvDiff = sqrt(vsurvDiff0[index]);
+    survDiffZ0[index] = (survDiff0[index] - survDiffH0)/sesurvDiff;
+    survDiffPValue0[index] = 1.0 - R::pnorm(survDiffZ0[index], 0, 1, 1, 0);
+    lower0[index] = survDiff0[index] - z*sesurvDiff;
+    upper0[index] = survDiff0[index] + z*sesurvDiff;
+
+    index++;
+  }
+
+  // only keep nonmissing records
+  LogicalVector sub = !is_na(rep0);
+  if (is_false(any(sub))) {
+    stop("no replication enables valid inference");
+  }
+
+  rep0 = rep0[sub];
+  surv10 = surv10[sub];
+  surv20 = surv20[sub];
+  survDiff0 = survDiff0[sub];
+  vsurv10 = vsurv10[sub];
+  vsurv20 = vsurv20[sub];
+  vsurvDiff0 = vsurvDiff0[sub];
+  survDiffZ0 = survDiffZ0[sub];
+  survDiffPValue0 = survDiffPValue0[sub];
+  lower0 = lower0[sub];
+  upper0 = upper0[sub];
+
+  DataFrame result = DataFrame::create(
+    _["milestone"] = milestone,
+    _["survDiffH0"] = survDiffH0,
+    _["surv1"] = surv10,
+    _["surv2"] = surv20,
+    _["survDiff"] = survDiff0,
+    _["vsurv1"] = vsurv10,
+    _["vsurv2"] = vsurv20,
+    _["vsurvDiff"] = vsurvDiff0,
+    _["survDiffZ"] = survDiffZ0,
+    _["survDiffPValue"] = survDiffPValue0,
+    _["lower"] = lower0,
+    _["upper"] = upper0,
+    _["conflev"] = conflev);
 
   if (has_rep) {
     for (i=0; i<p_rep; i++) {
