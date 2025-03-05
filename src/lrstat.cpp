@@ -301,8 +301,7 @@ void f_iscore(double *x, int n, void *ex) {
 //'
 //' * \code{uscore}: The numerator of the weighted log-rank test statistic.
 //'
-//' * \code{vscore}: The variance of the weighted log-rank score statistic
-//'   with weight squared.
+//' * \code{vscore}: The variance of the weighted log-rank score statistic.
 //'
 //' * \code{iscore}: The Fisher information of the weighted log-rank score
 //'   statistic.
@@ -3233,13 +3232,15 @@ List lrsamplesize(const double beta = 0.2,
       n0 = sum(NumericVector(lr[1]));
       n = std::ceil(n0 - 1.0e-12);
 
-      // adjust accrual intensity or duration to obtain int # of subjects
-      if (unknown == "accrualIntensity") {
-        accrualIntensity1 = (n/n0)*accrualIntensity1;
-      } else {
-        NumericVector ns(1, n);
-        accrualDuration = getAccrualDurationFromN(ns, accrualTime,
-                                                  accrualIntensity1)[0];
+      if (n - n0 > 1e-6) {
+        // adjust accrual intensity or duration to obtain int # of subjects
+        if (unknown == "accrualIntensity") {
+          accrualIntensity1 = (n/n0)*accrualIntensity1;
+        } else {
+          NumericVector ns(1, n);
+          accrualDuration = getAccrualDurationFromN(ns, accrualTime,
+                                                    accrualIntensity1)[0];
+        }
       }
 
       // adjust follow-up time to obtain integer number of events
@@ -3301,12 +3302,15 @@ List lrsamplesize(const double beta = 0.2,
       // round up the sample size
       n = std::ceil(n0 - 1.0e-12);
 
-      if (unknown == "accrualIntensity") {
-        accrualIntensity1 = (n/n0)*accrualIntensity1;
-      } else {
-        NumericVector ns(1, n);
-        accrualDuration = getAccrualDurationFromN(ns, accrualTime,
-                                                  accrualIntensity1)[0];
+      if (n - n0 > 1e-6) {
+        // adjust accrual intensity or duration to obtain int # of subjects
+        if (unknown == "accrualIntensity") {
+          accrualIntensity1 = (n/n0)*accrualIntensity1;
+        } else {
+          NumericVector ns(1, n);
+          accrualDuration = getAccrualDurationFromN(ns, accrualTime,
+                                                    accrualIntensity1)[0];
+        }
       }
 
       // adjust study duration to obtain integer number of events
@@ -3338,6 +3342,7 @@ List lrsamplesize(const double beta = 0.2,
       nevents = floor(D*informationRates1 + 0.5);
       informationRates1 = nevents/nevents[kMax-1];
     } else {
+      // obtain maximum information
       u0[0] = studyDuration;
       lr = lrstat(u0, hazardRatioH0, allocationRatioPlanned,
                   accrualTime, accrualIntensity1,
@@ -3345,10 +3350,10 @@ List lrsamplesize(const double beta = 0.2,
                   lambda1, lambda2, gamma1, gamma2,
                   accrualDuration, followupTime, fixedFollowup,
                   rho1, rho2, 2);
-
       double maxInformation = sum(NumericVector(lr[12]));
-      double information1;
 
+      // obtain timing of interim analyses
+      double information1;
       auto f = [hazardRatioH0, allocationRatioPlanned,
                 accrualTime, accrualIntensity1,
                 piecewiseSurvivalTime, stratumFraction,
@@ -3372,6 +3377,7 @@ List lrsamplesize(const double beta = 0.2,
       };
       time[kMax-1] = studyDuration;
 
+      // obtain corresponding number of events
       lr = lrstat(time, 1, allocationRatioPlanned,
                   accrualTime, accrualIntensity1,
                   piecewiseSurvivalTime, stratumFraction,
@@ -3379,6 +3385,7 @@ List lrsamplesize(const double beta = 0.2,
                   accrualDuration, followupTime, fixedFollowup,
                   rho1, rho2, 1);
 
+      // round the number of events and recalculate the timing of analyses
       nevents = floor(NumericVector(lr[2]) + 0.5);
       time = caltime(nevents, allocationRatioPlanned,
                      accrualTime, accrualIntensity1,
@@ -3386,6 +3393,7 @@ List lrsamplesize(const double beta = 0.2,
                      lambda1, lambda2, gamma1, gamma2,
                      accrualDuration, followupTime, fixedFollowup);
 
+      // update the information at each analysis
       lr = lrstat(time, hazardRatioH0, allocationRatioPlanned,
                   accrualTime, accrualIntensity1,
                   piecewiseSurvivalTime, stratumFraction,
@@ -3449,11 +3457,10 @@ List lrsamplesize(const double beta = 0.2,
   DataFrame overallResults = DataFrame(resultH1["overallResults"]);
   DataFrame byStageResults = DataFrame(resultH1["byStageResults"]);
   double D = overallResults["numberOfEvents"];
-  NumericVector information = byStageResults["information"];
-  double maxInformation = information[kMax-1];
+  double maxInformation = overallResults["information"];
   double studyDuration;
 
-  if (!fixedFollowup) {
+  if (!fixedFollowup) { // variable follow-up
     auto h = [hazardRatioH0, allocationRatioPlanned,
               accrualTime, accrualIntensity1,
               piecewiseSurvivalTime, stratumFraction,
@@ -4896,14 +4903,14 @@ List lrsamplesizeequiv(const double beta = 0.2,
 
                 // obtain the timing of interim analysis
                 lr = lrstat(u0, 1, allocationRatioPlanned,
-                            accrualTime, accrualIntensity,
+                            accrualTime, accrualIntensity1,
                             piecewiseSurvivalTime, stratumFraction,
                             lambda1, lambda2, gamma1, gamma2,
                             dur1, dur2, fixedFollowup, 0, 0, 1);
 
                 e0 = sum(NumericVector(lr[2]))*informationRates1;
                 time = caltime(e0, allocationRatioPlanned,
-                               accrualTime, accrualIntensity,
+                               accrualTime, accrualIntensity1,
                                piecewiseSurvivalTime, stratumFraction,
                                lambda1, lambda2, gamma1, gamma2,
                                dur1, dur2, fixedFollowup);
@@ -4973,13 +4980,15 @@ List lrsamplesizeequiv(const double beta = 0.2,
       n0 = sum(NumericVector(lr[1]));
       n = std::ceil(n0 - 1.0e-12);
 
-      // adjust accrual intensity or duration to obtain int # of subjects
-      if (unknown == "accrualIntensity") {
-        accrualIntensity1 = (n/n0)*accrualIntensity1;
-      } else {
-        NumericVector ns(1, n);
-        accrualDuration = getAccrualDurationFromN(ns, accrualTime,
-                                                  accrualIntensity1)[0];
+      if (n - n0 > 1e-6) {
+        // adjust accrual intensity or duration to obtain int # of subjects
+        if (unknown == "accrualIntensity") {
+          accrualIntensity1 = (n/n0)*accrualIntensity1;
+        } else {
+          NumericVector ns(1, n);
+          accrualDuration = getAccrualDurationFromN(ns, accrualTime,
+                                                    accrualIntensity1)[0];
+        }
       }
 
       // adjust follow-up time to obtain integer number of events
@@ -5041,12 +5050,14 @@ List lrsamplesizeequiv(const double beta = 0.2,
       // round up the sample size
       n = std::ceil(n0 - 1.0e-12);
 
-      if (unknown == "accrualIntensity") {
-        accrualIntensity1 = (n/n0)*accrualIntensity1;
-      } else {
-        NumericVector ns(1, n);
-        accrualDuration = getAccrualDurationFromN(ns, accrualTime,
-                                                  accrualIntensity1)[0];
+      if (n - n0 > 1e-6) {
+        if (unknown == "accrualIntensity") {
+          accrualIntensity1 = (n/n0)*accrualIntensity1;
+        } else {
+          NumericVector ns(1, n);
+          accrualDuration = getAccrualDurationFromN(ns, accrualTime,
+                                                    accrualIntensity1)[0];
+        }
       }
 
       // adjust study duration to obtain integer number of events
