@@ -14,7 +14,8 @@ DataFrame kmest(const DataFrame data,
                 const std::string time,
                 const std::string event,
                 const std::string conftype,
-                const double conflev);
+                const double conflev,
+                const bool keep_censor);
 
 DataFrame kmdiff(const DataFrame data,
                  const StringVector& rep,

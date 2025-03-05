@@ -59,6 +59,8 @@ NumericVector fsurvci(double surv, double sesurv, String ct, double z) {
 //'   The arcsin option bases the intervals on asin(sqrt(survival)).
 //' @param conflev The level of the two-sided confidence interval for
 //'   the survival probabilities. Defaults to 0.95.
+//' @param keep_censor Whether to retain the censoring time in the output
+//'   data frame.
 //'
 //' @return A data frame with the following variables:
 //'
@@ -69,6 +71,8 @@ NumericVector fsurvci(double surv, double sesurv, String ct, double z) {
 //' * \code{nrisk}: The number of subjects at risk.
 //'
 //' * \code{nevent}: The number of subjects having the event.
+//'
+//' * \code{ncensor}: The number of censored subjects.
 //'
 //' * \code{survival}: The Kaplan-Meier estimate of the survival probability.
 //'
@@ -101,7 +105,8 @@ DataFrame kmest(const DataFrame data,
                 const std::string time = "time",
                 const std::string event = "event",
                 const std::string conftype = "log-log",
-                const double conflev = 0.95) {
+                const double conflev = 0.95,
+                const bool keep_censor = 0) {
   int h, i, j, n = data.nrows();
 
   bool has_rep;
@@ -199,7 +204,7 @@ DataFrame kmest(const DataFrame data,
 
   IntegerVector rep0(n, NA_INTEGER);
   IntegerVector stratum0(n), size0(n);
-  NumericVector time0(n), nrisk0(n), nevent0(n);
+  NumericVector time0(n), nrisk0(n), nevent0(n), ncensor0(n);
   NumericVector surv0(n), sesurv0(n);
   NumericVector lower0(n), upper0(n);
 
@@ -243,13 +248,12 @@ DataFrame kmest(const DataFrame data,
       IntegerVector event2 = event1[q2];
 
       int s = stratum1[q2[0]], n2 = static_cast<int>(q2.size());
-      double t = 0, nrisk = n2, nevent = 0, surv = 1, vcumhaz = 0, sesurv;
+      double t = 0, nrisk = n2, nevent = 0, ncensor = 0,
+        surv = 1, vcumhaz = 0, sesurv;
       bool cache = 0;
       for (j=0; j<n2; j++) {
-        if (((j == 0) && (event2[j] == 1)) ||
-            ((j >= 1) && (event2[j] == 1) && (time2[j] > time2[j-1]))) {
-          // new event
-          // add the info for the previous event
+        if ((j == 0) || ((j >= 1) && (time2[j] > time2[j-1]))) {
+          // new time, add the information for the previous time if needed
           if (cache) {
             surv = surv*(1.0 - nevent/nrisk);
             if (nrisk > nevent) {
@@ -265,6 +269,7 @@ DataFrame kmest(const DataFrame data,
             time0[index] = t;
             nrisk0[index] = nrisk;
             nevent0[index] = nevent;
+            ncensor0[index] = ncensor;
             surv0[index] = surv;
             sesurv0[index] = sesurv;
 
@@ -280,46 +285,26 @@ DataFrame kmest(const DataFrame data,
           // update the buffer for the current event time
           t = time2[j];
           nrisk = n2-j;
-          nevent = 1;
 
-          cache = 1;
-        } else if ((j >= 1) && (event2[j] == 1) && (event2[j-1] == 1) &&
-          (time2[j] == time2[j-1])) { // tied event
-          nevent = nevent + 1;
-        } else if ((j >= 1) && (event2[j] == 0) && (event2[j-1] == 1)) {
-          // new censoring
-          // add the info for the previous event
-          surv = surv*(1.0 - nevent/nrisk);
-          if (nrisk > nevent) {
-            vcumhaz = vcumhaz + nevent/(nrisk*(nrisk - nevent));
+          if (event2[j] == 1) {
+            nevent = 1;
+            ncensor = 0;
+            cache = 1;
           } else {
-            vcumhaz = NA_REAL;
+            nevent = 0;
+            ncensor = 1;
+            cache = keep_censor ? 1 : 0;
           }
-          sesurv = surv*sqrt(vcumhaz);
-
-          rep0[index] = iter;
-          stratum0[index] = s;
-          size0[index] = n2;
-          time0[index] = t;
-          nrisk0[index] = nrisk;
-          nevent0[index] = nevent;
-          surv0[index] = surv;
-          sesurv0[index] = sesurv;
-
-          if (ct != "none") {
-            NumericVector ci = fsurvci(surv, sesurv, ct, z);
-            lower0[index] = ci[0];
-            upper0[index] = ci[1];
+        } else { // same time point
+          if (event2[j] == 1) {
+            nevent++;
+          } else {
+            ncensor++;
           }
-
-          index++;
-
-          // empty the cache for the current event time
-          cache = 0;
         }
       }
 
-      // add the info for the last event
+      // add the info for the last time point
       if (cache) {
         surv = surv*(1.0 - nevent/nrisk);
         if (nrisk > nevent) {
@@ -335,6 +320,7 @@ DataFrame kmest(const DataFrame data,
         time0[index] = t;
         nrisk0[index] = nrisk;
         nevent0[index] = nevent;
+        ncensor0[index] = ncensor;
         surv0[index] = surv;
         sesurv0[index] = sesurv;
 
@@ -361,6 +347,7 @@ DataFrame kmest(const DataFrame data,
   time0 = time0[sub];
   nrisk0 = nrisk0[sub];
   nevent0 = nevent0[sub];
+  ncensor0 = ncensor0[sub];
   surv0 = surv0[sub];
   sesurv0 = sesurv0[sub];
 
@@ -369,6 +356,7 @@ DataFrame kmest(const DataFrame data,
     _["time"] = time0,
     _["nrisk"] = nrisk0,
     _["nevent"] = nevent0,
+    _["ncensor"] = ncensor0,
     _["survival"] = surv0,
     _["stderr"] = sesurv0);
 
@@ -781,7 +769,7 @@ DataFrame kmdiff(const DataFrame data,
       _["event"] = event1);
 
     DataFrame dfout = kmest(dfin, "stratum", "treat", "time", "event",
-                            "none", 0.95);
+                            "none", 0.95, 0);
 
     IntegerVector stratum2 = dfout["stratum"];
     IntegerVector treat2 = dfout["treat"];
