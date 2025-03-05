@@ -151,8 +151,8 @@ NULL
 
 #' Parameter Description: maxFollowupTime
 #' @param maxFollowupTime Follow-up time for the first enrolled subject.
-#'   For fixed followup, \code{maxFollowupTime = minFollowupTime}.
-#'   For variable followup,
+#'   For fixed follow-up, \code{maxFollowupTime = minFollowupTime}.
+#'   For variable follow-up,
 #'   \code{maxFollowupTime = accrualDuration + minFollowupTime}.
 #' @name param_maxFollowupTime
 #' @keywords internal
