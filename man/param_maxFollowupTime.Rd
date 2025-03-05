@@ -5,8 +5,8 @@
 \title{Parameter Description: maxFollowupTime}
 \arguments{
 \item{maxFollowupTime}{Follow-up time for the first enrolled subject.
-For fixed followup, \code{maxFollowupTime = minFollowupTime}.
-For variable followup,
+For fixed follow-up, \code{maxFollowupTime = minFollowupTime}.
+For variable follow-up,
 \code{maxFollowupTime = accrualDuration + minFollowupTime}.}
 }
 \description{
