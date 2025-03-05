@@ -213,15 +213,12 @@ DataFrame kmstat1(const double time = NA_REAL,
   NumericVector calTime(nstrata), mileTime(nstrata);
   DataFrame df;
 
-  NumericVector milestone1(1, milestone);
-  NumericVector t = piecewiseSurvivalTime;
-  int jstar = findInterval3(milestone1, t)[0] - 1;
-  double tol = 1e-6;
-
   NumericVector tt = NumericVector::create(time - milestone);
   double a2 = accrual(tt, accrualTime, accrualIntensity, accrualDuration)[0];
   NumericVector nmilestone1(nstrata), nmilestone2(nstrata);
   NumericVector nmilestone(nstrata);
+  NumericVector zerogam(nintervals);
+  NumericVector u0(1, milestone);
 
   for (int h=0; h<nstrata; h++) {
     stratum[h] = h+1;
@@ -251,7 +248,7 @@ DataFrame kmstat1(const double time = NA_REAL,
     nevents(h, _) = x.row(0);
     ndropouts(h, _) = y.row(0);
 
-    // obtain number of subjects censored due to reaching the max follow-up
+    // obtain number of subjects reaching milestone
     double ncom = frac*a2;
     double p1 = patrisk(milestone, piecewiseSurvivalTime, lam1, gam1)[0];
     double p2 = patrisk(milestone, piecewiseSurvivalTime, lam2, gam2)[0];
@@ -259,32 +256,20 @@ DataFrame kmstat1(const double time = NA_REAL,
     nmilestone2[h] = (1-phi)*ncom*p2;
     nmilestone[h] = nmilestone1[h] + nmilestone2[h];
 
-    double s1 = 0.0, s2 = 0.0;
-    for (int j=0; j<=jstar; j++) {
-      if (j<jstar) {
-        s1 += lam1[j]*(t[j+1] - t[j]);
-        s2 += lam2[j]*(t[j+1] - t[j]);
-      } else {
-        s1 += lam1[j]*(milestone - t[j]);
-        s2 += lam2[j]*(milestone - t[j]);
-      }
-    }
-    s1 = exp(-s1);
-    s2 = exp(-s2);
-    surv1[h] = s1;
-    surv2[h] = s2;
+    surv1[h] = patrisk(u0, piecewiseSurvivalTime, lam1, zerogam)[0];
+    surv2[h] = patrisk(u0, piecewiseSurvivalTime, lam2, zerogam)[0];
     survDiff[h] = surv1[h] - surv2[h];
 
     kmparams param1 = {time, phi, accrualTime, frac*accrualIntensity,
-                       t, lam1, gam1, accrualDuration};
+                       piecewiseSurvivalTime, lam1, gam1, accrualDuration};
     kmparams param2 = {time, 1-phi, accrualTime, frac*accrualIntensity,
-                       t, lam2, gam2, accrualDuration};
+                       piecewiseSurvivalTime, lam2, gam2, accrualDuration};
 
-    double q1 = quad(f_km, &param1, 0.0, milestone, tol)[0];
-    double q2 = quad(f_km, &param2, 0.0, milestone, tol)[0];
+    double q1 = quad(f_km, &param1, 0.0, milestone, 1.0e-6)[0];
+    double q2 = quad(f_km, &param2, 0.0, milestone, 1.0e-6)[0];
 
-    vsurv1[h] = s1*s1*q1;
-    vsurv2[h] = s2*s2*q2;
+    vsurv1[h] = surv1[h]*surv1[h]*q1;
+    vsurv2[h] = surv2[h]*surv2[h]*q2;
     vsurvDiff[h] = vsurv1[h] + vsurv2[h];
   }
 
@@ -617,12 +602,12 @@ DataFrame kmstat(const NumericVector& time = NA_REAL,
     nmilestone2[j] = sum(NumericVector(df[12]));
     surv1[j] = sum(stratumFraction*NumericVector(df[13]));
     surv2[j] = sum(stratumFraction*NumericVector(df[14]));
-    survDiff[j] = sum(stratumFraction*NumericVector(df[15]));
+    survDiff[j] = surv1[j] - surv2[j];
     vsurv1[j] = sum(stratumFraction*stratumFraction*NumericVector(df[16]));
     vsurv2[j] = sum(stratumFraction*stratumFraction*NumericVector(df[17]));
-    vsurvDiff[j] = sum(stratumFraction*stratumFraction*NumericVector(df[18]));
+    vsurvDiff[j] = vsurv1[j] + vsurv2[j];
     information[j] = 1.0/vsurvDiff[j];
-    survDiffZ[j] = survDiff[j]/sqrt(vsurvDiff[j]);
+    survDiffZ[j] = survDiff[j]*sqrt(information[j]);
   }
 
   df = DataFrame::create(_["time"] = calTime,
@@ -1261,7 +1246,7 @@ List kmpower(const int kMax = 1,
 
   // obtain the timing of interim analysis
   DataFrame km;
-  NumericVector time(kMax), sdu(kMax), sdl(kMax);
+  NumericVector time(kMax);
   NumericVector u0(1, studyDuration1);
   km = kmstat(u0, milestone, allocationRatioPlanned,
               accrualTime, accrualIntensity,
@@ -1338,10 +1323,9 @@ List kmpower(const int kMax = 1,
   }
 
   // stagewise total exit probabilities
-  NumericVector pu(kMax), pl(kMax), ptotal(kMax);
-  pu = NumericVector(probs[0]);
-  pl = NumericVector(probs[1]);
-  ptotal = pu + pl;
+  NumericVector pu = NumericVector(probs[0]);
+  NumericVector pl = NumericVector(probs[1]);
+  NumericVector ptotal = pu + pl;
 
   double overallReject = sum(pu);
   double expectedNumberOfEvents = sum(ptotal*nevents);
@@ -1356,11 +1340,12 @@ List kmpower(const int kMax = 1,
   double expectedNumberOfMilestone2 = sum(ptotal*nmilestone2);
   double expectedStudyDuration = sum(ptotal*time);
   double expectedInformation = sum(ptotal*I);
+
   NumericVector cpu = cumsum(pu);
   NumericVector cpl = cumsum(pl);
 
-  sdu = survDiffH0 + criticalValues1/sqrt(I);
-  sdl = survDiffH0 + futilityBounds1/sqrt(I);
+  NumericVector sdu = survDiffH0 + criticalValues1/sqrt(I);
+  NumericVector sdl = survDiffH0 + futilityBounds1/sqrt(I);
 
   for (int i=0; i<kMax; i++) {
     if (criticalValues1[i] == 6) {
@@ -2098,34 +2083,21 @@ List kmsamplesize(const double beta = 0.2,
 
       accrualDuration = brent(g, accrualDuration, interval[1], 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else if (!fixedFollowup) { // adjust follow-up time
+    } else { // adjust follow-up time
       double lower =  std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
-      followupTime = brent(f, lower, interval[1], 1.0e-6);
+      followupTime = brent(f, lower, milestone, 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else { // fixed follow-up
-      // adjust study duration to obtain the target max information
-      followupTime = milestone;
-      auto g = [milestone, allocationRatioPlanned,
-                accrualTime, accrualIntensity,
-                piecewiseSurvivalTime, stratumFraction,
-                lambda1, lambda2, gamma1, gamma2,
-                accrualDuration, followupTime, fixedFollowup,
-                maxInformation](double aval)->double {
-                  NumericVector u0(1, accrualDuration + aval);
-                  DataFrame km = kmstat(
-                    u0, milestone, allocationRatioPlanned,
-                    accrualTime, accrualIntensity,
-                    piecewiseSurvivalTime, stratumFraction,
-                    lambda1, lambda2, gamma1, gamma2,
-                    accrualDuration, followupTime, fixedFollowup);
-                  return sum(NumericVector(km[18])) - maxInformation;
-                };
-
-      double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
-      double aval = brent(g, lower, followupTime, 1.0e-6);
-      studyDuration = accrualDuration + aval;
     }
   } else if (unknown == "accrualIntensity") {
+    if (accrualDuration + followupTime <= milestone) {
+      std::string str1 = "NOTE: The followupTime is too short for ";
+      std::string str2 = "anyone to reach milestone.";
+      std::string str3 = "NOTE: followupTime is increased to ";
+      std::string str4 = "milestone.";
+      Rcout << str1 + str2 << "\n";
+      Rcout << str3 + str4 << "\n";
+      followupTime = milestone;
+    }
     double aval = brent(f, interval[0], interval[1], 1.0e-6);
     accrualIntensity1 = aval*accrualIntensity;
     studyDuration = accrualDuration + followupTime;
@@ -2290,12 +2262,12 @@ List kmsamplesize(const double beta = 0.2,
         upper = 2.0*upper;
       }
       accrualDuration = brent(g, lower, upper, 1.0e-6);
-    } else if ((accrualDuration <= milestone) || (h(0) < 0)) {
+    } else if (accrualDuration <= milestone || h(0) < 0) {
       // adjust follow-up time
       double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
       followupTime = brent(h, lower, milestone, 1.0e-6);
     } else {
-      // adjust accrual duration
+      // decrease accrual duration
       auto g = [milestone, allocationRatioPlanned,
                 accrualTime, accrualIntensity1,
                 piecewiseSurvivalTime, stratumFraction,
@@ -2323,6 +2295,22 @@ List kmsamplesize(const double beta = 0.2,
               accrualTime, accrualIntensity1,
               piecewiseSurvivalTime, stratumFraction,
               lambda1H0, lambda2, gamma1, gamma2,
+              accrualDuration, followupTime, fixedFollowup,
+              maxInformation](double aval)->double {
+                NumericVector u0(1, accrualDuration + aval);
+                DataFrame km = kmstat(
+                  u0, milestone, allocationRatioPlanned,
+                  accrualTime, accrualIntensity1,
+                  piecewiseSurvivalTime, stratumFraction,
+                  lambda1H0, lambda2, gamma1, gamma2,
+                  accrualDuration, followupTime, fixedFollowup);
+                return sum(NumericVector(km[18])) - maxInformation;
+              };
+
+    auto g = [milestone, allocationRatioPlanned,
+              accrualTime, accrualIntensity1,
+              piecewiseSurvivalTime, stratumFraction,
+              lambda1H0, lambda2, gamma1, gamma2,
               followupTime, fixedFollowup,
               maxInformation](double aval)->double {
                 NumericVector u0(1, aval + followupTime);
@@ -2335,34 +2323,24 @@ List kmsamplesize(const double beta = 0.2,
                 return sum(NumericVector(km[18])) - maxInformation;
               };
 
-    if (h(accrualDuration) < 0) { // increase accrual duration
+    if (h(followupTime) < 0) { // increase accrual duration
       double lower = accrualDuration, upper = 2.0*accrualDuration;
-      while (h(upper) < 0) {
+      while (g(upper) < 0) {
         lower = upper;
         upper = 2.0*upper;
       }
-      accrualDuration = brent(h, lower, upper, 1.0e-6);
+      accrualDuration = brent(g, lower, upper, 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else { // decrease study duration
-      auto g = [milestone, allocationRatioPlanned,
-                accrualTime, accrualIntensity1,
-                piecewiseSurvivalTime, stratumFraction,
-                lambda1H0, lambda2, gamma1, gamma2,
-                accrualDuration, followupTime, fixedFollowup,
-                maxInformation](double aval)->double {
-                  NumericVector u0(1, accrualDuration + aval);
-                  DataFrame km = kmstat(
-                    u0, milestone, allocationRatioPlanned,
-                    accrualTime, accrualIntensity1,
-                    piecewiseSurvivalTime, stratumFraction,
-                    lambda1H0, lambda2, gamma1, gamma2,
-                    accrualDuration, followupTime, fixedFollowup);
-                  return sum(NumericVector(km[18])) - maxInformation;
-                };
-
+    } else if (accrualDuration <= milestone || h(0) < 0) {
+      // decrease study duration
       double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
-      double aval = brent(g, lower, followupTime, 1.0e-6);
+      double upper = std::min(milestone, followupTime);
+      double aval = brent(h, lower, upper, 1.0e-6);
       studyDuration = accrualDuration + aval;
+    } else { // decrease accrual duration
+      double lower = milestone + 1.0e-6;
+      accrualDuration = brent(g, lower, accrualDuration, 1.0e-6);
+      studyDuration = accrualDuration + followupTime;
     }
   }
 
@@ -2443,19 +2421,23 @@ List kmsamplesize(const double beta = 0.2,
 //'
 //'     - \code{alpha}: The overall significance level.
 //'
-//'     - \code{drift}: The drift parameter, equal to
-//'       \code{(surv - survH0)*sqrt(information)}.
-//'
-//'     - \code{inflationFactor}: The inflation factor (relative to the
-//'       fixed design).
+//'     - \code{numberOfEvents}: The total number of events.
 //'
 //'     - \code{numbeOfSubjects}: The total number of subjects.
+//'
+//'     - \code{numberOfMilestone}: The total number of subjects reaching
+//'       milestone.
 //'
 //'     - \code{studyDuration}: The total study duration.
 //'
 //'     - \code{information}: The maximum information.
 //'
+//'     - \code{expectedNumberOfEvents}: The expected number of events.
+//'
 //'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
+//'
+//'     - \code{expectedNumberOfMilestone}: The expected number of subjects
+//'       reaching milestone.
 //'
 //'     - \code{expectedStudyDuration}: The expected study duration.
 //'
@@ -2498,7 +2480,14 @@ List kmsamplesize(const double beta = 0.2,
 //'
 //'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
 //'
+//'     - \code{numberOfEvents}: The number of events.
+//'
+//'     - \code{numberOfDropouts}: The number of dropouts.
+//'
 //'     - \code{numberOfSubjects}: The number of subjects.
+//'
+//'     - \code{numberOfMilestone}: The number of subjects reaching
+//'       milestone.
 //'
 //'     - \code{analysisTime}: The average time since trial start.
 //'
@@ -2912,7 +2901,7 @@ List kmpower1s(const int kMax = 1,
 
   // obtain the timing of interim analysis using the twin treatment group
   DataFrame km;
-  NumericVector time(kMax), survu(kMax), survl(kMax);
+  NumericVector time(kMax);
   NumericVector u0(1, studyDuration1);
   km = kmstat(u0, milestone, 1,
               accrualTime, 2.0*accrualIntensity,
@@ -2948,8 +2937,16 @@ List kmpower1s(const int kMax = 1,
   }
   time[kMax-1] = studyDuration1;
 
-  NumericVector nsubjects = accrual(time, accrualTime, accrualIntensity,
-                                    accrualDuration);
+  km = kmstat(time, milestone, 1,
+              accrualTime, 2.0*accrualIntensity,
+              piecewiseSurvivalTime, stratumFraction,
+              lambda, lambda, gamma, gamma,
+              accrualDuration, followupTime, fixedFollowup);
+
+  NumericVector nsubjects = 0.5*NumericVector(km[1]);
+  NumericVector nevents = NumericVector(km[3]);
+  NumericVector ndropouts = NumericVector(km[6]);
+  NumericVector nmilestone = NumericVector(km[10]);
 
   // compute the stagewise exit probabilities for efficacy and futility
   if (!missingFutilityBounds || bsf=="none" || kMax==1) {
@@ -2970,20 +2967,22 @@ List kmpower1s(const int kMax = 1,
   }
 
   // stagewise total exit probabilities
-  NumericVector pu(kMax), pl(kMax), ptotal(kMax);
-  pu = NumericVector(probs[0]);
-  pl = NumericVector(probs[1]);
-  ptotal = pu + pl;
+  NumericVector pu = NumericVector(probs[0]);
+  NumericVector pl = NumericVector(probs[1]);
+  NumericVector ptotal = pu + pl;
 
   double overallReject = sum(pu);
+  double expectedNumberOfEvents = sum(ptotal*nevents);
   double expectedNumberOfSubjects = sum(ptotal*nsubjects);
+  double expectedNumberOfMilestone = sum(ptotal*nmilestone);
   double expectedStudyDuration = sum(ptotal*time);
   double expectedInformation = sum(ptotal*I);
+
   NumericVector cpu = cumsum(pu);
   NumericVector cpl = cumsum(pl);
 
-  survu = survH0 + criticalValues1/sqrt(I);
-  survl = survH0 + futilityBounds1/sqrt(I);
+  NumericVector survu = survH0 + criticalValues1/sqrt(I);
+  NumericVector survl = survH0 + futilityBounds1/sqrt(I);
 
   for (int i=0; i<kMax; i++) {
     if (criticalValues1[i] == 6) {
@@ -2997,10 +2996,6 @@ List kmpower1s(const int kMax = 1,
     }
   }
 
-  double drift = (surv - survH0)*sqrt(maxInformation);
-  double driftf = R::qnorm(1-alpha1, 0, 1, 1, 0) +
-    R::qnorm(overallReject, 0, 1, 1, 0);
-  double inflationFactor = pow(drift/driftf, 2);
 
   DataFrame byStageResults = DataFrame::create(
     _["informationRates"] = informationRates1,
@@ -3011,7 +3006,10 @@ List kmpower1s(const int kMax = 1,
     _["cumulativeRejection"] = cpu,
     _["cumulativeFutility"] = cpl,
     _["cumulativeAlphaSpent"] = cumAlphaSpent,
+    _["numberOfEvents"] = nevents,
+    _["numberOfDropouts"] = ndropouts,
     _["numberOfSubjects"] = nsubjects,
+    _["numberOfMilestone"] = nmilestone,
     _["analysisTime"] = time,
     _["efficacySurv"] = survu,
     _["futilitySurv"] = survl,
@@ -3024,12 +3022,14 @@ List kmpower1s(const int kMax = 1,
   DataFrame overallResults = DataFrame::create(
     _["overallReject"] = overallReject,
     _["alpha"] = (cumAlphaSpent[kMax-1]),
-    _["drift"] = drift,
-    _["inflationFactor"] = inflationFactor,
+    _["numberOfEvents"] = (nevents[kMax-1]),
     _["numberOfSubjects"] = (nsubjects[kMax-1]),
+    _["numberOfMilestone"] = (nmilestone[kMax-1]),
     _["studyDuration"] = (time[kMax-1]),
     _["information"] = maxInformation,
+    _["expectedNumberOfEvents"] = expectedNumberOfEvents,
     _["expectedNumberOfSubjects"] = expectedNumberOfSubjects,
+    _["expectedNumberOfMilestone"] = expectedNumberOfMilestone,
     _["expectedStudyDuration"] = expectedStudyDuration,
     _["expectedInformation"] = expectedInformation,
     _["accrualDuration"] = accrualDuration,
@@ -3663,33 +3663,21 @@ List kmsamplesize1s(const double beta = 0.2,
 
       accrualDuration = brent(g, accrualDuration, interval[1], 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else if (!fixedFollowup) { // adjust follow-up time
+    } else { // adjust follow-up time
       double lower =  std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
       followupTime = brent(f, lower, interval[1], 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else { // fixed follow-up
-      // adjust study duration to obtain the target max information
-      followupTime = milestone;
-      auto g = [milestone, accrualTime, accrualIntensity,
-                piecewiseSurvivalTime, stratumFraction,
-                lambda, gamma,
-                accrualDuration, followupTime, fixedFollowup,
-                maxInformation](double aval)->double {
-                  NumericVector u0(1, accrualDuration + aval);
-                  DataFrame km = kmstat(
-                    u0, milestone, 1,
-                    accrualTime, 2.0*accrualIntensity,
-                    piecewiseSurvivalTime, stratumFraction,
-                    lambda, lambda, gamma, gamma,
-                    accrualDuration, followupTime, fixedFollowup);
-                  return 2.0*sum(NumericVector(km[18])) - maxInformation;
-                };
-
-      double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
-      double aval = brent(g, lower, followupTime, 1.0e-6);
-      studyDuration = accrualDuration + aval;
     }
   } else if (unknown == "accrualIntensity") {
+    if (accrualDuration + followupTime <= milestone) {
+      std::string str1 = "NOTE: The followupTime is too short for ";
+      std::string str2 = "anyone to reach milestone.";
+      std::string str3 = "NOTE: followupTime is increased to ";
+      std::string str4 = "milestone.";
+      Rcout << str1 + str2 << "\n";
+      Rcout << str3 + str4 << "\n";
+      followupTime = milestone;
+    }
     double aval = brent(f, interval[0], interval[1], 1.0e-6);
     accrualIntensity1 = aval*accrualIntensity;
     studyDuration = accrualDuration + followupTime;
@@ -3850,7 +3838,7 @@ List kmsamplesize1s(const double beta = 0.2,
         upper = 2.0*upper;
       }
       accrualDuration = brent(g, lower, upper, 1.0e-6);
-    } else if ((accrualDuration <= milestone) || (h(0) < 0)) {
+    } else if (accrualDuration <= milestone || h(0) < 0) {
       // adjust follow-up time
       double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
       followupTime = brent(h, lower, milestone, 1.0e-6);
@@ -3880,6 +3868,21 @@ List kmsamplesize1s(const double beta = 0.2,
     auto h = [milestone, accrualTime, accrualIntensity1,
               piecewiseSurvivalTime, stratumFraction,
               lambdaH0, gamma,
+              accrualDuration, followupTime, fixedFollowup,
+              maxInformation](double aval)->double {
+                NumericVector u0(1, accrualDuration + aval);
+                DataFrame km = kmstat(
+                  u0, milestone, 1,
+                  accrualTime, 2.0*accrualIntensity1,
+                  piecewiseSurvivalTime, stratumFraction,
+                  lambdaH0, lambdaH0, gamma, gamma,
+                  accrualDuration, followupTime, fixedFollowup);
+                return 2.0*sum(NumericVector(km[18])) - maxInformation;
+              };
+
+    auto g = [milestone, accrualTime, accrualIntensity1,
+              piecewiseSurvivalTime, stratumFraction,
+              lambdaH0, gamma,
               followupTime, fixedFollowup,
               maxInformation](double aval)->double {
                 NumericVector u0(1, aval + followupTime);
@@ -3892,33 +3895,24 @@ List kmsamplesize1s(const double beta = 0.2,
                 return 2.0*sum(NumericVector(km[18])) - maxInformation;
               };
 
-    if (h(accrualDuration) < 0) { // increase accrual duration
+    if (h(followupTime) < 0) { // increase accrual duration
       double lower = accrualDuration, upper = 2.0*accrualDuration;
-      while (h(upper) < 0) {
+      while (g(upper) < 0) {
         lower = upper;
         upper = 2.0*upper;
       }
-      accrualDuration = brent(h, lower, upper, 1.0e-6);
+      accrualDuration = brent(g, lower, upper, 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else { // decrease study duration
-      auto g = [milestone, accrualTime, accrualIntensity1,
-                piecewiseSurvivalTime, stratumFraction,
-                lambdaH0, gamma,
-                accrualDuration, followupTime, fixedFollowup,
-                maxInformation](double aval)->double {
-                  NumericVector u0(1, accrualDuration + aval);
-                  DataFrame km = kmstat(
-                    u0, milestone, 1,
-                    accrualTime, 2.0*accrualIntensity1,
-                    piecewiseSurvivalTime, stratumFraction,
-                    lambdaH0, lambdaH0, gamma, gamma,
-                    accrualDuration, followupTime, fixedFollowup);
-                  return 2.0*sum(NumericVector(km[18])) - maxInformation;
-                };
-
+    } else if (accrualDuration <= milestone || h(0) < 0) {
+      // decrease study duration
       double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
-      double aval = brent(g, lower, followupTime, 1.0e-6);
+      double upper = std::min(milestone, followupTime);
+      double aval = brent(h, lower, upper, 1.0e-6);
       studyDuration = accrualDuration + aval;
+    } else { // decrease accrual duration
+      double lower = std::max(milestone - followupTime, 0.0) + 1.0e-6;
+      accrualDuration = brent(g, lower, accrualDuration, 1.0e-6);
+      studyDuration = accrualDuration + followupTime;
     }
   }
 
@@ -3994,9 +3988,9 @@ List kmsamplesize1s(const double beta = 0.2,
 //'
 //'     - \code{alpha}: The overall significance level.
 //'
-//'     - \code{numbeOfEvents}: The total number of events.
+//'     - \code{numberOfEvents}: The total number of events.
 //'
-//'     - \code{numbeOfSubjects}: The total number of subjects.
+//'     - \code{numberOfSubjects}: The total number of subjects.
 //'
 //'     - \code{studyDuration}: The total study duration.
 //'
@@ -5228,34 +5222,21 @@ List kmsamplesizeequiv(const double beta = 0.2,
 
       accrualDuration = brent(g, accrualDuration, interval[1], 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else if (!fixedFollowup) { // adjust follow-up time
+    } else { // adjust follow-up time
       double lower =  std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
       followupTime = brent(f, lower, interval[1], 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else { // fixed follow-up
-      // adjust study duration to obtain the target max information
-      followupTime = milestone;
-      auto g = [milestone, allocationRatioPlanned,
-                accrualTime, accrualIntensity,
-                piecewiseSurvivalTime, stratumFraction,
-                lambda1, lambda2, gamma1, gamma2,
-                accrualDuration, followupTime, fixedFollowup,
-                maxInformation](double aval)->double {
-                  NumericVector u0(1, accrualDuration + aval);
-                  DataFrame km = kmstat(
-                    u0, milestone, allocationRatioPlanned,
-                    accrualTime, accrualIntensity,
-                    piecewiseSurvivalTime, stratumFraction,
-                    lambda1, lambda2, gamma1, gamma2,
-                    accrualDuration, followupTime, fixedFollowup);
-                  return sum(NumericVector(km[18])) - maxInformation;
-                };
-
-      double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
-      double aval = brent(g, lower, followupTime, 1.0e-6);
-      studyDuration = accrualDuration + aval;
     }
   } else if (unknown == "accrualIntensity") {
+    if (accrualDuration + followupTime <= milestone) {
+      std::string str1 = "NOTE: The followupTime is too short for ";
+      std::string str2 = "anyone to reach milestone.";
+      std::string str3 = "NOTE: followupTime is increased to ";
+      std::string str4 = "milestone.";
+      Rcout << str1 + str2 << "\n";
+      Rcout << str3 + str4 << "\n";
+      followupTime = milestone;
+    }
     double aval = brent(f, interval[0], interval[1], 1.0e-6);
     accrualIntensity1 = aval*accrualIntensity;
     studyDuration = accrualDuration + followupTime;
