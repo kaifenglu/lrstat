@@ -505,7 +505,7 @@ DataFrame rmstat1(const double time = NA_REAL,
     nevents(h, _) = x.row(0);
     ndropouts(h, _) = y.row(0);
 
-    // obtain number of subjects censored due to reaching the max follow-up
+    // obtain number of subjects reaching milestone
     double ncom = frac*a2;
     double p1 = patrisk(milestone, piecewiseSurvivalTime, lam1, gam1)[0];
     double p2 = patrisk(milestone, piecewiseSurvivalTime, lam2, gam2)[0];
@@ -566,8 +566,7 @@ DataFrame rmstat1(const double time = NA_REAL,
 //' and difference in restricted mean survival times at given calendar
 //' times.
 //'
-//' @param time A vector of calendar times at which to calculate the
-//'   restricted mean survival time.
+//' @param time A vector of calendar times for data cut.
 //' @param milestone The milestone time at which to calculate the
 //'   restricted mean survival time.
 //' @inheritParams param_allocationRatioPlanned
@@ -585,8 +584,7 @@ DataFrame rmstat1(const double time = NA_REAL,
 //'
 //' @return A data frame containing the following variables:
 //'
-//' * \code{time}: The calendar time at which to calculate the restricted
-//'   mean survival time.
+//' * \code{time}: The calendar time since trial start.
 //'
 //' * \code{subjects}: The number of enrolled subjects.
 //'
@@ -858,12 +856,12 @@ DataFrame rmstat(const NumericVector& time = NA_REAL,
     nmilestone2[j] = sum(NumericVector(df[12]));
     rmst1[j] = sum(stratumFraction*NumericVector(df[13]));
     rmst2[j] = sum(stratumFraction*NumericVector(df[14]));
-    rmstDiff[j] = sum(stratumFraction*NumericVector(df[15]));
+    rmstDiff[j] = rmst1[j] - rmst2[j];
     vrmst1[j] = sum(stratumFraction*stratumFraction*NumericVector(df[16]));
     vrmst2[j] = sum(stratumFraction*stratumFraction*NumericVector(df[17]));
-    vrmstDiff[j] = sum(stratumFraction*stratumFraction*NumericVector(df[18]));
+    vrmstDiff[j] = vrmst1[j] + vrmst2[j];
     information[j] = 1.0/vrmstDiff[j];
-    rmstDiffZ[j] = rmstDiff[j]/sqrt(vrmstDiff[j]);
+    rmstDiffZ[j] = rmstDiff[j]*sqrt(information[j]);
   }
 
   df = DataFrame::create(_["time"] = calTime,
@@ -1434,6 +1432,11 @@ List rmpower(const int kMax = 1,
     stop("milestone cannot exceed followupTime for fixed follow-up");
   }
 
+  if (fixedFollowup && !std::isnan(studyDuration) &&
+      (milestone >= studyDuration)) {
+    stop("milestone cannot exceed studyDuration for fixed follow-up");
+  }
+
 
   // obtain criticalValues
   if (is_true(any(is_na(criticalValues)))) {
@@ -1493,7 +1496,7 @@ List rmpower(const int kMax = 1,
 
   // obtain the timing of interim analysis
   DataFrame rm;
-  NumericVector time(kMax), rdu(kMax), rdl(kMax);
+  NumericVector time(kMax);
   NumericVector u0(1, studyDuration1);
   rm = rmstat(u0, milestone, allocationRatioPlanned,
               accrualTime, accrualIntensity,
@@ -1570,10 +1573,9 @@ List rmpower(const int kMax = 1,
   }
 
   // stagewise total exit probabilities
-  NumericVector pu(kMax), pl(kMax), ptotal(kMax);
-  pu = NumericVector(probs[0]);
-  pl = NumericVector(probs[1]);
-  ptotal = pu + pl;
+  NumericVector pu = NumericVector(probs[0]);
+  NumericVector pl = NumericVector(probs[1]);
+  NumericVector ptotal = pu + pl;
 
   double overallReject = sum(pu);
   double expectedNumberOfEvents = sum(ptotal*nevents);
@@ -1588,11 +1590,12 @@ List rmpower(const int kMax = 1,
   double expectedNumberOfMilestone2 = sum(ptotal*nmilestone2);
   double expectedStudyDuration = sum(ptotal*time);
   double expectedInformation = sum(ptotal*I);
+
   NumericVector cpu = cumsum(pu);
   NumericVector cpl = cumsum(pl);
 
-  rdu = rmstDiffH0 + criticalValues1/sqrt(I);
-  rdl = rmstDiffH0 + futilityBounds1/sqrt(I);
+  NumericVector rdu = rmstDiffH0 + criticalValues1/sqrt(I);
+  NumericVector rdl = rmstDiffH0 + futilityBounds1/sqrt(I);
 
   for (int i=0; i<kMax; i++) {
     if (criticalValues1[i] == 6) {
@@ -2324,34 +2327,21 @@ List rmsamplesize(const double beta = 0.2,
 
       accrualDuration = brent(g, accrualDuration, interval[1], 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else if (!fixedFollowup) { // adjust follow-up time
+    } else { // adjust follow-up time
       double lower =  std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
-      followupTime = brent(f, lower, interval[1], 1.0e-6);
+      followupTime = brent(f, lower, milestone, 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else { // fixed follow-up
-      followupTime = milestone;
-      // adjust study duration to obtain the target max information
-      auto g = [milestone, allocationRatioPlanned,
-                accrualTime, accrualIntensity,
-                piecewiseSurvivalTime, stratumFraction,
-                lambda1, lambda2, gamma1, gamma2,
-                accrualDuration, followupTime, fixedFollowup,
-                maxInformation](double aval)->double {
-                  NumericVector u0(1, accrualDuration + aval);
-                  DataFrame rm = rmstat(
-                    u0, milestone, allocationRatioPlanned,
-                    accrualTime, accrualIntensity,
-                    piecewiseSurvivalTime, stratumFraction,
-                    lambda1, lambda2, gamma1, gamma2,
-                    accrualDuration, followupTime, fixedFollowup);
-                  return sum(NumericVector(rm[18])) - maxInformation;
-                };
-
-      double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
-      double aval = brent(g, lower, followupTime, 1.0e-6);
-      studyDuration = accrualDuration + aval;
     }
   } else if (unknown == "accrualIntensity") {
+    if (accrualDuration + followupTime <= milestone) {
+      std::string str1 = "NOTE: The followupTime is too short for ";
+      std::string str2 = "anyone to reach milestone.";
+      std::string str3 = "NOTE: followupTime is increased to ";
+      std::string str4 = "milestone.";
+      Rcout << str1 + str2 << "\n";
+      Rcout << str3 + str4 << "\n";
+      followupTime = milestone;
+    }
     double aval = brent(f, interval[0], interval[1], 1.0e-6);
     accrualIntensity1 = aval*accrualIntensity;
     studyDuration = accrualDuration + followupTime;
@@ -2443,7 +2433,7 @@ List rmsamplesize(const double beta = 0.2,
 
 
   // obtain results under H0 by matching the maximum information
-  // first find the hazard rate for the treatment group that yields
+  // first find the hazard rate for the active treatment group that yields
   // the specified difference in restricted mean survival times under H0
   auto frmst = [milestone, piecewiseSurvivalTime, stratumFraction,
                 nintervals, nstrata, l1, lambda2x, rmst2,
@@ -2515,12 +2505,12 @@ List rmsamplesize(const double beta = 0.2,
         upper = 2.0*upper;
       }
       accrualDuration = brent(g, lower, upper, 1.0e-6);
-    } else if ((accrualDuration <= milestone) || (h(0) < 0)) {
+    } else if (accrualDuration <= milestone || h(0) < 0) {
       // adjust follow-up time
       double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
       followupTime = brent(h, lower, milestone, 1.0e-6);
     } else {
-      // adjust accrual duration
+      // decrease accrual duration
       auto g = [milestone, allocationRatioPlanned,
                 accrualTime, accrualIntensity1,
                 piecewiseSurvivalTime, stratumFraction,
@@ -2548,6 +2538,22 @@ List rmsamplesize(const double beta = 0.2,
               accrualTime, accrualIntensity1,
               piecewiseSurvivalTime, stratumFraction,
               lambda1H0, lambda2, gamma1, gamma2,
+              accrualDuration, followupTime, fixedFollowup,
+              maxInformation](double aval)->double {
+                NumericVector u0(1, accrualDuration + aval);
+                DataFrame rm = rmstat(
+                  u0, milestone, allocationRatioPlanned,
+                  accrualTime, accrualIntensity1,
+                  piecewiseSurvivalTime, stratumFraction,
+                  lambda1H0, lambda2, gamma1, gamma2,
+                  accrualDuration, followupTime, fixedFollowup);
+                return sum(NumericVector(rm[18])) - maxInformation;
+              };
+
+    auto g = [milestone, allocationRatioPlanned,
+              accrualTime, accrualIntensity1,
+              piecewiseSurvivalTime, stratumFraction,
+              lambda1H0, lambda2, gamma1, gamma2,
               followupTime, fixedFollowup,
               maxInformation](double aval)->double {
                 NumericVector u0(1, aval + followupTime);
@@ -2560,34 +2566,24 @@ List rmsamplesize(const double beta = 0.2,
                 return sum(NumericVector(rm[18])) - maxInformation;
               };
 
-    if (h(accrualDuration) < 0) { // increase accrual duration
+    if (h(followupTime) < 0) { // increase accrual duration
       double lower = accrualDuration, upper = 2.0*accrualDuration;
-      while (h(upper) < 0) {
+      while (g(upper) < 0) {
         lower = upper;
         upper = 2.0*upper;
       }
-      accrualDuration = brent(h, lower, upper, 1.0e-6);
+      accrualDuration = brent(g, lower, upper, 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else { // decrease study duration
-      auto g = [milestone, allocationRatioPlanned,
-                accrualTime, accrualIntensity1,
-                piecewiseSurvivalTime, stratumFraction,
-                lambda1H0, lambda2, gamma1, gamma2,
-                accrualDuration, followupTime, fixedFollowup,
-                maxInformation](double aval)->double {
-                  NumericVector u0(1, accrualDuration + aval);
-                  DataFrame rm = rmstat(
-                    u0, milestone, allocationRatioPlanned,
-                    accrualTime, accrualIntensity1,
-                    piecewiseSurvivalTime, stratumFraction,
-                    lambda1H0, lambda2, gamma1, gamma2,
-                    accrualDuration, followupTime, fixedFollowup);
-                  return sum(NumericVector(rm[18])) - maxInformation;
-                };
-
+    } else if (accrualDuration <= milestone || h(0) < 0) {
+      // decrease study duration
       double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
-      double aval = brent(g, lower, followupTime, 1.0e-6);
+      double upper = std::min(milestone, followupTime);
+      double aval = brent(h, lower, upper, 1.0e-6);
       studyDuration = accrualDuration + aval;
+    } else { // decrease accrual duration
+      double lower = milestone + 1.0e-6;
+      accrualDuration = brent(g, lower, accrualDuration, 1.0e-6);
+      studyDuration = accrualDuration + followupTime;
     }
   }
 
@@ -2669,19 +2665,23 @@ List rmsamplesize(const double beta = 0.2,
 //'
 //'     - \code{alpha}: The overall significance level.
 //'
-//'     - \code{drift}: The drift parameter, equal to
-//'       \code{(rmst - rmstH0)*sqrt(information)}.
-//'
-//'     - \code{inflationFactor}: The inflation factor (relative to the
-//'       fixed design).
+//'     - \code{numberOfEvents}: The total number of events.
 //'
 //'     - \code{numbeOfSubjects}: The total number of subjects.
+//'
+//'     - \code{numberOfMilestone}: The total number of subjects reaching
+//'       milestone.
 //'
 //'     - \code{studyDuration}: The total study duration.
 //'
 //'     - \code{information}: The maximum information.
 //'
+//'     - \code{expectedNumberOfEvents}: The expected number of events.
+//'
 //'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
+//'
+//'     - \code{expectedNumberOfMilestone}: The expected number of subjects
+//'       reaching milestone.
 //'
 //'     - \code{expectedStudyDuration}: The expected study duration.
 //'
@@ -2695,7 +2695,8 @@ List rmsamplesize(const double beta = 0.2,
 //'
 //'     - \code{kMax}: The number of stages.
 //'
-//'     - \code{milestone}: The milestone time relative to randomization.
+//'     - \code{milestone}: The milestone time to calculate the restricted
+//'       mean survival time.
 //'
 //'     - \code{rmstH0}: The restricted mean survival time under the null
 //'       hypothesis.
@@ -2723,7 +2724,14 @@ List rmsamplesize(const double beta = 0.2,
 //'
 //'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
 //'
+//'     - \code{numberOfEvents}: The number of events.
+//'
+//'     - \code{numberOfDropouts}: The number of dropouts.
+//'
 //'     - \code{numberOfSubjects}: The number of subjects.
+//'
+//'     - \code{numberOfMilestone}: The number of subjects reaching
+//'       milestone.
 //'
 //'     - \code{analysisTime}: The average time since trial start.
 //'
@@ -3137,7 +3145,7 @@ List rmpower1s(const int kMax = 1,
 
   // obtain the timing of interim analysis using the twin treatment group
   DataFrame rm;
-  NumericVector time(kMax), rmstu(kMax), rmstl(kMax);
+  NumericVector time(kMax);
   NumericVector u0(1, studyDuration1);
   rm = rmstat(u0, milestone, 1,
               accrualTime, 2.0*accrualIntensity,
@@ -3173,8 +3181,16 @@ List rmpower1s(const int kMax = 1,
   }
   time[kMax-1] = studyDuration1;
 
-  NumericVector nsubjects = accrual(time, accrualTime, accrualIntensity,
-                                    accrualDuration);
+  rm = rmstat(time, milestone, 1,
+              accrualTime, 2.0*accrualIntensity,
+              piecewiseSurvivalTime, stratumFraction,
+              lambda, lambda, gamma, gamma,
+              accrualDuration, followupTime, fixedFollowup);
+
+  NumericVector nsubjects = 0.5*NumericVector(rm[1]);
+  NumericVector nevents = NumericVector(rm[3]);
+  NumericVector ndropouts = NumericVector(rm[6]);
+  NumericVector nmilestone = NumericVector(rm[10]);
 
   // compute the stagewise exit probabilities for efficacy and futility
   if (!missingFutilityBounds || bsf=="none" || kMax==1) {
@@ -3195,20 +3211,22 @@ List rmpower1s(const int kMax = 1,
   }
 
   // stagewise total exit probabilities
-  NumericVector pu(kMax), pl(kMax), ptotal(kMax);
-  pu = NumericVector(probs[0]);
-  pl = NumericVector(probs[1]);
-  ptotal = pu + pl;
+  NumericVector pu = NumericVector(probs[0]);
+  NumericVector pl = NumericVector(probs[1]);
+  NumericVector ptotal = pu + pl;
 
   double overallReject = sum(pu);
+  double expectedNumberOfEvents = sum(ptotal*nevents);
   double expectedNumberOfSubjects = sum(ptotal*nsubjects);
+  double expectedNumberOfMilestone = sum(ptotal*nmilestone);
   double expectedStudyDuration = sum(ptotal*time);
   double expectedInformation = sum(ptotal*I);
+
   NumericVector cpu = cumsum(pu);
   NumericVector cpl = cumsum(pl);
 
-  rmstu = rmstH0 + criticalValues1/sqrt(I);
-  rmstl = rmstH0 + futilityBounds1/sqrt(I);
+  NumericVector rmstu = rmstH0 + criticalValues1/sqrt(I);
+  NumericVector rmstl = rmstH0 + futilityBounds1/sqrt(I);
 
   for (int i=0; i<kMax; i++) {
     if (criticalValues1[i] == 6) {
@@ -3222,10 +3240,6 @@ List rmpower1s(const int kMax = 1,
     }
   }
 
-  double drift = (rmstH1 - rmstH0)*sqrt(maxInformation);
-  double driftf = R::qnorm(1-alpha1, 0, 1, 1, 0) +
-    R::qnorm(overallReject, 0, 1, 1, 0);
-  double inflationFactor = pow(drift/driftf, 2);
 
   DataFrame byStageResults = DataFrame::create(
     _["informationRates"] = informationRates1,
@@ -3236,7 +3250,10 @@ List rmpower1s(const int kMax = 1,
     _["cumulativeRejection"] = cpu,
     _["cumulativeFutility"] = cpl,
     _["cumulativeAlphaSpent"] = cumAlphaSpent,
+    _["numberOfEvents"] = nevents,
+    _["numberOfDropouts"] = ndropouts,
     _["numberOfSubjects"] = nsubjects,
+    _["numberOfMilestone"] = nmilestone,
     _["analysisTime"] = time,
     _["efficacyRmst"] = rmstu,
     _["futilityRmst"] = rmstl,
@@ -3249,12 +3266,14 @@ List rmpower1s(const int kMax = 1,
   DataFrame overallResults = DataFrame::create(
     _["overallReject"] = overallReject,
     _["alpha"] = (cumAlphaSpent[kMax-1]),
-    _["drift"] = drift,
-    _["inflationFactor"] = inflationFactor,
+    _["numberOfEvents"] = (nevents[kMax-1]),
     _["numberOfSubjects"] = (nsubjects[kMax-1]),
+    _["numberOfMilestone"] = (nmilestone[kMax-1]),
     _["studyDuration"] = (time[kMax-1]),
     _["information"] = maxInformation,
+    _["expectedNumberOfEvents"] = expectedNumberOfEvents,
     _["expectedNumberOfSubjects"] = expectedNumberOfSubjects,
+    _["expectedNumberOfMilestone"] = expectedNumberOfMilestone,
     _["expectedStudyDuration"] = expectedStudyDuration,
     _["expectedInformation"] = expectedInformation,
     _["accrualDuration"] = accrualDuration,
@@ -3886,33 +3905,21 @@ List rmsamplesize1s(const double beta = 0.2,
 
       accrualDuration = brent(g, accrualDuration, interval[1], 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else if (!fixedFollowup) { // adjust follow-up time
+    } else { // adjust follow-up time
       double lower =  std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
       followupTime = brent(f, lower, interval[1], 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else { // fixed follow-up
-      // adjust study duration to obtain the target max information
-      followupTime = milestone;
-      auto g = [milestone, accrualTime, accrualIntensity,
-                piecewiseSurvivalTime, stratumFraction,
-                lambda, gamma,
-                accrualDuration, followupTime, fixedFollowup,
-                maxInformation](double aval)->double {
-                  NumericVector u0(1, accrualDuration + aval);
-                  DataFrame rm = rmstat(
-                    u0, milestone, 1,
-                    accrualTime, 2.0*accrualIntensity,
-                    piecewiseSurvivalTime, stratumFraction,
-                    lambda, lambda, gamma, gamma,
-                    accrualDuration, followupTime, fixedFollowup);
-                  return 2.0*sum(NumericVector(rm[18])) - maxInformation;
-                };
-
-      double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
-      double aval = brent(g, lower, followupTime, 1.0e-6);
-      studyDuration = accrualDuration + aval;
     }
   } else if (unknown == "accrualIntensity") {
+    if (accrualDuration + followupTime <= milestone) {
+      std::string str1 = "NOTE: The followupTime is too short for ";
+      std::string str2 = "anyone to reach milestone.";
+      std::string str3 = "NOTE: followupTime is increased to ";
+      std::string str4 = "milestone.";
+      Rcout << str1 + str2 << "\n";
+      Rcout << str3 + str4 << "\n";
+      followupTime = milestone;
+    }
     double aval = brent(f, interval[0], interval[1], 1.0e-6);
     accrualIntensity1 = aval*accrualIntensity;
     studyDuration = accrualDuration + followupTime;
@@ -3982,7 +3989,6 @@ List rmsamplesize1s(const double beta = 0.2,
       }
     }
   }
-
 
   resultH1 = rmpower1s(
     kMax, informationRates1,
@@ -4072,7 +4078,7 @@ List rmsamplesize1s(const double beta = 0.2,
         upper = 2.0*upper;
       }
       accrualDuration = brent(g, lower, upper, 1.0e-6);
-    } else if ((accrualDuration <= milestone) || (h(0) < 0)) {
+    } else if (accrualDuration <= milestone || h(0) < 0) {
       // adjust follow-up time
       double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
       followupTime = brent(h, lower, milestone, 1.0e-6);
@@ -4080,8 +4086,7 @@ List rmsamplesize1s(const double beta = 0.2,
       // adjust accrual duration
       auto g = [milestone, accrualTime, accrualIntensity1,
                 piecewiseSurvivalTime, stratumFraction,
-                lambdaH0, gamma,
-                fixedFollowup,
+                lambdaH0, gamma, fixedFollowup,
                 maxInformation](double aval)->double {
                   NumericVector u0(1, aval);
                   DataFrame rm = rmstat(
@@ -4103,6 +4108,21 @@ List rmsamplesize1s(const double beta = 0.2,
     auto h = [milestone, accrualTime, accrualIntensity1,
               piecewiseSurvivalTime, stratumFraction,
               lambdaH0, gamma,
+              accrualDuration, followupTime, fixedFollowup,
+              maxInformation](double aval)->double {
+                NumericVector u0(1, accrualDuration + aval);
+                DataFrame rm = rmstat(
+                  u0, milestone, 1,
+                  accrualTime, 2.0*accrualIntensity1,
+                  piecewiseSurvivalTime, stratumFraction,
+                  lambdaH0, lambdaH0, gamma, gamma,
+                  accrualDuration, followupTime, fixedFollowup);
+                return 2.0*sum(NumericVector(rm[18])) - maxInformation;
+              };
+
+    auto g = [milestone, accrualTime, accrualIntensity1,
+              piecewiseSurvivalTime, stratumFraction,
+              lambdaH0, gamma,
               followupTime, fixedFollowup,
               maxInformation](double aval)->double {
                 NumericVector u0(1, aval + followupTime);
@@ -4115,33 +4135,24 @@ List rmsamplesize1s(const double beta = 0.2,
                 return 2.0*sum(NumericVector(rm[18])) - maxInformation;
               };
 
-    if (h(accrualDuration) < 0) { // increase accrual duration
+    if (h(followupTime) < 0) { // increase accrual duration
       double lower = accrualDuration, upper = 2.0*accrualDuration;
-      while (h(upper) < 0) {
+      while (g(upper) < 0) {
         lower = upper;
         upper = 2.0*upper;
       }
-      accrualDuration = brent(h, lower, upper, 1.0e-6);
+      accrualDuration = brent(g, lower, upper, 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else { // decrease study duration
-      auto g = [milestone, accrualTime, accrualIntensity1,
-                piecewiseSurvivalTime, stratumFraction,
-                lambdaH0, gamma,
-                accrualDuration, followupTime, fixedFollowup,
-                maxInformation](double aval)->double {
-                  NumericVector u0(1, accrualDuration + aval);
-                  DataFrame rm = rmstat(
-                    u0, milestone, 1,
-                    accrualTime, 2.0*accrualIntensity1,
-                    piecewiseSurvivalTime, stratumFraction,
-                    lambdaH0, lambdaH0, gamma, gamma,
-                    accrualDuration, followupTime, fixedFollowup);
-                  return 2.0*sum(NumericVector(rm[18])) - maxInformation;
-                };
-
+    } else if (accrualDuration <= milestone || h(0) < 0) {
+      // decrease study duration
       double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
-      double aval = brent(g, lower, followupTime, 1.0e-6);
+      double upper = std::min(milestone, followupTime);
+      double aval = brent(h, lower, upper, 1.0e-6);
       studyDuration = accrualDuration + aval;
+    } else { // decrease accrual duration
+      double lower = std::max(milestone - followupTime, 0.0) + 1.0e-6;
+      accrualDuration = brent(g, lower, accrualDuration, 1.0e-6);
+      studyDuration = accrualDuration + followupTime;
     }
   }
 
@@ -4219,7 +4230,7 @@ List rmsamplesize1s(const double beta = 0.2,
 //'
 //'     - \code{numberOfEvents}: The total number of events.
 //'
-//'     - \code{numbeOfSubjects}: The total number of subjects.
+//'     - \code{numberOfSubjects}: The total number of subjects.
 //'
 //'     - \code{studyDuration}: The total study duration.
 //'
@@ -5434,34 +5445,21 @@ List rmsamplesizeequiv(const double beta = 0.2,
 
       accrualDuration = brent(g, accrualDuration, interval[1], 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else if (!fixedFollowup) { // adjust follow-up time
+    } else { // adjust follow-up time
       double lower =  std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
       followupTime = brent(f, lower, interval[1], 1.0e-6);
       studyDuration = accrualDuration + followupTime;
-    } else { // fixed follow-up
-      // adjust study duration to obtain the target max information
-      followupTime = milestone;
-      auto g = [milestone, allocationRatioPlanned,
-                accrualTime, accrualIntensity,
-                piecewiseSurvivalTime, stratumFraction,
-                lambda1, lambda2, gamma1, gamma2,
-                accrualDuration, followupTime, fixedFollowup,
-                maxInformation](double aval)->double {
-                  NumericVector u0(1, accrualDuration + aval);
-                  DataFrame rm = rmstat(
-                    u0, milestone, allocationRatioPlanned,
-                    accrualTime, accrualIntensity,
-                    piecewiseSurvivalTime, stratumFraction,
-                    lambda1, lambda2, gamma1, gamma2,
-                    accrualDuration, followupTime, fixedFollowup);
-                  return sum(NumericVector(rm[18])) - maxInformation;
-                };
-
-      double lower = std::max(milestone - accrualDuration, 0.0) + 1.0e-6;
-      double aval = brent(g, lower, followupTime, 1.0e-6);
-      studyDuration = accrualDuration + aval;
     }
   } else if (unknown == "accrualIntensity") {
+    if (accrualDuration + followupTime <= milestone) {
+      std::string str1 = "NOTE: The followupTime is too short for ";
+      std::string str2 = "anyone to reach milestone.";
+      std::string str3 = "NOTE: followupTime is increased to ";
+      std::string str4 = "milestone.";
+      Rcout << str1 + str2 << "\n";
+      Rcout << str3 + str4 << "\n";
+      followupTime = milestone;
+    }
     double aval = brent(f, interval[0], interval[1], 1.0e-6);
     accrualIntensity1 = aval*accrualIntensity;
     studyDuration = accrualDuration + followupTime;

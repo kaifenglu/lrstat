@@ -4837,15 +4837,21 @@ getDesignMeanDiffMMRM <- function(
 
 
 #' @title Power and Sample Size for Direct Treatment Effects in Crossover
-#' Trials Accounting for Carryover Effects
+#' Trials
 #' @description Obtains the power and sample size for direct treatment
-#' effects in crossover trials accounting for carryover effects.
+#' effects in crossover trials accounting or without accounting for
+#' carryover effects.
 #'
 #' @param beta The type II error.
 #' @param n The total sample size.
-#' @param meanDiffH0 The mean difference at the last time point
+#' @param trtpair The treatment pair of interest to power the study.
+#'   If not given, it defaults to comparing the first treatment to the
+#'   last treatment.
+#' @param carryover Whether to account for carryover effects in the
+#'   power calculation. Defaults to TRUE.
+#' @param meanDiffH0 The mean difference for the treatment pair of interest
 #'   under the null hypothesis. Defaults to 0.
-#' @param meanDiff The mean difference at the last time point
+#' @param meanDiff The mean difference for the treatment pair of interest
 #'   under the alternative hypothesis.
 #' @param stDev The standard deviation for within-subject random error.
 #' @param corr The intra-subject correlation due to subject random effect.
@@ -4858,19 +4864,19 @@ getDesignMeanDiffMMRM <- function(
 #' @param normalApproximation The type of computation of the p-values.
 #'   If \code{TRUE}, the variance is assumed to be known, otherwise
 #'   the calculations are performed with the t distribution.
-#' @param rounding Whether to round up sample size. Defaults to 1 for
+#' @param rounding Whether to round up the sample size. Defaults to TRUE for
 #'   sample size rounding.
 #' @param alpha The one-sided significance level. Defaults to 0.025.
 #'
 #' @details
-#' The linear mixed-effects model to assess the direct treatment effect
-#' in the presence of carryover treatment effect is given by
+#' The linear mixed-effects model to assess the direct treatment effects
+#' in the presence of carryover treatment effects is given by
 #' \deqn{y_{ijk} = \mu + \alpha_i + b_{ij} + \gamma_k + \tau_{d(i,k)}
 #' + \lambda_{c(i,k-1)} + e_{ijk},}
 #' \deqn{i=1,\ldots,n; j=1,\ldots,r_i; k = 1,\ldots,p; d,c = 1,\ldots,t,}
 #' where \eqn{\mu} is the general mean, \eqn{\alpha_i} is the effect of
 #' the \eqn{i}th treatment sequence, \eqn{b_{ij}} is the random effect
-#' with variance \eqn{\sigma_b^2} for the \eqn{j}the subject of the
+#' with variance \eqn{\sigma_b^2} for the \eqn{j}th subject of the
 #' \eqn{i}th treatment sequence, \eqn{\gamma_k} is the period effect,
 #' and \eqn{e_{ijk}} is the random error with variance \eqn{\sigma^2}
 #' for the subject in period \eqn{k}. The direct effect of the treatment
@@ -4881,25 +4887,34 @@ getDesignMeanDiffMMRM <- function(
 #' response in the first period is \eqn{\lambda_{c(i,0)} = 0} since
 #' there is no carryover effect in the first period. The intra-subject
 #' correlation due to the subject random effect is
-#' \deqn{\rho = \frac{\sigma_b^2}{\sigma_b^2 + sigma^2}.}
+#' \deqn{\rho = \frac{\sigma_b^2}{\sigma_b^2 + \sigma^2}.}
+#' Therefore, \code{stDev} = \eqn{\sigma^2} and \code{corr} = \eqn{\rho}.
 #' By constructing the design matrix \eqn{X} for the linear model with
 #' a compound symmetry covariance matrix for the response vector of
 #' a subject, we can obtain \deqn{Var(\hat{\beta}) = (X'V^{-1}X)^{-1}.}
 #'
-#' The covariance matrix for the direct treatment effects and the
+#' The covariance matrix for the direct treatment effects and
 #' carryover treatment effects can be extracted from the appropriate
 #' sub-matrices. The covariance matrix for the direct treatment effects
 #' without accounting for the carryover treatment effects can be obtained
 #' by omitting the carryover effect terms from the model.
 #'
-#' The power and relative efficiency are for the direct treatment
-#' effect comparing the first treatment to the last treatment
-#' accounting for carryover effects.
+#' The power is for the direct treatment effect for the treatment pair of
+#' interest with or without accounting for carryover effects as determined
+#' by the input parameter \code{carryover}. The relative efficiency is
+#' for the direct treatment effect for the treatment pair of interest
+#' accounting for carryover effects relative to that without accounting
+#' for carryover effects.
 #'
-#' The degrees of freedom for the t-test can be calculated as the
-#' total number of observations minus the number of subjects minus
-#' \eqn{p-1} minus \eqn{2(t-1)} to account for the subject effect,
-#' period effect, and direct and carryover treatment effects.
+#' The degrees of freedom for the t-test accounting for carryover effects
+#' can be calculated as the total number of observations minus
+#' the number of subjects minus \eqn{p-1} minus \eqn{2(t-1)}
+#' to account for the subject effect, period effect, and direct and
+#' carryover treatment effects. The degrees of freedom for the t-test
+#' without accounting for carryover effects is equal to the total number
+#' of observations minus the number of subjects minus \eqn{p-1} minus
+#' \eqn{t-1} to account for the subject effect, period effect, and direct
+#' treatment effects.
 #'
 #' @return An S3 class \code{designMeanDiffCarryover} object with the
 #' following components:
@@ -4910,10 +4925,16 @@ getDesignMeanDiffMMRM <- function(
 #'
 #' * \code{numberOfSubjects}: The maximum number of subjects.
 #'
-#' * \code{meanDiffH0}: The mean difference under the null hypothesis.
+#' * \code{trtpair}: The treatment pair of interest to power the study.
 #'
-#' * \code{meanDiff}: The mean difference under the alternative
-#'   hypothesis.
+#' * \code{carryover}: Whether to account for carryover effects in
+#'   the power calculation.
+#'
+#' * \code{meanDiffH0}: The mean difference for the treatment pair of
+#'   interest under the null hypothesis.
+#'
+#' * \code{meanDiff}: The mean difference for the treatment pair of
+#'   interest under the alternative hypothesis.
 #'
 #' * \code{stDev}: The standard deviation for within-subject random error.
 #'
@@ -4922,6 +4943,12 @@ getDesignMeanDiffMMRM <- function(
 #' * \code{design}: The crossover design represented by a matrix with
 #'   rows indexing the sequences, columns indexing the periods, and
 #'   matrix entries indicating the treatments.
+#'
+#' * \code{designMatrix}: The design matrix accounting for intercept,
+#'   sequence, period, direct treatment effects and carryover treatment
+#'   effects when \code{carryover = TRUE}, or the design matrix
+#'   accounting for intercept, sequence, period, and direct treatment
+#'   effects when \code{carryover = FALSE}.
 #'
 #' * \code{nseq}: The number of sequences.
 #'
@@ -4932,28 +4959,32 @@ getDesignMeanDiffMMRM <- function(
 #' * \code{cumdrop}: The cumulative dropout rate over periods.
 #'
 #' * \code{V_direct_only}: The covariance matrix for direct treatment
-#'   effects without accounting for carryover effects.
+#'   effects without accounting for carryover effects. The treatment
+#'   comparisons for the covariance matrix are for the first \eqn{t-1}
+#'   treatments relative to the last treatment.
 #'
 #' * \code{V_direct_carry}: The covariance matrix for direct and
 #'   carryover treatment effects.
 #'
-#' * \code{v_direct_only}: The variance of direct treatment effects
-#'   without accounting for carryover effects.
+#' * \code{v_direct_only}: The variance of the direct treatment effect for
+#'   the treatment pair of interest without accounting for carryover
+#'   effects.
 #'
-#' * \code{v_direct}: The variance of direct treatment effects
-#'   accounting for carryover effects.
+#' * \code{v_direct}: The variance of the direct treatment effect for
+#'   the treatment pair of interest accounting for carryover effects.
 #'
-#' * \code{v_carry}: The variance of carryover treatment effects.
+#' * \code{v_carry}: The variance of the carryover treatment effect for
+#'   the treatment pair of interest.
 #'
 #' * \code{releff_direct}: The relative efficiency of the design
-#'   for estimating direct treatment effects after accounting
-#'   for carryover effects with respect to that without
-#'   accounting for carryover effects. This is equal to
+#'   for estimating the direct treatment effect for the treatment pair
+#'   of interest after accounting for carryover effects with respect to
+#'   that without accounting for carryover effects. This is equal to
 #'   \code{v_direct_only/v_direct}.
 #'
 #' * \code{releff_carry}: The relative efficiency of the design
-#'   for estimating carryover effects. This is equal to
-#'   \code{v_direct_only/v_carry}.
+#'   for estimating the carryover effect for the treatment pair
+#'   of interest. This is equal to \code{v_direct_only/v_carry}.
 #'
 #' * \code{allocationRatioPlanned}: Allocation ratio for the sequences.
 #'
@@ -4961,7 +4992,7 @@ getDesignMeanDiffMMRM <- function(
 #'   If \code{TRUE}, the variance is assumed to be known, otherwise
 #'   the calculations are performed with the t distribution.
 #'
-#' * \code{rounding}: Whether to round up sample size.
+#' * \code{rounding}: Whether to round up the sample size.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -4989,6 +5020,8 @@ getDesignMeanDiffMMRM <- function(
 getDesignMeanDiffCarryover <- function(
     beta = NA_real_,
     n = NA_real_,
+    trtpair = NA_real_,
+    carryover = TRUE,
     meanDiffH0 = 0,
     meanDiff = 0.5,
     stDev = 1,
@@ -5033,26 +5066,33 @@ getDesignMeanDiffCarryover <- function(
   ntrt = length(unique(c(design)))
 
   if (any(design <= 0 | design != round(design)) ||
-      !all.equal(unique(c(design)), 1:ntrt)) {
+      !all.equal(sort(unique(c(design))), 1:ntrt)) {
     stop(paste("Elements of design must be positive integers",
                "ranging from 1 to", ntrt))
+  }
+
+  if (any(is.na(trtpair))) {
+    trtpair = c(1, ntrt)
+  } else if (length(trtpair) != 2 ||
+             trtpair[1] == trtpair[2] ||
+             !all(trtpair %in% 1:ntrt)) {
+    stop(paste("trtpair must be a vector of two distinct integers",
+               "selected from 1 to", ntrt))
   }
 
   # number of model parameters consisting of the intercept, sequence effects,
   # period effects, direct treatment effects, and carryover treatment effects
   q = 1 + (nseq-1) + (nprd-1) + (ntrt-1) + (ntrt-1)
 
+  # number of model parameters consisting of the intercept, sequence effects,
+  # period effects, and direct treatment effects
+  q0 = 1 + (nseq-1) + (nprd-1) + (ntrt-1)
+
   # start of direct treatment effect
   l = 1 + (nseq-1) + (nprd-1) + 1
 
   # end of direct treatment effect
   m = 1 + (nseq-1) + (nprd-1) + (ntrt-1)
-
-
-  if (q > nseq*nprd) {
-    stop("The crossover design is overparameterized")
-  }
-
 
   if (any(is.na(cumdrop))) {
     cumdrop = rep(0, nseq)
@@ -5101,6 +5141,8 @@ getDesignMeanDiffCarryover <- function(
   theta = ifelse(directionUpper, meanDiff - meanDiffH0,
                  meanDiffH0 - meanDiff)
 
+  # compound symmetry covariance matrix for repeated measures
+  Sigma = stDev^2/(1-corr) * ((1-corr)*diag(nprd) + corr)
 
   # model design matrix with carryover effect
   X = matrix(0, nseq*nprd, q)
@@ -5131,38 +5173,73 @@ getDesignMeanDiffCarryover <- function(
     }
   }
 
-
-  # compound symmetry covariance matrix for repeated measures
-  Sigma = stDev^2/(1-corr) * ((1-corr)*diag(nprd) + corr)
-
-  # information matrix for model parameters with carryover effects
-  I = 0
-  for (i in 1:nseq) {
-    offset = (i-1)*nprd
-    J = 0
-    for (j in 1:nprd) {
-      idx = offset + (1:j)
-
-      if (j==1) {
-        x = t(as.matrix(X[idx,]))
-      } else {
-        x = X[idx,]
-      }
-
-      J = J + p[j]*t(x) %*% solve(Sigma[1:j,1:j]) %*% x
-    }
-    I = I + r[i]*J
+  # singular values of X
+  d = svdcpp(X, outtransform = FALSE, decreasing = FALSE)$d
+  tol = max(dim(X))*.Machine$double.eps
+  if (carryover && sum(d >= tol * max(d)) < q) {
+    stop("The crossover design is overparameterized for carryover effects")
   }
 
-  # covariance matrix for model parameters with carryover effects
-  V = solve(I)
+  if (carryover) {
+    # information matrix for model parameters with carryover effects
+    I = 0
+    for (i in 1:nseq) {
+      offset = (i-1)*nprd
+      J = 0
+      for (j in 1:nprd) {
+        idx = offset + (1:j)
 
-  # variance for direct treatment effect for one sampling unit
-  v1 = V[l,l]
+        if (j==1) {
+          x = t(as.matrix(X[idx,]))
+        } else {
+          x = X[idx,]
+        }
 
+        J = J + p[j]*t(x) %*% solve(Sigma[1:j,1:j]) %*% x
+      }
+      I = I + r[i]*J
+    }
+
+    # covariance matrix for model parameters with carryover effects
+    V = solve(I)
+
+    # variance for direct treatment effect for one sampling unit with carryover
+    if (trtpair[2]==ntrt) {
+      v1 = V[l+trtpair[1]-1, l+trtpair[1]-1]
+    } else if (trtpair[1]==ntrt) {
+      v1 = V[l+trtpair[2]-1, l+trtpair[2]-1]
+    } else {
+      v1 = V[l+trtpair[1]-1, l+trtpair[1]-1] +
+        V[l+trtpair[2]-1, l+trtpair[2]-1] -
+        2*V[l+trtpair[1]-1, l+trtpair[2]-1]
+    }
+
+
+    # variance for carryover treatment effect for one sampling unit
+    if (trtpair[2]==ntrt) {
+      v2 = V[m+trtpair[1], m+trtpair[1]]
+    } else if (trtpair[1]==ntrt) {
+      v2 = V[m+trtpair[2], m+trtpair[2]]
+    } else {
+      v2 = V[m+trtpair[1], m+trtpair[1]] +
+        V[m+trtpair[2], m+trtpair[2]] -
+        2*V[m+trtpair[1], m+trtpair[2]]
+    }
+  }
+
+
+  # design matrix for model parameters without carryover effects
+  X0 = X[, 1:m]
+  if (!carryover) {
+    # singular values of X0
+    d0 = svdcpp(X0, outtransform = FALSE, decreasing = FALSE)$d
+    tol0 = max(dim(X0))*.Machine$double.eps
+    if (sum(d0 >= tol0 * max(d0)) < q0) {
+      stop("The crossover design is overparameterized")
+    }
+  }
 
   # information matrix for model parameters without carryover effects
-  X0 = X[, 1:m]
   I0 = 0
   for (i in 1:nseq) {
     offset = (i-1)*nprd
@@ -5184,23 +5261,35 @@ getDesignMeanDiffCarryover <- function(
   # covariance matrix for model parameters without carryover effects
   V0 = solve(I0)
 
+  # variance for direct treatment effect for one sampling unit w/o carryover
+  if (trtpair[2]==ntrt) {
+    v0 = V0[l+trtpair[1]-1, l+trtpair[1]-1]
+  } else if (trtpair[1]==ntrt) {
+    v0 = V0[l+trtpair[2]-1, l+trtpair[2]-1]
+  } else {
+    v0 = V0[l+trtpair[1]-1, l+trtpair[1]-1] +
+      V0[l+trtpair[2]-1, l+trtpair[2]-1] -
+      2*V0[l+trtpair[1]-1, l+trtpair[2]-1]
+  }
+
+  v = ifelse(carryover, v1, v0)
 
   # power for t test
   f = function(n) {
     # residual degrees of freedom after accounting for the subject effects
     mean_nprd = sum(p*(1:nprd))
-    nu = n*mean_nprd - 1 - (n-1) - (nprd-1) - (ntrt-1) - (ntrt-1)
+    nu = n*mean_nprd - 1 - (n-1) - (nprd-1) - (ntrt-1) - (ntrt-1)*carryover
     b = qt(1-alpha, nu)
-    ncp = theta*sqrt(n/v1)
+    ncp = theta*sqrt(n/v)
     pt(b, nu, ncp, lower.tail = FALSE)
   }
 
 
   if (is.na(n)) { # calculate the sample size
     if (normalApproximation) {
-      n = (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
+      n = (qnorm(1-alpha) + qnorm(1-beta))^2*v/theta^2
     } else {
-      n0 = (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
+      n0 = (qnorm(1-alpha) + qnorm(1-beta))^2*v/theta^2
       n = uniroot(function(n) f(n) - (1-beta), c(0.5*n0, 1.5*n0))$root
     }
   }
@@ -5210,7 +5299,7 @@ getDesignMeanDiffCarryover <- function(
   }
 
   if (normalApproximation) {
-    power = pnorm(theta*sqrt(n/v1) - qnorm(1-alpha))
+    power = pnorm(theta*sqrt(n/v) - qnorm(1-alpha))
   } else {
     power = f(n)
   }
@@ -5218,24 +5307,586 @@ getDesignMeanDiffCarryover <- function(
   rownames(design) = paste0("Seq", 1:nseq)
   colnames(design) = paste0("Prd", 1:nprd)
 
-  des = list(
-    power = power, alpha = alpha, numberOfSubjects = n,
-    meanDiffH0 = meanDiffH0, meanDiff = meanDiff,
-    stDev = stDev, corr = corr, design = design,
-    nseq = nseq, nprd = nprd, ntrt = ntrt,
-    cumdrop = cumdrop,
-    V_direct_only = V0[l:m,l:m]/n,
-    V_direct_carry = V[l:q, l:q]/n,
-    v_direct_only = V0[l,l]/n,
-    v_direct = V[l,l]/n,
-    v_carry = V[m+1,m+1]/n,
-    releff_direct = V0[l,l]/V[l,l],
-    releff_carry = V0[l,l]/V[m+1,m+1],
-    allocationRatioPlanned = allocationRatioPlanned,
-    normalApproximation = normalApproximation,
-    rounding = rounding)
+  if (carryover) {
+    des = list(
+      power = power, alpha = alpha, numberOfSubjects = n,
+      trtpair = trtpair, carryover = carryover,
+      meanDiffH0 = meanDiffH0, meanDiff = meanDiff,
+      stDev = stDev, corr = corr,
+      design = design, designMatrix = X,
+      nseq = nseq, nprd = nprd, ntrt = ntrt,
+      cumdrop = cumdrop,
+      V_direct_only = V0[l:m,l:m]/n,
+      V_direct_carry = V[l:q, l:q]/n,
+      v_direct_only = v0/n,
+      v_direct = v1/n,
+      v_carry = v2/n,
+      releff_direct = v0/v1,
+      releff_carry = v0/v2,
+      allocationRatioPlanned = allocationRatioPlanned,
+      normalApproximation = normalApproximation,
+      rounding = rounding)
+  } else {
+    des = list(
+      power = power, alpha = alpha, numberOfSubjects = n,
+      trtpair = trtpair, carryover = carryover,
+      meanDiffH0 = meanDiffH0, meanDiff = meanDiff,
+      stDev = stDev, corr = corr,
+      design = design, designMatrix = X0,
+      nseq = nseq, nprd = nprd, ntrt = ntrt,
+      cumdrop = cumdrop,
+      V_direct_only = V0[l:m,l:m]/n,
+      v_direct_only = v0/n,
+      allocationRatioPlanned = allocationRatioPlanned,
+      normalApproximation = normalApproximation,
+      rounding = rounding)
+  }
 
   attr(des, "class") = "designMeanDiffCarryover"
+
+  des
+}
+
+
+#' @title Power and Sample Size for Equivalence in Direct Treatment Effects
+#' in Crossover Trials
+#' @description Obtains the power and sample size for equivalence in
+#' direct treatment effects in crossover trials accounting or without
+#' accounting for carryover effects.
+#'
+#' @param beta The type II error.
+#' @param n The total sample size.
+#' @param trtpair The treatment pair of interest to power the study.
+#'   If not given, it defaults to comparing the first treatment to the
+#'   last treatment.
+#' @param carryover Whether to account for carryover effects in the
+#'   power calculation. Defaults to TRUE.
+#' @param meanDiffLower The lower equivalence limit of mean difference
+#'   for the treatment pair of interest.
+#' @param meanDiffUpper The upper equivalence limit of mean difference
+#'   for the treatment pair of interest.
+#' @param meanDiff The mean difference under the alternative hypothesis,
+#' @param stDev The standard deviation for within-subject random error.
+#' @param corr The intra-subject correlation due to subject random effect.
+#' @param design The crossover design represented by a matrix with
+#'   rows indexing the sequences, columns indexing the periods, and
+#'   matrix entries indicating the treatments.
+#' @param cumdrop The cumulative dropout rate over periods.
+#' @param allocationRatioPlanned Allocation ratio for the sequences.
+#'   Defaults to equal randomization if not provided.
+#' @param normalApproximation The type of computation of the p-values.
+#'   If \code{TRUE}, the variance is assumed to be known, otherwise
+#'   the calculations are performed with the t distribution.
+#' @param rounding Whether to round up the sample size. Defaults to TRUE for
+#'   sample size rounding.
+#' @param alpha The one-sided significance level. Defaults to 0.025.
+#'
+#' @details
+#' The linear mixed-effects model to assess the direct treatment effects
+#' in the presence of carryover treatment effects is given by
+#' \deqn{y_{ijk} = \mu + \alpha_i + b_{ij} + \gamma_k + \tau_{d(i,k)}
+#' + \lambda_{c(i,k-1)} + e_{ijk},}
+#' \deqn{i=1,\ldots,n; j=1,\ldots,r_i; k = 1,\ldots,p; d,c = 1,\ldots,t,}
+#' where \eqn{\mu} is the general mean, \eqn{\alpha_i} is the effect of
+#' the \eqn{i}th treatment sequence, \eqn{b_{ij}} is the random effect
+#' with variance \eqn{\sigma_b^2} for the \eqn{j}th subject of the
+#' \eqn{i}th treatment sequence, \eqn{\gamma_k} is the period effect,
+#' and \eqn{e_{ijk}} is the random error with variance \eqn{\sigma^2}
+#' for the subject in period \eqn{k}. The direct effect of the treatment
+#' administered in period \eqn{k} of sequence \eqn{i} is
+#' \eqn{\tau_{d(i,k)}}, and \eqn{\lambda_{c(i,k-1)}} is the carryover
+#' effect of the treatment administered in period \eqn{k-1} of sequence
+#' \eqn{i}. The value of the carryover effect for the observed
+#' response in the first period is \eqn{\lambda_{c(i,0)} = 0} since
+#' there is no carryover effect in the first period. The intra-subject
+#' correlation due to the subject random effect is
+#' \deqn{\rho = \frac{\sigma_b^2}{\sigma_b^2 + \sigma^2}.}
+#' Therefore, \code{stDev} = \eqn{\sigma^2} and \code{corr} = \eqn{\rho}.
+#' By constructing the design matrix \eqn{X} for the linear model with
+#' a compound symmetry covariance matrix for the response vector of
+#' a subject, we can obtain \deqn{Var(\hat{\beta}) = (X'V^{-1}X)^{-1}.}
+#'
+#' The covariance matrix for the direct treatment effects and
+#' carryover treatment effects can be extracted from the appropriate
+#' sub-matrices. The covariance matrix for the direct treatment effects
+#' without accounting for the carryover treatment effects can be obtained
+#' by omitting the carryover effect terms from the model.
+#'
+#' The power is for the direct treatment effect for the treatment pair of
+#' interest with or without accounting for carryover effects as determined
+#' by the input parameter \code{carryover}. The relative efficiency is
+#' for the direct treatment effect for the treatment pair of interest
+#' accounting for carryover effects relative to that without accounting
+#' for carryover effects.
+#'
+#' The degrees of freedom for the t-test accounting for carryover effects
+#' can be calculated as the total number of observations minus
+#' the number of subjects minus \eqn{p-1} minus \eqn{2(t-1)}
+#' to account for the subject effect, period effect, and direct and
+#' carryover treatment effects. The degrees of freedom for the t-test
+#' without accounting for carryover effects is equal to the total number
+#' of observations minus the number of subjects minus \eqn{p-1} minus
+#' \eqn{t-1} to account for the subject effect, period effect, and direct
+#' treatment effects.
+#'
+#' @return An S3 class \code{designMeanDiffCarryover} object with the
+#' following components:
+#'
+#' * \code{power}: The power to reject the null hypothesis.
+#'
+#' * \code{alpha}: The one-sided significance level.
+#'
+#' * \code{numberOfSubjects}: The maximum number of subjects.
+#'
+#' * \code{trtpair}: The treatment pair of interest to power the study.
+#'
+#' * \code{carryover}: Whether to account for carryover effects in
+#'   the power calculation.
+#'
+#' * \code{meanDiffLower}: The lower equivalence limit of mean difference
+#'   for the treatment pair of interest.
+#'
+#' * \code{meanDiffUpper}: The upper equivalence limit of mean difference
+#'   for the treatment pair of interest.
+#'
+#' * \code{meanDiff}: The mean difference for the treatment pair of interest
+#'   under the alternative hypothesis.
+#'
+#' * \code{stDev}: The standard deviation for within-subject random error.
+#'
+#' * \code{corr}: The intra-subject correlation due to subject random effect.
+#'
+#' * \code{design}: The crossover design represented by a matrix with
+#'   rows indexing the sequences, columns indexing the periods, and
+#'   matrix entries indicating the treatments.
+#'
+#' * \code{designMatrix}: The design matrix accounting for intercept,
+#'   sequence, period, direct treatment effects and carryover treatment
+#'   effects when \code{carryover = TRUE}, or the design matrix
+#'   accounting for intercept, sequence, period, and direct treatment
+#'   effects when \code{carryover = FALSE}.
+#'
+#' * \code{nseq}: The number of sequences.
+#'
+#' * \code{nprd}: The number of periods.
+#'
+#' * \code{ntrt}: The number of treatments.
+#'
+#' * \code{cumdrop}: The cumulative dropout rate over periods.
+#'
+#' * \code{V_direct_only}: The covariance matrix for direct treatment
+#'   effects without accounting for carryover effects. The treatment
+#'   comparisons for the covariance matrix are for the first \eqn{t-1}
+#'   treatments relative to the last treatment.
+#'
+#' * \code{V_direct_carry}: The covariance matrix for direct and
+#'   carryover treatment effects.
+#'
+#' * \code{v_direct_only}: The variance of the direct treatment effect for
+#'   the treatment pair of interest without accounting for carryover
+#'   effects.
+#'
+#' * \code{v_direct}: The variance of the direct treatment effect for
+#'   the treatment pair of interest accounting for carryover effects.
+#'
+#' * \code{v_carry}: The variance of the carryover treatment effect for
+#'   the treatment pair of interest.
+#'
+#' * \code{releff_direct}: The relative efficiency of the design
+#'   for estimating the direct treatment effect for the treatment pair
+#'   of interest after accounting for carryover effects with respect to
+#'   that without accounting for carryover effects. This is equal to
+#'   \code{v_direct_only/v_direct}.
+#'
+#' * \code{releff_carry}: The relative efficiency of the design
+#'   for estimating the carryover effect for the treatment pair
+#'   of interest. This is equal to \code{v_direct_only/v_carry}.
+#'
+#' * \code{allocationRatioPlanned}: Allocation ratio for the sequences.
+#'
+#' * \code{normalApproximation}: The type of computation of the p-values.
+#'   If \code{TRUE}, the variance is assumed to be known, otherwise
+#'   the calculations are performed with the t distribution.
+#'
+#' * \code{rounding}: Whether to round up the sample size.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#'
+#' Robert O. Kuehl. Design of Experiments: Statistical Principles of
+#' Research Design and Analysis. Brooks/Cole: Pacific Grove, CA. 2000.
+#'
+#' @examples
+#'
+#' # Williams design for 4 treatments
+#'
+#' (design1 = getDesignMeanDiffCarryoverEquiv(
+#'   beta = 0.2, n = NA,
+#'   meanDiffLower = -1.3, meanDiffUpper = 1.3,
+#'   meanDiff = 0, stDev = 2.2,
+#'   design = matrix(c(1, 4, 2, 3,
+#'                     2, 1, 3, 4,
+#'                     3, 2, 4, 1,
+#'                     4, 3, 1, 2),
+#'                   4, 4, byrow = TRUE),
+#'   alpha = 0.025))
+#'
+#' @export
+#'
+getDesignMeanDiffCarryoverEquiv <- function(
+    beta = NA_real_,
+    n = NA_real_,
+    trtpair = NA_real_,
+    carryover = TRUE,
+    meanDiffLower = NA_real_,
+    meanDiffUpper = NA_real_,
+    meanDiff = 0,
+    stDev = 1,
+    corr = 0.5,
+    design = NA_real_,
+    cumdrop = NA_real_,
+    allocationRatioPlanned = NA_real_,
+    normalApproximation = FALSE,
+    rounding = TRUE,
+    alpha = 0.025) {
+
+  if (is.na(beta) && is.na(n)) {
+    stop("beta and n cannot be both missing")
+  }
+
+  if (!is.na(beta) && !is.na(n)) {
+    stop("Only one of beta and n should be provided")
+  }
+
+  if (!is.na(beta) && (beta >= 1-alpha || beta < 0.0001)) {
+    stop("beta must lie in [0.0001, 1-alpha)")
+  }
+
+  if (!is.na(n) && n <= 0) {
+    stop("n must be positive")
+  }
+
+  if (is.na(meanDiffLower)) {
+    stop("meanDiffLower must be provided")
+  }
+
+  if (is.na(meanDiffUpper)) {
+    stop("meanDiffUpper must be provided")
+  }
+
+  if (meanDiffLower >= meanDiff) {
+    stop("meanDiffLower must be less than meanDiff")
+  }
+
+  if (meanDiffUpper <= meanDiff) {
+    stop("meanDiffUpper must be greater than meanDiff")
+  }
+
+  if (stDev <= 0) {
+    stop("stDev must be positive")
+  }
+
+  if (corr <= -1 || corr >= 1) {
+    stop("corr must lie between -1 and 1")
+  }
+
+  if (any(is.na(design))) {
+    stop("design must be provided")
+  }
+
+  nseq = nrow(design)
+  nprd = ncol(design)
+  ntrt = length(unique(c(design)))
+
+  if (any(design <= 0 | design != round(design)) ||
+      !all.equal(sort(unique(c(design))), 1:ntrt)) {
+    stop(paste("Elements of design must be positive integers",
+               "ranging from 1 to", ntrt))
+  }
+
+  if (any(is.na(trtpair))) {
+    trtpair = c(1, ntrt)
+  } else if (length(trtpair) != 2 ||
+             trtpair[1] == trtpair[2] ||
+             !all(trtpair %in% 1:ntrt)) {
+    stop(paste("trtpair must be a vector of two distinct integers",
+               "selected from 1 to", ntrt))
+  }
+
+  # number of model parameters consisting of the intercept, sequence effects,
+  # period effects, direct treatment effects, and carryover treatment effects
+  q = 1 + (nseq-1) + (nprd-1) + (ntrt-1) + (ntrt-1)
+
+  # number of model parameters consisting of the intercept, sequence effects,
+  # period effects, and direct treatment effects
+  q0 = 1 + (nseq-1) + (nprd-1) + (ntrt-1)
+
+  # start of direct treatment effect
+  l = 1 + (nseq-1) + (nprd-1) + 1
+
+  # end of direct treatment effect
+  m = 1 + (nseq-1) + (nprd-1) + (ntrt-1)
+
+  if (any(is.na(cumdrop))) {
+    cumdrop = rep(0, nseq)
+  }
+
+  if (any(cumdrop < 0)) {
+    stop("Elements of cumdrop must be nonnegative")
+  } else if (nprd > 1 && any(diff(cumdrop) < 0)) {
+    stop("Elements of cumdrop must be nondecreasing")
+  } else if (any(cumdrop >= 1)) {
+    stop("Elements of cumdrop must be less than 1")
+  }
+
+  # observed data pattern probabilities
+  p = diff(c(cumdrop, 1))
+
+
+  if (any(is.na(allocationRatioPlanned))) {
+    allocationRatioPlanned = rep(1, nrow(design))
+  }
+
+  if (length(allocationRatioPlanned) != nseq-1 &&
+      length(allocationRatioPlanned) != nseq) {
+    stop(paste("allocationRatioPlanned should have", nseq-1,
+               "or", nseq, "elements"))
+  }
+
+  if (length(allocationRatioPlanned) == nseq-1) {
+    allocationRatioPlanned = c(allocationRatioPlanned, 1)
+  }
+
+  if (any(allocationRatioPlanned <= 0)) {
+    stop("Elements of allocationRatioPlanned must be positive")
+  }
+
+  if (alpha < 0.00001 || alpha >= 1) {
+    stop("alpha must lie in [0.00001, 1)")
+  }
+
+
+  # treatment sequence randomization probabilities
+  r = allocationRatioPlanned/sum(allocationRatioPlanned)
+
+
+  # compound symmetry covariance matrix for repeated measures
+  Sigma = stDev^2/(1-corr) * ((1-corr)*diag(nprd) + corr)
+
+  # model design matrix with carryover effect
+  X = matrix(0, nseq*nprd, q)
+  X[,1] = 1
+  for (i in 1:nseq) {
+    for (j in 1:nprd) {
+      k = (i-1)*nprd + j
+
+      # sequence effects
+      if (i < nseq) {
+        X[k, 1 + i] = 1
+      }
+
+      # period effects
+      if (j < nprd) {
+        X[k, 1 + (nseq-1) + j] = 1
+      }
+
+      # direct treatment effects
+      if (design[i,j] < ntrt) {
+        X[k, 1 + (nseq-1) + (nprd-1) + design[i,j]] = 1
+      }
+
+      # carryover treatment effects
+      if (j > 1 && design[i,j-1] < ntrt) {
+        X[k, 1 + (nseq-1) + (nprd-1) + (ntrt-1) + design[i,j-1]] = 1
+      }
+    }
+  }
+
+  # singular values of X
+  d = svdcpp(X)$d
+  tol = max(dim(X))*.Machine$double.eps
+  if (carryover && sum(d >= tol * max(d)) < q) {
+    stop("The crossover design is overparameterized for carryover effects")
+  }
+
+  if (carryover) {
+    # information matrix for model parameters with carryover effects
+    I = 0
+    for (i in 1:nseq) {
+      offset = (i-1)*nprd
+      J = 0
+      for (j in 1:nprd) {
+        idx = offset + (1:j)
+
+        if (j==1) {
+          x = t(as.matrix(X[idx,]))
+        } else {
+          x = X[idx,]
+        }
+
+        J = J + p[j]*t(x) %*% solve(Sigma[1:j,1:j]) %*% x
+      }
+      I = I + r[i]*J
+    }
+
+    # covariance matrix for model parameters with carryover effects
+    V = solve(I)
+
+    # variance for direct treatment effect for one sampling unit with carryover
+    if (trtpair[2]==ntrt) {
+      v1 = V[l+trtpair[1]-1, l+trtpair[1]-1]
+    } else if (trtpair[1]==ntrt) {
+      v1 = V[l+trtpair[2]-1, l+trtpair[2]-1]
+    } else {
+      v1 = V[l+trtpair[1]-1, l+trtpair[1]-1] +
+        V[l+trtpair[2]-1, l+trtpair[2]-1] -
+        2*V[l+trtpair[1]-1, l+trtpair[2]-1]
+    }
+
+
+    # variance for carryover treatment effect for one sampling unit
+    if (trtpair[2]==ntrt) {
+      v2 = V[m+trtpair[1], m+trtpair[1]]
+    } else if (trtpair[1]==ntrt) {
+      v2 = V[m+trtpair[2], m+trtpair[2]]
+    } else {
+      v2 = V[m+trtpair[1], m+trtpair[1]] +
+        V[m+trtpair[2], m+trtpair[2]] -
+        2*V[m+trtpair[1], m+trtpair[2]]
+    }
+  }
+
+
+  # design matrix for model parameters without carryover effects
+  X0 = X[, 1:m]
+  if (!carryover) {
+    # singular values of X0
+    d0 = svdcpp(X0)$d
+    tol0 = max(dim(X0))*.Machine$double.eps
+    if (sum(d0 >= tol0 * max(d0)) < q0) {
+      stop("The crossover design is overparameterized")
+    }
+  }
+
+  # information matrix for model parameters without carryover effects
+  I0 = 0
+  for (i in 1:nseq) {
+    offset = (i-1)*nprd
+    J = 0
+    for (j in 1:nprd) {
+      idx = offset+(1:j)
+
+      if (j==1) {
+        x = t(as.matrix(X0[idx,]))
+      } else {
+        x = X0[idx,]
+      }
+
+      J = J + p[j]*t(x) %*% solve(Sigma[1:j,1:j]) %*% x
+    }
+    I0 = I0 + r[i]*J
+  }
+
+  # covariance matrix for model parameters without carryover effects
+  V0 = solve(I0)
+
+  # variance for direct treatment effect for one sampling unit w/o carryover
+  if (trtpair[2]==ntrt) {
+    v0 = V0[l+trtpair[1]-1, l+trtpair[1]-1]
+  } else if (trtpair[1]==ntrt) {
+    v0 = V0[l+trtpair[2]-1, l+trtpair[2]-1]
+  } else {
+    v0 = V0[l+trtpair[1]-1, l+trtpair[1]-1] +
+      V0[l+trtpair[2]-1, l+trtpair[2]-1] -
+      2*V0[l+trtpair[1]-1, l+trtpair[2]-1]
+  }
+
+  v = ifelse(carryover, v1, v0)
+
+  # power for two one-sided t-tests
+  f = function(n) {
+    # residual degrees of freedom after accounting for the subject effects
+    mean_nprd = sum(p*(1:nprd))
+    nu = n*mean_nprd - 1 - (n-1) - (nprd-1) - (ntrt-1) - (ntrt-1)*carryover
+    b = qt(1-alpha, nu)
+    ncpLower = (meanDiff - meanDiffLower)*sqrt(n/v)
+    powerLower = pt(b, nu, ncpLower, lower.tail = FALSE)
+    ncpUpper = (meanDiffUpper - meanDiff)*sqrt(n/v1)
+    powerUpper = pt(b, nu, ncpUpper, lower.tail = FALSE)
+    power = powerLower + powerUpper - 1
+    power
+  }
+
+  if (is.na(n)) { # calculate the sample size
+    des = getDesignEquiv(
+      beta = beta, IMax = NA, thetaLower = meanDiffLower,
+      thetaUpper = meanDiffUpper, theta = meanDiff)
+
+    n = des$overallResults$information*v
+
+    if (!normalApproximation) {
+      n = uniroot(function(n) f(n) - (1-beta), c(0.5*n, 1.5*n))$root
+    }
+  }
+
+  if (rounding) {
+    n = ceiling(n - 1.0e-12)
+  }
+
+  if (normalApproximation) {
+    des = getDesignEquiv(
+      beta = NA, IMax = n/v, thetaLower = meanDiffLower,
+      thetaUpper = meanDiffUpper, theta = meanDiff)
+
+    power = des$overallResults$overallReject
+  } else {
+    power = f(n)
+  }
+
+  rownames(design) = paste0("Seq", 1:nseq)
+  colnames(design) = paste0("Prd", 1:nprd)
+
+  if (carryover) {
+    des = list(
+      power = power, alpha = alpha, numberOfSubjects = n,
+      trtpair = trtpair, carryover = carryover,
+      meanDiffLower = meanDiffLower,
+      meanDiffUpper = meanDiffUpper,
+      meanDiff = meanDiff,
+      stDev = stDev, corr = corr,
+      design = design, designMatrix = X,
+      nseq = nseq, nprd = nprd, ntrt = ntrt,
+      cumdrop = cumdrop,
+      V_direct_only = V0[l:m,l:m]/n,
+      V_direct_carry = V[l:q, l:q]/n,
+      v_direct_only = v0/n,
+      v_direct = v1/n,
+      v_carry = v2/n,
+      releff_direct = v0/v1,
+      releff_carry = v0/v2,
+      allocationRatioPlanned = allocationRatioPlanned,
+      normalApproximation = normalApproximation,
+      rounding = rounding)
+  } else {
+    des = list(
+      power = power, alpha = alpha, numberOfSubjects = n,
+      trtpair = trtpair, carryover = carryover,
+      meanDiffLower = meanDiffLower,
+      meanDiffUpper = meanDiffUpper,
+      meanDiff = meanDiff,
+      stDev = stDev, corr = corr,
+      design = design, designMatrix = X0,
+      nseq = nseq, nprd = nprd, ntrt = ntrt,
+      cumdrop = cumdrop,
+      V_direct_only = V0[l:m,l:m]/n,
+      v_direct_only = v0/n,
+      allocationRatioPlanned = allocationRatioPlanned,
+      normalApproximation = normalApproximation,
+      rounding = rounding)
+  }
+
+  attr(des, "class") = "designMeanDiffCarryoverEquiv"
 
   des
 }
