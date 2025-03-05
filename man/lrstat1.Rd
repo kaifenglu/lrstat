@@ -110,8 +110,7 @@ If \code{predictEventOnly = 0}, the following variables will also
 be included:
 \itemize{
 \item \code{uscore}: The numerator of the weighted log-rank test statistic.
-\item \code{vscore}: The variance of the weighted log-rank score statistic
-with weight squared.
+\item \code{vscore}: The variance of the weighted log-rank score statistic.
 \item \code{iscore}: The Fisher information of the weighted log-rank score
 statistic.
 }
