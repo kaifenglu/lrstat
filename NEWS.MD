@@ -1,3 +1,15 @@
+# lrstat 0.2.13
+
+- check whether the rounded up n is different from the original n0 before updating accrual intensity or accrual duration
+- change accrualIntensity to accrualIntensity1 in lrsamplesizeequiv when obtaing the timeing of interim analysis
+- update kmpower1s and rmpower1s to remove drift and inflation factor from the output while adding number of events, number of dropouts, and number of milestone subjects to the output
+- simplify the calculation of underlying survival probability for each treatment group in kmstat1
+- update kmpowersamplesize, kmsamplesize1s, kmsamplesizeequiv, rmpowersamplesize, rmsamplesize1s, rmsamplesizeequiv to remove the impossible case when followupTime is missing for fixed follow-up 
+- update kmpowersamplesize, kmsamplesize1s, kmsamplesizeequiv, rmpowersamplesize, rmsamplesize1s, rmsamplesizeequiv to add a check for solving accrualIntensity when study duration is shorter than or equal to milestone
+- update kmpowersamplesize, kmsamplesize1s, kmsamplesizeequiv, rmpowersamplesize, rmsamplesize1s, rmsamplesizeequiv to add a case to decrease accrual duration for fixed follow-up under H0
+- update getDesignMeanDiffCarryover to allow specification of the treatment comparison of interest and whether to account for carryover effects in power calculation
+- add getDesignMeanDiffCarryoverEquiv to test for equivalence in mean difference for the direct treatment effect of interest in crossover designs
+
 # lrstat 0.2.12
 
 - allow time to take zero values in kmest, lrtest, rmest, and rmdiff
