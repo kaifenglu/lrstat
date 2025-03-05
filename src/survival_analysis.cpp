@@ -3631,8 +3631,6 @@ double liferegplloop(int p, NumericVector par, void *ex,
   int i, j, iter;
   bool fail = 0;
 
-  NumericMatrix z1 = param->z;
-
   double toler = 1e-12;
   NumericVector beta(p), newbeta(p);
   double loglik, newlk;
@@ -3692,7 +3690,7 @@ double liferegplloop(int p, NumericVector par, void *ex,
     // check convergence
     fail = std::isnan(newlk) || std::isinf(newlk) == 1;
 
-    if (!fail && fabs((newlk - l0)/l0) < eps) {
+    if (!fail && fabs(newlk - l0) < eps && w < eps) {
       break;
     }
 
@@ -5293,8 +5291,6 @@ double phregplloop(int p, NumericVector par, void *ex,
   int i, j, iter;
   bool fail = 0;
 
-  NumericMatrix z1 = param->z;
-
   NumericVector beta(p), newbeta(p);
   double loglik, newlk;
   NumericVector u(p);
@@ -5351,7 +5347,7 @@ double phregplloop(int p, NumericVector par, void *ex,
     // check convergence
     fail = std::isnan(newlk) || std::isinf(newlk) == 1;
 
-    if (!fail && fabs((newlk - l0)/l0) < eps) {
+    if (!fail && fabs(newlk - l0) < eps && w < eps) {
       break;
     }
 
