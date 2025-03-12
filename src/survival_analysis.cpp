@@ -8,7 +8,10 @@ using namespace Rcpp;
 
 NumericVector fsurvci(double surv, double sesurv, String ct, double z) {
   double grad, hw, lower = NA_REAL, upper = NA_REAL;
-  if (ct == "plain") {
+  if (surv == 1.0 && sesurv == 0.0) {
+    lower = 1.0;
+    upper = 1.0;
+  } else if (ct == "plain") {
     lower = std::max(surv - z*sesurv, 0.0);
     upper = std::min(surv + z*sesurv, 1.0);
   } else if (ct == "log") {
@@ -202,11 +205,12 @@ DataFrame kmest(const DataFrame data,
   int nreps = static_cast<int>(idx.size());
   idx.push_back(n);
 
-  IntegerVector rep0(n, NA_INTEGER);
-  IntegerVector stratum0(n), size0(n);
-  NumericVector time0(n), nrisk0(n), nevent0(n), ncensor0(n);
-  NumericVector surv0(n), sesurv0(n);
-  NumericVector lower0(n), upper0(n);
+  int N = 2*n; // account for additional time 0 rows
+  IntegerVector rep0(N, NA_INTEGER);
+  IntegerVector stratum0(N), size0(N);
+  NumericVector time0(N), nrisk0(N), nevent0(N), ncensor0(N);
+  NumericVector surv0(N), sesurv0(N);
+  NumericVector lower0(N), upper0(N);
 
   int index = 0;
   for (h=0; h<nreps; h++) {
@@ -249,9 +253,29 @@ DataFrame kmest(const DataFrame data,
 
       int s = stratum1[q2[0]], n2 = static_cast<int>(q2.size());
       double t = 0, nrisk = n2, nevent = 0, ncensor = 0,
-        surv = 1, vcumhaz = 0, sesurv;
+        surv = 1, vcumhaz = 0, sesurv = 0;
       bool cache = 0;
       for (j=0; j<n2; j++) {
+        // add time 0
+        if ((j == 0) && (time2[j] != 0)) {
+          rep0[index] = iter;
+          stratum0[index] = s;
+          size0[index] = n2;
+          time0[index] = t;
+          nrisk0[index] = nrisk;
+          nevent0[index] = nevent;
+          ncensor0[index] = ncensor;
+          surv0[index] = surv;
+          sesurv0[index] = sesurv;
+
+          if (ct != "none") {
+            lower0[index] = 0;
+            upper0[index] = 0;
+          }
+
+          index++;
+        }
+
         if ((j == 0) || ((j >= 1) && (time2[j] > time2[j-1]))) {
           // new time, add the information for the previous time if needed
           if (cache) {
@@ -5392,6 +5416,7 @@ List f_basehaz(int p, NumericVector par, void *ex) {
 
   double dtime;             // distinct time
   int ndead = 0;            // number of deaths at this time point
+  int ncens = 0;            // number of censored at this time point
   double deadwt = 0;        // sum of weights for the deaths
   double meanwt;            // average weight for the deaths
   double risk;              // weighted risk, w*exp(zbeta)
@@ -5405,10 +5430,18 @@ List f_basehaz(int p, NumericVector par, void *ex) {
   IntegerVector idx = Range(0, param->nused-1);
   NumericVector time0 = param->tstop[idx];
   NumericVector time1 = unique(time0);
-  int J = static_cast<int>(time1.size());
+  int K = static_cast<int>(time1.size());
+
+  // unique strata
+  IntegerVector strata0 = param->strata[idx];
+  IntegerVector strata1 = unique(strata0);
+  int S = static_cast<int>(strata1.size());
+
+  // add time 0 to each stratum
+  int J = K+S;
 
   IntegerVector stratum(J);
-  NumericVector time(J), nrisk(J), nevent(J), haz(J), varhaz(J);
+  NumericVector time(J), nrisk(J), nevent(J), ncensor(J), haz(J), varhaz(J);
   NumericMatrix gradhaz(J,p);
 
   NumericVector eta(param->nused);
@@ -5425,6 +5458,12 @@ List f_basehaz(int p, NumericVector par, void *ex) {
   int j = J; // index the unique time in ascending order
   for (person = 0; person < param->nused; ) {
     if (param->strata[person] != istrata) { // hit a new stratum
+      // add time 0 at the start of a new stratum
+      j--;
+      stratum[j] = istrata;
+      time[j] = istrata*param->delta;
+      nrisk[j] = natrisk;
+
       istrata = param->strata[person]; // reset temporary variables
       i1 = person;
       natrisk = 0;
@@ -5448,6 +5487,7 @@ List f_basehaz(int p, NumericVector par, void *ex) {
       risk = param->weight[person]*exp(eta[person]);
       natrisk++;
       if (param->event[person] == 0) {
+        ncens++;
         denom += risk;
         for (i=0; i<p; i++) {
           a[i] += risk*param->z(person,i);
@@ -5481,6 +5521,8 @@ List f_basehaz(int p, NumericVector par, void *ex) {
     // add to the main terms
     nrisk[j] = natrisk;
     nevent[j] = ndead;
+    ncensor[j] = ncens;
+    ncens = 0; // reset for the next time point
     if (ndead > 0) {
       if (param->method == 0 || ndead == 1) {
         denom += denom2;
@@ -5513,11 +5555,17 @@ List f_basehaz(int p, NumericVector par, void *ex) {
     }
   }
 
+  // add time 0 for the first stratum
+  stratum[0] = istrata;
+  time[0] = istrata*param->delta;
+  nrisk[0] = natrisk;
+
   List result = List::create(
     _["stratum"] = stratum,
     _["time"] = time,
     _["nrisk"] = nrisk,
     _["nevent"] = nevent,
+    _["ncensor"] = ncensor,
     _["haz"] = haz,
     _["varhaz"] = varhaz
   );
@@ -5982,9 +6030,11 @@ List phregcpp(const DataFrame data,
   StringVector clparm0(nreps*p);
 
   // baseline hazards
-  IntegerVector drep(n, NA_INTEGER), dstratum(n);
-  NumericVector dtime(n), dnrisk(n), dnevent(n), dhaz(n), dvarhaz(n);
-  NumericMatrix dgradhaz(n,p);
+  int N = 2*n; // account for additional time 0 rows
+  IntegerVector drep(N, NA_INTEGER), dstratum(N);
+  NumericVector dtime(N), dnrisk(N), dnevent(N), dncensor(N);
+  NumericVector dhaz(N), dvarhaz(N);
+  NumericMatrix dgradhaz(N,p);
   int n0 = 0;
   int bign0 = 0;
   double toler = 1e-12;
@@ -6074,7 +6124,7 @@ List phregcpp(const DataFrame data,
         (tstarta[i] > tstarta[j]));
     });
 
-    coxparams param = {nused, stratum1a, tstarta, tstopa, event1a,
+    coxparams param = {nused, delta, stratum1a, tstarta, tstopa, event1a,
                        weight1a, offset1a, z1a, order1, method};
 
     NumericVector bint(p);
@@ -6108,7 +6158,7 @@ List phregcpp(const DataFrame data,
         ((stratum1x[i] == stratum1x[j]) && (tstartx[i] > tstartx[j]));
     });
 
-    coxparams paramx = {n1, stratum1x, tstartx, tstopx, event1x,
+    coxparams paramx = {n1, delta, stratum1x, tstartx, tstopx, event1x,
                         weight1x, offset1x, z1x, order1x, method};
 
     NumericVector b(p);
@@ -6310,6 +6360,7 @@ List phregcpp(const DataFrame data,
       NumericVector dtime1 = basehaz1["time"];
       NumericVector dnrisk1 = basehaz1["nrisk"];
       NumericVector dnevent1 = basehaz1["nevent"];
+      NumericVector dncensor1 = basehaz1["ncensor"];
       NumericVector dhaz1 = basehaz1["haz"];
       NumericVector dvarhaz1 = basehaz1["varhaz"];
       int J = static_cast<int>(dstratum1.size());
@@ -6326,6 +6377,7 @@ List phregcpp(const DataFrame data,
         dtime[n0+j] = dtime1[j];
         dnrisk[n0+j] = dnrisk1[j];
         dnevent[n0+j] = dnevent1[j];
+        dncensor[n0+j] = dncensor1[j];
         dhaz[n0+j] = dhaz1[j];
         dvarhaz[n0+j] = dvarhaz1[j];
 
@@ -6360,6 +6412,7 @@ List phregcpp(const DataFrame data,
     dtime = dtime[sub];
     dnrisk = dnrisk[sub];
     dnevent = dnevent[sub];
+    dncensor = dncensor[sub];
     dhaz = dhaz[sub];
     dvarhaz = dvarhaz[sub];
     if (p > 0) dgradhaz = subset_matrix_by_row(dgradhaz, sub);
@@ -6446,6 +6499,7 @@ List phregcpp(const DataFrame data,
         _["time"] = dtime,
         _["nrisk"] = dnrisk,
         _["nevent"] = dnevent,
+        _["ncensor"] = dncensor,
         _["haz"] = dhaz,
         _["varhaz"] = dvarhaz,
         _["gradhaz"] = dgradhaz
@@ -6531,6 +6585,7 @@ List phregcpp(const DataFrame data,
         _["time"] = dtime,
         _["nrisk"] = dnrisk,
         _["nevent"] = dnevent,
+        _["ncensor"] = dncensor,
         _["haz"] = dhaz,
         _["varhaz"] = dvarhaz
       );
@@ -6694,11 +6749,14 @@ DataFrame survfit_phregcpp(const int p,
   NumericVector time0 = basehaz["time"];
   NumericVector nrisk0 = basehaz["nrisk"];
   NumericVector nevent0 = basehaz["nevent"];
+  NumericVector ncensor0 = basehaz["ncensor"];
   NumericVector haz0 = basehaz["haz"];
   NumericVector vhaz0 = basehaz["varhaz"];
   NumericMatrix ghaz0(n0,p);
   for (j=0; j<p; j++) {
-    NumericVector u = basehaz[j+5]; // gradhaz starts at col 5 in basehaz
+    std::string col_name = "gradhaz";
+    if (p>1) col_name += "." + std::to_string(j+1);
+    NumericVector u = basehaz[col_name];
     ghaz0(_,j) = u;
   }
 
@@ -6814,7 +6872,7 @@ DataFrame survfit_phregcpp(const int p,
   }
 
   NumericVector time(m);
-  NumericVector nrisk(m), nevent(m);
+  NumericVector nrisk(m), nevent(m), ncensor(m);
   NumericVector cumhaz(m), vcumhaz(m), secumhaz(m);
   IntegerVector strata(m);
   NumericMatrix z(m,p);
@@ -6837,6 +6895,7 @@ DataFrame survfit_phregcpp(const int p,
     NumericVector time1 = time0[idx1];
     NumericVector nrisk1 = nrisk0[idx1];
     NumericVector nevent1 = nevent0[idx1];
+    NumericVector ncensor1 = ncensor0[idx1];
 
     // left-open and right-closed intervals containing the event time
     IntegerVector idx2 = rev(n1 - findInterval3(rev(-time1), rev(-tstop1)));
@@ -6852,6 +6911,7 @@ DataFrame survfit_phregcpp(const int p,
         time[l+i] = time1[i];
         nrisk[l+i] = nrisk1[i];
         nevent[l+i] = nevent1[i];
+        ncensor[l+i] = ncensor1[i];
 
         k = idx2[i];
         ids[l+i] = id1[k];
@@ -6919,6 +6979,7 @@ DataFrame survfit_phregcpp(const int p,
     _["time"] = time,
     _["nrisk"] = nrisk,
     _["nevent"] = nevent,
+    _["ncensor"] = ncensor,
     _["cumhaz"] = cumhaz,
     _["surv"] = surv);
 
@@ -7179,7 +7240,7 @@ List residuals_phregcpp(const int p,
         (tstart1[i] > tstart1[j]));
     });
 
-    coxparams param = {nused, stratum1, tstart1, tstop1, event1,
+    coxparams param = {nused, delta, stratum1, tstart1, tstop1, event1,
                        weight1, offset1, z1, order1, method};
 
     NumericMatrix ressco = f_ressco_2(p, beta, &param);
@@ -7236,7 +7297,7 @@ List residuals_phregcpp(const int p,
         (tstart1[i] > tstart1[j]));
     });
 
-    coxparams param = {nused, stratum1, tstart1, tstop1, event1,
+    coxparams param = {nused, delta, stratum1, tstart1, tstop1, event1,
                        weight1, offset1, z1, order1, method};
 
     List out = f_ressch(p, beta, &param);
