@@ -11,7 +11,8 @@ kmest(
   time = "time",
   event = "event",
   conftype = "log-log",
-  conflev = 0.95
+  conflev = 0.95,
+  keep_censor = 0L
 )
 }
 \arguments{
@@ -37,6 +38,9 @@ The arcsin option bases the intervals on asin(sqrt(survival)).}
 
 \item{conflev}{The level of the two-sided confidence interval for
 the survival probabilities. Defaults to 0.95.}
+
+\item{keep_censor}{Whether to retain the censoring time in the output
+data frame.}
 }
 \value{
 A data frame with the following variables:
@@ -45,6 +49,7 @@ A data frame with the following variables:
 \item \code{time}: The event time.
 \item \code{nrisk}: The number of subjects at risk.
 \item \code{nevent}: The number of subjects having the event.
+\item \code{ncensor}: The number of censored subjects.
 \item \code{survival}: The Kaplan-Meier estimate of the survival probability.
 \item \code{stderr}: The standard error of the estimated survival
 probability based on the Greendwood formula.
