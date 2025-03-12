@@ -105,6 +105,7 @@ List liferegcpp(const DataFrame data,
 
 struct coxparams {
   int nused;
+  double delta;
   IntegerVector strata;
   NumericVector tstart;
   NumericVector tstop;
