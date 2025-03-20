@@ -9,7 +9,12 @@
 - update kmpowersamplesize, kmsamplesize1s, kmsamplesizeequiv, rmpowersamplesize, rmsamplesize1s, rmsamplesizeequiv to add a case to decrease accrual duration for fixed follow-up under H0
 - update getDesignMeanDiffCarryover to allow specification of the treatment comparison of interest and whether to account for carryover effects in power calculation
 - add getDesignMeanDiffCarryoverEquiv to test for equivalence in mean difference for the direct treatment effect of interest in crossover designs
-- add the keep_censor parameter to the kmest function to specify whether to retain censoring time points in the Kaplan-Meier plot output data frame.
+- add the keep_censor parameter to the kmest function to specify whether to retain censoring time points in the output data frame
+- add interval to survsplit output
+- use the same stopping criteria for SAS PROC LOGISTIC profile likelihood
+- add the float_to_fraction utility function
+- rename runShinyApp to runShinyApp_lrstat
+
 
 # lrstat 0.2.12
 
