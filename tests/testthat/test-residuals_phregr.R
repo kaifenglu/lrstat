@@ -39,7 +39,7 @@ testthat::test_that(
         names(rr2) <- NULL
       } else {
         rownames(rr2) <- NULL
-        if (type=="schoenfeld") {
+        if (type=="schoenfeld" || type=="scaledsch") {
           attr(rr1, "time") <- NULL
         } else if (type=="dfbeta" || type=="dfbetas") {
           colnames(rr1) <- NULL
@@ -105,7 +105,7 @@ testthat::test_that(
         names(rr2) <- NULL
       } else {
         rownames(rr2) <- NULL
-        if (type=="schoenfeld") {
+        if (type=="schoenfeld" || type=="scaledsch") {
           attr(rr1, "time") <- NULL
         } else if (type=="dfbeta" || type=="dfbetas") {
           colnames(rr1) <- NULL
