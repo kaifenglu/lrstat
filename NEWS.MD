@@ -1,3 +1,15 @@
+# lrstat 0.2.14
+
+- updated survival_analysis to ignore intervals not at risk within each stratum without creating non overlapping times across strata
+- updated documentation for the survsplit utility function
+- removed bc from logisregr
+- added residuals_liferegr for residuals from parameteric regression models for failure time data
+- added maxiter and eps to logisregr, liferegr, and phregr
+- add initial values for liferegcpp
+- moved survQuantile from getDesignSurvival to survival_analysis.cpp
+- moved the detailed implementation from residuals_phregr to residuals_phregcpp
+- add detail description of the spending functions for errorSpent
+
 # lrstat 0.2.13
 
 - check whether the rounded up n is different from the original n0 before updating accrual intensity or accrual duration
