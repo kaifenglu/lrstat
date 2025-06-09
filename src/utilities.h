@@ -12,8 +12,7 @@ NumericVector stl_sort(const NumericVector& x);
 
 IntegerVector which(const LogicalVector& vector);
 
-IntegerVector findInterval3(NumericVector x,
-                            NumericVector breaks);
+IntegerVector findInterval3(NumericVector x, NumericVector v);
 
 double brent(const std::function<double(double)>& f,
              double x1, double x2, double tol);
