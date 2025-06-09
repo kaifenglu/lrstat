@@ -27,6 +27,56 @@ A vector of errors spent up to the interim look.
 Obtains the error spent at given spending times
 for the specified error spending function.
 }
+\details{
+This function implements a variety of error spending functions commonly
+used in group sequential designs, assuming one-sided hypothesis testing.
+
+\strong{O'Brien-Fleming-Type Spending Function}
+
+This spending function allocates very little alpha early on and more alpha
+later in the trial. It is defined as:
+\deqn{
+\alpha(t) = 2 - 2\Phi\left(\frac{z_{\alpha/2}}{\sqrt{t}}\right),
+}
+where \eqn{\Phi} is the standard normal cumulative distribution function,
+\eqn{z_{\alpha/2}} is the critical value from the standard normal
+distribution, and \eqn{t \in [0, 1]} denotes the information fraction.
+
+\strong{Pocock-Type Spending Function}
+
+This function spends alpha more evenly throughout the study:
+\deqn{
+\alpha(t) = \alpha \log(1 + (e - 1)t),
+}
+where \eqn{e} is Euler's number (approximately 2.718).
+
+\strong{Kim and DeMets Power-Type Spending Function}
+
+This family of spending functions is defined as:
+\deqn{
+\alpha(t) = \alpha t^{\rho}, \quad \rho > 0.
+}
+\itemize{
+\item When \eqn{\rho = 1}, the function mimics Pocock-type boundaries.
+\item When \eqn{\rho = 3}, it approximates O’Brien-Fleming-type boundaries.
+}
+
+\strong{Hwang, Shih, and DeCani Spending Function}
+
+This flexible family of functions is given by:
+\deqn{
+\alpha(t) =
+\begin{cases}
+\alpha \frac{1 - e^{-\gamma t}}{1 - e^{-\gamma}}, & \text{if }
+\gamma \ne 0 \\ \alpha t, & \text{if } \gamma = 0.
+\end{cases}
+}
+\itemize{
+\item When \eqn{\gamma = -4}, the spending function resembles
+O’Brien-Fleming boundaries.
+\item When \eqn{\gamma = 1}, it resembles Pocock boundaries.
+}
+}
 \examples{
 
 errorSpent(t = 0.5, error = 0.025, sf = "sfOF")
