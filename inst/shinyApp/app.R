@@ -2619,7 +2619,7 @@ server <- function(input, output, session) {
   # save inputs
   output$saveInputs <- downloadHandler(
     filename = function() {
-      paste0("inputs-", Sys.Date(), ".rds")
+      paste0("inputs-", Sys.Date(), ".RData")
     },
 
     content = function(file) {
