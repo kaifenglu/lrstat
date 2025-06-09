@@ -12,6 +12,52 @@
 #' @param sfpar The parameter for the spending function. Corresponds to
 #'   rho for "sfKD" and gamma for "sfHSD".
 #'
+#' @details
+#' This function implements a variety of error spending functions commonly
+#' used in group sequential designs, assuming one-sided hypothesis testing.
+#'
+#' **O'Brien-Fleming-Type Spending Function**
+#'
+#' This spending function allocates very little alpha early on and more alpha
+#' later in the trial. It is defined as:
+#' \deqn{
+#' \alpha(t) = 2 - 2\Phi\left(\frac{z_{\alpha/2}}{\sqrt{t}}\right),
+#' }
+#' where \eqn{\Phi} is the standard normal cumulative distribution function,
+#' \eqn{z_{\alpha/2}} is the critical value from the standard normal
+#' distribution, and \eqn{t \in [0, 1]} denotes the information fraction.
+#'
+#' **Pocock-Type Spending Function**
+#'
+#' This function spends alpha more evenly throughout the study:
+#' \deqn{
+#' \alpha(t) = \alpha \log(1 + (e - 1)t),
+#' }
+#' where \eqn{e} is Euler's number (approximately 2.718).
+#'
+#' **Kim and DeMets Power-Type Spending Function**
+#'
+#' This family of spending functions is defined as:
+#' \deqn{
+#' \alpha(t) = \alpha t^{\rho}, \quad \rho > 0.
+#' }
+#' - When \eqn{\rho = 1}, the function mimics Pocock-type boundaries.
+#' - When \eqn{\rho = 3}, it approximates O’Brien-Fleming-type boundaries.
+#'
+#' **Hwang, Shih, and DeCani Spending Function**
+#'
+#' This flexible family of functions is given by:
+#' \deqn{
+#' \alpha(t) =
+#' \begin{cases}
+#' \alpha \frac{1 - e^{-\gamma t}}{1 - e^{-\gamma}}, & \text{if }
+#' \gamma \ne 0 \\ \alpha t, & \text{if } \gamma = 0.
+#' \end{cases}
+#' }
+#' - When \eqn{\gamma = -4}, the spending function resembles
+#'   O’Brien-Fleming boundaries.
+#' - When \eqn{\gamma = 1}, it resembles Pocock boundaries.
+#'
 #' @return A vector of errors spent up to the interim look.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
@@ -1082,6 +1128,8 @@ getBound <- function(k = NA, informationRates = NA, alpha = 0.025,
 #'   variance estimate.
 #' @param plci Whether to obtain profile likelihood confidence interval.
 #' @param alpha The two-sided significance level.
+#' @param maxiter The maximum number of iterations.
+#' @param eps The tolerance to declare convergence.
 #'
 #' @details There are two ways to specify the model, one for right censored
 #' data through the time and event variables, and the other for interval
@@ -1241,7 +1289,8 @@ liferegr <- function(data, rep = "", stratum = "",
                      time = "time", time2 = "", event = "event",
                      covariates = "", weight = "", offset = "",
                      id = "", dist = "weibull", robust = FALSE,
-                     plci = FALSE, alpha = 0.05) {
+                     plci = FALSE, alpha = 0.05,
+                     maxiter = 50, eps = 1.0e-9) {
   rownames(data) = NULL
 
   elements = c(rep, stratum, covariates, weight, offset, id)
@@ -1289,7 +1338,8 @@ liferegr <- function(data, rep = "", stratum = "",
   fit <- liferegcpp(data = df, rep = rep, stratum = stratum, time = time,
                     time2 = time2, event = event, covariates = varnames,
                     weight = weight, offset = offset, id = id, dist = dist,
-                    robust = robust, plci = plci, alpha = alpha)
+                    robust = robust, plci = plci, alpha = alpha,
+                    maxiter = maxiter, eps = eps)
 
   fit$p <- fit$sumstat$p[1]
   fit$nvar <- fit$sumstat$nvar[1]
@@ -1404,6 +1454,8 @@ liferegr <- function(data, rep = "", stratum = "",
 #'   Defaults to \code{FALSE}.
 #' @param plci Whether to obtain profile likelihood confidence interval.
 #' @param alpha The two-sided significance level.
+#' @param maxiter The maximum number of iterations.
+#' @param eps The tolerance to declare convergence.
 #'
 #' @return A list with the following components:
 #'
@@ -1576,7 +1628,8 @@ phregr <- function(data, rep = "", stratum = "",
                    covariates = "", weight = "", offset = "",
                    id = "", ties = "efron", robust = FALSE,
                    est_basehaz = TRUE, est_resid = TRUE, firth = FALSE,
-                   plci = FALSE, alpha = 0.05) {
+                   plci = FALSE, alpha = 0.05,
+                   maxiter = 50, eps = 1.0e-9) {
 
   rownames(data) = NULL
 
@@ -1622,7 +1675,8 @@ phregr <- function(data, rep = "", stratum = "",
                   weight = weight, offset = offset, id = id, ties = ties,
                   robust = robust, est_basehaz = est_basehaz,
                   est_resid = est_resid, firth = firth,
-                  plci = plci, alpha = alpha)
+                  plci = plci, alpha = alpha,
+                  maxiter = maxiter, eps = eps)
 
   fit$p = fit$sumstat$p[1]
 
@@ -1680,7 +1734,7 @@ phregr <- function(data, rep = "", stratum = "",
 #' @description Obtains the predicted survivor function for a proportional
 #' hazards regression model.
 #'
-#' @param fit_phregr The output from the \code{phregr} call.
+#' @param object The output from the \code{phregr} call.
 #' @param newdata A data frame with the same variable names as those that
 #'   appear in the \code{phregr} call. For right-censored data, one curve is
 #'   produced per row to represent a cohort whose covariates correspond to
@@ -1770,28 +1824,28 @@ phregr <- function(data, rep = "", stratum = "",
 #'                           rx = c(0,1,0,1)))
 #'
 #' @export
-survfit_phregr <- function(fit_phregr, newdata, sefit = TRUE,
+survfit_phregr <- function(object, newdata, sefit = TRUE,
                            conftype = "log-log", conflev = 0.95) {
 
-  p = fit_phregr$p
+  p = object$p
   if (p == 0) {
     beta = 0
     vbeta = 0
   } else {
-    beta = fit_phregr$beta
-    vbeta = fit_phregr$vbeta
+    beta = object$beta
+    vbeta = object$vbeta
   }
 
-  basehaz = fit_phregr$basehaz
+  basehaz = object$basehaz
 
-  covariates = fit_phregr$covariates
-  stratum = fit_phregr$stratum
-  offset = fit_phregr$offset
-  id = fit_phregr$id
+  covariates = object$covariates
+  stratum = object$stratum
+  offset = object$offset
+  id = object$id
 
   if (id != "") {
-    tstart = fit_phregr$time
-    tstop = fit_phregr$time2
+    tstart = object$time
+    tstop = object$time2
   } else {
     tstart = ""
     tstop = ""
@@ -1810,7 +1864,7 @@ survfit_phregr <- function(fit_phregr, newdata, sefit = TRUE,
 
   if (p >= 1 && p3 >= 1 && !(missing(newdata) || is.null(newdata))) {
     df = newdata
-    mf = model.frame(t1, df, xlev = fit_phregr$xlevels)
+    mf = model.frame(t1, df, xlev = object$xlevels)
     mm = model.matrix(t1, mf)
     colnames(mm) = make.names(colnames(mm))
     varnames = colnames(mm)[-1]
@@ -1852,11 +1906,194 @@ survfit_phregr <- function(fit_phregr, newdata, sefit = TRUE,
 }
 
 
+#' @title Residuals for Parametric Regression Models for Failure Time Data
+#' @description Obtains the response, deviance, dfbeta, and likelihood
+#' displacement residuals for a parametric regression model for failure
+#' time data.
+#'
+#' @param object The output from the \code{phregr} call.
+#' @param type The type of residuals desired, with options including
+#'   \code{"response"}, \code{"deviance"}, \code{"dfbeta"},
+#'   \code{"dfbetas"}, \code{"working"}, \code{"ldcase"},
+#'   \code{"ldresp"}, \code{"ldshape"}, and \code{"matrix"}.
+#' @param collapse Whether to collapse the residuals by \code{id}.
+#' @param weighted Whether to compute weighted residuals.
+#'
+#' @details
+#' The algorithms follow the \code{residuals.survreg} function in the
+#' \code{survival} package.
+#'
+#' @return
+#' Either a vector or a matrix of residuals, depending on the specified type:
+#'
+#' * \code{response} residuals are on the scale of the original data.
+#'
+#' * \code{working} residuals are on the scale of the linear predictor.
+#'
+#' * \code{deviance} residuals are on the log-likelihood scale.
+#'
+#' * \code{dfbeta} residuals are returned as a matrix, where the
+#'   \eqn{i}-th row represents the approximate change in the model
+#'   coefficients resulting from the inclusion of subject \eqn{i}.
+#'
+#' * \code{dfbetas} residuals are similar to \code{dfbeta} residuals, but
+#'   each column is scaled by the standard deviation of the
+#'   corresponding coefficient.
+#'
+#' * \code{matrix} residuals are a matrix of derivatives of the
+#'   log-likelihood function. Let \eqn{L} be the log-likelihood, \eqn{p} be
+#'   the linear predictor (\eqn{X\beta}), and \eqn{s} be \eqn{log(\sigma)}.
+#'   Then the resulting matrix contains six columns: \eqn{L},
+#'   \eqn{\partial L/\partial p}, \eqn{\partial^2 L/\partial p^2},
+#'   \eqn{\partial L/\partial s}, \eqn{\partial^2 L/\partial s^2}, and
+#'   \eqn{\partial L^2/\partial p\partial s}.
+#'
+#' * \code{ldcase} residulas are likelihood displacement for case weight
+#'   perturbation.
+#'
+#' * \code{ldresp} residuals are likelihood displacement for response value
+#'   perturbation.
+#'
+#' * \code{ldshape} residuals are likelihood displacement related to the
+#'   shape parameter.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#' Escobar, L. A. and Meeker, W. Q.
+#' Assessing influence in regression analysis with censored data.
+#' Biometrics 1992; 48:507-528.
+#'
+#' @examples
+#'
+#' library(dplyr)
+#'
+#' fit1 <- liferegr(
+#'   data = tobin %>% mutate(time = ifelse(durable>0, durable, NA)),
+#'   time = "time", time2 = "durable",
+#'   covariates = c("age", "quant"), dist = "normal")
+#'
+#'  resid <- residuals_liferegr(fit1, type = "response")
+#'
+#' @export
+residuals_liferegr <- function(
+    object, type=c("response", "deviance", "dfbeta", "dfbetas",
+                   "working", "ldcase", "ldresp", "ldshape", "matrix"),
+    collapse=FALSE, weighted=(type %in% c("dfbeta", "dfbetas"))) {
+
+  p = object$p
+  beta = object$beta
+
+  data = object$data
+  stratum = object$stratum
+  time = object$time
+  time2 = object$time2
+  event = object$event
+  covariates = object$covariates
+  weight = object$weight
+  offset = object$offset
+  id = object$id
+  dist = object$dist
+  param = object$param
+
+  rownames(data) = NULL
+
+  elements = c(stratum, covariates, weight, offset, id)
+  elements = unique(elements[elements != "" & elements != "none"])
+  if (!(length(elements) == 0)) {
+    mf = model.frame(formula(paste("~", paste(elements, collapse = "+"))),
+                     data = data)
+  } else {
+    mf = model.frame(formula("~1"), data = data)
+  }
+
+  rownum = as.integer(rownames(mf))
+  df = data[rownum,]
+
+  nvar = length(covariates)
+  if (missing(covariates) || is.null(covariates) || (nvar == 1 && (
+    covariates[1] == "" || tolower(covariates[1]) == "none"))) {
+    t1 = terms(formula("~1"))
+    p3 = 0
+  } else {
+    t1 = terms(formula(paste("~", paste(covariates, collapse = "+"))))
+    t2 = attr(t1, "factors")
+    t3 = rownames(t2)
+    p3 = length(t3)
+  }
+
+  if (p >= 1 && p3 >= 1) {
+    mf = model.frame(t1, df)
+    mm = model.matrix(t1, mf)
+    colnames(mm) = make.names(colnames(mm))
+    varnames = colnames(mm)[-1]
+    for (i in 1:length(varnames)) {
+      if (!(varnames[i] %in% names(df))) {
+        df[,varnames[i]] = mm[,varnames[i]]
+      }
+    }
+  } else {
+    varnames = ""
+  }
+
+  type <- match.arg(type)
+
+  if (type=='dfbeta' || type=='dfbetas') {
+    if (missing(weighted))
+      weighted <- TRUE  # different default for this case
+  }
+
+  n = nrow(data)
+
+  vv <- drop(object$vbeta_naive)
+  if (is.null(vv)) vv <- drop(object$vbeta)
+
+  if (weight != "") {
+    weights <- df[[weight]]
+  } else {
+    weights <- rep(1,n)
+  }
+
+  if (id != "") {
+    idn <- df[[id]]
+  } else {
+    idn <- seq(1,n)
+  }
+
+  rr = residuals_liferegcpp(beta = beta,
+                            vbeta = vv,
+                            data = df,
+                            stratum = stratum,
+                            time = time,
+                            time2 = time2,
+                            event = event,
+                            covariates = varnames,
+                            weight = weight,
+                            offset = offset,
+                            id = id,
+                            dist = dist,
+                            type = type,
+                            collapse = collapse,
+                            weighted = weighted)
+
+  if (type=="response" || type=="deviance" || type=="working" ||
+      type=="ldcase" || type=="ldresp" || type=="ldshape") {
+    rr <- as.numeric(rr)
+  } else if (type=="dfbeta" || type=="dfbetas") {
+    colnames(rr) <- param
+  } else {
+    colnames(rr) <- c("g", "dg", "ddg", "ds", "dds", "dsg");
+  }
+
+  rr
+}
+
+
 #' @title Residuals for Proportional Hazards Regression Models
 #' @description Obtains the martingale, deviance, score, or Schoenfeld
 #' residuals for a proportional hazards regression model.
 #'
-#' @param fit_phregr The output from the \code{phregr} call.
+#' @param object The output from the \code{phregr} call.
 #' @param type The type of residuals desired, with options including
 #'   \code{"martingale"}, \code{"deviance"}, \code{"score"},
 #'   \code{"schoenfeld"}, \code{"dfbeta"}, \code{"dfbetas"}, and
@@ -1920,25 +2157,25 @@ survfit_phregr <- function(fit_phregr, newdata, sefit = TRUE,
 #'
 #' @export
 residuals_phregr <- function(
-    fit_phregr, type=c("martingale", "deviance", "score", "schoenfeld",
-                       "dfbeta", "dfbetas", "scaledsch"),
+    object, type=c("martingale", "deviance", "score", "schoenfeld",
+                   "dfbeta", "dfbetas", "scaledsch"),
     collapse=FALSE, weighted=(type %in% c("dfbeta", "dfbetas"))) {
 
-  p = fit_phregr$p
-  beta = fit_phregr$beta
-  residuals = fit_phregr$residuals
+  p = object$p
+  beta = object$beta
+  residuals = object$residuals
 
-  data = fit_phregr$data
-  stratum = fit_phregr$stratum
-  time = fit_phregr$time
-  time2 = fit_phregr$time2
-  event = fit_phregr$event
-  covariates = fit_phregr$covariates
-  weight = fit_phregr$weight
-  offset = fit_phregr$offset
-  id = fit_phregr$id
-  ties = fit_phregr$ties
-  param = fit_phregr$param
+  data = object$data
+  stratum = object$stratum
+  time = object$time
+  time2 = object$time2
+  event = object$event
+  covariates = object$covariates
+  weight = object$weight
+  offset = object$offset
+  id = object$id
+  ties = object$ties
+  param = object$param
 
   rownames(data) = NULL
 
@@ -1976,19 +2213,16 @@ residuals_phregr <- function(
 
 
   type <- match.arg(type)
-  otype <- type
+
   if (type=='dfbeta' || type=='dfbetas') {
-    type <- 'score'
     if (missing(weighted))
       weighted <- TRUE  # different default for this case
   }
-  if (type=='scaledsch') type<-'schoenfeld'
 
   n <- length(residuals)
-  rr <- residuals
 
-  vv <- drop(fit_phregr$vbeta_naive)
-  if (is.null(vv)) vv <- drop(fit_phregr$vbeta)
+  vv <- object$vbeta_naive
+  if (is.null(vv)) vv <- object$vbeta
 
   if (weight != "") {
     weights <- df[[weight]]
@@ -2003,111 +2237,50 @@ residuals_phregr <- function(
   }
 
 
-  if (type == 'martingale') rr <- fit_phregr$residuals
-
-  if (type=='schoenfeld') {
-    if (p == 0) stop("covariates must be present for schoenfeld residuals")
-
-    temp = residuals_phregcpp(p = p,
-                              beta = beta,
-                              data = df,
-                              stratum = stratum,
-                              time = time,
-                              time2 = time2,
-                              event = event,
-                              covariates = varnames,
-                              weight = weight,
-                              offset = offset,
-                              id = id,
-                              ties = ties,
-                              type = "schoenfeld")
-
-    if (p==1) {
-      rr <- c(temp$resid)
-    } else {
-      rr <- temp$resid
-    }
-    if (weighted) rr <- rr * weights[temp$obs]
-    if (length(unique(temp$stratumn)) > 1) {
-      attr(rr, "stratum") <- temp$stratumn
-    }
-    attr(rr, "time") <- temp$time
-
-    if (otype=='scaledsch') {
-      ndead <- length(temp$obs)
-      if (nvar==1) {
-        rr <- rr * vv * ndead + beta
-      } else {
-        rr <- drop(rr %*% vv *ndead + rep(beta, each=nrow(rr)))
-      }
-    }
-
-    if (is.matrix(rr)) colnames(rr) <- param
-
-    return(rr)
+  if (p == 0) { # null Cox model case
+    beta = 0
+    vv = matrix(0,1,1)
   }
 
-  if (type=='score') {
-    if (p == 0) stop("covariates must be present for score residuals")
+  temp = residuals_phregcpp(p = p,
+                            beta = beta,
+                            vbeta = vv,
+                            resmart = residuals,
+                            data = df,
+                            stratum = stratum,
+                            time = time,
+                            time2 = time2,
+                            event = event,
+                            covariates = varnames,
+                            weight = weight,
+                            offset = offset,
+                            id = id,
+                            ties = ties,
+                            type = type,
+                            collapse = collapse,
+                            weighted = weighted)
 
-    temp = residuals_phregcpp(p = p,
-                              beta = beta,
-                              data = df,
-                              stratum = stratum,
-                              time = time,
-                              time2 = time2,
-                              event = event,
-                              covariates = varnames,
-                              weight = weight,
-                              offset = offset,
-                              id = id,
-                              ties = ties,
-                              type = "score")
 
-
-    if (p==1) {
-      rr <- c(temp$resid)
-    } else {
-      rr <- temp$resid
-    }
-
-    if (otype=='dfbeta') {
-      if (is.matrix(rr)) {
-        rr <- rr %*% vv
-      } else {
-        rr <- rr * vv
-      }
-    }
-    else if (otype=='dfbetas') {
-      if (is.matrix(rr)) {
-        rr <- (rr %*% vv) %*% diag(sqrt(1/diag(vv)))
-      } else {
-        rr <- rr * sqrt(vv)
-      }
-    }
-
-    if (is.matrix(rr)) colnames(rr) <- param
-  }
-
-  #
-  # Multiply up by case weights (which will be 1 for unweighted)
-  #
-  if (weighted) rr <- rr * weights
-
-  status <- df[[event]]
-
-  # Collapse if desired
-  if (collapse) {
-    rr <- drop(rowsum(rr, idn))
-    if (type=='deviance') status <- drop(rowsum(status, idn))
-  }
-
-  # Deviance residuals are computed after collapsing occurs
-  if (type=='deviance') {
-    sign(rr) *sqrt(-2* (rr+ ifelse(status==0, 0, status*log(status-rr))))
+  if (type == "martingale" || type == "deviance") {
+    rr <- temp$resid
   } else {
-    rr
+    if (p == 1) {
+      rr = c(temp$resid)
+    } else {
+      rr = temp$resid
+    }
+
+    if (type == "schoenfeld" || type == "scaledsch") {
+      attr(rr, "time") = temp$time
+      if (length(temp) == 3) {
+        attr(rr, "strata") = temp$strata
+      }
+    }
   }
+
+  if (is.matrix(rr)) colnames(rr) <- param
+
+  rr
 }
 
 
@@ -2151,14 +2324,12 @@ residuals_phregr <- function(
 #'   variance estimate.
 #' @param firth Whether the firth's bias reducing penalized likelihood
 #'   should be used. The default is \code{FALSE}.
-#' @param bc Whether to apply firth's bias correction for noncanonical
-#'   parameterization and weighted logistic regression. The default is
-#'   \code{FALSE}, in which case, the penalized likelihood with Jeffreys
-#'   prior will be used.
 #' @param flic Whether to apply intercept correction to obtain more
 #'   accurate predicted probabilities. The default is \code{FALSE}.
 #' @param plci Whether to obtain profile likelihood confidence interval.
 #' @param alpha The two-sided significance level.
+#' @param maxiter The maximum number of iterations.
+#' @param eps The tolerance to declare convergence.
 #'
 #' @details
 #' Fitting a logistic regression model using Firth's bias reduction method
@@ -2207,9 +2378,6 @@ residuals_phregr <- function(
 #'
 #'     - \code{firth}: Whether the firth's penalized likelihood is used.
 #'
-#'     - \code{bc}: Whether to apply firth's bias correction for noncanonical
-#'       parameterization and weighted logistic regression.
-#'
 #'     - \code{flic}: Whether to apply intercept correction.
 #'
 #'     - \code{loglik0_unpenalized}: The unpenalized log-likelihood under null.
@@ -2251,11 +2419,11 @@ residuals_phregr <- function(
 #'
 #' * \code{fitted}: The data frame with the following variables:
 #'
-#'     - \code{linear_predictors}: The linear fit on the logit scale.
+#'     - \code{linear_predictors}: The linear fit on the link function scale.
 #'
 #'     - \code{fitted_values}: The fitted probabilities of having an event,
 #'       obtained by transforming the linear predictors by the inverse of
-#'       the logit link.
+#'       the link function.
 #'
 #'     - \code{rep}: The replication.
 #'
@@ -2271,7 +2439,7 @@ residuals_phregr <- function(
 #'
 #' * \code{vbeta_naive}: The naive covariance matrix for parameter estimates.
 #'
-#' * \code{linear_predictors}: The linear fit on the logit scale.
+#' * \code{linear_predictors}: The linear fit on the link function scale.
 #'
 #' * \code{fitted_values}: The fitted probabilities of having an event.
 #'
@@ -2297,9 +2465,6 @@ residuals_phregr <- function(
 #'
 #' * \code{robust}: Whether a robust sandwich variance estimate should be
 #'   computed.
-#'
-#' * \code{bc}: Whether to apply firth's bias correction for noncanonical
-#'   parameterization and weighted logistic regression.
 #'
 #' * \code{firth}: Whether to use the firth's bias reducing penalized
 #'   likelihood.
@@ -2336,7 +2501,8 @@ residuals_phregr <- function(
 logisregr <- function(data, rep = "", event = "event", covariates = "",
                       freq = "", weight = "", offset = "", id = "",
                       link = "logit", robust = FALSE, firth = FALSE,
-                      bc = FALSE, flic = FALSE, plci = FALSE, alpha = 0.05) {
+                      flic = FALSE, plci = FALSE, alpha = 0.05,
+                      maxiter = 50, eps = 1.0e-9) {
 
   rownames(data) = NULL
 
@@ -2381,8 +2547,8 @@ logisregr <- function(data, rep = "", event = "event", covariates = "",
   fit <- logisregcpp(data = df, rep = rep, event = event,
                      covariates = varnames, freq = freq, weight = weight,
                      offset = offset, id = id, link = link, robust = robust,
-                     firth = firth, bc = bc, flic = flic, plci = plci,
-                     alpha = alpha)
+                     firth = firth, flic = flic, plci = plci,
+                     alpha = alpha, maxiter = maxiter, eps = eps)
 
   fit$p <- fit$sumstat$p[1]
   fit$link <- fit$sumstat$link[1]
@@ -2427,7 +2593,6 @@ logisregr <- function(data, rep = "", event = "event", covariates = "",
   fit$id = id
   fit$robust = robust
   fit$firth = firth
-  fit$bc = bc
   fit$flic = flic
   fit$plci = plci
   fit$alpha = alpha
@@ -2435,5 +2600,6 @@ logisregr <- function(data, rep = "", event = "event", covariates = "",
   class(fit) = "logisregr"
   fit
 }
+
 
 
