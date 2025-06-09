@@ -4081,7 +4081,7 @@ NumericMatrix invsympd(NumericMatrix matrix, int n, double toler) {
 //' each record is split into multiple subrecords at each cut time. 
 //' The resulting dataset is in counting process format, with each 
 //' subrecord containing a start time, stop time, and event status.
-//' This is adapted from the survplit.c function from the survival package.
+//' This is adapted from the survsplit.c function from the survival package.
 //'
 //' @param tstart The starting time of the time interval for 
 //'   counting-process data.
@@ -4096,12 +4096,14 @@ NumericMatrix invsympd(NumericMatrix matrix, int n, double toler) {
 //'
 //' * \code{start}: The starting time of the resulting subrecord.
 //'
-//' * \code{stop}: The stopping time of the resulting subrecord.
+//' * \code{end}: The ending time of the resulting subrecord.
 //'
 //' * \code{censor}: Whether the subrecord lies strictly within a record
-//'   in the input data.
+//'   in the input data (1 for all but the last interval and 0 for the 
+//'   last interval with cutpoint set equal to tstop).
 //'
-//' * \code{interval}: The interval number.
+//' * \code{interval}: The interval number derived from cut (starting 
+//'   from 0 if the interval lies to the left of the first cutpoint).
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
