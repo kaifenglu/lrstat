@@ -3271,23 +3271,25 @@ mTPI2Table <- function(
 }
 
 
-#' @title BOIN Decision Table
-#' @description Obtains the decision table for the Bayesian optimal
-#' interval (BOIN) design.
+#' @title BOIN Decision Table for Dose-Finding Trials
+#' @description Generates the decision table for the Bayesian Optimal
+#' Interval (BOIN) design, a widely used approach for dose-escalation
+#' trials that guides dose-finding decisions based on observed
+#' toxicity rates.
 #'
-#' @param nMax The maximum number of subjects in a dose cohort.
+#' @param nMax The maximum number of subjects allowed in a dose cohort.
 #' @param pT The target toxicity probability. Defaults to 0.3.
-#' @param phi1 The lower equivalence limit for target toxicity
+#' @param phi1 The lower equivalence limit for the target toxicity
 #'   probability.
-#' @param phi2 The upper equivalence limit for target toxicity
+#' @param phi2 The upper equivalence limit for the target toxicity
 #'   probability.
-#' @param a The prior toxicity parameter for the beta prior.
-#' @param b The prior non-toxicity parameter for the beta prior.
-#' @param pExcessTox The threshold for excessive toxicity, i.e.,
-#'   if Prob(p > pT | Data) > pExcessTox, then the current and
-#'   all higher doses will be excluded and never be used again
-#'   in the remainder of the trial to avoid any other subjects
-#'   receiving treatment at those doses. Defaults to 0.95.
+#' @param a The prior toxicity shape parameter for the Beta prior.
+#' @param b The prior non-toxicity shape parameter for the Beta prior.
+#' @param pExcessTox The threshold for excessive toxicity.
+#'   If the posterior probability that the true toxicity rate exceeds
+#'   \code{pT} is greater than \code{pExcessTox}, the current and
+#'   all higher doses will be excluded from further use to protect
+#'   future participants. Defaults to 0.95.
 #'
 #' @return An S3 class \code{BOINTable} object with the following
 #' components:
@@ -3317,17 +3319,20 @@ mTPI2Table <- function(
 #'
 #'     - \code{pExcessTox}: The threshold for excessive toxicity.
 #'
-#' * \code{decisionDataFrame}: The decision data frame for the BOIN design.
-#'   It includes the following variables:
+#' * \code{decisionDataFrame}: A data frame listing dose-finding decisions
+#'   for each combination of sample size (\code{n}) and number of observed
+#'   toxicities (\code{y}):
 #'
-#'     - \code{n}: The sample size.
+#'     - \code{n}: Cohort size.
 #'
-#'     - \code{y}: The number of toxicities.
+#'     - \code{y}: Number of observed toxicities.
 #'
-#'     - \code{decision}: The dosing decision.
+#'     - \code{decision}: Recommended action: escalate, de-escalate,
+#'       or stay at the current dose.
 #'
-#' * \code{decisionMatrix}: The decision matrix corresponding to the
-#'   decision data frame.
+#' * \code{decisionMatrix}: A matrix version of the decision table
+#'   showing the recommended action based on the number of toxicities
+#'   for each possible cohort size.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
