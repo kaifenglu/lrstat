@@ -589,7 +589,7 @@ ui <- fluidPage(
                               paste("Power and Sample Size Calculation",
                                     "for Non-Proportional Hazards")))),
          span(downloadButton("saveInputs", "Save inputs"),
-              fileInputNoExtra("loadInputs", label=NULL, accept=".rds",
+              fileInputNoExtra("loadInputs", label=NULL, accept=".RData",
                                buttonLabel=list(icon("upload"),
                                                 "Load inputs"),
                                width="116px"),
@@ -2699,8 +2699,8 @@ server <- function(input, output, session) {
 
     req(file)
 
-    valid <- (ext == "rds")
-    if (!valid) showNotification("Please upload an rds file")
+    valid <- (ext == "RData")
+    if (!valid) showNotification("Please upload an RData file")
     req(valid)
 
     load(file=file$datapath)
