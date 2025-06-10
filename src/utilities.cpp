@@ -3106,19 +3106,20 @@ List getDesignEquiv(const double beta = NA_REAL,
 
 
 //' @title Adaptive Design at an Interim Look
-//' @description Obtains the conditional power for specified incremental
-//' information given the interim results, parameter value, and
-//' data-dependent changes in the error spending function, and the number
-//' and spacing of interim looks. Conversely, obtains the incremental
-//' information needed to attain a specified conditional power given
-//' the interim results, parameter value, and data-dependent changes
-//' in the error spending function, and the number and spacing of
-//' interim looks.
+//' @description
+//' Calculates the conditional power for specified incremental
+//' information, given the interim results, parameter value,
+//' data-dependent changes in the error spending function, and
+//' the number and spacing of interim looks. Conversely,
+//' calculates the incremental information required to attain
+//' a specified conditional power, given the interim results,
+//' parameter value, data-dependent changes in the error
+//' spending function, and the number and spacing of interim looks.
 //'
 //' @param betaNew The type II error for the secondary trial.
 //' @param INew The maximum information of the secondary trial. Either
-//'   \code{betaNew} or \code{INew} should be provided while the other one
-//'   should be missing.
+//'   \code{betaNew} or \code{INew} should be provided, while the other
+//'   must be missing.
 //' @param L The interim adaptation look of the primary trial.
 //' @param zL The z-test statistic at the interim adaptation look of
 //'   the primary trial.
@@ -3130,10 +3131,10 @@ List getDesignEquiv(const double beta = NA_REAL,
 //' @param kMax The maximum number of stages of the primary trial.
 //' @param informationRates The information rates of the primary trial.
 //' @param efficacyStopping Indicators of whether efficacy stopping is
-//'   allowed at each stage of the primary trial. Defaults to true
+//'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 //'   if left unspecified.
 //' @param futilityStopping Indicators of whether futility stopping is
-//'   allowed at each stage of the primary trial. Defaults to true
+//'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 //'   if left unspecified.
 //' @param criticalValues The upper boundaries on the z-test statistic scale
 //'   for efficacy stopping for the primary trial.
@@ -3154,8 +3155,8 @@ List getDesignEquiv(const double beta = NA_REAL,
 //' @param parameterAlphaSpending The parameter value of alpha spending
 //'   for the primary trial. Corresponds to Delta for "WT", rho for "sfKD",
 //'   and gamma for "sfHSD".
-//' @param userAlphaSpending The user defined alpha spending for the primary
-//'   trial. Cumulative alpha spent up to each stage.
+//' @param userAlphaSpending The user-defined alpha spending for the
+//'   primary trial. Represents the cumulative alpha spent up to each stage.
 //' @param futilityBounds The lower boundaries on the z-test statistic scale
 //'   for futility stopping for the primary trial. Defaults to
 //'   \code{rep(-6, kMax-1)} if left unspecified.
@@ -3171,17 +3172,17 @@ List getDesignEquiv(const double beta = NA_REAL,
 //'   for the primary trial. Corresponds to rho for "sfKD",
 //'   and gamma for "sfHSD".
 //' @param spendingTime The error spending time of the primary trial.
-//'   Defaults to missing, in which case, it is the same as
+//'   Defaults to missing, in which case it is assumed to be the same as
 //'   \code{informationRates}.
 //' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
 //'   for trial adaptation.
 //' @param kNew The number of looks of the secondary trial.
 //' @param informationRatesNew The spacing of looks of the secondary trial.
 //' @param efficacyStoppingNew The indicators of whether efficacy stopping is
-//'   allowed at each look of the secondary trial. Defaults to true
+//'   allowed at each look of the secondary trial. Defaults to \code{TRUE}
 //'   if left unspecified.
 //' @param futilityStoppingNew The indicators of whether futility stopping is
-//'   allowed at each look of the secondary trial. Defaults to true
+//'   allowed at each look of the secondary trial. Defaults to \code{TRUE}
 //'   if left unspecified.
 //' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 //'   trial. One of the following:
@@ -3209,10 +3210,11 @@ List getDesignEquiv(const double beta = NA_REAL,
 //' @param parameterBetaSpendingNew The parameter value of beta spending
 //'   for the secondary trial. Corresponds to rho for "sfKD",
 //'   and gamma for "sfHSD".
-//' @param userBetaSpendingNew The user defined cumulative beta spending.
-//'   Cumulative beta spent up to each stage of the secondary trial.
+//' @param userBetaSpendingNew The user-defined cumulative beta spending.
+//'   Represents the cumulative beta spent up to each stage of the
+//'   secondary trial.
 //' @param spendingTimeNew The error spending time of the secondary trial.
-//'   Defaults to missing, in which case, it is the same as
+//'   Defaults to missing, in which case it is assumed to be the same as
 //'   \code{informationRatesNew}.
 //' @param varianceRatio The ratio of the variance under H0 to the
 //'   variance under H1.
@@ -3263,7 +3265,7 @@ List getDesignEquiv(const double beta = NA_REAL,
 //' # conditional power with sample size increase
 //' (des2 = adaptDesign(
 //'   betaNew = NA, INew = 420/(4*sigma1^2),
-//'   L, zL, theta = delta1,
+//'   L = L, zL = zL, theta = delta1,
 //'   IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
 //'   alpha = 0.05, typeAlphaSpending = "sfHSD",
 //'   parameterAlphaSpending = -4))
@@ -3272,7 +3274,7 @@ List getDesignEquiv(const double beta = NA_REAL,
 //' # 3-look gamma(-2) spending with 84% power at delta = 4.5 and sigma = 20
 //' (des2 = adaptDesign(
 //'   betaNew = 0.16, INew = NA,
-//'   L, zL, theta = delta1,
+//'   L = L, zL = zL, theta = delta1,
 //'   IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
 //'   alpha = 0.05, typeAlphaSpending = "sfHSD",
 //'   parameterAlphaSpending = -4,
@@ -4077,21 +4079,21 @@ NumericMatrix invsympd(NumericMatrix matrix, int n, double toler) {
 
 
 //' @title Split a survival data set at specified cut points
-//' @description For a given survival dataset and specified cut times, 
-//' each record is split into multiple subrecords at each cut time. 
-//' The resulting dataset is in counting process format, with each 
+//' @description For a given survival dataset and specified cut times,
+//' each record is split into multiple subrecords at each cut time.
+//' The resulting dataset is in counting process format, with each
 //' subrecord containing a start time, stop time, and event status.
 //' This is adapted from the survsplit.c function from the survival package.
 //'
-//' @param tstart The starting time of the time interval for 
+//' @param tstart The starting time of the time interval for
 //'   counting-process data.
-//' @param tstop The stopping time of the time interval for 
+//' @param tstop The stopping time of the time interval for
 //'   counting-process data.
 //' @param cut The vector of cut points.
 //'
 //' @return A data frame with the following variables:
 //'
-//' * \code{row}: The row number of the observation in the input data 
+//' * \code{row}: The row number of the observation in the input data
 //'   (starting from 0).
 //'
 //' * \code{start}: The starting time of the resulting subrecord.
@@ -4099,10 +4101,10 @@ NumericMatrix invsympd(NumericMatrix matrix, int n, double toler) {
 //' * \code{end}: The ending time of the resulting subrecord.
 //'
 //' * \code{censor}: Whether the subrecord lies strictly within a record
-//'   in the input data (1 for all but the last interval and 0 for the 
+//'   in the input data (1 for all but the last interval and 0 for the
 //'   last interval with cutpoint set equal to tstop).
 //'
-//' * \code{interval}: The interval number derived from cut (starting 
+//' * \code{interval}: The interval number derived from cut (starting
 //'   from 0 if the interval lies to the left of the first cutpoint).
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
