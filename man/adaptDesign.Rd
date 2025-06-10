@@ -42,8 +42,8 @@ adaptDesign(
 \item{betaNew}{The type II error for the secondary trial.}
 
 \item{INew}{The maximum information of the secondary trial. Either
-\code{betaNew} or \code{INew} should be provided while the other one
-should be missing.}
+\code{betaNew} or \code{INew} should be provided, while the other
+must be missing.}
 
 \item{L}{The interim adaptation look of the primary trial.}
 
@@ -62,11 +62,11 @@ if conditional power calculation is desired.}
 \item{informationRates}{The information rates of the primary trial.}
 
 \item{efficacyStopping}{Indicators of whether efficacy stopping is
-allowed at each stage of the primary trial. Defaults to true
+allowed at each stage of the primary trial. Defaults to \code{TRUE}
 if left unspecified.}
 
 \item{futilityStopping}{Indicators of whether futility stopping is
-allowed at each stage of the primary trial. Defaults to true
+allowed at each stage of the primary trial. Defaults to \code{TRUE}
 if left unspecified.}
 
 \item{criticalValues}{The upper boundaries on the z-test statistic scale
@@ -92,8 +92,8 @@ Defaults to "sfOF".}
 for the primary trial. Corresponds to Delta for "WT", rho for "sfKD",
 and gamma for "sfHSD".}
 
-\item{userAlphaSpending}{The user defined alpha spending for the primary
-trial. Cumulative alpha spent up to each stage.}
+\item{userAlphaSpending}{The user-defined alpha spending for the
+primary trial. Represents the cumulative alpha spent up to each stage.}
 
 \item{futilityBounds}{The lower boundaries on the z-test statistic scale
 for futility stopping for the primary trial. Defaults to
@@ -113,7 +113,7 @@ for the primary trial. Corresponds to rho for "sfKD",
 and gamma for "sfHSD".}
 
 \item{spendingTime}{The error spending time of the primary trial.
-Defaults to missing, in which case, it is the same as
+Defaults to missing, in which case it is assumed to be the same as
 \code{informationRates}.}
 
 \item{MullerSchafer}{Whether to use the Muller and Schafer (2001) method
@@ -124,11 +124,11 @@ for trial adaptation.}
 \item{informationRatesNew}{The spacing of looks of the secondary trial.}
 
 \item{efficacyStoppingNew}{The indicators of whether efficacy stopping is
-allowed at each look of the secondary trial. Defaults to true
+allowed at each look of the secondary trial. Defaults to \code{TRUE}
 if left unspecified.}
 
 \item{futilityStoppingNew}{The indicators of whether futility stopping is
-allowed at each look of the secondary trial. Defaults to true
+allowed at each look of the secondary trial. Defaults to \code{TRUE}
 if left unspecified.}
 
 \item{typeAlphaSpendingNew}{The type of alpha spending for the secondary
@@ -161,11 +161,12 @@ Defaults to "none".}
 for the secondary trial. Corresponds to rho for "sfKD",
 and gamma for "sfHSD".}
 
-\item{userBetaSpendingNew}{The user defined cumulative beta spending.
-Cumulative beta spent up to each stage of the secondary trial.}
+\item{userBetaSpendingNew}{The user-defined cumulative beta spending.
+Represents the cumulative beta spent up to each stage of the
+secondary trial.}
 
 \item{spendingTimeNew}{The error spending time of the secondary trial.
-Defaults to missing, in which case, it is the same as
+Defaults to missing, in which case it is assumed to be the same as
 \code{informationRatesNew}.}
 
 \item{varianceRatio}{The ratio of the variance under H0 to the
@@ -182,14 +183,14 @@ and \code{MullerSchafer}.
 }
 }
 \description{
-Obtains the conditional power for specified incremental
-information given the interim results, parameter value, and
-data-dependent changes in the error spending function, and the number
-and spacing of interim looks. Conversely, obtains the incremental
-information needed to attain a specified conditional power given
-the interim results, parameter value, and data-dependent changes
-in the error spending function, and the number and spacing of
-interim looks.
+Calculates the conditional power for specified incremental
+information, given the interim results, parameter value,
+data-dependent changes in the error spending function, and
+the number and spacing of interim looks. Conversely,
+calculates the incremental information required to attain
+a specified conditional power, given the interim results,
+parameter value, data-dependent changes in the error
+spending function, and the number and spacing of interim looks.
 }
 \examples{
 
@@ -213,7 +214,7 @@ t = des1$byStageResults$informationRates
 # conditional power with sample size increase
 (des2 = adaptDesign(
   betaNew = NA, INew = 420/(4*sigma1^2),
-  L, zL, theta = delta1,
+  L = L, zL = zL, theta = delta1,
   IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
   alpha = 0.05, typeAlphaSpending = "sfHSD",
   parameterAlphaSpending = -4))
@@ -222,7 +223,7 @@ t = des1$byStageResults$informationRates
 # 3-look gamma(-2) spending with 84\% power at delta = 4.5 and sigma = 20
 (des2 = adaptDesign(
   betaNew = 0.16, INew = NA,
-  L, zL, theta = delta1,
+  L = L, zL = zL, theta = delta1,
   IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
   alpha = 0.05, typeAlphaSpending = "sfHSD",
   parameterAlphaSpending = -4,
