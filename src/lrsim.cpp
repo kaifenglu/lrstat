@@ -5021,16 +5021,20 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
 }
 
 
-//' @title Simulation for a Binary Endpoint and a Time-to-Event Endpoint
+//' @title Simulation for a Binary and a Time-to-Event Endpoint in
+//' Group Sequential Trials
 //' @description Performs simulation for two-endpoint two-arm group
-//' sequential trials. The first endpoint is a binary endpoint and
-//' the Mantel-Haenszel test is used to test risk difference.
-//' The second endpoint is a time-to-event endpoint and the log-rank
-//' test is used to test the treatment difference. The analysis times
-//' of the first endpoint are determined by the specified calendar times,
-//' while the analysis times for the second endpoint is based on the
-//' planned number of events at each look. The binary endpoint is
-//' assessed at the first post-treatment follow-up visit.
+//' sequential trials.
+//' \itemize{
+//'   \item Endpoint 1: Binary endpoint, analyzed using the
+//'         Mantel-Haenszel test for risk difference.
+//'   \item Endpoint 2: Time-to-event endpoint, analyzed using
+//'         the log-rank test for treatment effect.
+//' }
+//' The analysis times for the binary endpoint are based on calendar times,
+//' while the time-to-event analyses are triggered by reaching the
+//' pre-specified number of events. The binary endpoint is
+//' assessed at the first post-treatment follow-up visit (PTFU1).
 //'
 //' @param kMax1 Number of stages for the binary endpoint.
 //' @param kMax2 Number of stages for the time-to-event endpoint.
@@ -5046,7 +5050,8 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
 //' @inheritParams param_accrualIntensity
 //' @inheritParams param_piecewiseSurvivalTime
 //' @inheritParams param_stratumFraction
-//' @param globalOddsRatio The global odds ratio of the Plackett copula.
+//' @param globalOddsRatio Global odds ratio of the Plackett copula
+//'   linking the two endpoints.
 //' @param pi1 Response probabilities by stratum for the treatment group
 //'   for the binary endpoint.
 //' @param pi2 Response probabilities by stratum for the control group
@@ -5075,20 +5080,20 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
 //'   discontinuation applicable for all strata, or a vector of hazard rates
 //'   for treatment discontinuation in each analysis time interval by
 //'   stratum for the control group for the binary endpoint.
-//' @param upper1 The protocol-specified treatment duration for the treatment
-//'   group.
-//' @param upper2 The protocol-specified treatment duration for the control
-//'   group.
+//' @param upper1 Maximim protocol-specified treatment duration for
+//'   the treatment group.
+//' @param upper2 Maximum protocol-specified treatment duration for
+//'   the control group.
 //' @inheritParams param_accrualDuration
-//' @param plannedTime The calendar times for the analyses of the binary
+//' @param plannedTime Calendar times for the analyses of the binary
 //'   endpoint.
-//' @param plannedEvents The planned cumulative total number of events for
-//'   the time-to-event endpoint.
-//' @param maxNumberOfIterations The number of simulation iterations.
-//' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
-//'   stage to extract.
-//' @param seed The seed to reproduce the simulation results.
-//'   The seed from the environment will be used if left unspecified.
+//' @param plannedEvents Target cumulative number of events for
+//'   the time-to-event analyses.
+//' @param maxNumberOfIterations Number of simulation iterations to perform.
+//' @param maxNumberOfRawDatasetsPerStage Number of subject-level datasets
+//'   to retain per stage. Set to 0 to skip raw data saving.
+//' @param seed Random seed for reproducibility. If not specified,
+//'   the current R environment seed is used.
 //'
 //' @details We consider dual primary endpoints with endpoint 1 being a
 //'   binary endpoint and endpoint 2 being a time-to-event endpoint.
