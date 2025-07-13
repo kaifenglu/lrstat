@@ -6,6 +6,8 @@
 #' @param n The total sample size.
 #' @param piH0 The response probability under the null hypothesis.
 #' @param pi The response probability under the alternative hypothesis.
+#' @param nullVariance Whether to use the variance under the null
+#'   or the variance under the alternative.
 #' @param normalApproximation The type of computation of the p-values.
 #'   If \code{TRUE}, the normal approximation will be used, otherwise
 #'   the calculations are performed with the binomial distribution. The exact
@@ -142,6 +144,12 @@
 #'
 #'     - \code{spendingTime}: The error spending time at each analysis.
 #'
+#'     - \code{varianceRatio}: The ratio of the variance under H0 to
+#'       the variance under H1.
+#'
+#'     - \code{nullVariance}: Whether to use the variance under the null or
+#'       the empirical variance under the alternative.
+#'
 #'     - \code{normalApproximation}: The type of computation of the p-values.
 #'       If \code{TRUE}, the variance is assumed to be known, otherwise
 #'       the calculations are performed with the binomial distribution.
@@ -168,6 +176,7 @@ getDesignOneProportion <- function(
     n = NA_real_,
     piH0 = 0.1,
     pi = 0.2,
+    nullVariance = TRUE,
     normalApproximation = TRUE,
     rounding = TRUE,
     kMax = 1L,
@@ -220,7 +229,9 @@ getDesignOneProportion <- function(
   directionUpper = pi > piH0
 
   theta = ifelse(directionUpper, pi - piH0, piH0 - pi)
-  v1 = piH0*(1-piH0)
+  v0 = piH0*(1-piH0)
+  v1 = pi*(1-pi)
+  varianceRatio = ifelse(nullVariance, v0/v1, 1)
 
   if (!is.na(n)) { # power calculation
     if (rounding) {
@@ -236,7 +247,7 @@ getDesignOneProportion <- function(
       parameterAlphaSpending, userAlphaSpending,
       futilityBounds, typeBetaSpending,
       parameterBetaSpending, userBetaSpending,
-      spendingTime)
+      spendingTime, varianceRatio)
 
     if (kMax == 1 && !normalApproximation) { # exact test for fixed design
       if (!any(is.na(criticalValues))) {
@@ -314,7 +325,7 @@ getDesignOneProportion <- function(
         parameterAlphaSpending, userAlphaSpending,
         futilityBounds, typeBetaSpending,
         parameterBetaSpending, userBetaSpending,
-        spendingTime)
+        spendingTime, varianceRatio)
 
       des$overallResults$overallReject = power
       des$overallResults$attainedAlpha = attainedAlpha
@@ -343,7 +354,7 @@ getDesignOneProportion <- function(
         parameterAlphaSpending, userAlphaSpending,
         futilityBounds, typeBetaSpending,
         parameterBetaSpending, userBetaSpending,
-        spendingTime)
+        spendingTime, varianceRatio)
 
       n = des$overallResults$information*v1
 
@@ -360,7 +371,7 @@ getDesignOneProportion <- function(
           parameterAlphaSpending, userAlphaSpending,
           futilityBounds, typeBetaSpending,
           parameterBetaSpending, userBetaSpending,
-          spendingTime)
+          spendingTime, varianceRatio)
       }
 
       ns = des$byStageResults$informationRates*n
@@ -393,6 +404,8 @@ getDesignOneProportion <- function(
   des$byStageResults$numberOfSubjects =
     des$byStageResults$informationRates*n
 
+  des$settings$nullVariance = nullVariance
+  des$settings$varianceRatio = varianceRatio
   des$settings$normalApproximation = normalApproximation
   des$settings$rounding = rounding
 
@@ -435,6 +448,36 @@ getDesignOneProportion <- function(
 #' @param spendingTime A vector of length \code{kMax} for the error spending
 #'   time at each analysis. Defaults to missing, in which case, it is the
 #'   same as \code{informationRates}.
+#'
+#' @details
+#' Consider a group sequential design for McNemar's test for paired
+#' proportions. The table below shows joint probabilities for
+#' each cell (\eqn{\pi_{ij}} where \eqn{i} is for control group and
+#' \eqn{j} is for experimental group), with marginal totals.
+#' \tabular{lccc}{
+#'   \tab Experimental: No Response \tab Experimental: Response
+#'   \tab Row Total \cr
+#'   Control: No Response  \tab \eqn{\pi_{00}}  \tab \eqn{\pi_{01}}
+#'   \tab \eqn{1-\pi_c} \cr
+#'   Control: Response  \tab \eqn{\pi_{10}}  \tab \eqn{\pi_{11}}
+#'   \tab \eqn{\pi_c} \cr
+#'   Column Total  \tab \eqn{1-\pi_t}  \tab \eqn{\pi_t}  \tab 1
+#' }
+#' The parameters \eqn{\pi_{01}} and \eqn{\pi_{10}} are the discordant pairs
+#' (i.e., \eqn{\pi_{01} + \pi_{10} = \xi}) and the risk difference
+#' is \eqn{\pi_{01} - \pi_{10} = \delta}. The parameter \eqn{\pi_t} is the
+#' proportion of experimental group response, and \eqn{\pi_c} is the
+#' proportion of control group response. The parameter of interest
+#' is \deqn{\theta = \pi_t - \pi_c = \pi_{01} - \pi_{10} = \delta}
+#' The variance of \eqn{\hat{\theta}} can be obtained from the multinomial
+#' distribution as follows:
+#' \deqn{Var(\hat{\theta}) = \frac{1}{n} \{
+#' \pi_{01}(1-\pi_{01}) + \pi_{10}(1-\pi_{10}) + 2\pi_{01}\pi_{10} \}}
+#' which can be simplified to
+#' \deqn{Var(\hat{\theta}) = \frac{1}{n} (\xi - \delta^2)}
+#' Here, \eqn{n} is the total number of treatment pairs.
+#' This is the unconditional variance, which is used for the
+#' overall design.
 #'
 #' @return An S3 class \code{designPairedPropMcNemar} object with three
 #' components:
@@ -750,6 +793,24 @@ getDesignPairedPropMcNemar <- function(
 #'   time at each analysis. Defaults to missing, in which case, it is the
 #'   same as \code{informationRates}.
 #'
+#' @details
+#' Consider a group sequential design for two-sample risk difference.
+#' The parameter of interest is \deqn{\theta = \pi_1 - \pi_2}
+#' where \eqn{\pi_1} is the response probability for the active
+#' treatment group and \eqn{\pi_2} is the response probability
+#' for the control group. The variance of \eqn{\hat{\theta}}
+#' can be obtained from the binomial distributions as follows:
+#' \deqn{Var(\hat{\theta}) = \frac{1}{n} \{
+#' \frac{\pi_1(1-\pi_1)}{r} + \frac{\pi_2(1-\pi_2)}{1-r} \}}
+#' where \eqn{n} is the total number of subjects and \eqn{r} is the
+#' randomization probability for the active treatment group.
+#' When \code{nullVariance = TRUE}, the variance is computed
+#' under the null hypothesis. In this case, the values of
+#' \eqn{\pi_1} and \eqn{\pi_2} in the variance formula are
+#' replaced with their restricted maximum likelihood
+#' counterparts, subject to the constraint
+#' \deqn{\pi_1 - \pi_2 = \theta_0}
+#'
 #' @return An S3 class \code{designRiskDiff} object with three
 #' components:
 #'
@@ -878,7 +939,7 @@ getDesignPairedPropMcNemar <- function(
 #' (design1 <- getDesignRiskDiff(
 #'   beta = 0.2, n = NA, pi1 = 0.1, pi2 = 0.15,
 #'   kMax = 3, alpha = 0.025, typeAlphaSpending = "sfOF",
-#'   nullVariance = 0))
+#'   nullVariance = FALSE))
 #'
 #' @export
 getDesignRiskDiff <- function(
@@ -1083,6 +1144,27 @@ getDesignRiskDiff <- function(
 #' @param spendingTime A vector of length \code{kMax} for the error spending
 #'   time at each analysis. Defaults to missing, in which case, it is the
 #'   same as \code{informationRates}.
+#'
+#' @details
+#' Consider a group sequential design for two-sample risk ratio.
+#' The parameter of interest is \deqn{\rho = \pi_1 / \pi_2}
+#' where \eqn{\pi_1} is the response probability for the active
+#' treatment group and \eqn{\pi_2} is the response probability
+#' for the control group. For statistical inference,
+#' the parameter is often transformed to
+#' the log scale: \deqn{\theta = \log(\rho) = \log(\pi_1) - \log(\pi_2)}
+#' The variance of the estimator \eqn{\hat{\theta}}
+#' can be derived from the binomial distributions as follows:
+#' \deqn{Var(\hat{\theta}) = \frac{1}{n} \{
+#' \frac{1-\pi_1}{\pi_1 r} + \frac{1-\pi_2}{\pi_2(1-r)} \}}
+#' where \eqn{n} is the total number of subjects and \eqn{r} is the
+#' randomization probability for the active treatment group.
+#' When \code{nullVariance = TRUE}, the variance is computed
+#' under the null hypothesis. In this case, the values of
+#' \eqn{\pi_1} and \eqn{\pi_2} in the variance formula are
+#' replaced with their restricted maximum likelihood
+#' counterparts, subject to the constraint
+#' \deqn{\pi_1 / \pi_2 = \rho_0}
 #'
 #' @return An S3 class \code{designRiskRatio} object with three components:
 #'
@@ -1415,6 +1497,28 @@ getDesignRiskRatio <- function(
 #'   time at each analysis. Defaults to missing, in which case, it is the
 #'   same as \code{informationRates}.
 #'
+#' @details
+#' Consider a group sequential design for two-sample risk ratio.
+#' The parameter of interest is \deqn{\rho = \pi_1 / \pi_2}
+#' where \eqn{\pi_1} is the response probability for the active
+#' treatment group and \eqn{\pi_2} is the response probability
+#' for the control group. Let \eqn{\rho_0} denote the risk ratio
+#' under the null hypothesis. The Farrington-Manning score test
+#' statistic is constructed as
+#' \deqn{Z = \frac{\hat{\pi}_1 - \rho_0 \hat{\pi}_2}{
+#' \sqrt{Var(\hat{\pi}_1 - \rho_0 \hat{\pi}_2)}}}
+#' The variance can be derived from the binomial distributions as follows:
+#' \deqn{Var(\hat{\pi}_1 - \rho_0 \hat{\pi}_2) = \frac{1}{n} \{
+#' \frac{\pi_1(1-\pi_1)}{r} + \frac{\rho_0^2\pi_2(1-\pi_2)}{1-r} \}}
+#' where \eqn{n} is the total number of subjects and \eqn{r} is the
+#' randomization probability for the active treatment group.
+#' When \code{nullVariance = TRUE}, the variance is computed
+#' under the null hypothesis. In this case, the values of
+#' \eqn{\pi_1} and \eqn{\pi_2} in the variance formula are
+#' replaced with their restricted maximum likelihood
+#' counterparts, subject to the constraint
+#' \deqn{\pi_1 / \pi_2 = \rho_0}
+#'
 #' @return An S3 class \code{designRiskRatioFM} object with three
 #' components:
 #'
@@ -1746,6 +1850,29 @@ getDesignRiskRatioFM <- function(
 #' @param spendingTime A vector of length \code{kMax} for the error spending
 #'   time at each analysis. Defaults to missing, in which case, it is the
 #'   same as \code{informationRates}.
+#'
+#' @details
+#' Consider a group sequential design for two-sample odds ratio.
+#' The parameter of interest is
+#' \deqn{\psi = \frac{\pi_1(1-\pi_2)}{(1-\pi_1)\pi_2}}
+#' where \eqn{\pi_1} is the response probability for the active
+#' treatment group and \eqn{\pi_2} is the response probability
+#' for the control group. For statistical inference,
+#' the parameter is often transformed to
+#' the log scale: \deqn{\theta = \log(\psi) =
+#' \log(\pi_1/(1-\pi_1)) - \log(\pi_2/(1-\pi_2))}
+#' The variance of the estimator \eqn{\hat{\theta}}
+#' can be derived from the binomial distributions as follows:
+#' \deqn{Var(\hat{\theta}) = \frac{1}{n} \{
+#' \frac{1}{\pi_1(1-\pi_1) r} + \frac{1}{\pi_2(1-\pi_2)(1-r)} \}}
+#' where \eqn{n} is the total number of subjects and \eqn{r} is the
+#' randomization probability for the active treatment group.
+#' When \code{nullVariance = TRUE}, the variance is computed
+#' under the null hypothesis. In this case, the values of
+#' \eqn{\pi_1} and \eqn{\pi_2} in the variance formula are
+#' replaced with their restricted maximum likelihood
+#' counterparts, subject to the constraint
+#' \deqn{\frac{\pi_1(1-\pi_2)}{(1-\pi_1)\pi_2}= \psi_0}
 #'
 #' @return An S3 class \code{designOddsRatio} object with three components:
 #'
@@ -3080,6 +3207,12 @@ getDesignFisherExact <- function(
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
+#' @references
+#' Clopper, C. J., & Pearson, E. S. (1934).
+#' The use of confidence or fiducial limits illustrated in the case of the
+#' binomial.
+#' Biometrika, 26(4), 404-413.
+#'
 #' @examples
 #'
 #' ClopperPearsonCI(20, 3)
@@ -3170,6 +3303,12 @@ ClopperPearsonCI <- function(n, y, cilevel = 0.95) {
 #'   decision data frame.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#'
+#' Guo, W., Wang, S. J., Yang, S., Lynn, H., & Ji, Y. (2017).
+#' A Bayesian interval dose-finding design addressing Ockham's razor: mTPI-2.
+#' Contemporary Clinical Trials, 58, 23-33.
 #'
 #' @examples
 #'
@@ -3336,6 +3475,12 @@ mTPI2Table <- function(
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
+#' @references
+#' Liu, S., & Yuan, Y. (2015).
+#' Bayesian optimal interval designs for phase I clinical trials.
+#' Journal of the Royal Statistical Society:
+#' Series C (Applied Statistics), 64(3), 507-523.
+#'
 #' @examples
 #'
 #' BOINTable(nMax = 18, pT = 0.3, phi = 0.6*0.3, phi2 = 1.4*0.3)
@@ -3437,6 +3582,32 @@ BOINTable <- function(
 #' @param rounding Whether to round up sample size. Defaults to 1 for
 #'   sample size rounding.
 #' @param alpha The two-sided significance level. Defaults to 0.05.
+#'
+#' @details
+#' A single-arm multinomial response design is used to test whether the
+#' prevalence of each category is different from the null hypothesis
+#' prevalence.
+#' The null hypothesis is that the prevalence of each category
+#' is equal to \eqn{\pi_{0i}}, while the alternative hypothesis is that
+#' the prevalence of each category is equal to \eqn{\pi_i}, for
+#' \eqn{i=1,\ldots,C}, where \eqn{C} is the number of categories.
+#'
+#' The sample size is calculated based on the chi-square test for
+#' multinomial response. The test statistic is given by
+#' \deqn{X^2 = \sum_{i=1}^{C} \frac{(n_i - n\pi_{0i})^2}{n\pi_{0i}}}
+#' where \eqn{n_i} is the number of subjects in category \eqn{i}, and
+#' \eqn{n} is the total sample size.
+#'
+#' * Under the null hypothesis, \eqn{X^2} follows a chi-square distribution
+#'   with \eqn{C-1} degrees of freedom.
+#'
+#' * Under the alternative hypothesis, \eqn{X^2} follows a non-central
+#'   chi-square distribution with non-centrality parameter
+#'   \deqn{\lambda = n \sum_{i=1}^{C} \frac{(\pi_i - \pi_{0i})^2}{\pi_{0i}}}
+#'
+#' The sample size is chosen such that the power to reject the null
+#' hypothesis is at least \eqn{1-\beta} for a given
+#' significance level \eqn{\alpha}.
 #'
 #' @return An S3 class \code{designOneMultinom} object with the following
 #' components:
@@ -3597,6 +3768,34 @@ getDesignOneMultinom <- function(
 #' @param rounding Whether to round up sample size. Defaults to 1 for
 #'   sample size rounding.
 #' @param alpha The two-sided significance level. Defaults to 0.05.
+#'
+#' @details
+#' A two-arm multinomial response design is used to test whether the
+#' prevalence of each category differs between two treatment arms.
+#' Let \eqn{\pi_{gi}} denote the prevalence of category \eqn{i}
+#' in group \eqn{g}, where \eqn{g=1} for the treatment group and
+#' \eqn{g=2} for the control group.
+#' The chi-square test statistic is given by
+#' \deqn{X^2 = \sum_{g=1}^{2} \sum_{i=1}^{C}
+#' \frac{(n_{gi} - n_{g+} n_{+i}/n)^2}{n_{g+} n_{+i}/n}}
+#' where \eqn{n_{gi}} is the number of subjects in category \eqn{i}
+#' for group \eqn{g}, \eqn{n_{g+}} is the total number of subjects
+#' in group \eqn{g}, and \eqn{n_{+i}} is the total number of subjects
+#' in category \eqn{i} across both groups, and
+#' \eqn{n} is the total sample size.
+#'
+#' * Under the null hypothesis, \eqn{X^2} follows a chi-square distribution
+#'   with \eqn{C-1} degrees of freedom.
+#'
+#' * Under the alternative hypothesis, \eqn{X^2} follows a non-central
+#'   chi-square distribution with non-centrality parameter
+#'   \deqn{\lambda = n r (1-r) \sum_{i=1}^{C} \frac{(\pi_{1i} - \pi_{2i})^2}
+#'   {r \pi_{1i} + (1-r)\pi_{2i}}}
+#'   where \eqn{r} is the randomization probability for the active treatment.
+#'
+#' The sample size is chosen such that the power to reject the null
+#' hypothesis is at least \eqn{1-\beta} for a given
+#' significance level \eqn{\alpha}.
 #'
 #' @return An S3 class \code{designTwoMultinom} object with the following
 #' components:
@@ -3769,6 +3968,47 @@ getDesignTwoMultinom <- function(
 #' @param rounding Whether to round up sample size. Defaults to 1 for
 #'   sample size rounding.
 #' @inheritParams param_alpha
+#'
+#' @details
+#' A two-sample ordinal response design is used to test whether the
+#' ordinal response distributions differ between two treatment arms.
+#' Let \eqn{\pi_{gi}} denote the prevalence of category \eqn{i}
+#' in group \eqn{g}, where \eqn{g=1} represents the treatment group and
+#' \eqn{g=2} represents the control group.
+#'
+#' The parameter of interest is
+#' \deqn{\theta = \sum_{i=1}^{C} w_i (\pi_{1i} - \pi_{2i})}
+#' where \eqn{w_i} is the midrank score for category \eqn{i}.
+#' The Z-test statistic is given by
+#' \deqn{Z = \hat{\theta}/\sqrt{Var(\hat{\theta})}}
+#' where \eqn{\hat{\theta}} is the estimate of \eqn{\theta}.
+#'
+#' The midrank score \eqn{w_i} for category \eqn{i} is calculated as:
+#' \deqn{w_i = \sum_{j=1}^{i} \pi_j - 0.5\pi_i}
+#' where \eqn{\pi_i = r\pi_{1i} + (1-r)\pi_{2i}} denotes the average
+#' prevalence of category \eqn{i} across both groups,
+#' and \eqn{r} is the randomization probability for the active treatment.
+#'
+#' To understand the midrank score, consider \eqn{n\pi_i} subjects
+#' in category \eqn{i}. The midrank score is the average rank of
+#' these subjects:
+#' \deqn{s_i = \frac{1}{n\pi_i} \sum_{j=1}^{n\pi_i} (
+#' n\pi_1 + \cdots + n\pi_{i-1} + j)}
+#' This simplifies to
+#' \deqn{s_i = n\left(\sum_{j=1}^{i} \pi_j - 0.5\pi_i\right) + \frac{1}{2}}
+#' By dividing by \eqn{n} and ignoring \eqn{\frac{1}{2n}}, we obtain
+#' the midrank score \eqn{w_i}.
+#'
+#' The variance of \eqn{\hat{\theta}} can be derived from the multinomial
+#' distributions and is given by
+#' \deqn{Var(\hat{\theta}) = \frac{1}{n}\sum_{g=1}^{2} \frac{1}{r_g}
+#' \left\{\sum_{i=1}^{C} w_i^2\pi_{gi} - \left(\sum_{i=1}^{C} w_i\pi_{gi}
+#' \right)^2\right\}}
+#' where \eqn{r_g} is the randomization probability for group \eqn{g}.
+#'
+#' The sample size is chosen such that the power to reject the null
+#' hypothesis is at least \eqn{1-\beta} for a given
+#' significance level \eqn{\alpha}.
 #'
 #' @return An S3 class \code{designTwoOrdinal} object with the following
 #' components:
@@ -3951,6 +4191,39 @@ getDesignTwoOrdinal <- function(
 #'   sample size rounding.
 #' @param alpha The two-sided significance level. Defaults to 0.05.
 #'
+#' @details
+#' An ordered multi-sample binomial response design is used to test
+#' whether the response probabilities differ across multiple treatment
+#' groups. The null hypothesis is that the response probabilities
+#' are equal across all treatment groups, while the alternative
+#' hypothesis is that the response probabilities
+#' are ordered, i.e. the response probability increases with
+#' the treatment group index.
+#' The Cochran-Armitage trend test is used to test this hypothesis.
+#' This test effectively regresses the response probabilities
+#' against treatment group scores, and test whether
+#' the slope of the regression line is significantly different
+#' from zero.
+#'
+#' The trend parameter is defined as
+#' \deqn{\theta = \sum_{g=1}^{G} r_g (w_g - \bar{w}) \pi_g}
+#' where \eqn{G} is the number of treatment groups,
+#' \eqn{r_g} is the randomization probability for treatment group
+#' \eqn{g}, \eqn{w_g} is the score assigned to treatment group \eqn{g},
+#' \eqn{\pi_g} is the response probability for
+#' treatment group \eqn{g}, and \eqn{\bar{w} = \sum_{g=1}^{G} r_g w_g} is
+#' the weighted average score across all treatment groups.
+#'
+#' Since \eqn{\hat{\theta}} is a linear combination of the estimated
+#' response probabilities, its variance is given by
+#' \deqn{Var(\hat{\theta}) = \frac{1}{n}\sum_{g=1}^{G} r_g
+#' (w_g - \bar{w})^2 \pi_g(1-\pi_g)}
+#' where \eqn{n} is the total sample size.
+#'
+#' The sample size is chosen such that the power to reject the null
+#' hypothesis is at least \eqn{1-\beta} for a given
+#' significance level \eqn{\alpha}.
+#'
 #' @return An S3 class \code{designOrderedBinom} object with the following
 #' components:
 #'
@@ -4106,6 +4379,38 @@ getDesignOrderedBinom <- function(
 #'   sample size rounding.
 #' @param alpha The two-sided significance level. Defaults to 0.05.
 #'
+#' @details
+#' A multi-sample binomial response design is used to test whether the
+#' response probabilities differ among multiple treatment arms.
+#' Let \eqn{\pi_{g}} denote the response probability in group
+#' \eqn{g = 1,\ldots,G}, where \eqn{G} is the total number of
+#' treatment groups.
+#'
+#' The chi-square test statistic is given by
+#' \deqn{X^2 = \sum_{g=1}^{G} \sum_{i=1}^{2}
+#' \frac{(n_{gi} - n_{g+}n_{+i}/n)^2}{n_{g+} n_{+i}/n}}
+#' where \eqn{n_{gi}} is the number of subjects in category \eqn{i}
+#' for group \eqn{g}, \eqn{n_{g+}} is the total number of subjects
+#' in group \eqn{g}, and \eqn{n_{+i}} is the total number of subjects
+#' in category \eqn{i} across all groups, and
+#' \eqn{n} is the total sample size.
+#'
+#' Let \eqn{r_g} denote the randomization probability for group \eqn{g}, and
+#' define the weighted average response probability across all groups as
+#' \deqn{\bar{\pi} = \sum_{g=1}^{G} r_g \pi_g}
+#'
+#' * Under the null hypothesis, \eqn{X^2} follows a chi-square distribution
+#'   with \eqn{G-1} degrees of freedom.
+#'
+#' * Under the alternative hypothesis, \eqn{X^2} follows a non-central
+#'   chi-square distribution with non-centrality parameter
+#'   \deqn{\lambda = n \sum_{g=1}^{G} \frac{r_g (\pi_{g} - \bar{\pi})^2}
+#'   {\bar{\pi} (1-\bar{\pi})}}
+#'
+#' The sample size is chosen such that the power to reject the null
+#' hypothesis is at least \eqn{1-\beta} for a given
+#' significance level \eqn{\alpha}.
+#'
 #' @return An S3 class \code{designUnorderedBinom} object with the following
 #' components:
 #'
@@ -4253,6 +4558,42 @@ getDesignUnorderedBinom <- function(
 #' @param rounding Whether to round up sample size. Defaults to 1 for
 #'   sample size rounding.
 #' @param alpha The two-sided significance level. Defaults to 0.05.
+#'
+#' @details
+#' A multi-sample multinomial response design is used to test whether the
+#' response probabilities differ among multiple treatment arms.
+#' Let \eqn{\pi_{gi}} denote the response probability for
+#' category \eqn{i = 1,\ldots,C} in group
+#' \eqn{g = 1,\ldots,G}, where \eqn{G} is the total number of
+#' treatment groups, and \eqn{C} is the total number of categories
+#' for the response variable.
+#'
+#' The chi-square test statistic is given by
+#' \deqn{X^2 = \sum_{g=1}^{G} \sum_{i=1}^{C}
+#' \frac{(n_{gi} - n_{g+}n_{+i}/n)^2}{n_{g+} n_{+i}/n}}
+#' where \eqn{n_{gi}} is the number of subjects in category \eqn{i}
+#' for group \eqn{g}, \eqn{n_{g+}} is the total number of subjects
+#' in group \eqn{g}, and \eqn{n_{+i}} is the total number of subjects
+#' in category \eqn{i} across all groups, and
+#' \eqn{n} is the total sample size.
+#'
+#' Let \eqn{r_g} denote the randomization probability for group \eqn{g}, and
+#' define the weighted average response probability
+#' for category \eqn{i} across all groups as
+#' \deqn{\bar{\pi_i} = \sum_{g=1}^{G} r_g \pi_{gi}}
+#'
+#' * Under the null hypothesis, \eqn{X^2} follows a chi-square distribution
+#'   with \eqn{(G-1)(C-1)} degrees of freedom.
+#'
+#' * Under the alternative hypothesis, \eqn{X^2} follows a non-central
+#'   chi-square distribution with non-centrality parameter
+#'   \deqn{\lambda = n \sum_{g=1}^{G} \sum_{i=1}^{C}
+#'   \frac{r_g (\pi_{gi} - \bar{\pi_i})^2}
+#'   {\bar{\pi_i}}}
+#'
+#' The sample size is chosen such that the power to reject the null
+#' hypothesis is at least \eqn{1-\beta} for a given
+#' significance level \eqn{\alpha}.
 #'
 #' @return An S3 class \code{designUnorderedMultinom} object with the
 #' following components:
