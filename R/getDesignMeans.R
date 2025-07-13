@@ -234,7 +234,7 @@ getDesignOneMean <- function(
       parameterAlphaSpending, userAlphaSpending,
       futilityBounds, typeBetaSpending,
       parameterBetaSpending, userBetaSpending,
-      spendingTime)
+      spendingTime, 1)
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
@@ -299,7 +299,7 @@ getDesignOneMean <- function(
         parameterAlphaSpending, userAlphaSpending,
         futilityBounds, typeBetaSpending,
         parameterBetaSpending, userBetaSpending,
-        spendingTime)
+        spendingTime, 1)
 
       b = qt(1-alpha, n-1)
       ncp = theta*sqrt(n/v1)
@@ -330,7 +330,7 @@ getDesignOneMean <- function(
         parameterAlphaSpending, userAlphaSpending,
         futilityBounds, typeBetaSpending,
         parameterBetaSpending, userBetaSpending,
-        spendingTime)
+        spendingTime, 1)
 
       n = des$overallResults$information*v1
 
@@ -347,7 +347,7 @@ getDesignOneMean <- function(
           parameterAlphaSpending, userAlphaSpending,
           futilityBounds, typeBetaSpending,
           parameterBetaSpending, userBetaSpending,
-          spendingTime)
+          spendingTime, 1)
       }
 
       if (directionUpper) {
@@ -1098,7 +1098,7 @@ getDesignMeanDiff <- function(
       parameterAlphaSpending, userAlphaSpending,
       futilityBounds, typeBetaSpending,
       parameterBetaSpending, userBetaSpending,
-      spendingTime)
+      spendingTime, 1)
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
@@ -1120,23 +1120,23 @@ getDesignMeanDiff <- function(
       des$byStageResults$futilityBounds = b
 
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff = delta
-        des$byStageResults$futilityMeanDiff = delta
+        des$byStageResults$efficacyMeanDiff = delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff = delta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff = -delta
-        des$byStageResults$futilityMeanDiff = -delta
+        des$byStageResults$efficacyMeanDiff = -delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff = -delta + meanDiffH0
       }
     } else {
       if (directionUpper) {
         des$byStageResults$efficacyMeanDiff =
-          des$byStageResults$efficacyTheta
+          des$byStageResults$efficacyTheta + meanDiffH0
         des$byStageResults$futilityMeanDiff =
-          des$byStageResults$futilityTheta
+          des$byStageResults$futilityTheta + meanDiffH0
       } else {
         des$byStageResults$efficacyMeanDiff =
-          -des$byStageResults$efficacyTheta
+          -des$byStageResults$efficacyTheta + meanDiffH0
         des$byStageResults$futilityMeanDiff =
-          -des$byStageResults$futilityTheta
+          -des$byStageResults$futilityTheta + meanDiffH0
       }
     }
   } else { # sample size calculation
@@ -1163,7 +1163,7 @@ getDesignMeanDiff <- function(
         parameterAlphaSpending, userAlphaSpending,
         futilityBounds, typeBetaSpending,
         parameterBetaSpending, userBetaSpending,
-        spendingTime)
+        spendingTime, 1)
 
       b = qt(1-alpha, n-2)
       ncp = theta*sqrt(n/v1)
@@ -1179,11 +1179,11 @@ getDesignMeanDiff <- function(
       des$byStageResults$efficacyBounds = b
       des$byStageResults$futilityBounds = b
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff = delta
-        des$byStageResults$futilityMeanDiff = delta
+        des$byStageResults$efficacyMeanDiff = delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff = delta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff = -delta
-        des$byStageResults$futilityMeanDiff = -delta
+        des$byStageResults$efficacyMeanDiff = -delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff = -delta + meanDiffH0
       }
     } else {
       des = getDesign(
@@ -1194,7 +1194,7 @@ getDesignMeanDiff <- function(
         parameterAlphaSpending, userAlphaSpending,
         futilityBounds, typeBetaSpending,
         parameterBetaSpending, userBetaSpending,
-        spendingTime)
+        spendingTime, 1)
 
       n = des$overallResults$information*v1
 
@@ -1211,19 +1211,19 @@ getDesignMeanDiff <- function(
           parameterAlphaSpending, userAlphaSpending,
           futilityBounds, typeBetaSpending,
           parameterBetaSpending, userBetaSpending,
-          spendingTime)
+          spendingTime, 1)
       }
 
       if (directionUpper) {
         des$byStageResults$efficacyMeanDiff =
-          des$byStageResults$efficacyTheta
+          des$byStageResults$efficacyTheta + meanDiffH0
         des$byStageResults$futilityMeanDiff =
-          des$byStageResults$futilityTheta
+          des$byStageResults$futilityTheta + meanDiffH0
       } else {
         des$byStageResults$efficacyMeanDiff =
-          -des$byStageResults$efficacyTheta
+          -des$byStageResults$efficacyTheta + meanDiffH0
         des$byStageResults$futilityMeanDiff =
-          -des$byStageResults$futilityTheta
+          -des$byStageResults$futilityTheta + meanDiffH0
       }
     }
   }
@@ -1749,7 +1749,7 @@ getDesignMeanDiffXO <- function(
       parameterAlphaSpending, userAlphaSpending,
       futilityBounds, typeBetaSpending,
       parameterBetaSpending, userBetaSpending,
-      spendingTime)
+      spendingTime, 1)
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
@@ -1771,23 +1771,23 @@ getDesignMeanDiffXO <- function(
       des$byStageResults$futilityBounds = b
 
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff = delta
-        des$byStageResults$futilityMeanDiff = delta
+        des$byStageResults$efficacyMeanDiff = delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff = delta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff = -delta
-        des$byStageResults$futilityMeanDiff = -delta
+        des$byStageResults$efficacyMeanDiff = -delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff = -delta + meanDiffH0
       }
     } else {
       if (directionUpper) {
         des$byStageResults$efficacyMeanDiff =
-          des$byStageResults$efficacyTheta
+          des$byStageResults$efficacyTheta + meanDiffH0
         des$byStageResults$futilityMeanDiff =
-          des$byStageResults$futilityTheta
+          des$byStageResults$futilityTheta + meanDiffH0
       } else {
         des$byStageResults$efficacyMeanDiff =
-          -des$byStageResults$efficacyTheta
+          -des$byStageResults$efficacyTheta + meanDiffH0
         des$byStageResults$futilityMeanDiff =
-          -des$byStageResults$futilityTheta
+          -des$byStageResults$futilityTheta + meanDiffH0
       }
     }
   } else { # sample size calculation
@@ -1814,7 +1814,7 @@ getDesignMeanDiffXO <- function(
         parameterAlphaSpending, userAlphaSpending,
         futilityBounds, typeBetaSpending,
         parameterBetaSpending, userBetaSpending,
-        spendingTime)
+        spendingTime, 1)
 
       b = qt(1-alpha, n-2)
       ncp = theta*sqrt(n/v1)
@@ -1830,11 +1830,11 @@ getDesignMeanDiffXO <- function(
       des$byStageResults$efficacyBounds = b
       des$byStageResults$futilityBounds = b
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff = delta
-        des$byStageResults$futilityMeanDiff = delta
+        des$byStageResults$efficacyMeanDiff = delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff = delta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff = -delta
-        des$byStageResults$futilityMeanDiff = -delta
+        des$byStageResults$efficacyMeanDiff = -delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff = -delta + meanDiffH0
       }
     } else {
       des = getDesign(
@@ -1845,7 +1845,7 @@ getDesignMeanDiffXO <- function(
         parameterAlphaSpending, userAlphaSpending,
         futilityBounds, typeBetaSpending,
         parameterBetaSpending, userBetaSpending,
-        spendingTime)
+        spendingTime, 1)
 
       n = des$overallResults$information*v1
 
@@ -1862,19 +1862,19 @@ getDesignMeanDiffXO <- function(
           parameterAlphaSpending, userAlphaSpending,
           futilityBounds, typeBetaSpending,
           parameterBetaSpending, userBetaSpending,
-          spendingTime)
+          spendingTime, 1)
       }
 
       if (directionUpper) {
         des$byStageResults$efficacyMeanDiff =
-          des$byStageResults$efficacyTheta
+          des$byStageResults$efficacyTheta + meanDiffH0
         des$byStageResults$futilityMeanDiff =
-          des$byStageResults$futilityTheta
+          des$byStageResults$futilityTheta + meanDiffH0
       } else {
         des$byStageResults$efficacyMeanDiff =
-          -des$byStageResults$efficacyTheta
+          -des$byStageResults$efficacyTheta + meanDiffH0
         des$byStageResults$futilityMeanDiff =
-          -des$byStageResults$futilityTheta
+          -des$byStageResults$futilityTheta + meanDiffH0
       }
     }
   }
@@ -2405,12 +2405,7 @@ getDesignPairedMeanDiffEquiv <- function(
 
     b = qt(1-alpha, n-1)
     ncp = (pairedDiffUpper - pairedDiffLower)*sqrt(n/v1)
-
-    attainedAlpha = integrate(function(x) {
-      t1 = pnorm(-b*x + ncp) - pnorm(b*x)
-      t2 = dgamma((n-1)*x*x, (n-1)/2, 1/2)*2*(n-1)*x
-      t1*t2
-    }, 0, ncp/(2*b))$value
+    attainedAlpha = alpha - pt(b, n-1, ncp)
 
     des$overallResults$overallReject = power
     des$overallResults$attainedAlpha = attainedAlpha
@@ -2966,12 +2961,7 @@ getDesignMeanDiffEquiv <- function(
 
     b = qt(1-alpha, n-2)
     ncp = (meanDiffUpper - meanDiffLower)*sqrt(n/v1)
-
-    attainedAlpha = integrate(function(x) {
-      t1 = pnorm(-b*x + ncp) - pnorm(b*x)
-      t2 = dgamma((n-2)*x*x, (n-2)/2, 1/2)*2*(n-2)*x
-      t1*t2
-    }, 0, ncp/(2*b))$value
+    attainedAlpha = alpha - pt(b, n-2, ncp)
 
     des$overallResults$overallReject = power
     des$overallResults$attainedAlpha = attainedAlpha
@@ -3538,12 +3528,7 @@ getDesignMeanDiffXOEquiv <- function(
 
     b = qt(1-alpha, n-2)
     ncp = (meanDiffUpper - meanDiffLower)*sqrt(n/v1)
-
-    attainedAlpha = integrate(function(x) {
-      t1 = pnorm(-b*x + ncp) - pnorm(b*x)
-      t2 = dgamma((n-2)*x*x, (n-2)/2, 1/2)*2*(n-2)*x
-      t1*t2
-    }, 0, ncp/(2*b))$value
+    attainedAlpha = alpha - pt(b, n-2, ncp)
 
     des$overallResults$overallReject = power
     des$overallResults$attainedAlpha = attainedAlpha
@@ -3876,6 +3861,38 @@ getDesignMeanRatioXOEquiv <- function(
 #'   time at each analysis. Defaults to missing, in which case, it is the
 #'   same as \code{informationRates}.
 #'
+#' @details
+#' The Mann-Whitney U test is a non-parametric test for the
+#' difference in location between two independent groups. It is
+#' also known as the Wilcoxon rank-sum test. The test is based on
+#' the ranks of the data rather than the actual values, making it
+#' robust to outliers and non-normal distributions.
+#' The test statistic is the number of times a randomly
+#' chosen sample from the treatment group is larger than a
+#' randomly chosen sample from the control group, i.e.,
+#' \deqn{W_{XY} = \sum_{i=1}^{n_1}\sum_{j=1}^{n_2} I(X_i > Y_j)}
+#' where \eqn{X_i} and \eqn{Y_j} are the samples from the
+#' treatment and control groups, respectively.
+#' The test is often used when the data
+#' do not meet the assumptions of the t-test, such as
+#' non-normality or unequal variances.
+#' The test is also applicable to ordinal data.
+#' The test is one-sided, meaning that it only tests
+#' whether the treatment group is larger than the control group.
+#' Asymptotically,
+#' \deqn{\frac{W_{XY} - n_1 n_2/2}{\sqrt{n_1 n_2 (n+1)/12}} \sim N(0,1)
+#' \quad \text{under} H_0}
+#' where \eqn{n_1} and \eqn{n_2} are the sample sizes of the treatment
+#' and control groups, respectively, and \eqn{n=n_1+n_2}.
+#' Let \eqn{\theta = P(X > Y)}, and
+#' \eqn{\hat{\theta} = \frac{1}{nm}W_{XY}}. It follows that
+#' \deqn{\sqrt{n}(\hat{\theta} - 1/2) \sim
+#' N\left(0, \frac{1}{12 r(1-r)}\right) \quad \text{under} H_0}
+#' where \eqn{r = n_1/(n_1+n_2)} is the randomization probability
+#' for the active treatment group.
+#' This formulation allows for group sequential testing with
+#' futility stopping and efficacy stopping.
+#'
 #' @return An S3 class \code{designWilcoxon} object with three
 #' components:
 #'
@@ -4084,7 +4101,7 @@ getDesignWilcoxon <- function(
       parameterAlphaSpending, userAlphaSpending,
       futilityBounds, typeBetaSpending,
       parameterBetaSpending, userBetaSpending,
-      spendingTime)
+      spendingTime, 1)
   } else { # sample size calculation
     des = getDesign(
       beta, IMax = NA, theta,
@@ -4094,7 +4111,7 @@ getDesignWilcoxon <- function(
       parameterAlphaSpending, userAlphaSpending,
       futilityBounds, typeBetaSpending,
       parameterBetaSpending, userBetaSpending,
-      spendingTime)
+      spendingTime, 1)
 
     n = des$overallResults$information*v1
 
@@ -4111,7 +4128,7 @@ getDesignWilcoxon <- function(
         parameterAlphaSpending, userAlphaSpending,
         futilityBounds, typeBetaSpending,
         parameterBetaSpending, userBetaSpending,
-        spendingTime)
+        spendingTime, 1)
     }
   }
 
@@ -4198,6 +4215,72 @@ getDesignWilcoxon <- function(
 #' @param spendingTime A vector of length \code{kMax} for the error spending
 #'   time at each analysis. Defaults to missing, in which case, it is the
 #'   same as \code{informationRates}.
+#'
+#' @details
+#' Consider a longitudinal study with two treatment groups.
+#' The outcome is measured at baseline and at \eqn{k} postbaseline
+#' time points. For each treatment group, the outcomes are assumed to
+#' follow a multivariate normal distribution.
+#' Conditional on baseline, the covariance matrix of the post-baseline
+#' outcomes is denoted by \eqn{\Sigma_1} for the active treatment group
+#' and \eqn{\Sigma_2} for the control group.
+#' Let \eqn{\mu_1} and \eqn{\mu_2} denote the mean vectors of
+#' post-baseline outcomes for the active and control groups, respectively.
+#' We are interested in testing the null
+#' hypothesis \eqn{H_0: \mu_{1,k} - \mu_{2,k} = \delta_0}
+#' against the alternative \eqn{H_1: \mu_{1,k} - \mu_{2,k} = \delta}.
+#'
+#' The study design is based on the information for treatment difference
+#' at the last postbaseline time point. This information is given by
+#' \deqn{I = 1/\text{Var}(\hat{\mu}_{1,k} - \hat{\mu}_{2,k})}
+#' In the presence of monotone missing data, let
+#' \eqn{p_{g,1},\ldots,p_{g,k}} denote the proportions of subjects in
+#' observed data patterns 1 through \eqn{k} for treatment group
+#' \eqn{g=1} (active) or 2 (control).
+#' A subject in pattern \eqn{j} has complete data up to time \eqn{t_j}, i.e.,
+#' the observed outcomes are \eqn{y_{i,1},\ldots,y_{i,j}},
+#' with missing values for \eqn{y_{i,j+1},\ldots,y_{i,k}}.
+#'
+#' According to Lu et al. (2008), the information
+#' matrix for the post-baseline mean vector in group \eqn{g} is
+#' \deqn{I_g = n \pi_g J_g}
+#' where \eqn{\pi_g} is the proportion of subjects in group \eqn{g},
+#' and \deqn{J_g = \sum_{j=1}^k p_{g,j} \left(
+#' \begin{array}{cc} \Sigma_{g,j}^{-1} & 0 \\ 0 & 0 \end{array}\right)}
+#' Here, \eqn{\Sigma_{g,j}} is the leading \eqn{j\times j}
+#' principal submatrix of \eqn{\Sigma_g}. It follows that
+#' \deqn{\text{Var}(\hat{\mu}_{1,k} - \hat{\mu}_{2,k}) =
+#' \frac{1}{n}\left(\frac{1}{\pi_1} J_1^{-1}[k,k] +
+#' \frac{1}{\pi_2} J_2^{-1}[k,k]\right)}
+#'
+#' The observed data pattern probabilities depend on the accrual and
+#' dropout distributions.
+#' Let \eqn{H(u)} denote the cumulative distribution function of
+#' enrollment time \eqn{u},
+#' \eqn{G_g(t)} denote the survival function of dropout time \eqn{t} for
+#' treatment group \eqn{g},
+#' and \eqn{\tau} denote the calendar time at interim or final analysis.
+#' Then, for \eqn{j=1,\ldots,k-1}, the probability that a subject in group
+#' \eqn{g} falls into observed data pattern \eqn{j} is
+#' \deqn{p_{g,j} = H(\tau - t_j)G_g(t_j) - H(\tau - t_{j+1})G_g(t_{j+1})}
+#' For the last pattern (\eqn{j=k}, i.e., completers),
+#' \deqn{p_{g,k} = H(\tau - t_k)G_g(t_k)}
+#' For the final analysis, \eqn{\tau} is the study duration,
+#' so \eqn{H(\tau - t_j) = 1} for all \eqn{j}.
+#' Therefore, the pattern probabilities depend only on the dropout
+#' distribution:
+#' \deqn{p_{g,j} = G_g(t_j) - G_g(t_{j+1}), \quad j=1,\ldots,k-1}
+#' and \deqn{p_{g,k} = G_g(t_k)}
+#'
+#' Cumulative dropout probabilities at post-baseline time points
+#' can be used to define a piecewise exponential dropout distribution.
+#' Let \eqn{F_g(t_j)} denote the cumulative probability of dropout
+#' by time \eqn{t_j} for treatment group \eqn{g}.
+#' The left endpoints of the piecewise survival time intervals are given by
+#' \eqn{t_0=0,t_1,\ldots,t_{k-1}}.
+#' The hazard rate in the interval \eqn{(t_{j-1},t_j]} is given by
+#' \deqn{\gamma_{g,j} = -\log\left(\frac{1 - F_g(t_j)}{1 - F_g(t_{j-1})}
+#' \right) / (t_j - t_{j-1}), \quad j=1,\ldots,k}
 #'
 #' @return An S3 class \code{designMeanDiffMMRM} object with three
 #' components:
@@ -4304,6 +4387,8 @@ getDesignWilcoxon <- function(
 #'
 #'     - \code{numberOfSubjects}: The number of subjects.
 #'
+#'     - \code{numberOfCompleters}: The number of completers.
+#'
 #'     - \code{analysisTime}: The average time since trial start.
 #'
 #' * \code{settings}: A list containing the following input parameters:
@@ -4360,6 +4445,13 @@ getDesignWilcoxon <- function(
 #'     - \code{rounding}: Whether to round up sample size.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#'
+#' Kaifeng Lu, Xiaohui Luo, and Pei-Yun Chen.
+#' Sample size estimation for repeated measures analysis in randomized
+#' clinical trials with missing data.
+#' The International Journal of Biostatistics 2008; 14(1), Article 9.
 #'
 #' @examples
 #'
@@ -4603,14 +4695,14 @@ getDesignMeanDiffMMRM <- function(
     phi2 = out$phi2
 
     des = getDesign(
-      beta, IMax, theta,
+      beta = NA, IMax, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
       futilityBounds, typeBetaSpending,
       parameterBetaSpending, userBetaSpending,
-      spendingTime)
+      spendingTime, 1)
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
@@ -4653,18 +4745,19 @@ getDesignMeanDiffMMRM <- function(
     }
   } else { # sample size calculation
     des = getDesign(
-      beta, NA, theta,
+      beta, IMax = NA, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
       futilityBounds, typeBetaSpending,
       parameterBetaSpending, userBetaSpending,
-      spendingTime)
+      spendingTime, 1)
 
     IMax = des$overallResults$information
 
-
+    # v1, phi1, phi2 for the last time point are not affected by the
+    # accrual duration if everyone has a chance to complete the study
     out = f_info(1 + t[k], k, t, covar1, covar2, accrualTime,
                  accrualIntensity, piecewiseSurvivalTime,
                  gamma1, gamma2, 1, r)
@@ -4707,11 +4800,7 @@ getDesignMeanDiffMMRM <- function(
 
       # final maximum information
       IMax = n/v1
-
-      nu = n*r/phi1 + n*(1-r)/phi2 - 2
-      b = qt(1-alpha, nu)
-      ncp = theta*sqrt(n/v1)
-      power = pt(b, nu, ncp, lower.tail = FALSE)
+      power = f(n, r, phi1, phi2, alpha, theta, v1)
 
       des$overallResults$overallReject = power
       des$byStageResults$rejectPerStage = power
@@ -4748,14 +4837,14 @@ getDesignMeanDiffMMRM <- function(
       IMax = n/v1
 
       des = getDesign(
-        NA, IMax, theta,
+        beta = NA, IMax, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
         futilityBounds, typeBetaSpending,
         parameterBetaSpending, userBetaSpending,
-        spendingTime)
+        spendingTime, 1)
 
       if (directionUpper) {
         des$byStageResults$efficacyMeanDiff =
@@ -4784,7 +4873,7 @@ getDesignMeanDiffMMRM <- function(
                      accrualIntensity, piecewiseSurvivalTime,
                      gamma1, gamma2, accrualDuration, r)
         out$IMax - information[i]
-      }, c(t[k]+0.001, studyDuration))$root
+      }, c(t[k]+0.001, studyDuration))$root # at least 1 completer
     }
   }
 
@@ -4792,6 +4881,8 @@ getDesignMeanDiffMMRM <- function(
 
   numberOfSubjects = accrual(analysisTime, accrualTime, accrualIntensity,
                              accrualDuration)
+  numberOfCompleters = accrual(analysisTime - t[k], accrualTime,
+                               accrualIntensity, accrualDuration)
 
   p = des$byStageResults$rejectPerStage +
     des$byStageResults$futilityPerStage
@@ -4812,6 +4903,7 @@ getDesignMeanDiffMMRM <- function(
   des$overallResults$meanDiff = meanDiff
 
   des$byStageResults$numberOfSubjects = numberOfSubjects
+  des$byStageResults$numberOfCompleters = numberOfCompleters
   des$byStageResults$analysisTime = analysisTime
   des$byStageResults$efficacyTheta = NULL
   des$byStageResults$futilityTheta = NULL
@@ -4872,8 +4964,8 @@ getDesignMeanDiffMMRM <- function(
 #' The linear mixed-effects model to assess the direct treatment effects
 #' in the presence of carryover treatment effects is given by
 #' \deqn{y_{ijk} = \mu + \alpha_i + b_{ij} + \gamma_k + \tau_{d(i,k)}
-#' + \lambda_{c(i,k-1)} + e_{ijk},}
-#' \deqn{i=1,\ldots,n; j=1,\ldots,r_i; k = 1,\ldots,p; d,c = 1,\ldots,t,}
+#' + \lambda_{c(i,k-1)} + e_{ijk}}
+#' \deqn{i=1,\ldots,n; j=1,\ldots,r_i; k = 1,\ldots,p; d,c = 1,\ldots,t}
 #' where \eqn{\mu} is the general mean, \eqn{\alpha_i} is the effect of
 #' the \eqn{i}th treatment sequence, \eqn{b_{ij}} is the random effect
 #' with variance \eqn{\sigma_b^2} for the \eqn{j}th subject of the
@@ -4986,6 +5078,11 @@ getDesignMeanDiffMMRM <- function(
 #'   for estimating the carryover effect for the treatment pair
 #'   of interest. This is equal to \code{v_direct_only/v_carry}.
 #'
+#' * \code{half_width}: The half-width of the confidence interval for the
+#'   direct treatment effect for the treatment pair of interest.
+#'
+#' * \code{nu}: Degrees of freedom for the t-test.
+#'
 #' * \code{allocationRatioPlanned}: Allocation ratio for the sequences.
 #'
 #' * \code{normalApproximation}: The type of computation of the p-values.
@@ -5088,14 +5185,19 @@ getDesignMeanDiffCarryover <- function(
   # period effects, and direct treatment effects
   q0 = 1 + (nseq-1) + (nprd-1) + (ntrt-1)
 
+  # offset of direct treatment effect
+  l = 1 + (nseq-1) + (nprd-1)
+
   # start of direct treatment effect
-  l = 1 + (nseq-1) + (nprd-1) + 1
+  l1 = l + 1
 
   # end of direct treatment effect
   m = 1 + (nseq-1) + (nprd-1) + (ntrt-1)
 
   if (any(is.na(cumdrop))) {
-    cumdrop = rep(0, nseq)
+    cumdrop = rep(0, nprd)
+  } else if (length(cumdrop) != nprd) {
+    stop(paste("cumdrop should have", nprd, "elements"))
   }
 
   if (any(cumdrop < 0)) {
@@ -5205,13 +5307,13 @@ getDesignMeanDiffCarryover <- function(
 
     # variance for direct treatment effect for one sampling unit with carryover
     if (trtpair[2]==ntrt) {
-      v1 = V[l+trtpair[1]-1, l+trtpair[1]-1]
+      v1 = V[l+trtpair[1], l+trtpair[1]]
     } else if (trtpair[1]==ntrt) {
-      v1 = V[l+trtpair[2]-1, l+trtpair[2]-1]
+      v1 = V[l+trtpair[2], l+trtpair[2]]
     } else {
-      v1 = V[l+trtpair[1]-1, l+trtpair[1]-1] +
-        V[l+trtpair[2]-1, l+trtpair[2]-1] -
-        2*V[l+trtpair[1]-1, l+trtpair[2]-1]
+      v1 = V[l+trtpair[1], l+trtpair[1]] +
+        V[l+trtpair[2], l+trtpair[2]] -
+        2*V[l+trtpair[1], l+trtpair[2]]
     }
 
 
@@ -5263,16 +5365,20 @@ getDesignMeanDiffCarryover <- function(
 
   # variance for direct treatment effect for one sampling unit w/o carryover
   if (trtpair[2]==ntrt) {
-    v0 = V0[l+trtpair[1]-1, l+trtpair[1]-1]
+    v0 = V0[l+trtpair[1], l+trtpair[1]]
   } else if (trtpair[1]==ntrt) {
-    v0 = V0[l+trtpair[2]-1, l+trtpair[2]-1]
+    v0 = V0[l+trtpair[2], l+trtpair[2]]
   } else {
-    v0 = V0[l+trtpair[1]-1, l+trtpair[1]-1] +
-      V0[l+trtpair[2]-1, l+trtpair[2]-1] -
-      2*V0[l+trtpair[1]-1, l+trtpair[2]-1]
+    v0 = V0[l+trtpair[1], l+trtpair[1]] +
+      V0[l+trtpair[2], l+trtpair[2]] -
+      2*V0[l+trtpair[1], l+trtpair[2]]
   }
 
-  v = ifelse(carryover, v1, v0)
+  if (carryover) {
+    v = v1
+  } else {
+    v = v0
+  }
 
   # power for t test
   f = function(n) {
@@ -5307,6 +5413,15 @@ getDesignMeanDiffCarryover <- function(
   rownames(design) = paste0("Seq", 1:nseq)
   colnames(design) = paste0("Prd", 1:nprd)
 
+  if (!normalApproximation) {
+    mean_nprd = sum(p*(1:nprd))
+    nu = n*mean_nprd - 1 - (n-1) - (nprd-1) - (ntrt-1) - (ntrt-1)*carryover
+    hw = qt(1-alpha, nu)*sqrt(v/n)
+  } else {
+    nu = Inf
+    hw = qnorm(1-alpha)*sqrt(v/n)
+  }
+
   if (carryover) {
     des = list(
       power = power, alpha = alpha, numberOfSubjects = n,
@@ -5316,13 +5431,14 @@ getDesignMeanDiffCarryover <- function(
       design = design, designMatrix = X,
       nseq = nseq, nprd = nprd, ntrt = ntrt,
       cumdrop = cumdrop,
-      V_direct_only = V0[l:m,l:m]/n,
-      V_direct_carry = V[l:q, l:q]/n,
+      V_direct_only = V0[l1:m,l1:m]/n,
+      V_direct_carry = V[l1:q, l1:q]/n,
       v_direct_only = v0/n,
       v_direct = v1/n,
       v_carry = v2/n,
       releff_direct = v0/v1,
       releff_carry = v0/v2,
+      half_width = hw, nu = nu,
       allocationRatioPlanned = allocationRatioPlanned,
       normalApproximation = normalApproximation,
       rounding = rounding)
@@ -5335,8 +5451,9 @@ getDesignMeanDiffCarryover <- function(
       design = design, designMatrix = X0,
       nseq = nseq, nprd = nprd, ntrt = ntrt,
       cumdrop = cumdrop,
-      V_direct_only = V0[l:m,l:m]/n,
+      V_direct_only = V0[l1:m,l1:m]/n,
       v_direct_only = v0/n,
+      half_width = hw, nu = nu,
       allocationRatioPlanned = allocationRatioPlanned,
       normalApproximation = normalApproximation,
       rounding = rounding)
@@ -5385,8 +5502,8 @@ getDesignMeanDiffCarryover <- function(
 #' The linear mixed-effects model to assess the direct treatment effects
 #' in the presence of carryover treatment effects is given by
 #' \deqn{y_{ijk} = \mu + \alpha_i + b_{ij} + \gamma_k + \tau_{d(i,k)}
-#' + \lambda_{c(i,k-1)} + e_{ijk},}
-#' \deqn{i=1,\ldots,n; j=1,\ldots,r_i; k = 1,\ldots,p; d,c = 1,\ldots,t,}
+#' + \lambda_{c(i,k-1)} + e_{ijk}}
+#' \deqn{i=1,\ldots,n; j=1,\ldots,r_i; k = 1,\ldots,p; d,c = 1,\ldots,t}
 #' where \eqn{\mu} is the general mean, \eqn{\alpha_i} is the effect of
 #' the \eqn{i}th treatment sequence, \eqn{b_{ij}} is the random effect
 #' with variance \eqn{\sigma_b^2} for the \eqn{j}th subject of the
@@ -5501,6 +5618,11 @@ getDesignMeanDiffCarryover <- function(
 #' * \code{releff_carry}: The relative efficiency of the design
 #'   for estimating the carryover effect for the treatment pair
 #'   of interest. This is equal to \code{v_direct_only/v_carry}.
+#'
+#' * \code{half_width}: The half-width of the confidence interval for the
+#'   direct treatment effect for the treatment pair of interest.
+#'
+#' * \code{nu}: Degrees of freedom for the t-test.
 #'
 #' * \code{allocationRatioPlanned}: Allocation ratio for the sequences.
 #'
@@ -5622,14 +5744,19 @@ getDesignMeanDiffCarryoverEquiv <- function(
   # period effects, and direct treatment effects
   q0 = 1 + (nseq-1) + (nprd-1) + (ntrt-1)
 
+  # offset of direct treatment effect
+  l = 1 + (nseq-1) + (nprd-1)
+
   # start of direct treatment effect
-  l = 1 + (nseq-1) + (nprd-1) + 1
+  l1 = l + 1
 
   # end of direct treatment effect
   m = 1 + (nseq-1) + (nprd-1) + (ntrt-1)
 
   if (any(is.na(cumdrop))) {
-    cumdrop = rep(0, nseq)
+    cumdrop = rep(0, nprd)
+  } else if (length(cumdrop) != nprd) {
+    stop(paste("cumdrop should have", nprd, "elements"))
   }
 
   if (any(cumdrop < 0)) {
@@ -5735,13 +5862,13 @@ getDesignMeanDiffCarryoverEquiv <- function(
 
     # variance for direct treatment effect for one sampling unit with carryover
     if (trtpair[2]==ntrt) {
-      v1 = V[l+trtpair[1]-1, l+trtpair[1]-1]
+      v1 = V[l+trtpair[1], l+trtpair[1]]
     } else if (trtpair[1]==ntrt) {
-      v1 = V[l+trtpair[2]-1, l+trtpair[2]-1]
+      v1 = V[l+trtpair[2], l+trtpair[2]]
     } else {
-      v1 = V[l+trtpair[1]-1, l+trtpair[1]-1] +
-        V[l+trtpair[2]-1, l+trtpair[2]-1] -
-        2*V[l+trtpair[1]-1, l+trtpair[2]-1]
+      v1 = V[l+trtpair[1], l+trtpair[1]] +
+        V[l+trtpair[2], l+trtpair[2]] -
+        2*V[l+trtpair[1], l+trtpair[2]]
     }
 
 
@@ -5793,16 +5920,20 @@ getDesignMeanDiffCarryoverEquiv <- function(
 
   # variance for direct treatment effect for one sampling unit w/o carryover
   if (trtpair[2]==ntrt) {
-    v0 = V0[l+trtpair[1]-1, l+trtpair[1]-1]
+    v0 = V0[l+trtpair[1], l+trtpair[1]]
   } else if (trtpair[1]==ntrt) {
-    v0 = V0[l+trtpair[2]-1, l+trtpair[2]-1]
+    v0 = V0[l+trtpair[2], l+trtpair[2]]
   } else {
-    v0 = V0[l+trtpair[1]-1, l+trtpair[1]-1] +
-      V0[l+trtpair[2]-1, l+trtpair[2]-1] -
-      2*V0[l+trtpair[1]-1, l+trtpair[2]-1]
+    v0 = V0[l+trtpair[1], l+trtpair[1]] +
+      V0[l+trtpair[2], l+trtpair[2]] -
+      2*V0[l+trtpair[1], l+trtpair[2]]
   }
 
-  v = ifelse(carryover, v1, v0)
+  if (carryover) {
+    v = v1
+  } else {
+    v = v0
+  }
 
   # power for two one-sided t-tests
   f = function(n) {
@@ -5812,7 +5943,7 @@ getDesignMeanDiffCarryoverEquiv <- function(
     b = qt(1-alpha, nu)
     ncpLower = (meanDiff - meanDiffLower)*sqrt(n/v)
     powerLower = pt(b, nu, ncpLower, lower.tail = FALSE)
-    ncpUpper = (meanDiffUpper - meanDiff)*sqrt(n/v1)
+    ncpUpper = (meanDiffUpper - meanDiff)*sqrt(n/v)
     powerUpper = pt(b, nu, ncpUpper, lower.tail = FALSE)
     power = powerLower + powerUpper - 1
     power
@@ -5840,12 +5971,21 @@ getDesignMeanDiffCarryoverEquiv <- function(
       thetaUpper = meanDiffUpper, theta = meanDiff)
 
     power = des$overallResults$overallReject
+
   } else {
     power = f(n)
   }
 
   rownames(design) = paste0("Seq", 1:nseq)
   colnames(design) = paste0("Prd", 1:nprd)
+
+  if (!normalApproximation) {
+    mean_nprd = sum(p*(1:nprd))
+    nu = n*mean_nprd - 1 - (n-1) - (nprd-1) - (ntrt-1) - (ntrt-1)*carryover
+    hw = qt(1-alpha, nu)*sqrt(v/n)
+  } else {
+    hw = qnorm(1-alpha)*sqrt(v/n)
+  }
 
   if (carryover) {
     des = list(
@@ -5858,13 +5998,14 @@ getDesignMeanDiffCarryoverEquiv <- function(
       design = design, designMatrix = X,
       nseq = nseq, nprd = nprd, ntrt = ntrt,
       cumdrop = cumdrop,
-      V_direct_only = V0[l:m,l:m]/n,
-      V_direct_carry = V[l:q, l:q]/n,
+      V_direct_only = V0[l1:m,l1:m]/n,
+      V_direct_carry = V[l1:q, l1:q]/n,
       v_direct_only = v0/n,
       v_direct = v1/n,
       v_carry = v2/n,
       releff_direct = v0/v1,
       releff_carry = v0/v2,
+      half_width = hw, nu = nu,
       allocationRatioPlanned = allocationRatioPlanned,
       normalApproximation = normalApproximation,
       rounding = rounding)
@@ -5879,8 +6020,9 @@ getDesignMeanDiffCarryoverEquiv <- function(
       design = design, designMatrix = X0,
       nseq = nseq, nprd = nprd, ntrt = ntrt,
       cumdrop = cumdrop,
-      V_direct_only = V0[l:m,l:m]/n,
+      V_direct_only = V0[l1:m,l1:m]/n,
       v_direct_only = v0/n,
+      half_width = hw, nu = nu,
       allocationRatioPlanned = allocationRatioPlanned,
       normalApproximation = normalApproximation,
       rounding = rounding)
@@ -5917,7 +6059,7 @@ getDesignMeanDiffCarryoverEquiv <- function(
 #' common standard deviation, and \eqn{n} denote the total sample
 #' size. Then the \eqn{F}-statistic
 #' \deqn{F = \frac{SSR/(k-1)}{SSE/(n-k)}
-#' \sim F_{k-1, n-k, \lambda},} where
+#' \sim F_{k-1, n-k, \lambda}} where
 #' \deqn{\lambda = n \sum_{i=1}^k r_i (\mu_i - \bar{\mu})^2/\sigma^2}
 #' is the noncentrality parameter, and
 #' \eqn{\bar{\mu} = \sum_{i=1}^k r_i \mu_i}.
@@ -6224,6 +6366,11 @@ getDesignTwoWayANOVA <- function(
     n0 = max(n0, nlevelsA*nlevelsB + 1)
     while (fAB(n0) < 1-beta) n0 <- 2*n0
     nAB = uniroot(function(n) fAB(n) - (1-beta), c(0.5*n0, n0))$root
+
+    # ensure that nA, nB, and nAB are multiples of 4
+    nA = ceiling(nA/4) * 4
+    nB = ceiling(nB/4) * 4
+    nAB = ceiling(nAB/4) * 4
   } else {
     nA = n
     nB = n
@@ -6310,7 +6457,7 @@ getDesignTwoWayANOVA <- function(
 #'
 #' (design1 <- getDesignANOVAContrast(
 #'   beta = 0.1, ngroups = 4, means = c(1.5, 2.5, 2, 0),
-#'   stDev = 3.5, contrast = c(1, 1, 1, -3)/3,
+#'   stDev = 3.5, contrast = c(1, 1, 1, -3),
 #'   allocationRatioPlanned = c(2, 2, 2, 1),
 #'   alpha = 0.025))
 #'
@@ -6443,8 +6590,8 @@ getDesignANOVAContrast <- function(
 #' @details
 #' Let \eqn{y_{ij}} denote the measurement under treatment condition
 #' \eqn{j (j=1,\ldots,k)} for subject \eqn{i (i=1,\ldots,n)}. Then
-#' \deqn{y_{ij} = \alpha + \beta_j + b_i + e_{ij},} where \eqn{b_i}
-#' denotes the subject random effect, \eqn{b_i \sim N(0, \sigma_b^2),}
+#' \deqn{y_{ij} = \alpha + \beta_j + b_i + e_{ij}} where \eqn{b_i}
+#' denotes the subject random effect, \eqn{b_i \sim N(0, \sigma_b^2)}
 #' and \eqn{e_{ij} \sim N(0, \sigma_e^2)} denotes the within-subject
 #' residual. If we set \eqn{\beta_k = 0}, then \eqn{\alpha} is the
 #' mean of the last treatment (control), and \eqn{\beta_j} is the
@@ -6463,7 +6610,7 @@ getDesignANOVAContrast <- function(
 #' \deqn{Var(\hat{\beta}) = \frac{\sigma^2 (1-\rho)}{n} (I_{k-1} +
 #' 1_{k-1} 1_{k-1}^T).} It follows that
 #' \eqn{\hat{\beta}^T \hat{V}_{\hat{\beta}}^{-1} \hat{\beta} \sim
-#' F_{k-1,(n-1)(k-1), \lambda},} where the noncentrality parameter for
+#' F_{k-1,(n-1)(k-1), \lambda}} where the noncentrality parameter for
 #' the \eqn{F} distribution is \deqn{\lambda =
 #' \beta^T V_{\hat{\beta}}^{-1} \beta = \frac{n \sum_{j=1}^{k}
 #' (\mu_j - \bar{\mu})^2}{\sigma^2(1-\rho)}.}
@@ -6764,6 +6911,25 @@ getDesignRepeatedANOVAContrast <- function(
 #'   time at each analysis. Defaults to missing, in which case, it is the
 #'   same as \code{informationRates}.
 #'
+#' @details
+#' We assume a simple linear regression of the form
+#' \deqn{y_i = \alpha + \beta x_i + \epsilon_i}
+#' where \eqn{\epsilon_i} is the residual error, which is assumed to
+#' be normally distributed with mean 0 and standard deviation
+#' \eqn{\sigma_\epsilon}. The covariate \eqn{x_i} is assumed to
+#' be normally distributed with mean 0 and standard deviation
+#' \eqn{\sigma_x}. The slope under the null hypothesis is
+#' \eqn{\beta_0}, and the slope under the alternative
+#' hypothesis is \eqn{\beta}. Since
+#' \deqn{\hat{\beta} = \frac{\sum_{i=1}^{n} (x_i-\bar{x}) y_i}
+#' {\sum_{i=1}^{n}(x_i-\bar{x})^2}}
+#' it follows that
+#' \deqn{\hat{\beta} \sim N(\beta,
+#'  \frac{\sigma_\epsilon^2}{\sum_{i=1}^{n}(x_i-\bar{x})^2}).}
+#' Since the variance of \eqn{\hat{\beta}} is
+#' \deqn{\frac{\sigma_\epsilon^2}{n\sigma_x^2}} we can use it to
+#' calculate the power and sample size for the group sequential design.
+#'
 #' @return An S3 class \code{designOneSlope} object with three components:
 #'
 #' * \code{overallResults}: A data frame containing the following variables:
@@ -6967,7 +7133,7 @@ getDesignOneSlope <- function(
       parameterAlphaSpending, userAlphaSpending,
       futilityBounds, typeBetaSpending,
       parameterBetaSpending, userBetaSpending,
-      spendingTime)
+      spendingTime, 1)
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
@@ -7032,7 +7198,7 @@ getDesignOneSlope <- function(
         parameterAlphaSpending, userAlphaSpending,
         futilityBounds, typeBetaSpending,
         parameterBetaSpending, userBetaSpending,
-        spendingTime)
+        spendingTime, 1)
 
       b = qt(1-alpha, n-2)
       ncp = theta*sqrt(n/v1)
@@ -7064,7 +7230,7 @@ getDesignOneSlope <- function(
         parameterAlphaSpending, userAlphaSpending,
         futilityBounds, typeBetaSpending,
         parameterBetaSpending, userBetaSpending,
-        spendingTime)
+        spendingTime, 1)
 
       n = des$overallResults$information*v1
 
@@ -7081,7 +7247,7 @@ getDesignOneSlope <- function(
           parameterAlphaSpending, userAlphaSpending,
           futilityBounds, typeBetaSpending,
           parameterBetaSpending, userBetaSpending,
-          spendingTime)
+          spendingTime, 1)
       }
 
       if (directionUpper) {
@@ -7162,6 +7328,34 @@ getDesignOneSlope <- function(
 #' @param spendingTime A vector of length \code{kMax} for the error spending
 #'   time at each analysis. Defaults to missing, in which case, it is the
 #'   same as \code{informationRates}.
+#'
+#' @details
+#' We assume a simple linear regression of the form
+#' \deqn{y_{g,i} = \alpha_g + \beta_g x_{g,i} + \epsilon_{g,i}}
+#' for treatment group \eqn{g}, where \eqn{\epsilon_{g,i}}
+#' is the residual error for subject \eqn{i} in group \eqn{g},
+#' which is assumed to be normally distributed with mean 0 and
+#' standard deviation \eqn{\sigma_\epsilon}.
+#' The covariate \eqn{x_{g,i}} is assumed to
+#' be normally distributed with mean 0 and standard deviation
+#' \eqn{\sigma_x}. Since
+#' \deqn{\hat{\beta}_g = \frac{\sum_{i=1}^{n_g} (x_{g,i}-\bar{x}_g) y_{g,i}}
+#' {\sum_{i=1}^{n_g}(x_{g,i}-\bar{x}_g)^2}}
+#' where \eqn{n_g} is the sample size for group \eqn{g},
+#' it follows that
+#' \deqn{\hat{\beta}_g \sim N(\beta_g,
+#' \frac{\sigma_\epsilon^2}{\sum_{i=1}^{n_g}(x_{g,i}-\bar{x}_g)^2}).}
+#' The slope difference is defined as
+#' \deqn{\hat{\beta}_1 - \hat{\beta}_2}
+#' where \eqn{\hat{\beta}_1} and \eqn{\hat{\beta}_2}
+#' are the estimated slopes for treatment groups 1 and 2, respectively.
+#' Since the variance of \eqn{\hat{\beta}_g} is
+#' \deqn{\frac{\sigma_\epsilon^2}{n_g \sigma_x^2}}
+#' we have
+#' \deqn{\hat{\beta}_1 - \hat{\beta}_2 \sim N(\beta_1 - \beta_2,
+#' (n_1^{-1} + n_2^{-1})\sigma_\epsilon^2/\sigma_x^2)}
+#' which can be used to
+#' calculate the power and sample size for the group sequential design.
 #'
 #' @return An S3 class \code{designSlopeDiff} object with three components:
 #'
@@ -7376,7 +7570,7 @@ getDesignSlopeDiff <- function(
       parameterAlphaSpending, userAlphaSpending,
       futilityBounds, typeBetaSpending,
       parameterBetaSpending, userBetaSpending,
-      spendingTime)
+      spendingTime, 1)
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
@@ -7398,23 +7592,23 @@ getDesignSlopeDiff <- function(
       des$byStageResults$futilityBounds = b
 
       if (directionUpper) {
-        des$byStageResults$efficacySlopeDiff = delta
-        des$byStageResults$futilitySlopeDiff = delta
+        des$byStageResults$efficacySlopeDiff = delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff = delta + slopeDiffH0
       } else {
-        des$byStageResults$efficacySlopeDiff = -delta
-        des$byStageResults$futilitySlopeDiff = -delta
+        des$byStageResults$efficacySlopeDiff = -delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff = -delta + slopeDiffH0
       }
     } else {
       if (directionUpper) {
         des$byStageResults$efficacySlopeDiff =
-          des$byStageResults$efficacyTheta
+          des$byStageResults$efficacyTheta + slopeDiffH0
         des$byStageResults$futilitySlopeDiff =
-          des$byStageResults$futilityTheta
+          des$byStageResults$futilityTheta + slopeDiffH0
       } else {
         des$byStageResults$efficacySlopeDiff =
-          -des$byStageResults$efficacyTheta
+          -des$byStageResults$efficacyTheta + slopeDiffH0
         des$byStageResults$futilitySlopeDiff =
-          -des$byStageResults$futilityTheta
+          -des$byStageResults$futilityTheta + slopeDiffH0
       }
     }
   } else { # sample size calculation
@@ -7441,7 +7635,7 @@ getDesignSlopeDiff <- function(
         parameterAlphaSpending, userAlphaSpending,
         futilityBounds, typeBetaSpending,
         parameterBetaSpending, userBetaSpending,
-        spendingTime)
+        spendingTime, 1)
 
       b = qt(1-alpha, n-4)
       ncp = theta*sqrt(n/v1)
@@ -7457,11 +7651,11 @@ getDesignSlopeDiff <- function(
       des$byStageResults$efficacyBounds = b
       des$byStageResults$futilityBounds = b
       if (directionUpper) {
-        des$byStageResults$efficacySlopeDiff = delta
-        des$byStageResults$futilitySlopeDiff = delta
+        des$byStageResults$efficacySlopeDiff = delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff = delta + slopeDiffH0
       } else {
-        des$byStageResults$efficacySlopeDiff = -delta
-        des$byStageResults$futilitySlopeDiff = -delta
+        des$byStageResults$efficacySlopeDiff = -delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff = -delta + slopeDiffH0
       }
     } else {
       des = getDesign(
@@ -7472,7 +7666,7 @@ getDesignSlopeDiff <- function(
         parameterAlphaSpending, userAlphaSpending,
         futilityBounds, typeBetaSpending,
         parameterBetaSpending, userBetaSpending,
-        spendingTime)
+        spendingTime, 1)
 
       n = des$overallResults$information*v1
 
@@ -7489,19 +7683,19 @@ getDesignSlopeDiff <- function(
           parameterAlphaSpending, userAlphaSpending,
           futilityBounds, typeBetaSpending,
           parameterBetaSpending, userBetaSpending,
-          spendingTime)
+          spendingTime, 1)
       }
 
       if (directionUpper) {
         des$byStageResults$efficacySlopeDiff =
-          des$byStageResults$efficacyTheta
+          des$byStageResults$efficacyTheta + slopeDiffH0
         des$byStageResults$futilitySlopeDiff =
-          des$byStageResults$futilityTheta
+          des$byStageResults$futilityTheta + slopeDiffH0
       } else {
         des$byStageResults$efficacySlopeDiff =
-          -des$byStageResults$efficacyTheta
+          -des$byStageResults$efficacyTheta + slopeDiffH0
         des$byStageResults$futilitySlopeDiff =
-          -des$byStageResults$futilityTheta
+          -des$byStageResults$futilityTheta + slopeDiffH0
       }
     }
   }
@@ -7549,8 +7743,13 @@ getDesignSlopeDiff <- function(
 #' @param stDevSlope The standard deviation of the random slope.
 #' @param corrInterceptSlope The correlation between the random
 #'   intercept and random slope.
-#' @param w The number of time units per measurement visit in a period.
-#' @param N The number of measurement visits in a period.
+#' @param w The number of time units (e.g. weeks) per measurement visit
+#'   in a period. In general, visits are more frequent in the beginning
+#'   of the study and less frequent towards the end.
+#' @param N The number of measurement visits in a period. For example,
+#'   \code{w = c(8, 16)} and \code{N = c(2, Inf)} means that the
+#'   response variable will be collected at baseline, week 8,
+#'   week 16, and every 16 weeks thereafter.
 #' @inheritParams param_accrualTime
 #' @inheritParams param_accrualIntensity
 #' @inheritParams param_piecewiseSurvivalTime
@@ -7558,6 +7757,7 @@ getDesignSlopeDiff <- function(
 #' @inheritParams param_gamma2
 #' @inheritParams param_accrualDuration
 #' @inheritParams param_followupTime
+#' @inheritParams param_fixedFollowup
 #' @inheritParams param_allocationRatioPlanned
 #' @param normalApproximation The type of computation of the p-values.
 #'   If \code{TRUE}, the variance is assumed to be known, otherwise
@@ -7591,7 +7791,7 @@ getDesignSlopeDiff <- function(
 #'
 #' We use the following random-effects model to compare two slopes:
 #' \deqn{y_{ij} = \alpha + (\beta + \gamma x_i) t_j + a_i + b_i t_j
-#' + e_{ij},} where
+#' + e_{ij}} where
 #'
 #' * \eqn{\alpha}: overall intercept common across treatment groups
 #'   due to randomization
@@ -7614,8 +7814,42 @@ getDesignSlopeDiff <- function(
 #' * \eqn{e_{ij}}: within-subject residual with variance \eqn{\sigma_e^2}
 #'
 #' By accounting for randomization, we improve the efficiency for
-#' estimating the difference in slopes. We also allow for non-equal
-#' spacing of the time points and missing data due to dropouts.
+#' estimating the difference in slopes. The model also accommodates
+#' unequally spaced time points and missing data.
+#' Specifically, given a calendar time \eqn{\tau} for an interim or
+#' final analysis, let \eqn{k} be the number of scheduled time points
+#' up to and including \eqn{\tau}, subject to the follow-up duration for
+#' fixed follow-up designs. Let the observed time points be
+#' \eqn{t_1, t_2, \ldots, t_k}, where \eqn{t_1 = 0} denotes baseline.
+#'
+#' For a subject in treatment group \eqn{g} with observed data
+#' pattern \eqn{j}, the design matrix for the fixed effects
+#' \eqn{(\alpha, \beta, \gamma)'} is given by
+#' \deqn{X_{g,j} = (\bm{1}_j, \vec{t}_j, I(g=1)\vec{t}_j)}
+#' where \eqn{\bm{1}_j} is a \eqn{j}-vector of ones, and
+#' \eqn{\vec{t}_j = (t_1,\ldots,t_j)'} is the column vector of
+#' observed time points. The design matrix for the
+#' random effects \eqn{(a_i, b_i)'} is \deqn{Z_j = (\bm{1}_j, \vec{t}_j)}
+#' The variance-covariance matrix of the random effects is
+#' \deqn{D = \left(\begin{array}{cc} \sigma_a^2 & \rho \sigma_a \sigma_b \\
+#' \rho \sigma_a \sigma_b & \sigma_b^2 \end{array}\right)}
+#' Therefore, the variance-covariance matrix for the observed data
+#' for the subject is
+#' \deqn{V_{j} = Z_j D Z_j' + \sigma_e^2 I_j}
+#' where \eqn{I_j} is the \eqn{j\times j} identity matrix.
+#' Let \eqn{\pi_g} denote the proportion of subjects in group \eqn{g}.
+#' The information matrix for the fixed effects is \deqn{I = nJ}
+#' where
+#' \deqn{J = \sum_{g=1}^{2} \pi_g \sum_{j=1}^{k} p_{g,j}
+#' X_{g,j}' V_j^{-1} X_{g,j}}
+#' and \eqn{p_{g,j}} is the proportion of subjects in group \eqn{g}
+#' with observed data pattern \eqn{j}.
+#'
+#' The variance of the estimator for the slope difference
+#' \eqn{\hat{\gamma}} is given by
+#' \deqn{\text{Var}(\hat{\gamma}) = \frac{1}{n} J^{-1}[3,3]}
+#' which can be used to calculate the power and sample size for the
+#' group sequential design to detect a slope difference.
 #'
 #' @return An S3 class \code{designSlopeDiffMMRM} object with three
 #' components:
@@ -7821,6 +8055,7 @@ getDesignSlopeDiffMMRM <- function(
     gamma2 = 0,
     accrualDuration = NA_real_,
     followupTime = NA_real_,
+    fixedFollowup = FALSE,
     allocationRatioPlanned = 1,
     normalApproximation = TRUE,
     rounding = TRUE,
@@ -7839,9 +8074,9 @@ getDesignSlopeDiffMMRM <- function(
     userBetaSpending = NA_real_,
     spendingTime = NA_real_) {
 
-  m = length(w)
-  cumN = c(0, cumsum(N))
-  cumwN = c(0, cumsum(w*N))
+  m = length(w)             # total number of periods
+  cumN = c(0, cumsum(N))    # cumulative number of visits
+  cumwN = c(0, cumsum(w*N)) # cumulative number of weeks
 
   nintervals = length(piecewiseSurvivalTime)
 
@@ -7864,8 +8099,16 @@ getDesignSlopeDiffMMRM <- function(
     stop("beta must lie in [0.0001, 1-alpha)")
   }
 
+  if (any(is.na(w))) {
+    stop("w must be provided")
+  }
+
   if (any(w <= 0)) {
     stop("Elements of w must be positive")
+  }
+
+  if (any(is.na(N))) {
+    stop("N must be provided")
   }
 
   if (length(N) != m) {
@@ -7956,6 +8199,17 @@ getDesignSlopeDiffMMRM <- function(
     stop("followupTime must be nonnegative")
   }
 
+  if (fixedFollowup && is.na(followupTime)) {
+    stop("followupTime must be provided for fixedFollowup")
+  }
+
+  if (fixedFollowup) {
+    i = findInterval(followupTime, cumwN)
+    if ((followupTime - cumwN[i]) %% w[i] != 0) {
+      stop("followupTime must match a scheduled visit for fixedFollowup")
+    }
+  }
+
   if (allocationRatioPlanned <= 0) {
     stop("allocationRatioPlanned must be positive")
   }
@@ -7987,17 +8241,22 @@ getDesignSlopeDiffMMRM <- function(
   f_info <- function(tau, w, m, cumN, cumwN, stDev, G,
                      accrualTime, accrualIntensity,
                      piecewiseSurvivalTime, gamma1, gamma2,
-                     accrualDuration, r) {
+                     accrualDuration, followupTime, fixedFollowup, r) {
 
     # total number of enrolled subjects at interim analysis
     n = accrual(tau, accrualTime, accrualIntensity, accrualDuration)
 
-    i = findInterval(tau, cumwN)
-    k = floor((tau - cumwN[i])/w[i]) + cumN[i] + 1
+    i = findInterval(tau, cumwN)  # period for tau
+    k = floor((tau - cumwN[i])/w[i]) + cumN[i] + 1  # interval for tau
 
+    # interval indicators
     j = 1:k
-    i = pmax(findInterval(j-2, cumN), 1)   # period indicators
-    t = cumwN[i] + (j - cumN[i] - 1)*w[i]  # time points
+    # period indicators for the visits at the start of the intervals
+    i = pmax(findInterval(j-2, cumN), 1)
+    # time points for the visits up to time tau
+    # 0, w[1], ..., N[1]*w[1], N[1]*w[1]+w[2], ..., N[1]*w[1]+N[2]*w[2], ...
+    t = cumwN[i] + (j - cumN[i] - 1)*w[i]
+    if (fixedFollowup) t = pmin(t, followupTime)
 
     # total number of enrolled subjects at each time point
     ns = accrual(tau - t, accrualTime, accrualIntensity, accrualDuration)
@@ -8037,7 +8296,7 @@ getDesignSlopeDiffMMRM <- function(
     # information for slope difference
     IMax = 1/V[3,3]
 
-    # residual degrees of freedom
+    # degrees of freedom for slope difference
     nu = sum((n1 + n2)*(1:k)) - 2*n
 
     list(IMax = IMax, nu = nu)
@@ -8059,20 +8318,20 @@ getDesignSlopeDiffMMRM <- function(
     out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
                  accrualTime, accrualIntensity,
                  piecewiseSurvivalTime, gamma1, gamma2,
-                 accrualDuration, r)
+                 accrualDuration, followupTime, fixedFollowup, r)
 
     IMax = out$IMax
     nu = out$nu
 
     des = getDesign(
-      beta, IMax, theta,
+      beta = NA, IMax, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
       futilityBounds, typeBetaSpending,
       parameterBetaSpending, userBetaSpending,
-      spendingTime)
+      spendingTime, 1)
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
@@ -8114,14 +8373,14 @@ getDesignSlopeDiffMMRM <- function(
     }
   } else { # sample size calculation
     des = getDesign(
-      beta, NA, theta,
+      beta, IMax = NA, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
       futilityBounds, typeBetaSpending,
       parameterBetaSpending, userBetaSpending,
-      spendingTime)
+      spendingTime, 1)
 
     IMax = des$overallResults$information
 
@@ -8132,7 +8391,7 @@ getDesignSlopeDiffMMRM <- function(
           out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
                        accrualTime, accrualIntensity,
                        piecewiseSurvivalTime, gamma1, gamma2,
-                       x, r)
+                       x, followupTime, fixedFollowup, r)
           out$IMax - IMax
         }, c(0.001, 240))$root
       } else if (unknown == "followupTime") {
@@ -8141,7 +8400,7 @@ getDesignSlopeDiffMMRM <- function(
           out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
                        accrualTime, accrualIntensity,
                        piecewiseSurvivalTime, gamma1, gamma2,
-                       accrualDuration, r)
+                       accrualDuration, followupTime, fixedFollowup, r)
           out$IMax - IMax
         }, c(0.001, 240))$root
       } else {
@@ -8150,7 +8409,7 @@ getDesignSlopeDiffMMRM <- function(
           out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
                        accrualTime, x*accrualIntensity,
                        piecewiseSurvivalTime, gamma1, gamma2,
-                       accrualDuration, r)
+                       accrualDuration, followupTime, fixedFollowup, r)
           out$IMax - IMax
         }, c(0.001, 240))$root*accrualIntensity
       }
@@ -8159,7 +8418,7 @@ getDesignSlopeDiffMMRM <- function(
       out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
                    accrualTime, accrualIntensity,
                    piecewiseSurvivalTime, gamma1, gamma2,
-                   accrualDuration, r)
+                   accrualDuration, followupTime, fixedFollowup, r)
 
       nu = out$nu # this serves as the lower bound for degrees of freedom
 
@@ -8182,7 +8441,7 @@ getDesignSlopeDiffMMRM <- function(
           out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
                        accrualTime, accrualIntensity,
                        piecewiseSurvivalTime, gamma1, gamma2,
-                       x, r)
+                       x, followupTime, fixedFollowup, r)
           out$IMax - info
         }, c(0.5*accrualDuration, 1.5*accrualDuration))$root
       } else if (unknown == "followupTime") {
@@ -8191,7 +8450,7 @@ getDesignSlopeDiffMMRM <- function(
           out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
                        accrualTime, accrualIntensity,
                        piecewiseSurvivalTime, gamma1, gamma2,
-                       accrualDuration, r)
+                       accrualDuration, followupTime, fixedFollowup, r)
           out$IMax - info
         }, c(0.5*followupTime, 1.5*followupTime))$root
       } else {
@@ -8200,7 +8459,7 @@ getDesignSlopeDiffMMRM <- function(
           out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
                        accrualTime, x*accrualIntensity,
                        piecewiseSurvivalTime, gamma1, gamma2,
-                       accrualDuration, r)
+                       accrualDuration, followupTime, fixedFollowup, r)
           out$IMax - info
         }, c(0.5, 1.5))$root*accrualIntensity
       }
@@ -8227,7 +8486,7 @@ getDesignSlopeDiffMMRM <- function(
       out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
                    accrualTime, accrualIntensity,
                    piecewiseSurvivalTime, gamma1, gamma2,
-                   accrualDuration, r)
+                   accrualDuration, followupTime, fixedFollowup, r)
 
       IMax = out$IMax
       nu = out$nu
@@ -8258,7 +8517,7 @@ getDesignSlopeDiffMMRM <- function(
           out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
                        accrualTime, accrualIntensity,
                        piecewiseSurvivalTime, gamma1, gamma2,
-                       x, r)
+                       x, followupTime, fixedFollowup, r)
           out$IMax - IMax
         }, c(0.001, 240))$root
       } else if (unknown == "followupTime") {
@@ -8267,7 +8526,7 @@ getDesignSlopeDiffMMRM <- function(
           out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
                        accrualTime, accrualIntensity,
                        piecewiseSurvivalTime, gamma1, gamma2,
-                       accrualDuration, r)
+                       accrualDuration, followupTime, fixedFollowup, r)
           out$IMax - IMax
         }, c(0.001, 240))$root
       } else {
@@ -8276,7 +8535,7 @@ getDesignSlopeDiffMMRM <- function(
           out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
                        accrualTime, x*accrualIntensity,
                        piecewiseSurvivalTime, gamma1, gamma2,
-                       accrualDuration, r)
+                       accrualDuration, followupTime, fixedFollowup, r)
           out$IMax - IMax
         }, c(0.001, 240))$root*accrualIntensity
       }
@@ -8303,19 +8562,19 @@ getDesignSlopeDiffMMRM <- function(
         out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
                      accrualTime, accrualIntensity,
                      piecewiseSurvivalTime, gamma1, gamma2,
-                     accrualDuration, r)
+                     accrualDuration, followupTime, fixedFollowup, r)
 
         IMax = out$IMax
 
         des = getDesign(
-          NA, IMax, theta,
+          beta = NA, IMax, theta,
           kMax, informationRates,
           efficacyStopping, futilityStopping,
           criticalValues, alpha, typeAlphaSpending,
           parameterAlphaSpending, userAlphaSpending,
           futilityBounds, typeBetaSpending,
           parameterBetaSpending, userBetaSpending,
-          spendingTime)
+          spendingTime, 1)
       }
 
       if (directionUpper) {
@@ -8344,9 +8603,9 @@ getDesignSlopeDiffMMRM <- function(
         out = f_info(tau, w, m, cumN, cumwN, stDev, G,
                      accrualTime, accrualIntensity,
                      piecewiseSurvivalTime, gamma1, gamma2,
-                     accrualDuration, r)
+                     accrualDuration, followupTime, fixedFollowup, r)
         out$IMax - information[i]
-      }, c(w[1]+0.001, studyDuration))$root
+      }, c(w[1]+0.001, studyDuration))$root # at least one postbaseline visit
     }
   }
 
@@ -8369,11 +8628,16 @@ getDesignSlopeDiffMMRM <- function(
   des$overallResults$expectedStudyDurationH0 = sum(pH0*analysisTime)
   des$overallResults$accrualDuration = accrualDuration
   des$overallResults$followupTime = followupTime
-  des$overallResults$fixedFollowup = FALSE
+  des$overallResults$fixedFollowup = fixedFollowup
   des$overallResults$slopeDiffH0 = slopeDiffH0
   des$overallResults$slopeDiff = slopeDiff
 
   des$byStageResults$numberOfSubjects = numberOfSubjects
+  if (fixedFollowup) {
+    numberOfCompleters = accrual(analysisTime - followupTime, accrualTime,
+                                 accrualIntensity, accrualDuration)
+    des$byStageResults$numberOfCompleters = numberOfCompleters
+  }
   des$byStageResults$analysisTime = analysisTime
   des$byStageResults$efficacyTheta = NULL
   des$byStageResults$futilityTheta = NULL
@@ -8416,14 +8680,14 @@ getDesignSlopeDiffMMRM <- function(
 #' to quantify the difference between two groups. It's an improvement
 #' over Cohen's \eqn{d}, particularly when dealing with small sample sizes.
 #'
-#' The formula for Hedges' \eqn{g} is \deqn{g = c(m) d,} where \eqn{d}
+#' The formula for Hedges' \eqn{g} is \deqn{g = c(m) d} where \eqn{d}
 #' is Cohen's \eqn{d} effect size estimate, and \eqn{c(m)} is the bias
-#' correction factor, \deqn{d = (\hat{\mu}_1 - \hat{\mu}_2)/\hat{\sigma},}
+#' correction factor, \deqn{d = (\hat{\mu}_1 - \hat{\mu}_2)/\hat{\sigma}}
 #' \deqn{c(m) = 1 - \frac{3}{4m-1}.}
-#' Since \eqn{c(m) < 1}, Cohen's \eqn{d} overestimates the true effect size.
+#' Since \eqn{c(m) < 1}, Cohen's \eqn{d} overestimates the true effect size,
 #' \eqn{\delta = (\mu_1 - \mu_2)/\sigma.}
-#' Since \deqn{t = \sqrt{\tilde{n}} d,} we have
-#' \deqn{g = \frac{c(m)}{\sqrt{\tilde{n}}} t,} where \eqn{t}
+#' Since \deqn{t = \sqrt{\tilde{n}} d} we have
+#' \deqn{g = \frac{c(m)}{\sqrt{\tilde{n}}} t} where \eqn{t}
 #' has a noncentral \eqn{t} distribution with \eqn{m} degrees of freedom
 #' and noncentrality parameter \eqn{\sqrt{\tilde{n}} \delta}.
 #'
