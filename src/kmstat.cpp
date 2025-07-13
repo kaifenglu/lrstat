@@ -237,13 +237,13 @@ DataFrame kmstat1(const double time = NA_REAL,
                 frac*accrualIntensity,
                 piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
                 accrualDuration, followupTime, maxFollowupTime);
-
+    // number of dropouts in the stratum at the specified calendar time
     y = nevent2(ss, allocationRatioPlanned, accrualTime,
                 frac*accrualIntensity,
                 piecewiseSurvivalTime, gam1, gam2, lam1, lam2,
                 accrualDuration, followupTime, maxFollowupTime);
 
-    // obtain number of enrolled subjects and subjects having an event
+    // obtain number of enrolled subjects and subjects having an event/dropout
     nsubjects[h] = frac*a;
     nevents(h, _) = x.row(0);
     ndropouts(h, _) = y.row(0);
@@ -1259,9 +1259,30 @@ List kmpower(const int kMax = 1,
   double surv2 = sum(NumericVector(km[13]));
   double survDiff = sum(NumericVector(km[14]));
   NumericVector theta(kMax, survDiff - survDiffH0);
+
+  // information at milestone
+  u0[0] = milestone + 1.0e-6;
+  km = kmstat(u0, milestone, allocationRatioPlanned,
+              accrualTime, accrualIntensity,
+              piecewiseSurvivalTime, stratumFraction,
+              lambda1, lambda2, gamma1, gamma2,
+              accrualDuration, followupTime, fixedFollowup);
+
+  double information1 = sum(NumericVector(km[18]));
+  if (informationRates1[0] <= information1/maxInformation) {
+    std::string str1 = "The first information rate must exceed that";
+    std::string str2 = "at the milestone time\n";
+    std::string str3 = "The information at the milestone time is";
+    std::string str4 = "The maximum information at study end is";
+    std::string errmsg = str1 + " " + str2 +
+      str3 + " " + std::to_string(information1) + "\n" +
+      str4 + " " + std::to_string(maxInformation) + "\n";
+    stop(errmsg);
+  }
+
   NumericVector I = maxInformation*informationRates1;
 
-  double information1;
+
   auto f = [milestone, allocationRatioPlanned,
             accrualTime, accrualIntensity,
             piecewiseSurvivalTime, stratumFraction,
@@ -2912,9 +2933,30 @@ List kmpower1s(const int kMax = 1,
   double maxInformation = 2.0*sum(NumericVector(km[18]));
   double surv = sum(NumericVector(km[12]));
   NumericVector theta = rep(surv - survH0, kMax);
+
+  // information at milestone
+  u0[0] = milestone + 1.0e-6;
+  km = kmstat(u0, milestone, 1,
+              accrualTime, 2.0*accrualIntensity,
+              piecewiseSurvivalTime, stratumFraction,
+              lambda, lambda, gamma, gamma,
+              accrualDuration, followupTime, fixedFollowup);
+
+  double information1 = sum(NumericVector(km[18]));
+  if (informationRates1[0] <= information1/maxInformation) {
+    std::string str1 = "The first information rate must exceed that";
+    std::string str2 = "at the milestone time\n";
+    std::string str3 = "The information at the milestone time is";
+    std::string str4 = "The maximum information at study end is";
+    std::string errmsg = str1 + " " + str2 +
+      str3 + " " + std::to_string(information1) + "\n" +
+      str4 + " " + std::to_string(maxInformation) + "\n";
+    stop(errmsg);
+  }
+
   NumericVector I = maxInformation*informationRates1;
 
-  double information1;
+
   auto f = [milestone, accrualTime, accrualIntensity,
             piecewiseSurvivalTime, stratumFraction,
             lambda, gamma,
@@ -4485,8 +4527,29 @@ List kmpowerequiv(const int kMax = 1,
   double survDiff = sum(NumericVector(km[14]));
   NumericVector theta(kMax, survDiff);
   double maxInformation = sum(NumericVector(km[18]));
+
+  // information at milestone
+  u0[0] = milestone + 1.0e-6;
+  km = kmstat(u0, milestone, allocationRatioPlanned,
+              accrualTime, accrualIntensity,
+              piecewiseSurvivalTime, stratumFraction,
+              lambda1, lambda2, gamma1, gamma2,
+              accrualDuration, followupTime, fixedFollowup);
+
+  double information1 = sum(NumericVector(km[18]));
+  if (informationRates1[0] <= information1/maxInformation) {
+    std::string str1 = "The first information rate must exceed that";
+    std::string str2 = "at the milestone time\n";
+    std::string str3 = "The information at the milestone time is";
+    std::string str4 = "The maximum information at study end is";
+    std::string errmsg = str1 + " " + str2 +
+      str3 + " " + std::to_string(information1) + "\n" +
+      str4 + " " + std::to_string(maxInformation) + "\n";
+    stop(errmsg);
+  }
+
   NumericVector I = maxInformation*informationRates1;
-  double information1;
+
 
   auto f = [milestone, allocationRatioPlanned,
             accrualTime, accrualIntensity,
