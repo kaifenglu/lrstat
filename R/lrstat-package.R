@@ -133,8 +133,8 @@
 #' @importFrom Rcpp evalCpp
 #' @importFrom mvtnorm pmvnorm
 #' @importFrom stats dgamma dlogis dnorm formula integrate model.frame
-#' model.matrix optimize pbeta pchisq pf plogis pnorm pt qbeta qchisq
-#' qf qlogis qnorm qt terms uniroot var
+#' model.matrix na.omit na.pass optimize pbeta pchisq pf plogis pnorm pt
+#' qbeta qchisq qf qlogis qnorm qt terms uniroot var
 #' @importFrom lpSolve lp
 #' @importFrom shiny shinyAppDir
 #'
