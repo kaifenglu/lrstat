@@ -598,7 +598,7 @@ double logisregplloop(int p, NumericVector par, void *ex,
   if (iter == maxiter) fail = 1;
 
   if (fail) {
-    stop("The algorithm in logisregplloop did not converge");
+    warning("The algorithm in logisregplloop did not converge");
   }
 
   return newbeta[k];
@@ -615,6 +615,7 @@ List logisregcpp(const DataFrame data,
                  const std::string offset = "",
                  const std::string id = "",
                  const std::string link = "logit",
+                 const NumericVector& init = NA_REAL,
                  const bool robust = 0,
                  const bool firth = 0,
                  const bool flic = 0,
@@ -789,6 +790,7 @@ List logisregcpp(const DataFrame data,
   NumericVector loglik0(nreps), loglik1(nreps);
   NumericVector regloglik0(nreps), regloglik1(nreps); // regular loglik
   IntegerVector niter(nreps);
+  LogicalVector fails(nreps);
 
   IntegerVector rep0(nreps*p);
   StringVector par0(nreps*p);
@@ -844,10 +846,14 @@ List logisregcpp(const DataFrame data,
     if (p > 1) {
       // parameter estimates and standard errors for the full model
       IntegerVector colfit = seq(0,p-1);
-      out = logisregloop(p, bint, &param, maxiter, eps, firth, colfit, p);
+      if (is_false(any(is_na(init))) && init.size() == p) {
+        out = logisregloop(p, init, &param, maxiter, eps, firth, colfit, p);
+      } else {
+        out = logisregloop(p, bint, &param, maxiter, eps, firth, colfit, p);
+      }
 
       bool fail = out["fail"];
-      if (fail) stop("The algorithm in logisregr did not converge");
+      if (fail) warning("The algorithm in logisregr did not converge");
 
       b = out["coef"];
       vb = as<NumericMatrix>(out["var"]);
@@ -955,6 +961,7 @@ List logisregcpp(const DataFrame data,
     N += n1;
 
     niter[h] = out["iter"];
+    fails[h] = out["fail"];
 
     // robust variance estimates
     NumericVector rseb(p);  // robust standard error for betahat
@@ -1163,7 +1170,8 @@ List logisregcpp(const DataFrame data,
     _["link"] = link1,
     _["robust"] = robust,
     _["firth"] = firth,
-    _["flic"] = flic);
+    _["flic"] = flic,
+    _["fail"] = fails);
 
   if (firth) {
     sumstat.push_back(regloglik0, "loglik0_unpenalized");
