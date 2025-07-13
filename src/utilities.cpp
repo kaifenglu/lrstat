@@ -973,7 +973,6 @@ double intnorm(const std::function<double(double)>& f,
 }
 
 
-
 #define CGOLD 0.3819660
 #define ZEPS 1.0e-10
 #define SHFT(a,b,c,d) (a)=(b);(b)=(c);(c)=(d);
@@ -1096,6 +1095,119 @@ NumericVector quad(integr_fn f, void *ex, double lower, double upper,
                                Named("abserr") = abserr,
                                Named("neval") = neval,
                                Named("ier") = ier);
+}
+
+
+void f_bvnorm(double *x, int n, void *ex) {
+  bvnparams *param = (bvnparams *) ex;
+  double corr = param->corr;
+  double s = sqrt(1 - corr*corr);
+  for (int i=0; i<n; i++) {
+    double a = (param->a2 - corr*x[i])/s;
+    double b = (param->b2 - corr*x[i])/s;
+    double t1 = R::dnorm(x[i],0,1,0);
+    double t2 = R::pnorm(b,0,1,1,0) - R::pnorm(a,0,1,1,0);
+    x[i] = t1*t2;
+  }
+}
+
+
+// [[Rcpp::export]]
+double pbvnormcpp(NumericVector lower, NumericVector upper, double corr) {
+  double result;
+  if (corr == 0) {
+    double v1 = R::pnorm(upper[0],0,1,1,0) - R::pnorm(lower[0],0,1,1,0);
+    double v2 = R::pnorm(upper[1],0,1,1,0) - R::pnorm(lower[1],0,1,1,0);
+    result = v1*v2;
+  } else {
+    double tol = 1.0e-8;
+    bvnparams param = {corr, lower[1], upper[1]};
+    result = quad(f_bvnorm, &param, lower[0], upper[0], tol)[0];
+  }
+  return result;
+}
+
+
+// [[Rcpp::export]]
+NumericVector hazard_pdcpp(const NumericVector& piecewiseSurvivalTime,
+                           const NumericVector& hazard_pfs,
+                           const NumericVector& hazard_os,
+                           const double corr_pd_os) {
+  int n = static_cast<int>(piecewiseSurvivalTime.size());
+  int i;
+  NumericVector u(n);
+  for (i=0; i<n-1; i++) {
+    u[i] = piecewiseSurvivalTime[i+1];
+  }
+  u[n-1] = piecewiseSurvivalTime[n-1] + log(2)/hazard_pfs[n-1];
+
+  NumericVector hazard_pd(n);
+  NumericVector t(1), v(0), hazard(0), haz_pfs(0), haz_os(0);
+  auto f = [&t, &v, &hazard, &haz_pfs, &haz_os,
+            corr_pd_os](double haz)->double {
+              NumericVector haz_pd = clone(hazard);
+              haz_pd.push_back(haz);
+              NumericVector lower(2);
+              double a = ptpwexpcpp(t, v, haz_pd, 0, 1, 0)[0];
+              double b = ptpwexpcpp(t, v, haz_os, 0, 1, 0)[0];
+              lower[0] = R::qnorm(a,0,1,1,0);
+              lower[1] = R::qnorm(b,0,1,1,0);
+              NumericVector upper(2, R_PosInf);
+              double q = pbvnormcpp(lower, upper, corr_pd_os);
+              return q - ptpwexpcpp(t, v, haz_pfs, 0, 0, 0)[0];
+            };
+
+  double tol = 1e-6;
+  for (i=0; i<n; i++) {
+    t[0] = u[i];
+    v.push_back(piecewiseSurvivalTime[i]);
+    haz_pfs.push_back(hazard_pfs[i]);
+    haz_os.push_back(hazard_os[i]);
+    hazard_pd[i] = brent(f, 0.5*(hazard_pfs[i]-hazard_os[i]),
+                         hazard_pfs[i], tol);
+    hazard.push_back(hazard_pd[i]);
+  }
+
+  return hazard_pd;
+}
+
+
+// [[Rcpp::export]]
+NumericVector hazard_subcpp(const NumericVector& piecewiseSurvivalTime,
+                            const NumericVector& hazard_itt,
+                            const NumericVector& hazard_pos,
+                            const double p_pos) {
+  int n = static_cast<int>(piecewiseSurvivalTime.size());
+  int i;
+  NumericVector u(n);
+  for (i=0; i<n-1; i++) {
+    u[i] = piecewiseSurvivalTime[i+1];
+  }
+  u[n-1] = piecewiseSurvivalTime[n-1] + log(2)/hazard_itt[n-1];
+
+  NumericVector hazard_neg(n);
+  NumericVector t(1), v(0), hazard(0), haz_itt(0), haz_pos(0);
+  auto f = [&t, &v, &hazard, &haz_itt, &haz_pos, p_pos](double haz)->double {
+    NumericVector haz_neg = clone(hazard);
+    haz_neg.push_back(haz);
+    double a = ptpwexpcpp(t, v, haz_pos, 0, 1, 0)[0];
+    double b = ptpwexpcpp(t, v, haz_neg, 0, 1, 0)[0];
+    double q = p_pos*a + (1-p_pos)*b;
+    return q - ptpwexpcpp(t, v, haz_itt, 0, 1, 0)[0];
+  };
+
+  double tol = 1e-6;
+  for (i=0; i<n; i++) {
+    t[0] = u[i];
+    v.push_back(piecewiseSurvivalTime[i]);
+    haz_itt.push_back(hazard_itt[i]);
+    haz_pos.push_back(hazard_pos[i]);
+    hazard_neg[i] = brent(f, hazard_itt[i]-p_pos*hazard_pos[i],
+                          hazard_itt[i]/(1-p_pos), tol);
+    hazard.push_back(hazard_neg[i]);
+  }
+
+  return hazard_neg;
 }
 
 
@@ -2554,29 +2666,29 @@ List getDesign(const double beta = NA_REAL,
 //' for some \eqn{j=1,\ldots,k}, where \eqn{\{b_j:j=1,\ldots,K\}} are the
 //' critical values associated with the specified alpha-spending function,
 //' and \eqn{I_j} is the information for \eqn{\theta} (inverse variance of
-//' \eqn{\hat{\theta}} under the alternative hypothesis) at the
+//' \eqn{\hat{\theta}}) at the
 //' \eqn{j}th look. For example,
 //' for estimating the risk difference \eqn{\theta = \pi_1 - \pi_2},
 //' \deqn{I_j = \left\{\frac{\pi_1 (1-\pi_1)}{n_{1j}} +
 //' \frac{\pi_2(1-\pi_2)}{n_{2j}}\right\}^{-1}.}
 //' It follows that
 //' \deqn{(Z_{1j} \geq b_j) = (Z_j \geq b_j +
-//' (\theta_{10}-\theta)\sqrt{I_j}),}
-//' where \eqn{Z_j = (\hat{\theta}_j - \theta)\sqrt{I_j}}.
+//' \theta_{10}\sqrt{I_j}),}
+//' where \eqn{Z_j = \hat{\theta}_j \sqrt{I_j}}.
 //'
 //' Similarly, we reject \eqn{H_{20}} at or before look \eqn{k} if
 //' \deqn{Z_{2j} = (\hat{\theta}_j - \theta_{20})\sqrt{I_j}
 //' \leq -b_j} for some \eqn{j=1,\ldots,k}. We have
 //' \deqn{(Z_{2j} \leq -b_j) = (Z_j \leq - b_j +
-//' (\theta_{20}-\theta)\sqrt{I_j}).}
+//' \theta_{20}\sqrt{I_j}).}
 //'
-//' Let \eqn{l_j = b_j + (\theta_{10}-\theta)\sqrt{I_j}},
-//' and \eqn{u_j = -b_j + (\theta_{20}-\theta)\sqrt{I_j}}.
+//' Let \eqn{l_j = b_j + \theta_{10}\sqrt{I_j}},
+//' and \eqn{u_j = -b_j + \theta_{20}\sqrt{I_j}}.
 //' The cumulative probability to reject \eqn{H_0 = H_{10} \cup H_{20}} at
 //' or before look \eqn{k} under the alternative hypothesis \eqn{H_1} is
 //' given by
 //' \deqn{P_\theta\left(\cup_{j=1}^{k} (Z_{1j} \geq b_j) \cap
-//' \cup_{j=1}^{k} (Z_{2j} \leq -b_j)\right) = p_1 + p_2 + p_{12},}
+//' \cup_{j=1}^{k} (Z_{2j} \leq -b_j)\right) = p_1 + p_2 - p_{12},}
 //' where
 //' \deqn{p_1 = P_\theta\left(\cup_{j=1}^{k} (Z_{1j} \geq b_j)\right)
 //' = P_\theta\left(\cup_{j=1}^{k} (Z_j \geq l_j)\right),}
@@ -3971,6 +4083,21 @@ List bygroup(DataFrame data, const StringVector& variables) {
 
 
 // The following three utilities functions are from the survival package
+// and are used to compute the Cholesky decomposition of a symmetric
+// positive-definite matrix, solve a linear system, and compute the
+// inverse of a symmetric positive-definite matrix.
+
+// The matrix A is modified in place. Let A = U' d U, where U is upper
+// triangular with unit diagonals, and d is a diagonal matrix.
+// The lower triangular part of A is left unchanged, the diagonal part
+// is modified to contain d, and the upper triangular part is modified
+// to contain U. The toler parameter
+// is used to determine the threshold for considering a diagonal
+// element as zero. If the diagonal element is less than toler times
+// the largest diagonal element, it is considered zero. The function
+// returns the rank of the matrix, which is the number of non-zero
+// diagonal elements in the Cholesky decomposition.
+// [[Rcpp::export]]
 int cholesky2(NumericMatrix matrix, int n, double toler) {
   double temp;
   int i, j, k;
@@ -4007,7 +4134,7 @@ int cholesky2(NumericMatrix matrix, int n, double toler) {
   return(rank*nonneg);
 }
 
-
+// [[Rcpp::export]]
 void chsolve2(NumericMatrix matrix, int n, NumericVector y) {
   int i, j;
   double temp;

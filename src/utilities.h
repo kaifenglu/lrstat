@@ -84,6 +84,26 @@ NumericVector mini(const std::function<double(double)>& f,
 NumericVector quad(integr_fn f, void *ex, double lower, double upper,
                    double tol);
 
+struct bvnparams {
+  double corr;
+  double a2;
+  double b2;
+};
+
+void f_bvnorm(double *x, int n, void *ex);
+
+double pbvnormcpp(NumericVector lower, NumericVector upper, double corr);
+
+NumericVector hazard_pdcpp(const NumericVector& piecewiseSurvivalTime,
+                           const NumericVector& hazard_pfs,
+                           const NumericVector& hazard_os,
+                           const double corr_pd_os);
+
+NumericVector hazard_subcpp(const NumericVector& piecewiseSurvivalTime,
+                            const NumericVector& hazard_itt,
+                            const NumericVector& hazard_pos,
+                            const double p_pos);
+
 List bmini(NumericVector x0, optimfn fn, optimgr gr, void *ex, double eps);
 
 NumericVector accrual(const NumericVector& time,
