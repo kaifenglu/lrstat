@@ -1122,6 +1122,11 @@ getBound <- function(k = NA, informationRates = NA, alpha = 0.025,
 #'   "exponential", "weibull", "lognormal", and "loglogistic" to be
 #'   modeled on the log-scale, and "normal" and "logistic" to be modeled
 #'   on the original scale.
+#' @param init A vector of initial values for the model parameters,
+#'   including regression coefficients and the log scale parameter.
+#'   By default, initial values are derived from an intercept-only model.
+#'   If this approach fails, ordinary least squares (OLS) estimates,
+#'   ignoring censoring, are used instead.
 #' @param robust Whether a robust sandwich variance estimate should be
 #'   computed. In the presence of the id variable, the score residuals
 #'   will be aggregated for each id when computing the robust sandwich
@@ -1179,6 +1184,8 @@ getBound <- function(k = NA, informationRates = NA, alpha = 0.025,
 #'
 #'     - \code{robust}: Whether the robust sandwich variance estimate
 #'       is requested.
+#'
+#'     - \code{fail}: Whether the model fails to converge.
 #'
 #'     - \code{rep}: The replication.
 #'
@@ -1288,16 +1295,16 @@ getBound <- function(k = NA, informationRates = NA, alpha = 0.025,
 liferegr <- function(data, rep = "", stratum = "",
                      time = "time", time2 = "", event = "event",
                      covariates = "", weight = "", offset = "",
-                     id = "", dist = "weibull", robust = FALSE,
-                     plci = FALSE, alpha = 0.05,
+                     id = "", dist = "weibull", init = NA_real_,
+                     robust = FALSE, plci = FALSE, alpha = 0.05,
                      maxiter = 50, eps = 1.0e-9) {
   rownames(data) = NULL
 
   elements = c(rep, stratum, covariates, weight, offset, id)
   elements = unique(elements[elements != "" & elements != "none"])
   if (!(length(elements) == 0)) {
-    mf = model.frame(formula(paste("~", paste(elements, collapse = "+"))),
-                     data = data)
+    fml = formula(paste("~", paste(elements, collapse = "+")))
+    mf = model.frame(fml, data = data, na.action = na.omit)
   } else {
     mf = model.frame(formula("~1"), data = data)
   }
@@ -1308,19 +1315,18 @@ liferegr <- function(data, rep = "", stratum = "",
   nvar = length(covariates)
   if (missing(covariates) || is.null(covariates) || (nvar == 1 && (
     covariates[1] == "" || tolower(covariates[1]) == "none"))) {
-    t1 = terms(formula("~1"))
     p = 0
+    t1 = terms(formula("~1"))
   } else {
-    t1 = terms(formula(paste("~", paste(covariates, collapse = "+"))))
-    t2 = attr(t1, "factors")
-    t3 = rownames(t2)
-    p = length(t3)
+    fml1 = formula(paste("~", paste(covariates, collapse = "+")))
+    p = length(rownames(attr(terms(fml1), "factors")))
+    t1 = terms(fml1)
   }
 
   if (p >= 1) {
-    mf = model.frame(t1, df)
-    xlevels = mf$xlev
-    mm = model.matrix(t1, mf)
+    mf1 <- model.frame(fml1, data = df, na.action = na.pass)
+    mm <- model.matrix(fml1, mf1)
+    xlevels = mf1$xlev
     param = colnames(mm)
     colnames(mm) = make.names(colnames(mm))
     varnames = colnames(mm)[-1]
@@ -1338,8 +1344,8 @@ liferegr <- function(data, rep = "", stratum = "",
   fit <- liferegcpp(data = df, rep = rep, stratum = stratum, time = time,
                     time2 = time2, event = event, covariates = varnames,
                     weight = weight, offset = offset, id = id, dist = dist,
-                    robust = robust, plci = plci, alpha = alpha,
-                    maxiter = maxiter, eps = eps)
+                    init = init, robust = robust, plci = plci,
+                    alpha = alpha, maxiter = maxiter, eps = eps)
 
   fit$p <- fit$sumstat$p[1]
   fit$nvar <- fit$sumstat$nvar[1]
@@ -1442,6 +1448,8 @@ liferegr <- function(data, rep = "", stratum = "",
 #' @param id The name of the id variable in the input data.
 #' @param ties The method for handling ties, either "breslow" or
 #'   "efron" (default).
+#' @param init The vector of initial values. Defaults to zero for all
+#'   variables.
 #' @param robust Whether a robust sandwich variance estimate should be
 #'   computed. In the presence of the id variable, the score residuals
 #'   will be aggregated for each id when computing the robust sandwich
@@ -1482,6 +1490,8 @@ liferegr <- function(data, rep = "", stratum = "",
 #'     - \code{robust}: Whether to use the robust variance estimate.
 #'
 #'     - \code{firth}: Whether to use Firth's penalized likelihood method.
+#'
+#'     - \code{fail}: Whether the model fails to converge.
 #'
 #'     - \code{loglik0_unpenalized}: The unpenalized log-likelihood under null.
 #'
@@ -1626,7 +1636,8 @@ liferegr <- function(data, rep = "", stratum = "",
 phregr <- function(data, rep = "", stratum = "",
                    time = "time", time2 = "", event = "event",
                    covariates = "", weight = "", offset = "",
-                   id = "", ties = "efron", robust = FALSE,
+                   id = "", ties = "efron",
+                   init = NA_real_,  robust = FALSE,
                    est_basehaz = TRUE, est_resid = TRUE, firth = FALSE,
                    plci = FALSE, alpha = 0.05,
                    maxiter = 50, eps = 1.0e-9) {
@@ -1635,27 +1646,27 @@ phregr <- function(data, rep = "", stratum = "",
 
   elements = c(rep, stratum, time, event, covariates, weight, offset, id)
   elements = unique(elements[elements != "" & elements != "none"])
-  mf = model.frame(formula(paste("~", paste(elements, collapse = "+"))),
-                   data = data)
+  fml = formula(paste("~", paste(elements, collapse = "+")))
+  mf = model.frame(fml, data = data, na.action = na.omit)
+
   rownum = as.integer(rownames(mf))
   df = data[rownum,]
 
   nvar = length(covariates)
   if (missing(covariates) || is.null(covariates) || (nvar == 1 && (
     covariates[1] == "" || tolower(covariates[1]) == "none"))) {
-    t1 = terms(formula("~1"))
     p = 0
+    t1 = terms(formula("~1"))
   } else {
-    t1 = terms(formula(paste("~", paste(covariates, collapse = "+"))))
-    t2 = attr(t1, "factors")
-    t3 = rownames(t2)
-    p = length(t3)
+    fml1 = formula(paste("~", paste(covariates, collapse = "+")))
+    p = length(rownames(attr(terms(fml1), "factors")))
+    t1 = terms(fml1)
   }
 
   if (p >= 1) {
-    mf = model.frame(t1, df)
-    xlevels = mf$xlev
-    mm = model.matrix(t1, mf)
+    mf1 <- model.frame(fml1, data = df, na.action = na.pass)
+    mm <- model.matrix(fml1, mf1)
+    xlevels = mf1$xlev
     param = colnames(mm)
     colnames(mm) = make.names(colnames(mm))
     varnames = colnames(mm)[-1]
@@ -1672,7 +1683,8 @@ phregr <- function(data, rep = "", stratum = "",
 
   fit <- phregcpp(data = df, rep = rep, stratum = stratum, time = time,
                   time2 = time2, event = event, covariates = varnames,
-                  weight = weight, offset = offset, id = id, ties = ties,
+                  weight = weight, offset = offset, id = id,
+                  ties = ties, init = init,
                   robust = robust, est_basehaz = est_basehaz,
                   est_resid = est_resid, firth = firth,
                   plci = plci, alpha = alpha,
@@ -1856,16 +1868,15 @@ survfit_phregr <- function(object, newdata, sefit = TRUE,
     covariates[1] == "" || tolower(covariates[1]) == "none"))) {
     p3 = 0
   } else {
-    t1 = terms(formula(paste("~", paste(covariates, collapse = "+"))))
-    t2 = attr(t1, "factors")
-    t3 = rownames(t2)
-    p3 = length(t3)
+    fml1 = formula(paste("~", paste(covariates, collapse = "+")))
+    p3 = length(rownames(attr(terms(fml1), "factors")))
   }
 
   if (p >= 1 && p3 >= 1 && !(missing(newdata) || is.null(newdata))) {
     df = newdata
-    mf = model.frame(t1, df, xlev = object$xlevels)
-    mm = model.matrix(t1, mf)
+    mf1 <- model.frame(fml1, data = df, na.action = na.pass,
+                       xlev = object$xlevels)
+    mm <- model.matrix(fml1, mf1)
     colnames(mm) = make.names(colnames(mm))
     varnames = colnames(mm)[-1]
     for (i in 1:length(varnames)) {
@@ -2001,8 +2012,8 @@ residuals_liferegr <- function(
   elements = c(stratum, covariates, weight, offset, id)
   elements = unique(elements[elements != "" & elements != "none"])
   if (!(length(elements) == 0)) {
-    mf = model.frame(formula(paste("~", paste(elements, collapse = "+"))),
-                     data = data)
+    fml = formula(paste("~", paste(elements, collapse = "+")))
+    mf = model.frame(fml, data = data, na.action = na.omit)
   } else {
     mf = model.frame(formula("~1"), data = data)
   }
@@ -2013,18 +2024,15 @@ residuals_liferegr <- function(
   nvar = length(covariates)
   if (missing(covariates) || is.null(covariates) || (nvar == 1 && (
     covariates[1] == "" || tolower(covariates[1]) == "none"))) {
-    t1 = terms(formula("~1"))
     p3 = 0
   } else {
-    t1 = terms(formula(paste("~", paste(covariates, collapse = "+"))))
-    t2 = attr(t1, "factors")
-    t3 = rownames(t2)
-    p3 = length(t3)
+    fml1 = formula(paste("~", paste(covariates, collapse = "+")))
+    p3 = length(rownames(attr(terms(fml1), "factors")))
   }
 
   if (p >= 1 && p3 >= 1) {
-    mf = model.frame(t1, df)
-    mm = model.matrix(t1, mf)
+    mf1 <- model.frame(fml1, data = df, na.action = na.pass)
+    mm <- model.matrix(fml1, mf1)
     colnames(mm) = make.names(colnames(mm))
     varnames = colnames(mm)[-1]
     for (i in 1:length(varnames)) {
@@ -2181,8 +2189,9 @@ residuals_phregr <- function(
 
   elements = c(stratum, time, event, covariates, weight, offset, id)
   elements = unique(elements[elements != "" & elements != "none"])
-  mf = model.frame(formula(paste("~", paste(elements, collapse = "+"))),
-                   data = data)
+  fml = formula(paste("~", paste(elements, collapse = "+")))
+  mf = model.frame(fml, data = data, na.action = na.omit)
+
   rownum = as.integer(rownames(mf))
   df = data[rownum,]
 
@@ -2191,15 +2200,13 @@ residuals_phregr <- function(
     covariates[1] == "" || tolower(covariates[1]) == "none"))) {
     p3 = 0
   } else {
-    t1 = terms(formula(paste("~", paste(covariates, collapse = "+"))))
-    t2 = attr(t1, "factors")
-    t3 = rownames(t2)
-    p3 = length(t3)
+    fml1 = formula(paste("~", paste(covariates, collapse = "+")))
+    p3 = length(rownames(attr(terms(fml1), "factors")))
   }
 
   if (p >= 1 && p3 >= 1) {
-    mf = model.frame(t1, df)
-    mm = model.matrix(t1, mf)
+    mf1 <- model.frame(fml1, data = df, na.action = na.pass)
+    mm <- model.matrix(fml1, mf1)
     colnames(mm) = make.names(colnames(mm))
     varnames = colnames(mm)[-1]
     for (i in 1:length(varnames)) {
@@ -2318,6 +2325,8 @@ residuals_phregr <- function(
 #' @param link The link function linking the response probabilities to the
 #'   linear predictors. Options include "logit" (default), "probit", and
 #'   "cloglog" (complementary log-log).
+#' @param init A vector of initial values for the model parameters.
+#'   By default, initial values are derived from an intercept-only model.
 #' @param robust Whether a robust sandwich variance estimate should be
 #'   computed. In the presence of the id variable, the score residuals
 #'   will be aggregated for each id when computing the robust sandwich
@@ -2379,6 +2388,8 @@ residuals_phregr <- function(
 #'     - \code{firth}: Whether the firth's penalized likelihood is used.
 #'
 #'     - \code{flic}: Whether to apply intercept correction.
+#'
+#'     - \code{fail}: Whether the model fails to converge.
 #'
 #'     - \code{loglik0_unpenalized}: The unpenalized log-likelihood under null.
 #'
@@ -2500,7 +2511,8 @@ residuals_phregr <- function(
 #' @export
 logisregr <- function(data, rep = "", event = "event", covariates = "",
                       freq = "", weight = "", offset = "", id = "",
-                      link = "logit", robust = FALSE, firth = FALSE,
+                      link = "logit", init = NA_real_,
+                      robust = FALSE, firth = FALSE,
                       flic = FALSE, plci = FALSE, alpha = 0.05,
                       maxiter = 50, eps = 1.0e-9) {
 
@@ -2508,8 +2520,8 @@ logisregr <- function(data, rep = "", event = "event", covariates = "",
 
   elements = c(rep, event, covariates, freq, weight, offset)
   elements = unique(elements[elements != "" & elements != "none"])
-  mf = model.frame(formula(paste("~", paste(elements, collapse = "+"))),
-                   data = data)
+  fml = formula(paste("~", paste(elements, collapse = "+")))
+  mf = model.frame(fml, data = data, na.action = na.omit)
 
   rownum = as.integer(rownames(mf))
   df = data[rownum,]
@@ -2517,19 +2529,18 @@ logisregr <- function(data, rep = "", event = "event", covariates = "",
   nvar = length(covariates)
   if (missing(covariates) || is.null(covariates) || (nvar == 1 && (
     covariates[1] == "" || tolower(covariates[1]) == "none"))) {
-    t1 = terms(formula("~1"))
     p = 0
+    t1 = terms(formula("~1"))
   } else {
-    t1 = terms(formula(paste("~", paste(covariates, collapse = "+"))))
-    t2 = attr(t1, "factors")
-    t3 = rownames(t2)
-    p = length(t3)
+    fml1 = formula(paste("~", paste(covariates, collapse = "+")))
+    p = length(rownames(attr(terms(fml1), "factors")))
+    t1 = terms(fml1)
   }
 
   if (p >= 1) {
-    mf = model.frame(t1, df)
-    xlevels = mf$xlev
-    mm = model.matrix(t1, mf)
+    mf1 <- model.frame(fml1, data = df, na.action = na.pass)
+    mm <- model.matrix(fml1, mf1)
+    xlevels = mf1$xlev
     param = colnames(mm)
     colnames(mm) = make.names(colnames(mm))
     varnames = colnames(mm)[-1]
@@ -2546,7 +2557,8 @@ logisregr <- function(data, rep = "", event = "event", covariates = "",
 
   fit <- logisregcpp(data = df, rep = rep, event = event,
                      covariates = varnames, freq = freq, weight = weight,
-                     offset = offset, id = id, link = link, robust = robust,
+                     offset = offset, id = id, link = link,
+                     init = init, robust = robust,
                      firth = firth, flic = flic, plci = plci,
                      alpha = alpha, maxiter = maxiter, eps = eps)
 
@@ -2602,4 +2614,273 @@ logisregr <- function(data, rep = "", event = "event", covariates = "",
 }
 
 
+#' @title Distribution Function of the Standard Bivariate Normal
+#' @description Computes the cumulative distribution function (CDF) of
+#' the standard bivariate normal distribution with specified lower and
+#' upper integration limits and correlation coefficient.
+#'
+#' @param lower A numeric vector of length 2 specifying the lower limits
+#'   of integration.
+#' @param upper A numeric vector of length 2 specifying the upper limits
+#'   of integration.
+#' @param corr A numeric value specifying the correlation coefficient of
+#'   the standard bivariate normal distribution.
+#'
+#' @details This function evaluates the probability
+#' \eqn{P(\code{lower[1]} < X < \code{upper[1]},
+#' \code{lower[2]} < Y < \code{upper[2]})} where
+#' \eqn{(X, Y)} follows a standard bivariate normal
+#' distribution with correlation \code{corr}.
+#'
+#' @return A numeric value representing the probability that a standard
+#' bivariate normal vector falls within the specified rectangular region.
+#'
+#' @examples
+#' pbvnorm(c(-1, -1), c(1, 1), 0.5)
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @export
+pbvnorm <- function(lower = c(-Inf, Inf),
+                    upper = c(Inf, Inf), corr = 0) {
+
+  if (length(lower) != 1 && length(lower) != 2) {
+    stop("lower must be a numerical vector of length 1 or 2")
+  } else if (length(lower) == 1) {
+    lower = rep(lower, 2)
+  }
+
+  if (length(upper) != 1 && length(upper) != 2) {
+    stop("upper must be a numerical vector of length 1 or 2")
+  } else if (length(upper) == 1) {
+    upper = rep(upper, 2)
+  }
+
+  if (any(lower >= upper)) {
+    stop("lower must be less than upper")
+  }
+
+  if (corr >= 1 || corr <= -1) {
+    stop("corr must lie between -1 and 1")
+  }
+
+  pbvnormcpp(lower, upper, corr)
+}
+
+
+#' @title Hazard Function for Progressive Disease (PD)
+#'
+#' @description
+#' Computes the hazard function of a piecewise exponential (pwexp)
+#' distribution for progressive disease (PD), such that the
+#' resulting hazard function for progression-free survival (PFS)
+#' closely matches a given pwexp hazard for PFS.
+#'
+#' @inheritParams param_piecewiseSurvivalTime
+#' @param hazard_pfs A scalar or numeric vector specifying the
+#'   hazard(s) for PFS based on a pwexp distribution.
+#' @param hazard_os A scalar or numeric vector specifying the
+#'   hazard(s) for overall survival (OS) based on a pwexp distribution.
+#' @param corr_pd_os A numeric value specifying the correlation
+#'   between PD and OS times.
+#'
+#' @details
+#' This function determines the hazard vector \eqn{\lambda_{\text{pd}}}
+#' for the pwexp distribution of PD, so that the implied survival
+#' function for PFS time,
+#' \eqn{T_{\text{pfs}} = \min(T_{\text{pd}}, T_{\text{os}})}, closely
+#' matches the specified pwexp distribution for PFS with hazard vector
+#' \eqn{\lambda_{\text{pfs}}}.
+#'
+#' To achieve this, we simulate
+#' \eqn{(Z_{\text{pd}}, Z_{\text{os}})} from
+#' a standard bivariate normal distribution with correlation
+#' \eqn{\rho}. Then, \eqn{U_{\text{pd}} = \Phi(Z_{\text{pd}})}
+#' and \eqn{U_{\text{os}} = \Phi(Z_{\text{os}})} are generated, where
+#' \eqn{\Phi} denotes the standard normal CDF.
+#'
+#' The times to PD and OS are obtained via the inverse transform
+#' method using quantile functions of the pwexp distribution:
+#' \deqn{T_{\text{pd}} = \text{qpwexp}(U_{\text{pd}},u,\lambda_{\text{pd}})}
+#' \deqn{T_{\text{os}} = \text{qpwexp}(U_{\text{os}},u,\lambda_{\text{os}})}
+#' where \code{u = piecewiseSurvivalTime}.
+#'
+#' The function solves for \eqn{\lambda_{\text{pd}}} such that
+#' the survival function of \eqn{T_{\text{pfs}}} closely matches that
+#' of a pwexp distribution with hazard \eqn{\lambda_{\text{pfs}}}:
+#' \deqn{P(\min(T_{\text{pd}}, T_{\text{os}}) > t) = S_{\text{pfs}}(t)}
+#' Since \deqn{Z_{\text{pd}} =
+#'   \Phi^{-1}(\text{ppwexp}(T_\text{pd}, u, \lambda_{\text{pd}}))} and
+#' \deqn{Z_{\text{os}} =
+#'   \Phi^{-1}(\text{ppwexp}(T_\text{os}, u, \lambda_{\text{os}}))}
+#' we have
+#' \deqn{P(\min(T_{\text{pd}}, T_{\text{os}}) > t) =
+#' P(Z_{\text{pd}} >
+#'     \Phi^{-1}(\text{ppwexp}(t,u,\lambda_{\text{pd}})),
+#'   Z_{\text{os}} >
+#'     \Phi^{-1}(\text{ppwexp}(t,u,\lambda_{\text{os}})))}
+#' while
+#' \deqn{S_{\text{pfs}}(t) = 1 - \text{ppwexp}(t,u,\lambda_{\text{pfs}})}
+#'
+#' Matching is performed sequentially at the internal cutpoints
+#' \eqn{u_2, ..., u_J} and at the point
+#' \eqn{u_J + \log(2)/\lambda_{\text{pfs},J}} for the final interval
+#' to solve for \eqn{\lambda_{\text{pd},1}, \ldots,
+#' \lambda_{\text{pd},J-1}} and \eqn{\lambda_{\text{pd},J}}, respectively.
+#'
+#' @return A numeric vector representing the estimated hazard rates
+#' for the pwexp distribution of PD.
+#'
+#' @author
+#' Kaifeng Lu (\email{kaifenglu@gmail.com})
+#'
+#' @examples
+#' u <- c(0, 1, 3, 4)
+#' lambda1 <- c(0.0151, 0.0403, 0.0501, 0.0558)
+#' lambda2 <- 0.0145
+#' rho <- 0.5
+#' hazard_pd(u, lambda1, lambda2, rho)
+#'
+#' @export
+hazard_pd <- function(piecewiseSurvivalTime = 0,
+                      hazard_pfs = 0.0578,
+                      hazard_os = 0.02,
+                      corr_pd_os = 0.5) {
+
+  if (piecewiseSurvivalTime[1] != 0) {
+    stop("piecewiseSurvivalTime must start with 0")
+  }
+
+  if (length(piecewiseSurvivalTime) > 1 &&
+      any(diff(piecewiseSurvivalTime) <= 0)) {
+    stop("piecewiseSurvivalTime should be increasing")
+  }
+
+  k = length(piecewiseSurvivalTime)
+  if (!(length(hazard_pfs) %in% c(1, k))) {
+    stop(paste("hazard_pfs must be a scalar or have the same length",
+               "as piecewiseSurvivalTime"))
+  } else if (length(hazard_pfs) == 1) {
+    hazard_pfs = rep(hazard_pfs, k)
+  }
+
+  if (!(length(hazard_os) %in% c(1, k))) {
+    stop(paste("hazard_os must be a scalar or have the same length",
+               "as piecewiseSurvivalTime"))
+  } else if (length(hazard_os) == 1) {
+    hazard_os = rep(hazard_os, k)
+  }
+
+  if (any(hazard_os <= 0)) {
+    stop("hazard_os must be positive")
+  }
+
+  if (any(hazard_pfs <= hazard_os)) {
+    stop("hazard_pfs must be greater than hazard_os")
+  }
+
+  if (corr_pd_os <= -1 || corr_pd_os >= 1) {
+    stop("corr_pd_os must lie between -1 and 1")
+  }
+
+  hazard_pdcpp(piecewiseSurvivalTime, hazard_pfs, hazard_os, corr_pd_os)
+}
+
+
+#' @title Hazard Function for Sub Population
+#'
+#' @description
+#' Computes the hazard function of a piecewise exponential (pwexp)
+#' distribution for the biomarker negative sub population, such that the
+#' resulting survival function for the ITT population
+#' closely matches a given pwexp survival function.
+#'
+#' @inheritParams param_piecewiseSurvivalTime
+#' @param hazard_itt A scalar or numeric vector specifying the
+#'   hazard(s) for the ITT population based on a pwexp distribution.
+#' @param hazard_pos A scalar or numeric vector specifying the
+#'   hazard(s) for the biomarker positive sub population
+#'   based on a pwexp distribution.
+#' @param p_pos A numeric value specifying the prevalence of the
+#'   biomarker positive sub population.
+#'
+#' @details
+#' This function determines the hazard vector \eqn{\lambda_{\text{neg}}}
+#' for the pwexp distribution of the biomarker negative sub population,
+#' so that the implied survival function for the ITT population closely
+#' matches the specified pwexp distribution with hazard vector
+#' \eqn{\lambda_{\text{itt}}}.
+#'
+#' Let \eqn{p_{\text{pos}}} be the
+#' prevalence of the biomarker positive sub population,
+#' then the survival function for the ITT population is given by
+#' \deqn{S_{\text{itt}}(t) = p_{\text{pos}} S_{\text{pos}}(t) +
+#' (1 - p_{\text{pos}}) S_{\text{neg}}(t)}
+#' where \eqn{S_{\text{pos}}(t)} and \eqn{S_{\text{neg}}(t)} are
+#' the survival functions for the biomarker positive and
+#' biomarker negative sub populations, respectively.
+#'
+#' Matching is performed sequentially at the internal cutpoints
+#' \eqn{u_2, ..., u_J} and at the point
+#' \eqn{u_J + \log(2)/\lambda_{\text{itt},J}} for the final interval
+#' to solve for \eqn{\lambda_{\text{neg},1}, \ldots,
+#' \lambda_{\text{neg},J-1}} and \eqn{\lambda_{\text{neg},J}}, respectively.
+#'
+#' @return A numeric vector representing the estimated hazard rates
+#' for the pwexp distribution of the biomarker negative sub population.
+#'
+#' @author
+#' Kaifeng Lu (\email{kaifenglu@gmail.com})
+#'
+#' @examples
+#' u <- c(0, 1, 3, 4)
+#' lambda_itt <- c(0.0151, 0.0403, 0.0501, 0.0558)
+#' lambda_pos <- c(0.0115, 0.0302, 0.0351, 0.0404)
+#' p_pos <- 0.3
+#' hazard_sub(u, lambda_itt, lambda_pos, p_pos)
+#'
+#' @export
+hazard_sub <- function(piecewiseSurvivalTime = 0,
+                       hazard_itt = 0.0578,
+                       hazard_pos = 0.02,
+                       p_pos = 0.5) {
+
+  if (piecewiseSurvivalTime[1] != 0) {
+    stop("piecewiseSurvivalTime must start with 0")
+  }
+
+  if (length(piecewiseSurvivalTime) > 1 &&
+      any(diff(piecewiseSurvivalTime) <= 0)) {
+    stop("piecewiseSurvivalTime should be increasing")
+  }
+
+  k = length(piecewiseSurvivalTime)
+  if (!(length(hazard_itt) %in% c(1, k))) {
+    stop(paste("hazard_itt must be a scalar or have the same length",
+               "as piecewiseSurvivalTime"))
+  } else if (length(hazard_itt) == 1) {
+    hazard_itt = rep(hazard_itt, k)
+  }
+
+  if (!(length(hazard_pos) %in% c(1, k))) {
+    stop(paste("hazard_pos must be a scalar or have the same length",
+               "as piecewiseSurvivalTime"))
+  } else if (length(hazard_pos) == 1) {
+    hazard_pos = rep(hazard_pos, k)
+  }
+
+  if (any(hazard_pos <= 0)) {
+    stop("hazard_pos must be positive")
+  }
+
+  if (any(hazard_itt <= hazard_pos)) {
+    stop("hazard_itt must be greater than hazard_pos")
+  }
+
+  if (p_pos <= 0 || p_pos >= 1) {
+    stop("p_pos must lie between 0 and 1")
+  }
+
+  hazard_subcpp(piecewiseSurvivalTime, hazard_itt, hazard_pos, p_pos)
+}
 
