@@ -4761,15 +4761,16 @@ print.designMeanDiffMMRM <- function(x, ...) {
     b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
                "cumulativeRejection", "cumulativeFutility",
                "cumulativeAlphaSpent", "numberOfSubjects",
+               "numberOfCompleters", "analysisTime",
                "efficacyMeanDiff", "futilityMeanDiff",
                "efficacyP", "futilityP", "information",
                "cumulativeRejectionH0", "cumulativeFutilityH0")]
 
     # format number of digits after decimal for each column
-    j1 <- 7
-    j2 <- 12
-    j3 <- c(1,2,3,4,8,9,14)
-    j4 <- c(5,6,10,11,13)
+    j1 <- c(7,8,9)
+    j2 <- 14
+    j3 <- c(1,2,3,4,10,11,16)
+    j4 <- c(5,6,12,13,15)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -4786,6 +4787,8 @@ print.designMeanDiffMMRM <- function(x, ...) {
                        "Cumulative futility",
                        "Cumulative alpha spent",
                        "Number of subjects",
+                       "Number of completers",
+                       "Analysis time",
                        "Efficacy boundary (mean diff)",
                        "Futility boundary (mean diff)",
                        "Efficacy boundary (p)",
@@ -4795,12 +4798,14 @@ print.designMeanDiffMMRM <- function(x, ...) {
                        "Cumulative futility under H0")
 
     } else {
-      df = t(b[,c(1,2,4,6,7,8,10,12)])
+      df = t(b[,c(1,2,4,6,7,8,9,10,12,14)])
       rownames(df) = c("Information rate",
                        "Efficacy boundary (Z)",
                        "Cumulative rejection",
                        "Cumulative alpha spent",
                        "Number of subjects",
+                       "Number of completers",
+                       "Analysis time",
                        "Efficacy boundary (mean diff)",
                        "Efficacy boundary (p)",
                        "Information")
@@ -4885,7 +4890,8 @@ print.designMeanDiffCarryover <- function(x, ...) {
                  round(x$corr, 3))
 
   str5 <- paste0("Power: ", round(x$power, 3), ", ",
-                 "alpha (1-sided): ", round(x$alpha, 4))
+                 "alpha (1-sided): ", round(x$alpha, 4), ", ",
+                 "CI half-width: ", round(x$half_width, 3))
 
   str6 <- paste0("Cumulative dropout rates over periods: ",
                  paste(round(x$cumdrop, 3), collapse = ", "))
@@ -4987,7 +4993,8 @@ print.designMeanDiffCarryoverEquiv <- function(x, ...) {
                  round(x$corr, 3))
 
   str6 <- paste0("Power: ", round(x$power, 3), ", ",
-                 "alpha (1-sided): ", round(x$alpha, 4))
+                 "alpha (1-sided): ", round(x$alpha, 4), ", ",
+                 "CI half-width: ", round(x$half_width, 3))
 
   str7 <- paste0("Cumulative dropout rates over periods: ",
                  paste(round(x$cumdrop, 3), collapse = ", "))
@@ -5662,12 +5669,12 @@ print.designSlopeDiffMMRM <- function(x, ...) {
                  "slope difference under H1: ",
                  round(a$slopeDiff, 3))
 
-  str3 <- paste0("Standard deviation of within-subject residual: ",
+  str3 <- paste0("Standard deviation (SD) of within-subject residual: ",
                  round(x$settings$stDev, 3))
 
-  str4 <- paste0("Standard deviation of random intercept: ",
+  str4 <- paste0("SD of random intercept: ",
                  round(sqrt(x$settings$G[1,1]), 3), ", ",
-                 "of random slope: ",
+                 "SD of random slope: ",
                  round(sqrt(x$settings$G[2,2]), 3), ", ",
                  "correlation: ",
                  round(x$settings$G[1,2]/sqrt(x$settings$G[1,1]*
@@ -5803,55 +5810,110 @@ print.designSlopeDiffMMRM <- function(x, ...) {
   }
 
   if (kMax>1) {
-    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-               "cumulativeRejection", "cumulativeFutility",
-               "cumulativeAlphaSpent", "numberOfSubjects",
-               "analysisTime",
-               "efficacySlopeDiff", "futilitySlopeDiff",
-               "efficacyP", "futilityP", "information",
-               "cumulativeRejectionH0", "cumulativeFutilityH0")]
+    if (!a$fixedFollowup) {
+      b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
+                 "cumulativeRejection", "cumulativeFutility",
+                 "cumulativeAlphaSpent", "numberOfSubjects",
+                 "analysisTime",
+                 "efficacySlopeDiff", "futilitySlopeDiff",
+                 "efficacyP", "futilityP", "information",
+                 "cumulativeRejectionH0", "cumulativeFutilityH0")]
 
-    # format number of digits after decimal for each column
-    j1 <- c(7,8)
-    j2 <- 13
-    j3 <- c(1,2,3,4,9,10,15)
-    j4 <- c(5,6,11,12,14)
+      # format number of digits after decimal for each column
+      j1 <- c(7,8)
+      j2 <- 13
+      j3 <- c(1,2,3,4,9,10,15)
+      j4 <- c(5,6,11,12,14)
 
-    b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
-    b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
-    b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
-    b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
+      b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
+      b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
+      b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
+      b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    if (x$settings$typeBetaSpending != 'none' ||
-        (kMax > 1 && any(s$futilityBounds[1:(kMax-1)] > -6))) {
-      df = t(b)
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Futility boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative futility",
-                       "Cumulative alpha spent",
-                       "Number of subjects",
-                       "Analysis time",
-                       "Efficacy boundary (slope diff)",
-                       "Futility boundary (slope diff)",
-                       "Efficacy boundary (p)",
-                       "Futility boundary (p)",
-                       "Information",
-                       "Cumulative rejection under H0",
-                       "Cumulative futility under H0")
+      if (x$settings$typeBetaSpending != 'none' ||
+          (kMax > 1 && any(s$futilityBounds[1:(kMax-1)] > -6))) {
+        df = t(b)
+        rownames(df) = c("Information rate",
+                         "Efficacy boundary (Z)",
+                         "Futility boundary (Z)",
+                         "Cumulative rejection",
+                         "Cumulative futility",
+                         "Cumulative alpha spent",
+                         "Number of subjects",
+                         "Analysis time",
+                         "Efficacy boundary (slope diff)",
+                         "Futility boundary (slope diff)",
+                         "Efficacy boundary (p)",
+                         "Futility boundary (p)",
+                         "Information",
+                         "Cumulative rejection under H0",
+                         "Cumulative futility under H0")
 
+      } else {
+        df = t(b[,c(1,2,4,6,7,8,9,11,13)])
+        rownames(df) = c("Information rate",
+                         "Efficacy boundary (Z)",
+                         "Cumulative rejection",
+                         "Cumulative alpha spent",
+                         "Number of subjects",
+                         "Analysis time",
+                         "Efficacy boundary (slope diff)",
+                         "Efficacy boundary (p)",
+                         "Information")
+      }
     } else {
-      df = t(b[,c(1,2,4,6,7,8,9,11,13)])
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative alpha spent",
-                       "Number of subjects",
-                       "Analysis time",
-                       "Efficacy boundary (slope diff)",
-                       "Efficacy boundary (p)",
-                       "Information")
+      b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
+                 "cumulativeRejection", "cumulativeFutility",
+                 "cumulativeAlphaSpent", "numberOfSubjects",
+                 "numberOfCompleters", "analysisTime",
+                 "efficacySlopeDiff", "futilitySlopeDiff",
+                 "efficacyP", "futilityP", "information",
+                 "cumulativeRejectionH0", "cumulativeFutilityH0")]
+
+      # format number of digits after decimal for each column
+      j1 <- c(7,8,9)
+      j2 <- 13
+      j3 <- c(1,2,3,4,10,11,16)
+      j4 <- c(5,6,12,13,15)
+
+      b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
+      b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
+      b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
+      b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
+
+      if (x$settings$typeBetaSpending != 'none' ||
+          (kMax > 1 && any(s$futilityBounds[1:(kMax-1)] > -6))) {
+        df = t(b)
+        rownames(df) = c("Information rate",
+                         "Efficacy boundary (Z)",
+                         "Futility boundary (Z)",
+                         "Cumulative rejection",
+                         "Cumulative futility",
+                         "Cumulative alpha spent",
+                         "Number of subjects",
+                         "Number of completers",
+                         "Analysis time",
+                         "Efficacy boundary (slope diff)",
+                         "Futility boundary (slope diff)",
+                         "Efficacy boundary (p)",
+                         "Futility boundary (p)",
+                         "Information",
+                         "Cumulative rejection under H0",
+                         "Cumulative futility under H0")
+
+      } else {
+        df = t(b[,c(1,2,4,6,7,8,9,10,12,14)])
+        rownames(df) = c("Information rate",
+                         "Efficacy boundary (Z)",
+                         "Cumulative rejection",
+                         "Cumulative alpha spent",
+                         "Number of subjects",
+                         "Number of completers",
+                         "Analysis time",
+                         "Efficacy boundary (slope diff)",
+                         "Efficacy boundary (p)",
+                         "Information")
+      }
     }
 
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
