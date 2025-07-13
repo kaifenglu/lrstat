@@ -1,8 +1,8 @@
 Package: lrstat
 Type: Package
 Title: Power and Sample Size Calculation for Non-Proportional Hazards and Beyond
-Version: 0.2.14
-Date: 2025-06-09
+Version: 0.2.15
+Date: 2025-07-13
 Authors@R: 
     person("Kaifeng", "Lu", , "kaifenglu@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-6160-7119"))

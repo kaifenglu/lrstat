@@ -1,3 +1,35 @@
+# lrstat 0.2.15
+
+- added na.action = na.pass for model frame construction involving covariates for all methods and updated lrstat-package.R to add na.omit and na.pass to reflect this change
+- added pbvnorm for the distribution function for standard bivariate normal
+- added hazard_pd for the hazard function for progressive disease given the piecewise hazard functions for PFS and OS and the correlation between PD and OS
+- added hazard_sub for the hazard function for the biomarker negative subpopulation given the hazard function of the ITT population, the hazard function and the prevalence of the biomarker positive subpopulation
+- added the init parameter and the fail flag to the output to logisregr, liferegr, and phregr
+- added the nullVariance parameter to getDesignOneProportion
+- added details section to the documentation of getDesignPairedPropMcNemar, getDesignRiskDiff, getDesignRiskRatio, getDesignRiskRatioFM, getDesignOddsRatio, getDesignOneMultinom, getDesignTwoMultinom, getDesignTwoOrdinal, getDesignOrderedBinom, getDesignUnorderedBinom, getDesignUnorderedMultinom, pwexploglik, pwexpcuts, and lrschoenfeld
+- added references to the documentation of ClopperPearsonCI, BOINTable, mTPI2Table
+- added the tol parameter to pwexpcuts
+- added the lrsimsub function for log-rank test simulation for enrichment design
+- updated lrsim2e and lrsim2e3a to use the hazard_pd function when generating PFS time
+- updated kmstat.cpp and rmstat.cpp to report an error message if the information at the first interim is less than the information at the milestone time
+- updated lrstat.cpp to avoid the redundant calculation of the final analysis time in the lrpower, lrsamplesize, lrpowerequiv, and lrsamplesizeequiv functions
+- updated getDesignMeanDiffCarryover and getDesignMeanDiffCarryoverEquiv to fix the calculation of p and v
+- updated getDesignMeanDiff, getDesignMeanDiffXO, and getDesignSlopeDiff to add the parameter value at the null hypothesis to the boundaries for the parameter of interest for noninferiority trials
+- updated getDesignPairedMeanDiffEquiv, getDesignMeanDiffEquiv, getDesignMeanDiffXOEquiv, and getDesignSlopeDiffMMRM to simplify the calculation of attainedAlpha for equivalence trials
+- updated getDesignWilcoxon, getDesignMeanDiffMMRM, getDesignOneSlope, getDesignSlopeDiff to add details to the documentation
+- updated getDesignMeanDiffMMRM to add numberOfCompleters to the output and a reference to the documentation
+- updated getDesignMeanDiffCarryover and getDesignMeanDiffCarryoverEquiv to add half_width and nu to the output
+- updated getDesignTwoWayANOVA to ensure the sample sizes are multiples of 4
+- updated getDesignSlopeDiffMMRM to add more detailed description for the parameters w and N
+- updated getDesignSlopeDiffMMRM to add the fixedFollowup parameter to allow fixed follow-up designs and modify the function for computing information and add number of completers accordingly
+- updated getDesignSlopeDiffMMRM to add more content to the details section of the documentation
+- updated the definition of the Z statistic in the details section of the documentation for getDesignEquiv
+- updated print.designMeanDiffMMRM to add numberOfCompleters and analysisTime to the output
+- updated print.designMeanDiffCarryover and print.designMeanDiffCarryoverEquiv to add half_width to the output
+- updated print.designSlopeDiffMMRM to add numberOfCompleters to the output for fixed follow-up designs
+- updated the documentation of the output of lrschoenfeld
+- replaced the survreg initial value method with the OLS initial value method for liferegr
+
 # lrstat 0.2.14
 
 - updated survival_analysis to ignore intervals not at risk within each stratum without creating non overlapping times across strata
