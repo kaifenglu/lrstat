@@ -522,15 +522,14 @@ List lrsim(const int kMax = 1,
 
   NumericVector arrivalTime(n), survivalTime(n), dropoutTime(n),
   timeUnderObservation(n), totalTime(n), totalt(n),
-  observationTime(n), timeUnderObservationSorted(n);
+  timeUnderObservationSorted(n);
 
   LogicalVector event(n), dropoutEvent(n), sub(n), eventSorted(n);
 
 
   // stratum information
   IntegerVector b1(nstrata), b2(nstrata), n1(nstrata), n2(nstrata);
-  IntegerVector nt(nstrata);
-  NumericVector n1x(nstrata), ntx(nstrata);
+  NumericVector nt(nstrata), n1a(nstrata), nta(nstrata);
   NumericVector km(nstrata), w(nstrata);
   NumericVector cumStratumFraction = cumsum(stratumFraction);
 
@@ -563,7 +562,7 @@ List lrsim(const int kMax = 1,
   IntegerVector treatmentGroupx(nrow1);
   NumericVector survivalTimex(nrow1);
   NumericVector dropoutTimex(nrow1);
-  NumericVector observationTimex(nrow1);
+  NumericVector analysisTimex(nrow1);
   NumericVector timeUnderObservationx(nrow1);
   LogicalVector eventx(nrow1);
   LogicalVector dropoutEventx(nrow1);
@@ -670,13 +669,13 @@ List lrsim(const int kMax = 1,
 
       // initial observed time and event indicator
       if (fixedFollowup) { // fixed follow-up design
-        if (survivalTime[i] < dropoutTime[i] &&
-            survivalTime[i] < followupTime) {
+        if (survivalTime[i] <= dropoutTime[i] &&
+            survivalTime[i] <= followupTime) {
           timeUnderObservation[i] = survivalTime[i];
           event[i] = 1;
           dropoutEvent[i] = 0;
-        } else if (dropoutTime[i] < survivalTime[i] &&
-          dropoutTime[i] < followupTime) {
+        } else if (dropoutTime[i] <= survivalTime[i] &&
+          dropoutTime[i] <= followupTime) {
           timeUnderObservation[i] = dropoutTime[i];
           event[i] = 0;
           dropoutEvent[i] = 1;
@@ -686,7 +685,7 @@ List lrsim(const int kMax = 1,
           dropoutEvent[i] = 0;
         }
       } else { // variable follow-up design
-        if (survivalTime[i] < dropoutTime[i]) {
+        if (survivalTime[i] <= dropoutTime[i]) {
           timeUnderObservation[i] = survivalTime[i];
           event[i] = 1;
           dropoutEvent[i] = 0;
@@ -757,7 +756,6 @@ List lrsim(const int kMax = 1,
       // censor at analysis time
       for (i=0; i<n; i++) {
         h = stratum[i]-1;
-        observationTime[i] = time;
         if (arrivalTime[i] > time) { // patients not yet enrolled
           timeUnderObservation[i] = time - arrivalTime[i];
           event[i] = 0;
@@ -771,22 +769,22 @@ List lrsim(const int kMax = 1,
 
           if (fixedFollowup) {
             // the first three cases correspond to arrivalTime[i] +
-            // min(survivalTime[i], dropoutTime[i], followupTime) < time
-            if (arrivalTime[i] + survivalTime[i] < time &&
-                survivalTime[i] < dropoutTime[i] &&
-                survivalTime[i] < followupTime) {
+            // min(survivalTime[i], dropoutTime[i], followupTime) <= time
+            if (arrivalTime[i] + survivalTime[i] <= time &&
+                survivalTime[i] <= dropoutTime[i] &&
+                survivalTime[i] <= followupTime) {
               timeUnderObservation[i] = survivalTime[i];
               event[i] = 1;
               dropoutEvent[i] = 0;
-            } else if (arrivalTime[i] + dropoutTime[i] < time &&
-              dropoutTime[i] < survivalTime[i] &&
-              dropoutTime[i] < followupTime) {
+            } else if (arrivalTime[i] + dropoutTime[i] <= time &&
+              dropoutTime[i] <= survivalTime[i] &&
+              dropoutTime[i] <= followupTime) {
               timeUnderObservation[i] = dropoutTime[i];
               event[i] = 0;
               dropoutEvent[i] = 1;
-            } else if (arrivalTime[i] + followupTime < time &&
-              followupTime < survivalTime[i] &&
-              followupTime < dropoutTime[i]) {
+            } else if (arrivalTime[i] + followupTime <= time &&
+              followupTime <= survivalTime[i] &&
+              followupTime <= dropoutTime[i]) {
               timeUnderObservation[i] = followupTime;
               event[i] = 0;
               dropoutEvent[i] = 0;
@@ -796,13 +794,13 @@ List lrsim(const int kMax = 1,
               dropoutEvent[i] = 0;
             }
           } else {
-            if (arrivalTime[i] + survivalTime[i] < time &&
-                survivalTime[i] < dropoutTime[i]) {
+            if (arrivalTime[i] + survivalTime[i] <= time &&
+                survivalTime[i] <= dropoutTime[i]) {
               timeUnderObservation[i] = survivalTime[i];
               event[i] = 1;
               dropoutEvent[i] = 0;
-            } else if (arrivalTime[i] + dropoutTime[i] < time &&
-              dropoutTime[i] < survivalTime[i]) {
+            } else if (arrivalTime[i] + dropoutTime[i] <= time &&
+              dropoutTime[i] <= survivalTime[i]) {
               timeUnderObservation[i] = dropoutTime[i];
               event[i] = 0;
               dropoutEvent[i] = 1;
@@ -847,15 +845,15 @@ List lrsim(const int kMax = 1,
       km.fill(1);  // km(t-) estimate by stratum
       for (i=0; i<nsub; i++) {
         h = stratumSorted[i] - 1;
-        n1x[h] = n1[h]*hazardRatioH0;
+        n1a[h] = n1[h]*hazardRatioH0;
         nt[h] = n1[h] + n2[h];
-        ntx[h] = n1x[h] + n2[h];
+        nta[h] = n1a[h] + n2[h];
 
         if (eventSorted[i]) { // at most 1 event can occur at a given time
           w[h] = pow(km[h], rho1)*pow(1-km[h], rho2);
-          uscore1 += w[h]*((treatmentGroupSorted[i]==1)-n1x[h]/(ntx[h]+0.0));
-          vscore1 += w[h]*w[h]*n1x[h]*n2[h]/(ntx[h]*ntx[h]+0.0);
-          km[h] *= (1-1/(nt[h]+0.0)); // update km estimate
+          uscore1 += w[h]*((treatmentGroupSorted[i]==1)-n1a[h]/nta[h]);
+          vscore1 += w[h]*w[h]*n1a[h]*n2[h]/(nta[h]*nta[h]);
+          km[h] *= (1-1/nt[h]); // update km estimate
         }
 
         // reduce the risk set
@@ -950,7 +948,7 @@ List lrsim(const int kMax = 1,
               treatmentGroupx[index1] = treatmentGroup[i];
               survivalTimex[index1] = survivalTime[i];
               dropoutTimex[index1] = dropoutTime[i];
-              observationTimex[index1] = observationTime[i];
+              analysisTimex[index1] = time;
               timeUnderObservationx[index1] = timeUnderObservation[i];
               eventx[index1] = event[i];
               dropoutEventx[index1] = dropoutEvent[i];
@@ -1134,7 +1132,7 @@ List lrsim(const int kMax = 1,
     treatmentGroupx = treatmentGroupx[sub1];
     survivalTimex = survivalTimex[sub1];
     dropoutTimex = dropoutTimex[sub1];
-    observationTimex = observationTimex[sub1];
+    analysisTimex = analysisTimex[sub1];
     timeUnderObservationx = timeUnderObservationx[sub1];
     eventx = eventx[sub1];
     dropoutEventx = dropoutEventx[sub1];
@@ -1142,7 +1140,7 @@ List lrsim(const int kMax = 1,
     DataFrame rawdata = DataFrame::create(
       _["iterationNumber"] = iterationNumberx,
       _["stopStage"] = stopStagex,
-      _["analysisTime"] = observationTimex,
+      _["analysisTime"] = analysisTimex,
       _["subjectId"] = subjectIdx,
       _["arrivalTime"] = arrivalTimex,
       _["stratum"] = stratumx,
@@ -1649,7 +1647,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
 
   NumericVector arrivalTime(n), survivalTime(n), dropoutTime(n),
   timeUnderObservation(n), totalTime(n), totalt(n),
-  observationTime(n), timeUnderObservationSorted(n);
+  timeUnderObservationSorted(n);
 
   LogicalVector event(n), dropoutEvent(n), eventac(n), sub(n),
   eventSorted(n);
@@ -1658,7 +1656,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
   // stratum information
   IntegerVector b1(nstrata), b2(nstrata), b3(nstrata);
   IntegerVector n1(nstrata), n2(nstrata), n3(nstrata);
-  IntegerVector nt13(nstrata), nt23(nstrata), nt12(nstrata);
+  NumericVector nt13(nstrata), nt23(nstrata), nt12(nstrata);
   NumericVector n13a(nstrata), n23a(nstrata), n12a(nstrata);
   NumericVector nt13a(nstrata), nt23a(nstrata), nt12a(nstrata);
 
@@ -1687,7 +1685,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
   IntegerVector treatmentGroupx(nrow1);
   NumericVector survivalTimex(nrow1);
   NumericVector dropoutTimex(nrow1);
-  NumericVector observationTimex(nrow1);
+  NumericVector analysisTimex(nrow1);
   NumericVector timeUnderObservationx(nrow1);
   LogicalVector eventx(nrow1);
   LogicalVector dropoutEventx(nrow1);
@@ -1801,13 +1799,13 @@ List lrsim3a(const int kMax = NA_INTEGER,
 
       // initial observed time and event indicator
       if (fixedFollowup) { // fixed follow-up design
-        if (survivalTime[i] < dropoutTime[i] &&
-            survivalTime[i] < followupTime) {
+        if (survivalTime[i] <= dropoutTime[i] &&
+            survivalTime[i] <= followupTime) {
           timeUnderObservation[i] = survivalTime[i];
           event[i] = 1;
           dropoutEvent[i] = 0;
-        } else if (dropoutTime[i] < survivalTime[i] &&
-          dropoutTime[i] < followupTime) {
+        } else if (dropoutTime[i] <= survivalTime[i] &&
+          dropoutTime[i] <= followupTime) {
           timeUnderObservation[i] = dropoutTime[i];
           event[i] = 0;
           dropoutEvent[i] = 1;
@@ -1817,7 +1815,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
           dropoutEvent[i] = 0;
         }
       } else { // variable follow-up design
-        if (survivalTime[i] < dropoutTime[i]) {
+        if (survivalTime[i] <= dropoutTime[i]) {
           timeUnderObservation[i] = survivalTime[i];
           event[i] = 1;
           dropoutEvent[i] = 0;
@@ -1889,7 +1887,6 @@ List lrsim3a(const int kMax = NA_INTEGER,
       // censor at analysis time
       for (i=0; i<n; i++) {
         h = stratum[i]-1;
-        observationTime[i] = time;
         if (arrivalTime[i] > time) { // patients not yet enrolled
           timeUnderObservation[i] = time - arrivalTime[i];
           event[i] = 0;
@@ -1905,22 +1902,22 @@ List lrsim3a(const int kMax = NA_INTEGER,
 
           if (fixedFollowup) {
             // the first three cases correspond to arrivalTime[i] +
-            // min(survivalTime[i], dropoutTime[i], followupTime) < time
-            if (arrivalTime[i] + survivalTime[i] < time &&
-                survivalTime[i] < dropoutTime[i] &&
-                survivalTime[i] < followupTime) {
+            // min(survivalTime[i], dropoutTime[i], followupTime) <= time
+            if (arrivalTime[i] + survivalTime[i] <= time &&
+                survivalTime[i] <= dropoutTime[i] &&
+                survivalTime[i] <= followupTime) {
               timeUnderObservation[i] = survivalTime[i];
               event[i] = 1;
               dropoutEvent[i] = 0;
-            } else if (arrivalTime[i] + dropoutTime[i] < time &&
-              dropoutTime[i] < survivalTime[i] &&
-              dropoutTime[i] < followupTime) {
+            } else if (arrivalTime[i] + dropoutTime[i] <= time &&
+              dropoutTime[i] <= survivalTime[i] &&
+              dropoutTime[i] <= followupTime) {
               timeUnderObservation[i] = dropoutTime[i];
               event[i] = 0;
               dropoutEvent[i] = 1;
-            } else if (arrivalTime[i] + followupTime < time &&
-              followupTime < survivalTime[i] &&
-              followupTime < dropoutTime[i]) {
+            } else if (arrivalTime[i] + followupTime <= time &&
+              followupTime <= survivalTime[i] &&
+              followupTime <= dropoutTime[i]) {
               timeUnderObservation[i] = followupTime;
               event[i] = 0;
               dropoutEvent[i] = 0;
@@ -1930,13 +1927,13 @@ List lrsim3a(const int kMax = NA_INTEGER,
               dropoutEvent[i] = 0;
             }
           } else {
-            if (arrivalTime[i] + survivalTime[i] < time &&
-                survivalTime[i] < dropoutTime[i]) {
+            if (arrivalTime[i] + survivalTime[i] <= time &&
+                survivalTime[i] <= dropoutTime[i]) {
               timeUnderObservation[i] = survivalTime[i];
               event[i] = 1;
               dropoutEvent[i] = 0;
-            } else if (arrivalTime[i] + dropoutTime[i] < time &&
-              dropoutTime[i] < survivalTime[i]) {
+            } else if (arrivalTime[i] + dropoutTime[i] <= time &&
+              dropoutTime[i] <= survivalTime[i]) {
               timeUnderObservation[i] = dropoutTime[i];
               event[i] = 0;
               dropoutEvent[i] = 1;
@@ -1966,8 +1963,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
           arrivalTimex[index1] = arrivalTime[i];
           stratumx[index1] = stratum[i];
           treatmentGroupx[index1] = treatmentGroup[i];
-          observationTimex[index1] = observationTime[i];
-
+          analysisTimex[index1] = time;
           survivalTimex[index1] = survivalTime[i];
           dropoutTimex[index1] = dropoutTime[i];
           timeUnderObservationx[index1] = timeUnderObservation[i];
@@ -2036,7 +2032,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
           uscore13 += w13[h]*((treatmentGroupSorted[i]==1)
                                 - n13a[h]/nt13a[h]);
           vscore13 += w13[h]*w13[h]*n13a[h]*n3[h]/(nt13a[h]*nt13a[h]);
-          km13[h] *= (1-1/(nt13[h]+0.0)); // update km estimate
+          km13[h] *= (1-1/nt13[h]); // update km estimate
         }
 
         if (eventSorted[i] && (treatmentGroupSorted[i]==2 ||
@@ -2045,7 +2041,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
           uscore23 += w23[h]*((treatmentGroupSorted[i]==2)
                                 - n23a[h]/nt23a[h]);
           vscore23 += w23[h]*w23[h]*n23a[h]*n3[h]/(nt23a[h]*nt23a[h]);
-          km23[h] *= (1-1/(nt23[h]+0.0)); // update km estimate
+          km23[h] *= (1-1/nt23[h]); // update km estimate
         }
 
         if (eventSorted[i] && (treatmentGroupSorted[i]==1 ||
@@ -2054,7 +2050,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
           uscore12 += w12[h]*((treatmentGroupSorted[i]==1)
                                 - n12a[h]/nt12a[h]);
           vscore12 += w12[h]*w12[h]*n12a[h]*n2[h]/(nt12a[h]*nt12a[h]);
-          km12[h] *= (1-1/(nt12[h]+0.0)); // update km estimate
+          km12[h] *= (1-1/nt12[h]); // update km estimate
         }
 
         // reduce the risk set
@@ -2154,7 +2150,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
     arrivalTimex = arrivalTimex[sub1];
     stratumx = stratumx[sub1];
     treatmentGroupx = treatmentGroupx[sub1];
-    observationTimex = observationTimex[sub1];
+    analysisTimex = analysisTimex[sub1];
     survivalTimex = survivalTimex[sub1];
     dropoutTimex = dropoutTimex[sub1];
     timeUnderObservationx = timeUnderObservationx[sub1];
@@ -2164,7 +2160,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
     DataFrame rawdata = DataFrame::create(
       _["iterationNumber"] = iterationNumberx,
       _["stageNumber"] = stageNumberx,
-      _["analysisTime"] = observationTimex,
+      _["analysisTime"] = analysisTimex,
       _["subjectId"] = subjectIdx,
       _["arrivalTime"] = arrivalTimex,
       _["stratum"] = stratumx,
@@ -2404,6 +2400,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
              const int seed = NA_INTEGER) {
 
   // check input parameters
+  int h, i, j, k;
   int kMaxe1x = kMaxe1;
 
   int nstrata = static_cast<int>(stratumFraction.size());
@@ -2672,30 +2669,43 @@ List lrsim2e(const int kMax = NA_INTEGER,
     stop("Invalid length for gamma2e2");
   }
 
-
-
-  lambda1e1d = lambda1e1x - lambda1e2x;
-  lambda2e1d = lambda2e1x - lambda2e2x;
-  gamma1e1d = gamma1e1x - gamma1e2x;
-  gamma2e1d = gamma2e1x - gamma2e2x;
-
-  if (is_true(any(lambda1e1d < 0))) {
-    stop("lambda1e1 must be greater than or equal to lambda1e2");
+  if (is_true(any(lambda1e1x <= lambda1e2x))) {
+    stop("lambda1e1 must be greater than lambda1e2");
   }
 
-  if (is_true(any(lambda2e1d < 0))) {
-    stop("lambda2e1 must be greater than or equal to lambda2e2");
+  if (is_true(any(lambda2e1x <= lambda2e2x))) {
+    stop("lambda2e1 must be greater than lambda2e2");
   }
 
-
-  if (is_true(any(gamma1e1d < 0))) {
+  if (is_true(any(gamma1e1x < gamma1e2x))) {
     stop("gamma1e1 must be greater than or equal to gamma1e2");
   }
 
-  if (is_true(any(gamma2e1d < 0))) {
+  if (is_true(any(gamma2e1x < gamma2e2x))) {
     stop("gamma2e1 must be greater than or equal to gamma2e2");
   }
 
+  for (j=0; j<nstrata; j++) {
+    Range jj = Range(j*nintervals, (j+1)*nintervals-1);
+
+    NumericVector lam1e1x = lambda1e1x[jj];
+    NumericVector lam1e2x = lambda1e2x[jj];
+    NumericVector lam1e1d = hazard_pdcpp(piecewiseSurvivalTime,
+                                         lam1e1x, lam1e2x, rho);
+
+    NumericVector lam2e1x = lambda2e1x[jj];
+    NumericVector lam2e2x = lambda2e2x[jj];
+    NumericVector lam2e1d = hazard_pdcpp(piecewiseSurvivalTime,
+                                         lam2e1x, lam2e2x, rho);
+
+    for (k=0; k<nintervals; k++) {
+      lambda1e1d[j*nintervals + k] = lam1e1d[k];
+      lambda2e1d[j*nintervals + k] = lam2e1d[k];
+    }
+  }
+
+  gamma1e1d = gamma1e1x - gamma1e2x;
+  gamma2e1d = gamma2e1x - gamma2e2x;
 
 
   if (R_isnancpp(accrualDuration)) {
@@ -2734,7 +2744,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
 
 
   // declare variables
-  int i, iter, j, k, h, nevents1, nevents2, nstages, nsub;
+  int iter, nevents1, nevents2, nstages, nsub;
   int accruals1, accruals2, totalAccruals;
   int events1e1, events2e1, totalEventse1;
   int events1e2, events2e2, totalEventse2;
@@ -2766,7 +2776,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
   NumericVector arrivalTime(n), survivalTime1(n), survivalTime2(n),
   dropoutTime1(n), dropoutTime2(n), timeUnderObservation1(n),
   timeUnderObservation2(n), totalTime1(n), totalTime2(n),
-  totalt1(n), totalt2(n), observationTime(n), timeUnderObservationSorted(n);
+  totalt1(n), totalt2(n), timeUnderObservationSorted(n);
 
   LogicalVector event1(n), event2(n), dropoutEvent1(n), dropoutEvent2(n),
   event1ac(n), event2ac(n), sub(n), eventSorted(n);
@@ -2774,13 +2784,13 @@ List lrsim2e(const int kMax = NA_INTEGER,
 
   // stratum information
   IntegerVector b1(nstrata), b2(nstrata);
-  IntegerVector n1(nstrata), n2(nstrata), nt(nstrata);
+  IntegerVector n1(nstrata), n2(nstrata);
 
   // original copy of n1 and n2 when looping over the endpoints
   IntegerVector n1x(nstrata), n2x(nstrata);
 
   // hazardRatioH0 adjusted n1 and nt for calculating the log-rank statistic
-  NumericVector n1a(nstrata), nta(nstrata);
+  NumericVector nt(nstrata), n1a(nstrata), nta(nstrata);
 
   NumericVector km(nstrata), w(nstrata);
   NumericVector cumStratumFraction = cumsum(stratumFraction);
@@ -2811,7 +2821,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
   NumericVector survivalTime2x(nrow1);
   NumericVector dropoutTime1x(nrow1);
   NumericVector dropoutTime2x(nrow1);
-  NumericVector observationTimex(nrow1);
+  NumericVector analysisTimex(nrow1);
   NumericVector timeUnderObservation1x(nrow1);
   NumericVector timeUnderObservation2x(nrow1);
   LogicalVector event1x(nrow1);
@@ -2944,13 +2954,13 @@ List lrsim2e(const int kMax = NA_INTEGER,
 
       // initial observed time and event indicator
       if (fixedFollowup) { // fixed follow-up design
-        if (survivalTime1[i] < dropoutTime1[i] &&
-            survivalTime1[i] < followupTime) {
+        if (survivalTime1[i] <= dropoutTime1[i] &&
+            survivalTime1[i] <= followupTime) {
           timeUnderObservation1[i] = survivalTime1[i];
           event1[i] = 1;
           dropoutEvent1[i] = 0;
-        } else if (dropoutTime1[i] < survivalTime1[i] &&
-          dropoutTime1[i] < followupTime) {
+        } else if (dropoutTime1[i] <= survivalTime1[i] &&
+          dropoutTime1[i] <= followupTime) {
           timeUnderObservation1[i] = dropoutTime1[i];
           event1[i] = 0;
           dropoutEvent1[i] = 1;
@@ -2960,7 +2970,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
           dropoutEvent1[i] = 0;
         }
       } else {
-        if (survivalTime1[i] < dropoutTime1[i]) {
+        if (survivalTime1[i] <= dropoutTime1[i]) {
           timeUnderObservation1[i] = survivalTime1[i];
           event1[i] = 1;
           dropoutEvent1[i] = 0;
@@ -2975,13 +2985,13 @@ List lrsim2e(const int kMax = NA_INTEGER,
 
 
       if (fixedFollowup) { // fixed follow-up design
-        if (survivalTime2[i] < dropoutTime2[i] &&
-            survivalTime2[i] < followupTime) {
+        if (survivalTime2[i] <= dropoutTime2[i] &&
+            survivalTime2[i] <= followupTime) {
           timeUnderObservation2[i] = survivalTime2[i];
           event2[i] = 1;
           dropoutEvent2[i] = 0;
-        } else if (dropoutTime2[i] < survivalTime2[i] &&
-          dropoutTime2[i] < followupTime) {
+        } else if (dropoutTime2[i] <= survivalTime2[i] &&
+          dropoutTime2[i] <= followupTime) {
           timeUnderObservation2[i] = dropoutTime2[i];
           event2[i] = 0;
           dropoutEvent2[i] = 1;
@@ -2991,7 +3001,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
           dropoutEvent2[i] = 0;
         }
       } else {
-        if (survivalTime2[i] < dropoutTime2[i]) {
+        if (survivalTime2[i] <= dropoutTime2[i]) {
           timeUnderObservation2[i] = survivalTime2[i];
           event2[i] = 1;
           dropoutEvent2[i] = 0;
@@ -3102,7 +3112,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
       // whether the target PFS and OS events are achieved
       if (kMaxe1x > 0 && nevents1 < plannedEvents[kMaxe1x-1]) {
         eventsNotAchieved = 1;
-      } else if (nevents2 < plannedEvents[kMax-1]) {
+      } else if (kMaxe1x < kMax && nevents2 < plannedEvents[kMax-1]) {
         eventsNotAchieved = 1;
       } else {
         eventsNotAchieved = 0;
@@ -3136,7 +3146,6 @@ List lrsim2e(const int kMax = NA_INTEGER,
       // censor at analysis time
       for (i=0; i<n; i++) {
         h = stratum[i]-1;
-        observationTime[i] = time;
         if (arrivalTime[i] > time) { // patients not yet enrolled
           timeUnderObservation1[i] = time - arrivalTime[i];
           event1[i] = 0;
@@ -3155,21 +3164,21 @@ List lrsim2e(const int kMax = NA_INTEGER,
 
           // censored time for endpoint 1
           if (fixedFollowup) {
-            if (arrivalTime[i] + survivalTime1[i] < time &&
-                survivalTime1[i] < dropoutTime1[i] &&
-                survivalTime1[i] < followupTime) {
+            if (arrivalTime[i] + survivalTime1[i] <= time &&
+                survivalTime1[i] <= dropoutTime1[i] &&
+                survivalTime1[i] <= followupTime) {
               timeUnderObservation1[i] = survivalTime1[i];
               event1[i] = 1;
               dropoutEvent1[i] = 0;
-            } else if (arrivalTime[i] + dropoutTime1[i] < time &&
-              dropoutTime1[i] < survivalTime1[i] &&
-              dropoutTime1[i] < followupTime) {
+            } else if (arrivalTime[i] + dropoutTime1[i] <= time &&
+              dropoutTime1[i] <= survivalTime1[i] &&
+              dropoutTime1[i] <= followupTime) {
               timeUnderObservation1[i] = dropoutTime1[i];
               event1[i] = 0;
               dropoutEvent1[i] = 1;
-            } else if (arrivalTime[i] + followupTime < time &&
-              followupTime < survivalTime1[i] &&
-              followupTime < dropoutTime1[i]) {
+            } else if (arrivalTime[i] + followupTime <= time &&
+              followupTime <= survivalTime1[i] &&
+              followupTime <= dropoutTime1[i]) {
               timeUnderObservation1[i] = followupTime;
               event1[i] = 0;
               dropoutEvent1[i] = 0;
@@ -3179,13 +3188,13 @@ List lrsim2e(const int kMax = NA_INTEGER,
               dropoutEvent1[i] = 0;
             }
           } else {
-            if (arrivalTime[i] + survivalTime1[i] < time &&
-                survivalTime1[i] < dropoutTime1[i]) {
+            if (arrivalTime[i] + survivalTime1[i] <= time &&
+                survivalTime1[i] <= dropoutTime1[i]) {
               timeUnderObservation1[i] = survivalTime1[i];
               event1[i] = 1;
               dropoutEvent1[i] = 0;
-            } else if (arrivalTime[i] + dropoutTime1[i] < time &&
-              dropoutTime1[i] < survivalTime1[i]) {
+            } else if (arrivalTime[i] + dropoutTime1[i] <= time &&
+              dropoutTime1[i] <= survivalTime1[i]) {
               timeUnderObservation1[i] = dropoutTime1[i];
               event1[i] = 0;
               dropoutEvent1[i] = 1;
@@ -3204,21 +3213,21 @@ List lrsim2e(const int kMax = NA_INTEGER,
 
           // censored time for endpoint 2
           if (fixedFollowup) {
-            if (arrivalTime[i] + survivalTime2[i] < time &&
-                survivalTime2[i] < dropoutTime2[i] &&
-                survivalTime2[i] < followupTime) {
+            if (arrivalTime[i] + survivalTime2[i] <= time &&
+                survivalTime2[i] <= dropoutTime2[i] &&
+                survivalTime2[i] <= followupTime) {
               timeUnderObservation2[i] = survivalTime2[i];
               event2[i] = 1;
               dropoutEvent2[i] = 0;
-            } else if (arrivalTime[i] + dropoutTime2[i] < time &&
-              dropoutTime2[i] < survivalTime2[i] &&
-              dropoutTime2[i] < followupTime) {
+            } else if (arrivalTime[i] + dropoutTime2[i] <= time &&
+              dropoutTime2[i] <= survivalTime2[i] &&
+              dropoutTime2[i] <= followupTime) {
               timeUnderObservation2[i] = dropoutTime2[i];
               event2[i] = 0;
               dropoutEvent2[i] = 1;
-            } else if (arrivalTime[i] + followupTime < time &&
-              followupTime < survivalTime2[i] &&
-              followupTime < dropoutTime2[i]) {
+            } else if (arrivalTime[i] + followupTime <= time &&
+              followupTime <= survivalTime2[i] &&
+              followupTime <= dropoutTime2[i]) {
               timeUnderObservation2[i] = followupTime;
               event2[i] = 0;
               dropoutEvent2[i] = 0;
@@ -3228,13 +3237,13 @@ List lrsim2e(const int kMax = NA_INTEGER,
               dropoutEvent2[i] = 0;
             }
           } else {
-            if (arrivalTime[i] + survivalTime2[i] < time &&
-                survivalTime2[i] < dropoutTime2[i]) {
+            if (arrivalTime[i] + survivalTime2[i] <= time &&
+                survivalTime2[i] <= dropoutTime2[i]) {
               timeUnderObservation2[i] = survivalTime2[i];
               event2[i] = 1;
               dropoutEvent2[i] = 0;
-            } else if (arrivalTime[i] + dropoutTime2[i] < time &&
-              dropoutTime2[i] < survivalTime2[i]) {
+            } else if (arrivalTime[i] + dropoutTime2[i] <= time &&
+              dropoutTime2[i] <= survivalTime2[i]) {
               timeUnderObservation2[i] = dropoutTime2[i];
               event2[i] = 0;
               dropoutEvent2[i] = 1;
@@ -3262,7 +3271,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
           arrivalTimex[index1] = arrivalTime[i];
           stratumx[index1] = stratum[i];
           treatmentGroupx[index1] = treatmentGroup[i];
-          observationTimex[index1] = observationTime[i];
+          analysisTimex[index1] = time;
 
           survivalTime1x[index1] = survivalTime1[i];
           dropoutTime1x[index1] = dropoutTime1[i];
@@ -3345,7 +3354,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
             w[h] = pow(km[h], rho1)*pow(1-km[h], rho2);
             uscore += w[h]*((treatmentGroupSorted[i]==1) - n1a[h]/nta[h]);
             vscore += w[h]*w[h]*n1a[h]*n2[h]/(nta[h]*nta[h]);
-            km[h] *= (1-1/(nt[h]+0.0)); // update km estimate
+            km[h] *= (1-1/nt[h]); // update km estimate
           }
 
           // reduce the risk set
@@ -3440,7 +3449,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
     arrivalTimex = arrivalTimex[sub1];
     stratumx = stratumx[sub1];
     treatmentGroupx = treatmentGroupx[sub1];
-    observationTimex = observationTimex[sub1];
+    analysisTimex = analysisTimex[sub1];
     survivalTime1x = survivalTime1x[sub1];
     dropoutTime1x = dropoutTime1x[sub1];
     timeUnderObservation1x = timeUnderObservation1x[sub1];
@@ -3455,7 +3464,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
     DataFrame rawdata = DataFrame::create(
       _["iterationNumber"] = iterationNumberx,
       _["stageNumber"] = stageNumberx,
-      _["analysisTime"] = observationTimex,
+      _["analysisTime"] = analysisTimex,
       _["subjectId"] = subjectIdx,
       _["arrivalTime"] = arrivalTimex,
       _["stratum"] = stratumx,
@@ -3750,6 +3759,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
                const int seed = NA_INTEGER) {
 
   // check input parameters
+  int h, i, j, k;
   int kMaxe1x = kMaxe1;
 
   int nstrata = static_cast<int>(stratumFraction.size());
@@ -4099,37 +4109,58 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
     stop("Invalid length for gamma3e2");
   }
 
-
-  lambda1e1d = lambda1e1x - lambda1e2x;
-  lambda2e1d = lambda2e1x - lambda2e2x;
-  lambda3e1d = lambda3e1x - lambda3e2x;
-  gamma1e1d = gamma1e1x - gamma1e2x;
-  gamma2e1d = gamma2e1x - gamma2e2x;
-  gamma3e1d = gamma3e1x - gamma3e2x;
-
-  if (is_true(any(lambda1e1d < 0))) {
-    stop("lambda1e1 must be greater than or equal to lambda1e2");
+  if (is_true(any(lambda1e1x <= lambda1e2x))) {
+    stop("lambda1e1 must be greater than lambda1e2");
   }
 
-  if (is_true(any(lambda2e1d < 0))) {
-    stop("lambda2e1 must be greater than or equal to lambda2e2");
+  if (is_true(any(lambda2e1x <= lambda2e2x))) {
+    stop("lambda2e1 must be greater than lambda2e2");
   }
 
-  if (is_true(any(lambda3e1d < 0))) {
-    stop("lambda3e1 must be greater than or equal to lambda3e2");
+  if (is_true(any(lambda3e1x <= lambda3e2x))) {
+    stop("lambda3e1 must be greater than lambda3e2");
   }
 
-  if (is_true(any(gamma1e1d < 0))) {
+  if (is_true(any(gamma1e1x < gamma1e2x))) {
     stop("gamma1e1 must be greater than or equal to gamma1e2");
   }
 
-  if (is_true(any(gamma2e1d < 0))) {
+  if (is_true(any(gamma2e1x < gamma2e2x))) {
     stop("gamma2e1 must be greater than or equal to gamma2e2");
   }
 
-  if (is_true(any(gamma3e1d < 0))) {
+  if (is_true(any(gamma3e1x < gamma3e2x))) {
     stop("gamma3e1 must be greater than or equal to gamma3e2");
   }
+
+  for (j=0; j<nstrata; j++) {
+    Range jj = Range(j*nintervals, (j+1)*nintervals-1);
+
+    NumericVector lam1e1x = lambda1e1x[jj];
+    NumericVector lam1e2x = lambda1e2x[jj];
+    NumericVector lam1e1d = hazard_pdcpp(piecewiseSurvivalTime,
+                                         lam1e1x, lam1e2x, rho);
+
+    NumericVector lam2e1x = lambda2e1x[jj];
+    NumericVector lam2e2x = lambda2e2x[jj];
+    NumericVector lam2e1d = hazard_pdcpp(piecewiseSurvivalTime,
+                                         lam2e1x, lam2e2x, rho);
+
+    NumericVector lam3e1x = lambda3e1x[jj];
+    NumericVector lam3e2x = lambda3e2x[jj];
+    NumericVector lam3e1d = hazard_pdcpp(piecewiseSurvivalTime,
+                                         lam3e1x, lam3e2x, rho);
+
+    for (k=0; k<nintervals; k++) {
+      lambda1e1d[j*nintervals + k] = lam1e1d[k];
+      lambda2e1d[j*nintervals + k] = lam2e1d[k];
+      lambda3e1d[j*nintervals + k] = lam3e1d[k];
+    }
+  }
+
+  gamma1e1d = gamma1e1x - gamma1e2x;
+  gamma2e1d = gamma2e1x - gamma2e2x;
+  gamma3e1d = gamma3e1x - gamma3e2x;
 
 
   if (R_isnancpp(accrualDuration)) {
@@ -4169,7 +4200,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
 
 
   // declare variables
-  int i, iter, j, k, h, nevents1, nevents2, nstages, nsub;
+  int iter, nevents1, nevents2, nstages, nsub;
   int accruals1, accruals2, accruals3, totalAccruals;
   int events1e1, events2e1, events3e1, totalEventse1;
   int events1e2, events2e2, events3e2, totalEventse2;
@@ -4203,7 +4234,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   NumericVector arrivalTime(n), survivalTime1(n), survivalTime2(n),
   dropoutTime1(n), dropoutTime2(n), timeUnderObservation1(n),
   timeUnderObservation2(n), totalTime1(n), totalTime2(n),
-  totalt1(n), totalt2(n), observationTime(n), timeUnderObservationSorted(n);
+  totalt1(n), totalt2(n), timeUnderObservationSorted(n);
 
   LogicalVector event1(n), event2(n), dropoutEvent1(n), dropoutEvent2(n),
   event1ac(n), event2ac(n), sub(n), eventSorted(n);
@@ -4212,7 +4243,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   // stratum information
   IntegerVector b1(nstrata), b2(nstrata), b3(nstrata);
   IntegerVector n1(nstrata), n2(nstrata), n3(nstrata);
-  IntegerVector nt13(nstrata), nt23(nstrata), nt12(nstrata);
+  NumericVector nt13(nstrata), nt23(nstrata), nt12(nstrata);
 
   // original copy of n1, n2, and n3 when looping over the endpoints
   IntegerVector n1x(nstrata), n2x(nstrata), n3x(nstrata);
@@ -4250,7 +4281,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   NumericVector survivalTime2x(nrow1);
   NumericVector dropoutTime1x(nrow1);
   NumericVector dropoutTime2x(nrow1);
-  NumericVector observationTimex(nrow1);
+  NumericVector analysisTimex(nrow1);
   NumericVector timeUnderObservation1x(nrow1);
   NumericVector timeUnderObservation2x(nrow1);
   LogicalVector event1x(nrow1);
@@ -4407,13 +4438,13 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
 
       // initial observed time and event indicator
       if (fixedFollowup) { // fixed follow-up design
-        if (survivalTime1[i] < dropoutTime1[i] &&
-            survivalTime1[i] < followupTime) {
+        if (survivalTime1[i] <= dropoutTime1[i] &&
+            survivalTime1[i] <= followupTime) {
           timeUnderObservation1[i] = survivalTime1[i];
           event1[i] = 1;
           dropoutEvent1[i] = 0;
-        } else if (dropoutTime1[i] < survivalTime1[i] &&
-          dropoutTime1[i] < followupTime) {
+        } else if (dropoutTime1[i] <= survivalTime1[i] &&
+          dropoutTime1[i] <= followupTime) {
           timeUnderObservation1[i] = dropoutTime1[i];
           event1[i] = 0;
           dropoutEvent1[i] = 1;
@@ -4423,7 +4454,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           dropoutEvent1[i] = 0;
         }
       } else {
-        if (survivalTime1[i] < dropoutTime1[i]) {
+        if (survivalTime1[i] <= dropoutTime1[i]) {
           timeUnderObservation1[i] = survivalTime1[i];
           event1[i] = 1;
           dropoutEvent1[i] = 0;
@@ -4438,13 +4469,13 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
 
 
       if (fixedFollowup) { // fixed follow-up design
-        if (survivalTime2[i] < dropoutTime2[i] &&
-            survivalTime2[i] < followupTime) {
+        if (survivalTime2[i] <= dropoutTime2[i] &&
+            survivalTime2[i] <= followupTime) {
           timeUnderObservation2[i] = survivalTime2[i];
           event2[i] = 1;
           dropoutEvent2[i] = 0;
-        } else if (dropoutTime2[i] < survivalTime2[i] &&
-          dropoutTime2[i] < followupTime) {
+        } else if (dropoutTime2[i] <= survivalTime2[i] &&
+          dropoutTime2[i] <= followupTime) {
           timeUnderObservation2[i] = dropoutTime2[i];
           event2[i] = 0;
           dropoutEvent2[i] = 1;
@@ -4454,7 +4485,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           dropoutEvent2[i] = 0;
         }
       } else {
-        if (survivalTime2[i] < dropoutTime2[i]) {
+        if (survivalTime2[i] <= dropoutTime2[i]) {
           timeUnderObservation2[i] = survivalTime2[i];
           event2[i] = 1;
           dropoutEvent2[i] = 0;
@@ -4570,7 +4601,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
       // whether the target PFS and OS events are achieved
       if (kMaxe1x > 0 && nevents1 < plannedEvents[kMaxe1x-1]) {
         eventsNotAchieved = 1;
-      } else if (nevents2 < plannedEvents[kMax-1]) {
+      } else if (kMaxe1x < kMax && nevents2 < plannedEvents[kMax-1]) {
         eventsNotAchieved = 1;
       } else {
         eventsNotAchieved = 0;
@@ -4609,7 +4640,6 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
       // censor at analysis time
       for (i=0; i<n; i++) {
         h = stratum[i]-1;
-        observationTime[i] = time;
         if (arrivalTime[i] > time) { // patients not yet enrolled
           timeUnderObservation1[i] = time - arrivalTime[i];
           event1[i] = 0;
@@ -4630,21 +4660,21 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
 
           // censored time for endpoint 1
           if (fixedFollowup) {
-            if (arrivalTime[i] + survivalTime1[i] < time &&
-                survivalTime1[i] < dropoutTime1[i] &&
-                survivalTime1[i] < followupTime) {
+            if (arrivalTime[i] + survivalTime1[i] <= time &&
+                survivalTime1[i] <= dropoutTime1[i] &&
+                survivalTime1[i] <= followupTime) {
               timeUnderObservation1[i] = survivalTime1[i];
               event1[i] = 1;
               dropoutEvent1[i] = 0;
-            } else if (arrivalTime[i] + dropoutTime1[i] < time &&
-              dropoutTime1[i] < survivalTime1[i] &&
-              dropoutTime1[i] < followupTime) {
+            } else if (arrivalTime[i] + dropoutTime1[i] <= time &&
+              dropoutTime1[i] <= survivalTime1[i] &&
+              dropoutTime1[i] <= followupTime) {
               timeUnderObservation1[i] = dropoutTime1[i];
               event1[i] = 0;
               dropoutEvent1[i] = 1;
-            } else if (arrivalTime[i] + followupTime < time &&
-              followupTime < survivalTime1[i] &&
-              followupTime < dropoutTime1[i]) {
+            } else if (arrivalTime[i] + followupTime <= time &&
+              followupTime <= survivalTime1[i] &&
+              followupTime <= dropoutTime1[i]) {
               timeUnderObservation1[i] = followupTime;
               event1[i] = 0;
               dropoutEvent1[i] = 0;
@@ -4654,13 +4684,13 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
               dropoutEvent1[i] = 0;
             }
           } else {
-            if (arrivalTime[i] + survivalTime1[i] < time &&
-                survivalTime1[i] < dropoutTime1[i]) {
+            if (arrivalTime[i] + survivalTime1[i] <= time &&
+                survivalTime1[i] <= dropoutTime1[i]) {
               timeUnderObservation1[i] = survivalTime1[i];
               event1[i] = 1;
               dropoutEvent1[i] = 0;
-            } else if (arrivalTime[i] + dropoutTime1[i] < time &&
-              dropoutTime1[i] < survivalTime1[i]) {
+            } else if (arrivalTime[i] + dropoutTime1[i] <= time &&
+              dropoutTime1[i] <= survivalTime1[i]) {
               timeUnderObservation1[i] = dropoutTime1[i];
               event1[i] = 0;
               dropoutEvent1[i] = 1;
@@ -4681,21 +4711,21 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
 
           // censored time for endpoint 2
           if (fixedFollowup) {
-            if (arrivalTime[i] + survivalTime2[i] < time &&
-                survivalTime2[i] < dropoutTime2[i] &&
-                survivalTime2[i] < followupTime) {
+            if (arrivalTime[i] + survivalTime2[i] <= time &&
+                survivalTime2[i] <= dropoutTime2[i] &&
+                survivalTime2[i] <= followupTime) {
               timeUnderObservation2[i] = survivalTime2[i];
               event2[i] = 1;
               dropoutEvent2[i] = 0;
-            } else if (arrivalTime[i] + dropoutTime2[i] < time &&
-              dropoutTime2[i] < survivalTime2[i] &&
-              dropoutTime2[i] < followupTime) {
+            } else if (arrivalTime[i] + dropoutTime2[i] <= time &&
+              dropoutTime2[i] <= survivalTime2[i] &&
+              dropoutTime2[i] <= followupTime) {
               timeUnderObservation2[i] = dropoutTime2[i];
               event2[i] = 0;
               dropoutEvent2[i] = 1;
-            } else if (arrivalTime[i] + followupTime < time &&
-              followupTime < survivalTime2[i] &&
-              followupTime < dropoutTime2[i]) {
+            } else if (arrivalTime[i] + followupTime <= time &&
+              followupTime <= survivalTime2[i] &&
+              followupTime <= dropoutTime2[i]) {
               timeUnderObservation2[i] = followupTime;
               event2[i] = 0;
               dropoutEvent2[i] = 0;
@@ -4705,13 +4735,13 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
               dropoutEvent2[i] = 0;
             }
           } else {
-            if (arrivalTime[i] + survivalTime2[i] < time &&
-                survivalTime2[i] < dropoutTime2[i]) {
+            if (arrivalTime[i] + survivalTime2[i] <= time &&
+                survivalTime2[i] <= dropoutTime2[i]) {
               timeUnderObservation2[i] = survivalTime2[i];
               event2[i] = 1;
               dropoutEvent2[i] = 0;
-            } else if (arrivalTime[i] + dropoutTime2[i] < time &&
-              dropoutTime2[i] < survivalTime2[i]) {
+            } else if (arrivalTime[i] + dropoutTime2[i] <= time &&
+              dropoutTime2[i] <= survivalTime2[i]) {
               timeUnderObservation2[i] = dropoutTime2[i];
               event2[i] = 0;
               dropoutEvent2[i] = 1;
@@ -4741,7 +4771,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           arrivalTimex[index1] = arrivalTime[i];
           stratumx[index1] = stratum[i];
           treatmentGroupx[index1] = treatmentGroup[i];
-          observationTimex[index1] = observationTime[i];
+          analysisTimex[index1] = time;
 
           survivalTime1x[index1] = survivalTime1[i];
           dropoutTime1x[index1] = dropoutTime1[i];
@@ -4847,7 +4877,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
             uscore13 += w13[h]*((treatmentGroupSorted[i]==1)
                                   - n13a[h]/nt13a[h]);
             vscore13 += w13[h]*w13[h]*n13a[h]*n3[h]/(nt13a[h]*nt13a[h]);
-            km13[h] *= (1-1/(nt13[h]+0.0)); // update km estimate
+            km13[h] *= (1-1/nt13[h]); // update km estimate
           }
 
           if (eventSorted[i] && (treatmentGroupSorted[i]==2 ||
@@ -4856,7 +4886,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
             uscore23 += w23[h]*((treatmentGroupSorted[i]==2)
                                   - n23a[h]/nt23a[h]);
             vscore23 += w23[h]*w23[h]*n23a[h]*n3[h]/(nt23a[h]*nt23a[h]);
-            km23[h] *= (1-1/(nt23[h]+0.0)); // update km estimate
+            km23[h] *= (1-1/nt23[h]); // update km estimate
           }
 
           if (eventSorted[i] && (treatmentGroupSorted[i]==1 ||
@@ -4865,7 +4895,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
             uscore12 += w12[h]*((treatmentGroupSorted[i]==1)
                                   - n12a[h]/nt12a[h]);
             vscore12 += w12[h]*w12[h]*n12a[h]*n2[h]/(nt12a[h]*nt12a[h]);
-            km12[h] *= (1-1/(nt12[h]+0.0)); // update km estimate
+            km12[h] *= (1-1/nt12[h]); // update km estimate
           }
 
           // reduce the risk set
@@ -4980,7 +5010,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
     arrivalTimex = arrivalTimex[sub1];
     stratumx = stratumx[sub1];
     treatmentGroupx = treatmentGroupx[sub1];
-    observationTimex = observationTimex[sub1];
+    analysisTimex = analysisTimex[sub1];
     survivalTime1x = survivalTime1x[sub1];
     dropoutTime1x = dropoutTime1x[sub1];
     timeUnderObservation1x = timeUnderObservation1x[sub1];
@@ -4995,7 +5025,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
     DataFrame rawdata = DataFrame::create(
       _["iterationNumber"] = iterationNumberx,
       _["stageNumber"] = stageNumberx,
-      _["analysisTime"] = observationTimex,
+      _["analysisTime"] = analysisTimex,
       _["subjectId"] = subjectIdx,
       _["arrivalTime"] = arrivalTimex,
       _["stratum"] = stratumx,
@@ -5655,25 +5685,25 @@ List binary_tte_sim(
 
   NumericVector arrivalTime(n), survivalTime(n), dropoutTime(n);
   NumericVector timeUnderObservation(n), totalTime(n), totalt(n);
-  NumericVector observationTime(n), timeUnderObservationSorted(n);
+  NumericVector timeUnderObservationSorted(n);
 
   LogicalVector event(n), dropoutEvent(n), sub(n), eventSorted(n);
 
   NumericVector latentResponse(n);
   NumericVector trtDiscTime(n), ptfu1Time(n);
-  NumericVector observationTime1(n), timeUnderObservation1(n);
+  NumericVector timeUnderObservation1(n);
   LogicalVector responder(n);
   IntegerVector source(n);
 
   // stratum information
   IntegerVector b1(nstrata), b2(nstrata);
-  IntegerVector n1(nstrata), n2(nstrata), nt(nstrata);
+  IntegerVector n1(nstrata), n2(nstrata);
 
   // original copy of n1 and n2 when looping over the endpoints
   IntegerVector n1x(nstrata), n2x(nstrata);
 
   // hazardRatioH0 adjusted n1 and nt for calculating the log-rank statistic
-  NumericVector n1a(nstrata), nta(nstrata);
+  NumericVector nt(nstrata), n1a(nstrata), nta(nstrata);
 
   NumericVector cumStratumFraction = cumsum(stratumFraction);
 
@@ -5701,7 +5731,7 @@ List binary_tte_sim(
   NumericVector survivalTime1x(nrow1x);
   NumericVector dropoutTime1x(nrow1x);
   NumericVector ptfu1Timex(nrow1x);
-  NumericVector observationTime1x(nrow1x);
+  NumericVector analysisTime1x(nrow1x);
   NumericVector timeUnderObservation1x(nrow1x);
   LogicalVector responderx(nrow1x);
   IntegerVector sourcex(nrow1x);
@@ -5718,7 +5748,7 @@ List binary_tte_sim(
   IntegerVector treatmentGroup2x(nrow2x);
   NumericVector survivalTime2x(nrow2x);
   NumericVector dropoutTime2x(nrow2x);
-  NumericVector observationTime2x(nrow2x);
+  NumericVector analysisTime2x(nrow2x);
   NumericVector timeUnderObservation2x(nrow2x);
   LogicalVector eventx(nrow2x);
   LogicalVector dropoutEventx(nrow2x);
@@ -5859,7 +5889,7 @@ List binary_tte_sim(
       ptfu1Time[i] = std::min(trtDiscTime[i], upper);
 
       // initial observed time and event indicator for endpoint 2 (TTE)
-      if (survivalTime[i] < dropoutTime[i]) {
+      if (survivalTime[i] <= dropoutTime[i]) {
         timeUnderObservation[i] = survivalTime[i];
         event[i] = 1;
         dropoutEvent[i] = 0;
@@ -5887,7 +5917,6 @@ List binary_tte_sim(
 
       for (i=0; i<n; i++) {
         h = stratum[i]-1;
-        observationTime1[i] = time;
         if (arrivalTime[i] > time) { // patients not yet enrolled
           timeUnderObservation1[i] = time - arrivalTime[i];
           responder[i] = NA_LOGICAL;
@@ -5900,21 +5929,21 @@ List binary_tte_sim(
           }
 
           // censor at analysis time
-          if (arrivalTime[i] + ptfu1Time[i] < time &&
-              ptfu1Time[i] < survivalTime[i] &&
-              ptfu1Time[i] < dropoutTime[i]) {
+          if (arrivalTime[i] + ptfu1Time[i] <= time &&
+              ptfu1Time[i] <= survivalTime[i] &&
+              ptfu1Time[i] <= dropoutTime[i]) {
             timeUnderObservation1[i] = ptfu1Time[i];
             responder[i] = (latentResponse[i] <= 0);
             source[i] = 1;
-          } else if (arrivalTime[i] + survivalTime[i] < time &&
-            survivalTime[i] < dropoutTime[i] &&
-            survivalTime[i] < ptfu1Time[i]) {
+          } else if (arrivalTime[i] + survivalTime[i] <= time &&
+            survivalTime[i] <= dropoutTime[i] &&
+            survivalTime[i] <= ptfu1Time[i]) {
             timeUnderObservation1[i] = survivalTime[i];
             responder[i] = 0;
             source[i] = 2;
-          } else if (arrivalTime[i] + dropoutTime[i] < time &&
-            dropoutTime[i] < survivalTime[i] &&
-            dropoutTime[i] < ptfu1Time[i]) {
+          } else if (arrivalTime[i] + dropoutTime[i] <= time &&
+            dropoutTime[i] <= survivalTime[i] &&
+            dropoutTime[i] <= ptfu1Time[i]) {
             timeUnderObservation1[i] = dropoutTime[i];
             responder[i] = 0;
             source[i] = 3;
@@ -5938,7 +5967,7 @@ List binary_tte_sim(
           survivalTime1x[index1x] = survivalTime[i];
           dropoutTime1x[index1x] = dropoutTime[i];
           ptfu1Timex[index1x] = ptfu1Time[i];
-          observationTime1x[index1x] = observationTime1[i];
+          analysisTime1x[index1x] = time;
           timeUnderObservation1x[index1x] = timeUnderObservation1[i];
           responderx[index1x] = responder[i];
           sourcex[index1x] = source[i];
@@ -5954,9 +5983,6 @@ List binary_tte_sim(
       accruals1 = sum(n1x);
       accruals2 = sum(n2x);
       totalAccruals = accruals1 + accruals2;
-
-
-
 
       sub = !is_na(responder); // exclude subjects administratively censored
       eventSorted = responder[sub];
@@ -6061,7 +6087,6 @@ List binary_tte_sim(
       // censor at analysis time
       for (i=0; i<n; i++) {
         h = stratum[i]-1;
-        observationTime[i] = time;
         if (arrivalTime[i] > time) { // patients not yet enrolled
           timeUnderObservation[i] = time - arrivalTime[i];
           event[i] = 0;
@@ -6074,13 +6099,13 @@ List binary_tte_sim(
           }
 
           // censored time for endpoint 2
-          if (arrivalTime[i] + survivalTime[i] < time &&
-              survivalTime[i] < dropoutTime[i]) {
+          if (arrivalTime[i] + survivalTime[i] <= time &&
+              survivalTime[i] <= dropoutTime[i]) {
             timeUnderObservation[i] = survivalTime[i];
             event[i] = 1;
             dropoutEvent[i] = 0;
-          } else if (arrivalTime[i] + dropoutTime[i] < time &&
-            dropoutTime[i] < survivalTime[i]) {
+          } else if (arrivalTime[i] + dropoutTime[i] <= time &&
+            dropoutTime[i] <= survivalTime[i]) {
             timeUnderObservation[i] = dropoutTime[i];
             event[i] = 0;
             dropoutEvent[i] = 1;
@@ -6109,7 +6134,7 @@ List binary_tte_sim(
           treatmentGroup2x[index2x] = treatmentGroup[i];
           survivalTime2x[index2x] = survivalTime[i];
           dropoutTime2x[index2x] = dropoutTime[i];
-          observationTime2x[index2x] = observationTime[i];
+          analysisTime2x[index2x] = time;
           timeUnderObservation2x[index2x] = timeUnderObservation[i];
           eventx[index2x] = event[i];
           dropoutEventx[index2x] = dropoutEvent[i];
@@ -6285,7 +6310,7 @@ List binary_tte_sim(
     survivalTime1x = survivalTime1x[sub1];
     dropoutTime1x = dropoutTime1x[sub1];
     ptfu1Timex = ptfu1Timex[sub1];
-    observationTime1x = observationTime1x[sub1];
+    analysisTime1x = analysisTime1x[sub1];
     timeUnderObservation1x = timeUnderObservation1x[sub1];
     responderx = responderx[sub1];
     sourcex = sourcex[sub1];
@@ -6293,7 +6318,7 @@ List binary_tte_sim(
     DataFrame rawdataBIN = DataFrame::create(
       _["iterationNumber"] = iterationNumber1x,
       _["stageNumber"] = stageNumber1x,
-      _["analysisTime"] = observationTime1x,
+      _["analysisTime"] = analysisTime1x,
       _["subjectId"] = subjectId1x,
       _["arrivalTime"] = arrivalTime1x,
       _["stratum"] = stratum1x,
@@ -6315,7 +6340,7 @@ List binary_tte_sim(
     treatmentGroup2x = treatmentGroup2x[sub2];
     survivalTime2x = survivalTime2x[sub2];
     dropoutTime2x = dropoutTime2x[sub2];
-    observationTime2x = observationTime2x[sub2];
+    analysisTime2x = analysisTime2x[sub2];
     timeUnderObservation2x = timeUnderObservation2x[sub2];
     eventx = eventx[sub2];
     dropoutEventx = dropoutEventx[sub2];
@@ -6323,7 +6348,7 @@ List binary_tte_sim(
     DataFrame rawdataTTE = DataFrame::create(
       _["iterationNumber"] = iterationNumber2x,
       _["stageNumber"] = stageNumber2x,
-      _["analysisTime"] = observationTime2x,
+      _["analysisTime"] = analysisTime2x,
       _["subjectId"] = subjectId2x,
       _["arrivalTime"] = arrivalTime2x,
       _["stratum"] = stratum2x,
@@ -6347,3 +6372,1171 @@ List binary_tte_sim(
 }
 
 
+#include "utilities.h"
+
+using namespace Rcpp;
+
+
+//' @title Log-Rank Test Simulation for Enrichment Design
+//' @description Performs simulation for two-arm group
+//' sequential trials based on weighted log-rank test
+//' for a biomarker enrichment design. The looks are either
+//' driven by the total number of events in the ITT population
+//' or the biomarker positive sub population.
+//' Alternatively, the analyses can be planned to occur at
+//' specified calendar times.
+//'
+//' @inheritParams param_kMax
+//' @param kMaxitt Number of stages with timing determined by events
+//'   in the ITT population. Ranges from 0 (none) to \code{kMax}.
+//' @param hazardRatioH0itt Hazard ratio under the null hypothesis
+//'   for the ITT population. Defaults to 1 for superiority test.
+//' @param hazardRatioH0pos Hazard ratio under the null hypothesis
+//'   for the biomarker positive sub population. Defaults to 1 for
+//'   superiority test.
+//' @param hazardRatioH0neg Hazard ratio under the null hypothesis
+//'   for the biomarker negative sub population. Defaults to 1 for
+//'   superiority test.
+//' @param allocation1 Number of subjects in the treatment group in
+//'   a randomization block. Defaults to 1 for equal randomization.
+//' @param allocation2 Number of subjects in the control group in
+//'   a randomization block. Defaults to 1 for equal randomization.
+//' @inheritParams param_accrualTime
+//' @inheritParams param_accrualIntensity
+//' @inheritParams param_piecewiseSurvivalTime
+//' @inheritParams param_stratumFraction
+//' @param p_pos The prevalence of the biomarker positive sub population
+//'   in each stratum.
+//' @param lambda1itt A vector of hazard rates for the event in each analysis
+//'   time interval by stratum for the treatment group in the ITT population.
+//' @param lambda2itt A vector of hazard rates for the event in each analysis
+//'   time interval by stratum for the control group in the ITT population.
+//' @param lambda1pos A vector of hazard rates for the event in each analysis
+//'   time interval by stratum for the treatment group in the biomarker
+//'   positive sub population.
+//' @param lambda2pos A vector of hazard rates for the event in each analysis
+//'   time interval by stratum for the control group in the biomarker
+//'   positive sub population.
+//' @param gamma1itt The hazard rate for exponential dropout, a vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
+//'   interval by stratum for the treatment group in the ITT population.
+//' @param gamma2itt The hazard rate for exponential dropout, a vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
+//'   interval by stratum for the control group in the ITT population.
+//' @param gamma1pos The hazard rate for exponential dropout, a vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
+//'   interval by stratum for the treatment group in the biomarker
+//'   positive sub population.
+//' @param gamma2pos The hazard rate for exponential dropout, a vector of
+//'   hazard rates for piecewise exponential dropout applicable for all
+//'   strata, or a vector of hazard rates for dropout in each analysis time
+//'   interval by stratum for the control group in the biomarker
+//'   positive sub population.
+//' @inheritParams param_accrualDuration
+//' @inheritParams param_followupTime
+//' @inheritParams param_fixedFollowup
+//' @inheritParams param_rho1
+//' @inheritParams param_rho2
+//' @param plannedEvents The planned cumulative total number events in the
+//'   ITT population at Look 1 to Look \code{kMaxitt} and the planned
+//'   cumulative total number of events at Look \code{kMaxitt+1} to
+//'   Look \code{kMax} in the biomarker positive sub population.
+//' @param plannedTime The calendar times for the analyses. To use calendar
+//'   time to plan the analyses, \code{plannedEvents} should be missing.
+//' @param maxNumberOfIterations The number of simulation iterations.
+//'   Defaults to 1000.
+//' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
+//'   stage to extract.
+//' @param seed The seed to reproduce the simulation results.
+//'   The seed from the environment will be used if left unspecified.
+//'
+//' @return A list with 2 components:
+//'
+//' * \code{sumdata}: A data frame of summary data by iteration and stage:
+//'
+//'     - \code{iterationNumber}: The iteration number.
+//'
+//'     - \code{eventsNotAchieved}: Whether the target number of events
+//'       is not achieved for the iteration.
+//'
+//'     - \code{stageNumber}: The stage number, covering all stages even if
+//'       the trial stops at an interim look.
+//'
+//'     - \code{analysisTime}: The time for the stage since trial start.
+//'
+//'     - \code{population}: The population ("ITT", "Biomarker positive",
+//'       "Biomarker negative") under consideration.
+//'
+//'     - \code{accruals1}: The number of subjects enrolled at the stage for
+//'       the treatment group.
+//'
+//'     - \code{accruals2}: The number of subjects enrolled at the stage for
+//'       the control group.
+//'
+//'     - \code{totalAccruals}: The total number of subjects enrolled at
+//'       the stage.
+//'
+//'     - \code{events1}: The number of events at the stage for
+//'       the treatment group.
+//'
+//'     - \code{events2}: The number of events at the stage for
+//'       the control group.
+//'
+//'     - \code{totalEvents}: The total number of events at the stage.
+//'
+//'     - \code{dropouts1}: The number of dropouts at the stage for
+//'       the treatment group.
+//'
+//'     - \code{dropouts2}: The number of dropouts at the stage for
+//'       the control group.
+//'
+//'     - \code{totalDropouts}: The total number of dropouts at the stage.
+//'
+//'     - \code{logRankStatistic}: The log-rank test Z-statistic for
+//'       the population.
+//'
+//' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
+//'   positive integer): A data frame for subject-level data for selected
+//'   replications, containing the following variables:
+//'
+//'     - \code{iterationNumber}: The iteration number.
+//'
+//'     - \code{stageNumber}: The stage under consideration.
+//'
+//'     - \code{analysisTime}: The time for the stage since trial start.
+//'
+//'     - \code{subjectId}: The subject ID.
+//'
+//'     - \code{arrivalTime}: The enrollment time for the subject.
+//'
+//'     - \code{stratum}: The stratum for the subject.
+//'
+//'     - \code{biomarker}: The biomarker status for the subject (1 for
+//'       positive, 0 for negative).
+//'
+//'     - \code{treatmentGroup}: The treatment group (1 or 2) for the
+//'       subject.
+//'
+//'     - \code{survivalTime}: The underlying survival time for the subject.
+//'
+//'     - \code{dropoutTime}: The underlying dropout time for the subject.
+//'
+//'     - \code{timeUnderObservation}: The time under observation
+//'       since randomization for the subject.
+//'
+//'     - \code{event}: Whether the subject experienced an event.
+//'
+//'     - \code{dropoutEvent}: Whether the subject dropped out.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @examples
+//'
+//' sim1 = lrsimsub(
+//'   kMax = 2,
+//'   kMaxitt = 2,
+//'   allocation1 = 1,
+//'   allocation2 = 1,
+//'   accrualTime = seq(0,9),
+//'   accrualIntensity = c(seq(10,70,10),rep(70,3)),
+//'   piecewiseSurvivalTime = c(0,12,24),
+//'   p_pos = 0.6,
+//'   lambda1itt = c(0.00256, 0.00383, 0.00700),
+//'   lambda2itt = c(0.00427, 0.00638, 0.01167),
+//'   lambda1pos = c(0.00299, 0.00430, 0.01064),
+//'   lambda2pos = c(0.00516, 0.00741, 0.01835),
+//'   gamma1itt = -log(1-0.04)/12,
+//'   gamma2itt = -log(1-0.04)/12,
+//'   gamma1pos = -log(1-0.04)/12,
+//'   gamma2pos = -log(1-0.04)/12,
+//'   accrualDuration = 10.14,
+//'   plannedEvents = c(108,144),
+//'   maxNumberOfIterations = 1000,
+//'   maxNumberOfRawDatasetsPerStage = 1,
+//'   seed = 314159)
+//'
+//' head(sim1$sumdata)
+//' head(sim1$rawdata)
+//'
+//' @export
+// [[Rcpp::export]]
+List lrsimsub(const int kMax = NA_INTEGER,
+              const int kMaxitt = NA_INTEGER,
+              const double hazardRatioH0itt = 1,
+              const double hazardRatioH0pos = 1,
+              const double hazardRatioH0neg = 1,
+              const int allocation1 = 1,
+              const int allocation2 = 1,
+              const NumericVector& accrualTime = 0,
+              const NumericVector& accrualIntensity = NA_REAL,
+              const NumericVector& piecewiseSurvivalTime = 0,
+              const NumericVector& stratumFraction = 1,
+              const NumericVector& p_pos = NA_REAL,
+              const NumericVector& lambda1itt = NA_REAL,
+              const NumericVector& lambda2itt = NA_REAL,
+              const NumericVector& lambda1pos = NA_REAL,
+              const NumericVector& lambda2pos = NA_REAL,
+              const NumericVector& gamma1itt = 0,
+              const NumericVector& gamma2itt = 0,
+              const NumericVector& gamma1pos = 0,
+              const NumericVector& gamma2pos = 0,
+              const double accrualDuration = NA_REAL,
+              const double followupTime = NA_REAL,
+              const bool fixedFollowup = 0,
+              const double rho1 = 0,
+              const double rho2 = 0,
+              const IntegerVector& plannedEvents = NA_INTEGER,
+              const NumericVector& plannedTime = NA_REAL,
+              const int maxNumberOfIterations = 1000,
+              const int maxNumberOfRawDatasetsPerStage = 0,
+              const int seed = NA_INTEGER) {
+
+  // check input parameters
+  int h, i, j, k;
+  int kMaxittx = kMaxitt;
+
+  int nstrata = static_cast<int>(stratumFraction.size());
+  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
+  int nsi = nstrata*nintervals;
+
+  NumericVector lambda1ittx(nsi), lambda2ittx(nsi);
+  NumericVector lambda1posx(nsi), lambda2posx(nsi);
+  NumericVector lambda1negx(nsi), lambda2negx(nsi);
+  NumericVector gamma1ittx(nsi), gamma2ittx(nsi);
+  NumericVector gamma1posx(nsi), gamma2posx(nsi);
+  NumericVector gamma1negx(nsi), gamma2negx(nsi);
+
+  bool useEvents, eventsNotAchieved;
+
+
+  if (kMax < 1) {
+    stop("kMax must be a positive integer");
+  }
+
+  if (kMaxitt < 0) {
+    kMaxittx = kMax;
+  }
+
+  if (kMaxittx > kMax) {
+    stop("kMaxitt must be less than or equal to kMax");
+  }
+
+  // whether to plan the analyses based on events or calendar time
+  if (is_false(any(is_na(plannedEvents)))) {
+    useEvents = 1;
+
+    if (plannedEvents[0] <= 0) {
+      stop("Elements of plannedEvents must be positive");
+    }
+
+    if (plannedEvents.size() != kMax) {
+      stop("Invalid length for plannedEvents");
+    }
+
+    if (kMaxittx > 1) {
+      IntegerVector plannedEvents1 = plannedEvents[Range(0,kMaxittx-1)];
+      if (is_true(any(diff(plannedEvents1) <= 0))) {
+        stop("plannedEvents for endpoint 1 must be increasing");
+      }
+    }
+
+    if (kMax - kMaxittx > 1) {
+      IntegerVector plannedEvents2 = plannedEvents[Range(kMaxittx, kMax-1)];
+      if (is_true(any(diff(plannedEvents2) <= 0))) {
+        stop("plannedEvents for endpoint 2 must be increasing");
+      }
+    }
+  } else if (is_false(any(is_na(plannedTime)))) {
+    useEvents = 0;
+    if (plannedTime[0] <= 0) {
+      stop("Elements of plannedTime must be positive");
+    }
+
+    if (plannedTime.size() != kMax) {
+      stop("Invalid length for plannedTime");
+    }
+
+    if (kMax > 1 && is_true(any(diff(plannedTime) <= 0))) {
+      stop("Elements of plannedTime must be increasing");
+    }
+  } else {
+    stop("Either plannedEvents or plannedTime must be given");
+  }
+
+
+  if (hazardRatioH0itt <= 0) {
+    stop("hazardRatioH0itt must be positive");
+  }
+
+  if (hazardRatioH0pos <= 0) {
+    stop("hazardRatioH0pos must be positive");
+  }
+
+  if (hazardRatioH0neg <= 0) {
+    stop("hazardRatioH0neg must be positive");
+  }
+
+
+  if (allocation1 < 1) {
+    stop("allocation1 must be a positive integer");
+  }
+
+  if (allocation2 < 1) {
+    stop("allocation2 must be a positive integer");
+  }
+
+
+  if (accrualTime[0] != 0) {
+    stop("accrualTime must start with 0");
+  }
+
+  if (accrualTime.size() > 1 && is_true(any(diff(accrualTime) <= 0))) {
+    stop("accrualTime should be increasing");
+  }
+
+  if (is_true(any(is_na(accrualIntensity)))) {
+    stop("accrualIntensity must be provided");
+  }
+
+  if (accrualTime.size() != accrualIntensity.size()) {
+    stop("accrualTime must have the same length as accrualIntensity");
+  }
+
+  if (is_true(any(accrualIntensity < 0))) {
+    stop("accrualIntensity must be non-negative");
+  }
+
+
+  if (piecewiseSurvivalTime[0] != 0) {
+    stop("piecewiseSurvivalTime must start with 0");
+  }
+
+  if (nintervals > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
+    stop("piecewiseSurvivalTime should be increasing");
+  }
+
+
+  if (is_true(any(stratumFraction <= 0))) {
+    stop("stratumFraction must be positive");
+  }
+
+  if (sum(stratumFraction) != 1) {
+    stop("stratumFraction must sum to 1");
+  }
+
+
+  if (is_true(any(is_na(p_pos)))) {
+    stop("p_pos must be provided");
+  }
+
+  if (p_pos.size() != nstrata) {
+    stop("Invalid length for p_pos");
+  }
+
+  if (is_true(any((p_pos <= 0) | (p_pos >= 1)))) {
+    stop("p_pos must lie between 0 and 1");
+  }
+
+
+  if (is_true(any(is_na(lambda1itt)))) {
+    stop("lambda1itt must be provided");
+  }
+
+  if (is_true(any(is_na(lambda2itt)))) {
+    stop("lambda2itt must be provided");
+  }
+
+  if (is_true(any(is_na(lambda1pos)))) {
+    stop("lambda1pos must be provided");
+  }
+
+  if (is_true(any(is_na(lambda2pos)))) {
+    stop("lambda2pos must be provided");
+  }
+
+  if (is_true(any(lambda1itt < 0))) {
+    stop("lambda1itt must be non-negative");
+  }
+
+  if (is_true(any(lambda2itt < 0))) {
+    stop("lambda2itt must be non-negative");
+  }
+
+  if (is_true(any(lambda1pos < 0))) {
+    stop("lambda1pos must be non-negative");
+  }
+
+  if (is_true(any(lambda2pos < 0))) {
+    stop("lambda2pos must be non-negative");
+  }
+
+
+  if (is_true(any(gamma1itt < 0))) {
+    stop("gamma1itt must be non-negative");
+  }
+
+  if (is_true(any(gamma2itt < 0))) {
+    stop("gamma2itt must be non-negative");
+  }
+
+  if (is_true(any(gamma1pos < 0))) {
+    stop("gamma1pos must be non-negative");
+  }
+
+  if (is_true(any(gamma2pos < 0))) {
+    stop("gamma2pos must be non-negative");
+  }
+
+
+  if (lambda1itt.size() == 1) {
+    lambda1ittx = rep(lambda1itt, nsi);
+  } else if (lambda1itt.size() == nintervals) {
+    lambda1ittx = rep(lambda1itt, nstrata);
+  } else if (lambda1itt.size() == nsi) {
+    lambda1ittx = lambda1itt;
+  } else {
+    stop("Invalid length for lambda1itt");
+  }
+
+  if (lambda2itt.size() == 1) {
+    lambda2ittx = rep(lambda2itt, nsi);
+  } else if (lambda2itt.size() == nintervals) {
+    lambda2ittx = rep(lambda2itt, nstrata);
+  } else if (lambda2itt.size() == nsi) {
+    lambda2ittx = lambda2itt;
+  } else {
+    stop("Invalid length for lambda2itt");
+  }
+
+
+
+  if (lambda1pos.size() == 1) {
+    lambda1posx = rep(lambda1pos, nsi);
+  } else if (lambda1pos.size() == nintervals) {
+    lambda1posx = rep(lambda1pos, nstrata);
+  } else if (lambda1pos.size() == nsi) {
+    lambda1posx = lambda1pos;
+  } else {
+    stop("Invalid length for lambda1pos");
+  }
+
+  if (lambda2pos.size() == 1) {
+    lambda2posx = rep(lambda2pos, nsi);
+  } else if (lambda2pos.size() == nintervals) {
+    lambda2posx = rep(lambda2pos, nstrata);
+  } else if (lambda2pos.size() == nsi) {
+    lambda2posx = lambda2pos;
+  } else {
+    stop("Invalid length for lambda2pos");
+  }
+
+
+
+  if (gamma1itt.size() == 1) {
+    gamma1ittx = rep(gamma1itt, nsi);
+  } else if (gamma1itt.size() == nintervals) {
+    gamma1ittx = rep(gamma1itt, nstrata);
+  } else if (gamma1itt.size() == nsi) {
+    gamma1ittx = gamma1itt;
+  } else {
+    stop("Invalid length for gamma1itt");
+  }
+
+  if (gamma2itt.size() == 1) {
+    gamma2ittx = rep(gamma2itt, nsi);
+  } else if (gamma2itt.size() == nintervals) {
+    gamma2ittx = rep(gamma2itt, nstrata);
+  } else if (gamma2itt.size() == nsi) {
+    gamma2ittx = gamma2itt;
+  } else {
+    stop("Invalid length for gamma2itt");
+  }
+
+
+  if (gamma1pos.size() == 1) {
+    gamma1posx = rep(gamma1pos, nsi);
+  } else if (gamma1pos.size() == nintervals) {
+    gamma1posx = rep(gamma1pos, nstrata);
+  } else if (gamma1pos.size() == nsi) {
+    gamma1posx = gamma1pos;
+  } else {
+    stop("Invalid length for gamma1pos");
+  }
+
+  if (gamma2pos.size() == 1) {
+    gamma2posx = rep(gamma2pos, nsi);
+  } else if (gamma2pos.size() == nintervals) {
+    gamma2posx = rep(gamma2pos, nstrata);
+  } else if (gamma2pos.size() == nsi) {
+    gamma2posx = gamma2pos;
+  } else {
+    stop("Invalid length for gamma2pos");
+  }
+
+
+  for (j=0; j<nstrata; j++) {
+    Range jj = Range(j*nintervals, (j+1)*nintervals-1);
+
+    double p_posx = p_pos[j];
+
+    NumericVector lam1ittx = lambda1ittx[jj];
+    NumericVector lam1posx = lambda1posx[jj];
+    NumericVector lam1negx = hazard_subcpp(piecewiseSurvivalTime,
+                                           lam1ittx, lam1posx, p_posx);
+
+    NumericVector lam2ittx = lambda2ittx[jj];
+    NumericVector lam2posx = lambda2posx[jj];
+    NumericVector lam2negx = hazard_subcpp(piecewiseSurvivalTime,
+                                           lam2ittx, lam2posx, p_posx);
+
+    NumericVector gam1ittx = gamma1ittx[jj];
+    NumericVector gam1posx = gamma1posx[jj];
+    NumericVector gam1negx = hazard_subcpp(piecewiseSurvivalTime,
+                                           gam1ittx, gam1posx, p_posx);
+
+    NumericVector gam2ittx = gamma2ittx[jj];
+    NumericVector gam2posx = gamma2posx[jj];
+    NumericVector gam2negx = hazard_subcpp(piecewiseSurvivalTime,
+                                           gam2ittx, gam2posx, p_posx);
+
+    for (k=0; k<nintervals; k++) {
+      lambda1negx[j*nintervals + k] = lam1negx[k];
+      lambda2negx[j*nintervals + k] = lam2negx[k];
+      gamma1negx[j*nintervals + k] = gam1negx[k];
+      gamma2negx[j*nintervals + k] = gam2negx[k];
+    }
+  }
+
+
+  if (R_isnancpp(accrualDuration)) {
+    stop("accrualDuration must be provided");
+  }
+
+  if (accrualDuration <= 0) {
+    stop("accrualDuration must be positive");
+  }
+
+  if (fixedFollowup) {
+    if (R_isnancpp(followupTime)) {
+      stop("followupTime must be provided for fixed follow-up");
+    }
+
+    if (followupTime <= 0) {
+      stop("followupTime must be positive for fixed follow-up");
+    }
+  }
+
+  if (rho1 < 0) {
+    stop("rho1 must be non-negative");
+  }
+
+  if (rho2 < 0) {
+    stop("rho2 must be non-negative");
+  }
+
+  if (maxNumberOfIterations < 1) {
+    stop("maxNumberOfIterations must be a positive integer");
+  }
+
+  if (maxNumberOfRawDatasetsPerStage < 0) {
+    stop("maxNumberOfRawDatasetsPerStage must be a non-negative integer");
+  }
+
+
+  // declare variables
+  int iter, nevents, neventspos, nstages, nsub;
+  int accruals1, accruals2, totalAccruals;
+  int events1, events2, totalEvents;
+  int dropouts1, dropouts2, totalDropouts;
+  int index1=0, index2=0;
+
+  double enrollt, u, time, uscore, vscore, hazardRatioH0;
+
+
+  // maximum number of subjects to enroll
+  int m = static_cast<int>(accrualTime.size());
+  double s = 0;
+  for (i=0; i<m; i++) {
+    if (i<m-1 && accrualTime[i+1] < accrualDuration) {
+      s += accrualIntensity[i]*(accrualTime[i+1] - accrualTime[i]);
+    } else {
+      s += accrualIntensity[i]*(accrualDuration - accrualTime[i]);
+      break;
+    }
+  }
+  int n = static_cast<int>(std::floor(s + 0.5));
+
+
+  // subject-level raw data set for one simulation
+  IntegerVector stratum(n), treatmentGroup(n);
+
+  NumericVector arrivalTime(n), survivalTime(n), dropoutTime(n),
+  timeUnderObservation(n), totalTime(n), totalt(n), totaltpos(n);
+
+  LogicalVector biomarker(n), event(n), dropoutEvent(n), eventpos(n),
+  sub(n);
+
+  // stratum information
+  IntegerVector b1(nstrata), b2(nstrata);
+  IntegerVector n1(nstrata), n2(nstrata);
+
+  // hazardRatioH0 adjusted n1 and nt for calculating the log-rank statistic
+  NumericVector nt(nstrata), n1a(nstrata), nta(nstrata);
+
+  NumericVector km(nstrata), w(nstrata);
+  NumericVector cumStratumFraction = cumsum(stratumFraction);
+
+
+  // within-stratum hazard rates
+  NumericVector lam1(nintervals), lam2(nintervals);
+  NumericVector gam1(nintervals), gam2(nintervals);
+
+  // stage-wise information
+  IntegerVector niter(kMax);
+  NumericVector analysisTime(kMax);
+
+
+  // cache for the patient-level raw data to extract
+  int nrow1 = n*kMax*maxNumberOfRawDatasetsPerStage;
+
+  IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
+  IntegerVector stageNumberx(nrow1);
+  IntegerVector subjectIdx(nrow1);
+  NumericVector arrivalTimex(nrow1);
+  IntegerVector stratumx(nrow1);
+  LogicalVector biomarkerx(nrow1);
+  IntegerVector treatmentGroupx(nrow1);
+  NumericVector survivalTimex(nrow1);
+  NumericVector dropoutTimex(nrow1);
+  NumericVector analysisTimex(nrow1);
+  NumericVector timeUnderObservationx(nrow1);
+  LogicalVector eventx(nrow1);
+  LogicalVector dropoutEventx(nrow1);
+
+
+  // cache for the simulation-level summary data to extract
+  int nrow2 = kMax*maxNumberOfIterations*3;
+
+  IntegerVector iterationNumbery = IntegerVector(nrow2, NA_INTEGER);
+  LogicalVector eventsNotAchievedy(nrow2);
+  IntegerVector stageNumbery(nrow2);
+  NumericVector analysisTimey(nrow2);
+  StringVector populationy(nrow2);
+  IntegerVector accruals1y(nrow2);
+  IntegerVector accruals2y(nrow2);
+  IntegerVector totalAccrualsy(nrow2);
+  IntegerVector events1y(nrow2);
+  IntegerVector events2y(nrow2);
+  IntegerVector totalEventsy(nrow2);
+  IntegerVector dropouts1y(nrow2);
+  IntegerVector dropouts2y(nrow2);
+  IntegerVector totalDropoutsy(nrow2);
+  NumericVector logRankStatisticy(nrow2);
+
+
+  // set up random seed
+  if (seed != NA_INTEGER) {
+    set_seed(seed);
+  }
+
+
+  // simulation
+  for (iter=0; iter<maxNumberOfIterations; iter++) {
+
+    b1.fill(allocation1);
+    b2.fill(allocation2);
+
+    enrollt = 0;
+    for (i=0; i<n; i++) {
+
+      // generate accrual time
+      u = R::runif(0,1);
+      enrollt = qtpwexpcpp1(u, accrualTime, accrualIntensity, enrollt, 1, 0);
+      arrivalTime[i] = enrollt;
+
+      // generate stratum information
+      u = R::runif(0,1);
+      for (j=0; j<nstrata; j++) {
+        if (cumStratumFraction[j] > u) {
+          stratum[i] = j+1;
+          break;
+        }
+      }
+
+      // generate biomarker status
+      u = R::runif(0,1);
+      if (u <= p_pos[j]) {
+        biomarker[i] = 1; // positive
+      } else {
+        biomarker[i] = 0; // negative
+      }
+
+      // generate treatment group
+      // stratified block randomization
+      u = R::runif(0,1);
+      if (u <= b1[j]/(b1[j]+b2[j]+0.0)) {
+        treatmentGroup[i] = 1;
+        b1[j]--;
+      } else {
+        treatmentGroup[i] = 2;
+        b2[j]--;
+      }
+
+      // start a new block after depleting the current block
+      if (b1[j]+b2[j]==0) {
+        b1[j] = allocation1;
+        b2[j] = allocation2;
+      }
+
+      // stratum-specific hazard rates for event and dropout
+      Range jj = Range(j*nintervals, (j+1)*nintervals-1);
+
+      if (biomarker[i]==1) { // biomarker positive
+        lam1 = lambda1posx[jj];
+        lam2 = lambda2posx[jj];
+        gam1 = gamma1posx[jj];
+        gam2 = gamma2posx[jj];
+      } else { // biomarker negative
+        lam1 = lambda1negx[jj];
+        lam2 = lambda2negx[jj];
+        gam1 = gamma1negx[jj];
+        gam2 = gamma2negx[jj];
+      }
+
+
+      // generate survival times
+      u = R::runif(0,1);
+      if (treatmentGroup[i]==1) {
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam1, 0,1,0);
+      } else {
+        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam2, 0,1,0);
+      }
+
+      // generate dropout times
+      u = R::runif(0,1);
+      if (treatmentGroup[i]==1) {
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam1, 0,1,0);
+      } else {
+        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam2, 0,1,0);
+      }
+
+      // initial observed time and event indicator
+      if (fixedFollowup) { // fixed follow-up design
+        if (survivalTime[i] <= dropoutTime[i] &&
+            survivalTime[i] <= followupTime) {
+          timeUnderObservation[i] = survivalTime[i];
+          event[i] = 1;
+          dropoutEvent[i] = 0;
+        } else if (dropoutTime[i] <= survivalTime[i] &&
+          dropoutTime[i] <= followupTime) {
+          timeUnderObservation[i] = dropoutTime[i];
+          event[i] = 0;
+          dropoutEvent[i] = 1;
+        } else {
+          timeUnderObservation[i] = followupTime;
+          event[i] = 0;
+          dropoutEvent[i] = 0;
+        }
+      } else {
+        if (survivalTime[i] <= dropoutTime[i]) {
+          timeUnderObservation[i] = survivalTime[i];
+          event[i] = 1;
+          dropoutEvent[i] = 0;
+        } else {
+          timeUnderObservation[i] = dropoutTime[i];
+          event[i] = 0;
+          dropoutEvent[i] = 1;
+        }
+      }
+
+      totalTime[i] = arrivalTime[i] + timeUnderObservation[i];
+    }
+
+    // find the analysis time for each stage
+    if (useEvents) {
+      eventpos = event & biomarker;
+      nevents = sum(event);
+      neventspos = sum(eventpos);
+      totalt = stl_sort(totalTime[event]);
+      totaltpos = stl_sort(totalTime[eventpos]);
+
+      int j1 = kMaxittx, j2 = kMax - kMaxittx;
+
+      // ITT looks
+      if (kMaxittx > 0) {
+        for (j1=0; j1<kMaxittx; j1++) {
+          if (plannedEvents[j1] >= nevents) {
+            break;
+          }
+        }
+
+        if (j1==kMaxittx) { // total number of events exceeds planned
+          for (k=0; k<kMaxittx; k++) { // analyses occur at planned events
+            analysisTime[k] = totalt[plannedEvents[k]-1] + 1e-12;
+          }
+        } else {
+          for (k=0; k<=j1; k++) {
+            if (k < j1) {
+              analysisTime[k] = totalt[plannedEvents[k]-1] + 1e-12;
+            } else { // the last look may have events <= planned
+              analysisTime[k] = totalt[nevents-1] + 1e-12;
+            }
+          }
+        }
+      }
+
+      // biomarker positive looks
+      NumericVector analysisTime2(kMax - kMaxittx);
+
+      if (kMax > kMaxittx) {
+        for (j2=0; j2<kMax-kMaxittx; j2++) {
+          if (plannedEvents[kMaxittx+j2] >= neventspos) {
+            break;
+          }
+        }
+
+        if (j2==kMax-kMaxittx) { // total number of events exceeds planned
+          for (k=0; k<kMax-kMaxittx; k++) {
+            analysisTime2[k] = totaltpos[plannedEvents[kMaxittx+k]-1] + 1e-12;
+          }
+        } else {
+          for (k=0; k<=j2; k++) {
+            if (k < j2) {
+              analysisTime2[k] = totaltpos[plannedEvents[kMaxittx+k]-1]+1e-12;
+            } else {
+              analysisTime2[k] = totaltpos[neventspos-1] + 1e-12;
+            }
+          }
+        }
+      }
+
+      // determine the number of looks and timing of the looks
+      if (kMaxittx == 0) { // all looks based on biomarker positive events
+        if (j2 == kMax - kMaxittx) {
+          nstages = kMax - kMaxittx;
+        } else {
+          nstages = j2 + 1;
+        }
+
+        for (k=0; k<nstages; k++) {
+          analysisTime[k] = analysisTime2[k];
+        }
+      } else if (kMax == kMaxittx) { // all looks based on ITT events
+        if (j1 == kMaxittx) {
+          nstages = kMaxittx;
+        } else {
+          nstages = j1 + 1;
+        }
+      } else {
+        if (analysisTime2[kMax-kMaxittx-1] > analysisTime[kMaxittx-1]) {
+          // only biomarker positive looks that occur after the last ITT
+          // look contribute
+          int l = static_cast<int>(which_max(analysisTime2 >
+                                               analysisTime[kMaxittx-1]));
+          nstages = kMax-l;
+          for (k=kMaxittx; k<kMax-l; k++) {
+            analysisTime[k] = analysisTime2[k-kMaxittx+l];
+          }
+        } else { // no biomarker positive looks after the last ITT look
+          if (j1 == kMaxittx) {
+            nstages = kMaxittx;
+          } else {
+            nstages = j1 + 1;
+          }
+        }
+      }
+
+      // whether the target PFS and OS events are achieved
+      if (kMaxittx > 0 && nevents < plannedEvents[kMaxittx-1]) {
+        eventsNotAchieved = 1;
+      } else if (kMaxittx < kMax && neventspos < plannedEvents[kMax-1]) {
+        eventsNotAchieved = 1;
+      } else {
+        eventsNotAchieved = 0;
+      }
+    } else { // looks based on calendar time
+      nstages = kMax;
+      analysisTime = clone(plannedTime);
+      eventsNotAchieved = 0;
+    }
+
+
+    // construct the log-rank test statistic at each stage
+    for (k=0; k<nstages; k++) {
+      time = analysisTime[k];
+
+      for (int pop=1; pop<=3; pop++) {
+        // subset subjects for the population of interest
+        if (pop == 1) { // ITT
+          sub = LogicalVector(n, 1);
+          hazardRatioH0 = hazardRatioH0itt;
+        } else if (pop == 2) { // biomarker positive
+          sub = biomarker;
+          hazardRatioH0 = hazardRatioH0pos;
+        } else { // biomarker negative
+          sub = !biomarker;
+          hazardRatioH0 = hazardRatioH0neg;
+        }
+
+        nsub = sum(sub);
+        IntegerVector treatmentGroupSub = treatmentGroup[sub];
+        IntegerVector stratumSub = stratum[sub];
+        NumericVector arrivalTimeSub = arrivalTime[sub];
+        NumericVector survivalTimeSub = survivalTime[sub];
+        NumericVector dropoutTimeSub = dropoutTime[sub];
+        NumericVector timeUnderObservationSub = timeUnderObservation[sub];
+        LogicalVector eventSub = event[sub];
+        LogicalVector dropoutEventSub = dropoutEvent[sub];
+
+        n1.fill(0);
+        n2.fill(0);
+        events1 = 0;
+        events2 = 0;
+        dropouts1 = 0;
+        dropouts2 = 0;
+
+        // censor at analysis time
+        for (i=0; i<nsub; i++) {
+          h = stratumSub[i]-1;
+          if (arrivalTimeSub[i] > time) { // patients not yet enrolled
+            timeUnderObservationSub[i] = time - arrivalTimeSub[i];
+            eventSub[i] = 0;
+            dropoutEventSub[i] = 0;
+          } else {
+            if (treatmentGroupSub[i]==1) {
+              n1[h]++;
+            } else {
+              n2[h]++;
+            }
+
+            if (fixedFollowup) {
+              // the first three cases correspond to arrivalTime[i] +
+              // min(survivalTime[i], dropoutTime[i], followupTime) <= time
+              if (arrivalTimeSub[i] + survivalTimeSub[i] <= time &&
+                  survivalTimeSub[i] <= dropoutTimeSub[i] &&
+                  survivalTimeSub[i] <= followupTime) {
+                timeUnderObservationSub[i] = survivalTimeSub[i];
+                eventSub[i] = 1;
+                dropoutEventSub[i] = 0;
+              } else if (arrivalTimeSub[i] + dropoutTimeSub[i] <= time &&
+                dropoutTimeSub[i] <= survivalTimeSub[i] &&
+                dropoutTimeSub[i] <= followupTime) {
+                timeUnderObservationSub[i] = dropoutTimeSub[i];
+                eventSub[i] = 0;
+                dropoutEventSub[i] = 1;
+              } else if (arrivalTimeSub[i] + followupTime <= time &&
+                followupTime <= survivalTimeSub[i] &&
+                followupTime <= dropoutTimeSub[i]) {
+                timeUnderObservationSub[i] = followupTime;
+                eventSub[i] = 0;
+                dropoutEventSub[i] = 0;
+              } else {
+                timeUnderObservationSub[i] = time - arrivalTimeSub[i];
+                eventSub[i] = 0;
+                dropoutEventSub[i] = 0;
+              }
+            } else {
+              if (arrivalTimeSub[i] + survivalTimeSub[i] <= time &&
+                  survivalTimeSub[i] <= dropoutTimeSub[i]) {
+                timeUnderObservationSub[i] = survivalTimeSub[i];
+                eventSub[i] = 1;
+                dropoutEventSub[i] = 0;
+              } else if (arrivalTimeSub[i] + dropoutTimeSub[i] <= time &&
+                dropoutTimeSub[i] <= survivalTimeSub[i]) {
+                timeUnderObservationSub[i] = dropoutTimeSub[i];
+                eventSub[i] = 0;
+                dropoutEventSub[i] = 1;
+              } else {
+                timeUnderObservationSub[i] = time - arrivalTimeSub[i];
+                eventSub[i] = 0;
+                dropoutEventSub[i] = 0;
+              }
+            }
+
+            if (treatmentGroupSub[i]==1 && eventSub[i]) events1++;
+            if (treatmentGroupSub[i]==2 && eventSub[i]) events2++;
+            if (treatmentGroupSub[i]==1 && dropoutEventSub[i]) dropouts1++;
+            if (treatmentGroupSub[i]==2 && dropoutEventSub[i]) dropouts2++;
+          }
+        }
+
+
+        // add raw data to output
+        if (pop == 1) {
+          if (niter[k] < maxNumberOfRawDatasetsPerStage) {
+            for (i=0; i<n; i++) {
+              iterationNumberx[index1] = iter+1;
+              stageNumberx[index1] = k+1;
+              subjectIdx[index1] = i+1;
+              arrivalTimex[index1] = arrivalTime[i];
+              stratumx[index1] = stratum[i];
+              biomarkerx[index1] = biomarker[i];
+              treatmentGroupx[index1] = treatmentGroup[i];
+              analysisTimex[index1] = time;
+              survivalTimex[index1] = survivalTime[i];
+              dropoutTimex[index1] = dropoutTime[i];
+              timeUnderObservationx[index1] = timeUnderObservationSub[i];
+              eventx[index1] = eventSub[i];
+              dropoutEventx[index1] = dropoutEventSub[i];
+
+              index1++;
+            }
+
+            // update the number of stage k dataset to extract
+            niter[k]++;
+          }
+        }
+
+        // number of accrued patients and total number of events
+        accruals1 = sum(n1);
+        accruals2 = sum(n2);
+        totalAccruals = accruals1 + accruals2;
+
+        totalEvents = events1 + events2;
+        totalDropouts = dropouts1 + dropouts2;
+
+        // order the data by time under observation
+        NumericVector timeUnderObservationSorted =
+          stl_sort(timeUnderObservationSub);
+        IntegerVector sortedIndex = match(timeUnderObservationSorted,
+                                          timeUnderObservationSub);
+        sortedIndex = sortedIndex - 1;
+        LogicalVector eventSorted = eventSub[sortedIndex];
+        IntegerVector stratumSorted = stratumSub[sortedIndex];
+        IntegerVector treatmentGroupSorted = treatmentGroupSub[sortedIndex];
+
+        LogicalVector subSorted = (timeUnderObservationSorted > 0);
+        eventSorted = eventSorted[subSorted];
+        stratumSorted = stratumSorted[subSorted];
+        treatmentGroupSorted = treatmentGroupSorted[subSorted];
+        int nsubSorted = static_cast<int>(eventSorted.size());
+
+        // calculate the stratified log-rank test
+        uscore = 0;
+        vscore = 0;
+        km.fill(1);
+        for (i=0; i<nsubSorted; i++) {
+          h = stratumSorted[i] - 1;
+          n1a[h] = n1[h]*hazardRatioH0;
+          nt[h] = n1[h] + n2[h];
+          nta[h] = n1a[h] + n2[h];
+
+          if (eventSorted[i]) {
+            w[h] = pow(km[h], rho1)*pow(1-km[h], rho2);
+            uscore += w[h]*((treatmentGroupSorted[i]==1) - n1a[h]/nta[h]);
+            vscore += w[h]*w[h]*n1a[h]*n2[h]/(nta[h]*nta[h]);
+            km[h] *= (1-1/nt[h]); // update km estimate
+          }
+
+          // reduce the risk set
+          if (treatmentGroupSorted[i]==1) {
+            n1[h]--;
+          } else {
+            n2[h]--;
+          }
+        }
+
+        // add summary data to output
+        iterationNumbery[index2] = iter+1;
+        eventsNotAchievedy[index2] = eventsNotAchieved;
+        stageNumbery[index2] = k+1;
+        analysisTimey[index2] = analysisTime[k];
+        populationy[index2] = pop == 1 ? "ITT" :
+          (pop == 2 ? "Biomarker Positive" : "Biomarker Negative");
+        accruals1y[index2] = accruals1;
+        accruals2y[index2] = accruals2;
+        totalAccrualsy[index2] = totalAccruals;
+        events1y[index2] = events1;
+        events2y[index2] = events2;
+        totalEventsy[index2] = totalEvents;
+        dropouts1y[index2] = dropouts1;
+        dropouts2y[index2] = dropouts2;
+        totalDropoutsy[index2] = totalDropouts;
+        logRankStatisticy[index2] = uscore/sqrt(vscore);
+        index2++;
+      } // end of population of interest
+    } // end of stage
+  } // end of iteration
+
+
+
+  // only keep nonmissing records
+  LogicalVector sub2 = !is_na(iterationNumbery);
+  iterationNumbery = iterationNumbery[sub2];
+  eventsNotAchievedy = eventsNotAchievedy[sub2];
+  stageNumbery = stageNumbery[sub2];
+  analysisTimey = analysisTimey[sub2];
+  populationy = populationy[sub2];
+  accruals1y = accruals1y[sub2];
+  accruals2y = accruals2y[sub2];
+  totalAccrualsy = totalAccrualsy[sub2];
+  events1y = events1y[sub2];
+  events2y = events2y[sub2];
+  totalEventsy = totalEventsy[sub2];
+  dropouts1y = dropouts1y[sub2];
+  dropouts2y = dropouts2y[sub2];
+  totalDropoutsy = totalDropoutsy[sub2];
+  logRankStatisticy = logRankStatisticy[sub2];
+
+  DataFrame sumdata = DataFrame::create(
+    _["iterationNumber"] = iterationNumbery,
+    _["eventsNotAchieved"] = eventsNotAchievedy,
+    _["stageNumber"] = stageNumbery,
+    _["analysisTime"] = analysisTimey,
+    _["population"] = populationy,
+    _["accruals1"] = accruals1y,
+    _["accruals2"] = accruals2y,
+    _["totalAccruals"] = totalAccrualsy,
+    _["events1"] = events1y,
+    _["events2"] = events2y,
+    _["totalEvents"] = totalEventsy,
+    _["dropouts1"] = dropouts1y,
+    _["dropouts2"] = dropouts2y,
+    _["totalDropouts"] = totalDropoutsy,
+    _["logRankStatistic"] = logRankStatisticy);
+
+
+  List result;
+
+  if (maxNumberOfRawDatasetsPerStage > 0) {
+    LogicalVector sub1 = !is_na(iterationNumberx);
+    iterationNumberx = iterationNumberx[sub1];
+    stageNumberx = stageNumberx[sub1];
+    subjectIdx = subjectIdx[sub1];
+    arrivalTimex = arrivalTimex[sub1];
+    stratumx = stratumx[sub1];
+    biomarkerx = biomarkerx[sub1];
+    treatmentGroupx = treatmentGroupx[sub1];
+    survivalTimex = survivalTimex[sub1];
+    dropoutTimex = dropoutTimex[sub1];
+    analysisTimex = analysisTimex[sub1];
+    timeUnderObservationx = timeUnderObservationx[sub1];
+    eventx = eventx[sub1];
+    dropoutEventx = dropoutEventx[sub1];
+
+    DataFrame rawdata = DataFrame::create(
+      _["iterationNumber"] = iterationNumberx,
+      _["stageNumber"] = stageNumberx,
+      _["analysisTime"] = analysisTimex,
+      _["subjectId"] = subjectIdx,
+      _["arrivalTime"] = arrivalTimex,
+      _["stratum"] = stratumx,
+      _["biomarker"] = biomarkerx,
+      _["treatmentGroup"] = treatmentGroupx,
+      _["survivalTime"] = survivalTimex,
+      _["dropoutTime"] = dropoutTimex,
+      _["timeUnderObservation"] = timeUnderObservationx,
+      _["event"] = eventx,
+      _["dropoutEvent"] = dropoutEventx);
+
+    result = List::create(_["sumdata"] = sumdata,
+                          _["rawdata"] = rawdata);
+  } else {
+    result = List::create(_["sumdata"] = sumdata);
+  }
+
+  return result;
+}
