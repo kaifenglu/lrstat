@@ -1118,7 +1118,7 @@ NumericVector caltime(const NumericVector& nevents = NA_REAL,
   NumericVector time(k);
 
   event = max(nevents);
-  if (f(studyTime) < 0.0) {
+  if (f(studyTime) < 0) {
     stop("followupTime is too short to reach the target number of events");
   }
 
@@ -2030,11 +2030,17 @@ List lrpower(const int kMax = 1,
                 rho1, rho2, 1);
 
     e0 = sum(NumericVector(lr[2]))*informationRates1;
-    time = caltime(e0, allocationRatioPlanned,
-                   accrualTime, accrualIntensity,
-                   piecewiseSurvivalTime, stratumFraction,
-                   lambda1, lambda2, gamma1, gamma2,
-                   accrualDuration, followupTime, fixedFollowup);
+    if (kMax > 1) {
+      NumericVector nevents1 = e0[Range(0, kMax-2)];
+      NumericVector time1 = caltime(
+        nevents1, allocationRatioPlanned,
+        accrualTime, accrualIntensity,
+        piecewiseSurvivalTime, stratumFraction,
+        lambda1, lambda2, gamma1, gamma2,
+        accrualDuration, followupTime, fixedFollowup);
+      time[Range(0, kMax-2)] = time1;
+    }
+    time[kMax-1] = studyDuration1;
   } else {
     lr = lrstat(u0, hazardRatioH0, allocationRatioPlanned,
                 accrualTime, accrualIntensity,
@@ -3063,11 +3069,17 @@ List lrsamplesize(const double beta = 0.2,
                               dur1, dur2, fixedFollowup, rho1, rho2, 1);
 
                   e0 = sum(NumericVector(lr[2]))*informationRates1;
-                  time = caltime(e0, allocationRatioPlanned,
-                                 accrualTime, accrualIntensity1,
-                                 piecewiseSurvivalTime, stratumFraction,
-                                 lambda1, lambda2, gamma1, gamma2,
-                                 dur1, dur2, fixedFollowup);
+                  if (kMax > 1) {
+                    NumericVector nevents1 = e0[Range(0, kMax-2)];
+                    NumericVector time1 = caltime(
+                      nevents1, allocationRatioPlanned,
+                      accrualTime, accrualIntensity1,
+                      piecewiseSurvivalTime, stratumFraction,
+                      lambda1, lambda2, gamma1, gamma2,
+                      dur1, dur2, fixedFollowup);
+                    time[Range(0, kMax-2)] = time1;
+                  }
+                  time[kMax-1] = studyDuration1;
                 } else {
                   lr = lrstat(u0, hazardRatioH0, allocationRatioPlanned,
                               accrualTime, accrualIntensity1,
@@ -3209,7 +3221,6 @@ List lrsamplesize(const double beta = 0.2,
 
   futilityBounds1[kMax-1] = criticalValues1[kMax-1];
 
-
   // output the results
   List resultH1, resultH0, result;
 
@@ -3334,7 +3345,6 @@ List lrsamplesize(const double beta = 0.2,
       studyDuration = accrualDuration + aval;
     }
 
-
     // update information rates to calculate new boundaries
     NumericVector nevents(kMax), information(kMax), time(kMax);
 
@@ -3387,11 +3397,16 @@ List lrsamplesize(const double beta = 0.2,
 
       // round the number of events and recalculate the timing of analyses
       nevents = floor(NumericVector(lr[2]) + 0.5);
-      time = caltime(nevents, allocationRatioPlanned,
-                     accrualTime, accrualIntensity1,
-                     piecewiseSurvivalTime, stratumFraction,
-                     lambda1, lambda2, gamma1, gamma2,
-                     accrualDuration, followupTime, fixedFollowup);
+      if (kMax > 1) {
+        NumericVector nevents1 = nevents[Range(0, kMax-2)];
+        NumericVector time1 = caltime(
+          nevents1, allocationRatioPlanned,
+          accrualTime, accrualIntensity1,
+          piecewiseSurvivalTime, stratumFraction,
+          lambda1, lambda2, gamma1, gamma2,
+          accrualDuration, followupTime, fixedFollowup);
+        time[Range(0, kMax-2)] = time1;
+      }
 
       // update the information at each analysis
       lr = lrstat(time, hazardRatioH0, allocationRatioPlanned,
@@ -4180,11 +4195,17 @@ List lrpowerequiv(const int kMax = 1,
                         0, 0, 1);
 
   e0 = sum(NumericVector(lr[2]))*informationRates1;
-  time = caltime(e0, allocationRatioPlanned,
-                 accrualTime, accrualIntensity,
-                 piecewiseSurvivalTime, stratumFraction,
-                 lambda1, lambda2, gamma1, gamma2,
-                 accrualDuration, followupTime, fixedFollowup);
+  if (kMax > 1) {
+    NumericVector nevents1 = e0[Range(0, kMax-2)];
+    NumericVector time1 = caltime(
+      nevents1, allocationRatioPlanned,
+      accrualTime, accrualIntensity,
+      piecewiseSurvivalTime, stratumFraction,
+      lambda1, lambda2, gamma1, gamma2,
+      accrualDuration, followupTime, fixedFollowup);
+    time[Range(0, kMax-2)] = time1;
+  }
+  time[kMax-1] = studyDuration1;
 
   double phi = allocationRatioPlanned/(1.0 + allocationRatioPlanned);
   NumericVector HR(kMax), theta(kMax), I(kMax);
@@ -4909,11 +4930,17 @@ List lrsamplesizeequiv(const double beta = 0.2,
                             dur1, dur2, fixedFollowup, 0, 0, 1);
 
                 e0 = sum(NumericVector(lr[2]))*informationRates1;
-                time = caltime(e0, allocationRatioPlanned,
-                               accrualTime, accrualIntensity1,
-                               piecewiseSurvivalTime, stratumFraction,
-                               lambda1, lambda2, gamma1, gamma2,
-                               dur1, dur2, fixedFollowup);
+                if (kMax > 1) {
+                  NumericVector nevents1 = e0[Range(0, kMax-2)];
+                  NumericVector time1 = caltime(
+                    nevents1, allocationRatioPlanned,
+                    accrualTime, accrualIntensity1,
+                    piecewiseSurvivalTime, stratumFraction,
+                    lambda1, lambda2, gamma1, gamma2,
+                    dur1, dur2, fixedFollowup);
+                  time[Range(0, kMax-2)] = time1;
+                }
+                time[kMax-1] = studyDuration1;
 
                 // obtain the mean and information at each stage
                 lr = lrstat(time, 1, allocationRatioPlanned,
