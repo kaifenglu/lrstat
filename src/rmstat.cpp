@@ -62,7 +62,7 @@ double rmst(const double t1 = 0,
   NumericVector time = NumericVector::create(t1, t2);
   IntegerVector m = findInterval3(time, t) - 1;
 
-  double s1, s2, ch = 0.0, aval = 0.0;
+  double s1, s2, ch = 0.0, aval;
   for (int j=0; j<=m[0]-1; j++) {
     ch += lambda[j]*(t[j+1] - t[j]);
   }
@@ -74,7 +74,7 @@ double rmst(const double t1 = 0,
   } else {
     s1 = exp(-lambda[m[0]]*(t1 - t[m[0]]));
     s2 = exp(-lambda[m[0]]*(t[m[0]+1] - t[m[0]]));
-    aval = aval + exp(-ch)*(s1 - s2)/lambda[m[0]];
+    aval = exp(-ch)*(s1 - s2)/lambda[m[0]];
 
     for (int j=m[0]+1; j<=m[1]-1; j++) {
       ch += lambda[j-1]*(t[j] - t[j-1]);
@@ -297,7 +297,6 @@ NumericVector covrmst(const double t2 = NA_REAL,
 
 
 //' @title Restricted Mean Survival Time by Stratum
-//'
 //' @description Obtains the restricted mean survival time and associated
 //' variance by treatment group and by stratum at a given calendar time.
 //'
@@ -494,13 +493,13 @@ DataFrame rmstat1(const double time = NA_REAL,
                 frac*accrualIntensity,
                 piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
                 accrualDuration, followupTime, maxFollowupTime);
-
+    // number of dropouts in the stratum at the specified calendar time
     y = nevent2(ss, allocationRatioPlanned, accrualTime,
                 frac*accrualIntensity,
                 piecewiseSurvivalTime, gam1, gam2, lam1, lam2,
                 accrualDuration, followupTime, maxFollowupTime);
 
-    // obtain number of enrolled subjects and subjects having an event
+    // obtain number of enrolled subjects and subjects having an event/dropout
     nsubjects[h] = frac*a;
     nevents(h, _) = x.row(0);
     ndropouts(h, _) = y.row(0);
@@ -1509,9 +1508,30 @@ List rmpower(const int kMax = 1,
   double rmst2 = sum(NumericVector(rm[13]));
   double rmstDiff = sum(NumericVector(rm[14]));
   NumericVector theta(kMax, rmstDiff);
+
+  // information at milestone
+  u0[0] = milestone + 1.0e-6;
+  rm = rmstat(u0, milestone, allocationRatioPlanned,
+              accrualTime, accrualIntensity,
+              piecewiseSurvivalTime, stratumFraction,
+              lambda1, lambda2, gamma1, gamma2,
+              accrualDuration, followupTime, fixedFollowup);
+
+  double information1 = sum(NumericVector(rm[18]));
+  if (informationRates1[0] <= information1/maxInformation) {
+    std::string str1 = "The first information rate must exceed that";
+    std::string str2 = "at the milestone time\n";
+    std::string str3 = "The information at the milestone time is";
+    std::string str4 = "The maximum information at study end is";
+    std::string errmsg = str1 + " " + str2 +
+      str3 + " " + std::to_string(information1) + "\n" +
+      str4 + " " + std::to_string(maxInformation) + "\n";
+    stop(errmsg);
+  }
+
   NumericVector I = maxInformation*informationRates1;
 
-  double information1;
+
   auto f = [milestone, allocationRatioPlanned,
             accrualTime, accrualIntensity,
             piecewiseSurvivalTime, stratumFraction,
@@ -2414,7 +2434,6 @@ List rmsamplesize(const double beta = 0.2,
     }
   }
 
-
   resultH1 = rmpower(
     kMax, informationRates1,
     efficacyStopping1, futilityStopping1, criticalValues1,
@@ -2430,7 +2449,6 @@ List rmsamplesize(const double beta = 0.2,
 
   overallResults = DataFrame(resultH1["overallResults"]);
   maxInformation = overallResults["information"];
-
 
   // obtain results under H0 by matching the maximum information
   // first find the hazard rate for the active treatment group that yields
@@ -3156,9 +3174,30 @@ List rmpower1s(const int kMax = 1,
   double maxInformation = 2.0*sum(NumericVector(rm[18]));
   double rmstH1 = sum(NumericVector(rm[12]));
   NumericVector theta = rep(rmstH1 - rmstH0, kMax);
+
+  // information at milestone
+  u0[0] = milestone + 1.0e-6;
+  rm = rmstat(u0, milestone, 1,
+              accrualTime, 2.0*accrualIntensity,
+              piecewiseSurvivalTime, stratumFraction,
+              lambda, lambda, gamma, gamma,
+              accrualDuration, followupTime, fixedFollowup);
+
+  double information1 = sum(NumericVector(rm[18]));
+  if (informationRates1[0] <= information1/maxInformation) {
+    std::string str1 = "The first information rate must exceed that";
+    std::string str2 = "at the milestone time\n";
+    std::string str3 = "The information at the milestone time is";
+    std::string str4 = "The maximum information at study end is";
+    std::string errmsg = str1 + " " + str2 +
+      str3 + " " + std::to_string(information1) + "\n" +
+      str4 + " " + std::to_string(maxInformation) + "\n";
+    stop(errmsg);
+  }
+
   NumericVector I = maxInformation*informationRates1;
 
-  double information1;
+
   auto f = [milestone, accrualTime, accrualIntensity,
             piecewiseSurvivalTime, stratumFraction,
             lambda, gamma,
@@ -4717,8 +4756,29 @@ List rmpowerequiv(const int kMax = 1,
   double rmstDiff = sum(NumericVector(rm[14]));
   NumericVector theta(kMax, rmstDiff);
   double maxInformation = sum(NumericVector(rm[18]));
+
+  // information at milestone
+  u0[0] = milestone + 1.0e-6;
+  rm = rmstat(u0, milestone, allocationRatioPlanned,
+              accrualTime, accrualIntensity,
+              piecewiseSurvivalTime, stratumFraction,
+              lambda1, lambda2, gamma1, gamma2,
+              accrualDuration, followupTime, fixedFollowup);
+
+  double information1 = sum(NumericVector(rm[18]));
+  if (informationRates1[0] <= information1/maxInformation) {
+    std::string str1 = "The first information rate must exceed that";
+    std::string str2 = "at the milestone time\n";
+    std::string str3 = "The information at the milestone time is";
+    std::string str4 = "The maximum information at study end is";
+    std::string errmsg = str1 + " " + str2 +
+      str3 + " " + std::to_string(information1) + "\n" +
+      str4 + " " + std::to_string(maxInformation) + "\n";
+    stop(errmsg);
+  }
+
   NumericVector I = maxInformation*informationRates1;
-  double information1;
+
 
   auto f = [milestone, allocationRatioPlanned,
             accrualTime, accrualIntensity,
