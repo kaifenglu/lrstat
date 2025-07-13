@@ -8,9 +8,9 @@ using namespace Rcpp;
 
 NumericVector fsurvci(double surv, double sesurv, std::string ct, double z);
 
-DataFrame survQuantile(const NumericVector& time,
+DataFrame survQuantile(const NumericVector& time, 
                        const IntegerVector& event,
-                       const double cilevel,
+                       const double cilevel, 
                        const std::string transform,
                        const NumericVector& probs);
 
@@ -81,8 +81,6 @@ NumericVector f_score_1(int p, NumericVector par, void *ex);
 
 NumericMatrix f_info_1(int p, NumericVector par, void *ex);
 
-List f_der_eta_1(NumericVector eta, NumericVector sig, void *ex);
-
 List f_der_eta_tau_1(NumericVector eta, NumericVector sig, void *ex);
 
 NumericMatrix f_ressco_1(int p, NumericVector par, void *ex);
@@ -108,6 +106,7 @@ List liferegcpp(const DataFrame data,
                 const std::string offset,
                 const std::string id,
                 const std::string dist,
+                const NumericVector& init,
                 const bool robust,
                 const bool plci,
                 const double alpha,
@@ -182,6 +181,7 @@ List phregcpp(const DataFrame data,
               const std::string offset,
               const std::string id,
               const std::string ties,
+              const NumericVector& init,
               const bool robust,
               const bool est_basehaz,
               const bool est_resid,
