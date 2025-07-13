@@ -39,15 +39,52 @@ fquantile <- function(S, probs, ...) {
 }
 
 
-#' @title Profile Log-Likelihood Function for the Change Points in
+#' @title Profile Log-Likelihood Function for Change Points in
 #' Piecewise Exponential Approximation
-#' @description Obtains the profile log-likelihood function for the
+#' @description Obtains the profile log-likelihood function for
 #' change points in the piecewise exponential approximation to
 #' a survival function.
 #'
 #' @param tau The numeric vector of change points.
 #' @param S The survival function of a univariate survival time.
 #' @param ... Additional arguments to be passed to S.
+#'
+#' @details
+#' This function computes the profile log-likelihood for
+#' change points in a piecewise exponential survival model.
+#'
+#' Let \eqn{S(t)} denote the survival function of a univariate
+#' survival time, and \eqn{\tau} be a vector of \eqn{J-1} change points.
+#' The piecewise exponential survival model divides the time
+#' axis into \eqn{J} intervals defined by the change points \eqn{\tau},
+#' where each interval \eqn{[t_j, t_{j+1})} has a constant
+#' hazard rate \eqn{\lambda_j}. The time intervals are specified as:
+#' \deqn{[t_1, t_2), [t_2, t_3), \ldots, [t_{J}, t_{J+1})}
+#' where \eqn{t_1 = 0}, \eqn{t_{J+1} = \infty}, and
+#' \eqn{t_j = \tau_{j-1}} for \eqn{j = 2, \ldots, J}.
+#'
+#' For each subject, the expected number of events occurring
+#' in the \eqn{j}-th interval is
+#' \deqn{d_j = E\{I(t_j < Y \leq t_{j+1})\} = S(t_j) - S(t_{j+1})}
+#' The expected exposure in the \eqn{j}-th interval is:
+#' \deqn{e_j = E\{(Y-t_j)I(t_j < Y \leq t_{j+1}) +
+#' (t_{j+1} - t_j)I(Y > t_{j+1})\}}
+#' which can be shown to be equivalent to
+#' \deqn{e_j = \int_{t_j}^{t_{j+1}} S(t) dt}
+#'
+#' The log-likelihood for the piecewise exponential model is:
+#' \deqn{\ell(\tau,\lambda) =
+#' \sum_{j=1}^J \{d_j \log(\lambda_j) - e_j \lambda_j\}}
+#' The profile log-likelihood for \eqn{\tau} is obtained by maximizing
+#' \eqn{\ell(\tau,\lambda)} with respect to
+#' \eqn{\lambda} for fixed \eqn{\tau}.
+#' The maximum likelihood estimate of the hazard rate in the
+#' \eqn{j}-th interval is
+#' \deqn{\lambda_j = \frac{d_j}{e_j}}
+#' Substituting back, the profile log-likelihood is
+#' \deqn{\ell(\tau) = \sum_{j=1}^J d_j \log(d_j/e_j) - 1}
+#' where we use the fact that
+#' \eqn{\sum_{j=1}^J d_j = 1}.
 #'
 #' @return A list with the following three components:
 #'
@@ -92,6 +129,26 @@ pwexploglik <- function(tau, S, ...) {
 #'
 #' @param S The survival function of a univariate survival time.
 #' @param ... Additional arguments to be passed to S.
+#' @param tol The tolerance for convergence of the profile log-likelihood.
+#'   Defaults to 0.0001.
+#'
+#' @details
+#' This function computes the piecewise exponential approximation
+#' to a survival distribution.
+#' The piecewise exponential model divides the time axis into
+#' \eqn{J} intervals defined by the change points, where each
+#' interval \eqn{[t_j, t_{j+1})} has a constant hazard rate
+#' \eqn{\lambda_j}. The time intervals are specified as:
+#' \deqn{[t_1, t_2), [t_2, t_3), \ldots, [t_{J}, t_{J+1})}
+#' where \eqn{t_1 = 0}, \eqn{t_{J+1} = \infty}, and
+#' \eqn{t_j = \tau_{j-1}} for \eqn{j = 2, \ldots, J}.
+#' The function starts with \eqn{J = 2} (1 change point) and
+#' gradually increases \eqn{J} by adding one change point at a time
+#' until the maximized profile log-likelihood for change points
+#' stabilizes, i.e., the relative increase in the maximum of the
+#' profile log-likelihood function is less than \code{tol}.
+#' If the relative change in the hazard rate is also less than
+#' \code{tol}, the function stops and returns the results.
 #'
 #' @return A list with three components:
 #'
@@ -120,7 +177,7 @@ pwexploglik <- function(tau, S, ...) {
 #' pwexpcuts(pweibull, shape = 1.37, scale = 1/0.818, lower.tail = FALSE)
 #'
 #' @export
-pwexpcuts <- function(S, ...) {
+pwexpcuts <- function(S, ..., tol = 0.0001) {
   Sinf = S(Inf, ...)
   tmax = fquantile(S, 0.999*(1 - Sinf), ...)
 
@@ -152,12 +209,16 @@ pwexpcuts <- function(S, ...) {
       tau[J-1] = out$piecewiseSurvivalTime[J]
       loglik[J-1] = out$loglik
 
-      if (abs((loglik[J-1] - loglik[J-2])/loglik[J-2]) < 0.0001) break
+      if (abs((loglik[J-1] - loglik[J-2])/loglik[J-2]) < tol) break
     }
   }
 
-  list(piecewiseSurvivalTime = out$piecewiseSurvivalTime,
-       lambda = out$lambda, loglik = loglik[1:(J-1)])
+  if (abs((out$lambda[J] - out$lambda[J-1])/out$lambda[J-1]) < tol) {
+    J = J - 1
+  }
+
+  list(piecewiseSurvivalTime = out$piecewiseSurvivalTime[1:J],
+       lambda = out$lambda[1:J], loglik = loglik[1:(J-1)])
 }
 
 
@@ -212,13 +273,53 @@ pwexpcuts <- function(S, ...) {
 #' @param seed The seed to reproduce the simulation results.
 #'   The seed from the environment will be used if left unspecified.
 #'
+#' @details
+#' This function calculates the sample size and study duration
+#' by calibrating the number of events estimated using the
+#' Schoenfeld formula under the proportional hazards assumption,
+#' particularly when the hazard ratio is far away from one and/or
+#' the allocation between groups is unequal.
+#'
+#' For a fixed design, the Schoenfeld formula for the required
+#' number of events is
+#' \deqn{D = \frac{(\Phi^{-1}(1-\alpha) + \Phi^{-1}(1-\beta))^2}
+#' {(\theta - \theta_0)^2 r(1-r)}}
+#' where \eqn{D} is the total number of events required,
+#' \eqn{\alpha} is the type I error rate,
+#' \eqn{\beta} is the type II error rate,
+#' \eqn{r} is the randomization probability for the active treatment group,
+#' \eqn{\theta_0} and \eqn{\theta} are the log hazard ratios under
+#' the null and alternative hypotheses, respectively.
+#'
+#' The function first computes the number of events using the
+#' Schoenfeld formula. If \code{calibrate} is set to 1, the
+#' function uses simulations to calibrate the number of
+#' events, accounting for scenarios where the Schoenfeld formula
+#' may be inaccurate (e.g., when allocation is unequal or the hazard
+#' ratio is extreme).
+#'
+#' Let \eqn{D_{schoenfeld}} be the number of events calculated
+#' by the Schoenfeld formula, and \eqn{D_{calibrated}}
+#' be the calibrated number of events. The calibrated number of
+#' events is calculated as
+#' #' \deqn{D_{\text{calibrated}} =
+#' \frac{\left\{\Phi^{-1}(1-\alpha) + \Phi^{-1}(1-\beta)\right\}^2}
+#' {\left\{\Phi^{-1}(1-\alpha) +
+#' \Phi^{-1}(1-\beta_{\text{schoenfeld}})\right\}^2}
+#' D_{\text{schoenfeld}}}
+#' where \eqn{\beta_{schoenfeld}} is the empirical type II error
+#' estimated via simulation.
+#'
+#' A second round of simulation is performed to obtain the
+#' empirical power using the calibrated number of events.
+#'
 #' @return A list of two components:
 #'
-#' * \code{resultsUnderH1}: An S3 class \code{lrpower} object under the
-#' alternative hypothesis.
+#' * \code{analyticalResults}: An S3 class \code{lrpower} object for
+#'   the asymptotic power.
 #'
-#' * \code{resultsUnderH0}: An S3 class \code{lrpower} object under the
-#' null hypothesis.
+#' * \code{simulationResults}: An S3 class \code{lrsim} object for
+#'   the empirical power.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
