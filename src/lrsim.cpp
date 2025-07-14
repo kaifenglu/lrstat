@@ -496,7 +496,7 @@ List lrsim(const int kMax = 1,
 
 
   // declare variables
-  int i, iter, j, k, h, nevents, nstages, stopStage, nsub;
+  int i, iter, j, k, h, nevents, nstages, stopStage;
   int index1=0, index2=0;
 
   double u, enrollt, time, uscore1, vscore1;
@@ -517,14 +517,12 @@ List lrsim(const int kMax = 1,
 
 
   // subject-level raw data set for one simulation
-  IntegerVector stratum(n), treatmentGroup(n), sortedIndex(n),
-  stratumSorted(n), treatmentGroupSorted(n);
+  IntegerVector stratum(n), treatmentGroup(n);
 
   NumericVector arrivalTime(n), survivalTime(n), dropoutTime(n),
-  timeUnderObservation(n), totalTime(n), totalt(n),
-  timeUnderObservationSorted(n);
+  timeUnderObservation(n), totalTime(n), totalt(n);
 
-  LogicalVector event(n), dropoutEvent(n), sub(n), eventSorted(n);
+  LogicalVector event(n), dropoutEvent(n);
 
 
   // stratum information
@@ -556,13 +554,13 @@ List lrsim(const int kMax = 1,
 
   IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
   IntegerVector stopStagex(nrow1);
+  NumericVector analysisTimex(nrow1);
   IntegerVector subjectIdx(nrow1);
   NumericVector arrivalTimex(nrow1);
   IntegerVector stratumx(nrow1);
   IntegerVector treatmentGroupx(nrow1);
   NumericVector survivalTimex(nrow1);
   NumericVector dropoutTimex(nrow1);
-  NumericVector analysisTimex(nrow1);
   NumericVector timeUnderObservationx(nrow1);
   LogicalVector eventx(nrow1);
   LogicalVector dropoutEventx(nrow1);
@@ -827,23 +825,26 @@ List lrsim(const int kMax = 1,
       totalDropouts[k] = dropouts1[k] + dropouts2[k];
 
       // order the data by time under observation
-      timeUnderObservationSorted = stl_sort(timeUnderObservation);
-      sortedIndex = match(timeUnderObservationSorted, timeUnderObservation);
+      NumericVector timeUnderObservationSorted =
+        stl_sort(timeUnderObservation);
+      IntegerVector sortedIndex = match(timeUnderObservationSorted,
+                                        timeUnderObservation);
       sortedIndex = sortedIndex - 1;
-      eventSorted = event[sortedIndex];
-      stratumSorted = stratum[sortedIndex];
-      treatmentGroupSorted = treatmentGroup[sortedIndex];
-      sub = (timeUnderObservationSorted > 0);
-      eventSorted = eventSorted[sub];
-      stratumSorted = stratumSorted[sub];
-      treatmentGroupSorted = treatmentGroupSorted[sub];
-      nsub = static_cast<int>(eventSorted.size());
+      IntegerVector stratumSorted = stratum[sortedIndex];
+      IntegerVector treatmentGroupSorted = treatmentGroup[sortedIndex];
+      LogicalVector eventSorted = event[sortedIndex];
+
+      LogicalVector subSorted = (timeUnderObservationSorted > 0);
+      stratumSorted = stratumSorted[subSorted];
+      treatmentGroupSorted = treatmentGroupSorted[subSorted];
+      eventSorted = eventSorted[subSorted];
+      int nsubSorted = static_cast<int>(eventSorted.size());
 
       // calculate the stratified log-rank test
       uscore1 = 0;
       vscore1 = 0;
       km.fill(1);  // km(t-) estimate by stratum
-      for (i=0; i<nsub; i++) {
+      for (i=0; i<nsubSorted; i++) {
         h = stratumSorted[i] - 1;
         n1a[h] = n1[h]*hazardRatioH0;
         nt[h] = n1[h] + n2[h];
@@ -942,13 +943,13 @@ List lrsim(const int kMax = 1,
             for (i=0; i<n; i++) {
               iterationNumberx[index1] = iter+1;
               stopStagex[index1] = k+1;
+              analysisTimex[index1] = time;
               subjectIdx[index1] = i+1;
               arrivalTimex[index1] = arrivalTime[i];
               stratumx[index1] = stratum[i];
               treatmentGroupx[index1] = treatmentGroup[i];
               survivalTimex[index1] = survivalTime[i];
               dropoutTimex[index1] = dropoutTime[i];
-              analysisTimex[index1] = time;
               timeUnderObservationx[index1] = timeUnderObservation[i];
               eventx[index1] = event[i];
               dropoutEventx[index1] = dropoutEvent[i];
@@ -1126,13 +1127,13 @@ List lrsim(const int kMax = 1,
     LogicalVector sub1 = !is_na(iterationNumberx);
     iterationNumberx = iterationNumberx[sub1];
     stopStagex = stopStagex[sub1];
+    analysisTimex = analysisTimex[sub1];
     subjectIdx = subjectIdx[sub1];
     arrivalTimex = arrivalTimex[sub1];
     stratumx = stratumx[sub1];
     treatmentGroupx = treatmentGroupx[sub1];
     survivalTimex = survivalTimex[sub1];
     dropoutTimex = dropoutTimex[sub1];
-    analysisTimex = analysisTimex[sub1];
     timeUnderObservationx = timeUnderObservationx[sub1];
     eventx = eventx[sub1];
     dropoutEventx = dropoutEventx[sub1];
@@ -1336,7 +1337,7 @@ List lrsim(const int kMax = 1,
 //'
 //' @export
 // [[Rcpp::export]]
-List lrsim3a(const int kMax = NA_INTEGER,
+List lrsim3a(const int kMax = 1,
              const double hazardRatioH013 = 1,
              const double hazardRatioH023 = 1,
              const double hazardRatioH012 = 1,
@@ -1616,7 +1617,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
 
 
   // declare variables
-  int i, iter, j, k, h, nevents, nstages, nsub;
+  int i, iter, j, k, h, nevents, nstages;
   int accruals1, accruals2, accruals3, totalAccruals;
   int events1, events2, events3, totalEvents;
   int dropouts1, dropouts2, dropouts3, totalDropouts;
@@ -1642,15 +1643,12 @@ List lrsim3a(const int kMax = NA_INTEGER,
 
 
   // subject-level raw data set for one simulation
-  IntegerVector stratum(n), treatmentGroup(n), sortedIndex(n),
-  stratumSorted(n), treatmentGroupSorted(n);
+  IntegerVector stratum(n), treatmentGroup(n);
 
   NumericVector arrivalTime(n), survivalTime(n), dropoutTime(n),
-  timeUnderObservation(n), totalTime(n), totalt(n),
-  timeUnderObservationSorted(n);
+  timeUnderObservation(n), totalTime(n), totalt(n);
 
-  LogicalVector event(n), dropoutEvent(n), eventac(n), sub(n),
-  eventSorted(n);
+  LogicalVector event(n), dropoutEvent(n), eventac(n);
 
 
   // stratum information
@@ -1679,13 +1677,13 @@ List lrsim3a(const int kMax = NA_INTEGER,
 
   IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
   IntegerVector stageNumberx(nrow1);
+  NumericVector analysisTimex(nrow1);
   IntegerVector subjectIdx(nrow1);
   NumericVector arrivalTimex(nrow1);
   IntegerVector stratumx(nrow1);
   IntegerVector treatmentGroupx(nrow1);
   NumericVector survivalTimex(nrow1);
   NumericVector dropoutTimex(nrow1);
-  NumericVector analysisTimex(nrow1);
   NumericVector timeUnderObservationx(nrow1);
   LogicalVector eventx(nrow1);
   LogicalVector dropoutEventx(nrow1);
@@ -1959,11 +1957,11 @@ List lrsim3a(const int kMax = NA_INTEGER,
         for (i=0; i<n; i++) {
           iterationNumberx[index1] = iter+1;
           stageNumberx[index1] = k+1;
+          analysisTimex[index1] = time;
           subjectIdx[index1] = i+1;
           arrivalTimex[index1] = arrivalTime[i];
           stratumx[index1] = stratum[i];
           treatmentGroupx[index1] = treatmentGroup[i];
-          analysisTimex[index1] = time;
           survivalTimex[index1] = survivalTime[i];
           dropoutTimex[index1] = dropoutTime[i];
           timeUnderObservationx[index1] = timeUnderObservation[i];
@@ -1989,17 +1987,20 @@ List lrsim3a(const int kMax = NA_INTEGER,
 
 
       // order the data by time under observation
-      timeUnderObservationSorted = stl_sort(timeUnderObservation);
-      sortedIndex = match(timeUnderObservationSorted, timeUnderObservation);
+      NumericVector timeUnderObservationSorted =
+        stl_sort(timeUnderObservation);
+      IntegerVector sortedIndex = match(timeUnderObservationSorted,
+                                        timeUnderObservation);
       sortedIndex = sortedIndex - 1;
-      eventSorted = event[sortedIndex];
-      stratumSorted = stratum[sortedIndex];
-      treatmentGroupSorted = treatmentGroup[sortedIndex];
-      sub = (timeUnderObservationSorted > 0);
-      eventSorted = eventSorted[sub];
-      stratumSorted = stratumSorted[sub];
-      treatmentGroupSorted = treatmentGroupSorted[sub];
-      nsub = static_cast<int>(eventSorted.size());
+      IntegerVector stratumSorted = stratum[sortedIndex];
+      IntegerVector treatmentGroupSorted = treatmentGroup[sortedIndex];
+      LogicalVector eventSorted = event[sortedIndex];
+
+      LogicalVector subSorted = (timeUnderObservationSorted > 0);
+      stratumSorted = stratumSorted[subSorted];
+      treatmentGroupSorted = treatmentGroupSorted[subSorted];
+      eventSorted = eventSorted[subSorted];
+      int nsubSorted = static_cast<int>(eventSorted.size());
 
       // calculate the stratified log-rank test
       uscore13 = 0;
@@ -2011,7 +2012,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
       km13.fill(1);
       km23.fill(1);
       km12.fill(1);
-      for (i=0; i<nsub; i++) {
+      for (i=0; i<nsubSorted; i++) {
         h = stratumSorted[i] - 1;
         nt13[h] = n1[h] + n3[h];
         nt23[h] = n2[h] + n3[h];
@@ -2069,7 +2070,7 @@ List lrsim3a(const int kMax = NA_INTEGER,
       iterationNumbery[index2] = iter+1;
       eventsNotAchievedy[index2] = eventsNotAchieved;
       stageNumbery[index2] = k+1;
-      analysisTimey[index2] = analysisTime[k];
+      analysisTimey[index2] = time;
       accruals1y[index2] = accruals1;
       accruals2y[index2] = accruals2;
       accruals3y[index2] = accruals3;
@@ -2146,11 +2147,11 @@ List lrsim3a(const int kMax = NA_INTEGER,
     LogicalVector sub1 = !is_na(iterationNumberx);
     iterationNumberx = iterationNumberx[sub1];
     stageNumberx = stageNumberx[sub1];
+    analysisTimex = analysisTimex[sub1];
     subjectIdx = subjectIdx[sub1];
     arrivalTimex = arrivalTimex[sub1];
     stratumx = stratumx[sub1];
     treatmentGroupx = treatmentGroupx[sub1];
-    analysisTimex = analysisTimex[sub1];
     survivalTimex = survivalTimex[sub1];
     dropoutTimex = dropoutTimex[sub1];
     timeUnderObservationx = timeUnderObservationx[sub1];
@@ -2369,8 +2370,8 @@ List lrsim3a(const int kMax = NA_INTEGER,
 //'
 //' @export
 // [[Rcpp::export]]
-List lrsim2e(const int kMax = NA_INTEGER,
-             const int kMaxe1 = NA_INTEGER,
+List lrsim2e(const int kMax = 1,
+             const int kMaxe1 = 1,
              const double hazardRatioH0e1 = 1,
              const double hazardRatioH0e2 = 1,
              const int allocation1 = 1,
@@ -2744,7 +2745,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
 
 
   // declare variables
-  int iter, nevents1, nevents2, nstages, nsub;
+  int iter, nevents1, nevents2, nstages;
   int accruals1, accruals2, totalAccruals;
   int events1e1, events2e1, totalEventse1;
   int events1e2, events2e2, totalEventse2;
@@ -2770,16 +2771,15 @@ List lrsim2e(const int kMax = NA_INTEGER,
 
 
   // subject-level raw data set for one simulation
-  IntegerVector stratum(n), treatmentGroup(n), sortedIndex(n),
-  stratumSorted(n), treatmentGroupSorted(n);
+  IntegerVector stratum(n), treatmentGroup(n);
 
   NumericVector arrivalTime(n), survivalTime1(n), survivalTime2(n),
   dropoutTime1(n), dropoutTime2(n), timeUnderObservation1(n),
   timeUnderObservation2(n), totalTime1(n), totalTime2(n),
-  totalt1(n), totalt2(n), timeUnderObservationSorted(n);
+  totalt1(n), totalt2(n);
 
   LogicalVector event1(n), event2(n), dropoutEvent1(n), dropoutEvent2(n),
-  event1ac(n), event2ac(n), sub(n), eventSorted(n);
+  event1ac(n), event2ac(n);
 
 
   // stratum information
@@ -2813,6 +2813,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
 
   IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
   IntegerVector stageNumberx(nrow1);
+  NumericVector analysisTimex(nrow1);
   IntegerVector subjectIdx(nrow1);
   NumericVector arrivalTimex(nrow1);
   IntegerVector stratumx(nrow1);
@@ -2821,7 +2822,6 @@ List lrsim2e(const int kMax = NA_INTEGER,
   NumericVector survivalTime2x(nrow1);
   NumericVector dropoutTime1x(nrow1);
   NumericVector dropoutTime2x(nrow1);
-  NumericVector analysisTimex(nrow1);
   NumericVector timeUnderObservation1x(nrow1);
   NumericVector timeUnderObservation2x(nrow1);
   LogicalVector event1x(nrow1);
@@ -3267,11 +3267,11 @@ List lrsim2e(const int kMax = NA_INTEGER,
         for (i=0; i<n; i++) {
           iterationNumberx[index1] = iter+1;
           stageNumberx[index1] = k+1;
+          analysisTimex[index1] = time;
           subjectIdx[index1] = i+1;
           arrivalTimex[index1] = arrivalTime[i];
           stratumx[index1] = stratum[i];
           treatmentGroupx[index1] = treatmentGroup[i];
-          analysisTimex[index1] = time;
 
           survivalTime1x[index1] = survivalTime1[i];
           dropoutTime1x[index1] = dropoutTime1[i];
@@ -3317,6 +3317,9 @@ List lrsim2e(const int kMax = NA_INTEGER,
         }
 
         // order the data by time under observation
+        NumericVector timeUnderObservationSorted;
+        IntegerVector sortedIndex;
+        LogicalVector eventSorted;
         if (endpoint == 1) {
           timeUnderObservationSorted = stl_sort(timeUnderObservation1);
           sortedIndex = match(timeUnderObservationSorted,
@@ -3331,19 +3334,20 @@ List lrsim2e(const int kMax = NA_INTEGER,
           eventSorted = event2[sortedIndex];
         }
 
-        stratumSorted = stratum[sortedIndex];
-        treatmentGroupSorted = treatmentGroup[sortedIndex];
-        sub = (timeUnderObservationSorted > 0);
-        eventSorted = eventSorted[sub];
-        stratumSorted = stratumSorted[sub];
-        treatmentGroupSorted = treatmentGroupSorted[sub];
-        nsub = static_cast<int>(eventSorted.size());
+        IntegerVector stratumSorted = stratum[sortedIndex];
+        IntegerVector treatmentGroupSorted = treatmentGroup[sortedIndex];
+
+        LogicalVector subSorted = (timeUnderObservationSorted > 0);
+        stratumSorted = stratumSorted[subSorted];
+        treatmentGroupSorted = treatmentGroupSorted[subSorted];
+        eventSorted = eventSorted[subSorted];
+        int nsubSorted = static_cast<int>(eventSorted.size());
 
         // calculate the stratified log-rank test
         uscore = 0;
         vscore = 0;
         km.fill(1);
-        for (i=0; i<nsub; i++) {
+        for (i=0; i<nsubSorted; i++) {
           h = stratumSorted[i] - 1;
           nt[h] = n1[h] + n2[h];
 
@@ -3371,7 +3375,7 @@ List lrsim2e(const int kMax = NA_INTEGER,
         iterationNumbery[index2] = iter+1;
         eventsNotAchievedy[index2] = eventsNotAchieved;
         stageNumbery[index2] = k+1;
-        analysisTimey[index2] = analysisTime[k];
+        analysisTimey[index2] = time;
         accruals1y[index2] = accruals1;
         accruals2y[index2] = accruals2;
         totalAccrualsy[index2] = totalAccruals;
@@ -3445,11 +3449,11 @@ List lrsim2e(const int kMax = NA_INTEGER,
     LogicalVector sub1 = !is_na(iterationNumberx);
     iterationNumberx = iterationNumberx[sub1];
     stageNumberx = stageNumberx[sub1];
+    analysisTimex = analysisTimex[sub1];
     subjectIdx = subjectIdx[sub1];
     arrivalTimex = arrivalTimex[sub1];
     stratumx = stratumx[sub1];
     treatmentGroupx = treatmentGroupx[sub1];
-    analysisTimex = analysisTimex[sub1];
     survivalTime1x = survivalTime1x[sub1];
     dropoutTime1x = dropoutTime1x[sub1];
     timeUnderObservation1x = timeUnderObservation1x[sub1];
@@ -3719,8 +3723,8 @@ List lrsim2e(const int kMax = NA_INTEGER,
 //'
 //' @export
 // [[Rcpp::export]]
-List lrsim2e3a(const int kMax = NA_INTEGER,
-               const int kMaxe1 = NA_INTEGER,
+List lrsim2e3a(const int kMax = 1,
+               const int kMaxe1 = 1,
                const double hazardRatioH013e1 = 1,
                const double hazardRatioH023e1 = 1,
                const double hazardRatioH012e1 = 1,
@@ -4200,7 +4204,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
 
 
   // declare variables
-  int iter, nevents1, nevents2, nstages, nsub;
+  int iter, nevents1, nevents2, nstages;
   int accruals1, accruals2, accruals3, totalAccruals;
   int events1e1, events2e1, events3e1, totalEventse1;
   int events1e2, events2e2, events3e2, totalEventse2;
@@ -4228,16 +4232,15 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
 
 
   // subject-level raw data set for one simulation
-  IntegerVector stratum(n), treatmentGroup(n), sortedIndex(n),
-  stratumSorted(n), treatmentGroupSorted(n);
+  IntegerVector stratum(n), treatmentGroup(n);
 
   NumericVector arrivalTime(n), survivalTime1(n), survivalTime2(n),
   dropoutTime1(n), dropoutTime2(n), timeUnderObservation1(n),
   timeUnderObservation2(n), totalTime1(n), totalTime2(n),
-  totalt1(n), totalt2(n), timeUnderObservationSorted(n);
+  totalt1(n), totalt2(n);
 
   LogicalVector event1(n), event2(n), dropoutEvent1(n), dropoutEvent2(n),
-  event1ac(n), event2ac(n), sub(n), eventSorted(n);
+  event1ac(n), event2ac(n);
 
 
   // stratum information
@@ -4273,6 +4276,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
 
   IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
   IntegerVector stageNumberx(nrow1);
+  NumericVector analysisTimex(nrow1);
   IntegerVector subjectIdx(nrow1);
   NumericVector arrivalTimex(nrow1);
   IntegerVector stratumx(nrow1);
@@ -4281,7 +4285,6 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
   NumericVector survivalTime2x(nrow1);
   NumericVector dropoutTime1x(nrow1);
   NumericVector dropoutTime2x(nrow1);
-  NumericVector analysisTimex(nrow1);
   NumericVector timeUnderObservation1x(nrow1);
   NumericVector timeUnderObservation2x(nrow1);
   LogicalVector event1x(nrow1);
@@ -4767,11 +4770,11 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
         for (i=0; i<n; i++) {
           iterationNumberx[index1] = iter+1;
           stageNumberx[index1] = k+1;
+          analysisTimex[index1] = time;
           subjectIdx[index1] = i+1;
           arrivalTimex[index1] = arrivalTime[i];
           stratumx[index1] = stratum[i];
           treatmentGroupx[index1] = treatmentGroup[i];
-          analysisTimex[index1] = time;
 
           survivalTime1x[index1] = survivalTime1[i];
           dropoutTime1x[index1] = dropoutTime1[i];
@@ -4824,6 +4827,9 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
 
 
         // order the data by time under observation
+        NumericVector timeUnderObservationSorted;
+        IntegerVector sortedIndex;
+        LogicalVector eventSorted;
         if (endpoint == 1) {
           timeUnderObservationSorted = stl_sort(timeUnderObservation1);
           sortedIndex = match(timeUnderObservationSorted,
@@ -4838,13 +4844,14 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
           eventSorted = event2[sortedIndex];
         }
 
-        stratumSorted = stratum[sortedIndex];
-        treatmentGroupSorted = treatmentGroup[sortedIndex];
-        sub = (timeUnderObservationSorted > 0);
-        eventSorted = eventSorted[sub];
-        stratumSorted = stratumSorted[sub];
-        treatmentGroupSorted = treatmentGroupSorted[sub];
-        nsub = static_cast<int>(eventSorted.size());
+        IntegerVector stratumSorted = stratum[sortedIndex];
+        IntegerVector treatmentGroupSorted = treatmentGroup[sortedIndex];
+
+        LogicalVector subSorted = (timeUnderObservationSorted > 0);
+        stratumSorted = stratumSorted[subSorted];
+        treatmentGroupSorted = treatmentGroupSorted[subSorted];
+        eventSorted = eventSorted[subSorted];
+        int nsubSorted = static_cast<int>(eventSorted.size());
 
         // calculate the stratified log-rank test
         uscore13 = 0;
@@ -4856,7 +4863,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
         km13.fill(1);
         km23.fill(1);
         km12.fill(1);
-        for (i=0; i<nsub; i++) {
+        for (i=0; i<nsubSorted; i++) {
           h = stratumSorted[i] - 1;
           nt13[h] = n1[h] + n3[h];
           nt23[h] = n2[h] + n3[h];
@@ -4914,7 +4921,7 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
         iterationNumbery[index2] = iter+1;
         eventsNotAchievedy[index2] = eventsNotAchieved;
         stageNumbery[index2] = k+1;
-        analysisTimey[index2] = analysisTime[k];
+        analysisTimey[index2] = time;
         accruals1y[index2] = accruals1;
         accruals2y[index2] = accruals2;
         accruals3y[index2] = accruals3;
@@ -5006,11 +5013,11 @@ List lrsim2e3a(const int kMax = NA_INTEGER,
     LogicalVector sub1 = !is_na(iterationNumberx);
     iterationNumberx = iterationNumberx[sub1];
     stageNumberx = stageNumberx[sub1];
+    analysisTimex = analysisTimex[sub1];
     subjectIdx = subjectIdx[sub1];
     arrivalTimex = arrivalTimex[sub1];
     stratumx = stratumx[sub1];
     treatmentGroupx = treatmentGroupx[sub1];
-    analysisTimex = analysisTimex[sub1];
     survivalTime1x = survivalTime1x[sub1];
     dropoutTime1x = dropoutTime1x[sub1];
     timeUnderObservation1x = timeUnderObservation1x[sub1];
@@ -5656,7 +5663,7 @@ List binary_tte_sim(
 
 
   // declare variables
-  int h, i, iter, j, k, nevents, nstages1, nstages2, nsub;
+  int h, i, iter, j, k, nevents, nstages1, nstages2;
   int accruals1, accruals2, totalAccruals;
   int events1, events2, totalEvents;
   int dropouts1, dropouts2, totalDropouts;
@@ -5681,13 +5688,9 @@ List binary_tte_sim(
 
   // subject-level raw data set for one simulation
   IntegerVector stratum(n), treatmentGroup(n);
-  IntegerVector order(n), stratumSorted(n), treatmentGroupSorted(n);
-
   NumericVector arrivalTime(n), survivalTime(n), dropoutTime(n);
   NumericVector timeUnderObservation(n), totalTime(n), totalt(n);
-  NumericVector timeUnderObservationSorted(n);
-
-  LogicalVector event(n), dropoutEvent(n), sub(n), eventSorted(n);
+  LogicalVector event(n), dropoutEvent(n);
 
   NumericVector latentResponse(n);
   NumericVector trtDiscTime(n), ptfu1Time(n);
@@ -5724,6 +5727,7 @@ List binary_tte_sim(
 
   IntegerVector iterationNumber1x = IntegerVector(nrow1x, NA_INTEGER);
   IntegerVector stageNumber1x(nrow1x);
+  NumericVector analysisTime1x(nrow1x);
   IntegerVector subjectId1x(nrow1x);
   NumericVector arrivalTime1x(nrow1x);
   IntegerVector stratum1x(nrow1x);
@@ -5731,7 +5735,6 @@ List binary_tte_sim(
   NumericVector survivalTime1x(nrow1x);
   NumericVector dropoutTime1x(nrow1x);
   NumericVector ptfu1Timex(nrow1x);
-  NumericVector analysisTime1x(nrow1x);
   NumericVector timeUnderObservation1x(nrow1x);
   LogicalVector responderx(nrow1x);
   IntegerVector sourcex(nrow1x);
@@ -5742,13 +5745,13 @@ List binary_tte_sim(
 
   IntegerVector iterationNumber2x = IntegerVector(nrow2x, NA_INTEGER);
   IntegerVector stageNumber2x(nrow2x);
+  NumericVector analysisTime2x(nrow2x);
   IntegerVector subjectId2x(nrow2x);
   NumericVector arrivalTime2x(nrow2x);
   IntegerVector stratum2x(nrow2x);
   IntegerVector treatmentGroup2x(nrow2x);
   NumericVector survivalTime2x(nrow2x);
   NumericVector dropoutTime2x(nrow2x);
-  NumericVector analysisTime2x(nrow2x);
   NumericVector timeUnderObservation2x(nrow2x);
   LogicalVector eventx(nrow2x);
   LogicalVector dropoutEventx(nrow2x);
@@ -5960,6 +5963,7 @@ List binary_tte_sim(
         for (i=0; i<n; i++) {
           iterationNumber1x[index1x] = iter+1;
           stageNumber1x[index1x] = k+1;
+          analysisTime1x[index1x] = time;
           subjectId1x[index1x] = i+1;
           arrivalTime1x[index1x] = arrivalTime[i];
           stratum1x[index1x] = stratum[i];
@@ -5967,7 +5971,6 @@ List binary_tte_sim(
           survivalTime1x[index1x] = survivalTime[i];
           dropoutTime1x[index1x] = dropoutTime[i];
           ptfu1Timex[index1x] = ptfu1Time[i];
-          analysisTime1x[index1x] = time;
           timeUnderObservation1x[index1x] = timeUnderObservation1[i];
           responderx[index1x] = responder[i];
           sourcex[index1x] = source[i];
@@ -5984,15 +5987,16 @@ List binary_tte_sim(
       accruals2 = sum(n2x);
       totalAccruals = accruals1 + accruals2;
 
-      sub = !is_na(responder); // exclude subjects administratively censored
-      eventSorted = responder[sub];
-      stratumSorted = stratum[sub];
-      treatmentGroupSorted = treatmentGroup[sub];
-      nsub = static_cast<int>(eventSorted.size());
+      // exclude subjects administratively censored
+      LogicalVector subSorted = !is_na(responder);
+      IntegerVector stratumSorted = stratum[subSorted];
+      IntegerVector treatmentGroupSorted = treatmentGroup[subSorted];
+      LogicalVector eventSorted = responder[subSorted];
+      int nsubSorted = static_cast<int>(eventSorted.size());
 
       // obtain the Mantel-Haenszel statistic for stratified risk difference
       NumericVector n11(nstrata), n21(nstrata), n1s(nstrata), n2s(nstrata);
-      for (i=0; i<nsub; i++) {
+      for (i=0; i<nsubSorted; i++) {
         h = stratumSorted[i] - 1;
         if (treatmentGroupSorted[i] == 1) {
           n1s[h]++;
@@ -6128,13 +6132,13 @@ List binary_tte_sim(
         for (i=0; i<n; i++) {
           iterationNumber2x[index2x] = iter+1;
           stageNumber2x[index2x] = k+1;
+          analysisTime2x[index2x] = time;
           subjectId2x[index2x] = i+1;
           arrivalTime2x[index2x] = arrivalTime[i];
           stratum2x[index2x] = stratum[i];
           treatmentGroup2x[index2x] = treatmentGroup[i];
           survivalTime2x[index2x] = survivalTime[i];
           dropoutTime2x[index2x] = dropoutTime[i];
-          analysisTime2x[index2x] = time;
           timeUnderObservation2x[index2x] = timeUnderObservation[i];
           eventx[index2x] = event[i];
           dropoutEventx[index2x] = dropoutEvent[i];
@@ -6159,26 +6163,25 @@ List binary_tte_sim(
       n2 = clone(n2x);
 
       // order the data by time under observation
-      order = seq(0, n-1);
-      std::sort(order.begin(), order.end(), [&](int i, int j) {
-        return timeUnderObservation[i] < timeUnderObservation[j];
-      });
+      NumericVector timeUnderObservationSorted =
+        stl_sort(timeUnderObservation);
+      IntegerVector sortedIndex = match(timeUnderObservationSorted,
+                                        timeUnderObservation);
+      sortedIndex = sortedIndex - 1;
+      IntegerVector stratumSorted = stratum[sortedIndex];
+      IntegerVector treatmentGroupSorted = treatmentGroup[sortedIndex];
+      LogicalVector eventSorted = event[sortedIndex];
 
-      timeUnderObservationSorted = timeUnderObservation[order];
-      eventSorted = event[order];
-      stratumSorted = stratum[order];
-      treatmentGroupSorted = treatmentGroup[order];
-
-      sub = (timeUnderObservationSorted > 0);
-      eventSorted = eventSorted[sub];
-      stratumSorted = stratumSorted[sub];
-      treatmentGroupSorted = treatmentGroupSorted[sub];
-      nsub = static_cast<int>(eventSorted.size());
+      LogicalVector subSorted = (timeUnderObservationSorted > 0);
+      eventSorted = eventSorted[subSorted];
+      stratumSorted = stratumSorted[subSorted];
+      treatmentGroupSorted = treatmentGroupSorted[subSorted];
+      int nsubSorted = static_cast<int>(eventSorted.size());
 
       // calculate the stratified log-rank test
       uscore = 0;
       vscore = 0;
-      for (i=0; i<nsub; i++) {
+      for (i=0; i<nsubSorted; i++) {
         h = stratumSorted[i] - 1;
         nt[h] = n1[h] + n2[h];
 
@@ -6202,7 +6205,7 @@ List binary_tte_sim(
       iterationNumber2y[index2y] = iter+1;
       eventsNotAchievedy[index2y] = eventsNotAchieved;
       stageNumber2y[index2y] = k+1;
-      analysisTime2y[index2y] = analysisTime2[k];
+      analysisTime2y[index2y] = time;
       accruals1y[index2y] = accruals1;
       accruals2y[index2y] = accruals2;
       totalAccrualsy[index2y] = totalAccruals;
@@ -6303,6 +6306,7 @@ List binary_tte_sim(
     LogicalVector sub1 = !is_na(iterationNumber1x);
     iterationNumber1x = iterationNumber1x[sub1];
     stageNumber1x = stageNumber1x[sub1];
+    analysisTime1x = analysisTime1x[sub1];
     subjectId1x = subjectId1x[sub1];
     arrivalTime1x = arrivalTime1x[sub1];
     stratum1x = stratum1x[sub1];
@@ -6310,7 +6314,6 @@ List binary_tte_sim(
     survivalTime1x = survivalTime1x[sub1];
     dropoutTime1x = dropoutTime1x[sub1];
     ptfu1Timex = ptfu1Timex[sub1];
-    analysisTime1x = analysisTime1x[sub1];
     timeUnderObservation1x = timeUnderObservation1x[sub1];
     responderx = responderx[sub1];
     sourcex = sourcex[sub1];
@@ -6334,13 +6337,13 @@ List binary_tte_sim(
     LogicalVector sub2 = !is_na(iterationNumber2x);
     iterationNumber2x = iterationNumber2x[sub2];
     stageNumber2x = stageNumber2x[sub2];
+    analysisTime2x = analysisTime2x[sub2];
     subjectId2x = subjectId2x[sub2];
     arrivalTime2x = arrivalTime2x[sub2];
     stratum2x = stratum2x[sub2];
     treatmentGroup2x = treatmentGroup2x[sub2];
     survivalTime2x = survivalTime2x[sub2];
     dropoutTime2x = dropoutTime2x[sub2];
-    analysisTime2x = analysisTime2x[sub2];
     timeUnderObservation2x = timeUnderObservation2x[sub2];
     eventx = eventx[sub2];
     dropoutEventx = dropoutEventx[sub2];
@@ -6467,8 +6470,8 @@ using namespace Rcpp;
 //'
 //'     - \code{analysisTime}: The time for the stage since trial start.
 //'
-//'     - \code{population}: The population ("ITT", "Biomarker positive",
-//'       "Biomarker negative") under consideration.
+//'     - \code{population}: The population ("ITT", "Biomarker Positive",
+//'       "Biomarker Negative") under consideration.
 //'
 //'     - \code{accruals1}: The number of subjects enrolled at the stage for
 //'       the treatment group.
@@ -6563,8 +6566,8 @@ using namespace Rcpp;
 //'
 //' @export
 // [[Rcpp::export]]
-List lrsimsub(const int kMax = NA_INTEGER,
-              const int kMaxitt = NA_INTEGER,
+List lrsimsub(const int kMax = 1,
+              const int kMaxitt = 1,
               const double hazardRatioH0itt = 1,
               const double hazardRatioH0pos = 1,
               const double hazardRatioH0neg = 1,
@@ -6609,6 +6612,8 @@ List lrsimsub(const int kMax = NA_INTEGER,
   NumericVector gamma1posx(nsi), gamma2posx(nsi);
   NumericVector gamma1negx(nsi), gamma2negx(nsi);
 
+  NumericVector p_posx(nstrata);
+
   bool useEvents, eventsNotAchieved;
 
 
@@ -6639,14 +6644,14 @@ List lrsimsub(const int kMax = NA_INTEGER,
     if (kMaxittx > 1) {
       IntegerVector plannedEvents1 = plannedEvents[Range(0,kMaxittx-1)];
       if (is_true(any(diff(plannedEvents1) <= 0))) {
-        stop("plannedEvents for endpoint 1 must be increasing");
+        stop("plannedEvents for ITT must be increasing");
       }
     }
 
     if (kMax - kMaxittx > 1) {
       IntegerVector plannedEvents2 = plannedEvents[Range(kMaxittx, kMax-1)];
       if (is_true(any(diff(plannedEvents2) <= 0))) {
-        stop("plannedEvents for endpoint 2 must be increasing");
+        stop("plannedEvents for biomarker+ sub population must be increasing");
       }
     }
   } else if (is_false(any(is_na(plannedTime)))) {
@@ -6732,11 +6737,15 @@ List lrsimsub(const int kMax = NA_INTEGER,
     stop("p_pos must be provided");
   }
 
-  if (p_pos.size() != nstrata) {
+  if (p_pos.size() == 1) {
+    p_posx = rep(p_pos, nstrata);
+  } else if (p_pos.size() == nstrata) {
+    p_posx = p_pos;
+  } else {
     stop("Invalid length for p_pos");
   }
 
-  if (is_true(any((p_pos <= 0) | (p_pos >= 1)))) {
+  if (is_true(any((p_posx <= 0) | (p_posx >= 1)))) {
     stop("p_pos must lie between 0 and 1");
   }
 
@@ -6812,7 +6821,6 @@ List lrsimsub(const int kMax = NA_INTEGER,
   }
 
 
-
   if (lambda1pos.size() == 1) {
     lambda1posx = rep(lambda1pos, nsi);
   } else if (lambda1pos.size() == nintervals) {
@@ -6832,7 +6840,6 @@ List lrsimsub(const int kMax = NA_INTEGER,
   } else {
     stop("Invalid length for lambda2pos");
   }
-
 
 
   if (gamma1itt.size() == 1) {
@@ -6880,27 +6887,27 @@ List lrsimsub(const int kMax = NA_INTEGER,
   for (j=0; j<nstrata; j++) {
     Range jj = Range(j*nintervals, (j+1)*nintervals-1);
 
-    double p_posx = p_pos[j];
+    double posx = p_posx[j];
 
     NumericVector lam1ittx = lambda1ittx[jj];
     NumericVector lam1posx = lambda1posx[jj];
     NumericVector lam1negx = hazard_subcpp(piecewiseSurvivalTime,
-                                           lam1ittx, lam1posx, p_posx);
+                                           lam1ittx, lam1posx, posx);
 
     NumericVector lam2ittx = lambda2ittx[jj];
     NumericVector lam2posx = lambda2posx[jj];
     NumericVector lam2negx = hazard_subcpp(piecewiseSurvivalTime,
-                                           lam2ittx, lam2posx, p_posx);
+                                           lam2ittx, lam2posx, posx);
 
     NumericVector gam1ittx = gamma1ittx[jj];
     NumericVector gam1posx = gamma1posx[jj];
     NumericVector gam1negx = hazard_subcpp(piecewiseSurvivalTime,
-                                           gam1ittx, gam1posx, p_posx);
+                                           gam1ittx, gam1posx, posx);
 
     NumericVector gam2ittx = gamma2ittx[jj];
     NumericVector gam2posx = gamma2posx[jj];
     NumericVector gam2negx = hazard_subcpp(piecewiseSurvivalTime,
-                                           gam2ittx, gam2posx, p_posx);
+                                           gam2ittx, gam2posx, posx);
 
     for (k=0; k<nintervals; k++) {
       lambda1negx[j*nintervals + k] = lam1negx[k];
@@ -6947,7 +6954,7 @@ List lrsimsub(const int kMax = NA_INTEGER,
 
 
   // declare variables
-  int iter, nevents, neventspos, nstages, nsub;
+  int iter, nevents, neventspos, nstages;
   int accruals1, accruals2, totalAccruals;
   int events1, events2, totalEvents;
   int dropouts1, dropouts2, totalDropouts;
@@ -6976,8 +6983,7 @@ List lrsimsub(const int kMax = NA_INTEGER,
   NumericVector arrivalTime(n), survivalTime(n), dropoutTime(n),
   timeUnderObservation(n), totalTime(n), totalt(n), totaltpos(n);
 
-  LogicalVector biomarker(n), event(n), dropoutEvent(n), eventpos(n),
-  sub(n);
+  LogicalVector biomarker(n), event(n), dropoutEvent(n), eventpos(n);
 
   // stratum information
   IntegerVector b1(nstrata), b2(nstrata);
@@ -7004,6 +7010,7 @@ List lrsimsub(const int kMax = NA_INTEGER,
 
   IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
   IntegerVector stageNumberx(nrow1);
+  NumericVector analysisTimex(nrow1);
   IntegerVector subjectIdx(nrow1);
   NumericVector arrivalTimex(nrow1);
   IntegerVector stratumx(nrow1);
@@ -7011,7 +7018,6 @@ List lrsimsub(const int kMax = NA_INTEGER,
   IntegerVector treatmentGroupx(nrow1);
   NumericVector survivalTimex(nrow1);
   NumericVector dropoutTimex(nrow1);
-  NumericVector analysisTimex(nrow1);
   NumericVector timeUnderObservationx(nrow1);
   LogicalVector eventx(nrow1);
   LogicalVector dropoutEventx(nrow1);
@@ -7094,7 +7100,7 @@ List lrsimsub(const int kMax = NA_INTEGER,
       // stratum-specific hazard rates for event and dropout
       Range jj = Range(j*nintervals, (j+1)*nintervals-1);
 
-      if (biomarker[i]==1) { // biomarker positive
+      if (biomarker[i]) { // biomarker positive
         lam1 = lambda1posx[jj];
         lam2 = lambda2posx[jj];
         gam1 = gamma1posx[jj];
@@ -7270,6 +7276,7 @@ List lrsimsub(const int kMax = NA_INTEGER,
 
       for (int pop=1; pop<=3; pop++) {
         // subset subjects for the population of interest
+        LogicalVector sub(n);
         if (pop == 1) { // ITT
           sub = LogicalVector(n, 1);
           hazardRatioH0 = hazardRatioH0itt;
@@ -7281,9 +7288,9 @@ List lrsimsub(const int kMax = NA_INTEGER,
           hazardRatioH0 = hazardRatioH0neg;
         }
 
-        nsub = sum(sub);
-        IntegerVector treatmentGroupSub = treatmentGroup[sub];
+        int nsub = sum(sub);
         IntegerVector stratumSub = stratum[sub];
+        IntegerVector treatmentGroupSub = treatmentGroup[sub];
         NumericVector arrivalTimeSub = arrivalTime[sub];
         NumericVector survivalTimeSub = survivalTime[sub];
         NumericVector dropoutTimeSub = dropoutTime[sub];
@@ -7370,12 +7377,12 @@ List lrsimsub(const int kMax = NA_INTEGER,
             for (i=0; i<n; i++) {
               iterationNumberx[index1] = iter+1;
               stageNumberx[index1] = k+1;
+              analysisTimex[index1] = time;
               subjectIdx[index1] = i+1;
               arrivalTimex[index1] = arrivalTime[i];
               stratumx[index1] = stratum[i];
               biomarkerx[index1] = biomarker[i];
               treatmentGroupx[index1] = treatmentGroup[i];
-              analysisTimex[index1] = time;
               survivalTimex[index1] = survivalTime[i];
               dropoutTimex[index1] = dropoutTime[i];
               timeUnderObservationx[index1] = timeUnderObservationSub[i];
@@ -7404,14 +7411,14 @@ List lrsimsub(const int kMax = NA_INTEGER,
         IntegerVector sortedIndex = match(timeUnderObservationSorted,
                                           timeUnderObservationSub);
         sortedIndex = sortedIndex - 1;
-        LogicalVector eventSorted = eventSub[sortedIndex];
         IntegerVector stratumSorted = stratumSub[sortedIndex];
         IntegerVector treatmentGroupSorted = treatmentGroupSub[sortedIndex];
+        LogicalVector eventSorted = eventSub[sortedIndex];
 
         LogicalVector subSorted = (timeUnderObservationSorted > 0);
-        eventSorted = eventSorted[subSorted];
         stratumSorted = stratumSorted[subSorted];
         treatmentGroupSorted = treatmentGroupSorted[subSorted];
+        eventSorted = eventSorted[subSorted];
         int nsubSorted = static_cast<int>(eventSorted.size());
 
         // calculate the stratified log-rank test
@@ -7443,7 +7450,7 @@ List lrsimsub(const int kMax = NA_INTEGER,
         iterationNumbery[index2] = iter+1;
         eventsNotAchievedy[index2] = eventsNotAchieved;
         stageNumbery[index2] = k+1;
-        analysisTimey[index2] = analysisTime[k];
+        analysisTimey[index2] = time;
         populationy[index2] = pop == 1 ? "ITT" :
           (pop == 2 ? "Biomarker Positive" : "Biomarker Negative");
         accruals1y[index2] = accruals1;
@@ -7505,6 +7512,7 @@ List lrsimsub(const int kMax = NA_INTEGER,
     LogicalVector sub1 = !is_na(iterationNumberx);
     iterationNumberx = iterationNumberx[sub1];
     stageNumberx = stageNumberx[sub1];
+    analysisTimex = analysisTimex[sub1];
     subjectIdx = subjectIdx[sub1];
     arrivalTimex = arrivalTimex[sub1];
     stratumx = stratumx[sub1];
@@ -7512,7 +7520,6 @@ List lrsimsub(const int kMax = NA_INTEGER,
     treatmentGroupx = treatmentGroupx[sub1];
     survivalTimex = survivalTimex[sub1];
     dropoutTimex = dropoutTimex[sub1];
-    analysisTimex = analysisTimex[sub1];
     timeUnderObservationx = timeUnderObservationx[sub1];
     eventx = eventx[sub1];
     dropoutEventx = dropoutEventx[sub1];
