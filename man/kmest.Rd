@@ -9,10 +9,12 @@ kmest(
   rep = "",
   stratum = "",
   time = "time",
+  time2 = "",
   event = "event",
+  weight = "",
   conftype = "log-log",
   conflev = 0.95,
-  keep_censor = 0L
+  keep_censor = FALSE
 )
 }
 \arguments{
@@ -20,17 +22,29 @@ kmest(
 \itemize{
 \item \code{rep}: The replication for by-group processing.
 \item \code{stratum}: The stratum.
-\item \code{time}: The possibly right-censored survival time.
-\item \code{event}: The event indicator.
+\item \code{time}: The follow-up time for right censored data, or
+the left end of each interval for counting process data.
+\item \code{time2}: The right end of each interval for counting process
+data. Intervals are assumed to be open on the left
+and closed on the right, and event indicates whether an event
+occurred at the right end of each interval.
+\item \code{event}: The event indicator, 1=event, 0=no event.
+\item \code{weight}: The weight for each observation.
 }}
 
 \item{rep}{The name(s) of the replication variable(s) in the input data.}
 
 \item{stratum}{The name(s) of the stratum variable(s) in the input data.}
 
-\item{time}{The name of the time variable in the input data.}
+\item{time}{The name of the time variable or the left end of each
+interval for counting process data in the input data.}
+
+\item{time2}{The name of the right end of each interval for counting
+process data in the input data.}
 
 \item{event}{The name of the event variable in the input data.}
+
+\item{weight}{The name of the weight variable in the input data.}
 
 \item{conftype}{The type of the confidence interval. One of "none",
 "plain", "log", "log-log" (the default), or "arcsin".
@@ -50,8 +64,8 @@ A data frame with the following variables:
 \item \code{nrisk}: The number of subjects at risk.
 \item \code{nevent}: The number of subjects having the event.
 \item \code{ncensor}: The number of censored subjects.
-\item \code{survival}: The Kaplan-Meier estimate of the survival probability.
-\item \code{stderr}: The standard error of the estimated survival
+\item \code{surv}: The Kaplan-Meier estimate of the survival probability.
+\item \code{sesurv}: The standard error of the estimated survival
 probability based on the Greendwood formula.
 \item \code{lower}: The lower bound of confidence interval if requested.
 \item \code{upper}: The upper bound of confidence interval if requested.
