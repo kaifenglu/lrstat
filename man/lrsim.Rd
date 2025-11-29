@@ -20,7 +20,7 @@ lrsim(
   lambda2 = NA_real_,
   gamma1 = 0L,
   gamma2 = 0L,
-  accrualDuration = NA_real_,
+  n = NA_integer_,
   followupTime = NA_real_,
   fixedFollowup = 0L,
   rho1 = 0,
@@ -92,7 +92,7 @@ rates for piecewise exponential dropout applicable for all strata, or a
 vector of hazard rates for dropout in each analysis time interval
 by stratum for the control group.}
 
-\item{accrualDuration}{Duration of the enrollment period.}
+\item{n}{Sample size.}
 
 \item{followupTime}{Follow-up time for the last enrolled subject.}
 
@@ -148,7 +148,7 @@ for the overall study.
 the active treatment versus control.
 \item \code{useEvents}: whether the analyses are planned
 based on the number of events or calendar time.
-\item \code{accrualDuration}: Duration of the enrollment period.
+\item \code{n}: Sample size.
 \item \code{fixedFollowup}: Whether a fixed follow-up design is used.
 \item \code{rho1}: The first parameter of the Fleming-Harrington family
 of weighted log-rank test. Defaults to 0 for conventional log-rank
@@ -223,7 +223,7 @@ sim1 = lrsim(kMax = 2, informationRates = c(0.5, 1),
              criticalValues = c(2.797, 1.977),
              accrualIntensity = 11,
              lambda1 = 0.018, lambda2 = 0.030,
-             accrualDuration = 12,
+             n = 132,
              plannedEvents = c(60, 120),
              maxNumberOfIterations = 1000,
              maxNumberOfRawDatasetsPerStage = 1,
@@ -245,7 +245,7 @@ sim2 = lrsim(kMax = 2, informationRates = c(0.5, 1),
              criticalValues = c(2.797, 1.977),
              accrualIntensity = 11,
              lambda1 = 0.018, lambda2 = 0.030,
-             accrualDuration = 12,
+             n = 132,
              plannedTime = c(31.9, 113.2),
              maxNumberOfIterations = 1000,
              maxNumberOfRawDatasetsPerStage = 1,
