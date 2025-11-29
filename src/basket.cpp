@@ -424,7 +424,6 @@ List simonBayesSim(
   }
 
 
-  int iter, i, j, k, l, stage;
   double enrollt, u;
   int kMax = static_cast<int>(plannedSubjects.size());
   int nreps = maxNumberOfIterations;
@@ -473,7 +472,7 @@ List simonBayesSim(
     set_seed(seed);
   }
 
-  for (iter=0; iter<nreps; iter++) {
+  for (int iter=0; iter<nreps; iter++) {
     // initialize the contents in each stratum
     n.fill(0);
     r.fill(0);
@@ -481,16 +480,17 @@ List simonBayesSim(
     pos.fill(0);
     neg.fill(0);
 
-    k = 0;      // index of the number of subjects included in analysis
-    stage = 0;
+    int k = 0;      // index of the number of subjects included in analysis
+    int stage = 0;
     enrollt = 0;
-    for (i=0; i<100000; i++) {
+    for (int i=0; i<100000; i++) {
       // generate accrual time
       u = R::runif(0,1);
       enrollt = qtpwexpcpp1(u, accrualTime, accrualIntensity, enrollt, 1, 0);
 
       // generate stratum information
       u = R::runif(0,1);
+      int j;
       for (j=0; j<nstrata; j++) {
         if (cumStratumFraction[j] > u) {
           break;
@@ -532,7 +532,7 @@ List simonBayesSim(
           post_stratum = bayes["post_stratum"];
 
           // whether to close the stratum due to positive or negative results
-          for (l=0; l<nstrata; l++) {
+          for (int l=0; l<nstrata; l++) {
             if (open[l]) {
               if (post_stratum[l] > T) {
                 pos[l] = 1;
