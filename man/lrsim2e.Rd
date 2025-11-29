@@ -5,8 +5,8 @@
 \title{Log-Rank Test Simulation for Two Endpoints}
 \usage{
 lrsim2e(
-  kMax = NA_integer_,
-  kMaxe1 = NA_integer_,
+  kMax = 1L,
+  kMaxe1 = 1L,
   hazardRatioH0e1 = 1,
   hazardRatioH0e2 = 1,
   allocation1 = 1L,
@@ -24,7 +24,7 @@ lrsim2e(
   gamma2e1 = 0L,
   gamma1e2 = 0L,
   gamma2e2 = 0L,
-  accrualDuration = NA_real_,
+  n = NA_integer_,
   followupTime = NA_real_,
   fixedFollowup = 0L,
   rho1 = 0,
@@ -109,7 +109,7 @@ hazard rates for piecewise exponential dropout applicable for all
 strata, or a vector of hazard rates for dropout in each analysis time
 interval by stratum for the control group and endpoint 2 (OS).}
 
-\item{accrualDuration}{Duration of the enrollment period.}
+\item{n}{Sample size.}
 
 \item{followupTime}{Follow-up time for the last enrolled subject.}
 
@@ -166,6 +166,10 @@ the treatment group.
 \item \code{dropouts2}: The number of dropouts at the stage for
 the control group.
 \item \code{totalDropouts}: The total number of dropouts at the stage.
+\item \code{uscore}: The numerator of the log-rank test statistic for
+the endpoint.
+\item \code{vscore}: The variance of the log-rank test statistic for
+the endpoint.
 \item \code{logRankStatistic}: The log-rank test Z-statistic for
 the endpoint.
 }
@@ -225,7 +229,7 @@ sim1 = lrsim2e(
   lambda2e1 = log(2)/12,
   lambda1e2 = log(2)/30*0.65,
   lambda2e2 = log(2)/30,
-  accrualDuration = 20.143,
+  n = 420,
   plannedEvents = c(186, 259, 183),
   maxNumberOfIterations = 1000,
   maxNumberOfRawDatasetsPerStage = 1,
