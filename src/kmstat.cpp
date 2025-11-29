@@ -23,7 +23,7 @@ void f_km(double *x, int n, void *ex) {
   for (int i=0; i<n; i++) {
     u0[i] = x[i];
   }
-  IntegerVector j = findInterval3(u0, param->piecewiseSurvivalTime) - 1;
+  IntegerVector j = findInterval3(u0, param->piecewiseSurvivalTime,0,0,0) - 1;
   NumericVector lambda = param->lambda[j];
   NumericVector p = patrisk(u0, param->piecewiseSurvivalTime, param->lambda,
                             param->gamma);
