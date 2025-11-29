@@ -60,7 +60,7 @@ double rmst(const double t1 = 0,
 
   // identify the time interval containing the specified analysis time
   NumericVector time = NumericVector::create(t1, t2);
-  IntegerVector m = findInterval3(time, t) - 1;
+  IntegerVector m = findInterval3(time, t, 0, 0, 0) - 1;
 
   double s1, s2, ch = 0.0, aval;
   for (int j=0; j<=m[0]-1; j++) {
@@ -117,7 +117,7 @@ void f_rm(double *x, int n, void *ex) {
                  param->lambda);
   }
 
-  IntegerVector j = findInterval3(u0, param->piecewiseSurvivalTime) - 1;
+  IntegerVector j = findInterval3(u0, param->piecewiseSurvivalTime,0,0,0) - 1;
   NumericVector lambda = param->lambda[j];
   NumericVector p = patrisk(u0, param->piecewiseSurvivalTime, param->lambda,
                             param->gamma);
