@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 struct logparams {
   int n;
-  std::string link;
+  int link_code; // 0: logit, 1: probit, 2: cloglog
   NumericVector y;
   NumericMatrix z;
   NumericVector freq;
@@ -16,18 +16,15 @@ struct logparams {
   NumericVector offset;
 };
 
-double f_llik_0(int p, NumericVector par, void *ex);
-NumericVector f_score_0(int p, NumericVector par, void *ex);
-NumericMatrix f_info_0(int p, NumericVector par, void *ex);
+List f_der_0(int p, const NumericVector& par, void *ex, bool firth);
 
-double f_pen_llik_0(int p, NumericVector par, void *ex);
-NumericVector f_pen_score_0(int p, NumericVector par, void *ex);
-NumericMatrix f_ressco_0(int p, NumericVector par, void *ex);
-List logisregloop(int p, NumericVector par, void *ex,
+NumericMatrix f_ressco_0(int p, const NumericVector& par, void *ex);
+
+List logisregloop(int p, const NumericVector& par, void *ex,
                   int maxiter, double eps, bool firth,
-                  IntegerVector colfit, int ncolfit);
+                  const IntegerVector& colfit, int ncolfit);
 
-double logisregplloop(int p, NumericVector par, void *ex,
+double logisregplloop(int p, const NumericVector& par, void *ex,
                       int maxiter, double eps, bool firth,
                       int k, int which, double l0);
 
