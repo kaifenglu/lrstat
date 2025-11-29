@@ -29,7 +29,7 @@ using namespace Rcpp;
 //' @inheritParams param_lambda2_stratified
 //' @inheritParams param_gamma1_stratified
 //' @inheritParams param_gamma2_stratified
-//' @inheritParams param_accrualDuration
+//' @param n Sample size.
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_rho1
@@ -87,7 +87,7 @@ using namespace Rcpp;
 //'     - \code{useEvents}: whether the analyses are planned
 //'       based on the number of events or calendar time.
 //'
-//'     - \code{accrualDuration}: Duration of the enrollment period.
+//'     - \code{n}: Sample size.
 //'
 //'     - \code{fixedFollowup}: Whether a fixed follow-up design is used.
 //'
@@ -191,7 +191,7 @@ using namespace Rcpp;
 //'              criticalValues = c(2.797, 1.977),
 //'              accrualIntensity = 11,
 //'              lambda1 = 0.018, lambda2 = 0.030,
-//'              accrualDuration = 12,
+//'              n = 132,
 //'              plannedEvents = c(60, 120),
 //'              maxNumberOfIterations = 1000,
 //'              maxNumberOfRawDatasetsPerStage = 1,
@@ -213,7 +213,7 @@ using namespace Rcpp;
 //'              criticalValues = c(2.797, 1.977),
 //'              accrualIntensity = 11,
 //'              lambda1 = 0.018, lambda2 = 0.030,
-//'              accrualDuration = 12,
+//'              n = 132,
 //'              plannedTime = c(31.9, 113.2),
 //'              maxNumberOfIterations = 1000,
 //'              maxNumberOfRawDatasetsPerStage = 1,
@@ -242,7 +242,7 @@ List lrsim(const int kMax = 1,
            const NumericVector& lambda2 = NA_REAL,
            const NumericVector& gamma1 = 0,
            const NumericVector& gamma2 = 0,
-           const double accrualDuration = NA_REAL,
+           const int n = NA_INTEGER,
            const double followupTime = NA_REAL,
            const bool fixedFollowup = 0,
            const double rho1 = 0,
@@ -460,12 +460,12 @@ List lrsim(const int kMax = 1,
     stop("Invalid length for gamma2");
   }
 
-  if (R_isnancpp(accrualDuration)) {
-    stop("accrualDuration must be provided");
+  if (n == NA_INTEGER) {
+    stop("n must be provided");
   }
 
-  if (accrualDuration <= 0) {
-    stop("accrualDuration must be positive");
+  if (n <= 0) {
+    stop("n must be positive");
   }
 
   if (fixedFollowup) {
@@ -496,25 +496,10 @@ List lrsim(const int kMax = 1,
 
 
   // declare variables
-  int i, iter, j, k, h, nevents, nstages, stopStage;
+  int nevents, nstages, stopStage;
   int index1=0, index2=0;
 
   double u, enrollt, time, uscore1, vscore1;
-
-
-  // maximum number of subjects to enroll
-  int m = static_cast<int>(accrualTime.size());
-  double s = 0;
-  for (i=0; i<m; i++) {
-    if (i<m-1 && accrualTime[i+1] < accrualDuration) {
-      s += accrualIntensity[i]*(accrualTime[i+1] - accrualTime[i]);
-    } else {
-      s += accrualIntensity[i]*(accrualDuration - accrualTime[i]);
-      break;
-    }
-  }
-  int n = static_cast<int>(std::floor(s + 0.5));
-
 
   // subject-level raw data set for one simulation
   IntegerVector stratum(n), treatmentGroup(n);
@@ -602,14 +587,14 @@ List lrsim(const int kMax = 1,
   }
 
 
-  for (iter=0; iter<maxNumberOfIterations; iter++) {
+  for (int iter=0; iter<maxNumberOfIterations; iter++) {
     int nstops = 0;
 
     b1.fill(allocation1);
     b2.fill(allocation2);
 
     enrollt = 0;
-    for (i=0; i<n; i++) {
+    for (int i=0; i<n; i++) {
 
       // generate accrual time
       u = R::runif(0,1);
@@ -618,6 +603,7 @@ List lrsim(const int kMax = 1,
 
       // generate stratum information
       u = R::runif(0,1);
+      int j;
       for (j=0; j<nstrata; j++) {
         if (cumStratumFraction[j] > u) {
           stratum[i] = j+1;
@@ -705,6 +691,7 @@ List lrsim(const int kMax = 1,
       totalt = stl_sort(totalTime[event]);
       nstages = kMax;
 
+      int j;
       for (j=0; j<kMax; j++) {
         if (plannedEvents[j] >= nevents) {
           nstages = j+1;
@@ -714,12 +701,12 @@ List lrsim(const int kMax = 1,
 
 
       if (j==kMax) { // total number of events exceeds planned
-        for (k=0; k<nstages; k++) {
+        for (int k=0; k<nstages; k++) {
           analysisTime[k] = totalt[plannedEvents[k]-1] + 1e-12;
           obsEvents[k] = plannedEvents[k];
         }
       } else {
-        for (k=0; k<nstages; k++) {
+        for (int k=0; k<nstages; k++) {
           if (k < nstages-1) {
             analysisTime[k] = totalt[plannedEvents[k]-1] + 1e-12;
             obsEvents[k] = plannedEvents[k];
@@ -741,7 +728,7 @@ List lrsim(const int kMax = 1,
 
     // construct the log-rank test statistic at each stage
     stopStage = nstages;
-    for (k=0; k<nstages; k++) {
+    for (int k=0; k<nstages; k++) {
       time = analysisTime[k];
 
       n1.fill(0);  // number of subjects in each stratum by treatment
@@ -752,8 +739,8 @@ List lrsim(const int kMax = 1,
       dropouts2[k] = 0;
 
       // censor at analysis time
-      for (i=0; i<n; i++) {
-        h = stratum[i]-1;
+      for (int i=0; i<n; i++) {
+        int h = stratum[i]-1;
         if (arrivalTime[i] > time) { // patients not yet enrolled
           timeUnderObservation[i] = time - arrivalTime[i];
           event[i] = 0;
@@ -844,8 +831,8 @@ List lrsim(const int kMax = 1,
       uscore1 = 0;
       vscore1 = 0;
       km.fill(1);  // km(t-) estimate by stratum
-      for (i=0; i<nsubSorted; i++) {
-        h = stratumSorted[i] - 1;
+      for (int i=0; i<nsubSorted; i++) {
+        int h = stratumSorted[i] - 1;
         n1a[h] = n1[h]*hazardRatioH0;
         nt[h] = n1[h] + n2[h];
         nta[h] = n1a[h] + n2[h];
@@ -940,7 +927,7 @@ List lrsim(const int kMax = 1,
 
           // add raw data to output
           if (niter[k] < maxNumberOfRawDatasetsPerStage) {
-            for (i=0; i<n; i++) {
+            for (int i=0; i<n; i++) {
               iterationNumberx[index1] = iter+1;
               stopStagex[index1] = k+1;
               analysisTimex[index1] = time;
@@ -969,7 +956,7 @@ List lrsim(const int kMax = 1,
     }
 
     // add summary data to output
-    for (k=0; k<nstages; k++) {
+    for (int k=0; k<nstages; k++) {
       iterationNumbery[index2] = iter+1;
       stopStagey[index2] = stopStage;
       eventsNotAchievedy[index2] = eventsNotAchieved;
@@ -1029,8 +1016,8 @@ List lrsim(const int kMax = 1,
   // number of observations in the summary dataset
   int nrow3 = static_cast<int>(stageNumbery.size());
 
-  for (i=0; i<nrow3; i++) {
-    k = stageNumbery[i] - 1;
+  for (int i=0; i<nrow3; i++) {
+    int k = stageNumbery[i] - 1;
     if (stageNumbery[i] == stopStagey[i]) {
       pRejectPerStage[k] += rejectPerStagey[i];
       pFutilityPerStage[k] += futilityPerStagey[i];
@@ -1043,7 +1030,7 @@ List lrsim(const int kMax = 1,
   }
 
 
-  for (k=0; k<kMax; k++) {
+  for (int k=0; k<kMax; k++) {
     pRejectPerStage[k] /= maxNumberOfIterations;
     pFutilityPerStage[k] /= maxNumberOfIterations;
     nEventsPerStage[k] /= maxNumberOfIterations;
@@ -1060,7 +1047,7 @@ List lrsim(const int kMax = 1,
   double expectedNumberOfEvents=0, expectedNumberOfDropouts=0,
     expectedNumberOfSubjects=0, expectedStudyDuration=0;
 
-  for (i=0; i<nrow3; i++) {
+  for (int i=0; i<nrow3; i++) {
     if (stageNumbery[i] == stopStagey[i]) {
       expectedNumberOfEvents += totalEventsy[i];
       expectedNumberOfDropouts += totalDropoutsy[i];
@@ -1090,7 +1077,7 @@ List lrsim(const int kMax = 1,
     _["expectedStudyDuration"] = expectedStudyDuration,
     _["hazardRatioH0"] = hazardRatioH0,
     _["useEvents"] = useEvents,
-    _["accrualDuration"] = accrualDuration,
+    _["n"] = n,
     _["fixedFollowup"] = fixedFollowup,
     _["rho1"] = rho1,
     _["rho2"] = rho2,
@@ -1208,7 +1195,7 @@ List lrsim(const int kMax = 1,
 //'   hazard rates for piecewise exponential dropout applicable for all
 //'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for arm 3.
-//' @inheritParams param_accrualDuration
+//' @param n Sample size.
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_rho1
@@ -1326,7 +1313,7 @@ List lrsim(const int kMax = 1,
 //'   lambda1 = log(2)/12*0.60,
 //'   lambda2 = log(2)/12*0.70,
 //'   lambda3 = log(2)/12,
-//'   accrualDuration = 30.143,
+//'   n = 700,
 //'   plannedEvents = c(186, 259, 295),
 //'   maxNumberOfIterations = 1000,
 //'   maxNumberOfRawDatasetsPerStage = 1,
@@ -1354,7 +1341,7 @@ List lrsim3a(const int kMax = 1,
              const NumericVector& gamma1 = 0,
              const NumericVector& gamma2 = 0,
              const NumericVector& gamma3 = 0,
-             const double accrualDuration = NA_REAL,
+             const int n = NA_INTEGER,
              const double followupTime = NA_REAL,
              const bool fixedFollowup = 0,
              const double rho1 = 0,
@@ -1580,13 +1567,12 @@ List lrsim3a(const int kMax = 1,
   }
 
 
-
-  if (R_isnancpp(accrualDuration)) {
-    stop("accrualDuration must be provided");
+  if (n == NA_INTEGER) {
+    stop("n must be provided");
   }
 
-  if (accrualDuration <= 0) {
-    stop("accrualDuration must be positive");
+  if (n <= 0) {
+    stop("n must be positive");
   }
 
   if (fixedFollowup) {
@@ -1617,7 +1603,7 @@ List lrsim3a(const int kMax = 1,
 
 
   // declare variables
-  int i, iter, j, k, h, nevents, nstages;
+  int nevents, nstages;
   int accruals1, accruals2, accruals3, totalAccruals;
   int events1, events2, events3, totalEvents;
   int dropouts1, dropouts2, dropouts3, totalDropouts;
@@ -1626,20 +1612,6 @@ List lrsim3a(const int kMax = 1,
   double enrollt, u, time;
   double uscore13, uscore23, uscore12;
   double vscore13, vscore23, vscore12;
-
-
-  // maximum number of subjects to enroll
-  int m = static_cast<int>(accrualTime.size());
-  double s = 0;
-  for (i=0; i<m; i++) {
-    if (i<m-1 && accrualTime[i+1] < accrualDuration) {
-      s += accrualIntensity[i]*(accrualTime[i+1] - accrualTime[i]);
-    } else {
-      s += accrualIntensity[i]*(accrualDuration - accrualTime[i]);
-      break;
-    }
-  }
-  int n = static_cast<int>(std::floor(s + 0.5));
 
 
   // subject-level raw data set for one simulation
@@ -1718,14 +1690,14 @@ List lrsim3a(const int kMax = 1,
   }
 
 
-  for (iter=0; iter<maxNumberOfIterations; iter++) {
+  for (int iter=0; iter<maxNumberOfIterations; iter++) {
 
     b1.fill(allocation1);
     b2.fill(allocation2);
     b3.fill(allocation3);
 
     enrollt = 0;
-    for (i=0; i<n; i++) {
+    for (int i=0; i<n; i++) {
 
       // generate accrual time
       u = R::runif(0,1);
@@ -1734,6 +1706,7 @@ List lrsim3a(const int kMax = 1,
 
       // generate stratum information
       u = R::runif(0,1);
+      int j;
       for (j=0; j<nstrata; j++) {
         if (cumStratumFraction[j] > u) {
           stratum[i] = j+1;
@@ -1836,6 +1809,7 @@ List lrsim3a(const int kMax = 1,
       totalt = stl_sort(totalTime[eventac]);
       nstages = kMax;
 
+      int j;
       for (j=0; j<kMax; j++) {
         if (plannedEvents[j] >= nevents) {
           nstages = j+1;
@@ -1844,11 +1818,11 @@ List lrsim3a(const int kMax = 1,
       }
 
       if (j==kMax) { // total number of events exceeds planned
-        for (k=0; k<nstages; k++) {
+        for (int k=0; k<nstages; k++) {
           analysisTime[k] = totalt[plannedEvents[k]-1] + 1e-12;
         }
       } else {
-        for (k=0; k<nstages; k++) {
+        for (int k=0; k<nstages; k++) {
           if (k < nstages-1) {
             analysisTime[k] = totalt[plannedEvents[k]-1] + 1e-12;
           } else {
@@ -1867,7 +1841,7 @@ List lrsim3a(const int kMax = 1,
 
 
     // construct the log-rank test statistic at each stage
-    for (k=0; k<nstages; k++) {
+    for (int k=0; k<nstages; k++) {
       time = analysisTime[k];
 
       n1.fill(0);  // number of subjects in each stratum by treatment
@@ -1883,8 +1857,8 @@ List lrsim3a(const int kMax = 1,
       dropouts3 = 0;
 
       // censor at analysis time
-      for (i=0; i<n; i++) {
-        h = stratum[i]-1;
+      for (int i=0; i<n; i++) {
+        int h = stratum[i]-1;
         if (arrivalTime[i] > time) { // patients not yet enrolled
           timeUnderObservation[i] = time - arrivalTime[i];
           event[i] = 0;
@@ -1954,7 +1928,7 @@ List lrsim3a(const int kMax = 1,
 
       // add raw data to output
       if (niter[k] < maxNumberOfRawDatasetsPerStage) {
-        for (i=0; i<n; i++) {
+        for (int i=0; i<n; i++) {
           iterationNumberx[index1] = iter+1;
           stageNumberx[index1] = k+1;
           analysisTimex[index1] = time;
@@ -2012,8 +1986,8 @@ List lrsim3a(const int kMax = 1,
       km13.fill(1);
       km23.fill(1);
       km12.fill(1);
-      for (i=0; i<nsubSorted; i++) {
-        h = stratumSorted[i] - 1;
+      for (int i=0; i<nsubSorted; i++) {
+        int h = stratumSorted[i] - 1;
         nt13[h] = n1[h] + n3[h];
         nt23[h] = n2[h] + n3[h];
         nt12[h] = n1[h] + n2[h];
@@ -2234,7 +2208,7 @@ List lrsim3a(const int kMax = 1,
 //'   hazard rates for piecewise exponential dropout applicable for all
 //'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for the control group and endpoint 2 (OS).
-//' @inheritParams param_accrualDuration
+//' @param n Sample size.
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_rho1
@@ -2291,6 +2265,12 @@ List lrsim3a(const int kMax = 1,
 //'       the control group.
 //'
 //'     - \code{totalDropouts}: The total number of dropouts at the stage.
+//'
+//'     - \code{uscore}: The numerator of the log-rank test statistic for
+//'       the endpoint.
+//'
+//'     - \code{vscore}: The variance of the log-rank test statistic for
+//'       the endpoint.
 //'
 //'     - \code{logRankStatistic}: The log-rank test Z-statistic for
 //'       the endpoint.
@@ -2359,7 +2339,7 @@ List lrsim3a(const int kMax = 1,
 //'   lambda2e1 = log(2)/12,
 //'   lambda1e2 = log(2)/30*0.65,
 //'   lambda2e2 = log(2)/30,
-//'   accrualDuration = 20.143,
+//'   n = 420,
 //'   plannedEvents = c(186, 259, 183),
 //'   maxNumberOfIterations = 1000,
 //'   maxNumberOfRawDatasetsPerStage = 1,
@@ -2389,7 +2369,7 @@ List lrsim2e(const int kMax = 1,
              const NumericVector& gamma2e1 = 0,
              const NumericVector& gamma1e2 = 0,
              const NumericVector& gamma2e2 = 0,
-             const double accrualDuration = NA_REAL,
+             const int n = NA_INTEGER,
              const double followupTime = NA_REAL,
              const bool fixedFollowup = 0,
              const double rho1 = 0,
@@ -2401,7 +2381,6 @@ List lrsim2e(const int kMax = 1,
              const int seed = NA_INTEGER) {
 
   // check input parameters
-  int h, i, j, k;
   int kMaxe1x = kMaxe1;
 
   int nstrata = static_cast<int>(stratumFraction.size());
@@ -2686,7 +2665,7 @@ List lrsim2e(const int kMax = 1,
     stop("gamma2e1 must be greater than or equal to gamma2e2");
   }
 
-  for (j=0; j<nstrata; j++) {
+  for (int j=0; j<nstrata; j++) {
     Range jj = Range(j*nintervals, (j+1)*nintervals-1);
 
     NumericVector lam1e1x = lambda1e1x[jj];
@@ -2699,7 +2678,7 @@ List lrsim2e(const int kMax = 1,
     NumericVector lam2e1d = hazard_pdcpp(piecewiseSurvivalTime,
                                          lam2e1x, lam2e2x, rho);
 
-    for (k=0; k<nintervals; k++) {
+    for (int k=0; k<nintervals; k++) {
       lambda1e1d[j*nintervals + k] = lam1e1d[k];
       lambda2e1d[j*nintervals + k] = lam2e1d[k];
     }
@@ -2709,12 +2688,12 @@ List lrsim2e(const int kMax = 1,
   gamma2e1d = gamma2e1x - gamma2e2x;
 
 
-  if (R_isnancpp(accrualDuration)) {
-    stop("accrualDuration must be provided");
+  if (n == NA_INTEGER) {
+    stop("n must be provided");
   }
 
-  if (accrualDuration <= 0) {
-    stop("accrualDuration must be positive");
+  if (n <= 0) {
+    stop("n must be positive");
   }
 
   if (fixedFollowup) {
@@ -2745,7 +2724,7 @@ List lrsim2e(const int kMax = 1,
 
 
   // declare variables
-  int iter, nevents1, nevents2, nstages;
+  int nevents1, nevents2, nstages;
   int accruals1, accruals2, totalAccruals;
   int events1e1, events2e1, totalEventse1;
   int events1e2, events2e2, totalEventse2;
@@ -2754,20 +2733,6 @@ List lrsim2e(const int kMax = 1,
   int index1=0, index2=0;
 
   double enrollt, u, u1, u2, time, uscore, vscore;
-
-
-  // maximum number of subjects to enroll
-  int m = static_cast<int>(accrualTime.size());
-  double s = 0;
-  for (i=0; i<m; i++) {
-    if (i<m-1 && accrualTime[i+1] < accrualDuration) {
-      s += accrualIntensity[i]*(accrualTime[i+1] - accrualTime[i]);
-    } else {
-      s += accrualIntensity[i]*(accrualDuration - accrualTime[i]);
-      break;
-    }
-  }
-  int n = static_cast<int>(std::floor(s + 0.5));
 
 
   // subject-level raw data set for one simulation
@@ -2847,6 +2812,8 @@ List lrsim2e(const int kMax = 1,
   IntegerVector dropouts1y(nrow2);
   IntegerVector dropouts2y(nrow2);
   IntegerVector totalDropoutsy(nrow2);
+  NumericVector uscorey(nrow2);
+  NumericVector vscorey(nrow2);
   NumericVector logRankStatisticy(nrow2);
 
 
@@ -2857,13 +2824,13 @@ List lrsim2e(const int kMax = 1,
 
 
   // simulation
-  for (iter=0; iter<maxNumberOfIterations; iter++) {
+  for (int iter=0; iter<maxNumberOfIterations; iter++) {
 
     b1.fill(allocation1);
     b2.fill(allocation2);
 
     enrollt = 0;
-    for (i=0; i<n; i++) {
+    for (int i=0; i<n; i++) {
 
       // generate accrual time
       u = R::runif(0,1);
@@ -2872,6 +2839,7 @@ List lrsim2e(const int kMax = 1,
 
       // generate stratum information
       u = R::runif(0,1);
+      int j;
       for (j=0; j<nstrata; j++) {
         if (cumStratumFraction[j] > u) {
           stratum[i] = j+1;
@@ -3035,11 +3003,11 @@ List lrsim2e(const int kMax = 1,
         }
 
         if (j1==kMaxe1x) { // total number of PFS events exceeds planned
-          for (k=0; k<kMaxe1x; k++) {
+          for (int k=0; k<kMaxe1x; k++) {
             analysisTime[k] = totalt1[plannedEvents[k]-1] + 1e-12;
           }
         } else {
-          for (k=0; k<=j1; k++) {
+          for (int k=0; k<=j1; k++) {
             if (k < j1) {
               analysisTime[k] = totalt1[plannedEvents[k]-1] + 1e-12;
             } else {
@@ -3060,11 +3028,11 @@ List lrsim2e(const int kMax = 1,
         }
 
         if (j2==kMax-kMaxe1x) { // total number of OS events exceeds planned
-          for (k=0; k<kMax-kMaxe1x; k++) {
+          for (int k=0; k<kMax-kMaxe1x; k++) {
             analysisTime2[k] = totalt2[plannedEvents[kMaxe1x+k]-1] + 1e-12;
           }
         } else {
-          for (k=0; k<=j2; k++) {
+          for (int k=0; k<=j2; k++) {
             if (k < j2) {
               analysisTime2[k] = totalt2[plannedEvents[kMaxe1x+k]-1] + 1e-12;
             } else {
@@ -3082,7 +3050,7 @@ List lrsim2e(const int kMax = 1,
           nstages = j2 + 1;
         }
 
-        for (k=0; k<nstages; k++) {
+        for (int k=0; k<nstages; k++) {
           analysisTime[k] = analysisTime2[k];
         }
       } else if (kMax == kMaxe1x) { // all looks based on PFS events
@@ -3097,7 +3065,7 @@ List lrsim2e(const int kMax = 1,
           int l = static_cast<int>(which_max(analysisTime2 >
                                                analysisTime[kMaxe1x-1]));
           nstages = kMax-l;
-          for (k=kMaxe1x; k<kMax-l; k++) {
+          for (int k=kMaxe1x; k<kMax-l; k++) {
             analysisTime[k] = analysisTime2[k-kMaxe1x+l];
           }
         } else {
@@ -3125,7 +3093,7 @@ List lrsim2e(const int kMax = 1,
 
 
     // construct the log-rank test statistic at each stage
-    for (k=0; k<nstages; k++) {
+    for (int k=0; k<nstages; k++) {
       time = analysisTime[k];
 
       n1x.fill(0);  // number of subjects in each stratum by treatment
@@ -3144,8 +3112,8 @@ List lrsim2e(const int kMax = 1,
       dropouts2e2 = 0;
 
       // censor at analysis time
-      for (i=0; i<n; i++) {
-        h = stratum[i]-1;
+      for (int i=0; i<n; i++) {
+        int h = stratum[i]-1;
         if (arrivalTime[i] > time) { // patients not yet enrolled
           timeUnderObservation1[i] = time - arrivalTime[i];
           event1[i] = 0;
@@ -3264,7 +3232,7 @@ List lrsim2e(const int kMax = 1,
 
       // add raw data to output
       if (niter[k] < maxNumberOfRawDatasetsPerStage) {
-        for (i=0; i<n; i++) {
+        for (int i=0; i<n; i++) {
           iterationNumberx[index1] = iter+1;
           stageNumberx[index1] = k+1;
           analysisTimex[index1] = time;
@@ -3347,8 +3315,8 @@ List lrsim2e(const int kMax = 1,
         uscore = 0;
         vscore = 0;
         km.fill(1);
-        for (i=0; i<nsubSorted; i++) {
-          h = stratumSorted[i] - 1;
+        for (int i=0; i<nsubSorted; i++) {
+          int h = stratumSorted[i] - 1;
           nt[h] = n1[h] + n2[h];
 
           n1a[h] = n1[h]*hazardRatioH0;
@@ -3397,6 +3365,8 @@ List lrsim2e(const int kMax = 1,
           totalDropoutsy[index2] = totalDropoutse2;
         }
 
+        uscorey[index2] = uscore;
+        vscorey[index2] = vscore;
         logRankStatisticy[index2] = uscore/sqrt(vscore);
         index2++;
 
@@ -3423,6 +3393,8 @@ List lrsim2e(const int kMax = 1,
   dropouts1y = dropouts1y[sub2];
   dropouts2y = dropouts2y[sub2];
   totalDropoutsy = totalDropoutsy[sub2];
+  uscorey = uscorey[sub2];
+  vscorey = vscorey[sub2];
   logRankStatisticy = logRankStatisticy[sub2];
 
   DataFrame sumdata = DataFrame::create(
@@ -3440,6 +3412,8 @@ List lrsim2e(const int kMax = 1,
     _["dropouts1"] = dropouts1y,
     _["dropouts2"] = dropouts2y,
     _["totalDropouts"] = totalDropoutsy,
+    _["uscore"] = uscorey,
+    _["vscore"] = vscorey,
     _["logRankStatistic"] = logRankStatisticy);
 
 
@@ -3567,7 +3541,7 @@ List lrsim2e(const int kMax = 1,
 //'   hazard rates for piecewise exponential dropout applicable for all
 //'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for arm 3 and endpoint 2 (OS).
-//' @inheritParams param_accrualDuration
+//' @param n Sample size.
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_rho1
@@ -3712,7 +3686,7 @@ List lrsim2e(const int kMax = 1,
 //'   lambda1e2 = log(2)/30*0.65,
 //'   lambda2e2 = log(2)/30*0.75,
 //'   lambda3e2 = log(2)/30,
-//'   accrualDuration = 30.143,
+//'   n = 700,
 //'   plannedEvents = c(186, 259, 183),
 //'   maxNumberOfIterations = 500,
 //'   maxNumberOfRawDatasetsPerStage = 1,
@@ -3751,7 +3725,7 @@ List lrsim2e3a(const int kMax = 1,
                const NumericVector& gamma1e2 = 0,
                const NumericVector& gamma2e2 = 0,
                const NumericVector& gamma3e2 = 0,
-               const double accrualDuration = NA_REAL,
+               const int n = NA_INTEGER,
                const double followupTime = NA_REAL,
                const bool fixedFollowup = 0,
                const double rho1 = 0,
@@ -3763,7 +3737,6 @@ List lrsim2e3a(const int kMax = 1,
                const int seed = NA_INTEGER) {
 
   // check input parameters
-  int h, i, j, k;
   int kMaxe1x = kMaxe1;
 
   int nstrata = static_cast<int>(stratumFraction.size());
@@ -4137,7 +4110,7 @@ List lrsim2e3a(const int kMax = 1,
     stop("gamma3e1 must be greater than or equal to gamma3e2");
   }
 
-  for (j=0; j<nstrata; j++) {
+  for (int j=0; j<nstrata; j++) {
     Range jj = Range(j*nintervals, (j+1)*nintervals-1);
 
     NumericVector lam1e1x = lambda1e1x[jj];
@@ -4155,7 +4128,7 @@ List lrsim2e3a(const int kMax = 1,
     NumericVector lam3e1d = hazard_pdcpp(piecewiseSurvivalTime,
                                          lam3e1x, lam3e2x, rho);
 
-    for (k=0; k<nintervals; k++) {
+    for (int k=0; k<nintervals; k++) {
       lambda1e1d[j*nintervals + k] = lam1e1d[k];
       lambda2e1d[j*nintervals + k] = lam2e1d[k];
       lambda3e1d[j*nintervals + k] = lam3e1d[k];
@@ -4167,12 +4140,12 @@ List lrsim2e3a(const int kMax = 1,
   gamma3e1d = gamma3e1x - gamma3e2x;
 
 
-  if (R_isnancpp(accrualDuration)) {
-    stop("accrualDuration must be provided");
+  if (n == NA_INTEGER) {
+    stop("n must be provided");
   }
 
-  if (accrualDuration <= 0) {
-    stop("accrualDuration must be positive");
+  if (n <= 0) {
+    stop("n must be positive");
   }
 
   if (fixedFollowup) {
@@ -4204,7 +4177,7 @@ List lrsim2e3a(const int kMax = 1,
 
 
   // declare variables
-  int iter, nevents1, nevents2, nstages;
+  int nevents1, nevents2, nstages;
   int accruals1, accruals2, accruals3, totalAccruals;
   int events1e1, events2e1, events3e1, totalEventse1;
   int events1e2, events2e2, events3e2, totalEventse2;
@@ -4215,20 +4188,6 @@ List lrsim2e3a(const int kMax = 1,
   double enrollt, u, u1, u2, time;
   double uscore13, uscore23, uscore12;
   double vscore13, vscore23, vscore12;
-
-
-  // maximum number of subjects to enroll
-  int m = static_cast<int>(accrualTime.size());
-  double s = 0;
-  for (i=0; i<m; i++) {
-    if (i<m-1 && accrualTime[i+1] < accrualDuration) {
-      s += accrualIntensity[i]*(accrualTime[i+1] - accrualTime[i]);
-    } else {
-      s += accrualIntensity[i]*(accrualDuration - accrualTime[i]);
-      break;
-    }
-  }
-  int n = static_cast<int>(std::floor(s + 0.5));
 
 
   // subject-level raw data set for one simulation
@@ -4325,14 +4284,14 @@ List lrsim2e3a(const int kMax = 1,
 
 
   // simulation
-  for (iter=0; iter<maxNumberOfIterations; iter++) {
+  for (int iter=0; iter<maxNumberOfIterations; iter++) {
 
     b1.fill(allocation1);
     b2.fill(allocation2);
     b3.fill(allocation3);
 
     enrollt = 0;
-    for (i=0; i<n; i++) {
+    for (int i=0; i<n; i++) {
 
       // generate accrual time
       u = R::runif(0,1);
@@ -4341,6 +4300,7 @@ List lrsim2e3a(const int kMax = 1,
 
       // generate stratum information
       u = R::runif(0,1);
+      int j;
       for (j=0; j<nstrata; j++) {
         if (cumStratumFraction[j] > u) {
           stratum[i] = j+1;
@@ -4527,11 +4487,11 @@ List lrsim2e3a(const int kMax = 1,
         }
 
         if (j1==kMaxe1x) { // total number of PFS events exceeds planned
-          for (k=0; k<kMaxe1x; k++) {
+          for (int k=0; k<kMaxe1x; k++) {
             analysisTime[k] = totalt1[plannedEvents[k]-1] + 1e-12;
           }
         } else {
-          for (k=0; k<=j1; k++) {
+          for (int k=0; k<=j1; k++) {
             if (k < j1) {
               analysisTime[k] = totalt1[plannedEvents[k]-1] + 1e-12;
             } else {
@@ -4552,11 +4512,11 @@ List lrsim2e3a(const int kMax = 1,
         }
 
         if (j2==kMax-kMaxe1x) { // total number of OS events exceeds planned
-          for (k=0; k<kMax-kMaxe1x; k++) {
+          for (int k=0; k<kMax-kMaxe1x; k++) {
             analysisTime2[k] = totalt2[plannedEvents[kMaxe1x+k]-1] + 1e-12;
           }
         } else {
-          for (k=0; k<=j2; k++) {
+          for (int k=0; k<=j2; k++) {
             if (k < j2) {
               analysisTime2[k] = totalt2[plannedEvents[kMaxe1x+k]-1] + 1e-12;
             } else {
@@ -4574,7 +4534,7 @@ List lrsim2e3a(const int kMax = 1,
           nstages = j2 + 1;
         }
 
-        for (k=0; k<nstages; k++) {
+        for (int k=0; k<nstages; k++) {
           analysisTime[k] = analysisTime2[k];
         }
       } else if (kMax == kMaxe1x) { // all looks based on PFS events
@@ -4589,7 +4549,7 @@ List lrsim2e3a(const int kMax = 1,
           int l = static_cast<int>(which_max(analysisTime2 >
                                                analysisTime[kMaxe1x-1]));
           nstages = kMax-l;
-          for (k=kMaxe1x; k<kMax-l; k++) {
+          for (int k=kMaxe1x; k<kMax-l; k++) {
             analysisTime[k] = analysisTime2[k-kMaxe1x+l];
           }
         } else {
@@ -4617,7 +4577,7 @@ List lrsim2e3a(const int kMax = 1,
 
 
     // construct the log-rank test statistic at each stage
-    for (k=0; k<nstages; k++) {
+    for (int k=0; k<nstages; k++) {
       time = analysisTime[k];
 
       n1x.fill(0);  // number of subjects in each stratum by treatment
@@ -4641,8 +4601,8 @@ List lrsim2e3a(const int kMax = 1,
       dropouts3e2 = 0;
 
       // censor at analysis time
-      for (i=0; i<n; i++) {
-        h = stratum[i]-1;
+      for (int i=0; i<n; i++) {
+        int h = stratum[i]-1;
         if (arrivalTime[i] > time) { // patients not yet enrolled
           timeUnderObservation1[i] = time - arrivalTime[i];
           event1[i] = 0;
@@ -4767,7 +4727,7 @@ List lrsim2e3a(const int kMax = 1,
 
       // add raw data to output
       if (niter[k] < maxNumberOfRawDatasetsPerStage) {
-        for (i=0; i<n; i++) {
+        for (int i=0; i<n; i++) {
           iterationNumberx[index1] = iter+1;
           stageNumberx[index1] = k+1;
           analysisTimex[index1] = time;
@@ -4863,8 +4823,8 @@ List lrsim2e3a(const int kMax = 1,
         km13.fill(1);
         km23.fill(1);
         km12.fill(1);
-        for (i=0; i<nsubSorted; i++) {
-          h = stratumSorted[i] - 1;
+        for (int i=0; i<nsubSorted; i++) {
+          int h = stratumSorted[i] - 1;
           nt13[h] = n1[h] + n3[h];
           nt23[h] = n2[h] + n3[h];
           nt12[h] = n1[h] + n2[h];
@@ -5121,7 +5081,7 @@ List lrsim2e3a(const int kMax = 1,
 //'   the treatment group.
 //' @param upper2 Maximum protocol-specified treatment duration for
 //'   the control group.
-//' @inheritParams param_accrualDuration
+//' @param n Sample size.
 //' @param plannedTime Calendar times for the analyses of the binary
 //'   endpoint.
 //' @param plannedEvents Target cumulative number of events for
@@ -5349,7 +5309,7 @@ List lrsim2e3a(const int kMax = 1,
 //'   delta2 = -log(1-0.02)/12,
 //'   upper1 = 15*28/30.4,
 //'   upper2 = 12*28/30.4,
-//'   accrualDuration = 20,
+//'   n = 640,
 //'   plannedTime = 20 + 15*28/30.4,
 //'   plannedEvents = c(130, 173),
 //'   maxNumberOfIterations = 1000,
@@ -5381,7 +5341,7 @@ List binary_tte_sim(
     const NumericVector& delta2 = 0,
     const double upper1 = NA_REAL,
     const double upper2 = NA_REAL,
-    const double accrualDuration = NA_REAL,
+    const int n = NA_INTEGER,
     const NumericVector& plannedTime = NA_REAL,
     const IntegerVector& plannedEvents = NA_INTEGER,
     const int maxNumberOfIterations = 1000,
@@ -5606,12 +5566,12 @@ List binary_tte_sim(
   }
 
 
-  if (R_isnancpp(accrualDuration)) {
-    stop("accrualDuration must be provided");
+  if (n == NA_INTEGER) {
+    stop("n must be provided");
   }
 
-  if (accrualDuration <= 0) {
-    stop("accrualDuration must be positive");
+  if (n <= 0) {
+    stop("n must be positive");
   }
 
 
@@ -5629,10 +5589,6 @@ List binary_tte_sim(
 
   if (kMax1 > 1 && is_true(any(diff(plannedTime) <= 0))) {
     stop("plannedTime must be increasing");
-  }
-
-  if (plannedTime[kMax1-1] != accrualDuration + std::max(upper1, upper2)) {
-    stop("plannedTime must end at the maximum follow-up time for endpoint 1");
   }
 
 
@@ -5663,27 +5619,13 @@ List binary_tte_sim(
 
 
   // declare variables
-  int h, i, iter, j, k, nevents, nstages1, nstages2;
+  int nevents, nstages1, nstages2;
   int accruals1, accruals2, totalAccruals;
   int events1, events2, totalEvents;
   int dropouts1, dropouts2, totalDropouts;
   int index1x=0, index2x=0, index1y=0, index2y=0;
 
   double enrollt, u, u1, u2, time, uscore, vscore;
-
-
-  // maximum number of subjects to enroll
-  int m = static_cast<int>(accrualTime.size());
-  double s = 0;
-  for (i=0; i<m; i++) {
-    if (i<m-1 && accrualTime[i+1] < accrualDuration) {
-      s += accrualIntensity[i]*(accrualTime[i+1] - accrualTime[i]);
-    } else {
-      s += accrualIntensity[i]*(accrualDuration - accrualTime[i]);
-      break;
-    }
-  }
-  int n = static_cast<int>(std::floor(s + 0.5));
 
 
   // subject-level raw data set for one simulation
@@ -5808,13 +5750,13 @@ List binary_tte_sim(
   NumericVector alpha1x = log(pi1x/(1-pi1x)) - alpha0x;
   double S, b, c, d;
 
-  for (iter=0; iter<maxNumberOfIterations; iter++) {
+  for (int iter=0; iter<maxNumberOfIterations; iter++) {
 
     b1.fill(allocation1);
     b2.fill(allocation2);
 
     enrollt = 0;
-    for (i=0; i<n; i++) {
+    for (int i=0; i<n; i++) {
 
       // generate accrual time
       u = R::runif(0,1);
@@ -5823,6 +5765,7 @@ List binary_tte_sim(
 
       // generate stratum information
       u = R::runif(0,1);
+      int j;
       for (j=0; j<nstrata; j++) {
         if (cumStratumFraction[j] > u) {
           stratum[i] = j+1;
@@ -5912,14 +5855,14 @@ List binary_tte_sim(
 
 
     // construct the Mantel-Haenszel statistic for endpoint 1 at each stage
-    for (k=0; k<nstages1; k++) {
+    for (int k=0; k<nstages1; k++) {
       time = analysisTime1[k];
 
       n1x.fill(0);  // number of subjects in each stratum by treatment
       n2x.fill(0);
 
-      for (i=0; i<n; i++) {
-        h = stratum[i]-1;
+      for (int i=0; i<n; i++) {
+        int h = stratum[i]-1;
         if (arrivalTime[i] > time) { // patients not yet enrolled
           timeUnderObservation1[i] = time - arrivalTime[i];
           responder[i] = NA_LOGICAL;
@@ -5960,7 +5903,7 @@ List binary_tte_sim(
 
       // add raw data to output
       if (niter1[k] < maxNumberOfRawDatasetsPerStage) {
-        for (i=0; i<n; i++) {
+        for (int i=0; i<n; i++) {
           iterationNumber1x[index1x] = iter+1;
           stageNumber1x[index1x] = k+1;
           analysisTime1x[index1x] = time;
@@ -5996,8 +5939,8 @@ List binary_tte_sim(
 
       // obtain the Mantel-Haenszel statistic for stratified risk difference
       NumericVector n11(nstrata), n21(nstrata), n1s(nstrata), n2s(nstrata);
-      for (i=0; i<nsubSorted; i++) {
-        h = stratumSorted[i] - 1;
+      for (int i=0; i<nsubSorted; i++) {
+        int h = stratumSorted[i] - 1;
         if (treatmentGroupSorted[i] == 1) {
           n1s[h]++;
           n11[h] += eventSorted[i];
@@ -6009,7 +5952,7 @@ List binary_tte_sim(
       NumericVector nss = n1s + n2s;
 
       double A = 0, B = 0, P = 0, Q = 0;
-      for (h=0; h<nstrata; h++) {
+      for (int h=0; h<nstrata; h++) {
         double dh = n11[h]/n1s[h] - n21[h]/n2s[h];
         double wh = n1s[h]*n2s[h]/nss[h];
         A += dh*wh;
@@ -6050,6 +5993,7 @@ List binary_tte_sim(
     totalt = stl_sort(totalTime[event]);
     nstages2 = kMax2;
 
+    int j;
     for (j=0; j<kMax2; j++) {
       if (plannedEvents[j] >= nevents) {
         nstages2 = j+1;
@@ -6058,11 +6002,11 @@ List binary_tte_sim(
     }
 
     if (j==kMax2) { // total number of events exceeds planned
-      for (k=0; k<nstages2; k++) {
+      for (int k=0; k<nstages2; k++) {
         analysisTime2[k] = totalt[plannedEvents[k]-1] + 1e-12;
       }
     } else {
-      for (k=0; k<nstages2; k++) {
+      for (int k=0; k<nstages2; k++) {
         if (k < nstages2-1) {
           analysisTime2[k] = totalt[plannedEvents[k]-1] + 1e-12;
         } else {
@@ -6076,7 +6020,7 @@ List binary_tte_sim(
 
 
     // construct the log-rank test statistic for endpoint 2 at each stage
-    for (k=0; k<nstages2; k++) {
+    for (int k=0; k<nstages2; k++) {
       time = analysisTime2[k];
 
       n1x.fill(0);  // number of subjects in each stratum by treatment
@@ -6089,8 +6033,8 @@ List binary_tte_sim(
       dropouts2 = 0;
 
       // censor at analysis time
-      for (i=0; i<n; i++) {
-        h = stratum[i]-1;
+      for (int i=0; i<n; i++) {
+        int h = stratum[i]-1;
         if (arrivalTime[i] > time) { // patients not yet enrolled
           timeUnderObservation[i] = time - arrivalTime[i];
           event[i] = 0;
@@ -6129,7 +6073,7 @@ List binary_tte_sim(
 
       // add raw data to output
       if (niter2[k] < maxNumberOfRawDatasetsPerStage) {
-        for (i=0; i<n; i++) {
+        for (int i=0; i<n; i++) {
           iterationNumber2x[index2x] = iter+1;
           stageNumber2x[index2x] = k+1;
           analysisTime2x[index2x] = time;
@@ -6181,8 +6125,8 @@ List binary_tte_sim(
       // calculate the stratified log-rank test
       uscore = 0;
       vscore = 0;
-      for (i=0; i<nsubSorted; i++) {
-        h = stratumSorted[i] - 1;
+      for (int i=0; i<nsubSorted; i++) {
+        int h = stratumSorted[i] - 1;
         nt[h] = n1[h] + n2[h];
 
         n1a[h] = n1[h]*hazardRatioH0;
@@ -6375,11 +6319,6 @@ List binary_tte_sim(
 }
 
 
-#include "utilities.h"
-
-using namespace Rcpp;
-
-
 //' @title Log-Rank Test Simulation for Enrichment Design
 //' @description Performs simulation for two-arm group
 //' sequential trials based on weighted log-rank test
@@ -6438,7 +6377,7 @@ using namespace Rcpp;
 //'   strata, or a vector of hazard rates for dropout in each analysis time
 //'   interval by stratum for the control group in the biomarker
 //'   positive sub population.
-//' @inheritParams param_accrualDuration
+//' @param n Sample size.
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_rho1
@@ -6555,7 +6494,7 @@ using namespace Rcpp;
 //'   gamma2itt = -log(1-0.04)/12,
 //'   gamma1pos = -log(1-0.04)/12,
 //'   gamma2pos = -log(1-0.04)/12,
-//'   accrualDuration = 10.14,
+//'   n = 500,
 //'   plannedEvents = c(108,144),
 //'   maxNumberOfIterations = 1000,
 //'   maxNumberOfRawDatasetsPerStage = 1,
@@ -6586,7 +6525,7 @@ List lrsimsub(const int kMax = 1,
               const NumericVector& gamma2itt = 0,
               const NumericVector& gamma1pos = 0,
               const NumericVector& gamma2pos = 0,
-              const double accrualDuration = NA_REAL,
+              const int n = NA_INTEGER,
               const double followupTime = NA_REAL,
               const bool fixedFollowup = 0,
               const double rho1 = 0,
@@ -6598,7 +6537,6 @@ List lrsimsub(const int kMax = 1,
               const int seed = NA_INTEGER) {
 
   // check input parameters
-  int h, i, j, k;
   int kMaxittx = kMaxitt;
 
   int nstrata = static_cast<int>(stratumFraction.size());
@@ -6884,7 +6822,7 @@ List lrsimsub(const int kMax = 1,
   }
 
 
-  for (j=0; j<nstrata; j++) {
+  for (int j=0; j<nstrata; j++) {
     Range jj = Range(j*nintervals, (j+1)*nintervals-1);
 
     double posx = p_posx[j];
@@ -6909,7 +6847,7 @@ List lrsimsub(const int kMax = 1,
     NumericVector gam2negx = hazard_subcpp(piecewiseSurvivalTime,
                                            gam2ittx, gam2posx, posx);
 
-    for (k=0; k<nintervals; k++) {
+    for (int k=0; k<nintervals; k++) {
       lambda1negx[j*nintervals + k] = lam1negx[k];
       lambda2negx[j*nintervals + k] = lam2negx[k];
       gamma1negx[j*nintervals + k] = gam1negx[k];
@@ -6918,12 +6856,12 @@ List lrsimsub(const int kMax = 1,
   }
 
 
-  if (R_isnancpp(accrualDuration)) {
-    stop("accrualDuration must be provided");
+  if (n == NA_INTEGER) {
+    stop("n must be provided");
   }
 
-  if (accrualDuration <= 0) {
-    stop("accrualDuration must be positive");
+  if (n <= 0) {
+    stop("n must be positive");
   }
 
   if (fixedFollowup) {
@@ -6954,27 +6892,13 @@ List lrsimsub(const int kMax = 1,
 
 
   // declare variables
-  int iter, nevents, neventspos, nstages;
+  int nevents, neventspos, nstages;
   int accruals1, accruals2, totalAccruals;
   int events1, events2, totalEvents;
   int dropouts1, dropouts2, totalDropouts;
   int index1=0, index2=0;
 
   double enrollt, u, time, uscore, vscore, hazardRatioH0;
-
-
-  // maximum number of subjects to enroll
-  int m = static_cast<int>(accrualTime.size());
-  double s = 0;
-  for (i=0; i<m; i++) {
-    if (i<m-1 && accrualTime[i+1] < accrualDuration) {
-      s += accrualIntensity[i]*(accrualTime[i+1] - accrualTime[i]);
-    } else {
-      s += accrualIntensity[i]*(accrualDuration - accrualTime[i]);
-      break;
-    }
-  }
-  int n = static_cast<int>(std::floor(s + 0.5));
 
 
   // subject-level raw data set for one simulation
@@ -7050,13 +6974,13 @@ List lrsimsub(const int kMax = 1,
 
 
   // simulation
-  for (iter=0; iter<maxNumberOfIterations; iter++) {
+  for (int iter=0; iter<maxNumberOfIterations; iter++) {
 
     b1.fill(allocation1);
     b2.fill(allocation2);
 
     enrollt = 0;
-    for (i=0; i<n; i++) {
+    for (int i=0; i<n; i++) {
 
       // generate accrual time
       u = R::runif(0,1);
@@ -7065,6 +6989,7 @@ List lrsimsub(const int kMax = 1,
 
       // generate stratum information
       u = R::runif(0,1);
+      int j;
       for (j=0; j<nstrata; j++) {
         if (cumStratumFraction[j] > u) {
           stratum[i] = j+1;
@@ -7180,11 +7105,11 @@ List lrsimsub(const int kMax = 1,
         }
 
         if (j1==kMaxittx) { // total number of events exceeds planned
-          for (k=0; k<kMaxittx; k++) { // analyses occur at planned events
+          for (int k=0; k<kMaxittx; k++) { // analyses occur at planned events
             analysisTime[k] = totalt[plannedEvents[k]-1] + 1e-12;
           }
         } else {
-          for (k=0; k<=j1; k++) {
+          for (int k=0; k<=j1; k++) {
             if (k < j1) {
               analysisTime[k] = totalt[plannedEvents[k]-1] + 1e-12;
             } else { // the last look may have events <= planned
@@ -7205,11 +7130,11 @@ List lrsimsub(const int kMax = 1,
         }
 
         if (j2==kMax-kMaxittx) { // total number of events exceeds planned
-          for (k=0; k<kMax-kMaxittx; k++) {
+          for (int k=0; k<kMax-kMaxittx; k++) {
             analysisTime2[k] = totaltpos[plannedEvents[kMaxittx+k]-1] + 1e-12;
           }
         } else {
-          for (k=0; k<=j2; k++) {
+          for (int k=0; k<=j2; k++) {
             if (k < j2) {
               analysisTime2[k] = totaltpos[plannedEvents[kMaxittx+k]-1]+1e-12;
             } else {
@@ -7227,7 +7152,7 @@ List lrsimsub(const int kMax = 1,
           nstages = j2 + 1;
         }
 
-        for (k=0; k<nstages; k++) {
+        for (int k=0; k<nstages; k++) {
           analysisTime[k] = analysisTime2[k];
         }
       } else if (kMax == kMaxittx) { // all looks based on ITT events
@@ -7243,7 +7168,7 @@ List lrsimsub(const int kMax = 1,
           int l = static_cast<int>(which_max(analysisTime2 >
                                                analysisTime[kMaxittx-1]));
           nstages = kMax-l;
-          for (k=kMaxittx; k<kMax-l; k++) {
+          for (int k=kMaxittx; k<kMax-l; k++) {
             analysisTime[k] = analysisTime2[k-kMaxittx+l];
           }
         } else { // no biomarker positive looks after the last ITT look
@@ -7271,7 +7196,7 @@ List lrsimsub(const int kMax = 1,
 
 
     // construct the log-rank test statistic at each stage
-    for (k=0; k<nstages; k++) {
+    for (int k=0; k<nstages; k++) {
       time = analysisTime[k];
 
       for (int pop=1; pop<=3; pop++) {
@@ -7306,8 +7231,8 @@ List lrsimsub(const int kMax = 1,
         dropouts2 = 0;
 
         // censor at analysis time
-        for (i=0; i<nsub; i++) {
-          h = stratumSub[i]-1;
+        for (int i=0; i<nsub; i++) {
+          int h = stratumSub[i]-1;
           if (arrivalTimeSub[i] > time) { // patients not yet enrolled
             timeUnderObservationSub[i] = time - arrivalTimeSub[i];
             eventSub[i] = 0;
@@ -7374,7 +7299,7 @@ List lrsimsub(const int kMax = 1,
         // add raw data to output
         if (pop == 1) {
           if (niter[k] < maxNumberOfRawDatasetsPerStage) {
-            for (i=0; i<n; i++) {
+            for (int i=0; i<n; i++) {
               iterationNumberx[index1] = iter+1;
               stageNumberx[index1] = k+1;
               analysisTimex[index1] = time;
@@ -7425,8 +7350,8 @@ List lrsimsub(const int kMax = 1,
         uscore = 0;
         vscore = 0;
         km.fill(1);
-        for (i=0; i<nsubSorted; i++) {
-          h = stratumSorted[i] - 1;
+        for (int i=0; i<nsubSorted; i++) {
+          int h = stratumSorted[i] - 1;
           n1a[h] = n1[h]*hazardRatioH0;
           nt[h] = n1[h] + n2[h];
           nta[h] = n1a[h] + n2[h];
