@@ -5,8 +5,8 @@
 \title{Log-Rank Test Simulation for Two Endpoints and Three Arms}
 \usage{
 lrsim2e3a(
-  kMax = NA_integer_,
-  kMaxe1 = NA_integer_,
+  kMax = 1L,
+  kMaxe1 = 1L,
   hazardRatioH013e1 = 1,
   hazardRatioH023e1 = 1,
   hazardRatioH012e1 = 1,
@@ -33,7 +33,7 @@ lrsim2e3a(
   gamma1e2 = 0L,
   gamma2e2 = 0L,
   gamma3e2 = 0L,
-  accrualDuration = NA_real_,
+  n = NA_integer_,
   followupTime = NA_real_,
   fixedFollowup = 0L,
   rho1 = 0,
@@ -147,7 +147,7 @@ hazard rates for piecewise exponential dropout applicable for all
 strata, or a vector of hazard rates for dropout in each analysis time
 interval by stratum for arm 3 and endpoint 2 (OS).}
 
-\item{accrualDuration}{Duration of the enrollment period.}
+\item{n}{Sample size.}
 
 \item{followupTime}{Follow-up time for the last enrolled subject.}
 
@@ -278,7 +278,7 @@ sim1 = lrsim2e3a(
   lambda1e2 = log(2)/30*0.65,
   lambda2e2 = log(2)/30*0.75,
   lambda3e2 = log(2)/30,
-  accrualDuration = 30.143,
+  n = 700,
   plannedEvents = c(186, 259, 183),
   maxNumberOfIterations = 500,
   maxNumberOfRawDatasetsPerStage = 1,
