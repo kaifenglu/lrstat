@@ -441,6 +441,7 @@ lrschoenfeld <- function(
 
     lrp1 <- lrc1$resultsUnderH1
     accrualDuration <- lrp1$overallResults$accrualDuration
+    nsubjects <- lrp1$overallResults$numberOfSubjects
   }
 
   # run a simulation to verify the analytic results
@@ -457,7 +458,7 @@ lrschoenfeld <- function(
     accrualTime, accrualIntensity,
     piecewiseSurvivalTime, stratumFraction,
     lambda1, lambda2, gamma1, gamma2,
-    accrualDuration, followupTime,
+    nsubjects, followupTime,
     fixedFollowup, 0, 0,
     plannedEvents, NA,
     maxNumberOfIterations,
@@ -529,7 +530,7 @@ lrschoenfeld <- function(
       accrualTime, accrualIntensity,
       piecewiseSurvivalTime, stratumFraction,
       lambda1, lambda2, gamma1, gamma2,
-      accrualDuration, followupTime,
+      nsubjects, followupTime,
       fixedFollowup, 0, 0, nevents, NA,
       maxNumberOfIterations,
       maxNumberOfRawDatasetsPerStage, seed)
