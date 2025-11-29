@@ -2884,3 +2884,51 @@ hazard_sub <- function(piecewiseSurvivalTime = 0,
   hazard_subcpp(piecewiseSurvivalTime, hazard_itt, hazard_pos, p_pos)
 }
 
+
+#' @title Random Multivariate Normal Generation
+#'
+#' @description Generates random samples from a multivariate normal
+#' distribution with a specified mean vector and covariance matrix.
+#'
+#' @param n The number of samples to generate.
+#' @param mean A numeric vector representing the mean of the distribution.
+#' @param sigma A numeric matrix representing the covariance matrix.
+#'
+#' @details
+#' This function generates samples from a multivariate normal distribution
+#' using the Cholesky decomposition method. It first computes the Cholesky
+#' factorization of the covariance matrix, then generates standard normal
+#' random variables, and finally transforms them to the desired multivariate
+#' normal distribution.
+#'
+#' @return A numeric matrix where each row represents a sample from the
+#' multivariate normal distribution.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#' # Generate 5 samples from a bivariate normal distribution with mean (0,0)
+#' # and covariance matrix [[1, 0.5], [0.5, 1]]
+#'
+#' set.seed(314159)
+#' rmvnorm(5, c(0, 0), matrix(c(1, 0.5, 0.5, 1), nrow=2))
+#'
+#' @export
+rmvnorm <- function(n, mean = rep(0, nrow(sigma)),
+                    sigma = diag(length(mean))) {
+
+  if (n <= 0 || n != as.integer(n)) {
+    stop("n must be a positive integer")
+  }
+  if (!is.numeric(mean) || !is.numeric(sigma)) {
+    stop("mean and sigma must be numeric vectors and matrices")
+  }
+  if (!isSymmetric(sigma, tol = sqrt(.Machine$double.eps),
+                   check.attributes = FALSE)) {
+    stop("sigma must be a symmetric matrix")
+  }
+  if (length(mean) != nrow(sigma))
+    stop("mean and sigma have non-conforming size")
+
+  rmvnormcpp(n, mean, sigma)
+}
