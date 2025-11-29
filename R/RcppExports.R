@@ -763,19 +763,23 @@ kmsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, eff
 #'
 #'     - \code{alpha}: The overall significance level.
 #'
-#'     - \code{drift}: The drift parameter, equal to
-#'       \code{(surv - survH0)*sqrt(information)}.
-#'
-#'     - \code{inflationFactor}: The inflation factor (relative to the
-#'       fixed design).
+#'     - \code{numberOfEvents}: The total number of events.
 #'
 #'     - \code{numbeOfSubjects}: The total number of subjects.
+#'
+#'     - \code{numberOfMilestone}: The total number of subjects reaching
+#'       milestone.
 #'
 #'     - \code{studyDuration}: The total study duration.
 #'
 #'     - \code{information}: The maximum information.
 #'
+#'     - \code{expectedNumberOfEvents}: The expected number of events.
+#'
 #'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
+#'
+#'     - \code{expectedNumberOfMilestone}: The expected number of subjects
+#'       reaching milestone.
 #'
 #'     - \code{expectedStudyDuration}: The expected study duration.
 #'
@@ -818,7 +822,14 @@ kmsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, eff
 #'
 #'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
 #'
+#'     - \code{numberOfEvents}: The number of events.
+#'
+#'     - \code{numberOfDropouts}: The number of dropouts.
+#'
 #'     - \code{numberOfSubjects}: The number of subjects.
+#'
+#'     - \code{numberOfMilestone}: The number of subjects reaching
+#'       milestone.
 #'
 #'     - \code{analysisTime}: The average time since trial start.
 #'
@@ -1028,9 +1039,9 @@ kmsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'
 #'     - \code{alpha}: The overall significance level.
 #'
-#'     - \code{numbeOfEvents}: The total number of events.
+#'     - \code{numberOfEvents}: The total number of events.
 #'
-#'     - \code{numbeOfSubjects}: The total number of subjects.
+#'     - \code{numberOfSubjects}: The total number of subjects.
 #'
 #'     - \code{studyDuration}: The total study duration.
 #'
@@ -1266,85 +1277,8 @@ kmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
     .Call(`_lrstat_kmsamplesizeequiv`, beta, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, milestone, survDiffLower, survDiffUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, interval, spendingTime, rounding)
 }
 
-#' @title Estimate of Milestone Survival Difference
-#' @description Obtains the estimate of milestone survival difference
-#' between two treatment groups.
-#'
-#' @param data The input data frame that contains the following variables:
-#'
-#'   * \code{rep}: The replication for by-group processing.
-#'
-#'   * \code{stratum}: The stratum.
-#'
-#'   * \code{treat}: The treatment.
-#'
-#'   * \code{time}: The possibly right-censored survival time.
-#'
-#'   * \code{event}: The event indicator.
-#'
-#' @param rep The name of the replication variable in the input data.
-#' @param stratum The name of the stratum variable in the input data.
-#' @param treat The name of the treatment variable in the input data.
-#' @param time The name of the time variable in the input data.
-#' @param event The name of the event variable in the input data.
-#' @param milestone The milestone time at which to calculate the
-#'   survival probability.
-#' @param survDiffH0 The difference in milestone survival probabilities
-#'   under the null hypothesis. Defaults to 0 for superiority test.
-#' @param conflev The level of the two-sided confidence interval for
-#'   the difference in milestone survival probabilities. Defaults to 0.95.
-#'
-#' @return A data frame with the following variables:
-#'
-#' * \code{rep}: The replication.
-#'
-#' * \code{milestone}: The milestone time relative to randomization.
-#'
-#' * \code{survDiffH0}: The difference in milestone survival probabilities
-#'   under the null hypothesis.
-#'
-#' * \code{surv1}: The estimated milestone survival probability for
-#'   the treatment group.
-#'
-#' * \code{surv2}: The estimated milestone survival probability for
-#'   the control group.
-#'
-#' * \code{survDiff}: The estimated difference in milestone survival
-#'   probabilities.
-#'
-#' * \code{vsurv1}: The variance for surv1.
-#'
-#' * \code{vsurv2}: The variance for surv2.
-#'
-#' * \code{vsurvDiff}: The variance for survDiff.
-#'
-#' * \code{survDiffZ}: The Z-statistic value.
-#'
-#' * \code{survDiffPValue}: The one-sided p-value.
-#'
-#' * \code{lower}: The lower bound of confidence interval.
-#'
-#' * \code{upper}: The upper bound of confidence interval.
-#'
-#' * \code{conflev}: The level of confidence interval.
-#'
-#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#'
-#' @examples
-#'
-#' df <- kmdiff(data = rawdata, rep = "iterationNumber",
-#'              stratum = "stratum", treat = "treatmentGroup",
-#'              time = "timeUnderObservation", event = "event",
-#'              milestone = 12)
-#' head(df)
-#'
-#' @export
-kmdiff <- function(data, rep = "", stratum = "", treat = "treat", time = "time", event = "event", milestone = NA_real_, survDiffH0 = 0, conflev = 0.95) {
-    .Call(`_lrstat_kmdiff`, data, rep, stratum, treat, time, event, milestone, survDiffH0, conflev)
-}
-
-logisregcpp <- function(data, rep = "", event = "event", covariates = "", freq = "", weight = "", offset = "", id = "", link = "logit", robust = 0L, firth = 0L, bc = 0L, flic = 0L, plci = 0L, alpha = 0.05) {
-    .Call(`_lrstat_logisregcpp`, data, rep, event, covariates, freq, weight, offset, id, link, robust, firth, bc, flic, plci, alpha)
+logisregcpp <- function(data, rep = "", event = "event", covariates = "", freq = "", weight = "", offset = "", id = "", link = "logit", init = NA_real_, robust = FALSE, firth = FALSE, flic = FALSE, plci = FALSE, alpha = 0.05, maxiter = 50L, eps = 1.0e-9) {
+    .Call(`_lrstat_logisregcpp`, data, rep, event, covariates, freq, weight, offset, id, link, init, robust, firth, flic, plci, alpha, maxiter, eps)
 }
 
 #' @title Log-Rank Test Simulation
@@ -1373,7 +1307,7 @@ logisregcpp <- function(data, rep = "", event = "event", covariates = "", freq =
 #' @inheritParams param_lambda2_stratified
 #' @inheritParams param_gamma1_stratified
 #' @inheritParams param_gamma2_stratified
-#' @inheritParams param_accrualDuration
+#' @param n Sample size.
 #' @inheritParams param_followupTime
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_rho1
@@ -1431,7 +1365,7 @@ logisregcpp <- function(data, rep = "", event = "event", covariates = "", freq =
 #'     - \code{useEvents}: whether the analyses are planned
 #'       based on the number of events or calendar time.
 #'
-#'     - \code{accrualDuration}: Duration of the enrollment period.
+#'     - \code{n}: Sample size.
 #'
 #'     - \code{fixedFollowup}: Whether a fixed follow-up design is used.
 #'
@@ -1535,7 +1469,7 @@ logisregcpp <- function(data, rep = "", event = "event", covariates = "", freq =
 #'              criticalValues = c(2.797, 1.977),
 #'              accrualIntensity = 11,
 #'              lambda1 = 0.018, lambda2 = 0.030,
-#'              accrualDuration = 12,
+#'              n = 132,
 #'              plannedEvents = c(60, 120),
 #'              maxNumberOfIterations = 1000,
 #'              maxNumberOfRawDatasetsPerStage = 1,
@@ -1557,7 +1491,7 @@ logisregcpp <- function(data, rep = "", event = "event", covariates = "", freq =
 #'              criticalValues = c(2.797, 1.977),
 #'              accrualIntensity = 11,
 #'              lambda1 = 0.018, lambda2 = 0.030,
-#'              accrualDuration = 12,
+#'              n = 132,
 #'              plannedTime = c(31.9, 113.2),
 #'              maxNumberOfIterations = 1000,
 #'              maxNumberOfRawDatasetsPerStage = 1,
@@ -1570,8 +1504,8 @@ logisregcpp <- function(data, rep = "", event = "event", covariates = "", freq =
 #' head(sim2$sumdata)
 #'
 #' @export
-lrsim <- function(kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, futilityBounds = NA_real_, hazardRatioH0 = 1, allocation1 = 1L, allocation2 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
-    .Call(`_lrstat_lrsim`, kMax, informationRates, criticalValues, futilityBounds, hazardRatioH0, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
+lrsim <- function(kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, futilityBounds = NA_real_, hazardRatioH0 = 1, allocation1 = 1L, allocation2 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, n = NA_integer_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
+    .Call(`_lrstat_lrsim`, kMax, informationRates, criticalValues, futilityBounds, hazardRatioH0, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
 
 #' @title Log-Rank Test Simulation for Three Arms
@@ -1615,7 +1549,7 @@ lrsim <- function(kMax = 1L, informationRates = NA_real_, criticalValues = NA_re
 #'   hazard rates for piecewise exponential dropout applicable for all
 #'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for arm 3.
-#' @inheritParams param_accrualDuration
+#' @param n Sample size.
 #' @inheritParams param_followupTime
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_rho1
@@ -1733,7 +1667,7 @@ lrsim <- function(kMax = 1L, informationRates = NA_real_, criticalValues = NA_re
 #'   lambda1 = log(2)/12*0.60,
 #'   lambda2 = log(2)/12*0.70,
 #'   lambda3 = log(2)/12,
-#'   accrualDuration = 30.143,
+#'   n = 700,
 #'   plannedEvents = c(186, 259, 295),
 #'   maxNumberOfIterations = 1000,
 #'   maxNumberOfRawDatasetsPerStage = 1,
@@ -1743,8 +1677,8 @@ lrsim <- function(kMax = 1L, informationRates = NA_real_, criticalValues = NA_re
 #' head(sim1$rawdata)
 #'
 #' @export
-lrsim3a <- function(kMax = NA_integer_, hazardRatioH013 = 1, hazardRatioH023 = 1, hazardRatioH012 = 1, allocation1 = 1L, allocation2 = 1L, allocation3 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, lambda3 = NA_real_, gamma1 = 0L, gamma2 = 0L, gamma3 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
-    .Call(`_lrstat_lrsim3a`, kMax, hazardRatioH013, hazardRatioH023, hazardRatioH012, allocation1, allocation2, allocation3, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, lambda3, gamma1, gamma2, gamma3, accrualDuration, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
+lrsim3a <- function(kMax = 1L, hazardRatioH013 = 1, hazardRatioH023 = 1, hazardRatioH012 = 1, allocation1 = 1L, allocation2 = 1L, allocation3 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, lambda3 = NA_real_, gamma1 = 0L, gamma2 = 0L, gamma3 = 0L, n = NA_integer_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
+    .Call(`_lrstat_lrsim3a`, kMax, hazardRatioH013, hazardRatioH023, hazardRatioH012, allocation1, allocation2, allocation3, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, lambda3, gamma1, gamma2, gamma3, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
 
 #' @title Log-Rank Test Simulation for Two Endpoints
@@ -1799,7 +1733,7 @@ lrsim3a <- function(kMax = NA_integer_, hazardRatioH013 = 1, hazardRatioH023 = 1
 #'   hazard rates for piecewise exponential dropout applicable for all
 #'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for the control group and endpoint 2 (OS).
-#' @inheritParams param_accrualDuration
+#' @param n Sample size.
 #' @inheritParams param_followupTime
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_rho1
@@ -1856,6 +1790,12 @@ lrsim3a <- function(kMax = NA_integer_, hazardRatioH013 = 1, hazardRatioH023 = 1
 #'       the control group.
 #'
 #'     - \code{totalDropouts}: The total number of dropouts at the stage.
+#'
+#'     - \code{uscore}: The numerator of the log-rank test statistic for
+#'       the endpoint.
+#'
+#'     - \code{vscore}: The variance of the log-rank test statistic for
+#'       the endpoint.
 #'
 #'     - \code{logRankStatistic}: The log-rank test Z-statistic for
 #'       the endpoint.
@@ -1924,7 +1864,7 @@ lrsim3a <- function(kMax = NA_integer_, hazardRatioH013 = 1, hazardRatioH023 = 1
 #'   lambda2e1 = log(2)/12,
 #'   lambda1e2 = log(2)/30*0.65,
 #'   lambda2e2 = log(2)/30,
-#'   accrualDuration = 20.143,
+#'   n = 420,
 #'   plannedEvents = c(186, 259, 183),
 #'   maxNumberOfIterations = 1000,
 #'   maxNumberOfRawDatasetsPerStage = 1,
@@ -1934,8 +1874,8 @@ lrsim3a <- function(kMax = NA_integer_, hazardRatioH013 = 1, hazardRatioH023 = 1
 #' head(sim1$rawdata)
 #'
 #' @export
-lrsim2e <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH0e1 = 1, hazardRatioH0e2 = 1, allocation1 = 1L, allocation2 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, rho = 0, lambda1e1 = NA_real_, lambda2e1 = NA_real_, lambda1e2 = NA_real_, lambda2e2 = NA_real_, gamma1e1 = 0L, gamma2e1 = 0L, gamma1e2 = 0L, gamma2e2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
-    .Call(`_lrstat_lrsim2e`, kMax, kMaxe1, hazardRatioH0e1, hazardRatioH0e2, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, rho, lambda1e1, lambda2e1, lambda1e2, lambda2e2, gamma1e1, gamma2e1, gamma1e2, gamma2e2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
+lrsim2e <- function(kMax = 1L, kMaxe1 = 1L, hazardRatioH0e1 = 1, hazardRatioH0e2 = 1, allocation1 = 1L, allocation2 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, rho = 0, lambda1e1 = NA_real_, lambda2e1 = NA_real_, lambda1e2 = NA_real_, lambda2e2 = NA_real_, gamma1e1 = 0L, gamma2e1 = 0L, gamma1e2 = 0L, gamma2e2 = 0L, n = NA_integer_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
+    .Call(`_lrstat_lrsim2e`, kMax, kMaxe1, hazardRatioH0e1, hazardRatioH0e2, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, rho, lambda1e1, lambda2e1, lambda1e2, lambda2e2, gamma1e1, gamma2e1, gamma1e2, gamma2e2, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
 
 #' @title Log-Rank Test Simulation for Two Endpoints and Three Arms
@@ -2010,7 +1950,7 @@ lrsim2e <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH0e1 = 
 #'   hazard rates for piecewise exponential dropout applicable for all
 #'   strata, or a vector of hazard rates for dropout in each analysis time
 #'   interval by stratum for arm 3 and endpoint 2 (OS).
-#' @inheritParams param_accrualDuration
+#' @param n Sample size.
 #' @inheritParams param_followupTime
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_rho1
@@ -2155,7 +2095,7 @@ lrsim2e <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH0e1 = 
 #'   lambda1e2 = log(2)/30*0.65,
 #'   lambda2e2 = log(2)/30*0.75,
 #'   lambda3e2 = log(2)/30,
-#'   accrualDuration = 30.143,
+#'   n = 700,
 #'   plannedEvents = c(186, 259, 183),
 #'   maxNumberOfIterations = 500,
 #'   maxNumberOfRawDatasetsPerStage = 1,
@@ -2165,20 +2105,24 @@ lrsim2e <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH0e1 = 
 #' head(sim1$rawdata)
 #'
 #' @export
-lrsim2e3a <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH013e1 = 1, hazardRatioH023e1 = 1, hazardRatioH012e1 = 1, hazardRatioH013e2 = 1, hazardRatioH023e2 = 1, hazardRatioH012e2 = 1, allocation1 = 1L, allocation2 = 1L, allocation3 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, rho = 0, lambda1e1 = NA_real_, lambda2e1 = NA_real_, lambda3e1 = NA_real_, lambda1e2 = NA_real_, lambda2e2 = NA_real_, lambda3e2 = NA_real_, gamma1e1 = 0L, gamma2e1 = 0L, gamma3e1 = 0L, gamma1e2 = 0L, gamma2e2 = 0L, gamma3e2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
-    .Call(`_lrstat_lrsim2e3a`, kMax, kMaxe1, hazardRatioH013e1, hazardRatioH023e1, hazardRatioH012e1, hazardRatioH013e2, hazardRatioH023e2, hazardRatioH012e2, allocation1, allocation2, allocation3, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, rho, lambda1e1, lambda2e1, lambda3e1, lambda1e2, lambda2e2, lambda3e2, gamma1e1, gamma2e1, gamma3e1, gamma1e2, gamma2e2, gamma3e2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
+lrsim2e3a <- function(kMax = 1L, kMaxe1 = 1L, hazardRatioH013e1 = 1, hazardRatioH023e1 = 1, hazardRatioH012e1 = 1, hazardRatioH013e2 = 1, hazardRatioH023e2 = 1, hazardRatioH012e2 = 1, allocation1 = 1L, allocation2 = 1L, allocation3 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, rho = 0, lambda1e1 = NA_real_, lambda2e1 = NA_real_, lambda3e1 = NA_real_, lambda1e2 = NA_real_, lambda2e2 = NA_real_, lambda3e2 = NA_real_, gamma1e1 = 0L, gamma2e1 = 0L, gamma3e1 = 0L, gamma1e2 = 0L, gamma2e2 = 0L, gamma3e2 = 0L, n = NA_integer_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
+    .Call(`_lrstat_lrsim2e3a`, kMax, kMaxe1, hazardRatioH013e1, hazardRatioH023e1, hazardRatioH012e1, hazardRatioH013e2, hazardRatioH023e2, hazardRatioH012e2, allocation1, allocation2, allocation3, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, rho, lambda1e1, lambda2e1, lambda3e1, lambda1e2, lambda2e2, lambda3e2, gamma1e1, gamma2e1, gamma3e1, gamma1e2, gamma2e2, gamma3e2, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
 
-#' @title Simulation for a Binary Endpoint and a Time-to-Event Endpoint
+#' @title Simulation for a Binary and a Time-to-Event Endpoint in
+#' Group Sequential Trials
 #' @description Performs simulation for two-endpoint two-arm group
-#' sequential trials. The first endpoint is a binary endpoint and
-#' the Mantel-Haenszel test is used to test risk difference.
-#' The second endpoint is a time-to-event endpoint and the log-rank
-#' test is used to test the treatment difference. The analysis times
-#' of the first endpoint are determined by the specified calendar times,
-#' while the analysis times for the second endpoint is based on the
-#' planned number of events at each look. The binary endpoint is
-#' assessed at the first post-treatment follow-up visit.
+#' sequential trials.
+#' \itemize{
+#'   \item Endpoint 1: Binary endpoint, analyzed using the
+#'         Mantel-Haenszel test for risk difference.
+#'   \item Endpoint 2: Time-to-event endpoint, analyzed using
+#'         the log-rank test for treatment effect.
+#' }
+#' The analysis times for the binary endpoint are based on calendar times,
+#' while the time-to-event analyses are triggered by reaching the
+#' pre-specified number of events. The binary endpoint is
+#' assessed at the first post-treatment follow-up visit (PTFU1).
 #'
 #' @param kMax1 Number of stages for the binary endpoint.
 #' @param kMax2 Number of stages for the time-to-event endpoint.
@@ -2194,7 +2138,8 @@ lrsim2e3a <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH013e
 #' @inheritParams param_accrualIntensity
 #' @inheritParams param_piecewiseSurvivalTime
 #' @inheritParams param_stratumFraction
-#' @param globalOddsRatio The global odds ratio of the Plackett copula.
+#' @param globalOddsRatio Global odds ratio of the Plackett copula
+#'   linking the two endpoints.
 #' @param pi1 Response probabilities by stratum for the treatment group
 #'   for the binary endpoint.
 #' @param pi2 Response probabilities by stratum for the control group
@@ -2223,26 +2168,26 @@ lrsim2e3a <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH013e
 #'   discontinuation applicable for all strata, or a vector of hazard rates
 #'   for treatment discontinuation in each analysis time interval by
 #'   stratum for the control group for the binary endpoint.
-#' @param upper1 The protocol-specified treatment duration for the treatment
-#'   group.
-#' @param upper2 The protocol-specified treatment duration for the control
-#'   group.
-#' @inheritParams param_accrualDuration
-#' @param plannedTime The calendar times for the analyses of the binary
+#' @param upper1 Maximim protocol-specified treatment duration for
+#'   the treatment group.
+#' @param upper2 Maximum protocol-specified treatment duration for
+#'   the control group.
+#' @param n Sample size.
+#' @param plannedTime Calendar times for the analyses of the binary
 #'   endpoint.
-#' @param plannedEvents The planned cumulative total number of events for
-#'   the time-to-event endpoint.
-#' @param maxNumberOfIterations The number of simulation iterations.
-#' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
-#'   stage to extract.
-#' @param seed The seed to reproduce the simulation results.
-#'   The seed from the environment will be used if left unspecified.
+#' @param plannedEvents Target cumulative number of events for
+#'   the time-to-event analyses.
+#' @param maxNumberOfIterations Number of simulation iterations to perform.
+#' @param maxNumberOfRawDatasetsPerStage Number of subject-level datasets
+#'   to retain per stage. Set to 0 to skip raw data saving.
+#' @param seed Random seed for reproducibility. If not specified,
+#'   the current R environment seed is used.
 #'
 #' @details We consider dual primary endpoints with endpoint 1 being a
 #'   binary endpoint and endpoint 2 being a time-to-event endpoint.
 #'   The analyses of endpoint 1 will be based on calendar times, while
 #'   the analyses of endpoint 2 will be based on the number of events.
-#'   Therefor the analyses of the two endpoints are not at the same
+#'   Therefore, the analyses of the two endpoints are not at the same
 #'   time points. The correlation between the two endpoints is
 #'   characterized by the global odds ratio of the Plackett copula.
 #'   In addition, the time-to-event endpoint will render the binary
@@ -2455,7 +2400,7 @@ lrsim2e3a <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH013e
 #'   delta2 = -log(1-0.02)/12,
 #'   upper1 = 15*28/30.4,
 #'   upper2 = 12*28/30.4,
-#'   accrualDuration = 20,
+#'   n = 640,
 #'   plannedTime = 20 + 15*28/30.4,
 #'   plannedEvents = c(130, 173),
 #'   maxNumberOfIterations = 1000,
@@ -2464,8 +2409,197 @@ lrsim2e3a <- function(kMax = NA_integer_, kMaxe1 = NA_integer_, hazardRatioH013e
 #'
 #'
 #' @export
-binary_tte_sim <- function(kMax1 = 1L, kMax2 = 1L, riskDiffH0 = 0, hazardRatioH0 = 1, allocation1 = 1L, allocation2 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, globalOddsRatio = 1, pi1 = NA_real_, pi2 = NA_real_, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, delta1 = 0L, delta2 = 0L, upper1 = NA_real_, upper2 = NA_real_, accrualDuration = NA_real_, plannedTime = NA_real_, plannedEvents = NA_integer_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
-    .Call(`_lrstat_binary_tte_sim`, kMax1, kMax2, riskDiffH0, hazardRatioH0, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, globalOddsRatio, pi1, pi2, lambda1, lambda2, gamma1, gamma2, delta1, delta2, upper1, upper2, accrualDuration, plannedTime, plannedEvents, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
+binary_tte_sim <- function(kMax1 = 1L, kMax2 = 1L, riskDiffH0 = 0, hazardRatioH0 = 1, allocation1 = 1L, allocation2 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, globalOddsRatio = 1, pi1 = NA_real_, pi2 = NA_real_, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, delta1 = 0L, delta2 = 0L, upper1 = NA_real_, upper2 = NA_real_, n = NA_integer_, plannedTime = NA_real_, plannedEvents = NA_integer_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
+    .Call(`_lrstat_binary_tte_sim`, kMax1, kMax2, riskDiffH0, hazardRatioH0, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, globalOddsRatio, pi1, pi2, lambda1, lambda2, gamma1, gamma2, delta1, delta2, upper1, upper2, n, plannedTime, plannedEvents, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
+}
+
+#' @title Log-Rank Test Simulation for Enrichment Design
+#' @description Performs simulation for two-arm group
+#' sequential trials based on weighted log-rank test
+#' for a biomarker enrichment design. The looks are either
+#' driven by the total number of events in the ITT population
+#' or the biomarker positive sub population.
+#' Alternatively, the analyses can be planned to occur at
+#' specified calendar times.
+#'
+#' @inheritParams param_kMax
+#' @param kMaxitt Number of stages with timing determined by events
+#'   in the ITT population. Ranges from 0 (none) to \code{kMax}.
+#' @param hazardRatioH0itt Hazard ratio under the null hypothesis
+#'   for the ITT population. Defaults to 1 for superiority test.
+#' @param hazardRatioH0pos Hazard ratio under the null hypothesis
+#'   for the biomarker positive sub population. Defaults to 1 for
+#'   superiority test.
+#' @param hazardRatioH0neg Hazard ratio under the null hypothesis
+#'   for the biomarker negative sub population. Defaults to 1 for
+#'   superiority test.
+#' @param allocation1 Number of subjects in the treatment group in
+#'   a randomization block. Defaults to 1 for equal randomization.
+#' @param allocation2 Number of subjects in the control group in
+#'   a randomization block. Defaults to 1 for equal randomization.
+#' @inheritParams param_accrualTime
+#' @inheritParams param_accrualIntensity
+#' @inheritParams param_piecewiseSurvivalTime
+#' @inheritParams param_stratumFraction
+#' @param p_pos The prevalence of the biomarker positive sub population
+#'   in each stratum.
+#' @param lambda1itt A vector of hazard rates for the event in each analysis
+#'   time interval by stratum for the treatment group in the ITT population.
+#' @param lambda2itt A vector of hazard rates for the event in each analysis
+#'   time interval by stratum for the control group in the ITT population.
+#' @param lambda1pos A vector of hazard rates for the event in each analysis
+#'   time interval by stratum for the treatment group in the biomarker
+#'   positive sub population.
+#' @param lambda2pos A vector of hazard rates for the event in each analysis
+#'   time interval by stratum for the control group in the biomarker
+#'   positive sub population.
+#' @param gamma1itt The hazard rate for exponential dropout, a vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
+#'   interval by stratum for the treatment group in the ITT population.
+#' @param gamma2itt The hazard rate for exponential dropout, a vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
+#'   interval by stratum for the control group in the ITT population.
+#' @param gamma1pos The hazard rate for exponential dropout, a vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
+#'   interval by stratum for the treatment group in the biomarker
+#'   positive sub population.
+#' @param gamma2pos The hazard rate for exponential dropout, a vector of
+#'   hazard rates for piecewise exponential dropout applicable for all
+#'   strata, or a vector of hazard rates for dropout in each analysis time
+#'   interval by stratum for the control group in the biomarker
+#'   positive sub population.
+#' @param n Sample size.
+#' @inheritParams param_followupTime
+#' @inheritParams param_fixedFollowup
+#' @inheritParams param_rho1
+#' @inheritParams param_rho2
+#' @param plannedEvents The planned cumulative total number events in the
+#'   ITT population at Look 1 to Look \code{kMaxitt} and the planned
+#'   cumulative total number of events at Look \code{kMaxitt+1} to
+#'   Look \code{kMax} in the biomarker positive sub population.
+#' @param plannedTime The calendar times for the analyses. To use calendar
+#'   time to plan the analyses, \code{plannedEvents} should be missing.
+#' @param maxNumberOfIterations The number of simulation iterations.
+#'   Defaults to 1000.
+#' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
+#'   stage to extract.
+#' @param seed The seed to reproduce the simulation results.
+#'   The seed from the environment will be used if left unspecified.
+#'
+#' @return A list with 2 components:
+#'
+#' * \code{sumdata}: A data frame of summary data by iteration and stage:
+#'
+#'     - \code{iterationNumber}: The iteration number.
+#'
+#'     - \code{eventsNotAchieved}: Whether the target number of events
+#'       is not achieved for the iteration.
+#'
+#'     - \code{stageNumber}: The stage number, covering all stages even if
+#'       the trial stops at an interim look.
+#'
+#'     - \code{analysisTime}: The time for the stage since trial start.
+#'
+#'     - \code{population}: The population ("ITT", "Biomarker Positive",
+#'       "Biomarker Negative") under consideration.
+#'
+#'     - \code{accruals1}: The number of subjects enrolled at the stage for
+#'       the treatment group.
+#'
+#'     - \code{accruals2}: The number of subjects enrolled at the stage for
+#'       the control group.
+#'
+#'     - \code{totalAccruals}: The total number of subjects enrolled at
+#'       the stage.
+#'
+#'     - \code{events1}: The number of events at the stage for
+#'       the treatment group.
+#'
+#'     - \code{events2}: The number of events at the stage for
+#'       the control group.
+#'
+#'     - \code{totalEvents}: The total number of events at the stage.
+#'
+#'     - \code{dropouts1}: The number of dropouts at the stage for
+#'       the treatment group.
+#'
+#'     - \code{dropouts2}: The number of dropouts at the stage for
+#'       the control group.
+#'
+#'     - \code{totalDropouts}: The total number of dropouts at the stage.
+#'
+#'     - \code{logRankStatistic}: The log-rank test Z-statistic for
+#'       the population.
+#'
+#' * \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
+#'   positive integer): A data frame for subject-level data for selected
+#'   replications, containing the following variables:
+#'
+#'     - \code{iterationNumber}: The iteration number.
+#'
+#'     - \code{stageNumber}: The stage under consideration.
+#'
+#'     - \code{analysisTime}: The time for the stage since trial start.
+#'
+#'     - \code{subjectId}: The subject ID.
+#'
+#'     - \code{arrivalTime}: The enrollment time for the subject.
+#'
+#'     - \code{stratum}: The stratum for the subject.
+#'
+#'     - \code{biomarker}: The biomarker status for the subject (1 for
+#'       positive, 0 for negative).
+#'
+#'     - \code{treatmentGroup}: The treatment group (1 or 2) for the
+#'       subject.
+#'
+#'     - \code{survivalTime}: The underlying survival time for the subject.
+#'
+#'     - \code{dropoutTime}: The underlying dropout time for the subject.
+#'
+#'     - \code{timeUnderObservation}: The time under observation
+#'       since randomization for the subject.
+#'
+#'     - \code{event}: Whether the subject experienced an event.
+#'
+#'     - \code{dropoutEvent}: Whether the subject dropped out.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' sim1 = lrsimsub(
+#'   kMax = 2,
+#'   kMaxitt = 2,
+#'   allocation1 = 1,
+#'   allocation2 = 1,
+#'   accrualTime = seq(0,9),
+#'   accrualIntensity = c(seq(10,70,10),rep(70,3)),
+#'   piecewiseSurvivalTime = c(0,12,24),
+#'   p_pos = 0.6,
+#'   lambda1itt = c(0.00256, 0.00383, 0.00700),
+#'   lambda2itt = c(0.00427, 0.00638, 0.01167),
+#'   lambda1pos = c(0.00299, 0.00430, 0.01064),
+#'   lambda2pos = c(0.00516, 0.00741, 0.01835),
+#'   gamma1itt = -log(1-0.04)/12,
+#'   gamma2itt = -log(1-0.04)/12,
+#'   gamma1pos = -log(1-0.04)/12,
+#'   gamma2pos = -log(1-0.04)/12,
+#'   n = 500,
+#'   plannedEvents = c(108,144),
+#'   maxNumberOfIterations = 1000,
+#'   maxNumberOfRawDatasetsPerStage = 1,
+#'   seed = 314159)
+#'
+#' head(sim1$sumdata)
+#' head(sim1$rawdata)
+#'
+#' @export
+lrsimsub <- function(kMax = 1L, kMaxitt = 1L, hazardRatioH0itt = 1, hazardRatioH0pos = 1, hazardRatioH0neg = 1, allocation1 = 1L, allocation2 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, p_pos = NA_real_, lambda1itt = NA_real_, lambda2itt = NA_real_, lambda1pos = NA_real_, lambda2pos = NA_real_, gamma1itt = 0L, gamma2itt = 0L, gamma1pos = 0L, gamma2pos = 0L, n = NA_integer_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = NA_integer_) {
+    .Call(`_lrstat_lrsimsub`, kMax, kMaxitt, hazardRatioH0itt, hazardRatioH0pos, hazardRatioH0neg, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, p_pos, lambda1itt, lambda2itt, lambda1pos, lambda2pos, gamma1itt, gamma2itt, gamma1pos, gamma2pos, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
 
 #' @title Kaplan-Meier Survival Probability Based on Pooled Sample
@@ -2566,8 +2700,7 @@ kmsurv <- function(time = NA_real_, allocationRatioPlanned = 1, piecewiseSurviva
 #'
 #' * \code{uscore}: The numerator of the weighted log-rank test statistic.
 #'
-#' * \code{vscore}: The variance of the weighted log-rank score statistic
-#'   with weight squared.
+#' * \code{vscore}: The variance of the weighted log-rank score statistic.
 #'
 #' * \code{iscore}: The Fisher information of the weighted log-rank score
 #'   statistic.
@@ -4430,10 +4563,6 @@ remlRiskDiff <- function(riskDiffH0 = 0.0, n1 = NA_real_, y1 = NA_real_, n2 = NA
     .Call(`_lrstat_remlRiskDiff`, riskDiffH0, n1, y1, n2, y2)
 }
 
-remlRiskDiff2 <- function(riskDiffH0 = 0.0, n1 = NA_real_, y1 = NA_real_, n2 = NA_real_, y2 = NA_real_) {
-    .Call(`_lrstat_remlRiskDiff2`, riskDiffH0, n1, y1, n2, y2)
-}
-
 #' @title Miettinen-Nurminen Score Test Statistic for Two-Sample Risk
 #' difference
 #' @description Obtains the Miettinen-Nurminen score test statistic
@@ -4545,10 +4674,6 @@ mnRiskDiffCI <- function(n1 = NA_real_, y1 = NA_real_, n2 = NA_real_, y2 = NA_re
 #'
 remlRiskRatio <- function(riskRatioH0 = 1.0, n1 = NA_real_, y1 = NA_real_, n2 = NA_real_, y2 = NA_real_) {
     .Call(`_lrstat_remlRiskRatio`, riskRatioH0, n1, y1, n2, y2)
-}
-
-remlRiskRatio2 <- function(riskRatioH0 = 1.0, n1 = NA_real_, y1 = NA_real_, n2 = NA_real_, y2 = NA_real_) {
-    .Call(`_lrstat_remlRiskRatio2`, riskRatioH0, n1, y1, n2, y2)
 }
 
 #' @title Miettinen-Nurminen Score Test Statistic for Two-Sample Risk Ratio
@@ -4663,10 +4788,6 @@ remlOddsRatio <- function(oddsRatioH0 = 1.0, n1 = NA_real_, y1 = NA_real_, n2 = 
     .Call(`_lrstat_remlOddsRatio`, oddsRatioH0, n1, y1, n2, y2)
 }
 
-remlOddsRatio2 <- function(oddsRatioH0 = 1.0, n1 = NA_real_, y1 = NA_real_, n2 = NA_real_, y2 = NA_real_) {
-    .Call(`_lrstat_remlOddsRatio2`, oddsRatioH0, n1, y1, n2, y2)
-}
-
 #' @title Miettinen-Nurminen Score Test Statistic for Two-Sample Odds Ratio
 #' @description Obtains the Miettinen-Nurminen score test statistic for
 #' two-sample odds ratio possibly with stratification.
@@ -4779,10 +4900,6 @@ remlRateDiff <- function(rateDiffH0 = 0.0, t1 = NA_real_, y1 = NA_real_, t2 = NA
     .Call(`_lrstat_remlRateDiff`, rateDiffH0, t1, y1, t2, y2)
 }
 
-remlRateDiff2 <- function(rateDiffH0 = 0.0, t1 = NA_real_, y1 = NA_real_, t2 = NA_real_, y2 = NA_real_) {
-    .Call(`_lrstat_remlRateDiff2`, rateDiffH0, t1, y1, t2, y2)
-}
-
 #' @title Miettinen-Nurminen Score Test Statistic for Two-Sample Rate
 #' Difference
 #' @description Obtains the Miettinen-Nurminen score test statistic for
@@ -4891,10 +5008,6 @@ mnRateDiffCI <- function(t1 = NA_real_, y1 = NA_real_, t2 = NA_real_, y2 = NA_re
 #'
 remlRateRatio <- function(rateRatioH0 = 1.0, t1 = NA_real_, y1 = NA_real_, t2 = NA_real_, y2 = NA_real_) {
     .Call(`_lrstat_remlRateRatio`, rateRatioH0, t1, y1, t2, y2)
-}
-
-remlRateRatio2 <- function(rateRatioH0 = 1.0, t1 = NA_real_, y1 = NA_real_, t2 = NA_real_, y2 = NA_real_) {
-    .Call(`_lrstat_remlRateRatio2`, rateRatioH0, t1, y1, t2, y2)
 }
 
 #' @title Miettinen-Nurminen Score Test Statistic for Two-Sample Rate Ratio
@@ -7002,7 +7115,6 @@ covrmst <- function(t2 = NA_real_, tau1 = NA_real_, tau2 = NA_real_, allocationR
 }
 
 #' @title Restricted Mean Survival Time by Stratum
-#'
 #' @description Obtains the restricted mean survival time and associated
 #' variance by treatment group and by stratum at a given calendar time.
 #'
@@ -7099,8 +7211,7 @@ rmstat1 <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanne
 #' and difference in restricted mean survival times at given calendar
 #' times.
 #'
-#' @param time A vector of calendar times at which to calculate the
-#'   restricted mean survival time.
+#' @param time A vector of calendar times for data cut.
 #' @param milestone The milestone time at which to calculate the
 #'   restricted mean survival time.
 #' @inheritParams param_allocationRatioPlanned
@@ -7118,8 +7229,7 @@ rmstat1 <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanne
 #'
 #' @return A data frame containing the following variables:
 #'
-#' * \code{time}: The calendar time at which to calculate the restricted
-#'   mean survival time.
+#' * \code{time}: The calendar time since trial start.
 #'
 #' * \code{subjects}: The number of enrolled subjects.
 #'
@@ -7583,19 +7693,23 @@ rmsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, eff
 #'
 #'     - \code{alpha}: The overall significance level.
 #'
-#'     - \code{drift}: The drift parameter, equal to
-#'       \code{(rmst - rmstH0)*sqrt(information)}.
-#'
-#'     - \code{inflationFactor}: The inflation factor (relative to the
-#'       fixed design).
+#'     - \code{numberOfEvents}: The total number of events.
 #'
 #'     - \code{numbeOfSubjects}: The total number of subjects.
+#'
+#'     - \code{numberOfMilestone}: The total number of subjects reaching
+#'       milestone.
 #'
 #'     - \code{studyDuration}: The total study duration.
 #'
 #'     - \code{information}: The maximum information.
 #'
+#'     - \code{expectedNumberOfEvents}: The expected number of events.
+#'
 #'     - \code{expectedNumberOfSubjects}: The expected number of subjects.
+#'
+#'     - \code{expectedNumberOfMilestone}: The expected number of subjects
+#'       reaching milestone.
 #'
 #'     - \code{expectedStudyDuration}: The expected study duration.
 #'
@@ -7609,7 +7723,8 @@ rmsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, eff
 #'
 #'     - \code{kMax}: The number of stages.
 #'
-#'     - \code{milestone}: The milestone time relative to randomization.
+#'     - \code{milestone}: The milestone time to calculate the restricted
+#'       mean survival time.
 #'
 #'     - \code{rmstH0}: The restricted mean survival time under the null
 #'       hypothesis.
@@ -7637,7 +7752,14 @@ rmsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, eff
 #'
 #'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
 #'
+#'     - \code{numberOfEvents}: The number of events.
+#'
+#'     - \code{numberOfDropouts}: The number of dropouts.
+#'
 #'     - \code{numberOfSubjects}: The number of subjects.
+#'
+#'     - \code{numberOfMilestone}: The number of subjects reaching
+#'       milestone.
 #'
 #'     - \code{analysisTime}: The average time since trial start.
 #'
@@ -7849,7 +7971,7 @@ rmsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'
 #'     - \code{numberOfEvents}: The total number of events.
 #'
-#'     - \code{numbeOfSubjects}: The total number of subjects.
+#'     - \code{numberOfSubjects}: The total number of subjects.
 #'
 #'     - \code{studyDuration}: The total study duration.
 #'
@@ -8085,8 +8207,54 @@ rmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
     .Call(`_lrstat_rmsamplesizeequiv`, beta, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, milestone, rmstDiffLower, rmstDiffUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, interval, spendingTime, rounding)
 }
 
-fsurvci <- function(surv, sesurv, ct, z) {
-    .Call(`_lrstat_fsurvci`, surv, sesurv, ct, z)
+#' @title Brookmeyer-Crowley Confidence Interval for Quantiles of
+#' Right-Censored Time-to-Event Data
+#' @description Obtains the Brookmeyer-Crowley confidence
+#' interval for quantiles of right-censored time-to-event data.
+#'
+#' @param time The vector of possibly right-censored survival times.
+#' @param event The vector of event indicators.
+#' @param cilevel The confidence interval level. Defaults to 0.95.
+#' @param transform The transformation of the survival function to use
+#'   to construct the confidence interval. Options include
+#'   "linear" (alternatively "plain"), "log",
+#'   "loglog" (alternatively "log-log" or "cloglog"),
+#'   "asinsqrt" (alternatively "asin" or "arcsin"), and "logit".
+#'   Defaults to "loglog".
+#'
+#' @param probs The vector of probabilities to calculate the quantiles.
+#'   Defaults to c(0.25, 0.5, 0.75).
+#'
+#' @return A data frame containing the estimated quantile and
+#' confidence interval corresponding to each specified probability.
+#' It includes the following variables:
+#'
+#' * \code{prob}: The probability to calculate the quantile.
+#'
+#' * \code{quantile}: The estimated quantile.
+#'
+#' * \code{lower}: The lower limit of the confidence interval.
+#'
+#' * \code{upper}: The upper limit of the confidence interval.
+#'
+#' * \code{cilevel}: The confidence interval level.
+#'
+#' * \code{transform}: The transformation of the survival function to use
+#'   to construct the confidence interval.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' survQuantile(
+#'   time = c(33.7, 3.9, 10.5, 5.4, 19.5, 23.8, 7.9, 16.9, 16.6,
+#'            33.7, 17.1, 7.9, 10.5, 38),
+#'   event = c(0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1),
+#'   probs = c(0.25, 0.5, 0.75))
+#'
+#' @export
+survQuantile <- function(time = NA_real_, event = NA_integer_, cilevel = 0.95, transform = "loglog", probs = NA_real_) {
+    .Call(`_lrstat_survQuantile`, time, event, cilevel, transform, probs)
 }
 
 #' @title Kaplan-Meier Estimates of Survival Curve
@@ -8098,22 +8266,36 @@ fsurvci <- function(surv, sesurv, ct, z) {
 #'
 #'   * \code{stratum}: The stratum.
 #'
-#'   * \code{time}: The possibly right-censored survival time.
+#'   * \code{time}: The follow-up time for right censored data, or
+#'     the left end of each interval for counting process data.
 #'
-#'   * \code{event}: The event indicator.
+#'   * \code{time2}: The right end of each interval for counting process
+#'     data. Intervals are assumed to be open on the left
+#'     and closed on the right, and event indicates whether an event
+#'     occurred at the right end of each interval.
+#'
+#'   * \code{event}: The event indicator, 1=event, 0=no event.
+#'   
+#'   * \code{weight}: The weight for each observation.
 #'
 #' @param rep The name(s) of the replication variable(s) in the input data.
 #' @param stratum The name(s) of the stratum variable(s) in the input data.
-#' @param time The name of the time variable in the input data.
+#' @param time The name of the time variable or the left end of each
+#'   interval for counting process data in the input data.
+#' @param time2 The name of the right end of each interval for counting
+#'   process data in the input data.
 #' @param event The name of the event variable in the input data.
+#' @param weight The name of the weight variable in the input data.
 #' @param conftype The type of the confidence interval. One of "none",
 #'   "plain", "log", "log-log" (the default), or "arcsin".
 #'   The arcsin option bases the intervals on asin(sqrt(survival)).
 #' @param conflev The level of the two-sided confidence interval for
 #'   the survival probabilities. Defaults to 0.95.
+#' @param keep_censor Whether to retain the censoring time in the output
+#'   data frame.
 #'
 #' @return A data frame with the following variables:
-#'
+#' 
 #' * \code{size}: The number of subjects in the stratum.
 #'
 #' * \code{time}: The event time.
@@ -8122,9 +8304,11 @@ fsurvci <- function(surv, sesurv, ct, z) {
 #'
 #' * \code{nevent}: The number of subjects having the event.
 #'
-#' * \code{survival}: The Kaplan-Meier estimate of the survival probability.
+#' * \code{ncensor}: The number of censored subjects.
 #'
-#' * \code{stderr}: The standard error of the estimated survival
+#' * \code{surv}: The Kaplan-Meier estimate of the survival probability.
+#'
+#' * \code{sesurv}: The standard error of the estimated survival
 #'   probability based on the Greendwood formula.
 #'
 #' * \code{lower}: The lower bound of confidence interval if requested.
@@ -8146,13 +8330,13 @@ fsurvci <- function(surv, sesurv, ct, z) {
 #' kmest(data = aml, stratum = "x", time = "time", event = "status")
 #'
 #' @export
-kmest <- function(data, rep = "", stratum = "", time = "time", event = "event", conftype = "log-log", conflev = 0.95) {
-    .Call(`_lrstat_kmest`, data, rep, stratum, time, event, conftype, conflev)
+kmest <- function(data, rep = "", stratum = "", time = "time", time2 = "", event = "event", weight = "", conftype = "log-log", conflev = 0.95, keep_censor = FALSE) {
+    .Call(`_lrstat_kmest`, data, rep, stratum, time, time2, event, weight, conftype, conflev, keep_censor)
 }
 
-#' @title Log-Rank Test of Survival Curve Difference
-#' @description Obtains the log-rank test using the Fleming-Harrington
-#' family of weights.
+#' @title Estimate of Milestone Survival Difference
+#' @description Obtains the estimate of milestone survival difference
+#' between two treatment groups.
 #'
 #' @param data The input data frame that contains the following variables:
 #'
@@ -8171,6 +8355,98 @@ kmest <- function(data, rep = "", stratum = "", time = "time", event = "event", 
 #' @param treat The name of the treatment variable in the input data.
 #' @param time The name of the time variable in the input data.
 #' @param event The name of the event variable in the input data.
+#' @param milestone The milestone time at which to calculate the
+#'   survival probability.
+#' @param survDiffH0 The difference in milestone survival probabilities
+#'   under the null hypothesis. Defaults to 0 for superiority test.
+#' @param conflev The level of the two-sided confidence interval for
+#'   the difference in milestone survival probabilities. Defaults to 0.95.
+#'
+#' @return A data frame with the following variables:
+#'
+#' * \code{rep}: The replication.
+#'
+#' * \code{milestone}: The milestone time relative to randomization.
+#'
+#' * \code{survDiffH0}: The difference in milestone survival probabilities
+#'   under the null hypothesis.
+#'
+#' * \code{surv1}: The estimated milestone survival probability for
+#'   the treatment group.
+#'
+#' * \code{surv2}: The estimated milestone survival probability for
+#'   the control group.
+#'
+#' * \code{survDiff}: The estimated difference in milestone survival
+#'   probabilities.
+#'
+#' * \code{vsurv1}: The variance for surv1.
+#'
+#' * \code{vsurv2}: The variance for surv2.
+#'
+#' * \code{sesurvDiff}: The standard error for survDiff.
+#'
+#' * \code{survDiffZ}: The Z-statistic value.
+#'
+#' * \code{survDiffPValue}: The two-sided p-value.
+#'
+#' * \code{lower}: The lower bound of confidence interval.
+#'
+#' * \code{upper}: The upper bound of confidence interval.
+#'
+#' * \code{conflev}: The level of confidence interval.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' df <- kmdiff(data = rawdata, rep = "iterationNumber",
+#'              stratum = "stratum", treat = "treatmentGroup",
+#'              time = "timeUnderObservation", event = "event",
+#'              milestone = 12)
+#' head(df)
+#'
+#' @export
+kmdiff <- function(data, rep = "", stratum = "", treat = "treat", time = "time", event = "event", milestone = NA_real_, survDiffH0 = 0, conflev = 0.95) {
+    .Call(`_lrstat_kmdiff`, data, rep, stratum, treat, time, event, milestone, survDiffH0, conflev)
+}
+
+#' @title Log-Rank Test of Survival Curve Difference
+#' @description Obtains the log-rank test using the Fleming-Harrington
+#' family of weights.
+#'
+#' @param data The input data frame that contains the following variables:
+#'
+#'   * \code{rep}: The replication for by-group processing.
+#'
+#'   * \code{stratum}: The stratum.
+#'
+#'   * \code{treat}: The treatment.
+#'   
+#'   * \code{time}: The follow-up time for right censored data, or
+#'     the left end of each interval for counting process data.
+#'
+#'   * \code{time2}: The right end of each interval for counting process
+#'     data. Intervals are assumed to be open on the left
+#'     and closed on the right, and event indicates whether an event
+#'     occurred at the right end of each interval.
+#'
+#'   * \code{event}: The event indicator, 1=event, 0=no event.
+#'   
+#'   * \code{weight}: The weight for each observation.
+#'
+#' @param rep The name(s) of the replication variable(s) in the input data.
+#' @param stratum The name(s) of the stratum variable(s) in the input data.
+#' @param treat The name of the treatment variable in the input data.
+#' @param time The name of the time variable or the left end of each
+#'   interval for counting process data in the input data.
+#' @param time2 The name of the right end of each interval for counting
+#'   process data in the input data.
+#' @param event The name of the event variable in the input data.
+#' @param weight The name of the weight variable in the input data.
+#' @param weight_readj Whether the weight variable at each event time 
+#'   will be readjusted to be proportional to the number at risk by 
+#'   treatment group. Defaults to `FALSE`.
 #' @param rho1 The first parameter of the Fleming-Harrington family of
 #'   weighted log-rank test. Defaults to 0 for conventional log-rank test.
 #' @param rho2 The second parameter of the Fleming-Harrington family of
@@ -8184,7 +8460,9 @@ kmest <- function(data, rep = "", stratum = "", time = "time", event = "event", 
 #'
 #' * \code{logRankZ}: The Z-statistic value.
 #'
-#' * \code{logRankPValue}: The one-sided p-value.
+#' * \code{logRankPValue}: The two-sided p-value.
+#' 
+#' * \code{weight_readj}: Whether the weight variable will be readjusted.
 #'
 #' * \code{rho1}: The first parameter of the Fleming-Harrington weights.
 #'
@@ -8203,8 +8481,8 @@ kmest <- function(data, rep = "", stratum = "", time = "time", event = "event", 
 #' head(df)
 #'
 #' @export
-lrtest <- function(data, rep = "", stratum = "", treat = "treat", time = "time", event = "event", rho1 = 0, rho2 = 0) {
-    .Call(`_lrstat_lrtest`, data, rep, stratum, treat, time, event, rho1, rho2)
+lrtest <- function(data, rep = "", stratum = "", treat = "treat", time = "time", time2 = "", event = "event", weight = "", weight_readj = FALSE, rho1 = 0, rho2 = 0) {
+    .Call(`_lrstat_lrtest`, data, rep, stratum, treat, time, time2, event, weight, weight_readj, rho1, rho2)
 }
 
 #' @title Estimate of Restricted Mean Survival Time
@@ -8263,7 +8541,7 @@ lrtest <- function(data, rep = "", stratum = "", treat = "treat", time = "time",
 #'       time = "time", event = "status", milestone = 24)
 #'
 #' @export
-rmest <- function(data, rep = "", stratum = "", time = "time", event = "event", milestone = NA_real_, conflev = 0.95, biascorrection = 0L) {
+rmest <- function(data, rep = "", stratum = "", time = "time", event = "event", milestone = NA_real_, conflev = 0.95, biascorrection = FALSE) {
     .Call(`_lrstat_rmest`, data, rep, stratum, time, event, milestone, conflev, biascorrection)
 }
 
@@ -8320,11 +8598,11 @@ rmest <- function(data, rep = "", stratum = "", time = "time", event = "event", 
 #'
 #' * \code{vrmst2}: The variance for rmst2.
 #'
-#' * \code{vrmstDiff}: The variance for rmstDiff.
+#' * \code{sermstDiff}: The standard error for rmstDiff.
 #'
 #' * \code{rmstDiffZ}: The Z-statistic value.
 #'
-#' * \code{rmstDiffPValue}: The one-sided p-value.
+#' * \code{rmstDiffPValue}: The two-sided p-value.
 #'
 #' * \code{lower}: The lower bound of confidence interval.
 #'
@@ -8346,32 +8624,36 @@ rmest <- function(data, rep = "", stratum = "", time = "time", event = "event", 
 #' head(df)
 #'
 #' @export
-rmdiff <- function(data, rep = "", stratum = "", treat = "treat", time = "time", event = "event", milestone = NA_real_, rmstDiffH0 = 0, conflev = 0.95, biascorrection = 0L) {
+rmdiff <- function(data, rep = "", stratum = "", treat = "treat", time = "time", event = "event", milestone = NA_real_, rmstDiffH0 = 0, conflev = 0.95, biascorrection = FALSE) {
     .Call(`_lrstat_rmdiff`, data, rep, stratum, treat, time, event, milestone, rmstDiffH0, conflev, biascorrection)
 }
 
-liferegcpp <- function(data, rep = "", stratum = "", time = "time", time2 = "", event = "event", covariates = "", weight = "", offset = "", id = "", dist = "weibull", robust = 0L, plci = 0L, alpha = 0.05) {
-    .Call(`_lrstat_liferegcpp`, data, rep, stratum, time, time2, event, covariates, weight, offset, id, dist, robust, plci, alpha)
+liferegcpp <- function(data, rep = "", stratum = "", time = "time", time2 = "", event = "event", covariates = "", weight = "", offset = "", id = "", dist = "weibull", init = NA_real_, robust = FALSE, plci = FALSE, alpha = 0.05, maxiter = 50L, eps = 1.0e-9) {
+    .Call(`_lrstat_liferegcpp`, data, rep, stratum, time, time2, event, covariates, weight, offset, id, dist, init, robust, plci, alpha, maxiter, eps)
 }
 
-phregcpp <- function(data, rep = "", stratum = "", time = "time", time2 = "", event = "event", covariates = "", weight = "", offset = "", id = "", ties = "efron", robust = 0L, est_basehaz = 1L, est_resid = 1L, firth = 0L, plci = 0L, alpha = 0.05) {
-    .Call(`_lrstat_phregcpp`, data, rep, stratum, time, time2, event, covariates, weight, offset, id, ties, robust, est_basehaz, est_resid, firth, plci, alpha)
+residuals_liferegcpp <- function(beta, vbeta, data, stratum = "", time = "time", time2 = "", event = "event", covariates = "", weight = "", offset = "", id = "", dist = "weibull", type = "response", collapse = FALSE, weighted = FALSE) {
+    .Call(`_lrstat_residuals_liferegcpp`, beta, vbeta, data, stratum, time, time2, event, covariates, weight, offset, id, dist, type, collapse, weighted)
 }
 
-survfit_phregcpp <- function(p, beta, vbeta, basehaz, newdata, covariates = "", stratum = "", offset = "", id = "", tstart = "", tstop = "", sefit = 1L, conftype = "log-log", conflev = 0.95) {
+phregcpp <- function(data, rep = "", stratum = "", time = "time", time2 = "", event = "event", covariates = "", weight = "", offset = "", id = "", ties = "efron", init = NA_real_, robust = FALSE, est_basehaz = TRUE, est_resid = TRUE, firth = FALSE, plci = FALSE, alpha = 0.05, maxiter = 50L, eps = 1.0e-9) {
+    .Call(`_lrstat_phregcpp`, data, rep, stratum, time, time2, event, covariates, weight, offset, id, ties, init, robust, est_basehaz, est_resid, firth, plci, alpha, maxiter, eps)
+}
+
+survfit_phregcpp <- function(p, beta, vbeta, basehaz, newdata, covariates = "", stratum = "", offset = "", id = "", tstart = "", tstop = "", sefit = TRUE, conftype = "log-log", conflev = 0.95) {
     .Call(`_lrstat_survfit_phregcpp`, p, beta, vbeta, basehaz, newdata, covariates, stratum, offset, id, tstart, tstop, sefit, conftype, conflev)
 }
 
-residuals_phregcpp <- function(p, beta, data, stratum = "", time = "time", time2 = "", event = "event", covariates = "", weight = "", offset = "", id = "", ties = "efron", type = "schoenfeld") {
-    .Call(`_lrstat_residuals_phregcpp`, p, beta, data, stratum, time, time2, event, covariates, weight, offset, id, ties, type)
+residuals_phregcpp <- function(p, beta, vbeta, resmart, data, stratum = "", time = "time", time2 = "", event = "event", covariates = "", weight = "", offset = "", id = "", ties = "efron", type = "schoenfeld", collapse = FALSE, weighted = FALSE) {
+    .Call(`_lrstat_residuals_phregcpp`, p, beta, vbeta, resmart, data, stratum, time, time2, event, covariates, weight, offset, id, ties, type, collapse, weighted)
 }
 
-set_seed <- function(seed) {
-    invisible(.Call(`_lrstat_set_seed`, seed))
+assess_phregcpp <- function(p, beta, vbeta, data, stratum = "", time = "time", time2 = "", event = "event", covariates = "", weight = "", offset = "", ties = "efron", resample = 1000L, seed = NA_integer_) {
+    .Call(`_lrstat_assess_phregcpp`, p, beta, vbeta, data, stratum, time, time2, event, covariates, weight, offset, ties, resample, seed)
 }
 
-stl_sort <- function(x) {
-    .Call(`_lrstat_stl_sort`, x)
+zph_phregcpp <- function(p, beta, vbeta, resmart, data, stratum = "", time = "time", time2 = "", event = "event", covariates = "", weight = "", offset = "", ties = "efron", transform = "km") {
+    .Call(`_lrstat_zph_phregcpp`, p, beta, vbeta, resmart, data, stratum, time, time2, event, covariates, weight, offset, ties, transform)
 }
 
 #' @title Find Interval Numbers of Indices
@@ -8384,6 +8666,15 @@ stl_sort <- function(x) {
 #'
 #' @param x The numeric vector of interest.
 #' @param v The vector of break points.
+#' @param rightmost_closed Logical; if true, the rightmost interval,
+#'   `vec[N-1] .. vec[N]` is treated as closed if `left_open` is false,
+#'   and the leftmost interval, `vec[1] .. vec[2]` is treated as
+#'   closed if left_open is true.
+#' @param all_inside Logical; if true, the returned indices are coerced
+#'   into `1, ..., N-1`, i.e., `0` is mapped to `1` and
+#'   `N` is mapped to `N-1`.
+#' @param left_open Logical; if true, all intervals are open at left and
+#'   closedat right. This may be useful, .e.g., in survival analysis.
 #' @return A vector of \code{length(x)} with values in \code{0:N} where
 #'   \code{N = length(v)}.
 #'
@@ -8397,8 +8688,8 @@ stl_sort <- function(x) {
 #' cbind(x, findInterval3(x, v))
 #'
 #' @export
-findInterval3 <- function(x, v) {
-    .Call(`_lrstat_findInterval3`, x, v)
+findInterval3 <- function(x, v, rightmost_closed = FALSE, all_inside = FALSE, left_open = FALSE) {
+    .Call(`_lrstat_findInterval3`, x, v, rightmost_closed, all_inside, left_open)
 }
 
 errorSpentcpp <- function(t = NA_real_, error = NA_real_, sf = NA_character_, sfpar = NA_real_) {
@@ -8429,8 +8720,16 @@ getBoundcpp <- function(k = NA_integer_, informationRates = NA_real_, alpha = NA
     .Call(`_lrstat_getBoundcpp`, k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, efficacyStopping)
 }
 
-getPower <- function(alpha, kMax, b, theta, I, bsf, bsfpar, st, futilityStopping, w) {
-    .Call(`_lrstat_getPower`, alpha, kMax, b, theta, I, bsf, bsfpar, st, futilityStopping, w)
+pbvnormcpp <- function(lower, upper, corr) {
+    .Call(`_lrstat_pbvnormcpp`, lower, upper, corr)
+}
+
+hazard_pdcpp <- function(piecewiseSurvivalTime, hazard_pfs, hazard_os, corr_pd_os) {
+    .Call(`_lrstat_hazard_pdcpp`, piecewiseSurvivalTime, hazard_pfs, hazard_os, corr_pd_os)
+}
+
+hazard_subcpp <- function(piecewiseSurvivalTime, hazard_itt, hazard_pos, p_pos) {
+    .Call(`_lrstat_hazard_subcpp`, piecewiseSurvivalTime, hazard_itt, hazard_pos, p_pos)
 }
 
 #' @title Number of Enrolled Subjects
@@ -8502,8 +8801,6 @@ getAccrualDurationFromN <- function(nsubjects = NA_real_, accrualTime = 0L, accr
 #' analysis times after enrollment for a patient in a treatment group with
 #' specified piecewise exponential survival and dropout distributions.
 #'
-#' @keywords internal
-#'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
@@ -8532,8 +8829,6 @@ patrisk <- function(time = NA_real_, piecewiseSurvivalTime = 0L, lambda = NA_rea
 #' @return A vector of probabilities of having an event at the specified
 #' analysis times after enrollment for a patient in a treatment group with
 #' specified piecewise exponential survival and dropout distributions.
-#'
-#' @keywords internal
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -8677,8 +8972,6 @@ ad <- function(time = NA_real_, u1 = NA_real_, u2 = NA_real_, accrualTime = 0L, 
 #' @return A matrix of the number of patients at risk at the specified
 #' analysis times (row) for each treatment group (column).
 #'
-#' @keywords internal
-#'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
@@ -8719,8 +9012,6 @@ natrisk <- function(time = NA_real_, allocationRatioPlanned = 1, accrualTime = 0
 #' @return A matrix of the number of patients having an event at the
 #' specified analysis times (row) for each treatment group (column).
 #'
-#' @keywords internal
-#'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
@@ -8760,8 +9051,6 @@ nevent <- function(time = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L
 #'
 #' @return A matrix of the number of patients having an event at the
 #' specified calendar times (row) for each treatment group (column).
-#'
-#' @keywords internal
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -8973,37 +9262,37 @@ getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax =
 #' for some \eqn{j=1,\ldots,k}, where \eqn{\{b_j:j=1,\ldots,K\}} are the
 #' critical values associated with the specified alpha-spending function,
 #' and \eqn{I_j} is the information for \eqn{\theta} (inverse variance of
-#' \eqn{\hat{\theta}} under the alternative hypothesis) at the
+#' \eqn{\hat{\theta}}) at the
 #' \eqn{j}th look. For example,
 #' for estimating the risk difference \eqn{\theta = \pi_1 - \pi_2},
 #' \deqn{I_j = \left\{\frac{\pi_1 (1-\pi_1)}{n_{1j}} +
-#' \frac{\pi_2(1-\pi_2)}{n_2j}\right\}^{-1}.}
+#' \frac{\pi_2(1-\pi_2)}{n_{2j}}\right\}^{-1}.}
 #' It follows that
 #' \deqn{(Z_{1j} \geq b_j) = (Z_j \geq b_j +
-#' (\theta_{10}-\theta)\sqrt{I_j}),}
-#' where \eqn{Z_j = (\hat{\theta}_j - \theta)\sqrt{I_j}}.
+#' \theta_{10}\sqrt{I_j}),}
+#' where \eqn{Z_j = \hat{\theta}_j \sqrt{I_j}}.
 #'
 #' Similarly, we reject \eqn{H_{20}} at or before look \eqn{k} if
 #' \deqn{Z_{2j} = (\hat{\theta}_j - \theta_{20})\sqrt{I_j}
 #' \leq -b_j} for some \eqn{j=1,\ldots,k}. We have
 #' \deqn{(Z_{2j} \leq -b_j) = (Z_j \leq - b_j +
-#' (\theta_{20}-\theta)\sqrt{I_j}).}
+#' \theta_{20}\sqrt{I_j}).}
 #'
-#' Let \eqn{l_j = b_j + (\theta_{10}-\theta)\sqrt{I_j}},
-#' and \eqn{u_j = -b_j + (\theta_{20}-\theta)\sqrt{I_j}}.
+#' Let \eqn{l_j = b_j + \theta_{10}\sqrt{I_j}},
+#' and \eqn{u_j = -b_j + \theta_{20}\sqrt{I_j}}.
 #' The cumulative probability to reject \eqn{H_0 = H_{10} \cup H_{20}} at
 #' or before look \eqn{k} under the alternative hypothesis \eqn{H_1} is
 #' given by
 #' \deqn{P_\theta\left(\cup_{j=1}^{k} (Z_{1j} \geq b_j) \cap
-#' \cup_{j=1}^{k} (Z_{2j} \leq -b_j)\right) = p_1 + p_2 + p_{12},}
+#' \cup_{j=1}^{k} (Z_{2j} \leq -b_j)\right) = p_1 + p_2 - p_{12},}
 #' where
 #' \deqn{p_1 = P_\theta\left(\cup_{j=1}^{k} (Z_{1j} \geq b_j)\right)
 #' = P_\theta\left(\cup_{j=1}^{k} (Z_j \geq l_j)\right),}
 #' \deqn{p_2 = P_\theta\left(\cup_{j=1}^{k} (Z_{2j} \leq -b_j)\right)
 #' = P_\theta\left(\cup_{j=1}^{k} (Z_j \leq u_j)\right),}
 #' and
-#' \deqn{p_{12} = P_\theta\left(\cup_{j=1}^{k} \{(Z_j \geq l_j) \cup
-#' (Z_j \leq u_j)\}\right).}
+#' \deqn{p_{12} = P_\theta\left(\cup_{j=1}^{k} (Z_j \geq l_j) \cup
+#' (Z_j \leq u_j)\right).}
 #' Of note, both \eqn{p_1} and \eqn{p_2} can be evaluated using
 #' one-sided exit probabilities for group sequential designs.
 #' If there exists \eqn{j\leq k} such that \eqn{l_j \leq u_j}, then
@@ -9013,8 +9302,8 @@ getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax =
 #' Since the equivalent hypothesis is tested using two one-sided tests,
 #' the type I error is controlled. To evaluate the attained type I error
 #' of the equivalence trial under \eqn{H_{10}} (or \eqn{H_{20}}),
-#' we simply fix the control group parameter, update the active
-#' treatment group parameter according to the null hypothesis, and
+#' we simply fix the control group parameters, update the active
+#' treatment group parameters according to the null hypothesis, and
 #' use the parameters in the power calculation outlined above.
 #'
 #' @return An S3 class \code{designEquiv} object with three components:
@@ -9115,19 +9404,20 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 }
 
 #' @title Adaptive Design at an Interim Look
-#' @description Obtains the conditional power for specified incremental
-#' information given the interim results, parameter value, and
-#' data-dependent changes in the error spending function, and the number
-#' and spacing of interim looks. Conversely, obtains the incremental
-#' information needed to attain a specified conditional power given
-#' the interim results, parameter value, and data-dependent changes
-#' in the error spending function, and the number and spacing of
-#' interim looks.
+#' @description
+#' Calculates the conditional power for specified incremental
+#' information, given the interim results, parameter value,
+#' data-dependent changes in the error spending function, and
+#' the number and spacing of interim looks. Conversely,
+#' calculates the incremental information required to attain
+#' a specified conditional power, given the interim results,
+#' parameter value, data-dependent changes in the error
+#' spending function, and the number and spacing of interim looks.
 #'
 #' @param betaNew The type II error for the secondary trial.
 #' @param INew The maximum information of the secondary trial. Either
-#'   \code{betaNew} or \code{INew} should be provided while the other one
-#'   should be missing.
+#'   \code{betaNew} or \code{INew} should be provided, while the other
+#'   must be missing.
 #' @param L The interim adaptation look of the primary trial.
 #' @param zL The z-test statistic at the interim adaptation look of
 #'   the primary trial.
@@ -9139,10 +9429,10 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #' @param kMax The maximum number of stages of the primary trial.
 #' @param informationRates The information rates of the primary trial.
 #' @param efficacyStopping Indicators of whether efficacy stopping is
-#'   allowed at each stage of the primary trial. Defaults to true
+#'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 #'   if left unspecified.
 #' @param futilityStopping Indicators of whether futility stopping is
-#'   allowed at each stage of the primary trial. Defaults to true
+#'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 #'   if left unspecified.
 #' @param criticalValues The upper boundaries on the z-test statistic scale
 #'   for efficacy stopping for the primary trial.
@@ -9163,8 +9453,8 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #' @param parameterAlphaSpending The parameter value of alpha spending
 #'   for the primary trial. Corresponds to Delta for "WT", rho for "sfKD",
 #'   and gamma for "sfHSD".
-#' @param userAlphaSpending The user defined alpha spending for the primary
-#'   trial. Cumulative alpha spent up to each stage.
+#' @param userAlphaSpending The user-defined alpha spending for the
+#'   primary trial. Represents the cumulative alpha spent up to each stage.
 #' @param futilityBounds The lower boundaries on the z-test statistic scale
 #'   for futility stopping for the primary trial. Defaults to
 #'   \code{rep(-6, kMax-1)} if left unspecified.
@@ -9180,17 +9470,17 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #'   for the primary trial. Corresponds to rho for "sfKD",
 #'   and gamma for "sfHSD".
 #' @param spendingTime The error spending time of the primary trial.
-#'   Defaults to missing, in which case, it is the same as
+#'   Defaults to missing, in which case it is assumed to be the same as
 #'   \code{informationRates}.
 #' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
 #'   for trial adaptation.
 #' @param kNew The number of looks of the secondary trial.
 #' @param informationRatesNew The spacing of looks of the secondary trial.
 #' @param efficacyStoppingNew The indicators of whether efficacy stopping is
-#'   allowed at each look of the secondary trial. Defaults to true
+#'   allowed at each look of the secondary trial. Defaults to \code{TRUE}
 #'   if left unspecified.
 #' @param futilityStoppingNew The indicators of whether futility stopping is
-#'   allowed at each look of the secondary trial. Defaults to true
+#'   allowed at each look of the secondary trial. Defaults to \code{TRUE}
 #'   if left unspecified.
 #' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 #'   trial. One of the following:
@@ -9218,10 +9508,11 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #' @param parameterBetaSpendingNew The parameter value of beta spending
 #'   for the secondary trial. Corresponds to rho for "sfKD",
 #'   and gamma for "sfHSD".
-#' @param userBetaSpendingNew The user defined cumulative beta spending.
-#'   Cumulative beta spent up to each stage of the secondary trial.
+#' @param userBetaSpendingNew The user-defined cumulative beta spending.
+#'   Represents the cumulative beta spent up to each stage of the
+#'   secondary trial.
 #' @param spendingTimeNew The error spending time of the secondary trial.
-#'   Defaults to missing, in which case, it is the same as
+#'   Defaults to missing, in which case it is assumed to be the same as
 #'   \code{informationRatesNew}.
 #' @param varianceRatio The ratio of the variance under H0 to the
 #'   variance under H1.
@@ -9272,7 +9563,7 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #' # conditional power with sample size increase
 #' (des2 = adaptDesign(
 #'   betaNew = NA, INew = 420/(4*sigma1^2),
-#'   L, zL, theta = delta1,
+#'   L = L, zL = zL, theta = delta1,
 #'   IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
 #'   alpha = 0.05, typeAlphaSpending = "sfHSD",
 #'   parameterAlphaSpending = -4))
@@ -9281,7 +9572,7 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #' # 3-look gamma(-2) spending with 84% power at delta = 4.5 and sigma = 20
 #' (des2 = adaptDesign(
 #'   betaNew = 0.16, INew = NA,
-#'   L, zL, theta = delta1,
+#'   L = L, zL = zL, theta = delta1,
 #'   IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
 #'   alpha = 0.05, typeAlphaSpending = "sfHSD",
 #'   parameterAlphaSpending = -4,
@@ -9301,64 +9592,50 @@ hasVariable <- function(df, varName) {
     .Call(`_lrstat_hasVariable`, df, varName)
 }
 
-quantilecpp <- function(x, p) {
-    .Call(`_lrstat_quantilecpp`, x, p)
-}
-
-c_vectors_i <- function(vec1, vec2) {
-    .Call(`_lrstat_c_vectors_i`, vec1, vec2)
-}
-
-c_vectors <- function(vec1, vec2) {
-    .Call(`_lrstat_c_vectors`, vec1, vec2)
-}
-
-subset_matrix_by_row <- function(a, q) {
-    .Call(`_lrstat_subset_matrix_by_row`, a, q)
-}
-
-c_matrices <- function(a1, a2) {
-    .Call(`_lrstat_c_matrices`, a1, a2)
-}
-
-bygroup <- function(data, variables) {
-    .Call(`_lrstat_bygroup`, data, variables)
-}
-
 cholesky2 <- function(matrix, n, toler) {
     .Call(`_lrstat_cholesky2`, matrix, n, toler)
 }
 
-chsolve2 <- function(matrix, n, y) {
-    invisible(.Call(`_lrstat_chsolve2`, matrix, n, y))
-}
-
-chinv2 <- function(matrix, n) {
-    invisible(.Call(`_lrstat_chinv2`, matrix, n))
-}
-
-invsympd <- function(matrix, n, toler) {
-    .Call(`_lrstat_invsympd`, matrix, n, toler)
-}
-
+#' @title Split a survival data set at specified cut points
+#' @description For a given survival dataset and specified cut times,
+#' each record is split into multiple subrecords at each cut time.
+#' The resulting dataset is in counting process format, with each
+#' subrecord containing a start time, stop time, and event status.
+#' This is adapted from the survsplit.c function from the survival package.
+#'
+#' @param tstart The starting time of the time interval for
+#'   counting-process data.
+#' @param tstop The stopping time of the time interval for
+#'   counting-process data.
+#' @param cut The vector of cut points.
+#'
+#' @return A data frame with the following variables:
+#'
+#' * \code{row}: The row number of the observation in the input data
+#'   (starting from 0).
+#'
+#' * \code{start}: The starting time of the resulting subrecord.
+#'
+#' * \code{end}: The ending time of the resulting subrecord.
+#'
+#' * \code{censor}: Whether the subrecord lies strictly within a record
+#'   in the input data (1 for all but the last interval and 0 for the
+#'   last interval with cutpoint set equal to tstop).
+#'
+#' * \code{interval}: The interval number derived from cut (starting
+#'   from 0 if the interval lies to the left of the first cutpoint).
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @keywords internal
+#'
+#' @examples
+#'
+#' survsplit(15, 60, c(10, 30, 40))
+#'
+#' @export
 survsplit <- function(tstart, tstop, cut) {
     .Call(`_lrstat_survsplit`, tstart, tstop, cut)
-}
-
-is_sorted <- function(x) {
-    .Call(`_lrstat_is_sorted`, x)
-}
-
-house <- function(x) {
-    .Call(`_lrstat_house`, x)
-}
-
-row_house <- function(A, i1, i2, j1, j2, v) {
-    invisible(.Call(`_lrstat_row_house`, A, i1, i2, j1, j2, v))
-}
-
-col_house <- function(A, i1, i2, j1, j2, v) {
-    invisible(.Call(`_lrstat_col_house`, A, i1, i2, j1, j2, v))
 }
 
 #' @title QR Decomposition of a Matrix
@@ -9387,11 +9664,11 @@ col_house <- function(A, i1, i2, j1, j2, v) {
 #'
 #' @return A list with the following components:
 #'
-#' * \code{qr}: A matrix with the same dimensions as \code{x}. The upper
+#' * \code{qr}: A matrix with the same dimensions as \code{X}. The upper
 #'   triangle contains the \code{R} of the decomposition and the lower
 #'   triangle contains Householder vectors (stored in compact form).
 #'
-#' * \code{rank}: The rank of \code{x} as computed by the decomposition.
+#' * \code{rank}: The rank of \code{X} as computed by the decomposition.
 #'
 #' * \code{pivot}: The column permutation for the pivoting strategy used
 #'   during the decomposition.
@@ -9417,26 +9694,6 @@ col_house <- function(A, i1, i2, j1, j2, v) {
 #' @export
 qrcpp <- function(X, tol = 1e-12) {
     .Call(`_lrstat_qrcpp`, X, tol)
-}
-
-givens <- function(a, b) {
-    .Call(`_lrstat_givens`, a, b)
-}
-
-row_rot <- function(A, i1, i2, j1, j2, c, s) {
-    invisible(.Call(`_lrstat_row_rot`, A, i1, i2, j1, j2, c, s))
-}
-
-col_rot <- function(A, i1, i2, j1, j2, c, s) {
-    invisible(.Call(`_lrstat_col_rot`, A, i1, i2, j1, j2, c, s))
-}
-
-house_bidiag <- function(A, outtransform = 1L) {
-    .Call(`_lrstat_house_bidiag`, A, outtransform)
-}
-
-zero_diagonal <- function(B, k, outtransform = 1L) {
-    .Call(`_lrstat_zero_diagonal`, B, k, outtransform)
 }
 
 #' @title Singular Value Decomposition of a Matrix
@@ -9483,10 +9740,24 @@ svdcpp <- function(X, outtransform = 1L, decreasing = 1L) {
     .Call(`_lrstat_svdcpp`, X, outtransform, decreasing)
 }
 
-rmvnorm <- function(n, mean, sigma) {
-    .Call(`_lrstat_rmvnorm`, n, mean, sigma)
+rmvnormcpp <- function(n, mean, sigma) {
+    .Call(`_lrstat_rmvnormcpp`, n, mean, sigma)
 }
 
+#' @title Converting a decimal to a fraction
+#' @description Converts a decimal to a fraction based on the algorithm
+#' from http://stackoverflow.com/a/5128558/221955.
+#'
+#' @param x The fraction in decimal form.
+#' @param tol The tolerance level for the conversion error.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' float_to_fraction(5/3)
+#'
+#' @export
 float_to_fraction <- function(x, tol = 0.000001) {
     .Call(`_lrstat_float_to_fraction`, x, tol)
 }
