@@ -43,14 +43,13 @@ NumericVector kmsurv(const NumericVector& time = NA_REAL,
                      const NumericVector& gamma1 = 0,
                      const NumericVector& gamma2 = 0) {
 
-  int i, j;
   int k = static_cast<int>(time.size());
   int J = static_cast<int>(piecewiseSurvivalTime.size());
 
   double phi = allocationRatioPlanned/(1+allocationRatioPlanned);
 
   // identify the time interval containing the specified analysis time
-  IntegerVector m = pmax(findInterval3(time, piecewiseSurvivalTime), 1);
+  IntegerVector m = pmax(findInterval3(time, piecewiseSurvivalTime,0,0,0), 1);
   NumericVector t = piecewiseSurvivalTime;
 
   // hazard for failure or dropout
@@ -92,8 +91,8 @@ NumericVector kmsurv(const NumericVector& time = NA_REAL,
 
   NumericVector v(k);
   NumericVector lagch1(J), lagch2(J);
-  for (i=0; i<k; i++) {
-    for (j=0; j<m[i]; j++) {
+  for (int i=0; i<k; i++) {
+    for (int j=0; j<m[i]; j++) {
       if (j>0) {
         lagch1[j] = lagch1[j-1] + lamgam1[j-1]*(t[j] - t[j-1]);
         lagch2[j] = lagch2[j-1] + lamgam2[j-1]*(t[j] - t[j-1]);
@@ -148,7 +147,7 @@ void f_uscore(double *x, int n, void *ex) {
     param->accrualDuration0, param->minFollowupTime0,
     param->maxFollowupTime0);
   NumericVector r1 = xatrisk(_, 0), r2 = xatrisk(_, 1);
-  IntegerVector j = findInterval3(u0, param->piecewiseSurvivalTime) - 1;
+  IntegerVector j = findInterval3(u0, param->piecewiseSurvivalTime,0,0,0) - 1;
   NumericVector w(n), N(n), lam1(n), lam2(n), d(n);
   if (param->rho1 != 0.0 || param->rho2 != 0.0) {
     NumericVector s = kmsurv(
@@ -182,7 +181,7 @@ void f_vscore(double *x, int n, void *ex) {
     param->accrualDuration0, param->minFollowupTime0,
     param->maxFollowupTime0);
   NumericVector r1 = xatrisk(_, 0), r2 = xatrisk(_, 1);
-  IntegerVector j = findInterval3(u0, param->piecewiseSurvivalTime) - 1;
+  IntegerVector j = findInterval3(u0, param->piecewiseSurvivalTime,0,0,0) - 1;
   NumericVector w(n), N(n), lam1(n), lam2(n), d(n);
   if (param->rho1 != 0.0 || param->rho2 != 0.0) {
     NumericVector s = kmsurv(
@@ -216,7 +215,7 @@ void f_iscore(double *x, int n, void *ex) {
     param->accrualDuration0, param->minFollowupTime0,
     param->maxFollowupTime0);
   NumericVector r1 = xatrisk(_, 0), r2 = xatrisk(_, 1);
-  IntegerVector j = findInterval3(u0, param->piecewiseSurvivalTime) - 1;
+  IntegerVector j = findInterval3(u0, param->piecewiseSurvivalTime,0,0,0) - 1;
   NumericVector w(n), N(n), lam1(n), lam2(n), d(n);
   if (param->rho1 != 0.0 || param->rho2 != 0.0) {
     NumericVector s = kmsurv(
@@ -1113,7 +1112,7 @@ NumericVector caltime(const NumericVector& nevents = NA_REAL,
               return sum(NumericVector(lr[2])) - event;
             };
 
-  int i, k = static_cast<int>(nevents.size());
+  int k = static_cast<int>(nevents.size());
   double studyTime = accrualDuration + followupTime;
   NumericVector time(k);
 
@@ -1122,7 +1121,7 @@ NumericVector caltime(const NumericVector& nevents = NA_REAL,
     stop("followupTime is too short to reach the target number of events");
   }
 
-  for (i=0; i<k; i++) {
+  for (int i=0; i<k; i++) {
     // match the predicted number of events to the target
     event = std::max(nevents[i], 0.0);
     time[i] = brent(f, 0.0, studyTime, 1.0e-6);
