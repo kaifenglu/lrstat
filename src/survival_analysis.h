@@ -8,9 +8,9 @@ using namespace Rcpp;
 
 NumericVector fsurvci(double surv, double sesurv, std::string ct, double z);
 
-DataFrame survQuantile(const NumericVector& time, 
+DataFrame survQuantile(const NumericVector& time,
                        const IntegerVector& event,
-                       const double cilevel, 
+                       const double cilevel,
                        const std::string transform,
                        const NumericVector& probs);
 
@@ -18,7 +18,9 @@ DataFrame kmest(const DataFrame data,
                 const StringVector& rep,
                 const StringVector& stratum,
                 const std::string time,
+                const std::string time2,
                 const std::string event,
+                const std::string weight,
                 const std::string conftype,
                 const double conflev,
                 const bool keep_censor);
@@ -38,7 +40,10 @@ DataFrame lrtest(const DataFrame data,
                  const StringVector& stratum,
                  const std::string treat,
                  const std::string time,
+                 const std::string time2,
                  const std::string event,
+                 const std::string weight,
+                 const bool weight_readj,
                  const double rho1,
                  const double rho2);
 
@@ -63,7 +68,8 @@ DataFrame rmdiff(const DataFrame data,
                  const bool biascorrection);
 
 struct aftparams {
-  std::string dist;
+  int dist_code; // 1: exponential, 2: weibull, 3: lognormal, 4: normal,
+                 // 5: loglogistic, 6: logistic
   IntegerVector strata;
   NumericVector tstart;
   NumericVector tstop;
@@ -75,25 +81,21 @@ struct aftparams {
 };
 
 
-double f_llik_1(int p, NumericVector par, void *ex);
+List f_der_1(int p, const NumericVector& par, void *ex);
 
-NumericVector f_score_1(int p, NumericVector par, void *ex);
+NumericMatrix f_ressco_1(int p, const NumericVector& par, void *ex);
 
-NumericMatrix f_info_1(int p, NumericVector par, void *ex);
+NumericMatrix f_jj_1(int p, const NumericVector& par, void *ex);
 
-List f_der_eta_tau_1(NumericVector eta, NumericVector sig, void *ex);
-
-NumericMatrix f_ressco_1(int p, NumericVector par, void *ex);
-
-NumericMatrix f_jj_1(int p, NumericVector par, void *ex);
-
-List liferegloop(int p, NumericVector par, void *ex,
+List liferegloop(int p, const NumericVector& par, void *ex,
                  int maxiter, double eps,
-                 IntegerVector colfit, int ncolfit);
+                 const IntegerVector& colfit, int ncolfit);
 
-double liferegplloop(int p, NumericVector par, void *ex,
+double liferegplloop(int p, const NumericVector& par, void *ex,
                      int maxiter, double eps,
                      int k, int which, double l0);
+
+List f_ld_1(NumericVector eta, NumericVector sig, void *ex);
 
 List liferegcpp(const DataFrame data,
                 const StringVector& rep,
@@ -112,6 +114,7 @@ List liferegcpp(const DataFrame data,
                 const double alpha,
                 const int maxiter,
                 const double eps);
+
 
 NumericMatrix residuals_liferegcpp(const NumericVector& beta,
                                    const NumericMatrix& vbeta,
@@ -139,36 +142,27 @@ struct coxparams {
   NumericVector offset;
   NumericMatrix z;
   IntegerVector order1;
-  int method;
+  int method; // 1: breslow, 2: efron
 };
 
-double f_llik_2(int p, NumericVector par, void *ex);
 
-NumericVector f_score_2(int p, NumericVector par, void *ex);
+List f_der_2(int p, const NumericVector& par, void* ex, bool firth);
 
-NumericMatrix f_info_2(int p, NumericVector par, void *ex);
-
-double f_pen_llik_2(int p, NumericVector par, void *ex);
-
-NumericVector f_pen_score_2(int p, NumericVector par, void *ex);
-
-NumericMatrix f_ressco_2(int p, NumericVector par, void *ex);
-
-NumericMatrix f_jj_2(int p, NumericVector par, void *ex);
-
-List phregloop(int p, NumericVector par, void *ex,
+List phregloop(int p, const NumericVector& par, void *ex,
                int maxiter, double eps, bool firth,
-               IntegerVector colfit, int ncolfit);
+               const IntegerVector& colfit, int ncolfit);
 
-double phregplloop(int p, NumericVector par, void *ex,
+double phregplloop(int p, const NumericVector& par, void *ex,
                    int maxiter, double eps, bool firth,
                    int k, int which, double l0);
 
-List f_basehaz(int p, NumericVector par, void *ex);
+List f_basehaz(int p, const NumericVector& par, void *ex);
 
-NumericVector f_resmart(int p, NumericVector par, void *ex);
+NumericMatrix f_ressco_2(int p, const NumericVector& par, void *ex);
 
-List f_ressch(int p, NumericVector par, void *ex);
+NumericVector f_resmart(int p, const NumericVector& par, void *ex);
+
+List f_ressch(int p, const NumericVector& par, void *ex);
 
 List phregcpp(const DataFrame data,
               const StringVector& rep,
@@ -223,5 +217,38 @@ List residuals_phregcpp(const int p,
                         const std::string type,
                         const bool collapse,
                         const bool weighted);
+
+
+List f_der_i_2(int p, const NumericVector& par, void* ex);
+
+List assess_phregcpp(const int p,
+                     const NumericVector& beta,
+                     const NumericMatrix& vbeta,
+                     DataFrame data,
+                     const StringVector& stratum,
+                     const std::string time,
+                     const std::string time2,
+                     const std::string event,
+                     const StringVector& covariates,
+                     const std::string weight,
+                     const std::string offset,
+                     const std::string ties,
+                     const int resample,
+                     const int seed);
+
+List zph_phregcpp(const int p,
+                  const NumericVector& beta,
+                  const NumericMatrix& vbeta,
+                  const NumericVector& resmart,
+                  DataFrame data,
+                  const StringVector& stratum,
+                  const std::string time,
+                  const std::string time2,
+                  const std::string event,
+                  const StringVector& covariates,
+                  const std::string weight,
+                  const std::string offset,
+                  const std::string ties,
+                  const std::string transform);
 
 #endif // __SURVIVAL_ANALYSIS__
