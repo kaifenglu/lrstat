@@ -115,3 +115,7 @@ usethis::use_data(immdef, overwrite = TRUE)
 
 sexagg = logistf::sexagg
 usethis::use_data(sexagg, overwrite = TRUE)
+
+liver <- readxl::read_excel("notes/liver.xlsx")
+usethis::use_data(liver, overwrite = TRUE)
+
