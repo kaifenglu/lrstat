@@ -32,7 +32,7 @@ List updateGraph(const NumericVector& w,
                  const NumericMatrix& G,
                  const IntegerVector& I,
                  const int j) {
-  int k, l, m = static_cast<int>(w.size());
+  int m = static_cast<int>(w.size());
 
   if (G.nrow() != m || G.ncol() != m) {
     stop("Invalid dimension for G");
@@ -59,7 +59,7 @@ List updateGraph(const NumericVector& w,
 
   // update weights
   NumericVector wx = clone(w);
-  for (l=0; l<m; l++) {
+  for (int l=0; l<m; l++) {
     if (r(l) == 0) {
       wx(l) = wx(l) + wx(j1)*G(j1,l);
     }
@@ -68,9 +68,9 @@ List updateGraph(const NumericVector& w,
 
   // update transition matrix
   NumericMatrix g(m,m);
-  for (l=0; l<m; l++) {
+  for (int l=0; l<m; l++) {
     if (r[l] == 0) {
-      for (k=0; k<m; k++) {
+      for (int k=0; k<m; k++) {
         if ((r[k] == 0) && (l != k) && (G(l,j1)*G(j1,l) < 1.0 - 1.0e-12)) {
           g(l,k) = (G(l,k) + G(l,j1)*G(j1,k))/(1.0 - G(l,j1)*G(j1,l));
         }
@@ -93,7 +93,7 @@ NumericMatrix fadjpboncpp(const NumericVector& w,
                           const NumericMatrix& G,
                           const NumericMatrix& p) {
 
-  int i, j, k, l, m=static_cast<int>(w.size()), iter, iters=p.nrow(), step;
+  int m=static_cast<int>(w.size()), iters=p.nrow();
   double pmax; // running maximum adjusted p-value
 
   NumericMatrix padj(iters,m);  // adjusted p-values
@@ -126,7 +126,7 @@ NumericMatrix fadjpboncpp(const NumericVector& w,
     stop("Row sums of G must be less than or equal to 1");
   }
 
-  for (i=0; i<m; i++) {
+  for (int i=0; i<m; i++) {
     if (G(i,i) != 0.0) {
       stop("Diagonal elements of G must be equal to 0");
     }
@@ -137,18 +137,18 @@ NumericMatrix fadjpboncpp(const NumericVector& w,
   }
 
 
-  for (iter=0; iter<iters; iter++) {
+  for (int iter=0; iter<iters; iter++) {
     wx = clone(w);  // reset
     g = clone(G);
     r.fill(0);
     pmax = 0.0;
     pvalues = p.row(iter);
 
-    for (step=0; step<m; step++) {
+    for (int step=0; step<m; step++) {
 
       // ratios of raw p-values divided by weights
       q.fill(0.0);
-      for (i=0; i<m; i++) {
+      for (int i=0; i<m; i++) {
         if (wx(i) > 0.0) {
           q(i) = pvalues(i)/wx(i);
         }
@@ -158,14 +158,14 @@ NumericMatrix fadjpboncpp(const NumericVector& w,
 
 
       // identify the hypothesis to reject
-      j = static_cast<int>(which_min(q));
+      int j = static_cast<int>(which_min(q));
       padj(iter,j) = std::max(std::min(q(j), 1.0), pmax);
       pmax = padj(iter, j);
       r(j) = 1;
 
 
       // update weights
-      for (l=0; l<m; l++) {
+      for (int l=0; l<m; l++) {
         if (r(l) == 0) {
           wx(l) = wx(l) + wx(j)*g(j,l);
         }
@@ -176,9 +176,9 @@ NumericMatrix fadjpboncpp(const NumericVector& w,
       // update transition matrix
       g1.fill(0.0);
 
-      for (l=0; l<m; l++) {
+      for (int l=0; l<m; l++) {
         if (r[l] == 0) {
-          for (k=0; k<m; k++) {
+          for (int k=0; k<m; k++) {
             if ((r[k] == 0) && (l != k) && (g(l,j)*g(j,l) < 1.0 - 1.0e-12)) {
               g1(l,k) = (g(l,k) + g(l,j)*g(j,k))/(1.0 - g(l,j)*g(j,l));
             }
@@ -216,7 +216,6 @@ NumericMatrix fadjpboncpp(const NumericVector& w,
 NumericMatrix fwgtmat(const NumericVector& w,
                       const NumericMatrix& G) {
   int m = static_cast<int>(w.size());
-  int i, j, k, l;
   int ntests = (1 << m) - 1;
 
   if (is_true(any(w < 0.0))) {
@@ -239,7 +238,7 @@ NumericMatrix fwgtmat(const NumericVector& w,
     stop("Row sums of G must be less than or equal to 1");
   }
 
-  for (i=0; i<m; i++) {
+  for (int i=0; i<m; i++) {
     if (G(i,i) != 0.0) {
       stop("Diagonal elements of G must be equal to 0");
     }
@@ -249,18 +248,18 @@ NumericMatrix fwgtmat(const NumericVector& w,
   NumericMatrix g = clone(G);
   NumericMatrix wgtmat(ntests, m);
   NumericMatrix gtrmat((ntests+1)/2, m*m); // only need to store first half
-  for (i=0; i<ntests; i++) {
+  for (int i=0; i<ntests; i++) {
     int number = ntests - i;
 
     // binary representation of elementary hypotheses in the intersection
     IntegerVector cc(m);
-    for (j=0; j<m; j++) {
+    for (int j=0; j<m; j++) {
       cc(j) = (number/(1 << (m - 1 - j))) % 2;
     }
 
 
     if (i >= 1) {
-      j = static_cast<int>(which_min(cc));
+      int j = static_cast<int>(which_min(cc));
 
       // indicators for hypotheses not in the super set
       IntegerVector cc1 = 1 - cc;
@@ -268,26 +267,26 @@ NumericMatrix fwgtmat(const NumericVector& w,
 
       // index of the super set
       int ip = 0;
-      for (k=0; k<m; k++) {
+      for (int k=0; k<m; k++) {
         if (cc1(k)) {
           ip += (1 << (m - 1 - k));
         }
       }
 
       // load the weights from the super set
-      for (k=0; k<m; k++) {
+      for (int k=0; k<m; k++) {
         wx(k) = wgtmat(ip, k);
       }
 
       // load the transition matrix from the super set
-      for (k=0; k<m; k++) {
-        for (l=0; l<m; l++) {
+      for (int k=0; k<m; k++) {
+        for (int l=0; l<m; l++) {
           g(k,l) = gtrmat(ip, k*m+l);
         }
       }
 
       // update the weights
-      for (k=0; k<m; k++) {
+      for (int k=0; k<m; k++) {
         if (cc(k)) {
           wx(k) += wx(j)*g(j,k);
         }
@@ -296,8 +295,8 @@ NumericMatrix fwgtmat(const NumericVector& w,
 
       // update the transition matrix
       NumericMatrix g1(m,m);
-      for (k=0; k<m; k++) {
-        for (l=0; l<m; l++) {
+      for (int k=0; k<m; k++) {
+        for (int l=0; l<m; l++) {
           if (cc(k) && cc(l) && (k != l) && (g(k,j)*g(j,k) < 1.0 - 1e-12)) {
             g1(k,l) = (g(k,l) + g(k,j)*g(j,l))/(1 - g(k,j)*g(j,k));
           }
@@ -308,14 +307,14 @@ NumericMatrix fwgtmat(const NumericVector& w,
     }
 
     // save the weights
-    for (k=0; k<m; k++) {
+    for (int k=0; k<m; k++) {
       wgtmat(i,k) = wx(k);
     }
 
     // save the transition matrix
     if (i<(ntests+1)/2) {
-      for (k=0; k<m; k++) {
-        for (l=0; l<m; l++) {
+      for (int k=0; k<m; k++) {
+        for (int l=0; l<m; l++) {
           gtrmat(i, k*m+l) = g(k,l);
         }
       }
@@ -335,7 +334,6 @@ NumericMatrix fadjpsimcpp(const NumericMatrix& wgtmat,
   int m = wgtmat.ncol();
   int niters = p.nrow();
   int nfams = family.nrow();
-  int i, j, k, l, s, t, iter;
   LogicalMatrix incid(ntests, m);
   NumericMatrix pinter(niters, ntests);
   NumericMatrix padj(niters, m);
@@ -344,34 +342,34 @@ NumericMatrix fadjpsimcpp(const NumericMatrix& wgtmat,
     stop("family must have as many individual hypotheses as columns");
   }
 
-  for (j=0; j<m; j++) {
+  for (int j=0; j<m; j++) {
     if (sum(family(_,j)) != 1) {
       stop("Each hypothesis should belong to one or only one family");
     }
   }
 
-  for (i=0; i<ntests; i++) {
+  for (int i=0; i<ntests; i++) {
     int number = ntests - i;
 
     // binary representation of elementary hypotheses in the intersection
     LogicalVector cc(m);
-    for (j=0; j<m; j++) {
+    for (int j=0; j<m; j++) {
       cc(j) = (number/(1 << (m - 1 - j))) % 2;
     }
 
     // identify the active families and active hypotheses
     LogicalMatrix family0(nfams, m);
-    for (k=0; k<nfams; k++) {
-      for (j=0; j<m; j++) {
+    for (int k=0; k<nfams; k++) {
+      for (int j=0; j<m; j++) {
         family0(k,j) = family(k,j) && cc(j);
       }
     }
 
     int nhyps = sum(family0);
     IntegerVector nhyps0(nfams), hyp(nhyps), fam(nhyps);
-    l = 0;
-    for (k=0; k<nfams; k++) {
-      for (j=0; j<m; j++) {
+    int l = 0;
+    for (int k=0; k<nfams; k++) {
+      for (int j=0; j<m; j++) {
         if (family0(k,j)) {
           nhyps0(k)++;  // number of active hypotheses in family k
           fam(l) = k;   // family of the l-th active hypothesis
@@ -386,25 +384,25 @@ NumericMatrix fadjpsimcpp(const NumericMatrix& wgtmat,
     IntegerVector nhyps1 = nhyps0[sub]; // # of active hypotheses by family
 
     NumericVector w(nhyps);
-    for (j=0; j<nhyps; j++) {
+    for (int j=0; j<nhyps; j++) {
       w(j) = wgtmat(i, hyp(j));
     }
 
 
-    for (iter=0; iter<niters; iter++) {
+    for (int iter=0; iter<niters; iter++) {
       NumericVector pval(nhyps), cw(nhyps);
-      for (j=0; j<nhyps; j++) {
+      for (int j=0; j<nhyps; j++) {
         pval(j) = p(iter, hyp(j));
       }
 
       // sort p-values within each family and obtain associated cum weights
-      s = 0;
-      for (k=0; k<nfamil1; k++) {
-        t = nhyps1(k);
+      int s = 0;
+      for (int k=0; k<nfamil1; k++) {
+        int t = nhyps1(k);
 
         // extract p-values and weights in the family
         NumericVector p1(t), w1(t);
-        for (j=0; j<t; j++) {
+        for (int j=0; j<t; j++) {
           p1(j) = pval(s+j);
           w1(j) = w(s+j);
         }
@@ -418,7 +416,7 @@ NumericMatrix fadjpsimcpp(const NumericMatrix& wgtmat,
                   });
 
         // replace original with sorted values
-        for (j=0; j<t; j++) {
+        for (int j=0; j<t; j++) {
           pval(s+j) = p1(index(j));
 
           // obtain the cumulative weights within each family
@@ -433,7 +431,7 @@ NumericMatrix fadjpsimcpp(const NumericMatrix& wgtmat,
       }
 
       double q = 1;
-      for (j=0; j<nhyps; j++) {
+      for (int j=0; j<nhyps; j++) {
         if (cw(j) > 0) {
           q = std::min(q, pval(j)/cw(j));
         }
@@ -446,10 +444,10 @@ NumericMatrix fadjpsimcpp(const NumericMatrix& wgtmat,
   }
 
   // obtain the adjusted p-values for individual hypotheses
-  for (iter=0; iter<niters; iter++) {
-    for (j=0; j<m; j++) {
+  for (int iter=0; iter<niters; iter++) {
+    for (int j=0; j<m; j++) {
       padj(iter,j) = 0;
-      for (i=0; i<ntests; i++) {
+      for (int i=0; i<ntests; i++) {
         if (incid(i,j) && pinter(iter, i) > padj(iter,j)) {
           padj(iter,j) = pinter(iter, i);
         }
@@ -471,7 +469,6 @@ NumericVector repeatedPValuecpp(
     const NumericMatrix& information,
     const NumericMatrix& spendingTime) {
 
-  int iter, i, j, l, L;
   int B = p.nrow(), k = p.ncol();
 
   if (kMax <= 0) {
@@ -511,14 +508,14 @@ NumericVector repeatedPValuecpp(
   } else if (information.nrow() != 1 && information.nrow() != B) {
     stop("Invalid number of rows for information");
   } else if (information.nrow() == 1 && B > 1) {
-    for (iter=0; iter<B; iter++) {
+    for (int iter=0; iter<B; iter++) {
       info(iter, _) = information(0, _);
     }
   } else {
     info = information;
   }
 
-  for (iter=0; iter<B; iter++) {
+  for (int iter=0; iter<B; iter++) {
     if (info(iter,0) <= 0) {
       stop("Elements of information must be positive");
     } else if (k>1 && is_true(any(diff(info(iter,_)) <= 0))) {
@@ -537,14 +534,14 @@ NumericVector repeatedPValuecpp(
   } else if (spendingTime.nrow() != 1 && spendingTime.nrow() != B) {
     stop("Invalid number of rows for spendingTime");
   } else if (spendingTime.nrow() == 1 && B > 1) {
-    for (iter=0; iter<B; iter++) {
+    for (int iter=0; iter<B; iter++) {
       st(iter, _) = spendingTime(0, _);
     }
   } else {
     st = spendingTime;
   }
 
-  for (iter=0; iter<B; iter++) {
+  for (int iter=0; iter<B; iter++) {
     if (is_false(all(is_na(st(iter,_))))) {
       if (st(iter,0) <= 0) {
         stop("Elements of spendingTime must be positive");
@@ -560,7 +557,8 @@ NumericVector repeatedPValuecpp(
   NumericMatrix repp(B, k);
   repp.fill(NA_REAL);
 
-  for (iter=0; iter<B; iter++) {
+  for (int iter=0; iter<B; iter++) {
+    int L;
     if (is_true(all(is_na(st(iter,_))))) { // use information rates
       LogicalVector qq = (info(iter,_) >= maxInformation);
       if (is_false(any(qq))) { // all observed info < maxinfo
@@ -574,14 +572,14 @@ NumericVector repeatedPValuecpp(
 
     // information time for forming covariance matrix of test statistics
     NumericVector t1(L+1);
-    for (l=0; l<=L; l++) {
+    for (int l=0; l<=L; l++) {
       t1(l) = info(iter,l)/info(iter,L);
     }
 
     // spending time for error spending
     NumericVector s1(L+1);
     if (is_true(all(is_na(st(iter,_))))) { // use information rates
-      for (l=0; l<=L; l++) {
+      for (int l=0; l<=L; l++) {
         if (l == kMax-1 || info(iter,l) >= maxInformation) {
           s1(l) = 1.0;
         } else {
@@ -589,15 +587,15 @@ NumericVector repeatedPValuecpp(
         }
       }
     } else { // using spending time
-      for (l=0; l<=L; l++) {
+      for (int l=0; l<=L; l++) {
         s1(l) = st(iter,l);
       }
     }
 
 
-    for (i=0; i<=L; i++) {
+    for (int i=0; i<=L; i++) {
       NumericVector t(i+1), s(i+1);
-      for (j=0; j<=i; j++) {
+      for (int j=0; j<=i; j++) {
         t(j) = t1(j);
         s(j) = s1(j);
       }
@@ -664,7 +662,6 @@ IntegerVector fseqboncpp(
 
   int B = p.nrow()/m;
 
-  int iter, i, j, k, l;
   IntegerVector reject(B*m);  // first look when the hypothesis is rejected
 
   NumericMatrix info(B*m, k1); // matrix of observed information
@@ -695,7 +692,7 @@ IntegerVector fseqboncpp(
     stop("Row sums of G must be less than or equal to 1");
   }
 
-  for (i=0; i<m; i++) {
+  for (int i=0; i<m; i++) {
     if (G(i,i) != 0.0) {
       stop("Diagonal elements of G must be equal to 0");
     }
@@ -713,7 +710,7 @@ IntegerVector fseqboncpp(
     stop("Invalid length for parameterAlphaSpending");
   }
 
-  for (i=0; i<m; i++) {
+  for (int i=0; i<m; i++) {
     std::string asfi = Rcpp::as<std::string>(asf(i));
     std::for_each(asfi.begin(), asfi.end(), [](char & c) {
       c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
@@ -753,8 +750,8 @@ IntegerVector fseqboncpp(
   } else if (information.nrow() != m && information.nrow() != B*m) {
     stop("Invalid number of rows for information");
   } else if (information.nrow() == m && B > 1) {
-    for (iter=0; iter<B; iter++) {
-      for (j=0; j<m; j++) {
+    for (int iter=0; iter<B; iter++) {
+      for (int j=0; j<m; j++) {
         info(iter*m+j, _) = information(j, _);
       }
     }
@@ -762,7 +759,7 @@ IntegerVector fseqboncpp(
     info = information;
   }
 
-  for (iter=0; iter<B*m; iter++) {
+  for (int iter=0; iter<B*m; iter++) {
     if (info(iter,0) <= 0) {
       stop("Elements of information must be positive");
     } else if (k1>1 && is_true(any(diff(info(iter,_)) <= 0))) {
@@ -780,8 +777,8 @@ IntegerVector fseqboncpp(
   } else if (spendingTime.nrow() != m && spendingTime.nrow() != B*m) {
     stop("Invalid number of rows for spendingTime");
   } else if (spendingTime.nrow() == m && B > 1) {
-    for (iter=0; iter<B; iter++) {
-      for (j=0; j<m; j++) {
+    for (int iter=0; iter<B; iter++) {
+      for (int j=0; j<m; j++) {
         st(iter*m+j, _) = spendingTime(j, _);
       }
     }
@@ -793,10 +790,10 @@ IntegerVector fseqboncpp(
 
   // set information, p values, and spending time to missing at a study look
   // if the hypothesis is not to be tested at the study look
-  for (j=0; j<m; j++) {
-    for (k=0; k<k1; k++) {
+  for (int j=0; j<m; j++) {
+    for (int k=0; k<k1; k++) {
       if (!incid(j,k)) {
-        for (iter=0; iter<B; iter++) {
+        for (int iter=0; iter<B; iter++) {
           info(iter*m+j,k) = NA_REAL;
           rawp(iter*m+j,k) = NA_REAL;
           st(iter*m+j,k) = NA_REAL;
@@ -811,9 +808,9 @@ IntegerVector fseqboncpp(
 
   IntegerMatrix idx1(m, kMax); // study look
   IntegerMatrix idx2(m, kMax); // hypothesis look
-  for (j=0; j<m; j++) {
-    l = 0;
-    for (k=0; k<kMax; k++) {
+  for (int j=0; j<m; j++) {
+    int l = 0;
+    for (int k=0; k<kMax; k++) {
       if (incid(j,k)==1) {
         idx1(j,l) = k;
         idx2(j,k) = l;
@@ -822,7 +819,7 @@ IntegerVector fseqboncpp(
         idx2(j,k) = NA_INTEGER;
       }
     }
-    for (k=l; k<kMax; k++) {
+    for (int k=l; k<kMax; k++) {
       idx1(j,k) = NA_INTEGER;
     }
   }
@@ -838,13 +835,13 @@ IntegerVector fseqboncpp(
   LogicalVector r(m);
 
 
-  for (iter=0; iter<B; iter++) {
+  for (int iter=0; iter<B; iter++) {
     wx = clone(w);  // reset
     g = clone(G);
     r.fill(0);
 
     // extract iteration specific information, p-values, and spending time
-    for (j=0; j<m; j++) {
+    for (int j=0; j<m; j++) {
       NumericVector irow = info.row(iter*m+j);
       NumericVector prow = rawp.row(iter*m+j);
 
@@ -897,13 +894,13 @@ IntegerVector fseqboncpp(
 
 
       // information time for forming covariance matrix of test statistics
-      for (l=0; l<=L(j); l++) {
+      for (int l=0; l<=L(j); l++) {
         t1(j,l) = irow(l)/irow(L(j));
       }
 
       // spending time for error spending
       if (is_true(all(is_na(st1(j, _))))) { // use information rates
-        for (l=0; l<=L(j); l++) {
+        for (int l=0; l<=L(j); l++) {
           if (l == K0(j)-1 || irow(l) >= maxinfo(j)) {
             s1(j,l) = 1.0;
           } else {
@@ -911,7 +908,7 @@ IntegerVector fseqboncpp(
           }
         }
       } else { // use spending time
-        for (l=0; l<=L(j); l++) {
+        for (int l=0; l<=L(j); l++) {
           s1(j,l) = st1(j,l);
         }
       }
@@ -921,16 +918,17 @@ IntegerVector fseqboncpp(
     K4 = std::max(K3, K4);  // maximum look overall
 
     for (step=0; step<K3; step++) {  // loop over study look
-      for (i=0; i<m; i++) {
+      for (int i=0; i<m; i++) {
         // find a hypothesis that can be rejected
         bool done = 1;
+        int j;
         for (j=0; j<m; j++) {
           if (incid(j, step) && wx(j) > 1.0e-4) {
-            k = idx2(j, step);
+            int k = idx2(j, step);
             if (k <= L(j)) {
               NumericVector t(k+1);
               NumericVector s(k+1);
-              for (l=0; l<=k; l++) {
+              for (int l=0; l<=k; l++) {
                 t(l) = t1(j,l);
                 s(l) = s1(j,l);
               }
@@ -960,7 +958,7 @@ IntegerVector fseqboncpp(
           reject(iter*m+j) = step+1;
 
           // update weights
-          for (l=0; l<m; l++) {
+          for (int l=0; l<m; l++) {
             if (r(l) == 0) {
               wx(l) = wx(l) + wx(j)*g(j,l);
             }
@@ -969,9 +967,9 @@ IntegerVector fseqboncpp(
 
           // update transition matrix
           g1.fill(0.0);
-          for (l=0; l<m; l++) {
+          for (int l=0; l<m; l++) {
             if (r[l] == 0) {
-              for (k=0; k<m; k++) {
+              for (int k=0; k<m; k++) {
                 if ((r[k] == 0) && (l != k) &&
                     (g(l,j)*g(j,l) < 1.0 - 1.0e-12)) {
                   g1(l,k) = (g(l,k) + g(l,j)*g(j,k))/(1.0 - g(l,j)*g(j,l));
@@ -1012,11 +1010,9 @@ NumericMatrix fstp2seqcpp(const NumericMatrix& p,
   NumericMatrix padj(nreps, n);
   int m = n/2;
 
-  int iter, i, j, s;
-
   NumericMatrix a(nreps, m);
-  for (iter=0; iter<nreps; iter++) {
-    for (j=0; j<m; j++) {
+  for (int iter=0; iter<nreps; iter++) {
+    for (int j=0; j<m; j++) {
       double x1 = p(iter, 2*j);
       double x2 = p(iter, 2*j+1);
 
@@ -1028,22 +1024,22 @@ NumericMatrix fstp2seqcpp(const NumericMatrix& p,
   }
 
   NumericMatrix d(m, m);
-  for (s=0; s<m; s++) {
+  for (int s=0; s<m; s++) {
     double gmax = 0;
-    for (j=s; j<m; j++) {
+    for (int j=s; j<m; j++) {
       if (j>s) gmax = std::max(gmax, gamma[j-1]);
       d(s,j) = std::max((1-gmax)/2, 1e-12);
     }
   }
 
 
-  for (iter=0; iter<nreps; iter++) {
+  for (int iter=0; iter<nreps; iter++) {
     NumericVector a1 = a(iter, _);
-    for (i=0; i<m; i++) {
+    for (int i=0; i<m; i++) {
       double t1 = max(a1[Range(0,i)]);
 
       double t2 = 1;
-      for (s=0; s<=i; s++) {
+      for (int s=0; s<=i; s++) {
         double lhs = 0;
 
         if (s>0) {
@@ -1051,7 +1047,7 @@ NumericMatrix fstp2seqcpp(const NumericMatrix& p,
           lhs = std::max(lhs, y);
         }
 
-        for (j=s; j<=i; j++) {
+        for (int j=s; j<=i; j++) {
           lhs = std::max(lhs, p(iter,2*j)/d(s,j));
         }
 
@@ -1064,7 +1060,7 @@ NumericMatrix fstp2seqcpp(const NumericMatrix& p,
 
       if (retest && m>1) {
         double t3 = 1;
-        for (s=0; s<=std::min(i,m-2); s++) {
+        for (int s=0; s<=std::min(i,m-2); s++) {
           double lhs = 0;
 
           if (s>0) {
@@ -1072,11 +1068,11 @@ NumericMatrix fstp2seqcpp(const NumericMatrix& p,
             lhs = std::max(lhs, y);
           }
 
-          for (j=s; j<m; j++) {
+          for (int j=s; j<m; j++) {
             lhs = std::max(lhs, p(iter,2*j+1)/d(s,j));
           }
 
-          for (j=s; j<=i; j++) {
+          for (int j=s; j<=i; j++) {
             lhs = std::max(lhs, p(iter,2*j));
           }
 
@@ -1094,7 +1090,7 @@ NumericMatrix fstp2seqcpp(const NumericMatrix& p,
 
 
       t2 = 1;
-      for (s=0; s<=i; s++) {
+      for (int s=0; s<=i; s++) {
         double lhs = 0;
 
         if (s>0) {
@@ -1102,7 +1098,7 @@ NumericMatrix fstp2seqcpp(const NumericMatrix& p,
           lhs = std::max(lhs, y);
         }
 
-        for (j=s; j<=i; j++) {
+        for (int j=s; j<=i; j++) {
           lhs = std::max(lhs, p(iter,2*j+1)/d(s,j));
         }
 
@@ -1115,7 +1111,7 @@ NumericMatrix fstp2seqcpp(const NumericMatrix& p,
 
       if (retest && m>1) {
         double t3 = 1;
-        for (s=0; s<=std::min(i,m-2); s++) {
+        for (int s=0; s<=std::min(i,m-2); s++) {
           double lhs = 0;
 
           if (s>0) {
@@ -1123,11 +1119,11 @@ NumericMatrix fstp2seqcpp(const NumericMatrix& p,
             lhs = std::max(lhs, y);
           }
 
-          for (j=s; j<m; j++) {
+          for (int j=s; j<m; j++) {
             lhs = std::max(lhs, p(iter,2*j)/d(s,j));
           }
 
-          for (j=s; j<=i; j++) {
+          for (int j=s; j<=i; j++) {
             lhs = std::max(lhs, p(iter,2*j+1));
           }
 
@@ -2240,7 +2236,7 @@ List f_bwimage(const double theta,
   }
 
   NumericVector astars(1, astar);
-  IntegerVector js = findInterval3(astars, p);
+  IntegerVector js = findInterval3(astars, p, 0, 0, 0);
   int j = js[0];
 
   // find the z-test statistic value yielding the rejection probability
@@ -3996,36 +3992,35 @@ NumericMatrix ftrunccpp(const NumericMatrix& p,
   int niters = p.nrow();
   int m = p.ncol();
   int ntests = static_cast<int>(pow(2, m)) - 1;
-  int i, j, k, iter;
   LogicalMatrix incid(ntests, m);
   NumericMatrix pinter(niters, ntests);
   NumericMatrix padj(niters, m);
 
-  for (i=0; i<ntests; i++) {
+  for (int i=0; i<ntests; i++) {
     int number = ntests - i;
 
     // binary representation of elementary hypotheses in the intersection
     LogicalVector cc(m);
-    for (j=0; j<m; j++) {
+    for (int j=0; j<m; j++) {
       cc(j) = (number/(1 << (m - 1 - j))) % 2;
     }
 
     incid(i, _) = cc;
 
     // hypotheses included in the intersection
-    k = sum(cc);
+    int k = sum(cc);
     IntegerVector hyp = which(cc);
 
-    for (iter=0; iter<niters; iter++) {
+    for (int iter=0; iter<niters; iter++) {
       NumericVector p1(k);
-      for (j=0; j<k; j++) {
+      for (int j=0; j<k; j++) {
         p1(j) = p(iter, hyp(j));
       }
 
       NumericVector p2 = stl_sort(p1);
 
       double q = 1.0, w;
-      for (j=0; j<k; j++) {
+      for (int j=0; j<k; j++) {
         if (test == "hommel") {
           w = (j+1)*gamma/k + (1-gamma)/m;
         } else if (test == "hochberg") {
@@ -4042,10 +4037,10 @@ NumericMatrix ftrunccpp(const NumericMatrix& p,
   }
 
   // obtain the adjusted p-values for individual hypotheses
-  for (iter=0; iter<niters; iter++) {
-    for (j=0; j<m; j++) {
+  for (int iter=0; iter<niters; iter++) {
+    for (int j=0; j<m; j++) {
       padj(iter,j) = 0;
-      for (i=0; i<ntests; i++) {
+      for (int i=0; i<ntests; i++) {
         if (incid(i,j) && pinter(iter, i) > padj(iter,j)) {
           padj(iter,j) = pinter(iter, i);
         }
@@ -4127,8 +4122,6 @@ DataFrame simon2stage(const double alpha = NA_REAL,
                       const double pi = NA_REAL,
                       const int n_max = 110) {
 
-  int n1, n, r1, r;
-
   if (std::isnan(alpha)) {
     stop("alpha must be provided");
   }
@@ -4183,17 +4176,18 @@ DataFrame simon2stage(const double alpha = NA_REAL,
   NumericVector powerx(m);
 
   int i = 0;
-  for (n=n_lower; n<=n_upper; n++) {
+  for (int n=n_lower; n<=n_upper; n++) {
     // identify the design satisfying the type 1 and type 2 error constraints
     // while having the minimum expected sample size under H0 for the given n
     double EN0 = n;
     List optimal;
 
     bool exist = 0; // initialize to FALSE
-    for (n1=1; n1<=n-1; n1++) {
+    for (int n1=1; n1<=n-1; n1++) {
       int n2=n-n1;
-      for (r1=0; r1<=n1; r1++) {
+      for (int r1=0; r1<=n1; r1++) {
         // find the maximum value of r satisfying the type 2 error constraint
+        int r;
         for (r=r1+n2; r>=r1; r--) {
           betastar = pfutile(pi, n1, n2, r1, r);
           if (betastar <= beta) break;
@@ -4284,7 +4278,7 @@ DataFrame simon2stage(const double alpha = NA_REAL,
   // derive the interval for w
   m = static_cast<int>(u.size());
   NumericVector w1(m), w2(m);
-  for (i=0; i<m; i++) {
+  for (int i=0; i<m; i++) {
     if (i<m-1) {
       double slope = (en0x[i+1] - en0x[i])/(nx[i+1] - nx[i]);
       double w = slope/(slope - 1);
@@ -4303,7 +4297,7 @@ DataFrame simon2stage(const double alpha = NA_REAL,
   }
 
   StringVector design(m);
-  for (i=0; i<m; i++) {
+  for (int i=0; i<m; i++) {
     if (w1[i] == 0) {
       design[i] = "Optimal";
     } else if (w2[i] == 1) {
@@ -4425,9 +4419,8 @@ DataFrame samplesizeOnePropExact(const double beta = 0.2,
                                                              pi*(1-pi))));
   int n_upper = static_cast<int>(std::ceil(2*tau*std::max(piH0*(1-piH0),
                                                           pi*(1-pi))));
-  int n;
   DataFrame a, b;
-  for (n=n_lower; n<=n_upper; n++) {
+  for (int n=n_lower; n<=n_upper; n++) {
     a = powerOnePropExact(n, piH0, pi, alpha);
 
     // ensure that the power exceeds 1-beta for the next 10 sample sizes
@@ -4550,9 +4543,8 @@ DataFrame samplesizeOneRateExact(const double beta = 0.2,
                                                               lambda)*D)));
   int n_upper = static_cast<int>(std::ceil(2*tau/(std::min(lambdaH0,
                                                            lambda)*D)));
-  int n;
   DataFrame a, b;
-  for (n=n_lower; n<=n_upper; n++) {
+  for (int n=n_lower; n<=n_upper; n++) {
     a = powerOneRateExact(n, lambdaH0, lambda, D, alpha);
 
     // ensure that the power exceeds 1-beta for the next 10 sample sizes
@@ -4624,7 +4616,6 @@ DataFrame powerFisherExact(const int n = NA_INTEGER,
   double r = allocationRatioPlanned/(1 + allocationRatioPlanned);
   int n1 = static_cast<int>(std::round(n*r));
   int n2 = n - n1;
-  int i, j;
 
   double power = 0;
   for (int m=0; m<=n; m++) {
@@ -4647,7 +4638,7 @@ DataFrame powerFisherExact(const int n = NA_INTEGER,
 
     // tally the cumulative probabilities for unique values of p0
     IntegerVector idx(1,0);
-    for (i=1; i<k; i++) {
+    for (int i=1; i<k; i++) {
       if (p0sorted[i] != p0sorted[i-1]) {
         idx.push_back(i);
       }
@@ -4658,8 +4649,8 @@ DataFrame powerFisherExact(const int n = NA_INTEGER,
 
     double s = 0;
     NumericVector cp0(k1);
-    for (i=0; i<k1; i++) {
-      for (j=idx[i]; j<idx[i+1]; j++) {
+    for (int i=0; i<k1; i++) {
+      for (int j=idx[i]; j<idx[i+1]; j++) {
         s += p0sorted[j];
       }
       cp0[i] = s;
@@ -4668,6 +4659,7 @@ DataFrame powerFisherExact(const int n = NA_INTEGER,
     // reject H0 only if the smallest table probability is below alpha
     if (cp0[0] <= alpha) {
       // find the critical value table
+      int i;
       for (i=1; i<k1; i++) {
         if (cp0[i] > alpha) break;
       }
@@ -4676,7 +4668,7 @@ DataFrame powerFisherExact(const int n = NA_INTEGER,
       NumericVector p1 = dbinom(x, n1, pi1, 0)*dbinom(y, n2, pi2, 0);
       NumericVector p1sorted = p1[order];
 
-      for (j=0; j<idx[i]; j++) {
+      for (int j=0; j<idx[i]; j++) {
         power += p1sorted[j];
       }
     }
@@ -4752,7 +4744,7 @@ DataFrame samplesizeFisherExact(const double beta = NA_REAL,
                   R::qnorm(1-beta, 0, 1, 1, 0), 2)*v1/pow(delta, 2);
   double n1 = brent(f, 0.5*n0, 2*n0, 1.0e-6);
   int n_lower = static_cast<int>(std::floor(n1));
-  int n_upper = static_cast<int>(std::ceil(10*n1)), n;
+  int n_upper = static_cast<int>(std::ceil(10*n1));
 
   DataFrame a, b;
   a = powerFisherExact(n_lower, pi1, pi2, allocationRatioPlanned, alpha);
@@ -4760,7 +4752,7 @@ DataFrame samplesizeFisherExact(const double beta = NA_REAL,
     a = powerFisherExact(--n_lower, pi1, pi2, allocationRatioPlanned, alpha);
   }
 
-  for (n=n_lower+1; n<=n_upper; n++) {
+  for (int n=n_lower+1; n<=n_upper; n++) {
     a = powerFisherExact(n, pi1, pi2, allocationRatioPlanned, alpha);
 
     // ensure that the power exceeds 1-beta for the next 10 sample sizes
@@ -4896,10 +4888,10 @@ double zstatRiskDiff(const double riskDiffH0 = 0.0,
   NumericVector p1 = as<NumericVector>(mr["p1"]);
   NumericVector p2 = as<NumericVector>(mr["p2"]);
 
-  int i, k = static_cast<int>(n1.size());
+  int k = static_cast<int>(n1.size());
   NumericVector n = n1 + n2;
   NumericVector w(k), md(k), mv(k);
-  for (i=0; i<k; i++) {
+  for (int i=0; i<k; i++) {
     w[i] = n1[i]*n2[i]/n[i];
     md[i] = y1[i]/n1[i] - y2[i]/n2[i] - riskDiffH0;
     mv[i] = p1[i]*(1-p1[i])/n1[i] + p2[i]*(1-p2[i])/n2[i];
@@ -4989,16 +4981,16 @@ List mnRiskDiffCI(const NumericVector& n1 = NA_REAL,
     stop("cilevel must lie between 0 and 1");
   }
 
-  int i, k = static_cast<int>(n1.size());
+  int k = static_cast<int>(n1.size());
   NumericVector n = n1 + n2;
   NumericVector w(k);
-  for (i=0; i<k; i++) {
+  for (int i=0; i<k; i++) {
     w[i] = n1[i]*n2[i]/n[i];
   }
   w = w/sum(w);
 
   double estimate = 0;
-  for (i=0; i<k; i++) {
+  for (int i=0; i<k; i++) {
     estimate += w[i]*(y1[i]/n1[i] - y2[i]/n2[i]);
   }
 
@@ -5140,10 +5132,10 @@ double zstatRiskRatio(const double riskRatioH0 = 1.0,
   NumericVector p1 = as<NumericVector>(mr["p1"]);
   NumericVector p2 = as<NumericVector>(mr["p2"]);
 
-  int i, k = static_cast<int>(n1.size());
+  int k = static_cast<int>(n1.size());
   NumericVector n = n1 + n2;
   NumericVector w(k), md(k), mv(k);
-  for (i=0; i<k; i++) {
+  for (int i=0; i<k; i++) {
     w[i] = n1[i]*n2[i]/n[i];
     md[i] = y1[i]/n1[i] - y2[i]/n2[i]*riskRatioH0;
     mv[i] = p1[i]*(1-p1[i])/n1[i] + pow(riskRatioH0,2)*p2[i]*(1-p2[i])/n2[i];
@@ -5233,10 +5225,10 @@ List mnRiskRatioCI(const NumericVector& n1 = NA_REAL,
     stop("cilevel must lie between 0 and 1");
   }
 
-  int i, k = static_cast<int>(n1.size());
+  int k = static_cast<int>(n1.size());
   NumericVector n = n1 + n2;
   NumericVector w(k);
-  for (i=0; i<k; i++) {
+  for (int i=0; i<k; i++) {
     w[i] = n1[i]*n2[i]/n[i];
   }
   w = w/sum(w);
@@ -5269,7 +5261,7 @@ List mnRiskRatioCI(const NumericVector& n1 = NA_REAL,
     lower = brent(f1, 0.001, 1000.0, 1.0e-6);
   } else {
     double p1 = 0, p2 = 0;
-    for (i=0; i<k; i++) {
+    for (int i=0; i<k; i++) {
       p1 += w[i]*y1[i]/n1[i];
       p2 += w[i]*y2[i]/n2[i];
     }
@@ -5412,10 +5404,10 @@ double zstatOddsRatio(const double oddsRatioH0 = 1.0,
   NumericVector p1 = as<NumericVector>(mr["p1"]);
   NumericVector p2 = as<NumericVector>(mr["p2"]);
 
-  int i, k = static_cast<int>(n1.size());
+  int k = static_cast<int>(n1.size());
   NumericVector n = n1 + n2;
   NumericVector w(k), md(k), mv(k);
-  for (i=0; i<k; i++) {
+  for (int i=0; i<k; i++) {
     w[i] = n1[i]*n2[i]/n[i];
     md[i] = (y1[i]/n1[i] - p1[i])/(p1[i]*(1-p1[i])) -
       (y2[i]/n2[i] - p2[i])/(p2[i]*(1-p2[i]));
@@ -5506,10 +5498,10 @@ List mnOddsRatioCI(const NumericVector& n1 = NA_REAL,
     stop("cilevel must lie between 0 and 1");
   }
 
-  int i, k = static_cast<int>(n1.size());
+  int k = static_cast<int>(n1.size());
   NumericVector n = n1 + n2;
   NumericVector w(k);
-  for (i=0; i<k; i++) {
+  for (int i=0; i<k; i++) {
     w[i] = n1[i]*n2[i]/n[i];
   }
   w = w/sum(w);
@@ -5685,10 +5677,10 @@ double zstatRateDiff(const double rateDiffH0 = 0.0,
   NumericVector r1 = as<NumericVector>(mr["r1"]);
   NumericVector r2 = as<NumericVector>(mr["r2"]);
 
-  int i, k = static_cast<int>(t1.size());
+  int k = static_cast<int>(t1.size());
   NumericVector t = t1 + t2;
   NumericVector w(k), md(k), mv(k);
-  for (i=0; i<k; i++) {
+  for (int i=0; i<k; i++) {
     w[i] = t1[i]*t2[i]/t[i];
     md[i] = y1[i]/t1[i] - y2[i]/t2[i] - rateDiffH0;
     mv[i] = r1[i]/t1[i] + r2[i]/t2[i];
@@ -5778,13 +5770,13 @@ List mnRateDiffCI(const NumericVector& t1 = NA_REAL,
   }
 
 
-  int i, k = static_cast<int>(t1.size());
+  int k = static_cast<int>(t1.size());
   NumericVector t = t1 + t2;
   NumericVector w = t1*t2/t;
   w = w/sum(w);
 
   double estimate = 0;
-  for (i=0; i<k; i++) {
+  for (int i=0; i<k; i++) {
     estimate += w[i]*(y1[i]/t1[i] - y2[i]/t2[i]);
   }
 
@@ -5915,9 +5907,9 @@ double zstatRateRatio(const double rateRatioH0 = 1.0,
   NumericVector w = t1*t2/t;
   w = w/sum(w);
 
-  int i, k = static_cast<int>(t1.size());
+  int k = static_cast<int>(t1.size());
   NumericVector md(k), mv(k);
-  for (i=0; i<k; i++) {
+  for (int i=0; i<k; i++) {
     md[i] = y1[i]/t1[i] - (y2[i]/t2[i])*rateRatioH0;
     mv[i] = r1[i]/t1[i] + pow(rateRatioH0,2)*r2[i]/t2[i];
     mv[i] = std::max(mv[i], 1.0e-8);
@@ -6005,7 +5997,7 @@ List mnRateRatioCI(const NumericVector& t1,
   }
 
 
-  int i, k = static_cast<int>(t1.size());
+  int k = static_cast<int>(t1.size());
   NumericVector t = t1 + t2;
   NumericVector w = t1*t2/t;
   w = w/sum(w);
@@ -6037,7 +6029,7 @@ List mnRateRatioCI(const NumericVector& t1,
     lower = brent(f1, 0.001, 1000.0, 1.0e-6);
   } else {
     double r1=0, r2=0;
-    for (i=0; i<k; i++) {
+    for (int i=0; i<k; i++) {
       r1 += w[i]*y1[i]/t1[i];
       r2 += w[i]*y2[i]/t2[i];
     }
@@ -6143,11 +6135,11 @@ DataFrame powerRiskDiffExact(
   int n2 = n - n1;
   IntegerVector x1 = seq(0, n1);
   IntegerVector x2 = seq(0, n2);
-  int i, k = (n1+1)*(n2+1);
+  int k = (n1+1)*(n2+1);
 
   // The set of values for the test statistic
   NumericVector T(k);
-  i = 0;
+  int i = 0;
   for (int y1=0; y1<=n1; y1++) {
     for (int y2=0; y2<=n2; y2++) {
       NumericVector a = remlRiskDiff(riskDiffH0, n1, y1, n2, y2);
@@ -6169,7 +6161,7 @@ DataFrame powerRiskDiffExact(
 
   // identify the locations of the unique values of T
   IntegerVector idx(1,0);
-  for (i=1; i<k; i++) {
+  for (int i=1; i<k; i++) {
     if (Tsorted[i] != Tsorted[i-1]) {
       idx.push_back(i);
     }
@@ -6191,8 +6183,7 @@ DataFrame powerRiskDiffExact(
               NumericVector q2 = dbinom(x2, n2, p2, 0);
               NumericVector q(k);
 
-              int i, j, l;
-              i = 0;
+              int i = 0;
               for (int y1=0; y1<=n1; y1++) {
                 for (int y2=0; y2<=n2; y2++) {
                   q[i++] = q1[y1]*q2[y2];
@@ -6204,9 +6195,9 @@ DataFrame powerRiskDiffExact(
 
               if (directionUpper) { // reject H0 if T >= t
                 double s = 0;
-                l = k-1;  // flattened index
+                int l = k-1;  // flattened index
                 for (i=k1-1; i>=0; i--) {  // move down from the largest T
-                  for (j=idx[i+1]-1; j>=idx[i]; j--) {
+                  for (int j=idx[i+1]-1; j>=idx[i]; j--) {
                     s += qsorted[l--];
                   }
                   if (s > alpha) break;
@@ -6220,9 +6211,9 @@ DataFrame powerRiskDiffExact(
                 }
               } else { // reject H0 if T <= t
                 double s = 0;
-                l = 0;
+                int l = 0;
                 for (i=0; i<k1; i++) {  // move up from the smallest T
-                  for (j=idx[i]; j<idx[i+1]; j++) {
+                  for (int j=idx[i]; j<idx[i+1]; j++) {
                     s += qsorted[l++];
                   }
                   if (s > alpha) break;
@@ -6247,7 +6238,7 @@ DataFrame powerRiskDiffExact(
   NumericVector a(K), b(K);
   double delta = (pi2upper - pi2lower)/K;
   double tol = 1.0e-6;
-  for (i=0; i<K; i++) {
+  for (int i=0; i<K; i++) {
     double lower = pi2lower + i*delta;
     double upper = lower + delta;
     NumericVector out = mini(f, lower, upper, tol);
@@ -6306,7 +6297,7 @@ DataFrame powerRiskDiffExact(
                 return -preject;
     };
 
-    for (i=0; i<K; i++) {
+    for (int i=0; i<K; i++) {
       double lower = pi2lower + i*delta;
       double upper = lower + delta;
       NumericVector out = mini(h, lower, upper, tol);
@@ -6413,7 +6404,7 @@ DataFrame samplesizeRiskDiffExact(
   double theta = fabs(pi1 - pi2 - riskDiffH0);
   double n0 = pow(z0*sqrt(v0) + z1*sqrt(v1), 2)/pow(theta, 2);
   int n_lower = static_cast<int>(std::floor(n0));
-  int n_upper = static_cast<int>(std::ceil(10*n0)), n;
+  int n_upper = static_cast<int>(std::ceil(10*n0));
 
   DataFrame a, b;
   a = powerRiskDiffExact(n_lower, riskDiffH0, pi1, pi2,
@@ -6424,6 +6415,7 @@ DataFrame samplesizeRiskDiffExact(
                            allocationRatioPlanned, alpha, 0);
   }
 
+  int n;
   for (n=n_lower+1; n<=n_upper; n++) {
     a = powerRiskDiffExact(n, riskDiffH0, pi1, pi2,
                            allocationRatioPlanned, alpha, 0);
@@ -6521,11 +6513,11 @@ DataFrame powerRiskRatioExact(
   int n2 = n - n1;
   IntegerVector x1 = seq(0, n1);
   IntegerVector x2 = seq(0, n2);
-  int i, k = (n1+1)*(n2+1);
+  int k = (n1+1)*(n2+1);
 
   // The set of values for the test statistic
   NumericVector T(k);
-  i = 0;
+  int i = 0;
   for (int y1=0; y1<=n1; y1++) {
     for (int y2=0; y2<=n2; y2++) {
       NumericVector a = remlRiskRatio(riskRatioH0, n1, y1, n2, y2);
@@ -6548,7 +6540,7 @@ DataFrame powerRiskRatioExact(
 
   // identify the locations of the unique values of T
   IntegerVector idx(1,0);
-  for (i=1; i<k; i++) {
+  for (int i=1; i<k; i++) {
     if (Tsorted[i] != Tsorted[i-1]) {
       idx.push_back(i);
     }
@@ -6570,8 +6562,7 @@ DataFrame powerRiskRatioExact(
               NumericVector q2 = dbinom(x2, n2, p2, 0);
               NumericVector q(k);
 
-              int i, j, l;
-              i = 0;
+              int i = 0;
               for (int y1=0; y1<=n1; y1++) {
                 for (int y2=0; y2<=n2; y2++) {
                   q[i++] = q1[y1]*q2[y2];
@@ -6583,9 +6574,9 @@ DataFrame powerRiskRatioExact(
 
               if (directionUpper) { // reject H0 if T >= t
                 double s = 0;
-                l = k-1;  // flattened index
+                int l = k-1;  // flattened index
                 for (i=k1-1; i>=0; i--) {  // move down from the largest T
-                  for (j=idx[i+1]-1; j>=idx[i]; j--) {
+                  for (int j=idx[i+1]-1; j>=idx[i]; j--) {
                     s += qsorted[l--];
                   }
                   if (s > alpha) break;
@@ -6599,9 +6590,9 @@ DataFrame powerRiskRatioExact(
                 }
               } else { // reject H0 if T <= t
                 double s = 0;
-                l = 0;
+                int l = 0;
                 for (i=0; i<k1; i++) {  // move up from the smallest T
-                  for (j=idx[i]; j<idx[i+1]; j++) {
+                  for (int j=idx[i]; j<idx[i+1]; j++) {
                     s += qsorted[l++];
                   }
                   if (s > alpha) break;
@@ -6626,7 +6617,7 @@ DataFrame powerRiskRatioExact(
   NumericVector a(K), b(K);
   double delta = (pi2upper - pi2lower)/K;
   double tol = 1.0e-6;
-  for (i=0; i<K; i++) {
+  for (int i=0; i<K; i++) {
     double lower = pi2lower + i*delta;
     double upper = lower + delta;
     NumericVector out = mini(f, lower, upper, tol);
@@ -6685,7 +6676,7 @@ DataFrame powerRiskRatioExact(
                 return -preject;
               };
 
-    for (i=0; i<K; i++) {
+    for (int i=0; i<K; i++) {
       double lower = pi2lower + i*delta;
       double upper = lower + delta;
       NumericVector out = mini(h, lower, upper, tol);
@@ -6792,7 +6783,7 @@ DataFrame samplesizeRiskRatioExact(
   double theta = fabs(log(pi1/pi2)- log(riskRatioH0));
   double n0 = pow(z0*sqrt(v0) + z1*sqrt(v1), 2)/pow(theta, 2);
   int n_lower = static_cast<int>(std::floor(n0));
-  int n_upper = static_cast<int>(std::ceil(10*n0)), n;
+  int n_upper = static_cast<int>(std::ceil(10*n0));
 
   DataFrame a, b;
   a = powerRiskRatioExact(n_lower, riskRatioH0, pi1, pi2,
@@ -6803,6 +6794,7 @@ DataFrame samplesizeRiskRatioExact(
                             allocationRatioPlanned, alpha, 0);
   }
 
+  int n;
   for (n=n_lower+1; n<=n_upper; n++) {
     a = powerRiskRatioExact(n, riskRatioH0, pi1, pi2,
                             allocationRatioPlanned, alpha, 0);
@@ -6914,11 +6906,11 @@ DataFrame powerRiskDiffExactEquiv(
   int n2 = n - n1;
   IntegerVector x1 = seq(0, n1);
   IntegerVector x2 = seq(0, n2);
-  int i, k = (n1+1)*(n2+1);
+  int k = (n1+1)*(n2+1);
 
   // The set of values for the test statistic for the lower limit
   NumericVector T1(k);
-  i = 0;
+  int i = 0;
   for (int y1=0; y1<=n1; y1++) {
     for (int y2=0; y2<=n2; y2++) {
       NumericVector a = remlRiskDiff(riskDiffLower, n1, y1, n2, y2);
@@ -6940,7 +6932,7 @@ DataFrame powerRiskDiffExactEquiv(
 
   // identify the locations of the unique values of T1
   IntegerVector idx1(1,0);
-  for (i=1; i<k; i++) {
+  for (int i=1; i<k; i++) {
     if (T1sorted[i] != T1sorted[i-1]) {
       idx1.push_back(i);
     }
@@ -6959,8 +6951,7 @@ DataFrame powerRiskDiffExactEquiv(
                NumericVector q2 = dbinom(x2, n2, p2, 0);
                NumericVector q(k);
 
-               int i, j, l;
-               i = 0;
+               int i = 0;
                for (int y1=0; y1<=n1; y1++) {
                  for (int y2=0; y2<=n2; y2++) {
                    q[i++] = q1[y1]*q2[y2];
@@ -6971,9 +6962,9 @@ DataFrame powerRiskDiffExactEquiv(
                double aval;
 
                double s = 0;
-               l = k-1;  // flattened index
+               int l = k-1;  // flattened index
                for (i=k1-1; i>=0; i--) {  // move down from the largest T1
-                 for (j=idx1[i+1]-1; j>=idx1[i]; j--) {
+                 for (int j=idx1[i+1]-1; j>=idx1[i]; j--) {
                    s += qsorted[l--];
                  }
                  if (s > alpha) break;
@@ -6997,7 +6988,7 @@ DataFrame powerRiskDiffExactEquiv(
   NumericVector a1(K), b1(K);
   double delta1 = (pi2upper1 - pi2lower1)/K;
   double tol = 1.0e-6;
-  for (i=0; i<K; i++) {
+  for (int i=0; i<K; i++) {
     double lower = pi2lower1 + i*delta1;
     double upper = lower + delta1;
     NumericVector out = mini(f1, lower, upper, tol);
@@ -7042,7 +7033,7 @@ DataFrame powerRiskDiffExactEquiv(
 
     // identify the locations of the unique values of T2
     IntegerVector idx2(1,0);
-    for (i=1; i<k; i++) {
+    for (int i=1; i<k; i++) {
       if (T2sorted[i] != T2sorted[i-1]) {
         idx2.push_back(i);
       }
@@ -7061,8 +7052,7 @@ DataFrame powerRiskDiffExactEquiv(
                  NumericVector q2 = dbinom(x2, n2, p2, 0);
                  NumericVector q(k);
 
-                 int i, j, l;
-                 i = 0;
+                 int i = 0;
                  for (int y1=0; y1<=n1; y1++) {
                    for (int y2=0; y2<=n2; y2++) {
                      q[i++] = q1[y1]*q2[y2];
@@ -7073,9 +7063,9 @@ DataFrame powerRiskDiffExactEquiv(
                  double aval;
 
                  double s = 0;
-                 l = 0;
+                 int l = 0;
                  for (i=0; i<k2; i++) {  // move up from the smallest T2
-                   for (j=idx2[i]; j<idx2[i+1]; j++) {
+                   for (int j=idx2[i]; j<idx2[i+1]; j++) {
                      s += qsorted[l++];
                    }
                    if (s > alpha) break;
@@ -7094,7 +7084,7 @@ DataFrame powerRiskDiffExactEquiv(
     // find the critical value independent of pi2
     NumericVector b2(K);
     double delta2 = (pi2upper2 - pi2lower2)/K;
-    for (i=0; i<K; i++) {
+    for (int i=0; i<K; i++) {
       double lower = pi2lower2 + i*delta2;
       double upper = lower + delta2;
       NumericVector out = mini(f2, lower, upper, tol);
@@ -7154,7 +7144,7 @@ DataFrame powerRiskDiffExactEquiv(
               };
 
     riskDiffH0 = riskDiffLower;
-    for (i=0; i<K; i++) {
+    for (int i=0; i<K; i++) {
       double lower = pi2lower1 + i*delta1;
       double upper = lower + delta1;
       NumericVector out = mini(h, lower, upper, tol);
@@ -7172,7 +7162,7 @@ DataFrame powerRiskDiffExactEquiv(
       double delta2 = (pi2upper2 - pi2lower2)/K;
 
       riskDiffH0 = riskDiffUpper;
-      for (i=0; i<K; i++) {
+      for (int i=0; i<K; i++) {
         double lower = pi2lower2 + i*delta2;
         double upper = lower + delta2;
         NumericVector out = mini(h, lower, upper, tol);
@@ -7292,7 +7282,7 @@ DataFrame samplesizeRiskDiffExactEquiv(
   double z1 = R::qnorm(1-beta, 0, 1, 1, 0);
   double n0 = pow(z0 + z1, 2)*v1/pow(theta, 2);
   int n_lower = static_cast<int>(std::floor(n0));
-  int n_upper = static_cast<int>(std::ceil(10*n0)), n;
+  int n_upper = static_cast<int>(std::ceil(10*n0));
 
   DataFrame a, b;
   a = powerRiskDiffExactEquiv(n_lower, riskDiffLower, riskDiffUpper,
@@ -7303,6 +7293,7 @@ DataFrame samplesizeRiskDiffExactEquiv(
                                 pi1, pi2, allocationRatioPlanned, alpha, 0);
   }
 
+  int n;
   for (n=n_lower+1; n<=n_upper; n++) {
     a = powerRiskDiffExactEquiv(n, riskDiffLower, riskDiffUpper,
                                 pi1, pi2, allocationRatioPlanned, alpha, 0);
@@ -7414,11 +7405,11 @@ DataFrame powerRiskRatioExactEquiv(
   int n2 = n - n1;
   IntegerVector x1 = seq(0, n1);
   IntegerVector x2 = seq(0, n2);
-  int i, k = (n1+1)*(n2+1);
+  int k = (n1+1)*(n2+1);
 
   // The set of values for the test statistic for the lower limit
   NumericVector T1(k);
-  i = 0;
+  int i = 0;
   for (int y1=0; y1<=n1; y1++) {
     for (int y2=0; y2<=n2; y2++) {
       NumericVector a = remlRiskRatio(riskRatioLower, n1, y1, n2, y2);
@@ -7441,7 +7432,7 @@ DataFrame powerRiskRatioExactEquiv(
 
   // identify the locations of the unique values of T1
   IntegerVector idx1(1,0);
-  for (i=1; i<k; i++) {
+  for (int i=1; i<k; i++) {
     if (T1sorted[i] != T1sorted[i-1]) {
       idx1.push_back(i);
     }
@@ -7460,8 +7451,7 @@ DataFrame powerRiskRatioExactEquiv(
                NumericVector q2 = dbinom(x2, n2, p2, 0);
                NumericVector q(k);
 
-               int i, j, l;
-               i = 0;
+               int i = 0;
                for (int y1=0; y1<=n1; y1++) {
                  for (int y2=0; y2<=n2; y2++) {
                    q[i++] = q1[y1]*q2[y2];
@@ -7472,9 +7462,9 @@ DataFrame powerRiskRatioExactEquiv(
                double aval;
 
                double s = 0;
-               l = k-1;  // flattened index
+               int l = k-1;  // flattened index
                for (i=k1-1; i>=0; i--) {  // move down from the largest T1
-                 for (j=idx1[i+1]-1; j>=idx1[i]; j--) {
+                 for (int j=idx1[i+1]-1; j>=idx1[i]; j--) {
                    s += qsorted[l--];
                  }
                  if (s > alpha) break;
@@ -7498,7 +7488,7 @@ DataFrame powerRiskRatioExactEquiv(
   NumericVector a1(K), b1(K);
   double delta1 = (pi2upper1 - pi2lower1)/K;
   double tol = 1.0e-6;
-  for (i=0; i<K; i++) {
+  for (int i=0; i<K; i++) {
     double lower = pi2lower1 + i*delta1;
     double upper = lower + delta1;
     NumericVector out = mini(f1, lower, upper, tol);
@@ -7544,7 +7534,7 @@ DataFrame powerRiskRatioExactEquiv(
 
     // identify the locations of the unique values of T2
     IntegerVector idx2(1,0);
-    for (i=1; i<k; i++) {
+    for (int i=1; i<k; i++) {
       if (T2sorted[i] != T2sorted[i-1]) {
         idx2.push_back(i);
       }
@@ -7563,8 +7553,7 @@ DataFrame powerRiskRatioExactEquiv(
                  NumericVector q2 = dbinom(x2, n2, p2, 0);
                  NumericVector q(k);
 
-                 int i, j, l;
-                 i = 0;
+                 int i = 0;
                  for (int y1=0; y1<=n1; y1++) {
                    for (int y2=0; y2<=n2; y2++) {
                      q[i++] = q1[y1]*q2[y2];
@@ -7574,9 +7563,9 @@ DataFrame powerRiskRatioExactEquiv(
                  NumericVector qsorted = q[order2];
 
                  double s = 0;
-                 l = 0;
+                 int l = 0;
                  for (i=0; i<k2; i++) {  // move up from the smallest T2
-                   for (j=idx2[i]; j<idx2[i+1]; j++) {
+                   for (int j=idx2[i]; j<idx2[i+1]; j++) {
                      s += qsorted[l++];
                    }
                    if (s > alpha) break;
@@ -7593,7 +7582,7 @@ DataFrame powerRiskRatioExactEquiv(
     // find the critical value independent of pi2
     NumericVector b2(K);
     double delta2 = (pi2upper2 - pi2lower2)/K;
-    for (i=0; i<K; i++) {
+    for (int i=0; i<K; i++) {
       double lower = pi2lower2 + i*delta2;
       double upper = lower + delta2;
       NumericVector out = mini(f2, lower, upper, tol);
@@ -7653,7 +7642,7 @@ DataFrame powerRiskRatioExactEquiv(
               };
 
     riskRatioH0 = riskRatioLower;
-    for (i=0; i<K; i++) {
+    for (int i=0; i<K; i++) {
       double lower = pi2lower1 + i*delta1;
       double upper = lower + delta1;
       NumericVector out = mini(h, lower, upper, tol);
@@ -7671,7 +7660,7 @@ DataFrame powerRiskRatioExactEquiv(
       double delta2 = (pi2upper2 - pi2lower2)/K;
 
       riskRatioH0 = riskRatioUpper;
-      for (i=0; i<K; i++) {
+      for (int i=0; i<K; i++) {
         double lower = pi2lower2 + i*delta2;
         double upper = lower + delta2;
         NumericVector out = mini(h, lower, upper, tol);
@@ -7791,7 +7780,7 @@ DataFrame samplesizeRiskRatioExactEquiv(
   double z1 = R::qnorm(1-beta, 0, 1, 1, 0);
   double n0 = pow(z0 + z1, 2)*v1/pow(theta, 2);
   int n_lower = static_cast<int>(std::floor(n0));
-  int n_upper = static_cast<int>(std::ceil(10*n0)), n;
+  int n_upper = static_cast<int>(std::ceil(10*n0));
 
   DataFrame a, b;
   a = powerRiskRatioExactEquiv(n_lower, riskRatioLower, riskRatioUpper,
@@ -7802,6 +7791,7 @@ DataFrame samplesizeRiskRatioExactEquiv(
                                  pi1, pi2, allocationRatioPlanned, alpha, 0);
   }
 
+  int n;
   for (n=n_lower+1; n<=n_upper; n++) {
     a = powerRiskRatioExactEquiv(n, riskRatioLower, riskRatioUpper,
                                  pi1, pi2, allocationRatioPlanned, alpha, 0);
@@ -7881,11 +7871,11 @@ DataFrame riskDiffExactPValue(
     const int n2 = NA_INTEGER,
     const int y2 = NA_INTEGER) {
 
-  int i, k = (n1+1)*(n2+1);
+  int k = (n1+1)*(n2+1);
 
   // The set of values for the test statistic
   NumericVector T(k);
-  i = 0;
+  int i = 0;
   for (int x1=0; x1<=n1; x1++) {
     for (int x2=0; x2<=n2; x2++) {
       NumericVector a = remlRiskDiff(riskDiffH0, n1, x1, n2, x2);
@@ -7917,7 +7907,7 @@ DataFrame riskDiffExactPValue(
               }
 
               double s = 0.0;
-              for (i=0; i<k; i++) {
+              for (int i=0; i<k; i++) {
                 if ((2*directionUpper - 1)*(T[i] - Tobs) >= 0.0) {
                   s += q[i];
                 }
@@ -7934,7 +7924,7 @@ DataFrame riskDiffExactPValue(
   NumericVector a(K), b(K);
   double delta = (pi2upper - pi2lower)/K;
   double tol = 1.0e-6;
-  for (i=0; i<K; i++) {
+  for (int i=0; i<K; i++) {
     double lower = pi2lower + i*delta;
     double upper = lower + delta;
     NumericVector out = mini(f, lower, upper, tol);
@@ -8071,11 +8061,11 @@ DataFrame riskRatioExactPValue(
     const int n2 = NA_INTEGER,
     const int y2 = NA_INTEGER) {
 
-  int i, k = (n1+1)*(n2+1);
+  int k = (n1+1)*(n2+1);
 
   // The set of values for the test statistic
   NumericVector T(k);
-  i = 0;
+  int i = 0;
   for (int x1=0; x1<=n1; x1++) {
     for (int x2=0; x2<=n2; x2++) {
       NumericVector a = remlRiskRatio(riskRatioH0, n1, x1, n2, x2);
@@ -8108,7 +8098,7 @@ DataFrame riskRatioExactPValue(
               }
 
               double s = 0.0;
-              for (i=0; i<k; i++) {
+              for (int i=0; i<k; i++) {
                 if ((2*directionUpper - 1)*(T[i] - Tobs) >= 0.0) {
                   s += q[i];
                 }
@@ -8125,7 +8115,7 @@ DataFrame riskRatioExactPValue(
   NumericVector a(K), b(K);
   double delta = (pi2upper - pi2lower)/K;
   double tol = 1.0e-6;
-  for (i=0; i<K; i++) {
+  for (int i=0; i<K; i++) {
     double lower = pi2lower + i*delta;
     double upper = lower + delta;
     NumericVector out = mini(f, lower, upper, tol);
