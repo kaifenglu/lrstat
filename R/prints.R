@@ -863,8 +863,7 @@ print.lrsim <- function(x, ...) {
   str6 <- paste0("Expected study duration: ",
                  round(a$expectedStudyDuration, 1))
 
-  str7 <- paste0("Accrual duration: ",
-                 round(a$accrualDuration, 1), ", ",
+  str7 <- paste0("n: ", a$n, ", ",
                  "fixed follow-up: ", a$fixedFollowup)
 
   df1 = data.frame(x = rep("", 8))
