@@ -7,8 +7,7 @@ testthat::test_that("lrtest: two-sided p-value", {
 
   df2 <- survdiff(Surv(futime, fustat) ~ rx, data=ovarian)
 
-  testthat::expect_equal(2*min(df1$logRankPValue, 1-df1$logRankPValue),
-                         df2$pvalue)
+  testthat::expect_equal(df1$logRankPValue, df2$pvalue)
 })
 
 
@@ -21,8 +20,7 @@ testthat::test_that("lrtest: stratified log-rank test", {
   df2 <- survdiff(Surv(timeUnderObservation, event) ~ treatmentGroup +
                     strata(stratum), data=data1)
 
-  testthat::expect_equal(2*min(df1$logRankPValue, 1-df1$logRankPValue),
-                         df2$pvalue)
+  testthat::expect_equal(df1$logRankPValue, df2$pvalue)
 })
 
 
@@ -32,7 +30,6 @@ testthat::test_that("lrtest: weighted log-rank test", {
 
   df2 <- survdiff(Surv(time, status) ~ x, rho=0.5, data=aml)
 
-  testthat::expect_equal(2*min(df1$logRankPValue, 1-df1$logRankPValue),
-                         df2$pvalue)
+  testthat::expect_equal(df1$logRankPValue, df2$pvalue)
 })
 
