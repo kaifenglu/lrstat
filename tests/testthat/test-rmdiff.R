@@ -21,8 +21,7 @@ testthat::test_that("rmdiff: unstratified test of rmst difference", {
                            round(sqrt(df1$vrmst1), 4),
                            round(sqrt(df1$vrmst2), 4),
                            round(df1$rmstDiffZ^2, 4),
-                           round(2*min(df1$rmstDiffPValue,
-                                       1-df1$rmstDiffPValue), 4)),
+                           round(df1$rmstDiffPValue, 4)),
                          c(rmst1, rmst2, stderr1, stderr2,
                            rmstdiffchisq, pvalue))
 })
@@ -54,13 +53,13 @@ testthat::test_that("rmdiff: stratified test of rmst difference", {
   vrmstDiffs = stderr[a]^2 + stderr[b]^2
   w = ns/sum(ns)
   rmstDiff = sum(w*rmstDiffs)
-  vrmstDiff = sum(w*w*vrmstDiffs)
-  rmstDiffZ = rmstDiff/sqrt(vrmstDiff)
+  sermstDiff = sqrt(sum(w*w*vrmstDiffs))
+  rmstDiffZ = rmstDiff/sermstDiff
 
   testthat::expect_equal(c(round(df1$rmstDiff, 4),
-                           round(sqrt(df1$vrmstDiff), 3),
+                           round(df1$sermstDiff, 3),
                            round(df1$rmstDiffZ, 3)),
                          c(round(rmstDiff, 4),
-                           round(sqrt(vrmstDiff), 3),
+                           round(sermstDiff, 3),
                            round(rmstDiffZ, 3)))
 })
