@@ -1221,6 +1221,8 @@ getBound <- function(k = NA, informationRates = NA, alpha = 0.025,
 #'
 #'     - \code{rep}: The replication.
 #'
+#' * \code{linear_predictors}: The vector of linear predictors.
+#'
 #' * \code{p}: The number of parameters.
 #'
 #' * \code{nvar}: The number of columns of the design matrix excluding
@@ -1238,34 +1240,7 @@ getBound <- function(k = NA, informationRates = NA, alpha = 0.025,
 #'
 #' * \code{xlevels}: A record of the levels of the factors used in fitting.
 #'
-#' * \code{data}: The input data.
-#'
-#' * \code{rep}: The name(s) of the replication variable(s).
-#'
-#' * \code{stratum}: The name(s) of the stratum variable(s).
-#'
-#' * \code{time}: The name of the time variable.
-#'
-#' * \code{time2}: The name of the time2 variable.
-#'
-#' * \code{event}: The name of the event variable.
-#'
-#' * \code{covariates}: The names of baseline covariates.
-#'
-#' * \code{weight}: The name of the weight variable.
-#'
-#' * \code{offset}: The name of the offset variable.
-#'
-#' * \code{id}: The name of the id variable.
-#'
-#' * \code{dist}: The assumed distribution for time to event.
-#'
-#' * \code{robust}: Whether a robust sandwich variance estimate should be
-#'   computed.
-#'
-#' * \code{plci}: Whether to obtain profile likelihood confidence interval.
-#'
-#' * \code{alpha}: The two-sided significance level.
+#' * \code{settings}: A list containing the input parameter values.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -1383,24 +1358,17 @@ liferegr <- function(data, rep = "", stratum = "",
   fit$terms = t1
   if (fit$p > 0) fit$xlevels = xlevels
 
-  fit$data = data
-  fit$rep = rep
-  fit$stratum = stratum
-  fit$time = time
-  fit$time2 = time2
-  fit$event = event
-  fit$covariates = covariates
-  fit$weight = weight
-  fit$offset = offset
-  fit$id = id
-  fit$dist = dist
-  fit$robust = robust
-  fit$plci = plci
-  fit$alpha = alpha
+  fit$settings <- list(
+    data = data, rep = rep, stratum = stratum, time = time, time2 = time2,
+    event = event, covariates = covariates, weight = weight, offset = offset,
+    id = id, dist = dist, init = init, robust = robust, plci = plci,
+    alpha = alpha, maxiter = maxiter, eps = eps
+  )
 
   class(fit) = "liferegr"
   fit
 }
+
 
 
 #' @title Proportional Hazards Regression Models
@@ -1554,6 +1522,8 @@ liferegr <- function(data, rep = "", stratum = "",
 #'
 #' * \code{residuals}: The martingale residuals.
 #'
+#' * \code{linear_predictors}: The vector of linear predictors.
+#'
 #' * \code{p}: The number of parameters.
 #'
 #' * \code{param}: The parameter names.
@@ -1568,40 +1538,7 @@ liferegr <- function(data, rep = "", stratum = "",
 #'
 #' * \code{xlevels}: A record of the levels of the factors used in fitting.
 #'
-#' * \code{data}: The input data.
-#'
-#' * \code{rep}: The name(s) of the replication variable(s).
-#'
-#' * \code{stratum}: The name(s) of the stratum variable(s).
-#'
-#' * \code{time}: The name of the time varaible.
-#'
-#' * \code{time2}: The name of the time2 variable.
-#'
-#' * \code{event}: The name of the event variable.
-#'
-#' * \code{covariates}: The names of baseline covariates.
-#'
-#' * \code{weight}: The name of the weight variable.
-#'
-#' * \code{offset}: The name of the offset variable.
-#'
-#' * \code{id}: The name of the id variable.
-#'
-#' * \code{ties}: The method for handling ties.
-#'
-#' * \code{robust}: Whether a robust sandwich variance estimate should be
-#'   computed.
-#'
-#' * \code{est_basehaz}: Whether to estimate the baseline hazards.
-#'
-#' * \code{est_resid}: Whether to estimate the martingale residuals.
-#'
-#' * \code{firth}: Whether to use Firth's penalized likelihood method.
-#'
-#' * \code{plci}: Whether to obtain profile likelihood confidence interval.
-#'
-#' * \code{alpha}: The two-sided significance level.
+#' * \code{settings}: A list containing the input parameter values.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -1719,27 +1656,19 @@ phregr <- function(data, rep = "", stratum = "",
   fit$terms = t1
   if (fit$p > 0) fit$xlevels = xlevels
 
-  fit$data = data
-  fit$rep = rep
-  fit$stratum = stratum
-  fit$time = time
-  fit$time2 = time2
-  fit$event = event
-  fit$covariates = covariates
-  fit$weight = weight
-  fit$offset = offset
-  fit$id = id
-  fit$ties = ties
-  fit$robust = robust
-  fit$est_basehaz = est_basehaz
-  fit$est_resid = est_resid
-  fit$firth = firth
-  fit$plci = plci
-  fit$alpha = alpha
+  fit$settings <- list(
+    data = data, rep = rep, stratum = stratum, time = time,
+    time2 = time2, event = event, covariates = covariates,
+    weight = weight, offset = offset, id = id, ties = ties,
+    iniy = init, robust = robust, est_basehaz = est_basehaz,
+    est_resid = est_resid, firth = firth, plci = plci,
+    alpha = alpha, maxiter = maxiter, eps = eps
+  )
 
   class(fit) = "phregr"
   fit
 }
+
 
 
 #' @title Survival Curve for Proportional Hazards Regression Models
@@ -1821,6 +1750,7 @@ phregr <- function(data, rep = "", stratum = "",
 #'                         newdata = data.frame(
 #'                           stratum = as.integer(c(1,1,2,2)),
 #'                           treat = c(1,0,1,0)))
+#' head(surv1)
 #'
 #' # Example 2 with counting process data and robust variance estimate
 #' fit2 <- phregr(data = heart %>% mutate(rx = as.numeric(transplant) - 1),
@@ -1834,10 +1764,14 @@ phregr <- function(data, rep = "", stratum = "",
 #'                           start = c(0,36,0,26),
 #'                           stop = c(36,39,26,153),
 #'                           rx = c(0,1,0,1)))
+#' head(surv2)
 #'
 #' @export
 survfit_phregr <- function(object, newdata, sefit = TRUE,
                            conftype = "log-log", conflev = 0.95) {
+
+  if (!inherits(object, "phregr"))
+    stop("object must be of class 'phregr'");
 
   p = object$p
   if (p == 0) {
@@ -1850,14 +1784,14 @@ survfit_phregr <- function(object, newdata, sefit = TRUE,
 
   basehaz = object$basehaz
 
-  covariates = object$covariates
-  stratum = object$stratum
-  offset = object$offset
-  id = object$id
+  covariates = object$settings$covariates
+  stratum = object$settings$stratum
+  offset = object$settings$offset
+  id = object$settings$id
 
   if (id != "") {
-    tstart = object$time
-    tstop = object$time2
+    tstart = object$settings$time
+    tstop = object$settings$time2
   } else {
     tstart = ""
     tstop = ""
@@ -1917,27 +1851,33 @@ survfit_phregr <- function(object, newdata, sefit = TRUE,
 }
 
 
+
 #' @title Residuals for Parametric Regression Models for Failure Time Data
-#' @description Obtains the response, deviance, dfbeta, and likelihood
-#' displacement residuals for a parametric regression model for failure
-#' time data.
+#' @description Obtains the response, martingale, deviance, dfbeta, and
+#' likelihood displacement residuals for a parametric regression model
+#' for failure time data.
 #'
 #' @param object The output from the \code{phregr} call.
 #' @param type The type of residuals desired, with options including
-#'   \code{"response"}, \code{"deviance"}, \code{"dfbeta"},
-#'   \code{"dfbetas"}, \code{"working"}, \code{"ldcase"},
+#'   \code{"response"}, \code{"martingale"}, \code{"deviance"},
+#'   \code{"dfbeta"}, \code{"dfbetas"}, \code{"working"}, \code{"ldcase"},
 #'   \code{"ldresp"}, \code{"ldshape"}, and \code{"matrix"}.
 #' @param collapse Whether to collapse the residuals by \code{id}.
 #' @param weighted Whether to compute weighted residuals.
 #'
 #' @details
 #' The algorithms follow the \code{residuals.survreg} function in the
-#' \code{survival} package.
+#' \code{survival} package, except for martingale residuals, which
+#' are defined only for event or right-censored data for exponential,
+#' weibull, lognormal, and loglogistic distributions.
 #'
 #' @return
 #' Either a vector or a matrix of residuals, depending on the specified type:
 #'
 #' * \code{response} residuals are on the scale of the original data.
+#'
+#' * \code{martingale} residuals are event indicators minus the cumulative
+#'   hazards for event or right-censored data.
 #'
 #' * \code{working} residuals are on the scale of the linear predictor.
 #'
@@ -1984,27 +1924,31 @@ survfit_phregr <- function(object, newdata, sefit = TRUE,
 #'   time = "time", time2 = "durable",
 #'   covariates = c("age", "quant"), dist = "normal")
 #'
-#'  resid <- residuals_liferegr(fit1, type = "response")
+#' resid <- residuals_liferegr(fit1, type = "response")
+#' head(resid)
 #'
 #' @export
 residuals_liferegr <- function(
-    object, type=c("response", "deviance", "dfbeta", "dfbetas",
+    object, type=c("response", "martingale", "deviance", "dfbeta", "dfbetas",
                    "working", "ldcase", "ldresp", "ldshape", "matrix"),
     collapse=FALSE, weighted=(type %in% c("dfbeta", "dfbetas"))) {
+
+  if (!inherits(object, "liferegr"))
+    stop("object must be of class 'liferegr'");
 
   p = object$p
   beta = object$beta
 
-  data = object$data
-  stratum = object$stratum
-  time = object$time
-  time2 = object$time2
-  event = object$event
-  covariates = object$covariates
-  weight = object$weight
-  offset = object$offset
-  id = object$id
-  dist = object$dist
+  data = object$settings$data
+  stratum = object$settings$stratum
+  time = object$settings$time
+  time2 = object$settings$time2
+  event = object$settings$event
+  covariates = object$settings$covariates
+  weight = object$settings$weight
+  offset = object$settings$offset
+  id = object$settings$id
+  dist = object$settings$dist
   param = object$param
 
   rownames(data) = NULL
@@ -2084,8 +2028,9 @@ residuals_liferegr <- function(
                             collapse = collapse,
                             weighted = weighted)
 
-  if (type=="response" || type=="deviance" || type=="working" ||
-      type=="ldcase" || type=="ldresp" || type=="ldshape") {
+  if (type=="response" || type=="martingale" || type=="deviance" ||
+      type=="working" || type=="ldcase" || type=="ldresp" ||
+      type=="ldshape") {
     rr <- as.numeric(rr)
   } else if (type=="dfbeta" || type=="dfbetas") {
     colnames(rr) <- param
@@ -2155,6 +2100,7 @@ residuals_liferegr <- function(
 #'                covariates = "treat")
 #'
 #' ressco <- residuals_phregr(fit1, type = "score")
+#' head(ressco)
 #'
 #' # Example 2 with counting process data
 #' fit2 <- phregr(data = heart %>% mutate(rx = as.numeric(transplant) - 1),
@@ -2162,6 +2108,7 @@ residuals_liferegr <- function(
 #'                covariates = c("rx", "age"), id = "id", robust = TRUE)
 #'
 #' resssch <- residuals_phregr(fit2, type = "scaledsch")
+#' head(resssch)
 #'
 #' @export
 residuals_phregr <- function(
@@ -2169,20 +2116,23 @@ residuals_phregr <- function(
                    "dfbeta", "dfbetas", "scaledsch"),
     collapse=FALSE, weighted=(type %in% c("dfbeta", "dfbetas"))) {
 
+  if (!inherits(object, "phregr"))
+    stop("object must be of class 'phregr'");
+
   p = object$p
   beta = object$beta
   residuals = object$residuals
 
-  data = object$data
-  stratum = object$stratum
-  time = object$time
-  time2 = object$time2
-  event = object$event
-  covariates = object$covariates
-  weight = object$weight
-  offset = object$offset
-  id = object$id
-  ties = object$ties
+  data = object$settings$data
+  stratum = object$settings$stratum
+  time = object$settings$time
+  time2 = object$settings$time2
+  event = object$settings$event
+  covariates = object$settings$covariates
+  weight = object$settings$weight
+  offset = object$settings$offset
+  id = object$settings$id
+  ties = object$settings$ties
   param = object$param
 
   rownames(data) = NULL
@@ -2458,33 +2408,7 @@ residuals_phregr <- function(
 #'
 #' * \code{xlevels}: A record of the levels of the factors used in fitting.
 #'
-#' * \code{data}: The input data.
-#'
-#' * \code{rep}: The name(s) of the replication variable(s).
-#'
-#' * \code{event}: The name of the event variable.
-#'
-#' * \code{covariates}: The names of baseline covariates.
-#'
-#' * \code{freq}: The name of the freq variable.
-#'
-#' * \code{weight}: The name of the weight variable.
-#'
-#' * \code{offset}: The name of the offset variable.
-#'
-#' * \code{id}: The name of the id variable.
-#'
-#' * \code{robust}: Whether a robust sandwich variance estimate should be
-#'   computed.
-#'
-#' * \code{firth}: Whether to use the firth's bias reducing penalized
-#'   likelihood.
-#'
-#' * \code{flic}: Whether to apply intercept correction.
-#'
-#' * \code{plci}: Whether to obtain profile likelihood confidence interval.
-#'
-#' * \code{alpha}: The two-sided significance level.
+#' * \code{settings}: A list containing the input parameter values.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -2595,23 +2519,17 @@ logisregr <- function(data, rep = "", event = "event", covariates = "",
   fit$terms = t1
   if (fit$p > 0) fit$xlevels = xlevels
 
-  fit$data = data
-  fit$rep = rep
-  fit$event = event
-  fit$covariates = covariates
-  fit$freq = freq
-  fit$weight = weight
-  fit$offset = offset
-  fit$id = id
-  fit$robust = robust
-  fit$firth = firth
-  fit$flic = flic
-  fit$plci = plci
-  fit$alpha = alpha
+  fit$settings <- list(
+    data = data, rep = rep, event = event, covariates = covariates,
+    freq = freq, weight = weight, offset = offset, id = id,
+    link = link, init = init, robust = robust, firth = firth, flic = flic,
+    plci = plci, alpha = alpha, maxiter = maxiter, eps = eps
+  )
 
   class(fit) = "logisregr"
   fit
 }
+
 
 
 #' @title Distribution Function of the Standard Bivariate Normal
@@ -2932,3 +2850,266 @@ rmvnorm <- function(n, mean = rep(0, nrow(sigma)),
 
   rmvnormcpp(n, mean, sigma)
 }
+
+
+#' @title Assess Proportional Hazards Assumption Based on Supremum Test
+#' @description Obtains the standardized score processes and the simulated
+#' distribution under the null hypothesis as well as the p-values for
+#' the supremum tests.
+#'
+#' @param object The output from the \code{phregr} call.
+#' @param resample The number of simulation samples for the supremem test.
+#' @param seed The random seed for the simulations.
+#'
+#' @details
+#' The supremum test corresponds to the ASSESS statement with \code{ph}
+#' option of SAS PROC PHREG.
+#'
+#' @return A list with the following components:
+#'
+#' * \code{time} the unique event times.
+#'
+#' * \code{score_t} the observed standardized score process.
+#'
+#' * \code{score_t_list} a list of simulated standardized score processes
+#'   under the null hypothesis.
+#'
+#' * \code{max_abs_value} the supremum of the absolute value of the observed
+#'   standardized score process for each covariate and the supremum of
+#'   the sum of absolute values of the observed standardized score processes
+#'   across all covariates.
+#'
+#' * \code{p_value} the p-values for the supremum tests for each covariate
+#'   and the global test.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#' D. Y. Lin, L. J. Wei, and Z. Ying.
+#' Checking the Cox model with cumulative sums of martingale-based
+#' residuals.
+#' Biometrika 1993; 80:557-572.
+#'
+#' @examples
+#'
+#' library(dplyr)
+#'
+#' fit <- phregr(data = liver, time = "Time", event = "Status",
+#'               covariates = c("log(Bilirubin)", "log(Protime)",
+#'                              "log(Albumin)", "Age", "Edema"),
+#'               ties = "breslow")
+#'
+#' aph <- assess_phregr(fit, resample = 1000, seed = 314159)
+#'
+#' aph
+#'
+#' @export
+assess_phregr <- function(object, resample = 1000, seed = 12345) {
+
+  if (!inherits(object, "phregr"))
+    stop("object must be of class 'phregr'");
+
+  p = object$p
+  beta = object$beta
+  vbeta = object$vbeta
+  data = object$settings$data
+  stratum = object$settings$stratum
+  time = object$settings$time
+  time2 = object$settings$time2
+  event = object$settings$event
+  covariates = object$settings$covariates
+  weight = object$settings$weight
+  offset = object$settings$offset
+  ties = object$settings$ties
+
+  rownames(data) = NULL
+
+  elements = c(stratum, time, event, covariates, weight, offset)
+  elements = unique(elements[elements != "" & elements != "none"])
+  fml = formula(paste("~", paste(elements, collapse = "+")))
+  mf = model.frame(fml, data = data, na.action = na.omit)
+
+  rownum = as.integer(rownames(mf))
+  df = data[rownum,]
+
+  nvar = length(covariates)
+  if (missing(covariates) || is.null(covariates) || (nvar == 1 && (
+    covariates[1] == "" || tolower(covariates[1]) == "none"))) {
+    p3 = 0
+  } else {
+    fml1 = formula(paste("~", paste(covariates, collapse = "+")))
+    p3 = length(rownames(attr(terms(fml1), "factors")))
+  }
+
+  if (p >= 1 && p3 >= 1) {
+    mf1 <- model.frame(fml1, data = df, na.action = na.pass)
+    mm <- model.matrix(fml1, mf1)
+    colnames(mm) = make.names(colnames(mm))
+    varnames = colnames(mm)[-1]
+    for (i in 1:length(varnames)) {
+      if (!(varnames[i] %in% names(df))) {
+        df[,varnames[i]] = mm[,varnames[i]]
+      }
+    }
+  } else {
+    varnames = ""
+  }
+
+  aph <- assess_phregcpp(p = p,
+                         beta = beta,
+                         vbeta = vbeta,
+                         data = df,
+                         stratum = stratum,
+                         time = time,
+                         time2 = time2,
+                         event = event,
+                         covariates = varnames,
+                         weight = weight,
+                         offset = offset,
+                         ties = ties,
+                         resample = resample,
+                         seed = seed)
+
+  aph$covariates <- varnames
+  aph$resample <- resample
+  aph$seed <- seed
+
+  class(aph) <- "assess_phregr"
+  aph
+}
+
+
+#' @title Assess Proportional Hazards Assumption Based on Scaled
+#' Schoenfeld Residuals
+#' @description Obtains the scaled Schoenfeld residuals and tests the
+#' proportional hazards assumption using a score test for the interaction
+#' between each covariate and a transformed time variable.
+#'
+#' @param object The output from the \code{phregr} call.
+#' @param transform A character string indicating how survival times
+#'   should be transformed before the test is performed. Supported values
+#'   include "identity", "log", "rank", and "km" (default).
+#'   You may also supply the name of a user-defined function that
+#'   takes one argument.
+#'
+#' @details
+#' This corresponds to the \code{cox.zph} function from the \code{survival}
+#' package with \code{terms = FALSE} and \code{global = TRUE}.
+#'
+#' @return A list with the following components:
+#'
+#' * \code{table} A matrix with one row for each parameter and a final
+#'   row for the global test. The columns contain the score test
+#'   for adding the time-dependent term, the degrees of freedom,
+#'   and the two-sided p-value.
+#'
+#' * \code{x} The transformed time values.
+#'
+#' * \code{time} The original (untransformed) event times, with tied event
+#'   times repeated.
+#'
+#' * \code{strata} The stratum index for each event.
+#'
+#' * \code{y} The matrix of scaled Schoenfeld residuals, with one column
+#'   for each parameter and one row for each event. Column names correspond
+#'   to the parameter names.
+#'
+#' * \code{var} An approximate covariance matrix of the scaled Schoenfeld
+#'   residuals, used to construct an approximate standard error band for
+#'   plots.
+#'
+#' * \code{transform} the transformation applied to the time values.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#'
+#' Patricia M. Grambsch and Terry M. Therneau.
+#' Proportional hazards tests and diagnostics based on weighted residuals.
+#' Biometrika 1994; 81:515-26.
+#'
+#' @examples
+#'
+#' library(dplyr)
+#'
+#' fit <- phregr(data = liver, time = "Time", event = "Status",
+#'               covariates = c("log(Bilirubin)", "log(Protime)",
+#'                              "log(Albumin)", "Age", "Edema"),
+#'               ties = "breslow")
+#'
+#' zph <- zph_phregr(fit, transform = "log")
+#'
+#' zph$table
+#'
+#' @export
+zph_phregr <- function(object, transform = "km") {
+
+  if (!inherits(object, "phregr"))
+    stop("object must be of class 'phregr'");
+
+  p = object$p
+  beta = object$beta
+  vbeta = object$vbeta
+  resmart = object$residuals
+  data = object$settings$data
+  stratum = object$settings$stratum
+  time = object$settings$time
+  time2 = object$settings$time2
+  event = object$settings$event
+  covariates = object$settings$covariates
+  weight = object$settings$weight
+  offset = object$settings$offset
+  ties = object$settings$ties
+
+  rownames(data) = NULL
+
+  elements = c(stratum, time, event, covariates, weight, offset)
+  elements = unique(elements[elements != "" & elements != "none"])
+  fml = formula(paste("~", paste(elements, collapse = "+")))
+  mf = model.frame(fml, data = data, na.action = na.omit)
+
+  rownum = as.integer(rownames(mf))
+  df = data[rownum,]
+
+  nvar = length(covariates)
+  if (missing(covariates) || is.null(covariates) || (nvar == 1 && (
+    covariates[1] == "" || tolower(covariates[1]) == "none"))) {
+    p3 = 0
+  } else {
+    fml1 = formula(paste("~", paste(covariates, collapse = "+")))
+    p3 = length(rownames(attr(terms(fml1), "factors")))
+  }
+
+  if (p >= 1 && p3 >= 1) {
+    mf1 <- model.frame(fml1, data = df, na.action = na.pass)
+    mm <- model.matrix(fml1, mf1)
+    colnames(mm) = make.names(colnames(mm))
+    varnames = colnames(mm)[-1]
+    for (i in 1:length(varnames)) {
+      if (!(varnames[i] %in% names(df))) {
+        df[,varnames[i]] = mm[,varnames[i]]
+      }
+    }
+  } else {
+    varnames = ""
+  }
+
+  zph <- zph_phregcpp(p = p,
+                      beta = beta,
+                      vbeta = vbeta,
+                      resmart = resmart,
+                      data = df,
+                      stratum = stratum,
+                      time = time,
+                      time2 = time2,
+                      event = event,
+                      covariates = varnames,
+                      weight = weight,
+                      offset = offset,
+                      ties = ties,
+                      transform = transform)
+
+  class(zph) <- "cox.zph"
+  zph
+}
+
