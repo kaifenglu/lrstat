@@ -4,18 +4,19 @@ library(survival)
 testthat::test_that(
   "residuals_liferegr: right-censored data with covariates", {
     pbc <- pbc %>% mutate(event = 1*(status == 2))
-
+    
+    fit1 <- liferegr(pbc, time="time", event="event",
+                     covariates=c("age", "edema", "log(bili)",
+                                  "log(protime)", "log(albumin)"))
+    
+    fit2 <- survreg(Surv(time, event) ~ age + edema + log(bili) +
+                      log(protime) + log(albumin), data=pbc)
+    
     for (type in c("response", "deviance", "dfbeta", "dfbetas",
                    "working", "ldcase", "ldresp", "ldshape", "matrix")) {
-      fit1 <- liferegr(pbc, time="time", event="event",
-                       covariates=c("age", "edema", "log(bili)",
-                                    "log(protime)", "log(albumin)"))
 
       rr1 <- residuals_liferegr(fit1, type=type)
       
-      fit2 <- survreg(Surv(time, event) ~ age + edema + log(bili) +
-                        log(protime) + log(albumin), data=pbc)
-
       rr2 <- resid(fit2, type=type)
 
       if (type=="response" || type=="deviance" || 
