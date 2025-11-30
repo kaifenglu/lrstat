@@ -63,7 +63,7 @@ double rmst(const double t1 = 0,
   IntegerVector m = findInterval3(time, t, 0, 0, 0) - 1;
 
   double s1, s2, ch = 0.0, aval;
-  for (int j=0; j<=m[0]-1; j++) {
+  for (int j=0; j<=m[0]-1; ++j) {
     ch += lambda[j]*(t[j+1] - t[j]);
   }
 
@@ -76,7 +76,7 @@ double rmst(const double t1 = 0,
     s2 = exp(-lambda[m[0]]*(t[m[0]+1] - t[m[0]]));
     aval = exp(-ch)*(s1 - s2)/lambda[m[0]];
 
-    for (int j=m[0]+1; j<=m[1]-1; j++) {
+    for (int j=m[0]+1; j<=m[1]-1; ++j) {
       ch += lambda[j-1]*(t[j] - t[j-1]);
       s2 = exp(-lambda[j]*(t[j+1] - t[j]));
       aval = aval + exp(-ch)*(1.0 - s2)/lambda[j];
@@ -109,7 +109,7 @@ struct rmparams {
 void f_rm(double *x, int n, void *ex) {
   rmparams *param = (rmparams *) ex;
   NumericVector u0(n), a1(n), a2(n);
-  for (int i=0; i<n; i++) {
+  for (int i=0; i<n; ++i) {
     u0[i] = x[i];
     a1[i] = rmst(u0[i], param->tau1, param->piecewiseSurvivalTime,
                  param->lambda);
@@ -125,7 +125,7 @@ void f_rm(double *x, int n, void *ex) {
   NumericVector N = accrual(u0, param->accrualTime, param->accrualIntensity,
                             param->accrualDuration);
   u0 = a1*a2*lambda/((param->phi)*N*p);
-  for (int i=0; i<n; i++) {
+  for (int i=0; i<n; ++i) {
     x[i] = u0[i];
   }
 }
@@ -476,7 +476,7 @@ DataFrame rmstat1(const double time = NA_REAL,
   NumericVector nmilestone1(nstrata), nmilestone2(nstrata);
   NumericVector nmilestone(nstrata);
 
-  for (int h=0; h<nstrata; h++) {
+  for (int h=0; h<nstrata; ++h) {
     stratum[h] = h+1;
     calTime[h] = time;
     mileTime[h] = milestone;
@@ -834,7 +834,7 @@ DataFrame rmstat(const NumericVector& time = NA_REAL,
   rmstDiff(k), vrmstDiff(k), information(k), rmstDiffZ(k);
   DataFrame df;
 
-  for (int j=0; j<k; j++) {
+  for (int j=0; j<k; ++j) {
     df = rmstat1(time[j], milestone, allocationRatioPlanned,
                  accrualTime, accrualIntensity,
                  piecewiseSurvivalTime, stratumFraction,
@@ -1262,7 +1262,7 @@ List rmpower(const int kMax = 1,
 
   if (is_false(any(is_na(criticalValues))) &&
       is_false(any(is_na(futilityBounds)))) {
-    for (int i=0; i<kMax-1; i++) {
+    for (int i=0; i<kMax-1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         stop("futilityBounds must lie below criticalValues");
       }
@@ -1446,7 +1446,7 @@ List rmpower(const int kMax = 1,
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                     if (!efficacyStopping1[i]) u[i] = 6.0;
                   }
@@ -1548,7 +1548,7 @@ List rmpower(const int kMax = 1,
               return sum(NumericVector(rm[18])) - information1;
             };
 
-  for (int i=0; i<kMax-1; i++) {
+  for (int i=0; i<kMax-1; ++i) {
     information1 = I[i];
     time[i] = brent(f, milestone + 1.0e-6, studyDuration1, 1.0e-6);
   };
@@ -1587,7 +1587,7 @@ List rmpower(const int kMax = 1,
 
   NumericVector efficacyP(kMax);
   NumericVector futilityP(kMax);
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     efficacyP[i] = 1 - R::pnorm(criticalValues1[i], 0, 1, 1, 0);
     futilityP[i] = 1 - R::pnorm(futilityBounds1[i], 0, 1, 1, 0);
   }
@@ -1617,7 +1617,7 @@ List rmpower(const int kMax = 1,
   NumericVector rdu = rmstDiffH0 + criticalValues1/sqrt(I);
   NumericVector rdl = rmstDiffH0 + futilityBounds1/sqrt(I);
 
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     if (criticalValues1[i] == 6) {
       rdu[i] = NA_REAL;
       efficacyStopping1[i] = 0;
@@ -1996,7 +1996,7 @@ List rmsamplesize(const double beta = 0.2,
 
   if (is_false(any(is_na(criticalValues))) &&
       is_false(any(is_na(futilityBounds)))) {
-    for (int i=0; i<kMax-1; i++) {
+    for (int i=0; i<kMax-1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         stop("futilityBounds must lie below criticalValues");
       }
@@ -2202,7 +2202,7 @@ List rmsamplesize(const double beta = 0.2,
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                     if (!efficacyStopping1[i]) u[i] = 6.0;
                   }
@@ -2257,7 +2257,7 @@ List rmsamplesize(const double beta = 0.2,
 
   NumericVector rmsts1(nstrata), rmsts2(nstrata);
   IntegerVector l1 = Range(0, nintervals-1);
-  for (int h=0; h<nstrata; h++) {
+  for (int h=0; h<nstrata; ++h) {
     l = h*nintervals + l1;
     NumericVector lam1 = lambda1x[l];
     NumericVector lam2 = lambda2x[l];
@@ -2457,7 +2457,7 @@ List rmsamplesize(const double beta = 0.2,
                 nintervals, nstrata, l1, lambda2x, rmst2,
                 rmstDiffH0](double aval)-> double {
                   NumericVector rmsts1(nstrata);
-                  for (int h=0; h<nstrata; h++) {
+                  for (int h=0; h<nstrata; ++h) {
                     IntegerVector l = h*nintervals + l1;
                     NumericVector lam2 = lambda2x[l];
                     rmsts1[h] = rmst(0, milestone, piecewiseSurvivalTime,
@@ -2948,7 +2948,7 @@ List rmpower1s(const int kMax = 1,
 
   if (is_false(any(is_na(criticalValues))) &&
       is_false(any(is_na(futilityBounds)))) {
-    for (int i=0; i<kMax-1; i++) {
+    for (int i=0; i<kMax-1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         stop("futilityBounds must lie below criticalValues");
       }
@@ -3113,7 +3113,7 @@ List rmpower1s(const int kMax = 1,
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                     if (!efficacyStopping1[i]) u[i] = 6.0;
                   }
@@ -3213,7 +3213,7 @@ List rmpower1s(const int kMax = 1,
               return 2.0*sum(NumericVector(rm[18])) - information1;
             };
 
-  for (int i=0; i<kMax-1; i++) {
+  for (int i=0; i<kMax-1; ++i) {
     // match the predicted information to the target
     information1 = std::max(I[i], 0.0);
     time[i] = brent(f, milestone + 1.0e-6, studyDuration1, 1.0e-6);
@@ -3244,7 +3244,7 @@ List rmpower1s(const int kMax = 1,
 
   NumericVector efficacyP(kMax);
   NumericVector futilityP(kMax);
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     efficacyP[i] = 1 - R::pnorm(criticalValues1[i], 0, 1, 1, 0);
     futilityP[i] = 1 - R::pnorm(futilityBounds1[i], 0, 1, 1, 0);
   }
@@ -3267,7 +3267,7 @@ List rmpower1s(const int kMax = 1,
   NumericVector rmstu = rmstH0 + criticalValues1/sqrt(I);
   NumericVector rmstl = rmstH0 + futilityBounds1/sqrt(I);
 
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     if (criticalValues1[i] == 6) {
       rmstu[i] = NA_REAL;
       efficacyStopping1[i] = 0;
@@ -3617,7 +3617,7 @@ List rmsamplesize1s(const double beta = 0.2,
 
   if (is_false(any(is_na(criticalValues))) &&
       is_false(any(is_na(futilityBounds)))) {
-    for (int i=0; i<kMax-1; i++) {
+    for (int i=0; i<kMax-1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         stop("futilityBounds must lie below criticalValues");
       }
@@ -3804,7 +3804,7 @@ List rmsamplesize1s(const double beta = 0.2,
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                     if (!efficacyStopping1[i]) u[i] = 6.0;
                   }
@@ -3859,7 +3859,7 @@ List rmsamplesize1s(const double beta = 0.2,
 
   NumericVector rmsts(nstrata);
   IntegerVector l1 = Range(0, nintervals-1);
-  for (int h=0; h<nstrata; h++) {
+  for (int h=0; h<nstrata; ++h) {
     l = h*nintervals + l1;
     NumericVector lam = lambdax[l];
     rmsts[h] = rmst(0, milestone, piecewiseSurvivalTime, lam);
@@ -4053,7 +4053,7 @@ List rmsamplesize1s(const double beta = 0.2,
                 nintervals, nstrata, l1, lambdax,
                 rmstH0](double aval)-> double {
                   NumericVector rmsts(nstrata);
-                  for (int h=0; h<nstrata; h++) {
+                  for (int h=0; h<nstrata; ++h) {
                     IntegerVector l = h*nintervals + l1;
                     NumericVector lam = lambdax[l];
                     rmsts[h] = rmst(0, milestone, piecewiseSurvivalTime,
@@ -4708,7 +4708,7 @@ List rmpowerequiv(const int kMax = 1,
       auto f = [kMax, informationRates1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                   }
                   u[kMax-1] = aval;
@@ -4728,7 +4728,7 @@ List rmpowerequiv(const int kMax = 1,
   }
 
   NumericVector efficacyP(kMax);
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     efficacyP[i] = 1 - R::pnorm(criticalValues1[i], 0, 1, 1, 0);
   }
 
@@ -4796,7 +4796,7 @@ List rmpowerequiv(const int kMax = 1,
               return sum(NumericVector(rm[18])) - information1;
             };
 
-  for (int i=0; i<kMax-1; i++) {
+  for (int i=0; i<kMax-1; ++i) {
     information1 = I[i];
     time[i] = brent(f, milestone + 1.0e-6, studyDuration1, 1.0e-6);
   };
@@ -4847,7 +4847,7 @@ List rmpowerequiv(const int kMax = 1,
     NumericVector ca = cumsum(NumericVector(a[0]) +
       NumericVector(a[1]));
 
-    for (int i=0; i<kMax; i++) {
+    for (int i=0; i<kMax; ++i) {
       if (i <= K) {
         cp[i] = cpl[i] + cpu[i] - ca[i];
       } else {
@@ -4858,7 +4858,7 @@ List rmpowerequiv(const int kMax = 1,
 
   // incremental exit probabilities under H1
   NumericVector q(kMax);
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     if (i==0) {
       q[i] = cp[i];
     } else if (i<kMax-1) {
@@ -4869,7 +4869,7 @@ List rmpowerequiv(const int kMax = 1,
   }
 
   NumericVector rejectPerStage(kMax);
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     if (i==0) {
       rejectPerStage[i] = cp[i];
     } else {
@@ -4896,7 +4896,7 @@ List rmpowerequiv(const int kMax = 1,
     NumericVector ca = cumsum(NumericVector(a[0]) +
       NumericVector(a[1]));
 
-    for (int i=0; i<kMax; i++) {
+    for (int i=0; i<kMax; ++i) {
       if (i <= K) {
         cpH10[i] = cplH10[i] + cpuH10[i] - ca[i];
       } else {
@@ -4922,7 +4922,7 @@ List rmpowerequiv(const int kMax = 1,
     NumericVector ca = cumsum(NumericVector(a[0]) +
       NumericVector(a[1]));
 
-    for (int i=0; i<kMax; i++) {
+    for (int i=0; i<kMax; ++i) {
       if (i <= K) {
         cpH20[i] = cplH20[i] + cpuH20[i] - ca[i];
       } else {
@@ -5380,7 +5380,7 @@ List rmsamplesizeequiv(const double beta = 0.2,
       auto f = [kMax, informationRates1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                   }
                   u[kMax-1] = aval;
@@ -5418,7 +5418,7 @@ List rmsamplesizeequiv(const double beta = 0.2,
 
   NumericVector rmsts1(nstrata), rmsts2(nstrata);
   IntegerVector l1 = Range(0, nintervals-1);
-  for (int h=0; h<nstrata; h++) {
+  for (int h=0; h<nstrata; ++h) {
     IntegerVector l = h*nintervals + l1;
     NumericVector lam1 = lambda1x[l];
     NumericVector lam2 = lambda2x[l];

@@ -20,7 +20,7 @@ struct kmparams {
 void f_km(double *x, int n, void *ex) {
   kmparams *param = (kmparams *) ex;
   NumericVector u0(n);
-  for (int i=0; i<n; i++) {
+  for (int i=0; i<n; ++i) {
     u0[i] = x[i];
   }
   IntegerVector j = findInterval3(u0, param->piecewiseSurvivalTime,0,0,0) - 1;
@@ -31,7 +31,7 @@ void f_km(double *x, int n, void *ex) {
   NumericVector N = accrual(u0, param->accrualTime, param->accrualIntensity,
                             param->accrualDuration);
   u0 = lambda/((param->phi)*N*p);
-  for (int i=0; i<n; i++) {
+  for (int i=0; i<n; ++i) {
     x[i] = u0[i];
   }
 }
@@ -220,7 +220,7 @@ DataFrame kmstat1(const double time = NA_REAL,
   NumericVector zerogam(nintervals);
   NumericVector u0(1, milestone);
 
-  for (int h=0; h<nstrata; h++) {
+  for (int h=0; h<nstrata; ++h) {
     stratum[h] = h+1;
     calTime[h] = time;
     mileTime[h] = milestone;
@@ -581,7 +581,7 @@ DataFrame kmstat(const NumericVector& time = NA_REAL,
   survDiff(k), vsurvDiff(k), information(k), survDiffZ(k);
   DataFrame df;
 
-  for (int j=0; j<k; j++) {
+  for (int j=0; j<k; ++j) {
     df = kmstat1(time[j], milestone, allocationRatioPlanned,
                  accrualTime, accrualIntensity,
                  piecewiseSurvivalTime, stratumFraction,
@@ -1009,7 +1009,7 @@ List kmpower(const int kMax = 1,
 
   if (is_false(any(is_na(criticalValues))) &&
       is_false(any(is_na(futilityBounds)))) {
-    for (int i=0; i<kMax-1; i++) {
+    for (int i=0; i<kMax-1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         stop("futilityBounds must lie below criticalValues");
       }
@@ -1197,7 +1197,7 @@ List kmpower(const int kMax = 1,
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                     if (!efficacyStopping1[i]) u[i] = 6.0;
                   }
@@ -1299,7 +1299,7 @@ List kmpower(const int kMax = 1,
               return sum(NumericVector(km[18])) - information1;
             };
 
-  for (int i=0; i<kMax-1; i++) {
+  for (int i=0; i<kMax-1; ++i) {
     information1 = I[i];
     time[i] = brent(f, milestone + 1.0e-6, studyDuration1, 1.0e-6);
   };
@@ -1338,7 +1338,7 @@ List kmpower(const int kMax = 1,
 
   NumericVector efficacyP(kMax);
   NumericVector futilityP(kMax);
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     efficacyP[i] = 1 - R::pnorm(criticalValues1[i], 0, 1, 1, 0);
     futilityP[i] = 1 - R::pnorm(futilityBounds1[i], 0, 1, 1, 0);
   }
@@ -1368,7 +1368,7 @@ List kmpower(const int kMax = 1,
   NumericVector sdu = survDiffH0 + criticalValues1/sqrt(I);
   NumericVector sdl = survDiffH0 + futilityBounds1/sqrt(I);
 
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     if (criticalValues1[i] == 6) {
       sdu[i] = NA_REAL;
       efficacyStopping1[i] = 0;
@@ -1747,7 +1747,7 @@ List kmsamplesize(const double beta = 0.2,
 
   if (is_false(any(is_na(criticalValues))) &&
       is_false(any(is_na(futilityBounds)))) {
-    for (int i=0; i<kMax-1; i++) {
+    for (int i=0; i<kMax-1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         stop("futilityBounds must lie below criticalValues");
       }
@@ -1957,7 +1957,7 @@ List kmsamplesize(const double beta = 0.2,
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                     if (!efficacyStopping1[i]) u[i] = 6.0;
                   }
@@ -2014,7 +2014,7 @@ List kmsamplesize(const double beta = 0.2,
   IntegerVector l1 = Range(0, nintervals-1);
   NumericVector zerogam(nintervals);
   NumericVector u0(1, milestone);
-  for (int h=0; h<nstrata; h++) {
+  for (int h=0; h<nstrata; ++h) {
     l = h*nintervals + l1;
     NumericVector lam1 = lambda1x[l];
     NumericVector lam2 = lambda2x[l];
@@ -2217,7 +2217,7 @@ List kmsamplesize(const double beta = 0.2,
                 survDiffH0](double aval)-> double {
                   NumericVector survs1(nstrata);
                   NumericVector u0(1, milestone);
-                  for (int h=0; h<nstrata; h++) {
+                  for (int h=0; h<nstrata; ++h) {
                     IntegerVector l = h*nintervals + l1;
                     NumericVector lam2 = lambda2x[l];
                     survs1[h] = patrisk(u0, piecewiseSurvivalTime,
@@ -2707,7 +2707,7 @@ List kmpower1s(const int kMax = 1,
 
   if (is_false(any(is_na(criticalValues))) &&
       is_false(any(is_na(futilityBounds)))) {
-    for (int i=0; i<kMax-1; i++) {
+    for (int i=0; i<kMax-1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         stop("futilityBounds must lie below criticalValues");
       }
@@ -2872,7 +2872,7 @@ List kmpower1s(const int kMax = 1,
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                     if (!efficacyStopping1[i]) u[i] = 6.0;
                   }
@@ -2972,7 +2972,7 @@ List kmpower1s(const int kMax = 1,
               return 2.0*sum(NumericVector(km[18])) - information1;
             };
 
-  for (int i=0; i<kMax-1; i++) {
+  for (int i=0; i<kMax-1; ++i) {
     // match the predicted information to the target
     information1 = std::max(I[i], 0.0);
     time[i] = brent(f, milestone + 1.0e-6, studyDuration1, 1.0e-6);
@@ -3003,7 +3003,7 @@ List kmpower1s(const int kMax = 1,
 
   NumericVector efficacyP(kMax);
   NumericVector futilityP(kMax);
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     efficacyP[i] = 1 - R::pnorm(criticalValues1[i], 0, 1, 1, 0);
     futilityP[i] = 1 - R::pnorm(futilityBounds1[i], 0, 1, 1, 0);
   }
@@ -3026,7 +3026,7 @@ List kmpower1s(const int kMax = 1,
   NumericVector survu = survH0 + criticalValues1/sqrt(I);
   NumericVector survl = survH0 + futilityBounds1/sqrt(I);
 
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     if (criticalValues1[i] == 6) {
       survu[i] = NA_REAL;
       efficacyStopping1[i] = 0;
@@ -3376,7 +3376,7 @@ List kmsamplesize1s(const double beta = 0.2,
 
   if (is_false(any(is_na(criticalValues))) &&
       is_false(any(is_na(futilityBounds)))) {
-    for (int i=0; i<kMax-1; i++) {
+    for (int i=0; i<kMax-1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         stop("futilityBounds must lie below criticalValues");
       }
@@ -3563,7 +3563,7 @@ List kmsamplesize1s(const double beta = 0.2,
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                     if (!efficacyStopping1[i]) u[i] = 6.0;
                   }
@@ -3620,7 +3620,7 @@ List kmsamplesize1s(const double beta = 0.2,
   IntegerVector l1 = Range(0, nintervals-1);
   NumericVector zerogam(nintervals);
   NumericVector u0(1, milestone);
-  for (int h=0; h<nstrata; h++) {
+  for (int h=0; h<nstrata; ++h) {
     l = h*nintervals + l1;
     NumericVector lam = lambdax[l];
     survs[h] = patrisk(u0, piecewiseSurvivalTime, lam, zerogam)[0];
@@ -3816,7 +3816,7 @@ List kmsamplesize1s(const double beta = 0.2,
                 survH0](double aval)-> double {
                   NumericVector survs(nstrata);
                   NumericVector u0(1, milestone);
-                  for (int h=0; h<nstrata; h++) {
+                  for (int h=0; h<nstrata; ++h) {
                     IntegerVector l = h*nintervals + l1;
                     NumericVector lam = lambdax[l];
                     survs[h] = patrisk(u0, piecewiseSurvivalTime,
@@ -4479,7 +4479,7 @@ List kmpowerequiv(const int kMax = 1,
       auto f = [kMax, informationRates1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                   }
                   u[kMax-1] = aval;
@@ -4499,7 +4499,7 @@ List kmpowerequiv(const int kMax = 1,
   }
 
   NumericVector efficacyP(kMax);
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     efficacyP[i] = 1 - R::pnorm(criticalValues1[i], 0, 1, 1, 0);
   }
 
@@ -4567,7 +4567,7 @@ List kmpowerequiv(const int kMax = 1,
               return sum(NumericVector(km[18])) - information1;
             };
 
-  for (int i=0; i<kMax-1; i++) {
+  for (int i=0; i<kMax-1; ++i) {
     information1 = I[i];
     time[i] = brent(f, milestone + 1.0e-6, studyDuration1, 1.0e-6);
   };
@@ -4618,7 +4618,7 @@ List kmpowerequiv(const int kMax = 1,
     NumericVector ca = cumsum(NumericVector(a[0]) +
       NumericVector(a[1]));
 
-    for (int i=0; i<kMax; i++) {
+    for (int i=0; i<kMax; ++i) {
       if (i <= K) {
         cp[i] = cpl[i] + cpu[i] - ca[i];
       } else {
@@ -4629,7 +4629,7 @@ List kmpowerequiv(const int kMax = 1,
 
   // incremental exit probabilities under H1
   NumericVector q(kMax);
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     if (i==0) {
       q[i] = cp[i];
     } else if (i<kMax-1) {
@@ -4640,7 +4640,7 @@ List kmpowerequiv(const int kMax = 1,
   }
 
   NumericVector rejectPerStage(kMax);
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     if (i==0) {
       rejectPerStage[i] = cp[i];
     } else {
@@ -4667,7 +4667,7 @@ List kmpowerequiv(const int kMax = 1,
     NumericVector ca = cumsum(NumericVector(a[0]) +
       NumericVector(a[1]));
 
-    for (int i=0; i<kMax; i++) {
+    for (int i=0; i<kMax; ++i) {
       if (i <= K) {
         cpH10[i] = cplH10[i] + cpuH10[i] - ca[i];
       } else {
@@ -4693,7 +4693,7 @@ List kmpowerequiv(const int kMax = 1,
     NumericVector ca = cumsum(NumericVector(a[0]) +
       NumericVector(a[1]));
 
-    for (int i=0; i<kMax; i++) {
+    for (int i=0; i<kMax; ++i) {
       if (i <= K) {
         cpH20[i] = cplH20[i] + cpuH20[i] - ca[i];
       } else {
@@ -5158,7 +5158,7 @@ List kmsamplesizeequiv(const double beta = 0.2,
       auto f = [kMax, informationRates1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                   }
                   u[kMax-1] = aval;
@@ -5198,7 +5198,7 @@ List kmsamplesizeequiv(const double beta = 0.2,
   IntegerVector l1 = Range(0, nintervals-1);
   NumericVector zerogam(nintervals);
   NumericVector u0(1, milestone);
-  for (int h=0; h<nstrata; h++) {
+  for (int h=0; h<nstrata; ++h) {
     IntegerVector l = h*nintervals + l1;
     NumericVector lam1 = lambda1x[l];
     NumericVector lam2 = lambda2x[l];

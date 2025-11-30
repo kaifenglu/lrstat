@@ -128,10 +128,10 @@ List simonBayesAnalysis(
   int ncases = static_cast<int>(std::pow(2, nstrata));
   NumericMatrix incid(ncases, nstrata);
   NumericVector prior(ncases), like(ncases);
-  for (int i=0; i<ncases; i++) {
+  for (int i=0; i<ncases; ++i) {
     int number = ncases - i - 1;
     NumericVector cc(nstrata);
-    for (int j=0; j<nstrata; j++) {
+    for (int j=0; j<nstrata; ++j) {
       cc[j] = (number/static_cast<int>(std::pow(2, nstrata-1-j))) % 2;
     }
 
@@ -152,7 +152,7 @@ List simonBayesAnalysis(
   post = post/sum(post);
 
   NumericVector q_prior(nstrata), q_post(nstrata);
-  for (int j=0; j<nstrata; j++) {
+  for (int j=0; j<nstrata; ++j) {
     q_prior[j] = sum(incid(_,j)*prior);
     q_post[j] = sum(incid(_,j)*post);
   }
@@ -472,7 +472,7 @@ List simonBayesSim(
     set_seed(seed);
   }
 
-  for (int iter=0; iter<nreps; iter++) {
+  for (int iter=0; iter<nreps; ++iter) {
     // initialize the contents in each stratum
     n.fill(0);
     r.fill(0);
@@ -483,7 +483,7 @@ List simonBayesSim(
     int k = 0;      // index of the number of subjects included in analysis
     int stage = 0;
     enrollt = 0;
-    for (int i=0; i<100000; i++) {
+    for (int i=0; i<100000; ++i) {
       // generate accrual time
       u = R::runif(0,1);
       enrollt = qtpwexpcpp1(u, accrualTime, accrualIntensity, enrollt, 1, 0);
@@ -491,7 +491,7 @@ List simonBayesSim(
       // generate stratum information
       u = R::runif(0,1);
       int j;
-      for (j=0; j<nstrata; j++) {
+      for (j=0; j<nstrata; ++j) {
         if (cumStratumFraction[j] > u) {
           break;
         }
@@ -508,14 +508,14 @@ List simonBayesSim(
         n[j] = n[j] + 1;
         r[j] = r[j] + y[k];
 
-        k++;
+        ++k;
 
         // interim analysis
         if (is_true(any(plannedSubjects == k))) {
 
           // output raw data
           if (iter < maxNumberOfRawDatasets) {
-            for (int idx=0; idx<k; idx++) {
+            for (int idx=0; idx<k; ++idx) {
               iterationNumberx[index1] = iter+1;
               stageNumberx[index1] = stage+1;
               subjectIdx[index1] = idx+1;
@@ -523,7 +523,7 @@ List simonBayesSim(
               stratumx[index1] = stratum[idx];
               yx[index1] = y[idx];
 
-              index1++;
+              ++index1;
             }
           }
 
@@ -532,7 +532,7 @@ List simonBayesSim(
           post_stratum = bayes["post_stratum"];
 
           // whether to close the stratum due to positive or negative results
-          for (int l=0; l<nstrata; l++) {
+          for (int l=0; l<nstrata; ++l) {
             if (open[l]) {
               if (post_stratum[l] > T) {
                 pos[l] = 1;
@@ -555,10 +555,10 @@ List simonBayesSim(
             posy[index2] = pos[l];
             negy[index2] = neg[l];
 
-            index2++;
+            ++index2;
           }
 
-          stage++;
+          ++stage;
         }
 
 

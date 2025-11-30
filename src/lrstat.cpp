@@ -91,8 +91,8 @@ NumericVector kmsurv(const NumericVector& time = NA_REAL,
 
   NumericVector v(k);
   NumericVector lagch1(J), lagch2(J);
-  for (int i=0; i<k; i++) {
-    for (int j=0; j<m[i]; j++) {
+  for (int i=0; i<k; ++i) {
+    for (int j=0; j<m[i]; ++j) {
       if (j>0) {
         lagch1[j] = lagch1[j-1] + lamgam1[j-1]*(t[j] - t[j-1]);
         lagch2[j] = lagch2[j-1] + lamgam2[j-1]*(t[j] - t[j-1]);
@@ -137,7 +137,7 @@ struct lrparams {
 void f_uscore(double *x, int n, void *ex) {
   lrparams *param = (lrparams *) ex;
   NumericVector u0(n);
-  for (int i=0; i<n; i++) {
+  for (int i=0; i<n; ++i) {
     u0[i] = x[i];
   }
   NumericMatrix xatrisk = natrisk(
@@ -162,7 +162,7 @@ void f_uscore(double *x, int n, void *ex) {
   lam2 = param->lambda2[j];
   d = lam1/(param->hazardRatioH0) - lam2;
   u0 = w*N*d;
-  for (int i=0; i<n; i++) {
+  for (int i=0; i<n; ++i) {
     x[i] = u0[i];
   }
 }
@@ -171,7 +171,7 @@ void f_uscore(double *x, int n, void *ex) {
 void f_vscore(double *x, int n, void *ex) {
   lrparams *param = (lrparams *) ex;
   NumericVector u0(n);
-  for (int i=0; i<n; i++) {
+  for (int i=0; i<n; ++i) {
     u0[i] = x[i];
   }
   NumericMatrix xatrisk = natrisk(
@@ -196,7 +196,7 @@ void f_vscore(double *x, int n, void *ex) {
   lam2 = param->lambda2[j];
   d = r1*lam1 + r2*lam2;
   u0 = w*w*N*d;
-  for (int i=0; i<n; i++) {
+  for (int i=0; i<n; ++i) {
     x[i] = u0[i];
   }
 }
@@ -205,7 +205,7 @@ void f_vscore(double *x, int n, void *ex) {
 void f_iscore(double *x, int n, void *ex) {
   lrparams *param = (lrparams *) ex;
   NumericVector u0(n);
-  for (int i=0; i<n; i++) {
+  for (int i=0; i<n; ++i) {
     u0[i] = x[i];
   }
   NumericMatrix xatrisk = natrisk(
@@ -230,7 +230,7 @@ void f_iscore(double *x, int n, void *ex) {
   lam2 = param->lambda2[j];
   d = r1*lam1 + r2*lam2;
   u0 = w*N*d;
-  for (int i=0; i<n; i++) {
+  for (int i=0; i<n; ++i) {
     x[i] = u0[i];
   }
 }
@@ -426,7 +426,7 @@ DataFrame lrstat1(const double time = NA_REAL,
 
   double tol = 1e-6;
 
-  for (int h=0; h<nstrata; h++) {
+  for (int h=0; h<nstrata; ++h) {
     stratum[h] = h+1;
     times[h] = time;
 
@@ -806,7 +806,7 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
 
   bool predictEventOnly = predictTarget == 1;
 
-  for (int j=0; j<k; j++) {
+  for (int j=0; j<k; ++j) {
     df = lrstat1(time[j], hazardRatioH0, allocationRatioPlanned,
                  accrualTime, accrualIntensity,
                  piecewiseSurvivalTime, stratumFraction,
@@ -853,7 +853,7 @@ DataFrame lrstat(const NumericVector& time = NA_REAL,
                 return sum(NumericVector(df[12]));
               };
 
-    for (int j=0; j<k; j++) {
+    for (int j=0; j<k; ++j) {
       time1 = time[j];
       logHR[j] = brent(g, -4.6, 4.6, 1.0e-6);
       HR[j] = exp(logHR[j]);
@@ -1121,7 +1121,7 @@ NumericVector caltime(const NumericVector& nevents = NA_REAL,
     stop("followupTime is too short to reach the target number of events");
   }
 
-  for (int i=0; i<k; i++) {
+  for (int i=0; i<k; ++i) {
     // match the predicted number of events to the target
     event = std::max(nevents[i], 0.0);
     time[i] = brent(f, 0.0, studyTime, 1.0e-6);
@@ -1355,7 +1355,7 @@ DataFrame getDurationFromNevents(
   NumericVector ta(npoints), n(npoints), ts(npoints), tf(npoints);
   double dt = (t[1] - t[0])/(npoints - 1);
 
-  for (int i=0; i<npoints; i++) {
+  for (int i=0; i<npoints; ++i) {
     ta[i] = t[0] + i*dt;
 
     if (i==0) {
@@ -1753,7 +1753,7 @@ List lrpower(const int kMax = 1,
 
   if (is_false(any(is_na(criticalValues))) &&
       is_false(any(is_na(futilityBounds)))) {
-    for (int i=0; i<kMax-1; i++) {
+    for (int i=0; i<kMax-1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         stop("futilityBounds must lie below criticalValues");
       }
@@ -1920,7 +1920,7 @@ List lrpower(const int kMax = 1,
     NumericVector hrx = lambda1x / lambda2x;
 
     bool proportionalHazards = 1;
-    for (int i=1; i<nsi; i++) {
+    for (int i=1; i<nsi; ++i) {
       if (fabs(hrx[i] - hrx[0]) > 1e-8) {
         proportionalHazards = 0;
         break;
@@ -1967,7 +1967,7 @@ List lrpower(const int kMax = 1,
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                     if (!efficacyStopping1[i]) u[i] = 6.0;
                   }
@@ -2068,7 +2068,7 @@ List lrpower(const int kMax = 1,
                 return sum(NumericVector(lr[12])) - information1;
               };
 
-    for (int i=0; i<kMax-1; i++) {
+    for (int i=0; i<kMax-1; ++i) {
       information1 = maxInformation*informationRates1[i];
       time[i] = brent(f, 1.0e-6, studyDuration1, 1.0e-6);
     };
@@ -2148,7 +2148,7 @@ List lrpower(const int kMax = 1,
 
   NumericVector efficacyP(kMax);
   NumericVector futilityP(kMax);
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     efficacyP[i] = 1 - R::pnorm(criticalValues1[i], 0, 1, 1, 0);
     futilityP[i] = 1 - R::pnorm(futilityBounds1[i], 0, 1, 1, 0);
   }
@@ -2179,7 +2179,7 @@ List lrpower(const int kMax = 1,
     hrl = hazardRatioH0*exp(-futilityBounds1*sqrt(vlogHR));
   }
 
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     if (criticalValues1[i] == 6) {
       hru[i] = NA_REAL;
       efficacyStopping1[i] = 0;
@@ -2689,7 +2689,7 @@ List lrsamplesize(const double beta = 0.2,
 
   if (is_false(any(is_na(criticalValues))) &&
       is_false(any(is_na(futilityBounds)))) {
-    for (int i=0; i<kMax-1; i++) {
+    for (int i=0; i<kMax-1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         stop("futilityBounds must lie below criticalValues");
       }
@@ -2866,7 +2866,7 @@ List lrsamplesize(const double beta = 0.2,
     NumericVector hrx = lambda1x / lambda2x;
 
     bool proportionalHazards = 1;
-    for (int i=1; i<nsi; i++) {
+    for (int i=1; i<nsi; ++i) {
       if (fabs(hrx[i] - hrx[0]) > 1e-8) {
         proportionalHazards = 0;
         break;
@@ -2916,7 +2916,7 @@ List lrsamplesize(const double beta = 0.2,
       auto f = [kMax, informationRates1, efficacyStopping1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                     if (!efficacyStopping1[i]) u[i] = 6.0;
                   }
@@ -3106,7 +3106,7 @@ List lrsamplesize(const double beta = 0.2,
                                 information1;
                             };
 
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     information1 = maxInformation*informationRates1[i];
                     time[i] = brent(g, 1.0e-6, studyDuration1, 1.0e-6);
                   };
@@ -3167,7 +3167,7 @@ List lrsamplesize(const double beta = 0.2,
                             &futilityBounds1, theta,
                             vscore](double aval)->double {
                               NumericVector u(k+1), l(k+1);
-                              for (int i=0; i<k; i++) {
+                              for (int i=0; i<k; ++i) {
                                 u[i] = criticalValues1[i];
                                 l[i] = futilityBounds1[i];
                               }
@@ -3181,7 +3181,7 @@ List lrsamplesize(const double beta = 0.2,
                               return cpl - cumBetaSpent;
                             };
 
-                  for (k=1; k<kMax; k++) {
+                  for (k=1; k<kMax; ++k) {
                     if (bsf == "user") {
                       cumBetaSpent = userBetaSpending[k];
                     } else {
@@ -3380,7 +3380,7 @@ List lrsamplesize(const double beta = 0.2,
                   return sum(NumericVector(lr[12])) - information1;
                 };
 
-      for (int i=0; i<kMax-1; i++) {
+      for (int i=0; i<kMax-1; ++i) {
         information1 = maxInformation*informationRates1[i];
         time[i] = brent(f, 1.0e-6, studyDuration, 1.0e-6);
       };
@@ -4101,7 +4101,7 @@ List lrpowerequiv(const int kMax = 1,
     NumericVector hrx = lambda1x / lambda2x;
 
     bool proportionalHazards = 1;
-    for (int i=1; i<nsi; i++) {
+    for (int i=1; i<nsi; ++i) {
       if (fabs(hrx[i] - hrx[0]) > 1e-8) {
         proportionalHazards = 0;
         break;
@@ -4149,7 +4149,7 @@ List lrpowerequiv(const int kMax = 1,
       auto f = [kMax, informationRates1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                   }
                   u[kMax-1] = aval;
@@ -4169,7 +4169,7 @@ List lrpowerequiv(const int kMax = 1,
   }
 
   NumericVector efficacyP(kMax);
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     efficacyP[i] = 1 - R::pnorm(criticalValues1[i], 0, 1, 1, 0);
   }
 
@@ -4267,7 +4267,7 @@ List lrpowerequiv(const int kMax = 1,
     NumericVector ca = cumsum(NumericVector(a[0]) +
       NumericVector(a[1]));
 
-    for (int i=0; i<kMax; i++) {
+    for (int i=0; i<kMax; ++i) {
       if (i <= K) {
         cp[i] = cpl[i] + cpu[i] - ca[i];
       } else {
@@ -4278,7 +4278,7 @@ List lrpowerequiv(const int kMax = 1,
 
   // incremental exit probabilities under H1
   NumericVector q(kMax);
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     if (i==0) {
       q[i] = cp[i];
     } else if (i<kMax-1) {
@@ -4289,7 +4289,7 @@ List lrpowerequiv(const int kMax = 1,
   }
 
   NumericVector rejectPerStage(kMax);
-  for (int i=0; i<kMax; i++) {
+  for (int i=0; i<kMax; ++i) {
     if (i==0) {
       rejectPerStage[i] = cp[i];
     } else {
@@ -4316,7 +4316,7 @@ List lrpowerequiv(const int kMax = 1,
     NumericVector ca = cumsum(NumericVector(a[0]) +
       NumericVector(a[1]));
 
-    for (int i=0; i<kMax; i++) {
+    for (int i=0; i<kMax; ++i) {
       if (i <= K) {
         cpH10[i] = cplH10[i] + cpuH10[i] - ca[i];
       } else {
@@ -4341,7 +4341,7 @@ List lrpowerequiv(const int kMax = 1,
     NumericVector ca = cumsum(NumericVector(a[0]) +
       NumericVector(a[1]));
 
-    for (int i=0; i<kMax; i++) {
+    for (int i=0; i<kMax; ++i) {
       if (i <= K) {
         cpH20[i] = cplH20[i] + cpuH20[i] - ca[i];
       } else {
@@ -4753,7 +4753,7 @@ List lrsamplesizeequiv(const double beta = 0.2,
     NumericVector hrx = lambda1x / lambda2x;
 
     bool proportionalHazards = 1;
-    for (int i=1; i<nsi; i++) {
+    for (int i=1; i<nsi; ++i) {
       if (fabs(hrx[i] - hrx[0]) > 1e-8) {
         proportionalHazards = 0;
         break;
@@ -4803,7 +4803,7 @@ List lrsamplesizeequiv(const double beta = 0.2,
       auto f = [kMax, informationRates1,
                 criticalValues, alpha](double aval)->double {
                   NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; i++) {
+                  for (int i=0; i<kMax-1; ++i) {
                     u[i] = criticalValues[i];
                   }
                   u[kMax-1] = aval;
