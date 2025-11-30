@@ -136,6 +136,7 @@
 #' model.matrix na.omit na.pass optimize pbeta pchisq pf plogis pnorm pt
 #' qbeta qchisq qf qlogis qnorm qt terms uniroot var
 #' @importFrom lpSolve lp
+#' @importFrom rlang .data
 #' @importFrom shiny shinyAppDir
 #'
 NULL
