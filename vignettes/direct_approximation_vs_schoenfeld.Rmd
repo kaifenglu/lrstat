@@ -49,7 +49,7 @@ To see which method yields a more accurate power estimate, we run a lrsim functi
 lrsim(kMax = 1, criticalValues = 1.96, 
       accrualIntensity = 200/12, 
       lambda1 = -log(1-0.2)/12, lambda2 = -log(1-0.4)/12,
-      accrualDuration = 12, 
+      n = 200, 
       plannedEvents = 40, 
       maxNumberOfIterations = 10000, seed = 314159)
 ```
