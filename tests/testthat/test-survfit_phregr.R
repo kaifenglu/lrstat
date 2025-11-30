@@ -22,8 +22,7 @@ testthat::test_that("survfit_phregr: right-censored data", {
   # extract common variables
   surv1b <- surv1 %>%
     select(time, nrisk, nevent, ncensor, cumhaz,
-           surv, sesurv, lower, upper) %>%
-    slice(-1)
+           surv, sesurv, lower, upper)
 
   surv2b <- data.frame(time = surv2$time, nrisk = surv2$n.risk,
                        nevent = surv2$n.event, ncensor = surv2$n.censor,
@@ -63,7 +62,6 @@ testthat::test_that("survfit_phregr: stratified analysis", {
     select(time, nrisk, nevent, cumhaz, surv,
            sesurv, lower, upper, edema, age, bili) %>%
     group_by(edema, age, bili) %>%
-    slice(-1) %>%
     ungroup()
 
   strata <- rep(as.numeric(substring(names(surv2$strata), 7)), surv2$strata)
@@ -124,18 +122,14 @@ testthat::test_that("survfit_phregr: time-dependent covariates", {
 
   surv1b <- surv1 %>%
     select(time, nrisk, nevent, ncensor, cumhaz,
-           surv, sesurv, lower, upper) %>%
-    slice(-1)
+           surv, sesurv, lower, upper)
 
   surv2b <- data.frame(time = surv2$time, nrisk = surv2$n.risk,
                        nevent = surv2$n.event, ncensor = surv2$n.censor,
                        cumhaz = surv2$cumhaz, surv = surv2$surv,
                        sesurv = surv2$surv*surv2$std.chaz,
                        lower = surv2$lower, upper = surv2$upper)
-
-  # the point estimate would match but the standard error and confidence
-  # interval do not match due to an apparent bug in the survival package
-  testthat::expect_equal(surv1b %>% select(time, surv),
-                         surv2b %>% select(time, surv))
+  
+  testthat::expect_equal(surv1b, surv2b)
 })
 
