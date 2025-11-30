@@ -7,8 +7,8 @@ testthat::test_that("kmest: estimate and standard error", {
   df2 <- summary(survfit(Surv(time, status) ~ x, data=aml,
                          conf.type="none"))
 
-  testthat::expect_equal(df1$survival[df1$time > 0], df2$surv)
-  testthat::expect_equal(df1$stderr[df1$time > 0], df2$std.err)
+  testthat::expect_equal(df1$surv[df1$time > 0], df2$surv)
+  testthat::expect_equal(df1$sesurv[df1$time > 0], df2$std.err)
 })
 
 
