@@ -12,10 +12,16 @@ NumericVector stl_sort(const NumericVector& x);
 
 IntegerVector which(const LogicalVector& vector);
 
-IntegerVector findInterval3(NumericVector x, NumericVector v);
+IntegerVector findInterval3(NumericVector x, NumericVector v,
+                            bool rightmost_closed,
+                            bool all_inside,
+                            bool left_open);
 
 double brent(const std::function<double(double)>& f,
              double x1, double x2, double tol);
+
+double bisect(const std::function<double(double)>& f,
+              double x1, double x2, double tol);
 
 double errorSpentcpp(const double t,
                      const double error,
@@ -297,7 +303,7 @@ List svd_step(NumericMatrix& B, const bool outtransform);
 List svdcpp(const NumericMatrix& X, const bool outtransform,
             const bool decreasing);
 
-NumericMatrix rmvnorm(int n, NumericVector mean, NumericMatrix sigma);
+NumericMatrix rmvnormcpp(int n, NumericVector mean, NumericMatrix sigma);
 
 NumericVector float_to_fraction(const double x, const double tol);
 
