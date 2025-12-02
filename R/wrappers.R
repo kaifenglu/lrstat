@@ -74,6 +74,62 @@ errorSpent <- function(t, error, sf = "sfOF", sfpar = NA) {
 }
 
 
+
+#' @title Density Function of Truncated Piecewise Exponential
+#' Distribution
+#' @description Obtains the density of a truncated piecewise exponential
+#' distribution.
+#'
+#' @param q The vector of quantiles.
+#' @inheritParams param_piecewiseSurvivalTime
+#' @inheritParams param_lambda
+#' @param lowerBound The left truncation time point for the survival time.
+#'   Defaults to 0 for no truncation.
+#' @param log.d Logical; if TRUE, densities d are given as log(d).
+
+#' @return The density d such that
+#' d = lambda(q) * P(X > q | X > lowerBound).
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#' dtpwexp(q = c(8, 18), piecewiseSurvivalTime = c(0, 6, 9, 15),
+#'         lambda = c(0.025, 0.04, 0.015, 0.007))
+#'
+#' @export
+dtpwexp <- function(q, piecewiseSurvivalTime = 0, lambda = 0.0578,
+                    lowerBound = 0, log.d = FALSE) {
+
+  if (any(q < 0)) {
+    stop("q must be nonnegative")
+  }
+
+  if (piecewiseSurvivalTime[1] != 0) {
+    stop("piecewiseSurvivalTime must start with 0")
+  }
+
+  if (length(piecewiseSurvivalTime) > 1 &&
+      any(diff(piecewiseSurvivalTime) <= 0)) {
+    stop("piecewiseSurvivalTime should be increasing")
+  }
+
+  if (length(lambda) != length(piecewiseSurvivalTime)) {
+    stop("lambda and piecewiseSurvivalTime must have the same length")
+  }
+
+  if (any(lambda < 0)) {
+    stop("lambda must be nonnegative")
+  }
+
+  if (lowerBound < 0) {
+    stop("lowerBound must be nonnegative")
+  }
+
+  dtpwexpcpp(q = q, piecewiseSurvivalTime = piecewiseSurvivalTime,
+             lambda = lambda, lowerBound = lowerBound, logd = log.d)
+}
+
+
 #' @title Distribution Function of Truncated Piecewise Exponential
 #' Distribution
 #' @description Obtains the probability of a truncated piecewise exponential
@@ -2541,7 +2597,7 @@ logisregr <- function(data, rep = "", event = "event", covariates = "",
 #'   of integration.
 #' @param upper A numeric vector of length 2 specifying the upper limits
 #'   of integration.
-#' @param corr A numeric value specifying the correlation coefficient of
+#' @param rho A numeric value specifying the correlation coefficient of
 #'   the standard bivariate normal distribution.
 #'
 #' @details This function evaluates the probability
@@ -2560,7 +2616,7 @@ logisregr <- function(data, rep = "", event = "event", covariates = "",
 #'
 #' @export
 pbvnorm <- function(lower = c(-Inf, Inf),
-                    upper = c(Inf, Inf), corr = 0) {
+                    upper = c(Inf, Inf), rho = 0) {
 
   if (length(lower) != 1 && length(lower) != 2) {
     stop("lower must be a numerical vector of length 1 or 2")
@@ -2578,37 +2634,39 @@ pbvnorm <- function(lower = c(-Inf, Inf),
     stop("lower must be less than upper")
   }
 
-  if (corr >= 1 || corr <= -1) {
+  if (rho >= 1 || rho <= -1) {
     stop("corr must lie between -1 and 1")
   }
 
-  pbvnormcpp(lower, upper, corr)
+  pbvnormcpp(lower, upper, rho)
 }
 
 
-#' @title Hazard Function for Progressive Disease (PD)
+#' @title Hazard Function for Progressive Disease (PD) Given Correlation
+#' Between PD and OS
 #'
 #' @description
-#' Computes the hazard function of a piecewise exponential (pwexp)
+#' Computes the hazard function of a piecewise exponential
 #' distribution for progressive disease (PD), such that the
 #' resulting hazard function for progression-free survival (PFS)
-#' closely matches a given pwexp hazard for PFS.
+#' closely matches a given piecewise hazard for PFS.
 #'
 #' @inheritParams param_piecewiseSurvivalTime
 #' @param hazard_pfs A scalar or numeric vector specifying the
-#'   hazard(s) for PFS based on a pwexp distribution.
+#'   hazard(s) for PFS based on a piecewise exponential distribution.
 #' @param hazard_os A scalar or numeric vector specifying the
-#'   hazard(s) for overall survival (OS) based on a pwexp distribution.
-#' @param corr_pd_os A numeric value specifying the correlation
+#'   hazard(s) for overall survival (OS) based on a piecewise
+#'   exponential distribution.
+#' @param rho_pd_os A numeric value specifying the correlation
 #'   between PD and OS times.
 #'
 #' @details
 #' This function determines the hazard vector \eqn{\lambda_{\text{pd}}}
-#' for the pwexp distribution of PD, so that the implied survival
-#' function for PFS time,
+#' for the piecewise exponential distribution of PD, so that the
+#' implied survival function for PFS time,
 #' \eqn{T_{\text{pfs}} = \min(T_{\text{pd}}, T_{\text{os}})}, closely
-#' matches the specified pwexp distribution for PFS with hazard vector
-#' \eqn{\lambda_{\text{pfs}}}.
+#' matches the specified piecewise exponential distribution for PFS
+#' with hazard vector \eqn{\lambda_{\text{pfs}}}.
 #'
 #' To achieve this, we simulate
 #' \eqn{(Z_{\text{pd}}, Z_{\text{os}})} from
@@ -2618,14 +2676,15 @@ pbvnorm <- function(lower = c(-Inf, Inf),
 #' \eqn{\Phi} denotes the standard normal CDF.
 #'
 #' The times to PD and OS are obtained via the inverse transform
-#' method using quantile functions of the pwexp distribution:
+#' method using quantile functions of the piecewise exponential distribution:
 #' \deqn{T_{\text{pd}} = \text{qpwexp}(U_{\text{pd}},u,\lambda_{\text{pd}})}
 #' \deqn{T_{\text{os}} = \text{qpwexp}(U_{\text{os}},u,\lambda_{\text{os}})}
 #' where \code{u = piecewiseSurvivalTime}.
 #'
 #' The function solves for \eqn{\lambda_{\text{pd}}} such that
 #' the survival function of \eqn{T_{\text{pfs}}} closely matches that
-#' of a pwexp distribution with hazard \eqn{\lambda_{\text{pfs}}}:
+#' of a piecewise exponential distribution with hazard
+#' \eqn{\lambda_{\text{pfs}}}:
 #' \deqn{P(\min(T_{\text{pd}}, T_{\text{os}}) > t) = S_{\text{pfs}}(t)}
 #' Since \deqn{Z_{\text{pd}} =
 #'   \Phi^{-1}(\text{ppwexp}(T_\text{pd}, u, \lambda_{\text{pd}}))} and
@@ -2640,14 +2699,28 @@ pbvnorm <- function(lower = c(-Inf, Inf),
 #' while
 #' \deqn{S_{\text{pfs}}(t) = 1 - \text{ppwexp}(t,u,\lambda_{\text{pfs}})}
 #'
-#' Matching is performed sequentially at the internal cutpoints
+#' Matching is performed sequentially at the internal cut points
 #' \eqn{u_2, ..., u_J} and at the point
-#' \eqn{u_J + \log(2)/\lambda_{\text{pfs},J}} for the final interval
+#' \eqn{u_J + \log(2)/\lambda_{\text{pfs},J}} for the final interval,
+#' as well as the percentile points at 10%, 20%, ..., 90%, and 95%
 #' to solve for \eqn{\lambda_{\text{pd},1}, \ldots,
-#' \lambda_{\text{pd},J-1}} and \eqn{\lambda_{\text{pd},J}}, respectively.
+#' \lambda_{\text{pd},K}}, where \eqn{K} is the total number of
+#' unique cut points.
 #'
-#' @return A numeric vector representing the estimated hazard rates
-#' for the pwexp distribution of PD.
+#' @return A list with the following components:
+#'
+#' * \code{piecewiseSurvivalTime}: A vector that specifies the starting time
+#'   points of the intervals for the piecewise exponential distribution
+#'   for PD.
+#'
+#' * \code{hazard_pd}: A numeric vector representing the calculated hazard
+#'   rates for the piecewise exponential distribution of PD.
+#'
+#' * \code{hazard_os}: A numeric vector representing the hazard rates for
+#'   the piecewise exponential distribution of OS at the same time points
+#'   as PD.
+#'
+#' * \code{rho_pd_os}: The correlation between PD and OS times (as input).
 #'
 #' @author
 #' Kaifeng Lu (\email{kaifenglu@gmail.com})
@@ -2656,14 +2729,14 @@ pbvnorm <- function(lower = c(-Inf, Inf),
 #' u <- c(0, 1, 3, 4)
 #' lambda1 <- c(0.0151, 0.0403, 0.0501, 0.0558)
 #' lambda2 <- 0.0145
-#' rho <- 0.5
-#' hazard_pd(u, lambda1, lambda2, rho)
+#' rho_pd_os <- 0.5
+#' hazard_pd(u, lambda1, lambda2, rho_pd_os)
 #'
 #' @export
 hazard_pd <- function(piecewiseSurvivalTime = 0,
                       hazard_pfs = 0.0578,
                       hazard_os = 0.02,
-                      corr_pd_os = 0.5) {
+                      rho_pd_os = 0.5) {
 
   if (piecewiseSurvivalTime[1] != 0) {
     stop("piecewiseSurvivalTime must start with 0")
@@ -2697,37 +2770,222 @@ hazard_pd <- function(piecewiseSurvivalTime = 0,
     stop("hazard_pfs must be greater than hazard_os")
   }
 
-  if (corr_pd_os <= -1 || corr_pd_os >= 1) {
+  if (rho_pd_os <= -1 || rho_pd_os >= 1) {
     stop("corr_pd_os must lie between -1 and 1")
   }
 
-  hazard_pdcpp(piecewiseSurvivalTime, hazard_pfs, hazard_os, corr_pd_os)
+  hazard_pdcpp(piecewiseSurvivalTime, hazard_pfs, hazard_os, rho_pd_os)
 }
+
+
+#' @title Correlation Between PFS and OS Given Correlation Between PD and OS
+#'
+#' @description
+#' Computes the correlation between PFS and OS given the correlation
+#' between PD and OS.
+#'
+#' @inheritParams param_piecewiseSurvivalTime
+#' @param hazard_pfs A scalar or numeric vector specifying the
+#'   hazard(s) for PFS based on a piecewise exponential distribution.
+#' @param hazard_os A scalar or numeric vector specifying the
+#'   hazard(s) for overall survival (OS) based on a piecewise
+#'   exponential distribution.
+#' @param rho_pd_os A numeric value specifying the correlation
+#'   between PD and OS times.
+#'
+#' @details
+#' This function first determines the piecewise exponential distribution
+#' for PD such that the implied survival function for PFS time,
+#' \eqn{T_{\text{pfs}} = \min(T_{\text{pd}}, T_{\text{os}})}, closely
+#' matches the specified piecewise exponential distribution for PFS
+#' with hazard vector \eqn{\lambda_{\text{pfs}}}. Then, it calculates
+#' the correlation between PFS and OS times based on the derived
+#' piecewise exponential distribution for PD and the given piecewise
+#' exponential distribution for OS.
+#'
+#' @return The estimated correlation between PFS and OS.
+#'
+#' @author
+#' Kaifeng Lu (\email{kaifenglu@gmail.com})
+#'
+#' @examples
+#' u <- c(0, 1, 3, 4)
+#' lambda1 <- c(0.0151, 0.0403, 0.0501, 0.0558)
+#' lambda2 <- 0.0145
+#' rho_pd_os <- 0.5
+#' corr_pfs_os(u, lambda1, lambda2, rho_pd_os)
+#'
+#' @export
+corr_pfs_os <- function(piecewiseSurvivalTime, hazard_pfs,
+                        hazard_os, rho_pd_os) {
+
+  if (piecewiseSurvivalTime[1] != 0) {
+    stop("piecewiseSurvivalTime must start with 0")
+  }
+
+  if (length(piecewiseSurvivalTime) > 1 &&
+      any(diff(piecewiseSurvivalTime) <= 0)) {
+    stop("piecewiseSurvivalTime should be increasing")
+  }
+
+  k = length(piecewiseSurvivalTime)
+  if (!(length(hazard_pfs) %in% c(1, k))) {
+    stop(paste("hazard_pfs must be a scalar or have the same length",
+               "as piecewiseSurvivalTime"))
+  } else if (length(hazard_pfs) == 1) {
+    hazard_pfs = rep(hazard_pfs, k)
+  }
+
+  if (!(length(hazard_os) %in% c(1, k))) {
+    stop(paste("hazard_os must be a scalar or have the same length",
+               "as piecewiseSurvivalTime"))
+  } else if (length(hazard_os) == 1) {
+    hazard_os = rep(hazard_os, k)
+  }
+
+  if (any(hazard_os <= 0)) {
+    stop("hazard_os must be positive")
+  }
+
+  if (any(hazard_pfs <= hazard_os)) {
+    stop("hazard_pfs must be greater than hazard_os")
+  }
+
+  if (rho_pd_os <= -1 || rho_pd_os >= 1) {
+    stop("corr_pd_os must lie between -1 and 1")
+  }
+
+  corr_pfs_oscpp(piecewiseSurvivalTime, hazard_pfs, hazard_os, rho_pd_os);
+}
+
+
+#' @title Hazard Function for Progressive Disease (PD) Given Correlation
+#' Between PFS and OS
+#'
+#' @description
+#' Computes the hazard function of a piecewise exponential
+#' distribution for progressive disease (PD), such that the
+#' resulting hazard function for progression-free survival (PFS)
+#' closely matches a given piecewise hazard for PFS
+#' and the correlation coefficient between PFS and OS matches
+#' the specified value.
+#'
+#' @inheritParams param_piecewiseSurvivalTime
+#' @param hazard_pfs A scalar or numeric vector specifying the
+#'   hazard(s) for PFS based on a piecewise exponential distribution.
+#' @param hazard_os A scalar or numeric vector specifying the
+#'   hazard(s) for overall survival (OS) based on a piecewise
+#'   exponential distribution.
+#' @param rho_pfs_os A numeric value specifying the correlation
+#'   between PFS and OS times.
+#'
+#' @details
+#' This function determines the hazard vector \eqn{\lambda_{\text{pd}}}
+#' for the piecewise exponential distribution of PD, so that the
+#' implied survival function for PFS time,
+#' \eqn{T_{\text{pfs}} = \min(T_{\text{pd}}, T_{\text{os}})}, closely
+#' matches the specified piecewise exponential distribution for PFS
+#' with hazard vector \eqn{\lambda_{\text{pfs}}}, and the correlation
+#' between PFS and OS times matches the specified value \code{rho_pfs_os}.
+#'
+#' @return A list with the following components:
+#'
+#' * \code{piecewiseSurvivalTime}: A vector that specifies the starting time
+#'   points of the intervals for the piecewise exponential distribution
+#'   for PD.
+#'
+#' * \code{hazard_pd}: A numeric vector representing the calculated hazard
+#'   rates for the piecewise exponential distribution of PD.
+#'
+#' * \code{hazard_os}: A numeric vector representing the hazard rates for
+#'   the piecewise exponential distribution of OS at the same time points
+#'   as PD.
+#'
+#' * \code{rho_pd_os}: The correlation between PD and OS times.
+#'
+#' * \code{rho_pfs_os}: The correlation between PFS and OS times (as input).
+#'
+#' @author
+#' Kaifeng Lu (\email{kaifenglu@gmail.com})
+#'
+#' @examples
+#' u <- c(0, 1, 3, 4)
+#' lambda1 <- c(0.0151, 0.0403, 0.0501, 0.0558)
+#' lambda2 <- 0.0145
+#' rho_pfs_os <- 0.5
+#' hazard_pd2(u, lambda1, lambda2, rho_pfs_os)
+#'
+#' @export
+hazard_pd2 <- function(piecewiseSurvivalTime = 0,
+                       hazard_pfs = 0.0578,
+                       hazard_os = 0.02,
+                       rho_pfs_os = 0.5) {
+
+  if (piecewiseSurvivalTime[1] != 0) {
+    stop("piecewiseSurvivalTime must start with 0")
+  }
+
+  if (length(piecewiseSurvivalTime) > 1 &&
+      any(diff(piecewiseSurvivalTime) <= 0)) {
+    stop("piecewiseSurvivalTime should be increasing")
+  }
+
+  k = length(piecewiseSurvivalTime)
+  if (!(length(hazard_pfs) %in% c(1, k))) {
+    stop(paste("hazard_pfs must be a scalar or have the same length",
+               "as piecewiseSurvivalTime"))
+  } else if (length(hazard_pfs) == 1) {
+    hazard_pfs = rep(hazard_pfs, k)
+  }
+
+  if (!(length(hazard_os) %in% c(1, k))) {
+    stop(paste("hazard_os must be a scalar or have the same length",
+               "as piecewiseSurvivalTime"))
+  } else if (length(hazard_os) == 1) {
+    hazard_os = rep(hazard_os, k)
+  }
+
+  if (any(hazard_os <= 0)) {
+    stop("hazard_os must be positive")
+  }
+
+  if (any(hazard_pfs <= hazard_os)) {
+    stop("hazard_pfs must be greater than hazard_os")
+  }
+
+  if (rho_pfs_os <= -1 || rho_pfs_os >= 1) {
+    stop("corr_pfs_os must lie between -1 and 1")
+  }
+
+  hazard_pd2cpp(piecewiseSurvivalTime, hazard_pfs, hazard_os, rho_pfs_os)
+}
+
 
 
 #' @title Hazard Function for Sub Population
 #'
 #' @description
-#' Computes the hazard function of a piecewise exponential (pwexp)
+#' Computes the hazard function of a piecewise exponential
 #' distribution for the biomarker negative sub population, such that the
 #' resulting survival function for the ITT population
-#' closely matches a given pwexp survival function.
+#' closely matches a given piecewise survival function.
 #'
 #' @inheritParams param_piecewiseSurvivalTime
 #' @param hazard_itt A scalar or numeric vector specifying the
-#'   hazard(s) for the ITT population based on a pwexp distribution.
+#'   hazard(s) for the ITT population based on a piecewise exponential
+#'   distribution.
 #' @param hazard_pos A scalar or numeric vector specifying the
 #'   hazard(s) for the biomarker positive sub population
-#'   based on a pwexp distribution.
+#'   based on a piecewise exponential distribution.
 #' @param p_pos A numeric value specifying the prevalence of the
 #'   biomarker positive sub population.
 #'
 #' @details
 #' This function determines the hazard vector \eqn{\lambda_{\text{neg}}}
-#' for the pwexp distribution of the biomarker negative sub population,
-#' so that the implied survival function for the ITT population closely
-#' matches the specified pwexp distribution with hazard vector
-#' \eqn{\lambda_{\text{itt}}}.
+#' for the piecewise exponential distribution of the biomarker negative
+#' sub population, so that the implied survival function for the ITT
+#' population closely matches the specified piecewise exponential
+#' distribution with hazard vector \eqn{\lambda_{\text{itt}}}.
 #'
 #' Let \eqn{p_{\text{pos}}} be the
 #' prevalence of the biomarker positive sub population,
@@ -2740,12 +2998,29 @@ hazard_pd <- function(piecewiseSurvivalTime = 0,
 #'
 #' Matching is performed sequentially at the internal cutpoints
 #' \eqn{u_2, ..., u_J} and at the point
-#' \eqn{u_J + \log(2)/\lambda_{\text{itt},J}} for the final interval
+#' \eqn{u_J + \log(2)/\lambda_{\text{itt},J}} for the final interval,
+#' as well as the percentile points at 10%, 20%, ..., 90%, and 95%,
 #' to solve for \eqn{\lambda_{\text{neg},1}, \ldots,
-#' \lambda_{\text{neg},J-1}} and \eqn{\lambda_{\text{neg},J}}, respectively.
+#' \lambda_{\text{neg},K}}, where \eqn{K} is the total number of
+#' unique cut points.
 #'
-#' @return A numeric vector representing the estimated hazard rates
-#' for the pwexp distribution of the biomarker negative sub population.
+#' @return A list with the following components:
+#'
+#' * \code{piecewiseSurvivalTime}: A vector that specifies the starting time
+#'   points of the intervals for the piecewise exponential distribution
+#'   for the biomarker negative sub population.
+#'
+#' * \code{hazard_pos}: A numeric vector representing the hazard rates for
+#'   the piecewise exponential distribution of the biomarker positive
+#'   sub population at the same time points as the biomarker negative
+#'   sub population.
+#'
+#' * \code{hazard_neg}: A numeric vector representing the estimated hazard
+#'   rates for the piecewise exponential distribution of the biomarker
+#'   negative sub population.
+#'
+#' * \code{p_pos}: The prevalence of the biomarker positive sub population
+#'  (as input).
 #'
 #' @author
 #' Kaifeng Lu (\email{kaifenglu@gmail.com})
