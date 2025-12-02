@@ -1,4 +1,5 @@
 #include <Rcpp.h>
+#include <queue>
 #include <R_ext/Applic.h>
 #include "utilities.h"
 
@@ -509,20 +510,19 @@ List exitprobcpp(const NumericVector& b,
 
 
 // [[Rcpp::export]]
-NumericVector ptpwexpcpp(const NumericVector& q,
+NumericVector dtpwexpcpp(const NumericVector& q,
                          const NumericVector& piecewiseSurvivalTime,
                          const NumericVector& lambda,
-                         const double lowerBound,
-                         const bool lowertail,
-                         const bool logp) {
+                         const double lowerBound = 0.0,
+                         const bool logd = false) {
   int n = static_cast<int>(q.size());
-  NumericVector p(n);
+  NumericVector d(n);
   for (int h=0; h<n; ++h) {
     if (q[h] <= lowerBound) {
-      p[h] = 0;
+      d[h] = 0;
     } else {
       NumericVector y = NumericVector::create(lowerBound, q[h]);
-      IntegerVector i = findInterval3(y, piecewiseSurvivalTime);
+      IntegerVector i = findInterval3(y, piecewiseSurvivalTime, 0,0,0);
       double v;
       if (i[0] == i[1]) {
         v = lambda[i[0]-1]*(q[h] - lowerBound);
@@ -534,8 +534,43 @@ NumericVector ptpwexpcpp(const NumericVector& q,
         }
         v += lambda[i[1]-1]*(q[h] - piecewiseSurvivalTime[i[1]-1]);
       }
-      p[h] = 1 - exp(-v);
+      double w = lambda[i[1]-1];
+      d[h] = w*exp(-v);
     }
+  }
+
+  if (logd) d = log(d);
+
+  return d;
+}
+
+
+// [[Rcpp::export]]
+double ptpwexpcpp1(const double q,
+                   const NumericVector& piecewiseSurvivalTime,
+                   const NumericVector& lambda,
+                   const double lowerBound = 0.0,
+                   const bool lowertail = true,
+                   const bool logp = false) {
+
+  double p;
+  if (q <= lowerBound) {
+    p = 0;
+  } else {
+    NumericVector y = NumericVector::create(lowerBound, q);
+    IntegerVector i = findInterval3(y, piecewiseSurvivalTime, 0,0,0);
+    double v;
+    if (i[0] == i[1]) {
+      v = lambda[i[0]-1]*(q - lowerBound);
+    } else {
+      v = lambda[i[0]-1]*(piecewiseSurvivalTime[i[0]] - lowerBound);
+      for (int j=i[0]; j<i[1]-1; ++j) {
+        v += lambda[j]*(piecewiseSurvivalTime[j+1] -
+          piecewiseSurvivalTime[j]);
+      }
+      v += lambda[i[1]-1]*(q - piecewiseSurvivalTime[i[1]-1]);
+    }
+    p = 1 - exp(-v);
   }
 
   if (!lowertail) p = 1.0 - p;
@@ -546,12 +581,30 @@ NumericVector ptpwexpcpp(const NumericVector& q,
 
 
 // [[Rcpp::export]]
+NumericVector ptpwexpcpp(const NumericVector& q,
+                         const NumericVector& piecewiseSurvivalTime,
+                         const NumericVector& lambda,
+                         const double lowerBound = 0.0,
+                         const bool lowertail = true,
+                         const bool logp = false) {
+  int n = static_cast<int>(q.size());
+  NumericVector p(n);
+  for (int h=0; h<n; ++h) {
+    p[h] = ptpwexpcpp1(q[h], piecewiseSurvivalTime, lambda,
+                           lowerBound, lowertail, logp);
+  }
+
+  return p;
+}
+
+
+// [[Rcpp::export]]
 double qtpwexpcpp1(const double p,
                    const NumericVector& piecewiseSurvivalTime,
                    const NumericVector& lambda,
-                   const double lowerBound,
-                   const bool lowertail,
-                   const bool logp) {
+                   const double lowerBound = 0.0,
+                   const bool lowertail = true,
+                   const bool logp = false) {
   int m = static_cast<int>(piecewiseSurvivalTime.size());
   double q, u = p, v, v1;
 
@@ -600,17 +653,65 @@ double qtpwexpcpp1(const double p,
 NumericVector qtpwexpcpp(const NumericVector& p,
                          const NumericVector& piecewiseSurvivalTime,
                          const NumericVector& lambda,
-                         const double lowerBound,
-                         const bool lowertail,
-                         const bool logp) {
+                         const double lowerBound = 0.0,
+                         const bool lowertail = true,
+                         const bool logp = false) {
   int n = static_cast<int>(p.size());
   NumericVector q(n);
   for (int h=0; h<n; ++h) {
-    q[h] = qtpwexpcpp1(p[h], piecewiseSurvivalTime, lambda, lowerBound,
-                       lowertail, logp);
+    q[h] = qtpwexpcpp1(p[h], piecewiseSurvivalTime, lambda,
+                       lowerBound, lowertail, logp);
   }
 
   return q;
+}
+
+
+// mean and variance of a truncated piecewise exponential distribution
+// [[Rcpp::export]]
+List mtpwexpcpp(const NumericVector& piecewiseSurvivalTime,
+                const NumericVector& lambda,
+                const double lowerBound = 0.0) {
+
+  int m = static_cast<int>(piecewiseSurvivalTime.size());
+  int j0 = findInterval3(NumericVector::create(lowerBound),
+                         piecewiseSurvivalTime, 0,0,0)[0];
+  double v = 0.0;
+  for (int i=0; i<j0-1; ++i) {
+    v += lambda[i]*(piecewiseSurvivalTime[i+1] - piecewiseSurvivalTime[i]);
+  }
+
+  double w = v + lambda[j0-1]*(lowerBound - piecewiseSurvivalTime[j0-1]);
+  w = exp(-w);
+
+  double s1 = 0.0, s2 = 0.0;
+  for (int j=j0-1; j<m; ++j) {
+    double t1 = (j==j0-1 ? lowerBound : piecewiseSurvivalTime[j]);
+    double t2 = (j==m-1 ? 1.0e+8 : piecewiseSurvivalTime[j+1]);
+    if (j > j0-1)
+      v += lambda[j-1]*(piecewiseSurvivalTime[j]- piecewiseSurvivalTime[j-1]);
+
+    if (lambda[j] == 0.0) {
+      s1 += exp(-v)*(t2 - t1);
+      s2 += exp(-v)*(t2*t2 - t1*t1);
+    } else {
+      double a1 = exp(-lambda[j]*(t1 - piecewiseSurvivalTime[j]));
+      double a2 = exp(-lambda[j]*(t2 - piecewiseSurvivalTime[j]));
+      s1 += exp(-v)*1.0/lambda[j]*(a1 - a2);
+
+      a1 *= (1 + lambda[j]*t1);
+      a2 *= (1 + lambda[j]*t2);
+      s2 += exp(-v)*2.0/(lambda[j]*lambda[j])*(a1 - a2);
+    }
+  }
+
+  double m1 = s1/w + lowerBound;
+  double m2 = s2/w + lowerBound*lowerBound;
+
+  return List::create(
+    Named("mean") = m1,
+    Named("variance") = m2 - m1*m1
+  );
 }
 
 
@@ -619,7 +720,7 @@ NumericVector rtpwexpcpp(
     const int n = NA_INTEGER,
     const NumericVector& piecewiseSurvivalTime = NA_REAL,
     const NumericVector& lambda = NA_REAL,
-    const double lowerBound = NA_REAL) {
+    const double lowerBound = 0.0) {
 
   NumericVector p(n);
   for (int i=0; i<n; ++i) {
@@ -1099,8 +1200,8 @@ NumericVector mini(const std::function<double(double)>& f,
 }
 
 
-NumericVector quad(integr_fn f, void *ex, double lower, double upper,
-                   double tol) {
+List quad(integr_fn f, void *ex, double lower, double upper,
+          double tol) {
   double epsabs=tol, epsrel=tol, value, abserr;
   int neval, ier, limit=100, lenw=4*limit, last;
 
@@ -1130,20 +1231,174 @@ NumericVector quad(integr_fn f, void *ex, double lower, double upper,
   delete[] iwork;
   delete[] work;
 
-  return NumericVector::create(Named("value") = value,
-                               Named("abserr") = abserr,
-                               Named("neval") = neval,
-                               Named("ier") = ier);
+  return List::create(Named("value") = value,
+                      Named("abserr") = abserr,
+                      Named("neval") = neval,
+                      Named("ier") = ier);
 }
 
 
+// 1D Gauss nodes
+static const double x3[3] = { -0.774596669241483,
+                              0.0,
+                              0.774596669241483 };
+
+static const double w3[3] = { 0.555555555555556,
+                              0.888888888888889,
+                              0.555555555555556 };
+
+static const double x5[5] = { -0.906179845938664,
+                              -0.538469310105683,
+                              0.0,
+                              0.538469310105683,
+                              0.906179845938664 };
+
+static const double w5[5] = { 0.236926885056189,
+                              0.478628670499366,
+                              0.568888888888889,
+                              0.478628670499366,
+                              0.236926885056189 };
+
+
+// structure to store a region
+struct Region {
+  double ax, bx, ay, by;
+  double I_low;    // 3x3 rule
+  double I_high;   // 5x5 rule
+  double err;      // |I_high - I_low|
+};
+
+
+// compute 3x3 and 5x5 tensor-product Gauss rules on a region
+static void eval_region(
+    const std::function<double(double,double)>& f,
+    double ax, double bx,
+    double ay, double by,
+    long &neval, double &I3, double &I5) {
+  double cx = 0.5*(ax + bx), dx = 0.5*(bx - ax);
+  double cy = 0.5*(ay + by), dy = 0.5*(by - ay);
+
+  I3 = 0.0;
+  I5 = 0.0;
+
+  // Store f at Gauss nodes to reuse in Kronrod
+  double f3[3][3];
+
+  // 3x3 Gauss
+  for(int i=0;i<3;++i){
+    double xi = cx + dx * x3[i];
+    for(int j=0;j<3;++j){
+      double yj = cy + dy * x3[j];
+      f3[i][j] = f(xi,yj);
+      I3 += w3[i]*w3[j]*f3[i][j];
+      ++neval;
+    }
+  }
+  I3 *= dx*dy;
+
+
+  // 5×5 rule
+  for(int i=0;i<5;++i){
+    double xi = cx + dx * x5[i];
+    for(int j=0;j<5;++j){
+      double yj = cy + dy * x5[j];
+      if (i==2 && j==2) {
+        I5 += w5[i]*w5[j] * f3[1][1];
+      } else {
+        I5 += w5[i]*w5[j] * f(xi,yj);
+        ++neval;
+      }
+    }
+  }
+  I5 *= dx * dy;
+}
+
+
+// priority comparison: larger error first
+struct RegionCompare {
+  bool operator()(const Region& a, const Region& b) const {
+    return a.err < b.err;   // max-heap
+  }
+};
+
+
+List quad2d(const std::function<double(double,double)>& f,
+            double ax, double bx,
+            double ay, double by,
+            double tol = 1.0e-5) {
+  long neval = 0;
+  int ier = 0;
+  int maxRegions = 1000000;
+
+  double I3, I5;
+  eval_region(f, ax, bx, ay, by, neval, I3, I5);
+
+  double global_value = I5;
+  double global_err   = std::fabs(I5 - I3);
+
+  std::priority_queue<Region, std::vector<Region>, RegionCompare> pq;
+
+  pq.push({ax,bx,ay,by, I3, I5, global_err});
+
+  while(global_err > tol && global_err > std::fabs(global_value) * tol &&
+        (int)pq.size() < maxRegions)
+  {
+    Region R = pq.top();
+    pq.pop();
+
+    // split in x direction (larger span)
+    double dx = R.bx - R.ax;
+    double dy = R.by - R.ay;
+    bool splitX = (dx >= dy);
+
+    Region R1 = R, R2 = R;
+    if(splitX){
+      double m = 0.5*(R.ax + R.bx);
+      R1.bx = m; R2.ax = m;
+    } else {
+      double m = 0.5*(R.ay + R.by);
+      R1.by = m; R2.ay = m;
+    }
+
+    eval_region(f, R1.ax,R1.bx,R1.ay,R1.by, neval, R1.I_low, R1.I_high);
+    eval_region(f, R2.ax,R2.bx,R2.ay,R2.by, neval, R2.I_low, R2.I_high);
+
+    R1.err = std::fabs(R1.I_high - R1.I_low);
+    R2.err = std::fabs(R2.I_high - R2.I_low);
+
+    // update global integral & error incrementally
+    global_value += (R1.I_high + R2.I_high) - R.I_high;
+    global_err   += (R1.err + R2.err) - R.err;
+
+    pq.push(R1);
+    pq.push(R2);
+  }
+
+  if(global_err > tol && global_err > std::fabs(global_value) * tol) ier = 1;
+
+  return List::create(
+    Rcpp::Named("value")  = global_value,
+    Rcpp::Named("abserr") = global_err,
+    Rcpp::Named("neval")  = neval,
+    Rcpp::Named("ier")    = ier
+  );
+}
+
+
+
+struct bvnparams {
+  double rho;
+  double a2;
+  double b2;
+};
+
 void f_bvnorm(double *x, int n, void *ex) {
   bvnparams *param = (bvnparams *) ex;
-  double corr = param->corr;
-  double s = sqrt(1 - corr*corr);
+  double rho = param->rho;
+  double s = sqrt(1 - rho*rho);
   for (int i=0; i<n; ++i) {
-    double a = (param->a2 - corr*x[i])/s;
-    double b = (param->b2 - corr*x[i])/s;
+    double a = (param->a2 - rho*x[i])/s;
+    double b = (param->b2 - rho*x[i])/s;
     double t1 = R::dnorm(x[i],0,1,0);
     double t2 = R::pnorm(b,0,1,1,0) - R::pnorm(a,0,1,1,0);
     x[i] = t1*t2;
@@ -1152,15 +1407,15 @@ void f_bvnorm(double *x, int n, void *ex) {
 
 
 // [[Rcpp::export]]
-double pbvnormcpp(NumericVector lower, NumericVector upper, double corr) {
+double pbvnormcpp(NumericVector lower, NumericVector upper, double rho) {
   double result;
-  if (corr == 0) {
+  if (rho == 0) {
     double v1 = R::pnorm(upper[0],0,1,1,0) - R::pnorm(lower[0],0,1,1,0);
     double v2 = R::pnorm(upper[1],0,1,1,0) - R::pnorm(lower[1],0,1,1,0);
     result = v1*v2;
   } else {
     double tol = 1.0e-8;
-    bvnparams param = {corr, lower[1], upper[1]};
+    bvnparams param = {rho, lower[1], upper[1]};
     result = quad(f_bvnorm, &param, lower[0], upper[0], tol)[0];
   }
   return result;
@@ -1168,83 +1423,372 @@ double pbvnormcpp(NumericVector lower, NumericVector upper, double corr) {
 
 
 // [[Rcpp::export]]
-NumericVector hazard_pdcpp(const NumericVector& piecewiseSurvivalTime,
-                           const NumericVector& hazard_pfs,
-                           const NumericVector& hazard_os,
-                           const double corr_pd_os) {
+List hazard_pdcpp(const NumericVector& piecewiseSurvivalTime,
+                  const NumericVector& hazard_pfs,
+                  const NumericVector& hazard_os,
+                  const double rho_pd_os) {
   int n = static_cast<int>(piecewiseSurvivalTime.size());
-  NumericVector u(n);
+
+  // append additional time points for pfs quantiles
+  NumericVector p(10);
+  for (int i=0; i<9; ++i) {
+    p[i] = (i+1.0)/10.0;
+  }
+  p[9] = 0.95;
+
+  NumericVector u0 = qtpwexpcpp(p, piecewiseSurvivalTime,
+                                hazard_pfs, 0, 1, 0);
+  NumericVector u(n+10);
   for (int i=0; i<n-1; ++i) {
     u[i] = piecewiseSurvivalTime[i+1];
   }
   u[n-1] = piecewiseSurvivalTime[n-1] + log(2)/hazard_pfs[n-1];
+  for (int i=0; i<10; ++i) {
+    u[n+i] = u0[i];
+  }
 
-  NumericVector hazard_pd(n);
-  NumericVector t(1), v(0), hazard(0), haz_pfs(0), haz_os(0);
-  auto f = [&t, &v, &hazard, &haz_pfs, &haz_os,
-            corr_pd_os](double haz)->double {
+  // obtain sorted and unique time points
+  std::sort(u.begin(), u.end());
+  u.erase(std::unique(u.begin(), u.end()), u.end());
+  int m = static_cast<int>(u.size());
+
+  // shifted time points
+  NumericVector u1(m);
+  u1[0] = 0;
+  for (int i=1; i<m; ++i) {
+    u1[i] = u[i-1];
+  }
+
+  // get corresponding hazards
+  IntegerVector index = findInterval3(u1, piecewiseSurvivalTime, 0,0,0) - 1;
+  NumericVector hazard_pfs1 = hazard_pfs[index];
+  NumericVector hazard_os1 = hazard_os[index];
+
+  // solve for hazard_pd
+  double t;
+  NumericVector hazard_pd(m);
+  NumericVector v(0), hazard(0), haz_pfs(0), haz_os(0);
+  auto f = [&t, &v, &haz_pfs, &haz_os, &hazard,
+            rho_pd_os](double haz)->double {
               NumericVector haz_pd = clone(hazard);
               haz_pd.push_back(haz);
               NumericVector lower(2);
-              double a = ptpwexpcpp(t, v, haz_pd, 0, 1, 0)[0];
-              double b = ptpwexpcpp(t, v, haz_os, 0, 1, 0)[0];
+              double a = ptpwexpcpp1(t, v, haz_pd, 0, 1, 0);
+              double b = ptpwexpcpp1(t, v, haz_os, 0, 1, 0);
               lower[0] = R::qnorm(a,0,1,1,0);
               lower[1] = R::qnorm(b,0,1,1,0);
               NumericVector upper(2, R_PosInf);
-              double q = pbvnormcpp(lower, upper, corr_pd_os);
-              return q - ptpwexpcpp(t, v, haz_pfs, 0, 0, 0)[0];
+              double q = pbvnormcpp(lower, upper, rho_pd_os);
+              return q - ptpwexpcpp1(t, v, haz_pfs, 0, 0, 0);
             };
 
   double tol = 1e-6;
-  for (int i=0; i<n; ++i) {
-    t[0] = u[i];
-    v.push_back(piecewiseSurvivalTime[i]);
-    haz_pfs.push_back(hazard_pfs[i]);
-    haz_os.push_back(hazard_os[i]);
-    hazard_pd[i] = brent(f, 0.5*(hazard_pfs[i]-hazard_os[i]),
-                         hazard_pfs[i], tol);
+  for (int i=0; i<m; ++i) {
+    t = u[i];
+    v.push_back(u1[i]);
+    haz_pfs.push_back(hazard_pfs1[i]);
+    haz_os.push_back(hazard_os1[i]);
+    hazard_pd[i] = brent(f, 0.5*(hazard_pfs1[i] - hazard_os1[i]),
+                         2*hazard_pfs1[i], tol);
     hazard.push_back(hazard_pd[i]);
   }
 
-  return hazard_pd;
+  return List::create(
+    Named("piecewiseSurvivalTime" )= u1,
+    Named("hazard_pd") = hazard_pd,
+    Named("hazard_os") = hazard_os1,
+    Named("rho_pd_os") = rho_pd_os
+  );
+}
+
+
+
+struct pfsparams {
+  NumericVector piecewiseSurvivalTime;
+  NumericVector hazard_pd;
+  NumericVector hazard_os;
+  double rho_pd_os;
+};
+
+
+// [[Rcpp::export]]
+NumericVector pdf_pfs(const NumericVector& time,
+                      const NumericVector& piecewiseSurvivalTime,
+                      const NumericVector& hazard_pd,
+                      const NumericVector& hazard_os,
+                      const double rho_pd_os) {
+  double s = sqrt(1.0 - rho_pd_os*rho_pd_os);
+  NumericVector u1 = ptpwexpcpp(time, piecewiseSurvivalTime,
+                                hazard_pd, 0, 1, 0);
+  NumericVector u2 = ptpwexpcpp(time, piecewiseSurvivalTime,
+                                hazard_os, 0, 1, 0);
+  NumericVector z1 = qnorm(u1);
+  NumericVector z2 = qnorm(u2);
+  NumericVector a1 = 1 - pnorm((z2 - rho_pd_os*z1)/s);
+  NumericVector a2 = 1 - pnorm((z1 - rho_pd_os*z2)/s);
+  NumericVector d1 = dtpwexpcpp(time, piecewiseSurvivalTime,
+                                hazard_pd, 0, 0);
+  NumericVector d2 = dtpwexpcpp(time, piecewiseSurvivalTime,
+                                hazard_os, 0, 0);
+  NumericVector result = a1*d1 + a2*d2;
+  return result;
+};
+
+
+// [[Rcpp::export]]
+NumericVector sdf_pfs(const NumericVector& time,
+                      const NumericVector& piecewiseSurvivalTime,
+                      const NumericVector& hazard_pd,
+                      const NumericVector& hazard_os,
+                      const double rho_pd_os) {
+  NumericVector u1 = ptpwexpcpp(time, piecewiseSurvivalTime,
+                                hazard_pd, 0, 1, 0);
+  NumericVector u2 = ptpwexpcpp(time, piecewiseSurvivalTime,
+                                hazard_os, 0, 1, 0);
+  NumericVector z1 = qnorm(u1);
+  NumericVector z2 = qnorm(u2);
+
+  int n = static_cast<int>(time.size());
+  NumericVector p(n);
+  for (int i=0; i<n; ++i) {
+    p[i] = pbvnormcpp(NumericVector::create(z1[i], z2[i]),
+                      NumericVector::create(R_PosInf, R_PosInf),
+                      rho_pd_os);
+  }
+
+  return p;
+};
+
+
+double upper_pfs(const NumericVector& piecewiseSurvivalTime,
+                 const NumericVector& hazard_pd,
+                 const NumericVector& hazard_os,
+                 const double rho_pd_os) {
+
+  double tol = 1e-12;
+  double upper = 1.0;
+  while (sdf_pfs(NumericVector::create(upper),
+                 piecewiseSurvivalTime,
+                 hazard_pd, hazard_os,
+                 rho_pd_os)[0] > tol) {
+    upper *= 2.0;
+  }
+
+  return upper;
+}
+
+
+// integrand for the mean of pfs
+void fm_pfs(double *x, int n, void *ex) {
+  pfsparams *param = (pfsparams *) ex;
+  NumericVector u(n);
+  for (int i=0; i<n; ++i) {
+    u[i] = x[i];
+  }
+
+  NumericVector d = pdf_pfs(u, param->piecewiseSurvivalTime,
+                            param->hazard_pd, param->hazard_os,
+                            param->rho_pd_os);
+
+  for (int i=0; i<n; ++i) {
+    x[i] = u[i]*d[i];
+  }
+}
+
+
+// integrand for the second moment of pfs
+void fm2_pfs(double *x, int n, void *ex) {
+  pfsparams *param = (pfsparams *) ex;
+  NumericVector u(n);
+  for (int i=0; i<n; ++i) {
+    u[i] = x[i];
+  }
+
+  NumericVector d = pdf_pfs(u, param->piecewiseSurvivalTime,
+                            param->hazard_pd, param->hazard_os,
+                            param->rho_pd_os);
+
+  for (int i=0; i<n; ++i) {
+    x[i] = u[i]*u[i]*d[i];
+  }
 }
 
 
 // [[Rcpp::export]]
-NumericVector hazard_subcpp(const NumericVector& piecewiseSurvivalTime,
-                            const NumericVector& hazard_itt,
-                            const NumericVector& hazard_pos,
-                            const double p_pos) {
+List m_pfs(const NumericVector& piecewiseSurvivalTime,
+           const NumericVector& hazard_pd,
+           const NumericVector& hazard_os,
+           const double rho_pd_os) {
+  pfsparams param = {piecewiseSurvivalTime, hazard_pd,
+                     hazard_os, rho_pd_os};
+
+  double upper = upper_pfs(piecewiseSurvivalTime, hazard_pd,
+                           hazard_os, rho_pd_os);
+
+  double tol = 1e-5;
+  double m1 = quad(fm_pfs, &param, 0.0, upper, tol)[0];
+  double m2 = quad(fm2_pfs, &param, 0.0, upper, tol)[0];
+
+  return List::create(
+    Named("mean") = m1,
+    Named("variance") = m2 - m1*m1
+  );
+}
+
+
+// [[Rcpp::export]]
+double cor_pfs_os(const NumericVector& piecewiseSurvivalTime,
+                  const NumericVector& hazard_pd,
+                  const NumericVector& hazard_os,
+                  const double rho_pd_os) {
+  List mv1 = m_pfs(piecewiseSurvivalTime, hazard_pd,
+                   hazard_os, rho_pd_os);
+  double m1 = mv1["mean"];
+  double v1 = mv1["variance"];
+
+  List mv2 = mtpwexpcpp(piecewiseSurvivalTime, hazard_os, 0.0);
+  double m2 = mv2["mean"];
+  double v2 = mv2["variance"];
+
+  // integrand for the joint moment
+  auto f = [piecewiseSurvivalTime, hazard_pd, hazard_os,
+            rho_pd_os](double u1, double u2)->double {
+              double t1 = qtpwexpcpp1(u1, piecewiseSurvivalTime,
+                                      hazard_pd, 0, 1, 0);
+              double t2 = qtpwexpcpp1(u2, piecewiseSurvivalTime,
+                                      hazard_os, 0, 1, 0);
+              double z1 = R::qnorm(u1,0,1,1,0);
+              double z2 = R::qnorm(u2,0,1,1,0);
+              double a1 = std::min(t1,t2)*t2;
+
+              // joint density of standard bivariate normal
+              double s = sqrt(1 - rho_pd_os*rho_pd_os);
+              double a2 = 1.0/(2.0*M_PI*s) * exp(-1.0/(2.0*s*s) *
+                (z1*z1 - 2.0*rho_pd_os*z1*z2 + z2*z2));
+              double a3 = R::dnorm(z1,0,1,0) * R::dnorm(z2,0,1,0);
+              return a1 * a2 / a3;
+            };
+
+  double tol = 1e-4;
+  double m12 = quad2d(f, 0.0, 1.0, 0.0, 1.0, tol)["value"];
+
+  double cov = m12 - m1*m2;
+  return cov / sqrt(v1 * v2);
+}
+
+
+// [[Rcpp::export]]
+double corr_pfs_oscpp(const NumericVector& piecewiseSurvivalTime,
+                      const NumericVector& hazard_pfs,
+                      const NumericVector& hazard_os,
+                      const double rho_pd_os) {
+  List a = hazard_pdcpp(piecewiseSurvivalTime,
+                        hazard_pfs, hazard_os, rho_pd_os);
+  NumericVector u = a["piecewiseSurvivalTime"];
+  NumericVector hazard_pd1 = a["hazard_pd"];
+  NumericVector hazard_os1 = a["hazard_os"];
+
+  return cor_pfs_os(u, hazard_pd1, hazard_os1, rho_pd_os);
+}
+
+
+// [[Rcpp::export]]
+List hazard_pd2cpp(const NumericVector& piecewiseSurvivalTime,
+                   const NumericVector& hazard_pfs,
+                   const NumericVector& hazard_os,
+                   const double rho_pfs_os) {
+
+  auto f = [piecewiseSurvivalTime, hazard_pfs, hazard_os,
+            rho_pfs_os](double rho_pd_os)->double {
+              double rho = corr_pfs_oscpp(piecewiseSurvivalTime,
+                                          hazard_pfs, hazard_os,
+                                          rho_pd_os);
+              return rho - rho_pfs_os;
+            };
+
+  double tol = 1e-3;
+  double rho_pd_os = brent(f, 0, 0.99, tol);
+  List a = hazard_pdcpp(piecewiseSurvivalTime,
+                        hazard_pfs, hazard_os,
+                        rho_pd_os);
+  a.push_back(rho_pfs_os, "rho_pfs_os");
+  return a;
+}
+
+
+// [[Rcpp::export]]
+List hazard_subcpp(const NumericVector& piecewiseSurvivalTime,
+                   const NumericVector& hazard_itt,
+                   const NumericVector& hazard_pos,
+                   const double p_pos) {
   int n = static_cast<int>(piecewiseSurvivalTime.size());
-  NumericVector u(n);
+
+  // append additional time points for pfs quantiles
+  NumericVector p(10);
+  for (int i=0; i<9; ++i) {
+    p[i] = (i+1.0)/10.0;
+  }
+  p[9] = 0.95;
+
+  NumericVector u0 = qtpwexpcpp(p, piecewiseSurvivalTime,
+                                hazard_itt, 0, 1, 0);
+  NumericVector u(n+10);
   for (int i=0; i<n-1; ++i) {
     u[i] = piecewiseSurvivalTime[i+1];
   }
   u[n-1] = piecewiseSurvivalTime[n-1] + log(2)/hazard_itt[n-1];
+  for (int i=0; i<10; ++i) {
+    u[n+i] = u0[i];
+  }
 
-  NumericVector hazard_neg(n);
-  NumericVector t(1), v(0), hazard(0), haz_itt(0), haz_pos(0);
-  auto f = [&t, &v, &hazard, &haz_itt, &haz_pos, p_pos](double haz)->double {
-    NumericVector haz_neg = clone(hazard);
-    haz_neg.push_back(haz);
-    double a = ptpwexpcpp(t, v, haz_pos, 0, 1, 0)[0];
-    double b = ptpwexpcpp(t, v, haz_neg, 0, 1, 0)[0];
-    double q = p_pos*a + (1-p_pos)*b;
-    return q - ptpwexpcpp(t, v, haz_itt, 0, 1, 0)[0];
-  };
+  // obtain sorted and unique time points
+  std::sort(u.begin(), u.end());
+  u.erase(std::unique(u.begin(), u.end()), u.end());
+  int m = static_cast<int>(u.size());
+
+  // shifted time points
+  NumericVector u1(m);
+  u1[0] = 0;
+  for (int i=1; i<m; ++i) {
+    u1[i] = u[i-1];
+  }
+
+  // get corresponding hazards
+  IntegerVector index = findInterval3(u1, piecewiseSurvivalTime, 0,0,0) - 1;
+  NumericVector hazard_itt1 = hazard_itt[index];
+  NumericVector hazard_pos1 = hazard_pos[index];
+
+  // solve for hazard_sub
+  double t;
+  NumericVector hazard_neg(m);
+  NumericVector v(0), hazard(0), haz_itt(0), haz_pos(0);
+  auto f = [&t, &v, &haz_itt, &haz_pos, &hazard,
+            p_pos](double haz)->double {
+              NumericVector haz_neg = clone(hazard);
+              haz_neg.push_back(haz);
+              double a = ptpwexpcpp1(t, v, haz_pos, 0, 1, 0);
+              double b = ptpwexpcpp1(t, v, haz_neg, 0, 1, 0);
+              double q = p_pos*a + (1-p_pos)*b;
+              return q - ptpwexpcpp1(t, v, haz_itt, 0, 1, 0);
+            };
 
   double tol = 1e-6;
-  for (int i=0; i<n; ++i) {
-    t[0] = u[i];
-    v.push_back(piecewiseSurvivalTime[i]);
-    haz_itt.push_back(hazard_itt[i]);
-    haz_pos.push_back(hazard_pos[i]);
-    hazard_neg[i] = brent(f, hazard_itt[i]-p_pos*hazard_pos[i],
-                          hazard_itt[i]/(1-p_pos), tol);
+  for (int i=0; i<m; ++i) {
+    t = u[i];
+    v.push_back(u1[i]);
+    haz_itt.push_back(hazard_itt1[i]);
+    haz_pos.push_back(hazard_pos1[i]);
+    hazard_neg[i] = brent(f, 0.5*(hazard_itt1[i]-p_pos*hazard_pos1[i]),
+                          2.0*hazard_itt1[i]/(1-p_pos), tol);
     hazard.push_back(hazard_neg[i]);
   }
 
-  return hazard_neg;
+  return List::create(
+    Named("piecewiseSurvivalTime" )= u1,
+    Named("hazard_pos") = hazard_pos1,
+    Named("hazard_neg") = hazard_neg,
+    Named("p_pos") = p_pos
+  );
 }
 
 
@@ -1320,7 +1864,7 @@ NumericVector accrual(const NumericVector& time = NA_REAL,
   NumericVector t = pmax(pmin(time, accrualDuration), 0.0);
 
   // identify the time interval containing t
-  IntegerVector m = pmax(findInterval3(t, accrualTime), 1);
+  IntegerVector m = pmax(findInterval3(t, accrualTime, 0,0,0), 1);
 
   // sum up patients enrolled in each interval up to t
   for (int i=0; i<k; ++i) {
@@ -1368,7 +1912,7 @@ NumericVector getAccrualDurationFromN(
     p[j+1] = p[j] + accrualIntensity[j]*(accrualTime[j+1] - accrualTime[j]);
   }
 
-  IntegerVector m = findInterval3(nsubjects, p);
+  IntegerVector m = findInterval3(nsubjects, p, 0,0,0);
 
   for (int i=0; i<I; ++i) {
     int j = m[i] - 1;
@@ -1411,7 +1955,7 @@ NumericVector patrisk(const NumericVector& time = NA_REAL,
                       const NumericVector& gamma = 0) {
 
   // identify the time interval containing the specified analysis time
-  IntegerVector m = pmax(findInterval3(time, piecewiseSurvivalTime), 1);
+  IntegerVector m = pmax(findInterval3(time, piecewiseSurvivalTime,0,0,0), 1);
   int k = static_cast<int>(time.size());
   int J = static_cast<int>(piecewiseSurvivalTime.size());
 
@@ -1486,7 +2030,7 @@ NumericVector pevent(const NumericVector& time = NA_REAL,
                      const NumericVector& gamma = 0) {
 
   // identify the time interval containing the specified analysis time
-  IntegerVector m = pmax(findInterval3(time, piecewiseSurvivalTime), 1);
+  IntegerVector m = pmax(findInterval3(time, piecewiseSurvivalTime,0,0,0), 1);
   int k = static_cast<int>(time.size());
   int J = static_cast<int>(piecewiseSurvivalTime.size());
 
@@ -1651,7 +2195,8 @@ double pd(const double t1 = NA_REAL,
 
   // identify the analysis time intervals containing t1 and t2
   NumericVector t12 = NumericVector::create(t1, t2);
-  IntegerVector j12 = pmax(findInterval3(t12, piecewiseSurvivalTime), 1) - 1;
+  IntegerVector j12 = pmax(findInterval3(t12, piecewiseSurvivalTime,
+                                         0,0,0), 1) - 1;
 
   NumericVector t = piecewiseSurvivalTime;
 
@@ -1725,7 +2270,7 @@ NumericVector ad(const NumericVector& time = NA_REAL,
 
   // identify the accrual time intervals containing u1 and u2
   NumericVector u12 = NumericVector::create(u1, u2);
-  IntegerVector j12 = pmax(findInterval3(u12, accrualTime), 1) - 1;
+  IntegerVector j12 = pmax(findInterval3(u12, accrualTime, 0,0,0), 1) - 1;
 
   NumericVector u = accrualTime;
 

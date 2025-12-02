@@ -33,6 +33,12 @@ List exitprobcpp(const NumericVector& b,
                  const NumericVector& theta,
                  const NumericVector& I);
 
+NumericVector dtpwexpcpp(const NumericVector& q,
+                         const NumericVector& piecewiseSurvivalTime,
+                         const NumericVector& lambda,
+                         const double lowerBound,
+                         const bool logd);
+
 NumericVector ptpwexpcpp(const NumericVector& q,
                          const NumericVector& piecewiseSurvivalTime,
                          const NumericVector& lambda,
@@ -87,28 +93,25 @@ double intnorm(const std::function<double(double)>& f,
 NumericVector mini(const std::function<double(double)>& f,
                    double x1, double x2, double tol);
 
-NumericVector quad(integr_fn f, void *ex, double lower, double upper,
-                   double tol);
+List quad(integr_fn f, void *ex, double lower, double upper,
+          double tol);
 
-struct bvnparams {
-  double corr;
-  double a2;
-  double b2;
-};
+List quad2d(const std::function<double(double,double)>& f,
+            double ax, double bx,
+            double ay, double by,
+            double tol);
 
-void f_bvnorm(double *x, int n, void *ex);
+double pbvnormcpp(NumericVector lower, NumericVector upper, double rho);
 
-double pbvnormcpp(NumericVector lower, NumericVector upper, double corr);
+List hazard_pdcpp(const NumericVector& piecewiseSurvivalTime,
+                  const NumericVector& hazard_pfs,
+                  const NumericVector& hazard_os,
+                  const double rho_pd_os);
 
-NumericVector hazard_pdcpp(const NumericVector& piecewiseSurvivalTime,
-                           const NumericVector& hazard_pfs,
-                           const NumericVector& hazard_os,
-                           const double corr_pd_os);
-
-NumericVector hazard_subcpp(const NumericVector& piecewiseSurvivalTime,
-                            const NumericVector& hazard_itt,
-                            const NumericVector& hazard_pos,
-                            const double p_pos);
+List hazard_subcpp(const NumericVector& piecewiseSurvivalTime,
+                   const NumericVector& hazard_itt,
+                   const NumericVector& hazard_pos,
+                   const double p_pos);
 
 List bmini(NumericVector x0, optimfn fn, optimgr gr, void *ex, double eps);
 
@@ -131,28 +134,6 @@ NumericVector pevent(const NumericVector& time,
                      const NumericVector& piecewiseSurvivalTime,
                      const NumericVector& lambda,
                      const NumericVector& gamma);
-
-double hd(const int j,
-          const double t1,
-          const double t2,
-          const NumericVector& piecewiseSurvivalTime,
-          const NumericVector& lambda,
-          const NumericVector& gamma);
-
-double pd(const double t1,
-          const double t2,
-          const NumericVector& piecewiseSurvivalTime,
-          const NumericVector& lambda,
-          const NumericVector& gamma);
-
-NumericVector ad(const NumericVector& time,
-                 const double u1,
-                 const double u2,
-                 const NumericVector& accrualTime,
-                 const NumericVector& accrualIntensity,
-                 const NumericVector& piecewiseSurvivalTime,
-                 const NumericVector& lambda,
-                 const NumericVector& gamma);
 
 NumericMatrix natrisk(const NumericVector& time,
                       const double allocationRatioPlanned,
@@ -282,24 +263,8 @@ DataFrame survsplit(NumericVector tstart,
 
 bool is_sorted(NumericVector x);
 
-NumericVector house(const NumericVector& x);
-void row_house(NumericMatrix& A, const int i1, const int i2,
-               const int j1, const int j2, const NumericVector& v);
-void col_house(NumericMatrix& A, const int i1, const int i2,
-               const int j1, const int j2, const NumericVector& v);
 List qrcpp(const NumericMatrix& X, double tol);
 
-NumericVector givens(const double a, const double b);
-void row_rot(NumericMatrix& A, const int i1, const int i2,
-             const int j1, const int j2,
-             const double c, const double s);
-void col_rot(NumericMatrix& A, const int i1, const int i2,
-             const int j1, const int j2,
-             const double c, const double s);
-List house_bidiag(NumericMatrix& A, const bool outtransform);
-List zero_diagonal(NumericMatrix& B, const int k,
-                   const bool outtransform);
-List svd_step(NumericMatrix& B, const bool outtransform);
 List svdcpp(const NumericMatrix& X, const bool outtransform,
             const bool decreasing);
 
