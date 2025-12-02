@@ -6,8 +6,6 @@ using namespace Rcpp;
 #ifndef __SURVIVAL_ANALYSIS__
 #define __SURVIVAL_ANALYSIS__
 
-NumericVector fsurvci(double surv, double sesurv, std::string ct, double z);
-
 DataFrame survQuantile(const NumericVector& time,
                        const IntegerVector& event,
                        const double cilevel,
@@ -67,36 +65,6 @@ DataFrame rmdiff(const DataFrame data,
                  const double conflev,
                  const bool biascorrection);
 
-struct aftparams {
-  int dist_code; // 1: exponential, 2: weibull, 3: lognormal, 4: normal,
-                 // 5: loglogistic, 6: logistic
-  IntegerVector strata;
-  NumericVector tstart;
-  NumericVector tstop;
-  IntegerVector status;
-  NumericVector weight;
-  NumericVector offset;
-  NumericMatrix z;
-  int nstrata;
-};
-
-
-List f_der_1(int p, const NumericVector& par, void *ex);
-
-NumericMatrix f_ressco_1(int p, const NumericVector& par, void *ex);
-
-NumericMatrix f_jj_1(int p, const NumericVector& par, void *ex);
-
-List liferegloop(int p, const NumericVector& par, void *ex,
-                 int maxiter, double eps,
-                 const IntegerVector& colfit, int ncolfit);
-
-double liferegplloop(int p, const NumericVector& par, void *ex,
-                     int maxiter, double eps,
-                     int k, int which, double l0);
-
-List f_ld_1(NumericVector eta, NumericVector sig, void *ex);
-
 List liferegcpp(const DataFrame data,
                 const StringVector& rep,
                 const StringVector& stratum,
@@ -115,7 +83,6 @@ List liferegcpp(const DataFrame data,
                 const int maxiter,
                 const double eps);
 
-
 NumericMatrix residuals_liferegcpp(const NumericVector& beta,
                                    const NumericMatrix& vbeta,
                                    DataFrame data,
@@ -131,38 +98,6 @@ NumericMatrix residuals_liferegcpp(const NumericVector& beta,
                                    const std::string type,
                                    const bool collapse,
                                    const bool weighted);
-
-struct coxparams {
-  int nused;
-  IntegerVector strata;
-  NumericVector tstart;
-  NumericVector tstop;
-  IntegerVector event;
-  NumericVector weight;
-  NumericVector offset;
-  NumericMatrix z;
-  IntegerVector order1;
-  int method; // 1: breslow, 2: efron
-};
-
-
-List f_der_2(int p, const NumericVector& par, void* ex, bool firth);
-
-List phregloop(int p, const NumericVector& par, void *ex,
-               int maxiter, double eps, bool firth,
-               const IntegerVector& colfit, int ncolfit);
-
-double phregplloop(int p, const NumericVector& par, void *ex,
-                   int maxiter, double eps, bool firth,
-                   int k, int which, double l0);
-
-List f_basehaz(int p, const NumericVector& par, void *ex);
-
-NumericMatrix f_ressco_2(int p, const NumericVector& par, void *ex);
-
-NumericVector f_resmart(int p, const NumericVector& par, void *ex);
-
-List f_ressch(int p, const NumericVector& par, void *ex);
 
 List phregcpp(const DataFrame data,
               const StringVector& rep,
@@ -217,9 +152,6 @@ List residuals_phregcpp(const int p,
                         const std::string type,
                         const bool collapse,
                         const bool weighted);
-
-
-List f_der_i_2(int p, const NumericVector& par, void* ex);
 
 List assess_phregcpp(const int p,
                      const NumericVector& beta,

@@ -6,28 +6,6 @@ using namespace Rcpp;
 #ifndef __LOGISTIC_REGRESSION__
 #define __LOGISTIC_REGRESSION__
 
-struct logparams {
-  int n;
-  int link_code; // 0: logit, 1: probit, 2: cloglog
-  NumericVector y;
-  NumericMatrix z;
-  NumericVector freq;
-  NumericVector weight;
-  NumericVector offset;
-};
-
-List f_der_0(int p, const NumericVector& par, void *ex, bool firth);
-
-NumericMatrix f_ressco_0(int p, const NumericVector& par, void *ex);
-
-List logisregloop(int p, const NumericVector& par, void *ex,
-                  int maxiter, double eps, bool firth,
-                  const IntegerVector& colfit, int ncolfit);
-
-double logisregplloop(int p, const NumericVector& par, void *ex,
-                      int maxiter, double eps, bool firth,
-                      int k, int which, double l0);
-
 List logisregcpp(const DataFrame data,
                  const StringVector& rep,
                  const std::string event,
@@ -44,6 +22,6 @@ List logisregcpp(const DataFrame data,
                  const bool plci,
                  const double alpha,
                  const int maxiter,
-                 const double eps);                      
+                 const double eps);
 
 #endif // __LOGISTIC_REGRESSION__
