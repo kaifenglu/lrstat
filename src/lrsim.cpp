@@ -254,8 +254,8 @@ List lrsim(const int kMax = 1,
            const int seed = NA_INTEGER) {
 
   int nstrata = static_cast<int>(stratumFraction.size());
-  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
-  int nsi = nstrata*nintervals;
+  int nints = static_cast<int>(piecewiseSurvivalTime.size());
+  int nsi = nstrata*nints;
   NumericVector lambda1x(nsi), lambda2x(nsi);
   NumericVector gamma1x(nsi), gamma2x(nsi);
 
@@ -383,7 +383,7 @@ List lrsim(const int kMax = 1,
     stop("piecewiseSurvivalTime must start with 0");
   }
 
-  if (nintervals > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
+  if (nints > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
     stop("piecewiseSurvivalTime should be increasing");
   }
 
@@ -422,7 +422,7 @@ List lrsim(const int kMax = 1,
 
   if (lambda1.size() == 1) {
     lambda1x = rep(lambda1, nsi);
-  } else if (lambda1.size() == nintervals) {
+  } else if (lambda1.size() == nints) {
     lambda1x = rep(lambda1, nstrata);
   } else if (lambda1.size() == nsi) {
     lambda1x = lambda1;
@@ -432,7 +432,7 @@ List lrsim(const int kMax = 1,
 
   if (lambda2.size() == 1) {
     lambda2x = rep(lambda2, nsi);
-  } else if (lambda2.size() == nintervals) {
+  } else if (lambda2.size() == nints) {
     lambda2x = rep(lambda2, nstrata);
   } else if (lambda2.size() == nsi) {
     lambda2x = lambda2;
@@ -442,7 +442,7 @@ List lrsim(const int kMax = 1,
 
   if (gamma1.size() == 1) {
     gamma1x = rep(gamma1, nsi);
-  } else if (gamma1.size() == nintervals) {
+  } else if (gamma1.size() == nints) {
     gamma1x = rep(gamma1, nstrata);
   } else if (gamma1.size() == nsi) {
     gamma1x = gamma1;
@@ -452,7 +452,7 @@ List lrsim(const int kMax = 1,
 
   if (gamma2.size() == 1) {
     gamma2x = rep(gamma2, nsi);
-  } else if (gamma2.size() == nintervals) {
+  } else if (gamma2.size() == nints) {
     gamma2x = rep(gamma2, nstrata);
   } else if (gamma2.size() == nsi) {
     gamma2x = gamma2;
@@ -518,8 +518,8 @@ List lrsim(const int kMax = 1,
 
 
   // within-stratum hazard rates
-  NumericVector lam1(nintervals), lam2(nintervals);
-  NumericVector gam1(nintervals), gam2(nintervals);
+  NumericVector lam1(nints), lam2(nints);
+  NumericVector gam1(nints), gam2(nints);
 
   // stage-wise information
   IntegerVector accruals1(kMax), accruals2(kMax), totalAccruals(kMax),
@@ -628,7 +628,7 @@ List lrsim(const int kMax = 1,
       }
 
       // stratum-specific hazard rates for event and dropout
-      Range jj = Range(j*nintervals, (j+1)*nintervals-1);
+      Range jj = Range(j*nints, (j+1)*nints-1);
 
       lam1 = lambda1x[jj];
       lam2 = lambda2x[jj];
@@ -1354,8 +1354,8 @@ List lrsim3a(const int kMax = 1,
 
   // check input parameters
   int nstrata = static_cast<int>(stratumFraction.size());
-  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
-  int nsi = nstrata*nintervals;
+  int nints = static_cast<int>(piecewiseSurvivalTime.size());
+  int nsi = nstrata*nints;
 
   NumericVector lambda1x(nsi), lambda2x(nsi), lambda3x(nsi);
   NumericVector gamma1x(nsi), gamma2x(nsi), gamma3x(nsi);
@@ -1448,7 +1448,7 @@ List lrsim3a(const int kMax = 1,
     stop("piecewiseSurvivalTime must start with 0");
   }
 
-  if (nintervals > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
+  if (nints > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
     stop("piecewiseSurvivalTime should be increasing");
   }
 
@@ -1502,7 +1502,7 @@ List lrsim3a(const int kMax = 1,
 
   if (lambda1.size() == 1) {
     lambda1x = rep(lambda1, nsi);
-  } else if (lambda1.size() == nintervals) {
+  } else if (lambda1.size() == nints) {
     lambda1x = rep(lambda1, nstrata);
   } else if (lambda1.size() == nsi) {
     lambda1x = lambda1;
@@ -1513,7 +1513,7 @@ List lrsim3a(const int kMax = 1,
 
   if (lambda2.size() == 1) {
     lambda2x = rep(lambda2, nsi);
-  } else if (lambda2.size() == nintervals) {
+  } else if (lambda2.size() == nints) {
     lambda2x = rep(lambda2, nstrata);
   } else if (lambda2.size() == nsi) {
     lambda2x = lambda2;
@@ -1524,7 +1524,7 @@ List lrsim3a(const int kMax = 1,
 
   if (lambda3.size() == 1) {
     lambda3x = rep(lambda3, nsi);
-  } else if (lambda3.size() == nintervals) {
+  } else if (lambda3.size() == nints) {
     lambda3x = rep(lambda3, nstrata);
   } else if (lambda3.size() == nsi) {
     lambda3x = lambda3;
@@ -1536,7 +1536,7 @@ List lrsim3a(const int kMax = 1,
 
   if (gamma1.size() == 1) {
     gamma1x = rep(gamma1, nsi);
-  } else if (gamma1.size() == nintervals) {
+  } else if (gamma1.size() == nints) {
     gamma1x = rep(gamma1, nstrata);
   } else if (gamma1.size() == nsi) {
     gamma1x = gamma1;
@@ -1547,7 +1547,7 @@ List lrsim3a(const int kMax = 1,
 
   if (gamma2.size() == 1) {
     gamma2x = rep(gamma2, nsi);
-  } else if (gamma2.size() == nintervals) {
+  } else if (gamma2.size() == nints) {
     gamma2x = rep(gamma2, nstrata);
   } else if (gamma2.size() == nsi) {
     gamma2x = gamma2;
@@ -1558,7 +1558,7 @@ List lrsim3a(const int kMax = 1,
 
   if (gamma3.size() == 1) {
     gamma3x = rep(gamma3, nsi);
-  } else if (gamma3.size() == nintervals) {
+  } else if (gamma3.size() == nints) {
     gamma3x = rep(gamma3, nstrata);
   } else if (gamma3.size() == nsi) {
     gamma3x = gamma3;
@@ -1635,8 +1635,8 @@ List lrsim3a(const int kMax = 1,
   NumericVector cumStratumFraction = cumsum(stratumFraction);
 
   // within-stratum hazard rates
-  NumericVector lam1(nintervals), lam2(nintervals), lam3(nintervals);
-  NumericVector gam1(nintervals), gam2(nintervals), gam3(nintervals);
+  NumericVector lam1(nints), lam2(nints), lam3(nints);
+  NumericVector gam1(nints), gam2(nints), gam3(nints);
 
 
   // stage-wise information
@@ -1735,7 +1735,7 @@ List lrsim3a(const int kMax = 1,
       }
 
       // stratum-specific hazard rates for event and dropout
-      Range jj = Range(j*nintervals, (j+1)*nintervals-1);
+      Range jj = Range(j*nints, (j+1)*nints-1);
 
       lam1 = lambda1x[jj];
       lam2 = lambda2x[jj];
@@ -2156,22 +2156,22 @@ List lrsim3a(const int kMax = 1,
 }
 
 
-//' @title Log-Rank Test Simulation for Two Endpoints
-//' @description Performs simulation for two-endpoint two-arm group
-//' sequential trials based on weighted log-rank test. The first
-//' \code{kMaxe1} looks are driven by the total number of PFS events in
+//' @title Log-Rank Test Simulation for PFS and OS Endpoints
+//' @description Performs simulation for two-endpoint (PFS and OS) two-arm
+//' group sequential trials based on weighted log-rank test. The first
+//' \code{kMaxpfs} looks are driven by the total number of PFS events in
 //' two arms combined, and the subsequent looks are driven by the total
 //' number of OS events in two arms combined. Alternatively,
 //' the analyses can be planned to occur at specified calendar times.
 //'
 //' @inheritParams param_kMax
-//' @param kMaxe1 Number of stages with timing determined by PFS events.
+//' @param kMaxpfs Number of stages with timing determined by PFS events.
 //'   Ranges from 0 (none) to \code{kMax}.
-//' @param hazardRatioH0e1 Hazard ratio under the null hypothesis for the
-//'   active treatment vs control for endpoint 1 (PFS). Defaults to 1 for
+//' @param hazardRatioH0pfs Hazard ratio under the null hypothesis for the
+//'   active treatment vs control for PFS. Defaults to 1 for
 //'   superiority test.
-//' @param hazardRatioH0e2 Hazard ratio under the null hypothesis for the
-//'   active treatment vs control for endpoint 2 (OS). Defaults to 1 for
+//' @param hazardRatioH0os Hazard ratio under the null hypothesis for the
+//'   active treatment vs control for OS. Defaults to 1 for
 //'   superiority test.
 //' @param allocation1 Number of subjects in the treatment group in
 //'   a randomization block. Defaults to 1 for equal randomization.
@@ -2181,41 +2181,41 @@ List lrsim3a(const int kMax = 1,
 //' @inheritParams param_accrualIntensity
 //' @inheritParams param_piecewiseSurvivalTime
 //' @inheritParams param_stratumFraction
-//' @param rho The correlation coefficient for the standard bivariate normal
-//'   random variables used to generate time to disease progression and time
-//'   to death using the inverse CDF method.
-//' @param lambda1e1 A vector of hazard rates for the event in each analysis
-//'   time interval by stratum for the treatment group and endpoint 1 (PFS).
-//' @param lambda2e1 A vector of hazard rates for the event in each analysis
-//'   time interval by stratum for the control group and endpoint 1 (PFS).
-//' @param lambda1e2 A vector of hazard rates for the event in each analysis
-//'   time interval by stratum for the treatment group and endpoint 2 (OS).
-//' @param lambda2e2 A vector of hazard rates for the event in each analysis
-//'   time interval by stratum for the control group and endpoint 2 (OS).
-//' @param gamma1e1 The hazard rate for exponential dropout, a vector of
+//' @param rho_pd_os The correlation coefficient for the standard
+//'   bivariate normal random variables used to generate time to disease
+//'   progression (PD) and time to death using the inverse CDF method.
+//' @param lambda1pfs A vector of hazard rates for the event in each analysis
+//'   time interval by stratum for the treatment group and PFS.
+//' @param lambda2pfs A vector of hazard rates for the event in each analysis
+//'   time interval by stratum for the control group and PFS.
+//' @param lambda1os A vector of hazard rates for the event in each analysis
+//'   time interval by stratum for the treatment group and OS.
+//' @param lambda2os A vector of hazard rates for the event in each analysis
+//'   time interval by stratum for the control group and OS.
+//' @param gamma1pfs The hazard rate for exponential dropout, a vector of
 //'   hazard rates for piecewise exponential dropout applicable for all
 //'   strata, or a vector of hazard rates for dropout in each analysis time
-//'   interval by stratum for the treatment group and endpoint 1 (PFS).
-//' @param gamma2e1 The hazard rate for exponential dropout, a vector of
+//'   interval by stratum for the treatment group and PFS.
+//' @param gamma2pfs The hazard rate for exponential dropout, a vector of
 //'   hazard rates for piecewise exponential dropout applicable for all
 //'   strata, or a vector of hazard rates for dropout in each analysis time
-//'   interval by stratum for the control group and endpoint 1 (PFS).
-//' @param gamma1e2 The hazard rate for exponential dropout, a vector of
+//'   interval by stratum for the control group and PFS.
+//' @param gamma1os The hazard rate for exponential dropout, a vector of
 //'   hazard rates for piecewise exponential dropout applicable for all
 //'   strata, or a vector of hazard rates for dropout in each analysis time
-//'   interval by stratum for the treatment group and endpoint 2 (OS).
-//' @param gamma2e2 The hazard rate for exponential dropout, a vector of
+//'   interval by stratum for the treatment group and OS.
+//' @param gamma2os The hazard rate for exponential dropout, a vector of
 //'   hazard rates for piecewise exponential dropout applicable for all
 //'   strata, or a vector of hazard rates for dropout in each analysis time
-//'   interval by stratum for the control group and endpoint 2 (OS).
+//'   interval by stratum for the control group and OS.
 //' @param n Sample size.
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_rho1
 //' @inheritParams param_rho2
 //' @param plannedEvents The planned cumulative total number of PFS events at
-//'   Look 1 to Look \code{kMaxe1} and the planned cumulative total number
-//'   of OS events at Look \code{kMaxe1+1} to Look \code{kMax}.
+//'   Look 1 to Look \code{kMaxpfs} and the planned cumulative total number
+//'   of OS events at Look \code{kMaxpfs+1} to Look \code{kMax}.
 //' @param plannedTime The calendar times for the analyses. To use calendar
 //'   time to plan the analyses, \code{plannedEvents} should be missing.
 //' @param maxNumberOfIterations The number of simulation iterations.
@@ -2248,7 +2248,8 @@ List lrsim3a(const int kMax = 1,
 //'     - \code{totalAccruals}: The total number of subjects enrolled at
 //'       the stage.
 //'
-//'     - \code{endpoint}: The endpoint (1 or 2) under consideration.
+//'     - \code{endpoint}: The endpoint (1 for PFS or 2 for OS) under
+//'       consideration.
 //'
 //'     - \code{events1}: The number of events at the stage for
 //'       the treatment group.
@@ -2295,32 +2296,34 @@ List lrsim3a(const int kMax = 1,
 //'       subject.
 //'
 //'     - \code{survivalTime1}: The underlying survival time for
-//'       event endpoint 1 for the subject.
+//'       event endpoint 1 (PFS) for the subject.
 //'
 //'     - \code{dropoutTime1}: The underlying dropout time for
-//'       event endpoint 1 for the subject.
+//'       event endpoint 1 (PFS) for the subject.
 //'
 //'     - \code{timeUnderObservation1}: The time under observation
-//'       since randomization for event endpoint 1 for the subject.
+//'       since randomization for event endpoint 1 (PFS) for the subject.
 //'
-//'     - \code{event1}: Whether the subject experienced event endpoint 1.
+//'     - \code{event1}: Whether the subject experienced event
+//'       endpoint 1 (PFS).
 //'
 //'     - \code{dropoutEvent1}: Whether the subject dropped out for
-//'       endpoint 1.
+//'       endpoint 1 (PFS).
 //'
 //'     - \code{survivalTime2}: The underlying survival time for
-//'       event endpoint 2 for the subject.
+//'       event endpoint 2 (OS) for the subject.
 //'
 //'     - \code{dropoutTime2}: The underlying dropout time for
-//'       event endpoint 2 for the subject.
+//'       event endpoint 2 (OS) for the subject.
 //'
 //'     - \code{timeUnderObservation2}: The time under observation
-//'       since randomization for event endpoint 2 for the subject.
+//'       since randomization for event endpoint 2 (OS) for the subject.
 //'
-//'     - \code{event2}: Whether the subject experienced event endpoint 2.
+//'     - \code{event2}: Whether the subject experienced event
+//'       endpoint 2 (OS).
 //'
 //'     - \code{dropoutEvent2}: Whether the subject dropped out for
-//'       endpoint 2.
+//'       endpoint 2 (OS).
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
@@ -2328,17 +2331,17 @@ List lrsim3a(const int kMax = 1,
 //'
 //' sim1 = lrsim2e(
 //'   kMax = 3,
-//'   kMaxe1 = 2,
+//'   kMaxpfs = 2,
 //'   allocation1 = 2,
 //'   allocation2 = 1,
 //'   accrualTime = c(0, 8),
 //'   accrualIntensity = c(10, 28),
 //'   piecewiseSurvivalTime = 0,
-//'   rho = 0,
-//'   lambda1e1 = log(2)/12*0.60,
-//'   lambda2e1 = log(2)/12,
-//'   lambda1e2 = log(2)/30*0.65,
-//'   lambda2e2 = log(2)/30,
+//'   rho_pd_os = 0,
+//'   lambda1pfs = log(2)/12*0.60,
+//'   lambda2pfs = log(2)/12,
+//'   lambda1os = log(2)/30*0.65,
+//'   lambda2os = log(2)/30,
 //'   n = 420,
 //'   plannedEvents = c(186, 259, 183),
 //'   maxNumberOfIterations = 1000,
@@ -2351,24 +2354,24 @@ List lrsim3a(const int kMax = 1,
 //' @export
 // [[Rcpp::export]]
 List lrsim2e(const int kMax = 1,
-             const int kMaxe1 = 1,
-             const double hazardRatioH0e1 = 1,
-             const double hazardRatioH0e2 = 1,
+             const int kMaxpfs = 1,
+             const double hazardRatioH0pfs = 1,
+             const double hazardRatioH0os = 1,
              const int allocation1 = 1,
              const int allocation2 = 1,
              const NumericVector& accrualTime = 0,
              const NumericVector& accrualIntensity = NA_REAL,
              const NumericVector& piecewiseSurvivalTime = 0,
              const NumericVector& stratumFraction = 1,
-             const double rho = 0,
-             const NumericVector& lambda1e1 = NA_REAL,
-             const NumericVector& lambda2e1 = NA_REAL,
-             const NumericVector& lambda1e2 = NA_REAL,
-             const NumericVector& lambda2e2 = NA_REAL,
-             const NumericVector& gamma1e1 = 0,
-             const NumericVector& gamma2e1 = 0,
-             const NumericVector& gamma1e2 = 0,
-             const NumericVector& gamma2e2 = 0,
+             const double rho_pd_os = 0,
+             const NumericVector& lambda1pfs = NA_REAL,
+             const NumericVector& lambda2pfs = NA_REAL,
+             const NumericVector& lambda1os = NA_REAL,
+             const NumericVector& lambda2os = NA_REAL,
+             const NumericVector& gamma1pfs = 0,
+             const NumericVector& gamma2pfs = 0,
+             const NumericVector& gamma1os = 0,
+             const NumericVector& gamma2os = 0,
              const int n = NA_INTEGER,
              const double followupTime = NA_REAL,
              const bool fixedFollowup = 0,
@@ -2381,18 +2384,22 @@ List lrsim2e(const int kMax = 1,
              const int seed = NA_INTEGER) {
 
   // check input parameters
-  int kMaxe1x = kMaxe1;
+  int kMaxpfsx = kMaxpfs;
 
   int nstrata = static_cast<int>(stratumFraction.size());
-  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
-  int nsi = nstrata*nintervals;
+  int nints = static_cast<int>(piecewiseSurvivalTime.size());
+  int nsi = nstrata*nints;
+  int nints2 = nints == 1 ? 10 : nints + 10;
+  int nsi2 = nstrata*nints2;
 
-  NumericVector lambda1e1x(nsi), lambda2e1x(nsi);
-  NumericVector lambda1e2x(nsi), lambda2e2x(nsi);
-  NumericVector gamma1e1x(nsi), gamma2e1x(nsi);
-  NumericVector gamma1e2x(nsi), gamma2e2x(nsi);
-  NumericVector lambda1e1d(nsi), lambda2e1d(nsi);
-  NumericVector gamma1e1d(nsi), gamma2e1d(nsi);
+  NumericVector lambda1pfsx(nsi), lambda2pfsx(nsi);
+  NumericVector lambda1osx(nsi), lambda2osx(nsi);
+  NumericVector gamma1pfsx(nsi), gamma2pfsx(nsi);
+  NumericVector gamma1osx(nsi), gamma2osx(nsi);
+  NumericVector lambda1pd(nsi2), lambda2pd(nsi2);
+  NumericVector gamma1pd(nsi), gamma2pd(nsi);
+
+  NumericVector tau1pd(nsi2), tau2pd(nsi2);
 
   bool useEvents, eventsNotAchieved;
 
@@ -2401,12 +2408,12 @@ List lrsim2e(const int kMax = 1,
     stop("kMax must be a positive integer");
   }
 
-  if (kMaxe1 < 0) {
-    kMaxe1x = kMax;
+  if (kMaxpfs < 0) {
+    kMaxpfsx = kMax;
   }
 
-  if (kMaxe1x > kMax) {
-    stop("kMaxe1 must be less than or equal to kMax");
+  if (kMaxpfsx > kMax) {
+    stop("kMaxpfs must be less than or equal to kMax");
   }
 
   // whether to plan the analyses based on events or calendar time
@@ -2421,17 +2428,17 @@ List lrsim2e(const int kMax = 1,
       stop("Invalid length for plannedEvents");
     }
 
-    if (kMaxe1x > 1) {
-      IntegerVector plannedEvents1 = plannedEvents[Range(0,kMaxe1x-1)];
+    if (kMaxpfsx > 1) {
+      IntegerVector plannedEvents1 = plannedEvents[Range(0,kMaxpfsx-1)];
       if (is_true(any(diff(plannedEvents1) <= 0))) {
-        stop("plannedEvents for endpoint 1 must be increasing");
+        stop("plannedEvents for PFS must be increasing");
       }
     }
 
-    if (kMax - kMaxe1x > 1) {
-      IntegerVector plannedEvents2 = plannedEvents[Range(kMaxe1x, kMax-1)];
+    if (kMax - kMaxpfsx > 1) {
+      IntegerVector plannedEvents2 = plannedEvents[Range(kMaxpfsx, kMax-1)];
       if (is_true(any(diff(plannedEvents2) <= 0))) {
-        stop("plannedEvents for endpoint 2 must be increasing");
+        stop("plannedEvents for OS must be increasing");
       }
     }
   } else if (is_false(any(is_na(plannedTime)))) {
@@ -2452,12 +2459,12 @@ List lrsim2e(const int kMax = 1,
   }
 
 
-  if (hazardRatioH0e1 <= 0) {
-    stop("hazardRatioH0e1 must be positive");
+  if (hazardRatioH0pfs <= 0) {
+    stop("hazardRatioH0pfs must be positive");
   }
 
-  if (hazardRatioH0e2 <= 0) {
-    stop("hazardRatioH0e2 must be positive");
+  if (hazardRatioH0os <= 0) {
+    stop("hazardRatioH0os must be positive");
   }
 
 
@@ -2495,7 +2502,7 @@ List lrsim2e(const int kMax = 1,
     stop("piecewiseSurvivalTime must start with 0");
   }
 
-  if (nintervals > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
+  if (nints > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
     stop("piecewiseSurvivalTime should be increasing");
   }
 
@@ -2509,183 +2516,193 @@ List lrsim2e(const int kMax = 1,
   }
 
 
-  if (rho <= -1 || rho >= 1) {
-    stop("rho must lie in (-1, 1)");
+  if (rho_pd_os <= -1 || rho_pd_os >= 1) {
+    stop("rho_pd_os must lie in (-1, 1)");
   }
 
 
-  if (is_true(any(is_na(lambda1e1)))) {
-    stop("lambda1e1 must be provided");
+  if (is_true(any(is_na(lambda1pfs)))) {
+    stop("lambda1pfs must be provided");
   }
 
-  if (is_true(any(is_na(lambda2e1)))) {
-    stop("lambda2e1 must be provided");
+  if (is_true(any(is_na(lambda2pfs)))) {
+    stop("lambda2pfs must be provided");
   }
 
-  if (is_true(any(is_na(lambda1e2)))) {
-    stop("lambda1e2 must be provided");
+  if (is_true(any(is_na(lambda1os)))) {
+    stop("lambda1os must be provided");
   }
 
-  if (is_true(any(is_na(lambda2e2)))) {
-    stop("lambda2e2 must be provided");
+  if (is_true(any(is_na(lambda2os)))) {
+    stop("lambda2os must be provided");
   }
 
-  if (is_true(any(lambda1e1 < 0))) {
-    stop("lambda1e1 must be non-negative");
+  if (is_true(any(lambda1pfs < 0))) {
+    stop("lambda1pfs must be non-negative");
   }
 
-  if (is_true(any(lambda2e1 < 0))) {
-    stop("lambda2e1 must be non-negative");
+  if (is_true(any(lambda2pfs < 0))) {
+    stop("lambda2pfs must be non-negative");
   }
 
-  if (is_true(any(lambda1e2 < 0))) {
-    stop("lambda1e2 must be non-negative");
+  if (is_true(any(lambda1os < 0))) {
+    stop("lambda1os must be non-negative");
   }
 
-  if (is_true(any(lambda2e2 < 0))) {
-    stop("lambda2e2 must be non-negative");
-  }
-
-
-  if (is_true(any(gamma1e1 < 0))) {
-    stop("gamma1e1 must be non-negative");
-  }
-
-  if (is_true(any(gamma2e1 < 0))) {
-    stop("gamma2e1 must be non-negative");
-  }
-
-  if (is_true(any(gamma1e2 < 0))) {
-    stop("gamma1e2 must be non-negative");
-  }
-
-  if (is_true(any(gamma2e2 < 0))) {
-    stop("gamma2e2 must be non-negative");
+  if (is_true(any(lambda2os < 0))) {
+    stop("lambda2os must be non-negative");
   }
 
 
-  if (lambda1e1.size() == 1) {
-    lambda1e1x = rep(lambda1e1, nsi);
-  } else if (lambda1e1.size() == nintervals) {
-    lambda1e1x = rep(lambda1e1, nstrata);
-  } else if (lambda1e1.size() == nsi) {
-    lambda1e1x = lambda1e1;
+  if (is_true(any(gamma1pfs < 0))) {
+    stop("gamma1pfs must be non-negative");
+  }
+
+  if (is_true(any(gamma2pfs < 0))) {
+    stop("gamma2pfs must be non-negative");
+  }
+
+  if (is_true(any(gamma1os < 0))) {
+    stop("gamma1os must be non-negative");
+  }
+
+  if (is_true(any(gamma2os < 0))) {
+    stop("gamma2os must be non-negative");
+  }
+
+
+  if (lambda1pfs.size() == 1) {
+    lambda1pfsx = rep(lambda1pfs, nsi);
+  } else if (lambda1pfs.size() == nints) {
+    lambda1pfsx = rep(lambda1pfs, nstrata);
+  } else if (lambda1pfs.size() == nsi) {
+    lambda1pfsx = lambda1pfs;
   } else {
-    stop("Invalid length for lambda1e1");
+    stop("Invalid length for lambda1pfs");
   }
 
-  if (lambda2e1.size() == 1) {
-    lambda2e1x = rep(lambda2e1, nsi);
-  } else if (lambda2e1.size() == nintervals) {
-    lambda2e1x = rep(lambda2e1, nstrata);
-  } else if (lambda2e1.size() == nsi) {
-    lambda2e1x = lambda2e1;
+  if (lambda2pfs.size() == 1) {
+    lambda2pfsx = rep(lambda2pfs, nsi);
+  } else if (lambda2pfs.size() == nints) {
+    lambda2pfsx = rep(lambda2pfs, nstrata);
+  } else if (lambda2pfs.size() == nsi) {
+    lambda2pfsx = lambda2pfs;
   } else {
-    stop("Invalid length for lambda2e1");
+    stop("Invalid length for lambda2pfs");
   }
 
 
 
-  if (lambda1e2.size() == 1) {
-    lambda1e2x = rep(lambda1e2, nsi);
-  } else if (lambda1e2.size() == nintervals) {
-    lambda1e2x = rep(lambda1e2, nstrata);
-  } else if (lambda1e2.size() == nsi) {
-    lambda1e2x = lambda1e2;
+  if (lambda1os.size() == 1) {
+    lambda1osx = rep(lambda1os, nsi);
+  } else if (lambda1os.size() == nints) {
+    lambda1osx = rep(lambda1os, nstrata);
+  } else if (lambda1os.size() == nsi) {
+    lambda1osx = lambda1os;
   } else {
-    stop("Invalid length for lambda1e2");
+    stop("Invalid length for lambda1os");
   }
 
-  if (lambda2e2.size() == 1) {
-    lambda2e2x = rep(lambda2e2, nsi);
-  } else if (lambda2e2.size() == nintervals) {
-    lambda2e2x = rep(lambda2e2, nstrata);
-  } else if (lambda2e2.size() == nsi) {
-    lambda2e2x = lambda2e2;
+  if (lambda2os.size() == 1) {
+    lambda2osx = rep(lambda2os, nsi);
+  } else if (lambda2os.size() == nints) {
+    lambda2osx = rep(lambda2os, nstrata);
+  } else if (lambda2os.size() == nsi) {
+    lambda2osx = lambda2os;
   } else {
-    stop("Invalid length for lambda2e2");
+    stop("Invalid length for lambda2os");
   }
 
 
 
-  if (gamma1e1.size() == 1) {
-    gamma1e1x = rep(gamma1e1, nsi);
-  } else if (gamma1e1.size() == nintervals) {
-    gamma1e1x = rep(gamma1e1, nstrata);
-  } else if (gamma1e1.size() == nsi) {
-    gamma1e1x = gamma1e1;
+  if (gamma1pfs.size() == 1) {
+    gamma1pfsx = rep(gamma1pfs, nsi);
+  } else if (gamma1pfs.size() == nints) {
+    gamma1pfsx = rep(gamma1pfs, nstrata);
+  } else if (gamma1pfs.size() == nsi) {
+    gamma1pfsx = gamma1pfs;
   } else {
-    stop("Invalid length for gamma1e1");
+    stop("Invalid length for gamma1pfs");
   }
 
-  if (gamma2e1.size() == 1) {
-    gamma2e1x = rep(gamma2e1, nsi);
-  } else if (gamma2e1.size() == nintervals) {
-    gamma2e1x = rep(gamma2e1, nstrata);
-  } else if (gamma2e1.size() == nsi) {
-    gamma2e1x = gamma2e1;
+  if (gamma2pfs.size() == 1) {
+    gamma2pfsx = rep(gamma2pfs, nsi);
+  } else if (gamma2pfs.size() == nints) {
+    gamma2pfsx = rep(gamma2pfs, nstrata);
+  } else if (gamma2pfs.size() == nsi) {
+    gamma2pfsx = gamma2pfs;
   } else {
-    stop("Invalid length for gamma2e1");
+    stop("Invalid length for gamma2pfs");
   }
 
 
-  if (gamma1e2.size() == 1) {
-    gamma1e2x = rep(gamma1e2, nsi);
-  } else if (gamma1e2.size() == nintervals) {
-    gamma1e2x = rep(gamma1e2, nstrata);
-  } else if (gamma1e2.size() == nsi) {
-    gamma1e2x = gamma1e2;
+  if (gamma1os.size() == 1) {
+    gamma1osx = rep(gamma1os, nsi);
+  } else if (gamma1os.size() == nints) {
+    gamma1osx = rep(gamma1os, nstrata);
+  } else if (gamma1os.size() == nsi) {
+    gamma1osx = gamma1os;
   } else {
-    stop("Invalid length for gamma1e2");
+    stop("Invalid length for gamma1os");
   }
 
-  if (gamma2e2.size() == 1) {
-    gamma2e2x = rep(gamma2e2, nsi);
-  } else if (gamma2e2.size() == nintervals) {
-    gamma2e2x = rep(gamma2e2, nstrata);
-  } else if (gamma2e2.size() == nsi) {
-    gamma2e2x = gamma2e2;
+  if (gamma2os.size() == 1) {
+    gamma2osx = rep(gamma2os, nsi);
+  } else if (gamma2os.size() == nints) {
+    gamma2osx = rep(gamma2os, nstrata);
+  } else if (gamma2os.size() == nsi) {
+    gamma2osx = gamma2os;
   } else {
-    stop("Invalid length for gamma2e2");
+    stop("Invalid length for gamma2os");
   }
 
-  if (is_true(any(lambda1e1x <= lambda1e2x))) {
-    stop("lambda1e1 must be greater than lambda1e2");
+  if (is_true(any(lambda1pfsx <= lambda1osx))) {
+    stop("lambda1pfs must be greater than lambda1os");
   }
 
-  if (is_true(any(lambda2e1x <= lambda2e2x))) {
-    stop("lambda2e1 must be greater than lambda2e2");
+  if (is_true(any(lambda2pfsx <= lambda2osx))) {
+    stop("lambda2pfs must be greater than lambda2os");
   }
 
-  if (is_true(any(gamma1e1x < gamma1e2x))) {
-    stop("gamma1e1 must be greater than or equal to gamma1e2");
+  if (is_true(any(gamma1pfsx < gamma1osx))) {
+    stop("gamma1pfs must be greater than or equal to gamma1os");
   }
 
-  if (is_true(any(gamma2e1x < gamma2e2x))) {
-    stop("gamma2e1 must be greater than or equal to gamma2e2");
+  if (is_true(any(gamma2pfsx < gamma2osx))) {
+    stop("gamma2pfs must be greater than or equal to gamma2os");
   }
 
   for (int j=0; j<nstrata; ++j) {
-    Range jj = Range(j*nintervals, (j+1)*nintervals-1);
+    Range jj = Range(j*nints, (j+1)*nints-1);
 
-    NumericVector lam1e1x = lambda1e1x[jj];
-    NumericVector lam1e2x = lambda1e2x[jj];
-    NumericVector lam1e1d = hazard_pdcpp(piecewiseSurvivalTime,
-                                         lam1e1x, lam1e2x, rho);
+    NumericVector lam1pfs = lambda1pfsx[jj];
+    NumericVector lam1os = lambda1osx[jj];
 
-    NumericVector lam2e1x = lambda2e1x[jj];
-    NumericVector lam2e2x = lambda2e2x[jj];
-    NumericVector lam2e1d = hazard_pdcpp(piecewiseSurvivalTime,
-                                         lam2e1x, lam2e2x, rho);
+    List a1 = hazard_pdcpp(piecewiseSurvivalTime,
+                           lam1pfs, lam1os, rho_pd_os);
 
-    for (int k=0; k<nintervals; ++k) {
-      lambda1e1d[j*nintervals + k] = lam1e1d[k];
-      lambda2e1d[j*nintervals + k] = lam2e1d[k];
+    NumericVector time1pd = a1["piecewiseSurvivalTime"];
+    NumericVector lam1pd = a1["hazard_pd"];
+
+    NumericVector lam2pfs = lambda2pfsx[jj];
+    NumericVector lam2os = lambda2osx[jj];
+
+    List a2 = hazard_pdcpp(piecewiseSurvivalTime,
+                           lam2pfs, lam2os, rho_pd_os);
+
+    NumericVector time2pd = a2["piecewiseSurvivalTime"];
+    NumericVector lam2pd = a2["hazard_pd"];
+
+    for (int k=0; k<nints2; ++k) {
+      tau1pd[j*nints2 + k] = time1pd[k];
+      tau2pd[j*nints2 + k] = time2pd[k];
+      lambda1pd[j*nints + k] = lam1pd[k];
+      lambda2pd[j*nints + k] = lam2pd[k];
     }
   }
 
-  gamma1e1d = gamma1e1x - gamma1e2x;
-  gamma2e1d = gamma2e1x - gamma2e2x;
+  gamma1pd = gamma1pfsx - gamma1osx;
+  gamma2pd = gamma2pfsx - gamma2osx;
 
 
   if (n == NA_INTEGER) {
@@ -2760,12 +2777,12 @@ List lrsim2e(const int kMax = 1,
   NumericVector km(nstrata), w(nstrata);
   NumericVector cumStratumFraction = cumsum(stratumFraction);
 
-
   // within-stratum hazard rates
-  NumericVector lam1e1(nintervals), lam2e1(nintervals);
-  NumericVector lam1e2(nintervals), lam2e2(nintervals);
-  NumericVector gam1e1(nintervals), gam2e1(nintervals);
-  NumericVector gam1e2(nintervals), gam2e2(nintervals);
+  NumericVector time1pd(nints2), time2pd(nints2);
+  NumericVector lam1pd(nints2), lam2pd(nints2);
+  NumericVector lam1os(nints), lam2os(nints);
+  NumericVector gam1pd(nints), gam2pd(nints);
+  NumericVector gam1os(nints), gam2os(nints);
 
 
   // stage-wise information
@@ -2864,23 +2881,27 @@ List lrsim2e(const int kMax = 1,
       }
 
       // stratum-specific hazard rates for event and dropout
-      Range jj = Range(j*nintervals, (j+1)*nintervals-1);
+      Range jj = Range(j*nints, (j+1)*nints-1);
+      Range jj2 = Range(j*nints2, (j+1)*nints2-1);
 
-      lam1e1 = lambda1e1d[jj];
-      lam2e1 = lambda2e1d[jj];
+      time1pd = tau1pd[jj2];
+      time2pd = tau2pd[jj2];
 
-      lam1e2 = lambda1e2x[jj];
-      lam2e2 = lambda2e2x[jj];
+      lam1pd = lambda1pd[jj2];
+      lam2pd = lambda2pd[jj2];
 
-      gam1e1 = gamma1e1d[jj];
-      gam2e1 = gamma2e1d[jj];
+      lam1os = lambda1osx[jj];
+      lam2os = lambda2osx[jj];
 
-      gam1e2 = gamma1e2x[jj];
-      gam2e2 = gamma2e2x[jj];
+      gam1pd = gamma1pd[jj];
+      gam2pd = gamma2pd[jj];
 
-      // standard bivariate normal with correlation rho
+      gam1os = gamma1osx[jj];
+      gam2os = gamma2osx[jj];
+
+      // standard bivariate normal with correlation rho_pd_os
       u1 = R::rnorm(0,1);
-      u2 = R::rnorm(rho*u1, sqrt(1-rho*rho));
+      u2 = R::rnorm(rho_pd_os*u1, sqrt(1-rho_pd_os*rho_pd_os));
 
       // transform to uniform
       u1 = R::pnorm(u1, 0, 1, 1, 0);
@@ -2888,15 +2909,11 @@ List lrsim2e(const int kMax = 1,
 
       // generate survival times
       if (treatmentGroup[i]==1) {
-        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam1e1, 0,
-                                       1, 0);
-        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam1e2, 0,
-                                       1, 0);
+        survivalTime1[i] = qtpwexpcpp1(u1, time1pd, lam1pd, 0, 1, 0);
+        survivalTime2[i] = qtpwexpcpp1(u2,piecewiseSurvivalTime,lam1os,0,1,0);
       } else {
-        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam2e1, 0,
-                                       1, 0);
-        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam2e2, 0,
-                                       1, 0);
+        survivalTime1[i] = qtpwexpcpp1(u1, time2pd, lam2pd, 0, 1, 0);
+        survivalTime2[i] = qtpwexpcpp1(u2,piecewiseSurvivalTime,lam2os,0,1,0);
       }
       // PFS includes death
       survivalTime1[i] = std::min(survivalTime1[i], survivalTime2[i]);
@@ -2906,15 +2923,11 @@ List lrsim2e(const int kMax = 1,
       u1 = R::runif(0,1);
       u2 = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam1e1, 0,
-                                      1, 0);
-        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam1e2, 0,
-                                      1, 0);
+        dropoutTime1[i] = qtpwexpcpp1(u1,piecewiseSurvivalTime,gam1pd,0,1,0);
+        dropoutTime2[i] = qtpwexpcpp1(u2,piecewiseSurvivalTime,gam1os,0,1,0);
       } else {
-        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam2e1, 0,
-                                      1, 0);
-        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam2e2, 0,
-                                      1, 0);
+        dropoutTime1[i] = qtpwexpcpp1(u1,piecewiseSurvivalTime,gam2pd,0,1,0);
+        dropoutTime2[i] = qtpwexpcpp1(u2,piecewiseSurvivalTime,gam2os,0,1,0);
       }
       // whatever censors OS will also censor PFS
       dropoutTime1[i] = std::min(dropoutTime1[i], dropoutTime2[i]);
@@ -2992,18 +3005,18 @@ List lrsim2e(const int kMax = 1,
       totalt1 = stl_sort(totalTime1[event1]);
       totalt2 = stl_sort(totalTime2[event2]);
 
-      int j1 = kMaxe1x, j2 = kMax - kMaxe1x;
+      int j1 = kMaxpfsx, j2 = kMax - kMaxpfsx;
 
       // PFS looks
-      if (kMaxe1x > 0) {
-        for (j1=0; j1<kMaxe1x; ++j1) {
+      if (kMaxpfsx > 0) {
+        for (j1=0; j1<kMaxpfsx; ++j1) {
           if (plannedEvents[j1] >= nevents1) {
             break;
           }
         }
 
-        if (j1==kMaxe1x) { // total number of PFS events exceeds planned
-          for (int k=0; k<kMaxe1x; ++k) {
+        if (j1==kMaxpfsx) { // total number of PFS events exceeds planned
+          for (int k=0; k<kMaxpfsx; ++k) {
             analysisTime[k] = totalt1[plannedEvents[k]-1] + 1e-12;
           }
         } else {
@@ -3018,23 +3031,23 @@ List lrsim2e(const int kMax = 1,
       }
 
       // OS looks
-      NumericVector analysisTime2(kMax - kMaxe1x);
+      NumericVector analysisTime2(kMax - kMaxpfsx);
 
-      if (kMax > kMaxe1x) {
-        for (j2=0; j2<kMax-kMaxe1x; ++j2) {
-          if (plannedEvents[kMaxe1x+j2] >= nevents2) {
+      if (kMax > kMaxpfsx) {
+        for (j2=0; j2<kMax-kMaxpfsx; ++j2) {
+          if (plannedEvents[kMaxpfsx+j2] >= nevents2) {
             break;
           }
         }
 
-        if (j2==kMax-kMaxe1x) { // total number of OS events exceeds planned
-          for (int k=0; k<kMax-kMaxe1x; ++k) {
-            analysisTime2[k] = totalt2[plannedEvents[kMaxe1x+k]-1] + 1e-12;
+        if (j2==kMax-kMaxpfsx) { // total number of OS events exceeds planned
+          for (int k=0; k<kMax-kMaxpfsx; ++k) {
+            analysisTime2[k] = totalt2[plannedEvents[kMaxpfsx+k]-1] + 1e-12;
           }
         } else {
           for (int k=0; k<=j2; ++k) {
             if (k < j2) {
-              analysisTime2[k] = totalt2[plannedEvents[kMaxe1x+k]-1] + 1e-12;
+              analysisTime2[k] = totalt2[plannedEvents[kMaxpfsx+k]-1] + 1e-12;
             } else {
               analysisTime2[k] = totalt2[nevents2-1] + 1e-12;
             }
@@ -3043,9 +3056,9 @@ List lrsim2e(const int kMax = 1,
       }
 
       // determine the number of looks and timing of the looks
-      if (kMaxe1x == 0) { // all looks based on OS events
-        if (j2 == kMax - kMaxe1x) {
-          nstages = kMax - kMaxe1x;
+      if (kMaxpfsx == 0) { // all looks based on OS events
+        if (j2 == kMax - kMaxpfsx) {
+          nstages = kMax - kMaxpfsx;
         } else {
           nstages = j2 + 1;
         }
@@ -3053,24 +3066,24 @@ List lrsim2e(const int kMax = 1,
         for (int k=0; k<nstages; ++k) {
           analysisTime[k] = analysisTime2[k];
         }
-      } else if (kMax == kMaxe1x) { // all looks based on PFS events
-        if (j1 == kMaxe1x) {
-          nstages = kMaxe1x;
+      } else if (kMax == kMaxpfsx) { // all looks based on PFS events
+        if (j1 == kMaxpfsx) {
+          nstages = kMaxpfsx;
         } else {
           nstages = j1 + 1;
         }
       } else {
-        if (analysisTime2[kMax-kMaxe1x-1] > analysisTime[kMaxe1x-1]) {
+        if (analysisTime2[kMax-kMaxpfsx-1] > analysisTime[kMaxpfsx-1]) {
           // only OS looks that occur after the last PFS look contribute
           int l = static_cast<int>(which_max(analysisTime2 >
-                                               analysisTime[kMaxe1x-1]));
+                                               analysisTime[kMaxpfsx-1]));
           nstages = kMax-l;
-          for (int k=kMaxe1x; k<kMax-l; ++k) {
-            analysisTime[k] = analysisTime2[k-kMaxe1x+l];
+          for (int k=kMaxpfsx; k<kMax-l; ++k) {
+            analysisTime[k] = analysisTime2[k-kMaxpfsx+l];
           }
         } else {
-          if (j1 == kMaxe1x) {
-            nstages = kMaxe1x;
+          if (j1 == kMaxpfsx) {
+            nstages = kMaxpfsx;
           } else {
             nstages = j1 + 1;
           }
@@ -3078,9 +3091,9 @@ List lrsim2e(const int kMax = 1,
       }
 
       // whether the target PFS and OS events are achieved
-      if (kMaxe1x > 0 && nevents1 < plannedEvents[kMaxe1x-1]) {
+      if (kMaxpfsx > 0 && nevents1 < plannedEvents[kMaxpfsx-1]) {
         eventsNotAchieved = 1;
-      } else if (kMaxe1x < kMax && nevents2 < plannedEvents[kMax-1]) {
+      } else if (kMaxpfsx < kMax && nevents2 < plannedEvents[kMax-1]) {
         eventsNotAchieved = 1;
       } else {
         eventsNotAchieved = 0;
@@ -3279,9 +3292,9 @@ List lrsim2e(const int kMax = 1,
 
         double hazardRatioH0;
         if (endpoint == 1) {
-          hazardRatioH0 = hazardRatioH0e1;
+          hazardRatioH0 = hazardRatioH0pfs;
         } else {
-          hazardRatioH0 = hazardRatioH0e2;
+          hazardRatioH0 = hazardRatioH0os;
         }
 
         // order the data by time under observation
@@ -3469,29 +3482,31 @@ List lrsim2e(const int kMax = 1,
 
 
 
-//' @title Log-Rank Test Simulation for Two Endpoints and Three Arms
-//' @description Performs simulation for two-endpoint three-arm group
-//' sequential trials based on weighted log-rank test. The first
-//' \code{kMaxe1} looks are driven by the total number of PFS events in Arm A
-//' and Arm C combined, and the subsequent looks are driven by the total
-//' number of OS events in Arm A and Arm C combined. Alternatively,
-//' the analyses can be planned to occur at specified calendar times.
+//' @title Log-Rank Test Simulation for Two Endpoints (PFS and OS) and
+//' Three Arms
+//' @description Performs simulation for two-endpoint (PFS and OS)
+//' three-arm group sequential trials based on weighted log-rank test.
+//' The first \code{kMaxpfs} looks are driven by the total number of
+//' PFS events in Arm A and Arm C combined, and the subsequent looks
+//' are driven by the total number of OS events in Arm A and Arm C
+//' combined. Alternatively, the analyses can be planned to occur at
+//' specified calendar times.
 //'
 //' @inheritParams param_kMax
-//' @param kMaxe1 Number of stages with timing determined by PFS events.
+//' @param kMaxpfs Number of stages with timing determined by PFS events.
 //'   Ranges from 0 (none) to \code{kMax}.
-//' @param hazardRatioH013e1 Hazard ratio under the null hypothesis for arm 1
-//'   vs arm 3 for endpoint 1 (PFS). Defaults to 1 for superiority test.
-//' @param hazardRatioH023e1 Hazard ratio under the null hypothesis for arm 2
-//'   vs arm 3 for endpoint 1 (PFS). Defaults to 1 for superiority test.
-//' @param hazardRatioH012e1 Hazard ratio under the null hypothesis for arm 1
-//'   vs arm 2 for endpoint 1 (PFS). Defaults to 1 for superiority test.
-//' @param hazardRatioH013e2 Hazard ratio under the null hypothesis for arm 1
-//'   vs arm 3 for endpoint 2 (OS). Defaults to 1 for superiority test.
-//' @param hazardRatioH023e2 Hazard ratio under the null hypothesis for arm 2
-//'   vs arm 3 for endpoint 2 (OS). Defaults to 1 for superiority test.
-//' @param hazardRatioH012e2 Hazard ratio under the null hypothesis for arm 1
-//'   vs arm 2 for endpoint 2 (OS). Defaults to 1 for superiority test.
+//' @param hazardRatioH013pfs Hazard ratio under the null hypothesis for arm 1
+//'   vs arm 3 for PFS. Defaults to 1 for superiority test.
+//' @param hazardRatioH023pfs Hazard ratio under the null hypothesis for arm 2
+//'   vs arm 3 for PFS. Defaults to 1 for superiority test.
+//' @param hazardRatioH012pfs Hazard ratio under the null hypothesis for arm 1
+//'   vs arm 2 for PFS. Defaults to 1 for superiority test.
+//' @param hazardRatioH013os Hazard ratio under the null hypothesis for arm 1
+//'   vs arm 3 for OS. Defaults to 1 for superiority test.
+//' @param hazardRatioH023os Hazard ratio under the null hypothesis for arm 2
+//'   vs arm 3 for OS. Defaults to 1 for superiority test.
+//' @param hazardRatioH012os Hazard ratio under the null hypothesis for arm 1
+//'   vs arm 2 for OS. Defaults to 1 for superiority test.
 //' @param allocation1 Number of subjects in Arm A in
 //'   a randomization block. Defaults to 1 for equal randomization.
 //' @param allocation2 Number of subjects in Arm B in
@@ -3502,53 +3517,53 @@ List lrsim2e(const int kMax = 1,
 //' @inheritParams param_accrualIntensity
 //' @inheritParams param_piecewiseSurvivalTime
 //' @inheritParams param_stratumFraction
-//' @param rho The correlation coefficient for the standard bivariate normal
-//'   random variables used to generate time to disease progression and time
-//'   to death using the inverse CDF method.
-//' @param lambda1e1 A vector of hazard rates for the event in each analysis
-//'   time interval by stratum for arm 1 and endpoint 1 (PFS).
-//' @param lambda2e1 A vector of hazard rates for the event in each analysis
-//'   time interval by stratum for arm 2 and endpoint 1 (PFS).
-//' @param lambda3e1 A vector of hazard rates for the event in each analysis
-//'   time interval by stratum for arm 3 and endpoint 1 (PFS).
-//' @param lambda1e2 A vector of hazard rates for the event in each analysis
-//'   time interval by stratum for arm 1 and endpoint 2 (OS).
-//' @param lambda2e2 A vector of hazard rates for the event in each analysis
-//'   time interval by stratum for arm 2 and endpoint 2 (OS).
-//' @param lambda3e2 A vector of hazard rates for the event in each analysis
-//'   time interval by stratum for arm 3 and endpoint 2 (OS).
-//' @param gamma1e1 The hazard rate for exponential dropout. A vector of
+//' @param rho_pd_os The correlation coefficient for the standard
+//'   bivariate normal random variables used to generate time to
+//'   disease progression and time to death using the inverse CDF method.
+//' @param lambda1pfs A vector of hazard rates for the event in each analysis
+//'   time interval by stratum for arm 1 and PFS.
+//' @param lambda2pfs A vector of hazard rates for the event in each analysis
+//'   time interval by stratum for arm 2 and PFS.
+//' @param lambda3pfs A vector of hazard rates for the event in each analysis
+//'   time interval by stratum for arm 3 and PFS.
+//' @param lambda1os A vector of hazard rates for the event in each analysis
+//'   time interval by stratum for arm 1 and OS.
+//' @param lambda2os A vector of hazard rates for the event in each analysis
+//'   time interval by stratum for arm 2 and OS.
+//' @param lambda3os A vector of hazard rates for the event in each analysis
+//'   time interval by stratum for arm 3 and OS.
+//' @param gamma1pfs The hazard rate for exponential dropout. A vector of
 //'   hazard rates for piecewise exponential dropout applicable for all
 //'   strata, or a vector of hazard rates for dropout in each analysis time
-//'   interval by stratum for arm 1 and endpoint 1 (PFS).
-//' @param gamma2e1 The hazard rate for exponential dropout. A vector of
+//'   interval by stratum for arm 1 and PFS.
+//' @param gamma2pfs The hazard rate for exponential dropout. A vector of
 //'   hazard rates for piecewise exponential dropout applicable for all
 //'   strata, or a vector of hazard rates for dropout in each analysis time
-//'   interval by stratum for arm 2 and endpoint 1 (PFS).
-//' @param gamma3e1 The hazard rate for exponential dropout. A vector of
+//'   interval by stratum for arm 2 and PFS.
+//' @param gamma3pfs The hazard rate for exponential dropout. A vector of
 //'   hazard rates for piecewise exponential dropout applicable for all
 //'   strata, or a vector of hazard rates for dropout in each analysis time
-//'   interval by stratum for arm 3 and endpoint 1 (PFS).
-//' @param gamma1e2 The hazard rate for exponential dropout. A vector of
+//'   interval by stratum for arm 3 and PFS.
+//' @param gamma1os The hazard rate for exponential dropout. A vector of
 //'   hazard rates for piecewise exponential dropout applicable for all
 //'   strata, or a vector of hazard rates for dropout in each analysis time
-//'   interval by stratum for arm 1 and endpoint 2 (OS).
-//' @param gamma2e2 The hazard rate for exponential dropout. A vector of
+//'   interval by stratum for arm 1 and OS.
+//' @param gamma2os The hazard rate for exponential dropout. A vector of
 //'   hazard rates for piecewise exponential dropout applicable for all
 //'   strata, or a vector of hazard rates for dropout in each analysis time
-//'   interval by stratum for arm 2 and endpoint 2 (OS).
-//' @param gamma3e2 The hazard rate for exponential dropout. A vector of
+//'   interval by stratum for arm 2 and OS.
+//' @param gamma3os The hazard rate for exponential dropout. A vector of
 //'   hazard rates for piecewise exponential dropout applicable for all
 //'   strata, or a vector of hazard rates for dropout in each analysis time
-//'   interval by stratum for arm 3 and endpoint 2 (OS).
+//'   interval by stratum for arm 3 and OS.
 //' @param n Sample size.
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_rho1
 //' @inheritParams param_rho2
 //' @param plannedEvents The planned cumulative total number of PFS events at
-//'   Look 1 to Look \code{kMaxe1} for Arms A and C combined and the planned
-//'   cumulative total number of OS events at Look \code{kMaxe1+1} to Look
+//'   Look 1 to Look \code{kMaxpfs} for Arms A and C combined and the planned
+//'   cumulative total number of OS events at Look \code{kMaxpfs+1} to Look
 //'   \code{kMax} for Arms A and C combined.
 //' @param plannedTime The calendar times for the analyses. To use calendar
 //'   time to plan the analyses, \code{plannedEvents} should be missing.
@@ -3585,7 +3600,8 @@ List lrsim2e(const int kMax = 1,
 //'     - \code{totalAccruals}: The total number of subjects enrolled at
 //'       the stage.
 //'
-//'     - \code{endpoint}: The endpoint (1 or 2) under consideration.
+//'     - \code{endpoint}: The endpoint (1 for PFS or 2 for OS) under
+//'       consideration.
 //'
 //'     - \code{events1}: The number of events at the stage for
 //'       the active treatment 1 group.
@@ -3639,32 +3655,34 @@ List lrsim2e(const int kMax = 1,
 //'       the subject.
 //'
 //'     - \code{survivalTime1}: The underlying survival time for
-//'       event endpoint 1 for the subject.
+//'       event endpoint 1 (PFS) for the subject.
 //'
 //'     - \code{dropoutTime1}: The underlying dropout time for
-//'       event endpoint 1 for the subject.
+//'       event endpoint 1 (PFS) for the subject.
 //'
 //'     - \code{timeUnderObservation1}: The time under observation
-//'       since randomization for event endpoint 1 for the subject.
+//'       since randomization for event endpoint 1 (PFS) for the subject.
 //'
-//'     - \code{event1}: Whether the subject experienced event endpoint 1.
+//'     - \code{event1}: Whether the subject experienced event
+//'       endpoint 1 (PFS) .
 //'
 //'     - \code{dropoutEvent1}: Whether the subject dropped out for
-//'       endpoint 1.
+//'       endpoint 1 (PFS).
 //'
 //'     - \code{survivalTime2}: The underlying survival time for
-//'       event endpoint 2 for the subject.
+//'       event endpoint 2 (OS) for the subject.
 //'
 //'     - \code{dropoutTime2}: The underlying dropout time for
-//'       event endpoint 2 for the subject.
+//'       event endpoint 2 (OS) for the subject.
 //'
 //'     - \code{timeUnderObservation2}: The time under observation
-//'       since randomization for event endpoint 2 for the subject.
+//'       since randomization for event endpoint 2 (OS) for the subject.
 //'
-//'     - \code{event2}: Whether the subject experienced event endpoint 2.
+//'     - \code{event2}: Whether the subject experienced event
+//'       endpoint 2 (OS).
 //'
 //'     - \code{dropoutEvent2}: Whether the subject dropped out for
-//'       endpoint 2.
+//'       endpoint 2 (OS).
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
@@ -3672,20 +3690,20 @@ List lrsim2e(const int kMax = 1,
 //'
 //' sim1 = lrsim2e3a(
 //'   kMax = 3,
-//'   kMaxe1 = 2,
+//'   kMaxpfs = 2,
 //'   allocation1 = 2,
 //'   allocation2 = 2,
 //'   allocation3 = 1,
 //'   accrualTime = c(0, 8),
 //'   accrualIntensity = c(10, 28),
 //'   piecewiseSurvivalTime = 0,
-//'   rho = 0,
-//'   lambda1e1 = log(2)/12*0.60,
-//'   lambda2e1 = log(2)/12*0.70,
-//'   lambda3e1 = log(2)/12,
-//'   lambda1e2 = log(2)/30*0.65,
-//'   lambda2e2 = log(2)/30*0.75,
-//'   lambda3e2 = log(2)/30,
+//'   rho_pd_os = 0,
+//'   lambda1pfs = log(2)/12*0.60,
+//'   lambda2pfs = log(2)/12*0.70,
+//'   lambda3pfs = log(2)/12,
+//'   lambda1os = log(2)/30*0.65,
+//'   lambda2os = log(2)/30*0.75,
+//'   lambda3os = log(2)/30,
 //'   n = 700,
 //'   plannedEvents = c(186, 259, 183),
 //'   maxNumberOfIterations = 500,
@@ -3698,13 +3716,13 @@ List lrsim2e(const int kMax = 1,
 //' @export
 // [[Rcpp::export]]
 List lrsim2e3a(const int kMax = 1,
-               const int kMaxe1 = 1,
-               const double hazardRatioH013e1 = 1,
-               const double hazardRatioH023e1 = 1,
-               const double hazardRatioH012e1 = 1,
-               const double hazardRatioH013e2 = 1,
-               const double hazardRatioH023e2 = 1,
-               const double hazardRatioH012e2 = 1,
+               const int kMaxpfs = 1,
+               const double hazardRatioH013pfs = 1,
+               const double hazardRatioH023pfs = 1,
+               const double hazardRatioH012pfs = 1,
+               const double hazardRatioH013os = 1,
+               const double hazardRatioH023os = 1,
+               const double hazardRatioH012os = 1,
                const int allocation1 = 1,
                const int allocation2 = 1,
                const int allocation3 = 1,
@@ -3712,19 +3730,19 @@ List lrsim2e3a(const int kMax = 1,
                const NumericVector& accrualIntensity = NA_REAL,
                const NumericVector& piecewiseSurvivalTime = 0,
                const NumericVector& stratumFraction = 1,
-               const double rho = 0,
-               const NumericVector& lambda1e1 = NA_REAL,
-               const NumericVector& lambda2e1 = NA_REAL,
-               const NumericVector& lambda3e1 = NA_REAL,
-               const NumericVector& lambda1e2 = NA_REAL,
-               const NumericVector& lambda2e2 = NA_REAL,
-               const NumericVector& lambda3e2 = NA_REAL,
-               const NumericVector& gamma1e1 = 0,
-               const NumericVector& gamma2e1 = 0,
-               const NumericVector& gamma3e1 = 0,
-               const NumericVector& gamma1e2 = 0,
-               const NumericVector& gamma2e2 = 0,
-               const NumericVector& gamma3e2 = 0,
+               const double rho_pd_os = 0,
+               const NumericVector& lambda1pfs = NA_REAL,
+               const NumericVector& lambda2pfs = NA_REAL,
+               const NumericVector& lambda3pfs = NA_REAL,
+               const NumericVector& lambda1os = NA_REAL,
+               const NumericVector& lambda2os = NA_REAL,
+               const NumericVector& lambda3os = NA_REAL,
+               const NumericVector& gamma1pfs = 0,
+               const NumericVector& gamma2pfs = 0,
+               const NumericVector& gamma3pfs = 0,
+               const NumericVector& gamma1os = 0,
+               const NumericVector& gamma2os = 0,
+               const NumericVector& gamma3os = 0,
                const int n = NA_INTEGER,
                const double followupTime = NA_REAL,
                const bool fixedFollowup = 0,
@@ -3737,18 +3755,22 @@ List lrsim2e3a(const int kMax = 1,
                const int seed = NA_INTEGER) {
 
   // check input parameters
-  int kMaxe1x = kMaxe1;
+  int kMaxpfsx = kMaxpfs;
 
   int nstrata = static_cast<int>(stratumFraction.size());
-  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
-  int nsi = nstrata*nintervals;
+  int nints = static_cast<int>(piecewiseSurvivalTime.size());
+  int nsi = nstrata*nints;
+  int nints2 = nints == 1 ? 10 : nints + 10;
+  int nsi2 = nstrata*nints2;
 
-  NumericVector lambda1e1x(nsi), lambda2e1x(nsi), lambda3e1x(nsi);
-  NumericVector lambda1e2x(nsi), lambda2e2x(nsi), lambda3e2x(nsi);
-  NumericVector gamma1e1x(nsi), gamma2e1x(nsi), gamma3e1x(nsi);
-  NumericVector gamma1e2x(nsi), gamma2e2x(nsi), gamma3e2x(nsi);
-  NumericVector lambda1e1d(nsi), lambda2e1d(nsi), lambda3e1d(nsi);
-  NumericVector gamma1e1d(nsi), gamma2e1d(nsi), gamma3e1d(nsi);
+  NumericVector lambda1pfsx(nsi), lambda2pfsx(nsi), lambda3pfsx(nsi);
+  NumericVector lambda1osx(nsi), lambda2osx(nsi), lambda3osx(nsi);
+  NumericVector gamma1pfsx(nsi), gamma2pfsx(nsi), gamma3pfsx(nsi);
+  NumericVector gamma1osx(nsi), gamma2osx(nsi), gamma3osx(nsi);
+  NumericVector lambda1pd(nsi2), lambda2pd(nsi2), lambda3pd(nsi2);
+  NumericVector gamma1pd(nsi), gamma2pd(nsi), gamma3pd(nsi);
+
+  NumericVector tau1pd(nsi2), tau2pd(nsi2), tau3pd(nsi2);
 
   bool useEvents, eventsNotAchieved;
 
@@ -3757,12 +3779,12 @@ List lrsim2e3a(const int kMax = 1,
     stop("kMax must be a positive integer");
   }
 
-  if (kMaxe1 < 0) {
-    kMaxe1x = kMax;
+  if (kMaxpfs < 0) {
+    kMaxpfsx = kMax;
   }
 
-  if (kMaxe1x > kMax) {
-    stop("kMaxe1 must be less than or equal to kMax");
+  if (kMaxpfsx > kMax) {
+    stop("kMaxpfs must be less than or equal to kMax");
   }
 
 
@@ -3778,17 +3800,17 @@ List lrsim2e3a(const int kMax = 1,
       stop("Invalid length for plannedEvents");
     }
 
-    if (kMaxe1x > 1) {
-      IntegerVector plannedEvents1 = plannedEvents[Range(0,kMaxe1x-1)];
+    if (kMaxpfsx > 1) {
+      IntegerVector plannedEvents1 = plannedEvents[Range(0,kMaxpfsx-1)];
       if (is_true(any(diff(plannedEvents1) <= 0))) {
-        stop("plannedEvents for endpoint 1 must be increasing");
+        stop("plannedEvents for PFS must be increasing");
       }
     }
 
-    if (kMax - kMaxe1x > 1) {
-      IntegerVector plannedEvents2 = plannedEvents[Range(kMaxe1x, kMax-1)];
+    if (kMax - kMaxpfsx > 1) {
+      IntegerVector plannedEvents2 = plannedEvents[Range(kMaxpfsx, kMax-1)];
       if (is_true(any(diff(plannedEvents2) <= 0))) {
-        stop("plannedEvents for endpoint 2 must be increasing");
+        stop("plannedEvents for OS must be increasing");
       }
     }
   } else if (is_false(any(is_na(plannedTime)))) {
@@ -3808,28 +3830,28 @@ List lrsim2e3a(const int kMax = 1,
     stop("Either plannedEvents or plannedTime must be given");
   }
 
-  if (hazardRatioH013e1 <= 0) {
-    stop("hazardRatioH013e1 must be positive");
+  if (hazardRatioH013pfs <= 0) {
+    stop("hazardRatioH013pfs must be positive");
   }
 
-  if (hazardRatioH023e1 <= 0) {
-    stop("hazardRatioH023e1 must be positive");
+  if (hazardRatioH023pfs <= 0) {
+    stop("hazardRatioH023pfs must be positive");
   }
 
-  if (hazardRatioH012e1 <= 0) {
-    stop("hazardRatioH012e1 must be positive");
+  if (hazardRatioH012pfs <= 0) {
+    stop("hazardRatioH012pfs must be positive");
   }
 
-  if (hazardRatioH013e2 <= 0) {
-    stop("hazardRatioH013e2 must be positive");
+  if (hazardRatioH013os <= 0) {
+    stop("hazardRatioH013os must be positive");
   }
 
-  if (hazardRatioH023e2 <= 0) {
-    stop("hazardRatioH023e2 must be positive");
+  if (hazardRatioH023os <= 0) {
+    stop("hazardRatioH023os must be positive");
   }
 
-  if (hazardRatioH012e2 <= 0) {
-    stop("hazardRatioH012e2 must be positive");
+  if (hazardRatioH012os <= 0) {
+    stop("hazardRatioH012os must be positive");
   }
 
   if (allocation1 < 1) {
@@ -3870,7 +3892,7 @@ List lrsim2e3a(const int kMax = 1,
     stop("piecewiseSurvivalTime must start with 0");
   }
 
-  if (nintervals > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
+  if (nints > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
     stop("piecewiseSurvivalTime should be increasing");
   }
 
@@ -3884,260 +3906,275 @@ List lrsim2e3a(const int kMax = 1,
   }
 
 
-  if (rho <= -1 || rho >= 1) {
-    stop("rho must lie in (-1, 1)");
+  if (rho_pd_os <= -1 || rho_pd_os >= 1) {
+    stop("rho_pd_os must lie in (-1, 1)");
   }
 
 
-  if (is_true(any(is_na(lambda1e1)))) {
-    stop("lambda1e1 must be provided");
+  if (is_true(any(is_na(lambda1pfs)))) {
+    stop("lambda1pfs must be provided");
   }
 
-  if (is_true(any(is_na(lambda2e1)))) {
-    stop("lambda2e1 must be provided");
+  if (is_true(any(is_na(lambda2pfs)))) {
+    stop("lambda2pfs must be provided");
   }
 
-  if (is_true(any(is_na(lambda3e1)))) {
-    stop("lambda3e1 must be provided");
+  if (is_true(any(is_na(lambda3pfs)))) {
+    stop("lambda3pfs must be provided");
   }
 
-  if (is_true(any(is_na(lambda1e2)))) {
-    stop("lambda1e2 must be provided");
+  if (is_true(any(is_na(lambda1os)))) {
+    stop("lambda1os must be provided");
   }
 
-  if (is_true(any(is_na(lambda2e2)))) {
-    stop("lambda2e2 must be provided");
+  if (is_true(any(is_na(lambda2os)))) {
+    stop("lambda2os must be provided");
   }
 
-  if (is_true(any(is_na(lambda3e2)))) {
-    stop("lambda3e2 must be provided");
+  if (is_true(any(is_na(lambda3os)))) {
+    stop("lambda3os must be provided");
   }
 
-  if (is_true(any(lambda1e1 < 0))) {
-    stop("lambda1e1 must be non-negative");
+  if (is_true(any(lambda1pfs < 0))) {
+    stop("lambda1pfs must be non-negative");
   }
 
-  if (is_true(any(lambda2e1 < 0))) {
-    stop("lambda2e1 must be non-negative");
+  if (is_true(any(lambda2pfs < 0))) {
+    stop("lambda2pfs must be non-negative");
   }
 
-  if (is_true(any(lambda3e1 < 0))) {
-    stop("lambda3e1 must be non-negative");
+  if (is_true(any(lambda3pfs < 0))) {
+    stop("lambda3pfs must be non-negative");
   }
 
-  if (is_true(any(lambda1e2 < 0))) {
-    stop("lambda1e2 must be non-negative");
+  if (is_true(any(lambda1os < 0))) {
+    stop("lambda1os must be non-negative");
   }
 
-  if (is_true(any(lambda2e2 < 0))) {
-    stop("lambda2e2 must be non-negative");
+  if (is_true(any(lambda2os < 0))) {
+    stop("lambda2os must be non-negative");
   }
 
-  if (is_true(any(lambda3e2 < 0))) {
-    stop("lambda3e2 must be non-negative");
-  }
-
-
-  if (is_true(any(gamma1e1 < 0))) {
-    stop("gamma1e1 must be non-negative");
-  }
-
-  if (is_true(any(gamma2e1 < 0))) {
-    stop("gamma2e1 must be non-negative");
-  }
-
-  if (is_true(any(gamma3e1 < 0))) {
-    stop("gamma3e1 must be non-negative");
-  }
-
-  if (is_true(any(gamma1e2 < 0))) {
-    stop("gamma1e2 must be non-negative");
-  }
-
-  if (is_true(any(gamma2e2 < 0))) {
-    stop("gamma2e2 must be non-negative");
-  }
-
-  if (is_true(any(gamma3e2 < 0))) {
-    stop("gamma3e2 must be non-negative");
+  if (is_true(any(lambda3os < 0))) {
+    stop("lambda3os must be non-negative");
   }
 
 
-  if (lambda1e1.size() == 1) {
-    lambda1e1x = rep(lambda1e1, nsi);
-  } else if (lambda1e1.size() == nintervals) {
-    lambda1e1x = rep(lambda1e1, nstrata);
-  } else if (lambda1e1.size() == nsi) {
-    lambda1e1x = lambda1e1;
+  if (is_true(any(gamma1pfs < 0))) {
+    stop("gamma1pfs must be non-negative");
+  }
+
+  if (is_true(any(gamma2pfs < 0))) {
+    stop("gamma2pfs must be non-negative");
+  }
+
+  if (is_true(any(gamma3pfs < 0))) {
+    stop("gamma3pfs must be non-negative");
+  }
+
+  if (is_true(any(gamma1os < 0))) {
+    stop("gamma1os must be non-negative");
+  }
+
+  if (is_true(any(gamma2os < 0))) {
+    stop("gamma2os must be non-negative");
+  }
+
+  if (is_true(any(gamma3os < 0))) {
+    stop("gamma3os must be non-negative");
+  }
+
+
+  if (lambda1pfs.size() == 1) {
+    lambda1pfsx = rep(lambda1pfs, nsi);
+  } else if (lambda1pfs.size() == nints) {
+    lambda1pfsx = rep(lambda1pfs, nstrata);
+  } else if (lambda1pfs.size() == nsi) {
+    lambda1pfsx = lambda1pfs;
   } else {
-    stop("Invalid length for lambda1e1");
+    stop("Invalid length for lambda1pfs");
   }
 
-  if (lambda2e1.size() == 1) {
-    lambda2e1x = rep(lambda2e1, nsi);
-  } else if (lambda2e1.size() == nintervals) {
-    lambda2e1x = rep(lambda2e1, nstrata);
-  } else if (lambda2e1.size() == nsi) {
-    lambda2e1x = lambda2e1;
+  if (lambda2pfs.size() == 1) {
+    lambda2pfsx = rep(lambda2pfs, nsi);
+  } else if (lambda2pfs.size() == nints) {
+    lambda2pfsx = rep(lambda2pfs, nstrata);
+  } else if (lambda2pfs.size() == nsi) {
+    lambda2pfsx = lambda2pfs;
   } else {
-    stop("Invalid length for lambda2e1");
+    stop("Invalid length for lambda2pfs");
   }
 
-  if (lambda3e1.size() == 1) {
-    lambda3e1x = rep(lambda3e1, nsi);
-  } else if (lambda3e1.size() == nintervals) {
-    lambda3e1x = rep(lambda3e1, nstrata);
-  } else if (lambda3e1.size() == nsi) {
-    lambda3e1x = lambda3e1;
+  if (lambda3pfs.size() == 1) {
+    lambda3pfsx = rep(lambda3pfs, nsi);
+  } else if (lambda3pfs.size() == nints) {
+    lambda3pfsx = rep(lambda3pfs, nstrata);
+  } else if (lambda3pfs.size() == nsi) {
+    lambda3pfsx = lambda3pfs;
   } else {
-    stop("Invalid length for lambda3e1");
+    stop("Invalid length for lambda3pfs");
   }
 
 
-  if (lambda1e2.size() == 1) {
-    lambda1e2x = rep(lambda1e2, nsi);
-  } else if (lambda1e2.size() == nintervals) {
-    lambda1e2x = rep(lambda1e2, nstrata);
-  } else if (lambda1e2.size() == nsi) {
-    lambda1e2x = lambda1e2;
+  if (lambda1os.size() == 1) {
+    lambda1osx = rep(lambda1os, nsi);
+  } else if (lambda1os.size() == nints) {
+    lambda1osx = rep(lambda1os, nstrata);
+  } else if (lambda1os.size() == nsi) {
+    lambda1osx = lambda1os;
   } else {
-    stop("Invalid length for lambda1e2");
+    stop("Invalid length for lambda1os");
   }
 
-  if (lambda2e2.size() == 1) {
-    lambda2e2x = rep(lambda2e2, nsi);
-  } else if (lambda2e2.size() == nintervals) {
-    lambda2e2x = rep(lambda2e2, nstrata);
-  } else if (lambda2e2.size() == nsi) {
-    lambda2e2x = lambda2e2;
+  if (lambda2os.size() == 1) {
+    lambda2osx = rep(lambda2os, nsi);
+  } else if (lambda2os.size() == nints) {
+    lambda2osx = rep(lambda2os, nstrata);
+  } else if (lambda2os.size() == nsi) {
+    lambda2osx = lambda2os;
   } else {
-    stop("Invalid length for lambda2e2");
+    stop("Invalid length for lambda2os");
   }
 
-  if (lambda3e2.size() == 1) {
-    lambda3e2x = rep(lambda3e2, nsi);
-  } else if (lambda3e2.size() == nintervals) {
-    lambda3e2x = rep(lambda3e2, nstrata);
-  } else if (lambda3e2.size() == nsi) {
-    lambda3e2x = lambda3e2;
+  if (lambda3os.size() == 1) {
+    lambda3osx = rep(lambda3os, nsi);
+  } else if (lambda3os.size() == nints) {
+    lambda3osx = rep(lambda3os, nstrata);
+  } else if (lambda3os.size() == nsi) {
+    lambda3osx = lambda3os;
   } else {
-    stop("Invalid length for lambda3e2");
+    stop("Invalid length for lambda3os");
   }
 
 
-  if (gamma1e1.size() == 1) {
-    gamma1e1x = rep(gamma1e1, nsi);
-  } else if (gamma1e1.size() == nintervals) {
-    gamma1e1x = rep(gamma1e1, nstrata);
-  } else if (gamma1e1.size() == nsi) {
-    gamma1e1x = gamma1e1;
+  if (gamma1pfs.size() == 1) {
+    gamma1pfsx = rep(gamma1pfs, nsi);
+  } else if (gamma1pfs.size() == nints) {
+    gamma1pfsx = rep(gamma1pfs, nstrata);
+  } else if (gamma1pfs.size() == nsi) {
+    gamma1pfsx = gamma1pfs;
   } else {
-    stop("Invalid length for gamma1e1");
+    stop("Invalid length for gamma1pfs");
   }
 
-  if (gamma2e1.size() == 1) {
-    gamma2e1x = rep(gamma2e1, nsi);
-  } else if (gamma2e1.size() == nintervals) {
-    gamma2e1x = rep(gamma2e1, nstrata);
-  } else if (gamma2e1.size() == nsi) {
-    gamma2e1x = gamma2e1;
+  if (gamma2pfs.size() == 1) {
+    gamma2pfsx = rep(gamma2pfs, nsi);
+  } else if (gamma2pfs.size() == nints) {
+    gamma2pfsx = rep(gamma2pfs, nstrata);
+  } else if (gamma2pfs.size() == nsi) {
+    gamma2pfsx = gamma2pfs;
   } else {
-    stop("Invalid length for gamma2e1");
+    stop("Invalid length for gamma2pfs");
   }
 
-  if (gamma3e1.size() == 1) {
-    gamma3e1x = rep(gamma3e1, nsi);
-  } else if (gamma3e1.size() == nintervals) {
-    gamma3e1x = rep(gamma3e1, nstrata);
-  } else if (gamma3e1.size() == nsi) {
-    gamma3e1x = gamma3e1;
+  if (gamma3pfs.size() == 1) {
+    gamma3pfsx = rep(gamma3pfs, nsi);
+  } else if (gamma3pfs.size() == nints) {
+    gamma3pfsx = rep(gamma3pfs, nstrata);
+  } else if (gamma3pfs.size() == nsi) {
+    gamma3pfsx = gamma3pfs;
   } else {
-    stop("Invalid length for gamma3e1");
+    stop("Invalid length for gamma3pfs");
   }
 
 
-  if (gamma1e2.size() == 1) {
-    gamma1e2x = rep(gamma1e2, nsi);
-  } else if (gamma1e2.size() == nintervals) {
-    gamma1e2x = rep(gamma1e2, nstrata);
-  } else if (gamma1e2.size() == nsi) {
-    gamma1e2x = gamma1e2;
+  if (gamma1os.size() == 1) {
+    gamma1osx = rep(gamma1os, nsi);
+  } else if (gamma1os.size() == nints) {
+    gamma1osx = rep(gamma1os, nstrata);
+  } else if (gamma1os.size() == nsi) {
+    gamma1osx = gamma1os;
   } else {
-    stop("Invalid length for gamma1e2");
+    stop("Invalid length for gamma1os");
   }
 
-  if (gamma2e2.size() == 1) {
-    gamma2e2x = rep(gamma2e2, nsi);
-  } else if (gamma2e2.size() == nintervals) {
-    gamma2e2x = rep(gamma2e2, nstrata);
-  } else if (gamma2e2.size() == nsi) {
-    gamma2e2x = gamma2e2;
+  if (gamma2os.size() == 1) {
+    gamma2osx = rep(gamma2os, nsi);
+  } else if (gamma2os.size() == nints) {
+    gamma2osx = rep(gamma2os, nstrata);
+  } else if (gamma2os.size() == nsi) {
+    gamma2osx = gamma2os;
   } else {
-    stop("Invalid length for gamma2e2");
+    stop("Invalid length for gamma2os");
   }
 
-  if (gamma3e2.size() == 1) {
-    gamma3e2x = rep(gamma3e2, nsi);
-  } else if (gamma3e2.size() == nintervals) {
-    gamma3e2x = rep(gamma3e2, nstrata);
-  } else if (gamma3e2.size() == nsi) {
-    gamma3e2x = gamma3e2;
+  if (gamma3os.size() == 1) {
+    gamma3osx = rep(gamma3os, nsi);
+  } else if (gamma3os.size() == nints) {
+    gamma3osx = rep(gamma3os, nstrata);
+  } else if (gamma3os.size() == nsi) {
+    gamma3osx = gamma3os;
   } else {
-    stop("Invalid length for gamma3e2");
+    stop("Invalid length for gamma3os");
   }
 
-  if (is_true(any(lambda1e1x <= lambda1e2x))) {
-    stop("lambda1e1 must be greater than lambda1e2");
+  if (is_true(any(lambda1pfsx <= lambda1osx))) {
+    stop("lambda1pfs must be greater than lambda1os");
   }
 
-  if (is_true(any(lambda2e1x <= lambda2e2x))) {
-    stop("lambda2e1 must be greater than lambda2e2");
+  if (is_true(any(lambda2pfsx <= lambda2osx))) {
+    stop("lambda2pfs must be greater than lambda2os");
   }
 
-  if (is_true(any(lambda3e1x <= lambda3e2x))) {
-    stop("lambda3e1 must be greater than lambda3e2");
+  if (is_true(any(lambda3pfsx <= lambda3osx))) {
+    stop("lambda3pfs must be greater than lambda3os");
   }
 
-  if (is_true(any(gamma1e1x < gamma1e2x))) {
-    stop("gamma1e1 must be greater than or equal to gamma1e2");
+  if (is_true(any(gamma1pfsx < gamma1osx))) {
+    stop("gamma1pfs must be greater than or equal to gamma1os");
   }
 
-  if (is_true(any(gamma2e1x < gamma2e2x))) {
-    stop("gamma2e1 must be greater than or equal to gamma2e2");
+  if (is_true(any(gamma2pfsx < gamma2osx))) {
+    stop("gamma2pfs must be greater than or equal to gamma2os");
   }
 
-  if (is_true(any(gamma3e1x < gamma3e2x))) {
-    stop("gamma3e1 must be greater than or equal to gamma3e2");
+  if (is_true(any(gamma3pfsx < gamma3osx))) {
+    stop("gamma3pfs must be greater than or equal to gamma3os");
   }
 
   for (int j=0; j<nstrata; ++j) {
-    Range jj = Range(j*nintervals, (j+1)*nintervals-1);
+    Range jj = Range(j*nints, (j+1)*nints-1);
 
-    NumericVector lam1e1x = lambda1e1x[jj];
-    NumericVector lam1e2x = lambda1e2x[jj];
-    NumericVector lam1e1d = hazard_pdcpp(piecewiseSurvivalTime,
-                                         lam1e1x, lam1e2x, rho);
+    NumericVector lam1pfs = lambda1pfsx[jj];
+    NumericVector lam1os = lambda1osx[jj];
 
-    NumericVector lam2e1x = lambda2e1x[jj];
-    NumericVector lam2e2x = lambda2e2x[jj];
-    NumericVector lam2e1d = hazard_pdcpp(piecewiseSurvivalTime,
-                                         lam2e1x, lam2e2x, rho);
+    List a1 = hazard_pdcpp(piecewiseSurvivalTime,
+                           lam1pfs, lam1os, rho_pd_os);
 
-    NumericVector lam3e1x = lambda3e1x[jj];
-    NumericVector lam3e2x = lambda3e2x[jj];
-    NumericVector lam3e1d = hazard_pdcpp(piecewiseSurvivalTime,
-                                         lam3e1x, lam3e2x, rho);
+    NumericVector time1pd = a1["piecewiseSurvivalTime"];
+    NumericVector lam1pd = a1["hazard_pd"];
 
-    for (int k=0; k<nintervals; ++k) {
-      lambda1e1d[j*nintervals + k] = lam1e1d[k];
-      lambda2e1d[j*nintervals + k] = lam2e1d[k];
-      lambda3e1d[j*nintervals + k] = lam3e1d[k];
+    NumericVector lam2pfs = lambda2pfsx[jj];
+    NumericVector lam2os = lambda2osx[jj];
+
+    List a2 = hazard_pdcpp(piecewiseSurvivalTime,
+                           lam2pfs, lam2os, rho_pd_os);
+
+    NumericVector time2pd = a2["piecewiseSurvivalTime"];
+    NumericVector lam2pd = a2["hazard_pd"];
+
+    NumericVector lam3pfs = lambda3pfsx[jj];
+    NumericVector lam3os = lambda3osx[jj];
+
+    List a3 = hazard_pdcpp(piecewiseSurvivalTime,
+                           lam3pfs, lam3os, rho_pd_os);
+
+    NumericVector time3pd = a3["piecewiseSurvivalTime"];
+    NumericVector lam3pd = a3["hazard_pd"];
+
+    for (int k=0; k<nints2; ++k) {
+      tau1pd[j*nints2 + k] = time1pd[k];
+      tau2pd[j*nints2 + k] = time2pd[k];
+      tau3pd[j*nints2 + k] = time3pd[k];
+      lambda1pd[j*nints + k] = lam1pd[k];
+      lambda2pd[j*nints + k] = lam2pd[k];
+      lambda3pd[j*nints + k] = lam3pd[k];
     }
   }
 
-  gamma1e1d = gamma1e1x - gamma1e2x;
-  gamma2e1d = gamma2e1x - gamma2e2x;
-  gamma3e1d = gamma3e1x - gamma3e2x;
+  gamma1pd = gamma1pfsx - gamma1osx;
+  gamma2pd = gamma2pfsx - gamma2osx;
+  gamma3pd = gamma3pfsx - gamma3osx;
 
 
   if (n == NA_INTEGER) {
@@ -4219,10 +4256,11 @@ List lrsim2e3a(const int kMax = 1,
   NumericVector cumStratumFraction = cumsum(stratumFraction);
 
   // within-stratum hazard rates
-  NumericVector lam1e1(nintervals), lam2e1(nintervals), lam3e1(nintervals);
-  NumericVector lam1e2(nintervals), lam2e2(nintervals), lam3e2(nintervals);
-  NumericVector gam1e1(nintervals), gam2e1(nintervals), gam3e1(nintervals);
-  NumericVector gam1e2(nintervals), gam2e2(nintervals), gam3e2(nintervals);
+  NumericVector time1pd(nints2), time2pd(nints2), time3pd(nints2);
+  NumericVector lam1pd(nints2), lam2pd(nints2), lam3pd(nints2);
+  NumericVector lam1os(nints), lam2os(nints), lam3os(nints);
+  NumericVector gam1pd(nints), gam2pd(nints), gam3pd(nints);
+  NumericVector gam1os(nints), gam2os(nints), gam3os(nints);
 
 
   // stage-wise information
@@ -4329,27 +4367,32 @@ List lrsim2e3a(const int kMax = 1,
       }
 
       // stratum-specific hazard rates for event and dropout
-      Range jj = Range(j*nintervals, (j+1)*nintervals-1);
+      Range jj = Range(j*nints, (j+1)*nints-1);
+      Range jj2 = Range(j*nints2, (j+1)*nints2-1);
 
-      lam1e1 = lambda1e1d[jj];
-      lam2e1 = lambda2e1d[jj];
-      lam3e1 = lambda3e1d[jj];
+      time1pd = tau1pd[jj2];
+      time2pd = tau2pd[jj2];
+      time3pd = tau3pd[jj2];
 
-      lam1e2 = lambda1e2x[jj];
-      lam2e2 = lambda2e2x[jj];
-      lam3e2 = lambda3e2x[jj];
+      lam1pd = lambda1pd[jj2];
+      lam2pd = lambda2pd[jj2];
+      lam3pd = lambda3pd[jj2];
 
-      gam1e1 = gamma1e1d[jj];
-      gam2e1 = gamma2e1d[jj];
-      gam3e1 = gamma3e1d[jj];
+      lam1os = lambda1osx[jj];
+      lam2os = lambda2osx[jj];
+      lam3os = lambda3osx[jj];
 
-      gam1e2 = gamma1e2x[jj];
-      gam2e2 = gamma2e2x[jj];
-      gam3e2 = gamma3e2x[jj];
+      gam1pd = gamma1pd[jj];
+      gam2pd = gamma2pd[jj];
+      gam3pd = gamma3pd[jj];
 
-      // standard bivariate normal with correlation rho
+      gam1os = gamma1osx[jj];
+      gam2os = gamma2osx[jj];
+      gam3os = gamma3osx[jj];
+
+      // standard bivariate normal with correlation rho_pd_os
       u1 = R::rnorm(0,1);
-      u2 = R::rnorm(rho*u1, sqrt(1-rho*rho));
+      u2 = R::rnorm(rho_pd_os*u1, sqrt(1-rho_pd_os*rho_pd_os));
 
       // transform to uniform
       u1 = R::pnorm(u1, 0, 1, 1, 0);
@@ -4357,20 +4400,14 @@ List lrsim2e3a(const int kMax = 1,
 
       // generate survival times
       if (treatmentGroup[i]==1) {
-        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam1e1, 0,
-                                       1, 0);
-        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam1e2, 0,
-                                       1, 0);
+        survivalTime1[i] = qtpwexpcpp1(u1, time1pd, lam1pd, 0, 1, 0);
+        survivalTime2[i] = qtpwexpcpp1(u2,piecewiseSurvivalTime,lam1os,0,1,0);
       } else if (treatmentGroup[i]==2) {
-        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam2e1, 0,
-                                       1, 0);
-        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam2e2, 0,
-                                       1, 0);
+        survivalTime1[i] = qtpwexpcpp1(u1, time2pd, lam2pd, 0, 1, 0);
+        survivalTime2[i] = qtpwexpcpp1(u2,piecewiseSurvivalTime,lam2os,0,1,0);
       } else {
-        survivalTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, lam3e1, 0,
-                                       1, 0);
-        survivalTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, lam3e2, 0,
-                                       1, 0);
+        survivalTime1[i] = qtpwexpcpp1(u1, time3pd, lam3pd, 0, 1, 0);
+        survivalTime2[i] = qtpwexpcpp1(u2,piecewiseSurvivalTime,lam3os,0,1,0);
       }
       // PFS includes death
       survivalTime1[i] = std::min(survivalTime1[i], survivalTime2[i]);
@@ -4380,20 +4417,14 @@ List lrsim2e3a(const int kMax = 1,
       u1 = R::runif(0,1);
       u2 = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam1e1, 0,
-                                      1, 0);
-        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam1e2, 0,
-                                      1, 0);
+        dropoutTime1[i] = qtpwexpcpp1(u1,piecewiseSurvivalTime,gam1pd,0,1,0);
+        dropoutTime2[i] = qtpwexpcpp1(u2,piecewiseSurvivalTime,gam1os,0,1,0);
       } else if (treatmentGroup[i]==2) {
-        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam2e1, 0,
-                                      1, 0);
-        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam2e2, 0,
-                                      1, 0);
+        dropoutTime1[i] = qtpwexpcpp1(u1,piecewiseSurvivalTime,gam2pd,0,1,0);
+        dropoutTime2[i] = qtpwexpcpp1(u2,piecewiseSurvivalTime,gam2os,0,1,0);
       } else {
-        dropoutTime1[i] = qtpwexpcpp1(u1, piecewiseSurvivalTime, gam3e1, 0,
-                                      1, 0);
-        dropoutTime2[i] = qtpwexpcpp1(u2, piecewiseSurvivalTime, gam3e2, 0,
-                                      1, 0);
+        dropoutTime1[i] = qtpwexpcpp1(u1,piecewiseSurvivalTime,gam3pd,0,1,0);
+        dropoutTime2[i] = qtpwexpcpp1(u2,piecewiseSurvivalTime,gam3os,0,1,0);
       }
       // whatever censors OS will also censor PFS
       dropoutTime1[i] = std::min(dropoutTime1[i], dropoutTime2[i]);
@@ -4476,18 +4507,18 @@ List lrsim2e3a(const int kMax = 1,
       nevents2 = sum(event2ac);
       totalt2 = stl_sort(totalTime2[event2ac]);
 
-      int j1 = kMaxe1x, j2 = kMax - kMaxe1x;
+      int j1 = kMaxpfsx, j2 = kMax - kMaxpfsx;
 
       // PFS looks
-      if (kMaxe1x > 0) {
-        for (j1=0; j1<kMaxe1x; ++j1) {
+      if (kMaxpfsx > 0) {
+        for (j1=0; j1<kMaxpfsx; ++j1) {
           if (plannedEvents[j1] >= nevents1) {
             break;
           }
         }
 
-        if (j1==kMaxe1x) { // total number of PFS events exceeds planned
-          for (int k=0; k<kMaxe1x; ++k) {
+        if (j1==kMaxpfsx) { // total number of PFS events exceeds planned
+          for (int k=0; k<kMaxpfsx; ++k) {
             analysisTime[k] = totalt1[plannedEvents[k]-1] + 1e-12;
           }
         } else {
@@ -4502,23 +4533,23 @@ List lrsim2e3a(const int kMax = 1,
       }
 
       // OS looks
-      NumericVector analysisTime2(kMax - kMaxe1x);
+      NumericVector analysisTime2(kMax - kMaxpfsx);
 
-      if (kMax > kMaxe1x) {
-        for (j2=0; j2<kMax-kMaxe1x; ++j2) {
-          if (plannedEvents[kMaxe1x+j2] >= nevents2) {
+      if (kMax > kMaxpfsx) {
+        for (j2=0; j2<kMax-kMaxpfsx; ++j2) {
+          if (plannedEvents[kMaxpfsx+j2] >= nevents2) {
             break;
           }
         }
 
-        if (j2==kMax-kMaxe1x) { // total number of OS events exceeds planned
-          for (int k=0; k<kMax-kMaxe1x; ++k) {
-            analysisTime2[k] = totalt2[plannedEvents[kMaxe1x+k]-1] + 1e-12;
+        if (j2==kMax-kMaxpfsx) { // total number of OS events exceeds planned
+          for (int k=0; k<kMax-kMaxpfsx; ++k) {
+            analysisTime2[k] = totalt2[plannedEvents[kMaxpfsx+k]-1] + 1e-12;
           }
         } else {
           for (int k=0; k<=j2; ++k) {
             if (k < j2) {
-              analysisTime2[k] = totalt2[plannedEvents[kMaxe1x+k]-1] + 1e-12;
+              analysisTime2[k] = totalt2[plannedEvents[kMaxpfsx+k]-1] + 1e-12;
             } else {
               analysisTime2[k] = totalt2[nevents2-1] + 1e-12;
             }
@@ -4527,9 +4558,9 @@ List lrsim2e3a(const int kMax = 1,
       }
 
       // determine the number of looks and timing of the looks
-      if (kMaxe1x == 0) { // all looks based on OS events
-        if (j2 == kMax - kMaxe1x) {
-          nstages = kMax - kMaxe1x;
+      if (kMaxpfsx == 0) { // all looks based on OS events
+        if (j2 == kMax - kMaxpfsx) {
+          nstages = kMax - kMaxpfsx;
         } else {
           nstages = j2 + 1;
         }
@@ -4537,24 +4568,24 @@ List lrsim2e3a(const int kMax = 1,
         for (int k=0; k<nstages; ++k) {
           analysisTime[k] = analysisTime2[k];
         }
-      } else if (kMax == kMaxe1x) { // all looks based on PFS events
-        if (j1 == kMaxe1x) {
-          nstages = kMaxe1x;
+      } else if (kMax == kMaxpfsx) { // all looks based on PFS events
+        if (j1 == kMaxpfsx) {
+          nstages = kMaxpfsx;
         } else {
           nstages = j1 + 1;
         }
       } else {
-        if (analysisTime2[kMax-kMaxe1x-1] > analysisTime[kMaxe1x-1]) {
+        if (analysisTime2[kMax-kMaxpfsx-1] > analysisTime[kMaxpfsx-1]) {
           // only OS looks that occur after the last PFS look contribute
           int l = static_cast<int>(which_max(analysisTime2 >
-                                               analysisTime[kMaxe1x-1]));
+                                               analysisTime[kMaxpfsx-1]));
           nstages = kMax-l;
-          for (int k=kMaxe1x; k<kMax-l; ++k) {
-            analysisTime[k] = analysisTime2[k-kMaxe1x+l];
+          for (int k=kMaxpfsx; k<kMax-l; ++k) {
+            analysisTime[k] = analysisTime2[k-kMaxpfsx+l];
           }
         } else {
-          if (j1 == kMaxe1x) {
-            nstages = kMaxe1x;
+          if (j1 == kMaxpfsx) {
+            nstages = kMaxpfsx;
           } else {
             nstages = j1 + 1;
           }
@@ -4562,9 +4593,9 @@ List lrsim2e3a(const int kMax = 1,
       }
 
       // whether the target PFS and OS events are achieved
-      if (kMaxe1x > 0 && nevents1 < plannedEvents[kMaxe1x-1]) {
+      if (kMaxpfsx > 0 && nevents1 < plannedEvents[kMaxpfsx-1]) {
         eventsNotAchieved = 1;
-      } else if (kMaxe1x < kMax && nevents2 < plannedEvents[kMax-1]) {
+      } else if (kMaxpfsx < kMax && nevents2 < plannedEvents[kMax-1]) {
         eventsNotAchieved = 1;
       } else {
         eventsNotAchieved = 0;
@@ -4776,13 +4807,13 @@ List lrsim2e3a(const int kMax = 1,
 
         double hazardRatioH013, hazardRatioH023, hazardRatioH012;
         if (endpoint == 1) {
-          hazardRatioH013 = hazardRatioH013e1;
-          hazardRatioH023 = hazardRatioH023e1;
-          hazardRatioH012 = hazardRatioH012e1;
+          hazardRatioH013 = hazardRatioH013pfs;
+          hazardRatioH023 = hazardRatioH023pfs;
+          hazardRatioH012 = hazardRatioH012pfs;
         } else {
-          hazardRatioH013 = hazardRatioH013e2;
-          hazardRatioH023 = hazardRatioH023e2;
-          hazardRatioH012 = hazardRatioH012e2;
+          hazardRatioH013 = hazardRatioH013os;
+          hazardRatioH023 = hazardRatioH023os;
+          hazardRatioH012 = hazardRatioH012os;
         }
 
 
@@ -5350,8 +5381,8 @@ List binary_tte_sim(
 
   // check input parameters
   int nstrata = static_cast<int>(stratumFraction.size());
-  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
-  int nsi = nstrata*nintervals;
+  int nints = static_cast<int>(piecewiseSurvivalTime.size());
+  int nsi = nstrata*nints;
 
   NumericVector pi1x(nstrata), pi2x(nstrata);
   NumericVector lambda1x(nsi), lambda2x(nsi);
@@ -5412,7 +5443,7 @@ List binary_tte_sim(
     stop("piecewiseSurvivalTime must start with 0");
   }
 
-  if (nintervals > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
+  if (nints > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
     stop("piecewiseSurvivalTime should be increasing");
   }
 
@@ -5498,7 +5529,7 @@ List binary_tte_sim(
 
   if (lambda1.size() == 1) {
     lambda1x = rep(lambda1, nsi);
-  } else if (lambda1.size() == nintervals) {
+  } else if (lambda1.size() == nints) {
     lambda1x = rep(lambda1, nstrata);
   } else if (lambda1.size() == nsi) {
     lambda1x = lambda1;
@@ -5508,7 +5539,7 @@ List binary_tte_sim(
 
   if (lambda2.size() == 1) {
     lambda2x = rep(lambda2, nsi);
-  } else if (lambda2.size() == nintervals) {
+  } else if (lambda2.size() == nints) {
     lambda2x = rep(lambda2, nstrata);
   } else if (lambda2.size() == nsi) {
     lambda2x = lambda2;
@@ -5518,7 +5549,7 @@ List binary_tte_sim(
 
   if (gamma1.size() == 1) {
     gamma1x = rep(gamma1, nsi);
-  } else if (gamma1.size() == nintervals) {
+  } else if (gamma1.size() == nints) {
     gamma1x = rep(gamma1, nstrata);
   } else if (gamma1.size() == nsi) {
     gamma1x = gamma1;
@@ -5528,7 +5559,7 @@ List binary_tte_sim(
 
   if (gamma2.size() == 1) {
     gamma2x = rep(gamma2, nsi);
-  } else if (gamma2.size() == nintervals) {
+  } else if (gamma2.size() == nints) {
     gamma2x = rep(gamma2, nstrata);
   } else if (gamma2.size() == nsi) {
     gamma2x = gamma2;
@@ -5538,7 +5569,7 @@ List binary_tte_sim(
 
   if (delta1.size() == 1) {
     delta1x = rep(delta1, nsi);
-  } else if (delta1.size() == nintervals) {
+  } else if (delta1.size() == nints) {
     delta1x = rep(delta1, nstrata);
   } else if (delta1.size() == nsi) {
     delta1x = delta1;
@@ -5548,7 +5579,7 @@ List binary_tte_sim(
 
   if (delta2.size() == 1) {
     delta2x = rep(delta2, nsi);
-  } else if (delta2.size() == nintervals) {
+  } else if (delta2.size() == nints) {
     delta2x = rep(delta2, nstrata);
   } else if (delta2.size() == nsi) {
     delta2x = delta2;
@@ -5654,9 +5685,9 @@ List binary_tte_sim(
 
   // within-stratum response rates and hazard rates
   double alpha0, alpha1; // parameters on the logit scale for endpoint 1
-  NumericVector lam1(nintervals), lam2(nintervals);
-  NumericVector gam1(nintervals), gam2(nintervals);
-  NumericVector del1(nintervals), del2(nintervals);
+  NumericVector lam1(nints), lam2(nints);
+  NumericVector gam1(nints), gam2(nints);
+  NumericVector del1(nints), del2(nints);
 
 
   // stage-wise information
@@ -5793,7 +5824,7 @@ List binary_tte_sim(
       alpha0 = alpha0x[j];
       alpha1 = alpha1x[j];
 
-      Range jj = Range(j*nintervals, (j+1)*nintervals-1);
+      Range jj = Range(j*nints, (j+1)*nints-1);
 
       lam1 = lambda1x[jj];
       lam2 = lambda2x[jj];
@@ -6540,15 +6571,22 @@ List lrsimsub(const int kMax = 1,
   int kMaxittx = kMaxitt;
 
   int nstrata = static_cast<int>(stratumFraction.size());
-  int nintervals = static_cast<int>(piecewiseSurvivalTime.size());
-  int nsi = nstrata*nintervals;
+  int nints = static_cast<int>(piecewiseSurvivalTime.size());
+  int nsi = nstrata*nints;
+  int nints2 = nints == 1 ? 10 : nints + 10;
+  int nsi2 = nstrata*nints2;
 
   NumericVector lambda1ittx(nsi), lambda2ittx(nsi);
   NumericVector lambda1posx(nsi), lambda2posx(nsi);
-  NumericVector lambda1negx(nsi), lambda2negx(nsi);
+  NumericVector lambda1posy(nsi2), lambda2posy(nsi2);
+  NumericVector lambda1negy(nsi2), lambda2negy(nsi2);
   NumericVector gamma1ittx(nsi), gamma2ittx(nsi);
   NumericVector gamma1posx(nsi), gamma2posx(nsi);
-  NumericVector gamma1negx(nsi), gamma2negx(nsi);
+  NumericVector gamma1posy(nsi2), gamma2posy(nsi2);
+  NumericVector gamma1negy(nsi2), gamma2negy(nsi2);
+
+  NumericVector tau1pos(nsi2), tau2pos(nsi2);
+  NumericVector tau1neg(nsi2), tau2neg(nsi2);
 
   NumericVector p_posx(nstrata);
 
@@ -6657,7 +6695,7 @@ List lrsimsub(const int kMax = 1,
     stop("piecewiseSurvivalTime must start with 0");
   }
 
-  if (nintervals > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
+  if (nints > 1 && is_true(any(diff(piecewiseSurvivalTime) <= 0))) {
     stop("piecewiseSurvivalTime should be increasing");
   }
 
@@ -6740,7 +6778,7 @@ List lrsimsub(const int kMax = 1,
 
   if (lambda1itt.size() == 1) {
     lambda1ittx = rep(lambda1itt, nsi);
-  } else if (lambda1itt.size() == nintervals) {
+  } else if (lambda1itt.size() == nints) {
     lambda1ittx = rep(lambda1itt, nstrata);
   } else if (lambda1itt.size() == nsi) {
     lambda1ittx = lambda1itt;
@@ -6750,7 +6788,7 @@ List lrsimsub(const int kMax = 1,
 
   if (lambda2itt.size() == 1) {
     lambda2ittx = rep(lambda2itt, nsi);
-  } else if (lambda2itt.size() == nintervals) {
+  } else if (lambda2itt.size() == nints) {
     lambda2ittx = rep(lambda2itt, nstrata);
   } else if (lambda2itt.size() == nsi) {
     lambda2ittx = lambda2itt;
@@ -6761,7 +6799,7 @@ List lrsimsub(const int kMax = 1,
 
   if (lambda1pos.size() == 1) {
     lambda1posx = rep(lambda1pos, nsi);
-  } else if (lambda1pos.size() == nintervals) {
+  } else if (lambda1pos.size() == nints) {
     lambda1posx = rep(lambda1pos, nstrata);
   } else if (lambda1pos.size() == nsi) {
     lambda1posx = lambda1pos;
@@ -6771,7 +6809,7 @@ List lrsimsub(const int kMax = 1,
 
   if (lambda2pos.size() == 1) {
     lambda2posx = rep(lambda2pos, nsi);
-  } else if (lambda2pos.size() == nintervals) {
+  } else if (lambda2pos.size() == nints) {
     lambda2posx = rep(lambda2pos, nstrata);
   } else if (lambda2pos.size() == nsi) {
     lambda2posx = lambda2pos;
@@ -6782,7 +6820,7 @@ List lrsimsub(const int kMax = 1,
 
   if (gamma1itt.size() == 1) {
     gamma1ittx = rep(gamma1itt, nsi);
-  } else if (gamma1itt.size() == nintervals) {
+  } else if (gamma1itt.size() == nints) {
     gamma1ittx = rep(gamma1itt, nstrata);
   } else if (gamma1itt.size() == nsi) {
     gamma1ittx = gamma1itt;
@@ -6792,7 +6830,7 @@ List lrsimsub(const int kMax = 1,
 
   if (gamma2itt.size() == 1) {
     gamma2ittx = rep(gamma2itt, nsi);
-  } else if (gamma2itt.size() == nintervals) {
+  } else if (gamma2itt.size() == nints) {
     gamma2ittx = rep(gamma2itt, nstrata);
   } else if (gamma2itt.size() == nsi) {
     gamma2ittx = gamma2itt;
@@ -6803,7 +6841,7 @@ List lrsimsub(const int kMax = 1,
 
   if (gamma1pos.size() == 1) {
     gamma1posx = rep(gamma1pos, nsi);
-  } else if (gamma1pos.size() == nintervals) {
+  } else if (gamma1pos.size() == nints) {
     gamma1posx = rep(gamma1pos, nstrata);
   } else if (gamma1pos.size() == nsi) {
     gamma1posx = gamma1pos;
@@ -6813,7 +6851,7 @@ List lrsimsub(const int kMax = 1,
 
   if (gamma2pos.size() == 1) {
     gamma2posx = rep(gamma2pos, nsi);
-  } else if (gamma2pos.size() == nintervals) {
+  } else if (gamma2pos.size() == nints) {
     gamma2posx = rep(gamma2pos, nstrata);
   } else if (gamma2pos.size() == nsi) {
     gamma2posx = gamma2pos;
@@ -6823,35 +6861,63 @@ List lrsimsub(const int kMax = 1,
 
 
   for (int j=0; j<nstrata; ++j) {
-    Range jj = Range(j*nintervals, (j+1)*nintervals-1);
+    Range jj = Range(j*nints, (j+1)*nints-1);
 
-    double posx = p_posx[j];
+    double ppos = p_posx[j];
 
-    NumericVector lam1ittx = lambda1ittx[jj];
-    NumericVector lam1posx = lambda1posx[jj];
-    NumericVector lam1negx = hazard_subcpp(piecewiseSurvivalTime,
-                                           lam1ittx, lam1posx, posx);
+    NumericVector lam1itt = lambda1ittx[jj];
+    NumericVector lam1pos = lambda1posx[jj];
 
-    NumericVector lam2ittx = lambda2ittx[jj];
-    NumericVector lam2posx = lambda2posx[jj];
-    NumericVector lam2negx = hazard_subcpp(piecewiseSurvivalTime,
-                                           lam2ittx, lam2posx, posx);
+    List a1 = hazard_subcpp(piecewiseSurvivalTime,
+                            lam1itt, lam1pos, ppos);
 
-    NumericVector gam1ittx = gamma1ittx[jj];
-    NumericVector gam1posx = gamma1posx[jj];
-    NumericVector gam1negx = hazard_subcpp(piecewiseSurvivalTime,
-                                           gam1ittx, gam1posx, posx);
+    NumericVector time1pos = a1["piecewiseSurvivalTime"];
+    NumericVector lam1posy = a1["hazard_pos"];
+    NumericVector lam1negy = a1["hazard_neg"];
 
-    NumericVector gam2ittx = gamma2ittx[jj];
-    NumericVector gam2posx = gamma2posx[jj];
-    NumericVector gam2negx = hazard_subcpp(piecewiseSurvivalTime,
-                                           gam2ittx, gam2posx, posx);
+    NumericVector lam2itt = lambda2ittx[jj];
+    NumericVector lam2pos = lambda2posx[jj];
 
-    for (int k=0; k<nintervals; ++k) {
-      lambda1negx[j*nintervals + k] = lam1negx[k];
-      lambda2negx[j*nintervals + k] = lam2negx[k];
-      gamma1negx[j*nintervals + k] = gam1negx[k];
-      gamma2negx[j*nintervals + k] = gam2negx[k];
+    List a2 = hazard_subcpp(piecewiseSurvivalTime,
+                            lam2itt, lam2pos, ppos);
+
+    NumericVector time2pos = a2["piecewiseSurvivalTime"];
+    NumericVector lam2posy = a2["hazard_pos"];
+    NumericVector lam2negy = a2["hazard_neg"];
+
+    NumericVector gam1itt = gamma1ittx[jj];
+    NumericVector gam1pos = gamma1posx[jj];
+
+    List b1 = hazard_subcpp(piecewiseSurvivalTime,
+                            gam1itt, gam1pos, ppos);
+
+    NumericVector time1neg = b1["piecewiseSurvivalTime"];
+    NumericVector gam1posy = b1["hazard_pos"];
+    NumericVector gam1negy = b1["hazard_neg"];
+
+    NumericVector gam2itt = gamma2ittx[jj];
+    NumericVector gam2pos = gamma2posx[jj];
+
+    List b2 = hazard_subcpp(piecewiseSurvivalTime,
+                            gam2itt, gam2pos, ppos);
+
+    NumericVector time2neg = b2["piecewiseSurvivalTime"];
+    NumericVector gam2posy = b2["hazard_pos"];
+    NumericVector gam2negy = b2["hazard_neg"];
+
+    for (int k=0; k<nints2; ++k) {
+      tau1pos[j*nints2 + k] = time1pos[k];
+      tau2pos[j*nints2 + k] = time2pos[k];
+      tau1neg[j*nints2 + k] = time1neg[k];
+      tau2neg[j*nints2 + k] = time2neg[k];
+      lambda1posy[j*nints2 + k] = lam1posy[k];
+      lambda2posy[j*nints2 + k] = lam2posy[k];
+      lambda1negy[j*nints2 + k] = lam1negy[k];
+      lambda2negy[j*nints2 + k] = lam2negy[k];
+      gamma1posy[j*nints2 + k] = gam1posy[k];
+      gamma2posy[j*nints2 + k] = gam2posy[k];
+      gamma1negy[j*nints2 + k] = gam1negy[k];
+      gamma2negy[j*nints2 + k] = gam2negy[k];
     }
   }
 
@@ -6921,8 +6987,9 @@ List lrsimsub(const int kMax = 1,
 
 
   // within-stratum hazard rates
-  NumericVector lam1(nintervals), lam2(nintervals);
-  NumericVector gam1(nintervals), gam2(nintervals);
+  NumericVector time1(nints2), time2(nints2);
+  NumericVector lam1(nints2), lam2(nints2);
+  NumericVector gam1(nints2), gam2(nints2);
 
   // stage-wise information
   IntegerVector niter(kMax);
@@ -7023,35 +7090,39 @@ List lrsimsub(const int kMax = 1,
       }
 
       // stratum-specific hazard rates for event and dropout
-      Range jj = Range(j*nintervals, (j+1)*nintervals-1);
+      Range jj2 = Range(j*nints2, (j+1)*nints2-1);
 
       if (biomarker[i]) { // biomarker positive
-        lam1 = lambda1posx[jj];
-        lam2 = lambda2posx[jj];
-        gam1 = gamma1posx[jj];
-        gam2 = gamma2posx[jj];
+        time1 = tau1pos[jj2];
+        time2 = tau2pos[jj2];
+        lam1 = lambda1posy[jj2];
+        lam2 = lambda2posy[jj2];
+        gam1 = gamma1posy[jj2];
+        gam2 = gamma2posy[jj2];
       } else { // biomarker negative
-        lam1 = lambda1negx[jj];
-        lam2 = lambda2negx[jj];
-        gam1 = gamma1negx[jj];
-        gam2 = gamma2negx[jj];
+        time1 = tau1neg[jj2];
+        time2 = tau2neg[jj2];
+        lam1 = lambda1negy[jj2];
+        lam2 = lambda2negy[jj2];
+        gam1 = gamma1negy[jj2];
+        gam2 = gamma2negy[jj2];
       }
 
 
       // generate survival times
       u = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam1, 0,1,0);
+        survivalTime[i] = qtpwexpcpp1(u, time1, lam1, 0, 1, 0);
       } else {
-        survivalTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, lam2, 0,1,0);
+        survivalTime[i] = qtpwexpcpp1(u, time2, lam2, 0, 1, 0);
       }
 
       // generate dropout times
       u = R::runif(0,1);
       if (treatmentGroup[i]==1) {
-        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam1, 0,1,0);
+        dropoutTime[i] = qtpwexpcpp1(u, time1, gam1, 0, 1, 0);
       } else {
-        dropoutTime[i] = qtpwexpcpp1(u, piecewiseSurvivalTime, gam2, 0,1,0);
+        dropoutTime[i] = qtpwexpcpp1(u, time2, gam2, 0, 1, 0);
       }
 
       // initial observed time and event indicator
