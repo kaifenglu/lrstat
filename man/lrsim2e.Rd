@@ -15,7 +15,7 @@ lrsim2e(
   accrualIntensity = NA_real_,
   piecewiseSurvivalTime = 0L,
   stratumFraction = 1L,
-  rho = 0,
+  rho_pd_os = 0,
   lambda1e1 = NA_real_,
   lambda2e1 = NA_real_,
   lambda1e2 = NA_real_,
@@ -73,9 +73,9 @@ Defaults to 0 for exponential distribution.}
 \item{stratumFraction}{A vector of stratum fractions that sum to 1.
 Defaults to 1 for no stratification.}
 
-\item{rho}{The correlation coefficient for the standard bivariate normal
-random variables used to generate time to disease progression and time
-to death using the inverse CDF method.}
+\item{rho_pd_os}{The correlation coefficient for the standard
+bivariate normal random variables used to generate time to
+disease progression and time to death using the inverse CDF method.}
 
 \item{lambda1e1}{A vector of hazard rates for the event in each analysis
 time interval by stratum for the treatment group and endpoint 1 (PFS).}
@@ -224,7 +224,7 @@ sim1 = lrsim2e(
   accrualTime = c(0, 8),
   accrualIntensity = c(10, 28),
   piecewiseSurvivalTime = 0,
-  rho = 0,
+  rho_pd_os = 0,
   lambda1e1 = log(2)/12*0.60,
   lambda2e1 = log(2)/12,
   lambda1e2 = log(2)/30*0.65,
