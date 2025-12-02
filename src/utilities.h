@@ -60,6 +60,10 @@ NumericVector qtpwexpcpp(const NumericVector& p,
                          const bool lowertail,
                          const bool logp);
 
+List mtpwexpcpp(const NumericVector& piecewiseSurvivalTime,
+                const NumericVector& lambda,
+                const double lowerBound);
+
 NumericVector rtpwexpcpp(
     const int n,
     const NumericVector& piecewiseSurvivalTime,

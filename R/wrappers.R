@@ -244,6 +244,53 @@ qtpwexp <- function(p, piecewiseSurvivalTime = 0, lambda = 0.0578,
 }
 
 
+#' @title Mean and Variance of Truncated Piecewise Exponential Distribution
+#' @description Obtains the mean and variance from a truncated piecewise
+#' exponential distribution.
+#'
+#' @inheritParams param_piecewiseSurvivalTime
+#' @inheritParams param_lambda
+#' @param lowerBound The left truncation time point for the survival time.
+#'   Defaults to 0 for no truncation.
+#'
+#' @return A list with two components, one for the mean, and the other for
+#' the variance of the truncated piecewise exponential distribution.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#' mtpwexp(piecewiseSurvivalTime = c(0, 6, 9, 15),
+#'         lambda = c(0.025, 0.04, 0.015, 0.007))
+#'
+#' @export
+mtpwexp <- function(piecewiseSurvivalTime = 0, lambda = 0.0578,
+                    lowerBound = 0) {
+  if (piecewiseSurvivalTime[1] != 0) {
+    stop("piecewiseSurvivalTime must start with 0")
+  }
+
+  if (length(piecewiseSurvivalTime) > 1 &&
+      any(diff(piecewiseSurvivalTime) <= 0)) {
+    stop("piecewiseSurvivalTime should be increasing")
+  }
+
+  if (length(lambda) != length(piecewiseSurvivalTime)) {
+    stop("lambda and piecewiseSurvivalTime must have the same length")
+  }
+
+  if (any(lambda < 0)) {
+    stop("lambda must be nonnegative")
+  }
+
+  if (lowerBound < 0) {
+    stop("lowerBound must be nonnegative")
+  }
+
+  mtpwexpcpp(piecewiseSurvivalTime = piecewiseSurvivalTime,
+             lambda = lambda, lowerBound = lowerBound)
+}
+
+
 #' @title Random Number Generation Function of Truncated Piecewise
 #' Exponential Distribution
 #' @description Obtains random samples from a truncated piecewise
