@@ -14,7 +14,7 @@ Imports:
     lpSolve (>= 5.6.1),
     ggplot2 (>= 3.3.6),
     shiny (>= 1.7.1)
-LinkingTo: Rcpp
+LinkingTo: Rcpp, RcppThread, BH
 Suggests: 
     testthat (>= 3.0.0),
     dplyr (>= 1.1.4),
@@ -29,6 +29,7 @@ Encoding: UTF-8
 NeedsCompilation: yes
 Depends: 
     R (>= 3.5.0)
+SystemRequirements: C++17
 LazyData: true
 URL: https://github.com/kaifenglu/lrstat
 BugReports: https://github.com/kaifenglu/lrstat/issues
