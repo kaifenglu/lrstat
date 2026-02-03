@@ -1,0 +1,15 @@
+Vendored third-party code for lrstat
+--------------------------------------
+
+1) ska::flat_hash_map (header-only)
+   - Upstream URL: https://github.com/skarupke/flat_hash_map
+   - Vendored path in this package: src/ska/flat_hash_map.hpp
+   - Upstream commit/sha: 2c4687431f978f02a3780e24b8b701d22aa32d9c
+   - Raw file URL at that commit:
+     https://github.com/skarupke/flat_hash_map/commit/2c4687431f978f02a3780e24b8b701d22aa32d9c
+   - License: Boost Software License 1.0 (see LICENSE-ska-flat_hash_map)
+   - Copyright: Malte Skarupke 2017
+
+Notes:
+- The header is vendored to avoid external dependencies during CRAN builds.
+- The original copyright and license header in the vendored header file are preserved verbatim.
