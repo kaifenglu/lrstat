@@ -69,10 +69,53 @@
 #' errorSpent(t = c(0.5, 0.75, 1), error = 0.025, sf = "sfHSD", sfpar = -4)
 #'
 #' @export
-errorSpent <- function(t, error, sf = "sfOF", sfpar = NA) {
+errorSpent <- function(t, error = 0.025, sf = "sfOF", sfpar = NA) {
   sapply(t, errorSpentcpp, error = error, sf = sf, sfpar = sfpar)
 }
 
+
+#' @title Stagewise Exit Probabilities
+#' @description Obtains the stagewise exit probabilities for both efficacy
+#' and futility stopping.
+#'
+#' @param b Upper boundaries on the z-test statistic scale.
+#' @param a Lower boundaries on the z-test statistic scale. Defaults to
+#'   \code{c(rep(-6.0, kMax-1), b[kMax])} if left unspecified, where
+#'   \code{kMax = length(b)}.
+#' @param theta Stagewise parameter of interest, e.g., \code{-U/V} for
+#'   weighted log-rank test, where \code{U} is the mean and \code{V} is
+#'   the variance of the weighted log-rank test score statistic at each
+#'   stage. For proportional hazards and conventional log-rank test, use the
+#'   scalar input, \code{theta = -log(HR)}. Defaults to 0 corresponding to
+#'   the null hypothesis.
+#' @param I Stagewise cumulative information, e.g., \code{V}, the variance
+#'   of the weighted log-rank test score statistic at each stage. For
+#'   conventional log-rank test, information can be approximated by
+#'   \code{phi*(1-phi)*D}, where \code{phi} is the probability of being
+#'   allocated to the active arm, and \code{D} is the total number of events
+#'   at each stage. Defaults to \code{seq(1, kMax)} if left unspecified.
+#'
+#' @return A list of stagewise exit probabilities:
+#'
+#' * \code{exitProbUpper}: The vector of efficacy stopping probabilities
+#'
+#' * \code{exitProbLower}: The vector of futility stopping probabilities.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#' exitprob(b = c(3.471, 2.454, 2.004), theta = -log(0.6),
+#'          I = c(50, 100, 150)/4)
+#'
+#' exitprob(b = c(2.963, 2.359, 2.014),
+#'          a = c(-0.264, 0.599, 2.014),
+#'          theta = c(0.141, 0.204, 0.289),
+#'          I = c(81, 121, 160))
+#'
+#' @export
+exitprob <- function(b, a = NA, theta = 0, I = NA) {
+  exitprobcpp(b = b, a = a, theta = theta, I = I)
+}
 
 
 #' @title Density Function of Truncated Piecewise Exponential
@@ -339,53 +382,12 @@ rtpwexp <- function(n, piecewiseSurvivalTime = 0, lambda = 0.0578,
     stop("lowerBound must be nonnegative")
   }
 
-  rtpwexpcpp(n = n, piecewiseSurvivalTime = piecewiseSurvivalTime,
+  qtpwexpcpp(p = runif(n), piecewiseSurvivalTime = piecewiseSurvivalTime,
              lambda = lambda, lowerBound = lowerBound)
 }
 
 
-#' @title Stagewise Exit Probabilities
-#' @description Obtains the stagewise exit probabilities for both efficacy
-#' and futility stopping.
-#'
-#' @param b Upper boundaries on the z-test statistic scale.
-#' @param a Lower boundaries on the z-test statistic scale. Defaults to
-#'   \code{c(rep(-6.0, kMax-1), b[kMax])} if left unspecified, where
-#'   \code{kMax = length(b)}.
-#' @param theta Stagewise parameter of interest, e.g., \code{-U/V} for
-#'   weighted log-rank test, where \code{U} is the mean and \code{V} is
-#'   the variance of the weighted log-rank test score statistic at each
-#'   stage. For proportional hazards and conventional log-rank test, use the
-#'   scalar input, \code{theta = -log(HR)}. Defaults to 0 corresponding to
-#'   the null hypothesis.
-#' @param I Stagewise cumulative information, e.g., \code{V}, the variance
-#'   of the weighted log-rank test score statistic at each stage. For
-#'   conventional log-rank test, information can be approximated by
-#'   \code{phi*(1-phi)*D}, where \code{phi} is the probability of being
-#'   allocated to the active arm, and \code{D} is the total number of events
-#'   at each stage. Defaults to \code{seq(1, kMax)} if left unspecified.
-#'
-#' @return A list of stagewise exit probabilities:
-#'
-#' * \code{exitProbUpper}: The vector of efficacy stopping probabilities
-#'
-#' * \code{exitProbLower}: The vector of futility stopping probabilities.
-#'
-#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#'
-#' @examples
-#' exitprob(b = c(3.471, 2.454, 2.004), theta = -log(0.6),
-#'          I = c(50, 100, 150)/4)
-#'
-#' exitprob(b = c(2.963, 2.359, 2.014),
-#'          a = c(-0.264, 0.599, 2.014),
-#'          theta = c(0.141, 0.204, 0.289),
-#'          I = c(81, 121, 160))
-#'
-#' @export
-exitprob <- function(b, a = NA, theta = 0, I = NA) {
-  exitprobcpp(b = b, a = a, theta = theta, I = I)
-}
+
 
 #' @title Split a survival data set at specified cut points
 #' @description For a given survival dataset and specified cut times,
@@ -1173,51 +1175,6 @@ fmodmix <- function(p, family = NULL, serial, parallel,
     x = as.vector(x)
   }
   x
-}
-
-
-
-#' @title Efficacy Boundaries for Group Sequential Design
-#' @description Obtains the efficacy stopping boundaries for a group
-#' sequential design.
-#'
-#' @param k Look number for the current analysis.
-#' @param informationRates Information rates up to the current look. Must be
-#'   increasing and less than or equal to 1.
-#' @inheritParams param_alpha
-#' @inheritParams param_typeAlphaSpending
-#' @inheritParams param_parameterAlphaSpending
-#' @inheritParams param_userAlphaSpending
-#' @param spendingTime A vector of length \code{k} for the error spending
-#'   time at each analysis. Must be increasing and less than or equal to 1.
-#'   Defaults to missing, in which case, it is the same as
-#'   \code{informationRates}.
-#' @inheritParams param_efficacyStopping
-#'
-#' @details
-#' If \code{typeAlphaSpending} is "OF", "P", or "WT", then the boundaries
-#' will be based on equally spaced looks.
-#'
-#' @return A numeric vector of critical values up to the current look.
-#'
-#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#'
-#' @examples
-#'
-#' getBound(k = 2, informationRates = c(0.5,1),
-#'          alpha = 0.025, typeAlphaSpending = "sfOF")
-#'
-#' @export
-getBound <- function(k = NA, informationRates = NA, alpha = 0.025,
-                     typeAlphaSpending = "sfOF", parameterAlphaSpending = NA,
-                     userAlphaSpending = NA, spendingTime = NA,
-                     efficacyStopping = NA) {
-  getBoundcpp(k = k, informationRates = informationRates, alpha = alpha,
-              typeAlphaSpending = typeAlphaSpending,
-              parameterAlphaSpending = parameterAlphaSpending,
-              userAlphaSpending = userAlphaSpending,
-              spendingTime = spendingTime,
-              efficacyStopping = efficacyStopping)
 }
 
 
@@ -2945,109 +2902,6 @@ corr_pfs_os <- function(piecewiseSurvivalTime, hazard_pfs,
 
   corr_pfs_oscpp(piecewiseSurvivalTime, hazard_pfs, hazard_os, rho_pd_os);
 }
-
-
-#' @title Hazard Function for Progressive Disease (PD) Given Correlation
-#' Between PFS and OS
-#'
-#' @description
-#' Computes the hazard function of a piecewise exponential
-#' distribution for progressive disease (PD), such that the
-#' resulting hazard function for progression-free survival (PFS)
-#' closely matches a given piecewise hazard for PFS
-#' and the correlation coefficient between PFS and OS matches
-#' the specified value.
-#'
-#' @inheritParams param_piecewiseSurvivalTime
-#' @param hazard_pfs A scalar or numeric vector specifying the
-#'   hazard(s) for PFS based on a piecewise exponential distribution.
-#' @param hazard_os A scalar or numeric vector specifying the
-#'   hazard(s) for overall survival (OS) based on a piecewise
-#'   exponential distribution.
-#' @param rho_pfs_os A numeric value specifying the correlation
-#'   between PFS and OS times.
-#'
-#' @details
-#' This function determines the hazard vector \eqn{\lambda_{\text{pd}}}
-#' for the piecewise exponential distribution of PD, so that the
-#' implied survival function for PFS time,
-#' \eqn{T_{\text{pfs}} = \min(T_{\text{pd}}, T_{\text{os}})}, closely
-#' matches the specified piecewise exponential distribution for PFS
-#' with hazard vector \eqn{\lambda_{\text{pfs}}}, and the correlation
-#' between PFS and OS times matches the specified value \code{rho_pfs_os}.
-#'
-#' @return A list with the following components:
-#'
-#' * \code{piecewiseSurvivalTime}: A vector that specifies the starting time
-#'   points of the intervals for the piecewise exponential distribution
-#'   for PD.
-#'
-#' * \code{hazard_pd}: A numeric vector representing the calculated hazard
-#'   rates for the piecewise exponential distribution of PD.
-#'
-#' * \code{hazard_os}: A numeric vector representing the hazard rates for
-#'   the piecewise exponential distribution of OS at the same time points
-#'   as PD.
-#'
-#' * \code{rho_pd_os}: The correlation between PD and OS times.
-#'
-#' * \code{rho_pfs_os}: The correlation between PFS and OS times (as input).
-#'
-#' @author
-#' Kaifeng Lu (\email{kaifenglu@gmail.com})
-#'
-#' @examples
-#' u <- c(0, 1, 3, 4)
-#' lambda1 <- c(0.0151, 0.0403, 0.0501, 0.0558)
-#' lambda2 <- 0.0145
-#' rho_pfs_os <- 0.5
-#' hazard_pd2(u, lambda1, lambda2, rho_pfs_os)
-#'
-#' @export
-hazard_pd2 <- function(piecewiseSurvivalTime = 0,
-                       hazard_pfs = 0.0578,
-                       hazard_os = 0.02,
-                       rho_pfs_os = 0.5) {
-
-  if (piecewiseSurvivalTime[1] != 0) {
-    stop("piecewiseSurvivalTime must start with 0")
-  }
-
-  if (length(piecewiseSurvivalTime) > 1 &&
-      any(diff(piecewiseSurvivalTime) <= 0)) {
-    stop("piecewiseSurvivalTime should be increasing")
-  }
-
-  k = length(piecewiseSurvivalTime)
-  if (!(length(hazard_pfs) %in% c(1, k))) {
-    stop(paste("hazard_pfs must be a scalar or have the same length",
-               "as piecewiseSurvivalTime"))
-  } else if (length(hazard_pfs) == 1) {
-    hazard_pfs = rep(hazard_pfs, k)
-  }
-
-  if (!(length(hazard_os) %in% c(1, k))) {
-    stop(paste("hazard_os must be a scalar or have the same length",
-               "as piecewiseSurvivalTime"))
-  } else if (length(hazard_os) == 1) {
-    hazard_os = rep(hazard_os, k)
-  }
-
-  if (any(hazard_os <= 0)) {
-    stop("hazard_os must be positive")
-  }
-
-  if (any(hazard_pfs <= hazard_os)) {
-    stop("hazard_pfs must be greater than hazard_os")
-  }
-
-  if (rho_pfs_os <= -1 || rho_pfs_os >= 1) {
-    stop("corr_pfs_os must lie between -1 and 1")
-  }
-
-  hazard_pd2cpp(piecewiseSurvivalTime, hazard_pfs, hazard_os, rho_pfs_os)
-}
-
 
 
 #' @title Hazard Function for Sub Population
