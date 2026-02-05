@@ -4,22 +4,21 @@
 #include "dataframe_list.h"
 #include "thread_utils.h"
 
-#include <algorithm>  // fill, lower_bound, max_element, memmove,
-// min_element, sort, swap, upper_bound
-#include <cmath>      // copysign, exp, fabs, isinf, isnan, log, pow, sqrt
-#include <cstddef>    // size_t
-#include <cstring>    // memcpy
-#include <functional> // function
-#include <limits>     // numeric_limits
-#include <memory>     // make_shared, shared_ptr
+#include <algorithm>  // fill, sort, lower_bound, upper_bound, max_element,
+// swap, for_each, none_of, all_of
 #include <numeric>    // accumulate, inner_product, iota
-#include <queue>      // priority_queue
-#include <sstream>    // ostringstream
-#include <stdexcept>  // invalid_argument, runtime_error
-#include <string>     // string
+#include <cmath>      // fabs, isnan, isinf, exp, log, pow, sqrt, copysign
+#include <stdexcept>  // invalid_argument, runtime_error, out_of_range
+#include <limits>     // numeric_limits
 #include <utility>    // pair, swap
+#include <functional> // function
 #include <vector>     // vector
-
+#include <string>     // string, tolower
+#include <memory>     // make_shared, shared_ptr
+#include <sstream>    // ostringstream
+#include <cstring>    // memcpy
+#include <cstddef>    // size_t
+#include <queue>      // priority_queue
 
 #include <boost/math/distributions/normal.hpp>
 #include <boost/math/distributions/logistic.hpp>
@@ -1863,8 +1862,8 @@ std::vector<double> patrisk(const std::vector<double>& time,
                             const std::vector<double>& piecewiseSurvivalTime,
                             const std::vector<double>& lambda,
                             const std::vector<double>& gamma) {
-  size_t k = time.size();
-  size_t J = piecewiseSurvivalTime.size();
+  std::size_t k = time.size();
+  std::size_t J = piecewiseSurvivalTime.size();
 
   // Validate and replicate lambda and gamma
   std::vector<double> lambdax(J), gammax(J);
@@ -1887,7 +1886,7 @@ std::vector<double> patrisk(const std::vector<double>& time,
 
   // Cumulative hazards for lambda + gamma
   std::vector<double> lamgam(J);
-  for (size_t j = 0; j < J; ++j) {
+  for (std::size_t j = 0; j < J; ++j) {
     lamgam[j] = lambdax[j] + gammax[j];
   }
 
@@ -1897,7 +1896,7 @@ std::vector<double> patrisk(const std::vector<double>& time,
   std::vector<int> m = findInterval3(time, piecewiseSurvivalTime);
 
   // Compute cumulative hazard for each time point
-  for (size_t i = 0; i < k; ++i) {
+  for (std::size_t i = 0; i < k; ++i) {
     double a = 0.0;  // Hazard accumulator for this time point
     for (int j = 0; j < m[i]; ++j) {
       if (j < m[i] - 1) {
@@ -1944,8 +1943,8 @@ std::vector<double> pevent(const std::vector<double>& time,
                            const std::vector<double>& piecewiseSurvivalTime,
                            const std::vector<double>& lambda,
                            const std::vector<double>& gamma) {
-  size_t k = time.size();
-  size_t J = piecewiseSurvivalTime.size();
+  std::size_t k = time.size();
+  std::size_t J = piecewiseSurvivalTime.size();
 
   // Validate and replicate lambda and gamma
   std::vector<double> lambdax(J), gammax(J);
@@ -1968,7 +1967,7 @@ std::vector<double> pevent(const std::vector<double>& time,
 
   // Compute lambda + gamma
   std::vector<double> lamgam(J);
-  for (size_t j = 0; j < J; ++j) {
+  for (std::size_t j = 0; j < J; ++j) {
     lamgam[j] = lambdax[j] + gammax[j];
   }
 
@@ -1980,7 +1979,7 @@ std::vector<double> pevent(const std::vector<double>& time,
   std::vector<double> a(k, 0.0);
 
   // Compute cumulative hazard contributions for each time point
-  for (size_t i = 0; i < k; ++i) {
+  for (std::size_t i = 0; i < k; ++i) {
     double ai = 0.0;  // Accumulator for this time point
     for (int j = 0; j < m[i]; ++j) {
       double p;
@@ -2051,7 +2050,7 @@ double hd(const int j,
   double d0 = pevent(t0_vec, piecewiseSurvivalTime, lambda, gamma)[0];
 
   // Prepare lambda and gamma vectors
-  size_t J = piecewiseSurvivalTime.size();
+  std::size_t J = piecewiseSurvivalTime.size();
   std::vector<double> lambdax(J), gammax(J);
 
   if (lambda.size() == 1) {
@@ -2072,7 +2071,7 @@ double hd(const int j,
 
   // Compute total hazard (lambda + gamma)
   std::vector<double> lamgam(J);
-  for (size_t i = 0; i < J; ++i) {
+  for (std::size_t i = 0; i < J; ++i) {
     lamgam[i] = lambdax[i] + gammax[i];
   }
 
@@ -2209,11 +2208,11 @@ std::vector<double> ad(const std::vector<double>& time,
   int j1 = std::max(j12[0] - 1, 0);  // 0-based index for j1
   int j2 = std::max(j12[1] - 1, 0);  // 0-based index for j2
 
-  size_t k = time.size();
+  std::size_t k = time.size();
   std::vector<double> a(k, 0.0);  // Initialize the result vector with zeroes
 
   // Sum up the number of patients with an event across accrual time intervals
-  for (size_t i = 0; i < k; ++i) {
+  for (std::size_t i = 0; i < k; ++i) {
     double t = time[i];  // Current time
     for (int j = j1; j <= j2; ++j) {
       double x = 0.0;
@@ -2290,11 +2289,11 @@ FlatMatrix natrisk(const std::vector<double>& time,
                    const double minFollowupTime,
                    const double maxFollowupTime) {
 
-  size_t k = time.size();
+  std::size_t k = time.size();
 
   // truncate the analysis time by the maximum follow-up
   std::vector<double> t(k), u(k);
-  for (size_t i = 0; i < k; ++i) {
+  for (std::size_t i = 0; i < k; ++i) {
     t[i] = std::min(time[i], maxFollowupTime);
     u[i] = std::min(accrualDuration + minFollowupTime - t[i], accrualDuration);
   }
@@ -2312,7 +2311,7 @@ FlatMatrix natrisk(const std::vector<double>& time,
   std::vector<double> patrisk2 = patrisk(t, piecewiseSurvivalTime, lambda2, gamma2);
 
   // Compute values for FlatMatrix directly
-  for (size_t i = 0; i < k; ++i) {
+  for (std::size_t i = 0; i < k; ++i) {
     n(i, 0) = phi * a[i] * patrisk1[i];  // Patients at risk in active treatment
     n(i, 1) = (1.0 - phi) * a[i] * patrisk2[i];  // Patients at risk in control
   }
@@ -2370,11 +2369,11 @@ FlatMatrix nevent(const std::vector<double>& time,
                   const double minFollowupTime,
                   const double maxFollowupTime) {
 
-  size_t k = time.size();
+  std::size_t k = time.size();
 
   // truncate the analysis time by the maximum follow-up
   std::vector<double> t(k), u(k);
-  for (size_t i = 0; i < k; ++i) {
+  for (std::size_t i = 0; i < k; ++i) {
     t[i] = std::min(time[i], maxFollowupTime);
     u[i] = std::min(accrualDuration + minFollowupTime - t[i], accrualDuration);
   }
@@ -2396,7 +2395,7 @@ FlatMatrix nevent(const std::vector<double>& time,
   std::vector<double> u1(1, accrualDuration + minFollowupTime);
 
   // Compute the number of patients having an event in each group
-  for (size_t i = 0; i < k; ++i) {
+  for (std::size_t i = 0; i < k; ++i) {
     double ad1 = ad(u1, u[i], accrualDuration, accrualTime, accrualIntensity,
                     piecewiseSurvivalTime, lambda1, gamma1)[0];
     double ad2 = ad(u1, u[i], accrualDuration, accrualTime, accrualIntensity,
@@ -2461,11 +2460,11 @@ FlatMatrix nevent2(const std::vector<double>& time,
                    const double minFollowupTime,
                    const double maxFollowupTime) {
 
-  size_t k = time.size();
+  std::size_t k = time.size();
 
   // truncate the analysis time by the maximum follow-up
   std::vector<double> t(k), u(k), w(k);
-  for (size_t i = 0; i < k; ++i) {
+  for (std::size_t i = 0; i < k; ++i) {
     t[i] = std::min(time[i], accrualDuration + minFollowupTime);
     u[i] = std::min(std::max(t[i] - maxFollowupTime, 0.0), accrualDuration);
     w[i] = std::min(t[i], accrualDuration);
@@ -2488,13 +2487,13 @@ FlatMatrix nevent2(const std::vector<double>& time,
   double pevent1 = pevent(s, piecewiseSurvivalTime, lambda1, gamma1)[0];
   double pevent2 = pevent(s, piecewiseSurvivalTime, lambda2, gamma2)[0];
 
-  for (size_t i = 0; i < k; ++i) {
+  for (std::size_t i = 0; i < k; ++i) {
     d1[i] *= pevent1;
     d2[i] *= pevent2;
   }
 
   // Compute the number of patients experiencing events in each group
-  for (size_t i = 0; i < k; ++i) {
+  for (std::size_t i = 0; i < k; ++i) {
     std::vector<double> v(1, t[i]);
     double ad1 = ad(v, u[i], w[i], accrualTime, accrualIntensity,
                     piecewiseSurvivalTime, lambda1, gamma1)[0];
