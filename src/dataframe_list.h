@@ -30,47 +30,47 @@ struct FlatMatrix {
   std::vector<double> data; // column-major: element (r,c) => data[c*nrow + r]
   int nrow = 0;
   int ncol = 0;
-  
+
   FlatMatrix() = default;
   FlatMatrix(int nr, int nc) : data(nr * nc), nrow(nr), ncol(nc) {}
-  
+
   FlatMatrix(std::vector<double>&& d, int nr, int nc)
     : data(std::move(d)), nrow(nr), ncol(nc) {
     if (nr * nc != static_cast<int>(data.size()))
       throw std::runtime_error("FlatMatrix: data size mismatch with dimensions");
   }
-  
+
   inline void resize(int nr, int nc) {
     nrow = nr; ncol = nc;
     data.resize(nr * nc);
   }
-  
+
   inline void fill(double v) { std::fill(data.begin(), data.end(), v); }
-  inline bool empty() const noexcept { 
+  inline bool empty() const noexcept {
     return data.empty() || nrow == 0 || ncol == 0; }
   inline std::size_t size() const noexcept { return data.size(); }
-  
+
   // column-major index helper
   inline static int idx_col(int row, int col, int nrows) noexcept {
     return col * nrows + row;
   }
-  
+
   inline double& operator()(int r, int c) {
     return data[idx_col(r, c, nrow)];
   }
   inline double operator()(int r, int c) const {
     return data[idx_col(r, c, nrow)];
   }
-  
+
   // raw pointer accessors for parallel-friendly use
-  inline const double* data_ptr() const noexcept { 
+  inline const double* data_ptr() const noexcept {
     return data.empty() ? nullptr : data.data(); }
   inline double* data_ptr() noexcept { return data.empty() ? nullptr : data.data(); }
-  
-  
-  // Print helper: pretty-print a small view of the matrix to an ostream 
+
+
+  // Print helper: pretty-print a small view of the matrix to an ostream
   // (default std::cout)
-  inline void print(std::ostream& os = std::cout, int max_rows = 10, 
+  inline void print(std::ostream& os = std::cout, int max_rows = 10,
                     int max_cols = 10) const {
     os << "FlatMatrix: " << nrow << " x " << ncol << "\n";
     if (nrow == 0 || ncol == 0) return;
@@ -90,7 +90,7 @@ struct FlatMatrix {
     // restore formatting
     os.unsetf(std::ios::floatfield);
   }
-  
+
   // ostream operator for convenience
   friend inline std::ostream& operator<<(std::ostream& os, const FlatMatrix& fm) {
     fm.print(os);
@@ -105,40 +105,40 @@ struct IntMatrix {
   std::vector<int> data; // column-major: element (r,c) => data[c * nrow + r]
   int nrow = 0;
   int ncol = 0;
-  
+
   IntMatrix() = default;
   IntMatrix(int nr, int nc) : data(nr * nc), nrow(nr), ncol(nc) {}
-  
+
   IntMatrix(std::vector<int>&& d, int nr, int nc)
     : data(std::move(d)), nrow(nr), ncol(nc) {
     if (nr * nc != static_cast<int>(data.size()))
       throw std::runtime_error("IntMatrix: data size mismatch with dimensions");
   }
-  
+
   inline void resize(int nr, int nc) {
     nrow = nr; ncol = nc;
     data.resize(nr * nc);
   }
-  
+
   inline void fill(int v) { std::fill(data.begin(), data.end(), v); }
-  inline bool empty() const noexcept { 
+  inline bool empty() const noexcept {
     return data.empty() || nrow == 0 || ncol == 0; }
   inline std::size_t size() const noexcept { return data.size(); }
-  
+
   // column-major index helper
   inline static int idx_col(int row, int col, int nrows) noexcept {
     return col * nrows + row;
   }
-  
+
   inline int& operator()(int r, int c) {
     return data[idx_col(r, c, nrow)];
   }
   inline int operator()(int r, int c) const {
     return data[idx_col(r, c, nrow)];
   }
-  
+
   // raw pointer accessors for parallel-friendly use
-  inline const int* data_ptr() const noexcept { 
+  inline const int* data_ptr() const noexcept {
     return data.empty() ? nullptr : data.data(); }
   inline int* data_ptr() noexcept { return data.empty() ? nullptr : data.data(); }
 };
@@ -154,47 +154,47 @@ struct FlatArray {
   int nrow = 0;
   int ncol = 0;
   int nslice = 0;
-  
+
   FlatArray() = default;
-  FlatArray(int nr, int nc, int ns) : data(nr * nc * ns), nrow(nr), ncol(nc), 
+  FlatArray(int nr, int nc, int ns) : data(nr * nc * ns), nrow(nr), ncol(nc),
   nslice(ns) {}
-  
+
   FlatArray(std::vector<double>&& d, int nr, int nc, int ns)
     : data(std::move(d)), nrow(nr), ncol(nc), nslice(ns) {
     if (nr * nc * ns != static_cast<int>(data.size()))
       throw std::runtime_error("FlatArray: data size mismatch with dimensions");
   }
-  
+
   inline void resize(int nr, int nc, int ns) {
     nrow = nr; ncol = nc; nslice = ns;
     data.resize(nr * nc * ns);
   }
-  
+
   inline void fill(double v) { std::fill(data.begin(), data.end(), v); }
-  inline bool empty() const noexcept { return data.empty() || nrow == 0 || 
+  inline bool empty() const noexcept { return data.empty() || nrow == 0 ||
     ncol == 0 || nslice == 0; }
   inline std::size_t size() const noexcept { return data.size(); }
-  
+
   // index helper: (row, col, slice)
   inline static int idx(int row, int col, int slice, int nrows, int ncols) noexcept {
     // slice outermost, then column, then row (rows contiguous)
     return slice * (nrows * ncols) + col * nrows + row;
   }
-  
+
   inline double& operator()(int r, int c, int s) {
     return data[idx(r, c, s, nrow, ncol)];
   }
-  
+
   inline double operator()(int r, int c, int s) const {
     return data[idx(r, c, s, nrow, ncol)];
   }
-  
+
   // raw pointer access for parallel-friendly use
-  inline const double* data_ptr() const noexcept { 
+  inline const double* data_ptr() const noexcept {
     return data.empty() ? nullptr : data.data(); }
-  inline double* data_ptr() noexcept { 
+  inline double* data_ptr() noexcept {
     return data.empty() ? nullptr : data.data(); }
-  
+
   // pointer to the start of slice s (returns pointer to element (0,0,s))
   inline double* slice_ptr(int s) noexcept {
     if (s < 0 || s >= nslice) return nullptr;
@@ -211,19 +211,19 @@ struct FlatArray {
 //
 struct DataFrameCpp {
   std::vector<std::string> names_; // insertion order
-  
+
   // use ska::flat_hash_map for better performance than unordered_map
   ska::flat_hash_map<std::string, std::vector<double>> numeric_cols;
   ska::flat_hash_map<std::string, std::vector<int>> int_cols;
   ska::flat_hash_map<std::string, std::vector<unsigned char>> bool_cols;
   ska::flat_hash_map<std::string, std::vector<std::string>> string_cols;
-  
+
   DataFrameCpp() = default;
-  
+
   inline static int idx_col(int row, int col, int nrows) noexcept {
     return FlatMatrix::idx_col(row, col, nrows);
   }
-  
+
   std::size_t nrows() const {
     if (!names_.empty()) {
       const std::string& nm = names_.front();
@@ -234,74 +234,74 @@ struct DataFrameCpp {
     }
     return 0;
   }
-  
+
   std::size_t size() const { return names_.size(); }
   const std::vector<std::string>& names() const { return names_; }
-  
+
   bool containElementNamed(const std::string& name) const {
     return numeric_cols.count(name) || int_cols.count(name) ||
       bool_cols.count(name) || string_cols.count(name);
   }
-  
+
   void check_row_size(std::size_t size, const std::string& name) const {
     std::size_t cur = nrows();
-    if (cur > 0 && size != cur) 
-      throw std::runtime_error("Column '" + name + 
+    if (cur > 0 && size != cur)
+      throw std::runtime_error("Column '" + name +
                                "' has inconsistent number of rows");
   }
-  
+
   // Push single column overloads (double)
   void push_back(const std::vector<double>& col, const std::string& name);
   void push_back(std::vector<double>&& col, const std::string& name);
-  
+
   // int column overloads (const& + &&)
   void push_back(const std::vector<int>& col, const std::string& name);
   void push_back(std::vector<int>&& col, const std::string& name);
-  
+
   // bool column overloads (const& + &&)
   void push_back(const std::vector<unsigned char>& col, const std::string& name);
   void push_back(std::vector<unsigned char>&& col, const std::string& name);
-  
+
   // string column overloads (const& + &&)
   void push_back(const std::vector<std::string>& col, const std::string& name);
   void push_back(std::vector<std::string>&& col, const std::string& name);
-  
+
   // Scalar expansions
   void push_back(double value, const std::string& name);
   void push_back(int value, const std::string& name);
   void push_back(bool value, const std::string& name);
   void push_back(const std::string& value, const std::string& name);
-  
+
   // push_back_flat accepts a column-major flattened buffer with nrows*p values
   // create p new columns named base_name, base_name.1, ..., base_name.p (if p>1)
-  void push_back_flat(const std::vector<double>& flat_col_major, int nrows, 
+  void push_back_flat(const std::vector<double>& flat_col_major, int nrows,
                       const std::string& base_name);
-  
+
   void push_back(const FlatMatrix& fm, const std::string& base_name);
   void push_back(FlatMatrix&& fm, const std::string& base_name);
-  
+
   // Push front variants (const& + && for all types)
   void push_front(const std::vector<double>& col, const std::string& name);
   void push_front(std::vector<double>&& col, const std::string& name);
-  
+
   void push_front(const std::vector<int>& col, const std::string& name);
   void push_front(std::vector<int>&& col, const std::string& name);
-  
+
   void push_front(const std::vector<unsigned char>& col, const std::string& name);
   void push_front(std::vector<unsigned char>&& col, const std::string& name);
-  
+
   void push_front(const std::vector<std::string>& col, const std::string& name);
   void push_front(std::vector<std::string>&& col, const std::string& name);
-  
+
   // Scalar expansions for push_front (requested)
   void push_front(double value, const std::string& name);
   void push_front(int value, const std::string& name);
   void push_front(bool value, const std::string& name);
   void push_front(const std::string& value, const std::string& name);
-  
+
   // Erase column
   void erase(const std::string& name);
-  
+
   // Accessors with type checking
   template <typename T>
   std::vector<T>& get(const std::string& name) {
@@ -316,7 +316,7 @@ struct DataFrameCpp {
     }
     throw std::runtime_error("Column '" + name + "' not found or type mismatch.");
   }
-  
+
   template <typename T>
   const std::vector<T>& get(const std::string& name) const {
     if constexpr (std::is_same_v<T, double>) {
@@ -330,16 +330,16 @@ struct DataFrameCpp {
     }
     throw std::runtime_error("Column '" + name + "' not found or type mismatch.");
   }
-  
+
   // Print helper for DataFrameCpp: prints basic table view to ostream
   // (default std::cout)
-  inline void print(std::ostream& os = std::cout, int max_rows = 10, 
+  inline void print(std::ostream& os = std::cout, int max_rows = 10,
                     bool show_col_types = false) const {
     const std::size_t rows = nrows();
     const std::size_t cols = size();
     os << "DataFrameCpp: " << rows << " rows x " << cols << " cols\n";
     if (cols == 0) return;
-    
+
     // Print header (column names and optional types)
     for (std::size_t c = 0; c < names_.size(); ++c) {
       const std::string& nm = names_[c];
@@ -356,12 +356,12 @@ struct DataFrameCpp {
       if (c + 1 < names_.size()) os << "\t";
     }
     os << "\n";
-    
+
     if (rows == 0) return;
-    
+
     const int rmax = static_cast<int>(std::min<std::size_t>(
       rows, static_cast<std::size_t>(max_rows)));
-    
+
     for (int r = 0; r < rmax; ++r) {
       for (std::size_t c = 0; c < names_.size(); ++c) {
         const std::string& nm = names_[c];
@@ -388,7 +388,7 @@ struct DataFrameCpp {
     }
     if (rmax < static_cast<int>(rows)) os << "...\n";
   }
-  
+
   // ostream operator for convenience
   friend inline std::ostream& operator<<(std::ostream& os, const DataFrameCpp& df) {
     df.print(os);
@@ -421,67 +421,67 @@ struct ListCpp {
     std::vector<DataFrameCpp>,
     std::vector<ListPtr>                // vector of pointers to nested ListCpp
     >> data;
-    
+
     ListCpp() = default;
-    
+
     std::size_t size() const { return data.size(); }
     std::vector<std::string> names() const { return names_; }
-    bool containsElementNamed(const std::string& name) const { 
+    bool containsElementNamed(const std::string& name) const {
       return data.count(name) > 0; }
-    
+
     // push_back for value-like types that match the variant alternatives
     template<typename T>
     void push_back(T value, const std::string& name) {
-      if (containsElementNamed(name)) 
+      if (containsElementNamed(name))
         throw std::runtime_error("Element '" + name + "' already exists.");
       data.emplace(name, std::move(value));
       names_.push_back(name);
     }
-    
+
     // Convenience overloads for adding ListCpp by value or by shared_ptr
     void push_back(const ListCpp& l, const std::string& name);
     void push_back(ListCpp&& l, const std::string& name);
     void push_back(const ListPtr& p, const std::string& name);
     void push_back(ListPtr&& p, const std::string& name);
-    
+
     // Convenience overloads for FlatMatrix / IntMatrix / FlatArray / DataFrameCpp
     void push_back(const FlatMatrix& fm, const std::string& name);
     void push_back(FlatMatrix&& fm, const std::string& name);
-     
+
     void push_back(const IntMatrix& im, const std::string& name);
     void push_back(IntMatrix&& im, const std::string& name);
 
     void push_back(const FlatArray& fa, const std::string& name);
     void push_back(FlatArray&& fa, const std::string& name);
-    
+
     void push_back(const DataFrameCpp& df, const std::string& name);
     void push_back(DataFrameCpp&& df, const std::string& name);
-    
+
     // push_front variants
     template<typename T>
     void push_front(T value, const std::string& name) {
-      if (containsElementNamed(name)) 
+      if (containsElementNamed(name))
         throw std::runtime_error("Element '" + name + "' already exists.");
       data.emplace(name, std::move(value));
       names_.insert(names_.begin(), name);
     }
-    
+
     void erase(const std::string& name);
-    
+
     template <typename T>
     T& get(const std::string& name) {
-      if (!containsElementNamed(name)) 
+      if (!containsElementNamed(name))
         throw std::runtime_error("Element with name '" + name + "' not found.");
       return std::get<T>(data.at(name));
     }
-    
+
     template <typename T>
     const T& get(const std::string& name) const {
-      if (!containsElementNamed(name)) 
+      if (!containsElementNamed(name))
         throw std::runtime_error("Element with name '" + name + "' not found.");
       return std::get<T>(data.at(name));
     }
-    
+
     // Convenience: get nested ListCpp by reference (throws if not present)
     ListCpp& get_list(const std::string& name);
     const ListCpp& get_list(const std::string& name) const;
@@ -491,13 +491,15 @@ FlatMatrix subset_flatmatrix(const FlatMatrix& fm, const std::vector<int>& row_i
 void subset_in_place_flatmatrix(FlatMatrix& fm, const std::vector<int>& row_idx);
 FlatMatrix subset_flatmatrix(const FlatMatrix& fm, int start, int end);
 void subset_in_place_flatmatrix(FlatMatrix& fm, int start, int end);
+FlatMatrix subset_flatmatrix(const FlatMatrix& fm, int row_start, int row_end,
+                             int col_start, int col_end);
 FlatArray subset_flatarray(const FlatArray& fa, const std::vector<int>& row_idx);
 void subset_in_place_flatarray(FlatArray& fa, const std::vector<int>& row_idx);
 
 FlatMatrix concat_flatmatrix(const FlatMatrix& fm1, const FlatMatrix& fm2);
 void append_flatmatrix(FlatMatrix& fm1, const FlatMatrix& fm2);
 void append_flatmatrix(std::vector<std::vector<double>>& fm1, const FlatMatrix& fm2);
-void append_flatmatrix(std::vector<std::vector<double>>& fm1, 
+void append_flatmatrix(std::vector<std::vector<double>>& fm1,
                        const std::vector<std::vector<double>>& fm2);
 FlatMatrix cols_to_flatmatrix(const std::vector<std::vector<double>>& cols);
 std::vector<double> flatmatrix_get_column(const FlatMatrix& M, int col);
