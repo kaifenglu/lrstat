@@ -1,24 +1,17 @@
 #include <Rcpp.h>
-#include <boost/random.hpp>
 
 #include "utilities.h"
 #include "dataframe_list.h"
 
-#include <algorithm>  // fill, lower_bound, max_element, memmove,
-// min_element, sort, swap, upper_bound
-#include <cmath>      // copysign, exp, fabs, isinf, isnan, log, pow, sqrt
-#include <cstddef>    // size_t
-#include <cstring>    // memcpy
-#include <functional> // function
-#include <limits>     // numeric_limits
-#include <memory>     // make_shared, shared_ptr
+#include <algorithm>  // fill, all_of, any_of, transform, partial_sum
 #include <numeric>    // accumulate, inner_product, iota
-#include <queue>      // priority_queue
-#include <sstream>    // ostringstream
+#include <cmath>      // fabs, isnan, isinf, exp, log, pow, sqrt
 #include <stdexcept>  // invalid_argument, runtime_error
-#include <string>     // string
-#include <utility>    // pair, swap
+#include <limits>     // numeric_limits
 #include <vector>     // vector
+#include <cstddef>    // size_t
+
+#include <boost/random.hpp>
 
 
 ListCpp simonBayesAnalysiscpp(
@@ -52,7 +45,7 @@ ListCpp simonBayesAnalysiscpp(
     throw std::invalid_argument("r must be nonnegative.");
   }
 
-  for (size_t i = 0; i < r.size(); ++i) {
+  for (std::size_t i = 0; i < r.size(); ++i) {
     if (r[i] > n[i]) {
       throw std::invalid_argument("r must be less than or equal to n.");
     }
@@ -327,9 +320,8 @@ ListCpp simonBayesSimcpp(
     throw std::invalid_argument("maxNumberOfRawDatasets must be non-negative.");
   }
 
-
   std::vector<unsigned char> act(p.size());
-  for (size_t i = 0; i < p.size(); ++i) {
+  for (std::size_t i = 0; i < p.size(); ++i) {
     act[i] = (p[i] == phi) ? 1 : 0;
   }
   int nactive = std::accumulate(act.begin(), act.end(), 0);
@@ -462,7 +454,6 @@ ListCpp simonBayesSimcpp(
           ++stage;
         }
 
-
         // stop the trial if all strata are closed or max subjects reached
         // Check if all elements in open are 0, or k reached maxSubjects
         bool all_closed = std::all_of(open.begin(), open.end(),
@@ -511,8 +502,7 @@ ListCpp simonBayesSimcpp(
     }
   }
 
-  // subject-level raw data set
-  DataFrameCpp rawdata;
+  // subset the cached data to the actual size
   if (maxNumberOfRawDatasets > 0) {
     subset_in_place(iterationNumberx, 0, index1);
     subset_in_place(stageNumberx, 0, index1);
@@ -520,16 +510,8 @@ ListCpp simonBayesSimcpp(
     subset_in_place(arrivalTimex, 0, index1);
     subset_in_place(stratumx, 0, index1);
     subset_in_place(yx, 0, index1);
-
-    rawdata.push_back(std::move(iterationNumberx), "iterationNumber");
-    rawdata.push_back(std::move(stageNumberx), "stageNumber");
-    rawdata.push_back(std::move(subjectIdx), "subjectId");
-    rawdata.push_back(std::move(arrivalTimex), "arrivalTime");
-    rawdata.push_back(std::move(stratumx), "stratum");
-    rawdata.push_back(std::move(yx), "y");
   }
 
-  // simulation summary data set
   subset_in_place(iterationNumbery, 0, index2);
   subset_in_place(stageNumbery, 0, index2);
   subset_in_place(stratumy, 0, index2);
@@ -540,6 +522,25 @@ ListCpp simonBayesSimcpp(
   subset_in_place(openy, 0, index2);
   subset_in_place(posy, 0, index2);
   subset_in_place(negy, 0, index2);
+
+  // calculate the means
+  double mn_nact = mean_kahan(nact);
+  double mn_tpos = mean_kahan(tpos);
+  double mn_fneg = mean_kahan(fneg);
+  double mn_fpos = mean_kahan(fpos);
+  double mn_tneg = mean_kahan(tneg);
+  double mn_inde = mean_kahan(nopen);
+  double mn_N = mean_kahan(N);
+
+  DataFrameCpp rawdata;
+  if (maxNumberOfRawDatasets > 0) {
+    rawdata.push_back(std::move(iterationNumberx), "iterationNumber");
+    rawdata.push_back(std::move(stageNumberx), "stageNumber");
+    rawdata.push_back(std::move(subjectIdx), "subjectId");
+    rawdata.push_back(std::move(arrivalTimex), "arrivalTime");
+    rawdata.push_back(std::move(stratumx), "stratum");
+    rawdata.push_back(std::move(yx), "y");
+  }
 
   DataFrameCpp sumdata1;
   sumdata1.push_back(std::move(iterationNumbery), "iterationNumber");
@@ -564,14 +565,6 @@ ListCpp simonBayesSimcpp(
   sumdata2.push_back(std::move(nopen), "n_indet_strata");
   sumdata2.push_back(std::move(N), "numberOfSubjects");
 
-  double mn_nact = mean_kahan(nact);
-  double mn_tpos = mean_kahan(tpos);
-  double mn_fneg = mean_kahan(fneg);
-  double mn_fpos = mean_kahan(fpos);
-  double mn_tneg = mean_kahan(tneg);
-  double mn_inde = mean_kahan(nopen);
-  double mn_N = mean_kahan(N);
-
   DataFrameCpp overview;
   overview.push_back(nstrata, "numberOfStrata");
   overview.push_back(mn_nact, "n_active_strata");
@@ -595,7 +588,6 @@ ListCpp simonBayesSimcpp(
   }
   return result;
 }
-
 
 //' @title Simulation of Simon's Bayesian Basket Trials
 //' @description Obtains the simulated raw and summary data for Simon's
