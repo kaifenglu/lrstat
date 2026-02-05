@@ -1,5 +1,162 @@
+#include <Rcpp.h>
+#include <boost/random.hpp>
+
 #include "utilities.h"
-using namespace Rcpp;
+#include "dataframe_list.h"
+
+#include <algorithm>  // fill, lower_bound, max_element, memmove,
+// min_element, sort, swap, upper_bound
+#include <cmath>      // copysign, exp, fabs, isinf, isnan, log, pow, sqrt
+#include <cstddef>    // size_t
+#include <cstring>    // memcpy
+#include <functional> // function
+#include <limits>     // numeric_limits
+#include <memory>     // make_shared, shared_ptr
+#include <numeric>    // accumulate, inner_product, iota
+#include <queue>      // priority_queue
+#include <sstream>    // ostringstream
+#include <stdexcept>  // invalid_argument, runtime_error
+#include <string>     // string
+#include <utility>    // pair, swap
+#include <vector>     // vector
+
+
+ListCpp simonBayesAnalysiscpp(
+    const int nstrata,
+    const std::vector<double>& r,
+    const std::vector<double>& n,
+    const double lambda,
+    const double gamma,
+    const double phi,
+    const double plo) {
+
+  if (nstrata == INT_MIN) {
+    throw std::invalid_argument("nstrata must be provided.");
+  }
+  if (nstrata <= 0) {
+    throw std::invalid_argument("nstrata must be a positive integer.");
+  }
+  if (!none_na(r)) {
+    throw std::invalid_argument("r must be provided.");
+  }
+  if (!none_na(n)) {
+    throw std::invalid_argument("n must be provided.");
+  }
+  if (static_cast<int>(r.size()) != nstrata) {
+    throw std::invalid_argument("Invalid length for r.");
+  }
+  if (static_cast<int>(n.size()) != nstrata) {
+    throw std::invalid_argument("Invalid length for n.");
+  }
+  if (std::any_of(r.begin(), r.end(), [](double val) { return val < 0.0; })) {
+    throw std::invalid_argument("r must be nonnegative.");
+  }
+
+  for (size_t i = 0; i < r.size(); ++i) {
+    if (r[i] > n[i]) {
+      throw std::invalid_argument("r must be less than or equal to n.");
+    }
+  }
+
+  if (std::isnan(lambda)) {
+    throw std::invalid_argument("lambda must be provided.");
+  }
+  if (std::isnan(gamma)) {
+    throw std::invalid_argument("gamma must be provided.");
+  }
+  if (std::isnan(phi)) {
+    throw std::invalid_argument("phi must be provided.");
+  }
+  if (std::isnan(plo)) {
+    throw std::invalid_argument("plo must be provided.");
+  }
+  if (lambda <= 0 || lambda >= 1) {
+    throw std::invalid_argument("lambda must lie between 0 and 1.");
+  }
+  if (gamma <= 0 || gamma >= 1) {
+    throw std::invalid_argument("gamma must lie between 0 and 1.");
+  }
+  if (phi <= 0 || phi >= 1) {
+    throw std::invalid_argument("phi must lie between 0 and 1.");
+  }
+  if (plo <= 0 || plo >= 1) {
+    throw std::invalid_argument("plo must lie between 0 and 1.");
+  }
+  if (plo >= phi) {
+    throw std::invalid_argument("plo must be less than phi.");
+  }
+
+  int ncases = static_cast<int>(std::pow(2, nstrata));
+  FlatMatrix incid(ncases, nstrata);
+  std::vector<double> prior(ncases), like(ncases);
+  for (int i=0; i<ncases; ++i) {
+    int number = ncases - i - 1;
+    std::vector<double> cc(nstrata);
+    for (int j=0; j<nstrata; ++j) {
+      cc[j] = (number / static_cast<int>(std::pow(2, nstrata - 1 - j))) % 2;
+    }
+
+    bool all_ones = std::all_of(cc.begin(), cc.end(), [](int x) { return x == 1; });
+    bool all_zeros = std::all_of(cc.begin(), cc.end(), [](int x) { return x == 0; });
+
+    if (all_ones || all_zeros) {
+      prior[i] = lambda * (gamma * (cc[0] == 1) + (1 - gamma) * (cc[0] == 0)) +
+        (1 - lambda) * (std::pow(gamma, nstrata) * (cc[0] == 1) +
+        std::pow(1 - gamma, nstrata) * (cc[0]==0));
+    } else {
+      double y = std::accumulate(cc.begin(), cc.end(), 0.0);
+      prior[i] = (1 - lambda) * std::pow(gamma, y) *
+        std::pow(1 - gamma, nstrata - y);
+    }
+
+    int m = static_cast<int>(cc.size());
+    std::vector<double> x(m);
+    for (int j = 0; j < m; ++j) {
+      x[j] = phi * cc[j] + plo * (1 - cc[j]);
+    }
+
+    // Calculate sum of r*log(x) + (n-r)*log(1-x)
+    double log_sum = 0.0;
+    for (int j = 0; j < m; ++j) {
+      log_sum += r[j] * std::log(x[j]) + (n[j] - r[j]) * std::log(1 - x[j]);
+    }
+    like[i] = std::exp(log_sum);
+
+    // Copy cc to row i of incid matrix
+    for (int j = 0; j < m; ++j) {
+      incid(i, j) = cc[j];
+    }
+  }
+
+  std::vector<double> post(ncases);
+  for (int i = 0; i < ncases; ++i) {
+    post[i] = prior[i] * like[i];
+  }
+
+  // Normalize: post = post / sum(post)
+  double post_sum = std::accumulate(post.begin(), post.end(), 0.0);
+  for (int i = 0; i < ncases; ++i) {
+    post[i] /= post_sum;
+  }
+
+  // Calculate q_prior and q_post for each stratum
+  std::vector<double> q_prior(nstrata, 0.0);
+  std::vector<double> q_post(nstrata, 0.0);
+  for (int j = 0; j < nstrata; ++j) {
+    for (int i = 0; i < ncases; ++i) {
+      q_prior[j] += incid(i, j) * prior[i];
+      q_post[j] += incid(i, j) * post[i];
+    }
+  }
+
+  ListCpp result;
+  result.push_back(std::move(incid), "case");
+  result.push_back(std::move(prior), "prior_case");
+  result.push_back(std::move(q_prior), "prior_stratum");
+  result.push_back(std::move(post), "post_case");
+  result.push_back(std::move(q_post), "post_stratum");
+  return result;
+}
 
 //' @title Analysis of Simon's Bayesian Basket Trials
 //' @description Obtains the prior and posterior probabilities for
@@ -47,124 +204,397 @@ using namespace Rcpp;
 //'
 //' @export
 // [[Rcpp::export]]
-List simonBayesAnalysis(
+Rcpp::List simonBayesAnalysis(
     const int nstrata = NA_INTEGER,
-    const NumericVector& r = NA_REAL,
-    const NumericVector& n = NA_REAL,
+    const Rcpp::NumericVector& r = NA_REAL,
+    const Rcpp::NumericVector& n = NA_REAL,
     const double lambda = NA_REAL,
     const double gamma = NA_REAL,
     const double phi = NA_REAL,
     const double plo = NA_REAL) {
+  auto r1 = Rcpp::as<std::vector<double>>(r);
+  auto n1 = Rcpp::as<std::vector<double>>(n);
+  ListCpp result = simonBayesAnalysiscpp(nstrata, r1, n1, lambda, gamma, phi, plo);
+  return Rcpp::wrap(result);
+}
 
-  if (nstrata == NA_INTEGER) {
-    stop("nstrata must be provided");
+
+ListCpp simonBayesSimcpp(
+    const std::vector<double>& p,
+    const std::vector<double>& accrualTime,
+    const std::vector<double>& accrualIntensity,
+    const std::vector<double>& stratumFraction,
+    const double lambda,
+    const double gamma,
+    const double phi,
+    const double plo,
+    const double T,
+    const int maxSubjects,
+    const std::vector<int>& plannedSubjects,
+    const int maxNumberOfIterations,
+    const int maxNumberOfRawDatasets,
+    const int seed) {
+
+  int nstrata = static_cast<int>(stratumFraction.size());
+
+  if (!none_na(p)) {
+    throw std::invalid_argument("p must be provided.");
+  }
+  if (std::any_of(p.begin(), p.end(), [](double x) { return x <= 0 || x >= 1; })) {
+    throw std::invalid_argument("p must lie between 0 and 1.");
   }
 
-  if (nstrata <= 0) {
-    stop("nstrata must be a positive integer");
+  if (accrualTime[0] != 0) {
+    throw std::invalid_argument("accrualTime must start with 0.");
+  }
+  if (any_nonincreasing(accrualTime)) {
+    throw std::invalid_argument("accrualTime should be increasing.");
+  }
+  if (!none_na(accrualIntensity)) {
+    throw std::invalid_argument("accrualIntensity must be provided.");
+  }
+  if (accrualTime.size() != accrualIntensity.size()) {
+    throw std::invalid_argument(
+        "accrualTime must have the same length as accrualIntensity.");
+  }
+  if (std::any_of(accrualIntensity.begin(), accrualIntensity.end(),
+                  [](double val) { return val < 0.0; })) {
+    throw std::invalid_argument("accrualIntensity must be non-negative.");
+  }
+  if (std::any_of(stratumFraction.begin(), stratumFraction.end(),
+                  [](double val) { return val <= 0.0; })) {
+    throw std::invalid_argument("stratumFraction must be positive.");
   }
 
-  if (is_true(any(is_na(r)))) {
-    stop("r must be provided");
-  }
-
-  if (is_true(any(is_na(n)))) {
-    stop("n must be provided");
-  }
-
-  if (r.size() != nstrata) {
-    stop("Invalid length for r");
-  }
-
-  if (n.size() != nstrata) {
-    stop("Invalid length for n");
-  }
-
-  if (is_true(any(r < 0))) {
-    stop("r must be nonnegative");
-  }
-
-  if (is_true(any(r > n))) {
-    stop("r must be less than or equal to n");
+  double sum_stratumFraction = std::accumulate(stratumFraction.begin(),
+                                               stratumFraction.end(), 0.0);
+  if (std::fabs(sum_stratumFraction - 1.0) > 1.0e-8) {
+    throw std::invalid_argument("stratumFraction must sum to 1.");
   }
 
   if (std::isnan(lambda)) {
-    stop("lambda must be provided");
+    throw std::invalid_argument("lambda must be provided.");
   }
-
   if (std::isnan(gamma)) {
-    stop("gamma must be provided");
+    throw std::invalid_argument("gamma must be provided.");
   }
-
   if (std::isnan(phi)) {
-    stop("phi must be provided");
+    throw std::invalid_argument("phi must be provided.");
   }
-
   if (std::isnan(plo)) {
-    stop("plo must be provided");
+    throw std::invalid_argument("plo must be provided.");
   }
-
+  if (std::isnan(T)) {
+    throw std::invalid_argument("T must be provided.");
+  }
   if (lambda <= 0 || lambda >= 1) {
-    stop("lambda must lie between 0 and 1");
+    throw std::invalid_argument("lambda must lie between 0 and 1.");
   }
-
   if (gamma <= 0 || gamma >= 1) {
-    stop("gamma must lie between 0 and 1");
+    throw std::invalid_argument("gamma must lie between 0 and 1.");
   }
-
   if (phi <= 0 || phi >= 1) {
-    stop("phi must lie between 0 and 1");
+    throw std::invalid_argument("phi must lie between 0 and 1.");
   }
-
   if (plo <= 0 || plo >= 1) {
-    stop("plo must lie between 0 and 1");
+    throw std::invalid_argument("plo must lie between 0 and 1.");
   }
-
   if (plo >= phi) {
-    stop("plo must be less than phi");
+    throw std::invalid_argument("plo must be less than phi.");
+  }
+  if (T <= 0 || T >= 1) {
+    throw std::invalid_argument("T must lie between 0 and 1.");
+  }
+  if (maxSubjects == INT_MIN) {
+    throw std::invalid_argument("maxSubjects must be provided.");
+  }
+  if (maxSubjects < 1) {
+    throw std::invalid_argument("maxSubjects must be a positive integer.");
+  }
+  if (!none_na(plannedSubjects)) {
+    throw std::invalid_argument("plannedSubjects must be provided.");
+  }
+  if (plannedSubjects[0] <= 0) {
+    throw std::invalid_argument("plannedSubjects must be positive.");
+  }
+  if (any_nonincreasing(plannedSubjects)) {
+    throw std::invalid_argument("plannedSubjects must be increasing.");
+  }
+  if (maxNumberOfIterations < 1) {
+    throw std::invalid_argument("maxNumberOfIterations must be positive.");
+  }
+  if (maxNumberOfRawDatasets < 0) {
+    throw std::invalid_argument("maxNumberOfRawDatasets must be non-negative.");
   }
 
 
-  int ncases = static_cast<int>(std::pow(2, nstrata));
-  NumericMatrix incid(ncases, nstrata);
-  NumericVector prior(ncases), like(ncases);
-  for (int i=0; i<ncases; ++i) {
-    int number = ncases - i - 1;
-    NumericVector cc(nstrata);
-    for (int j=0; j<nstrata; ++j) {
-      cc[j] = (number/static_cast<int>(std::pow(2, nstrata-1-j))) % 2;
+  std::vector<unsigned char> act(p.size());
+  for (size_t i = 0; i < p.size(); ++i) {
+    act[i] = (p[i] == phi) ? 1 : 0;
+  }
+  int nactive = std::accumulate(act.begin(), act.end(), 0);
+
+  std::vector<double> cumStratumFraction(nstrata);
+  std::partial_sum(stratumFraction.begin(), stratumFraction.end(),
+                   cumStratumFraction.begin());
+  std::vector<double> post_stratum(nstrata), n(nstrata), r(nstrata);
+  std::vector<unsigned char> open(nstrata), pos(nstrata), neg(nstrata);
+
+
+  std::vector<double> arrivalTime(maxSubjects);
+  std::vector<int> stratum(maxSubjects), y(maxSubjects);
+  std::vector<int> iterationNumber(maxNumberOfIterations);
+  std::vector<double> N(maxNumberOfIterations);
+  std::vector<double> nact(maxNumberOfIterations), nopen(maxNumberOfIterations);
+  std::vector<double> tpos(maxNumberOfIterations), fneg(maxNumberOfIterations);
+  std::vector<double> fpos(maxNumberOfIterations), tneg(maxNumberOfIterations);
+  std::vector<int> numberOfStrata(maxNumberOfIterations, nstrata);
+
+  // cache for the patient-level raw data to extract
+  int kMax = static_cast<int>(plannedSubjects.size());
+  int nrow1 = kMax * maxNumberOfRawDatasets * maxSubjects;
+  std::vector<int> iterationNumberx(nrow1);
+  std::vector<int> stageNumberx(nrow1);
+  std::vector<int> subjectIdx(nrow1);
+  std::vector<double> arrivalTimex(nrow1);
+  std::vector<int> stratumx(nrow1);
+  std::vector<int> yx(nrow1);
+
+  // cache for the summary data to extract
+  int nrow2 = kMax * maxNumberOfIterations * nstrata;
+  std::vector<int> iterationNumbery(nrow2);
+  std::vector<int> stageNumbery(nrow2);
+  std::vector<int> stratumy(nrow2);
+  std::vector<unsigned char> activey(nrow2);
+  std::vector<int> ny(nrow2);
+  std::vector<int> ry(nrow2);
+  std::vector<double> posty(nrow2);
+  std::vector<unsigned char> openy(nrow2);
+  std::vector<unsigned char> posy(nrow2);
+  std::vector<unsigned char> negy(nrow2);
+
+  // random number generator
+  boost::random::mt19937_64 rng(seed);
+  boost::random::uniform_real_distribution<double> unif(0.0, 1.0);
+
+  int index1 = 0, index2 = 0;
+  for (int iter = 0; iter < maxNumberOfIterations; ++iter) {
+    // initialize the contents in each stratum
+    std::fill(n.begin(), n.end(), 0.0);
+    std::fill(r.begin(), r.end(), 0.0);
+    std::fill(open.begin(), open.end(), 1);
+    std::fill(pos.begin(), pos.end(), 0);
+    std::fill(neg.begin(), neg.end(), 0);
+
+    int k = 0;      // index of the number of subjects included in analysis
+    int stage = 0;
+    double enrollt = 0.0;
+    for (int i = 0; i < 100000; ++i) {
+      // generate accrual time
+      double u = unif(rng);
+      enrollt = qtpwexpcpp1(u, accrualTime, accrualIntensity, enrollt, 1, 0);
+
+      // generate stratum information
+      u = unif(rng);
+      int j = 0;
+      for (; j < nstrata; ++j) {
+        if (cumStratumFraction[j] > u) break;
+      }
+
+      // if the stratum is open, generate the response for the subject
+      if (open[j]) {
+        arrivalTime[k] = enrollt;
+        stratum[k] = j+1;
+        y[k] = (unif(rng) < p[j]) ? 1 : 0;
+
+        // update the number of subjects and responders in the stratum
+        n[j] = n[j] + 1;
+        r[j] = r[j] + y[k];
+
+        ++k;
+
+        // interim analysis
+        if (std::any_of(plannedSubjects.begin(), plannedSubjects.end(),
+                        [k](double val) { return val == k; })) {
+          // output raw data
+          if (iter < maxNumberOfRawDatasets) {
+            for (int idx = 0; idx < k; ++idx) {
+              iterationNumberx[index1] = iter + 1;
+              stageNumberx[index1] = stage + 1;
+              subjectIdx[index1] = idx + 1;
+              arrivalTimex[index1] = arrivalTime[idx];
+              stratumx[index1] = stratum[idx];
+              yx[index1] = y[idx];
+
+              ++index1;
+            }
+          }
+
+          // calculate the posterior probabilities
+          ListCpp a = simonBayesAnalysiscpp(nstrata, r, n, lambda, gamma, phi, plo);
+          post_stratum = a.get<std::vector<double>>("post_stratum");
+
+          // whether to close the stratum due to positive or negative results
+          for (int l = 0; l < nstrata; ++l) {
+            if (open[l]) {
+              if (post_stratum[l] > T) {
+                pos[l] = 1; open[l] = 0;
+              } else if (post_stratum[l] < 1 - T) {
+                neg[l] = 1; open[l] = 0;
+              }
+            }
+
+            // output strata-level data
+            iterationNumbery[index2] = iter + 1;
+            stageNumbery[index2] = stage + 1;
+            stratumy[index2] = l + 1;
+            activey[index2] = act[l];
+            ny[index2] = n[l];
+            ry[index2] = r[l];
+            posty[index2] = post_stratum[l];
+            openy[index2] = open[l];
+            posy[index2] = pos[l];
+            negy[index2] = neg[l];
+
+            ++index2;
+          }
+
+          ++stage;
+        }
+
+
+        // stop the trial if all strata are closed or max subjects reached
+        // Check if all elements in open are 0, or k reached maxSubjects
+        bool all_closed = std::all_of(open.begin(), open.end(),
+                                      [](unsigned char val) { return val == 0; });
+
+        if (all_closed || (k == maxSubjects)) {
+          iterationNumber[iter] = iter + 1;
+          N[iter] = k;
+          nact[iter] = nactive;
+
+          // Calculate true positives: sum(pos & act)
+          int sum_pos_act = 0;
+          for (int i = 0; i < nstrata; ++i) {
+            sum_pos_act += pos[i] & act[i];
+          }
+          tpos[iter] = sum_pos_act;
+
+          // Calculate false negatives: sum(neg & act)
+          int sum_neg_act = 0;
+          for (int i = 0; i < nstrata; ++i) {
+            sum_neg_act += neg[i] & act[i];
+          }
+          fneg[iter] = sum_neg_act;
+
+          // Calculate false positives: sum(pos & !act)
+          int sum_pos_notact = 0;
+          for (int i = 0; i < nstrata; ++i) {
+            sum_pos_notact += pos[i] & !act[i];
+          }
+          fpos[iter] = sum_pos_notact;
+
+          // Calculate true negatives: sum(neg & !act)
+          int sum_neg_notact = 0;
+          for (int i = 0; i < nstrata; ++i) {
+            sum_neg_notact += neg[i] & !act[i];
+          }
+          tneg[iter] = sum_neg_notact;
+
+          // Calculate number of open: sum(open)
+          int sum_open = std::accumulate(open.begin(), open.end(), 0);
+          nopen[iter] = sum_open;
+
+          break;
+        }
+      }
     }
-
-    if (is_true(all(cc==1)) || is_true(all(cc==0))) {
-      prior[i] = lambda*(gamma*(cc[0]==1) + (1-gamma)*(cc[0]==0)) +
-        (1-lambda)*(pow(gamma,nstrata)*(cc[0]==1) +
-        pow(1-gamma,nstrata)*(cc[0]==0));
-    } else {
-      double y = sum(cc);
-      prior[i] = (1-lambda)*pow(gamma,y)*pow(1-gamma,nstrata-y);
-    }
-
-    NumericVector x = phi*cc + plo*(1-cc);
-    like[i] = exp(sum(r*log(x) + (n-r)*log(1-x)));
-    incid(i,_) = cc;
-  }
-  NumericVector post = prior*like;
-  post = post/sum(post);
-
-  NumericVector q_prior(nstrata), q_post(nstrata);
-  for (int j=0; j<nstrata; ++j) {
-    q_prior[j] = sum(incid(_,j)*prior);
-    q_post[j] = sum(incid(_,j)*post);
   }
 
-  return List::create(
-    _["case"] = incid,
-    _["prior_case"] = prior,
-    _["prior_stratum"] = q_prior,
-    _["post_case"] = post,
-    _["post_stratum"] = q_post);
+  // subject-level raw data set
+  DataFrameCpp rawdata;
+  if (maxNumberOfRawDatasets > 0) {
+    subset_in_place(iterationNumberx, 0, index1);
+    subset_in_place(stageNumberx, 0, index1);
+    subset_in_place(subjectIdx, 0, index1);
+    subset_in_place(arrivalTimex, 0, index1);
+    subset_in_place(stratumx, 0, index1);
+    subset_in_place(yx, 0, index1);
+
+    rawdata.push_back(std::move(iterationNumberx), "iterationNumber");
+    rawdata.push_back(std::move(stageNumberx), "stageNumber");
+    rawdata.push_back(std::move(subjectIdx), "subjectId");
+    rawdata.push_back(std::move(arrivalTimex), "arrivalTime");
+    rawdata.push_back(std::move(stratumx), "stratum");
+    rawdata.push_back(std::move(yx), "y");
+  }
+
+  // simulation summary data set
+  subset_in_place(iterationNumbery, 0, index2);
+  subset_in_place(stageNumbery, 0, index2);
+  subset_in_place(stratumy, 0, index2);
+  subset_in_place(activey, 0, index2);
+  subset_in_place(ny, 0, index2);
+  subset_in_place(ry, 0, index2);
+  subset_in_place(posty, 0, index2);
+  subset_in_place(openy, 0, index2);
+  subset_in_place(posy, 0, index2);
+  subset_in_place(negy, 0, index2);
+
+  DataFrameCpp sumdata1;
+  sumdata1.push_back(std::move(iterationNumbery), "iterationNumber");
+  sumdata1.push_back(std::move(stageNumbery), "stageNumber");
+  sumdata1.push_back(std::move(stratumy), "stratum");
+  sumdata1.push_back(std::move(activey), "active");
+  sumdata1.push_back(std::move(ny), "n");
+  sumdata1.push_back(std::move(ry), "r");
+  sumdata1.push_back(std::move(posty), "posterior");
+  sumdata1.push_back(std::move(openy), "open");
+  sumdata1.push_back(std::move(posy), "positive");
+  sumdata1.push_back(std::move(negy), "negative");
+
+  DataFrameCpp sumdata2;
+  sumdata2.push_back(std::move(iterationNumber), "iterationNumber");
+  sumdata2.push_back(std::move(numberOfStrata), "numberOfStrata");
+  sumdata2.push_back(std::move(nact), "n_active_strata");
+  sumdata2.push_back(std::move(tpos), "true_positive");
+  sumdata2.push_back(std::move(fneg), "false_negative");
+  sumdata2.push_back(std::move(fpos), "false_positive");
+  sumdata2.push_back(std::move(tneg), "true_negative");
+  sumdata2.push_back(std::move(nopen), "n_indet_strata");
+  sumdata2.push_back(std::move(N), "numberOfSubjects");
+
+  double mn_nact = mean_kahan(nact);
+  double mn_tpos = mean_kahan(tpos);
+  double mn_fneg = mean_kahan(fneg);
+  double mn_fpos = mean_kahan(fpos);
+  double mn_tneg = mean_kahan(tneg);
+  double mn_inde = mean_kahan(nopen);
+  double mn_N = mean_kahan(N);
+
+  DataFrameCpp overview;
+  overview.push_back(nstrata, "numberOfStrata");
+  overview.push_back(mn_nact, "n_active_strata");
+  overview.push_back(mn_tpos, "true_positive");
+  overview.push_back(mn_fneg, "false_negative");
+  overview.push_back(mn_fpos, "false_positive");
+  overview.push_back(mn_tneg, "true_negative");
+  overview.push_back(mn_inde, "n_indet_strata");
+  overview.push_back(mn_N, "numberOfSubjects");
+
+  ListCpp result;
+  if (maxNumberOfRawDatasets > 0) {
+    result.push_back(std::move(rawdata), "rawdata");
+    result.push_back(std::move(sumdata1), "sumdata1");
+    result.push_back(std::move(sumdata2), "sumdata2");
+    result.push_back(std::move(overview), "overview");
+  } else {
+    result.push_back(std::move(sumdata1), "sumdata1");
+    result.push_back(std::move(sumdata2), "sumdata2");
+    result.push_back(std::move(overview), "overview");
+  }
+  return result;
 }
-
 
 
 //' @title Simulation of Simon's Bayesian Basket Trials
@@ -296,380 +726,32 @@ List simonBayesAnalysis(
 //'
 //' @export
 // [[Rcpp::export]]
-List simonBayesSim(
-    const NumericVector& p = NA_REAL,
-    const NumericVector& accrualTime = 0,
-    const NumericVector& accrualIntensity = NA_REAL,
-    const NumericVector& stratumFraction = 1,
+Rcpp::List simonBayesSim(
+    const Rcpp::NumericVector& p = NA_REAL,
+    const Rcpp::NumericVector& accrualTime = 0,
+    const Rcpp::NumericVector& accrualIntensity = NA_REAL,
+    const Rcpp::NumericVector& stratumFraction = 1,
     const double lambda = NA_REAL,
     const double gamma = NA_REAL,
     const double phi = NA_REAL,
     const double plo = NA_REAL,
     const double T = NA_REAL,
     const int maxSubjects = NA_INTEGER,
-    const IntegerVector& plannedSubjects = NA_INTEGER,
+    const Rcpp::IntegerVector& plannedSubjects = NA_INTEGER,
     const int maxNumberOfIterations = 1000,
     const int maxNumberOfRawDatasets = 1,
-    const int seed = NA_INTEGER) {
-
-  int nstrata = static_cast<int>(stratumFraction.size());
-
-  if (is_true(any(is_na(p)))) {
-    stop("p must be provided");
-  }
-
-  if (is_true(any((p <= 0) | (p >= 1)))) {
-    stop("p must lie between 0 and 1");
-  }
-
-  if (accrualTime[0] != 0) {
-    stop("accrualTime must start with 0");
-  }
-
-  if (accrualTime.size() > 1 && is_true(any(diff(accrualTime) <= 0))) {
-    stop("accrualTime should be increasing");
-  }
-
-  if (is_true(any(is_na(accrualIntensity)))) {
-    stop("accrualIntensity must be provided");
-  }
-
-  if (accrualTime.size() != accrualIntensity.size()) {
-    stop("accrualTime must have the same length as accrualIntensity");
-  }
-
-  if (is_true(any(accrualIntensity < 0))) {
-    stop("accrualIntensity must be non-negative");
-  }
-
-  if (is_true(any(stratumFraction <= 0))) {
-    stop("stratumFraction must be positive");
-  }
-
-  if (fabs(sum(stratumFraction) - 1.0) > 1.0e-8) {
-    stop("stratumFraction must sum to 1");
-  }
-
-  if (std::isnan(lambda)) {
-    stop("lambda must be provided");
-  }
-
-  if (std::isnan(gamma)) {
-    stop("gamma must be provided");
-  }
-
-  if (std::isnan(phi)) {
-    stop("phi must be provided");
-  }
-
-  if (std::isnan(plo)) {
-    stop("plo must be provided");
-  }
-
-  if (std::isnan(T)) {
-    stop("T must be provided");
-  }
-
-  if (lambda <= 0 || lambda >= 1) {
-    stop("lambda must lie between 0 and 1");
-  }
-
-  if (gamma <= 0 || gamma >= 1) {
-    stop("gamma must lie between 0 and 1");
-  }
-
-  if (phi <= 0 || phi >= 1) {
-    stop("phi must lie between 0 and 1");
-  }
-
-  if (plo <= 0 || plo >= 1) {
-    stop("plo must lie between 0 and 1");
-  }
-
-  if (plo >= phi) {
-    stop("plo must be less than phi");
-  }
-
-  if (T <= 0 || T >= 1) {
-    stop("T must lie between 0 and 1");
-  }
-
-  if (maxSubjects == NA_INTEGER) {
-    stop("maxSubjects must be provided");
-  }
-
-  if (maxSubjects < 1) {
-    stop("maxSubjects must be a positive integer");
-  }
-
-  if (is_true(any(is_na(plannedSubjects)))) {
-    stop("plannedSubjects must be provided");
-  }
-
-  if (plannedSubjects[0] <= 0) {
-    stop("Elements of plannedSubjects must be positive");
-  }
-
-  if (plannedSubjects.size() > 1 &&
-      is_true(any(diff(plannedSubjects) <= 0))) {
-    stop("Elements of plannedSubjects must be increasing");
-  }
-
-  if (maxNumberOfIterations < 1) {
-    stop("maxNumberOfIterations must be a positive integer");
-  }
-
-  if (maxNumberOfRawDatasets < 0) {
-    stop("maxNumberOfRawDatasets must be a non-negative integer");
-  }
-
-
-  double enrollt, u;
-  int kMax = static_cast<int>(plannedSubjects.size());
-  int nreps = maxNumberOfIterations;
-
-  LogicalVector act = (p == phi);
-  int nactive = sum(act);
-
-  NumericVector cumStratumFraction = cumsum(stratumFraction);
-  NumericVector post_stratum(nstrata);
-  NumericVector n(nstrata), r(nstrata);
-  LogicalVector open(nstrata), pos(nstrata), neg(nstrata);
-  List bayes;
-
-  NumericVector arrivalTime(maxSubjects);
-  IntegerVector stratum(maxSubjects), y(maxSubjects);
-  IntegerVector iterationNumber(nreps), N(nreps), nact(nreps), nopen(nreps);
-  IntegerVector tpos(nreps), fneg(nreps), fpos(nreps), tneg(nreps);
-  IntegerVector numberOfStrata(nreps, nstrata);
-
-  // cache for the patient-level raw data to extract
-  int nrow1 = kMax*maxNumberOfRawDatasets*maxSubjects;
-  IntegerVector iterationNumberx = IntegerVector(nrow1, NA_INTEGER);
-  IntegerVector stageNumberx(nrow1);
-  IntegerVector subjectIdx(nrow1);
-  NumericVector arrivalTimex(nrow1);
-  IntegerVector stratumx(nrow1);
-  IntegerVector yx(nrow1);
-
-  // cache for the summary data to extract
-  int nrow2 = kMax*maxNumberOfIterations*nstrata;
-  IntegerVector iterationNumbery = IntegerVector(nrow2, NA_INTEGER);
-  IntegerVector stageNumbery(nrow2);
-  IntegerVector stratumy(nrow2);
-  LogicalVector activey(nrow2);
-  IntegerVector ny(nrow2);
-  IntegerVector ry(nrow2);
-  NumericVector posty(nrow2);
-  LogicalVector openy(nrow2);
-  LogicalVector posy(nrow2);
-  LogicalVector negy(nrow2);
-
-  int index1 = 0, index2 = 0;
-
-  // set up random seed
-  if (seed != NA_INTEGER) {
-    set_seed(seed);
-  }
-
-  for (int iter=0; iter<nreps; ++iter) {
-    // initialize the contents in each stratum
-    n.fill(0);
-    r.fill(0);
-    open.fill(1);
-    pos.fill(0);
-    neg.fill(0);
-
-    int k = 0;      // index of the number of subjects included in analysis
-    int stage = 0;
-    enrollt = 0;
-    for (int i=0; i<100000; ++i) {
-      // generate accrual time
-      u = R::runif(0,1);
-      enrollt = qtpwexpcpp1(u, accrualTime, accrualIntensity, enrollt, 1, 0);
-
-      // generate stratum information
-      u = R::runif(0,1);
-      int j;
-      for (j=0; j<nstrata; ++j) {
-        if (cumStratumFraction[j] > u) {
-          break;
-        }
-      }
-
-      // if the stratum is open, generate the response for the subject
-      if (open[j]) {
-        arrivalTime[k] = enrollt;
-        stratum[k] = j+1;
-        u = R::runif(0,1);
-        y[k] = u < p[j] ? 1 : 0;
-
-        // update the number of subjects and responders in the stratum
-        n[j] = n[j] + 1;
-        r[j] = r[j] + y[k];
-
-        ++k;
-
-        // interim analysis
-        if (is_true(any(plannedSubjects == k))) {
-
-          // output raw data
-          if (iter < maxNumberOfRawDatasets) {
-            for (int idx=0; idx<k; ++idx) {
-              iterationNumberx[index1] = iter+1;
-              stageNumberx[index1] = stage+1;
-              subjectIdx[index1] = idx+1;
-              arrivalTimex[index1] = arrivalTime[idx];
-              stratumx[index1] = stratum[idx];
-              yx[index1] = y[idx];
-
-              ++index1;
-            }
-          }
-
-          // calculate the posterior probabilities
-          bayes = simonBayesAnalysis(nstrata, r, n, lambda, gamma, phi, plo);
-          post_stratum = bayes["post_stratum"];
-
-          // whether to close the stratum due to positive or negative results
-          for (int l=0; l<nstrata; ++l) {
-            if (open[l]) {
-              if (post_stratum[l] > T) {
-                pos[l] = 1;
-                open[l] = 0;
-              } else if (post_stratum[l] < 1 - T) {
-                neg[l] = 1;
-                open[l] = 0;
-              }
-            }
-
-            // output strata-level data
-            iterationNumbery[index2] = iter+1;
-            stageNumbery[index2] = stage+1;
-            stratumy[index2] = l+1;
-            activey[index2] = act[l];
-            ny[index2] = n[l];
-            ry[index2] = r[l];
-            posty[index2] = post_stratum[l];
-            openy[index2] = open[l];
-            posy[index2] = pos[l];
-            negy[index2] = neg[l];
-
-            ++index2;
-          }
-
-          ++stage;
-        }
-
-
-        // stop the trial if all strata are closed or max subjects reached
-        if (is_true(all(open == 0)) || (k == maxSubjects)) {
-          iterationNumber[iter] = iter+1;
-          N[iter] = k;
-          nact[iter] = nactive;
-          tpos[iter] = sum(pos & act);
-          fneg[iter] = sum(neg & act);
-          fpos[iter] = sum(pos & !act);
-          tneg[iter] = sum(neg & !act);
-          nopen[iter] = sum(open);
-
-          break;
-        }
-      }
-    }
-  }
-
-
-  DataFrame rawdata;
-  if (maxNumberOfRawDatasets > 0) {
-    LogicalVector sub1 = !is_na(iterationNumberx);
-    iterationNumberx = iterationNumberx[sub1];
-    stageNumberx = stageNumberx[sub1];
-    subjectIdx = subjectIdx[sub1];
-    arrivalTimex = arrivalTimex[sub1];
-    stratumx = stratumx[sub1];
-    yx = yx[sub1];
-
-    rawdata = DataFrame::create(
-      _["iterationNumber"] = iterationNumberx,
-      _["stageNumber"] = stageNumberx,
-      _["subjectId"] = subjectIdx,
-      _["arrivalTime"] = arrivalTimex,
-      _["stratum"] = stratumx,
-      _["y"] = yx);
-  }
-
-
-  // simulation summary data set
-  LogicalVector sub2 = !is_na(iterationNumbery);
-  iterationNumbery = iterationNumbery[sub2];
-  stageNumbery = stageNumbery[sub2];
-  stratumy = stratumy[sub2];
-  activey = activey[sub2];
-  ny = ny[sub2];
-  ry = ry[sub2];
-  posty = posty[sub2];
-  openy = openy[sub2];
-  posy = posy[sub2];
-  negy = negy[sub2];
-
-  DataFrame sumdata1 = DataFrame::create(
-    _["iterationNumber"] = iterationNumbery,
-    _["stageNumber"] = stageNumbery,
-    _["stratum"] = stratumy,
-    _["active"] = activey,
-    _["n"] = ny,
-    _["r"] = ry,
-    _["posterior"] = posty,
-    _["open"] = openy,
-    _["positive"] = posy,
-    _["negative"] = negy);
-
-
-  DataFrame sumdata2 = DataFrame::create(
-    _["iterationNumber"] = iterationNumber,
-    _["numberOfStrata"] = numberOfStrata,
-    _["n_active_strata"] = nact,
-    _["true_positive"] = tpos,
-    _["false_negative"] = fneg,
-    _["false_positive"] = fpos,
-    _["true_negative"] = tneg,
-    _["n_indet_strata"] = nopen,
-    _["numberOfSubjects"] = N);
-
-
-  double mn_nact = mean(NumericVector(nact));
-  double mn_tpos = mean(NumericVector(tpos));
-  double mn_fneg = mean(NumericVector(fneg));
-  double mn_fpos = mean(NumericVector(fpos));
-  double mn_tneg = mean(NumericVector(tneg));
-  double mn_inde = mean(NumericVector(nopen));
-  double mn_N = mean(NumericVector(N));
-
-  DataFrame overview = DataFrame::create(
-    _["numberOfStrata"] = nstrata,
-    _["n_active_strata"] = mn_nact,
-    _["true_positive"] = mn_tpos,
-    _["false_negative"] = mn_fneg,
-    _["false_positive"] = mn_fpos,
-    _["true_negative"] = mn_tneg,
-    _["n_indet_strata"] = mn_inde,
-    _["numberOfSubjects"] = mn_N);
-
-  List result;
-
-  if (maxNumberOfRawDatasets > 0) {
-    result = List::create(
-      _["rawdata"] = rawdata,
-      _["sumdata1"] = sumdata1,
-      _["sumdata2"] = sumdata2,
-      _["overview"] = overview);
-  } else {
-    result = List::create(
-      _["sumdata1"] = sumdata1,
-      _["sumdata2"] = sumdata2,
-      _["overview"] = overview);
-  }
-
-  return result;
+    const int seed = 0) {
+
+  auto p1 = Rcpp::as<std::vector<double>>(p);
+  auto accrualTime1 = Rcpp::as<std::vector<double>>(accrualTime);
+  auto accrualIntensity1 = Rcpp::as<std::vector<double>>(accrualIntensity);
+  auto stratumFraction1 = Rcpp::as<std::vector<double>>(stratumFraction);
+  auto plannedSubjects1 = Rcpp::as<std::vector<int>>(plannedSubjects);
+
+  ListCpp result = simonBayesSimcpp(
+    p1, accrualTime1, accrualIntensity1, stratumFraction1,
+    lambda, gamma, phi, plo, T, maxSubjects, plannedSubjects1,
+    maxNumberOfIterations, maxNumberOfRawDatasets, seed);
+
+  return Rcpp::wrap(result);
 }
