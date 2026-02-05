@@ -1,251 +1,311 @@
 #include <Rcpp.h>
-#include <queue>
-#include <R_ext/Applic.h>
+
 #include "utilities.h"
+#include "dataframe_list.h"
+#include "thread_utils.h"
 
-using namespace Rcpp;
+#include <algorithm>  // fill, lower_bound, max_element, memmove,
+// min_element, sort, swap, upper_bound
+#include <cmath>      // copysign, exp, fabs, isinf, isnan, log, pow, sqrt
+#include <cstddef>    // size_t
+#include <cstring>    // memcpy
+#include <functional> // function
+#include <limits>     // numeric_limits
+#include <memory>     // make_shared, shared_ptr
+#include <numeric>    // accumulate, inner_product, iota
+#include <queue>      // priority_queue
+#include <sstream>    // ostringstream
+#include <stdexcept>  // invalid_argument, runtime_error
+#include <string>     // string
+#include <utility>    // pair, swap
+#include <vector>     // vector
 
 
-void set_seed(int seed) {
-  Environment base_env("package:base");
-  Function set_seed_r = base_env["set.seed"];
-  set_seed_r(seed);
+#include <boost/math/distributions/normal.hpp>
+#include <boost/math/distributions/logistic.hpp>
+#include <boost/math/distributions/extreme_value.hpp>
+#include <boost/math/distributions/chi_squared.hpp>
+#include <boost/math/distributions/students_t.hpp>
+#include <boost/math/quadrature/gauss_kronrod.hpp>
+#include <boost/math/quadrature/tanh_sinh.hpp>
+#include <boost/math/tools/minima.hpp>
+
+double boost_pnorm(double q, double mean, double sd, bool lower_tail) {
+  if (std::isnan(q)) return std::numeric_limits<double>::quiet_NaN();
+  if (sd <= 0) throw std::invalid_argument("Standard deviation must be positive.");
+  boost::math::normal_distribution<> dist(mean, sd);
+  if (lower_tail) return boost::math::cdf(dist, q);
+  else return boost::math::cdf(boost::math::complement(dist, q));
+}
+
+double boost_qnorm(double p, double mean, double sd, bool lower_tail) {
+  if (std::isnan(p)) return std::numeric_limits<double>::quiet_NaN();
+  if (sd <= 0) throw std::invalid_argument("Standard deviation must be positive.");
+  if (p < 0.0 || p > 1.0) throw std::invalid_argument(
+      "Probability must be between 0 and 1.");
+  boost::math::normal_distribution<> dist(mean, sd);
+  return lower_tail ? boost::math::quantile(dist, p) :
+    boost::math::quantile(dist, 1.0 - p);
+}
+
+double boost_dnorm(double x, double mean, double sd) {
+  if (std::isnan(x)) return std::numeric_limits<double>::quiet_NaN();
+  if (sd <= 0) throw std::invalid_argument("Standard deviation must be positive.");
+  boost::math::normal_distribution<> dist(mean, sd);
+  return boost::math::pdf(dist, x);
+}
+
+double boost_plogis(double q, double location, double scale, bool lower_tail) {
+  if (std::isnan(q)) return std::numeric_limits<double>::quiet_NaN();
+  if (scale <= 0) throw std::invalid_argument("Scale must be positive.");
+  boost::math::logistic_distribution<> dist(location, scale);
+  if (lower_tail) return boost::math::cdf(dist, q);
+  else return boost::math::cdf(boost::math::complement(dist, q));
+}
+
+double boost_qlogis(double p, double location, double scale, bool lower_tail) {
+  if (std::isnan(p)) return std::numeric_limits<double>::quiet_NaN();
+  if (scale <= 0) throw std::invalid_argument("Scale must be positive.");
+  if (p < 0.0 || p > 1.0) throw std::invalid_argument(
+      "Probability must be between 0 and 1.");
+  boost::math::logistic_distribution<> dist(location, scale);
+  return lower_tail ? boost::math::quantile(dist, p) :
+    boost::math::quantile(dist, 1.0 - p);
+}
+
+double boost_dlogis(double x, double location, double scale) {
+  if (std::isnan(x)) return std::numeric_limits<double>::quiet_NaN();
+  if (scale <= 0) throw std::invalid_argument("Scale must be positive.");
+  boost::math::logistic_distribution<> dist(location, scale);
+  return boost::math::pdf(dist, x);
+}
+
+double boost_pextreme(double q, double location, double scale, bool lower_tail) {
+  if (std::isnan(q)) return std::numeric_limits<double>::quiet_NaN();
+  if (scale <= 0) throw std::invalid_argument("Scale must be positive.");
+  boost::math::extreme_value_distribution<> dist(location, scale);
+  // keep semantics consistent with complementary log-log link
+  if (lower_tail) return boost::math::cdf(complement(dist, 2.0 * location - q));
+  else return boost::math::cdf(dist, 2.0 * location - q);
+}
+
+double boost_qextreme(double p, double location, double scale, bool lower_tail) {
+  if (std::isnan(p)) return std::numeric_limits<double>::quiet_NaN();
+  if (scale <= 0) throw std::invalid_argument("Scale must be positive.");
+  if (p < 0.0 || p > 1.0) throw std::invalid_argument(
+      "Probability must be between 0 and 1.");
+  boost::math::extreme_value_distribution<> dist(location, scale);
+  return lower_tail? -boost::math::quantile(complement(dist, p)) :
+    -boost::math::quantile(complement(dist, 1.0 - p));
+}
+
+double boost_dextreme(double x, double location, double scale) {
+  if (std::isnan(x)) return std::numeric_limits<double>::quiet_NaN();
+  if (scale <= 0) throw std::invalid_argument("Scale must be positive.");
+  boost::math::extreme_value_distribution<> dist(location, scale);
+  return boost::math::pdf(dist, -x);
+}
+
+double boost_pchisq(double q, double df, bool lower_tail) {
+  if (std::isnan(q)) return std::numeric_limits<double>::quiet_NaN();
+  if (df <= 0) throw std::invalid_argument("Degrees of freedom must be positive.");
+  if (std::isinf(q)) {
+    if (q > 0.0) return lower_tail ? 1.0 : 0.0;
+    else return lower_tail ? 0.0 : 1.0;
+  }
+  boost::math::chi_squared_distribution<> dist(df);
+  if (lower_tail) return boost::math::cdf(dist, q);
+  else return boost::math::cdf(boost::math::complement(dist, q));
+}
+
+double boost_qchisq(double p, double df, bool lower_tail) {
+  if (std::isnan(p)) return std::numeric_limits<double>::quiet_NaN();
+  if (df <= 0) throw std::invalid_argument("Degrees of freedom must be positive.");
+  if (p < 0.0 || p > 1.0) throw std::invalid_argument(
+      "Probability must be between 0 and 1.");
+  boost::math::chi_squared_distribution<> dist(df);
+  return lower_tail ? boost::math::quantile(dist, p) :
+    boost::math::quantile(dist, 1.0 - p);
+}
+
+double boost_pt(double q, double df, bool lower_tail) {
+  if (std::isnan(q)) return std::numeric_limits<double>::quiet_NaN();
+  if (df <= 0) throw std::invalid_argument("Degrees of freedom must be positive.");
+  boost::math::students_t_distribution<> dist(df);
+  if (lower_tail) return boost::math::cdf(dist, q);
+  else return boost::math::cdf(boost::math::complement(dist, q));
+}
+
+double boost_qt(double p, double df, bool lower_tail) {
+  if (std::isnan(p)) return std::numeric_limits<double>::quiet_NaN();
+  if (df <= 0) throw std::invalid_argument("Degrees of freedom must be positive.");
+  if (p < 0.0 || p > 1.0) throw std::invalid_argument(
+      "Probability must be between 0 and 1.");
+  boost::math::students_t_distribution<> dist(df);
+  return lower_tail ? boost::math::quantile(dist, p) :
+    boost::math::quantile(dist, 1.0 - p);
 }
 
 
-NumericVector stl_sort(const NumericVector& x) {
-  NumericVector y = clone(x);
+std::vector<double> stl_sort(const std::vector<double>& x) {
+  std::vector<double> y = x;
   std::sort(y.begin(), y.end());
   return y;
 }
 
-
-// Function to find the indices of all TRUE elements in a logical vector
-IntegerVector which(const LogicalVector& vector) {
-  IntegerVector true_indices;
-  for (int i = 0; i < vector.size(); ++i) {
-    if (vector[i]) {
-      true_indices.push_back(i);
-    }
-  }
-  return true_indices;
+std::vector<int> seqcpp(int start, int end) {
+  if (start > end) throw std::invalid_argument(
+      "start must be less than or equal to end for the sequence function.");
+  int size = end - start + 1;
+  std::vector<int> result(size);
+  std::iota(result.begin(), result.end(), start);
+  return result;
 }
 
+std::vector<unsigned char> convertLogicalVector(const Rcpp::LogicalVector& vec) {
+  int n = vec.size();
+  std::vector<unsigned char> result;
+  result.resize(n);
+  for (int i = 0; i < n; ++i) {
+    int v = vec[i];
+    if (v == NA_LOGICAL) result[i] = 255; // NA representation
+    else result[i] = v ? 1 : 0; // TRUE -> 1, FALSE -> 0
+  }
+  return result;
+}
 
-//' @title Find Interval Numbers of Indices
-//' @description The implementation of \code{findInterval()} in R from
-//' Advanced R by Hadley Wickham. Given a vector of non-decreasing
-//' breakpoints in v, find the interval containing each element of x; i.e.,
-//' if \code{i <- findInterval3(x,v)}, for each index \code{j} in \code{x},
-//' \code{v[i[j]] <= x[j] < v[i[j] + 1]}, where \code{v[0] := -Inf},
-//' \code{v[N+1] := +Inf}, and \code{N = length(v)}.
-//'
-//' @param x The numeric vector of interest.
-//' @param v The vector of break points.
-//' @param rightmost_closed Logical; if true, the rightmost interval,
-//'   `vec[N-1] .. vec[N]` is treated as closed if `left_open` is false,
-//'   and the leftmost interval, `vec[1] .. vec[2]` is treated as
-//'   closed if left_open is true.
-//' @param all_inside Logical; if true, the returned indices are coerced
-//'   into `1, ..., N-1`, i.e., `0` is mapped to `1` and
-//'   `N` is mapped to `N-1`.
-//' @param left_open Logical; if true, all intervals are open at left and
-//'   closedat right. This may be useful, .e.g., in survival analysis.
-//' @return A vector of \code{length(x)} with values in \code{0:N} where
-//'   \code{N = length(v)}.
-//'
-//' @keywords internal
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @examples
-//' x <- 2:18
-//' v <- c(5, 10, 15) # create two bins [5,10) and [10,15)
-//' cbind(x, findInterval3(x, v))
-//'
-//' @export
-// [[Rcpp::export]]
-IntegerVector findInterval3(NumericVector x, NumericVector v,
-                            bool rightmost_closed = false,
-                            bool all_inside = false,
-                            bool left_open = false) {
-  IntegerVector out(x.size());
+std::vector<int> which(const std::vector<unsigned char>& vec) {
+  std::vector<int> indices;
+  indices.reserve(vec.size());
+  int n = vec.size();
+  for (int i = 0; i < n; ++i) {
+    if (vec[i] != 0 && vec[i] != 255) indices.push_back(i);
+  }
+  return indices;
+}
 
-  NumericVector::iterator it, pos;
-  IntegerVector::iterator out_it;
+std::vector<int> findInterval3(const std::vector<double>& x,
+                               const std::vector<double>& v,
+                               bool rightmost_closed,
+                               bool all_inside,
+                               bool left_open) {
+  std::vector<int> out(x.size());
+  const double* v_begin = v.data();
+  const double* v_end   = v_begin + v.size();
+  const int n = x.size();
+  const int nv = v.size();
 
-  NumericVector::iterator x_begin=x.begin(), x_end=x.end();
-  NumericVector::iterator v_begin=v.begin(), v_end=v.end();
-
-  int nv = v.size();
-
-  for(it = x_begin, out_it = out.begin(); it != x_end; ++it, ++out_it) {
-    // Handle NA in x
-    if (NumericVector::is_na(*it)) {
-      *out_it = NA_INTEGER;
-      continue;
-    }
-
-    // Choose bound depending on left_open
-    if (left_open) {
-      pos = std::lower_bound(v_begin, v_end, *it);
-    } else {
-      pos = std::upper_bound(v_begin, v_end, *it);
-    }
-
-    int idx = static_cast<int>(std::distance(v_begin, pos));
-
+  for (int i = 0; i < n; ++i) {
+    double xi = x[i];
+    if (std::isnan(xi)) { out[i] = -1; continue; }
+    const double* pos = left_open ? std::lower_bound(v_begin, v_end, xi) :
+      std::upper_bound(v_begin, v_end, xi);
+    int idx = static_cast<int>(pos - v_begin);
     if (rightmost_closed) {
       if (left_open) {
-        if (*it == v[0]) idx = 1;
+        if (nv > 0 && xi == v[0]) idx = 1;
       } else {
-        if (*it == v[nv-1]) idx = nv-1;
+        if (nv > 0 && xi == v[nv - 1]) idx = nv - 1;
       }
     }
-
     if (all_inside) {
-      if (idx == 0) {
-        idx = 1;
-      } else if (idx == nv) {
-        idx = nv-1;
-      }
+      if (idx == 0) idx = 1;
+      else if (idx == nv) idx = nv - 1;
     }
-
-    *out_it = idx;
+    out[i] = idx;
   }
-
   return out;
 }
 
-
-#include <algorithm>
-#define ITMAX 100
-#define EPS 3.0e-8
-#define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
+// --------------------------- Root finders -----------------------------------
 double brent(const std::function<double(double)>& f,
-             double x1, double x2, double tol) {
+             double x1, double x2, double tol, int maxiter) {
+  constexpr double EPS = 3.0e-8;
 
-  double a=x1, b=x2, c=x2, d, d1 = 0.0, min1, min2;
-  double fa=f(a), fb=f(b), fc, p, q, r, s, tol1, xm;
+  double a = x1, b = x2, c = x2;
+  double fa = f(a), fb = f(b), fc = fb;
+  double d = 0.0, d1 = 0.0;
 
-  if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0)) {
-    stop("Root must be bracketed in brent");
-  }
+  if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0))
+    throw std::invalid_argument("Root must be bracketed in brent.");
 
-  fc = fb;
-  for (int iter=1; iter<=ITMAX; ++iter) {
+  for (int iter = 1; iter <= maxiter; ++iter) {
     if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) {
-      c = a;     // Rename a, b, c and adjust bounding interval d
-      fc = fa;
-      d = b - a;
-      d1 = d;
-    }
-    if (fabs(fc) < fabs(fb)) {
-      a = b;
-      b = c;
-      c = a;
-      fa = fb;
-      fb = fc;
-      fc = fa;
-    }
-    // Convergence check
-    tol1 = 2.0*EPS*fabs(b) + 0.5*tol;
-    xm = 0.5*(c-b);
-    if (fabs(xm) <= tol1 || fb == 0.0) {
-      return b;
+      c = a; fc = fa; d = b - a; d1 = d;
     }
 
-    if (fabs(d1) >= tol1 && fabs(fa) > fabs(fb)) {
-      s = fb/fa; // Attempt inverse quadratic interpolation
+    if (std::fabs(fc) < std::fabs(fb)) {
+      a = b; b = c; c = a;
+      fa = fb; fb = fc; fc = fa;
+    }
+
+    double tol1 = 2.0 * EPS * std::fabs(b) + 0.5 * tol;
+    double xm = 0.5 * (c - b);
+    if (std::fabs(xm) <= tol1 || fb == 0.0) return b;
+
+    double p, q, r, s;
+    if (std::fabs(d1) >= tol1 && std::fabs(fa) > std::fabs(fb)) {
+      s = fb / fa;
       if (a == c) {
-        p = 2.0*xm*s;
-        q = 1.0-s;
+        p = 2.0 * xm * s;
+        q = 1.0 - s;
       } else {
-        q = fa/fc;
-        r = fb/fc;
-        p = s*(2.0*xm*q*(q-r) - (b-a)*(r-1.0));
-        q = (q-1.0)*(r-1.0)*(s-1.0);
+        q = fa / fc;
+        r = fb / fc;
+        p = s * (2.0 * xm * q * (q - r) - (b - a) * (r - 1.0));
+        q = (q - 1.0) * (r - 1.0) * (s - 1.0);
       }
-      if (p > 0.0) {
-        q = -q;  // Check whether in bounds
+      if (p > 0.0) q = -q;
+      p = std::fabs(p);
+      double min1 = 3.0 * xm * q - std::fabs(tol1 * q);
+      double min2 = std::fabs(d1 * q);
+      if (2.0 * p < (min1 < min2 ? min1 : min2)) {
+        d1 = d; d = p / q;
+      } else {
+        d = xm; d1 = d;
       }
-      p = fabs(p);
-      min1 = 3.0*xm*q - fabs(tol1*q);
-      min2 = fabs(d1)*fabs(q);
-      if (2.0*p < (min1 < min2 ? min1 : min2)) {
-        d1 = d;  // Accept interpolation
-        d = p/q;
-      } else {  // Interpolation failed, use bisection
-        d = xm;
-        d1 = d;
-      }
-    } else {  // Bounds decreasing too slowly, use bisection
-      d = xm;
-      d1 = d;
-    }
-    a = b;  // Move last best guess to a
-    fa = fb;
-    if (fabs(d) > tol1) { // Evaluate new trial root
-      b += d;
     } else {
-      b += SIGN(tol1, xm);
+      d = xm; d1 = d;
     }
+
+    a = b; fa = fb;
+    if (std::fabs(d) > tol1) b += d; else b += std::copysign(tol1, xm);
     fb = f(b);
   }
-  stop("Maximum number of iterations exceeded in brent");
-  return 0.0; // Never get here
+  throw std::runtime_error("Maximum iterations exceeded in brent");
 }
 
-
 double bisect(const std::function<double(double)>& f,
-              double x1, double x2, double tol) {
-  double f1 = f(x1);
-  double f2 = f(x2);
-
-  if ((f1 > 0.0 && f2 > 0.0) || (f1 < 0.0 && f2 < 0.0)) {
-    stop("Root must be bracketed in bisect");
+              double x1, double x2, double tol, int maxiter) {
+  double a = x1, b = x2;
+  double fa = f(a), fb = f(b);
+  if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0))
+    throw std::invalid_argument("Root must be bracketed in bisect.");
+  if (std::fabs(fa) < tol) return a;
+  if (std::fabs(fb) < tol) return b;
+  double xmid, fmid;
+  for (int j = 1; j <= maxiter; ++j) {
+    xmid = a + 0.5 * (b - a);
+    fmid = f(xmid);
+    if (std::fabs(fmid) < tol || (b - a) < tol) return xmid;
+    if ((fa > 0.0 && fmid < 0.0) || (fa < 0.0 && fmid > 0.0)) {
+      b = xmid; fb = fmid; }
+    else { a = xmid; fa = fmid; }
   }
-
-  // rtb will hold the endpoint where f is negative
-  // dx is the signed interval width
-  double rtb, dx;
-  if (f1 < 0.0) {
-    dx  = x2 - x1;
-    rtb = x1;
-  } else {
-    dx  = x1 - x2;
-    rtb = x2;
-  }
-
-  for (int j = 1; j <= ITMAX; ++j) {
-    dx *= 0.5;
-    double xmid = rtb + dx;
-    double fmid = f(xmid);
-
-    if (fmid <= 0.0) {
-      rtb = xmid;
-    }
-
-    if (std::fabs(dx) < tol || fmid == 0.0) {
-      return rtb;
-    }
-  }
-
-  stop("Maximum number of iterations exceeded in bisect");
-  return 0.0; // never reached
+  throw std::runtime_error("Maximum number of iterations exceeded in bisect");
 }
 
 
 // [[Rcpp::export]]
-double errorSpentcpp(const double t = NA_REAL,
-                     const double error = NA_REAL,
-                     const String sf = NA_STRING,
-                     const double sfpar = NA_REAL) {
+double errorSpentcpp(const double t,
+                     const double error,
+                     const std::string& sf,
+                     const double sfpar) {
   if (error <= 0 || error >= 1) {
-    stop("error must be a number between 0 and 1");
+    throw std::invalid_argument("error must be a number between 0 and 1.");
   }
   if (t <= 0 || t > 1) {
-    stop("t must be a number between 0 and 1");
+    throw std::invalid_argument("t must be a number between 0 and 1.");
   }
 
   std::string asf = sf;
@@ -255,410 +315,471 @@ double errorSpentcpp(const double t = NA_REAL,
 
   double aval;
   if (asf == "sfp") {
-    aval = error*log(1 + (exp(1) - 1)*t);
+    aval = error * std::log(1.0 + (std::exp(1.0) - 1.0) * t);
   } else if (asf == "sfof") {
-    aval = R::qnorm(1-error/2, 0, 1, 1, 0);
-    aval = 2*(1 - R::pnorm(aval/sqrt(t), 0, 1, 1, 0));
+    aval = boost_qnorm(1.0 - error / 2.0);
+    aval = 2.0 * (1.0 - boost_pnorm(aval / std::sqrt(t)));
   } else if (asf == "sfkd") {
     if (std::isnan(sfpar)) {
-      stop("Parameter sfpar is missing for sfKD");
+      throw std::invalid_argument("Parameter sfpar is missing for sfKD.");
     } else if (sfpar <= 0) {
-      stop ("sfpar must be positive for sfKD");
+      throw std::invalid_argument("sfpar must be positive for sfKD.");
     } else {
-      aval = error*pow(t, sfpar);
+      aval = error * std::pow(t, sfpar);
     }
   } else if (asf == "sfhsd") {
     if (std::isnan(sfpar)) {
-      stop("Parameter sfpar is missing for sfHSD");
+      throw std::invalid_argument("Parameter sfpar is missing for sfHSD.");
     } else if (sfpar == 0) {
-      aval = error*t;
+      aval = error * t;
     } else {
-      aval = error*(1 - exp(-sfpar*t))/(1 - exp(-sfpar));
+      aval = error * (1.0 - std::exp(-sfpar * t)) / (1.0 - std::exp(-sfpar));
     }
   } else {
-    stop("Invalid spending function");
+    throw std::invalid_argument("Invalid spending function.");
   }
   return aval;
 }
 
 
-
 // [[Rcpp::export]]
-List exitprobcpp(const NumericVector& b,
-                 const NumericVector& a,
-                 const NumericVector& theta,
-                 const NumericVector& I) {
+ListCpp exitprobcpp(const std::vector<double>& b,
+                    const std::vector<double>& a,
+                    const std::vector<double>& theta,
+                    const std::vector<double>& I) {
 
-  NumericVector a1 = clone(a);
-  NumericVector theta1 = clone(theta);
-  NumericVector I1 = clone(I);
+  // kMax is the total number of stages
+  int kMax = static_cast<int>(b.size());
 
   // Integer value controlling grid for numerical integration as in
   // Jennison and Turnbull (2000)
   const int r = 18;
+  const int r1 = 6 * r - 1;   // size of x1 and shift
+  const int r2 = 12 * r - 3;  // size of z, h vectors when fully expanded
 
-  // variable declarations
-  // kMax is the total number of stages
-  // m0, z0, h0 for the previous stage
-  // m, z, h for the current stage
-  int kMax=static_cast<int>(b.size());
-  int r1=6*r-1, r2=12*r-3, i1=0, i2=r1-1, m0=r2, m1=r1, m=r2;
-  double t, tlower, tupper, xlower, xupper;
-
-  NumericVector sqrtI(kMax), thetaSqrtI(kMax), thetaI(kMax), dI(kMax),
-  dThetaI(kMax), exitProbUpper(kMax), exitProbLower(kMax),
-  shift(r1), x1(r1), x(r1), z0(r2), z(r2), w(r2), h0(r2), h(r2);
-
-  // set default parameter values
-  if (is_false(any(is_na(a)))) {
-    if (a.size() != kMax) {
-      stop("Invalid length for a");
-    }
+  // Prepare a1, theta1, I1 only if defaults / expansion necessary.
+  std::vector<double> a1; a1.reserve(kMax);
+  if (none_na(a)) {
+    if (static_cast<int>(a.size()) != kMax)
+      throw std::invalid_argument("Invalid length for a.");
+    a1 = a; // copy once
   } else {
-    NumericVector tem(kMax);
-    for (int i=0; i<kMax; ++i) {
-      if (i<kMax-1) {
-        tem[i] = -6.0;
-      } else {
-        tem[i] = b[i];
-      }
-    }
-    a1 = tem;
-  }
-
-  // edit check of boundaries
-  for (int i=0; i<kMax; ++i) {
-    if (a1[i] > b[i]) {
-      stop("Lower bounds (a) must be less than upper bounds (b)");
+    a1.assign(kMax, 0.0);
+    for (int i = 0; i < kMax; ++i) {
+      a1[i] = (i < kMax - 1 ? -6.0 : b[i]);
     }
   }
 
-
-  if (is_false(any(is_na(theta)))) {
-    if (theta.size() == 1) {
-      theta1 = rep(theta, kMax);
-    } else if (theta.size() != kMax) {
-      stop("Invalid length for theta");
-    }
-  } else {
-    theta1 = rep(0, kMax);
+  // check lower < upper
+  for (int i = 0; i < kMax; ++i) {
+    if (a1[i] > b[i]) throw std::invalid_argument(
+        "Lower bounds (a) must be less than upper bounds (b).");
   }
 
-
-  if (is_false(any(is_na(I)))) {
-    if (I.size() != kMax) {
-      stop("Invalid length for I");
-    } else if (I[0] <= 0) {
-      stop("Elements of I must be positive");
-    } else if (kMax > 1 && is_true(any(diff(I) <= 0))) {
-      stop("Elements of I must be increasing");
-    }
-  } else {
-    IntegerVector tem = seq_len(kMax);
-    I1 = NumericVector(tem);
-  }
-
-  // constant shifts relative to the means, use floating point computation
-  for (int i=0; i<r1; ++i) {
-    if (i < r-1) {
-      shift[i] = -3 - 4*log(r/(i+1.0));
-    } else if (i < 5*r) {
-      shift[i] = -3 + 3*(i+1.0-r)/(2*r);
+  // theta expansion
+  std::vector<double> theta1;
+  if (none_na(theta)) {
+    if (static_cast<int>(theta.size()) == 1) {
+      theta1.assign(kMax, theta[0]);
+    } else if (static_cast<int>(theta.size()) == kMax) {
+      theta1 = theta;
     } else {
-      shift[i] = 3 + 4*log(r/(6*r-i-1.0));
+      throw std::invalid_argument("Invalid length for theta.");
     }
+  } else {
+    theta1.assign(kMax, 0.0);
   }
 
-  // obtain various vectors associated with theta and I
-  for (int j=0; j<kMax; ++j) {
-    sqrtI[j] = sqrt(I1[j]);
-    thetaSqrtI[j] = theta1[j]*sqrtI[j];
-    thetaI[j] = theta1[j]*I1[j];
-    if (j==0) {
-      dI[j] = I1[j];
-      dThetaI[j] = thetaI[j];
+
+  // information times expansion / validation
+  std::vector<double> I1;
+  if (none_na(I)) {
+    if (static_cast<int>(I.size()) != kMax)
+      throw std::invalid_argument("Invalid length for I.");
+    if (I[0] <= 0.0)
+      throw std::invalid_argument("Elements of I must be positive.");
+    if (any_nonincreasing(I))
+      throw std::invalid_argument("Elements of I must be increasing.");
+    I1 = I;
+  } else {
+    I1.resize(kMax);
+    std::iota(I1.begin(), I1.end(), 1.0);
+  }
+
+  // Precompute shifts (constant across stages)
+  std::vector<double> shift(r1);
+  for (int i = 0; i < r1; ++i) {
+    if (i < r - 1) {
+      shift[i] = -3.0 - 4.0 * std::log(static_cast<double>(r) / (i + 1.0));
+    } else if (i < 5 * r) {
+      shift[i] = -3.0 + 3.0 * ( (i + 1.0 - r) / (2.0 * r) );
     } else {
-      dI[j] = I1[j] - I1[j-1];
-      dThetaI[j] = thetaI[j] - thetaI[j-1];
+      shift[i] = 3.0 + 4.0 * std::log(static_cast<double>(r) / (6.0 * r - i - 1.0));
     }
   }
 
-  // loop over stages
-  for (int j=0; j<kMax; ++j) {
 
-    // initialize x values
-    for (int i=0; i<r1; ++i) {
-      x1[i] = thetaSqrtI[j] + shift[i];
-    }
+  // Precompute sqrt and theta*sqrt/I combos
+  std::vector<double> sqrtI(kMax), thetaSqrtI(kMax), thetaI(kMax);
+  for (int j = 0; j < kMax; ++j) {
+    sqrtI[j] = std::sqrt(I1[j]);
+    thetaSqrtI[j] = theta1[j] * sqrtI[j];
+    thetaI[j] = theta1[j] * I1[j];
+  }
 
-    // trim off x values outside (a[j], b[j])
-    // trim from below
+
+  // dI and dThetaI
+  std::vector<double> dI(kMax), dThetaI(kMax);
+  dI[0] = I1[0];
+  dThetaI[0] = thetaI[0];
+  for (int j = 1; j < kMax; ++j) {
+    dI[j] = I1[j] - I1[j-1];
+    dThetaI[j] = thetaI[j] - thetaI[j-1];
+  }
+
+  // pre-allocate buffers once, reuse across stages
+  std::vector<double> exitProbUpper(kMax), exitProbLower(kMax);
+
+  // allocate working arrays at max sizes once
+  std::vector<double> x1(r1), x(r1);  // x1 is untrimmed, x is trimmed
+  std::vector<double> w(r2), z(r2), h(r2); // z, h for the current stage
+  std::vector<double> z0, h0; // z0, h0 for the previous stage
+  z0.reserve(r2); h0.reserve(r2);
+
+  int m0 = 0; // size of previous z0/h0
+  // z0 and h0 are represented by the first m0 entries of z and h vectors.
+
+  for (int j = 0; j < kMax; ++j) {
+    const double thetaSqrtIj = thetaSqrtI[j];
+    const double sqrtIj = sqrtI[j];
+    const double sqrtIjm1 = sqrtI[j-1];
+    const double a1j = a1[j];
+    const double bj = b[j];
+    const double dThetaIj = dThetaI[j];
+    const double sqrtdIj = std::sqrt(dI[j]);
+    const double sqrtI1dIj = std::sqrt(I1[j] / dI[j]);
+
+    // initialize x1 = thetaSqrtI[j] + shift
+    for (int i = 0; i < r1; ++i) x1[i] = thetaSqrtIj + shift[i];
+
+    // find trimming indices using binary search (x1 is sorted b/c shift is monotone)
+    int i1 = 0;
     if (a1[j] >= x1[0]) {
-      i1 = 0;
-      while (x1[i1] <= a1[j]) {
-        ++i1;
-      }
-      --i1;
-      xlower = a1[j]; // lower bound on x
-    } else {
-      i1 = 0;
-      xlower = x1[0];
+      // first index i1 s.t. x1[i1] > a1[j]; then use i1-1 as lower trimming index
+      auto it = std::upper_bound(x1.begin(), x1.end(), a1[j]);
+      i1 = static_cast<int>(it - x1.begin()) - 1;
     }
 
-    // trim from above
-    if (b[j] <= x1[r1-1]) {
-      i2 = r1-1;
-      while (x1[i2] >= b[j]) {
-        --i2;
-      }
-      ++i2;
-      xupper = b[j]; // upper bound on x
-    } else {
-      i2 = r1-1;
-      xupper = x1[r1-1];
-    }
-
-    // save the trimmed portion to x
-    m1 = i2 - i1 + 1;
-    x[0] = xlower;
-    x[m1-1] = xupper;
-    for (int i=1; i<m1-1; ++i) {
-      x[i] = x1[i+i1];
-    }
-
-    // derive the grid points for z
-    m = 2*m1 - 1;
-
-    // odd grid points;
-    for (int i=0; i<m1; ++i) {
-      z[2*i] = x[i];
-    }
-
-    // even grid points;
-    for (int i=0; i<m1-1; ++i) {
-      z[2*i+1] = (z[2*i] + z[2*i+2])/2;
+    int i2 = r1 - 1;
+    if (b[j] <= x1[r1 - 1]) {
+      // find last index i2 such that x1[i2] < b[j]; then i2+1
+      auto it2 = std::lower_bound(x1.begin(), x1.end(), b[j]);
+      i2 = static_cast<int>(it2 - x1.begin());
     }
 
 
-    // derive the weights
-    w[0] = 1.0/6*(z[2] - z[0]);
+    // m1 is number of retained x nodes after trimming
+    const int m1 = i2 - i1 + 1;
 
-    for (int i0=1; i0<=m1-2; ++i0) {
-      int i = 2*i0;
-      w[i] = 1.0/6*(z[i+2] - z[i-2]);
+    // build x (trimmed) and set x[0]=xlower, x[m1-1]=xupper
+    x[0] = std::max(a1[j], x1[0]);
+    x[m1 - 1] = std::min(b[j], x1[r1 - 1]);
+
+    // copy interior trimmed x1 values
+    for (int i = 1; i < m1 - 1; ++i) x[i] = x1[i + i1];
+
+    // derive z grid (odd + even interleaving)
+    const int m = 2 * m1 - 1;
+    // odd points
+    for (int i = 0; i < m1; ++i) z[2*i] = x[i];
+    // even points (midpoints)
+    for (int i = 0; i < m1 - 1; ++i) z[2*i + 1] = 0.5 * (z[2*i] + z[2*i + 2]);
+
+
+    // weights w as Simpson-like composite rule (same formulas)
+    // w[0]
+    w[0] = (z[2] - z[0]) / 6.0;
+
+    // interior even indices (i = 2, 4, ..., 2*(m1-2))
+    for (int i0 = 1; i0 <= m1 - 2; ++i0) {
+      int i = 2 * i0;
+      w[i] = (z[i + 2] - z[i - 2]) / 6.0;
     }
-
-    for (int i0=1; i0<=m1-1; ++i0) {
-      int i = 2*i0-1;
-      w[i] = 4.0/6*(z[i+1] - z[i-1]);
+    // interior odd indices (i = 1,3,...)
+    for (int i0 = 1; i0 <= m1 - 1; ++i0) {
+      int i = 2 * i0 - 1;
+      w[i] = 4.0 * (z[i + 1] - z[i - 1]) / 6.0;
     }
-
-    w[m-1] = 1.0/6*(z[m-1] - z[m-3]);
+    // last weight
+    w[m - 1] = (z[m - 1] - z[m - 3]) / 6.0;
 
 
     // first stage is easy
-    if (j==0) {
+    if (j == 0) {
       // exit probabilities
-      exitProbUpper[j] = R::pnorm(-b[j] + thetaSqrtI[j], 0.0, 1.0, 1, 0);
-      exitProbLower[j] = R::pnorm(a1[j] - thetaSqrtI[j], 0.0, 1.0, 1, 0);
+      exitProbUpper[j] = boost_pnorm(-bj + thetaSqrtIj);
+      exitProbLower[j] = boost_pnorm(a1j - thetaSqrtIj);
 
       // prepare h0, m0, z0 for the next stage
       if (kMax > 1) {
-        for (int i=0; i<m; ++i) {
-          h0[i] = w[i]*R::dnorm(z[i] - thetaSqrtI[j], 0.0, 1.0, 0);
-        }
-
         m0 = m;
-        z0 = z+0.0; // adding 0.0 to avoid passing by reference
+        h0.resize(m0);
+        z0.resize(m0);
+        for (int i = 0; i < m0; ++i) {
+          h0[i] = w[i] * boost_dnorm(z[i] - thetaSqrtIj);
+          z0[i] = z[i];
+        }
       }
-
     } else {
       // calculate exit probabilities using h0 from the previous stage
-      for (int i0=0; i0<m0; ++i0) {
-        tupper = (z0[i0]*sqrtI[j-1] - b[j]*sqrtI[j] +
-          dThetaI[j])/sqrt(dI[j]);
-        tlower = (-z0[i0]*sqrtI[j-1] + a1[j]*sqrtI[j] -
-          dThetaI[j])/sqrt(dI[j]);
-        exitProbUpper[j] += h0[i0]*R::pnorm(tupper, 0.0, 1.0, 1, 0);
-        exitProbLower[j] += h0[i0]*R::pnorm(tlower, 0.0, 1.0, 1, 0);
+      double sumUpper = 0.0, sumLower = 0.0;
+      for (int i0 = 0; i0 < m0; ++i0) {
+        double tupper = (z0[i0] * sqrtIjm1 - bj * sqrtIj + dThetaIj) / sqrtdIj;
+        double tlower = (-z0[i0] * sqrtIjm1 + a1j * sqrtIj - dThetaIj) / sqrtdIj;
+        sumUpper += h0[i0] * boost_pnorm(tupper);
+        sumLower += h0[i0] * boost_pnorm(tlower);
       }
+      exitProbUpper[j] = sumUpper;
+      exitProbLower[j] = sumLower;
 
       // prepare h0, m0, z0 for the next stage
       if (j < kMax-1) {
-        for (int i=0; i<m; ++i) {
-          h[i] = 0;
-          for (int i0=0; i0<m0; ++i0) {
-            t = (z[i]*sqrtI[j] - z0[i0]*sqrtI[j-1] - dThetaI[j])/sqrt(dI[j]);
-            h[i] += h0[i0]*R::dnorm(t, 0.0, 1.0, 0);
+        for (int i = 0; i < m; ++i) {
+          double sum = 0.0;
+          for (int i0 = 0; i0 < m0; ++i0) {
+            double t = (z[i] * sqrtIj - z0[i0] * sqrtIjm1 - dThetaIj) / sqrtdIj;
+            sum += h0[i0] * boost_dnorm(t);
           }
-          h[i] *= w[i]*sqrt(I1[j]/dI[j]); // factors invariant to i0
+          h[i] = sum * w[i] * sqrtI1dIj; // factors invariant to i0
         }
 
-        h0 = h+0.0; // adding 0.0 to avoid passing by reference
         m0 = m;
-        z0 = z+0.0;
+        h0.resize(m0);
+        z0.resize(m0);
+        for (int i = 0; i < m0; ++i) {
+          h0[i] = h[i];
+          z0[i] = z[i];
+        }
       }
     }
-
   }
 
   // return a list of stagewise exit probabilities
-  return List::create(Named("exitProbUpper") = exitProbUpper,
-                      Named("exitProbLower") = exitProbLower);
-
+  ListCpp exitProb;
+  exitProb.push_back(std::move(exitProbUpper), "exitProbUpper");
+  exitProb.push_back(std::move(exitProbLower), "exitProbLower");
+  return exitProb;
 }
 
 
-// [[Rcpp::export]]
-NumericVector dtpwexpcpp(const NumericVector& q,
-                         const NumericVector& piecewiseSurvivalTime,
-                         const NumericVector& lambda,
-                         const double lowerBound = 0.0,
-                         const bool logd = false) {
-  int n = static_cast<int>(q.size());
-  NumericVector d(n);
-  for (int h=0; h<n; ++h) {
-    if (q[h] <= lowerBound) {
-      d[h] = 0;
+double dtpwexpcpp1(const double q,
+                   const std::vector<double>& piecewiseSurvivalTime,
+                   const std::vector<double>& lambda,
+                   const double lowerBound,
+                   const bool logd) {
+  double d;
+  if (q <= lowerBound) {
+    d = 0.0;
+  } else {
+    std::vector<double> y = {lowerBound, q};
+    std::vector<int> i = findInterval3(y, piecewiseSurvivalTime);
+    double v;
+    int i0 = i[0] - 1;
+    int i1 = i[1] - 1;
+    if (i0 == i1) {
+      v = lambda[i0] * (q - lowerBound);
     } else {
-      NumericVector y = NumericVector::create(lowerBound, q[h]);
-      IntegerVector i = findInterval3(y, piecewiseSurvivalTime, 0,0,0);
-      double v;
-      if (i[0] == i[1]) {
-        v = lambda[i[0]-1]*(q[h] - lowerBound);
-      } else {
-        v = lambda[i[0]-1]*(piecewiseSurvivalTime[i[0]] - lowerBound);
-        for (int j=i[0]; j<i[1]-1; ++j) {
-          v += lambda[j]*(piecewiseSurvivalTime[j+1] -
-            piecewiseSurvivalTime[j]);
-        }
-        v += lambda[i[1]-1]*(q[h] - piecewiseSurvivalTime[i[1]-1]);
+      v = lambda[i0] * (piecewiseSurvivalTime[i0 + 1] - lowerBound);
+      for (int j = i0 + 1; j < i1; ++j) {
+        v += lambda[j] * (piecewiseSurvivalTime[j + 1] - piecewiseSurvivalTime[j]);
       }
-      double w = lambda[i[1]-1];
-      d[h] = w*exp(-v);
+      v += lambda[i1] * (q - piecewiseSurvivalTime[i1]);
+    }
+    d = lambda[i1] * std::exp(-v);
+  }
+  if (logd) d = std::log(d);
+  return d;
+}
+
+// [[Rcpp::export]]
+std::vector<double> dtpwexpcpp(
+    const std::vector<double>& q,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda,
+    const double lowerBound,
+    const bool logd) {
+  int m = static_cast<int>(piecewiseSurvivalTime.size());
+  std::vector t0 = {lowerBound};
+  int i0 = findInterval3(t0, piecewiseSurvivalTime)[0] - 1;
+  int m1 = m - i0;
+  std::vector<double> ch(m1, 0.0);
+  for (int j = 1; j < m1; ++j) {
+    int jj = j + i0 - 1;
+    double lb = (j == 1) ? lowerBound : piecewiseSurvivalTime[jj];
+    ch[j] = ch[j-1] + lambda[jj] * (piecewiseSurvivalTime[jj+1] - lb);
+  }
+
+  std::vector<int> idx = findInterval3(q, piecewiseSurvivalTime);
+  int n = static_cast<int>(q.size());
+  std::vector<double> d(n);
+
+  for (int h = 0; h < n; ++h) {
+    if (q[h] <= lowerBound) {
+      d[h] = 0.0;
+    } else {
+      int i1 = idx[h] - 1;
+      int j1 = i1 + i0;
+      double lb = (j1 == i0) ? lowerBound : piecewiseSurvivalTime[j1];
+      double ch1 = ch[i1] + lambda[i1] * (q[h] - lb);
+      d[h] = lambda[i1] * std::exp(-ch1);
     }
   }
 
-  if (logd) d = log(d);
+  if (logd) {
+    for (int h = 0; h < n; ++h) {
+      d[h] = std::log(d[h]);
+    }
+  }
 
   return d;
 }
 
 
-// [[Rcpp::export]]
 double ptpwexpcpp1(const double q,
-                   const NumericVector& piecewiseSurvivalTime,
-                   const NumericVector& lambda,
-                   const double lowerBound = 0.0,
-                   const bool lowertail = true,
-                   const bool logp = false) {
+                   const std::vector<double>& piecewiseSurvivalTime,
+                   const std::vector<double>& lambda,
+                   const double lowerBound,
+                   const bool lowertail,
+                   const bool logp) {
 
   double p;
   if (q <= lowerBound) {
-    p = 0;
+    p = 0.0;
   } else {
-    NumericVector y = NumericVector::create(lowerBound, q);
-    IntegerVector i = findInterval3(y, piecewiseSurvivalTime, 0,0,0);
+    std::vector<double> y = {lowerBound, q};
+    std::vector<int> i = findInterval3(y, piecewiseSurvivalTime);
     double v;
     if (i[0] == i[1]) {
-      v = lambda[i[0]-1]*(q - lowerBound);
+      v = lambda[i[0] - 1] * (q - lowerBound);
     } else {
-      v = lambda[i[0]-1]*(piecewiseSurvivalTime[i[0]] - lowerBound);
-      for (int j=i[0]; j<i[1]-1; ++j) {
-        v += lambda[j]*(piecewiseSurvivalTime[j+1] -
+      v = lambda[i[0] - 1] * (piecewiseSurvivalTime[i[0]] - lowerBound);
+      for (int j = i[0]; j < i[1] - 1; ++j) {
+        v += lambda[j] * (piecewiseSurvivalTime[j + 1] -
           piecewiseSurvivalTime[j]);
       }
-      v += lambda[i[1]-1]*(q - piecewiseSurvivalTime[i[1]-1]);
+      v += lambda[i[1] - 1] * (q - piecewiseSurvivalTime[i[1] - 1]);
     }
-    p = 1 - exp(-v);
+    p = 1.0 - std::exp(-v);
   }
 
   if (!lowertail) p = 1.0 - p;
-  if (logp) p = log(p);
+  if (logp) p = std::log(p);
 
   return p;
 }
 
-
 // [[Rcpp::export]]
-NumericVector ptpwexpcpp(const NumericVector& q,
-                         const NumericVector& piecewiseSurvivalTime,
-                         const NumericVector& lambda,
-                         const double lowerBound = 0.0,
-                         const bool lowertail = true,
-                         const bool logp = false) {
-  int n = static_cast<int>(q.size());
-  NumericVector p(n);
-  for (int h=0; h<n; ++h) {
-    p[h] = ptpwexpcpp1(q[h], piecewiseSurvivalTime, lambda,
-                           lowerBound, lowertail, logp);
-  }
-
-  return p;
-}
-
-
-// [[Rcpp::export]]
-double qtpwexpcpp1(const double p,
-                   const NumericVector& piecewiseSurvivalTime,
-                   const NumericVector& lambda,
-                   const double lowerBound = 0.0,
-                   const bool lowertail = true,
-                   const bool logp = false) {
+std::vector<double> ptpwexpcpp(
+    const std::vector<double>& q,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda,
+    const double lowerBound,
+    const bool lowertail,
+    const bool logp) {
   int m = static_cast<int>(piecewiseSurvivalTime.size());
-  double q, u = p, v, v1;
-
-  // cumulative hazard from lowerBound until the quantile
-  if (logp) u = exp(p);
-  if (!lowertail) u = 1.0 - u;
-
-  v1 = -log(1.0 - u);
-
-  // identify the time interval containing the lowerBound
-  int j;
-  for (j=0; j<m; ++j) {
-    if (piecewiseSurvivalTime[j] > lowerBound) break;
+  std::vector t0 = {lowerBound};
+  int i0 = findInterval3(t0, piecewiseSurvivalTime)[0] - 1;
+  int m1 = m - i0;
+  std::vector<double> ch(m1, 0.0);
+  for (int j = 1; j < m1; ++j) {
+    int jj = j + i0 - 1;
+    double lb = (j == 1) ? lowerBound : piecewiseSurvivalTime[jj];
+    ch[j] = ch[j-1] + lambda[jj] * (piecewiseSurvivalTime[jj+1] - lb);
   }
-  int j1 = (j==0 ? 0 : j-1); // to handle floating point precision
 
-  if (j1 == m-1) { // in the last interval
-    q = (lambda[j1]==0.0 ? 1.0e+8 : v1/lambda[j1] + lowerBound);
-  } else {
-    // accumulate the pieces on the cumulative hazard scale
-    v = 0;
-    for (j=j1; j<m-1; ++j) {
-      if (j==j1) {
-        v += lambda[j]*(piecewiseSurvivalTime[j+1] - lowerBound);
-      } else {
-        v += lambda[j]*(piecewiseSurvivalTime[j+1] -
-          piecewiseSurvivalTime[j]);
-      }
-      if (v >= v1) break;
-    }
+  std::vector<int> idx = findInterval3(q, piecewiseSurvivalTime);
+  int n = static_cast<int>(q.size());
+  std::vector<double> p(n);
 
-    if (j == m-1) { // in the last interval
-      q = (lambda[j]==0.0 ? 1.0e+8 :
-             (v1 - v)/lambda[j] + piecewiseSurvivalTime[j]);
+  for (int h = 0; h < n; ++h) {
+    if (q[h] <= lowerBound) {
+      p[h] = 0.0;
     } else {
-      q = (lambda[j]==0.0 ? 1.0e+8 :
-             piecewiseSurvivalTime[j+1] - (v - v1)/lambda[j]);
+      int i1 = idx[h] - 1;
+      int j1 = i1 + i0;
+      double lb = (j1 == i0) ? lowerBound : piecewiseSurvivalTime[j1];
+      double ch1 = ch[i1] + lambda[i1] * (q[h] - lb);
+      p[h] = 1.0 - std::exp(-ch1);
     }
   }
 
-  return q;
+  if (!lowertail) {
+    for (int h = 0; h < n; ++h) {
+      p[h] = 1.0 - p[h];
+    }
+  }
+
+  if (logp) {
+    for (int h = 0; h < n; ++h) {
+      p[h] = std::log(p[h]);
+    }
+  }
+
+  return p;
 }
 
 
+double qtpwexpcpp1(const double p,
+                   const std::vector<double>& piecewiseSurvivalTime,
+                   const std::vector<double>& lambda,
+                   const double lowerBound,
+                   const bool lowertail,
+                   const bool logp) {
+  int m = static_cast<int>(piecewiseSurvivalTime.size());
+  if (m == 0 || static_cast<int>(lambda.size()) != m)
+    throw std::invalid_argument("Invalid piecewise model inputs.");
+  double u = logp ? std::exp(p) : p;
+  if (!lowertail) u = 1.0 - u;
+  if (u <= 0.0) return lowerBound;
+  if (u >= 1.0) return std::numeric_limits<double>::infinity();
+  double v1 = -log1p(-u);
+  int j = 0;
+  while (j < m && piecewiseSurvivalTime[j] <= lowerBound) ++j;
+  int j1 = (j == 0) ? 0 : (j - 1);
+  double v = 0.0;
+  if (j1 == m - 1) {
+    double lj = lambda[j1];
+    if (lj <= 0.0) return std::numeric_limits<double>::infinity();
+    return lowerBound + v1 / lj;
+  }
+  for (j = j1; j < m - 1; ++j) {
+    double dt = (j == j1) ? piecewiseSurvivalTime[j + 1] - lowerBound :
+    piecewiseSurvivalTime[j + 1] - piecewiseSurvivalTime[j];
+    double lj = lambda[j];
+    if (lj > 0.0) v += lj * dt;
+    if (v >= v1) break;
+  }
+  double lj = lambda[j];
+  if (lj <= 0.0) return std::numeric_limits<double>::infinity();
+  if (j == m - 1) {
+    double dt = (v1 - v) / lj;
+    return piecewiseSurvivalTime[j] + dt;
+  }
+  double dt = (v - v1) / lj;
+  return piecewiseSurvivalTime[j + 1] - dt;
+}
+
 // [[Rcpp::export]]
-NumericVector qtpwexpcpp(const NumericVector& p,
-                         const NumericVector& piecewiseSurvivalTime,
-                         const NumericVector& lambda,
-                         const double lowerBound = 0.0,
-                         const bool lowertail = true,
-                         const bool logp = false) {
+std::vector<double> qtpwexpcpp(
+    const std::vector<double>& p,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda,
+    const double lowerBound,
+    const bool lowertail,
+    const bool logp) {
   int n = static_cast<int>(p.size());
-  NumericVector q(n);
-  for (int h=0; h<n; ++h) {
+  std::vector<double> q(n);
+  for (int h = 0; h < n; ++h) {
     q[h] = qtpwexpcpp1(p[h], piecewiseSurvivalTime, lambda,
                        lowerBound, lowertail, logp);
   }
@@ -669,575 +790,538 @@ NumericVector qtpwexpcpp(const NumericVector& p,
 
 // mean and variance of a truncated piecewise exponential distribution
 // [[Rcpp::export]]
-List mtpwexpcpp(const NumericVector& piecewiseSurvivalTime,
-                const NumericVector& lambda,
-                const double lowerBound = 0.0) {
-
+ListCpp mtpwexpcpp(const std::vector<double>& piecewiseSurvivalTime,
+                   const std::vector<double>& lambda,
+                   const double lowerBound) {
   int m = static_cast<int>(piecewiseSurvivalTime.size());
-  int j0 = findInterval3(NumericVector::create(lowerBound),
-                         piecewiseSurvivalTime, 0,0,0)[0];
-  double v = 0.0;
-  for (int i=0; i<j0-1; ++i) {
-    v += lambda[i]*(piecewiseSurvivalTime[i+1] - piecewiseSurvivalTime[i]);
+  if (lambda[m-1] == 0.0) {
+    throw std::invalid_argument("The last hazard rate must be positive.");
   }
 
-  double w = v + lambda[j0-1]*(lowerBound - piecewiseSurvivalTime[j0-1]);
-  w = exp(-w);
+  std::vector t0 = {lowerBound};
+  int i0 = findInterval3(t0, piecewiseSurvivalTime)[0] - 1;
 
-  double s1 = 0.0, s2 = 0.0;
-  for (int j=j0-1; j<m; ++j) {
-    double t1 = (j==j0-1 ? lowerBound : piecewiseSurvivalTime[j]);
-    double t2 = (j==m-1 ? 1.0e+8 : piecewiseSurvivalTime[j+1]);
-    if (j > j0-1)
-      v += lambda[j-1]*(piecewiseSurvivalTime[j]- piecewiseSurvivalTime[j-1]);
+  double s1 = 0.0, s2 = 0.0, v = 0.0;
+  for (int j = i0; j < m; ++j) {
+    double lb = (j == i0) ? lowerBound : piecewiseSurvivalTime[j];
+    double ub = (j == m-1) ? POS_INF : piecewiseSurvivalTime[j+1];
+
+    if (j > i0) {
+      double lb0 = (j == i0 + 1) ? lowerBound : piecewiseSurvivalTime[j-1];
+      v += lambda[j-1] * (piecewiseSurvivalTime[j] - lb0);
+    }
 
     if (lambda[j] == 0.0) {
-      s1 += exp(-v)*(t2 - t1);
-      s2 += exp(-v)*(t2*t2 - t1*t1);
+      s1 += std::exp(-v) * (ub - lb);
+      s2 += std::exp(-v) * (ub*ub - lb*lb);
     } else {
-      double a1 = exp(-lambda[j]*(t1 - piecewiseSurvivalTime[j]));
-      double a2 = exp(-lambda[j]*(t2 - piecewiseSurvivalTime[j]));
-      s1 += exp(-v)*1.0/lambda[j]*(a1 - a2);
+      double a1, a2;
+      if (j < m - 1) {
+        double a0 = std::exp(-lambda[j] * (ub - lb));
+        a1 = 1.0 - a0;
+        a2 = (1.0 + lambda[j] * lb) - (1.0 + lambda[j] * ub) * a0;
+      } else {
+        a1 = 1.0;
+        a2 = 1.0 + lambda[j] * lb;
+      }
 
-      a1 *= (1 + lambda[j]*t1);
-      a2 *= (1 + lambda[j]*t2);
-      s2 += exp(-v)*2.0/(lambda[j]*lambda[j])*(a1 - a2);
+      double ilam = 1.0 / lambda[j];
+      s1 += std::exp(-v) * ilam * a1;
+      s2 += std::exp(-v) * 2.0 * ilam * ilam * a2;
     }
   }
 
-  double m1 = s1/w + lowerBound;
-  double m2 = s2/w + lowerBound*lowerBound;
+  double m1 = s1 + lowerBound;
+  double m2 = s2 + lowerBound * lowerBound;
 
-  return List::create(
-    Named("mean") = m1,
-    Named("variance") = m2 - m1*m1
-  );
+  ListCpp result;
+  result.push_back(m1, "mean");
+  result.push_back(m2 - m1 * m1, "variance");
+  return result;
 }
 
 
-// [[Rcpp::export]]
-NumericVector rtpwexpcpp(
-    const int n = NA_INTEGER,
-    const NumericVector& piecewiseSurvivalTime = NA_REAL,
-    const NumericVector& lambda = NA_REAL,
-    const double lowerBound = 0.0) {
+std::vector<double> getBoundcpp(
+    const int k,
+    const std::vector<double>& informationRates,
+    const double alpha,
+    const std::string& typeAlphaSpending,
+    const double parameterAlphaSpending,
+    const std::vector<double>& userAlphaSpending,
+    const std::vector<double>& spendingTime,
+    const std::vector<unsigned char>& efficacyStopping) {
 
-  NumericVector p(n);
-  for (int i=0; i<n; ++i) {
-    p[i] = R::runif(0,1);
-  }
+  if (k <= 0) throw std::invalid_argument("k must be provided and positive.");
 
-  return qtpwexpcpp(p, piecewiseSurvivalTime, lambda, lowerBound, 1, 0);
-}
-
-
-// [[Rcpp::export]]
-NumericVector getBoundcpp(
-    const int k = NA_INTEGER,
-    const NumericVector& informationRates = NA_REAL,
-    const double alpha = NA_REAL,
-    const String typeAlphaSpending = NA_STRING,
-    const double parameterAlphaSpending = NA_REAL,
-    const NumericVector& userAlphaSpending = NA_REAL,
-    const NumericVector& spendingTime = NA_REAL,
-    const LogicalVector& efficacyStopping = NA_LOGICAL) {
-
-  NumericVector informationRates1 = clone(informationRates);
-  NumericVector spendingTime1 = clone(spendingTime);
-  LogicalVector efficacyStopping1 = clone(efficacyStopping);
-
-  if (k == NA_INTEGER) {
-    stop("k must be provided");
-  }
-
-  if (is_false(any(is_na(informationRates)))) {
-    if (informationRates.size() != k) {
-      stop("Invalid length for informationRates");
-    } else if (informationRates[0] <= 0) {
-      stop("Elements of informationRates must be positive");
-    } else if (k > 1 && is_true(any(diff(informationRates) <= 0))) {
-      stop("Elements of informationRates must be increasing");
-    } else if (informationRates[k-1] > 1) {
-      stop("informationRates must not exceed 1");
-    }
+  // infoRates: if missing create 1/k, 2/k, ..., k/k
+  std::vector<double> infoRates(k);
+  if (none_na(informationRates)) {
+    if (static_cast<int>(informationRates.size()) != k)
+      throw std::invalid_argument("Invalid length for informationRates.");
+    if (informationRates[0] <= 0.0)
+      throw std::invalid_argument("informationRates must be positive.");
+    if (any_nonincreasing(informationRates))
+      throw std::invalid_argument("informationRates must be increasing.");
+    if (informationRates[k-1] > 1.0)
+      throw std::invalid_argument("informationRates must not exceed 1.");
+    infoRates = informationRates; // copy
   } else {
-    IntegerVector tem = seq_len(k);
-    informationRates1 = NumericVector(tem)/(k+0.0);
+    for (int i = 0; i < k; ++i)
+      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(k);
   }
 
-  if (is_false(any(is_na(spendingTime)))) {
-    if (spendingTime.size() != k) {
-      stop("Invalid length for spendingTime");
-    } else if (spendingTime[0] <= 0) {
-      stop("Elements of spendingTime must be positive");
-    } else if (k > 1 && is_true(any(diff(spendingTime) <= 0))) {
-      stop("Elements of spendingTime must be increasing");
-    } else if (spendingTime[k-1] > 1) {
-      stop("spendingTime must not exceed 1");
-    }
+  // spendTime: default to infoRates if missing
+  std::vector<double> spendTime;
+  if (none_na(spendingTime)) {
+    if (static_cast<int>(spendingTime.size()) != k)
+      throw std::invalid_argument("Invalid length for spendingTime.");
+    if (spendingTime[0] <= 0.0)
+      throw std::invalid_argument("Elements of spendingTime must be positive.");
+    if (any_nonincreasing(spendingTime))
+      throw std::invalid_argument("Elements of spendingTime must be increasing.");
+    if (spendingTime[k-1] > 1.0)
+      throw std::invalid_argument("spendingTime must not exceed 1.");
+    spendTime = spendingTime;
   } else {
-    spendingTime1 = clone(informationRates1);
+    spendTime = infoRates;
   }
 
-  if (is_false(any(is_na(efficacyStopping)))) {
-    if (efficacyStopping.size() != k) {
-      stop("Invalid length for efficacyStopping");
-    } else if (efficacyStopping[k-1] != 1) {
-      stop("efficacyStopping must end with 1");
-    } else if (is_false(all((efficacyStopping == 1) |
-      (efficacyStopping == 0)))) {
-      stop("Elements of efficacyStopping must be 1 or 0");
-    }
+  // effStopping: default to all 1s if missing
+  std::vector<unsigned char> effStopping;
+  if (none_na(efficacyStopping)) {
+    if (static_cast<int>(efficacyStopping.size()) != k)
+      throw std::invalid_argument("Invalid length for efficacyStopping.");
+    if (efficacyStopping[k-1] != 1)
+      throw std::invalid_argument("efficacyStopping must end with 1.");
+    effStopping = efficacyStopping; // copy
   } else {
-    efficacyStopping1 = rep(1, k);
+    effStopping.assign(k, 1);
   }
 
+  // asf (alpha spending function) to lower-case
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
-  double asfpar = parameterAlphaSpending;
 
-  if (asf=="user") {
-    if (is_true(any(is_na(userAlphaSpending)))) {
-      stop("userAlphaSpending must be specified");
-    } else if (userAlphaSpending.size() < k) {
-      stop("Insufficient length of userAlphaSpending");
-    } else if (userAlphaSpending[0] < 0) {
-      stop("Elements of userAlphaSpending must be nonnegative");
-    } else if (k > 1 && is_true(any(diff(userAlphaSpending) < 0))) {
-      stop("Elements of userAlphaSpending must be nondecreasing");
-    } else if (userAlphaSpending[k-1] > alpha) {
-      stop("userAlphaSpending must not exceed the specified alpha");
+  // userAlphaSpending checks when asf == "user"
+  if (asf == "user") {
+    if (!none_na(userAlphaSpending))
+      throw std::invalid_argument("userAlphaSpending must be specified.");
+    if (static_cast<int>(userAlphaSpending.size()) < k)
+      throw std::invalid_argument("Insufficient length of userAlphaSpending.");
+    if (userAlphaSpending[0] < 0.0)
+      throw std::invalid_argument("userAlphaSpending must be nonnegative.");
+    if (any_nonincreasing(userAlphaSpending))
+      throw std::invalid_argument("userAlphaSpending must be nondecreasing.");
+    if (userAlphaSpending[k-1] > alpha)
+      throw std::invalid_argument("userAlphaSpending must not exceed alpha.");
+  }
+
+  if (asf == "of" || asf == "p" || asf == "wt") {
+    bool equal_spacing = true;
+    for (int i = 0; i < k; ++i) {
+      double expected = static_cast<double>(i+1) / static_cast<double>(k);
+      if (std::fabs(infoRates[i] - expected) > 1e-6) {
+        equal_spacing = false; break;
+      }
+    }
+    if (!equal_spacing) {
+      thread_utils::push_thread_warning(
+        "Equal spacing is used for OF, P, and WT boundaries");
     }
   }
 
-  if (asf=="of" || asf=="p" || asf=="wt") {
-    IntegerVector tem = seq_len(k);
-    NumericVector informationRates2 = NumericVector(tem)/(k+0.0);
-    if (max(abs(informationRates1 - informationRates2)) > 1.0e-6) {
-      warning("Equal spacing is used for OF, P, and WT boundaries");
-    }
+  if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
+      std::isnan(parameterAlphaSpending)) {
+    throw std::invalid_argument("Missing value for parameterAlphaSpending.");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
-    stop("Missing value for parameterAlphaSpending");
+  if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
+    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD.");
   }
 
-  if (asf=="sfkd" && asfpar <= 0) {
-    stop ("parameterAlphaSpending must be positive for sfKD");
-  }
-
-  NumericVector theta(k); // mean values under H0, initialized to zero
-  IntegerVector tem = seq_len(k);
-  NumericVector I = NumericVector(tem);
-  NumericVector t = clone(informationRates1); // info time for test stat
-  NumericVector s = clone(spendingTime1); // spending time for alpha-spending
-  NumericVector criticalValues(k);
+  std::vector<double> criticalValues(k);
 
   if (asf == "none") {
-    for (int i=0; i<k-1; ++i) {
-      criticalValues[i] = 6.0;
-    }
-    criticalValues[k-1] = R::qnorm(1-alpha, 0, 1, 1, 0);
-  } else if (asf == "of" || asf == "p" || asf == "wt") {
+    for (int i = 0; i < k-1; ++i) criticalValues[i] = 6.0;
+    criticalValues[k-1] = boost_qnorm(1.0 - alpha);
+    return criticalValues;
+  }
+
+  if (asf == "of" || asf == "p" || asf == "wt") {
     double Delta;
-    if (asf == "of") {
-      Delta = 0;
-    } else if (asf == "p") {
-      Delta = 0.5;
-    } else {
-      Delta = asfpar;
+    if (asf == "of") Delta = 0.0;
+    else if (asf == "p") Delta = 0.5;
+    else Delta = parameterAlphaSpending; // parameterAlphaSpending holds delta for WT
+
+    // for a given multiplier, compute cumulative upper exit probability - alpha
+    std::vector<double> l(k, -6.0);
+    std::vector<double> theta(k, 0.0);
+    std::vector<double> I(k), u0(k);
+    for (int i = 0; i < k; ++i) {
+      I[i] = static_cast<double>(i+1) / static_cast<double>(k);
+      u0[i] = std::pow(I[i], Delta - 0.5);
     }
 
-    auto f = [k, alpha, Delta, theta, I,
-              efficacyStopping1] (double aval)->double {
-      NumericVector u(k), l(k);
-      for (int i=0; i<k; ++i) {
-        u[i] = aval*pow((i+1.0)/k, Delta-0.5);
-        if (!efficacyStopping1[i]) u[i] = 6.0;
-        l[i] = -6.0;
+    auto f = [k, alpha, u0, l, theta, I, effStopping](double aval)->double {
+      std::vector<double> u(k);
+      for (int i = 0; i < k; ++i) {
+        u[i] = aval * u0[i];
+        if (!effStopping[i]) u[i] = 6.0;
       }
 
-      List probs = exitprobcpp(u, l, theta, I);
-      double cpu = sum(NumericVector(probs[0]));
+      ListCpp probs = exitprobcpp(u, l, theta, I);
+      auto v = probs.get<std::vector<double>>("exitProbUpper");
+      double cpu = std::accumulate(v.begin(), v.end(), 0.0);
       return cpu - alpha;
     };
 
-    double cwt = brent(f, 0.0, 10.0, 1.0e-6);
-    for (int i=0; i<k; ++i) {
-      criticalValues[i] = cwt*pow((i+1.0)/k, Delta-0.5);
-      if (!efficacyStopping1[i]) criticalValues[i] = 6.0;
+    double cwt = brent(f, 0.0, 10.0, 1e-6);
+    for (int i = 0; i < k; ++i) {
+      criticalValues[i] = cwt * u0[i];
+      if (!effStopping[i]) criticalValues[i] = 6.0;
     }
-  } else if (asf == "sfof" || asf == "sfp" || asf == "sfkd" ||
-    asf == "sfhsd" || asf == "user") {
-
-    // stage 1
-    double cumAlphaSpent;
-    if (asf == "user") {
-      cumAlphaSpent = userAlphaSpending[0];
-    } else {
-      cumAlphaSpent = errorSpentcpp(s[0], alpha, asf, asfpar);
-    }
-
-    if (!efficacyStopping1[0]) {
-      criticalValues[0] = 6.0;
-    } else {
-      criticalValues[0] = R::qnorm(1 - cumAlphaSpent, 0, 1, 1, 0);
-    }
-
-
-    // lambda expression for finding the critical Values at stage k
-    int k1=0;
-    auto f = [&k1, &cumAlphaSpent, &criticalValues,
-              theta, t](double aval)->double {
-                NumericVector u(k1+1), l(k1+1);
-                for (int i=0; i<k1; ++i) {
-                  u[i] = criticalValues[i];
-                  l[i] = -6.0;
-                }
-                u[k1] = aval;
-                l[k1] = -6.0;
-
-                IntegerVector idx = Range(0,k1);
-                List probs = exitprobcpp(u, l, theta[idx], t[idx]);
-                double cpu = sum(NumericVector(probs[0]));
-                return cpu - cumAlphaSpent;
-              };
-
-    // subsequent stages
-    for (k1=1; k1<k; ++k1) {
-      if (asf == "user") {
-        cumAlphaSpent = userAlphaSpending[k1];
-      } else {
-        cumAlphaSpent = errorSpentcpp(s[k1], alpha, asf, asfpar);
-      }
-
-      if (!efficacyStopping1[k1]) {
-        criticalValues[k1] = 6.0;
-      } else {
-        if (f(6.0) > 0) { // no alpha spent at current visit
-          criticalValues[k1] = 6.0;
-        } else {
-          criticalValues[k1] = brent(f, -5.0, 6.0, 1.0e-6);
-        }
-      }
-    }
-  } else {
-    stop("Invalid value for typeAlphaSpending");
+    return criticalValues;
   }
 
-  return criticalValues;
+  if (asf == "sfof" || asf == "sfp" || asf == "sfkd" ||
+      asf == "sfhsd" || asf == "user") {
+    // stage 1
+    double cumAlpha;
+    if (asf == "user") cumAlpha = userAlphaSpending[0];
+    else cumAlpha = errorSpentcpp(spendTime[0], alpha, asf,
+                                  parameterAlphaSpending);
+
+    if (!effStopping[0]) criticalValues[0] = 6.0;
+    else criticalValues[0] = boost_qnorm(1.0 - cumAlpha);
+
+    // lambda expression for finding the critical Values at stage k
+    int k1 = 0;
+    auto f = [&k1, &cumAlpha, &criticalValues, infoRates](double aval)->double {
+      std::vector<double> u(k1+1);
+      for (int i = 0; i < k1; ++i) u[i] = criticalValues[i];
+      u[k1] = aval;
+      std::vector<double> l(k1+1, -6.0);
+      std::vector<double> theta(k1+1, 0.0);
+      std::vector<double> I(infoRates.begin(), infoRates.begin() + k1 + 1);
+
+      ListCpp probs = exitprobcpp(u, l, theta, I);
+      auto v = probs.get<std::vector<double>>("exitProbUpper");
+      double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+      return cpu - cumAlpha;
+    };
+
+    // subsequent stages
+    for (k1 = 1; k1 < k; ++k1) {
+      if (asf == "user") cumAlpha = userAlphaSpending[k1];
+      else cumAlpha = errorSpentcpp(spendTime[k1], alpha, asf,
+                                    parameterAlphaSpending);
+
+      if (!effStopping[k1]) {
+        criticalValues[k1] = 6.0;
+        continue;
+      }
+
+      double f_6 = f(6.0);
+      if (f_6 > 0.0) { // no alpha spent at current visit
+        criticalValues[k1] = 6.0;
+      } else {
+        auto f_for_brent = [&](double x)->double {
+          if (x == 6.0) return f_6; // avoid recomputation at 6.0
+          return f(x);
+        };
+        criticalValues[k1] = brent(f_for_brent, -5.0, 6.0, 1e-6);
+      }
+    }
+
+    return criticalValues;
+  }
+
+  throw std::invalid_argument("Invalid value for typeAlphaSpending.");
+}
+
+//' @title Efficacy Boundaries for Group Sequential Design
+//' @description Obtains the efficacy stopping boundaries for a group
+//' sequential design.
+//'
+//' @param k Look number for the current analysis.
+//' @param informationRates Information rates up to the current look. Must be
+//'   increasing and less than or equal to 1.
+//' @inheritParams param_alpha
+//' @inheritParams param_typeAlphaSpending
+//' @inheritParams param_parameterAlphaSpending
+//' @inheritParams param_userAlphaSpending
+//' @param spendingTime A vector of length \code{k} for the error spending
+//'   time at each analysis. Must be increasing and less than or equal to 1.
+//'   Defaults to missing, in which case, it is the same as
+//'   \code{informationRates}.
+//' @inheritParams param_efficacyStopping
+//'
+//' @details
+//' If \code{typeAlphaSpending} is "OF", "P", or "WT", then the boundaries
+//' will be based on equally spaced looks.
+//'
+//' @return A numeric vector of critical values up to the current look.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @examples
+//'
+//' getBound(k = 2, informationRates = c(0.5,1),
+//'          alpha = 0.025, typeAlphaSpending = "sfOF")
+//'
+//' @export
+// [[Rcpp::export]]
+Rcpp::NumericVector getBound(
+    const int k = NA_INTEGER,
+    const Rcpp::NumericVector& informationRates = NA_REAL,
+    const double alpha = 0.025,
+    const std::string& typeAlphaSpending = "sfOF",
+    const double parameterAlphaSpending = NA_REAL,
+    const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
+    const Rcpp::NumericVector& spendingTime = NA_REAL,
+    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL) {
+
+  auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
+  auto effStopping = convertLogicalVector(efficacyStopping);
+  auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
+  auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
+
+  std::vector<double> result = getBoundcpp(
+    k, infoRates, alpha, typeAlphaSpending, parameterAlphaSpending,
+    userAlpha, spendTime, effStopping);
+
+  return Rcpp::wrap(result);
 }
 
 
-List getPower(const double alpha,
-              const int kMax,
-              const NumericVector& b,
-              const NumericVector& theta,
-              const NumericVector& I,
-              const std::string bsf,
-              const double bsfpar,
-              const NumericVector& st,
-              const LogicalVector& futilityStopping,
-              const NumericVector& w) { // w is the sqrt of variance ratio
+ListCpp getPower(
+    const double alpha,
+    const int kMax,
+    const std::vector<double>& b,
+    const std::vector<double>& theta,
+    const std::vector<double>& I,
+    const std::string& bsf,
+    const double bsfpar,
+    const std::vector<double>& st,
+    const std::vector<unsigned char>& futilityStopping,
+    const std::vector<double>& w) { // w is the sqrt of variance ratio
 
-  double beta;
-  NumericVector a(kMax);
-  List probs;
-  auto f = [kMax, b, futilityStopping, &a,
-            bsf, bsfpar, theta, I, st, w](double beta)->double {
-              // initialize futility bound to be updated
-              a = NumericVector(kMax);
-              double eps;
+  double thetaSqrtI0 = theta[0] * std::sqrt(I[0]);
+  std::vector<double> a(kMax, 0.0);
+  std::vector<double> u(kMax), l(kMax, 0.0);
+  for (int i = 0; i < kMax; ++i) u[i] = b[i] * w[i];
 
-              // first stage
-              int k = 0;
-              double cb = errorSpentcpp(st[0], beta, bsf, bsfpar);
-              if (!futilityStopping[0]) {
-                a[0] = -6.0;
-              } else {
-                eps = R::pnorm(b[0]*w[0] - theta[0]*sqrt(I[0]), 0, 1, 1, 0)
-                      - cb;
-                if (eps < 0) return -1.0; // to decrease beta
-                a[0] = (R::qnorm(cb, 0, 1, 1, 0) + theta[0]*sqrt(I[0]))/w[0];
-              }
+  // reusable buffers for prefixes
+  std::vector<double> u1; u1.reserve(kMax);
+  std::vector<double> l1; l1.reserve(kMax);
+  std::vector<double> theta1; theta1.reserve(kMax);
+  std::vector<double> I1; I1.reserve(kMax);
 
-              // lambda expression for finding futility bound at stage k
-              auto g = [&k, &cb, b, &a, theta, I, w](double aval)->double {
-                NumericVector u(k+1), l(k+1);
-                for (int i=0; i<k; ++i) {
-                  u[i] = b[i]*w[i];
-                  l[i] = a[i]*w[i];
-                }
-                u[k] = 6.0;
-                l[k] = aval*w[k];
+  auto f = [&](double x) -> double {
+    // reset futility bounds
+    std::fill(a.begin(), a.end(), 0.0);
+    double eps = 0.0;
 
-                IntegerVector idx = Range(0,k);
-                List probs = exitprobcpp(u, l, theta[idx], I[idx]);
-                double cpl = sum(NumericVector(probs[1]));
-                return cpl - cb;
-              };
+    // first stage
+    int k = 0;
+    double cb = errorSpentcpp(st[0], x, bsf, bsfpar); // cumulative beta spent
+    if (!futilityStopping[0]) {
+      a[0] = -6.0;
+    } else {
+      eps = boost_pnorm(u[0] - thetaSqrtI0) - cb;
+      if (eps < 0.0) return -1.0; // to decrease beta
+      a[0] = (boost_qnorm(cb) + thetaSqrtI0) / w[0];
+    }
 
-              for (k=1; k<kMax; ++k) {
-                cb = errorSpentcpp(st[k], beta, bsf, bsfpar);
+    // lambda expression for finding futility bound at stage k
+    auto g = [&](double aval) -> double {
+      u1.resize(k + 1);
+      l1.resize(k + 1);
+      theta1.resize(k + 1);
+      I1.resize(k + 1);
+      if (k > 0) {
+        std::memcpy(u1.data(), u.data(), k * sizeof(double));
+        std::memcpy(l1.data(), l.data(), k * sizeof(double));
+      }
+      u1[k] = 6.0;
+      l1[k] = aval * w[k];
 
-                if (!futilityStopping[k]) {
-                  a[k] = -6.0;
-                } else {
-                  eps = g(b[k]);
+      std::memcpy(theta1.data(), theta.data(), (k + 1) * sizeof(double));
+      std::memcpy(I1.data(), I.data(), (k + 1) * sizeof(double));
 
-                  if (g(-6.0) > 0) { // no beta spent at current visit
-                    a[k] = -6.0;
-                  } else if (eps > 0) {
-                    a[k] = brent(g, -6.0, b[k], 1.0e-6);
-                  } else if (k < kMax-1) {
-                    return -1.0;
-                  }
-                }
-              }
+      ListCpp probs = exitprobcpp(u1, l1, theta1, I1);
+      auto v = probs.get<std::vector<double>>("exitProbLower");
+      double cpl = std::accumulate(v.begin(), v.end(), 0.0);
+      return cpl - cb;
+    };
 
-              return eps;
-            };
+    for (k = 1; k < kMax; ++k) {
+      l[k-1] = a[k-1] * w[k-1];
+      cb = errorSpentcpp(st[k], x, bsf, bsfpar);
+      if (!futilityStopping[k]) {
+        a[k] = -6.0;
+      } else {
+        double bk = b[k];
+        eps = g(bk);
+        double g_minus6 = g(-6.0);
 
-  double v1 = f(0.0001), v2 = f(1-alpha);
+        if (g_minus6 > 0.0) { // no beta spent at current visit
+          a[k] = -6.0;
+        } else if (eps > 0.0) {
+          auto g_for_brent = [&](double x)->double {
+            if (x == -6.0) return g_minus6;  // avoid recomputation at 6.0
+            if (x == bk) return eps;         // avoid recomputation at b[k]
+            return g(x);
+          };
+          a[k] = brent(g_for_brent, -6.0, bk, 1e-6);
+        } else if (k < kMax-1) {
+          return -1.0;
+        }
+      }
+    }
 
-  if (v1 == -1.0 || (v1 < 0 && a[kMax-1] == 0)) {
-    stop("Power must be less than 0.9999 to use beta spending");
-  } else if (v2 > 0) {
-    stop("Power must be greater than alpha to use beta spending");
+    return eps;
+  };
+
+  double v1 = f(0.0001), v2 = f(1.0 - alpha);
+  double beta = 0.0;
+  ListCpp probs;
+  if (v1 == -1.0 || (v1 < 0.0 && a[kMax-1] == 0.0)) {
+    throw std::invalid_argument("Power must be less than 0.9999.");
+  } else if (v2 > 0.0) {
+    throw std::invalid_argument("Power must be greater than alpha.");
   } else {
-    beta = brent(f, 0.0001, 1-alpha, 1.0e-6);
+    beta = brent(f, 0.0001, 1.0 - alpha, 1e-6);
     a[kMax-1] = b[kMax-1];
-    probs = exitprobcpp(b*w, a*w, theta, I);
+    l[kMax-1] = a[kMax-1] * w[kMax-1];
+    probs = exitprobcpp(u, l, theta, I);
   }
 
-  List result = List::create(
-    _["beta"] = beta,
-    _["futilityBounds"] = a,
-    _["probs"] = probs);
-
+  ListCpp result;
+  result.push_back(beta, "beta");
+  result.push_back(std::move(a), "futilityBounds");
+  result.push_back(std::move(probs), "probs");
   return result;
 }
 
 
-//' @title Integration With Respect to a Normal Density
-//' @description Integrate a function f(theta) with respect to a normal
-//' density of theta.
-//'
-//' @param f Name of the univariate objective function.
-//' @param mu The mean of the normal distribution for theta.
-//' @param sigma The standard deviation of the normal distribution for theta.
-//' @param a One end of the interval bracket.
-//' @param b The other end of the interval bracket.
-//'
-//' @return The value of the integration:
-//'   integrate(function(theta) f(theta)*dnorm(theta, mu, sigma), a, b)/
-//'   (pnorm(b, mu, sigma) - pnorm(a, mu, sigma)).
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @export
-//'
-// [[Rcpp::plugins(cpp11)]]
+// Integrate a function f(theta) with respect to a normal density of theta:
+//   integrate[f(theta) * dnorm(theta, mu, sigma), a, b) /
+//             (pnorm(b, mu, sigma) - pnorm(a, mu, sigma)), {theta, a, b}].
 double intnorm(const std::function<double(double)>& f,
                double mu, double sigma, double a, double b) {
 
-  int r=18, r1=6*r-1, r2=12*r-3, i1=0, i2=r1-1, m=r2, m1=r1;
-  double a1=(a-mu)/sigma , b1=(b-mu)/sigma, xlower, xupper, aval;
-  NumericVector x1(r1), x(r1), z(r2), w(r2);
+  int r = 18, r1 = 6 * r - 1;
+  double a1 = (a - mu) / sigma , b1 = (b - mu) / sigma;
 
-  for (int i=0; i<r1; ++i) {
-    if (i < r-1) {
-      x1[i] = -3 - 4*log(r/(i+1.0));
-    } else if (i < 5*r) {
-      x1[i] = -3 + 3*(i+1.0-r)/(2*r);
+  std::vector<double> x1(r1);
+  for (int i = 0; i < r1; ++i) {
+    if (i < r - 1) {
+      x1[i] = -3.0 - 4.0 * std::log(static_cast<double>(r) / (i + 1.0));
+    } else if (i < 5 * r) {
+      x1[i] = -3.0 + 3.0 * ( (i + 1.0 - r) / (2.0 * r) );
     } else {
-      x1[i] = 3 + 4*log(r/(6*r-i-1.0));
+      x1[i] = 3.0 + 4.0 * std::log(static_cast<double>(r) / (6.0 * r - i - 1.0));
     }
   }
 
   // trim off x values outside (a1, b1)
   // trim from below
+  int i1 = 0;
   if (a1 >= x1[0]) {
-    i1 = 0;
-    while (x1[i1] <= a1) {
-      ++i1;
-    }
-    --i1;
-    xlower = a1; // lower bound on x
-  } else {
-    i1 = 0;
-    xlower = x1[0];
+    // first index i1 such that x1[i1] > a1[j]; then use i1-1 as lower trimming index
+    auto it = std::upper_bound(x1.begin(), x1.end(), a1);
+    i1 = static_cast<int>(it - x1.begin()) - 1;
   }
 
   // trim from above
-  if (b1 <= x1[r1-1]) {
-    i2 = r1-1;
-    while (x1[i2] >= b1) {
-      --i2;
-    }
-    ++i2;
-    xupper = b1; // upper bound on x
-  } else {
-    i2 = r1-1;
-    xupper = x1[r1-1];
+  int i2 = r1 - 1;
+  if (b1 <= x1[r1 - 1]) {
+    // find last index i2 such that x1[i2] < b[j]; then i2+1
+    auto it2 = std::lower_bound(x1.begin(), x1.end(), b1);
+    i2 = static_cast<int>(it2 - x1.begin());
   }
 
   // save the trimmed portion to x
-  m1 = i2 - i1 + 1;
-  x[0] = xlower;
-  x[m1-1] = xupper;
-  for (int i=1; i<m1-1; ++i) {
-    x[i] = x1[i+i1];
-  }
+  const int m1 = i2 - i1 + 1;
+  std::vector<double> x(m1);
+  x[0] = std::max(a1, x1[0]);
+  x[m1 - 1] = std::min(b1, x1[r1 - 1]);
+  for (int i = 1; i < m1 - 1; ++i) x[i] = x1[i + i1];
 
   // derive the grid points for z
-  m = 2*m1 - 1;
+  const int m = 2 * m1 - 1;
+  std::vector<double> z(m), w(m);
+  // odd points
+  for (int i = 0; i < m1; ++i) z[2*i] = x[i];
+  // even points (midpoints)
+  for (int i = 0; i < m1 - 1; ++i) z[2*i + 1] = 0.5 * (z[2*i] + z[2*i + 2]);
 
-  // odd grid points;
-  for (int i=0; i<m1; ++i) {
-    z[2*i] = x[i];
+  // weights w as Simpson-like composite rule (same formulas)
+  // w[0]
+  w[0] = (z[2] - z[0]) / 6.0;
+
+  // interior even indices (i = 2, 4, ..., 2*(m1-2))
+  for (int i0 = 1; i0 <= m1 - 2; ++i0) {
+    int i = 2 * i0;
+    w[i] = (z[i + 2] - z[i - 2]) / 6.0;
   }
-
-  // even grid points;
-  for (int i=0; i<m1-1; ++i) {
-    z[2*i+1] = (z[2*i] + z[2*i+2])/2;
+  // interior odd indices (i = 1,3,...)
+  for (int i0 = 1; i0 <= m1 - 1; ++i0) {
+    int i = 2 * i0 - 1;
+    w[i] = 4.0 * (z[i + 1] - z[i - 1]) / 6.0;
   }
-
-
-  // derive the weights
-  w[0] = 1.0/6*(z[2] - z[0]);
-
-  for (int i0=1; i0<=m1-2; ++i0) {
-    int i = 2*i0;
-    w[i] = 1.0/6*(z[i+2] - z[i-2]);
-  }
-
-  for (int i0=1; i0<=m1-1; ++i0) {
-    int i = 2*i0-1;
-    w[i] = 4.0/6*(z[i+1] - z[i-1]);
-  }
-
-  w[m-1] = 1.0/6*(z[m-1] - z[m-3]);
-
+  // last weight
+  w[m - 1] = (z[m - 1] - z[m - 3]) / 6.0;
 
   // integrate
-  aval = 0;
-  for (int i=0; i<m; ++i) {
-    aval += w[i]*f(mu + sigma*z[i])*R::dnorm(z[i], 0, 1, 0);
+  double aval = 0.0;
+  for (int i = 0; i < m; ++i) {
+    aval += w[i] * f(mu + sigma * z[i]) * boost_dnorm(z[i]);
   }
 
-  double denom = R::pnorm(b1, 0, 1, 1, 0) - R::pnorm(a1, 0, 1, 1, 0);
+  double denom = boost_pnorm(b1) - boost_pnorm(a1);
 
-  return aval/denom;
+  return aval / denom;
 }
 
 
-#define CGOLD 0.3819660
-#define ZEPS 1.0e-10
-#define SHFT(a,b,c,d) (a)=(b);(b)=(c);(c)=(d);
+std::pair<double, double> mini(
+    const std::function<double(double)>& f, double x1, double x2) {
 
-NumericVector mini(const std::function<double(double)>& f,
-                   double x1, double x2, double tol) {
-  double a,b,etemp,fu,fv,fw,fx,p,q,r,tol1,tol2,u,v,w,x,xm;
-  double d=0.0, e=0.0;
+  // Validate inputs
+  if (!(x1 < x2)) throw std::invalid_argument("mini: require x1 < x2.");
 
-  a=x1; b=x2;
-  x=w=v=a+CGOLD*(b-a);
-  fw=fv=fx=f(x);
-  for (int iter=0;iter<ITMAX;++iter) {
-    xm=0.5*(a+b);
-    tol2=2.0*(tol1=tol*fabs(x)+ZEPS);
-    if (fabs(x-xm) <= (tol2-0.5*(b-a))) {
-      return NumericVector::create(x,fx);
-    }
-    if (fabs(e) > tol1) {
-      r=(x-w)*(fx-fv);
-      q=(x-v)*(fx-fw);
-      p=(x-v)*q-(x-w)*r;
-      q=2.0*(q-r);
-      if (q > 0.0) p = -p;
-      q=fabs(q);
-      etemp=e;
-      e=d;
-      // if the new step size is at least half of the step before last, or
-      // if the new point is outside of (a,b) (to the left or to the right)
-      if (fabs(p) >= fabs(0.5*q*etemp) || p <= q*(a-x) || p >= q*(b-x)) {
-        d=CGOLD*(e=(x >= xm ? a-x : b-x));
-      } else{
-        d=p/q; // new step size
-        u=x+d; // new point
-        if (u-a < tol2 || b-u < tol2) {
-          d = SIGN(tol1, xm-x);
-        }
-      }
-    } else {
-      d=CGOLD*(e=(x >= xm ? a-x : b-x));
-    }
-    u=(fabs(d) >= tol1 ? x+d : x+SIGN(tol1,d));
-    fu=f(u);
-    if (fu <= fx) {
-      if (u >= x) a=x; else b=x;
-      SHFT(v,w,x,u);
-      SHFT(fv,fw,fx,fu);
-    } else {
-      if (u < x) a=u; else b=u;
-      if (fu <= fw || w == x) {
-        v=w;
-        w=u;
-        fv=fw;
-        fw=fu;
-      } else if (fu <= fv || v == x || v == w) {
-        v=u;
-        fv=fu;
-      }
-    }
-  }
-  stop("Too many iterations in mini");
-  return NumericVector::create(x, fx); // Never get here
+  // Use Boost's brent_find_minima
+  return boost::math::tools::brent_find_minima(
+    f, x1, x2, std::numeric_limits<double>::digits10);
 }
 
 
-List quad(integr_fn f, void *ex, double lower, double upper,
-          double tol) {
-  double epsabs=tol, epsrel=tol, value, abserr;
-  int neval, ier, limit=100, lenw=4*limit, last;
+// Numerical integration of f over [lower, upper] with specified tolerance.
+// - tol is absolute tolerance; relative behavior depends on integrator.
+// - maxiter is max subdivisions/recursions for the GK integrator.
+double quad(const std::function<double(double)>& f,
+            double lower, double upper, double tol, unsigned maxiter) {
 
-  int *iwork = new int[limit];
-  double *work = new double[lenw];
-
+  // Both finite -> use Gauss-Kronrod (good default for finite intervals)
   if (!std::isinf(lower) && !std::isinf(upper)) {
-    Rdqags(f, ex, &lower, &upper, &epsabs, &epsrel, &value, &abserr,
-           &neval, &ier, &limit, &lenw, &last, iwork, work);
-  } else if (!std::isinf(lower) && std::isinf(upper)) {
-    double bound = lower;
-    int inf = 1;
-    Rdqagi(f, ex, &bound, &inf, &epsabs, &epsrel, &value, &abserr,
-           &neval, &ier, &limit, &lenw, &last, iwork, work);
-  } else if (std::isinf(lower) && !std::isinf(upper)) {
-    double bound = upper;
-    int inf = -1;
-    Rdqagi(f, ex, &bound, &inf, &epsabs, &epsrel, &value, &abserr,
-           &neval, &ier, &limit, &lenw, &last, iwork, work);
-  } else {
-    double bound = 0.0;
-    int inf = 2;
-    Rdqagi(f, ex, &bound, &inf, &epsabs, &epsrel, &value, &abserr,
-           &neval, &ier, &limit, &lenw, &last, iwork, work);
+    // Use 15-point GK rule (common choice)
+    boost::math::quadrature::gauss_kronrod<double, 15> integrator;
+    return integrator.integrate(f, lower, upper, maxiter, tol);
   }
 
-  delete[] iwork;
-  delete[] work;
-
-  return List::create(Named("value") = value,
-                      Named("abserr") = abserr,
-                      Named("neval") = neval,
-                      Named("ier") = ier);
+  // Any endpoint infinite -> use tanh-sinh which handles infinite endpoints well
+  // tanh_sinh::integrate accepts infinite endpoints (pass +/- inf)
+  boost::math::quadrature::tanh_sinh<double> integrator;
+  return integrator.integrate(f, lower, upper, tol);
 }
 
 
+// 2D adaptive quadrature using 3x3 and 5x5 tensor-product Gauss rules
 // 1D Gauss nodes
 static const double x3[3] = { -0.774596669241483,
                               0.0,
@@ -1259,7 +1343,6 @@ static const double w5[5] = { 0.236926885056189,
                               0.478628670499366,
                               0.236926885056189 };
 
-
 // structure to store a region
 struct Region {
   double ax, bx, ay, by;
@@ -1268,13 +1351,12 @@ struct Region {
   double err;      // |I_high - I_low|
 };
 
-
 // compute 3x3 and 5x5 tensor-product Gauss rules on a region
 static void eval_region(
     const std::function<double(double,double)>& f,
     double ax, double bx,
     double ay, double by,
-    long &neval, double &I3, double &I5) {
+    double &I3, double &I5) {
   double cx = 0.5*(ax + bx), dx = 0.5*(bx - ax);
   double cy = 0.5*(ay + by), dy = 0.5*(by - ay);
 
@@ -1291,11 +1373,9 @@ static void eval_region(
       double yj = cy + dy * x3[j];
       f3[i][j] = f(xi,yj);
       I3 += w3[i]*w3[j]*f3[i][j];
-      ++neval;
     }
   }
   I3 *= dx*dy;
-
 
   // 5×5 rule
   for(int i=0;i<5;++i){
@@ -1306,13 +1386,11 @@ static void eval_region(
         I5 += w5[i]*w5[j] * f3[1][1];
       } else {
         I5 += w5[i]*w5[j] * f(xi,yj);
-        ++neval;
       }
     }
   }
   I5 *= dx * dy;
 }
-
 
 // priority comparison: larger error first
 struct RegionCompare {
@@ -1321,24 +1399,19 @@ struct RegionCompare {
   }
 };
 
-
-List quad2d(const std::function<double(double,double)>& f,
-            double ax, double bx,
-            double ay, double by,
-            double tol = 1.0e-5) {
-  long neval = 0;
-  int ier = 0;
+double quad2d(const std::function<double(double,double)>& f,
+              double ax, double bx, double ay, double by, double tol) {
   int maxRegions = 1000000;
 
   double I3, I5;
-  eval_region(f, ax, bx, ay, by, neval, I3, I5);
+  eval_region(f, ax, bx, ay, by, I3, I5);
 
   double global_value = I5;
   double global_err   = std::fabs(I5 - I3);
 
   std::priority_queue<Region, std::vector<Region>, RegionCompare> pq;
 
-  pq.push({ax,bx,ay,by, I3, I5, global_err});
+  pq.push({ax, bx, ay, by, I3, I5, global_err});
 
   while(global_err > tol && global_err > std::fabs(global_value) * tol &&
         (int)pq.size() < maxRegions)
@@ -1360,8 +1433,8 @@ List quad2d(const std::function<double(double,double)>& f,
       R1.by = m; R2.ay = m;
     }
 
-    eval_region(f, R1.ax,R1.bx,R1.ay,R1.by, neval, R1.I_low, R1.I_high);
-    eval_region(f, R2.ax,R2.bx,R2.ay,R2.by, neval, R2.I_low, R2.I_high);
+    eval_region(f, R1.ax, R1.bx, R1.ay, R1.by, R1.I_low, R1.I_high);
+    eval_region(f, R2.ax, R2.bx, R2.ay, R2.by, R2.I_low, R2.I_high);
 
     R1.err = std::fabs(R1.I_high - R1.I_low);
     R2.err = std::fabs(R2.I_high - R2.I_low);
@@ -1374,78 +1447,49 @@ List quad2d(const std::function<double(double,double)>& f,
     pq.push(R2);
   }
 
-  if(global_err > tol && global_err > std::fabs(global_value) * tol) ier = 1;
-
-  return List::create(
-    Rcpp::Named("value")  = global_value,
-    Rcpp::Named("abserr") = global_err,
-    Rcpp::Named("neval")  = neval,
-    Rcpp::Named("ier")    = ier
-  );
-}
-
-
-
-struct bvnparams {
-  double rho;
-  double a2;
-  double b2;
-};
-
-void f_bvnorm(double *x, int n, void *ex) {
-  bvnparams *param = (bvnparams *) ex;
-  double rho = param->rho;
-  double s = sqrt(1 - rho*rho);
-  for (int i=0; i<n; ++i) {
-    double a = (param->a2 - rho*x[i])/s;
-    double b = (param->b2 - rho*x[i])/s;
-    double t1 = R::dnorm(x[i],0,1,0);
-    double t2 = R::pnorm(b,0,1,1,0) - R::pnorm(a,0,1,1,0);
-    x[i] = t1*t2;
-  }
+  return global_value;
 }
 
 
 // [[Rcpp::export]]
-double pbvnormcpp(NumericVector lower, NumericVector upper, double rho) {
-  double result;
-  if (rho == 0) {
-    double v1 = R::pnorm(upper[0],0,1,1,0) - R::pnorm(lower[0],0,1,1,0);
-    double v2 = R::pnorm(upper[1],0,1,1,0) - R::pnorm(lower[1],0,1,1,0);
-    result = v1*v2;
-  } else {
-    double tol = 1.0e-8;
-    bvnparams param = {rho, lower[1], upper[1]};
-    result = quad(f_bvnorm, &param, lower[0], upper[0], tol)[0];
+double pbvnormcpp(std::vector<double> lower, std::vector<double> upper, double rho) {
+  if (rho == 0.0) {
+    double v1 = boost_pnorm(upper[0]) - boost_pnorm(lower[0]);
+    double v2 = boost_pnorm(upper[1]) - boost_pnorm(lower[1]);
+    return v1 * v2;
   }
-  return result;
+
+  double a2 = lower[1];
+  double b2 = upper[1];
+  double s = std::sqrt(1.0 - rho * rho);
+  auto f = [rho, a2, b2, s](double x)->double {
+    double a = (a2 - rho * x) / s;
+    double b = (b2 - rho * x) / s;
+    double t1 = boost_dnorm(x);
+    double t2 = boost_pnorm(b) - boost_pnorm(a);
+    return t1 * t2;
+  };
+  return quad(f, lower[0], upper[0]);
 }
 
 
 // [[Rcpp::export]]
-List hazard_pdcpp(const NumericVector& piecewiseSurvivalTime,
-                  const NumericVector& hazard_pfs,
-                  const NumericVector& hazard_os,
-                  const double rho_pd_os) {
+ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
+                     const std::vector<double>& hazard_pfs,
+                     const std::vector<double>& hazard_os,
+                     const double rho_pd_os) {
   int n = static_cast<int>(piecewiseSurvivalTime.size());
 
   // append additional time points for pfs quantiles
-  NumericVector p(10);
-  for (int i=0; i<9; ++i) {
-    p[i] = (i+1.0)/10.0;
-  }
+  std::vector<double> p(10);
+  for (int i=0; i<9; ++i) p[i] = (i+1.0)/10.0;
   p[9] = 0.95;
 
-  NumericVector u0 = qtpwexpcpp(p, piecewiseSurvivalTime,
-                                hazard_pfs, 0, 1, 0);
-  NumericVector u(n+10);
-  for (int i=0; i<n-1; ++i) {
-    u[i] = piecewiseSurvivalTime[i+1];
-  }
-  u[n-1] = piecewiseSurvivalTime[n-1] + log(2)/hazard_pfs[n-1];
-  for (int i=0; i<10; ++i) {
-    u[n+i] = u0[i];
-  }
+  std::vector<double> u0 = qtpwexpcpp(p, piecewiseSurvivalTime, hazard_pfs);
+  std::vector<double> u(n+10);
+  for (int i=0; i<n-1; ++i) u[i] = piecewiseSurvivalTime[i+1];
+  u[n-1] = piecewiseSurvivalTime[n-1] + std::log(2.0)/hazard_pfs[n-1];
+  for (int i=0; i<10; ++i) u[n+i] = u0[i];
 
   // obtain sorted and unique time points
   std::sort(u.begin(), u.end());
@@ -1453,31 +1497,29 @@ List hazard_pdcpp(const NumericVector& piecewiseSurvivalTime,
   int m = static_cast<int>(u.size());
 
   // shifted time points
-  NumericVector u1(m);
+  std::vector<double> u1(m);
   u1[0] = 0;
-  for (int i=1; i<m; ++i) {
-    u1[i] = u[i-1];
-  }
+  for (int i=1; i<m; ++i) u1[i] = u[i-1];
 
   // get corresponding hazards
-  IntegerVector index = findInterval3(u1, piecewiseSurvivalTime, 0,0,0) - 1;
-  NumericVector hazard_pfs1 = hazard_pfs[index];
-  NumericVector hazard_os1 = hazard_os[index];
+  std::vector<int> index = findInterval3(u1, piecewiseSurvivalTime);
+  for (int i=0; i<m; ++i) index[i] = index[i] - 1;
+  std::vector<double> hazard_pfs1 = subset(hazard_pfs, index);
+  std::vector<double> hazard_os1 = subset(hazard_os, index);
 
   // solve for hazard_pd
   double t;
-  NumericVector hazard_pd(m);
-  NumericVector v(0), hazard(0), haz_pfs(0), haz_os(0);
-  auto f = [&t, &v, &haz_pfs, &haz_os, &hazard,
-            rho_pd_os](double haz)->double {
-              NumericVector haz_pd = clone(hazard);
+  std::vector<double> hazard_pd(m);
+  std::vector<double> v(0), hazard(0), haz_pfs(0), haz_os(0);
+  auto f = [&t, &v, &haz_pfs, &haz_os, &hazard, rho_pd_os](double haz)->double {
+              std::vector<double> haz_pd = hazard;
               haz_pd.push_back(haz);
-              NumericVector lower(2);
+              std::vector<double> lower(2);
               double a = ptpwexpcpp1(t, v, haz_pd, 0, 1, 0);
               double b = ptpwexpcpp1(t, v, haz_os, 0, 1, 0);
-              lower[0] = R::qnorm(a,0,1,1,0);
-              lower[1] = R::qnorm(b,0,1,1,0);
-              NumericVector upper(2, R_PosInf);
+              lower[0] = boost_qnorm(a);
+              lower[1] = boost_qnorm(b);
+              std::vector<double> upper(2, POS_INF);
               double q = pbvnormcpp(lower, upper, rho_pd_os);
               return q - ptpwexpcpp1(t, v, haz_pfs, 0, 0, 0);
             };
@@ -1488,258 +1530,156 @@ List hazard_pdcpp(const NumericVector& piecewiseSurvivalTime,
     v.push_back(u1[i]);
     haz_pfs.push_back(hazard_pfs1[i]);
     haz_os.push_back(hazard_os1[i]);
-    hazard_pd[i] = brent(f, 0.5*(hazard_pfs1[i] - hazard_os1[i]),
-                         2*hazard_pfs1[i], tol);
+    hazard_pd[i] = brent(f, 0.5 * (hazard_pfs1[i] - hazard_os1[i]),
+                         2.0 * hazard_pfs1[i], tol);
     hazard.push_back(hazard_pd[i]);
   }
 
-  return List::create(
-    Named("piecewiseSurvivalTime" )= u1,
-    Named("hazard_pd") = hazard_pd,
-    Named("hazard_os") = hazard_os1,
-    Named("rho_pd_os") = rho_pd_os
-  );
+  ListCpp result;
+  result.push_back(u1, "piecewiseSurvivalTime");
+  result.push_back(hazard_pd, "hazard_pd");
+  result.push_back(hazard_os1, "hazard_os");
+  result.push_back(rho_pd_os, "rho_pd_os");
+  return result;
 }
 
 
-
-struct pfsparams {
-  NumericVector piecewiseSurvivalTime;
-  NumericVector hazard_pd;
-  NumericVector hazard_os;
-  double rho_pd_os;
-};
-
-
-// [[Rcpp::export]]
-NumericVector pdf_pfs(const NumericVector& time,
-                      const NumericVector& piecewiseSurvivalTime,
-                      const NumericVector& hazard_pd,
-                      const NumericVector& hazard_os,
-                      const double rho_pd_os) {
-  double s = sqrt(1.0 - rho_pd_os*rho_pd_os);
-  NumericVector u1 = ptpwexpcpp(time, piecewiseSurvivalTime,
-                                hazard_pd, 0, 1, 0);
-  NumericVector u2 = ptpwexpcpp(time, piecewiseSurvivalTime,
-                                hazard_os, 0, 1, 0);
-  NumericVector z1 = qnorm(u1);
-  NumericVector z2 = qnorm(u2);
-  NumericVector a1 = 1 - pnorm((z2 - rho_pd_os*z1)/s);
-  NumericVector a2 = 1 - pnorm((z1 - rho_pd_os*z2)/s);
-  NumericVector d1 = dtpwexpcpp(time, piecewiseSurvivalTime,
-                                hazard_pd, 0, 0);
-  NumericVector d2 = dtpwexpcpp(time, piecewiseSurvivalTime,
-                                hazard_os, 0, 0);
-  NumericVector result = a1*d1 + a2*d2;
+double pdf_pfs(const double time,
+               const std::vector<double>& piecewiseSurvivalTime,
+               const std::vector<double>& hazard_pd,
+               const std::vector<double>& hazard_os,
+               const double rho_pd_os) {
+  double s = std::sqrt(1.0 - rho_pd_os * rho_pd_os);
+  double u1 = ptpwexpcpp1(time, piecewiseSurvivalTime, hazard_pd);
+  double u2 = ptpwexpcpp1(time, piecewiseSurvivalTime, hazard_os);
+  double d1 = dtpwexpcpp1(time, piecewiseSurvivalTime, hazard_pd);
+  double d2 = dtpwexpcpp1(time, piecewiseSurvivalTime, hazard_os);
+  double z1 = boost_qnorm(u1);
+  double z2 = boost_qnorm(u2);
+  double a1 = 1.0 - boost_pnorm((z2 - rho_pd_os * z1) / s);
+  double a2 = 1.0 - boost_pnorm((z1 - rho_pd_os * z2) / s);
+  double result = a1 * d1 + a2 * d2;
   return result;
 };
 
-
-// [[Rcpp::export]]
-NumericVector sdf_pfs(const NumericVector& time,
-                      const NumericVector& piecewiseSurvivalTime,
-                      const NumericVector& hazard_pd,
-                      const NumericVector& hazard_os,
-                      const double rho_pd_os) {
-  NumericVector u1 = ptpwexpcpp(time, piecewiseSurvivalTime,
-                                hazard_pd, 0, 1, 0);
-  NumericVector u2 = ptpwexpcpp(time, piecewiseSurvivalTime,
-                                hazard_os, 0, 1, 0);
-  NumericVector z1 = qnorm(u1);
-  NumericVector z2 = qnorm(u2);
-
-  int n = static_cast<int>(time.size());
-  NumericVector p(n);
-  for (int i=0; i<n; ++i) {
-    p[i] = pbvnormcpp(NumericVector::create(z1[i], z2[i]),
-                      NumericVector::create(R_PosInf, R_PosInf),
-                      rho_pd_os);
-  }
-
+double sdf_pfs(const double time,
+               const std::vector<double>& piecewiseSurvivalTime,
+               const std::vector<double>& hazard_pd,
+               const std::vector<double>& hazard_os,
+               const double rho_pd_os) {
+  double u1 = ptpwexpcpp1(time, piecewiseSurvivalTime, hazard_pd);
+  double u2 = ptpwexpcpp1(time, piecewiseSurvivalTime, hazard_os);
+  double z1 = boost_qnorm(u1);
+  double z2 = boost_qnorm(u2);
+  std::vector<double> lower = {z1, z2};
+  std::vector<double> upper = {POS_INF, POS_INF};
+  double p = pbvnormcpp(lower, upper, rho_pd_os);
   return p;
 };
 
-
-double upper_pfs(const NumericVector& piecewiseSurvivalTime,
-                 const NumericVector& hazard_pd,
-                 const NumericVector& hazard_os,
+double upper_pfs(const std::vector<double>& piecewiseSurvivalTime,
+                 const std::vector<double>& hazard_pd,
+                 const std::vector<double>& hazard_os,
                  const double rho_pd_os) {
-
   double tol = 1e-12;
   double upper = 1.0;
-  while (sdf_pfs(NumericVector::create(upper),
-                 piecewiseSurvivalTime,
-                 hazard_pd, hazard_os,
-                 rho_pd_os)[0] > tol) {
+  while (sdf_pfs(upper, piecewiseSurvivalTime,
+                 hazard_pd, hazard_os, rho_pd_os) > tol) {
     upper *= 2.0;
   }
-
   return upper;
 }
 
-
-// integrand for the mean of pfs
-void fm_pfs(double *x, int n, void *ex) {
-  pfsparams *param = (pfsparams *) ex;
-  NumericVector u(n);
-  for (int i=0; i<n; ++i) {
-    u[i] = x[i];
-  }
-
-  NumericVector d = pdf_pfs(u, param->piecewiseSurvivalTime,
-                            param->hazard_pd, param->hazard_os,
-                            param->rho_pd_os);
-
-  for (int i=0; i<n; ++i) {
-    x[i] = u[i]*d[i];
-  }
-}
-
-
-// integrand for the second moment of pfs
-void fm2_pfs(double *x, int n, void *ex) {
-  pfsparams *param = (pfsparams *) ex;
-  NumericVector u(n);
-  for (int i=0; i<n; ++i) {
-    u[i] = x[i];
-  }
-
-  NumericVector d = pdf_pfs(u, param->piecewiseSurvivalTime,
-                            param->hazard_pd, param->hazard_os,
-                            param->rho_pd_os);
-
-  for (int i=0; i<n; ++i) {
-    x[i] = u[i]*u[i]*d[i];
-  }
-}
-
-
-// [[Rcpp::export]]
-List m_pfs(const NumericVector& piecewiseSurvivalTime,
-           const NumericVector& hazard_pd,
-           const NumericVector& hazard_os,
-           const double rho_pd_os) {
-  pfsparams param = {piecewiseSurvivalTime, hazard_pd,
-                     hazard_os, rho_pd_os};
-
-  double upper = upper_pfs(piecewiseSurvivalTime, hazard_pd,
-                           hazard_os, rho_pd_os);
+ListCpp m_pfs(const std::vector<double>& piecewiseSurvivalTime,
+              const std::vector<double>& hazard_pd,
+              const std::vector<double>& hazard_os,
+              const double rho_pd_os) {
+  double upper = upper_pfs(piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
+  auto fm_pfs = [&](double t)->double {
+    return t * pdf_pfs(t, piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
+  };
+  auto fm2_pfs = [&](double t)->double {
+    return t*t * pdf_pfs(t, piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
+  };
 
   double tol = 1e-5;
-  double m1 = quad(fm_pfs, &param, 0.0, upper, tol)[0];
-  double m2 = quad(fm2_pfs, &param, 0.0, upper, tol)[0];
+  double m1 = quad(fm_pfs, 0.0, upper, tol);
+  double m2 = quad(fm2_pfs, 0.0, upper, tol);
 
-  return List::create(
-    Named("mean") = m1,
-    Named("variance") = m2 - m1*m1
-  );
+  ListCpp result;
+  result.push_back(m1, "mean");
+  result.push_back(m2 - m1 * m1, "variance");
+  return result;
 }
 
-
-// [[Rcpp::export]]
-double cor_pfs_os(const NumericVector& piecewiseSurvivalTime,
-                  const NumericVector& hazard_pd,
-                  const NumericVector& hazard_os,
+double cor_pfs_os(const std::vector<double>& piecewiseSurvivalTime,
+                  const std::vector<double>& hazard_pd,
+                  const std::vector<double>& hazard_os,
                   const double rho_pd_os) {
-  List mv1 = m_pfs(piecewiseSurvivalTime, hazard_pd,
-                   hazard_os, rho_pd_os);
-  double m1 = mv1["mean"];
-  double v1 = mv1["variance"];
+  ListCpp mv1 = m_pfs(piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
+  double m1 = mv1.get<double>("mean");
+  double v1 = mv1.get<double>("variance");
 
-  List mv2 = mtpwexpcpp(piecewiseSurvivalTime, hazard_os, 0.0);
-  double m2 = mv2["mean"];
-  double v2 = mv2["variance"];
+  ListCpp mv2 = mtpwexpcpp(piecewiseSurvivalTime, hazard_os);
+  double m2 = mv2.get<double>("mean");
+  double v2 = mv2.get<double>("variance");
+
+  double s = std::sqrt(1.0 - rho_pd_os * rho_pd_os);
+  double c1 = 1.0 / (2.0 * M_PI * s);
+  double c2 = 1.0 / (2.0 * s * s);
 
   // integrand for the joint moment
   auto f = [piecewiseSurvivalTime, hazard_pd, hazard_os,
-            rho_pd_os](double u1, double u2)->double {
-              double t1 = qtpwexpcpp1(u1, piecewiseSurvivalTime,
-                                      hazard_pd, 0, 1, 0);
-              double t2 = qtpwexpcpp1(u2, piecewiseSurvivalTime,
-                                      hazard_os, 0, 1, 0);
-              double z1 = R::qnorm(u1,0,1,1,0);
-              double z2 = R::qnorm(u2,0,1,1,0);
-              double a1 = std::min(t1,t2)*t2;
+            rho_pd_os, c1, c2](double u1, double u2)->double {
+              double t1 = qtpwexpcpp1(u1, piecewiseSurvivalTime, hazard_pd);
+              double t2 = qtpwexpcpp1(u2, piecewiseSurvivalTime, hazard_os);
+              double z1 = boost_qnorm(u1);
+              double z2 = boost_qnorm(u2);
+              double a1 = std::min(t1, t2) * t2;
 
               // joint density of standard bivariate normal
-              double s = sqrt(1 - rho_pd_os*rho_pd_os);
-              double a2 = 1.0/(2.0*M_PI*s) * exp(-1.0/(2.0*s*s) *
-                (z1*z1 - 2.0*rho_pd_os*z1*z2 + z2*z2));
-              double a3 = R::dnorm(z1,0,1,0) * R::dnorm(z2,0,1,0);
+              double a2 = c1 * exp(-c2 * (z1*z1 - 2.0*rho_pd_os*z1*z2 + z2*z2));
+              double a3 = boost_dnorm(z1) * boost_dnorm(z2);
               return a1 * a2 / a3;
             };
 
   double tol = 1e-4;
-  double m12 = quad2d(f, 0.0, 1.0, 0.0, 1.0, tol)["value"];
+  double m12 = quad2d(f, 0.0, 1.0, 0.0, 1.0, tol);
 
-  double cov = m12 - m1*m2;
+  double cov = m12 - m1 * m2;
   return cov / sqrt(v1 * v2);
 }
 
-
 // [[Rcpp::export]]
-double corr_pfs_oscpp(const NumericVector& piecewiseSurvivalTime,
-                      const NumericVector& hazard_pfs,
-                      const NumericVector& hazard_os,
+double corr_pfs_oscpp(const std::vector<double>& piecewiseSurvivalTime,
+                      const std::vector<double>& hazard_pfs,
+                      const std::vector<double>& hazard_os,
                       const double rho_pd_os) {
-  List a = hazard_pdcpp(piecewiseSurvivalTime,
-                        hazard_pfs, hazard_os, rho_pd_os);
-  NumericVector u = a["piecewiseSurvivalTime"];
-  NumericVector hazard_pd1 = a["hazard_pd"];
-  NumericVector hazard_os1 = a["hazard_os"];
-
+  ListCpp a = hazard_pdcpp(piecewiseSurvivalTime, hazard_pfs, hazard_os, rho_pd_os);
+  std::vector<double> u = a.get<std::vector<double>>("piecewiseSurvivalTime");
+  std::vector<double> hazard_pd1 = a.get<std::vector<double>>("hazard_pd");
+  std::vector<double> hazard_os1 = a.get<std::vector<double>>("hazard_os");
   return cor_pfs_os(u, hazard_pd1, hazard_os1, rho_pd_os);
 }
 
 
 // [[Rcpp::export]]
-List hazard_pd2cpp(const NumericVector& piecewiseSurvivalTime,
-                   const NumericVector& hazard_pfs,
-                   const NumericVector& hazard_os,
-                   const double rho_pfs_os) {
-
-  auto f = [piecewiseSurvivalTime, hazard_pfs, hazard_os,
-            rho_pfs_os](double rho_pd_os)->double {
-              double rho = corr_pfs_oscpp(piecewiseSurvivalTime,
-                                          hazard_pfs, hazard_os,
-                                          rho_pd_os);
-              return rho - rho_pfs_os;
-            };
-
-  double tol = 1e-3;
-  double rho_pd_os = brent(f, 0, 0.99, tol);
-  List a = hazard_pdcpp(piecewiseSurvivalTime,
-                        hazard_pfs, hazard_os,
-                        rho_pd_os);
-  a.push_back(rho_pfs_os, "rho_pfs_os");
-  return a;
-}
-
-
-// [[Rcpp::export]]
-List hazard_subcpp(const NumericVector& piecewiseSurvivalTime,
-                   const NumericVector& hazard_itt,
-                   const NumericVector& hazard_pos,
-                   const double p_pos) {
+ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
+                      const std::vector<double>& hazard_itt,
+                      const std::vector<double>& hazard_pos,
+                      const double p_pos) {
   int n = static_cast<int>(piecewiseSurvivalTime.size());
 
   // append additional time points for pfs quantiles
-  NumericVector p(10);
-  for (int i=0; i<9; ++i) {
-    p[i] = (i+1.0)/10.0;
-  }
+  std::vector<double> p(10);
+  for (int i=0; i<9; ++i) p[i] = (i+1.0)/10.0;
   p[9] = 0.95;
 
-  NumericVector u0 = qtpwexpcpp(p, piecewiseSurvivalTime,
-                                hazard_itt, 0, 1, 0);
-  NumericVector u(n+10);
-  for (int i=0; i<n-1; ++i) {
-    u[i] = piecewiseSurvivalTime[i+1];
-  }
-  u[n-1] = piecewiseSurvivalTime[n-1] + log(2)/hazard_itt[n-1];
-  for (int i=0; i<10; ++i) {
-    u[n+i] = u0[i];
-  }
+  std::vector<double> u0 = qtpwexpcpp(p, piecewiseSurvivalTime, hazard_itt);
+  std::vector<double> u(n+10);
+  for (int i=0; i<n-1; ++i) u[i] = piecewiseSurvivalTime[i+1];
+  u[n-1] = piecewiseSurvivalTime[n-1] + std::log(2.0)/hazard_itt[n-1];
+  for (int i=0; i<10; ++i) u[n+i] = u0[i];
 
   // obtain sorted and unique time points
   std::sort(u.begin(), u.end());
@@ -1747,28 +1687,26 @@ List hazard_subcpp(const NumericVector& piecewiseSurvivalTime,
   int m = static_cast<int>(u.size());
 
   // shifted time points
-  NumericVector u1(m);
+  std::vector<double> u1(m);
   u1[0] = 0;
-  for (int i=1; i<m; ++i) {
-    u1[i] = u[i-1];
-  }
+  for (int i=1; i<m; ++i) u1[i] = u[i-1];
 
   // get corresponding hazards
-  IntegerVector index = findInterval3(u1, piecewiseSurvivalTime, 0,0,0) - 1;
-  NumericVector hazard_itt1 = hazard_itt[index];
-  NumericVector hazard_pos1 = hazard_pos[index];
+  std::vector<int> index = findInterval3(u1, piecewiseSurvivalTime);
+  for (int i=0; i<m; ++i) index[i] = index[i] - 1;
+  std::vector<double> hazard_itt1 = subset(hazard_itt, index);
+  std::vector<double> hazard_pos1 = subset(hazard_pos, index);
 
   // solve for hazard_sub
   double t;
-  NumericVector hazard_neg(m);
-  NumericVector v(0), hazard(0), haz_itt(0), haz_pos(0);
-  auto f = [&t, &v, &haz_itt, &haz_pos, &hazard,
-            p_pos](double haz)->double {
-              NumericVector haz_neg = clone(hazard);
+  std::vector<double> hazard_neg(m);
+  std::vector<double> v(0), hazard(0), haz_itt(0), haz_pos(0);
+  auto f = [&t, &v, &haz_itt, &haz_pos, &hazard, p_pos](double haz)->double {
+              std::vector<double> haz_neg = hazard;
               haz_neg.push_back(haz);
               double a = ptpwexpcpp1(t, v, haz_pos, 0, 1, 0);
               double b = ptpwexpcpp1(t, v, haz_neg, 0, 1, 0);
-              double q = p_pos*a + (1-p_pos)*b;
+              double q = p_pos * a + (1.0 - p_pos) * b;
               return q - ptpwexpcpp1(t, v, haz_itt, 0, 1, 0);
             };
 
@@ -1778,46 +1716,17 @@ List hazard_subcpp(const NumericVector& piecewiseSurvivalTime,
     v.push_back(u1[i]);
     haz_itt.push_back(hazard_itt1[i]);
     haz_pos.push_back(hazard_pos1[i]);
-    hazard_neg[i] = brent(f, 0.5*(hazard_itt1[i]-p_pos*hazard_pos1[i]),
-                          2.0*hazard_itt1[i]/(1-p_pos), tol);
+    hazard_neg[i] = brent(f, 0.5 * (hazard_itt1[i] - p_pos * hazard_pos1[i]),
+                          2.0 * hazard_itt1[i] / (1.0 - p_pos), tol);
     hazard.push_back(hazard_neg[i]);
   }
 
-  return List::create(
-    Named("piecewiseSurvivalTime" )= u1,
-    Named("hazard_pos") = hazard_pos1,
-    Named("hazard_neg") = hazard_neg,
-    Named("p_pos") = p_pos
-  );
-}
-
-
-// Wrapper function for vmmin
-List bmini(NumericVector x0, optimfn fn, optimgr gr, void *ex, double eps) {
-  int maxit = 100;
-  int trace = 0;
-  double abstol = eps, reltol = eps;
-  int nREPORT = 10;
-
-  int n = static_cast<int>(x0.size());
-  double Fmin;
-  int fncount = 0, grcount = 0, fail = 0;
-  IntegerVector mask(n, 1);  // All parameters are free
-
-  // Convert NumericVector to standard double array
-  std::vector<double> x(x0.begin(), x0.end());
-
-  // Call vmmin function
-  vmmin(n, x.data(), &Fmin, fn, gr, maxit, trace,
-        mask.begin(), abstol, reltol, nREPORT,
-        ex, &fncount, &grcount, &fail);
-
-  // Return results as a list
-  return List::create(Named("par") = NumericVector(x.begin(), x.end()),
-                      Named("value") = Fmin,
-                      Named("fncount") = fncount,
-                      Named("grcount") = grcount,
-                      Named("fail") = fail);
+  ListCpp result;
+  result.push_back(u1, "piecewiseSurvivalTime");
+  result.push_back(hazard_pos1, "hazard_pos");
+  result.push_back(hazard_neg, "hazard_neg");
+  result.push_back(p_pos, "p_pos");
+  return result;
 }
 
 
@@ -1852,34 +1761,36 @@ List bmini(NumericVector x0, optimfn fn, optimgr gr, void *ex, double eps) {
 //'
 //' @export
 // [[Rcpp::export]]
-NumericVector accrual(const NumericVector& time = NA_REAL,
-                      const NumericVector& accrualTime = 0,
-                      const NumericVector& accrualIntensity = NA_REAL,
-                      const double accrualDuration = NA_REAL) {
+std::vector<double> accrual(const std::vector<double>& time,
+                            const std::vector<double>& accrualTime,
+                            const std::vector<double>& accrualIntensity,
+                            const double accrualDuration) {
 
   int k = static_cast<int>(time.size());
-  NumericVector n(k);
+  std::vector<double> n(k);
 
   // up to end of enrollment
-  NumericVector t = pmax(pmin(time, accrualDuration), 0.0);
+  std::vector<double> t(k);
+  for (int i = 0; i < k; ++i) {
+    t[i] = std::max(std::min(time[i], accrualDuration), 0.0);
+  }
 
   // identify the time interval containing t
-  IntegerVector m = pmax(findInterval3(t, accrualTime, 0,0,0), 1);
+  std::vector<int> m = findInterval3(t, accrualTime);
 
   // sum up patients enrolled in each interval up to t
-  for (int i=0; i<k; ++i) {
-    for (int j=0; j<m[i]; ++j) {
-      if (j<m[i]-1) {
-        n[i] += accrualIntensity[j]*(accrualTime[j+1] - accrualTime[j]);
+  for (int i = 0; i < k; ++i) {
+    for (int j = 0; j < m[i]; ++j) {
+      if (j < m[i] - 1) {
+        n[i] += accrualIntensity[j] * (accrualTime[j + 1] - accrualTime[j]);
       } else {
-        n[i] += accrualIntensity[j]*(t[i] - accrualTime[j]);
+        n[i] += accrualIntensity[j] * (t[i] - accrualTime[j]);
       }
     }
   }
 
   return n;
 }
-
 
 //' @title Accrual Duration to Enroll Target Number of Subjects
 //' @description Obtains the accrual duration to enroll the target number
@@ -1899,29 +1810,28 @@ NumericVector accrual(const NumericVector& time = NA_REAL,
 //'
 //' @export
 // [[Rcpp::export]]
-NumericVector getAccrualDurationFromN(
-    const NumericVector& nsubjects = NA_REAL,
-    const NumericVector& accrualTime = 0,
-    const NumericVector& accrualIntensity = NA_REAL) {
+std::vector<double> getAccrualDurationFromN(
+    const std::vector<double>& nsubjects,
+    const std::vector<double>& accrualTime,
+    const std::vector<double>& accrualIntensity) {
   int I = static_cast<int>(nsubjects.size());
   int J = static_cast<int>(accrualTime.size());
-  NumericVector t(I), p(J);
+  std::vector<double> t(I), p(J);
 
   p[0] = 0;
-  for (int j=0; j<J-1; ++j) {
-    p[j+1] = p[j] + accrualIntensity[j]*(accrualTime[j+1] - accrualTime[j]);
+  for (int j = 0; j < J - 1; ++j) {
+    p[j+1] = p[j] + accrualIntensity[j] * (accrualTime[j+1] - accrualTime[j]);
   }
 
-  IntegerVector m = findInterval3(nsubjects, p, 0,0,0);
+  std::vector<int> m = findInterval3(nsubjects, p);
 
-  for (int i=0; i<I; ++i) {
+  for (int i = 0; i < I; ++i) {
     int j = m[i] - 1;
-    t[i] = accrualTime[j] + (nsubjects[i] - p[j])/accrualIntensity[j];
+    t[i] = accrualTime[j] + (nsubjects[i] - p[j]) / accrualIntensity[j];
   }
 
   return t;
 }
-
 
 //' @title Probability of Being at Risk
 //' @description Obtains the probability of being at risk at given analysis
@@ -1949,54 +1859,60 @@ NumericVector getAccrualDurationFromN(
 //'
 //' @export
 // [[Rcpp::export]]
-NumericVector patrisk(const NumericVector& time = NA_REAL,
-                      const NumericVector& piecewiseSurvivalTime = 0,
-                      const NumericVector& lambda = NA_REAL,
-                      const NumericVector& gamma = 0) {
+std::vector<double> patrisk(const std::vector<double>& time,
+                            const std::vector<double>& piecewiseSurvivalTime,
+                            const std::vector<double>& lambda,
+                            const std::vector<double>& gamma) {
+  size_t k = time.size();
+  size_t J = piecewiseSurvivalTime.size();
 
-  // identify the time interval containing the specified analysis time
-  IntegerVector m = pmax(findInterval3(time, piecewiseSurvivalTime,0,0,0), 1);
-  int k = static_cast<int>(time.size());
-  int J = static_cast<int>(piecewiseSurvivalTime.size());
-
-  // hazard for failure or dropout
-  NumericVector lambdax(J), gammax(J);
+  // Validate and replicate lambda and gamma
+  std::vector<double> lambdax(J), gammax(J);
 
   if (lambda.size() == 1) {
-    lambdax = rep(lambda, J);
+    lambdax = std::vector<double>(J, lambda[0]);
   } else if (lambda.size() == J) {
     lambdax = lambda;
   } else {
-    stop("Invalid length for lambda");
+    throw std::invalid_argument("Invalid length for lambda.");
   }
 
   if (gamma.size() == 1) {
-    gammax = rep(gamma, J);
+    gammax = std::vector<double>(J, gamma[0]);
   } else if (gamma.size() == J) {
     gammax = gamma;
   } else {
-    stop("Invalid length for gamma");
+    throw std::invalid_argument("Invalid length for gamma.");
   }
 
-  NumericVector lamgam = lambdax + gammax;
+  // Cumulative hazards for lambda + gamma
+  std::vector<double> lamgam(J);
+  for (size_t j = 0; j < J; ++j) {
+    lamgam[j] = lambdax[j] + gammax[j];
+  }
 
-  NumericVector t = piecewiseSurvivalTime;
+  std::vector<double> cumulativeRisk(k, 0.0);
 
-  // sum up cumulative hazard up to time
-  NumericVector a(k);
-  for (int i=0; i<k; ++i) {
-    for (int j=0; j<m[i]; ++j) {
-      if (j<m[i]-1) {
-        a[i] += lamgam[j]*(t[j+1] - t[j]);
+  // Find intervals containing specified analysis time
+  std::vector<int> m = findInterval3(time, piecewiseSurvivalTime);
+
+  // Compute cumulative hazard for each time point
+  for (size_t i = 0; i < k; ++i) {
+    double a = 0.0;  // Hazard accumulator for this time point
+    for (int j = 0; j < m[i]; ++j) {
+      if (j < m[i] - 1) {
+        // Contribution from intervals fully covered by time[i]
+        a += lamgam[j] * (piecewiseSurvivalTime[j + 1] - piecewiseSurvivalTime[j]);
       } else {
-        a[i] += lamgam[j]*(time[i] - t[j]);
+        // Contribution from the remaining portion of the last interval
+        a += lamgam[j] * (time[i] - piecewiseSurvivalTime[j]);
       }
     }
+    cumulativeRisk[i] = std::exp(-a);  // Apply exponential decay
   }
 
-  return exp(-a);
+  return cumulativeRisk;
 }
-
 
 //' @title Probability of Having an Event
 //' @description Obtains the probability of having an event at given analysis
@@ -2024,57 +1940,66 @@ NumericVector patrisk(const NumericVector& time = NA_REAL,
 //'
 //' @export
 // [[Rcpp::export]]
-NumericVector pevent(const NumericVector& time = NA_REAL,
-                     const NumericVector& piecewiseSurvivalTime = 0,
-                     const NumericVector& lambda = NA_REAL,
-                     const NumericVector& gamma = 0) {
+std::vector<double> pevent(const std::vector<double>& time,
+                           const std::vector<double>& piecewiseSurvivalTime,
+                           const std::vector<double>& lambda,
+                           const std::vector<double>& gamma) {
+  size_t k = time.size();
+  size_t J = piecewiseSurvivalTime.size();
 
-  // identify the time interval containing the specified analysis time
-  IntegerVector m = pmax(findInterval3(time, piecewiseSurvivalTime,0,0,0), 1);
-  int k = static_cast<int>(time.size());
-  int J = static_cast<int>(piecewiseSurvivalTime.size());
-
-  // hazard for failure or dropout
-  NumericVector lambdax(J), gammax(J);
+  // Validate and replicate lambda and gamma
+  std::vector<double> lambdax(J), gammax(J);
 
   if (lambda.size() == 1) {
-    lambdax = rep(lambda, J);
+    lambdax = std::vector<double>(J, lambda[0]);
   } else if (lambda.size() == J) {
     lambdax = lambda;
   } else {
-    stop("Invalid length for lambda");
+    throw std::invalid_argument("Invalid length for lambda.");
   }
 
   if (gamma.size() == 1) {
-    gammax = rep(gamma, J);
+    gammax = std::vector<double>(J, gamma[0]);
   } else if (gamma.size() == J) {
     gammax = gamma;
   } else {
-    stop("Invalid length for gamma");
+    throw std::invalid_argument("Invalid length for gamma.");
   }
 
-  NumericVector lamgam = lambdax + gammax;
+  // Compute lambda + gamma
+  std::vector<double> lamgam(J);
+  for (size_t j = 0; j < J; ++j) {
+    lamgam[j] = lambdax[j] + gammax[j];
+  }
 
-  // sum up cumulative hazard up to time
-  NumericVector t = piecewiseSurvivalTime;
-  NumericVector n = patrisk(t, t, lambda, gamma);
-  NumericVector a(k);
-  double p;
+  // Get risk of patients up to each time interval
+  std::vector<double> n = patrisk(piecewiseSurvivalTime, piecewiseSurvivalTime,
+                                  lambda, gamma);
 
-  for (int i=0; i<k; ++i) {
-    for (int j=0; j<m[i]; ++j) {
-      if (j<m[i]-1) {
-        p = lambda[j]/lamgam[j]*(1 - exp(-lamgam[j]*(t[j+1] - t[j])));
+  std::vector<int> m = findInterval3(time, piecewiseSurvivalTime);
+  std::vector<double> a(k, 0.0);
+
+  // Compute cumulative hazard contributions for each time point
+  for (size_t i = 0; i < k; ++i) {
+    double ai = 0.0;  // Accumulator for this time point
+    for (int j = 0; j < m[i]; ++j) {
+      double p;
+      if (j < m[i] - 1) {
+        // Full interval is covered
+        p = lambdax[j] / lamgam[j] * (1.0 - std::exp(-lamgam[j] *
+          (piecewiseSurvivalTime[j + 1] - piecewiseSurvivalTime[j])));
       } else {
-        p = lambda[j]/lamgam[j]*(1 - exp(-lamgam[j]*(time[i] - t[j])));
+        // Partial interval is covered
+        p = lambdax[j] / lamgam[j] * (1.0 - std::exp(-lamgam[j] *
+          (time[i] - piecewiseSurvivalTime[j])));
       }
-      a[i] += n[j]*p;
+      ai += n[j] * p;  // Add risk-weighted probability
     }
+    a[i] = ai;
   }
 
   return a;
 }
-
 
 //' @title Integrated Event Probability Over an Interval With Constant Hazard
 //' @description Obtains the integrated probability of having an event
@@ -2106,57 +2031,61 @@ NumericVector pevent(const NumericVector& time = NA_REAL,
 //'
 //' @export
 // [[Rcpp::export]]
-double hd(const int j = NA_INTEGER,
-          const double t1 = NA_REAL,
-          const double t2 = NA_REAL,
-          const NumericVector& piecewiseSurvivalTime = 0,
-          const NumericVector& lambda = NA_REAL,
-          const NumericVector& gamma = 0) {
+double hd(const int j,
+          const double t1,
+          const double t2,
+          const std::vector<double>& piecewiseSurvivalTime,
+          const std::vector<double>& lambda,
+          const std::vector<double>& gamma) {
 
   int j1 = j-1;
 
   // lower bound of time interval j for piecewise exponential distribution
-  NumericVector t0 = NumericVector::create(piecewiseSurvivalTime[j1]);
+  double t0 = piecewiseSurvivalTime[j1];
+  std::vector<double> t0_vec = {t0};
 
   // probability of being at risk at the start of interval j
-  NumericVector n0 = patrisk(t0, piecewiseSurvivalTime, lambda, gamma);
+  double n0 = patrisk(t0_vec, piecewiseSurvivalTime, lambda, gamma)[0];
 
-  // probability of having an event at the start of interval j
-  NumericVector d0 = pevent(t0, piecewiseSurvivalTime, lambda, gamma);
+  // Compute probability of having an event at the start of interval j
+  double d0 = pevent(t0_vec, piecewiseSurvivalTime, lambda, gamma)[0];
 
-  int J = static_cast<int>(piecewiseSurvivalTime.size());
-
-  // hazard for failure or dropout
-  NumericVector lambdax(J), gammax(J);
+  // Prepare lambda and gamma vectors
+  size_t J = piecewiseSurvivalTime.size();
+  std::vector<double> lambdax(J), gammax(J);
 
   if (lambda.size() == 1) {
-    lambdax = rep(lambda, J);
+    lambdax = std::vector<double>(J, lambda[0]);
   } else if (lambda.size() == J) {
     lambdax = lambda;
   } else {
-    stop("Invalid length for lambda");
+    throw std::invalid_argument("Invalid length for lambda.");
   }
 
   if (gamma.size() == 1) {
-    gammax = rep(gamma, J);
+    gammax = std::vector<double>(J, gamma[0]);
   } else if (gamma.size() == J) {
     gammax = gamma;
   } else {
-    stop("Invalid length for gamma");
+    throw std::invalid_argument("Invalid length for gamma.");
   }
 
-  NumericVector lamgam = lambdax + gammax;
+  // Compute total hazard (lambda + gamma)
+  std::vector<double> lamgam(J);
+  for (size_t i = 0; i < J; ++i) {
+    lamgam[i] = lambdax[i] + gammax[i];
+  }
 
-  // integration of conditional probability of having an event over (t1,t2)
-  // given survival at the start of interval j
-  double q1 = (exp(-lamgam[j1]*(t1-t0[0])) -
-               exp(-lamgam[j1]*(t2-t0[0])))/lamgam[j1];
-  double q = lambda[j1]/lamgam[j1] * (t2-t1 - q1);
+  // Integration for conditional probability over (t1, t2)
+  double lamgam_j1 = lamgam[j1];
+  double exp1 = std::exp(-lamgam_j1 * (t1 - t0));
+  double exp2 = std::exp(-lamgam_j1 * (t2 - t0));
+  double q1 = (exp1 - exp2) / lamgam_j1;
+  double q = lambdax[j1] / lamgam_j1 * (t2 - t1 - q1);
 
-  // sum up the integration for the already failed and to-be-failed
-  return d0[0]*(t2-t1) + n0[0]*q;
+  // Sum up the integration for already failed and to-be-failed
+  return d0 * (t2 - t1) + n0 * q;
 }
-
 
 //' @title Integrated Event Probability Over an Interval
 //' @description Obtains the integration of the probability of having an
@@ -2187,39 +2116,45 @@ double hd(const int j = NA_INTEGER,
 //'
 //' @export
 // [[Rcpp::export]]
-double pd(const double t1 = NA_REAL,
-          const double t2 = NA_REAL,
-          const NumericVector& piecewiseSurvivalTime = 0,
-          const NumericVector& lambda = NA_REAL,
-          const NumericVector& gamma = 0) {
+double pd(const double t1,
+          const double t2,
+          const std::vector<double>& piecewiseSurvivalTime,
+          const std::vector<double>& lambda,
+          const std::vector<double>& gamma) {
 
-  // identify the analysis time intervals containing t1 and t2
-  NumericVector t12 = NumericVector::create(t1, t2);
-  IntegerVector j12 = pmax(findInterval3(t12, piecewiseSurvivalTime,
-                                         0,0,0), 1) - 1;
+  // Identify analysis time intervals containing t1 and t2
+  std::vector<double> t12 = {t1, t2};
+  std::vector<int> j12 = findInterval3(t12, piecewiseSurvivalTime);
 
-  NumericVector t = piecewiseSurvivalTime;
+  int j1 = std::max(j12[0] - 1, 0);  // Ensure index is not less than 0
+  int j2 = std::max(j12[1] - 1, 0);
 
-  int j1=j12[0], j2=j12[1];
+  double a = 0.0;
 
-  // sum up the integrated event probabilities across analysis time intervals
-  double a=0, x;
-  for (int j=j1; j<=j2; ++j) {
-    if (j1==j2) {
-      x = hd(j+1, t1, t2, t, lambda, gamma);
-    } else if (j==j1) {
-      x = hd(j+1, t1, t[j+1], t, lambda, gamma);
-    } else if (j==j2) {
-      x = hd(j+1, t[j], t2, t, lambda, gamma);
+  // Sum up the integrated event probabilities across analysis time intervals
+  for (int j = j1; j <= j2; ++j) {
+    double x = 0.0;
+    if (j1 == j2) {
+      // Both t1 and t2 are in the same interval
+      x = hd(j + 1, t1, t2, piecewiseSurvivalTime, lambda, gamma);
+    } else if (j == j1) {
+      // First interval
+      x = hd(j + 1, t1, piecewiseSurvivalTime[j + 1],
+             piecewiseSurvivalTime, lambda, gamma);
+    } else if (j == j2) {
+      // Last interval
+      x = hd(j + 1, piecewiseSurvivalTime[j], t2,
+             piecewiseSurvivalTime, lambda, gamma);
     } else {
-      x = hd(j+1, t[j], t[j+1], t, lambda, gamma);
+      // Intermediate intervals
+      x = hd(j + 1, piecewiseSurvivalTime[j], piecewiseSurvivalTime[j + 1],
+             piecewiseSurvivalTime, lambda, gamma);
     }
     a += x;
   }
 
   return a;
 }
-
 
 //' @title Number of Patients Enrolled During an Interval and Having an Event
 //' by Specified Calendar Times
@@ -2259,46 +2194,51 @@ double pd(const double t1 = NA_REAL,
 //'
 //' @export
 // [[Rcpp::export]]
-NumericVector ad(const NumericVector& time = NA_REAL,
-                 const double u1 = NA_REAL,
-                 const double u2 = NA_REAL,
-                 const NumericVector& accrualTime = 0,
-                 const NumericVector& accrualIntensity = NA_REAL,
-                 const NumericVector& piecewiseSurvivalTime = 0,
-                 const NumericVector& lambda = NA_REAL,
-                 const NumericVector& gamma = 0) {
+std::vector<double> ad(const std::vector<double>& time,
+                       const double u1,
+                       const double u2,
+                       const std::vector<double>& accrualTime,
+                       const std::vector<double>& accrualIntensity,
+                       const std::vector<double>& piecewiseSurvivalTime,
+                       const std::vector<double>& lambda,
+                       const std::vector<double>& gamma) {
 
-  // identify the accrual time intervals containing u1 and u2
-  NumericVector u12 = NumericVector::create(u1, u2);
-  IntegerVector j12 = pmax(findInterval3(u12, accrualTime, 0,0,0), 1) - 1;
+  // Identify accrual time intervals containing u1 and u2
+  std::vector<double> u12 = {u1, u2};
+  std::vector<int> j12 = findInterval3(u12, accrualTime);
+  int j1 = std::max(j12[0] - 1, 0);  // 0-based index for j1
+  int j2 = std::max(j12[1] - 1, 0);  // 0-based index for j2
 
-  NumericVector u = accrualTime;
+  size_t k = time.size();
+  std::vector<double> a(k, 0.0);  // Initialize the result vector with zeroes
 
-  int j1=j12[0], j2=j12[1], k=static_cast<int>(time.size());
-
-  NumericVector a(k);
-
-  // sum up the number of patients with event across accrual time intervals
-  double t, x;
-  for (int i=0; i<k; ++i) {
-    t = time[i];
-    for (int j=j1; j<=j2; ++j) {
-      if (j1==j2) {
-        x = pd(t-u2, t-u1, piecewiseSurvivalTime, lambda, gamma);
-      } else if (j==j1) {
-        x = pd(t-u[j+1], t-u1, piecewiseSurvivalTime, lambda, gamma);
-      } else if (j==j2) {
-        x = pd(t-u2, t-u[j], piecewiseSurvivalTime, lambda, gamma);
+  // Sum up the number of patients with an event across accrual time intervals
+  for (size_t i = 0; i < k; ++i) {
+    double t = time[i];  // Current time
+    for (int j = j1; j <= j2; ++j) {
+      double x = 0.0;
+      // Check intervals
+      if (j1 == j2) {
+        // Both u1 and u2 are in the same interval
+        x = pd(t - u2, t - u1, piecewiseSurvivalTime, lambda, gamma);
+      } else if (j == j1) {
+        // First interval
+        x = pd(t - accrualTime[j + 1], t - u1, piecewiseSurvivalTime, lambda, gamma);
+      } else if (j == j2) {
+        // Last interval
+        x = pd(t - u2, t - accrualTime[j], piecewiseSurvivalTime, lambda, gamma);
       } else {
-        x = pd(t-u[j+1], t-u[j], piecewiseSurvivalTime, lambda, gamma);
+        // Intermediate intervals
+        x = pd(t - accrualTime[j + 1], t - accrualTime[j],
+               piecewiseSurvivalTime, lambda, gamma);
       }
-      a[i] += accrualIntensity[j]*x;
+      // Add the contribution from this interval
+      a[i] += accrualIntensity[j] * x;
     }
   }
 
   return a;
 }
-
 
 //' @title Number of Subjects at Risk
 //' @description Obtains the number of subjects at risk at given analysis
@@ -2337,41 +2277,48 @@ NumericVector ad(const NumericVector& time = NA_REAL,
 //'
 //' @export
 // [[Rcpp::export]]
-NumericMatrix natrisk(const NumericVector& time = NA_REAL,
-                      const double allocationRatioPlanned = 1,
-                      const NumericVector& accrualTime = 0,
-                      const NumericVector& accrualIntensity = NA_REAL,
-                      const NumericVector& piecewiseSurvivalTime = 0,
-                      const NumericVector& lambda1 = NA_REAL,
-                      const NumericVector& lambda2 = NA_REAL,
-                      const NumericVector& gamma1 = 0,
-                      const NumericVector& gamma2 = 0,
-                      const double accrualDuration = NA_REAL,
-                      const double minFollowupTime = NA_REAL,
-                      const double maxFollowupTime = NA_REAL) {
+FlatMatrix natrisk(const std::vector<double>& time,
+                   const double allocationRatioPlanned,
+                   const std::vector<double>& accrualTime,
+                   const std::vector<double>& accrualIntensity,
+                   const std::vector<double>& piecewiseSurvivalTime,
+                   const std::vector<double>& lambda1,
+                   const std::vector<double>& lambda2,
+                   const std::vector<double>& gamma1,
+                   const std::vector<double>& gamma2,
+                   const double accrualDuration,
+                   const double minFollowupTime,
+                   const double maxFollowupTime) {
+
+  size_t k = time.size();
 
   // truncate the analysis time by the maximum follow-up
-  NumericVector t = pmin(time, maxFollowupTime);
+  std::vector<double> t(k), u(k);
+  for (size_t i = 0; i < k; ++i) {
+    t[i] = std::min(time[i], maxFollowupTime);
+    u[i] = std::min(accrualDuration + minFollowupTime - t[i], accrualDuration);
+  }
 
-  // enrollment time
-  NumericVector u = pmin(accrualDuration+minFollowupTime-t, accrualDuration);
+  // Number of patients enrolled
+  std::vector<double> a = accrual(u, accrualTime, accrualIntensity, accrualDuration);
 
-  // number of patients enrolled
-  NumericVector a = accrual(u, accrualTime, accrualIntensity,
-                            accrualDuration);
+  // Probability of randomization to the active treatment group
+  double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
 
-  // probability of being randomized to the active treatment group
-  double phi = allocationRatioPlanned/(1+allocationRatioPlanned);
+  FlatMatrix n(k, 2);  // FlatMatrix with column-major storage
 
-  // number of patients at risk in each treatment group
-  int k = static_cast<int>(time.size());
-  NumericMatrix n(k, 2);
-  n(_, 0) = phi*a*patrisk(t, piecewiseSurvivalTime, lambda1, gamma1);
-  n(_, 1) = (1-phi)*a*patrisk(t, piecewiseSurvivalTime, lambda2, gamma2);
+  // Compute probabilities for the active and control groups
+  std::vector<double> patrisk1 = patrisk(t, piecewiseSurvivalTime, lambda1, gamma1);
+  std::vector<double> patrisk2 = patrisk(t, piecewiseSurvivalTime, lambda2, gamma2);
+
+  // Compute values for FlatMatrix directly
+  for (size_t i = 0; i < k; ++i) {
+    n(i, 0) = phi * a[i] * patrisk1[i];  // Patients at risk in active treatment
+    n(i, 1) = (1.0 - phi) * a[i] * patrisk2[i];  // Patients at risk in control
+  }
 
   return n;
 }
-
 
 //' @title Number of Subjects Having an Event
 //' @description Obtains the number of subjects having an event by given
@@ -2410,54 +2357,60 @@ NumericMatrix natrisk(const NumericVector& time = NA_REAL,
 //'
 //' @export
 // [[Rcpp::export]]
-NumericMatrix nevent(const NumericVector& time = NA_REAL,
-                     const double allocationRatioPlanned = 1,
-                     const NumericVector& accrualTime = 0,
-                     const NumericVector& accrualIntensity = NA_REAL,
-                     const NumericVector& piecewiseSurvivalTime = 0,
-                     const NumericVector& lambda1 = NA_REAL,
-                     const NumericVector& lambda2 = NA_REAL,
-                     const NumericVector& gamma1 = 0,
-                     const NumericVector& gamma2 = 0,
-                     const double accrualDuration = NA_REAL,
-                     const double minFollowupTime = NA_REAL,
-                     const double maxFollowupTime = NA_REAL) {
+FlatMatrix nevent(const std::vector<double>& time,
+                  const double allocationRatioPlanned,
+                  const std::vector<double>& accrualTime,
+                  const std::vector<double>& accrualIntensity,
+                  const std::vector<double>& piecewiseSurvivalTime,
+                  const std::vector<double>& lambda1,
+                  const std::vector<double>& lambda2,
+                  const std::vector<double>& gamma1,
+                  const std::vector<double>& gamma2,
+                  const double accrualDuration,
+                  const double minFollowupTime,
+                  const double maxFollowupTime) {
+
+  size_t k = time.size();
 
   // truncate the analysis time by the maximum follow-up
-  NumericVector t = pmin(time, maxFollowupTime);
+  std::vector<double> t(k), u(k);
+  for (size_t i = 0; i < k; ++i) {
+    t[i] = std::min(time[i], maxFollowupTime);
+    u[i] = std::min(accrualDuration + minFollowupTime - t[i], accrualDuration);
+  }
 
-  // enrollment time
-  NumericVector u = pmin(accrualDuration+minFollowupTime-t, accrualDuration);
+  // Number of patients enrolled
+  std::vector<double> a = accrual(u, accrualTime, accrualIntensity, accrualDuration);
 
-  // number of patients enrolled
-  NumericVector a = accrual(u, accrualTime, accrualIntensity,
-                            accrualDuration);
+  // Probability of randomization to the active treatment group
+  double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
 
-  // probability of being randomized to the active treatment group
-  double phi = allocationRatioPlanned/(1+allocationRatioPlanned);
+  // Prepare FlatMatrix for results (k rows, 2 columns)
+  FlatMatrix d(k, 2);  // FlatMatrix with column-major storage
 
-  // number of patients having an event in each treatment group
-  NumericVector u1(1);
-  u1[0] = accrualDuration + minFollowupTime;
+  // Compute the probabilities of having events in both treatment groups
+  std::vector<double> pevent1 = pevent(t, piecewiseSurvivalTime, lambda1, gamma1);
+  std::vector<double> pevent2 = pevent(t, piecewiseSurvivalTime, lambda2, gamma2);
 
-  int k = static_cast<int>(time.size());
-  NumericMatrix d(k, 2);
+  // Constant for ad() calculations
+  std::vector<double> u1(1, accrualDuration + minFollowupTime);
 
-  NumericVector d1(k), d2(k);
-  d1 = a*pevent(t, piecewiseSurvivalTime, lambda1, gamma1);
-  d2 = a*pevent(t, piecewiseSurvivalTime, lambda2, gamma2);
+  // Compute the number of patients having an event in each group
+  for (size_t i = 0; i < k; ++i) {
+    double ad1 = ad(u1, u[i], accrualDuration, accrualTime, accrualIntensity,
+                    piecewiseSurvivalTime, lambda1, gamma1)[0];
+    double ad2 = ad(u1, u[i], accrualDuration, accrualTime, accrualIntensity,
+                    piecewiseSurvivalTime, lambda2, gamma2)[0];
 
-  for (int i=0; i<k; ++i) {
-    d(i,0) = phi*(d1[i] + ad(u1, u[i], accrualDuration, accrualTime,
-                  accrualIntensity, piecewiseSurvivalTime,
-                  lambda1, gamma1)[0]);
-    d(i,1) = (1-phi)*(d2[i] + ad(u1, u[i], accrualDuration, accrualTime,
-              accrualIntensity, piecewiseSurvivalTime, lambda2, gamma2)[0]);
+    double d1 = a[i] * pevent1[i];
+    double d2 = a[i] * pevent2[i];
+
+    d(i, 0) = phi * (d1 + ad1);  // Active treatment group
+    d(i, 1) = (1.0 - phi) * (d2 + ad2);  // Control group
   }
 
   return d;
 }
-
 
 //' @title Number of Subjects Having an Event by Calendar Time
 //' @description Obtains the number of subjects having an event by given
@@ -2495,55 +2448,561 @@ NumericMatrix nevent(const NumericVector& time = NA_REAL,
 //'
 //' @export
 // [[Rcpp::export]]
-NumericMatrix nevent2(const NumericVector& time = NA_REAL,
-                      const double allocationRatioPlanned = 1,
-                      const NumericVector& accrualTime = 0,
-                      const NumericVector& accrualIntensity = NA_REAL,
-                      const NumericVector& piecewiseSurvivalTime = 0,
-                      const NumericVector& lambda1 = NA_REAL,
-                      const NumericVector& lambda2 = NA_REAL,
-                      const NumericVector& gamma1 = 0,
-                      const NumericVector& gamma2 = 0,
-                      const double accrualDuration = NA_REAL,
-                      const double minFollowupTime = NA_REAL,
-                      const double maxFollowupTime = NA_REAL) {
+FlatMatrix nevent2(const std::vector<double>& time,
+                   const double allocationRatioPlanned,
+                   const std::vector<double>& accrualTime,
+                   const std::vector<double>& accrualIntensity,
+                   const std::vector<double>& piecewiseSurvivalTime,
+                   const std::vector<double>& lambda1,
+                   const std::vector<double>& lambda2,
+                   const std::vector<double>& gamma1,
+                   const std::vector<double>& gamma2,
+                   const double accrualDuration,
+                   const double minFollowupTime,
+                   const double maxFollowupTime) {
 
-  // truncate the calendar time by study end
-  NumericVector t = pmin(time, accrualDuration + minFollowupTime);
+  size_t k = time.size();
 
-  // enrollment time
-  NumericVector u = pmin(pmax(t - maxFollowupTime, 0.0), accrualDuration);
-  NumericVector w = pmin(t, accrualDuration);
+  // truncate the analysis time by the maximum follow-up
+  std::vector<double> t(k), u(k), w(k);
+  for (size_t i = 0; i < k; ++i) {
+    t[i] = std::min(time[i], accrualDuration + minFollowupTime);
+    u[i] = std::min(std::max(t[i] - maxFollowupTime, 0.0), accrualDuration);
+    w[i] = std::min(t[i], accrualDuration);
+  }
 
-  // number of patients enrolled
-  NumericVector a = accrual(u, accrualTime, accrualIntensity,
-                            accrualDuration);
+  // Number of patients enrolled
+  std::vector<double> a = accrual(u, accrualTime, accrualIntensity, accrualDuration);
 
-  // probability of being randomized to the active treatment group
-  double phi = allocationRatioPlanned/(1+allocationRatioPlanned);
+  // Probability of randomization to the active treatment group
+  double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
 
-  // number of patients having an event in each treatment group
-  NumericVector s(1), v(1);
-  s[0] = maxFollowupTime;
+  // Prepare FlatMatrix for results (k rows, 2 columns)
+  FlatMatrix d(k, 2);  // FlatMatrix with column-major storage
 
-  int k = static_cast<int>(time.size());
-  NumericMatrix d(k, 2);
+  // Precompute probabilities using pevent
+  std::vector<double> s(1, maxFollowupTime); // s contains maxFollowupTime
+  std::vector<double> d1 = a; // Copy of a
+  std::vector<double> d2 = a; // Copy of a
 
-  NumericVector d1(k), d2(k);
-  d1 = a*pevent(s, piecewiseSurvivalTime, lambda1, gamma1)[0];
-  d2 = a*pevent(s, piecewiseSurvivalTime, lambda2, gamma2)[0];
+  double pevent1 = pevent(s, piecewiseSurvivalTime, lambda1, gamma1)[0];
+  double pevent2 = pevent(s, piecewiseSurvivalTime, lambda2, gamma2)[0];
 
-  for (int i=0; i<k; ++i) {
-    v[0] = t[i];
-    d(i,0) = phi*(d1[i] + ad(v, u[i], w[i], accrualTime, accrualIntensity,
-                  piecewiseSurvivalTime, lambda1, gamma1)[0]);
-    d(i,1) = (1-phi)*(d2[i] + ad(v, u[i], w[i], accrualTime,
-              accrualIntensity, piecewiseSurvivalTime, lambda2, gamma2)[0]);
+  for (size_t i = 0; i < k; ++i) {
+    d1[i] *= pevent1;
+    d2[i] *= pevent2;
+  }
+
+  // Compute the number of patients experiencing events in each group
+  for (size_t i = 0; i < k; ++i) {
+    std::vector<double> v(1, t[i]);
+    double ad1 = ad(v, u[i], w[i], accrualTime, accrualIntensity,
+                    piecewiseSurvivalTime, lambda1, gamma1)[0];
+    double ad2 = ad(v, u[i], w[i], accrualTime, accrualIntensity,
+                    piecewiseSurvivalTime, lambda2, gamma2)[0];
+
+    d(i, 0) = phi * (d1[i] + ad1);  // Active treatment group
+    d(i, 1) = (1.0 - phi) * (d2[i] + ad2);  // Control group
   }
 
   return d;
 }
 
+
+ListCpp getDesigncpp(const double beta,
+                     const double IMax,
+                     const double theta,
+                     const int kMax,
+                     const std::vector<double>& informationRates,
+                     const std::vector<unsigned char>& efficacyStopping,
+                     const std::vector<unsigned char>& futilityStopping,
+                     const std::vector<double>& criticalValues,
+                     const double alpha,
+                     const std::string& typeAlphaSpending,
+                     const double parameterAlphaSpending,
+                     const std::vector<double>& userAlphaSpending,
+                     const std::vector<double>& futilityBounds,
+                     const std::string& typeBetaSpending,
+                     const double parameterBetaSpending,
+                     const std::vector<double>& userBetaSpending,
+                     const std::vector<double>& spendingTime,
+                     const double varianceRatio) {
+
+  // ----------- Input Validation ----------- //
+  if (std::isnan(beta) && std::isnan(IMax)) {
+    throw std::invalid_argument("beta and IMax cannot be missing simultaneously.");
+  }
+  if (!std::isnan(beta) && !std::isnan(IMax)) {
+    throw std::invalid_argument("Only one of beta and IMax should be provided.");
+  }
+  if (!std::isnan(IMax) && IMax <= 0) {
+    throw std::invalid_argument("IMax must be positive");
+  }
+  if (std::isnan(theta)) {
+    throw std::invalid_argument("theta must be provided.");
+  }
+  if (kMax < 1) {
+    throw std::invalid_argument("kMax must be a positive integer.");
+  }
+
+  // Alpha and Beta must be within valid ranges
+  if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1)) {
+    throw std::invalid_argument("alpha must lie in [0.00001, 1).");
+  }
+  if (!std::isnan(beta) && (beta >= 1 - alpha || beta < 0.0001)) {
+    throw std::invalid_argument("beta must lie in [0.0001, 1-alpha).");
+  }
+
+  std::string unknown = std::isnan(beta) ? "beta" : "IMax";
+
+  // informationRates: default to (1:kMax)/kMax if missing
+  std::vector<double> infoRates(kMax);
+  if (none_na(informationRates)) {
+    if (static_cast<int>(informationRates.size()) != kMax)
+      throw std::invalid_argument("Invalid length for informationRates.");
+    if (informationRates[0] <= 0.0)
+      throw std::invalid_argument("informationRates must be positive.");
+    if (any_nonincreasing(informationRates))
+      throw std::invalid_argument("informationRates must be increasing.");
+    if (informationRates[kMax-1] != 1.0)
+      throw std::invalid_argument("informationRates must end with 1.");
+    infoRates = informationRates; // copy
+  } else {
+    for (int i = 0; i < kMax; ++i)
+      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(kMax);
+  }
+
+  // effStopping: default to all 1s if missing
+  std::vector<unsigned char> effStopping;
+  if (none_na(efficacyStopping)) {
+    if (static_cast<int>(efficacyStopping.size()) != kMax)
+      throw std::invalid_argument("Invalid length for efficacyStopping.");
+    if (efficacyStopping[kMax-1] != 1)
+      throw std::invalid_argument("efficacyStopping must end with 1.");
+    effStopping = efficacyStopping; // copy
+  } else {
+    effStopping.assign(kMax, 1);
+  }
+
+  // futStopping: default to all 1s if missing
+  std::vector<unsigned char> futStopping;
+  if (none_na(futilityStopping)) {
+    if (static_cast<int>(futilityStopping.size()) != kMax)
+      throw std::invalid_argument("Invalid length for futilityStopping.");
+    if (futilityStopping[kMax-1] != 1)
+      throw std::invalid_argument("futilityStopping must end with 1.");
+    futStopping = futilityStopping; // copy
+  } else {
+    futStopping.assign(kMax, 1);
+  }
+
+  bool missingCriticalValues = !none_na(criticalValues);
+  bool missingFutilityBounds = !none_na(futilityBounds);
+
+  if (!missingCriticalValues) {
+    if (static_cast<int>(criticalValues.size()) != kMax) {
+      throw std::invalid_argument("Invalid length for criticalValues.");
+    }
+  }
+  if (missingCriticalValues && std::isnan(alpha)) {
+    throw std::invalid_argument("alpha must be provided for missing criticalValues.");
+  }
+
+  std::string asf = typeAlphaSpending;
+  std::for_each(asf.begin(), asf.end(), [](char & c) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  });
+
+  if (missingCriticalValues && !(asf == "of" || asf == "p" ||
+      asf == "wt" || asf == "sfof" || asf == "sfp" ||
+      asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
+    throw std::invalid_argument("Invalid value for typeAlphaSpending.");
+  }
+  if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
+      std::isnan(parameterAlphaSpending)) {
+    throw std::invalid_argument("Missing value for parameterAlphaSpending.");
+  }
+  if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
+    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD.");
+  }
+
+  if (missingCriticalValues && asf == "user") {
+    if (!none_na(userAlphaSpending))
+      throw std::invalid_argument("userAlphaSpending must be specified.");
+    if (static_cast<int>(userAlphaSpending.size()) < kMax)
+      throw std::invalid_argument("Insufficient length of userAlphaSpending.");
+    if (userAlphaSpending[0] < 0.0)
+      throw std::invalid_argument("userAlphaSpending must be nonnegative.");
+    if (any_nonincreasing(userAlphaSpending))
+      throw std::invalid_argument("userAlphaSpending must be nondecreasing.");
+    if (userAlphaSpending[kMax-1] != alpha)
+      throw std::invalid_argument("userAlphaSpending must end with specified alpha.");
+  }
+
+  if (!missingFutilityBounds) {
+    if (!(static_cast<int>(futilityBounds.size()) == kMax - 1 ||
+        static_cast<int>(futilityBounds.size()) == kMax)) {
+      throw std::invalid_argument("Invalid length for futilityBounds.");
+    }
+  }
+  if (!missingCriticalValues && !missingFutilityBounds) {
+    for (int i = 0; i < kMax - 1; ++i) {
+      if (futilityBounds[i] > criticalValues[i]) {
+        throw std::invalid_argument("futilityBounds must lie below criticalValues.");
+      }
+    }
+    if (static_cast<int>(futilityBounds.size()) == kMax &&
+        futilityBounds[kMax-1] != criticalValues[kMax-1]) {
+      throw std::invalid_argument(
+          "futilityBounds must meet criticalValues at the final look.");
+    }
+  }
+
+  std::string bsf = typeBetaSpending;
+  std::for_each(bsf.begin(), bsf.end(), [](char & c) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  });
+
+  if (unknown == "IMax") {
+    if (missingFutilityBounds && !(bsf == "sfof" || bsf == "sfp" ||
+        bsf == "sfkd" || bsf == "sfhsd" || bsf == "user" || bsf == "none")) {
+      throw std::invalid_argument("Invalid value for typeBetaSpending.");
+    }
+  } else {
+    if (missingFutilityBounds && !(bsf == "sfof" || bsf == "sfp" ||
+        bsf == "sfkd" || bsf == "sfhsd" || bsf == "none")) {
+      throw std::invalid_argument("Invalid value for typeBetaSpending.");
+    }
+  }
+
+  if ((bsf == "sfkd" || bsf == "sfhsd") && std::isnan(parameterBetaSpending)) {
+    throw std::invalid_argument("Missing value for parameterBetaSpending.");
+  }
+  if (bsf == "sfkd" && parameterBetaSpending <= 0.0) {
+    throw std::invalid_argument ("parameterBetaSpending must be positive for sfKD.");
+  }
+
+  if (unknown == "IMax" && bsf == "user") {
+    if (!none_na(userBetaSpending))
+      throw std::invalid_argument("userBetaSpending must be specified.");
+    if (static_cast<int>(userBetaSpending.size()) < kMax)
+      throw std::invalid_argument("Insufficient length of userBetaSpending.");
+    if (userBetaSpending[0] < 0.0)
+      throw std::invalid_argument("userBetaSpending must be nonnegative.");
+    if (any_nonincreasing(userBetaSpending))
+      throw std::invalid_argument("userBetaSpending must be nondecreasing.");
+    if (userBetaSpending[kMax-1] != beta)
+      throw std::invalid_argument("userBetaSpending must end with specified beta.");
+  }
+
+  std::vector<double> spendTime;
+  if (none_na(spendingTime)) {
+    if (static_cast<int>(spendingTime.size()) != kMax)
+      throw std::invalid_argument("Invalid length for spendingTime.");
+    if (spendingTime[0] <= 0.0)
+      throw std::invalid_argument("spendingTime must be positive.");
+    if (any_nonincreasing(spendingTime))
+      throw std::invalid_argument("spendingTime must be increasing.");
+    if (spendingTime[kMax-1] != 1.0)
+      throw std::invalid_argument("spendingTime must end with 1.");
+    spendTime = spendingTime; // copy
+  } else {
+    spendTime = infoRates;
+  }
+
+  if (varianceRatio <= 0.0) {
+    throw std::invalid_argument("varianceRatio must be positive.");
+  }
+  // ----------- End of Input Validation ----------- //
+
+  // set up efficacy bounds
+  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> critValues = criticalValues;
+  if (missingCriticalValues) {
+    bool haybittle = false;
+    if (kMax > 1 && static_cast<int>(criticalValues.size()) == kMax) {
+      bool hasNaN = false;
+      for (int i = 0; i < kMax - 1; ++i) {
+        if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
+      }
+      if (!hasNaN && std::isnan(criticalValues[kMax-1])) {
+        haybittle = true;
+      }
+    }
+
+    if (haybittle) { // Haybittle & Peto
+      std::vector<double> u(kMax);
+      for (int i = 0; i < kMax - 1; ++i) {
+        u[i] = criticalValues[i];
+        if (!effStopping[i]) u[i] = 6.0;
+      }
+
+      auto f = [&](double aval)->double {
+        u[kMax-1] = aval;
+        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
+        auto v = probs.get<std::vector<double>>("exitProbUpper");
+        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        return cpu - alpha;
+      };
+
+      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+    } else {
+      critValues = getBoundcpp(kMax, infoRates, alpha, asf,
+                               parameterAlphaSpending, userAlphaSpending,
+                               spendTime, effStopping);
+    }
+  }
+
+  ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
+  auto v = probs.get<std::vector<double>>("exitProbUpper");
+  std::vector<double> cumAlphaSpent(kMax);
+  std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
+  double alpha1 = cumAlphaSpent[kMax-1];
+
+  // set up futility bounds
+  std::vector<double> futBounds = futilityBounds;
+  if (kMax > 1) {
+    if (missingFutilityBounds && bsf == "none") {
+      futBounds = std::vector<double>(kMax, -6.0);
+      futBounds[kMax-1] = critValues[kMax-1];
+    } else if (!missingFutilityBounds &&
+      static_cast<int>(futBounds.size()) == kMax-1) {
+      futBounds.push_back(critValues[kMax-1]);
+    }
+  } else {
+    if (missingFutilityBounds) {
+      futBounds = critValues;
+    }
+  }
+
+  // multiplier for the boundaries under the alternative hypothesis
+  std::vector<double> w(kMax, std::sqrt(varianceRatio));
+  std::vector<double> u(kMax);
+  for (int i = 0; i < kMax; ++i) {
+    u[i] = critValues[i] * w[i];
+  }
+
+  double beta1 = beta;
+  double IMax1 = IMax;
+  double drift;
+  if (unknown == "IMax") {
+    std::vector<double> u1; u1.reserve(kMax);
+    std::vector<double> l1; l1.reserve(kMax);
+    std::vector<double> delta1; delta1.reserve(kMax);
+    std::vector<double> I1; I1.reserve(kMax);
+    double sqrtt0 = std::sqrt(infoRates[0]);
+
+    auto f = [&](double aval)->double {
+      std::vector<double> delta = std::vector<double>(kMax, aval);
+
+      // compute stagewise exit probabilities
+      if (!missingFutilityBounds || bsf == "none" || kMax == 1) {
+        for (int i = 0; i < kMax; ++i) {
+          l[i] = futBounds[i] * w[i];
+        }
+        ListCpp probs = exitprobcpp(u, l, delta, infoRates);
+        auto v = probs.get<std::vector<double>>("exitProbUpper");
+        double overallReject = std::accumulate(v.begin(), v.end(), 0.0);
+        return overallReject - (1.0 - beta);
+      } else {
+        // initialize futility bound to be updated
+        futBounds = std::vector<double>(kMax);
+        double eps = 0.0;
+
+        // first stage
+        int k = 0;
+        double cb = (bsf == "user") ? userBetaSpending[0] :
+          errorSpentcpp(spendTime[0], beta, bsf, parameterBetaSpending);
+
+        if (!futStopping[0]) {
+          futBounds[0] = -6.0;
+        } else {
+          double dt0 = delta[0] * sqrtt0;
+          eps = boost_pnorm(u[0] - dt0) - cb;
+          if (eps < 0.0) return -1.0; // to decrease drift
+          futBounds[0] = (boost_qnorm(cb) + dt0) / w[0];
+        }
+
+        // lambda expression for finding futility bound at stage k
+        auto g = [&](double aval)->double {
+          u1.resize(k + 1);
+          l1.resize(k + 1);
+          delta1.resize(k + 1);
+          I1.resize(k + 1);
+
+          if (k > 0) {
+            std::memcpy(u1.data(), u.data(), k * sizeof(double));
+            std::memcpy(l1.data(), l.data(), k * sizeof(double));
+          }
+          u1[k] = 6.0;
+          l1[k] = aval * w[k];
+
+          std::memcpy(delta1.data(), delta.data(), (k + 1) * sizeof(double));
+          std::memcpy(I1.data(), infoRates.data(), (k + 1) * sizeof(double));
+
+          ListCpp probs = exitprobcpp(u1, l1, delta1, I1);
+          auto v = probs.get<std::vector<double>>("exitProbLower");
+          double cpl = std::accumulate(v.begin(), v.end(), 0.0);
+          return cpl - cb;
+        };
+
+        for (k = 1; k < kMax; ++k) {
+          l[k-1] = futBounds[k-1] * w[k-1];
+          cb = (bsf == "user") ? userBetaSpending[k] :
+            errorSpentcpp(spendTime[k], beta, bsf, parameterBetaSpending);
+
+          if (!futStopping[k]) {
+            futBounds[k] = -6.0;
+          } else {
+            double bk = critValues[k];
+            eps = g(bk);
+            double g_minus6 = g(-6.0);
+
+            if (g_minus6 > 0.0) { // no beta spent at current visit
+              futBounds[k] = -6.0;
+            } else if (eps > 0.0) {
+              auto g_for_brent = [&](double x)->double {
+                if (x == -6.0) return g_minus6;  // avoid recomputation at 6.0
+                if (x == bk) return eps;         // avoid recomputation at b[k]
+                return g(x);
+              };
+
+              futBounds[k] = brent(g_for_brent, -6.0, bk, 1e-6);
+            } else if (k < kMax-1) {
+              return -1.0;
+            }
+          }
+        }
+
+        return eps;
+      }
+    };
+
+    drift = brent(f, 0.0, 6.0, 1e-6);
+    IMax1 = sq(drift / theta);
+    futBounds[kMax-1] = critValues[kMax-1];
+    l[kMax-1] = futBounds[kMax-1] * w[kMax-1];
+    std::vector<double> delta = std::vector<double>(kMax, drift);
+    probs = exitprobcpp(u, l, delta, infoRates);
+  } else {
+    drift = theta * std::sqrt(IMax1);
+    std::vector<double> delta = std::vector<double>(kMax, drift);
+    if (!missingFutilityBounds || bsf=="none" || kMax==1) {
+      for (int i = 0; i < kMax; ++i) {
+        l[i] = futBounds[i] * w[i];
+      }
+      probs = exitprobcpp(u, l, delta, infoRates);
+      auto v = probs.get<std::vector<double>>("exitProbUpper");
+      double overallReject = std::accumulate(v.begin(), v.end(), 0.0);
+      beta1 = 1.0 - overallReject;
+    } else {
+      ListCpp out = getPower(alpha1, kMax, critValues, delta, infoRates, bsf,
+                             parameterBetaSpending, spendTime, futStopping, w);
+      beta1 = out.get<double>("beta");
+      futBounds = out.get<std::vector<double>>("futilityBounds");
+      for (int i = 0; i < kMax; ++i) {
+        l[i] = futBounds[i] * w[i];
+      }
+      probs = out.get_list("probs");
+    }
+  }
+
+  double driftf = boost_qnorm(1.0 - alpha1) * w[0] + boost_qnorm(1.0 - beta1);
+  double inflationFactor = sq(drift / driftf);
+
+  // output the results
+  std::vector<double> information(kMax);
+  std::vector<double> efficacyTheta(kMax);
+  std::vector<double> futilityTheta(kMax);
+  std::vector<double> efficacyP(kMax);
+  std::vector<double> futilityP(kMax);
+  for (int i = 0; i < kMax; ++i) {
+    information[i] = IMax1 * infoRates[i];
+    efficacyTheta[i] = u[i] / std::sqrt(information[i]);
+    futilityTheta[i] = l[i] / std::sqrt(information[i]);
+    efficacyP[i] = 1.0 - boost_pnorm(critValues[i]);
+    futilityP[i] = 1.0 - boost_pnorm(futBounds[i]);
+  }
+
+  // stagewise exit probabilities under H1
+  auto pu = probs.get<std::vector<double>>("exitProbUpper");
+  auto pl = probs.get<std::vector<double>>("exitProbLower");
+  std::vector<double> cpu(kMax), cpl(kMax);
+  std::partial_sum(pu.begin(), pu.end(), cpu.begin());
+  std::partial_sum(pl.begin(), pl.end(), cpl.begin());
+  double overallReject = cpu[kMax-1];
+  std::vector<double> ptotal(kMax);
+  for (int i = 0; i < kMax; ++i) ptotal[i] = pu[i] + pl[i];
+  double expectedInformationH1 = std::inner_product(
+    ptotal.begin(), ptotal.end(), information.begin(), 0.0);
+
+  // stagewise exit probabilities under H0 with binding futility
+  ListCpp probsH0 = exitprobcpp(critValues, futBounds, zero, infoRates);
+  auto puH0 = probsH0.get<std::vector<double>>("exitProbUpper");
+  auto plH0 = probsH0.get<std::vector<double>>("exitProbLower");
+  std::vector<double> cpuH0(kMax), cplH0(kMax);
+  std::partial_sum(puH0.begin(), puH0.end(), cpuH0.begin());
+  std::partial_sum(plH0.begin(), plH0.end(), cplH0.begin());
+  double overallRejectH0 = cpuH0[kMax-1];
+  std::vector<double> ptotalH0(kMax);
+  for (int i = 0; i < kMax; ++i) ptotalH0[i] = puH0[i] + plH0[i];
+  double expectedInformationH0 = std::inner_product(
+    ptotalH0.begin(), ptotalH0.end(), information.begin(), 0.0);
+
+  for (int i = 0; i < kMax; ++i) {
+    if (critValues[i] == 6) effStopping[i] = 0;
+    if (futBounds[i] == -6) futStopping[i] = 0;
+  }
+
+  DataFrameCpp byStageResults;
+  byStageResults.push_back(std::move(infoRates), "informationRates");
+  byStageResults.push_back(std::move(critValues), "efficacyBounds");
+  byStageResults.push_back(std::move(futBounds), "futilityBounds");
+  byStageResults.push_back(std::move(pu), "rejectPerStage");
+  byStageResults.push_back(std::move(pl), "futilityPerStage");
+  byStageResults.push_back(std::move(cpu), "cumulativeRejection");
+  byStageResults.push_back(std::move(cpl), "cumulativeFutility");
+  byStageResults.push_back(std::move(cumAlphaSpent), "cumulativeAlphaSpent");
+  byStageResults.push_back(std::move(efficacyTheta), "efficacyTheta");
+  byStageResults.push_back(std::move(futilityTheta), "futilityTheta");
+  byStageResults.push_back(std::move(efficacyP), "efficacyP");
+  byStageResults.push_back(std::move(futilityP), "futilityP");
+  byStageResults.push_back(std::move(information), "information");
+  byStageResults.push_back(std::move(effStopping), "efficacyStopping");
+  byStageResults.push_back(std::move(futStopping), "futilityStopping");
+  byStageResults.push_back(std::move(puH0), "rejectPerStageH0");
+  byStageResults.push_back(std::move(plH0), "futilityPerStageH0");
+  byStageResults.push_back(std::move(cpuH0), "cumulativeRejectionH0");
+  byStageResults.push_back(std::move(cplH0), "cumulativeFutilityH0");
+
+  DataFrameCpp overallResults;
+  overallResults.push_back(overallReject, "overallReject");
+  overallResults.push_back(alpha1, "alpha");
+  overallResults.push_back(overallRejectH0, "attainedAlpha");
+  overallResults.push_back(kMax, "kMax");
+  overallResults.push_back(theta, "theta");
+  overallResults.push_back(IMax1, "information");
+  overallResults.push_back(expectedInformationH1, "expectedInformationH1");
+  overallResults.push_back(expectedInformationH0, "expectedInformationH0");
+  overallResults.push_back(drift, "drift");
+  overallResults.push_back(inflationFactor, "inflationFactor");
+
+  ListCpp settings;
+  settings.push_back(typeAlphaSpending, "typeAlphaSpending");
+  settings.push_back(parameterAlphaSpending, "parameterAlphaSpending");
+  settings.push_back(userAlphaSpending, "userAlphaSpending");
+  settings.push_back(typeBetaSpending, "typeBetaSpending");
+  settings.push_back(parameterBetaSpending, "parameterBetaSpending");
+  settings.push_back(userBetaSpending, "userBetaSpending");
+  settings.push_back(spendingTime, "spendingTime");
+  settings.push_back(varianceRatio, "varianceRatio");
+
+  ListCpp result;
+  result.push_back(std::move(byStageResults), "byStageResults");
+  result.push_back(std::move(overallResults), "overallResults");
+  result.push_back(std::move(settings), "settings");
+  return result;
+}
 
 //' @title Power and Sample Size for a Generic Group Sequential Design
 //' @description Obtains the maximum information and stopping boundaries
@@ -2675,9 +3134,9 @@ NumericMatrix nevent2(const NumericVector& time = NA_REAL,
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
 //' @references
-//' Christopher Jennison, Bruce W. Turnbull. Group Sequential Methods with
-//' Applications to Clinical Trials. Chapman & Hall/CRC: Boca Raton, 2000,
-//' ISBN:0849303168
+//' Chrithrow std::invalid_argumenther Jennison, Bruce W. Turnbull.
+//' Group Sequential Methods with Applications to Clinical Trials.
+//' Chapman & Hall/CRC: Boca Raton, 2000, ISBN:0849303168
 //'
 //' @examples
 //'
@@ -2697,518 +3156,483 @@ NumericMatrix nevent2(const NumericVector& time = NA_REAL,
 //'
 //' @export
 // [[Rcpp::export]]
-List getDesign(const double beta = NA_REAL,
-               const double IMax = NA_REAL,
-               const double theta = NA_REAL,
-               const int kMax = 1,
-               const NumericVector& informationRates = NA_REAL,
-               const LogicalVector& efficacyStopping = NA_LOGICAL,
-               const LogicalVector& futilityStopping = NA_LOGICAL,
-               const NumericVector& criticalValues = NA_REAL,
-               const double alpha = 0.025,
-               const std::string typeAlphaSpending = "sfOF",
-               const double parameterAlphaSpending = NA_REAL,
-               const NumericVector& userAlphaSpending = NA_REAL,
-               const NumericVector& futilityBounds = NA_REAL,
-               const std::string typeBetaSpending = "none",
-               const double parameterBetaSpending = NA_REAL,
-               const NumericVector& userBetaSpending = NA_REAL,
-               const NumericVector& spendingTime = NA_REAL,
-               const double varianceRatio = 1) {
+Rcpp::List getDesign(
+    const double beta = NA_REAL,
+    const double IMax = NA_REAL,
+    const double theta = NA_REAL,
+    const int kMax = 1,
+    const Rcpp::NumericVector& informationRates = NA_REAL,
+    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
+    const Rcpp::LogicalVector& futilityStopping = NA_LOGICAL,
+    const Rcpp::NumericVector& criticalValues = NA_REAL,
+    const double alpha = 0.025,
+    const std::string& typeAlphaSpending = "sfOF",
+    const double parameterAlphaSpending = NA_REAL,
+    const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
+    const Rcpp::NumericVector& futilityBounds = NA_REAL,
+    const std::string& typeBetaSpending = "none",
+    const double parameterBetaSpending = NA_REAL,
+    const Rcpp::NumericVector& userBetaSpending = NA_REAL,
+    const Rcpp::NumericVector& spendingTime = NA_REAL,
+    const double varianceRatio = 1) {
 
-  NumericVector informationRates1 = clone(informationRates);
-  LogicalVector efficacyStopping1 = clone(efficacyStopping);
-  LogicalVector futilityStopping1 = clone(futilityStopping);
-  NumericVector criticalValues1 = clone(criticalValues);
-  NumericVector futilityBounds1 = clone(futilityBounds);
-  NumericVector spendingTime1 = clone(spendingTime);
+  auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
+  auto effStopping = convertLogicalVector(efficacyStopping);
+  auto futStopping = convertLogicalVector(futilityStopping);
+  auto critValues = Rcpp::as<std::vector<double>>(criticalValues);
+  auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
+  auto futBounds = Rcpp::as<std::vector<double>>(futilityBounds);
+  auto userBeta = Rcpp::as<std::vector<double>>(userBetaSpending);
+  auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
 
-  double alpha1 = alpha;
-  double beta1 = beta;
-  double IMax1 = IMax;
-  double drift, inflationFactor;
+  ListCpp result = getDesigncpp(
+    beta, IMax, theta, kMax, infoRates, effStopping, futStopping, critValues,
+    alpha, typeAlphaSpending, parameterAlphaSpending, userAlpha, futBounds,
+    typeBetaSpending, parameterBetaSpending, userBeta, spendTime, varianceRatio);
 
-  std::string unknown;
+  Rcpp::List resultR = Rcpp::wrap(result);
+  resultR.attr("class") = "design";
+  return resultR;
+}
 
+
+ListCpp getDesignEquivcpp(const double beta,
+                          const double IMax,
+                          const double thetaLower,
+                          const double thetaUpper,
+                          const double theta,
+                          const int kMax,
+                          const std::vector<double>& informationRates,
+                          const std::vector<double>& criticalValues,
+                          const double alpha,
+                          const std::string& typeAlphaSpending,
+                          const double parameterAlphaSpending,
+                          const std::vector<double>& userAlphaSpending,
+                          const std::vector<double>& spendingTime) {
+
+  // ----------- Input Validation ----------- //
   if (std::isnan(beta) && std::isnan(IMax)) {
-    stop("beta and IMax cannot be both missing");
+    throw std::invalid_argument("beta and IMax cannot be missing simultaneously.");
   }
-
   if (!std::isnan(beta) && !std::isnan(IMax)) {
-    stop("Only one of beta and IMax should be provided");
+    throw std::invalid_argument("Only one of beta and IMax should be provided.");
   }
-
-  if (!std::isnan(IMax)) {
-    if (IMax <= 0) {
-      stop("IMax must be positive");
-    }
-    unknown = "beta";
-  } else if (!std::isnan(beta)) {
-    unknown = "IMax";
+  if (!std::isnan(IMax) && IMax <= 0) {
+    throw std::invalid_argument("IMax must be positive.");
   }
-
   if (std::isnan(theta)) {
-    stop("theta must be provided");
+    throw std::invalid_argument("theta must be provided.");
   }
-
-  if (kMax == NA_INTEGER) {
-    stop("kMax must be provided");
+  if (std::isnan(thetaLower)) {
+    throw std::invalid_argument("thetaLower must be provided.");
   }
-
+  if (std::isnan(thetaUpper)) {
+    throw std::invalid_argument("thetaUpper must be provided.");
+  }
+  if (thetaLower >= theta) {
+    throw std::invalid_argument("thetaLower must be less than theta.");
+  }
+  if (thetaUpper <= theta) {
+    throw std::invalid_argument("thetaUpper must be greater than theta.");
+  }
   if (kMax < 1) {
-    stop("kMax must be a positive integer");
+    throw std::invalid_argument("kMax must be a positive integer.");
   }
 
-  if (is_false(any(is_na(informationRates)))) {
-    if (informationRates.size() != kMax) {
-      stop("Invalid length for informationRates");
-    } else if (informationRates[0] <= 0) {
-      stop("Elements of informationRates must be positive");
-    } else if (kMax > 1 && is_true(any(diff(informationRates) <= 0))) {
-      stop("Elements of informationRates must be increasing");
-    } else if (informationRates[kMax-1] != 1) {
-      stop("informationRates must end with 1");
-    }
+  // Alpha and Beta must be within valid ranges
+  if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1)) {
+    throw std::invalid_argument("alpha must lie in [0.00001, 1).");
+  }
+  if (!std::isnan(beta) && (beta >= 1 - alpha || beta < 0.0001)) {
+    throw std::invalid_argument("beta must lie in [0.0001, 1-alpha).");
+  }
+
+  std::string unknown = std::isnan(beta) ? "beta" : "IMax";
+
+
+  // informationRates: default to (1:kMax)/kMax if missing
+  std::vector<double> infoRates(kMax);
+  if (none_na(informationRates)) {
+    if (static_cast<int>(informationRates.size()) != kMax)
+      throw std::invalid_argument("Invalid length for informationRates.");
+    if (informationRates[0] <= 0.0)
+      throw std::invalid_argument("informationRates must be positive.");
+    if (any_nonincreasing(informationRates))
+      throw std::invalid_argument("informationRates must be increasing.");
+    if (informationRates[kMax-1] != 1.0)
+      throw std::invalid_argument("informationRates must end with 1.");
+    infoRates = informationRates; // copy
   } else {
-    IntegerVector tem = seq_len(kMax);
-    informationRates1 = NumericVector(tem)/(kMax+0.0);
+    for (int i = 0; i < kMax; ++i)
+      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(kMax);
   }
 
-  if (is_false(any(is_na(efficacyStopping)))) {
-    if (efficacyStopping.size() != kMax) {
-      stop("Invalid length for efficacyStopping");
-    } else if (efficacyStopping[kMax-1] != 1) {
-      stop("efficacyStopping must end with 1");
-    } else if (is_false(all((efficacyStopping == 1) |
-      (efficacyStopping == 0)))) {
-      stop("Elements of efficacyStopping must be 1 or 0");
-    }
-  } else {
-    efficacyStopping1 = rep(1, kMax);
-  }
 
-  if (is_false(any(is_na(futilityStopping)))) {
-    if (futilityStopping.size() != kMax) {
-      stop("Invalid length for futilityStopping");
-    } else if (futilityStopping[kMax-1] != 1) {
-      stop("futilityStopping must end with 1");
-    } else if (is_false(all((futilityStopping == 1) |
-      (futilityStopping == 0)))) {
-      stop("Elements of futilityStopping must be 1 or 0");
-    }
-  } else {
-    futilityStopping1 = rep(1, kMax);
-  }
+  bool missingCriticalValues = !none_na(criticalValues);
 
-  if (is_false(any(is_na(criticalValues)))) {
-    if (criticalValues.size() != kMax) {
-      stop("Invalid length for criticalValues");
+  if (!missingCriticalValues) {
+    if (static_cast<int>(criticalValues.size()) != kMax) {
+      throw std::invalid_argument("Invalid length for criticalValues.");
     }
   }
-
-  if (!std::isnan(alpha)) {
-    if (alpha < 0.00001 || alpha >= 1) {
-      stop("alpha must lie in [0.00001, 1)");
-    }
+  if (missingCriticalValues && std::isnan(alpha)) {
+    throw std::invalid_argument("alpha must be provided for missing criticalValues.");
   }
-
-  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
-    stop("alpha must be provided when criticalValues is missing");
-  }
-
-  if ((unknown == "IMax") && (beta >= 1-alpha || beta < 0.0001)) {
-    stop("beta must lie in [0.0001, 1-alpha)");
-  }
-
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
-  double asfpar = parameterAlphaSpending;
-
-  if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
-      asf=="wt" || asf=="sfof" || asf=="sfp" ||
-      asf=="sfkd" || asf=="sfhsd" || asf=="user" || asf=="none")) {
-    stop("Invalid value for typeAlphaSpending");
+  if (missingCriticalValues && !(asf == "of" || asf == "p" ||
+      asf == "wt" || asf == "sfof" || asf == "sfp" ||
+      asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
+    throw std::invalid_argument("Invalid value for typeAlphaSpending.");
+  }
+  if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
+      std::isnan(parameterAlphaSpending)) {
+    throw std::invalid_argument("Missing value for parameterAlphaSpending.");
+  }
+  if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
+    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD.");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
-    stop("Missing value for parameterAlphaSpending");
+  if (missingCriticalValues && asf == "user") {
+    if (!none_na(userAlphaSpending))
+      throw std::invalid_argument("userAlphaSpending must be specified.");
+    if (static_cast<int>(userAlphaSpending.size()) < kMax)
+      throw std::invalid_argument("Insufficient length of userAlphaSpending.");
+    if (userAlphaSpending[0] < 0.0)
+      throw std::invalid_argument("userAlphaSpending must be nonnegative.");
+    if (any_nonincreasing(userAlphaSpending))
+      throw std::invalid_argument("userAlphaSpending must be nondecreasing.");
+    if (userAlphaSpending[kMax-1] != alpha)
+      throw std::invalid_argument("userAlphaSpending must end with specified alpha.");
   }
 
-  if (asf=="sfkd" && asfpar <= 0) {
-    stop ("parameterAlphaSpending must be positive for sfKD");
+  std::vector<double> spendTime;
+  if (none_na(spendingTime)) {
+    if (static_cast<int>(spendingTime.size()) != kMax)
+      throw std::invalid_argument("Invalid length for spendingTime.");
+    if (spendingTime[0] <= 0.0)
+      throw std::invalid_argument("spendingTime must be positive.");
+    if (any_nonincreasing(spendingTime))
+      throw std::invalid_argument("spendingTime must be increasing.");
+    if (spendingTime[kMax-1] != 1.0)
+      throw std::invalid_argument("spendingTime must end with 1.");
+    spendTime = spendingTime; // copy
+  } else {
+    spendTime = infoRates;
   }
 
-  if (is_true(any(is_na(criticalValues))) && asf=="user") {
-    if (is_true(any(is_na(userAlphaSpending)))) {
-      stop("userAlphaSpending must be specified");
-    } else if (userAlphaSpending.size() < kMax) {
-      stop("Insufficient length of userAlphaSpending");
-    } else if (userAlphaSpending[0] < 0) {
-      stop("Elements of userAlphaSpending must be nonnegative");
-    } else if (kMax > 1 && is_true(any(diff(userAlphaSpending) < 0))) {
-      stop("Elements of userAlphaSpending must be nondecreasing");
-    } else if (userAlphaSpending[kMax-1] != alpha) {
-      stop("userAlphaSpending must end with specified alpha");
-    }
-  }
+  // ----------- End of Input Validation ----------- //
 
-  if (is_false(any(is_na(futilityBounds)))) {
-    if (!(futilityBounds.size() == kMax-1 ||
-        futilityBounds.size() == kMax)) {
-      stop("Invalid length for futilityBounds");
-    }
-  }
+  std::vector<double> u(kMax), l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> critValues = criticalValues;
 
-  if (is_false(any(is_na(criticalValues))) &&
-      is_false(any(is_na(futilityBounds)))) {
-    for (int i=0; i<kMax-1; ++i) {
-      if (futilityBounds[i] > criticalValues[i]) {
-        stop("futilityBounds must lie below criticalValues");
+  // obtain criticalValues
+  if (missingCriticalValues) {
+    bool haybittle = false;
+    if (kMax > 1 && static_cast<int>(criticalValues.size()) == kMax) {
+      bool hasNaN = false;
+      for (int i = 0; i < kMax - 1; ++i) {
+        if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
+      }
+      if (!hasNaN && std::isnan(criticalValues[kMax-1])) {
+        haybittle = true;
       }
     }
 
-    if (futilityBounds.size() == kMax &&
-        futilityBounds[kMax-1] != criticalValues[kMax-1]) {
-      stop("futilityBounds and criticalValues must meet at final analysis");
+    if (haybittle) { // Haybittle & Peto
+      for (int i = 0; i < kMax - 1; ++i) {
+        u[i] = criticalValues[i];
+      }
+
+      auto f = [&](double aval)->double {
+        u[kMax-1] = aval;
+        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
+        auto v = probs.get<std::vector<double>>("exitProbUpper");
+        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        return cpu - alpha;
+      };
+
+      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+    } else {
+      std::vector<unsigned char> effStopping(kMax, 1);
+      critValues = getBoundcpp(kMax, infoRates, alpha, asf,
+                               parameterAlphaSpending, userAlphaSpending,
+                               spendTime, effStopping);
     }
   }
 
-  std::string bsf = typeBetaSpending;
-  std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
+  std::vector<double> li(kMax, -6.0), ui(kMax, 6.0);
+  ListCpp probs = exitprobcpp(critValues, li, zero, infoRates);
+  auto v = probs.get<std::vector<double>>("exitProbUpper");
+  std::vector<double> cumAlphaSpent(kMax);
+  std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
 
-  double bsfpar = parameterBetaSpending;
+  std::vector<double> efficacyP(kMax);
+  for (int i = 0; i < kMax; ++i) {
+    efficacyP[i] = 1.0 - boost_pnorm(critValues[i]);
+  }
+
+  // calculate cumulative rejection probability under H1
+  double deltaLower = thetaLower - theta;
+  double deltaUpper = thetaUpper - theta;
+
+  // obtain IMax if needed
+  double IMax1 = IMax;
+  std::vector<double> I(kMax);
+  std::vector<double> b(kMax);
+  std::vector<double> a(kMax);
+  std::vector<double> cpl(kMax);
+  std::vector<double> cpu(kMax);
 
   if (unknown == "IMax") {
-    if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfof" || bsf=="sfp" ||
-        bsf=="sfkd" || bsf=="sfhsd" || bsf=="user" || bsf=="none")) {
-      stop("Invalid value for typeBetaSpending");
+    auto f = [&](double aval)->double {
+      for (int i = 0; i < kMax; ++i) {
+        I[i] = infoRates[i] * aval;
+        double sqrtIi = std::sqrt(I[i]);
+        l[i] = critValues[i] + deltaLower * sqrtIi;
+        u[i] = -critValues[i] + deltaUpper * sqrtIi;
+        b[i] = std::max(l[i], li[i]);
+        a[i] = std::min(u[i], ui[i]);
+      }
+
+      ListCpp probs1 = exitprobcpp(b, li, zero, I);
+      ListCpp probs2 = exitprobcpp(ui, a, zero, I);
+      auto v1 = probs1.get<std::vector<double>>("exitProbUpper");
+      auto v2 = probs2.get<std::vector<double>>("exitProbLower");
+      std::partial_sum(v1.begin(), v1.end(), cpl.begin());
+      std::partial_sum(v2.begin(), v2.end(), cpu.begin());
+      double p1 = cpl[kMax-1];
+      double p2 = cpu[kMax-1];
+
+      bool cross = false;
+      for (int i = 0; i < kMax; ++i) {
+        if (l[i] <= u[i]) { cross = true; break; }
+      }
+
+      double power;
+      if (cross) {
+        power = p1 + p2 - 1.0;
+      } else {
+        ListCpp probs = exitprobcpp(l, u, zero, I);
+        auto v1x = probs.get<std::vector<double>>("exitProbUpper");
+        auto v2x = probs.get<std::vector<double>>("exitProbLower");
+        double p1x = std::accumulate(v1x.begin(), v1x.end(), 0.0);
+        double p2x = std::accumulate(v2x.begin(), v2x.end(), 0.0);
+        power = p1 + p2 - p1x - p2x;
+      }
+
+      return power - (1.0 - beta);
+    };
+
+    double z0 = boost_qnorm(1.0 - alpha);
+    double z1 = boost_qnorm(1.0 - beta);
+    double IMax0 = sq((z0 + z1) / deltaLower);
+    double IMaxLower = 0.5 * IMax0;
+    double IMaxUpper = 1.5 * IMax0;
+    IMax1 = brent(f, IMaxLower, IMaxUpper, 1e-6);
+  }
+
+  // cumulative rejection probability under H1
+  for (int i = 0; i < kMax; ++i) {
+    I[i] = infoRates[i] * IMax1;
+    double sqrtIi = std::sqrt(I[i]);
+    l[i] = critValues[i] + deltaLower * sqrtIi;
+    u[i] = -critValues[i] + deltaUpper * sqrtIi;
+    b[i] = std::max(l[i], li[i]);
+    a[i] = std::min(u[i], ui[i]);
+  }
+
+  ListCpp probs1 = exitprobcpp(b, li, zero, I);
+  ListCpp probs2 = exitprobcpp(ui, a, zero, I);
+  auto v1 = probs1.get<std::vector<double>>("exitProbUpper");
+  auto v2 = probs2.get<std::vector<double>>("exitProbLower");
+  std::partial_sum(v1.begin(), v1.end(), cpl.begin());
+  std::partial_sum(v2.begin(), v2.end(), cpu.begin());
+
+  std::vector<unsigned char> nocross(kMax);
+  for (int i = 0; i < kMax; ++i) {
+    nocross[i] = (l[i] >= u[i]) ? 1 : 0;
+  }
+  std::vector<int> k = which(nocross);
+
+  std::vector<double> cp(kMax);
+  if (k.empty()) {
+    for (int i = 0; i < kMax; ++i) {
+      cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   } else {
-    if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfof" || bsf=="sfp" ||
-        bsf=="sfkd" || bsf=="sfhsd" || bsf=="none")) {
-      stop("Invalid value for typeBetaSpending");
+    int K = *std::max_element(k.begin(), k.end());
+    std::vector l1 = subset(l, 0, K+1);
+    std::vector u1 = subset(u, 0, K+1);
+    std::vector d1 = subset(zero, 0, K+1);
+    std::vector I1 = subset(I, 0, K+1);
+    ListCpp probs = exitprobcpp(l1, u1, d1, I1);
+    auto v1x = probs.get<std::vector<double>>("exitProbUpper");
+    auto v2x = probs.get<std::vector<double>>("exitProbLower");
+    std::vector<double> cplx(kMax), cpux(kMax);
+    std::partial_sum(v1x.begin(), v1x.end(), cplx.begin());
+    std::partial_sum(v2x.begin(), v2x.end(), cpux.begin());
+    for (int i = 0; i <= K; ++i) {
+      cp[i] = cpl[i] + cpu[i] - cplx[i] - cpux[i];
+    }
+    for (int i = K+1; i < kMax; ++i) {
+      cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   }
 
-  if ((bsf=="sfkd" || bsf=="sfhsd") && std::isnan(bsfpar)) {
-    stop("Missing value for parameterBetaSpending");
+  // incremental exit probabilities under H1
+  std::vector<double> q(kMax);
+  q[0] = cp[0];
+  for (int i = 1; i < kMax - 1; ++i) q[i] = cp[i] - cp[i-1];
+  q[kMax-1] = 1.0 - cp[kMax-2];
+
+  std::vector<double> rejectPerStage(kMax);
+  rejectPerStage[0] = cp[0];
+  for (int i = 1; i < kMax; ++i) {
+    rejectPerStage[i] = cp[i] - cp[i-1];
   }
 
-  if (bsf=="sfkd" && bsfpar <= 0) {
-    stop ("parameterBetaSpending must be positive for sfKD");
+  double overallReject = cp[kMax-1];
+  double expectedInformationH1 = std::inner_product(
+    q.begin(), q.end(), I.begin(), 0.0);
+
+  std::vector<double> efficacyThetaLower(kMax), efficacyThetaUpper(kMax);
+  for (int i = 0; i < kMax; ++i) {
+    double thetaBound = critValues[i] / std::sqrt(I[i]);
+    efficacyThetaLower[i] = thetaBound + thetaLower;
+    efficacyThetaUpper[i] = -thetaBound + thetaUpper;
   }
 
-  if (unknown=="IMax" && bsf=="user") {
-    if (is_true(any(is_na(userBetaSpending)))) {
-      stop("userBetaSpending must be specified");
-    } else if (userBetaSpending.size() < kMax) {
-      stop("Insufficient length of userBetaSpending");
-    } else if (userBetaSpending[0] < 0) {
-      stop("Elements of userBetaSpending must be nonnegative");
-    } else if (kMax > 1 && is_true(any(diff(userBetaSpending) < 0))) {
-      stop("Elements of userBetaSpending must be nondecreasing");
-    } else if (userBetaSpending[kMax-1] != beta) {
-      stop("userBetaSpending must end with specified beta");
-    }
-  }
+  std::vector<double> theta10(kMax, deltaLower);
+  std::vector<double> theta20(kMax, deltaUpper);
 
-  if (is_false(any(is_na(spendingTime)))) {
-    if (spendingTime.size() != kMax) {
-      stop("Invalid length for spendingTime");
-    } else if (spendingTime[0] <= 0) {
-      stop("Elements of spendingTime must be positive");
-    } else if (kMax > 1 && is_true(any(diff(spendingTime) <= 0))) {
-      stop("Elements of spendingTime must be increasing");
-    } else if (spendingTime[kMax-1] != 1) {
-      stop("spendingTime must end with 1");
-    }
-  } else {
-    spendingTime1 = clone(informationRates1);
-  }
+  // cumulative rejection probability under H10
+  ListCpp probsH10 = exitprobcpp(ui, a, theta10, I);
+  auto vH10 = probsH10.get<std::vector<double>>("exitProbLower");
+  std::vector<double> cpuH10(kMax);
+  std::partial_sum(vH10.begin(), vH10.end(), cpuH10.begin());
+  std::vector<double> cplH10 = cumAlphaSpent;
 
-  if (varianceRatio <= 0) {
-    stop("varianceRatio must be positive");
-  }
-
-
-  if (is_true(any(is_na(criticalValues)))) {
-    if (kMax > 1 && criticalValues.size() == kMax &&
-        is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
-
-      auto f = [kMax, informationRates1, efficacyStopping1,
-                criticalValues, alpha](double aval)->double {
-                  NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; ++i) {
-                    u[i] = criticalValues[i];
-                    if (!efficacyStopping1[i]) u[i] = 6.0;
-                  }
-                  u[kMax-1] = aval;
-
-                  List probs = exitprobcpp(u, l, zero, informationRates1);
-                  double cpu = sum(NumericVector(probs[0]));
-                  return cpu - alpha;
-                };
-
-      criticalValues1[kMax-1] = brent(f, -5.0, 6.0, 1.0e-6);
-    } else {
-      criticalValues1 = getBoundcpp(kMax, informationRates1, alpha,
-                                    asf, asfpar, userAlphaSpending,
-                                    spendingTime1, efficacyStopping1);
-    }
-  }
-
-  NumericVector l(kMax, -6.0), zero(kMax);
-  List probs = exitprobcpp(criticalValues1, l, zero, informationRates1);
-  alpha1 = sum(NumericVector(probs[0]));
-
-  bool missingFutilityBounds = is_true(any(is_na(futilityBounds)));
-  if (kMax > 1) {
-    if (missingFutilityBounds && bsf=="none") {
-      futilityBounds1 = rep(-6.0, kMax);
-      futilityBounds1[kMax-1] = criticalValues1[kMax-1];
-    } else if (!missingFutilityBounds &&
-      futilityBounds1.size() == kMax-1) {
-      futilityBounds1.push_back(criticalValues1[kMax-1]);
+  std::vector<double> cpH10(kMax);
+  if (k.empty()) {
+    for (int i = 0; i < kMax; ++i) {
+      cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   } else {
-    if (missingFutilityBounds) {
-      futilityBounds1 = criticalValues1[kMax-1];
+    int K = *std::max_element(k.begin(), k.end());
+    std::vector l1 = subset(l, 0, K+1);
+    std::vector u1 = subset(u, 0, K+1);
+    std::vector d1 = subset(theta10, 0, K+1);
+    std::vector I1 = subset(I, 0, K+1);
+    ListCpp probs = exitprobcpp(l1, u1, d1, I1);
+    auto v1x = probs.get<std::vector<double>>("exitProbUpper");
+    auto v2x = probs.get<std::vector<double>>("exitProbLower");
+    std::vector<double> cplH10x(kMax), cpuH10x(kMax);
+    std::partial_sum(v1x.begin(), v1x.end(), cplH10x.begin());
+    std::partial_sum(v2x.begin(), v2x.end(), cpuH10x.begin());
+    for (int i = 0; i <= K; ++i) {
+      cpH10[i] = cplH10[i] + cpuH10[i] - cplH10x[i] - cpuH10x[i];
+    }
+    for (int i = K+1; i < kMax; ++i) {
+      cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   }
 
-  // multiplier for the boundaries under the alternative hypothesis
-  NumericVector w = rep(sqrt(varianceRatio), kMax);
+  // incremental exit probabilities under H10
+  std::vector<double> qH10(kMax);
+  qH10[0] = cpH10[0];
+  for (int i = 1; i < kMax - 1; ++i) qH10[i] = cpH10[i] - cpH10[i-1];
+  qH10[kMax-1] = 1.0 - cpH10[kMax-2];
 
-  NumericVector t = informationRates1;
-  NumericVector st = spendingTime1;
-  NumericVector theta1(kMax);
-  if (unknown == "IMax") {
-    auto f = [beta, kMax, t, futilityStopping1,
-              criticalValues1, &futilityBounds1,
-              bsf, bsfpar, userBetaSpending, st, w,
-              missingFutilityBounds](double aval)->double {
+  double attainedAlphaH10 = cpH10[kMax-1];
+  double expectedInformationH10 = std::inner_product(
+    qH10.begin(), qH10.end(), I.begin(), 0.0);
 
-                NumericVector theta1 = rep(aval, kMax);
+  // cumulative rejection probability under H20
+  ListCpp probsH20 = exitprobcpp(b, li, theta20, I);
+  auto vH20 = probsH20.get<std::vector<double>>("exitProbUpper");
+  std::vector<double> cplH20(kMax);
+  std::partial_sum(vH20.begin(), vH20.end(), cplH20.begin());
+  std::vector<double> cpuH20 = cumAlphaSpent;
 
-                // compute stagewise exit probabilities
-                if (!missingFutilityBounds || bsf=="none" || kMax==1) {
-                  List probs = exitprobcpp(
-                    criticalValues1*w, futilityBounds1*w, theta1, t);
-                  NumericVector pu = NumericVector(probs[0]);
-                  double overallReject = sum(pu);
-                  return overallReject - (1-beta);
-                } else {
-                  // initialize futility bound to be updated
-                  futilityBounds1 = NumericVector(kMax);
-                  double epsilon;
-
-                  // first stage
-                  int k = 0;
-                  double cumBetaSpent;
-                  if (bsf=="user") {
-                    cumBetaSpent = userBetaSpending[0];
-                  } else {
-                    cumBetaSpent = errorSpentcpp(st[0], beta, bsf, bsfpar);
-                  }
-
-                  if (!futilityStopping1[0]) {
-                    futilityBounds1[0] = -6.0;
-                  } else {
-                    epsilon = R::pnorm(criticalValues1[0]*w[0] -
-                      theta1[0]*sqrt(t[0]), 0, 1, 1, 0) - cumBetaSpent;
-                    if (epsilon < 0) return -1.0;
-                    futilityBounds1[0] = (R::qnorm(cumBetaSpent, 0, 1, 1, 0)
-                                            + theta1[0]*sqrt(t[0]))/w[0];
-                  }
-
-
-                  // lambda expression for finding futility bound at stage k
-                  auto g = [&k, &cumBetaSpent, criticalValues1,
-                            &futilityBounds1, theta1, w,
-                            t](double aval)->double {
-                              NumericVector u(k+1), l(k+1);
-                              for (int i=0; i<k; ++i) {
-                                u[i] = criticalValues1[i]*w[i];
-                                l[i] = futilityBounds1[i]*w[i];
-                              }
-                              u[k] = 6.0;
-                              l[k] = aval*w[k];
-
-                              IntegerVector idx = Range(0,k);
-                              List probs = exitprobcpp(
-                                u, l, theta1[idx], t[idx]);
-                              double cpl = sum(NumericVector(probs[1]));
-                              return cpl - cumBetaSpent;
-                            };
-
-
-                  for (k=1; k<kMax; ++k) {
-                    if (bsf == "user") {
-                      cumBetaSpent = userBetaSpending[k];
-                    } else {
-                      cumBetaSpent = errorSpentcpp(st[k], beta, bsf, bsfpar);
-                    }
-
-                    if (!futilityStopping1[k]) {
-                      futilityBounds1[k] = -6.0;
-                    } else {
-                      epsilon = g(criticalValues1[k]);
-
-                      if (g(-6.0) > 0) { // no beta spent at current visit
-                        futilityBounds1[k] = -6.0;
-                      } else if (epsilon > 0) {
-                        futilityBounds1[k] = brent(
-                          g, -6.0, criticalValues1[k], 1.0e-6);
-                      } else if (k < kMax-1) {
-                        return -1.0;
-                      }
-                    }
-                  }
-
-                  return epsilon;
-                }
-              };
-
-    drift = brent(f, 0.0, 6.0, 1.0e-6);
-    IMax1 = pow(drift/theta, 2);
-    futilityBounds1[kMax-1] = criticalValues1[kMax-1];
-    theta1 = rep(drift, kMax);
-    probs = exitprobcpp(criticalValues1*w, futilityBounds1*w, theta1, t);
+  std::vector<double> cpH20(kMax);
+  if (k.empty()) {
+    for (int i = 0; i < kMax; ++i) {
+      cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
+    }
   } else {
-    drift = theta*sqrt(IMax1);
-    theta1 = rep(drift, kMax);
-
-    if (!missingFutilityBounds || bsf=="none" || kMax==1) {
-      probs = exitprobcpp(criticalValues1*w, futilityBounds1*w, theta1, t);
-      beta1 = 1 - sum(NumericVector(probs[0]));
-    } else {
-      List out = getPower(alpha1, kMax, criticalValues1, theta1, t,
-                          bsf, bsfpar, st, futilityStopping1, w);
-
-      beta1 = out[0];
-      futilityBounds1 = out[1];
-      probs = out[2];
+    int K = *std::max_element(k.begin(), k.end());
+    std::vector l1 = subset(l, 0, K+1);
+    std::vector u1 = subset(u, 0, K+1);
+    std::vector d1 = subset(theta20, 0, K+1);
+    std::vector I1 = subset(I, 0, K+1);
+    ListCpp probs = exitprobcpp(l1, u1, d1, I1);
+    auto v1x = probs.get<std::vector<double>>("exitProbUpper");
+    auto v2x = probs.get<std::vector<double>>("exitProbLower");
+    std::vector<double> cplH20x(kMax), cpuH20x(kMax);
+    std::partial_sum(v1x.begin(), v1x.end(), cplH20x.begin());
+    std::partial_sum(v2x.begin(), v2x.end(), cpuH20x.begin());
+    for (int i = 0; i <= K; ++i) {
+      cpH20[i] = cplH20[i] + cpuH20[i] - cplH20x[i] - cpuH20x[i];
+    }
+    for (int i = K+1; i < kMax; ++i) {
+      cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   }
 
-  double driftf = R::qnorm(1-alpha1, 0, 1, 1, 0)*w[0] +
-    R::qnorm(1-beta1, 0, 1, 1, 0);
-  inflationFactor = pow(drift/driftf, 2);
+  // incremental exit probabilities under H20
+  std::vector<double> qH20(kMax);
+  qH20[0] = cpH20[0];
+  for (int i = 1; i < kMax - 1; ++i) qH20[i] = cpH20[i] - cpH20[i-1];
+  qH20[kMax-1] = 1.0 - cpH20[kMax-2];
 
+  double attainedAlphaH20 = cpH20[kMax-1];
+  double expectedInformationH20 = std::inner_product(
+    qH20.begin(), qH20.end(), I.begin(), 0.0);
 
-  // output the results
-  NumericVector information(kMax);
-  NumericVector efficacyTheta(kMax);
-  NumericVector futilityTheta(kMax);
-  NumericVector efficacyP(kMax);
-  NumericVector futilityP(kMax);
-  for (int i=0; i<kMax; ++i) {
-    information[i] = IMax1*informationRates1[i];
-    efficacyTheta[i] = criticalValues1[i]/sqrt(information[i])*w[i];
-    futilityTheta[i] = futilityBounds1[i]/sqrt(information[i])*w[i];
-    efficacyP[i] = 1 - R::pnorm(criticalValues1[i], 0, 1, 1, 0);
-    futilityP[i] = 1 - R::pnorm(futilityBounds1[i], 0, 1, 1, 0);
-  }
+  DataFrameCpp byStageResults;
+  byStageResults.push_back(std::move(infoRates), "informationRates");
+  byStageResults.push_back(std::move(critValues), "efficacyBounds");
+  byStageResults.push_back(std::move(rejectPerStage), "rejectPerStage");
+  byStageResults.push_back(std::move(cp), "cumulativeRejection");
+  byStageResults.push_back(std::move(cumAlphaSpent), "cumulativeAlphaSpent");
+  byStageResults.push_back(std::move(cpH10), "cumulativeAttainedAlphaH10");
+  byStageResults.push_back(std::move(cpH20), "cumulativeAttainedAlphaH20");
+  byStageResults.push_back(std::move(efficacyThetaLower), "efficacyThetaLower");
+  byStageResults.push_back(std::move(efficacyThetaUpper), "efficacyThetaUpper");
+  byStageResults.push_back(std::move(efficacyP), "efficacyP");
+  byStageResults.push_back(std::move(I), "information");
 
-  // stagewise exit probabilities under H1
-  NumericVector pu(kMax), pl(kMax), ptotal(kMax);
-  pu = NumericVector(probs[0]);
-  pl = NumericVector(probs[1]);
-  ptotal = pu + pl;
+  DataFrameCpp overallResults;
+  overallResults.push_back(overallReject, "overallReject");
+  overallResults.push_back(alpha, "alpha");
+  overallResults.push_back(attainedAlphaH10, "attainedAlphaH10");
+  overallResults.push_back(attainedAlphaH20, "attainedAlphaH20");
+  overallResults.push_back(kMax, "kMax");
+  overallResults.push_back(thetaLower, "thetaLower");
+  overallResults.push_back(thetaUpper, "thetaUpper");
+  overallResults.push_back(theta, "theta");
+  overallResults.push_back(IMax1, "information");
+  overallResults.push_back(expectedInformationH1, "expectedInformationH1");
+  overallResults.push_back(expectedInformationH10, "expectedInformationH10");
+  overallResults.push_back(expectedInformationH20, "expectedInformationH20");
 
-  double expectedInformationH1 = sum(ptotal*information);
+  ListCpp settings;
+  settings.push_back(typeAlphaSpending, "typeAlphaSpending");
+  settings.push_back(parameterAlphaSpending, "parameterAlphaSpending");
+  settings.push_back(userAlphaSpending, "userAlphaSpending");
+  settings.push_back(spendingTime, "spendingTime");
 
-  double overallReject = sum(pu);
-  NumericVector cpu = cumsum(pu);
-  NumericVector cpl = cumsum(pl);
-
-  // cumulative alpha spent under H0 with non-binding futility
-  NumericVector futilityBounds0(kMax, -6.0), theta0(kMax);
-  List probs0 = exitprobcpp(criticalValues1, futilityBounds0, theta0, t);
-  NumericVector cumAlphaSpent = cumsum(NumericVector(probs0[0]));
-
-  // stagewise exit probabilities under H0 with binding futility
-  probs0 = exitprobcpp(criticalValues1, futilityBounds1, theta0, t);
-  NumericVector pu0(kMax), pl0(kMax), ptotal0(kMax);
-  pu0 = NumericVector(probs0[0]);
-  pl0 = NumericVector(probs0[1]);
-  ptotal0 = pu0 + pl0;
-
-  double expectedInformationH0 = sum(ptotal0*information);
-
-  double overallRejectH0 = sum(pu0);
-  NumericVector cpu0 = cumsum(pu0);
-  NumericVector cpl0 = cumsum(pl0);
-
-  for (int i=0; i<kMax; ++i) {
-    if (criticalValues1[i] == 6) {
-      efficacyStopping1[i] = 0;
-    }
-    if (futilityBounds1[i] == -6) {
-      futilityStopping1[i] = 0;
-    }
-  }
-
-  DataFrame byStageResults = DataFrame::create(
-    _["informationRates"] = informationRates1,
-    _["efficacyBounds"] = criticalValues1,
-    _["futilityBounds"] = futilityBounds1,
-    _["rejectPerStage"] = pu,
-    _["futilityPerStage"] = pl,
-    _["cumulativeRejection"] = cpu,
-    _["cumulativeFutility"] = cpl,
-    _["cumulativeAlphaSpent"] = cumAlphaSpent,
-    _["efficacyTheta"] = efficacyTheta,
-    _["futilityTheta"] = futilityTheta,
-    _["efficacyP"] = efficacyP,
-    _["futilityP"] = futilityP,
-    _["information"] = information,
-    _["efficacyStopping"] = efficacyStopping1,
-    _["futilityStopping"] = futilityStopping1,
-    _["rejectPerStageH0"] = pu0,
-    _["futilityPerStageH0"] = pl0,
-    _["cumulativeRejectionH0"] = cpu0,
-    _["cumulativeFutilityH0"] = cpl0);
-
-  DataFrame overallResults = DataFrame::create(
-    _["overallReject"] = overallReject,
-    _["alpha"] = (cumAlphaSpent[kMax-1]),
-    _["attainedAlpha"] = overallRejectH0,
-    _["kMax"] = kMax,
-    _["theta"] = theta,
-    _["information"] = IMax1,
-    _["expectedInformationH1"] = expectedInformationH1,
-    _["expectedInformationH0"] = expectedInformationH0,
-    _["drift"] = drift,
-    _["inflationFactor"] = inflationFactor);
-
-  List settings = List::create(
-    _["typeAlphaSpending"] = typeAlphaSpending,
-    _["parameterAlphaSpending"] = parameterAlphaSpending,
-    _["userAlphaSpending"] = userAlphaSpending,
-    _["typeBetaSpending"] = typeBetaSpending,
-    _["parameterBetaSpending"] = parameterBetaSpending,
-    _["userBetaSpending"] = userBetaSpending,
-    _["spendingTime"] = spendingTime,
-    _["varianceRatio"] = varianceRatio);
-
-  List result = List::create(
-    _["byStageResults"] = byStageResults,
-    _["overallResults"] = overallResults,
-    _["settings"] = settings);
-
-  result.attr("class") = "design";
-
+  ListCpp result;
+  result.push_back(std::move(byStageResults), "byStageResults");
+  result.push_back(std::move(overallResults), "overallResults");
+  result.push_back(std::move(settings), "settings");
   return result;
 }
-
 
 //' @title Power and Sample Size for a Generic Group Sequential Equivalence
 //' Design
@@ -3385,418 +3809,540 @@ List getDesign(const double beta = NA_REAL,
 //'
 //' @export
 // [[Rcpp::export]]
-List getDesignEquiv(const double beta = NA_REAL,
-                    const double IMax = NA_REAL,
-                    const double thetaLower = NA_REAL,
-                    const double thetaUpper = NA_REAL,
-                    const double theta = 0,
-                    const int kMax = 1,
-                    const NumericVector& informationRates = NA_REAL,
-                    const NumericVector& criticalValues = NA_REAL,
-                    const double alpha = 0.05,
-                    const std::string typeAlphaSpending = "sfOF",
-                    const double parameterAlphaSpending = NA_REAL,
-                    const NumericVector& userAlphaSpending = NA_REAL,
-                    const NumericVector& spendingTime = NA_REAL) {
+Rcpp::List getDesignEquiv(
+    const double beta = NA_REAL,
+    const double IMax = NA_REAL,
+    const double thetaLower = NA_REAL,
+    const double thetaUpper = NA_REAL,
+    const double theta = 0,
+    const int kMax = 1,
+    const Rcpp::NumericVector& informationRates = NA_REAL,
+    const Rcpp::NumericVector& criticalValues = NA_REAL,
+    const double alpha = 0.05,
+    const std::string& typeAlphaSpending = "sfOF",
+    const double parameterAlphaSpending = NA_REAL,
+    const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
+    const Rcpp::NumericVector& spendingTime = NA_REAL) {
 
-  NumericVector informationRates1 = clone(informationRates);
-  NumericVector criticalValues1 = clone(criticalValues);
-  NumericVector spendingTime1 = clone(spendingTime);
+  auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
+  auto critValues = Rcpp::as<std::vector<double>>(criticalValues);
+  auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
+  auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
 
-  double IMax1 = IMax;
+  ListCpp result = getDesignEquivcpp(
+    beta, IMax, thetaLower, thetaUpper, theta, kMax, infoRates, critValues,
+    alpha, typeAlphaSpending, parameterAlphaSpending, userAlpha, spendTime);
 
-  std::string unknown;
+  Rcpp::List resultR = Rcpp::wrap(result);
+  resultR.attr("class") = "designEquiv";
+  return resultR;
+}
 
-  if (std::isnan(beta) && std::isnan(IMax)) {
-    stop("beta and IMax cannot be both missing");
+
+ListCpp adaptDesigncpp(double betaNew,
+                       double INew,
+                       const int L,
+                       const double zL,
+                       const double theta,
+                       const double IMax,
+                       const int kMax,
+                       const std::vector<double>& informationRates,
+                       const std::vector<unsigned char>& efficacyStopping,
+                       const std::vector<unsigned char>& futilityStopping,
+                       const std::vector<double>& criticalValues,
+                       const double alpha,
+                       const std::string& typeAlphaSpending,
+                       const double parameterAlphaSpending,
+                       const std::vector<double>& userAlphaSpending,
+                       const std::vector<double>& futilityBounds,
+                       const std::string& typeBetaSpending,
+                       const double parameterBetaSpending,
+                       const std::vector<double>& spendingTime,
+                       const bool MullerSchafer,
+                       const int kNew,
+                       const std::vector<double>& informationRatesNew,
+                       const std::vector<unsigned char>& efficacyStoppingNew,
+                       const std::vector<unsigned char>& futilityStoppingNew,
+                       const std::string& typeAlphaSpendingNew,
+                       const double parameterAlphaSpendingNew,
+                       const std::string& typeBetaSpendingNew,
+                       const double parameterBetaSpendingNew,
+                       const std::vector<double>& userBetaSpendingNew,
+                       const std::vector<double>& spendingTimeNew,
+                       const double varianceRatio) {
+
+  // ----------- Input Validation ----------- //
+  if (std::isnan(betaNew) && std::isnan(INew)) {
+    throw std::invalid_argument("betaNew and INew cannot be missing simultaneously.");
   }
-
-  if (!std::isnan(beta) && !std::isnan(IMax)) {
-    stop("Only one of beta and IMax should be provided");
+  if (!std::isnan(betaNew) && !std::isnan(INew)) {
+    throw std::invalid_argument("Only one of betaNew and INew should be provided.");
   }
-
-  if (!std::isnan(IMax)) {
-    if (IMax <= 0) {
-      stop("IMax must be positive");
-    }
-    unknown = "beta";
-  } else if (!std::isnan(beta)) {
-    unknown = "IMax";
+  if (!std::isnan(INew) && INew <= 0.0) {
+    throw std::invalid_argument("INew must be positive.");
   }
-
-  if (std::isnan(thetaLower)) {
-    stop("thetaLower must be provided");
+  if (std::isnan(theta)) {
+    throw std::invalid_argument("theta must be provided.");
   }
-
-  if (std::isnan(thetaUpper)) {
-    stop("thetaUpper must be provided");
+  if (L < 1) {
+    throw std::invalid_argument("L must be a positive integer.");
   }
-
-  if (thetaLower >= theta) {
-    stop("thetaLower must be less than theta");
+  if (std::isnan(zL)) {
+    throw std::invalid_argument("zL must be provided.");
   }
-
-  if (thetaUpper <= theta) {
-    stop("thetaUpper must be greater than theta");
-  }
-
-  if (kMax == NA_INTEGER) {
-    stop("kMax must be provided");
-  }
-
   if (kMax < 1) {
-    stop("kMax must be a positive integer");
+    throw std::invalid_argument("kMax must be a positive integer.");
+  }
+  if (kMax <= L) {
+    throw std::invalid_argument("kMax must be greater than L.");
   }
 
-  if (is_false(any(is_na(informationRates)))) {
-    if (informationRates.size() != kMax) {
-      stop("Invalid length for informationRates");
-    } else if (informationRates[0] <= 0) {
-      stop("Elements of informationRates must be positive");
-    } else if (kMax > 1 && is_true(any(diff(informationRates) <= 0))) {
-      stop("Elements of informationRates must be increasing");
-    } else if (informationRates[kMax-1] != 1) {
-      stop("informationRates must end with 1");
-    }
+  // Alpha and Beta must be within valid ranges
+  if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1)) {
+    throw std::invalid_argument("alpha must lie in [0.00001, 1).");
+  }
+  if (!std::isnan(betaNew) && (betaNew < 0.0001 || betaNew >= 1)) {
+    throw std::invalid_argument("betaNew must lie in [0.0001, 1).");
+  }
+
+  // informationRates: default to (1:kMax)/kMax if missing
+  std::vector<double> infoRates(kMax);
+  if (none_na(informationRates)) {
+    if (static_cast<int>(informationRates.size()) != kMax)
+      throw std::invalid_argument("Invalid length for informationRates.");
+    if (informationRates[0] <= 0.0)
+      throw std::invalid_argument("informationRates must be positive.");
+    if (any_nonincreasing(informationRates))
+      throw std::invalid_argument("informationRates must be increasing.");
+    if (informationRates[kMax-1] != 1.0)
+      throw std::invalid_argument("informationRates must end with 1.");
+    infoRates = informationRates; // copy
   } else {
-    IntegerVector tem = seq_len(kMax);
-    informationRates1 = NumericVector(tem)/(kMax+0.0);
+    for (int i = 0; i < kMax; ++i)
+      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(kMax);
   }
 
-  if (is_false(any(is_na(criticalValues)))) {
-    if (criticalValues.size() != kMax) {
-      stop("Invalid length for criticalValues");
+  // effStopping: default to all 1s if missing
+  std::vector<unsigned char> effStopping;
+  if (none_na(efficacyStopping)) {
+    if (static_cast<int>(efficacyStopping.size()) != kMax)
+      throw std::invalid_argument("Invalid length for efficacyStopping.");
+    if (efficacyStopping[kMax-1] != 1)
+      throw std::invalid_argument("efficacyStopping must end with 1.");
+    effStopping = efficacyStopping; // copy
+  } else {
+    effStopping.assign(kMax, 1);
+  }
+
+  // futStopping: default to all 1s if missing
+  std::vector<unsigned char> futStopping;
+  if (none_na(futilityStopping)) {
+    if (static_cast<int>(futilityStopping.size()) != kMax)
+      throw std::invalid_argument("Invalid length for futilityStopping.");
+    if (futilityStopping[kMax-1] != 1)
+      throw std::invalid_argument("futilityStopping must end with 1.");
+    futStopping = futilityStopping; // copy
+  } else {
+    futStopping.assign(kMax, 1);
+  }
+
+  bool missingCriticalValues = !none_na(criticalValues);
+  bool missingFutilityBounds = !none_na(futilityBounds);
+
+  if (!missingCriticalValues) {
+    if (static_cast<int>(criticalValues.size()) != kMax) {
+      throw std::invalid_argument("Invalid length for criticalValues.");
     }
   }
-
-  if (!std::isnan(alpha)) {
-    if (alpha < 0.00001 || alpha >= 1) {
-      stop("alpha must lie in [0.00001, 1)");
-    }
+  if (missingCriticalValues && std::isnan(alpha)) {
+    throw std::invalid_argument("alpha must be provided for missing criticalValues.");
   }
-
-  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
-    stop("alpha must be provided when criticalValues is missing");
-  }
-
-  if ((unknown == "IMax") && (beta >= 1-alpha || beta < 0.0001)) {
-    stop("beta must lie in [0.0001, 1-alpha)");
-  }
-
 
   std::string asf = typeAlphaSpending;
   std::for_each(asf.begin(), asf.end(), [](char & c) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   });
 
-  double asfpar = parameterAlphaSpending;
-
-  if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
-      asf=="wt" || asf=="sfof" || asf=="sfp" ||
-      asf=="sfkd" || asf=="sfhsd" || asf=="user" || asf=="none")) {
-    stop("Invalid value for typeAlphaSpending");
+  if (missingCriticalValues && !(asf == "of" || asf == "p" ||
+      asf == "wt" || asf == "sfof" || asf == "sfp" ||
+      asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
+    throw std::invalid_argument("Invalid value for typeAlphaSpending.");
+  }
+  if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
+      std::isnan(parameterAlphaSpending)) {
+    throw std::invalid_argument("Missing value for parameterAlphaSpending.");
+  }
+  if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
+    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD.");
   }
 
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
-    stop("Missing value for parameterAlphaSpending");
+  if (missingCriticalValues && asf == "user") {
+    if (!none_na(userAlphaSpending))
+      throw std::invalid_argument("userAlphaSpending must be specified.");
+    if (static_cast<int>(userAlphaSpending.size()) < kMax)
+      throw std::invalid_argument("Insufficient length of userAlphaSpending.");
+    if (userAlphaSpending[0] < 0.0)
+      throw std::invalid_argument("userAlphaSpending must be nonnegative.");
+    if (any_nonincreasing(userAlphaSpending))
+      throw std::invalid_argument("userAlphaSpending must be nondecreasing.");
+    if (userAlphaSpending[kMax-1] != alpha)
+      throw std::invalid_argument("userAlphaSpending must end with specified alpha.");
   }
 
-  if (asf=="sfkd" && asfpar <= 0) {
-    stop ("parameterAlphaSpending must be positive for sfKD");
-  }
-
-  if (is_true(any(is_na(criticalValues))) && asf=="user") {
-    if (is_true(any(is_na(userAlphaSpending)))) {
-      stop("userAlphaSpending must be specified");
-    } else if (userAlphaSpending.size() < kMax) {
-      stop("Insufficient length of userAlphaSpending");
-    } else if (userAlphaSpending[0] < 0) {
-      stop("Elements of userAlphaSpending must be nonnegative");
-    } else if (kMax > 1 && is_true(any(diff(userAlphaSpending) < 0))) {
-      stop("Elements of userAlphaSpending must be nondecreasing");
-    } else if (userAlphaSpending[kMax-1] != alpha) {
-      stop("userAlphaSpending must end with specified alpha");
+  if (!missingFutilityBounds) {
+    if (!(static_cast<int>(futilityBounds.size()) == kMax - 1 ||
+        static_cast<int>(futilityBounds.size()) == kMax)) {
+      throw std::invalid_argument("Invalid length for futilityBounds.");
     }
   }
-
-  if (is_false(any(is_na(spendingTime)))) {
-    if (spendingTime.size() != kMax) {
-      stop("Invalid length for spendingTime");
-    } else if (spendingTime[0] <= 0) {
-      stop("Elements of spendingTime must be positive");
-    } else if (kMax > 1 && is_true(any(diff(spendingTime) <= 0))) {
-      stop("Elements of spendingTime must be increasing");
-    } else if (spendingTime[kMax-1] != 1) {
-      stop("spendingTime must end with 1");
-    }
-  } else {
-    spendingTime1 = clone(informationRates1);
-  }
-
-
-  // obtain criticalValues
-  if (is_true(any(is_na(criticalValues)))) {
-    if (kMax > 1 && criticalValues.size() == kMax &&
-        is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
-
-      auto f = [kMax, informationRates1,
-                criticalValues, alpha](double aval)->double {
-                  NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-                  for (int i=0; i<kMax-1; ++i) {
-                    u[i] = criticalValues[i];
-                  }
-                  u[kMax-1] = aval;
-
-                  List probs = exitprobcpp(u, l, zero, informationRates1);
-                  double cpu = sum(NumericVector(probs[0]));
-                  return cpu - alpha;
-                };
-
-      criticalValues1[kMax-1] = brent(f, -5.0, 6.0, 1.0e-6);
-    } else {
-      LogicalVector efficacyStopping1(kMax, 1);
-      criticalValues1 = getBoundcpp(kMax, informationRates1, alpha,
-                                    asf, asfpar, userAlphaSpending,
-                                    spendingTime1, efficacyStopping1);
-    }
-  }
-
-  NumericVector li(kMax, -6.0), ui(kMax, 6.0), zero(kMax);
-  List probs = exitprobcpp(criticalValues1, li, zero, informationRates1);
-  NumericVector cumAlphaSpent = cumsum(NumericVector(probs[0]));
-
-  NumericVector efficacyP(kMax);
-  for (int i=0; i<kMax; ++i) {
-    efficacyP[i] = 1 - R::pnorm(criticalValues1[i], 0, 1, 1, 0);
-  }
-
-  // calculate cumulative rejection probability under H1
-  NumericVector t = informationRates1;
-  NumericVector b = criticalValues1;
-  double deltaLower = thetaLower - theta;
-  double deltaUpper = thetaUpper - theta;
-
-  // obtain IMax if needed
-  if (unknown == "IMax") {
-    auto f = [beta, t, b, deltaLower, deltaUpper,
-              li, ui, zero](double aval)->double {
-                NumericVector I = t*aval;
-                NumericVector l = b + deltaLower*sqrt(I);
-                NumericVector u = -b + deltaUpper*sqrt(I);
-
-                List probs1 = exitprobcpp(pmax(l, li), li, zero, I);
-                List probs2 = exitprobcpp(ui, pmin(u, ui), zero, I);
-
-                double cpl = sum(NumericVector(probs1[0]));
-                double cpu = sum(NumericVector(probs2[1]));
-
-                double power;
-                if (is_true(any(l <= u))) {
-                  power = cpl + cpu - 1;
-                } else {
-                  List a = exitprobcpp(l, u, zero, I);
-                  double ca = sum(NumericVector(a[0]) + NumericVector(a[1]));
-                  power = cpl + cpu - ca;
-                }
-
-                return power - (1-beta);
-              };
-
-    double z0 = R::qnorm(1-alpha, 0, 1, 1, 0);
-    double z1 = R::qnorm(1-beta, 0, 1, 1, 0);
-    double IMax0 = pow((z0 + z1)/deltaLower, 2);
-    double IMaxLower = 0.5*IMax0;
-    double IMaxUpper = 1.5*IMax0;
-    IMax1 = brent(f, IMaxLower, IMaxUpper, 1.0e-6);
-  }
-
-  // obtain cumulative rejection probabilities under H1
-  NumericVector I = t*IMax1;
-  NumericVector l = b + deltaLower*sqrt(I);
-  NumericVector u = -b + deltaUpper*sqrt(I);
-
-  List probs1 = exitprobcpp(pmax(l, li), li, zero, I);
-  List probs2 = exitprobcpp(ui, pmin(u, ui), zero, I);
-
-  NumericVector cpl = cumsum(NumericVector(probs1[0]));
-  NumericVector cpu = cumsum(NumericVector(probs2[1]));
-
-  IntegerVector k = which(l >= u);
-  NumericVector cp(kMax);
-  if (k.size() == 0) {
-    cp = cpl + cpu - 1;
-  } else {
-    int K = max(k);
-    IntegerVector idx = Range(0, K);
-    List a = exitprobcpp(l[idx], u[idx], zero[idx], I[idx]);
-    NumericVector ca = cumsum(NumericVector(a[0]) +
-      NumericVector(a[1]));
-
-    for (int i=0; i<kMax; ++i) {
-      if (i <= K) {
-        cp[i] = cpl[i] + cpu[i] - ca[i];
-      } else {
-        cp[i] = cpl[i] + cpu[i] - 1;
+  if (!missingCriticalValues && !missingFutilityBounds) {
+    for (int i = 0; i < kMax - 1; ++i) {
+      if (futilityBounds[i] > criticalValues[i]) {
+        throw std::invalid_argument("futilityBounds must lie below criticalValues.");
       }
     }
-  }
-
-  // incremental exit probabilities under H1
-  NumericVector q(kMax);
-  for (int i=0; i<kMax; ++i) {
-    if (i==0) {
-      q[i] = cp[i];
-    } else if (i<kMax-1) {
-      q[i] = cp[i] - cp[i-1];
-    } else {
-      q[i] = 1 - cp[i-1];
+    if (static_cast<int>(futilityBounds.size()) == kMax &&
+        futilityBounds[kMax-1] != criticalValues[kMax-1]) {
+      throw std::invalid_argument(
+          "futilityBounds must meet criticalValues at the final look.");
     }
   }
 
-  NumericVector rejectPerStage(kMax);
-  for (int i=0; i<kMax; ++i) {
-    if (i==0) {
-      rejectPerStage[i] = cp[i];
-    } else {
-      rejectPerStage[i] = cp[i] - cp[i-1];
-    }
+  std::string bsf = typeBetaSpending;
+  std::for_each(bsf.begin(), bsf.end(), [](char & c) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  });
+
+  if (missingFutilityBounds && !(bsf == "sfof" || bsf == "sfp" ||
+      bsf == "sfkd" || bsf == "sfhsd" || bsf == "none")) {
+    throw std::invalid_argument("Invalid value for typeBetaSpending.");
   }
 
-  double overallReject = cp[kMax-1];
-  double expectedInformationH1 = sum(q*I);
+  if ((bsf == "sfkd" || bsf == "sfhsd") && std::isnan(parameterBetaSpending)) {
+    throw std::invalid_argument("Missing value for parameterBetaSpending.");
+  }
+  if (bsf == "sfkd" && parameterBetaSpending <= 0.0) {
+    throw std::invalid_argument ("parameterBetaSpending must be positive for sfKD.");
+  }
 
-  NumericVector efficacyThetaLower = b/sqrt(I) + thetaLower;
-  NumericVector efficacyThetaUpper = -b/sqrt(I) + thetaUpper;
-
-
-  NumericVector theta10 = rep(deltaLower, kMax);
-  NumericVector theta20 = rep(deltaUpper, kMax);
-
-  // cumulative rejection probability under H10
-  List probs2H10 = exitprobcpp(ui, pmin(u, ui), theta10, I);
-  NumericVector cplH10 = cumAlphaSpent;
-  NumericVector cpuH10 = cumsum(NumericVector(probs2H10[1]));
-
-  NumericVector cpH10(kMax);
-  if (k.size() == 0) {
-    cpH10 = cplH10 + cpuH10 - 1;
+  std::vector<double> spendTime;
+  if (none_na(spendingTime)) {
+    if (static_cast<int>(spendingTime.size()) != kMax)
+      throw std::invalid_argument("Invalid length for spendingTime.");
+    if (spendingTime[0] <= 0.0)
+      throw std::invalid_argument("spendingTime must be positive.");
+    if (any_nonincreasing(spendingTime))
+      throw std::invalid_argument("spendingTime must be increasing.");
+    if (spendingTime[kMax-1] != 1.0)
+      throw std::invalid_argument("spendingTime must end with 1.");
+    spendTime = spendingTime; // copy
   } else {
-    int K = max(k);
-    IntegerVector idx = Range(0, K);
-    List a = exitprobcpp(l[idx], u[idx], theta10[idx], I[idx]);
-    NumericVector ca = cumsum(NumericVector(a[0]) +
-      NumericVector(a[1]));
+    spendTime = infoRates;
+  }
 
-    for (int i=0; i<kMax; ++i) {
-      if (i <= K) {
-        cpH10[i] = cplH10[i] + cpuH10[i] - ca[i];
-      } else {
-        cpH10[i] = cplH10[i] + cpuH10[i] - 1;
+  // ----------- New Design Input Validation ----------- //
+  std::vector<double> infoRatesNew;
+  std::vector<unsigned char> effStoppingNew;
+  std::vector<unsigned char> futStoppingNew;
+  std::vector<double> spendTimeNew = spendingTimeNew;
+
+  std::string asfNew = typeAlphaSpendingNew;
+  std::for_each(asfNew.begin(), asfNew.end(), [](char & c) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  });
+
+  std::string bsfNew = typeBetaSpendingNew;
+  std::for_each(bsfNew.begin(), bsfNew.end(), [](char & c) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  });
+
+  if (MullerSchafer) {
+    if (kNew < 1) {
+      throw std::invalid_argument("kNew must be a positive integer.");
+    }
+
+    // informationRatesNew: default to (1:kNew)/kNew if missing
+    infoRatesNew.resize(kNew);
+    if (none_na(informationRatesNew)) {
+      if (static_cast<int>(informationRatesNew.size()) != kNew)
+        throw std::invalid_argument("Invalid length for informationRatesNew.");
+      if (informationRatesNew[0] <= 0.0)
+        throw std::invalid_argument("informationRatesNew must be positive.");
+      if (any_nonincreasing(informationRatesNew))
+        throw std::invalid_argument("informationRatesNew must be increasing.");
+      if (informationRatesNew[kNew-1] != 1.0)
+        throw std::invalid_argument("informationRatesNew must end with 1.");
+      infoRatesNew = informationRatesNew; // copy
+    } else {
+      for (int i = 0; i < kNew; ++i)
+        infoRatesNew[i] = static_cast<double>(i+1) / static_cast<double>(kNew);
+    }
+
+    // effStoppingNew: default to all 1s if missing
+    if (none_na(efficacyStoppingNew)) {
+      if (static_cast<int>(efficacyStoppingNew.size()) != kNew)
+        throw std::invalid_argument("Invalid length for efficacyStoppingNew.");
+      if (efficacyStoppingNew[kNew-1] != 1)
+        throw std::invalid_argument("efficacyStoppingNew must end with 1.");
+      effStoppingNew = efficacyStoppingNew; // copy
+    } else {
+      effStoppingNew.assign(kNew, 1);
+    }
+
+    // futStoppingNew: default to all 1s if missing
+    if (none_na(futilityStoppingNew)) {
+      if (static_cast<int>(futilityStoppingNew.size()) != kNew)
+        throw std::invalid_argument("Invalid length for futilityStoppingNew.");
+      if (futilityStoppingNew[kNew-1] != 1)
+        throw std::invalid_argument("futilityStoppingNew must end with 1.");
+      futStoppingNew = futilityStoppingNew; // copy
+    } else {
+      futStoppingNew.assign(kNew, 1);
+    }
+
+    if (!(asfNew == "of" || asfNew == "p" || asfNew == "wt" ||
+        asfNew == "sfof" || asfNew == "sfp" ||
+        asfNew == "sfkd" || asfNew == "sfhsd" || asfNew == "none")) {
+      throw std::invalid_argument("Invalid value for typeAlphaSpendingNew.");
+    }
+    if ((asfNew == "wt" || asfNew == "sfkd" || asfNew == "sfhsd") &&
+        std::isnan(parameterAlphaSpendingNew)) {
+      throw std::invalid_argument("Missing value for parameterAlphaSpendingNew.");
+    }
+    if (asfNew == "sfkd" && parameterAlphaSpendingNew <= 0.0) {
+      throw std::invalid_argument (
+          "parameterAlphaSpendingNew must be positive for sfKD.");
+    }
+
+    if (std::isnan(INew)) {
+      if (!(bsfNew == "sfof" || bsfNew == "sfp" ||
+          bsfNew == "sfkd" || bsfNew == "sfhsd" || bsfNew == "user" ||
+          bsfNew == "none")) {
+        throw std::invalid_argument("Invalid value for typeBetaSpendingNew.");
+      }
+    } else {
+      if (!(bsfNew == "sfof" || bsfNew == "sfp" ||
+          bsfNew == "sfkd" || bsfNew == "sfhsd" || bsfNew == "none")) {
+        throw std::invalid_argument("Invalid value for typeBetaSpendingNew.");
       }
     }
-  }
 
-  // incremental exit probabilities under H10
-  NumericVector qH10(kMax);
-  for (int i=0; i<kMax; ++i) {
-    if (i==0) {
-      qH10[i] = cpH10[i];
-    } else if (i<kMax-1) {
-      qH10[i] = cpH10[i] - cpH10[i-1];
+    if ((bsfNew == "sfkd" || bsfNew == "sfhsd") &&
+        std::isnan(parameterBetaSpendingNew)) {
+      throw std::invalid_argument("Missing value for parameterBetaSpendingNew.");
+    }
+    if (bsfNew == "sfkd" && parameterBetaSpendingNew <= 0.0) {
+      throw std::invalid_argument(
+          "parameterBetaSpendingNew must be positive for sfKD.");
+    }
+
+    if (std::isnan(INew) && bsfNew == "user") {
+      if (!none_na(userBetaSpendingNew))
+        throw std::invalid_argument("userBetaSpendingNew must be specified.");
+      if (static_cast<int>(userBetaSpendingNew.size()) < kNew)
+        throw std::invalid_argument("Insufficient length of userBetaSpendingNew.");
+      if (userBetaSpendingNew[0] < 0.0)
+        throw std::invalid_argument("userBetaSpendingNew must be nonnegative.");
+      if (any_nonincreasing(userBetaSpendingNew))
+        throw std::invalid_argument("userBetaSpendingNew must be nondecreasing.");
+      if (userBetaSpendingNew[kNew] != betaNew)
+        throw std::invalid_argument(
+            "userBetaSpendingNew must end with specified betaNew.");
+    }
+
+    // spendingTimeNew: default to informationRatesNew if missing
+    if (none_na(spendingTimeNew)) {
+      if (static_cast<int>(spendingTimeNew.size()) != kNew)
+        throw std::invalid_argument("Invalid length for spendingTimeNew.");
+      if (spendingTimeNew[0] <= 0.0)
+        throw std::invalid_argument("spendingTimeNew must be positive.");
+      if (any_nonincreasing(spendingTimeNew))
+        throw std::invalid_argument("spendingTimeNew must be increasing.");
+      if (spendingTimeNew[kNew-1] != 1.0)
+        throw std::invalid_argument("spendingTimeNew must end with 1.");
     } else {
-      qH10[i] = 1 - cpH10[i-1];
+      spendTimeNew = infoRatesNew;
     }
   }
 
-  double attainedAlphaH10 = cpH10[kMax-1];
-  double expectedInformationH10 = sum(qH10*I);
+  if (varianceRatio <= 0.0) {
+    throw std::invalid_argument("varianceRatio must be positive.");
+  }
+  // ----------- End of Input Validation ----------- //
 
-
-  // cumulative rejection probability under H20
-  List probs1H20 = exitprobcpp(pmax(l, li), li, theta20, I);
-  NumericVector cplH20 = cumsum(NumericVector(probs1H20[0]));
-  NumericVector cpuH20 = cumAlphaSpent;
-
-  NumericVector cpH20(kMax);
-  if (k.size() == 0) {
-    cpH20 = cplH20 + cpuH20 - 1;
-  } else {
-    int K = max(k);
-    IntegerVector idx = Range(0, K);
-    List a = exitprobcpp(l[idx], u[idx], theta20[idx], I[idx]);
-    NumericVector ca = cumsum(NumericVector(a[0]) +
-      NumericVector(a[1]));
-
-    for (int i=0; i<kMax; ++i) {
-      if (i <= K) {
-        cpH20[i] = cplH20[i] + cpuH20[i] - ca[i];
-      } else {
-        cpH20[i] = cplH20[i] + cpuH20[i] - 1;
+  // obtain critical values for the primary trial
+  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> critValues = criticalValues;
+  double alpha1 = alpha;
+  if (missingCriticalValues) {
+    bool haybittle = false;
+    if (kMax > 1 && static_cast<int>(criticalValues.size()) == kMax) {
+      bool hasNaN = false;
+      for (int i = 0; i < kMax - 1; ++i) {
+        if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
+      }
+      if (!hasNaN && std::isnan(criticalValues[kMax-1])) {
+        haybittle = true;
       }
     }
+
+    if (haybittle) { // Haybittle & Peto
+      std::vector<double> u(kMax);
+      for (int i = 0; i < kMax - 1; ++i) {
+        u[i] = criticalValues[i];
+        if (!effStopping[i]) u[i] = 6.0;
+      }
+
+      auto f = [&](double aval)->double {
+        u[kMax-1] = aval;
+        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
+        auto v = probs.get<std::vector<double>>("exitProbUpper");
+        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        return cpu - alpha;
+      };
+
+      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+    } else {
+      critValues = getBoundcpp(kMax, infoRates, alpha, asf,
+                               parameterAlphaSpending, userAlphaSpending,
+                               spendTime, effStopping);
+    }
+  } else {
+    ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
+    auto v = probs.get<std::vector<double>>("exitProbUpper");
+    alpha1 = std::accumulate(v.begin(), v.end(), 0.0);
   }
 
-  // incremental exit probabilities under H20
-  NumericVector qH20(kMax);
-  for (int i=0; i<kMax; ++i) {
-    if (i==0) {
-      qH20[i] = cpH20[i];
-    } else if (i<kMax-1) {
-      qH20[i] = cpH20[i] - cpH20[i-1];
-    } else {
-      qH20[i] = 1 - cpH20[i-1];
+  // obtain futility bounds for the primary trial
+  std::vector<double> futBounds = futilityBounds;
+  if (kMax > 1) {
+    if (missingFutilityBounds && bsf == "none") {
+      futBounds = std::vector<double>(kMax, -6.0);
+      futBounds[kMax-1] = critValues[kMax-1];
+    } else if (!missingFutilityBounds &&
+      static_cast<int>(futBounds.size()) == kMax-1) {
+      futBounds.push_back(critValues[kMax-1]);
+    }
+  } else {
+    if (missingFutilityBounds) {
+      futBounds = critValues;
     }
   }
 
-  double attainedAlphaH20 = cpH20[kMax-1];
-  double expectedInformationH20 = sum(qH20*I);
+  // multiplier for the boundaries under the alternative hypothesis
+  std::vector<double> w(kMax, std::sqrt(varianceRatio));
+  if (!none_na(futBounds)) {
+    if (std::isnan(IMax)) {
+      throw std::invalid_argument("IMax must be provided.");
+    }
+    if (IMax <= 0.0) {
+      throw std::invalid_argument("IMax must be positive.");
+    }
 
+    std::vector<double> delta(kMax, theta);
+    std::vector<double> information(kMax);
+    for (int i = 0; i < kMax; ++i) {
+      information[i] = IMax * infoRates[i];
+    }
 
-  DataFrame byStageResults = DataFrame::create(
-    _["informationRates"] = informationRates1,
-    _["efficacyBounds"] = criticalValues1,
-    _["rejectPerStage"] = rejectPerStage,
-    _["cumulativeRejection"] = cp,
-    _["cumulativeAlphaSpent"] = cumAlphaSpent,
-    _["cumulativeAttainedAlphaH10"] = cpH10,
-    _["cumulativeAttainedAlphaH20"] = cpH20,
-    _["efficacyThetaLower"] = efficacyThetaLower,
-    _["efficacyThetaUpper"] = efficacyThetaUpper,
-    _["efficacyP"] = efficacyP,
-    _["information"] = I);
+    ListCpp out = getPower(alpha1, kMax, critValues, delta, information, bsf,
+                           parameterBetaSpending, spendTime, futStopping, w);
+    futBounds = out.get<std::vector<double>>("futilityBounds");
+  }
 
-  DataFrame overallResults = DataFrame::create(
-    _["overallReject"] = overallReject,
-    _["alpha"] = alpha,
-    _["attainedAlphaH10"] = attainedAlphaH10,
-    _["attainedAlphaH20"] = attainedAlphaH20,
-    _["kMax"] = kMax,
-    _["thetaLower"] = thetaLower,
-    _["thetaUpper"] = thetaUpper,
-    _["theta"] = theta,
-    _["information"] = IMax1,
-    _["expectedInformationH1"] = expectedInformationH1,
-    _["expectedInformationH10"] = expectedInformationH10,
-    _["expectedInformationH20"] = expectedInformationH20);
+  // compute conditional alpha, conditional power, and predictive power
+  int k1 = kMax - L;
 
-  List settings = List::create(
-    _["typeAlphaSpending"] = typeAlphaSpending,
-    _["parameterAlphaSpending"] = parameterAlphaSpending,
-    _["userAlphaSpending"] = userAlphaSpending,
-    _["spendingTime"] = spendingTime);
+  std::vector<double> t1(k1), r1(k1), b1(k1), a1(k1, -6.0), theta1(k1, 0.0);
+  for (int l = 0; l < k1; ++l) {
+    t1[l] = (infoRates[l+L] - infoRates[L-1]) / (1.0 - infoRates[L-1]);
+    r1[l] = infoRates[L-1] / infoRates[l+L];
+    b1[l] = (critValues[l+L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
+    if (!effStopping[l+L]) b1[l] = 6.0;
+  }
 
-  List result = List::create(
-    _["byStageResults"] = byStageResults,
-    _["overallResults"] = overallResults,
-    _["settings"] = settings);
+  // conditional type I error
+  ListCpp probs = exitprobcpp(b1, a1, theta1, t1);
+  auto v = probs.get<std::vector<double>>("exitProbUpper");
+  double alphaNew = std::accumulate(v.begin(), v.end(), 0.0);
 
-  result.attr("class") = "designEquiv";
+  // conditional power and predictive power
+  double conditionalPower, predictivePower;
+  for (int l = 0; l < k1; ++l) {
+    a1[l] = (futBounds[l+L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
+    if (!futStopping[l+L]) a1[l] = -6.0;
+  }
 
+  if (!std::isnan(IMax)) {
+    double sigma = 1.0 / std::sqrt(IMax * infoRates[L-1]);
+    double mu = zL * sigma;
+    std::vector<double> theta1(k1, mu);
+
+    std::vector<double> I1(k1);
+    for (int l = 0; l < k1; ++l) {
+      I1[l] = IMax * (infoRates[l+L] - infoRates[L-1]);
+    }
+
+    ListCpp probs = exitprobcpp(b1, a1, theta1, I1);
+    auto v = probs.get<std::vector<double>>("exitProbUpper");
+    conditionalPower = std::accumulate(v.begin(), v.end(), 0.0);
+
+    // predictive power
+    auto f = [k1, b1, a1, I1](double theta)->double {
+      std::vector<double> theta1(k1, theta);
+      ListCpp probs = exitprobcpp(b1, a1, theta1, I1);
+      auto v = probs.get<std::vector<double>>("exitProbUpper");
+      return std::accumulate(v.begin(), v.end(), 0.0);
+    };
+
+    double lower = mu - 6.0*sigma, upper = mu + 6.0*sigma;
+    predictivePower = intnorm(f, mu, sigma, lower, upper);
+  } else {
+    conditionalPower = NaN;
+    predictivePower = NaN;
+  }
+
+  ListCpp des1;
+  des1.push_back(L, "L");
+  des1.push_back(zL, "zL");
+  des1.push_back(theta, "theta");
+  des1.push_back(kMax, "kMax");
+  des1.push_back(std::move(infoRates), "informationRates");
+  des1.push_back(std::move(critValues), "efficacyBounds");
+  des1.push_back(std::move(futBounds), "futilityBounds");
+  des1.push_back(alphaNew, "conditionalAlpha");
+  des1.push_back(conditionalPower, "conditionalPower");
+  des1.push_back(predictivePower, "predictivePower");
+  des1.push_back(MullerSchafer, "MullerSchafer");
+
+  ListCpp des2;
+  if (!MullerSchafer) {
+    effStoppingNew = subset(effStopping, L, kMax);
+    futStoppingNew = subset(futStopping, L, kMax);
+    des2 = getDesigncpp(betaNew, INew, theta, k1, t1, effStoppingNew,
+                        futStoppingNew, b1, NaN, typeAlphaSpendingNew,
+                        parameterAlphaSpendingNew, {NaN}, a1,
+                        typeBetaSpendingNew, parameterBetaSpendingNew,
+                        userBetaSpendingNew, spendTimeNew, varianceRatio);
+  } else {
+    if (!std::isnan(betaNew) && betaNew >= 1.0 - alphaNew) {
+      throw std::invalid_argument(
+          "betaNew must be less than 1 minus the conditional type I error.");
+    }
+
+    std::vector<double> b1New(kNew, NaN), a1New(kNew, NaN);
+    des2 = getDesigncpp(betaNew, INew, theta, kNew, infoRatesNew, effStoppingNew,
+                        futStoppingNew, b1New, alphaNew, typeAlphaSpendingNew,
+                        parameterAlphaSpendingNew, {NaN}, a1New,
+                        typeBetaSpendingNew, parameterBetaSpendingNew,
+                        userBetaSpendingNew, spendTimeNew, varianceRatio);
+  }
+
+  ListCpp result;
+  result.push_back(std::move(des1), "primaryTrial");
+  result.push_back(std::move(des2), "secondaryTrial");
   return result;
 }
-
-
 
 //' @title Adaptive Design at an Interim Look
 //' @description
@@ -3980,930 +4526,320 @@ List getDesignEquiv(const double beta = NA_REAL,
 //'
 //' @export
 // [[Rcpp::export]]
-List adaptDesign(double betaNew = NA_REAL,
-                 double INew = NA_REAL,
-                 const int L = NA_INTEGER,
-                 const double zL = NA_REAL,
-                 const double theta = NA_REAL,
-                 const double IMax = NA_REAL,
-                 const int kMax = NA_INTEGER,
-                 const NumericVector& informationRates = NA_REAL,
-                 const LogicalVector& efficacyStopping = NA_LOGICAL,
-                 const LogicalVector& futilityStopping = NA_LOGICAL,
-                 const NumericVector& criticalValues = NA_REAL,
-                 const double alpha = 0.025,
-                 const std::string typeAlphaSpending = "sfOF",
-                 const double parameterAlphaSpending = NA_REAL,
-                 const NumericVector& userAlphaSpending = NA_REAL,
-                 const NumericVector& futilityBounds = NA_REAL,
-                 const std::string typeBetaSpending = "none",
-                 const double parameterBetaSpending = NA_REAL,
-                 const NumericVector& spendingTime = NA_REAL,
-                 const bool MullerSchafer = 0,
-                 const int kNew = NA_INTEGER,
-                 const NumericVector& informationRatesNew = NA_REAL,
-                 const LogicalVector& efficacyStoppingNew = NA_LOGICAL,
-                 const LogicalVector& futilityStoppingNew = NA_LOGICAL,
-                 const std::string typeAlphaSpendingNew = "sfOF",
-                 const double parameterAlphaSpendingNew = NA_REAL,
-                 const std::string typeBetaSpendingNew = "none",
-                 const double parameterBetaSpendingNew = NA_REAL,
-                 const NumericVector& userBetaSpendingNew = NA_REAL,
-                 const NumericVector& spendingTimeNew = NA_REAL,
-                 const double varianceRatio = 1) {
-
-  NumericVector t = clone(informationRates);
-  LogicalVector es = clone(efficacyStopping);
-  LogicalVector fs = clone(futilityStopping);
-  NumericVector b = clone(criticalValues);
-  NumericVector a = clone(futilityBounds);
-  NumericVector st = clone(spendingTime);
-
-  NumericVector tNew = clone(informationRatesNew);
-  LogicalVector esNew = clone(efficacyStoppingNew);
-  LogicalVector fsNew = clone(futilityStoppingNew);
-  NumericVector stNew = clone(spendingTimeNew);
-
-  double alpha1 = alpha;
-
-  std::string asf = typeAlphaSpending;
-  std::for_each(asf.begin(), asf.end(), [](char & c) {
-    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
-
-  double asfpar = parameterAlphaSpending;
-
-  std::string bsf = typeBetaSpending;
-  std::for_each(bsf.begin(), bsf.end(), [](char & c) {
-    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
-
-  double bsfpar = parameterBetaSpending;
-
-  std::string asfNew = typeAlphaSpendingNew;
-  std::for_each(asfNew.begin(), asfNew.end(), [](char & c) {
-    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
-
-  double asfparNew = parameterAlphaSpendingNew;
-
-  std::string bsfNew = typeBetaSpendingNew;
-  std::for_each(bsfNew.begin(), bsfNew.end(), [](char & c) {
-    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
-
-  double bsfparNew = parameterBetaSpendingNew;
-
-  if (std::isnan(betaNew) && std::isnan(INew)) {
-    stop("betaNew and INew cannot be both missing");
-  }
-
-  if (!std::isnan(betaNew) && !std::isnan(INew)) {
-    stop("Only one of betaNew and INew should be provided");
-  }
-
-  if (!std::isnan(betaNew) && betaNew < 0.0001 && betaNew >= 1) {
-    stop("betaNew must be greater than or equal to 0.0001 and less than 1");
-  }
-
-  if (!std::isnan(INew) && INew <= 0) {
-    stop("INew must be positive");
-  }
-
-  if (L == NA_INTEGER) {
-    stop("L must be provided");
-  }
-
-  if (L < 1) {
-    stop("L must be a positive integer");
-  }
-
-  if (std::isnan(zL)) {
-    stop("zL must be provided");
-  }
-
-  if (std::isnan(theta)) {
-    stop("theta must be provided");
-  }
-
-  if (kMax == NA_INTEGER) {
-    stop("kMax must be provided");
-  }
-
-  if (kMax <= L) {
-    stop("kMax must be greater than L");
-  }
-
-  if (is_false(any(is_na(informationRates)))) {
-    if (informationRates.size() != kMax) {
-      stop("Invalid length for informationRates");
-    } else if (informationRates[0] <= 0) {
-      stop("Elements of informationRates must be positive");
-    } else if (kMax > 1 && is_true(any(diff(informationRates) <= 0))) {
-      stop("Elements of informationRates must be increasing");
-    } else if (informationRates[kMax-1] != 1) {
-      stop("informationRates must end with 1");
-    }
-  } else {
-    IntegerVector tem = seq_len(kMax);
-    t = NumericVector(tem)/(kMax+0.0);
-  }
-
-  if (is_false(any(is_na(efficacyStopping)))) {
-    if (efficacyStopping.size() != kMax) {
-      stop("Invalid length for efficacyStopping");
-    } else if (efficacyStopping[kMax-1] != 1) {
-      stop("efficacyStopping must end with 1");
-    } else if (is_false(all((efficacyStopping == 1) |
-      (efficacyStopping == 0)))) {
-      stop("Elements of efficacyStopping must be 1 or 0");
-    }
-  } else {
-    es = rep(1, kMax);
-  }
-
-  if (is_false(any(is_na(futilityStopping)))) {
-    if (futilityStopping.size() != kMax) {
-      stop("Invalid length for futilityStopping");
-    } else if (futilityStopping[kMax-1] != 1) {
-      stop("futilityStopping must end with 1");
-    } else if (is_false(all((futilityStopping == 1) |
-      (futilityStopping == 0)))) {
-      stop("Elements of futilityStopping must be 1 or 0");
-    }
-  } else {
-    fs = rep(1, kMax);
-  }
-
-  if (is_false(any(is_na(criticalValues)))) {
-    if (criticalValues.size() != kMax) {
-      stop("Invalid length for criticalValues");
-    }
-  }
-
-  if (!std::isnan(alpha)) {
-    if (alpha < 0.00001 || alpha >= 1) {
-      stop("alpha must lie in [0.00001, 1)");
-    }
-  }
-
-  if (is_true(any(is_na(criticalValues))) && std::isnan(alpha)) {
-    stop("alpha must be provided when criticalValues is missing");
-  }
-
-  if (is_true(any(is_na(criticalValues))) && !(asf=="of" || asf=="p" ||
-      asf=="wt" || asf=="sfof" || asf=="sfp" ||
-      asf=="sfkd" || asf=="sfhsd" || asf=="user" || asf=="none")) {
-    stop("Invalid value for typeAlphaSpending");
-  }
-
-  if ((asf=="wt" || asf=="sfkd" || asf=="sfhsd") && std::isnan(asfpar)) {
-    stop("Missing value for parameterAlphaSpending");
-  }
-
-  if (asf=="sfkd" && asfpar <= 0) {
-    stop ("parameterAlphaSpending must be positive for sfKD");
-  }
-
-  if (is_true(any(is_na(criticalValues))) && asf=="user") {
-    if (is_true(any(is_na(userAlphaSpending)))) {
-      stop("userAlphaSpending must be specified");
-    } else if (userAlphaSpending.size() < kMax) {
-      stop("Insufficient length of userAlphaSpending");
-    } else if (userAlphaSpending[0] < 0) {
-      stop("Elements of userAlphaSpending must be nonnegative");
-    } else if (kMax > 1 && is_true(any(diff(userAlphaSpending) < 0))) {
-      stop("Elements of userAlphaSpending must be nondecreasing");
-    } else if (userAlphaSpending[kMax-1] != alpha) {
-      stop("userAlphaSpending must end with specified alpha");
-    }
-  }
-
-  if (is_false(any(is_na(futilityBounds)))) {
-    if (!(futilityBounds.size() == kMax-1 ||
-        futilityBounds.size() == kMax)) {
-      stop("Invalid length for futilityBounds");
-    }
-  }
-
-  if (is_false(any(is_na(criticalValues))) &&
-      is_false(any(is_na(futilityBounds)))) {
-    for (int i=0; i<kMax-1; ++i) {
-      if (futilityBounds[i] > criticalValues[i]) {
-        stop("futilityBounds must lie below criticalValues");
-      }
-    }
-
-    if (futilityBounds.size() == kMax &&
-        futilityBounds[kMax-1] != criticalValues[kMax-1]) {
-      stop("futilityBounds and criticalValues must meet at final analysis");
-    }
-  }
-
-  if (is_true(any(is_na(futilityBounds))) && !(bsf=="sfof" || bsf=="sfp" ||
-      bsf=="sfkd" || bsf=="sfhsd" || bsf=="none")) {
-    stop("Invalid value for typeBetaSpending");
-  }
-
-  if ((bsf=="sfkd" || bsf=="sfhsd") && std::isnan(bsfpar)) {
-    stop("Missing value for parameterBetaSpending");
-  }
-
-  if (bsf=="sfkd" && bsfpar <= 0) {
-    stop ("parameterBetaSpending must be positive for sfKD");
-  }
-
-  if (is_false(any(is_na(spendingTime)))) {
-    if (spendingTime.size() != kMax) {
-      stop("Invalid length for spendingTime");
-    } else if (spendingTime[0] <= 0) {
-      stop("Elements of spendingTime must be positive");
-    } else if (kMax > 1 && is_true(any(diff(spendingTime) <= 0))) {
-      stop("Elements of spendingTime must be increasing");
-    } else if (spendingTime[kMax-1] != 1) {
-      stop("spendingTime must end with 1");
-    }
-  } else {
-    st = clone(t);
-  }
-
-
-  if (MullerSchafer) {
-    if (kNew == NA_INTEGER) {
-      stop("kNew must be provided");
-    }
-
-    if (is_false(any(is_na(informationRatesNew)))) {
-      if (informationRatesNew.size() != kNew) {
-        stop("Invalid length for informationRatesNew");
-      } else if (informationRatesNew[0] <= 0) {
-        stop("Elements of informationRatesNew must be positive");
-      } else if (kNew > 1 && is_true(any(diff(informationRatesNew) <= 0))) {
-        stop("Elements of informationRatesNew must be increasing");
-      } else if (informationRatesNew[kNew-1] != 1) {
-        stop("informationRatesNew must end with 1");
-      }
-    } else {
-      IntegerVector tem = seq_len(kNew);
-      tNew = NumericVector(tem)/(kNew+0.0);
-    }
-
-    if (is_false(any(is_na(efficacyStoppingNew)))) {
-      if (efficacyStoppingNew.size() != kNew) {
-        stop("Invalid length for efficacyStoppingNew");
-      } else if (efficacyStoppingNew[kNew-1] != 1) {
-        stop("efficacyStoppingNew must end with 1");
-      } else if (is_false(all((efficacyStoppingNew == 1) |
-        (efficacyStoppingNew == 0)))) {
-        stop("Elements of efficacyStoppingNew must be 1 or 0");
-      }
-    } else {
-      esNew = rep(1, kNew);
-    }
-
-    if (is_false(any(is_na(futilityStoppingNew)))) {
-      if (futilityStoppingNew.size() != kNew) {
-        stop("Invalid length for futilityStoppingNew");
-      } else if (futilityStoppingNew[kNew-1] != 1) {
-        stop("futilityStoppingNew must end with 1");
-      } else if (is_false(all((futilityStoppingNew == 1) |
-        (futilityStoppingNew == 0)))) {
-        stop("Elements of futilityStoppingNew must be 1 or 0");
-      }
-    } else {
-      fsNew = rep(1, kNew);
-    }
-
-    if (!(asfNew=="of" || asfNew=="p" || asfNew=="wt" ||
-        asfNew=="sfof" || asfNew=="sfp" ||
-        asfNew=="sfkd" || asfNew=="sfhsd" || asfNew=="none")) {
-      stop("Invalid value for typeAlphaSpendingNew");
-    }
-
-    if ((asfNew=="wt" || asfNew=="sfkd" || asfNew=="sfhsd") &&
-        std::isnan(asfparNew)) {
-      stop("Missing value for parameterAlphaSpendingNew");
-    }
-
-    if (asfNew=="sfkd" && asfparNew <= 0) {
-      stop ("parameterAlphaSpendingNew must be positive for sfKD");
-    }
-
-    if (std::isnan(INew) && !(bsfNew=="sfof" || bsfNew=="sfp" ||
-        bsfNew=="sfkd" || bsfNew=="sfhsd" ||
-        bsfNew=="user" || bsfNew=="none")) {
-      stop("Invalid value for typeBetaSpendingNew");
-    } else if (!(bsfNew=="sfof" || bsfNew=="sfp" || bsfNew=="sfkd" ||
-      bsfNew=="sfhsd" || bsfNew=="none")) {
-      stop("Invalid value for typeBetaSpendingNew");
-    }
-
-    if ((bsfNew=="sfkd" || bsfNew=="sfhsd") && std::isnan(bsfparNew)) {
-      stop("Missing value for parameterBetaSpendingNew");
-    }
-
-    if (bsfNew=="sfkd" && bsfparNew <= 0) {
-      stop ("parameterBetaSpendingNew must be positive for sfKD");
-    }
-
-    if (std::isnan(INew) && bsfNew=="user") {
-      if (is_true(any(is_na(userBetaSpendingNew)))) {
-        stop("userBetaSpendingNew must be specified");
-      } else if (userBetaSpendingNew.size() < kNew) {
-        stop("Insufficient length of userBetaSpendingNew");
-      } else if (userBetaSpendingNew[0] < 0) {
-        stop("Elements of userBetaSpendingNew must be nonnegative");
-      } else if (kNew > 1 && is_true(any(diff(userBetaSpendingNew) < 0))) {
-        stop("Elements of userBetaSpendingNew must be nondecreasing");
-      } else if (userBetaSpendingNew[kNew] != betaNew) {
-        stop("userBetaSpendingNew must end with specified betaNew");
-      }
-    }
-
-    if (is_false(any(is_na(spendingTimeNew)))) {
-      if (spendingTimeNew.size() != kNew) {
-        stop("Invalid length for spendingTimeNew");
-      } else if (spendingTimeNew[0] <= 0) {
-        stop("Elements of spendingTimeNew must be positive");
-      } else if (kNew > 1 && is_true(any(diff(spendingTimeNew) <= 0))) {
-        stop("Elements of spendingTimeNew must be increasing");
-      } else if (spendingTimeNew[kNew-1] != 1) {
-        stop("spendingTimeNew must end with 1");
-      }
-    } else {
-      stNew = clone(tNew);
-    }
-  }
-
-  if (varianceRatio <= 0) {
-    stop("varianceRatio must be positive");
-  }
-
-  NumericVector w = rep(sqrt(varianceRatio), kMax);
-
-
-  // obtain critical values for the primary trial
-  if (is_true(any(is_na(criticalValues)))) {
-    if (kMax > 1 && criticalValues.size() == kMax &&
-        is_false(any(is_na(head(criticalValues, kMax-1)))) &&
-        std::isnan(criticalValues[kMax-1])) { // Haybittle & Peto
-
-      auto f = [kMax, t, es, criticalValues, alpha](double aval)->double {
-        NumericVector u(kMax), l(kMax, -6.0), zero(kMax);
-        for (int i=0; i<kMax-1; ++i) {
-          u[i] = criticalValues[i];
-          if (!es[i]) u[i] = 6.0;
-        }
-        u[kMax-1] = aval;
-
-        List probs = exitprobcpp(u, l, zero, t);
-        double cpu = sum(NumericVector(probs[0]));
-        return cpu - alpha;
-      };
-
-      b[kMax-1] = brent(f, -5.0, 6.0, 1.0e-6);
-    } else {
-      b = getBoundcpp(kMax, t, alpha, asf, asfpar, userAlphaSpending,
-                      st, es);
-    }
-  }
-
-  NumericVector l(kMax, -6.0), zero(kMax);
-  List probs = exitprobcpp(b, l, zero, t);
-  alpha1 = sum(NumericVector(probs[0]));
-
-  // obtain futility bounds for the primary trial
-  if (kMax > 1) {
-    if (is_true(any(is_na(futilityBounds))) && bsf=="none") {
-      a = rep(-6.0, kMax);
-      a[kMax-1] = b[kMax-1];
-    } else if (is_false(any(is_na(futilityBounds))) && a.size() == kMax-1) {
-      a.push_back(b[kMax-1]);
-    }
-  } else {
-    if (is_true(any(is_na(futilityBounds)))) {
-      a = b[kMax-1];
-    }
-  }
-
-  if (is_true(any(is_na(a)))) {
-    if (std::isnan(IMax)) {
-      stop("IMax must be provided");
-    }
-
-    if (IMax <= 0) {
-      stop("IMax must be positive");
-    }
-
-    NumericVector theta1(kMax, theta);
-    List out = getPower(alpha1, kMax, b, theta1, IMax*t, bsf, bsfpar,
-                        st, fs, w);
-    a = out[1];
-  }
-
-  int k1 = kMax - L;
-  double alphaNew, conditionalPower, predictivePower;
-
-  NumericVector t1(k1), r1(k1), b1(k1), a1(k1, -6.0), theta0(k1);
-  for (int l=0; l<k1; ++l) {
-    t1[l] = (t[l+L] - t[L-1])/(1 - t[L-1]);
-    r1[l] = t[L-1]/t[l+L];
-    b1[l] = (b[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
-    if (!es[l+L]) b1[l] = 6.0;
-  }
-
-  // conditional type I error
-  probs = exitprobcpp(b1, a1, theta0, t1);
-  alphaNew = sum(NumericVector(probs[0]));
-
-  // conditional power
-  for (int l=0; l<k1; ++l) {
-    a1[l] = (a[l+L] - sqrt(r1[l])*zL)/sqrt(1 - r1[l]);
-    if (!fs[l+L]) a1[l] = -6.0;
-  }
-
-  if (!std::isnan(IMax)) {
-    double sigma = 1/sqrt(IMax*t[L-1]);
-    double mu = zL*sigma;
-    NumericVector theta1(k1, mu);
-
-    NumericVector I1(k1);
-    for (int l=0; l<k1; ++l) {
-      I1[l] = IMax*(t[l+L] - t[L-1]);
-    }
-
-    probs = exitprobcpp(b1, a1, theta1, I1);
-    conditionalPower = sum(NumericVector(probs[0]));
-
-    // predictive power
-    auto f = [k1, b1, a1, I1](double theta)->double {
-      NumericVector theta1(k1, theta);
-      List probs = exitprobcpp(b1, a1, theta1, I1);
-      return sum(NumericVector(probs[0]));
-    };
-
-    double lower = mu - 6*sigma, upper = mu + 6*sigma;
-    predictivePower = intnorm(f, mu, sigma, lower, upper);
-  } else {
-    conditionalPower = NA_REAL;
-    predictivePower = NA_REAL;
-  }
-
-  List des1 = List::create(
-    _["L"] = L,
-    _["zL"] = zL,
-    _["theta"] = theta,
-    _["kMax"] = kMax,
-    _["informationRates"] = t,
-    _["efficacyBounds"] = b,
-    _["futilityBounds"] = a,
-    _["conditionalAlpha"] = alphaNew,
-    _["conditionalPower"] = conditionalPower,
-    _["predictivePower"] = predictivePower,
-    _["MullerSchafer"] = MullerSchafer);
-
-
-  List des2;
-
-  if (!MullerSchafer) {
-    IntegerVector idx = Range(L, kMax-1);
-    LogicalVector esNew = es[idx];
-    LogicalVector fsNew = fs[idx];
-
-    des2 = getDesign(betaNew, INew, theta, k1, t1, esNew, fsNew,
-                     b1, NA_REAL, typeAlphaSpendingNew,
-                     parameterAlphaSpendingNew, 0,
-                     a1, typeBetaSpendingNew, parameterBetaSpendingNew,
-                     userBetaSpendingNew, stNew, varianceRatio);
-  } else {
-    if (!std::isnan(betaNew) && betaNew >= 1-alphaNew) {
-      stop("betaNew must be less than 1 minus conditional type I error");
-    }
-
-    NumericVector b1New(kNew, NA_REAL), a1New(kNew, NA_REAL);
-
-    des2 = getDesign(betaNew, INew, theta, kNew, tNew, esNew, fsNew,
-                     b1New, alphaNew, typeAlphaSpendingNew,
-                     parameterAlphaSpendingNew, 0,
-                     a1New, typeBetaSpendingNew, parameterBetaSpendingNew,
-                     userBetaSpendingNew, stNew, varianceRatio);
-  }
-
-  List result = List::create(
-    _["primaryTrial"] = des1,
-    _["secondaryTrial"] = des2);
-
-  result.attr("class") = "adaptDesign";
-
-  return result;
+Rcpp::List adaptDesign(
+    double betaNew = NA_REAL,
+    double INew = NA_REAL,
+    const int L = NA_INTEGER,
+    const double zL = NA_REAL,
+    const double theta = NA_REAL,
+    const double IMax = NA_REAL,
+    const int kMax = NA_INTEGER,
+    const Rcpp::NumericVector& informationRates = NA_REAL,
+    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
+    const Rcpp::LogicalVector& futilityStopping = NA_LOGICAL,
+    const Rcpp::NumericVector& criticalValues = NA_REAL,
+    const double alpha = 0.025,
+    const std::string& typeAlphaSpending = "sfOF",
+    const double parameterAlphaSpending = NA_REAL,
+    const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
+    const Rcpp::NumericVector& futilityBounds = NA_REAL,
+    const std::string& typeBetaSpending = "none",
+    const double parameterBetaSpending = NA_REAL,
+    const Rcpp::NumericVector& spendingTime = NA_REAL,
+    const bool MullerSchafer = false,
+    const int kNew = NA_INTEGER,
+    const Rcpp::NumericVector& informationRatesNew = NA_REAL,
+    const Rcpp::LogicalVector& efficacyStoppingNew = NA_LOGICAL,
+    const Rcpp::LogicalVector& futilityStoppingNew = NA_LOGICAL,
+    const std::string& typeAlphaSpendingNew = "sfOF",
+    const double parameterAlphaSpendingNew = NA_REAL,
+    const std::string& typeBetaSpendingNew = "none",
+    const double parameterBetaSpendingNew = NA_REAL,
+    const Rcpp::NumericVector& userBetaSpendingNew = NA_REAL,
+    const Rcpp::NumericVector& spendingTimeNew = NA_REAL,
+    const double varianceRatio = 1.0) {
+
+  auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
+  auto effStopping = convertLogicalVector(efficacyStopping);
+  auto futStopping = convertLogicalVector(futilityStopping);
+  auto critValues = Rcpp::as<std::vector<double>>(criticalValues);
+  auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
+  auto futBounds = Rcpp::as<std::vector<double>>(futilityBounds);
+  auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
+  auto infoRatesNew = Rcpp::as<std::vector<double>>(informationRatesNew);
+  auto effStoppingNew = convertLogicalVector(efficacyStoppingNew);
+  auto futStoppingNew = convertLogicalVector(futilityStoppingNew);
+  auto userBetaNew = Rcpp::as<std::vector<double>>(userBetaSpendingNew);
+  auto spendTimeNew = Rcpp::as<std::vector<double>>(spendingTimeNew);
+
+  ListCpp result = adaptDesigncpp(
+    betaNew, INew, L, zL, theta, IMax, kMax, infoRates, effStopping,
+    futStopping, critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
+    userAlpha, futBounds, typeBetaSpending, parameterBetaSpending, spendTime,
+    MullerSchafer, kNew, infoRatesNew, effStoppingNew, futStoppingNew,
+    typeAlphaSpendingNew, parameterAlphaSpendingNew, typeBetaSpendingNew,
+    parameterBetaSpendingNew, userBetaNew, spendTimeNew, varianceRatio);
+
+  Rcpp::List resultR = Rcpp::wrap(result);
+  resultR.attr("class") = "adaptDesign";
+  return resultR;
 }
 
 
-// [[Rcpp::export]]
-bool hasVariable(DataFrame df, std::string varName) {
-  StringVector names = df.names();
-  for (int i = 0; i < names.size(); ++i) {
-    if (names[i] == varName) {
-      return true;
-    }
-  }
-  return false;
-}
-
-
-double quantilecpp(const NumericVector& x, const double p) {
-  int n = static_cast<int>(x.size());
-  NumericVector y = clone(x);
-  y.sort();
-  double u = n*p + 1 - p;
-  int j = static_cast<int>(std::floor(u));
-  double g = u - j;
-  double result = (1-g)*y[j-1] + g*y[j];
-  return result;
-}
-
-
-double squantilecpp(const std::function<double(double)>& S, double p) {
-  double lower = 0;
-  double upper = 1;
-  while (S(upper) > p) {
-    lower = upper;
-    upper = 2*upper;
-  }
-
-  auto f = [S, p](double t)->double{
-    return S(t) - p;
-  };
-
-  return brent(f, lower, upper, 1e-6);
-}
-
-
-IntegerVector c_vectors_i(IntegerVector vec1, IntegerVector vec2) {
-  IntegerVector result(vec1.size() + vec2.size());
-  std::copy(vec1.begin(), vec1.end(), result.begin());
-  std::copy(vec2.begin(), vec2.end(), result.begin() + vec1.size());
-  return result;
-}
-
-
-NumericVector c_vectors(NumericVector vec1, NumericVector vec2) {
-  NumericVector result(vec1.size() + vec2.size());
-  std::copy(vec1.begin(), vec1.end(), result.begin());
-  std::copy(vec2.begin(), vec2.end(), result.begin() + vec1.size());
-  return result;
-}
-
-
-NumericMatrix subset_matrix_by_row(NumericMatrix a, IntegerVector q) {
-  int n = static_cast<int>(q.size()), p = a.ncol();
-  NumericMatrix b(n,p);
-  for (int j=0; j<p; ++j) {
-    for (int i=0; i<n; ++i) {
-      b(i,j) = a(q[i],j);
-    }
-  }
-  return b;
-}
-
-
-NumericMatrix c_matrices(NumericMatrix a1, NumericMatrix a2) {
-  int n1 = a1.nrow(), n2 = a2.nrow(), p = a1.ncol();
-  NumericMatrix b(n1+n2, p);
-  for (int i=0; i<n1; ++i) {
-    for (int j=0; j<p; ++j) {
-      b(i,j) = a1(i,j);
-    }
-  }
-
-  for (int i=0; i<n2; ++i) {
-    int h = i+n1;
-    for (int j=0; j<p; ++j) {
-      b(h,j) = a2(i,j);
-    }
-  }
-
-  return b;
-}
-
-
-List bygroup(DataFrame data, const StringVector& variables) {
+// bygroup: group-by helper that builds lookup tables and combined indices
+ListCpp bygroup(const DataFrameCpp& data,
+                const std::vector<std::string>& variables) {
   int n = data.nrows();
-  int p = static_cast<int>(variables.size());
+  int p = variables.size();
+  ListCpp result;
+  std::vector<int> nlevels(p);
 
-  IntegerVector d(p);   // the number of unique values
-  List u(p);            // the vector of unique values
-  IntegerMatrix x(n,p); // indices of original values in unique values
-  for (int i=0; i<p; ++i) {
-    std::string s = as<std::string>(variables[i]);
-    if (!hasVariable(data, s)) {
-      stop("data must contain the variables");
-    }
-    SEXP col = data[s];
-    SEXPTYPE col_type = TYPEOF(col);
-    if (col_type == LGLSXP || col_type == INTSXP) {
-      IntegerVector v = col;
-      IntegerVector w = unique(v);
-      w.sort();
-      d[i] = static_cast<int>(w.size());
-      u[i] = w;
-      x(_,i) = match(v,w) - 1;
-    } else if (col_type == REALSXP) {
-      NumericVector v = col;
-      NumericVector w = unique(v);
-      w.sort();
-      d[i] = static_cast<int>(w.size());
-      u[i] = w;
-      x(_,i) = match(v,w) - 1;
-    } else if (col_type == STRSXP) {
-      StringVector v = col;
-      StringVector w = unique(v);
-      w.sort();
-      d[i] = static_cast<int>(w.size());
-      u[i] = w;
-      x(_,i) = match(v,w) - 1;
+  // IntMatrix for indices (n rows, p cols), column-major storage
+  IntMatrix indices(n, p);
+
+  // Flattened lookup buffers and per-variable metadata
+  struct VarLookupInfo {
+    int type; // 0=int, 1=double, 2=bool, 3=string
+    int offset;
+  };
+  std::vector<VarLookupInfo> var_info(p);
+
+  std::vector<int> int_flat;
+  std::vector<double> dbl_flat;
+  std::vector<unsigned char> bool_flat;
+  std::vector<std::string> str_flat;
+
+  ListCpp lookups_per_variable; // will contain a std::vector for each variable
+
+  for (int i = 0; i < p; ++i) {
+    const std::string& var = variables[i];
+    if (!data.containElementNamed(var))
+      throw std::invalid_argument("Data must contain variable: " + var);
+
+    if (data.int_cols.count(var)) {
+      const auto& col = data.int_cols.at(var);
+      auto w = unique_sorted(col);
+      nlevels[i] = w.size();
+      auto idx = matchcpp(col, w); // indices 0..(levels-1)
+
+      // append w to flat buffer and record metadata
+      int off = int_flat.size();
+      int_flat.insert(int_flat.end(), w.begin(), w.end());
+      var_info[i] = VarLookupInfo{0, off};
+
+      // fill indices column i (column-major layout)
+      intmatrix_set_column(indices, i, idx);
+      lookups_per_variable.push_back(std::move(w), var);
+    } else if (data.numeric_cols.count(var)) {
+      const auto& col = data.numeric_cols.at(var);
+      auto w = unique_sorted(col);
+      nlevels[i] = w.size();
+      auto idx = matchcpp(col, w);
+
+      int off = dbl_flat.size();
+      dbl_flat.insert(dbl_flat.end(), w.begin(), w.end());
+      var_info[i] = VarLookupInfo{1, off};
+
+      intmatrix_set_column(indices, i, idx);
+      lookups_per_variable.push_back(std::move(w), var);
+    } else if (data.bool_cols.count(var)) {
+      const auto& col = data.bool_cols.at(var);
+      auto w = unique_sorted(col);
+      nlevels[i] = w.size();
+      auto idx = matchcpp(col, w);
+
+      int off = bool_flat.size();
+      bool_flat.insert(bool_flat.end(), w.begin(), w.end());
+      var_info[i] = VarLookupInfo{2, off};
+
+      intmatrix_set_column(indices, i, idx);
+      lookups_per_variable.push_back(std::move(w), var);
+    } else if (data.string_cols.count(var)) {
+      const auto& col = data.string_cols.at(var);
+      auto w = unique_sorted(col);
+      nlevels[i] = w.size();
+      auto idx = matchcpp(col, w);
+
+      int off = str_flat.size();
+      str_flat.insert(str_flat.end(), w.begin(), w.end());
+      var_info[i] = VarLookupInfo{3, off};
+
+      intmatrix_set_column(indices, i, idx);
+      lookups_per_variable.push_back(std::move(w), var);
     } else {
-      stop("Unsupported variable type in bygroup" + s);
+      throw std::invalid_argument("Unsupported variable type in bygroup: " + var);
     }
-  }
+  } // end for variables
 
-  int frac = 1;
+  // compute combined index
+  std::vector<int> combined_index(n, 0);
   int orep = 1;
-  for (int i=0; i<p; ++i) {
-    orep *= d[i];
-  }
+  for (int i = 0; i < p; ++i) orep *= nlevels[i];
+  int lookup_nrows = orep;
 
-  IntegerVector index(n);
-  List lookup;
-  for (int i=0; i<p; ++i) {
-    orep /= d[i];
-    index += x(_,i)*orep;
-
-    IntegerVector j = rep(rep_each(seq(0, d[i]-1), orep), frac);
-    std::string s = as<std::string>(variables[i]);
-    SEXP data_col;
-    SEXP col = u[i];
-    SEXPTYPE col_type = TYPEOF(col);
-    if (col_type == LGLSXP || col_type == INTSXP) {
-      IntegerVector w = col;
-      data_col = w[j];
-    } else if (col_type == REALSXP) {
-      NumericVector w = col;
-      data_col = w[j];
-    } else if (col_type == STRSXP) {
-      StringVector w = col;
-      data_col = w[j];
-    } else {
-      stop("Unsupported variable type in bygroup" + s);
+  for (int i = 0; i < p; ++i) {
+    orep /= nlevels[i];
+    const int* col_ptr = indices.data_ptr() + i * n;
+    for (int j = 0; j < n; ++j) {
+      combined_index[j] += col_ptr[j] * orep;
     }
-    lookup.push_back(data_col, s);
-
-    frac = frac*d[i];
   }
 
-  return List::create(
-    Named("nlevels") = d,
-    Named("indices") = x,
-    Named("lookups") = u,
-    Named("index") = index,
-    Named("lookup") = as<DataFrame>(lookup));
+  // Build lookup_df with columns repeated in the same pattern as before.
+  DataFrameCpp lookup_df;
+  int repeat_each = lookup_nrows;
+  for (int i = 0; i < p; ++i) {
+    const std::string& var = variables[i];
+    int nlevels_i = nlevels[i];
+    repeat_each /= nlevels_i;
+    int times = lookup_nrows / ( nlevels_i * repeat_each );
+
+    VarLookupInfo info = var_info[i];
+    if (info.type == 0) {
+      const int* base = int_flat.data() + info.offset;
+      std::vector<int> col(lookup_nrows);
+      int idxw = 0;
+      for (int t = 0; t < times; ++t) {
+        for (int level = 0; level < nlevels_i; ++level)
+          for (int r = 0; r < repeat_each; ++r) col[idxw++] = base[level];
+      }
+      lookup_df.push_back(std::move(col), var);
+    } else if (info.type == 1) {
+      const double* base = dbl_flat.data() + info.offset;
+      std::vector<double> col(lookup_nrows);
+      int idxw = 0;
+      for (int t = 0; t < times; ++t) {
+        for (int level = 0; level < nlevels_i; ++level)
+          for (int r = 0; r < repeat_each; ++r) col[idxw++] = base[level];
+      }
+      lookup_df.push_back(std::move(col), var);
+    } else if (info.type == 2) {
+      const unsigned char* base = bool_flat.data() + info.offset;
+      std::vector<unsigned char> col(lookup_nrows);
+      int idxw = 0;
+      for (int t = 0; t < times; ++t) {
+        for (int level = 0; level < nlevels_i; ++level) {
+          for (int r = 0; r < repeat_each; ++r) col[idxw++] = base[level];
+        }
+      }
+      lookup_df.push_back(std::move(col), var);
+    } else { // string
+      const std::string* base = str_flat.data() + info.offset;
+      std::vector<std::string> col(lookup_nrows);
+      int idxw = 0;
+      for (int t = 0; t < times; ++t) {
+        for (int level = 0; level < nlevels_i; ++level)
+          for (int r = 0; r < repeat_each; ++r) col[idxw++] = base[level];
+      }
+      lookup_df.push_back(std::move(col), var);
+    }
+  }
+
+  result.push_back(std::move(nlevels), "nlevels");
+  result.push_back(std::move(indices), "indices");
+  result.push_back(std::move(lookups_per_variable), "lookups_per_variable");
+  result.push_back(std::move(combined_index), "index");
+  result.push_back(std::move(lookup_df), "lookup");
+  return result;
 }
 
-// The following three utilities functions are from the survival package
-// and are used to compute the Cholesky decomposition of a symmetric
-// positive-definite matrix, solve a linear system, and compute the
-// inverse of a symmetric positive-definite matrix.
 
-// The matrix A is modified in place. Let A = U' d U, where U is upper
-// triangular with unit diagonals, and d is a diagonal matrix.
-// The lower triangular part of A is left unchanged, the diagonal part
-// is modified to contain d, and the upper triangular part is modified
-// to contain U. The toler parameter
-// is used to determine the threshold for considering a diagonal
-// element as zero. If the diagonal element is less than toler times
-// the largest diagonal element, it is considered zero. The function
-// returns the rank of the matrix, which is the number of non-zero
-// diagonal elements in the Cholesky decomposition.
-// [[Rcpp::export]]
-int cholesky2(NumericMatrix matrix, int n, double toler) {
-  double eps = 0;
-  for (int i=0; i<n; ++i) {
-    if (matrix(i,i) > eps) eps = matrix(i,i);
+// --------------------------- Linear algebra helpers (FlatMatrix-backed) ----
+// cholesky2: in-place working on FlatMatrix (n x n), returns rank * nonneg
+int cholesky2(FlatMatrix& matrix, int n, double toler) {
+  double* base = matrix.data_ptr();
+  double eps = 0.0;
+  for (int i = 0; i < n; ++i) {
+    double val = matrix(i, i);
+    if (val > eps) eps = val;
   }
-  if (eps==0) eps = toler; // no positive diagonals!
-  else eps *= toler;
-
+  if (eps == 0.0) eps = toler; else eps *= toler;
   int nonneg = 1;
   int rank = 0;
-  for (int i=0; i<n; ++i) {
-    double pivot = matrix(i,i);
-    if (std::isinf(pivot) == 1 || pivot < eps) {
-      matrix(i,i) = 0;
-      if (pivot < -8*eps) nonneg = -1;
-    }
-    else  {
+
+  for (int i = 0; i < n; ++i) {
+    double* col_i = base + i * n;
+    double pivot = col_i[i];
+    if (std::isinf(pivot) || pivot < eps) {
+      col_i[i] = 0.0;
+      if (pivot < -8.0 * eps) nonneg = -1;
+    } else {
       ++rank;
-      for (int j=i+1; j<n; ++j) {
-        double temp = matrix(i,j)/pivot;
-        matrix(i,j) = temp;
-        matrix(j,j) -= temp*temp*pivot;
-        for (int k=j+1; k<n; ++k) matrix(j,k) -= temp*matrix(i,k);
+      for (int j = i + 1; j < n; ++j) {
+        double* col_j = base + j * n;
+        double temp = col_i[j] / pivot;
+        col_i[j] = temp;
+        col_j[j] -= temp * temp * pivot;
+        for (int k = j + 1; k < n; ++k) {
+          col_j[k] -= temp * col_i[k];
+        }
       }
     }
   }
-
-  return(rank*nonneg);
+  return rank * nonneg;
 }
 
-
-void chsolve2(NumericMatrix matrix, int n, NumericVector y) {
-  for (int i=0; i<n; ++i) {
-    double temp = y[i];
-    for (int j=0; j<i; ++j)
-      temp -= y[j]*matrix(j,i);
-    y[i] = temp;
+// chsolve2 assumes matrix holds the representation produced by cholesky2
+void chsolve2(FlatMatrix& matrix, int n, double* y) {
+  // Forward substitution L * z = y
+  double* base = matrix.data_ptr();
+  for (int j = 0; j < n-1; ++j) {
+    double yj = y[j];
+    if (yj == 0.0) continue;
+    double* col_j = base + j * n;
+    for (int i = j + 1; i < n; ++i) {
+      y[i] -= yj * col_j[i];
+    }
   }
-
-  for (int i=n-1; i>=0; --i) {
-    if (matrix(i,i) == 0) y[i] = 0;
-    else {
-      double temp = y[i]/matrix(i,i);
-      for (int j=i+1; j<n; ++j)
-        temp -= y[j]*matrix(i,j);
+  // Now y holds z; solve L^T * x = z
+  if (n == 0) return;
+  for (int i = n - 1; i >= 0; --i) {
+    double* col_i = base + i * n;
+    double diag = col_i[i];
+    if (diag == 0.0) {
+      y[i] = 0.0;
+    } else {
+      double temp = y[i] / diag;
+      for (int j = i + 1; j < n; ++j) temp -= y[j] * col_i[j];
       y[i] = temp;
     }
   }
 }
 
-
-void chinv2(NumericMatrix matrix, int n) {
-  for (int i=0; i<n; ++i){
-    if (matrix(i,i) > 0) {
-      matrix(i,i) = 1/matrix(i,i);   // this line inverts D
-      for (int j=i+1; j<n; ++j) {
-        matrix(i,j) = -matrix(i,j);
-        for (int k=0; k<i; ++k)     // sweep operator
-          matrix(k,j) += matrix(i,j)*matrix(k,i);
-      }
-    }
-  }
-
-  for (int i=0; i<n; ++i) {
-    if (matrix(i,i) == 0) {  // singular row
-      for (int j=0; j<i; ++j) matrix(i,j) = 0;
-      for (int j=i; j<n; ++j) matrix(j,i) = 0;
-    }
-    else {
-      for (int j=i+1; j<n; ++j) {
-        double temp = matrix(i,j)*matrix(j,j);
-        matrix(j,i) = temp;
-        for (int k=i; k<j; ++k)
-          matrix(k,i) += temp*matrix(k,j);
-      }
-    }
-  }
-}
-
-
-NumericMatrix invsympd(NumericMatrix matrix, int n, double toler) {
-  NumericMatrix v = clone(matrix);
+// invsympd: returns the inverse of a symmetric positive definite matrix
+FlatMatrix invsympd(const FlatMatrix& matrix, int n, double toler) {
+  FlatMatrix v = matrix; // copy
   cholesky2(v, n, toler);
-  chinv2(v, n);
-  for (int i=1; i<n; ++i) {
-    for (int j=0; j<i; ++j) {
-      v(j,i) = v(i,j);
-    }
+  FlatMatrix iv(n, n);
+  for (int i = 0; i < n; ++i) {
+    iv(i,i) = 1.0;
+    double* ycol = iv.data_ptr() + i * n;
+    chsolve2(v, n, ycol);
   }
-
-  return v;
+  return iv;
 }
 
-
-//' @title Split a survival data set at specified cut points
-//' @description For a given survival dataset and specified cut times,
-//' each record is split into multiple subrecords at each cut time.
-//' The resulting dataset is in counting process format, with each
-//' subrecord containing a start time, stop time, and event status.
-//' This is adapted from the survsplit.c function from the survival package.
-//'
-//' @param tstart The starting time of the time interval for
-//'   counting-process data.
-//' @param tstop The stopping time of the time interval for
-//'   counting-process data.
-//' @param cut The vector of cut points.
-//'
-//' @return A data frame with the following variables:
-//'
-//' * \code{row}: The row number of the observation in the input data
-//'   (starting from 0).
-//'
-//' * \code{start}: The starting time of the resulting subrecord.
-//'
-//' * \code{end}: The ending time of the resulting subrecord.
-//'
-//' * \code{censor}: Whether the subrecord lies strictly within a record
-//'   in the input data (1 for all but the last interval and 0 for the
-//'   last interval with cutpoint set equal to tstop).
-//'
-//' * \code{interval}: The interval number derived from cut (starting
-//'   from 0 if the interval lies to the left of the first cutpoint).
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @keywords internal
-//'
-//' @examples
-//'
-//' survsplit(15, 60, c(10, 30, 40))
-//'
-//' @export
-// [[Rcpp::export]]
-DataFrame survsplit(NumericVector tstart,
-                    NumericVector tstop,
-                    NumericVector cut) {
-  int extra;
-  int n = static_cast<int>(tstart.size());
-  int ncut = static_cast<int>(cut.size());
-
-  // Each cut point strictly within an interval generates an extra line.
-  // NA inputs are left alone.
-  extra = 0;
-  for (int i=0; i<n; ++i) {
-    for (int j=0; j<ncut; ++j) {
-      if (!std::isnan(tstart[i]) && !std::isnan(tstop[i]) &&
-          cut[j] > tstart[i] && cut[j] < tstop[i]) ++extra;
+// transpose: returns the transpose of matrix A
+FlatMatrix transpose(const FlatMatrix& A) {
+  if (A.nrow == 0 || A.ncol == 0) return FlatMatrix();
+  FlatMatrix At(A.ncol, A.nrow);
+  for (int c = 0; c < A.ncol; ++c) {
+    for (int r = 0; r < A.nrow; ++r) {
+      At(c, r) = A(r, c);
     }
   }
-
-  int n2 = n + extra;
-  IntegerVector row(n2), interval(n2);
-  NumericVector start(n2), end(n2);
-  LogicalVector censor(n2);
-
-  int k = 0;
-  for (int i=0; i<n; ++i) {
-    if (std::isnan(tstart[i]) || std::isnan(tstop[i])) {
-      start[k] = tstart[i];
-      end[k] = tstop[i];
-      row[k] = i;           // row in the original data
-      interval[k] = 1;
-      ++k;
-    } else {
-      // find the first cut point after tstart
-      int j = 0;
-      for (; j < ncut && cut[j] <= tstart[i]; ++j);
-      start[k] = tstart[i];
-      row[k] = i;
-      interval[k] = j;
-      for (; j < ncut && cut[j] < tstop[i]; ++j) {
-        if (cut[j] > tstart[i]) {
-          end[k] = cut[j];
-          censor[k] = 1;
-          ++k; // create the next sub-interval
-          start[k] = cut[j];
-          row[k] = i;
-          interval[k] = j+1;
-        }
-      }
-      end[k] = tstop[i]; // finish the last sub-interval
-      censor[k] = 0;
-      ++k;
-    }
-  }
-
-  DataFrame result = DataFrame::create(
-    Named("row") = row,
-    Named("start") = start,
-    Named("end") = end,
-    Named("censor") = censor,
-    Named("interval") = interval);
-
-  return result;
-}
-
-
-
-bool is_sorted(NumericVector x) {
-  int n = x.size();
-
-  // Loop through the vector and check if it is sorted
-  for (int i = 1; i < n; ++i) {
-    if (x[i] < x[i - 1]) {
-      return 0;  // Return false if any element is smaller than the previous
-    }
-  }
-
-  return 1;  // If no violations, the vector is sorted
+  return At;
 }
 
 
 // Householder vector
 // Given an n-vector x, this function computes an n-vector v with v(1) = 1
 // such that (I - 2*v*t(v)/t(v)*v)*x is zero in all but the first component.
-NumericVector house(const NumericVector& x) {
+std::vector<double> house(const std::vector<double>& x) {
   int n = static_cast<int>(x.size());
-  double mu = sqrt(sum(x*x));
-  NumericVector v = clone(x);
+  double sumxx = std::inner_product(x.begin(), x.end(), x.begin(), 0.0);
+  double mu = std::sqrt(sumxx);
+  std::vector<double> v = x;
   if (mu > 0.0) {
     double beta = x[0] + std::copysign(1.0, x[0])*mu;
     for (int i=1; i<n; ++i) {
@@ -4914,23 +4850,23 @@ NumericVector house(const NumericVector& x) {
   return v;
 }
 
-
 // Householder pre-multiplication
 // Given an m-by-n matrix A and a nonzero m-vector v with v(1) = 1,
 // the following algorithm overwrites A with P*A where
 // P = I - 2*v*t(v)/t(v)*v.
-void row_house(NumericMatrix& A, const int i1, const int i2,
-               const int j1, const int j2, const NumericVector& v) {
-  if (i1 < 0 || i1 > i2 || i2 >= A.nrow()) {
-    stop("Invalid row indices i1 and i2");
+void row_house(FlatMatrix& A, const int i1, const int i2, const int j1,
+               const int j2, const std::vector<double>& v) {
+  if (i1 < 0 || i1 > i2 || i2 >= A.nrow) {
+    throw std::invalid_argument("Invalid row indices i1 and i2");
   }
-  if (j1 < 0 || j1 > j2 || j2 >= A.ncol()) {
-    stop("Invalid column indices j1 and j2");
+  if (j1 < 0 || j1 > j2 || j2 >= A.ncol) {
+    throw std::invalid_argument("Invalid column indices j1 and j2");
   }
 
   int m = i2-i1+1, n = j2-j1+1;
-  double beta = -2.0/sum(v*v);
-  NumericVector w(n);
+  double sumvv = std::inner_product(v.begin(), v.end(), v.begin(), 0.0);
+  double beta = -2.0 / sumvv;
+  std::vector<double> w(n);
   for (int j=0; j<n; ++j) {
     for (int i=0; i<m; ++i) {
       w[j] += A(i+i1,j+j1)*v[i];
@@ -4938,268 +4874,113 @@ void row_house(NumericMatrix& A, const int i1, const int i2,
     w[j] *= beta;
   }
 
-  for (int i=0; i<m; ++i) {
-    for (int j=0; j<n; ++j) {
+  for (int j=0; j<n; ++j) {
+    for (int i=0; i<m; ++i) {
       A(i+i1,j+j1) += v[i]*w[j];
     }
   }
 }
 
-
 // Householder post-multiplication
 // Given an m-by-n matrix A and a nonzero n-vector v with v(1) = 1,
 // the following algorithm overwrites A with A*P where
 // P = I - 2*v*t(v)/t(v)*v.
-void col_house(NumericMatrix& A, const int i1, const int i2,
-               const int j1, const int j2, const NumericVector& v) {
-  if (i1 < 0 || i1 > i2 || i2 >= A.nrow()) {
-    stop("Invalid row indices i1 and i2");
+void col_house(FlatMatrix& A, const int i1, const int i2, const int j1,
+               const int j2, const std::vector<double>& v) {
+  if (i1 < 0 || i1 > i2 || i2 >= A.nrow) {
+    throw std::invalid_argument("Invalid row indices i1 and i2");
   }
-  if (j1 < 0 || j1 > j2 || j2 >= A.ncol()) {
-    stop("Invalid column indices j1 and j2");
+  if (j1 < 0 || j1 > j2 || j2 >= A.ncol) {
+    throw std::invalid_argument("Invalid column indices j1 and j2");
   }
 
   int m = i2-i1+1, n = j2-j1+1;
-  double beta = -2.0/sum(v*v);
-  NumericVector w(m);
-  for (int i=0; i<m; ++i) {
-    for (int j=0; j<n; ++j) {
+  double sumvv = std::inner_product(v.begin(), v.end(), v.begin(), 0.0);
+  double beta = -2.0 / sumvv;
+  std::vector<double> w(m);
+  for (int j=0; j<n; ++j) {
+    for (int i=0; i<m; ++i) {
       w[i] += A(i+i1,j+j1)*v[j];
     }
+  }
+  for (int i=0; i<m; ++i) {
     w[i] *= beta;
   }
-
-  for (int i=0; i<m; ++i) {
-    for (int j=0; j<n; ++j) {
+  for (int j=0; j<n; ++j) {
+    for (int i=0; i<m; ++i) {
       A(i+i1,j+j1) += w[i]*v[j];
     }
   }
 }
 
-
-//' @title QR Decomposition of a Matrix
-//' @description Computes the QR decomposition of a matrix.
-//'
-//' @param X A numeric matrix whose QR decomposition is to be computed.
-//' @param tol The tolerance for detecting linear dependencies in the
-//'   columns of \code{X}.
-//'
-//' @details
-//' This function performs Householder QR with column pivoting:
-//' Given an \eqn{m}-by-\eqn{n} matrix \eqn{A} with \eqn{m \geq n},
-//' the following algorithm computes \eqn{r = \textrm{rank}(A)} and
-//' the factorization \eqn{Q^T A P} equal to
-//' \tabular{ccccc}{
-//' | \tab \eqn{R_{11}} \tab \eqn{R_{12}} \tab | \tab \eqn{r} \cr
-//' | \tab 0 \tab 0 \tab | \tab \eqn{m-r} \cr
-//'   \tab \eqn{r} \tab \eqn{n-r} \tab \tab
-//' }
-//' with \eqn{Q = H_1 \cdots H_r} and \eqn{P = P_1 \cdots P_r}.
-//' The upper triangular part of \eqn{A}
-//' is overwritten by the upper triangular part of \eqn{R} and
-//' components \eqn{(j+1):m} of
-//' the \eqn{j}th Householder vector are stored in \eqn{A((j+1):m, j)}.
-//' The permutation \eqn{P} is encoded in an integer vector \code{pivot}.
-//'
-//' @return A list with the following components:
-//'
-//' * \code{qr}: A matrix with the same dimensions as \code{X}. The upper
-//'   triangle contains the \code{R} of the decomposition and the lower
-//'   triangle contains Householder vectors (stored in compact form).
-//'
-//' * \code{rank}: The rank of \code{X} as computed by the decomposition.
-//'
-//' * \code{pivot}: The column permutation for the pivoting strategy used
-//'   during the decomposition.
-//'
-//' * \code{Q}: The complete \eqn{m}-by-\eqn{m} orthogonal matrix \eqn{Q}.
-//'
-//' * \code{R}: The complete \eqn{m}-by-\eqn{n} upper triangular
-//'   matrix \eqn{R}.
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @references
-//' Gene N. Golub and Charles F. Van Loan.
-//' Matrix Computations, second edition. Baltimore, Maryland:
-//' The John Hopkins University Press, 1989, p.235.
-//'
-//' @examples
-//'
-//' hilbert <- function(n) { i <- 1:n; 1 / outer(i - 1, i, `+`) }
-//' h9 <- hilbert(9)
-//' qrcpp(h9)
-//'
-//' @export
-// [[Rcpp::export]]
-List qrcpp(const NumericMatrix& X, double tol = 1e-12) {
-  int m = X.nrow(), n = X.ncol();
-  NumericMatrix A = clone(X);
-  NumericVector c(n);
-  for (int j=0; j<n; ++j) {
-    c[j] = sum(A(_,j)*A(_,j));
-  }
-
-  double tau = max(c);
-  int k = 0;
-  for (; k<n; ++k) {
-    if (c[k] > tol) break;
-  }
-
-  int r = -1;
-  IntegerVector piv = seq(0,n-1);
-  double u;
-  while (tau > tol) {
-    ++r;
-
-    // exchange column r with column k
-    int l = piv[r];
-    piv[r] = piv[k];
-    piv[k] = l;
-
-    for (int i=0; i<m; ++i) {
-      u = A(i,r);
-      A(i,r) = A(i,k);
-      A(i,k) = u;
-    }
-
-    u = c[r];
-    c[r] = c[k];
-    c[k] = u;
-
-    // find the Householder vector
-    NumericVector v(m-r);
-    for (int i=0; i<m-r; ++i) {
-      v[i] = A(i+r,r);
-    }
-    v = house(v);
-
-    // pre-multiply by the Householder matrix
-    row_house(A, r, m-1, r, n-1, v);
-
-    // update the sub-diagonal elements of column r
-    for (int i=1; i<m-r; ++i) {
-      A(i+r,r) = v[i];
-    }
-
-    // go to the next column and update the squared norm
-    for (int i=r+1; i<n; ++i) {
-      c[i] -= A(r,i)*A(r,i);
-    }
-
-    // identify the pivot column
-    if (r < n-1) {
-      tau = max(c[Range(r+1,n-1)]);
-      for (k=r+1; k<n; ++k) {
-        if (c[k] > tol) break;
-      }
-    } else {
-      tau = 0.0;
-    }
-  }
-
-  // recover the Q matrix
-  NumericMatrix Q = NumericMatrix::diag(m, 1.0);
-  for (int k=r; k>=0; --k) {
-    NumericVector v(m-k);
-    v[0] = 1.0;
-    for (int i=1; i<m-k; ++i) {
-      v[i] = A(i+k,k);
-    }
-
-    row_house(Q, k, m-1, k, m-1, v);
-  }
-
-  // recover the R matrix
-  NumericMatrix R(m,n);
-  for (int j=0; j<n; ++j) {
-    for (int i=0; i<=j; ++i) {
-      R(i,j) = A(i,j);
-    }
-  }
-
-  List result = List::create(
-    Named("qr") = A,
-    Named("rank") = r+1,
-    Named("pivot") = piv+1,
-    Named("Q") = Q,
-    Named("R") = R
-  );
-
-  return result;
-}
-
-
 // Given scalars a and b, this function computes
 // c = cos(theta) and s = sin(theta) so that
 //               |  c   s  |^T | a |  =  | r |
 //               | -s   c  |   | b |     | 0 |
-NumericVector givens(const double a, const double b) {
+std::vector<double> givens(const double a, const double b) {
   double c, s, tau;
 
   if (b == 0.0) {
     c = 1.0; s = 0.0;
   } else {
-    if (fabs(b) > fabs(a)) {
+    if (std::fabs(b) > std::fabs(a)) {
       double d = -std::copysign(1.0, b);
-      tau = -a/b; s = d*1.0/sqrt(1.0 + tau*tau); c = s*tau;
+      tau = -a/b; s = d*1.0/std::sqrt(1.0 + tau*tau); c = s*tau;
     } else {
       double d = std::copysign(1.0, a);
-      tau = -b/a; c = d*1.0/sqrt(1.0 + tau*tau); s = c*tau;
+      tau = -b/a; c = d*1.0/std::sqrt(1.0 + tau*tau); s = c*tau;
     }
   }
 
-  return NumericVector::create(c,s);
+  std::vector<double> result = {c,s};
+  return result;
 }
-
 
 // Given A in R^(2xq), c = cos(theta), and s = sin(theta),
 // the following algorithm overwrites A with the matrix
 //               |  c   s  |^T  A
 //               | -s   c  |
-void row_rot(NumericMatrix& A, const int i1, const int i2,
-             const int j1, const int j2,
+void row_rot(FlatMatrix& A, const int i1, const int i2, const int j1, const int j2,
              const double c, const double s) {
-  if (i1 < 0 || i1 >= i2 || i2 >= A.nrow()) {
-    stop("Invalid row indices i1 and i2");
+  if (i1 < 0 || i1 >= i2 || i2 >= A.nrow) {
+    throw std::invalid_argument("Invalid row indices i1 and i2.");
   }
-  if (j1 < 0 || j1 > j2 || j2 >= A.ncol()) {
-    stop("Invalid column indices j1 and j2");
+  if (j1 < 0 || j1 > j2 || j2 >= A.ncol) {
+    throw std::invalid_argument("Invalid column indices j1 and j2.");
   }
 
   int q = j2-j1+1;
   for (int j=0; j<q; ++j) {
-    double tau1 = A(i1,j+j1);
-    double tau2 = A(i2,j+j1);
-    A(i1,j+j1) = c*tau1 - s*tau2;
-    A(i2,j+j1) = s*tau1 + c*tau2;
+    int jj1 = j+j1;
+    double tau1 = A(i1,jj1);
+    double tau2 = A(i2,jj1);
+    A(i1,jj1) = c*tau1 - s*tau2;
+    A(i2,jj1) = s*tau1 + c*tau2;
   }
 }
-
 
 // Given A in R^(qx2), c = cos(theta), and s = sin(theta),
 // the following algorithm overwrites A with the matrix
 //               A  |  c   s  |
 //                  | -s   c  |
-void col_rot(NumericMatrix& A, const int i1, const int i2,
-             const int j1, const int j2,
+void col_rot(FlatMatrix& A, const int i1, const int i2, const int j1, const int j2,
              const double c, const double s) {
-  if (i1 < 0 || i1 > i2 || i2 >= A.nrow()) {
-    stop("Invalid row indices i1 and i2");
+  if (i1 < 0 || i1 > i2 || i2 >= A.nrow) {
+    throw std::invalid_argument("Invalid row indices i1 and i2");
   }
-  if (j1 < 0 || j1 >= j2 || j2 >= A.ncol()) {
-    stop("Invalid column indices j1 and j2");
+  if (j1 < 0 || j1 >= j2 || j2 >= A.ncol) {
+    throw std::invalid_argument("Invalid column indices j1 and j2");
   }
 
   int q = i2-i1+1;
   for (int i=0; i<q; ++i) {
-    double tau1 = A(i+i1,j1);
-    double tau2 = A(i+i1,j2);
-    A(i+i1,j1) = c*tau1 - s*tau2;
-    A(i+i1,j2) = s*tau1 + c*tau2;
+    int ii1 = i+i1;
+    double tau1 = A(ii1,j1);
+    double tau2 = A(ii1,j2);
+    A(ii1,j1) = c*tau1 - s*tau2;
+    A(ii1,j2) = s*tau1 + c*tau2;
   }
 }
-
 
 // Householder Bidiagonalization
 // Given A in R^(mxn) with m>=n, the following algorithm overwrites
@@ -5208,47 +4989,46 @@ void col_rot(NumericMatrix& A, const int i1, const int i2,
 // V = V_1 ... V_{n-2}. The essential part of U_j's Householder vector
 // is stored in A((j+1):m, j), while the essential part of V_j's
 // Householder vector is stored in A(j, (j+2):n).
-List house_bidiag(NumericMatrix& A, const bool outtransform = 1) {
-  int m = A.nrow(), n = A.ncol();
+ListCpp house_bidiag(FlatMatrix& A, const bool outtransform = true) {
+  int m = A.nrow, n = A.ncol;
   if (m < n) {
-    stop("The input matrix must have number of rows >= number of columns");
+    throw std::invalid_argument("The input matrix must have # rows >= # columns.");
   }
-  double tol = 1e-12;
-  NumericMatrix B(n,n);
-  NumericMatrix U = NumericMatrix::diag(m, 1.0);
-  NumericMatrix V = NumericMatrix::diag(n, 1.0);
 
-  bool bidiag = 1;
-  for (int i=0; i<n-2; ++i) {
-    for (int j=i+2; j<n; ++j) {
-      if (fabs(A(i,j)) > tol) {
-        bidiag = 0;
-        break;
+  double tol = 1e-12;
+  bool bidiag = true;
+  for (int j=2; j<n; ++j) {
+    for (int i=0; i<j-1; ++i) {
+      if (std::fabs(A(i,j)) > tol) {
+        bidiag = false; break;
       }
     }
   }
-  for (int i=1; i<n; ++i) {
-    for (int j=0; j<i; ++j) {
-      if (fabs(A(i,j)) > tol) {
-        bidiag = 0;
-        break;
+  for (int j=0; j<n-1; ++j) {
+    for (int i=j+1; i<n; ++i) {
+      if (std::fabs(A(i,j)) > tol) {
+        bidiag = false; break;
       }
     }
   }
-  for (int i=n; i<m-1; ++i) {
-    for (int j=0; j<n; ++j) {
-      if (fabs(A(i,j)) > tol) {
-        bidiag = 0;
-        break;
+  for (int j=0; j<n; ++j) {
+    for (int i=n; i<m-1; ++i) {
+      if (std::fabs(A(i,j)) > tol) {
+        bidiag = false; break;
       }
     }
   }
+
+  FlatMatrix B(n,n);
+  FlatMatrix U(m,m), V(n,n);
+  for (int i=0; i<m; ++i) U(i,i) = 1.0;
+  for (int i=0; i<n; ++i) V(i,i) = 1.0;
 
   if (bidiag) {
-    B = clone(A);
+    B = A;
   } else {
     for (int j=0; j<n; ++j) {
-      NumericVector v(m-j);
+      std::vector<double> v(m-j);
       for (int i=0; i<m-j; ++i) {
         v[i] = A(i+j,j);
       }
@@ -5262,7 +5042,7 @@ List house_bidiag(NumericMatrix& A, const bool outtransform = 1) {
       }
 
       if (j < n-2) {
-        NumericVector v(n-j-1);
+        std::vector<double> v(n-j-1);
         for (int i=0; i<n-j-1; ++i) {
           v[i] = A(j,i+j+1);
         }
@@ -5279,7 +5059,7 @@ List house_bidiag(NumericMatrix& A, const bool outtransform = 1) {
 
     if (outtransform) {
       for (int j=n-1; j>=0; --j) {
-        NumericVector v(m-j);
+        std::vector<double> v(m-j);
         v[0] = 1.0;
         for (int i=1; i<m-j; ++i) {
           v[i] = A(i+j,j);
@@ -5289,7 +5069,7 @@ List house_bidiag(NumericMatrix& A, const bool outtransform = 1) {
       }
 
       for (int j=n-3; j>=0; --j) {
-        NumericVector v(n-j-1);
+        std::vector<double> v(n-j-1);
         v[0] = 1.0;
         for (int i=1; i<n-j-1; ++i) {
           v[i] = A(j,i+j+1);
@@ -5307,35 +5087,32 @@ List house_bidiag(NumericMatrix& A, const bool outtransform = 1) {
     }
   }
 
+  ListCpp result;
   if (outtransform) {
-    return List::create(
-      Named("B") = B,
-      Named("U") = U,
-      Named("V") = V
-    );
+    result.push_back(std::move(B), "B");
+    result.push_back(std::move(U), "U");
+    result.push_back(std::move(V), "V");
   } else {
-    return List::create(
-      Named("B") = B
-    );
+    result.push_back(std::move(B), "B");
   }
+  return result;
 }
-
 
 // Given a bidiagonal matrix with a zero diagonal, premultiplication
 // by a sequence of Givens transformations to zero the entire row
-List zero_diagonal(NumericMatrix& B, const int k,
-                   const bool outtransform = 1) {
-  int n = B.nrow();
-  if (B.ncol() != n) {
-    stop("The input matrix must be a square matrix");
+ListCpp zero_diagonal(FlatMatrix& B, const int k, const bool outtransform = true) {
+  int n = B.nrow;
+  if (B.ncol != n) {
+    throw std::invalid_argument("The input matrix must be a square matrix.");
   }
   if (k < 0 || k >= n-1) {
-    stop("Invalid value for index k");
+    throw std::invalid_argument("Invalid value for index k.");
   }
-  NumericMatrix U = NumericMatrix::diag(n, 1.0);
+  FlatMatrix U(n,n);
+  for (int i=0; i<n; ++i) U(i,i) = 1.0;
 
   for (int j=k+1; j<n; ++j) {
-    NumericVector v = givens(B(k,j), B(j,j));
+    std::vector<double> v = givens(B(k,j), B(j,j));
     double w = v[0];
     v[0] = -v[1]; v[1] = w;
     int j1 = j < n-1 ? j+1 : n-1;
@@ -5343,18 +5120,15 @@ List zero_diagonal(NumericMatrix& B, const int k,
     if (outtransform) col_rot(U, k, j, k, j, v[0], v[1]);
   }
 
+  ListCpp result;
   if (outtransform) {
-    return List::create(
-      Named("B") = B,
-      Named("U") = U
-    );
+    result.push_back(B, "B");
+    result.push_back(std::move(U), "U");
   } else {
-    return List::create(
-      Named("B") = B
-    );
+    result.push_back(B, "B");
   }
+  return result;
 }
-
 
 // Golub-Kahan SVD Step
 // Given a bidiagonal matrix B having no zeros on its diagonal or
@@ -5362,19 +5136,21 @@ List zero_diagonal(NumericMatrix& B, const int k,
 // bidiagonal matrix t(U)*B*V, where U and V are orthogonal and V
 // is essentially the orthogonal matrix that would be obtained by
 // applying Algorithm 8.2.2 in Golub and Van Loan (1989) to T = t(B)*B.
-List svd_step(NumericMatrix& B, const bool outtransform = 1) {
-  int n = B.ncol();
-  NumericMatrix U = NumericMatrix::diag(n, 1.0);
-  NumericMatrix V = NumericMatrix::diag(n, 1.0);
+ListCpp svd_step(FlatMatrix& B, const bool outtransform = true) {
+  int n = B.ncol;
+  FlatMatrix U(n,n), V(n,n);
+  for (int i=0; i<n; ++i) {
+    U(i,i) = 1.0; V(i,i) = 1.0;
+  }
 
   double f1 = B(n-3,n-2), f2 = B(n-2,n-1);
   double d1 = B(n-2,n-2), d2 = B(n-1,n-1);
   double a1 = f1*f1 + d1*d1, a2 = f2*f2 + d2*d2, b1 = f2*d1;
   double d = 0.5*(a1-a2);
-  double mu = a2 + d - std::copysign(1.0, d)*sqrt(d*d + b1*b1);
+  double mu = a2 + d - std::copysign(1.0, d)*std::sqrt(d*d + b1*b1);
   double y = B(0,0)*B(0,0) - mu;
   double z = B(0,0)*B(0,1);
-  NumericVector v(2);
+  std::vector<double> v(2);
   for (int k=0; k<n-1; ++k) {
     v = givens(y,z);
     int k1 = k > 0 ? k-1 : 0;
@@ -5394,19 +5170,193 @@ List svd_step(NumericMatrix& B, const bool outtransform = 1) {
     }
   }
 
+  ListCpp result;
   if (outtransform) {
-    return List::create(
-      Named("B") = B,
-      Named("U") = U,
-      Named("V") = V
-    );
+    result.push_back(B, "B");
+    result.push_back(std::move(U), "U");
+    result.push_back(std::move(V), "V");
   } else {
-    return List::create(
-      Named("B") = B
-    );
+    result.push_back(B, "B");
   }
+  return result;
 }
 
+ListCpp svdcpp1(const FlatMatrix& X, const bool outtransform,
+                const bool decreasing) {
+  int m1 = X.nrow, n1 = X.ncol, m, n;
+  if (m1 >= n1) {
+    m = m1; n = n1;
+  } else {
+    m = n1; n = m1;
+  }
+
+  FlatMatrix Y(m,n);
+  if (m1 >= n1) {
+    Y = X;
+  } else {
+    Y = transpose(X);
+  }
+
+  ListCpp a = house_bidiag(Y, outtransform);
+  FlatMatrix B = a.get<FlatMatrix>("B");
+
+  FlatMatrix U(m,m), V(n,n);
+  for (int i=0; i<m; ++i) U(i,i) = 1.0;
+  for (int i=0; i<n; ++i) V(i,i) = 1.0;
+  if (outtransform) {
+    U = a.get<FlatMatrix>("U");
+    V = a.get<FlatMatrix>("V");
+  }
+
+  double tol = 1e-12;
+  int p, q = 0;
+  while (q < n) {
+    for (int i=1; i<n; ++i) {
+      if (std::fabs(B(i-1,i)) <= tol*(std::fabs(B(i-1,i-1)) + std::fabs(B(i,i)))) {
+        B(i-1,i) = 0.0;
+      }
+    }
+
+    // find the largest non-negative q and the smallest non-negative p
+    // such that
+    //               |  B11   0    0   |   p
+    //           B = |   0   B22   0   |   n-p-q
+    //               |   0    0   B33  |   q
+    //                   p  n-p-q  q
+    // where B33 is diagonal and B22 has nonzero superdiagonal
+    q = n;
+    for (int i=n-1; i>=1; --i) {
+      if (B(i-1,i) != 0.0) {
+        q = n-i-1; break;
+      }
+    }
+
+    p = 0;
+    for (int i=n-q-2; i>=1; --i) {
+      if (B(i-1,i) == 0.0) {
+        p = i; break;
+      }
+    }
+
+    if (q < n) {
+      // if any diagonal entry in B22 is zero, then zero the superdiagonal
+      // entry in the same row
+      FlatMatrix B22 = subset_flatmatrix(B, p, n-q, p, n-q);
+      for (int i=0; i<n-p-q-1; ++i) {
+        if (std::fabs(B22(i,i)) < tol) {
+          ListCpp b = zero_diagonal(B22, i, outtransform);
+          if (outtransform) {
+            FlatMatrix Z = b.get<FlatMatrix>("U");
+            FlatMatrix W = subset_flatmatrix(U, 0, m, p, n-q);
+            for (int k=0; k<n-p-q; ++k) {
+              for (int j=0; j<m; ++j) {
+                U(j,k+p) = 0.0;
+              }
+            }
+            for (int k=0; k<n-p-q; ++k) {
+              for (int l=0; l<n-p-q; ++l) {
+                for (int j=0; j<m; ++j) {
+                  U(j,k+p) += W(j,l)*Z(l,k);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // apply Algorithm 8.3.1 to B22
+      ListCpp c = svd_step(B22, outtransform);
+
+      // update B22
+      for (int j=0; j<n-p-q; ++j) {
+        for (int i=0; i<n-p-q; ++i) {
+          B(i+p,j+p) = B22(i,j);
+        }
+      }
+
+      if (outtransform) {
+        FlatMatrix Z1 = c.get<FlatMatrix>("U");
+        FlatMatrix W1 = subset_flatmatrix(U, 0, m, p, n-q);
+        for (int j=0; j<n-p-q; ++j) {
+          for (int i=0; i<m; ++i) {
+            U(i,j+p) = 0.0;
+          }
+        }
+        for (int j=0; j<n-p-q; ++j) {
+          for (int k=0; k<n-p-q; ++k) {
+            for (int i=0; i<m; ++i) {
+              U(i,j+p) += W1(i,k)*Z1(k,j);
+            }
+          }
+        }
+
+        FlatMatrix Z2 = c.get<FlatMatrix>("V");
+        FlatMatrix W2 = subset_flatmatrix(V, 0, n, p, n-q);
+        for (int j=0; j<n-p-q; ++j) {
+          for (int i=0; i<n; ++i) {
+            V(i,j+p) = 0.0;
+          }
+        }
+        for (int j=0; j<n-p-q; ++j) {
+          for (int k=0; k<n-p-q; ++k) {
+            for (int i=0; i<n; ++i) {
+              V(i,j+p) += W2(i,k)*Z2(k,j);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  std::vector<double> d(n);
+  for (int i=0; i<n; ++i) d[i] = B(i,i);
+
+  // ensure the singular values are positive
+  for (int i=0; i<n; ++i) {
+    if (d[i] < 0.0) {
+      d[i] = -d[i];
+      for (int j=0; j<n; ++j) V(j,i) = -V(j,i);
+    }
+  }
+
+  if (decreasing) {
+    // order the singular values from the largest to the smallest
+    // and the arrange the associated vectors accordingly
+    std::vector<int> order = seqcpp(0, n-1);
+    std::sort(order.begin(), order.end(), [&](int i, int j) {
+      return d[i] > d[j];
+    });
+
+    subset_in_place(d, order);
+    if (outtransform) {
+      FlatMatrix Z = U;
+      FlatMatrix W = V;
+      for (int i=0; i<n; ++i) {
+        int k = order[i];
+        for (int j=0; j<m; ++j) U(j,i) = Z(j,k);
+        for (int j=0; j<n; ++j) V(j,i) = W(j,k);
+      }
+    }
+  }
+
+  // switch U and V if m1 < n1
+  FlatMatrix U1(m1,m1), V1(n1,n1);
+  if (m1 >= n1) {
+    U1 = U; V1 = V;
+  } else {
+    U1 = V; V1 = U;
+  }
+
+  ListCpp result;
+  if (outtransform) {
+    result.push_back(std::move(d), "d");
+    result.push_back(std::move(U1), "U");
+    result.push_back(std::move(V1), "V");
+  } else {
+    result.push_back(std::move(d), "d");
+  }
+  return result;
+}
 
 //' @title Singular Value Decomposition of a Matrix
 //' @description Computes the singular-value decomposition of a
@@ -5449,206 +5399,11 @@ List svd_step(NumericMatrix& B, const bool outtransform = 1) {
 //'
 //' @export
 // [[Rcpp::export]]
-List svdcpp(const NumericMatrix& X, const bool outtransform = 1,
-            const bool decreasing = 1) {
-  int m1 = X.nrow(), n1 = X.ncol(), m, n;
-  if (m1 >= n1) {
-    m = m1; n = n1;
-  } else {
-    m = n1; n = m1;
-  }
-  NumericMatrix Y(m,n);
-  NumericMatrix U = NumericMatrix::diag(m, 1.0);
-  NumericMatrix V = NumericMatrix::diag(n, 1.0);
-  if (m1 >= n1) {
-    Y = clone(X);
-  } else {
-    Y = clone(transpose(X));
-  }
-  double tol = 1e-12;
-
-  List a = house_bidiag(Y, outtransform);
-  NumericMatrix B = a["B"];
-  if (outtransform) {
-    U = as<NumericMatrix>(a["U"]);
-    V = as<NumericMatrix>(a["V"]);
-  }
-
-  int p, q = 0;
-  while (q < n) {
-    for (int i=1; i<n; ++i) {
-      if (fabs(B(i-1,i)) <= tol*(fabs(B(i-1,i-1)) + fabs(B(i,i)))) {
-        B(i-1,i) = 0.0;
-      }
-    }
-
-    // find the largest non-negative q and the smallest non-negative p
-    // such that
-    //               |  B11   0    0   |   p
-    //           B = |   0   B22   0   |   n-p-q
-    //               |   0    0   B33  |   q
-    //                   p  n-p-q  q
-    // where B33 is diagonal and B22 has nonzero superdiagonal
-    q = n;
-    for (int i=n-1; i>=1; --i) {
-      if (B(i-1,i) != 0.0) {
-        q = n-i-1;
-        break;
-      }
-    }
-
-    p = 0;
-    for (int i=n-q-2; i>=1; --i) {
-      if (B(i-1,i) == 0.0) {
-        p = i;
-        break;
-      }
-    }
-
-    if (q < n) {
-      // if any diagonal entry in B22 is zero, then zero the superdiagonal
-      // entry in the same row
-      NumericMatrix B22 = B(Range(p,n-q-1), Range(p,n-q-1));
-      for (int i=0; i<n-p-q-1; ++i) {
-        if (fabs(B22(i,i)) < tol) {
-          List b = zero_diagonal(B22, i, outtransform);
-          if (outtransform) {
-            NumericMatrix Z = b["U"];
-            NumericMatrix W = U(Range(0,m-1), Range(p,n-q-1));
-            for (int j=0; j<m; ++j) {
-              for (int k=0; k<n-p-q; ++k) {
-                U(j,k+p) = 0.0;
-                for (int l=0; l<n-p-q; ++l) {
-                  U(j,k+p) += W(j,l)*Z(l,k);
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // apply Algorithm 8.3.1 to B22
-      List c = svd_step(B22, outtransform);
-
-      // update B22
-      for (int i=0; i<n-p-q; ++i) {
-        for (int j=0; j<n-p-q; ++j) {
-          B(i+p,j+p) = B22(i,j);
-        }
-      }
-
-      if (outtransform) {
-        NumericMatrix Z1 = c["U"];
-        NumericMatrix W1 = U(Range(0,m-1), Range(p,n-q-1));
-        for (int i=0; i<m; ++i) {
-          for (int j=0; j<n-p-q; ++j) {
-            U(i,j+p) = 0.0;
-            for (int k=0; k<n-p-q; ++k) {
-              U(i,j+p) += W1(i,k)*Z1(k,j);
-            }
-          }
-        }
-
-        NumericMatrix Z2 = c["V"];
-        NumericMatrix W2 = V(Range(0,n-1), Range(p,n-q-1));
-        for (int i=0; i<n; ++i) {
-          for (int j=0; j<n-p-q; ++j) {
-            V(i,j+p) = 0.0;
-            for (int k=0; k<n-p-q; ++k) {
-              V(i,j+p) += W2(i,k)*Z2(k,j);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  NumericVector d(n);
-  for (int i=0; i<n; ++i) {
-    d[i] = B(i,i);
-  }
-
-  // ensure the singular values are positive
-  for (int i=0; i<n; ++i) {
-    if (d[i] < 0.0) {
-      d[i] = -d[i];
-      V(_,i) = -V(_,i);
-    }
-  }
-
-  if (decreasing) {
-    // order the singular values from the largest to the smallest
-    // and the arrange the associated vectors accordingly
-    IntegerVector order = seq(0, n-1);
-    std::sort(order.begin(), order.end(), [&](int i, int j) {
-      return d[i] > d[j];
-    });
-    d = d[order];
-    if (outtransform) {
-      NumericMatrix Z = clone(U);
-      NumericMatrix W = clone(V);
-      for (int i=0; i<n; ++i) {
-        U(_,i) = Z(_,order[i]);
-        V(_,i) = W(_,order[i]);
-      }
-    }
-  }
-
-  // switch U and V if m1 < n1
-  NumericMatrix U1(m1,m1), V1(n1,n1);
-  if (m1 >= n1) {
-    U1 = U;
-    V1 = V;
-  } else {
-    U1 = V;
-    V1 = U;
-  }
-
-  if (outtransform) {
-    return List::create(
-      Named("d") = d,
-      Named("U") = U1,
-      Named("V") = V1
-    );
-  } else {
-    return List::create(
-      Named("d") = d
-    );
-  }
-}
-
-
-// [[Rcpp::export]]
-NumericMatrix rmvnormcpp(int n, NumericVector mean, NumericMatrix sigma) {
-  int p = static_cast<int>(mean.size());
-  double toler = 1.818989e-12;
-  NumericMatrix v = clone(sigma);
-  cholesky2(v, p, toler);
-
-  NumericMatrix H(p,p);
-  for (int i=0; i<p; ++i) {
-    H(i,i) = sqrt(v(i,i));
-    for (int j=0; j<i; ++j) {
-      H(i,j) = v(j,i)*H(j,j);
-    }
-  }
-
-  NumericMatrix result(n,p);
-  NumericVector z(p);
-  for (int i=0; i<n; ++i) {
-    for (int j=0; j<p; ++j) {
-      z[j] = R::rnorm(0,1);
-    }
-
-    for (int j=0; j<p; ++j) {
-      result(i,j) = mean[j];
-      for (int k=0; k<p; ++k) {
-        result(i,j) += H(j,k)*z[k];
-      }
-    }
-  }
-
-  return result;
+Rcpp::List svdcpp(const Rcpp::NumericMatrix& X, const bool outtransform = true,
+                  const bool decreasing = true) {
+  FlatMatrix fm = flatmatrix_from_Rmatrix(X);
+  ListCpp result = svdcpp1(fm, outtransform, decreasing);
+  return Rcpp::wrap(result);
 }
 
 
@@ -5667,8 +5422,8 @@ NumericMatrix rmvnormcpp(int n, NumericVector mean, NumericMatrix sigma) {
 //'
 //' @export
 // [[Rcpp::export]]
-NumericVector float_to_fraction(const double x, const double tol=0.000001) {
-  NumericVector v(2);
+std::vector<double> float_to_fraction(const double x, const double tol=0.000001) {
+  std::vector<double> v(2);
   double x1 = x;
   double n = std::floor(x1);
   x1 = x1 - n;
@@ -5687,7 +5442,7 @@ NumericVector float_to_fraction(const double x, const double tol=0.000001) {
     double upper_n = 1;
     double upper_d = 1;
 
-    bool cond = 1;
+    bool cond = true;
     while (cond) {
       // The middle fraction is (lower_n + upper_n) / (lower_d + upper_d)
       double middle_n = lower_n + upper_n;
@@ -5707,7 +5462,7 @@ NumericVector float_to_fraction(const double x, const double tol=0.000001) {
         // Else middle is our best fraction
         v[0] = n * middle_d + middle_n;
         v[1] = middle_d;
-        cond = 0;
+        cond = false;
       }
     }
   }
