@@ -30,6 +30,21 @@ struct ListCpp;
 inline constexpr double NaN = std::numeric_limits<double>::quiet_NaN();
 inline constexpr double POS_INF = std::numeric_limits<double>::infinity();
 
+// Constants for numerical stability
+// Machine epsilon for double precision
+inline constexpr double EPSILON = 2.2204460492503131e-16;
+inline constexpr double MIN_PROB = EPSILON;           // ~2.22e-16
+inline constexpr double MAX_PROB = 1.0 - EPSILON;     // ~1.0 - 2.22e-16
+
+// Maximum safe quantile value (corresponds to p ≈ 1 - 1e-16)
+// qnorm(1 - 2.22e-16) ≈ 8.1258906647
+inline constexpr double MAX_NORMAL_QUANTILE = 8.125890664701906;
+inline constexpr double MIN_NORMAL_QUANTILE = -8.125890664701906;
+
+// Extreme z-score threshold for pnorm
+// For |z| > EXTREME_Z, pnorm returns 0 or 1 within machine precision
+inline constexpr double EXTREME_Z = 37.5;
+
 // --------------------------- Distribution helpers --------------------------
 double boost_pnorm(double q, double mean = 0.0, double sd = 1.0,
                    bool lower_tail = true);

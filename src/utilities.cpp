@@ -1,24 +1,24 @@
-#include <Rcpp.h>
-
 #include "utilities.h"
 #include "dataframe_list.h"
 #include "thread_utils.h"
 
+#include <Rcpp.h>
+
 #include <algorithm>  // fill, sort, lower_bound, upper_bound, max_element,
 // swap, for_each, none_of, all_of
-#include <numeric>    // accumulate, inner_product, iota
 #include <cmath>      // fabs, isnan, isinf, exp, log, pow, sqrt, copysign
-#include <stdexcept>  // invalid_argument, runtime_error, out_of_range
-#include <limits>     // numeric_limits
-#include <utility>    // pair, swap
-#include <functional> // function
-#include <vector>     // vector
-#include <string>     // string, tolower
-#include <memory>     // make_shared, shared_ptr
-#include <sstream>    // ostringstream
-#include <cstring>    // memcpy
 #include <cstddef>    // size_t
+#include <cstring>    // memcpy
+#include <functional> // function
+#include <limits>     // numeric_limits
+#include <memory>     // make_shared, shared_ptr
+#include <numeric>    // accumulate, inner_product, iota
 #include <queue>      // priority_queue
+#include <sstream>    // ostringstream
+#include <stdexcept>  // invalid_argument, runtime_error, out_of_range
+#include <string>     // string, tolower
+#include <utility>    // pair, swap
+#include <vector>     // vector
 
 #include <boost/math/distributions/normal.hpp>
 #include <boost/math/distributions/logistic.hpp>
@@ -32,6 +32,16 @@
 double boost_pnorm(double q, double mean, double sd, bool lower_tail) {
   if (std::isnan(q)) return std::numeric_limits<double>::quiet_NaN();
   if (sd <= 0) throw std::invalid_argument("Standard deviation must be positive.");
+
+  double z = (q - mean) / sd;
+  if (lower_tail) {
+    if (z <= -EXTREME_Z) return 0.0;
+    if (z >= EXTREME_Z) return 1.0;
+  } else {
+    if (z >= EXTREME_Z) return 0.0;
+    if (z <= -EXTREME_Z) return 1.0;
+  }
+
   boost::math::normal_distribution<> dist(mean, sd);
   if (lower_tail) return boost::math::cdf(dist, q);
   else return boost::math::cdf(boost::math::complement(dist, q));
@@ -42,6 +52,36 @@ double boost_qnorm(double p, double mean, double sd, bool lower_tail) {
   if (sd <= 0) throw std::invalid_argument("Standard deviation must be positive.");
   if (p < 0.0 || p > 1.0) throw std::invalid_argument(
       "Probability must be between 0 and 1.");
+
+  // Clamp extreme probabilities to avoid overflow in boost::math::quantile
+  bool at_extreme = false;
+  double extreme_quantile = 0.0;
+
+  if (lower_tail) {
+    if (p <= MIN_PROB) {
+      at_extreme = true;
+      extreme_quantile = MIN_NORMAL_QUANTILE;
+    } else if (p >= MAX_PROB) {
+      at_extreme = true;
+      extreme_quantile = MAX_NORMAL_QUANTILE;
+    }
+  } else {
+    // When lower_tail = false, we compute quantile(1 - p)
+    if (p <= MIN_PROB) {
+      at_extreme = true;
+      extreme_quantile = MAX_NORMAL_QUANTILE;
+    } else if (p >= MAX_PROB) {
+      at_extreme = true;
+      extreme_quantile = MIN_NORMAL_QUANTILE;
+    }
+  }
+
+  // If at extreme, return scaled value directly
+  if (at_extreme) {
+    return mean + sd * extreme_quantile;
+  }
+
+  // Safe to call boost quantile
   boost::math::normal_distribution<> dist(mean, sd);
   return lower_tail ? boost::math::quantile(dist, p) :
     boost::math::quantile(dist, 1.0 - p);
@@ -396,9 +436,9 @@ ListCpp exitprobcpp(const std::vector<double>& b,
     if (static_cast<int>(I.size()) != kMax)
       throw std::invalid_argument("Invalid length for I.");
     if (I[0] <= 0.0)
-      throw std::invalid_argument("Elements of I must be positive.");
+      throw std::invalid_argument("I must be positive.");
     if (any_nonincreasing(I))
-      throw std::invalid_argument("Elements of I must be increasing.");
+      throw std::invalid_argument("I must be increasing.");
     I1 = I;
   } else {
     I1.resize(kMax);
@@ -875,9 +915,9 @@ std::vector<double> getBoundcpp(
     if (static_cast<int>(spendingTime.size()) != k)
       throw std::invalid_argument("Invalid length for spendingTime.");
     if (spendingTime[0] <= 0.0)
-      throw std::invalid_argument("Elements of spendingTime must be positive.");
+      throw std::invalid_argument("spendingTime must be positive.");
     if (any_nonincreasing(spendingTime))
-      throw std::invalid_argument("Elements of spendingTime must be increasing.");
+      throw std::invalid_argument("spendingTime must be increasing.");
     if (spendingTime[k-1] > 1.0)
       throw std::invalid_argument("spendingTime must not exceed 1.");
     spendTime = spendingTime;
@@ -964,7 +1004,7 @@ std::vector<double> getBoundcpp(
       u0[i] = std::pow(I[i], Delta - 0.5);
     }
 
-    auto f = [k, alpha, u0, l, theta, I, effStopping](double aval)->double {
+    auto f = [&](double aval)->double {
       std::vector<double> u(k);
       for (int i = 0; i < k; ++i) {
         u[i] = aval * u0[i];
@@ -998,7 +1038,7 @@ std::vector<double> getBoundcpp(
 
     // lambda expression for finding the critical Values at stage k
     int k1 = 0;
-    auto f = [&k1, &cumAlpha, &criticalValues, infoRates](double aval)->double {
+    auto f = [&](double aval)->double {
       std::vector<double> u(k1+1);
       for (int i = 0; i < k1; ++i) u[i] = criticalValues[i];
       u[k1] = aval;
@@ -1461,7 +1501,7 @@ double pbvnormcpp(std::vector<double> lower, std::vector<double> upper, double r
   double a2 = lower[1];
   double b2 = upper[1];
   double s = std::sqrt(1.0 - rho * rho);
-  auto f = [rho, a2, b2, s](double x)->double {
+  auto f = [&](double x)->double {
     double a = (a2 - rho * x) / s;
     double b = (b2 - rho * x) / s;
     double t1 = boost_dnorm(x);
@@ -1510,18 +1550,18 @@ ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
   double t;
   std::vector<double> hazard_pd(m);
   std::vector<double> v(0), hazard(0), haz_pfs(0), haz_os(0);
-  auto f = [&t, &v, &haz_pfs, &haz_os, &hazard, rho_pd_os](double haz)->double {
-              std::vector<double> haz_pd = hazard;
-              haz_pd.push_back(haz);
-              std::vector<double> lower(2);
-              double a = ptpwexpcpp1(t, v, haz_pd, 0, 1, 0);
-              double b = ptpwexpcpp1(t, v, haz_os, 0, 1, 0);
-              lower[0] = boost_qnorm(a);
-              lower[1] = boost_qnorm(b);
-              std::vector<double> upper(2, POS_INF);
-              double q = pbvnormcpp(lower, upper, rho_pd_os);
-              return q - ptpwexpcpp1(t, v, haz_pfs, 0, 0, 0);
-            };
+  auto f = [&](double haz)->double {
+    std::vector<double> haz_pd = hazard;
+    haz_pd.push_back(haz);
+    std::vector<double> lower(2);
+    double a = ptpwexpcpp1(t, v, haz_pd, 0, 1, 0);
+    double b = ptpwexpcpp1(t, v, haz_os, 0, 1, 0);
+    lower[0] = boost_qnorm(a);
+    lower[1] = boost_qnorm(b);
+    std::vector<double> upper(2, POS_INF);
+    double q = pbvnormcpp(lower, upper, rho_pd_os);
+    return q - ptpwexpcpp1(t, v, haz_pfs, 0, 0, 0);
+  };
 
   double tol = 1e-6;
   for (int i=0; i<m; ++i) {
@@ -1628,19 +1668,18 @@ double cor_pfs_os(const std::vector<double>& piecewiseSurvivalTime,
   double c2 = 1.0 / (2.0 * s * s);
 
   // integrand for the joint moment
-  auto f = [piecewiseSurvivalTime, hazard_pd, hazard_os,
-            rho_pd_os, c1, c2](double u1, double u2)->double {
-              double t1 = qtpwexpcpp1(u1, piecewiseSurvivalTime, hazard_pd);
-              double t2 = qtpwexpcpp1(u2, piecewiseSurvivalTime, hazard_os);
-              double z1 = boost_qnorm(u1);
-              double z2 = boost_qnorm(u2);
-              double a1 = std::min(t1, t2) * t2;
+  auto f = [&](double u1, double u2)->double {
+    double t1 = qtpwexpcpp1(u1, piecewiseSurvivalTime, hazard_pd);
+    double t2 = qtpwexpcpp1(u2, piecewiseSurvivalTime, hazard_os);
+    double z1 = boost_qnorm(u1);
+    double z2 = boost_qnorm(u2);
+    double a1 = std::min(t1, t2) * t2;
 
-              // joint density of standard bivariate normal
-              double a2 = c1 * exp(-c2 * (z1*z1 - 2.0*rho_pd_os*z1*z2 + z2*z2));
-              double a3 = boost_dnorm(z1) * boost_dnorm(z2);
-              return a1 * a2 / a3;
-            };
+    // joint density of standard bivariate normal
+    double a2 = c1 * exp(-c2 * (z1*z1 - 2.0*rho_pd_os*z1*z2 + z2*z2));
+    double a3 = boost_dnorm(z1) * boost_dnorm(z2);
+    return a1 * a2 / a3;
+  };
 
   double tol = 1e-4;
   double m12 = quad2d(f, 0.0, 1.0, 0.0, 1.0, tol);
@@ -1700,14 +1739,14 @@ ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
   double t;
   std::vector<double> hazard_neg(m);
   std::vector<double> v(0), hazard(0), haz_itt(0), haz_pos(0);
-  auto f = [&t, &v, &haz_itt, &haz_pos, &hazard, p_pos](double haz)->double {
-              std::vector<double> haz_neg = hazard;
-              haz_neg.push_back(haz);
-              double a = ptpwexpcpp1(t, v, haz_pos, 0, 1, 0);
-              double b = ptpwexpcpp1(t, v, haz_neg, 0, 1, 0);
-              double q = p_pos * a + (1.0 - p_pos) * b;
-              return q - ptpwexpcpp1(t, v, haz_itt, 0, 1, 0);
-            };
+  auto f = [&](double haz)->double {
+    std::vector<double> haz_neg = hazard;
+    haz_neg.push_back(haz);
+    double a = ptpwexpcpp1(t, v, haz_pos, 0, 1, 0);
+    double b = ptpwexpcpp1(t, v, haz_neg, 0, 1, 0);
+    double q = p_pos * a + (1.0 - p_pos) * b;
+    return q - ptpwexpcpp1(t, v, haz_itt, 0, 1, 0);
+  };
 
   double tol = 1e-6;
   for (int i=0; i<m; ++i) {
@@ -4287,7 +4326,7 @@ ListCpp adaptDesigncpp(double betaNew,
     conditionalPower = std::accumulate(v.begin(), v.end(), 0.0);
 
     // predictive power
-    auto f = [k1, b1, a1, I1](double theta)->double {
+    auto f = [&](double theta)->double {
       std::vector<double> theta1(k1, theta);
       ListCpp probs = exitprobcpp(b1, a1, theta1, I1);
       auto v = probs.get<std::vector<double>>("exitProbUpper");
