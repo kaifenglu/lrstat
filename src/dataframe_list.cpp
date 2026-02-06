@@ -1,5 +1,7 @@
 #include "dataframe_list.h"
 
+#include <Rcpp.h>
+
 #include <algorithm> // copy_n, fill, max_element, remove
 #include <cmath>     // isnan
 #include <cstddef>   // size_t
@@ -10,8 +12,6 @@
 #include <utility>   // move
 #include <variant>   // get_if, variant
 #include <vector>    // vector
-
-#include <Rcpp.h> // ensure Rcpp types available in this TU
 
 // ------------------------- DataFrameCpp members (small) -------------------
 
@@ -301,6 +301,19 @@ void ListCpp::push_back(const IntMatrix& im, const std::string& name) {
   names_.push_back(name);
 }
 void ListCpp::push_back(IntMatrix&& im, const std::string& name) {
+  if (containsElementNamed(name))
+    throw std::runtime_error("Element '" + name + "' already exists.");
+  data.emplace(name, std::move(im));
+  names_.push_back(name);
+}
+// BoolMatrix overloads
+void ListCpp::push_back(const BoolMatrix& im, const std::string& name) {
+  if (containsElementNamed(name))
+    throw std::runtime_error("Element '" + name + "' already exists.");
+  data.emplace(name, im);
+  names_.push_back(name);
+}
+void ListCpp::push_back(BoolMatrix&& im, const std::string& name) {
   if (containsElementNamed(name))
     throw std::runtime_error("Element '" + name + "' already exists.");
   data.emplace(name, std::move(im));
@@ -869,6 +882,23 @@ IntMatrix intmatrix_from_Rmatrix(const Rcpp::IntegerMatrix& M) {
   if (nr == 0 || nc == 0) return IntMatrix();
   IntMatrix im(nr, nc);
   std::memcpy(im.data.data(), INTEGER(M), nr * nc * sizeof(int));
+  return im;
+}
+
+// Convert Rcpp::LogicalMatrix to BoolMatrix
+BoolMatrix boolmatrix_from_Rmatrix(const Rcpp::LogicalMatrix& M) {
+  int nr = M.nrow(), nc = M.ncol();
+  if (nr == 0 || nc == 0) return BoolMatrix();
+  BoolMatrix im(nr, nc);
+  const int* src = LOGICAL(M);
+  unsigned char* dst = im.data.data();
+  for (int i = 0, n = nr * nc; i < n; ++i) {
+    if (src[i] == NA_LOGICAL) {
+      dst[i] = 255;
+    } else {
+      dst[i] = static_cast<unsigned char>(src[i] != 0);
+    }
+  }
   return im;
 }
 

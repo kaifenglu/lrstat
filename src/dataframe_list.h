@@ -1,8 +1,6 @@
 #ifndef __DATAFRAME_LIST__
 #define __DATAFRAME_LIST__
 
-// [[Rcpp::plugins(cpp17)]]
-
 #include <Rcpp.h>
 
 #include "ska/flat_hash_map.hpp"
@@ -141,6 +139,52 @@ struct IntMatrix {
   inline const int* data_ptr() const noexcept {
     return data.empty() ? nullptr : data.data(); }
   inline int* data_ptr() noexcept { return data.empty() ? nullptr : data.data(); }
+};
+
+//
+// BoolMatrix: contiguous column-major logical matrix representation (bool)
+//
+struct BoolMatrix {
+  std::vector<unsigned char> data; // column-major: element(r,c) => data[c * nrow + r]
+  int nrow = 0;
+  int ncol = 0;
+
+  BoolMatrix() = default;
+  BoolMatrix(int nr, int nc) : data(nr * nc), nrow(nr), ncol(nc) {}
+
+  BoolMatrix(std::vector<unsigned char>&& d, int nr, int nc)
+    : data(std::move(d)), nrow(nr), ncol(nc) {
+    if (nr * nc != static_cast<int>(data.size()))
+      throw std::runtime_error("BoolMatrix: data size mismatch with dimensions");
+  }
+
+  inline void resize(int nr, int nc) {
+    nrow = nr; ncol = nc;
+    data.resize(nr * nc);
+  }
+
+  inline void fill(unsigned char v) { std::fill(data.begin(), data.end(), v); }
+  inline bool empty() const noexcept {
+    return data.empty() || nrow == 0 || ncol == 0; }
+  inline std::size_t size() const noexcept { return data.size(); }
+
+  // column-major index helper
+  inline static int idx_col(int row, int col, int nrows) noexcept {
+    return col * nrows + row;
+  }
+
+  inline unsigned char& operator()(int r, int c) {
+    return data[idx_col(r, c, nrow)];
+  }
+  inline unsigned char operator()(int r, int c) const {
+    return data[idx_col(r, c, nrow)];
+  }
+
+  // raw pointer accessors for parallel-friendly use
+  inline const unsigned char* data_ptr() const noexcept {
+    return data.empty() ? nullptr : data.data(); }
+  inline unsigned char* data_ptr() noexcept {
+    return data.empty() ? nullptr : data.data(); }
 };
 
 
@@ -415,6 +459,7 @@ struct ListCpp {
     std::vector<std::string>,
     FlatMatrix,
     IntMatrix,
+    BoolMatrix,
     FlatArray,
     DataFrameCpp,
     ListPtr,                            // pointer to nested ListCpp
@@ -444,12 +489,15 @@ struct ListCpp {
     void push_back(const ListPtr& p, const std::string& name);
     void push_back(ListPtr&& p, const std::string& name);
 
-    // Convenience overloads for FlatMatrix / IntMatrix / FlatArray / DataFrameCpp
+    // Overloads for FlatMatrix / IntMatrix / BoolMatrix / FlatArray / DataFrameCpp
     void push_back(const FlatMatrix& fm, const std::string& name);
     void push_back(FlatMatrix&& fm, const std::string& name);
 
     void push_back(const IntMatrix& im, const std::string& name);
     void push_back(IntMatrix&& im, const std::string& name);
+
+    void push_back(const BoolMatrix& im, const std::string& name);
+    void push_back(BoolMatrix&& im, const std::string& name);
 
     void push_back(const FlatArray& fa, const std::string& name);
     void push_back(FlatArray&& fa, const std::string& name);
@@ -515,22 +563,37 @@ Rcpp::List convertListCppToR(const ListCpp& L);
 // Rcpp wrap specializations
 namespace Rcpp {
 template <> inline SEXP wrap(const DataFrameCpp& df) {
-  return Rcpp::wrap(convertDataFrameCppToR(df));
+  return convertDataFrameCppToR(df);
 }
 template <> inline SEXP wrap(const ListCpp& l) {
-  return Rcpp::wrap(convertListCppToR(l));
+  return convertListCppToR(l);
 }
 template <> inline SEXP wrap(const FlatMatrix& fm) {
   if (fm.nrow == 0 || fm.ncol == 0) return R_NilValue;
   Rcpp::NumericMatrix M(fm.nrow, fm.ncol);
   std::memcpy(REAL(M), fm.data.data(), fm.data.size() * sizeof(double));
-  return Rcpp::wrap(M);
+  return M;
 }
 template <> inline SEXP wrap(const IntMatrix& im) {
   if (im.nrow == 0 || im.ncol == 0) return R_NilValue;
   Rcpp::IntegerMatrix M(im.nrow, im.ncol);
   std::memcpy(INTEGER(M), im.data.data(), im.data.size() * sizeof(int));
-  return Rcpp::wrap(M);
+  return M;
+}
+template <> inline SEXP wrap(const BoolMatrix& im) {
+  if (im.nrow == 0 || im.ncol == 0) return R_NilValue;
+  Rcpp::LogicalMatrix M(im.nrow, im.ncol);
+  int* dst = LOGICAL(M);
+  const unsigned char* src = im.data.data();
+  // Convert: 0->FALSE, 1->TRUE, 255->NA_LOGICAL
+  for (std::size_t i = 0; i < im.data.size(); ++i) {
+    if (src[i] == 255) {
+      dst[i] = NA_LOGICAL;
+    } else {
+      dst[i] = static_cast<int>(src[i]);
+    }
+  }
+  return M;
 }
 template <> inline SEXP wrap(const FlatArray& fa) {
   if (fa.nrow == 0 || fa.ncol == 0 || fa.nslice == 0) return R_NilValue;
@@ -538,13 +601,14 @@ template <> inline SEXP wrap(const FlatArray& fa) {
   std::memcpy(REAL(vec), fa.data.data(), fa.data.size() * sizeof(double));
   Rcpp::IntegerVector dims = Rcpp::IntegerVector::create(fa.nrow, fa.ncol, fa.nslice);
   vec.attr("dim") = dims;
-  return Rcpp::wrap(vec);
+  return vec;
 }
 } // namespace Rcpp
 
 // Declarations for helpers implemented in dataframe_list.cpp
 FlatMatrix flatmatrix_from_Rmatrix(const Rcpp::NumericMatrix& M);
 IntMatrix intmatrix_from_Rmatrix(const Rcpp::IntegerMatrix& M);
+BoolMatrix boolmatrix_from_Rmatrix(const Rcpp::LogicalMatrix& M);
 std::shared_ptr<ListCpp> listcpp_from_rlist(const Rcpp::List& rlist);
 
 #endif // __DATAFRAME_LIST__
