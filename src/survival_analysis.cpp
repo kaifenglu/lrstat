@@ -1,12 +1,10 @@
-#include <RcppThread.h>
-#include <Rcpp.h>
-
-#include <boost/random.hpp>
-
 #include "survival_analysis.h"
 #include "utilities.h"
 #include "dataframe_list.h"
 #include "thread_utils.h"
+
+#include <Rcpp.h>
+#include <boost/random.hpp>
 
 #include <algorithm> // accumulate, any_of, max_element, min_element, none_of, sort
 #include <cctype>    // isalnum, isalpha, tolower, toupper
@@ -348,8 +346,8 @@ Rcpp::DataFrame survQuantile(
   auto eventv = Rcpp::as<std::vector<int>>(event);
   auto probsv = Rcpp::as<std::vector<double>>(probs);
   
-  DataFrameCpp result = survQuantilecpp(timev, eventv, cilevel, transform, probsv);
-  return Rcpp::wrap(result);
+  auto cpp_result = survQuantilecpp(timev, eventv, cilevel, transform, probsv);
+  return Rcpp::wrap(cpp_result);
 }
 
 
@@ -750,10 +748,10 @@ Rcpp::DataFrame kmest(const Rcpp::DataFrame& data,
                       const double conflev = 0.95,
                       const bool keep_censor = false) {
   
-  DataFrameCpp dfcpp = convertRDataFrameToCpp(data);
+  auto dfcpp = convertRDataFrameToCpp(data);
   auto stratumcpp = Rcpp::as<std::vector<std::string>>(stratum);
   
-  DataFrameCpp cpp_result = kmestcpp(
+  auto cpp_result = kmestcpp(
     dfcpp, stratumcpp, time, time2, event, weight, 
     conftype, conflev, keep_censor
   );
@@ -1272,12 +1270,13 @@ Rcpp::DataFrame kmdiff(const Rcpp::DataFrame& data,
                        const double survDiffH0 = 0,
                        const double conflev = 0.95) {
   
-  DataFrameCpp dfcpp = convertRDataFrameToCpp(data);
+  auto dfcpp = convertRDataFrameToCpp(data);
   auto stratumcpp = Rcpp::as<std::vector<std::string>>(stratum);
   
-  DataFrameCpp cpp_result = kmdiffcpp(
+  auto cpp_result = kmdiffcpp(
     dfcpp, stratumcpp, treat, time, time2, event, weight, 
-    milestone, survDiffH0, conflev);
+    milestone, survDiffH0, conflev
+  );
   
   thread_utils::drain_thread_warnings_to_R();
   return Rcpp::wrap(cpp_result);
@@ -1763,12 +1762,13 @@ Rcpp::DataFrame lrtest(const Rcpp::DataFrame data,
                        const double rho1 = 0,
                        const double rho2 = 0) {
   
-  DataFrameCpp dfcpp = convertRDataFrameToCpp(data);
+  auto dfcpp = convertRDataFrameToCpp(data);
   auto stratumcpp = Rcpp::as<std::vector<std::string>>(stratum);
   
-  DataFrameCpp cpp_result = lrtestcpp(
+  auto cpp_result = lrtestcpp(
     dfcpp, stratumcpp, treat, time, time2, event, weight, 
-    weight_readj, rho1, rho2);
+    weight_readj, rho1, rho2
+  );
   
   return Rcpp::wrap(cpp_result);
 }
@@ -2157,10 +2157,10 @@ Rcpp::DataFrame rmest(const Rcpp::DataFrame& data,
                       const double conflev = 0.95,
                       const bool biascorrection = false) {
   
-  DataFrameCpp dfcpp = convertRDataFrameToCpp(data);
+  auto dfcpp = convertRDataFrameToCpp(data);
   auto stratumcpp = Rcpp::as<std::vector<std::string>>(stratum);
   
-  DataFrameCpp cpp_result = rmestcpp(
+  auto cpp_result = rmestcpp(
     dfcpp, stratumcpp, time, event, milestone, conflev, biascorrection
   );
   
@@ -2499,10 +2499,10 @@ Rcpp::DataFrame rmdiff(const Rcpp::DataFrame& data,
                        const double conflev = 0.95,
                        const bool biascorrection = false) {
   
-  DataFrameCpp dfcpp = convertRDataFrameToCpp(data);
+  auto dfcpp = convertRDataFrameToCpp(data);
   auto stratumcpp = Rcpp::as<std::vector<std::string>>(stratum);
   
-  DataFrameCpp cpp_result = rmdiffcpp(
+  auto cpp_result = rmdiffcpp(
     dfcpp, stratumcpp, treat, time, event, milestone,
     rmstDiffH0, conflev,  biascorrection
   );
@@ -4240,9 +4240,9 @@ Rcpp::List liferegRcpp(const Rcpp::DataFrame& data,
                        const int maxiter,
                        const double eps) {
   
-  DataFrameCpp dfcpp = convertRDataFrameToCpp(data);
+  auto dfcpp = convertRDataFrameToCpp(data);
   
-  ListCpp cpp_result = liferegcpp(
+  auto cpp_result = liferegcpp(
     dfcpp, stratum, time, time2, event, covariates, weight, offset, id, 
     dist, init, robust, plci, alpha, maxiter, eps
   );
@@ -5066,12 +5066,13 @@ Rcpp::NumericMatrix residuals_liferegRcpp(
     const bool collapse,
     const bool weighted) {
   
-  DataFrameCpp dfcpp = convertRDataFrameToCpp(data);
-  FlatMatrix vbetacpp = flatmatrix_from_Rmatrix(vbeta);
+  auto dfcpp = convertRDataFrameToCpp(data);
+  auto vbetacpp = flatmatrix_from_Rmatrix(vbeta);
   
-  FlatMatrix rrcpp = residuals_liferegcpp(
+  auto rrcpp = residuals_liferegcpp(
     beta, vbetacpp, dfcpp, stratum, time, time2, event, covariates, 
-    weight, offset, id, dist, type, collapse, weighted);
+    weight, offset, id, dist, type, collapse, weighted
+  );
   
   return Rcpp::wrap(rrcpp);
 }
@@ -6887,12 +6888,13 @@ Rcpp::List phregRcpp(const Rcpp::DataFrame& data,
                      const int maxiter,
                      const double eps) {
   
-  DataFrameCpp dfcpp = convertRDataFrameToCpp(data);
+  auto dfcpp = convertRDataFrameToCpp(data);
   
-  ListCpp cpp_result = phregcpp(
+  auto cpp_result = phregcpp(
     dfcpp, stratum, time, time2, event, covariates, weight, offset, id, 
     ties, init, robust, est_basehaz, est_resid, firth, plci, alpha, 
-    maxiter, eps);
+    maxiter, eps
+  );
   
   thread_utils::drain_thread_warnings_to_R();
   return Rcpp::wrap(cpp_result);
@@ -7404,13 +7406,14 @@ Rcpp::DataFrame survfit_phregRcpp(const int p,
                                   const std::string& conftype,
                                   const double conflev) {
   
-  FlatMatrix vbetacpp = flatmatrix_from_Rmatrix(vbeta);
-  DataFrameCpp basehcpp = convertRDataFrameToCpp(basehaz);
-  DataFrameCpp newdfcpp = convertRDataFrameToCpp(newdata);
+  auto vbetacpp = flatmatrix_from_Rmatrix(vbeta);
+  auto basehcpp = convertRDataFrameToCpp(basehaz);
+  auto newdfcpp = convertRDataFrameToCpp(newdata);
   
-  DataFrameCpp cpp_result = survfit_phregcpp(
+  auto cpp_result = survfit_phregcpp(
     p, beta, vbetacpp, basehcpp, newdfcpp, covariates, stratum, 
-    offset, id, tstart, tstop, sefit, conftype, conflev);
+    offset, id, tstart, tstop, sefit, conftype, conflev
+  );
   
   return Rcpp::wrap(cpp_result);
 }
@@ -8089,12 +8092,13 @@ Rcpp::List residuals_phregRcpp(const int p,
                                const bool collapse,
                                const bool weighted) {
   
-  FlatMatrix vbetacpp = flatmatrix_from_Rmatrix(vbeta);
-  DataFrameCpp dfcpp = convertRDataFrameToCpp(data);
+  auto vbetacpp = flatmatrix_from_Rmatrix(vbeta);
+  auto dfcpp = convertRDataFrameToCpp(data);
   
-  ListCpp cpp_result = residuals_phregcpp(
+  auto cpp_result = residuals_phregcpp(
     p, beta, vbetacpp, resmart, dfcpp, stratum, time, time2, event, 
-    covariates, weight, offset, id, ties, type, collapse, weighted);
+    covariates, weight, offset, id, ties, type, collapse, weighted
+  );
   
   return Rcpp::wrap(cpp_result);
 }
@@ -8795,13 +8799,13 @@ Rcpp::List assess_phregRcpp(const int p,
                             const int resample,
                             const std::uint32_t seed) {
   
+  auto vbetacpp = flatmatrix_from_Rmatrix(vbeta);
+  auto dfcpp = convertRDataFrameToCpp(data);
   
-  FlatMatrix vbetacpp = flatmatrix_from_Rmatrix(vbeta);
-  DataFrameCpp dfcpp = convertRDataFrameToCpp(data);
-  
-  ListCpp cpp_result = assess_phregcpp(
+  auto cpp_result = assess_phregcpp(
     p, beta, vbetacpp, dfcpp, stratum, time, time2, event,
-    covariates, weight, offset, ties, resample, seed);
+    covariates, weight, offset, ties, resample, seed
+  );
   
   return Rcpp::wrap(cpp_result);
 }
@@ -9287,12 +9291,13 @@ Rcpp::List zph_phregRcpp(int p,
                          const std::string& ties,
                          const std::string& transform) {
   
-  FlatMatrix vbetacpp = flatmatrix_from_Rmatrix(vbeta);
-  DataFrameCpp dfcpp = convertRDataFrameToCpp(data);
+  auto vbetacpp = flatmatrix_from_Rmatrix(vbeta);
+  auto dfcpp = convertRDataFrameToCpp(data);
   
-  ListCpp cpp_result = zph_phregcpp(
+  auto cpp_result = zph_phregcpp(
     p, beta, vbetacpp, resmart, dfcpp, stratum, time, time2, event,
-    covariates, weight, offset, ties, transform);
+    covariates, weight, offset, ties, transform
+  );
   
   return Rcpp::wrap(cpp_result);
 }
