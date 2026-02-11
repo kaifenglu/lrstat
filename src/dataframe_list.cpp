@@ -745,6 +745,16 @@ std::vector<int> intmatrix_get_column(const IntMatrix& M, int col) {
   return out;
 }
 
+std::vector<unsigned char> boolmatrix_get_column(const BoolMatrix& M, int col) {
+  if (M.nrow == 0 || M.ncol == 0) return {};
+  if (col < 0 || col >= M.ncol) throw std::out_of_range("column index out of range");
+  const unsigned char* src = M.data_ptr() + BoolMatrix::idx_col(0, col, M.nrow);
+  std::vector<unsigned char> out(static_cast<std::size_t>(M.nrow));
+  std::memcpy(out.data(), src, 
+              static_cast<std::size_t>(M.nrow) * sizeof(unsigned char));
+  return out;
+}
+
 void flatmatrix_set_column(FlatMatrix& M, int col, const std::vector<double>& src) {
   if (col < 0 || col >= M.ncol) throw std::out_of_range("col out of range");
   if (static_cast<int>(src.size()) != M.nrow)
@@ -761,6 +771,17 @@ void intmatrix_set_column(IntMatrix& M, int col, const std::vector<int>& src) {
   const int* src_ptr = src.data();
   int* dst_ptr = M.data_ptr() + IntMatrix::idx_col(0, col, M.nrow);
   std::memcpy(dst_ptr, src_ptr, static_cast<std::size_t>(M.nrow) * sizeof(int));
+}
+
+void boolmatrix_set_column(BoolMatrix& M, int col, 
+                           const std::vector<unsigned char>& src) {
+  if (col < 0 || col >= M.ncol) throw std::out_of_range("col out of range");
+  if (static_cast<int>(src.size()) != M.nrow)
+    throw std::invalid_argument("src size != M.nrow");
+  const unsigned char* src_ptr = src.data();
+  unsigned char* dst_ptr = M.data_ptr() + BoolMatrix::idx_col(0, col, M.nrow);
+  std::memcpy(dst_ptr, src_ptr, 
+              static_cast<std::size_t>(M.nrow) * sizeof(unsigned char));
 }
 
 // -------------------------- Converters implementations ---------------------

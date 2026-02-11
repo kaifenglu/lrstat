@@ -139,6 +139,32 @@ struct IntMatrix {
   inline const int* data_ptr() const noexcept {
     return data.empty() ? nullptr : data.data(); }
   inline int* data_ptr() noexcept { return data.empty() ? nullptr : data.data(); }
+
+
+  // Print helper for IntMatrix: pretty-print a small view of the matrix to an ostream
+  // (default std::cout)
+  inline void print(std::ostream& os = std::cout, int max_rows = 10,
+                    int max_cols = 10) const {
+    os << "IntMatrix: " << nrow << " x " << ncol << "\n";
+    if (nrow == 0 || ncol == 0) return;
+    const int rows = std::min(nrow, max_rows);
+    const int cols = std::min(ncol, max_cols);
+    for (int r = 0; r < rows; ++r) {
+      for (int c = 0; c < cols; ++c) {
+        os << (*this)(r, c);
+        if (c + 1 < cols) os << "\t";
+      }
+      if (cols < ncol) os << "\t...";
+      os << "\n";
+    }
+    if (rows < nrow) os << "...\n";
+  }
+
+  // ostream operator for convenience
+  friend inline std::ostream& operator<<(std::ostream& os, const IntMatrix& im) {
+    im.print(os);
+    return os;
+  }
 };
 
 //
@@ -185,6 +211,32 @@ struct BoolMatrix {
     return data.empty() ? nullptr : data.data(); }
   inline unsigned char* data_ptr() noexcept {
     return data.empty() ? nullptr : data.data(); }
+
+
+  // Print helper for BoolMatrix: pretty-print a small view of the matrix to an ostream
+  // Values printed as 0/1. (default std::cout)
+  inline void print(std::ostream& os = std::cout, int max_rows = 10,
+                    int max_cols = 10) const {
+    os << "BoolMatrix: " << nrow << " x " << ncol << "\n";
+    if (nrow == 0 || ncol == 0) return;
+    const int rows = std::min(nrow, max_rows);
+    const int cols = std::min(ncol, max_cols);
+    for (int r = 0; r < rows; ++r) {
+      for (int c = 0; c < cols; ++c) {
+        os << static_cast<int>((*this)(r, c)); // print 0/1
+        if (c + 1 < cols) os << "\t";
+      }
+      if (cols < ncol) os << "\t...";
+      os << "\n";
+    }
+    if (rows < nrow) os << "...\n";
+  }
+
+  // ostream operator for convenience
+  friend inline std::ostream& operator<<(std::ostream& os, const BoolMatrix& bm) {
+    bm.print(os);
+    return os;
+  }
 };
 
 
@@ -552,8 +604,11 @@ void append_flatmatrix(std::vector<std::vector<double>>& fm1,
 FlatMatrix cols_to_flatmatrix(const std::vector<std::vector<double>>& cols);
 std::vector<double> flatmatrix_get_column(const FlatMatrix& M, int col);
 std::vector<int> intmatrix_get_column(const IntMatrix& M, int col);
+std::vector<unsigned char> boolmatrix_get_column(const BoolMatrix& M, int col);
 void flatmatrix_set_column(FlatMatrix& M, int col, const std::vector<double>& src);
 void intmatrix_set_column(IntMatrix& M, int col, const std::vector<int>& src);
+void boolmatrix_set_column(BoolMatrix& M, int col, 
+                           const std::vector<unsigned char>& src);
 
 // ------------------- Converters between R and C++ types (declarations) ----
 DataFrameCpp convertRDataFrameToCpp(const Rcpp::DataFrame& r_df);
