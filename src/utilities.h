@@ -6,6 +6,8 @@
 #include <Rcpp.h>
 
 struct FlatMatrix;
+struct IntMatrix;
+struct BoolMatrix;
 struct DataFrameCpp;
 struct ListCpp;
 
@@ -538,6 +540,9 @@ int cholesky2(FlatMatrix& matrix, int n, double toler = 1e-12);
 void chsolve2(FlatMatrix& matrix, int n, double* y);
 FlatMatrix invsympd(const FlatMatrix& matrix, int n, double toler = 1e-12);
 
+FlatMatrix transpose(const FlatMatrix& M);
+IntMatrix transpose(const IntMatrix& M);
+BoolMatrix transpose(const BoolMatrix& M);
 
 // Print a std::vector<T> to std::cout.
 // Requirements: T must be streamable via operator<< to std::ostream.

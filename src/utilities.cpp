@@ -266,7 +266,7 @@ double brent(const std::function<double(double)>& f,
   double d = 0.0, d1 = 0.0;
 
   if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0))
-    throw std::invalid_argument("Root must be bracketed in brent.");
+    throw std::invalid_argument("Root must be bracketed in brent");
 
   for (int iter = 1; iter <= maxiter; ++iter) {
     if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) {
@@ -319,7 +319,7 @@ double bisect(const std::function<double(double)>& f,
   double a = x1, b = x2;
   double fa = f(a), fb = f(b);
   if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0))
-    throw std::invalid_argument("Root must be bracketed in bisect.");
+    throw std::invalid_argument("Root must be bracketed in bisect");
   if (std::fabs(fa) < tol) return a;
   if (std::fabs(fb) < tol) return b;
   double xmid, fmid;
@@ -341,10 +341,10 @@ double errorSpentcpp(const double t,
                      const std::string& sf,
                      const double sfpar) {
   if (error <= 0 || error >= 1) {
-    throw std::invalid_argument("error must be a number between 0 and 1.");
+    throw std::invalid_argument("error must be a number between 0 and 1");
   }
   if (t <= 0 || t > 1) {
-    throw std::invalid_argument("t must be a number between 0 and 1.");
+    throw std::invalid_argument("t must be a number between 0 and 1");
   }
 
   std::string asf = sf;
@@ -360,22 +360,22 @@ double errorSpentcpp(const double t,
     aval = 2.0 * (1.0 - boost_pnorm(aval / std::sqrt(t)));
   } else if (asf == "sfkd") {
     if (std::isnan(sfpar)) {
-      throw std::invalid_argument("Parameter sfpar is missing for sfKD.");
+      throw std::invalid_argument("sfpar is missing for sfKD");
     } else if (sfpar <= 0) {
-      throw std::invalid_argument("sfpar must be positive for sfKD.");
+      throw std::invalid_argument("sfpar must be positive for sfKD");
     } else {
       aval = error * std::pow(t, sfpar);
     }
   } else if (asf == "sfhsd") {
     if (std::isnan(sfpar)) {
-      throw std::invalid_argument("Parameter sfpar is missing for sfHSD.");
+      throw std::invalid_argument("sfpar is missing for sfHSD");
     } else if (sfpar == 0) {
       aval = error * t;
     } else {
       aval = error * (1.0 - std::exp(-sfpar * t)) / (1.0 - std::exp(-sfpar));
     }
   } else {
-    throw std::invalid_argument("Invalid spending function.");
+    throw std::invalid_argument("Invalid spending function");
   }
   return aval;
 }
@@ -399,20 +399,18 @@ ListCpp exitprobcpp(const std::vector<double>& b,
   // Prepare a1, theta1, I1 only if defaults / expansion necessary.
   std::vector<double> a1; a1.reserve(kMax);
   if (none_na(a)) {
-    if (static_cast<int>(a.size()) != kMax)
-      throw std::invalid_argument("Invalid length for a.");
+    if (static_cast<int>(a.size()) < kMax)
+      throw std::invalid_argument("Insufficient length for a");
     a1 = a; // copy once
   } else {
-    a1.assign(kMax, 0.0);
-    for (int i = 0; i < kMax; ++i) {
-      a1[i] = (i < kMax - 1 ? -6.0 : b[i]);
-    }
+    a1.assign(kMax, -6.0);
+    a1[kMax - 1] = b[kMax - 1]; // set last element to b[kMax-1]
   }
 
   // check lower < upper
   for (int i = 0; i < kMax; ++i) {
     if (a1[i] > b[i]) throw std::invalid_argument(
-        "Lower bounds (a) must be less than upper bounds (b).");
+        "Lower bounds (a) must be less than upper bounds (b)");
   }
 
   // theta expansion
@@ -420,10 +418,10 @@ ListCpp exitprobcpp(const std::vector<double>& b,
   if (none_na(theta)) {
     if (static_cast<int>(theta.size()) == 1) {
       theta1.assign(kMax, theta[0]);
-    } else if (static_cast<int>(theta.size()) == kMax) {
+    } else if (static_cast<int>(theta.size()) >= kMax) {
       theta1 = theta;
     } else {
-      throw std::invalid_argument("Invalid length for theta.");
+      throw std::invalid_argument("Insufficient length for theta");
     }
   } else {
     theta1.assign(kMax, 0.0);
@@ -433,12 +431,12 @@ ListCpp exitprobcpp(const std::vector<double>& b,
   // information times expansion / validation
   std::vector<double> I1;
   if (none_na(I)) {
-    if (static_cast<int>(I.size()) != kMax)
-      throw std::invalid_argument("Invalid length for I.");
+    if (static_cast<int>(I.size()) < kMax)
+      throw std::invalid_argument("Insufficient length for I");
     if (I[0] <= 0.0)
-      throw std::invalid_argument("I must be positive.");
+      throw std::invalid_argument("I must be positive");
     if (any_nonincreasing(I))
-      throw std::invalid_argument("I must be increasing.");
+      throw std::invalid_argument("I must be increasing");
     I1 = I;
   } else {
     I1.resize(kMax);
@@ -775,8 +773,6 @@ double qtpwexpcpp1(const double p,
                    const bool lowertail,
                    const bool logp) {
   int m = static_cast<int>(piecewiseSurvivalTime.size());
-  if (m == 0 || static_cast<int>(lambda.size()) != m)
-    throw std::invalid_argument("Invalid piecewise model inputs.");
   double u = logp ? std::exp(p) : p;
   if (!lowertail) u = 1.0 - u;
   if (u <= 0.0) return lowerBound;
@@ -834,7 +830,7 @@ ListCpp mtpwexpcpp(const std::vector<double>& piecewiseSurvivalTime,
                    const double lowerBound) {
   int m = static_cast<int>(piecewiseSurvivalTime.size());
   if (lambda[m-1] == 0.0) {
-    throw std::invalid_argument("The last hazard rate must be positive.");
+    throw std::invalid_argument("The last hazard rate must be positive");
   }
 
   std::vector t0 = {lowerBound};
@@ -890,36 +886,37 @@ std::vector<double> getBoundcpp(
     const std::vector<double>& spendingTime,
     const std::vector<unsigned char>& efficacyStopping) {
 
-  if (k <= 0) throw std::invalid_argument("k must be provided and positive.");
+  if (k <= 0) throw std::invalid_argument("k must be provided and positive");
 
   // infoRates: if missing create 1/k, 2/k, ..., k/k
   std::vector<double> infoRates(k);
   if (none_na(informationRates)) {
-    if (static_cast<int>(informationRates.size()) != k)
-      throw std::invalid_argument("Invalid length for informationRates.");
+    if (static_cast<int>(informationRates.size()) < k)
+      throw std::invalid_argument("Insufficient length for informationRates");
     if (informationRates[0] <= 0.0)
-      throw std::invalid_argument("informationRates must be positive.");
+      throw std::invalid_argument("informationRates must be positive");
     if (any_nonincreasing(informationRates))
-      throw std::invalid_argument("informationRates must be increasing.");
+      throw std::invalid_argument("informationRates must be increasing");
     if (informationRates[k-1] > 1.0)
-      throw std::invalid_argument("informationRates must not exceed 1.");
+      throw std::invalid_argument("informationRates must not exceed 1");
     infoRates = informationRates; // copy
   } else {
-    for (int i = 0; i < k; ++i)
+    for (int i = 0; i < k; ++i) {
       infoRates[i] = static_cast<double>(i+1) / static_cast<double>(k);
+    }
   }
 
   // spendTime: default to infoRates if missing
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
-    if (static_cast<int>(spendingTime.size()) != k)
-      throw std::invalid_argument("Invalid length for spendingTime.");
+    if (static_cast<int>(spendingTime.size()) < k)
+      throw std::invalid_argument("Insufficient length for spendingTime");
     if (spendingTime[0] <= 0.0)
-      throw std::invalid_argument("spendingTime must be positive.");
+      throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
-      throw std::invalid_argument("spendingTime must be increasing.");
+      throw std::invalid_argument("spendingTime must be increasing");
     if (spendingTime[k-1] > 1.0)
-      throw std::invalid_argument("spendingTime must not exceed 1.");
+      throw std::invalid_argument("spendingTime must not exceed 1");
     spendTime = spendingTime;
   } else {
     spendTime = infoRates;
@@ -928,10 +925,10 @@ std::vector<double> getBoundcpp(
   // effStopping: default to all 1s if missing
   std::vector<unsigned char> effStopping;
   if (none_na(efficacyStopping)) {
-    if (static_cast<int>(efficacyStopping.size()) != k)
-      throw std::invalid_argument("Invalid length for efficacyStopping.");
+    if (static_cast<int>(efficacyStopping.size()) < k)
+      throw std::invalid_argument("Insufficient length for efficacyStopping");
     if (efficacyStopping[k-1] != 1)
-      throw std::invalid_argument("efficacyStopping must end with 1.");
+      throw std::invalid_argument("efficacyStopping must end with 1");
     effStopping = efficacyStopping; // copy
   } else {
     effStopping.assign(k, 1);
@@ -947,15 +944,15 @@ std::vector<double> getBoundcpp(
   // userAlphaSpending checks when asf == "user"
   if (asf == "user") {
     if (!none_na(userAlphaSpending))
-      throw std::invalid_argument("userAlphaSpending must be specified.");
+      throw std::invalid_argument("userAlphaSpending must be specified");
     if (static_cast<int>(userAlphaSpending.size()) < k)
-      throw std::invalid_argument("Insufficient length of userAlphaSpending.");
+      throw std::invalid_argument("Insufficient length of userAlphaSpending");
     if (userAlphaSpending[0] < 0.0)
-      throw std::invalid_argument("userAlphaSpending must be nonnegative.");
+      throw std::invalid_argument("userAlphaSpending must be nonnegative");
     if (any_nonincreasing(userAlphaSpending))
-      throw std::invalid_argument("userAlphaSpending must be nondecreasing.");
+      throw std::invalid_argument("userAlphaSpending must be nondecreasing");
     if (userAlphaSpending[k-1] > alpha)
-      throw std::invalid_argument("userAlphaSpending must not exceed alpha.");
+      throw std::invalid_argument("userAlphaSpending must not exceed alpha");
   }
 
   if (asf == "of" || asf == "p" || asf == "wt") {
@@ -974,11 +971,11 @@ std::vector<double> getBoundcpp(
 
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
       std::isnan(parameterAlphaSpending)) {
-    throw std::invalid_argument("Missing value for parameterAlphaSpending.");
+    throw std::invalid_argument("Missing value for parameterAlphaSpending");
   }
 
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD.");
+    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
   }
 
   std::vector<double> criticalValues(k);
@@ -996,6 +993,7 @@ std::vector<double> getBoundcpp(
     else Delta = parameterAlphaSpending; // parameterAlphaSpending holds delta for WT
 
     // for a given multiplier, compute cumulative upper exit probability - alpha
+    std::vector<double> u(k);
     std::vector<double> l(k, -6.0);
     std::vector<double> theta(k, 0.0);
     std::vector<double> I(k), u0(k);
@@ -1005,7 +1003,6 @@ std::vector<double> getBoundcpp(
     }
 
     auto f = [&](double aval)->double {
-      std::vector<double> u(k);
       for (int i = 0; i < k; ++i) {
         u[i] = aval * u0[i];
         if (!effStopping[i]) u[i] = 6.0;
@@ -1030,38 +1027,46 @@ std::vector<double> getBoundcpp(
     // stage 1
     double cumAlpha;
     if (asf == "user") cumAlpha = userAlphaSpending[0];
-    else cumAlpha = errorSpentcpp(spendTime[0], alpha, asf,
-                                  parameterAlphaSpending);
+    else cumAlpha = errorSpentcpp(spendTime[0], alpha, asf, parameterAlphaSpending);
 
     if (!effStopping[0]) criticalValues[0] = 6.0;
     else criticalValues[0] = boost_qnorm(1.0 - cumAlpha);
 
-    // lambda expression for finding the critical Values at stage k
-    int k1 = 0;
-    auto f = [&](double aval)->double {
-      std::vector<double> u(k1+1);
-      for (int i = 0; i < k1; ++i) u[i] = criticalValues[i];
-      u[k1] = aval;
-      std::vector<double> l(k1+1, -6.0);
-      std::vector<double> theta(k1+1, 0.0);
-      std::vector<double> I(infoRates.begin(), infoRates.begin() + k1 + 1);
-
-      ListCpp probs = exitprobcpp(u, l, theta, I);
-      auto v = probs.get<std::vector<double>>("exitProbUpper");
-      double cpu = std::accumulate(v.begin(), v.end(), 0.0);
-      return cpu - cumAlpha;
-    };
+    // Preallocate reusable buffers used by the root-finding lambda
+    std::vector<double> u_vec; u_vec.reserve(k);
+    std::vector<double> l_vec(k, -6.0);
+    std::vector<double> theta_vec(k, 0.0);
 
     // subsequent stages
-    for (k1 = 1; k1 < k; ++k1) {
+    for (int k1 = 1; k1 < k; ++k1) {
+      // determine cumulative alpha at this stage
       if (asf == "user") cumAlpha = userAlphaSpending[k1];
-      else cumAlpha = errorSpentcpp(spendTime[k1], alpha, asf,
-                                    parameterAlphaSpending);
+      else cumAlpha = errorSpentcpp(spendTime[k1], alpha, asf, parameterAlphaSpending);
 
       if (!effStopping[k1]) {
         criticalValues[k1] = 6.0;
         continue;
       }
+
+      // Ensure reusable buffers have size k1+1 and capacity >= k
+      u_vec.resize(k1 + 1);
+
+      // - copy already computed criticalValues[0..k1-1] into u_vec[0..k1-1]
+      // the last entry (u_vec[k1]) will be set by the lambda
+      std::memcpy(u_vec.data(), criticalValues.data(), k1 * sizeof(double));
+
+      // Define lambda that only sets the last element of u_vec
+      auto f = [&](double aval)->double {
+        // set the last element to the current candidate critical value
+        u_vec[k1] = aval;
+
+        // exitprobcpp expects exact-sized vectors
+        ListCpp probs = exitprobcpp(u_vec, l_vec, theta_vec, infoRates);
+        auto v = probs.get<std::vector<double>>("exitProbUpper");
+        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        return cpu - cumAlpha;
+      };
+
 
       double f_6 = f(6.0);
       if (f_6 > 0.0) { // no alpha spent at current visit
@@ -1078,7 +1083,7 @@ std::vector<double> getBoundcpp(
     return criticalValues;
   }
 
-  throw std::invalid_argument("Invalid value for typeAlphaSpending.");
+  throw std::invalid_argument("Invalid value for typeAlphaSpending");
 }
 
 //' @title Efficacy Boundaries for Group Sequential Design
@@ -1128,9 +1133,10 @@ Rcpp::NumericVector getBound(
   auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
 
-  std::vector<double> result = getBoundcpp(
+  auto result = getBoundcpp(
     k, infoRates, alpha, typeAlphaSpending, parameterAlphaSpending,
-    userAlpha, spendTime, effStopping);
+    userAlpha, spendTime, effStopping
+  );
 
   return Rcpp::wrap(result);
 }
@@ -1156,8 +1162,6 @@ ListCpp getPower(
   // reusable buffers for prefixes
   std::vector<double> u1; u1.reserve(kMax);
   std::vector<double> l1; l1.reserve(kMax);
-  std::vector<double> theta1; theta1.reserve(kMax);
-  std::vector<double> I1; I1.reserve(kMax);
 
   auto f = [&](double x) -> double {
     // reset futility bounds
@@ -1165,7 +1169,6 @@ ListCpp getPower(
     double eps = 0.0;
 
     // first stage
-    int k = 0;
     double cb = errorSpentcpp(st[0], x, bsf, bsfpar); // cumulative beta spent
     if (!futilityStopping[0]) {
       a[0] = -6.0;
@@ -1175,38 +1178,31 @@ ListCpp getPower(
       a[0] = (boost_qnorm(cb) + thetaSqrtI0) / w[0];
     }
 
-    // lambda expression for finding futility bound at stage k
-    auto g = [&](double aval) -> double {
-      u1.resize(k + 1);
-      l1.resize(k + 1);
-      theta1.resize(k + 1);
-      I1.resize(k + 1);
-      if (k > 0) {
-        std::memcpy(u1.data(), u.data(), k * sizeof(double));
-        std::memcpy(l1.data(), l.data(), k * sizeof(double));
-      }
-      u1[k] = 6.0;
-      l1[k] = aval * w[k];
-
-      std::memcpy(theta1.data(), theta.data(), (k + 1) * sizeof(double));
-      std::memcpy(I1.data(), I.data(), (k + 1) * sizeof(double));
-
-      ListCpp probs = exitprobcpp(u1, l1, theta1, I1);
-      auto v = probs.get<std::vector<double>>("exitProbLower");
-      double cpl = std::accumulate(v.begin(), v.end(), 0.0);
-      return cpl - cb;
-    };
-
-    for (k = 1; k < kMax; ++k) {
+    // subsequent stages
+    for (int k = 1; k < kMax; ++k) {
       l[k-1] = a[k-1] * w[k-1];
       cb = errorSpentcpp(st[k], x, bsf, bsfpar);
       if (!futilityStopping[k]) {
         a[k] = -6.0;
       } else {
+        u1.resize(k + 1);
+        l1.resize(k + 1);
+        std::memcpy(u1.data(), u.data(), k * sizeof(double));
+        std::memcpy(l1.data(), l.data(), k * sizeof(double));
+        u1[k] = 6.0;
+
+        // lambda expression for finding futility bound at stage k
+        auto g = [&](double aval) -> double {
+          l1[k] = aval * w[k];
+          ListCpp probs = exitprobcpp(u1, l1, theta, I);
+          auto v = probs.get<std::vector<double>>("exitProbLower");
+          double cpl = std::accumulate(v.begin(), v.end(), 0.0);
+          return cpl - cb;
+        };
+
         double bk = b[k];
         eps = g(bk);
         double g_minus6 = g(-6.0);
-
         if (g_minus6 > 0.0) { // no beta spent at current visit
           a[k] = -6.0;
         } else if (eps > 0.0) {
@@ -1229,9 +1225,9 @@ ListCpp getPower(
   double beta = 0.0;
   ListCpp probs;
   if (v1 == -1.0 || (v1 < 0.0 && a[kMax-1] == 0.0)) {
-    throw std::invalid_argument("Power must be less than 0.9999.");
+    throw std::invalid_argument("Power must be less than 0.9999");
   } else if (v2 > 0.0) {
-    throw std::invalid_argument("Power must be greater than alpha.");
+    throw std::invalid_argument("Power must be greater than alpha");
   } else {
     beta = brent(f, 0.0001, 1.0 - alpha, 1e-6);
     a[kMax-1] = b[kMax-1];
@@ -1332,7 +1328,7 @@ std::pair<double, double> mini(
     const std::function<double(double)>& f, double x1, double x2) {
 
   // Validate inputs
-  if (!(x1 < x2)) throw std::invalid_argument("mini: require x1 < x2.");
+  if (!(x1 < x2)) throw std::invalid_argument("mini: require x1 < x2");
 
   // Use Boost's brent_find_minima
   return boost::math::tools::brent_find_minima(
@@ -1622,9 +1618,10 @@ double upper_pfs(const std::vector<double>& piecewiseSurvivalTime,
                  const double rho_pd_os) {
   double tol = 1e-12;
   double upper = 1.0;
-  while (sdf_pfs(upper, piecewiseSurvivalTime,
-                 hazard_pd, hazard_os, rho_pd_os) > tol) {
+  double p = sdf_pfs(upper, piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
+  while (p > tol) {
     upper *= 2.0;
+    p = sdf_pfs(upper, piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
   }
   return upper;
 }
@@ -1912,7 +1909,7 @@ std::vector<double> patrisk(const std::vector<double>& time,
   } else if (lambda.size() == J) {
     lambdax = lambda;
   } else {
-    throw std::invalid_argument("Invalid length for lambda.");
+    throw std::invalid_argument("Invalid length for lambda");
   }
 
   if (gamma.size() == 1) {
@@ -1920,7 +1917,7 @@ std::vector<double> patrisk(const std::vector<double>& time,
   } else if (gamma.size() == J) {
     gammax = gamma;
   } else {
-    throw std::invalid_argument("Invalid length for gamma.");
+    throw std::invalid_argument("Invalid length for gamma");
   }
 
   // Cumulative hazards for lambda + gamma
@@ -1993,7 +1990,7 @@ std::vector<double> pevent(const std::vector<double>& time,
   } else if (lambda.size() == J) {
     lambdax = lambda;
   } else {
-    throw std::invalid_argument("Invalid length for lambda.");
+    throw std::invalid_argument("Invalid length for lambda");
   }
 
   if (gamma.size() == 1) {
@@ -2001,7 +1998,7 @@ std::vector<double> pevent(const std::vector<double>& time,
   } else if (gamma.size() == J) {
     gammax = gamma;
   } else {
-    throw std::invalid_argument("Invalid length for gamma.");
+    throw std::invalid_argument("Invalid length for gamma");
   }
 
   // Compute lambda + gamma
@@ -2097,7 +2094,7 @@ double hd(const int j,
   } else if (lambda.size() == J) {
     lambdax = lambda;
   } else {
-    throw std::invalid_argument("Invalid length for lambda.");
+    throw std::invalid_argument("Invalid length for lambda");
   }
 
   if (gamma.size() == 1) {
@@ -2105,7 +2102,7 @@ double hd(const int j,
   } else if (gamma.size() == J) {
     gammax = gamma;
   } else {
-    throw std::invalid_argument("Invalid length for gamma.");
+    throw std::invalid_argument("Invalid length for gamma");
   }
 
   // Compute total hazard (lambda + gamma)
@@ -2278,6 +2275,50 @@ std::vector<double> ad(const std::vector<double>& time,
   return a;
 }
 
+
+FlatMatrix natriskcpp(const std::vector<double>& time,
+                      const double allocationRatioPlanned,
+                      const std::vector<double>& accrualTime,
+                      const std::vector<double>& accrualIntensity,
+                      const std::vector<double>& piecewiseSurvivalTime,
+                      const std::vector<double>& lambda1,
+                      const std::vector<double>& lambda2,
+                      const std::vector<double>& gamma1,
+                      const std::vector<double>& gamma2,
+                      const double accrualDuration,
+                      const double minFollowupTime,
+                      const double maxFollowupTime) {
+
+  std::size_t k = time.size();
+
+  // truncate the analysis time by the maximum follow-up
+  std::vector<double> t(k), u(k);
+  for (std::size_t i = 0; i < k; ++i) {
+    t[i] = std::min(time[i], maxFollowupTime);
+    u[i] = std::min(accrualDuration + minFollowupTime - t[i], accrualDuration);
+  }
+
+  // Number of patients enrolled
+  std::vector<double> a = accrual(u, accrualTime, accrualIntensity, accrualDuration);
+
+  // Probability of randomization to the active treatment group
+  double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
+
+  FlatMatrix n(k, 2);  // FlatMatrix with column-major storage
+
+  // Compute probabilities for the active and control groups
+  std::vector<double> patrisk1 = patrisk(t, piecewiseSurvivalTime, lambda1, gamma1);
+  std::vector<double> patrisk2 = patrisk(t, piecewiseSurvivalTime, lambda2, gamma2);
+
+  // Compute values for FlatMatrix directly
+  for (std::size_t i = 0; i < k; ++i) {
+    n(i, 0) = phi * a[i] * patrisk1[i];  // Patients at risk in active treatment
+    n(i, 1) = (1.0 - phi) * a[i] * patrisk2[i];  // Patients at risk in control
+  }
+
+  return n;
+}
+
 //' @title Number of Subjects at Risk
 //' @description Obtains the number of subjects at risk at given analysis
 //' times for each treatment group.
@@ -2315,86 +2356,39 @@ std::vector<double> ad(const std::vector<double>& time,
 //'
 //' @export
 // [[Rcpp::export]]
-FlatMatrix natrisk(const std::vector<double>& time,
-                   const double allocationRatioPlanned,
-                   const std::vector<double>& accrualTime,
-                   const std::vector<double>& accrualIntensity,
-                   const std::vector<double>& piecewiseSurvivalTime,
-                   const std::vector<double>& lambda1,
-                   const std::vector<double>& lambda2,
-                   const std::vector<double>& gamma1,
-                   const std::vector<double>& gamma2,
-                   const double accrualDuration,
-                   const double minFollowupTime,
-                   const double maxFollowupTime) {
+Rcpp::NumericMatrix natrisk(
+    const Rcpp::NumericVector& time = NA_REAL,
+    const double allocationRatioPlanned = 1,
+    const Rcpp::NumericVector& accrualTime = 0,
+    const Rcpp::NumericVector& accrualIntensity = NA_REAL,
+    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
+    const Rcpp::NumericVector& lambda1 = NA_REAL,
+    const Rcpp::NumericVector& lambda2 = NA_REAL,
+    const Rcpp::NumericVector& gamma1 = 0,
+    const Rcpp::NumericVector& gamma2 = 0,
+    const double accrualDuration = NA_REAL,
+    const double minFollowupTime = NA_REAL,
+    const double maxFollowupTime = NA_REAL) {
 
-  std::size_t k = time.size();
+  auto timecpp = Rcpp::as<std::vector<double>>(time);
+  auto accrualTimecpp = Rcpp::as<std::vector<double>>(accrualTime);
+  auto accrualIntensitycpp = Rcpp::as<std::vector<double>>(accrualIntensity);
+  auto piecewiseTimecpp = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto lambda1cpp = Rcpp::as<std::vector<double>>(lambda1);
+  auto lambda2cpp = Rcpp::as<std::vector<double>>(lambda2);
+  auto gamma1cpp = Rcpp::as<std::vector<double>>(gamma1);
+  auto gamma2cpp = Rcpp::as<std::vector<double>>(gamma2);
 
-  // truncate the analysis time by the maximum follow-up
-  std::vector<double> t(k), u(k);
-  for (std::size_t i = 0; i < k; ++i) {
-    t[i] = std::min(time[i], maxFollowupTime);
-    u[i] = std::min(accrualDuration + minFollowupTime - t[i], accrualDuration);
-  }
+  auto cpp_result = natriskcpp(
+    timecpp, allocationRatioPlanned, accrualTimecpp, accrualIntensitycpp,
+    piecewiseTimecpp, lambda1cpp, lambda2cpp, gamma1cpp, gamma2cpp,
+    accrualDuration, minFollowupTime, maxFollowupTime
+  );
 
-  // Number of patients enrolled
-  std::vector<double> a = accrual(u, accrualTime, accrualIntensity, accrualDuration);
-
-  // Probability of randomization to the active treatment group
-  double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
-
-  FlatMatrix n(k, 2);  // FlatMatrix with column-major storage
-
-  // Compute probabilities for the active and control groups
-  std::vector<double> patrisk1 = patrisk(t, piecewiseSurvivalTime, lambda1, gamma1);
-  std::vector<double> patrisk2 = patrisk(t, piecewiseSurvivalTime, lambda2, gamma2);
-
-  // Compute values for FlatMatrix directly
-  for (std::size_t i = 0; i < k; ++i) {
-    n(i, 0) = phi * a[i] * patrisk1[i];  // Patients at risk in active treatment
-    n(i, 1) = (1.0 - phi) * a[i] * patrisk2[i];  // Patients at risk in control
-  }
-
-  return n;
+  return Rcpp::wrap(cpp_result);
 }
 
-//' @title Number of Subjects Having an Event
-//' @description Obtains the number of subjects having an event by given
-//' analysis times for each treatment group.
-//'
-//' @param time A vector of analysis times at which to calculate the number
-//'   of patients having an event.
-//' @inheritParams param_allocationRatioPlanned
-//' @inheritParams param_accrualTime
-//' @inheritParams param_accrualIntensity
-//' @inheritParams param_piecewiseSurvivalTime
-//' @inheritParams param_lambda1
-//' @inheritParams param_lambda2
-//' @inheritParams param_gamma1
-//' @inheritParams param_gamma2
-//' @inheritParams param_accrualDuration
-//' @inheritParams param_minFollowupTime
-//' @inheritParams param_maxFollowupTime
-//'
-//' @return A matrix of the number of patients having an event at the
-//' specified analysis times (row) for each treatment group (column).
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @examples
-//' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
-//' # the end of 1 year.
-//'
-//' nevent(time = c(9, 24), allocationRatioPlanned = 1,
-//'        accrualTime = c(0, 3), accrualIntensity = c(10, 20),
-//'        piecewiseSurvivalTime = c(0, 6),
-//'        lambda1 = c(0.0533, 0.0309), lambda2 = c(0.0533, 0.0533),
-//'        gamma1 = -log(1-0.05)/12, gamma2 = -log(1-0.05)/12,
-//'        accrualDuration = 12, minFollowupTime = 18,
-//'        maxFollowupTime = 30)
-//'
-//' @export
-// [[Rcpp::export]]
+
 FlatMatrix nevent(const std::vector<double>& time,
                   const double allocationRatioPlanned,
                   const std::vector<double>& accrualTime,
@@ -2450,11 +2444,11 @@ FlatMatrix nevent(const std::vector<double>& time,
   return d;
 }
 
-//' @title Number of Subjects Having an Event by Calendar Time
+//' @title Number of Subjects Having an Event
 //' @description Obtains the number of subjects having an event by given
-//' calendar times for each treatment group.
+//' analysis times for each treatment group.
 //'
-//' @param time A vector of calendar times at which to calculate the number
+//' @param time A vector of analysis times at which to calculate the number
 //'   of patients having an event.
 //' @inheritParams param_allocationRatioPlanned
 //' @inheritParams param_accrualTime
@@ -2469,23 +2463,57 @@ FlatMatrix nevent(const std::vector<double>& time,
 //' @inheritParams param_maxFollowupTime
 //'
 //' @return A matrix of the number of patients having an event at the
-//' specified calendar times (row) for each treatment group (column).
+//' specified analysis times (row) for each treatment group (column).
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
 //' @examples
 //' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
 //' # the end of 1 year.
-//' nevent2(time = c(9, 24), allocationRatioPlanned = 1,
-//'         accrualTime = c(0, 3), accrualIntensity = c(10, 20),
-//'         piecewiseSurvivalTime = c(0, 6),
-//'         lambda1 = c(0.0533, 0.0309), lambda2 = c(0.0533, 0.0533),
-//'         gamma1 = -log(1-0.05)/12, gamma2 = -log(1-0.05)/12,
-//'         accrualDuration = 12, minFollowupTime = 18,
-//'         maxFollowupTime = 30)
+//'
+//' nevent(time = c(9, 24), allocationRatioPlanned = 1,
+//'        accrualTime = c(0, 3), accrualIntensity = c(10, 20),
+//'        piecewiseSurvivalTime = c(0, 6),
+//'        lambda1 = c(0.0533, 0.0309), lambda2 = c(0.0533, 0.0533),
+//'        gamma1 = -log(1-0.05)/12, gamma2 = -log(1-0.05)/12,
+//'        accrualDuration = 12, minFollowupTime = 18,
+//'        maxFollowupTime = 30)
 //'
 //' @export
 // [[Rcpp::export]]
+Rcpp::NumericMatrix nevent(
+    const Rcpp::NumericVector& time = NA_REAL,
+    const double allocationRatioPlanned = 1,
+    const Rcpp::NumericVector& accrualTime = 0,
+    const Rcpp::NumericVector& accrualIntensity = NA_REAL,
+    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
+    const Rcpp::NumericVector& lambda1 = NA_REAL,
+    const Rcpp::NumericVector& lambda2 = NA_REAL,
+    const Rcpp::NumericVector& gamma1 = 0,
+    const Rcpp::NumericVector& gamma2 = 0,
+    const double accrualDuration = NA_REAL,
+    const double minFollowupTime = NA_REAL,
+    const double maxFollowupTime = NA_REAL) {
+
+  auto timecpp = Rcpp::as<std::vector<double>>(time);
+  auto accrualTimecpp = Rcpp::as<std::vector<double>>(accrualTime);
+  auto accrualIntensitycpp = Rcpp::as<std::vector<double>>(accrualIntensity);
+  auto piecewiseTimecpp = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto lambda1cpp = Rcpp::as<std::vector<double>>(lambda1);
+  auto lambda2cpp = Rcpp::as<std::vector<double>>(lambda2);
+  auto gamma1cpp = Rcpp::as<std::vector<double>>(gamma1);
+  auto gamma2cpp = Rcpp::as<std::vector<double>>(gamma2);
+
+  auto cpp_result = nevent(
+    timecpp, allocationRatioPlanned, accrualTimecpp, accrualIntensitycpp,
+    piecewiseTimecpp, lambda1cpp, lambda2cpp, gamma1cpp, gamma2cpp,
+    accrualDuration, minFollowupTime, maxFollowupTime
+  );
+
+  return Rcpp::wrap(cpp_result);
+}
+
+
 FlatMatrix nevent2(const std::vector<double>& time,
                    const double allocationRatioPlanned,
                    const std::vector<double>& accrualTime,
@@ -2546,6 +2574,74 @@ FlatMatrix nevent2(const std::vector<double>& time,
   return d;
 }
 
+//' @title Number of Subjects Having an Event by Calendar Time
+//' @description Obtains the number of subjects having an event by given
+//' calendar times for each treatment group.
+//'
+//' @param time A vector of calendar times at which to calculate the number
+//'   of patients having an event.
+//' @inheritParams param_allocationRatioPlanned
+//' @inheritParams param_accrualTime
+//' @inheritParams param_accrualIntensity
+//' @inheritParams param_piecewiseSurvivalTime
+//' @inheritParams param_lambda1
+//' @inheritParams param_lambda2
+//' @inheritParams param_gamma1
+//' @inheritParams param_gamma2
+//' @inheritParams param_accrualDuration
+//' @inheritParams param_minFollowupTime
+//' @inheritParams param_maxFollowupTime
+//'
+//' @return A matrix of the number of patients having an event at the
+//' specified calendar times (row) for each treatment group (column).
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @examples
+//' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
+//' # the end of 1 year.
+//' nevent2(time = c(9, 24), allocationRatioPlanned = 1,
+//'         accrualTime = c(0, 3), accrualIntensity = c(10, 20),
+//'         piecewiseSurvivalTime = c(0, 6),
+//'         lambda1 = c(0.0533, 0.0309), lambda2 = c(0.0533, 0.0533),
+//'         gamma1 = -log(1-0.05)/12, gamma2 = -log(1-0.05)/12,
+//'         accrualDuration = 12, minFollowupTime = 18,
+//'         maxFollowupTime = 30)
+//'
+//' @export
+// [[Rcpp::export]]
+Rcpp::NumericMatrix nevent2(
+    const Rcpp::NumericVector& time = NA_REAL,
+    const double allocationRatioPlanned = 1,
+    const Rcpp::NumericVector& accrualTime = 0,
+    const Rcpp::NumericVector& accrualIntensity = NA_REAL,
+    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
+    const Rcpp::NumericVector& lambda1 = NA_REAL,
+    const Rcpp::NumericVector& lambda2 = NA_REAL,
+    const Rcpp::NumericVector& gamma1 = 0,
+    const Rcpp::NumericVector& gamma2 = 0,
+    const double accrualDuration = NA_REAL,
+    const double minFollowupTime = NA_REAL,
+    const double maxFollowupTime = NA_REAL) {
+
+  auto timecpp = Rcpp::as<std::vector<double>>(time);
+  auto accrualTimecpp = Rcpp::as<std::vector<double>>(accrualTime);
+  auto accrualIntensitycpp = Rcpp::as<std::vector<double>>(accrualIntensity);
+  auto piecewiseTimecpp = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto lambda1cpp = Rcpp::as<std::vector<double>>(lambda1);
+  auto lambda2cpp = Rcpp::as<std::vector<double>>(lambda2);
+  auto gamma1cpp = Rcpp::as<std::vector<double>>(gamma1);
+  auto gamma2cpp = Rcpp::as<std::vector<double>>(gamma2);
+
+  auto cpp_result = nevent2(
+    timecpp, allocationRatioPlanned, accrualTimecpp, accrualIntensitycpp,
+    piecewiseTimecpp, lambda1cpp, lambda2cpp, gamma1cpp, gamma2cpp,
+    accrualDuration, minFollowupTime, maxFollowupTime
+  );
+
+  return Rcpp::wrap(cpp_result);
+}
+
 
 ListCpp getDesigncpp(const double beta,
                      const double IMax,
@@ -2568,27 +2664,27 @@ ListCpp getDesigncpp(const double beta,
 
   // ----------- Input Validation ----------- //
   if (std::isnan(beta) && std::isnan(IMax)) {
-    throw std::invalid_argument("beta and IMax cannot be missing simultaneously.");
+    throw std::invalid_argument("beta and IMax cannot be missing simultaneously");
   }
   if (!std::isnan(beta) && !std::isnan(IMax)) {
-    throw std::invalid_argument("Only one of beta and IMax should be provided.");
+    throw std::invalid_argument("Only one of beta and IMax should be provided");
   }
   if (!std::isnan(IMax) && IMax <= 0) {
     throw std::invalid_argument("IMax must be positive");
   }
   if (std::isnan(theta)) {
-    throw std::invalid_argument("theta must be provided.");
+    throw std::invalid_argument("theta must be provided");
   }
   if (kMax < 1) {
-    throw std::invalid_argument("kMax must be a positive integer.");
+    throw std::invalid_argument("kMax must be a positive integer");
   }
 
   // Alpha and Beta must be within valid ranges
   if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1)) {
-    throw std::invalid_argument("alpha must lie in [0.00001, 1).");
+    throw std::invalid_argument("alpha must lie in [0.00001, 1)");
   }
   if (!std::isnan(beta) && (beta >= 1 - alpha || beta < 0.0001)) {
-    throw std::invalid_argument("beta must lie in [0.0001, 1-alpha).");
+    throw std::invalid_argument("beta must lie in [0.0001, 1-alpha)");
   }
 
   std::string unknown = std::isnan(beta) ? "beta" : "IMax";
@@ -2597,13 +2693,13 @@ ListCpp getDesigncpp(const double beta,
   std::vector<double> infoRates(kMax);
   if (none_na(informationRates)) {
     if (static_cast<int>(informationRates.size()) != kMax)
-      throw std::invalid_argument("Invalid length for informationRates.");
+      throw std::invalid_argument("Invalid length for informationRates");
     if (informationRates[0] <= 0.0)
-      throw std::invalid_argument("informationRates must be positive.");
+      throw std::invalid_argument("informationRates must be positive");
     if (any_nonincreasing(informationRates))
-      throw std::invalid_argument("informationRates must be increasing.");
+      throw std::invalid_argument("informationRates must be increasing");
     if (informationRates[kMax-1] != 1.0)
-      throw std::invalid_argument("informationRates must end with 1.");
+      throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy
   } else {
     for (int i = 0; i < kMax; ++i)
@@ -2614,9 +2710,9 @@ ListCpp getDesigncpp(const double beta,
   std::vector<unsigned char> effStopping;
   if (none_na(efficacyStopping)) {
     if (static_cast<int>(efficacyStopping.size()) != kMax)
-      throw std::invalid_argument("Invalid length for efficacyStopping.");
+      throw std::invalid_argument("Invalid length for efficacyStopping");
     if (efficacyStopping[kMax-1] != 1)
-      throw std::invalid_argument("efficacyStopping must end with 1.");
+      throw std::invalid_argument("efficacyStopping must end with 1");
     effStopping = efficacyStopping; // copy
   } else {
     effStopping.assign(kMax, 1);
@@ -2626,9 +2722,9 @@ ListCpp getDesigncpp(const double beta,
   std::vector<unsigned char> futStopping;
   if (none_na(futilityStopping)) {
     if (static_cast<int>(futilityStopping.size()) != kMax)
-      throw std::invalid_argument("Invalid length for futilityStopping.");
+      throw std::invalid_argument("Invalid length for futilityStopping");
     if (futilityStopping[kMax-1] != 1)
-      throw std::invalid_argument("futilityStopping must end with 1.");
+      throw std::invalid_argument("futilityStopping must end with 1");
     futStopping = futilityStopping; // copy
   } else {
     futStopping.assign(kMax, 1);
@@ -2639,11 +2735,11 @@ ListCpp getDesigncpp(const double beta,
 
   if (!missingCriticalValues) {
     if (static_cast<int>(criticalValues.size()) != kMax) {
-      throw std::invalid_argument("Invalid length for criticalValues.");
+      throw std::invalid_argument("Invalid length for criticalValues");
     }
   }
   if (missingCriticalValues && std::isnan(alpha)) {
-    throw std::invalid_argument("alpha must be provided for missing criticalValues.");
+    throw std::invalid_argument("alpha must be provided for missing criticalValues");
   }
 
   std::string asf = typeAlphaSpending;
@@ -2654,45 +2750,45 @@ ListCpp getDesigncpp(const double beta,
   if (missingCriticalValues && !(asf == "of" || asf == "p" ||
       asf == "wt" || asf == "sfof" || asf == "sfp" ||
       asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
-    throw std::invalid_argument("Invalid value for typeAlphaSpending.");
+    throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
       std::isnan(parameterAlphaSpending)) {
-    throw std::invalid_argument("Missing value for parameterAlphaSpending.");
+    throw std::invalid_argument("Missing value for parameterAlphaSpending");
   }
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD.");
+    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
   }
 
   if (missingCriticalValues && asf == "user") {
     if (!none_na(userAlphaSpending))
-      throw std::invalid_argument("userAlphaSpending must be specified.");
+      throw std::invalid_argument("userAlphaSpending must be specified");
     if (static_cast<int>(userAlphaSpending.size()) < kMax)
-      throw std::invalid_argument("Insufficient length of userAlphaSpending.");
+      throw std::invalid_argument("Insufficient length of userAlphaSpending");
     if (userAlphaSpending[0] < 0.0)
-      throw std::invalid_argument("userAlphaSpending must be nonnegative.");
+      throw std::invalid_argument("userAlphaSpending must be nonnegative");
     if (any_nonincreasing(userAlphaSpending))
-      throw std::invalid_argument("userAlphaSpending must be nondecreasing.");
+      throw std::invalid_argument("userAlphaSpending must be nondecreasing");
     if (userAlphaSpending[kMax-1] != alpha)
-      throw std::invalid_argument("userAlphaSpending must end with specified alpha.");
+      throw std::invalid_argument("userAlphaSpending must end with specified alpha");
   }
 
   if (!missingFutilityBounds) {
     if (!(static_cast<int>(futilityBounds.size()) == kMax - 1 ||
         static_cast<int>(futilityBounds.size()) == kMax)) {
-      throw std::invalid_argument("Invalid length for futilityBounds.");
+      throw std::invalid_argument("Invalid length for futilityBounds");
     }
   }
   if (!missingCriticalValues && !missingFutilityBounds) {
     for (int i = 0; i < kMax - 1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
-        throw std::invalid_argument("futilityBounds must lie below criticalValues.");
+        throw std::invalid_argument("futilityBounds must lie below criticalValues");
       }
     }
     if (static_cast<int>(futilityBounds.size()) == kMax &&
         futilityBounds[kMax-1] != criticalValues[kMax-1]) {
       throw std::invalid_argument(
-          "futilityBounds must meet criticalValues at the final look.");
+          "futilityBounds must meet criticalValues at the final look");
     }
   }
 
@@ -2704,52 +2800,52 @@ ListCpp getDesigncpp(const double beta,
   if (unknown == "IMax") {
     if (missingFutilityBounds && !(bsf == "sfof" || bsf == "sfp" ||
         bsf == "sfkd" || bsf == "sfhsd" || bsf == "user" || bsf == "none")) {
-      throw std::invalid_argument("Invalid value for typeBetaSpending.");
+      throw std::invalid_argument("Invalid value for typeBetaSpending");
     }
   } else {
     if (missingFutilityBounds && !(bsf == "sfof" || bsf == "sfp" ||
         bsf == "sfkd" || bsf == "sfhsd" || bsf == "none")) {
-      throw std::invalid_argument("Invalid value for typeBetaSpending.");
+      throw std::invalid_argument("Invalid value for typeBetaSpending");
     }
   }
 
   if ((bsf == "sfkd" || bsf == "sfhsd") && std::isnan(parameterBetaSpending)) {
-    throw std::invalid_argument("Missing value for parameterBetaSpending.");
+    throw std::invalid_argument("Missing value for parameterBetaSpending");
   }
   if (bsf == "sfkd" && parameterBetaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterBetaSpending must be positive for sfKD.");
+    throw std::invalid_argument ("parameterBetaSpending must be positive for sfKD");
   }
 
   if (unknown == "IMax" && bsf == "user") {
     if (!none_na(userBetaSpending))
-      throw std::invalid_argument("userBetaSpending must be specified.");
+      throw std::invalid_argument("userBetaSpending must be specified");
     if (static_cast<int>(userBetaSpending.size()) < kMax)
-      throw std::invalid_argument("Insufficient length of userBetaSpending.");
+      throw std::invalid_argument("Insufficient length of userBetaSpending");
     if (userBetaSpending[0] < 0.0)
-      throw std::invalid_argument("userBetaSpending must be nonnegative.");
+      throw std::invalid_argument("userBetaSpending must be nonnegative");
     if (any_nonincreasing(userBetaSpending))
-      throw std::invalid_argument("userBetaSpending must be nondecreasing.");
+      throw std::invalid_argument("userBetaSpending must be nondecreasing");
     if (userBetaSpending[kMax-1] != beta)
-      throw std::invalid_argument("userBetaSpending must end with specified beta.");
+      throw std::invalid_argument("userBetaSpending must end with specified beta");
   }
 
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
     if (static_cast<int>(spendingTime.size()) != kMax)
-      throw std::invalid_argument("Invalid length for spendingTime.");
+      throw std::invalid_argument("Invalid length for spendingTime");
     if (spendingTime[0] <= 0.0)
-      throw std::invalid_argument("spendingTime must be positive.");
+      throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
-      throw std::invalid_argument("spendingTime must be increasing.");
+      throw std::invalid_argument("spendingTime must be increasing");
     if (spendingTime[kMax-1] != 1.0)
-      throw std::invalid_argument("spendingTime must end with 1.");
+      throw std::invalid_argument("spendingTime must end with 1");
     spendTime = spendingTime; // copy
   } else {
     spendTime = infoRates;
   }
 
   if (varianceRatio <= 0.0) {
-    throw std::invalid_argument("varianceRatio must be positive.");
+    throw std::invalid_argument("varianceRatio must be positive");
   }
   // ----------- End of Input Validation ----------- //
 
@@ -2826,8 +2922,6 @@ ListCpp getDesigncpp(const double beta,
   if (unknown == "IMax") {
     std::vector<double> u1; u1.reserve(kMax);
     std::vector<double> l1; l1.reserve(kMax);
-    std::vector<double> delta1; delta1.reserve(kMax);
-    std::vector<double> I1; I1.reserve(kMax);
     double sqrtt0 = std::sqrt(infoRates[0]);
 
     auto f = [&](double aval)->double {
@@ -2848,7 +2942,6 @@ ListCpp getDesigncpp(const double beta,
         double eps = 0.0;
 
         // first stage
-        int k = 0;
         double cb = (bsf == "user") ? userBetaSpending[0] :
           errorSpentcpp(spendTime[0], beta, bsf, parameterBetaSpending);
 
@@ -2861,30 +2954,8 @@ ListCpp getDesigncpp(const double beta,
           futBounds[0] = (boost_qnorm(cb) + dt0) / w[0];
         }
 
-        // lambda expression for finding futility bound at stage k
-        auto g = [&](double aval)->double {
-          u1.resize(k + 1);
-          l1.resize(k + 1);
-          delta1.resize(k + 1);
-          I1.resize(k + 1);
-
-          if (k > 0) {
-            std::memcpy(u1.data(), u.data(), k * sizeof(double));
-            std::memcpy(l1.data(), l.data(), k * sizeof(double));
-          }
-          u1[k] = 6.0;
-          l1[k] = aval * w[k];
-
-          std::memcpy(delta1.data(), delta.data(), (k + 1) * sizeof(double));
-          std::memcpy(I1.data(), infoRates.data(), (k + 1) * sizeof(double));
-
-          ListCpp probs = exitprobcpp(u1, l1, delta1, I1);
-          auto v = probs.get<std::vector<double>>("exitProbLower");
-          double cpl = std::accumulate(v.begin(), v.end(), 0.0);
-          return cpl - cb;
-        };
-
-        for (k = 1; k < kMax; ++k) {
+        // subsequent stages
+        for (int k = 1; k < kMax; ++k) {
           l[k-1] = futBounds[k-1] * w[k-1];
           cb = (bsf == "user") ? userBetaSpending[k] :
             errorSpentcpp(spendTime[k], beta, bsf, parameterBetaSpending);
@@ -2892,6 +2963,22 @@ ListCpp getDesigncpp(const double beta,
           if (!futStopping[k]) {
             futBounds[k] = -6.0;
           } else {
+            u1.resize(k + 1);
+            l1.resize(k + 1);
+
+            std::memcpy(u1.data(), u.data(), k * sizeof(double));
+            u1[k] = 6.0;
+            std::memcpy(l1.data(), l.data(), k * sizeof(double));
+
+            // lambda expression for finding futility bound at stage k
+            auto g = [&](double aval)->double {
+              l1[k] = aval * w[k];
+              ListCpp probs = exitprobcpp(u1, l1, delta, infoRates);
+              auto v = probs.get<std::vector<double>>("exitProbLower");
+              double cpl = std::accumulate(v.begin(), v.end(), 0.0);
+              return cpl - cb;
+            };
+
             double bk = critValues[k];
             eps = g(bk);
             double g_minus6 = g(-6.0);
@@ -3172,7 +3259,7 @@ ListCpp getDesigncpp(const double beta,
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
 //' @references
-//' Chrithrow std::invalid_argumenther Jennison, Bruce W. Turnbull.
+//' Christopher Jennison, Bruce W. Turnbull.
 //' Group Sequential Methods with Applications to Clinical Trials.
 //' Chapman & Hall/CRC: Boca Raton, 2000, ISBN:0849303168
 //'
@@ -3223,14 +3310,15 @@ Rcpp::List getDesign(
   auto userBeta = Rcpp::as<std::vector<double>>(userBetaSpending);
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
 
-  ListCpp result = getDesigncpp(
+  auto cpp_result = getDesigncpp(
     beta, IMax, theta, kMax, infoRates, effStopping, futStopping, critValues,
     alpha, typeAlphaSpending, parameterAlphaSpending, userAlpha, futBounds,
-    typeBetaSpending, parameterBetaSpending, userBeta, spendTime, varianceRatio);
+    typeBetaSpending, parameterBetaSpending, userBeta, spendTime, varianceRatio
+  );
 
-  Rcpp::List resultR = Rcpp::wrap(result);
-  resultR.attr("class") = "design";
-  return resultR;
+  Rcpp::List result = Rcpp::wrap(cpp_result);
+  result.attr("class") = "design";
+  return result;
 }
 
 
@@ -3250,39 +3338,39 @@ ListCpp getDesignEquivcpp(const double beta,
 
   // ----------- Input Validation ----------- //
   if (std::isnan(beta) && std::isnan(IMax)) {
-    throw std::invalid_argument("beta and IMax cannot be missing simultaneously.");
+    throw std::invalid_argument("beta and IMax cannot be missing simultaneously");
   }
   if (!std::isnan(beta) && !std::isnan(IMax)) {
-    throw std::invalid_argument("Only one of beta and IMax should be provided.");
+    throw std::invalid_argument("Only one of beta and IMax should be provided");
   }
   if (!std::isnan(IMax) && IMax <= 0) {
-    throw std::invalid_argument("IMax must be positive.");
+    throw std::invalid_argument("IMax must be positive");
   }
   if (std::isnan(theta)) {
-    throw std::invalid_argument("theta must be provided.");
+    throw std::invalid_argument("theta must be provided");
   }
   if (std::isnan(thetaLower)) {
-    throw std::invalid_argument("thetaLower must be provided.");
+    throw std::invalid_argument("thetaLower must be provided");
   }
   if (std::isnan(thetaUpper)) {
-    throw std::invalid_argument("thetaUpper must be provided.");
+    throw std::invalid_argument("thetaUpper must be provided");
   }
   if (thetaLower >= theta) {
-    throw std::invalid_argument("thetaLower must be less than theta.");
+    throw std::invalid_argument("thetaLower must be less than theta");
   }
   if (thetaUpper <= theta) {
-    throw std::invalid_argument("thetaUpper must be greater than theta.");
+    throw std::invalid_argument("thetaUpper must be greater than theta");
   }
   if (kMax < 1) {
-    throw std::invalid_argument("kMax must be a positive integer.");
+    throw std::invalid_argument("kMax must be a positive integer");
   }
 
   // Alpha and Beta must be within valid ranges
   if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1)) {
-    throw std::invalid_argument("alpha must lie in [0.00001, 1).");
+    throw std::invalid_argument("alpha must lie in [0.00001, 1)");
   }
   if (!std::isnan(beta) && (beta >= 1 - alpha || beta < 0.0001)) {
-    throw std::invalid_argument("beta must lie in [0.0001, 1-alpha).");
+    throw std::invalid_argument("beta must lie in [0.0001, 1-alpha)");
   }
 
   std::string unknown = std::isnan(beta) ? "beta" : "IMax";
@@ -3292,13 +3380,13 @@ ListCpp getDesignEquivcpp(const double beta,
   std::vector<double> infoRates(kMax);
   if (none_na(informationRates)) {
     if (static_cast<int>(informationRates.size()) != kMax)
-      throw std::invalid_argument("Invalid length for informationRates.");
+      throw std::invalid_argument("Invalid length for informationRates");
     if (informationRates[0] <= 0.0)
-      throw std::invalid_argument("informationRates must be positive.");
+      throw std::invalid_argument("informationRates must be positive");
     if (any_nonincreasing(informationRates))
-      throw std::invalid_argument("informationRates must be increasing.");
+      throw std::invalid_argument("informationRates must be increasing");
     if (informationRates[kMax-1] != 1.0)
-      throw std::invalid_argument("informationRates must end with 1.");
+      throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy
   } else {
     for (int i = 0; i < kMax; ++i)
@@ -3310,11 +3398,11 @@ ListCpp getDesignEquivcpp(const double beta,
 
   if (!missingCriticalValues) {
     if (static_cast<int>(criticalValues.size()) != kMax) {
-      throw std::invalid_argument("Invalid length for criticalValues.");
+      throw std::invalid_argument("Invalid length for criticalValues");
     }
   }
   if (missingCriticalValues && std::isnan(alpha)) {
-    throw std::invalid_argument("alpha must be provided for missing criticalValues.");
+    throw std::invalid_argument("alpha must be provided for missing criticalValues");
   }
 
   std::string asf = typeAlphaSpending;
@@ -3325,39 +3413,39 @@ ListCpp getDesignEquivcpp(const double beta,
   if (missingCriticalValues && !(asf == "of" || asf == "p" ||
       asf == "wt" || asf == "sfof" || asf == "sfp" ||
       asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
-    throw std::invalid_argument("Invalid value for typeAlphaSpending.");
+    throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
       std::isnan(parameterAlphaSpending)) {
-    throw std::invalid_argument("Missing value for parameterAlphaSpending.");
+    throw std::invalid_argument("Missing value for parameterAlphaSpending");
   }
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD.");
+    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
   }
 
   if (missingCriticalValues && asf == "user") {
     if (!none_na(userAlphaSpending))
-      throw std::invalid_argument("userAlphaSpending must be specified.");
+      throw std::invalid_argument("userAlphaSpending must be specified");
     if (static_cast<int>(userAlphaSpending.size()) < kMax)
-      throw std::invalid_argument("Insufficient length of userAlphaSpending.");
+      throw std::invalid_argument("Insufficient length of userAlphaSpending");
     if (userAlphaSpending[0] < 0.0)
-      throw std::invalid_argument("userAlphaSpending must be nonnegative.");
+      throw std::invalid_argument("userAlphaSpending must be nonnegative");
     if (any_nonincreasing(userAlphaSpending))
-      throw std::invalid_argument("userAlphaSpending must be nondecreasing.");
+      throw std::invalid_argument("userAlphaSpending must be nondecreasing");
     if (userAlphaSpending[kMax-1] != alpha)
-      throw std::invalid_argument("userAlphaSpending must end with specified alpha.");
+      throw std::invalid_argument("userAlphaSpending must end with specified alpha");
   }
 
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
     if (static_cast<int>(spendingTime.size()) != kMax)
-      throw std::invalid_argument("Invalid length for spendingTime.");
+      throw std::invalid_argument("Invalid length for spendingTime");
     if (spendingTime[0] <= 0.0)
-      throw std::invalid_argument("spendingTime must be positive.");
+      throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
-      throw std::invalid_argument("spendingTime must be increasing.");
+      throw std::invalid_argument("spendingTime must be increasing");
     if (spendingTime[kMax-1] != 1.0)
-      throw std::invalid_argument("spendingTime must end with 1.");
+      throw std::invalid_argument("spendingTime must end with 1");
     spendTime = spendingTime; // copy
   } else {
     spendTime = infoRates;
@@ -3867,13 +3955,14 @@ Rcpp::List getDesignEquiv(
   auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
 
-  ListCpp result = getDesignEquivcpp(
+  auto cpp_result = getDesignEquivcpp(
     beta, IMax, thetaLower, thetaUpper, theta, kMax, infoRates, critValues,
-    alpha, typeAlphaSpending, parameterAlphaSpending, userAlpha, spendTime);
+    alpha, typeAlphaSpending, parameterAlphaSpending, userAlpha, spendTime
+  );
 
-  Rcpp::List resultR = Rcpp::wrap(result);
-  resultR.attr("class") = "designEquiv";
-  return resultR;
+  Rcpp::List result = Rcpp::wrap(cpp_result);
+  result.attr("class") = "designEquiv";
+  return result;
 }
 
 
@@ -3911,49 +4000,49 @@ ListCpp adaptDesigncpp(double betaNew,
 
   // ----------- Input Validation ----------- //
   if (std::isnan(betaNew) && std::isnan(INew)) {
-    throw std::invalid_argument("betaNew and INew cannot be missing simultaneously.");
+    throw std::invalid_argument("betaNew and INew cannot be missing simultaneously");
   }
   if (!std::isnan(betaNew) && !std::isnan(INew)) {
-    throw std::invalid_argument("Only one of betaNew and INew should be provided.");
+    throw std::invalid_argument("Only one of betaNew and INew should be provided");
   }
   if (!std::isnan(INew) && INew <= 0.0) {
-    throw std::invalid_argument("INew must be positive.");
+    throw std::invalid_argument("INew must be positive");
   }
   if (std::isnan(theta)) {
-    throw std::invalid_argument("theta must be provided.");
+    throw std::invalid_argument("theta must be provided");
   }
   if (L < 1) {
-    throw std::invalid_argument("L must be a positive integer.");
+    throw std::invalid_argument("L must be a positive integer");
   }
   if (std::isnan(zL)) {
-    throw std::invalid_argument("zL must be provided.");
+    throw std::invalid_argument("zL must be provided");
   }
   if (kMax < 1) {
-    throw std::invalid_argument("kMax must be a positive integer.");
+    throw std::invalid_argument("kMax must be a positive integer");
   }
   if (kMax <= L) {
-    throw std::invalid_argument("kMax must be greater than L.");
+    throw std::invalid_argument("kMax must be greater than L");
   }
 
   // Alpha and Beta must be within valid ranges
   if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1)) {
-    throw std::invalid_argument("alpha must lie in [0.00001, 1).");
+    throw std::invalid_argument("alpha must lie in [0.00001, 1)");
   }
   if (!std::isnan(betaNew) && (betaNew < 0.0001 || betaNew >= 1)) {
-    throw std::invalid_argument("betaNew must lie in [0.0001, 1).");
+    throw std::invalid_argument("betaNew must lie in [0.0001, 1)");
   }
 
   // informationRates: default to (1:kMax)/kMax if missing
   std::vector<double> infoRates(kMax);
   if (none_na(informationRates)) {
     if (static_cast<int>(informationRates.size()) != kMax)
-      throw std::invalid_argument("Invalid length for informationRates.");
+      throw std::invalid_argument("Invalid length for informationRates");
     if (informationRates[0] <= 0.0)
-      throw std::invalid_argument("informationRates must be positive.");
+      throw std::invalid_argument("informationRates must be positive");
     if (any_nonincreasing(informationRates))
-      throw std::invalid_argument("informationRates must be increasing.");
+      throw std::invalid_argument("informationRates must be increasing");
     if (informationRates[kMax-1] != 1.0)
-      throw std::invalid_argument("informationRates must end with 1.");
+      throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy
   } else {
     for (int i = 0; i < kMax; ++i)
@@ -3964,9 +4053,9 @@ ListCpp adaptDesigncpp(double betaNew,
   std::vector<unsigned char> effStopping;
   if (none_na(efficacyStopping)) {
     if (static_cast<int>(efficacyStopping.size()) != kMax)
-      throw std::invalid_argument("Invalid length for efficacyStopping.");
+      throw std::invalid_argument("Invalid length for efficacyStopping");
     if (efficacyStopping[kMax-1] != 1)
-      throw std::invalid_argument("efficacyStopping must end with 1.");
+      throw std::invalid_argument("efficacyStopping must end with 1");
     effStopping = efficacyStopping; // copy
   } else {
     effStopping.assign(kMax, 1);
@@ -3976,9 +4065,9 @@ ListCpp adaptDesigncpp(double betaNew,
   std::vector<unsigned char> futStopping;
   if (none_na(futilityStopping)) {
     if (static_cast<int>(futilityStopping.size()) != kMax)
-      throw std::invalid_argument("Invalid length for futilityStopping.");
+      throw std::invalid_argument("Invalid length for futilityStopping");
     if (futilityStopping[kMax-1] != 1)
-      throw std::invalid_argument("futilityStopping must end with 1.");
+      throw std::invalid_argument("futilityStopping must end with 1");
     futStopping = futilityStopping; // copy
   } else {
     futStopping.assign(kMax, 1);
@@ -3989,11 +4078,11 @@ ListCpp adaptDesigncpp(double betaNew,
 
   if (!missingCriticalValues) {
     if (static_cast<int>(criticalValues.size()) != kMax) {
-      throw std::invalid_argument("Invalid length for criticalValues.");
+      throw std::invalid_argument("Invalid length for criticalValues");
     }
   }
   if (missingCriticalValues && std::isnan(alpha)) {
-    throw std::invalid_argument("alpha must be provided for missing criticalValues.");
+    throw std::invalid_argument("alpha must be provided for missing criticalValues");
   }
 
   std::string asf = typeAlphaSpending;
@@ -4004,45 +4093,45 @@ ListCpp adaptDesigncpp(double betaNew,
   if (missingCriticalValues && !(asf == "of" || asf == "p" ||
       asf == "wt" || asf == "sfof" || asf == "sfp" ||
       asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
-    throw std::invalid_argument("Invalid value for typeAlphaSpending.");
+    throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
       std::isnan(parameterAlphaSpending)) {
-    throw std::invalid_argument("Missing value for parameterAlphaSpending.");
+    throw std::invalid_argument("Missing value for parameterAlphaSpending");
   }
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD.");
+    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
   }
 
   if (missingCriticalValues && asf == "user") {
     if (!none_na(userAlphaSpending))
-      throw std::invalid_argument("userAlphaSpending must be specified.");
+      throw std::invalid_argument("userAlphaSpending must be specified");
     if (static_cast<int>(userAlphaSpending.size()) < kMax)
-      throw std::invalid_argument("Insufficient length of userAlphaSpending.");
+      throw std::invalid_argument("Insufficient length of userAlphaSpending");
     if (userAlphaSpending[0] < 0.0)
-      throw std::invalid_argument("userAlphaSpending must be nonnegative.");
+      throw std::invalid_argument("userAlphaSpending must be nonnegative");
     if (any_nonincreasing(userAlphaSpending))
-      throw std::invalid_argument("userAlphaSpending must be nondecreasing.");
+      throw std::invalid_argument("userAlphaSpending must be nondecreasing");
     if (userAlphaSpending[kMax-1] != alpha)
-      throw std::invalid_argument("userAlphaSpending must end with specified alpha.");
+      throw std::invalid_argument("userAlphaSpending must end with specified alpha");
   }
 
   if (!missingFutilityBounds) {
     if (!(static_cast<int>(futilityBounds.size()) == kMax - 1 ||
         static_cast<int>(futilityBounds.size()) == kMax)) {
-      throw std::invalid_argument("Invalid length for futilityBounds.");
+      throw std::invalid_argument("Invalid length for futilityBounds");
     }
   }
   if (!missingCriticalValues && !missingFutilityBounds) {
     for (int i = 0; i < kMax - 1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
-        throw std::invalid_argument("futilityBounds must lie below criticalValues.");
+        throw std::invalid_argument("futilityBounds must lie below criticalValues");
       }
     }
     if (static_cast<int>(futilityBounds.size()) == kMax &&
         futilityBounds[kMax-1] != criticalValues[kMax-1]) {
       throw std::invalid_argument(
-          "futilityBounds must meet criticalValues at the final look.");
+          "futilityBounds must meet criticalValues at the final look");
     }
   }
 
@@ -4053,26 +4142,26 @@ ListCpp adaptDesigncpp(double betaNew,
 
   if (missingFutilityBounds && !(bsf == "sfof" || bsf == "sfp" ||
       bsf == "sfkd" || bsf == "sfhsd" || bsf == "none")) {
-    throw std::invalid_argument("Invalid value for typeBetaSpending.");
+    throw std::invalid_argument("Invalid value for typeBetaSpending");
   }
 
   if ((bsf == "sfkd" || bsf == "sfhsd") && std::isnan(parameterBetaSpending)) {
-    throw std::invalid_argument("Missing value for parameterBetaSpending.");
+    throw std::invalid_argument("Missing value for parameterBetaSpending");
   }
   if (bsf == "sfkd" && parameterBetaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterBetaSpending must be positive for sfKD.");
+    throw std::invalid_argument ("parameterBetaSpending must be positive for sfKD");
   }
 
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
     if (static_cast<int>(spendingTime.size()) != kMax)
-      throw std::invalid_argument("Invalid length for spendingTime.");
+      throw std::invalid_argument("Invalid length for spendingTime");
     if (spendingTime[0] <= 0.0)
-      throw std::invalid_argument("spendingTime must be positive.");
+      throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
-      throw std::invalid_argument("spendingTime must be increasing.");
+      throw std::invalid_argument("spendingTime must be increasing");
     if (spendingTime[kMax-1] != 1.0)
-      throw std::invalid_argument("spendingTime must end with 1.");
+      throw std::invalid_argument("spendingTime must end with 1");
     spendTime = spendingTime; // copy
   } else {
     spendTime = infoRates;
@@ -4096,20 +4185,20 @@ ListCpp adaptDesigncpp(double betaNew,
 
   if (MullerSchafer) {
     if (kNew < 1) {
-      throw std::invalid_argument("kNew must be a positive integer.");
+      throw std::invalid_argument("kNew must be a positive integer");
     }
 
     // informationRatesNew: default to (1:kNew)/kNew if missing
     infoRatesNew.resize(kNew);
     if (none_na(informationRatesNew)) {
       if (static_cast<int>(informationRatesNew.size()) != kNew)
-        throw std::invalid_argument("Invalid length for informationRatesNew.");
+        throw std::invalid_argument("Invalid length for informationRatesNew");
       if (informationRatesNew[0] <= 0.0)
-        throw std::invalid_argument("informationRatesNew must be positive.");
+        throw std::invalid_argument("informationRatesNew must be positive");
       if (any_nonincreasing(informationRatesNew))
-        throw std::invalid_argument("informationRatesNew must be increasing.");
+        throw std::invalid_argument("informationRatesNew must be increasing");
       if (informationRatesNew[kNew-1] != 1.0)
-        throw std::invalid_argument("informationRatesNew must end with 1.");
+        throw std::invalid_argument("informationRatesNew must end with 1");
       infoRatesNew = informationRatesNew; // copy
     } else {
       for (int i = 0; i < kNew; ++i)
@@ -4119,9 +4208,9 @@ ListCpp adaptDesigncpp(double betaNew,
     // effStoppingNew: default to all 1s if missing
     if (none_na(efficacyStoppingNew)) {
       if (static_cast<int>(efficacyStoppingNew.size()) != kNew)
-        throw std::invalid_argument("Invalid length for efficacyStoppingNew.");
+        throw std::invalid_argument("Invalid length for efficacyStoppingNew");
       if (efficacyStoppingNew[kNew-1] != 1)
-        throw std::invalid_argument("efficacyStoppingNew must end with 1.");
+        throw std::invalid_argument("efficacyStoppingNew must end with 1");
       effStoppingNew = efficacyStoppingNew; // copy
     } else {
       effStoppingNew.assign(kNew, 1);
@@ -4130,9 +4219,9 @@ ListCpp adaptDesigncpp(double betaNew,
     // futStoppingNew: default to all 1s if missing
     if (none_na(futilityStoppingNew)) {
       if (static_cast<int>(futilityStoppingNew.size()) != kNew)
-        throw std::invalid_argument("Invalid length for futilityStoppingNew.");
+        throw std::invalid_argument("Invalid length for futilityStoppingNew");
       if (futilityStoppingNew[kNew-1] != 1)
-        throw std::invalid_argument("futilityStoppingNew must end with 1.");
+        throw std::invalid_argument("futilityStoppingNew must end with 1");
       futStoppingNew = futilityStoppingNew; // copy
     } else {
       futStoppingNew.assign(kNew, 1);
@@ -4141,70 +4230,70 @@ ListCpp adaptDesigncpp(double betaNew,
     if (!(asfNew == "of" || asfNew == "p" || asfNew == "wt" ||
         asfNew == "sfof" || asfNew == "sfp" ||
         asfNew == "sfkd" || asfNew == "sfhsd" || asfNew == "none")) {
-      throw std::invalid_argument("Invalid value for typeAlphaSpendingNew.");
+      throw std::invalid_argument("Invalid value for typeAlphaSpendingNew");
     }
     if ((asfNew == "wt" || asfNew == "sfkd" || asfNew == "sfhsd") &&
         std::isnan(parameterAlphaSpendingNew)) {
-      throw std::invalid_argument("Missing value for parameterAlphaSpendingNew.");
+      throw std::invalid_argument("Missing value for parameterAlphaSpendingNew");
     }
     if (asfNew == "sfkd" && parameterAlphaSpendingNew <= 0.0) {
       throw std::invalid_argument (
-          "parameterAlphaSpendingNew must be positive for sfKD.");
+          "parameterAlphaSpendingNew must be positive for sfKD");
     }
 
     if (std::isnan(INew)) {
       if (!(bsfNew == "sfof" || bsfNew == "sfp" ||
           bsfNew == "sfkd" || bsfNew == "sfhsd" || bsfNew == "user" ||
           bsfNew == "none")) {
-        throw std::invalid_argument("Invalid value for typeBetaSpendingNew.");
+        throw std::invalid_argument("Invalid value for typeBetaSpendingNew");
       }
     } else {
       if (!(bsfNew == "sfof" || bsfNew == "sfp" ||
           bsfNew == "sfkd" || bsfNew == "sfhsd" || bsfNew == "none")) {
-        throw std::invalid_argument("Invalid value for typeBetaSpendingNew.");
+        throw std::invalid_argument("Invalid value for typeBetaSpendingNew");
       }
     }
 
     if ((bsfNew == "sfkd" || bsfNew == "sfhsd") &&
         std::isnan(parameterBetaSpendingNew)) {
-      throw std::invalid_argument("Missing value for parameterBetaSpendingNew.");
+      throw std::invalid_argument("Missing value for parameterBetaSpendingNew");
     }
     if (bsfNew == "sfkd" && parameterBetaSpendingNew <= 0.0) {
       throw std::invalid_argument(
-          "parameterBetaSpendingNew must be positive for sfKD.");
+          "parameterBetaSpendingNew must be positive for sfKD");
     }
 
     if (std::isnan(INew) && bsfNew == "user") {
       if (!none_na(userBetaSpendingNew))
-        throw std::invalid_argument("userBetaSpendingNew must be specified.");
+        throw std::invalid_argument("userBetaSpendingNew must be specified");
       if (static_cast<int>(userBetaSpendingNew.size()) < kNew)
-        throw std::invalid_argument("Insufficient length of userBetaSpendingNew.");
+        throw std::invalid_argument("Insufficient length of userBetaSpendingNew");
       if (userBetaSpendingNew[0] < 0.0)
-        throw std::invalid_argument("userBetaSpendingNew must be nonnegative.");
+        throw std::invalid_argument("userBetaSpendingNew must be nonnegative");
       if (any_nonincreasing(userBetaSpendingNew))
-        throw std::invalid_argument("userBetaSpendingNew must be nondecreasing.");
+        throw std::invalid_argument("userBetaSpendingNew must be nondecreasing");
       if (userBetaSpendingNew[kNew] != betaNew)
         throw std::invalid_argument(
-            "userBetaSpendingNew must end with specified betaNew.");
+            "userBetaSpendingNew must end with specified betaNew");
     }
 
     // spendingTimeNew: default to informationRatesNew if missing
     if (none_na(spendingTimeNew)) {
       if (static_cast<int>(spendingTimeNew.size()) != kNew)
-        throw std::invalid_argument("Invalid length for spendingTimeNew.");
+        throw std::invalid_argument("Invalid length for spendingTimeNew");
       if (spendingTimeNew[0] <= 0.0)
-        throw std::invalid_argument("spendingTimeNew must be positive.");
+        throw std::invalid_argument("spendingTimeNew must be positive");
       if (any_nonincreasing(spendingTimeNew))
-        throw std::invalid_argument("spendingTimeNew must be increasing.");
+        throw std::invalid_argument("spendingTimeNew must be increasing");
       if (spendingTimeNew[kNew-1] != 1.0)
-        throw std::invalid_argument("spendingTimeNew must end with 1.");
+        throw std::invalid_argument("spendingTimeNew must end with 1");
     } else {
       spendTimeNew = infoRatesNew;
     }
   }
 
   if (varianceRatio <= 0.0) {
-    throw std::invalid_argument("varianceRatio must be positive.");
+    throw std::invalid_argument("varianceRatio must be positive");
   }
   // ----------- End of Input Validation ----------- //
 
@@ -4271,10 +4360,10 @@ ListCpp adaptDesigncpp(double betaNew,
   std::vector<double> w(kMax, std::sqrt(varianceRatio));
   if (!none_na(futBounds)) {
     if (std::isnan(IMax)) {
-      throw std::invalid_argument("IMax must be provided.");
+      throw std::invalid_argument("IMax must be provided");
     }
     if (IMax <= 0.0) {
-      throw std::invalid_argument("IMax must be positive.");
+      throw std::invalid_argument("IMax must be positive");
     }
 
     std::vector<double> delta(kMax, theta);
@@ -4365,7 +4454,7 @@ ListCpp adaptDesigncpp(double betaNew,
   } else {
     if (!std::isnan(betaNew) && betaNew >= 1.0 - alphaNew) {
       throw std::invalid_argument(
-          "betaNew must be less than 1 minus the conditional type I error.");
+          "betaNew must be less than 1 minus the conditional type I error");
     }
 
     std::vector<double> b1New(kNew, NaN), a1New(kNew, NaN);
@@ -4610,17 +4699,18 @@ Rcpp::List adaptDesign(
   auto userBetaNew = Rcpp::as<std::vector<double>>(userBetaSpendingNew);
   auto spendTimeNew = Rcpp::as<std::vector<double>>(spendingTimeNew);
 
-  ListCpp result = adaptDesigncpp(
+  auto cpp_result = adaptDesigncpp(
     betaNew, INew, L, zL, theta, IMax, kMax, infoRates, effStopping,
     futStopping, critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
     userAlpha, futBounds, typeBetaSpending, parameterBetaSpending, spendTime,
     MullerSchafer, kNew, infoRatesNew, effStoppingNew, futStoppingNew,
     typeAlphaSpendingNew, parameterAlphaSpendingNew, typeBetaSpendingNew,
-    parameterBetaSpendingNew, userBetaNew, spendTimeNew, varianceRatio);
+    parameterBetaSpendingNew, userBetaNew, spendTimeNew, varianceRatio
+  );
 
-  Rcpp::List resultR = Rcpp::wrap(result);
-  resultR.attr("class") = "adaptDesign";
-  return resultR;
+  Rcpp::List result = Rcpp::wrap(cpp_result);
+  result.attr("class") = "adaptDesign";
+  return result;
 }
 
 
@@ -4857,16 +4947,68 @@ FlatMatrix invsympd(const FlatMatrix& matrix, int n, double toler) {
   return iv;
 }
 
-// transpose: returns the transpose of matrix A
-FlatMatrix transpose(const FlatMatrix& A) {
-  if (A.nrow == 0 || A.ncol == 0) return FlatMatrix();
-  FlatMatrix At(A.ncol, A.nrow);
-  for (int c = 0; c < A.ncol; ++c) {
-    for (int r = 0; r < A.nrow; ++r) {
-      At(c, r) = A(r, c);
+
+// Transpose a FlatMatrix (double)
+FlatMatrix transpose(const FlatMatrix& M) {
+  if (M.nrow == 0 || M.ncol == 0) return FlatMatrix();
+
+  const int src_nrow = M.nrow;
+  const int src_ncol = M.ncol;
+  FlatMatrix out(src_ncol, src_nrow); // swapped dims
+
+  const double* src = M.data_ptr();
+  double* dst = out.data_ptr();
+
+  for (int c = 0; c < src_ncol; ++c) {
+    const double* src_col = src + c * src_nrow;
+    for (int r = 0; r < src_nrow; ++r) {
+      dst[r * src_ncol + c] = src_col[r];
     }
   }
-  return At;
+
+  return out;
+}
+
+// Transpose an IntMatrix (int)
+IntMatrix transpose(const IntMatrix& M) {
+  if (M.nrow == 0 || M.ncol == 0) return IntMatrix();
+
+  const int src_nrow = M.nrow;
+  const int src_ncol = M.ncol;
+  IntMatrix out(src_ncol, src_nrow); // swapped dims
+
+  const int* src = M.data_ptr();
+  int* dst = out.data_ptr();
+
+  for (int c = 0; c < src_ncol; ++c) {
+    const int* src_col = src + c * src_nrow;
+    for (int r = 0; r < src_nrow; ++r) {
+      dst[r * src_ncol + c] = src_col[r];
+    }
+  }
+
+  return out;
+}
+
+// Transpose a BoolMatrix (unsigned char)
+BoolMatrix transpose(const BoolMatrix& M) {
+  if (M.nrow == 0 || M.ncol == 0) return BoolMatrix();
+
+  const int src_nrow = M.nrow;
+  const int src_ncol = M.ncol;
+  BoolMatrix out(src_ncol, src_nrow); // swapped dims
+
+  const unsigned char* src = M.data_ptr();
+  unsigned char* dst = out.data_ptr();
+
+  for (int c = 0; c < src_ncol; ++c) {
+    const unsigned char* src_col = src + c * src_nrow;
+    for (int r = 0; r < src_nrow; ++r) {
+      dst[r * src_ncol + c] = src_col[r];
+    }
+  }
+
+  return out;
 }
 
 
@@ -4981,10 +5123,10 @@ std::vector<double> givens(const double a, const double b) {
 void row_rot(FlatMatrix& A, const int i1, const int i2, const int j1, const int j2,
              const double c, const double s) {
   if (i1 < 0 || i1 >= i2 || i2 >= A.nrow) {
-    throw std::invalid_argument("Invalid row indices i1 and i2.");
+    throw std::invalid_argument("Invalid row indices i1 and i2");
   }
   if (j1 < 0 || j1 > j2 || j2 >= A.ncol) {
-    throw std::invalid_argument("Invalid column indices j1 and j2.");
+    throw std::invalid_argument("Invalid column indices j1 and j2");
   }
 
   int q = j2-j1+1;
@@ -5030,7 +5172,7 @@ void col_rot(FlatMatrix& A, const int i1, const int i2, const int j1, const int 
 ListCpp house_bidiag(FlatMatrix& A, const bool outtransform = true) {
   int m = A.nrow, n = A.ncol;
   if (m < n) {
-    throw std::invalid_argument("The input matrix must have # rows >= # columns.");
+    throw std::invalid_argument("The input matrix must have # rows >= # columns");
   }
 
   double tol = 1e-12;
@@ -5141,10 +5283,10 @@ ListCpp house_bidiag(FlatMatrix& A, const bool outtransform = true) {
 ListCpp zero_diagonal(FlatMatrix& B, const int k, const bool outtransform = true) {
   int n = B.nrow;
   if (B.ncol != n) {
-    throw std::invalid_argument("The input matrix must be a square matrix.");
+    throw std::invalid_argument("The input matrix must be a square matrix");
   }
   if (k < 0 || k >= n-1) {
-    throw std::invalid_argument("Invalid value for index k.");
+    throw std::invalid_argument("Invalid value for index k");
   }
   FlatMatrix U(n,n);
   for (int i=0; i<n; ++i) U(i,i) = 1.0;
@@ -5437,11 +5579,12 @@ ListCpp svdcpp1(const FlatMatrix& X, const bool outtransform,
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List svdcpp(const Rcpp::NumericMatrix& X, const bool outtransform = true,
+Rcpp::List svdcpp(const Rcpp::NumericMatrix& X,
+                  const bool outtransform = true,
                   const bool decreasing = true) {
-  FlatMatrix fm = flatmatrix_from_Rmatrix(X);
-  ListCpp result = svdcpp1(fm, outtransform, decreasing);
-  return Rcpp::wrap(result);
+  auto fm = flatmatrix_from_Rmatrix(X);
+  auto cpp_result = svdcpp1(fm, outtransform, decreasing);
+  return Rcpp::wrap(cpp_result);
 }
 
 
@@ -5460,7 +5603,8 @@ Rcpp::List svdcpp(const Rcpp::NumericMatrix& X, const bool outtransform = true,
 //'
 //' @export
 // [[Rcpp::export]]
-std::vector<double> float_to_fraction(const double x, const double tol=0.000001) {
+std::vector<double> float_to_fraction(const double x,
+                                      const double tol=0.000001) {
   std::vector<double> v(2);
   double x1 = x;
   double n = std::floor(x1);
