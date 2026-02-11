@@ -1,4 +1,7 @@
+// [[Rcpp::depends(RcppParallel)]]
+
 #include <Rcpp.h>
+#include <RcppParallel.h>
 
 #include "utilities.h"
 #include "dataframe_list.h"
@@ -672,22 +675,16 @@ Rcpp::NumericMatrix fadjpsimcpp(const Rcpp::NumericMatrix& wgtmat,
 }
 
 
-std::vector<double> repeatedPValuecpp(
+FlatMatrix repeatedPValuecpp1(
     const int kMax,
     const std::string& typeAlphaSpending,
     const double parameterAlphaSpending,
     const double maxInformation,
-    const std::vector<double>& p,
-    const std::vector<double>& information,
-    const std::vector<double>& spendingTime) {
+    const FlatMatrix& p,
+    const FlatMatrix& information,
+    const FlatMatrix& spendingTime) {
 
-  if (!none_na(p)) {
-    throw std::invalid_argument("p must be provided");
-  }
-
-  int k = static_cast<int>(p.size());
-
-  // Validation: kMax
+  // Validation: kMax must be a positive integer
   if (kMax <= 0) {
     throw std::invalid_argument("kMax must be a positive integer");
   }
@@ -718,103 +715,252 @@ std::vector<double> repeatedPValuecpp(
     throw std::invalid_argument("maxInformation must be positive");
   }
 
-  // Validation: information elements
-  if (!none_na(information))
-    throw std::invalid_argument("information must be provided");
-  if (static_cast<int>(information.size()) != k)
-    throw std::invalid_argument("Invalid length for information");
-  if (information[0] <= 0)
-    throw std::invalid_argument("information must be positive");
-  if (any_nonincreasing(information))
-    throw std::invalid_argument("information must be increasing over time");
+  // Validation: dimensions of p and information
+  int B = p.nrow;
+  int k1 = p.ncol;
 
-  // Process spendingTime matrix
-  std::vector<double> spendTime(k);
-  if (none_na(spendingTime)) {
-    if (static_cast<int>(spendingTime.size()) != k)
-      throw std::invalid_argument("Invalid length for spendingTime");
-    if (spendingTime[0] <= 0.0)
-      throw std::invalid_argument("spendingTime must be positive");
-    if (any_nonincreasing(spendingTime))
-      throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[k-1] > 1.0)
-      throw std::invalid_argument("spendingTime must not exceed 1");
-    spendTime = spendingTime;
+  if (k1 > kMax) {
+    throw std::invalid_argument("Number of columns in p must not exceed kMax");
+  }
+
+  // Process information matrix with possible broadcasting
+  FlatMatrix info(B, k1);
+  if (information.ncol != k1) {
+    throw std::invalid_argument("Invalid number of columns for information");
+  }
+  if (information.nrow != 1 && information.nrow != B) {
+    throw std::invalid_argument("Invalid number of rows for information");
+  }
+
+  const double* in_ptr = information.data_ptr();
+  double* info_ptr = info.data_ptr();
+  if (information.nrow == B) {
+    // shapes match -> fast block copy
+    std::memcpy(info_ptr, in_ptr, B * k1 * sizeof(double));
   } else {
-    std::fill(spendTime.begin(), spendTime.end(), NaN);
-  }
-
-
-  // Initialize result matrix with NaN
-  std::vector<double> repp(k, NaN);
-
-  int L;
-  bool all_st_na = std::all_of(spendTime.data(), spendTime.data() + k,
-                               [](double v){ return std::isnan(v); });
-
-  if (all_st_na) {  // use information rates
-    // Find if any information >= maxInformation
-    const double* ibegin = information.data();
-    const double* iend = ibegin + k;
-    const double* it = std::lower_bound(ibegin, iend, maxInformation);
-    if (it == iend) { // none >= maxInformation
-      L = k;
-    } else {
-      L = static_cast<int>(it - ibegin) + 1;
+    // information.nrow == 1 -> broadcast the single row to all B rows
+    // For each column k, value = in_ptr[k], destination column is info_ptr + k*B
+    for (int k = 0; k < k1; ++k) {
+      double v = in_ptr[k];                    // source scalar for column k
+      double* dst_col = info_ptr + k * B;      // column-major base
+      std::fill_n(dst_col, B, v);              // efficient bulk write
     }
-  } else {  // use spending time
-    L = k;
   }
 
-  // Information time for forming covariance matrix of test statistics
-  std::vector<double> t1(L);
-  double denom = information[L-1];
-  for (int l = 0; l < L; ++l) {
-    t1[l] = information[l] / denom;
-  }
+  // Process spendingTime matrix with possible broadcasting and NA handling
+  FlatMatrix spendTime(B, k1);
+  if (spendingTime.nrow == 1 && spendingTime.ncol == 1 && spendingTime(0, 0) == 0) {
+    spendTime.fill(NaN);
+  } else {
+    if (spendingTime.ncol != k1) {
+      throw std::invalid_argument("Invalid number of columns for spendingTime");
+    }
+    if (spendingTime.nrow != 1 && spendingTime.nrow != B) {
+      throw std::invalid_argument("Invalid number of rows for spendingTime");
+    }
 
-  // Spending time for error spending
-  std::vector<double> s1(L);
-  if (all_st_na) {  // use information rates
-    const double invMax = 1.0 / maxInformation;
-    const double* ib = information.data();
-    const double* it = std::lower_bound(ib, ib + L, maxInformation);
-    int idx = static_cast<int>(it - ib);     // first >= maxInformation (or L)
-    for (int i = 0; i < idx; ++i) s1[i] = ib[i] * invMax;
-    for (int i = idx; i < L; ++i) s1[i] = 1.0;
-    if (idx == L && L == kMax) s1[L-1] = 1.0; // handle the kMax-1 special-case
-  } else {  // using spending time
-    std::memcpy(s1.data(), spendTime.data(), L * sizeof(double));
-  }
-
-  // Compute repeated p-values
-  std::vector<unsigned char> x(L, 1);
-  std::vector<double> user(1, NaN); // for passing NaN by reference
-  for (int i = 0; i < L; ++i) {
-    double pvalue = p[i];
-
-    // Lambda function for root finding
-    auto f = [&](double a)->double {
-      auto u = getBoundcpp(i + 1, t1, a, asf, parameterAlphaSpending, user, s1, x);
-      return 1.0 - boost_pnorm(u[i]) - pvalue;
-    };
-
-    // Find root
-    double fl = f(0.000001);
-    if (fl > 0) {
-      repp[i] = 0.000001;
+    const double* sp_ptr = spendingTime.data_ptr();
+    double* spend_ptr = spendTime.data_ptr();
+    if (spendingTime.nrow == B) {
+      // shapes match -> fast block copy
+      std::memcpy(spend_ptr, sp_ptr, B * k1 * sizeof(double));
     } else {
-      double fh = f(0.999999);
-      if (fh < 0) {
-        repp[i] = 0.999999;
-      } else {
-        repp[i] = brent(f, 0.000001, 0.999999, 1e-6);
+      // spendingTime.nrow == 1 -> broadcast the single row to all B rows
+      // For each column k, value = sp_ptr[k], destination column is spend_ptr + k*B
+      for (int k = 0; k < k1; ++k) {
+        double v = sp_ptr[k];                    // source scalar for column k
+        double* dst_col = spend_ptr + k * B;     // column-major base
+        std::fill_n(dst_col, B, v);              // efficient bulk write
       }
     }
   }
 
-  return repp;
+
+  auto f = [&](const int b)-> std::vector<double> {
+    std::vector<double> p_vec(k1), i_vec(k1), s_vec(k1);
+    for (int k = 0; k < k1; ++k) {
+      p_vec[k] = p(b, k);
+      i_vec[k] = info(b, k);
+      s_vec[k] = spendTime(b, k);
+    }
+
+    // Validation: p-values must be between 0 and 1 and not NA
+    if (std::any_of(p_vec.begin(), p_vec.end(),
+                    [](double v){ return std::isnan(v); })) {
+      throw std::invalid_argument("p-values must be provided");
+    }
+    if (std::any_of(p_vec.begin(), p_vec.end(),
+                    [](double v){ return v < 0 || v > 1; })) {
+      throw std::invalid_argument("p-values must be between 0 and 1");
+    }
+
+    // Validation: information must be positive, increasing, and not NA
+    if (std::any_of(i_vec.begin(), i_vec.end(),
+                    [](double v){ return std::isnan(v); })) {
+      throw std::invalid_argument("information must be provided");
+    }
+    if (i_vec[0] <= 0.0) {
+      throw std::invalid_argument("information must be positive");
+    }
+    if (any_nonincreasing(i_vec)) {
+      throw std::invalid_argument("information must be increasing over time");
+    }
+
+    // Validation: spendingTime must be positive, increasing, and not exceeding 1
+    bool all_na = std::all_of(s_vec.data(), s_vec.data() + k1,
+                              [](double v){ return std::isnan(v); });
+
+    if (!all_na) {
+      if (std::any_of(s_vec.data(), s_vec.data() + k1,
+                      [](double v){ return std::isnan(v); })) {
+        throw std::invalid_argument("spendingTime must be provided");
+      }
+      if (s_vec[0] <= 0.0) {
+        throw std::invalid_argument("spendingTime must be positive");
+      }
+      if (any_nonincreasing(s_vec)) {
+        throw std::invalid_argument("spendingTime must be increasing over time");
+      }
+       if (s_vec[k1 - 1] > 1.0) {
+        throw std::invalid_argument("spendingTime must not exceed 1");
+      }
+    }
+
+
+    // Determine L based on maxInformation and spendingTime
+    int L;
+    if (all_na) {  // use information rates
+      // Find if any information >= maxInformation
+      auto it = std::lower_bound(i_vec.begin(), i_vec.end(), maxInformation);
+      if (it == i_vec.end()) { // none >= maxInformation
+        L = k1;
+      } else {
+        L = static_cast<int>(std::distance(i_vec.begin(), it)) + 1;
+      }
+    } else {  // use spending time
+      L = k1;
+    }
+
+    std::vector<double> p1(k1), t1(k1), s1(k1);
+    std::memcpy(p1.data(), p_vec.data(), L * sizeof(double));
+
+    // Information time for forming covariance matrix of test statistics
+    double info_L = i_vec[L-1];
+    for (int l = 0; l < L; ++l) {
+      t1[l] = i_vec[l] / info_L;
+    }
+
+    // Spending time for error spending
+    if (all_na) {  // use information rates
+      for (int l = 0; l < L; ++l) {
+        if (l == kMax - 1 || i_vec[l] >= maxInformation) {
+          s1[l] = 1.0; // the last look is at or beyond maxInformation
+        } else {
+          s1[l] = i_vec[l] / maxInformation;
+        }
+      }
+    } else {  // using spending time
+      std::memcpy(s1.data(), s_vec.data(), L * sizeof(double));
+    }
+
+    // Compute repeated p-values
+    std::vector<double> repp(k1);
+    std::vector<unsigned char> x(L, 1);
+    std::vector<double> user(1, NaN); // userAlphaSpending for getBoundcpp
+    for (int i = 0; i < L; ++i) {
+      double pvalue = p1[i];
+
+      // Lambda function for root finding
+      auto f = [&](double a)->double {
+        auto u = getBoundcpp(i + 1, t1, a, asf, parameterAlphaSpending, user, s1, x);
+        return 1.0 - boost_pnorm(u[i]) - pvalue;
+      };
+
+      // Find root in (0, 1) using brent's method, with checks at the endpoints
+      double fl = f(0.000001);
+      if (fl > 0) {
+        repp[i] = 0.000001;
+      } else {
+        double fh = f(0.999999);
+        if (fh < 0) {
+          repp[i] = 0.999999;
+        } else {
+          repp[i] = brent(f, 0.000001, 0.999999, 1e-6);
+        }
+      }
+    }
+
+    return repp;
+  };
+
+
+  struct SimulationWorker : public RcppParallel::Worker {
+    // references to read-only inputs (no mutation)
+    const int k1;
+    const std::string& asf;
+    const double parameterAlphaSpending;
+    const int kMax;
+    const double maxInformation;
+    const FlatMatrix& p;
+    const FlatMatrix& info;
+    const FlatMatrix& spendTime;
+
+    // function f and other params that f needs are captured from outer scope
+    // capture them by reference here so worker can call f(...)
+    std::function<std::vector<double>(const int)> f;
+
+    // result references (each iteration writes unique index into these)
+    FlatMatrix& repp_out; // B by k1 matrix to store repeated p-values
+
+    // constructor
+    SimulationWorker(const int k1_,
+                     const std::string& asf_,
+                     const double parameterAlphaSpending_,
+                     const int kMax_,
+                     const double maxInformation_,
+                     const FlatMatrix& p_,
+                     const FlatMatrix& info_,
+                     const FlatMatrix& spendTime_,
+                     decltype(f) f_,
+                     FlatMatrix& repp_out_) :
+
+      k1(k1_), asf(asf_), parameterAlphaSpending(parameterAlphaSpending_),
+      kMax(kMax_), maxInformation(maxInformation_),
+      p(p_), info(info_), spendTime(spendTime_),
+      f(std::move(f_)),
+      repp_out(repp_out_) {}
+
+    // operator() processes a range of bootstrap iterations [begin, end)
+    void operator()(std::size_t begin, std::size_t end) {
+      for (std::size_t b = begin; b < end; ++b) {
+        // call the (thread-safe) per-iteration function f
+        std::vector<double> out = f(static_cast<int>(b));
+
+        // write results
+        for (int k = 0; k < k1; ++k) {
+          repp_out(b, k) = out[k];
+        }
+      } // end for b
+    } // end operator()
+  }; // end BootstrapWorker
+
+  FlatMatrix repp_mat(B, k1); // B by k1 matrix to store repeated values
+
+  // Instantiate the Worker with references to inputs and outputs
+  SimulationWorker worker(
+      k1, asf, parameterAlphaSpending, kMax,
+      maxInformation, p, info, spendTime,
+      // bind f into std::function (capture the f we already have)
+      std::function<std::vector<double>(const int)>(f),
+      repp_mat
+  );
+
+  // Run the parallel loop over iterations
+  RcppParallel::parallelFor(0, B, worker, 1 /*grain size*/);
+
+  return worker.repp_out;
 }
+
 
 //' @title Repeated p-Values for Group Sequential Design
 //' @description Obtains the repeated p-values for a group sequential design.
@@ -851,20 +997,20 @@ std::vector<double> repeatedPValuecpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::NumericVector repeatedPValue(
+Rcpp::NumericMatrix repeatedPValuecpp(
     const int kMax,
-    const std::string& typeAlphaSpending = "sfOF",
-    const double parameterAlphaSpending = NA_REAL,
-    const double maxInformation = 1.0,
-    const Rcpp::NumericVector& p = NA_REAL,
-    const Rcpp::NumericVector& information = NA_REAL,
-    const Rcpp::NumericVector& spendingTime = NA_REAL) {
+    const std::string& typeAlphaSpending,
+    const double parameterAlphaSpending,
+    const double maxInformation,
+    const Rcpp::NumericMatrix& p,
+    const Rcpp::NumericMatrix& information,
+    const Rcpp::NumericMatrix& spendingTime) {
 
-  auto p1 = Rcpp::as<std::vector<double>>(p);
-  auto information1 = Rcpp::as<std::vector<double>>(information);
-  auto spendingTime1 = Rcpp::as<std::vector<double>>(spendingTime);
+  auto p1 = flatmatrix_from_Rmatrix(p);
+  auto information1 = flatmatrix_from_Rmatrix(information);
+  auto spendingTime1 = flatmatrix_from_Rmatrix(spendingTime);
 
-  auto repp = repeatedPValuecpp(
+  auto repp = repeatedPValuecpp1(
     kMax, typeAlphaSpending, parameterAlphaSpending,
     maxInformation, p1, information1, spendingTime1);
   return Rcpp::wrap(repp);
@@ -873,7 +1019,7 @@ Rcpp::NumericVector repeatedPValue(
 
 // Helper to compute the first rejection step for Bonferroni-based graphical
 // approaches in group sequential trials
-std::vector<int> fseqboncpp1(
+IntMatrix fseqboncpp1(
     const std::vector<double>& w,
     const FlatMatrix& G,
     const double alpha,
@@ -1001,35 +1147,68 @@ std::vector<int> fseqboncpp1(
     throw std::invalid_argument("k1 must be less than or equal to kMax");
   }
 
+
   // Validation: p matrix dimension
   if (p.ncol != m) {
     throw std::invalid_argument("Invalid number of columns for p");
   }
-  if (p.nrow != k1) {
-    throw std::invalid_argument("Invalid number of rows for p");
+  if (p.nrow % k1 != 0) {
+    throw std::invalid_argument("p number of rows must be a multiple of k1");
   }
+
+  int B = p.nrow / k1;
 
   // Validation: information matrix dimension
   if (information.ncol != m) {
     throw std::invalid_argument("Invalid number of columns for information");
   }
-  if (information.nrow != k1) {
+  if (information.nrow != k1 && information.nrow != B * k1) {
     throw std::invalid_argument("Invalid number of rows for information");
   }
 
+  FlatMatrix info(B * k1, m);
+  if (information.nrow == k1 && B > 1) {
+    // replicate information for B iterations
+    const double* src_ptr = information.data_ptr();
+    double* dst_ptr = info.data_ptr();
+    for (int j = 0; j < m; ++ j) {
+      for (int b = 0; b < B; ++b) {
+        std::memcpy(dst_ptr + (b * k1) + j * (B * k1),
+                    src_ptr + j * k1,
+                    k1 * sizeof(double));
+      }
+    }
+  } else {
+    info = information;
+  }
+
+
   // Handle spending time
-  FlatMatrix spendTime;
+  FlatMatrix spendTime(B * k1, m);
   if (spendingTime.nrow == 1 && spendingTime.ncol == 1 && spendingTime(0, 0) == 0) {
-    spendTime = FlatMatrix(k1, m);
     spendTime.fill(NaN);
   } else {
     if (spendingTime.ncol != m) {
       throw std::invalid_argument("Invalid number of columns for spendingTime");
     }
-    if (spendingTime.nrow != k1) {
+    if (spendingTime.nrow != k1 && spendingTime.nrow != B * k1) {
       throw std::invalid_argument("Invalid number of rows for spendingTime");
     }
-    spendTime = spendingTime;
+
+    if (spendingTime.nrow == k1 && B > 1) {
+      // replicate spendingTime for B iterations
+      const double* src_ptr = spendingTime.data_ptr();
+      double* dst_ptr = spendTime.data_ptr();
+      for (int j = 0; j < m; ++ j) {
+        for (int b = 0; b < B; ++b) {
+          std::memcpy(dst_ptr + (b * k1) + j * (B * k1),
+                      src_ptr + j * k1,
+                      k1 * sizeof(double));
+        }
+      }
+    } else {
+      spendTime = spendingTime;
+    }
   }
 
 
@@ -1062,285 +1241,368 @@ std::vector<int> fseqboncpp1(
     }
   }
 
-  std::vector<int> L(m); // number of looks to consider for each hypothesis at interim
+  // Implement the logic to determine which hypotheses are rejected at iteration b
+  // based on the p-values, information, spending time, and the graphical procedure.
+  auto f = [&](const int b)->std::vector<int> {
+    std::vector<int> L(m);
 
-  FlatMatrix p1(k1, m), t1(k1, m), s1(k1, m);
-  p1.fill(NaN); t1.fill(NaN); s1.fill(NaN);
-  double* p1_ptr = p1.data_ptr();
-  double* t1_ptr = t1.data_ptr();
-  double* s1_ptr = s1.data_ptr();
+    FlatMatrix p1(k1, m), t1(k1, m), s1(k1, m);
+    p1.fill(NaN); t1.fill(NaN); s1.fill(NaN);
+    double* p1_ptr = p1.data_ptr();
+    double* t1_ptr = t1.data_ptr();
+    double* s1_ptr = s1.data_ptr();
 
-  // Extract p-values, information, and spending time vectors for each hypothesis
-  std::vector<double> p_vec; p_vec.reserve(k1);
-  std::vector<double> i_vec; i_vec.reserve(k1);
-  std::vector<double> s_vec; s_vec.reserve(k1);
-  for (int j = 0; j < m; ++j) {
-    int Kj = K1[j];
-    // no testable look for this hypothesis, skip to next hypothesis
-    if (Kj == 0) continue;
+    // Extract p-values, information, and spending time vectors for each hypothesis
+    std::vector<double> p_vec; p_vec.reserve(k1);
+    std::vector<double> i_vec; i_vec.reserve(k1);
+    std::vector<double> s_vec; s_vec.reserve(k1);
+    for (int j = 0; j < m; ++j) { // loop over hypotheses
+      int Kj = K1[j]; // number of testable looks for hypothesis j at interim
+      if (Kj == 0) continue; // no testable look, skip to next hypothesis
+      double maxinfoj = maxInformation[j]; // maxInformation for hypothesis j
 
-    p_vec.resize(Kj);
-    i_vec.resize(Kj);
-    s_vec.resize(Kj);
-    for (int l = 0; l < Kj; ++l) {
-      int k = idx1(l, j); // study look index for the l-th testable look
-      if (std::isnan(p(k, j))) {
-        throw std::invalid_argument("p must be provided at each testable look");
+      p_vec.resize(Kj);
+      i_vec.resize(Kj);
+      s_vec.resize(Kj);
+      for (int l = 0; l < Kj; ++l) {
+        int k = idx1(l, j); // study look index for the l-th testable look
+
+        // row index in p, info, and spendTime for iteration b and study look k
+        int h = b * k1 + k;
+        if (std::isnan(p(h, j))) {
+          throw std::invalid_argument("p must be provided at each testable look");
+        }
+        if (std::isnan(info(h, j))) {
+          throw std::invalid_argument(
+              "information must be provided at each testable look");
+        }
+        p_vec[l] = p(h, j);
+        i_vec[l] = info(h, j);
+        s_vec[l] = spendTime(h, j);
       }
-      if (std::isnan(information(k, j))) {
-        throw std::invalid_argument(
-            "information must be provided at each testable look");
-      }
-      p_vec[l] = p(k, j);
-      i_vec[l] = information(k, j);
-      s_vec[l] = spendTime(k, j);
-    }
 
-    // Validate p values
-    if (std::any_of(p_vec.begin(), p_vec.end(),
-                    [](double v){ return (v < 0) | (v > 1); })) {
-      throw std::invalid_argument("p must lie between 0 and 1");
-    }
+      // Validate p values
+      if (std::any_of(p_vec.begin(), p_vec.end(),
+                      [](double v){ return v < 0.0 || v > 1.0; })) {
+        throw std::invalid_argument("p must lie between 0 and 1");
+      }
 
-    // Validate information
-    if (i_vec[0] <= 0.0) {
-      throw std::invalid_argument("information must be positive");
-    }
-    if (any_nonincreasing(i_vec)) {
-      throw std::invalid_argument("information must be increasing over time");
-    }
+      // Validate information
+      if (i_vec[0] <= 0.0) {
+        throw std::invalid_argument("information must be positive");
+      }
+      if (any_nonincreasing(i_vec)) {
+        throw std::invalid_argument("information must be increasing over time");
+      }
 
-    // Validate spending time
-    bool all_na = std::all_of(s_vec.begin(), s_vec.end(),
-                              [](double v){ return std::isnan(v); });
-    if (!all_na) {
-      if (std::any_of(s_vec.begin(), s_vec.end(),
-                      [](double v){ return std::isnan(v); })) {
-        throw std::invalid_argument(
-            "spendingTime must be provided at each testable look");
+      // Validate spending time
+      bool all_na = std::all_of(s_vec.begin(), s_vec.end(),
+                                [](double v){ return std::isnan(v); });
+      if (!all_na) {
+        if (std::any_of(s_vec.begin(), s_vec.end(),
+                        [](double v){ return std::isnan(v); })) {
+          throw std::invalid_argument(
+              "spendingTime must be provided at each testable look");
+        }
+        if (s_vec[0] <= 0.0) {
+          throw std::invalid_argument("spendingTime must be positive");
+        }
+        if (any_nonincreasing(s_vec)) {
+          throw std::invalid_argument("spendingTime must be increasing over time");
+        }
+        if (s_vec[Kj - 1] > 1.0) {
+          throw std::invalid_argument("spendingTime must be less than or equal to 1");
+        }
       }
-      if (s_vec[0] <= 0.0) {
-        throw std::invalid_argument("spendingTime must be positive");
-      }
-      if (any_nonincreasing(s_vec)) {
-        throw std::invalid_argument("spendingTime must be increasing over time");
-      }
-      if (s_vec[Kj - 1] > 1.0) {
-        throw std::invalid_argument("spendingTime must be less than or equal to 1");
-      }
-    }
 
-    // Determine L[j]: number of looks to consider for hypothesis j at interim
-    if (all_na) { // will use information rates, no need to check s_vec further
-      auto it = std::lower_bound(i_vec.begin(), i_vec.end(), maxInformation[j]);
-      if (it == i_vec.end()) { // none >= maxInformation
+      // Determine L[j]: number of looks to consider for hypothesis j at interim
+      if (all_na) { // will use information rates, no need to check s_vec further
+        auto it = std::lower_bound(i_vec.begin(), i_vec.end(), maxinfoj);
+        if (it == i_vec.end()) { // none >= maxInformation
+          L[j] = Kj;
+        } else { // first >= maxInformation, consider looks up to & including this one
+          L[j] = static_cast<int>(std::distance(i_vec.begin(), it)) + 1;
+        }
+      } else { // will use spending time, consider all testable looks
         L[j] = Kj;
-      } else { // first >= maxInformation, consider looks up to and including this one
-        L[j] = static_cast<int>(std::distance(i_vec.begin(), it)) + 1;
       }
-    } else { // will use spending time, consider all testable looks
-      L[j] = Kj;
-    }
-    int Lj = L[j];
+      int Lj = L[j];
 
-    // Copy p values in one block (p_vec contiguous)
-    double* p1_col = p1_ptr + j * k1; // column j begins at offset j * k1
-    double* t1_col = t1_ptr + j * k1;
-    double* s1_col = s1_ptr + j * k1;
+      // Copy p values in one block (p_vec contiguous)
+      double* p1_col = p1_ptr + j * k1; // column j begins at offset j * k1
+      double* t1_col = t1_ptr + j * k1;
+      double* s1_col = s1_ptr + j * k1;
 
-    std::memcpy(p1_col, p_vec.data(), Lj * sizeof(double));
+      std::memcpy(p1_col, p_vec.data(), Lj * sizeof(double));
 
-    // Information time for forming covariance matrix of test statistics
-    double info_L = i_vec[Lj - 1];
-    for (int l = 0; l < Lj; ++l) {
-      t1_col[l] = i_vec[l] / info_L;
-    }
-
-    // Spending time for error spending
-    if (all_na) { // use information rates
+      // Information time for forming covariance matrix of test statistics
+      double info_L = i_vec[Lj - 1];
       for (int l = 0; l < Lj; ++l) {
-        if (l == K0[j] - 1 || i_vec[l] >= maxInformation[j]) {
-          s1_col[l] = 1.0; // the last testable look is at or beyond maxInformation
-        } else {
-          s1_col[l] = i_vec[l] / maxInformation[j];
-        }
-      }
-    } else { // use spending time
-      std::memcpy(s1_col, s_vec.data(), Lj * sizeof(double));
-    }
-  }
-
-
-  int num_rejected = 0; // number of hypotheses rejected so far
-  std::vector<unsigned char> r(m, 0); // Whether the hypothesis is rejected
-  std::vector<int> reject(m, 0); // first look when the hypothesis is rejected
-  std::vector<double> wx = w; // current weights for hypotheses, updated in-place
-  FlatMatrix g = G; // current transition matrix, updated in-place
-  FlatMatrix g1(m, m); // temporary transition matrix for update
-  std::vector<double> user(1, NaN); // userAlphaSpending for getBoundcpp
-
-  std::vector<int> active(m); // currently active hypotheses
-  std::iota(active.begin(), active.end(), 0); // initialize with 0,1,...,m-1
-  std::vector<int> pos(m); // position map: pos[idx] = index in active or -1
-  std::iota(pos.begin(), pos.end(), 0); // initialize with 0,1,...,m-1
-
-  std::vector<double> denom(m); // temp denominator for transition matrix update
-  std::vector<double> u_vec; u_vec.reserve(k1); // upper bound from getBoundcpp
-
-  // temp vectors reuse across hypotheses
-  std::vector<double> t;
-  std::vector<double> s;
-  std::vector<unsigned char> x(k1, 1); // efficacyStopping for getBoundcpp
-  // std::vector<double> w_pre = wx; // initialize previous weights
-  //
-  // // cached per-hypothesis previous upper bounds (u_pre[j] for hypothesis j)
-  // std::vector<std::vector<double>> u_pre(m);
-  // for (int j = 0; j < m; ++j) u_pre[j].resize(k1);
-  //
-  // // Preallocated helper vectors reused for "resuse" branch
-  // std::vector<double> l_vec(k1, -6.0);
-  // std::vector<double> theta_vec(k1, 0.0);
-
-  // pointers to incidence and idx2
-  BoolMatrix incid = transpose(incidenceMatrix); // transpose for column-major access
-  const unsigned char* incid_ptr = incid.data_ptr(); // m x kMax
-  const int* idx2_ptr = idx2.data_ptr(); // m x k1
-
-  int K3 = *std::max_element(K2.begin(), K2.end());
-
-  for (int step = 0; step < K3; ++step) {  // loop over study look
-    const unsigned char* incid_col = incid_ptr + step * m;
-    const int* idx2_col = idx2_ptr + step * m;
-
-    //Try to find a hypothesis that can be rejected at this step
-    for ([[maybe_unused]] int i : active) {
-      bool found_reject = false;
-      int found_j = -1;
-
-      // scan all hypotheses j to find a rejectable one
-      for (int j : active) {
-        if (!incid_col[j]) continue; // not testable at this study look
-        if (wx[j] < 1e-8) continue;  // weight too small or already rejected
-
-        int l = idx2_col[j];         // testable look index (0-based)
-        if (l < 0) continue;         // not testable at this study look
-        if (l >= L[j]) continue;     // beyond L[j] considered at interim
-        int n = l + 1; // number of testable looks for hypothesis j at this study look
-
-        double alpha1 = wx[j] * alpha;
-        const std::string& asf1 = asf[j];
-        double asfpar1 = asfpar[j];
-
-        t = flatmatrix_get_column(t1, j);
-        s = flatmatrix_get_column(s1, j);
-
-        u_vec = getBoundcpp(n, t, alpha1, asf1, asfpar1, user, s, x);
-        // // Compute upper bound
-        // if (wx[j] != w_pre[j] || u_pre[j].size() < static_cast<std::size_t>(n)) {
-        //   // weights changed or no cached u available -> compute full u_vec
-        //   u_vec = getBoundcpp(n, t, alpha1, asf1, asfpar1, user, s, x);
-        // } else {
-        //   // reuse previous u_pre[j] prefix, only solve for last element
-        //   u_vec.resize(n);
-        //   if (l > 0) std::memcpy(u_vec.data(), u_pre[j].data(), l * sizeof(double));
-        //   // compute cumulative alpha for this n
-        //   double cumAlpha = errorSpentcpp(s[l], alpha1, asf1, asfpar1);
-        //
-        //   // small lambda that only sets last element
-        //   auto f = [&](double aval)->double {
-        //     u_vec[l] = aval;
-        //     ListCpp probs = exitprobcpp(u_vec, l_vec, theta_vec, t);
-        //     auto v = probs.get<std::vector<double>>("exitProbUpper");
-        //     double cpu = std::accumulate(v.begin(), v.end(), 0.0);
-        //     return cpu - cumAlpha;
-        //   };
-        //
-        //   double f_6 = f(6.0);
-        //   if (f_6 > 0.0) { // no alpha spent at current visit
-        //     u_vec[l] = 6.0;
-        //   } else {
-        //     auto f_for_brent = [&](double aval)->double {
-        //       if (aval == 6.0) return f_6; // avoid recomputation at 6.0
-        //       return f(aval);
-        //     };
-        //     u_vec[l] = brent(f_for_brent, -5.0, 6.0, 1e-6);
-        //   }
-        // }
-        //
-        // // cache computed u_vec for hypothesis j
-        // std::memcpy(u_pre[j].data(), u_vec.data(), n * sizeof(double));
-
-        // test rejection
-        double alphastar = 1.0 - boost_pnorm(u_vec[l]);
-        if (p1(l, j) < alphastar) {
-          found_reject = true;
-          found_j = j;
-          break; // stop scanning j, we'll process rejection
-        }
-      } // end scan j
-
-      if (!found_reject) { // no more rejections at this study look
-        // nothing rejected at this study look; remember current weights for reuse later
-        // w_pre = wx;
-        break;
+        t1_col[l] = i_vec[l] / info_L;
       }
 
-      // Process rejection of hypothesis found_j
-      int j = found_j;
-      r[j] = 1;
-      reject[j] = step + 1;
-      ++num_rejected;
-
-      // Remove j from active set
-      int remove_pos = pos[j];
-      int last_pos = static_cast<int>(active.size()) - 1;
-      if (remove_pos != last_pos) {
-        int swapped_idx = active[last_pos];
-        active[remove_pos] = swapped_idx;
-        pos[swapped_idx] = remove_pos;
-      }
-      active.pop_back();
-      pos[j] = -1;
-
-      // Update weights in-place for remaining active hypotheses
-      // w_pre = wx; // store current weights before update
-      double wxj = wx[j];
-      for (int l : active) {
-        wx[l] += wxj * g(j, l);
-      }
-      wx[j] = 0.0; // weight of rejected hypothesis becomes 0
-
-      // Update transition matrix for active hypotheses
-      for (int l : active) {
-        denom[l] =  1.0 - g(l, j) * g(j, l);
-      }
-
-      g1.fill(0.0); // reset g1 to 0 before filling
-      for (int k : active) {
-        double g_jk = g(j, k);
-        for (int l : active) {
-          if (l == k) continue;
-          double dl = denom[l];
-          if (dl > 1e-12) {
-            g1(l, k) = (g(l, k) + g(l, j) * g_jk) / dl;
+      // Spending time for error spending
+      if (all_na) { // use information rates
+        for (int l = 0; l < Lj; ++l) {
+          if (l == K0[j] - 1 || i_vec[l] >= maxinfoj) {
+            s1_col[l] = 1.0; // the last testable look is at or beyond maxInformation
+          } else {
+            s1_col[l] = i_vec[l] / maxinfoj;
           }
         }
+      } else { // use spending time
+        std::memcpy(s1_col, s_vec.data(), Lj * sizeof(double));
       }
+    }
 
-      std::swap(g.data, g1.data);  // copy g1 to g for next iteration
+    int num_rejected = 0; // number of hypotheses rejected so far
+    std::vector<int> reject(m, 0); // first look when the hypothesis is rejected
+    std::vector<double> wx = w; // current weights for hypotheses, updated in-place
+    FlatMatrix g = G; // current transition matrix, updated in-place
+    FlatMatrix g1(m, m); // temporary transition matrix for update
+    std::vector<double> user(1, NaN); // userAlphaSpending for getBoundcpp
 
-      // Stop if all hypotheses rejected
+    std::vector<int> active(m); // currently active hypotheses
+    std::iota(active.begin(), active.end(), 0); // initialize with 0,1,...,m-1
+    std::vector<int> pos(m); // position map: pos[idx] = index in active or -1
+    std::iota(pos.begin(), pos.end(), 0); // initialize with 0,1,...,m-1
+
+    std::vector<double> denom(m); // temp denominator for transition matrix update
+    std::vector<double> u_vec; u_vec.reserve(k1); // upper bound from getBoundcpp
+
+    // temp vectors reuse across hypotheses
+    std::vector<double> t;
+    std::vector<double> s;
+    std::vector<unsigned char> x(k1, 1); // efficacyStopping for getBoundcpp
+    std::vector<double> w_pre(k1); // previous weights
+
+    // cached per-hypothesis previous upper bounds (u_pre[j] for hypothesis j)
+    std::vector<std::vector<double>> u_pre(m);
+    for (int j = 0; j < m; ++j) u_pre[j].resize(k1);
+
+    // Preallocated helper vectors reused for "resuse" branch
+    std::vector<double> l_vec(k1, -6.0);
+    std::vector<double> theta_vec(k1, 0.0);
+
+    // pointers to idx2
+    const int* idx2_ptr = idx2.data_ptr(); // m x k1
+
+    int K3 = *std::max_element(K2.begin(), K2.end());
+
+    for (int step = 0; step < K3; ++step) {  // loop over study look
+      const int* idx2_col = idx2_ptr + step * m;
+
+      //Try to find a hypothesis that can be rejected at this step
+      for ([[maybe_unused]] int i : active) {
+        bool found_reject = false;
+        int found_j = -1;
+
+        // scan all hypotheses j to find a rejectable one
+        for (int j : active) {
+          if (wx[j] < 1e-8) continue;  // weight too small or already rejected
+          int l = idx2_col[j];         // testable look index (0-based)
+          if (l < 0) continue;         // not testable at this study look
+          if (l >= L[j]) continue;     // beyond L[j] considered at interim
+          int n = l + 1; // # of testable looks for hypothesis j at this study look
+
+          double alpha1 = wx[j] * alpha;
+          const std::string& asf1 = asf[j];
+          double asfpar1 = asfpar[j];
+
+          // Compute upper bound
+          t = flatmatrix_get_column(t1, j);
+          s = flatmatrix_get_column(s1, j);
+          if (wx[j] != w_pre[j]) {
+            // weights changed, compute full u_vec
+            u_vec = getBoundcpp(n, t, alpha1, asf1, asfpar1, user, s, x);
+          } else {
+            // reuse previous u_pre[j] prefix, only solve for last element
+            u_vec.resize(n);
+            if (l > 0) std::memcpy(u_vec.data(), u_pre[j].data(), l * sizeof(double));
+            // compute cumulative alpha for this n
+            double cumAlpha = errorSpentcpp(s[l], alpha1, asf1, asfpar1);
+
+            // small lambda that only sets last element
+            auto g = [&](double aval)->double {
+              u_vec[l] = aval;
+              ListCpp probs = exitprobcpp(u_vec, l_vec, theta_vec, t);
+              auto v = probs.get<std::vector<double>>("exitProbUpper");
+              double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+              return cpu - cumAlpha;
+            };
+
+            double g_6 = g(6.0);
+            if (g_6 > 0.0) { // no alpha spent at current visit
+              u_vec[l] = 6.0;
+            } else {
+              auto g_for_brent = [&](double aval)->double {
+                if (aval == 6.0) return g_6; // avoid recomputation at 6.0
+                return g(aval);
+              };
+              u_vec[l] = brent(g_for_brent, -5.0, 6.0, 1e-6);
+            }
+          }
+
+          // cache computed u_vec for hypothesis j
+          std::memcpy(u_pre[j].data(), u_vec.data(), n * sizeof(double));
+
+          // test rejection
+          double alphastar = 1.0 - boost_pnorm(u_vec[l]);
+          if (p1(l, j) < alphastar) {
+            found_reject = true;
+            found_j = j;
+            break; // stop scanning j, we'll process rejection
+          }
+        } // end scan j
+
+        if (!found_reject) { // no more rejections at this study look
+          // remember current weights for next study look to check if weights changed
+          w_pre = wx;
+          break;
+        }
+
+        // Process rejection of hypothesis found_j
+        int j = found_j;
+        reject[j] = step + 1;
+        ++num_rejected;
+
+        // Remove j from active set
+        int remove_pos = pos[j];
+        int last_pos = static_cast<int>(active.size()) - 1;
+        if (remove_pos != last_pos) {
+          int swapped_idx = active[last_pos];
+          active[remove_pos] = swapped_idx;
+          pos[swapped_idx] = remove_pos;
+        }
+        active.pop_back();
+        pos[j] = -1;
+
+        // Update weights in-place for remaining active hypotheses
+        w_pre = wx; // store current weights before update
+        double wxj = wx[j];
+        for (int l : active) {
+          wx[l] += wxj * g(j, l);
+        }
+        wx[j] = 0.0; // weight of rejected hypothesis becomes 0
+
+        // Update transition matrix for active hypotheses
+        for (int l : active) {
+          denom[l] =  1.0 - g(l, j) * g(j, l);
+        }
+
+        g1.fill(0.0); // reset g1 to 0 before filling
+        for (int k : active) {
+          double g_jk = g(j, k);
+          for (int l : active) {
+            if (l == k) continue;
+            double dl = denom[l];
+            if (dl > 1e-12) {
+              g1(l, k) = (g(l, k) + g(l, j) * g_jk) / dl;
+            }
+          }
+        }
+
+        std::swap(g.data, g1.data);  // copy g1 to g for next iteration
+
+        // Stop if all hypotheses rejected
+        if (num_rejected == m) break;
+      } // end attempt loop
+
       if (num_rejected == m) break;
-    } // end attempt loop
+    } // end study look loop
 
-    if (num_rejected == m) break;
-  } // end study look loop
+    return reject;
+  };
 
-  return reject;
+
+  struct SimulationWorker : public RcppParallel::Worker {
+    // references to read-only inputs (no mutation)
+    const int m;
+    const int k1;
+    const std::vector<double>& w;
+    const FlatMatrix& G;
+    const double alpha;
+    const std::vector<std::string>& asf;
+    const std::vector<double>& asfpar;
+    const std::vector<int>& K0;
+    const std::vector<int>& K1;
+    const std::vector<int>& K2;
+    const IntMatrix& idx1;
+    const IntMatrix& idx2;
+    const std::vector<double>& maxInformation;
+    const FlatMatrix& p;
+    const FlatMatrix& info;
+    const FlatMatrix& spendTime;
+
+    // function f and other params that f needs are captured from outer scope
+    // capture them by reference here so worker can call f(...)
+    std::function<std::vector<int>(const int)> f;
+
+    // result references (each iteration writes unique index into these)
+    IntMatrix& reject_out; // B by m matrix to store rejection results
+
+    // constructor
+    SimulationWorker(const int m_,
+                     const int k1_,
+                     const std::vector<double>& w_,
+                     const FlatMatrix& G_,
+                     const double alpha_,
+                     const std::vector<std::string>& asf_,
+                     const std::vector<double>& asfpar_,
+                     const std::vector<int>& K0_,
+                     const std::vector<int>& K1_,
+                     const std::vector<int>& K2_,
+                     const IntMatrix& idx1_,
+                     const IntMatrix& idx2_,
+                     const std::vector<double>& maxInformation_,
+                     const FlatMatrix& p_,
+                     const FlatMatrix& info_,
+                     const FlatMatrix& spendTime_,
+                     decltype(f) f_,
+                     IntMatrix& reject_out_) :
+
+      m(m_), k1(k1_), w(w_), G(G_), alpha(alpha_),
+      asf(asf_), asfpar(asfpar_), K0(K0_), K1(K1_), K2(K2_),
+      idx1(idx1_), idx2(idx2_), maxInformation(maxInformation_),
+      p(p_), info(info_), spendTime(spendTime_),
+      f(std::move(f_)),
+      reject_out(reject_out_) {}
+
+
+    // operator() processes a range of bootstrap iterations [begin, end)
+    void operator()(std::size_t begin, std::size_t end) {
+      for (std::size_t b = begin; b < end; ++b) {
+        // call the (thread-safe) per-iteration function f
+        std::vector<int> out = f(static_cast<int>(b));
+
+        // write results
+        for (int j = 0; j < m; ++j) {
+          reject_out(b, j) = out[j];
+        }
+      } // end for b
+    } // end operator()
+  }; // end BootstrapWorker
+
+  IntMatrix reject_mat(B, m); // B by m matrix to store rejection results
+
+  // Instantiate the Worker with references to inputs and outputs
+  SimulationWorker worker(
+      m, k1, w, G, alpha, asf, asfpar, K0, K1, K2,
+      idx1, idx2, maxInformation, p, info, spendTime,
+      // bind f into std::function (capture the f we already have)
+      std::function<std::vector<int>(const int)>(f),
+      reject_mat
+  );
+
+  // Run the parallel loop over iterations
+  RcppParallel::parallelFor(0, B, worker, 1 /*grain size*/);
+
+  return worker.reject_out;
 }
 
+
 // [[Rcpp::export]]
-Rcpp::IntegerVector fseqboncpp(
+Rcpp::IntegerMatrix fseqboncpp(
     const Rcpp::NumericVector& w,
     const Rcpp::NumericMatrix& G,
     const double alpha,
@@ -1366,3 +1628,6 @@ Rcpp::IntegerVector fseqboncpp(
                              incid1, k1, p1, info1, spendTime1);
   return Rcpp::wrap(reject1);
 }
+
+
+
