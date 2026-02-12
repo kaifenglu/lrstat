@@ -2,6 +2,8 @@
 
 #include <Rcpp.h>
 #include <RcppParallel.h>
+#include <boost/math/distributions/binomial.hpp>
+#include <boost/math/distributions/normal.hpp>
 
 #include "utilities.h"
 #include "dataframe_list.h"
@@ -10,12 +12,13 @@
 // any_of, fill, distance, min, for_each, transform, tolower
 #include <cctype>      // tolower
 #include <cmath>       // fabs, isnan
-#include <cstring>
+#include <cstring>     // memcpy
+#include <limits>      // numeric_limits
 #include <numeric>     // accumulate
 #include <stdexcept>   // invalid_argument
 #include <string>      // string
 #include <vector>      // vector
-
+#include <unordered_map>
 
 // Helper to update graph for graphical approaches
 ListCpp updateGraphcpp(const std::vector<double>& w,
@@ -675,6 +678,7 @@ Rcpp::NumericMatrix fadjpsimcpp(const Rcpp::NumericMatrix& wgtmat,
 }
 
 
+// Helper to compute repeated p-values for alpha spending approaches
 FlatMatrix repeatedPValuecpp1(
     const int kMax,
     const std::string& typeAlphaSpending,
@@ -962,40 +966,6 @@ FlatMatrix repeatedPValuecpp1(
 }
 
 
-//' @title Repeated p-Values for Group Sequential Design
-//' @description Obtains the repeated p-values for a group sequential design.
-//'
-//' @inheritParams param_kMax
-//' @inheritParams param_typeAlphaSpending
-//' @inheritParams param_parameterAlphaSpending
-//' @param maxInformation The target maximum information. Defaults to 1,
-//'   in which case, \code{information} represents \code{informationRates}.
-//' @param p The raw p-values at look 1 to look \code{k} for \code{k <= kMax}.
-//' @param information The observed information by look.
-//' @param spendingTime The error spending time at each analysis, must be
-//'   increasing and less than or equal to 1. Defaults to \code{NA},
-//'   in which case, it is the same as \code{informationRates} derived from
-//'   \code{information} and \code{maxInformation}.
-//'
-//' @return The repeated p-values at look 1 to look \code{k}.
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @examples
-//'
-//' # Example 1: informationRates different from spendingTime
-//' repeatedPValue(kMax = 3, typeAlphaSpending = "sfOF",
-//'                maxInformation = 800,
-//'                p = c(0.2, 0.15, 0.1),
-//'                information = c(529, 700, 800),
-//'                spendingTime = c(0.6271186, 0.8305085, 1))
-//'
-//' # Example 2: Maurer & Bretz (2013), current look is not the last look
-//' repeatedPValue(kMax = 3, typeAlphaSpending = "sfOF",
-//'                p = c(0.0062, 0.017),
-//'                information = c(1/3, 2/3))
-//'
-//' @export
 // [[Rcpp::export]]
 Rcpp::NumericMatrix repeatedPValuecpp(
     const int kMax,
@@ -1631,3 +1601,1489 @@ Rcpp::IntegerMatrix fseqboncpp(
 
 
 
+// Converts step-down p-values to sequential adjusted p-values
+FlatMatrix fstp2seqcpp1(
+    const FlatMatrix& p,
+    const std::vector<double>& gamma,
+    const std::string& test = "hochberg",
+    const bool retest = true) {
+
+  // Validate dimensions
+  int nreps = p.nrow;
+  int n = p.ncol;
+  int m = n / 2;
+
+  // Normalize test string to lowercase
+  std::string test1 = test;
+  std::transform(test1.begin(), test1.end(), test1.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+
+  if (test1 != "hochberg" && test1 != "holm") {
+    throw std::invalid_argument("test must be 'hochberg' or 'holm'");
+  }
+
+  // Validate p-values in [0, 1]
+  if (std::any_of(p.data.begin(), p.data.end(),
+                  [](double v){ return v < 0.0 || v > 1.0; })) {
+    throw std::invalid_argument("p-values must be between 0 and 1");
+  }
+
+  bool is_holm = (test1 == "holm");
+
+  // Step 1: Compute matrix a (nreps × m) from pairs of p-values
+  FlatMatrix a(nreps, m);
+  for (int j = 0; j < m; ++j) {
+    double gamma_j = gamma[j];
+    double inv_factor = 1.0 / (1.0 + gamma_j);
+
+    for (int iter = 0; iter < nreps; ++iter) {
+      double x1 = p(iter, 2*j);
+      double x2 = p(iter, 2*j+1);
+      double val = 2.0 * std::max(x1, x2) * inv_factor;
+      if (is_holm) {
+        val = std::max(val, 2.0 * std::min(x1, x2));
+      }
+      a(iter, j) = val;
+    }
+  }
+
+  // Step 2: Compute matrix d (m × m) - lower triangular discount factors
+  FlatMatrix d(m, m);
+  for (int s = 0; s < m; ++s) {
+    double gmax = 0.0;
+    for (int j = s; j < m; ++j) {
+      if (j > s) {
+        gmax = std::max(gmax, gamma[j - 1]);
+      }
+      d(s, j) = std::max((1.0 - gmax) * 0.5, 1e-12);
+    }
+  }
+
+  // Step 3: Compute adjusted p-values
+  FlatMatrix padj(nreps, n);
+
+  // Preallocate reusable vectors
+  std::vector<double> a_row(m);        // current row of a
+  std::vector<double> a_cummax(m);     // cumulative max
+  for (int iter = 0; iter < nreps; ++iter) {
+    // Extract row iter from a and compute cumulative max
+    for (int j = 0; j < m; ++j) {
+      a_row[j] = a(iter, j);
+    }
+
+    a_cummax[0] = a_row[0];
+    for (int j = 1; j < m; ++j) {
+      a_cummax[j] = std::max(a_cummax[j - 1], a_row[j]);
+    }
+
+    // For each hypothesis index i
+    for (int i = 0; i < m; ++i) {
+      double t1 = a_cummax[i]; // max of a[0..i]
+
+      // --- Compute padj(iter, 2*i) (even index) ---
+      double t2_even = 1.0;
+      for (int s = 0; s <= i; ++s) {
+        double lhs = (s > 0) ? a_cummax[s - 1] : 0.0;
+
+        // max over j ∈ [s, i] of p(iter, 2*j) / d(s, j)
+        for (int j = s; j <= i; ++j) {
+          lhs = std::max(lhs, p(iter, 2*j) / d(s, j));
+        }
+
+        double rhs = 2.0 * p(iter, 2*s+1) / (1.0 + gamma[s]);
+        if (lhs < rhs) {
+          t2_even = std::min(t2_even, lhs);
+        }
+      }
+
+      double result_even;
+      if (retest && m > 1) {
+        double t3_even = 1.0;
+        int s_max = std::min(i, m - 2);
+
+        for (int s = 0; s <= s_max; ++s) {
+          double lhs = (s > 0) ? a_cummax[s - 1] : 0.0;
+
+          // max over j ∈ [s, m-1] of p(iter, 2*j+1) / d(s, j)
+          for (int j = s; j < m; ++j) {
+            lhs = std::max(lhs, p(iter, 2*j+1) / d(s, j));
+          }
+
+          // max over j ∈ [s, i] of p(iter, 2*j)
+          for (int j = s; j <= i; ++j) {
+            lhs = std::max(lhs, p(iter, 2*j));
+          }
+
+          double rhs = 2.0 * p(iter, 2*s) / (1.0 + gamma[s]);
+          if (lhs < rhs) {
+            t3_even = std::min(t3_even, lhs);
+          }
+        }
+
+        result_even = std::min({t1, t2_even, t3_even});
+      } else {
+        result_even = std::min(t1, t2_even);
+      }
+
+      padj(iter, 2*i) = result_even;
+
+      // --- Compute padj(iter, 2*i+1) (odd index) ---
+      double t2_odd = 1.0;
+      for (int s = 0; s <= i; ++s) {
+        double lhs = (s > 0) ? a_cummax[s - 1] : 0.0;
+
+        // max over j ∈ [s, i] of p(iter, 2*j+1) / d(s, j)
+        for (int j = s; j <= i; ++j) {
+          lhs = std::max(lhs, p(iter, 2*j+1) / d(s, j));
+        }
+
+        double rhs = 2.0 * p(iter, 2*s) / (1.0 + gamma[s]);
+        if (lhs < rhs) {
+          t2_odd = std::min(t2_odd, lhs);
+        }
+      }
+
+      double result_odd;
+      if (retest && m > 1) {
+        double t3_odd = 1.0;
+        int s_max = std::min(i, m - 2);
+
+        for (int s = 0; s <= s_max; ++s) {
+          double lhs = (s > 0) ? a_cummax[s - 1] : 0.0;
+
+          // max over j ∈ [s, m-1] of p(iter, 2*j) / d(s, j)
+          for (int j = s; j < m; ++j) {
+            lhs = std::max(lhs, p(iter, 2*j) / d(s, j));
+          }
+
+          // max over j ∈ [s, i] of p(iter, 2*j+1)
+          for (int j = s; j <= i; ++j) {
+            lhs = std::max(lhs, p(iter, 2*j+1));
+          }
+
+          double rhs = 2.0 * p(iter, 2*s+1) / (1.0 + gamma[s]);
+          if (lhs < rhs) {
+            t3_odd = std::min(t3_odd, lhs);
+          }
+        }
+
+        result_odd = std::min({t1, t2_odd, t3_odd});
+      } else {
+        result_odd = std::min(t1, t2_odd);
+      }
+
+      padj(iter, 2*i+1) = result_odd;
+    }
+  }
+
+  return padj;
+}
+
+
+// [[Rcpp::export]]
+Rcpp::NumericMatrix fstp2seqcpp(
+    const Rcpp::NumericMatrix& p,
+    const Rcpp::NumericVector& gamma,
+    const std::string& test = "hochberg",
+    const bool retest = true) {
+
+  auto p1 = flatmatrix_from_Rmatrix(p);
+  auto gamma1 = Rcpp::as<std::vector<double>>(gamma);
+  auto padj1 = fstp2seqcpp1(p1, gamma1, test, retest);
+  return Rcpp::wrap(padj1);
+}
+
+
+// Helper: compute row sums for BoolMatrix
+std::vector<int> boolmatrix_rowsums(const BoolMatrix& mat) {
+  int nrow = mat.nrow;
+  int ncol = mat.ncol;
+  std::vector<int> sums(nrow, 0);
+  const unsigned char* data = mat.data_ptr();
+
+  for (int j = 0; j < ncol; ++j) {
+    const unsigned char* col = data + j * nrow;
+    for (int i = 0; i < nrow; ++i) {
+      sums[i] += col[i];
+    }
+  }
+  return sums;
+}
+
+
+// Helper for adjusted p-values for standard mixture gatekeeping procedures
+FlatMatrix fstdmixcpp1(
+    const FlatMatrix& p,
+    const BoolMatrix& family,
+    const BoolMatrix& serial,
+    const BoolMatrix& parallel,
+    const std::vector<double>& gamma,
+    const std::string& test = "hommel",
+    const bool exhaust = true) {
+
+  // Validate inputs
+  int nreps = p.nrow;
+  int m = p.ncol;
+
+  if (family.ncol != m) {
+    throw std::invalid_argument("family must have m columns");
+  }
+
+  if (serial.nrow != m || serial.ncol != m) {
+    throw std::invalid_argument("serial must be m x m matrix");
+  }
+
+  if (parallel.nrow != m || parallel.ncol != m) {
+    throw std::invalid_argument("parallel must be m x m matrix");
+  }
+
+  int nfamily = family.nrow;
+
+  if (gamma.size() != static_cast<std::size_t>(nfamily)) {
+    throw std::invalid_argument("gamma length must equal nrow(family)");
+  }
+
+  // Validate gamma in [0, 1]
+  if (std::any_of(gamma.begin(), gamma.end(),
+                  [](double g){ return g < 0.0 || g > 1.0; })) {
+    throw std::invalid_argument("gamma values must be between 0 and 1");
+  }
+
+  // Validate p-values in [0, 1]
+  if (std::any_of(p.data.begin(), p.data.end(),
+                  [](double v){ return v < 0.0 || v > 1.0; })) {
+    throw std::invalid_argument("p-values must be between 0 and 1");
+  }
+
+  // Normalize test string
+  std::string test1 = test;
+  std::transform(test1.begin(), test1.end(), test1.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+
+  if (test1 != "hommel" && test1 != "hochberg" && test1 != "holm") {
+    throw std::invalid_argument("test must be 'hommel', 'hochberg', or 'holm'");
+  }
+
+  // Compute number of hypotheses per family
+  std::vector<int> nhyps = boolmatrix_rowsums(family);
+
+  // Number of intersection tests
+  int ntests = (1 << m) - 1; // 2^m - 1
+
+  // Matrix to store local p-values for intersection tests
+  FlatMatrix pinter(nreps, ntests);
+
+  // Incidence matrix for elementary hypotheses
+  BoolMatrix incid(ntests, m);
+
+  // Process each intersection hypothesis
+  for (int i = 0; i < ntests; ++i) {
+    int number = ntests - i;
+
+    // Binary representation of intersection hypothesis
+    std::vector<unsigned char> cc(m);
+    for (int j = 0; j < m; ++j) {
+      cc[j] = (number >> (m - 1 - j)) & 1;
+    }
+
+    // Active hypotheses in each family, I1, ..., I_nfamily
+    BoolMatrix family0(nfamily, m);
+    for (int j = 0; j < m; ++j) {
+      for (int h = 0; h < nfamily; ++h) {
+        family0(h, j) = family(h, j) & cc[j];
+      }
+    }
+
+    // Number of active hypotheses by family, k1, ..., k_nfamily
+    std::vector<int> nhyps0 = boolmatrix_rowsums(family0);
+
+    // Determine restricted index set for each family
+    std::vector<unsigned char> cc1(m, 1);
+
+    for (int j = 0; j < m; ++j) {
+      // Check serial constraints
+      int serial_sum = 0;
+      for (int k = 0; k < m; ++k) {
+        serial_sum += serial(j, k);
+      }
+
+      if (serial_sum > 0) {
+        // if any serial predecessor is accepted, remove j
+        for (int k = 0; k < m; ++k) {
+          if (serial(j, k) && cc[k]) {
+            cc1[j] = 0;
+            break;
+          }
+        }
+
+        // if any serial predecessor is not testable, remove j
+        for (int k = 0; k < m; ++k) {
+          if (serial(j, k) && !cc1[k]) {
+            cc1[j] = 0;
+            break;
+          }
+        }
+      }
+
+      // Check parallel constraints
+      int parallel_sum = 0;
+      for (int k = 0; k < m; ++k) {
+        parallel_sum += parallel(j, k);
+      }
+
+      if (parallel_sum > 0) {
+        // if none of the parallel predecessors are rejected, remove j
+        bool hit = true;
+        for (int k = 0; k < m; ++k) {
+          if (parallel(j, k) && !cc[k]) {
+            hit = false;
+            break;
+          }
+        }
+        if (hit) cc1[j] = 0;
+
+        // if none of the parallel predecessors are testable, remove j
+        hit = true;
+        for (int k = 0; k < m; ++k) {
+          if (parallel(j, k) && cc1[k]) {
+            hit = false;
+            break;
+          }
+        }
+        if (hit) cc1[j] = 0;
+      }
+    }
+
+    // Apply intersection
+    for (int j = 0; j < m; ++j) {
+      cc1[j] = cc1[j] & cc[j];
+    }
+
+    // Error rate function divided by alpha
+    std::vector<double> errf(nfamily);
+    for (int j = 0; j < nfamily; ++j) {
+      errf[j] = nhyps0[j] > 0 ?
+      gamma[j] + (1.0 - gamma[j]) * nhyps0[j] / nhyps[j] : 0.0;
+    }
+
+    // Allocated fraction of alpha for each family
+    std::vector<double> coef(nfamily);
+    coef[0] = 1.0;
+    for (int j = 1; j < nfamily; ++j) {
+      coef[j] = coef[j - 1] * (1.0 - errf[j - 1]);
+    }
+
+    int kmax = 0; // last family with positive allocation (1-based index)
+    for (int j = nfamily - 1; j >= 0; --j) {
+      if (coef[j] > 0.0) {
+        kmax = j + 1;
+        break;
+      }
+    }
+
+    // Families up to kmax, I_1*, ..., I_kmax*
+    BoolMatrix family1(kmax, m);
+    for (int j = 0; j < kmax; ++j) {
+      for (int k = 0; k < m; ++k) {
+        family1(j, k) = family(j, k) & cc1[k];
+      }
+    }
+
+    // Number of testable hypotheses by family, k_1*, ..., k_kmax*
+    std::vector<int> nhyps1 = boolmatrix_rowsums(family1);
+
+    // Indices of active families
+    std::vector<int> sub;
+    sub.reserve(kmax);
+    for (int j = 0; j < kmax; ++j) {
+      if (nhyps1[j] > 0) {
+        sub.push_back(j);
+      }
+    }
+
+    int nfamily2 = static_cast<int>(sub.size());
+
+    // Subset of active families after removing those without testable hypotheses
+    BoolMatrix family2(nfamily2, m);
+    std::vector<int> nhyps2(nfamily2);
+    for (int j = 0; j < nfamily2; ++j) {
+      for (int k = 0; k < m; ++k) {
+        family2(j, k) = family1(sub[j], k);
+      }
+      nhyps2[j] = nhyps1[sub[j]];
+    }
+
+    // family indices and hypothesis indices for testable hypotheses
+    std::vector<int> fam, hyps2;
+    for (int j = 0; j < nfamily2; ++j) {
+      for (int k = 0; k < m; ++k) {
+        if (family2(j, k)) {
+          fam.push_back(j);
+          hyps2.push_back(k);
+        }
+      }
+    }
+
+    // total number of testable hypotheses across active families
+    int n = static_cast<int>(hyps2.size());
+
+    // Relative importance for active families
+    std::vector<double> coef1(nfamily2);
+    for (int j = 0; j < nfamily2; ++j) {
+      coef1[j] = coef[sub[j]];
+    }
+
+    // Broadcasted family weight for each testable hypothesis
+    std::vector<double> c(n);
+    for (int k = 0; k < n; ++k) {
+      c[k] = coef1[fam[k]];
+    }
+
+    // Truncation parameters
+    std::vector<double> gam2(nfamily2);
+    for (int j = 0; j < nfamily2; ++j) {
+      gam2[j] = gamma[sub[j]];
+    }
+    if (exhaust) gam2[nfamily2 - 1] = 1.0;
+
+    // Bonferroni part of weights
+    std::vector<double> coef2(nfamily2);
+    for (int j = 0; j < nfamily2; ++j) {
+      coef2[j] = (1.0 - gam2[j]) / nhyps[sub[j]];
+    }
+
+    // Broadcasted Bonferroni part of weights to each testable hypothesis
+    std::vector<double> tbon(n);
+    for (int k = 0; k < n; ++k) {
+      tbon[k] = coef2[fam[k]];
+    }
+
+    // Cumulative count of hypotheses before the current family
+    std::vector<int> ck(nfamily2 + 1, 0);
+    for (int j = 1; j <= nfamily2; ++j) {
+      ck[j] = ck[j - 1] + nhyps2[j - 1];
+    }
+
+    // Compute weights
+    std::vector<double> w(n);
+    if (test1 == "hommel") {
+      for (int k = 0; k < n; ++k) {
+        int l = fam[k];
+        int j = (k + 1) - ck[l];
+        w[k] = j * gam2[l] / nhyps2[l] + tbon[k];
+      }
+    } else if (test1 == "hochberg") {
+      for (int k = 0; k < n; ++k) {
+        int l = fam[k];
+        int j = (k + 1) - ck[l];
+        w[k] = gam2[l] / (nhyps2[l] - j + 1) + tbon[k];
+      }
+    } else { // holm
+      for (int k = 0; k < n; ++k) {
+        int l = fam[k];
+        w[k] = gam2[l] / nhyps2[l] + tbon[k];
+      }
+    }
+
+    // Process each replication
+    std::vector<double> p1(n), p1s(n), p2(n);
+    for (int iter = 0; iter < nreps; ++iter) {
+      // Extract raw p-values
+      for (int k = 0; k < n; ++k) {
+        p1[k] = p(iter, hyps2[k]);
+      }
+
+      // Sort p-values within each family
+      for (int j = 0; j < nfamily2; ++j) {
+        int start = ck[j];
+        int end = ck[j + 1];
+        int len = end - start;
+        p1s = subset(p1, start, end);
+        std::sort(p1s.begin(), p1s.end());
+        std::memcpy(p2.data() + start, p1s.data(), len * sizeof(double));
+      }
+
+      // Compute minimum ratio
+      double min_val = 1.0;
+      for (int k = 0; k < n; ++k) {
+        double ratio = p2[k] / (w[k] * c[k]);
+        min_val = std::min(min_val, ratio);
+      }
+
+      pinter(iter, i) = min_val;
+    }
+
+    // Store incidence
+    for (int j = 0; j < m; ++j) {
+      incid(i, j) = cc[j];
+    }
+  }
+
+  // Compute adjusted p-values for elementary hypotheses
+  FlatMatrix padj(nreps, m);
+  for (int j = 0; j < m; ++j) {
+    for (int iter = 0; iter < nreps; ++iter) {
+      double max_p = 0.0;
+      for (int i = 0; i < ntests; ++i) {
+        if (incid(i, j)) {
+          max_p = std::max(max_p, pinter(iter, i));
+        }
+      }
+      padj(iter, j) = std::min(max_p, 1.0);
+    }
+  }
+
+  // Apply logical restrictions (serial constraints)
+  for (int j = 0; j < m; ++j) {
+    int serial_sum = 0;
+    for (int k = 0; k < m; ++k) {
+      serial_sum += serial(j, k);
+    }
+
+    if (serial_sum > 0) {
+      for (int iter = 0; iter < nreps; ++iter) {
+        double pre = 0.0;
+        for (int k = 0; k < m; ++k) {
+          if (serial(j, k)) {
+            pre = std::max(pre, padj(iter, k));
+          }
+        }
+        padj(iter, j) = std::max(padj(iter, j), pre);
+      }
+    }
+  }
+
+  // Apply logical restrictions (parallel constraints)
+  for (int j = 0; j < m; ++j) {
+    int parallel_sum = 0;
+    for (int k = 0; k < m; ++k) {
+      parallel_sum += parallel(j, k);
+    }
+
+    if (parallel_sum > 0) {
+      for (int iter = 0; iter < nreps; ++iter) {
+        double pre = 1.0;
+        for (int k = 0; k < m; ++k) {
+          if (parallel(j, k)) {
+            pre = std::min(pre, padj(iter, k));
+          }
+        }
+        padj(iter, j) = std::max(padj(iter, j), pre);
+      }
+    }
+  }
+
+  return padj;
+}
+
+
+// [[Rcpp::export]]
+Rcpp::NumericMatrix fstdmixcpp(
+    const Rcpp::NumericMatrix& p,
+    const Rcpp::LogicalMatrix& family,
+    const Rcpp::LogicalMatrix& serial,
+    const Rcpp::LogicalMatrix& parallel,
+    const Rcpp::NumericVector& gamma,
+    const std::string& test = "hommel",
+    const bool exhaust = true) {
+  auto p1 = flatmatrix_from_Rmatrix(p);
+  auto family1 = boolmatrix_from_Rmatrix(family);
+  auto serial1 = boolmatrix_from_Rmatrix(serial);
+  auto parallel1 = boolmatrix_from_Rmatrix(parallel);
+  auto gamma1 = Rcpp::as<std::vector<double>>(gamma);
+  auto padj1 = fstdmixcpp1(p1, family1, serial1, parallel1, gamma1, test, exhaust);
+  return Rcpp::wrap(padj1);
+}
+
+
+// Helper for adjusted p-values for modified mixture gatekeeping procedures
+FlatMatrix fmodmixcpp1(
+    const FlatMatrix& p,
+    const BoolMatrix& family,
+    const BoolMatrix& serial,
+    const BoolMatrix& parallel,
+    const std::vector<double>& gamma,
+    const std::string& test = "hommel",
+    const bool exhaust = true) {
+
+  // Validate inputs
+  int nreps = p.nrow;
+  int m = p.ncol;
+
+  if (family.ncol != m) {
+    throw std::invalid_argument("family must have m columns");
+  }
+
+  if (serial.nrow != m || serial.ncol != m) {
+    throw std::invalid_argument("serial must be m x m matrix");
+  }
+
+  if (parallel.nrow != m || parallel.ncol != m) {
+    throw std::invalid_argument("parallel must be m x m matrix");
+  }
+
+  int nfamily = family.nrow;
+
+  if (gamma.size() != static_cast<std::size_t>(nfamily)) {
+    throw std::invalid_argument("gamma length must equal nrow(family)");
+  }
+
+  // Validate gamma in [0, 1]
+  if (std::any_of(gamma.begin(), gamma.end(),
+                  [](double g){ return g < 0.0 || g > 1.0; })) {
+    throw std::invalid_argument("gamma values must be between 0 and 1");
+  }
+
+  // Validate p-values in [0, 1]
+  if (std::any_of(p.data.begin(), p.data.end(),
+                  [](double v){ return v < 0.0 || v > 1.0; })) {
+    throw std::invalid_argument("p-values must be between 0 and 1");
+  }
+
+  // Normalize test string
+  std::string test1 = test;
+  std::transform(test1.begin(), test1.end(), test1.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+
+  if (test1 != "hommel" && test1 != "hochberg" && test1 != "holm") {
+    throw std::invalid_argument("test must be 'hommel', 'hochberg', or 'holm'");
+  }
+
+  // Compute number of hypotheses per family
+  std::vector<int> nhyps = boolmatrix_rowsums(family);
+
+  // Number of intersection tests
+  int ntests = (1 << m) - 1; // 2^m - 1
+
+  // Matrix to store local p-values for intersection tests
+  FlatMatrix pinter(nreps, ntests);
+
+  // Incidence matrix for elementary hypotheses
+  BoolMatrix incid(ntests, m);
+
+  // Process each intersection hypothesis
+  for (int i = 0; i < ntests; ++i) {
+    int number = ntests - i;
+
+    // Binary representation of intersection hypothesis
+    std::vector<unsigned char> cc(m);
+    for (int j = 0; j < m; ++j) {
+      cc[j] = (number >> (m - 1 - j)) & 1;
+    }
+
+    // Active hypotheses in each family, I1, ..., I_nfamily
+    BoolMatrix family0(nfamily, m);
+    for (int j = 0; j < m; ++j) {
+      for (int h = 0; h < nfamily; ++h) {
+        family0(h, j) = family(h, j) & cc[j];
+      }
+    }
+
+    // Number of active hypotheses by family, k1, ..., k_nfamily
+    std::vector<int> nhyps0 = boolmatrix_rowsums(family0);
+
+    // Determine restricted index set for each family
+    std::vector<unsigned char> cc1(m, 1);
+
+    for (int j = 0; j < m; ++j) {
+      // Check serial constraints
+      int serial_sum = 0;
+      for (int k = 0; k < m; ++k) {
+        serial_sum += serial(j, k);
+      }
+
+      if (serial_sum > 0) {
+        // if any serial predecessor is accepted, remove j
+        for (int k = 0; k < m; ++k) {
+          if (serial(j, k) && cc[k]) {
+            cc1[j] = 0;
+            break;
+          }
+        }
+
+        // if any serial predecessor is not testable, remove j
+        for (int k = 0; k < m; ++k) {
+          if (serial(j, k) && !cc1[k]) {
+            cc1[j] = 0;
+            break;
+          }
+        }
+      }
+
+      // Check parallel constraints
+      int parallel_sum = 0;
+      for (int k = 0; k < m; ++k) {
+        parallel_sum += parallel(j, k);
+      }
+
+      if (parallel_sum > 0) {
+        // if none of the parallel predecessors are rejected, remove j
+        bool hit = true;
+        for (int k = 0; k < m; ++k) {
+          if (parallel(j, k) && !cc[k]) {
+            hit = false;
+            break;
+          }
+        }
+        if (hit) cc1[j] = 0;
+
+        // if none of the parallel predecessors are testable, remove j
+        hit = true;
+        for (int k = 0; k < m; ++k) {
+          if (parallel(j, k) && cc1[k]) {
+            hit = false;
+            break;
+          }
+        }
+        if (hit) cc1[j] = 0;
+      }
+    }
+
+    std::vector<unsigned char> cc2 = cc1; // for nstar calculation
+
+    // Apply intersection, for kstar calculation
+    for (int j = 0; j < m; ++j) {
+      cc1[j] = cc1[j] & cc[j];
+    }
+
+    // Compute kstar and nstar for error rate function
+    std::vector<int> kstar(nfamily), nstar(nfamily);
+    std::vector<double> errf(nfamily);
+    for (int j = 0; j < nfamily; ++j) {
+      kstar[j] = 0;
+      nstar[j] = 0;
+
+      for (int k = 0; k < m; ++k) {
+        if (family(j, k) && cc1[k]) kstar[j]++;
+        if (family(j, k) && cc2[k]) nstar[j]++;
+      }
+
+      // KEY DIFFERENCE from stdmix: uses kstar and nstar instead of nhyps0 and nhyps
+      errf[j] = kstar[j] > 0 ?
+      gamma[j] + (1.0 - gamma[j]) * kstar[j] / nstar[j] : 0.0;
+    }
+
+    // Allocated fraction of alpha for each family
+    std::vector<double> coef(nfamily);
+    coef[0] = 1.0;
+    for (int j = 1; j < nfamily; ++j) {
+      coef[j] = coef[j - 1] * (1.0 - errf[j - 1]);
+    }
+
+    int kmax = 0; // last family with positive allocation (1-based index)
+    for (int j = nfamily - 1; j >= 0; --j) {
+      if (coef[j] > 0.0) {
+        kmax = j + 1;
+        break;
+      }
+    }
+
+    // Families up to kmax, I_1*, ..., I_kmax*
+    BoolMatrix family1(kmax, m);
+    for (int j = 0; j < kmax; ++j) {
+      for (int k = 0; k < m; ++k) {
+        family1(j, k) = family(j, k) & cc1[k];
+      }
+    }
+
+    // Number of testable hypotheses by family, k_1*, ..., k_kmax*
+    std::vector<int> nhyps1 = boolmatrix_rowsums(family1);
+
+    // Indices of active families
+    std::vector<int> sub;
+    sub.reserve(kmax);
+    for (int j = 0; j < kmax; ++j) {
+      if (nhyps1[j] > 0) {
+        sub.push_back(j);
+      }
+    }
+
+    int nfamily2 = static_cast<int>(sub.size());
+
+    // Subset of active families after removing those without testable hypotheses
+    BoolMatrix family2(nfamily2, m);
+    std::vector<int> nhyps2(nfamily2);
+    for (int j = 0; j < nfamily2; ++j) {
+      for (int k = 0; k < m; ++k) {
+        family2(j, k) = family1(sub[j], k);
+      }
+      nhyps2[j] = nhyps1[sub[j]];
+    }
+
+    // family indices and hypothesis indices for testable hypotheses
+    std::vector<int> fam, hyps2;
+    for (int j = 0; j < nfamily2; ++j) {
+      for (int k = 0; k < m; ++k) {
+        if (family2(j, k)) {
+          fam.push_back(j);
+          hyps2.push_back(k);
+        }
+      }
+    }
+
+    // total number of testable hypotheses across active families
+    int n = static_cast<int>(hyps2.size());
+
+    // Relative importance for active families
+    std::vector<double> coef1(nfamily2);
+    for (int j = 0; j < nfamily2; ++j) {
+      coef1[j] = coef[sub[j]];
+    }
+
+    // Broadcasted family weight for each testable hypothesis
+    std::vector<double> c(n);
+    for (int k = 0; k < n; ++k) {
+      c[k] = coef1[fam[k]];
+    }
+
+    // Truncation parameters
+    std::vector<double> gam2(nfamily2);
+    for (int j = 0; j < nfamily2; ++j) {
+      gam2[j] = gamma[sub[j]];
+    }
+    if (exhaust) gam2[nfamily2 - 1] = 1.0;
+
+    // Bonferroni part of weights
+    // (KEY DIFFERENCE from stdmix: uses nstar instead of nhyps)
+    std::vector<double> coef2(nfamily2);
+    for (int j = 0; j < nfamily2; ++j) {
+      coef2[j] = (1.0 - gam2[j]) / nstar[sub[j]];
+    }
+
+    // Broadcasted Bonferroni part of weights to each testable hypothesis
+    std::vector<double> tbon(n);
+    for (int k = 0; k < n; ++k) {
+      tbon[k] = coef2[fam[k]];
+    }
+
+    // Cumulative count of hypotheses before the current family
+    std::vector<int> ck(nfamily2 + 1, 0);
+    for (int j = 1; j <= nfamily2; ++j) {
+      ck[j] = ck[j - 1] + nhyps2[j - 1];
+    }
+
+    // Compute weights
+    std::vector<double> w(n);
+    if (test1 == "hommel") {
+      for (int k = 0; k < n; ++k) {
+        int l = fam[k];
+        int j = (k + 1) - ck[l];
+        w[k] = j * gam2[l] / nhyps2[l] + tbon[k];
+      }
+    } else if (test1 == "hochberg") {
+      for (int k = 0; k < n; ++k) {
+        int l = fam[k];
+        int j = (k + 1) - ck[l];
+        w[k] = gam2[l] / (nhyps2[l] - j + 1) + tbon[k];
+      }
+    } else { // holm
+      for (int k = 0; k < n; ++k) {
+        int l = fam[k];
+        w[k] = gam2[l] / nhyps2[l] + tbon[k];
+      }
+    }
+
+    // Process each replication
+    std::vector<double> p1(n), p1s(n), p2(n);
+    for (int iter = 0; iter < nreps; ++iter) {
+      // Extract raw p-values
+      for (int k = 0; k < n; ++k) {
+        p1[k] = p(iter, hyps2[k]);
+      }
+
+      // Sort p-values within each family
+      for (int j = 0; j < nfamily2; ++j) {
+        int start = ck[j];
+        int end = ck[j + 1];
+        int len = end - start;
+        p1s = subset(p1, start, end);
+        std::sort(p1s.begin(), p1s.end());
+        std::memcpy(p2.data() + start, p1s.data(), len * sizeof(double));
+      }
+
+      // Compute minimum ratio
+      double min_val = 1.0;
+      for (int k = 0; k < n; ++k) {
+        double ratio = p2[k] / (w[k] * c[k]);
+        min_val = std::min(min_val, ratio);
+      }
+
+      pinter(iter, i) = min_val;
+    }
+
+    // Store incidence
+    for (int j = 0; j < m; ++j) {
+      incid(i, j) = cc[j];
+    }
+  }
+
+  // Compute adjusted p-values for elementary hypotheses
+  FlatMatrix padj(nreps, m);
+  for (int j = 0; j < m; ++j) {
+    for (int iter = 0; iter < nreps; ++iter) {
+      double max_p = 0.0;
+      for (int i = 0; i < ntests; ++i) {
+        if (incid(i, j)) {
+          max_p = std::max(max_p, pinter(iter, i));
+        }
+      }
+      padj(iter, j) = std::min(max_p, 1.0);
+    }
+  }
+
+  // Apply logical restrictions (serial constraints)
+  for (int j = 0; j < m; ++j) {
+    int serial_sum = 0;
+    for (int k = 0; k < m; ++k) {
+      serial_sum += serial(j, k);
+    }
+
+    if (serial_sum > 0) {
+      for (int iter = 0; iter < nreps; ++iter) {
+        double pre = 0.0;
+        for (int k = 0; k < m; ++k) {
+          if (serial(j, k)) {
+            pre = std::max(pre, padj(iter, k));
+          }
+        }
+        padj(iter, j) = std::max(padj(iter, j), pre);
+      }
+    }
+  }
+
+  // Apply logical restrictions (parallel constraints)
+  for (int j = 0; j < m; ++j) {
+    int parallel_sum = 0;
+    for (int k = 0; k < m; ++k) {
+      parallel_sum += parallel(j, k);
+    }
+
+    if (parallel_sum > 0) {
+      for (int iter = 0; iter < nreps; ++iter) {
+        double pre = 1.0;
+        for (int k = 0; k < m; ++k) {
+          if (parallel(j, k)) {
+            pre = std::min(pre, padj(iter, k));
+          }
+        }
+        padj(iter, j) = std::max(padj(iter, j), pre);
+      }
+    }
+  }
+
+  return padj;
+}
+
+
+// [[Rcpp::export]]
+Rcpp::NumericMatrix fmodmixcpp(
+    const Rcpp::NumericMatrix& p,
+    const Rcpp::LogicalMatrix& family,
+    const Rcpp::LogicalMatrix& serial,
+    const Rcpp::LogicalMatrix& parallel,
+    const Rcpp::NumericVector& gamma,
+    const std::string& test = "hommel",
+    const bool exhaust = true) {
+  auto p1 = flatmatrix_from_Rmatrix(p);
+  auto family1 = boolmatrix_from_Rmatrix(family);
+  auto serial1 = boolmatrix_from_Rmatrix(serial);
+  auto parallel1 = boolmatrix_from_Rmatrix(parallel);
+  auto gamma1 = Rcpp::as<std::vector<double>>(gamma);
+  auto padj1 = fmodmixcpp1(p1, family1, serial1, parallel1, gamma1, test, exhaust);
+  return Rcpp::wrap(padj1);
+}
+
+
+// Helper to compute truncated adjusted p-values for multiple testing
+FlatMatrix ftrunccpp1(
+    const FlatMatrix& p,
+    const std::string& test,
+    const double gamma) {
+
+  // Validate inputs
+  int niters = p.nrow;
+  int m = p.ncol;
+
+  if (gamma < 0.0 || gamma > 1.0) {
+    throw std::invalid_argument("gamma must be between 0 and 1");
+  }
+
+  // Validate p-values in [0, 1]
+  if (std::any_of(p.data.begin(), p.data.end(),
+                  [](double v){ return v < 0.0 || v > 1.0; })) {
+    throw std::invalid_argument("p-values must be between 0 and 1");
+  }
+
+  // Normalize test string
+  std::string test1 = test;
+  std::transform(test1.begin(), test1.end(), test1.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+
+  if (test1 != "hommel" && test1 != "hochberg" && test1 != "holm") {
+    throw std::invalid_argument("test must be 'hommel', 'hochberg', or 'holm'");
+  }
+
+  int ntests = (1 << m) - 1; // 2^m - 1
+
+  // Incidence matrix (ntests x m) - which hypotheses are in each intersection
+  BoolMatrix incid(ntests, m);
+
+  // Intersection p-values (niters x ntests)
+  FlatMatrix pinter(niters, ntests);
+
+  // Precompute constant factors
+  double tbon = (1.0 - gamma) / m;
+
+  // Preallocate reusable vectors
+  std::vector<int> hyp_indices; hyp_indices.reserve(m);
+  std::vector<double> p1; p1.reserve(m);
+
+  // Process each intersection hypothesis
+  for (int i = 0; i < ntests; ++i) {
+    int number = ntests - i;
+
+    // Binary representation of elementary hypotheses in intersection
+    std::vector<unsigned char> cc(m);
+    int k = 0; // count of hypotheses in this intersection
+    hyp_indices.clear();
+
+    for (int j = 0; j < m; ++j) {
+      cc[j] = (number >> (m - 1 - j)) & 1;
+      if (cc[j]) {
+        hyp_indices.push_back(j);
+        ++k;
+      }
+    }
+
+    // Store incidence (column-major: column j base = incid_data + j * ntests)
+    for (int j = 0; j < m; ++j) {
+      incid(i, j) = cc[j];
+    }
+
+    // Precompute weights if they're constant across iterations
+    std::vector<double> weights(k);
+    if (test1 == "hommel") {
+      for (int j = 0; j < k; ++j) {
+        weights[j] = (j + 1) * gamma / k + tbon;
+      }
+    } else if (test1 == "hochberg") {
+      for (int j = 0; j < k; ++j) {
+        weights[j] = gamma / (k - j) + tbon;
+      }
+    } else { // holm
+      double w_holm = gamma / k + tbon;
+      std::fill(weights.begin(), weights.end(), w_holm);
+    }
+
+    // Process each iteration/replication
+    for (int iter = 0; iter < niters; ++iter) {
+      // Extract p-values for hypotheses in this intersection
+      p1.resize(k);
+      for (int j = 0; j < k; ++j) {
+        p1[j] = p(iter, hyp_indices[j]);
+      }
+
+      // Sort p-values
+      std::sort(p1.begin(), p1.end());
+
+      // Compute minimum ratio
+      double q = 1.0;
+      for (int j = 0; j < k; ++j) {
+        double ratio = p1[j] / weights[j];
+        q = std::min(q, ratio);
+      }
+
+      pinter(iter, i) = q;
+    }
+  }
+
+  // Compute adjusted p-values for individual hypotheses
+  FlatMatrix padj(niters, m);
+
+  // For each hypothesis j, find max pinter over intersections containing j
+  for (int j = 0; j < m; ++j) {
+    for (int iter = 0; iter < niters; ++iter) {
+      double max_p = 0.0;
+      for (int i = 0; i < ntests; ++i) {
+        if (incid(i, j)) {
+          max_p = std::max(max_p, pinter(iter, i));
+        }
+      }
+
+      padj(iter, j) = max_p;
+    }
+  }
+
+  return padj;
+}
+
+
+// Hash function for caching pfutile results
+struct PfutileKey {
+  double p;
+  int n1, n2, r1, r;
+
+  bool operator==(const PfutileKey& other) const {
+    return n1 == other.n1 && n2 == other.n2 &&
+      r1 == other.r1 && r == other.r &&
+      std::abs(p - other.p) < 1e-10;
+  }
+};
+
+namespace std {
+template<>
+struct hash<PfutileKey> {
+  size_t operator()(const PfutileKey& k) const {
+    size_t seed = 0;
+
+    // Hash combine pattern (better distribution)
+    auto hash_combine = [](size_t& seed, size_t hash) {
+      seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    };
+
+    hash_combine(seed, hash<double>()(k.p));    // Include p!
+    hash_combine(seed, hash<int>()(k.n1));
+    hash_combine(seed, hash<int>()(k.n2));
+    hash_combine(seed, hash<int>()(k.r1));
+    hash_combine(seed, hash<int>()(k.r));
+
+    return seed;
+  }
+};
+}
+
+// Optimized pfutile with reusable distribution objects
+class PfutileCalculator {
+private:
+  std::unordered_map<PfutileKey, double> cache_;
+
+public:
+  double compute(double p, int n1, int n2, int r1, int r) {
+    // Check cache first
+    PfutileKey key{p, n1, n2, r1, r};
+    auto it = cache_.find(key);
+    if (it != cache_.end()) {
+      return it->second;
+    }
+
+    // Create distributions once
+    boost::math::binomial_distribution<double> binom1(n1, p);
+    boost::math::binomial_distribution<double> binom2(n2, p);
+
+    double aval = boost::math::cdf(binom1, r1);
+
+    int upper_limit = std::min(n1, r);
+    for (int x = r1 + 1; x <= upper_limit; ++x) {
+      double pmf_x = boost::math::pdf(binom1, x);
+      double cdf_stage2 = boost::math::cdf(binom2, r - x);
+      aval += pmf_x * cdf_stage2;
+    }
+
+    // Cache result
+    cache_[key] = aval;
+    return aval;
+  }
+};
+
+// Binary search for maximum r satisfying beta constraint
+int find_max_r(PfutileCalculator& calc, double pi, int n1, int n2,
+               int r1, double beta) {
+  int r_lower = r1;
+  int r_upper = r1 + n2;
+  int r_best = -1;
+
+  // Quick check 1: If even minimum r violates, no solution exists
+  if (calc.compute(pi, n1, n2, r1, r_lower) > beta) {
+    return -1;
+  }
+
+  // Quick check 2: If maximum r satisfies, return it immediately
+  if (calc.compute(pi, n1, n2, r1, r_upper) <= beta) {
+    return r_upper;
+  }
+
+  // Binary search for the maximum r where betastar <= beta
+  // Invariant: betastar is monotonically increasing in r
+  while (r_lower <= r_upper) {
+    int r_mid = r_lower + (r_upper - r_lower) / 2;
+    double betastar = calc.compute(pi, n1, n2, r1, r_mid);
+
+    if (betastar <= beta) {
+      // Constraint satisfied at r_mid
+      r_best = r_mid;
+      r_lower = r_mid + 1;  // Try larger r (search right)
+    } else {
+      // Constraint violated at r_mid
+      r_upper = r_mid - 1;  // Try smaller r (search left)
+    }
+  }
+
+  return r_best;
+}
+
+DataFrameCpp simon2stagecpp(
+    const double alpha,
+    const double beta,
+    const double piH0,
+    const double pi,
+    const int n_max) {
+
+  // Input validation
+  if (std::isnan(alpha)) throw std::invalid_argument("alpha must be provided");
+
+  if (alpha < 0.00001 || alpha >= 1.0)
+    throw std::invalid_argument("alpha must lie in [0.00001, 1)");
+
+  if (std::isnan(beta)) throw std::invalid_argument("beta must be provided");
+
+  if (beta >= 1.0 - alpha || beta < 0.0001)
+    throw std::invalid_argument("beta must lie in [0.0001, 1-alpha)");
+
+  if (std::isnan(piH0)) throw std::invalid_argument("piH0 must be provided");
+
+  if (piH0 <= 0.0 || piH0 >= 1.0)
+    throw std::invalid_argument("piH0 must lie between 0 and 1");
+
+  if (std::isnan(pi)) throw std::invalid_argument("pi must be provided");
+
+  if (pi <= piH0 || pi >= 1.0)
+    throw std::invalid_argument("pi must lie between piH0 and 1");
+
+  double p = (piH0 + pi) / 2.0;
+  double z1 = boost_qnorm(1.0 - alpha);
+  double z2 = boost_qnorm(1.0 - beta);
+
+  int n_min = static_cast<int>(std::floor(p * (1.0 - p) *
+                               std::pow((z1 + z2) / (pi - piH0), 2)));
+  int n_max1 = static_cast<int>(std::ceil(2.0 * n_min));
+
+  int n_lower = static_cast<int>(std::floor(0.5 * n_min));
+  int n_upper = std::min(n_max, n_max1);
+
+  // Create reusable calculator with cache
+  PfutileCalculator calc_pi, calc_piH0;
+
+  // Storage for candidate designs
+  std::vector<int> nx, n1x, r1x, rx;
+  std::vector<double> en0x, pet0x, alphax, powerx;
+
+  // Search over total sample sizes
+  for (int n = n_lower; n <= n_upper; ++n) {
+    double EN0_best = static_cast<double>(n);
+    int n1_best = -1, r1_best = -1, r_best = -1;
+    double pet0_best = 0.0, alpha_best = 0.0, power_best = 0.0;
+
+    bool exist = false;
+
+    // Narrow n1 search range using heuristics
+    int n1_min = std::max(1, static_cast<int>(0.15 * n));
+    int n1_max = std::min(n - 1, static_cast<int>(0.85 * n));
+
+    for (int n1 = n1_min; n1 <= n1_max; ++n1) {
+      int n2 = n - n1;
+
+      // early termination: if n1 alone exceeds best EN0
+      if (n1 >= EN0_best) {
+        break;
+      }
+
+      // Create distribution for this n1 (reused across r1 loop)
+      boost::math::binomial_distribution<double> binom_n1_piH0(n1, piH0);
+
+      for (int r1 = 0; r1 <= n1; ++r1) {
+        int r = find_max_r(calc_pi, pi, n1, n2, r1, beta);
+
+        if (r >= r1) {
+          double alphastar = 1.0 - calc_piH0.compute(piH0, n1, n2, r1, r);
+
+          if (alphastar <= alpha) {
+            exist = true;
+
+            // Use the distribution created for this n1
+            double pet0 = boost::math::cdf(binom_n1_piH0, r1);
+            double en0 = n1 + (1.0 - pet0) * n2;
+
+            if (en0 < EN0_best) {
+              EN0_best = en0;
+              n1_best = n1;
+              r1_best = r1;
+              r_best = r;
+              pet0_best = pet0;
+              alpha_best = alphastar;
+              power_best = 1.0 - calc_pi.compute(pi, n1, n2, r1, r);
+            }
+          }
+        }
+      }
+    }
+
+
+    if (exist) {
+      nx.push_back(n);
+      n1x.push_back(n1_best);
+      r1x.push_back(r1_best);
+      rx.push_back(r_best);
+      en0x.push_back(EN0_best);
+      pet0x.push_back(pet0_best);
+      alphax.push_back(alpha_best);
+      powerx.push_back(power_best);
+    }
+  }
+
+  if (nx.empty()) {
+    throw std::runtime_error("No design found satisfying the constraints");
+  }
+
+  // [Rest of the code for convex hull and output formatting - same as before]
+  auto min_it = std::min_element(en0x.begin(), en0x.end());
+  int I = static_cast<int>(std::distance(en0x.begin(), min_it));
+
+  nx.resize(I + 1);
+  n1x.resize(I + 1);
+  r1x.resize(I + 1);
+  rx.resize(I + 1);
+  en0x.resize(I + 1);
+  pet0x.resize(I + 1);
+  alphax.resize(I + 1);
+  powerx.resize(I + 1);
+
+  std::vector<int> u_indices;
+  u_indices.push_back(0);
+
+  int i = 0;
+  while (i < I) {
+    int best_j = -1;
+    double min_slope = std::numeric_limits<double>::infinity();
+
+    for (int j = i + 1; j <= I; ++j) {
+      double slope = (en0x[j] - en0x[i]) / (nx[j] - nx[i]);
+      if (slope < min_slope) {
+        min_slope = slope;
+        best_j = j;
+      }
+    }
+
+    i = best_j;
+    u_indices.push_back(i);
+  }
+
+  // Extract admissible designs
+  subset_in_place(nx, u_indices);
+  subset_in_place(n1x, u_indices);
+  subset_in_place(r1x, u_indices);
+  subset_in_place(rx, u_indices);
+  subset_in_place(en0x, u_indices);
+  subset_in_place(pet0x, u_indices);
+  subset_in_place(alphax, u_indices);
+  subset_in_place(powerx, u_indices);
+
+  int m = static_cast<int>(nx.size());
+  std::vector<double> w1(m), w2(m);
+  std::vector<std::string> design(m);
+
+  for (int i = 0; i < m; ++i) {
+    if (i < m - 1) {
+      double slope = (en0x[i + 1] - en0x[i]) / (nx[i + 1] - nx[i]);
+      double w = slope / (slope - 1.0);
+
+      if (i == 0) {
+        w1[i] = w;
+        w2[i] = 1.0;
+        design[i] = "Minimax";
+      } else {
+        w1[i] = w;
+        w2[i] = w1[i - 1];
+        design[i] = "Admissible";
+      }
+    } else {
+      w1[i] = 0.0;
+      w2[i] = w1[i - 1];
+      design[i] = "Optimal";
+    }
+  }
+
+  // Build result DataFrame
+  DataFrameCpp result;
+  std::vector<double> piH0_vec(m, piH0);
+  result.push_back(piH0_vec, "piH0");
+  result.push_back(pi, "pi");
+  result.push_back(alpha, "alpha");
+  result.push_back(beta, "beta");
+  result.push_back(nx, "n");
+  result.push_back(n1x, "n1");
+  result.push_back(r1x, "r1");
+  result.push_back(rx, "r");
+  result.push_back(en0x, "EN0");
+  result.push_back(alphax, "attainedAlpha");
+  result.push_back(powerx, "attainedPower");
+  result.push_back(pet0x, "PET0");
+  result.push_back(w1, "w_lower");
+  result.push_back(w2, "w_upper");
+  result.push_back(design, "design");
+
+  return result;
+}
+
+
+//' @title Simon's Two-Stage Design
+//' @description Obtains Simon's two-stage minimax, admissible, and
+//' optimal designs.
+//'
+//' @param alpha Type I error rate (one-sided).
+//' @param beta Type II error rate (1-power).
+//' @param piH0 Response probability under the null hypothesis.
+//' @param pi Response probability under the alternative hypothesis.
+//' @param n_max Upper limit for sample size, defaults to 110.
+//'
+//' @return A data frame containing the following variables:
+//'
+//' * \code{piH0}: Response probability under the null hypothesis.
+//'
+//' * \code{pi}: Response probability under the alternative hypothesis.
+//'
+//' * \code{alpha}: The specified one-sided significance level.
+//'
+//' * \code{beta}: The specified type II error.
+//'
+//' * \code{n}: Total sample size.
+//'
+//' * \code{n1}: Stage 1 sample size.
+//'
+//' * \code{r1}: Futility boundary for stage 1.
+//'
+//' * \code{r}: Futility boundary for stage 2.
+//'
+//' * \code{EN0}: Expected sample size under the null hypothesis.
+//'
+//' * \code{attainedAlpha}: Attained type 1 error.
+//'
+//' * \code{power}: Attained power.
+//'
+//' * \code{PET0}: Probability of early stopping under the null hypothesis.
+//'
+//' * \code{w_lower}: Lower bound of the interval for \code{w}.
+//'
+//' * \code{w_upper}: Upper bound of the interval for \code{w}.
+//'
+//' * \code{design}: Description of the design, e.g., minimax, admissible,
+//'   or optimal.
+//'
+//' Here \code{w} is the weight in the objective function:
+//' \code{w*n + (1-w)*EN0}.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @examples
+//' simon2stage(0.05, 0.2, 0.1, 0.3)
+//'
+//' @export
+// [[Rcpp::export]]
+Rcpp::DataFrame simon2stage(
+    const double alpha = NA_REAL,
+    const double beta = NA_REAL,
+    const double piH0 = NA_REAL,
+    const double pi = NA_REAL,
+    const int n_max = 110) {
+  auto result = simon2stagecpp(alpha, beta, piH0, pi, n_max);
+  return Rcpp::wrap(result);
+}
