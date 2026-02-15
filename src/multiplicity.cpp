@@ -1,21 +1,19 @@
 // [[Rcpp::depends(RcppParallel)]]
+#include "generic_design.h"
 #include "utilities.h"
 #include "dataframe_list.h"
 
+#include <algorithm>     // any_of, distance, fill, max_element, min, sort
+#include <cctype>        // tolower
+#include <cmath>         // fabs, isnan
+#include <cstring>       // memcpy
+#include <numeric>       // accumulate
+#include <stdexcept>     // invalid_argument
+#include <string>        // string
+#include <vector>        // vector
+
 #include <Rcpp.h>
 #include <RcppParallel.h>
-
-#include <algorithm>   // min_element, max_element, find, sort, adjacent_find,
-// any_of, fill, distance, min, for_each, transform, tolower
-#include <cctype>      // tolower
-#include <cmath>       // fabs, isnan
-#include <cstring>     // memcpy
-#include <limits>      // numeric_limits
-#include <numeric>     // accumulate
-#include <stdexcept>   // invalid_argument
-#include <string>      // string
-#include <vector>      // vector
-#include <unordered_map>
 
 
 // Helper to update graph for graphical approaches

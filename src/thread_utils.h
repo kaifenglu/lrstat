@@ -1,11 +1,13 @@
 #ifndef THREAD_UTILS_H
 #define THREAD_UTILS_H
 
-#include <Rcpp.h>
-#include <RcppThread.h>
 #include <mutex>
 #include <string>
 #include <vector>
+
+#include <Rcpp.h>
+#include <RcppThread.h>
+
 
 namespace thread_utils {
 

@@ -1,7 +1,5 @@
 #include "dataframe_list.h"
 
-#include <Rcpp.h>
-
 #include <algorithm> // copy_n, fill, max_element, remove
 #include <cmath>     // isnan
 #include <cstddef>   // size_t
@@ -12,6 +10,9 @@
 #include <utility>   // move
 #include <variant>   // get_if, variant
 #include <vector>    // vector
+
+#include <Rcpp.h>
+
 
 // ------------------------- DataFrameCpp members (small) -------------------
 
@@ -750,7 +751,7 @@ std::vector<unsigned char> boolmatrix_get_column(const BoolMatrix& M, int col) {
   if (col < 0 || col >= M.ncol) throw std::out_of_range("column index out of range");
   const unsigned char* src = M.data_ptr() + BoolMatrix::idx_col(0, col, M.nrow);
   std::vector<unsigned char> out(static_cast<std::size_t>(M.nrow));
-  std::memcpy(out.data(), src, 
+  std::memcpy(out.data(), src,
               static_cast<std::size_t>(M.nrow) * sizeof(unsigned char));
   return out;
 }
@@ -773,14 +774,14 @@ void intmatrix_set_column(IntMatrix& M, int col, const std::vector<int>& src) {
   std::memcpy(dst_ptr, src_ptr, static_cast<std::size_t>(M.nrow) * sizeof(int));
 }
 
-void boolmatrix_set_column(BoolMatrix& M, int col, 
+void boolmatrix_set_column(BoolMatrix& M, int col,
                            const std::vector<unsigned char>& src) {
   if (col < 0 || col >= M.ncol) throw std::out_of_range("col out of range");
   if (static_cast<int>(src.size()) != M.nrow)
     throw std::invalid_argument("src size != M.nrow");
   const unsigned char* src_ptr = src.data();
   unsigned char* dst_ptr = M.data_ptr() + BoolMatrix::idx_col(0, col, M.nrow);
-  std::memcpy(dst_ptr, src_ptr, 
+  std::memcpy(dst_ptr, src_ptr,
               static_cast<std::size_t>(M.nrow) * sizeof(unsigned char));
 }
 

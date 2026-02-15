@@ -3,8 +3,6 @@
 #include "dataframe_list.h"
 #include "thread_utils.h"
 
-#include <Rcpp.h>
-
 #include <algorithm> // any_of, fill, for_each, none_of, sort
 #include <cctype>    // tolower
 #include <climits>   // INT_MIN
@@ -14,6 +12,9 @@
 #include <string>    // string
 #include <utility>   // move
 #include <vector>    // vector
+
+#include <Rcpp.h>
+
 
 // structure to hold parameters for logistic regression
 struct logparams {
@@ -39,7 +40,7 @@ ListCpp f_der_0(int p, const std::vector<double>& par, void *ex, bool firth) {
   for (int i = 0; i < n; ++i) {
     fwvec[i] = freq[i] * weight[i];
   }
-  
+
   // compute linear predictor eta efficiently using column-major storage:
   std::vector<double> eta = param->offset; // initialize with offset
   // add contributions of each coefficient times column
@@ -51,11 +52,11 @@ ListCpp f_der_0(int p, const std::vector<double>& par, void *ex, bool firth) {
       eta[r] += beta * zi[r];
     }
   }
-  
+
   double loglik = 0.0;
   std::vector<double> score(p);
   FlatMatrix imat(p, p); // information matrix in column-major p x p
-  
+
   // Pre-allocate per-observation temporaries
   std::vector<double> rvec(n); // fitted probabilities
   std::vector<double> c1(n);   // contribution for score
@@ -69,13 +70,13 @@ ListCpp f_der_0(int p, const std::vector<double>& par, void *ex, bool firth) {
     a.assign(n, 0.0);
     b.assign(n, 0.0);
   }
-  
+
   // 1) single pass over observations: compute r, loglik, c1, c2 + firth temporaries
   for (int person = 0; person < n; ++person) {
     double fw = fwvec[person];
     double y = yv[person];
     double et = eta[person];
-    
+
     if (link_code == 1) {                // logit
       double r = boost_plogis(et);
       rvec[person] = r;
@@ -118,7 +119,7 @@ ListCpp f_der_0(int p, const std::vector<double>& par, void *ex, bool firth) {
       }
     }
   }
-  
+
   // 2) compute score vector by column dot-products: score[j] = sum_i c1[i] * z_{i,j}
   for (int j = 0; j < p; ++j) {
     const double* zcol = zptr + j * n;   // start of column j
@@ -127,7 +128,7 @@ ListCpp f_der_0(int p, const std::vector<double>& par, void *ex, bool firth) {
     for (int i = 0; i < n; ++i) s += c1[i] * zcol[i];
     score[j] = s;
   }
-  
+
   // 3) compute information matrix (lower triangle) using c2 as per-observation weight
   for (int j = 0; j < p; ++j) {
     const double* zj = zptr + j * n;
@@ -140,32 +141,32 @@ ListCpp f_der_0(int p, const std::vector<double>& par, void *ex, bool firth) {
       imat(i, j) = sum;
     }
   }
-  
+
   // 4) fill upper triangle as before (keep symmetric)
   for (int j = 1; j < p; ++j) {
     for (int i = 0; i < j; ++i) {
       imat(i, j) = imat(j, i);
     }
   }
-  
+
   if (firth) {
     // make a copy for Cholesky so we preserve imat for output
     FlatMatrix imat0 = imat;
     cholesky2(imat0, p); // in-place Cholesky on imat0
-    
+
     double sumlog = 0.0;
     for (int i = 0; i < p; ++i) sumlog += std::log(imat0(i, i));
-    
+
     double penloglik = loglik + 0.5 * sumlog;
-    
+
     // precompute per-person scalar c[k] = f * w * a[k]
     std::vector<double> c(n);
     for (int person = 0; person < n; ++person) {
       c[person] = fwvec[person] * a[person];
     }
-    
+
     FlatMatrix xwx(p, p); // data initially zeroed by constructor
-    
+
     // compute lower triangle (i >= j) using column-major access
     for (int j = 0; j < p; ++j) {
       const double* zj = zptr + j * n;      // Z(:, j)
@@ -179,18 +180,18 @@ ListCpp f_der_0(int p, const std::vector<double>& par, void *ex, bool firth) {
         xwx(i, j) = sum;
       }
     }
-    
+
     // fill upper triangle of xwx
     for (int j = 1; j < p; ++j) {
       for (int i = 0; i < j; ++i) {
         xwx(i, j) = xwx(j, i);
       }
     }
-    
+
     // compute inverse of xwx as FlatMatrix
     FlatMatrix var = invsympd(xwx, p);
     const double* vptr = var.data_ptr();
-    
+
     std::vector<double> h0(n, 0.0);
     for (int k = 0; k < p; ++k) {
       const double* zk = zptr + k * n;   // column k of Z
@@ -203,7 +204,7 @@ ListCpp f_der_0(int p, const std::vector<double>& par, void *ex, bool firth) {
         }
       }
     }
-    
+
     // compute u[r] = f * w * resid * d + 0.5 * b * (f * w * a * h0)
     std::vector<double> u(n);
     for (int i = 0; i < n; ++i) {
@@ -212,16 +213,16 @@ ListCpp f_der_0(int p, const std::vector<double>& par, void *ex, bool firth) {
       double h_scaled = h0[i] * fw * a[i];
       u[i] = fw * resid * d[i] + 0.5 * b[i] * h_scaled;
     }
-    
+
     // compute g = Z^T * u
-    std::vector<double> g(p, 0.0); 
-    for (int j = 0; j < p; ++j) { 
-      const double* zj = zptr + j * n; // Z(:, j) 
-      double sum = 0.0; 
-      for (int i = 0; i < n; ++i) sum += u[i] * zj[i]; 
+    std::vector<double> g(p, 0.0);
+    for (int j = 0; j < p; ++j) {
+      const double* zj = zptr + j * n; // Z(:, j)
+      double sum = 0.0;
+      for (int i = 0; i < n; ++i) sum += u[i] * zj[i];
       g[j] = sum;
     }
-    
+
     ListCpp result;
     result.push_back(penloglik, "loglik");
     result.push_back(std::move(g), "score");
@@ -240,7 +241,7 @@ ListCpp f_der_0(int p, const std::vector<double>& par, void *ex, bool firth) {
 
 
 // --------------------------- f_ressco_0 (score residuals) --------------------
-// Returns an n x p FlatMatrix (column-major), where entry (r, c) equals 
+// Returns an n x p FlatMatrix (column-major), where entry (r, c) equals
 // residual for observation r and covariate c.
 FlatMatrix f_ressco_0(int p, const std::vector<double>& par, void *ex) {
   logparams *param = (logparams *) ex;
@@ -248,7 +249,7 @@ FlatMatrix f_ressco_0(int p, const std::vector<double>& par, void *ex) {
   const int link_code = param->link_code;
   const std::vector<int>& yv = param->y;
   const double* zptr = param->z.data_ptr();
-  
+
   // compute eta similarly to f_der_0
   std::vector<double> eta = param->offset;
   for (int i = 0; i < p; ++i) {
@@ -259,10 +260,10 @@ FlatMatrix f_ressco_0(int p, const std::vector<double>& par, void *ex) {
       eta[r] += beta * zi[r];
     }
   }
-  
+
   FlatMatrix resid(n, p);
-  double* rptr = resid.data_ptr(); 
-  
+  double* rptr = resid.data_ptr();
+
   switch (link_code) {
   case 1: { // logit
     std::vector<double> v(n);
@@ -270,7 +271,7 @@ FlatMatrix f_ressco_0(int p, const std::vector<double>& par, void *ex) {
       double r = boost_plogis(eta[person]);
       v[person] = yv[person] - r;
     }
-    
+
     for (int i = 0; i < p; ++i) {
       int off = i * n;
       const double* zcol = zptr + off;
@@ -281,7 +282,7 @@ FlatMatrix f_ressco_0(int p, const std::vector<double>& par, void *ex) {
     }
     break;
   }
-    
+
   case 2: { // probit
     std::vector<double> vd(n);
     for (int person = 0; person < n; ++person) {
@@ -291,7 +292,7 @@ FlatMatrix f_ressco_0(int p, const std::vector<double>& par, void *ex) {
       double v = yv[person] - r;
       vd[person] = v * d;
     }
-    
+
     for (int i = 0; i < p; ++i) {
       int off = i * n;
       const double* zcol = zptr + off;
@@ -311,7 +312,7 @@ FlatMatrix f_ressco_0(int p, const std::vector<double>& par, void *ex) {
       double v = yv[person] - r;
       vd[person] = v * d;
     }
-    
+
     for (int i = 0; i < p; ++i) {
       int off = i * n;
       const double* zcol = zptr + off;
@@ -331,10 +332,10 @@ ListCpp logisregloop(int p, const std::vector<double>& par, void *ex,
                      int maxiter, double eps, bool firth,
                      const std::vector<int>& colfit, int ncolfit) {
   logparams *param = (logparams *) ex;
-  
+
   int iter = 0, halving = 0;
   bool fail = false;
-  
+
   std::vector<double> beta = par;
   std::vector<double> newbeta(p);
   double loglik = 0.0, newlk = 0.0;
@@ -343,34 +344,34 @@ ListCpp logisregloop(int p, const std::vector<double>& par, void *ex,
   double* u1 = uu1.data();
   FlatMatrix imat(p, p);
   FlatMatrix imat1(ncolfit, ncolfit);
-  
+
   // --- first step ---
   ListCpp der = f_der_0(p, beta, param, firth);
   loglik = der.get<double>("loglik");
   u = der.get<std::vector<double>>("score");
   imat = der.get<FlatMatrix>("imat");
-  
+
   for (int i = 0; i < ncolfit; ++i) u1[i] = u[colfit[i]];
-  
+
   for (int j = 0; j < ncolfit; ++j)
     for (int i = 0; i < ncolfit; ++i)
       imat1(i,j) = imat(colfit[i], colfit[j]);
-  
+
   cholesky2(imat1, ncolfit);
   chsolve2(imat1, ncolfit, u1);
-  
+
   std::fill(u.begin(), u.end(), 0.0);
   for (int i = 0; i < ncolfit; ++i) u[colfit[i]] = u1[i];
   for (int i = 0; i < p; ++i) newbeta[i] = beta[i] + u[i];
-  
+
   // --- main iteration ---
   for (iter = 0; iter < maxiter; ++iter) {
     der = f_der_0(p, newbeta, param, firth);
     newlk = der.get<double>("loglik");
-    
+
     fail = std::isnan(newlk) || std::isinf(newlk);
     if (!fail && halving == 0 && std::fabs(1 - (loglik / newlk)) < eps) break;
-    
+
     if (fail || newlk < loglik) {
       ++halving;
       for (int i = 0; i < p; ++i) {
@@ -378,54 +379,54 @@ ListCpp logisregloop(int p, const std::vector<double>& par, void *ex,
       }
       continue;
     }
-    
+
     halving = 0;
     beta = newbeta;
     loglik = newlk;
     u = der.get<std::vector<double>>("score");
     imat = der.get<FlatMatrix>("imat");
-    
+
     for (int i = 0; i < ncolfit; ++i) u1[i] = u[colfit[i]];
-    
+
     for (int j = 0; j < ncolfit; ++j)
       for (int i = 0; i < ncolfit; ++i)
         imat1(i, j) = imat(colfit[i], colfit[j]);
-    
+
     cholesky2(imat1, ncolfit);
     chsolve2(imat1, ncolfit, u1);
-    
+
     std::fill(u.begin(), u.end(), 0.0);
     for (int i = 0; i < ncolfit; ++i) u[colfit[i]] = u1[i];
     for (int i = 0; i < p; ++i) newbeta[i] = beta[i] + u[i];
   }
-  
+
   if (iter == maxiter) fail = true;
-  
+
   // final variance assembly
   imat = der.get<FlatMatrix>("imat");
-  
+
   for (int j = 0; j < ncolfit; ++j)
     for (int i = 0; i < ncolfit; ++i)
       imat1(i, j) = imat(colfit[i], colfit[j]);
-  
+
   FlatMatrix var1 = invsympd(imat1, ncolfit);
   FlatMatrix var(p, p);
   for (int j = 0; j < ncolfit; ++j)
     for (int i = 0; i < ncolfit; ++i)
       var(colfit[i], colfit[j]) = var1(i, j);
-  
+
   ListCpp result;
   result.push_back(std::move(newbeta), "coef");
   result.push_back(iter, "iter");
   result.push_back(std::move(var), "var");
   result.push_back(newlk, "loglik");
   result.push_back(fail, "fail");
-  
+
   if (firth) {
     double regloglik = der.get<double>("regloglik");
     result.push_back(regloglik, "regloglik");
   }
-  
+
   return result;
 }
 
@@ -436,7 +437,7 @@ double logisregplloop(int p, const std::vector<double>& par,
   logparams *param = (logparams *) ex;
   int iter;
   bool fail = false;
-  
+
   std::vector<double> beta = par;
   std::vector<double> newbeta(p);
   double loglik = 0.0, newlk = 0.0;
@@ -444,13 +445,13 @@ double logisregplloop(int p, const std::vector<double>& par,
   std::vector<double> delta(p);
   FlatMatrix imat(p, p);
   FlatMatrix v(p, p);
-  
+
   ListCpp der = f_der_0(p, beta, param, firth);
   loglik = der.get<double>("loglik");
   u = der.get<std::vector<double>>("score");
   imat = der.get<FlatMatrix>("imat");
   v = invsympd(imat, p);
-  
+
   // compute w = - u^T v u
   double w = -quadsym(u, v);
   double underroot = -2 * (l0 - loglik + 0.5 * w) / v(k, k);
@@ -458,8 +459,8 @@ double logisregplloop(int p, const std::vector<double>& par,
   u[k] += lambda;
   delta = mat_vec_mult(v, u);
   for (int i = 0; i < p; ++i) newbeta[i] = beta[i] + delta[i];
-  
-  // iterate to convergence 
+
+  // iterate to convergence
   for (iter = 0; iter < maxiter; ++iter) {
     der = f_der_0(p, newbeta, param, firth);
     newlk = der.get<double>("loglik");
@@ -477,10 +478,10 @@ double logisregplloop(int p, const std::vector<double>& par,
     delta = mat_vec_mult(v, u);
     for (int i = 0; i < p; ++i) newbeta[i] = beta[i] + delta[i];
   }
-  
+
   if (iter == maxiter) fail = true;
   if (fail) thread_utils::push_thread_warning("logisregplloop did not converge.");
-  
+
   return newbeta[k];
 }
 
@@ -502,13 +503,13 @@ ListCpp logisregcpp(const DataFrameCpp& data,
                     const double alpha,
                     const int maxiter,
                     const double eps) {
-  
+
   int n = data.nrows();
   int p = covariates.size() + 1;
   if (p == 2 && covariates[0].empty()) p = 1;
-  
+
   if (event.empty()) throw std::invalid_argument("event variable is not specified");
-  if (!data.containElementNamed(event)) 
+  if (!data.containElementNamed(event))
     throw std::invalid_argument("data must contain the event variable");
   std::vector<int> eventn(n);
   if (data.bool_cols.count(event)) {
@@ -522,18 +523,18 @@ ListCpp logisregcpp(const DataFrameCpp& data,
   } else {
     throw std::invalid_argument("event variable must be bool, integer or numeric");
   }
-  for (double val : eventn) if (val != 0 && val != 1) 
+  for (double val : eventn) if (val != 0 && val != 1)
     throw std::invalid_argument("event must be 1 or 0 for each observation");
-  
+
   // construct design matrix zn (n x p) as FlatMatrix column-major
   FlatMatrix zn(n, p);
   // intercept column
   for (int i = 0; i < n; ++i) zn.data[i] = 1.0;
-  
+
   // fill covariate columns (1..p-1)
   for (int j = 0; j < p - 1; ++j) {
     const std::string& zj = covariates[j];
-    if (!data.containElementNamed(zj)) 
+    if (!data.containElementNamed(zj))
       throw std::invalid_argument("data must contain the variables in covariates");
     double* zn_col = zn.data_ptr() + (j + 1) * n;
     if (data.bool_cols.count(zj)) {
@@ -549,7 +550,7 @@ ListCpp logisregcpp(const DataFrameCpp& data,
       throw std::invalid_argument("covariates must be bool, integer or numeric");
     }
   }
-  
+
   // freq, weight, offset
   std::vector<int> freqn(n, 1);
   if (!freq.empty() && data.containElementNamed(freq)) {
@@ -559,10 +560,10 @@ ListCpp logisregcpp(const DataFrameCpp& data,
       const std::vector<double>& vd = data.get<double>(freq);
       for (int i = 0; i < n; ++i) freqn[i] = static_cast<int>(vd[i]);
     } else throw std::invalid_argument("freq variable must be integer or numeric");
-    for (double v : freqn) if (v <= 0) 
+    for (double v : freqn) if (v <= 0)
       throw std::invalid_argument("freq must be positive integers");
   }
-  
+
   std::vector<double> weightn(n, 1.0);
   if (!weight.empty() && data.containElementNamed(weight)) {
     if (data.int_cols.count(weight)) {
@@ -571,10 +572,10 @@ ListCpp logisregcpp(const DataFrameCpp& data,
     } else if (data.numeric_cols.count(weight)) {
       weightn = data.get<double>(weight);
     } else throw std::invalid_argument("weight variable must be integer or numeric");
-    for (double v : weightn) if (v <= 0.0) 
+    for (double v : weightn) if (v <= 0.0)
       throw std::invalid_argument("weight must be greater than 0");
   }
-  
+
   std::vector<double> offsetn(n, 0.0);
   if (!offset.empty() && data.containElementNamed(offset)) {
     if (data.int_cols.count(offset)) {
@@ -584,7 +585,7 @@ ListCpp logisregcpp(const DataFrameCpp& data,
       offsetn = data.get<double>(offset);
     } else throw std::invalid_argument("offset variable must be integer or numeric");
   }
-  
+
   // id processing (unchanged semantics)
   bool has_id = !id.empty() && data.containElementNamed(id);
   std::vector<int> idn(n);
@@ -608,26 +609,26 @@ ListCpp logisregcpp(const DataFrameCpp& data,
           "incorrect type for the id variable in the input data");
     }
   }
-  
+
   // link code mapping
   std::string link1 = link;
   for (char &c : link1) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
-  
+
   if (link1 == "log-log" || link1 == "loglog") link1 = "cloglog";
-  
+
   int link_code = 0;
   if (link1 == "logit") link_code = 1;
   else if (link1 == "probit") link_code = 2;
   else if (link1 == "cloglog") link_code = 3;
   else throw std::invalid_argument("invalid link: " + link1);
-  
+
   // exclude observations with missing values
   std::vector<unsigned char> sub(n, 1);
-  for (int i = 0; i < n; ++i) { 
-    if (eventn[i] == INT_MIN || freqn[i] == INT_MIN || 
-        std::isnan(weightn[i]) || std::isnan(offsetn[i]) || 
+  for (int i = 0; i < n; ++i) {
+    if (eventn[i] == INT_MIN || freqn[i] == INT_MIN ||
+        std::isnan(weightn[i]) || std::isnan(offsetn[i]) ||
         idn[i] == INT_MIN) {
       sub[i] = 0;
       continue;
@@ -636,7 +637,7 @@ ListCpp logisregcpp(const DataFrameCpp& data,
       if (std::isnan(zn(i, j+1))) { sub[i] = 0; break; }
     }
   }
-  
+
   std::vector<int> order = which(sub);
   subset_in_place(eventn, order);
   subset_in_place(freqn, order);
@@ -646,14 +647,14 @@ ListCpp logisregcpp(const DataFrameCpp& data,
   subset_in_place_flatmatrix(zn, order);
   n = order.size();
   if (n == 0) throw std::invalid_argument("no observations without missing values");
-  
+
   // sumstat data set
   int nobs, nevents;
   double loglik0, loglik1;
   double regloglik0, regloglik1; // regular loglik
   int niter;
   bool fail;
-  
+
   // parest data set
   std::vector<std::string> par(p);
   std::vector<double> b(p), seb(p), rseb(p);
@@ -661,13 +662,13 @@ ListCpp logisregcpp(const DataFrameCpp& data,
   FlatMatrix vb(p, p), rvb(p, p);
   std::vector<double> lb(p), ub(p), prob(p);
   std::vector<std::string> clparm(p);
-  
+
   // linear predictor and fitted values for all observations
   std::vector<double> linear_predictors(n), fitted_values(n);
-  
+
   double zcrit = boost_qnorm(1.0 - alpha / 2.0);
   double xcrit = zcrit * zcrit;
-  
+
   // number of trials and number of events accounting for frequencies
   nobs = std::accumulate(freqn.begin(), freqn.end(), 0);
   nevents = std::inner_product(freqn.begin(), freqn.end(), eventn.begin(), 0);
@@ -684,14 +685,14 @@ ListCpp logisregcpp(const DataFrameCpp& data,
       prob[i] = NaN;
       clparm[i] = "Wald";
     }
-    
+
     for (int j = 0; j < p; ++j) {
       for (int i = 0; i < p; ++i) {
-        vb(i,j) = 0;    
+        vb(i,j) = 0;
         rvb(i,j) = 0;
       }
     }
-    
+
     for (int person = 0; person < n; ++person) {
       linear_predictors[person] = offsetn[person];
     }
@@ -709,7 +710,7 @@ ListCpp logisregcpp(const DataFrameCpp& data,
         fitted_values[person] = boost_pextreme(linear_predictors[person]);
       break;
     }
-    
+
     loglik0 = NaN;
     loglik1 = NaN;
     regloglik0 = NaN;
@@ -727,48 +728,48 @@ ListCpp logisregcpp(const DataFrameCpp& data,
       num += 0.5;
       den += 1.0;
     }
-    
+
     std::vector<double> bint0(p);
     bint0[0] = boost_qlogis(num / den);
-    
+
     std::vector<int> colfit0(1);
     logparams param = {n, link_code, eventn, zn, freqn, weightn, offsetn};
     ListCpp outint = logisregloop(p, bint0, &param, maxiter, eps, firth, colfit0, 1);
-    
+
     std::vector<double> bint = outint.get<std::vector<double>>("coef");
     FlatMatrix vbint = outint.get<FlatMatrix>("var");
-    
+
     ListCpp out;
-    
+
     if (p > 1) {
       // parameter estimates and standard errors for the full model
       std::vector<int> colfit = seqcpp(0,p-1);
-      if (!init.empty() && static_cast<int>(init.size()) == p && 
-          std::none_of(init.begin(), init.end(), [](double val){ 
+      if (!init.empty() && static_cast<int>(init.size()) == p &&
+          std::none_of(init.begin(), init.end(), [](double val){
             return std::isnan(val); })) {
         out = logisregloop(p, init, &param, maxiter, eps, firth, colfit, p);
       } else {
         out = logisregloop(p, bint, &param, maxiter, eps, firth, colfit, p);
       }
-      
+
       fail = out.get<bool>("fail");
       if (fail) {
         thread_utils::push_thread_warning(
           "logisregloop failed to converge for the full model; "
           "continuing with current results.");
       }
-      
+
       b = out.get<std::vector<double>>("coef");
       vb = out.get<FlatMatrix>("var");
-      
+
       // intercept correction
       if (flic) {
         std::vector<double> lp = offsetn;  // linear predictor excluding intercept
-        
+
         // pointers into data for fastest access
         const double* zptr = zn.data_ptr();
         double* lpptr = lp.data();
-        
+
         for (int col = 1; col < p; ++col) {   // skip intercept column 0
           double coef = b[col];
           if (coef == 0.0) continue;                       // skip zero coefficient
@@ -778,17 +779,17 @@ ListCpp logisregcpp(const DataFrameCpp& data,
             lpptr[row] += coef * zcol[row];
           }
         }
-        
+
         logparams param0 = {n, link_code, eventn, zn, freqn, weightn, lp};
         std::vector<double> bint00(1, bint0[0]);
-        ListCpp outint0 = logisregloop(1, bint00, &param0, maxiter, 
+        ListCpp outint0 = logisregloop(1, bint00, &param0, maxiter,
                                        eps, 0, colfit0, 1);
         double a = outint0.get<std::vector<double>>("coef")[0];
         double va = outint0.get<FlatMatrix>("var")(0,0);
-        
+
         // update the intercept estimate
         b[0] = a;
-        
+
         // partial derivative of alpha(beta) with respect to beta
         ListCpp derint = f_der_0(p, b, &param, 0);
         FlatMatrix iflic = derint.get<FlatMatrix>("imat");
@@ -796,7 +797,7 @@ ListCpp logisregcpp(const DataFrameCpp& data,
         for (int i = 0; i < p - 1; ++i) {
           der[i] = -iflic(i+1, 0) / iflic(0, 0);
         }
-        
+
         // update variance-covariance matrix via the delta method
         if (p <= 1) { // only intercept
           vb(0,0) = va;
@@ -804,12 +805,12 @@ ListCpp logisregcpp(const DataFrameCpp& data,
           int p1 = p - 1;                  // length of der and of the submatrix
           const double* derp = der.data();
           double* vbptr = vb.data_ptr();    // column-major
-          
+
           // accumulator for vb(1..p-1,0): indexed 0..p1-1 corresponds to rows 1..p-1
           std::vector<double> col0(p1, 0.0);
-          
+
           // Compute col0 = M * der, where M = vb[1..p-1, 1..p-1]
-          // columns of M correspond to vb columns 1..p-1; 
+          // columns of M correspond to vb columns 1..p-1;
           // for column j (0..p1-1) start at
           // src = vbptr + (j+1)*nrows and element M(row = r+1, col = j+1) is src[r+1]
           for (int j = 0; j < p1; ++j) {
@@ -821,7 +822,7 @@ ListCpp logisregcpp(const DataFrameCpp& data,
               col0[r] += src_col[r + 1] * dj;
             }
           }
-          
+
           // write back vb(1..p-1,0) and vb(0,1..p-1) and compute der^T * col0
           double dot = 0.0;
           // vb( row, col ) -> vbptr[ col*nrows + row ]
@@ -831,31 +832,31 @@ ListCpp logisregcpp(const DataFrameCpp& data,
             vbptr[(r + 1) * p + 0] = v;          // vb(0, r+1)
             dot += derp[r] * v;
           }
-          
+
           // final scalar update
-          vbptr[0] = va + dot;                       // vb(0,0)  
+          vbptr[0] = va + dot;                       // vb(0,0)
         }
       }
     } else {
       b = bint;
       vb = vbint;
       out = outint;
-      
+
       if (flic) {
         out = logisregloop(p, bint0, &param, maxiter, eps, 0, colfit0, 1);
         b = out.get<std::vector<double>>("coef");
         vb = outint.get<FlatMatrix>("var");
       }
     }
-    
+
     for (int i = 0; i < p; ++i) {
       seb[i] = std::sqrt(vb(i,i));
     }
-    
+
     for (int i = 0; i < p; ++i) {
       par[i] = (i == 0) ? "(Intercept)" : covariates[i-1];
     }
-    
+
     // linear predictors and fitted values
     std::vector<double> eta = offsetn;
     for (int i = 0; i < p; ++i) {
@@ -867,7 +868,7 @@ ListCpp logisregcpp(const DataFrameCpp& data,
       }
     }
     linear_predictors = eta;
-    
+
     switch (link_code) {
     case 1: // logit
       for (int person = 0; person < n; ++person) {
@@ -885,14 +886,14 @@ ListCpp logisregcpp(const DataFrameCpp& data,
       }
       break;
     }
-    
+
     niter = out.get<int>("iter");
     fail = out.get<bool>("fail");
-    
+
     // robust variance estimates
     if (robust) {
       FlatMatrix ressco = f_ressco_0(p, b, &param);
-      
+
       int nr; // number of rows in the score residual matrix
       std::vector<int> freqr;
       if (!has_id) {
@@ -902,7 +903,7 @@ ListCpp logisregcpp(const DataFrameCpp& data,
             rcol[i] *= weightn[i];
           }
         }
-        
+
         nr = n;
         freqr = freqn;
       } else { // need to sum up score residuals by id
@@ -911,7 +912,7 @@ ListCpp logisregcpp(const DataFrameCpp& data,
         std::sort(order.begin(), order.end(), [&](int i, int j) {
           return idn[i] < idn[j];
         });
-        
+
         std::vector<int> id1 = subset(idn, order);
         std::vector<int> idx(1,0);
         for (int i = 1; i < n; ++i) {
@@ -919,10 +920,10 @@ ListCpp logisregcpp(const DataFrameCpp& data,
             idx.push_back(i);
           }
         }
-        
+
         int nids = static_cast<int>(idx.size());
         idx.push_back(n);
-        
+
         FlatMatrix ressco1(nids, p);
         for (int j = 0; j < p; ++j) {
           const double* rcol = ressco.data_ptr() + j * n;
@@ -936,23 +937,23 @@ ListCpp logisregcpp(const DataFrameCpp& data,
             rcol1[i] = sum;
           }
         }
-        
+
         std::vector<int> freq1(nids); // cluster frequency
         for (int i = 0; i < nids; ++i) {
           freq1[i] = freqn[order[idx[i]]];
         }
-        
+
         // update the score residuals
-        ressco = std::move(ressco1);  
+        ressco = std::move(ressco1);
         nr = nids;
         freqr = std::move(freq1);
       }
-      
+
       FlatMatrix D = mat_mat_mult(ressco, vb);
-      
+
       const double* Dptr = D.data_ptr();      // Dcol_j starts at Dptr + j*nr_sz
       double* rvbptr     = rvb.data_ptr();    // rvbcol_k starts at rvbptr + k*p
-      
+
       // rvb(j,k) corresponds to rvbptr[k*p + j] because column-major: column k, row j
       for (int j = 0; j < p; ++j) {
         const double* Dj = Dptr + j * nr;          // pointer to D(:,j)
@@ -968,30 +969,30 @@ ListCpp logisregcpp(const DataFrameCpp& data,
           if (j != k) rvbptr[j * p + k] = sum;    // rvb(k,j) = rvb(j,k)  (mirror)
         }
       }
-      
+
       for (int i = 0; i < p; ++i) {
         rseb[i] = std::sqrt(rvb(i, i));
       }
     }
-    
+
     // profile likelihood confidence interval for regression coefficients
     if (plci) {
       double lmax = out.get<double>("loglik");
       double l0 = lmax - 0.5 * xcrit;
-      
+
       if (!(firth && flic)) { // PL CI for all parameters
         for (int k = 0; k < p; ++k) {
           lb[k] = logisregplloop(p, b, &param, maxiter, eps, firth, k, -1, l0);
           ub[k] = logisregplloop(p, b, &param, maxiter, eps, firth, k, 1, l0);
-          
+
           std::vector<int> colfit1(p-1);
           for (int i = 0, j = 0; i < p; ++i) {
             if (i == k) continue;
             colfit1[j++] = i;
           }
-          
+
           std::vector<double> b0(p);
-          ListCpp out0 = logisregloop(p, b0, &param, maxiter, eps, 
+          ListCpp out0 = logisregloop(p, b0, &param, maxiter, eps,
                                       firth, colfit1, p-1);
           double lmax0 = out0.get<double>("loglik");
           prob[k] = boost_pchisq(-2.0 * (lmax0 - lmax), 1, 0);
@@ -1008,11 +1009,11 @@ ListCpp logisregcpp(const DataFrameCpp& data,
           prob[0] = boost_pchisq(sq(b[0] / rseb[0]), 1, 0);
         }
         clparm[0] = "Wald";
-        
+
         for (int k = 1; k < p; ++k) {
           lb[k] = logisregplloop(p, b, &param, maxiter, eps, firth, k, -1, l0);
           ub[k] = logisregplloop(p, b, &param, maxiter, eps, firth, k, 1, l0);
-          
+
           std::vector<int> colfit1(p-1);
           for (int i = 0; i < k; ++i) {
             colfit1[i] = i;
@@ -1020,9 +1021,9 @@ ListCpp logisregcpp(const DataFrameCpp& data,
           for (int i = k + 1; i < p; ++i) {
             colfit1[i-1] = i;
           }
-          
+
           std::vector<double> b0(p);
-          ListCpp out0 = logisregloop(p, b0, &param, maxiter, eps, 
+          ListCpp out0 = logisregloop(p, b0, &param, maxiter, eps,
                                       firth, colfit1, p-1);
           double lmax0 = out0.get<double>("loglik");
           prob[k] = boost_pchisq(-2.0 * (lmax0 - lmax), 1, 0);
@@ -1043,7 +1044,7 @@ ListCpp logisregcpp(const DataFrameCpp& data,
         clparm[k] = "Wald";
       }
     }
-    
+
     // log-likelihoods
     if (p > 0 && firth) {
       loglik0 = outint.get<double>("loglik");
@@ -1056,12 +1057,12 @@ ListCpp logisregcpp(const DataFrameCpp& data,
       regloglik0 = loglik0;
       regloglik1 = loglik1;
     }
-    
+
     // compute exp(beta)
     for (int i = 0; i < p; ++i) {
       expbeta[i] = std::exp(b[i]);
     }
-    
+
     // compute z statistics
     if (robust) {
       for (int i = 0; i < p; ++i) {
@@ -1081,7 +1082,7 @@ ListCpp logisregcpp(const DataFrameCpp& data,
       }
     }
   }
-  
+
   // prepare the output data sets
   DataFrameCpp sumstat;
   sumstat.push_back(nobs, "n");
@@ -1095,15 +1096,15 @@ ListCpp logisregcpp(const DataFrameCpp& data,
   sumstat.push_back(firth, "firth");
   sumstat.push_back(flic, "flic");
   sumstat.push_back(fail, "fail");
-  
+
   if (p > 0 && firth) {
     sumstat.push_back(regloglik0, "loglik0_unpenalized");
     sumstat.push_back(regloglik1, "loglik1_unpenalized");
   }
-  
+
   std::vector<double> sebeta = robust ? rseb : seb;
   FlatMatrix vbeta = robust ? rvb : vb;
-  
+
   DataFrameCpp parest;
   parest.push_back(std::move(par), "param");
   parest.push_back(std::move(b), "beta");
@@ -1115,18 +1116,18 @@ ListCpp logisregcpp(const DataFrameCpp& data,
   parest.push_back(std::move(prob), "p");
   parest.push_back(std::move(clparm), "method");
   if (robust) parest.push_back(std::move(seb), "sebeta_naive");
-  
+
   DataFrameCpp fitted;
   fitted.push_back(std::move(linear_predictors), "linear_predictors");
   fitted.push_back(std::move(fitted_values), "fitted_values");
-  
+
   ListCpp result;
   result.push_back(std::move(sumstat), "sumstat");
   result.push_back(std::move(parest), "parest");
   result.push_back(std::move(vbeta), "vbeta");
   if (robust) result.push_back(std::move(vb), "vbeta_naive");
   result.push_back(std::move(fitted), "fitted");
-  
+
   return result;
 }
 
@@ -1148,14 +1149,14 @@ Rcpp::List logisregRcpp(const Rcpp::DataFrame& data,
                         const double alpha,
                         const int maxiter,
                         const double eps) {
-  
+
   DataFrameCpp dfcpp = convertRDataFrameToCpp(data);
-  
+
   ListCpp cpp_result = logisregcpp(
     dfcpp, event, covariates, freq, weight, offset, id, link,
     init, robust, firth, flic, plci, alpha, maxiter, eps
   );
-  
+
   thread_utils::drain_thread_warnings_to_R();
   return Rcpp::wrap(cpp_result);
 }

@@ -1,7 +1,6 @@
+#include "generic_design.h"
 #include "utilities.h"
 #include "dataframe_list.h"
-
-#include <Rcpp.h>
 
 #include <algorithm>     // any_of, fill
 #include <cctype>        // tolower
@@ -11,6 +10,8 @@
 #include <stdexcept>     // invalid_argument
 #include <string>        // string
 #include <vector>        // vector
+
+#include <Rcpp.h>
 
 
 // Helper function to compute conditional power

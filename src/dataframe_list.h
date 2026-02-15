@@ -1,10 +1,6 @@
 #ifndef __DATAFRAME_LIST__
 #define __DATAFRAME_LIST__
 
-#include <Rcpp.h>
-
-#include "ska/flat_hash_map.hpp"
-
 #include <algorithm>   // fill, min
 #include <cmath>       // isnan
 #include <cstddef>     // size_t
@@ -19,6 +15,9 @@
 #include <variant>     // get, variant
 #include <vector>      // vector
 #include <utility>     // move
+
+#include <Rcpp.h>
+#include "ska/flat_hash_map.hpp"
 
 
 //
@@ -607,7 +606,7 @@ std::vector<int> intmatrix_get_column(const IntMatrix& M, int col);
 std::vector<unsigned char> boolmatrix_get_column(const BoolMatrix& M, int col);
 void flatmatrix_set_column(FlatMatrix& M, int col, const std::vector<double>& src);
 void intmatrix_set_column(IntMatrix& M, int col, const std::vector<int>& src);
-void boolmatrix_set_column(BoolMatrix& M, int col, 
+void boolmatrix_set_column(BoolMatrix& M, int col,
                            const std::vector<unsigned char>& src);
 
 // ------------------- Converters between R and C++ types (declarations) ----

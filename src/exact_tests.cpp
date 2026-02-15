@@ -2,11 +2,6 @@
 #include "dataframe_list.h"
 #include "miettinen_nurminen.h"
 
-#include <Rcpp.h>
-#include <boost/math/distributions/binomial.hpp>
-#include <boost/math/distributions/poisson.hpp>
-#include <boost/random.hpp>
-
 #include <algorithm>     // any_of, distance, fill, min, min_element
 #include <cctype>        // tolower
 #include <cmath>         // fabs, isnan
@@ -18,6 +13,12 @@
 #include <vector>        // vector
 #include <unordered_map> // unordered_map
 #include <utility>       // make_pair, pair
+
+#include <Rcpp.h>
+#include <boost/math/distributions/binomial.hpp>
+#include <boost/math/distributions/poisson.hpp>
+#include <boost/random.hpp>
+
 
 struct OneSampleExactResult {
   double attainedAlpha;
@@ -1851,7 +1852,8 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
     // build order2, unique breakpoints
     std::vector<int> order2(k);
     std::iota(order2.begin(), order2.end(), 0);
-    std::sort(order2.begin(), order2.end(), [&](int a, int b){ return T2[a] < T2[b]; });
+    std::sort(order2.begin(), order2.end(),
+              [&](int a, int b){ return T2[a] < T2[b]; });
 
     std::vector<double> T2sorted(k);
     for (int i = 0; i < k; ++i) T2sorted[i] = T2[order2[i]];
@@ -2381,7 +2383,8 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
     // build order2, unique breakpoints
     std::vector<int> order2(k);
     std::iota(order2.begin(), order2.end(), 0);
-    std::sort(order2.begin(), order2.end(), [&](int a, int b){ return T2[a] < T2[b]; });
+    std::sort(order2.begin(), order2.end(),
+              [&](int a, int b){ return T2[a] < T2[b]; });
 
     std::vector<double> T2sorted(k);
     for (int i = 0; i < k; ++i) T2sorted[i] = T2[order2[i]];
@@ -2819,9 +2822,9 @@ DataFrameCpp riskDiffExactPValuecpp(
   std::vector<double> logc_n1 = make_log_choose(n1);
   std::vector<double> logc_n2 = make_log_choose(n2);
 
-  // f(p2) returns -s where s is the total probability under H0 (p1 = p2 + riskDiffH0)
-  // of all tables with statistic as or more extreme than observed
-  // according to directionUpper.
+  // f(p2) returns -s where s is the total probability under
+  // H0 (p1 = p2 + riskDiffH0) of all tables with statistic as or
+  // more extreme than observed according to directionUpper.
   auto f = [&](double p2)->double {
     double p1 = p2 + riskDiffH0;
 
@@ -3065,9 +3068,9 @@ DataFrameCpp riskRatioExactPValuecpp(
   std::vector<double> logc_n1 = make_log_choose(n1);
   std::vector<double> logc_n2 = make_log_choose(n2);
 
-  // f(p2) returns -s where s is the total probability under H0 (p1 = p2 * riskRatioH0)
-  // of all tables with statistic as or more extreme than observed
-  // according to directionUpper.
+  // f(p2) returns -s where s is the total probability under
+  // H0 (p1 = p2 * riskRatioH0) of all tables with statistic as or
+  // more extreme than observed according to directionUpper.
   auto f = [&](double p2)->double {
     double p1 = p2 * riskRatioH0;
 

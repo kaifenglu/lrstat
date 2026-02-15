@@ -2,8 +2,6 @@
 #include "utilities.h"
 #include "dataframe_list.h"
 
-#include <Rcpp.h>
-
 #include <algorithm>     // any_of, distance, fill, min, min_element
 #include <cctype>        // tolower
 #include <cmath>         // fabs, isnan
@@ -15,6 +13,8 @@
 #include <vector>        // vector
 #include <unordered_map> // unordered_map
 #include <utility>       // make_pair, pair
+
+#include <Rcpp.h>
 
 
 //' @title REML Estimates of Individual Proportions With Specified Risk

@@ -1,7 +1,6 @@
+#include "generic_design.h"
 #include "utilities.h"
 #include "dataframe_list.h"
-
-#include <Rcpp.h>
 
 #include <algorithm>     // any_of, fill
 #include <cctype>        // tolower
@@ -12,6 +11,8 @@
 #include <string>        // string
 #include <vector>        // vector
 #include <utility>       // pair, make_pair
+
+#include <Rcpp.h>
 
 
 // Compute the p-value given theta, look L, observed z at look L (zL),

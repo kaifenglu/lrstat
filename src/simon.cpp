@@ -1,12 +1,7 @@
 #include "utilities.h"
 #include "dataframe_list.h"
 
-#include <Rcpp.h>
-#include <boost/math/distributions/binomial.hpp>
-#include <boost/random.hpp>
-
 #include <algorithm>     // any_of, distance, fill, min, min_element
-#include <cctype>        // tolower
 #include <cmath>         // fabs, isnan
 #include <cstddef>       // size_t
 #include <limits>        // numeric_limits
@@ -15,6 +10,10 @@
 #include <string>        // string
 #include <vector>        // vector
 #include <unordered_map> // unordered_map
+
+#include <Rcpp.h>
+#include <boost/math/distributions/binomial.hpp>
+#include <boost/random.hpp>
 
 
 // Hash function for caching pfutile results
@@ -32,11 +31,11 @@ struct PfutileKey {
 namespace std {
 template<>
 struct hash<PfutileKey> {
-  size_t operator()(const PfutileKey& k) const {
-    size_t seed = 0;
+  std::size_t operator()(const PfutileKey& k) const {
+    std::size_t seed = 0;
 
     // Hash combine pattern (better distribution)
-    auto hash_combine = [](size_t& seed, size_t hash) {
+    auto hash_combine = [](std::size_t& seed, std::size_t hash) {
       seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
     };
 

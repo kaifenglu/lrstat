@@ -3,34 +3,31 @@
 
 // [[Rcpp::plugins(cpp17)]]
 
-#include <Rcpp.h>
-
 struct FlatMatrix;
 struct IntMatrix;
 struct BoolMatrix;
 struct DataFrameCpp;
 struct ListCpp;
 
-#include <algorithm>     // copy, find, sort, unique,
-#include <cmath>         // sqrt, isnan
+#include <algorithm>     // find, sort, unique,
+#include <cmath>         // fabs, isnan, sqrt,
 #include <cstddef>       // size_t
-#include <cstdint>       // uint64_t
+#include <cstdint>       // uint8_t
 #include <cstring>       // memcpy, memmove
 #include <functional>    // function
 #include <iomanip>       // fixed, setprecision
 #include <iostream>      // cout, ostream
 #include <iterator>      // distance
 #include <limits>        // numeric_limits
-#include <list>          // list
-#include <mutex>         // mutex
-#include <numeric>       // accumulate
 #include <sstream>       // ostringstream
 #include <stdexcept>     // out_of_range
 #include <string>        // string
 #include <type_traits>   // is_convertible
-#include <unordered_map> // unordered_map
 #include <utility>       // declval
 #include <vector>        // vector
+
+#include <Rcpp.h>
+
 
 inline constexpr double NaN = std::numeric_limits<double>::quiet_NaN();
 inline constexpr double POS_INF = std::numeric_limits<double>::infinity();
@@ -310,21 +307,12 @@ std::vector<int> matchcpp(const std::vector<T>& x, const std::vector<T>& table,
 }
 
 
-double errorSpentcpp(const double t,
-                     const double error = 0.025,
-                     const std::string& sf = "sfOF",
-                     const double sfpar = 0.0);
-
-ListCpp exitprobcpp(const std::vector<double>& b,
-                    const std::vector<double>& a,
-                    const std::vector<double>& theta,
-                    const std::vector<double>& I);
-
-double dtpwexpcpp1(const double q,
-                   const std::vector<double>& piecewiseSurvivalTime,
-                   const std::vector<double>& lambda,
-                   const double lowerBound = 0.0,
-                   const bool logd = false);
+double dtpwexpcpp1(
+    const double q,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda,
+    const double lowerBound = 0.0,
+    const bool logd = false);
 
 std::vector<double> dtpwexpcpp(
     const std::vector<double>& q,
@@ -333,12 +321,13 @@ std::vector<double> dtpwexpcpp(
     const double lowerBound = 0.0,
     const bool logd = false);
 
-double ptpwexpcpp1(const double q,
-                   const std::vector<double>& piecewiseSurvivalTime,
-                   const std::vector<double>& lambda,
-                   const double lowerBound = 0.0,
-                   const bool lowertail = true,
-                   const bool logp = false);
+double ptpwexpcpp1(
+    const double q,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda,
+    const double lowerBound = 0.0,
+    const bool lowertail = true,
+    const bool logp = false);
 
 std::vector<double> ptpwexpcpp(
     const std::vector<double>& q,
@@ -348,12 +337,13 @@ std::vector<double> ptpwexpcpp(
     const bool lowertail = true,
     const bool logp = false);
 
-double qtpwexpcpp1(const double p,
-                   const std::vector<double>& piecewiseSurvivalTime,
-                   const std::vector<double>& lambda,
-                   const double lowerBound = 0.0,
-                   const bool lowertail = true,
-                   const bool logp = false);
+double qtpwexpcpp1(
+    const double p,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda,
+    const double lowerBound = 0.0,
+    const bool lowertail = true,
+    const bool logp = false);
 
 std::vector<double> qtpwexpcpp(
     const std::vector<double>& p,
@@ -363,70 +353,11 @@ std::vector<double> qtpwexpcpp(
     const bool lowertail = true,
     const bool logp = false);
 
-ListCpp mtpwexpcpp(const std::vector<double>& piecewiseSurvivalTime,
-                   const std::vector<double>& lambda,
-                   const double lowerBound = 0.0);
+ListCpp mtpwexpcpp(
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda,
+    const double lowerBound = 0.0);
 
-std::vector<double> getBoundcpp(
-    const int k,
-    const std::vector<double>& informationRates,
-    const double alpha,
-    const std::string& typeAlphaSpending,
-    const double parameterAlphaSpending,
-    const std::vector<double>& userAlphaSpending,
-    const std::vector<double>& spendingTime,
-    const std::vector<unsigned char>& efficacyStopping);
-
-
-class BoundCacheAlpha {
-public:
-  BoundCacheAlpha(int k,
-                  const std::vector<double>& infoRates,
-                  const std::string& asf,
-                  double asfpar,
-                  const std::vector<double>& userAlphaSpending,
-                  const std::vector<double>& spendTime,
-                  const std::vector<unsigned char>& effStopping,
-                  std::size_t maxEntries = 64,
-                  int alphaPrecision = 12);
-
-  std::vector<double> get(double alpha);
-
-private:
-  struct CacheEntry {
-    std::vector<double> value;
-    std::list<int64_t>::iterator lruIt;
-  };
-
-  int64_t discretize(double alpha) const;
-
-  int k_;
-  std::vector<double> infoRates_;
-  std::string asf_;
-  double asfpar_;
-  std::vector<double> userAlphaSpending_;
-  std::vector<double> spendTime_;
-  std::vector<unsigned char> effStopping_;
-
-  std::size_t maxEntries_;
-  int alphaPrecision_;
-  std::unordered_map<int64_t, CacheEntry> map_;
-  std::list<int64_t> usage_;
-  std::mutex mu_;
-};
-
-
-ListCpp getPower(
-    const double alpha,
-    const int kMax,
-    const std::vector<double>& b,
-    const std::vector<double>& theta,
-    const std::vector<double>& I,
-    const std::string& bsf,
-    const double bsfpar,
-    const std::vector<double>& st,
-    const std::vector<unsigned char>& futilityStopping,
-    const std::vector<double>& w);
 
 double intnorm(const std::function<double(double)>& f,
                double mu, double sigma, double a, double b);
@@ -435,12 +366,16 @@ std::pair<double, double> mini(
     const std::function<double(double)>& f, double x1, double x2);
 
 double quad(const std::function<double(double)>& f,
-            double lower, double upper, double tol = 1e-8, unsigned maxiter = 1000);
+            double lower, double upper, double tol = 1e-8,
+            unsigned maxiter = 1000);
 
 double quad2d(const std::function<double(double,double)>& f,
-              double ax, double bx, double ay, double by, double tol = 1.0e-5);
+              double ax, double bx, double ay, double by,
+              double tol = 1.0e-5);
 
-double pbvnormcpp(std::vector<double> lower, std::vector<double> upper, double rho);
+double pbvnormcpp(std::vector<double>& lower,
+                  std::vector<double>& upper,
+                  double rho);
 
 ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
                      const std::vector<double>& hazard_pfs,
@@ -457,139 +392,22 @@ ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
                       const std::vector<double>& hazard_pos,
                       const double p_pos);
 
-std::vector<double> accrual(const std::vector<double>& time,
-                            const std::vector<double>& accrualTime,
-                            const std::vector<double>& accrualIntensity,
-                            const double accrualDuration);
 
-std::vector<double> getAccrualDurationFromN(
-    const std::vector<double>& nsubjects,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity);
-
-std::vector<double> patrisk(const std::vector<double>& time,
-                            const std::vector<double>& piecewiseSurvivalTime,
-                            const std::vector<double>& lambda,
-                            const std::vector<double>& gamma);
-
-std::vector<double> pevent(const std::vector<double>& time,
-                           const std::vector<double>& piecewiseSurvivalTime,
-                           const std::vector<double>& lambda,
-                           const std::vector<double>& gamma);
-
-FlatMatrix natrisk(const std::vector<double>& time,
-                   const double allocationRatioPlanned,
-                   const std::vector<double>& accrualTime,
-                   const std::vector<double>& accrualIntensity,
-                   const std::vector<double>& piecewiseSurvivalTime,
-                   const std::vector<double>& lambda1,
-                   const std::vector<double>& lambda2,
-                   const std::vector<double>& gamma1,
-                   const std::vector<double>& gamma2,
-                   const double accrualDuration,
-                   const double minFollowupTime,
-                   const double maxFollowupTime);
-
-FlatMatrix nevent(const std::vector<double>& time,
-                  const double allocationRatioPlanned,
-                  const std::vector<double>& accrualTime,
-                  const std::vector<double>& accrualIntensity,
-                  const std::vector<double>& piecewiseSurvivalTime,
-                  const std::vector<double>& lambda1,
-                  const std::vector<double>& lambda2,
-                  const std::vector<double>& gamma1,
-                  const std::vector<double>& gamma2,
-                  const double accrualDuration,
-                  const double minFollowupTime,
-                  const double maxFollowupTime);
-
-FlatMatrix nevent2(const std::vector<double>& time,
-                   const double allocationRatioPlanned,
-                   const std::vector<double>& accrualTime,
-                   const std::vector<double>& accrualIntensity,
-                   const std::vector<double>& piecewiseSurvivalTime,
-                   const std::vector<double>& lambda1,
-                   const std::vector<double>& lambda2,
-                   const std::vector<double>& gamma1,
-                   const std::vector<double>& gamma2,
-                   const double accrualDuration,
-                   const double minFollowupTime,
-                   const double maxFollowupTime);
-
-ListCpp getDesigncpp(const double beta,
-                     const double IMax,
-                     const double theta,
-                     const int kMax,
-                     const std::vector<double>& informationRates,
-                     const std::vector<unsigned char>& efficacyStopping,
-                     const std::vector<unsigned char>& futilityStopping,
-                     const std::vector<double>& criticalValues,
-                     const double alpha,
-                     const std::string& typeAlphaSpending,
-                     const double parameterAlphaSpending,
-                     const std::vector<double>& userAlphaSpending,
-                     const std::vector<double>& futilityBounds,
-                     const std::string& typeBetaSpending,
-                     const double parameterBetaSpending,
-                     const std::vector<double>& userBetaSpending,
-                     const std::vector<double>& spendingTime,
-                     const double varianceRatio = 1.0);
-
-ListCpp getDesignEquivcpp(const double beta,
-                          const double IMax,
-                          const double thetaLower,
-                          const double thetaUpper,
-                          const double theta,
-                          const int kMax,
-                          const std::vector<double>& informationRates,
-                          const std::vector<double>& criticalValues,
-                          const double alpha,
-                          const std::string& typeAlphaSpending,
-                          const double parameterAlphaSpending,
-                          const std::vector<double>& userAlphaSpending,
-                          const std::vector<double>& spendingTime);
-
-ListCpp adaptDesigncpp(double betaNew,
-                       double INew,
-                       const int L,
-                       const double zL,
-                       const double theta,
-                       const double IMax,
-                       const int kMax,
-                       const std::vector<double>& informationRates,
-                       const std::vector<unsigned char>& efficacyStopping,
-                       const std::vector<unsigned char>& futilityStopping,
-                       const std::vector<double>& criticalValues,
-                       const double alpha,
-                       const std::string& typeAlphaSpending,
-                       const double parameterAlphaSpending,
-                       const std::vector<double>& userAlphaSpending,
-                       const std::vector<double>& futilityBounds,
-                       const std::string& typeBetaSpending,
-                       const double parameterBetaSpending,
-                       const std::vector<double>& spendingTime,
-                       const bool MullerSchafer,
-                       const int kNew,
-                       const std::vector<double>& informationRatesNew,
-                       const std::vector<unsigned char>& efficacyStoppingNew,
-                       const std::vector<unsigned char>& futilityStoppingNew,
-                       const std::string& typeAlphaSpendingNew,
-                       const double parameterAlphaSpendingNew,
-                       const std::string& typeBetaSpendingNew,
-                       const double parameterBetaSpendingNew,
-                       const std::vector<double>& userBetaSpendingNew,
-                       const std::vector<double>& spendingTimeNew,
-                       const double varianceRatio);
-
-ListCpp bygroup(const DataFrameCpp& data, const std::vector<std::string>& variables);
+ListCpp bygroup(const DataFrameCpp& data,
+                const std::vector<std::string>& variables);
 
 int cholesky2(FlatMatrix& matrix, int n, double toler = 1e-12);
 void chsolve2(FlatMatrix& matrix, int n, double* y);
 FlatMatrix invsympd(const FlatMatrix& matrix, int n, double toler = 1e-12);
 
+std::vector<double> mat_vec_mult(const FlatMatrix& A, const std::vector<double>& x);
+FlatMatrix mat_mat_mult(const FlatMatrix& A, const FlatMatrix& B);
+
 FlatMatrix transpose(const FlatMatrix& M);
 IntMatrix transpose(const IntMatrix& M);
 BoolMatrix transpose(const BoolMatrix& M);
+
+double quadsym(const std::vector<double>& u, const FlatMatrix& v);
 
 // Print a std::vector<T> to std::cout.
 // Requirements: T must be streamable via operator<< to std::ostream.
