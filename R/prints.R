@@ -7902,27 +7902,6 @@ print.BOINTable <- function(x, ...) {
 }
 
 
-#' @title Print the Point Estimate and Confidence Interval
-#' @description Prints the point estimate and confidence interval.
-#'
-#' @param x The estimateCI object to print.
-#' @param ... Ensures that all arguments starting from "..." are named.
-#'
-#' @return A tabular printout of the design elements.
-#'
-#' @keywords internal
-#'
-#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-#'
-#' @export
-print.estimateCI <- function(x, ...) {
-  df1 <- x$estimates
-  rownames(df1) = NULL
-  print(df1, ..., na.print = "" , quote = FALSE )
-  invisible(x)
-}
-
-
 #' @title Print Power and Sample Size Results for One-Sample Multinomial
 #' Response
 #' @description Prints the power and sample size for one-sample multinomial

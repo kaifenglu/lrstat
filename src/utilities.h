@@ -447,6 +447,11 @@ ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
                      const std::vector<double>& hazard_os,
                      const double rho_pd_os);
 
+double corr_pfs_oscpp(const std::vector<double>& piecewiseSurvivalTime,
+                      const std::vector<double>& hazard_pfs,
+                      const std::vector<double>& hazard_os,
+                      const double rho_pd_os);
+
 ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
                       const std::vector<double>& hazard_itt,
                       const std::vector<double>& hazard_pos,

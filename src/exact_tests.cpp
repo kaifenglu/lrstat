@@ -2902,14 +2902,14 @@ DataFrameCpp riskDiffExactPValuecpp(
 //' @description Obtains the p-value for exact unconditional
 //' test of risk difference.
 //'
-//' @param riskDiffH0 The risk difference under the null hypothesis.
-//'   Defaults to 0.
-//' @param directionUpper Whether larger values represent better
-//'   responses.
 //' @param n1 The sample size for the active treatment group.
 //' @param y1 The number of responses for the active treatment group.
 //' @param n2 The sample size for the control group.
 //' @param y2 The number of responses for the control group.
+//' @param riskDiffH0 The risk difference under the null hypothesis.
+//'   Defaults to 0.
+//' @param directionUpper Whether larger values represent better
+//'   responses.
 //'
 //' @return A data frame containing the following variables:
 //'
@@ -3148,14 +3148,14 @@ DataFrameCpp riskRatioExactPValuecpp(
 //' @description Obtains the p-value for exact unconditional
 //' test of risk ratio.
 //'
-//' @param riskRatioH0 The risk ratio under the null hypothesis.
-//'   Defaults to 1.
-//' @param directionUpper Whether larger values represent better
-//'   responses.
 //' @param n1 The sample size for the active treatment group.
 //' @param y1 The number of responses for the active treatment group.
 //' @param n2 The sample size for the control group.
 //' @param y2 The number of responses for the control group.
+//' @param riskRatioH0 The risk ratio under the null hypothesis.
+//'   Defaults to 1.
+//' @param directionUpper Whether larger values represent better
+//'   responses.
 //'
 //' @return A data frame containing the following variables:
 //'
