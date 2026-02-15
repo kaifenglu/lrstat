@@ -1,10 +1,9 @@
-#include <RcppThread.h>
-#include <Rcpp.h>
-
 #include "logistic_regression.h"
 #include "utilities.h"
 #include "dataframe_list.h"
 #include "thread_utils.h"
+
+#include <Rcpp.h>
 
 #include <algorithm> // any_of, fill, for_each, none_of, sort
 #include <cctype>    // tolower
@@ -612,9 +611,9 @@ ListCpp logisregcpp(const DataFrameCpp& data,
   
   // link code mapping
   std::string link1 = link;
-  std::for_each(link1.begin(), link1.end(), [](char & c) { 
-    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
-  });
+  for (char &c : link1) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  }
   
   if (link1 == "log-log" || link1 == "loglog") link1 = "cloglog";
   

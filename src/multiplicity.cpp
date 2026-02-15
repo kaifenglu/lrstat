@@ -1,10 +1,9 @@
 // [[Rcpp::depends(RcppParallel)]]
+#include "utilities.h"
+#include "dataframe_list.h"
 
 #include <Rcpp.h>
 #include <RcppParallel.h>
-
-#include "utilities.h"
-#include "dataframe_list.h"
 
 #include <algorithm>   // min_element, max_element, find, sort, adjacent_find,
 // any_of, fill, distance, min, for_each, transform, tolower
@@ -17,6 +16,7 @@
 #include <string>      // string
 #include <vector>      // vector
 #include <unordered_map>
+
 
 // Helper to update graph for graphical approaches
 ListCpp updateGraphcpp(const std::vector<double>& w,
@@ -693,9 +693,9 @@ FlatMatrix repeatedPValuecpp1(
 
   // Convert typeAlphaSpending to lowercase
   std::string asf = typeAlphaSpending;
-  std::for_each(asf.begin(), asf.end(), [](char& c) {
+  for (char &c : asf) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
+  }
 
   // Validation: typeAlphaSpending
   if (!(asf == "of" || asf == "p" || asf == "wt" || asf == "sfof" ||
@@ -866,15 +866,20 @@ FlatMatrix repeatedPValuecpp1(
     }
 
     // Compute repeated p-values
+    std::vector<double> empty_user;
     std::vector<double> repp(k1);
-    std::vector<unsigned char> x(L, 1);
-    std::vector<double> user(1, NaN); // userAlphaSpending for getBoundcpp
     for (int i = 0; i < L; ++i) {
       double pvalue = p1[i];
+      std::vector<double> t0(t1.begin(), t1.begin() + i + 1);
+      std::vector<double> s0(s1.begin(), s1.begin() + i + 1);
+      std::vector<unsigned char> x(i + 1, 1);
 
-      // Lambda function for root finding
+      BoundCacheAlpha cache(i + 1, t0, asf, parameterAlphaSpending,
+                            empty_user, s0, x, 64, 12);
+
+      // Lambda function for root finding to solve for the repeated p-value at step i
       auto f = [&](double a)->double {
-        auto u = getBoundcpp(i + 1, t1, a, asf, parameterAlphaSpending, user, s1, x);
+        auto u = cache.get(a);
         return 1.0 - boost_pnorm(u[i]) - pvalue;
       };
 
@@ -1072,8 +1077,9 @@ IntMatrix fseqboncpp1(
 
   for (int i = 0; i < m; ++i) {
     std::string& asfi = asf[i];
-    std::transform(asfi.begin(), asfi.end(), asfi.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
+    for (char &c : asfi) {
+      c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
 
     if (!(asfi == "of" || asfi == "p" || asfi == "wt" ||
         asfi == "sfof" || asfi == "sfp" || asfi == "sfkd" ||
@@ -1328,7 +1334,7 @@ IntMatrix fseqboncpp1(
     std::vector<double> wx = w; // current weights for hypotheses, updated in-place
     FlatMatrix g = G; // current transition matrix, updated in-place
     FlatMatrix g1(m, m); // temporary transition matrix for update
-    std::vector<double> user(1, NaN); // userAlphaSpending for getBoundcpp
+    std::vector<double> user; // empty userAlphaSpending for getBoundcpp
 
     std::vector<int> active(m); // currently active hypotheses
     std::iota(active.begin(), active.end(), 0); // initialize with 0,1,...,m-1
@@ -1613,8 +1619,9 @@ FlatMatrix fstp2seqcpp1(
 
   // Normalize test string to lowercase
   std::string test1 = test;
-  std::transform(test1.begin(), test1.end(), test1.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
+  for (char &c : test1) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  }
 
   if (test1 != "hochberg" && test1 != "holm") {
     throw std::invalid_argument("test must be 'hochberg' or 'holm'");
@@ -1855,8 +1862,9 @@ FlatMatrix fstdmixcpp1(
 
   // Normalize test string
   std::string test1 = test;
-  std::transform(test1.begin(), test1.end(), test1.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
+  for (char &c : test1) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  }
 
   if (test1 != "hommel" && test1 != "hochberg" && test1 != "holm") {
     throw std::invalid_argument("test must be 'hommel', 'hochberg', or 'holm'");
@@ -2240,8 +2248,9 @@ FlatMatrix fmodmixcpp1(
 
   // Normalize test string
   std::string test1 = test;
-  std::transform(test1.begin(), test1.end(), test1.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
+  for (char &c : test1) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  }
 
   if (test1 != "hommel" && test1 != "hochberg" && test1 != "holm") {
     throw std::invalid_argument("test must be 'hommel', 'hochberg', or 'holm'");
@@ -2614,8 +2623,9 @@ FlatMatrix ftrunccpp1(
 
   // Normalize test string
   std::string test1 = test;
-  std::transform(test1.begin(), test1.end(), test1.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
+  for (char &c : test1) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  }
 
   if (test1 != "hommel" && test1 != "hochberg" && test1 != "holm") {
     throw std::invalid_argument("test must be 'hommel', 'hochberg', or 'holm'");

@@ -348,9 +348,9 @@ double errorSpentcpp(const double t,
   }
 
   std::string asf = sf;
-  std::for_each(asf.begin(), asf.end(), [](char & c) {
+  for (char &c : asf) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
+  }
 
   double aval;
   if (asf == "sfp") {
@@ -936,10 +936,9 @@ std::vector<double> getBoundcpp(
 
   // asf (alpha spending function) to lower-case
   std::string asf = typeAlphaSpending;
-  std::for_each(asf.begin(), asf.end(), [](char & c) {
+  for (char &c : asf) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
-
+  }
 
   // userAlphaSpending checks when asf == "user"
   if (asf == "user") {
@@ -1142,6 +1141,67 @@ Rcpp::NumericVector getBound(
 }
 
 
+BoundCacheAlpha::BoundCacheAlpha(int k,
+                                 const std::vector<double>& infoRates,
+                                 const std::string& asf,
+                                 double asfpar,
+                                 const std::vector<double>& userAlphaSpending,
+                                 const std::vector<double>& spendTime,
+                                 const std::vector<unsigned char>& effStopping,
+                                 std::size_t maxEntries,
+                                 int alphaPrecision)
+  : k_(k),
+    infoRates_(infoRates),
+    asf_(asf),
+    asfpar_(asfpar),
+    userAlphaSpending_(userAlphaSpending),
+    spendTime_(spendTime),
+    effStopping_(effStopping),
+    maxEntries_(maxEntries),
+    alphaPrecision_(alphaPrecision) {}
+
+int64_t BoundCacheAlpha::discretize(double alpha) const {
+  const double scale = std::pow(10.0, alphaPrecision_);
+  return static_cast<int64_t>(std::llround(alpha * scale));
+}
+
+std::vector<double> BoundCacheAlpha::get(double alpha) {
+  int64_t key = discretize(alpha);
+  { std::lock_guard<std::mutex> lg(mu_);
+    auto it = map_.find(key);
+    if (it != map_.end()) {
+      usage_.splice(usage_.begin(), usage_, it->second.lruIt);
+      return it->second.value;
+    }
+  }
+
+  // Compute without holding the lock
+  std::vector<double> computed =
+    getBoundcpp(k_, infoRates_, alpha, asf_, asfpar_, userAlphaSpending_,
+                spendTime_, effStopping_);
+
+  std::lock_guard<std::mutex> lg(mu_);
+  auto it2 = map_.find(key);
+  if (it2 != map_.end()) {
+    usage_.splice(usage_.begin(), usage_, it2->second.lruIt);
+    return it2->second.value;
+  }
+
+  if (map_.size() >= maxEntries_) {
+    int64_t lastkey = usage_.back();
+    usage_.pop_back();
+    map_.erase(lastkey);
+  }
+  usage_.push_front(key);
+  CacheEntry e;
+  e.value = std::move(computed);
+  e.lruIt = usage_.begin();
+  map_.emplace(key, std::move(e));
+  return map_[key].value;
+}
+
+
+
 ListCpp getPower(
     const double alpha,
     const int kMax,
@@ -1236,7 +1296,7 @@ ListCpp getPower(
   }
 
   ListCpp result;
-  result.push_back(beta, "beta");
+  result.push_back(1.0 - beta, "power");
   result.push_back(std::move(a), "futilityBounds");
   result.push_back(std::move(probs), "probs");
   return result;
@@ -2743,9 +2803,9 @@ ListCpp getDesigncpp(const double beta,
   }
 
   std::string asf = typeAlphaSpending;
-  std::for_each(asf.begin(), asf.end(), [](char & c) {
+  for (char &c : asf) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
+  }
 
   if (missingCriticalValues && !(asf == "of" || asf == "p" ||
       asf == "wt" || asf == "sfof" || asf == "sfp" ||
@@ -2763,8 +2823,8 @@ ListCpp getDesigncpp(const double beta,
   if (missingCriticalValues && asf == "user") {
     if (!none_na(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be specified");
-    if (static_cast<int>(userAlphaSpending.size()) < kMax)
-      throw std::invalid_argument("Insufficient length of userAlphaSpending");
+    if (static_cast<int>(userAlphaSpending.size()) != kMax)
+      throw std::invalid_argument("Invalid length of userAlphaSpending");
     if (userAlphaSpending[0] < 0.0)
       throw std::invalid_argument("userAlphaSpending must be nonnegative");
     if (any_nonincreasing(userAlphaSpending))
@@ -2793,9 +2853,9 @@ ListCpp getDesigncpp(const double beta,
   }
 
   std::string bsf = typeBetaSpending;
-  std::for_each(bsf.begin(), bsf.end(), [](char & c) {
+  for (char &c : bsf) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
+  }
 
   if (unknown == "IMax") {
     if (missingFutilityBounds && !(bsf == "sfof" || bsf == "sfp" ||
@@ -2819,8 +2879,8 @@ ListCpp getDesigncpp(const double beta,
   if (unknown == "IMax" && bsf == "user") {
     if (!none_na(userBetaSpending))
       throw std::invalid_argument("userBetaSpending must be specified");
-    if (static_cast<int>(userBetaSpending.size()) < kMax)
-      throw std::invalid_argument("Insufficient length of userBetaSpending");
+    if (static_cast<int>(userBetaSpending.size()) != kMax)
+      throw std::invalid_argument("Invalid length of userBetaSpending");
     if (userBetaSpending[0] < 0.0)
       throw std::invalid_argument("userBetaSpending must be nonnegative");
     if (any_nonincreasing(userBetaSpending))
@@ -3023,7 +3083,8 @@ ListCpp getDesigncpp(const double beta,
     } else {
       ListCpp out = getPower(alpha1, kMax, critValues, delta, infoRates, bsf,
                              parameterBetaSpending, spendTime, futStopping, w);
-      beta1 = out.get<double>("beta");
+      double overallReject = out.get<double>("power");
+      beta1 = 1.0 - overallReject;
       futBounds = out.get<std::vector<double>>("futilityBounds");
       for (int i = 0; i < kMax; ++i) {
         l[i] = futBounds[i] * w[i];
@@ -3406,9 +3467,9 @@ ListCpp getDesignEquivcpp(const double beta,
   }
 
   std::string asf = typeAlphaSpending;
-  std::for_each(asf.begin(), asf.end(), [](char & c) {
+  for (char &c : asf) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
+  }
 
   if (missingCriticalValues && !(asf == "of" || asf == "p" ||
       asf == "wt" || asf == "sfof" || asf == "sfp" ||
@@ -3426,8 +3487,8 @@ ListCpp getDesignEquivcpp(const double beta,
   if (missingCriticalValues && asf == "user") {
     if (!none_na(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be specified");
-    if (static_cast<int>(userAlphaSpending.size()) < kMax)
-      throw std::invalid_argument("Insufficient length of userAlphaSpending");
+    if (static_cast<int>(userAlphaSpending.size()) != kMax)
+      throw std::invalid_argument("Invalid length of userAlphaSpending");
     if (userAlphaSpending[0] < 0.0)
       throw std::invalid_argument("userAlphaSpending must be nonnegative");
     if (any_nonincreasing(userAlphaSpending))
@@ -4008,21 +4069,10 @@ ListCpp adaptDesigncpp(double betaNew,
   if (!std::isnan(INew) && INew <= 0.0) {
     throw std::invalid_argument("INew must be positive");
   }
-  if (std::isnan(theta)) {
-    throw std::invalid_argument("theta must be provided");
-  }
-  if (L < 1) {
-    throw std::invalid_argument("L must be a positive integer");
-  }
-  if (std::isnan(zL)) {
-    throw std::invalid_argument("zL must be provided");
-  }
-  if (kMax < 1) {
-    throw std::invalid_argument("kMax must be a positive integer");
-  }
-  if (kMax <= L) {
-    throw std::invalid_argument("kMax must be greater than L");
-  }
+  if (std::isnan(theta)) throw std::invalid_argument("theta must be provided");
+  if (L < 1) throw std::invalid_argument("L must be a positive integer");
+  if (std::isnan(zL)) throw std::invalid_argument("zL must be provided");
+  if (kMax <= L) throw std::invalid_argument("kMax must be greater than L");
 
   // Alpha and Beta must be within valid ranges
   if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1)) {
@@ -4086,9 +4136,9 @@ ListCpp adaptDesigncpp(double betaNew,
   }
 
   std::string asf = typeAlphaSpending;
-  std::for_each(asf.begin(), asf.end(), [](char & c) {
+  for (char &c : asf) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
+  }
 
   if (missingCriticalValues && !(asf == "of" || asf == "p" ||
       asf == "wt" || asf == "sfof" || asf == "sfp" ||
@@ -4106,8 +4156,8 @@ ListCpp adaptDesigncpp(double betaNew,
   if (missingCriticalValues && asf == "user") {
     if (!none_na(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be specified");
-    if (static_cast<int>(userAlphaSpending.size()) < kMax)
-      throw std::invalid_argument("Insufficient length of userAlphaSpending");
+    if (static_cast<int>(userAlphaSpending.size()) != kMax)
+      throw std::invalid_argument("Invalid length of userAlphaSpending");
     if (userAlphaSpending[0] < 0.0)
       throw std::invalid_argument("userAlphaSpending must be nonnegative");
     if (any_nonincreasing(userAlphaSpending))
@@ -4136,9 +4186,9 @@ ListCpp adaptDesigncpp(double betaNew,
   }
 
   std::string bsf = typeBetaSpending;
-  std::for_each(bsf.begin(), bsf.end(), [](char & c) {
+  for (char &c : bsf) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
+  }
 
   if (missingFutilityBounds && !(bsf == "sfof" || bsf == "sfp" ||
       bsf == "sfkd" || bsf == "sfhsd" || bsf == "none")) {
@@ -4174,14 +4224,14 @@ ListCpp adaptDesigncpp(double betaNew,
   std::vector<double> spendTimeNew = spendingTimeNew;
 
   std::string asfNew = typeAlphaSpendingNew;
-  std::for_each(asfNew.begin(), asfNew.end(), [](char & c) {
+  for (char &c : asfNew) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
+  }
 
   std::string bsfNew = typeBetaSpendingNew;
-  std::for_each(bsfNew.begin(), bsfNew.end(), [](char & c) {
+  for (char &c : bsfNew) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
+  }
 
   if (MullerSchafer) {
     if (kNew < 1) {
@@ -4266,8 +4316,8 @@ ListCpp adaptDesigncpp(double betaNew,
     if (std::isnan(INew) && bsfNew == "user") {
       if (!none_na(userBetaSpendingNew))
         throw std::invalid_argument("userBetaSpendingNew must be specified");
-      if (static_cast<int>(userBetaSpendingNew.size()) < kNew)
-        throw std::invalid_argument("Insufficient length of userBetaSpendingNew");
+      if (static_cast<int>(userBetaSpendingNew.size()) != kNew)
+        throw std::invalid_argument("Invalid length of userBetaSpendingNew");
       if (userBetaSpendingNew[0] < 0.0)
         throw std::invalid_argument("userBetaSpendingNew must be nonnegative");
       if (any_nonincreasing(userBetaSpendingNew))
@@ -4335,6 +4385,9 @@ ListCpp adaptDesigncpp(double betaNew,
                                spendTime, effStopping);
     }
   } else {
+    for (int i = 0; i < kMax; ++i) {
+      if (!effStopping[i]) critValues[i] = 6.0;
+    }
     ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
     auto v = probs.get<std::vector<double>>("exitProbUpper");
     alpha1 = std::accumulate(v.begin(), v.end(), 0.0);
@@ -4382,10 +4435,10 @@ ListCpp adaptDesigncpp(double betaNew,
 
   std::vector<double> t1(k1), r1(k1), b1(k1), a1(k1, -6.0), theta1(k1, 0.0);
   for (int l = 0; l < k1; ++l) {
-    t1[l] = (infoRates[l+L] - infoRates[L-1]) / (1.0 - infoRates[L-1]);
-    r1[l] = infoRates[L-1] / infoRates[l+L];
-    b1[l] = (critValues[l+L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
-    if (!effStopping[l+L]) b1[l] = 6.0;
+    t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
+    r1[l] = infoRates[L - 1] / infoRates[l + L];
+    b1[l] = (critValues[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
+    if (!effStopping[l + L]) b1[l] = 6.0;
   }
 
   // conditional type I error
@@ -4396,18 +4449,18 @@ ListCpp adaptDesigncpp(double betaNew,
   // conditional power and predictive power
   double conditionalPower, predictivePower;
   for (int l = 0; l < k1; ++l) {
-    a1[l] = (futBounds[l+L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
-    if (!futStopping[l+L]) a1[l] = -6.0;
+    a1[l] = (futBounds[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
+    if (!futStopping[l + L]) a1[l] = -6.0;
   }
 
   if (!std::isnan(IMax)) {
-    double sigma = 1.0 / std::sqrt(IMax * infoRates[L-1]);
+    double sigma = 1.0 / std::sqrt(IMax * infoRates[L - 1]);
     double mu = zL * sigma;
     std::vector<double> theta1(k1, mu);
 
     std::vector<double> I1(k1);
     for (int l = 0; l < k1; ++l) {
-      I1[l] = IMax * (infoRates[l+L] - infoRates[L-1]);
+      I1[l] = IMax * (infoRates[l + L] - infoRates[L - 1]);
     }
 
     ListCpp probs = exitprobcpp(b1, a1, theta1, I1);

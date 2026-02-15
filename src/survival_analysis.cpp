@@ -87,10 +87,10 @@ DataFrameCpp survQuantilecpp(const std::vector<double>& time,
   }
   
   std::string ct = transform;
-  std::for_each(ct.begin(), ct.end(), [](char & c) {
+  for (char &c : ct) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
-  
+  }
+
   if (!(ct == "linear" || ct == "plain" || ct == "log" ||
       ct == "loglog" || ct == "log-log" || ct == "cloglog" ||
       ct == "asinsqrt" || ct == "arcsin"|| ct == "asin" ||
@@ -450,10 +450,10 @@ DataFrameCpp kmestcpp(const DataFrameCpp& data,
   }
   
   std::string ct = conftype;
-  std::for_each(ct.begin(), ct.end(), [](char & c) {
+  for (char &c : ct) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
-  
+  }
+
   if (!(ct == "none" || ct == "plain" || ct == "log" || ct == "log-log" || 
       ct == "logit" || ct == "arcsin")) {
     throw std::invalid_argument(
@@ -3592,9 +3592,9 @@ ListCpp liferegcpp(const DataFrameCpp& data,
   if (nvar == 2 && covariates[0] == "") nvar = 1;
   
   std::string dist1 = dist;
-  std::for_each(dist1.begin(), dist1.end(), [](char &c){ 
-    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
+  for (char &c : dist1) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
+  }
   if (dist1 == "log-logistic" || dist1 == "llogistic") dist1 = "loglogistic";
   else if (dist1 == "log-normal" || dist1 == "lnormal") dist1 = "lognormal";
   else if (dist1 == "gaussian") dist1 = "normal";
@@ -4545,9 +4545,9 @@ FlatMatrix residuals_liferegcpp(const std::vector<double>& beta,
   if (nvar == 2 && covariates[0] == "") nvar = 1;
   
   std::string dist1 = dist;
-  std::for_each(dist1.begin(), dist1.end(), [](char &c){
+  for (char &c : dist1) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
+  }
   if (dist1 == "log-logistic" || dist1 == "llogistic") dist1 = "loglogistic";
   else if (dist1 == "log-normal" || dist1 == "lnormal") dist1 = "lognormal";
   else if (dist1 == "gaussian") dist1 = "normal";
@@ -6294,10 +6294,10 @@ ListCpp phregcpp(const DataFrameCpp& data,
   }
   
   std::string meth = ties;
-  std::for_each(meth.begin(), meth.end(), [](char & c) {
+  for (char &c : meth) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
-  
+  }
+
   int method = meth == "efron" ? 1 : 0;
   
   // unify right censored data with counting process data
@@ -6922,10 +6922,10 @@ DataFrameCpp survfit_phregcpp(const int p,
   int nvar = static_cast<int>(covariates.size());
   
   std::string ct = conftype;
-  std::for_each(ct.begin(), ct.end(), [](char & c) {
+  for (char &c : ct) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
-  
+  }
+
   if (!(ct=="none" || ct=="plain" || ct=="log" || ct=="log-log" || 
       ct=="logit" || ct=="arcsin")) {
     throw std::invalid_argument(
@@ -7732,9 +7732,9 @@ ListCpp residuals_phregcpp(const int p,
   }
   
   std::string meth = ties;
-  std::for_each(meth.begin(), meth.end(), [](char & c) {
+  for (char &c : meth) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
+  }
   int method = meth == "efron" ? 1 : 0;
   
   // unify right censored data with counting process data
@@ -8452,9 +8452,9 @@ ListCpp assess_phregcpp(const int p,
   }
   
   std::string meth = ties;
-  std::for_each(meth.begin(), meth.end(), [](char & c) {
+  for (char &c : meth) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
+  }
   
   int method = meth == "efron" ? 1 : 0;
   
@@ -8953,10 +8953,10 @@ ListCpp zph_phregcpp(int p,
   }
   
   std::string meth = ties;
-  std::for_each(meth.begin(), meth.end(), [](char & c) {
+  for (char &c : meth) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  });
-  
+  }
+
   int method = meth == "efron" ? 1 : 0;
   
   // unify right censored data with counting process data

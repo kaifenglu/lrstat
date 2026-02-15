@@ -11,23 +11,26 @@ struct BoolMatrix;
 struct DataFrameCpp;
 struct ListCpp;
 
-#include <algorithm>   // copy, find, sort, unique,
-#include <cmath>       // sqrt, isnan
-#include <cstddef>     // size_t
-#include <cstdint>     // uint64_t
-#include <cstring>     // memcpy, memmove
-#include <functional>  // function
-#include <iomanip>     // fixed, setprecision
-#include <iostream>    // cout, ostream
-#include <iterator>    // distance
-#include <limits>      // numeric_limits
-#include <numeric>     // accumulate
-#include <sstream>     // ostringstream
-#include <stdexcept>   // out_of_range
-#include <string>      // string
-#include <type_traits> // is_convertible
-#include <utility>     // declval
-#include <vector>      // vector
+#include <algorithm>     // copy, find, sort, unique,
+#include <cmath>         // sqrt, isnan
+#include <cstddef>       // size_t
+#include <cstdint>       // uint64_t
+#include <cstring>       // memcpy, memmove
+#include <functional>    // function
+#include <iomanip>       // fixed, setprecision
+#include <iostream>      // cout, ostream
+#include <iterator>      // distance
+#include <limits>        // numeric_limits
+#include <list>          // list
+#include <mutex>         // mutex
+#include <numeric>       // accumulate
+#include <sstream>       // ostringstream
+#include <stdexcept>     // out_of_range
+#include <string>        // string
+#include <type_traits>   // is_convertible
+#include <unordered_map> // unordered_map
+#include <utility>       // declval
+#include <vector>        // vector
 
 inline constexpr double NaN = std::numeric_limits<double>::quiet_NaN();
 inline constexpr double POS_INF = std::numeric_limits<double>::infinity();
@@ -373,6 +376,45 @@ std::vector<double> getBoundcpp(
     const std::vector<double>& userAlphaSpending,
     const std::vector<double>& spendingTime,
     const std::vector<unsigned char>& efficacyStopping);
+
+
+class BoundCacheAlpha {
+public:
+  BoundCacheAlpha(int k,
+                  const std::vector<double>& infoRates,
+                  const std::string& asf,
+                  double asfpar,
+                  const std::vector<double>& userAlphaSpending,
+                  const std::vector<double>& spendTime,
+                  const std::vector<unsigned char>& effStopping,
+                  std::size_t maxEntries = 64,
+                  int alphaPrecision = 12);
+
+  std::vector<double> get(double alpha);
+
+private:
+  struct CacheEntry {
+    std::vector<double> value;
+    std::list<int64_t>::iterator lruIt;
+  };
+
+  int64_t discretize(double alpha) const;
+
+  int k_;
+  std::vector<double> infoRates_;
+  std::string asf_;
+  double asfpar_;
+  std::vector<double> userAlphaSpending_;
+  std::vector<double> spendTime_;
+  std::vector<unsigned char> effStopping_;
+
+  std::size_t maxEntries_;
+  int alphaPrecision_;
+  std::unordered_map<int64_t, CacheEntry> map_;
+  std::list<int64_t> usage_;
+  std::mutex mu_;
+};
+
 
 ListCpp getPower(
     const double alpha,
