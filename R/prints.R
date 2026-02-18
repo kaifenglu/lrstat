@@ -604,6 +604,7 @@ print.lrpower <- function(x, ...) {
 
     bsf = tolower(x$settings$typeBetaSpending)
     bsfpar = round(x$settings$parameterBetaSpending, 3)
+    if (bsf == "user") bsfuser = round(x$settings$userBetaSpending, 4)
 
     if (asf == "of") {
       str10 = paste0("Alpha spending: O'Brien-Fleming")
@@ -641,7 +642,8 @@ print.lrpower <- function(x, ...) {
     } else if (bsf == "sfhsd") {
       str11 = paste0("beta spending: HSD(gamma = ", bsfpar, ")")
     } else if (bsf == "user") {
-      str11 = paste0("beta spending: User defined")
+      str11 = paste0("beta spending: User defined(",
+                     paste(bsfuser, collapse = ","), ")")
     } else {
       str11 = "beta spending: None"
     }
