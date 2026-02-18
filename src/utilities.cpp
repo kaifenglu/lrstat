@@ -218,6 +218,55 @@ std::vector<int> which(const std::vector<unsigned char>& vec) {
   return indices;
 }
 
+std::vector<double> expand_stratified(const std::vector<double>& v,
+                                      const std::size_t nstrata,
+                                      const std::size_t nintervals,
+                                      const char* name) {
+  std::size_t nsi = nstrata * nintervals;
+  if (v.size() == 1) {
+    return std::vector<double>(nsi, v[0]);
+  } else if (v.size() == nintervals) {
+    std::vector<double> out(nsi);
+    for (std::size_t s = 0; s < nstrata; ++s) {
+      std::memcpy(&out[s * nintervals], v.data(), nintervals * sizeof(double));
+    }
+    return out;
+  } else if (v.size() == nsi) {
+    return v;
+  } else {
+    throw std::invalid_argument(std::string("Invalid length for ") + name);
+  }
+}
+
+int findInterval1(const double x,
+                  const std::vector<double>& v,
+                  bool rightmost_closed,
+                  bool all_inside,
+                  bool left_open) {
+
+  const double* v_begin = v.data();
+  const double* v_end   = v_begin + v.size();
+  const int nv = v.size();
+
+  const double* pos = left_open ? std::lower_bound(v_begin, v_end, x) :
+    std::upper_bound(v_begin, v_end, x);
+  int idx = static_cast<int>(pos - v_begin);
+  if (rightmost_closed) {
+    if (left_open) {
+      if (x == v[0]) idx = 1;
+    } else {
+      if (x == v[nv - 1]) idx = nv - 1;
+    }
+  }
+  if (all_inside) {
+    if (idx == 0) idx = 1;
+    else if (idx == nv) idx = nv - 1;
+  }
+
+  return idx;
+}
+
+
 std::vector<int> findInterval3(const std::vector<double>& x,
                                const std::vector<double>& v,
                                bool rightmost_closed,
@@ -695,12 +744,41 @@ std::pair<double, double> mini(
 }
 
 
+// Integrate f over multiple intervals defined by breaks, i.e. sum of integrals
+double integrate3(
+    const std::function<double(double)>& f,
+    const std::vector<double>& breaks,
+    double tol, unsigned maxiter) {
+
+  boost::math::quadrature::gauss_kronrod<double, 15> integrator_gk;
+  boost::math::quadrature::tanh_sinh<double> integrator_ts;
+
+  double sum = 0.0;
+  for (size_t i = 0; i + 1 < breaks.size(); ++i) {
+    double a = breaks[i];
+    double b = breaks[i+1];
+    if (b <= a) continue;
+    if (std::isinf(a) || std::isinf(b)) {
+      // use tanh-sinh for infinite intervals
+      double val = integrator_ts.integrate(f, a, b, tol);
+      sum += val;
+      continue;
+    }
+    // choose local tolerance (split global tol evenly)
+    double local_tol = tol / static_cast<double>(breaks.size() - 1);
+    double val = integrator_gk.integrate(f, a, b, maxiter, local_tol);
+    sum += val;
+  }
+  return sum;
+}
+
+
 // Numerical integration of f over [lower, upper] with specified tolerance.
 // - tol is absolute tolerance; relative behavior depends on integrator.
 // - maxiter is max subdivisions/recursions for the GK integrator.
 double quad(const std::function<double(double)>& f,
-            double lower, double upper, double tol,
-            unsigned maxiter) {
+            double lower, double upper,
+            double tol, unsigned maxiter) {
 
   // Both finite -> use Gauss-Kronrod (good default for finite intervals)
   if (!std::isinf(lower) && !std::isinf(upper)) {
@@ -934,9 +1012,9 @@ ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
   }
 
   ListCpp result;
-  result.push_back(u1, "piecewiseSurvivalTime");
-  result.push_back(hazard_pd, "hazard_pd");
-  result.push_back(hazard_os1, "hazard_os");
+  result.push_back(std::move(u1), "piecewiseSurvivalTime");
+  result.push_back(std::move(hazard_pd), "hazard_pd");
+  result.push_back(std::move(hazard_os1), "hazard_os");
   result.push_back(rho_pd_os, "rho_pd_os");
   return result;
 }
@@ -1120,9 +1198,9 @@ ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
   }
 
   ListCpp result;
-  result.push_back(u1, "piecewiseSurvivalTime");
-  result.push_back(hazard_pos1, "hazard_pos");
-  result.push_back(hazard_neg, "hazard_neg");
+  result.push_back(std::move(u1), "piecewiseSurvivalTime");
+  result.push_back(std::move(hazard_pos1), "hazard_pos");
+  result.push_back(std::move(hazard_neg), "hazard_neg");
   result.push_back(p_pos, "p_pos");
   return result;
 }

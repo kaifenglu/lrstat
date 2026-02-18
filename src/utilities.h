@@ -86,7 +86,19 @@ std::vector<unsigned char> convertLogicalVector(const Rcpp::LogicalVector& vec);
 // which: return indices of true values
 std::vector<int> which(const std::vector<unsigned char>& vec);
 
-// findInterval3: adapted helper (return indices following R-like convention)
+// expand_stratified: expand stratified vector to full length
+std::vector<double> expand_stratified(const std::vector<double>& v,
+                                      const std::size_t nstrata,
+                                      const std::size_t nintervals,
+                                      const char* name);
+
+// findInterval: adapted helper (return indices following R-like convention)
+int findInterval1(const double x,
+                  const std::vector<double>& v,
+                  bool rightmost_closed = false,
+                  bool all_inside = false,
+                  bool left_open = false);
+
 std::vector<int> findInterval3(const std::vector<double>& x,
                                const std::vector<double>& v,
                                bool rightmost_closed = false,
@@ -365,9 +377,14 @@ double intnorm(const std::function<double(double)>& f,
 std::pair<double, double> mini(
     const std::function<double(double)>& f, double x1, double x2);
 
+double integrate3(
+    const std::function<double(double)>& f,
+    const std::vector<double>& breaks,
+    double tol = 1e-8, unsigned maxiter = 100);
+
 double quad(const std::function<double(double)>& f,
-            double lower, double upper, double tol = 1e-8,
-            unsigned maxiter = 1000);
+            double lower, double upper,
+            double tol = 1e-8, unsigned maxiter = 100);
 
 double quad2d(const std::function<double(double,double)>& f,
               double ax, double bx, double ay, double by,
