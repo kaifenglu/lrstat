@@ -57,42 +57,45 @@ DataFrameCpp getCIcpp(const int L,
 
   // Basic argument checks
   if (L <= 0) throw std::invalid_argument("L must be a positive integer");
+
+  std::size_t L1 = static_cast<std::size_t>(L);
+
   if (std::isnan(zL)) throw std::invalid_argument("zL must be provided");
   if (std::isnan(IMax)) throw std::invalid_argument("IMax must be provided");
   if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
   if (!none_na(informationRates))
     throw std::invalid_argument("informationRates must be provided");
-  if (static_cast<int>(informationRates.size()) < L)
+  if (informationRates.size() < L1)
     throw std::invalid_argument("Insufficient length for informationRates");
   if (informationRates[0] <= 0.0)
     throw std::invalid_argument("informationRates must be positive");
   if (any_nonincreasing(informationRates))
     throw std::invalid_argument("informationRates must be increasing");
-  if (informationRates[L - 1] > 1.0)
+  if (informationRates[L1 - 1] > 1.0)
     throw std::invalid_argument("informationRates must not exceed 1");
 
   // efficacyStopping: if provided, validate, otherwise default to all ones
   std::vector<unsigned char> effStopping;
   if (none_na(efficacyStopping)) {
-    if (static_cast<int>(efficacyStopping.size()) < L)
+    if (efficacyStopping.size() < L1)
       throw std::invalid_argument("Insufficient length for efficacyStopping");
-    if (efficacyStopping[L - 1] != 1)
+    if (efficacyStopping[L1 - 1] != 1)
       throw std::invalid_argument("efficacyStopping must end with 1");
     effStopping = efficacyStopping;
   } else {
-    effStopping.assign(L, 1);
+    effStopping.assign(L1, 1);
   }
 
   // spendingTime: if provided validate, otherwise use informationRates
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
-    if (static_cast<int>(spendingTime.size()) < L)
+    if (spendingTime.size() < L1)
       throw std::invalid_argument("Insufficient length for spendingTime");
     if (spendingTime[0] <= 0.0)
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[L - 1] > 1.0)
+    if (spendingTime[L1 - 1] > 1.0)
       throw std::invalid_argument("spendingTime must not exceed 1");
     spendTime = spendingTime;
   } else {
@@ -126,7 +129,7 @@ DataFrameCpp getCIcpp(const int L,
   // critical values: if not provided, compute using getBoundcpp
   std::vector<double> b;
   if (none_na(criticalValues)) {
-    if (static_cast<int>(criticalValues.size()) < L)
+    if (criticalValues.size() < L1)
       throw std::invalid_argument("Insufficient length for criticalValues");
     b = criticalValues;
   } else {
@@ -135,8 +138,8 @@ DataFrameCpp getCIcpp(const int L,
   }
 
   // Build full information vector I = IMax * informationRates
-  std::vector<double> I(L);
-  for (int i = 0; i < L; ++i) I[i] = IMax * informationRates[i];
+  std::vector<double> I(L1);
+  for (std::size_t i = 0; i < L1; ++i) I[i] = IMax * informationRates[i];
 
   // p-value at theta = 0
   double pvalue = f_pvalue(0.0, L, zL, b, I);
@@ -144,7 +147,7 @@ DataFrameCpp getCIcpp(const int L,
   double cilevel = 1.0 - 2.0 * alpha;
 
   // initial bracketing interval for theta: (zL +/- 6) / sqrt(I_L)
-  double sqrtIL = std::sqrt(I[L - 1]);
+  double sqrtIL = std::sqrt(I[L1 - 1]);
   double left = (zL - 6.0) / sqrtIL;
   double right = (zL + 6.0) / sqrtIL;
   double tol = 1.0e-6;
@@ -293,42 +296,44 @@ DataFrameCpp getRCIcpp(
 
   // Basic argument checks
   if (L <= 0) throw std::invalid_argument("L must be a positive integer");
+  std::size_t L1 = static_cast<std::size_t>(L);
+
   if (std::isnan(zL)) throw std::invalid_argument("zL must be provided");
   if (std::isnan(IMax)) throw std::invalid_argument("IMax must be provided");
   if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
   if (!none_na(informationRates))
     throw std::invalid_argument("informationRates must be provided");
-  if (static_cast<int>(informationRates.size()) < L)
+  if (informationRates.size() < L1)
     throw std::invalid_argument("Insufficient length for informationRates");
   if (informationRates[0] <= 0.0)
     throw std::invalid_argument("informationRates must be positive");
   if (any_nonincreasing(informationRates))
     throw std::invalid_argument("informationRates must be increasing");
-  if (informationRates[L - 1] > 1.0)
+  if (informationRates[L1 - 1] > 1.0)
     throw std::invalid_argument("informationRates must not exceed 1");
 
   // efficacyStopping: if provided, validate, otherwise default to all ones
   std::vector<unsigned char> effStopping;
   if (none_na(efficacyStopping)) {
-    if (static_cast<int>(efficacyStopping.size()) < L)
+    if (efficacyStopping.size() < L1)
       throw std::invalid_argument("Insufficient length for efficacyStopping");
-    if (efficacyStopping[L - 1] != 1)
+    if (efficacyStopping[L1 - 1] != 1)
       throw std::invalid_argument("efficacyStopping must end with 1");
     effStopping = efficacyStopping;
   } else {
-    effStopping.assign(L, 1);
+    effStopping.assign(L1, 1);
   }
 
   // spendingTime: if provided validate, otherwise use informationRates
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
-    if (static_cast<int>(spendingTime.size()) < L)
+    if (spendingTime.size() < L1)
       throw std::invalid_argument("Insufficient length for spendingTime");
     if (spendingTime[0] <= 0.0)
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[L - 1] > 1.0)
+    if (spendingTime[L1 - 1] > 1.0)
       throw std::invalid_argument("spendingTime must not exceed 1");
     spendTime = spendingTime;
   } else {
@@ -364,7 +369,7 @@ DataFrameCpp getRCIcpp(
                         std::vector<double>{}, spendTime, effStopping, 64, 12);
   std::vector<double> b;
   if (none_na(criticalValues)) {
-    if (static_cast<int>(criticalValues.size()) < L)
+    if (criticalValues.size() < L1)
       throw std::invalid_argument("Insufficient length for criticalValues");
     b = criticalValues;
   } else {
@@ -372,23 +377,23 @@ DataFrameCpp getRCIcpp(
   }
 
   // Build full information vector I = IMax * informationRates
-  std::vector<double> I(L);
-  for (int i = 0; i < L; ++i) I[i] = IMax * informationRates[i];
+  std::vector<double> I(L1);
+  for (std::size_t i = 0; i < L1; ++i) I[i] = IMax * informationRates[i];
 
   // repeated confidence interval
-  double sqrtIL = std::sqrt(I[L-1]);
-  double lower = (zL - b[L-1]) / sqrtIL;
-  double upper = (zL + b[L-1]) / sqrtIL;
+  double sqrtIL = std::sqrt(I[L1-1]);
+  double lower = (zL - b[L1-1]) / sqrtIL;
+  double upper = (zL + b[L1-1]) / sqrtIL;
 
   // point estimate is the lower bound for alpha = 0.5
   std::vector<double> u = cache.get(0.5);
-  double thetahat = (zL - u[L-1]) / sqrtIL;
+  double thetahat = (zL - u[L1-1]) / sqrtIL;
 
   // repeated p-value: alpha for which the lower bound of theta is zero:
   // Solve f(aval) = zL - u[ L-1 ] = 0 for aval in (1e-6, 0.999999)
   auto f = [&](double aval)->double {
     std::vector<double> u_local = cache.get(aval);
-    return zL - u_local[L-1];
+    return zL - u_local[L1-1];
   };
 
   double pvalue;
@@ -538,28 +543,28 @@ double f_astar(const double theta,
 
 
 // Compute the backward image (J, zJ)
-std::pair<int,double> f_bwimage(const double theta,
-                                const int kMax,
-                                const int L,
-                                const double zL,
-                                const std::vector<double>& b,
-                                const std::vector<double>& I,
-                                const int L2,
-                                const double zL2,
-                                const std::vector<double>& b2,
-                                const std::vector<double>& I2) {
+std::pair<int, double> f_bwimage(const double theta,
+                                 const int kMax,
+                                 const int L,
+                                 const double zL,
+                                 const std::vector<double>& b,
+                                 const std::vector<double>& I,
+                                 const int L2,
+                                 const double zL2,
+                                 const std::vector<double>& b2,
+                                 const std::vector<double>& I2) {
   // compute astar for the secondary trial under shifted null
   double astar = f_astar(theta, L2, zL2, b2, I2);
 
-  int k1 = kMax - L;
+  std::size_t K1 = kMax - L;
 
   // prepare b1, a1, mu, I1 for the "shifted" secondary trial
-  std::vector<double> b1(k1);
-  std::vector<double> a1(k1, -6.0);
-  std::vector<double> mu(k1, theta);
-  std::vector<double> I1(k1);
+  std::vector<double> b1(K1);
+  std::vector<double> a1(K1, -6.0);
+  std::vector<double> mu(K1, theta);
+  std::vector<double> I1(K1);
 
-  for (int l = 0; l < k1; ++l) {
+  for (std::size_t l = 0; l < K1; ++l) {
     const double ratio = I[L-1] / I[l + L];
     b1[l] = (b[l + L] - std::sqrt(ratio) * zL) / std::sqrt(1.0 - ratio);
     I1[l] = I[l + L] - I[L - 1];
@@ -570,11 +575,11 @@ std::pair<int,double> f_bwimage(const double theta,
   auto pu = probs.get<std::vector<double>>("exitProbUpper");
 
   // cumulative probabilities p[0]=0, p[1]=pu[0], ...
-  std::vector<double> p(k1 + 1, 0.0);
-  for (int l = 0; l < k1; ++l) p[l + 1] = p[l] + pu[l];
+  std::vector<double> p(K1 + 1, 0.0);
+  for (std::size_t l = 0; l < K1; ++l) p[l + 1] = p[l] + pu[l];
 
   // find interval containing astar (j such that p[j-1] <= astar < p[j])
-  int j = findInterval3({astar}, p)[0];
+  int j = findInterval1(astar, p);
 
   // find z1j
   double z1j;
@@ -585,7 +590,7 @@ std::pair<int,double> f_bwimage(const double theta,
     std::vector<double> upper(j);
     std::vector<double> lower(j, -6.0);
     std::vector<double> mu(j, theta);
-    if (j > 1) std::memcpy(upper.data(), b1.data(), (j - 1) * sizeof(double));
+    std::memcpy(upper.data(), b1.data(), (j - 1) * sizeof(double));
 
     auto f = [&](double z)->double {
       upper[j - 1] = z;
@@ -666,42 +671,42 @@ DataFrameCpp getADCIcpp(
   if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
   if (kMax <= L) throw std::invalid_argument("kMax must be greater than L");
 
+  std::size_t K = static_cast<std::size_t>(kMax);
+
   // informationRates: default to (1:kMax)/kMax if missing
-  std::vector<double> infoRates(kMax);
+  std::vector<double> infoRates(K);
   if (none_na(informationRates)) {
-    if (static_cast<int>(informationRates.size()) != kMax)
+    if (informationRates.size() != K)
       throw std::invalid_argument("Invalid length for informationRates");
     if (informationRates[0] <= 0.0)
       throw std::invalid_argument("informationRates must be positive");
     if (any_nonincreasing(informationRates))
       throw std::invalid_argument("informationRates must be increasing");
-    if (informationRates[kMax - 1] != 1.0)
+    if (informationRates[K - 1] != 1.0)
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy if provided
   } else {
-    infoRates.resize(kMax);
-    for (int i = 0; i < kMax; ++i) {
-      infoRates[i] = static_cast<double>(i + 1) / static_cast<double>(kMax);
+    infoRates.resize(K);
+    for (std::size_t i = 0; i < K; ++i) {
+      infoRates[i] = static_cast<double>(i + 1) / static_cast<double>(K);
     }
   }
 
   // efficacyStopping: default to all ones if not provided
   std::vector<unsigned char> effStopping;
   if (none_na(efficacyStopping)) {
-    if (static_cast<int>(efficacyStopping.size()) != kMax)
+    if (efficacyStopping.size() != K)
       throw std::invalid_argument("Invalid length for efficacyStopping");
-    if (efficacyStopping[kMax - 1] != 1)
+    if (efficacyStopping[K - 1] != 1)
       throw std::invalid_argument("efficacyStopping must end with 1");
     effStopping = efficacyStopping; // copy if provided
   } else {
-    effStopping.assign(kMax, 1);
+    effStopping.assign(K, 1);
   }
 
   bool missingCriticalValues = !none_na(criticalValues);
-  if (!missingCriticalValues) {
-    if (static_cast<int>(criticalValues.size()) != kMax) {
-      throw std::invalid_argument("Invalid length for criticalValues");
-    }
+  if (!missingCriticalValues && criticalValues.size() != K) {
+    throw std::invalid_argument("Invalid length for criticalValues");
   }
   if (missingCriticalValues && std::isnan(alpha)) {
     throw std::invalid_argument("alpha must be provided for missing criticalValues");
@@ -730,13 +735,13 @@ DataFrameCpp getADCIcpp(
 
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
-    if (static_cast<int>(spendingTime.size()) != kMax)
+    if (spendingTime.size() != K)
       throw std::invalid_argument("Invalid length for spendingTime");
     if (spendingTime[0] <= 0.0)
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[kMax-1] != 1.0)
+    if (spendingTime[K-1] != 1.0)
       throw std::invalid_argument("spendingTime must end with 1");
     spendTime = spendingTime; // copy
   } else {
@@ -750,6 +755,8 @@ DataFrameCpp getADCIcpp(
   if (std::isnan(INew)) throw std::invalid_argument("INew must be provided");
   if (INew <= 0.0) throw std::invalid_argument("INew must be positive");
 
+  std::size_t LL2 = static_cast<std::size_t>(L2);
+
   std::vector<unsigned char> effStoppingNew;
   std::vector<double> spendTimeNew = spendingTimeNew;
 
@@ -760,13 +767,13 @@ DataFrameCpp getADCIcpp(
 
   if (MullerSchafer) {
     if (none_na(informationRatesNew)) {
-      if (static_cast<int>(informationRatesNew.size()) != L2)
+      if (informationRatesNew.size() != LL2)
         throw std::invalid_argument("Invalid length for informationRatesNew");
       if (informationRatesNew[0] <= 0.0)
         throw std::invalid_argument("informationRatesNew must be positive");
       if (any_nonincreasing(informationRatesNew))
         throw std::invalid_argument("informationRatesNew must be increasing");
-      if (informationRatesNew[L2 - 1] > 1.0)
+      if (informationRatesNew[LL2 - 1] > 1.0)
         throw std::invalid_argument("informationRatesNew must not exceed 1");
     } else {
       throw std::invalid_argument(
@@ -774,13 +781,13 @@ DataFrameCpp getADCIcpp(
     }
 
     if (none_na(efficacyStoppingNew)) {
-      if (static_cast<int>(efficacyStoppingNew.size()) != L2)
+      if (efficacyStoppingNew.size() != LL2)
         throw std::invalid_argument("Invalid length for efficacyStoppingNew");
-      if (efficacyStoppingNew[L2 - 1] != 1)
+      if (efficacyStoppingNew[LL2 - 1] != 1)
         throw std::invalid_argument("efficacyStoppingNew must end with 1");
       effStoppingNew = efficacyStoppingNew;
     } else {
-      effStoppingNew.assign(L2, 1);
+      effStoppingNew.assign(LL2, 1);
     }
 
     if (!(asfNew == "of" || asfNew == "p" || asfNew == "wt" ||
@@ -798,13 +805,13 @@ DataFrameCpp getADCIcpp(
           "parameterAlphaSpendingNew must be positive for sfKD");
 
     if (none_na(spendingTimeNew)) {
-      if (static_cast<int>(spendingTimeNew.size()) != L2)
+      if (spendingTimeNew.size() != LL2)
         throw std::invalid_argument("Invalid length for spendingTimeNew");
       if (spendingTimeNew[0] <= 0.0)
         throw std::invalid_argument("spendingTimeNew must be positive");
       if (any_nonincreasing(spendingTimeNew))
         throw std::invalid_argument("spendingTimeNew must be increasing");
-      if (spendingTimeNew[L2 - 1] > 1.0)
+      if (spendingTimeNew[LL2 - 1] > 1.0)
         throw std::invalid_argument("spendingTimeNew must not exceed 1");
       spendTimeNew = spendingTimeNew;
     } else {
@@ -815,43 +822,43 @@ DataFrameCpp getADCIcpp(
 
   // -----------------------------------------------------------------------
   // obtain critical values for the primary trial
-  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> l(K, -6.0), zero(K, 0.0);
   std::vector<double> b = criticalValues;
   double alpha1 = alpha;
   if (missingCriticalValues) {
     bool haybittle = false;
-    if (kMax > 1 && static_cast<int>(criticalValues.size()) == kMax) {
+    if (K > 1 && criticalValues.size() == K) {
       bool hasNaN = false;
-      for (int i = 0; i < kMax - 1; ++i) {
+      for (std::size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
-      if (!hasNaN && std::isnan(criticalValues[kMax-1])) {
+      if (!hasNaN && std::isnan(criticalValues[K-1])) {
         haybittle = true;
       }
     }
 
     if (haybittle) { // Haybittle & Peto
-      std::vector<double> u(kMax);
-      for (int i = 0; i < kMax - 1; ++i) {
+      std::vector<double> u(K);
+      for (std::size_t i = 0; i < K - 1; ++i) {
         u[i] = criticalValues[i];
         if (!effStopping[i]) u[i] = 6.0;
       }
 
       auto f = [&](double aval)->double {
-        u[kMax-1] = aval;
+        u[K-1] = aval;
         ListCpp probs = exitprobcpp(u, l, zero, infoRates);
         auto v = probs.get<std::vector<double>>("exitProbUpper");
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
       };
 
-      b[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+      b[K-1] = brent(f, -5.0, 6.0, 1e-6);
     } else {
       b = getBoundcpp(kMax, infoRates, alpha, asf, parameterAlphaSpending,
                       std::vector<double>{}, spendTime, effStopping);
     }
   } else {
-    for (int i = 0; i < kMax; ++i) {
+    for (std::size_t i = 0; i < K; ++i) {
       if (!effStopping[i]) b[i] = 6.0;
     }
     ListCpp probs = exitprobcpp(b, l, zero, infoRates);
@@ -861,13 +868,13 @@ DataFrameCpp getADCIcpp(
 
 
   // Primary information vector
-  std::vector<double> I(kMax);
-  for (int i = 0; i < kMax; ++i) I[i] = IMax * informationRates[i];
+  std::vector<double> I(K);
+  for (std::size_t i = 0; i < K; ++i) I[i] = IMax * informationRates[i];
 
   // compute b2 and I2 for secondary trial depending on MullerSchafer
-  std::vector<double> b2(L2), I2(L2);
+  std::vector<double> b2(LL2), I2(LL2);
   if (!MullerSchafer) {
-    for (int l = 0; l < L2; ++l) {
+    for (std::size_t l = 0; l < LL2; ++l) {
       double t1 = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       double r1 = infoRates[L - 1] / infoRates[l + L];
       b2[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
@@ -875,9 +882,9 @@ DataFrameCpp getADCIcpp(
       I2[l] = INew * t1;
     }
   } else { // conditional type I error
-    int k1 = kMax - L;
-    std::vector<double> t1(k1), r1(k1), b1(k1), a1(k1, -6.0);
-    for (int l = 0; l < k1; ++l) {
+    std::size_t K1 = K - L;
+    std::vector<double> t1(K1), r1(K1), b1(K1), a1(K1, -6.0);
+    for (std::size_t l = 0; l < K1; ++l) {
       t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       r1[l] = infoRates[L - 1] / infoRates[l + L];
       b1[l] = (b[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
@@ -891,7 +898,7 @@ DataFrameCpp getADCIcpp(
                      parameterAlphaSpendingNew, std::vector<double>{},
                      spendTimeNew, effStoppingNew);
 
-    for (int l = 0; l < L2; ++l) I2[l] = INew * informationRatesNew[l];
+    for (std::size_t l = 0; l < LL2; ++l) I2[l] = INew * informationRatesNew[l];
   }
 
   // confidence level
@@ -1150,42 +1157,42 @@ DataFrameCpp getADRCIcpp(
   if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
   if (kMax <= L) throw std::invalid_argument("kMax must be greater than L");
 
+  std::size_t K = static_cast<std::size_t>(kMax);
+
   // informationRates: default to (1:kMax)/kMax if missing
-  std::vector<double> infoRates(kMax);
+  std::vector<double> infoRates(K);
   if (none_na(informationRates)) {
-    if (static_cast<int>(informationRates.size()) != kMax)
+    if (informationRates.size() != K)
       throw std::invalid_argument("Invalid length for informationRates");
     if (informationRates[0] <= 0.0)
       throw std::invalid_argument("informationRates must be positive");
     if (any_nonincreasing(informationRates))
       throw std::invalid_argument("informationRates must be increasing");
-    if (informationRates[kMax - 1] != 1.0)
+    if (informationRates[K - 1] != 1.0)
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy if provided
   } else {
-    infoRates.resize(kMax);
-    for (int i = 0; i < kMax; ++i) {
-      infoRates[i] = static_cast<double>(i + 1) / static_cast<double>(kMax);
+    infoRates.resize(K);
+    for (std::size_t i = 0; i < K; ++i) {
+      infoRates[i] = static_cast<double>(i + 1) / static_cast<double>(K);
     }
   }
 
   // efficacyStopping: default to all ones if not provided
   std::vector<unsigned char> effStopping;
   if (none_na(efficacyStopping)) {
-    if (static_cast<int>(efficacyStopping.size()) != kMax)
+    if (efficacyStopping.size() != K)
       throw std::invalid_argument("Invalid length for efficacyStopping");
-    if (efficacyStopping[kMax - 1] != 1)
+    if (efficacyStopping[K - 1] != 1)
       throw std::invalid_argument("efficacyStopping must end with 1");
     effStopping = efficacyStopping; // copy if provided
   } else {
-    effStopping.assign(kMax, 1);
+    effStopping.assign(K, 1);
   }
 
   bool missingCriticalValues = !none_na(criticalValues);
-  if (!missingCriticalValues) {
-    if (static_cast<int>(criticalValues.size()) != kMax) {
-      throw std::invalid_argument("Invalid length for criticalValues");
-    }
+  if (!missingCriticalValues && criticalValues.size() != K) {
+    throw std::invalid_argument("Invalid length for criticalValues");
   }
   if (missingCriticalValues && std::isnan(alpha)) {
     throw std::invalid_argument("alpha must be provided for missing criticalValues");
@@ -1214,13 +1221,13 @@ DataFrameCpp getADRCIcpp(
 
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
-    if (static_cast<int>(spendingTime.size()) != kMax)
+    if (spendingTime.size() != K)
       throw std::invalid_argument("Invalid length for spendingTime");
     if (spendingTime[0] <= 0.0)
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[kMax-1] != 1.0)
+    if (spendingTime[K-1] != 1.0)
       throw std::invalid_argument("spendingTime must end with 1");
     spendTime = spendingTime; // copy
   } else {
@@ -1234,6 +1241,8 @@ DataFrameCpp getADRCIcpp(
   if (std::isnan(INew)) throw std::invalid_argument("INew must be provided");
   if (INew <= 0.0) throw std::invalid_argument("INew must be positive");
 
+  std::size_t LL2 = static_cast<std::size_t>(L2);
+
   std::vector<unsigned char> effStoppingNew;
   std::vector<double> spendTimeNew = spendingTimeNew;
 
@@ -1244,13 +1253,13 @@ DataFrameCpp getADRCIcpp(
 
   if (MullerSchafer) {
     if (none_na(informationRatesNew)) {
-      if (static_cast<int>(informationRatesNew.size()) != L2)
+      if (informationRatesNew.size() != LL2)
         throw std::invalid_argument("Invalid length for informationRatesNew");
       if (informationRatesNew[0] <= 0.0)
         throw std::invalid_argument("informationRatesNew must be positive");
       if (any_nonincreasing(informationRatesNew))
         throw std::invalid_argument("informationRatesNew must be increasing");
-      if (informationRatesNew[L2 - 1] > 1.0)
+      if (informationRatesNew[LL2 - 1] > 1.0)
         throw std::invalid_argument("informationRatesNew must not exceed 1");
     } else {
       throw std::invalid_argument(
@@ -1258,13 +1267,13 @@ DataFrameCpp getADRCIcpp(
     }
 
     if (none_na(efficacyStoppingNew)) {
-      if (static_cast<int>(efficacyStoppingNew.size()) != L2)
+      if (efficacyStoppingNew.size() != LL2)
         throw std::invalid_argument("Invalid length for efficacyStoppingNew");
-      if (efficacyStoppingNew[L2 - 1] != 1)
+      if (efficacyStoppingNew[LL2 - 1] != 1)
         throw std::invalid_argument("efficacyStoppingNew must end with 1");
       effStoppingNew = efficacyStoppingNew;
     } else {
-      effStoppingNew.assign(L2, 1);
+      effStoppingNew.assign(LL2, 1);
     }
 
     if (!(asfNew == "of" || asfNew == "p" || asfNew == "wt" ||
@@ -1282,13 +1291,13 @@ DataFrameCpp getADRCIcpp(
           "parameterAlphaSpendingNew must be positive for sfKD");
 
     if (none_na(spendingTimeNew)) {
-      if (static_cast<int>(spendingTimeNew.size()) != L2)
+      if (spendingTimeNew.size() != LL2)
         throw std::invalid_argument("Invalid length for spendingTimeNew");
       if (spendingTimeNew[0] <= 0.0)
         throw std::invalid_argument("spendingTimeNew must be positive");
       if (any_nonincreasing(spendingTimeNew))
         throw std::invalid_argument("spendingTimeNew must be increasing");
-      if (spendingTimeNew[L2 - 1] > 1.0)
+      if (spendingTimeNew[LL2 - 1] > 1.0)
         throw std::invalid_argument("spendingTimeNew must not exceed 1");
       spendTimeNew = spendingTimeNew;
     } else {
@@ -1299,43 +1308,43 @@ DataFrameCpp getADRCIcpp(
 
   // -----------------------------------------------------------------------
   // obtain critical values for the primary trial
-  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> l(K, -6.0), zero(K, 0.0);
   std::vector<double> b = criticalValues;
   double alpha1 = alpha;
   if (missingCriticalValues) {
     bool haybittle = false;
-    if (kMax > 1 && static_cast<int>(criticalValues.size()) == kMax) {
+    if (K > 1 && criticalValues.size() == K) {
       bool hasNaN = false;
-      for (int i = 0; i < kMax - 1; ++i) {
+      for (std::size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
-      if (!hasNaN && std::isnan(criticalValues[kMax-1])) {
+      if (!hasNaN && std::isnan(criticalValues[K-1])) {
         haybittle = true;
       }
     }
 
     if (haybittle) { // Haybittle & Peto
-      std::vector<double> u(kMax);
-      for (int i = 0; i < kMax - 1; ++i) {
+      std::vector<double> u(K);
+      for (std::size_t i = 0; i < K - 1; ++i) {
         u[i] = criticalValues[i];
         if (!effStopping[i]) u[i] = 6.0;
       }
 
       auto f = [&](double aval)->double {
-        u[kMax-1] = aval;
+        u[K-1] = aval;
         ListCpp probs = exitprobcpp(u, l, zero, infoRates);
         auto v = probs.get<std::vector<double>>("exitProbUpper");
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
       };
 
-      b[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+      b[K-1] = brent(f, -5.0, 6.0, 1e-6);
     } else {
       b = getBoundcpp(kMax, infoRates, alpha, asf, parameterAlphaSpending,
                       std::vector<double>{}, spendTime, effStopping);
     }
   } else {
-    for (int i = 0; i < kMax; ++i) {
+    for (std::size_t i = 0; i < K; ++i) {
       if (!effStopping[i]) b[i] = 6.0;
     }
     ListCpp probs = exitprobcpp(b, l, zero, infoRates);
@@ -1345,13 +1354,13 @@ DataFrameCpp getADRCIcpp(
 
 
   // Primary information vector
-  std::vector<double> I(kMax);
-  for (int i = 0; i < kMax; ++i) I[i] = IMax * informationRates[i];
+  std::vector<double> I(K);
+  for (std::size_t i = 0; i < K; ++i) I[i] = IMax * informationRates[i];
 
   // compute b2 and I2 for secondary trial depending on MullerSchafer
-  std::vector<double> b2(L2), I2(L2);
+  std::vector<double> b2(LL2), I2(LL2);
   if (!MullerSchafer) {
-    for (int l = 0; l < L2; ++l) {
+    for (std::size_t l = 0; l < LL2; ++l) {
       double t1 = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       double r1 = infoRates[L - 1] / infoRates[l + L];
       b2[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
@@ -1359,9 +1368,9 @@ DataFrameCpp getADRCIcpp(
       I2[l] = INew * t1;
     }
   } else { // conditional type I error
-    int k1 = kMax - L;
-    std::vector<double> t1(k1), r1(k1), b1(k1), a1(k1, -6.0);
-    for (int l = 0; l < k1; ++l) {
+    std::size_t K1 = K - L;
+    std::vector<double> t1(K1), r1(K1), b1(K1), a1(K1, -6.0);
+    for (std::size_t l = 0; l < K1; ++l) {
       t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       r1[l] = infoRates[L - 1] / infoRates[l + L];
       b1[l] = (b[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
@@ -1375,7 +1384,7 @@ DataFrameCpp getADRCIcpp(
                      parameterAlphaSpendingNew, std::vector<double>{},
                      spendTimeNew, effStoppingNew);
 
-    for (int l = 0; l < L2; ++l) I2[l] = INew * informationRatesNew[l];
+    for (std::size_t l = 0; l < LL2; ++l) I2[l] = INew * informationRatesNew[l];
   }
 
 
@@ -1385,22 +1394,22 @@ DataFrameCpp getADRCIcpp(
   if (!MullerSchafer) {
     // simple combination formula
     double I1 = IMax * infoRates[L - 1];
-    double I2 = INew * (infoRates[L + L2 - 1] - infoRates[L - 1]) /
+    double I2 = INew * (infoRates[L + LL2 - 1] - infoRates[L - 1]) /
       (1.0 - infoRates[L - 1]);
-    double r1 = infoRates[L - 1] / infoRates[L + L2 - 1];
+    double r1 = infoRates[L - 1] / infoRates[L + LL2 - 1];
     double w1 = std::sqrt(r1);
     double w2 = std::sqrt(1.0 - r1);
     double c1 = w1 * zL + w2 * zL2;
     double c2 = w1 * std::sqrt(I1) + w2 * std::sqrt(I2);
 
-    lower = (c1 - b[L + L2 - 1]) / c2;
-    upper = (c1 + b[L + L2 - 1]) / c2;
+    lower = (c1 - b[L + LL2 - 1]) / c2;
+    upper = (c1 + b[L + LL2 - 1]) / c2;
 
     // point estimate is lower bound with alpha=0.5
-    int J = L + L2;
+    std::size_t J = L + LL2;
     // create cache_J for J
     std::vector<double> t_prefix(J);
-    for (int i = 0; i < J; ++i) t_prefix[i] = infoRates[i];
+    for (std::size_t i = 0; i < J; ++i) t_prefix[i] = infoRates[i];
     BoundCacheAlpha cache_J(J, t_prefix, asf, parameterAlphaSpending,
                             std::vector<double>{}, spendTime, effStopping, 64, 12);
     std::vector<double> u = cache_J.get(0.5);
@@ -1438,14 +1447,14 @@ DataFrameCpp getADRCIcpp(
 
     // Muller-Schafer branch: more complex iterative root-finding
     double I1 = IMax * infoRates[L - 1];
-    double I2 = INew * informationRatesNew[L2 - 1];
+    double I2 = INew * informationRatesNew[LL2 - 1];
     double sqrtI1 = std::sqrt(I1);
     double sqrtI2 = std::sqrt(I2);
 
-    int k1 = kMax - L;
+    std::size_t K1 = K - L;
 
-    std::vector<double> t1(k1), r1(k1), w1(k1), w2(k1);
-    for (int l = 0; l < k1; ++l) {
+    std::vector<double> t1(K1), r1(K1), w1(K1), w2(K1);
+    for (std::size_t l = 0; l < K1; ++l) {
       t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       r1[l] = infoRates[L - 1] / infoRates[l + L];
       w1[l] = std::sqrt(r1[l]);
@@ -1460,14 +1469,14 @@ DataFrameCpp getADRCIcpp(
     // point estimate is the lower bound for alpha = 0.5
     std::vector<double> u = cache_kMax.get(0.5);
 
-    std::vector<double> b1(k1);
-    std::vector<double> a1(k1, -6.0);
-    std::vector<double> b2_local(L2);
+    std::vector<double> b1(K1);
+    std::vector<double> a1(K1, -6.0);
+    std::vector<double> b2_local(LL2);
 
     // thetahat: root of f0(theta) = 0 on [left, right]
     auto f0 = [&](double theta)->double {
       double zL1 = zL - theta * sqrtI1;
-      for (int l = 0; l < k1; ++l) {
+      for (std::size_t l = 0; l < K1; ++l) {
         b1[l] = (u[l + L] - w1[l] * zL1) / w2[l];
         if (!effStopping[l + L]) b1[l] = 6.0;
       }
@@ -1475,14 +1484,14 @@ DataFrameCpp getADRCIcpp(
       auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
       double alphaNew = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
       b2_local = cache_L2.get(alphaNew);
-      return zL2 - theta * sqrtI2 - b2_local[L2 - 1];
+      return zL2 - theta * sqrtI2 - b2_local[LL2 - 1];
     };
     thetahat = brent(f0, left, right, tol);
 
     // lower: root of f1(theta) = 0 on [left, thetahat]
     auto f1 = [&](double theta)->double {
       double zL1 = zL - theta * sqrtI1;
-      for (int l = 0; l < k1; ++l) {
+      for (std::size_t l = 0; l < K1; ++l) {
         b1[l] = (b[l + L] - w1[l] * zL1) / w2[l];
         if (!effStopping[l + L]) b1[l] = 6.0;
       }
@@ -1490,14 +1499,14 @@ DataFrameCpp getADRCIcpp(
       auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
       double alphaNew = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
       b2_local = cache_L2.get(alphaNew);
-      return zL2 - theta * sqrtI2 - b2_local[L2 - 1];
+      return zL2 - theta * sqrtI2 - b2_local[LL2 - 1];
     };
     lower = brent(f1, left, thetahat, tol);
 
     // upper: root of f2(theta) = 0 on [thetahat, right]
     auto f2 = [&](double theta)->double {
       double zL1 = -zL + theta * sqrtI1;
-      for (int l = 0; l < k1; ++l) {
+      for (std::size_t l = 0; l < K1; ++l) {
         b1[l] = (b[l + L] - w1[l] * zL1) / w2[l];
         if (!effStopping[l + L]) b1[l] = 6.0;
       }
@@ -1505,7 +1514,7 @@ DataFrameCpp getADRCIcpp(
       auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
       double alphaNew = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
       b2_local = cache_L2.get(alphaNew);
-      return -zL2 + theta * sqrtI2 - b2_local[L2 - 1];
+      return -zL2 + theta * sqrtI2 - b2_local[LL2 - 1];
     };
     upper = brent(f2, thetahat, right, tol);
 
@@ -1515,7 +1524,7 @@ DataFrameCpp getADRCIcpp(
 
       auto g = [&](double theta)->double {
         double zL1 = zL - theta * sqrtI1;
-        for (int l = 0; l < k1; ++l) {
+        for (std::size_t l = 0; l < K1; ++l) {
           b1[l] = (u_local[l + L] - w1[l] * zL1) / w2[l];
           if (!effStopping[l + L]) b1[l] = 6.0;
         }
@@ -1523,7 +1532,7 @@ DataFrameCpp getADRCIcpp(
         auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
         double alphaNew = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
         b2_local = cache_L2.get(alphaNew);
-        return zL2 - theta * sqrtI2 - b2_local[L2 - 1];
+        return zL2 - theta * sqrtI2 - b2_local[LL2 - 1];
       };
 
       double theta_root = brent(g, left, right, tol);
