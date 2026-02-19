@@ -648,7 +648,7 @@ ListCpp getPower(
 
   auto f = [&](double x) -> double {
     // reset futility bounds
-    std::fill(a.begin(), a.end(), -6.0);
+    std::fill_n(a.data(), a.size(), -6.0);
     double eps = 0.0;
 
     // first stage
@@ -941,9 +941,7 @@ ListCpp getDesigncpp(const double beta,
       for (std::size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
-      if (!hasNaN && std::isnan(criticalValues[K-1])) {
-        haybittle = true;
-      }
+      if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
     }
 
     if (haybittle) { // Haybittle & Peto
@@ -1547,9 +1545,7 @@ ListCpp getDesignEquivcpp(const double beta,
       for (std::size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
-      if (!hasNaN && std::isnan(criticalValues[K-1])) {
-        haybittle = true;
-      }
+      if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
     }
 
     if (haybittle) { // Haybittle & Peto
@@ -1585,37 +1581,36 @@ ListCpp getDesignEquivcpp(const double beta,
     efficacyP[i] = 1.0 - boost_pnorm(critValues[i]);
   }
 
-  // calculate cumulative rejection probability under H1
+  // we center the margins at theta so that exitprobcpp can be called
+  // with zero drift and with max upper bound for Z statistic of 6.0
+  // and min lower bound of -6.0, which is numerically more stable
   double deltaLower = thetaLower - theta;
   double deltaUpper = thetaUpper - theta;
 
   // obtain IMax if needed
   double IMax1 = IMax;
   std::vector<double> I(K);
+  std::vector<double> sqrtI(K);
   std::vector<double> b(K);
   std::vector<double> a(K);
-  std::vector<double> cpl(K);
-  std::vector<double> cpu(K);
 
   if (unknown == "IMax") {
     auto f = [&](double aval)->double {
       for (std::size_t i = 0; i < K; ++i) {
         I[i] = infoRates[i] * aval;
-        double sqrtIi = std::sqrt(I[i]);
-        l[i] = critValues[i] + deltaLower * sqrtIi;
-        u[i] = -critValues[i] + deltaUpper * sqrtIi;
-        b[i] = std::max(l[i], li[i]);
-        a[i] = std::min(u[i], ui[i]);
+        sqrtI[i] = std::sqrt(I[i]);
+        l[i] = critValues[i] + deltaLower * sqrtI[i];  // reject H10 if Z0 >= l
+        u[i] = -critValues[i] + deltaUpper * sqrtI[i]; // reject H20 if Z0 <= u
+        b[i] = std::max(l[i], li[i]); // ensure b >= li
+        a[i] = std::min(u[i], ui[i]); // ensure ui >= a
       }
 
       ListCpp probs1 = exitprobcpp(b, li, zero, I);
       ListCpp probs2 = exitprobcpp(ui, a, zero, I);
       auto v1 = probs1.get<std::vector<double>>("exitProbUpper");
       auto v2 = probs2.get<std::vector<double>>("exitProbLower");
-      std::partial_sum(v1.begin(), v1.end(), cpl.begin());
-      std::partial_sum(v2.begin(), v2.end(), cpu.begin());
-      double p1 = cpl[K-1];
-      double p2 = cpu[K-1];
+      double p1 = std::accumulate(v1.begin(), v1.end(), 0.0);
+      double p2 = std::accumulate(v2.begin(), v2.end(), 0.0);
 
       bool cross = false;
       for (std::size_t i = 0; i < K; ++i) {
@@ -1645,16 +1640,17 @@ ListCpp getDesignEquivcpp(const double beta,
     IMax1 = brent(f, IMaxLower, IMaxUpper, 1e-6);
   }
 
-  // cumulative rejection probability under H1
+  // cumulative rejection probability under H1 (at theta)
   for (std::size_t i = 0; i < K; ++i) {
     I[i] = infoRates[i] * IMax1;
-    double sqrtIi = std::sqrt(I[i]);
-    l[i] = critValues[i] + deltaLower * sqrtIi;
-    u[i] = -critValues[i] + deltaUpper * sqrtIi;
+    sqrtI[i] = std::sqrt(I[i]);
+    l[i] = critValues[i] + deltaLower * sqrtI[i];
+    u[i] = -critValues[i] + deltaUpper * sqrtI[i];
     b[i] = std::max(l[i], li[i]);
     a[i] = std::min(u[i], ui[i]);
   }
 
+  std::vector<double> cpl(K), cpu(K);
   ListCpp probs1 = exitprobcpp(b, li, zero, I);
   ListCpp probs2 = exitprobcpp(ui, a, zero, I);
   auto v1 = probs1.get<std::vector<double>>("exitProbUpper");
@@ -1662,49 +1658,46 @@ ListCpp getDesignEquivcpp(const double beta,
   std::partial_sum(v1.begin(), v1.end(), cpl.begin());
   std::partial_sum(v2.begin(), v2.end(), cpu.begin());
 
-  std::vector<unsigned char> nocross(K);
+  std::size_t kk = K; // index for the first crossing look (0-based)
   for (std::size_t i = 0; i < K; ++i) {
-    nocross[i] = (l[i] >= u[i]) ? 1 : 0;
+    if (l[i] <= u[i]) { kk = i; break; }
   }
-  std::vector<int> k = which(nocross);
+  int k = static_cast<int>(kk);
 
   std::vector<double> cp(K);
-  if (k.empty()) {
+  if (k == 0) { // crossing at the first look
     for (std::size_t i = 0; i < K; ++i) {
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   } else {
-    int kk = *std::max_element(k.begin(), k.end());
-    std::vector l1 = subset(l, 0, kk+1);
-    std::vector u1 = subset(u, 0, kk+1);
-    std::vector d1 = subset(zero, 0, kk+1);
-    std::vector I1 = subset(I, 0, kk+1);
+    std::vector<double> cplx(kk), cpux(kk);
+    std::vector l1 = subset(l, 0, k);
+    std::vector u1 = subset(u, 0, k);
+    std::vector d1 = subset(zero, 0, k);
+    std::vector I1 = subset(I, 0, k);
     ListCpp probs = exitprobcpp(l1, u1, d1, I1);
     auto v1x = probs.get<std::vector<double>>("exitProbUpper");
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
-    std::vector<double> cplx(K), cpux(K);
     std::partial_sum(v1x.begin(), v1x.end(), cplx.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpux.begin());
-    std::size_t kk1 = static_cast<std::size_t>(kk);
-    for (std::size_t i = 0; i <= kk1; ++i) {
+    for (std::size_t i = 0; i < kk; ++i) {
       cp[i] = cpl[i] + cpu[i] - cplx[i] - cpux[i];
     }
-    for (std::size_t i = kk1 + 1; i < K; ++i) {
+    for (std::size_t i = kk; i < K; ++i) {
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   }
 
-  // incremental exit probabilities under H1
-  std::vector<double> q(K);
-  q[0] = cp[0];
-  for (std::size_t i = 1; i < K - 1; ++i) q[i] = cp[i] - cp[i-1];
-  q[K-1] = 1.0 - cp[K-2];
-
+  // incremental exit probabilities under H1 (at theta)
   std::vector<double> rejectPerStage(K);
   rejectPerStage[0] = cp[0];
   for (std::size_t i = 1; i < K; ++i) {
     rejectPerStage[i] = cp[i] - cp[i-1];
   }
+
+  std::vector<double> q(K);
+  std::memcpy(q.data(), rejectPerStage.data(), K * sizeof(double));
+  if (K > 1) q[K - 1] = 1.0 - cp[K - 2];
 
   double overallReject = cp[K-1];
   double expectedInformationH1 = std::inner_product(
@@ -1717,38 +1710,38 @@ ListCpp getDesignEquivcpp(const double beta,
     efficacyThetaUpper[i] = -thetaBound + thetaUpper;
   }
 
-  std::vector<double> theta10(K, deltaLower);
-  std::vector<double> theta20(K, deltaUpper);
-
-  // cumulative rejection probability under H10
-  ListCpp probsH10 = exitprobcpp(ui, a, theta10, I);
+  // cumulative attained alpha under H10 (at thetaLower)
+  for (std::size_t i = 0; i < K; ++i) {
+    l[i] = critValues[i];
+    u[i] = -critValues[i] + (thetaUpper - thetaLower) * sqrtI[i];
+    a[i] = std::min(u[i], ui[i]);
+  }
+  ListCpp probsH10 = exitprobcpp(ui, a, zero, I);
   auto vH10 = probsH10.get<std::vector<double>>("exitProbLower");
   std::vector<double> cpuH10(K);
   std::partial_sum(vH10.begin(), vH10.end(), cpuH10.begin());
   std::vector<double> cplH10 = cumAlphaSpent;
 
   std::vector<double> cpH10(K);
-  if (k.empty()) {
+  if (k == 0) {
     for (std::size_t i = 0; i < K; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   } else {
-    int kk = *std::max_element(k.begin(), k.end());
-    std::vector l1 = subset(l, 0, kk+1);
-    std::vector u1 = subset(u, 0, kk+1);
-    std::vector d1 = subset(theta10, 0, kk+1);
-    std::vector I1 = subset(I, 0, kk+1);
+    std::vector<double> cplH10x(kk), cpuH10x(kk);
+    std::vector l1 = subset(l, 0, k);
+    std::vector u1 = subset(u, 0, k);
+    std::vector d1 = subset(zero, 0, k);
+    std::vector I1 = subset(I, 0, k);
     ListCpp probs = exitprobcpp(l1, u1, d1, I1);
     auto v1x = probs.get<std::vector<double>>("exitProbUpper");
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
-    std::vector<double> cplH10x(K), cpuH10x(K);
     std::partial_sum(v1x.begin(), v1x.end(), cplH10x.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpuH10x.begin());
-    std::size_t kk1 = static_cast<std::size_t>(kk);
-    for (std::size_t i = 0; i <= kk1; ++i) {
+    for (std::size_t i = 0; i < kk; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - cplH10x[i] - cpuH10x[i];
     }
-    for (std::size_t i = kk1 + 1; i < K; ++i) {
+    for (std::size_t i = kk; i < K; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   }
@@ -1757,41 +1750,45 @@ ListCpp getDesignEquivcpp(const double beta,
   std::vector<double> qH10(K);
   qH10[0] = cpH10[0];
   for (std::size_t i = 1; i < K - 1; ++i) qH10[i] = cpH10[i] - cpH10[i-1];
-  qH10[K-1] = 1.0 - cpH10[K-2];
+  if (K > 1) qH10[K-1] = 1.0 - cpH10[K-2];
 
   double attainedAlphaH10 = cpH10[K-1];
   double expectedInformationH10 = std::inner_product(
     qH10.begin(), qH10.end(), I.begin(), 0.0);
 
-  // cumulative rejection probability under H20
-  ListCpp probsH20 = exitprobcpp(b, li, theta20, I);
+  // cumulative attained alpha under H20 (at thetaUpper)
+  for (std::size_t i = 0; i < K; ++i) {
+    l[i] = critValues[i] + (thetaLower - thetaUpper) * sqrtI[i];
+    u[i] = -critValues[i];
+    b[i] = std::max(l[i], li[i]);
+  }
+
+  ListCpp probsH20 = exitprobcpp(b, li, zero, I);
   auto vH20 = probsH20.get<std::vector<double>>("exitProbUpper");
   std::vector<double> cplH20(K);
   std::partial_sum(vH20.begin(), vH20.end(), cplH20.begin());
   std::vector<double> cpuH20 = cumAlphaSpent;
 
   std::vector<double> cpH20(K);
-  if (k.empty()) {
+  if (k == 0) {
     for (std::size_t i = 0; i < K; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   } else {
-    int kk = *std::max_element(k.begin(), k.end());
-    std::vector l1 = subset(l, 0, kk+1);
-    std::vector u1 = subset(u, 0, kk+1);
-    std::vector d1 = subset(theta20, 0, kk+1);
-    std::vector I1 = subset(I, 0, kk+1);
+    std::vector<double> cplH20x(kk), cpuH20x(kk);
+    std::vector l1 = subset(l, 0, k);
+    std::vector u1 = subset(u, 0, k);
+    std::vector d1 = subset(zero, 0, k);
+    std::vector I1 = subset(I, 0, k);
     ListCpp probs = exitprobcpp(l1, u1, d1, I1);
     auto v1x = probs.get<std::vector<double>>("exitProbUpper");
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
-    std::vector<double> cplH20x(K), cpuH20x(K);
     std::partial_sum(v1x.begin(), v1x.end(), cplH20x.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpuH20x.begin());
-    std::size_t kk1 = static_cast<std::size_t>(kk);
-    for (std::size_t i = 0; i <= kk1; ++i) {
+    for (std::size_t i = 0; i < kk; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - cplH20x[i] - cpuH20x[i];
     }
-    for (std::size_t i = kk1 + 1; i < K; ++i) {
+    for (std::size_t i = kk; i < K; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   }
@@ -2384,9 +2381,7 @@ ListCpp adaptDesigncpp(double betaNew,
       for (std::size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
-      if (!hasNaN && std::isnan(criticalValues[K-1])) {
-        haybittle = true;
-      }
+      if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
     }
 
     if (haybittle) { // Haybittle & Peto
