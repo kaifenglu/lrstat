@@ -832,9 +832,7 @@ DataFrameCpp getADCIcpp(
       for (std::size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
-      if (!hasNaN && std::isnan(criticalValues[K-1])) {
-        haybittle = true;
-      }
+      if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
     }
 
     if (haybittle) { // Haybittle & Peto
@@ -1318,9 +1316,7 @@ DataFrameCpp getADRCIcpp(
       for (std::size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
-      if (!hasNaN && std::isnan(criticalValues[K-1])) {
-        haybittle = true;
-      }
+      if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
     }
 
     if (haybittle) { // Haybittle & Peto
