@@ -315,9 +315,7 @@ double getCPcpp(
       for (std::size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
-      if (!hasNaN && std::isnan(criticalValues[K-1])) {
-        haybittle = true;
-      }
+      if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
     }
 
     if (haybittle) { // Haybittle & Peto
@@ -371,7 +369,7 @@ double getCPcpp(
     // build delta prefix of length kMax
     std::vector<double> delta(K);
     if (theta.size() == 1) {
-      std::fill(delta.begin(), delta.end(), theta[0]);
+      std::fill_n(delta.data(), delta.size(), theta[0]);
     } else if (theta.size() >= K) {
       std::memcpy(delta.data(), theta.data(), K * sizeof(double));
     } else {
@@ -403,7 +401,7 @@ double getCPcpp(
     // construct theta1 of length K1 + 1
     std::vector<double> theta1(K1 + 1);
     if (theta.size() == 1) {
-      std::fill(theta1.begin(), theta1.end(), theta[0]);
+      std::fill_n(theta1.data(), theta1.size(), theta[0]);
     } else if (theta.size() == K + K1) {
       theta1[0] = theta[L - 1];
       for (std::size_t l = 0; l < K1; ++l) theta1[l + 1] = theta[K + l];
@@ -431,7 +429,7 @@ double getCPcpp(
     // Muller-Schafer branch
     std::vector<double> theta1(KNew + 1);
     if (theta.size() == 1) {
-      std::fill(theta1.begin(), theta1.end(), theta[0]);
+      std::fill_n(theta1.data(), theta1.size(), theta[0]);
     } else if (theta.size() == K + KNew) {
       theta1[0] = theta[L - 1];
       for (std::size_t l = 0; l < KNew; ++l) theta1[l + 1] = theta[K + l];

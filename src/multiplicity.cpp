@@ -237,7 +237,7 @@ FlatMatrix fadjpboncpp1(const std::vector<double>& w,
     // Reset for this iteration
     wx = w;  // copy w
     g = G;   // copy G
-    std::fill(r.begin(), r.end(), 0);
+    std::fill_n(r.data(), r.size(), 0);
 
     // Extract row iter from p into pvalues
     for (int i = 0; i < m; ++i) {
@@ -2678,7 +2678,7 @@ FlatMatrix ftrunccpp1(
       }
     } else { // holm
       double w_holm = gamma / k + tbon;
-      std::fill(weights.begin(), weights.end(), w_holm);
+      std::fill_n(weights.data(), weights.size(), w_holm);
     }
 
     // Process each iteration/replication

@@ -8,8 +8,8 @@
 #include <numeric>       // accumulate
 #include <stdexcept>     // invalid_argument
 #include <string>        // string
-#include <vector>        // vector
 #include <unordered_map> // unordered_map
+#include <vector>        // vector
 
 #include <Rcpp.h>
 #include <boost/math/distributions/binomial.hpp>
@@ -747,11 +747,11 @@ ListCpp simonBayesSimcpp(
   int index1 = 0, index2 = 0;
   for (int iter = 0; iter < maxNumberOfIterations; ++iter) {
     // initialize the contents in each stratum
-    std::fill(n.begin(), n.end(), 0.0);
-    std::fill(r.begin(), r.end(), 0.0);
-    std::fill(open.begin(), open.end(), 1);
-    std::fill(pos.begin(), pos.end(), 0);
-    std::fill(neg.begin(), neg.end(), 0);
+    std::fill_n(n.data(), n.size(), 0.0);
+    std::fill_n(r.data(), r.size(), 0.0);
+    std::fill_n(open.data(), open.size(), 1);
+    std::fill_n(pos.data(), pos.size(), 0);
+    std::fill_n(neg.data(), neg.size(), 0);
 
     int k = 0;      // index of the number of subjects included in analysis
     int stage = 0;
