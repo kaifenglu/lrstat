@@ -3374,7 +3374,7 @@ ListCpp liferegloop(int p, const std::vector<double>& par, void *ex,
   }
 
   // construct update vector u (length p) from solved u1
-  std::fill_n(u.data(), u.size(), 0.0);
+  std::fill(u.begin(), u.end(), 0.0);
   for (int i = 0; i < ncolfit; ++i) u[colfit[i]] = u1[i];
 
   // newbeta = beta + u
@@ -3427,7 +3427,7 @@ ListCpp liferegloop(int p, const std::vector<double>& par, void *ex,
       chsolve2(imat1, ncolfit, u1);
     }
 
-    std::fill_n(u.data(), u.size(), 0.0);
+    std::fill(u.begin(), u.end(), 0.0);
     for (int i = 0; i < ncolfit; ++i) u[colfit[i]] = u1[i];
     for (int i = 0; i < p; ++i) newbeta[i] = beta[i] + u[i];
   }
@@ -5504,7 +5504,7 @@ ListCpp phregloop(int p, const std::vector<double>& par, void *ex,
   cholesky2(imat1, ncolfit);
   chsolve2(imat1, ncolfit, u1);
 
-  std::fill_n(u.data(), u.size(), 0.0);
+  std::fill(u.begin(), u.end(), 0.0);
   for (int i = 0; i < ncolfit; ++i) u[colfit[i]] = u1[i];
   for (int i = 0; i < p; ++i) newbeta[i] = beta[i] + u[i];
 
@@ -5540,7 +5540,7 @@ ListCpp phregloop(int p, const std::vector<double>& par, void *ex,
     cholesky2(imat1, ncolfit);
     chsolve2(imat1, ncolfit, u1);
 
-    std::fill_n(u.data(), u.size(), 0.0);
+    std::fill(u.begin(), u.end(), 0.0);
     for (int i = 0; i < ncolfit; ++i) u[colfit[i]] = u1[i];
     for (int i = 0; i < p; ++i) newbeta[i] = beta[i] + u[i];
   }
@@ -5716,7 +5716,7 @@ ListCpp f_basehaz(int p, const std::vector<double>& par, void *ex) {
       i1 = person;
       natrisk = 0;
       denom = 0.0;
-      std::fill_n(a.data(), a.size(), 0.0);
+      std::fill(a.begin(), a.end(), 0.0);
     }
 
     const double dtime = tstop[person];
@@ -5798,7 +5798,7 @@ ListCpp f_basehaz(int p, const std::vector<double>& par, void *ex) {
 
       // reset for the next death time
       ndead = deadwt = denom2 = 0.0;
-      std::fill_n(a2.data(), a2.size(), 0.0);
+      std::fill(a2.begin(), a2.end(), 0.0);
     }
   }
 
@@ -6011,8 +6011,8 @@ FlatMatrix f_ressco_2(int p, const std::vector<double>& par, void *ex) {
 
       denom = 0.0; // reset temporary variables
       cumhaz = 0.0;
-      std::fill_n(a.data(), a.size(), 0.0);
-      std::fill_n(xhaz.data(), xhaz.size(), 0.0);
+      std::fill(a.begin(), a.end(), 0.0);
+      std::fill(xhaz.begin(), xhaz.end(), 0.0);
     }
 
     const double dtime = tstop[person];
@@ -6108,7 +6108,7 @@ FlatMatrix f_ressco_2(int p, const std::vector<double>& par, void *ex) {
 
       // Reset after processing deaths
       ndead = deadwt = denom2 = 0.0;
-      std::fill_n(a2.data(), a2.size(), 0.0);
+      std::fill(a2.begin(), a2.end(), 0.0);
     }
   }
 
@@ -7084,7 +7084,7 @@ DataFrameCpp survfit_phregcpp(const int p,
   std::vector<double> tstartn(n), tstopn(n);
   if (!has_id) { // right-censored data
     double maxt0 = *std::max_element(time0.begin(), time0.end()) + 1.0;
-    std::fill_n(tstopn.data(), tstopn.size(), maxt0);
+    std::fill(tstopn.begin(), tstopn.end(), maxt0);
   } else {
     if (!newdata.containElementNamed(tstart))
       throw std::invalid_argument("newdata must contain the tstart variable");
@@ -7479,7 +7479,7 @@ ListCpp f_ressch(int p, const std::vector<double>& par, void *ex) {
       istrata = strata[person]; // reset temporary variables
       i1 = person;
       denom = 0.0;
-      std::fill_n(a.data(), a.size(), 0.0);
+      std::fill(a.begin(), a.end(), 0.0);
     }
 
     const double dtime = tstop[person];
@@ -7530,7 +7530,7 @@ ListCpp f_ressch(int p, const std::vector<double>& par, void *ex) {
           xbar[i] = a[i] / denom;
         }
       } else {
-        std::fill_n(xbar.data(), xbar.size(), 0.0);
+        std::fill(xbar.begin(), xbar.end(), 0.0);
         for (int k = 0; k < ndead; ++k) {
           denom += denom2 / ndead;
           for (int i = 0; i < p; ++i) {
@@ -7553,7 +7553,7 @@ ListCpp f_ressch(int p, const std::vector<double>& par, void *ex) {
 
       // reset for the next death time
       ndead = denom2 = 0.0;
-      std::fill_n(a2.data(), a2.size(), 0.0);
+      std::fill(a2.begin(), a2.end(), 0.0);
     }
   }
 

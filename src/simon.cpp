@@ -15,6 +15,8 @@
 #include <boost/math/distributions/binomial.hpp>
 #include <boost/random.hpp>
 
+using std::size_t;
+
 
 // Hash function for caching pfutile results
 struct PfutileKey {
@@ -31,11 +33,11 @@ struct PfutileKey {
 namespace std {
 template<>
 struct hash<PfutileKey> {
-  std::size_t operator()(const PfutileKey& k) const {
-    std::size_t seed = 0;
+  size_t operator()(const PfutileKey& k) const {
+    size_t seed = 0;
 
     // Hash combine pattern (better distribution)
-    auto hash_combine = [](std::size_t& seed, std::size_t hash) {
+    auto hash_combine = [](size_t& seed, size_t hash) {
       seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
     };
 
@@ -419,7 +421,7 @@ ListCpp simonBayesAnalysiscpp(
     throw std::invalid_argument("r must be nonnegative.");
   }
 
-  for (std::size_t i = 0; i < r.size(); ++i) {
+  for (size_t i = 0; i < r.size(); ++i) {
     if (r[i] > n[i]) {
       throw std::invalid_argument("r must be less than or equal to n.");
     }
@@ -696,7 +698,7 @@ ListCpp simonBayesSimcpp(
   }
 
   std::vector<unsigned char> act(p.size());
-  for (std::size_t i = 0; i < p.size(); ++i) {
+  for (size_t i = 0; i < p.size(); ++i) {
     act[i] = (p[i] == phi) ? 1 : 0;
   }
   int nactive = static_cast<int>(std::accumulate(act.begin(), act.end(), 0));
@@ -747,11 +749,11 @@ ListCpp simonBayesSimcpp(
   int index1 = 0, index2 = 0;
   for (int iter = 0; iter < maxNumberOfIterations; ++iter) {
     // initialize the contents in each stratum
-    std::fill_n(n.data(), n.size(), 0.0);
-    std::fill_n(r.data(), r.size(), 0.0);
-    std::fill_n(open.data(), open.size(), 1);
-    std::fill_n(pos.data(), pos.size(), 0);
-    std::fill_n(neg.data(), neg.size(), 0);
+    std::fill(n.begin(), n.end(), 0.0);
+    std::fill(r.begin(), r.end(), 0.0);
+    std::fill(open.begin(), open.end(), 1);
+    std::fill(pos.begin(), pos.end(), 0);
+    std::fill(neg.begin(), neg.end(), 0);
 
     int k = 0;      // index of the number of subjects included in analysis
     int stage = 0;

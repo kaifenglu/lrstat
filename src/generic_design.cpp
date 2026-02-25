@@ -19,6 +19,8 @@
 
 #include <Rcpp.h>
 
+using std::size_t;
+
 
 // [[Rcpp::export]]
 double errorSpentcpp(const double t,
@@ -73,7 +75,7 @@ ListCpp exitprobcpp(const std::vector<double>& b,
                     const std::vector<double>& I) {
 
   // K is the total number of stages
-  std::size_t K = b.size();
+  size_t K = b.size();
 
   // Integer value controlling grid for numerical integration as in
   // Jennison and Turnbull (2000)
@@ -93,7 +95,7 @@ ListCpp exitprobcpp(const std::vector<double>& b,
   }
 
   // check lower < upper
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     if (a1[i] > b[i]) throw std::invalid_argument(
         "Lower bounds (a) must be less than upper bounds (b)");
   }
@@ -143,7 +145,7 @@ ListCpp exitprobcpp(const std::vector<double>& b,
 
   // Precompute sqrt and theta*sqrt/I combos
   std::vector<double> sqrtI(K), thetaSqrtI(K), thetaI(K);
-  for (std::size_t j = 0; j < K; ++j) {
+  for (size_t j = 0; j < K; ++j) {
     sqrtI[j] = std::sqrt(I1[j]);
     thetaSqrtI[j] = theta1[j] * sqrtI[j];
     thetaI[j] = theta1[j] * I1[j];
@@ -154,7 +156,7 @@ ListCpp exitprobcpp(const std::vector<double>& b,
   std::vector<double> dI(K), dThetaI(K);
   dI[0] = I1[0];
   dThetaI[0] = thetaI[0];
-  for (std::size_t j = 1; j < K; ++j) {
+  for (size_t j = 1; j < K; ++j) {
     dI[j] = I1[j] - I1[j-1];
     dThetaI[j] = thetaI[j] - thetaI[j-1];
   }
@@ -171,7 +173,7 @@ ListCpp exitprobcpp(const std::vector<double>& b,
   int m0 = 0; // size of previous z0/h0
   // z0 and h0 are represented by the first m0 entries of z and h vectors.
 
-  for (std::size_t j = 0; j < K; ++j) {
+  for (size_t j = 0; j < K; ++j) {
     const double thetaSqrtIj = thetaSqrtI[j];
     const double sqrtIj = sqrtI[j];
     const double sqrtIjm1 = sqrtI[j-1];
@@ -306,7 +308,7 @@ std::vector<double> getBoundcpp(
 
   if (k <= 0) throw std::invalid_argument("k must be provided and positive");
 
-  std::size_t K = static_cast<std::size_t>(k);
+  size_t K = static_cast<size_t>(k);
 
   // infoRates: if missing create 1/k, 2/k, ..., k/k
   std::vector<double> infoRates(K);
@@ -321,7 +323,7 @@ std::vector<double> getBoundcpp(
       throw std::invalid_argument("informationRates must not exceed 1");
     infoRates = informationRates; // copy
   } else {
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       infoRates[i] = static_cast<double>(i+1) / static_cast<double>(K);
     }
   }
@@ -376,7 +378,7 @@ std::vector<double> getBoundcpp(
 
   if (asf == "of" || asf == "p" || asf == "wt") {
     bool equal_spacing = true;
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       double expected = static_cast<double>(i+1) / static_cast<double>(K);
       if (std::fabs(infoRates[i] - expected) > 1e-6) {
         equal_spacing = false; break;
@@ -400,7 +402,7 @@ std::vector<double> getBoundcpp(
   std::vector<double> criticalValues(K);
 
   if (asf == "none") {
-    for (std::size_t i = 0; i < K-1; ++i) criticalValues[i] = 6.0;
+    for (size_t i = 0; i < K-1; ++i) criticalValues[i] = 6.0;
     criticalValues[K-1] = boost_qnorm(1.0 - alpha);
     return criticalValues;
   }
@@ -416,13 +418,13 @@ std::vector<double> getBoundcpp(
     std::vector<double> l(K, -6.0);
     std::vector<double> theta(K, 0.0);
     std::vector<double> I(K), u0(K);
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       I[i] = static_cast<double>(i+1) / static_cast<double>(K);
       u0[i] = std::pow(I[i], Delta - 0.5);
     }
 
     auto f = [&](double aval)->double {
-      for (std::size_t i = 0; i < K; ++i) {
+      for (size_t i = 0; i < K; ++i) {
         u[i] = aval * u0[i];
         if (!effStopping[i]) u[i] = 6.0;
       }
@@ -434,7 +436,7 @@ std::vector<double> getBoundcpp(
     };
 
     double cwt = brent(f, 0.0, 10.0, 1e-6);
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       criticalValues[i] = cwt * u0[i];
       if (!effStopping[i]) criticalValues[i] = 6.0;
     }
@@ -457,7 +459,7 @@ std::vector<double> getBoundcpp(
     std::vector<double> theta_vec(K, 0.0);
 
     // subsequent stages
-    for (std::size_t k1 = 1; k1 < K; ++k1) {
+    for (size_t k1 = 1; k1 < K; ++k1) {
       // determine cumulative alpha at this stage
       if (asf == "user") cumAlpha = userAlphaSpending[k1];
       else cumAlpha = errorSpentcpp(spendTime[k1], alpha, asf, parameterAlphaSpending);
@@ -570,7 +572,7 @@ BoundCacheAlpha::BoundCacheAlpha(
   const std::vector<double>& userAlphaSpending,
   const std::vector<double>& spendTime,
   const std::vector<unsigned char>& effStopping,
-  std::size_t maxEntries,
+  size_t maxEntries,
   int alphaPrecision) : k_(k),
   infoRates_(infoRates),
   asf_(asf),
@@ -636,11 +638,11 @@ ListCpp getPower(
     const std::vector<unsigned char>& futilityStopping,
     const std::vector<double>& w) { // w is the sqrt of variance ratio
 
-  std::size_t K = static_cast<std::size_t>(kMax);
+  size_t K = static_cast<size_t>(kMax);
   double thetaSqrtI0 = theta[0] * std::sqrt(I[0]);
   std::vector<double> a(K, 0.0);
   std::vector<double> u(K), l(K, 0.0);
-  for (std::size_t i = 0; i < K; ++i) u[i] = b[i] * w[i];
+  for (size_t i = 0; i < K; ++i) u[i] = b[i] * w[i];
 
   // reusable buffers for prefixes
   std::vector<double> u1; u1.reserve(K);
@@ -648,7 +650,7 @@ ListCpp getPower(
 
   auto f = [&](double x) -> double {
     // reset futility bounds
-    std::fill_n(a.data(), a.size(), -6.0);
+    std::fill(a.begin(), a.end(), -6.0);
     double eps = 0.0;
 
     // first stage
@@ -661,7 +663,7 @@ ListCpp getPower(
     }
 
     // subsequent stages
-    for (std::size_t k = 1; k < K; ++k) {
+    for (size_t k = 1; k < K; ++k) {
       l[k-1] = a[k-1] * w[k-1];
       if (futilityStopping[k]) {
         cb = errorSpentcpp(st[k], x, bsf, bsfpar);
@@ -773,7 +775,7 @@ ListCpp getDesigncpp(const double beta,
 
   std::string unknown = std::isnan(beta) ? "beta" : "IMax";
 
-  std::size_t K = static_cast<std::size_t>(kMax);
+  size_t K = static_cast<size_t>(kMax);
 
   // informationRates: default to (1:kMax)/kMax if missing
   std::vector<double> infoRates(K);
@@ -788,7 +790,7 @@ ListCpp getDesigncpp(const double beta,
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy
   } else {
-    for (std::size_t i = 0; i < K; ++i)
+    for (size_t i = 0; i < K; ++i)
       infoRates[i] = static_cast<double>(i+1) / static_cast<double>(K);
   }
 
@@ -863,7 +865,7 @@ ListCpp getDesigncpp(const double beta,
     }
   }
   if (!missingCriticalValues && !missingFutilityBounds) {
-    for (std::size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < K - 1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         throw std::invalid_argument("futilityBounds must lie below criticalValues");
       }
@@ -938,7 +940,7 @@ ListCpp getDesigncpp(const double beta,
     bool haybittle = false;
     if (K > 1 && criticalValues.size() == K) {
       bool hasNaN = false;
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
       if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
@@ -946,7 +948,7 @@ ListCpp getDesigncpp(const double beta,
 
     if (haybittle) { // Haybittle & Peto
       std::vector<double> u(K);
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         u[i] = criticalValues[i];
         if (!effStopping[i]) u[i] = 6.0;
       }
@@ -991,7 +993,7 @@ ListCpp getDesigncpp(const double beta,
   // multiplier for the boundaries under the alternative hypothesis
   std::vector<double> w(K, std::sqrt(varianceRatio));
   std::vector<double> u(K);
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     u[i] = critValues[i] * w[i];
   }
 
@@ -1008,7 +1010,7 @@ ListCpp getDesigncpp(const double beta,
 
       // compute stagewise exit probabilities
       if (!missingFutilityBounds || bsf == "none" || K == 1) {
-        for (std::size_t i = 0; i < K; ++i) {
+        for (size_t i = 0; i < K; ++i) {
           l[i] = futBounds[i] * w[i];
         }
         ListCpp probs = exitprobcpp(u, l, delta, infoRates);
@@ -1034,7 +1036,7 @@ ListCpp getDesigncpp(const double beta,
         }
 
         // subsequent stages
-        for (std::size_t k = 1; k < K; ++k) {
+        for (size_t k = 1; k < K; ++k) {
           l[k-1] = futBounds[k-1] * w[k-1];
           cb = (bsf == "user") ? userBetaSpending[k] :
             errorSpentcpp(spendTime[k], beta, bsf, parameterBetaSpending);
@@ -1092,7 +1094,7 @@ ListCpp getDesigncpp(const double beta,
     drift = theta * std::sqrt(IMax1);
     std::vector<double> delta = std::vector<double>(K, drift);
     if (!missingFutilityBounds || bsf == "none" || K == 1) {
-      for (std::size_t i = 0; i < K; ++i) {
+      for (size_t i = 0; i < K; ++i) {
         l[i] = futBounds[i] * w[i];
       }
       probs = exitprobcpp(u, l, delta, infoRates);
@@ -1105,7 +1107,7 @@ ListCpp getDesigncpp(const double beta,
       double overallReject = out.get<double>("power");
       beta1 = 1.0 - overallReject;
       futBounds = out.get<std::vector<double>>("futilityBounds");
-      for (std::size_t i = 0; i < K; ++i) {
+      for (size_t i = 0; i < K; ++i) {
         l[i] = futBounds[i] * w[i];
       }
       probs = out.get_list("probs");
@@ -1121,7 +1123,7 @@ ListCpp getDesigncpp(const double beta,
   std::vector<double> futilityTheta(K);
   std::vector<double> efficacyP(K);
   std::vector<double> futilityP(K);
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     information[i] = IMax1 * infoRates[i];
     efficacyTheta[i] = u[i] / std::sqrt(information[i]);
     futilityTheta[i] = l[i] / std::sqrt(information[i]);
@@ -1137,7 +1139,7 @@ ListCpp getDesigncpp(const double beta,
   std::partial_sum(pl.begin(), pl.end(), cpl.begin());
   double overallReject = cpu[K-1];
   std::vector<double> ptotal(K);
-  for (std::size_t i = 0; i < K; ++i) ptotal[i] = pu[i] + pl[i];
+  for (size_t i = 0; i < K; ++i) ptotal[i] = pu[i] + pl[i];
   double expectedInformationH1 = std::inner_product(
     ptotal.begin(), ptotal.end(), information.begin(), 0.0);
 
@@ -1150,11 +1152,11 @@ ListCpp getDesigncpp(const double beta,
   std::partial_sum(plH0.begin(), plH0.end(), cplH0.begin());
   double overallRejectH0 = cpuH0[K-1];
   std::vector<double> ptotalH0(K);
-  for (std::size_t i = 0; i < K; ++i) ptotalH0[i] = puH0[i] + plH0[i];
+  for (size_t i = 0; i < K; ++i) ptotalH0[i] = puH0[i] + plH0[i];
   double expectedInformationH0 = std::inner_product(
     ptotalH0.begin(), ptotalH0.end(), information.begin(), 0.0);
 
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     if (critValues[i] == 6) effStopping[i] = 0;
     if (futBounds[i] == -6) futStopping[i] = 0;
   }
@@ -1457,7 +1459,7 @@ ListCpp getDesignEquivcpp(const double beta,
 
   std::string unknown = std::isnan(beta) ? "beta" : "IMax";
 
-  std::size_t K = static_cast<std::size_t>(kMax);
+  size_t K = static_cast<size_t>(kMax);
 
   // informationRates: default to (1:kMax)/kMax if missing
   std::vector<double> infoRates(K);
@@ -1472,7 +1474,7 @@ ListCpp getDesignEquivcpp(const double beta,
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy
   } else {
-    for (std::size_t i = 0; i < K; ++i)
+    for (size_t i = 0; i < K; ++i)
       infoRates[i] = static_cast<double>(i+1) / static_cast<double>(K);
   }
 
@@ -1542,14 +1544,14 @@ ListCpp getDesignEquivcpp(const double beta,
     bool haybittle = false;
     if (K > 1 && criticalValues.size() == K) {
       bool hasNaN = false;
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
       if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
     }
 
     if (haybittle) { // Haybittle & Peto
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         u[i] = criticalValues[i];
       }
 
@@ -1577,7 +1579,7 @@ ListCpp getDesignEquivcpp(const double beta,
   std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
 
   std::vector<double> efficacyP(K);
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     efficacyP[i] = 1.0 - boost_pnorm(critValues[i]);
   }
 
@@ -1596,7 +1598,7 @@ ListCpp getDesignEquivcpp(const double beta,
 
   if (unknown == "IMax") {
     auto f = [&](double aval)->double {
-      for (std::size_t i = 0; i < K; ++i) {
+      for (size_t i = 0; i < K; ++i) {
         I[i] = infoRates[i] * aval;
         sqrtI[i] = std::sqrt(I[i]);
         l[i] = critValues[i] + deltaLower * sqrtI[i];  // reject H10 if Z0 >= l
@@ -1613,7 +1615,7 @@ ListCpp getDesignEquivcpp(const double beta,
       double p2 = std::accumulate(v2.begin(), v2.end(), 0.0);
 
       bool cross = false;
-      for (std::size_t i = 0; i < K; ++i) {
+      for (size_t i = 0; i < K; ++i) {
         if (l[i] <= u[i]) { cross = true; break; }
       }
 
@@ -1641,7 +1643,7 @@ ListCpp getDesignEquivcpp(const double beta,
   }
 
   // cumulative rejection probability under H1 (at theta)
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     I[i] = infoRates[i] * IMax1;
     sqrtI[i] = std::sqrt(I[i]);
     l[i] = critValues[i] + deltaLower * sqrtI[i];
@@ -1658,15 +1660,15 @@ ListCpp getDesignEquivcpp(const double beta,
   std::partial_sum(v1.begin(), v1.end(), cpl.begin());
   std::partial_sum(v2.begin(), v2.end(), cpu.begin());
 
-  std::size_t kk = K; // index for the first crossing look (0-based)
-  for (std::size_t i = 0; i < K; ++i) {
+  size_t kk = K; // index for the first crossing look (0-based)
+  for (size_t i = 0; i < K; ++i) {
     if (l[i] <= u[i]) { kk = i; break; }
   }
   int k = static_cast<int>(kk);
 
   std::vector<double> cp(K);
   if (k == 0) { // crossing at the first look
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   } else {
@@ -1680,10 +1682,10 @@ ListCpp getDesignEquivcpp(const double beta,
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplx.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpux.begin());
-    for (std::size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < kk; ++i) {
       cp[i] = cpl[i] + cpu[i] - cplx[i] - cpux[i];
     }
-    for (std::size_t i = kk; i < K; ++i) {
+    for (size_t i = kk; i < K; ++i) {
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   }
@@ -1691,7 +1693,7 @@ ListCpp getDesignEquivcpp(const double beta,
   // incremental exit probabilities under H1 (at theta)
   std::vector<double> rejectPerStage(K);
   rejectPerStage[0] = cp[0];
-  for (std::size_t i = 1; i < K; ++i) {
+  for (size_t i = 1; i < K; ++i) {
     rejectPerStage[i] = cp[i] - cp[i-1];
   }
 
@@ -1704,14 +1706,14 @@ ListCpp getDesignEquivcpp(const double beta,
     q.begin(), q.end(), I.begin(), 0.0);
 
   std::vector<double> efficacyThetaLower(K), efficacyThetaUpper(K);
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     double thetaBound = critValues[i] / std::sqrt(I[i]);
     efficacyThetaLower[i] = thetaBound + thetaLower;
     efficacyThetaUpper[i] = -thetaBound + thetaUpper;
   }
 
   // cumulative attained alpha under H10 (at thetaLower)
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     l[i] = critValues[i];
     u[i] = -critValues[i] + (thetaUpper - thetaLower) * sqrtI[i];
     a[i] = std::min(u[i], ui[i]);
@@ -1724,7 +1726,7 @@ ListCpp getDesignEquivcpp(const double beta,
 
   std::vector<double> cpH10(K);
   if (k == 0) {
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   } else {
@@ -1738,10 +1740,10 @@ ListCpp getDesignEquivcpp(const double beta,
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplH10x.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpuH10x.begin());
-    for (std::size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < kk; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - cplH10x[i] - cpuH10x[i];
     }
-    for (std::size_t i = kk; i < K; ++i) {
+    for (size_t i = kk; i < K; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   }
@@ -1749,7 +1751,7 @@ ListCpp getDesignEquivcpp(const double beta,
   // incremental exit probabilities under H10
   std::vector<double> qH10(K);
   qH10[0] = cpH10[0];
-  for (std::size_t i = 1; i < K - 1; ++i) qH10[i] = cpH10[i] - cpH10[i-1];
+  for (size_t i = 1; i < K - 1; ++i) qH10[i] = cpH10[i] - cpH10[i-1];
   if (K > 1) qH10[K-1] = 1.0 - cpH10[K-2];
 
   double attainedAlphaH10 = cpH10[K-1];
@@ -1757,7 +1759,7 @@ ListCpp getDesignEquivcpp(const double beta,
     qH10.begin(), qH10.end(), I.begin(), 0.0);
 
   // cumulative attained alpha under H20 (at thetaUpper)
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     l[i] = critValues[i] + (thetaLower - thetaUpper) * sqrtI[i];
     u[i] = -critValues[i];
     b[i] = std::max(l[i], li[i]);
@@ -1771,7 +1773,7 @@ ListCpp getDesignEquivcpp(const double beta,
 
   std::vector<double> cpH20(K);
   if (k == 0) {
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   } else {
@@ -1785,10 +1787,10 @@ ListCpp getDesignEquivcpp(const double beta,
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplH20x.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpuH20x.begin());
-    for (std::size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < kk; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - cplH20x[i] - cpuH20x[i];
     }
-    for (std::size_t i = kk; i < K; ++i) {
+    for (size_t i = kk; i < K; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   }
@@ -1796,7 +1798,7 @@ ListCpp getDesignEquivcpp(const double beta,
   // incremental exit probabilities under H20
   std::vector<double> qH20(K);
   qH20[0] = cpH20[0];
-  for (std::size_t i = 1; i < K - 1; ++i) qH20[i] = cpH20[i] - cpH20[i-1];
+  for (size_t i = 1; i < K - 1; ++i) qH20[i] = cpH20[i] - cpH20[i-1];
   qH20[K-1] = 1.0 - cpH20[K-2];
 
   double attainedAlphaH20 = cpH20[K-1];
@@ -2105,7 +2107,7 @@ ListCpp adaptDesigncpp(double betaNew,
     throw std::invalid_argument("betaNew must lie in [0.0001, 1)");
   }
 
-  std::size_t K = static_cast<std::size_t>(kMax);
+  size_t K = static_cast<size_t>(kMax);
 
   // informationRates: default to (1:kMax)/kMax if missing
   std::vector<double> infoRates(K);
@@ -2120,7 +2122,7 @@ ListCpp adaptDesigncpp(double betaNew,
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy
   } else {
-    for (std::size_t i = 0; i < K; ++i)
+    for (size_t i = 0; i < K; ++i)
       infoRates[i] = static_cast<double>(i+1) / static_cast<double>(K);
   }
 
@@ -2195,7 +2197,7 @@ ListCpp adaptDesigncpp(double betaNew,
     }
   }
   if (!missingCriticalValues && !missingFutilityBounds) {
-    for (std::size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < K - 1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         throw std::invalid_argument("futilityBounds must lie below criticalValues");
       }
@@ -2254,7 +2256,7 @@ ListCpp adaptDesigncpp(double betaNew,
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
-  std::size_t KNew = static_cast<std::size_t>(kNew);
+  size_t KNew = static_cast<size_t>(kNew);
 
   if (MullerSchafer) {
     if (KNew < 1) {
@@ -2274,7 +2276,7 @@ ListCpp adaptDesigncpp(double betaNew,
         throw std::invalid_argument("informationRatesNew must end with 1");
       infoRatesNew = informationRatesNew; // copy
     } else {
-      for (std::size_t i = 0; i < KNew; ++i)
+      for (size_t i = 0; i < KNew; ++i)
         infoRatesNew[i] = static_cast<double>(i+1) / static_cast<double>(KNew);
     }
 
@@ -2378,7 +2380,7 @@ ListCpp adaptDesigncpp(double betaNew,
     bool haybittle = false;
     if (K > 1 && criticalValues.size() == K) {
       bool hasNaN = false;
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
       if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
@@ -2386,7 +2388,7 @@ ListCpp adaptDesigncpp(double betaNew,
 
     if (haybittle) { // Haybittle & Peto
       std::vector<double> u(K);
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         u[i] = criticalValues[i];
         if (!effStopping[i]) u[i] = 6.0;
       }
@@ -2406,7 +2408,7 @@ ListCpp adaptDesigncpp(double betaNew,
                                spendTime, effStopping);
     }
   } else {
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       if (!effStopping[i]) critValues[i] = 6.0;
     }
     ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
@@ -2441,7 +2443,7 @@ ListCpp adaptDesigncpp(double betaNew,
 
     std::vector<double> delta(K, theta);
     std::vector<double> information(K);
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       information[i] = IMax * infoRates[i];
     }
 
@@ -2452,10 +2454,10 @@ ListCpp adaptDesigncpp(double betaNew,
 
   // compute conditional alpha, conditional power, and predictive power
   int k1 = kMax - L;
-  std::size_t K1 = static_cast<std::size_t>(k1);
+  size_t K1 = static_cast<size_t>(k1);
 
   std::vector<double> t1(K1), r1(K1), b1(K1), a1(K1, -6.0), theta1(K1, 0.0);
-  for (std::size_t l = 0; l < K1; ++l) {
+  for (size_t l = 0; l < K1; ++l) {
     t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
     r1[l] = infoRates[L - 1] / infoRates[l + L];
     b1[l] = (critValues[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
@@ -2469,7 +2471,7 @@ ListCpp adaptDesigncpp(double betaNew,
 
   // conditional power and predictive power
   double conditionalPower, predictivePower;
-  for (std::size_t l = 0; l < K1; ++l) {
+  for (size_t l = 0; l < K1; ++l) {
     a1[l] = (futBounds[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
     if (!futStopping[l + L]) a1[l] = -6.0;
   }
@@ -2480,7 +2482,7 @@ ListCpp adaptDesigncpp(double betaNew,
     std::vector<double> theta1(K1, mu);
 
     std::vector<double> I1(K1);
-    for (std::size_t l = 0; l < K1; ++l) {
+    for (size_t l = 0; l < K1; ++l) {
       I1[l] = IMax * (infoRates[l + L] - infoRates[L - 1]);
     }
 

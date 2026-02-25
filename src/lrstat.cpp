@@ -18,6 +18,8 @@
 
 #include <Rcpp.h>
 
+using std::size_t;
+
 
 double kmsurv1cpp(
     const double time,
@@ -31,19 +33,19 @@ double kmsurv1cpp(
   double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
 
   // lamgam = lambda + gamma for each group and interval
-  std::size_t J = piecewiseSurvivalTime.size();
+  size_t J = piecewiseSurvivalTime.size();
   std::vector<double> lamgam1(J), lamgam2(J);
-  for (std::size_t j = 0; j < J; ++j) {
+  for (size_t j = 0; j < J; ++j) {
     lamgam1[j] = lambda1[j] + gamma1[j];
     lamgam2[j] = lambda2[j] + gamma2[j];
   }
 
-  std::size_t m = findInterval1(time, piecewiseSurvivalTime);
+  size_t m = findInterval1(time, piecewiseSurvivalTime);
 
   // compute v then return exp(-v)
   double v = 0.0, ch1 = 0.0, ch2 = 0.0;
   // iterate intervals j = 0..m-1
-  for (std::size_t j = 0; j < m; ++j) {
+  for (size_t j = 0; j < m; ++j) {
     if (j > 0) {
       double dt = piecewiseSurvivalTime[j] - piecewiseSurvivalTime[j - 1];
       ch1 += lamgam1[j - 1] * dt;
@@ -92,15 +94,15 @@ std::vector<double> kmsurvcpp(
     const std::vector<double>& gamma1,
     const std::vector<double>& gamma2) {
 
-  std::size_t J = static_cast<int>(piecewiseSurvivalTime.size());
-  auto lambda1x = expand_stratified(lambda1, 1, J, "lambda1");
-  auto lambda2x = expand_stratified(lambda2, 1, J, "lambda2");
-  auto gamma1x = expand_stratified(gamma1, 1, J, "gamma1");
-  auto gamma2x = expand_stratified(gamma2, 1, J, "gamma2");
+  size_t J = static_cast<int>(piecewiseSurvivalTime.size());
+  auto lambda1x = expand1(lambda1, J, "lambda1");
+  auto lambda2x = expand1(lambda2, J, "lambda2");
+  auto gamma1x = expand1(gamma1, J, "gamma1");
+  auto gamma2x = expand1(gamma2, J, "gamma2");
 
-  std::size_t k = time.size();
+  size_t k = time.size();
   std::vector<double> v(k);
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     v[i] = kmsurv1cpp(time[i], allocationRatioPlanned, piecewiseSurvivalTime,
                       lambda1x, lambda2x, gamma1x, gamma2x);
   }
@@ -150,18 +152,17 @@ Rcpp::NumericVector kmsurv(
     const Rcpp::NumericVector& gamma2 = 0) {
 
   auto time1 = Rcpp::as<std::vector<double>>(time);
-  auto piecewiseTime = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
   auto lam1 = Rcpp::as<std::vector<double>>(lambda1);
   auto lam2 = Rcpp::as<std::vector<double>>(lambda2);
   auto gam1 = Rcpp::as<std::vector<double>>(gamma1);
   auto gam2 = Rcpp::as<std::vector<double>>(gamma2);
 
   auto result = kmsurvcpp(
-    time1, allocationRatioPlanned, piecewiseTime, lam1, lam2, gam1, gam2);
+    time1, allocationRatioPlanned, pwSurvT, lam1, lam2, gam1, gam2);
 
   return Rcpp::wrap(result);
 }
-
 
 
 std::vector<double> make_breaks(
@@ -247,10 +248,10 @@ DataFrameCpp lrstat0cpp(
     const std::vector<double>& accrualIntensity,
     const std::vector<double>& piecewiseSurvivalTime,
     const std::vector<double>& stratumFraction,
-    const std::vector<double>& lambda1,
-    const std::vector<double>& lambda2,
-    const std::vector<double>& gamma1,
-    const std::vector<double>& gamma2,
+    const std::vector<std::vector<double>>& lambda1,
+    const std::vector<std::vector<double>>& lambda2,
+    const std::vector<std::vector<double>>& gamma1,
+    const std::vector<std::vector<double>>& gamma2,
     const double accrualDuration,
     const double followupTime,
     const bool fixedFollowup,
@@ -258,10 +259,9 @@ DataFrameCpp lrstat0cpp(
     const double rho2,
     const bool predictEventOnly) {
 
-  std::size_t nstrata = stratumFraction.size();
-  std::size_t nintervals = piecewiseSurvivalTime.size();
+  size_t nstrata = stratumFraction.size();
 
-  // determine maxFollowupTime like original
+  // determine maxFollowupTime
   double maxFollowupTime = fixedFollowup ? followupTime :
     (accrualDuration + followupTime);
 
@@ -281,23 +281,26 @@ DataFrameCpp lrstat0cpp(
   std::vector<double> nfmax1(nstrata), nfmax2(nstrata), nfmax(nstrata);
   std::vector<double> uscore(nstrata), vscore(nstrata), iscore(nstrata);
 
-  DataFrameCpp result;
+  double accrualDuration0 = std::min(time, accrualDuration);
+  double minFollowupTime0 = std::max(time - accrualDuration, 0.0);
+  double maxFollowupTime0 = std::min(time, maxFollowupTime);
+  auto breaks = make_breaks(piecewiseSurvivalTime, accrualTime,
+                            accrualDuration0, minFollowupTime0,
+                            maxFollowupTime0);
   double tol = 1e-6;
 
   // loop strata
-  for (std::size_t h = 0; h < nstrata; ++h) {
-    stratum[h] = h + 1;
+  for (size_t h = 0; h < nstrata; ++h) {
+    stratum[h] = static_cast<int>(h + 1);
     times[h] = time;
 
-    double frac = stratumFraction[h];
+    const double frac = stratumFraction[h];
 
     // build per-stratum vectors for the intervals
-    int start = h * nintervals;
-    int end = start + nintervals;
-    std::vector<double> lam1 = subset(lambda1, start, end);
-    std::vector<double> lam2 = subset(lambda2, start, end);
-    std::vector<double> gam1 = subset(gamma1, start, end);
-    std::vector<double> gam2 = subset(gamma2, start, end);
+    const std::vector<double>& lam1 = lambda1[h];
+    const std::vector<double>& lam2 = lambda2[h];
+    const std::vector<double>& gam1 = gamma1[h];
+    const std::vector<double>& gam2 = gamma2[h];
 
     // number of events in the stratum at calendar time
     std::vector<double> accrualIntensity_frac = accrualIntensity;
@@ -305,14 +308,14 @@ DataFrameCpp lrstat0cpp(
 
     auto ne_row = nevent21cpp(
       time, allocationRatioPlanned, accrualTime, accrualIntensity_frac,
-      piecewiseSurvivalTime, lam1, lam2, gam1, gam2, accrualDuration,
-      followupTime, maxFollowupTime);
+      piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
+      accrualDuration, followupTime, maxFollowupTime);
 
-    // obtain dropouts by swapping hazard roles (as in original)
+    // obtain dropouts by swapping hazard roles
     auto nd_row = nevent21cpp(
       time, allocationRatioPlanned, accrualTime, accrualIntensity_frac,
-      piecewiseSurvivalTime, gam1, gam2, lam1, lam2, accrualDuration,
-      followupTime, maxFollowupTime);
+      piecewiseSurvivalTime, gam1, gam2, lam1, lam2,
+      accrualDuration, followupTime, maxFollowupTime);
 
     // number of subjects, events, dropouts in the stratum at calendar time
     nsubjects[h] = frac * a;
@@ -332,11 +335,6 @@ DataFrameCpp lrstat0cpp(
     nfmax[h]  = nfmax1[h] + nfmax2[h];
 
     if (!predictEventOnly) {
-
-      double accrualDuration0 = std::min(time, accrualDuration);
-      double minFollowupTime0 = std::max(time - accrualDuration, 0.0);
-      double maxFollowupTime0 = std::min(time, maxFollowupTime);
-
       auto fu = [&](double t)->double {
         // call natriskcpp for a single time point
         auto risk = natrisk1cpp(
@@ -429,16 +427,13 @@ DataFrameCpp lrstat0cpp(
       };
 
       // integrate fu, fv, fi over [0, maxFollowupTime0] by intervals
-      auto breaks = make_breaks(piecewiseSurvivalTime, accrualTime,
-                                accrualDuration0, minFollowupTime0,
-                                maxFollowupTime0);
-
       uscore[h] = integrate3(fu, breaks, tol);
       vscore[h] = integrate3(fv, breaks, tol);
       iscore[h] = integrate3(fi, breaks, tol);
     }
   }
 
+  DataFrameCpp result;
   result.push_back(std::move(stratum), "stratum");
   result.push_back(std::move(times), "time");
   result.push_back(std::move(nsubjects), "subjects");
@@ -476,10 +471,10 @@ DataFrameCpp lrstat1cpp(
     const std::vector<double>& accrualIntensity,
     const std::vector<double>& piecewiseSurvivalTime,
     const std::vector<double>& stratumFraction,
-    const std::vector<double>& lambda1,
-    const std::vector<double>& lambda2,
-    const std::vector<double>& gamma1,
-    const std::vector<double>& gamma2,
+    const std::vector<std::vector<double>>& lambda1,
+    const std::vector<std::vector<double>>& lambda2,
+    const std::vector<std::vector<double>>& gamma1,
+    const std::vector<std::vector<double>>& gamma2,
     const double accrualDuration,
     const double followupTime,
     const bool fixedFollowup,
@@ -638,8 +633,6 @@ DataFrameCpp lrstatcpp(
 
   if (!none_na(lambda1)) throw std::invalid_argument("lambda1 must be provided");
   if (!none_na(lambda2)) throw std::invalid_argument("lambda2 must be provided");
-  if (!none_na(gamma1)) throw std::invalid_argument("gamma1 must be provided");
-  if (!none_na(gamma2)) throw std::invalid_argument("gamma2 must be provided");
 
   for (double v : lambda1) {
     if (v < 0.0) throw std::invalid_argument("lambda1 must be non-negative");
@@ -675,15 +668,15 @@ DataFrameCpp lrstatcpp(
   const bool predictEventOnly = (predictTarget == 1);
 
   // expand stratified rates
-  std::size_t nstrata = stratumFraction.size();
-  std::size_t nintervals = piecewiseSurvivalTime.size();
+  size_t nstrata = stratumFraction.size();
+  size_t nintervals = piecewiseSurvivalTime.size();
   auto lambda1x = expand_stratified(lambda1, nstrata, nintervals, "lambda1");
   auto lambda2x = expand_stratified(lambda2, nstrata, nintervals, "lambda2");
   auto gamma1x = expand_stratified(gamma1, nstrata, nintervals, "gamma1");
   auto gamma2x = expand_stratified(gamma2, nstrata, nintervals, "gamma2");
 
   // prepare output
-  std::size_t k = time.size();
+  size_t k = time.size();
   std::vector<double> subjects(k), nevents(k), nevents1(k), nevents2(k);
   std::vector<double> ndropouts(k), ndropouts1(k), ndropouts2(k);
   std::vector<double> nfmax(k), nfmax1(k), nfmax2(k);
@@ -691,7 +684,7 @@ DataFrameCpp lrstatcpp(
   std::vector<double> HR(k), vlogHR(k), zlogHR(k);
 
   // For each requested time call lrstat1cpp
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     DataFrameCpp df = lrstat1cpp(
       time[i], hazardRatioH0, allocationRatioPlanned,
       accrualTime, accrualIntensity,
@@ -876,7 +869,7 @@ Rcpp::DataFrame lrstat(
   auto time1 = Rcpp::as<std::vector<double>>(time);
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
-  auto piecewiseTime = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
   auto stratumFrac = Rcpp::as<std::vector<double>>(stratumFraction);
   auto lam1 = Rcpp::as<std::vector<double>>(lambda1);
   auto lam2 = Rcpp::as<std::vector<double>>(lambda2);
@@ -885,7 +878,7 @@ Rcpp::DataFrame lrstat(
 
   DataFrameCpp df = lrstatcpp(
     time1, hazardRatioH0, allocationRatioPlanned,
-    accrualT, accrualInt, piecewiseTime,
+    accrualT, accrualInt, pwSurvT,
     stratumFrac, lam1, lam2, gam1, gam2,
     accrualDuration, followupTime, fixedFollowup,
     rho1, rho2, predictTarget
@@ -903,10 +896,10 @@ double caltime1cpp(
     const std::vector<double>& accrualIntensity,
     const std::vector<double>& piecewiseSurvivalTime,
     const std::vector<double>& stratumFraction,
-    const std::vector<double>& lambda1,
-    const std::vector<double>& lambda2,
-    const std::vector<double>& gamma1,
-    const std::vector<double>& gamma2,
+    const std::vector<std::vector<double>>& lambda1,
+    const std::vector<std::vector<double>>& lambda2,
+    const std::vector<std::vector<double>>& gamma1,
+    const std::vector<std::vector<double>>& gamma2,
     const double accrualDuration,
     const double followupTime,
     const bool fixedFollowup) {
@@ -985,8 +978,6 @@ std::vector<double> caltimecpp(
 
   if (!none_na(lambda1)) throw std::invalid_argument("lambda1 must be provided");
   if (!none_na(lambda2)) throw std::invalid_argument("lambda2 must be provided");
-  if (!none_na(gamma1)) throw std::invalid_argument("gamma1 must be provided");
-  if (!none_na(gamma2)) throw std::invalid_argument("gamma2 must be provided");
 
   for (double v : lambda1) {
     if (v < 0.0) throw std::invalid_argument("lambda1 must be non-negative");
@@ -1002,8 +993,8 @@ std::vector<double> caltimecpp(
   }
 
   // expand stratified rates
-  std::size_t nstrata = stratumFraction.size();
-  std::size_t nintervals = piecewiseSurvivalTime.size();
+  size_t nstrata = stratumFraction.size();
+  size_t nintervals = piecewiseSurvivalTime.size();
   auto lambda1x = expand_stratified(lambda1, nstrata, nintervals, "lambda1");
   auto lambda2x = expand_stratified(lambda2, nstrata, nintervals, "lambda2");
   auto gamma1x = expand_stratified(gamma1, nstrata, nintervals, "gamma1");
@@ -1023,9 +1014,9 @@ std::vector<double> caltimecpp(
         "followupTime must be non-negative for variable follow-up");
 
   // Prepare output
-  std::size_t k = nevents.size();
+  size_t k = nevents.size();
   std::vector<double> out(k);
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     double eventTarget = std::max(nevents[i], 0.0);
 
     out[i] = caltime1cpp(
@@ -1098,7 +1089,7 @@ Rcpp::NumericVector caltime(
   auto nevents1 = Rcpp::as<std::vector<double>>(nevents);
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
-  auto piecewiseTime = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
   auto stratumFrac = Rcpp::as<std::vector<double>>(stratumFraction);
   auto lam1 = Rcpp::as<std::vector<double>>(lambda1);
   auto lam2 = Rcpp::as<std::vector<double>>(lambda2);
@@ -1107,7 +1098,7 @@ Rcpp::NumericVector caltime(
 
   auto out = caltimecpp(
     nevents1, allocationRatioPlanned, accrualT, accrualInt,
-    piecewiseTime, stratumFrac, lam1, lam2, gam1, gam2,
+    pwSurvT, stratumFrac, lam1, lam2, gam1, gam2,
     accrualDuration, followupTime, fixedFollowup
   );
 
@@ -1164,8 +1155,6 @@ DataFrameCpp getDurationFromNeventscpp(
 
   if (!none_na(lambda1)) throw std::invalid_argument("lambda1 must be provided");
   if (!none_na(lambda2)) throw std::invalid_argument("lambda2 must be provided");
-  if (!none_na(gamma1)) throw std::invalid_argument("gamma1 must be provided");
-  if (!none_na(gamma2)) throw std::invalid_argument("gamma2 must be provided");
 
   for (double v : lambda1) {
     if (v < 0.0) throw std::invalid_argument("lambda1 must be non-negative");
@@ -1181,8 +1170,8 @@ DataFrameCpp getDurationFromNeventscpp(
   }
 
   // expand stratified rates
-  std::size_t nstrata = stratumFraction.size();
-  std::size_t nintervals = piecewiseSurvivalTime.size();
+  size_t nstrata = stratumFraction.size();
+  size_t nintervals = piecewiseSurvivalTime.size();
   auto lambda1x = expand_stratified(lambda1, nstrata, nintervals, "lambda1");
   auto lambda2x = expand_stratified(lambda2, nstrata, nintervals, "lambda2");
   auto gamma1x = expand_stratified(gamma1, nstrata, nintervals, "gamma1");
@@ -1240,12 +1229,12 @@ DataFrameCpp getDurationFromNeventscpp(
   double t1 = brent(f2, t0, upper, 1e-6);
 
   // 3) Prepare grid of accrual durations ta (npoints) between t0 and t1
-  std::size_t npts = static_cast<std::size_t>(npoints);
+  size_t npts = static_cast<size_t>(npoints);
   std::vector<double> ta(npts), ts(npts), tf(npts);
   double dt = (t1 - t0) / static_cast<double>(npts - 1);
-  for (std::size_t i = 0; i < npts; ++i) ta[i] = t0 + i * dt;
+  for (size_t i = 0; i < npts; ++i) ta[i] = t0 + i * dt;
 
-  for (std::size_t i = 0; i < npts; ++i) {
+  for (size_t i = 0; i < npts; ++i) {
     if (i == 0) {
       ts[i] = ta[i] + Tf1;
     } else if (i == npts - 1) {
@@ -1348,7 +1337,7 @@ Rcpp::DataFrame getDurationFromNevents(
 
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
-  auto piecewiseTime = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
   auto stratumFrac = Rcpp::as<std::vector<double>>(stratumFraction);
   auto lam1 = Rcpp::as<std::vector<double>>(lambda1);
   auto lam2 = Rcpp::as<std::vector<double>>(lambda2);
@@ -1357,7 +1346,7 @@ Rcpp::DataFrame getDurationFromNevents(
 
   auto df = getDurationFromNeventscpp(
     nevents, allocationRatioPlanned, accrualT, accrualInt,
-    piecewiseTime, stratumFrac, lam1, lam2, gam1, gam2,
+    pwSurvT, stratumFrac, lam1, lam2, gam1, gam2,
     followupTime, fixedFollowup, npoints
   );
 
@@ -1405,7 +1394,7 @@ ListCpp lrpowercpp(
     throw std::invalid_argument("alpha must lie in [0.00001, 1)");
   }
 
-  std::size_t K = static_cast<std::size_t>(kMax);
+  size_t K = static_cast<size_t>(kMax);
 
   // informationRates: default to (1:kMax)/kMax if missing
   std::vector<double> infoRates(K);
@@ -1420,7 +1409,7 @@ ListCpp lrpowercpp(
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy
   } else {
-    for (std::size_t i = 0; i < K; ++i)
+    for (size_t i = 0; i < K; ++i)
       infoRates[i] = static_cast<double>(i+1) / static_cast<double>(K);
   }
 
@@ -1495,7 +1484,7 @@ ListCpp lrpowercpp(
     }
   }
   if (!missingCriticalValues && !missingFutilityBounds) {
-    for (std::size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < K - 1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         throw std::invalid_argument("futilityBounds must lie below criticalValues");
       }
@@ -1555,8 +1544,6 @@ ListCpp lrpowercpp(
 
   if (!none_na(lambda1)) throw std::invalid_argument("lambda1 must be provided");
   if (!none_na(lambda2)) throw std::invalid_argument("lambda2 must be provided");
-  if (!none_na(gamma1)) throw std::invalid_argument("gamma1 must be provided");
-  if (!none_na(gamma2)) throw std::invalid_argument("gamma2 must be provided");
 
   for (double v : lambda1) {
     if (v < 0.0) throw std::invalid_argument("lambda1 must be non-negative");
@@ -1572,9 +1559,9 @@ ListCpp lrpowercpp(
   }
 
   // expand stratified rates
-  std::size_t nstrata = stratumFraction.size();
-  std::size_t nintervals = piecewiseSurvivalTime.size();
-  std::size_t nsi = nstrata * nintervals;
+  size_t nstrata = stratumFraction.size();
+  size_t nintervals = piecewiseSurvivalTime.size();
+  size_t nsi = nstrata * nintervals;
   auto lambda1x = expand_stratified(lambda1, nstrata, nintervals, "lambda1");
   auto lambda2x = expand_stratified(lambda2, nstrata, nintervals, "lambda2");
   auto gamma1x = expand_stratified(gamma1, nstrata, nintervals, "gamma1");
@@ -1622,10 +1609,15 @@ ListCpp lrpowercpp(
 
   // --- Determine if Schoenfeld method is eligible-----------------------------
   std::vector<double> hrx(nsi);
-  for (std::size_t i = 0; i < nsi; ++i) hrx[i] = lambda1x[i] / lambda2x[i];
+  for (size_t i = 0; i < nstrata; ++i) {
+    for (size_t j = 0; j < nintervals; ++j) {
+      size_t idx = i * nintervals + j;
+      hrx[idx] = lambda1x[i][j] / lambda2x[i][j];
+    }
+  }
   bool proportional = true;
   double hrx0 = hrx[0];
-  for (std::size_t i = 1; i < nsi; ++i) {
+  for (size_t i = 1; i < nsi; ++i) {
     if (std::fabs(hrx[i] - hrx0) > 1e-8) { proportional = false; break; }
   }
   double hazardRatio = proportional ? hrx0 : 1.0;
@@ -1655,7 +1647,7 @@ ListCpp lrpowercpp(
     bool haybittle = false;
     if (K > 1 && criticalValues.size() == K) {
       bool hasNaN = false;
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
       if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
@@ -1663,7 +1655,7 @@ ListCpp lrpowercpp(
 
     if (haybittle) { // Haybittle & Peto
       std::vector<double> u(K);
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         u[i] = criticalValues[i];
         if (!effStopping[i]) u[i] = 6.0;
       }
@@ -1756,7 +1748,7 @@ ListCpp lrpowercpp(
     }
 
     // for interim analyses
-    for (std::size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < K - 1; ++i) {
       double nevents_target = totalEvents * infoRates[i];
 
       time[i] = caltime1cpp(
@@ -1822,7 +1814,7 @@ ListCpp lrpowercpp(
     info[K - 1] =  maxInformation;
 
     // compute times by matching informationRates1 * maxInformation
-    for (std::size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < K - 1; ++i) {
       double information1 = maxInformation * infoRates[i];
 
       // solve for analysis time where total information equals information1
@@ -1868,12 +1860,12 @@ ListCpp lrpowercpp(
   std::vector<double> HR(K), vlogHR(K);
   if (estimateHazardRatio) {
     if (su1 == 's') {
-      for (std::size_t i = 0; i < K; ++i) {
+      for (size_t i = 0; i < K; ++i) {
         HR[i] = hazardRatio;
         vlogHR[i] = 1.0 / info[i];
       }
     } else {
-      for (std::size_t i = 0; i < K; ++i) {
+      for (size_t i = 0; i < K; ++i) {
         DataFrameCpp df = lrstat1cpp(
           time[i], hazardRatioH0, allocationRatioPlanned,
           accrualTime, accrualIntensity,
@@ -1904,7 +1896,7 @@ ListCpp lrpowercpp(
   }
 
   std::vector<double> efficacyP(K), futilityP(K);
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     efficacyP[i] = 1 - boost_pnorm(critValues[i]);
     futilityP[i] = 1 - boost_pnorm(futBounds[i]);
   }
@@ -1912,7 +1904,7 @@ ListCpp lrpowercpp(
   auto pu = exit_probs.get<std::vector<double>>("exitProbUpper");
   auto pl = exit_probs.get<std::vector<double>>("exitProbLower");
   std::vector<double> ptotal(K);
-  for (std::size_t i = 0; i < K; ++i) ptotal[i] = pu[i] + pl[i];
+  for (size_t i = 0; i < K; ++i) ptotal[i] = pu[i] + pl[i];
 
   double overallReject = std::accumulate(pu.begin(), pu.end(), 0.0);
   double expectedNumberOfEvents = 0.0;
@@ -1927,7 +1919,7 @@ ListCpp lrpowercpp(
   double expectedStudyDuration = 0.0;
   double expectedInformation = 0.0;
 
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     expectedNumberOfEvents += ptotal[i] * nevents[i];
     expectedNumberOfDropouts += ptotal[i] * ndropouts[i];
     expectedNumberOfSubjects += ptotal[i] * nsubjects[i];
@@ -1949,7 +1941,7 @@ ListCpp lrpowercpp(
   // hazard ratio transforms for display if estimateHazardRatio
   std::vector<double> hru(K), hrl(K);
   if (estimateHazardRatio) {
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       hru[i] = hazardRatioH0 * std::exp(-critValues[i] * std::sqrt(vlogHR[i]));
       hrl[i] = hazardRatioH0 * std::exp(-futBounds[i] * std::sqrt(vlogHR[i]));
       if (critValues[i] == 6.0) { hru[i] = NaN; effStopping[i] = 0; }
@@ -2298,7 +2290,7 @@ Rcpp::List lrpower(
   auto futBounds = Rcpp::as<std::vector<double>>(futilityBounds);
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
-  auto piecewiseTime = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
   auto stratumFrac = Rcpp::as<std::vector<double>>(stratumFraction);
   auto lam1 = Rcpp::as<std::vector<double>>(lambda1);
   auto lam2 = Rcpp::as<std::vector<double>>(lambda2);
@@ -2313,7 +2305,7 @@ Rcpp::List lrpower(
     futBounds, typeBetaSpending, parameterBetaSpending,
     hazardRatioH0, allocationRatioPlanned,
     accrualT, accrualInt,
-    piecewiseTime, stratumFrac,
+    pwSurvT, stratumFrac,
     lam1, lam2, gam1, gam2,
     accrualDuration, followupTime, fixedFollowup,
     rho1, rho2, estimateHazardRatio,
@@ -2514,7 +2506,7 @@ ListCpp lrsamplesizecpp(
     throw std::invalid_argument("beta must lie in [0.0001, 1-alpha)");
 
   if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
-  std::size_t K = static_cast<std::size_t>(kMax);
+  size_t K = static_cast<size_t>(kMax);
 
   // informationRates: default to (1:kMax)/kMax if missing
   std::vector<double> infoRates(K);
@@ -2529,7 +2521,7 @@ ListCpp lrsamplesizecpp(
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy
   } else {
-    for (std::size_t i = 0; i < K; ++i)
+    for (size_t i = 0; i < K; ++i)
       infoRates[i] = static_cast<double>(i+1) / static_cast<double>(K);
   }
 
@@ -2604,7 +2596,7 @@ ListCpp lrsamplesizecpp(
     }
   }
   if (!missingCriticalValues && !missingFutilityBounds) {
-    for (std::size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < K - 1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         throw std::invalid_argument("futilityBounds must lie below criticalValues");
       }
@@ -2678,8 +2670,6 @@ ListCpp lrsamplesizecpp(
 
   if (!none_na(lambda1)) throw std::invalid_argument("lambda1 must be provided");
   if (!none_na(lambda2)) throw std::invalid_argument("lambda2 must be provided");
-  if (!none_na(gamma1)) throw std::invalid_argument("gamma1 must be provided");
-  if (!none_na(gamma2)) throw std::invalid_argument("gamma2 must be provided");
 
   for (double v : lambda1) {
     if (v < 0.0) throw std::invalid_argument("lambda1 must be non-negative");
@@ -2695,9 +2685,9 @@ ListCpp lrsamplesizecpp(
   }
 
   // expand stratified rates
-  std::size_t nstrata = stratumFraction.size();
-  std::size_t nintervals = piecewiseSurvivalTime.size();
-  std::size_t nsi = nstrata * nintervals;
+  size_t nstrata = stratumFraction.size();
+  size_t nintervals = piecewiseSurvivalTime.size();
+  size_t nsi = nstrata * nintervals;
   auto lambda1x = expand_stratified(lambda1, nstrata, nintervals, "lambda1");
   auto lambda2x = expand_stratified(lambda2, nstrata, nintervals, "lambda2");
   auto gamma1x = expand_stratified(gamma1, nstrata, nintervals, "gamma1");
@@ -2741,10 +2731,15 @@ ListCpp lrsamplesizecpp(
 
   // --- Determine if Schoenfeld method is eligible-----------------------------
   std::vector<double> hrx(nsi);
-  for (std::size_t i = 0; i < nsi; ++i) hrx[i] = lambda1x[i] / lambda2x[i];
+  for (size_t i = 0; i < nstrata; ++i) {
+    for (size_t j = 0; j < nintervals; ++j) {
+      size_t idx = i * nintervals + j;
+      hrx[idx] = lambda1x[i][j] / lambda2x[i][j];
+    }
+  }
   bool proportional = true;
   double hrx0 = hrx[0];
-  for (std::size_t i = 1; i < nsi; ++i) {
+  for (size_t i = 1; i < nsi; ++i) {
     if (std::fabs(hrx[i] - hrx0) > 1e-8) { proportional = false; break; }
   }
   double hazardRatio = proportional ? hrx0 : 1.0;
@@ -2774,7 +2769,7 @@ ListCpp lrsamplesizecpp(
     bool haybittle = false;
     if (K > 1 && criticalValues.size() == K) {
       bool hasNaN = false;
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
       if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
@@ -2782,7 +2777,7 @@ ListCpp lrsamplesizecpp(
 
     if (haybittle) { // Haybittle & Peto
       std::vector<double> u(K);
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         u[i] = criticalValues[i];
         if (!effStopping[i]) u[i] = 6.0;
       }
@@ -2892,7 +2887,7 @@ ListCpp lrsamplesizecpp(
         info[K - 1] = vscore;
       }
 
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         double nevents_target = totalEvents * infoRates[i];
 
         double time = caltime1cpp(
@@ -2935,7 +2930,7 @@ ListCpp lrsamplesizecpp(
       theta[K - 1] = -uscore / maxInformation;
       info[K - 1] =  maxInformation;
 
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         double information1 = maxInformation * infoRates[i];
 
         // solve for analysis time where total information equals information1
@@ -2980,7 +2975,7 @@ ListCpp lrsamplesizecpp(
       double thetaSqrtI0 = theta[0] * std::sqrt(info[0]);
 
       // compute cumulative beta spending under H1 similar to getPower
-      std::fill_n(futBounds.data(), futBounds.size(), -6.0);
+      std::fill(futBounds.begin(), futBounds.end(), -6.0);
       double eps = 0.0;
 
       // first stage
@@ -2994,15 +2989,15 @@ ListCpp lrsamplesizecpp(
       }
 
       // subsequent stages
-      for (std::size_t k = 1; k < K; ++k) {
+      for (size_t k = 1; k < K; ++k) {
         if (futStopping[k]) {
           cb = (bsf == "user") ? userBetaSpending[k] :
           errorSpentcpp(spendTime[k], beta, bsf, parameterBetaSpending);
 
           u1.resize(k + 1);
           l1.resize(k + 1);
-          std::memcpy(u1.data(), critValues.data(), k * sizeof(double));
-          std::memcpy(l1.data(), futBounds.data(), k * sizeof(double));
+          std::copy_n(critValues.begin(), k, u1.begin());
+          std::copy_n(futBounds.begin(), k, l1.begin());
           u1[k] = 6.0;
 
           // lambda expression for finding futility bound at stage k
@@ -3269,7 +3264,7 @@ ListCpp lrsamplesizecpp(
 
     // update informationRates
     if (rho1 == 0.0 && rho2 == 0.0) {
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         double nevents = std::floor(D * infoRates[i] + 0.5);
         infoRates[i] = nevents / D;
       }
@@ -3285,7 +3280,7 @@ ListCpp lrsamplesizecpp(
 
       double maxInformation = extract_lr(lr_end, "vscore");
 
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         // recompute analysis time from information target and then events
         double information1 = maxInformation * infoRates[i];
 
@@ -3402,9 +3397,8 @@ ListCpp lrsamplesizecpp(
   // Under H0, we assume the same baseline hazard in the control arm as under H1,
   // and the hazard in the treatment arm is scaled by hazardRatioH0.
   std::vector<double> lambda1H0 = lambda2;
-  std::vector<double> lambda1H0x = lambda2x;
   for (double &v : lambda1H0) v *= hazardRatioH0;
-  for (double &v : lambda1H0x) v *= hazardRatioH0;
+  auto lambda1H0x = expand_stratified(lambda1H0, nstrata, nintervals, "lambda1H0");
 
   // Helper: compute number of events under H0 given accrualDuration (accrDur),
   // followupTime (fu), and accrualIntensity (accrInt).
@@ -3744,7 +3738,7 @@ Rcpp::List lrsamplesize(
   auto userBeta = Rcpp::as<std::vector<double>>(userBetaSpending);
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
-  auto piecewiseTime = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
   auto stratumFrac = Rcpp::as<std::vector<double>>(stratumFraction);
   auto lam1 = Rcpp::as<std::vector<double>>(lambda1);
   auto lam2 = Rcpp::as<std::vector<double>>(lambda2);
@@ -3760,7 +3754,7 @@ Rcpp::List lrsamplesize(
     futBounds, typeBetaSpending, parameterBetaSpending,
     userBeta, hazardRatioH0, allocationRatioPlanned,
     accrualT, accrualInt,
-    piecewiseTime, stratumFrac,
+    pwSurvT, stratumFrac,
     lam1, lam2, gam1, gam2,
     accrualDuration, followupTime, fixedFollowup,
     rho1, rho2, estimateHazardRatio,
@@ -3813,7 +3807,7 @@ ListCpp lrpowerequivcpp(
   if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1.0))
     throw std::invalid_argument("alpha must lie in [0.00001, 1)");
 
-  const std::size_t K = static_cast<std::size_t>(kMax);
+  const size_t K = static_cast<size_t>(kMax);
 
   // information rates -> infoRates
   std::vector<double> infoRates(K);
@@ -3828,7 +3822,7 @@ ListCpp lrpowerequivcpp(
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates;
   } else {
-    for (std::size_t i=0;i<K;++i)
+    for (size_t i=0;i<K;++i)
       infoRates[i] = static_cast<double>(i+1)/static_cast<double>(K);
   }
 
@@ -3910,8 +3904,6 @@ ListCpp lrpowerequivcpp(
 
   if (!none_na(lambda1)) throw std::invalid_argument("lambda1 must be provided");
   if (!none_na(lambda2)) throw std::invalid_argument("lambda2 must be provided");
-  if (!none_na(gamma1)) throw std::invalid_argument("gamma1 must be provided");
-  if (!none_na(gamma2)) throw std::invalid_argument("gamma2 must be provided");
 
   for (double v : lambda1) {
     if (v < 0.0) throw std::invalid_argument("lambda1 must be non-negative");
@@ -3927,9 +3919,9 @@ ListCpp lrpowerequivcpp(
   }
 
   // expand stratified rates
-  std::size_t nstrata = stratumFraction.size();
-  std::size_t nintervals = piecewiseSurvivalTime.size();
-  std::size_t nsi = nstrata * nintervals;
+  size_t nstrata = stratumFraction.size();
+  size_t nintervals = piecewiseSurvivalTime.size();
+  size_t nsi = nstrata * nintervals;
   auto lambda1x = expand_stratified(lambda1, nstrata, nintervals, "lambda1");
   auto lambda2x = expand_stratified(lambda2, nstrata, nintervals, "lambda2");
   auto gamma1x = expand_stratified(gamma1, nstrata, nintervals, "gamma1");
@@ -3974,10 +3966,15 @@ ListCpp lrpowerequivcpp(
 
   // --- determine proportional hazards / schoenfeld eligible
   std::vector<double> hrx(nsi);
-  for (std::size_t i = 0; i < nsi; ++i) hrx[i] = lambda1x[i] / lambda2x[i];
+  for (size_t i = 0; i < nstrata; ++i) {
+    for (size_t j = 0; j < nintervals; ++j) {
+      size_t idx = i * nintervals + j;
+      hrx[idx] = lambda1x[i][j] / lambda2x[i][j];
+    }
+  }
   bool proportional = true;
   double hrx0 = hrx[0];
-  for (std::size_t i = 1; i < nsi; ++i) {
+  for (size_t i = 1; i < nsi; ++i) {
     if (std::fabs(hrx[i] - hrx0) > 1e-8) { proportional = false; break; }
   }
   double hazardRatio = proportional ? hrx0 : 1.0;
@@ -4003,13 +4000,13 @@ ListCpp lrpowerequivcpp(
     bool haybittle = false;
     if (K > 1 && criticalValues.size() == K) {
       bool hasNaN = false;
-      for (std::size_t i = 0; i < K-1; ++i) {
+      for (size_t i = 0; i < K-1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
       if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
     }
     if (haybittle) {
-      for (std::size_t i=0;i<K-1;++i) u[i] = criticalValues[i];
+      for (size_t i=0;i<K-1;++i) u[i] = criticalValues[i];
       auto f = [&](double aval)->double {
         u[K-1] = aval;
         ListCpp p = exitprobcpp(u, l, zero, infoRates);
@@ -4033,7 +4030,7 @@ ListCpp lrpowerequivcpp(
   std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
 
   std::vector<double> efficacyP(K);
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     efficacyP[i] = 1.0 - boost_pnorm(critValues[i]);
   }
 
@@ -4053,8 +4050,8 @@ ListCpp lrpowerequivcpp(
   if (su1 == 's') { // information is proportional to events
     double vtrt = phi * (1.0 - phi);
     double theta1 = std::log(hazardRatio);
-    std::fill_n(HR.data(), HR.size(), hazardRatio);
-    std::fill_n(theta.data(), theta.size(), theta1);
+    std::fill(HR.begin(), HR.end(), hazardRatio);
+    std::fill(theta.begin(), theta.end(), theta1);
 
     DataFrameCpp lr_end = lrstat0cpp(
       studyDuration1, 1.0, allocationRatioPlanned,
@@ -4078,7 +4075,7 @@ ListCpp lrpowerequivcpp(
     ndropouts2[K - 1] = extract_lr(lr_end, "ndropouts2");
     I[K - 1] = vtrt * totalEvents;
 
-    for (std::size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < K - 1; ++i) {
       double nevents_target = totalEvents * infoRates[i];
 
       time[i] = caltime1cpp(
@@ -4132,7 +4129,7 @@ ListCpp lrpowerequivcpp(
     theta[K - 1] = std::log(HR[K - 1]);
     I[K - 1] = maxInformation;
 
-    for (std::size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < K - 1; ++i) {
       double information1 = maxInformation * infoRates[i];
 
       auto g = [&](double t)->double {
@@ -4179,7 +4176,7 @@ ListCpp lrpowerequivcpp(
   double thetaLower = std::log(hazardRatioLower);
   double thetaUpper = std::log(hazardRatioUpper);
   std::vector<double> sqrtI(K), b(K), a(K);
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     sqrtI[i] = std::sqrt(I[i]);
     l[i] = critValues[i] + (thetaLower - theta[i]) * sqrtI[i];
     u[i] = -critValues[i] + (thetaUpper - theta[i]) * sqrtI[i];
@@ -4196,15 +4193,15 @@ ListCpp lrpowerequivcpp(
   std::partial_sum(v2.begin(), v2.end(), cpu.begin());
 
   // index for the first crossing look (0-based)
-  std::size_t kk = K;
-  for (std::size_t i = 0; i < K; ++i) {
+  size_t kk = K;
+  for (size_t i = 0; i < K; ++i) {
     if (l[i] <= u[i]) { kk = i; break; }
   }
   int k = static_cast<int>(kk);
 
   std::vector<double> cp(K);
   if (k == 0) { // crossing at the first look
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   } else {
@@ -4218,10 +4215,10 @@ ListCpp lrpowerequivcpp(
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplx.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpux.begin());
-    for (std::size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < kk; ++i) {
       cp[i] = cpl[i] + cpu[i] - cplx[i] - cpux[i];
     }
-    for (std::size_t i = kk; i < K; ++i) {
+    for (size_t i = kk; i < K; ++i) {
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   }
@@ -4229,24 +4226,23 @@ ListCpp lrpowerequivcpp(
   // incremental rejection probability at each stage
   std::vector<double> rejectPerStage(K);
   rejectPerStage[0] = cp[0];
-  for (std::size_t i = 1; i < K; ++i) {
+  for (size_t i = 1; i < K; ++i) {
     rejectPerStage[i] = cp[i] - cp[i-1];
   }
 
-  std::vector<double> q(K);
-  std::memcpy(q.data(), rejectPerStage.data(), K * sizeof(double));
+  std::vector<double> q = rejectPerStage;
   if (K > 1) q[K - 1] = 1.0 - cp[K - 2];
 
   // compute efficacy HR bounds
   std::vector<double> efficacyHRLower(K), efficacyHRUpper(K);
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     double thetaBound = critValues[i] / sqrtI[i];
     efficacyHRLower[i] = std::exp(thetaLower + thetaBound);
     efficacyHRUpper[i] = std::exp(thetaUpper - thetaBound);
   }
 
   // cumulative attained alpha under H10 (at thetaLower)
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     l[i] = critValues[i];
     u[i] = -critValues[i] + (thetaUpper - thetaLower) * sqrtI[i];
     a[i] = std::min(u[i], ui[i]);
@@ -4259,7 +4255,7 @@ ListCpp lrpowerequivcpp(
 
   std::vector<double> cpH10(K);
   if (k == 0) {
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   } else {
@@ -4273,16 +4269,16 @@ ListCpp lrpowerequivcpp(
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplH10x.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpuH10x.begin());
-    for (std::size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < kk; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - cplH10x[i] - cpuH10x[i];
     }
-    for (std::size_t i = kk; i < K; ++i) {
+    for (size_t i = kk; i < K; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   }
 
   // cumulative attained alpha under H20 (at thetaUpper)
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     l[i] = critValues[i] + (thetaLower - thetaUpper) * sqrtI[i];
     u[i] = -critValues[i];
     b[i] = std::max(l[i], li[i]);
@@ -4296,7 +4292,7 @@ ListCpp lrpowerequivcpp(
 
   std::vector<double> cpH20(K);
   if (k == 0) {
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   } else {
@@ -4310,10 +4306,10 @@ ListCpp lrpowerequivcpp(
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplH20x.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpuH20x.begin());
-    for (std::size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < kk; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - cplH20x[i] - cpuH20x[i];
     }
-    for (std::size_t i = kk; i < K; ++i) {
+    for (size_t i = kk; i < K; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   }
@@ -4330,7 +4326,7 @@ ListCpp lrpowerequivcpp(
   double expectedNumberOfSubjects2 = 0.0;
   double expectedStudyDuration = 0.0;
   double expectedInformation = 0.0;
-  for (std::size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < K; ++i) {
     expectedNumberOfEvents += q[i] * nevents[i];
     expectedNumberOfDropouts += q[i] * ndropouts[i];
     expectedNumberOfSubjects += q[i] * nsubjects[i];
@@ -4643,7 +4639,7 @@ Rcpp::List lrpowerequiv(
   auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
-  auto piecewiseTime = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
   auto stratumFrac = Rcpp::as<std::vector<double>>(stratumFraction);
   auto lam1 = Rcpp::as<std::vector<double>>(lambda1);
   auto lam2 = Rcpp::as<std::vector<double>>(lambda2);
@@ -4655,7 +4651,7 @@ Rcpp::List lrpowerequiv(
     kMax, infoRates, critValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlpha, hazardRatioLower,
     hazardRatioUpper, allocationRatioPlanned, accrualT,
-    accrualInt, piecewiseTime, stratumFrac, lam1, lam2,
+    accrualInt, pwSurvT, stratumFrac, lam1, lam2,
     gam1, gam2, accrualDuration, followupTime,
     fixedFollowup, typeOfComputation, spendTime,
     studyDuration);
@@ -4700,7 +4696,7 @@ ListCpp lrsamplesizeequivcpp(
     throw std::invalid_argument("beta must lie in [0.0001, 1-alpha)");
 
   if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
-  const std::size_t K = static_cast<std::size_t>(kMax);
+  const size_t K = static_cast<size_t>(kMax);
 
   // informationRates: default to (1:kMax)/kMax if missing
   std::vector<double> infoRates(K);
@@ -4715,7 +4711,7 @@ ListCpp lrsamplesizeequivcpp(
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy
   } else {
-    for (std::size_t i = 0; i < K; ++i)
+    for (size_t i = 0; i < K; ++i)
       infoRates[i] = static_cast<double>(i+1) / static_cast<double>(K);
   }
 
@@ -4799,8 +4795,6 @@ ListCpp lrsamplesizeequivcpp(
 
   if (!none_na(lambda1)) throw std::invalid_argument("lambda1 must be provided");
   if (!none_na(lambda2)) throw std::invalid_argument("lambda2 must be provided");
-  if (!none_na(gamma1)) throw std::invalid_argument("gamma1 must be provided");
-  if (!none_na(gamma2)) throw std::invalid_argument("gamma2 must be provided");
 
   for (double v : lambda1) {
     if (v < 0.0) throw std::invalid_argument("lambda1 must be non-negative");
@@ -4816,9 +4810,9 @@ ListCpp lrsamplesizeequivcpp(
   }
 
   // expand stratified rates
-  std::size_t nstrata = stratumFraction.size();
-  std::size_t nintervals = piecewiseSurvivalTime.size();
-  std::size_t nsi = nstrata * nintervals;
+  size_t nstrata = stratumFraction.size();
+  size_t nintervals = piecewiseSurvivalTime.size();
+  size_t nsi = nstrata * nintervals;
   auto lambda1x = expand_stratified(lambda1, nstrata, nintervals, "lambda1");
   auto lambda2x = expand_stratified(lambda2, nstrata, nintervals, "lambda2");
   auto gamma1x = expand_stratified(gamma1, nstrata, nintervals, "gamma1");
@@ -4859,10 +4853,15 @@ ListCpp lrsamplesizeequivcpp(
 
   // --- Determine if Schoenfeld method is eligible-----------------------------
   std::vector<double> hrx(nsi);
-  for (std::size_t i = 0; i < nsi; ++i) hrx[i] = lambda1x[i] / lambda2x[i];
+  for (size_t i = 0; i < nstrata; ++i) {
+    for (size_t j = 0; j < nintervals; ++j) {
+      size_t idx = i * nintervals + j;
+      hrx[idx] = lambda1x[i][j] / lambda2x[i][j];
+    }
+  }
   bool proportional = true;
   double hrx0 = hrx[0];
-  for (std::size_t i = 1; i < nsi; ++i) {
+  for (size_t i = 1; i < nsi; ++i) {
     if (std::fabs(hrx[i] - hrx0) > 1e-8) { proportional = false; break; }
   }
   double hazardRatio = proportional ? hrx0 : 1.0;
@@ -4893,14 +4892,14 @@ ListCpp lrsamplesizeequivcpp(
     bool haybittle = false;
     if (K > 1 && criticalValues.size() == K) {
       bool hasNaN = false;
-      for (std::size_t i = 0; i < K-1; ++i) {
+      for (size_t i = 0; i < K-1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
       if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
     }
 
     if (haybittle) {
-      for (std::size_t i = 0; i < K - 1; ++i) u[i] = criticalValues[i];
+      for (size_t i = 0; i < K - 1; ++i) u[i] = criticalValues[i];
 
       auto f = [&](double aval)->double {
         u[K-1] = aval;
@@ -4966,7 +4965,7 @@ ListCpp lrsamplesizeequivcpp(
     if (su1 == 's') { // information is proportional to events
       double vtrt = phi * (1.0 - phi);
       double theta1 = std::log(hazardRatio);
-      std::fill_n(theta.data(), theta.size(), theta1);
+      std::fill(theta.begin(), theta.end(), theta1);
 
       DataFrameCpp lr_end = lrstat0cpp(
         studyDuration1, 1.0, allocationRatioPlanned,
@@ -4979,7 +4978,7 @@ ListCpp lrsamplesizeequivcpp(
       double totalEvents = extract_lr(lr_end, "nevents");
       I[K - 1] = vtrt * totalEvents;
 
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         double nevents_target = totalEvents * infoRates[i];
         I[i] = vtrt * nevents_target;
       }
@@ -4996,7 +4995,7 @@ ListCpp lrsamplesizeequivcpp(
       theta[K - 1] = std::log(lr_end.get<double>("HR")[0]);
       I[K - 1] = maxInformation;
 
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         double information1 = maxInformation * infoRates[i];
 
         auto g = [&](double t)->double {
@@ -5027,7 +5026,7 @@ ListCpp lrsamplesizeequivcpp(
 
     // --- compute power ---
     std::vector<double> b(K), a(K);
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       double sqrtIi = std::sqrt(I[i]);
       l[i] = critValues[i] + (thetaLower - theta[i]) * sqrtIi;
       u[i] = -critValues[i] + (thetaUpper - theta[i]) * sqrtIi;
@@ -5043,7 +5042,7 @@ ListCpp lrsamplesizeequivcpp(
     double p2 = std::accumulate(v2.begin(), v2.end(), 0.0);
 
     bool cross = false;
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       if (l[i] <= u[i]) { cross = true; break; }
     }
 
@@ -5277,7 +5276,7 @@ ListCpp lrsamplesizeequivcpp(
     }
 
     // update information rates to calculate new boundaries
-    for (std::size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < K - 1; ++i) {
       double nevents = std::floor(D * infoRates[i] + 0.5);
       infoRates[i] = nevents / D;
     }
@@ -5401,7 +5400,7 @@ Rcpp::List lrsamplesizeequiv(
   auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
-  auto piecewiseTime = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
   auto stratumFrac = Rcpp::as<std::vector<double>>(stratumFraction);
   auto lam1 = Rcpp::as<std::vector<double>>(lambda1);
   auto lam2 = Rcpp::as<std::vector<double>>(lambda2);
@@ -5415,7 +5414,7 @@ Rcpp::List lrsamplesizeequiv(
     alpha, typeAlphaSpending, parameterAlphaSpending,
     userAlpha, hazardRatioLower, hazardRatioUpper,
     allocationRatioPlanned, accrualT, accrualInt,
-    piecewiseTime, stratumFrac,
+    pwSurvT, stratumFrac,
     lam1, lam2, gam1, gam2,
     accrualDuration, followupTime, fixedFollowup,
     typeOfComputation, intv, spendTime, rounding);

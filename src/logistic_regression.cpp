@@ -360,7 +360,7 @@ ListCpp logisregloop(int p, const std::vector<double>& par, void *ex,
   cholesky2(imat1, ncolfit);
   chsolve2(imat1, ncolfit, u1);
 
-  std::fill_n(u.data(), u.size(), 0.0);
+  std::fill(u.begin(), u.end(), 0.0);
   for (int i = 0; i < ncolfit; ++i) u[colfit[i]] = u1[i];
   for (int i = 0; i < p; ++i) newbeta[i] = beta[i] + u[i];
 
@@ -395,7 +395,7 @@ ListCpp logisregloop(int p, const std::vector<double>& par, void *ex,
     cholesky2(imat1, ncolfit);
     chsolve2(imat1, ncolfit, u1);
 
-    std::fill_n(u.data(), u.size(), 0.0);
+    std::fill(u.begin(), u.end(), 0.0);
     for (int i = 0; i < ncolfit; ++i) u[colfit[i]] = u1[i];
     for (int i = 0; i < p; ++i) newbeta[i] = beta[i] + u[i];
   }

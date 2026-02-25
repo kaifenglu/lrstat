@@ -15,6 +15,8 @@
 #include <Rcpp.h>
 #include <RcppParallel.h>
 
+using std::size_t;
+
 
 // Helper to update graph for graphical approaches
 ListCpp updateGraphcpp(const std::vector<double>& w,
@@ -237,7 +239,7 @@ FlatMatrix fadjpboncpp1(const std::vector<double>& w,
     // Reset for this iteration
     wx = w;  // copy w
     g = G;   // copy G
-    std::fill_n(r.data(), r.size(), 0);
+    std::fill(r.begin(), r.end(), 0);
 
     // Extract row iter from p into pvalues
     for (int i = 0; i < m; ++i) {
@@ -936,8 +938,8 @@ FlatMatrix repeatedPValuecpp1(
       repp_out(repp_out_) {}
 
     // operator() processes a range of bootstrap iterations [begin, end)
-    void operator()(std::size_t begin, std::size_t end) {
-      for (std::size_t b = begin; b < end; ++b) {
+    void operator()(size_t begin, size_t end) {
+      for (size_t b = begin; b < end; ++b) {
         // call the (thread-safe) per-iteration function f
         std::vector<double> out = f(static_cast<int>(b));
 
@@ -1064,12 +1066,12 @@ IntMatrix fseqboncpp1(
   std::vector<double> asfpar = parameterAlphaSpending;
 
   if (asf.size() == 1) asf.resize(m, asf[0]);
-  if (asf.size() != static_cast<std::size_t>(m)) {
+  if (asf.size() != static_cast<size_t>(m)) {
     throw std::invalid_argument("Invalid length for typeAlphaSpending");
   }
 
   if (asfpar.size() == 1) asfpar.resize(m, asfpar[0]);
-  if (asfpar.size() != static_cast<std::size_t>(m)) {
+  if (asfpar.size() != static_cast<size_t>(m)) {
     throw std::invalid_argument("Invalid length for parameterAlphaSpending");
   }
 
@@ -1095,7 +1097,7 @@ IntMatrix fseqboncpp1(
   }
 
   // Validation: maxInformation must be positive for each hypothesis
-  if (maxInformation.size() != static_cast<std::size_t>(m)) {
+  if (maxInformation.size() != static_cast<size_t>(m)) {
     throw std::invalid_argument("Invalid length for maxInformation");
   }
   if (std::any_of(maxInformation.begin(), maxInformation.end(),
@@ -1542,8 +1544,8 @@ IntMatrix fseqboncpp1(
 
 
     // operator() processes a range of bootstrap iterations [begin, end)
-    void operator()(std::size_t begin, std::size_t end) {
-      for (std::size_t b = begin; b < end; ++b) {
+    void operator()(size_t begin, size_t end) {
+      for (size_t b = begin; b < end; ++b) {
         // call the (thread-safe) per-iteration function f
         std::vector<int> out = f(static_cast<int>(b));
 
@@ -1842,7 +1844,7 @@ FlatMatrix fstdmixcpp1(
 
   int nfamily = family.nrow;
 
-  if (gamma.size() != static_cast<std::size_t>(nfamily)) {
+  if (gamma.size() != static_cast<size_t>(nfamily)) {
     throw std::invalid_argument("gamma length must equal nrow(family)");
   }
 
@@ -2228,7 +2230,7 @@ FlatMatrix fmodmixcpp1(
 
   int nfamily = family.nrow;
 
-  if (gamma.size() != static_cast<std::size_t>(nfamily)) {
+  if (gamma.size() != static_cast<size_t>(nfamily)) {
     throw std::invalid_argument("gamma length must equal nrow(family)");
   }
 
@@ -2678,7 +2680,7 @@ FlatMatrix ftrunccpp1(
       }
     } else { // holm
       double w_holm = gamma / k + tbon;
-      std::fill_n(weights.data(), weights.size(), w_holm);
+      std::fill(weights.begin(), weights.end(), w_holm);
     }
 
     // Process each iteration/replication

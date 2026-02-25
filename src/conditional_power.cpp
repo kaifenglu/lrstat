@@ -13,6 +13,8 @@
 
 #include <Rcpp.h>
 
+using std::size_t;
+
 
 // Helper function to compute conditional power
 double getCPcpp(
@@ -63,8 +65,8 @@ double getCPcpp(
     throw std::invalid_argument("alpha must lie in [0.00001, 1)");
   }
 
-  std::size_t K = static_cast<std::size_t>(kMax);
-  std::size_t KNew = static_cast<std::size_t>(kNew);
+  size_t K = static_cast<size_t>(kMax);
+  size_t KNew = static_cast<size_t>(kNew);
 
   // informationRates: default to (1:kMax)/kMax if missing
   std::vector<double> infoRates(K);
@@ -79,7 +81,7 @@ double getCPcpp(
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy
   } else {
-    for (std::size_t i = 0; i < K; ++i)
+    for (size_t i = 0; i < K; ++i)
       infoRates[i] = static_cast<double>(i+1) / static_cast<double>(K);
   }
 
@@ -154,7 +156,7 @@ double getCPcpp(
     }
   }
   if (!missingCriticalValues && !missingFutilityBounds) {
-    for (std::size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < K - 1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         throw std::invalid_argument("futilityBounds must lie below criticalValues");
       }
@@ -231,7 +233,7 @@ double getCPcpp(
         throw std::invalid_argument("informationRatesNew must end with 1");
       infoRatesNew = informationRatesNew; // copy
     } else {
-      for (std::size_t i = 0; i < KNew; ++i)
+      for (size_t i = 0; i < KNew; ++i)
         infoRatesNew[i] = static_cast<double>(i+1) / static_cast<double>(KNew);
     }
 
@@ -312,7 +314,7 @@ double getCPcpp(
     bool haybittle = false;
     if (K > 1 && criticalValues.size() == K) {
       bool hasNaN = false;
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
       if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
@@ -320,7 +322,7 @@ double getCPcpp(
 
     if (haybittle) { // Haybittle & Peto
       std::vector<double> u(K);
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         u[i] = criticalValues[i];
         if (!effStopping[i]) u[i] = 6.0;
       }
@@ -340,7 +342,7 @@ double getCPcpp(
                                spendTime, effStopping);
     }
   } else {
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       if (!effStopping[i]) critValues[i] = 6.0;
     }
     ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
@@ -369,7 +371,7 @@ double getCPcpp(
     // build delta prefix of length kMax
     std::vector<double> delta(K);
     if (theta.size() == 1) {
-      std::fill_n(delta.data(), delta.size(), theta[0]);
+      std::fill(delta.begin(), delta.end(), theta[0]);
     } else if (theta.size() >= K) {
       std::memcpy(delta.data(), theta.data(), K * sizeof(double));
     } else {
@@ -377,7 +379,7 @@ double getCPcpp(
     }
 
     std::vector<double> information(K);
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       information[i] = IMax * infoRates[i];
     }
 
@@ -387,9 +389,9 @@ double getCPcpp(
   }
 
   // compute transformed quantities for adaptation
-  std::size_t K1 = K - L;
+  size_t K1 = K - L;
   std::vector<double> t1(K1), r1(K1), b1(K1), a1(K1, -6.0);
-  for (std::size_t l = 0; l < K1; ++l) {
+  for (size_t l = 0; l < K1; ++l) {
     t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
     r1[l] = infoRates[L - 1] / infoRates[l + L];
     b1[l] = (critValues[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
@@ -401,22 +403,22 @@ double getCPcpp(
     // construct theta1 of length K1 + 1
     std::vector<double> theta1(K1 + 1);
     if (theta.size() == 1) {
-      std::fill_n(theta1.data(), theta1.size(), theta[0]);
+      std::fill(theta1.begin(), theta1.end(), theta[0]);
     } else if (theta.size() == K + K1) {
       theta1[0] = theta[L - 1];
-      for (std::size_t l = 0; l < K1; ++l) theta1[l + 1] = theta[K + l];
+      for (size_t l = 0; l < K1; ++l) theta1[l + 1] = theta[K + l];
     } else {
       throw std::invalid_argument("Invalid length for theta");
     }
 
     // compute a1 (futility bounds for secondary trial)
-    for (std::size_t l = 0; l < K1; ++l) {
+    for (size_t l = 0; l < K1; ++l) {
       a1[l] = (futBounds[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
       if (!futStopping[l + L]) a1[l] = -6.0;
     }
 
     std::vector<double> mu(K1), I2(K1);
-    for (std::size_t l = 0; l < K1; ++l) {
+    for (size_t l = 0; l < K1; ++l) {
       double r = (IMax * infoRates[L - 1]) / (IMax * infoRates[L - 1] + INew * t1[l]);
       mu[l] = (theta1[l + 1] - r * theta1[0]) / (1.0 - r);
       I2[l] = INew * t1[l];
@@ -429,10 +431,10 @@ double getCPcpp(
     // Muller-Schafer branch
     std::vector<double> theta1(KNew + 1);
     if (theta.size() == 1) {
-      std::fill_n(theta1.data(), theta1.size(), theta[0]);
+      std::fill(theta1.begin(), theta1.end(), theta[0]);
     } else if (theta.size() == K + KNew) {
       theta1[0] = theta[L - 1];
-      for (std::size_t l = 0; l < KNew; ++l) theta1[l + 1] = theta[K + l];
+      for (size_t l = 0; l < KNew; ++l) theta1[l + 1] = theta[K + l];
     } else {
       throw std::invalid_argument("Invalid length for theta");
     }
@@ -449,7 +451,7 @@ double getCPcpp(
 
     // conditional power
     std::vector<double> mu(KNew), I2(KNew);
-    for (std::size_t l = 0; l < KNew; ++l) {
+    for (size_t l = 0; l < KNew; ++l) {
       double r = (IMax * infoRates[L - 1]) /
         (IMax * infoRates[L - 1] + INew * informationRatesNew[l]);
       mu[l] = (theta1[l + 1] - r * theta1[0]) / (1.0 - r);

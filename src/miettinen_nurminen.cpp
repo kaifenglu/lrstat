@@ -16,6 +16,8 @@
 
 #include <Rcpp.h>
 
+using std::size_t;
+
 
 //' @title REML Estimates of Individual Proportions With Specified Risk
 //' difference
@@ -136,8 +138,8 @@ double zstatRiskDiff(const std::vector<double>& n1,
                      const double riskDiffH0 = 0.0) {
 
   double num = 0.0, den = 0.0;
-  const std::size_t k = n1.size();
-  for (std::size_t i = 0; i < k; ++i) {
+  const size_t k = n1.size();
+  for (size_t i = 0; i < k; ++i) {
     double ni = n1[i] + n2[i];
     double wi = n1[i] * n2[i] / ni;
     double mdi = y1[i] / n1[i] - y2[i] / n2[i] - riskDiffH0;
@@ -160,11 +162,11 @@ DataFrameCpp mnRiskDiffCIcpp(const std::vector<double>& n1,
                              const std::vector<double>& y2,
                              const double cilevel = 0.95) {
   // Input validation
-  const std::size_t k = n1.size();
+  const size_t k = n1.size();
   if (y1.size() != k || n2.size() != k || y2.size() != k) {
     throw std::invalid_argument("All input vectors must have the same length");
   }
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (!(n1[i] > 0.0)) throw std::invalid_argument("n1 must be positive");
     if (!(n2[i] > 0.0)) throw std::invalid_argument("n2 must be positive");
     if (!(y1[i] >= 0.0 && y1[i] <= n1[i]))
@@ -177,7 +179,7 @@ DataFrameCpp mnRiskDiffCIcpp(const std::vector<double>& n1,
 
 
   double sum_w = 0.0, estimate = 0.0;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     double ni = n1[i] + n2[i];
     double wi = n1[i] * n2[i] / ni;
     double mdi = y1[i] / n1[i] - y2[i] / n2[i];
@@ -360,8 +362,8 @@ double zstatRiskRatio(const std::vector<double>& n1,
                       const double riskRatioH0 = 1.0) {
 
   double num = 0.0, den = 0.0;
-  const std::size_t k = n1.size();
-  for (std::size_t i = 0; i < k; ++i) {
+  const size_t k = n1.size();
+  for (size_t i = 0; i < k; ++i) {
     double ni = n1[i] + n2[i];
     double wi = n1[i] * n2[i] / ni;
     double mdi = y1[i] / n1[i] - y2[i] / n2[i] * riskRatioH0;
@@ -385,11 +387,11 @@ DataFrameCpp mnRiskRatioCIcpp(const std::vector<double>& n1,
                               const std::vector<double>& y2,
                               const double cilevel = 0.95) {
   // Input validation
-  const std::size_t k = n1.size();
+  const size_t k = n1.size();
   if (y1.size() != k || n2.size() != k || y2.size() != k) {
     throw std::invalid_argument("All input vectors must have the same length");
   }
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (!(n1[i] > 0.0)) throw std::invalid_argument("n1 must be positive");
     if (!(n2[i] > 0.0)) throw std::invalid_argument("n2 must be positive");
     if (!(y1[i] >= 0.0 && y1[i] <= n1[i]))
@@ -401,7 +403,7 @@ DataFrameCpp mnRiskRatioCIcpp(const std::vector<double>& n1,
     throw std::invalid_argument("cilevel must lie between 0 and 1");
 
   double sum_w = 0.0, p1 = 0.0, p2 = 0.0;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     double ni = n1[i] + n2[i];
     double wi = (n1[i] * n2[i]) / ni;
     sum_w += wi;
@@ -415,7 +417,7 @@ DataFrameCpp mnRiskRatioCIcpp(const std::vector<double>& n1,
 
   // special cases
   bool any_both_zero = false;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (y1[i] == 0 && y2[i] == 0) {
       any_both_zero = true;
       break;
@@ -423,7 +425,7 @@ DataFrameCpp mnRiskRatioCIcpp(const std::vector<double>& n1,
   }
 
   bool all_y1_zero = true;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (y1[i] != 0) {
       all_y1_zero = false;
       break;
@@ -431,7 +433,7 @@ DataFrameCpp mnRiskRatioCIcpp(const std::vector<double>& n1,
   }
 
   bool all_y2_zero = true;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (y2[i] != 0) {
       all_y2_zero = false;
       break;
@@ -634,8 +636,8 @@ double zstatOddsRatio(const std::vector<double>& n1,
                       const double oddsRatioH0 = 1.0) {
 
   double num = 0.0, den = 0.0;
-  const std::size_t k = n1.size();
-  for (std::size_t i = 0; i < k; ++i) {
+  const size_t k = n1.size();
+  for (size_t i = 0; i < k; ++i) {
     double ni = n1[i] + n2[i];
     double wi = n1[i] * n2[i] / ni;
     auto ppi = remlOddsRatio(n1[i], y1[i], n2[i], y2[i], oddsRatioH0);
@@ -661,11 +663,11 @@ DataFrameCpp mnOddsRatioCIcpp(const std::vector<double>& n1,
                               const double cilevel = 0.95) {
 
   // Input validation
-  const std::size_t k = n1.size();
+  const size_t k = n1.size();
   if (y1.size() != k || n2.size() != k || y2.size() != k) {
     throw std::invalid_argument("All input vectors must have the same length");
   }
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (!(n1[i] > 0.0)) throw std::invalid_argument("n1 must be positive");
     if (!(n2[i] > 0.0)) throw std::invalid_argument("n2 must be positive");
     if (!(y1[i] >= 0.0 && y1[i] <= n1[i]))
@@ -680,7 +682,7 @@ DataFrameCpp mnOddsRatioCIcpp(const std::vector<double>& n1,
 
   // special cases
   bool any_both_zero = false;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (y1[i] == 0 && y2[i] == 0) {
       any_both_zero = true;
       break;
@@ -688,7 +690,7 @@ DataFrameCpp mnOddsRatioCIcpp(const std::vector<double>& n1,
   }
 
   bool any_both_n = false;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (y1[i] == n1[i] && y2[i] == n2[i]) {
       any_both_n = true;
       break;
@@ -696,7 +698,7 @@ DataFrameCpp mnOddsRatioCIcpp(const std::vector<double>& n1,
   }
 
   bool all_y1_zero = true;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (y1[i] != 0) {
       all_y1_zero = false;
       break;
@@ -704,7 +706,7 @@ DataFrameCpp mnOddsRatioCIcpp(const std::vector<double>& n1,
   }
 
   bool all_y1_n = true;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (y1[i] != n1[i]) {
       all_y1_n = false;
       break;
@@ -712,7 +714,7 @@ DataFrameCpp mnOddsRatioCIcpp(const std::vector<double>& n1,
   }
 
   bool all_y2_zero = true;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (y2[i] != 0) {
       all_y2_zero = false;
       break;
@@ -720,7 +722,7 @@ DataFrameCpp mnOddsRatioCIcpp(const std::vector<double>& n1,
   }
 
   bool all_y2_n = true;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (y2[i] != n2[i]) {
       all_y2_n = false;
       break;
@@ -915,8 +917,8 @@ double zstatRateDiff(const std::vector<double>& t1,
                      const double rateDiffH0 = 0.0) {
 
   double num = 0.0, den = 0.0;
-  const std::size_t k = t1.size();
-  for (std::size_t i = 0; i < k; ++i) {
+  const size_t k = t1.size();
+  for (size_t i = 0; i < k; ++i) {
     double ti = t1[i] + t2[i];
     double wi = t1[i] * t2[i] / ti;
     double mdi = y1[i] / t1[i] - y2[i] / t2[i] - rateDiffH0;
@@ -940,11 +942,11 @@ DataFrameCpp mnRateDiffCIcpp(const std::vector<double>& t1,
                              const double cilevel = 0.95) {
 
   // Input validation
-  const std::size_t k = t1.size();
+  const size_t k = t1.size();
   if (y1.size() != k || t2.size() != k || y2.size() != k) {
     throw std::invalid_argument("All input vectors must have the same length");
   }
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (!(t1[i] > 0.0)) throw std::invalid_argument("t1 must be positive");
     if (!(t2[i] > 0.0)) throw std::invalid_argument("t2 must be positive");
     if (!(y1[i] >= 0.0))
@@ -956,7 +958,7 @@ DataFrameCpp mnRateDiffCIcpp(const std::vector<double>& t1,
     throw std::invalid_argument("cilevel must lie between 0 and 1");
 
   double sum_w = 0.0, estimate = 0.0;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     double ti = t1[i] + t2[i];
     double wi = t1[i] * t2[i] / ti;
     double mdi = y1[i] / t1[i] - y2[i] / t2[i];
@@ -1117,8 +1119,8 @@ double zstatRateRatio(const std::vector<double>& t1,
                       const double rateRatioH0 = 1.0) {
 
   double num = 0.0, den = 0.0;
-  const std::size_t k = t1.size();
-  for (std::size_t i = 0; i < k; ++i) {
+  const size_t k = t1.size();
+  for (size_t i = 0; i < k; ++i) {
     double ti = t1[i] + t2[i];
     double wi = t1[i] * t2[i] / ti;
     double mdi = y1[i] / t1[i] - y2[i] / t2[i] * rateRatioH0;
@@ -1142,11 +1144,11 @@ DataFrameCpp mnRateRatioCIcpp(const std::vector<double>& t1,
                               const double cilevel = 0.95) {
 
   // Input validation
-  const std::size_t k = t1.size();
+  const size_t k = t1.size();
   if (y1.size() != k || t2.size() != k || y2.size() != k) {
     throw std::invalid_argument("All input vectors must have the same length");
   }
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (!(t1[i] > 0.0)) throw std::invalid_argument("t1 must be positive");
     if (!(t2[i] > 0.0)) throw std::invalid_argument("t2 must be positive");
     if (!(y1[i] >= 0.0))
@@ -1158,7 +1160,7 @@ DataFrameCpp mnRateRatioCIcpp(const std::vector<double>& t1,
     throw std::invalid_argument("cilevel must lie between 0 and 1");
 
   double sum_w = 0.0, r1 = 0.0, r2 = 0.0;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     double ti = t1[i] + t2[i];
     double wi = (t1[i] * t2[i]) / ti;
     sum_w += wi;
@@ -1172,7 +1174,7 @@ DataFrameCpp mnRateRatioCIcpp(const std::vector<double>& t1,
 
   // special cases
   bool any_both_zero = false;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (y1[i] == 0 && y2[i] == 0) {
       any_both_zero = true;
       break;
@@ -1180,7 +1182,7 @@ DataFrameCpp mnRateRatioCIcpp(const std::vector<double>& t1,
   }
 
   bool all_y1_zero = true;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (y1[i] != 0) {
       all_y1_zero = false;
       break;
@@ -1188,7 +1190,7 @@ DataFrameCpp mnRateRatioCIcpp(const std::vector<double>& t1,
   }
 
   bool all_y2_zero = true;
-  for (std::size_t i = 0; i < k; ++i) {
+  for (size_t i = 0; i < k; ++i) {
     if (y2[i] != 0) {
       all_y2_zero = false;
       break;

@@ -19,6 +19,7 @@
 #include <Rcpp.h>
 #include "ska/flat_hash_map.hpp"
 
+using std::size_t;
 
 //
 // FlatMatrix: contiguous column-major matrix representation (double)
@@ -45,7 +46,7 @@ struct FlatMatrix {
   inline void fill(double v) { std::fill(data.begin(), data.end(), v); }
   inline bool empty() const noexcept {
     return data.empty() || nrow == 0 || ncol == 0; }
-  inline std::size_t size() const noexcept { return data.size(); }
+  inline size_t size() const noexcept { return data.size(); }
 
   // column-major index helper
   inline static int idx_col(int row, int col, int nrows) noexcept {
@@ -120,7 +121,7 @@ struct IntMatrix {
   inline void fill(int v) { std::fill(data.begin(), data.end(), v); }
   inline bool empty() const noexcept {
     return data.empty() || nrow == 0 || ncol == 0; }
-  inline std::size_t size() const noexcept { return data.size(); }
+  inline size_t size() const noexcept { return data.size(); }
 
   // column-major index helper
   inline static int idx_col(int row, int col, int nrows) noexcept {
@@ -191,7 +192,7 @@ struct BoolMatrix {
   inline void fill(unsigned char v) { std::fill(data.begin(), data.end(), v); }
   inline bool empty() const noexcept {
     return data.empty() || nrow == 0 || ncol == 0; }
-  inline std::size_t size() const noexcept { return data.size(); }
+  inline size_t size() const noexcept { return data.size(); }
 
   // column-major index helper
   inline static int idx_col(int row, int col, int nrows) noexcept {
@@ -268,7 +269,7 @@ struct FlatArray {
   inline void fill(double v) { std::fill(data.begin(), data.end(), v); }
   inline bool empty() const noexcept { return data.empty() || nrow == 0 ||
     ncol == 0 || nslice == 0; }
-  inline std::size_t size() const noexcept { return data.size(); }
+  inline size_t size() const noexcept { return data.size(); }
 
   // index helper: (row, col, slice)
   inline static int idx(int row, int col, int slice, int nrows, int ncols) noexcept {
@@ -319,7 +320,7 @@ struct DataFrameCpp {
     return FlatMatrix::idx_col(row, col, nrows);
   }
 
-  std::size_t nrows() const {
+  size_t nrows() const {
     if (!names_.empty()) {
       const std::string& nm = names_.front();
       if (numeric_cols.count(nm)) return numeric_cols.at(nm).size();
@@ -330,7 +331,7 @@ struct DataFrameCpp {
     return 0;
   }
 
-  std::size_t size() const { return names_.size(); }
+  size_t size() const { return names_.size(); }
   const std::vector<std::string>& names() const { return names_; }
 
   bool containElementNamed(const std::string& name) const {
@@ -338,8 +339,8 @@ struct DataFrameCpp {
       bool_cols.count(name) || string_cols.count(name);
   }
 
-  void check_row_size(std::size_t size, const std::string& name) const {
-    std::size_t cur = nrows();
+  void check_row_size(size_t size, const std::string& name) const {
+    size_t cur = nrows();
     if (cur > 0 && size != cur)
       throw std::runtime_error("Column '" + name +
                                "' has inconsistent number of rows");
@@ -430,13 +431,13 @@ struct DataFrameCpp {
   // (default std::cout)
   inline void print(std::ostream& os = std::cout, int max_rows = 10,
                     bool show_col_types = false) const {
-    const std::size_t rows = nrows();
-    const std::size_t cols = size();
+    const size_t rows = nrows();
+    const size_t cols = size();
     os << "DataFrameCpp: " << rows << " rows x " << cols << " cols\n";
     if (cols == 0) return;
 
     // Print header (column names and optional types)
-    for (std::size_t c = 0; c < names_.size(); ++c) {
+    for (size_t c = 0; c < names_.size(); ++c) {
       const std::string& nm = names_[c];
       os << nm;
       if (show_col_types) {
@@ -454,11 +455,11 @@ struct DataFrameCpp {
 
     if (rows == 0) return;
 
-    const int rmax = static_cast<int>(std::min<std::size_t>(
-      rows, static_cast<std::size_t>(max_rows)));
+    const int rmax = static_cast<int>(std::min<size_t>(
+      rows, static_cast<size_t>(max_rows)));
 
     for (int r = 0; r < rmax; ++r) {
-      for (std::size_t c = 0; c < names_.size(); ++c) {
+      for (size_t c = 0; c < names_.size(); ++c) {
         const std::string& nm = names_[c];
         if (numeric_cols.count(nm)) {
           const auto& col = numeric_cols.at(nm);
@@ -520,7 +521,7 @@ struct ListCpp {
 
     ListCpp() = default;
 
-    std::size_t size() const { return data.size(); }
+    size_t size() const { return data.size(); }
     std::vector<std::string> names() const { return names_; }
     bool containsElementNamed(const std::string& name) const {
       return data.count(name) > 0; }
@@ -640,7 +641,7 @@ template <> inline SEXP wrap(const BoolMatrix& im) {
   int* dst = LOGICAL(M);
   const unsigned char* src = im.data.data();
   // Convert: 0->FALSE, 1->TRUE, 255->NA_LOGICAL
-  for (std::size_t i = 0; i < im.data.size(); ++i) {
+  for (size_t i = 0; i < im.data.size(); ++i) {
     if (src[i] == 255) {
       dst[i] = NA_LOGICAL;
     } else {

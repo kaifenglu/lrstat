@@ -14,6 +14,7 @@
 
 #include <Rcpp.h>
 
+using std::size_t;
 
 // Compute the p-value given theta, look L, observed z at look L (zL),
 // critical values vector b (length L) and information vector I (length L).
@@ -58,7 +59,7 @@ DataFrameCpp getCIcpp(const int L,
   // Basic argument checks
   if (L <= 0) throw std::invalid_argument("L must be a positive integer");
 
-  std::size_t L1 = static_cast<std::size_t>(L);
+  size_t L1 = static_cast<size_t>(L);
 
   if (std::isnan(zL)) throw std::invalid_argument("zL must be provided");
   if (std::isnan(IMax)) throw std::invalid_argument("IMax must be provided");
@@ -139,7 +140,7 @@ DataFrameCpp getCIcpp(const int L,
 
   // Build full information vector I = IMax * informationRates
   std::vector<double> I(L1);
-  for (std::size_t i = 0; i < L1; ++i) I[i] = IMax * informationRates[i];
+  for (size_t i = 0; i < L1; ++i) I[i] = IMax * informationRates[i];
 
   // p-value at theta = 0
   double pvalue = f_pvalue(0.0, L, zL, b, I);
@@ -296,7 +297,7 @@ DataFrameCpp getRCIcpp(
 
   // Basic argument checks
   if (L <= 0) throw std::invalid_argument("L must be a positive integer");
-  std::size_t L1 = static_cast<std::size_t>(L);
+  size_t L1 = static_cast<size_t>(L);
 
   if (std::isnan(zL)) throw std::invalid_argument("zL must be provided");
   if (std::isnan(IMax)) throw std::invalid_argument("IMax must be provided");
@@ -378,7 +379,7 @@ DataFrameCpp getRCIcpp(
 
   // Build full information vector I = IMax * informationRates
   std::vector<double> I(L1);
-  for (std::size_t i = 0; i < L1; ++i) I[i] = IMax * informationRates[i];
+  for (size_t i = 0; i < L1; ++i) I[i] = IMax * informationRates[i];
 
   // repeated confidence interval
   double sqrtIL = std::sqrt(I[L1-1]);
@@ -556,7 +557,7 @@ std::pair<int, double> f_bwimage(const double theta,
   // compute astar for the secondary trial under shifted null
   double astar = f_astar(theta, L2, zL2, b2, I2);
 
-  std::size_t K1 = kMax - L;
+  size_t K1 = kMax - L;
 
   // prepare b1, a1, mu, I1 for the "shifted" secondary trial
   std::vector<double> b1(K1);
@@ -564,7 +565,7 @@ std::pair<int, double> f_bwimage(const double theta,
   std::vector<double> mu(K1, theta);
   std::vector<double> I1(K1);
 
-  for (std::size_t l = 0; l < K1; ++l) {
+  for (size_t l = 0; l < K1; ++l) {
     const double ratio = I[L-1] / I[l + L];
     b1[l] = (b[l + L] - std::sqrt(ratio) * zL) / std::sqrt(1.0 - ratio);
     I1[l] = I[l + L] - I[L - 1];
@@ -576,7 +577,7 @@ std::pair<int, double> f_bwimage(const double theta,
 
   // cumulative probabilities p[0]=0, p[1]=pu[0], ...
   std::vector<double> p(K1 + 1, 0.0);
-  for (std::size_t l = 0; l < K1; ++l) p[l + 1] = p[l] + pu[l];
+  for (size_t l = 0; l < K1; ++l) p[l + 1] = p[l] + pu[l];
 
   // find interval containing astar (j such that p[j-1] <= astar < p[j])
   int j = findInterval1(astar, p);
@@ -671,7 +672,7 @@ DataFrameCpp getADCIcpp(
   if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
   if (kMax <= L) throw std::invalid_argument("kMax must be greater than L");
 
-  std::size_t K = static_cast<std::size_t>(kMax);
+  size_t K = static_cast<size_t>(kMax);
 
   // informationRates: default to (1:kMax)/kMax if missing
   std::vector<double> infoRates(K);
@@ -687,7 +688,7 @@ DataFrameCpp getADCIcpp(
     infoRates = informationRates; // copy if provided
   } else {
     infoRates.resize(K);
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       infoRates[i] = static_cast<double>(i + 1) / static_cast<double>(K);
     }
   }
@@ -755,7 +756,7 @@ DataFrameCpp getADCIcpp(
   if (std::isnan(INew)) throw std::invalid_argument("INew must be provided");
   if (INew <= 0.0) throw std::invalid_argument("INew must be positive");
 
-  std::size_t LL2 = static_cast<std::size_t>(L2);
+  size_t LL2 = static_cast<size_t>(L2);
 
   std::vector<unsigned char> effStoppingNew;
   std::vector<double> spendTimeNew = spendingTimeNew;
@@ -829,7 +830,7 @@ DataFrameCpp getADCIcpp(
     bool haybittle = false;
     if (K > 1 && criticalValues.size() == K) {
       bool hasNaN = false;
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
       if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
@@ -837,7 +838,7 @@ DataFrameCpp getADCIcpp(
 
     if (haybittle) { // Haybittle & Peto
       std::vector<double> u(K);
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         u[i] = criticalValues[i];
         if (!effStopping[i]) u[i] = 6.0;
       }
@@ -856,7 +857,7 @@ DataFrameCpp getADCIcpp(
                       std::vector<double>{}, spendTime, effStopping);
     }
   } else {
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       if (!effStopping[i]) b[i] = 6.0;
     }
     ListCpp probs = exitprobcpp(b, l, zero, infoRates);
@@ -867,12 +868,12 @@ DataFrameCpp getADCIcpp(
 
   // Primary information vector
   std::vector<double> I(K);
-  for (std::size_t i = 0; i < K; ++i) I[i] = IMax * informationRates[i];
+  for (size_t i = 0; i < K; ++i) I[i] = IMax * informationRates[i];
 
   // compute b2 and I2 for secondary trial depending on MullerSchafer
   std::vector<double> b2(LL2), I2(LL2);
   if (!MullerSchafer) {
-    for (std::size_t l = 0; l < LL2; ++l) {
+    for (size_t l = 0; l < LL2; ++l) {
       double t1 = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       double r1 = infoRates[L - 1] / infoRates[l + L];
       b2[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
@@ -880,9 +881,9 @@ DataFrameCpp getADCIcpp(
       I2[l] = INew * t1;
     }
   } else { // conditional type I error
-    std::size_t K1 = K - L;
+    size_t K1 = K - L;
     std::vector<double> t1(K1), r1(K1), b1(K1), a1(K1, -6.0);
-    for (std::size_t l = 0; l < K1; ++l) {
+    for (size_t l = 0; l < K1; ++l) {
       t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       r1[l] = infoRates[L - 1] / infoRates[l + L];
       b1[l] = (b[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
@@ -896,7 +897,7 @@ DataFrameCpp getADCIcpp(
                      parameterAlphaSpendingNew, std::vector<double>{},
                      spendTimeNew, effStoppingNew);
 
-    for (std::size_t l = 0; l < LL2; ++l) I2[l] = INew * informationRatesNew[l];
+    for (size_t l = 0; l < LL2; ++l) I2[l] = INew * informationRatesNew[l];
   }
 
   // confidence level
@@ -1155,7 +1156,7 @@ DataFrameCpp getADRCIcpp(
   if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
   if (kMax <= L) throw std::invalid_argument("kMax must be greater than L");
 
-  std::size_t K = static_cast<std::size_t>(kMax);
+  size_t K = static_cast<size_t>(kMax);
 
   // informationRates: default to (1:kMax)/kMax if missing
   std::vector<double> infoRates(K);
@@ -1171,7 +1172,7 @@ DataFrameCpp getADRCIcpp(
     infoRates = informationRates; // copy if provided
   } else {
     infoRates.resize(K);
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       infoRates[i] = static_cast<double>(i + 1) / static_cast<double>(K);
     }
   }
@@ -1239,7 +1240,7 @@ DataFrameCpp getADRCIcpp(
   if (std::isnan(INew)) throw std::invalid_argument("INew must be provided");
   if (INew <= 0.0) throw std::invalid_argument("INew must be positive");
 
-  std::size_t LL2 = static_cast<std::size_t>(L2);
+  size_t LL2 = static_cast<size_t>(L2);
 
   std::vector<unsigned char> effStoppingNew;
   std::vector<double> spendTimeNew = spendingTimeNew;
@@ -1313,7 +1314,7 @@ DataFrameCpp getADRCIcpp(
     bool haybittle = false;
     if (K > 1 && criticalValues.size() == K) {
       bool hasNaN = false;
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
       if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
@@ -1321,7 +1322,7 @@ DataFrameCpp getADRCIcpp(
 
     if (haybittle) { // Haybittle & Peto
       std::vector<double> u(K);
-      for (std::size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < K - 1; ++i) {
         u[i] = criticalValues[i];
         if (!effStopping[i]) u[i] = 6.0;
       }
@@ -1340,7 +1341,7 @@ DataFrameCpp getADRCIcpp(
                       std::vector<double>{}, spendTime, effStopping);
     }
   } else {
-    for (std::size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < K; ++i) {
       if (!effStopping[i]) b[i] = 6.0;
     }
     ListCpp probs = exitprobcpp(b, l, zero, infoRates);
@@ -1351,12 +1352,12 @@ DataFrameCpp getADRCIcpp(
 
   // Primary information vector
   std::vector<double> I(K);
-  for (std::size_t i = 0; i < K; ++i) I[i] = IMax * informationRates[i];
+  for (size_t i = 0; i < K; ++i) I[i] = IMax * informationRates[i];
 
   // compute b2 and I2 for secondary trial depending on MullerSchafer
   std::vector<double> b2(LL2), I2(LL2);
   if (!MullerSchafer) {
-    for (std::size_t l = 0; l < LL2; ++l) {
+    for (size_t l = 0; l < LL2; ++l) {
       double t1 = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       double r1 = infoRates[L - 1] / infoRates[l + L];
       b2[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
@@ -1364,9 +1365,9 @@ DataFrameCpp getADRCIcpp(
       I2[l] = INew * t1;
     }
   } else { // conditional type I error
-    std::size_t K1 = K - L;
+    size_t K1 = K - L;
     std::vector<double> t1(K1), r1(K1), b1(K1), a1(K1, -6.0);
-    for (std::size_t l = 0; l < K1; ++l) {
+    for (size_t l = 0; l < K1; ++l) {
       t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       r1[l] = infoRates[L - 1] / infoRates[l + L];
       b1[l] = (b[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
@@ -1380,7 +1381,7 @@ DataFrameCpp getADRCIcpp(
                      parameterAlphaSpendingNew, std::vector<double>{},
                      spendTimeNew, effStoppingNew);
 
-    for (std::size_t l = 0; l < LL2; ++l) I2[l] = INew * informationRatesNew[l];
+    for (size_t l = 0; l < LL2; ++l) I2[l] = INew * informationRatesNew[l];
   }
 
 
@@ -1402,10 +1403,10 @@ DataFrameCpp getADRCIcpp(
     upper = (c1 + b[L + LL2 - 1]) / c2;
 
     // point estimate is lower bound with alpha=0.5
-    std::size_t J = L + LL2;
+    size_t J = L + LL2;
     // create cache_J for J
     std::vector<double> t_prefix(J);
-    for (std::size_t i = 0; i < J; ++i) t_prefix[i] = infoRates[i];
+    for (size_t i = 0; i < J; ++i) t_prefix[i] = infoRates[i];
     BoundCacheAlpha cache_J(J, t_prefix, asf, parameterAlphaSpending,
                             std::vector<double>{}, spendTime, effStopping, 64, 12);
     std::vector<double> u = cache_J.get(0.5);
@@ -1447,10 +1448,10 @@ DataFrameCpp getADRCIcpp(
     double sqrtI1 = std::sqrt(I1);
     double sqrtI2 = std::sqrt(I2);
 
-    std::size_t K1 = K - L;
+    size_t K1 = K - L;
 
     std::vector<double> t1(K1), r1(K1), w1(K1), w2(K1);
-    for (std::size_t l = 0; l < K1; ++l) {
+    for (size_t l = 0; l < K1; ++l) {
       t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       r1[l] = infoRates[L - 1] / infoRates[l + L];
       w1[l] = std::sqrt(r1[l]);
@@ -1472,7 +1473,7 @@ DataFrameCpp getADRCIcpp(
     // thetahat: root of f0(theta) = 0 on [left, right]
     auto f0 = [&](double theta)->double {
       double zL1 = zL - theta * sqrtI1;
-      for (std::size_t l = 0; l < K1; ++l) {
+      for (size_t l = 0; l < K1; ++l) {
         b1[l] = (u[l + L] - w1[l] * zL1) / w2[l];
         if (!effStopping[l + L]) b1[l] = 6.0;
       }
@@ -1487,7 +1488,7 @@ DataFrameCpp getADRCIcpp(
     // lower: root of f1(theta) = 0 on [left, thetahat]
     auto f1 = [&](double theta)->double {
       double zL1 = zL - theta * sqrtI1;
-      for (std::size_t l = 0; l < K1; ++l) {
+      for (size_t l = 0; l < K1; ++l) {
         b1[l] = (b[l + L] - w1[l] * zL1) / w2[l];
         if (!effStopping[l + L]) b1[l] = 6.0;
       }
@@ -1502,7 +1503,7 @@ DataFrameCpp getADRCIcpp(
     // upper: root of f2(theta) = 0 on [thetahat, right]
     auto f2 = [&](double theta)->double {
       double zL1 = -zL + theta * sqrtI1;
-      for (std::size_t l = 0; l < K1; ++l) {
+      for (size_t l = 0; l < K1; ++l) {
         b1[l] = (b[l + L] - w1[l] * zL1) / w2[l];
         if (!effStopping[l + L]) b1[l] = 6.0;
       }
@@ -1520,7 +1521,7 @@ DataFrameCpp getADRCIcpp(
 
       auto g = [&](double theta)->double {
         double zL1 = zL - theta * sqrtI1;
-        for (std::size_t l = 0; l < K1; ++l) {
+        for (size_t l = 0; l < K1; ++l) {
           b1[l] = (u_local[l + L] - w1[l] * zL1) / w2[l];
           if (!effStopping[l + L]) b1[l] = 6.0;
         }

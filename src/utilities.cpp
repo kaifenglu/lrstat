@@ -23,6 +23,8 @@
 #include <boost/math/quadrature/tanh_sinh.hpp>
 #include <boost/math/tools/minima.hpp>
 
+using std::size_t;
+
 
 double boost_pnorm(double q, double mean, double sd, bool lower_tail) {
   if (std::isnan(q)) return std::numeric_limits<double>::quiet_NaN();
@@ -218,24 +220,43 @@ std::vector<int> which(const std::vector<unsigned char>& vec) {
   return indices;
 }
 
-std::vector<double> expand_stratified(const std::vector<double>& v,
-                                      const std::size_t nstrata,
-                                      const std::size_t nintervals,
-                                      const char* name) {
-  std::size_t nsi = nstrata * nintervals;
+std::vector<double> expand1(
+    const std::vector<double>& v,
+    const size_t nintervals,
+    const char* name) {
   if (v.size() == 1) {
-    return std::vector<double>(nsi, v[0]);
+    return std::vector<double>(nintervals, v[0]);
   } else if (v.size() == nintervals) {
-    std::vector<double> out(nsi);
-    for (std::size_t s = 0; s < nstrata; ++s) {
-      std::memcpy(&out[s * nintervals], v.data(), nintervals * sizeof(double));
-    }
-    return out;
-  } else if (v.size() == nsi) {
     return v;
   } else {
     throw std::invalid_argument(std::string("Invalid length for ") + name);
   }
+}
+
+std::vector<std::vector<double>> expand_stratified(
+    const std::vector<double>& v,
+    const size_t nstrata,
+    const size_t nintervals,
+    const char* name) {
+  std::vector<std::vector<double>> out(nstrata);
+  size_t nsi = nstrata * nintervals;
+  if (v.size() == 1) {
+    for (size_t s = 0; s < nstrata; ++s) {
+      out[s] = std::vector<double>(nintervals, v[0]);
+    }
+  } else if (v.size() == nintervals) {
+    for (size_t s = 0; s < nstrata; ++s) {
+      out[s] = v;
+    }
+  } else if (v.size() == nsi) {
+    for (size_t s = 0; s < nstrata; ++s) {
+      out[s] = std::vector<double>(v.begin() + s * nintervals,
+                                   v.begin() + (s + 1) * nintervals);
+    }
+  } else {
+    throw std::invalid_argument(std::string("Invalid length for ") + name);
+  }
+  return out;
 }
 
 int findInterval1(const double x,

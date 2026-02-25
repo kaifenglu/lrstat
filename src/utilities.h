@@ -28,6 +28,8 @@ struct ListCpp;
 
 #include <Rcpp.h>
 
+using std::size_t;
+
 
 inline constexpr double NaN = std::numeric_limits<double>::quiet_NaN();
 inline constexpr double POS_INF = std::numeric_limits<double>::infinity();
@@ -86,11 +88,19 @@ std::vector<unsigned char> convertLogicalVector(const Rcpp::LogicalVector& vec);
 // which: return indices of true values
 std::vector<int> which(const std::vector<unsigned char>& vec);
 
+// expand1: expand vector to full length
+std::vector<double> expand1(
+    const std::vector<double>& v,
+    const size_t nintervals,
+    const char* name);
+
 // expand_stratified: expand stratified vector to full length
-std::vector<double> expand_stratified(const std::vector<double>& v,
-                                      const std::size_t nstrata,
-                                      const std::size_t nintervals,
-                                      const char* name);
+std::vector<std::vector<double>> expand_stratified(
+    const std::vector<double>& v,
+    const size_t nstrata,
+    const size_t nintervals,
+    const char* name);
+
 
 // findInterval: adapted helper (return indices following R-like convention)
 int findInterval1(const double x,
@@ -118,11 +128,11 @@ inline bool all_equal(const std::vector<double>& v, double target, double tol = 
 
 // mean using Kahan summation for improved numerical stability
 inline double mean_kahan(const std::vector<double>& v) {
-  const std::size_t n = v.size();
+  const size_t n = v.size();
   if (n == 0) return std::numeric_limits<double>::quiet_NaN();
   double sum = 0.0;
   double c = 0.0; // compensation
-  for (std::size_t i = 0; i < n; ++i) {
+  for (size_t i = 0; i < n; ++i) {
     double y = v[i] - c;        // corrected addend
     double t = sum + y;         // provisional sum
     c = (t - sum) - y;          // new compensation
@@ -132,7 +142,7 @@ inline double mean_kahan(const std::vector<double>& v) {
 }
 
 // mean and sd using Welford's method
-inline void mean_sd(const double* data, std::size_t n, double &omean, double &osd) {
+inline void mean_sd(const double* data, size_t n, double &omean, double &osd) {
   if (n == 0) {
     omean = std::numeric_limits<double>::quiet_NaN();
     osd = std::numeric_limits<double>::quiet_NaN();
@@ -143,7 +153,7 @@ inline void mean_sd(const double* data, std::size_t n, double &omean, double &os
   double M2 = 0.0;     // sum of squares of differences
   double count = 0.0;
 
-  for (std::size_t i = 0; i < n; ++i) {
+  for (size_t i = 0; i < n; ++i) {
     ++count;
     double x = data[i];
     double delta = x - mean;
@@ -157,7 +167,7 @@ inline void mean_sd(const double* data, std::size_t n, double &omean, double &os
 }
 
 inline void mean_sd(const double* data, int n, double &omean, double &osd) {
-  mean_sd(data, static_cast<std::size_t>(n), omean, osd);
+  mean_sd(data, static_cast<size_t>(n), omean, osd);
 }
 
 // --------------------------- Root finders -----------------------------------
@@ -230,14 +240,14 @@ template <typename T>
 std::vector<T> subset(const std::vector<T>& v, int start, int end) {
   if (start < 0) throw std::out_of_range("subset: start < 0");
   if (end < 0) throw std::out_of_range("subset: end < 0");
-  const std::size_t vsz = v.size();
-  if (static_cast<std::size_t>(end) > vsz)
+  const size_t vsz = v.size();
+  if (static_cast<size_t>(end) > vsz)
     throw std::out_of_range("subset: end > v.size()");
   if (!(start < end)) throw std::invalid_argument("subset: require start < end");
 
-  const std::size_t s = static_cast<std::size_t>(start);
-  const std::size_t e = static_cast<std::size_t>(end);
-  const std::size_t n = e - s;
+  const size_t s = static_cast<size_t>(start);
+  const size_t e = static_cast<size_t>(end);
+  const size_t n = e - s;
 
   if constexpr (std::is_trivially_copyable_v<T>) {
     std::vector<T> out;
@@ -261,15 +271,15 @@ template <typename T>
 void subset_in_place(std::vector<T>& v, int start, int end) {
   if (start < 0) throw std::out_of_range("subset_in_place: start < 0");
   if (end < 0) throw std::out_of_range("subset_in_place: end < 0");
-  const std::size_t vsz = v.size();
-  if (static_cast<std::size_t>(end) > vsz)
+  const size_t vsz = v.size();
+  if (static_cast<size_t>(end) > vsz)
     throw std::out_of_range("subset_in_place: end > v.size()");
   if (!(start < end))
     throw std::invalid_argument("subset_in_place: require start < end");
 
-  const std::size_t s = static_cast<std::size_t>(start);
-  const std::size_t e = static_cast<std::size_t>(end);
-  const std::size_t n = e - s; // number of elements to keep
+  const size_t s = static_cast<size_t>(start);
+  const size_t e = static_cast<size_t>(end);
+  const size_t n = e - s; // number of elements to keep
 
   if (s == 0) {
     // already at beginning; just resize down to requested length
@@ -443,8 +453,8 @@ template <typename T>
 void print_vector(const std::vector<T>& v,
                   const std::string& label = "",
                   int precision = -1,
-                  std::size_t head = 5,
-                  std::size_t tail = 5,
+                  size_t head = 5,
+                  size_t tail = 5,
                   const std::string& sep = ", ",
                   bool show_indices = false,
                   bool endline = true) {
@@ -455,7 +465,7 @@ void print_vector(const std::vector<T>& v,
   std::ostringstream ss;
   if (!label.empty()) ss << label << ": ";
 
-  std::size_t n = v.size();
+  size_t n = v.size();
   if (n == 0) {
     ss << "[]";
     if (endline) ss << '\n';
@@ -468,7 +478,7 @@ void print_vector(const std::vector<T>& v,
   if (use_precision) ss << std::fixed << std::setprecision(precision);
 
   ss << "[";
-  auto print_elem = [&](std::size_t i) {
+  auto print_elem = [&](size_t i) {
     if (show_indices) ss << i << ": ";
     if constexpr (std::is_same_v<T, unsigned char> ||
                   std::is_same_v<T, std::uint8_t>) {
@@ -480,19 +490,19 @@ void print_vector(const std::vector<T>& v,
   };
 
   if (n <= head + tail || head + tail == 0) {
-    for (std::size_t i = 0; i < n; ++i) {
+    for (size_t i = 0; i < n; ++i) {
       if (i) ss << sep;
       print_elem(i);
     }
   } else {
     // print head
-    for (std::size_t i = 0; i < head; ++i) {
+    for (size_t i = 0; i < head; ++i) {
       if (i) ss << sep;
       print_elem(i);
     }
     ss << sep << "..." << sep;
     // print tail
-    for (std::size_t j = n - tail; j < n; ++j) {
+    for (size_t j = n - tail; j < n; ++j) {
       if (j != n - tail) ss << sep;
       print_elem(j);
     }
