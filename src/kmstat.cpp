@@ -383,30 +383,30 @@ DataFrameCpp kmstatcpp(
       lambda1x, lambda2x, gamma1x, gamma2x,
       accrualDuration, followupTime, fixedFollowup);
 
-    subjects[j]   = extract_km(df, "subjects");
-    nevents[j]    = extract_km(df, "nevents");
-    nevents1[j]   = extract_km(df, "nevents1");
-    nevents2[j]   = extract_km(df, "nevents2");
-    ndropouts[j]  = extract_km(df, "ndropouts");
-    ndropouts1[j] = extract_km(df, "ndropouts1");
-    ndropouts2[j] = extract_km(df, "ndropouts2");
-    nmilestone[j]  = extract_km(df, "nmilestone");
-    nmilestone1[j] = extract_km(df, "nmilestone1");
-    nmilestone2[j] = extract_km(df, "nmilestone2");
+    subjects[j]     = extract_km(df, "subjects");
+    nevents[j]      = extract_km(df, "nevents");
+    nevents1[j]     = extract_km(df, "nevents1");
+    nevents2[j]     = extract_km(df, "nevents2");
+    ndropouts[j]    = extract_km(df, "ndropouts");
+    ndropouts1[j]   = extract_km(df, "ndropouts1");
+    ndropouts2[j]   = extract_km(df, "ndropouts2");
+    nmilestone[j]   = extract_km(df, "nmilestone");
+    nmilestone1[j]  = extract_km(df, "nmilestone1");
+    nmilestone2[j]  = extract_km(df, "nmilestone2");
 
-    const auto& s1    = df.get<double>("surv1");
-    const auto& s2    = df.get<double>("surv2");
-    const auto& vs1   = df.get<double>("vsurv1");
-    const auto& vs2   = df.get<double>("vsurv2");
+    const auto& s1  = df.get<double>("surv1");
+    const auto& s2  = df.get<double>("surv2");
+    const auto& vs1 = df.get<double>("vsurv1");
+    const auto& vs2 = df.get<double>("vsurv2");
     for (size_t i = 0; i < nstrata; ++i) {
-      surv1[j] += stratumFraction[i] * s1[i];
-      surv2[j] += stratumFraction[i] * s2[i];
+      surv1[j]  += stratumFraction[i] * s1[i];
+      surv2[j]  += stratumFraction[i] * s2[i];
       vsurv1[j] += stratumFraction[i] * stratumFraction[i] * vs1[i];
       vsurv2[j] += stratumFraction[i] * stratumFraction[i] * vs2[i];
     }
 
-    survDiff[j] = surv1[j] - surv2[j];
-    vsurvDiff[j] = vsurv1[j] + vsurv2[j];
+    survDiff[j]    = surv1[j] - surv2[j];
+    vsurvDiff[j]   = vsurv1[j] + vsurv2[j];
     information[j] = 1.0 / vsurvDiff[j];
     survDiffZ[j]   = survDiff[j] * std::sqrt(information[j]);
   }
@@ -804,14 +804,16 @@ ListCpp kmpowercpp(
   // fixed follow-up studyDuration constraints
   if (fixedFollowup && !std::isnan(studyDuration) &&
       (studyDuration < accrualDuration))
-    throw std::invalid_argument("studyDuration must be >= accrualDuration");
+    throw std::invalid_argument(
+        "studyDuration must be greater than or equal to accrualDuration");
   if (fixedFollowup && !std::isnan(studyDuration) &&
       (studyDuration > accrualDuration + followupTime))
     throw std::invalid_argument(
-        "studyDuration must be <= accrualDuration + followupTime");
+        "studyDuration must be less than or equal to accrualDuration + followupTime");
 
   if (milestone >= accrualDuration + followupTime)
-    throw std::invalid_argument("milestone must be < accrualDuration + followupTime");
+    throw std::invalid_argument(
+        "milestone must be less than accrualDuration + followupTime");
   if (fixedFollowup && milestone > followupTime)
     throw std::invalid_argument(
         "milestone cannot exceed followupTime for fixed follow-up");
@@ -905,8 +907,8 @@ ListCpp kmpowercpp(
   const auto& vs2   = km_end.get<double>("vsurv2");
   double surv1 = 0.0, surv2 = 0.0, vsurv1 = 0.0, vsurv2 = 0.0;
   for (size_t i = 0; i < nstrata; ++i) {
-    surv1 += stratumFraction[i] * s1[i];
-    surv2 += stratumFraction[i] * s2[i];
+    surv1  += stratumFraction[i] * s1[i];
+    surv2  += stratumFraction[i] * s2[i];
     vsurv1 += stratumFraction[i] * stratumFraction[i] * vs1[i];
     vsurv2 += stratumFraction[i] * stratumFraction[i] * vs2[i];
   }
@@ -916,18 +918,18 @@ ListCpp kmpowercpp(
 
   std::vector<double> theta(kMax, survDiff - survDiffH0);
 
-  info[K - 1] =  maxInformation;
-  time[K - 1] = studyDuration1;
-  nsubjects[K - 1] = extract_km(km_end, "subjects");
-  nsubjects1[K - 1] = phi * nsubjects[K - 1];
-  nsubjects2[K - 1] = (1.0 - phi) * nsubjects[K - 1];
-  nevents[K - 1] = extract_km(km_end, "nevents");
-  nevents1[K - 1] = extract_km(km_end, "nevents1");
-  nevents2[K - 1] = extract_km(km_end, "nevents2");
-  ndropouts[K - 1] = extract_km(km_end, "ndropouts");
-  ndropouts1[K - 1] = extract_km(km_end, "ndropouts1");
-  ndropouts2[K - 1] = extract_km(km_end, "ndropouts2");
-  nmilestone[K - 1] = extract_km(km_end, "nmilestone");
+  info[K - 1]        = maxInformation;
+  time[K - 1]        = studyDuration1;
+  nsubjects[K - 1]   = extract_km(km_end, "subjects");
+  nsubjects1[K - 1]  = phi * nsubjects[K - 1];
+  nsubjects2[K - 1]  = (1.0 - phi) * nsubjects[K - 1];
+  nevents[K - 1]     = extract_km(km_end, "nevents");
+  nevents1[K - 1]    = extract_km(km_end, "nevents1");
+  nevents2[K - 1]    = extract_km(km_end, "nevents2");
+  ndropouts[K - 1]   = extract_km(km_end, "ndropouts");
+  ndropouts1[K - 1]  = extract_km(km_end, "ndropouts1");
+  ndropouts2[K - 1]  = extract_km(km_end, "ndropouts2");
+  nmilestone[K - 1]  = extract_km(km_end, "nmilestone");
   nmilestone1[K - 1] = extract_km(km_end, "nmilestone1");
   nmilestone2[K - 1] = extract_km(km_end, "nmilestone2");
 
@@ -957,7 +959,7 @@ ListCpp kmpowercpp(
       return information - information1;
     };
 
-    time[i] = brent(g, milestone*1.0001, studyDuration1, 1e-6);
+    time[i] = brent(g, milestone*1.001, studyDuration1, 1e-6);
 
     DataFrameCpp km_i = kmstat1cpp(
       time[i], milestone, allocationRatioPlanned,
@@ -966,16 +968,16 @@ ListCpp kmpowercpp(
       lambda1x, lambda2x, gamma1x, gamma2x,
       accrualDuration, followupTime, fixedFollowup);
 
-    nsubjects[i] = extract_km(km_i, "subjects");
-    nsubjects1[i] = phi * nsubjects[i];
-    nsubjects2[i] = (1.0 - phi) * nsubjects[i];
-    nevents[i] = extract_km(km_i, "nevents");
-    nevents1[i] = extract_km(km_i, "nevents1");
-    nevents2[i] = extract_km(km_i, "nevents2");
-    ndropouts[i] = extract_km(km_i, "ndropouts");
-    ndropouts1[i] = extract_km(km_i, "ndropouts1");
-    ndropouts2[i] = extract_km(km_i, "ndropouts2");
-    nmilestone[i] = extract_km(km_i, "nmilestone");
+    nsubjects[i]   = extract_km(km_i, "subjects");
+    nsubjects1[i]  = phi * nsubjects[i];
+    nsubjects2[i]  = (1.0 - phi) * nsubjects[i];
+    nevents[i]     = extract_km(km_i, "nevents");
+    nevents1[i]    = extract_km(km_i, "nevents1");
+    nevents2[i]    = extract_km(km_i, "nevents2");
+    ndropouts[i]   = extract_km(km_i, "ndropouts");
+    ndropouts1[i]  = extract_km(km_i, "ndropouts1");
+    ndropouts2[i]  = extract_km(km_i, "ndropouts2");
+    nmilestone[i]  = extract_km(km_i, "nmilestone");
     nmilestone1[i] = extract_km(km_i, "nmilestone");
     nmilestone2[i] = extract_km(km_i, "nmilestone");
   }
@@ -1434,3 +1436,920 @@ Rcpp::List kmpower(
   return result;
 }
 
+
+ListCpp kmsamplesizecpp(
+    const double beta,
+    const int kMax,
+    const std::vector<double>& informationRates,
+    const std::vector<unsigned char>& efficacyStopping,
+    const std::vector<unsigned char>& futilityStopping,
+    const std::vector<double>& criticalValues,
+    const double alpha,
+    const std::string& typeAlphaSpending,
+    const double parameterAlphaSpending,
+    const std::vector<double>& userAlphaSpending,
+    const std::vector<double>& futilityBounds,
+    const std::string& typeBetaSpending,
+    const double parameterBetaSpending,
+    const std::vector<double>& userBetaSpending,
+    const double milestone,
+    const double survDiffH0,
+    const double allocationRatioPlanned,
+    const std::vector<double>& accrualTime,
+    const std::vector<double>& accrualIntensity,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& stratumFraction,
+    const std::vector<double>& lambda1,
+    const std::vector<double>& lambda2,
+    const std::vector<double>& gamma1,
+    const std::vector<double>& gamma2,
+    double accrualDuration, // may be solved
+    double followupTime,    // may be solved
+    const bool fixedFollowup,
+    const std::vector<double>& spendingTime,
+    const bool rounding) {
+
+  if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1))
+    throw std::invalid_argument("alpha must lie in [0.00001, 1)");
+  if (beta < 0.0001 || (!std::isnan(alpha) && beta >= 1.0 - alpha))
+    throw std::invalid_argument("beta must lie in [0.0001, 1-alpha)");
+
+  if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
+  size_t K = static_cast<size_t>(kMax);
+
+  // informationRates: default to (1:kMax)/kMax if missing
+  std::vector<double> infoRates(K);
+  if (none_na(informationRates)) {
+    if (informationRates.size() != K)
+      throw std::invalid_argument("Invalid length for informationRates");
+    if (informationRates[0] <= 0.0)
+      throw std::invalid_argument("informationRates must be positive");
+    if (any_nonincreasing(informationRates))
+      throw std::invalid_argument("informationRates must be increasing");
+    if (informationRates[K-1] != 1.0)
+      throw std::invalid_argument("informationRates must end with 1");
+    infoRates = informationRates; // copy
+  } else {
+    for (size_t i = 0; i < K; ++i)
+      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(K);
+  }
+
+  // effStopping: default to all 1s if missing
+  std::vector<unsigned char> effStopping;
+  if (none_na(efficacyStopping)) {
+    if (efficacyStopping.size() != K)
+      throw std::invalid_argument("Invalid length for efficacyStopping");
+    if (efficacyStopping[K-1] != 1)
+      throw std::invalid_argument("efficacyStopping must end with 1");
+    effStopping = efficacyStopping; // copy
+  } else {
+    effStopping.assign(K, 1);
+  }
+
+  // futStopping: default to all 1s if missing
+  std::vector<unsigned char> futStopping;
+  if (none_na(futilityStopping)) {
+    if (futilityStopping.size() != K)
+      throw std::invalid_argument("Invalid length for futilityStopping");
+    if (futilityStopping[K-1] != 1)
+      throw std::invalid_argument("futilityStopping must end with 1");
+    futStopping = futilityStopping; // copy
+  } else {
+    futStopping.assign(K, 1);
+  }
+
+  bool missingCriticalValues = !none_na(criticalValues);
+  bool missingFutilityBounds = !none_na(futilityBounds);
+
+  if (!missingCriticalValues && criticalValues.size() != K) {
+    throw std::invalid_argument("Invalid length for criticalValues");
+  }
+  if (missingCriticalValues && std::isnan(alpha)) {
+    throw std::invalid_argument("alpha must be provided for missing criticalValues");
+  }
+
+  std::string asf = typeAlphaSpending;
+  for (char &c : asf) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  }
+
+  if (missingCriticalValues && !(asf == "of" || asf == "p" ||
+      asf == "wt" || asf == "sfof" || asf == "sfp" ||
+      asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
+    throw std::invalid_argument("Invalid value for typeAlphaSpending");
+  }
+  if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
+      std::isnan(parameterAlphaSpending)) {
+    throw std::invalid_argument("Missing value for parameterAlphaSpending");
+  }
+  if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
+    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
+  }
+
+  if (missingCriticalValues && asf == "user") {
+    if (!none_na(userAlphaSpending))
+      throw std::invalid_argument("userAlphaSpending must be specified");
+    if (userAlphaSpending.size() != K)
+      throw std::invalid_argument("Invalid length of userAlphaSpending");
+    if (userAlphaSpending[0] < 0.0)
+      throw std::invalid_argument("userAlphaSpending must be nonnegative");
+    if (any_nonincreasing(userAlphaSpending))
+      throw std::invalid_argument("userAlphaSpending must be nondecreasing");
+    if (userAlphaSpending[K-1] != alpha)
+      throw std::invalid_argument("userAlphaSpending must end with specified alpha");
+  }
+
+  if (!missingFutilityBounds) {
+    if (!(futilityBounds.size() == K - 1 || futilityBounds.size() == K)) {
+      throw std::invalid_argument("Invalid length for futilityBounds");
+    }
+  }
+  if (!missingCriticalValues && !missingFutilityBounds) {
+    for (size_t i = 0; i < K - 1; ++i) {
+      if (futilityBounds[i] > criticalValues[i]) {
+        throw std::invalid_argument("futilityBounds must lie below criticalValues");
+      }
+    }
+    if (futilityBounds.size() == K && futilityBounds[K-1] != criticalValues[K-1]) {
+      throw std::invalid_argument(
+          "futilityBounds must meet criticalValues at the final look");
+    }
+  }
+
+  std::string bsf = typeBetaSpending;
+  for (char &c : bsf) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  }
+
+  if (missingFutilityBounds && !(bsf == "sfof" || bsf == "sfp" ||
+      bsf == "sfkd" || bsf == "sfhsd" || bsf == "user" || bsf == "none")) {
+    throw std::invalid_argument("Invalid value for typeBetaSpending");
+  }
+  if ((bsf == "sfkd" || bsf == "sfhsd") && std::isnan(parameterBetaSpending)) {
+    throw std::invalid_argument("Missing value for parameterBetaSpending");
+  }
+  if (bsf == "sfkd" && parameterBetaSpending <= 0.0) {
+    throw std::invalid_argument("parameterBetaSpending must be positive for sfKD");
+  }
+
+  if (missingFutilityBounds && bsf=="user") {
+    if (!none_na(userBetaSpending))
+      throw std::invalid_argument("userBetaSpending must be specified");
+    if (userBetaSpending.size() != K)
+      throw std::invalid_argument("Invalid length of userBetaSpending");
+    if (userBetaSpending[0] < 0.0)
+      throw std::invalid_argument("userBetaSpending must be nonnegative");
+    if (any_nonincreasing(userBetaSpending))
+      throw std::invalid_argument("userBetaSpending must be nondecreasing");
+    if (userBetaSpending[K-1] != beta)
+      throw std::invalid_argument("userBetaSpending must end with specified beta");
+  }
+
+  // validate milestone and H0 diff
+  if (std::isnan(milestone)) throw std::invalid_argument("milestone must be provided");
+  if (milestone <= 0.0) throw std::invalid_argument("milestone must be positive");
+  if (survDiffH0 <= -1.0 || survDiffH0 >= 1.0)
+    throw std::invalid_argument("survDiffH0 must lie between -1 and 1");
+
+  // validate accrual + survival inputs (same style as lrstat.cpp)
+  if (allocationRatioPlanned <= 0.0)
+    throw std::invalid_argument("allocationRatioPlanned must be positive");
+
+  if (accrualTime[0] != 0.0)
+    throw std::invalid_argument("accrualTime must start with 0");
+  if (any_nonincreasing(accrualTime))
+    throw std::invalid_argument("accrualTime should be increasing");
+
+  if (!none_na(accrualIntensity))
+    throw std::invalid_argument("accrualIntensity must be provided");
+  if (accrualIntensity.size() != accrualTime.size())
+    throw std::invalid_argument("Invalid length for accrualIntensity");
+  for (double v : accrualIntensity) {
+    if (v < 0.0) throw std::invalid_argument("accrualIntensity must be non-negative");
+  }
+
+  if (piecewiseSurvivalTime[0] != 0.0)
+    throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
+  if (any_nonincreasing(piecewiseSurvivalTime))
+    throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
+
+  for (double v : stratumFraction) {
+    if (v <= 0.0) throw std::invalid_argument("stratumFraction must be positive");
+  }
+  double sumf = std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
+  if (std::fabs(sumf - 1.0) > 1e-12)
+    throw std::invalid_argument("stratumFraction must sum to 1");
+
+  if (!none_na(lambda1)) throw std::invalid_argument("lambda1 must be provided");
+  if (!none_na(lambda2)) throw std::invalid_argument("lambda2 must be provided");
+
+  for (double v : lambda1) {
+    if (v < 0.0) throw std::invalid_argument("lambda1 must be non-negative");
+  }
+  for (double v : lambda2) {
+    if (v < 0.0) throw std::invalid_argument("lambda2 must be non-negative");
+  }
+  for (double v : gamma1) {
+    if (v < 0.0) throw std::invalid_argument("gamma1 must be non-negative");
+  }
+  for (double v : gamma2) {
+    if (v < 0.0) throw std::invalid_argument("gamma2 must be non-negative");
+  }
+
+  // expand stratified rates
+  size_t nstrata = stratumFraction.size();
+  size_t nintervals = piecewiseSurvivalTime.size();
+  const std::vector<double>& tau = piecewiseSurvivalTime;
+
+  auto lambda1x = expand_stratified(lambda1, nstrata, nintervals, "lambda1");
+  auto lambda2x = expand_stratified(lambda2, nstrata, nintervals, "lambda2");
+  auto gamma1x = expand_stratified(gamma1, nstrata, nintervals, "gamma1");
+  auto gamma2x = expand_stratified(gamma2, nstrata, nintervals, "gamma2");
+
+  if (!std::isnan(accrualDuration) && accrualDuration <= 0.0)
+    throw std::invalid_argument("accrualDuration must be positive");
+
+  if (!std::isnan(followupTime) && fixedFollowup && followupTime <= 0.0)
+    throw std::invalid_argument("followupTime must be positive for fixed follow-up");
+  if (!std::isnan(followupTime) && !fixedFollowup && followupTime < 0.0)
+    throw std::invalid_argument(
+        "followupTime must be non-negative for variable follow-up");
+  if (fixedFollowup && std::isnan(followupTime))
+    throw std::invalid_argument("followupTime must be provided for fixed follow-up");
+
+  if (!std::isnan(accrualDuration) && !std::isnan(followupTime) &&
+      (milestone >= accrualDuration + followupTime)) {
+    throw std::invalid_argument(
+        "milestone must be less than accrualDuration + followupTime");
+  }
+  if (fixedFollowup && milestone > followupTime)
+    throw std::invalid_argument(
+        "milestone cannot exceed followupTime for fixed follow-up");
+
+  // spendingTime default to informationRates
+  std::vector<double> spendTime;
+  if (none_na(spendingTime)) {
+    if (spendingTime.size() != K)
+      throw std::invalid_argument("Invalid length for spendingTime");
+    if (spendingTime[0] <= 0.0)
+      throw std::invalid_argument("spendingTime must be positive");
+    if (any_nonincreasing(spendingTime))
+      throw std::invalid_argument("spendingTime must be increasing");
+    if (spendingTime[K-1] != 1.0)
+      throw std::invalid_argument("spendingTime must end with 1");
+    spendTime = spendingTime; // copy
+  } else {
+    spendTime = infoRates;
+  }
+
+
+  // --- Efficacy boundaries ---------------------------------------------------
+  std::vector<double> l(K, -6.0), zero(K, 0.0);
+  std::vector<double> critValues = criticalValues;
+  if (missingCriticalValues) {
+    bool haybittle = false;
+    if (K > 1 && criticalValues.size() == K) {
+      bool hasNaN = false;
+      for (size_t i = 0; i < K - 1; ++i) {
+        if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
+      }
+      if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
+    }
+
+    if (haybittle) { // Haybittle & Peto
+      std::vector<double> u(K);
+      for (size_t i = 0; i < K - 1; ++i) {
+        u[i] = criticalValues[i];
+        if (!effStopping[i]) u[i] = 6.0;
+      }
+
+      auto f = [&](double aval)->double {
+        u[K-1] = aval;
+        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
+        auto v = probs.get<std::vector<double>>("exitProbUpper");
+        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        return cpu - alpha;
+      };
+
+      critValues[K-1] = brent(f, -5.0, 6.0, 1e-6);
+    } else {
+      critValues = getBoundcpp(kMax, infoRates, alpha, asf,
+                               parameterAlphaSpending, userAlphaSpending,
+                               spendTime, effStopping);
+    }
+  }
+
+  ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
+  auto v = probs.get<std::vector<double>>("exitProbUpper");
+  std::vector<double> cumAlphaSpent(K);
+  std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
+  double alpha1 = missingCriticalValues ? alpha : cumAlphaSpent[K-1];
+
+
+  // --- Futility boundaries ---------------------------------------------------
+  std::vector<double> futBounds = futilityBounds;
+  if (K > 1) {
+    if (missingFutilityBounds && bsf == "none") {
+      futBounds = std::vector<double>(K, -6.0);
+      futBounds[K-1] = critValues[K-1];
+    } else if (!missingFutilityBounds && futBounds.size() == K-1) {
+      futBounds.push_back(critValues[K-1]);
+    }
+  } else {
+    if (missingFutilityBounds) {
+      futBounds = critValues;
+    }
+  }
+
+
+  // Which design parameter is unknown?
+  enum Unknown { ACC_DUR, FUP_TIME, ACC_INT };
+  Unknown unknown;
+  bool missAccrual = std::isnan(accrualDuration);
+  bool missFollow = std::isnan(followupTime);
+  if (missAccrual && !missFollow) unknown = ACC_DUR;
+  else if (!missAccrual && missFollow) unknown = FUP_TIME;
+  else if (!missAccrual && !missFollow) unknown = ACC_INT;
+  else throw std::invalid_argument(
+      "accrualDuration and followupTime cannot be both missing");
+
+  // local accrualIntensity copy (we might scale it)
+  std::vector<double> accrualInt = accrualIntensity;
+
+  // milestone survival under H1
+  std::vector<double> zerogam(nintervals, 0.0);
+  double surv1 = 0.0, surv2 = 0.0;
+  for (size_t i = 0; i < nstrata; ++i) {
+    double p1 = patrisk1(milestone, tau, lambda1x[i], zerogam);
+    double p2 = patrisk1(milestone, tau, lambda2x[i], zerogam);
+    surv1 += stratumFraction[i] * p1;
+    surv2 += stratumFraction[i] * p2;
+  }
+  double theta1 = (surv1 - surv2 - survDiffH0);
+  std::vector<double> theta(K, theta1);
+
+  // --- determine target maxInformation from group sequential design ---
+  ListCpp design = getDesigncpp(
+    beta, NaN, theta1, kMax, infoRates,
+    effStopping, futStopping,
+    critValues, alpha1, asf,
+    parameterAlphaSpending, userAlphaSpending,
+    futBounds, bsf, parameterBetaSpending,
+    userBetaSpending, spendTime, 1.0);
+
+  auto byStageResults = design.get<DataFrameCpp>("byStageResults");
+  futBounds = byStageResults.get<double>("futilityBounds");
+
+  auto overallResults = design.get<DataFrameCpp>("overallResults");
+  double maxInformation = overallResults.get<double>("information")[0];
+
+  // Helper: compute information under H1 given accrualDuration (accrDur),
+  // followupTime (fu), and accrualIntensity (accrInt).
+  auto info_minus_target_H1 = [&](double t, double accrDur, double fu,
+                                  const std::vector<double>& accrInt) {
+    DataFrameCpp km1 = kmstat1cpp(
+      t, milestone, allocationRatioPlanned,
+      accrualTime, accrInt,
+      piecewiseSurvivalTime, stratumFraction,
+      lambda1x, lambda2x, gamma1x, gamma2x,
+      accrDur, fu, fixedFollowup);
+
+    const auto& vs1 = km1.get<double>("vsurv1");
+    const auto& vs2 = km1.get<double>("vsurv2");
+    double vsurv1 = 0.0, vsurv2 = 0.0;
+    for (size_t i = 0; i < nstrata; ++i) {
+      vsurv1 += stratumFraction[i] * stratumFraction[i] * vs1[i];
+      vsurv2 += stratumFraction[i] * stratumFraction[i] * vs2[i];
+    }
+    double vsurvDiff = vsurv1 + vsurv2;
+    return 1.0 / vsurvDiff - maxInformation;
+  };
+
+
+  // when info at zero follow-up (end of enrollment) already exceeds target,
+  // set followupTime = 0 and find minimal accrualDuration achieving target
+  bool curtailed = false;
+
+  // when info at maximum follow-up (milestone) is still below target,
+  // increase accrualDuration to achieve target
+  bool expanded = false;
+
+  // Root-finding function to solve for the unknown design parameter to achieve target
+  std::function<double(double)> f_root;
+
+  if (unknown == ACC_DUR) {
+    f_root = [&](double x)->double {
+      double t = x + followupTime;
+      return info_minus_target_H1(t, x, followupTime, accrualInt);
+    };
+  } else if (unknown == FUP_TIME) {
+    if (!fixedFollowup &&
+        info_minus_target_H1(accrualDuration, accrualDuration, 0.0, accrualInt) > 0) {
+      thread_utils::push_thread_warning(
+        "Information at zero follow-up (end of enrollment) already exceeds target. "
+        "Setting followupTime = 0 and finding minimal accrualDuration.");
+
+      f_root = [&](double x)->double {
+        return info_minus_target_H1(x, x, 0.0, accrualInt);
+      };
+
+      curtailed = true;
+    } else if (info_minus_target_H1(accrualDuration + milestone, accrualDuration,
+                                    milestone, accrualInt) < 0) {
+      thread_utils::push_thread_warning(
+        "The required information cannot be attained by increasing "
+        "followupTime alone. accrualDuration is also increased to "
+        "attain the required information.");
+
+      f_root = [&](double x)->double {
+        double t = x + milestone;
+        return info_minus_target_H1(t, x, milestone, accrualInt);
+      };
+
+      expanded = true;
+    } else {
+      f_root = [&](double x)->double {
+        double t = accrualDuration + x;
+        return info_minus_target_H1(t, accrualDuration, x, accrualInt);
+      };
+    }
+  } else {
+    f_root = [&](double m)->double {
+      std::vector<double> scaled = accrualInt;
+      for (double &v : scaled) v *= m;
+      double t = accrualDuration + followupTime;
+      return info_minus_target_H1(t, accrualDuration, followupTime, scaled);
+    };
+  }
+
+  double lower, upper;
+  if (unknown == ACC_DUR) {
+    lower = std::max(milestone - followupTime, 0.0) + 0.001;
+    upper = 2.0 * lower;
+  } else if (unknown == FUP_TIME && curtailed) {
+    lower = milestone * 1.001;
+    upper = accrualDuration;
+  } else if (unknown == FUP_TIME && expanded) {
+    lower = accrualDuration;
+    upper = 2.0 * lower;
+  } else if (unknown == FUP_TIME && !curtailed && !expanded) {
+    lower = std::max(milestone - accrualDuration, 0.0) + 0.001;
+    upper = milestone;
+  } else { // unknown == ACC_INT
+    lower = 0.001;
+    upper = 120;
+  }
+
+  // expand upper if needed to ensure root is bracketed
+  double fl_val = f_root(lower), fu_val = f_root(upper);
+  if (unknown == ACC_DUR || (unknown == FUP_TIME && expanded) || unknown == ACC_INT) {
+    int expand_iter = 0;
+    while (fl_val * fu_val > 0.0 && expand_iter < 60) {
+      upper *= 2.0;
+      fu_val = f_root(upper);
+      ++expand_iter;
+    }
+  }
+  if (fl_val * fu_val > 0.0) throw std::runtime_error(
+      "Unable to bracket root; check interval or inputs");
+
+  // solve for root and apply solution for the unknown design parameter
+  auto f_for_brent = [&](double x)->double {
+    if (x == lower) return fl_val;
+    if (x == upper) return fu_val;
+    return f_root(x);
+  };
+  double solution = brent(f_for_brent, lower, upper, 1e-6);
+
+  if (unknown == ACC_DUR) {
+    accrualDuration = solution;
+  } else if (unknown == FUP_TIME && curtailed) {
+    followupTime = 0.0;
+    accrualDuration = solution;
+  } else if (unknown == FUP_TIME && expanded) {
+    followupTime = milestone;
+    accrualDuration = solution;
+  } else if (unknown == FUP_TIME && !curtailed && !expanded) {
+    followupTime = solution;
+  } else { // scaled multiplier for accrualIntensity
+    for (double &v : accrualInt) v *= solution;
+  }
+
+  double studyDuration = accrualDuration + followupTime;
+
+  // --- rounding to integer N (adjust intensity or accrualDuration) ---
+  if (rounding) {
+    double n0 = accrual1(studyDuration, accrualTime, accrualInt, accrualDuration);
+    double n = std::ceil(n0 - 1.0e-12);
+
+    if (n - n0 > 1e-6) {
+      if (unknown == ACC_INT) { // scale intensity to hit integer n
+        double mult = n / n0;
+        for (double& v : accrualInt) v *= mult;
+      } else { // adjust accrualDuration to hit integer n
+        accrualDuration = getAccrualDurationFromN1(n, accrualTime, accrualInt);
+      }
+
+      if (!fixedFollowup) {
+        // variable follow-up: adjust follow-up time to match maxInformation
+        auto h = [&](double x)->double {
+          double t = accrualDuration + x;
+          return info_minus_target_H1(t, accrualDuration, x, accrualInt);
+        };
+        double lower = std::max(milestone - accrualDuration, 0.0) + 0.001;
+        followupTime = brent(h, lower, followupTime, 1.0e-6);
+        studyDuration = accrualDuration + followupTime;
+      } else {
+        // fixed follow-up: adjust studyDuration by extending post-accrual time
+        auto h = [&](double x)->double {
+          double t = accrualDuration + x;
+          return info_minus_target_H1(t, accrualDuration, followupTime, accrualInt);
+        };
+        double lower = std::max(milestone - accrualDuration, 0.0) + 0.001;
+        double extra = brent(h, lower, followupTime, 1.0e-6);
+        studyDuration = accrualDuration + extra;
+      }
+    }
+  }
+
+  // --- Results under H1 ---
+  ListCpp resultsH1 = kmpowercpp(
+    kMax, infoRates, effStopping, futStopping,
+    critValues, alpha1, typeAlphaSpending,
+    parameterAlphaSpending, userAlphaSpending,
+    futBounds, typeBetaSpending, parameterBetaSpending,
+    milestone, survDiffH0, allocationRatioPlanned,
+    accrualTime, accrualInt,
+    piecewiseSurvivalTime, stratumFraction,
+    lambda1, lambda2, gamma1, gamma2,
+    accrualDuration, followupTime, fixedFollowup,
+    spendingTime, studyDuration);
+
+  // refresh maxInformation from H1 power results    {
+  DataFrameCpp overallResultsH1 = resultsH1.get<DataFrameCpp>("overallResults");
+  maxInformation = overallResultsH1.get<double>("information")[0];
+
+
+  // --- Construct lambda1 under H0 (scale lambda2 to match survDiffH0) ---
+  // Solve for multiplier a s.t. weighted_surv1(a*lambda2) - surv2 - survDiffH0 == 0
+  auto f_surv = [&](double aval)->double {
+    double surv1H0 = 0.0;
+    for (std::size_t h = 0; h < nstrata; ++h) {
+      auto lam1H0 = lambda2x[h]; // build per-stratum scaled lambda
+      for (double &v : lam1H0) v *= aval;
+      double p1 = patrisk1(milestone, tau, lam1H0, zerogam);
+      surv1H0 += stratumFraction[h] * p1;
+    }
+    return surv1H0 - surv2 - survDiffH0;
+  };
+
+  double lo = 0.001, hi = 2.0;
+  double flo = f_surv(lo);
+  double fhi = f_surv(hi);
+  int it = 0;
+  while (flo * fhi > 0.0) {
+    hi *= 2.0;
+    fhi = f_surv(hi);
+    if (++it > 60) throw std::runtime_error(
+        "Unable to bracket lambda1H0 multiplier");
+  }
+  double multH0 = brent(f_surv, lo, hi, 1.0e-6);
+
+  std::vector<double> lambda1H0 = lambda2;
+  for (double &v : lambda1H0) v *= multH0;
+  auto lambda1H0x = expand_stratified(lambda1H0, nstrata, nintervals, "lambda1H0");
+
+  // Helper: compute information under H0 given accrualDuration (accrDur),
+  // followupTime (fu), and accrualIntensity (accrInt).
+  auto info_minus_target_H0 = [&](double t, double accrDur, double fu,
+                                  const std::vector<double>& accrInt) {
+    DataFrameCpp km1 = kmstat1cpp(
+      t, milestone, allocationRatioPlanned,
+      accrualTime, accrInt,
+      piecewiseSurvivalTime, stratumFraction,
+      lambda1H0x, lambda2x, gamma1x, gamma2x,
+      accrDur, fu, fixedFollowup);
+
+    const auto& vs1 = km1.get<double>("vsurv1");
+    const auto& vs2 = km1.get<double>("vsurv2");
+    double vsurv1 = 0.0, vsurv2 = 0.0;
+    for (size_t i = 0; i < nstrata; ++i) {
+      vsurv1 += stratumFraction[i] * stratumFraction[i] * vs1[i];
+      vsurv2 += stratumFraction[i] * stratumFraction[i] * vs2[i];
+    }
+    double vsurvDiff = vsurv1 + vsurv2;
+    return 1.0 / vsurvDiff - maxInformation;
+  };
+
+  if (!fixedFollowup) {
+    auto h_follow = [&](double x)->double {
+      double t = accrualDuration + x;
+      return info_minus_target_H0(t, accrualDuration, x, accrualInt);
+    };
+
+    if (h_follow(0.0) > 0.0) {
+      thread_utils::push_thread_warning(
+        "Information at zero follow-up (end of enrollment) already exceeds target. "
+        "Setting followupTime = 0 and finding minimal accrualDuration.");
+
+      double lo = milestone * 1.001;
+      double hi = accrualDuration;
+      accrualDuration = brent(h_follow, lo, hi, 1.0e-6);
+      followupTime = 0.0;
+      studyDuration = accrualDuration;
+    } else if (h_follow(followupTime) < 0.0) {
+      thread_utils::push_thread_warning(
+        "The required information cannot be attained by increasing "
+        "followupTime alone. accrualDuration is also increased to "
+        "attain the required information.");
+
+      auto h_accr = [&](double x)->double {
+        double t = x + milestone;
+        return info_minus_target_H0(t, x, milestone, accrualInt);
+      };
+
+      // adjust accrualDuration upward to match target
+      double lo = accrualDuration;
+      double hi = 2.0 * accrualDuration;
+      double flo = h_accr(lo);
+      double fhi = h_accr(hi);
+      int it = 0;
+      while (flo * fhi > 0.0) {
+        hi *= 2.0;
+        fhi = h_accr(hi);
+        if (++it > 60) throw std::runtime_error(
+            "Unable to bracket accrualDuration under H0");
+      }
+      accrualDuration = brent(h_accr, lo, hi, 1.0e-6);
+      followupTime = milestone;
+      studyDuration = accrualDuration + followupTime;
+    } else {
+      // adjust follow-up time to match target
+      double lo = std::max(milestone - accrualDuration, 0.0) + 0.001;
+      double hi = milestone;
+
+      followupTime = brent(h_follow, lo, hi, 1.0e-6);
+      studyDuration = accrualDuration + followupTime;
+    }
+  } else {
+    auto h_study = [&](double x)->double {
+      double t = accrualDuration + x;
+      return info_minus_target_H0(t, accrualDuration, followupTime, accrualInt);
+    };
+
+    auto h_accr = [&](double x)->double {
+      double t = x + followupTime;
+      return info_minus_target_H0(t, x, followupTime, accrualInt);
+    };
+
+    if (h_study(0.0) > 0.0) {
+      thread_utils::push_thread_warning(
+        "Information at zero follow-up (end of enrollment) already exceeds target. "
+        "Decrease accrual druation.");
+
+      double lo = milestone * 1.001;
+      double hi = accrualDuration;
+      accrualDuration = brent(h_accr, lo, hi, 1.0e-6);
+      studyDuration = accrualDuration + followupTime;
+    } else if (h_study(followupTime) < 0.0) {
+      thread_utils::push_thread_warning(
+        "The required information cannot be attained by increasing "
+        "followupTime alone. accrualDuration is also increased to "
+        "attain the required information.");
+
+      double lo = accrualDuration;
+      double hi = 2.0 * accrualDuration;
+      double flo = h_accr(lo);
+      double fhi = h_accr(hi);
+      int it = 0;
+      while (flo * fhi > 0.0) {
+        hi *= 2.0;
+        fhi = h_accr(hi);
+        if (++it > 60) throw std::runtime_error(
+            "Unable to bracket accrualDuration under H0");
+      }
+      accrualDuration = brent(h_accr, lo, hi, 1.0e-6);
+      studyDuration = accrualDuration + followupTime;
+    } else {
+      double lo = std::max(milestone - accrualDuration, 0.0) + 0.001;
+      double hi = std::min(milestone, followupTime);
+      double extra = brent(h_study, lo, hi, 1.0e-6);
+      studyDuration = accrualDuration + extra;
+    }
+  }
+
+  // --- Results under H0 with same boundaries as H1 ---
+  ListCpp resultsH0 = kmpowercpp(
+    kMax, infoRates, effStopping, futStopping,
+    critValues, alpha1, typeAlphaSpending,
+    parameterAlphaSpending, userAlphaSpending,
+    futBounds, typeBetaSpending, parameterBetaSpending,
+    milestone, survDiffH0, allocationRatioPlanned,
+    accrualTime, accrualInt,
+    piecewiseSurvivalTime, stratumFraction,
+    lambda1H0, lambda2, gamma1, gamma2,
+    accrualDuration, followupTime, fixedFollowup,
+    spendingTime, studyDuration);
+
+  // add userBetaSpending to settings
+  if (bsf == "user") {
+    ListCpp& settingsH1 = resultsH1.get_list("settings");
+    ListCpp& settingsH0 = resultsH0.get_list("settings");
+    settingsH1.push_back(userBetaSpending, "userBetaSpending");
+    settingsH0.push_back(userBetaSpending, "userBetaSpending");
+  }
+
+  ListCpp result;
+  result.push_back(std::move(resultsH1), "resultsUnderH1");
+  result.push_back(std::move(resultsH0), "resultsUnderH0");
+
+  return result;
+}
+
+
+//' @title Sample Size for Difference in Milestone Survival Probabilities
+//' @description Obtains the needed accrual duration given power,
+//' accrual intensity, and follow-up time, the needed follow-up time
+//' given power, accrual intensity, and accrual duration, or the needed
+//' absolute accrual intensity given power, relative accrual intensity,
+//' accrual duration, and follow-up time in a two-group survival design.
+//'
+//' @param beta Type II error. Defaults to 0.2.
+//' @inheritParams param_kMax
+//' @param informationRates The information rates.
+//'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
+//' @inheritParams param_efficacyStopping
+//' @inheritParams param_futilityStopping
+//' @inheritParams param_criticalValues
+//' @inheritParams param_alpha
+//' @inheritParams param_typeAlphaSpending
+//' @inheritParams param_parameterAlphaSpending
+//' @inheritParams param_userAlphaSpending
+//' @inheritParams param_futilityBounds
+//' @inheritParams param_typeBetaSpending
+//' @inheritParams param_parameterBetaSpending
+//' @inheritParams param_userBetaSpending
+//' @param milestone The milestone time at which to calculate the survival
+//'   probability.
+//' @param survDiffH0 The difference in milestone survival probabilities
+//'   under the null hypothesis. Defaults to 0 for superiority test.
+//' @inheritParams param_allocationRatioPlanned
+//' @inheritParams param_accrualTime
+//' @inheritParams param_accrualIntensity
+//' @inheritParams param_piecewiseSurvivalTime
+//' @inheritParams param_stratumFraction
+//' @inheritParams param_lambda1_stratified
+//' @inheritParams param_lambda2_stratified
+//' @inheritParams param_gamma1_stratified
+//' @inheritParams param_gamma2_stratified
+//' @inheritParams param_accrualDuration
+//' @inheritParams param_followupTime
+//' @inheritParams param_fixedFollowup
+//' @param interval The interval to search for the solution of
+//'   accrualDuration, followupTime, or the proportionality constant
+//'   of accrualIntensity. Defaults to \code{c(0.001, 240)}.
+//' @param spendingTime A vector of length \code{kMax} for the error spending
+//'   time at each analysis. Defaults to missing, in which case, it is the
+//'   same as \code{informationRates}.
+//' @param rounding Whether to round up sample size.
+//'   Defaults to 1 for sample size rounding.
+//'
+//' @return A list of two components:
+//'
+//' * \code{resultsUnderH1}: An S3 class \code{kmpower} object under the
+//'   alternative hypothesis.
+//'
+//' * \code{resultsUnderH0}: An S3 class \code{kmpower} object under the
+//'   null hypothesis.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @seealso \code{\link{kmpower}}
+//'
+//' @examples
+//' # Example 1: Obtains follow-up time given power, accrual intensity,
+//' # and accrual duration for variable follow-up. Of note, the power
+//' # reaches the maximum when the follow-up time equals milestone.
+//'
+//' kmsamplesize(beta = 0.25, kMax = 2, informationRates = c(0.8, 1),
+//'              alpha = 0.025, typeAlphaSpending = "sfOF",
+//'              milestone = 18,
+//'              allocationRatioPlanned = 1, accrualTime = seq(0, 8),
+//'              accrualIntensity = 26/9*seq(1, 9),
+//'              piecewiseSurvivalTime = c(0, 6),
+//'              stratumFraction = c(0.2, 0.8),
+//'              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
+//'              lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+//'              gamma1 = -log(1-0.05)/12,
+//'              gamma2 = -log(1-0.05)/12, accrualDuration = 22,
+//'              followupTime = NA, fixedFollowup = FALSE)
+//'
+//' # Example 2: Obtains accrual intensity given power, accrual duration, and
+//' # follow-up time for variable follow-up
+//'
+//' kmsamplesize(beta = 0.2, kMax = 2, informationRates = c(0.8, 1),
+//'              alpha = 0.025, typeAlphaSpending = "sfOF",
+//'              milestone = 18,
+//'              allocationRatioPlanned = 1, accrualTime = seq(0, 8),
+//'              accrualIntensity = 26/9*seq(1, 9),
+//'              piecewiseSurvivalTime = c(0, 6),
+//'              stratumFraction = c(0.2, 0.8),
+//'              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
+//'              lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+//'              gamma1 = -log(1-0.05)/12,
+//'              gamma2 = -log(1-0.05)/12, accrualDuration = 22,
+//'              followupTime = 18, fixedFollowup = FALSE)
+//'
+//'
+//' # Example 3: Obtains accrual duration given power, accrual intensity, and
+//' # follow-up time for fixed follow-up
+//'
+//' kmsamplesize(beta = 0.2, kMax = 2, informationRates = c(0.8, 1),
+//'              alpha = 0.025, typeAlphaSpending = "sfOF",
+//'              milestone = 18,
+//'              allocationRatioPlanned = 1, accrualTime = seq(0, 8),
+//'              accrualIntensity = 26/9*seq(1, 9),
+//'              piecewiseSurvivalTime = c(0, 6),
+//'              stratumFraction = c(0.2, 0.8),
+//'              lambda1 = c(0.0533, 0.0309, 1.5*0.0533, 1.5*0.0309),
+//'              lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
+//'              gamma1 = -log(1-0.05)/12,
+//'              gamma2 = -log(1-0.05)/12, accrualDuration = NA,
+//'              followupTime = 18, fixedFollowup = TRUE)
+//'
+//' @export
+// [[Rcpp::export]]
+Rcpp::List kmsamplesize(
+    const double beta = 0.2,
+    const int kMax = 1,
+    const Rcpp::NumericVector& informationRates = NA_REAL,
+    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
+    const Rcpp::LogicalVector& futilityStopping = NA_LOGICAL,
+    const Rcpp::NumericVector& criticalValues = NA_REAL,
+    const double alpha = 0.025,
+    const std::string& typeAlphaSpending = "sfOF",
+    const double parameterAlphaSpending = NA_REAL,
+    const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
+    const Rcpp::NumericVector& futilityBounds = NA_REAL,
+    const std::string& typeBetaSpending = "none",
+    const double parameterBetaSpending = NA_REAL,
+    const Rcpp::NumericVector& userBetaSpending = NA_REAL,
+    const double milestone = NA_REAL,
+    const double survDiffH0 = 0,
+    const double allocationRatioPlanned = 1,
+    const Rcpp::NumericVector& accrualTime = 0,
+    const Rcpp::NumericVector& accrualIntensity = NA_REAL,
+    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
+    const Rcpp::NumericVector& stratumFraction = 1,
+    const Rcpp::NumericVector& lambda1 = NA_REAL,
+    const Rcpp::NumericVector& lambda2 = NA_REAL,
+    const Rcpp::NumericVector& gamma1 = 0,
+    const Rcpp::NumericVector& gamma2 = 0,
+    double accrualDuration = NA_REAL,
+    double followupTime = NA_REAL,
+    const bool fixedFollowup = false,
+    const Rcpp::NumericVector& spendingTime = NA_REAL,
+    const bool rounding = true) {
+
+  auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
+  auto effStopping = convertLogicalVector(efficacyStopping);
+  auto futStopping = convertLogicalVector(futilityStopping);
+  auto critValues = Rcpp::as<std::vector<double>>(criticalValues);
+  auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
+  auto futBounds = Rcpp::as<std::vector<double>>(futilityBounds);
+  auto userBeta = Rcpp::as<std::vector<double>>(userBetaSpending);
+  auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
+  auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
+  auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto stratumFrac = Rcpp::as<std::vector<double>>(stratumFraction);
+  auto lam1 = Rcpp::as<std::vector<double>>(lambda1);
+  auto lam2 = Rcpp::as<std::vector<double>>(lambda2);
+  auto gam1 = Rcpp::as<std::vector<double>>(gamma1);
+  auto gam2 = Rcpp::as<std::vector<double>>(gamma2);
+  auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
+
+  auto out = kmsamplesizecpp(
+    beta, kMax, infoRates, effStopping, futStopping,
+    critValues, alpha, typeAlphaSpending,
+    parameterAlphaSpending, userAlpha,
+    futBounds, typeBetaSpending, parameterBetaSpending,
+    userBeta, milestone, survDiffH0, allocationRatioPlanned,
+    accrualT, accrualInt, pwSurvT, stratumFrac,
+    lam1, lam2, gam1, gam2,
+    accrualDuration, followupTime, fixedFollowup,
+    spendTime, rounding);
+
+  ListCpp resultsUnderH1 = out.get_list("resultsUnderH1");
+  ListCpp resultsUnderH0 = out.get_list("resultsUnderH0");
+
+  Rcpp::List resultsH1 = Rcpp::wrap(resultsUnderH1);
+  Rcpp::List resultsH0 = Rcpp::wrap(resultsUnderH0);
+
+  resultsH1.attr("class") = "kmpower";
+  resultsH0.attr("class") = "kmpower";
+
+  return Rcpp::List::create(
+    Rcpp::Named("resultsUnderH1") = resultsH1,
+    Rcpp::Named("resultsUnderH0") = resultsH0
+  );
+}
