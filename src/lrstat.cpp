@@ -2496,7 +2496,6 @@ ListCpp lrsamplesizecpp(
     const double rho2,
     const bool estimateHazardRatio,
     const std::string& typeOfComputation,
-    const std::vector<double>& interval,
     const std::vector<double>& spendingTime,
     const bool rounding = true) {
 
@@ -2706,13 +2705,6 @@ ListCpp lrsamplesizecpp(
 
   if (rho1 < 0.0) throw std::invalid_argument("rho1 must be non-negative");
   if (rho2 < 0.0) throw std::invalid_argument("rho2 must be non-negative");
-
-  if (interval.size() != 2)
-    throw std::invalid_argument("interval must have 2 elements");
-  if (interval[0] < 0)
-    throw std::invalid_argument("lower limit of interval must be positive");
-  if (interval[0] >= interval[1])
-    throw std::invalid_argument("upper limit must exceed lower limit for interval");
 
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
@@ -3128,11 +3120,11 @@ ListCpp lrsamplesizecpp(
   double lower, upper;
   if (curtailed) {
     // we will search for minimal accrualDuration with followupTime fixed at 0
-    lower = 1e-6;
+    lower = 0.001;
     upper = accrualDuration;
   } else {
-    lower = interval[0];
-    upper = interval[1];
+    lower = 0.001;
+    upper = 120;
   }
 
   // expand upper if needed to ensure root is bracketed
@@ -3617,10 +3609,6 @@ ListCpp lrsamplesizecpp(
 //' @inheritParams param_rho2
 //' @inheritParams param_estimateHazardRatio
 //' @inheritParams param_typeOfComputation
-//' @param interval The interval to search for the solution of
-//'   accrualDuration, followupTime, or the proportionality constant
-//'   of accrualIntensity. Defaults to \code{c(0.001, 240)}. Adjustment
-//'   may be needed for non-monotone relationship with study power.
 //' @param spendingTime A vector of length \code{kMax} for the error spending
 //'   time at each analysis. Defaults to missing, in which case, it is the
 //'   same as \code{informationRates}.
@@ -3725,7 +3713,6 @@ Rcpp::List lrsamplesize(
     const double rho2 = 0,
     const bool estimateHazardRatio = true,
     const std::string& typeOfComputation = "",
-    const Rcpp::NumericVector& interval = Rcpp::NumericVector::create(0.001, 240),
     const Rcpp::NumericVector& spendingTime = NA_REAL,
     const bool rounding = true) {
 
@@ -3744,7 +3731,6 @@ Rcpp::List lrsamplesize(
   auto lam2 = Rcpp::as<std::vector<double>>(lambda2);
   auto gam1 = Rcpp::as<std::vector<double>>(gamma1);
   auto gam2 = Rcpp::as<std::vector<double>>(gamma2);
-  auto intv = Rcpp::as<std::vector<double>>(interval);
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
 
   auto out = lrsamplesizecpp(
@@ -3758,7 +3744,7 @@ Rcpp::List lrsamplesize(
     lam1, lam2, gam1, gam2,
     accrualDuration, followupTime, fixedFollowup,
     rho1, rho2, estimateHazardRatio,
-    typeOfComputation, intv, spendTime, rounding);
+    typeOfComputation, spendTime, rounding);
 
   ListCpp resultsUnderH1 = out.get_list("resultsUnderH1");
   ListCpp resultsUnderH0 = out.get_list("resultsUnderH0");
@@ -4686,7 +4672,6 @@ ListCpp lrsamplesizeequivcpp(
     double followupTime,
     const bool fixedFollowup,
     const std::string& typeOfComputation,
-    const std::vector<double>& interval,
     const std::vector<double>& spendingTime,
     const bool rounding) {
 
@@ -4828,13 +4813,6 @@ ListCpp lrsamplesizeequivcpp(
         "followupTime must be non-negative for variable follow-up");
   if (fixedFollowup && std::isnan(followupTime))
     throw std::invalid_argument("followupTime must be provided for fixed follow-up");
-
-  if (interval.size() != 2)
-    throw std::invalid_argument("interval must have 2 elements");
-  if (interval[0] < 0)
-    throw std::invalid_argument("lower limit of interval must be positive");
-  if (interval[0] >= interval[1])
-    throw std::invalid_argument("upper limit must exceed lower limit for interval");
 
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
@@ -5153,11 +5131,11 @@ ListCpp lrsamplesizeequivcpp(
   double lower, upper;
   if (curtailed) {
     // we will search for minimal accrualDuration with followupTime fixed at 0
-    lower = 1e-6;
+    lower = 0.001;
     upper = accrualDuration;
   } else {
-    lower = interval[0];
-    upper = interval[1];
+    lower = 0.001;
+    upper = 120;
   }
 
   // expand upper if needed to ensure root is bracketed
@@ -5336,9 +5314,6 @@ ListCpp lrsamplesizeequivcpp(
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
 //' @inheritParams param_typeOfComputation
-//' @param interval The interval to search for the solution of
-//'   accrualDuration, followupDuration, or the proportionality constant
-//'   of accrualIntensity. Defaults to \code{c(0.001, 240)}.
 //' @param spendingTime A vector of length \code{kMax} for the error spending
 //'   time at each analysis. Defaults to missing, in which case, it is the
 //'   same as \code{informationRates}.
@@ -5391,7 +5366,6 @@ Rcpp::List lrsamplesizeequiv(
     double followupTime = NA_REAL,
     const bool fixedFollowup = 0,
     const std::string& typeOfComputation = "direct",
-    const Rcpp::NumericVector& interval = Rcpp::NumericVector::create(0.001, 240),
     const Rcpp::NumericVector& spendingTime = NA_REAL,
     const bool rounding = true) {
 
@@ -5406,7 +5380,6 @@ Rcpp::List lrsamplesizeequiv(
   auto lam2 = Rcpp::as<std::vector<double>>(lambda2);
   auto gam1 = Rcpp::as<std::vector<double>>(gamma1);
   auto gam2 = Rcpp::as<std::vector<double>>(gamma2);
-  auto intv = Rcpp::as<std::vector<double>>(interval);
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
 
   auto out = lrsamplesizeequivcpp(
@@ -5417,7 +5390,7 @@ Rcpp::List lrsamplesizeequiv(
     pwSurvT, stratumFrac,
     lam1, lam2, gam1, gam2,
     accrualDuration, followupTime, fixedFollowup,
-    typeOfComputation, intv, spendTime, rounding);
+    typeOfComputation, spendTime, rounding);
 
   Rcpp::List result = Rcpp::wrap(out);
   result.attr("class") = "lrpowerequiv";
