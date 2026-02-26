@@ -3392,6 +3392,8 @@ Rcpp::List lrsim2e(
     plannedE, plannedT, maxNumberOfIterations,
     maxNumberOfRawDatasetsPerStage, seed);
 
+  thread_utils::drain_thread_warnings_to_R();
+
   return Rcpp::wrap(out);
 }
 
@@ -4824,6 +4826,8 @@ Rcpp::List lrsim2e3a(
     followupTime, fixedFollowup, rho1, rho2, plannedE, plannedT,
     maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed);
 
+  thread_utils::drain_thread_warnings_to_R();
+
   return Rcpp::wrap(out);
 }
 
@@ -5981,6 +5985,8 @@ Rcpp::List lrsimsub(
     n, followupTime, fixedFollowup, rho1, rho2,
     plannedE, plannedT, maxNumberOfIterations,
     maxNumberOfRawDatasetsPerStage, seed);
+
+  thread_utils::drain_thread_warnings_to_R();
 
   return Rcpp::wrap(out);
 }
@@ -7392,6 +7398,8 @@ Rcpp::List binary_tte_sim(
     pi1v, pi2v, lam1, lam2, gam1, gam2, del1, del2,
     upper1, upper2, n, plannedT, plannedE,
     maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed);
+
+  thread_utils::drain_thread_warnings_to_R();
 
   return Rcpp::wrap(out);
 }
