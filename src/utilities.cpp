@@ -321,6 +321,13 @@ std::vector<int> findInterval3(const std::vector<double>& x,
   return out;
 }
 
+
+double extract_sum(const DataFrameCpp& df, const char* name) {
+  auto vec = df.get<double>(name);
+  return std::accumulate(vec.begin(), vec.end(), 0.0);
+};
+
+
 // --------------------------- Root finders -----------------------------------
 double brent(const std::function<double(double)>& f,
              double x1, double x2, double tol, int maxiter) {
@@ -794,26 +801,6 @@ double integrate3(
 }
 
 
-// Numerical integration of f over [lower, upper] with specified tolerance.
-// - tol is absolute tolerance; relative behavior depends on integrator.
-// - maxiter is max subdivisions/recursions for the GK integrator.
-double quad(const std::function<double(double)>& f,
-            double lower, double upper,
-            double tol, unsigned maxiter) {
-
-  // Both finite -> use Gauss-Kronrod (good default for finite intervals)
-  if (!std::isinf(lower) && !std::isinf(upper)) {
-    // Use 15-point GK rule (common choice)
-    boost::math::quadrature::gauss_kronrod<double, 15> integrator;
-    return integrator.integrate(f, lower, upper, maxiter, tol);
-  }
-
-  // Any endpoint infinite -> use tanh-sinh which handles infinite endpoints well
-  // tanh_sinh::integrate accepts infinite endpoints (pass +/- inf)
-  boost::math::quadrature::tanh_sinh<double> integrator;
-  return integrator.integrate(f, lower, upper, tol);
-}
-
 
 // 2D adaptive quadrature using 3x3 and 5x5 tensor-product Gauss rules
 // 1D Gauss nodes
@@ -966,7 +953,8 @@ double pbvnormcpp(std::vector<double>& lower,
     double t2 = boost_pnorm(b) - boost_pnorm(a);
     return t1 * t2;
   };
-  return quad(f, lower[0], upper[0]);
+  std::vector<double> breaks = {lower[0], upper[0]};
+  return integrate3(f, breaks, 1e-8, 1000);
 }
 
 
@@ -1101,8 +1089,9 @@ ListCpp m_pfs(const std::vector<double>& piecewiseSurvivalTime,
   };
 
   double tol = 1e-5;
-  double m1 = quad(fm_pfs, 0.0, upper, tol);
-  double m2 = quad(fm2_pfs, 0.0, upper, tol);
+  std::vector<double> breaks = {0.0, upper};
+  double m1 = integrate3(fm_pfs, breaks, tol);
+  double m2 = integrate3(fm2_pfs, breaks, tol);
 
   ListCpp result;
   result.push_back(m1, "mean");

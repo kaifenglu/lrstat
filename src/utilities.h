@@ -170,6 +170,8 @@ inline void mean_sd(const double* data, int n, double &omean, double &osd) {
   mean_sd(data, static_cast<size_t>(n), omean, osd);
 }
 
+double extract_sum(const DataFrameCpp& df, const char* name);
+
 // --------------------------- Root finders -----------------------------------
 double brent(const std::function<double(double)>& f,
              double x1, double x2, double tol = 1e-8, int maxiter = 100);
@@ -391,10 +393,6 @@ double integrate3(
     const std::function<double(double)>& f,
     const std::vector<double>& breaks,
     double tol = 1e-8, unsigned maxiter = 100);
-
-double quad(const std::function<double(double)>& f,
-            double lower, double upper,
-            double tol = 1e-8, unsigned maxiter = 100);
 
 double quad2d(const std::function<double(double,double)>& f,
               double ax, double bx, double ay, double by,
