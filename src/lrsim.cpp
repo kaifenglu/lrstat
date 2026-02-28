@@ -379,8 +379,6 @@ ListCpp lrsimcpp(
 
           u = unif(rng_local);
           int j = findInterval1(u, cumF);
-          if (j < 0) j = 0;
-          if (static_cast<size_t>(j) >= nstrata) j = static_cast<int>(nstrata) - 1;
           stratum[i] = j + 1;
 
           u = unif(rng_local);
@@ -1498,8 +1496,6 @@ ListCpp lrsim3acpp(
 
           u = unif(rng_local);
           int j = findInterval1(u, cumF);
-          if (j < 0) j = 0;
-          if (static_cast<size_t>(j) >= nstrata) j = static_cast<int>(nstrata) - 1;
           stratum[i] = j + 1;
 
           // stratified block randomization among 3 arms
@@ -2611,8 +2607,6 @@ ListCpp lrsim2ecpp(
 
           u = unif(rng_local);
           int j = findInterval1(u, cumF);
-          if (j < 0) j = 0;
-          if (static_cast<size_t>(j) >= nstrata) j = static_cast<int>(nstrata) - 1;
           stratum[i] = j + 1;
 
           u = unif(rng_local);
@@ -3882,8 +3876,6 @@ ListCpp lrsim2e3acpp(
 
           u = unif(rng_local);
           int j = findInterval1(u, cumF);
-          if (j < 0) j = 0;
-          if (static_cast<size_t>(j) >= nstrata) j = static_cast<int>(nstrata) - 1;
           stratum[i] = j + 1;
 
           // stratified block randomization among 3 arms
@@ -5272,8 +5264,6 @@ ListCpp lrsimsubcpp(
 
           u = unif(rng_local);
           int j = findInterval1(u, cumF);
-          if (j < 0) j = 0;
-          if (static_cast<size_t>(j) >= nstrata) j = static_cast<int>(nstrata) - 1;
           stratum[i] = j + 1;
 
           // biomarker
@@ -6386,8 +6376,6 @@ ListCpp binary_tte_sim_cpp(
 
           u = unif(rng_local);
           int j = findInterval1(u, cumF);
-          if (j < 0) j = 0;
-          if (static_cast<size_t>(j) >= nstrata) j = static_cast<int>(nstrata) - 1;
           stratum[i] = j + 1;
 
           // randomization
