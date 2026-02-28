@@ -2,7 +2,6 @@
 #include "generic_design.h"
 #include "utilities.h"
 #include "dataframe_list.h"
-#include "thread_utils.h"
 
 #include <algorithm>
 #include <cctype>
@@ -165,7 +164,7 @@ Rcpp::NumericVector kmsurv(
 }
 
 
-std::vector<double> make_breaks(
+std::vector<double> lr_make_breaks(
     const std::vector<double>& piecewiseSurvivalTime,
     const std::vector<double>& accrualTime,
     const double accrualDuration,
@@ -284,9 +283,9 @@ DataFrameCpp lrstat0cpp(
   double accrualDuration0 = std::min(time, accrualDuration);
   double minFollowupTime0 = std::max(time - accrualDuration, 0.0);
   double maxFollowupTime0 = std::min(time, maxFollowupTime);
-  auto breaks = make_breaks(piecewiseSurvivalTime, accrualTime,
-                            accrualDuration0, minFollowupTime0,
-                            maxFollowupTime0);
+  auto breaks = lr_make_breaks(piecewiseSurvivalTime, accrualTime,
+                               accrualDuration0, minFollowupTime0,
+                               maxFollowupTime0);
   double tol = 1e-6;
 
   // loop strata
@@ -457,12 +456,6 @@ DataFrameCpp lrstat0cpp(
 }
 
 
-double extract_lr(const DataFrameCpp& df, const char* name) {
-  auto vec = df.get<double>(name);
-  return std::accumulate(vec.begin(), vec.end(), 0.0);
-};
-
-
 DataFrameCpp lrstat1cpp(
     const double time,
     const double hazardRatioH0,
@@ -494,16 +487,16 @@ DataFrameCpp lrstat1cpp(
   );
 
   // sums over strata
-  double subjects = extract_lr(df, "subjects");
-  double nevents = extract_lr(df, "nevents");
-  double nevents1 = extract_lr(df, "nevents1");
-  double nevents2 = extract_lr(df, "nevents2");
-  double ndropouts = extract_lr(df, "ndropouts");
-  double ndropouts1 = extract_lr(df, "ndropouts1");
-  double ndropouts2 = extract_lr(df, "ndropouts2");
-  double nfmax = extract_lr(df, "nfmax");
-  double nfmax1 = extract_lr(df, "nfmax1");
-  double nfmax2 = extract_lr(df, "nfmax2");
+  double subjects = extract_sum(df, "subjects");
+  double nevents = extract_sum(df, "nevents");
+  double nevents1 = extract_sum(df, "nevents1");
+  double nevents2 = extract_sum(df, "nevents2");
+  double ndropouts = extract_sum(df, "ndropouts");
+  double ndropouts1 = extract_sum(df, "ndropouts1");
+  double ndropouts2 = extract_sum(df, "ndropouts2");
+  double nfmax = extract_sum(df, "nfmax");
+  double nfmax1 = extract_sum(df, "nfmax1");
+  double nfmax2 = extract_sum(df, "nfmax2");
 
   DataFrameCpp out;
   out.push_back(time, "time");
@@ -519,8 +512,8 @@ DataFrameCpp lrstat1cpp(
   out.push_back(nfmax2, "nfmax2");
 
   if (!predictEventOnly) {
-    double uscore = extract_lr(df, "uscore");
-    double vscore = extract_lr(df, "vscore");
+    double uscore = extract_sum(df, "uscore");
+    double vscore = extract_sum(df, "vscore");
     double logRankZ = vscore > 0.0 ? uscore / std::sqrt(vscore) : 0.0;
 
     out.push_back(uscore, "uscore");
@@ -544,7 +537,7 @@ DataFrameCpp lrstat1cpp(
         accrualDuration, followupTime, fixedFollowup,
         rho1, rho2, false
       );
-      return extract_lr(lr, "uscore");
+      return extract_sum(lr, "uscore");
     };
 
     double logHR = brent(g, -4.6, 4.6, 1.0e-6);
@@ -559,8 +552,8 @@ DataFrameCpp lrstat1cpp(
       rho1, rho2, false
     );
 
-    double vscore1 = extract_lr(lr1, "vscore");
-    double iscore1 = extract_lr(lr1, "iscore");
+    double vscore1 = extract_sum(lr1, "vscore");
+    double iscore1 = extract_sum(lr1, "iscore");
     double vlogHR = 0.0, zlogHR = 0.0;
     if (iscore1 != 0.0) {
       vlogHR = vscore1 / (iscore1 * iscore1);
@@ -914,7 +907,7 @@ double caltime1cpp(
       accrualDuration, followupTime, fixedFollowup,
       0.0, 0.0, true
     );
-    return extract_lr(df, "nevents") - nevents;
+    return extract_sum(df, "nevents") - nevents;
   };
 
   // initial feasibility check: use maximum target event
@@ -1195,7 +1188,7 @@ DataFrameCpp getDurationFromNeventscpp(
       accrdur, futime, fixedFollowup,
       0.0, 0.0, true
     );
-    return extract_lr(df, "nevents");
+    return extract_sum(df, "nevents");
   };
 
   // 1) find minimal accrualDuration t[0] such that with Tf1 we reach nevents
@@ -1398,13 +1391,9 @@ ListCpp lrpowercpp(
     const std::vector<double>& spendingTime,
     const double studyDuration) {
 
-  // --- Input validation & normalization -------------------
-  if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
-
-  if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1)) {
+  if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1))
     throw std::invalid_argument("alpha must lie in [0.00001, 1)");
-  }
-
+  if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
   size_t K = static_cast<size_t>(kMax);
 
   // informationRates: default to (1:kMax)/kMax if missing
@@ -1450,7 +1439,6 @@ ListCpp lrpowercpp(
 
   bool missingCriticalValues = !none_na(criticalValues);
   bool missingFutilityBounds = !none_na(futilityBounds);
-
   if (!missingCriticalValues && criticalValues.size() != K) {
     throw std::invalid_argument("Invalid length for criticalValues");
   }
@@ -1475,7 +1463,6 @@ ListCpp lrpowercpp(
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
     throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
   }
-
   if (missingCriticalValues && asf == "user") {
     if (!none_na(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be specified");
@@ -1488,7 +1475,6 @@ ListCpp lrpowercpp(
     if (userAlphaSpending[K-1] != alpha)
       throw std::invalid_argument("userAlphaSpending must end with specified alpha");
   }
-
   if (!missingFutilityBounds) {
     if (!(futilityBounds.size() == K - 1 || futilityBounds.size() == K)) {
       throw std::invalid_argument("Invalid length for futilityBounds");
@@ -1510,7 +1496,6 @@ ListCpp lrpowercpp(
   for (char &c : bsf) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
-
   if (missingFutilityBounds && !(bsf == "sfof" || bsf == "sfp" ||
       bsf == "sfkd" || bsf == "sfhsd" || bsf == "none")) {
     throw std::invalid_argument("Invalid value for typeBetaSpending");
@@ -1521,18 +1506,14 @@ ListCpp lrpowercpp(
   if (bsf == "sfkd" && parameterBetaSpending <= 0.0) {
     throw std::invalid_argument("parameterBetaSpending must be positive for sfKD");
   }
-
   if (hazardRatioH0 <= 0.0)
     throw std::invalid_argument("hazardRatioH0 must be positive");
-
   if (allocationRatioPlanned <= 0.0)
     throw std::invalid_argument("allocationRatioPlanned must be positive");
-
   if (accrualTime[0] != 0.0)
     throw std::invalid_argument("accrualTime must start with 0");
   if (any_nonincreasing(accrualTime))
     throw std::invalid_argument("accrualTime should be increasing");
-
   if (!none_na(accrualIntensity))
     throw std::invalid_argument("accrualIntensity must be provided");
   if (accrualIntensity.size() != accrualTime.size())
@@ -1540,7 +1521,6 @@ ListCpp lrpowercpp(
   for (double v : accrualIntensity) {
     if (v < 0.0) throw std::invalid_argument("accrualIntensity must be non-negative");
   }
-
   if (piecewiseSurvivalTime[0] != 0.0)
     throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
   if (any_nonincreasing(piecewiseSurvivalTime))
@@ -1568,21 +1548,10 @@ ListCpp lrpowercpp(
   for (double v : gamma2) {
     if (v < 0.0) throw std::invalid_argument("gamma2 must be non-negative");
   }
-
-  // expand stratified rates
-  size_t nstrata = stratumFraction.size();
-  size_t nintv = piecewiseSurvivalTime.size();
-  size_t nsi = nstrata * nintv;
-  auto lambda1x = expand_stratified(lambda1, nstrata, nintv, "lambda1");
-  auto lambda2x = expand_stratified(lambda2, nstrata, nintv, "lambda2");
-  auto gamma1x = expand_stratified(gamma1, nstrata, nintv, "gamma1");
-  auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
-
   if (std::isnan(accrualDuration))
     throw std::invalid_argument("accrualDuration must be provided");
   if (accrualDuration <= 0.0)
     throw std::invalid_argument("accrualDuration must be positive");
-
   if (std::isnan(followupTime))
     throw std::invalid_argument("followupTime must be provided");
   if (fixedFollowup && followupTime <= 0.0)
@@ -1590,7 +1559,11 @@ ListCpp lrpowercpp(
   if (!fixedFollowup && followupTime < 0.0)
     throw std::invalid_argument(
         "followupTime must be non-negative for variable follow-up");
-
+  if (!std::isnan(studyDuration) && studyDuration < accrualDuration)
+    throw std::invalid_argument("studyDuration must be >= accrualDuration");
+  if (!std::isnan(studyDuration) && studyDuration > accrualDuration + followupTime)
+    throw std::invalid_argument(
+        "studyDuration must be <= accrualDuration + followupTime");
   if (rho1 < 0.0) throw std::invalid_argument("rho1 must be non-negative");
   if (rho2 < 0.0) throw std::invalid_argument("rho2 must be non-negative");
 
@@ -1609,13 +1582,14 @@ ListCpp lrpowercpp(
     spendTime = infoRates;
   }
 
-  if (fixedFollowup && !std::isnan(studyDuration) &&
-      (studyDuration < accrualDuration))
-    throw std::invalid_argument("studyDuration must be >= accrualDuration");
-  if (fixedFollowup && !std::isnan(studyDuration) &&
-      (studyDuration > accrualDuration + followupTime))
-    throw std::invalid_argument(
-        "studyDuration must be <= accrualDuration + followupTime");
+  // expand stratified rates
+  size_t nstrata = stratumFraction.size();
+  size_t nintv = piecewiseSurvivalTime.size();
+  size_t nsi = nstrata * nintv;
+  auto lambda1x = expand_stratified(lambda1, nstrata, nintv, "lambda1");
+  auto lambda2x = expand_stratified(lambda2, nstrata, nintv, "lambda2");
+  auto gamma1x = expand_stratified(gamma1, nstrata, nintv, "gamma1");
+  auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
 
 
   // --- Determine if Schoenfeld method is eligible-----------------------------
@@ -1719,7 +1693,7 @@ ListCpp lrpowercpp(
   std::vector<double> time(K), nsubjects(K), nsubjects1(K), nsubjects2(K);
   std::vector<double> nevents(K), nevents1(K), nevents2(K);
   std::vector<double> ndropouts(K), ndropouts1(K), ndropouts2(K);
-  std::vector<double> theta(K), info(K);
+  std::vector<double> theta(K), I(K);
 
   if (rho1 == 0 && rho2 == 0) {
     // ordinary log-rank test: can directly use information = phi*(1-phi)*events
@@ -1736,27 +1710,27 @@ ListCpp lrpowercpp(
       accrualDuration, followupTime, fixedFollowup,
       rho1, rho2, predictEventOnly);
 
-    double totalEvents = extract_lr(lr_end, "nevents");
+    double totalEvents = extract_sum(lr_end, "nevents");
 
     time[K - 1] = studyDuration1;
-    nsubjects[K - 1] = extract_lr(lr_end, "subjects");
+    nsubjects[K - 1] = extract_sum(lr_end, "subjects");
     nsubjects1[K - 1] = phi * nsubjects[K - 1];
     nsubjects2[K - 1] = (1.0 - phi) * nsubjects[K - 1];
     nevents[K - 1] = totalEvents;
-    nevents1[K - 1] = extract_lr(lr_end, "nevents1");
-    nevents2[K - 1] = extract_lr(lr_end, "nevents2");
-    ndropouts[K - 1] = extract_lr(lr_end, "ndropouts");
-    ndropouts1[K - 1] = extract_lr(lr_end, "ndropouts1");
-    ndropouts2[K - 1] = extract_lr(lr_end, "ndropouts2");
+    nevents1[K - 1] = extract_sum(lr_end, "nevents1");
+    nevents2[K - 1] = extract_sum(lr_end, "nevents2");
+    ndropouts[K - 1] = extract_sum(lr_end, "ndropouts");
+    ndropouts1[K - 1] = extract_sum(lr_end, "ndropouts1");
+    ndropouts2[K - 1] = extract_sum(lr_end, "ndropouts2");
 
     if (su1 == 's') {
       theta[K - 1] = theta1;
-      info[K - 1] = vtrt * totalEvents;
+      I[K - 1] = vtrt * totalEvents;
     } else {
-      double uscore = extract_lr(lr_end, "uscore");
-      double vscore = extract_lr(lr_end, "vscore");
+      double uscore = extract_sum(lr_end, "uscore");
+      double vscore = extract_sum(lr_end, "vscore");
       theta[K - 1] = -uscore / vscore;
-      info[K - 1] = vscore;
+      I[K - 1] = vscore;
     }
 
     // for interim analyses
@@ -1778,24 +1752,24 @@ ListCpp lrpowercpp(
         accrualDuration, followupTime, fixedFollowup,
         rho1, rho2, predictEventOnly);
 
-      nsubjects[i] = extract_lr(lr_i, "subjects");
+      nsubjects[i] = extract_sum(lr_i, "subjects");
       nsubjects1[i] = phi * nsubjects[i];
       nsubjects2[i] = (1.0 - phi) * nsubjects[i];
       nevents[i] = nevents_target;
-      nevents1[i] = extract_lr(lr_i, "nevents1");
-      nevents2[i] = extract_lr(lr_i, "nevents2");
-      ndropouts[i] = extract_lr(lr_i, "ndropouts");
-      ndropouts1[i] = extract_lr(lr_i, "ndropouts1");
-      ndropouts2[i] = extract_lr(lr_i, "ndropouts2");
+      nevents1[i] = extract_sum(lr_i, "nevents1");
+      nevents2[i] = extract_sum(lr_i, "nevents2");
+      ndropouts[i] = extract_sum(lr_i, "ndropouts");
+      ndropouts1[i] = extract_sum(lr_i, "ndropouts1");
+      ndropouts2[i] = extract_sum(lr_i, "ndropouts2");
 
       if (su1 == 's') {
         theta[i] = theta1;
-        info[i] = vtrt * nevents_target;
+        I[i] = vtrt * nevents_target;
       } else {
-        double uscore1 = extract_lr(lr_i, "uscore");
-        double vscore1 = extract_lr(lr_i, "vscore");
+        double uscore1 = extract_sum(lr_i, "uscore");
+        double vscore1 = extract_sum(lr_i, "vscore");
         theta[i] = -uscore1 / vscore1;
-        info[i] = vscore1;
+        I[i] = vscore1;
       }
     }
   } else {
@@ -1808,22 +1782,22 @@ ListCpp lrpowercpp(
       accrualDuration, followupTime, fixedFollowup,
       rho1, rho2, false);
 
-    double maxInformation = extract_lr(lr_end, "vscore");
+    double maxInformation = extract_sum(lr_end, "vscore");
 
     time[K - 1] = studyDuration1;
-    nsubjects[K - 1] = extract_lr(lr_end, "subjects");
+    nsubjects[K - 1] = extract_sum(lr_end, "subjects");
     nsubjects1[K - 1] = phi * nsubjects[K - 1];
     nsubjects2[K - 1] = (1.0 - phi) * nsubjects[K - 1];
-    nevents[K - 1] = extract_lr(lr_end, "nevents");
-    nevents1[K - 1] = extract_lr(lr_end, "nevents1");
-    nevents2[K - 1] = extract_lr(lr_end, "nevents2");
-    ndropouts[K - 1] = extract_lr(lr_end, "ndropouts");
-    ndropouts1[K - 1] = extract_lr(lr_end, "ndropouts1");
-    ndropouts2[K - 1] = extract_lr(lr_end, "ndropouts2");
+    nevents[K - 1] = extract_sum(lr_end, "nevents");
+    nevents1[K - 1] = extract_sum(lr_end, "nevents1");
+    nevents2[K - 1] = extract_sum(lr_end, "nevents2");
+    ndropouts[K - 1] = extract_sum(lr_end, "ndropouts");
+    ndropouts1[K - 1] = extract_sum(lr_end, "ndropouts1");
+    ndropouts2[K - 1] = extract_sum(lr_end, "ndropouts2");
 
-    double uscore = extract_lr(lr_end, "uscore");
+    double uscore = extract_sum(lr_end, "uscore");
     theta[K - 1] = -uscore / maxInformation;
-    info[K - 1] =  maxInformation;
+    I[K - 1] =  maxInformation;
 
     // compute times by matching informationRates1 * maxInformation
     for (size_t i = 0; i < K - 1; ++i) {
@@ -1839,7 +1813,7 @@ ListCpp lrpowercpp(
           accrualDuration, followupTime, fixedFollowup,
           rho1, rho2, false);
 
-        return extract_lr(lr1, "vscore") - information1;
+        return extract_sum(lr1, "vscore") - information1;
       };
 
       time[i] = brent(g, 1e-6, studyDuration1, 1e-6);
@@ -1852,19 +1826,19 @@ ListCpp lrpowercpp(
         accrualDuration, followupTime, fixedFollowup,
         rho1, rho2, false);
 
-      nsubjects[i] = extract_lr(lr_i, "subjects");
+      nsubjects[i] = extract_sum(lr_i, "subjects");
       nsubjects1[i] = phi * nsubjects[i];
       nsubjects2[i] = (1.0 - phi) * nsubjects[i];
-      nevents[i] = extract_lr(lr_i, "nevents");
-      nevents1[i] = extract_lr(lr_i, "nevents1");
-      nevents2[i] = extract_lr(lr_i, "nevents2");
-      ndropouts[i] = extract_lr(lr_i, "ndropouts");
-      ndropouts1[i] = extract_lr(lr_i, "ndropouts1");
-      ndropouts2[i] = extract_lr(lr_i, "ndropouts2");
+      nevents[i] = extract_sum(lr_i, "nevents");
+      nevents1[i] = extract_sum(lr_i, "nevents1");
+      nevents2[i] = extract_sum(lr_i, "nevents2");
+      ndropouts[i] = extract_sum(lr_i, "ndropouts");
+      ndropouts1[i] = extract_sum(lr_i, "ndropouts1");
+      ndropouts2[i] = extract_sum(lr_i, "ndropouts2");
 
-      double uscore1 = extract_lr(lr_i, "uscore");
+      double uscore1 = extract_sum(lr_i, "uscore");
       theta[i] = -uscore1 / information1;
-      info[i] = information1;
+      I[i] = information1;
     }
   }
 
@@ -1874,7 +1848,7 @@ ListCpp lrpowercpp(
     if (su1 == 's') {
       for (size_t i = 0; i < K; ++i) {
         HR[i] = hazardRatio;
-        vlogHR[i] = 1.0 / info[i];
+        vlogHR[i] = 1.0 / I[i];
       }
     } else {
       for (size_t i = 0; i < K; ++i) {
@@ -1895,10 +1869,10 @@ ListCpp lrpowercpp(
   // --- compute stagewise exit probabilities and related metrics --------------
   ListCpp exit_probs;
   if (!missingFutilityBounds || bsf == "none" || K == 1) {
-    exit_probs = exitprobcpp(critValues, futBounds, theta, info);
+    exit_probs = exitprobcpp(critValues, futBounds, theta, I);
   } else {
     std::vector<double> w(K, 1.0);
-    auto gp = getPower(alpha1, kMax, critValues, theta, info, bsf,
+    auto gp = getPower(alpha1, kMax, critValues, theta, I, bsf,
                        parameterBetaSpending, spendTime, futStopping, w);
 
     // gp structure: [power, futilityBounds, probs]
@@ -1942,7 +1916,7 @@ ListCpp lrpowercpp(
     expectedNumberOfDropouts2 += ptotal[i] * ndropouts2[i];
     expectedNumberOfSubjects2 += ptotal[i] * nsubjects2[i];
     expectedStudyDuration += ptotal[i] * time[i];
-    expectedInformation += ptotal[i] * info[i];
+    expectedInformation += ptotal[i] * I[i];
   }
 
   // cummulative sums cpu and cpl
@@ -1966,11 +1940,11 @@ ListCpp lrpowercpp(
   DataFrameCpp overallResults;
   overallResults.push_back(overallReject, "overallReject");
   overallResults.push_back(alpha1, "alpha");
-  overallResults.push_back(nevents[K-1], "numberOfEvents");
-  overallResults.push_back(ndropouts[K-1], "numberOfDropouts");
-  overallResults.push_back(nsubjects[K-1], "numberOfSubjects");
-  overallResults.push_back(time[K-1], "studyDuration");
-  overallResults.push_back(info[K-1], "information");
+  overallResults.push_back(nevents.back(), "numberOfEvents");
+  overallResults.push_back(ndropouts.back(), "numberOfDropouts");
+  overallResults.push_back(nsubjects.back(), "numberOfSubjects");
+  overallResults.push_back(time.back(), "studyDuration");
+  overallResults.push_back(I.back(), "information");
   overallResults.push_back(expectedNumberOfEvents, "expectedNumberOfEvents");
   overallResults.push_back(expectedNumberOfDropouts, "expectedNumberOfDropouts");
   overallResults.push_back(expectedNumberOfSubjects, "expectedNumberOfSubjects");
@@ -2004,7 +1978,7 @@ ListCpp lrpowercpp(
   }
   byStageResults.push_back(std::move(efficacyP), "efficacyP");
   byStageResults.push_back(std::move(futilityP), "futilityP");
-  byStageResults.push_back(std::move(info), "information");
+  byStageResults.push_back(std::move(I), "information");
   if (estimateHazardRatio) byStageResults.push_back(std::move(HR), "HR");
   byStageResults.push_back(std::move(effStopping), "efficacyStopping");
   byStageResults.push_back(std::move(futStopping), "futilityStopping");
@@ -2494,7 +2468,7 @@ ListCpp lrsamplesizecpp(
     const double hazardRatioH0,
     const double allocationRatioPlanned,
     const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
+    std::vector<double>& accrualIntensity,
     const std::vector<double>& piecewiseSurvivalTime,
     const std::vector<double>& stratumFraction,
     const std::vector<double>& lambda1,
@@ -2837,10 +2811,6 @@ ListCpp lrsamplesizecpp(
   else throw std::invalid_argument(
       "accrualDuration and followupTime cannot be both missing");
 
-  // local accrualIntensity copy (we might scale it)
-  std::vector<double> accrualInt = accrualIntensity;
-
-
   // Helper: compute number of events under H1 given accrualDuration (accrDur),
   // followupTime (fu), and accrualIntensity (accrInt).
   auto events_under_H1 = [&](double t, double accrDur, double fu,
@@ -2852,7 +2822,7 @@ ListCpp lrsamplesizecpp(
       lambda1x, lambda2x, gamma1x, gamma2x,
       accrDur, fu, fixedFollowup,
       rho1, rho2, true);
-    return extract_lr(lr, "nevents");
+    return extract_sum(lr, "nevents");
   };
 
   // Helper: difference between the calculated cumulative type II error and
@@ -2866,7 +2836,7 @@ ListCpp lrsamplesizecpp(
     double studyDuration1 = accrDur + fu;
 
     // --- obtain theta and information at each look under H1 as in lrpowercpp
-    std::vector<double> theta(K), info(K);
+    std::vector<double> theta(K), I(K);
     if (rho1 == 0 && rho2 == 0) {
       double vtrt = phi * (1.0 - phi);
       double theta1 = -std::log(hazardRatio / hazardRatioH0);
@@ -2880,16 +2850,16 @@ ListCpp lrsamplesizecpp(
         accrDur, fu, fixedFollowup,
         rho1, rho2, predictEventOnly);
 
-      double totalEvents = extract_lr(lr_end, "nevents");
+      double totalEvents = extract_sum(lr_end, "nevents");
 
       if (su1 == 's') {
         theta[K - 1] = theta1;
-        info[K - 1] = vtrt * totalEvents;
+        I[K - 1] = vtrt * totalEvents;
       } else {
-        double uscore = extract_lr(lr_end, "uscore");
-        double vscore = extract_lr(lr_end, "vscore");
+        double uscore = extract_sum(lr_end, "uscore");
+        double vscore = extract_sum(lr_end, "vscore");
         theta[K - 1] = -uscore / vscore;
-        info[K - 1] = vscore;
+        I[K - 1] = vscore;
       }
 
       for (size_t i = 0; i < K - 1; ++i) {
@@ -2912,12 +2882,12 @@ ListCpp lrsamplesizecpp(
 
         if (su1 == 's') {
           theta[i] = theta1;
-          info[i] = vtrt * nevents_target;
+          I[i] = vtrt * nevents_target;
         } else {
-          double uscore1 = extract_lr(lr_i, "uscore");
-          double vscore1 = extract_lr(lr_i, "vscore");
+          double uscore1 = extract_sum(lr_i, "uscore");
+          double vscore1 = extract_sum(lr_i, "vscore");
           theta[i] = -uscore1 / vscore1;
-          info[i] = vscore1;
+          I[i] = vscore1;
         }
       }
     } else {
@@ -2929,11 +2899,11 @@ ListCpp lrsamplesizecpp(
         accrDur, fu, fixedFollowup,
         rho1, rho2, false);
 
-      double maxInformation = extract_lr(lr_end, "vscore");
+      double maxInformation = extract_sum(lr_end, "vscore");
 
-      double uscore = extract_lr(lr_end, "uscore");
+      double uscore = extract_sum(lr_end, "uscore");
       theta[K - 1] = -uscore / maxInformation;
-      info[K - 1] =  maxInformation;
+      I[K - 1] =  maxInformation;
 
       for (size_t i = 0; i < K - 1; ++i) {
         double information1 = maxInformation * infoRates[i];
@@ -2948,7 +2918,7 @@ ListCpp lrsamplesizecpp(
             accrDur, fu, fixedFollowup,
             rho1, rho2, false);
 
-          return extract_lr(lr1, "vscore") - information1;
+          return extract_sum(lr1, "vscore") - information1;
         };
 
         double time = brent(g, 1e-6, studyDuration1, 1e-6);
@@ -2961,23 +2931,23 @@ ListCpp lrsamplesizecpp(
           accrDur, fu, fixedFollowup,
           rho1, rho2, false);
 
-        double uscore1 = extract_lr(lr_i, "uscore");
+        double uscore1 = extract_sum(lr_i, "uscore");
         theta[i] = -uscore1 / information1;
-        info[i] = information1;
+        I[i] = information1;
       }
     }
 
     // --- compute futility bounds and cumulative beta spending under H1
     if (!missingFutilityBounds || bsf == "none" || K == 1) {
       // compute overall beta using the specified futility bounds
-      ListCpp probs = exitprobcpp(critValues, futBounds, theta, info);
+      ListCpp probs = exitprobcpp(critValues, futBounds, theta, I);
       auto v = probs.get<std::vector<double>>("exitProbUpper");
       double overallReject = std::accumulate(v.begin(), v.end(), 0.0);
       return (1.0 - overallReject) - beta;
     } else {
       std::vector<double> u1; u1.reserve(K);
       std::vector<double> l1; l1.reserve(K);
-      double thetaSqrtI0 = theta[0] * std::sqrt(info[0]);
+      double thetaSqrtI0 = theta[0] * std::sqrt(I[0]);
 
       // compute cumulative beta spending under H1 similar to getPower
       std::fill(futBounds.begin(), futBounds.end(), -6.0);
@@ -3010,7 +2980,7 @@ ListCpp lrsamplesizecpp(
           // and we want to find the root
           auto g = [&](double aval) -> double {
             l1[k] = aval;
-            ListCpp probs = exitprobcpp(u1, l1, theta, info);
+            ListCpp probs = exitprobcpp(u1, l1, theta, I);
             auto v = probs.get<std::vector<double>>("exitProbLower");
             double cpl = std::accumulate(v.begin(), v.end(), 0.0);
             return cpl - cb;
@@ -3069,17 +3039,19 @@ ListCpp lrsamplesizecpp(
     if (unknown == ACC_DUR) {
       // find minimal accrualDuration achieving target events
       f_root = [&](double x)->double {
-        return events_under_H1(x + followupTime, x, followupTime, accrualInt) - D;
+        return events_under_H1(x + followupTime, x, followupTime,
+                               accrualIntensity) - D;
       };
     } else if (unknown == FUP_TIME) {
       if (!fixedFollowup &&
-          events_under_H1(accrualDuration, accrualDuration, 0.0, accrualInt) > D) {
-        thread_utils::push_thread_warning(
-          "Events at zero follow-up (end of enrollment) already exceeds target. "
-          "Setting followupTime = 0 and finding minimal accrualDuration.");
+          events_under_H1(accrualDuration, accrualDuration, 0.0,
+                          accrualIntensity) > D) {
+        std::clog << "WARNING: Events at zero follow-up (end of enrollment) "
+        "already exceeds target. Setting followupTime = 0 and "
+        "finding minimal accrualDuration.\n";
 
         f_root = [&](double x)->double {
-          return events_under_H1(x, x, 0.0, accrualInt) - D;
+          return events_under_H1(x, x, 0.0, accrualIntensity) - D;
         };
 
         curtailed = true;
@@ -3087,12 +3059,12 @@ ListCpp lrsamplesizecpp(
         // find minimal followupTime achieving target events
          f_root = [&](double x)->double {
           return events_under_H1(accrualDuration + x, accrualDuration, x,
-                                 accrualInt) - D;
+                                 accrualIntensity) - D;
         };
       }
-    } else { // ACC_INT: find multiplier m s.t. scaled accrualInt*m attains power
+    } else { // ACC_INT: find multiplier m s.t. scaled accrualIntensity*m attains power
       f_root = [&](double m)->double {
-        std::vector<double> scaled = accrualInt;
+        std::vector<double> scaled = accrualIntensity;
         for (double &v : scaled) v *= m;
         return events_under_H1(accrualDuration + followupTime, accrualDuration,
                                followupTime, scaled) - D;
@@ -3102,26 +3074,26 @@ ListCpp lrsamplesizecpp(
     // --- Direct method: solve for design parameter to achieve target power ---
     if (unknown == ACC_DUR) {
       f_root = [&](double x)->double {
-        return betadiff_under_H1(x, followupTime, accrualInt);
+        return betadiff_under_H1(x, followupTime, accrualIntensity);
       };
     } else if (unknown == FUP_TIME) {
       if (!fixedFollowup &&
-          betadiff_under_H1(accrualDuration, 0, accrualInt) < 0.0) {
-        thread_utils::push_thread_warning(
-          "Power at zero follow-up (end of enrollment) already exceeds target. "
-          "Setting followupTime = 0 and finding minimal accrualDuration.");
+          betadiff_under_H1(accrualDuration, 0, accrualIntensity) < 0.0) {
+        std::clog << "WARNING: Power at zero follow-up (end of enrollment) "
+                     "already exceeds target. Setting followupTime = 0 and "
+                     "finding minimal accrualDuration.\n";
         f_root = [&](double x)->double {
-          return betadiff_under_H1(x, 0.0, accrualInt);
+          return betadiff_under_H1(x, 0.0, accrualIntensity);
         };
         curtailed = true;
       } else {
         f_root = [&](double x)->double {
-          return betadiff_under_H1(accrualDuration, x, accrualInt);
+          return betadiff_under_H1(accrualDuration, x, accrualIntensity);
         };
       }
-    } else { // ACC_INT: find multiplier m s.t. scaled accrualInt*m attains power
+    } else { // ACC_INT: find multiplier m s.t. scaled accrualIntensity*m attains power
       f_root = [&](double m)->double {
-        std::vector<double> scaled = accrualInt;
+        std::vector<double> scaled = accrualIntensity;
         for (double &v : scaled) v *= m;
         return betadiff_under_H1(accrualDuration, followupTime, scaled);
       };
@@ -3168,7 +3140,7 @@ ListCpp lrsamplesizecpp(
     followupTime = 0.0;
     accrualDuration = solution;
   } else { // scaled multiplier for accrualIntensity
-    for (double &v : accrualInt) v *= solution;
+    for (double &v : accrualIntensity) v *= solution;
   }
 
   double studyDuration = accrualDuration + followupTime;
@@ -3186,35 +3158,35 @@ ListCpp lrsamplesizecpp(
     // Get number of events at study end under H1
     DataFrameCpp lr_end = lrstat0cpp(
       studyDuration, hazardRatioH0, allocationRatioPlanned,
-      accrualTime, accrualInt,
+      accrualTime, accrualIntensity,
       piecewiseSurvivalTime, stratumFraction,
       lambda1x, lambda2x, gamma1x, gamma2x,
       accrualDuration, followupTime, fixedFollowup,
       rho1, rho2, true);
 
     // unrounded number of events at study end under H1
-    double D0 = extract_lr(lr_end, "nevents");
+    double D0 = extract_sum(lr_end, "nevents");
     // round up to nearest integer (subtract small epsilon to
     // avoid rounding up when D0 is very close to an integer)
     double D = std::ceil(D0 - 1e-12);
 
     if (!fixedFollowup) { // variable follow-up
       // adjust accrualDuration / accrualIntensity to get integer subjects
-      double n0 = extract_lr(lr_end, "subjects");
+      double n0 = extract_sum(lr_end, "subjects");
       double n = std::ceil(n0 - 1e-12);
       if (n - n0 > 1e-6) {
         if (unknown == ACC_INT) { // scale accrual intensity
           double scale = n / n0;
-          for (double &v : accrualInt) v *= scale;
+          for (double &v : accrualIntensity) v *= scale;
         } else { // solve for accrualDuration that achieves n subjects
-          accrualDuration = getAccrualDurationFromN1(n, accrualTime, accrualInt);
+          accrualDuration = getAccrualDurationFromN1(n, accrualTime, accrualIntensity);
         }
       }
 
       // adjust follow-up time to obtain integer number of events
       auto h_follow = [&](double x)->double {
         return events_under_H1(accrualDuration + x, accrualDuration, x,
-                               accrualInt) - D;
+                               accrualIntensity) - D;
       };
 
       // bracket and solve for follow-up time
@@ -3245,10 +3217,11 @@ ListCpp lrsamplesizecpp(
       // adjust accrualDuration / accrualIntensity to get integer events
       if (unknown == ACC_INT) { // scale accrual intensity
         double scale = D / D0;
-        for (double &v : accrualInt) v *= scale;
+        for (double &v : accrualIntensity) v *= scale;
       } else { // solve for accrualDuration that achieves D events
         auto h_accr = [&](double x)->double {
-          return events_under_H1(x + followupTime, x, followupTime, accrualInt) - D;
+          return events_under_H1(x + followupTime, x, followupTime,
+                                 accrualIntensity) - D;
         };
 
         double lower_h = std::max(1e-6, accrualDuration);
@@ -3276,21 +3249,22 @@ ListCpp lrsamplesizecpp(
       }
 
       // recompute integer n
-      double n0 = accrual1(accrualDuration, accrualTime, accrualInt, accrualDuration);
+      double n0 = accrual1(accrualDuration, accrualTime, accrualIntensity,
+                           accrualDuration);
       double n = std::ceil(n0 - 1e-12);
       if (n - n0 > 1e-6) {
         if (unknown == ACC_INT) { // scale accrual intensity
           double scale = n / n0;
-          for (double &v : accrualInt) v *= scale;
+          for (double &v : accrualIntensity) v *= scale;
         } else { // solve for accrualDuration that achieves n subjects
-          accrualDuration = getAccrualDurationFromN1(n, accrualTime, accrualInt);
+          accrualDuration = getAccrualDurationFromN1(n, accrualTime, accrualIntensity);
         }
       }
 
       // adjust study duration (no change to followupTime) to get integer events
       auto h_follow2 = [&](double x)->double {
         return events_under_H1(accrualDuration + x, accrualDuration,
-                               followupTime, accrualInt) - D;
+                               followupTime, accrualIntensity) - D;
       };
 
       double aval = brent(h_follow2, 0.0, followupTime, 1e-6);
@@ -3307,13 +3281,13 @@ ListCpp lrsamplesizecpp(
       // obtain maximum information
       DataFrameCpp lr_end = lrstat0cpp(
         studyDuration, hazardRatioH0, allocationRatioPlanned,
-        accrualTime, accrualInt,
+        accrualTime, accrualIntensity,
         piecewiseSurvivalTime, stratumFraction,
         lambda1x, lambda2x, gamma1x, gamma2x,
         accrualDuration, followupTime, fixedFollowup,
         rho1, rho2, false);
 
-      double maxInformation = extract_lr(lr_end, "vscore");
+      double maxInformation = extract_sum(lr_end, "vscore");
 
       for (size_t i = 0; i < K - 1; ++i) {
         // recompute analysis time from information target and then events
@@ -3322,13 +3296,13 @@ ListCpp lrsamplesizecpp(
         auto g_info = [&](double t)->double {
           DataFrameCpp lr1 = lrstat0cpp(
             t, hazardRatioH0, allocationRatioPlanned,
-            accrualTime, accrualInt,
+            accrualTime, accrualIntensity,
             piecewiseSurvivalTime, stratumFraction,
             lambda1x, lambda2x, gamma1x, gamma2x,
             accrualDuration, followupTime, fixedFollowup,
             rho1, rho2, false);
 
-          return extract_lr(lr1, "vscore") - information1;
+          return extract_sum(lr1, "vscore") - information1;
         };
 
         double time = brent(g_info, 1e-6, studyDuration, 1e-6);
@@ -3336,19 +3310,19 @@ ListCpp lrsamplesizecpp(
         // get event count at the calendar time and round up
         DataFrameCpp lr_events = lrstat0cpp(
           time, hazardRatioH0, allocationRatioPlanned,
-          accrualTime, accrualInt,
+          accrualTime, accrualIntensity,
           piecewiseSurvivalTime, stratumFraction,
           lambda1x, lambda2x, gamma1x, gamma2x,
           accrualDuration, followupTime, fixedFollowup,
           rho1, rho2, true);
 
-        double nevents = extract_lr(lr_events, "nevents");
+        double nevents = extract_sum(lr_events, "nevents");
         nevents = std::floor(nevents + 0.5);
 
         // recompute analysis time from rounded event count
         time = caltime1cpp(
           nevents, allocationRatioPlanned,
-          accrualTime, accrualInt,
+          accrualTime, accrualIntensity,
           piecewiseSurvivalTime, stratumFraction,
           lambda1x, lambda2x, gamma1x, gamma2x,
           accrualDuration, followupTime, fixedFollowup);
@@ -3356,14 +3330,14 @@ ListCpp lrsamplesizecpp(
         // update informationRates based on new analysis time
         DataFrameCpp lr_info = lrstat0cpp(
           time, hazardRatioH0, allocationRatioPlanned,
-          accrualTime, accrualInt,
+          accrualTime, accrualIntensity,
           piecewiseSurvivalTime, stratumFraction,
           lambda1x, lambda2x, gamma1x, gamma2x,
           accrualDuration, followupTime, fixedFollowup,
           rho1, rho2, false);
 
-        double info = extract_lr(lr_info, "vscore");
-        infoRates[i] = info / maxInformation;
+        information1 = extract_sum(lr_info, "vscore");
+        infoRates[i] = information1 / maxInformation;
       }
     }
 
@@ -3378,7 +3352,7 @@ ListCpp lrsamplesizecpp(
         parameterAlphaSpending, userAlphaSpending,
         futilityBounds, typeBetaSpending, parameterBetaSpending,
         hazardRatioH0, allocationRatioPlanned,
-        accrualTime, accrualInt,
+        accrualTime, accrualIntensity,
         piecewiseSurvivalTime, stratumFraction,
         lambda1, lambda2, gamma1, gamma2,
         accrualDuration, followupTime, fixedFollowup,
@@ -3392,7 +3366,7 @@ ListCpp lrsamplesizecpp(
         parameterAlphaSpending, userAlphaSpending,
         futBounds, typeBetaSpending, parameterBetaSpending,
         hazardRatioH0, allocationRatioPlanned,
-        accrualTime, accrualInt,
+        accrualTime, accrualIntensity,
         piecewiseSurvivalTime, stratumFraction,
         lambda1, lambda2, gamma1, gamma2,
         accrualDuration, followupTime, fixedFollowup,
@@ -3409,7 +3383,7 @@ ListCpp lrsamplesizecpp(
       parameterAlphaSpending, userAlphaSpending,
       futBounds, typeBetaSpending, parameterBetaSpending,
       hazardRatioH0, allocationRatioPlanned,
-      accrualTime, accrualInt,
+      accrualTime, accrualIntensity,
       piecewiseSurvivalTime, stratumFraction,
       lambda1, lambda2, gamma1, gamma2,
       accrualDuration, followupTime, fixedFollowup,
@@ -3446,7 +3420,7 @@ ListCpp lrsamplesizecpp(
       lambda1H0x, lambda2x, gamma1x, gamma2x,
       accrDur, fu, fixedFollowup,
       rho1, rho2, true);
-    return extract_lr(lr, "nevents");
+    return extract_sum(lr, "nevents");
   };
 
   // Helper: compute information under H0 given accrualDuration (accrDur),
@@ -3460,7 +3434,7 @@ ListCpp lrsamplesizecpp(
       lambda1H0x, lambda2x, gamma1x, gamma2x,
       accrDur, fu, fixedFollowup,
       rho1, rho2, false);
-    return extract_lr(lr, "vscore");
+    return extract_sum(lr, "vscore");
   };
 
 
@@ -3468,10 +3442,10 @@ ListCpp lrsamplesizecpp(
     auto h_follow = [&](double x)->double {
       if (rho1 == 0 && rho2 == 0) {
         return events_under_H0(accrualDuration + x, accrualDuration, x,
-                               accrualInt) - D;
+                               accrualIntensity) - D;
       } else {
         return info_under_H0(accrualDuration + x, accrualDuration, x,
-                             accrualInt) - maxI;
+                             accrualIntensity) - maxI;
       }
     };
 
@@ -3498,14 +3472,14 @@ ListCpp lrsamplesizecpp(
       followupTime = brent(h_for_brent, lower_h, upper_h, 1e-6);
       studyDuration = accrualDuration + followupTime;
     } else {
-      thread_utils::push_thread_warning(
-        "Events at zero follow-up (end of enrollment) already exceeds target. "
-        "Setting followupTime = 0 and finding minimal accrualDuration.");
+      std::clog << "WARNING: Events at zero follow-up (end of enrollment) "
+                   "already exceeds target. Setting followupTime = 0 and "
+                   "finding minimal accrualDuration.\n";
       auto h_accr = [&](double x)->double {
         if (rho1 == 0 && rho2 == 0) {
-          return events_under_H0(x, x, 0.0, accrualInt) - D;
+          return events_under_H0(x, x, 0.0, accrualIntensity) - D;
         } else {
-          return info_under_H0(x, x, 0.0, accrualInt) - maxI;
+          return info_under_H0(x, x, 0.0, accrualIntensity) - maxI;
         }
       };
 
@@ -3517,10 +3491,10 @@ ListCpp lrsamplesizecpp(
     auto h_minfu = [&](double x)->double {
       if (rho1 == 0 && rho2 == 0) {
         return events_under_H0(accrualDuration + x, accrualDuration,
-                               followupTime, accrualInt) - D;
+                               followupTime, accrualIntensity) - D;
       } else {
         return info_under_H0(accrualDuration + x, accrualDuration,
-                             followupTime, accrualInt) - maxI;
+                             followupTime, accrualIntensity) - maxI;
       }
     };
 
@@ -3530,9 +3504,11 @@ ListCpp lrsamplesizecpp(
     if (h_fu < 0.0) { // need to increase accrualDuration
       auto h_accr = [&](double x)->double {
         if (rho1 == 0 && rho2 == 0) {
-          return events_under_H0(x + followupTime, x, followupTime, accrualInt) - D;
+          return events_under_H0(x + followupTime, x, followupTime,
+                                 accrualIntensity) - D;
         } else {
-          return info_under_H0(x + followupTime, x, followupTime, accrualInt) - maxI;
+          return info_under_H0(x + followupTime, x, followupTime,
+                               accrualIntensity) - maxI;
         }
       };
 
@@ -3558,14 +3534,14 @@ ListCpp lrsamplesizecpp(
       accrualDuration = brent(h_for_brent, lower_h, upper_h, 1e-6);
       studyDuration = accrualDuration + followupTime;
     } else if (h_0 > 0.0) {
-      thread_utils::push_thread_warning(
-        "Events at zero follow-up (end of enrollment) already exceeds target. "
-        "finding minimal accrualDuration as followupTime is fixed.");
+      std::clog << "WARNING: Events at zero follow-up (end of enrollment) "
+                   "already exceeds target. finding minimal accrualDuration "
+                   "as followupTime is fixed.\n";
        auto h_accr = [&](double x)->double {
         if (rho1 == 0 && rho2 == 0) {
-          return events_under_H0(x, x, followupTime, accrualInt) - D;
+          return events_under_H0(x, x, followupTime, accrualIntensity) - D;
         } else {
-          return info_under_H0(x, x, followupTime, accrualInt) - maxI;
+          return info_under_H0(x, x, followupTime, accrualIntensity) - maxI;
         }
       };
 
@@ -3589,7 +3565,7 @@ ListCpp lrsamplesizecpp(
     parameterAlphaSpending, userAlphaSpending,
     futBounds, typeBetaSpending, parameterBetaSpending,
     hazardRatioH0, allocationRatioPlanned,
-    accrualTime, accrualInt,
+    accrualTime, accrualIntensity,
     piecewiseSurvivalTime, stratumFraction,
     lambda1H0, lambda2, gamma1, gamma2,
     accrualDuration, followupTime, fixedFollowup,
@@ -3790,8 +3766,6 @@ Rcpp::List lrsamplesize(
     rho1, rho2, estimateHazardRatio,
     typeOfComputation, spendTime, rounding);
 
-  thread_utils::drain_thread_warnings_to_R();
-
   ListCpp resultsUnderH1 = out.get_list("resultsUnderH1");
   ListCpp resultsUnderH0 = out.get_list("resultsUnderH0");
 
@@ -3835,10 +3809,9 @@ ListCpp lrpowerequivcpp(
     const std::vector<double>& spendingTime,
     const double studyDuration) {
 
-  if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
   if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1.0))
     throw std::invalid_argument("alpha must lie in [0.00001, 1)");
-
+  if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
   const size_t K = static_cast<size_t>(kMax);
 
   // information rates -> infoRates
@@ -3859,7 +3832,6 @@ ListCpp lrpowerequivcpp(
   }
 
   bool missingCriticalValues = !none_na(criticalValues);
-
   if (!missingCriticalValues && criticalValues.size() != K)
     throw std::invalid_argument("Invalid length for criticalValues");
   if (missingCriticalValues && std::isnan(alpha))
@@ -3869,7 +3841,6 @@ ListCpp lrpowerequivcpp(
   std::string asf = typeAlphaSpending;
   for (char &c : asf)
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-
   if (missingCriticalValues && !(asf == "of" || asf == "p" ||
       asf == "wt" || asf == "sfof" || asf == "sfp" ||
       asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
@@ -3882,7 +3853,6 @@ ListCpp lrpowerequivcpp(
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
     throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
   }
-
   if (missingCriticalValues && asf == "user") {
     if (!none_na(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be specified");
@@ -3895,7 +3865,6 @@ ListCpp lrpowerequivcpp(
     if (userAlphaSpending[K-1] != alpha)
       throw std::invalid_argument("userAlphaSpending must end with specified alpha");
   }
-
   if (std::isnan(hazardRatioLower))
     throw std::invalid_argument("hazardRatioLower must be provided");
   if (std::isnan(hazardRatioUpper))
@@ -3905,15 +3874,12 @@ ListCpp lrpowerequivcpp(
   if (hazardRatioLower >= hazardRatioUpper)
     throw std::invalid_argument(
         "hazardRatioLower must be less than hazardRatioUpper");
-
   if (allocationRatioPlanned <= 0.0)
     throw std::invalid_argument("allocationRatioPlanned must be positive");
-
   if (accrualTime[0] != 0.0)
     throw std::invalid_argument("accrualTime must start with 0");
   if (any_nonincreasing(accrualTime))
     throw std::invalid_argument("accrualTime should be increasing");
-
   if (!none_na(accrualIntensity))
     throw std::invalid_argument("accrualIntensity must be provided");
   if (accrualIntensity.size() != accrualTime.size())
@@ -3921,22 +3887,18 @@ ListCpp lrpowerequivcpp(
   for (double v : accrualIntensity) {
     if (v < 0.0) throw std::invalid_argument("accrualIntensity must be non-negative");
   }
-
   if (piecewiseSurvivalTime[0] != 0.0)
     throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
   if (any_nonincreasing(piecewiseSurvivalTime))
     throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
-
   for (double v : stratumFraction) {
     if (v <= 0.0) throw std::invalid_argument("stratumFraction must be positive");
   }
   double sumf = std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
   if (std::fabs(sumf - 1.0) > 1e-12)
     throw std::invalid_argument("stratumFraction must sum to 1");
-
   if (!none_na(lambda1)) throw std::invalid_argument("lambda1 must be provided");
   if (!none_na(lambda2)) throw std::invalid_argument("lambda2 must be provided");
-
   for (double v : lambda1) {
     if (v < 0.0) throw std::invalid_argument("lambda1 must be non-negative");
   }
@@ -3949,21 +3911,10 @@ ListCpp lrpowerequivcpp(
   for (double v : gamma2) {
     if (v < 0.0) throw std::invalid_argument("gamma2 must be non-negative");
   }
-
-  // expand stratified rates
-  size_t nstrata = stratumFraction.size();
-  size_t nintv = piecewiseSurvivalTime.size();
-  size_t nsi = nstrata * nintv;
-  auto lambda1x = expand_stratified(lambda1, nstrata, nintv, "lambda1");
-  auto lambda2x = expand_stratified(lambda2, nstrata, nintv, "lambda2");
-  auto gamma1x = expand_stratified(gamma1, nstrata, nintv, "gamma1");
-  auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
-
   if (std::isnan(accrualDuration))
     throw std::invalid_argument("accrualDuration must be provided");
   if (accrualDuration <= 0.0)
     throw std::invalid_argument("accrualDuration must be positive");
-
   if (std::isnan(followupTime))
     throw std::invalid_argument("followupTime must be provided");
   if (fixedFollowup && followupTime <= 0.0)
@@ -3971,6 +3922,11 @@ ListCpp lrpowerequivcpp(
   if (!fixedFollowup && followupTime < 0.0)
     throw std::invalid_argument(
         "followupTime must be non-negative for variable follow-up");
+  if (!std::isnan(studyDuration) && studyDuration < accrualDuration)
+    throw std::invalid_argument("studyDuration must be >= accrualDuration");
+  if (!std::isnan(studyDuration) && studyDuration > accrualDuration + followupTime)
+    throw std::invalid_argument(
+        "studyDuration must be <= accrualDuration + followupTime");
 
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
@@ -3987,13 +3943,14 @@ ListCpp lrpowerequivcpp(
     spendTime = infoRates;
   }
 
-  if (fixedFollowup && !std::isnan(studyDuration) &&
-      (studyDuration < accrualDuration))
-    throw std::invalid_argument("studyDuration must be >= accrualDuration");
-  if (fixedFollowup && !std::isnan(studyDuration) &&
-      (studyDuration > accrualDuration + followupTime))
-    throw std::invalid_argument(
-        "studyDuration must be <= accrualDuration + followupTime");
+  // expand stratified rates
+  size_t nstrata = stratumFraction.size();
+  size_t nintv = piecewiseSurvivalTime.size();
+  size_t nsi = nstrata * nintv;
+  auto lambda1x = expand_stratified(lambda1, nstrata, nintv, "lambda1");
+  auto lambda2x = expand_stratified(lambda2, nstrata, nintv, "lambda2");
+  auto gamma1x = expand_stratified(gamma1, nstrata, nintv, "gamma1");
+  auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
 
 
   // --- determine proportional hazards / schoenfeld eligible
@@ -4093,18 +4050,18 @@ ListCpp lrpowerequivcpp(
       accrualDuration, followupTime, fixedFollowup,
       0.0, 0.0, true);
 
-    double totalEvents = extract_lr(lr_end, "nevents");
+    double totalEvents = extract_sum(lr_end, "nevents");
 
     time[K-1] = studyDuration1;
-    nsubjects[K - 1] = extract_lr(lr_end, "subjects");
+    nsubjects[K - 1] = extract_sum(lr_end, "subjects");
     nsubjects1[K - 1] = phi * nsubjects[K - 1];
     nsubjects2[K - 1] = (1.0 - phi) * nsubjects[K - 1];
     nevents[K - 1] = totalEvents;
-    nevents1[K - 1] = extract_lr(lr_end, "nevents1");
-    nevents2[K - 1] = extract_lr(lr_end, "nevents2");
-    ndropouts[K - 1] = extract_lr(lr_end, "ndropouts");
-    ndropouts1[K - 1] = extract_lr(lr_end, "ndropouts1");
-    ndropouts2[K - 1] = extract_lr(lr_end, "ndropouts2");
+    nevents1[K - 1] = extract_sum(lr_end, "nevents1");
+    nevents2[K - 1] = extract_sum(lr_end, "nevents2");
+    ndropouts[K - 1] = extract_sum(lr_end, "ndropouts");
+    ndropouts1[K - 1] = extract_sum(lr_end, "ndropouts1");
+    ndropouts2[K - 1] = extract_sum(lr_end, "ndropouts2");
     I[K - 1] = vtrt * totalEvents;
 
     for (size_t i = 0; i < K - 1; ++i) {
@@ -4125,15 +4082,15 @@ ListCpp lrpowerequivcpp(
         accrualDuration, followupTime, fixedFollowup,
         0.0, 0.0, true);
 
-      nsubjects[i] = extract_lr(lr_i, "subjects");
+      nsubjects[i] = extract_sum(lr_i, "subjects");
       nsubjects1[i] = phi * nsubjects[i];
       nsubjects2[i] = (1.0 - phi) * nsubjects[i];
       nevents[i] = nevents_target;
-      nevents1[i] = extract_lr(lr_i, "nevents1");
-      nevents2[i] = extract_lr(lr_i, "nevents2");
-      ndropouts[i] = extract_lr(lr_i, "ndropouts");
-      ndropouts1[i] = extract_lr(lr_i, "ndropouts1");
-      ndropouts2[i] = extract_lr(lr_i, "ndropouts2");
+      nevents1[i] = extract_sum(lr_i, "nevents1");
+      nevents2[i] = extract_sum(lr_i, "nevents2");
+      ndropouts[i] = extract_sum(lr_i, "ndropouts");
+      ndropouts1[i] = extract_sum(lr_i, "ndropouts1");
+      ndropouts2[i] = extract_sum(lr_i, "ndropouts2");
       I[i] = vtrt * nevents_target;
     }
   } else { // information is inverse of variance of log(HR)
@@ -4376,11 +4333,11 @@ ListCpp lrpowerequivcpp(
   DataFrameCpp overallResults;
   overallResults.push_back(overallReject, "overallReject");
   overallResults.push_back(alpha, "alpha");
-  overallResults.push_back(nevents[K-1], "numberOfEvents");
-  overallResults.push_back(ndropouts[K-1], "numberOfDropouts");
-  overallResults.push_back(nsubjects[K-1], "numberOfSubjects");
-  overallResults.push_back(time[K-1], "studyDuration");
-  overallResults.push_back(I[K-1], "information");
+  overallResults.push_back(nevents.back(), "numberOfEvents");
+  overallResults.push_back(ndropouts.back(), "numberOfDropouts");
+  overallResults.push_back(nsubjects.back(), "numberOfSubjects");
+  overallResults.push_back(time.back(), "studyDuration");
+  overallResults.push_back(I.back(), "information");
   overallResults.push_back(expectedNumberOfEvents, "expectedNumberOfEvents");
   overallResults.push_back(expectedNumberOfDropouts, "expectedNumberOfDropouts");
   overallResults.push_back(expectedNumberOfSubjects, "expectedNumberOfSubjects");
@@ -4707,7 +4664,7 @@ ListCpp lrsamplesizeequivcpp(
     const double hazardRatioUpper,
     const double allocationRatioPlanned,
     const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
+    std::vector<double>& accrualIntensity,
     const std::vector<double>& piecewiseSurvivalTime,
     const std::vector<double>& stratumFraction,
     const std::vector<double>& lambda1,
@@ -4725,7 +4682,6 @@ ListCpp lrsamplesizeequivcpp(
     throw std::invalid_argument("alpha must lie in [0.00001, 1)");
   if (beta < 0.0001 || (!std::isnan(alpha) && beta >= 1.0 - alpha))
     throw std::invalid_argument("beta must lie in [0.0001, 1-alpha)");
-
   if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
   const size_t K = static_cast<size_t>(kMax);
 
@@ -4747,7 +4703,6 @@ ListCpp lrsamplesizeequivcpp(
   }
 
   bool missingCriticalValues = !none_na(criticalValues);
-
   if (!missingCriticalValues && criticalValues.size() != K) {
     throw std::invalid_argument("Invalid length for criticalValues");
   }
@@ -4759,7 +4714,6 @@ ListCpp lrsamplesizeequivcpp(
   for (char &c : asf) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
-
   if (missingCriticalValues && !(asf == "of" || asf == "p" ||
       asf == "wt" || asf == "sfof" || asf == "sfp" ||
       asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
@@ -4772,7 +4726,6 @@ ListCpp lrsamplesizeequivcpp(
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
     throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
   }
-
   if (missingCriticalValues && asf == "user") {
     if (!none_na(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be specified");
@@ -4785,7 +4738,6 @@ ListCpp lrsamplesizeequivcpp(
     if (userAlphaSpending[K-1] != alpha)
       throw std::invalid_argument("userAlphaSpending must end with specified alpha");
   }
-
   if (std::isnan(hazardRatioLower))
     throw std::invalid_argument("hazardRatioLower must be provided");
   if (std::isnan(hazardRatioUpper))
@@ -4795,15 +4747,12 @@ ListCpp lrsamplesizeequivcpp(
   if (hazardRatioLower >= hazardRatioUpper)
     throw std::invalid_argument(
         "hazardRatioLower must be less than hazardRatioUpper");
-
   if (allocationRatioPlanned <= 0.0)
     throw std::invalid_argument("allocationRatioPlanned must be positive");
-
   if (accrualTime[0] != 0.0)
     throw std::invalid_argument("accrualTime must start with 0");
   if (any_nonincreasing(accrualTime))
     throw std::invalid_argument("accrualTime should be increasing");
-
   if (!none_na(accrualIntensity))
     throw std::invalid_argument("accrualIntensity must be provided");
   if (accrualIntensity.size() != accrualTime.size())
@@ -4811,22 +4760,18 @@ ListCpp lrsamplesizeequivcpp(
   for (double v : accrualIntensity) {
     if (v < 0.0) throw std::invalid_argument("accrualIntensity must be non-negative");
   }
-
   if (piecewiseSurvivalTime[0] != 0.0)
     throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
   if (any_nonincreasing(piecewiseSurvivalTime))
     throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
-
   for (double v : stratumFraction) {
     if (v <= 0.0) throw std::invalid_argument("stratumFraction must be positive");
   }
   double sumf = std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
   if (std::fabs(sumf - 1.0) > 1e-12)
     throw std::invalid_argument("stratumFraction must sum to 1");
-
   if (!none_na(lambda1)) throw std::invalid_argument("lambda1 must be provided");
   if (!none_na(lambda2)) throw std::invalid_argument("lambda2 must be provided");
-
   for (double v : lambda1) {
     if (v < 0.0) throw std::invalid_argument("lambda1 must be non-negative");
   }
@@ -4839,19 +4784,8 @@ ListCpp lrsamplesizeequivcpp(
   for (double v : gamma2) {
     if (v < 0.0) throw std::invalid_argument("gamma2 must be non-negative");
   }
-
-  // expand stratified rates
-  size_t nstrata = stratumFraction.size();
-  size_t nintv = piecewiseSurvivalTime.size();
-  size_t nsi = nstrata * nintv;
-  auto lambda1x = expand_stratified(lambda1, nstrata, nintv, "lambda1");
-  auto lambda2x = expand_stratified(lambda2, nstrata, nintv, "lambda2");
-  auto gamma1x = expand_stratified(gamma1, nstrata, nintv, "gamma1");
-  auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
-
   if (!std::isnan(accrualDuration) && accrualDuration <= 0.0)
     throw std::invalid_argument("accrualDuration must be positive");
-
   if (!std::isnan(followupTime) && fixedFollowup && followupTime <= 0.0)
     throw std::invalid_argument("followupTime must be positive for fixed follow-up");
   if (!std::isnan(followupTime) && !fixedFollowup && followupTime < 0.0)
@@ -4874,6 +4808,16 @@ ListCpp lrsamplesizeequivcpp(
   } else {
     spendTime = infoRates;
   }
+
+  // expand stratified rates
+  size_t nstrata = stratumFraction.size();
+  size_t nintv = piecewiseSurvivalTime.size();
+  size_t nsi = nstrata * nintv;
+  auto lambda1x = expand_stratified(lambda1, nstrata, nintv, "lambda1");
+  auto lambda2x = expand_stratified(lambda2, nstrata, nintv, "lambda2");
+  auto gamma1x = expand_stratified(gamma1, nstrata, nintv, "gamma1");
+  auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
+
 
   // --- Determine if Schoenfeld method is eligible-----------------------------
   std::vector<double> hrx(nsi);
@@ -4960,10 +4904,6 @@ ListCpp lrsamplesizeequivcpp(
   else throw std::invalid_argument(
       "accrualDuration and followupTime cannot be both missing");
 
-  // local accrualIntensity copy (we might scale it)
-  std::vector<double> accrualInt = accrualIntensity;
-
-
   // Helper: compute number of events under H1 given accrualDuration (accrDur),
   // followupTime (fu), and accrualIntensity (accrInt).
   auto events_under_H1 = [&](double t, double accrDur, double fu,
@@ -4975,7 +4915,7 @@ ListCpp lrsamplesizeequivcpp(
       lambda1x, lambda2x, gamma1x, gamma2x,
       accrDur, fu, fixedFollowup,
       0.0, 0.0, true);
-    return extract_lr(lr, "nevents");
+    return extract_sum(lr, "nevents");
   };
 
   // Helper: compute power under H1 given accrualDuration (accrDur),
@@ -4999,7 +4939,7 @@ ListCpp lrsamplesizeequivcpp(
         accrDur, fu, fixedFollowup,
         0.0, 0.0, true);
 
-      double totalEvents = extract_lr(lr_end, "nevents");
+      double totalEvents = extract_sum(lr_end, "nevents");
       I[K - 1] = vtrt * totalEvents;
 
       for (size_t i = 0; i < K - 1; ++i) {
@@ -5110,17 +5050,18 @@ ListCpp lrsamplesizeequivcpp(
     if (unknown == ACC_DUR) {
       // find minimal accrualDuration achieving target events
       f_root = [&](double x)->double {
-        return events_under_H1(x + followupTime, x, followupTime, accrualInt) - D;
+        return events_under_H1(x + followupTime, x, followupTime,
+                               accrualIntensity) - D;
       };
     } else if (unknown == FUP_TIME) {
       if (!fixedFollowup &&
-          events_under_H1(accrualDuration, accrualDuration, 0.0, accrualInt) > D) {
-        thread_utils::push_thread_warning(
-          "Events at zero follow-up (end of enrollment) already exceeds target. "
-          "Setting followupTime = 0 and finding minimal accrualDuration.");
-
+          events_under_H1(accrualDuration, accrualDuration, 0.0,
+                          accrualIntensity) > D) {
+        std::clog << "WARNING: Events at zero follow-up (end of enrollment) "
+                     "already exceeds target. Setting followupTime = 0 and "
+                     "finding minimal accrualDuration.\n";
         f_root = [&](double x)->double {
-          return events_under_H1(x, x, 0.0, accrualInt) - D;
+          return events_under_H1(x, x, 0.0, accrualIntensity) - D;
         };
 
         curtailed = true;
@@ -5128,12 +5069,12 @@ ListCpp lrsamplesizeequivcpp(
         // find minimal followupTime achieving target events
         f_root = [&](double x)->double {
           return events_under_H1(accrualDuration + x, accrualDuration, x,
-                                 accrualInt) - D;
+                                 accrualIntensity) - D;
         };
       }
-    } else { // ACC_INT: find multiplier m s.t. scaled accrualInt*m attains power
+    } else { // ACC_INT: find multiplier m s.t. scaled accrualIntensity*m attains power
       f_root = [&](double m)->double {
-        std::vector<double> scaled = accrualInt;
+        std::vector<double> scaled = accrualIntensity;
         for (double &v : scaled) v *= m;
         return events_under_H1(accrualDuration + followupTime,
                                accrualDuration, followupTime, scaled) - D;
@@ -5145,26 +5086,26 @@ ListCpp lrsamplesizeequivcpp(
 
     if (unknown == ACC_DUR) {
       f_root = [&](double x)->double {
-        return power_under_H1(x, followupTime, accrualInt) - P;
+        return power_under_H1(x, followupTime, accrualIntensity) - P;
       };
     } else if (unknown == FUP_TIME) {
       if (!fixedFollowup &&
-          power_under_H1(accrualDuration, 0.0, accrualInt) > P) {
-        thread_utils::push_thread_warning(
-          "Power at zero follow-up (end of enrollment) already exceeds target. "
-          "Setting followupTime = 0 and finding minimal accrualDuration.");
+          power_under_H1(accrualDuration, 0.0, accrualIntensity) > P) {
+        std::clog << "WARNING: Power at zero follow-up (end of enrollment) "
+                     "already exceeds target. Setting followupTime = 0 and "
+                     "finding minimal accrualDuration.\n";
         f_root = [&](double x)->double {
-          return power_under_H1(x, 0.0, accrualInt) - P;
+          return power_under_H1(x, 0.0, accrualIntensity) - P;
         };
         curtailed = true;
       } else {
         f_root = [&](double x)->double {
-          return power_under_H1(accrualDuration, x, accrualInt) - P;
+          return power_under_H1(accrualDuration, x, accrualIntensity) - P;
         };
       }
-    } else { // ACC_INT: find multiplier m s.t. scaled accrualInt*m attains power
+    } else { // ACC_INT: find multiplier m s.t. scaled accrualIntensity*m attains power
       f_root = [&](double m)->double {
-        std::vector<double> scaled = accrualInt;
+        std::vector<double> scaled = accrualIntensity;
         for (double &v : scaled) v *= m;
         return power_under_H1(accrualDuration, followupTime, scaled) - P;
       };
@@ -5210,7 +5151,7 @@ ListCpp lrsamplesizeequivcpp(
     followupTime = 0.0;
     accrualDuration = solution;
   } else { // scaled multiplier for accrualIntensity
-    for (double &v : accrualInt) v *= solution;
+    for (double &v : accrualIntensity) v *= solution;
   }
 
   double studyDuration = accrualDuration + followupTime;
@@ -5221,31 +5162,31 @@ ListCpp lrsamplesizeequivcpp(
   if (rounding) {
     DataFrameCpp lr_end = lrstat0cpp(
       studyDuration, 1.0, allocationRatioPlanned,
-      accrualTime, accrualInt,
+      accrualTime, accrualIntensity,
       piecewiseSurvivalTime, stratumFraction,
       lambda1x, lambda2x, gamma1x, gamma2x,
       accrualDuration, followupTime, fixedFollowup,
       0.0, 0.0, true);
 
-    double D0 = extract_lr(lr_end, "nevents");
+    double D0 = extract_sum(lr_end, "nevents");
     double D = std::ceil(D0 - 1.0e-12);
 
     if (!fixedFollowup) { // variable follow-up
-      double n0 = extract_lr(lr_end, "subjects");
+      double n0 = extract_sum(lr_end, "subjects");
       double n = std::ceil(n0 - 1.0e-12);
       if (n - n0 > 1e-6) {
         if (unknown == ACC_INT) { // scale accrual intensity
           double scale = n / n0;
-          for (double &v : accrualInt) v *= scale;
+          for (double &v : accrualIntensity) v *= scale;
         } else { // solve for accrualDuration that achieves n subjects
-          accrualDuration = getAccrualDurationFromN1(n, accrualTime, accrualInt);
+          accrualDuration = getAccrualDurationFromN1(n, accrualTime, accrualIntensity);
         }
       }
 
       // adjust follow-up time to obtain integer number of events
       auto h_follow = [&](double x)->double {
         return events_under_H1(accrualDuration + x, accrualDuration, x,
-                               accrualInt) - D;
+                               accrualIntensity) - D;
       };
 
       // bracket and solve for follow-up time
@@ -5273,10 +5214,11 @@ ListCpp lrsamplesizeequivcpp(
     } else { // fixed follow-up
       if (unknown == ACC_INT) { // scale accrual intensity
         double scale = D / D0;
-        for (double &v : accrualInt) v *= scale;
+        for (double &v : accrualIntensity) v *= scale;
       } else { // solve for accrualDuration that achieves D events
         auto h_accr = [&](double x)->double {
-          return events_under_H1(x + followupTime, x, followupTime, accrualInt) - D;
+          return events_under_H1(x + followupTime, x, followupTime,
+                                 accrualIntensity) - D;
         };
 
         double lower_h = accrualDuration;
@@ -5303,21 +5245,22 @@ ListCpp lrsamplesizeequivcpp(
       }
 
       // recompute integer n
-      double n0 = accrual1(accrualDuration, accrualTime, accrualInt, accrualDuration);
+      double n0 = accrual1(accrualDuration, accrualTime, accrualIntensity,
+                           accrualDuration);
       double n = std::ceil(n0 - 1e-12);
       if (n - n0 > 1e-6) {
         if (unknown == ACC_INT) { // scale accrual intensity
           double scale = n / n0;
-          for (double &v : accrualInt) v *= scale;
+          for (double &v : accrualIntensity) v *= scale;
         } else { // solve for accrualDuration that achieves n subjects
-          accrualDuration = getAccrualDurationFromN1(n, accrualTime, accrualInt);
+          accrualDuration = getAccrualDurationFromN1(n, accrualTime, accrualIntensity);
         }
       }
 
       // adjust study duration (no change to followupTime) to get integer events
       auto h_follow2 = [&](double x)->double {
         return events_under_H1(accrualDuration + x, accrualDuration,
-                               followupTime, accrualInt) - D;
+                               followupTime, accrualIntensity) - D;
       };
 
       double aval = brent(h_follow2, 0.0, followupTime, 1e-6);
@@ -5335,7 +5278,7 @@ ListCpp lrsamplesizeequivcpp(
       kMax, infoRates, criticalValues,
       alpha, typeAlphaSpending, parameterAlphaSpending,
       userAlphaSpending, hazardRatioLower, hazardRatioUpper,
-      allocationRatioPlanned, accrualTime, accrualInt,
+      allocationRatioPlanned, accrualTime, accrualIntensity,
       piecewiseSurvivalTime, stratumFraction,
       lambda1, lambda2, gamma1, gamma2,
       accrualDuration, followupTime, fixedFollowup,
@@ -5346,7 +5289,7 @@ ListCpp lrsamplesizeequivcpp(
       kMax, infoRates, critValues,
       alpha, typeAlphaSpending, parameterAlphaSpending,
       userAlphaSpending, hazardRatioLower, hazardRatioUpper,
-      allocationRatioPlanned, accrualTime, accrualInt,
+      allocationRatioPlanned, accrualTime, accrualIntensity,
       piecewiseSurvivalTime, stratumFraction,
       lambda1, lambda2, gamma1, gamma2,
       accrualDuration, followupTime, fixedFollowup,
@@ -5462,8 +5405,6 @@ Rcpp::List lrsamplesizeequiv(
     lam1, lam2, gam1, gam2,
     accrualDuration, followupTime, fixedFollowup,
     typeOfComputation, spendTime, rounding);
-
-  thread_utils::drain_thread_warnings_to_R();
 
   Rcpp::List result = Rcpp::wrap(out);
   result.attr("class") = "lrpowerequiv";
