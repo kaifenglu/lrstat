@@ -126,8 +126,8 @@ print.design <- function(x, ...) {
 
     # format number of digits after decimal for each column
     j2 <- 11
-    j3 <- c(1,2,3,4,7,8,13)
-    j4 <- c(5,6,9,10,12)
+    j3 <- c(1,2,3,7,8)
+    j4 <- c(4,5,6,9,10,12,13)
 
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
@@ -289,8 +289,8 @@ print.designEquiv <- function(x, ...) {
 
     # format number of digits after decimal for each column
     j2 <- 10
-    j3 <- c(1,2,3,7,8)
-    j4 <- c(4,5,6,9)
+    j3 <- c(1,2,7,8)
+    j4 <- c(3,4,5,6,9)
 
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
@@ -447,8 +447,8 @@ print.adaptDesign <- function(x, ...) {
 
     # format number of digits after decimal for each column
     j2 <- 11
-    j3 <- c(1,2,3,4,5,7,8)
-    j4 <- c(6,9,10)
+    j3 <- c(1,2,3,7,8)
+    j4 <- c(4,5,6,9,10)
 
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
@@ -883,10 +883,10 @@ print.lrsim <- function(x, ...) {
 
     # format number of digits after decimal for each column
     j1 <- c(3,4,5,6)
-    j3 <- c(1,2)
+    j4 <- c(1,2)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
-    b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
+    b[j4] <- lapply(b[j3], formatC, format = "f", digits = 4)
 
     df = t(b)
     rownames(df) = c("Cumulative rejection",
@@ -1408,8 +1408,8 @@ print.nbpowerequiv <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- c(7,8,9,10,11)
     j2 <- 15
-    j3 <- c(1,2,3,12,13)
-    j4 <- c(4,5,6,14)
+    j3 <- c(1,2,12,13)
+    j4 <- c(3,4,5,6,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -1654,8 +1654,8 @@ print.nbpower1s <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- c(7,8,9,10,11)
     j2 <- 16
-    j3 <- c(1,2,3,4,5)
-    j4 <- c(6,12,13,14,15)
+    j3 <- c(1,2,3)
+    j4 <- c(4,5,6,12,13,14,15)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -1876,8 +1876,8 @@ print.designOneMean <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,8,9,14)
-    j4 <- c(5,6,10,11,13)
+    j3 <- c(1,2,3,8,9)
+    j4 <- c(4,5,6,10,11,13,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -2098,8 +2098,8 @@ print.designPairedMeanDiff <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,8,9,14)
-    j4 <- c(5,6,10,11,13)
+    j3 <- c(1,2,3,8,9)
+    j4 <- c(4,5,6,10,11,13,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -2321,8 +2321,8 @@ print.designPairedMeanRatio <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,8,9,14)
-    j4 <- c(5,6,10,11,13)
+    j3 <- c(1,2,3,8,9)
+    j4 <- c(4,5,6,10,11,13,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -2546,8 +2546,8 @@ print.designMeanDiff <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,8,9,14)
-    j4 <- c(5,6,10,11,13)
+    j3 <- c(1,2,3,8,9)
+    j4 <- c(4,5,6,10,11,13,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -2771,8 +2771,8 @@ print.designMeanRatio <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,8,9,14)
-    j4 <- c(5,6,10,11,13)
+    j3 <- c(1,2,3,8,9)
+    j4 <- c(4,5,6,10,11,13,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -2998,8 +2998,8 @@ print.designMeanDiffXO <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,8,9,14)
-    j4 <- c(5,6,10,11,13)
+    j3 <- c(1,2,3,8,9)
+    j4 <- c(4,5,6,10,11,13,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -3223,8 +3223,8 @@ print.designMeanRatioXO <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,8,9,14)
-    j4 <- c(5,6,10,11,13)
+    j3 <- c(1,2,3,8,9)
+    j4 <- c(4,5,6,10,11,13,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -3415,8 +3415,8 @@ print.designPairedMeanDiffEquiv <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 6
     j2 <- 10
-    j3 <- c(1,2,3,7,8)
-    j4 <- c(4,5,9)
+    j3 <- c(1,2,7,8)
+    j4 <- c(3,4,5,9)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -3592,8 +3592,8 @@ print.designPairedMeanRatioEquiv <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 6
     j2 <- 10
-    j3 <- c(1,2,3,7,8)
-    j4 <- c(4,5,9)
+    j3 <- c(1,2,7,8)
+    j4 <- c(3,4,5,9)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -3773,8 +3773,8 @@ print.designMeanDiffEquiv <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 6
     j2 <- 10
-    j3 <- c(1,2,3,7,8)
-    j4 <- c(4,5,9)
+    j3 <- c(1,2,7,8)
+    j4 <- c(3,4,5,9)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -3954,8 +3954,8 @@ print.designMeanRatioEquiv <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 6
     j2 <- 10
-    j3 <- c(1,2,3,7,8)
-    j4 <- c(4,5,9)
+    j3 <- c(1,2,7,8)
+    j4 <- c(3,4,5,9)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -4136,8 +4136,8 @@ print.designMeanDiffXOEquiv <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 6
     j2 <- 10
-    j3 <- c(1,2,3,7,8)
-    j4 <- c(4,5,9)
+    j3 <- c(1,2,7,8)
+    j4 <- c(3,4,5,9)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -4317,8 +4317,8 @@ print.designMeanRatioXOEquiv <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 6
     j2 <- 10
-    j3 <- c(1,2,3,7,8)
-    j4 <- c(4,5,9)
+    j3 <- c(1,2,7,8)
+    j4 <- c(3,4,5,9)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -4525,8 +4525,8 @@ print.designWilcoxon <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,14)
-    j4 <- c(5,6,8,9,10,11,13)
+    j3 <- c(1,2,3)
+    j4 <- c(4,5,6,8,9,10,11,13,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -4770,8 +4770,8 @@ print.designMeanDiffMMRM <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- c(7,8,9)
     j2 <- 14
-    j3 <- c(1,2,3,4,10,11,16)
-    j4 <- c(5,6,12,13,15)
+    j3 <- c(1,2,3,10,11)
+    j4 <- c(4,5,6,12,13,15,16)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -5337,8 +5337,8 @@ print.designOneSlope <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,8,9,14)
-    j4 <- c(5,6,10,11,13)
+    j3 <- c(1,2,3,8,9)
+    j4 <- c(4,5,6,10,11,13,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -5566,8 +5566,8 @@ print.designSlopeDiff <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,8,9,14)
-    j4 <- c(5,6,10,11,13)
+    j3 <- c(1,2,3,8,9)
+    j4 <- c(4,5,6,10,11,13,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -5823,8 +5823,8 @@ print.designSlopeDiffMMRM <- function(x, ...) {
       # format number of digits after decimal for each column
       j1 <- c(7,8)
       j2 <- 13
-      j3 <- c(1,2,3,4,9,10,15)
-      j4 <- c(5,6,11,12,14)
+      j3 <- c(1,2,3,9,10)
+      j4 <- c(4,5,6,11,12,14,15)
 
       b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
       b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -5873,9 +5873,9 @@ print.designSlopeDiffMMRM <- function(x, ...) {
 
       # format number of digits after decimal for each column
       j1 <- c(7,8,9)
-      j2 <- 13
-      j3 <- c(1,2,3,4,10,11,16)
-      j4 <- c(5,6,12,13,15)
+      j2 <- 14
+      j3 <- c(1,2,3,10,11)
+      j4 <- c(4,5,6,12,13,15,16)
 
       b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
       b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -6103,11 +6103,13 @@ print.designOneProportion <- function(x, ...) {
                "cumulativeRejectionH0", "cumulativeFutilityH0")]
 
     # format number of digits after decimal for each column
-    j1 <- c(7,8,9)
+    j0 <- c(8,9)
+    j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,14)
-    j4 <- c(5,6,10,11,13)
+    j3 <- c(1,2,3)
+    j4 <- c(4,5,6,10,11,13,14)
 
+    b[j0] <- lapply(b[j0], formatC, format = "f", digits = 0)
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
@@ -6148,11 +6150,11 @@ print.designOneProportion <- function(x, ...) {
     b <- s[, c("efficacyBounds", "efficacyResponses", "efficacyP")]
 
     # format number of digits after decimal for each column
-    j1 <- 2
+    j0 <- 2
     j3 <- 1
     j4 <- 3
 
-    b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
+    b[j0] <- lapply(b[j0], formatC, format = "f", digits = 0)
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
@@ -6331,8 +6333,8 @@ print.designPairedPropMcNemar <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,14)
-    j4 <- c(5,6,8,9,10,11,13)
+    j3 <- c(1,2,3,8,9)
+    j4 <- c(4,5,6,10,11,13,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -6550,8 +6552,8 @@ print.designRiskDiff <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,8,9,14)
-    j4 <- c(5,6,10,11,13)
+    j3 <- c(1,2,3,8,9)
+    j4 <- c(4,5,6,10,11,13,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -6768,8 +6770,8 @@ print.designRiskRatio <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,8,9,14)
-    j4 <- c(5,6,10,11,13)
+    j3 <- c(1,2,3,8,9)
+    j4 <- c(4,5,6,10,11,13,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -6987,8 +6989,8 @@ print.designRiskRatioFM <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,8,9,14)
-    j4 <- c(5,6,10,11,13)
+    j3 <- c(1,2,3,8,9)
+    j4 <- c(4,5,6,10,11,13,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -7205,8 +7207,8 @@ print.designOddsRatio <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 12
-    j3 <- c(1,2,3,4,8,9,14)
-    j4 <- c(5,6,10,11,13)
+    j3 <- c(1,2,3,8,9)
+    j4 <- c(4,5,6,10,11,13,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -7402,8 +7404,8 @@ print.designRiskDiffEquiv <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 11
-    j3 <- c(1,2,3,8,9)
-    j4 <- c(4,5,6,10)
+    j3 <- c(1,2,8,9)
+    j4 <- c(3,4,5,6,10)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -7584,8 +7586,8 @@ print.designRiskRatioEquiv <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 11
-    j3 <- c(1,2,3,8,9)
-    j4 <- c(4,5,6,10)
+    j3 <- c(1,2,8,9)
+    j4 <- c(3,4,5,6,10)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -7766,8 +7768,8 @@ print.designOddsRatioEquiv <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- 7
     j2 <- 11
-    j3 <- c(1,2,3,8,9)
-    j4 <- c(4,5,6,10)
+    j3 <- c(1,2,8,9)
+    j4 <- c(3,4,5,6,10)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -8732,8 +8734,8 @@ print.kmpowerequiv <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- c(7,8,9,10,11)
     j2 <- 15
-    j3 <- c(1,2,3,12,13)
-    j4 <- c(4,5,6,14)
+    j3 <- c(1,2,12,13)
+    j4 <- c(3,4,5,6,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -8932,8 +8934,8 @@ print.rmpowerequiv <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- c(7,8,9,10,11)
     j2 <- 15
-    j3 <- c(1,2,3,12,13)
-    j4 <- c(4,5,6,14)
+    j3 <- c(1,2,12,13)
+    j4 <- c(3,4,5,6,14)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
@@ -9133,8 +9135,8 @@ print.lrpowerequiv <- function(x, ...) {
     # format number of digits after decimal for each column
     j1 <- c(7,8,9,10)
     j2 <- c(14,15)
-    j3 <- c(1,2,3,11,12)
-    j4 <- c(4,5,6,13)
+    j3 <- c(1,2,11,12)
+    j4 <- c(3,4,5,6,13)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)

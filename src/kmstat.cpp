@@ -1833,10 +1833,8 @@ ListCpp kmsamplesizecpp(
   if (unknown == ACC_DUR || (unknown == FUP_TIME && expanded) || unknown == ACC_INT) {
     int expand_iter = 0;
     while (fl_val * fu_val > 0.0 && expand_iter < 60) {
-      lower = upper;
-      fl_val = fu_val;
-      upper *= 2.0;
-      fu_val = f_root(upper);
+      lower = upper; fl_val = fu_val;
+      upper *= 2.0;  fu_val = f_root(upper);
       ++expand_iter;
     }
   }
@@ -1935,14 +1933,12 @@ ListCpp kmsamplesizecpp(
   };
 
   double lo = 0.001, hi = 2.0;
-  double flo = f_surv(lo);
-  double fhi = f_surv(hi);
-  int it = 0;
-  while (flo * fhi > 0.0 && it < 60) {
-    lo = hi;
-    flo = fhi;
-    hi *= 2.0;
-    fhi = f_surv(hi);
+  double flo = f_surv(lo), fhi = f_surv(hi);
+  int expand_iter = 0;
+  while (flo * fhi > 0.0 && expand_iter < 60) {
+    lo = hi;   flo = fhi;
+    hi *= 2.0; fhi = f_surv(hi);
+    ++expand_iter;
   }
   if (flo * fhi > 0.0) throw std::runtime_error(
       "Unable to bracket root for lambda1H0 under H0; check inputs");
@@ -2000,32 +1996,29 @@ ListCpp kmsamplesizecpp(
       accrualDuration = brent(h_accr, lo, hi, 1.0e-6);
       followupTime = 0.0;
       studyDuration = accrualDuration;
-    } else if (h_follow(followupTime) < 0.0) {
+    } else if (h_follow(milestone) < 0.0) {
       std::clog << "WARNING: The required information cannot be attained by "
-                   "increasing followupTime alone. accrualDuration is also "
-                   "increased to attain the required information.\n";
+                   "increasing followupTime to milestone alone; accrualDuration "
+                   " is also increased to attain the required information.\n";
       auto h_accr = [&](double x)->double {
         return info_minus_target_H0(x + milestone, x, milestone, accrualIntensity);
       };
 
       // adjust accrualDuration upward to match target
-      double lo = accrualDuration;
-      double hi = 2.0 * accrualDuration;
-      double flo = h_accr(lo);
-      double fhi = h_accr(hi);
-      int it = 0;
-      while (flo * fhi > 0.0 && it < 60) {
-        lo = hi;
-        flo = fhi;
-        hi *= 2.0;
-        fhi = h_accr(hi);
+      double lo = accrualDuration, hi = 2.0 * accrualDuration;
+      double hlo = h_accr(lo), hhi = h_accr(hi);
+      int expand_iter = 0;
+      while (hlo * hhi > 0.0 && expand_iter < 60) {
+        lo = hi;   hlo = hhi;
+        hi *= 2.0; hhi = h_accr(hi);
+        ++expand_iter;
       }
-      if (flo * fhi > 0.0) throw std::runtime_error(
+      if (hlo * hhi > 0.0) throw std::runtime_error(
           "Unable to bracket accrualDuration under H0; check inputs");
 
       auto h_for_brent = [&](double x)->double {
-        if (x == lo) return flo;
-        if (x == hi) return fhi;
+        if (x == lo) return hlo;
+        if (x == hi) return hhi;
         return h_accr(x);
       };
 
@@ -2040,55 +2033,30 @@ ListCpp kmsamplesizecpp(
       followupTime = brent(h_follow, lo, hi, 1.0e-6);
       studyDuration = accrualDuration + followupTime;
     }
-  } else {
-    auto h_study = [&](double x)->double {
-      return info_minus_target_H0(accrualDuration + x, accrualDuration,
-                                  followupTime, accrualIntensity);
-    };
-
+  } else { // fixed follow-up, adjust accrualDuration if needed to match target
     auto h_accr = [&](double x)->double {
       return info_minus_target_H0(x + followupTime, x, followupTime, accrualIntensity);
     };
 
-    if (accrualDuration > milestone + 0.001 && h_study(0.0) > 0.0) {
-      std::clog << "WARNING: Information at zero follow-up (end of enrollment) "
-                   "already exceeds target. Decrease accrual druation.\n";
-      double lo = milestone + 0.001;
-      double hi = accrualDuration;
-      accrualDuration = brent(h_accr, lo, hi, 1.0e-6);
-      studyDuration = accrualDuration + followupTime;
-    } else if (h_study(followupTime) < 0.0) {
-      std::clog << "WARNING: The required information cannot be attained by "
-                   "increasing followupTime alone. accrualDuration is also "
-                   "increased to attain the required information.\n";
-      double lo = accrualDuration;
-      double hi = 2.0 * accrualDuration;
-      double flo = h_accr(lo);
-      double fhi = h_accr(hi);
-      int it = 0;
-      while (flo * fhi > 0.0 && it < 60) {
-        lo = hi;
-        flo = fhi;
-        hi *= 2.0;
-        fhi = h_accr(hi);
-      }
-      if (flo * fhi > 0.0) throw std::runtime_error(
-          "Unable to bracket accrualDuration under H0; check inputs");
-
-      auto h_for_brent = [&](double x)->double {
-        if (x == lo) return flo;
-        if (x == hi) return fhi;
-        return h_accr(x);
-      };
-
-      accrualDuration = brent(h_for_brent, lo, hi, 1.0e-6);
-      studyDuration = accrualDuration + followupTime;
-    } else {
-      double lo = std::max(milestone - accrualDuration, 0.0) + 0.001;
-      double hi = milestone;
-      double extra = brent(h_study, lo, hi, 1.0e-6);
-      studyDuration = accrualDuration + extra;
+    double lo = 0.001, hi = accrualDuration;
+    double hlo = h_accr(lo), hhi = h_accr(hi);
+    int expand_iter = 0;
+    while (hlo * hhi > 0.0 && expand_iter < 60) {
+      lo = hi;   hlo = hhi;
+      hi *= 2.0; hhi = h_accr(hi);
+      ++expand_iter;
     }
+    if (hlo * hhi > 0.0) throw std::runtime_error(
+        "Unable to bracket accrualDuration under H0; check inputs");
+
+    auto h_for_brent = [&](double x)->double {
+      if (x == lo) return hlo;
+      if (x == hi) return hhi;
+      return h_accr(x);
+    };
+
+    accrualDuration = brent(h_for_brent, lo, hi, 1.0e-6);
+    studyDuration = accrualDuration + followupTime;
   }
 
   // --- Results under H0 with same boundaries as H1 ---
@@ -2473,7 +2441,7 @@ ListCpp kmpower1scpp(
   double sumf = std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
   if (std::fabs(sumf - 1.0) > 1e-12)
     throw std::invalid_argument("stratumFraction must sum to 1");
-  if (none_na(lambda) == false) throw std::invalid_argument("lambda must be provided");
+  if (!none_na(lambda)) throw std::invalid_argument("lambda must be provided");
   for (double v : lambda) {
     if (v < 0.0) throw std::invalid_argument("lambda must be non-negative");
   }
@@ -3198,7 +3166,7 @@ ListCpp kmsamplesize1scpp(
   if (std::fabs(sumf - 1.0) > 1e-12)
     throw std::invalid_argument("stratumFraction must sum to 1");
 
-  if (none_na(lambda) == false) throw std::invalid_argument("lambda must be provided");
+  if (!none_na(lambda)) throw std::invalid_argument("lambda must be provided");
   for (double v : lambda) {
     if (v < 0.0) throw std::invalid_argument("lambda must be non-negative");
   }
@@ -3440,10 +3408,8 @@ ListCpp kmsamplesize1scpp(
   if (unknown == ACC_DUR || (unknown == FUP_TIME && expanded) || unknown == ACC_INT) {
     int expand_iter = 0;
     while (fl_val * fu_val > 0.0 && expand_iter < 60) {
-      lower = upper;
-      fl_val = fu_val;
-      upper *= 2.0;
-      fu_val = f_root(upper);
+      lower = upper; fl_val = fu_val;
+      upper *= 2.0;  fu_val = f_root(upper);
       ++expand_iter;
     }
   }
@@ -3541,14 +3507,12 @@ ListCpp kmsamplesize1scpp(
   };
 
   double lo = 0.001, hi = 2.0;
-  double flo = f_surv(lo);
-  double fhi = f_surv(hi);
-  int it = 0;
-  while (flo * fhi > 0.0 && it < 60) {
-    lo = hi;
-    flo = fhi;
-    hi *= 2.0;
-    fhi = f_surv(hi);
+  double flo = f_surv(lo), fhi = f_surv(hi);
+  int expand_iter = 0;
+  while (flo * fhi > 0.0 && expand_iter < 60) {
+    lo = hi;   flo = fhi;
+    hi *= 2.0; fhi = f_surv(hi);
+    ++expand_iter;
   }
   if (flo * fhi > 0.0) throw std::runtime_error(
       "Unable to bracket root for lambda under H0; check inputs");
@@ -3607,7 +3571,7 @@ ListCpp kmsamplesize1scpp(
       accrualDuration = brent(h_accr, lo, hi, 1.0e-6);
       followupTime = 0.0;
       studyDuration = accrualDuration;
-    } else if (h_follow(followupTime) < 0.0) {
+    } else if (h_follow(milestone) < 0.0) {
       std::clog << "WARNING: The required information cannot be attained by "
                    "increasing followupTime alone. accrualDuration is also "
                    "increased to attain the required information.\n";
@@ -3616,23 +3580,20 @@ ListCpp kmsamplesize1scpp(
       };
 
       // adjust accrualDuration upward to match target
-      double lo = accrualDuration;
-      double hi = 2.0 * accrualDuration;
-      double flo = h_accr(lo);
-      double fhi = h_accr(hi);
-      int it = 0;
-      while (flo * fhi > 0.0 && it < 60) {
-        lo = hi;
-        flo = fhi;
-        hi *= 2.0;
-        fhi = h_accr(hi);
+      double lo = accrualDuration, hi = 2.0 * accrualDuration;
+      double hlo = h_accr(lo), hhi = h_accr(hi);
+      int expand_iter = 0;
+      while (hlo * hhi > 0.0 && expand_iter < 60) {
+        lo = hi;   hlo = hhi;
+        hi *= 2.0; hhi = h_accr(hi);
+        ++expand_iter;
       }
-      if (flo * fhi > 0.0) throw std::runtime_error(
+      if (hlo * hhi > 0.0) throw std::runtime_error(
           "Unable to bracket accrualDuration under H0; check inputs");
 
       auto h_for_brent = [&](double x)->double {
-        if (x == lo) return flo;
-        if (x == hi) return fhi;
+        if (x == lo) return hlo;
+        if (x == hi) return hhi;
         return h_accr(x);
       };
 
@@ -3648,54 +3609,29 @@ ListCpp kmsamplesize1scpp(
       studyDuration = accrualDuration + followupTime;
     }
   } else {
-    auto h_study = [&](double x)->double {
-      return info_minus_target_H0(accrualDuration + x, accrualDuration,
-                                  followupTime, accrualIntensity);
-    };
-
     auto h_accr = [&](double x)->double {
       return info_minus_target_H0(x + followupTime, x, followupTime, accrualIntensity);
     };
 
-    if (accrualDuration > milestone + 0.001 && h_study(0.0) > 0.0) {
-      std::clog << "WARNING: Information at zero follow-up (end of enrollment) "
-                   "already exceeds target. Decrease accrual druation.\n";
-      double lo = milestone + 0.001;
-      double hi = accrualDuration;
-      accrualDuration = brent(h_accr, lo, hi, 1.0e-6);
-      studyDuration = accrualDuration + followupTime;
-    } else if (h_study(followupTime) < 0.0) {
-      std::clog << "WARNING: The required information cannot be attained by "
-                   "increasing followupTime alone. accrualDuration is also "
-                   "increased to attain the required information.\n";
-      double lo = accrualDuration;
-      double hi = 2.0 * accrualDuration;
-      double flo = h_accr(lo);
-      double fhi = h_accr(hi);
-      int it = 0;
-      while (flo * fhi > 0.0 && it < 60) {
-        lo = hi;
-        flo = fhi;
-        hi *= 2.0;
-        fhi = h_accr(hi);
-      }
-      if (flo * fhi > 0.0) throw std::runtime_error(
-          "Unable to bracket accrualDuration under H0; check inputs");
-
-      auto h_for_brent = [&](double x)->double {
-        if (x == lo) return flo;
-        if (x == hi) return fhi;
-        return h_accr(x);
-      };
-
-      accrualDuration = brent(h_for_brent, lo, hi, 1.0e-6);
-      studyDuration = accrualDuration + followupTime;
-    } else {
-      double lo = std::max(milestone - accrualDuration, 0.0) + 0.001;
-      double hi = followupTime;
-      double extra = brent(h_study, lo, hi, 1.0e-6);
-      studyDuration = accrualDuration + extra;
+    double lo = 0.001, hi = accrualDuration;
+    double hlo = h_accr(lo), hhi = h_accr(hi);
+    int expand_iter = 0;
+    while (hlo * hhi > 0.0 && expand_iter < 60) {
+      lo = hi;   hlo = hhi;
+      hi *= 2.0; hhi = h_accr(hi);
+      ++expand_iter;
     }
+    if (hlo * hhi > 0.0) throw std::runtime_error(
+        "Unable to bracket accrualDuration under H0; check inputs");
+
+    auto h_for_brent = [&](double x)->double {
+      if (x == lo) return hlo;
+      if (x == hi) return hhi;
+      return h_accr(x);
+    };
+
+    accrualDuration = brent(h_for_brent, lo, hi, 1.0e-6);
+    studyDuration = accrualDuration + followupTime;
   }
 
   // --- Results under H0 with same boundaries as H1 ---
@@ -5109,10 +5045,8 @@ ListCpp kmsamplesizeequivcpp(
   if (unknown == ACC_DUR || (unknown == FUP_TIME && expanded) || unknown == ACC_INT) {
     int expand_iter = 0;
     while (fl_val * fu_val > 0.0 && expand_iter < 60) {
-      lower = upper;
-      fl_val = fu_val;
-      upper *= 2.0;
-      fu_val = f_root(upper);
+      lower = upper; fl_val = fu_val;
+      upper *= 2.0;  fu_val = f_root(upper);
       ++expand_iter;
     }
   }

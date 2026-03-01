@@ -1199,16 +1199,12 @@ DataFrameCpp getDurationFromNeventscpp(
   };
 
   // bracket and find lower bound root for f1
-  double lower = 0.001;
-  double upper = 240.0;
-  double fl_val = f1(lower);
-  double fu_val = f1(upper);
+  double lower = 0.001, upper = 120.0;
+  double fl_val = f1(lower), fu_val = f1(upper);
   int expand_iter = 0;
   while (fl_val * fu_val > 0.0 && expand_iter < 60) {
-    lower = upper;
-    fl_val = fu_val;
-    upper *= 2.0;
-    fu_val = f1(upper);
+    lower = upper; fl_val = fu_val;
+    upper *= 2.0;  fu_val = f1(upper);
     ++expand_iter;
   }
   if (fl_val * fu_val > 0.0) throw std::runtime_error(
@@ -3116,10 +3112,8 @@ ListCpp lrsamplesizecpp(
   if (!curtailed) {
     int expand_iter = 0;
     while (fl_val * fu_val > 0.0 && expand_iter < 60) {
-      lower = upper;
-      fl_val = fu_val;
-      upper *= 2.0;
-      fu_val = f_root(upper);
+      lower = upper; fl_val = fu_val;
+      upper *= 2.0;  fu_val = f_root(upper);
       ++expand_iter;
     }
   }
@@ -3190,28 +3184,24 @@ ListCpp lrsamplesizecpp(
       };
 
       // bracket and solve for follow-up time
-      double lower_h = 0.0;
-      double upper_h = std::max(1.1*followupTime, 1.0);
-      double hl_val = h_follow(lower_h);
-      double hu_val = h_follow(upper_h);
+      double lo = 0.0, hi = std::max(followupTime, 1.0);
+      double hlo = h_follow(lo), hhi = h_follow(hi);
       int expand_iter = 0;
-      while (hl_val * hu_val > 0.0 && expand_iter < 60) {
-        lower_h = upper_h;
-        hl_val = hu_val;
-        upper_h *= 2.0;
-        hu_val = h_follow(upper_h);
+      while (hlo * hhi > 0.0 && expand_iter < 60) {
+        lo = hi;   hlo = hhi;
+        hi *= 2.0; hhi = h_follow(hi);
         ++expand_iter;
       }
-      if (hl_val * hu_val > 0.0) throw std::runtime_error(
+      if (hlo * hhi > 0.0) throw std::runtime_error(
           "Unable to bracket root for follow-up time; check interval or inputs");
 
       auto h_for_brent = [&](double x)->double {
-        if (x == lower_h) return hl_val;
-        if (x == upper_h) return hu_val;
+        if (x == lo) return hlo;
+        if (x == hi) return hhi;
         return h_follow(x);
       };
 
-      followupTime = brent(h_for_brent, lower_h, upper_h, 1e-6);
+      followupTime = brent(h_for_brent, lo, hi, 1e-6);
       studyDuration = accrualDuration + followupTime;
     } else { // fixed follow-up
       // adjust accrualDuration / accrualIntensity to get integer events
@@ -3224,28 +3214,25 @@ ListCpp lrsamplesizecpp(
                                  accrualIntensity) - D;
         };
 
-        double lower_h = std::max(1e-6, accrualDuration);
-        double upper_h = accrualDuration * 1.1;
-        double hl_val = h_accr(lower_h);
-        double hu_val = h_accr(upper_h);
+        double lo = std::max(1e-6, accrualDuration);
+        double hi = accrualDuration * 1.1;
+        double hlo = h_accr(lo), hhi = h_accr(hi);
         int expand_iter = 0;
-        while (hl_val * hu_val > 0.0 && expand_iter < 60) {
-          lower_h = upper_h;
-          hl_val = hu_val;
-          upper_h *= 2.0;
-          hu_val = h_accr(upper_h);
+        while (hlo * hhi > 0.0 && expand_iter < 60) {
+          lo = hi;   hlo = hhi;
+          hi *= 2.0; hhi = h_accr(hi);
           ++expand_iter;
         }
-        if (hl_val * hu_val > 0.0) throw std::runtime_error(
+        if (hlo * hhi > 0.0) throw std::runtime_error(
             "Unable to bracket root for accrual duration; check interval or inputs");
 
          auto h_for_brent = [&](double x)->double {
-          if (x == lower_h) return hl_val;
-          if (x == upper_h) return hu_val;
+          if (x == lo) return hlo;
+          if (x == hi) return hhi;
           return h_accr(x);
         };
 
-        accrualDuration = brent(h_for_brent, lower_h, upper_h, 1e-6);
+        accrualDuration = brent(h_for_brent, lo, hi, 1e-6);
       }
 
       // recompute integer n
@@ -3450,31 +3437,10 @@ ListCpp lrsamplesizecpp(
     };
 
     double h_0 = h_follow(0.0);
-    if (h_0 < 0.0) { // normal case: adjust followupTime
-      double lower_h = 0.0, upper_h = std::max(1.0, followupTime);
-      double hl_val = h_0, hu_val = h_follow(upper_h);
-      int expand_iter = 0;
-      while (hl_val * hu_val > 0.0 && expand_iter < 60) {
-        lower_h = upper_h;
-        hl_val = hu_val;
-        upper_h *= 2.0;
-        hu_val = h_follow(upper_h);
-        ++expand_iter;
-      }
-      if (hl_val * hu_val > 0.0) throw std::runtime_error(
-          "Unable to bracket root for H0; check interval or inputs");
-
-      auto h_for_brent = [&](double x)->double {
-        if (x == lower_h) return hl_val;
-        if (x == upper_h) return hu_val;
-        return h_follow(x);
-      };
-      followupTime = brent(h_for_brent, lower_h, upper_h, 1e-6);
-      studyDuration = accrualDuration + followupTime;
-    } else {
+    if (h_0 > 0.0) {
       std::clog << "WARNING: Events at zero follow-up (end of enrollment) "
-                   "already exceeds target. Setting followupTime = 0 and "
-                   "finding minimal accrualDuration.\n";
+      "already exceeds target. Setting followupTime = 0 and "
+      "finding minimal accrualDuration.\n";
       auto h_accr = [&](double x)->double {
         if (rho1 == 0 && rho2 == 0) {
           return events_under_H0(x, x, 0.0, accrualIntensity) - D;
@@ -3486,77 +3452,56 @@ ListCpp lrsamplesizecpp(
       accrualDuration = brent(h_accr, 1e-6, accrualDuration, 1e-6);
       followupTime = 0.0;
       studyDuration = accrualDuration + followupTime;
-    }
-  } else { // fixed follow-up
-    auto h_minfu = [&](double x)->double {
-      if (rho1 == 0 && rho2 == 0) {
-        return events_under_H0(accrualDuration + x, accrualDuration,
-                               followupTime, accrualIntensity) - D;
-      } else {
-        return info_under_H0(accrualDuration + x, accrualDuration,
-                             followupTime, accrualIntensity) - maxI;
-      }
-    };
-
-    double h_0 = h_minfu(0.0);
-    double h_fu = h_minfu(followupTime);
-
-    if (h_fu < 0.0) { // need to increase accrualDuration
-      auto h_accr = [&](double x)->double {
-        if (rho1 == 0 && rho2 == 0) {
-          return events_under_H0(x + followupTime, x, followupTime,
-                                 accrualIntensity) - D;
-        } else {
-          return info_under_H0(x + followupTime, x, followupTime,
-                               accrualIntensity) - maxI;
-        }
-      };
-
-      double lower_h = accrualDuration;
-      double upper_h = accrualDuration * 2.0;
-      double hl_val = h_accr(lower_h), hu_val = h_accr(upper_h);
+    } else { // normal case: adjust followupTime
+      double lo = 0.0, hi = std::max(1.0, followupTime);
+      double hlo = h_0, hhi = h_follow(hi);
       int expand_iter = 0;
-      while (hl_val * hu_val > 0.0 && expand_iter < 60) {
-        lower_h = upper_h;
-        hl_val = hu_val;
-        upper_h *= 2.0;
-        hu_val = h_accr(upper_h);
+      while (hlo * hhi > 0.0 && expand_iter < 60) {
+        lo = hi;   hlo = hhi;
+        hi *= 2.0; hhi = h_follow(hi);
         ++expand_iter;
       }
-      if (hl_val * hu_val > 0.0) throw std::runtime_error(
+      if (hlo * hhi > 0.0) throw std::runtime_error(
           "Unable to bracket root for H0; check interval or inputs");
 
       auto h_for_brent = [&](double x)->double {
-        if (x == lower_h) return hl_val;
-        if (x == upper_h) return hu_val;
-        return h_accr(x);
+        if (x == lo) return hlo;
+        if (x == hi) return hhi;
+        return h_follow(x);
       };
-      accrualDuration = brent(h_for_brent, lower_h, upper_h, 1e-6);
+      followupTime = brent(h_for_brent, lo, hi, 1e-6);
       studyDuration = accrualDuration + followupTime;
-    } else if (h_0 > 0.0) {
-      std::clog << "WARNING: Events at zero follow-up (end of enrollment) "
-                   "already exceeds target. finding minimal accrualDuration "
-                   "as followupTime is fixed.\n";
-       auto h_accr = [&](double x)->double {
-        if (rho1 == 0 && rho2 == 0) {
-          return events_under_H0(x, x, followupTime, accrualIntensity) - D;
-        } else {
-          return info_under_H0(x, x, followupTime, accrualIntensity) - maxI;
-        }
-      };
-
-      accrualDuration = brent(h_accr, 1e-6, accrualDuration, 1e-6);
-      studyDuration = accrualDuration + followupTime;
-    } else {
-      // study duration between accrualDuration and accrualDuration + followupTime
-      auto h_for_brent = [&](double x)->double {
-        if (x == 0.0) return h_0;
-        if (x == followupTime) return h_fu;
-        return h_minfu(x);
-      };
-      double aval = brent(h_for_brent, 0.0, followupTime, 1e-6);
-      studyDuration = accrualDuration + aval;
     }
+  } else { // fixed follow-up, adjust accrualDuration
+    auto h_accr = [&](double x)->double {
+      if (rho1 == 0 && rho2 == 0) {
+        return events_under_H0(x + followupTime, x, followupTime,
+                               accrualIntensity) - D;
+      } else {
+        return info_under_H0(x + followupTime, x, followupTime,
+                             accrualIntensity) - maxI;
+      }
+    };
+
+    double lo = 0.0, hi = accrualDuration;
+    double hlo = h_accr(lo), hhi = h_accr(hi);
+    int expand_iter = 0;
+    while (hlo * hhi > 0.0 && expand_iter < 60) {
+      lo = hi;   hlo = hhi;
+      hi *= 2.0; hhi = h_accr(hi);
+      ++expand_iter;
+    }
+    if (hlo * hhi > 0.0) throw std::runtime_error(
+        "Unable to bracket accrualDuration under H0; check inputs");
+
+    auto h_for_brent = [&](double x)->double {
+      if (x == lo) return hlo;
+      if (x == hi) return hhi;
+      return h_accr(x);
+    };
+
+    accrualDuration = brent(h_for_brent, lo, hi, 1.0e-6);
+    studyDuration = accrualDuration + followupTime;
   }
 
   ListCpp resultsH0 = lrpowercpp(
@@ -5129,8 +5074,8 @@ ListCpp lrsamplesizeequivcpp(
   if (!curtailed) {
     int expand_iter = 0;
     while (fl_val * fu_val > 0.0 && expand_iter < 60) {
-      upper *= 2.0;
-      fu_val = f_root(upper);
+      lower = upper; fl_val = fu_val;
+      upper *= 2.0;  fu_val = f_root(upper);
       ++expand_iter;
     }
   }
@@ -5190,26 +5135,24 @@ ListCpp lrsamplesizeequivcpp(
       };
 
       // bracket and solve for follow-up time
-      double lower_h = 0.0, upper_h = std::max(1.1*followupTime, 1.0);
-      double hl_val = h_follow(lower_h), hu_val = h_follow(upper_h);
+      double lo = 0.0, hi = std::max(followupTime * 1.1, 1.0);
+      double hlo = h_follow(lo), hhi = h_follow(hi);
       int expand_iter = 0;
-      while (hl_val * hu_val > 0.0 && expand_iter < 60) {
-        lower_h = upper_h;
-        hl_val = hu_val;
-        upper_h *= 2.0;
-        hu_val = h_follow(upper_h);
+      while (hlo * hhi > 0.0 && expand_iter < 60) {
+        lo = hi;   hlo = hhi;
+        hi *= 2.0; hhi = h_follow(hi);
         ++expand_iter;
       }
-      if (hl_val * hu_val > 0.0) throw std::runtime_error(
+      if (hlo * hhi > 0.0) throw std::runtime_error(
           "Unable to bracket root for follow-up time; check inputs");
 
       auto h_for_brent = [&](double x)->double {
-        if (x == lower_h) return hl_val;
-        if (x == upper_h) return hu_val;
+        if (x == lo) return hlo;
+        if (x == hi) return hhi;
         return h_follow(x);
       };
 
-      followupTime = brent(h_for_brent, lower_h, upper_h, 1e-6);
+      followupTime = brent(h_for_brent, lo, hi, 1e-6);
       studyDuration = accrualDuration + followupTime;
     } else { // fixed follow-up
       if (unknown == ACC_INT) { // scale accrual intensity
@@ -5221,27 +5164,24 @@ ListCpp lrsamplesizeequivcpp(
                                  accrualIntensity) - D;
         };
 
-        double lower_h = accrualDuration;
-        double upper_h = accrualDuration * 1.1;
-        double hl_val = h_accr(lower_h), hu_val = h_accr(upper_h);
+        double lo = accrualDuration, hi = accrualDuration * 1.1;
+        double hlo = h_accr(lo), hhi = h_accr(hi);
         int expand_iter = 0;
-        while (hl_val * hu_val > 0.0 && expand_iter < 60) {
-          lower_h = upper_h;
-          hl_val = hu_val;
-          upper_h *= 2.0;
-          hu_val = h_accr(upper_h);
+        while (hlo * hhi > 0.0 && expand_iter < 60) {
+          lo = hi;   hlo = hhi;
+          hi *= 2.0; hhi = h_accr(hi);
           ++expand_iter;
         }
-        if (hl_val * hu_val > 0.0) throw std::runtime_error(
+        if (hlo * hhi > 0.0) throw std::runtime_error(
             "Unable to bracket root for accrual duration; check inputs");
 
         auto h_for_brent = [&](double x)->double {
-          if (x == lower_h) return hl_val;
-          if (x == upper_h) return hu_val;
+          if (x == lo) return hlo;
+          if (x == hi) return hhi;
           return h_accr(x);
         };
 
-        accrualDuration = brent(h_for_brent, lower_h, upper_h, 1e-6);
+        accrualDuration = brent(h_for_brent, lo, hi, 1e-6);
       }
 
       // recompute integer n
