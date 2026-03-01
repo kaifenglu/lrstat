@@ -1,4 +1,3 @@
-// [[Rcpp::depends(RcppParallel)]]
 #include "generic_design.h"
 #include "utilities.h"
 #include "dataframe_list.h"

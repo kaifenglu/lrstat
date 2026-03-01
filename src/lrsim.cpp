@@ -1,5 +1,3 @@
-// [[Rcpp::depends(RcppParallel)]]
-
 #include "enrollment_event.h"
 #include "generic_design.h"
 #include "utilities.h"
