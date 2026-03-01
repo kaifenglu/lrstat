@@ -2164,6 +2164,12 @@ server <- function(input, output, session) {
       allocation <- c(r, 1)
     }
 
+    n <- accrual(
+      time = input$accrualDuration,
+      accrualTime = accrualTime(),
+      accrualIntensity = accrualIntensity(),
+      accrualDuration = input$accrualDuration)
+
     l <- lrsim(
       kMax = as.numeric(input$kMax),
       informationRates = as.vector(input$boundaries[,1], "numeric"),
@@ -2178,7 +2184,7 @@ server <- function(input, output, session) {
       lambda2 = as.vector(input$survival[,3], "numeric"),
       gamma1 = as.vector(input$dropout[,1], "numeric"),
       gamma2 = as.vector(input$dropout[,2], "numeric"),
-      accrualDuration = input$accrualDuration,
+      n = n,
       followupTime = input$followupTime,
       fixedFollowup = input$fixedFollowup,
       rho1 = input$rho1,
@@ -2202,6 +2208,12 @@ server <- function(input, output, session) {
       allocation <- c(r, 1)
     }
 
+    n <- accrual(
+      time = input$accrualDuration,
+      accrualTime = accrualTime(),
+      accrualIntensity = accrualIntensity(),
+      accrualDuration = input$accrualDuration)
+
     l <- lrsim(
       kMax = as.numeric(input$kMax),
       informationRates = as.vector(input$boundaries[,1], "numeric"),
@@ -2216,7 +2228,7 @@ server <- function(input, output, session) {
       lambda2 = as.vector(input$survival[,3], "numeric"),
       gamma1 = as.vector(input$dropout[,1], "numeric"),
       gamma2 = as.vector(input$dropout[,2], "numeric"),
-      accrualDuration = input$accrualDuration,
+      n = n,
       followupTime = input$followupTime,
       fixedFollowup = input$fixedFollowup,
       rho1 = input$rho1,

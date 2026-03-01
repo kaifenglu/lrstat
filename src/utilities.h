@@ -398,9 +398,9 @@ double quad2d(const std::function<double(double,double)>& f,
               double ax, double bx, double ay, double by,
               double tol = 1.0e-5);
 
-double pbvnormcpp(std::vector<double>& lower,
-                  std::vector<double>& upper,
-                  double rho);
+double pbvnormcpp(const std::vector<double>& lower,
+                  const std::vector<double>& upper,
+                  const double rho);
 
 ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
                      const std::vector<double>& hazard_pfs,

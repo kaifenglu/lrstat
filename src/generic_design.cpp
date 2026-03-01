@@ -22,7 +22,6 @@
 using std::size_t;
 
 
-// [[Rcpp::export]]
 double errorSpentcpp(const double t,
                      const double error,
                      const std::string& sf,
@@ -68,7 +67,93 @@ double errorSpentcpp(const double t,
 }
 
 
+//' @title Error Spending
+//' @description Obtains the error spent at given spending times
+//' for the specified error spending function.
+//'
+//' @param t A vector of spending times, typically equal to information
+//'   fractions.
+//' @param error The total error to spend.
+//' @param sf The spending function. One of the following: "sfOF" for
+//'   O'Brien-Fleming type spending function, "sfP" for Pocock type spending
+//'   function, "sfKD" for Kim & DeMets spending function, and "sfHSD" for
+//'   Hwang, Shi & DeCani spending function. Defaults to "sfOF".
+//' @param sfpar The parameter for the spending function. Corresponds to
+//'   rho for "sfKD" and gamma for "sfHSD".
+//'
+//' @details
+//' This function implements a variety of error spending functions commonly
+//' used in group sequential designs, assuming one-sided hypothesis testing.
+//'
+//' **O'Brien-Fleming-Type Spending Function**
+//'
+//' This spending function allocates very little alpha early on and more alpha
+//' later in the trial. It is defined as:
+//' \deqn{
+//' \alpha(t) = 2 - 2\Phi\left(\frac{z_{\alpha/2}}{\sqrt{t}}\right),
+//' }
+//' where \eqn{\Phi} is the standard normal cumulative distribution function,
+//' \eqn{z_{\alpha/2}} is the critical value from the standard normal
+//' distribution, and \eqn{t \in [0, 1]} denotes the information fraction.
+//'
+//' **Pocock-Type Spending Function**
+//'
+//' This function spends alpha more evenly throughout the study:
+//' \deqn{
+//' \alpha(t) = \alpha \log(1 + (e - 1)t),
+//' }
+//' where \eqn{e} is Euler's number (approximately 2.718).
+//'
+//' **Kim and DeMets Power-Type Spending Function**
+//'
+//' This family of spending functions is defined as:
+//' \deqn{
+//' \alpha(t) = \alpha t^{\rho}, \quad \rho > 0.
+//' }
+//' - When \eqn{\rho = 1}, the function mimics Pocock-type boundaries.
+//' - When \eqn{\rho = 3}, it approximates O’Brien-Fleming-type boundaries.
+//'
+//' **Hwang, Shih, and DeCani Spending Function**
+//'
+//' This flexible family of functions is given by:
+//' \deqn{
+//' \alpha(t) =
+//' \begin{cases}
+//' \alpha \frac{1 - e^{-\gamma t}}{1 - e^{-\gamma}}, & \text{if }
+//' \gamma \ne 0 \\ \alpha t, & \text{if } \gamma = 0.
+//' \end{cases}
+//' }
+//' - When \eqn{\gamma = -4}, the spending function resembles
+//'   O’Brien-Fleming boundaries.
+//' - When \eqn{\gamma = 1}, it resembles Pocock boundaries.
+//'
+//' @return A vector of errors spent up to the interim look.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @examples
+//'
+//' errorSpent(t = 0.5, error = 0.025, sf = "sfOF")
+//'
+//' errorSpent(t = c(0.5, 0.75, 1), error = 0.025, sf = "sfHSD", sfpar = -4)
+//'
+//' @export
 // [[Rcpp::export]]
+std::vector<double> errorSpent(
+    const std::vector<double>& t,
+    const double error = 0.025,
+    const std::string& sf = "sfOF",
+    const double sfpar = NA_REAL) {
+
+  size_t n = t.size();
+  std::vector<double> result(n);
+  for (size_t i = 0; i < n; ++i) {
+    result[i] = errorSpentcpp(t[i], error, sf, sfpar);
+  }
+  return result;
+}
+
+
 ListCpp exitprobcpp(const std::vector<double>& b,
                     const std::vector<double>& a,
                     const std::vector<double>& theta,
@@ -293,6 +378,62 @@ ListCpp exitprobcpp(const std::vector<double>& b,
   exitProb.push_back(std::move(exitProbUpper), "exitProbUpper");
   exitProb.push_back(std::move(exitProbLower), "exitProbLower");
   return exitProb;
+}
+
+
+//' @title Stagewise Exit Probabilities
+//' @description Obtains the stagewise exit probabilities for both efficacy
+//' and futility stopping.
+//'
+//' @param b Upper boundaries on the z-test statistic scale.
+//' @param a Lower boundaries on the z-test statistic scale. Defaults to
+//'   \code{c(rep(-6.0, kMax-1), b[kMax])} if left unspecified, where
+//'   \code{kMax = length(b)}.
+//' @param theta Stagewise parameter of interest, e.g., \code{-U/V} for
+//'   weighted log-rank test, where \code{U} is the mean and \code{V} is
+//'   the variance of the weighted log-rank test score statistic at each
+//'   stage. For proportional hazards and conventional log-rank test, use the
+//'   scalar input, \code{theta = -log(HR)}. Defaults to 0 corresponding to
+//'   the null hypothesis.
+//' @param I Stagewise cumulative information, e.g., \code{V}, the variance
+//'   of the weighted log-rank test score statistic at each stage. For
+//'   conventional log-rank test, information can be approximated by
+//'   \code{phi*(1-phi)*D}, where \code{phi} is the probability of being
+//'   allocated to the active arm, and \code{D} is the total number of events
+//'   at each stage. Defaults to \code{seq(1, kMax)} if left unspecified.
+//'
+//' @return A list of stagewise exit probabilities:
+//'
+//' * \code{exitProbUpper}: The vector of efficacy stopping probabilities
+//'
+//' * \code{exitProbLower}: The vector of futility stopping probabilities.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @examples
+//' exitprob(b = c(3.471, 2.454, 2.004), theta = -log(0.6),
+//'          I = c(50, 100, 150)/4)
+//'
+//' exitprob(b = c(2.963, 2.359, 2.014),
+//'          a = c(-0.264, 0.599, 2.014),
+//'          theta = c(0.141, 0.204, 0.289),
+//'          I = c(81, 121, 160))
+//'
+//' @export
+// [[Rcpp::export]]
+Rcpp::List exitprob(
+    const Rcpp::NumericVector& b,
+    const Rcpp::NumericVector& a = NA_REAL,
+    const Rcpp::NumericVector& theta = 0,
+    const Rcpp::NumericVector& I = NA_REAL) {
+
+  auto bv = Rcpp::as<std::vector<double>>(b);
+  auto av = Rcpp::as<std::vector<double>>(a);
+  auto thetav = Rcpp::as<std::vector<double>>(theta);
+  auto Iv = Rcpp::as<std::vector<double>>(I);
+
+  auto out = exitprobcpp(bv, av, thetav, Iv);
+  return Rcpp::wrap(out);
 }
 
 

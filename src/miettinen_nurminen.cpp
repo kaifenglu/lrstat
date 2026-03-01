@@ -40,7 +40,6 @@ using std::size_t;
 //' remlRiskDiff(n1 = 10, y1 = 4, n2 = 20, y2 = 0, riskDiffH0 = 0.1)
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 std::vector<double> remlRiskDiff(const double n1,
                                  const double y1,
@@ -129,7 +128,6 @@ std::vector<double> remlRiskDiff(const double n1,
 //'               n2 = c(20, 10), y2 = c(2, 0), riskDiffH0 = 0)
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 double zstatRiskDiff(const std::vector<double>& n1,
                      const std::vector<double>& y1,
@@ -260,7 +258,6 @@ DataFrameCpp mnRiskDiffCIcpp(const std::vector<double>& n1,
 //'              n2 = c(20, 10), y2 = c(2, 0))
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 Rcpp::DataFrame mnRiskDiffCI(const std::vector<double>& n1,
                              const std::vector<double>& y1,
@@ -294,7 +291,6 @@ Rcpp::DataFrame mnRiskDiffCI(const std::vector<double>& n1,
 //' remlRiskRatio(n1 = 10, y1 = 4, n2 = 20, y2 = 2, riskRatioH0 = 1.2)
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 std::vector<double> remlRiskRatio(const double n1,
                                   const double y1,
@@ -353,7 +349,6 @@ std::vector<double> remlRiskRatio(const double n1,
 //'                n2 = c(20, 10), y2 = c(2, 0), riskRatioH0 = 1)
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 double zstatRiskRatio(const std::vector<double>& n1,
                       const std::vector<double>& y1,
@@ -533,7 +528,6 @@ DataFrameCpp mnRiskRatioCIcpp(const std::vector<double>& n1,
 //'               n2 = c(20, 10), y2 = c(2, 0))
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 Rcpp::DataFrame mnRiskRatioCI(const std::vector<double>& n1,
                               const std::vector<double>& y1,
@@ -567,7 +561,6 @@ Rcpp::DataFrame mnRiskRatioCI(const std::vector<double>& n1,
 //' remlOddsRatio(n1 = 10, y1 = 4, n2 = 20, y2 = 2, oddsRatioH0 = 1.25)
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 std::vector<double> remlOddsRatio(const double n1,
                                   const double y1,
@@ -627,7 +620,6 @@ std::vector<double> remlOddsRatio(const double n1,
 //'                n2 = c(20, 10), y2 = c(2, 0), oddsRatioH0 = 1)
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 double zstatOddsRatio(const std::vector<double>& n1,
                       const std::vector<double>& y1,
@@ -815,7 +807,6 @@ DataFrameCpp mnOddsRatioCIcpp(const std::vector<double>& n1,
 //' mnOddsRatioCI(n1 = c(10,10), y1 = c(4,3), n2 = c(20,10), y2 = c(2,0))
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 Rcpp::DataFrame mnOddsRatioCI(const std::vector<double>& n1,
                               const std::vector<double>& y1,
@@ -849,7 +840,6 @@ Rcpp::DataFrame mnOddsRatioCI(const std::vector<double>& n1,
 //' remlRateDiff(t1 = 10, y1 = 4, t2 = 20, y2 = 2, rateDiffH0 = 0.1)
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 std::vector<double> remlRateDiff(const double t1,
                                  const double y1,
@@ -908,7 +898,6 @@ std::vector<double> remlRateDiff(const double t1,
 //'               t2 = c(20, 10), y2 = c(2, 0), rateDiffH0 = 0)
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 double zstatRateDiff(const std::vector<double>& t1,
                      const std::vector<double>& y1,
@@ -1036,7 +1025,6 @@ DataFrameCpp mnRateDiffCIcpp(const std::vector<double>& t1,
 //' mnRateDiffCI(t1 = c(10,10), y1 = c(4,3), t2 = c(20,10), y2 = c(2,0))
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 Rcpp::DataFrame mnRateDiffCI(const std::vector<double>& t1,
                              const std::vector<double>& y1,
@@ -1070,7 +1058,6 @@ Rcpp::DataFrame mnRateDiffCI(const std::vector<double>& t1,
 //' remlRateRatio(t1 = 10, y1 = 4, t2 = 20, y2 = 2, rateRatioH0 = 1.1)
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 std::vector<double> remlRateRatio(const double t1,
                                   const double y1,
@@ -1110,7 +1097,6 @@ std::vector<double> remlRateRatio(const double t1,
 //'                t2 = c(20, 10), y2 = c(2, 0), rateRatioH0 = 1)
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 double zstatRateRatio(const std::vector<double>& t1,
                       const std::vector<double>& y1,
@@ -1281,7 +1267,6 @@ DataFrameCpp mnRateRatioCIcpp(const std::vector<double>& t1,
 //' mnRateRatioCI(t1 = c(10,10), y1 = c(4,3), t2 = c(20,10), y2 = c(2,0))
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 Rcpp::DataFrame mnRateRatioCI(const std::vector<double>& t1,
                               const std::vector<double>& y1,

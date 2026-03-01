@@ -886,7 +886,7 @@ print.lrsim <- function(x, ...) {
     j4 <- c(1,2)
 
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
-    b[j4] <- lapply(b[j3], formatC, format = "f", digits = 4)
+    b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     df = t(b)
     rownames(df) = c("Cumulative rejection",

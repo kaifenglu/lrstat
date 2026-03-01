@@ -386,6 +386,7 @@ double brent(const std::function<double(double)>& f,
   throw std::runtime_error("Maximum iterations exceeded in brent");
 }
 
+
 double bisect(const std::function<double(double)>& f,
               double x1, double x2, double tol, int maxiter) {
   double a = x1, b = x2;
@@ -436,6 +437,7 @@ double dtpwexpcpp1(
   if (logd) d = std::log(d);
   return d;
 }
+
 
 // [[Rcpp::export]]
 std::vector<double> dtpwexpcpp(
@@ -513,6 +515,7 @@ double ptpwexpcpp1(
 
   return p;
 }
+
 
 // [[Rcpp::export]]
 std::vector<double> ptpwexpcpp(
@@ -605,6 +608,7 @@ double qtpwexpcpp1(
   return piecewiseSurvivalTime[j + 1] - dt;
 }
 
+
 // [[Rcpp::export]]
 std::vector<double> qtpwexpcpp(
     const std::vector<double>& p,
@@ -625,11 +629,22 @@ std::vector<double> qtpwexpcpp(
 
 
 // mean and variance of a truncated piecewise exponential distribution
-// [[Rcpp::export]]
 ListCpp mtpwexpcpp(
     const std::vector<double>& piecewiseSurvivalTime,
     const std::vector<double>& lambda,
     const double lowerBound) {
+
+  if (piecewiseSurvivalTime[0] != 0)
+    throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
+  if (any_nonincreasing(piecewiseSurvivalTime))
+    throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
+  if (!none_na(lambda)) throw std::invalid_argument("lambda must be provided");
+  if (lambda.size() != piecewiseSurvivalTime.size())
+    throw std::invalid_argument("Invalid length for lambda");
+  for (double v : lambda) {
+    if (v < 0) throw std::invalid_argument("lambda must be nonnegative");
+  }
+  if (lowerBound < 0) throw std::invalid_argument("lowerBound must be nonnegative");
 
   int m = static_cast<int>(piecewiseSurvivalTime.size());
   if (lambda[m-1] == 0.0) {
@@ -676,6 +691,39 @@ ListCpp mtpwexpcpp(
   result.push_back(m1, "mean");
   result.push_back(m2 - m1 * m1, "variance");
   return result;
+}
+
+
+//' @title Mean and Variance of Truncated Piecewise Exponential Distribution
+//' @description Obtains the mean and variance from a truncated piecewise
+//' exponential distribution.
+//'
+//' @inheritParams param_piecewiseSurvivalTime
+//' @inheritParams param_lambda
+//' @param lowerBound The left truncation time point for the survival time.
+//'   Defaults to 0 for no truncation.
+//'
+//' @return A list with two components, one for the mean, and the other for
+//' the variance of the truncated piecewise exponential distribution.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @examples
+//' mtpwexp(piecewiseSurvivalTime = c(0, 6, 9, 15),
+//'         lambda = c(0.025, 0.04, 0.015, 0.007))
+//'
+//' @export
+//  [[Rcpp::export]]
+Rcpp::List mtpwexp(
+    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
+    const Rcpp::NumericVector& lambda = NA_REAL,
+    const double lowerBound = 0) {
+
+  auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto lam = Rcpp::as<std::vector<double>>(lambda);
+
+  auto out = mtpwexpcpp(pwSurvT, lam, lowerBound);
+  return Rcpp::wrap(out);
 }
 
 
@@ -933,18 +981,30 @@ double quad2d(const std::function<double(double,double)>& f,
 }
 
 
-// [[Rcpp::export]]
-double pbvnormcpp(std::vector<double>& lower,
-                  std::vector<double>& upper,
-                  double rho) {
+double pbvnormcpp(const std::vector<double>& lower,
+                  const std::vector<double>& upper,
+                  const double rho) {
+  if (!none_na(lower)) throw std::invalid_argument("lower must be provided");
+  if (!none_na(upper)) throw std::invalid_argument("upper must be provided");
+
+  auto lowerv = expand1(lower, 2, "lower");
+  auto upperv = expand1(upper, 2, "upper");
+  for (size_t i = 0; i < 2; ++i) {
+    if (lowerv[i] >= upperv[i])
+      throw std::invalid_argument("lower must be less than upper");
+  }
+
+  if (rho >= 1 || rho <= -1)
+    throw std::invalid_argument("corr must lie between -1 and 1");
+
   if (rho == 0.0) {
-    double v1 = boost_pnorm(upper[0]) - boost_pnorm(lower[0]);
-    double v2 = boost_pnorm(upper[1]) - boost_pnorm(lower[1]);
+    double v1 = boost_pnorm(upperv[0]) - boost_pnorm(lowerv[0]);
+    double v2 = boost_pnorm(upperv[1]) - boost_pnorm(lowerv[1]);
     return v1 * v2;
   }
 
-  double a2 = lower[1];
-  double b2 = upper[1];
+  double a2 = lowerv[1];
+  double b2 = upperv[1];
   double s = std::sqrt(1.0 - rho * rho);
   auto f = [&](double x)->double {
     double a = (a2 - rho * x) / s;
@@ -953,44 +1013,108 @@ double pbvnormcpp(std::vector<double>& lower,
     double t2 = boost_pnorm(b) - boost_pnorm(a);
     return t1 * t2;
   };
-  std::vector<double> breaks = {lower[0], upper[0]};
+  std::vector<double> breaks = {lowerv[0], upperv[0]};
   return integrate3(f, breaks, 1e-8, 1000);
 }
 
 
+
+//' @title Distribution Function of the Standard Bivariate Normal
+//' @description Computes the cumulative distribution function (CDF) of
+//' the standard bivariate normal distribution with specified lower and
+//' upper integration limits and correlation coefficient.
+//'
+//' @param lower A numeric vector of length 2 specifying the lower limits
+//'   of integration.
+//' @param upper A numeric vector of length 2 specifying the upper limits
+//'   of integration.
+//' @param rho A numeric value specifying the correlation coefficient of
+//'   the standard bivariate normal distribution.
+//'
+//' @details This function evaluates the probability
+//' \eqn{P(\code{lower[1]} < X < \code{upper[1]},
+//' \code{lower[2]} < Y < \code{upper[2]})} where
+//' \eqn{(X, Y)} follows a standard bivariate normal
+//' distribution with correlation \code{corr}.
+//'
+//' @return A numeric value representing the probability that a standard
+//' bivariate normal vector falls within the specified rectangular region.
+//'
+//' @examples
+//' pbvnorm(c(-1, -1), c(1, 1), 0.5)
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @export
 // [[Rcpp::export]]
+double pbvnorm(
+    const Rcpp::NumericVector& lower = NA_REAL,
+    const Rcpp::NumericVector& upper = NA_REAL,
+    const double rho = 0) {
+
+  auto lowerv = Rcpp::as<std::vector<double>>(lower);
+  auto upperv = Rcpp::as<std::vector<double>>(upper);
+  return pbvnormcpp(lowerv, upperv, rho);
+}
+
+
+
+
 ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
                      const std::vector<double>& hazard_pfs,
                      const std::vector<double>& hazard_os,
                      const double rho_pd_os) {
-  int n = static_cast<int>(piecewiseSurvivalTime.size());
+
+  if (piecewiseSurvivalTime[0] != 0)
+    throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
+  if (any_nonincreasing(piecewiseSurvivalTime))
+    throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
+  size_t n = piecewiseSurvivalTime.size();
+
+  if (!none_na(hazard_pfs)) throw std::invalid_argument("hazard_pfs must be provided");
+  if (!none_na(hazard_os)) throw std::invalid_argument("hazard_os must be provided");
+  for (double v : hazard_pfs) {
+    if (v <= 0) throw std::invalid_argument("hazard_pfs must be positive");
+  }
+  for (double v : hazard_os) {
+    if (v <= 0) throw std::invalid_argument("hazard_os must be positive");
+  }
+  auto hazard_pfsv = expand1(hazard_pfs, n, "hazard_pfs");
+  auto hazard_osv = expand1(hazard_os, n, "hazard_os");
+  for (size_t i = 0; i < n; ++i) {
+    if (hazard_pfsv[i] <= hazard_osv[i]) {
+      throw std::invalid_argument("hazard_pfs must be greater than hazard_os");
+    }
+  }
+  if (rho_pd_os <= -1 || rho_pd_os >= 1)
+    throw std::invalid_argument("corr_pd_os must lie between -1 and 1");
 
   // append additional time points for pfs quantiles
   std::vector<double> p(10);
-  for (int i=0; i<9; ++i) p[i] = (i+1.0)/10.0;
+  for (size_t i=0; i<9; ++i) p[i] = (i+1.0)/10.0;
   p[9] = 0.95;
 
-  std::vector<double> u0 = qtpwexpcpp(p, piecewiseSurvivalTime, hazard_pfs);
+  std::vector<double> u0 = qtpwexpcpp(p, piecewiseSurvivalTime, hazard_pfsv);
   std::vector<double> u(n+10);
-  for (int i=0; i<n-1; ++i) u[i] = piecewiseSurvivalTime[i+1];
-  u[n-1] = piecewiseSurvivalTime[n-1] + std::log(2.0)/hazard_pfs[n-1];
-  for (int i=0; i<10; ++i) u[n+i] = u0[i];
+  for (size_t i=0; i<n-1; ++i) u[i] = piecewiseSurvivalTime[i+1];
+  u[n-1] = piecewiseSurvivalTime[n-1] + std::log(2.0)/hazard_pfsv[n-1];
+  for (size_t i=0; i<10; ++i) u[n+i] = u0[i];
 
   // obtain sorted and unique time points
   std::sort(u.begin(), u.end());
   u.erase(std::unique(u.begin(), u.end()), u.end());
-  int m = static_cast<int>(u.size());
+  size_t m = u.size();
 
   // shifted time points
   std::vector<double> u1(m);
   u1[0] = 0;
-  for (int i=1; i<m; ++i) u1[i] = u[i-1];
+  for (size_t i=1; i<m; ++i) u1[i] = u[i-1];
 
   // get corresponding hazards
   std::vector<int> index = findInterval3(u1, piecewiseSurvivalTime);
-  for (int i=0; i<m; ++i) index[i] = index[i] - 1;
-  std::vector<double> hazard_pfs1 = subset(hazard_pfs, index);
-  std::vector<double> hazard_os1 = subset(hazard_os, index);
+  for (size_t i=0; i<m; ++i) index[i] = index[i] - 1;
+  std::vector<double> hazard_pfs1 = subset(hazard_pfsv, index);
+  std::vector<double> hazard_os1 = subset(hazard_osv, index);
 
   // solve for hazard_pd
   double t;
@@ -1010,7 +1134,7 @@ ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
   };
 
   double tol = 1e-6;
-  for (int i=0; i<m; ++i) {
+  for (size_t i=0; i<m; ++i) {
     t = u[i];
     v.push_back(u1[i]);
     haz_pfs.push_back(hazard_pfs1[i]);
@@ -1027,6 +1151,114 @@ ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
   result.push_back(rho_pd_os, "rho_pd_os");
   return result;
 }
+
+
+//' @title Hazard Function for Progressive Disease (PD) Given Correlation
+//' Between PD and OS
+//'
+//' @description
+//' Computes the hazard function of a piecewise exponential
+//' distribution for progressive disease (PD), such that the
+//' resulting hazard function for progression-free survival (PFS)
+//' closely matches a given piecewise hazard for PFS.
+//'
+//' @inheritParams param_piecewiseSurvivalTime
+//' @param hazard_pfs A scalar or numeric vector specifying the
+//'   hazard(s) for PFS based on a piecewise exponential distribution.
+//' @param hazard_os A scalar or numeric vector specifying the
+//'   hazard(s) for overall survival (OS) based on a piecewise
+//'   exponential distribution.
+//' @param rho_pd_os A numeric value specifying the correlation
+//'   between PD and OS times.
+//'
+//' @details
+//' This function determines the hazard vector \eqn{\lambda_{\text{pd}}}
+//' for the piecewise exponential distribution of PD, so that the
+//' implied survival function for PFS time,
+//' \eqn{T_{\text{pfs}} = \min(T_{\text{pd}}, T_{\text{os}})}, closely
+//' matches the specified piecewise exponential distribution for PFS
+//' with hazard vector \eqn{\lambda_{\text{pfs}}}.
+//'
+//' To achieve this, we simulate
+//' \eqn{(Z_{\text{pd}}, Z_{\text{os}})} from
+//' a standard bivariate normal distribution with correlation
+//' \eqn{\rho}. Then, \eqn{U_{\text{pd}} = \Phi(Z_{\text{pd}})}
+//' and \eqn{U_{\text{os}} = \Phi(Z_{\text{os}})} are generated, where
+//' \eqn{\Phi} denotes the standard normal CDF.
+//'
+//' The times to PD and OS are obtained via the inverse transform
+//' method using quantile functions of the piecewise exponential distribution:
+//' \deqn{T_{\text{pd}} = \text{qpwexp}(U_{\text{pd}},u,\lambda_{\text{pd}})}
+//' \deqn{T_{\text{os}} = \text{qpwexp}(U_{\text{os}},u,\lambda_{\text{os}})}
+//' where \code{u = piecewiseSurvivalTime}.
+//'
+//' The function solves for \eqn{\lambda_{\text{pd}}} such that
+//' the survival function of \eqn{T_{\text{pfs}}} closely matches that
+//' of a piecewise exponential distribution with hazard
+//' \eqn{\lambda_{\text{pfs}}}:
+//' \deqn{P(\min(T_{\text{pd}}, T_{\text{os}}) > t) = S_{\text{pfs}}(t)}
+//' Since \deqn{Z_{\text{pd}} =
+//'   \Phi^{-1}(\text{ppwexp}(T_\text{pd}, u, \lambda_{\text{pd}}))} and
+//' \deqn{Z_{\text{os}} =
+//'   \Phi^{-1}(\text{ppwexp}(T_\text{os}, u, \lambda_{\text{os}}))}
+//' we have
+//' \deqn{P(\min(T_{\text{pd}}, T_{\text{os}}) > t) =
+//' P(Z_{\text{pd}} >
+//'     \Phi^{-1}(\text{ppwexp}(t,u,\lambda_{\text{pd}})),
+//'   Z_{\text{os}} >
+//'     \Phi^{-1}(\text{ppwexp}(t,u,\lambda_{\text{os}})))}
+//' while
+//' \deqn{S_{\text{pfs}}(t) = 1 - \text{ppwexp}(t,u,\lambda_{\text{pfs}})}
+//'
+//' Matching is performed sequentially at the internal cut points
+//' \eqn{u_2, ..., u_J} and at the point
+//' \eqn{u_J + \log(2)/\lambda_{\text{pfs},J}} for the final interval,
+//' as well as the percentile points at 10%, 20%, ..., 90%, and 95%
+//' to solve for \eqn{\lambda_{\text{pd},1}, \ldots,
+//' \lambda_{\text{pd},K}}, where \eqn{K} is the total number of
+//' unique cut points.
+//'
+//' @return A list with the following components:
+//'
+//' * \code{piecewiseSurvivalTime}: A vector that specifies the starting time
+//'   points of the intervals for the piecewise exponential distribution
+//'   for PD.
+//'
+//' * \code{hazard_pd}: A numeric vector representing the calculated hazard
+//'   rates for the piecewise exponential distribution of PD.
+//'
+//' * \code{hazard_os}: A numeric vector representing the hazard rates for
+//'   the piecewise exponential distribution of OS at the same time points
+//'   as PD.
+//'
+//' * \code{rho_pd_os}: The correlation between PD and OS times (as input).
+//'
+//' @author
+//' Kaifeng Lu (\email{kaifenglu@gmail.com})
+//'
+//' @examples
+//' u <- c(0, 1, 3, 4)
+//' lambda1 <- c(0.0151, 0.0403, 0.0501, 0.0558)
+//' lambda2 <- 0.0145
+//' rho_pd_os <- 0.5
+//' hazard_pd(u, lambda1, lambda2, rho_pd_os)
+//'
+//' @export
+// [[Rcpp::export]]
+Rcpp::List hazard_pd(
+    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
+    const Rcpp::NumericVector& hazard_pfs = NA_REAL,
+    const Rcpp::NumericVector& hazard_os = NA_REAL,
+    const double rho_pd_os = 0.5) {
+
+  auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto haz_pfs = Rcpp::as<std::vector<double>>(hazard_pfs);
+  auto haz_os = Rcpp::as<std::vector<double>>(hazard_os);
+
+  auto out = hazard_pdcpp(pwSurvT, haz_pfs, haz_os, rho_pd_os);
+  return Rcpp::wrap(out);
+}
+
 
 
 double pdf_pfs(const double time,
@@ -1136,12 +1368,37 @@ double cor_pfs_os(const std::vector<double>& piecewiseSurvivalTime,
   return cov / sqrt(v1 * v2);
 }
 
-// [[Rcpp::export]]
+
 double corr_pfs_oscpp(const std::vector<double>& piecewiseSurvivalTime,
                       const std::vector<double>& hazard_pfs,
                       const std::vector<double>& hazard_os,
                       const double rho_pd_os) {
-  ListCpp a = hazard_pdcpp(piecewiseSurvivalTime, hazard_pfs, hazard_os, rho_pd_os);
+
+  if (piecewiseSurvivalTime[0] != 0)
+    throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
+  if (any_nonincreasing(piecewiseSurvivalTime))
+    throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
+  size_t n = piecewiseSurvivalTime.size();
+
+  if (!none_na(hazard_pfs)) throw std::invalid_argument("hazard_pfs must be provided");
+  if (!none_na(hazard_os)) throw std::invalid_argument("hazard_os must be provided");
+  for (double v : hazard_pfs) {
+    if (v <= 0) throw std::invalid_argument("hazard_pfs must be positive");
+  }
+  for (double v : hazard_os) {
+    if (v <= 0) throw std::invalid_argument("hazard_os must be positive");
+  }
+  auto hazard_pfsv = expand1(hazard_pfs, n, "hazard_pfs");
+  auto hazard_osv = expand1(hazard_os, n, "hazard_os");
+  for (size_t i = 0; i < n; ++i) {
+    if (hazard_pfsv[i] <= hazard_osv[i]) {
+      throw std::invalid_argument("hazard_pfs must be greater than hazard_os");
+    }
+  }
+  if (rho_pd_os <= -1 || rho_pd_os >= 1)
+    throw std::invalid_argument("corr_pd_os must lie between -1 and 1");
+
+  ListCpp a = hazard_pdcpp(piecewiseSurvivalTime, hazard_pfsv, hazard_osv, rho_pd_os);
   std::vector<double> u = a.get<std::vector<double>>("piecewiseSurvivalTime");
   std::vector<double> hazard_pd1 = a.get<std::vector<double>>("hazard_pd");
   std::vector<double> hazard_os1 = a.get<std::vector<double>>("hazard_os");
@@ -1149,39 +1406,111 @@ double corr_pfs_oscpp(const std::vector<double>& piecewiseSurvivalTime,
 }
 
 
+//' @title Correlation Between PFS and OS Given Correlation Between PD and OS
+//'
+//' @description
+//' Computes the correlation between PFS and OS given the correlation
+//' between PD and OS.
+//'
+//' @inheritParams param_piecewiseSurvivalTime
+//' @param hazard_pfs A scalar or numeric vector specifying the
+//'   hazard(s) for PFS based on a piecewise exponential distribution.
+//' @param hazard_os A scalar or numeric vector specifying the
+//'   hazard(s) for overall survival (OS) based on a piecewise
+//'   exponential distribution.
+//' @param rho_pd_os A numeric value specifying the correlation
+//'   between PD and OS times.
+//'
+//' @details
+//' This function first determines the piecewise exponential distribution
+//' for PD such that the implied survival function for PFS time,
+//' \eqn{T_{\text{pfs}} = \min(T_{\text{pd}}, T_{\text{os}})}, closely
+//' matches the specified piecewise exponential distribution for PFS
+//' with hazard vector \eqn{\lambda_{\text{pfs}}}. Then, it calculates
+//' the correlation between PFS and OS times based on the derived
+//' piecewise exponential distribution for PD and the given piecewise
+//' exponential distribution for OS.
+//'
+//' @return The estimated correlation between PFS and OS.
+//'
+//' @author
+//' Kaifeng Lu (\email{kaifenglu@gmail.com})
+//'
+//' @examples
+//' u <- c(0, 1, 3, 4)
+//' lambda1 <- c(0.0151, 0.0403, 0.0501, 0.0558)
+//' lambda2 <- 0.0145
+//' rho_pd_os <- 0.5
+//' corr_pfs_os(u, lambda1, lambda2, rho_pd_os)
+//'
+//' @export
 // [[Rcpp::export]]
+double corr_pfs_os(
+    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
+    const Rcpp::NumericVector& hazard_pfs = NA_REAL,
+    const Rcpp::NumericVector& hazard_os = NA_REAL,
+    const double rho_pd_os = NA_REAL) {
+
+  auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto haz_pfs = Rcpp::as<std::vector<double>>(hazard_pfs);
+  auto haz_os = Rcpp::as<std::vector<double>>(hazard_os);
+
+  return corr_pfs_oscpp(pwSurvT, haz_pfs, haz_os, rho_pd_os);
+}
+
+
+
 ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
                       const std::vector<double>& hazard_itt,
                       const std::vector<double>& hazard_pos,
                       const double p_pos) {
-  int n = static_cast<int>(piecewiseSurvivalTime.size());
+
+  if (piecewiseSurvivalTime[0] != 0)
+    throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
+  if (any_nonincreasing(piecewiseSurvivalTime))
+    throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
+  if (!none_na(hazard_itt)) throw std::invalid_argument("hazard_itt must be provided");
+  if (!none_na(hazard_pos)) throw std::invalid_argument("hazard_pos must be provided");
+  for (double v : hazard_itt) {
+    if (v <= 0) throw std::invalid_argument("hazard_itt must be positive");
+  }
+  for (double v : hazard_pos) {
+    if (v <= 0) throw std::invalid_argument("hazard_pos must be positive");
+  }
+  if (std::isnan(p_pos)) throw std::invalid_argument("p_pos must be provided");
+  if (p_pos <= 0 || p_pos >= 1)
+    throw std::invalid_argument("p_pos must lie between 0 and 1");
+
+  size_t n = piecewiseSurvivalTime.size();
+  auto hazard_ittv = expand1(hazard_itt, n, "hazard_itt");
+  auto hazard_posv = expand1(hazard_pos, n, "hazard_pos");
 
   // append additional time points for pfs quantiles
   std::vector<double> p(10);
-  for (int i=0; i<9; ++i) p[i] = (i+1.0)/10.0;
+  for (size_t i=0; i<9; ++i) p[i] = (i+1.0)/10.0;
   p[9] = 0.95;
 
-  std::vector<double> u0 = qtpwexpcpp(p, piecewiseSurvivalTime, hazard_itt);
+  std::vector<double> u0 = qtpwexpcpp(p, piecewiseSurvivalTime, hazard_ittv);
   std::vector<double> u(n+10);
-  for (int i=0; i<n-1; ++i) u[i] = piecewiseSurvivalTime[i+1];
-  u[n-1] = piecewiseSurvivalTime[n-1] + std::log(2.0)/hazard_itt[n-1];
-  for (int i=0; i<10; ++i) u[n+i] = u0[i];
+  for (size_t i=0; i<n-1; ++i) u[i] = piecewiseSurvivalTime[i+1];
+  u[n-1] = piecewiseSurvivalTime[n-1] + std::log(2.0)/hazard_ittv[n-1];
+  for (size_t i=0; i<10; ++i) u[n+i] = u0[i];
 
   // obtain sorted and unique time points
   std::sort(u.begin(), u.end());
   u.erase(std::unique(u.begin(), u.end()), u.end());
-  int m = static_cast<int>(u.size());
+  size_t m = u.size();
 
   // shifted time points
   std::vector<double> u1(m);
   u1[0] = 0;
-  for (int i=1; i<m; ++i) u1[i] = u[i-1];
+  for (size_t i=1; i<m; ++i) u1[i] = u[i-1];
 
   // get corresponding hazards
   std::vector<int> index = findInterval3(u1, piecewiseSurvivalTime);
-  for (int i=0; i<m; ++i) index[i] = index[i] - 1;
-  std::vector<double> hazard_itt1 = subset(hazard_itt, index);
-  std::vector<double> hazard_pos1 = subset(hazard_pos, index);
+  for (size_t i=0; i<m; ++i) index[i] = index[i] - 1;
+  std::vector<double> hazard_itt1 = subset(hazard_ittv, index);
+  std::vector<double> hazard_pos1 = subset(hazard_posv, index);
 
   // solve for hazard_sub
   double t;
@@ -1197,7 +1526,7 @@ ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
   };
 
   double tol = 1e-6;
-  for (int i=0; i<m; ++i) {
+  for (size_t i=0; i<m; ++i) {
     t = u[i];
     v.push_back(u1[i]);
     haz_itt.push_back(hazard_itt1[i]);
@@ -1213,6 +1542,93 @@ ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
   result.push_back(std::move(hazard_neg), "hazard_neg");
   result.push_back(p_pos, "p_pos");
   return result;
+}
+
+
+//' @title Hazard Function for Sub Population
+//'
+//' @description
+//' Computes the hazard function of a piecewise exponential
+//' distribution for the biomarker negative sub population, such that the
+//' resulting survival function for the ITT population
+//' closely matches a given piecewise survival function.
+//'
+//' @inheritParams param_piecewiseSurvivalTime
+//' @param hazard_itt A scalar or numeric vector specifying the
+//'   hazard(s) for the ITT population based on a piecewise exponential
+//'   distribution.
+//' @param hazard_pos A scalar or numeric vector specifying the
+//'   hazard(s) for the biomarker positive sub population
+//'   based on a piecewise exponential distribution.
+//' @param p_pos A numeric value specifying the prevalence of the
+//'   biomarker positive sub population.
+//'
+//' @details
+//' This function determines the hazard vector \eqn{\lambda_{\text{neg}}}
+//' for the piecewise exponential distribution of the biomarker negative
+//' sub population, so that the implied survival function for the ITT
+//' population closely matches the specified piecewise exponential
+//' distribution with hazard vector \eqn{\lambda_{\text{itt}}}.
+//'
+//' Let \eqn{p_{\text{pos}}} be the
+//' prevalence of the biomarker positive sub population,
+//' then the survival function for the ITT population is given by
+//' \deqn{S_{\text{itt}}(t) = p_{\text{pos}} S_{\text{pos}}(t) +
+//' (1 - p_{\text{pos}}) S_{\text{neg}}(t)}
+//' where \eqn{S_{\text{pos}}(t)} and \eqn{S_{\text{neg}}(t)} are
+//' the survival functions for the biomarker positive and
+//' biomarker negative sub populations, respectively.
+//'
+//' Matching is performed sequentially at the internal cutpoints
+//' \eqn{u_2, ..., u_J} and at the point
+//' \eqn{u_J + \log(2)/\lambda_{\text{itt},J}} for the final interval,
+//' as well as the percentile points at 10%, 20%, ..., 90%, and 95%,
+//' to solve for \eqn{\lambda_{\text{neg},1}, \ldots,
+//' \lambda_{\text{neg},K}}, where \eqn{K} is the total number of
+//' unique cut points.
+//'
+//' @return A list with the following components:
+//'
+//' * \code{piecewiseSurvivalTime}: A vector that specifies the starting time
+//'   points of the intervals for the piecewise exponential distribution
+//'   for the biomarker negative sub population.
+//'
+//' * \code{hazard_pos}: A numeric vector representing the hazard rates for
+//'   the piecewise exponential distribution of the biomarker positive
+//'   sub population at the same time points as the biomarker negative
+//'   sub population.
+//'
+//' * \code{hazard_neg}: A numeric vector representing the estimated hazard
+//'   rates for the piecewise exponential distribution of the biomarker
+//'   negative sub population.
+//'
+//' * \code{p_pos}: The prevalence of the biomarker positive sub population
+//'  (as input).
+//'
+//' @author
+//' Kaifeng Lu (\email{kaifenglu@gmail.com})
+//'
+//' @examples
+//' u <- c(0, 1, 3, 4)
+//' lambda_itt <- c(0.0151, 0.0403, 0.0501, 0.0558)
+//' lambda_pos <- c(0.0115, 0.0302, 0.0351, 0.0404)
+//' p_pos <- 0.3
+//' hazard_sub(u, lambda_itt, lambda_pos, p_pos)
+//'
+//' @export
+// [[Rcpp::export]]
+Rcpp::List hazard_sub(
+    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
+    const Rcpp::NumericVector& hazard_itt = NA_REAL,
+    const Rcpp::NumericVector& hazard_pos = NA_REAL,
+    const double p_pos = NA_REAL) {
+
+  auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto haz_itt = Rcpp::as<std::vector<double>>(hazard_itt);
+  auto haz_pos = Rcpp::as<std::vector<double>>(hazard_pos);
+
+  auto out = hazard_subcpp(pwSurvT, haz_itt, haz_pos, p_pos);
+  return Rcpp::wrap(out);
 }
 
 

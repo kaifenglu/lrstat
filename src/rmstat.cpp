@@ -3184,7 +3184,6 @@ ListCpp rmpower1scpp(
 //'           followupTime = 18, fixedFollowup = FALSE)
 //'
 //' @export
-//'
 // [[Rcpp::export]]
 Rcpp::List rmpower1s(
     const int kMax = 1,

@@ -26,7 +26,7 @@ sim1 <- lrsim(
   lambda2 = c(0.0533, 0.0533, 1.5*0.0533, 1.5*0.0533),
   gamma1 = -log(1-0.05)/12,
   gamma2 = -log(1-0.05)/12,
-  accrualDuration = 22.9,
+  n = 492,
   plannedEvents = 376,
   maxNumberOfIterations = 1000,
   maxNumberOfRawDatasetsPerStage = 10,
