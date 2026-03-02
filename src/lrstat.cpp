@@ -169,9 +169,10 @@ std::vector<double> lr_make_breaks(
     const std::vector<double>& accrualTime,
     const double accrualDuration,
     const double minFollowupTime,
-    const double maxFollowupTime) {
+    const double maxFollowupTime,
+    const double time) {
 
-  if (!(maxFollowupTime > 0.0)) return std::vector<double>{0.0, maxFollowupTime};
+  double upper = std::min(time, maxFollowupTime);
 
   // Candidate set
   std::vector<double> pts;
@@ -179,34 +180,30 @@ std::vector<double> lr_make_breaks(
 
   // add piecewise survival cut points (exclude 0 and maxFollowupTime)
   for (double t : piecewiseSurvivalTime) {
-    if (t <= 0.0 || t >= maxFollowupTime) continue;
+    if (t <= 0.0 || t >= upper) continue;
     pts.push_back(t);
   }
 
   // add accrual-derived points: accrualDuration + minFollowupTime - accrualTime[i]
   for (double at : accrualTime) {
     double s = accrualDuration + minFollowupTime - at;
-    if (s <= 0.0 || s >= maxFollowupTime) continue;
+    if (s <= 0.0 || s >= upper) continue;
     pts.push_back(s);
   }
 
-  // Also include the two special switch points where u(t) hits its clamp bounds:
+  // Also include the special switch point where u(t) hits its clamp bounds:
   // s(t)=accrualDuration  => t = minFollowupTime
-  // s(t)=0                => t = accrualDuration + minFollowupTime
-  // They may not fall on the accrualTime grid; include them if inside (0,max)
   double t_1 = minFollowupTime;
-  double t_2 = accrualDuration + minFollowupTime;
-  if (t_1 > 0.0 && t_1 < maxFollowupTime) pts.push_back(t_1);
-  if (t_2 > 0.0 && t_2 < maxFollowupTime) pts.push_back(t_2);
+  if (t_1 > 0.0 && t_1 < upper) pts.push_back(t_1);
 
   if (pts.empty()) {
     // no internal break points -> simple [0, max]
-    return std::vector<double>{0.0, maxFollowupTime};
+    return std::vector<double>{0.0, upper};
   }
 
   // sort and deduplicate with tolerance
   std::sort(pts.begin(), pts.end());
-  double eps = std::max(1e-12, 1e-15 * std::max(1.0, std::fabs(maxFollowupTime)));
+  double eps = std::max(1e-12, 1e-15 * std::max(1.0, upper));
 
   std::vector<double> uniques;
   uniques.reserve(pts.size());
@@ -225,7 +222,7 @@ std::vector<double> lr_make_breaks(
   breaks.reserve(uniques.size() + 2);
   breaks.push_back(0.0);
   for (double v : uniques) breaks.push_back(v);
-  breaks.push_back(maxFollowupTime);
+  breaks.push_back(upper);
 
   // Optionally remove intervals of zero (or tiny) width:
   std::vector<double> final_breaks;
@@ -256,7 +253,7 @@ DataFrameCpp lrstat0cpp(
     const bool fixedFollowup,
     const double rho1,
     const double rho2,
-    const bool predictEventOnly) {
+    const int predictTarget) {
 
   size_t nstrata = stratumFraction.size();
 
@@ -280,12 +277,10 @@ DataFrameCpp lrstat0cpp(
   std::vector<double> nfmax1(nstrata), nfmax2(nstrata), nfmax(nstrata);
   std::vector<double> uscore(nstrata), vscore(nstrata), iscore(nstrata);
 
-  double accrualDuration0 = std::min(time, accrualDuration);
-  double minFollowupTime0 = std::max(time - accrualDuration, 0.0);
-  double maxFollowupTime0 = std::min(time, maxFollowupTime);
+  double minFollowupTime = std::max(time - accrualDuration, 0.0);
   auto breaks = lr_make_breaks(piecewiseSurvivalTime, accrualTime,
-                               accrualDuration0, minFollowupTime0,
-                               maxFollowupTime0);
+                               accrualDuration, minFollowupTime,
+                               maxFollowupTime, time);
   double tol = 1e-6;
 
   // loop strata
@@ -333,13 +328,13 @@ DataFrameCpp lrstat0cpp(
     nfmax2[h] = (1.0 - phi) * ncom * p2;
     nfmax[h]  = nfmax1[h] + nfmax2[h];
 
-    if (!predictEventOnly) {
+    if (predictTarget == 2 || predictTarget == 3) {
       auto fu = [&](double t)->double {
         // call natriskcpp for a single time point
         auto risk = natrisk1cpp(
           t, allocationRatioPlanned, accrualTime, accrualIntensity_frac,
           piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
-          accrualDuration0, minFollowupTime0, maxFollowupTime0);
+          accrualDuration, minFollowupTime, maxFollowupTime);
 
         // extract r1,r2 for row 0 (time t) and columns 0,1 (groups 1,2)
         double r1 = risk.first;
@@ -371,7 +366,7 @@ DataFrameCpp lrstat0cpp(
         auto risk = natrisk1cpp(
           t, allocationRatioPlanned, accrualTime, accrualIntensity_frac,
           piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
-          accrualDuration0, minFollowupTime0, maxFollowupTime0);
+          accrualDuration, minFollowupTime, maxFollowupTime);
 
         double r1 = risk.first;
         double r2 = risk.second;
@@ -396,39 +391,41 @@ DataFrameCpp lrstat0cpp(
         return val;
       };
 
-      auto fi = [&](double t)->double {
-        auto risk = natrisk1cpp(
-          t, allocationRatioPlanned, accrualTime, accrualIntensity_frac,
-          piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
-          accrualDuration0, minFollowupTime0, maxFollowupTime0);
-
-        double r1 = risk.first;
-        double r2 = risk.second;
-
-        int j = findInterval1(t, piecewiseSurvivalTime) - 1;
-
-        double w = 1.0;
-        if (rho1 != 0.0 || rho2 != 0.0) {
-          double s = kmsurv1cpp(
-            t, allocationRatioPlanned, piecewiseSurvivalTime,
-            lam1, lam2, gam1, gam2);
-          w = std::pow(s, rho1) * std::pow(1.0 - s, rho2);
-        }
-
-        double denom = r1 * hazardRatioH0 + r2;
-        if (denom <= 0.0) return 0.0;
-
-        double N = (r1 * hazardRatioH0) * r2 / (denom * denom);
-        double d = r1 * lam1[j] + r2 *lam2[j];
-
-        double val = w * N * d;
-        return val;
-      };
-
-      // integrate fu, fv, fi over [0, maxFollowupTime0] by intervals
       uscore[h] = integrate3(fu, breaks, tol);
       vscore[h] = integrate3(fv, breaks, tol);
-      iscore[h] = integrate3(fi, breaks, tol);
+
+      if (predictTarget == 3) {
+        auto fi = [&](double t)->double {
+          auto risk = natrisk1cpp(
+            t, allocationRatioPlanned, accrualTime, accrualIntensity_frac,
+            piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
+            accrualDuration, minFollowupTime, maxFollowupTime);
+
+          double r1 = risk.first;
+          double r2 = risk.second;
+
+          int j = findInterval1(t, piecewiseSurvivalTime) - 1;
+
+          double w = 1.0;
+          if (rho1 != 0.0 || rho2 != 0.0) {
+            double s = kmsurv1cpp(
+              t, allocationRatioPlanned, piecewiseSurvivalTime,
+              lam1, lam2, gam1, gam2);
+            w = std::pow(s, rho1) * std::pow(1.0 - s, rho2);
+          }
+
+          double denom = r1 * hazardRatioH0 + r2;
+          if (denom <= 0.0) return 0.0;
+
+          double N = (r1 * hazardRatioH0) * r2 / (denom * denom);
+          double d = r1 * lam1[j] + r2 *lam2[j];
+
+          double val = w * N * d;
+          return val;
+        };
+
+        iscore[h] = integrate3(fi, breaks, tol);
+      }
     }
   }
 
@@ -446,10 +443,12 @@ DataFrameCpp lrstat0cpp(
   result.push_back(std::move(nfmax1), "nfmax1");
   result.push_back(std::move(nfmax2), "nfmax2");
 
-  if (!predictEventOnly) {
+  if (predictTarget == 2 || predictTarget == 3) {
     result.push_back(std::move(uscore), "uscore");
     result.push_back(std::move(vscore), "vscore");
-    result.push_back(std::move(iscore), "iscore");
+    if (predictTarget == 3) {
+      result.push_back(std::move(iscore), "iscore");
+    }
   }
 
   return result;
@@ -475,7 +474,7 @@ DataFrameCpp lrstat1cpp(
     const double rho2,
     const int predictTarget) {
 
-  const bool predictEventOnly = (predictTarget == 1);
+  int predictTarget1 = predictTarget == 1 ? 1 : 2;
 
   DataFrameCpp df = lrstat0cpp(
     time, hazardRatioH0, allocationRatioPlanned,
@@ -483,7 +482,7 @@ DataFrameCpp lrstat1cpp(
     piecewiseSurvivalTime, stratumFraction,
     lambda1, lambda2, gamma1, gamma2,
     accrualDuration, followupTime, fixedFollowup,
-    rho1, rho2, predictEventOnly
+    rho1, rho2, predictTarget1
   );
 
   // sums over strata
@@ -511,7 +510,7 @@ DataFrameCpp lrstat1cpp(
   out.push_back(nfmax1, "nfmax1");
   out.push_back(nfmax2, "nfmax2");
 
-  if (!predictEventOnly) {
+  if (predictTarget == 2 || predictTarget == 3) {
     double uscore = extract_sum(df, "uscore");
     double vscore = extract_sum(df, "vscore");
     double logRankZ = vscore > 0.0 ? uscore / std::sqrt(vscore) : 0.0;
@@ -520,49 +519,48 @@ DataFrameCpp lrstat1cpp(
     out.push_back(vscore, "vscore");
     out.push_back(logRankZ, "logRankZ");
     out.push_back(hazardRatioH0, "hazardRatioH0");
-  }
 
-  // If predictTarget == 3, solve for weighted Cox estimator (logHR)
-  if (predictTarget == 3) {
-    double logHR0 = std::log(hazardRatioH0);
+    if (predictTarget == 3) { // solve for weighted Cox estimator (logHR)
+      double logHR0 = std::log(hazardRatioH0);
 
-    // g(beta) = sum_uscore at hazardRatio = exp(beta)
-    auto g = [&](double beta)->double {
-      double hazardRatio = std::exp(beta);
-      DataFrameCpp lr = lrstat0cpp(
-        time, hazardRatio, allocationRatioPlanned,
+      // g(beta) = sum_uscore at hazardRatio = exp(beta)
+      auto g = [&](double beta)->double {
+        double hazardRatio = std::exp(beta);
+        DataFrameCpp lr = lrstat0cpp(
+          time, hazardRatio, allocationRatioPlanned,
+          accrualTime, accrualIntensity,
+          piecewiseSurvivalTime, stratumFraction,
+          lambda1, lambda2, gamma1, gamma2,
+          accrualDuration, followupTime, fixedFollowup,
+          rho1, rho2, 2
+        );
+        return extract_sum(lr, "uscore");
+      };
+
+      double logHR = brent(g, -4.6, 4.6, 1.0e-6);
+      double HR = std::exp(logHR);
+
+      DataFrameCpp lr1 = lrstat0cpp(
+        time, HR, allocationRatioPlanned,
         accrualTime, accrualIntensity,
         piecewiseSurvivalTime, stratumFraction,
         lambda1, lambda2, gamma1, gamma2,
         accrualDuration, followupTime, fixedFollowup,
-        rho1, rho2, false
+        rho1, rho2, 3
       );
-      return extract_sum(lr, "uscore");
-    };
 
-    double logHR = brent(g, -4.6, 4.6, 1.0e-6);
-    double HR = std::exp(logHR);
+      double vscore1 = extract_sum(lr1, "vscore");
+      double iscore1 = extract_sum(lr1, "iscore");
+      double vlogHR = 0.0, zlogHR = 0.0;
+      if (iscore1 != 0.0) {
+        vlogHR = vscore1 / (iscore1 * iscore1);
+        if (vlogHR > 0.0) zlogHR = (logHR - logHR0) / std::sqrt(vlogHR);
+      }
 
-    DataFrameCpp lr1 = lrstat0cpp(
-      time, HR, allocationRatioPlanned,
-      accrualTime, accrualIntensity,
-      piecewiseSurvivalTime, stratumFraction,
-      lambda1, lambda2, gamma1, gamma2,
-      accrualDuration, followupTime, fixedFollowup,
-      rho1, rho2, false
-    );
-
-    double vscore1 = extract_sum(lr1, "vscore");
-    double iscore1 = extract_sum(lr1, "iscore");
-    double vlogHR = 0.0, zlogHR = 0.0;
-    if (iscore1 != 0.0) {
-      vlogHR = vscore1 / (iscore1 * iscore1);
-      if (vlogHR > 0.0) zlogHR = (logHR - logHR0) / std::sqrt(vlogHR);
+      out.push_back(HR, "HR");
+      out.push_back(vlogHR, "vlogHR");
+      out.push_back(zlogHR, "zlogHR");
     }
-
-    out.push_back(HR, "HR");
-    out.push_back(vlogHR, "vlogHR");
-    out.push_back(zlogHR, "zlogHR");
   }
 
   return out;
@@ -905,7 +903,7 @@ double caltime1cpp(
       piecewiseSurvivalTime, stratumFraction,
       lambda1, lambda2, gamma1, gamma2,
       accrualDuration, followupTime, fixedFollowup,
-      0.0, 0.0, true
+      0.0, 0.0, 1
     );
     return extract_sum(df, "nevents") - nevents;
   };
@@ -1186,7 +1184,7 @@ DataFrameCpp getDurationFromNeventscpp(
       piecewiseSurvivalTime, stratumFraction,
       lambda1x, lambda2x, gamma1x, gamma2x,
       accrdur, futime, fixedFollowup,
-      0.0, 0.0, true
+      0.0, 0.0, 1
     );
     return extract_sum(df, "nevents");
   };
@@ -1696,7 +1694,7 @@ ListCpp lrpowercpp(
     double vtrt = phi * (1.0 - phi);
     double theta1 = -std::log(hazardRatio / hazardRatioH0);
 
-    bool predictEventOnly = (su1 == 's');
+    int predictTarget1 = (su1 == 's') ? 1 : 2;
 
     DataFrameCpp lr_end = lrstat0cpp(
       studyDuration1, hazardRatioH0, allocationRatioPlanned,
@@ -1704,7 +1702,7 @@ ListCpp lrpowercpp(
       piecewiseSurvivalTime, stratumFraction,
       lambda1x, lambda2x, gamma1x, gamma2x,
       accrualDuration, followupTime, fixedFollowup,
-      rho1, rho2, predictEventOnly);
+      rho1, rho2, predictTarget1);
 
     double totalEvents = extract_sum(lr_end, "nevents");
 
@@ -1746,7 +1744,7 @@ ListCpp lrpowercpp(
         piecewiseSurvivalTime, stratumFraction,
         lambda1x, lambda2x, gamma1x, gamma2x,
         accrualDuration, followupTime, fixedFollowup,
-        rho1, rho2, predictEventOnly);
+        rho1, rho2, predictTarget1);
 
       nsubjects[i] = extract_sum(lr_i, "subjects");
       nsubjects1[i] = phi * nsubjects[i];
@@ -1776,7 +1774,7 @@ ListCpp lrpowercpp(
       piecewiseSurvivalTime, stratumFraction,
       lambda1x, lambda2x, gamma1x, gamma2x,
       accrualDuration, followupTime, fixedFollowup,
-      rho1, rho2, false);
+      rho1, rho2, 2);
 
     double maxInformation = extract_sum(lr_end, "vscore");
 
@@ -1807,7 +1805,7 @@ ListCpp lrpowercpp(
           piecewiseSurvivalTime, stratumFraction,
           lambda1x, lambda2x, gamma1x, gamma2x,
           accrualDuration, followupTime, fixedFollowup,
-          rho1, rho2, false);
+          rho1, rho2, 2);
 
         return extract_sum(lr1, "vscore") - information1;
       };
@@ -1820,7 +1818,7 @@ ListCpp lrpowercpp(
         piecewiseSurvivalTime, stratumFraction,
         lambda1x, lambda2x, gamma1x, gamma2x,
         accrualDuration, followupTime, fixedFollowup,
-        rho1, rho2, false);
+        rho1, rho2, 2);
 
       nsubjects[i] = extract_sum(lr_i, "subjects");
       nsubjects1[i] = phi * nsubjects[i];
@@ -2735,6 +2733,7 @@ ListCpp lrsamplesizecpp(
         "Schoenfeld method can only be used for ordinary log-rank test "
         "with proportional hazards");
   }
+  int predictTarget1 = (su1 == 's') ? 1 : 2;
 
   // --- Efficacy boundaries ---------------------------------------------------
   std::vector<double> l(K, -6.0), zero(K, 0.0);
@@ -2817,7 +2816,7 @@ ListCpp lrsamplesizecpp(
       piecewiseSurvivalTime, stratumFraction,
       lambda1x, lambda2x, gamma1x, gamma2x,
       accrDur, fu, fixedFollowup,
-      rho1, rho2, true);
+      rho1, rho2, 1);
     return extract_sum(lr, "nevents");
   };
 
@@ -2836,7 +2835,6 @@ ListCpp lrsamplesizecpp(
     if (rho1 == 0 && rho2 == 0) {
       double vtrt = phi * (1.0 - phi);
       double theta1 = -std::log(hazardRatio / hazardRatioH0);
-      bool predictEventOnly = (su1 == 's');
 
       DataFrameCpp lr_end = lrstat0cpp(
         studyDuration1, hazardRatioH0, allocationRatioPlanned,
@@ -2844,7 +2842,7 @@ ListCpp lrsamplesizecpp(
         piecewiseSurvivalTime, stratumFraction,
         lambda1x, lambda2x, gamma1x, gamma2x,
         accrDur, fu, fixedFollowup,
-        rho1, rho2, predictEventOnly);
+        rho1, rho2, predictTarget1);
 
       double totalEvents = extract_sum(lr_end, "nevents");
 
@@ -2874,7 +2872,7 @@ ListCpp lrsamplesizecpp(
           piecewiseSurvivalTime, stratumFraction,
           lambda1x, lambda2x, gamma1x, gamma2x,
           accrDur, fu, fixedFollowup,
-          rho1, rho2, predictEventOnly);
+          rho1, rho2, predictTarget1);
 
         if (su1 == 's') {
           theta[i] = theta1;
@@ -2893,7 +2891,7 @@ ListCpp lrsamplesizecpp(
         piecewiseSurvivalTime, stratumFraction,
         lambda1x, lambda2x, gamma1x, gamma2x,
         accrDur, fu, fixedFollowup,
-        rho1, rho2, false);
+        rho1, rho2, 2);
 
       double maxInformation = extract_sum(lr_end, "vscore");
 
@@ -2912,7 +2910,7 @@ ListCpp lrsamplesizecpp(
             piecewiseSurvivalTime, stratumFraction,
             lambda1x, lambda2x, gamma1x, gamma2x,
             accrDur, fu, fixedFollowup,
-            rho1, rho2, false);
+            rho1, rho2, 2);
 
           return extract_sum(lr1, "vscore") - information1;
         };
@@ -2925,7 +2923,7 @@ ListCpp lrsamplesizecpp(
           piecewiseSurvivalTime, stratumFraction,
           lambda1x, lambda2x, gamma1x, gamma2x,
           accrDur, fu, fixedFollowup,
-          rho1, rho2, false);
+          rho1, rho2, 2);
 
         double uscore1 = extract_sum(lr_i, "uscore");
         theta[i] = -uscore1 / information1;
@@ -3156,7 +3154,7 @@ ListCpp lrsamplesizecpp(
       piecewiseSurvivalTime, stratumFraction,
       lambda1x, lambda2x, gamma1x, gamma2x,
       accrualDuration, followupTime, fixedFollowup,
-      rho1, rho2, true);
+      rho1, rho2, 1);
 
     // unrounded number of events at study end under H1
     double D0 = extract_sum(lr_end, "nevents");
@@ -3272,7 +3270,7 @@ ListCpp lrsamplesizecpp(
         piecewiseSurvivalTime, stratumFraction,
         lambda1x, lambda2x, gamma1x, gamma2x,
         accrualDuration, followupTime, fixedFollowup,
-        rho1, rho2, false);
+        rho1, rho2, 2);
 
       double maxInformation = extract_sum(lr_end, "vscore");
 
@@ -3287,7 +3285,7 @@ ListCpp lrsamplesizecpp(
             piecewiseSurvivalTime, stratumFraction,
             lambda1x, lambda2x, gamma1x, gamma2x,
             accrualDuration, followupTime, fixedFollowup,
-            rho1, rho2, false);
+            rho1, rho2, 2);
 
           return extract_sum(lr1, "vscore") - information1;
         };
@@ -3301,7 +3299,7 @@ ListCpp lrsamplesizecpp(
           piecewiseSurvivalTime, stratumFraction,
           lambda1x, lambda2x, gamma1x, gamma2x,
           accrualDuration, followupTime, fixedFollowup,
-          rho1, rho2, true);
+          rho1, rho2, 1);
 
         double nevents = extract_sum(lr_events, "nevents");
         nevents = std::floor(nevents + 0.5);
@@ -3321,7 +3319,7 @@ ListCpp lrsamplesizecpp(
           piecewiseSurvivalTime, stratumFraction,
           lambda1x, lambda2x, gamma1x, gamma2x,
           accrualDuration, followupTime, fixedFollowup,
-          rho1, rho2, false);
+          rho1, rho2, 2);
 
         information1 = extract_sum(lr_info, "vscore");
         infoRates[i] = information1 / maxInformation;
@@ -3406,7 +3404,7 @@ ListCpp lrsamplesizecpp(
       piecewiseSurvivalTime, stratumFraction,
       lambda1H0x, lambda2x, gamma1x, gamma2x,
       accrDur, fu, fixedFollowup,
-      rho1, rho2, true);
+      rho1, rho2, 1);
     return extract_sum(lr, "nevents");
   };
 
@@ -3420,7 +3418,7 @@ ListCpp lrsamplesizecpp(
       piecewiseSurvivalTime, stratumFraction,
       lambda1H0x, lambda2x, gamma1x, gamma2x,
       accrDur, fu, fixedFollowup,
-      rho1, rho2, false);
+      rho1, rho2, 2);
     return extract_sum(lr, "vscore");
   };
 
@@ -3993,7 +3991,7 @@ ListCpp lrpowerequivcpp(
       piecewiseSurvivalTime, stratumFraction,
       lambda1x, lambda2x, gamma1x, gamma2x,
       accrualDuration, followupTime, fixedFollowup,
-      0.0, 0.0, true);
+      0.0, 0.0, 1);
 
     double totalEvents = extract_sum(lr_end, "nevents");
 
@@ -4025,7 +4023,7 @@ ListCpp lrpowerequivcpp(
         piecewiseSurvivalTime, stratumFraction,
         lambda1x, lambda2x, gamma1x, gamma2x,
         accrualDuration, followupTime, fixedFollowup,
-        0.0, 0.0, true);
+        0.0, 0.0, 1);
 
       nsubjects[i] = extract_sum(lr_i, "subjects");
       nsubjects1[i] = phi * nsubjects[i];
@@ -4859,7 +4857,7 @@ ListCpp lrsamplesizeequivcpp(
       piecewiseSurvivalTime, stratumFraction,
       lambda1x, lambda2x, gamma1x, gamma2x,
       accrDur, fu, fixedFollowup,
-      0.0, 0.0, true);
+      0.0, 0.0, 1);
     return extract_sum(lr, "nevents");
   };
 
@@ -4882,7 +4880,7 @@ ListCpp lrsamplesizeequivcpp(
         piecewiseSurvivalTime, stratumFraction,
         lambda1x, lambda2x, gamma1x, gamma2x,
         accrDur, fu, fixedFollowup,
-        0.0, 0.0, true);
+        0.0, 0.0, 1);
 
       double totalEvents = extract_sum(lr_end, "nevents");
       I[K - 1] = vtrt * totalEvents;
@@ -5111,7 +5109,7 @@ ListCpp lrsamplesizeequivcpp(
       piecewiseSurvivalTime, stratumFraction,
       lambda1x, lambda2x, gamma1x, gamma2x,
       accrualDuration, followupTime, fixedFollowup,
-      0.0, 0.0, true);
+      0.0, 0.0, 1);
 
     double D0 = extract_sum(lr_end, "nevents");
     double D = std::ceil(D0 - 1.0e-12);
