@@ -1904,9 +1904,12 @@ ListCpp lrpowercpp(
     for (size_t i = 0; i < K; ++i) {
       hru[i] = hazardRatioH0 * std::exp(-critValues[i] * std::sqrt(vlogHR[i]));
       hrl[i] = hazardRatioH0 * std::exp(-futBounds[i] * std::sqrt(vlogHR[i]));
-      if (critValues[i] == 6.0) { hru[i] = NaN; effStopping[i] = 0; }
-      if (futBounds[i] == -6.0) { hrl[i] = NaN; futStopping[i] = 0; }
     }
+  }
+
+  for (size_t i = 0; i < K; ++i) {
+    if (critValues[i] == 6.0) { hru[i] = NaN; effStopping[i] = 0; }
+    if (futBounds[i] == -6.0) { hrl[i] = NaN; futStopping[i] = 0; }
   }
 
   // --- Build output DataFrames and Lists ------------------------------------
