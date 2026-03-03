@@ -36,7 +36,7 @@ lrsamplesize(beta = 0.1, kMax = 1, criticalValues = 1.96,
 ```
 
 
-On the other hand, the output from the default lrsamplesize call implies that we only need 26 events with 127 subjects enrolled over 25.4 months, a dramatic difference from the Schoenfeld formula. Denote this design as design 2. 
+On the other hand, the output from the lrsamplesize call using the 'direct' method implies that we only need 26 events with 127 subjects enrolled over 25.4 months, a dramatic difference from the Schoenfeld formula. Denote this design as design 2. 
 ```{r}
 lrsamplesize(beta = 0.1, kMax = 1, criticalValues = 1.96, 
              allocationRatioPlanned = 3, accrualIntensity = 5, 
@@ -69,7 +69,7 @@ lrsim(kMax = 1, criticalValues = 1.96,
       plannedEvents = 26, 
       maxNumberOfIterations = 10000, seed = 12345)
 ```
-The simulated power is about 95% for design 1, and 83% for design 2. Neither is close to the target 90% power.  
+The simulated power is about 95% for design 1, and 84% for design 2. Neither is close to the target 90% power.  
 
 We use the following formula to adjust the sample size to attain the target power, 
 \[
