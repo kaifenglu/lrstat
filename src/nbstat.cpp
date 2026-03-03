@@ -163,8 +163,8 @@ ListCpp nbstat1cpp(
     const std::vector<double>& kappa2,
     const std::vector<double>& lambda1,
     const std::vector<double>& lambda2,
-    const std::vector<std::vector<double>>& gamma1,
-    const std::vector<std::vector<double>>& gamma2,
+    const FlatMatrix& gamma1,
+    const FlatMatrix& gamma2,
     const double accrualDuration,
     const double followupTime,
     const bool fixedFollowup,
@@ -214,8 +214,8 @@ ListCpp nbstat1cpp(
     const double k2 = kappa2[h];
     const double lam1 = lambda1[h];
     const double lam2 = lambda2[h];
-    const std::vector<double>& gam1 = gamma1[h];
-    const std::vector<double>& gam2 = gamma2[h];
+    const std::vector<double>& gam1 = flatmatrix_get_column(gamma1, h);
+    const std::vector<double>& gam2 = flatmatrix_get_column(gamma2, h);
 
     // scale accrualIntensity by stratum fraction
     std::vector<double> accrualIntensity_frac = accrualIntensity;
@@ -233,10 +233,10 @@ ListCpp nbstat1cpp(
       }
     }
     if (hasDropout) {
-      auto nd_row = nevent21cpp(
+      auto nd_row = nevent1(
         time, allocationRatioPlanned, accrualTime, accrualIntensity_frac,
         piecewiseSurvivalTime, gam1, gam2, zero, zero,
-        accrualDuration, followupTime, maxFollowupTime);
+        accrualDuration, maxFollowupTime);
 
       ndropouts1[h] = nd_row.first;
       ndropouts2[h] = nd_row.second;
@@ -2688,9 +2688,6 @@ ListCpp nbsamplesizecpp(
 //' @inheritParams param_accrualDuration
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
-//' @param interval The interval to search for the solution of
-//'   accrualDuration, followupDuration, or the proportionality constant
-//'   of accrualIntensity. Defaults to \code{c(0.001, 240)}.
 //' @param spendingTime A vector of length \code{kMax} for the error spending
 //'   time at each analysis. Defaults to missing, in which case, it is the
 //'   same as \code{informationRates}.
@@ -4172,9 +4169,6 @@ ListCpp nbsamplesize1scpp(
 //' @inheritParams param_accrualDuration
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
-//' @param interval The interval to search for the solution of
-//'   accrualDuration, followupDuration, or the proportionality constant
-//'   of accrualIntensity. Defaults to \code{c(0.001, 240)}.
 //' @param spendingTime A vector of length \code{kMax} for the error spending
 //'   time at each analysis. Defaults to missing, in which case, it is the
 //'   same as \code{informationRates}.
@@ -5599,9 +5593,6 @@ ListCpp nbsamplesizeequivcpp(
 //' @inheritParams param_accrualDuration
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
-//' @param interval The interval to search for the solution of
-//'   accrualDuration, followupDuration, or the proportionality constant
-//'   of accrualIntensity. Defaults to \code{c(0.001, 240)}.
 //' @param spendingTime A vector of length \code{kMax} for the error spending
 //'   time at each analysis. Defaults to missing, in which case, it is the
 //'   same as \code{informationRates}.
