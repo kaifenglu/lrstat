@@ -171,9 +171,8 @@ ListCpp exitprobcpp(const std::vector<double>& b,
   // Prepare a1, theta1, I1 only if defaults / expansion necessary.
   std::vector<double> a1; a1.reserve(K);
   if (none_na(a)) {
-    if (a.size() < K)
-      throw std::invalid_argument("Insufficient length for a");
-    a1 = a; // copy once
+    if (a.size() < K) throw std::invalid_argument("Insufficient length for a");
+    a1.assign(a.begin(), a.begin() + K);
   } else {
     a1.assign(K, -6.0);
     a1[K - 1] = b[K - 1]; // set last element to b[K-1]
@@ -186,14 +185,14 @@ ListCpp exitprobcpp(const std::vector<double>& b,
   }
 
   // theta expansion
-  std::vector<double> theta1;
+  std::vector<double> theta1; theta1.reserve(K);
   if (none_na(theta)) {
     if (theta.size() == 1) {
       theta1.assign(K, theta[0]);
-    } else if (theta.size() >= K) {
-      theta1 = theta;
-    } else {
+    } else if (theta.size() < K) {
       throw std::invalid_argument("Insufficient length for theta");
+    } else {
+      theta1.assign(theta.begin(), theta.begin() + K);
     }
   } else {
     theta1.assign(K, 0.0);
@@ -201,15 +200,13 @@ ListCpp exitprobcpp(const std::vector<double>& b,
 
 
   // information times expansion / validation
-  std::vector<double> I1;
+  std::vector<double> I1; I1.reserve(K);
   if (none_na(I)) {
-    if (I.size() < K)
-      throw std::invalid_argument("Insufficient length for I");
-    if (I[0] <= 0.0)
-      throw std::invalid_argument("I must be positive");
-    if (any_nonincreasing(I))
-      throw std::invalid_argument("I must be increasing");
-    I1 = I;
+    if (I.size() < K) throw std::invalid_argument("Insufficient length for I");
+
+    I1.assign(I.begin(), I.begin() + K);
+    if (I1[0] <= 0.0) throw std::invalid_argument("I must be positive");
+    if (any_nonincreasing(I1)) throw std::invalid_argument("I must be increasing");
   } else {
     I1.resize(K);
     std::iota(I1.begin(), I1.end(), 1.0);
@@ -456,13 +453,14 @@ std::vector<double> getBoundcpp(
   if (none_na(informationRates)) {
     if (informationRates.size() < K)
       throw std::invalid_argument("Insufficient length for informationRates");
-    if (informationRates[0] <= 0.0)
+
+    infoRates.assign(informationRates.begin(), informationRates.begin() + K);
+    if (infoRates[0] <= 0.0)
       throw std::invalid_argument("informationRates must be positive");
-    if (any_nonincreasing(informationRates))
+    if (any_nonincreasing(infoRates))
       throw std::invalid_argument("informationRates must be increasing");
-    if (informationRates[K-1] > 1.0)
+    if (infoRates[K-1] > 1.0)
       throw std::invalid_argument("informationRates must not exceed 1");
-    infoRates = informationRates; // copy
   } else {
     for (size_t i = 0; i < K; ++i) {
       infoRates[i] = static_cast<double>(i+1) / static_cast<double>(K);
@@ -470,29 +468,31 @@ std::vector<double> getBoundcpp(
   }
 
   // spendTime: default to infoRates if missing
-  std::vector<double> spendTime;
+  std::vector<double> spendTime; spendTime.reserve(K);
   if (none_na(spendingTime)) {
     if (spendingTime.size() < K)
       throw std::invalid_argument("Insufficient length for spendingTime");
-    if (spendingTime[0] <= 0.0)
+
+    spendTime.assign(spendingTime.begin(), spendingTime.begin() + K);
+    if (spendTime[0] <= 0.0)
       throw std::invalid_argument("spendingTime must be positive");
-    if (any_nonincreasing(spendingTime))
+    if (any_nonincreasing(spendTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[K-1] > 1.0)
+    if (spendTime[K-1] > 1.0)
       throw std::invalid_argument("spendingTime must not exceed 1");
-    spendTime = spendingTime;
   } else {
     spendTime = infoRates;
   }
 
   // effStopping: default to all 1s if missing
-  std::vector<unsigned char> effStopping;
+  std::vector<unsigned char> effStopping; effStopping.reserve(K);
   if (none_na(efficacyStopping)) {
     if (efficacyStopping.size() < K)
       throw std::invalid_argument("Insufficient length for efficacyStopping");
-    if (efficacyStopping[K-1] != 1)
+
+    effStopping.assign(efficacyStopping.begin(), efficacyStopping.begin() + K);
+    if (effStopping[K-1] != 1)
       throw std::invalid_argument("efficacyStopping must end with 1");
-    effStopping = efficacyStopping; // copy
   } else {
     effStopping.assign(K, 1);
   }
