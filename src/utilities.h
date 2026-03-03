@@ -392,7 +392,7 @@ std::pair<double, double> mini(
 double integrate3(
     const std::function<double(double)>& f,
     const std::vector<double>& breaks,
-    double tol = 1e-8, unsigned maxiter = 100);
+    double tol = 1e-8);
 
 double quad2d(const std::function<double(double,double)>& f,
               double ax, double bx, double ay, double by,
