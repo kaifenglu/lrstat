@@ -35,7 +35,8 @@ Therefore the followup time for the last enrolled patient is 13.63 - 12 = 1.63 m
 ```{r}
 lrpower(kMax = 1, criticalValues = 1.96, accrualDuration = 12, 
         accrualIntensity = 200/12, lambda1 = -log(1-0.2)/12, 
-        lambda2 = -log(1-0.4)/12,  followupTime = 1.63)
+        lambda2 = -log(1-0.4)/12,  followupTime = 1.63, 
+        typeOfComputation = "direct")
 ```
 
 Therefore, the power is estimated to be 71.4%. In comparison, the Schoenfeld formula yields a power of 74.5%. 
