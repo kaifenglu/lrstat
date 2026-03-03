@@ -233,26 +233,23 @@ std::vector<double> expand1(
   }
 }
 
-std::vector<std::vector<double>> expand_stratified(
+FlatMatrix expand_stratified(
     const std::vector<double>& v,
     const size_t nstrata,
-    const size_t nintervals,
+    const size_t nintv,
     const char* name) {
-  std::vector<std::vector<double>> out(nstrata);
-  size_t nsi = nstrata * nintervals;
+  int nstrata1 = static_cast<int>(nstrata);
+  int nintv1 = static_cast<int>(nintv);
+
+  FlatMatrix out(nintv1, nstrata1);
   if (v.size() == 1) {
-    for (size_t s = 0; s < nstrata; ++s) {
-      out[s] = std::vector<double>(nintervals, v[0]);
+    out.fill(v[0]);
+  } else if (v.size() == nintv) {
+    for (int s = 0; s < nstrata1; ++s) {
+      flatmatrix_set_column(out, s, v);
     }
-  } else if (v.size() == nintervals) {
-    for (size_t s = 0; s < nstrata; ++s) {
-      out[s] = v;
-    }
-  } else if (v.size() == nsi) {
-    for (size_t s = 0; s < nstrata; ++s) {
-      out[s] = std::vector<double>(v.begin() + s * nintervals,
-                                   v.begin() + (s + 1) * nintervals);
-    }
+  } else if (v.size() == nstrata * nintv) {
+    out.data = v;
   } else {
     throw std::invalid_argument(std::string("Invalid length for ") + name);
   }
@@ -1321,7 +1318,15 @@ ListCpp m_pfs(const std::vector<double>& piecewiseSurvivalTime,
   };
 
   double tol = 1e-5;
-  std::vector<double> breaks = {0.0, upper};
+
+  // Candidate set of break points for integration
+  std::vector<double> breaks;
+  breaks.reserve(piecewiseSurvivalTime.size() + 1);
+  for (double t : piecewiseSurvivalTime) {
+    if (t >= upper) continue;
+    breaks.push_back(t);
+  }
+  breaks.push_back(upper);
   double m1 = integrate3(fm_pfs, breaks, tol);
   double m2 = integrate3(fm2_pfs, breaks, tol);
 
@@ -1402,6 +1407,7 @@ double corr_pfs_oscpp(const std::vector<double>& piecewiseSurvivalTime,
   std::vector<double> u = a.get<std::vector<double>>("piecewiseSurvivalTime");
   std::vector<double> hazard_pd1 = a.get<std::vector<double>>("hazard_pd");
   std::vector<double> hazard_os1 = a.get<std::vector<double>>("hazard_os");
+
   return cor_pfs_os(u, hazard_pd1, hazard_os1, rho_pd_os);
 }
 
