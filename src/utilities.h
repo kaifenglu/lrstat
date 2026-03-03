@@ -77,7 +77,6 @@ double boost_qt(double p, double df, bool lower_tail = true);
 // --------------------------- Small utilities --------------------------------
 inline double sq(double x) noexcept { return x * x; }
 
-std::vector<double> stl_sort(const std::vector<double>& x);
 
 // seqcpp: inclusive sequence; inputs are int
 std::vector<int> seqcpp(int start, int end);
@@ -175,8 +174,6 @@ double extract_sum(const DataFrameCpp& df, const char* name);
 // --------------------------- Root finders -----------------------------------
 double brent(const std::function<double(double)>& f,
              double x1, double x2, double tol = 1e-8, int maxiter = 100);
-double bisect(const std::function<double(double)>& f,
-              double x1, double x2, double tol = 1e-8, int maxiter = 100);
 
 // check if no elements are missing
 inline bool none_na(const std::vector<double>& v) {
@@ -338,23 +335,8 @@ double dtpwexpcpp1(
     const double lowerBound = 0.0,
     const bool logd = false);
 
-std::vector<double> dtpwexpcpp(
-    const std::vector<double>& q,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda,
-    const double lowerBound = 0.0,
-    const bool logd = false);
-
 double ptpwexpcpp1(
     const double q,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda,
-    const double lowerBound = 0.0,
-    const bool lowertail = true,
-    const bool logp = false);
-
-std::vector<double> ptpwexpcpp(
-    const std::vector<double>& q,
     const std::vector<double>& piecewiseSurvivalTime,
     const std::vector<double>& lambda,
     const double lowerBound = 0.0,
