@@ -220,6 +220,7 @@ rtpwexp <- function(n, piecewiseSurvivalTime = 0, lambda = 0.0578,
   }
 
   qtpwexpcpp(p = runif(n), piecewiseSurvivalTime = piecewiseSurvivalTime,
-             lambda = lambda, lowerBound = lowerBound)
+             lambda = lambda, lowerBound = lowerBound,
+             lowertail = TRUE, logp = FALSE)
 }
 
