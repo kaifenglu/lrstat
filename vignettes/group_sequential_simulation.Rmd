@@ -31,7 +31,7 @@ lrstat(time=c(20, 25, 30, 35, 38.5), allocationRatioPlanned = 3,
        accrualDuration = 32, followupTime = 6.5, fixedFollowup = TRUE)
 ```
 
-Suppose we run the trial for a target maximum number of 32 events. The trial will stop once 32 events have been observed or the trial is stopped early for futility or efficacy. Due to the fixed follow-up design, there might be situations where a total of 160 patients with each followed-up for 6.5 month do not yield 32 events, in which case, the trial will stop and we allocate all remaining alpha to the final look. The simulation below demonstrates that the study has approximately 88% under the alternative hypothesis.  
+Suppose we run the trial for a target maximum number of 32 events. The trial will stop once 32 events have been observed or the trial is stopped early for futility or efficacy. Due to the fixed follow-up design, there might be situations where a total of 160 patients with each followed-up for 6.5 month do not yield 32 events, in which case, the trial will stop and we allocate all remaining alpha to the final look. The simulation below demonstrates that the study has approximately 90% under the alternative hypothesis.  
 ```{r}
 lrsim(kMax = 3, informationRates = c(0.5, 0.75, 1), 
       criticalValues = c(6, 2.34, 2.012), 
@@ -51,7 +51,7 @@ lrsim(kMax = 3, informationRates = c(0.5, 0.75, 1),
       seed = 12345)
 ```
 
-The simulation below shows that the probability of futility stopping under the null hypothesis is 65%. 
+The simulation below shows that the probability of futility stopping at the first look is about 62% under the null hypothesis. 
 ```{r}
 lrsim(kMax = 3, informationRates = c(0.5, 0.75, 1), 
       criticalValues = c(6, 2.34, 2.012), 
