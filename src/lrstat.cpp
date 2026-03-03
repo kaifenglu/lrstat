@@ -20,7 +20,7 @@
 using std::size_t;
 
 
-double kmsurv1cpp(
+double kmsurv1(
     const double time,
     const double allocationRatioPlanned,
     const std::vector<double>& piecewiseSurvivalTime,
@@ -84,31 +84,6 @@ double kmsurv1cpp(
 }
 
 
-std::vector<double> kmsurvcpp(
-    const std::vector<double>& time,
-    const double allocationRatioPlanned,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda1,
-    const std::vector<double>& lambda2,
-    const std::vector<double>& gamma1,
-    const std::vector<double>& gamma2) {
-
-  size_t J = static_cast<int>(piecewiseSurvivalTime.size());
-  auto lambda1x = expand1(lambda1, J, "lambda1");
-  auto lambda2x = expand1(lambda2, J, "lambda2");
-  auto gamma1x = expand1(gamma1, J, "gamma1");
-  auto gamma2x = expand1(gamma2, J, "gamma2");
-
-  size_t k = time.size();
-  std::vector<double> v(k);
-  for (size_t i = 0; i < k; ++i) {
-    v[i] = kmsurv1cpp(time[i], allocationRatioPlanned, piecewiseSurvivalTime,
-                      lambda1x, lambda2x, gamma1x, gamma2x);
-  }
-  return v;
-}
-
-
 //' @title Kaplan-Meier Survival Probability Based on Pooled Sample
 //' @description Obtains the limit of Kaplan-Meier estimate of the survival
 //' probabilities based on the pooled sample.
@@ -157,10 +132,20 @@ Rcpp::NumericVector kmsurv(
   auto gam1 = Rcpp::as<std::vector<double>>(gamma1);
   auto gam2 = Rcpp::as<std::vector<double>>(gamma2);
 
-  auto result = kmsurvcpp(
-    time1, allocationRatioPlanned, pwSurvT, lam1, lam2, gam1, gam2);
+  size_t J = static_cast<int>(piecewiseSurvivalTime.size());
+  auto lambda1x = expand1(lam1, J, "lambda1");
+  auto lambda2x = expand1(lam2, J, "lambda2");
+  auto gamma1x = expand1(gam1, J, "gamma1");
+  auto gamma2x = expand1(gam2, J, "gamma2");
 
-  return Rcpp::wrap(result);
+  size_t k = time1.size();
+  std::vector<double> v(k);
+  for (size_t i = 0; i < k; ++i) {
+    v[i] = kmsurv1(time1[i], allocationRatioPlanned, pwSurvT,
+                   lambda1x, lambda2x, gamma1x, gamma2x);
+  }
+
+  return Rcpp::wrap(v);
 }
 
 
@@ -168,7 +153,6 @@ std::vector<double> lr_make_breaks(
     const std::vector<double>& piecewiseSurvivalTime,
     const std::vector<double>& accrualTime,
     const double accrualDuration,
-    const double minFollowupTime,
     const double maxFollowupTime,
     const double time) {
 
@@ -186,14 +170,12 @@ std::vector<double> lr_make_breaks(
 
   // add accrual-derived points: accrualDuration + minFollowupTime - accrualTime[i]
   for (double at : accrualTime) {
-    double s = accrualDuration + minFollowupTime - at;
+    double s = time - at;
     if (s <= 0.0 || s >= upper) continue;
     pts.push_back(s);
   }
 
-  // Also include the special switch point where u(t) hits its clamp bounds:
-  // s(t)=accrualDuration  => t = minFollowupTime
-  double t_1 = minFollowupTime;
+  double t_1 = time - accrualDuration;
   if (t_1 > 0.0 && t_1 < upper) pts.push_back(t_1);
 
   if (pts.empty()) {
@@ -244,10 +226,10 @@ DataFrameCpp lrstat0cpp(
     const std::vector<double>& accrualIntensity,
     const std::vector<double>& piecewiseSurvivalTime,
     const std::vector<double>& stratumFraction,
-    const std::vector<std::vector<double>>& lambda1,
-    const std::vector<std::vector<double>>& lambda2,
-    const std::vector<std::vector<double>>& gamma1,
-    const std::vector<std::vector<double>>& gamma2,
+    const FlatMatrix& lambda1,
+    const FlatMatrix& lambda2,
+    const FlatMatrix& gamma1,
+    const FlatMatrix& gamma2,
     const double accrualDuration,
     const double followupTime,
     const bool fixedFollowup,
@@ -277,10 +259,8 @@ DataFrameCpp lrstat0cpp(
   std::vector<double> nfmax1(nstrata), nfmax2(nstrata), nfmax(nstrata);
   std::vector<double> uscore(nstrata), vscore(nstrata), iscore(nstrata);
 
-  double minFollowupTime = std::max(time - accrualDuration, 0.0);
   auto breaks = lr_make_breaks(piecewiseSurvivalTime, accrualTime,
-                               accrualDuration, minFollowupTime,
-                               maxFollowupTime, time);
+                               accrualDuration, maxFollowupTime, time);
   double tol = 1e-6;
 
   // loop strata
@@ -291,25 +271,25 @@ DataFrameCpp lrstat0cpp(
     const double frac = stratumFraction[h];
 
     // build per-stratum vectors for the intervals
-    const std::vector<double>& lam1 = lambda1[h];
-    const std::vector<double>& lam2 = lambda2[h];
-    const std::vector<double>& gam1 = gamma1[h];
-    const std::vector<double>& gam2 = gamma2[h];
+    const std::vector<double>& lam1 = flatmatrix_get_column(lambda1, h);
+    const std::vector<double>& lam2 = flatmatrix_get_column(lambda2, h);
+    const std::vector<double>& gam1 = flatmatrix_get_column(gamma1, h);
+    const std::vector<double>& gam2 = flatmatrix_get_column(gamma2, h);
 
     // number of events in the stratum at calendar time
     std::vector<double> accrualIntensity_frac = accrualIntensity;
     for (double &v : accrualIntensity_frac) v *= frac;
 
-    auto ne_row = nevent21cpp(
+    auto ne_row = nevent1(
       time, allocationRatioPlanned, accrualTime, accrualIntensity_frac,
       piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
-      accrualDuration, followupTime, maxFollowupTime);
+      accrualDuration, maxFollowupTime);
 
     // obtain dropouts by swapping hazard roles
-    auto nd_row = nevent21cpp(
+    auto nd_row = nevent1(
       time, allocationRatioPlanned, accrualTime, accrualIntensity_frac,
       piecewiseSurvivalTime, gam1, gam2, lam1, lam2,
-      accrualDuration, followupTime, maxFollowupTime);
+      accrualDuration, maxFollowupTime);
 
     // number of subjects, events, dropouts in the stratum at calendar time
     nsubjects[h] = frac * a;
@@ -331,10 +311,10 @@ DataFrameCpp lrstat0cpp(
     if (predictTarget == 2 || predictTarget == 3) {
       auto fu = [&](double t)->double {
         // call natriskcpp for a single time point
-        auto risk = natrisk1cpp(
+        auto risk = natrisk1(
           t, allocationRatioPlanned, accrualTime, accrualIntensity_frac,
           piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
-          accrualDuration, minFollowupTime, maxFollowupTime);
+          accrualDuration, maxFollowupTime, time);
 
         // extract r1,r2 for row 0 (time t) and columns 0,1 (groups 1,2)
         double r1 = risk.first;
@@ -346,7 +326,7 @@ DataFrameCpp lrstat0cpp(
         // weight w
         double w = 1.0;
         if (rho1 != 0.0 || rho2 != 0.0) {
-          double s = kmsurv1cpp(
+          double s = kmsurv1(
             t, allocationRatioPlanned, piecewiseSurvivalTime,
             lam1, lam2, gam1, gam2);
           w = std::pow(s, rho1) * std::pow(1.0 - s, rho2);
@@ -363,10 +343,10 @@ DataFrameCpp lrstat0cpp(
       };
 
       auto fv = [&](double t)->double {
-        auto risk = natrisk1cpp(
+        auto risk = natrisk1(
           t, allocationRatioPlanned, accrualTime, accrualIntensity_frac,
           piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
-          accrualDuration, minFollowupTime, maxFollowupTime);
+          accrualDuration, maxFollowupTime, time);
 
         double r1 = risk.first;
         double r2 = risk.second;
@@ -375,7 +355,7 @@ DataFrameCpp lrstat0cpp(
 
         double w = 1.0;
         if (rho1 != 0.0 || rho2 != 0.0) {
-          double s = kmsurv1cpp(
+          double s = kmsurv1(
             t, allocationRatioPlanned, piecewiseSurvivalTime,
             lam1, lam2, gam1, gam2);
           w = std::pow(s, rho1) * std::pow(1.0 - s, rho2);
@@ -396,10 +376,10 @@ DataFrameCpp lrstat0cpp(
 
       if (predictTarget == 3) {
         auto fi = [&](double t)->double {
-          auto risk = natrisk1cpp(
+          auto risk = natrisk1(
             t, allocationRatioPlanned, accrualTime, accrualIntensity_frac,
             piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
-            accrualDuration, minFollowupTime, maxFollowupTime);
+            accrualDuration, maxFollowupTime, time);
 
           double r1 = risk.first;
           double r2 = risk.second;
@@ -408,7 +388,7 @@ DataFrameCpp lrstat0cpp(
 
           double w = 1.0;
           if (rho1 != 0.0 || rho2 != 0.0) {
-            double s = kmsurv1cpp(
+            double s = kmsurv1(
               t, allocationRatioPlanned, piecewiseSurvivalTime,
               lam1, lam2, gam1, gam2);
             w = std::pow(s, rho1) * std::pow(1.0 - s, rho2);
@@ -463,10 +443,10 @@ DataFrameCpp lrstat1cpp(
     const std::vector<double>& accrualIntensity,
     const std::vector<double>& piecewiseSurvivalTime,
     const std::vector<double>& stratumFraction,
-    const std::vector<std::vector<double>>& lambda1,
-    const std::vector<std::vector<double>>& lambda2,
-    const std::vector<std::vector<double>>& gamma1,
-    const std::vector<std::vector<double>>& gamma2,
+    const FlatMatrix& lambda1,
+    const FlatMatrix& lambda2,
+    const FlatMatrix& gamma1,
+    const FlatMatrix& gamma2,
     const double accrualDuration,
     const double followupTime,
     const bool fixedFollowup,
@@ -887,10 +867,10 @@ double caltime1cpp(
     const std::vector<double>& accrualIntensity,
     const std::vector<double>& piecewiseSurvivalTime,
     const std::vector<double>& stratumFraction,
-    const std::vector<std::vector<double>>& lambda1,
-    const std::vector<std::vector<double>>& lambda2,
-    const std::vector<std::vector<double>>& gamma1,
-    const std::vector<std::vector<double>>& gamma2,
+    const FlatMatrix& lambda1,
+    const FlatMatrix& lambda2,
+    const FlatMatrix& gamma1,
+    const FlatMatrix& gamma2,
     const double accrualDuration,
     const double followupTime,
     const bool fixedFollowup) {
@@ -1591,7 +1571,7 @@ ListCpp lrpowercpp(
   for (size_t i = 0; i < nstrata; ++i) {
     for (size_t j = 0; j < nintv; ++j) {
       size_t idx = i * nintv + j;
-      hrx[idx] = lambda1x[i][j] / lambda2x[i][j];
+      hrx[idx] = lambda1x(j, i) / lambda2x(j, i);
     }
   }
   bool proportional = true;
@@ -1810,7 +1790,7 @@ ListCpp lrpowercpp(
         return extract_sum(lr1, "vscore") - information1;
       };
 
-      time[i] = brent(g, 1e-6, studyDuration1, 1e-6);
+      time[i] = brent(g, 0.001, studyDuration1, 1e-6);
 
       DataFrameCpp lr_i = lrstat0cpp(
         time[i], hazardRatioH0, allocationRatioPlanned,
@@ -2706,7 +2686,7 @@ ListCpp lrsamplesizecpp(
   for (size_t i = 0; i < nstrata; ++i) {
     for (size_t j = 0; j < nintv; ++j) {
       size_t idx = i * nintv + j;
-      hrx[idx] = lambda1x[i][j] / lambda2x[i][j];
+      hrx[idx] = lambda1x(j, i) / lambda2x(j, i);
     }
   }
   bool proportional = true;
@@ -2915,7 +2895,7 @@ ListCpp lrsamplesizecpp(
           return extract_sum(lr1, "vscore") - information1;
         };
 
-        double time = brent(g, 1e-6, studyDuration1, 1e-6);
+        double time = brent(g, 0.001, studyDuration1, 1e-6);
 
         DataFrameCpp lr_i = lrstat0cpp(
           time, hazardRatioH0, allocationRatioPlanned,
@@ -3290,7 +3270,7 @@ ListCpp lrsamplesizecpp(
           return extract_sum(lr1, "vscore") - information1;
         };
 
-        double time = brent(g_info, 1e-6, studyDuration, 1e-6);
+        double time = brent(g_info, 0.001, studyDuration, 1e-6);
 
         // get event count at the calendar time and round up
         DataFrameCpp lr_events = lrstat0cpp(
@@ -3447,7 +3427,7 @@ ListCpp lrsamplesizecpp(
         }
       };
 
-      accrualDuration = brent(h_accr, 1e-6, accrualDuration, 1e-6);
+      accrualDuration = brent(h_accr, 0.001, accrualDuration, 1e-6);
       followupTime = 0.0;
       studyDuration = accrualDuration + followupTime;
     } else { // normal case: adjust followupTime
@@ -3901,7 +3881,7 @@ ListCpp lrpowerequivcpp(
   for (size_t i = 0; i < nstrata; ++i) {
     for (size_t j = 0; j < nintv; ++j) {
       size_t idx = i * nintv + j;
-      hrx[idx] = lambda1x[i][j] / lambda2x[i][j];
+      hrx[idx] = lambda1x(j, i) / lambda2x(j, i);
     }
   }
   bool proportional = true;
@@ -4075,7 +4055,7 @@ ListCpp lrpowerequivcpp(
         return 1.0 / lr1.get<double>("vlogHR")[0] - information1;
       };
 
-      time[i] = brent(g, 1e-6, studyDuration1, 1e-6);
+      time[i] = brent(g, 0.001, studyDuration1, 1e-6);
 
       DataFrameCpp lr_i = lrstat1cpp(
         time[i], 1.0, allocationRatioPlanned,
@@ -4767,7 +4747,7 @@ ListCpp lrsamplesizeequivcpp(
   for (size_t i = 0; i < nstrata; ++i) {
     for (size_t j = 0; j < nintv; ++j) {
       size_t idx = i * nintv + j;
-      hrx[idx] = lambda1x[i][j] / lambda2x[i][j];
+      hrx[idx] = lambda1x(j, i) / lambda2x(j, i);
     }
   }
   bool proportional = true;
@@ -4916,7 +4896,7 @@ ListCpp lrsamplesizeequivcpp(
           return 1.0 / lr1.get<double>("vlogHR")[0] - information1;
         };
 
-        double time = brent(g, 1e-6, studyDuration1, 1e-6);
+        double time = brent(g, 0.001, studyDuration1, 1e-6);
 
         DataFrameCpp lr_i = lrstat1cpp(
           time, 1.0, allocationRatioPlanned,
