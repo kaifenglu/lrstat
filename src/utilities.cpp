@@ -820,10 +820,8 @@ std::pair<double, double> mini(
 // Integrate f over multiple intervals defined by breaks, i.e. sum of integrals
 double integrate3(
     const std::function<double(double)>& f,
-    const std::vector<double>& breaks,
-    double tol, unsigned maxiter) {
+    const std::vector<double>& breaks, double tol) {
 
-  boost::math::quadrature::gauss_kronrod<double, 15> integrator_gk;
   boost::math::quadrature::tanh_sinh<double> integrator_ts;
 
   double sum = 0.0;
@@ -831,15 +829,7 @@ double integrate3(
     double a = breaks[i];
     double b = breaks[i+1];
     if (b <= a) continue;
-    if (std::isinf(a) || std::isinf(b)) {
-      // use tanh-sinh for infinite intervals
-      double val = integrator_ts.integrate(f, a, b, tol);
-      sum += val;
-      continue;
-    }
-    // choose local tolerance (split global tol evenly)
-    double local_tol = tol / static_cast<double>(breaks.size() - 1);
-    double val = integrator_gk.integrate(f, a, b, maxiter, local_tol);
+    double val = integrator_ts.integrate(f, a, b, tol);
     sum += val;
   }
   return sum;
@@ -1011,7 +1001,7 @@ double pbvnormcpp(const std::vector<double>& lower,
     return t1 * t2;
   };
   std::vector<double> breaks = {lowerv[0], upperv[0]};
-  return integrate3(f, breaks, 1e-8, 1000);
+  return integrate3(f, breaks, 1e-8);
 }
 
 
