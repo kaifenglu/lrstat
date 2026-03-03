@@ -100,7 +100,7 @@ double getAccrualDurationFromN1(
     p[j + 1] = p[j] + accrualIntensity[j] * (accrualTime[j + 1] - accrualTime[j]);
   }
 
-  size_t m = findInterval1(nsubjects, p) - 1;
+  size_t m = std::max(findInterval1(nsubjects, p) - 1, 0);
   double t = accrualTime[m] + (nsubjects - p[m]) / accrualIntensity[m];
   return t;
 }
@@ -145,28 +145,19 @@ double patrisk1(
     const std::vector<double>& lambda,
     const std::vector<double>& gamma) {
 
-  size_t J = piecewiseSurvivalTime.size();
-
-  // Cumulative hazards for lambda + gamma
-  std::vector<double> lamgam(J);
-  for (size_t j = 0; j < J; ++j) {
-    lamgam[j] = lambda[j] + gamma[j];
-  }
+  const std::vector<double>& t = piecewiseSurvivalTime;
 
   // Find interval containing specified analysis time
-  size_t m = std::max(findInterval1(time, piecewiseSurvivalTime), 1);
+  size_t m = std::max(findInterval1(time, t), 1);
 
   // Compute cumulative hazard for the time point
   double a = 0.0;
-  for (size_t j = 0; j < m; ++j) {
-    if (j < m - 1) {
-      // Contribution from intervals fully covered by time[i]
-      a += lamgam[j] * (piecewiseSurvivalTime[j + 1] - piecewiseSurvivalTime[j]);
-    } else {
-      // Contribution from the remaining portion of the last interval
-      a += lamgam[j] * (time - piecewiseSurvivalTime[j]);
-    }
+  // Contribution from intervals fully covered
+  for (size_t j = 0; j < m-1; ++j) {
+    a += (lambda[j] + gamma[j]) * (t[j+1] - t[j]);
   }
+  // Contribution from the remaining portion of the last interval
+  a += (lambda[m-1] + gamma[m-1]) * (time - t[m-1]);
 
   return std::exp(-a);
 }
@@ -225,34 +216,24 @@ double pevent1(
     const std::vector<double>& lambda,
     const std::vector<double>& gamma) {
 
-  size_t J = piecewiseSurvivalTime.size();
+  const std::vector<double>& t = piecewiseSurvivalTime;
 
-  // Compute lambda + gamma
-  std::vector<double> lamgam(J);
-  for (size_t j = 0; j < J; ++j) {
-    lamgam[j] = lambda[j] + gamma[j];
-  }
-
-  // Get risk of patients up to each time interval
-  auto n = patrisk(piecewiseSurvivalTime, piecewiseSurvivalTime, lambda, gamma);
-
-  size_t m = std::max(findInterval1(time, piecewiseSurvivalTime), 1);
+  size_t m = std::max(findInterval1(time, t), 1);
 
   double a = 0;
-  for (size_t j = 0; j < m; ++j) {
-    double p;
-    if (j < m - 1) {
-      // Full interval is covered
-      p = lambda[j] / lamgam[j] * (1.0 - std::exp(-lamgam[j] *
-        (piecewiseSurvivalTime[j + 1] - piecewiseSurvivalTime[j])));
-    } else {
-      // Partial interval is covered
-      p = lambda[j] / lamgam[j] * (1.0 - std::exp(-lamgam[j] *
-        (time - piecewiseSurvivalTime[j])));
-    }
-
-    a += n[j] * p;  // Add risk-weighted probability
+  // Full interval is covered
+  for (size_t j = 0; j < m-1; ++j) {
+    double n = patrisk1(t[j], t, lambda, gamma);
+    double theta = lambda[j] + gamma[j];
+    double p = lambda[j] / theta * (1.0 - std::exp(-theta * (t[j + 1] - t[j])));
+    a += n * p;  // Add risk-weighted probability
   }
+
+  // Partial interval is covered
+  double n = patrisk1(t[m-1], t, lambda, gamma);
+  double theta = lambda[m-1] + gamma[m-1];
+  double p = lambda[m-1] / theta * (1.0 - std::exp(-theta * (time - t[m-1])));
+  a += n * p;
 
   return a;
 }
@@ -305,36 +286,8 @@ std::vector<double> pevent(
 }
 
 
-//' @title Integrated Event Probability Over an Interval With Constant Hazard
-//' @description Obtains the integrated probability of having an event
-//' during an interval with constant hazard.
-//'
-//' @param j The analysis time interval with constant hazard.
-//' @param t1 Lower bound of the analysis time interval.
-//' @param t2 Upper bound of the analysis time interval.
-//' @inheritParams param_piecewiseSurvivalTime
-//' @inheritParams param_lambda
-//' @inheritParams param_gamma
-//'
-//' @return A value for the integrated probability of having an event
-//' during an interval with constant hazard for a treatment
-//' group with specified piecewise exponential survival and dropout
-//' distributions.
-//'
-//' @keywords internal
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @examples
-//' # Piecewise exponential survival with hazard 0.0533 in the first 6
-//' # months, and hazard 0.0309 thereafter, and 5% dropout by the end of
-//' # 1 year.
-//'
-//' hd(j = 1, t1 = 1, t2 = 3, piecewiseSurvivalTime = c(0, 6),
-//'    lambda = c(0.0533, 0.0309), gamma = -log(1-0.05)/12)
-//'
-//' @export
-// [[Rcpp::export]]
+// Integrate[D(t), {t, t1, t2}], for t1 and t2 in the j-th interval of
+// piecewise exponential distribution
 double hd(const size_t j,
           const double t1,
           const double t2,
@@ -342,11 +295,8 @@ double hd(const size_t j,
           const std::vector<double>& lambda,
           const std::vector<double>& gamma) {
 
-  size_t j1 = j - 1;
-
   // lower bound of time interval j for piecewise exponential distribution
-  double t0 = piecewiseSurvivalTime[j1];
-  std::vector<double> t0_vec = {t0};
+  double t0 = piecewiseSurvivalTime[j];
 
   // probability of being at risk at the start of interval j
   double n0 = patrisk1(t0, piecewiseSurvivalTime, lambda, gamma);
@@ -354,130 +304,54 @@ double hd(const size_t j,
   // Compute probability of having an event at the start of interval j
   double d0 = pevent1(t0, piecewiseSurvivalTime, lambda, gamma);
 
-  // Compute total hazard (lambda + gamma)
-  size_t J = piecewiseSurvivalTime.size();
-  std::vector<double> lamgam(J);
-  for (size_t i = 0; i < J; ++i) {
-    lamgam[i] = lambda[i] + gamma[i];
-  }
-
   // Integration for conditional probability over (t1, t2)
-  double lamgam_j1 = lamgam[j1];
-  double exp1 = std::exp(-lamgam_j1 * (t1 - t0));
-  double exp2 = std::exp(-lamgam_j1 * (t2 - t0));
-  double q1 = (exp1 - exp2) / lamgam_j1;
-  double q = lambda[j1] / lamgam_j1 * (t2 - t1 - q1);
+  double theta = lambda[j] + gamma[j];
+  double q1 = (std::exp(-theta * (t1 - t0)) - std::exp(-theta * (t2 - t0))) / theta;
+  double q = lambda[j] / theta * (t2 - t1 - q1);
 
   // Sum up the integration for already failed and to-be-failed
   return d0 * (t2 - t1) + n0 * q;
 }
 
 
-//' @title Integrated Event Probability Over an Interval
-//' @description Obtains the integration of the probability of having an
-//' event during an interval. The specified analysis time interval can span
-//' more than one analysis time interval with constant hazard.
-//'
-//' @param t1 Lower bound of the analysis time interval.
-//' @param t2 Upper bound of the analysis time interval.
-//' @inheritParams param_piecewiseSurvivalTime
-//' @inheritParams param_lambda
-//' @inheritParams param_gamma
-//'
-//' @return A value for the integrated probability of having an event
-//' during an interval for a treatment group with specified
-//' piecewise exponential survival and dropout distributions.
-//'
-//' @keywords internal
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @examples
-//' # Piecewise exponential survival with hazard 0.0533 in the first 6
-//' # months, and hazard 0.0309 thereafter, and 5% dropout by the end of
-//' # 1 year.
-//'
-//' pd(t1 = 1, t2 = 8, piecewiseSurvivalTime = c(0, 6),
-//'    lambda = c(0.0533, 0.0309), gamma = -log(1-0.05)/12)
-//'
-//' @export
-// [[Rcpp::export]]
+// Integration of the probability of having an event during an interval.
+// The specified analysis time interval can span more than one analysis
+// time interval with constant hazard.
 double pd(const double t1,
           const double t2,
           const std::vector<double>& piecewiseSurvivalTime,
           const std::vector<double>& lambda,
           const std::vector<double>& gamma) {
 
+  const std::vector<double>& t = piecewiseSurvivalTime;
+
   // Identify analysis time intervals containing t1 and t2
-  size_t j1 = std::max(findInterval1(t1, piecewiseSurvivalTime) - 1, 0);
-  size_t j2 = std::max(findInterval1(t2, piecewiseSurvivalTime) - 1, 0);
+  size_t j1 = std::max(findInterval1(t1, t) - 1, 0);
+  size_t j2 = std::max(findInterval1(t2, t) - 1, 0);
 
   double a = 0.0;
 
   // Sum up the integrated event probabilities across analysis time intervals
-  for (size_t j = j1; j <= j2; ++j) {
-    double x = 0.0;
-    if (j1 == j2) {
-      // Both t1 and t2 are in the same interval
-      x = hd(j + 1, t1, t2, piecewiseSurvivalTime, lambda, gamma);
-    } else if (j == j1) {
-      // First interval
-      x = hd(j + 1, t1, piecewiseSurvivalTime[j + 1],
-             piecewiseSurvivalTime, lambda, gamma);
-    } else if (j == j2) {
-      // Last interval
-      x = hd(j + 1, piecewiseSurvivalTime[j], t2,
-             piecewiseSurvivalTime, lambda, gamma);
-    } else {
+  if (j1 == j2) {
+    // Both t1 and t2 are in the same interval
+    a = hd(j1, t1, t2, t, lambda, gamma);
+  } else {
+    // First interval
+    a = hd(j1, t1, t[j1 + 1], t, lambda, gamma);
+    for (size_t j = j1 + 1; j < j2; ++j) {
       // Intermediate intervals
-      x = hd(j + 1, piecewiseSurvivalTime[j], piecewiseSurvivalTime[j + 1],
-             piecewiseSurvivalTime, lambda, gamma);
+      a += hd(j, t[j], t[j + 1], t, lambda, gamma);
     }
-    a += x;
+    // Last interval
+    a += hd(j2, t[j2], t2, t, lambda, gamma);
   }
 
   return a;
 }
 
 
-//' @title Number of Patients Enrolled During an Interval and Having an Event
-//' by Specified Calendar Times
-//' @description Obtains the number of patients who are enrolled during a
-//' specified enrollment time interval and have an event by the specified
-//' calendar times.
-//'
-//' @param time Calendar time at which to calculate the number
-//'   of patients having an event.
-//' @param u1 Lower bound of the accrual time interval.
-//' @param u2 Upper bound of the accrual time interval.
-//' @inheritParams param_accrualTime
-//' @inheritParams param_accrualIntensity
-//' @inheritParams param_piecewiseSurvivalTime
-//' @inheritParams param_lambda
-//' @inheritParams param_gamma
-//'
-//' @return Number of patients who are enrolled during a
-//' specified enrollment time interval and have an event by the specified
-//' calendar times for a given treatment group had the enrollment being
-//' restricted to the treatment group. By definition, we must have
-//' \code{time >= u2}.
-//'
-//' @keywords internal
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @examples
-//' # Piecewise accrual, 10 patients per month for the first 3 months, and
-//' # 20 patients per month thereafter. Piecewise exponential survival with
-//' # hazard 0.0533 in the first 6 months, and hazard 0.0309 thereafter,
-//' # and 5% dropout by the end of 1 year.
-//'
-//' ad(time = 9, u1 = 1, u2 = 8, accrualTime = c(0, 3),
-//'    accrualIntensity = c(10, 20), piecewiseSurvivalTime=c(0, 6),
-//'    lambda = c(0.0533, 0.0309), gamma = -log(1-0.05)/12)
-//'
-//' @export
-// [[Rcpp::export]]
+// Number of Patients Enrolled During an Interval and Having an Event
+// by Specified Calendar Times
 double ad(const double time,
           const double u1,
           const double u2,
@@ -487,42 +361,36 @@ double ad(const double time,
           const std::vector<double>& lambda,
           const std::vector<double>& gamma) {
 
+  const std::vector<double>& u = accrualTime;
+  const std::vector<double>& t = piecewiseSurvivalTime;
+
   // Identify accrual time intervals containing u1 and u2
-  size_t j1 = std::max(findInterval1(u1, accrualTime) - 1, 0);
-  size_t j2 = std::max(findInterval1(u2, accrualTime) - 1, 0);
+  size_t i1 = std::max(findInterval1(u1, u) - 1, 0);
+  size_t i2 = std::max(findInterval1(u2, u) - 1, 0);
 
   double a = 0.0;  // Initialize the result with zero
 
   // Sum up the number of patients with an event across accrual time intervals
-  for (size_t j = j1; j <= j2; ++j) {
-    double x = 0.0;
-    // Check intervals
-    if (j1 == j2) {
-      // Both u1 and u2 are in the same interval
-      x = pd(time - u2, time - u1, piecewiseSurvivalTime, lambda, gamma);
-    } else if (j == j1) {
-      // First interval
-      x = pd(time - accrualTime[j + 1], time - u1, piecewiseSurvivalTime,
-             lambda, gamma);
-    } else if (j == j2) {
-      // Last interval
-      x = pd(time - u2, time - accrualTime[j], piecewiseSurvivalTime,
-             lambda, gamma);
-    } else {
-      // Intermediate intervals
-      x = pd(time - accrualTime[j + 1], time - accrualTime[j],
-             piecewiseSurvivalTime, lambda, gamma);
+  if (i1 == i2) {
+    // Both u1 and u2 are in the same interval
+    a = accrualIntensity[i1] * pd(time - u2, time - u1, t, lambda, gamma);
+  } else {
+    // First interval
+    a = accrualIntensity[i1] * pd(time - u[i1 + 1], time - u1, t, lambda, gamma);
+    // intermediate intervals
+    for (size_t i = i1 + 1; i < i2; ++i) {
+      a += accrualIntensity[i] * pd(time - u[i + 1], time - u[i], t, lambda, gamma);
     }
-    // Add the contribution from this interval
-    a += accrualIntensity[j] * x;
+    // Last interval
+    a += accrualIntensity[i2] * pd(time - u2, time - u[i2], t, lambda, gamma);
   }
 
   return a;
 }
 
 
-std::pair<double, double> natrisk1cpp(
-    const double time,
+std::pair<double, double> natrisk1(
+    const double t,
     const double allocationRatioPlanned,
     const std::vector<double>& accrualTime,
     const std::vector<double>& accrualIntensity,
@@ -532,12 +400,12 @@ std::pair<double, double> natrisk1cpp(
     const std::vector<double>& gamma1,
     const std::vector<double>& gamma2,
     const double accrualDuration,
-    const double minFollowupTime,
-    const double maxFollowupTime) {
+    const double maxFollowupTime,
+    const double time) {
 
   // truncate the analysis time by the maximum follow-up
-  double t = std::min(time, maxFollowupTime);
-  double u = std::min(accrualDuration + minFollowupTime - t, accrualDuration);
+  double t1 = std::min(std::min(t, maxFollowupTime), time);
+  double u = time - t1;
 
   // Number of patients enrolled
   double a = accrual1(u, accrualTime, accrualIntensity, accrualDuration);
@@ -546,8 +414,8 @@ std::pair<double, double> natrisk1cpp(
   double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
 
   // Compute probabilities for the active and control groups
-  double p1 = patrisk1(t, piecewiseSurvivalTime, lambda1, gamma1);
-  double p2 = patrisk1(t, piecewiseSurvivalTime, lambda2, gamma2);
+  double p1 = patrisk1(t1, piecewiseSurvivalTime, lambda1, gamma1);
+  double p2 = patrisk1(t1, piecewiseSurvivalTime, lambda2, gamma2);
 
   // Compute values for FlatMatrix directly
   double n1 = phi * a * p1;  // Patients at risk in active treatment
@@ -557,48 +425,11 @@ std::pair<double, double> natrisk1cpp(
 }
 
 
-FlatMatrix natriskcpp(
-    const std::vector<double>& time,
-    const double allocationRatioPlanned,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda1,
-    const std::vector<double>& lambda2,
-    const std::vector<double>& gamma1,
-    const std::vector<double>& gamma2,
-    const double accrualDuration,
-    const double minFollowupTime,
-    const double maxFollowupTime) {
-
-  size_t J = piecewiseSurvivalTime.size();
-  auto lambda1x = expand1(lambda1, J, "lambda1");
-  auto lambda2x = expand1(lambda2, J, "lambda2");
-  auto gamma1x = expand1(gamma1, J, "gamma1");
-  auto gamma2x = expand1(gamma2, J, "gamma2");
-
-  size_t k = time.size();
-  FlatMatrix n(k, 2);
-  for (size_t i = 0; i < k; ++i) {
-    auto result = natrisk1cpp(
-      time[i], allocationRatioPlanned, accrualTime, accrualIntensity,
-      piecewiseSurvivalTime, lambda1x, lambda2x, gamma1x, gamma2x,
-      accrualDuration, minFollowupTime, maxFollowupTime
-    );
-
-    n(i, 0) = result.first;  // Patients at risk in active treatment
-    n(i, 1) = result.second; // Patients at risk in control
-  }
-
-  return n;
-}
-
-
 //' @title Number of Subjects at Risk
 //' @description Obtains the number of subjects at risk at given analysis
 //' times for each treatment group.
 //'
-//' @param time A vector of analysis times at which to calculate the number
+//' @param t A vector of analysis times at which to calculate the number
 //'   of patients at risk.
 //' @inheritParams param_allocationRatioPlanned
 //' @inheritParams param_accrualTime
@@ -609,30 +440,38 @@ FlatMatrix natriskcpp(
 //' @inheritParams param_gamma1
 //' @inheritParams param_gamma2
 //' @inheritParams param_accrualDuration
-//' @inheritParams param_minFollowupTime
 //' @inheritParams param_maxFollowupTime
+//' @param time Calendar time for the analysis.
 //'
 //' @return A matrix of the number of patients at risk at the specified
 //' analysis times (row) for each treatment group (column).
 //'
+//' @details For a given treatment group \eqn{g} and calendar time \eqn{\tau},
+//' the number of patients at risk at analysis time \eqn{t} is calculated as
+//' \deqn{\phi_g A(\tau - t) S_g(t) G_g(t),} where \eqn{\phi_g} is the
+//' probability of randomization to treatment group \eqn{g},
+//' \eqn{A(\tau - t)} is the number of patients enrolled by calendar time
+//' \eqn{\tau - t}, \eqn{S_g(t)G_g(t)} is the probability of being at risk at
+//' analysis time \eqn{t} for a patient in treatment group \eqn{g}
+//' after enrollment. Obviously, \eqn{t < \min(\tau, T_{\rm{fmax}})}.
+//'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
 //' @examples
 //' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
 //' # the end of 1 year.
 //'
-//' natrisk(time = c(9, 24), allocationRatioPlanned = 1,
+//' natrisk(t = c(9, 24), allocationRatioPlanned = 1,
 //'         accrualTime = c(0, 3), accrualIntensity = c(10, 20),
 //'         piecewiseSurvivalTime = c(0, 6),
 //'         lambda1 = c(0.0533, 0.0309), lambda2 = c(0.0533, 0.0533),
 //'         gamma1 = -log(1-0.05)/12, gamma2 = -log(1-0.05)/12,
-//'         accrualDuration = 12, minFollowupTime = 18,
-//'         maxFollowupTime = 30)
+//'         accrualDuration = 12, maxFollowupTime = 30, time = 30)
 //'
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericMatrix natrisk(
-    const Rcpp::NumericVector& time = NA_REAL,
+    const Rcpp::NumericVector& t = NA_REAL,
     const double allocationRatioPlanned = 1,
     const Rcpp::NumericVector& accrualTime = 0,
     const Rcpp::NumericVector& accrualIntensity = NA_REAL,
@@ -642,10 +481,10 @@ Rcpp::NumericMatrix natrisk(
     const Rcpp::NumericVector& gamma1 = 0,
     const Rcpp::NumericVector& gamma2 = 0,
     const double accrualDuration = NA_REAL,
-    const double minFollowupTime = NA_REAL,
-    const double maxFollowupTime = NA_REAL) {
+    const double maxFollowupTime = NA_REAL,
+    const double time = NA_REAL) {
 
-  auto time1 = Rcpp::as<std::vector<double>>(time);
+  auto t1 = Rcpp::as<std::vector<double>>(t);
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
   auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
@@ -654,169 +493,30 @@ Rcpp::NumericMatrix natrisk(
   auto gam1 = Rcpp::as<std::vector<double>>(gamma1);
   auto gam2 = Rcpp::as<std::vector<double>>(gamma2);
 
-  auto result = natriskcpp(
-    time1, allocationRatioPlanned, accrualT, accrualInt,
-    pwSurvT, lam1, lam2, gam1, gam2,
-    accrualDuration, minFollowupTime, maxFollowupTime
-  );
+  size_t J = pwSurvT.size();
+  auto lambda1x = expand1(lam1, J, "lambda1");
+  auto lambda2x = expand1(lam2, J, "lambda2");
+  auto gamma1x = expand1(gam1, J, "gamma1");
+  auto gamma2x = expand1(gam2, J, "gamma2");
 
-  return Rcpp::wrap(result);
-}
-
-
-std::pair<double, double> nevent1cpp(
-    const double time,
-    const double allocationRatioPlanned,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda1,
-    const std::vector<double>& lambda2,
-    const std::vector<double>& gamma1,
-    const std::vector<double>& gamma2,
-    const double accrualDuration,
-    const double minFollowupTime,
-    const double maxFollowupTime) {
-
-  // truncate the analysis time by the maximum follow-up
-  double t = std::min(time, maxFollowupTime);
-  double u = std::min(accrualDuration + minFollowupTime - t, accrualDuration);
-
-  // Number of patients enrolled
-  double a = accrual1(u, accrualTime, accrualIntensity, accrualDuration);
-
-  // Probability of randomization to the active treatment group
-  double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
-
-  // Compute the probabilities of having events in both treatment groups
-  double p1 = pevent1(t, piecewiseSurvivalTime, lambda1, gamma1);
-  double p2 = pevent1(t, piecewiseSurvivalTime, lambda2, gamma2);
-
-  // Compute the number of patients having an event in each group
-  double u1 = accrualDuration + minFollowupTime;
-  double c1 = ad(u1, u, accrualDuration, accrualTime, accrualIntensity,
-                  piecewiseSurvivalTime, lambda1, gamma1);
-  double c2 = ad(u1, u, accrualDuration, accrualTime, accrualIntensity,
-                  piecewiseSurvivalTime, lambda2, gamma2);
-
-  double b1 = a * p1;
-  double b2 = a * p2;
-
-  double d1 = phi * (b1 + c1);  // Active treatment group
-  double d2 = (1.0 - phi) * (b2 + c2);  // Control group
-
-  return std::make_pair(d1, d2);
-}
-
-
-FlatMatrix neventcpp(
-    const std::vector<double>& time,
-    const double allocationRatioPlanned,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda1,
-    const std::vector<double>& lambda2,
-    const std::vector<double>& gamma1,
-    const std::vector<double>& gamma2,
-    const double accrualDuration,
-    const double minFollowupTime,
-    const double maxFollowupTime) {
-
-  size_t J = piecewiseSurvivalTime.size();
-  auto lambda1x = expand1(lambda1, J, "lambda1");
-  auto lambda2x = expand1(lambda2, J, "lambda2");
-  auto gamma1x = expand1(gamma1, J, "gamma1");
-  auto gamma2x = expand1(gamma2, J, "gamma2");
-
-  size_t k = time.size();
-  FlatMatrix d(k, 2);
+  size_t k = t1.size();
+  FlatMatrix n(k, 2);
   for (size_t i = 0; i < k; ++i) {
-    auto result = nevent1cpp(
-      time[i], allocationRatioPlanned, accrualTime, accrualIntensity,
-      piecewiseSurvivalTime, lambda1x, lambda2x, gamma1x, gamma2x,
-      accrualDuration, minFollowupTime, maxFollowupTime
+    auto result = natrisk1(
+      t1[i], allocationRatioPlanned, accrualT, accrualInt,
+      pwSurvT, lambda1x, lambda2x, gamma1x, gamma2x,
+      accrualDuration, maxFollowupTime, time
     );
 
-    d(i, 0) = result.first;  // Number of events in active treatment
-    d(i, 1) = result.second; // Number of events in control
+    n(i, 0) = result.first;  // Patients at risk in active treatment
+    n(i, 1) = result.second; // Patients at risk in control
   }
 
-  return d;
+  return Rcpp::wrap(n);
 }
 
 
-//' @title Number of Subjects Having an Event
-//' @description Obtains the number of subjects having an event by given
-//' analysis times for each treatment group.
-//'
-//' @param time A vector of analysis times at which to calculate the number
-//'   of patients having an event.
-//' @inheritParams param_allocationRatioPlanned
-//' @inheritParams param_accrualTime
-//' @inheritParams param_accrualIntensity
-//' @inheritParams param_piecewiseSurvivalTime
-//' @inheritParams param_lambda1
-//' @inheritParams param_lambda2
-//' @inheritParams param_gamma1
-//' @inheritParams param_gamma2
-//' @inheritParams param_accrualDuration
-//' @inheritParams param_minFollowupTime
-//' @inheritParams param_maxFollowupTime
-//'
-//' @return A matrix of the number of patients having an event at the
-//' specified analysis times (row) for each treatment group (column).
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @examples
-//' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
-//' # the end of 1 year.
-//'
-//' nevent(time = c(9, 24), allocationRatioPlanned = 1,
-//'        accrualTime = c(0, 3), accrualIntensity = c(10, 20),
-//'        piecewiseSurvivalTime = c(0, 6),
-//'        lambda1 = c(0.0533, 0.0309), lambda2 = c(0.0533, 0.0533),
-//'        gamma1 = -log(1-0.05)/12, gamma2 = -log(1-0.05)/12,
-//'        accrualDuration = 12, minFollowupTime = 18,
-//'        maxFollowupTime = 30)
-//'
-//' @export
-// [[Rcpp::export]]
-Rcpp::NumericMatrix nevent(
-    const Rcpp::NumericVector& time = NA_REAL,
-    const double allocationRatioPlanned = 1,
-    const Rcpp::NumericVector& accrualTime = 0,
-    const Rcpp::NumericVector& accrualIntensity = NA_REAL,
-    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
-    const Rcpp::NumericVector& lambda1 = NA_REAL,
-    const Rcpp::NumericVector& lambda2 = NA_REAL,
-    const Rcpp::NumericVector& gamma1 = 0,
-    const Rcpp::NumericVector& gamma2 = 0,
-    const double accrualDuration = NA_REAL,
-    const double minFollowupTime = NA_REAL,
-    const double maxFollowupTime = NA_REAL) {
-
-  auto time1 = Rcpp::as<std::vector<double>>(time);
-  auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
-  auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
-  auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
-  auto lam1 = Rcpp::as<std::vector<double>>(lambda1);
-  auto lam2 = Rcpp::as<std::vector<double>>(lambda2);
-  auto gam1 = Rcpp::as<std::vector<double>>(gamma1);
-  auto gam2 = Rcpp::as<std::vector<double>>(gamma2);
-
-  auto result = neventcpp(
-    time1, allocationRatioPlanned, accrualT, accrualInt,
-    pwSurvT, lam1, lam2, gam1, gam2,
-    accrualDuration, minFollowupTime, maxFollowupTime
-  );
-
-  return Rcpp::wrap(result);
-}
-
-
-std::pair<double, double> nevent21cpp(
+std::pair<double, double> nevent1(
     const double time,
     const double allocationRatioPlanned,
     const std::vector<double>& accrualTime,
@@ -827,73 +527,30 @@ std::pair<double, double> nevent21cpp(
     const std::vector<double>& gamma1,
     const std::vector<double>& gamma2,
     const double accrualDuration,
-    const double minFollowupTime,
     const double maxFollowupTime) {
-
-  // truncate the analysis time by the maximum follow-up
-  double t = std::min(time, accrualDuration + minFollowupTime);
-  double u = std::min(std::max(t - maxFollowupTime, 0.0), accrualDuration);
-  double w = std::min(t, accrualDuration);
-
-  // Number of patients enrolled
-  double a = accrual1(u, accrualTime, accrualIntensity, accrualDuration);
 
   // Probability of randomization to the active treatment group
   double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
+
+  // Number of patients enrolled by calendar time (time - maxFollowupTime)
+  double a = accrual1(time - maxFollowupTime, accrualTime, accrualIntensity,
+                      accrualDuration);
 
   double p1 = pevent1(maxFollowupTime, piecewiseSurvivalTime, lambda1, gamma1);
   double p2 = pevent1(maxFollowupTime, piecewiseSurvivalTime, lambda2, gamma2);
 
-  double b1 = a * p1;
-  double b2 = a * p2;
+  // Calculate the number of patients enrolled during the interval
+  // (time - maxFollowupTime, time) and having an event by calendar time time
+  double u1 = std::min(std::max(time - maxFollowupTime, 0.0), accrualDuration);
+  double u2 = std::min(time, accrualDuration);
+  double c1 = ad(time, u1, u2, accrualTime, accrualIntensity,
+                 piecewiseSurvivalTime, lambda1, gamma1);
+  double c2 = ad(time, u1, u2, accrualTime, accrualIntensity,
+                 piecewiseSurvivalTime, lambda2, gamma2);
 
-  // Compute the number of patients experiencing events in each group
-  double c1 = ad(t, u, w, accrualTime, accrualIntensity,
-                  piecewiseSurvivalTime, lambda1, gamma1);
-  double c2 = ad(t, u, w, accrualTime, accrualIntensity,
-                  piecewiseSurvivalTime, lambda2, gamma2);
-
-  double d1 = phi * (b1 + c1);  // Active treatment group
-  double d2 = (1.0 - phi) * (b2 + c2);  // Control group
-
+  double d1 = phi * (a * p1 + c1);  // Active treatment group
+  double d2 = (1.0 - phi) * (a * p2 + c2);  // Control group
   return std::make_pair(d1, d2);
-}
-
-
-FlatMatrix nevent2cpp(
-    const std::vector<double>& time,
-    const double allocationRatioPlanned,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda1,
-    const std::vector<double>& lambda2,
-    const std::vector<double>& gamma1,
-    const std::vector<double>& gamma2,
-    const double accrualDuration,
-    const double minFollowupTime,
-    const double maxFollowupTime) {
-
-  size_t J = piecewiseSurvivalTime.size();
-  auto lambda1x = expand1(lambda1, J, "lambda1");
-  auto lambda2x = expand1(lambda2, J, "lambda2");
-  auto gamma1x = expand1(gamma1, J, "gamma1");
-  auto gamma2x = expand1(gamma2, J, "gamma2");
-
-  size_t k = time.size();
-  FlatMatrix d(k, 2);
-  for (size_t i = 0; i < k; ++i) {
-    auto result = nevent21cpp(
-      time[i], allocationRatioPlanned, accrualTime, accrualIntensity,
-      piecewiseSurvivalTime, lambda1x, lambda2x, gamma1x, gamma2x,
-      accrualDuration, minFollowupTime, maxFollowupTime
-    );
-
-    d(i, 0) = result.first;  // Active treatment group
-    d(i, 1) = result.second; // Control group
-  }
-
-  return d;
 }
 
 
@@ -912,7 +569,6 @@ FlatMatrix nevent2cpp(
 //' @inheritParams param_gamma1
 //' @inheritParams param_gamma2
 //' @inheritParams param_accrualDuration
-//' @inheritParams param_minFollowupTime
 //' @inheritParams param_maxFollowupTime
 //'
 //' @return A matrix of the number of patients having an event at the
@@ -920,20 +576,35 @@ FlatMatrix nevent2cpp(
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
+//' @details For a given treatment group \eqn{g} and calendar time \eqn{\tau},
+//' the number of patients having an event by calendar time \eqn{\tau} is
+//' calculated as \eqn{I_1 + I_2}, where
+//' \deqn{I_1 = \phi_g A(\tau - T_{\rm{fmax}}) P_g(T_{\rm{fmax}}),} and
+//' \deqn{I_2 = \phi_g \int_{\tau - T_{\rm{fmax}}}^{\tau} a(u) P_g(\tau - u) du,}
+//' where \eqn{\phi_g} is the probability of randomization to treatment group \eqn{g},
+//' \eqn{A(\tau - T_{\rm{fmax}})} is the number of patients enrolled by
+//' calendar time \eqn{\tau - T_{\rm{fmax}}},
+//' \eqn{P_g(T_{\rm{fmax}})} is the probability of having an event by
+//' the maximum follow-up time \eqn{T_{\rm{fmax}}} for a patient in
+//' treatment group \eqn{g} after enrollment,
+//' \eqn{a(u)} is the accrual intensity at calendar time \eqn{u},
+//' and \eqn{P_g(\tau - u)} is the probability of having an event by
+//' calendar time \eqn{\tau} for a patient in treatment group \eqn{g}
+//' enrolled at calendar time \eqn{u}.
+//'
 //' @examples
 //' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
 //' # the end of 1 year.
-//' nevent2(time = c(9, 24), allocationRatioPlanned = 1,
-//'         accrualTime = c(0, 3), accrualIntensity = c(10, 20),
-//'         piecewiseSurvivalTime = c(0, 6),
-//'         lambda1 = c(0.0533, 0.0309), lambda2 = c(0.0533, 0.0533),
-//'         gamma1 = -log(1-0.05)/12, gamma2 = -log(1-0.05)/12,
-//'         accrualDuration = 12, minFollowupTime = 18,
-//'         maxFollowupTime = 30)
+//' nevent(time = c(9, 24), allocationRatioPlanned = 1,
+//'        accrualTime = c(0, 3), accrualIntensity = c(10, 20),
+//'        piecewiseSurvivalTime = c(0, 6),
+//'        lambda1 = c(0.0533, 0.0309), lambda2 = c(0.0533, 0.0533),
+//'        gamma1 = -log(1-0.05)/12, gamma2 = -log(1-0.05)/12,
+//'        accrualDuration = 12, maxFollowupTime = 30)
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::NumericMatrix nevent2(
+Rcpp::NumericMatrix nevent(
     const Rcpp::NumericVector& time = NA_REAL,
     const double allocationRatioPlanned = 1,
     const Rcpp::NumericVector& accrualTime = 0,
@@ -944,7 +615,6 @@ Rcpp::NumericMatrix nevent2(
     const Rcpp::NumericVector& gamma1 = 0,
     const Rcpp::NumericVector& gamma2 = 0,
     const double accrualDuration = NA_REAL,
-    const double minFollowupTime = NA_REAL,
     const double maxFollowupTime = NA_REAL) {
 
   auto time1 = Rcpp::as<std::vector<double>>(time);
@@ -956,11 +626,24 @@ Rcpp::NumericMatrix nevent2(
   auto gam1 = Rcpp::as<std::vector<double>>(gamma1);
   auto gam2 = Rcpp::as<std::vector<double>>(gamma2);
 
-  auto result = nevent2cpp(
-    time1, allocationRatioPlanned, accrualT, accrualInt,
-    pwSurvT, lam1, lam2, gam1, gam2,
-    accrualDuration, minFollowupTime, maxFollowupTime
-  );
+  size_t J = pwSurvT.size();
+  auto lambda1x = expand1(lam1, J, "lambda1");
+  auto lambda2x = expand1(lam2, J, "lambda2");
+  auto gamma1x = expand1(gam1, J, "gamma1");
+  auto gamma2x = expand1(gam2, J, "gamma2");
 
-  return Rcpp::wrap(result);
+  size_t k = time1.size();
+  FlatMatrix d(k, 2);
+  for (size_t i = 0; i < k; ++i) {
+    auto result = nevent1(
+      time1[i], allocationRatioPlanned, accrualT, accrualInt,
+      pwSurvT, lambda1x, lambda2x, gamma1x, gamma2x,
+      accrualDuration, maxFollowupTime
+    );
+
+    d(i, 0) = result.first;  // Active treatment group
+    d(i, 1) = result.second; // Control group
+  }
+
+  return Rcpp::wrap(d);
 }
