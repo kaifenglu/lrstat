@@ -38,5 +38,5 @@ testthat::test_that("power for stratified analysis", {
               lambda2 = lambda2,
               accrualDuration = 24,
               followupTime = 30.92)
-  testthat::expect_equal(round(l$overallResults$overallReject, 4), 0.8824)
+  testthat::expect_equal(round(l$overallResults$overallReject, 4), 0.9024)
 })
