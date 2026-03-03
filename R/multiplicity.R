@@ -246,7 +246,8 @@ fadjpsim <- function(wgtmat, p, family = NULL) {
 #'                             0.0002, 0.0035,
 #'                             0.002, 0.06),
 #'                           nrow=4, ncol=2),
-#'                information = c(1/3, 2/3))
+#'                information = c(1/3, 2/3),
+#'                nthreads = 1)
 #'
 #' @export
 repeatedPValue <- function(kMax,
@@ -364,7 +365,8 @@ repeatedPValue <- function(kMax,
 #'                0.0002, 0.0035, 0.002, 0.06),
 #'              nrow=2, ncol=4, byrow=TRUE),
 #'   information = matrix(c(rep(1/3, 4), rep(2/3, 4)),
-#'                        nrow=2, ncol=4, byrow=TRUE))
+#'                        nrow=2, ncol=4, byrow=TRUE),
+#'   nthreads = 1)
 #'
 #'
 #' @export
