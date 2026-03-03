@@ -34,15 +34,15 @@ plot.assess_phregr <- function(x, nsim = 20, ...) {
   g <- list()
   for (j in 1:length(x$covariates)) {
     g[[j]] <- ggplot2::ggplot(
-      data = rbind(data.frame(t = x$time,
-                              u = x$score_t[,j],
-                              sim = 0,
-                              type = "observed"),
-                   data.frame(t = rep(x$time, nsim),
-                              u = do.call(c, lapply(1:nsim, function(i)
-                                x$score_t_list[[i]][,j])),
-                              sim = rep(1:nsim, each=length(x$time)),
-                              type = "simulated")),
+      data <- rbind(data.frame(t = x$time,
+                               u = x$score_t[,j],
+                               sim = 0,
+                               type = "observed"),
+                    data.frame(t = rep(x$time, nsim),
+                               u = do.call(c, lapply(1:nsim, function(i)
+                                 x$score_t_list[,j,i])),
+                               sim = rep(1:nsim, each=length(x$time)),
+                               type = "simulated")),
       ggplot2::aes(x = .data$t, y = .data$u, group = .data$sim,
                    linetype =.data$type, linewidth = .data$type,
                    color = .data$type)) +
@@ -71,3 +71,4 @@ plot.assess_phregr <- function(x, nsim = 20, ...) {
 
   g
 }
+
