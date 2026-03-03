@@ -183,12 +183,6 @@ double boost_qt(double p, double df, bool lower_tail) {
 }
 
 
-std::vector<double> stl_sort(const std::vector<double>& x) {
-  std::vector<double> y = x;
-  std::sort(y.begin(), y.end());
-  return y;
-}
-
 std::vector<int> seqcpp(int start, int end) {
   if (start > end) throw std::invalid_argument(
       "start must be less than or equal to end for the sequence function.");
@@ -381,27 +375,6 @@ double brent(const std::function<double(double)>& f,
     fb = f(b);
   }
   throw std::runtime_error("Maximum iterations exceeded in brent");
-}
-
-
-double bisect(const std::function<double(double)>& f,
-              double x1, double x2, double tol, int maxiter) {
-  double a = x1, b = x2;
-  double fa = f(a), fb = f(b);
-  if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0))
-    throw std::invalid_argument("Root must be bracketed in bisect");
-  if (std::fabs(fa) < tol) return a;
-  if (std::fabs(fb) < tol) return b;
-  double xmid, fmid;
-  for (int j = 1; j <= maxiter; ++j) {
-    xmid = a + 0.5 * (b - a);
-    fmid = f(xmid);
-    if (std::fabs(fmid) < tol || (b - a) < tol) return xmid;
-    if ((fa > 0.0 && fmid < 0.0) || (fa < 0.0 && fmid > 0.0)) {
-      b = xmid; fb = fmid; }
-    else { a = xmid; fa = fmid; }
-  }
-  throw std::runtime_error("Maximum number of iterations exceeded in bisect");
 }
 
 
