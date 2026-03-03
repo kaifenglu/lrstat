@@ -351,7 +351,7 @@ DataFrameCpp lrstat0cpp(
         double r1 = risk.first;
         double r2 = risk.second;
 
-        int j = findInterval1(t, piecewiseSurvivalTime) - 1;
+        int j = std::max(findInterval1(t, piecewiseSurvivalTime) - 1, 0);
 
         double w = 1.0;
         if (rho1 != 0.0 || rho2 != 0.0) {
