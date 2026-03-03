@@ -1017,7 +1017,7 @@ getDesignRiskDiff <- function(
                  riskDiffH0 - riskDiff)
 
   # restricted maximum likelihood estimates
-  mr = remlRiskDiff(riskDiffH0, r, r*pi1, 1-r, (1-r)*pi2)
+  mr = remlRiskDiff(r, r*pi1, 1-r, (1-r)*pi2, riskDiffH0)
   p1 = mr[1]
   p2 = mr[2]
 
@@ -1370,7 +1370,7 @@ getDesignRiskRatio <- function(
                  log(riskRatioH0) - log(riskRatio))
 
   # restricted maximum likelihood estimates
-  mr = remlRiskRatio(riskRatioH0, r, r*pi1, 1-r, (1-r)*pi2)
+  mr = remlRiskRatio(r, r*pi1, 1-r, (1-r)*pi2, riskRatioH0)
   p1 = mr[1]
   p2 = mr[2]
 
@@ -1724,7 +1724,7 @@ getDesignRiskRatioFM <- function(
                  -pi1 + riskRatioH0*pi2)
 
   # restricted maximum likelihood estimates
-  mr = remlRiskRatio(riskRatioH0, r, r*pi1, 1-r, (1-r)*pi2)
+  mr = remlRiskRatio(r, r*pi1, 1-r, (1-r)*pi2, riskRatioH0)
   p1 = mr[1]
   p2 = mr[2]
 
@@ -2078,7 +2078,7 @@ getDesignOddsRatio <- function(
                  log(oddsRatioH0) - log(oddsRatio))
 
   # restricted maximum likelihood estimates
-  mr = remlOddsRatio(oddsRatioH0, r, r*pi1, 1-r, (1-r)*pi2)
+  mr = remlOddsRatio(r, r*pi1, 1-r, (1-r)*pi2, oddsRatioH0)
   p1 = mr[1]
   p2 = mr[2]
 
