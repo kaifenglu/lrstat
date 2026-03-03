@@ -71,10 +71,11 @@ lrpower(kMax = 3,
         lambda1 = 0.4466*lambda2, 
         lambda2 = lambda2, 
         accrualDuration = 24, 
-        followupTime = 30.92)
+        followupTime = 30.92, 
+        typeOfComputation = "schoenfeld")
 ```
 
-Therefore, the overall power is about 88% for the stratified analysis. This is confirmed by the simulation below. 
+Therefore, the overall power is about 90% for the stratified analysis. This is confirmed by the simulation below. 
 ```{r}
 lrsim(kMax = 3, 
       informationRates = c(0.333, 0.667, 1), 
