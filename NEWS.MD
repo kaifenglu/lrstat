@@ -20,6 +20,8 @@
 * added quad2d for numerical integration in two dimensions
 * removed hd, pd, ad, house, row\_house, col\_house, givens, row\_rot, col\_rot, house\_bidiag, zero\_diagonal, and svd\_step from utilities.h
 * renamed the parameters in lrsim2e and lrsim2e3a, replacing e1 by pfs and e2 by os
+* run the simulations in serial mode to pass CRAN checks
+
 
 # lrstat 0.2.15
 
