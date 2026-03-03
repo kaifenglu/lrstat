@@ -250,10 +250,10 @@ ListCpp lrsimcpp(
     const std::vector<double>& accrualIntensity;
     const std::vector<double>& tau;
     const std::vector<double>& stratumFraction;
-    const std::vector<std::vector<double>>& lambda1x;
-    const std::vector<std::vector<double>>& lambda2x;
-    const std::vector<std::vector<double>>& gamma1x;
-    const std::vector<std::vector<double>>& gamma2x;
+    const FlatMatrix& lambda1x;
+    const FlatMatrix& lambda2x;
+    const FlatMatrix& gamma1x;
+    const FlatMatrix& gamma2x;
     const size_t N;
     const double fu;
     const bool fixedFollowup;
@@ -283,10 +283,10 @@ ListCpp lrsimcpp(
       const std::vector<double>& accrualIntensity_,
       const std::vector<double>& tau_,
       const std::vector<double>& stratumFraction_,
-      const std::vector<std::vector<double>>& lambda1x_,
-      const std::vector<std::vector<double>>& lambda2x_,
-      const std::vector<std::vector<double>>& gamma1x_,
-      const std::vector<std::vector<double>>& gamma2x_,
+      const FlatMatrix& lambda1x_,
+      const FlatMatrix& lambda2x_,
+      const FlatMatrix& gamma1x_,
+      const FlatMatrix& gamma2x_,
       size_t N_,
       double fu_,
       bool fixedFollowup_,
@@ -386,13 +386,18 @@ ListCpp lrsimcpp(
           else { trtGrp[i] = 2; --b2[j]; }
           if (b1[j] + b2[j] == 0) { b1[j] = allocation1; b2[j] = allocation2; }
 
-          u = unif(rng_local);
-          if (trtGrp[i] == 1) survivalT[i] = qtpwexpcpp1(u, tau, lambda1x[j]);
-          else survivalT[i] = qtpwexpcpp1(u, tau, lambda2x[j]);
+          const std::vector<double>& lam1 = flatmatrix_get_column(lambda1x, j);
+          const std::vector<double>& lam2 = flatmatrix_get_column(lambda2x, j);
+          const std::vector<double>& gam1 = flatmatrix_get_column(gamma1x, j);
+          const std::vector<double>& gam2 = flatmatrix_get_column(gamma2x, j);
 
           u = unif(rng_local);
-          if (trtGrp[i] == 1) dropoutT[i] = qtpwexpcpp1(u, tau, gamma1x[j]);
-          else dropoutT[i] = qtpwexpcpp1(u, tau, gamma1x[j]);
+          if (trtGrp[i] == 1) survivalT[i] = qtpwexpcpp1(u, tau, lam1);
+          else survivalT[i] = qtpwexpcpp1(u, tau, lam2);
+
+          u = unif(rng_local);
+          if (trtGrp[i] == 1) dropoutT[i] = qtpwexpcpp1(u, tau, gam1);
+          else dropoutT[i] = qtpwexpcpp1(u, tau, gam2);
 
           double sv = survivalT[i], dr = dropoutT[i];
           if (fixedFollowup) {
@@ -1366,12 +1371,12 @@ ListCpp lrsim3acpp(
     const std::vector<double>& accrualIntensity;
     const std::vector<double>& tau;
     const std::vector<double>& stratumFraction;
-    const std::vector<std::vector<double>>& lambda1x;
-    const std::vector<std::vector<double>>& lambda2x;
-    const std::vector<std::vector<double>>& lambda3x;
-    const std::vector<std::vector<double>>& gamma1x;
-    const std::vector<std::vector<double>>& gamma2x;
-    const std::vector<std::vector<double>>& gamma3x;
+    const FlatMatrix& lambda1x;
+    const FlatMatrix& lambda2x;
+    const FlatMatrix& lambda3x;
+    const FlatMatrix& gamma1x;
+    const FlatMatrix& gamma2x;
+    const FlatMatrix& gamma3x;
     const size_t N;
     const double fu;
     const bool fixedFollowup;
@@ -1400,12 +1405,12 @@ ListCpp lrsim3acpp(
       const std::vector<double>& accrualIntensity_,
       const std::vector<double>& tau_,
       const std::vector<double>& stratumFraction_,
-      const std::vector<std::vector<double>>& lambda1x_,
-      const std::vector<std::vector<double>>& lambda2x_,
-      const std::vector<std::vector<double>>& lambda3x_,
-      const std::vector<std::vector<double>>& gamma1x_,
-      const std::vector<std::vector<double>>& gamma2x_,
-      const std::vector<std::vector<double>>& gamma3x_,
+      const FlatMatrix& lambda1x_,
+      const FlatMatrix& lambda2x_,
+      const FlatMatrix& lambda3x_,
+      const FlatMatrix& gamma1x_,
+      const FlatMatrix& gamma2x_,
+      const FlatMatrix& gamma3x_,
       size_t N_,
       double fu_,
       bool fixedFollowup_,
@@ -1508,17 +1513,24 @@ ListCpp lrsim3acpp(
             b1[j] = allocation1; b2[j] = allocation2; b3[j] = allocation3;
           }
 
+          const std::vector<double>& lam1 = flatmatrix_get_column(lambda1x, j);
+          const std::vector<double>& lam2 = flatmatrix_get_column(lambda2x, j);
+          const std::vector<double>& lam3 = flatmatrix_get_column(lambda3x, j);
+          const std::vector<double>& gam1 = flatmatrix_get_column(gamma1x, j);
+          const std::vector<double>& gam2 = flatmatrix_get_column(gamma2x, j);
+          const std::vector<double>& gam3 = flatmatrix_get_column(gamma3x, j);
+
           // survival time
           u = unif(rng_local);
-          if (trtGrp[i] == 1) survivalT[i] = qtpwexpcpp1(u, tau, lambda1x[j]);
-          else if (trtGrp[i] == 2) survivalT[i] = qtpwexpcpp1(u, tau, lambda2x[j]);
-          else survivalT[i] = qtpwexpcpp1(u, tau, lambda3x[j]);
+          if (trtGrp[i] == 1) survivalT[i] = qtpwexpcpp1(u, tau, lam1);
+          else if (trtGrp[i] == 2) survivalT[i] = qtpwexpcpp1(u, tau, lam2);
+          else survivalT[i] = qtpwexpcpp1(u, tau, lam3);
 
           // dropout time
           u = unif(rng_local);
-          if (trtGrp[i] == 1) dropoutT[i] = qtpwexpcpp1(u, tau, gamma1x[j]);
-          else if (trtGrp[i] == 2) dropoutT[i] = qtpwexpcpp1(u, tau, gamma2x[j]);
-          else dropoutT[i] = qtpwexpcpp1(u, tau, gamma3x[j]);
+          if (trtGrp[i] == 1) dropoutT[i] = qtpwexpcpp1(u, tau, gam1);
+          else if (trtGrp[i] == 2) dropoutT[i] = qtpwexpcpp1(u, tau, gam2);
+          else dropoutT[i] = qtpwexpcpp1(u, tau, gam3);
 
           // initial observed time and event indicator
           double sv = survivalT[i], dr = dropoutT[i];
@@ -2362,28 +2374,45 @@ ListCpp lrsim2ecpp(
   auto gamma2osx   = expand_stratified(gamma2os,   nstrata, nintv, "gamma2os");
 
   // compute P(D) hazard piecewise for each stratum using hazard_pdcpp
-  std::vector<std::vector<double>> tau1pdx(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> tau2pdx(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> lambda1pd(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> lambda2pd(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> gamma1pd(nstrata, std::vector<double>(nintv));
-  std::vector<std::vector<double>> gamma2pd(nstrata, std::vector<double>(nintv));
+  FlatMatrix tau1pdx(nintv2, nstrata);
+  FlatMatrix tau2pdx(nintv2, nstrata);
+  FlatMatrix lambda1pd(nintv2, nstrata);
+  FlatMatrix lambda2pd(nintv2, nstrata);
+  FlatMatrix gamma1pd(nintv, nstrata);
+  FlatMatrix gamma2pd(nintv, nstrata);
 
   for (size_t s = 0; s < nstrata; ++s) {
     // pass per-stratum vectors to hazard_pdcpp
-    ListCpp a1 = hazard_pdcpp(tau, lambda1pfsx[s], lambda1osx[s], rho_pd_os);
-    ListCpp a2 = hazard_pdcpp(tau, lambda2pfsx[s], lambda2osx[s], rho_pd_os);
+    const std::vector<double>& lam1pfs = flatmatrix_get_column(lambda1pfsx, s);
+    const std::vector<double>& lam2pfs = flatmatrix_get_column(lambda2pfsx, s);
+    const std::vector<double>& lam1os = flatmatrix_get_column(lambda1osx, s);
+    const std::vector<double>& lam2os = flatmatrix_get_column(lambda2osx, s);
+    const std::vector<double>& gam1pfs = flatmatrix_get_column(gamma1pfsx, s);
+    const std::vector<double>& gam2pfs = flatmatrix_get_column(gamma2pfsx, s);
+    const std::vector<double>& gam1os = flatmatrix_get_column(gamma1osx, s);
+    const std::vector<double>& gam2os = flatmatrix_get_column(gamma2osx, s);
 
-    tau1pdx[s] = a1.get<std::vector<double>>("piecewiseSurvivalTime");
-    tau2pdx[s] = a2.get<std::vector<double>>("piecewiseSurvivalTime");
-    lambda1pd[s]  = a1.get<std::vector<double>>("hazard_pd");
-    lambda2pd[s]  = a2.get<std::vector<double>>("hazard_pd");
+    ListCpp a1 = hazard_pdcpp(tau, lam1pfs, lam1os, rho_pd_os);
+    ListCpp a2 = hazard_pdcpp(tau, lam2pfs, lam2os, rho_pd_os);
+
+    auto tau1pd = a1.get<std::vector<double>>("piecewiseSurvivalTime");
+    auto tau2pd = a2.get<std::vector<double>>("piecewiseSurvivalTime");
+    auto lam1pd = a1.get<std::vector<double>>("hazard_pd");
+    auto lam2pd = a2.get<std::vector<double>>("hazard_pd");
 
     // gamma for pd is difference pfs - os
+    std::vector<double> gam1pd(nintv), gam2pd(nintv);
     for (size_t t = 0; t < nintv; ++t) {
-      gamma1pd[s][t] = gamma1pfsx[s][t] - gamma1osx[s][t];
-      gamma2pd[s][t] = gamma2pfsx[s][t] - gamma2osx[s][t];
+      gam1pd[t] = gam1pfs[t] - gam1os[t];
+      gam2pd[t] = gam2pfs[t] - gam2os[t];
     }
+
+    flatmatrix_set_column(tau1pdx, s, tau1pd);
+    flatmatrix_set_column(tau2pdx, s, tau2pd);
+    flatmatrix_set_column(lambda1pd, s, lam1pd);
+    flatmatrix_set_column(lambda2pd, s, lam2pd);
+    flatmatrix_set_column(gamma1pd, s, gam1pd);
+    flatmatrix_set_column(gamma2pd, s, gam2pd);
   }
 
   // generate seeds for each iteration to ensure reproducibility
@@ -2442,20 +2471,20 @@ ListCpp lrsim2ecpp(
     const std::vector<double>& tau;
     const std::vector<double>& stratumFraction;
     const double rho_pd_os;
-    const std::vector<std::vector<double>>& lambda1pfsx;
-    const std::vector<std::vector<double>>& lambda2pfsx;
-    const std::vector<std::vector<double>>& lambda1osx;
-    const std::vector<std::vector<double>>& lambda2osx;
-    const std::vector<std::vector<double>>& gamma1pfsx;
-    const std::vector<std::vector<double>>& gamma2pfsx;
-    const std::vector<std::vector<double>>& gamma1osx;
-    const std::vector<std::vector<double>>& gamma2osx;
-    const std::vector<std::vector<double>>& tau1pdx;
-    const std::vector<std::vector<double>>& tau2pdx;
-    const std::vector<std::vector<double>>& lambda1pd;
-    const std::vector<std::vector<double>>& lambda2pd;
-    const std::vector<std::vector<double>>& gamma1pd;
-    const std::vector<std::vector<double>>& gamma2pd;
+    const FlatMatrix& lambda1pfsx;
+    const FlatMatrix& lambda2pfsx;
+    const FlatMatrix& lambda1osx;
+    const FlatMatrix& lambda2osx;
+    const FlatMatrix& gamma1pfsx;
+    const FlatMatrix& gamma2pfsx;
+    const FlatMatrix& gamma1osx;
+    const FlatMatrix& gamma2osx;
+    const FlatMatrix& tau1pdx;
+    const FlatMatrix& tau2pdx;
+    const FlatMatrix& lambda1pd;
+    const FlatMatrix& lambda2pd;
+    const FlatMatrix& gamma1pd;
+    const FlatMatrix& gamma2pd;
 
     const size_t N;
     const double fu;
@@ -2486,20 +2515,20 @@ ListCpp lrsim2ecpp(
       const std::vector<double>& tau_,
       const std::vector<double>& stratumFraction_,
       double rho_pd_os_,
-      const std::vector<std::vector<double>>& lambda1pfsx_,
-      const std::vector<std::vector<double>>& lambda2pfsx_,
-      const std::vector<std::vector<double>>& lambda1osx_,
-      const std::vector<std::vector<double>>& lambda2osx_,
-      const std::vector<std::vector<double>>& gamma1pfsx_,
-      const std::vector<std::vector<double>>& gamma2pfsx_,
-      const std::vector<std::vector<double>>& gamma1osx_,
-      const std::vector<std::vector<double>>& gamma2osx_,
-      const std::vector<std::vector<double>>& tau1pdx_,
-      const std::vector<std::vector<double>>& tau2pdx_,
-      const std::vector<std::vector<double>>& lambda1pd_,
-      const std::vector<std::vector<double>>& lambda2pd_,
-      const std::vector<std::vector<double>>& gamma1pd_,
-      const std::vector<std::vector<double>>& gamma2pd_,
+      const FlatMatrix& lambda1pfsx_,
+      const FlatMatrix& lambda2pfsx_,
+      const FlatMatrix& lambda1osx_,
+      const FlatMatrix& lambda2osx_,
+      const FlatMatrix& gamma1pfsx_,
+      const FlatMatrix& gamma2pfsx_,
+      const FlatMatrix& gamma1osx_,
+      const FlatMatrix& gamma2osx_,
+      const FlatMatrix& tau1pdx_,
+      const FlatMatrix& tau2pdx_,
+      const FlatMatrix& lambda1pd_,
+      const FlatMatrix& lambda2pd_,
+      const FlatMatrix& gamma1pd_,
+      const FlatMatrix& gamma2pd_,
       size_t N_,
       double fu_,
       bool fixedFollowup_,
@@ -2614,6 +2643,17 @@ ListCpp lrsim2ecpp(
           else { trtGrp[i] = 2; --b2[j]; }
           if (b1[j] + b2[j] == 0) { b1[j] = allocation1; b2[j] = allocation2; }
 
+          const std::vector<double>& lam1pd = flatmatrix_get_column(lambda1pd, j);
+          const std::vector<double>& lam2pd = flatmatrix_get_column(lambda2pd, j);
+          const std::vector<double>& gam1pd = flatmatrix_get_column(gamma1pd, j);
+          const std::vector<double>& gam2pd = flatmatrix_get_column(gamma2pd, j);
+          const std::vector<double>& lam1os = flatmatrix_get_column(lambda1osx, j);
+          const std::vector<double>& lam2os = flatmatrix_get_column(lambda2osx, j);
+          const std::vector<double>& gam1os = flatmatrix_get_column(gamma1osx, j);
+          const std::vector<double>& gam2os = flatmatrix_get_column(gamma2osx, j);
+          const std::vector<double>& tau1pd = flatmatrix_get_column(tau1pdx, j);
+          const std::vector<double>& tau2pd = flatmatrix_get_column(tau2pdx, j);
+
           // correlated normals -> uniforms
           double z1 = norm(rng_local);
           double z2 = norm(rng_local);
@@ -2621,11 +2661,11 @@ ListCpp lrsim2ecpp(
           double u2 = boost_pnorm(rho_pd_os * z1 + rho_pd_os_pyth_comp * z2);
 
           if (trtGrp[i] == 1) {
-            survivalT1[i] = qtpwexpcpp1(u1, tau1pdx[j], lambda1pd[j]);
-            survivalT2[i] = qtpwexpcpp1(u2, tau, lambda1osx[j]);
+            survivalT1[i] = qtpwexpcpp1(u1, tau1pd, lam1pd);
+            survivalT2[i] = qtpwexpcpp1(u2, tau, lam1os);
           } else {
-            survivalT1[i] = qtpwexpcpp1(u1, tau2pdx[j], lambda2pd[j]);
-            survivalT2[i] = qtpwexpcpp1(u2, tau, lambda2osx[j]);
+            survivalT1[i] = qtpwexpcpp1(u1, tau2pd, lam2pd);
+            survivalT2[i] = qtpwexpcpp1(u2, tau, lam2os);
           }
           // PFS includes death
           if (survivalT1[i] > survivalT2[i]) survivalT1[i] = survivalT2[i];
@@ -2634,11 +2674,11 @@ ListCpp lrsim2ecpp(
           u1 = unif(rng_local);
           u2 = unif(rng_local);
           if (trtGrp[i] == 1) {
-            dropoutT1[i] = qtpwexpcpp1(u1, tau, gamma1pd[j]);
-            dropoutT2[i] = qtpwexpcpp1(u2, tau, gamma1osx[j]);
+            dropoutT1[i] = qtpwexpcpp1(u1, tau, gam1pd);
+            dropoutT2[i] = qtpwexpcpp1(u2, tau, gam1os);
           } else {
-            dropoutT1[i] = qtpwexpcpp1(u1, tau, gamma2pd[j]);
-            dropoutT2[i] = qtpwexpcpp1(u2, tau, gamma2osx[j]);
+            dropoutT1[i] = qtpwexpcpp1(u1, tau, gam2pd);
+            dropoutT2[i] = qtpwexpcpp1(u2, tau, gam2os);
           }
           if (dropoutT1[i] > dropoutT2[i]) dropoutT1[i] = dropoutT2[i];
 
@@ -3586,33 +3626,57 @@ ListCpp lrsim2e3acpp(
   auto gamma3osx   = expand_stratified(gamma3os,   nstrata, nintv, "gamma3os");
 
   // compute pd hazards per stratum & arm (main thread)
-  std::vector<std::vector<double>> tau1pdx(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> tau2pdx(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> tau3pdx(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> lambda1pd(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> lambda2pd(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> lambda3pd(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> gamma1pd(nstrata, std::vector<double>(nintv));
-  std::vector<std::vector<double>> gamma2pd(nstrata, std::vector<double>(nintv));
-  std::vector<std::vector<double>> gamma3pd(nstrata, std::vector<double>(nintv));
+  FlatMatrix tau1pdx(nintv2, nstrata);
+  FlatMatrix tau2pdx(nintv2, nstrata);
+  FlatMatrix tau3pdx(nintv2, nstrata);
+  FlatMatrix lambda1pd(nintv2, nstrata);
+  FlatMatrix lambda2pd(nintv2, nstrata);
+  FlatMatrix lambda3pd(nintv2, nstrata);
+  FlatMatrix gamma1pd(nintv, nstrata);
+  FlatMatrix gamma2pd(nintv, nstrata);
+  FlatMatrix gamma3pd(nintv, nstrata);
 
   for (size_t s = 0; s < nstrata; ++s) {
-    ListCpp a1 = hazard_pdcpp(tau, lambda1pfsx[s], lambda1osx[s], rho_pd_os);
-    ListCpp a2 = hazard_pdcpp(tau, lambda2pfsx[s], lambda2osx[s], rho_pd_os);
-    ListCpp a3 = hazard_pdcpp(tau, lambda3pfsx[s], lambda3osx[s], rho_pd_os);
+    const std::vector<double>& lam1pfs = flatmatrix_get_column(lambda1pfsx, s);
+    const std::vector<double>& lam2pfs = flatmatrix_get_column(lambda2pfsx, s);
+    const std::vector<double>& lam3pfs = flatmatrix_get_column(lambda3pfsx, s);
+    const std::vector<double>& lam1os = flatmatrix_get_column(lambda1osx, s);
+    const std::vector<double>& lam2os = flatmatrix_get_column(lambda2osx, s);
+    const std::vector<double>& lam3os = flatmatrix_get_column(lambda3osx, s);
+    const std::vector<double>& gam1pfs = flatmatrix_get_column(gamma1pfsx, s);
+    const std::vector<double>& gam2pfs = flatmatrix_get_column(gamma2pfsx, s);
+    const std::vector<double>& gam3pfs = flatmatrix_get_column(gamma3pfsx, s);
+    const std::vector<double>& gam1os = flatmatrix_get_column(gamma1osx, s);
+    const std::vector<double>& gam2os = flatmatrix_get_column(gamma2osx, s);
+    const std::vector<double>& gam3os = flatmatrix_get_column(gamma3osx, s);
 
-    tau1pdx[s] = a1.get<std::vector<double>>("piecewiseSurvivalTime");
-    tau2pdx[s] = a2.get<std::vector<double>>("piecewiseSurvivalTime");
-    tau3pdx[s] = a3.get<std::vector<double>>("piecewiseSurvivalTime");
-    lambda1pd[s] = a1.get<std::vector<double>>("hazard_pd");
-    lambda2pd[s] = a2.get<std::vector<double>>("hazard_pd");
-    lambda3pd[s] = a3.get<std::vector<double>>("hazard_pd");
+    ListCpp a1 = hazard_pdcpp(tau, lam1pfs, lam1os, rho_pd_os);
+    ListCpp a2 = hazard_pdcpp(tau, lam2pfs, lam2os, rho_pd_os);
+    ListCpp a3 = hazard_pdcpp(tau, lam3pfs, lam3os, rho_pd_os);
 
+    auto tau1pd = a1.get<std::vector<double>>("piecewiseSurvivalTime");
+    auto tau2pd = a2.get<std::vector<double>>("piecewiseSurvivalTime");
+    auto tau3pd = a3.get<std::vector<double>>("piecewiseSurvivalTime");
+    auto lam1pd = a1.get<std::vector<double>>("hazard_pd");
+    auto lam2pd = a2.get<std::vector<double>>("hazard_pd");
+    auto lam3pd = a3.get<std::vector<double>>("hazard_pd");
+
+    std::vector<double> gam1pd(nintv), gam2pd(nintv), gam3pd(nintv);
     for (size_t t = 0; t < nintv; ++t) {
-      gamma1pd[s][t] = gamma1pfsx[s][t] - gamma1osx[s][t];
-      gamma2pd[s][t] = gamma2pfsx[s][t] - gamma2osx[s][t];
-      gamma3pd[s][t] = gamma3pfsx[s][t] - gamma3osx[s][t];
+      gam1pd[t] = gam1pfs[t] - gam1os[t];
+      gam2pd[t] = gam2pfs[t] - gam2os[t];
+      gam3pd[t] = gam3pfs[t] - gam3os[t];
     }
+
+    flatmatrix_set_column(tau1pdx, s, tau1pd);
+    flatmatrix_set_column(tau2pdx, s, tau2pd);
+    flatmatrix_set_column(tau3pdx, s, tau3pd);
+    flatmatrix_set_column(lambda1pd, s, lam1pd);
+    flatmatrix_set_column(lambda2pd, s, lam2pd);
+    flatmatrix_set_column(lambda3pd, s, lam3pd);
+    flatmatrix_set_column(gamma1pd, s, gam1pd);
+    flatmatrix_set_column(gamma2pd, s, gam2pd);
+    flatmatrix_set_column(gamma3pd, s, gam3pd);
   }
 
   // seeds for reproducibility
@@ -3679,27 +3743,27 @@ ListCpp lrsim2e3acpp(
     const std::vector<double>& tau;
     const std::vector<double>& stratumFraction;
     const double rho_pd_os;
-    const std::vector<std::vector<double>>& lambda1pfsx;
-    const std::vector<std::vector<double>>& lambda2pfsx;
-    const std::vector<std::vector<double>>& lambda3pfsx;
-    const std::vector<std::vector<double>>& lambda1osx;
-    const std::vector<std::vector<double>>& lambda2osx;
-    const std::vector<std::vector<double>>& lambda3osx;
-    const std::vector<std::vector<double>>& gamma1pfsx;
-    const std::vector<std::vector<double>>& gamma2pfsx;
-    const std::vector<std::vector<double>>& gamma3pfsx;
-    const std::vector<std::vector<double>>& gamma1osx;
-    const std::vector<std::vector<double>>& gamma2osx;
-    const std::vector<std::vector<double>>& gamma3osx;
-    const std::vector<std::vector<double>>& tau1pdx;
-    const std::vector<std::vector<double>>& tau2pdx;
-    const std::vector<std::vector<double>>& tau3pdx;
-    const std::vector<std::vector<double>>& lambda1pd;
-    const std::vector<std::vector<double>>& lambda2pd;
-    const std::vector<std::vector<double>>& lambda3pd;
-    const std::vector<std::vector<double>>& gamma1pd;
-    const std::vector<std::vector<double>>& gamma2pd;
-    const std::vector<std::vector<double>>& gamma3pd;
+    const FlatMatrix& lambda1pfsx;
+    const FlatMatrix& lambda2pfsx;
+    const FlatMatrix& lambda3pfsx;
+    const FlatMatrix& lambda1osx;
+    const FlatMatrix& lambda2osx;
+    const FlatMatrix& lambda3osx;
+    const FlatMatrix& gamma1pfsx;
+    const FlatMatrix& gamma2pfsx;
+    const FlatMatrix& gamma3pfsx;
+    const FlatMatrix& gamma1osx;
+    const FlatMatrix& gamma2osx;
+    const FlatMatrix& gamma3osx;
+    const FlatMatrix& tau1pdx;
+    const FlatMatrix& tau2pdx;
+    const FlatMatrix& tau3pdx;
+    const FlatMatrix& lambda1pd;
+    const FlatMatrix& lambda2pd;
+    const FlatMatrix& lambda3pd;
+    const FlatMatrix& gamma1pd;
+    const FlatMatrix& gamma2pd;
+    const FlatMatrix& gamma3pd;
 
     const size_t N;
     const double fu;
@@ -3735,27 +3799,27 @@ ListCpp lrsim2e3acpp(
       const std::vector<double>& tau_,
       const std::vector<double>& stratumFraction_,
       double rho_pd_os_,
-      const std::vector<std::vector<double>>& lambda1pfsx_,
-      const std::vector<std::vector<double>>& lambda2pfsx_,
-      const std::vector<std::vector<double>>& lambda3pfsx_,
-      const std::vector<std::vector<double>>& lambda1osx_,
-      const std::vector<std::vector<double>>& lambda2osx_,
-      const std::vector<std::vector<double>>& lambda3osx_,
-      const std::vector<std::vector<double>>& gamma1pfsx_,
-      const std::vector<std::vector<double>>& gamma2pfsx_,
-      const std::vector<std::vector<double>>& gamma3pfsx_,
-      const std::vector<std::vector<double>>& gamma1osx_,
-      const std::vector<std::vector<double>>& gamma2osx_,
-      const std::vector<std::vector<double>>& gamma3osx_,
-      const std::vector<std::vector<double>>& tau1pdx_,
-      const std::vector<std::vector<double>>& tau2pdx_,
-      const std::vector<std::vector<double>>& tau3pdx_,
-      const std::vector<std::vector<double>>& lambda1pd_,
-      const std::vector<std::vector<double>>& lambda2pd_,
-      const std::vector<std::vector<double>>& lambda3pd_,
-      const std::vector<std::vector<double>>& gamma1pd_,
-      const std::vector<std::vector<double>>& gamma2pd_,
-      const std::vector<std::vector<double>>& gamma3pd_,
+      const FlatMatrix& lambda1pfsx_,
+      const FlatMatrix& lambda2pfsx_,
+      const FlatMatrix& lambda3pfsx_,
+      const FlatMatrix& lambda1osx_,
+      const FlatMatrix& lambda2osx_,
+      const FlatMatrix& lambda3osx_,
+      const FlatMatrix& gamma1pfsx_,
+      const FlatMatrix& gamma2pfsx_,
+      const FlatMatrix& gamma3pfsx_,
+      const FlatMatrix& gamma1osx_,
+      const FlatMatrix& gamma2osx_,
+      const FlatMatrix& gamma3osx_,
+      const FlatMatrix& tau1pdx_,
+      const FlatMatrix& tau2pdx_,
+      const FlatMatrix& tau3pdx_,
+      const FlatMatrix& lambda1pd_,
+      const FlatMatrix& lambda2pd_,
+      const FlatMatrix& lambda3pd_,
+      const FlatMatrix& gamma1pd_,
+      const FlatMatrix& gamma2pd_,
+      const FlatMatrix& gamma3pd_,
       size_t N_,
       double fu_,
       bool fixedFollowup_,
@@ -3894,16 +3958,33 @@ ListCpp lrsim2e3acpp(
           double u1 = boost_pnorm(z1);
           double u2 = boost_pnorm(rho_pd_os * z1 + rho_pd_os_pyth_comp * z2);
 
+          const std::vector<double>& tau1pd = flatmatrix_get_column(tau1pdx, j);
+          const std::vector<double>& tau2pd = flatmatrix_get_column(tau2pdx, j);
+          const std::vector<double>& tau3pd = flatmatrix_get_column(tau3pdx, j);
+          const std::vector<double>& lam1pd = flatmatrix_get_column(lambda1pd, j);
+          const std::vector<double>& lam2pd = flatmatrix_get_column(lambda2pd, j);
+          const std::vector<double>& lam3pd = flatmatrix_get_column(lambda3pd, j);
+          const std::vector<double>& lam1os = flatmatrix_get_column(lambda1osx, j);
+          const std::vector<double>& lam2os = flatmatrix_get_column(lambda2osx, j);
+          const std::vector<double>& lam3os = flatmatrix_get_column(lambda3osx, j);
+
+          const std::vector<double>& gam1pd = flatmatrix_get_column(gamma1pd, j);
+          const std::vector<double>& gam2pd = flatmatrix_get_column(gamma2pd, j);
+          const std::vector<double>& gam3pd = flatmatrix_get_column(gamma3pd, j);
+          const std::vector<double>& gam1os = flatmatrix_get_column(gamma1osx, j);
+          const std::vector<double>& gam2os = flatmatrix_get_column(gamma2osx, j);
+          const std::vector<double>& gam3os = flatmatrix_get_column(gamma3osx, j);
+
           // survival times
           if (trtGrp[i] == 1) {
-            survivalT1[i] = qtpwexpcpp1(u1, tau1pdx[j], lambda1pd[j]);
-            survivalT2[i] = qtpwexpcpp1(u2, tau, lambda1osx[j]);
+            survivalT1[i] = qtpwexpcpp1(u1, tau1pd, lam1pd);
+            survivalT2[i] = qtpwexpcpp1(u2, tau, lam1os);
           } else if (trtGrp[i] == 2) {
-            survivalT1[i] = qtpwexpcpp1(u1, tau2pdx[j], lambda2pd[j]);
-            survivalT2[i] = qtpwexpcpp1(u2, tau, lambda2osx[j]);
+            survivalT1[i] = qtpwexpcpp1(u1, tau2pd, lam2pd);
+            survivalT2[i] = qtpwexpcpp1(u2, tau, lam2os);
           } else {
-            survivalT1[i] = qtpwexpcpp1(u1, tau3pdx[j], lambda3pd[j]);
-            survivalT2[i] = qtpwexpcpp1(u2, tau, lambda3osx[j]);
+            survivalT1[i] = qtpwexpcpp1(u1, tau3pd, lam3pd);
+            survivalT2[i] = qtpwexpcpp1(u2, tau, lam3os);
           }
           if (survivalT1[i] > survivalT2[i]) survivalT1[i] = survivalT2[i];
 
@@ -3911,14 +3992,14 @@ ListCpp lrsim2e3acpp(
           u1 = unif(rng_local);
           u2 = unif(rng_local);
           if (trtGrp[i] == 1) {
-            dropoutT1[i] = qtpwexpcpp1(u1, tau, gamma1pd[j]);
-            dropoutT2[i] = qtpwexpcpp1(u2, tau, gamma1osx[j]);
+            dropoutT1[i] = qtpwexpcpp1(u1, tau, gam1pd);
+            dropoutT2[i] = qtpwexpcpp1(u2, tau, gam1os);
           } else if (trtGrp[i] == 2) {
-            dropoutT1[i] = qtpwexpcpp1(u1, tau, gamma2pd[j]);
-            dropoutT2[i] = qtpwexpcpp1(u2, tau, gamma2osx[j]);
+            dropoutT1[i] = qtpwexpcpp1(u1, tau, gam2pd);
+            dropoutT2[i] = qtpwexpcpp1(u2, tau, gam2os);
           } else {
-            dropoutT1[i] = qtpwexpcpp1(u1, tau, gamma3pd[j]);
-            dropoutT2[i] = qtpwexpcpp1(u2, tau, gamma3osx[j]);
+            dropoutT1[i] = qtpwexpcpp1(u1, tau, gam3pd);
+            dropoutT2[i] = qtpwexpcpp1(u2, tau, gam3os);
           }
           if (dropoutT1[i] > dropoutT2[i]) dropoutT1[i] = dropoutT2[i];
 
@@ -4985,49 +5066,71 @@ ListCpp lrsimsubcpp(
 
   std::vector<double> p_posv = expand1(p_pos, nstrata, "p_pos");
 
-  auto lam1ittx = expand_stratified(lambda1itt, nstrata, nintv, "lambda1itt");
-  auto lam2ittx = expand_stratified(lambda2itt, nstrata, nintv, "lambda2itt");
-  auto lam1posx = expand_stratified(lambda1pos, nstrata, nintv, "lambda1pos");
-  auto lam2posx = expand_stratified(lambda2pos, nstrata, nintv, "lambda2pos");
-  auto gam1ittx  = expand_stratified(gamma1itt,  nstrata, nintv, "gamma1itt");
-  auto gam2ittx  = expand_stratified(gamma2itt,  nstrata, nintv, "gamma2itt");
-  auto gam1posx  = expand_stratified(gamma1pos,  nstrata, nintv, "gamma1pos");
-  auto gam2posx  = expand_stratified(gamma2pos,  nstrata, nintv, "gamma2pos");
+  auto lambda1ittx = expand_stratified(lambda1itt, nstrata, nintv, "lambda1itt");
+  auto lambda2ittx = expand_stratified(lambda2itt, nstrata, nintv, "lambda2itt");
+  auto lambda1posx = expand_stratified(lambda1pos, nstrata, nintv, "lambda1pos");
+  auto lambda2posx = expand_stratified(lambda2pos, nstrata, nintv, "lambda2pos");
+  auto gamma1ittx  = expand_stratified(gamma1itt,  nstrata, nintv, "gamma1itt");
+  auto gamma2ittx  = expand_stratified(gamma2itt,  nstrata, nintv, "gamma2itt");
+  auto gamma1posx  = expand_stratified(gamma1pos,  nstrata, nintv, "gamma1pos");
+  auto gamma2posx  = expand_stratified(gamma2pos,  nstrata, nintv, "gamma2pos");
 
   // compute subpopulation hazards via hazard_subcpp (main thread)
-  std::vector<std::vector<double>> tau1pos(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> tau2pos(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> tau1neg(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> tau2neg(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> lam1posy(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> lam2posy(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> lam1negy(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> lam2negy(nstrata, std::vector<double>(nintv2));
-  std::vector<std::vector<double>> gam1posy(nstrata, std::vector<double>(nintv));
-  std::vector<std::vector<double>> gam2posy(nstrata, std::vector<double>(nintv));
-  std::vector<std::vector<double>> gam1negy(nstrata, std::vector<double>(nintv));
-  std::vector<std::vector<double>> gam2negy(nstrata, std::vector<double>(nintv));
+  FlatMatrix tau1posy(nintv2, nstrata);
+  FlatMatrix tau2posy(nintv2, nstrata);
+  FlatMatrix tau1negy(nintv2, nstrata);
+  FlatMatrix tau2negy(nintv2, nstrata);
+  FlatMatrix lambda1posy(nintv2, nstrata);
+  FlatMatrix lambda2posy(nintv2, nstrata);
+  FlatMatrix lambda1negy(nintv2, nstrata);
+  FlatMatrix lambda2negy(nintv2, nstrata);
+  FlatMatrix gamma1posy(nintv2, nstrata);
+  FlatMatrix gamma2posy(nintv2, nstrata);
+  FlatMatrix gamma1negy(nintv2, nstrata);
+  FlatMatrix gamma2negy(nintv2, nstrata);
 
   for (size_t s = 0; s < nstrata; ++s) {
-    ListCpp a1 = hazard_subcpp(tau, lam1ittx[s], lam1posx[s], p_posv[s]);
-    ListCpp a2 = hazard_subcpp(tau, lam2ittx[s], lam2posx[s], p_posv[s]);
-    ListCpp b1 = hazard_subcpp(tau, gam1ittx[s], gam1posx[s], p_posv[s]);
-    ListCpp b2 = hazard_subcpp(tau, gam2ittx[s], gam2posx[s], p_posv[s]);
+    const std::vector<double>& lam1ittx = flatmatrix_get_column(lambda1ittx, s);
+    const std::vector<double>& lam2ittx = flatmatrix_get_column(lambda2ittx, s);
+    const std::vector<double>& lam1posx = flatmatrix_get_column(lambda1posx, s);
+    const std::vector<double>& lam2posx = flatmatrix_get_column(lambda2posx, s);
+    const std::vector<double>& gam1ittx = flatmatrix_get_column(gamma1ittx, s);
+    const std::vector<double>& gam2ittx = flatmatrix_get_column(gamma2ittx, s);
+    const std::vector<double>& gam1posx = flatmatrix_get_column(gamma1posx, s);
+    const std::vector<double>& gam2posx = flatmatrix_get_column(gamma2posx, s);
 
-    tau1pos[s] = a1.get<std::vector<double>>("piecewiseSurvivalTime");
-    tau2pos[s] = a2.get<std::vector<double>>("piecewiseSurvivalTime");
-    tau1neg[s] = b1.get<std::vector<double>>("piecewiseSurvivalTime");
-    tau2neg[s] = b2.get<std::vector<double>>("piecewiseSurvivalTime");
+    ListCpp a1 = hazard_subcpp(tau, lam1ittx, lam1posx, p_posv[s]);
+    ListCpp a2 = hazard_subcpp(tau, lam2ittx, lam2posx, p_posv[s]);
+    ListCpp b1 = hazard_subcpp(tau, gam1ittx, gam1posx, p_posv[s]);
+    ListCpp b2 = hazard_subcpp(tau, gam2ittx, gam2posx, p_posv[s]);
 
-    lam1posy[s] = a1.get<std::vector<double>>("hazard_pos");
-    lam1negy[s] = a1.get<std::vector<double>>("hazard_neg");
-    lam2posy[s] = a2.get<std::vector<double>>("hazard_pos");
-    lam2negy[s] = a2.get<std::vector<double>>("hazard_neg");
+    auto tau1pos = a1.get<std::vector<double>>("piecewiseSurvivalTime");
+    auto tau2pos = a2.get<std::vector<double>>("piecewiseSurvivalTime");
+    auto tau1neg = b1.get<std::vector<double>>("piecewiseSurvivalTime");
+    auto tau2neg = b2.get<std::vector<double>>("piecewiseSurvivalTime");
 
-    gam1posy[s] = b1.get<std::vector<double>>("hazard_pos");
-    gam1negy[s] = b1.get<std::vector<double>>("hazard_neg");
-    gam2posy[s] = b2.get<std::vector<double>>("hazard_pos");
-    gam2negy[s] = b2.get<std::vector<double>>("hazard_neg");
+    auto lam1pos = a1.get<std::vector<double>>("hazard_pos");
+    auto lam1neg = a1.get<std::vector<double>>("hazard_neg");
+    auto lam2pos = a2.get<std::vector<double>>("hazard_pos");
+    auto lam2neg = a2.get<std::vector<double>>("hazard_neg");
+
+    auto gam1pos = b1.get<std::vector<double>>("hazard_pos");
+    auto gam1neg = b1.get<std::vector<double>>("hazard_neg");
+    auto gam2pos = b2.get<std::vector<double>>("hazard_pos");
+    auto gam2neg = b2.get<std::vector<double>>("hazard_neg");
+
+    flatmatrix_set_column(tau1posy, s, tau1pos);
+    flatmatrix_set_column(tau2posy, s, tau2pos);
+    flatmatrix_set_column(tau1negy, s, tau1neg);
+    flatmatrix_set_column(tau2negy, s, tau2neg);
+    flatmatrix_set_column(lambda1posy, s, lam1pos);
+    flatmatrix_set_column(lambda2posy, s, lam2pos);
+    flatmatrix_set_column(lambda1negy, s, lam1neg);
+    flatmatrix_set_column(lambda2negy, s, lam2neg);
+    flatmatrix_set_column(gamma1posy, s, gam1pos);
+    flatmatrix_set_column(gamma2posy, s, gam2pos);
+    flatmatrix_set_column(gamma1negy, s, gam1neg);
+    flatmatrix_set_column(gamma2negy, s, gam2neg);
   }
 
   // prepare per-iteration seed vector
@@ -5087,26 +5190,26 @@ ListCpp lrsimsubcpp(
     const std::vector<double>& tau;
     const std::vector<double>& stratumFraction;
     const std::vector<double>& p_posv;
-    const std::vector<std::vector<double>>& lam1ittx;
-    const std::vector<std::vector<double>>& lam2ittx;
-    const std::vector<std::vector<double>>& lam1posx;
-    const std::vector<std::vector<double>>& lam2posx;
-    const std::vector<std::vector<double>>& gam1ittx;
-    const std::vector<std::vector<double>>& gam2ittx;
-    const std::vector<std::vector<double>>& gam1posx;
-    const std::vector<std::vector<double>>& gam2posx;
-    const std::vector<std::vector<double>>& tau1pos;
-    const std::vector<std::vector<double>>& tau2pos;
-    const std::vector<std::vector<double>>& tau1neg;
-    const std::vector<std::vector<double>>& tau2neg;
-    const std::vector<std::vector<double>>& lam1posy;
-    const std::vector<std::vector<double>>& lam2posy;
-    const std::vector<std::vector<double>>& lam1negy;
-    const std::vector<std::vector<double>>& lam2negy;
-    const std::vector<std::vector<double>>& gam1posy;
-    const std::vector<std::vector<double>>& gam2posy;
-    const std::vector<std::vector<double>>& gam1negy;
-    const std::vector<std::vector<double>>& gam2negy;
+    const FlatMatrix& lambda1ittx;
+    const FlatMatrix& lambda2ittx;
+    const FlatMatrix& lambda1posx;
+    const FlatMatrix& lambda2posx;
+    const FlatMatrix& gamma1ittx;
+    const FlatMatrix& gamma2ittx;
+    const FlatMatrix& gamma1posx;
+    const FlatMatrix& gamma2posx;
+    const FlatMatrix& tau1posy;
+    const FlatMatrix& tau2posy;
+    const FlatMatrix& tau1negy;
+    const FlatMatrix& tau2negy;
+    const FlatMatrix& lambda1posy;
+    const FlatMatrix& lambda2posy;
+    const FlatMatrix& lambda1negy;
+    const FlatMatrix& lambda2negy;
+    const FlatMatrix& gamma1posy;
+    const FlatMatrix& gamma2posy;
+    const FlatMatrix& gamma1negy;
+    const FlatMatrix& gamma2negy;
 
     const size_t N;
     const double fu;
@@ -5136,26 +5239,26 @@ ListCpp lrsimsubcpp(
       const std::vector<double>& tau_,
       const std::vector<double>& stratumFraction_,
       const std::vector<double>& p_posv_,
-      const std::vector<std::vector<double>>& lam1ittx_,
-      const std::vector<std::vector<double>>& lam2ittx_,
-      const std::vector<std::vector<double>>& lam1posx_,
-      const std::vector<std::vector<double>>& lam2posx_,
-      const std::vector<std::vector<double>>& gam1ittx_,
-      const std::vector<std::vector<double>>& gam2ittx_,
-      const std::vector<std::vector<double>>& gam1posx_,
-      const std::vector<std::vector<double>>& gam2posx_,
-      const std::vector<std::vector<double>>& tau1pos_,
-      const std::vector<std::vector<double>>& tau2pos_,
-      const std::vector<std::vector<double>>& tau1neg_,
-      const std::vector<std::vector<double>>& tau2neg_,
-      const std::vector<std::vector<double>>& lam1posy_,
-      const std::vector<std::vector<double>>& lam2posy_,
-      const std::vector<std::vector<double>>& lam1negy_,
-      const std::vector<std::vector<double>>& lam2negy_,
-      const std::vector<std::vector<double>>& gam1posy_,
-      const std::vector<std::vector<double>>& gam2posy_,
-      const std::vector<std::vector<double>>& gam1negy_,
-      const std::vector<std::vector<double>>& gam2negy_,
+      const FlatMatrix& lambda1ittx_,
+      const FlatMatrix& lambda2ittx_,
+      const FlatMatrix& lambda1posx_,
+      const FlatMatrix& lambda2posx_,
+      const FlatMatrix& gamma1ittx_,
+      const FlatMatrix& gamma2ittx_,
+      const FlatMatrix& gamma1posx_,
+      const FlatMatrix& gamma2posx_,
+      const FlatMatrix& tau1posy_,
+      const FlatMatrix& tau2posy_,
+      const FlatMatrix& tau1negy_,
+      const FlatMatrix& tau2negy_,
+      const FlatMatrix& lambda1posy_,
+      const FlatMatrix& lambda2posy_,
+      const FlatMatrix& lambda1negy_,
+      const FlatMatrix& lambda2negy_,
+      const FlatMatrix& gamma1posy_,
+      const FlatMatrix& gamma2posy_,
+      const FlatMatrix& gamma1negy_,
+      const FlatMatrix& gamma2negy_,
       size_t N_,
       double fu_,
       bool fixedFollowup_,
@@ -5181,26 +5284,26 @@ ListCpp lrsimsubcpp(
         tau(tau_),
         stratumFraction(stratumFraction_),
         p_posv(p_posv_),
-        lam1ittx(lam1ittx_),
-        lam2ittx(lam2ittx_),
-        lam1posx(lam1posx_),
-        lam2posx(lam2posx_),
-        gam1ittx(gam1ittx_),
-        gam2ittx(gam2ittx_),
-        gam1posx(gam1posx_),
-        gam2posx(gam2posx_),
-        tau1pos(tau1pos_),
-        tau2pos(tau2pos_),
-        tau1neg(tau1neg_),
-        tau2neg(tau2neg_),
-        lam1posy(lam1posy_),
-        lam2posy(lam2posy_),
-        lam1negy(lam1negy_),
-        lam2negy(lam2negy_),
-        gam1posy(gam1posy_),
-        gam2posy(gam2posy_),
-        gam1negy(gam1negy_),
-        gam2negy(gam2negy_),
+        lambda1ittx(lambda1ittx_),
+        lambda2ittx(lambda2ittx_),
+        lambda1posx(lambda1posx_),
+        lambda2posx(lambda2posx_),
+        gamma1ittx(gamma1ittx_),
+        gamma2ittx(gamma2ittx_),
+        gamma1posx(gamma1posx_),
+        gamma2posx(gamma2posx_),
+        tau1posy(tau1posy_),
+        tau2posy(tau2posy_),
+        tau1negy(tau1negy_),
+        tau2negy(tau2negy_),
+        lambda1posy(lambda1posy_),
+        lambda2posy(lambda2posy_),
+        lambda1negy(lambda1negy_),
+        lambda2negy(lambda2negy_),
+        gamma1posy(gamma1posy_),
+        gamma2posy(gamma2posy_),
+        gamma1negy(gamma1negy_),
+        gamma2negy(gamma2negy_),
         N(N_),
         fu(fu_),
         fixedFollowup(fixedFollowup_),
@@ -5276,24 +5379,37 @@ ListCpp lrsimsubcpp(
           else { trtGrp[i] = 2; --b2[j]; }
           if (b1[j] + b2[j] == 0) { b1[j] = allocation1; b2[j] = allocation2; }
 
+          const std::vector<double>& tau1pos = flatmatrix_get_column(tau1posy, j);
+          const std::vector<double>& tau2pos = flatmatrix_get_column(tau2posy, j);
+          const std::vector<double>& tau1neg = flatmatrix_get_column(tau1negy, j);
+          const std::vector<double>& tau2neg = flatmatrix_get_column(tau2negy, j);
+          const std::vector<double>& lam1pos = flatmatrix_get_column(lambda1posy, j);
+          const std::vector<double>& lam2pos = flatmatrix_get_column(lambda2posy, j);
+          const std::vector<double>& lam1neg = flatmatrix_get_column(lambda1negy, j);
+          const std::vector<double>& lam2neg = flatmatrix_get_column(lambda2negy, j);
+          const std::vector<double>& gam1pos = flatmatrix_get_column(gamma1posy, j);
+          const std::vector<double>& gam2pos = flatmatrix_get_column(gamma2posy, j);
+          const std::vector<double>& gam1neg = flatmatrix_get_column(gamma1negy, j);
+          const std::vector<double>& gam2neg = flatmatrix_get_column(gamma2negy, j);
+
           // survival time
           u = unif(rng_local);
           if (marker[i]) {
-            if (trtGrp[i] == 1) survivalT[i] = qtpwexpcpp1(u, tau1pos[j], lam1posy[j]);
-            else survivalT[i] = qtpwexpcpp1(u, tau2pos[j], lam2posy[j]);
+            if (trtGrp[i] == 1) survivalT[i] = qtpwexpcpp1(u, tau1pos, lam1pos);
+            else survivalT[i] = qtpwexpcpp1(u, tau2pos, lam2pos);
           } else {
-            if (trtGrp[i] == 1) survivalT[i] = qtpwexpcpp1(u, tau1neg[j], lam1negy[j]);
-            else survivalT[i] = qtpwexpcpp1(u, tau2neg[j], lam2negy[j]);
+            if (trtGrp[i] == 1) survivalT[i] = qtpwexpcpp1(u, tau1neg, lam1neg);
+            else survivalT[i] = qtpwexpcpp1(u, tau2neg, lam2neg);
           }
 
           // dropout time
           u = unif(rng_local);
           if (marker[i]) {
-            if (trtGrp[i] == 1) dropoutT[i] = qtpwexpcpp1(u, tau1pos[j], gam1posy[j]);
-            else dropoutT[i] = qtpwexpcpp1(u, tau2pos[j], gam2posy[j]);
+            if (trtGrp[i] == 1) dropoutT[i] = qtpwexpcpp1(u, tau1pos, gam1pos);
+            else dropoutT[i] = qtpwexpcpp1(u, tau2pos, gam2pos);
           } else {
-            if (trtGrp[i] == 1) dropoutT[i] = qtpwexpcpp1(u, tau1neg[j], gam1negy[j]);
-            else dropoutT[i] = qtpwexpcpp1(u, tau2neg[j], gam2negy[j]);
+            if (trtGrp[i] == 1) dropoutT[i] = qtpwexpcpp1(u, tau1neg, gam1neg);
+            else dropoutT[i] = qtpwexpcpp1(u, tau2neg, gam2neg);
           }
 
           // observed time and event
@@ -5584,11 +5700,11 @@ ListCpp lrsimsubcpp(
       K, Kitt, hazardRatioH0itt, hazardRatioH0pos, hazardRatioH0neg,
       allocation1, allocation2,
       accrualTime, accrualIntensity, tau, stratumFraction, p_posv,
-      lam1ittx, lam2ittx, lam1posx, lam2posx,
-      gam1ittx, gam2ittx, gam1posx, gam2posx,
-      tau1pos, tau2pos, tau1neg, tau2neg,
-      lam1posy, lam2posy, lam1negy, lam2negy,
-      gam1posy, gam2posy, gam1negy, gam2negy,
+      lambda1ittx, lambda2ittx, lambda1posx, lambda2posx,
+      gamma1ittx, gamma2ittx, gamma1posx, gamma2posx,
+      tau1posy, tau2posy, tau1negy, tau2negy,
+      lambda1posy, lambda2posy, lambda1negy, lambda2negy,
+      gamma1posy, gamma2posy, gamma1negy, gamma2negy,
       N, fu, fixedFollowup, rho1, rho2,
       plannedEvents, plannedTime,
       maxIters, maxRawIters, seeds, useEvents, nstrata,
@@ -6224,12 +6340,12 @@ ListCpp binary_tte_sim_cpp(
     const double globalOddsRatio;
     const std::vector<double>& pi1v;
     const std::vector<double>& pi2v;
-    const std::vector<std::vector<double>>& lambda1x;
-    const std::vector<std::vector<double>>& lambda2x;
-    const std::vector<std::vector<double>>& gamma1x;
-    const std::vector<std::vector<double>>& gamma2x;
-    const std::vector<std::vector<double>>& delta1x;
-    const std::vector<std::vector<double>>& delta2x;
+    const FlatMatrix& lambda1x;
+    const FlatMatrix& lambda2x;
+    const FlatMatrix& gamma1x;
+    const FlatMatrix& gamma2x;
+    const FlatMatrix& delta1x;
+    const FlatMatrix& delta2x;
     const double upper1;
     const double upper2;
     const size_t N;
@@ -6261,12 +6377,12 @@ ListCpp binary_tte_sim_cpp(
       double globalOddsRatio_,
       const std::vector<double>& pi1v_,
       const std::vector<double>& pi2v_,
-      const std::vector<std::vector<double>>& lambda1x_,
-      const std::vector<std::vector<double>>& lambda2x_,
-      const std::vector<std::vector<double>>& gamma1x_,
-      const std::vector<std::vector<double>>& gamma2x_,
-      const std::vector<std::vector<double>>& delta1x_,
-      const std::vector<std::vector<double>>& delta2x_,
+      const FlatMatrix& lambda1x_,
+      const FlatMatrix& lambda2x_,
+      const FlatMatrix& gamma1x_,
+      const FlatMatrix& gamma2x_,
+      const FlatMatrix& delta1x_,
+      const FlatMatrix& delta2x_,
       double upper1_,
       double upper2_,
       size_t N_,
@@ -6383,6 +6499,13 @@ ListCpp binary_tte_sim_cpp(
           if (u <= p) { trtGrp[i] = 1; --b1[j]; } else { trtGrp[i] = 2; --b2[j]; }
           if (b1[j] + b2[j] == 0) { b1[j] = allocation1; b2[j] = allocation2; }
 
+          const std::vector<double>& lam1 = flatmatrix_get_column(lambda1x, j);
+          const std::vector<double>& lam2 = flatmatrix_get_column(lambda2x, j);
+          const std::vector<double>& gam1 = flatmatrix_get_column(gamma1x, j);
+          const std::vector<double>& gam2 = flatmatrix_get_column(gamma2x, j);
+          const std::vector<double>& del1 = flatmatrix_get_column(delta1x, j);
+          const std::vector<double>& del2 = flatmatrix_get_column(delta2x, j);
+
           // Plackett copula sampling for joint (binary latent and TTE u/v)
           // See equations (2.9.1), (3.3.3a) and (3.3.3b) in Nelson,
           // "An Introduction to Copulas", second edition, 2006
@@ -6433,24 +6556,24 @@ ListCpp binary_tte_sim_cpp(
           // survival time (inverse CDF sampling from p.w. exponential distribution)
           if (trtGrp[i] == 1) {
             latentResp[i] = -alpha1v[j] + std::log(u_plack / (1.0 - u_plack));
-            survivalT[i] = qtpwexpcpp1(v_plack, tau, lambda1x[j]);
+            survivalT[i] = qtpwexpcpp1(v_plack, tau, lam1);
           } else {
             latentResp[i] = -alpha2v[j] + std::log(u_plack / (1.0 - u_plack));
-            survivalT[i] = qtpwexpcpp1(v_plack, tau, lambda2x[j]);
+            survivalT[i] = qtpwexpcpp1(v_plack, tau, lam2);
           }
 
           // dropout time
           u = unif(rng_local);
-          if (trtGrp[i] == 1) dropoutT[i] = qtpwexpcpp1(u, tau, gamma1x[j]);
-          else dropoutT[i] = qtpwexpcpp1(u, tau, gamma2x[j]);
+          if (trtGrp[i] == 1) dropoutT[i] = qtpwexpcpp1(u, tau, gam1);
+          else dropoutT[i] = qtpwexpcpp1(u, tau, gam2);
 
           // treatment discontinuation and ptfu1Time for endpoint 1
           u = unif(rng_local);
           if (trtGrp[i] == 1) {
-            trtDiscT[i] = qtpwexpcpp1(u, tau, delta1x[j]);
+            trtDiscT[i] = qtpwexpcpp1(u, tau, del1);
             ptfu1T[i] = std::min(trtDiscT[i], upper1);
           } else {
-             trtDiscT[i] = qtpwexpcpp1(u, tau, delta2x[j]);
+             trtDiscT[i] = qtpwexpcpp1(u, tau, del2);
              ptfu1T[i] = std::min(trtDiscT[i], upper2);
           }
 
