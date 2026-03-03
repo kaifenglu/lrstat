@@ -126,10 +126,10 @@ DataFrameCpp kmstat1cpp(
     const std::vector<double>& accrualIntensity,
     const std::vector<double>& piecewiseSurvivalTime,
     const std::vector<double>& stratumFraction,
-    const std::vector<std::vector<double>>& lambda1,
-    const std::vector<std::vector<double>>& lambda2,
-    const std::vector<std::vector<double>>& gamma1,
-    const std::vector<std::vector<double>>& gamma2,
+    const FlatMatrix& lambda1,
+    const FlatMatrix& lambda2,
+    const FlatMatrix& gamma1,
+    const FlatMatrix& gamma2,
     const double accrualDuration,
     const double followupTime,
     const bool fixedFollowup) {
@@ -173,25 +173,25 @@ DataFrameCpp kmstat1cpp(
     const double frac = stratumFraction[h];
 
     // subset per-stratum hazards
-    const std::vector<double>& lam1 = lambda1[h];
-    const std::vector<double>& lam2 = lambda2[h];
-    const std::vector<double>& gam1 = gamma1[h];
-    const std::vector<double>& gam2 = gamma2[h];
+    const std::vector<double>& lam1 = flatmatrix_get_column(lambda1, h);
+    const std::vector<double>& lam2 = flatmatrix_get_column(lambda2, h);
+    const std::vector<double>& gam1 = flatmatrix_get_column(gamma1, h);
+    const std::vector<double>& gam2 = flatmatrix_get_column(gamma2, h);
 
     // scale accrualIntensity by stratum fraction
     std::vector<double> accrualIntensity_frac = accrualIntensity;
     for (double& v : accrualIntensity_frac) v *= frac;
 
     // events and dropouts at calendar time
-    auto ne_row = nevent21cpp(
+    auto ne_row = nevent1(
       time, allocationRatioPlanned, accrualTime, accrualIntensity_frac,
       piecewiseSurvivalTime, lam1, lam2, gam1, gam2,
-      accrualDuration, followupTime, maxFollowupTime);
+      accrualDuration, maxFollowupTime);
 
-    auto nd_row = nevent21cpp(
+    auto nd_row = nevent1(
       time, allocationRatioPlanned, accrualTime, accrualIntensity_frac,
       piecewiseSurvivalTime, gam1, gam2, lam1, lam2,   // swapped
-      accrualDuration, followupTime, maxFollowupTime);
+      accrualDuration, maxFollowupTime);
 
     nsubjects[h]  = frac * a;
     nevents1[h]   = ne_row.first;
@@ -1712,8 +1712,10 @@ ListCpp kmsamplesizecpp(
   std::vector<double> zerogam(nintv, 0.0);
   double surv1 = 0.0, surv2 = 0.0;
   for (size_t h = 0; h < nstrata; ++h) {
-    double p1 = patrisk1(milestone, piecewiseSurvivalTime, lambda1x[h], zerogam);
-    double p2 = patrisk1(milestone, piecewiseSurvivalTime, lambda2x[h], zerogam);
+    const std::vector<double>& lam1 = flatmatrix_get_column(lambda1x, h);
+    const std::vector<double>& lam2 = flatmatrix_get_column(lambda2x, h);
+    double p1 = patrisk1(milestone, piecewiseSurvivalTime, lam1, zerogam);
+    double p2 = patrisk1(milestone, piecewiseSurvivalTime, lam2, zerogam);
     surv1 += stratumFraction[h] * p1;
     surv2 += stratumFraction[h] * p2;
   }
@@ -1924,7 +1926,7 @@ ListCpp kmsamplesizecpp(
   auto f_surv = [&](double aval)->double {
     double surv1 = 0.0;
     for (std::size_t h = 0; h < nstrata; ++h) {
-      auto lam1H0 = lambda2x[h]; // build per-stratum scaled lambda
+      std::vector<double> lam1H0 =  flatmatrix_get_column(lambda2x, h);
       for (double &v : lam1H0) v *= aval;
       double p = patrisk1(milestone, piecewiseSurvivalTime, lam1H0, zerogam);
       surv1 += stratumFraction[h] * p;
@@ -2126,9 +2128,6 @@ ListCpp kmsamplesizecpp(
 //' @inheritParams param_accrualDuration
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
-//' @param interval The interval to search for the solution of
-//'   accrualDuration, followupTime, or the proportionality constant
-//'   of accrualIntensity. Defaults to \code{c(0.001, 240)}.
 //' @param spendingTime A vector of length \code{kMax} for the error spending
 //'   time at each analysis. Defaults to missing, in which case, it is the
 //'   same as \code{informationRates}.
@@ -3289,7 +3288,8 @@ ListCpp kmsamplesize1scpp(
   std::vector<double> zerogam(nintv, 0.0);
   double surv = 0.0;
   for (size_t h = 0; h < nstrata; ++h) {
-    double p = patrisk1(milestone, piecewiseSurvivalTime, lambdax[h], zerogam);
+    const std::vector<double>& lam = flatmatrix_get_column(lambdax, h);
+    double p = patrisk1(milestone, piecewiseSurvivalTime, lam, zerogam);
     surv += stratumFraction[h] * p;
   }
   double theta1 = surv - survH0;
@@ -3498,7 +3498,7 @@ ListCpp kmsamplesize1scpp(
   auto f_surv = [&](double aval)->double {
     double surv = 0.0;
     for (std::size_t h = 0; h < nstrata; ++h) {
-      auto lamH0 = lambdax[h]; // build per-stratum scaled lambda
+      std::vector<double> lamH0 = flatmatrix_get_column(lambdax, h);
       for (double &v : lamH0) v *= aval;
       double p = patrisk1(milestone, piecewiseSurvivalTime, lamH0, zerogam);
       surv += stratumFraction[h] * p;
@@ -3701,9 +3701,6 @@ ListCpp kmsamplesize1scpp(
 //' @inheritParams param_accrualDuration
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
-//' @param interval The interval to search for the solution of
-//'   accrualDuration, followupDuration, or the proportionality constant
-//'   of accrualIntensity. Defaults to \code{c(0.001, 240)}.
 //' @param spendingTime A vector of length \code{kMax} for the error spending
 //'   time at each analysis. Defaults to missing, in which case, it is the
 //'   same as \code{informationRates}.
@@ -4931,8 +4928,10 @@ ListCpp kmsamplesizeequivcpp(
   std::vector<double> zerogam(nintv, 0.0);
   double surv1 = 0.0, surv2 = 0.0;
   for (size_t h = 0; h < nstrata; ++h) {
-    double p1 = patrisk1(milestone, piecewiseSurvivalTime, lambda1x[h], zerogam);
-    double p2 = patrisk1(milestone, piecewiseSurvivalTime, lambda2x[h], zerogam);
+    const std::vector<double>& lam1 = flatmatrix_get_column(lambda1x, h);
+    const std::vector<double>& lam2 = flatmatrix_get_column(lambda2x, h);
+    double p1 = patrisk1(milestone, piecewiseSurvivalTime, lam1, zerogam);
+    double p2 = patrisk1(milestone, piecewiseSurvivalTime, lam2, zerogam);
     surv1 += stratumFraction[h] * p1;
     surv2 += stratumFraction[h] * p2;
   }
@@ -5162,9 +5161,6 @@ ListCpp kmsamplesizeequivcpp(
 //' @inheritParams param_accrualDuration
 //' @inheritParams param_followupTime
 //' @inheritParams param_fixedFollowup
-//' @param interval The interval to search for the solution of
-//'   accrualDuration, followupDuration, or the proportionality constant
-//'   of accrualIntensity. Defaults to \code{c(0.001, 240)}.
 //' @param spendingTime A vector of length \code{kMax} for the error spending
 //'   time at each analysis. Defaults to missing, in which case, it is the
 //'   same as \code{informationRates}.
