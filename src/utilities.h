@@ -94,11 +94,11 @@ std::vector<double> expand1(
     const size_t nintervals,
     const char* name);
 
-// expand_stratified: expand stratified vector to full length
-std::vector<std::vector<double>> expand_stratified(
+// expand_stratified: expand to a matrix with nintv rows and nstrata columns
+FlatMatrix expand_stratified(
     const std::vector<double>& v,
     const size_t nstrata,
-    const size_t nintervals,
+    const size_t nintv,
     const char* name);
 
 
