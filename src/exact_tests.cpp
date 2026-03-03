@@ -298,6 +298,7 @@ OneSampleExactResult powerOneRateExactcpp(
     int rstar = static_cast<int>(std::floor(qd + 1e-12));
     double c_at_rstar = boost::math::cdf(d0, rstar);
     int r = (c_at_rstar <= alpha) ? rstar : (rstar - 1);
+    out.r = r;
 
     out.attainedAlpha = boost::math::cdf(d0, r);
 
