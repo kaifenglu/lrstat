@@ -257,8 +257,6 @@ pwexpcuts <- function(S, ..., tol = 0.0001) {
 #' @inheritParams param_gamma2_stratified
 #' @inheritParams param_followupTime
 #' @inheritParams param_fixedFollowup
-#' @param interval The interval to search for the solution of
-#'   followupTime. Defaults to \code{c(0.001, 240)}.
 #' @param spendingTime A vector of length \code{kMax} for the error spending
 #'   time at each analysis. Defaults to missing, in which case, it is the
 #'   same as \code{informationRates}.
@@ -374,7 +372,6 @@ lrschoenfeld <- function(
     gamma2 = 0L,
     followupTime = NA_real_,
     fixedFollowup = 0L,
-    interval = as.numeric(c(0.001, 240)),
     spendingTime = NA_real_,
     rounding = 1L,
     calibrate = 1L,
@@ -420,7 +417,7 @@ lrschoenfeld <- function(
       lambda1, lambda2, gamma1, gamma2,
       accrualDuration, followupTime,
       fixedFollowup, 0, 0, 0, "schoenfeld",
-      interval, spendingTime, rounding)
+      spendingTime, rounding)
 
     lrp1 <- lrc1$resultsUnderH1
   } else { # look for accrual duration directly
@@ -437,7 +434,7 @@ lrschoenfeld <- function(
       lambda1, lambda2, gamma1, gamma2,
       NA, followupTime,
       fixedFollowup, 0, 0, 0, "schoenfeld",
-      interval, spendingTime, rounding)
+      spendingTime, rounding)
 
     lrp1 <- lrc1$resultsUnderH1
     accrualDuration <- lrp1$overallResults$accrualDuration
