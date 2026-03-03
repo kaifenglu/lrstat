@@ -28,10 +28,6 @@ cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73",
 # number of time points for power curves
 ntpts = 11
 
-# Bracket interval for root finding when the calculation target is
-# accrual or follow-up duration
-interval = c(0.001, 120)
-
 
 # reduced style fileInput
 fileInputNoExtra<-function(inputId, label, multiple = FALSE, accept = NULL,
@@ -1118,7 +1114,6 @@ server <- function(input, output, session) {
           rho1 = rho1(),
           rho2 = rho2(),
           typeOfComputation = typeOfComputation(),
-          interval = interval,
           rounding = input$rounding)
       }, error = function(e) {
         shiny:::reactiveStop(conditionMessage(e))
@@ -1156,7 +1151,6 @@ server <- function(input, output, session) {
           rho1 = rho1(),
           rho2 = rho2(),
           typeOfComputation = typeOfComputation(),
-          interval = interval,
           rounding = input$rounding)
       }, error = function(e) {
         shiny:::reactiveStop(conditionMessage(e))
@@ -1211,7 +1205,6 @@ server <- function(input, output, session) {
         rho2 = a$rho2,
         estimateHazardRatio = 0,
         typeOfComputation = typeOfComputation(),
-        interval = interval,
         rounding = input$rounding
       )$resultsUnderH1$overallResults$followupTime
     } else {
@@ -1338,7 +1331,6 @@ server <- function(input, output, session) {
       rho2 = a$rho2,
       estimateHazardRatio = 0,
       typeOfComputation = typeOfComputation(),
-      interval = interval,
       rounding = input$rounding
     )$resultsUnderH1$overallResults$accrualDuration
   })
@@ -1469,7 +1461,6 @@ server <- function(input, output, session) {
       rho2 = a$rho2,
       estimateHazardRatio = 0,
       typeOfComputation = typeOfComputation(),
-      interval = interval,
       rounding = input$rounding
     )$resultsUnderH1$overallResults$accrualDuration
   })
@@ -1530,7 +1521,6 @@ server <- function(input, output, session) {
             rho2 = a$rho2,
             estimateHazardRatio = 0,
             typeOfComputation = typeOfComputation(),
-            interval = interval,
             rounding = input$rounding)$resultsUnderH1
 
           N[i] = lrx$overallResults$numberOfSubjects
@@ -1590,7 +1580,6 @@ server <- function(input, output, session) {
             rho2 = a$rho2,
             estimateHazardRatio = 0,
             typeOfComputation = typeOfComputation(),
-            interval = interval,
             rounding = input$rounding)$resultsUnderH1
 
           N[i] = lrx$overallResults$numberOfSubjects
@@ -2496,7 +2485,6 @@ server <- function(input, output, session) {
       str13 <- paste0("accrualDuration = NA,")
       str14 <- paste0("followupTime = ", a$followupTime, ",")
       str17 <- paste0("typeOfComputation = '", a$typeOfComputation, "',")
-      str18 <- paste0("interval = c(", paste(interval, collapse=", "), ")))")
 
       if (a$kMax == 1) {
         paste(str0, str1, str2, str6, str9, str10,
@@ -2505,7 +2493,7 @@ server <- function(input, output, session) {
       } else {
         paste(str0, str1, str2, str3, str6, str7, str8, str9, str10,
               str11, str12, str13, str14, str15, str16, str17,
-              str18, sep = '<br/>')
+              sep = '<br/>')
       }
     } else if (input$target == 'followupTime') {
       str0 <- paste0("(lr <- lrsamplesize(")
@@ -2514,17 +2502,16 @@ server <- function(input, output, session) {
       str13 <- paste0("accrualDuration = ", a$accrualDuration, ",")
       str14 <- paste0("followupTime = NA,")
       str17 <- paste0("typeOfComputation = '", a$typeOfComputation, "',")
-      str18 <- paste0("interval = c(", paste(interval, collapse=", "), ")),")
-      str19 <- paste("rounding = ", input$rounding, "))")
+      str18 <- paste("rounding = ", input$rounding, "))")
 
       if (a$kMax == 1) {
         paste(str0, str1, str2, str6, str9, str10,
               str11, str12, str13, str14, str15, str16, str17,
-              str18,  str19, sep = '<br/>')
+              str18, sep = '<br/>')
       } else {
         paste(str0, str1, str2, str3, str6, str7, str8, str9, str10,
               str11, str12, str13, str14, str15, str16, str17,
-              str18, str19, sep = '<br/>')
+              str18, sep = '<br/>')
       }
     }
 
