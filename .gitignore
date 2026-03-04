@@ -1,9 +1,7 @@
 inst/doc
 .Rproj.user
 lrstat.Rcheck
-man/
 notes/
-NAMESPACE
 R/RcppExports.R
 src/RcppExports.cpp
 src/*.o

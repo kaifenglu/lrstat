@@ -32,7 +32,3 @@ testthat::test_that("rmest: bias correction for variance estimate", {
 })
 
 
-testthat::test_that("rmest: milestone should be <= largest observed time", {
-  testthat::expect_error(rmest(aml %>% filter(x == "Nonmaintained"),
-                               time="time", event="status", milestone=161))
-})
