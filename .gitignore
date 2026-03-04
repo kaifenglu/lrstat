@@ -1,9 +1,8 @@
-inst/doc
 .Rproj.user
+.Rhistory
+.RData
 lrstat.Rcheck
 notes/
-R/RcppExports.R
-src/RcppExports.cpp
 src/*.o
 src/*.dll
 

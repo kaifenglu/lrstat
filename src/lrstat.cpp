@@ -132,7 +132,7 @@ Rcpp::NumericVector kmsurv(
   auto gam1 = Rcpp::as<std::vector<double>>(gamma1);
   auto gam2 = Rcpp::as<std::vector<double>>(gamma2);
 
-  size_t J = static_cast<int>(piecewiseSurvivalTime.size());
+  size_t J = piecewiseSurvivalTime.size();
   auto lambda1x = expand1(lam1, J, "lambda1");
   auto lambda2x = expand1(lam2, J, "lambda2");
   auto gamma1x = expand1(gam1, J, "gamma1");
