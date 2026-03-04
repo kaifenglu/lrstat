@@ -38,6 +38,8 @@
 #' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
 #'   stage to extract.
 #' @param seed The seed to reproduce the simulation results.
+#' @param nthreads The number of threads to use in simulations (0 means
+#'   the default RcppParallel behavior).
 #'
 #' @return An S3 class \code{lrsim} object with 3 components:
 #'
@@ -327,6 +329,8 @@ lrsim <- function(
 #' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
 #'   stage to extract.
 #' @param seed The seed to reproduce the simulation results.
+#' @param nthreads The number of threads to use in simulations (0 means
+#'   the default RcppParallel behavior).
 #'
 #' @return A list with 2 components:
 #'
@@ -573,6 +577,8 @@ lrsim3a <- function(
 #' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
 #'   stage to extract.
 #' @param seed The seed to reproduce the simulation results.
+#' @param nthreads The number of threads to use in simulations (0 means
+#'   the default RcppParallel behavior).
 #'
 #' @return A list with 2 components:
 #'
@@ -831,6 +837,8 @@ lrsim2e <- function(
 #' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
 #'   stage to extract.
 #' @param seed The seed to reproduce the simulation results.
+#' @param nthreads The number of threads to use in simulations (0 means
+#'   the default RcppParallel behavior).
 #'
 #' @return A list with 2 components:
 #'
@@ -1099,6 +1107,8 @@ lrsim2e3a <- function(
 #' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
 #'   stage to extract.
 #' @param seed The seed to reproduce the simulation results.
+#' @param nthreads The number of threads to use in simulations (0 means
+#'   the default RcppParallel behavior).
 #'
 #' @return A list with 2 components:
 #'
@@ -1334,6 +1344,8 @@ lrsimsub <- function(
 #' @param maxNumberOfRawDatasetsPerStage Number of subject-level datasets
 #'   to retain per stage. Set to 0 to skip raw data saving.
 #' @param seed The seed to reproduce the simulation results.
+#' @param nthreads The number of threads to use in simulations (0 means
+#'   the default RcppParallel behavior).
 #'
 #' @details We consider dual primary endpoints with endpoint 1 being a
 #'   binary endpoint and endpoint 2 being a time-to-event endpoint.
