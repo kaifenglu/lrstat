@@ -398,8 +398,8 @@ DataFrameCpp getRCIcpp(
   };
 
   double pvalue;
-  const double lo_p = 0.000001;
-  const double hi_p = 0.999999;
+  double lo_p = 0.000001;
+  double hi_p = 0.999999;
   double f_lo = f(lo_p);
   if (f_lo > 0.0) {
     pvalue = lo_p;
@@ -566,7 +566,7 @@ std::pair<int, double> f_bwimage(const double theta,
   std::vector<double> I1(K1);
 
   for (size_t l = 0; l < K1; ++l) {
-    const double ratio = I[L-1] / I[l + L];
+    double ratio = I[L-1] / I[l + L];
     b1[l] = (b[l + L] - std::sqrt(ratio) * zL) / std::sqrt(1.0 - ratio);
     I1[l] = I[l + L] - I[L - 1];
   }
@@ -1419,8 +1419,8 @@ DataFrameCpp getADRCIcpp(
       return c1 - u_local[J - 1];
     };
 
-    const double p_lo = 0.000001;
-    const double p_hi = 0.999999;
+    double p_lo = 0.000001;
+    double p_hi = 0.999999;
     double f_lo = f_alpha(p_lo);
     if (f_lo > 0.0) {
       pvalue = p_lo;
