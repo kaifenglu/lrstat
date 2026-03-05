@@ -23,7 +23,7 @@ ListCpp updateGraphcpp(const std::vector<double>& w,
                        const std::vector<int>& I,
                        const int j) {
 
-  const int m = static_cast<int>(w.size());
+  size_t m = w.size();
 
   // Validation: w must be nonnegative
   if (std::any_of(w.begin(), w.end(), [](double val) { return val < 0.0; })) {
@@ -42,7 +42,7 @@ ListCpp updateGraphcpp(const std::vector<double>& w,
   }
 
   // Validation: G must be nonnegative
-  for (int i = 0; i < m * m; ++i) {
+  for (size_t i = 0; i < m * m; ++i) {
     if (G.data[i] < 0.0) {
       throw std::invalid_argument("G must be nonnegative");
     }
@@ -50,19 +50,19 @@ ListCpp updateGraphcpp(const std::vector<double>& w,
 
   // Validation: Row sums of G must be <= 1
   std::vector<double> rowsum(m, 0.0);
-  for (int j = 0; j < m; ++j) {
-    for (int i = 0; i < m; ++i) {
+  for (size_t j = 0; j < m; ++j) {
+    for (size_t i = 0; i < m; ++i) {
       rowsum[i] += G(i, j);
     }
   }
-  for (int i = 0; i < m; ++i) {
+  for (size_t i = 0; i < m; ++i) {
     if (rowsum[i] > 1.0 + 1e-8) {
       throw std::invalid_argument("Row sums of G must be less than or equal to 1");
     }
   }
 
   // Validation: Diagonal elements of G must be 0
-  for (int i = 0; i < m; ++i) {
+  for (size_t i = 0; i < m; ++i) {
     if (G(i, i) != 0.0) {
       throw std::invalid_argument("Diagonal elements of G must be equal to 0");
     }
@@ -74,7 +74,7 @@ ListCpp updateGraphcpp(const std::vector<double>& w,
   std::vector<int> I_new; I_new.reserve(I.size()); // new I after removing j
   std::vector<int> I_zero_new; I_zero_new.reserve(I.size());
   for (int val : I) {
-    if (val < 1 || val > m) {
+    if (val < 1 || val > static_cast<int>(m)) {
       throw std::invalid_argument("Elements of I must be integers between 1 and m.");
     }
     int idx = val - 1;
@@ -170,8 +170,8 @@ FlatMatrix fadjpboncpp1(const std::vector<double>& w,
                         const FlatMatrix& G,
                         const FlatMatrix& p) {
 
-  const int m = static_cast<int>(w.size());
-  const int iters = p.nrow;
+  size_t m = w.size();
+  size_t iters = p.nrow;
 
   // Validation: w must be nonnegative
   if (std::any_of(w.begin(), w.end(), [](double val) { return val < 0.0; })) {
@@ -190,7 +190,7 @@ FlatMatrix fadjpboncpp1(const std::vector<double>& w,
   }
 
   // Validation: G must be nonnegative
-  for (int i = 0; i < m * m; ++i) {
+  for (size_t i = 0; i < m * m; ++i) {
     if (G.data[i] < 0.0) {
       throw std::invalid_argument("G must be nonnegative");
     }
@@ -198,19 +198,19 @@ FlatMatrix fadjpboncpp1(const std::vector<double>& w,
 
   // Validation: Row sums of G must be <= 1
   std::vector<double> rowsum(m, 0.0);
-  for (int j = 0; j < m; ++j) {
-    for (int i = 0; i < m; ++i) {
+  for (size_t j = 0; j < m; ++j) {
+    for (size_t i = 0; i < m; ++i) {
       rowsum[i] += G(i, j);
     }
   }
-  for (int i = 0; i < m; ++i) {
+  for (size_t i = 0; i < m; ++i) {
     if (rowsum[i] > 1.0 + 1e-8) {
       throw std::invalid_argument("Row sums of G must be less than or equal to 1");
     }
   }
 
   // Validation: Diagonal elements of G must be 0
-  for (int i = 0; i < m; ++i) {
+  for (size_t i = 0; i < m; ++i) {
     if (G(i, i) != 0.0) {
       throw std::invalid_argument("Diagonal elements of G must be equal to 0");
     }
@@ -228,26 +228,26 @@ FlatMatrix fadjpboncpp1(const std::vector<double>& w,
   std::vector<double> pvalues(m);  // raw p-values
   std::vector<double> wx(m);    // dynamic weights
   std::vector<double> denom(m); // denom reused
-  std::vector<int> active;      // currently active hypotheses
+  std::vector<size_t> active;      // currently active hypotheses
   active.reserve(m);
   std::vector<int> pos(m, -1); // position map: pos[idx] = index in active or -1
   FlatMatrix g(m, m), g1(m, m);  // dynamic transition matrices
 
   // Main outer loop: per-iteration (each row of p)
-  for (int iter = 0; iter < iters; ++iter) {
+  for (size_t iter = 0; iter < iters; ++iter) {
     // Reset for this iteration
     wx = w;  // copy w
     g = G;   // copy G
     std::fill(r.begin(), r.end(), 0);
 
     // Extract row iter from p into pvalues
-    for (int i = 0; i < m; ++i) {
+    for (size_t i = 0; i < m; ++i) {
       pvalues[i] = p(iter, i);
     }
 
     // build initial active list and pos map
     active.clear();
-    for (int idx = 0; idx < m; ++idx) {
+    for (size_t idx = 0; idx < m; ++idx) {
       active.push_back(idx);
       pos[idx] = idx;
     }
@@ -258,12 +258,12 @@ FlatMatrix fadjpboncpp1(const std::vector<double>& w,
     g1.fill(0.0);
 
     // Steps: reject one hypothesis at a time
-    for (int step = 0; step < m; ++step) {
+    for (size_t step = 0; step < m; ++step) {
 
       // Find min ratio among active indices (ignoring zero weights)
       double min_q = POS_INF;
       int j = -1;
-      for (int i : active) {
+      for (size_t i : active) {
         double wxi = wx[i];
         if (wxi > 0.0) {
           double qval = pvalues[i] / wxi;
@@ -298,20 +298,20 @@ FlatMatrix fadjpboncpp1(const std::vector<double>& w,
 
       // Update weights wx for remaining active indices
       double wxj = wx[j];
-      for (int l : active) {
+      for (size_t l : active) {
         wx[l] += wxj * g(j, l);
       }
       wx[j] = 0.0;
 
       // Precompute denom for surviving l entries only
-      for (int l : active) {
+      for (size_t l : active) {
         denom[l] =  1.0 - g(l, j) * g(j, l);
       }
 
       // Build new g1 columns only for remaining k in active and l in active
-      for (int k : active) {
+      for (size_t k : active) {
         double g_jk = g(j, k);
-        for (int l : active) {
+        for (size_t l : active) {
           if (l == k) continue;
           double dl = denom[l];
           if (dl > 1e-12) {
@@ -343,10 +343,10 @@ Rcpp::NumericMatrix fadjpboncpp(const Rcpp::NumericVector& w,
 // Helper to compute the full weight matrix for graphical approaches
 FlatMatrix fwgtmatcpp(const std::vector<double>& w,
                       const FlatMatrix& G) {
-  int m = static_cast<int>(w.size());
-  int ntests = (1 << m) - 1;
-  const int gtr_nrow = (ntests + 1) / 2;
-  const int gtr_ncol = m * m;
+  size_t m = w.size();
+  size_t ntests = (1 << m) - 1;
+  size_t gtr_nrow = (ntests + 1) / 2;
+  size_t gtr_ncol = m * m;
 
   // Validation: w must be nonnegative
   if (std::any_of(w.begin(), w.end(), [](double val) { return val < 0.0; })) {
@@ -365,7 +365,7 @@ FlatMatrix fwgtmatcpp(const std::vector<double>& w,
   }
 
   // Validation: G must be nonnegative
-  for (int i = 0; i < m * m; ++i) {
+  for (size_t i = 0; i < m * m; ++i) {
     if (G.data[i] < 0.0) {
       throw std::invalid_argument("G must be nonnegative");
     }
@@ -373,19 +373,19 @@ FlatMatrix fwgtmatcpp(const std::vector<double>& w,
 
   // Validation: Row sums of G must be <= 1
   std::vector<double> rowsum(m, 0.0);
-  for (int j = 0; j < m; ++j) {
-    for (int i = 0; i < m; ++i) {
+  for (size_t j = 0; j < m; ++j) {
+    for (size_t i = 0; i < m; ++i) {
       rowsum[i] += G(i, j);
     }
   }
-  for (int i = 0; i < m; ++i) {
+  for (size_t i = 0; i < m; ++i) {
     if (rowsum[i] > 1.0 + 1e-8) {
       throw std::invalid_argument("Row sums of G must be less than or equal to 1");
     }
   }
 
   // Validation: Diagonal elements of G must be 0
-  for (int i = 0; i < m; ++i) {
+  for (size_t i = 0; i < m; ++i) {
     if (G(i, i) != 0.0) {
       throw std::invalid_argument("Diagonal elements of G must be equal to 0");
     }
@@ -398,22 +398,22 @@ FlatMatrix fwgtmatcpp(const std::vector<double>& w,
   FlatMatrix gtrmat(gtr_nrow, gtr_ncol); // store first half of transition matrix
   FlatMatrix wgtmat(ntests, m); // output
 
-  std::vector<int> active; // indices of active hypotheses in intersection
+  std::vector<size_t> active; // indices of active hypotheses in intersection
   active.reserve(m);
 
   // bitmask for m bits, used to flip bits and find super set
   const int mask = (1 << m) - 1;
   std::vector<double> denom(m); // temp denominator for transition matrix update
 
-  for (int i = 0; i < ntests; ++i) {
+  for (size_t i = 0; i < ntests; ++i) {
     if (i >= 1) {
       int number = ntests - i;  // original mapping
 
       // Build list of active indices
       active.clear();
-      int j = 0; // index of minimum active hypothesis
+      size_t j = 0; // index of minimum active hypothesis
       bool found_zero = false;
-      for (int k = 0; k < m; ++k) {
+      for (size_t k = 0; k < m; ++k) {
         int bit = (number >> (m - 1 - k)) & 1;
         if (bit) active.push_back(k);
         else if (!found_zero) { j = k; found_zero = true; }
@@ -421,16 +421,16 @@ FlatMatrix fwgtmatcpp(const std::vector<double>& w,
       if (!found_zero) j = 0;
 
       // index of the super set, with j-th bit set to 0 and others flipped
-      int ip = ((~number) & mask) & ~(1 << (m - 1 - j));
+      size_t ip = ((~number) & mask) & ~(1 << (m - 1 - j));
 
       // Load the weights from the super set
-      for (int k = 0; k < m; ++k) {
+      for (size_t k = 0; k < m; ++k) {
         wx[k] = wgtmat(ip, k);
       }
 
       // Load the transition matrix from the super set
-      for (int k = 0; k < m; ++k) {
-        for (int l = 0; l < m; ++l) {
+      for (size_t k = 0; k < m; ++k) {
+        for (size_t l = 0; l < m; ++l) {
           g(l, k) = gtrmat(ip, k * m + l);
         }
       }
@@ -438,21 +438,21 @@ FlatMatrix fwgtmatcpp(const std::vector<double>& w,
       // Update the weights
       double wxj = wx[j];
       if (wxj != 0.0) {
-        for (int k : active) {
+        for (size_t k : active) {
           wx[k] += wxj * g(j, k);
         }
         wx[j] = 0.0;
       }
 
       // Update the transition matrix
-      for (int l : active) {
+      for (size_t l : active) {
         denom[l] =  1.0 - g(l, j) * g(j, l);
       }
 
       g1.fill(0.0); // ensure g1 is zeroed before use
-      for (int k : active) {
+      for (size_t k : active) {
         double g_jk = g(j, k);
-        for (int l : active) {
+        for (size_t l : active) {
           if (l == k) continue;
           double dl = denom[l];
           if (dl > 1e-12) {
@@ -465,14 +465,14 @@ FlatMatrix fwgtmatcpp(const std::vector<double>& w,
     }
 
     // Save the weights
-    for (int k = 0; k < m; ++k) {
+    for (size_t k = 0; k < m; ++k) {
       wgtmat(i, k) = wx[k];
     }
 
     // Save the transition matrix
     if (i < gtr_nrow) {
-      for (int k = 0; k < m; ++k) {
-        for (int l = 0; l < m; ++l) {
+      for (size_t k = 0; k < m; ++k) {
+        for (size_t l = 0; l < m; ++l) {
           gtrmat(i, k * m + l) = g(l, k);
         }
       }
@@ -515,10 +515,10 @@ FlatMatrix fadjpsimcpp1(const FlatMatrix& wgtmat,
                         const FlatMatrix& p,
                         const BoolMatrix& family) {
 
-  const int ntests = wgtmat.nrow;
-  const int m = wgtmat.ncol;
-  const int niters = p.nrow;
-  const int nfams = family.nrow;
+  size_t ntests = wgtmat.nrow;
+  size_t m = wgtmat.ncol;
+  size_t niters = p.nrow;
+  size_t nfams = family.nrow;
 
   if (family.ncol != m) {
     throw std::invalid_argument(
@@ -526,10 +526,10 @@ FlatMatrix fadjpsimcpp1(const FlatMatrix& wgtmat,
   }
 
   // Precompute hyps in each family (static)
-  std::vector<std::vector<int>> hyps_in_family(nfams);
-  for (int j = 0; j < m; ++j) {
+  std::vector<std::vector<size_t>> hyps_in_family(nfams);
+  for (size_t j = 0; j < m; ++j) {
     int found = 0;
-    for (int k = 0; k < nfams; ++k) {
+    for (size_t k = 0; k < nfams; ++k) {
       if (family(k, j)) {
         hyps_in_family[k].push_back(j);
         ++found;
@@ -543,19 +543,19 @@ FlatMatrix fadjpsimcpp1(const FlatMatrix& wgtmat,
 
   // Precompute, for each subset i, the active hypotheses (hyp) and
   // the family block sizes nhyps1
-  std::vector<std::vector<int>> subset_hyp(ntests);
-  std::vector<std::vector<int>> subset_nhyps1(ntests);
+  std::vector<std::vector<size_t>> subset_hyp(ntests);
+  std::vector<std::vector<size_t>> subset_nhyps1(ntests);
 
-  for (int i = 0; i < ntests; ++i) {
-    int number = ntests - i; // MSB-first bit convention as original
+  for (size_t i = 0; i < ntests; ++i) {
+    size_t number = ntests - i; // MSB-first bit convention as original
 
-    std::vector<int> nhyps0(nfams, 0);
-    std::vector<int>& hyp = subset_hyp[i];
+    std::vector<size_t> nhyps0(nfams, 0);
+    std::vector<size_t>& hyp = subset_hyp[i];
     hyp.clear();
-    for (int j = 0; j < m; ++j) {
+    for (size_t j = 0; j < m; ++j) {
       int bit = (number >> (m - 1 - j)) & 1;
       if (!bit) continue;
-      for (int k = 0; k < nfams; ++k) {
+      for (size_t k = 0; k < nfams; ++k) {
         if (family(k, j)) {
           nhyps0[k]++;
           hyp.push_back(j);
@@ -563,9 +563,9 @@ FlatMatrix fadjpsimcpp1(const FlatMatrix& wgtmat,
         }
       }
     }
-    std::vector<int>& nh1 = subset_nhyps1[i];
+    std::vector<size_t>& nh1 = subset_nhyps1[i];
     nh1.clear();
-    for (int k = 0; k < nfams; ++k) {
+    for (size_t k = 0; k < nfams; ++k) {
       if (nhyps0[k] > 0) nh1.push_back(nhyps0[k]);
     }
   }
@@ -577,42 +577,42 @@ FlatMatrix fadjpsimcpp1(const FlatMatrix& wgtmat,
   std::vector<double> wbuf; wbuf.reserve(m);
   std::vector<double> pbuf; pbuf.reserve(m);
   std::vector<double> cw;   cw.reserve(m);
-  std::vector<int> idx;     idx.reserve(m);
+  std::vector<size_t> idx;     idx.reserve(m);
   std::vector<double> pinter_col(niters);
 
   // Main loop over subsets
-  for (int i = 0; i < ntests; ++i) {
-    const std::vector<int>& hyp = subset_hyp[i];
-    const std::vector<int>& nhyps1 = subset_nhyps1[i];
-    const int nhyps = static_cast<int>(hyp.size());
+  for (size_t i = 0; i < ntests; ++i) {
+    std::vector<size_t>& hyp = subset_hyp[i];
+    std::vector<size_t>& nhyps1 = subset_nhyps1[i];
+    size_t nhyps = hyp.size();
 
     // Extract weights wx for this subset from wgtmat row i (column-major)
     wbuf.assign(nhyps, 0.0);
-    for (int t = 0; t < nhyps; ++t) {
-      int col = hyp[t];
+    for (size_t t = 0; t < nhyps; ++t) {
+      size_t col = hyp[t];
       wbuf[t] = wgtmat(i, col);
     }
 
     // For each iteration (row of p), compute pinter(iter, i)
-    for (int iter = 0; iter < niters; ++iter) {
+    for (size_t iter = 0; iter < niters; ++iter) {
       // Extract p-values for active hypotheses in the same hyp order
       pbuf.resize(nhyps);
       cw.assign(nhyps, 0.0);
-      for (int t = 0; t < nhyps; ++t) {
-        int col = hyp[t];
+      for (size_t t = 0; t < nhyps; ++t) {
+        size_t col = hyp[t];
         pbuf[t] = p(iter, col);
       }
 
       // Sort p-values within each active family block
       // (nhyps1 gives block sizes in family order).
-      int s = 0;
-      for (int block = 0; block < (int)nhyps1.size(); ++block) {
-        int t = nhyps1[block];
+      size_t s = 0;
+      for (size_t block = 0; block < nhyps1.size(); ++block) {
+        size_t t = nhyps1[block];
         // snapshot original block to avoid in-place overwrite corruption
         // p1 and w1 are small (<= m) and allocated on the heap but
         // re-used across iterations
         std::vector<double> p1(t), w1(t); // within family block
-        for (int u = 0; u < t; ++u) {
+        for (size_t u = 0; u < t; ++u) {
           p1[u] = pbuf[s + u];
           w1[u] = wbuf[s + u];
         }
@@ -625,8 +625,8 @@ FlatMatrix fadjpsimcpp1(const FlatMatrix& wgtmat,
 
         // copy sorted p and compute cumulative weights from the snapshot
         double cum = 0.0;
-        for (int j = 0; j < t; ++j) {
-          int src = idx[j];
+        for (size_t j = 0; j < t; ++j) {
+          size_t src = idx[j];
           double pv = p1[src];
           double wv = w1[src];
           cum += wv;
@@ -638,7 +638,7 @@ FlatMatrix fadjpsimcpp1(const FlatMatrix& wgtmat,
 
       // compute q = min_j pbuf[j] / cw[j] ignoring cw==0
       double q = 1.0;
-      for (int j = 0; j < nhyps; ++j) {
+      for (size_t j = 0; j < nhyps; ++j) {
         double cj = cw[j];
         if (cj > 0.0) {
           double ratio = pbuf[j] / cj;
@@ -649,10 +649,10 @@ FlatMatrix fadjpsimcpp1(const FlatMatrix& wgtmat,
     } // end iter loop
 
     // Update padj columns for active hypotheses (each hyp[t] gets max over subsets)
-    for (int t = 0; t < nhyps; ++t) {
-      int col = hyp[t];
+    for (size_t t = 0; t < nhyps; ++t) {
+      size_t col = hyp[t];
       double* padj_col = &padj.data[col * niters]; // contiguous column
-      for (int iter = 0; iter < niters; ++iter) {
+      for (size_t iter = 0; iter < niters; ++iter) {
         double v = pinter_col[iter];
         if (v > padj_col[iter]) padj_col[iter] = v;
       }
@@ -689,6 +689,7 @@ FlatMatrix repeatedPValuecpp1(
   if (kMax <= 0) {
     throw std::invalid_argument("kMax must be a positive integer");
   }
+  size_t K = static_cast<size_t>(kMax);
 
   // Convert typeAlphaSpending to lowercase
   std::string asf = typeAlphaSpending;
@@ -717,10 +718,10 @@ FlatMatrix repeatedPValuecpp1(
   }
 
   // Validation: dimensions of p and information
-  int B = p.nrow;
-  int k1 = p.ncol;
+  size_t B = p.nrow;
+  size_t k1 = p.ncol;
 
-  if (k1 > kMax) {
+  if (k1 > K) {
     throw std::invalid_argument("Number of columns in p must not exceed kMax");
   }
 
@@ -741,7 +742,7 @@ FlatMatrix repeatedPValuecpp1(
   } else {
     // information.nrow == 1 -> broadcast the single row to all B rows
     // For each column k, value = in_ptr[k], destination column is info_ptr + k*B
-    for (int k = 0; k < k1; ++k) {
+    for (size_t k = 0; k < k1; ++k) {
       double v = in_ptr[k];                    // source scalar for column k
       double* dst_col = info_ptr + k * B;      // column-major base
       std::fill_n(dst_col, B, v);              // efficient bulk write
@@ -768,7 +769,7 @@ FlatMatrix repeatedPValuecpp1(
     } else {
       // spendingTime.nrow == 1 -> broadcast the single row to all B rows
       // For each column k, value = sp_ptr[k], destination column is spend_ptr + k*B
-      for (int k = 0; k < k1; ++k) {
+      for (size_t k = 0; k < k1; ++k) {
         double v = sp_ptr[k];                    // source scalar for column k
         double* dst_col = spend_ptr + k * B;     // column-major base
         std::fill_n(dst_col, B, v);              // efficient bulk write
@@ -777,9 +778,9 @@ FlatMatrix repeatedPValuecpp1(
   }
 
 
-  auto f = [&](const int b)-> std::vector<double> {
+  auto f = [&](const size_t b)-> std::vector<double> {
     std::vector<double> p_vec(k1), i_vec(k1), s_vec(k1);
-    for (int k = 0; k < k1; ++k) {
+    for (size_t k = 0; k < k1; ++k) {
       p_vec[k] = p(b, k);
       i_vec[k] = info(b, k);
       s_vec[k] = spendTime(b, k);
@@ -829,14 +830,14 @@ FlatMatrix repeatedPValuecpp1(
 
 
     // Determine L based on maxInformation and spendingTime
-    int L;
+    size_t L;
     if (all_na) {  // use information rates
       // Find if any information >= maxInformation
       auto it = std::lower_bound(i_vec.begin(), i_vec.end(), maxInformation);
       if (it == i_vec.end()) { // none >= maxInformation
         L = k1;
       } else {
-        L = static_cast<int>(std::distance(i_vec.begin(), it)) + 1;
+        L = static_cast<size_t>(std::distance(i_vec.begin(), it)) + 1;
       }
     } else {  // use spending time
       L = k1;
@@ -847,14 +848,14 @@ FlatMatrix repeatedPValuecpp1(
 
     // Information time for forming covariance matrix of test statistics
     double info_L = i_vec[L-1];
-    for (int l = 0; l < L; ++l) {
+    for (size_t l = 0; l < L; ++l) {
       t1[l] = i_vec[l] / info_L;
     }
 
     // Spending time for error spending
     if (all_na) {  // use information rates
-      for (int l = 0; l < L; ++l) {
-        if (l == kMax - 1 || i_vec[l] >= maxInformation) {
+      for (size_t l = 0; l < L; ++l) {
+        if (l == K - 1 || i_vec[l] >= maxInformation) {
           s1[l] = 1.0; // the last look is at or beyond maxInformation
         } else {
           s1[l] = i_vec[l] / maxInformation;
@@ -867,7 +868,7 @@ FlatMatrix repeatedPValuecpp1(
     // Compute repeated p-values
     std::vector<double> empty_user;
     std::vector<double> repp(k1);
-    for (int i = 0; i < L; ++i) {
+    for (size_t i = 0; i < L; ++i) {
       double pvalue = p1[i];
       std::vector<double> t0(t1.begin(), t1.begin() + i + 1);
       std::vector<double> s0(s1.begin(), s1.begin() + i + 1);
@@ -902,10 +903,10 @@ FlatMatrix repeatedPValuecpp1(
 
   struct SimulationWorker : public RcppParallel::Worker {
     // references to read-only inputs (no mutation)
-    const int k1;
+    const size_t k1;
     const std::string& asf;
     const double parameterAlphaSpending;
-    const int kMax;
+    const size_t K;
     const double maxInformation;
     const FlatMatrix& p;
     const FlatMatrix& info;
@@ -913,16 +914,16 @@ FlatMatrix repeatedPValuecpp1(
 
     // function f and other params that f needs are captured from outer scope
     // capture them by reference here so worker can call f(...)
-    std::function<std::vector<double>(const int)> f;
+    std::function<std::vector<double>(const size_t)> f;
 
     // result references (each iteration writes unique index into these)
     FlatMatrix& repp_out; // B by k1 matrix to store repeated p-values
 
     // constructor
-    SimulationWorker(const int k1_,
+    SimulationWorker(const size_t k1_,
                      const std::string& asf_,
                      const double parameterAlphaSpending_,
-                     const int kMax_,
+                     const size_t K_,
                      const double maxInformation_,
                      const FlatMatrix& p_,
                      const FlatMatrix& info_,
@@ -931,7 +932,7 @@ FlatMatrix repeatedPValuecpp1(
                      FlatMatrix& repp_out_) :
 
       k1(k1_), asf(asf_), parameterAlphaSpending(parameterAlphaSpending_),
-      kMax(kMax_), maxInformation(maxInformation_),
+      K(K_), maxInformation(maxInformation_),
       p(p_), info(info_), spendTime(spendTime_),
       f(std::move(f_)),
       repp_out(repp_out_) {}
@@ -940,10 +941,10 @@ FlatMatrix repeatedPValuecpp1(
     void operator()(size_t begin, size_t end) {
       for (size_t b = begin; b < end; ++b) {
         // call the (thread-safe) per-iteration function f
-        std::vector<double> out = f(static_cast<int>(b));
+        std::vector<double> out = f(b);
 
         // write results
-        for (int k = 0; k < k1; ++k) {
+        for (size_t k = 0; k < k1; ++k) {
           repp_out(b, k) = out[k];
         }
       } // end for b
@@ -954,10 +955,10 @@ FlatMatrix repeatedPValuecpp1(
 
   // Instantiate the Worker with references to inputs and outputs
   SimulationWorker worker(
-      k1, asf, parameterAlphaSpending, kMax,
+      k1, asf, parameterAlphaSpending, K,
       maxInformation, p, info, spendTime,
       // bind f into std::function (capture the f we already have)
-      std::function<std::vector<double>(const int)>(f),
+      std::function<std::vector<double>(const size_t)>(f),
       repp_mat
   );
 
@@ -1000,12 +1001,14 @@ IntMatrix fseqboncpp1(
     const std::vector<double>& parameterAlphaSpending,
     const std::vector<double>& maxInformation,
     const BoolMatrix& incidenceMatrix,
-    const int k1,
+    const int kk1,
     const FlatMatrix& p,
     const FlatMatrix& information,
     const FlatMatrix& spendingTime) {
 
-  int m = static_cast<int>(w.size());
+  size_t m = w.size();
+  size_t K = static_cast<size_t>(kMax);
+  size_t k1 = static_cast<size_t>(kk1);
 
   // Validation: w must be nonnegative
   if (std::any_of(w.begin(), w.end(), [](double val) { return val < 0.0; })) {
@@ -1024,7 +1027,7 @@ IntMatrix fseqboncpp1(
   }
 
   // Validation: G must be nonnegative
-  for (int i = 0; i < m * m; ++i) {
+  for (size_t i = 0; i < m * m; ++i) {
     if (G.data[i] < 0.0) {
       throw std::invalid_argument("G must be nonnegative");
     }
@@ -1032,19 +1035,19 @@ IntMatrix fseqboncpp1(
 
   // Validation: Row sums of G must be <= 1
   std::vector<double> rowsum(m, 0.0);
-  for (int j = 0; j < m; ++j) {
-    for (int i = 0; i < m; ++i) {
+  for (size_t j = 0; j < m; ++j) {
+    for (size_t i = 0; i < m; ++i) {
       rowsum[i] += G(i, j);
     }
   }
-  for (int i = 0; i < m; ++i) {
+  for (size_t i = 0; i < m; ++i) {
     if (rowsum[i] > 1.0 + 1e-8) {
       throw std::invalid_argument("Row sums of G must be less than or equal to 1");
     }
   }
 
   // Validation: Diagonal elements of G must be 0
-  for (int i = 0; i < m; ++i) {
+  for (size_t i = 0; i < m; ++i) {
     if (G(i, i) != 0.0) {
       throw std::invalid_argument("Diagonal elements of G must be equal to 0");
     }
@@ -1056,7 +1059,7 @@ IntMatrix fseqboncpp1(
   }
 
   // Validation: kMax must be a positive integer
-  if (kMax <= 0) {
+  if (K <= 0) {
     throw std::invalid_argument("kMax must be a positive integer");
   }
 
@@ -1074,7 +1077,7 @@ IntMatrix fseqboncpp1(
     throw std::invalid_argument("Invalid length for parameterAlphaSpending");
   }
 
-  for (int i = 0; i < m; ++i) {
+  for (size_t i = 0; i < m; ++i) {
     std::string& asfi = asf[i];
     for (char &c : asfi) {
       c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
@@ -1108,7 +1111,7 @@ IntMatrix fseqboncpp1(
   if (incidenceMatrix.ncol != m) {
     throw std::invalid_argument("Invalid number of columns for incidenceMatrix");
   }
-  if (incidenceMatrix.nrow != kMax) {
+  if (incidenceMatrix.nrow != K) {
     throw std::invalid_argument("Invalid number of rows for incidenceMatrix");
   }
 
@@ -1116,7 +1119,7 @@ IntMatrix fseqboncpp1(
   if (k1 <= 0) {
     throw std::invalid_argument("k1 must be a positive integer");
   }
-  if (k1 > kMax) {
+  if (k1 > K) {
     throw std::invalid_argument("k1 must be less than or equal to kMax");
   }
 
@@ -1129,7 +1132,7 @@ IntMatrix fseqboncpp1(
     throw std::invalid_argument("p number of rows must be a multiple of k1");
   }
 
-  int B = p.nrow / k1;
+  size_t B = p.nrow / k1;
 
   // Validation: information matrix dimension
   if (information.ncol != m) {
@@ -1144,8 +1147,8 @@ IntMatrix fseqboncpp1(
     // replicate information for B iterations
     const double* src_ptr = information.data_ptr();
     double* dst_ptr = info.data_ptr();
-    for (int j = 0; j < m; ++ j) {
-      for (int b = 0; b < B; ++b) {
+    for (size_t j = 0; j < m; ++ j) {
+      for (size_t b = 0; b < B; ++b) {
         std::memcpy(dst_ptr + (b * k1) + j * (B * k1),
                     src_ptr + j * k1,
                     k1 * sizeof(double));
@@ -1172,8 +1175,8 @@ IntMatrix fseqboncpp1(
       // replicate spendingTime for B iterations
       const double* src_ptr = spendingTime.data_ptr();
       double* dst_ptr = spendTime.data_ptr();
-      for (int j = 0; j < m; ++ j) {
-        for (int b = 0; b < B; ++b) {
+      for (size_t j = 0; j < m; ++ j) {
+        for (size_t b = 0; b < B; ++b) {
           std::memcpy(dst_ptr + (b * k1) + j * (B * k1),
                       src_ptr + j * k1,
                       k1 * sizeof(double));
@@ -1185,9 +1188,9 @@ IntMatrix fseqboncpp1(
   }
 
 
-  std::vector<int> K0(m, 0); // max number of testable looks for hypothesis j
-  for (int j = 0; j < m; ++j) {
-    for (int k = 0; k < kMax; ++k) {
+  std::vector<size_t> K0(m, 0); // max number of testable looks for hypothesis j
+  for (size_t j = 0; j < m; ++j) {
+    for (size_t k = 0; k < K; ++k) {
       if (incidenceMatrix(k, j)) K0[j]++;
     }
   }
@@ -1197,11 +1200,11 @@ IntMatrix fseqboncpp1(
   IntMatrix idx2(m, k1); // testable look index for each study look
   idx1.fill(-1); // initialize with -1 for non-existent test look
   idx2.fill(-1); // initialize with -1 for non-tested study look
-  std::vector<int> K1(m); // number of testable looks for hypothesis j at interim
-  std::vector<int> K2(m); // last study look for each hypothesis at interim
-  for (int j = 0; j < m; ++j) {
-    int l = 0; // index for testable looks of hypothesis j
-    for (int k = 0; k < k1; ++k) {
+  std::vector<size_t> K1(m); // number of testable looks for hypothesis j at interim
+  std::vector<size_t> K2(m); // last study look for each hypothesis at interim
+  for (size_t j = 0; j < m; ++j) {
+    size_t l = 0; // index for testable looks of hypothesis j
+    for (size_t k = 0; k < k1; ++k) {
       if (incidenceMatrix(k, j)) {
         idx1(l, j) = k; // study look index for the l-th testable look of hypothesis j
         idx2(j, k) = l; // testable look index for the k-th study look of hypothesis j
@@ -1216,8 +1219,8 @@ IntMatrix fseqboncpp1(
 
   // Implement the logic to determine which hypotheses are rejected at iteration b
   // based on the p-values, information, spending time, and the graphical procedure.
-  auto f = [&](const int b)->std::vector<int> {
-    std::vector<int> L(m);
+  auto f = [&](const size_t b)->std::vector<int> {
+    std::vector<size_t> L(m);
 
     FlatMatrix p1(k1, m), t1(k1, m), s1(k1, m);
     p1.fill(NaN); t1.fill(NaN); s1.fill(NaN);
@@ -1229,19 +1232,19 @@ IntMatrix fseqboncpp1(
     std::vector<double> p_vec; p_vec.reserve(k1);
     std::vector<double> i_vec; i_vec.reserve(k1);
     std::vector<double> s_vec; s_vec.reserve(k1);
-    for (int j = 0; j < m; ++j) { // loop over hypotheses
-      int Kj = K1[j]; // number of testable looks for hypothesis j at interim
+    for (size_t j = 0; j < m; ++j) { // loop over hypotheses
+      size_t Kj = K1[j]; // number of testable looks for hypothesis j at interim
       if (Kj == 0) continue; // no testable look, skip to next hypothesis
       double maxinfoj = maxInformation[j]; // maxInformation for hypothesis j
 
       p_vec.resize(Kj);
       i_vec.resize(Kj);
       s_vec.resize(Kj);
-      for (int l = 0; l < Kj; ++l) {
-        int k = idx1(l, j); // study look index for the l-th testable look
+      for (size_t l = 0; l < Kj; ++l) {
+        size_t k = idx1(l, j); // study look index for the l-th testable look
 
         // row index in p, info, and spendTime for iteration b and study look k
-        int h = b * k1 + k;
+        size_t h = b * k1 + k;
         if (std::isnan(p(h, j))) {
           throw std::invalid_argument("p must be provided at each testable look");
         }
@@ -1294,12 +1297,12 @@ IntMatrix fseqboncpp1(
         if (it == i_vec.end()) { // none >= maxInformation
           L[j] = Kj;
         } else { // first >= maxInformation, consider looks up to & including this one
-          L[j] = static_cast<int>(std::distance(i_vec.begin(), it)) + 1;
+          L[j] = static_cast<size_t>(std::distance(i_vec.begin(), it)) + 1;
         }
       } else { // will use spending time, consider all testable looks
         L[j] = Kj;
       }
-      int Lj = L[j];
+      size_t Lj = L[j];
 
       // Copy p values in one block (p_vec contiguous)
       double* p1_col = p1_ptr + j * k1; // column j begins at offset j * k1
@@ -1310,13 +1313,13 @@ IntMatrix fseqboncpp1(
 
       // Information time for forming covariance matrix of test statistics
       double info_L = i_vec[Lj - 1];
-      for (int l = 0; l < Lj; ++l) {
+      for (size_t l = 0; l < Lj; ++l) {
         t1_col[l] = i_vec[l] / info_L;
       }
 
       // Spending time for error spending
       if (all_na) { // use information rates
-        for (int l = 0; l < Lj; ++l) {
+        for (size_t l = 0; l < Lj; ++l) {
           if (l == K0[j] - 1 || i_vec[l] >= maxinfoj) {
             s1_col[l] = 1.0; // the last testable look is at or beyond maxInformation
           } else {
@@ -1328,14 +1331,14 @@ IntMatrix fseqboncpp1(
       }
     }
 
-    int num_rejected = 0; // number of hypotheses rejected so far
+    size_t num_rejected = 0; // number of hypotheses rejected so far
     std::vector<int> reject(m, 0); // first look when the hypothesis is rejected
     std::vector<double> wx = w; // current weights for hypotheses, updated in-place
     FlatMatrix g = G; // current transition matrix, updated in-place
     FlatMatrix g1(m, m); // temporary transition matrix for update
     std::vector<double> user; // empty userAlphaSpending for getBoundcpp
 
-    std::vector<int> active(m); // currently active hypotheses
+    std::vector<size_t> active(m); // currently active hypotheses
     std::iota(active.begin(), active.end(), 0); // initialize with 0,1,...,m-1
     std::vector<int> pos(m); // position map: pos[idx] = index in active or -1
     std::iota(pos.begin(), pos.end(), 0); // initialize with 0,1,...,m-1
@@ -1351,7 +1354,7 @@ IntMatrix fseqboncpp1(
 
     // cached per-hypothesis previous upper bounds (u_pre[j] for hypothesis j)
     std::vector<std::vector<double>> u_pre(m);
-    for (int j = 0; j < m; ++j) u_pre[j].resize(k1);
+    for (size_t j = 0; j < m; ++j) u_pre[j].resize(k1);
 
     // Preallocated helper vectors reused for "resuse" branch
     std::vector<double> l_vec(k1, -6.0);
@@ -1360,23 +1363,23 @@ IntMatrix fseqboncpp1(
     // pointers to idx2
     const int* idx2_ptr = idx2.data_ptr(); // m x k1
 
-    int K3 = *std::max_element(K2.begin(), K2.end());
+    size_t K3 = *std::max_element(K2.begin(), K2.end());
 
-    for (int step = 0; step < K3; ++step) {  // loop over study look
+    for (size_t step = 0; step < K3; ++step) {  // loop over study look
       const int* idx2_col = idx2_ptr + step * m;
 
       //Try to find a hypothesis that can be rejected at this step
-      for ([[maybe_unused]] int i : active) {
+      for ([[maybe_unused]] size_t i : active) {
         bool found_reject = false;
         int found_j = -1;
 
         // scan all hypotheses j to find a rejectable one
-        for (int j : active) {
+        for (size_t j : active) {
           if (wx[j] < 1e-8) continue;  // weight too small or already rejected
-          int l = idx2_col[j];         // testable look index (0-based)
+          size_t l = idx2_col[j];         // testable look index (0-based)
           if (l < 0) continue;         // not testable at this study look
           if (l >= L[j]) continue;     // beyond L[j] considered at interim
-          int n = l + 1; // # of testable looks for hypothesis j at this study look
+          size_t n = l + 1; // # of testable looks for hypothesis j at this study look
 
           double alpha1 = wx[j] * alpha;
           const std::string& asf1 = asf[j];
@@ -1435,7 +1438,7 @@ IntMatrix fseqboncpp1(
         }
 
         // Process rejection of hypothesis found_j
-        int j = found_j;
+        size_t j = found_j;
         reject[j] = step + 1;
         ++num_rejected;
 
@@ -1453,20 +1456,20 @@ IntMatrix fseqboncpp1(
         // Update weights in-place for remaining active hypotheses
         w_pre = wx; // store current weights before update
         double wxj = wx[j];
-        for (int l : active) {
+        for (size_t l : active) {
           wx[l] += wxj * g(j, l);
         }
         wx[j] = 0.0; // weight of rejected hypothesis becomes 0
 
         // Update transition matrix for active hypotheses
-        for (int l : active) {
+        for (size_t l : active) {
           denom[l] =  1.0 - g(l, j) * g(j, l);
         }
 
         g1.fill(0.0); // reset g1 to 0 before filling
-        for (int k : active) {
+        for (size_t k : active) {
           double g_jk = g(j, k);
-          for (int l : active) {
+          for (size_t l : active) {
             if (l == k) continue;
             double dl = denom[l];
             if (dl > 1e-12) {
@@ -1490,16 +1493,16 @@ IntMatrix fseqboncpp1(
 
   struct SimulationWorker : public RcppParallel::Worker {
     // references to read-only inputs (no mutation)
-    const int m;
-    const int k1;
+    const size_t m;
+    const size_t k1;
     const std::vector<double>& w;
     const FlatMatrix& G;
     const double alpha;
     const std::vector<std::string>& asf;
     const std::vector<double>& asfpar;
-    const std::vector<int>& K0;
-    const std::vector<int>& K1;
-    const std::vector<int>& K2;
+    const std::vector<size_t>& K0;
+    const std::vector<size_t>& K1;
+    const std::vector<size_t>& K2;
     const IntMatrix& idx1;
     const IntMatrix& idx2;
     const std::vector<double>& maxInformation;
@@ -1509,22 +1512,22 @@ IntMatrix fseqboncpp1(
 
     // function f and other params that f needs are captured from outer scope
     // capture them by reference here so worker can call f(...)
-    std::function<std::vector<int>(const int)> f;
+    std::function<std::vector<int>(const size_t)> f;
 
     // result references (each iteration writes unique index into these)
     IntMatrix& reject_out; // B by m matrix to store rejection results
 
     // constructor
-    SimulationWorker(const int m_,
-                     const int k1_,
+    SimulationWorker(const size_t m_,
+                     const size_t k1_,
                      const std::vector<double>& w_,
                      const FlatMatrix& G_,
                      const double alpha_,
                      const std::vector<std::string>& asf_,
                      const std::vector<double>& asfpar_,
-                     const std::vector<int>& K0_,
-                     const std::vector<int>& K1_,
-                     const std::vector<int>& K2_,
+                     const std::vector<size_t>& K0_,
+                     const std::vector<size_t>& K1_,
+                     const std::vector<size_t>& K2_,
                      const IntMatrix& idx1_,
                      const IntMatrix& idx2_,
                      const std::vector<double>& maxInformation_,
@@ -1546,10 +1549,10 @@ IntMatrix fseqboncpp1(
     void operator()(size_t begin, size_t end) {
       for (size_t b = begin; b < end; ++b) {
         // call the (thread-safe) per-iteration function f
-        std::vector<int> out = f(static_cast<int>(b));
+        std::vector<int> out = f(b);
 
         // write results
-        for (int j = 0; j < m; ++j) {
+        for (size_t j = 0; j < m; ++j) {
           reject_out(b, j) = out[j];
         }
       } // end for b
@@ -1563,7 +1566,7 @@ IntMatrix fseqboncpp1(
       m, k1, w, G, alpha, asf, asfpar, K0, K1, K2,
       idx1, idx2, maxInformation, p, info, spendTime,
       // bind f into std::function (capture the f we already have)
-      std::function<std::vector<int>(const int)>(f),
+      std::function<std::vector<int>(const size_t)>(f),
       reject_mat
   );
 
@@ -1612,9 +1615,9 @@ FlatMatrix fstp2seqcpp1(
     const bool retest = true) {
 
   // Validate dimensions
-  int nreps = p.nrow;
-  int n = p.ncol;
-  int m = n / 2;
+  size_t nreps = p.nrow;
+  size_t n = p.ncol;
+  size_t m = n / 2;
 
   // Normalize test string to lowercase
   std::string test1 = test;
@@ -1636,11 +1639,11 @@ FlatMatrix fstp2seqcpp1(
 
   // Step 1: Compute matrix a (nreps × m) from pairs of p-values
   FlatMatrix a(nreps, m);
-  for (int j = 0; j < m; ++j) {
+  for (size_t j = 0; j < m; ++j) {
     double gamma_j = gamma[j];
     double inv_factor = 1.0 / (1.0 + gamma_j);
 
-    for (int iter = 0; iter < nreps; ++iter) {
+    for (size_t iter = 0; iter < nreps; ++iter) {
       double x1 = p(iter, 2*j);
       double x2 = p(iter, 2*j+1);
       double val = 2.0 * std::max(x1, x2) * inv_factor;
@@ -1653,9 +1656,9 @@ FlatMatrix fstp2seqcpp1(
 
   // Step 2: Compute matrix d (m × m) - lower triangular discount factors
   FlatMatrix d(m, m);
-  for (int s = 0; s < m; ++s) {
+  for (size_t s = 0; s < m; ++s) {
     double gmax = 0.0;
-    for (int j = s; j < m; ++j) {
+    for (size_t j = s; j < m; ++j) {
       if (j > s) {
         gmax = std::max(gmax, gamma[j - 1]);
       }
@@ -1669,28 +1672,28 @@ FlatMatrix fstp2seqcpp1(
   // Preallocate reusable vectors
   std::vector<double> a_row(m);        // current row of a
   std::vector<double> a_cummax(m);     // cumulative max
-  for (int iter = 0; iter < nreps; ++iter) {
+  for (size_t iter = 0; iter < nreps; ++iter) {
     // Extract row iter from a and compute cumulative max
-    for (int j = 0; j < m; ++j) {
+    for (size_t j = 0; j < m; ++j) {
       a_row[j] = a(iter, j);
     }
 
     a_cummax[0] = a_row[0];
-    for (int j = 1; j < m; ++j) {
+    for (size_t j = 1; j < m; ++j) {
       a_cummax[j] = std::max(a_cummax[j - 1], a_row[j]);
     }
 
     // For each hypothesis index i
-    for (int i = 0; i < m; ++i) {
+    for (size_t i = 0; i < m; ++i) {
       double t1 = a_cummax[i]; // max of a[0..i]
 
       // --- Compute padj(iter, 2*i) (even index) ---
       double t2_even = 1.0;
-      for (int s = 0; s <= i; ++s) {
+      for (size_t s = 0; s <= i; ++s) {
         double lhs = (s > 0) ? a_cummax[s - 1] : 0.0;
 
         // max over j ∈ [s, i] of p(iter, 2*j) / d(s, j)
-        for (int j = s; j <= i; ++j) {
+        for (size_t j = s; j <= i; ++j) {
           lhs = std::max(lhs, p(iter, 2*j) / d(s, j));
         }
 
@@ -1703,18 +1706,18 @@ FlatMatrix fstp2seqcpp1(
       double result_even;
       if (retest && m > 1) {
         double t3_even = 1.0;
-        int s_max = std::min(i, m - 2);
+        size_t s_max = std::min(i, m - 2);
 
-        for (int s = 0; s <= s_max; ++s) {
+        for (size_t s = 0; s <= s_max; ++s) {
           double lhs = (s > 0) ? a_cummax[s - 1] : 0.0;
 
           // max over j ∈ [s, m-1] of p(iter, 2*j+1) / d(s, j)
-          for (int j = s; j < m; ++j) {
+          for (size_t j = s; j < m; ++j) {
             lhs = std::max(lhs, p(iter, 2*j+1) / d(s, j));
           }
 
           // max over j ∈ [s, i] of p(iter, 2*j)
-          for (int j = s; j <= i; ++j) {
+          for (size_t j = s; j <= i; ++j) {
             lhs = std::max(lhs, p(iter, 2*j));
           }
 
@@ -1733,11 +1736,11 @@ FlatMatrix fstp2seqcpp1(
 
       // --- Compute padj(iter, 2*i+1) (odd index) ---
       double t2_odd = 1.0;
-      for (int s = 0; s <= i; ++s) {
+      for (size_t s = 0; s <= i; ++s) {
         double lhs = (s > 0) ? a_cummax[s - 1] : 0.0;
 
         // max over j ∈ [s, i] of p(iter, 2*j+1) / d(s, j)
-        for (int j = s; j <= i; ++j) {
+        for (size_t j = s; j <= i; ++j) {
           lhs = std::max(lhs, p(iter, 2*j+1) / d(s, j));
         }
 
@@ -1750,18 +1753,18 @@ FlatMatrix fstp2seqcpp1(
       double result_odd;
       if (retest && m > 1) {
         double t3_odd = 1.0;
-        int s_max = std::min(i, m - 2);
+        size_t s_max = std::min(i, m - 2);
 
-        for (int s = 0; s <= s_max; ++s) {
+        for (size_t s = 0; s <= s_max; ++s) {
           double lhs = (s > 0) ? a_cummax[s - 1] : 0.0;
 
           // max over j ∈ [s, m-1] of p(iter, 2*j) / d(s, j)
-          for (int j = s; j < m; ++j) {
+          for (size_t j = s; j < m; ++j) {
             lhs = std::max(lhs, p(iter, 2*j) / d(s, j));
           }
 
           // max over j ∈ [s, i] of p(iter, 2*j+1)
-          for (int j = s; j <= i; ++j) {
+          for (size_t j = s; j <= i; ++j) {
             lhs = std::max(lhs, p(iter, 2*j+1));
           }
 
@@ -1799,15 +1802,15 @@ Rcpp::NumericMatrix fstp2seqcpp(
 
 
 // Helper: compute row sums for BoolMatrix
-std::vector<int> boolmatrix_rowsums(const BoolMatrix& mat) {
-  int nrow = mat.nrow;
-  int ncol = mat.ncol;
-  std::vector<int> sums(nrow, 0);
+std::vector<size_t> boolmatrix_rowsums(const BoolMatrix& mat) {
+  size_t nrow = mat.nrow;
+  size_t ncol = mat.ncol;
+  std::vector<size_t> sums(nrow, 0);
   const unsigned char* data = mat.data_ptr();
 
-  for (int j = 0; j < ncol; ++j) {
+  for (size_t j = 0; j < ncol; ++j) {
     const unsigned char* col = data + j * nrow;
-    for (int i = 0; i < nrow; ++i) {
+    for (size_t i = 0; i < nrow; ++i) {
       sums[i] += col[i];
     }
   }
@@ -1826,8 +1829,8 @@ FlatMatrix fstdmixcpp1(
     const bool exhaust = true) {
 
   // Validate inputs
-  int nreps = p.nrow;
-  int m = p.ncol;
+  size_t nreps = p.nrow;
+  size_t m = p.ncol;
 
   if (family.ncol != m) {
     throw std::invalid_argument("family must have m columns");
@@ -1841,7 +1844,7 @@ FlatMatrix fstdmixcpp1(
     throw std::invalid_argument("parallel must be m x m matrix");
   }
 
-  int nfamily = family.nrow;
+  size_t nfamily = family.nrow;
 
   if (gamma.size() != static_cast<size_t>(nfamily)) {
     throw std::invalid_argument("gamma length must equal nrow(family)");
@@ -1870,10 +1873,10 @@ FlatMatrix fstdmixcpp1(
   }
 
   // Compute number of hypotheses per family
-  std::vector<int> nhyps = boolmatrix_rowsums(family);
+  std::vector<size_t> nhyps = boolmatrix_rowsums(family);
 
   // Number of intersection tests
-  int ntests = (1 << m) - 1; // 2^m - 1
+  size_t ntests = (1 << m) - 1; // 2^m - 1
 
   // Matrix to store local p-values for intersection tests
   FlatMatrix pinter(nreps, ntests);
@@ -1882,39 +1885,39 @@ FlatMatrix fstdmixcpp1(
   BoolMatrix incid(ntests, m);
 
   // Process each intersection hypothesis
-  for (int i = 0; i < ntests; ++i) {
-    int number = ntests - i;
+  for (size_t i = 0; i < ntests; ++i) {
+    size_t number = ntests - i;
 
     // Binary representation of intersection hypothesis
     std::vector<unsigned char> cc(m);
-    for (int j = 0; j < m; ++j) {
+    for (size_t j = 0; j < m; ++j) {
       cc[j] = (number >> (m - 1 - j)) & 1;
     }
 
     // Active hypotheses in each family, I1, ..., I_nfamily
     BoolMatrix family0(nfamily, m);
-    for (int j = 0; j < m; ++j) {
-      for (int h = 0; h < nfamily; ++h) {
+    for (size_t j = 0; j < m; ++j) {
+      for (size_t h = 0; h < nfamily; ++h) {
         family0(h, j) = family(h, j) & cc[j];
       }
     }
 
     // Number of active hypotheses by family, k1, ..., k_nfamily
-    std::vector<int> nhyps0 = boolmatrix_rowsums(family0);
+    std::vector<size_t> nhyps0 = boolmatrix_rowsums(family0);
 
     // Determine restricted index set for each family
     std::vector<unsigned char> cc1(m, 1);
 
-    for (int j = 0; j < m; ++j) {
+    for (size_t j = 0; j < m; ++j) {
       // Check serial constraints
       int serial_sum = 0;
-      for (int k = 0; k < m; ++k) {
+      for (size_t k = 0; k < m; ++k) {
         serial_sum += serial(j, k);
       }
 
       if (serial_sum > 0) {
         // if any serial predecessor is accepted, remove j
-        for (int k = 0; k < m; ++k) {
+        for (size_t k = 0; k < m; ++k) {
           if (serial(j, k) && cc[k]) {
             cc1[j] = 0;
             break;
@@ -1922,7 +1925,7 @@ FlatMatrix fstdmixcpp1(
         }
 
         // if any serial predecessor is not testable, remove j
-        for (int k = 0; k < m; ++k) {
+        for (size_t k = 0; k < m; ++k) {
           if (serial(j, k) && !cc1[k]) {
             cc1[j] = 0;
             break;
@@ -1932,14 +1935,14 @@ FlatMatrix fstdmixcpp1(
 
       // Check parallel constraints
       int parallel_sum = 0;
-      for (int k = 0; k < m; ++k) {
+      for (size_t k = 0; k < m; ++k) {
         parallel_sum += parallel(j, k);
       }
 
       if (parallel_sum > 0) {
         // if none of the parallel predecessors are rejected, remove j
         bool hit = true;
-        for (int k = 0; k < m; ++k) {
+        for (size_t k = 0; k < m; ++k) {
           if (parallel(j, k) && !cc[k]) {
             hit = false;
             break;
@@ -1949,7 +1952,7 @@ FlatMatrix fstdmixcpp1(
 
         // if none of the parallel predecessors are testable, remove j
         hit = true;
-        for (int k = 0; k < m; ++k) {
+        for (size_t k = 0; k < m; ++k) {
           if (parallel(j, k) && cc1[k]) {
             hit = false;
             break;
@@ -1960,13 +1963,13 @@ FlatMatrix fstdmixcpp1(
     }
 
     // Apply intersection
-    for (int j = 0; j < m; ++j) {
+    for (size_t j = 0; j < m; ++j) {
       cc1[j] = cc1[j] & cc[j];
     }
 
     // Error rate function divided by alpha
     std::vector<double> errf(nfamily);
-    for (int j = 0; j < nfamily; ++j) {
+    for (size_t j = 0; j < nfamily; ++j) {
       errf[j] = nhyps0[j] > 0 ?
       gamma[j] + (1.0 - gamma[j]) * nhyps0[j] / nhyps[j] : 0.0;
     }
@@ -1974,12 +1977,12 @@ FlatMatrix fstdmixcpp1(
     // Allocated fraction of alpha for each family
     std::vector<double> coef(nfamily);
     coef[0] = 1.0;
-    for (int j = 1; j < nfamily; ++j) {
+    for (size_t j = 1; j < nfamily; ++j) {
       coef[j] = coef[j - 1] * (1.0 - errf[j - 1]);
     }
 
-    int kmax = 0; // last family with positive allocation (1-based index)
-    for (int j = nfamily - 1; j >= 0; --j) {
+    size_t kmax = 0; // last family with positive allocation (1-based index)
+    for (size_t j = nfamily; j-- > 0; ) {
       if (coef[j] > 0.0) {
         kmax = j + 1;
         break;
@@ -1988,40 +1991,40 @@ FlatMatrix fstdmixcpp1(
 
     // Families up to kmax, I_1*, ..., I_kmax*
     BoolMatrix family1(kmax, m);
-    for (int j = 0; j < kmax; ++j) {
-      for (int k = 0; k < m; ++k) {
+    for (size_t j = 0; j < kmax; ++j) {
+      for (size_t k = 0; k < m; ++k) {
         family1(j, k) = family(j, k) & cc1[k];
       }
     }
 
     // Number of testable hypotheses by family, k_1*, ..., k_kmax*
-    std::vector<int> nhyps1 = boolmatrix_rowsums(family1);
+    std::vector<size_t> nhyps1 = boolmatrix_rowsums(family1);
 
     // Indices of active families
-    std::vector<int> sub;
+    std::vector<size_t> sub;
     sub.reserve(kmax);
-    for (int j = 0; j < kmax; ++j) {
+    for (size_t j = 0; j < kmax; ++j) {
       if (nhyps1[j] > 0) {
         sub.push_back(j);
       }
     }
 
-    int nfamily2 = static_cast<int>(sub.size());
+    size_t nfamily2 = sub.size();
 
     // Subset of active families after removing those without testable hypotheses
     BoolMatrix family2(nfamily2, m);
-    std::vector<int> nhyps2(nfamily2);
-    for (int j = 0; j < nfamily2; ++j) {
-      for (int k = 0; k < m; ++k) {
+    std::vector<size_t> nhyps2(nfamily2);
+    for (size_t j = 0; j < nfamily2; ++j) {
+      for (size_t k = 0; k < m; ++k) {
         family2(j, k) = family1(sub[j], k);
       }
       nhyps2[j] = nhyps1[sub[j]];
     }
 
     // family indices and hypothesis indices for testable hypotheses
-    std::vector<int> fam, hyps2;
-    for (int j = 0; j < nfamily2; ++j) {
-      for (int k = 0; k < m; ++k) {
+    std::vector<size_t> fam, hyps2;
+    for (size_t j = 0; j < nfamily2; ++j) {
+      for (size_t k = 0; k < m; ++k) {
         if (family2(j, k)) {
           fam.push_back(j);
           hyps2.push_back(k);
@@ -2030,79 +2033,79 @@ FlatMatrix fstdmixcpp1(
     }
 
     // total number of testable hypotheses across active families
-    int n = static_cast<int>(hyps2.size());
+    size_t n = hyps2.size();
 
     // Relative importance for active families
     std::vector<double> coef1(nfamily2);
-    for (int j = 0; j < nfamily2; ++j) {
+    for (size_t j = 0; j < nfamily2; ++j) {
       coef1[j] = coef[sub[j]];
     }
 
     // Broadcasted family weight for each testable hypothesis
     std::vector<double> c(n);
-    for (int k = 0; k < n; ++k) {
+    for (size_t k = 0; k < n; ++k) {
       c[k] = coef1[fam[k]];
     }
 
     // Truncation parameters
     std::vector<double> gam2(nfamily2);
-    for (int j = 0; j < nfamily2; ++j) {
+    for (size_t j = 0; j < nfamily2; ++j) {
       gam2[j] = gamma[sub[j]];
     }
     if (exhaust) gam2[nfamily2 - 1] = 1.0;
 
     // Bonferroni part of weights
     std::vector<double> coef2(nfamily2);
-    for (int j = 0; j < nfamily2; ++j) {
+    for (size_t j = 0; j < nfamily2; ++j) {
       coef2[j] = (1.0 - gam2[j]) / nhyps[sub[j]];
     }
 
     // Broadcasted Bonferroni part of weights to each testable hypothesis
     std::vector<double> tbon(n);
-    for (int k = 0; k < n; ++k) {
+    for (size_t k = 0; k < n; ++k) {
       tbon[k] = coef2[fam[k]];
     }
 
     // Cumulative count of hypotheses before the current family
-    std::vector<int> ck(nfamily2 + 1, 0);
-    for (int j = 1; j <= nfamily2; ++j) {
+    std::vector<size_t> ck(nfamily2 + 1, 0);
+    for (size_t j = 1; j <= nfamily2; ++j) {
       ck[j] = ck[j - 1] + nhyps2[j - 1];
     }
 
     // Compute weights
     std::vector<double> w(n);
     if (test1 == "hommel") {
-      for (int k = 0; k < n; ++k) {
-        int l = fam[k];
-        int j = (k + 1) - ck[l];
+      for (size_t k = 0; k < n; ++k) {
+        size_t l = fam[k];
+        size_t j = (k + 1) - ck[l];
         w[k] = j * gam2[l] / nhyps2[l] + tbon[k];
       }
     } else if (test1 == "hochberg") {
-      for (int k = 0; k < n; ++k) {
-        int l = fam[k];
-        int j = (k + 1) - ck[l];
+      for (size_t k = 0; k < n; ++k) {
+        size_t l = fam[k];
+        size_t j = (k + 1) - ck[l];
         w[k] = gam2[l] / (nhyps2[l] - j + 1) + tbon[k];
       }
     } else { // holm
-      for (int k = 0; k < n; ++k) {
-        int l = fam[k];
+      for (size_t k = 0; k < n; ++k) {
+        size_t l = fam[k];
         w[k] = gam2[l] / nhyps2[l] + tbon[k];
       }
     }
 
     // Process each replication
     std::vector<double> p1(n), p1s(n), p2(n);
-    for (int iter = 0; iter < nreps; ++iter) {
+    for (size_t iter = 0; iter < nreps; ++iter) {
       // Extract raw p-values
-      for (int k = 0; k < n; ++k) {
+      for (size_t k = 0; k < n; ++k) {
         p1[k] = p(iter, hyps2[k]);
       }
 
       // Sort p-values within each family
-      for (int j = 0; j < nfamily2; ++j) {
-        int start = ck[j];
-        int end = ck[j + 1];
-        int len = end - start;
+      for (size_t j = 0; j < nfamily2; ++j) {
+        size_t start = ck[j];
+        size_t end = ck[j + 1];
+        size_t len = end - start;
         p1s = subset(p1, start, end);
         std::sort(p1s.begin(), p1s.end());
         std::memcpy(p2.data() + start, p1s.data(), len * sizeof(double));
@@ -2110,7 +2113,7 @@ FlatMatrix fstdmixcpp1(
 
       // Compute minimum ratio
       double min_val = 1.0;
-      for (int k = 0; k < n; ++k) {
+      for (size_t k = 0; k < n; ++k) {
         double ratio = p2[k] / (w[k] * c[k]);
         min_val = std::min(min_val, ratio);
       }
@@ -2119,17 +2122,17 @@ FlatMatrix fstdmixcpp1(
     }
 
     // Store incidence
-    for (int j = 0; j < m; ++j) {
+    for (size_t j = 0; j < m; ++j) {
       incid(i, j) = cc[j];
     }
   }
 
   // Compute adjusted p-values for elementary hypotheses
   FlatMatrix padj(nreps, m);
-  for (int j = 0; j < m; ++j) {
-    for (int iter = 0; iter < nreps; ++iter) {
+  for (size_t j = 0; j < m; ++j) {
+    for (size_t iter = 0; iter < nreps; ++iter) {
       double max_p = 0.0;
-      for (int i = 0; i < ntests; ++i) {
+      for (size_t i = 0; i < ntests; ++i) {
         if (incid(i, j)) {
           max_p = std::max(max_p, pinter(iter, i));
         }
@@ -2139,16 +2142,16 @@ FlatMatrix fstdmixcpp1(
   }
 
   // Apply logical restrictions (serial constraints)
-  for (int j = 0; j < m; ++j) {
+  for (size_t j = 0; j < m; ++j) {
     int serial_sum = 0;
-    for (int k = 0; k < m; ++k) {
+    for (size_t k = 0; k < m; ++k) {
       serial_sum += serial(j, k);
     }
 
     if (serial_sum > 0) {
-      for (int iter = 0; iter < nreps; ++iter) {
+      for (size_t iter = 0; iter < nreps; ++iter) {
         double pre = 0.0;
-        for (int k = 0; k < m; ++k) {
+        for (size_t k = 0; k < m; ++k) {
           if (serial(j, k)) {
             pre = std::max(pre, padj(iter, k));
           }
@@ -2159,16 +2162,16 @@ FlatMatrix fstdmixcpp1(
   }
 
   // Apply logical restrictions (parallel constraints)
-  for (int j = 0; j < m; ++j) {
+  for (size_t j = 0; j < m; ++j) {
     int parallel_sum = 0;
-    for (int k = 0; k < m; ++k) {
+    for (size_t k = 0; k < m; ++k) {
       parallel_sum += parallel(j, k);
     }
 
     if (parallel_sum > 0) {
-      for (int iter = 0; iter < nreps; ++iter) {
+      for (size_t iter = 0; iter < nreps; ++iter) {
         double pre = 1.0;
-        for (int k = 0; k < m; ++k) {
+        for (size_t k = 0; k < m; ++k) {
           if (parallel(j, k)) {
             pre = std::min(pre, padj(iter, k));
           }
@@ -2212,8 +2215,8 @@ FlatMatrix fmodmixcpp1(
     const bool exhaust = true) {
 
   // Validate inputs
-  int nreps = p.nrow;
-  int m = p.ncol;
+  size_t nreps = p.nrow;
+  size_t m = p.ncol;
 
   if (family.ncol != m) {
     throw std::invalid_argument("family must have m columns");
@@ -2227,7 +2230,7 @@ FlatMatrix fmodmixcpp1(
     throw std::invalid_argument("parallel must be m x m matrix");
   }
 
-  int nfamily = family.nrow;
+  size_t nfamily = family.nrow;
 
   if (gamma.size() != static_cast<size_t>(nfamily)) {
     throw std::invalid_argument("gamma length must equal nrow(family)");
@@ -2256,10 +2259,10 @@ FlatMatrix fmodmixcpp1(
   }
 
   // Compute number of hypotheses per family
-  std::vector<int> nhyps = boolmatrix_rowsums(family);
+  std::vector<size_t> nhyps = boolmatrix_rowsums(family);
 
   // Number of intersection tests
-  int ntests = (1 << m) - 1; // 2^m - 1
+  size_t ntests = (1 << m) - 1; // 2^m - 1
 
   // Matrix to store local p-values for intersection tests
   FlatMatrix pinter(nreps, ntests);
@@ -2268,39 +2271,39 @@ FlatMatrix fmodmixcpp1(
   BoolMatrix incid(ntests, m);
 
   // Process each intersection hypothesis
-  for (int i = 0; i < ntests; ++i) {
-    int number = ntests - i;
+  for (size_t i = 0; i < ntests; ++i) {
+    size_t number = ntests - i;
 
     // Binary representation of intersection hypothesis
     std::vector<unsigned char> cc(m);
-    for (int j = 0; j < m; ++j) {
+    for (size_t j = 0; j < m; ++j) {
       cc[j] = (number >> (m - 1 - j)) & 1;
     }
 
     // Active hypotheses in each family, I1, ..., I_nfamily
     BoolMatrix family0(nfamily, m);
-    for (int j = 0; j < m; ++j) {
-      for (int h = 0; h < nfamily; ++h) {
+    for (size_t j = 0; j < m; ++j) {
+      for (size_t h = 0; h < nfamily; ++h) {
         family0(h, j) = family(h, j) & cc[j];
       }
     }
 
     // Number of active hypotheses by family, k1, ..., k_nfamily
-    std::vector<int> nhyps0 = boolmatrix_rowsums(family0);
+    std::vector<size_t> nhyps0 = boolmatrix_rowsums(family0);
 
     // Determine restricted index set for each family
     std::vector<unsigned char> cc1(m, 1);
 
-    for (int j = 0; j < m; ++j) {
+    for (size_t j = 0; j < m; ++j) {
       // Check serial constraints
       int serial_sum = 0;
-      for (int k = 0; k < m; ++k) {
+      for (size_t k = 0; k < m; ++k) {
         serial_sum += serial(j, k);
       }
 
       if (serial_sum > 0) {
         // if any serial predecessor is accepted, remove j
-        for (int k = 0; k < m; ++k) {
+        for (size_t k = 0; k < m; ++k) {
           if (serial(j, k) && cc[k]) {
             cc1[j] = 0;
             break;
@@ -2308,7 +2311,7 @@ FlatMatrix fmodmixcpp1(
         }
 
         // if any serial predecessor is not testable, remove j
-        for (int k = 0; k < m; ++k) {
+        for (size_t k = 0; k < m; ++k) {
           if (serial(j, k) && !cc1[k]) {
             cc1[j] = 0;
             break;
@@ -2318,14 +2321,14 @@ FlatMatrix fmodmixcpp1(
 
       // Check parallel constraints
       int parallel_sum = 0;
-      for (int k = 0; k < m; ++k) {
+      for (size_t k = 0; k < m; ++k) {
         parallel_sum += parallel(j, k);
       }
 
       if (parallel_sum > 0) {
         // if none of the parallel predecessors are rejected, remove j
         bool hit = true;
-        for (int k = 0; k < m; ++k) {
+        for (size_t k = 0; k < m; ++k) {
           if (parallel(j, k) && !cc[k]) {
             hit = false;
             break;
@@ -2335,7 +2338,7 @@ FlatMatrix fmodmixcpp1(
 
         // if none of the parallel predecessors are testable, remove j
         hit = true;
-        for (int k = 0; k < m; ++k) {
+        for (size_t k = 0; k < m; ++k) {
           if (parallel(j, k) && cc1[k]) {
             hit = false;
             break;
@@ -2348,18 +2351,18 @@ FlatMatrix fmodmixcpp1(
     std::vector<unsigned char> cc2 = cc1; // for nstar calculation
 
     // Apply intersection, for kstar calculation
-    for (int j = 0; j < m; ++j) {
+    for (size_t j = 0; j < m; ++j) {
       cc1[j] = cc1[j] & cc[j];
     }
 
     // Compute kstar and nstar for error rate function
-    std::vector<int> kstar(nfamily), nstar(nfamily);
+    std::vector<size_t> kstar(nfamily), nstar(nfamily);
     std::vector<double> errf(nfamily);
-    for (int j = 0; j < nfamily; ++j) {
+    for (size_t j = 0; j < nfamily; ++j) {
       kstar[j] = 0;
       nstar[j] = 0;
 
-      for (int k = 0; k < m; ++k) {
+      for (size_t k = 0; k < m; ++k) {
         if (family(j, k) && cc1[k]) kstar[j]++;
         if (family(j, k) && cc2[k]) nstar[j]++;
       }
@@ -2372,12 +2375,12 @@ FlatMatrix fmodmixcpp1(
     // Allocated fraction of alpha for each family
     std::vector<double> coef(nfamily);
     coef[0] = 1.0;
-    for (int j = 1; j < nfamily; ++j) {
+    for (size_t j = 1; j < nfamily; ++j) {
       coef[j] = coef[j - 1] * (1.0 - errf[j - 1]);
     }
 
-    int kmax = 0; // last family with positive allocation (1-based index)
-    for (int j = nfamily - 1; j >= 0; --j) {
+    size_t kmax = 0; // last family with positive allocation (1-based index)
+    for (size_t j = nfamily; j-- > 0; ) {
       if (coef[j] > 0.0) {
         kmax = j + 1;
         break;
@@ -2386,40 +2389,40 @@ FlatMatrix fmodmixcpp1(
 
     // Families up to kmax, I_1*, ..., I_kmax*
     BoolMatrix family1(kmax, m);
-    for (int j = 0; j < kmax; ++j) {
-      for (int k = 0; k < m; ++k) {
+    for (size_t j = 0; j < kmax; ++j) {
+      for (size_t k = 0; k < m; ++k) {
         family1(j, k) = family(j, k) & cc1[k];
       }
     }
 
     // Number of testable hypotheses by family, k_1*, ..., k_kmax*
-    std::vector<int> nhyps1 = boolmatrix_rowsums(family1);
+    std::vector<size_t> nhyps1 = boolmatrix_rowsums(family1);
 
     // Indices of active families
-    std::vector<int> sub;
+    std::vector<size_t> sub;
     sub.reserve(kmax);
-    for (int j = 0; j < kmax; ++j) {
+    for (size_t j = 0; j < kmax; ++j) {
       if (nhyps1[j] > 0) {
         sub.push_back(j);
       }
     }
 
-    int nfamily2 = static_cast<int>(sub.size());
+    size_t nfamily2 = sub.size();
 
     // Subset of active families after removing those without testable hypotheses
     BoolMatrix family2(nfamily2, m);
-    std::vector<int> nhyps2(nfamily2);
-    for (int j = 0; j < nfamily2; ++j) {
-      for (int k = 0; k < m; ++k) {
+    std::vector<size_t> nhyps2(nfamily2);
+    for (size_t j = 0; j < nfamily2; ++j) {
+      for (size_t k = 0; k < m; ++k) {
         family2(j, k) = family1(sub[j], k);
       }
       nhyps2[j] = nhyps1[sub[j]];
     }
 
     // family indices and hypothesis indices for testable hypotheses
-    std::vector<int> fam, hyps2;
-    for (int j = 0; j < nfamily2; ++j) {
-      for (int k = 0; k < m; ++k) {
+    std::vector<size_t> fam, hyps2;
+    for (size_t j = 0; j < nfamily2; ++j) {
+      for (size_t k = 0; k < m; ++k) {
         if (family2(j, k)) {
           fam.push_back(j);
           hyps2.push_back(k);
@@ -2428,23 +2431,23 @@ FlatMatrix fmodmixcpp1(
     }
 
     // total number of testable hypotheses across active families
-    int n = static_cast<int>(hyps2.size());
+    size_t n = hyps2.size();
 
     // Relative importance for active families
     std::vector<double> coef1(nfamily2);
-    for (int j = 0; j < nfamily2; ++j) {
+    for (size_t j = 0; j < nfamily2; ++j) {
       coef1[j] = coef[sub[j]];
     }
 
     // Broadcasted family weight for each testable hypothesis
     std::vector<double> c(n);
-    for (int k = 0; k < n; ++k) {
+    for (size_t k = 0; k < n; ++k) {
       c[k] = coef1[fam[k]];
     }
 
     // Truncation parameters
     std::vector<double> gam2(nfamily2);
-    for (int j = 0; j < nfamily2; ++j) {
+    for (size_t j = 0; j < nfamily2; ++j) {
       gam2[j] = gamma[sub[j]];
     }
     if (exhaust) gam2[nfamily2 - 1] = 1.0;
@@ -2452,56 +2455,56 @@ FlatMatrix fmodmixcpp1(
     // Bonferroni part of weights
     // (KEY DIFFERENCE from stdmix: uses nstar instead of nhyps)
     std::vector<double> coef2(nfamily2);
-    for (int j = 0; j < nfamily2; ++j) {
+    for (size_t j = 0; j < nfamily2; ++j) {
       coef2[j] = (1.0 - gam2[j]) / nstar[sub[j]];
     }
 
     // Broadcasted Bonferroni part of weights to each testable hypothesis
     std::vector<double> tbon(n);
-    for (int k = 0; k < n; ++k) {
+    for (size_t k = 0; k < n; ++k) {
       tbon[k] = coef2[fam[k]];
     }
 
     // Cumulative count of hypotheses before the current family
-    std::vector<int> ck(nfamily2 + 1, 0);
-    for (int j = 1; j <= nfamily2; ++j) {
+    std::vector<size_t> ck(nfamily2 + 1, 0);
+    for (size_t j = 1; j <= nfamily2; ++j) {
       ck[j] = ck[j - 1] + nhyps2[j - 1];
     }
 
     // Compute weights
     std::vector<double> w(n);
     if (test1 == "hommel") {
-      for (int k = 0; k < n; ++k) {
-        int l = fam[k];
-        int j = (k + 1) - ck[l];
+      for (size_t k = 0; k < n; ++k) {
+        size_t l = fam[k];
+        size_t j = (k + 1) - ck[l];
         w[k] = j * gam2[l] / nhyps2[l] + tbon[k];
       }
     } else if (test1 == "hochberg") {
-      for (int k = 0; k < n; ++k) {
-        int l = fam[k];
-        int j = (k + 1) - ck[l];
+      for (size_t k = 0; k < n; ++k) {
+        size_t l = fam[k];
+        size_t j = (k + 1) - ck[l];
         w[k] = gam2[l] / (nhyps2[l] - j + 1) + tbon[k];
       }
     } else { // holm
-      for (int k = 0; k < n; ++k) {
-        int l = fam[k];
+      for (size_t k = 0; k < n; ++k) {
+        size_t l = fam[k];
         w[k] = gam2[l] / nhyps2[l] + tbon[k];
       }
     }
 
     // Process each replication
     std::vector<double> p1(n), p1s(n), p2(n);
-    for (int iter = 0; iter < nreps; ++iter) {
+    for (size_t iter = 0; iter < nreps; ++iter) {
       // Extract raw p-values
-      for (int k = 0; k < n; ++k) {
+      for (size_t k = 0; k < n; ++k) {
         p1[k] = p(iter, hyps2[k]);
       }
 
       // Sort p-values within each family
-      for (int j = 0; j < nfamily2; ++j) {
-        int start = ck[j];
-        int end = ck[j + 1];
-        int len = end - start;
+      for (size_t j = 0; j < nfamily2; ++j) {
+        size_t start = ck[j];
+        size_t end = ck[j + 1];
+        size_t len = end - start;
         p1s = subset(p1, start, end);
         std::sort(p1s.begin(), p1s.end());
         std::memcpy(p2.data() + start, p1s.data(), len * sizeof(double));
@@ -2509,7 +2512,7 @@ FlatMatrix fmodmixcpp1(
 
       // Compute minimum ratio
       double min_val = 1.0;
-      for (int k = 0; k < n; ++k) {
+      for (size_t k = 0; k < n; ++k) {
         double ratio = p2[k] / (w[k] * c[k]);
         min_val = std::min(min_val, ratio);
       }
@@ -2518,17 +2521,17 @@ FlatMatrix fmodmixcpp1(
     }
 
     // Store incidence
-    for (int j = 0; j < m; ++j) {
+    for (size_t j = 0; j < m; ++j) {
       incid(i, j) = cc[j];
     }
   }
 
   // Compute adjusted p-values for elementary hypotheses
   FlatMatrix padj(nreps, m);
-  for (int j = 0; j < m; ++j) {
-    for (int iter = 0; iter < nreps; ++iter) {
+  for (size_t j = 0; j < m; ++j) {
+    for (size_t iter = 0; iter < nreps; ++iter) {
       double max_p = 0.0;
-      for (int i = 0; i < ntests; ++i) {
+      for (size_t i = 0; i < ntests; ++i) {
         if (incid(i, j)) {
           max_p = std::max(max_p, pinter(iter, i));
         }
@@ -2538,16 +2541,16 @@ FlatMatrix fmodmixcpp1(
   }
 
   // Apply logical restrictions (serial constraints)
-  for (int j = 0; j < m; ++j) {
+  for (size_t j = 0; j < m; ++j) {
     int serial_sum = 0;
-    for (int k = 0; k < m; ++k) {
+    for (size_t k = 0; k < m; ++k) {
       serial_sum += serial(j, k);
     }
 
     if (serial_sum > 0) {
-      for (int iter = 0; iter < nreps; ++iter) {
+      for (size_t iter = 0; iter < nreps; ++iter) {
         double pre = 0.0;
-        for (int k = 0; k < m; ++k) {
+        for (size_t k = 0; k < m; ++k) {
           if (serial(j, k)) {
             pre = std::max(pre, padj(iter, k));
           }
@@ -2558,16 +2561,16 @@ FlatMatrix fmodmixcpp1(
   }
 
   // Apply logical restrictions (parallel constraints)
-  for (int j = 0; j < m; ++j) {
+  for (size_t j = 0; j < m; ++j) {
     int parallel_sum = 0;
-    for (int k = 0; k < m; ++k) {
+    for (size_t k = 0; k < m; ++k) {
       parallel_sum += parallel(j, k);
     }
 
     if (parallel_sum > 0) {
-      for (int iter = 0; iter < nreps; ++iter) {
+      for (size_t iter = 0; iter < nreps; ++iter) {
         double pre = 1.0;
-        for (int k = 0; k < m; ++k) {
+        for (size_t k = 0; k < m; ++k) {
           if (parallel(j, k)) {
             pre = std::min(pre, padj(iter, k));
           }
@@ -2607,8 +2610,8 @@ FlatMatrix ftrunccpp1(
     const double gamma) {
 
   // Validate inputs
-  int niters = p.nrow;
-  int m = p.ncol;
+  size_t niters = p.nrow;
+  size_t m = p.ncol;
 
   if (gamma < 0.0 || gamma > 1.0) {
     throw std::invalid_argument("gamma must be between 0 and 1");
@@ -2630,7 +2633,7 @@ FlatMatrix ftrunccpp1(
     throw std::invalid_argument("test must be 'hommel', 'hochberg', or 'holm'");
   }
 
-  int ntests = (1 << m) - 1; // 2^m - 1
+  size_t ntests = (1 << m) - 1; // 2^m - 1
 
   // Incidence matrix (ntests x m) - which hypotheses are in each intersection
   BoolMatrix incid(ntests, m);
@@ -2642,19 +2645,19 @@ FlatMatrix ftrunccpp1(
   double tbon = (1.0 - gamma) / m;
 
   // Preallocate reusable vectors
-  std::vector<int> hyp_indices; hyp_indices.reserve(m);
+  std::vector<size_t> hyp_indices; hyp_indices.reserve(m);
   std::vector<double> p1; p1.reserve(m);
 
   // Process each intersection hypothesis
-  for (int i = 0; i < ntests; ++i) {
-    int number = ntests - i;
+  for (size_t i = 0; i < ntests; ++i) {
+    size_t number = ntests - i;
 
     // Binary representation of elementary hypotheses in intersection
     std::vector<unsigned char> cc(m);
-    int k = 0; // count of hypotheses in this intersection
+    size_t k = 0; // count of hypotheses in this intersection
     hyp_indices.clear();
 
-    for (int j = 0; j < m; ++j) {
+    for (size_t j = 0; j < m; ++j) {
       cc[j] = (number >> (m - 1 - j)) & 1;
       if (cc[j]) {
         hyp_indices.push_back(j);
@@ -2663,18 +2666,18 @@ FlatMatrix ftrunccpp1(
     }
 
     // Store incidence (column-major: column j base = incid_data + j * ntests)
-    for (int j = 0; j < m; ++j) {
+    for (size_t j = 0; j < m; ++j) {
       incid(i, j) = cc[j];
     }
 
     // Precompute weights if they're constant across iterations
     std::vector<double> weights(k);
     if (test1 == "hommel") {
-      for (int j = 0; j < k; ++j) {
+      for (size_t j = 0; j < k; ++j) {
         weights[j] = (j + 1) * gamma / k + tbon;
       }
     } else if (test1 == "hochberg") {
-      for (int j = 0; j < k; ++j) {
+      for (size_t j = 0; j < k; ++j) {
         weights[j] = gamma / (k - j) + tbon;
       }
     } else { // holm
@@ -2683,10 +2686,10 @@ FlatMatrix ftrunccpp1(
     }
 
     // Process each iteration/replication
-    for (int iter = 0; iter < niters; ++iter) {
+    for (size_t iter = 0; iter < niters; ++iter) {
       // Extract p-values for hypotheses in this intersection
       p1.resize(k);
-      for (int j = 0; j < k; ++j) {
+      for (size_t j = 0; j < k; ++j) {
         p1[j] = p(iter, hyp_indices[j]);
       }
 
@@ -2695,7 +2698,7 @@ FlatMatrix ftrunccpp1(
 
       // Compute minimum ratio
       double q = 1.0;
-      for (int j = 0; j < k; ++j) {
+      for (size_t j = 0; j < k; ++j) {
         double ratio = p1[j] / weights[j];
         q = std::min(q, ratio);
       }
@@ -2708,10 +2711,10 @@ FlatMatrix ftrunccpp1(
   FlatMatrix padj(niters, m);
 
   // For each hypothesis j, find max pinter over intersections containing j
-  for (int j = 0; j < m; ++j) {
-    for (int iter = 0; iter < niters; ++iter) {
+  for (size_t j = 0; j < m; ++j) {
+    for (size_t iter = 0; iter < niters; ++iter) {
       double max_p = 0.0;
-      for (int i = 0; i < ntests; ++i) {
+      for (size_t i = 0; i < ntests; ++i) {
         if (incid(i, j)) {
           max_p = std::max(max_p, pinter(iter, i));
         }

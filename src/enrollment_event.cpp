@@ -25,7 +25,7 @@ double accrual1(
   double t = std::max(std::min(time, accrualDuration), 0.0);
 
   // identify the time interval containing t
-  size_t m = std::max(findInterval1(t, accrualTime), 1);
+  size_t m = findInterval1(t, accrualTime);
 
   // sum up patients enrolled in each interval up to t
   double n = 0;
@@ -100,7 +100,7 @@ double getAccrualDurationFromN1(
     p[j + 1] = p[j] + accrualIntensity[j] * (accrualTime[j + 1] - accrualTime[j]);
   }
 
-  size_t m = std::max(findInterval1(nsubjects, p) - 1, 0);
+  size_t m = findInterval1(nsubjects, p) - 1;
   double t = accrualTime[m] + (nsubjects - p[m]) / accrualIntensity[m];
   return t;
 }
@@ -148,7 +148,7 @@ double patrisk1(
   const std::vector<double>& t = piecewiseSurvivalTime;
 
   // Find interval containing specified analysis time
-  size_t m = std::max(findInterval1(time, t), 1);
+  size_t m = findInterval1(time, t);
 
   // Compute cumulative hazard for the time point
   double a = 0.0;
@@ -218,7 +218,7 @@ double pevent1(
 
   const std::vector<double>& t = piecewiseSurvivalTime;
 
-  size_t m = std::max(findInterval1(time, t), 1);
+  size_t m = findInterval1(time, t);
 
   double a = 0;
   // Full interval is covered
@@ -326,8 +326,8 @@ double pd(const double t1,
   const std::vector<double>& t = piecewiseSurvivalTime;
 
   // Identify analysis time intervals containing t1 and t2
-  size_t j1 = std::max(findInterval1(t1, t) - 1, 0);
-  size_t j2 = std::max(findInterval1(t2, t) - 1, 0);
+  size_t j1 = findInterval1(t1, t) - 1;
+  size_t j2 = findInterval1(t2, t) - 1;
 
   double a = 0.0;
 
@@ -365,8 +365,8 @@ double ad(const double time,
   const std::vector<double>& t = piecewiseSurvivalTime;
 
   // Identify accrual time intervals containing u1 and u2
-  size_t i1 = std::max(findInterval1(u1, u) - 1, 0);
-  size_t i2 = std::max(findInterval1(u2, u) - 1, 0);
+  size_t i1 = findInterval1(u1, u) - 1;
+  size_t i2 = findInterval1(u2, u) - 1;
 
   double a = 0.0;  // Initialize the result with zero
 

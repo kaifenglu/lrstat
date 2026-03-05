@@ -79,13 +79,13 @@ inline double sq(double x) noexcept { return x * x; }
 
 
 // seqcpp: inclusive sequence; inputs are int
-std::vector<int> seqcpp(int start, int end);
+std::vector<size_t> seqcpp(size_t start, size_t end);
 
 // convertLogicalVector: convert Rcpp LogicalVector to std::vector<unsigned char>
 std::vector<unsigned char> convertLogicalVector(const Rcpp::LogicalVector& vec);
 
 // which: return indices of true values
-std::vector<int> which(const std::vector<unsigned char>& vec);
+std::vector<size_t> which(const std::vector<unsigned char>& vec);
 
 // expand1: expand vector to full length
 std::vector<double> expand1(
@@ -102,17 +102,17 @@ FlatMatrix expand_stratified(
 
 
 // findInterval: adapted helper (return indices following R-like convention)
-int findInterval1(const double x,
-                  const std::vector<double>& v,
-                  bool rightmost_closed = false,
-                  bool all_inside = false,
-                  bool left_open = false);
+size_t findInterval1(const double x,
+                     const std::vector<double>& v,
+                     bool rightmost_closed = false,
+                     bool all_inside = false,
+                     bool left_open = false);
 
-std::vector<int> findInterval3(const std::vector<double>& x,
-                               const std::vector<double>& v,
-                               bool rightmost_closed = false,
-                               bool all_inside = false,
-                               bool left_open = false);
+std::vector<size_t> findInterval3(const std::vector<double>& x,
+                                  const std::vector<double>& v,
+                                  bool rightmost_closed = false,
+                                  bool all_inside = false,
+                                  bool left_open = false);
 
 // all_equal: check if all elements in v equal target within tolerance tol
 inline bool all_equal(const std::vector<double>& v, double target, double tol = 0.0) {
@@ -177,15 +177,18 @@ double brent(const std::function<double(double)>& f,
 
 // check if no elements are missing
 inline bool none_na(const std::vector<double>& v) {
-  return std::none_of(v.begin(), v.end(), [](double x){ return std::isnan(x); });
+  return !v.empty() &&
+    std::none_of(v.begin(), v.end(), [](double x){ return std::isnan(x); });
 }
 
 inline bool none_na(const std::vector<int>& v) {
-  return std::none_of(v.begin(), v.end(), [](double x){ return x == INT_MIN; });
+  return !v.empty() &&
+    std::none_of(v.begin(), v.end(), [](double x){ return x == INT_MIN; });
 }
 
 inline bool none_na(const std::vector<unsigned char>& v) {
-  return std::none_of(v.begin(), v.end(), [](double x){ return x == 255; });
+  return !v.empty() &&
+    std::none_of(v.begin(), v.end(), [](double x){ return x == 255; });
 }
 
 // check if any element is non-increasing compared to previous
@@ -201,12 +204,12 @@ bool any_nonincreasing(const std::vector<T>& I) {
 
 // subset: return a subset of v according to 'order' (indices)
 template <typename T>
-std::vector<T> subset(const std::vector<T>& v, const std::vector<int>& order) {
+std::vector<T> subset(const std::vector<T>& v, const std::vector<size_t>& order) {
   std::vector<T> result(order.size());
-  int n = order.size();
-  int nv = v.size();
-  for (int i = 0; i < n; ++i) {
-    int index = order[i];
+  size_t n = order.size();
+  size_t nv = v.size();
+  for (size_t i = 0; i < n; ++i) {
+    size_t index = order[i];
     if (index < 0 || index >= nv) {
       throw std::out_of_range(
           "Index in 'order' is out of bounds for the source vector.");
@@ -218,12 +221,12 @@ std::vector<T> subset(const std::vector<T>& v, const std::vector<int>& order) {
 
 // subset_in_place: reorder/keep elements of v according to 'order' (indices)
 template <typename T>
-void subset_in_place(std::vector<T>& v, const std::vector<int>& order) {
+void subset_in_place(std::vector<T>& v, const std::vector<size_t>& order) {
   std::vector<T> temp_subset(order.size());
-  int n = order.size();
-  int nv = v.size();
-  for (int i = 0; i < n; ++i) {
-    int index = order[i];
+  size_t n = order.size();
+  size_t nv = v.size();
+  for (size_t i = 0; i < n; ++i) {
+    size_t index = order[i];
     if (index < 0 || index >= nv) {
       throw std::out_of_range(
           "Index in 'order' is out of bounds for the source vector.");
@@ -236,7 +239,7 @@ void subset_in_place(std::vector<T>& v, const std::vector<int>& order) {
 // Return a new vector containing elements v[start, end).
 // Preconditions required by you: 0 <= start < end (and end <= v.size()).
 template <typename T>
-std::vector<T> subset(const std::vector<T>& v, int start, int end) {
+std::vector<T> subset(const std::vector<T>& v, size_t start, size_t end) {
   if (start < 0) throw std::out_of_range("subset: start < 0");
   if (end < 0) throw std::out_of_range("subset: end < 0");
   const size_t vsz = v.size();
@@ -267,7 +270,7 @@ std::vector<T> subset(const std::vector<T>& v, int start, int end) {
 // In-place subset: keep elements [start, end) and discard the rest.
 // Preconditions required by you: 0 <= start < end (and end <= v.size()).
 template <typename T>
-void subset_in_place(std::vector<T>& v, int start, int end) {
+void subset_in_place(std::vector<T>& v, size_t start, size_t end) {
   if (start < 0) throw std::out_of_range("subset_in_place: start < 0");
   if (end < 0) throw std::out_of_range("subset_in_place: end < 0");
   const size_t vsz = v.size();
@@ -313,10 +316,10 @@ std::vector<T> unique_sorted(const std::vector<T>& v) {
 // matchcpp: for each element of x find its index in table or -1 if not found
 template <typename T>
 std::vector<int> matchcpp(const std::vector<T>& x, const std::vector<T>& table,
-                          const int start_index = 0) {
+                          const size_t start_index = 0) {
   std::vector<int> result(x.size());
-  int n = x.size();
-  for (int i = 0; i < n; ++i) {
+  size_t n = x.size();
+  for (size_t i = 0; i < n; ++i) {
     auto it = std::find(table.begin(), table.end(), x[i]);
     if (it != table.end()) {
       result[i] = static_cast<int>(std::distance(table.begin(), it)) + start_index;
@@ -403,9 +406,9 @@ ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
 ListCpp bygroup(const DataFrameCpp& data,
                 const std::vector<std::string>& variables);
 
-int cholesky2(FlatMatrix& matrix, int n, double toler = 1e-12);
-void chsolve2(FlatMatrix& matrix, int n, double* y);
-FlatMatrix invsympd(const FlatMatrix& matrix, int n, double toler = 1e-12);
+int cholesky2(FlatMatrix& matrix, size_t n, double toler = 1e-12);
+void chsolve2(FlatMatrix& matrix, size_t n, double* y);
+FlatMatrix invsympd(const FlatMatrix& matrix, size_t n, double toler = 1e-12);
 
 std::vector<double> mat_vec_mult(const FlatMatrix& A, const std::vector<double>& x);
 FlatMatrix mat_mat_mult(const FlatMatrix& A, const FlatMatrix& B);

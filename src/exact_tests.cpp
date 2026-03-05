@@ -549,19 +549,19 @@ double powerFisherExactcpp(
     // feasible x range given margins
     int lower = std::max(0, m - n2);
     int upper = std::min(n1, m);
-    int k = upper - lower + 1;
+    size_t k = upper - lower + 1;
 
     // compute p0 for x = lower..upper (hypergeometric PMF under H0)
     std::vector<double> p0(k);
     std::vector<int> x_vec(k);
     for (int x = lower; x <= upper; ++x) {
-      int i = x - lower;
+      size_t i = x - lower;
       p0[i] = hypergeom_pmf(x, n1, n2, m);
       x_vec[i] = x;
     }
 
     // produce order (indices) that sort p0 ascending
-    std::vector<int> order = seqcpp(0, k - 1);
+    std::vector<size_t> order = seqcpp(0, k - 1);
     std::sort(order.begin(), order.end(),
               [&p0](int i, int j) { return p0[i] < p0[j]; });
 
@@ -570,22 +570,22 @@ double powerFisherExactcpp(
 
     // group equal p0sorted values
     // collect indices of group boundaries
-    std::vector<int> idxs;
+    std::vector<size_t> idxs;
     idxs.reserve(k + 1);
     idxs.push_back(0);
-    for (int i = 1; i < k; ++i) {
+    for (size_t i = 1; i < k; ++i) {
       if (p0sorted[i] != p0sorted[i - 1]) idxs.push_back(i);
     }
-    int k1 = static_cast<int>(idxs.size());
+    size_t k1 = idxs.size();
     idxs.push_back(k); // sentinel for end
 
     // compute cumulative probabilities for groups
     std::vector<double> cp0(k1, 0.0);
     double s = 0.0;
-    for (int gi = 0; gi < k1; ++gi) {
-      int start = idxs[gi];
-      int end = idxs[gi + 1]; // exclusive
-      for (int j = start; j < end; ++j) s += p0sorted[j];
+    for (size_t gi = 0; gi < k1; ++gi) {
+      size_t start = idxs[gi];
+      size_t end = idxs[gi + 1]; // exclusive
+      for (size_t j = start; j < end; ++j) s += p0sorted[j];
       cp0[gi] = s;
     }
 
@@ -593,7 +593,7 @@ double powerFisherExactcpp(
     if (cp0[0] > alpha) continue;
 
     // find group index i where cp0[i] > alpha (first group exceeding alpha)
-    int i_grp = std::upper_bound(cp0.begin() + 1, cp0.end(), alpha) - cp0.begin();
+    size_t i_grp = std::upper_bound(cp0.begin() + 1, cp0.end(), alpha) - cp0.begin();
     // i_grp is the index of first cp0 > alpha, or k1 if none
 
     // compute unconditional alternative probabilities for corresponding x:
@@ -601,9 +601,9 @@ double powerFisherExactcpp(
     // then sort p1 according to the same order and sum up to idxs[i_grp]-1
 
     // number of smallest-table-probability cells included in rejection region
-    for (int i = 0; i < i_grp; ++i) {
-      for (int j = idxs[i]; j < idxs[i + 1]; ++j) {
-        int orig_idx = order[j];
+    for (size_t i = 0; i < i_grp; ++i) {
+      for (size_t j = idxs[i]; j < idxs[i + 1]; ++j) {
+        size_t orig_idx = order[j];
         int x = x_vec[orig_idx];
         double p_x = binomial_pmf(x, n1, pi1) * binomial_pmf(m - x, n2, pi2);
         power += p_x;
@@ -859,7 +859,7 @@ DataFrameCpp powerRiskDiffExactcpp(
   int n1 = static_cast<int>(std::round(n * r));
   int n2 = n - n1;
 
-  const int k = (n1 + 1) * (n2 + 1);
+  size_t k = (n1 + 1) * (n2 + 1);
 
   // Precompute T and flattened mapping (flat_y1, flat_y2)
   std::vector<double> T; T.reserve(k);
@@ -882,20 +882,20 @@ DataFrameCpp powerRiskDiffExactcpp(
   }
 
   // Order indices by ascending T
-  std::vector<int> order(k);
+  std::vector<size_t> order(k);
   std::iota(order.begin(), order.end(), 0);
   std::sort(order.begin(), order.end(), [&](int i, int j) { return T[i] < T[j]; });
 
   // Build Tsorted and find unique group boundaries (idx)
   std::vector<double> Tsorted(k);
-  for (int i = 0; i < k; ++i) Tsorted[i] = T[order[i]];
+  for (size_t i = 0; i < k; ++i) Tsorted[i] = T[order[i]];
 
-  std::vector<int> idx; idx.reserve(k / 4 + 4);
+  std::vector<size_t> idx; idx.reserve(k / 4 + 4);
   idx.push_back(0);
-  for (int i = 1; i < k; ++i) if (Tsorted[i] != Tsorted[i - 1]) idx.push_back(i);
-  int k1 = static_cast<int>(idx.size());
+  for (size_t i = 1; i < k; ++i) if (Tsorted[i] != Tsorted[i - 1]) idx.push_back(i);
+  size_t k1 = idx.size();
   std::vector<double> Tunique; Tunique.reserve(k1);
-  for (int i = 0; i < k1; ++i) Tunique.push_back(Tsorted[idx[i]]);
+  for (size_t i = 0; i < k1; ++i) Tunique.push_back(Tsorted[idx[i]]);
   idx.push_back(k); // sentinel
 
   // Determine direction: higher T means better response if pi1 - pi2 > riskDiffH0
@@ -924,11 +924,11 @@ DataFrameCpp powerRiskDiffExactcpp(
     // sum probabilities group-wise until exceed alpha
     if (directionUpper) {
       double s = 0.0;
-      int i_group;
-      for (i_group = k1 - 1; i_group >= 0; --i_group) {
+      size_t i_group;
+      for (i_group = k1; i_group-- > 0; ) {
         // sum all entries in group i_group
-        for (int j = idx[i_group]; j < idx[i_group + 1]; ++j) {
-          int flatIndex = order[j];
+        for (size_t j = idx[i_group]; j < idx[i_group + 1]; ++j) {
+          size_t flatIndex = order[j];
           s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
         }
         if (s > alpha) break;
@@ -939,10 +939,10 @@ DataFrameCpp powerRiskDiffExactcpp(
       return -aval; // negate to make it a minimization problem
     } else {
       double s = 0.0;
-      int i_group;
+      size_t i_group;
       for (i_group = 0; i_group < k1; ++i_group) {
-        for (int j = idx[i_group]; j < idx[i_group + 1]; ++j) {
-          int flatIndex = order[j];
+        for (size_t j = idx[i_group]; j < idx[i_group + 1]; ++j) {
+          size_t flatIndex = order[j];
           s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
         }
         if (s > alpha) break;
@@ -961,22 +961,22 @@ DataFrameCpp powerRiskDiffExactcpp(
 
   // Partition domain into K subintervals, run local minimizer on each,
   // pick global best
-  const int K = 100;
+  const size_t K = 100;
   const double delta = (pi2upper - pi2lower) / static_cast<double>(K);
   std::vector<double> a(K), b(K);
 
-  for (int ii = 0; ii < K; ++ii) {
-    double lo = pi2lower + ii * delta;
+  for (size_t i = 0; i < K; ++i) {
+    double lo = pi2lower + i * delta;
     double hi = lo + delta;
     // minimize f on [lo,hi]
     auto res = mini(f, lo, hi);
-    a[ii] = res.first;
-    b[ii] = res.second;
+    a[i] = res.first;
+    b[i] = res.second;
   }
 
   // pick interval with minimal b
   int best_i = 0;
-  for (int ii = 1; ii < K; ++ii) if (b[ii] < b[best_i]) best_i = ii;
+  for (size_t i = 1; i < K; ++i) if (b[i] < b[best_i]) best_i = i;
   double pi2star = a[best_i];
   double t = directionUpper ? -b[best_i] : b[best_i];
 
@@ -989,7 +989,7 @@ DataFrameCpp powerRiskDiffExactcpp(
       q2[y] = binomial_pmf_from_logchoose(y, n2, p2_val, logchoose_n2);
 
     double preject = 0.0;
-    for (int flatIndex = 0; flatIndex < k; ++flatIndex) {
+    for (size_t flatIndex = 0; flatIndex < k; ++flatIndex) {
       if ((directionUpper && (T[flatIndex] >= t)) ||
           ((!directionUpper) && (T[flatIndex] <= t))) {
         preject += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
@@ -1010,15 +1010,15 @@ DataFrameCpp powerRiskDiffExactcpp(
     };
 
     // search K intervals again for h minimization
-    for (int ii = 0; ii < K; ++ii) {
-      double lo = pi2lower + ii * delta;
+    for (size_t i = 0; i < K; ++i) {
+      double lo = pi2lower + i * delta;
       double hi = lo + delta;
       auto res = mini(h, lo, hi);
-      a[ii] = res.first;
-      b[ii] = res.second;
+      a[i] = res.first;
+      b[i] = res.second;
     }
-    int best2 = 0;
-    for (int ii = 1; ii < K; ++ii) if (b[ii] < b[best2]) best2 = ii;
+    size_t best2 = 0;
+    for (size_t i = 1; i < K; ++i) if (b[i] < b[best2]) best2 = i;
     double attainedAlpha = -b[best2];
 
     result.push_back(alpha, "alpha");
@@ -1298,7 +1298,7 @@ DataFrameCpp powerRiskRatioExactcpp(
   int n1 = static_cast<int>(std::round(n * r));
   int n2 = n - n1;
 
-  const int k = (n1 + 1) * (n2 + 1);
+  size_t k = (n1 + 1) * (n2 + 1);
 
   // Precompute T and flattened mapping (flat_y1, flat_y2)
   std::vector<double> T; T.reserve(k);
@@ -1322,20 +1322,20 @@ DataFrameCpp powerRiskRatioExactcpp(
   }
 
   // order indices by ascending T
-  std::vector<int> order(k);
+  std::vector<size_t> order(k);
   std::iota(order.begin(), order.end(), 0);
   std::sort(order.begin(), order.end(), [&](int i, int j) { return T[i] < T[j]; });
 
   // Build Tsorted and find unique group boundaries (idx)
   std::vector<double> Tsorted(k);
-  for (int i = 0; i < k; ++i) Tsorted[i] = T[order[i]];
+  for (size_t i = 0; i < k; ++i) Tsorted[i] = T[order[i]];
 
-  std::vector<int> idx; idx.reserve(k / 4 + 4);
+  std::vector<size_t> idx; idx.reserve(k / 4 + 4);
   idx.push_back(0);
-  for (int i = 1; i < k; ++i) if (Tsorted[i] != Tsorted[i - 1]) idx.push_back(i);
-  int k1 = static_cast<int>(idx.size());
+  for (size_t i = 1; i < k; ++i) if (Tsorted[i] != Tsorted[i - 1]) idx.push_back(i);
+  size_t k1 = idx.size();
   std::vector<double> Tunique; Tunique.reserve(k1);
-  for (int i = 0; i < k1; ++i) Tunique.push_back(Tsorted[idx[i]]);
+  for (size_t i = 0; i < k1; ++i) Tunique.push_back(Tsorted[idx[i]]);
   idx.push_back(k); // sentinel
 
   // determine direction: higher T means better response if pi1 / pi2 > riskRatioH0
@@ -1364,11 +1364,11 @@ DataFrameCpp powerRiskRatioExactcpp(
     // sum probabilities group-wise until exceed alpha
     if (directionUpper) {
       double s = 0.0;
-      int i_group;
-      for (i_group = k1 - 1; i_group >= 0; --i_group) {
+      size_t i_group;
+      for (i_group = k1; i_group-- > 0; ) {
         // sum all entries in group i_group
-        for (int j = idx[i_group]; j < idx[i_group + 1]; ++j) {
-          int flatIndex = order[j];
+        for (size_t j = idx[i_group]; j < idx[i_group + 1]; ++j) {
+          size_t flatIndex = order[j];
           s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
         }
         if (s > alpha) break;
@@ -1379,10 +1379,10 @@ DataFrameCpp powerRiskRatioExactcpp(
       return -aval; // negate to make it a minimization problem
     } else {
       double s = 0.0;
-      int i_group;
+      size_t i_group;
       for (i_group = 0; i_group < k1; ++i_group) {
-        for (int j = idx[i_group]; j < idx[i_group + 1]; ++j) {
-          int flatIndex = order[j];
+        for (size_t j = idx[i_group]; j < idx[i_group + 1]; ++j) {
+          size_t flatIndex = order[j];
           s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
         }
         if (s > alpha) break;
@@ -1401,22 +1401,22 @@ DataFrameCpp powerRiskRatioExactcpp(
 
   // Partition domain into K subintervals, run local minimizer on each,
   // pick global best
-  const int K = 100;
-  const double delta = (pi2upper - pi2lower) / static_cast<double>(K);
+  size_t K = 100;
+  double delta = (pi2upper - pi2lower) / static_cast<double>(K);
   std::vector<double> a(K), b(K);
 
-  for (int ii = 0; ii < K; ++ii) {
-    double lo = pi2lower + ii * delta;
+  for (size_t i = 0; i < K; ++i) {
+    double lo = pi2lower + i * delta;
     double hi = lo + delta;
     // minimize f on [lo,hi]
     auto res = mini(f, lo, hi);
-    a[ii] = res.first;
-    b[ii] = res.second;
+    a[i] = res.first;
+    b[i] = res.second;
   }
 
   // pick interval with minimal b
-  int best_i = 0;
-  for (int ii = 1; ii < K; ++ii) if (b[ii] < b[best_i]) best_i = ii;
+  size_t best_i = 0;
+  for (size_t i = 1; i < K; ++i) if (b[i] < b[best_i]) best_i = i;
   double pi2star = a[best_i];
   double t = directionUpper ? -b[best_i] : b[best_i];
 
@@ -1429,7 +1429,7 @@ DataFrameCpp powerRiskRatioExactcpp(
       q2[y] = binomial_pmf_from_logchoose(y, n2, p2_val, logchoose_n2);
 
     double preject = 0.0;
-    for (int flatIndex = 0; flatIndex < k; ++flatIndex) {
+    for (size_t flatIndex = 0; flatIndex < k; ++flatIndex) {
       if ((directionUpper && (T[flatIndex] >= t)) ||
           ((!directionUpper) && (T[flatIndex] <= t))) {
         preject += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
@@ -1449,15 +1449,15 @@ DataFrameCpp powerRiskRatioExactcpp(
       return -g(p1, p2);
     };
 
-    for (int ii = 0; ii < K; ++ii) {
-      double lo = pi2lower + ii * delta;
+    for (size_t i = 0; i < K; ++i) {
+      double lo = pi2lower + i * delta;
       double hi = lo + delta;
       auto res = mini(h, lo, hi);
-      a[ii] = res.first;
-      b[ii] = res.second;
+      a[i] = res.first;
+      b[i] = res.second;
     }
-    int best2 = 0;
-    for (int ii = 1; ii < K; ++ii) if (b[ii] < b[best2]) best2 = ii;
+    size_t best2 = 0;
+    for (size_t i = 1; i < K; ++i) if (b[i] < b[best2]) best2 = i;
     double attainedAlpha = -b[best2];
 
     result.push_back(alpha, "alpha");
@@ -1741,7 +1741,7 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
   int n1 = static_cast<int>(std::round(n * r));
   int n2 = n - n1;
 
-  const int k = (n1 + 1) * (n2 + 1);
+  size_t k = (n1 + 1) * (n2 + 1);
 
   // Precompute log-choose tables for binomial pmfs
   std::vector<double> logc_n1 = make_log_choose(n1);
@@ -1768,19 +1768,19 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
   }
 
   // order1 and unique breakpoints for T1
-  std::vector<int> order1(k);
+  std::vector<size_t> order1(k);
   std::iota(order1.begin(), order1.end(), 0);
   std::sort(order1.begin(), order1.end(), [&](int a, int b){ return T1[a] < T1[b]; });
 
   std::vector<double> T1sorted(k);
-  for (int i = 0; i < k; ++i) T1sorted[i] = T1[order1[i]];
+  for (size_t i = 0; i < k; ++i) T1sorted[i] = T1[order1[i]];
 
-  std::vector<int> idx1; idx1.reserve(k/4 + 4);
+  std::vector<size_t> idx1; idx1.reserve(k/4 + 4);
   idx1.push_back(0);
-  for (int i = 1; i < k; ++i) if (T1sorted[i] != T1sorted[i-1]) idx1.push_back(i);
-  int k1 = static_cast<int>(idx1.size());
+  for (size_t i = 1; i < k; ++i) if (T1sorted[i] != T1sorted[i-1]) idx1.push_back(i);
+  size_t k1 = idx1.size();
   std::vector<double> T1unique; T1unique.reserve(k1);
-  for (int i = 0; i < k1; ++i) T1unique.push_back(T1sorted[idx1[i]]);
+  for (size_t i = 0; i < k1; ++i) T1unique.push_back(T1sorted[idx1[i]]);
   idx1.push_back(k); // sentinel
 
   // f1: given p2 under H10, compute signed critical value (-aval)
@@ -1796,10 +1796,10 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
 
     // iterate groups from largest T downwards, accumulating group probabilities
     double s = 0.0;
-    int i_group;
-    for (i_group = k1 - 1; i_group >= 0; --i_group) {
-      for (int j = idx1[i_group]; j < idx1[i_group + 1]; ++j) {
-        int flatIndex = order1[j];
+    size_t i_group;
+    for (i_group = k1; i_group-- > 0; ) {
+      for (size_t j = idx1[i_group]; j < idx1[i_group + 1]; ++j) {
+        size_t flatIndex = order1[j];
         s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
       }
       if (s > alpha) break;
@@ -1813,16 +1813,16 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
   // find critical value for H10 by partitioned minimization over p2 in valid domain
   double pi2lower1 = std::max(0.0, -riskDiffLower);
   double pi2upper1 = std::min(1.0, 1.0 - riskDiffLower);
-  const int K = 100;
+  size_t K = 100;
   double delta1 = (pi2upper1 - pi2lower1) / static_cast<double>(K);
   std::vector<double> a1(K), b1(K);
 
-  for (int ii = 0; ii < K; ++ii) {
-    double lo = pi2lower1 + ii * delta1;
+  for (size_t i = 0; i < K; ++i) {
+    double lo = pi2lower1 + i * delta1;
     double hi = lo + delta1;
     auto res = mini(f1, lo, hi);
-    a1[ii] = res.first;
-    b1[ii] = res.second;
+    a1[i] = res.first;
+    b1[i] = res.second;
   }
   double t1 = - *std::min_element(b1.begin(), b1.end());
 
@@ -1851,20 +1851,20 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
     t2 = -t1;
   } else {
     // build order2, unique breakpoints
-    std::vector<int> order2(k);
+    std::vector<size_t> order2(k);
     std::iota(order2.begin(), order2.end(), 0);
     std::sort(order2.begin(), order2.end(),
               [&](int a, int b){ return T2[a] < T2[b]; });
 
     std::vector<double> T2sorted(k);
-    for (int i = 0; i < k; ++i) T2sorted[i] = T2[order2[i]];
+    for (size_t i = 0; i < k; ++i) T2sorted[i] = T2[order2[i]];
 
-    std::vector<int> idx2; idx2.reserve(k/4 + 4);
+    std::vector<size_t> idx2; idx2.reserve(k/4 + 4);
     idx2.push_back(0);
-    for (int i = 1; i < k; ++i) if (T2sorted[i] != T2sorted[i-1]) idx2.push_back(i);
-    int k2 = static_cast<int>(idx2.size());
+    for (size_t i = 1; i < k; ++i) if (T2sorted[i] != T2sorted[i-1]) idx2.push_back(i);
+    size_t k2 = idx2.size();
     std::vector<double> T2unique; T2unique.reserve(k2);
-    for (int i = 0; i < k2; ++i) T2unique.push_back(T2sorted[idx2[i]]);
+    for (size_t i = 0; i < k2; ++i) T2unique.push_back(T2sorted[idx2[i]]);
     idx2.push_back(k);
 
     auto f2 = [&](double p2)->double {
@@ -1877,10 +1877,10 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
         q2[y] = binomial_pmf_from_logchoose(y, n2, p2, logc_n2);
 
       double s = 0.0;
-      int i_group;
+      size_t i_group;
       for (i_group = 0; i_group < k2; ++i_group) {
-        for (int j = idx2[i_group]; j < idx2[i_group + 1]; ++j) {
-          int flatIndex = order2[j];
+        for (size_t j = idx2[i_group]; j < idx2[i_group + 1]; ++j) {
+          size_t flatIndex = order2[j];
           s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
         }
         if (s > alpha) break;
@@ -1894,12 +1894,12 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
 
     // partition minimization
     std::vector<double> a2(K), b2(K);
-    for (int ii = 0; ii < K; ++ii) {
-      double lo = pi2lower2 + ii * delta2;
+    for (size_t i = 0; i < K; ++i) {
+      double lo = pi2lower2 + i * delta2;
       double hi = lo + delta2;
       auto res = mini(f2, lo, hi);
-      a2[ii] = res.first;
-      b2[ii] = res.second;
+      a2[i] = res.first;
+      b2[i] = res.second;
     }
     t2 = *std::min_element(b2.begin(), b2.end());
   }
@@ -1914,7 +1914,7 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
       q2[y] = binomial_pmf_from_logchoose(y, n2, p2_val, logc_n2);
 
     double preject = 0.0;
-    for (int flatIndex = 0; flatIndex < k; ++flatIndex) {
+    for (size_t flatIndex = 0; flatIndex < k; ++flatIndex) {
       if ((T1[flatIndex] >= t1) && (T2[flatIndex] <= t2)) {
         preject += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
       }
@@ -1935,11 +1935,11 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
     };
 
     // partition and minimize h10 over pi2lower1..pi2upper1
-    for (int ii = 0; ii < K; ++ii) {
-      double lo = pi2lower1 + ii * delta1;
+    for (size_t i = 0; i < K; ++i) {
+      double lo = pi2lower1 + i * delta1;
       double hi = lo + delta1;
       auto res = mini(h10, lo, hi);
-      b1[ii] = res.second;
+      b1[i] = res.second;
     }
     double attainedAlphaH10 = - *std::min_element(b1.begin(), b1.end());
 
@@ -1955,11 +1955,11 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
 
       // partition and minimize h20 over across pi2lower2..pi2upper2
       std::vector<double> b2(K);
-      for (int ii = 0; ii < K; ++ii) {
-        double lo = pi2lower2 + ii * delta2;
+      for (size_t i = 0; i < K; ++i) {
+        double lo = pi2lower2 + i * delta2;
         double hi = lo + delta2;
         auto res = mini(h20, lo, hi);
-        b2[ii] = res.second;
+        b2[i] = res.second;
       }
 
       attainedAlphaH20 = - *std::min_element(b2.begin(), b2.end());
@@ -2271,8 +2271,7 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
   double r = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
   int n1 = static_cast<int>(std::round(n * r));
   int n2 = n - n1;
-
-  const int k = (n1 + 1) * (n2 + 1);
+  size_t k = (n1 + 1) * (n2 + 1);
 
   // Precompute log-choose tables for binomial pmfs
   std::vector<double> logc_n1 = make_log_choose(n1);
@@ -2299,19 +2298,19 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
   }
 
   // order1 and unique breakpoints for T1
-  std::vector<int> order1(k);
+  std::vector<size_t> order1(k);
   std::iota(order1.begin(), order1.end(), 0);
   std::sort(order1.begin(), order1.end(), [&](int a, int b){ return T1[a] < T1[b]; });
 
   std::vector<double> T1sorted(k);
-  for (int i = 0; i < k; ++i) T1sorted[i] = T1[order1[i]];
+  for (size_t i = 0; i < k; ++i) T1sorted[i] = T1[order1[i]];
 
-  std::vector<int> idx1; idx1.reserve(k/4 + 4);
+  std::vector<size_t> idx1; idx1.reserve(k/4 + 4);
   idx1.push_back(0);
-  for (int i = 1; i < k; ++i) if (T1sorted[i] != T1sorted[i-1]) idx1.push_back(i);
-  int k1 = static_cast<int>(idx1.size());
+  for (size_t i = 1; i < k; ++i) if (T1sorted[i] != T1sorted[i-1]) idx1.push_back(i);
+  size_t k1 = idx1.size();
   std::vector<double> T1unique; T1unique.reserve(k1);
-  for (int i = 0; i < k1; ++i) T1unique.push_back(T1sorted[idx1[i]]);
+  for (size_t i = 0; i < k1; ++i) T1unique.push_back(T1sorted[idx1[i]]);
   idx1.push_back(k); // sentinel
 
   // f1: given p2 under H10, compute signed critical value (-aval)
@@ -2327,10 +2326,10 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
 
     // iterate groups from largest T downwards, accumulating group probabilities
     double s = 0.0;
-    int i_group;
-    for (i_group = k1 - 1; i_group >= 0; --i_group) {
-      for (int j = idx1[i_group]; j < idx1[i_group + 1]; ++j) {
-        int flatIndex = order1[j];
+    size_t i_group;
+    for (i_group = k1; i_group-- > 0; ) {
+      for (size_t j = idx1[i_group]; j < idx1[i_group + 1]; ++j) {
+        size_t flatIndex = order1[j];
         s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
       }
       if (s > alpha) break;
@@ -2344,16 +2343,16 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
   // find critical value for H10 by partitioned minimization over p2 in valid domain
   double pi2lower1 = 0;
   double pi2upper1 = std::min(1.0, 1.0 / riskRatioLower);
-  const int K = 100;
+  size_t K = 100;
   double delta1 = (pi2upper1 - pi2lower1) / static_cast<double>(K);
   std::vector<double> a1(K), b1(K);
 
-  for (int ii = 0; ii < K; ++ii) {
-    double lo = pi2lower1 + ii * delta1;
+  for (size_t i = 0; i < K; ++i) {
+    double lo = pi2lower1 + i * delta1;
     double hi = lo + delta1;
     auto res = mini(f1, lo, hi);
-    a1[ii] = res.first;
-    b1[ii] = res.second;
+    a1[i] = res.first;
+    b1[i] = res.second;
   }
   double t1 = - *std::min_element(b1.begin(), b1.end());
 
@@ -2382,20 +2381,20 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
     t2 = -t1;
   } else {
     // build order2, unique breakpoints
-    std::vector<int> order2(k);
+    std::vector<size_t> order2(k);
     std::iota(order2.begin(), order2.end(), 0);
     std::sort(order2.begin(), order2.end(),
               [&](int a, int b){ return T2[a] < T2[b]; });
 
     std::vector<double> T2sorted(k);
-    for (int i = 0; i < k; ++i) T2sorted[i] = T2[order2[i]];
+    for (size_t i = 0; i < k; ++i) T2sorted[i] = T2[order2[i]];
 
-    std::vector<int> idx2; idx2.reserve(k/4 + 4);
+    std::vector<size_t> idx2; idx2.reserve(k/4 + 4);
     idx2.push_back(0);
-    for (int i = 1; i < k; ++i) if (T2sorted[i] != T2sorted[i-1]) idx2.push_back(i);
-    int k2 = static_cast<int>(idx2.size());
+    for (size_t i = 1; i < k; ++i) if (T2sorted[i] != T2sorted[i-1]) idx2.push_back(i);
+    size_t k2 = idx2.size();
     std::vector<double> T2unique; T2unique.reserve(k2);
-    for (int i = 0; i < k2; ++i) T2unique.push_back(T2sorted[idx2[i]]);
+    for (size_t i = 0; i < k2; ++i) T2unique.push_back(T2sorted[idx2[i]]);
     idx2.push_back(k);
 
     auto f2 = [&](double p2)->double {
@@ -2408,10 +2407,10 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
         q2[y] = binomial_pmf_from_logchoose(y, n2, p2, logc_n2);
 
       double s = 0.0;
-      int i_group;
+      size_t i_group;
       for (i_group = 0; i_group < k2; ++i_group) {
-        for (int j = idx2[i_group]; j < idx2[i_group + 1]; ++j) {
-          int flatIndex = order2[j];
+        for (size_t j = idx2[i_group]; j < idx2[i_group + 1]; ++j) {
+          size_t flatIndex = order2[j];
           s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
         }
         if (s > alpha) break;
@@ -2425,12 +2424,12 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
 
     // partition minimization
     std::vector<double> a2(K), b2(K);
-    for (int ii = 0; ii < K; ++ii) {
-      double lo = pi2lower2 + ii * delta2;
+    for (size_t i = 0; i < K; ++i) {
+      double lo = pi2lower2 + i * delta2;
       double hi = lo + delta2;
       auto res = mini(f2, lo, hi);
-      a2[ii] = res.first;
-      b2[ii] = res.second;
+      a2[i] = res.first;
+      b2[i] = res.second;
     }
     t2 = *std::min_element(b2.begin(), b2.end());
   }
@@ -2445,7 +2444,7 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
       q2[y] = binomial_pmf_from_logchoose(y, n2, p2_val, logc_n2);
 
     double preject = 0.0;
-    for (int flatIndex = 0; flatIndex < k; ++flatIndex) {
+    for (size_t flatIndex = 0; flatIndex < k; ++flatIndex) {
       if ((T1[flatIndex] >= t1) && (T2[flatIndex] <= t2)) {
         preject += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
       }
@@ -2466,11 +2465,11 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
     };
 
     // partition and minimize h10 over pi2lower1..pi2upper1
-    for (int ii = 0; ii < K; ++ii) {
-      double lo = pi2lower1 + ii * delta1;
+    for (size_t i = 0; i < K; ++i) {
+      double lo = pi2lower1 + i * delta1;
       double hi = lo + delta1;
       auto res = mini(h10, lo, hi);
-      b1[ii] = res.second;
+      b1[i] = res.second;
     }
     double attainedAlphaH10 = - *std::min_element(b1.begin(), b1.end());
 
@@ -2486,11 +2485,11 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
 
       // partition and minimize h20 over across pi2lower2..pi2upper2
       std::vector<double> b2(K);
-      for (int ii = 0; ii < K; ++ii) {
-        double lo = pi2lower2 + ii * delta2;
+      for (size_t i = 0; i < K; ++i) {
+        double lo = pi2lower2 + i * delta2;
         double hi = lo + delta2;
         auto res = mini(h20, lo, hi);
-        b2[ii] = res.second;
+        b2[i] = res.second;
       }
 
       attainedAlphaH20 = - *std::min_element(b2.begin(), b2.end());
@@ -2797,7 +2796,7 @@ DataFrameCpp riskDiffExactPValuecpp(
     const double riskDiffH0,
     bool directionUpper) {
 
-  const int k = (n1 + 1) * (n2 + 1);
+  size_t k = (n1 + 1) * (n2 + 1);
 
   // Precompute T for all tables (row-major: index = y1*(n2+1) + y2)
   std::vector<double> T; T.reserve(k);
@@ -2840,7 +2839,7 @@ DataFrameCpp riskDiffExactPValuecpp(
     const int sign = (directionUpper ? +1 : -1);
     // iterate all flat indices and sum q1[y1] * q2[y2] where
     // (T[i] - Tobs) has same sign or zero
-    int idx = 0;
+    size_t idx = 0;
     for (int yy1 = 0; yy1 <= n1; ++yy1) {
       double q1val = q1[yy1];
       for (int yy2 = 0; yy2 <= n2; ++yy2) {
@@ -2870,23 +2869,23 @@ DataFrameCpp riskDiffExactPValuecpp(
     return out;
   }
 
-  const int K = 100;
+  size_t K = 100;
   std::vector<double> a(K), b(K);
 
   // Partition domain into K subintervals; run local minimizer on each
   double delta = (pi2upper - pi2lower) / static_cast<double>(K);
 
-  for (int ii = 0; ii < K; ++ii) {
-    double lo = pi2lower + ii * delta;
+  for (size_t i = 0; i < K; ++i) {
+    double lo = pi2lower + i * delta;
     double hi = lo + delta;
     auto res = mini(f, lo, hi);
-    a[ii] = res.first;
-    b[ii] = res.second;
+    a[i] = res.first;
+    b[i] = res.second;
   }
 
   // pick best (minimum b)
-  int best = 0;
-  for (int ii = 1; ii < K; ++ii) if (b[ii] < b[best]) best = ii;
+  size_t best = 0;
+  for (size_t i = 1; i < K; ++i) if (b[i] < b[best]) best = i;
 
   double pi2star = a[best];
   double pvalue = -b[best];
@@ -3042,7 +3041,7 @@ DataFrameCpp riskRatioExactPValuecpp(
     const double riskRatioH0,
     bool directionUpper) {
 
-  const int k = (n1 + 1) * (n2 + 1);
+  size_t k = (n1 + 1) * (n2 + 1);
 
   // Precompute T for all tables (row-major: index = y1*(n2+1) + y2)
   std::vector<double> T; T.reserve(k);
@@ -3086,7 +3085,7 @@ DataFrameCpp riskRatioExactPValuecpp(
     const int sign = (directionUpper ? +1 : -1);
     // iterate all flat indices and sum q1[y1] * q2[y2] where
     // (T[i] - Tobs) has same sign or zero
-    int idx = 0;
+    size_t idx = 0;
     for (int yy1 = 0; yy1 <= n1; ++yy1) {
       double q1val = q1[yy1];
       for (int yy2 = 0; yy2 <= n2; ++yy2) {
@@ -3116,23 +3115,23 @@ DataFrameCpp riskRatioExactPValuecpp(
     return out;
   }
 
-  const int K = 100;
+  size_t K = 100;
   std::vector<double> a(K), b(K);
 
   // Partition domain into K subintervals; run local minimizer on each
   double delta = (pi2upper - pi2lower) / static_cast<double>(K);
 
-  for (int ii = 0; ii < K; ++ii) {
-    double lo = pi2lower + ii * delta;
+  for (size_t i = 0; i < K; ++i) {
+    double lo = pi2lower + i * delta;
     double hi = lo + delta;
     auto res = mini(f, lo, hi);
-    a[ii] = res.first;
-    b[ii] = res.second;
+    a[i] = res.first;
+    b[i] = res.second;
   }
 
   // pick best (minimum b)
-  int best = 0;
-  for (int ii = 1; ii < K; ++ii) if (b[ii] < b[best]) best = ii;
+  size_t best = 0;
+  for (size_t i = 1; i < K; ++i) if (b[i] < b[best]) best = i;
 
   double pi2star = a[best];
   double pvalue = -b[best];

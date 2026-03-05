@@ -376,8 +376,8 @@ ListCpp lrsimcpp(
           arrivalT[i] = enrollt;
 
           u = unif(rng_local);
-          int j = findInterval1(u, cumF);
-          stratum[i] = j + 1;
+          size_t j = findInterval1(u, cumF);
+          stratum[i] = static_cast<int>(j + 1);
 
           u = unif(rng_local);
           double denom = static_cast<double>(b1[j] + b2[j]);
@@ -766,7 +766,7 @@ ListCpp lrsimcpp(
   std::vector<double> eventsPerStage(K), dropoutsPerStage(K);
   std::vector<double> subjectsPerStage(K), analysisTimePerStage(K);
   for (size_t i = 0; i < index2; ++i) {
-    int k = sum_stageNum[i] - 1;
+    size_t k = static_cast<size_t>(sum_stageNum[i] - 1);
     if (sum_stageNum[i] == sum_stopStage[i]) {
       niters += 1.0;
       stopPerStage[k] += 1.0;
@@ -1274,8 +1274,8 @@ ListCpp lrsim3acpp(
           arrivalT[i] = enrollt;
 
           u = unif(rng_local);
-          int j = findInterval1(u, cumF);
-          stratum[i] = j + 1;
+          size_t j = findInterval1(u, cumF);
+          stratum[i] = static_cast<int>(j + 1);
 
           // stratified block randomization among 3 arms
           u = unif(rng_local);
@@ -2223,8 +2223,8 @@ ListCpp lrsim2ecpp(
           arrivalT[i] = enrollt;
 
           u = unif(rng_local);
-          int j = findInterval1(u, cumF);
-          stratum[i] = j + 1;
+          size_t j = findInterval1(u, cumF);
+          stratum[i] = static_cast<int>(j + 1);
 
           u = unif(rng_local);
           double denom = static_cast<double>(b1[j] + b2[j]);
@@ -3342,8 +3342,8 @@ ListCpp lrsim2e3acpp(
           arrivalT[i] = enrollt;
 
           u = unif(rng_local);
-          int j = findInterval1(u, cumF);
-          stratum[i] = j + 1;
+          size_t j = findInterval1(u, cumF);
+          stratum[i] = static_cast<int>(j + 1);
 
           // stratified block randomization among 3 arms
           u = unif(rng_local);
@@ -4550,8 +4550,8 @@ ListCpp lrsimsubcpp(
           arrivalT[i] = enrollt;
 
           u = unif(rng_local);
-          int j = findInterval1(u, cumF);
-          stratum[i] = j + 1;
+          size_t j = findInterval1(u, cumF);
+          stratum[i] = static_cast<int>(j + 1);
 
           // biomarker
           u = unif(rng_local);
@@ -5491,8 +5491,8 @@ ListCpp binary_tte_sim_cpp(
           arrivalT[i] = enrollt;
 
           u = unif(rng_local);
-          int j = findInterval1(u, cumF);
-          stratum[i] = j + 1;
+          size_t j = findInterval1(u, cumF);
+          stratum[i] = static_cast<int>(j + 1);
 
           // randomization
           u = unif(rng_local);

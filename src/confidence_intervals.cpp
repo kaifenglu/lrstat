@@ -580,7 +580,7 @@ std::pair<int, double> f_bwimage(const double theta,
   for (size_t l = 0; l < K1; ++l) p[l + 1] = p[l] + pu[l];
 
   // find interval containing astar (j such that p[j-1] <= astar < p[j])
-  int j = findInterval1(astar, p);
+  size_t j = findInterval1(astar, p);
 
   // find z1j
   double z1j;
@@ -604,7 +604,7 @@ std::pair<int, double> f_bwimage(const double theta,
     z1j = brent(f, -6.0, 6.0, 1e-6);
   }
 
-  int J = L + j; // combined stage index in primary trial numbering
+  size_t J = L + j; // combined stage index in primary trial numbering
   double ratio = I[L-1] / I[J-1];
   double zJ = std::sqrt(ratio) * zL + std::sqrt(1.0 - ratio) * z1j;
 

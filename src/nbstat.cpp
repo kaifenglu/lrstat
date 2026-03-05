@@ -188,7 +188,7 @@ ListCpp nbstat1cpp(
   const double a2 = accrual1(time - maxFollowupTime, accrualTime,
                              accrualIntensity, accrualDuration);
 
-  // ---- outputs ----
+  // --- outputs ---
   std::vector<int> stratum(nstrata);
   std::vector<double> calTime(nstrata, time);
   std::vector<double> nsubjects(nstrata);
@@ -1194,7 +1194,7 @@ ListCpp nbpowercpp(
   auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
 
 
-  // --- Efficacy boundaries ---------------------------------------------------
+  // --- Efficacy boundaries ---
   std::vector<double> l(K, -6.0), zero(K, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
@@ -1237,7 +1237,7 @@ ListCpp nbpowercpp(
   double alpha1 = missingCriticalValues ? alpha :
     std::round(cumAlphaSpent.back() * 1e6) / 1e6;
 
-  // --- Futility boundaries ---------------------------------------------------
+  // --- Futility boundaries ---
   std::vector<double> futBounds = futilityBounds;
   if (K > 1) {
     if (missingFutilityBounds && bsf == "none") {
@@ -1255,7 +1255,7 @@ ListCpp nbpowercpp(
   // Randomization probability for treatment group
   double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
 
-  // ---- study duration ----
+  // --- study duration ---
   double studyDuration1 = studyDuration;
   if (!fixedFollowup || std::isnan(studyDuration)) {
     studyDuration1 = accrualDuration + followupTime;
@@ -1268,7 +1268,7 @@ ListCpp nbpowercpp(
   std::vector<double> I(K);
   std::vector<double> w(K, 1.0); // square root of variance ratio
 
-  // ---- compute maxInformation and theta via nbstat at study end ----
+  // --- compute maxInformation and theta via nbstat at study end ---
   ListCpp nb = nbstat1cpp(
     studyDuration1, rateRatioH0, allocationRatioPlanned,
     accrualTime, accrualIntensity,
@@ -1316,7 +1316,7 @@ ListCpp nbpowercpp(
   }
 
 
-  // ---- compute information, time, and other stats at interim analyses ----
+  // --- compute information, time, and other stats at interim analyses ---
   for (size_t i = 0; i < K - 1; ++i) {
     double information1 = maxInformation * infoRates[i];
     I[i] = information1;
@@ -1375,7 +1375,7 @@ ListCpp nbpowercpp(
     }
   }
 
-  // ---- compute exit probabilities ----
+  // --- compute exit probabilities ---
   ListCpp exit_probs;
   if (!missingFutilityBounds || bsf == "none" || K == 1) {
     std::vector<double> critValues1 = critValues;
@@ -1450,7 +1450,7 @@ ListCpp nbpowercpp(
     if (futBounds[i] == -6.0) { rrl[i] = NaN; futStopping[i] = 0; }
   }
 
-  // --- Build output DataFrames and Lists ------------------------------------
+  // --- Build output DataFrames and Lists ---
   DataFrameCpp overallResults;
   overallResults.push_back(overallReject, "overallReject");
   overallResults.push_back(alpha1, "alpha");
@@ -2088,7 +2088,7 @@ ListCpp nbsamplesizecpp(
   auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
 
 
-  // --- Efficacy boundaries ---------------------------------------------------
+  // --- Efficacy boundaries ---
   std::vector<double> l(K, -6.0), zero(K, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
@@ -2124,7 +2124,7 @@ ListCpp nbsamplesizecpp(
     }
   }
 
-  // --- Futility boundaries ---------------------------------------------------
+  // --- Futility boundaries ---
   std::vector<double> futBounds = futilityBounds;
   if (K > 1) {
     if (missingFutilityBounds && bsf == "none") {
@@ -2196,7 +2196,7 @@ ListCpp nbsamplesizecpp(
     std::vector<double> time(K), I(K);
     std::vector<double> w(K, 1.0); // square root of information ratio
 
-    // ---- compute maxInformation and theta via nbstat at study end ----
+    // --- compute maxInformation and theta via nbstat at study end ---
     ListCpp nb = nbstat1cpp(
       studyDuration1, rateRatioH0, allocationRatioPlanned,
       accrualTime, accrInt,
@@ -4526,7 +4526,7 @@ ListCpp nbpowerequivcpp(
     efficacyP[i] = 1.0 - boost_pnorm(critValues[i]);
   }
 
-  // --- timing, events, information -----------
+  // --- timing, events, information ---
   double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
 
   double studyDuration1 = studyDuration;
@@ -4539,7 +4539,7 @@ ListCpp nbpowerequivcpp(
   std::vector<double> exposure(K), exposure1(K), exposure2(K);
   std::vector<double> I(K);
 
-  // ---- compute maxInformation and theta via nbstat at study end ----
+  // --- compute maxInformation and theta via nbstat at study end ---
   ListCpp nb = nbstat1cpp(
     studyDuration1, 1.0, allocationRatioPlanned,
     accrualTime, accrualIntensity,
@@ -4574,7 +4574,7 @@ ListCpp nbpowerequivcpp(
   exposure1[K - 1]   = extract_sum(dfH1, "exposure1");
   exposure2[K - 1]   = extract_sum(dfH1, "exposure2");
 
-  // ---- compute information, time, and other stats at interim analyses ----
+  // --- compute information, time, and other stats at interim analyses ---
   for (size_t i = 0; i < K - 1; ++i) {
     double information1 = maxInformation * infoRates[i];
     I[i] = information1;
@@ -4646,11 +4646,10 @@ ListCpp nbpowerequivcpp(
   std::partial_sum(v2.begin(), v2.end(), cpu.begin());
 
   // index for the first crossing look (0-based)
-  size_t kk = K;
+  size_t k = K;
   for (size_t i = 0; i < K; ++i) {
-    if (l[i] <= u[i]) { kk = i; break; }
+    if (l[i] <= u[i]) { k = i; break; }
   }
-  int k = static_cast<int>(kk);
 
   std::vector<double> cp(K);
   if (k == 0) { // crossing at the first look
@@ -4658,7 +4657,7 @@ ListCpp nbpowerequivcpp(
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   } else {
-    std::vector<double> cplx(kk), cpux(kk);
+    std::vector<double> cplx(k), cpux(k);
     std::vector l1 = subset(l, 0, k);
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
@@ -4668,10 +4667,10 @@ ListCpp nbpowerequivcpp(
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplx.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpux.begin());
-    for (size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < k; ++i) {
       cp[i] = cpl[i] + cpu[i] - cplx[i] - cpux[i];
     }
-    for (size_t i = kk; i < K; ++i) {
+    for (size_t i = k; i < K; ++i) {
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   }
@@ -4712,7 +4711,7 @@ ListCpp nbpowerequivcpp(
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   } else {
-    std::vector<double> cplH10x(kk), cpuH10x(kk);
+    std::vector<double> cplH10x(k), cpuH10x(k);
     std::vector l1 = subset(l, 0, k);
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
@@ -4722,10 +4721,10 @@ ListCpp nbpowerequivcpp(
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplH10x.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpuH10x.begin());
-    for (size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < k; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - cplH10x[i] - cpuH10x[i];
     }
-    for (size_t i = kk; i < K; ++i) {
+    for (size_t i = k; i < K; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   }
@@ -4749,7 +4748,7 @@ ListCpp nbpowerequivcpp(
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   } else {
-    std::vector<double> cplH20x(kk), cpuH20x(kk);
+    std::vector<double> cplH20x(k), cpuH20x(k);
     std::vector l1 = subset(l, 0, k);
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
@@ -4759,10 +4758,10 @@ ListCpp nbpowerequivcpp(
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplH20x.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpuH20x.begin());
-    for (size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < k; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - cplH20x[i] - cpuH20x[i];
     }
-    for (size_t i = kk; i < K; ++i) {
+    for (size_t i = k; i < K; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   }

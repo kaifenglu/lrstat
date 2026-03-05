@@ -236,7 +236,7 @@ DataFrameCpp simon2stagecpp(
 
   // [Rest of the code for convex hull and output formatting - same as before]
   auto min_it = std::min_element(en0x.begin(), en0x.end());
-  int I = static_cast<int>(std::distance(en0x.begin(), min_it));
+  size_t I = static_cast<size_t>(std::distance(en0x.begin(), min_it));
 
   nx.resize(I + 1);
   n1x.resize(I + 1);
@@ -247,15 +247,15 @@ DataFrameCpp simon2stagecpp(
   alphax.resize(I + 1);
   powerx.resize(I + 1);
 
-  std::vector<int> u_indices;
+  std::vector<size_t> u_indices;
   u_indices.push_back(0);
 
-  int i = 0;
+  size_t i = 0;
   while (i < I) {
     int best_j = -1;
     double min_slope = std::numeric_limits<double>::infinity();
 
-    for (int j = i + 1; j <= I; ++j) {
+    for (size_t j = i + 1; j <= I; ++j) {
       double slope = (en0x[j] - en0x[i]) / (nx[j] - nx[i]);
       if (slope < min_slope) {
         min_slope = slope;
@@ -277,11 +277,11 @@ DataFrameCpp simon2stagecpp(
   subset_in_place(alphax, u_indices);
   subset_in_place(powerx, u_indices);
 
-  int m = static_cast<int>(nx.size());
+  size_t m = nx.size();
   std::vector<double> w1(m), w2(m);
   std::vector<std::string> design(m);
 
-  for (int i = 0; i < m; ++i) {
+  for (size_t i = 0; i < m; ++i) {
     if (i < m - 1) {
       double slope = (en0x[i + 1] - en0x[i]) / (nx[i + 1] - nx[i]);
       double w = slope / (slope - 1.0);
@@ -391,7 +391,7 @@ Rcpp::DataFrame simon2stage(
 
 // Helper for the analyis of Simon's Bayesian basket trials
 ListCpp simonBayesAnalysiscpp(
-    const int nstrata,
+    const int nstrata1,
     const std::vector<double>& r,
     const std::vector<double>& n,
     const double lambda,
@@ -399,22 +399,24 @@ ListCpp simonBayesAnalysiscpp(
     const double phi,
     const double plo) {
 
-  if (nstrata == INT_MIN) {
+  if (nstrata1 == INT_MIN) {
     throw std::invalid_argument("nstrata must be provided.");
   }
-  if (nstrata <= 0) {
+  if (nstrata1 <= 0) {
     throw std::invalid_argument("nstrata must be a positive integer.");
   }
+  size_t nstrata = static_cast<size_t>(nstrata1);
+
   if (!none_na(r)) {
     throw std::invalid_argument("r must be provided.");
   }
   if (!none_na(n)) {
     throw std::invalid_argument("n must be provided.");
   }
-  if (static_cast<int>(r.size()) != nstrata) {
+  if (r.size() != nstrata) {
     throw std::invalid_argument("Invalid length for r.");
   }
-  if (static_cast<int>(n.size()) != nstrata) {
+  if (n.size() != nstrata) {
     throw std::invalid_argument("Invalid length for n.");
   }
   if (std::any_of(r.begin(), r.end(), [](double val) { return val < 0.0; })) {
@@ -455,13 +457,13 @@ ListCpp simonBayesAnalysiscpp(
     throw std::invalid_argument("plo must be less than phi.");
   }
 
-  int ncases = static_cast<int>(1u << nstrata);
+  size_t ncases = static_cast<size_t>(1u << nstrata);
   FlatMatrix incid(ncases, nstrata);
   std::vector<double> prior(ncases), like(ncases);
-  for (int i = 0; i < ncases; ++i) {
-    int number = ncases - i - 1;
+  for (size_t i = 0; i < ncases; ++i) {
+    size_t number = ncases - i - 1;
     std::vector<signed char> cc(nstrata);
-    for (int j = 0; j < nstrata; ++j) {
+    for (size_t j = 0; j < nstrata; ++j) {
       cc[j] = (number >> (nstrata - 1 - j)) & 1u;
     }
 
@@ -479,39 +481,39 @@ ListCpp simonBayesAnalysiscpp(
     }
 
     std::vector<double> x(nstrata);
-    for (int j = 0; j < nstrata; ++j) {
+    for (size_t j = 0; j < nstrata; ++j) {
       x[j] = phi * cc[j] + plo * (1 - cc[j]);
     }
 
     // Calculate sum of r*log(x) + (n-r)*log(1-x)
     double log_sum = 0.0;
-    for (int j = 0; j < nstrata; ++j) {
+    for (size_t j = 0; j < nstrata; ++j) {
       log_sum += r[j] * std::log(x[j]) + (n[j] - r[j]) * std::log(1 - x[j]);
     }
     like[i] = std::exp(log_sum);
 
     // Copy cc to row i of incid matrix
-    for (int j = 0; j < nstrata; ++j) {
+    for (size_t j = 0; j < nstrata; ++j) {
       incid(i, j) = cc[j];
     }
   }
 
   std::vector<double> post(ncases);
-  for (int i = 0; i < ncases; ++i) {
+  for (size_t i = 0; i < ncases; ++i) {
     post[i] = prior[i] * like[i];
   }
 
   // Normalize: post = post / sum(post)
   double post_sum = std::accumulate(post.begin(), post.end(), 0.0);
-  for (int i = 0; i < ncases; ++i) {
+  for (size_t i = 0; i < ncases; ++i) {
     post[i] /= post_sum;
   }
 
   // Calculate q_prior and q_post for each stratum
   std::vector<double> q_prior(nstrata, 0.0);
   std::vector<double> q_post(nstrata, 0.0);
-  for (int j = 0; j < nstrata; ++j) {
-    for (int i = 0; i < ncases; ++i) {
+  for (size_t j = 0; j < nstrata; ++j) {
+    for (size_t i = 0; i < ncases; ++i) {
       q_prior[j] += incid(i, j) * prior[i];
       q_post[j] += incid(i, j) * post[i];
     }
@@ -605,7 +607,7 @@ ListCpp simonBayesSimcpp(
     const int maxNumberOfRawDatasets,
     const int seed) {
 
-  int nstrata = static_cast<int>(stratumFraction.size());
+  size_t nstrata = stratumFraction.size();
 
   if (!none_na(p)) {
     throw std::invalid_argument("p must be provided.");
@@ -701,7 +703,7 @@ ListCpp simonBayesSimcpp(
   for (size_t i = 0; i < p.size(); ++i) {
     act[i] = (p[i] == phi) ? 1 : 0;
   }
-  int nactive = static_cast<int>(std::accumulate(act.begin(), act.end(), 0));
+  size_t nactive = static_cast<size_t>(std::accumulate(act.begin(), act.end(), 0));
 
   std::vector<double> cumStratumFraction(nstrata);
   std::partial_sum(stratumFraction.begin(), stratumFraction.end(),
@@ -717,11 +719,11 @@ ListCpp simonBayesSimcpp(
   std::vector<double> nact(maxNumberOfIterations), nopen(maxNumberOfIterations);
   std::vector<double> tpos(maxNumberOfIterations), fneg(maxNumberOfIterations);
   std::vector<double> fpos(maxNumberOfIterations), tneg(maxNumberOfIterations);
-  std::vector<int> numberOfStrata(maxNumberOfIterations, nstrata);
+  std::vector<int> numberOfStrata(maxNumberOfIterations, static_cast<int>(nstrata));
 
   // cache for the patient-level raw data to extract
-  int kMax = static_cast<int>(plannedSubjects.size());
-  int nrow1 = kMax * maxNumberOfRawDatasets * maxSubjects;
+  size_t K = plannedSubjects.size();
+  size_t nrow1 = K * maxNumberOfRawDatasets * maxSubjects;
   std::vector<int> iterationNumberx(nrow1);
   std::vector<int> stageNumberx(nrow1);
   std::vector<int> subjectIdx(nrow1);
@@ -730,7 +732,7 @@ ListCpp simonBayesSimcpp(
   std::vector<int> yx(nrow1);
 
   // cache for the summary data to extract
-  int nrow2 = kMax * maxNumberOfIterations * nstrata;
+  size_t nrow2 = K * maxNumberOfIterations * nstrata;
   std::vector<int> iterationNumbery(nrow2);
   std::vector<int> stageNumbery(nrow2);
   std::vector<int> stratumy(nrow2);
@@ -746,7 +748,7 @@ ListCpp simonBayesSimcpp(
   boost::random::mt19937_64 rng(seed);
   boost::random::uniform_real_distribution<double> unif(0.0, 1.0);
 
-  int index1 = 0, index2 = 0;
+  size_t index1 = 0, index2 = 0;
   for (int iter = 0; iter < maxNumberOfIterations; ++iter) {
     // initialize the contents in each stratum
     std::fill(n.begin(), n.end(), 0.0);
@@ -755,17 +757,17 @@ ListCpp simonBayesSimcpp(
     std::fill(pos.begin(), pos.end(), 0);
     std::fill(neg.begin(), neg.end(), 0);
 
-    int k = 0;      // index of the number of subjects included in analysis
-    int stage = 0;
+    size_t k = 0;      // index of the number of subjects included in analysis
+    size_t stage = 0;
     double enrollt = 0.0;
-    for (int i = 0; i < 100000; ++i) {
+    for (size_t i = 0; i < 100000; ++i) {
       // generate accrual time
       double u = unif(rng);
       enrollt = qtpwexpcpp1(u, accrualTime, accrualIntensity, enrollt);
 
       // generate stratum information
       u = unif(rng);
-      int j = 0;
+      size_t j = 0;
       for (; j < nstrata; ++j) {
         if (cumStratumFraction[j] > u) break;
       }
@@ -787,7 +789,7 @@ ListCpp simonBayesSimcpp(
                         [k](double val) { return val == k; })) {
           // output raw data
           if (iter < maxNumberOfRawDatasets) {
-            for (int idx = 0; idx < k; ++idx) {
+            for (size_t idx = 0; idx < k; ++idx) {
               iterationNumberx[index1] = iter + 1;
               stageNumberx[index1] = stage + 1;
               subjectIdx[index1] = idx + 1;
@@ -804,7 +806,7 @@ ListCpp simonBayesSimcpp(
           post_stratum = a.get<std::vector<double>>("post_stratum");
 
           // whether to close the stratum due to positive or negative results
-          for (int l = 0; l < nstrata; ++l) {
+          for (size_t l = 0; l < nstrata; ++l) {
             if (open[l]) {
               if (post_stratum[l] > T) {
                 pos[l] = 1; open[l] = 0;
@@ -835,35 +837,35 @@ ListCpp simonBayesSimcpp(
         bool all_closed = std::all_of(open.begin(), open.end(),
                                       [](unsigned char val) { return val == 0; });
 
-        if (all_closed || (k == maxSubjects)) {
+        if (all_closed || (k == static_cast<size_t>(maxSubjects))) {
           iterationNumber[iter] = iter + 1;
           N[iter] = k;
           nact[iter] = nactive;
 
           // Calculate true positives: sum(pos & act)
           int sum_pos_act = 0;
-          for (int i = 0; i < nstrata; ++i) {
+          for (size_t i = 0; i < nstrata; ++i) {
             sum_pos_act += pos[i] & act[i];
           }
           tpos[iter] = sum_pos_act;
 
           // Calculate false negatives: sum(neg & act)
           int sum_neg_act = 0;
-          for (int i = 0; i < nstrata; ++i) {
+          for (size_t i = 0; i < nstrata; ++i) {
             sum_neg_act += neg[i] & act[i];
           }
           fneg[iter] = sum_neg_act;
 
           // Calculate false positives: sum(pos & !act)
           int sum_pos_notact = 0;
-          for (int i = 0; i < nstrata; ++i) {
+          for (size_t i = 0; i < nstrata; ++i) {
             sum_pos_notact += pos[i] & !act[i];
           }
           fpos[iter] = sum_pos_notact;
 
           // Calculate true negatives: sum(neg & !act)
           int sum_neg_notact = 0;
-          for (int i = 0; i < nstrata; ++i) {
+          for (size_t i = 0; i < nstrata; ++i) {
             sum_neg_notact += neg[i] & !act[i];
           }
           tneg[iter] = sum_neg_notact;
@@ -942,7 +944,7 @@ ListCpp simonBayesSimcpp(
   sumdata2.push_back(std::move(N), "numberOfSubjects");
 
   DataFrameCpp overview;
-  overview.push_back(nstrata, "numberOfStrata");
+  overview.push_back(static_cast<int>(nstrata), "numberOfStrata");
   overview.push_back(mn_nact, "n_active_strata");
   overview.push_back(mn_tpos, "true_positive");
   overview.push_back(mn_fneg, "false_negative");

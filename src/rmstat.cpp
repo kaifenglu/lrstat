@@ -99,11 +99,11 @@ double rmstcpp(const double t1,
 
   // identify the time interval containing the specified analysis time
   // t[m1] <= t1 < t[m1+1], t[m2] <= t2 < t[m2+1]
-  int m1 = findInterval1(t1, t) - 1;
-  int m2 = findInterval1(t2, t) - 1;
+  size_t m1 = findInterval1(t1, t) - 1;
+  size_t m2 = findInterval1(t2, t) - 1;
 
   double ch = 0.0;
-  for (int j = 0; j < m1; ++j) {
+  for (size_t j = 0; j < m1; ++j) {
     ch += lambda[j] * (t[j+1] - t[j]);
   }
 
@@ -133,7 +133,7 @@ double rmstcpp(const double t1,
 
     // Add full intervals between m1+1 and m2-1 (if any).
     // Before entering interval j we add the previous interval's full hazard to ch:
-    for (int j = m1 + 1; j < m2; ++j) {
+    for (size_t j = m1 + 1; j < m2; ++j) {
       ch += lambda[j-1] * (t[j] - t[j-1]);
       double lam = lambda[j];
       if (lam == 0.0) {
@@ -222,7 +222,7 @@ double rm_integrand(
   double a2 = rmstcpp(x, tau2, piecewiseSurvivalTime, lambda);
 
   // interval index for x in piecewiseSurvivalTime
-  int j = findInterval1(x, piecewiseSurvivalTime) - 1;
+  size_t j = findInterval1(x, piecewiseSurvivalTime) - 1;
 
   // p(x) = P(at risk at time x since randomization) under event+dropout hazards
   double p = patrisk1(x, piecewiseSurvivalTime, lambda, gamma);
@@ -430,7 +430,7 @@ DataFrameCpp rmstat1cpp(
   const double a2 = accrual1(time - milestone, accrualTime, accrualIntensity,
                              accrualDuration);
 
-  // ---- outputs ----
+  // --- outputs ---
   std::vector<int> stratum(nstrata);
   std::vector<double> calTime(nstrata, time);
   std::vector<double> mileTime(nstrata, milestone);
@@ -615,7 +615,7 @@ DataFrameCpp rmstatcpp(
   auto gamma1x = expand_stratified(gamma1, nstrata, nintv, "gamma1");
   auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
 
-  // ---- outputs ----
+  // --- outputs ---
   const size_t k = time.size();
   std::vector<double> calTime = time;
   std::vector<double> mileTime(k, milestone);
@@ -1048,7 +1048,7 @@ ListCpp rmpowercpp(
   auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
 
 
-  // --- Efficacy boundaries ---------------------------------------------------
+  // --- Efficacy boundaries ---
   std::vector<double> l(K, -6.0), zero(K, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
@@ -1091,7 +1091,7 @@ ListCpp rmpowercpp(
   double alpha1 = missingCriticalValues ? alpha :
     std::round(cumAlphaSpent.back() * 1e6) / 1e6;
 
-  // --- Futility boundaries ---------------------------------------------------
+  // --- Futility boundaries ---
   std::vector<double> futBounds = futilityBounds;
   if (K > 1) {
     if (missingFutilityBounds && bsf == "none") {
@@ -1109,7 +1109,7 @@ ListCpp rmpowercpp(
   // Randomization probability for treatment group
   double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
 
-  // ---- study duration ----
+  // --- study duration ---
   double studyDuration1 = studyDuration;
   if (!fixedFollowup || std::isnan(studyDuration)) {
     studyDuration1 = accrualDuration + followupTime;
@@ -1121,7 +1121,7 @@ ListCpp rmpowercpp(
   std::vector<double> nmilestone(K), nmilestone1(K), nmilestone2(K);
   std::vector<double> I(K);
 
-  // ---- compute maxInformation and theta via rmstat at study end ----
+  // --- compute maxInformation and theta via rmstat at study end ---
   DataFrameCpp rm_end = rmstat1cpp(
     studyDuration1, milestone, allocationRatioPlanned,
     accrualTime, accrualIntensity,
@@ -1161,7 +1161,7 @@ ListCpp rmpowercpp(
   nmilestone1[K - 1] = extract_sum(rm_end, "nmilestone1");
   nmilestone2[K - 1] = extract_sum(rm_end, "nmilestone2");
 
-  // ---- compute information, time, and other stats at interim analyses ----
+  // --- compute information, time, and other stats at interim analyses ---
   for (size_t i = 0; i < K - 1; ++i) {
     double information1 = maxInformation * infoRates[i];
     I[i] = information1;
@@ -1209,7 +1209,7 @@ ListCpp rmpowercpp(
     nmilestone2[i] = extract_sum(rm_i, "nmilestone");
   }
 
-  // ---- compute exit probabilities ----
+  // --- compute exit probabilities ---
   ListCpp exit_probs;
   if (!missingFutilityBounds || bsf == "none" || K == 1) {
     exit_probs = exitprobcpp(critValues, futBounds, theta, I);
@@ -1278,7 +1278,7 @@ ListCpp rmpowercpp(
     if (futBounds[i] == -6.0) { rdl[i] = NaN; futStopping[i] = 0; }
   }
 
-  // --- Build output DataFrames and Lists ------------------------------------
+  // --- Build output DataFrames and Lists ---
   DataFrameCpp overallResults;
   overallResults.push_back(overallReject, "overallReject");
   overallResults.push_back(alpha1, "alpha");
@@ -1905,7 +1905,7 @@ ListCpp rmsamplesizecpp(
   auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
 
 
-  // --- Efficacy boundaries ---------------------------------------------------
+  // --- Efficacy boundaries ---
   std::vector<double> l(K, -6.0), zero(K, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
@@ -1941,7 +1941,7 @@ ListCpp rmsamplesizecpp(
     }
   }
 
-  // --- Futility boundaries ---------------------------------------------------
+  // --- Futility boundaries ---
   std::vector<double> futBounds = futilityBounds;
   if (K > 1) {
     if (missingFutilityBounds && bsf == "none") {
@@ -4321,7 +4321,7 @@ ListCpp rmpowerequivcpp(
     efficacyP[i] = 1.0 - boost_pnorm(critValues[i]);
   }
 
-  // --- timing, events, information -----------
+  // --- timing, events, information ---
   double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
 
   double studyDuration1 = studyDuration;
@@ -4333,7 +4333,7 @@ ListCpp rmpowerequivcpp(
   std::vector<double> ndropouts(K), ndropouts1(K), ndropouts2(K);
   std::vector<double> nmilestone(K), nmilestone1(K), nmilestone2(K);
 
-  // ---- compute maxInformation and theta via rmstat at study end ----
+  // --- compute maxInformation and theta via rmstat at study end ---
   DataFrameCpp rm_end = rmstat1cpp(
     studyDuration1, milestone, allocationRatioPlanned,
     accrualTime, accrualIntensity,
@@ -4374,7 +4374,7 @@ ListCpp rmpowerequivcpp(
   nmilestone1[K - 1] = extract_sum(rm_end, "nmilestone1");
   nmilestone2[K - 1] = extract_sum(rm_end, "nmilestone2");
 
-  // ---- compute information, time, and other stats at interim analyses ----
+  // --- compute information, time, and other stats at interim analyses ---
   for (size_t i = 0; i < K - 1; ++i) {
     double information1 = maxInformation * infoRates[i];
 
@@ -4440,11 +4440,10 @@ ListCpp rmpowerequivcpp(
   std::partial_sum(v2.begin(), v2.end(), cpu.begin());
 
   // index for the first crossing look (0-based)
-  size_t kk = K;
+  size_t k = K;
   for (size_t i = 0; i < K; ++i) {
-    if (l[i] <= u[i]) { kk = i; break; }
+    if (l[i] <= u[i]) { k = i; break; }
   }
-  int k = static_cast<int>(kk);
 
   std::vector<double> cp(K);
   if (k == 0) { // crossing at the first look
@@ -4452,7 +4451,7 @@ ListCpp rmpowerequivcpp(
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   } else {
-    std::vector<double> cplx(kk), cpux(kk);
+    std::vector<double> cplx(k), cpux(k);
     std::vector l1 = subset(l, 0, k);
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
@@ -4462,10 +4461,10 @@ ListCpp rmpowerequivcpp(
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplx.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpux.begin());
-    for (size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < k; ++i) {
       cp[i] = cpl[i] + cpu[i] - cplx[i] - cpux[i];
     }
-    for (size_t i = kk; i < K; ++i) {
+    for (size_t i = k; i < K; ++i) {
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   }
@@ -4506,7 +4505,7 @@ ListCpp rmpowerequivcpp(
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   } else {
-    std::vector<double> cplH10x(kk), cpuH10x(kk);
+    std::vector<double> cplH10x(k), cpuH10x(k);
     std::vector l1 = subset(l, 0, k);
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
@@ -4516,10 +4515,10 @@ ListCpp rmpowerequivcpp(
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplH10x.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpuH10x.begin());
-    for (size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < k; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - cplH10x[i] - cpuH10x[i];
     }
-    for (size_t i = kk; i < K; ++i) {
+    for (size_t i = k; i < K; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   }
@@ -4543,7 +4542,7 @@ ListCpp rmpowerequivcpp(
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   } else {
-    std::vector<double> cplH20x(kk), cpuH20x(kk);
+    std::vector<double> cplH20x(k), cpuH20x(k);
     std::vector l1 = subset(l, 0, k);
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
@@ -4553,10 +4552,10 @@ ListCpp rmpowerequivcpp(
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplH20x.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpuH20x.begin());
-    for (size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < k; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - cplH20x[i] - cpuH20x[i];
     }
-    for (size_t i = kk; i < K; ++i) {
+    for (size_t i = k; i < K; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   }

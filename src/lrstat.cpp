@@ -321,7 +321,7 @@ DataFrameCpp lrstat0cpp(
         double r2 = risk.second;
 
         // find interval j for time t
-        int j = findInterval1(t, piecewiseSurvivalTime) - 1;
+        size_t j = findInterval1(t, piecewiseSurvivalTime) - 1;
 
         // weight w
         double w = 1.0;
@@ -351,7 +351,7 @@ DataFrameCpp lrstat0cpp(
         double r1 = risk.first;
         double r2 = risk.second;
 
-        int j = std::max(findInterval1(t, piecewiseSurvivalTime) - 1, 0);
+        size_t j = findInterval1(t, piecewiseSurvivalTime) - 1;
 
         double w = 1.0;
         if (rho1 != 0.0 || rho2 != 0.0) {
@@ -384,7 +384,7 @@ DataFrameCpp lrstat0cpp(
           double r1 = risk.first;
           double r2 = risk.second;
 
-          int j = findInterval1(t, piecewiseSurvivalTime) - 1;
+          size_t j = findInterval1(t, piecewiseSurvivalTime) - 1;
 
           double w = 1.0;
           if (rho1 != 0.0 || rho2 != 0.0) {
@@ -4108,11 +4108,10 @@ ListCpp lrpowerequivcpp(
   std::partial_sum(v2.begin(), v2.end(), cpu.begin());
 
   // index for the first crossing look (0-based)
-  size_t kk = K;
+  size_t k = K;
   for (size_t i = 0; i < K; ++i) {
-    if (l[i] <= u[i]) { kk = i; break; }
+    if (l[i] <= u[i]) { k = i; break; }
   }
-  int k = static_cast<int>(kk);
 
   std::vector<double> cp(K);
   if (k == 0) { // crossing at the first look
@@ -4120,7 +4119,7 @@ ListCpp lrpowerequivcpp(
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   } else {
-    std::vector<double> cplx(kk), cpux(kk);
+    std::vector<double> cplx(k), cpux(k);
     std::vector l1 = subset(l, 0, k);
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
@@ -4130,10 +4129,10 @@ ListCpp lrpowerequivcpp(
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplx.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpux.begin());
-    for (size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < k; ++i) {
       cp[i] = cpl[i] + cpu[i] - cplx[i] - cpux[i];
     }
-    for (size_t i = kk; i < K; ++i) {
+    for (size_t i = k; i < K; ++i) {
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   }
@@ -4174,7 +4173,7 @@ ListCpp lrpowerequivcpp(
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   } else {
-    std::vector<double> cplH10x(kk), cpuH10x(kk);
+    std::vector<double> cplH10x(k), cpuH10x(k);
     std::vector l1 = subset(l, 0, k);
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
@@ -4184,10 +4183,10 @@ ListCpp lrpowerequivcpp(
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplH10x.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpuH10x.begin());
-    for (size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < k; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - cplH10x[i] - cpuH10x[i];
     }
-    for (size_t i = kk; i < K; ++i) {
+    for (size_t i = k; i < K; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   }
@@ -4211,7 +4210,7 @@ ListCpp lrpowerequivcpp(
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   } else {
-    std::vector<double> cplH20x(kk), cpuH20x(kk);
+    std::vector<double> cplH20x(k), cpuH20x(k);
     std::vector l1 = subset(l, 0, k);
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
@@ -4221,10 +4220,10 @@ ListCpp lrpowerequivcpp(
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplH20x.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpuH20x.begin());
-    for (size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < k; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - cplH20x[i] - cpuH20x[i];
     }
-    for (size_t i = kk; i < K; ++i) {
+    for (size_t i = k; i < K; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   }
