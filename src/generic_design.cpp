@@ -257,13 +257,13 @@ ListCpp exitprobcpp(const std::vector<double>& b,
   // z0 and h0 are represented by the first m0 entries of z and h vectors.
 
   for (size_t j = 0; j < K; ++j) {
-    const double thetaSqrtIj = thetaSqrtI[j];
-    const double sqrtIj = sqrtI[j];
-    const double a1j = a1[j];
-    const double bj = b[j];
-    const double dThetaIj = dThetaI[j];
-    const double sqrtdIj = std::sqrt(dI[j]);
-    const double sqrtI1dIj = std::sqrt(I1[j] / dI[j]);
+    double thetaSqrtIj = thetaSqrtI[j];
+    double sqrtIj = sqrtI[j];
+    double a1j = a1[j];
+    double bj = b[j];
+    double dThetaIj = dThetaI[j];
+    double sqrtdIj = std::sqrt(dI[j]);
+    double sqrtI1dIj = std::sqrt(I1[j] / dI[j]);
 
     // initialize x1 = thetaSqrtI[j] + shift
     for (size_t i = 0; i < r1; ++i) x1[i] = thetaSqrtIj + shift[i];
@@ -329,7 +329,7 @@ ListCpp exitprobcpp(const std::vector<double>& b,
         std::memcpy(z0.data(), z.data(), m0 * sizeof(double));
       }
     } else {
-      const double sqrtIjm1 = sqrtI[j-1];
+      double sqrtIjm1 = sqrtI[j-1];
 
       // calculate exit probabilities using h0 from the previous stage, (19.8)
       double sumUpper = 0.0, sumLower = 0.0;
@@ -718,7 +718,7 @@ BoundCacheAlpha::BoundCacheAlpha(
 }
 
 int64_t BoundCacheAlpha::discretize(double alpha) const {
-  const double scale = std::pow(10.0, alphaPrecision_);
+  double scale = std::pow(10.0, alphaPrecision_);
   return static_cast<int64_t>(std::llround(alpha * scale));
 }
 
