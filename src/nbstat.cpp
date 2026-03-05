@@ -91,6 +91,7 @@ std::vector<double> nb_make_breaks(
 // Mean exposure E(t), where t = min(time - W, C, maxFollowupTime) and
 // W is the enrollment time, C is dropout time, and the expectation is taken
 // with respect to the distribution of W and C: E(t) = integrate(S(t) dt)
+
 double nb_ex_integrand(
     const double x, // analysis time
     const double time, // calendar time of analysis
@@ -101,7 +102,7 @@ double nb_ex_integrand(
     const double kappa,
     const double lambda,
     const std::vector<double>& zero,
-    const std::vector<double>& gamma,
+    const DoubleView& gamma,
     const double accrualDuration) {
 
   // p(x) = P(at risk at time x since randomization) under dropout hazards
@@ -135,7 +136,7 @@ double nb_info_integrand(
     const double kappa,
     const double lambda,
     const std::vector<double>& zero,
-    const std::vector<double>& gamma,
+    const DoubleView& gamma,
     const double accrualDuration) {
 
   // p(x) = P(at risk at time x since randomization) under dropout hazards
@@ -214,8 +215,8 @@ ListCpp nbstat1cpp(
     const double k2 = kappa2[h];
     const double lam1 = lambda1[h];
     const double lam2 = lambda2[h];
-    const std::vector<double>& gam1 = flatmatrix_get_column(gamma1, h);
-    const std::vector<double>& gam2 = flatmatrix_get_column(gamma2, h);
+    auto gam1 = flatmatrix_get_column_view(gamma1, h);
+    auto gam2 = flatmatrix_get_column_view(gamma2, h);
 
     // scale accrualIntensity by stratum fraction
     std::vector<double> accrualIntensity_frac = accrualIntensity;
