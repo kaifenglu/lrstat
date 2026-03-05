@@ -151,7 +151,7 @@ OneSampleExactResult samplesizeOnePropExactcpp(
   int start_n = static_cast<int>(std::floor(n0));
   if (start_n < 1) start_n = 1;
 
-  const double target = 1.0 - beta;
+  double target = 1.0 - beta;
 
   // cache power evaluations
   std::unordered_map<int, double> power_cache;
@@ -273,8 +273,8 @@ OneSampleExactResult powerOneRateExactcpp(
   out.power = 0.0;
 
   // Poisson mean under H0
-  const double mean0 = static_cast<double>(n) * lambdaH0 * D;
-  const double mean1 = static_cast<double>(n) * lambda * D;
+  double mean0 = static_cast<double>(n) * lambdaH0 * D;
+  double mean1 = static_cast<double>(n) * lambda * D;
 
   bool directionUpper = (lambda > lambdaH0);
 
@@ -389,7 +389,7 @@ OneSampleExactResult samplesizeOneRateExactcpp(
   int start_n = static_cast<int>(std::floor(n0));
   if (start_n < 1) start_n = 1;
 
-  const double target = 1.0 - beta;
+  double target = 1.0 - beta;
 
   // cache power evaluations
   std::unordered_map<int, double> power_cache;
@@ -706,7 +706,7 @@ DataFrameCpp samplesizeFisherExactcpp(
   int start_n = static_cast<int>(std::floor(n0));
   if (start_n < 1) start_n = 1;
 
-  const double target = 1.0 - beta;
+  double target = 1.0 - beta;
 
   // caching of power evaluations
   std::unordered_map<int, double> power_cache;
@@ -961,8 +961,8 @@ DataFrameCpp powerRiskDiffExactcpp(
 
   // Partition domain into K subintervals, run local minimizer on each,
   // pick global best
-  const size_t K = 100;
-  const double delta = (pi2upper - pi2lower) / static_cast<double>(K);
+  size_t K = 100;
+  double delta = (pi2upper - pi2lower) / static_cast<double>(K);
   std::vector<double> a(K), b(K);
 
   for (size_t i = 0; i < K; ++i) {
@@ -1155,7 +1155,7 @@ DataFrameCpp samplesizeRiskDiffExactcpp(
   int start_n = static_cast<int>(std::floor(n0));
   if (start_n < 1) start_n = 1;
 
-  const double target = 1.0 - beta;
+  double target = 1.0 - beta;
 
   // cache power evaluations
   std::unordered_map<int, double> power_cache;
@@ -1594,7 +1594,7 @@ DataFrameCpp samplesizeRiskRatioExactcpp(
   int start_n = static_cast<int>(std::floor(n0));
   if (start_n < 1) start_n = 1;
 
-  const double target = 1.0 - beta;
+  double target = 1.0 - beta;
 
   // cache power evaluations
   std::unordered_map<int, double> power_cache;
@@ -2114,7 +2114,7 @@ DataFrameCpp samplesizeRiskDiffExactEquivcpp(
   int start_n = static_cast<int>(std::floor(n0));
   if (start_n < 1) start_n = 1;
 
-  const double target = 1.0 - beta;
+  double target = 1.0 - beta;
 
   // cache power evaluations
   std::unordered_map<int, double> power_cache;
@@ -2645,7 +2645,7 @@ DataFrameCpp samplesizeRiskRatioExactEquivcpp(
   int start_n = static_cast<int>(std::floor(n0));
   if (start_n < 1) start_n = 1;
 
-  const double target = 1.0 - beta;
+  double target = 1.0 - beta;
 
   // cache power evaluations
   std::unordered_map<int, double> power_cache;
@@ -2836,7 +2836,7 @@ DataFrameCpp riskDiffExactPValuecpp(
       q2[y] = binomial_pmf_from_logchoose(y, n2, p2, logc_n2);
 
     double s = 0.0;
-    const int sign = (directionUpper ? +1 : -1);
+    int sign = (directionUpper ? +1 : -1);
     // iterate all flat indices and sum q1[y1] * q2[y2] where
     // (T[i] - Tobs) has same sign or zero
     size_t idx = 0;
@@ -2964,7 +2964,7 @@ DataFrameCpp riskDiffExactCIcpp(
   double estimate = p1 - p2;
 
   double alpha = 1.0 - cilevel; // two-sided alpha
-  const double target = alpha / 2.0;
+  double target = alpha / 2.0;
 
   auto f1 = [&](double riskDiff)->double {
     auto df = riskDiffExactPValuecpp(n1, y1, n2, y2, riskDiff, true);
@@ -3082,7 +3082,7 @@ DataFrameCpp riskRatioExactPValuecpp(
       q2[y] = binomial_pmf_from_logchoose(y, n2, p2, logc_n2);
 
     double s = 0.0;
-    const int sign = (directionUpper ? +1 : -1);
+    int sign = (directionUpper ? +1 : -1);
     // iterate all flat indices and sum q1[y1] * q2[y2] where
     // (T[i] - Tobs) has same sign or zero
     size_t idx = 0;
@@ -3210,7 +3210,7 @@ DataFrameCpp riskRatioExactCIcpp(
   double estimate = p2 > 0.0 ? p1 / p2 : POS_INF;
 
   double alpha = 1.0 - cilevel; // two-sided alpha
-  const double target = alpha / 2.0;
+  double target = alpha / 2.0;
 
   auto f1 = [&](double riskRatio)->double {
     auto df = riskRatioExactPValuecpp(n1, y1, n2, y2, riskRatio, true);
