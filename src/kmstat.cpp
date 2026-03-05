@@ -88,16 +88,16 @@ std::vector<double> km_make_breaks(
   return final_breaks;
 }
 
-
-double km_integrand(
+template <class VLam, class VGam>
+static double km_integrand(
   const double x, // analysis time
   const double time, // calendar time of analysis
   const double phi,
   const std::vector<double>& accrualTime,
   const std::vector<double>& accrualIntensity,
   const std::vector<double>& piecewiseSurvivalTime,
-  const DoubleView& lambda,
-  const DoubleView& gamma,
+  const VLam& lambda,
+  const VGam& gamma,
   const double accrualDuration) {
 
   // interval index for x in piecewiseSurvivalTime
