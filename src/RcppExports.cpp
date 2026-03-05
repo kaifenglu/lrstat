@@ -2698,12 +2698,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // zph_phregRcpp
-Rcpp::List zph_phregRcpp(int p, const std::vector<double>& beta, const Rcpp::NumericMatrix& vbeta, const std::vector<double>& resmart, const Rcpp::DataFrame& data, const std::vector<std::string>& stratum, const std::string& time, const std::string& time2, const std::string& event, const std::vector<std::string>& covariates, const std::string& weight, const std::string& offset, const std::string& ties, const std::string& transform);
+Rcpp::List zph_phregRcpp(const int p, const std::vector<double>& beta, const Rcpp::NumericMatrix& vbeta, const std::vector<double>& resmart, const Rcpp::DataFrame& data, const std::vector<std::string>& stratum, const std::string& time, const std::string& time2, const std::string& event, const std::vector<std::string>& covariates, const std::string& weight, const std::string& offset, const std::string& ties, const std::string& transform);
 RcppExport SEXP _lrstat_zph_phregRcpp(SEXP pSEXP, SEXP betaSEXP, SEXP vbetaSEXP, SEXP resmartSEXP, SEXP dataSEXP, SEXP stratumSEXP, SEXP timeSEXP, SEXP time2SEXP, SEXP eventSEXP, SEXP covariatesSEXP, SEXP weightSEXP, SEXP offsetSEXP, SEXP tiesSEXP, SEXP transformSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< const int >::type p(pSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type beta(betaSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type vbeta(vbetaSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type resmart(resmartSEXP);
