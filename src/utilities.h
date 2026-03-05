@@ -356,7 +356,7 @@ double ptpwexpcpp1(
 
 
 template <class VTIME, class VLam>
-inline double qtpwexpcpp1_impl(
+inline double qtpwexpcpp1(
     const double p,
     const VTIME& piecewiseSurvivalTime,
     const VLam& lambda,
@@ -394,40 +394,6 @@ inline double qtpwexpcpp1_impl(
   }
   double dt = (v - v1) / lj;
   return piecewiseSurvivalTime[j + 1] - dt;
-}
-
-
-inline double qtpwexpcpp1(
-    const double p,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda,
-    const double lowerBound = 0.0,
-    const bool lowertail = true,
-    const bool logp = false) {
-  return qtpwexpcpp1_impl(p, piecewiseSurvivalTime, lambda,
-                          lowerBound, lowertail, logp);
-}
-
-inline double qtpwexpcpp1(
-    const double p,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const DoubleView& lambda,
-    const double lowerBound = 0.0,
-    const bool lowertail = true,
-    const bool logp = false) {
-  return qtpwexpcpp1_impl(p, piecewiseSurvivalTime, lambda,
-                          lowerBound, lowertail, logp);
-}
-
-inline double qtpwexpcpp1(
-    const double p,
-    const DoubleView& piecewiseSurvivalTime,
-    const DoubleView& lambda,
-    const double lowerBound = 0.0,
-    const bool lowertail = true,
-    const bool logp = false) {
-  return qtpwexpcpp1_impl(p, piecewiseSurvivalTime, lambda,
-                          lowerBound, lowertail, logp);
 }
 
 
