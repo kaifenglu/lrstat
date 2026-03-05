@@ -386,10 +386,10 @@ ListCpp lrsimcpp(
           else { trtGrp[i] = 2; --b2[j]; }
           if (b1[j] + b2[j] == 0) { b1[j] = allocation1; b2[j] = allocation2; }
 
-          const std::vector<double>& lam1 = flatmatrix_get_column(lambda1x, j);
-          const std::vector<double>& lam2 = flatmatrix_get_column(lambda2x, j);
-          const std::vector<double>& gam1 = flatmatrix_get_column(gamma1x, j);
-          const std::vector<double>& gam2 = flatmatrix_get_column(gamma2x, j);
+          auto lam1 = flatmatrix_get_column_view(lambda1x, j);
+          auto lam2 = flatmatrix_get_column_view(lambda2x, j);
+          auto gam1 = flatmatrix_get_column_view(gamma1x, j);
+          auto gam2 = flatmatrix_get_column_view(gamma2x, j);
 
           u = unif(rng_local);
           if (trtGrp[i] == 1) survivalT[i] = qtpwexpcpp1(u, tau, lam1);
@@ -1289,12 +1289,12 @@ ListCpp lrsim3acpp(
             b1[j] = allocation1; b2[j] = allocation2; b3[j] = allocation3;
           }
 
-          const std::vector<double>& lam1 = flatmatrix_get_column(lambda1x, j);
-          const std::vector<double>& lam2 = flatmatrix_get_column(lambda2x, j);
-          const std::vector<double>& lam3 = flatmatrix_get_column(lambda3x, j);
-          const std::vector<double>& gam1 = flatmatrix_get_column(gamma1x, j);
-          const std::vector<double>& gam2 = flatmatrix_get_column(gamma2x, j);
-          const std::vector<double>& gam3 = flatmatrix_get_column(gamma3x, j);
+          auto lam1 = flatmatrix_get_column_view(lambda1x, j);
+          auto lam2 = flatmatrix_get_column_view(lambda2x, j);
+          auto lam3 = flatmatrix_get_column_view(lambda3x, j);
+          auto gam1 = flatmatrix_get_column_view(gamma1x, j);
+          auto gam2 = flatmatrix_get_column_view(gamma2x, j);
+          auto gam3 = flatmatrix_get_column_view(gamma3x, j);
 
           // survival time
           u = unif(rng_local);
@@ -1973,14 +1973,14 @@ ListCpp lrsim2ecpp(
 
   for (size_t s = 0; s < nstrata; ++s) {
     // pass per-stratum vectors to hazard_pdcpp
-    const std::vector<double>& lam1pfs = flatmatrix_get_column(lambda1pfsx, s);
-    const std::vector<double>& lam2pfs = flatmatrix_get_column(lambda2pfsx, s);
-    const std::vector<double>& lam1os = flatmatrix_get_column(lambda1osx, s);
-    const std::vector<double>& lam2os = flatmatrix_get_column(lambda2osx, s);
-    const std::vector<double>& gam1pfs = flatmatrix_get_column(gamma1pfsx, s);
-    const std::vector<double>& gam2pfs = flatmatrix_get_column(gamma2pfsx, s);
-    const std::vector<double>& gam1os = flatmatrix_get_column(gamma1osx, s);
-    const std::vector<double>& gam2os = flatmatrix_get_column(gamma2osx, s);
+    auto lam1pfs = flatmatrix_get_column(lambda1pfsx, s);
+    auto lam2pfs = flatmatrix_get_column(lambda2pfsx, s);
+    auto lam1os = flatmatrix_get_column(lambda1osx, s);
+    auto lam2os = flatmatrix_get_column(lambda2osx, s);
+    auto gam1pfs = flatmatrix_get_column(gamma1pfsx, s);
+    auto gam2pfs = flatmatrix_get_column(gamma2pfsx, s);
+    auto gam1os = flatmatrix_get_column(gamma1osx, s);
+    auto gam2os = flatmatrix_get_column(gamma2osx, s);
 
     ListCpp a1 = hazard_pdcpp(tau, lam1pfs, lam1os, rho_pd_os);
     ListCpp a2 = hazard_pdcpp(tau, lam2pfs, lam2os, rho_pd_os);
@@ -2197,7 +2197,6 @@ ListCpp lrsim2ecpp(
       std::vector<double> totalte2; totalte2.reserve(N);
       std::vector<size_t> sub; sub.reserve(N);
 
-
       for (size_t iter = begin; iter < end; ++iter) {
         // RNG for this iteration
         boost::random::mt19937_64 rng_local(seeds[iter]);
@@ -2233,16 +2232,16 @@ ListCpp lrsim2ecpp(
           else { trtGrp[i] = 2; --b2[j]; }
           if (b1[j] + b2[j] == 0) { b1[j] = allocation1; b2[j] = allocation2; }
 
-          const std::vector<double>& lam1pd = flatmatrix_get_column(lambda1pd, j);
-          const std::vector<double>& lam2pd = flatmatrix_get_column(lambda2pd, j);
-          const std::vector<double>& gam1pd = flatmatrix_get_column(gamma1pd, j);
-          const std::vector<double>& gam2pd = flatmatrix_get_column(gamma2pd, j);
-          const std::vector<double>& lam1os = flatmatrix_get_column(lambda1osx, j);
-          const std::vector<double>& lam2os = flatmatrix_get_column(lambda2osx, j);
-          const std::vector<double>& gam1os = flatmatrix_get_column(gamma1osx, j);
-          const std::vector<double>& gam2os = flatmatrix_get_column(gamma2osx, j);
-          const std::vector<double>& tau1pd = flatmatrix_get_column(tau1pdx, j);
-          const std::vector<double>& tau2pd = flatmatrix_get_column(tau2pdx, j);
+          auto lam1pd = flatmatrix_get_column_view(lambda1pd, j);
+          auto lam2pd = flatmatrix_get_column_view(lambda2pd, j);
+          auto gam1pd = flatmatrix_get_column_view(gamma1pd, j);
+          auto gam2pd = flatmatrix_get_column_view(gamma2pd, j);
+          auto lam1os = flatmatrix_get_column_view(lambda1osx, j);
+          auto lam2os = flatmatrix_get_column_view(lambda2osx, j);
+          auto gam1os = flatmatrix_get_column_view(gamma1osx, j);
+          auto gam2os = flatmatrix_get_column_view(gamma2osx, j);
+          auto tau1pd = flatmatrix_get_column_view(tau1pdx, j);
+          auto tau2pd = flatmatrix_get_column_view(tau2pdx, j);
 
           // correlated normals -> uniforms
           double z1 = norm(rng_local);
@@ -3042,18 +3041,18 @@ ListCpp lrsim2e3acpp(
   FlatMatrix gamma3pd(nintv, nstrata);
 
   for (size_t s = 0; s < nstrata; ++s) {
-    const std::vector<double>& lam1pfs = flatmatrix_get_column(lambda1pfsx, s);
-    const std::vector<double>& lam2pfs = flatmatrix_get_column(lambda2pfsx, s);
-    const std::vector<double>& lam3pfs = flatmatrix_get_column(lambda3pfsx, s);
-    const std::vector<double>& lam1os = flatmatrix_get_column(lambda1osx, s);
-    const std::vector<double>& lam2os = flatmatrix_get_column(lambda2osx, s);
-    const std::vector<double>& lam3os = flatmatrix_get_column(lambda3osx, s);
-    const std::vector<double>& gam1pfs = flatmatrix_get_column(gamma1pfsx, s);
-    const std::vector<double>& gam2pfs = flatmatrix_get_column(gamma2pfsx, s);
-    const std::vector<double>& gam3pfs = flatmatrix_get_column(gamma3pfsx, s);
-    const std::vector<double>& gam1os = flatmatrix_get_column(gamma1osx, s);
-    const std::vector<double>& gam2os = flatmatrix_get_column(gamma2osx, s);
-    const std::vector<double>& gam3os = flatmatrix_get_column(gamma3osx, s);
+    auto lam1pfs = flatmatrix_get_column(lambda1pfsx, s);
+    auto lam2pfs = flatmatrix_get_column(lambda2pfsx, s);
+    auto lam3pfs = flatmatrix_get_column(lambda3pfsx, s);
+    auto lam1os = flatmatrix_get_column(lambda1osx, s);
+    auto lam2os = flatmatrix_get_column(lambda2osx, s);
+    auto lam3os = flatmatrix_get_column(lambda3osx, s);
+    auto gam1pfs = flatmatrix_get_column(gamma1pfsx, s);
+    auto gam2pfs = flatmatrix_get_column(gamma2pfsx, s);
+    auto gam3pfs = flatmatrix_get_column(gamma3pfsx, s);
+    auto gam1os = flatmatrix_get_column(gamma1osx, s);
+    auto gam2os = flatmatrix_get_column(gamma2osx, s);
+    auto gam3os = flatmatrix_get_column(gamma3osx, s);
 
     ListCpp a1 = hazard_pdcpp(tau, lam1pfs, lam1os, rho_pd_os);
     ListCpp a2 = hazard_pdcpp(tau, lam2pfs, lam2os, rho_pd_os);
@@ -3363,22 +3362,22 @@ ListCpp lrsim2e3acpp(
           double u1 = boost_pnorm(z1);
           double u2 = boost_pnorm(rho_pd_os * z1 + rho_pd_os_pyth_comp * z2);
 
-          const std::vector<double>& tau1pd = flatmatrix_get_column(tau1pdx, j);
-          const std::vector<double>& tau2pd = flatmatrix_get_column(tau2pdx, j);
-          const std::vector<double>& tau3pd = flatmatrix_get_column(tau3pdx, j);
-          const std::vector<double>& lam1pd = flatmatrix_get_column(lambda1pd, j);
-          const std::vector<double>& lam2pd = flatmatrix_get_column(lambda2pd, j);
-          const std::vector<double>& lam3pd = flatmatrix_get_column(lambda3pd, j);
-          const std::vector<double>& lam1os = flatmatrix_get_column(lambda1osx, j);
-          const std::vector<double>& lam2os = flatmatrix_get_column(lambda2osx, j);
-          const std::vector<double>& lam3os = flatmatrix_get_column(lambda3osx, j);
+          auto tau1pd = flatmatrix_get_column_view(tau1pdx, j);
+          auto tau2pd = flatmatrix_get_column_view(tau2pdx, j);
+          auto tau3pd = flatmatrix_get_column_view(tau3pdx, j);
+          auto lam1pd = flatmatrix_get_column_view(lambda1pd, j);
+          auto lam2pd = flatmatrix_get_column_view(lambda2pd, j);
+          auto lam3pd = flatmatrix_get_column_view(lambda3pd, j);
+          auto lam1os = flatmatrix_get_column_view(lambda1osx, j);
+          auto lam2os = flatmatrix_get_column_view(lambda2osx, j);
+          auto lam3os = flatmatrix_get_column_view(lambda3osx, j);
 
-          const std::vector<double>& gam1pd = flatmatrix_get_column(gamma1pd, j);
-          const std::vector<double>& gam2pd = flatmatrix_get_column(gamma2pd, j);
-          const std::vector<double>& gam3pd = flatmatrix_get_column(gamma3pd, j);
-          const std::vector<double>& gam1os = flatmatrix_get_column(gamma1osx, j);
-          const std::vector<double>& gam2os = flatmatrix_get_column(gamma2osx, j);
-          const std::vector<double>& gam3os = flatmatrix_get_column(gamma3osx, j);
+          auto gam1pd = flatmatrix_get_column_view(gamma1pd, j);
+          auto gam2pd = flatmatrix_get_column_view(gamma2pd, j);
+          auto gam3pd = flatmatrix_get_column_view(gamma3pd, j);
+          auto gam1os = flatmatrix_get_column_view(gamma1osx, j);
+          auto gam2os = flatmatrix_get_column_view(gamma2osx, j);
+          auto gam3os = flatmatrix_get_column_view(gamma3osx, j);
 
           // survival times
           if (trtGrp[i] == 1) {
@@ -4276,14 +4275,14 @@ ListCpp lrsimsubcpp(
   FlatMatrix gamma2negy(nintv2, nstrata);
 
   for (size_t s = 0; s < nstrata; ++s) {
-    const std::vector<double>& lam1ittx = flatmatrix_get_column(lambda1ittx, s);
-    const std::vector<double>& lam2ittx = flatmatrix_get_column(lambda2ittx, s);
-    const std::vector<double>& lam1posx = flatmatrix_get_column(lambda1posx, s);
-    const std::vector<double>& lam2posx = flatmatrix_get_column(lambda2posx, s);
-    const std::vector<double>& gam1ittx = flatmatrix_get_column(gamma1ittx, s);
-    const std::vector<double>& gam2ittx = flatmatrix_get_column(gamma2ittx, s);
-    const std::vector<double>& gam1posx = flatmatrix_get_column(gamma1posx, s);
-    const std::vector<double>& gam2posx = flatmatrix_get_column(gamma2posx, s);
+    auto lam1ittx = flatmatrix_get_column(lambda1ittx, s);
+    auto lam2ittx = flatmatrix_get_column(lambda2ittx, s);
+    auto lam1posx = flatmatrix_get_column(lambda1posx, s);
+    auto lam2posx = flatmatrix_get_column(lambda2posx, s);
+    auto gam1ittx = flatmatrix_get_column(gamma1ittx, s);
+    auto gam2ittx = flatmatrix_get_column(gamma2ittx, s);
+    auto gam1posx = flatmatrix_get_column(gamma1posx, s);
+    auto gam2posx = flatmatrix_get_column(gamma2posx, s);
 
     ListCpp a1 = hazard_subcpp(tau, lam1ittx, lam1posx, p_posv[s]);
     ListCpp a2 = hazard_subcpp(tau, lam2ittx, lam2posx, p_posv[s]);
@@ -4565,18 +4564,18 @@ ListCpp lrsimsubcpp(
           else { trtGrp[i] = 2; --b2[j]; }
           if (b1[j] + b2[j] == 0) { b1[j] = allocation1; b2[j] = allocation2; }
 
-          const std::vector<double>& tau1pos = flatmatrix_get_column(tau1posy, j);
-          const std::vector<double>& tau2pos = flatmatrix_get_column(tau2posy, j);
-          const std::vector<double>& tau1neg = flatmatrix_get_column(tau1negy, j);
-          const std::vector<double>& tau2neg = flatmatrix_get_column(tau2negy, j);
-          const std::vector<double>& lam1pos = flatmatrix_get_column(lambda1posy, j);
-          const std::vector<double>& lam2pos = flatmatrix_get_column(lambda2posy, j);
-          const std::vector<double>& lam1neg = flatmatrix_get_column(lambda1negy, j);
-          const std::vector<double>& lam2neg = flatmatrix_get_column(lambda2negy, j);
-          const std::vector<double>& gam1pos = flatmatrix_get_column(gamma1posy, j);
-          const std::vector<double>& gam2pos = flatmatrix_get_column(gamma2posy, j);
-          const std::vector<double>& gam1neg = flatmatrix_get_column(gamma1negy, j);
-          const std::vector<double>& gam2neg = flatmatrix_get_column(gamma2negy, j);
+          auto tau1pos = flatmatrix_get_column_view(tau1posy, j);
+          auto tau2pos = flatmatrix_get_column_view(tau2posy, j);
+          auto tau1neg = flatmatrix_get_column_view(tau1negy, j);
+          auto tau2neg = flatmatrix_get_column_view(tau2negy, j);
+          auto lam1pos = flatmatrix_get_column_view(lambda1posy, j);
+          auto lam2pos = flatmatrix_get_column_view(lambda2posy, j);
+          auto lam1neg = flatmatrix_get_column_view(lambda1negy, j);
+          auto lam2neg = flatmatrix_get_column_view(lambda2negy, j);
+          auto gam1pos = flatmatrix_get_column_view(gamma1posy, j);
+          auto gam2pos = flatmatrix_get_column_view(gamma2posy, j);
+          auto gam1neg = flatmatrix_get_column_view(gamma1negy, j);
+          auto gam2neg = flatmatrix_get_column_view(gamma2negy, j);
 
           // survival time
           u = unif(rng_local);
@@ -5460,7 +5459,6 @@ ListCpp binary_tte_sim_cpp(
       std::vector<size_t> set; set.reserve(N);
       std::vector<size_t> sub; sub.reserve(N);
 
-
       for (size_t iter = begin; iter < end; ++iter) {
         // per-iteration RNG
         boost::random::mt19937_64 rng_local(seeds[iter]);
@@ -5501,12 +5499,12 @@ ListCpp binary_tte_sim_cpp(
           if (u <= p) { trtGrp[i] = 1; --b1[j]; } else { trtGrp[i] = 2; --b2[j]; }
           if (b1[j] + b2[j] == 0) { b1[j] = allocation1; b2[j] = allocation2; }
 
-          const std::vector<double>& lam1 = flatmatrix_get_column(lambda1x, j);
-          const std::vector<double>& lam2 = flatmatrix_get_column(lambda2x, j);
-          const std::vector<double>& gam1 = flatmatrix_get_column(gamma1x, j);
-          const std::vector<double>& gam2 = flatmatrix_get_column(gamma2x, j);
-          const std::vector<double>& del1 = flatmatrix_get_column(delta1x, j);
-          const std::vector<double>& del2 = flatmatrix_get_column(delta2x, j);
+          auto lam1 = flatmatrix_get_column_view(lambda1x, j);
+          auto lam2 = flatmatrix_get_column_view(lambda2x, j);
+          auto gam1 = flatmatrix_get_column_view(gamma1x, j);
+          auto gam2 = flatmatrix_get_column_view(gamma2x, j);
+          auto del1 = flatmatrix_get_column_view(delta1x, j);
+          auto del2 = flatmatrix_get_column_view(delta2x, j);
 
           // Plackett copula sampling for joint (binary latent and TTE u/v)
           // See equations (2.9.1), (3.3.3a) and (3.3.3b) in Nelson,

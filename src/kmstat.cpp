@@ -96,8 +96,8 @@ double km_integrand(
   const std::vector<double>& accrualTime,
   const std::vector<double>& accrualIntensity,
   const std::vector<double>& piecewiseSurvivalTime,
-  const std::vector<double>& lambda,
-  const std::vector<double>& gamma,
+  const DoubleView& lambda,
+  const DoubleView& gamma,
   const double accrualDuration) {
 
   // interval index for x in piecewiseSurvivalTime
@@ -134,23 +134,23 @@ DataFrameCpp kmstat1cpp(
     const double followupTime,
     const bool fixedFollowup) {
 
-  const std::size_t nstrata = stratumFraction.size();
-  const std::size_t nintv = piecewiseSurvivalTime.size();
+  std::size_t nstrata = stratumFraction.size();
+  std::size_t nintv = piecewiseSurvivalTime.size();
   std::vector<double> zerogam(nintv, 0.0);
 
   // phi = P(randomized to group 1)
-  const double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
+  double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
 
   // max follow-up time for first enrolled subject
-  const double maxFollowupTime = fixedFollowup ? followupTime :
+  double maxFollowupTime = fixedFollowup ? followupTime :
     (accrualDuration + followupTime);
 
   // total enrolled by calendar time 'time'
-  const double a = accrual1(time, accrualTime, accrualIntensity, accrualDuration);
+  double a = accrual1(time, accrualTime, accrualIntensity, accrualDuration);
 
   // enrolled by (time - milestone) used for reaching milestone
-  const double a2 = accrual1(time - milestone, accrualTime, accrualIntensity,
-                             accrualDuration);
+  double a2 = accrual1(time - milestone, accrualTime, accrualIntensity,
+                       accrualDuration);
 
   // --- outputs ---
   std::vector<int> stratum(nstrata);
@@ -170,13 +170,13 @@ DataFrameCpp kmstat1cpp(
 
   for (std::size_t h = 0; h < nstrata; ++h) {
     stratum[h] = static_cast<int>(h + 1);
-    const double frac = stratumFraction[h];
+    double frac = stratumFraction[h];
 
     // subset per-stratum hazards
-    const std::vector<double>& lam1 = flatmatrix_get_column(lambda1, h);
-    const std::vector<double>& lam2 = flatmatrix_get_column(lambda2, h);
-    const std::vector<double>& gam1 = flatmatrix_get_column(gamma1, h);
-    const std::vector<double>& gam2 = flatmatrix_get_column(gamma2, h);
+    auto lam1 = flatmatrix_get_column_view(lambda1, h);
+    auto lam2 = flatmatrix_get_column_view(lambda2, h);
+    auto gam1 = flatmatrix_get_column_view(gamma1, h);
+    auto gam2 = flatmatrix_get_column_view(gamma2, h);
 
     // scale accrualIntensity by stratum fraction
     std::vector<double> accrualIntensity_frac = accrualIntensity;
@@ -352,7 +352,7 @@ DataFrameCpp kmstatcpp(
   auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
 
   // --- outputs ---
-  const size_t k = time.size();
+  size_t k = time.size();
   std::vector<double> calTime = time;
   std::vector<double> mileTime(k, milestone);
   std::vector<double> subjects(k), nevents(k), nevents1(k), nevents2(k);
@@ -1712,8 +1712,8 @@ ListCpp kmsamplesizecpp(
   std::vector<double> zerogam(nintv, 0.0);
   double surv1 = 0.0, surv2 = 0.0;
   for (size_t h = 0; h < nstrata; ++h) {
-    const std::vector<double>& lam1 = flatmatrix_get_column(lambda1x, h);
-    const std::vector<double>& lam2 = flatmatrix_get_column(lambda2x, h);
+    auto lam1 = flatmatrix_get_column_view(lambda1x, h);
+    auto lam2 = flatmatrix_get_column_view(lambda2x, h);
     double p1 = patrisk1(milestone, piecewiseSurvivalTime, lam1, zerogam);
     double p2 = patrisk1(milestone, piecewiseSurvivalTime, lam2, zerogam);
     surv1 += stratumFraction[h] * p1;
@@ -1926,7 +1926,7 @@ ListCpp kmsamplesizecpp(
   auto f_surv = [&](double aval)->double {
     double surv1 = 0.0;
     for (std::size_t h = 0; h < nstrata; ++h) {
-      std::vector<double> lam1H0 =  flatmatrix_get_column(lambda2x, h);
+      auto lam1H0 = flatmatrix_get_column(lambda2x, h);
       for (double &v : lam1H0) v *= aval;
       double p = patrisk1(milestone, piecewiseSurvivalTime, lam1H0, zerogam);
       surv1 += stratumFraction[h] * p;
@@ -3288,7 +3288,7 @@ ListCpp kmsamplesize1scpp(
   std::vector<double> zerogam(nintv, 0.0);
   double surv = 0.0;
   for (size_t h = 0; h < nstrata; ++h) {
-    const std::vector<double>& lam = flatmatrix_get_column(lambdax, h);
+    auto lam = flatmatrix_get_column_view(lambdax, h);
     double p = patrisk1(milestone, piecewiseSurvivalTime, lam, zerogam);
     surv += stratumFraction[h] * p;
   }
@@ -3498,7 +3498,7 @@ ListCpp kmsamplesize1scpp(
   auto f_surv = [&](double aval)->double {
     double surv = 0.0;
     for (std::size_t h = 0; h < nstrata; ++h) {
-      std::vector<double> lamH0 = flatmatrix_get_column(lambdax, h);
+      auto lamH0 = flatmatrix_get_column(lambdax, h);
       for (double &v : lamH0) v *= aval;
       double p = patrisk1(milestone, piecewiseSurvivalTime, lamH0, zerogam);
       surv += stratumFraction[h] * p;
@@ -4927,8 +4927,8 @@ ListCpp kmsamplesizeequivcpp(
   std::vector<double> zerogam(nintv, 0.0);
   double surv1 = 0.0, surv2 = 0.0;
   for (size_t h = 0; h < nstrata; ++h) {
-    const std::vector<double>& lam1 = flatmatrix_get_column(lambda1x, h);
-    const std::vector<double>& lam2 = flatmatrix_get_column(lambda2x, h);
+    auto lam1 = flatmatrix_get_column_view(lambda1x, h);
+    auto lam2 = flatmatrix_get_column_view(lambda2x, h);
     double p1 = patrisk1(milestone, piecewiseSurvivalTime, lam1, zerogam);
     double p2 = patrisk1(milestone, piecewiseSurvivalTime, lam2, zerogam);
     surv1 += stratumFraction[h] * p1;
