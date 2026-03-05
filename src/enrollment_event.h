@@ -1,7 +1,7 @@
 #ifndef __ENROLLMENT_EVENT__
 #define __ENROLLMENT_EVENT__
 
-struct FlatMatrix;
+#include "utilities.h"
 
 #include <vector>
 
@@ -11,47 +11,405 @@ double accrual1(
     const std::vector<double>& accrualIntensity,
     const double accrualDuration);
 
-std::vector<double> accrual(
-    const std::vector<double>& time,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
-    const double accrualDuration);
-
 double getAccrualDurationFromN1(
     const double nsubjects,
     const std::vector<double>& accrualTime,
     const std::vector<double>& accrualIntensity);
 
-std::vector<double> getAccrualDurationFromN(
-    const std::vector<double>& nsubjects,
+
+template <class VLam, class VGam>
+inline double patrisk1_impl(
+    const double time,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const VLam& lambda,
+    const VGam& gamma) {
+
+  const auto& t = piecewiseSurvivalTime;
+
+  // Find interval containing specified analysis time
+  size_t m = findInterval1(time, t);
+
+  // Compute cumulative hazard for the time point
+  double a = 0.0;
+  // Contribution from intervals fully covered
+  for (size_t j = 0; j < m-1; ++j) {
+    a += (lambda[j] + gamma[j]) * (t[j+1] - t[j]);
+  }
+  // Contribution from the remaining portion of the last interval
+  a += (lambda[m-1] + gamma[m-1]) * (time - t[m-1]);
+
+  return std::exp(-a);
+}
+
+inline double patrisk1(
+    const double time,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda,
+    const std::vector<double>& gamma) {
+  return patrisk1_impl(time, piecewiseSurvivalTime, lambda, gamma);
+}
+
+inline double patrisk1(
+    const double time,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda,
+    const DoubleView& gamma) {
+  return patrisk1_impl(time, piecewiseSurvivalTime, lambda, gamma);
+}
+
+inline double patrisk1(
+    const double time,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const DoubleView& lambda,
+    const std::vector<double>& gamma) {
+  return patrisk1_impl(time, piecewiseSurvivalTime, lambda, gamma);
+}
+
+inline double patrisk1(
+    const double time,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const DoubleView& lambda,
+    const DoubleView& gamma) {
+  return patrisk1_impl(time, piecewiseSurvivalTime, lambda, gamma);
+}
+
+
+template <class VLam, class VGam>
+inline double pevent1_impl(
+    const double time,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const VLam& lambda,
+    const VGam& gamma) {
+
+  const auto& t = piecewiseSurvivalTime;
+
+  size_t m = findInterval1(time, t);
+
+  double a = 0;
+  // Full interval is covered
+  for (size_t j = 0; j < m-1; ++j) {
+    double n = patrisk1_impl(t[j], t, lambda, gamma);
+    double theta = lambda[j] + gamma[j];
+    double p = lambda[j] / theta * (1.0 - std::exp(-theta * (t[j + 1] - t[j])));
+    a += n * p;  // Add risk-weighted probability
+  }
+
+  // Partial interval is covered
+  double n = patrisk1_impl(t[m-1], t, lambda, gamma);
+  double theta = lambda[m-1] + gamma[m-1];
+  double p = lambda[m-1] / theta * (1.0 - std::exp(-theta * (time - t[m-1])));
+  a += n * p;
+
+  return a;
+}
+
+inline double pevent1(
+    const double time,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda,
+    const std::vector<double>& gamma) {
+  return pevent1_impl(time, piecewiseSurvivalTime, lambda, gamma);
+}
+
+inline double pevent1(
+    const double time,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda,
+    const DoubleView& gamma) {
+  return pevent1_impl(time, piecewiseSurvivalTime, lambda, gamma);
+}
+
+inline double pevent1(
+    const double time,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const DoubleView& lambda,
+    const std::vector<double>& gamma) {
+  return pevent1_impl(time, piecewiseSurvivalTime, lambda, gamma);
+}
+
+inline double pevent1(
+    const double time,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const DoubleView& lambda,
+    const DoubleView& gamma) {
+  return pevent1_impl(time, piecewiseSurvivalTime, lambda, gamma);
+}
+
+// Integrate[D(t), {t, t1, t2}], for t1 and t2 in the j-th interval of
+// piecewise exponential distribution
+template <class VLam, class VGam>
+inline double hd_impl(
+    const size_t j,
+    const double t1,
+    const double t2,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const VLam& lambda,
+    const VGam& gamma) {
+
+  // lower bound of time interval j for piecewise exponential distribution
+  double t0 = piecewiseSurvivalTime[j];
+
+  // probability of being at risk at the start of interval j
+  double n0 = patrisk1_impl(t0, piecewiseSurvivalTime, lambda, gamma);
+
+  // Compute probability of having an event at the start of interval j
+  double d0 = pevent1_impl(t0, piecewiseSurvivalTime, lambda, gamma);
+
+  // Integration for conditional probability over (t1, t2)
+  double theta = lambda[j] + gamma[j];
+  double q1 = (std::exp(-theta * (t1 - t0)) - std::exp(-theta * (t2 - t0))) / theta;
+  double q = lambda[j] / theta * (t2 - t1 - q1);
+
+  // Sum up the integration for already failed and to-be-failed
+  return d0 * (t2 - t1) + n0 * q;
+}
+
+inline double hd(
+    const size_t j,
+    const double t1,
+    const double t2,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda,
+    const std::vector<double>& gamma) {
+  return hd_impl(j, t1, t2, piecewiseSurvivalTime, lambda, gamma);
+}
+
+inline double hd(
+    const size_t j,
+    const double t1,
+    const double t2,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda,
+    const DoubleView& gamma) {
+  return hd_impl(j, t1, t2, piecewiseSurvivalTime, lambda, gamma);
+}
+
+inline double hd(
+    const size_t j,
+    const double t1,
+    const double t2,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const DoubleView& lambda,
+    const std::vector<double>& gamma) {
+  return hd_impl(j, t1, t2, piecewiseSurvivalTime, lambda, gamma);
+}
+
+inline double hd(
+    const size_t j,
+    const double t1,
+    const double t2,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const DoubleView& lambda,
+    const DoubleView& gamma) {
+  return hd_impl(j, t1, t2, piecewiseSurvivalTime, lambda, gamma);
+}
+
+// Integration of the probability of having an event during an interval.
+// The specified analysis time interval can span more than one analysis
+// time interval with constant hazard.
+template <class VLam, class VGam>
+inline double pd_impl(
+    const double t1,
+    const double t2,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const VLam& lambda,
+    const VGam& gamma) {
+
+  const std::vector<double>& t = piecewiseSurvivalTime;
+
+  // Identify analysis time intervals containing t1 and t2
+  size_t j1 = findInterval1(t1, t) - 1;
+  size_t j2 = findInterval1(t2, t) - 1;
+
+  double a = 0.0;
+
+  // Sum up the integrated event probabilities across analysis time intervals
+  if (j1 == j2) {
+    // Both t1 and t2 are in the same interval
+    a = hd_impl(j1, t1, t2, t, lambda, gamma);
+  } else {
+    // First interval
+    a = hd_impl(j1, t1, t[j1 + 1], t, lambda, gamma);
+    for (size_t j = j1 + 1; j < j2; ++j) {
+      // Intermediate intervals
+      a += hd_impl(j, t[j], t[j + 1], t, lambda, gamma);
+    }
+    // Last interval
+    a += hd_impl(j2, t[j2], t2, t, lambda, gamma);
+  }
+
+  return a;
+}
+
+inline double pd(
+    const double t1,
+    const double t2,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda,
+    const std::vector<double>& gamma) {
+  return pd_impl(t1, t2, piecewiseSurvivalTime, lambda, gamma);
+}
+
+inline double pd(
+    const double t1,
+    const double t2,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda,
+    const DoubleView& gamma) {
+  return pd_impl(t1, t2, piecewiseSurvivalTime, lambda, gamma);
+}
+
+inline double pd(
+    const double t1,
+    const double t2,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const DoubleView& lambda,
+    const std::vector<double>& gamma) {
+  return pd_impl(t1, t2, piecewiseSurvivalTime, lambda, gamma);
+}
+
+inline double pd(
+    const double t1,
+    const double t2,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const DoubleView& lambda,
+    const DoubleView& gamma) {
+  return pd_impl(t1, t2, piecewiseSurvivalTime, lambda, gamma);
+}
+
+
+// Number of Patients Enrolled During an Interval and Having an Event
+// by Specified Calendar Times
+template <class VLam, class VGam>
+inline double ad_impl(
+    const double time,
+    const double u1,
+    const double u2,
     const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity);
+    const std::vector<double>& accrualIntensity,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const VLam& lambda,
+    const VGam& gamma) {
 
-double patrisk1(
+  const std::vector<double>& u = accrualTime;
+  const std::vector<double>& t = piecewiseSurvivalTime;
+
+  // Identify accrual time intervals containing u1 and u2
+  size_t i1 = findInterval1(u1, u) - 1;
+  size_t i2 = findInterval1(u2, u) - 1;
+
+  double a = 0.0;  // Initialize the result with zero
+
+  // Sum up the number of patients with an event across accrual time intervals
+  if (i1 == i2) {
+    // Both u1 and u2 are in the same interval
+    a = accrualIntensity[i1] * pd_impl(time - u2, time - u1, t, lambda, gamma);
+  } else {
+    // First interval
+    a = accrualIntensity[i1] *
+      pd_impl(time - u[i1 + 1], time - u1, t, lambda, gamma);
+    // intermediate intervals
+    for (size_t i = i1 + 1; i < i2; ++i) {
+      a += accrualIntensity[i] *
+        pd_impl(time - u[i + 1], time - u[i], t, lambda, gamma);
+    }
+    // Last interval
+    a += accrualIntensity[i2] * pd_impl(time - u2, time - u[i2], t, lambda, gamma);
+  }
+
+  return a;
+}
+
+inline double ad(
     const double time,
+    const double u1,
+    const double u2,
+    const std::vector<double>& accrualTime,
+    const std::vector<double>& accrualIntensity,
     const std::vector<double>& piecewiseSurvivalTime,
     const std::vector<double>& lambda,
-    const std::vector<double>& gamma);
+    const std::vector<double>& gamma) {
+  return ad_impl(time, u1, u2, accrualTime, accrualIntensity,
+                 piecewiseSurvivalTime, lambda, gamma);
+}
 
-std::vector<double> patrisk(
-    const std::vector<double>& time,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda,
-    const std::vector<double>& gamma);
-
-double pevent1(
+inline double ad(
     const double time,
+    const double u1,
+    const double u2,
+    const std::vector<double>& accrualTime,
+    const std::vector<double>& accrualIntensity,
     const std::vector<double>& piecewiseSurvivalTime,
     const std::vector<double>& lambda,
-    const std::vector<double>& gamma);
+    const DoubleView& gamma) {
+  return ad_impl(time, u1, u2, accrualTime, accrualIntensity,
+                 piecewiseSurvivalTime, lambda, gamma);
+}
 
-std::vector<double> pevent(
-    const std::vector<double>& time,
+inline double ad(
+    const double time,
+    const double u1,
+    const double u2,
+    const std::vector<double>& accrualTime,
+    const std::vector<double>& accrualIntensity,
     const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda,
-    const std::vector<double>& gamma);
+    const DoubleView& lambda,
+    const std::vector<double>& gamma) {
+  return ad_impl(time, u1, u2, accrualTime, accrualIntensity,
+                 piecewiseSurvivalTime, lambda, gamma);
+}
 
-std::pair<double, double> natrisk1(
+inline double ad(
+    const double time,
+    const double u1,
+    const double u2,
+    const std::vector<double>& accrualTime,
+    const std::vector<double>& accrualIntensity,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const DoubleView& lambda,
+    const DoubleView& gamma) {
+  return ad_impl(time, u1, u2, accrualTime, accrualIntensity,
+                 piecewiseSurvivalTime, lambda, gamma);
+}
+
+
+template <class VLam1, class VLam2, class VGam1, class VGam2>
+inline std::pair<double, double> natrisk1_impl(
+    const double t,
+    const double allocationRatioPlanned,
+    const std::vector<double>& accrualTime,
+    const std::vector<double>& accrualIntensity,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const VLam1& lambda1,
+    const VLam2& lambda2,
+    const VGam1& gamma1,
+    const VGam2& gamma2,
+    const double accrualDuration,
+    const double maxFollowupTime,
+    const double time) {
+
+  // truncate the analysis time by the maximum follow-up
+  double t1 = std::min(std::min(t, maxFollowupTime), time);
+  double u = time - t1;
+
+  // Number of patients enrolled
+  double a = accrual1(u, accrualTime, accrualIntensity, accrualDuration);
+
+  // Probability of randomization to the active treatment group
+  double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
+
+  // Compute probabilities for the active and control groups
+  double p1 = patrisk1_impl(t1, piecewiseSurvivalTime, lambda1, gamma1);
+  double p2 = patrisk1_impl(t1, piecewiseSurvivalTime, lambda2, gamma2);
+
+  // Compute values for FlatMatrix directly
+  double n1 = phi * a * p1;  // Patients at risk in active treatment
+  double n2 = (1.0 - phi) * a * p2;  // Patients at risk in control
+
+  return std::make_pair(n1, n2);
+}
+
+inline std::pair<double, double> natrisk1(
     const double t,
     const double allocationRatioPlanned,
     const std::vector<double>& accrualTime,
@@ -63,9 +421,106 @@ std::pair<double, double> natrisk1(
     const std::vector<double>& gamma2,
     const double accrualDuration,
     const double maxFollowupTime,
-    const double time);
+    const double time) {
+  return natrisk1_impl(t, allocationRatioPlanned, accrualTime, accrualIntensity,
+                       piecewiseSurvivalTime, lambda1, lambda2, gamma1, gamma2,
+                       accrualDuration, maxFollowupTime, time);
+}
 
-std::pair<double, double> nevent1(
+inline std::pair<double, double> natrisk1(
+    const double t,
+    const double allocationRatioPlanned,
+    const std::vector<double>& accrualTime,
+    const std::vector<double>& accrualIntensity,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda1,
+    const std::vector<double>& lambda2,
+    const DoubleView& gamma1,
+    const DoubleView& gamma2,
+    const double accrualDuration,
+    const double maxFollowupTime,
+    const double time) {
+  return natrisk1_impl(t, allocationRatioPlanned, accrualTime, accrualIntensity,
+                       piecewiseSurvivalTime, lambda1, lambda2, gamma1, gamma2,
+                       accrualDuration, maxFollowupTime, time);
+}
+
+inline std::pair<double, double> natrisk1(
+    const double t,
+    const double allocationRatioPlanned,
+    const std::vector<double>& accrualTime,
+    const std::vector<double>& accrualIntensity,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const DoubleView& lambda1,
+    const DoubleView& lambda2,
+    const std::vector<double>& gamma1,
+    const std::vector<double>& gamma2,
+    const double accrualDuration,
+    const double maxFollowupTime,
+    const double time) {
+  return natrisk1_impl(t, allocationRatioPlanned, accrualTime, accrualIntensity,
+                       piecewiseSurvivalTime, lambda1, lambda2, gamma1, gamma2,
+                       accrualDuration, maxFollowupTime, time);
+}
+
+inline std::pair<double, double> natrisk1(
+    const double t,
+    const double allocationRatioPlanned,
+    const std::vector<double>& accrualTime,
+    const std::vector<double>& accrualIntensity,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const DoubleView& lambda1,
+    const DoubleView& lambda2,
+    const DoubleView& gamma1,
+    const DoubleView& gamma2,
+    const double accrualDuration,
+    const double maxFollowupTime,
+    const double time) {
+  return natrisk1_impl(t, allocationRatioPlanned, accrualTime, accrualIntensity,
+                       piecewiseSurvivalTime, lambda1, lambda2, gamma1, gamma2,
+                       accrualDuration, maxFollowupTime, time);
+}
+
+
+template <class VLam1, class VLam2, class VGam1, class VGam2>
+inline std::pair<double, double> nevent1_impl(
+    const double time,
+    const double allocationRatioPlanned,
+    const std::vector<double>& accrualTime,
+    const std::vector<double>& accrualIntensity,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const VLam1& lambda1,
+    const VLam2& lambda2,
+    const VGam1& gamma1,
+    const VGam2& gamma2,
+    const double accrualDuration,
+    const double maxFollowupTime) {
+
+  // Probability of randomization to the active treatment group
+  double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
+
+  // Number of patients enrolled by calendar time (time - maxFollowupTime)
+  double a = accrual1(time - maxFollowupTime, accrualTime, accrualIntensity,
+                      accrualDuration);
+
+  double p1 = pevent1_impl(maxFollowupTime, piecewiseSurvivalTime, lambda1, gamma1);
+  double p2 = pevent1_impl(maxFollowupTime, piecewiseSurvivalTime, lambda2, gamma2);
+
+  // Calculate the number of patients enrolled during the interval
+  // (time - maxFollowupTime, time) and having an event by calendar time time
+  double u1 = std::min(std::max(time - maxFollowupTime, 0.0), accrualDuration);
+  double u2 = std::min(time, accrualDuration);
+  double c1 = ad_impl(time, u1, u2, accrualTime, accrualIntensity,
+                      piecewiseSurvivalTime, lambda1, gamma1);
+  double c2 = ad_impl(time, u1, u2, accrualTime, accrualIntensity,
+                      piecewiseSurvivalTime, lambda2, gamma2);
+
+  double d1 = phi * (a * p1 + c1);  // Active treatment group
+  double d2 = (1.0 - phi) * (a * p2 + c2);  // Control group
+  return std::make_pair(d1, d2);
+}
+
+inline std::pair<double, double> nevent1(
     const double time,
     const double allocationRatioPlanned,
     const std::vector<double>& accrualTime,
@@ -76,7 +531,62 @@ std::pair<double, double> nevent1(
     const std::vector<double>& gamma1,
     const std::vector<double>& gamma2,
     const double accrualDuration,
-    const double maxFollowupTime);
+    const double maxFollowupTime) {
+  return nevent1_impl(time, allocationRatioPlanned, accrualTime, accrualIntensity,
+                      piecewiseSurvivalTime, lambda1, lambda2, gamma1, gamma2,
+                      accrualDuration, maxFollowupTime);
+}
+
+inline std::pair<double, double> nevent1(
+    const double time,
+    const double allocationRatioPlanned,
+    const std::vector<double>& accrualTime,
+    const std::vector<double>& accrualIntensity,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda1,
+    const std::vector<double>& lambda2,
+    const DoubleView& gamma1,
+    const DoubleView& gamma2,
+    const double accrualDuration,
+    const double maxFollowupTime) {
+  return nevent1_impl(time, allocationRatioPlanned, accrualTime, accrualIntensity,
+                      piecewiseSurvivalTime, lambda1, lambda2, gamma1, gamma2,
+                      accrualDuration, maxFollowupTime);
+}
+
+inline std::pair<double, double> nevent1(
+    const double time,
+    const double allocationRatioPlanned,
+    const std::vector<double>& accrualTime,
+    const std::vector<double>& accrualIntensity,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const DoubleView& lambda1,
+    const DoubleView& lambda2,
+    const std::vector<double>& gamma1,
+    const std::vector<double>& gamma2,
+    const double accrualDuration,
+    const double maxFollowupTime) {
+  return nevent1_impl(time, allocationRatioPlanned, accrualTime, accrualIntensity,
+                      piecewiseSurvivalTime, lambda1, lambda2, gamma1, gamma2,
+                      accrualDuration, maxFollowupTime);
+}
+
+inline std::pair<double, double> nevent1(
+    const double time,
+    const double allocationRatioPlanned,
+    const std::vector<double>& accrualTime,
+    const std::vector<double>& accrualIntensity,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const DoubleView& lambda1,
+    const DoubleView& lambda2,
+    const DoubleView& gamma1,
+    const DoubleView& gamma2,
+    const double accrualDuration,
+    const double maxFollowupTime) {
+  return nevent1_impl(time, allocationRatioPlanned, accrualTime, accrualIntensity,
+                      piecewiseSurvivalTime, lambda1, lambda2, gamma1, gamma2,
+                      accrualDuration, maxFollowupTime);
+}
 
 
 #endif // __ENROLLMENT_EVENT__
