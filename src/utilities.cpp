@@ -529,47 +529,6 @@ std::vector<double> ptpwexpcpp(
 }
 
 
-double qtpwexpcpp1(
-    const double p,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda,
-    const double lowerBound,
-    const bool lowertail,
-    const bool logp) {
-
-  size_t m = piecewiseSurvivalTime.size();
-  double u = logp ? std::exp(p) : p;
-  if (!lowertail) u = 1.0 - u;
-  if (u <= 0.0) return lowerBound;
-  if (u >= 1.0) return std::numeric_limits<double>::infinity();
-  double v1 = -log1p(-u);
-  size_t j = 0;
-  while (j < m && piecewiseSurvivalTime[j] <= lowerBound) ++j;
-  size_t j1 = (j == 0) ? 0 : (j - 1);
-  double v = 0.0;
-  if (j1 == m - 1) {
-    double lj = lambda[j1];
-    if (lj <= 0.0) return std::numeric_limits<double>::infinity();
-    return lowerBound + v1 / lj;
-  }
-  for (j = j1; j < m - 1; ++j) {
-    double dt = (j == j1) ? piecewiseSurvivalTime[j + 1] - lowerBound :
-    piecewiseSurvivalTime[j + 1] - piecewiseSurvivalTime[j];
-    double lj = lambda[j];
-    if (lj > 0.0) v += lj * dt;
-    if (v >= v1) break;
-  }
-  double lj = lambda[j];
-  if (lj <= 0.0) return std::numeric_limits<double>::infinity();
-  if (j == m - 1) {
-    double dt = (v1 - v) / lj;
-    return piecewiseSurvivalTime[j] + dt;
-  }
-  double dt = (v - v1) / lj;
-  return piecewiseSurvivalTime[j + 1] - dt;
-}
-
-
 // [[Rcpp::export]]
 std::vector<double> qtpwexpcpp(
     const std::vector<double>& p,
@@ -1036,11 +995,12 @@ ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
   for (size_t i=0; i<9; ++i) p[i] = (i+1.0)/10.0;
   p[9] = 0.95;
 
-  std::vector<double> u0 = qtpwexpcpp(p, piecewiseSurvivalTime, hazard_pfsv);
   std::vector<double> u(n+10);
   for (size_t i=0; i<n-1; ++i) u[i] = piecewiseSurvivalTime[i+1];
   u[n-1] = piecewiseSurvivalTime[n-1] + std::log(2.0)/hazard_pfsv[n-1];
-  for (size_t i=0; i<10; ++i) u[n+i] = u0[i];
+  for (size_t i=0; i<10; ++i) {
+    u[n+i] = qtpwexpcpp1(p[i], piecewiseSurvivalTime, hazard_pfsv);
+  }
 
   // obtain sorted and unique time points
   std::sort(u.begin(), u.end());
@@ -1289,7 +1249,7 @@ double cor_pfs_os(const std::vector<double>& piecewiseSurvivalTime,
   double m1 = mv1.get<double>("mean");
   double v1 = mv1.get<double>("variance");
 
-  ListCpp mv2 = mtpwexpcpp(piecewiseSurvivalTime, hazard_os);
+  ListCpp mv2 = mtpwexpcpp(piecewiseSurvivalTime, hazard_os, 0);
   double m2 = mv2.get<double>("mean");
   double v2 = mv2.get<double>("variance");
 
@@ -1441,11 +1401,12 @@ ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
   for (size_t i=0; i<9; ++i) p[i] = (i+1.0)/10.0;
   p[9] = 0.95;
 
-  std::vector<double> u0 = qtpwexpcpp(p, piecewiseSurvivalTime, hazard_ittv);
   std::vector<double> u(n+10);
   for (size_t i=0; i<n-1; ++i) u[i] = piecewiseSurvivalTime[i+1];
   u[n-1] = piecewiseSurvivalTime[n-1] + std::log(2.0)/hazard_ittv[n-1];
-  for (size_t i=0; i<10; ++i) u[n+i] = u0[i];
+  for (size_t i=0; i<10; ++i) {
+    u[n+i] = qtpwexpcpp1(p[i], piecewiseSurvivalTime, hazard_ittv);
+  }
 
   // obtain sorted and unique time points
   std::sort(u.begin(), u.end());
