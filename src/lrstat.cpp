@@ -1566,7 +1566,7 @@ ListCpp lrpowercpp(
   auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
 
 
-  // --- Determine if Schoenfeld method is eligible-----------------------------
+  // --- Determine if Schoenfeld method is eligible ---
   std::vector<double> hrx(nsi);
   for (size_t i = 0; i < nstrata; ++i) {
     for (size_t j = 0; j < nintv; ++j) {
@@ -1599,7 +1599,7 @@ ListCpp lrpowercpp(
         "with proportional hazards");
   }
 
-  // --- Efficacy boundaries ---------------------------------------------------
+  // --- Efficacy boundaries ---
   std::vector<double> l(K, -6.0), zero(K, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
@@ -1642,7 +1642,7 @@ ListCpp lrpowercpp(
   double alpha1 = missingCriticalValues ? alpha :
     std::round(cumAlphaSpent.back() * 1e6) / 1e6;
 
-  // --- Futility boundaries ---------------------------------------------------
+  // --- Futility boundaries ---
   std::vector<double> futBounds = futilityBounds;
   if (K > 1) {
     if (missingFutilityBounds && bsf == "none") {
@@ -1657,7 +1657,7 @@ ListCpp lrpowercpp(
     }
   }
 
-  // --- Analysis timing, number of events, and information --------------------
+  // --- Analysis timing, number of events, and information ---
   double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
 
   double studyDuration1 = studyDuration;
@@ -1816,7 +1816,7 @@ ListCpp lrpowercpp(
     }
   }
 
-  // --- Compute hazard-ratio estimates ----------------------------------------
+  // --- Compute hazard-ratio estimates ---
   std::vector<double> HR(K), vlogHR(K);
   if (estimateHazardRatio) {
     if (su1 == 's') {
@@ -1840,7 +1840,7 @@ ListCpp lrpowercpp(
     }
   }
 
-  // --- compute stagewise exit probabilities and related metrics --------------
+  // --- compute stagewise exit probabilities and related metrics ---
   ListCpp exit_probs;
   if (!missingFutilityBounds || bsf == "none" || K == 1) {
     exit_probs = exitprobcpp(critValues, futBounds, theta, I);
@@ -1912,7 +1912,7 @@ ListCpp lrpowercpp(
     if (futBounds[i] == -6.0) { hrl[i] = NaN; futStopping[i] = 0; }
   }
 
-  // --- Build output DataFrames and Lists ------------------------------------
+  // --- Build output DataFrames and Lists ---
   std::string typeOfComputationDisplay = su1 == 's' ? "Schoenfeld" : "Direct";
   DataFrameCpp overallResults;
   overallResults.push_back(overallReject, "overallReject");
@@ -2684,7 +2684,7 @@ ListCpp lrsamplesizecpp(
     spendTime = infoRates;
   }
 
-  // --- Determine if Schoenfeld method is eligible-----------------------------
+  // --- Determine if Schoenfeld method is eligible---
   std::vector<double> hrx(nsi);
   for (size_t i = 0; i < nstrata; ++i) {
     for (size_t j = 0; j < nintv; ++j) {
@@ -2718,7 +2718,7 @@ ListCpp lrsamplesizecpp(
   }
   int predictTarget1 = (su1 == 's') ? 1 : 2;
 
-  // --- Efficacy boundaries ---------------------------------------------------
+  // --- Efficacy boundaries ---
   std::vector<double> l(K, -6.0), zero(K, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
@@ -2761,7 +2761,7 @@ ListCpp lrsamplesizecpp(
   double alpha1 = missingCriticalValues ? alpha :
     std::round(cumAlphaSpent.back() * 1e6) / 1e6;
 
-  // --- Futility boundaries ---------------------------------------------------
+  // --- Futility boundaries ---
   std::vector<double> futBounds = futilityBounds;
   if (K > 1) {
     if (missingFutilityBounds && bsf == "none") {
@@ -2994,7 +2994,7 @@ ListCpp lrsamplesizecpp(
   // Root-finding function to solve for the unknown design parameter to achieve target
   std::function<double(double)> f_root;
   if (su1 == 's') {
-    // --- Schoenfeld method if eligible and requested -------------------------
+    // --- Schoenfeld method if eligible and requested ---
     double theta = -std::log(hazardRatio / hazardRatioH0);
 
     ListCpp design = getDesigncpp(
@@ -3310,7 +3310,7 @@ ListCpp lrsamplesizecpp(
     }
 
 
-    // --- Recalculate boundaries --------------------------------------
+    // --- Recalculate boundaries ---
     if (bsf != "user") {
       // criticalValues, futilityBounds, spendingTime are all recalculated
       // if not user-specified
@@ -3950,7 +3950,7 @@ ListCpp lrpowerequivcpp(
   }
 
 
-  // --- timing, events, information -----------
+  // --- timing, events, information ---
   double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
 
   double studyDuration1 = studyDuration;
@@ -4744,7 +4744,7 @@ ListCpp lrsamplesizeequivcpp(
   auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
 
 
-  // --- Determine if Schoenfeld method is eligible-----------------------------
+  // --- Determine if Schoenfeld method is eligible ---
   std::vector<double> hrx(nsi);
   for (size_t i = 0; i < nstrata; ++i) {
     for (size_t j = 0; j < nintv; ++j) {
@@ -4778,7 +4778,7 @@ ListCpp lrsamplesizeequivcpp(
   }
 
 
-  // --- Efficacy boundaries ---------------------------------------------------
+  // --- Efficacy boundaries ---
   std::vector<double> u(K), l(K, -6.0), zero(K, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {

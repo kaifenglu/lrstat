@@ -457,8 +457,8 @@ double ptpwexpcpp1(
   if (q <= lowerBound) {
     p = 0.0;
   } else {
-    size_t i0 = findInterval1(lowerBound, piecewiseSurvivalTime) - 1;
-    size_t i1 = findInterval1(q, piecewiseSurvivalTime) - 1;
+    size_t i0 = findInterval1(lowerBound, piecewiseSurvivalTime);
+    size_t i1 = findInterval1(q, piecewiseSurvivalTime);
     double v;
     if (i0 == i1) {
       v = lambda[i0 - 1] * (q - lowerBound);
