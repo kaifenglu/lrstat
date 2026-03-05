@@ -18,6 +18,7 @@
 
 #include <Rcpp.h>
 #include "ska/flat_hash_map.hpp"
+#include "utilities.h"
 
 using std::size_t;
 
@@ -603,6 +604,7 @@ void append_flatmatrix(std::vector<std::vector<double>>& fm1,
                        const std::vector<std::vector<double>>& fm2);
 FlatMatrix cols_to_flatmatrix(const std::vector<std::vector<double>>& cols);
 std::vector<double> flatmatrix_get_column(const FlatMatrix& M, size_t col);
+DoubleView flatmatrix_get_column_view(const FlatMatrix& M, size_t col);
 std::vector<int> intmatrix_get_column(const IntMatrix& M, size_t col);
 std::vector<unsigned char> boolmatrix_get_column(const BoolMatrix& M, size_t col);
 void flatmatrix_set_column(FlatMatrix& M, size_t col, const std::vector<double>& src);

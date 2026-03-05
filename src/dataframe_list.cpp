@@ -700,12 +700,12 @@ void append_flatmatrix(std::vector<std::vector<double>>& fm1,
  Throws std::invalid_argument if columns have inconsistent lengths.
  */
 FlatMatrix cols_to_flatmatrix(const std::vector<std::vector<double>>& cols) {
-  const size_t ncol = cols.size();
+  size_t ncol = cols.size();
   if (ncol == 0) {
     return FlatMatrix(); // empty
   }
 
-  const size_t nrow = cols[0].size();
+  size_t nrow = cols[0].size();
   // validate sizes
   for (size_t c = 1; c < ncol; ++c) {
     if (cols[c].size() != nrow) {
@@ -718,7 +718,7 @@ FlatMatrix cols_to_flatmatrix(const std::vector<std::vector<double>>& cols) {
   data.resize(nrow * ncol);
 
   // copy each column into its place: column c starts at data + c * nrow
-  const size_t bytes_per_col = nrow * sizeof(double);
+  size_t bytes_per_col = nrow * sizeof(double);
   for (size_t c = 0; c < ncol; ++c) {
     if (nrow > 0) {
       std::memcpy(data.data() + c * nrow, cols[c].data(), bytes_per_col);
@@ -738,6 +738,14 @@ std::vector<double> flatmatrix_get_column(const FlatMatrix& M, size_t col) {
   std::memcpy(out.data(), src, M.nrow * sizeof(double));
   return out;
 }
+
+DoubleView flatmatrix_get_column_view(const FlatMatrix& M, size_t col) {
+  if (M.nrow == 0 || M.ncol == 0) return {};
+  if (col >= M.ncol) throw std::out_of_range("column index out of range");
+  const double* src = M.data_ptr() + FlatMatrix::idx_col(0, col, M.nrow);
+  return DoubleView{src, M.nrow};
+}
+
 
 std::vector<int> intmatrix_get_column(const IntMatrix& M, size_t col) {
   if (M.nrow == 0 || M.ncol == 0) return {};
