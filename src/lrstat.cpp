@@ -19,15 +19,16 @@
 
 using std::size_t;
 
-
-double kmsurv1(
+template <class VLam, class VGam>
+static double kmsurv1_impl(
+    /* same args as kmsurv1, but hazards are generic: */
     const double time,
     const double allocationRatioPlanned,
     const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda1,
-    const std::vector<double>& lambda2,
-    const std::vector<double>& gamma1,
-    const std::vector<double>& gamma2) {
+    const VLam& lambda1,
+    const VLam& lambda2,
+    const VGam& gamma1,
+    const VGam& gamma2) {
 
   double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
 
@@ -81,6 +82,30 @@ double kmsurv1(
 
   // convert to survival: exp(-v)
   return std::exp(-v);
+}
+
+static double kmsurv1(
+    const double time,
+    const double allocationRatioPlanned,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const std::vector<double>& lambda1,
+    const std::vector<double>& lambda2,
+    const std::vector<double>& gamma1,
+    const std::vector<double>& gamma2) {
+  return kmsurv1_impl(time, allocationRatioPlanned, piecewiseSurvivalTime,
+                      lambda1, lambda2, gamma1, gamma2);
+}
+
+static double kmsurv1(
+    const double time,
+    const double allocationRatioPlanned,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const DoubleView& lambda1,
+    const DoubleView& lambda2,
+    const DoubleView& gamma1,
+    const DoubleView& gamma2) {
+  return kmsurv1_impl(time, allocationRatioPlanned, piecewiseSurvivalTime,
+                      lambda1, lambda2, gamma1, gamma2);
 }
 
 
@@ -268,13 +293,13 @@ DataFrameCpp lrstat0cpp(
     stratum[h] = static_cast<int>(h + 1);
     times[h] = time;
 
-    const double frac = stratumFraction[h];
+    double frac = stratumFraction[h];
 
     // build per-stratum vectors for the intervals
-    const std::vector<double>& lam1 = flatmatrix_get_column(lambda1, h);
-    const std::vector<double>& lam2 = flatmatrix_get_column(lambda2, h);
-    const std::vector<double>& gam1 = flatmatrix_get_column(gamma1, h);
-    const std::vector<double>& gam2 = flatmatrix_get_column(gamma2, h);
+    auto lam1 = flatmatrix_get_column_view(lambda1, h);
+    auto lam2 = flatmatrix_get_column_view(lambda2, h);
+    auto gam1 = flatmatrix_get_column_view(gamma1, h);
+    auto gam2 = flatmatrix_get_column_view(gamma2, h);
 
     // number of events in the stratum at calendar time
     std::vector<double> accrualIntensity_frac = accrualIntensity;
@@ -1208,9 +1233,12 @@ DataFrameCpp getDurationFromNeventscpp(
 
   // 3) Prepare grid of accrual durations ta (npoints) between t0 and t1
   size_t npts = static_cast<size_t>(npoints);
-  std::vector<double> ta(npts), ts(npts), tf(npts);
+  std::vector<double> ta(npts), subjects(npts), ts(npts), tf(npts);
   double dt = (t1 - t0) / static_cast<double>(npts - 1);
-  for (size_t i = 0; i < npts; ++i) ta[i] = t0 + i * dt;
+  for (size_t i = 0; i < npts; ++i) {
+    ta[i] = t0 + i * dt;
+    subjects[i] = accrual1(ta[i], accrualTime, accrualIntensity, 1000.0);
+  }
 
   for (size_t i = 0; i < npts; ++i) {
     if (i == 0) {
@@ -1226,9 +1254,6 @@ DataFrameCpp getDurationFromNeventscpp(
     }
     tf[i] = fixedFollowup ? followupTime : (ts[i] - ta[i]);
   }
-
-  // use large accrualDurationLarge to avoid truncation
-  auto subjects = accrual(ta, accrualTime, accrualIntensity, 1000.0);
 
   // Build DataFrameCpp result
   DataFrameCpp out;
