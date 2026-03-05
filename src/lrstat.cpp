@@ -20,7 +20,7 @@
 using std::size_t;
 
 template <class VLam, class VGam>
-static double kmsurv1_impl(
+static double kmsurv1(
     /* same args as kmsurv1, but hazards are generic: */
     const double time,
     const double allocationRatioPlanned,
@@ -82,30 +82,6 @@ static double kmsurv1_impl(
 
   // convert to survival: exp(-v)
   return std::exp(-v);
-}
-
-static double kmsurv1(
-    const double time,
-    const double allocationRatioPlanned,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda1,
-    const std::vector<double>& lambda2,
-    const std::vector<double>& gamma1,
-    const std::vector<double>& gamma2) {
-  return kmsurv1_impl(time, allocationRatioPlanned, piecewiseSurvivalTime,
-                      lambda1, lambda2, gamma1, gamma2);
-}
-
-static double kmsurv1(
-    const double time,
-    const double allocationRatioPlanned,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const DoubleView& lambda1,
-    const DoubleView& lambda2,
-    const DoubleView& gamma1,
-    const DoubleView& gamma2) {
-  return kmsurv1_impl(time, allocationRatioPlanned, piecewiseSurvivalTime,
-                      lambda1, lambda2, gamma1, gamma2);
 }
 
 
