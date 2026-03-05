@@ -91,8 +91,8 @@ std::vector<double> nb_make_breaks(
 // Mean exposure E(t), where t = min(time - W, C, maxFollowupTime) and
 // W is the enrollment time, C is dropout time, and the expectation is taken
 // with respect to the distribution of W and C: E(t) = integrate(S(t) dt)
-
-double nb_ex_integrand(
+template <class VGam>
+static double nb_ex_integrand(
     const double x, // analysis time
     const double time, // calendar time of analysis
     const double phi,
@@ -102,7 +102,7 @@ double nb_ex_integrand(
     const double kappa,
     const double lambda,
     const std::vector<double>& zero,
-    const DoubleView& gamma,
+    const VGam& gamma,
     const double accrualDuration) {
 
   // p(x) = P(at risk at time x since randomization) under dropout hazards
@@ -126,7 +126,8 @@ double nb_ex_integrand(
 // where n H(time - t) is the number of subjects enrolled by calendar
 // time (time-t), and G(t) is the probability of being at risk of dropout
 // at time t since randomization under the piecewise exponential dropout model.
-double nb_info_integrand(
+template <class VGam>
+static double nb_info_integrand(
     const double x, // analysis time
     const double time, // calendar time of analysis
     const double phi,
@@ -136,7 +137,7 @@ double nb_info_integrand(
     const double kappa,
     const double lambda,
     const std::vector<double>& zero,
-    const DoubleView& gamma,
+    const VGam& gamma,
     const double accrualDuration) {
 
   // p(x) = P(at risk at time x since randomization) under dropout hazards
