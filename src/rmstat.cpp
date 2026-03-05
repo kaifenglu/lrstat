@@ -88,11 +88,12 @@ std::vector<double> rm_make_breaks(
   return final_breaks;
 }
 
-
-double rmstcpp(const double t1,
-               const double t2,
-               const std::vector<double>& piecewiseSurvivalTime,
-               const std::vector<double>& lambda) {
+template <class VLam>
+static double rmstcpp(
+    const double t1,
+    const double t2,
+    const std::vector<double>& piecewiseSurvivalTime,
+    const VLam& lambda) {
 
   // alias for convenience
   const std::vector<double>& t = piecewiseSurvivalTime;
@@ -200,12 +201,14 @@ double rmst(const double t1 = 0,
     if (v < 0.0) throw std::invalid_argument("lambda must be non-negative");
   }
 
-  return rmstcpp(t1, t2, pwSurvT, lam);
+  size_t nintv = pwSurvT.size();
+  auto lambdax = expand1(lam, nintv, "lambda");
+  return rmstcpp(t1, t2, pwSurvT, lambdax);
 }
 
 
-
-double rm_integrand(
+template <class VLam, class VGam>
+static double rm_integrand(
   const double x,    // analysis time (integration variable)
   const double t2,   // calendar time for look 2
   const double tau1, // milestone for look 1
@@ -214,8 +217,8 @@ double rm_integrand(
   const std::vector<double>& accrualTime,
   const std::vector<double>& accrualIntensity,
   const std::vector<double>& piecewiseSurvivalTime,
-  const std::vector<double>& lambda,
-  const std::vector<double>& gamma,
+  const VLam& lambda,
+  const VGam& gamma,
   const double accrualDuration) {
 
   double a1 = rmstcpp(x, tau1, piecewiseSurvivalTime, lambda);
@@ -239,7 +242,8 @@ double rm_integrand(
 }
 
 
-std::pair<double, double> covrmstcpp(
+template <class VLam1, class VLam2, class VGam1, class VGam2>
+static std::pair<double, double> covrmstcpp(
     double t2,
     double tau1,
     double tau2,
@@ -247,10 +251,10 @@ std::pair<double, double> covrmstcpp(
     const std::vector<double>& accrualTime,
     const std::vector<double>& accrualIntensity,
     const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda1,
-    const std::vector<double>& lambda2,
-    const std::vector<double>& gamma1,
-    const std::vector<double>& gamma2,
+    const VLam1& lambda1,
+    const VLam2& lambda2,
+    const VGam1& gamma1,
+    const VGam2& gamma2,
     double accrualDuration,
     double maxFollowupTime) {
 
@@ -261,12 +265,14 @@ std::pair<double, double> covrmstcpp(
   double tol = 1e-6;
 
   auto f1 = [&](double x)->double {
-    return rm_integrand(x, t2, tau1, tau2, phi, accrualTime, accrualIntensity,
-                       piecewiseSurvivalTime, lambda1, gamma1, accrualDuration);
+    return rm_integrand(
+      x, t2, tau1, tau2, phi, accrualTime, accrualIntensity,
+      piecewiseSurvivalTime, lambda1, gamma1, accrualDuration);
   };
   auto f2 = [&](double x)->double {
-    return rm_integrand(x, t2, tau1, tau2, 1.0 - phi, accrualTime, accrualIntensity,
-                       piecewiseSurvivalTime, lambda2, gamma2, accrualDuration);
+    return rm_integrand(
+      x, t2, tau1, tau2, 1.0 - phi, accrualTime, accrualIntensity,
+      piecewiseSurvivalTime, lambda2, gamma2, accrualDuration);
   };
 
   double q1 = integrate3(f1, breaks, tol);
@@ -274,7 +280,6 @@ std::pair<double, double> covrmstcpp(
 
   return std::make_pair(q1, q2);
 }
-
 
 
 //' @title Covariance Between Restricted Mean Survival Times
@@ -448,10 +453,10 @@ DataFrameCpp rmstat1cpp(
     const double frac = stratumFraction[h];
 
     // subset per-stratum hazards
-    const std::vector<double>& lam1 = flatmatrix_get_column(lambda1, h);
-    const std::vector<double>& lam2 = flatmatrix_get_column(lambda2, h);
-    const std::vector<double>& gam1 = flatmatrix_get_column(gamma1, h);
-    const std::vector<double>& gam2 = flatmatrix_get_column(gamma2, h);
+    auto lam1 = flatmatrix_get_column_view(lambda1, h);
+    auto lam2 = flatmatrix_get_column_view(lambda2, h);
+    auto gam1 = flatmatrix_get_column_view(gamma1, h);
+    auto gam2 = flatmatrix_get_column_view(gamma2, h);
 
     // scale accrualIntensity by stratum fraction
     std::vector<double> accrualIntensity_frac = accrualIntensity;
@@ -1971,8 +1976,8 @@ ListCpp rmsamplesizecpp(
   // RMST under H1
   double rmst1 = 0.0, rmst2 = 0.0;
   for (size_t h = 0; h < nstrata; ++h) {
-    const std::vector<double>& lam1 = flatmatrix_get_column(lambda1x, h);
-    const std::vector<double>& lam2 = flatmatrix_get_column(lambda2x, h);
+    auto lam1 = flatmatrix_get_column_view(lambda1x, h);
+    auto lam2 = flatmatrix_get_column_view(lambda2x, h);
     double s1 = rmstcpp(0, milestone, piecewiseSurvivalTime, lam1);
     double s2 = rmstcpp(0, milestone, piecewiseSurvivalTime, lam2);
     rmst1 += stratumFraction[h] * s1;
@@ -2184,8 +2189,9 @@ ListCpp rmsamplesizecpp(
   // Solve for multiplier a s.t. weighted_rmst1(a*lambda2) - rmst2 - rmstDiffH0 == 0
   auto f_rmst = [&](double aval)->double {
     double rmst1 = 0.0;
+    std::vector<double> lam1H0;
     for (std::size_t h = 0; h < nstrata; ++h) {
-      std::vector<double> lam1H0 = flatmatrix_get_column(lambda2x, h);
+      auto lam1H0 = flatmatrix_get_column(lambda2x, h);
       for (double &v : lam1H0) v *= aval;
       double p = rmstcpp(0, milestone, piecewiseSurvivalTime, lam1H0);
       rmst1 += stratumFraction[h] * p;
@@ -3545,7 +3551,7 @@ ListCpp rmsamplesize1scpp(
   // RMST under H1
   double rmst = 0.0;
   for (size_t h = 0; h < nstrata; ++h) {
-    const std::vector<double>& lam = flatmatrix_get_column(lambdax, h);
+    auto lam = flatmatrix_get_column_view(lambdax, h);
     double p = rmstcpp(0, milestone, piecewiseSurvivalTime, lam);
     rmst += stratumFraction[h] * p;
   }
@@ -3755,7 +3761,7 @@ ListCpp rmsamplesize1scpp(
   auto f_rmst = [&](double aval)->double {
     double rmst = 0.0;
     for (std::size_t h = 0; h < nstrata; ++h) {
-      std::vector<double> lamH0 = flatmatrix_get_column(lambdax, h);
+      auto lamH0 = flatmatrix_get_column(lambdax, h);
       for (double &v : lamH0) v *= aval;
       double p = rmstcpp(0, milestone, piecewiseSurvivalTime, lamH0);
       rmst += stratumFraction[h] * p;
@@ -5175,8 +5181,8 @@ ListCpp rmsamplesizeequivcpp(
   // RMST under H1
   double rmst1 = 0.0, rmst2 = 0.0;
   for (size_t h = 0; h < nstrata; ++h) {
-    const std::vector<double>& lam1 = flatmatrix_get_column(lambda1x, h);
-    const std::vector<double>& lam2 = flatmatrix_get_column(lambda2x, h);
+    auto lam1 = flatmatrix_get_column_view(lambda1x, h);
+    auto lam2 = flatmatrix_get_column_view(lambda2x, h);
     double p1 = rmstcpp(0, milestone, piecewiseSurvivalTime, lam1);
     double p2 = rmstcpp(0, milestone, piecewiseSurvivalTime, lam2);
     rmst1 += stratumFraction[h] * p1;
