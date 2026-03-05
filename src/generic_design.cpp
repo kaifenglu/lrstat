@@ -160,13 +160,14 @@ ListCpp exitprobcpp(const std::vector<double>& b,
                     const std::vector<double>& I) {
 
   // K is the total number of stages
+  if (b.empty()) throw std::invalid_argument("b must have length >= 1");
   size_t K = b.size();
 
   // Integer value controlling grid for numerical integration as in
   // Jennison and Turnbull (2000)
-  const int r = 18;
-  const int r1 = 6 * r - 1;   // size of x1 and shift
-  const int r2 = 12 * r - 3;  // size of z, h vectors when fully expanded
+  size_t r = 18;
+  size_t r1 = 6 * r - 1;   // size of x1 and shift
+  size_t r2 = 12 * r - 3;  // size of z, h vectors when fully expanded
 
   // Prepare a1, theta1, I1 only if defaults / expansion necessary.
   std::vector<double> a1; a1.reserve(K);
@@ -181,7 +182,7 @@ ListCpp exitprobcpp(const std::vector<double>& b,
   // check lower < upper
   for (size_t i = 0; i < K; ++i) {
     if (a1[i] > b[i]) throw std::invalid_argument(
-        "Lower bounds (a) must be less than upper bounds (b)");
+        "Lower bounds (a) must be less than or equal to upper bounds (b)");
   }
 
   // theta expansion
@@ -214,7 +215,7 @@ ListCpp exitprobcpp(const std::vector<double>& b,
 
   // Precompute shifts (constant across stages)
   std::vector<double> shift(r1);
-  for (int i = 0; i < r1; ++i) {
+  for (size_t i = 0; i < r1; ++i) {
     if (i < r - 1) {
       shift[i] = -3.0 - 4.0 * std::log(static_cast<double>(r) / (i + 1.0));
     } else if (i < 5 * r) {
@@ -252,13 +253,12 @@ ListCpp exitprobcpp(const std::vector<double>& b,
   std::vector<double> z0, h0; // z0, h0 for the previous stage
   z0.reserve(r2); h0.reserve(r2);
 
-  int m0 = 0; // size of previous z0/h0
+  size_t m0 = 0; // size of previous z0/h0
   // z0 and h0 are represented by the first m0 entries of z and h vectors.
 
   for (size_t j = 0; j < K; ++j) {
     const double thetaSqrtIj = thetaSqrtI[j];
     const double sqrtIj = sqrtI[j];
-    const double sqrtIjm1 = sqrtI[j-1];
     const double a1j = a1[j];
     const double bj = b[j];
     const double dThetaIj = dThetaI[j];
@@ -266,54 +266,46 @@ ListCpp exitprobcpp(const std::vector<double>& b,
     const double sqrtI1dIj = std::sqrt(I1[j] / dI[j]);
 
     // initialize x1 = thetaSqrtI[j] + shift
-    for (int i = 0; i < r1; ++i) x1[i] = thetaSqrtIj + shift[i];
+    for (size_t i = 0; i < r1; ++i) x1[i] = thetaSqrtIj + shift[i];
 
+    // trim off x values outside (a1[j], b[j])
     // find trimming indices using binary search (x1 is sorted b/c shift is monotone)
-    int i1 = 0;
-    if (a1[j] >= x1[0]) {
-      // first index i1 s.t. x1[i1] > a1[j]; then use i1-1 as lower trimming index
-      auto it = std::upper_bound(x1.begin(), x1.end(), a1[j]);
-      i1 = static_cast<int>(it - x1.begin()) - 1;
-    }
+    auto it1 = std::upper_bound(x1.begin(), x1.end(), a1[j]);
+    size_t i1 = static_cast<size_t>(it1 - x1.begin()); // x1[i1-1] <= a1[j] < x1[i1]
 
-    int i2 = r1 - 1;
-    if (b[j] <= x1[r1 - 1]) {
-      // find last index i2 such that x1[i2] < b[j]; then i2+1
-      auto it2 = std::lower_bound(x1.begin(), x1.end(), b[j]);
-      i2 = static_cast<int>(it2 - x1.begin());
-    }
-
+    auto it2 = std::lower_bound(x1.begin(), x1.end(), b[j]);
+    size_t i2 = static_cast<size_t>(it2 - x1.begin()); // x1[i2-1] < b[j] <= x1[i2]
 
     // m1 is number of retained x nodes after trimming
-    const int m1 = i2 - i1 + 1;
+    size_t m1 = i2 - i1 + 2;
 
-    // build x (trimmed) and set x[0]=xlower, x[m1-1]=xupper
-    x[0] = std::max(a1[j], x1[0]);
-    x[m1 - 1] = std::min(b[j], x1[r1 - 1]);
+    // set first and last x values to the bounds
+    x[0] = a1[j];
+    x[m1 - 1] = b[j];
 
     // copy interior trimmed x1 values
-    for (int i = 1; i < m1 - 1; ++i) x[i] = x1[i + i1];
+    for (size_t i = 1; i < m1 - 1; ++i) x[i] = x1[i + i1 - 1];
 
     // derive z grid (odd + even interleaving)
-    const int m = 2 * m1 - 1;
+    size_t m = 2 * m1 - 1;
     // odd points
-    for (int i = 0; i < m1; ++i) z[2*i] = x[i];
+    for (size_t i = 0; i < m1; ++i) z[2*i] = x[i];
     // even points (midpoints)
-    for (int i = 0; i < m1 - 1; ++i) z[2*i + 1] = 0.5 * (z[2*i] + z[2*i + 2]);
+    for (size_t i = 0; i < m1 - 1; ++i) z[2*i + 1] = 0.5 * (z[2*i] + z[2*i + 2]);
 
 
     // weights w as Simpson-like composite rule (same formulas)
-    // w[0]
+    // first weight
     w[0] = (z[2] - z[0]) / 6.0;
 
     // interior even indices (i = 2, 4, ..., 2*(m1-2))
-    for (int i0 = 1; i0 <= m1 - 2; ++i0) {
-      int i = 2 * i0;
+    for (size_t i0 = 1; i0 < m1 - 1; ++i0) {
+      size_t i = 2 * i0;
       w[i] = (z[i + 2] - z[i - 2]) / 6.0;
     }
     // interior odd indices (i = 1,3,...)
-    for (int i0 = 1; i0 <= m1 - 1; ++i0) {
-      int i = 2 * i0 - 1;
+    for (size_t i0 = 1; i0 < m1; ++i0) {
+      size_t i = 2 * i0 - 1;
       w[i] = 4.0 * (z[i + 1] - z[i - 1]) / 6.0;
     }
     // last weight
@@ -326,20 +318,22 @@ ListCpp exitprobcpp(const std::vector<double>& b,
       exitProbUpper[j] = boost_pnorm(-bj + thetaSqrtIj);
       exitProbLower[j] = boost_pnorm(a1j - thetaSqrtIj);
 
-      // prepare h0, m0, z0 for the next stage
+      // prepare m0, h0, z0 for the next stage
       if (K > 1) {
         m0 = m;
         h0.resize(m0);
         z0.resize(m0);
-        for (int i = 0; i < m0; ++i) {
+        for (size_t i = 0; i < m0; ++i) {
           h0[i] = w[i] * boost_dnorm(z[i] - thetaSqrtIj);
-          z0[i] = z[i];
         }
+        std::memcpy(z0.data(), z.data(), m0 * sizeof(double));
       }
     } else {
-      // calculate exit probabilities using h0 from the previous stage
+      const double sqrtIjm1 = sqrtI[j-1];
+
+      // calculate exit probabilities using h0 from the previous stage, (19.8)
       double sumUpper = 0.0, sumLower = 0.0;
-      for (int i0 = 0; i0 < m0; ++i0) {
+      for (size_t i0 = 0; i0 < m0; ++i0) {
         double tupper = (z0[i0] * sqrtIjm1 - bj * sqrtIj + dThetaIj) / sqrtdIj;
         double tlower = (-z0[i0] * sqrtIjm1 + a1j * sqrtIj - dThetaIj) / sqrtdIj;
         sumUpper += h0[i0] * boost_pnorm(tupper);
@@ -348,11 +342,11 @@ ListCpp exitprobcpp(const std::vector<double>& b,
       exitProbUpper[j] = sumUpper;
       exitProbLower[j] = sumLower;
 
-      // prepare h0, m0, z0 for the next stage
+      // prepare m0, h0, z0 for the next stage, equation following (19.7)
       if (j < K-1) {
-        for (int i = 0; i < m; ++i) {
+        for (size_t i = 0; i < m; ++i) {
           double sum = 0.0;
-          for (int i0 = 0; i0 < m0; ++i0) {
+          for (size_t i0 = 0; i0 < m0; ++i0) {
             double t = (z[i] * sqrtIj - z0[i0] * sqrtIjm1 - dThetaIj) / sqrtdIj;
             sum += h0[i0] * boost_dnorm(t);
           }
@@ -362,10 +356,8 @@ ListCpp exitprobcpp(const std::vector<double>& b,
         m0 = m;
         h0.resize(m0);
         z0.resize(m0);
-        for (int i = 0; i < m0; ++i) {
-          h0[i] = h[i];
-          z0[i] = z[i];
-        }
+        std::memcpy(h0.data(), h.data(), m0 * sizeof(double));
+        std::memcpy(z0.data(), z.data(), m0 * sizeof(double));
       }
     }
   }
