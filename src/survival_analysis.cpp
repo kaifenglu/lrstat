@@ -118,7 +118,7 @@ DataFrameCpp survQuantilecpp(const std::vector<double>& time,
 
   // sort by time, and event with event in descending order
   std::vector<size_t> order = seqcpp(0, n-1);
-  std::sort(order.begin(), order.end(), [&](int i, int j) {
+  std::sort(order.begin(), order.end(), [&](size_t i, size_t j) {
     if (time[i] != time[j]) return time[i] < time[j];
     return event[i] > event[j];
   });
@@ -472,7 +472,7 @@ DataFrameCpp kmestcpp(const DataFrameCpp& data,
 
   // sort by stopping time in descending order within each stratum
   std::vector<size_t> order = seqcpp(0, n-1);
-  std::sort(order.begin(), order.end(), [&](int i, int j) {
+  std::sort(order.begin(), order.end(), [&](size_t i, size_t j) {
     if (stratumn[i] != stratumn[j]) return stratumn[i] > stratumn[j];
     if (tstopn[i] != tstopn[j]) return tstopn[i] > tstopn[j];
     return eventn[i] < eventn[j];
@@ -486,7 +486,7 @@ DataFrameCpp kmestcpp(const DataFrameCpp& data,
 
   // sort by starting time in descending order within each stratum
   std::vector<size_t> order1 = seqcpp(0, n-1);
-  std::sort(order1.begin(), order1.end(), [&](int i, int j) {
+  std::sort(order1.begin(), order1.end(), [&](size_t i, size_t j) {
     if (stratumn[i] != stratumn[j]) return stratumn[i] > stratumn[j];
     return tstartn[i] > tstartn[j];
   });
@@ -931,7 +931,7 @@ DataFrameCpp kmdiffcpp(const DataFrameCpp& data,
 
   // sort by stratum
   std::vector<size_t> order = seqcpp(0, n-1);
-  std::sort(order.begin(), order.end(), [&](int i, int j) {
+  std::sort(order.begin(), order.end(), [&](size_t i, size_t j) {
     return stratumn[i] < stratumn[j];
   });
 
@@ -1431,7 +1431,7 @@ DataFrameCpp lrtestcpp(const DataFrameCpp& data,
 
   // sort by stopping time in descending order within each stratum
   std::vector<size_t> order = seqcpp(0, n-1);
-  std::sort(order.begin(), order.end(), [&](int i, int j) {
+  std::sort(order.begin(), order.end(), [&](size_t i, size_t j) {
     if (stratumn[i] != stratumn[j]) return stratumn[i] < stratumn[j];
     if (tstopn[i] != tstopn[j]) return tstopn[i] > tstopn[j];
     return eventn[i] < eventn[j];
@@ -1446,7 +1446,7 @@ DataFrameCpp lrtestcpp(const DataFrameCpp& data,
 
   // sort by starting time in descending order within each stratum
   std::vector<size_t> order1 = seqcpp(0, n-1);
-  std::sort(order1.begin(), order1.end(), [&](int i, int j) {
+  std::sort(order1.begin(), order1.end(), [&](size_t i, size_t j) {
     if (stratumn[i] != stratumn[j]) return stratumn[i] < stratumn[j];
     return tstartn[i] > tstartn[j];
   });
@@ -1855,7 +1855,7 @@ DataFrameCpp rmestcpp(const DataFrameCpp& data,
 
   // sort by stratum, time, and event with event in descending order
   std::vector<size_t> order = seqcpp(0, n-1);
-  std::sort(order.begin(), order.end(), [&](int i, int j) {
+  std::sort(order.begin(), order.end(), [&](size_t i, size_t j) {
     if (stratumn[i] != stratumn[j]) return stratumn[i] < stratumn[j];
     if (timen[i] != timen[j]) return timen[i] < timen[j];
     return eventn[i] > eventn[j];
@@ -4070,7 +4070,7 @@ ListCpp liferegcpp(const DataFrameCpp& data,
         nr = n1;
       } else { // sum up the score residuals by id
         std::vector<size_t> order = seqcpp(0, n1-1);
-        std::sort(order.begin(), order.end(), [&](int i, int j) {
+        std::sort(order.begin(), order.end(), [&](size_t i, size_t j) {
           return idn[i] < idn[j];
         });
 
@@ -5027,7 +5027,7 @@ FlatMatrix residuals_liferegcpp(const std::vector<double>& beta,
   if (collapse) {
     // order by id
     std::vector<size_t> order = seqcpp(0, n1 - 1);
-    std::sort(order.begin(), order.end(), [&](int i, int j){
+    std::sort(order.begin(), order.end(), [&](size_t i, size_t j){
       return idn[i] < idn[j]; });
     std::vector<int> id1 = subset(idn, order);
     std::vector<size_t> idx(1,0);
@@ -6444,7 +6444,7 @@ ListCpp phregcpp(const DataFrameCpp& data,
   } else {
     // sort by stratum
     std::vector<size_t> order0 = seqcpp(0, n-1);
-    std::sort(order0.begin(), order0.end(), [&](int i, int j) {
+    std::sort(order0.begin(), order0.end(), [&](size_t i, size_t j) {
       return stratumn[i] < stratumn[j];
     });
 
@@ -6501,7 +6501,7 @@ ListCpp phregcpp(const DataFrameCpp& data,
 
     // sort by stopping time in descending order within each stratum
     std::vector<size_t> order1 = seqcpp(0, n-1);
-    std::sort(order1.begin(), order1.end(), [&](int i, int j) {
+    std::sort(order1.begin(), order1.end(), [&](size_t i, size_t j) {
       if (ignoren[i] != ignoren[j]) return ignoren[i] < ignoren[j];
       if (stratumn[i] != stratumn[j]) return stratumn[i] < stratumn[j];
       if (tstopn[i] != tstopn[j]) return tstopn[i] > tstopn[j];
@@ -6521,7 +6521,7 @@ ListCpp phregcpp(const DataFrameCpp& data,
 
     // sort by starting time in descending order within each stratum
     std::vector<size_t> orderna = seqcpp(0, n-1);
-    std::sort(orderna.begin(), orderna.end(), [&](int i, int j) {
+    std::sort(orderna.begin(), orderna.end(), [&](size_t i, size_t j) {
       if (ignorena[i] != ignorena[j]) return ignorena[i] < ignorena[j];
       if (stratumna[i] != stratumna[j]) return stratumna[i] < stratumna[j];
       return tstartna[i] > tstartna[j];
@@ -6588,7 +6588,7 @@ ListCpp phregcpp(const DataFrameCpp& data,
           nr = n;
         } else { // need to sum up score residuals by id
           std::vector<size_t> order = seqcpp(0, n-1);
-          std::sort(order.begin(), order.end(), [&](int i, int j) {
+          std::sort(order.begin(), order.end(), [&](size_t i, size_t j) {
             return idna[i] < idna[j];
           });
 
@@ -6706,7 +6706,7 @@ ListCpp phregcpp(const DataFrameCpp& data,
 
       // sort by stopping time in descending order within each stratum
       std::vector<size_t> order2 = seqcpp(0, n-1);
-      std::sort(order2.begin(), order2.end(), [&](int i, int j) {
+      std::sort(order2.begin(), order2.end(), [&](size_t i, size_t j) {
         if (stratumn[i] != stratumn[j]) return stratumn[i] > stratumn[j];
         return tstopn[i] > tstopn[j];
       });
@@ -6722,7 +6722,7 @@ ListCpp phregcpp(const DataFrameCpp& data,
 
       // sort by starting time in descending order within each stratum
       std::vector<size_t> ordernb = seqcpp(0, n-1);
-      std::sort(ordernb.begin(), ordernb.end(), [&](int i, int j) {
+      std::sort(ordernb.begin(), ordernb.end(), [&](size_t i, size_t j) {
         if (stratumnb[i] != stratumnb[j]) return stratumnb[i] > stratumnb[j];
         return tstartnb[i] > tstartnb[j];
       });
@@ -7127,7 +7127,7 @@ DataFrameCpp survfit_phregcpp(const size_t p,
 
   // order data by id and tstop, assuming consecutive intervals
   std::vector<size_t> order = seqcpp(0, n-1);
-  std::sort(order.begin(), order.end(), [&](int i, int j) {
+  std::sort(order.begin(), order.end(), [&](size_t i, size_t j) {
     if (idn[i] != idn[j]) return idn[i] < idn[j];
     return tstopn[i] < tstopn[j];
   });
@@ -7785,7 +7785,7 @@ ListCpp residuals_phregcpp(const size_t p,
 
   // sort by stratum
   std::vector<size_t> ordern = seqcpp(0, n-1);
-  std::sort(ordern.begin(), ordern.end(), [&](int i, int j) {
+  std::sort(ordern.begin(), ordern.end(), [&](size_t i, size_t j) {
     return stratumn[i] < stratumn[j];
   });
 
@@ -7839,7 +7839,7 @@ ListCpp residuals_phregcpp(const size_t p,
   std::vector<size_t> idx(1,0);
   size_t nids = n;
   if (has_id) {
-    std::sort(order.begin(), order.end(), [&](int i, int j){
+    std::sort(order.begin(), order.end(), [&](size_t i, size_t j){
       return idn[i] < idn[j];
     });
     std::vector<int> id1 = subset(idn, order);
@@ -7903,7 +7903,7 @@ ListCpp residuals_phregcpp(const size_t p,
   if (type == "score" || type == "dfbeta" || type == "dfbetas") {
     // sort by stopping time in descending order within each stratum
     std::vector<size_t> order0 = seqcpp(0, n-1);
-    std::sort(order0.begin(), order0.end(), [&](int i, int j){
+    std::sort(order0.begin(), order0.end(), [&](size_t i, size_t j){
       if (ignore[i] != ignore[j]) return ignore[i] < ignore[j];
       if (stratumn[i] != stratumn[j]) return stratumn[i] < stratumn[j];
       if (tstopn[i] != tstopn[j]) return tstopn[i] > tstopn[j];
@@ -7921,7 +7921,7 @@ ListCpp residuals_phregcpp(const size_t p,
 
     // sort by starting time in descending order within each stratum
     std::vector<size_t> order1 = seqcpp(0, n-1);
-    std::sort(order1.begin(), order1.end(), [&](int i, int j){
+    std::sort(order1.begin(), order1.end(), [&](size_t i, size_t j){
       if (ignore1[i] != ignore1[j]) return ignore1[i] < ignore1[j];
       if (stratum1[i] != stratum1[j]) return stratum1[i] < stratum1[j];
       return tstart1[i] > tstart1[j];
@@ -7991,7 +7991,7 @@ ListCpp residuals_phregcpp(const size_t p,
   if (type == "schoenfeld" || type == "scaledsch") {
     // sort by stopping time in descending order within each stratum
     std::vector<size_t> order0 = seqcpp(0, n-1);
-    std::sort(order0.begin(), order0.end(), [&](int i, int j){
+    std::sort(order0.begin(), order0.end(), [&](size_t i, size_t j){
       if (ignore[i] != ignore[j]) return ignore[i] < ignore[j];
       if (stratumn[i] != stratumn[j]) return stratumn[i] > stratumn[j];
       if (tstopn[i] != tstopn[j]) return tstopn[i] > tstopn[j];
@@ -8012,7 +8012,7 @@ ListCpp residuals_phregcpp(const size_t p,
 
     // sort by starting time in descending order within each stratum
     std::vector<size_t> order1 = seqcpp(0, n-1);
-    std::sort(order1.begin(), order1.end(), [&](int i, int j){
+    std::sort(order1.begin(), order1.end(), [&](size_t i, size_t j){
       if (ignore1[i] != ignore1[j]) return ignore1[i] < ignore1[j];
       if (stratum1[i] != stratum1[j]) return stratum1[i] > stratum1[j];
       return tstart1[i] > tstart1[j];
@@ -8506,7 +8506,7 @@ ListCpp assess_phregcpp(const size_t p,
 
   // sort by stratum
   std::vector<size_t> order0 = seqcpp(0, n-1);
-  std::sort(order0.begin(), order0.end(), [&](int i, int j) {
+  std::sort(order0.begin(), order0.end(), [&](size_t i, size_t j) {
     return stratumn[i] < stratumn[j];
   });
 
@@ -8563,7 +8563,7 @@ ListCpp assess_phregcpp(const size_t p,
 
   // sort by stopping time in descending order within each stratum
   std::vector<size_t> order1 = seqcpp(0, n-1);
-  std::sort(order1.begin(), order1.end(), [&](int i, int j) {
+  std::sort(order1.begin(), order1.end(), [&](size_t i, size_t j) {
     if (ignoren[i] != ignoren[j]) return ignoren[i] < ignoren[j];
     if (stratumn[i] != stratumn[j]) return stratumn[i] < stratumn[j];
     if (tstopn[i] != tstopn[j]) return tstopn[i] > tstopn[j];
@@ -8582,7 +8582,7 @@ ListCpp assess_phregcpp(const size_t p,
 
   // sort by starting time in descending order within each stratum
   std::vector<size_t> order10 = seqcpp(0, n-1);
-  std::sort(order10.begin(), order10.end(), [&](int i, int j) {
+  std::sort(order10.begin(), order10.end(), [&](size_t i, size_t j) {
     if (ignore1[i] != ignore1[j]) return ignore1[i] < ignore1[j];
     if (stratum1[i] != stratum1[j]) return stratum1[i] < stratum1[j];
     return tstart1[i] > tstart1[j];
@@ -8597,7 +8597,7 @@ ListCpp assess_phregcpp(const size_t p,
 
   // order data by ascending tstop
   std::vector<size_t> order2 = seqcpp(0, n-1);
-  std::sort(order2.begin(), order2.end(), [&](int i, int j) {
+  std::sort(order2.begin(), order2.end(), [&](size_t i, size_t j) {
     return tstop1[i] < tstop1[j];
   });
 
@@ -9008,7 +9008,7 @@ ListCpp zph_phregcpp(const size_t p,
 
   // sort by stratum
   std::vector<size_t> order0 = seqcpp(0, n-1);
-  std::sort(order0.begin(), order0.end(), [&](int i, int j) {
+  std::sort(order0.begin(), order0.end(), [&](size_t i, size_t j) {
     return stratumn[i] < stratumn[j];
   });
 
@@ -9065,7 +9065,7 @@ ListCpp zph_phregcpp(const size_t p,
 
   // sort by stopping time in descending order within each stratum
   std::vector<size_t> order1 = seqcpp(0, n-1);
-  std::sort(order1.begin(), order1.end(), [&](int i, int j) {
+  std::sort(order1.begin(), order1.end(), [&](size_t i, size_t j) {
     if (ignoren[i] != ignoren[j]) return ignoren[i] < ignoren[j];
     if (stratumn[i] != stratumn[j]) return stratumn[i] < stratumn[j];
     if (tstopn[i] != tstopn[j]) return tstopn[i] > tstopn[j];
@@ -9084,7 +9084,7 @@ ListCpp zph_phregcpp(const size_t p,
 
   // sort by starting time in descending order within each stratum
   std::vector<size_t> order10 = seqcpp(0, n-1);
-  std::sort(order10.begin(), order10.end(), [&](int i, int j) {
+  std::sort(order10.begin(), order10.end(), [&](size_t i, size_t j) {
     if (ignore1[i] != ignore1[j]) return ignore1[i] < ignore1[j];
     if (stratum1[i] != stratum1[j]) return stratum1[i] < stratum1[j];
     return tstart1[i] > tstart1[j];
@@ -9099,7 +9099,7 @@ ListCpp zph_phregcpp(const size_t p,
 
   // order data by ascending tstop
   std::vector<size_t> order2 = seqcpp(0, n-1);
-  std::sort(order2.begin(), order2.end(), [&](int i, int j) {
+  std::sort(order2.begin(), order2.end(), [&](size_t i, size_t j) {
     return tstop1[i] < tstop1[j];
   });
 
