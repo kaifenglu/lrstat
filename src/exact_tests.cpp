@@ -563,7 +563,7 @@ double powerFisherExactcpp(
     // produce order (indices) that sort p0 ascending
     std::vector<size_t> order = seqcpp(0, k - 1);
     std::sort(order.begin(), order.end(),
-              [&p0](int i, int j) { return p0[i] < p0[j]; });
+              [&p0](size_t i, size_t j) { return p0[i] < p0[j]; });
 
     // build sorted p0 using order
     std::vector<double> p0sorted = subset(p0, order);
@@ -884,7 +884,8 @@ DataFrameCpp powerRiskDiffExactcpp(
   // Order indices by ascending T
   std::vector<size_t> order(k);
   std::iota(order.begin(), order.end(), 0);
-  std::sort(order.begin(), order.end(), [&](int i, int j) { return T[i] < T[j]; });
+  std::sort(order.begin(), order.end(),
+            [&](size_t i, size_t j) { return T[i] < T[j]; });
 
   // Build Tsorted and find unique group boundaries (idx)
   std::vector<double> Tsorted(k);
@@ -1324,7 +1325,8 @@ DataFrameCpp powerRiskRatioExactcpp(
   // order indices by ascending T
   std::vector<size_t> order(k);
   std::iota(order.begin(), order.end(), 0);
-  std::sort(order.begin(), order.end(), [&](int i, int j) { return T[i] < T[j]; });
+  std::sort(order.begin(), order.end(),
+            [&](size_t i, size_t j) { return T[i] < T[j]; });
 
   // Build Tsorted and find unique group boundaries (idx)
   std::vector<double> Tsorted(k);
@@ -1770,7 +1772,8 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
   // order1 and unique breakpoints for T1
   std::vector<size_t> order1(k);
   std::iota(order1.begin(), order1.end(), 0);
-  std::sort(order1.begin(), order1.end(), [&](int a, int b){ return T1[a] < T1[b]; });
+  std::sort(order1.begin(), order1.end(),
+            [&](size_t a, size_t b){ return T1[a] < T1[b]; });
 
   std::vector<double> T1sorted(k);
   for (size_t i = 0; i < k; ++i) T1sorted[i] = T1[order1[i]];
@@ -1854,7 +1857,7 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
     std::vector<size_t> order2(k);
     std::iota(order2.begin(), order2.end(), 0);
     std::sort(order2.begin(), order2.end(),
-              [&](int a, int b){ return T2[a] < T2[b]; });
+              [&](size_t a, size_t b){ return T2[a] < T2[b]; });
 
     std::vector<double> T2sorted(k);
     for (size_t i = 0; i < k; ++i) T2sorted[i] = T2[order2[i]];
@@ -2300,7 +2303,8 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
   // order1 and unique breakpoints for T1
   std::vector<size_t> order1(k);
   std::iota(order1.begin(), order1.end(), 0);
-  std::sort(order1.begin(), order1.end(), [&](int a, int b){ return T1[a] < T1[b]; });
+  std::sort(order1.begin(), order1.end(),
+            [&](size_t a, size_t b){ return T1[a] < T1[b]; });
 
   std::vector<double> T1sorted(k);
   for (size_t i = 0; i < k; ++i) T1sorted[i] = T1[order1[i]];
@@ -2384,7 +2388,7 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
     std::vector<size_t> order2(k);
     std::iota(order2.begin(), order2.end(), 0);
     std::sort(order2.begin(), order2.end(),
-              [&](int a, int b){ return T2[a] < T2[b]; });
+              [&](size_t a, size_t b){ return T2[a] < T2[b]; });
 
     std::vector<double> T2sorted(k);
     for (size_t i = 0; i < k; ++i) T2sorted[i] = T2[order2[i]];
