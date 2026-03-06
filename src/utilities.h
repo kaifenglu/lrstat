@@ -179,9 +179,65 @@ inline void mean_sd(const double* data, int n, double &omean, double &osd) {
 
 double extract_sum(const DataFrameCpp& df, const char* name);
 
+
 // --------------------------- Root finders -----------------------------------
-double brent(const std::function<double(double)>& f,
-             double x1, double x2, double tol = 1e-8, int maxiter = 100);
+template <class F>
+double brent(F&& f, double x1, double x2, double tol = 1e-8, int maxiter = 100) {
+  constexpr double EPS = 3.0e-8;
+
+  double a = x1, b = x2, c = x2;
+  double fa = f(a), fb = f(b), fc = fb;
+  double d = 0.0, d1 = 0.0;
+
+  if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0))
+    throw std::invalid_argument("Root must be bracketed in brent");
+
+  for (int iter = 1; iter <= maxiter; ++iter) {
+    if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) {
+      c = a; fc = fa; d = b - a; d1 = d;
+    }
+
+    if (std::fabs(fc) < std::fabs(fb)) {
+      a = b; b = c; c = a;
+      fa = fb; fb = fc; fc = fa;
+    }
+
+    double tol1 = 2.0 * EPS * std::fabs(b) + 0.5 * tol;
+    double xm = 0.5 * (c - b);
+    if (std::fabs(xm) <= tol1 || fb == 0.0) return b;
+
+    double p, q, r, s;
+    if (std::fabs(d1) >= tol1 && std::fabs(fa) > std::fabs(fb)) {
+      s = fb / fa;
+      if (a == c) {
+        p = 2.0 * xm * s;
+        q = 1.0 - s;
+      } else {
+        q = fa / fc;
+        r = fb / fc;
+        p = s * (2.0 * xm * q * (q - r) - (b - a) * (r - 1.0));
+        q = (q - 1.0) * (r - 1.0) * (s - 1.0);
+      }
+      if (p > 0.0) q = -q;
+      p = std::fabs(p);
+      double min1 = 3.0 * xm * q - std::fabs(tol1 * q);
+      double min2 = std::fabs(d1 * q);
+      if (2.0 * p < (min1 < min2 ? min1 : min2)) {
+        d1 = d; d = p / q;
+      } else {
+        d = xm; d1 = d;
+      }
+    } else {
+      d = xm; d1 = d;
+    }
+
+    a = b; fa = fb;
+    if (std::fabs(d) > tol1) b += d; else b += std::copysign(tol1, xm);
+    fb = f(b);
+  }
+  throw std::runtime_error("Maximum iterations exceeded in brent");
+}
+
 
 // check if no elements are missing
 inline bool none_na(const std::vector<double>& v) {
@@ -400,13 +456,11 @@ inline double qtpwexpcpp1(
 double intnorm(const std::function<double(double)>& f,
                double mu, double sigma, double a, double b);
 
-std::pair<double, double> mini(
-    const std::function<double(double)>& f, double x1, double x2);
+std::pair<double, double> mini(const std::function<double(double)>& f,
+                               double x1, double x2);
 
-double integrate3(
-    const std::function<double(double)>& f,
-    const std::vector<double>& breaks,
-    double tol = 1e-8);
+double integrate3(const std::function<double(double)>& f,
+                  const std::vector<double>& breaks, double tol = 1e-8);
 
 double quad2d(const std::function<double(double,double)>& f,
               double ax, double bx, double ay, double by,
