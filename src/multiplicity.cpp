@@ -619,7 +619,7 @@ FlatMatrix fadjpsimcpp1(const FlatMatrix& wgtmat,
 
         // obtain index ordering of the snapshot
         idx = seqcpp(0, t-1);
-        std::sort(idx.begin(), idx.end(), [&p1](int a, int b) {
+        std::sort(idx.begin(), idx.end(), [&p1](size_t a, size_t b) {
                     return p1[a] < p1[b];
                   });
 
@@ -878,21 +878,21 @@ FlatMatrix repeatedPValuecpp1(
                             empty_user, s0, x, 64, 12);
 
       // Lambda function for root finding to solve for the repeated p-value at step i
-      auto f = [&](double a)->double {
+      auto g = [&](double a)->double {
         auto u = cache.get(a);
         return 1.0 - boost_pnorm(u[i]) - pvalue;
       };
 
       // Find root in (0, 1) using brent's method, with checks at the endpoints
-      double fl = f(0.000001);
-      if (fl > 0) {
+      double gl = g(0.000001);
+      if (gl > 0) {
         repp[i] = 0.000001;
       } else {
-        double fh = f(0.999999);
-        if (fh < 0) {
+        double gh = g(0.999999);
+        if (gh < 0) {
           repp[i] = 0.999999;
         } else {
-          repp[i] = brent(f, 0.000001, 0.999999, 1e-6);
+          repp[i] = brent(g, 0.000001, 0.999999, 1e-6);
         }
       }
     }
