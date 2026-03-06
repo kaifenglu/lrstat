@@ -5310,7 +5310,7 @@ ListCpp binary_tte_sim_cpp(
 
   double globalOddsRatio1 = globalOddsRatio - 1.0;
 
-  auto f = [&](double v, double u, double t)->double {
+  auto f = [globalOddsRatio, globalOddsRatio1](double v, double u, double t)->double {
     double c1 = 1.0 + globalOddsRatio1 * (u + v);
     double c2 = 4.0 * v * globalOddsRatio * globalOddsRatio1;
     double c3 = 2.0 * c1 * globalOddsRatio1 - c2;
