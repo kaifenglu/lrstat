@@ -911,7 +911,7 @@ ListCpp logisregcpp(const DataFrameCpp& data,
       } else { // need to sum up score residuals by id
         std::vector<size_t> order(n);
         std::iota(order.begin(), order.end(), 0);
-        std::sort(order.begin(), order.end(), [&](int i, int j) {
+        std::sort(order.begin(), order.end(), [&](size_t i, size_t j) {
           return idn[i] < idn[j];
         });
 
