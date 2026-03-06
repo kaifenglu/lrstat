@@ -419,21 +419,21 @@ DataFrameCpp rmstat1cpp(
     const double followupTime,
     const bool fixedFollowup) {
 
-  const std::size_t nstrata = stratumFraction.size();
+  std::size_t nstrata = stratumFraction.size();
 
   // phi = P(randomized to group 1)
-  const double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
+  double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
 
   // max follow-up time for first enrolled subject
-  const double maxFollowupTime = fixedFollowup ? followupTime :
+  double maxFollowupTime = fixedFollowup ? followupTime :
     (accrualDuration + followupTime);
 
   // total enrolled by calendar time 'time'
-  const double a = accrual1(time, accrualTime, accrualIntensity, accrualDuration);
+  double a = accrual1(time, accrualTime, accrualIntensity, accrualDuration);
 
   // enrolled by (time - milestone) used for reaching milestone
-  const double a2 = accrual1(time - milestone, accrualTime, accrualIntensity,
-                             accrualDuration);
+  double a2 = accrual1(time - milestone, accrualTime, accrualIntensity,
+                       accrualDuration);
 
   // --- outputs ---
   std::vector<int> stratum(nstrata);
@@ -450,7 +450,7 @@ DataFrameCpp rmstat1cpp(
 
   for (std::size_t h = 0; h < nstrata; ++h) {
     stratum[h] = static_cast<int>(h + 1);
-    const double frac = stratumFraction[h];
+    double frac = stratumFraction[h];
 
     // subset per-stratum hazards
     auto lam1 = flatmatrix_get_column_view(lambda1, h);
@@ -621,7 +621,7 @@ DataFrameCpp rmstatcpp(
   auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
 
   // --- outputs ---
-  const size_t k = time.size();
+  size_t k = time.size();
   std::vector<double> calTime = time;
   std::vector<double> mileTime(k, milestone);
   std::vector<double> subjects(k), nevents(k), nevents1(k), nevents2(k);
@@ -2003,8 +2003,11 @@ ListCpp rmsamplesizecpp(
 
   // Helper: compute information under H1 given accrualDuration (accrDur),
   // followupTime (fu), and accrualIntensity (accrInt).
-  auto info_minus_target_H1 = [&](double t, double accrDur, double fu,
-                                  const std::vector<double>& accrInt) {
+  auto info_minus_target_H1 = [milestone, allocationRatioPlanned, accrualTime,
+                               piecewiseSurvivalTime, stratumFraction,
+                               lambda1x, lambda2x, gamma1x, gamma2x,
+                               fixedFollowup, nstrata, maxInformation]
+  (double t, double accrDur, double fu, const std::vector<double>& accrInt) {
     DataFrameCpp rm1 = rmstat1cpp(
       t, milestone, allocationRatioPlanned,
       accrualTime, accrInt,
@@ -2024,21 +2027,32 @@ ListCpp rmsamplesizecpp(
   };
 
 
-  // when information at zero follow-up (end of enrollment) already exceeds target,
-  // set followupTime = 0 and find minimal accrualDuration achieving target
-  bool curtailed = false;
-
-  // when information at maximum follow-up (milestone) is still below target,
-  // increase accrualDuration to achieve target
-  bool expanded = false;
-
-  // Root-finding function to solve for the unknown design parameter to achieve target
-  std::function<double(double)> f_root;
-
   if (unknown == ACC_DUR) {
-    f_root = [&](double x)->double {
+    auto f = [info_minus_target_H1, followupTime, accrualIntensity](double x)->double {
       return info_minus_target_H1(x + followupTime, x, followupTime, accrualIntensity);
     };
+
+
+    double lower = std::max(milestone - followupTime, 0.0) + 0.001;
+    double upper = 2.0 * lower;
+    double fl_val = f(lower), fu_val = f(upper);
+    int expand_iter = 0;
+    while (fl_val * fu_val > 0.0 && expand_iter < 60) {
+      lower = upper; fl_val = fu_val;
+      upper *= 2.0;  fu_val = f(upper);
+      ++expand_iter;
+    }
+    if (fl_val * fu_val > 0.0) throw std::runtime_error(
+        "Unable to bracket accrualDuration; check inputs");
+
+    auto f_for_brent = [f, lower, upper, fl_val, fu_val](double x)->double {
+      if (x == lower) return fl_val;
+      if (x == upper) return fu_val;
+      return f(x);
+    };
+
+    accrualDuration = brent(f_for_brent, lower, upper, 1e-6);
+
   } else if (unknown == FUP_TIME) {
     if (!fixedFollowup && accrualDuration > milestone + 0.001 &&
         info_minus_target_H1(accrualDuration, accrualDuration, 0.0,
@@ -2046,87 +2060,84 @@ ListCpp rmsamplesizecpp(
       std::clog << "WARNING: Information at zero follow-up (end of enrollment) "
                    "already exceeds target. Setting followupTime = 0 and "
                    "finding minimal accrualDuration.\n";
-      f_root = [&](double x)->double {
+      auto f = [info_minus_target_H1, accrualIntensity](double x)->double {
         return info_minus_target_H1(x, x, 0.0, accrualIntensity);
       };
 
-      curtailed = true;
+      accrualDuration = brent(f, milestone + 0.001, accrualDuration, 1e-6);
+      followupTime = 0.0;
+
     } else if (info_minus_target_H1(accrualDuration + milestone, accrualDuration,
                                     milestone, accrualIntensity) < 0) {
       std::clog << "WARNING: The required information cannot be attained by "
                    "increasing followupTime alone. accrualDuration is also "
                    "increased to attain the required information.\n";
-      f_root = [&](double x)->double {
+     auto f = [info_minus_target_H1, milestone, accrualIntensity](double x)->double {
         return info_minus_target_H1(x + milestone, x, milestone, accrualIntensity);
       };
 
-      expanded = true;
+     double lower = accrualDuration;
+     double upper = 2.0 * lower;
+     double fl_val = f(lower), fu_val = f(upper);
+     int expand_iter = 0;
+     while (fl_val * fu_val > 0.0 && expand_iter < 60) {
+       lower = upper; fl_val = fu_val;
+       upper *= 2.0;  fu_val = f(upper);
+       ++expand_iter;
+     }
+     if (fl_val * fu_val > 0.0) throw std::runtime_error(
+         "Unable to bracket accrualDuration; check inputs");
+
+     auto f_for_brent = [f, lower, upper, fl_val, fu_val](double x)->double {
+       if (x == lower) return fl_val;
+       if (x == upper) return fu_val;
+       return f(x);
+     };
+
+     accrualDuration = brent(f_for_brent, lower, upper, 1e-6);
+     followupTime = milestone;
+
     } else {
-      f_root = [&](double x)->double {
+      auto f = [info_minus_target_H1, accrualDuration, accrualIntensity]
+      (double x)->double {
         return info_minus_target_H1(accrualDuration + x, accrualDuration, x,
                                     accrualIntensity);
       };
+
+      double lower = std::max(milestone - accrualDuration, 0.0) + 0.001;
+      double upper = milestone;
+      followupTime = brent(f, lower, upper, 1e-6);
+
     }
   } else {
-    f_root = [&](double m)->double {
+    auto f = [info_minus_target_H1, accrualDuration, followupTime, accrualIntensity]
+    (double m)->double {
       std::vector<double> scaled = accrualIntensity;
       for (double &v : scaled) v *= m;
       return info_minus_target_H1(accrualDuration + followupTime,
                                   accrualDuration, followupTime, scaled);
     };
-  }
 
-  double lower, upper;
-  if (unknown == ACC_DUR) {
-    lower = std::max(milestone - followupTime, 0.0) + 0.001;
-    upper = 2.0 * lower;
-  } else if (unknown == FUP_TIME && curtailed) {
-    lower = milestone + 0.001;
-    upper = accrualDuration;
-  } else if (unknown == FUP_TIME && expanded) {
-    lower = accrualDuration;
-    upper = 2.0 * lower;
-  } else if (unknown == FUP_TIME && !curtailed && !expanded) {
-    lower = std::max(milestone - accrualDuration, 0.0) + 0.001;
-    upper = milestone;
-  } else { // unknown == ACC_INT
-    lower = 0.001;
-    upper = 120;
-  }
-
-  // expand upper if needed to ensure root is bracketed
-  double fl_val = f_root(lower), fu_val = f_root(upper);
-  if (unknown == ACC_DUR || (unknown == FUP_TIME && expanded) || unknown == ACC_INT) {
+    double lower = 0.001, upper = 120;
+    double fl_val = f(lower), fu_val = f(upper);
     int expand_iter = 0;
     while (fl_val * fu_val > 0.0 && expand_iter < 60) {
       lower = upper; fl_val = fu_val;
-      upper *= 2.0;  fu_val = f_root(upper);
+      upper *= 2.0;  fu_val = f(upper);
       ++expand_iter;
     }
-  }
-  if (fl_val * fu_val > 0.0) throw std::runtime_error(
-      "Unable to bracket root; check interval or inputs");
+    if (fl_val * fu_val > 0.0) throw std::runtime_error(
+        "Unable to bracket accrualIntensity; check inputs");
 
-  // solve for root and apply solution for the unknown design parameter
-  auto f_for_brent1 = [&](double x)->double {
-    if (x == lower) return fl_val;
-    if (x == upper) return fu_val;
-    return f_root(x);
-  };
-  double solution = brent(f_for_brent1, lower, upper, 1e-6);
+    auto f_for_brent = [f, lower, upper, fl_val, fu_val](double x)->double {
+      if (x == lower) return fl_val;
+      if (x == upper) return fu_val;
+      return f(x);
+    };
 
-  if (unknown == ACC_DUR) {
-    accrualDuration = solution;
-  } else if (unknown == FUP_TIME && curtailed) {
-    followupTime = 0.0;
-    accrualDuration = solution;
-  } else if (unknown == FUP_TIME && expanded) {
-    followupTime = milestone;
-    accrualDuration = solution;
-  } else if (unknown == FUP_TIME && !curtailed && !expanded) {
-    followupTime = solution;
-  } else { // scaled multiplier for accrualIntensity
-    for (double &v : accrualIntensity) v *= solution;
+    double multiplier = brent(f_for_brent, lower, upper, 1e-6);
+    for (double &v : accrualIntensity) v *= multiplier;
+
   }
 
   double studyDuration = accrualDuration + followupTime;
@@ -2147,7 +2158,8 @@ ListCpp rmsamplesizecpp(
 
       if (!fixedFollowup) {
         // variable follow-up: adjust follow-up time to match maxInformation
-        auto h = [&](double x)->double {
+        auto h = [info_minus_target_H1, accrualDuration, accrualIntensity]
+        (double x)->double {
           return info_minus_target_H1(accrualDuration + x, accrualDuration, x,
                                       accrualIntensity);
         };
@@ -2156,9 +2168,10 @@ ListCpp rmsamplesizecpp(
         studyDuration = accrualDuration + followupTime;
       } else {
         // fixed follow-up: adjust studyDuration by extending post-accrual time
-        auto h = [&](double x)->double {
-          return info_minus_target_H1(accrualDuration + x, accrualDuration,
-                                      followupTime, accrualIntensity);
+        auto h = [info_minus_target_H1, accrualDuration, followupTime,
+                  accrualIntensity](double x)->double {
+                    return info_minus_target_H1(accrualDuration + x, accrualDuration,
+                                                followupTime, accrualIntensity);
         };
         double lower = std::max(milestone - accrualDuration, 0.0) + 0.001;
         double extra = brent(h, lower, followupTime, 1.0e-6);
@@ -2187,7 +2200,9 @@ ListCpp rmsamplesizecpp(
 
   // --- Construct lambda1 under H0 (scale lambda2 to match rmstDiffH0) ---
   // Solve for multiplier a s.t. weighted_rmst1(a*lambda2) - rmst2 - rmstDiffH0 == 0
-  auto f_rmst = [&](double aval)->double {
+  auto f_rmst = [nstrata, lambda2x, milestone, piecewiseSurvivalTime,
+                 stratumFraction, rmst2, rmstDiffH0]
+  (double aval)->double {
     double rmst1 = 0.0;
     std::vector<double> lam1H0;
     for (std::size_t h = 0; h < nstrata; ++h) {
@@ -2210,13 +2225,13 @@ ListCpp rmsamplesizecpp(
   if (flo * fhi > 0.0) throw std::runtime_error(
       "Unable to bracket root for lambda1H0 under H0; check inputs");
 
-  auto f_for_brent2 = [&](double x)->double {
+  auto f_for_brent = [f_rmst, lo, hi, flo, fhi](double x)->double {
     if (x == lo) return flo;
     if (x == hi) return fhi;
     return f_rmst(x);
   };
 
-  double multH0 = brent(f_for_brent2, lo, hi, 1.0e-6);
+  double multH0 = brent(f_for_brent, lo, hi, 1.0e-6);
 
   std::vector<double> lambda1H0 = lambda2;
   for (double &v : lambda1H0) v *= multH0;
@@ -2224,8 +2239,11 @@ ListCpp rmsamplesizecpp(
 
   // Helper: compute information under H0 given accrualDuration (accrDur),
   // followupTime (fu), and accrualIntensity (accrInt).
-  auto info_minus_target_H0 = [&](double t, double accrDur, double fu,
-                                  const std::vector<double>& accrInt) {
+  auto info_minus_target_H0 = [milestone, allocationRatioPlanned, accrualTime,
+                               piecewiseSurvivalTime, stratumFraction,
+                               lambda1H0x, lambda2x, gamma1x, gamma2x,
+                               fixedFollowup, nstrata, maxInformation]
+  (double t, double accrDur, double fu, const std::vector<double>& accrInt) {
     DataFrameCpp rm1 = rmstat1cpp(
       t, milestone, allocationRatioPlanned,
       accrualTime, accrInt,
@@ -2245,7 +2263,8 @@ ListCpp rmsamplesizecpp(
   };
 
   if (!fixedFollowup) {
-    auto h_follow = [&](double x)->double {
+    auto h_follow = [info_minus_target_H0, accrualDuration, accrualIntensity]
+    (double x)->double {
       return info_minus_target_H0(accrualDuration + x, accrualDuration, x,
                                   accrualIntensity);
     };
@@ -2254,7 +2273,7 @@ ListCpp rmsamplesizecpp(
       std::clog << "WARNING: Information at zero follow-up (end of enrollment) "
                    "already exceeds target. Setting followupTime = 0 and "
                    "finding minimal accrualDuration.\n";
-      auto h_accr = [&](double x)->double {
+      auto h_accr = [info_minus_target_H0, accrualIntensity](double x)->double {
         return info_minus_target_H0(x, x, 0.0, accrualIntensity);
       };
 
@@ -2267,7 +2286,8 @@ ListCpp rmsamplesizecpp(
       std::clog << "WARNING: The required information cannot be attained by "
                    "increasing followupTime alone. accrualDuration is also "
                    "increased to attain the required information.\n";
-      auto h_accr = [&](double x)->double {
+      auto h_accr = [info_minus_target_H0, milestone, accrualIntensity]
+      (double x)->double {
         return info_minus_target_H0(x + milestone, x, milestone, accrualIntensity);
       };
 
@@ -2283,7 +2303,7 @@ ListCpp rmsamplesizecpp(
       if (hlo * hhi > 0.0) throw std::runtime_error(
           "Unable to bracket accrualDuration under H0; check inputs");
 
-      auto h_for_brent = [&](double x)->double {
+      auto h_for_brent = [h_accr, lo, hi, hlo, hhi](double x)->double {
         if (x == lo) return hlo;
         if (x == hi) return hhi;
         return h_accr(x);
@@ -2301,7 +2321,8 @@ ListCpp rmsamplesizecpp(
       studyDuration = accrualDuration + followupTime;
     }
   } else {
-    auto h_accr = [&](double x)->double {
+    auto h_accr = [info_minus_target_H0, followupTime, accrualIntensity]
+    (double x)->double {
       return info_minus_target_H0(x + followupTime, x, followupTime, accrualIntensity);
     };
 
@@ -2316,7 +2337,7 @@ ListCpp rmsamplesizecpp(
     if (hlo * hhi > 0.0) throw std::runtime_error(
         "Unable to bracket accrualDuration under H0; check inputs");
 
-    auto h_for_brent = [&](double x)->double {
+    auto h_for_brent = [h_accr, lo, hi, hlo, hhi](double x)->double {
       if (x == lo) return hlo;
       if (x == hi) return hhi;
       return h_accr(x);
@@ -3575,8 +3596,11 @@ ListCpp rmsamplesize1scpp(
 
   // Helper: compute information under H1 given accrualDuration (accrDur),
   // followupTime (fu), and accrualIntensity (accrInt).
-  auto info_minus_target_H1 = [&](double t, double accrDur, double fu,
-                                  const std::vector<double>& accrInt) {
+  auto info_minus_target_H1 = [milestone, accrualTime,
+                               piecewiseSurvivalTime, stratumFraction,
+                               lambdax, gammax,
+                               fixedFollowup, nstrata, maxInformation]
+  (double t, double accrDur, double fu, const std::vector<double>& accrInt) {
     // compute information using twin group trick
     std::vector<double> accrInt2 = accrInt;
     for (double& v : accrInt2) v *= 2.0;
@@ -3596,21 +3620,31 @@ ListCpp rmsamplesize1scpp(
     return 1.0 / vrmst - maxInformation;
   };
 
-  // when information at zero follow-up (end of enrollment) already exceeds target,
-  // set followupTime = 0 and find minimal accrualDuration achieving target
-  bool curtailed = false;
-
-  // when information at maximum follow-up (milestone) is still below target,
-  // increase accrualDuration to achieve target
-  bool expanded = false;
-
-  // Root-finding function to solve for the unknown design parameter to achieve target
-  std::function<double(double)> f_root;
-
   if (unknown == ACC_DUR) {
-    f_root = [&](double x)->double {
+    auto f = [info_minus_target_H1, followupTime, accrualIntensity](double x)->double {
       return info_minus_target_H1(x + followupTime, x, followupTime, accrualIntensity);
     };
+
+    double lower = std::max(milestone - followupTime, 0.0) + 0.001;
+    double upper = 2.0 * lower;
+    double fl_val = f(lower), fu_val = f(upper);
+    int expand_iter = 0;
+    while (fl_val * fu_val > 0.0 && expand_iter < 60) {
+      lower = upper; fl_val = fu_val;
+      upper *= 2.0;  fu_val = f(upper);
+      ++expand_iter;
+    }
+    if (fl_val * fu_val > 0.0) throw std::runtime_error(
+        "Unable to bracket accrualDuration; check inputs");
+
+    auto f_for_brent = [f, lower, upper, fl_val, fu_val](double x)->double {
+      if (x == lower) return fl_val;
+      if (x == upper) return fu_val;
+      return f(x);
+    };
+
+    accrualDuration = brent(f_for_brent, lower, upper, 1e-6);
+
   } else if (unknown == FUP_TIME) {
     if (!fixedFollowup && accrualDuration > milestone + 0.001 &&
         info_minus_target_H1(accrualDuration, accrualDuration, 0.0,
@@ -3618,87 +3652,84 @@ ListCpp rmsamplesize1scpp(
       std::clog << "WARNING: Information at zero follow-up (end of enrollment) "
                    "already exceeds target. Setting followupTime = 0 and "
                    "finding minimal accrualDuration.\n";
-      f_root = [&](double x)->double {
+      auto f = [info_minus_target_H1, accrualIntensity](double x)->double {
         return info_minus_target_H1(x, x, 0.0, accrualIntensity);
       };
 
-      curtailed = true;
+      accrualDuration = brent(f, milestone + 0.001, accrualDuration, 1e-6);
+      followupTime = 0.0;
+
     } else if (info_minus_target_H1(accrualDuration + milestone, accrualDuration,
                                     milestone, accrualIntensity) < 0) {
       std::clog << "WARNING: The required information cannot be attained by "
                    "increasing followupTime alone. accrualDuration is also "
                    "increased to attain the required information.\n";
-      f_root = [&](double x)->double {
+      auto f = [info_minus_target_H1, milestone, accrualIntensity](double x)->double {
         return info_minus_target_H1(x + milestone, x, milestone, accrualIntensity);
       };
 
-      expanded = true;
+      double lower = accrualDuration;
+      double upper = 2.0 * lower;
+      double fl_val = f(lower), fu_val = f(upper);
+      int expand_iter = 0;
+      while (fl_val * fu_val > 0.0 && expand_iter < 60) {
+        lower = upper; fl_val = fu_val;
+        upper *= 2.0;  fu_val = f(upper);
+        ++expand_iter;
+      }
+      if (fl_val * fu_val > 0.0) throw std::runtime_error(
+          "Unable to bracket accrualDuration; check inputs");
+
+      auto f_for_brent = [f, lower, upper, fl_val, fu_val](double x)->double {
+        if (x == lower) return fl_val;
+        if (x == upper) return fu_val;
+        return f(x);
+      };
+
+      accrualDuration = brent(f_for_brent, lower, upper, 1e-6);
+      followupTime = milestone;
+
     } else {
-      f_root = [&](double x)->double {
+      auto f = [info_minus_target_H1, accrualDuration, accrualIntensity]
+      (double x)->double {
         return info_minus_target_H1(accrualDuration + x, accrualDuration, x,
                                     accrualIntensity);
       };
+
+      double lower = std::max(milestone - accrualDuration, 0.0) + 0.001;
+      double upper = milestone;
+      followupTime = brent(f, lower, upper, 1e-6);
+
     }
   } else {
-    f_root = [&](double m)->double {
+    auto f = [info_minus_target_H1, accrualDuration, followupTime, accrualIntensity]
+    (double m)->double {
       std::vector<double> scaled = accrualIntensity;
       for (double &v : scaled) v *= m;
       return info_minus_target_H1(accrualDuration + followupTime,
                                   accrualDuration, followupTime, scaled);
     };
-  }
 
-  double lower, upper;
-  if (unknown == ACC_DUR) {
-    lower = std::max(milestone - followupTime, 0.0) + 0.001;
-    upper = 2.0 * lower;
-  } else if (unknown == FUP_TIME && curtailed) {
-    lower = milestone + 0.001;
-    upper = accrualDuration;
-  } else if (unknown == FUP_TIME && expanded) {
-    lower = accrualDuration;
-    upper = 2.0 * lower;
-  } else if (unknown == FUP_TIME && !curtailed && !expanded) {
-    lower = std::max(milestone - accrualDuration, 0.0) + 0.001;
-    upper = milestone;
-  } else { // unknown == ACC_INT
-    lower = 0.001;
-    upper = 120;
-  }
-
-  // expand upper if needed to ensure root is bracketed
-  double fl_val = f_root(lower), fu_val = f_root(upper);
-  if (unknown == ACC_DUR || (unknown == FUP_TIME && expanded) || unknown == ACC_INT) {
+    double lower = 0.001, upper = 120;
+    double fl_val = f(lower), fu_val = f(upper);
     int expand_iter = 0;
     while (fl_val * fu_val > 0.0 && expand_iter < 60) {
       lower = upper; fl_val = fu_val;
-      upper *= 2.0;  fu_val = f_root(upper);
+      upper *= 2.0;  fu_val = f(upper);
       ++expand_iter;
     }
-  }
-  if (fl_val * fu_val > 0.0) throw std::runtime_error(
-      "Unable to bracket root; check interval or inputs");
+    if (fl_val * fu_val > 0.0) throw std::runtime_error(
+        "Unable to bracket accrualIntensity; check inputs");
 
-  // solve for root and apply solution for the unknown design parameter
-  auto f_for_brent1 = [&](double x)->double {
-    if (x == lower) return fl_val;
-    if (x == upper) return fu_val;
-    return f_root(x);
-  };
-  double solution = brent(f_for_brent1, lower, upper, 1e-6);
+    auto f_for_brent = [f, lower, upper, fl_val, fu_val](double x)->double {
+      if (x == lower) return fl_val;
+      if (x == upper) return fu_val;
+      return f(x);
+    };
 
-  if (unknown == ACC_DUR) {
-    accrualDuration = solution;
-  } else if (unknown == FUP_TIME && curtailed) {
-    followupTime = 0.0;
-    accrualDuration = solution;
-  } else if (unknown == FUP_TIME && expanded) {
-    followupTime = milestone;
-    accrualDuration = solution;
-  } else if (unknown == FUP_TIME && !curtailed && !expanded) {
-    followupTime = solution;
-  } else { // scaled multiplier for accrualIntensity
-    for (double &v : accrualIntensity) v *= solution;
+    double multiplier = brent(f_for_brent, lower, upper, 1e-6);
+    for (double &v : accrualIntensity) v *= multiplier;
+
   }
 
   double studyDuration = accrualDuration + followupTime;
@@ -3719,7 +3750,8 @@ ListCpp rmsamplesize1scpp(
 
       if (!fixedFollowup) {
         // variable follow-up: adjust follow-up time to match maxInformation
-        auto h = [&](double x)->double {
+        auto h = [info_minus_target_H1, accrualDuration, accrualIntensity]
+        (double x)->double {
           return info_minus_target_H1(accrualDuration + x, accrualDuration, x,
                                       accrualIntensity);
         };
@@ -3728,9 +3760,10 @@ ListCpp rmsamplesize1scpp(
         studyDuration = accrualDuration + followupTime;
       } else {
         // fixed follow-up: adjust studyDuration by extending post-accrual time
-        auto h = [&](double x)->double {
-          return info_minus_target_H1(accrualDuration + x, accrualDuration,
-                                      followupTime, accrualIntensity);
+        auto h = [info_minus_target_H1, accrualDuration, followupTime,
+                  accrualIntensity](double x)->double {
+                    return info_minus_target_H1(accrualDuration + x, accrualDuration,
+                                                followupTime, accrualIntensity);
         };
         double lower = std::max(milestone - accrualDuration, 0.0) + 0.001;
         double extra = brent(h, lower, followupTime, 1.0e-6);
@@ -3758,7 +3791,9 @@ ListCpp rmsamplesize1scpp(
 
   // --- Construct lambda under H0 (scale lambda to match rmstH0) ---
   // Solve for multiplier a s.t. weighted_rmst(a*lambda) - rmstH0 == 0
-  auto f_rmst = [&](double aval)->double {
+  auto f_rmst = [nstrata, lambdax, milestone, piecewiseSurvivalTime,
+                 stratumFraction, rmstH0]
+  (double aval)->double {
     double rmst = 0.0;
     for (std::size_t h = 0; h < nstrata; ++h) {
       auto lamH0 = flatmatrix_get_column(lambdax, h);
@@ -3780,13 +3815,13 @@ ListCpp rmsamplesize1scpp(
   if (flo * fhi > 0.0) throw std::runtime_error(
       "Unable to bracket root for lambda under H0; check inputs");
 
-  auto f_for_brent2 = [&](double x)->double {
+  auto f_for_brent = [f_rmst, lo, hi, flo, fhi](double x)->double {
     if (x == lo) return flo;
     if (x == hi) return fhi;
     return f_rmst(x);
   };
 
-  double multH0 = brent(f_for_brent2, lo, hi, 1.0e-6);
+  double multH0 = brent(f_for_brent, lo, hi, 1.0e-6);
 
   std::vector<double> lambdaH0 = lambda;
   for (double &v : lambdaH0) v *= multH0;
@@ -3794,8 +3829,11 @@ ListCpp rmsamplesize1scpp(
 
   // Helper: compute information under H0 given accrualDuration (accrDur),
   // followupTime (fu), and accrualIntensity (accrInt).
-  auto info_minus_target_H0 = [&](double t, double accrDur, double fu,
-                                  const std::vector<double>& accrInt) {
+  auto info_minus_target_H0 = [milestone, accrualTime,
+                               piecewiseSurvivalTime, stratumFraction,
+                               lambdaH0x, gammax,
+                               fixedFollowup, nstrata, maxInformation]
+  (double t, double accrDur, double fu, const std::vector<double>& accrInt) {
     // compute information using twin group trick
     std::vector<double> accrInt2 = accrInt;
     for (double& v : accrInt2) v *= 2.0;
@@ -3816,7 +3854,8 @@ ListCpp rmsamplesize1scpp(
   };
 
   if (!fixedFollowup) {
-    auto h_follow = [&](double x)->double {
+    auto h_follow = [info_minus_target_H0, accrualDuration, accrualIntensity]
+    (double x)->double {
       return info_minus_target_H0(accrualDuration + x, accrualDuration, x,
                                   accrualIntensity);
     };
@@ -3825,7 +3864,7 @@ ListCpp rmsamplesize1scpp(
       std::clog << "WARNING: Information at zero follow-up (end of enrollment) "
                    "already exceeds target. Setting followupTime = 0 and "
                    "finding minimal accrualDuration.\n";
-      auto h_accr = [&](double x)->double {
+      auto h_accr = [info_minus_target_H0, accrualIntensity](double x)->double {
         return info_minus_target_H0(x, x, 0.0, accrualIntensity);
       };
 
@@ -3838,7 +3877,8 @@ ListCpp rmsamplesize1scpp(
       std::clog << "WARNING: The required information cannot be attained by "
                    "increasing followupTime alone. accrualDuration is also "
                    "increased to attain the required information.\n";
-      auto h_accr = [&](double x)->double {
+      auto h_accr = [info_minus_target_H0, milestone, accrualIntensity]
+      (double x)->double {
         return info_minus_target_H0(x + milestone, x, milestone, accrualIntensity);
       };
 
@@ -3854,7 +3894,7 @@ ListCpp rmsamplesize1scpp(
       if (hlo * hhi > 0.0) throw std::runtime_error(
           "Unable to bracket accrualDuration under H0; check inputs");
 
-      auto h_for_brent = [&](double x)->double {
+      auto h_for_brent = [h_accr, lo, hi, hlo, hhi](double x)->double {
         if (x == lo) return hlo;
         if (x == hi) return hhi;
         return h_accr(x);
@@ -3872,7 +3912,8 @@ ListCpp rmsamplesize1scpp(
       studyDuration = accrualDuration + followupTime;
     }
   } else {
-    auto h_accr = [&](double x)->double {
+    auto h_accr = [info_minus_target_H0, followupTime, accrualIntensity]
+    (double x)->double {
       return info_minus_target_H0(x + followupTime, x, followupTime, accrualIntensity);
     };
 
@@ -3887,7 +3928,7 @@ ListCpp rmsamplesize1scpp(
     if (hlo * hhi > 0.0) throw std::runtime_error(
         "Unable to bracket accrualDuration under H0; check inputs");
 
-    auto h_for_brent = [&](double x)->double {
+    auto h_for_brent = [h_accr, lo, hi, hlo, hhi](double x)->double {
       if (x == lo) return hlo;
       if (x == hi) return hhi;
       return h_accr(x);
@@ -5202,8 +5243,11 @@ ListCpp rmsamplesizeequivcpp(
 
   // Helper: compute information under H1 given accrualDuration (accrDur),
   // followupTime (fu), and accrualIntensity (accrInt).
-  auto info_minus_target_H1 = [&](double t, double accrDur, double fu,
-                                  const std::vector<double>& accrInt) {
+  auto info_minus_target_H1 = [milestone, allocationRatioPlanned, accrualTime,
+                               piecewiseSurvivalTime, stratumFraction,
+                               lambda1x, lambda2x, gamma1x, gamma2x,
+                               fixedFollowup, nstrata, maxInformation]
+  (double t, double accrDur, double fu, const std::vector<double>& accrInt) {
     DataFrameCpp rm1 = rmstat1cpp(
       t, milestone, allocationRatioPlanned,
       accrualTime, accrInt,
@@ -5222,21 +5266,31 @@ ListCpp rmsamplesizeequivcpp(
     return 1.0 / vrmstDiff - maxInformation;
   };
 
-  // when information at zero follow-up (end of enrollment) already exceeds target,
-  // set followupTime = 0 and find minimal accrualDuration achieving target
-  bool curtailed = false;
-
-  // when information at maximum follow-up (milestone) is still below target,
-  // increase accrualDuration to achieve target
-  bool expanded = false;
-
-  // Root-finding function to solve for the unknown design parameter to achieve target
-  std::function<double(double)> f_root;
-
   if (unknown == ACC_DUR) {
-    f_root = [&](double x)->double {
+    auto f = [info_minus_target_H1, followupTime, accrualIntensity](double x)->double {
       return info_minus_target_H1(x + followupTime, x, followupTime, accrualIntensity);
     };
+
+    double lower = std::max(milestone - followupTime, 0.0) + 0.001;
+    double upper = 2.0 * lower;
+    double fl_val = f(lower), fu_val = f(upper);
+    int expand_iter = 0;
+    while (fl_val * fu_val > 0.0 && expand_iter < 60) {
+      lower = upper; fl_val = fu_val;
+      upper *= 2.0;  fu_val = f(upper);
+      ++expand_iter;
+    }
+    if (fl_val * fu_val > 0.0) throw std::runtime_error(
+        "Unable to bracket accrualDuration; check inputs");
+
+    auto f_for_brent = [f, lower, upper, fl_val, fu_val](double x)->double {
+      if (x == lower) return fl_val;
+      if (x == upper) return fu_val;
+      return f(x);
+    };
+
+    accrualDuration = brent(f_for_brent, lower, upper, 1e-6);
+
   } else if (unknown == FUP_TIME) {
     if (!fixedFollowup && accrualDuration > milestone + 0.001 &&
         info_minus_target_H1(accrualDuration, accrualDuration, 0.0,
@@ -5244,87 +5298,86 @@ ListCpp rmsamplesizeequivcpp(
       std::clog << "WARNING: Information at zero follow-up (end of enrollment) "
                    "already exceeds target. Setting followupTime = 0 and "
                    "finding minimal accrualDuration.\n";
-      f_root = [&](double x)->double {
+      auto f = [info_minus_target_H1, accrualIntensity](double x)->double {
         return info_minus_target_H1(x, x, 0.0, accrualIntensity);
       };
 
-      curtailed = true;
+      accrualDuration = brent(f, milestone + 0.001, accrualDuration, 1e-6);
+      followupTime = 0.0;
+
     } else if (info_minus_target_H1(accrualDuration + milestone, accrualDuration,
                                     milestone, accrualIntensity) < 0) {
       std::clog << "WARNING: The required information cannot be attained by "
                    "increasing followupTime alone. accrualDuration is also "
                    "increased to attain the required information.\n";
-      f_root = [&](double x)->double {
+      auto f = [info_minus_target_H1, milestone, accrualIntensity](double x)->double {
         return info_minus_target_H1(x + milestone, x, milestone, accrualIntensity);
       };
 
-      expanded = true;
+      double lower = accrualDuration;
+      double upper = 2.0 * lower;
+      double fl_val = f(lower), fu_val = f(upper);
+      int expand_iter = 0;
+      while (fl_val * fu_val > 0.0 && expand_iter < 60) {
+        lower = upper; fl_val = fu_val;
+        upper *= 2.0;  fu_val = f(upper);
+        ++expand_iter;
+      }
+      if (fl_val * fu_val > 0.0) throw std::runtime_error(
+          "Unable to bracket accrualDuration; check inputs");
+
+      auto f_for_brent = [f, lower, upper, fl_val, fu_val](double x)->double {
+        if (x == lower) return fl_val;
+        if (x == upper) return fu_val;
+        return f(x);
+      };
+
+      accrualDuration = brent(f_for_brent, lower, upper, 1e-6);
+      followupTime = milestone;
+
     } else {
-      f_root = [&](double x)->double {
+      auto f = [info_minus_target_H1, accrualDuration, accrualIntensity]
+      (double x)->double {
         return info_minus_target_H1(accrualDuration + x, accrualDuration, x,
                                     accrualIntensity);
       };
+
+
+      double lower = std::max(milestone - accrualDuration, 0.0) + 0.001;
+      double upper = milestone;
+
+      followupTime = brent(f, lower, upper, 1e-6);
+
     }
   } else {
-    f_root = [&](double m)->double {
+    auto f = [info_minus_target_H1, accrualDuration, followupTime, accrualIntensity]
+    (double m)->double {
       std::vector<double> scaled = accrualIntensity;
       for (double &v : scaled) v *= m;
       return info_minus_target_H1(accrualDuration + followupTime,
                                   accrualDuration, followupTime, scaled);
     };
-  }
 
-  double lower, upper;
-  if (unknown == ACC_DUR) {
-    lower = std::max(milestone - followupTime, 0.0) + 0.001;
-    upper = 2.0 * lower;
-  } else if (unknown == FUP_TIME && curtailed) {
-    lower = milestone + 0.001;
-    upper = accrualDuration;
-  } else if (unknown == FUP_TIME && expanded) {
-    lower = accrualDuration;
-    upper = 2.0 * lower;
-  } else if (unknown == FUP_TIME && !curtailed && !expanded) {
-    lower = std::max(milestone - accrualDuration, 0.0) + 0.001;
-    upper = milestone;
-  } else { // unknown == ACC_INT
-    lower = 0.001;
-    upper = 120;
-  }
-
-  // expand upper if needed to ensure root is bracketed
-  double fl_val = f_root(lower), fu_val = f_root(upper);
-  if (unknown == ACC_DUR || (unknown == FUP_TIME && expanded) || unknown == ACC_INT) {
+    double lower = 0.001, upper = 120;
+    double fl_val = f(lower), fu_val = f(upper);
     int expand_iter = 0;
     while (fl_val * fu_val > 0.0 && expand_iter < 60) {
       lower = upper; fl_val = fu_val;
-      upper *= 2.0;  fu_val = f_root(upper);
+      upper *= 2.0;  fu_val = f(upper);
       ++expand_iter;
     }
-  }
-  if (fl_val * fu_val > 0.0) throw std::runtime_error(
-      "Unable to bracket root; check interval or inputs");
+    if (fl_val * fu_val > 0.0) throw std::runtime_error(
+        "Unable to bracket accrualIntensity; check inputs");
 
-  // solve for root and apply solution for the unknown design parameter
-  auto f_for_brent1 = [&](double x)->double {
-    if (x == lower) return fl_val;
-    if (x == upper) return fu_val;
-    return f_root(x);
-  };
-  double solution = brent(f_for_brent1, lower, upper, 1e-6);
+    auto f_for_brent = [f, lower, upper, fl_val, fu_val](double x)->double {
+      if (x == lower) return fl_val;
+      if (x == upper) return fu_val;
+      return f(x);
+    };
 
-  if (unknown == ACC_DUR) {
-    accrualDuration = solution;
-  } else if (unknown == FUP_TIME && curtailed) {
-    followupTime = 0.0;
-    accrualDuration = solution;
-  } else if (unknown == FUP_TIME && expanded) {
-    followupTime = milestone;
-    accrualDuration = solution;
-  } else if (unknown == FUP_TIME && !curtailed && !expanded) {
-    followupTime = solution;
-  } else { // scaled multiplier for accrualIntensity
-    for (double &v : accrualIntensity) v *= solution;
+    double multiplier = brent(f_for_brent, lower, upper, 1e-6);
+    for (double &v : accrualIntensity) v *= multiplier;
+
   }
 
   double studyDuration = accrualDuration + followupTime;
@@ -5345,7 +5398,8 @@ ListCpp rmsamplesizeequivcpp(
 
       if (!fixedFollowup) {
         // variable follow-up: adjust follow-up time to match maxInformation
-        auto h = [&](double x)->double {
+        auto h = [info_minus_target_H1, accrualDuration, accrualIntensity]
+        (double x)->double {
           return info_minus_target_H1(accrualDuration + x, accrualDuration, x,
                                       accrualIntensity);
         };
@@ -5354,9 +5408,10 @@ ListCpp rmsamplesizeequivcpp(
         studyDuration = accrualDuration + followupTime;
       } else {
         // fixed follow-up: adjust studyDuration by extending post-accrual time
-        auto h = [&](double x)->double {
-          return info_minus_target_H1(accrualDuration + x, accrualDuration,
-                                      followupTime, accrualIntensity);
+        auto h = [info_minus_target_H1, accrualDuration, followupTime,
+                  accrualIntensity](double x)->double {
+                    return info_minus_target_H1(accrualDuration + x, accrualDuration,
+                                                followupTime, accrualIntensity);
         };
         double lower = std::max(milestone - accrualDuration, 0.0) + 0.001;
         double extra = brent(h, lower, followupTime, 1.0e-6);
