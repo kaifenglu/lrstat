@@ -2166,7 +2166,7 @@ ListCpp svd_step(FlatMatrix& B, const bool outtransform = true) {
     return result;
   }
 
-  double f1 = n > 2 : B(n-3,n-2) : 0.0;
+  double f1 = (n > 2) ? B(n-3,n-2) : 0.0;
   double f2 = B(n-2,n-1);
   double d1 = B(n-2,n-2), d2 = B(n-1,n-1);
   double a1 = f1*f1 + d1*d1, a2 = f2*f2 + d2*d2, b1 = f2*d1;
