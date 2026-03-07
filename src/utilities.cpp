@@ -2248,19 +2248,32 @@ ListCpp svdcpp1(const FlatMatrix& X, const bool outtransform,
     //               |   0    0   B33  |   q
     //                   p  n-p-q  q
     // where B33 is diagonal and B22 has nonzero superdiagonal
+
     q = n;
-    for (size_t i=n-1; i>=1; --i) {
-      if (B(i-1,i) != 0.0) {
-        q = n-i-1; break;
+
+    // Find last nonzero superdiagonal entry B(i-1, i) scanning i = n-1 ... 1
+    if (n >= 2) {
+      for (size_t i = n; i-- > 1; ) {          // i: n-1, ..., 1
+        if (B(i-1, i) != 0.0) {
+          q = n - i - 1;
+          break;
+        }
       }
     }
 
     p = 0;
-    for (size_t i=n-q-2; i>=1; --i) {
-      if (B(i-1,i) == 0.0) {
-        p = i; break;
+
+    // We search for a zero superdiagonal in the active part.
+    const size_t active = n - q;
+    if (active >= 2) {
+      for (size_t i = active - 1; i-- > 1; ) { // i: active-2, ..., 1
+        if (B(i-1, i) == 0.0) {
+          p = i;
+          break;
+        }
       }
     }
+
 
     if (q < n) {
       // if any diagonal entry in B22 is zero, then zero the superdiagonal
