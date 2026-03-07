@@ -2387,10 +2387,7 @@ ListCpp lrsim2ecpp(
               // It follows that analysisT1.size() == Kpfs in this case.
 
               // find first OS look after last PFS look
-              size_t l = 0;
-              for (size_t idx = 0; idx < analysisT2.size(); ++idx) {
-                if (analysisT2[idx] > analysisT1.back()) { l = idx; break; }
-              }
+              size_t l = findInterval1(analysisT1.back(), analysisT2);
               // number of stages
               nstages = Kpfs + (analysisT2.size() - l);
               // copy PFS looks unchanged and append relevant OS looks
@@ -3528,10 +3525,7 @@ ListCpp lrsim2e3acpp(
               // It follows that analysisT1.size() == Kpfs in this case.
 
               // find first OS look after last PFS look
-              size_t l = 0;
-              for (size_t idx = 0; idx < analysisT2.size(); ++idx) {
-                if (analysisT2[idx] > analysisT1.back()) { l = idx; break; }
-              }
+              size_t l = findInterval1(analysisT1.back(), analysisT2);
               // number of stages
               nstages = Kpfs + (analysisT2.size() - l);
               // copy PFS looks unchanged and append relevant OS looks
@@ -4699,10 +4693,7 @@ ListCpp lrsimsubcpp(
               // It follows that analysisTime1.size() == Kitt in this case.
 
               // find first biomarker+ look after last ITT look
-              size_t l = 0;
-              for (size_t idx = 0; idx < analysisT2.size(); ++idx) {
-                if (analysisT2[idx] > analysisT1.back()) { l = idx; break; }
-              }
+              size_t l = findInterval1(analysisT1.back(), analysisT2);
               nstages = Kitt + (analysisT2.size() - l);
               std::copy_n(analysisT1.begin(), Kitt, analysisT.begin());
               size_t count = analysisT2.size() - l;
@@ -5756,13 +5747,13 @@ ListCpp binary_tte_sim_cpp(
         }
         if (j == K2) {
           for (size_t k = 0; k < nstages2; ++k) {
-            analysisT2[k] = totalte[plannedEvents[k] - 1] + 1e-12;
+            analysisT2.push_back(totalte[plannedEvents[k] - 1] + 1e-12);
           }
         } else {
           for (size_t k = 0; k < nstages2 - 1; ++k) {
-            analysisT2[k] = totalte[plannedEvents[k] - 1] + 1e-12;
+            analysisT2.push_back(totalte[plannedEvents[k] - 1] + 1e-12);
           }
-          analysisT2[nstages2 - 1] = totalte.back() + 1e-12;
+          analysisT2.push_back(totalte.back() + 1e-12);
         }
         bool evNotAch = (nevents < plannedEvents[K2 - 1]);
 
