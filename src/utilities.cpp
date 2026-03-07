@@ -2154,7 +2154,20 @@ ListCpp svd_step(FlatMatrix& B, const bool outtransform = true) {
     U(i,i) = 1.0; V(i,i) = 1.0;
   }
 
-  double f1 = B(n-3,n-2), f2 = B(n-2,n-1);
+  if (n == 1) {
+    ListCpp result;
+    if (outtransform) {
+      result.push_back(B, "B");
+      result.push_back(U, "U");
+      result.push_back(V, "V");
+    } else {
+      result.push_back(B, "B");
+    }
+    return result;
+  }
+
+  double f1 = n > 2 : B(n-3,n-2) : 0.0;
+  double f2 = B(n-2,n-1);
   double d1 = B(n-2,n-2), d2 = B(n-1,n-1);
   double a1 = f1*f1 + d1*d1, a2 = f2*f2 + d2*d2, b1 = f2*d1;
   double d = 0.5*(a1-a2);
