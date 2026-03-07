@@ -1793,11 +1793,10 @@ ListCpp getDesignEquivcpp(const double beta,
   std::partial_sum(v1.begin(), v1.end(), cpl.begin());
   std::partial_sum(v2.begin(), v2.end(), cpu.begin());
 
-  size_t kk = K; // index for the first crossing look (0-based)
+  size_t k = K; // index for the first crossing look (0-based)
   for (size_t i = 0; i < K; ++i) {
-    if (l[i] <= u[i]) { kk = i; break; }
+    if (l[i] <= u[i]) { k = i; break; }
   }
-  int k = static_cast<int>(kk);
 
   std::vector<double> cp(K);
   if (k == 0) { // crossing at the first look
@@ -1805,7 +1804,7 @@ ListCpp getDesignEquivcpp(const double beta,
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   } else {
-    std::vector<double> cplx(kk), cpux(kk);
+    std::vector<double> cplx(k), cpux(k);
     std::vector l1 = subset(l, 0, k);
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
@@ -1815,10 +1814,10 @@ ListCpp getDesignEquivcpp(const double beta,
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplx.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpux.begin());
-    for (size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < k; ++i) {
       cp[i] = cpl[i] + cpu[i] - cplx[i] - cpux[i];
     }
-    for (size_t i = kk; i < K; ++i) {
+    for (size_t i = k; i < K; ++i) {
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   }
@@ -1832,7 +1831,7 @@ ListCpp getDesignEquivcpp(const double beta,
 
   std::vector<double> q(K);
   std::memcpy(q.data(), rejectPerStage.data(), K * sizeof(double));
-  if (K > 1) q[K - 1] = 1.0 - cp[K - 2];
+  if (K > 1) q[K-1] = 1.0 - cp[K-2];
 
   double overallReject = cp[K-1];
   double expectedInformationH1 = std::inner_product(
@@ -1863,7 +1862,7 @@ ListCpp getDesignEquivcpp(const double beta,
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   } else {
-    std::vector<double> cplH10x(kk), cpuH10x(kk);
+    std::vector<double> cplH10x(k), cpuH10x(k);
     std::vector l1 = subset(l, 0, k);
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
@@ -1873,10 +1872,10 @@ ListCpp getDesignEquivcpp(const double beta,
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplH10x.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpuH10x.begin());
-    for (size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < k; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - cplH10x[i] - cpuH10x[i];
     }
-    for (size_t i = kk; i < K; ++i) {
+    for (size_t i = k; i < K; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   }
@@ -1910,7 +1909,7 @@ ListCpp getDesignEquivcpp(const double beta,
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   } else {
-    std::vector<double> cplH20x(kk), cpuH20x(kk);
+    std::vector<double> cplH20x(k), cpuH20x(k);
     std::vector l1 = subset(l, 0, k);
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
@@ -1920,10 +1919,10 @@ ListCpp getDesignEquivcpp(const double beta,
     auto v2x = probs.get<std::vector<double>>("exitProbLower");
     std::partial_sum(v1x.begin(), v1x.end(), cplH20x.begin());
     std::partial_sum(v2x.begin(), v2x.end(), cpuH20x.begin());
-    for (size_t i = 0; i < kk; ++i) {
+    for (size_t i = 0; i < k; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - cplH20x[i] - cpuH20x[i];
     }
-    for (size_t i = kk; i < K; ++i) {
+    for (size_t i = k; i < K; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   }
@@ -1932,7 +1931,7 @@ ListCpp getDesignEquivcpp(const double beta,
   std::vector<double> qH20(K);
   qH20[0] = cpH20[0];
   for (size_t i = 1; i < K - 1; ++i) qH20[i] = cpH20[i] - cpH20[i-1];
-  qH20[K-1] = 1.0 - cpH20[K-2];
+  if (K > 1) qH20[K-1] = 1.0 - cpH20[K-2];
 
   double attainedAlphaH20 = cpH20[K-1];
   double expectedInformationH20 = std::inner_product(
