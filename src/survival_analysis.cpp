@@ -7,6 +7,7 @@
 #include <cctype>    // isalnum, isalpha, tolower, toupper
 #include <climits>   // INT_MIN
 #include <cmath>     // exp, fabs, isinf, isnan, log, sqrt
+#include <cstddef>     // size_t
 #include <cstring>   // memcpy
 #include <limits>    // numeric_limits
 #include <numeric>   // iota, inner_product
@@ -4196,8 +4197,8 @@ ListCpp liferegcpp(const DataFrameCpp& data,
   sumstat.push_back(loglik1, "loglik1");
   sumstat.push_back(niter, "niter");
   sumstat.push_back(dist1, "dist");
-  sumstat.push_back(static_cast<int>(p), "p");
-  sumstat.push_back(static_cast<int>(nvar - 1), "nvar");
+  sumstat.push_back(p, "p");
+  sumstat.push_back(nvar - 1, "nvar");
   sumstat.push_back(robust, "robust");
   sumstat.push_back(fail, "fail");
 
@@ -6801,7 +6802,7 @@ ListCpp phregcpp(const DataFrameCpp& data,
   sumstat.push_back(scoretest, "scoretest");
   sumstat.push_back(niter, "niter");
   sumstat.push_back(meth, "ties");
-  sumstat.push_back(static_cast<int>(p), "p");
+  sumstat.push_back(p, "p");
   sumstat.push_back(robust, "robust");
   sumstat.push_back(firth, "firth");
   sumstat.push_back(fail, "fail");
@@ -6948,14 +6949,14 @@ DataFrameCpp survfit_phregcpp(const size_t p,
 
   std::vector<int> stratumn0(n0);
   DataFrameCpp u_stratum0;
-  std::vector<int> nlevels;
+  std::vector<size_t> nlevels;
   ListPtr lookups_ptr;
   size_t p_stratum = stratum.size();
   if (!(p_stratum == 0 || (p_stratum == 1 && stratum[0] == ""))) {
     ListCpp out = bygroup(basehaz, stratum);
     stratumn0 = out.get<std::vector<int>>("index");
     u_stratum0 = out.get<DataFrameCpp>("lookup");
-    nlevels = out.get<std::vector<int>>("nlevels");
+    nlevels = out.get<std::vector<size_t>>("nlevels");
     lookups_ptr = out.get<ListPtr>("lookups_per_variable");
   }
 
@@ -6993,7 +6994,7 @@ DataFrameCpp survfit_phregcpp(const size_t p,
     const ListCpp& lookups = *lookups_ptr;
 
     // match stratum in newdata to stratum in basehaz
-    int orep = u_stratum0.nrows();
+    size_t orep = u_stratum0.nrows();
     for (size_t i = 0; i < p_stratum; ++i) {
       orep /= nlevels[i];
       std::string s = stratum[i];
@@ -8790,7 +8791,7 @@ ListCpp assess_phregcpp(const size_t p,
   result.push_back(std::move(score_i_vec_2), "score_t_list");
   result.push_back(std::move(tobs), "max_abs_value");
   result.push_back(std::move(p_values), "p_value");
-  result.push_back(static_cast<int>(resample), "resample");
+  result.push_back(resample, "resample");
   result.push_back(seed, "seed");
   return result;
 }
