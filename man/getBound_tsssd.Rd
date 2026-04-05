@@ -24,6 +24,11 @@ getBound_tsssd(
 \item{r}{Randomization ratio of each active arm to the common control in
 phase 2. Must be positive.}
 
+\item{corr_known}{whether the correlation between the Wald statistics in
+phase 2 is known. If \code{TRUE}, the correlation is determined by
+the randomization ratio \code{r} as \eqn{r / (r + 1)};
+if \code{FALSE}, the correlation is conservatively set to 0.}
+
 \item{k}{Look number for the current analysis.}
 
 \item{informationRates}{Information rates up to the current look. Must be
