@@ -856,13 +856,13 @@ ListCpp lrsim_tsssd_cpp(
   overview.push_back(expStudyDur, "expectedStudyDuration");
   overview.push_back(hazardRatioH0s, "hazardRatioH0s");
   overview.push_back(useEvents, "useEvents");
-  overview.push_back(static_cast<int>(niters), "numberOfIterations");
-  overview.push_back(static_cast<int>(n), "n");
+  overview.push_back(niters, "numberOfIterations");
+  overview.push_back(n, "n");
   overview.push_back(fixedFollowup, "fixedFollowup");
   overview.push_back(rho1, "rho1");
   overview.push_back(rho2, "rho2");
-  overview.push_back(static_cast<int>(M), "M");
-  overview.push_back(static_cast<int>(K), "K");
+  overview.push_back(M, "M");
+  overview.push_back(K, "K");
 
   DataFrameCpp sumdata1;
   sumdata1.push_back(std::move(sum1_iterNum), "iterationNumber");
