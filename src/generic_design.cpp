@@ -160,7 +160,9 @@ ListCpp exitprobcpp(const std::vector<double>& b,
                     const std::vector<double>& I) {
 
   // K is the total number of stages
-  if (b.empty()) throw std::invalid_argument("b must have length >= 1");
+  if (!none_na(b)) {
+    throw std::invalid_argument("b must be provided");
+  }
   size_t K = b.size();
 
   // Integer value controlling grid for numerical integration as in
@@ -198,7 +200,6 @@ ListCpp exitprobcpp(const std::vector<double>& b,
   } else {
     theta1.assign(K, 0.0);
   }
-
 
   // information times expansion / validation
   std::vector<double> I1; I1.reserve(K);
