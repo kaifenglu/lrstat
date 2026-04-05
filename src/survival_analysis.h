@@ -1,12 +1,12 @@
-#ifndef __SURVIVAL_ANALYSIS__
-#define __SURVIVAL_ANALYSIS__
+#pragma once
+
+#include <cstddef>
+#include <string>
+#include <vector>
 
 struct FlatMatrix;
 struct DataFrameCpp;
 struct ListCpp;
-
-#include <string>
-#include <vector>
 
 
 DataFrameCpp survQuantilecpp(const std::vector<double>& time,
@@ -181,4 +181,3 @@ ListCpp zph_phregcpp(const std::size_t p,
                      const std::string& ties = "efron",
                      const std::string& transform = "km");
 
-#endif // __SURVIVAL_ANALYSIS__

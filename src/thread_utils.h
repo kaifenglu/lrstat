@@ -1,5 +1,4 @@
-#ifndef THREAD_UTILS_H
-#define THREAD_UTILS_H
+#pragma once
 
 #include <mutex>
 #include <string>
@@ -52,5 +51,3 @@ inline void drain_thread_warnings_to_R() {
 }
 
 } // namespace thread_utils
-
-#endif // THREAD_UTILS_H

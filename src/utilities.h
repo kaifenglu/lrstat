@@ -1,14 +1,6 @@
-#ifndef __UTILITIES_H__
-#define __UTILITIES_H__
+#pragma once
 
 // [[Rcpp::plugins(cpp17)]]
-
-struct FlatMatrix;
-struct IntMatrix;
-struct BoolMatrix;
-struct FlatArray;
-struct DataFrameCpp;
-struct ListCpp;
 
 #include <algorithm>     // find, sort, unique,
 #include <cmath>         // fabs, isnan, sqrt,
@@ -28,6 +20,15 @@ struct ListCpp;
 #include <vector>        // vector
 
 #include <Rcpp.h>
+
+struct FlatMatrix;
+struct IntMatrix;
+struct SztMatrix;
+struct BoolMatrix;
+struct FlatArray;
+
+struct DataFrameCpp;
+struct ListCpp;
 
 
 inline constexpr double NaN = std::numeric_limits<double>::quiet_NaN();
@@ -97,6 +98,32 @@ std::vector<unsigned char> convertLogicalVector(const Rcpp::LogicalVector& vec);
 
 // which: return indices of true values
 std::vector<std::size_t> which(const std::vector<unsigned char>& vec);
+
+// check if no elements are missing
+inline bool none_na(const std::vector<double>& v) {
+  return !v.empty() &&
+    std::none_of(v.begin(), v.end(), [](double x){ return std::isnan(x); });
+}
+
+inline bool none_na(const std::vector<int>& v) {
+  return !v.empty() &&
+    std::none_of(v.begin(), v.end(), [](double x){ return x == INT_MIN; });
+}
+
+inline bool none_na(const std::vector<unsigned char>& v) {
+  return !v.empty() &&
+    std::none_of(v.begin(), v.end(), [](double x){ return x == 255; });
+}
+
+// check if any element is non-increasing compared to previous
+template<typename T>
+bool any_nonincreasing(const std::vector<T>& I) {
+  if (I.size() < 2) return false;
+  for (std::size_t i = 1; i < I.size(); ++i) {
+    if (I[i] <= I[i-1]) return true;
+  }
+  return false;
+}
 
 // expand1: expand vector to full length
 std::vector<double> expand1(
@@ -249,33 +276,6 @@ double brent(F&& f, double x1, double x2, double tol = 1e-8, int maxiter = 100) 
 }
 
 
-// check if no elements are missing
-inline bool none_na(const std::vector<double>& v) {
-  return !v.empty() &&
-    std::none_of(v.begin(), v.end(), [](double x){ return std::isnan(x); });
-}
-
-inline bool none_na(const std::vector<int>& v) {
-  return !v.empty() &&
-    std::none_of(v.begin(), v.end(), [](double x){ return x == INT_MIN; });
-}
-
-inline bool none_na(const std::vector<unsigned char>& v) {
-  return !v.empty() &&
-    std::none_of(v.begin(), v.end(), [](double x){ return x == 255; });
-}
-
-// check if any element is non-increasing compared to previous
-template<typename T>
-bool any_nonincreasing(const std::vector<T>& I) {
-  if (I.size() < 2) return false;
-  for (std::size_t i = 1; i < I.size(); ++i) {
-    if (I[i] <= I[i-1]) return true;
-  }
-  return false;
-}
-
-
 // subset: return a subset of v according to 'order' (indices)
 template <typename T>
 std::vector<T> subset(const std::vector<T>& v, const std::vector<std::size_t>& order) {
@@ -404,6 +404,26 @@ std::vector<int> matchcpp(const std::vector<T>& x, const std::vector<T>& table,
   return result;
 }
 
+// bygroup: process grouping variables and return indices and lookup tables
+ListCpp bygroup(const DataFrameCpp& data, const std::vector<std::string>& variables);
+
+// --------------------------- Matrix utilities (FlatMatrix) ------------------
+std::vector<double> mat_vec_mult(const FlatMatrix& A, const std::vector<double>& x);
+FlatMatrix mat_mat_mult(const FlatMatrix& A, const FlatMatrix& B);
+
+FlatMatrix transpose(const FlatMatrix& M);
+IntMatrix transpose(const IntMatrix& M);
+SztMatrix transpose(const SztMatrix& M);
+BoolMatrix transpose(const BoolMatrix& M);
+
+double quadsym(const std::vector<double>& u, const FlatMatrix& v);
+
+// --------------------------- Linear algebra helpers (FlatMatrix-backed) ----
+int cholesky2(FlatMatrix& matrix, std::size_t n, double toler = 1e-12);
+void chsolve2(FlatMatrix& matrix, std::size_t n, double* y);
+FlatMatrix invsympd(const FlatMatrix& matrix, std::size_t n, double toler = 1e-12);
+FlatMatrix invchol(FlatMatrix& matrix, std::size_t n);
+
 
 double dtpwexpcpp1(
     const double q,
@@ -495,24 +515,6 @@ ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
                       const std::vector<double>& hazard_pos,
                       const double p_pos);
 
-
-ListCpp bygroup(const DataFrameCpp& data,
-                const std::vector<std::string>& variables);
-
-int cholesky2(FlatMatrix& matrix, std::size_t n, double toler = 1e-12);
-void chsolve2(FlatMatrix& matrix, std::size_t n, double* y);
-FlatMatrix invsympd(const FlatMatrix& matrix, std::size_t n, double toler = 1e-12);
-FlatMatrix invchol(FlatMatrix& matrix, std::size_t n);
-
-std::vector<double> mat_vec_mult(const FlatMatrix& A, const std::vector<double>& x);
-FlatMatrix mat_mat_mult(const FlatMatrix& A, const FlatMatrix& B);
-
-FlatMatrix transpose(const FlatMatrix& M);
-IntMatrix transpose(const IntMatrix& M);
-BoolMatrix transpose(const BoolMatrix& M);
-
-double quadsym(const std::vector<double>& u, const FlatMatrix& v);
-
 // Print a std::vector<T> to std::cout.
 // Requirements: T must be streamable via operator<< to std::ostream.
 //
@@ -589,5 +591,3 @@ void print_vector(const std::vector<T>& v,
 
   std::cout << ss.str();
 }
-
-#endif // __UTILITIES__

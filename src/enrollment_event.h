@@ -1,9 +1,9 @@
-#ifndef __ENROLLMENT_EVENT__
-#define __ENROLLMENT_EVENT__
+#pragma once
+
+#include <vector>
 
 #include "utilities.h"
 
-#include <vector>
 
 double accrual1(
     const double time,
@@ -255,7 +255,3 @@ inline std::pair<double, double> nevent1(
   double d2 = (1.0 - phi) * (a * p2 + c2);  // Control group
   return std::make_pair(d1, d2);
 }
-
-
-#endif // __ENROLLMENT_EVENT__
-

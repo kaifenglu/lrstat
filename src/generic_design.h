@@ -1,7 +1,4 @@
-#ifndef __GENERIC_DESIGN__
-#define __GENERIC_DESIGN__
-
-struct ListCpp;
+#pragma once
 
 #include <cstddef>       // size_t
 #include <cstdint>       // std::int64_t
@@ -10,6 +7,10 @@ struct ListCpp;
 #include <string>        // std::string
 #include <unordered_map> // std::unordered_map
 #include <vector>        // std::vector
+
+#include "utilities.h"
+
+struct ListCpp;
 
 
 double errorSpentcpp(const double t,
@@ -155,6 +156,3 @@ ListCpp adaptDesigncpp(
     const std::vector<double>& userBetaSpendingNew,
     const std::vector<double>& spendingTimeNew,
     const double varianceRatio = 1.0);
-
-
-#endif // __GENERIC_DESIGN__

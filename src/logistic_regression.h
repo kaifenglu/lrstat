@@ -1,11 +1,11 @@
-#ifndef __LOGISTIC_REGRESSION__
-#define __LOGISTIC_REGRESSION__
-
-struct DataFrameCpp; 
-struct ListCpp; 
+#pragma once
 
 #include <string>
 #include <vector>
+
+struct DataFrameCpp;
+struct ListCpp;
+
 
 ListCpp logisregcpp(const DataFrameCpp& data,
                     const std::string& event = "event",
@@ -23,6 +23,3 @@ ListCpp logisregcpp(const DataFrameCpp& data,
                     const double alpha = 0.05,
                     const int maxiter = 50,
                     const double eps = 1.0e-9);
-
-
-#endif // __LOGISTIC_REGRESSION__

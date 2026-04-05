@@ -1,9 +1,9 @@
-#ifndef __MIETTINEN_NURMINEN__
-#define __MIETTINEN_NURMINEN__
+#pragma once
+
+#include <vector>
 
 struct DataFrameCpp;
 
-#include <vector>        // vector
 
 std::vector<double> remlRiskDiff(const double n1,
                                  const double y1,
@@ -94,5 +94,3 @@ DataFrameCpp mnRateRatioCIcpp(const std::vector<double>& t1,
                               const std::vector<double>& t2,
                               const std::vector<double>& y2,
                               const double cilevel);
-
-#endif // __MIETTINEN_NURMINEN__
