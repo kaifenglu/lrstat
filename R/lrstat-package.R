@@ -131,7 +131,7 @@
 #'
 #' @useDynLib lrstat, .registration = TRUE
 #' @importFrom Rcpp evalCpp
-#' @importFrom RcppParallel setThreadOptions
+#' @importFrom RcppParallel setThreadOptions RcppParallelLibs
 #' @importFrom parallel detectCores
 #' @importFrom mvtnorm pmvnorm
 #' @importFrom stats as.formula complete.cases dgamma dlogis dnorm formula integrate model.frame
