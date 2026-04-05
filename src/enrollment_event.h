@@ -27,12 +27,12 @@ inline double patrisk1(
   const auto& t = piecewiseSurvivalTime;
 
   // Find interval containing specified analysis time
-  size_t m = findInterval1(time, t);
+  std::size_t m = findInterval1(time, t);
 
   // Compute cumulative hazard for the time point
   double a = 0.0;
   // Contribution from intervals fully covered
-  for (size_t j = 0; j < m-1; ++j) {
+  for (std::size_t j = 0; j < m-1; ++j) {
     a += (lambda[j] + gamma[j]) * (t[j+1] - t[j]);
   }
   // Contribution from the remaining portion of the last interval
@@ -51,11 +51,11 @@ inline double pevent1(
 
   const auto& t = piecewiseSurvivalTime;
 
-  size_t m = findInterval1(time, t);
+  std::size_t m = findInterval1(time, t);
 
   double a = 0;
   // Full interval is covered
-  for (size_t j = 0; j < m-1; ++j) {
+  for (std::size_t j = 0; j < m-1; ++j) {
     double n = patrisk1(t[j], t, lambda, gamma);
     double theta = lambda[j] + gamma[j];
     double p = lambda[j] / theta * (1.0 - std::exp(-theta * (t[j + 1] - t[j])));
@@ -76,7 +76,7 @@ inline double pevent1(
 // piecewise exponential distribution
 template <class VLam, class VGam>
 inline double hd(
-    const size_t j,
+    const std::size_t j,
     const double t1,
     const double t2,
     const std::vector<double>& piecewiseSurvivalTime,
@@ -116,8 +116,8 @@ inline double pd(
   const std::vector<double>& t = piecewiseSurvivalTime;
 
   // Identify analysis time intervals containing t1 and t2
-  size_t j1 = findInterval1(t1, t) - 1;
-  size_t j2 = findInterval1(t2, t) - 1;
+  std::size_t j1 = findInterval1(t1, t) - 1;
+  std::size_t j2 = findInterval1(t2, t) - 1;
 
   double a = 0.0;
 
@@ -128,7 +128,7 @@ inline double pd(
   } else {
     // First interval
     a = hd(j1, t1, t[j1 + 1], t, lambda, gamma);
-    for (size_t j = j1 + 1; j < j2; ++j) {
+    for (std::size_t j = j1 + 1; j < j2; ++j) {
       // Intermediate intervals
       a += hd(j, t[j], t[j + 1], t, lambda, gamma);
     }
@@ -157,8 +157,8 @@ inline double ad(
   const std::vector<double>& t = piecewiseSurvivalTime;
 
   // Identify accrual time intervals containing u1 and u2
-  size_t i1 = findInterval1(u1, u) - 1;
-  size_t i2 = findInterval1(u2, u) - 1;
+  std::size_t i1 = findInterval1(u1, u) - 1;
+  std::size_t i2 = findInterval1(u2, u) - 1;
 
   double a = 0.0;  // Initialize the result with zero
 
@@ -170,7 +170,7 @@ inline double ad(
     // First interval
     a = accrualIntensity[i1] * pd(time - u[i1 + 1], time - u1, t, lambda, gamma);
     // intermediate intervals
-    for (size_t i = i1 + 1; i < i2; ++i) {
+    for (std::size_t i = i1 + 1; i < i2; ++i) {
       a += accrualIntensity[i] * pd(time - u[i + 1], time - u[i], t, lambda, gamma);
     }
     // Last interval
