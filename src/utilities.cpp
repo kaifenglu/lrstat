@@ -1,9 +1,10 @@
 #include "utilities.h"
 #include "dataframe_list.h"
-#include "thread_utils.h"
 
 #include <algorithm>  // lower_bound, sort, upper_bound
 #include <cmath>      // copysign, exp, fabs, isinf, isnan, log, sqrt
+#include <cstddef>    // size_t
+#include <cstring>    // memcpy
 #include <functional> // function
 #include <limits>     // numeric_limits
 #include <numeric>    // inner_product, iota
@@ -19,7 +20,6 @@
 #include <boost/math/distributions/extreme_value.hpp>
 #include <boost/math/distributions/chi_squared.hpp>
 #include <boost/math/distributions/students_t.hpp>
-#include <boost/math/quadrature/gauss_kronrod.hpp>
 #include <boost/math/quadrature/tanh_sinh.hpp>
 #include <boost/math/tools/minima.hpp>
 
@@ -296,8 +296,7 @@ std::vector<unsigned char> convertLogicalVector(const Rcpp::LogicalVector& vec) 
 std::vector<size_t> which(const std::vector<unsigned char>& vec) {
   std::vector<size_t> indices;
   indices.reserve(vec.size());
-  size_t n = vec.size();
-  for (size_t i = 0; i < n; ++i) {
+  for (size_t i = 0; i < vec.size(); ++i) {
     if (vec[i] != 0 && vec[i] != 255) indices.push_back(i);
   }
   return indices;
@@ -1605,14 +1604,14 @@ ListCpp bygroup(const DataFrameCpp& data,
   size_t n = data.nrows();
   size_t p = variables.size();
   ListCpp result;
-  std::vector<int> nlevels(p);
+  std::vector<size_t> nlevels(p);
 
   // IntMatrix for indices (n rows, p cols), column-major storage
   IntMatrix indices(n, p);
 
   // Flattened lookup buffers and per-variable metadata
   struct VarLookupInfo {
-    int type; // 0=int, 1=double, 2=bool, 3=string
+    int type; // 0=int, 1=double, 2=bool, 3=string, 4=size_t
     size_t offset;
   };
   std::vector<VarLookupInfo> var_info(p);
@@ -1621,6 +1620,7 @@ ListCpp bygroup(const DataFrameCpp& data,
   std::vector<double> dbl_flat;
   std::vector<unsigned char> bool_flat;
   std::vector<std::string> str_flat;
+  std::vector<size_t> size_t_flat;
 
   ListCpp lookups_per_variable; // will contain a std::vector for each variable
 
@@ -1679,6 +1679,18 @@ ListCpp bygroup(const DataFrameCpp& data,
 
       intmatrix_set_column(indices, i, idx);
       lookups_per_variable.push_back(std::move(w), var);
+    } else if (data.size_t_cols.count(var)) {
+      const auto& col = data.size_t_cols.at(var);
+      auto w = unique_sorted(col);
+      nlevels[i] = w.size();
+      auto idx = matchcpp(col, w);
+
+      size_t off = size_t_flat.size();
+      size_t_flat.insert(size_t_flat.end(), w.begin(), w.end());
+      var_info[i] = VarLookupInfo{4, off};
+
+      intmatrix_set_column(indices, i, idx);
+      lookups_per_variable.push_back(std::move(w), var);
     } else {
       throw std::invalid_argument("Unsupported variable type in bygroup: " + var);
     }
@@ -1686,7 +1698,7 @@ ListCpp bygroup(const DataFrameCpp& data,
 
   // compute combined index
   std::vector<int> combined_index(n, 0);
-  int orep = 1;
+  size_t orep = 1;
   for (size_t i = 0; i < p; ++i) orep *= nlevels[i];
   size_t lookup_nrows = orep;
 
@@ -1736,9 +1748,18 @@ ListCpp bygroup(const DataFrameCpp& data,
         }
       }
       lookup_df.push_back(std::move(col), var);
-    } else { // string
+    } else if (info.type == 3) { // string
       const std::string* base = str_flat.data() + info.offset;
       std::vector<std::string> col(lookup_nrows);
+      size_t idxw = 0;
+      for (size_t t = 0; t < times; ++t) {
+        for (size_t level = 0; level < nlevels_i; ++level)
+          for (size_t r = 0; r < repeat_each; ++r) col[idxw++] = base[level];
+      }
+      lookup_df.push_back(std::move(col), var);
+    } else { // size_t
+      const size_t* base = size_t_flat.data() + info.offset;
+      std::vector<size_t> col(lookup_nrows);
       size_t idxw = 0;
       for (size_t t = 0; t < times; ++t) {
         for (size_t level = 0; level < nlevels_i; ++level)
@@ -1758,6 +1779,149 @@ ListCpp bygroup(const DataFrameCpp& data,
 
 
 // --------------------------- Linear algebra helpers (FlatMatrix-backed) ----
+
+std::vector<double> mat_vec_mult(const FlatMatrix& A, const std::vector<double>& x) {
+  size_t m = A.nrow;
+  size_t p = A.ncol;
+  if (x.size() != p)
+    throw std::invalid_argument("Vector size mismatch");
+  std::vector<double> result(m, 0.0);
+  for (size_t c = 0; c < p; ++c) {
+    double xc = x[c];
+    size_t offset = c * m;
+    const double* colptr = A.data_ptr() + offset;
+    for (size_t r = 0; r < m; ++r) result[r] += colptr[r] * xc;
+  }
+  return result;
+}
+
+FlatMatrix mat_mat_mult(const FlatMatrix& A, const FlatMatrix& B) {
+  size_t m = A.nrow;
+  size_t k = A.ncol;
+  size_t k2 = B.nrow;
+  size_t n = B.ncol;
+  if (k != k2) throw std::invalid_argument("Matrix dimensions mismatch");
+  if (m == 0 || k == 0 || n == 0) return FlatMatrix();
+  FlatMatrix C(m, n);
+  // Column-major: For each column j in B/C, compute
+  // C[:,j] = sum_{t=0..k-1} A[:,t] * B[t,j]
+  for (size_t j = 0; j < n; ++j) {
+    const double* bcol = B.data_ptr() + j * k;
+    double* ccol = C.data_ptr() + j * m;
+    for (size_t t = 0; t < k; ++t) {
+      const double* acol = A.data_ptr() + t * m;
+      double scale = bcol[t];
+      if (scale == 0.0) continue;
+      for (size_t i = 0; i < m; ++i) {
+        ccol[i] += acol[i] * scale;
+      }
+    }
+  }
+  return C;
+}
+
+// Transpose a FlatMatrix (double)
+FlatMatrix transpose(const FlatMatrix& M) {
+  if (M.nrow == 0 || M.ncol == 0) return FlatMatrix();
+
+  const size_t src_nrow = M.nrow;
+  const size_t src_ncol = M.ncol;
+  FlatMatrix out(src_ncol, src_nrow); // swapped dims
+
+  const double* src = M.data_ptr();
+  double* dst = out.data_ptr();
+
+  for (size_t c = 0; c < src_ncol; ++c) {
+    const double* src_col = src + c * src_nrow;
+    for (size_t r = 0; r < src_nrow; ++r) {
+      dst[r * src_ncol + c] = src_col[r];
+    }
+  }
+
+  return out;
+}
+
+// Transpose an IntMatrix (int)
+IntMatrix transpose(const IntMatrix& M) {
+  if (M.nrow == 0 || M.ncol == 0) return IntMatrix();
+
+  const size_t src_nrow = M.nrow;
+  const size_t src_ncol = M.ncol;
+  IntMatrix out(src_ncol, src_nrow); // swapped dims
+
+  const int* src = M.data_ptr();
+  int* dst = out.data_ptr();
+
+  for (size_t c = 0; c < src_ncol; ++c) {
+    const int* src_col = src + c * src_nrow;
+    for (size_t r = 0; r < src_nrow; ++r) {
+      dst[r * src_ncol + c] = src_col[r];
+    }
+  }
+
+  return out;
+}
+
+// Transpose an SztMatrix (std::size_t)
+SztMatrix transpose(const SztMatrix& M) {
+  if (M.nrow == 0 || M.ncol == 0) return SztMatrix();
+
+  const size_t src_nrow = M.nrow;
+  const size_t src_ncol = M.ncol;
+  SztMatrix out(src_ncol, src_nrow); // swapped dims
+
+  const size_t* src = M.data_ptr();
+  size_t* dst = out.data_ptr();
+
+  for (size_t c = 0; c < src_ncol; ++c) {
+    const size_t* src_col = src + c * src_nrow;
+    for (size_t r = 0; r < src_nrow; ++r) {
+      dst[r * src_ncol + c] = src_col[r];
+    }
+  }
+
+  return out;
+}
+
+// Transpose a BoolMatrix (unsigned char)
+BoolMatrix transpose(const BoolMatrix& M) {
+  if (M.nrow == 0 || M.ncol == 0) return BoolMatrix();
+
+  const size_t src_nrow = M.nrow;
+  const size_t src_ncol = M.ncol;
+  BoolMatrix out(src_ncol, src_nrow); // swapped dims
+
+  const unsigned char* src = M.data_ptr();
+  unsigned char* dst = out.data_ptr();
+
+  for (size_t c = 0; c < src_ncol; ++c) {
+    const unsigned char* src_col = src + c * src_nrow;
+    for (size_t r = 0; r < src_nrow; ++r) {
+      dst[r * src_ncol + c] = src_col[r];
+    }
+  }
+
+  return out;
+}
+
+double quadsym(const std::vector<double>& u, const FlatMatrix& v) {
+  size_t p = u.size();
+  const double* vptr = v.data_ptr();
+  const double* uptr = u.data();
+  double sum = 0.0;
+
+  for (size_t j = 0; j < p; ++j) {
+    const double* col = vptr + j * p;
+    // diagonal term
+    sum += uptr[j] * uptr[j] * col[j]; // col[j] == v(j,j)
+    // off-diagonals i < j. Access column j contiguous for i = 0..j-1
+    double s = 0.0;
+    for (size_t i = 0; i < j; ++i) s += col[i] * uptr[i];
+    sum += 2.0 * uptr[j] * s; // account for symmetric pair (i,j) and (j,i)
+  }
+  return sum;
+}
+
 // cholesky2: in-place working on FlatMatrix (n x n), returns rank * nonneg
 int cholesky2(FlatMatrix& matrix, size_t n, double toler) {
   double* base = matrix.data_ptr();
@@ -1853,128 +2017,6 @@ FlatMatrix invchol(FlatMatrix& matrix, size_t n) {
     }
   }
   return iv;
-}
-
-
-std::vector<double> mat_vec_mult(const FlatMatrix& A, const std::vector<double>& x) {
-  size_t m = A.nrow;
-  size_t p = A.ncol;
-  if (x.size() != p)
-    throw std::invalid_argument("Vector size mismatch");
-  std::vector<double> result(m, 0.0);
-  for (size_t c = 0; c < p; ++c) {
-    double xc = x[c];
-    size_t offset = c * m;
-    const double* colptr = A.data_ptr() + offset;
-    for (size_t r = 0; r < m; ++r) result[r] += colptr[r] * xc;
-  }
-  return result;
-}
-
-FlatMatrix mat_mat_mult(const FlatMatrix& A, const FlatMatrix& B) {
-  size_t m = A.nrow;
-  size_t k = A.ncol;
-  size_t k2 = B.nrow;
-  size_t n = B.ncol;
-  if (k != k2) throw std::invalid_argument("Matrix dimensions mismatch");
-  if (m == 0 || k == 0 || n == 0) return FlatMatrix();
-  FlatMatrix C(m, n);
-  // Column-major: For each column j in B/C, compute
-  // C[:,j] = sum_{t=0..k-1} A[:,t] * B[t,j]
-  for (size_t j = 0; j < n; ++j) {
-    const double* bcol = B.data_ptr() + j * k;
-    double* ccol = C.data_ptr() + j * m;
-    for (size_t t = 0; t < k; ++t) {
-      const double* acol = A.data_ptr() + t * m;
-      double scale = bcol[t];
-      if (scale == 0.0) continue;
-      for (size_t i = 0; i < m; ++i) {
-        ccol[i] += acol[i] * scale;
-      }
-    }
-  }
-  return C;
-}
-
-// Transpose a FlatMatrix (double)
-FlatMatrix transpose(const FlatMatrix& M) {
-  if (M.nrow == 0 || M.ncol == 0) return FlatMatrix();
-
-  const size_t src_nrow = M.nrow;
-  const size_t src_ncol = M.ncol;
-  FlatMatrix out(src_ncol, src_nrow); // swapped dims
-
-  const double* src = M.data_ptr();
-  double* dst = out.data_ptr();
-
-  for (size_t c = 0; c < src_ncol; ++c) {
-    const double* src_col = src + c * src_nrow;
-    for (size_t r = 0; r < src_nrow; ++r) {
-      dst[r * src_ncol + c] = src_col[r];
-    }
-  }
-
-  return out;
-}
-
-// Transpose an IntMatrix (int)
-IntMatrix transpose(const IntMatrix& M) {
-  if (M.nrow == 0 || M.ncol == 0) return IntMatrix();
-
-  const size_t src_nrow = M.nrow;
-  const size_t src_ncol = M.ncol;
-  IntMatrix out(src_ncol, src_nrow); // swapped dims
-
-  const int* src = M.data_ptr();
-  int* dst = out.data_ptr();
-
-  for (size_t c = 0; c < src_ncol; ++c) {
-    const int* src_col = src + c * src_nrow;
-    for (size_t r = 0; r < src_nrow; ++r) {
-      dst[r * src_ncol + c] = src_col[r];
-    }
-  }
-
-  return out;
-}
-
-// Transpose a BoolMatrix (unsigned char)
-BoolMatrix transpose(const BoolMatrix& M) {
-  if (M.nrow == 0 || M.ncol == 0) return BoolMatrix();
-
-  const size_t src_nrow = M.nrow;
-  const size_t src_ncol = M.ncol;
-  BoolMatrix out(src_ncol, src_nrow); // swapped dims
-
-  const unsigned char* src = M.data_ptr();
-  unsigned char* dst = out.data_ptr();
-
-  for (size_t c = 0; c < src_ncol; ++c) {
-    const unsigned char* src_col = src + c * src_nrow;
-    for (size_t r = 0; r < src_nrow; ++r) {
-      dst[r * src_ncol + c] = src_col[r];
-    }
-  }
-
-  return out;
-}
-
-double quadsym(const std::vector<double>& u, const FlatMatrix& v) {
-  size_t p = u.size();
-  const double* vptr = v.data_ptr();
-  const double* uptr = u.data();
-  double sum = 0.0;
-
-  for (size_t j = 0; j < p; ++j) {
-    const double* col = vptr + j * p;
-    // diagonal term
-    sum += uptr[j] * uptr[j] * col[j]; // col[j] == v(j,j)
-    // off-diagonals i < j. Access column j contiguous for i = 0..j-1
-    double s = 0.0;
-    for (size_t i = 0; i < j; ++i) s += col[i] * uptr[i];
-    sum += 2.0 * uptr[j] * s; // account for symmetric pair (i,j) and (j,i)
-  }
-  return sum;
 }
 
 
