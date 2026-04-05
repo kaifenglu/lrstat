@@ -142,7 +142,8 @@ PMVNResult pmvnormcpp(const std::vector<double>& lower,
                       std::size_t R = 8,
                       double abseps = 1e-4,
                       double releps = 0.0,
-                      uint64_t seed = 0);
+                      uint64_t seed = 0,
+                      bool parallel = true);
 
 double qmvnormcpp(const double p,
                   const std::vector<double>& mean,
@@ -153,4 +154,5 @@ double qmvnormcpp(const double p,
                   std::size_t R = 8,
                   double abseps = 1e-4,
                   double releps = 0.0,
-                  uint64_t seed = 0);
+                  uint64_t seed = 0,
+                  bool parallel = true);
