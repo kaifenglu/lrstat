@@ -331,14 +331,8 @@ struct ExtendReplicatesWorker : public RcppParallel::Worker {
 
     for (std::size_t rep = begin; rep < end; ++rep) {
       auto& acc = reps[rep];
-
-      if (n_target > acc.n_done) {
-        acc.sum += pmvn_sum_range_incremental(
-          acc, J, lower_std, upper_std, C, fast,
-          acc.n_done, n_target, w.data(), z.data());
-        acc.n_done = n_target;
-      }
-
+      extend_replicate(acc, n_target, J, lower_std, upper_std, C,
+                       fast, w.data(), z.data());
       phat[rep] = acc.sum / static_cast<double>(n_target);
     }
   }
@@ -399,31 +393,47 @@ PMVNResult pmvnorm_adaptive(size_t J,
   double error = std::numeric_limits<double>::quiet_NaN();
   const double tcrit = boost_qt(0.975, static_cast<double>(R - 1));
 
-  for (;;) {
-    // Extend each replicate to n
-    if (!parallel) {
+  if (!parallel) {
+    for (;;) {
+      // Extend each replicate to n
       for (size_t rep = 0; rep < R; ++rep) {
         extend_replicate(reps[rep], n, J, lower_std, upper_std, C, fast,
                          w.data(), y.data());
         phat[rep] = reps[rep].sum / static_cast<double>(n);
       }
-    } else {
+
+      mean_se_from_replicates(phat, pbar, se);
+      double tol = std::max(abseps, releps * std::abs(pbar));
+
+      // stopping rule
+      error = tcrit * se;
+      if (error < tol) break;
+
+      // increase n for next iteration, but cap at n_max
+      if (n >= n_max) break;
+      const size_t n2 = n + n0;
+      n = (n2 > n_max) ? n_max : n2;
+    }
+  } else {
+    for (;;) {
       ExtendReplicatesWorker worker(reps, n, J, lower_std, upper_std, C, fast, phat);
       RcppParallel::parallelFor(0, R, worker);
+
+
+      mean_se_from_replicates(phat, pbar, se);
+      double tol = std::max(abseps, releps * std::abs(pbar));
+
+      // stopping rule
+      error = tcrit * se;
+      if (error < tol) break;
+
+      // increase n for next iteration, but cap at n_max
+      if (n >= n_max) break;
+      const size_t n2 = n + n0;
+      n = (n2 > n_max) ? n_max : n2;
     }
-
-    mean_se_from_replicates(phat, pbar, se);
-    double tol = std::max(abseps, releps * std::abs(pbar));
-
-    // stopping rule
-    error = tcrit * se;
-    if (error < tol) break;
-
-    // increase n for next iteration, but cap at n_max
-    if (n >= n_max) break;
-    const size_t n2 = n + n0;
-    n = (n2 > n_max) ? n_max : n2;
   }
+
 
   PMVNResult out;
   out.prob = pbar;
