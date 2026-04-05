@@ -11,8 +11,6 @@ struct ListCpp;
 #include <unordered_map> // std::unordered_map
 #include <vector>        // std::vector
 
-using std::size_t;
-
 
 double errorSpentcpp(const double t,
                      const double error = 0.025,
@@ -46,7 +44,7 @@ public:
                   const std::vector<double>& userAlphaSpending,
                   const std::vector<double>& spendTime,
                   const std::vector<unsigned char>& effStopping,
-                  size_t maxEntries = 64,
+                  std::size_t maxEntries = 64,
                   int alphaPrecision = 12);
 
   std::vector<double> get(double alpha);
@@ -67,7 +65,7 @@ private:
   std::vector<double> spendTime_;
   std::vector<unsigned char> effStopping_;
 
-  size_t maxEntries_;
+  std::size_t maxEntries_;
   int alphaPrecision_;
   std::unordered_map<int64_t, CacheEntry> map_;
   std::list<int64_t> usage_;
