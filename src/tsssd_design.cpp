@@ -526,6 +526,10 @@ std::vector<double> getBound_tsssd_cpp(
 //' @param M Number of active arms in phase 2. Must be at least 2.
 //' @param r Randomization ratio of each active arm to the common control in
 //'  phase 2. Must be positive.
+//' @param corr_known whether the correlation between the Wald statistics in
+//'   phase 2 is known. If \code{TRUE}, the correlation is determined by
+//'   the randomization ratio \code{r} as \eqn{r / (r + 1)};
+//'   if \code{FALSE}, the correlation is conservatively set to 0.
 //' @param k Look number for the current analysis.
 //' @param informationRates Information rates up to the current look. Must be
 //'   increasing and less than or equal to 1.
