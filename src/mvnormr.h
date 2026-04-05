@@ -1,9 +1,4 @@
 #pragma once
-#include "utilities.h"
-#include "dataframe_list.h"
-
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_int_distribution.hpp>
 
 #include <algorithm>
 #include <array>
@@ -14,6 +9,12 @@
 #include <limits>
 #include <stdexcept>
 #include <vector>
+
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
+
+#include "utilities.h"
+#include "dataframe_list.h"
 
 
 // Prime bases. This list length sets the max supported dimension.
