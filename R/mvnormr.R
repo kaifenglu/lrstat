@@ -6,7 +6,10 @@
 #' @param upper the upper bounds of the hyperrectangle.
 #' @param mean  the mean vector (optional). If NULL, defaults to rep(0, nrow(sigma)).
 #' @param sigma the covariance matrix of the multivariate normal distribution.
-#' @param ... forwarded to pmvnormRcpp (fast, n0, n_max, R, abseps, releps, seed)
+#' @param ... forwarded to pmvnormRcpp (fast, n0, n_max, R, abseps, releps,
+#'   seed, parallel)
+#' @param nthreads the number of threads to use in simulations (0 means
+#'   the default RcppParallel behavior).
 #'
 #' @return list(prob=..., error=..., n=...)
 #'
@@ -24,11 +27,17 @@
 #' print(prob)
 #'
 #' @export
-pmvnormr <- function(lower, upper, mean = NULL, sigma, ...) {
+pmvnormr <- function(lower, upper, mean = NULL, sigma, ... , nthreads = 0) {
   if (!is.matrix(sigma) && length(sigma) == 1) sigma = matrix(sigma, nrow = 1, ncol = 1)
   if (is.null(dim(sigma)) || length(dim(sigma)) != 2L) stop("sigma must be a matrix")
   if (nrow(sigma) != ncol(sigma)) stop("sigma must be square")
   if (is.null(mean)) mean <- rep(0, nrow(sigma))
+
+  # Respect user-requested number of threads (best effort)
+  if (nthreads > 0) {
+    n_physical_cores <- parallel::detectCores(logical = FALSE)
+    RcppParallel::setThreadOptions(min(nthreads, n_physical_cores))
+  }
 
   out <- pmvnormRcpp(lower = lower, upper = upper, mean = mean, sigma = sigma, ...)
   prob <- out$prob
@@ -46,6 +55,8 @@ pmvnormr <- function(lower, upper, mean = NULL, sigma, ...) {
 #' @param mean  the mean vector (optional). If NULL, defaults to rep(0, nrow(sigma)).
 #' @param sigma the covariance matrix of the multivariate normal distribution.
 #' @param ... forwarded to qmvnormRcpp (fast, n0, n_max, R, abseps, releps, seed)
+#' @param nthreads the number of threads to use in simulations (0 means
+#'   the default RcppParallel behavior).
 #'
 #' @return The calculated quantile.
 #'
@@ -60,11 +71,17 @@ pmvnormr <- function(lower, upper, mean = NULL, sigma, ...) {
 #' qmvnormr(0.5, mean, corr)
 #'
 #' @export
-qmvnormr <- function(p, mean = NULL, sigma, ...) {
+qmvnormr <- function(p, mean = NULL, sigma, ..., nthreads = 0) {
   if (!is.matrix(sigma) && length(sigma) == 1) sigma = matrix(sigma, nrow = 1, ncol = 1)
   if (is.null(dim(sigma)) || length(dim(sigma)) != 2L) stop("sigma must be a matrix")
   if (nrow(sigma) != ncol(sigma)) stop("sigma must be square")
   if (is.null(mean)) mean <- rep(0, nrow(sigma))
+
+  # Respect user-requested number of threads (best effort)
+  if (nthreads > 0) {
+    n_physical_cores <- parallel::detectCores(logical = FALSE)
+    RcppParallel::setThreadOptions(min(nthreads, n_physical_cores))
+  }
 
   qmvnormRcpp(p = p, mean = mean, sigma = sigma, ...)
 }
