@@ -183,6 +183,95 @@ double boost_qt(double p, double df, bool lower_tail) {
 }
 
 
+// Fast normal CDF approximation
+// see https://doi.org/10.2139/ssrn.2842681
+inline constexpr double g2 = -0.0150234471495426236132;
+inline constexpr double g4 = 0.000666098511701018747289;
+inline constexpr double g6 = 5.07937324518981103694e-06;
+inline constexpr double g8 = -2.92345273673194627762e-06;
+inline constexpr double g10 = 1.34797733516989204361e-07;
+inline constexpr double m2dpi = -0.6366197723675813824329; // -2.0 / pi
+
+// [[Rcpp::export]]
+double pnorm_fast(double x) {
+  if (!std::isfinite(x)) return (x > 0 ? 1.0 : 0.0);
+
+  const double x2  = x * x;
+  const double x4  = x2 * x2;
+  const double x6  = x4 * x2;
+  const double x8  = x6 * x2;
+  const double x10 = x8 * x2;
+
+  double tmp = 1.0 + g2 * x2 + g4 * x4 + g6 * x6 + g8 * x8 + g10 * x10;
+  double t = 1.0 - std::exp(tmp * m2dpi * x2);
+  return 0.5 + 0.5 * ((x > 0) - (x < 0)) * std::sqrt(t);
+}
+
+
+// Approximate inverse standard normal CDF (qnorm).
+// Based on Peter John Acklam's rational approximation.
+// Good accuracy for double precision when p in (0,1).
+// [[Rcpp::export]]
+double qnorm_acklam(double p) {
+  // Coefficients in rational approximations
+  static constexpr double a[] = {
+    -3.969683028665376e+01,
+    2.209460984245205e+02,
+    -2.759285104469687e+02,
+    1.383577518672690e+02,
+    -3.066479806614716e+01,
+    2.506628277459239e+00
+  };
+  static constexpr double b[] = {
+    -5.447609879822406e+01,
+    1.615858368580409e+02,
+    -1.556989798598866e+02,
+    6.680131188771972e+01,
+    -1.328068155288572e+01
+  };
+  static constexpr double c[] = {
+    -7.784894002430293e-03,
+    -3.223964580411365e-01,
+    -2.400758277161838e+00,
+    -2.549732539343734e+00,
+    4.374664141464968e+00,
+    2.938163982698783e+00
+  };
+  static constexpr double d[] = {
+    7.784695709041462e-03,
+    3.224671290700398e-01,
+    2.445134137142996e+00,
+    3.754408661907416e+00
+  };
+
+  // Protect against invalid inputs; caller should clamp too.
+  p = std::min(std::max(p, 1e-300), 1.0 - 1e-16);
+
+  // Define break-points.
+  constexpr double plow  = 0.02425;
+  constexpr double phigh = 1.0 - plow;
+
+  double q, r;
+  if (p < plow) {
+    // Rational approximation for lower region.
+    q = std::sqrt(-2.0 * std::log(p));
+    return (((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) /
+      ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1.0);
+  } else if (p > phigh) {
+    // Rational approximation for upper region.
+    q = std::sqrt(-2.0 * std::log(1.0 - p));
+    return -(((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) /
+      ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1.0);
+  } else {
+    // Rational approximation for central region.
+    q = p - 0.5;
+    r = q * q;
+    return (((((a[0]*r + a[1])*r + a[2])*r + a[3])*r + a[4])*r + a[5]) * q /
+      (((((b[0]*r + b[1])*r + b[2])*r + b[3])*r + b[4])*r + 1.0);
+  }
+}
+
+
 std::vector<size_t> seqcpp(size_t start, size_t end) {
   if (start > end) throw std::invalid_argument(
       "start must be less than or equal to end for the sequence function.");
@@ -247,6 +336,33 @@ FlatMatrix expand_stratified(
   }
   return out;
 }
+
+void expand_stratified_to_slice(
+    const std::vector<double>& v,
+    FlatArray& out,
+    size_t slice_index,
+    size_t nstrata,
+    size_t nintv,
+    const char* name) {
+
+  double* dst = out.slice_ptr(slice_index);
+  if (v.size() == 1) {
+    for (size_t i = 0; i < nintv * nstrata; ++i) {
+      dst[i] = v[0];
+    }
+  } else if (v.size() == nintv) {
+    const double* src = v.data();
+    for (size_t s = 0; s < nstrata; ++s) {
+      std::memcpy(dst + s * nintv, src, nintv * sizeof(double));
+    }
+  } else if (v.size() == nstrata * nintv) {
+    const double* src = v.data();
+    std::memcpy(dst, src, nintv * nstrata * sizeof(double));
+  } else {
+    throw std::invalid_argument(std::string("Invalid length for ") + name);
+  }
+}
+
 
 size_t findInterval1(const double x,
                      const std::vector<double>& v,
@@ -1714,6 +1830,27 @@ FlatMatrix invsympd(const FlatMatrix& matrix, size_t n, double toler) {
     iv(i,i) = 1.0;
     double* ycol = iv.data_ptr() + i * n;
     chsolve2(v, n, ycol);
+  }
+  return iv;
+}
+
+
+// invchol assumes matrix holds the representation produced by cholesky2
+FlatMatrix invchol(FlatMatrix& matrix, size_t n) {
+  // Forward substitution L * z = y
+  double* base = matrix.data_ptr();
+  FlatMatrix iv(n, n);
+  for (size_t k = 0; k < n; ++k) {
+    iv(k,k) = 1.0;
+    double* y = iv.data_ptr() + k * n;
+    for (size_t j = 0; j < n-1; ++j) {
+      double yj = y[j];
+      if (yj == 0.0) continue;
+      double* col_j = base + j * n;
+      for (size_t i = j + 1; i < n; ++i) {
+        y[i] -= yj * col_j[i];
+      }
+    }
   }
   return iv;
 }
