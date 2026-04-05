@@ -761,17 +761,24 @@ ListCpp lrsimcpp(
   // compute per-stage simulation summaries
   size_t index2 = sum_iterNum.size();
   double niters = 0.0;
-  std::vector<double> stopPerStage(K);
   std::vector<double> rejPerStage(K), futPerStage(K);
-  std::vector<double> eventsPerStage(K), dropoutsPerStage(K);
-  std::vector<double> subjectsPerStage(K), analysisTimePerStage(K);
   for (size_t i = 0; i < index2; ++i) {
     size_t k = static_cast<size_t>(sum_stageNum[i] - 1);
     if (sum_stageNum[i] == sum_stopStage[i]) {
       niters += 1.0;
-      stopPerStage[k] += 1.0;
       rejPerStage[k] += sum_rejPerStage[i];
       futPerStage[k] += sum_futPerStage[i];
+    }
+  }
+
+  std::vector<double> haveStage(K);
+  std::vector<double> eventsPerStage(K), dropoutsPerStage(K);
+  std::vector<double> subjectsPerStage(K), analysisTimePerStage(K);
+  for (size_t i = 0; i < index2; ++i) {
+    size_t k = static_cast<size_t>(sum_stageNum[i] - 1);
+    size_t kk = static_cast<size_t>(sum_stopStage[i] - 1);
+    if (k <= kk) {
+      haveStage[k] += 1.0;
       eventsPerStage[k] += sum_totEvents[i];
       dropoutsPerStage[k] += sum_totDropouts[i];
       subjectsPerStage[k] += sum_totAccruals[i];
@@ -783,11 +790,11 @@ ListCpp lrsimcpp(
     rejPerStage[k] /= niters;
     futPerStage[k] /= niters;
 
-    if (stopPerStage[k] > 0.0) {
-      eventsPerStage[k] /= stopPerStage[k];
-      dropoutsPerStage[k] /= stopPerStage[k];
-      subjectsPerStage[k] /= stopPerStage[k];
-      analysisTimePerStage[k] /= stopPerStage[k];
+    if (haveStage[k] > 0.0) {
+      eventsPerStage[k] /= haveStage[k];
+      dropoutsPerStage[k] /= haveStage[k];
+      subjectsPerStage[k] /= haveStage[k];
+      analysisTimePerStage[k] /= haveStage[k];
     } else {
       eventsPerStage[k] = 0.0;
       dropoutsPerStage[k] = 0.0;
