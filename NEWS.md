@@ -1,3 +1,14 @@
+# lrstat 0.3.1
+
+* calculated eventsPerStage, dropoutPerStage, subjectsPerStage, and analysisTimePerstage in the lrsim output based on trials having the stage (i.e., did not stop before the stage).
+* added mvnormr for multivariate normal probability and quantile calculations
+* added tsssd_design: analytical calculation for two-stage seamless sequential designs for treatment/dose selection.
+* added lrstim_tsssd: simulation function for two-stage seamless sequential designs for treatment/dose selection.
+* printed power with 4 instead of 3 decimal places in the output
+* used std::size_t instead of size_t in all header files
+* added pnorm_fast, qnorm_acklam, expand_stratified_to_slice, and invchol utility functions 
+
+
 # lrstat 0.3.0
 
 * replaced accrualDuration with n for lrsim, lrsim2e, lrsim3a, lrsim2e3a, lrsimsub, and binary\_tte\_sim to allow the simulation to run with a fixed number of subjects
