@@ -1,0 +1,37 @@
+@echo off
+REM configure.win -- generate src\Makevars with RcppParallel flags and C++17 setting
+
+REM Try to get R_HOME, otherwise call 'R RHOME'
+if not defined R_HOME (
+  for /f "usebackq delims=" %%R in (`R RHOME`) do set "R_HOME=%%R"
+)
+
+set "Rscript=%R_HOME%\bin\Rscript.exe"
+if not exist "%Rscript%" (
+  for /f "delims=" %%p in ('where Rscript 2^>nul') do set "Rscript=%%p"
+)
+
+if not exist "%Rscript%" (
+  echo Error: Rscript not found. >&2
+  exit /b 1
+)
+
+REM Write flags to temporary files
+"%Rscript%" -e "cat(RcppParallel::CxxFlags())" > tmp_cppflags.txt
+"%Rscript%" -e "cat(RcppParallel::RcppParallelLibs())" > tmp_libs.txt
+
+set /p CPPFLAGS=<tmp_cppflags.txt
+set /p LIBS=<tmp_libs.txt
+
+if not exist src mkdir src
+
+(
+  echo CXX_STD = CXX17
+  echo PKG_CPPFLAGS = %CPPFLAGS%
+  echo PKG_LIBS     = %LIBS%
+) > src\Makevars
+
+del /q tmp_cppflags.txt
+del /q tmp_libs.txt
+
+echo Wrote src\Makevars
