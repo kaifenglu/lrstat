@@ -82,6 +82,24 @@ void DataFrameCpp::push_back(std::vector<std::string>&& col,
   names_.push_back(name);
 }
 
+void DataFrameCpp::push_back(const std::vector<size_t>& col, 
+                             const std::string& name) {
+  if (containElementNamed(name))
+    throw std::runtime_error("Column '" + name + "' already exists.");
+  check_row_size(col.size(), name);
+  size_t_cols[name] = col;
+  names_.push_back(name);
+}
+void DataFrameCpp::push_back(std::vector<size_t>&& col, 
+                             const std::string& name) {
+  if (containElementNamed(name))
+    throw std::runtime_error("Column '" + name + "' already exists.");
+  check_row_size(col.size(), name);
+  size_t_cols.emplace(name, std::move(col));
+  names_.push_back(name);
+}
+
+
 // Scalar expansions (push_back)
 void DataFrameCpp::push_back(double value, const std::string& name) {
   size_t cur = nrows();
@@ -113,6 +131,14 @@ void DataFrameCpp::push_back(const std::string& value, const std::string& name) 
     throw std::runtime_error("Cannot push scalar when DataFrame has 0 rows");
   if (cur == 0) cur = 1;
   std::vector<std::string> col(cur, value);
+  push_back(std::move(col), name);
+}
+void DataFrameCpp::push_back(size_t value, const std::string& name) {
+  size_t cur = nrows();
+  if (cur == 0 && !names_.empty())
+    throw std::runtime_error("Cannot push scalar when DataFrame has 0 rows");
+  if (cur == 0) cur = 1;
+  std::vector<size_t> col(cur, value);
   push_back(std::move(col), name);
 }
 
@@ -217,6 +243,22 @@ void DataFrameCpp::push_front(std::vector<std::string>&& col,
   string_cols.emplace(name, std::move(col));
   names_.insert(names_.begin(), name);
 }
+void DataFrameCpp::push_front(const std::vector<size_t>& col, 
+                              const std::string& name) {
+  if (containElementNamed(name))
+    throw std::runtime_error("Column '" + name + "' already exists.");
+  check_row_size(col.size(), name);
+  size_t_cols[name] = col;
+  names_.insert(names_.begin(), name);
+}
+void DataFrameCpp::push_front(std::vector<size_t>&& col, 
+                              const std::string& name) {
+  if (containElementNamed(name))
+    throw std::runtime_error("Column '" + name + "' already exists.");
+  check_row_size(col.size(), name);
+  size_t_cols.emplace(name, std::move(col));
+  names_.insert(names_.begin(), name);
+}
 
 // Scalar expansions for push_front
 void DataFrameCpp::push_front(double value, const std::string& name) {
@@ -251,11 +293,20 @@ void DataFrameCpp::push_front(const std::string& value, const std::string& name)
   std::vector<std::string> col(cur, value);
   push_front(std::move(col), name);
 }
+void DataFrameCpp::push_front(size_t value, const std::string& name) {
+  size_t cur = nrows();
+  if (cur == 0 && !names_.empty())
+    throw std::runtime_error("Cannot push scalar when DataFrame has 0 rows");
+  if (cur == 0) cur = 1;
+  std::vector<size_t> col(cur, value);
+  push_front(std::move(col), name);
+}
 
 void DataFrameCpp::erase(const std::string& name) {
   if (numeric_cols.erase(name)) { }
   else if (int_cols.erase(name)) { }
   else if (bool_cols.erase(name)) { }
+  else if (size_t_cols.erase(name)) { }
   else string_cols.erase(name);
   names_.erase(std::remove(names_.begin(), names_.end(), name), names_.end());
 }
@@ -306,6 +357,19 @@ void ListCpp::push_back(IntMatrix&& im, const std::string& name) {
   if (containsElementNamed(name))
     throw std::runtime_error("Element '" + name + "' already exists.");
   data.emplace(name, std::move(im));
+  names_.push_back(name);
+}
+// SztMatrix overloads
+void ListCpp::push_back(const SztMatrix& sm, const std::string& name) {
+  if (containsElementNamed(name))
+    throw std::runtime_error("Element '" + name + "' already exists.");
+  data.emplace(name, sm);
+  names_.push_back(name);
+}
+void ListCpp::push_back(SztMatrix&& sm, const std::string& name) {
+  if (containsElementNamed(name))
+    throw std::runtime_error("Element '" + name + "' already exists.");
+  data.emplace(name, std::move(sm));
   names_.push_back(name);
 }
 // BoolMatrix overloads
@@ -756,6 +820,15 @@ std::vector<int> intmatrix_get_column(const IntMatrix& M, size_t col) {
   return out;
 }
 
+std::vector<size_t> sztmatrix_get_column(const SztMatrix& M, size_t col) {
+  if (M.nrow == 0 || M.ncol == 0) return {};
+  if (col >= M.ncol) throw std::out_of_range("column index out of range");
+  const size_t* src = M.data_ptr() + SztMatrix::idx_col(0, col, M.nrow);
+  std::vector<size_t> out(M.nrow);
+  std::memcpy(out.data(), src, M.nrow * sizeof(size_t));
+  return out;
+}
+
 std::vector<unsigned char> boolmatrix_get_column(const BoolMatrix& M, size_t col) {
   if (M.nrow == 0 || M.ncol == 0) return {};
   if (col >= M.ncol) throw std::out_of_range("column index out of range");
@@ -783,6 +856,15 @@ void intmatrix_set_column(IntMatrix& M, size_t col, const std::vector<int>& src)
   std::memcpy(dst_ptr, src_ptr, M.nrow * sizeof(int));
 }
 
+void sztmatrix_set_column(SztMatrix& M, size_t col, const std::vector<size_t>& src) {
+  if (col >= M.ncol) throw std::out_of_range("col out of range");
+  if (src.size() != M.nrow)
+    throw std::invalid_argument("src size != M.nrow");
+  const size_t* src_ptr = src.data();
+  size_t* dst_ptr = M.data_ptr() + SztMatrix::idx_col(0, col, M.nrow);
+  std::memcpy(dst_ptr, src_ptr, M.nrow * sizeof(size_t));
+}
+
 void boolmatrix_set_column(BoolMatrix& M, size_t col,
                            const std::vector<unsigned char>& src) {
   if (col >= M.ncol) throw std::out_of_range("col out of range");
@@ -798,6 +880,8 @@ void boolmatrix_set_column(BoolMatrix& M, size_t col,
 Rcpp::DataFrame convertDataFrameCppToR(const DataFrameCpp& df) {
   Rcpp::List cols;
   Rcpp::CharacterVector names;
+  bool warned_size_t_overflow = false;
+  
   for (const auto& nm : df.names_) {
     names.push_back(nm);
     if (df.numeric_cols.count(nm)) {
@@ -816,6 +900,24 @@ Rcpp::DataFrame convertDataFrameCppToR(const DataFrameCpp& df) {
       cols.push_back(std::move(lv));
     } else if (df.string_cols.count(nm)) {
       cols.push_back(Rcpp::wrap(df.string_cols.at(nm)));
+    } else if (df.size_t_cols.count(nm)) {
+      const auto& vv = df.size_t_cols.at(nm);
+      R_xlen_t n = static_cast<R_xlen_t>(vv.size());
+      Rcpp::IntegerVector iv(n);
+      for (R_xlen_t i = 0; i < n; ++i) {
+        size_t v = vv[static_cast<size_t>(i)];
+        if (v > static_cast<size_t>(std::numeric_limits<int>::max())) {
+          iv[i] = NA_INTEGER;
+          if (!warned_size_t_overflow) {
+            Rcpp::warning("convertDataFrameCppToR: some size_t values exceed "
+                            "INT_MAX and were set to NA");
+            warned_size_t_overflow = true;
+          }
+        } else {
+          iv[i] = static_cast<int>(v);
+        }
+      }
+      cols.push_back(std::move(iv));    
     } else {
       cols.push_back(R_NilValue);
     }
@@ -877,6 +979,63 @@ struct RcppVisitor {
       else out.push_back(convertListCppToR(*p));
     }
     return out;
+  }
+  
+  // Visitor for SztMatrix: convert std::size_t -> int, overflow -> NA (warn once)
+  Rcpp::RObject operator()(const SztMatrix& sm) const {
+    if (sm.nrow == 0 || sm.ncol == 0) return R_NilValue;
+    // Rcpp IntegerMatrix uses int dims
+    Rcpp::IntegerMatrix M(static_cast<int>(sm.nrow), static_cast<int>(sm.ncol));
+    int* dst = INTEGER(M);
+    const size_t* src = sm.data.data();
+    const size_t N = sm.data.size();
+    static bool warned_szt_overflow = false;
+    const size_t INTMAX = static_cast<size_t>(std::numeric_limits<int>::max());
+    for (size_t i = 0; i < N; ++i) {
+      size_t v = src[i];
+      if (v > INTMAX) {
+        dst[i] = NA_INTEGER;
+        if (!warned_szt_overflow) {
+          Rcpp::warning("SztMatrix -> IntegerMatrix: some size_t values exceed "
+                          "INT_MAX and were converted to NA_integer_");
+          warned_szt_overflow = true;
+        }
+      } else {
+        dst[i] = static_cast<int>(v);
+      }
+    }
+    return M;
+  }
+  
+  // Handle vector<std::size_t> -> IntegerVector (with overflow -> NA and warning)
+  Rcpp::RObject operator()(const std::vector<size_t>& v) const {
+    R_xlen_t n = static_cast<R_xlen_t>(v.size());
+    Rcpp::IntegerVector iv(n);
+    bool warned = false;
+    for (R_xlen_t i = 0; i < n; ++i) {
+      size_t val = v[static_cast<size_t>(i)];
+      if (val > static_cast<size_t>(std::numeric_limits<int>::max())) {
+        iv[i] = NA_INTEGER;
+        if (!warned) {
+          Rcpp::Rcout << "convertListCppToR: some size_t values exceed INT_MAX "
+          "and were set to NA\n";
+          warned = true;
+        }
+      } else {
+        iv[i] = static_cast<int>(val);
+      }
+    }
+    return iv;
+  }
+  
+  // Handle std::size_t scalar -> integer scalar (with overflow -> NA and warning)
+  Rcpp::RObject operator()(size_t v) const {
+    if (v > static_cast<size_t>(std::numeric_limits<int>::max())) {
+      Rcpp::warning("convertListCppToR: size_t scalar exceeds INT_MAX; "
+                      "returning NA_integer_");
+      return Rcpp::wrap(NA_INTEGER);
+    }
+    return Rcpp::wrap(static_cast<int>(v));
   }
 };
 
