@@ -83,6 +83,8 @@
 #'     - \code{useEvents}: whether the analyses are planned
 #'       based on the number of events or calendar time.
 #'
+#'     - \code{numberOfIterations}: The number of simulation iterations.
+#'
 #'     - \code{n}: Sample size.
 #'
 #'     - \code{fixedFollowup}: Whether a fixed follow-up design is used.
