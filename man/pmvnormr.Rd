@@ -4,19 +4,51 @@
 \alias{pmvnormr}
 \title{Probability of Multivariate Normal Distribution over a Hyperrectangle}
 \usage{
-pmvnormr(lower, upper, mean = NULL, sigma, ..., nthreads = 0)
+pmvnormr(
+  lower,
+  upper,
+  mean = NULL,
+  sigma,
+  fast = TRUE,
+  n0 = 128,
+  n_max = 16384,
+  R = 8,
+  abseps = 1e-04,
+  releps = 0,
+  seed = 0,
+  parallel = TRUE,
+  nthreads = 0
+)
 }
 \arguments{
 \item{lower}{the lower bounds of the hyperrectangle.}
 
 \item{upper}{the upper bounds of the hyperrectangle.}
 
-\item{mean}{the mean vector (optional). If NULL, defaults to rep(0, nrow(sigma)).}
+\item{mean}{the mean vector (optional). If NULL, defaults to
+\code{rep(0, nrow(sigma))}.}
 
 \item{sigma}{the covariance matrix of the multivariate normal distribution.}
 
-\item{...}{forwarded to pmvnormRcpp (fast, n0, n_max, R, abseps, releps,
-seed, parallel)}
+\item{fast}{whether to use the fast version of pnorm and qnorm.}
+
+\item{n0}{the initial number of samples for the Monte Carlo estimation
+per replication.}
+
+\item{n_max}{the maximum number of samples for the Monte Carlo estimation
+per replication.}
+
+\item{R}{the number of replications for the Monte Carlo estimation.}
+
+\item{abseps}{the absolute error tolerance for the Monte Carlo estimation.}
+
+\item{releps}{the relative error tolerance for the Monte Carlo estimation.}
+
+\item{seed}{the random seed for reproducibility. If 0 (default), seed
+will be generated randomly.}
+
+\item{parallel}{whether to use parallel computation for the Monte Carlo
+estimation.}
 
 \item{nthreads}{the number of threads to use in simulations (0 means
 the default RcppParallel behavior).}
