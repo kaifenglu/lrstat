@@ -1,37 +1,33 @@
-@echo off
-REM configure.win -- generate src\Makevars with RcppParallel flags and C++17 setting
+#!/bin/sh
+# configure.win -- generate src/Makevars with RcppParallel flags and C++17 setting
+set -e
 
-REM Try to get R_HOME, otherwise call 'R RHOME'
-if not defined R_HOME (
-  for /f "usebackq delims=" %%R in (`R RHOME`) do set "R_HOME=%%R"
-)
+echo "Running configure.win for lrstat: generating src/Makevars"
 
-set "Rscript=%R_HOME%\bin\Rscript.exe"
-if not exist "%Rscript%" (
-  for /f "delims=" %%p in ('where Rscript 2^>nul') do set "Rscript=%%p"
-)
+# Prefer R_HOME/bin/Rscript if available
+if [ -n "${R_HOME}" ] && [ -x "${R_HOME}/bin/Rscript" ]; then
+  Rscript_exec="${R_HOME}/bin/Rscript"
+else
+  Rscript_exec="$(command -v Rscript 2>/dev/null || true)"
+fi
 
-if not exist "%Rscript%" (
-  echo Error: Rscript not found. >&2
-  exit /b 1
-)
+if [ -z "${Rscript_exec}" ]; then
+  echo "Error: Rscript not found in PATH and R_HOME/bin/Rscript not available." >&2
+  exit 1
+fi
 
-REM Write flags to temporary files
-"%Rscript%" -e "cat(RcppParallel::CxxFlags())" > tmp_cppflags.txt
-"%Rscript%" -e "cat(RcppParallel::RcppParallelLibs())" > tmp_libs.txt
+# Ask RcppParallel for the correct flags
+CPPFLAGS="$("${Rscript_exec}" -e 'cat(RcppParallel::CxxFlags())')"
+LIBS="$("${Rscript_exec}" -e 'cat(RcppParallel::RcppParallelLibs())')"
 
-set /p CPPFLAGS=<tmp_cppflags.txt
-set /p LIBS=<tmp_libs.txt
+# Make sure src exists
+mkdir -p src
 
-if not exist src mkdir src
+# Write a portable Makevars (no GNU make $(shell) or +=)
+cat > src/Makevars <<EOF
+CXX_STD = CXX17
+PKG_CPPFLAGS = ${CPPFLAGS}
+PKG_LIBS     = ${LIBS}
+EOF
 
-(
-  echo CXX_STD = CXX17
-  echo PKG_CPPFLAGS = %CPPFLAGS%
-  echo PKG_LIBS     = %LIBS%
-) > src\Makevars
-
-del /q tmp_cppflags.txt
-del /q tmp_libs.txt
-
-echo Wrote src\Makevars
+echo "Wrote src/Makevars"
