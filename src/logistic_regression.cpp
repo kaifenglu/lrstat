@@ -7,6 +7,7 @@
 #include <cctype>    // tolower
 #include <climits>   // INT_MIN
 #include <cmath>     // exp, fabs, isinf, isnan, log, pow
+#include <cstddef>   // size_t
 #include <numeric>   // accumulate, inner_product, iota
 #include <stdexcept> // invalid_argument, runtime_error
 #include <string>    // string
@@ -1092,7 +1093,7 @@ ListCpp logisregcpp(const DataFrameCpp& data,
   sumstat.push_back(loglik0, "loglik0");
   sumstat.push_back(loglik1, "loglik1");
   sumstat.push_back(niter, "niter");
-  sumstat.push_back(static_cast<int>(p), "p");
+  sumstat.push_back(p, "p");
   sumstat.push_back(link1, "link");
   sumstat.push_back(robust, "robust");
   sumstat.push_back(firth, "firth");
