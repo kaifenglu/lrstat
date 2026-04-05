@@ -151,6 +151,7 @@ for the overall study.
 the active treatment versus control.
 \item \code{useEvents}: whether the analyses are planned
 based on the number of events or calendar time.
+\item \code{numberOfIterations}: The number of simulation iterations.
 \item \code{n}: Sample size.
 \item \code{fixedFollowup}: Whether a fixed follow-up design is used.
 \item \code{rho1}: The first parameter of the Fleming-Harrington family
