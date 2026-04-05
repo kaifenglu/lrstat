@@ -3,6 +3,7 @@
 #include "mvnormr.h"
 
 #include <Rcpp.h>
+#include <RcppParallel.h>
 
 #include <cmath>
 #include <cstddef>
@@ -296,6 +297,54 @@ void extend_replicate(ReplicateAccumulator& acc,
   acc.n_done = n_target;
 }
 
+
+struct ExtendReplicatesWorker : public RcppParallel::Worker {
+  std::vector<ReplicateAccumulator>& reps;
+  const std::size_t n_target;
+  const std::size_t J;
+  const std::vector<double>& lower_std;
+  const std::vector<double>& upper_std;
+  const std::vector<double>& C;
+  const bool fast;
+  std::vector<double>& phat;
+
+  ExtendReplicatesWorker(std::vector<ReplicateAccumulator>& reps_,
+                         std::size_t n_target_,
+                         std::size_t J_,
+                         const std::vector<double>& lower_std_,
+                         const std::vector<double>& upper_std_,
+                         const std::vector<double>& C_,
+                         bool fast_,
+                         std::vector<double>& phat_)
+    : reps(reps_),
+      n_target(n_target_),
+      J(J_),
+      lower_std(lower_std_),
+      upper_std(upper_std_),
+      C(C_),
+      fast(fast_),
+      phat(phat_) {}
+
+  void operator()(std::size_t begin, std::size_t end) {
+    std::vector<double> w(J > 0 ? (J - 1) : 0);
+    std::vector<double> z(J, 0.0);
+
+    for (std::size_t rep = begin; rep < end; ++rep) {
+      auto& acc = reps[rep];
+
+      if (n_target > acc.n_done) {
+        acc.sum += pmvn_sum_range_incremental(
+          acc, J, lower_std, upper_std, C, fast,
+          acc.n_done, n_target, w.data(), z.data());
+        acc.n_done = n_target;
+      }
+
+      phat[rep] = acc.sum / static_cast<double>(n_target);
+    }
+  }
+};
+
+
 // Compute mean and SE from replicate means phat[0..R-1]
 void mean_se_from_replicates(const std::vector<double>& phat,
                              double& mean_out,
@@ -317,7 +366,8 @@ PMVNResult pmvnorm_adaptive(size_t J,
                             size_t R,
                             double abseps,
                             double releps,
-                            std::uint64_t seed) {
+                            std::uint64_t seed,
+                            bool parallel) {
   if (J < 1) throw std::invalid_argument("J must be >= 1");
   if (R < 2) throw std::invalid_argument("R must be >= 2");
   if (n0 < 1) throw std::invalid_argument("n0 must be >= 1");
@@ -351,10 +401,15 @@ PMVNResult pmvnorm_adaptive(size_t J,
 
   for (;;) {
     // Extend each replicate to n
-    for (size_t rep = 0; rep < R; ++rep) {
-      extend_replicate(reps[rep], n, J, lower_std, upper_std, C, fast,
-                       w.data(), y.data());
-      phat[rep] = reps[rep].sum / static_cast<double>(n);
+    if (!parallel) {
+      for (size_t rep = 0; rep < R; ++rep) {
+        extend_replicate(reps[rep], n, J, lower_std, upper_std, C, fast,
+                         w.data(), y.data());
+        phat[rep] = reps[rep].sum / static_cast<double>(n);
+      }
+    } else {
+      ExtendReplicatesWorker worker(reps, n, J, lower_std, upper_std, C, fast, phat);
+      RcppParallel::parallelFor(0, R, worker);
     }
 
     mean_se_from_replicates(phat, pbar, se);
@@ -377,100 +432,25 @@ PMVNResult pmvnorm_adaptive(size_t J,
   return out;
 }
 
-// Main entry point: validate inputs, permute/standardize, factorize, and
-// call adaptive routine.
-PMVNResult pmvnormcpp(const std::vector<double>& lower,
-                      const std::vector<double>& upper,
-                      const std::vector<double>& mean,
-                      const FlatMatrix& sigma,
-                      bool fast,
-                      size_t n0,
-                      size_t n_max,
-                      size_t R,
-                      double abseps,
-                      double releps,
-                      uint64_t seed) {
+
+// helper struct to hold precomputed state
+struct PMVNPrecomputed {
+  size_t J;
+  std::vector<double> lower_std; // length J
+  std::vector<double> upper_std;
+  std::vector<double> sd;
+  std::vector<double> C;         // triangular factor (properly standardized)
+};
+
+// permute/standardize/factorize and return PMVNPrecomputed struct
+PMVNPrecomputed precompute_pmvn(const std::vector<double>& lower,
+                                const std::vector<double>& upper,
+                                const std::vector<double>& mean,
+                                const FlatMatrix& sigma) {
   size_t J = lower.size();
-  if (J < 1) throw std::invalid_argument("J must be >= 1");
-  if (upper.size() != J || mean.size() != J)
-    throw std::invalid_argument("lower/upper/mean must have same length");
-  if (sigma.nrow != J || sigma.ncol != J)
-    throw std::invalid_argument("sigma must be J x J");
-  if (R < 2) throw std::invalid_argument("R must be >= 2");
-  if (n0 < 1) throw std::invalid_argument("n0 must be >= 1");
-  if (n_max < n0) throw std::invalid_argument("n_max must be >= n0");
-  if (abseps <= 0.0) throw std::invalid_argument("abseps must be positive");
-  if (releps < 0.0) throw std::invalid_argument("releps must be non-negative");
-
-  // handle special case of univariate MVN probability with simple formula
-  if (J == 1) {
-    double sd = std::sqrt(sigma(0, 0));
-    double aj = (lower[0] - mean[0]) / sd;
-    double bj = (upper[0] - mean[0]) / sd;
-    double p = boost_pnorm(bj) - boost_pnorm(aj);
-    if (p <= 0.0) return PMVNResult{0.0, 0.0, 1}; // handle zero prob case
-    return PMVNResult{p, 0.0, 1};
-  }
-
-  // special case of compound symmetry with positive correlations
-  if (J > 1) {
-    bool is_comp_symm = true;
-    double diagonal = sigma(0, 0);
-    double off_diag = sigma(0, 1);
-    if (off_diag < 0.0 || off_diag >= diagonal) {
-      is_comp_symm = false;
-    } else {
-      for (size_t j = 0; j < J; ++j) {
-        if (sigma(j, j) != diagonal) {
-          is_comp_symm = false;
-          break;
-        }
-        for (size_t k = j + 1; k < J; ++k) {
-          if (sigma(j, k) != off_diag) {
-            is_comp_symm = false;
-            break;
-          }
-        }
-        if (!is_comp_symm) break;
-      }
-    }
-
-    if (is_comp_symm) {
-      double sigma_e = std::sqrt(diagonal - off_diag);
-      double sigma_b = std::sqrt(off_diag);
-      if (off_diag == 0.0) {
-        // indepedent case, just product of univariate probabilities
-        double p = 1.0;
-        for (size_t j = 0; j < J; ++j) {
-          double aj = (lower[j] - mean[j]) / sigma_e;
-          double bj = (upper[j] - mean[j]) / sigma_e;
-          double mass = boost_pnorm(bj) - boost_pnorm(aj);
-          if (mass <= 0.0) return PMVNResult{0.0, 0.0, 1}; // handle zero prob case
-          p *= mass;
-        }
-        return PMVNResult{p, 0.0, 1};
-      }
-
-      auto f = [&](double b) {
-        double p = 1.0;
-        for (size_t j = 0; j < J; ++j) {
-          double aj = (lower[j] - mean[j] - b) / sigma_e;
-          double bj = (upper[j] - mean[j] - b) / sigma_e;
-          double mass = boost_pnorm(bj) - boost_pnorm(aj);
-          if (mass <= 0.0) return 0.0; // handle zero prob case
-          p *= mass;
-        }
-        return p * boost_dnorm(b, 0.0, sigma_b);
-      };
-
-      std::vector<double> breaks = { -6.0 * sigma_b, 0.0, 6.0 * sigma_b };
-      double p = integrate3(f, breaks, 1e-6);
-      return PMVNResult{p, 0.0, 1};
-    }
-  }
-
-  auto piv = greedy_order_mvn_rect(sigma, mean, lower, upper);
   std::vector<double> lower_perm(J), upper_perm(J), mean_perm(J);
+  FlatMatrix sigma_perm(J, J);
+  auto piv = greedy_order_mvn_rect(sigma, mean, lower, upper);
   for (size_t j = 0; j < J; ++j) {
     const size_t oj = piv[j];
     lower_perm[j] = lower[oj];
@@ -478,7 +458,6 @@ PMVNResult pmvnormcpp(const std::vector<double>& lower,
     mean_perm[j]  = mean[oj];
   }
 
-  FlatMatrix sigma_perm(J, J);
   for (size_t j = 0; j < J; ++j) {
     const size_t oj = piv[j];
     for (size_t i = 0; i < J; ++i) {
@@ -512,9 +491,122 @@ PMVNResult pmvnormcpp(const std::vector<double>& lower,
     upper_std[j] = (upper_perm[j] - mean_perm[j]) / sd[j];
   }
 
-  return pmvnorm_adaptive(
-    J, lower_std, upper_std, C, fast, n0, n_max,  R, abseps, releps, seed);
+  return PMVNPrecomputed{J, lower_std, upper_std, sd, C};
 }
+
+// use precomputed C/lower_std/upper_std and call the adaptive engine
+PMVNResult pmvnorm_with_precomp(const PMVNPrecomputed& P,
+                                bool fast, size_t n0, size_t n_max, size_t R,
+                                double abseps, double releps,
+                                uint64_t seed, bool parallel) {
+
+  return pmvnorm_adaptive(P.J, P.lower_std, P.upper_std, P.C,
+                          fast, n0, n_max, R, abseps, releps, seed, parallel);
+}
+
+// detect if sigma is compound symmetry with non-negative correlations
+bool is_compound_symmetry(const FlatMatrix& sigma) {
+  size_t J = sigma.nrow;
+  if (sigma.ncol != J) return false;
+  if (J == 0) throw std::invalid_argument("sigma must be non-empty");
+  if (J == 1) return true;
+
+  double diagonal = sigma(0, 0);
+  double off_diag = sigma(0, 1);
+  if (off_diag < 0.0 || off_diag >= diagonal) {
+    return false;
+  }
+
+  for (size_t j = 0; j < J; ++j) {
+    if (sigma(j, j) != diagonal) {
+      return false;
+    }
+    for (size_t k = j + 1; k < J; ++k) {
+      if (sigma(j, k) != off_diag) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+// Main entry point: validate inputs, permute/standardize, factorize, and
+// call adaptive routine.
+PMVNResult pmvnormcpp(const std::vector<double>& lower,
+                      const std::vector<double>& upper,
+                      const std::vector<double>& mean,
+                      const FlatMatrix& sigma,
+                      bool fast,
+                      size_t n0,
+                      size_t n_max,
+                      size_t R,
+                      double abseps,
+                      double releps,
+                      uint64_t seed,
+                      bool parallel) {
+  size_t J = lower.size();
+  if (J < 1) throw std::invalid_argument("J must be >= 1");
+  if (upper.size() != J || mean.size() != J)
+    throw std::invalid_argument("lower/upper/mean must have same length");
+  if (sigma.nrow != J || sigma.ncol != J)
+    throw std::invalid_argument("sigma must be J x J");
+  if (R < 2) throw std::invalid_argument("R must be >= 2");
+  if (n0 < 1) throw std::invalid_argument("n0 must be >= 1");
+  if (n_max < n0) throw std::invalid_argument("n_max must be >= n0");
+  if (abseps <= 0.0) throw std::invalid_argument("abseps must be positive");
+  if (releps < 0.0) throw std::invalid_argument("releps must be non-negative");
+
+  // handle special case of univariate MVN probability with simple formula
+  if (J == 1) {
+    double sd = std::sqrt(sigma(0, 0));
+    double aj = (lower[0] - mean[0]) / sd;
+    double bj = (upper[0] - mean[0]) / sd;
+    double p = boost_pnorm(bj) - boost_pnorm(aj);
+    if (p <= 0.0) return PMVNResult{0.0, 0.0, 1}; // handle zero prob case
+    return PMVNResult{p, 0.0, 1};
+  }
+
+  // special case of compound symmetry with positive correlations
+  if (J > 1 && is_compound_symmetry(sigma)) {
+    double diagonal = sigma(0, 0);
+    double off_diag = sigma(0, 1);
+    double sigma_e = std::sqrt(diagonal - off_diag);
+    double sigma_b = std::sqrt(off_diag);
+    if (off_diag == 0.0) {
+      // indepedent case, just product of univariate probabilities
+      double p = 1.0;
+      for (size_t j = 0; j < J; ++j) {
+        double aj = (lower[j] - mean[j]) / sigma_e;
+        double bj = (upper[j] - mean[j]) / sigma_e;
+        double mass = boost_pnorm(bj) - boost_pnorm(aj);
+        if (mass <= 0.0) return PMVNResult{0.0, 0.0, 1}; // handle zero prob case
+        p *= mass;
+      }
+      return PMVNResult{p, 0.0, 1};
+    }
+
+    auto f = [&](double b) {
+      double p = 1.0;
+      for (size_t j = 0; j < J; ++j) {
+        double aj = (lower[j] - mean[j] - b) / sigma_e;
+        double bj = (upper[j] - mean[j] - b) / sigma_e;
+        double mass = boost_pnorm(bj) - boost_pnorm(aj);
+        if (mass <= 0.0) return 0.0; // handle zero prob case
+        p *= mass;
+      }
+      return p * boost_dnorm(b, 0.0, sigma_b);
+    };
+
+    std::vector<double> breaks = { -6.0 * sigma_b, 0.0, 6.0 * sigma_b };
+    double p = integrate3(f, breaks, 1e-6);
+    return PMVNResult{p, 0.0, 1};
+  }
+
+  PMVNPrecomputed P = precompute_pmvn(lower, upper, mean, sigma);
+  return pmvnorm_with_precomp(P, fast, n0, n_max, R, abseps, releps, seed, parallel);
+}
+
 
 // [[Rcpp::export]]
 Rcpp::List pmvnormRcpp(
@@ -528,10 +620,11 @@ Rcpp::List pmvnormRcpp(
     size_t R = 8,
     double abseps = 1e-4,
     double releps = 0.0,
-    uint64_t seed = 0) {
+    uint64_t seed = 0,
+    bool parallel = true) {
   auto sigma_fm = flatmatrix_from_Rmatrix(sigma);
   auto out = pmvnormcpp(lower, upper, mean, sigma_fm, fast, n0, n_max,
-                        R, abseps, releps, seed);
+                        R, abseps, releps, seed, parallel);
 
   return Rcpp::List::create(
     Rcpp::Named("prob") = out.prob,
@@ -550,7 +643,8 @@ double qmvnormcpp(const double p,
                   size_t R,
                   double abseps,
                   double releps,
-                  uint64_t seed) {
+                  uint64_t seed,
+                  bool parallel) {
   if (p <= 0.0 || p >= 1.0) throw std::invalid_argument("p must lie in (0,1)");
   size_t J = mean.size();
   if (J < 1) throw std::invalid_argument("J must be >= 1");
@@ -562,18 +656,33 @@ double qmvnormcpp(const double p,
   if (abseps <= 0.0) throw std::invalid_argument("abseps must be positive");
   if (releps < 0.0) throw std::invalid_argument("releps must be non-negative");
 
-  auto f = [&](double x) {
-    std::vector<double> lower(J, -std::numeric_limits<double>::infinity());
-    std::vector<double> upper(J, x);
-    auto res = pmvnormcpp(lower, upper, mean, sigma, fast, n0, n_max,
-                          R, abseps, releps, seed);
-    return res.prob - p;
-  };
-
+  double upper0 = mean_kahan(mean);
+  std::vector<double> lower(J, -std::numeric_limits<double>::infinity());
+  std::vector<double> upper(J, upper0);
   double x1 = mean[0] - 10.0 * std::sqrt(sigma(0, 0));
   double x2 = mean[0] + 10.0 * std::sqrt(sigma(0, 0));
-  double q = brent(f, x1, x2, 1e-4);
-  return q;
+  if (J == 1 || (J > 1 && is_compound_symmetry(sigma))) {
+    auto f = [&](double x) {
+      std::fill(upper.begin(), upper.end(), x);
+      auto res = pmvnormcpp(lower, upper, mean, sigma, fast, n0, n_max,
+                            R, abseps, releps, seed, parallel);
+      return res.prob - p;
+    };
+    return brent(f, x1, x2, 1e-4);
+  } else {
+    PMVNPrecomputed P = precompute_pmvn(lower, upper, mean, sigma);
+    std::vector<double> upper_std0 = P.upper_std;
+    auto f = [&](double x) {
+      // update upper limits in P and call adaptive engine
+      for (size_t j = 0; j < J; ++j) {
+        P.upper_std[j] = upper_std0[j]  + (x - upper0) / P.sd[j];
+      }
+      auto res = pmvnorm_with_precomp(P, fast, n0, n_max, R, abseps, releps,
+                                      seed, parallel);
+      return res.prob - p;
+    };
+    return brent(f, x1, x2, 1e-4);
+  }
 }
 
 // [[Rcpp::export]]
@@ -587,8 +696,10 @@ double qmvnormRcpp(
     size_t R = 8,
     double abseps = 1e-4,
     double releps = 0.0,
-    uint64_t seed = 0) {
+    uint64_t seed = 0,
+    bool parallel = true) {
   auto sigma_fm = flatmatrix_from_Rmatrix(sigma);
-  return qmvnormcpp(p, mean, sigma_fm, fast, n0, n_max, R, abseps, releps, seed);
+  return qmvnormcpp(
+    p, mean, sigma_fm, fast, n0, n_max, R, abseps, releps, seed, parallel);
 }
 
