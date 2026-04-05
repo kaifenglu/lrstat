@@ -27,7 +27,7 @@ print.design <- function(x, ...) {
                  "maximum information: ", round(a$information, 2))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -220,7 +220,7 @@ print.designEquiv <- function(x, ...) {
   str3 <- paste0("Maximum information: ", round(a$information, 2))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha: ",
                  round(a$alpha, 4), ", ",
                  "attained under H10: ",
@@ -363,7 +363,7 @@ print.adaptDesign <- function(x, ...) {
   if (!is.na(des1$conditionalPower)) {
     str5 = paste0("Conditional power: ", round(des1$conditionalPower, 3),
                   ", ", "predictive power: ",
-                  round(des1$predictivePower, 3))
+                  round(des1$predictivePower, 4))
 
     str6 = paste0("Muller & Schafer method for secondary trial: ",
                   des1$MullerSchafer)
@@ -417,7 +417,7 @@ print.adaptDesign <- function(x, ...) {
                  "maximum information: ", round(a$information, 2))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall significance level (1-sided): ",
                  round(a$alpha, 4))
 
@@ -541,7 +541,7 @@ print.lrpower <- function(x, ...) {
   }
 
   str2 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall significance level (1-sided): ",
                  round(a$alpha, 4))
 
@@ -851,7 +851,7 @@ print.lrsim <- function(x, ...) {
     str1 = paste0(str1, " for log-rank test")
   }
 
-  str2 <- paste0("Empirical power: ", round(a$overallReject, 3))
+  str2 <- paste0("Empirical power: ", round(a$overallReject, 4))
 
   str3 <- paste0("Expected # events: ",
                  round(a$expectedNumberOfEvents, 1))
@@ -968,7 +968,7 @@ print.nbpower <- function(x, ...) {
                        collase = " "))
 
   str5 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall significance level (1-sided): ",
                  round(a$alpha, 4))
 
@@ -1270,7 +1270,7 @@ print.nbpowerequiv <- function(x, ...) {
                        collapse = " "))
 
   str5 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha: ",
                  round(a$alpha, 4))
 
@@ -1512,7 +1512,7 @@ print.nbpower1s <- function(x, ...) {
   }
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall significance level (1-sided): ",
                  round(a$alpha, 4))
 
@@ -1759,7 +1759,7 @@ print.designOneMean <- function(x, ...) {
                  "standard deviation: ", round(a$stDev, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -1982,7 +1982,7 @@ print.designPairedMeanDiff <- function(x, ...) {
                  "standard deviation: ", round(a$stDev, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -2204,7 +2204,7 @@ print.designPairedMeanRatio <- function(x, ...) {
                  "coefficient of variation: ", round(a$CV, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha: ",
                  round(a$alpha, 4))
 
@@ -2427,7 +2427,7 @@ print.designMeanDiff <- function(x, ...) {
                  "standard deviation: ", round(a$stDev, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -2652,7 +2652,7 @@ print.designMeanRatio <- function(x, ...) {
                  "coefficient of variation: ", round(a$CV, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -2879,7 +2879,7 @@ print.designMeanDiffXO <- function(x, ...) {
                  round(a$stDev, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -3104,7 +3104,7 @@ print.designMeanRatioXO <- function(x, ...) {
                  "coefficient of variation: ", round(a$CV, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -3334,7 +3334,7 @@ print.designPairedMeanDiffEquiv <- function(x, ...) {
                  round(a$stDev, 3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha: ",
                  round(a$alpha, 4), ", ",
                  "attained alpha: ",
@@ -3511,7 +3511,7 @@ print.designPairedMeanRatioEquiv <- function(x, ...) {
                  round(a$CV, 3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha: ",
                  round(a$alpha, 4), ", ",
                  "attained alpha: ",
@@ -3688,7 +3688,7 @@ print.designMeanDiffEquiv <- function(x, ...) {
                  round(a$stDev, 3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha: ",
                  round(a$alpha, 4), ", ",
                  "attained alpha: ",
@@ -3869,7 +3869,7 @@ print.designMeanRatioEquiv <- function(x, ...) {
                  round(a$CV, 3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4), ", ",
                  "attained alpha: ",
@@ -4050,7 +4050,7 @@ print.designMeanDiffXOEquiv <- function(x, ...) {
                  round(a$stDev, 3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4), ", ",
                  "attained alpha: ",
@@ -4232,7 +4232,7 @@ print.designMeanRatioXOEquiv <- function(x, ...) {
                  round(a$CV, 3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4), ", ",
                  "attained alpha: ",
@@ -4406,7 +4406,7 @@ print.designWilcoxon <- function(x, ...) {
                  round(a$pLarger, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -4632,7 +4632,7 @@ print.designMeanDiffMMRM <- function(x, ...) {
                        3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -4892,7 +4892,7 @@ print.designMeanDiffCarryover <- function(x, ...) {
                  "intra-subject correlation: ",
                  round(x$corr, 3))
 
-  str5 <- paste0("Power: ", round(x$power, 3), ", ",
+  str5 <- paste0("Power: ", round(x$power, 4), ", ",
                  "alpha (1-sided): ", round(x$alpha, 4), ", ",
                  "CI half-width: ", round(x$half_width, 3))
 
@@ -4995,7 +4995,7 @@ print.designMeanDiffCarryoverEquiv <- function(x, ...) {
                  "intra-subject correlation: ",
                  round(x$corr, 3))
 
-  str6 <- paste0("Power: ", round(x$power, 3), ", ",
+  str6 <- paste0("Power: ", round(x$power, 4), ", ",
                  "alpha (1-sided): ", round(x$alpha, 4), ", ",
                  "CI half-width: ", round(x$half_width, 3))
 
@@ -5220,7 +5220,7 @@ print.designOneSlope <- function(x, ...) {
                  round(a$stDevCovariate, 3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -5447,7 +5447,7 @@ print.designSlopeDiff <- function(x, ...) {
                  round(a$stDevCovariate, 3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -5684,7 +5684,7 @@ print.designSlopeDiffMMRM <- function(x, ...) {
                                                 x$settings$G[2,2]), 3))
 
   str5 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -5984,7 +5984,7 @@ print.designOneProportion <- function(x, ...) {
                  round(a$pi, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -6214,7 +6214,7 @@ print.designPairedPropMcNemar <- function(x, ...) {
                  "risk difference: ", round(a$riskDiff, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -6431,7 +6431,7 @@ print.designRiskDiff <- function(x, ...) {
                  "proportion on control: ", round(a$pi2, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -6649,7 +6649,7 @@ print.designRiskRatio <- function(x, ...) {
                  "proportion on control: ", round(a$pi2, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -6868,7 +6868,7 @@ print.designRiskRatioFM <- function(x, ...) {
                  "proportion on control: ", round(a$pi2, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -7086,7 +7086,7 @@ print.designOddsRatio <- function(x, ...) {
                  "proportion on control: ", round(a$pi2, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4))
 
@@ -7310,7 +7310,7 @@ print.designRiskDiffEquiv <- function(x, ...) {
                  "risk difference: ", round(a$riskDiff, 3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha: ",
                  round(a$alpha, 4), ", ",
                  "attained under H10: ",
@@ -7492,7 +7492,7 @@ print.designRiskRatioEquiv <- function(x, ...) {
                  "risk ratio: ", round(a$riskRatio, 3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha: ",
                  round(a$alpha, 4), ", ",
                  "attained under H10: ",
@@ -7674,7 +7674,7 @@ print.designOddsRatioEquiv <- function(x, ...) {
                  "odds ratio: ", round(a$oddsRatio, 3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha (1-sided): ",
                  round(a$alpha, 4), ", ",
                  "attained under H10: ",
@@ -8145,7 +8145,7 @@ print.kmpower <- function(x, ...) {
                  "on control: ", round(a$surv2, 3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall significance level (1-sided): ",
                  round(a$alpha, 4))
 
@@ -8386,7 +8386,7 @@ print.rmpower <- function(x, ...) {
                  "on control: ", round(a$rmst2, 3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall significance level (1-sided): ",
                  round(a$alpha, 4))
 
@@ -8629,7 +8629,7 @@ print.kmpowerequiv <- function(x, ...) {
                  "difference: ", round(a$survDiff, 3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha: ",
                  round(a$alpha, 4))
 
@@ -8829,7 +8829,7 @@ print.rmpowerequiv <- function(x, ...) {
                  "difference: ", round(a$rmstDiff, 3))
 
   str4 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha: ",
                  round(a$alpha, 4))
 
@@ -9023,7 +9023,7 @@ print.lrpowerequiv <- function(x, ...) {
                  round(a$hazardRatioUpper, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall alpha: ",
                  round(a$alpha, 4))
 
@@ -9224,7 +9224,7 @@ print.kmpower1s <- function(x, ...) {
                  "under H1: ", round(a$surv, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall significance level (1-sided): ",
                  round(a$alpha, 4))
 
@@ -9465,7 +9465,7 @@ print.rmpower1s <- function(x, ...) {
                  "under H1: ", round(a$rmst, 3))
 
   str3 <- paste0("Overall power: ",
-                 round(a$overallReject, 3), ", ",
+                 round(a$overallReject, 4), ", ",
                  "overall significance level (1-sided): ",
                  round(a$alpha, 4))
 
@@ -9991,3 +9991,214 @@ print.assess_phregr <- function(x, ...) {
   invisible(x)
 }
 
+
+#' @title Print Two-Stage Seamless Sequential Design
+#' @description Prints the stopping boundaries and power for
+#' two-stage seamless sequential design.
+#'
+#' @param x The design object to print.
+#' @param ... Ensures that all arguments starting from "..." are named.
+#'
+#' @return A tabular printout of the design elements.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @export
+print.tsssd <- function(x, ...) {
+  a = x$overallResults
+  s = x$byStageResults
+  t = x$byArmResults
+  k = a$K
+
+  # overall results
+  if (k>1) {
+    str1 <- "Phase 2/3 seamless group-sequential design"
+  } else {
+    str1 <- "Phase 2/3 seamless design"
+  }
+  str1 <- paste0(str1, " for log-rank test")
+
+  str2 <- paste0("Overall power: ",
+                 round(a$overallReject, 4), ", ",
+                 "overall alpha (1-sided): ",
+                 round(a$alpha, 4))
+
+  str3 <- paste0("Number of active arms in phase 2: ", a$M)
+
+  str4 <- paste0("Randomization ratio of each active vs. control: ", a$r)
+
+  str5 <- paste0("Using correlation for critical value calculation: ",
+                 a$corr_known)
+
+  str6 <- paste0("Number of looks in phase 3: ", a$K)
+
+  asf = tolower(x$settings$typeAlphaSpending)
+  asfpar = round(x$settings$parameterAlphaSpending, 3)
+  asfuser = round(x$settings$userAlphaSpending, 4)
+
+  if (asf == "of") {
+    str7 <- paste0("Alpha spending: O'Brien-Fleming")
+  } else if (asf == "p") {
+    str7 <- paste0("Alpha spending: Pocock")
+  } else if (asf == "wt") {
+    str7 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+  } else if (asf == "sfof") {
+    str7 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+  } else if (asf == "sfp") {
+    str7 <- paste0("Alpha spending: Lan-DeMets Pocock")
+  } else if (asf == "sfkd") {
+    str7 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
+  } else if (asf == "sfhsd") {
+    str7 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+  } else if (asf == "user") {
+    str7 <- paste0("Alpha spending: User defined(",
+                   paste(asfuser, collapse = ","), ")")
+  } else {
+    str7 <- "Alpha spending: None"
+  }
+
+  if (!any(is.na(x$settings$spendingTime)) &&
+      !all(x$settings$spendingTime == s$informationRates)) {
+    str8 <- paste0("Spending time: ",
+                   paste(round(x$settings$spendingTime, 3), collapse = ","))
+    df1 <- data.frame(x = rep("", 9))
+    colnames(df1) <- NULL
+    rownames(df1) <- c(str1, str2, str3, str4, str5,
+                       paste(str6, str7, sep = ", "), str8, "")
+  } else {
+    df1 <- data.frame(x = rep("", 8))
+    colnames(df1) <- NULL
+    rownames(df1) <- c(str1, str2, str3, str4, str5, str6,
+                       paste(str7, sep = ", "), "")
+  }
+
+  # by stage results
+  b <- s[, c("informationRates", "efficacyBounds",
+             "cumulativeRejection", "cumulativeAlphaSpent",
+             "efficacyTheta", "efficacyP", "information")]
+
+  # format number of digits after decimal for each column
+  j2 <- 7
+  j3 <- c(1,2,5)
+  j4 <- c(3,4,6)
+
+  b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
+  b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
+  b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
+
+  df2 <- t(b)
+  rownames(df2) <- c("Information rate",
+                     "Efficacy boundary (Z)",
+                     "Cumulative rejection",
+                     "Cumulative alpha spent",
+                     "Efficacy boundary (theta)",
+                     "Efficacy boundary (p)",
+                     "Information")
+
+  colnames(df2) <- paste("Stage", seq_len(ncol(df2)), sep=" ")
+
+  # by arm results
+  j3 <- 1
+  j4 <- c(2,3,4)
+  t[j3] <- lapply(t[j3], formatC, format = "f", digits = 3)
+  t[j4] <- lapply(t[j4], formatC, format = "f", digits = 4)
+
+  df3 <- t(t)
+  rownames(df3) <- c("Treatment effect (theta)",
+                     "Being the best in phase 2",
+                     "Power",
+                     "Conditional power")
+  colnames(df3) <- paste("Arm", seq_len(ncol(df3)), sep=" ")
+
+  print(df1, ..., na.print = "" , quote = FALSE )
+  print(df2, ..., na.print = "" , quote = FALSE )
+  cat("\n")
+  print(df3, ..., na.print = "" , quote = FALSE )
+  invisible(x)
+}
+
+
+#' @title Print Simulation Results for Two-Stage Seamless Sequential Design
+#' @description Prints the summary statistics from simulation.
+#'
+#' @param x The lrsim_tsssd object to print.
+#' @param ... Ensures that all arguments starting from "..." are named.
+#'
+#' @return A tabular printout of the summary statistics from simulation runs.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @export
+print.lrsim_tsssd <- function(x, ...) {
+  a = x$overview
+  k = a$K + 1
+
+  if (k>1) {
+    str1 <- paste0("Phase 2/3 seamless group-sequential design")
+  } else {
+    str1 <- "Phase 2/3 seamless design"
+  }
+
+  if (a$rho1 != 0 || a$rho2 != 0) {
+    str1 <- paste0(str1, " for weighted log-rank test, FH(",
+                   a$rho1, ", ", a$rho2, ")")
+  } else {
+    str1 <- paste0(str1, " for log-rank test")
+  }
+
+  str2 <- paste0("Empirical power: ", round(a$overallReject, 4))
+
+  str3 <- paste0("Number of active arms in phase 2: ", a$M)
+
+  str4 <- paste0("Number of looks in phase 3: ", a$K)
+
+  str5 <- paste0("Expected # events: ",
+                 round(a$expectedNumberOfEvents, 1))
+
+  str6 <- paste0("Expected # dropouts: ",
+                 round(a$expectedNumberOfDropouts, 1))
+
+  str7 <- paste0("Expected # subjects: ",
+                 round(a$expectedNumberOfSubjects, 1))
+
+  str8 <- paste0("Expected study duration: ",
+                 round(a$expectedStudyDuration, 1))
+
+  str9 <- paste0("n: ", a$n, ", ",
+                 "fixed follow-up: ", a$fixedFollowup)
+
+  str10 <- paste0("Number of simulations: ", a$numberOfIterations)
+
+  df1 = data.frame(x = rep("", 11))
+  colnames(df1) = NULL
+  rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7, str8,
+                    str9, str10, "")
+
+  df2 <- t(data.frame(selectAsBest = a$selectAsBest))
+  rownames(df2) <- "Selected as best in phase 2"
+  colnames(df2) <- paste("Arm", seq_len(ncol(df2)), sep=" ")
+
+  df3 <- data.frame(activeArm = rep(c(seq(1, a$M), "Overall"), each = k),
+                    stage = rep(seq(1, k), times = a$M + 1),
+                    cumReject = c(a$cumulativeRejection),
+                    nEvents = c(a$numberOfEvents),
+                    nDropouts = c(a$numberOfDropouts),
+                    nSubjects = c(a$numberOfSubjects),
+                    analysisTime = c(a$analysisTime))
+
+  # format number of digits after decimal for each column
+  j1 <- c(4,5,6,7)
+  j4 <- 3
+  df3[j1] <- lapply(df3[j1], formatC, format = "f", digits = 1)
+  df3[j4] <- lapply(df3[j4], formatC, format = "f", digits = 4)
+
+  print(df1, ..., na.print = "" , quote = FALSE )
+  print(df2, ..., na.print = "" , quote = FALSE )
+  cat("\n")
+  print(df3, ..., na.print = "" , quote = FALSE, row.names= FALSE)
+  invisible(x)
+}
