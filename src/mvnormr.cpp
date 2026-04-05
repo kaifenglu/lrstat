@@ -331,12 +331,8 @@ struct ExtendReplicatesWorker : public RcppParallel::Worker {
 
     for (std::size_t rep = begin; rep < end; ++rep) {
       auto& acc = reps[rep];
-      if (n_target > acc.n_done) {
-        acc.sum += pmvn_sum_range_incremental(
-          acc, J, lower_std, upper_std, C, fast,
-          acc.n_done, n_target, w.data(), z.data());
-        acc.n_done = n_target;
-      }
+      extend_replicate(acc, n_target, J, lower_std, upper_std, C,
+                       fast, w.data(), z.data());
       phat[rep] = acc.sum / static_cast<double>(n_target);
     }
   }
