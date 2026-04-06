@@ -237,13 +237,13 @@ sim1 = lrsim_tsssd(
   accrualTime = c(0, 8),
   accrualIntensity = c(10, 28),
   piecewiseSurvivalTime = 0,
-  lambdas = list(log(2)/12*0.60, log(2)/12*0.70, log(2)/12),
+  lambdas = list(log(2)/12*0.5, log(2)/12*0.7, log(2)/12),
   n = 700,
-  plannedEvents = c(186, 259, 295),
-  maxNumberOfIterations = 1000,
+  plannedEvents = c(40, 80, 120),
+  maxNumberOfIterations = 10000,
   maxNumberOfRawDatasetsPerStage = 1,
   seed = 314159,
-  nthreads = 1)
+  nthreads = 0)
 
 head(sim1$sumdata1)
 head(sim1$sumdata2)
