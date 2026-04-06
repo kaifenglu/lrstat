@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getBound_tsssd}
 \alias{getBound_tsssd}
-\title{Efficacy Boundaries for Two-Stage Seamless Sequential Design}
+\title{Efficacy Boundaries for Two-Stage Seamless Sequential Design (TSSSD)}
 \usage{
 getBound_tsssd(
   M = NA_integer_,
@@ -19,59 +19,73 @@ getBound_tsssd(
 )
 }
 \arguments{
-\item{M}{Number of active arms in phase 2. Must be at least 2.}
+\item{M}{Number of active treatment arms in Phase 2 (\eqn{M \ge 2}).}
 
-\item{r}{Randomization ratio of each active arm to the common control in
-phase 2. Must be positive.}
+\item{r}{Randomization ratio of each active arm to the common control
+in Phase 2.}
 
-\item{corr_known}{whether the correlation between the Wald statistics in
-phase 2 is known. If \code{TRUE}, the correlation is determined by
-the randomization ratio \code{r} as \eqn{r / (r + 1)};
-if \code{FALSE}, the correlation is conservatively set to 0.}
+\item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
+statistics in Phase 2 is derived from the randomization ratio \eqn{r}
+as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
+0 is assumed.}
 
-\item{k}{Look number for the current analysis.}
+\item{k}{The index of the current look in Phase 3.}
 
-\item{informationRates}{Information rates up to the current look. Must be
-increasing and less than or equal to 1.}
+\item{informationRates}{A numeric vector of information rates up to the
+current look. Values must be strictly increasing and \eqn{\le 1}.}
 
 \item{alpha}{The significance level. Defaults to 0.025.}
 
 \item{typeAlphaSpending}{The type of alpha spending. One of the following:
-"OF" for O'Brien-Fleming boundaries, "P" for Pocock boundaries,
-"WT" for Wang & Tsiatis boundaries, "sfOF" for O'Brien-Fleming type
-spending function, "sfP" for Pocock type spending function,
-"sfKD" for Kim & DeMets spending function, "sfHSD" for Hwang,
-Shi & DeCani spending function, "user" for user defined spending,
-and "none" for no early efficacy stopping. Defaults to "sfOF".}
+\code{"OF"} for O'Brien-Fleming boundaries,
+\code{"P"} for Pocock boundaries,
+\code{"WT"} for Wang & Tsiatis boundaries,
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+\code{"user"} for user defined spending, and
+\code{"none"} for no early efficacy stopping.
+Defaults to \code{"sfOF"}.}
 
 \item{parameterAlphaSpending}{The parameter value for the alpha spending.
-Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".}
+Corresponds to \eqn{\Delta} for \code{"WT"}, \eqn{rho} for \code{"sfKD"},
+and \eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{userAlphaSpending}{The user defined alpha spending. Cumulative alpha
 spent up to each stage.}
 
-\item{spendingTime}{A vector of length \code{k} for the error spending
-time at each analysis. Must be increasing and less than or equal to 1.
-Defaults to missing, in which case, it is the same as
-\code{informationRates}.}
+\item{spendingTime}{A numeric vector of length \eqn{k+1} specifying the
+error spending time at each analysis. Values must be strictly increasing
+and \eqn{\le 1}. If omitted, defaults to \code{informationRates}.}
 
 \item{efficacyStopping}{Indicators of whether efficacy stopping is allowed
-at each stage. Defaults to true if left unspecified.}
+at each stage. Defaults to \code{TRUE} if left unspecified.}
 }
 \value{
-A numeric vector of critical values up to the current look.
+A numeric vector of length \eqn{k + 1} containing the critical
+values (on the standard normal Z-scale) for each analysis up to the
+current look.
 }
 \description{
-Obtains the efficacy stopping boundaries for a two-stage
-seamless sequential design (TSSSD).
+Calculates the efficacy stopping boundaries for a two-stage
+seamless sequential design, accounting for the selection of the best arm
+at the end of Phase 2 and sequential testing in Phase 3.
 }
 \details{
-If \code{typeAlphaSpending} is "OF", "P", or "WT", then the boundaries
-will be based on equally spaced looks.
+The function determines critical values by solving for the boundary that
+satisfies the alpha-spending requirement, given the selection of the
+"best" arm at the end of Phase 2.
+
+If \code{typeAlphaSpending} is specified as \code{"OF"} (O'Brien-Fleming),
+\code{"P"} (Pocock), or \code{"WT"} (Wang-Tsiatis), the boundaries are
+calculated assuming the looks are equally spaced in terms of information.
 }
 \examples{
 
-getBound_tsssd(M = 2, k = 2, informationRates = seq(1,3)/3,
+# Determine O'Brien-Fleming boundaries for a TSSSD with
+# 2 active arms in Phase 2 and 2 looks in Phase 3 (3 looks total).
+getBound_tsssd(M = 2, k = 2, informationRates = seq(1, 3)/3,
               alpha = 0.025, typeAlphaSpending = "OF")
 
 }

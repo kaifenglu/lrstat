@@ -5,7 +5,8 @@
 \title{Parameter Description: parameterBetaSpending}
 \arguments{
 \item{parameterBetaSpending}{The parameter value for the beta spending.
-Corresponds to rho for "sfKD", and gamma for "sfHSD".}
+Corresponds to \eqn{\rho} for \code{"sfKD"}, and
+\eqn{\gamma} for \code{"sfHSD"}.}
 }
 \description{
 Parameter Description: parameterBetaSpending

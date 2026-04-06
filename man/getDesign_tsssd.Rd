@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getDesign_tsssd}
 \alias{getDesign_tsssd}
-\title{Power and Sample Size for a Generic Two-Stage Seamless Sequential Design}
+\title{Power and Sample Size for Two-Stage Seamless Sequential Design (TSSSD)}
 \usage{
 getDesign_tsssd(
   beta = NA_real_,
@@ -24,33 +24,35 @@ getDesign_tsssd(
 )
 }
 \arguments{
-\item{beta}{The type II error.}
+\item{beta}{Type II error rate. Provide either \code{beta} or \code{IMax};
+the other should be missing.}
 
-\item{IMax}{The maximum information for any active arm versus the common
-control. Either \code{beta} or \code{IMax} should be provided while
-the other one should be missing.}
+\item{IMax}{Maximum information for any active arm versus the common
+control. Provide either \code{IMax} or \code{beta}; the other should
+be missing.}
 
-\item{theta}{The parameter vector. The global null hypothesis is at
-\eqn{\theta_i = 0} for all \eqn{i}, and the alternative hypothesis
-is one-sided for \eqn{theta_i > 0} for at least one \eqn{i = 1,\ldots,M}.}
+\item{theta}{A vector of length \eqn{M} representing the true treatment
+effects for each active arm versus the common control. The global null
+is \eqn{\theta_i = 0} for all \eqn{i}, and alternatives are one-sided:
+\eqn{\theta_i > 0} for at least one \eqn{i = 1, \ldots, M}.}
 
-\item{M}{The number of active arms in phase 2. Must be at least 2.}
+\item{M}{Number of active treatment arms in Phase 2.}
 
-\item{r}{The randomization ratio of each active arm to the common control
-in phase 2. Must be positive.}
+\item{r}{Randomization ratio of each active arm to the common control
+in Phase 2.}
 
-\item{corr_known}{whether the correlation between the Wald statistics in
-phase 2 is known. If \code{TRUE}, the correlation is determined by
-the randomization ratio \code{r} as \eqn{r / (r + 1)};
-if \code{FALSE}, the correlation is conservatively set to 0.}
+\item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
+statistics in Phase 2 is derived from the randomization ratio \code{r}
+as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
+0 is used.}
 
-\item{K}{The maximum number of stages in phase 3. Must be at least 1.}
+\item{K}{Number of sequential looks in Phase 3.}
 
-\item{informationRates}{The information rates. Fixed prior to the trial.
-Defaults to \code{(1:(K+1)) / (K+1)} if left unspecified.}
+\item{informationRates}{A numeric vector of information rates fixed
+before the trial. If unspecified, defaults to \eqn{(1:(K+1)) / (K+1)}.}
 
 \item{efficacyStopping}{Indicators of whether efficacy stopping is allowed
-at each stage. Defaults to true if left unspecified.}
+at each stage. Defaults to \code{TRUE} if left unspecified.}
 
 \item{criticalValues}{Upper boundaries on the z-test statistic scale
 for stopping for efficacy.}
@@ -58,88 +60,92 @@ for stopping for efficacy.}
 \item{alpha}{The significance level. Defaults to 0.025.}
 
 \item{typeAlphaSpending}{The type of alpha spending. One of the following:
-"OF" for O'Brien-Fleming boundaries, "P" for Pocock boundaries,
-"WT" for Wang & Tsiatis boundaries, "sfOF" for O'Brien-Fleming type
-spending function, "sfP" for Pocock type spending function,
-"sfKD" for Kim & DeMets spending function, "sfHSD" for Hwang,
-Shi & DeCani spending function, "user" for user defined spending,
-and "none" for no early efficacy stopping. Defaults to "sfOF".}
+\code{"OF"} for O'Brien-Fleming boundaries,
+\code{"P"} for Pocock boundaries,
+\code{"WT"} for Wang & Tsiatis boundaries,
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+\code{"user"} for user defined spending, and
+\code{"none"} for no early efficacy stopping.
+Defaults to \code{"sfOF"}.}
 
 \item{parameterAlphaSpending}{The parameter value for the alpha spending.
-Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".}
+Corresponds to \eqn{\Delta} for \code{"WT"}, \eqn{rho} for \code{"sfKD"},
+and \eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{userAlphaSpending}{The user defined alpha spending. Cumulative alpha
 spent up to each stage.}
 
-\item{spendingTime}{A vector of length \code{K+1} for the error spending
-time at each analysis. Defaults to missing, in which case, it is the
-same as \code{informationRates}.}
+\item{spendingTime}{A numeric vector of length \eqn{K+1} specifying the
+error spending time at each analysis. Values must be strictly increasing
+and ends at 1. If omitted, defaults to \code{informationRates}.}
 
-\item{varianceRatio}{The ratio of the variance under H0 to the
-variance under H1.}
+\item{varianceRatio}{Ratio of the variance under \eqn{H_0} to the
+variance under \eqn{H_1}.}
 }
 \value{
-An S3 class \code{design} object with three components:
+An S3 object of class \code{tsssd} with these components:
 \itemize{
-\item \code{overallResults}: A data frame containing the following variables:
+\item \code{overallResults}: A data frame containing:
 \itemize{
-\item \code{overallReject}: The overall rejection probability.
-\item \code{alpha}: The overall significance level.
-\item \code{M}: The number of active arms in phase 2.
-\item \code{r}: The randomization ratio of each active arm to the
-common control in phase 2.
-\item \code{corr_known}: Whether the correlation between the Wald statistics
-in phase 2 is known.
-\item \code{K}: The number of stages in phase 3.
-\item \code{information}: The maximum information for any given active arm
-versus the common control.
+\item \code{overallReject}: Overall probability of rejecting the null
+hypothesis.
+\item \code{alpha}: Overall significance level.
+\item \code{M}: Number of active arms in phase 2.
+\item \code{r}: Randomization ratio per active arm versus control in phase 2.
+\item \code{corr_known}: Whether the phase-2 correlation was assumed known.
+\item \code{K}: Number of stages in phase 3.
+\item \code{information}: Maximum information for any active arm versus control.
 }
-\item \code{byStageResults}: A data frame containing the following variables:
+\item \code{byStageResults}: A data frame containing:
 \itemize{
-\item \code{informationRates}: The information rates.
-\item \code{efficacyBounds}: The efficacy boundaries on the Z-scale.
-\item \code{rejectPerStage}: The probability for efficacy stopping.
-\item \code{cumulativeRejection}: The cumulative probability for efficacy
-stopping.
-\item \code{cumulativeAlphaSpent}: The cumulative alpha spent.
-\item \code{efficacyTheta}: The efficacy boundaries on the parameter
-scale.
-\item \code{efficacyP}: The efficacy boundaries on the p-value scale.
-\item \code{information}: The cumulative information.
-\item \code{efficacyStopping}: Whether to allow efficacy stopping.
+\item \code{informationRates}: Information rates at each analysis.
+\item \code{efficacyBounds}: Efficacy boundaries on the Z-scale.
+\item \code{rejectPerStage}: Probability of efficacy stopping at each stage.
+\item \code{cumulativeRejection}: Cumulative probability of efficacy stopping.
+\item \code{cumulativeAlphaSpent}: Cumulative alpha spent.
+\item \code{efficacyTheta}: Efficacy boundaries on the parameter scale.
+\item \code{efficacyP}: Efficacy boundaries on the p-value scale.
+\item \code{information}: Cumulative information for any active arm versus
+control at each analysis.
+\item \code{efficacyStopping}: Indicator of whether efficacy stopping
+is permitted.
 }
-\item \code{byArmResults}: A data frame containing the following variables:
+\item \code{byArmResults}: A data frame containing:
 \itemize{
-\item \code{theta}: The parameter values for the active arms.
-\item \code{selectAsBest}: The probability of being selected as the
-best arm at the end of phase 2.
-\item \code{powerByArm}: The probability of rejecting the null hypothesis
-for each arm at the end of the trial.
-\item \code{condPowerByArm}: The conditional power for each arm given that
-the arm is selected as the best at the end of phase 2.
+\item \code{theta}: Parameter values for the active arms.
+\item \code{selectAsBest}: Probability an arm is selected as best in at
+the end of phase 2.
+\item \code{powerByArm}: Probability of rejecting the null for each arm
+by trial end.
+\item \code{condPowerByArm}: Conditional power for each arm given it was
+selected as best at the end of phase 2.
 }
-\item \code{settings}: A list containing the following input parameters:
+\item \code{settings}: A list of input settings:
 \itemize{
-\item \code{typeAlphaSpending}: The type of alpha spending.
-\item \code{parameterAlphaSpending}: The parameter value for alpha
-spending.
-\item \code{userAlphaSpending}: The user defined alpha spending.
-\item \code{spendingTime}: The error spending time at each analysis.
-\item \code{varianceRatio}: The ratio of the variance under H0
-to the variance under H1.
+\item \code{typeAlphaSpending}: Type of alpha spending function.
+\item \code{parameterAlphaSpending}: Parameter value for the chosen
+alpha spending function.
+\item \code{userAlphaSpending}: User-specified alpha spending values.
+\item \code{spendingTime}: Error-spending times at each analysis.
+\item \code{varianceRatio}: Ratio of variance under \eqn{H_0} to variance
+under \eqn{H_1}.
 }
 }
 }
 \description{
-Obtains the maximum information and stopping boundaries
-for a generic two-stage seamless sequential design design, or obtains
-the power given the maximum information and stopping boundaries.
+Computes either the maximum information and stopping
+boundaries for a generic two-stage seamless sequential design, or
+the achieved power when the maximum information and stopping boundaries
+are provided.
 }
 \details{
-When \code{corr_known} is \code{FALSE}, the critical boundaries
-are computed under the assumption of independence among the Wald
-statistics in phase 2, whereas the power is evaluated using the
-correlation implied by the randomization ratio.
+If \code{corr_known} is \code{FALSE}, critical boundaries are
+computed assuming independence among the phase-2 Wald statistics
+(a conservative assumption). Power calculations, however, use the
+correlation implied by the randomization ratio \eqn{r}.
 }
 \examples{
 

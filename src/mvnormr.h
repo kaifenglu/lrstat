@@ -128,8 +128,9 @@ struct ReplicateAccumulator {
 
 struct PMVNResult {
   double prob;
+  std::string method;
   double error;
-  std::size_t n;
+  std::size_t nsamples;
 };
 
 
@@ -138,7 +139,7 @@ PMVNResult pmvnormcpp(const std::vector<double>& lower,
                       const std::vector<double>& mean,
                       const FlatMatrix& sigma,
                       bool fast = true,
-                      std::size_t n0 = 128,
+                      std::size_t n0 = 1024,
                       std::size_t n_max = 16384,
                       std::size_t R = 8,
                       double abseps = 1e-4,
@@ -150,7 +151,7 @@ double qmvnormcpp(const double p,
                   const std::vector<double>& mean,
                   const FlatMatrix& sigma,
                   bool fast = true,
-                  std::size_t n0 = 128,
+                  std::size_t n0 = 1024,
                   std::size_t n_max = 16384,
                   std::size_t R = 8,
                   double abseps = 1e-4,

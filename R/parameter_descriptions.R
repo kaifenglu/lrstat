@@ -2,7 +2,7 @@
 #' @param accrualTime A vector that specifies the starting time of
 #'   piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 #'   \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
-#'   [0, 3) and [3, Inf).
+#'   \eqn{[0, 3)} and \eqn{[3, \infty)}.
 #' @name param_accrualTime
 #' @keywords internal
 NULL
@@ -24,7 +24,7 @@ NULL
 #' @param piecewiseSurvivalTime A vector that specifies the starting time of
 #'   piecewise exponential survival time intervals. Must start with 0, e.g.,
 #'   \code{c(0, 6)} breaks the time axis into 2 event intervals:
-#'   [0, 6) and [6, Inf).
+#'   \eqn{[0, 6)} and \eqn{[6, \infty)}.
 #'   Defaults to 0 for exponential distribution.
 #' @name param_piecewiseSurvivalTime
 #' @keywords internal
@@ -138,7 +138,7 @@ NULL
 
 #' Parameter Description: fixedFollowup
 #' @param fixedFollowup Whether a fixed follow-up design is used.
-#'   Defaults to 0 for variable follow-up.
+#'   Defaults to \code{FALSE} for variable follow-up.
 #' @name param_fixedFollowup
 #' @keywords internal
 NULL
@@ -188,14 +188,14 @@ NULL
 
 #' Parameter Description: efficacyStopping
 #' @param efficacyStopping Indicators of whether efficacy stopping is allowed
-#'   at each stage. Defaults to true if left unspecified.
+#'   at each stage. Defaults to \code{TRUE} if left unspecified.
 #' @name param_efficacyStopping
 #' @keywords internal
 NULL
 
 #' Parameter Description: futilityStopping
 #' @param futilityStopping Indicators of whether futility stopping is allowed
-#'   at each stage. Defaults to true if left unspecified.
+#'   at each stage. Defaults to \code{TRUE} if left unspecified.
 #' @name param_futilityStopping
 #' @keywords internal
 NULL
@@ -217,19 +217,24 @@ NULL
 
 #' Parameter Description: typeAlphaSpending
 #' @param typeAlphaSpending The type of alpha spending. One of the following:
-#'   "OF" for O'Brien-Fleming boundaries, "P" for Pocock boundaries,
-#'   "WT" for Wang & Tsiatis boundaries, "sfOF" for O'Brien-Fleming type
-#'   spending function, "sfP" for Pocock type spending function,
-#'   "sfKD" for Kim & DeMets spending function, "sfHSD" for Hwang,
-#'   Shi & DeCani spending function, "user" for user defined spending,
-#'   and "none" for no early efficacy stopping. Defaults to "sfOF".
+#'   \code{"OF"} for O'Brien-Fleming boundaries,
+#'   \code{"P"} for Pocock boundaries,
+#'   \code{"WT"} for Wang & Tsiatis boundaries,
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+#'   \code{"user"} for user defined spending, and
+#'   \code{"none"} for no early efficacy stopping.
+#'   Defaults to \code{"sfOF"}.
 #' @name param_typeAlphaSpending
 #' @keywords internal
 NULL
 
 #' Parameter Description: parameterAlphaSpending
 #' @param parameterAlphaSpending The parameter value for the alpha spending.
-#'   Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
+#'   Corresponds to \eqn{\Delta} for \code{"WT"}, \eqn{rho} for \code{"sfKD"},
+#'   and \eqn{\gamma} for \code{"sfHSD"}.
 #' @name param_parameterAlphaSpending
 #' @keywords internal
 NULL
@@ -244,7 +249,7 @@ NULL
 
 #' Parameter Description: futilityBounds
 #' @param futilityBounds Lower boundaries on the z-test statistic scale
-#'   for stopping for futility at stages 1, ..., \code{kMax-1}. Defaults to
+#'   for stopping for futility at stages \code{1, ..., kMax-1}. Defaults to
 #'   \code{rep(-6, kMax-1)} if left unspecified. The futility bounds are
 #'   non-binding for the calculation of critical values.
 #' @name param_futilityBounds
@@ -253,18 +258,21 @@ NULL
 
 #' Parameter Description: typeBetaSpending
 #' @param typeBetaSpending The type of beta spending. One of the following:
-#'   "sfOF" for O'Brien-Fleming type spending function, "sfP" for Pocock type
-#'   spending function, "sfKD" for Kim & DeMets spending function,
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, "user" for
-#'   user defined spending, and "none" for no early futility stopping.
-#'   Defaults to "none".
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+#'   \code{"user"} for user defined spending, and
+#'   \code{"none"} for no early futility stopping.
+#'   Defaults to \code{"none"}.
 #' @name param_typeBetaSpending
 #' @keywords internal
 NULL
 
 #' Parameter Description: parameterBetaSpending
 #' @param parameterBetaSpending The parameter value for the beta spending.
-#'   Corresponds to rho for "sfKD", and gamma for "sfHSD".
+#'   Corresponds to \eqn{\rho} for \code{"sfKD"}, and
+#'   \eqn{\gamma} for \code{"sfHSD"}.
 #' @name param_parameterBetaSpending
 #' @keywords internal
 NULL
@@ -286,8 +294,8 @@ NULL
 
 #' Parameter Description: typeOfComputation
 #' @param typeOfComputation The type of computation,
-#'   either "direct" for the direct approximation method,
-#'   or "schoenfeld" for the Schoenfeld method.
+#'   either \code{"direct"} for the direct approximation method,
+#'   or \code{"schoenfeld"} for the Schoenfeld method.
 #'   Defaults to empty, which selects the Schoenfeld method
 #'   under proportional hazards and ordinary log-rank test
 #'   and the direct method otherwise.

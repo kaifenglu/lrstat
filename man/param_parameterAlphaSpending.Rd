@@ -5,7 +5,8 @@
 \title{Parameter Description: parameterAlphaSpending}
 \arguments{
 \item{parameterAlphaSpending}{The parameter value for the alpha spending.
-Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".}
+Corresponds to \eqn{\Delta} for \code{"WT"}, \eqn{rho} for \code{"sfKD"},
+and \eqn{\gamma} for \code{"sfHSD"}.}
 }
 \description{
 Parameter Description: parameterAlphaSpending

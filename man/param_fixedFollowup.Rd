@@ -5,7 +5,7 @@
 \title{Parameter Description: fixedFollowup}
 \arguments{
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
-Defaults to 0 for variable follow-up.}
+Defaults to \code{FALSE} for variable follow-up.}
 }
 \description{
 Parameter Description: fixedFollowup

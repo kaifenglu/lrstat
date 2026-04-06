@@ -30,39 +30,39 @@ lrsim_tsssd(
 )
 }
 \arguments{
-\item{M}{The number of active treatment arms in phase 2. Must be at least 2.}
+\item{M}{Number of active treatment arms in Phase 2.}
 
-\item{K}{The number of looks in phase 3. Must be at least 1.}
+\item{K}{Number of sequential looks in Phase 3.}
 
-\item{criticalValues}{A numeric vector of length \eqn{K + 1} that
-gives the critical values for the Wald statistic at each look
-(Look 1 through Look \eqn{K + 1}). Decision rule:
+\item{criticalValues}{Numeric vector of length \eqn{K + 1} giving the
+critical value for the Wald statistic at each look (Look 1 through
+Look \eqn{K + 1}). Decision rule:
 \itemize{
 \item At Look 1, compute the Wald statistic for each active arm versus the
-common control. If the maximum of these statistics exceeds the
-Look 1 critical value, the trial stops for efficacy.
-\item If the Look 1 stopping rule is not met, select the active arm with
-the largest Wald statistic as the best arm and proceed to Look 2
-(comparing only that selected arm to the common control).
-\item For each subsequent look \eqn{j = 2,\ldots, K + 1}, compare the
-selected active arm to the common control; if its Wald statistic
-exceeds the critical value for Look \eqn{j} the trial stops for
-efficacy, otherwise continue to the next look.
-\item If no critical value is exceeded by Look \code{K + 1}, the procedure
+common control. If the maximum of these statistics exceeds the Look 1
+critical value, stop for efficacy.
+\item If the Look 1 stopping rule is not met, select the active arm with the
+largest Wald statistic as the "best" arm and continue with that arm
+only versus control at subsequent looks.
+\item For each look \eqn{j = 2,\ldots,K+1}, compare the selected arm to
+control; if its Wald statistic exceeds the Look \eqn{j} critical
+value, stop for efficacy; otherwise continue.
+\item If no critical value is exceeded by Look \eqn{K + 1}, the procedure
 ends without rejection.
 }}
 
-\item{hazardRatioH0s}{Hazard ratios under the null hypothesis for
-each active arm versus the common control. A vector of length M. Defaults
-to 1 for superiority test.}
+\item{hazardRatioH0s}{Numeric vector of length \eqn{M}. Hazard ratios
+under \eqn{H_0} for each active arm versus the common control. Defaults
+to 1 for superiority tests.}
 
-\item{allocations}{Number of subjects in each arm in a randomization block.
-Defaults to 1 for equal randomization.}
+\item{allocations}{Integer or integer vector of length \eqn{M + 1}.
+Number of subjects per arm within a randomization block. A single value
+implies equal allocation; defaults to 1.}
 
 \item{accrualTime}{A vector that specifies the starting time of
 piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
-[0, 3) and [3, Inf).}
+\eqn{[0, 3)} and \eqn{[3, \infty)}.}
 
 \item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
@@ -70,24 +70,27 @@ each accrual time interval.}
 \item{piecewiseSurvivalTime}{A vector that specifies the starting time of
 piecewise exponential survival time intervals. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
-[0, 6) and [6, Inf).
+\eqn{[0, 6)} and \eqn{[6, \infty)}.
 Defaults to 0 for exponential distribution.}
 
 \item{stratumFraction}{A vector of stratum fractions that sum to 1.
 Defaults to 1 for no stratification.}
 
-\item{lambdas}{A list of vectors of hazard rates for event in each
-analysis time interval by stratum for each arm.}
+\item{lambdas}{List of length \eqn{M} (one element per arm). Each element
+is a scalar or a numeric vector of event hazard rates for the
+corresponding arm, given by analysis interval and stratum as required
+by the simulation.}
 
-\item{gammas}{A list of vectors of hazard rates for dropout in each
-analysis time interval by stratum for each arm.}
+\item{gammas}{List of length \eqn{M} (one element per arm). Each element
+is a scalar or a numeric vector of dropout hazard rates for the
+corresponding arm, by analysis interval and stratum.}
 
-\item{n}{Sample size.}
+\item{n}{Planned total sample size across all active arms and control.}
 
 \item{followupTime}{Follow-up time for the last enrolled subject.}
 
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
-Defaults to 0 for variable follow-up.}
+Defaults to \code{FALSE} for variable follow-up.}
 
 \item{rho1}{The first parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
@@ -95,142 +98,97 @@ weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 \item{rho2}{The second parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
-\item{plannedEvents}{The planned cumulative total number of events at
-Look 1 to Look \code{K + 1} for Arms A and C combined.}
+\item{plannedEvents}{Numeric vector of length \eqn{K + 1} giving the
+planned cumulative number of events to trigger Look 1 through Look
+\eqn{K + 1}. Each entry refers to the combined events for the first
+active arm and the common control. Use \code{plannedEvents} to schedule
+event-driven looks.}
 
-\item{plannedTime}{The calendar times for the analyses. To use calendar
-time to plan the analyses, \code{plannedEvents} should be missing.}
+\item{plannedTime}{Numeric vector of calendar times for the analyses.
+If \code{plannedTime} is supplied, analyses are scheduled by calendar
+time and \code{plannedEvents} should be left missing.}
 
-\item{maxNumberOfIterations}{The number of simulation iterations.
+\item{maxNumberOfIterations}{Number of Monte Carlo replications.
 Defaults to 1000.}
 
-\item{maxNumberOfRawDatasetsPerStage}{The number of raw datasets per
-stage to extract.}
+\item{maxNumberOfRawDatasetsPerStage}{Number of subject-level
+raw datasets to retain per stage (for selected replications).}
 
-\item{seed}{The seed to reproduce the simulation results.}
+\item{seed}{Random seed for reproducibility.}
 
-\item{nthreads}{The number of threads to use in simulations (0 means
-the default RcppParallel behavior).}
+\item{nthreads}{Number of threads for parallel simulation.
+Use 0 to accept the default RcppParallel behavior.}
 }
 \value{
-A list with 3 components:
+An S3 object of class \code{"lrsim_tsssd"} with these components:
 \itemize{
-\item \code{overview}: A list containing the following information:
+\item \code{overview}: A list summarizing trial-level results and settings:
 \itemize{
-\item \code{selectAsBest}: The probability of selecting each active arm
-as the best arm at phase 2 analysis.
-\item \code{rejectPerStage}: The probability of rejecting the null
-hypothesis for each active arm at each stage.
-\item \code{cumulativeRejection}: The cumulative probability of rejecting
-the null hypothesis for each active arm by stage.
-\item \code{numberOfEvents}: The cumulative number of events up to each
-stage, including events from all arms in stage 1 and new
-events from the selected active arm and the common control
-in later stages.
-\item \code{numberOfDropouts}: The cumulative number of dropouts up to each
-stage, including dropouts from all arms in stage 1 and new
-dropouts from the selected active arm and the common control
-in later stages.
-\item \code{numberOfSubjects}: The cumulative number of subjects enrolled
-up to each stage, including subjects from all arms in stage 1 and new
-subjects from the selected active arm and the common control in
-later stages.
-\item \code{analysisTime}: The average calendar time for each stage among
-replications that have the stage (do not reject before the stage).
-\item \code{overallReject}: The overall probability of rejecting the
-null hypothesis by the end of the trial.
-\item \code{expectedNumberOfEvents}: The expected cumulative number of
-events at the end of the trial.
-\item \code{expectedNumberOfDropouts}: The expected cumulative number of
-dropouts at the end of the trial.
-\item \code{expectedNumberOfSubjects}: The expected cumulative number of
-subjects enrolled at the end of the trial.
-\item \code{expectedStudyDuration}: The expected study duration.
-\item \code{hazardRatioH0s}: The hazard ratios under the null hypothesis
-for each active arm versus the common control.
-\item \code{useEvents}: Whether the analyses are planned based on the
-number of events.
-\item \code{numberOfIterations}: The number of simulation iterations.
-\item \code{n}: The planned sample size for the trial.
-\item \code{fixedFollowup}: Whether a fixed follow-up design is used.
-\item \code{rho1}: The first parameter of the Fleming-Harrington family
-of weighted log-rank test. Defaults to 0 for conventional log-rank
-test.
-\item \code{rho2}: The second parameter of the Fleming-Harrington family
-of weighted log-rank test. Defaults to 0 for conventional log-rank
-test.
-\item \code{M}: The number of active arms in phase 2.
-\item \code{K}: The number of looks in phase 3.
+\item \code{selectAsBest}: Probability of selecting each active arm as
+the best arm at the end of phase 2.
+\item \code{rejectPerStage}: Probability of rejecting the null for each
+active arm at each stage.
+\item \code{cumulativeRejection}: Cumulative probability of rejection by stage.
+\item \code{numberOfEvents}: Cumulative event counts by stage, including
+events from all arms in stage 1 and events from the selected arm
+and control in later stages.
+\item \code{numberOfDropouts}: Cumulative dropouts by stage.
+\item \code{numberOfSubjects}: Cumulative enrollments by stage.
+\item \code{analysisTime}: Average calendar time for each stage among
+replications that reached that stage.
+\item \code{overallReject}: Overall probability of rejecting the null
+by trial end.
+\item \code{expectedNumberOfEvents}: Expected cumulative events at trial end.
+\item \code{expectedNumberOfDropouts}: Expected cumulative dropouts at trial end.
+\item \code{expectedNumberOfSubjects}: Expected cumulative enrollments
+at trial end.
+\item \code{expectedStudyDuration}: Expected study duration.
+\item \code{hazardRatioH0s}: The input hazard ratios under \eqn{H_0}.
+\item \code{useEvents}: Logical indicating whether analyses were event-driven.
+\item \code{numberOfIterations}: Number of simulation iterations performed.
+\item \code{n}: Planned total sample size.
+\item \code{fixedFollowup}: Logical indicating whether fixed follow-up was used.
+\item \code{rho1}, \code{rho2}: Fleming–Harrington weighting parameters used.
+\item \code{M}: Number of active arms in Phase 2.
+\item \code{K}: Number of sequential looks in Phase 3.
 }
-\item \code{sumdata1}: A data frame of summary data by iteration, stage, and arm:
+\item \code{sumdata1}: Data frame summarizing each iteration, stage, and
+treatment group:
 \itemize{
-\item \code{iterationNumber}: The iteration number.
-\item \code{eventsNotAchieved}: Whether the target number of events
-is not achieved for the iteration.
-\item \code{stageNumber}: The stage number, covering all stages even if
-the trial stops at an interim look.
-\item \code{analysisTime}: The time for the stage since trial start.
-\item \code{treatmentGroup}: The treatment group. For each stage, the final
-row corresponds to the overall study (all arms combined).
-\item \code{accruals}: The number of subjects enrolled at the stage for
-the treatment group.
-\item \code{events}: The number of events at the stage for the
-treatment group.
-\item \code{dropouts}: The number of dropouts at the stage for the
-treatment group.
+\item \code{iterationNumber}, \code{eventsNotAchieved}, \code{stageNumber},
+\code{analysisTime}, \code{treatmentGroup}, \code{accruals},
+\code{events}, \code{dropouts}.
+\item For each stage the final row summarizes the overall study
+(all arms combined).
 }
-\item \code{summdata2}: A data frame of summary data by iteration, stage, and
-active arm for the log-rank test statistics comparing the active arm to
-the common control:
+\item \code{summdata2}: Data frame summarizing log-rank statistics by iteration,
+stage, and active arm:
 \itemize{
-\item \code{iterationNumber}: The iteration number.
-\item \code{stageNumber}: The stage number, covering all stages even if
-the trial stops at an interim look.
-\item \code{analysisTime}: The time for the stage since trial start.
-\item \code{activeArm}: The active arm under consideration.
-\item \code{totalAccruals}: The total number of subjects enrolled at
-the stage for the active arm and the common control combined.
-\item \code{totalEvents}: The total number of events at the stage for
-the active arm and the common control combined.
-\item \code{totalDropouts}: The total number of dropouts at the stage for
-the active arm and the common control combined.
-\item \code{uscore}: The log-rank test score statistic comparing the
-active arm to the control.
-\item \code{vscore}: The log-rank test variance statistic comparing the
-active arm to the control.
-\item \code{logRankStatistic}: The log-rank test Z-statistic comparing the
-active arm to the control.
+\item \code{iterationNumber}, \code{stageNumber}, \code{analysisTime},
+\code{activeArm}, \code{totalAccruals}, \code{totalEvents},
+\code{totalDropouts}, \code{uscore}, \code{vscore},
+\code{logRankStatistic}.
+\item For each active arm, total accruals, events, and dropouts refer to
+the combined counts for that arm and the common control at that stage.
 }
-\item \code{rawdata} (exists if \code{maxNumberOfRawDatasetsPerStage} is a
-positive integer): A data frame for subject-level data for selected
-replications, containing the following variables:
+\item \code{rawdata} (present when \code{maxNumberOfRawDatasetsPerStage} > 0):
+Subject-level data for selected replications with variables:
 \itemize{
-\item \code{iterationNumber}: The iteration number.
-\item \code{stageNumber}: The stage under consideration.
-\item \code{analysisTime}: The time for the stage since trial start.
-\item \code{subjectId}: The subject ID.
-\item \code{arrivalTime}: The enrollment time for the subject.
-\item \code{stratum}: The stratum for the subject.
-\item \code{treatmentGroup}: The treatment group (1, 2, or 3) for
-the subject.
-\item \code{survivalTime}: The underlying survival time for the subject.
-\item \code{dropoutTime}: The underlying dropout time for the subject.
-\item \code{timeUnderObservation}: The time under observation
-since randomization for the subject.
-\item \code{event}: Whether the subject experienced the event.
-\item \code{dropoutEvent}: Whether the subject dropped out.
+\item \code{iterationNumber}, \code{stageNumber}, \code{analysisTime},
+\code{subjectId}, \code{arrivalTime}, \code{stratum},
+\code{treatmentGroup}, \code{survivalTime}, \code{dropoutTime},
+\code{timeUnderObservation}, \code{event}, \code{dropoutEvent}.
 }
 }
 }
 \description{
-Performs simulation for multiple-arm group sequential trials
-based on weighted log-rank test. The looks are driven by the total
-number of events in Arm 1 and common control combined. Alternatively,
-the analyses can be planned to occur at specified calendar times.
+Simulate multi-arm group-sequential trials using a weighted
+log-rank test. Analyses can be triggered either by the cumulative number
+of events (combined for an active arm and the common control) or by
+pre-specified calendar times.
 }
 \examples{
-
-sim1 = lrsim_tsssd(
+(sim1 = lrsim_tsssd(
   M = 2,
   K = 2,
   criticalValues = c(3.852050, 2.723811, 2.223982),
@@ -240,14 +198,10 @@ sim1 = lrsim_tsssd(
   lambdas = list(log(2)/12*0.5, log(2)/12*0.7, log(2)/12),
   n = 700,
   plannedEvents = c(40, 80, 120),
-  maxNumberOfIterations = 10000,
+  maxNumberOfIterations = 1000,
   maxNumberOfRawDatasetsPerStage = 1,
   seed = 314159,
-  nthreads = 0)
-
-head(sim1$sumdata1)
-head(sim1$sumdata2)
-head(sim1$rawdata)
+  nthreads = 0))
 
 }
 \author{

@@ -435,8 +435,9 @@ PMVNResult pmvnorm_adaptive(size_t J,
 
   PMVNResult out;
   out.prob = pbar;
+  out.method = "qmc";
   out.error = error;
-  out.n = n;
+  out.nsamples = n * R;
   return out;
 }
 
@@ -571,8 +572,8 @@ PMVNResult pmvnormcpp(const std::vector<double>& lower,
     double aj = (lower[0] - mean[0]) / sd;
     double bj = (upper[0] - mean[0]) / sd;
     double p = boost_pnorm(bj) - boost_pnorm(aj);
-    if (p <= 0.0) return PMVNResult{0.0, 0.0, 1}; // handle zero prob case
-    return PMVNResult{p, 0.0, 1};
+    if (p <= 0.0) return PMVNResult{0.0, "analytic", 0.0, 1};
+    return PMVNResult{p, "analytic", 0.0, 1};
   }
 
   // special case of compound symmetry with positive correlations
@@ -588,10 +589,10 @@ PMVNResult pmvnormcpp(const std::vector<double>& lower,
         double aj = (lower[j] - mean[j]) / sigma_e;
         double bj = (upper[j] - mean[j]) / sigma_e;
         double mass = boost_pnorm(bj) - boost_pnorm(aj);
-        if (mass <= 0.0) return PMVNResult{0.0, 0.0, 1}; // handle zero prob case
+        if (mass <= 0.0) return PMVNResult{0.0, "analytic", 0.0, 1};
         p *= mass;
       }
-      return PMVNResult{p, 0.0, 1};
+      return PMVNResult{p, "analytic", 0.0, 1};
     }
 
     auto f = [&](double b) {
@@ -608,7 +609,7 @@ PMVNResult pmvnormcpp(const std::vector<double>& lower,
 
     std::vector<double> breaks = { -6.0 * sigma_b, 0.0, 6.0 * sigma_b };
     double p = integrate3(f, breaks, 1e-6);
-    return PMVNResult{p, 0.0, 1};
+    return PMVNResult{p, "analytic", 0.0, 1};
   }
 
   PMVNPrecomputed P = precompute_pmvn(lower, upper, mean, sigma);
@@ -623,7 +624,7 @@ Rcpp::List pmvnormRcpp(
     const std::vector<double>& mean,
     const Rcpp::NumericMatrix& sigma,
     bool fast = true,
-    size_t n0 = 128,
+    size_t n0 = 1024,
     size_t n_max = 16384,
     size_t R = 8,
     double abseps = 1e-4,
@@ -636,8 +637,9 @@ Rcpp::List pmvnormRcpp(
 
   return Rcpp::List::create(
     Rcpp::Named("prob") = out.prob,
+    Rcpp::Named("method") = out.method,
     Rcpp::Named("error") = out.error,
-    Rcpp::Named("n") = out.n
+    Rcpp::Named("nsamples") = out.nsamples
   );
 }
 
@@ -699,7 +701,7 @@ double qmvnormRcpp(
     const std::vector<double>& mean,
     const Rcpp::NumericMatrix& sigma,
     bool fast = true,
-    size_t n0 = 128,
+    size_t n0 = 1024,
     size_t n_max = 16384,
     size_t R = 8,
     double abseps = 1e-4,

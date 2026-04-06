@@ -12,7 +12,7 @@ getAccrualDurationFromN(nsubjects, accrualTime, accrualIntensity)
 \item{accrualTime}{A vector that specifies the starting time of
 piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
-[0, 3) and [3, Inf).}
+\eqn{[0, 3)} and \eqn{[3, \infty)}.}
 
 \item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}

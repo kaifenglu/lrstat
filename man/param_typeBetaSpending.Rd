@@ -5,11 +5,13 @@
 \title{Parameter Description: typeBetaSpending}
 \arguments{
 \item{typeBetaSpending}{The type of beta spending. One of the following:
-"sfOF" for O'Brien-Fleming type spending function, "sfP" for Pocock type
-spending function, "sfKD" for Kim & DeMets spending function,
-"sfHSD" for Hwang, Shi & DeCani spending function, "user" for
-user defined spending, and "none" for no early futility stopping.
-Defaults to "none".}
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+\code{"user"} for user defined spending, and
+\code{"none"} for no early futility stopping.
+Defaults to \code{"none"}.}
 }
 \description{
 Parameter Description: typeBetaSpending

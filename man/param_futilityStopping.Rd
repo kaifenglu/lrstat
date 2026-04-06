@@ -5,7 +5,7 @@
 \title{Parameter Description: futilityStopping}
 \arguments{
 \item{futilityStopping}{Indicators of whether futility stopping is allowed
-at each stage. Defaults to true if left unspecified.}
+at each stage. Defaults to \code{TRUE} if left unspecified.}
 }
 \description{
 Parameter Description: futilityStopping

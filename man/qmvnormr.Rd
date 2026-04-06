@@ -2,14 +2,14 @@
 % Please edit documentation in R/mvnormr.R
 \name{qmvnormr}
 \alias{qmvnormr}
-\title{Quantile of the Multivariate Normal Distribution}
+\title{Equicoordinate Quantiles of the Multivariate Normal Distribution}
 \usage{
 qmvnormr(
   p,
   mean = NULL,
   sigma,
   fast = TRUE,
-  n0 = 128,
+  n0 = 1024,
   n_max = 16384,
   R = 8,
   abseps = 1e-04,
@@ -20,50 +20,56 @@ qmvnormr(
 )
 }
 \arguments{
-\item{p}{the probability.}
+\item{p}{The probability level (cumulative probability).}
 
-\item{mean}{the mean vector (optional). If NULL, defaults to
-\code{rep(0, nrow(sigma))}.}
+\item{mean}{The mean vector. If \code{NULL} (default), a zero vector of
+appropriate length is used.}
 
-\item{sigma}{the covariance matrix of the multivariate normal distribution.}
+\item{sigma}{The covariance (or correlation) matrix of the distribution.}
 
-\item{fast}{whether to use the fast version of pnorm and qnorm.}
+\item{fast}{Logical; if \code{TRUE}, uses a fast approximation of the
+univariate normal CDF and quantile functions.}
 
-\item{n0}{the initial number of samples for the Monte Carlo estimation
-per replication.}
+\item{n0}{Initial number of samples per replication for the Monte Carlo
+integration.}
 
-\item{n_max}{the maximum number of samples for the Monte Carlo estimation
-per replication.}
+\item{n_max}{Maximum number of samples allowed per replication.}
 
-\item{R}{the number of replications for the Monte Carlo estimation.}
+\item{R}{Number of independent replications used to estimate the error.}
 
-\item{abseps}{the absolute error tolerance for the Monte Carlo estimation.}
+\item{abseps}{Absolute error tolerance for the probability calculation.}
 
-\item{releps}{the relative error tolerance for the Monte Carlo estimation.}
+\item{releps}{Relative error tolerance for the probability calculation.}
 
-\item{seed}{the random seed for reproducibility. If 0 (default), seed
-will be generated randomly.}
+\item{seed}{Random seed for reproducibility. If 0, a seed is generated
+from the computer clock.}
 
-\item{parallel}{whether to use parallel computation for the Monte Carlo
-estimation.}
+\item{parallel}{Logical; if \code{TRUE}, computations are performed in parallel.}
 
-\item{nthreads}{the number of threads to use in simulations (0 means
-the default RcppParallel behavior).}
+\item{nthreads}{Number of threads for parallel execution. If 0, the
+default RcppParallel behavior is used.}
 }
 \value{
-The calculated quantile.
+A numeric value representing the calculated equicoordinate quantile.
 }
 \description{
-Computes the equicoordinate quantile function of the
-multivariate normal distribution.
+Computes the equicoordinate quantile \eqn{q} such that
+\eqn{P(X_1 \le q, X_2 \le q, \ldots, X_k \le q) = p} for a multivariate
+normal random vector \eqn{X}.
+}
+\details{
+This function finds the value \eqn{q} using a root-finding algorithm
+applied to the \code{pmvnormr} function. It solves for the value where
+the multivariate normal cumulative distribution function equals the
+target probability \eqn{p}.
 }
 \examples{
+
 n <- 5
-mean <- rep(0, 5)
-corr <- diag(5)
-corr[lower.tri(corr)] <- 0.5
-corr[upper.tri(corr)] <- 0.5
-qmvnormr(0.5, mean, corr)
+mean <- rep(0, n)
+sigma <- matrix(0.5, n, n)
+diag(sigma) <- 1
+qmvnormr(0.5, mean = mean, sigma = sigma)
 
 }
 \author{

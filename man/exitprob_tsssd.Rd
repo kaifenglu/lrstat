@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{exitprob_tsssd}
 \alias{exitprob_tsssd}
-\title{Exit probabilities for two-stage seamless sequential design (TSSSD)}
+\title{Exit Probabilities for Two-Stage Seamless Sequential Design (TSSSD)}
 \usage{
 exitprob_tsssd(
   M = NA_integer_,
@@ -15,92 +15,87 @@ exitprob_tsssd(
 )
 }
 \arguments{
-\item{M}{number of active arms in phase 2.}
+\item{M}{Number of active treatment arms in Phase 2 (\eqn{M \ge 2}).}
 
-\item{r}{randomization ratio of each active arm to the common control in phase 2.}
+\item{r}{Randomization ratio of each active arm to the common control
+in Phase 2.}
 
-\item{theta}{vector of true treatment effects for the M active arms in phase 2.}
+\item{theta}{A vector of length \eqn{M} representing the true treatment
+effects for each active arm versus the common control.}
 
-\item{corr_known}{whether the correlation between the Wald statistics in
-phase 2 is known. If \code{TRUE}, the correlation is determined by
-the randomization ratio \code{r} as \eqn{r / (r + 1)};
-if \code{FALSE}, the correlation is conservatively set to 0.}
+\item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
+statistics in Phase 2 is derived from the randomization ratio \eqn{r}
+as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
+0 is used.}
 
-\item{K}{number of looks in phase 3.}
+\item{K}{Number of sequential looks in Phase 3.}
 
-\item{b}{vector of critical values for phase 2 and the K looks in phase 3.}
+\item{b}{A vector of critical values (length \eqn{K+1}). The first element
+is for Phase 2; the remaining \eqn{K} elements are for the looks in
+Phase 3.}
 
-\item{I}{vector of information levels for phase 2 and the K looks in
-phase 3 for any arm versus the common control.}
+\item{I}{A vector of information levels (length \eqn{K+1}) for any active
+arm versus the common control. The first element is for Phase 2;
+the remaining \eqn{K} elements are for the looks in Phase 3.}
 }
 \value{
-A list with three components:
+A list containing:
 \itemize{
-\item exitProb: A vector of length \eqn{K + 1}, where the first element is the
-exit probability in phase 2, and the \eqn{k}-th element for
-\eqn{k = 1,\ldots,K} is the exit probability at look \eqn{k} in phase 3.
-\item exitProbByArm: A matrix of dimension \eqn{(K + 1)} by \eqn{M}, where
-the \eqn{(k, m)}-th  element for \eqn{k = 0,\ldots,K} and
-\eqn{m = 1,\ldots,M} is the probability of rejecting the
-global null hypothesis in phase 2 if arm \eqn{m} is selected in phase 2
-when \eqn{k = 0}, and the probability of rejecting the global null hypothesis
-at look \eqn{k} in phase 3 if arm \eqn{m} is selected in phase 2 when
-\eqn{k = 1,...,K}.
-\item selectAsBest: A vector of length \eqn{M}, where the \eqn{m}-th element
-is the probability of selecting arm \eqn{m} in phase 2 as the best arm
-among the \eqn{M} active arms in phase 2.
+\item \code{exitProb}: A vector of length \eqn{K + 1}. The first element is the
+probability of rejection in Phase 2; the remaining elements are the
+probabilities of rejection at each look in Phase 3.
+\item \code{exitProbByArm}: A \eqn{(K+1) \times M} matrix. The \eqn{(k, m)}-th
+entry represents the probability that the global null is rejected at
+look \eqn{k} given that arm \eqn{m} was selected as the best arm.
+\item \code{selectAsBest}: A vector of length \eqn{M} containing the probability
+that each active arm is selected to move on to Phase 3.
 }
 }
 \description{
-Computes the exit probabilities for a two-stage selection
-and testing design with a common control arm in phase 2 and the selected
-active arm and the common control arm in phase 3.
+Computes the exit (rejection) probabilities for a two-stage
+selection and testing design. In Phase 2, multiple active arms are
+compared against a common control arm. The best-performing arm is
+selected to proceed to Phase 3, where it is tested against the common
+control over multiple looks.
 }
 \details{
-The exit probability in phase 2 is the probability of rejecting
-the global null hypothesis at the end of phase 2, and the exit probability
-at look \eqn{k} in phase 3 is the probability of rejecting the global null
-hypothesis at look \eqn{k} in phase 3 given that the global null hypothesis
-is not rejected in phase 2. The exit probabilities are computed under
-the multivariate normal distribution of the Wald statistics for the \eqn{M}
-active arms in phase 2 and the selected active arm in phase 3, where
-the covariance matrix is determined by the randomization ratio \eqn{r}.
+The function assumes a multivariate normal distribution for the Wald
+statistics. The "best" arm is defined as the active arm with the largest
+score statistic at the end of Phase 2.
 
-We reject the global null hypothesis in phase 2 if \deqn{Z(I_0) >= b_0,}
-where \eqn{Z(I_0)} is the Wald statistic for best arm in phase 2, and
-we reject the global null hypothesis at look \eqn{k} in phase 3 if
-\deqn{Z(I_0) < b_0, Z(I_j) < b_j \text{ for } j = 1,\ldots,k-1,
-\text{ and } Z(I_k) >= b_k,} where \eqn{Z(I_k)} is the Wald statistic
-for the selected arm at look \eqn{k} in phase 3.
-
-The following assumptions are made for the TSSSD design:
+\strong{Decision Rules:}
 \itemize{
-\item Information is the same across active arms in phase 2
-\item At most one active arm can be selected at the end of phase 2
-\item The selected arm is the one with the largest score statistic in phase 2
+\item \strong{Phase 2}: The global null hypothesis is rejected if the Wald
+statistic for the best arm, \eqn{Z(I_0)}, satisfies \eqn{Z(I_0) \ge b_0}.
+\item \strong{Phase 3}: If the trial continues, the hypothesis is rejected at
+look \eqn{k} if \eqn{Z(I_k) \ge b_k} and all previous
+looks (including Phase 2) failed to reject.
+}
+
+\strong{Design Assumptions:}
+\itemize{
+\item All active arms share the same information level in Phase 2.
+\item Exactly one active arm is selected at the end of Phase 2 based on the
+largest observed statistic.
 }
 }
 \examples{
 
-# Two active arms vs. a common control in phase 2, and the selected
-# active arm vs. the common control in phase 3 with 2 looks in phase 3
+# Setup: 2 active arms vs control in phase 2; 1 selected arm vs control
+# in phase 3. Phase 3 has 2 sequential looks.
 
-# equal spacing of information levels across phase 2/3 for any arm vs.
-# the common control
-
-# maximum of 110 patients per arm planned
-# standard deviation of the endpoint is 1
+# Information levels: equal spacing over 3 looks based on max 110 patients
+# per arm, SD = 1.0
 I <- c(110 / (2 * 1.0^2) * seq(1, 3)/3)
 
-# O'Brien-Fleming critical values for phase 2/3
+# O'Brien-Fleming critical values
 b <- c(3.776606, 2.670463, 2.180424)
 
 # Type I error under the global null hypothesis
 p0 <- exitprob_tsssd(M = 2, theta = c(0, 0), K = 2, b = b, I = I)
 cumsum(p0$exitProb)
 
-# Power under the alternative hypothesis where the treatment effects for
-# the two active arms are 0.3 and 0.5, respectively
+# Power under alternative: Treatment effects of 0.3 and 0.5
 p1 <- exitprob_tsssd(M = 2, theta = c(0.3, 0.5), K = 2, b = b, I = I)
 cumsum(p1$exitProb)
 

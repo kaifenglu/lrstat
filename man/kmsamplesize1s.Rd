@@ -43,10 +43,10 @@ kmsamplesize1s(
 Defaults to \code{(1:kMax) / kMax} if left unspecified.}
 
 \item{efficacyStopping}{Indicators of whether efficacy stopping is allowed
-at each stage. Defaults to true if left unspecified.}
+at each stage. Defaults to \code{TRUE} if left unspecified.}
 
 \item{futilityStopping}{Indicators of whether futility stopping is allowed
-at each stage. Defaults to true if left unspecified.}
+at each stage. Defaults to \code{TRUE} if left unspecified.}
 
 \item{criticalValues}{Upper boundaries on the z-test statistic scale
 for stopping for efficacy.}
@@ -54,33 +54,41 @@ for stopping for efficacy.}
 \item{alpha}{The significance level. Defaults to 0.025.}
 
 \item{typeAlphaSpending}{The type of alpha spending. One of the following:
-"OF" for O'Brien-Fleming boundaries, "P" for Pocock boundaries,
-"WT" for Wang & Tsiatis boundaries, "sfOF" for O'Brien-Fleming type
-spending function, "sfP" for Pocock type spending function,
-"sfKD" for Kim & DeMets spending function, "sfHSD" for Hwang,
-Shi & DeCani spending function, "user" for user defined spending,
-and "none" for no early efficacy stopping. Defaults to "sfOF".}
+\code{"OF"} for O'Brien-Fleming boundaries,
+\code{"P"} for Pocock boundaries,
+\code{"WT"} for Wang & Tsiatis boundaries,
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+\code{"user"} for user defined spending, and
+\code{"none"} for no early efficacy stopping.
+Defaults to \code{"sfOF"}.}
 
 \item{parameterAlphaSpending}{The parameter value for the alpha spending.
-Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".}
+Corresponds to \eqn{\Delta} for \code{"WT"}, \eqn{rho} for \code{"sfKD"},
+and \eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{userAlphaSpending}{The user defined alpha spending. Cumulative alpha
 spent up to each stage.}
 
 \item{futilityBounds}{Lower boundaries on the z-test statistic scale
-for stopping for futility at stages 1, ..., \code{kMax-1}. Defaults to
+for stopping for futility at stages \code{1, ..., kMax-1}. Defaults to
 \code{rep(-6, kMax-1)} if left unspecified. The futility bounds are
 non-binding for the calculation of critical values.}
 
 \item{typeBetaSpending}{The type of beta spending. One of the following:
-"sfOF" for O'Brien-Fleming type spending function, "sfP" for Pocock type
-spending function, "sfKD" for Kim & DeMets spending function,
-"sfHSD" for Hwang, Shi & DeCani spending function, "user" for
-user defined spending, and "none" for no early futility stopping.
-Defaults to "none".}
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+\code{"user"} for user defined spending, and
+\code{"none"} for no early futility stopping.
+Defaults to \code{"none"}.}
 
 \item{parameterBetaSpending}{The parameter value for the beta spending.
-Corresponds to rho for "sfKD", and gamma for "sfHSD".}
+Corresponds to \eqn{\rho} for \code{"sfKD"}, and
+\eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{userBetaSpending}{The user defined beta spending. Cumulative beta
 spent up to each stage.}
@@ -94,7 +102,7 @@ hypothesis.}
 \item{accrualTime}{A vector that specifies the starting time of
 piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
-[0, 3) and [3, Inf).}
+\eqn{[0, 3)} and \eqn{[3, \infty)}.}
 
 \item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
@@ -102,7 +110,7 @@ each accrual time interval.}
 \item{piecewiseSurvivalTime}{A vector that specifies the starting time of
 piecewise exponential survival time intervals. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
-[0, 6) and [6, Inf).
+\eqn{[0, 6)} and \eqn{[6, \infty)}.
 Defaults to 0 for exponential distribution.}
 
 \item{stratumFraction}{A vector of stratum fractions that sum to 1.
@@ -120,7 +128,7 @@ no dropout.}
 \item{followupTime}{Follow-up time for the last enrolled subject.}
 
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
-Defaults to 0 for variable follow-up.}
+Defaults to \code{FALSE} for variable follow-up.}
 
 \item{spendingTime}{A vector of length \code{kMax} for the error spending
 time at each analysis. Defaults to missing, in which case, it is the

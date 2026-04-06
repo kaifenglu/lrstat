@@ -2,7 +2,7 @@
 % Please edit documentation in R/mvnormr.R
 \name{pmvnormr}
 \alias{pmvnormr}
-\title{Probability of Multivariate Normal Distribution over a Hyperrectangle}
+\title{Multivariate Normal Probabilities over a Hyperrectangle}
 \usage{
 pmvnormr(
   lower,
@@ -10,7 +10,7 @@ pmvnormr(
   mean = NULL,
   sigma,
   fast = TRUE,
-  n0 = 128,
+  n0 = 1024,
   n_max = 16384,
   R = 8,
   abseps = 1e-04,
@@ -21,55 +21,101 @@ pmvnormr(
 )
 }
 \arguments{
-\item{lower}{the lower bounds of the hyperrectangle.}
+\item{lower}{A numeric vector of lower integration limits.}
 
-\item{upper}{the upper bounds of the hyperrectangle.}
+\item{upper}{A numeric vector of upper integration limits.}
 
-\item{mean}{the mean vector (optional). If NULL, defaults to
-\code{rep(0, nrow(sigma))}.}
+\item{mean}{The mean vector. If \code{NULL} (default), a zero vector of
+appropriate length is used.}
 
-\item{sigma}{the covariance matrix of the multivariate normal distribution.}
+\item{sigma}{The covariance (or correlation) matrix of the distribution.}
 
-\item{fast}{whether to use the fast version of pnorm and qnorm.}
+\item{fast}{Logical; if \code{TRUE}, uses a fast approximation of the
+univariate normal CDF and quantile functions.}
 
-\item{n0}{the initial number of samples for the Monte Carlo estimation
-per replication.}
+\item{n0}{Initial number of samples per replication for the Monte Carlo
+integration.}
 
-\item{n_max}{the maximum number of samples for the Monte Carlo estimation
-per replication.}
+\item{n_max}{Maximum number of samples allowed per replication.}
 
-\item{R}{the number of replications for the Monte Carlo estimation.}
+\item{R}{Number of independent replications used to estimate the error.}
 
-\item{abseps}{the absolute error tolerance for the Monte Carlo estimation.}
+\item{abseps}{Absolute error tolerance for the probability calculation.}
 
-\item{releps}{the relative error tolerance for the Monte Carlo estimation.}
+\item{releps}{Relative error tolerance for the probability calculation.}
 
-\item{seed}{the random seed for reproducibility. If 0 (default), seed
-will be generated randomly.}
+\item{seed}{Random seed for reproducibility. If 0, a seed is generated
+from the computer clock.}
 
-\item{parallel}{whether to use parallel computation for the Monte Carlo
-estimation.}
+\item{parallel}{Logical; if \code{TRUE}, computations are performed in parallel.}
 
-\item{nthreads}{the number of threads to use in simulations (0 means
-the default RcppParallel behavior).}
+\item{nthreads}{Number of threads for parallel execution. If 0, the
+default RcppParallel behavior is used.}
 }
 \value{
-list(prob=..., error=..., n=...)
+The estimated probability with the following attributes:
+\itemize{
+\item \code{method}: \code{"exact"} for analytic methods or \code{"qmc"} for
+the Monte Carlo approach.
+\item \code{error}: The estimated error (half-width of 95\% confidence interval).
+\item \code{nsamples}: The total number of samples used across all replications.
+}
 }
 \description{
-Computes the probability that a multivariate normal random vector
-falls within a specified hyperrectangle defined by lower and upper bounds.
+Computes the probability that a multivariate normal random
+vector falls within a rectangular region defined by lower and upper bounds.
+}
+\details{
+The function automatically selects the most efficient computation method
+based on the input:
+\itemize{
+\item Analytic Methods: Used for univariate cases or multivariate distributions
+with a compound symmetry correlation structure and non-negative
+correlations.
+\item Monte Carlo Estimation: Used for all other cases. The algorithm employs
+a randomized quasi-Monte Carlo (QMC) approach using generalized Halton
+sequences.
+}
+
+To improve efficiency and accuracy, the QMC approach incorporates:
+\itemize{
+\item Sequential Conditioning: Mimics the standardization and transformation
+approach used in \code{mvtnorm::lpmvnorm}, reducing the \eqn{J}-dimensional
+integral to a \eqn{(J-1)}-dimensional problem over a hypercube.
+\item Initial Pivoting: Reorders the integration variables to minimize the
+variance of the integrand.
+\item Adaptive Sampling: The number of samples per replication increases
+dynamically until the estimated error falls below \code{abseps} or
+\code{releps}, or until \code{n_max} is reached.
+}
+
+The standard error is derived from \eqn{R} independent replications.
+For high-dimensional problems, computations can be accelerated by
+setting \code{parallel = TRUE}, which distributes the replications across
+multiple CPU threads via \code{nthreads}.
 }
 \examples{
+
+# Example 1: Compound symmetry covariance structure and analytic method
 n <- 5
-mean <- rep(0, 5)
-lower <- rep(-1, 5)
-upper <- rep(3, 5)
-corr <- diag(5)
-corr[lower.tri(corr)] <- 0.5
-corr[upper.tri(corr)] <- 0.5
-prob <- pmvnormr(lower, upper, mean, corr)
-print(prob)
+mean <- rep(0, n)
+lower <- rep(-1, n)
+upper <- rep(3, n)
+sigma <- matrix(0.5, n, n)
+diag(sigma) <- 1
+pmvnormr(lower, upper, mean, sigma)
+
+# Example 2: General covariance structure and Monte Carlo method
+n <- 5
+mean <- rep(0, n)
+lower <- rep(-1, n)
+upper <- rep(3, n)
+sigma <- matrix(c(1, 0.5, 0.3, 0.2, 0.1,
+                  0.5, 1, 0.4, 0.3, 0.2,
+                  0.3, 0.4, 1, 0.5, 0.3,
+                  0.2, 0.3, 0.5, 1, 0.4,
+                  0.1, 0.2, 0.3, 0.4, 1), nrow = n)
+pmvnormr(lower, upper, mean, sigma)
 
 }
 \author{

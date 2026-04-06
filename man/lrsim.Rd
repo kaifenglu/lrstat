@@ -47,7 +47,7 @@ is provided and to \code{plannedTime / plannedTime[kMax]} otherwise.}
 for stopping for efficacy.}
 
 \item{futilityBounds}{Lower boundaries on the z-test statistic scale
-for stopping for futility at stages 1, ..., \code{kMax-1}. Defaults to
+for stopping for futility at stages \code{1, ..., kMax-1}. Defaults to
 \code{rep(-6, kMax-1)} if left unspecified. The futility bounds are
 non-binding for the calculation of critical values.}
 
@@ -63,7 +63,7 @@ a randomization block. Defaults to 1 for equal randomization.}
 \item{accrualTime}{A vector that specifies the starting time of
 piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
 \code{c(0, 3)} breaks the time axis into 2 accrual intervals:
-[0, 3) and [3, Inf).}
+\eqn{[0, 3)} and \eqn{[3, \infty)}.}
 
 \item{accrualIntensity}{A vector of accrual intensities. One for
 each accrual time interval.}
@@ -71,7 +71,7 @@ each accrual time interval.}
 \item{piecewiseSurvivalTime}{A vector that specifies the starting time of
 piecewise exponential survival time intervals. Must start with 0, e.g.,
 \code{c(0, 6)} breaks the time axis into 2 event intervals:
-[0, 6) and [6, Inf).
+\eqn{[0, 6)} and \eqn{[6, \infty)}.
 Defaults to 0 for exponential distribution.}
 
 \item{stratumFraction}{A vector of stratum fractions that sum to 1.
@@ -98,7 +98,7 @@ by stratum for the control group.}
 \item{followupTime}{Follow-up time for the last enrolled subject.}
 
 \item{fixedFollowup}{Whether a fixed follow-up design is used.
-Defaults to 0 for variable follow-up.}
+Defaults to \code{FALSE} for variable follow-up.}
 
 \item{rho1}{The first parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}

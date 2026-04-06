@@ -87,7 +87,7 @@ ListCpp exitprob_tsssd_cpp(
   // compute the exit probabilities at the K looks in phase 3
   std::vector<double> I1(K), sqrtI1(K);
   for (size_t k = 0; k < K; ++k) {
-    I1[k] = Ivec[k+1] - Ivec[0]; // information for the selected arm in phase 3 at look k
+    I1[k] = Ivec[k+1] - Ivec[0]; // information for the selected arm in phase 3
     sqrtI1[k] = std::sqrt(I1[k]);
   }
 
@@ -182,88 +182,82 @@ ListCpp exitprob_tsssd_cpp(
 }
 
 
-//' @title Exit probabilities for two-stage seamless sequential design (TSSSD)
-//' @description Computes the exit probabilities for a two-stage selection
-//' and testing design with a common control arm in phase 2 and the selected
-//' active arm and the common control arm in phase 3.
+//' @title Exit Probabilities for Two-Stage Seamless Sequential Design (TSSSD)
+//' @description Computes the exit (rejection) probabilities for a two-stage
+//' selection and testing design. In Phase 2, multiple active arms are
+//' compared against a common control arm. The best-performing arm is
+//' selected to proceed to Phase 3, where it is tested against the common
+//' control over multiple looks.
 //'
-//' @param M number of active arms in phase 2.
-//' @param r randomization ratio of each active arm to the common control in phase 2.
-//' @param theta vector of true treatment effects for the M active arms in phase 2.
-//' @param corr_known whether the correlation between the Wald statistics in
-//'   phase 2 is known. If \code{TRUE}, the correlation is determined by
-//'   the randomization ratio \code{r} as \eqn{r / (r + 1)};
-//'   if \code{FALSE}, the correlation is conservatively set to 0.
-//' @param K number of looks in phase 3.
-//' @param b vector of critical values for phase 2 and the K looks in phase 3.
-//' @param I vector of information levels for phase 2 and the K looks in
-//'         phase 3 for any arm versus the common control.
+//' @param M Number of active treatment arms in Phase 2 (\eqn{M \ge 2}).
+//' @param r Randomization ratio of each active arm to the common control
+//'   in Phase 2.
+//' @param theta A vector of length \eqn{M} representing the true treatment
+//'   effects for each active arm versus the common control.
+//' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
+//'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
+//'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
+//'   0 is used.
+//' @param K Number of sequential looks in Phase 3.
+//' @param b A vector of critical values (length \eqn{K+1}). The first element
+//'   is for Phase 2; the remaining \eqn{K} elements are for the looks in
+//'   Phase 3.
+//' @param I A vector of information levels (length \eqn{K+1}) for any active
+//'   arm versus the common control. The first element is for Phase 2;
+//'   the remaining \eqn{K} elements are for the looks in Phase 3.
 //'
-//' @return A list with three components:
+//' @details
+//' The function assumes a multivariate normal distribution for the Wald
+//' statistics. The "best" arm is defined as the active arm with the largest
+//' score statistic at the end of Phase 2.
 //'
-//' * exitProb: A vector of length \eqn{K + 1}, where the first element is the
-//' exit probability in phase 2, and the \eqn{k}-th element for
-//' \eqn{k = 1,\ldots,K} is the exit probability at look \eqn{k} in phase 3.
+//' \strong{Decision Rules:}
+//' * \strong{Phase 2}: The global null hypothesis is rejected if the Wald
+//'   statistic for the best arm, \eqn{Z(I_0)}, satisfies \eqn{Z(I_0) \ge b_0}.
 //'
-//' * exitProbByArm: A matrix of dimension \eqn{(K + 1)} by \eqn{M}, where
-//' the \eqn{(k, m)}-th  element for \eqn{k = 0,\ldots,K} and
-//' \eqn{m = 1,\ldots,M} is the probability of rejecting the
-//' global null hypothesis in phase 2 if arm \eqn{m} is selected in phase 2
-//' when \eqn{k = 0}, and the probability of rejecting the global null hypothesis
-//' at look \eqn{k} in phase 3 if arm \eqn{m} is selected in phase 2 when
-//' \eqn{k = 1,...,K}.
+//' * \strong{Phase 3}: If the trial continues, the hypothesis is rejected at
+//'   look \eqn{k} if \eqn{Z(I_k) \ge b_k} and all previous
+//'   looks (including Phase 2) failed to reject.
 //'
-//' * selectAsBest: A vector of length \eqn{M}, where the \eqn{m}-th element
-//' is the probability of selecting arm \eqn{m} in phase 2 as the best arm
-//' among the \eqn{M} active arms in phase 2.
+//' \strong{Design Assumptions:}
 //'
-//' @details The exit probability in phase 2 is the probability of rejecting
-//' the global null hypothesis at the end of phase 2, and the exit probability
-//' at look \eqn{k} in phase 3 is the probability of rejecting the global null
-//' hypothesis at look \eqn{k} in phase 3 given that the global null hypothesis
-//' is not rejected in phase 2. The exit probabilities are computed under
-//' the multivariate normal distribution of the Wald statistics for the \eqn{M}
-//' active arms in phase 2 and the selected active arm in phase 3, where
-//' the covariance matrix is determined by the randomization ratio \eqn{r}.
+//' * All active arms share the same information level in Phase 2.
 //'
-//' We reject the global null hypothesis in phase 2 if \deqn{Z(I_0) >= b_0,}
-//' where \eqn{Z(I_0)} is the Wald statistic for best arm in phase 2, and
-//' we reject the global null hypothesis at look \eqn{k} in phase 3 if
-//' \deqn{Z(I_0) < b_0, Z(I_j) < b_j \text{ for } j = 1,\ldots,k-1,
-//' \text{ and } Z(I_k) >= b_k,} where \eqn{Z(I_k)} is the Wald statistic
-//' for the selected arm at look \eqn{k} in phase 3.
+//' * Exactly one active arm is selected at the end of Phase 2 based on the
+//'   largest observed statistic.
 //'
-//' The following assumptions are made for the TSSSD design:
+//' @return A list containing:
 //'
-//' * Information is the same across active arms in phase 2
+//' * \code{exitProb}: A vector of length \eqn{K + 1}. The first element is the
+//' probability of rejection in Phase 2; the remaining elements are the
+//' probabilities of rejection at each look in Phase 3.
 //'
-//' * At most one active arm can be selected at the end of phase 2
+//' * \code{exitProbByArm}: A \eqn{(K+1) \times M} matrix. The \eqn{(k, m)}-th
+//' entry represents the probability that the global null is rejected at
+//' look \eqn{k} given that arm \eqn{m} was selected as the best arm.
 //'
-//' * The selected arm is the one with the largest score statistic in phase 2
+//' * \code{selectAsBest}: A vector of length \eqn{M} containing the probability
+//' that each active arm is selected to move on to Phase 3.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
 //' @examples
 //'
-//' # Two active arms vs. a common control in phase 2, and the selected
-//' # active arm vs. the common control in phase 3 with 2 looks in phase 3
+//' # Setup: 2 active arms vs control in phase 2; 1 selected arm vs control
+//' # in phase 3. Phase 3 has 2 sequential looks.
 //'
-//' # equal spacing of information levels across phase 2/3 for any arm vs.
-//' # the common control
-//'
-//' # maximum of 110 patients per arm planned
-//' # standard deviation of the endpoint is 1
+//' # Information levels: equal spacing over 3 looks based on max 110 patients
+//' # per arm, SD = 1.0
 //' I <- c(110 / (2 * 1.0^2) * seq(1, 3)/3)
 //'
-//' # O'Brien-Fleming critical values for phase 2/3
+//' # O'Brien-Fleming critical values
 //' b <- c(3.776606, 2.670463, 2.180424)
 //'
 //' # Type I error under the global null hypothesis
 //' p0 <- exitprob_tsssd(M = 2, theta = c(0, 0), K = 2, b = b, I = I)
 //' cumsum(p0$exitProb)
 //'
-//' # Power under the alternative hypothesis where the treatment effects for
-//' # the two active arms are 0.3 and 0.5, respectively
+//' # Power under alternative: Treatment effects of 0.3 and 0.5
 //' p1 <- exitprob_tsssd(M = 2, theta = c(0.3, 0.5), K = 2, b = b, I = I)
 //' cumsum(p1$exitProb)
 //'
@@ -271,7 +265,7 @@ ListCpp exitprob_tsssd_cpp(
 // [[Rcpp::export]]
 Rcpp::List exitprob_tsssd(
     const int M = NA_INTEGER,
-    const double r = 1.0,
+    const double r = 1,
     const Rcpp::NumericVector& theta = NA_REAL,
     const bool corr_known = true,
     const int K = NA_INTEGER,
@@ -474,7 +468,8 @@ std::vector<double> getBound_tsssd_cpp(
     for (size_t k1 = 1; k1 < K; ++k1) {
       // determine cumulative alpha at this stage
       if (asf == "user") cumAlpha = userAlphaSpending[k1];
-      else cumAlpha = errorSpentcpp(spendTime[k1], alpha, asf, parameterAlphaSpending);
+      else cumAlpha = errorSpentcpp(spendTime[k1], alpha, asf,
+                                    parameterAlphaSpending);
 
       if (!effStopping[k1]) {
         criticalValues[k1] = 6.0;
@@ -519,48 +514,57 @@ std::vector<double> getBound_tsssd_cpp(
 }
 
 
-//' @title Efficacy Boundaries for Two-Stage Seamless Sequential Design
-//' @description Obtains the efficacy stopping boundaries for a two-stage
-//' seamless sequential design (TSSSD).
+//' @title Efficacy Boundaries for Two-Stage Seamless Sequential Design (TSSSD)
+//' @description Calculates the efficacy stopping boundaries for a two-stage
+//' seamless sequential design, accounting for the selection of the best arm
+//' at the end of Phase 2 and sequential testing in Phase 3.
 //'
-//' @param M Number of active arms in phase 2. Must be at least 2.
-//' @param r Randomization ratio of each active arm to the common control in
-//'  phase 2. Must be positive.
-//' @param corr_known whether the correlation between the Wald statistics in
-//'   phase 2 is known. If \code{TRUE}, the correlation is determined by
-//'   the randomization ratio \code{r} as \eqn{r / (r + 1)};
-//'   if \code{FALSE}, the correlation is conservatively set to 0.
-//' @param k Look number for the current analysis.
-//' @param informationRates Information rates up to the current look. Must be
-//'   increasing and less than or equal to 1.
+//' @param M Number of active treatment arms in Phase 2 (\eqn{M \ge 2}).
+//' @param r Randomization ratio of each active arm to the common control
+//'   in Phase 2.
+//' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
+//'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
+//'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
+//'   0 is assumed.
+//' @param k The index of the current look in Phase 3.
+//' @param informationRates A numeric vector of information rates up to the
+//'   current look. Values must be strictly increasing and \eqn{\le 1}.
 //' @inheritParams param_alpha
 //' @inheritParams param_typeAlphaSpending
 //' @inheritParams param_parameterAlphaSpending
 //' @inheritParams param_userAlphaSpending
-//' @param spendingTime A vector of length \code{k} for the error spending
-//'   time at each analysis. Must be increasing and less than or equal to 1.
-//'   Defaults to missing, in which case, it is the same as
-//'   \code{informationRates}.
+//' @param spendingTime A numeric vector of length \eqn{k+1} specifying the
+//'   error spending time at each analysis. Values must be strictly increasing
+//'   and \eqn{\le 1}. If omitted, defaults to \code{informationRates}.
 //' @inheritParams param_efficacyStopping
 //'
 //' @details
-//' If \code{typeAlphaSpending} is "OF", "P", or "WT", then the boundaries
-//' will be based on equally spaced looks.
+//' The function determines critical values by solving for the boundary that
+//' satisfies the alpha-spending requirement, given the selection of the
+//' "best" arm at the end of Phase 2.
 //'
-//' @return A numeric vector of critical values up to the current look.
+//' If \code{typeAlphaSpending} is specified as \code{"OF"} (O'Brien-Fleming),
+//' \code{"P"} (Pocock), or \code{"WT"} (Wang-Tsiatis), the boundaries are
+//' calculated assuming the looks are equally spaced in terms of information.
+//'
+//' @return A numeric vector of length \eqn{k + 1} containing the critical
+//' values (on the standard normal Z-scale) for each analysis up to the
+//' current look.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
 //' @examples
 //'
-//' getBound_tsssd(M = 2, k = 2, informationRates = seq(1,3)/3,
+//' # Determine O'Brien-Fleming boundaries for a TSSSD with
+//' # 2 active arms in Phase 2 and 2 looks in Phase 3 (3 looks total).
+//' getBound_tsssd(M = 2, k = 2, informationRates = seq(1, 3)/3,
 //'               alpha = 0.025, typeAlphaSpending = "OF")
 //'
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericVector getBound_tsssd(
     const int M = NA_INTEGER,
-    const double r = 1.0,
+    const double r = 1,
     const bool corr_known = true,
     const int k = NA_INTEGER,
     const Rcpp::NumericVector& informationRates = NA_REAL,
@@ -885,114 +889,90 @@ ListCpp getDesign_tsssd_cpp(
 }
 
 
-//' @title Power and Sample Size for a Generic Two-Stage Seamless Sequential Design
-//' @description Obtains the maximum information and stopping boundaries
-//' for a generic two-stage seamless sequential design design, or obtains
-//' the power given the maximum information and stopping boundaries.
+//' @title Power and Sample Size for Two-Stage Seamless Sequential Design (TSSSD)
+//' @description Computes either the maximum information and stopping
+//' boundaries for a generic two-stage seamless sequential design, or
+//' the achieved power when the maximum information and stopping boundaries
+//' are provided.
 //'
-//' @param beta The type II error.
-//' @param IMax The maximum information for any active arm versus the common
-//'   control. Either \code{beta} or \code{IMax} should be provided while
-//'   the other one should be missing.
-//' @param theta The parameter vector. The global null hypothesis is at
-//'   \eqn{\theta_i = 0} for all \eqn{i}, and the alternative hypothesis
-//'   is one-sided for \eqn{theta_i > 0} for at least one \eqn{i = 1,\ldots,M}.
-//' @param M The number of active arms in phase 2. Must be at least 2.
-//' @param r The randomization ratio of each active arm to the common control
-//'  in phase 2. Must be positive.
-//' @param corr_known whether the correlation between the Wald statistics in
-//'   phase 2 is known. If \code{TRUE}, the correlation is determined by
-//'   the randomization ratio \code{r} as \eqn{r / (r + 1)};
-//'   if \code{FALSE}, the correlation is conservatively set to 0.
-//' @param K The maximum number of stages in phase 3. Must be at least 1.
-//' @param informationRates The information rates. Fixed prior to the trial.
-//'   Defaults to \code{(1:(K+1)) / (K+1)} if left unspecified.
+//' @param beta Type II error rate. Provide either \code{beta} or \code{IMax};
+//'   the other should be missing.
+//' @param IMax Maximum information for any active arm versus the common
+//'   control. Provide either \code{IMax} or \code{beta}; the other should
+//'   be missing.
+//' @param theta A vector of length \eqn{M} representing the true treatment
+//'   effects for each active arm versus the common control. The global null
+//'   is \eqn{\theta_i = 0} for all \eqn{i}, and alternatives are one-sided:
+//'   \eqn{\theta_i > 0} for at least one \eqn{i = 1, \ldots, M}.
+//' @param M Number of active treatment arms in Phase 2.
+//' @param r Randomization ratio of each active arm to the common control
+//'   in Phase 2.
+//' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
+//'   statistics in Phase 2 is derived from the randomization ratio \code{r}
+//'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
+//'   0 is used.
+//' @param K Number of sequential looks in Phase 3.
+//' @param informationRates A numeric vector of information rates fixed
+//'   before the trial. If unspecified, defaults to \eqn{(1:(K+1)) / (K+1)}.
 //' @inheritParams param_efficacyStopping
 //' @inheritParams param_criticalValues
 //' @inheritParams param_alpha
 //' @inheritParams param_typeAlphaSpending
 //' @inheritParams param_parameterAlphaSpending
 //' @inheritParams param_userAlphaSpending
-//' @param spendingTime A vector of length \code{K+1} for the error spending
-//'   time at each analysis. Defaults to missing, in which case, it is the
-//'   same as \code{informationRates}.
-//' @param varianceRatio The ratio of the variance under H0 to the
-//'   variance under H1.
+//' @param spendingTime A numeric vector of length \eqn{K+1} specifying the
+//'   error spending time at each analysis. Values must be strictly increasing
+//'   and ends at 1. If omitted, defaults to \code{informationRates}.
+//' @param varianceRatio Ratio of the variance under \eqn{H_0} to the
+//'   variance under \eqn{H_1}.
 //'
-//' @return An S3 class \code{design} object with three components:
+//' @return An S3 object of class \code{tsssd} with these components:
 //'
-//' * \code{overallResults}: A data frame containing the following variables:
+//' * \code{overallResults}: A data frame containing:
+//'     - \code{overallReject}: Overall probability of rejecting the null
+//'       hypothesis.
+//'     - \code{alpha}: Overall significance level.
+//'     - \code{M}: Number of active arms in phase 2.
+//'     - \code{r}: Randomization ratio per active arm versus control in phase 2.
+//'     - \code{corr_known}: Whether the phase-2 correlation was assumed known.
+//'     - \code{K}: Number of stages in phase 3.
+//'     - \code{information}: Maximum information for any active arm versus control.
 //'
-//'     - \code{overallReject}: The overall rejection probability.
+//' * \code{byStageResults}: A data frame containing:
+//'     - \code{informationRates}: Information rates at each analysis.
+//'     - \code{efficacyBounds}: Efficacy boundaries on the Z-scale.
+//'     - \code{rejectPerStage}: Probability of efficacy stopping at each stage.
+//'     - \code{cumulativeRejection}: Cumulative probability of efficacy stopping.
+//'     - \code{cumulativeAlphaSpent}: Cumulative alpha spent.
+//'     - \code{efficacyTheta}: Efficacy boundaries on the parameter scale.
+//'     - \code{efficacyP}: Efficacy boundaries on the p-value scale.
+//'     - \code{information}: Cumulative information for any active arm versus
+//'       control at each analysis.
+//'     - \code{efficacyStopping}: Indicator of whether efficacy stopping
+//'       is permitted.
 //'
-//'     - \code{alpha}: The overall significance level.
+//' * \code{byArmResults}: A data frame containing:
+//'     - \code{theta}: Parameter values for the active arms.
+//'     - \code{selectAsBest}: Probability an arm is selected as best in at
+//'       the end of phase 2.
+//'     - \code{powerByArm}: Probability of rejecting the null for each arm
+//'       by trial end.
+//'     - \code{condPowerByArm}: Conditional power for each arm given it was
+//'       selected as best at the end of phase 2.
 //'
-//'     - \code{M}: The number of active arms in phase 2.
+//' * \code{settings}: A list of input settings:
+//'     - \code{typeAlphaSpending}: Type of alpha spending function.
+//'     - \code{parameterAlphaSpending}: Parameter value for the chosen
+//'       alpha spending function.
+//'     - \code{userAlphaSpending}: User-specified alpha spending values.
+//'     - \code{spendingTime}: Error-spending times at each analysis.
+//'     - \code{varianceRatio}: Ratio of variance under \eqn{H_0} to variance
+//'       under \eqn{H_1}.
 //'
-//'     - \code{r}: The randomization ratio of each active arm to the
-//'       common control in phase 2.
-//'
-//'     - \code{corr_known}: Whether the correlation between the Wald statistics
-//'       in phase 2 is known.
-//'
-//'     - \code{K}: The number of stages in phase 3.
-//'
-//'     - \code{information}: The maximum information for any given active arm
-//'       versus the common control.
-//'
-//' * \code{byStageResults}: A data frame containing the following variables:
-//'
-//'     - \code{informationRates}: The information rates.
-//'
-//'     - \code{efficacyBounds}: The efficacy boundaries on the Z-scale.
-//'
-//'     - \code{rejectPerStage}: The probability for efficacy stopping.
-//'
-//'     - \code{cumulativeRejection}: The cumulative probability for efficacy
-//'       stopping.
-//'
-//'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
-//'
-//'     - \code{efficacyTheta}: The efficacy boundaries on the parameter
-//'       scale.
-//'
-//'     - \code{efficacyP}: The efficacy boundaries on the p-value scale.
-//'
-//'     - \code{information}: The cumulative information.
-//'
-//'     - \code{efficacyStopping}: Whether to allow efficacy stopping.
-//'
-//' * \code{byArmResults}: A data frame containing the following variables:
-//'
-//'     - \code{theta}: The parameter values for the active arms.
-//'
-//'     - \code{selectAsBest}: The probability of being selected as the
-//'       best arm at the end of phase 2.
-//'
-//'     - \code{powerByArm}: The probability of rejecting the null hypothesis
-//'       for each arm at the end of the trial.
-//'
-//'     - \code{condPowerByArm}: The conditional power for each arm given that
-//'       the arm is selected as the best at the end of phase 2.
-//'
-//' * \code{settings}: A list containing the following input parameters:
-//'
-//'     - \code{typeAlphaSpending}: The type of alpha spending.
-//'
-//'     - \code{parameterAlphaSpending}: The parameter value for alpha
-//'       spending.
-//'
-//'     - \code{userAlphaSpending}: The user defined alpha spending.
-//'
-//'     - \code{spendingTime}: The error spending time at each analysis.
-//'
-//'     - \code{varianceRatio}: The ratio of the variance under H0
-//'       to the variance under H1.
-//'
-//' @details When \code{corr_known} is \code{FALSE}, the critical boundaries
-//' are computed under the assumption of independence among the Wald
-//' statistics in phase 2, whereas the power is evaluated using the
-//' correlation implied by the randomization ratio.
+//' @details If \code{corr_known} is \code{FALSE}, critical boundaries are
+//' computed assuming independence among the phase-2 Wald statistics
+//' (a conservative assumption). Power calculations, however, use the
+//' correlation implied by the randomization ratio \eqn{r}.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
@@ -1022,7 +1002,7 @@ Rcpp::List getDesign_tsssd(
     const double IMax = NA_REAL,
     const Rcpp::NumericVector& theta = NA_REAL,
     const int M = NA_INTEGER,
-    const double r = 1.0,
+    const double r = 1,
     const bool corr_known = true,
     const int K = 1,
     const Rcpp::NumericVector& informationRates = NA_REAL,
