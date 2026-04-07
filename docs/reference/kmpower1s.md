@@ -78,7 +78,7 @@ kmpower1s(
 - parameterAlphaSpending:
 
   The parameter value for the alpha spending. Corresponds to \\\Delta\\
-  for `"WT"`, \\rho\\ for `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
+  for `"WT"`, \\\rho\\ for `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
 
 - userAlphaSpending:
 

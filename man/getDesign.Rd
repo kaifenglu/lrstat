@@ -63,7 +63,7 @@ for stopping for efficacy.}
 Defaults to \code{"sfOF"}.}
 
 \item{parameterAlphaSpending}{The parameter value for the alpha spending.
-Corresponds to \eqn{\Delta} for \code{"WT"}, \eqn{rho} for \code{"sfKD"},
+Corresponds to \eqn{\Delta} for \code{"WT"}, \eqn{\rho} for \code{"sfKD"},
 and \eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{userAlphaSpending}{The user defined alpha spending. Cumulative alpha
