@@ -156,7 +156,7 @@
 # lrstat 0.2.6
 
 * replace "R\_isnancpp(x)" with "x == NA\_INTEGER" for integer parameter x
-* replace "!all.equal(x$settings$spendingTime, s$informationRates)" with "!all(x$settings$spendingTime == s$informationRates)" in prints.R
+* replace the check for equality of spendigTime and informationRates in settings in prints.R
 
 # lrstat 0.2.5
 
