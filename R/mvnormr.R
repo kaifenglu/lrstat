@@ -83,7 +83,7 @@
 #'                   0.3, 0.4, 1, 0.5, 0.3,
 #'                   0.2, 0.3, 0.5, 1, 0.4,
 #'                   0.1, 0.2, 0.3, 0.4, 1), nrow = n)
-#' pmvnormr(lower, upper, mean, sigma)
+#' pmvnormr(lower, upper, mean, sigma, seed = 314159)
 #'
 #' @export
 pmvnormr <- function(lower, upper, mean = NULL, sigma, fast = TRUE,

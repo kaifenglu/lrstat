@@ -5,3 +5,5 @@
 notes
 ^data-raw$
 ^\.github$
+^docs$
+^_pkgdown\.yml$

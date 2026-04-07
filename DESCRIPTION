@@ -24,7 +24,7 @@ Suggests:
     knitr (>= 1.45),
     rmarkdown (>= 2.25),
     survival (>= 3.5-7),
-    pkgdown (2.2.0)
+    pkgdown (>= 2.2.0)
 VignetteBuilder: knitr
 RoxygenNote: 7.3.3
 Roxygen: list(markdown = TRUE)
