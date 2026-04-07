@@ -6,7 +6,13 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Sample Size Calculation With Fixed Follow-up • lrstat</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -215,37 +221,19 @@ the lrsim function.</p>
 <p>The simulated power is about 95% for design 1, and 84% for design 2.
 Neither is close to the target 90% power.</p>
 <p>We use the following formula to adjust the sample size to attain the
-target power,
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>D</mi><mo>=</mo><msub><mi>D</mi><mn>0</mn></msub><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msup><mi>Φ</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msup><mi>Φ</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><msup><mi>Φ</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msup><mi>Φ</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>β</mi><mn>0</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">
-D = D_0 \left( \frac{\Phi^{-1}(1-\alpha) + \Phi^{-1}(1-\beta)} {\Phi^{-1}(1-\alpha) + \Phi^{-1}(1-\beta_0)} \right)^2
-</annotation></semantics></math> where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>D</mi><mn>0</mn></msub><annotation encoding="application/x-tex">D_0</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mn>0</mn></msub><annotation encoding="application/x-tex">\beta_0</annotation></semantics></math>
-are the initial event number and the correponding type II error, and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>D</mi><annotation encoding="application/x-tex">D</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>β</mi><annotation encoding="application/x-tex">\beta</annotation></semantics></math>
-are the required event number and the target type II error,
-respectively. For
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0.025</mn></mrow><annotation encoding="application/x-tex">\alpha=0.025</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mo>=</mo><mn>0.1</mn></mrow><annotation encoding="application/x-tex">\beta=0.1</annotation></semantics></math>,
-plugging in
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>D</mi><mn>0</mn></msub><mo>=</mo><mn>39</mn><mo>,</mo><msub><mi>β</mi><mn>0</mn></msub><mo>=</mo><mn>0.05</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(D_0=39, \beta_0=0.05)</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>D</mi><mn>0</mn></msub><mo>=</mo><mn>26</mn><mo>,</mo><msub><mi>β</mi><mn>0</mn></msub><mo>=</mo><mn>0.17</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(D_0=26, \beta_0=0.17)</annotation></semantics></math>
-would yield
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>D</mi><mo>=</mo><mn>32</mn></mrow><annotation encoding="application/x-tex">D=32</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>D</mi><mo>=</mo><mn>32</mn></mrow><annotation encoding="application/x-tex">D=32</annotation></semantics></math>,
-respectively. For
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>D</mi><mo>=</mo><mn>32</mn></mrow><annotation encoding="application/x-tex">D=32</annotation></semantics></math>,
-we need about 156 patients for an enrollment period of 31.2
-months,<br><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi><mo>=</mo><mfrac><mi>D</mi><mrow><mfrac><mi>r</mi><mrow><mn>1</mn><mo>+</mo><mi>r</mi></mrow></mfrac><mfrac><msub><mi>λ</mi><mn>1</mn></msub><mrow><msub><mi>λ</mi><mn>1</mn></msub><mo>+</mo><msub><mi>γ</mi><mn>1</mn></msub></mrow></mfrac><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>λ</mi><mn>1</mn></msub><mo>+</mo><msub><mi>γ</mi><mn>1</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>T</mi><mi>f</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><mi>r</mi></mrow></mfrac><mfrac><msub><mi>λ</mi><mn>2</mn></msub><mrow><msub><mi>λ</mi><mn>2</mn></msub><mo>+</mo><msub><mi>γ</mi><mn>2</mn></msub></mrow></mfrac><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>λ</mi><mn>2</mn></msub><mo>+</mo><msub><mi>γ</mi><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>T</mi><mi>f</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac></mrow><annotation encoding="application/x-tex">
-N = \frac{D}{ \frac{r}{1+r}\frac{\lambda_1}{\lambda_1+\gamma_1} (1 - \exp(-(\lambda_1+\gamma_1)T_f)) + \frac{1}{1+r}\frac{\lambda_2}{\lambda_2+\gamma_2} (1 - \exp(-(\lambda_2+\gamma_2)T_f)) }
-</annotation></semantics></math> Simulation results confirmed the
-accuracy of this sample size estimate.</p>
+target power, <span class="math display">\[
+D = D_0 \left( \frac{\Phi^{-1}(1-\alpha) + \Phi^{-1}(1-\beta)}
+{\Phi^{-1}(1-\alpha) + \Phi^{-1}(1-\beta_0)} \right)^2
+\]</span> where <span class="math inline">\(D_0\)</span> and <span class="math inline">\(\beta_0\)</span> are the initial event number and
+the correponding type II error, and <span class="math inline">\(D\)</span> and <span class="math inline">\(\beta\)</span> are the required event number and
+the target type II error, respectively. For <span class="math inline">\(\alpha=0.025\)</span> and <span class="math inline">\(\beta=0.1\)</span>, plugging in <span class="math inline">\((D_0=39, \beta_0=0.05)\)</span> and <span class="math inline">\((D_0=26, \beta_0=0.17)\)</span> would yield <span class="math inline">\(D=32\)</span> and <span class="math inline">\(D=32\)</span>, respectively. For <span class="math inline">\(D=32\)</span>, we need about 156 patients for an
+enrollment period of 31.2 months,<br><span class="math display">\[
+N = \frac{D}{ \frac{r}{1+r}\frac{\lambda_1}{\lambda_1+\gamma_1} (1 -
+\exp(-(\lambda_1+\gamma_1)T_f)) +
+\frac{1}{1+r}\frac{\lambda_2}{\lambda_2+\gamma_2} (1 -
+\exp(-(\lambda_2+\gamma_2)T_f)) }
+\]</span> Simulation results confirmed the accuracy of this sample size
+estimate.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lrsim.html">lrsim</a></span><span class="op">(</span>kMax <span class="op">=</span> <span class="fl">1</span>, criticalValues <span class="op">=</span> <span class="fl">1.96</span>,  </span>
 <span>      allocation1 <span class="op">=</span> <span class="fl">3</span>, allocation2 <span class="op">=</span> <span class="fl">1</span>,</span>

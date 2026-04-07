@@ -9,8 +9,8 @@ sample size calculation of survival trials as implemented in the lrstat
 package with the Schoenfeld method for sample size calculation of
 survival trials.
 
-Consider a fixed design with $`\pi_1=0.2`$ for the active treatment
-group and $`\pi_2=0.4`$ for the control group at month 12, an enrollment
+Consider a fixed design with \\\pi_1=0.2\\ for the active treatment
+group and \\\pi_2=0.4\\ for the control group at month 12, an enrollment
 period lasting 12 months to enroll 200 patients, and a target number of
 events of 40.
 

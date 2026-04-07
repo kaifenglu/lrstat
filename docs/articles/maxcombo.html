@@ -6,7 +6,13 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Power Calculation Using Max-Combo Tests • lrstat</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -84,32 +90,21 @@ resulting power is abut 73%. We now verify this through analytic
 calculation and simulation.</p>
 <p>First, we derive the critical values at the interim and final
 analyses. For the interim analysis, only one log-rank test will be used,
-hence the critical value is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>u</mi><mn>1</mn></msub><mo>=</mo><msup><mi>Φ</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mn>0.0015</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>2.968</mn></mrow><annotation encoding="application/x-tex">u_1 = \Phi^{-1}(1-0.0015) = 2.968</annotation></semantics></math>.
-For the final analysis, the critical value
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>u</mi><mn>2</mn></msub><annotation encoding="application/x-tex">u_2</annotation></semantics></math>
-satisfies
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mn>0</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Z</mi><mrow><mn>1</mn><mo>,</mo><mn>1</mn></mrow></msub><mo>&lt;</mo><msub><mi>u</mi><mn>1</mn></msub><mo>,</mo><mo>max</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Z</mi><mrow><mn>1</mn><mo>,</mo><mn>2</mn></mrow></msub><mo>,</mo><msub><mi>Z</mi><mrow><mn>2</mn><mo>,</mo><mn>2</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>&lt;</mo><msub><mi>u</mi><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn><mo>−</mo><mn>0.025</mn></mrow><annotation encoding="application/x-tex">
+hence the critical value is <span class="math inline">\(u_1 =
+\Phi^{-1}(1-0.0015) = 2.968\)</span>. For the final analysis, the
+critical value <span class="math inline">\(u_2\)</span> satisfies <span class="math display">\[
   P_0(Z_{1,1} &lt; u_1, \max(Z_{1,2}, Z_{2,2}) &lt; u_2) = 1 - 0.025
-</annotation></semantics></math> which is the same as
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mn>0</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Z</mi><mrow><mn>1</mn><mo>,</mo><mn>1</mn></mrow></msub><mo>&lt;</mo><msub><mi>u</mi><mn>1</mn></msub><mo>,</mo><msub><mi>Z</mi><mrow><mn>1</mn><mo>,</mo><mn>2</mn></mrow></msub><mo>&lt;</mo><msub><mi>u</mi><mn>2</mn></msub><mo>,</mo><msub><mi>Z</mi><mrow><mn>2</mn><mo>,</mo><mn>2</mn></mrow></msub><mo>&lt;</mo><msub><mi>u</mi><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>0.975</mn><mspace width="0.278em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mi>E</mi><mi>q</mi><mi>.</mi><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
-  P_0(Z_{1,1} &lt; u_1, Z_{1,2} &lt; u_2, Z_{2,2} &lt; u_2) = 0.975 \; 
+\]</span> which is the same as <span class="math display">\[
+  P_0(Z_{1,1} &lt; u_1, Z_{1,2} &lt; u_2, Z_{2,2} &lt; u_2) = 0.975 \;
     (Eq. 1)
-</annotation></semantics></math> Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>U</mi><mrow><mi>F</mi><mi>H</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>p</mi><mo>,</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mi>i</mi></mrow></msub><annotation encoding="application/x-tex">U_{FH(p,q),i}</annotation></semantics></math>
-denote the numerator of the FH(p,q) weighted log-rank test statistic at
-analysis
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>,
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>V</mi><mrow><mi>F</mi><mi>H</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>p</mi><mo>,</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mi>i</mi></mrow></msub><annotation encoding="application/x-tex">V_{FH(p,q),i}</annotation></semantics></math>
-its variance. Then
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>W</mi><mrow><mi>F</mi><mi>H</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>p</mi><mo>,</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mi>i</mi></mrow></msub><mo>=</mo><msub><mi>U</mi><mrow><mi>F</mi><mi>H</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>p</mi><mo>,</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mi>i</mi></mrow></msub><mi>/</mi><msubsup><mi>V</mi><mrow><mi>F</mi><mi>H</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>p</mi><mo>,</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mi>i</mi></mrow><mrow><mn>1</mn><mi>/</mi><mn>2</mn></mrow></msubsup></mrow><annotation encoding="application/x-tex">W_{FH(p,q),i} = U_{FH(p,q),i}/{V_{FH(p,q),i}^{1/2}}</annotation></semantics></math>.
-In addition, similar to <span class="citation">Karrison (2016)</span>,
-we can show that
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><mi>o</mi><mi>v</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>U</mi><mrow><mi>F</mi><mi>H</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>p</mi><mn>1</mn></msub><mo>,</mo><msub><mi>q</mi><mn>1</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>U</mi><mrow><mi>F</mi><mi>H</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>p</mi><mn>2</mn></msub><mo>,</mo><msub><mi>q</mi><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mn>2</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>V</mi><mrow><mi>F</mi><mi>H</mi><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msub><mi>p</mi><mn>1</mn></msub><mo>+</mo><msub><mi>p</mi><mn>2</mn></msub></mrow><mn>2</mn></mfrac><mo>,</mo><mfrac><mrow><msub><mi>q</mi><mn>1</mn></msub><mo>+</mo><msub><mi>q</mi><mn>2</mn></msub></mrow><mn>2</mn></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mn>1</mn></mrow></msub></mrow><annotation encoding="application/x-tex">
-  Cov(U_{FH(p_1,q_1),1}, U_{FH(p_2,q_2),2}) = 
+\]</span> Let <span class="math inline">\(U_{FH(p,q),i}\)</span> denote
+the numerator of the FH(p,q) weighted log-rank test statistic at
+analysis <span class="math inline">\(i\)</span>, and <span class="math inline">\(V_{FH(p,q),i}\)</span> its variance. Then <span class="math inline">\(W_{FH(p,q),i} =
+U_{FH(p,q),i}/{V_{FH(p,q),i}^{1/2}}\)</span>. In addition, similar to
+<span class="citation">Karrison (2016)</span>, we can show that <span class="math display">\[
+  Cov(U_{FH(p_1,q_1),1}, U_{FH(p_2,q_2),2}) =
   V_{FH\left(\frac{p_1+p_2}{2},\frac{q_1+q_2}{2}\right),1}
-</annotation></semantics></math></p>
+\]</span></p>
 <p>First, we find the time when 50 and 99.9 events are expected to have
 occurred.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -157,23 +152,21 @@ weights.</p>
 <span><span class="co">#&gt;   nfmax nfmax1 nfmax2    uscore    vscore  logRankZ hazardRatioH0</span></span>
 <span><span class="co">#&gt; 1     0      0      0 -2.089089  3.241192 -1.160391             1</span></span>
 <span><span class="co">#&gt; 2     0      0      0 -8.253880 10.082599 -2.599393             1</span></span></code></pre></div>
-<p>It follows that the mean of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝐙</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Z</mi><mrow><mn>1</mn><mo>,</mo><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>Z</mi><mrow><mn>1</mn><mo>,</mo><mn>2</mn></mrow></msub><mo>,</mo><msub><mi>Z</mi><mrow><mn>2</mn><mo>,</mo><mn>2</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\mathbf{Z}=(Z_{1,1}, Z_{1,2}, Z_{2,2})</annotation></semantics></math>
-is
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mn>3.179</mn><msqrt><mn>12.464</mn></msqrt></mfrac><mo>,</mo><mfrac><mn>10.545</mn><msqrt><mn>22.270</mn></msqrt></mfrac><mo>,</mo><mfrac><mn>6.608</mn><msqrt><mn>6.161</mn></msqrt></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0.900</mn><mo>,</mo><mn>2.234</mn><mo>,</mo><mn>2.662</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
-  \left(\frac{3.179}{\sqrt{12.464}}, \frac{10.545}{\sqrt{22.270}}, 
+<p>It follows that the mean of <span class="math inline">\(\mathbf{Z}=(Z_{1,1}, Z_{1,2}, Z_{2,2})\)</span> is
+<span class="math display">\[
+  \left(\frac{3.179}{\sqrt{12.464}}, \frac{10.545}{\sqrt{22.270}},
   \frac{6.608}{\sqrt{6.161}} \right) = (0.900, 2.234, 2.662)
-</annotation></semantics></math> and the covariance matrix of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐙</mi><annotation encoding="application/x-tex">\mathbf{Z}</annotation></semantics></math>
-is
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd><mtd columnalign="center" style="text-align: center"><msqrt><mfrac><mn>12.464</mn><mn>22.270</mn></mfrac></msqrt></mtd><mtd columnalign="center" style="text-align: center"><mfrac><mn>3.241</mn><msqrt><mrow><mn>12.464</mn><mo>×</mo><mn>6.161</mn></mrow></msqrt></mfrac></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msqrt><mfrac><mn>12.464</mn><mn>22.270</mn></mfrac></msqrt></mtd><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd><mtd columnalign="center" style="text-align: center"><mfrac><mn>10.083</mn><msqrt><mrow><mn>22.270</mn><mo>×</mo><mn>6.161</mn></mrow></msqrt></mfrac></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mfrac><mn>3.241</mn><msqrt><mrow><mn>12.464</mn><mo>×</mo><mn>6.161</mn></mrow></msqrt></mfrac></mtd><mtd columnalign="center" style="text-align: center"><mfrac><mn>10.083</mn><msqrt><mrow><mn>22.270</mn><mo>×</mo><mn>6.161</mn></mrow></msqrt></mfrac></mtd><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd></mtr></mtable><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0.748</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0.370</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>0.748</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0.861</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>0.370</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0.861</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd></mtr></mtable><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
-  \left(\begin{array}{ccc} 1 &amp; \sqrt{\frac{12.464}{22.270}} &amp; \frac{3.241}{\sqrt{12.464\times 6.161}} \\
-  \sqrt{\frac{12.464}{22.270}} &amp; 1 &amp; \frac{10.083}{\sqrt{22.270\times 6.161}} \\ 
-  \frac{3.241}{\sqrt{12.464\times 6.161}}  &amp; \frac{10.083}{\sqrt{22.270\times 6.161}} &amp; 1 \end{array} \right) = \left(\begin{array}{ccc} 1 &amp; 0.748 &amp;  0.370 \\ 
-  0.748 &amp; 1 &amp; 0.861 \\ 0.370 &amp; 0.861 &amp; 1 \end{array} \right)
-</annotation></semantics></math> Now, we obtain the critical value
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>u</mi><mn>2</mn></msub><annotation encoding="application/x-tex">u_2</annotation></semantics></math>
-by solving equation (1).</p>
+\]</span> and the covariance matrix of <span class="math inline">\(\mathbf{Z}\)</span> is <span class="math display">\[
+  \left(\begin{array}{ccc} 1 &amp; \sqrt{\frac{12.464}{22.270}} &amp;
+\frac{3.241}{\sqrt{12.464\times 6.161}} \\
+  \sqrt{\frac{12.464}{22.270}} &amp; 1 &amp;
+\frac{10.083}{\sqrt{22.270\times 6.161}} \\
+  \frac{3.241}{\sqrt{12.464\times 6.161}}  &amp;
+\frac{10.083}{\sqrt{22.270\times 6.161}} &amp; 1 \end{array} \right) =
+\left(\begin{array}{ccc} 1 &amp; 0.748 &amp;  0.370 \\
+  0.748 &amp; 1 &amp; 0.861 \\ 0.370 &amp; 0.861 &amp; 1 \end{array}
+\right)
+\]</span> Now, we obtain the critical value <span class="math inline">\(u_2\)</span> by solving equation (1).</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://mvtnorm.R-forge.R-project.org" class="external-link">mvtnorm</a></span><span class="op">)</span></span>
 <span><span class="va">mu</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.900</span>, <span class="fl">2.234</span>, <span class="fl">2.662</span><span class="op">)</span></span>

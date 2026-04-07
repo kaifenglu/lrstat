@@ -166,23 +166,20 @@ The simulated power is about 95% for design 1, and 84% for design 2.
 Neither is close to the target 90% power.
 
 We use the following formula to adjust the sample size to attain the
-target power,
-``` math
-
-D = D_0 \left( \frac{\Phi^{-1}(1-\alpha) + \Phi^{-1}(1-\beta)} {\Phi^{-1}(1-\alpha) + \Phi^{-1}(1-\beta_0)} \right)^2
-```
-where $`D_0`$ and $`\beta_0`$ are the initial event number and the
-correponding type II error, and $`D`$ and $`\beta`$ are the required
-event number and the target type II error, respectively. For
-$`\alpha=0.025`$ and $`\beta=0.1`$, plugging in
-$`(D_0=39, \beta_0=0.05)`$ and $`(D_0=26, \beta_0=0.17)`$ would yield
-$`D=32`$ and $`D=32`$, respectively. For $`D=32`$, we need about 156
-patients for an enrollment period of 31.2 months,  
-``` math
-
-N = \frac{D}{ \frac{r}{1+r}\frac{\lambda_1}{\lambda_1+\gamma_1} (1 - \exp(-(\lambda_1+\gamma_1)T_f)) + \frac{1}{1+r}\frac{\lambda_2}{\lambda_2+\gamma_2} (1 - \exp(-(\lambda_2+\gamma_2)T_f)) }
-```
-Simulation results confirmed the accuracy of this sample size estimate.
+target power, \\ D = D_0 \left( \frac{\Phi^{-1}(1-\alpha) +
+\Phi^{-1}(1-\beta)} {\Phi^{-1}(1-\alpha) + \Phi^{-1}(1-\beta_0)}
+\right)^2 \\ where \\D_0\\ and \\\beta_0\\ are the initial event number
+and the correponding type II error, and \\D\\ and \\\beta\\ are the
+required event number and the target type II error, respectively. For
+\\\alpha=0.025\\ and \\\beta=0.1\\, plugging in \\(D_0=39,
+\beta_0=0.05)\\ and \\(D_0=26, \beta_0=0.17)\\ would yield \\D=32\\ and
+\\D=32\\, respectively. For \\D=32\\, we need about 156 patients for an
+enrollment period of 31.2 months,  
+\\ N = \frac{D}{ \frac{r}{1+r}\frac{\lambda_1}{\lambda_1+\gamma_1} (1 -
+\exp(-(\lambda_1+\gamma_1)T_f)) +
+\frac{1}{1+r}\frac{\lambda_2}{\lambda_2+\gamma_2} (1 -
+\exp(-(\lambda_2+\gamma_2)T_f)) } \\ Simulation results confirmed the
+accuracy of this sample size estimate.
 
 ``` r
 lrsim(kMax = 1, criticalValues = 1.96,  

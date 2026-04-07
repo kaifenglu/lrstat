@@ -23,27 +23,17 @@ analytic calculation and simulation.
 
 First, we derive the critical values at the interim and final analyses.
 For the interim analysis, only one log-rank test will be used, hence the
-critical value is $`u_1 = \Phi^{-1}(1-0.0015) = 2.968`$. For the final
-analysis, the critical value $`u_2`$ satisfies
-``` math
-
-  P_0(Z_{1,1} < u_1, \max(Z_{1,2}, Z_{2,2}) < u_2) = 1 - 0.025
-```
-which is the same as
-``` math
-
-  P_0(Z_{1,1} < u_1, Z_{1,2} < u_2, Z_{2,2} < u_2) = 0.975 \; 
-    (Eq. 1)
-```
-Let $`U_{FH(p,q),i}`$ denote the numerator of the FH(p,q) weighted
-log-rank test statistic at analysis $`i`$, and $`V_{FH(p,q),i}`$ its
-variance. Then $`W_{FH(p,q),i} = U_{FH(p,q),i}/{V_{FH(p,q),i}^{1/2}}`$.
-In addition, similar to Karrison (2016), we can show that
-``` math
-
-  Cov(U_{FH(p_1,q_1),1}, U_{FH(p_2,q_2),2}) = 
-  V_{FH\left(\frac{p_1+p_2}{2},\frac{q_1+q_2}{2}\right),1}
-```
+critical value is \\u_1 = \Phi^{-1}(1-0.0015) = 2.968\\. For the final
+analysis, the critical value \\u_2\\ satisfies \\ P_0(Z\_{1,1} \< u_1,
+\max(Z\_{1,2}, Z\_{2,2}) \< u_2) = 1 - 0.025 \\ which is the same as \\
+P_0(Z\_{1,1} \< u_1, Z\_{1,2} \< u_2, Z\_{2,2} \< u_2) = 0.975 \\
+(Eq. 1) \\ Let \\U\_{FH(p,q),i}\\ denote the numerator of the FH(p,q)
+weighted log-rank test statistic at analysis \\i\\, and
+\\V\_{FH(p,q),i}\\ its variance. Then \\W\_{FH(p,q),i} =
+U\_{FH(p,q),i}/{V\_{FH(p,q),i}^{1/2}}\\. In addition, similar to
+Karrison (2016), we can show that \\ Cov(U\_{FH(p_1,q_1),1},
+U\_{FH(p_2,q_2),2}) =
+V\_{FH\left(\frac{p_1+p_2}{2},\frac{q_1+q_2}{2}\right),1} \\
 
 First, we find the time when 50 and 99.9 events are expected to have
 occurred.
@@ -97,22 +87,18 @@ statistics at the interim and final analyses for relevant FH weights.
 #> 2     0      0      0 -8.253880 10.082599 -2.599393             1
 ```
 
-It follows that the mean of $`\mathbf{Z}=(Z_{1,1}, Z_{1,2}, Z_{2,2})`$
-is
-``` math
-
-  \left(\frac{3.179}{\sqrt{12.464}}, \frac{10.545}{\sqrt{22.270}}, 
-  \frac{6.608}{\sqrt{6.161}} \right) = (0.900, 2.234, 2.662)
-```
-and the covariance matrix of $`\mathbf{Z}`$ is
-``` math
-
-  \left(\begin{array}{ccc} 1 & \sqrt{\frac{12.464}{22.270}} & \frac{3.241}{\sqrt{12.464\times 6.161}} \\
-  \sqrt{\frac{12.464}{22.270}} & 1 & \frac{10.083}{\sqrt{22.270\times 6.161}} \\ 
-  \frac{3.241}{\sqrt{12.464\times 6.161}}  & \frac{10.083}{\sqrt{22.270\times 6.161}} & 1 \end{array} \right) = \left(\begin{array}{ccc} 1 & 0.748 &  0.370 \\ 
-  0.748 & 1 & 0.861 \\ 0.370 & 0.861 & 1 \end{array} \right)
-```
-Now, we obtain the critical value $`u_2`$ by solving equation (1).
+It follows that the mean of \\\mathbf{Z}=(Z\_{1,1}, Z\_{1,2},
+Z\_{2,2})\\ is \\ \left(\frac{3.179}{\sqrt{12.464}},
+\frac{10.545}{\sqrt{22.270}}, \frac{6.608}{\sqrt{6.161}} \right) =
+(0.900, 2.234, 2.662) \\ and the covariance matrix of \\\mathbf{Z}\\ is
+\\ \left(\begin{array}{ccc} 1 & \sqrt{\frac{12.464}{22.270}} &
+\frac{3.241}{\sqrt{12.464\times 6.161}} \\ \sqrt{\frac{12.464}{22.270}}
+& 1 & \frac{10.083}{\sqrt{22.270\times 6.161}} \\
+\frac{3.241}{\sqrt{12.464\times 6.161}} &
+\frac{10.083}{\sqrt{22.270\times 6.161}} & 1 \end{array} \right) =
+\left(\begin{array}{ccc} 1 & 0.748 & 0.370 \\ 0.748 & 1 & 0.861 \\ 0.370
+& 0.861 & 1 \end{array} \right) \\ Now, we obtain the critical value
+\\u_2\\ by solving equation (1).
 
 ``` r
 library(mvtnorm)

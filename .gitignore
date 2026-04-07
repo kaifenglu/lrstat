@@ -3,6 +3,7 @@
 .RData
 lrstat.Rcheck
 notes/
+docs/
 src/*.o
 src/*.dll
 

@@ -6,7 +6,13 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Comparing Direct Approximation and Schoenfeld Methods • lrstat</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -69,12 +75,10 @@
 sample size calculation of survival trials as implemented in the lrstat
 package with the Schoenfeld method for sample size calculation of
 survival trials.</p>
-<p>Consider a fixed design with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>π</mi><mn>1</mn></msub><mo>=</mo><mn>0.2</mn></mrow><annotation encoding="application/x-tex">\pi_1=0.2</annotation></semantics></math>
-for the active treatment group and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>π</mi><mn>2</mn></msub><mo>=</mo><mn>0.4</mn></mrow><annotation encoding="application/x-tex">\pi_2=0.4</annotation></semantics></math>
-for the control group at month 12, an enrollment period lasting 12
-months to enroll 200 patients, and a target number of events of 40.</p>
+<p>Consider a fixed design with <span class="math inline">\(\pi_1=0.2\)</span> for the active treatment group
+and <span class="math inline">\(\pi_2=0.4\)</span> for the control group
+at month 12, an enrollment period lasting 12 months to enroll 200
+patients, and a target number of events of 40.</p>
 <p>First, we find the follow-up time at which 40 events will be
 observed. This can be accomplished by the caltime function using a large
 upper bound of the follow-up time for bracketed search:</p>
