@@ -7,3 +7,4 @@ notes
 ^\.github$
 ^docs$
 ^_pkgdown\.yml$
+^pkgdown-head\.html$

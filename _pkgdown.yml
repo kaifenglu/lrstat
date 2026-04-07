@@ -17,3 +17,6 @@ navbar:
 
 url: https://kaifenglu.github.io/lrstat
 destination: docs
+
+includes:
+  in_header: pkgdown-head.html
