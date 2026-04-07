@@ -1,5 +1,5 @@
 
-# lrstat
+# lrstat <a href="https://kaifenglu.github.io/lrstat"><img src="man/figures/logo.svg" align="right" height="139" alt="lrstat website" /></a>
 
 <!-- badges: start -->
 <!-- badges: end -->
