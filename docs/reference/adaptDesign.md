@@ -235,7 +235,7 @@ classical group sequential approaches. Biometrics 2001;57:886-891.
 
 ## See also
 
-[`getDesign`](https://github.com/kaifenglu/lrstat/reference/getDesign.md)
+[`getDesign`](https://kaifenglu.github.io/lrstat/reference/getDesign.md)
 
 ## Author
 

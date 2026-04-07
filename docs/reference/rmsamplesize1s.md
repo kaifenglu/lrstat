@@ -196,7 +196,7 @@ A list of two components:
 
 ## See also
 
-[`rmpower1s`](https://github.com/kaifenglu/lrstat/reference/rmpower1s.md)
+[`rmpower1s`](https://kaifenglu.github.io/lrstat/reference/rmpower1s.md)
 
 ## Author
 

@@ -276,7 +276,7 @@ An S3 class `nbpower1s` object with 3 components:
 
 ## See also
 
-[`nbstat`](https://github.com/kaifenglu/lrstat/reference/nbstat.md)
+[`nbstat`](https://kaifenglu.github.io/lrstat/reference/nbstat.md)
 
 ## Author
 

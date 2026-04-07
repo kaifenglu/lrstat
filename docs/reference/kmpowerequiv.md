@@ -318,7 +318,7 @@ An S3 class `kmpowerequiv` object with 4 components:
 
 ## See also
 
-[`kmstat`](https://github.com/kaifenglu/lrstat/reference/kmstat.md)
+[`kmstat`](https://kaifenglu.github.io/lrstat/reference/kmstat.md)
 
 ## Author
 

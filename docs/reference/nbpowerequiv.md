@@ -314,7 +314,7 @@ An S3 class `nbpowerequiv` object with 4 components:
 
 ## See also
 
-[`nbstat`](https://github.com/kaifenglu/lrstat/reference/nbstat.md)
+[`nbstat`](https://kaifenglu.github.io/lrstat/reference/nbstat.md)
 
 ## Author
 

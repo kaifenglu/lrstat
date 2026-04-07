@@ -299,7 +299,7 @@ An S3 class `lrpowerequiv` object with 4 components:
 
 ## See also
 
-[`rmstat`](https://github.com/kaifenglu/lrstat/reference/rmstat.md)
+[`rmstat`](https://kaifenglu.github.io/lrstat/reference/rmstat.md)
 
 ## Author
 

@@ -220,7 +220,7 @@ A list of two components:
 
 ## See also
 
-[`kmpower`](https://github.com/kaifenglu/lrstat/reference/kmpower.md)
+[`kmpower`](https://kaifenglu.github.io/lrstat/reference/kmpower.md)
 
 ## Author
 

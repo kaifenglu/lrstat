@@ -243,7 +243,7 @@ A list of two components:
 
 ## See also
 
-[`lrpower`](https://github.com/kaifenglu/lrstat/reference/lrpower.md)
+[`lrpower`](https://kaifenglu.github.io/lrstat/reference/lrpower.md)
 
 ## Author
 

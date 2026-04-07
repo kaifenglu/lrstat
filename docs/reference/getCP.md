@@ -211,7 +211,7 @@ Stat Med. 2011;30:3267–3284.
 
 ## See also
 
-[`getDesign`](https://github.com/kaifenglu/lrstat/reference/getDesign.md)
+[`getDesign`](https://kaifenglu.github.io/lrstat/reference/getDesign.md)
 
 ## Author
 

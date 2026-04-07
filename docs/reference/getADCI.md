@@ -156,7 +156,7 @@ group sequential designs. Stat Med. 2013;32(23):3991-4005.
 
 ## See also
 
-[`adaptDesign`](https://github.com/kaifenglu/lrstat/reference/adaptDesign.md)
+[`adaptDesign`](https://kaifenglu.github.io/lrstat/reference/adaptDesign.md)
 
 ## Author
 

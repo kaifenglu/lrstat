@@ -2,414 +2,414 @@
 
 ## All functions
 
-- [`accrual()`](https://github.com/kaifenglu/lrstat/reference/accrual.md)
+- [`accrual()`](https://kaifenglu.github.io/lrstat/reference/accrual.md)
   : Number of Enrolled Subjects
-- [`adaptDesign()`](https://github.com/kaifenglu/lrstat/reference/adaptDesign.md)
+- [`adaptDesign()`](https://kaifenglu.github.io/lrstat/reference/adaptDesign.md)
   : Adaptive Design at an Interim Look
-- [`aml`](https://github.com/kaifenglu/lrstat/reference/aml.md) : Acute
+- [`aml`](https://kaifenglu.github.io/lrstat/reference/aml.md) : Acute
   myelogenous leukemia survival data from the survival package
-- [`assess_phregr()`](https://github.com/kaifenglu/lrstat/reference/assess_phregr.md)
+- [`assess_phregr()`](https://kaifenglu.github.io/lrstat/reference/assess_phregr.md)
   : Assess Proportional Hazards Assumption Based on Supremum Test
-- [`binary_tte_sim()`](https://github.com/kaifenglu/lrstat/reference/binary_tte_sim.md)
+- [`binary_tte_sim()`](https://kaifenglu.github.io/lrstat/reference/binary_tte_sim.md)
   : Simulation for a Binary and a Time-to-Event Endpoint in Group
   Sequential Trials
-- [`BOINTable()`](https://github.com/kaifenglu/lrstat/reference/BOINTable.md)
+- [`BOINTable()`](https://kaifenglu.github.io/lrstat/reference/BOINTable.md)
   : BOIN Decision Table for Dose-Finding Trials
-- [`caltime()`](https://github.com/kaifenglu/lrstat/reference/caltime.md)
+- [`caltime()`](https://kaifenglu.github.io/lrstat/reference/caltime.md)
   : Calendar Times for Target Number of Events
-- [`ClopperPearsonCI()`](https://github.com/kaifenglu/lrstat/reference/ClopperPearsonCI.md)
+- [`ClopperPearsonCI()`](https://kaifenglu.github.io/lrstat/reference/ClopperPearsonCI.md)
   : Clopper-Pearson Confidence Interval for One-Sample Proportion
-- [`corr_pfs_os()`](https://github.com/kaifenglu/lrstat/reference/corr_pfs_os.md)
+- [`corr_pfs_os()`](https://kaifenglu.github.io/lrstat/reference/corr_pfs_os.md)
   : Correlation Between PFS and OS Given Correlation Between PD and OS
-- [`covrmst()`](https://github.com/kaifenglu/lrstat/reference/covrmst.md)
+- [`covrmst()`](https://kaifenglu.github.io/lrstat/reference/covrmst.md)
   : Covariance Between Restricted Mean Survival Times
-- [`dtpwexp()`](https://github.com/kaifenglu/lrstat/reference/dtpwexp.md)
+- [`dtpwexp()`](https://kaifenglu.github.io/lrstat/reference/dtpwexp.md)
   : Density Function of Truncated Piecewise Exponential Distribution
-- [`errorSpent()`](https://github.com/kaifenglu/lrstat/reference/errorSpent.md)
+- [`errorSpent()`](https://kaifenglu.github.io/lrstat/reference/errorSpent.md)
   : Error Spending
-- [`exitprob()`](https://github.com/kaifenglu/lrstat/reference/exitprob.md)
+- [`exitprob()`](https://kaifenglu.github.io/lrstat/reference/exitprob.md)
   : Stagewise Exit Probabilities
-- [`exitprob_tsssd()`](https://github.com/kaifenglu/lrstat/reference/exitprob_tsssd.md)
+- [`exitprob_tsssd()`](https://kaifenglu.github.io/lrstat/reference/exitprob_tsssd.md)
   : Exit Probabilities for Two-Stage Seamless Sequential Design (TSSSD)
-- [`fadjpbon()`](https://github.com/kaifenglu/lrstat/reference/fadjpbon.md)
+- [`fadjpbon()`](https://kaifenglu.github.io/lrstat/reference/fadjpbon.md)
   : Adjusted p-Values for Bonferroni-Based Graphical Approaches
-- [`fadjpdun()`](https://github.com/kaifenglu/lrstat/reference/fadjpdun.md)
+- [`fadjpdun()`](https://kaifenglu.github.io/lrstat/reference/fadjpdun.md)
   : Adjusted p-Values for Dunnett-Based Graphical Approaches
-- [`fadjpsim()`](https://github.com/kaifenglu/lrstat/reference/fadjpsim.md)
+- [`fadjpsim()`](https://kaifenglu.github.io/lrstat/reference/fadjpsim.md)
   : Adjusted p-Values for Simes-Based Graphical Approaches
-- [`float_to_fraction()`](https://github.com/kaifenglu/lrstat/reference/float_to_fraction.md)
+- [`float_to_fraction()`](https://kaifenglu.github.io/lrstat/reference/float_to_fraction.md)
   : Converting a decimal to a fraction
-- [`fmodmix()`](https://github.com/kaifenglu/lrstat/reference/fmodmix.md)
+- [`fmodmix()`](https://kaifenglu.github.io/lrstat/reference/fmodmix.md)
   : Adjusted p-Values for Modified Mixture Gatekeeping Procedures
-- [`fquantile()`](https://github.com/kaifenglu/lrstat/reference/fquantile.md)
+- [`fquantile()`](https://kaifenglu.github.io/lrstat/reference/fquantile.md)
   : The Quantiles of a Survival Distribution
-- [`fseqbon()`](https://github.com/kaifenglu/lrstat/reference/fseqbon.md)
+- [`fseqbon()`](https://kaifenglu.github.io/lrstat/reference/fseqbon.md)
   : Group Sequential Trials Using Bonferroni-Based Graphical Approaches
-- [`fstdmix()`](https://github.com/kaifenglu/lrstat/reference/fstdmix.md)
+- [`fstdmix()`](https://kaifenglu.github.io/lrstat/reference/fstdmix.md)
   : Adjusted p-Values for Standard Mixture Gatekeeping Procedures
-- [`fstp2seq()`](https://github.com/kaifenglu/lrstat/reference/fstp2seq.md)
+- [`fstp2seq()`](https://kaifenglu.github.io/lrstat/reference/fstp2seq.md)
   : Adjusted p-Values for Stepwise Testing Procedures for Two Sequences
-- [`ftrunc()`](https://github.com/kaifenglu/lrstat/reference/ftrunc.md)
-  : Adjusted p-Values for Holm, Hochberg, and Hommel Procedures
-- [`fwgtmat()`](https://github.com/kaifenglu/lrstat/reference/fwgtmat.md)
+- [`ftrunc()`](https://kaifenglu.github.io/lrstat/reference/ftrunc.md) :
+  Adjusted p-Values for Holm, Hochberg, and Hommel Procedures
+- [`fwgtmat()`](https://kaifenglu.github.io/lrstat/reference/fwgtmat.md)
   : Weight Matrix for All Intersection Hypotheses
-- [`getAccrualDurationFromN()`](https://github.com/kaifenglu/lrstat/reference/getAccrualDurationFromN.md)
+- [`getAccrualDurationFromN()`](https://kaifenglu.github.io/lrstat/reference/getAccrualDurationFromN.md)
   : Accrual Duration to Enroll Target Number of Subjects
-- [`getADCI()`](https://github.com/kaifenglu/lrstat/reference/getADCI.md)
+- [`getADCI()`](https://kaifenglu.github.io/lrstat/reference/getADCI.md)
   : Confidence Interval After Adaptation
-- [`getADRCI()`](https://github.com/kaifenglu/lrstat/reference/getADRCI.md)
+- [`getADRCI()`](https://kaifenglu.github.io/lrstat/reference/getADRCI.md)
   : Repeated Confidence Interval After Adaptation
-- [`getBound()`](https://github.com/kaifenglu/lrstat/reference/getBound.md)
+- [`getBound()`](https://kaifenglu.github.io/lrstat/reference/getBound.md)
   : Efficacy Boundaries for Group Sequential Design
-- [`getBound_tsssd()`](https://github.com/kaifenglu/lrstat/reference/getBound_tsssd.md)
+- [`getBound_tsssd()`](https://kaifenglu.github.io/lrstat/reference/getBound_tsssd.md)
   : Efficacy Boundaries for Two-Stage Seamless Sequential Design (TSSSD)
-- [`getCI()`](https://github.com/kaifenglu/lrstat/reference/getCI.md) :
+- [`getCI()`](https://kaifenglu.github.io/lrstat/reference/getCI.md) :
   Confidence Interval After Trial Termination
-- [`getCP()`](https://github.com/kaifenglu/lrstat/reference/getCP.md) :
+- [`getCP()`](https://kaifenglu.github.io/lrstat/reference/getCP.md) :
   Conditional Power Allowing for Varying Parameter Values
-- [`getDesign()`](https://github.com/kaifenglu/lrstat/reference/getDesign.md)
+- [`getDesign()`](https://kaifenglu.github.io/lrstat/reference/getDesign.md)
   : Power and Sample Size for a Generic Group Sequential Design
-- [`getDesignAgreement()`](https://github.com/kaifenglu/lrstat/reference/getDesignAgreement.md)
+- [`getDesignAgreement()`](https://kaifenglu.github.io/lrstat/reference/getDesignAgreement.md)
   : Power and Sample Size for Cohen's kappa
-- [`getDesignANOVA()`](https://github.com/kaifenglu/lrstat/reference/getDesignANOVA.md)
+- [`getDesignANOVA()`](https://kaifenglu.github.io/lrstat/reference/getDesignANOVA.md)
   : Power and Sample Size for One-Way ANOVA
-- [`getDesignANOVAContrast()`](https://github.com/kaifenglu/lrstat/reference/getDesignANOVAContrast.md)
+- [`getDesignANOVAContrast()`](https://kaifenglu.github.io/lrstat/reference/getDesignANOVAContrast.md)
   : Power and Sample Size for One-Way ANOVA Contrast
-- [`getDesignEquiv()`](https://github.com/kaifenglu/lrstat/reference/getDesignEquiv.md)
+- [`getDesignEquiv()`](https://kaifenglu.github.io/lrstat/reference/getDesignEquiv.md)
   : Power and Sample Size for a Generic Group Sequential Equivalence
   Design
-- [`getDesignFisherExact()`](https://github.com/kaifenglu/lrstat/reference/getDesignFisherExact.md)
+- [`getDesignFisherExact()`](https://kaifenglu.github.io/lrstat/reference/getDesignFisherExact.md)
   : Power and Sample Size for Fisher's Exact Test for Two Proportions
-- [`getDesignLogistic()`](https://github.com/kaifenglu/lrstat/reference/getDesignLogistic.md)
+- [`getDesignLogistic()`](https://kaifenglu.github.io/lrstat/reference/getDesignLogistic.md)
   : Power and Sample Size for Logistic Regression
-- [`getDesignMeanDiff()`](https://github.com/kaifenglu/lrstat/reference/getDesignMeanDiff.md)
+- [`getDesignMeanDiff()`](https://kaifenglu.github.io/lrstat/reference/getDesignMeanDiff.md)
   : Group Sequential Design for Two-Sample Mean Difference
-- [`getDesignMeanDiffCarryover()`](https://github.com/kaifenglu/lrstat/reference/getDesignMeanDiffCarryover.md)
+- [`getDesignMeanDiffCarryover()`](https://kaifenglu.github.io/lrstat/reference/getDesignMeanDiffCarryover.md)
   : Power and Sample Size for Direct Treatment Effects in Crossover
   Trials
-- [`getDesignMeanDiffCarryoverEquiv()`](https://github.com/kaifenglu/lrstat/reference/getDesignMeanDiffCarryoverEquiv.md)
+- [`getDesignMeanDiffCarryoverEquiv()`](https://kaifenglu.github.io/lrstat/reference/getDesignMeanDiffCarryoverEquiv.md)
   : Power and Sample Size for Equivalence in Direct Treatment Effects in
   Crossover Trials
-- [`getDesignMeanDiffEquiv()`](https://github.com/kaifenglu/lrstat/reference/getDesignMeanDiffEquiv.md)
+- [`getDesignMeanDiffEquiv()`](https://kaifenglu.github.io/lrstat/reference/getDesignMeanDiffEquiv.md)
   : Group Sequential Design for Equivalence in Two-Sample Mean
   Difference
-- [`getDesignMeanDiffMMRM()`](https://github.com/kaifenglu/lrstat/reference/getDesignMeanDiffMMRM.md)
+- [`getDesignMeanDiffMMRM()`](https://kaifenglu.github.io/lrstat/reference/getDesignMeanDiffMMRM.md)
   : Group Sequential Design for Two-Sample Mean Difference From the MMRM
   Model
-- [`getDesignMeanDiffXO()`](https://github.com/kaifenglu/lrstat/reference/getDesignMeanDiffXO.md)
+- [`getDesignMeanDiffXO()`](https://kaifenglu.github.io/lrstat/reference/getDesignMeanDiffXO.md)
   : Group Sequential Design for Mean Difference in 2x2 Crossover
-- [`getDesignMeanDiffXOEquiv()`](https://github.com/kaifenglu/lrstat/reference/getDesignMeanDiffXOEquiv.md)
+- [`getDesignMeanDiffXOEquiv()`](https://kaifenglu.github.io/lrstat/reference/getDesignMeanDiffXOEquiv.md)
   : Group Sequential Design for Equivalence in Mean Difference in 2x2
   Crossover
-- [`getDesignMeanRatio()`](https://github.com/kaifenglu/lrstat/reference/getDesignMeanRatio.md)
+- [`getDesignMeanRatio()`](https://kaifenglu.github.io/lrstat/reference/getDesignMeanRatio.md)
   : Group Sequential Design for Two-Sample Mean Ratio
-- [`getDesignMeanRatioEquiv()`](https://github.com/kaifenglu/lrstat/reference/getDesignMeanRatioEquiv.md)
+- [`getDesignMeanRatioEquiv()`](https://kaifenglu.github.io/lrstat/reference/getDesignMeanRatioEquiv.md)
   : Group Sequential Design for Equivalence in Two-Sample Mean Ratio
-- [`getDesignMeanRatioXO()`](https://github.com/kaifenglu/lrstat/reference/getDesignMeanRatioXO.md)
+- [`getDesignMeanRatioXO()`](https://kaifenglu.github.io/lrstat/reference/getDesignMeanRatioXO.md)
   : Group Sequential Design for Mean Ratio in 2x2 Crossover
-- [`getDesignMeanRatioXOEquiv()`](https://github.com/kaifenglu/lrstat/reference/getDesignMeanRatioXOEquiv.md)
+- [`getDesignMeanRatioXOEquiv()`](https://kaifenglu.github.io/lrstat/reference/getDesignMeanRatioXOEquiv.md)
   : Group Sequential Design for Equivalence in Mean Ratio in 2x2
   Crossover
-- [`getDesignOddsRatio()`](https://github.com/kaifenglu/lrstat/reference/getDesignOddsRatio.md)
+- [`getDesignOddsRatio()`](https://kaifenglu.github.io/lrstat/reference/getDesignOddsRatio.md)
   : Group Sequential Design for Two-Sample Odds Ratio
-- [`getDesignOddsRatioEquiv()`](https://github.com/kaifenglu/lrstat/reference/getDesignOddsRatioEquiv.md)
+- [`getDesignOddsRatioEquiv()`](https://kaifenglu.github.io/lrstat/reference/getDesignOddsRatioEquiv.md)
   : Group Sequential Design for Equivalence in Two-Sample Odds Ratio
-- [`getDesignOneMean()`](https://github.com/kaifenglu/lrstat/reference/getDesignOneMean.md)
+- [`getDesignOneMean()`](https://kaifenglu.github.io/lrstat/reference/getDesignOneMean.md)
   : Group Sequential Design for One-Sample Mean
-- [`getDesignOneMultinom()`](https://github.com/kaifenglu/lrstat/reference/getDesignOneMultinom.md)
+- [`getDesignOneMultinom()`](https://kaifenglu.github.io/lrstat/reference/getDesignOneMultinom.md)
   : Power and Sample Size for One-Sample Multinomial Response
-- [`getDesignOneProportion()`](https://github.com/kaifenglu/lrstat/reference/getDesignOneProportion.md)
+- [`getDesignOneProportion()`](https://kaifenglu.github.io/lrstat/reference/getDesignOneProportion.md)
   : Group Sequential Design for One-Sample Proportion
-- [`getDesignOneRateExact()`](https://github.com/kaifenglu/lrstat/reference/getDesignOneRateExact.md)
+- [`getDesignOneRateExact()`](https://kaifenglu.github.io/lrstat/reference/getDesignOneRateExact.md)
   : Power and Sample Size for One-Sample Poisson Rate Exact Test
-- [`getDesignOneSlope()`](https://github.com/kaifenglu/lrstat/reference/getDesignOneSlope.md)
+- [`getDesignOneSlope()`](https://kaifenglu.github.io/lrstat/reference/getDesignOneSlope.md)
   : Group Sequential Design for One-Sample Slope
-- [`getDesignOrderedBinom()`](https://github.com/kaifenglu/lrstat/reference/getDesignOrderedBinom.md)
+- [`getDesignOrderedBinom()`](https://kaifenglu.github.io/lrstat/reference/getDesignOrderedBinom.md)
   : Power and Sample Size for Cochran-Armitage Trend Test for Ordered
   Multi-Sample Binomial Response
-- [`getDesignPairedMeanDiff()`](https://github.com/kaifenglu/lrstat/reference/getDesignPairedMeanDiff.md)
+- [`getDesignPairedMeanDiff()`](https://kaifenglu.github.io/lrstat/reference/getDesignPairedMeanDiff.md)
   : Group Sequential Design for Paired Mean Difference
-- [`getDesignPairedMeanDiffEquiv()`](https://github.com/kaifenglu/lrstat/reference/getDesignPairedMeanDiffEquiv.md)
+- [`getDesignPairedMeanDiffEquiv()`](https://kaifenglu.github.io/lrstat/reference/getDesignPairedMeanDiffEquiv.md)
   : Group Sequential Design for Equivalence in Paired Mean Difference
-- [`getDesignPairedMeanRatio()`](https://github.com/kaifenglu/lrstat/reference/getDesignPairedMeanRatio.md)
+- [`getDesignPairedMeanRatio()`](https://kaifenglu.github.io/lrstat/reference/getDesignPairedMeanRatio.md)
   : Group Sequential Design for Paired Mean Ratio
-- [`getDesignPairedMeanRatioEquiv()`](https://github.com/kaifenglu/lrstat/reference/getDesignPairedMeanRatioEquiv.md)
+- [`getDesignPairedMeanRatioEquiv()`](https://kaifenglu.github.io/lrstat/reference/getDesignPairedMeanRatioEquiv.md)
   : Group Sequential Design for Equivalence in Paired Mean Ratio
-- [`getDesignPairedPropMcNemar()`](https://github.com/kaifenglu/lrstat/reference/getDesignPairedPropMcNemar.md)
+- [`getDesignPairedPropMcNemar()`](https://kaifenglu.github.io/lrstat/reference/getDesignPairedPropMcNemar.md)
   : Group Sequential Design for McNemar's Test for Paired Proportions
-- [`getDesignRepeatedANOVA()`](https://github.com/kaifenglu/lrstat/reference/getDesignRepeatedANOVA.md)
+- [`getDesignRepeatedANOVA()`](https://kaifenglu.github.io/lrstat/reference/getDesignRepeatedANOVA.md)
   : Power and Sample Size for Repeated-Measures ANOVA
-- [`getDesignRepeatedANOVAContrast()`](https://github.com/kaifenglu/lrstat/reference/getDesignRepeatedANOVAContrast.md)
+- [`getDesignRepeatedANOVAContrast()`](https://kaifenglu.github.io/lrstat/reference/getDesignRepeatedANOVAContrast.md)
   : Power and Sample Size for One-Way Repeated Measures ANOVA Contrast
-- [`getDesignRiskDiff()`](https://github.com/kaifenglu/lrstat/reference/getDesignRiskDiff.md)
+- [`getDesignRiskDiff()`](https://kaifenglu.github.io/lrstat/reference/getDesignRiskDiff.md)
   : Group Sequential Design for Two-Sample Risk Difference
-- [`getDesignRiskDiffEquiv()`](https://github.com/kaifenglu/lrstat/reference/getDesignRiskDiffEquiv.md)
+- [`getDesignRiskDiffEquiv()`](https://kaifenglu.github.io/lrstat/reference/getDesignRiskDiffEquiv.md)
   : Group Sequential Design for Equivalence in Two-Sample Risk
   Difference
-- [`getDesignRiskDiffExact()`](https://github.com/kaifenglu/lrstat/reference/getDesignRiskDiffExact.md)
+- [`getDesignRiskDiffExact()`](https://kaifenglu.github.io/lrstat/reference/getDesignRiskDiffExact.md)
   : Power and Sample Size for Exact Unconditional Test for Risk
   Difference
-- [`getDesignRiskDiffExactEquiv()`](https://github.com/kaifenglu/lrstat/reference/getDesignRiskDiffExactEquiv.md)
+- [`getDesignRiskDiffExactEquiv()`](https://kaifenglu.github.io/lrstat/reference/getDesignRiskDiffExactEquiv.md)
   : Power and Sample Size for Exact Unconditional Test for Equivalence
   in Risk Difference
-- [`getDesignRiskRatio()`](https://github.com/kaifenglu/lrstat/reference/getDesignRiskRatio.md)
+- [`getDesignRiskRatio()`](https://kaifenglu.github.io/lrstat/reference/getDesignRiskRatio.md)
   : Group Sequential Design for Two-Sample Risk Ratio
-- [`getDesignRiskRatioEquiv()`](https://github.com/kaifenglu/lrstat/reference/getDesignRiskRatioEquiv.md)
+- [`getDesignRiskRatioEquiv()`](https://kaifenglu.github.io/lrstat/reference/getDesignRiskRatioEquiv.md)
   : Group Sequential Design for Equivalence in Two-Sample Risk Ratio
-- [`getDesignRiskRatioExact()`](https://github.com/kaifenglu/lrstat/reference/getDesignRiskRatioExact.md)
+- [`getDesignRiskRatioExact()`](https://kaifenglu.github.io/lrstat/reference/getDesignRiskRatioExact.md)
   : Power and Sample Size for Exact Unconditional Test for Risk Ratio
-- [`getDesignRiskRatioExactEquiv()`](https://github.com/kaifenglu/lrstat/reference/getDesignRiskRatioExactEquiv.md)
+- [`getDesignRiskRatioExactEquiv()`](https://kaifenglu.github.io/lrstat/reference/getDesignRiskRatioExactEquiv.md)
   : Power and Sample Size for Exact Unconditional Test for Equivalence
   in Risk Ratio
-- [`getDesignRiskRatioFM()`](https://github.com/kaifenglu/lrstat/reference/getDesignRiskRatioFM.md)
+- [`getDesignRiskRatioFM()`](https://kaifenglu.github.io/lrstat/reference/getDesignRiskRatioFM.md)
   : Group Sequential Design for Two-Sample Risk Ratio Based on the
   Farrington-Manning Score Test
-- [`getDesignSlopeDiff()`](https://github.com/kaifenglu/lrstat/reference/getDesignSlopeDiff.md)
+- [`getDesignSlopeDiff()`](https://kaifenglu.github.io/lrstat/reference/getDesignSlopeDiff.md)
   : Group Sequential Design for Two-Sample Slope Difference
-- [`getDesignSlopeDiffMMRM()`](https://github.com/kaifenglu/lrstat/reference/getDesignSlopeDiffMMRM.md)
+- [`getDesignSlopeDiffMMRM()`](https://kaifenglu.github.io/lrstat/reference/getDesignSlopeDiffMMRM.md)
   : Group Sequential Design for Two-Sample Slope Difference From the
   MMRM Model
-- [`getDesignTwoMultinom()`](https://github.com/kaifenglu/lrstat/reference/getDesignTwoMultinom.md)
+- [`getDesignTwoMultinom()`](https://kaifenglu.github.io/lrstat/reference/getDesignTwoMultinom.md)
   : Power and Sample Size for Difference in Two-Sample Multinomial
   Responses
-- [`getDesignTwoOrdinal()`](https://github.com/kaifenglu/lrstat/reference/getDesignTwoOrdinal.md)
+- [`getDesignTwoOrdinal()`](https://kaifenglu.github.io/lrstat/reference/getDesignTwoOrdinal.md)
   : Power and Sample Size for the Wilcoxon Test for Two-Sample Ordinal
   Response
-- [`getDesignTwoWayANOVA()`](https://github.com/kaifenglu/lrstat/reference/getDesignTwoWayANOVA.md)
+- [`getDesignTwoWayANOVA()`](https://kaifenglu.github.io/lrstat/reference/getDesignTwoWayANOVA.md)
   : Power and Sample Size for Two-Way ANOVA
-- [`getDesignUnorderedBinom()`](https://github.com/kaifenglu/lrstat/reference/getDesignUnorderedBinom.md)
+- [`getDesignUnorderedBinom()`](https://kaifenglu.github.io/lrstat/reference/getDesignUnorderedBinom.md)
   : Power and Sample Size for Unordered Multi-Sample Binomial Response
-- [`getDesignUnorderedMultinom()`](https://github.com/kaifenglu/lrstat/reference/getDesignUnorderedMultinom.md)
+- [`getDesignUnorderedMultinom()`](https://kaifenglu.github.io/lrstat/reference/getDesignUnorderedMultinom.md)
   : Power and Sample Size for Unordered Multi-Sample Multinomial
   Response
-- [`getDesignWilcoxon()`](https://github.com/kaifenglu/lrstat/reference/getDesignWilcoxon.md)
+- [`getDesignWilcoxon()`](https://kaifenglu.github.io/lrstat/reference/getDesignWilcoxon.md)
   : Group Sequential Design for Two-Sample Wilcoxon Test
-- [`getDesign_tsssd()`](https://github.com/kaifenglu/lrstat/reference/getDesign_tsssd.md)
+- [`getDesign_tsssd()`](https://kaifenglu.github.io/lrstat/reference/getDesign_tsssd.md)
   : Power and Sample Size for Two-Stage Seamless Sequential Design
   (TSSSD)
-- [`getDurationFromNevents()`](https://github.com/kaifenglu/lrstat/reference/getDurationFromNevents.md)
+- [`getDurationFromNevents()`](https://kaifenglu.github.io/lrstat/reference/getDurationFromNevents.md)
   : Range of Accrual Duration for Target Number of Events
-- [`getNeventsFromHazardRatio()`](https://github.com/kaifenglu/lrstat/reference/getNeventsFromHazardRatio.md)
+- [`getNeventsFromHazardRatio()`](https://kaifenglu.github.io/lrstat/reference/getNeventsFromHazardRatio.md)
   : Required Number of Events Given Hazard Ratio
-- [`getRCI()`](https://github.com/kaifenglu/lrstat/reference/getRCI.md)
-  : Repeated Confidence Interval for Group Sequential Design
-- [`hazard_pd()`](https://github.com/kaifenglu/lrstat/reference/hazard_pd.md)
+- [`getRCI()`](https://kaifenglu.github.io/lrstat/reference/getRCI.md) :
+  Repeated Confidence Interval for Group Sequential Design
+- [`hazard_pd()`](https://kaifenglu.github.io/lrstat/reference/hazard_pd.md)
   : Hazard Function for Progressive Disease (PD) Given Correlation
   Between PD and OS
-- [`hazard_sub()`](https://github.com/kaifenglu/lrstat/reference/hazard_sub.md)
+- [`hazard_sub()`](https://kaifenglu.github.io/lrstat/reference/hazard_sub.md)
   : Hazard Function for Sub Population
-- [`heart`](https://github.com/kaifenglu/lrstat/reference/heart.md) :
+- [`heart`](https://kaifenglu.github.io/lrstat/reference/heart.md) :
   Stanford heart transplant data from the survival package
-- [`hedgesg()`](https://github.com/kaifenglu/lrstat/reference/hedgesg.md)
+- [`hedgesg()`](https://kaifenglu.github.io/lrstat/reference/hedgesg.md)
   : Hedges' g Effect Size
-- [`immdef`](https://github.com/kaifenglu/lrstat/reference/immdef.md) :
+- [`immdef`](https://kaifenglu.github.io/lrstat/reference/immdef.md) :
   Simulated CONCORDE trial data from the rpsftm package
-- [`ingots`](https://github.com/kaifenglu/lrstat/reference/ingots.md) :
+- [`ingots`](https://kaifenglu.github.io/lrstat/reference/ingots.md) :
   The binary data from Cox and Snell (1989, pp. 10-11).
-- [`kmdiff()`](https://github.com/kaifenglu/lrstat/reference/kmdiff.md)
-  : Estimate of Milestone Survival Difference
-- [`kmest()`](https://github.com/kaifenglu/lrstat/reference/kmest.md) :
+- [`kmdiff()`](https://kaifenglu.github.io/lrstat/reference/kmdiff.md) :
+  Estimate of Milestone Survival Difference
+- [`kmest()`](https://kaifenglu.github.io/lrstat/reference/kmest.md) :
   Kaplan-Meier Estimates of Survival Curve
-- [`kmpower()`](https://github.com/kaifenglu/lrstat/reference/kmpower.md)
+- [`kmpower()`](https://kaifenglu.github.io/lrstat/reference/kmpower.md)
   : Power for Difference in Milestone Survival Probabilities
-- [`kmpower1s()`](https://github.com/kaifenglu/lrstat/reference/kmpower1s.md)
+- [`kmpower1s()`](https://kaifenglu.github.io/lrstat/reference/kmpower1s.md)
   : Power for One-Sample Milestone Survival Probability
-- [`kmpowerequiv()`](https://github.com/kaifenglu/lrstat/reference/kmpowerequiv.md)
+- [`kmpowerequiv()`](https://kaifenglu.github.io/lrstat/reference/kmpowerequiv.md)
   : Power for Equivalence in Milestone Survival Probability Difference
-- [`kmsamplesize()`](https://github.com/kaifenglu/lrstat/reference/kmsamplesize.md)
+- [`kmsamplesize()`](https://kaifenglu.github.io/lrstat/reference/kmsamplesize.md)
   : Sample Size for Difference in Milestone Survival Probabilities
-- [`kmsamplesize1s()`](https://github.com/kaifenglu/lrstat/reference/kmsamplesize1s.md)
+- [`kmsamplesize1s()`](https://kaifenglu.github.io/lrstat/reference/kmsamplesize1s.md)
   : Sample Size for One-Sample Milestone Survival Probability
-- [`kmsamplesizeequiv()`](https://github.com/kaifenglu/lrstat/reference/kmsamplesizeequiv.md)
+- [`kmsamplesizeequiv()`](https://kaifenglu.github.io/lrstat/reference/kmsamplesizeequiv.md)
   : Sample Size for Equivalence in Milestone Survival Probability
   Difference
-- [`kmstat()`](https://github.com/kaifenglu/lrstat/reference/kmstat.md)
-  : Stratified Difference in Milestone Survival Probabilities
-- [`liferegr()`](https://github.com/kaifenglu/lrstat/reference/liferegr.md)
+- [`kmstat()`](https://kaifenglu.github.io/lrstat/reference/kmstat.md) :
+  Stratified Difference in Milestone Survival Probabilities
+- [`liferegr()`](https://kaifenglu.github.io/lrstat/reference/liferegr.md)
   : Parametric Regression Models for Failure Time Data
-- [`liver`](https://github.com/kaifenglu/lrstat/reference/liver.md) :
-  The liver data used in SAS PROC PHREG documentation examples.
-- [`logisregr()`](https://github.com/kaifenglu/lrstat/reference/logisregr.md)
+- [`liver`](https://kaifenglu.github.io/lrstat/reference/liver.md) : The
+  liver data used in SAS PROC PHREG documentation examples.
+- [`logisregr()`](https://kaifenglu.github.io/lrstat/reference/logisregr.md)
   : Logistic Regression Models for Binary Data
-- [`lrpower()`](https://github.com/kaifenglu/lrstat/reference/lrpower.md)
+- [`lrpower()`](https://kaifenglu.github.io/lrstat/reference/lrpower.md)
   : Log-Rank Test Power
-- [`lrpowerequiv()`](https://github.com/kaifenglu/lrstat/reference/lrpowerequiv.md)
+- [`lrpowerequiv()`](https://kaifenglu.github.io/lrstat/reference/lrpowerequiv.md)
   : Power for Equivalence in Hazard Ratio
-- [`lrsamplesize()`](https://github.com/kaifenglu/lrstat/reference/lrsamplesize.md)
+- [`lrsamplesize()`](https://kaifenglu.github.io/lrstat/reference/lrsamplesize.md)
   : Log-Rank Test Sample Size
-- [`lrsamplesizeequiv()`](https://github.com/kaifenglu/lrstat/reference/lrsamplesizeequiv.md)
+- [`lrsamplesizeequiv()`](https://kaifenglu.github.io/lrstat/reference/lrsamplesizeequiv.md)
   : Sample Size for Equivalence in Hazard Ratio
-- [`lrschoenfeld()`](https://github.com/kaifenglu/lrstat/reference/lrschoenfeld.md)
+- [`lrschoenfeld()`](https://kaifenglu.github.io/lrstat/reference/lrschoenfeld.md)
   : Schoenfeld Method for Log-Rank Test Sample Size Calculation
-- [`lrsim()`](https://github.com/kaifenglu/lrstat/reference/lrsim.md) :
+- [`lrsim()`](https://kaifenglu.github.io/lrstat/reference/lrsim.md) :
   Log-Rank Test Simulation
-- [`lrsim2e()`](https://github.com/kaifenglu/lrstat/reference/lrsim2e.md)
+- [`lrsim2e()`](https://kaifenglu.github.io/lrstat/reference/lrsim2e.md)
   : Log-Rank Test Simulation for PFS and OS Endpoints
-- [`lrsim2e3a()`](https://github.com/kaifenglu/lrstat/reference/lrsim2e3a.md)
+- [`lrsim2e3a()`](https://kaifenglu.github.io/lrstat/reference/lrsim2e3a.md)
   : Log-Rank Test Simulation for Two Endpoints (PFS and OS) and Three
   Arms
-- [`lrsim3a()`](https://github.com/kaifenglu/lrstat/reference/lrsim3a.md)
+- [`lrsim3a()`](https://kaifenglu.github.io/lrstat/reference/lrsim3a.md)
   : Log-Rank Test Simulation for Three Arms
-- [`lrsimsub()`](https://github.com/kaifenglu/lrstat/reference/lrsimsub.md)
+- [`lrsimsub()`](https://kaifenglu.github.io/lrstat/reference/lrsimsub.md)
   : Log-Rank Test Simulation for Enrichment Design
-- [`lrsim_tsssd()`](https://github.com/kaifenglu/lrstat/reference/lrsim_tsssd.md)
+- [`lrsim_tsssd()`](https://kaifenglu.github.io/lrstat/reference/lrsim_tsssd.md)
   : Log-Rank Test Simulation for Multiple Active Arms vs. Common Control
-- [`lrstat-package`](https://github.com/kaifenglu/lrstat/reference/lrstat-package.md)
+- [`lrstat-package`](https://kaifenglu.github.io/lrstat/reference/lrstat-package.md)
   : Power and Sample Size Calculation for Non-Proportional Hazards and
   Beyond
-- [`lrstat()`](https://github.com/kaifenglu/lrstat/reference/lrstat.md)
-  : Number of Subjects Having an Event and Log-Rank Statistics
-- [`lrtest()`](https://github.com/kaifenglu/lrstat/reference/lrtest.md)
-  : Log-Rank Test of Survival Curve Difference
-- [`mnOddsRatioCI()`](https://github.com/kaifenglu/lrstat/reference/mnOddsRatioCI.md)
+- [`lrstat()`](https://kaifenglu.github.io/lrstat/reference/lrstat.md) :
+  Number of Subjects Having an Event and Log-Rank Statistics
+- [`lrtest()`](https://kaifenglu.github.io/lrstat/reference/lrtest.md) :
+  Log-Rank Test of Survival Curve Difference
+- [`mnOddsRatioCI()`](https://kaifenglu.github.io/lrstat/reference/mnOddsRatioCI.md)
   : Miettinen-Nurminen Score Confidence Interval for Two-Sample Odds
   Ratio
-- [`mnRateDiffCI()`](https://github.com/kaifenglu/lrstat/reference/mnRateDiffCI.md)
+- [`mnRateDiffCI()`](https://kaifenglu.github.io/lrstat/reference/mnRateDiffCI.md)
   : Miettinen-Nurminen Score Confidence Interval for Two-Sample Rate
   Difference
-- [`mnRateRatioCI()`](https://github.com/kaifenglu/lrstat/reference/mnRateRatioCI.md)
+- [`mnRateRatioCI()`](https://kaifenglu.github.io/lrstat/reference/mnRateRatioCI.md)
   : Miettinen-Nurminen Score Confidence Interval for Two-Sample Rate
   Ratio
-- [`mnRiskDiffCI()`](https://github.com/kaifenglu/lrstat/reference/mnRiskDiffCI.md)
+- [`mnRiskDiffCI()`](https://kaifenglu.github.io/lrstat/reference/mnRiskDiffCI.md)
   : Miettinen-Nurminen Score Confidence Interval for Two-Sample Risk
   Difference
-- [`mnRiskRatioCI()`](https://github.com/kaifenglu/lrstat/reference/mnRiskRatioCI.md)
+- [`mnRiskRatioCI()`](https://kaifenglu.github.io/lrstat/reference/mnRiskRatioCI.md)
   : Miettinen-Nurminen Score Confidence Interval for Two-Sample Risk
   Ratio
-- [`mTPI2Table()`](https://github.com/kaifenglu/lrstat/reference/mTPI2Table.md)
+- [`mTPI2Table()`](https://kaifenglu.github.io/lrstat/reference/mTPI2Table.md)
   : mTPI-2 Decision Table
-- [`mtpwexp()`](https://github.com/kaifenglu/lrstat/reference/mtpwexp.md)
+- [`mtpwexp()`](https://kaifenglu.github.io/lrstat/reference/mtpwexp.md)
   : Mean and Variance of Truncated Piecewise Exponential Distribution
-- [`natrisk()`](https://github.com/kaifenglu/lrstat/reference/natrisk.md)
+- [`natrisk()`](https://kaifenglu.github.io/lrstat/reference/natrisk.md)
   : Number of Subjects at Risk
-- [`nbpower()`](https://github.com/kaifenglu/lrstat/reference/nbpower.md)
+- [`nbpower()`](https://kaifenglu.github.io/lrstat/reference/nbpower.md)
   : Power for Negative Binomial Rate Ratio
-- [`nbpower1s()`](https://github.com/kaifenglu/lrstat/reference/nbpower1s.md)
+- [`nbpower1s()`](https://kaifenglu.github.io/lrstat/reference/nbpower1s.md)
   : Power for One-Sample Negative Binomial Rate
-- [`nbpowerequiv()`](https://github.com/kaifenglu/lrstat/reference/nbpowerequiv.md)
+- [`nbpowerequiv()`](https://kaifenglu.github.io/lrstat/reference/nbpowerequiv.md)
   : Power for Equivalence in Negative Binomial Rate Ratio
-- [`nbsamplesize()`](https://github.com/kaifenglu/lrstat/reference/nbsamplesize.md)
+- [`nbsamplesize()`](https://kaifenglu.github.io/lrstat/reference/nbsamplesize.md)
   : Sample Size for Negative Binomial Rate Ratio
-- [`nbsamplesize1s()`](https://github.com/kaifenglu/lrstat/reference/nbsamplesize1s.md)
+- [`nbsamplesize1s()`](https://kaifenglu.github.io/lrstat/reference/nbsamplesize1s.md)
   : Sample Size for One-Sample Negative Binomial Rate
-- [`nbsamplesizeequiv()`](https://github.com/kaifenglu/lrstat/reference/nbsamplesizeequiv.md)
+- [`nbsamplesizeequiv()`](https://kaifenglu.github.io/lrstat/reference/nbsamplesizeequiv.md)
   : Sample Size for Equivalence in Negative Binomial Rate Ratio
-- [`nbstat()`](https://github.com/kaifenglu/lrstat/reference/nbstat.md)
-  : Negative Binomial Rate Ratio
-- [`nevent()`](https://github.com/kaifenglu/lrstat/reference/nevent.md)
-  : Number of Subjects Having an Event by Calendar Time
-- [`patrisk()`](https://github.com/kaifenglu/lrstat/reference/patrisk.md)
+- [`nbstat()`](https://kaifenglu.github.io/lrstat/reference/nbstat.md) :
+  Negative Binomial Rate Ratio
+- [`nevent()`](https://kaifenglu.github.io/lrstat/reference/nevent.md) :
+  Number of Subjects Having an Event by Calendar Time
+- [`patrisk()`](https://kaifenglu.github.io/lrstat/reference/patrisk.md)
   : Probability of Being at Risk
-- [`pbvnorm()`](https://github.com/kaifenglu/lrstat/reference/pbvnorm.md)
+- [`pbvnorm()`](https://kaifenglu.github.io/lrstat/reference/pbvnorm.md)
   : Distribution Function of the Standard Bivariate Normal
-- [`pevent()`](https://github.com/kaifenglu/lrstat/reference/pevent.md)
-  : Probability of Having an Event
-- [`phregr()`](https://github.com/kaifenglu/lrstat/reference/phregr.md)
-  : Proportional Hazards Regression Models
-- [`pmvnormr()`](https://github.com/kaifenglu/lrstat/reference/pmvnormr.md)
+- [`pevent()`](https://kaifenglu.github.io/lrstat/reference/pevent.md) :
+  Probability of Having an Event
+- [`phregr()`](https://kaifenglu.github.io/lrstat/reference/phregr.md) :
+  Proportional Hazards Regression Models
+- [`pmvnormr()`](https://kaifenglu.github.io/lrstat/reference/pmvnormr.md)
   : Multivariate Normal Probabilities over a Hyperrectangle
-- [`ptpwexp()`](https://github.com/kaifenglu/lrstat/reference/ptpwexp.md)
+- [`ptpwexp()`](https://kaifenglu.github.io/lrstat/reference/ptpwexp.md)
   : Distribution Function of Truncated Piecewise Exponential
   Distribution
-- [`pwexpcuts()`](https://github.com/kaifenglu/lrstat/reference/pwexpcuts.md)
+- [`pwexpcuts()`](https://kaifenglu.github.io/lrstat/reference/pwexpcuts.md)
   : Piecewise Exponential Approximation to a Survival Distribution
-- [`pwexploglik()`](https://github.com/kaifenglu/lrstat/reference/pwexploglik.md)
+- [`pwexploglik()`](https://kaifenglu.github.io/lrstat/reference/pwexploglik.md)
   : Profile Log-Likelihood Function for Change Points in Piecewise
   Exponential Approximation
-- [`qmvnormr()`](https://github.com/kaifenglu/lrstat/reference/qmvnormr.md)
+- [`qmvnormr()`](https://kaifenglu.github.io/lrstat/reference/qmvnormr.md)
   : Equicoordinate Quantiles of the Multivariate Normal Distribution
-- [`qtpwexp()`](https://github.com/kaifenglu/lrstat/reference/qtpwexp.md)
+- [`qtpwexp()`](https://kaifenglu.github.io/lrstat/reference/qtpwexp.md)
   : Quantile Function of Truncated Piecewise Exponential Distribution
-- [`rawdata`](https://github.com/kaifenglu/lrstat/reference/rawdata.md)
-  : A simulated time-to-event data set with 10 replications
-- [`remlOddsRatio()`](https://github.com/kaifenglu/lrstat/reference/remlOddsRatio.md)
+- [`rawdata`](https://kaifenglu.github.io/lrstat/reference/rawdata.md) :
+  A simulated time-to-event data set with 10 replications
+- [`remlOddsRatio()`](https://kaifenglu.github.io/lrstat/reference/remlOddsRatio.md)
   : REML Estimates of Individual Proportions With Specified Odds Ratio
-- [`remlRateDiff()`](https://github.com/kaifenglu/lrstat/reference/remlRateDiff.md)
+- [`remlRateDiff()`](https://kaifenglu.github.io/lrstat/reference/remlRateDiff.md)
   : REML Estimates of Individual Rates With Specified Rate Difference
-- [`remlRateRatio()`](https://github.com/kaifenglu/lrstat/reference/remlRateRatio.md)
+- [`remlRateRatio()`](https://kaifenglu.github.io/lrstat/reference/remlRateRatio.md)
   : REML Estimates of Individual Rates With Specified Rate Ratio
-- [`remlRiskDiff()`](https://github.com/kaifenglu/lrstat/reference/remlRiskDiff.md)
+- [`remlRiskDiff()`](https://kaifenglu.github.io/lrstat/reference/remlRiskDiff.md)
   : REML Estimates of Individual Proportions With Specified Risk
   difference
-- [`remlRiskRatio()`](https://github.com/kaifenglu/lrstat/reference/remlRiskRatio.md)
+- [`remlRiskRatio()`](https://kaifenglu.github.io/lrstat/reference/remlRiskRatio.md)
   : REML Estimates of Individual Proportions With Specified Risk Ratio
-- [`repeatedPValue()`](https://github.com/kaifenglu/lrstat/reference/repeatedPValue.md)
+- [`repeatedPValue()`](https://kaifenglu.github.io/lrstat/reference/repeatedPValue.md)
   : Repeated p-Values for Group Sequential Design
-- [`residuals_liferegr()`](https://github.com/kaifenglu/lrstat/reference/residuals_liferegr.md)
+- [`residuals_liferegr()`](https://kaifenglu.github.io/lrstat/reference/residuals_liferegr.md)
   : Residuals for Parametric Regression Models for Failure Time Data
-- [`residuals_phregr()`](https://github.com/kaifenglu/lrstat/reference/residuals_phregr.md)
+- [`residuals_phregr()`](https://kaifenglu.github.io/lrstat/reference/residuals_phregr.md)
   : Residuals for Proportional Hazards Regression Models
-- [`riskDiffExactCI()`](https://github.com/kaifenglu/lrstat/reference/riskDiffExactCI.md)
+- [`riskDiffExactCI()`](https://kaifenglu.github.io/lrstat/reference/riskDiffExactCI.md)
   : Exact Unconditional Confidence Interval for Risk Difference
-- [`riskDiffExactPValue()`](https://github.com/kaifenglu/lrstat/reference/riskDiffExactPValue.md)
+- [`riskDiffExactPValue()`](https://kaifenglu.github.io/lrstat/reference/riskDiffExactPValue.md)
   : P-Value for Exact Unconditional Test of Risk Difference
-- [`riskRatioExactCI()`](https://github.com/kaifenglu/lrstat/reference/riskRatioExactCI.md)
+- [`riskRatioExactCI()`](https://kaifenglu.github.io/lrstat/reference/riskRatioExactCI.md)
   : Exact Unconditional Confidence Interval for Risk Ratio
-- [`riskRatioExactPValue()`](https://github.com/kaifenglu/lrstat/reference/riskRatioExactPValue.md)
+- [`riskRatioExactPValue()`](https://kaifenglu.github.io/lrstat/reference/riskRatioExactPValue.md)
   : P-Value for Exact Unconditional Test of Risk Ratio
-- [`rmdiff()`](https://github.com/kaifenglu/lrstat/reference/rmdiff.md)
-  : Estimate of Restricted Mean Survival Time Difference
-- [`rmest()`](https://github.com/kaifenglu/lrstat/reference/rmest.md) :
+- [`rmdiff()`](https://kaifenglu.github.io/lrstat/reference/rmdiff.md) :
+  Estimate of Restricted Mean Survival Time Difference
+- [`rmest()`](https://kaifenglu.github.io/lrstat/reference/rmest.md) :
   Estimate of Restricted Mean Survival Time
-- [`rmpower()`](https://github.com/kaifenglu/lrstat/reference/rmpower.md)
+- [`rmpower()`](https://kaifenglu.github.io/lrstat/reference/rmpower.md)
   : Power for Difference in Restricted Mean Survival Times
-- [`rmpower1s()`](https://github.com/kaifenglu/lrstat/reference/rmpower1s.md)
+- [`rmpower1s()`](https://kaifenglu.github.io/lrstat/reference/rmpower1s.md)
   : Power for One-Sample Restricted Mean Survival Time
-- [`rmpowerequiv()`](https://github.com/kaifenglu/lrstat/reference/rmpowerequiv.md)
+- [`rmpowerequiv()`](https://kaifenglu.github.io/lrstat/reference/rmpowerequiv.md)
   : Power for Equivalence in Restricted Mean Survival Time Difference
-- [`rmsamplesize()`](https://github.com/kaifenglu/lrstat/reference/rmsamplesize.md)
+- [`rmsamplesize()`](https://kaifenglu.github.io/lrstat/reference/rmsamplesize.md)
   : Sample Size for Difference in Restricted Mean Survival Times
-- [`rmsamplesize1s()`](https://github.com/kaifenglu/lrstat/reference/rmsamplesize1s.md)
+- [`rmsamplesize1s()`](https://kaifenglu.github.io/lrstat/reference/rmsamplesize1s.md)
   : Sample Size for One-Sample Restricted Mean Survival Time
-- [`rmsamplesizeequiv()`](https://github.com/kaifenglu/lrstat/reference/rmsamplesizeequiv.md)
+- [`rmsamplesizeequiv()`](https://kaifenglu.github.io/lrstat/reference/rmsamplesizeequiv.md)
   : Sample Size for Equivalence in Restricted Mean Survival Time
   Difference
-- [`rmst()`](https://github.com/kaifenglu/lrstat/reference/rmst.md) :
+- [`rmst()`](https://kaifenglu.github.io/lrstat/reference/rmst.md) :
   Restricted Mean Survival Time
-- [`rmstat()`](https://github.com/kaifenglu/lrstat/reference/rmstat.md)
-  : Stratified Difference in Restricted Mean Survival Times
-- [`rtpwexp()`](https://github.com/kaifenglu/lrstat/reference/rtpwexp.md)
+- [`rmstat()`](https://kaifenglu.github.io/lrstat/reference/rmstat.md) :
+  Stratified Difference in Restricted Mean Survival Times
+- [`rtpwexp()`](https://kaifenglu.github.io/lrstat/reference/rtpwexp.md)
   : Random Number Generation Function of Truncated Piecewise Exponential
   Distribution
-- [`runShinyApp_lrstat()`](https://github.com/kaifenglu/lrstat/reference/runShinyApp_lrstat.md)
+- [`runShinyApp_lrstat()`](https://kaifenglu.github.io/lrstat/reference/runShinyApp_lrstat.md)
   : Run Shiny App
-- [`sexagg`](https://github.com/kaifenglu/lrstat/reference/sexagg.md) :
+- [`sexagg`](https://kaifenglu.github.io/lrstat/reference/sexagg.md) :
   Urinary tract infection data from the logistf package
-- [`shilong`](https://github.com/kaifenglu/lrstat/reference/shilong.md)
-  : The randomized clinical trial SHIVA data in long format from the
+- [`shilong`](https://kaifenglu.github.io/lrstat/reference/shilong.md) :
+  The randomized clinical trial SHIVA data in long format from the
   ipcwswitch package
-- [`simon2stage()`](https://github.com/kaifenglu/lrstat/reference/simon2stage.md)
+- [`simon2stage()`](https://kaifenglu.github.io/lrstat/reference/simon2stage.md)
   : Simon's Two-Stage Design
-- [`simonBayesAnalysis()`](https://github.com/kaifenglu/lrstat/reference/simonBayesAnalysis.md)
+- [`simonBayesAnalysis()`](https://kaifenglu.github.io/lrstat/reference/simonBayesAnalysis.md)
   : Analysis of Simon's Bayesian Basket Trials
-- [`simonBayesSim()`](https://github.com/kaifenglu/lrstat/reference/simonBayesSim.md)
+- [`simonBayesSim()`](https://kaifenglu.github.io/lrstat/reference/simonBayesSim.md)
   : Simulation of Simon's Bayesian Basket Trials
-- [`six`](https://github.com/kaifenglu/lrstat/reference/six.md) : The
+- [`six`](https://kaifenglu.github.io/lrstat/reference/six.md) : The
   repeated measures data from the "Six Cities" study of the health
   effects of air pollution (Ware et al. 1984).
-- [`survfit_phregr()`](https://github.com/kaifenglu/lrstat/reference/survfit_phregr.md)
+- [`survfit_phregr()`](https://kaifenglu.github.io/lrstat/reference/survfit_phregr.md)
   : Survival Curve for Proportional Hazards Regression Models
-- [`survQuantile()`](https://github.com/kaifenglu/lrstat/reference/survQuantile.md)
+- [`survQuantile()`](https://kaifenglu.github.io/lrstat/reference/survQuantile.md)
   : Brookmeyer-Crowley Confidence Interval for Quantiles of
   Right-Censored Time-to-Event Data
-- [`svdcpp()`](https://github.com/kaifenglu/lrstat/reference/svdcpp.md)
-  : Singular Value Decomposition of a Matrix
-- [`tobin`](https://github.com/kaifenglu/lrstat/reference/tobin.md) :
+- [`svdcpp()`](https://kaifenglu.github.io/lrstat/reference/svdcpp.md) :
+  Singular Value Decomposition of a Matrix
+- [`tobin`](https://kaifenglu.github.io/lrstat/reference/tobin.md) :
   Tobin's tobit data from the survival package
-- [`updateGraph()`](https://github.com/kaifenglu/lrstat/reference/updateGraph.md)
+- [`updateGraph()`](https://kaifenglu.github.io/lrstat/reference/updateGraph.md)
   : Update Graph for Graphical Approaches
-- [`zph_phregr()`](https://github.com/kaifenglu/lrstat/reference/zph_phregr.md)
+- [`zph_phregr()`](https://kaifenglu.github.io/lrstat/reference/zph_phregr.md)
   : Assess Proportional Hazards Assumption Based on Scaled Schoenfeld
   Residuals
-- [`zstatOddsRatio()`](https://github.com/kaifenglu/lrstat/reference/zstatOddsRatio.md)
+- [`zstatOddsRatio()`](https://kaifenglu.github.io/lrstat/reference/zstatOddsRatio.md)
   : Miettinen-Nurminen Score Test Statistic for Two-Sample Odds Ratio
-- [`zstatRateDiff()`](https://github.com/kaifenglu/lrstat/reference/zstatRateDiff.md)
+- [`zstatRateDiff()`](https://kaifenglu.github.io/lrstat/reference/zstatRateDiff.md)
   : Miettinen-Nurminen Score Test Statistic for Two-Sample Rate
   Difference
-- [`zstatRateRatio()`](https://github.com/kaifenglu/lrstat/reference/zstatRateRatio.md)
+- [`zstatRateRatio()`](https://kaifenglu.github.io/lrstat/reference/zstatRateRatio.md)
   : Miettinen-Nurminen Score Test Statistic for Two-Sample Rate Ratio
-- [`zstatRiskDiff()`](https://github.com/kaifenglu/lrstat/reference/zstatRiskDiff.md)
+- [`zstatRiskDiff()`](https://kaifenglu.github.io/lrstat/reference/zstatRiskDiff.md)
   : Miettinen-Nurminen Score Test Statistic for Two-Sample Risk
   difference
-- [`zstatRiskRatio()`](https://github.com/kaifenglu/lrstat/reference/zstatRiskRatio.md)
+- [`zstatRiskRatio()`](https://kaifenglu.github.io/lrstat/reference/zstatRiskRatio.md)
   : Miettinen-Nurminen Score Test Statistic for Two-Sample Risk Ratio

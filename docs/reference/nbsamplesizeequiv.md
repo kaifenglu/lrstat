@@ -180,7 +180,7 @@ An S3 class `nbpowerequiv` object
 
 ## See also
 
-[`nbpowerequiv`](https://github.com/kaifenglu/lrstat/reference/nbpowerequiv.md)
+[`nbpowerequiv`](https://kaifenglu.github.io/lrstat/reference/nbpowerequiv.md)
 
 ## Author
 

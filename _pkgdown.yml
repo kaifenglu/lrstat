@@ -14,5 +14,5 @@ navbar:
   - text: News
     href: news/index.html
 
-url: https://kaifenglu.github.io/lrstat/
+url: https://kaifenglu.github.io/lrstat
 destination: docs

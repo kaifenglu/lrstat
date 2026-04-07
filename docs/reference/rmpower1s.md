@@ -276,7 +276,7 @@ An S3 class `rmpower1s` object with 3 components:
 
 ## See also
 
-[`rmstat`](https://github.com/kaifenglu/lrstat/reference/rmstat.md)
+[`rmstat`](https://kaifenglu.github.io/lrstat/reference/rmstat.md)
 
 ## Author
 

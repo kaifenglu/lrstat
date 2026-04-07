@@ -275,7 +275,7 @@ An S3 class `kmpower1s` object with 3 components:
 
 ## See also
 
-[`kmstat`](https://github.com/kaifenglu/lrstat/reference/kmstat.md)
+[`kmstat`](https://kaifenglu.github.io/lrstat/reference/kmstat.md)
 
 ## Author
 

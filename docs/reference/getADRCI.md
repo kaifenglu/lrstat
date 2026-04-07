@@ -157,7 +157,7 @@ confidence intervals for adaptive group sequential trials. Stat Med.
 
 ## See also
 
-[`adaptDesign`](https://github.com/kaifenglu/lrstat/reference/adaptDesign.md)
+[`adaptDesign`](https://kaifenglu.github.io/lrstat/reference/adaptDesign.md)
 
 ## Author
 

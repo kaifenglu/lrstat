@@ -201,7 +201,7 @@ A list of two components:
 
 ## See also
 
-[`nbpower1s`](https://github.com/kaifenglu/lrstat/reference/nbpower1s.md)
+[`nbpower1s`](https://kaifenglu.github.io/lrstat/reference/nbpower1s.md)
 
 ## Author
 

@@ -176,7 +176,7 @@ An S3 class `kmpowerequiv` object
 
 ## See also
 
-[`kmpowerequiv`](https://github.com/kaifenglu/lrstat/reference/kmpowerequiv.md)
+[`kmpowerequiv`](https://kaifenglu.github.io/lrstat/reference/kmpowerequiv.md)
 
 ## Author
 

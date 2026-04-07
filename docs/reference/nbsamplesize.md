@@ -232,7 +232,7 @@ A list of two components:
 
 ## See also
 
-[`nbpower`](https://github.com/kaifenglu/lrstat/reference/nbpower.md)
+[`nbpower`](https://kaifenglu.github.io/lrstat/reference/nbpower.md)
 
 ## Author
 

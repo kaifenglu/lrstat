@@ -177,7 +177,7 @@ An S3 class `lrpowerequiv` object
 
 ## See also
 
-[`lrpowerequiv`](https://github.com/kaifenglu/lrstat/reference/lrpowerequiv.md)
+[`lrpowerequiv`](https://kaifenglu.github.io/lrstat/reference/lrpowerequiv.md)
 
 ## Author
 
