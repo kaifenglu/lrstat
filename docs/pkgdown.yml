@@ -1,0 +1,14 @@
+pandoc: 3.6.3
+pkgdown: 2.2.0
+pkgdown_sha: ~
+articles:
+  direct_approximation_vs_schoenfeld: direct_approximation_vs_schoenfeld.html
+  fixed_follow-up: fixed_follow-up.html
+  group_sequential_simulation: group_sequential_simulation.html
+  maxcombo: maxcombo.html
+  non-proportional_hazards: non-proportional_hazards.html
+  stratified: stratified.html
+last_built: 2026-04-07T00:20Z
+urls:
+  reference: https://github.com/kaifenglu/lrstat/reference
+  article: https://github.com/kaifenglu/lrstat/articles

@@ -1,0 +1,17 @@
+template:
+  params:
+    bootswatch: flatly
+
+navbar:
+  left:
+  - text: Home
+    href: index.html
+  - text: Reference
+    href: reference/index.html
+  - text: Articles
+    href: articles/index.html
+  - text: News
+    href: news/index.html
+
+url: https://github.com/kaifenglu/lrstat
+destination: docs
