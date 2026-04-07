@@ -233,7 +233,7 @@ NULL
 
 #' Parameter Description: parameterAlphaSpending
 #' @param parameterAlphaSpending The parameter value for the alpha spending.
-#'   Corresponds to \eqn{\Delta} for \code{"WT"}, \eqn{rho} for \code{"sfKD"},
+#'   Corresponds to \eqn{\Delta} for \code{"WT"}, \eqn{\rho} for \code{"sfKD"},
 #'   and \eqn{\gamma} for \code{"sfHSD"}.
 #' @name param_parameterAlphaSpending
 #' @keywords internal
