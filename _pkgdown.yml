@@ -1,7 +1,5 @@
 template:
   bootstrap: 5
-    bslib:
-      preset: "bootstrap"
   math-rendering: mathjax
   params:
     bootswatch: flatly
