@@ -34,6 +34,6 @@ Depends:
     R (>= 3.5.0)
 SystemRequirements: C++17
 LazyData: true
-URL: https://kaifenglu.github.io/lrstat, https://github.com/kaifenglu/lrstat
+URL: https://kaifenglu.github.io/lrstat/, https://github.com/kaifenglu/lrstat
 BugReports: https://github.com/kaifenglu/lrstat/issues
 Config/testthat/edition: 3
