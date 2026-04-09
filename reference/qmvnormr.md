@@ -11,6 +11,7 @@ qmvnormr(
   p,
   mean = NULL,
   sigma,
+  pivot = FALSE,
   fast = TRUE,
   n0 = 1024,
   n_max = 16384,
@@ -37,6 +38,11 @@ qmvnormr(
 - sigma:
 
   The covariance (or correlation) matrix of the distribution.
+
+- pivot:
+
+  Logical; if `TRUE`, applies an initial pivoting step to reorder the
+  integration variables for improved efficiency.
 
 - fast:
 
@@ -101,5 +107,5 @@ mean <- rep(0, n)
 sigma <- matrix(0.5, n, n)
 diag(sigma) <- 1
 qmvnormr(0.5, mean = mean, sigma = sigma)
-#> [1] 0.8150347
+#> Error in qmvnormRcpp(p = p, mean = mean, sigma = sigma, pivot = pivot,     fast = fast, n0 = n0, n_max = n_max, R = R, abseps = abseps,     releps = releps, seed = seed, parallel = parallel): unused argument (pivot = pivot)
 ```

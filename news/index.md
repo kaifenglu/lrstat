@@ -2,6 +2,8 @@
 
 ## lrstat 0.3.1
 
+CRAN release: 2026-04-08
+
 - calculated eventsPerStage, dropoutPerStage, subjectsPerStage, and
   analysisTimePerstage in the lrsim output based on trials having the
   stage (i.e., did not stop before the stage).

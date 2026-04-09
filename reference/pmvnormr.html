@@ -54,6 +54,7 @@ vector falls within a rectangular region defined by lower and upper bounds.</p>
 <span>  <span class="va">upper</span>,</span>
 <span>  mean <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">sigma</span>,</span>
+<span>  pivot <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  fast <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  n0 <span class="op">=</span> <span class="fl">1024</span>,</span>
 <span>  n_max <span class="op">=</span> <span class="fl">16384</span>,</span>
@@ -85,6 +86,11 @@ appropriate length is used.</p></dd>
 
 <dt id="arg-sigma">sigma<a class="anchor" aria-label="anchor" href="#arg-sigma"></a></dt>
 <dd><p>The covariance (or correlation) matrix of the distribution.</p></dd>
+
+
+<dt id="arg-pivot">pivot<a class="anchor" aria-label="anchor" href="#arg-pivot"></a></dt>
+<dd><p>Logical; if <code>TRUE</code>, applies an initial pivoting step
+to reorder the integration variables for improved efficiency.</p></dd>
 
 
 <dt id="arg-fast">fast<a class="anchor" aria-label="anchor" href="#arg-fast"></a></dt>
@@ -146,8 +152,8 @@ sequences.</p></li>
 </ul><p>To improve efficiency and accuracy, the QMC approach incorporates:</p><ul><li><p>Sequential Conditioning: Mimics the standardization and transformation
 approach used in <code><a href="https://rdrr.io/pkg/mvtnorm/man/lpmvnorm.html" class="external-link">mvtnorm::lpmvnorm</a></code>, reducing the \(J\)-dimensional
 integral to a \((J-1)\)-dimensional problem over a hypercube.</p></li>
-<li><p>Initial Pivoting: Reorders the integration variables to minimize the
-variance of the integrand.</p></li>
+<li><p>Initial Pivoting (if requested): Reorders the integration variables to
+minimize the variance of the integrand.</p></li>
 <li><p>Adaptive Sampling: The number of samples per replication increases
 dynamically until the estimated error falls below <code>abseps</code> or
 <code>releps</code>, or until <code>n_max</code> is reached.</p></li>
@@ -172,13 +178,7 @@ multiple CPU threads via <code>nthreads</code>.</p>
 <span class="r-in"><span><span class="va">sigma</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="va">n</span>, <span class="va">n</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="va">sigma</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fl">1</span></span></span>
 <span class="r-in"><span><span class="fu">pmvnormr</span><span class="op">(</span><span class="va">lower</span>, <span class="va">upper</span>, <span class="va">mean</span>, <span class="va">sigma</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.5800477</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"method")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "analytic"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"error")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"nsamples")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in pmvnormRcpp(lower = lower, upper = upper, mean = mean, sigma = sigma,     pivot = pivot, fast = fast, n0 = n0, n_max = n_max, R = R,     abseps = abseps, releps = releps, seed = seed, parallel = parallel):</span> unused argument (pivot = pivot)</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Example 2: General covariance structure and Monte Carlo method</span></span></span>
 <span class="r-in"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">5</span></span></span>
@@ -191,13 +191,7 @@ multiple CPU threads via <code>nthreads</code>.</p>
 <span class="r-in"><span>                  <span class="fl">0.2</span>, <span class="fl">0.3</span>, <span class="fl">0.5</span>, <span class="fl">1</span>, <span class="fl">0.4</span>,</span></span>
 <span class="r-in"><span>                  <span class="fl">0.1</span>, <span class="fl">0.2</span>, <span class="fl">0.3</span>, <span class="fl">0.4</span>, <span class="fl">1</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">pmvnormr</span><span class="op">(</span><span class="va">lower</span>, <span class="va">upper</span>, <span class="va">mean</span>, <span class="va">sigma</span>, seed <span class="op">=</span> <span class="fl">314159</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.5259248</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"method")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "qmc"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"error")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 9.473211e-05</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"nsamples")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 16384</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in pmvnormRcpp(lower = lower, upper = upper, mean = mean, sigma = sigma,     pivot = pivot, fast = fast, n0 = n0, n_max = n_max, R = R,     abseps = abseps, releps = releps, seed = seed, parallel = parallel):</span> unused argument (pivot = pivot)</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
