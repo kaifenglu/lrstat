@@ -5,6 +5,7 @@
 #include <Rcpp.h>
 #include <RcppParallel.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -455,11 +456,18 @@ struct PMVNPrecomputed {
 PMVNPrecomputed precompute_pmvn(const std::vector<double>& lower,
                                 const std::vector<double>& upper,
                                 const std::vector<double>& mean,
-                                const FlatMatrix& sigma) {
+                                const FlatMatrix& sigma,
+                                const bool pivot) {
   size_t J = lower.size();
   std::vector<double> lower_perm(J), upper_perm(J), mean_perm(J);
   FlatMatrix sigma_perm(J, J);
-  auto piv = greedy_order_mvn_rect(sigma, mean, lower, upper);
+
+  std::vector<size_t> piv(J);
+  if (pivot) {
+    piv = greedy_order_mvn_rect(sigma, mean, lower, upper);
+  } else {
+    std::iota(piv.begin(), piv.end(), 0);
+  }
   for (size_t j = 0; j < J; ++j) {
     const size_t oj = piv[j];
     lower_perm[j] = lower[oj];
@@ -546,6 +554,7 @@ PMVNResult pmvnormcpp(const std::vector<double>& lower,
                       const std::vector<double>& upper,
                       const std::vector<double>& mean,
                       const FlatMatrix& sigma,
+                      bool pivot,
                       bool fast,
                       size_t n0,
                       size_t n_max,
@@ -612,7 +621,7 @@ PMVNResult pmvnormcpp(const std::vector<double>& lower,
     return PMVNResult{p, "analytic", 0.0, 1};
   }
 
-  PMVNPrecomputed P = precompute_pmvn(lower, upper, mean, sigma);
+  PMVNPrecomputed P = precompute_pmvn(lower, upper, mean, sigma, pivot);
   return pmvnorm_with_precomp(P, fast, n0, n_max, R, abseps, releps, seed, parallel);
 }
 
@@ -623,6 +632,7 @@ Rcpp::List pmvnormRcpp(
     const std::vector<double>& upper,
     const std::vector<double>& mean,
     const Rcpp::NumericMatrix& sigma,
+    bool pivot = false,
     bool fast = true,
     size_t n0 = 1024,
     size_t n_max = 16384,
@@ -632,9 +642,8 @@ Rcpp::List pmvnormRcpp(
     uint64_t seed = 0,
     bool parallel = true) {
   auto sigma_fm = flatmatrix_from_Rmatrix(sigma);
-  auto out = pmvnormcpp(lower, upper, mean, sigma_fm, fast, n0, n_max,
-                        R, abseps, releps, seed, parallel);
-
+  auto out = pmvnormcpp(lower, upper, mean, sigma_fm, pivot, fast,
+                        n0, n_max, R, abseps, releps, seed, parallel);
   return Rcpp::List::create(
     Rcpp::Named("prob") = out.prob,
     Rcpp::Named("method") = out.method,
@@ -647,6 +656,7 @@ Rcpp::List pmvnormRcpp(
 double qmvnormcpp(const double p,
                   const std::vector<double>& mean,
                   const FlatMatrix& sigma,
+                  bool pivot,
                   bool fast,
                   size_t n0,
                   size_t n_max,
@@ -674,21 +684,21 @@ double qmvnormcpp(const double p,
   if (J == 1 || (J > 1 && is_compound_symmetry(sigma))) {
     auto f = [&](double x) {
       std::fill(upper.begin(), upper.end(), x);
-      auto res = pmvnormcpp(lower, upper, mean, sigma, fast, n0, n_max,
-                            R, abseps, releps, seed, parallel);
+      auto res = pmvnormcpp(lower, upper, mean, sigma, pivot, fast,
+                            n0, n_max, R, abseps, releps, seed, parallel);
       return res.prob - p;
     };
     return brent(f, x1, x2, 1e-4);
   } else {
-    PMVNPrecomputed P = precompute_pmvn(lower, upper, mean, sigma);
+    PMVNPrecomputed P = precompute_pmvn(lower, upper, mean, sigma, pivot);
     std::vector<double> upper_std0 = P.upper_std;
     auto f = [&](double x) {
       // update upper limits in P and call adaptive engine
       for (size_t j = 0; j < J; ++j) {
         P.upper_std[j] = upper_std0[j]  + (x - upper0) / P.sd[j];
       }
-      auto res = pmvnorm_with_precomp(P, fast, n0, n_max, R, abseps, releps,
-                                      seed, parallel);
+      auto res = pmvnorm_with_precomp(P, fast, n0, n_max, R,
+                                      abseps, releps, seed, parallel);
       return res.prob - p;
     };
     return brent(f, x1, x2, 1e-4);
@@ -700,6 +710,7 @@ double qmvnormRcpp(
     const double p,
     const std::vector<double>& mean,
     const Rcpp::NumericMatrix& sigma,
+    bool pivot = false,
     bool fast = true,
     size_t n0 = 1024,
     size_t n_max = 16384,
@@ -709,7 +720,7 @@ double qmvnormRcpp(
     uint64_t seed = 0,
     bool parallel = true) {
   auto sigma_fm = flatmatrix_from_Rmatrix(sigma);
-  return qmvnormcpp(
-    p, mean, sigma_fm, fast, n0, n_max, R, abseps, releps, seed, parallel);
+  return qmvnormcpp(p, mean, sigma_fm, pivot, fast, n0, n_max, R,
+                    abseps, releps, seed, parallel);
 }
 

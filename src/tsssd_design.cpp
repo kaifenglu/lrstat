@@ -81,8 +81,8 @@ ListCpp exitprob_tsssd_cpp(
     }
   }
 
-  PMVNResult out0 = pmvnormcpp(lower0, upper0, mean0, sigma0,
-                               true, 1024, 16384, 8, 1e-4, 0.0, 314159, true);
+  PMVNResult out0 = pmvnormcpp(lower0, upper0, mean0, sigma0, false, true,
+                               1024, 16384, 8, 1e-4, 0.0, 314159, true);
   preject[0] = 1.0 - out0.prob;
 
   // compute the exit probabilities at the K looks in phase 3
@@ -118,8 +118,8 @@ ListCpp exitprob_tsssd_cpp(
         }
       }
 
-      PMVNResult out = pmvnormcpp(lower, upper, mean, sigma,
-                                  true, 1024, 16384, 8, 1e-4, 0.0, 314159, true);
+      PMVNResult out = pmvnormcpp(lower, upper, mean, sigma, false, true,
+                                  1024, 16384, 8, 1e-4, 0.0, 314159, true);
       // multiply the density of the Wald statistic for arm m at z0
       return out.prob * boost_dnorm(z0, mu, 1.0);
     };
@@ -459,7 +459,8 @@ std::vector<double> getBound_tsssd_cpp(
           sigma(i, j) = (i == j) ? 1.0 : r / (r + 1.0);
         }
       }
-      criticalValues[0] = qmvnormcpp(1.0 - cumAlpha, mean, sigma);
+      criticalValues[0] = qmvnormcpp(1.0 - cumAlpha, mean, sigma, false, true,
+                                     1024, 16384, 8, 1e-4, 0.0, 314159, true);
     }
 
     // Preallocate reusable buffers used by the root-finding lambda
