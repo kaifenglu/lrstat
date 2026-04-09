@@ -4910,12 +4910,12 @@ ftrunccpp <- function(p, test, gamma) {
     .Call(`_lrstat_ftrunccpp`, p, test, gamma)
 }
 
-pmvnormRcpp <- function(lower, upper, mean, sigma, fast = TRUE, n0 = 1024L, n_max = 16384L, R = 8L, abseps = 1e-4, releps = 0.0, seed = 0L, parallel = TRUE) {
-    .Call(`_lrstat_pmvnormRcpp`, lower, upper, mean, sigma, fast, n0, n_max, R, abseps, releps, seed, parallel)
+pmvnormRcpp <- function(lower, upper, mean, sigma, pivot = FALSE, fast = TRUE, n0 = 1024L, n_max = 16384L, R = 8L, abseps = 1e-4, releps = 0.0, seed = 0L, parallel = TRUE) {
+    .Call(`_lrstat_pmvnormRcpp`, lower, upper, mean, sigma, pivot, fast, n0, n_max, R, abseps, releps, seed, parallel)
 }
 
-qmvnormRcpp <- function(p, mean, sigma, fast = TRUE, n0 = 1024L, n_max = 16384L, R = 8L, abseps = 1e-4, releps = 0.0, seed = 0L, parallel = TRUE) {
-    .Call(`_lrstat_qmvnormRcpp`, p, mean, sigma, fast, n0, n_max, R, abseps, releps, seed, parallel)
+qmvnormRcpp <- function(p, mean, sigma, pivot = FALSE, fast = TRUE, n0 = 1024L, n_max = 16384L, R = 8L, abseps = 1e-4, releps = 0.0, seed = 0L, parallel = TRUE) {
+    .Call(`_lrstat_qmvnormRcpp`, p, mean, sigma, pivot, fast, n0, n_max, R, abseps, releps, seed, parallel)
 }
 
 #' @title Negative Binomial Rate Ratio

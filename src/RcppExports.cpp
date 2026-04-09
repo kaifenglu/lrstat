@@ -1876,8 +1876,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // pmvnormRcpp
-Rcpp::List pmvnormRcpp(const std::vector<double>& lower, const std::vector<double>& upper, const std::vector<double>& mean, const Rcpp::NumericMatrix& sigma, bool fast, size_t n0, size_t n_max, size_t R, double abseps, double releps, uint64_t seed, bool parallel);
-RcppExport SEXP _lrstat_pmvnormRcpp(SEXP lowerSEXP, SEXP upperSEXP, SEXP meanSEXP, SEXP sigmaSEXP, SEXP fastSEXP, SEXP n0SEXP, SEXP n_maxSEXP, SEXP RSEXP, SEXP absepsSEXP, SEXP relepsSEXP, SEXP seedSEXP, SEXP parallelSEXP) {
+Rcpp::List pmvnormRcpp(const std::vector<double>& lower, const std::vector<double>& upper, const std::vector<double>& mean, const Rcpp::NumericMatrix& sigma, bool pivot, bool fast, size_t n0, size_t n_max, size_t R, double abseps, double releps, uint64_t seed, bool parallel);
+RcppExport SEXP _lrstat_pmvnormRcpp(SEXP lowerSEXP, SEXP upperSEXP, SEXP meanSEXP, SEXP sigmaSEXP, SEXP pivotSEXP, SEXP fastSEXP, SEXP n0SEXP, SEXP n_maxSEXP, SEXP RSEXP, SEXP absepsSEXP, SEXP relepsSEXP, SEXP seedSEXP, SEXP parallelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1885,6 +1885,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const std::vector<double>& >::type upper(upperSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type mean(meanSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< bool >::type pivot(pivotSEXP);
     Rcpp::traits::input_parameter< bool >::type fast(fastSEXP);
     Rcpp::traits::input_parameter< size_t >::type n0(n0SEXP);
     Rcpp::traits::input_parameter< size_t >::type n_max(n_maxSEXP);
@@ -1893,19 +1894,20 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type releps(relepsSEXP);
     Rcpp::traits::input_parameter< uint64_t >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< bool >::type parallel(parallelSEXP);
-    rcpp_result_gen = Rcpp::wrap(pmvnormRcpp(lower, upper, mean, sigma, fast, n0, n_max, R, abseps, releps, seed, parallel));
+    rcpp_result_gen = Rcpp::wrap(pmvnormRcpp(lower, upper, mean, sigma, pivot, fast, n0, n_max, R, abseps, releps, seed, parallel));
     return rcpp_result_gen;
 END_RCPP
 }
 // qmvnormRcpp
-double qmvnormRcpp(const double p, const std::vector<double>& mean, const Rcpp::NumericMatrix& sigma, bool fast, size_t n0, size_t n_max, size_t R, double abseps, double releps, uint64_t seed, bool parallel);
-RcppExport SEXP _lrstat_qmvnormRcpp(SEXP pSEXP, SEXP meanSEXP, SEXP sigmaSEXP, SEXP fastSEXP, SEXP n0SEXP, SEXP n_maxSEXP, SEXP RSEXP, SEXP absepsSEXP, SEXP relepsSEXP, SEXP seedSEXP, SEXP parallelSEXP) {
+double qmvnormRcpp(const double p, const std::vector<double>& mean, const Rcpp::NumericMatrix& sigma, bool pivot, bool fast, size_t n0, size_t n_max, size_t R, double abseps, double releps, uint64_t seed, bool parallel);
+RcppExport SEXP _lrstat_qmvnormRcpp(SEXP pSEXP, SEXP meanSEXP, SEXP sigmaSEXP, SEXP pivotSEXP, SEXP fastSEXP, SEXP n0SEXP, SEXP n_maxSEXP, SEXP RSEXP, SEXP absepsSEXP, SEXP relepsSEXP, SEXP seedSEXP, SEXP parallelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const double >::type p(pSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type mean(meanSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< bool >::type pivot(pivotSEXP);
     Rcpp::traits::input_parameter< bool >::type fast(fastSEXP);
     Rcpp::traits::input_parameter< size_t >::type n0(n0SEXP);
     Rcpp::traits::input_parameter< size_t >::type n_max(n_maxSEXP);
@@ -1914,7 +1916,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type releps(relepsSEXP);
     Rcpp::traits::input_parameter< uint64_t >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< bool >::type parallel(parallelSEXP);
-    rcpp_result_gen = Rcpp::wrap(qmvnormRcpp(p, mean, sigma, fast, n0, n_max, R, abseps, releps, seed, parallel));
+    rcpp_result_gen = Rcpp::wrap(qmvnormRcpp(p, mean, sigma, pivot, fast, n0, n_max, R, abseps, releps, seed, parallel));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -3107,8 +3109,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lrstat_fstdmixcpp", (DL_FUNC) &_lrstat_fstdmixcpp, 7},
     {"_lrstat_fmodmixcpp", (DL_FUNC) &_lrstat_fmodmixcpp, 7},
     {"_lrstat_ftrunccpp", (DL_FUNC) &_lrstat_ftrunccpp, 3},
-    {"_lrstat_pmvnormRcpp", (DL_FUNC) &_lrstat_pmvnormRcpp, 12},
-    {"_lrstat_qmvnormRcpp", (DL_FUNC) &_lrstat_qmvnormRcpp, 11},
+    {"_lrstat_pmvnormRcpp", (DL_FUNC) &_lrstat_pmvnormRcpp, 13},
+    {"_lrstat_qmvnormRcpp", (DL_FUNC) &_lrstat_qmvnormRcpp, 12},
     {"_lrstat_nbstat", (DL_FUNC) &_lrstat_nbstat, 17},
     {"_lrstat_nbpower", (DL_FUNC) &_lrstat_nbpower, 30},
     {"_lrstat_nbsamplesize", (DL_FUNC) &_lrstat_nbsamplesize, 32},
