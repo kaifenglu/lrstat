@@ -107,5 +107,5 @@ mean <- rep(0, n)
 sigma <- matrix(0.5, n, n)
 diag(sigma) <- 1
 qmvnormr(0.5, mean = mean, sigma = sigma)
-#> Error in qmvnormRcpp(p = p, mean = mean, sigma = sigma, pivot = pivot,     fast = fast, n0 = n0, n_max = n_max, R = R, abseps = abseps,     releps = releps, seed = seed, parallel = parallel): unused argument (pivot = pivot)
+#> [1] 0.8150347
 ```

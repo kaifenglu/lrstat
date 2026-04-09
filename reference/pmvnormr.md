@@ -147,7 +147,13 @@ upper <- rep(3, n)
 sigma <- matrix(0.5, n, n)
 diag(sigma) <- 1
 pmvnormr(lower, upper, mean, sigma)
-#> Error in pmvnormRcpp(lower = lower, upper = upper, mean = mean, sigma = sigma,     pivot = pivot, fast = fast, n0 = n0, n_max = n_max, R = R,     abseps = abseps, releps = releps, seed = seed, parallel = parallel): unused argument (pivot = pivot)
+#> [1] 0.5800477
+#> attr(,"method")
+#> [1] "analytic"
+#> attr(,"error")
+#> [1] 0
+#> attr(,"nsamples")
+#> [1] 1
 
 # Example 2: General covariance structure and Monte Carlo method
 n <- 5
@@ -160,5 +166,11 @@ sigma <- matrix(c(1, 0.5, 0.3, 0.2, 0.1,
                   0.2, 0.3, 0.5, 1, 0.4,
                   0.1, 0.2, 0.3, 0.4, 1), nrow = n)
 pmvnormr(lower, upper, mean, sigma, seed = 314159)
-#> Error in pmvnormRcpp(lower = lower, upper = upper, mean = mean, sigma = sigma,     pivot = pivot, fast = fast, n0 = n0, n_max = n_max, R = R,     abseps = abseps, releps = releps, seed = seed, parallel = parallel): unused argument (pivot = pivot)
+#> [1] 0.5259248
+#> attr(,"method")
+#> [1] "qmc"
+#> attr(,"error")
+#> [1] 9.473211e-05
+#> attr(,"nsamples")
+#> [1] 16384
 ```
