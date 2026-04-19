@@ -18,7 +18,7 @@
 using std::size_t;
 
 
-ListCpp exitprob_tsssd_cpp(
+ListCpp exitprob_seamless_cpp(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -81,7 +81,7 @@ ListCpp exitprob_tsssd_cpp(
     }
   }
 
-  PMVNResult out0 = pmvnormcpp(lower0, upper0, mean0, sigma0, false, true,
+  PMVNResult out0 = pmvnormcpp(lower0, upper0, mean0, sigma0,
                                1024, 16384, 8, 1e-4, 0.0, 314159, true);
   preject[0] = 1.0 - out0.prob;
 
@@ -118,7 +118,7 @@ ListCpp exitprob_tsssd_cpp(
         }
       }
 
-      PMVNResult out = pmvnormcpp(lower, upper, mean, sigma, false, true,
+      PMVNResult out = pmvnormcpp(lower, upper, mean, sigma,
                                   1024, 16384, 8, 1e-4, 0.0, 314159, true);
       // multiply the density of the Wald statistic for arm m at z0
       return out.prob * boost_dnorm(z0, mu, 1.0);
@@ -143,6 +143,7 @@ ListCpp exitprob_tsssd_cpp(
       std::vector<double> b1(K);
       for (size_t k = 0; k < K; ++k) {
         b1[k] = (b[k+1] * sqrtI[k+1] - z0 * sqrtI0) / sqrtI1[k];
+        if (b1[k] < -6.0) b1[k] = -6.0;
       }
 
       ListCpp probs = exitprobcpp(b1, a1, theta1, I1);
@@ -184,7 +185,7 @@ ListCpp exitprob_tsssd_cpp(
 }
 
 
-//' @title Exit Probabilities for Two-Stage Seamless Sequential Design (TSSSD)
+//' @title Exit Probabilities for Two-Stage Seamless Sequential Design
 //' @description Computes the exit (rejection) probabilities for a two-stage
 //' selection and testing design. In Phase 2, multiple active arms are
 //' compared against a common control arm. The best-performing arm is
@@ -256,16 +257,16 @@ ListCpp exitprob_tsssd_cpp(
 //' b <- c(3.776606, 2.670463, 2.180424)
 //'
 //' # Type I error under the global null hypothesis
-//' p0 <- exitprob_tsssd(M = 2, theta = c(0, 0), K = 2, b = b, I = I)
+//' p0 <- exitprob_seamless(M = 2, theta = c(0, 0), K = 2, b = b, I = I)
 //' cumsum(p0$exitProb)
 //'
 //' # Power under alternative: Treatment effects of 0.3 and 0.5
-//' p1 <- exitprob_tsssd(M = 2, theta = c(0.3, 0.5), K = 2, b = b, I = I)
+//' p1 <- exitprob_seamless(M = 2, theta = c(0.3, 0.5), K = 2, b = b, I = I)
 //' cumsum(p1$exitProb)
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List exitprob_tsssd(
+Rcpp::List exitprob_seamless(
     const int M = NA_INTEGER,
     const double r = 1,
     const Rcpp::NumericVector& theta = NA_REAL,
@@ -277,13 +278,14 @@ Rcpp::List exitprob_tsssd(
   std::vector<double> thetaVec(theta.begin(), theta.end());
   std::vector<double> bVec(b.begin(), b.end());
   std::vector<double> IVec(I.begin(), I.end());
-  auto result = exitprob_tsssd_cpp(static_cast<size_t>(M), r, thetaVec, corr_known,
-                                   static_cast<size_t>(K), bVec, IVec);
+  auto result = exitprob_seamless_cpp(
+    static_cast<size_t>(M), r, thetaVec, corr_known,
+    static_cast<size_t>(K), bVec, IVec);
   return Rcpp::wrap(result);
 }
 
 
-std::vector<double> getBound_tsssd_cpp(
+std::vector<double> getBound_seamless_cpp(
     const size_t M,
     const double r,
     const bool corr_known,
@@ -377,20 +379,6 @@ std::vector<double> getBound_tsssd_cpp(
       throw std::invalid_argument("userAlphaSpending must not exceed alpha");
   }
 
-  if (asf == "of" || asf == "p" || asf == "wt") {
-    bool equal_spacing = true;
-    for (size_t i = 0; i < K; ++i) {
-      double expected = static_cast<double>(i+1) / static_cast<double>(K);
-      if (std::fabs(infoRates[i] - expected) > 1e-6) {
-        equal_spacing = false; break;
-      }
-    }
-    if (!equal_spacing) {
-      thread_utils::push_thread_warning(
-        "Equal spacing is used for OF, P, and WT boundaries");
-    }
-  }
-
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
       std::isnan(parameterAlphaSpending)) {
     throw std::invalid_argument("Missing value for parameterAlphaSpending");
@@ -404,7 +392,18 @@ std::vector<double> getBound_tsssd_cpp(
 
   if (asf == "none") {
     for (size_t i = 0; i < K-1; ++i) criticalValues[i] = 6.0;
-    criticalValues[K-1] = boost_qnorm(1.0 - alpha);
+    std::vector<double> theta(M, 0.0);
+
+    auto f = [&](double aval)->double {
+      criticalValues[K-1] = aval;
+      auto probs = exitprob_seamless_cpp(M, r, theta, corr_known, k,
+                                      criticalValues, infoRates);
+      auto v = probs.get<std::vector<double>>("exitProb");
+      double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+      return cpu - alpha;
+    };
+
+    criticalValues[K-1] = brent(f, 0.0, 6.0, 1e-6);
     return criticalValues;
   }
 
@@ -417,10 +416,9 @@ std::vector<double> getBound_tsssd_cpp(
     // for a given multiplier, compute cumulative upper exit probability - alpha
     std::vector<double> u(K);
     std::vector<double> theta(M, 0.0);
-    std::vector<double> I(K), u0(K);
+    std::vector<double> u0(K);
     for (size_t i = 0; i < K; ++i) {
-      I[i] = static_cast<double>(i+1) / static_cast<double>(K);
-      u0[i] = std::pow(I[i], Delta - 0.5);
+      u0[i] = std::pow(infoRates[i], Delta - 0.5);
     }
 
     auto f = [&](double aval)->double {
@@ -429,13 +427,13 @@ std::vector<double> getBound_tsssd_cpp(
         if (!effStopping[i]) u[i] = 6.0;
       }
 
-      auto probs = exitprob_tsssd_cpp(M, r, theta, corr_known, k, u, I);
+      auto probs = exitprob_seamless_cpp(M, r, theta, corr_known, k, u, infoRates);
       auto v = probs.get<std::vector<double>>("exitProb");
       double cpu = std::accumulate(v.begin(), v.end(), 0.0);
       return cpu - alpha;
     };
 
-    double cwt = brent(f, 0.0, 10.0, 1e-4);
+    double cwt = brent(f, 0.0, 10.0, 1e-6);
     for (size_t i = 0; i < K; ++i) {
       criticalValues[i] = cwt * u0[i];
       if (!effStopping[i]) criticalValues[i] = 6.0;
@@ -459,7 +457,7 @@ std::vector<double> getBound_tsssd_cpp(
           sigma(i, j) = (i == j) ? 1.0 : r / (r + 1.0);
         }
       }
-      criticalValues[0] = qmvnormcpp(1.0 - cumAlpha, mean, sigma, false, true,
+      criticalValues[0] = qmvnormcpp(1.0 - cumAlpha, mean, sigma,
                                      1024, 16384, 8, 1e-4, 0.0, 314159, true);
     }
 
@@ -490,8 +488,8 @@ std::vector<double> getBound_tsssd_cpp(
       auto f = [&](double aval)->double {
         // set the last element to the current candidate critical value
         u_vec[k1] = aval;
-        auto probs = exitprob_tsssd_cpp(M, r, theta_vec, corr_known,
-                                        k1, u_vec, infoRates);
+        auto probs = exitprob_seamless_cpp(
+          M, r, theta_vec, corr_known, k1, u_vec, infoRates);
         auto v = probs.get<std::vector<double>>("exitProb");
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - cumAlpha;
@@ -506,7 +504,7 @@ std::vector<double> getBound_tsssd_cpp(
           return f(x);
         };
 
-        criticalValues[k1] = brent(f_for_brent, 0.0, 6.0, 1e-4);
+        criticalValues[k1] = brent(f_for_brent, 0.0, 6.0, 1e-6);
       }
     }
 
@@ -517,7 +515,7 @@ std::vector<double> getBound_tsssd_cpp(
 }
 
 
-//' @title Efficacy Boundaries for Two-Stage Seamless Sequential Design (TSSSD)
+//' @title Efficacy Boundaries for Two-Stage Seamless Sequential Design
 //' @description Calculates the efficacy stopping boundaries for a two-stage
 //' seamless sequential design, accounting for the selection of the best arm
 //' at the end of Phase 2 and sequential testing in Phase 3.
@@ -558,14 +556,14 @@ std::vector<double> getBound_tsssd_cpp(
 //'
 //' @examples
 //'
-//' # Determine O'Brien-Fleming boundaries for a TSSSD with
+//' # Determine O'Brien-Fleming boundaries for a seamless design with
 //' # 2 active arms in Phase 2 and 2 looks in Phase 3 (3 looks total).
-//' getBound_tsssd(M = 2, k = 2, informationRates = seq(1, 3)/3,
-//'               alpha = 0.025, typeAlphaSpending = "OF")
+//' getBound_seamless(M = 2, k = 2, informationRates = seq(1, 3)/3,
+//'                   alpha = 0.025, typeAlphaSpending = "OF")
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::NumericVector getBound_tsssd(
+Rcpp::NumericVector getBound_seamless(
     const int M = NA_INTEGER,
     const double r = 1,
     const bool corr_known = true,
@@ -583,7 +581,7 @@ Rcpp::NumericVector getBound_tsssd(
   std::vector<double> userAlpha(userAlphaSpending.begin(), userAlphaSpending.end());
   std::vector<double> spendTime(spendingTime.begin(), spendingTime.end());
 
-  auto result = getBound_tsssd_cpp(
+  auto result = getBound_seamless_cpp(
     static_cast<size_t>(M), r, corr_known, static_cast<size_t>(k),
     infoRates, alpha, typeAlphaSpending, parameterAlphaSpending,
     userAlpha, spendTime, effStopping
@@ -593,7 +591,7 @@ Rcpp::NumericVector getBound_tsssd(
 }
 
 
-ListCpp getDesign_tsssd_cpp(
+ListCpp getDesign_seamless_cpp(
     const double beta,
     const double IMax,
     const std::vector<double>& theta,
@@ -608,8 +606,7 @@ ListCpp getDesign_tsssd_cpp(
     const std::string& typeAlphaSpending,
     const double parameterAlphaSpending,
     const std::vector<double>& userAlphaSpending,
-    const std::vector<double>& spendingTime,
-    const double varianceRatio) {
+    const std::vector<double>& spendingTime) {
 
   // ----------- Input Validation ----------- //
   if (std::isnan(beta) && std::isnan(IMax)) {
@@ -733,9 +730,6 @@ ListCpp getDesign_tsssd_cpp(
     spendTime = infoRates;
   }
 
-  if (varianceRatio <= 0.0) {
-    throw std::invalid_argument("varianceRatio must be positive");
-  }
   // ----------- End of Input Validation ----------- //
 
   // set up efficacy bounds
@@ -760,34 +754,27 @@ ListCpp getDesign_tsssd_cpp(
 
       auto f = [&](double aval)->double {
         u[kMax-1] = aval;
-        ListCpp probs = exitprob_tsssd_cpp(M, r, zero, corr_known,
-                                           K, u, infoRates);
+        ListCpp probs = exitprob_seamless_cpp(
+          M, r, zero, corr_known, K, u, infoRates);
         auto v = probs.get<std::vector<double>>("exitProb");
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
       };
 
-      critValues[kMax-1] = brent(f, 0.0, 6.0, 1e-4);
+      critValues[kMax-1] = brent(f, 0.0, 6.0, 1e-6);
     } else {
-      critValues = getBound_tsssd_cpp(
+      critValues = getBound_seamless_cpp(
         M, r, corr_known, K, infoRates, alpha, asf, parameterAlphaSpending,
         userAlphaSpending, spendTime, effStopping);
     }
   }
 
-  ListCpp probs = exitprob_tsssd_cpp(M, r, zero, corr_known,
-                                     K, critValues, infoRates);
+  ListCpp probs = exitprob_seamless_cpp(
+    M, r, zero, corr_known, K, critValues, infoRates);
   auto v = probs.get<std::vector<double>>("exitProb");
   std::vector<double> cumAlphaSpent(kMax);
   std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
   double alpha1 = missingCriticalValues ? alpha : cumAlphaSpent[kMax-1];
-
-  // multiplier for the boundaries under the alternative hypothesis
-  std::vector<double> w(kMax, std::sqrt(varianceRatio));
-  std::vector<double> u(kMax);
-  for (size_t i = 0; i < kMax; ++i) {
-    u[i] = critValues[i] * w[i];
-  }
 
   double IMax1 = IMax;
   if (unknown == "IMax") {
@@ -795,22 +782,22 @@ ListCpp getDesign_tsssd_cpp(
     auto f = [&](double aval)->double {
       std::vector<double> theta1(M);
       for (size_t i = 0; i < M; ++i) theta1[i] = theta[i] * aval / maxtheta;
-      ListCpp probs = exitprob_tsssd_cpp(M, r, theta1, true,
-                                         K, critValues, infoRates);
+      ListCpp probs = exitprob_seamless_cpp(
+        M, r, theta1, true, K, critValues, infoRates);
       auto v = probs.get<std::vector<double>>("exitProb");
       double overallReject = std::accumulate(v.begin(), v.end(), 0.0);
       return overallReject - (1.0 - beta);
     };
 
-    double drift = brent(f, 0.0, 6.0, 1e-4);
+    double drift = brent(f, 0.0, 6.0, 1e-6);
     IMax1 = sq(drift / maxtheta);
     std::vector<double> info(kMax);
     for (size_t i = 0; i < kMax; ++i) info[i] = infoRates[i] * IMax1;
-    probs = exitprob_tsssd_cpp(M, r, theta, true, K, critValues, info);
+    probs = exitprob_seamless_cpp(M, r, theta, true, K, critValues, info);
   } else {
     std::vector<double> info = infoRates;
     for (double &x : info) x *= IMax1;
-    probs = exitprob_tsssd_cpp(M, r, theta, true, K, critValues, info);
+    probs = exitprob_seamless_cpp(M, r, theta, true, K, critValues, info);
   }
 
   // output the results
@@ -819,7 +806,7 @@ ListCpp getDesign_tsssd_cpp(
   std::vector<double> efficacyP(kMax);
   for (size_t i = 0; i < kMax; ++i) {
     information[i] = IMax1 * infoRates[i];
-    efficacyTheta[i] = u[i] / std::sqrt(information[i]);
+    efficacyTheta[i] = critValues[i] / std::sqrt(information[i]);
     efficacyP[i] = 1.0 - boost_pnorm(critValues[i]);
   }
 
@@ -830,7 +817,7 @@ ListCpp getDesign_tsssd_cpp(
   double overallReject = cpu[kMax-1];
 
   for (size_t i = 0; i < kMax; ++i) {
-    if (critValues[i] == 6) effStopping[i] = 0;
+    if (critValues[i] == 6.0) effStopping[i] = 0;
   }
 
   auto selectAsBest = probs.get<std::vector<double>>("selectAsBest");
@@ -881,7 +868,6 @@ ListCpp getDesign_tsssd_cpp(
   settings.push_back(parameterAlphaSpending, "parameterAlphaSpending");
   settings.push_back(userAlphaSpending, "userAlphaSpending");
   settings.push_back(spendingTime, "spendingTime");
-  settings.push_back(varianceRatio, "varianceRatio");
 
   ListCpp result;
   result.push_back(std::move(byStageResults), "byStageResults");
@@ -892,7 +878,7 @@ ListCpp getDesign_tsssd_cpp(
 }
 
 
-//' @title Power and Sample Size for Two-Stage Seamless Sequential Design (TSSSD)
+//' @title Power and Sample Size for Two-Stage Seamless Sequential Design
 //' @description Computes either the maximum information and stopping
 //' boundaries for a generic two-stage seamless sequential design, or
 //' the achieved power when the maximum information and stopping boundaries
@@ -926,10 +912,8 @@ ListCpp getDesign_tsssd_cpp(
 //' @param spendingTime A numeric vector of length \eqn{K+1} specifying the
 //'   error spending time at each analysis. Values must be strictly increasing
 //'   and ends at 1. If omitted, defaults to \code{informationRates}.
-//' @param varianceRatio Ratio of the variance under \eqn{H_0} to the
-//'   variance under \eqn{H_1}.
 //'
-//' @return An S3 object of class \code{tsssd} with these components:
+//' @return An S3 object of class \code{seamless} with these components:
 //'
 //' * \code{overallResults}: A data frame containing:
 //'     - \code{overallReject}: Overall probability of rejecting the null
@@ -969,8 +953,6 @@ ListCpp getDesign_tsssd_cpp(
 //'       alpha spending function.
 //'     - \code{userAlphaSpending}: User-specified alpha spending values.
 //'     - \code{spendingTime}: Error-spending times at each analysis.
-//'     - \code{varianceRatio}: Ratio of variance under \eqn{H_0} to variance
-//'       under \eqn{H_1}.
 //'
 //' @details If \code{corr_known} is \code{FALSE}, critical boundaries are
 //' computed assuming independence among the phase-2 Wald statistics
@@ -987,20 +969,20 @@ ListCpp getDesign_tsssd_cpp(
 //' @examples
 //'
 //' # Example 1: obtain the maximum information given power
-//' (design1 <- getDesign_tsssd(
+//' (design1 <- getDesign_seamless(
 //'   beta = 0.1, theta = c(0.3, 0.5), M = 2, r = 1.0,
 //'   K = 2, informationRates = seq(1, 3)/3,
 //'   alpha = 0.025, typeAlphaSpending = "OF"))
 //'
 //' # Example 2: obtain power given the maximum information
-//' (design2 <- getDesign_tsssd(
+//' (design2 <- getDesign_seamless(
 //'   IMax = 110/(2*1^2), theta = c(0.3, 0.5), M = 2, r = 1.0,
 //'   K = 2, informationRates = seq(1, 3)/3,
 //'   alpha = 0.025, typeAlphaSpending = "OF"))
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List getDesign_tsssd(
+Rcpp::List getDesign_seamless(
     const double beta = NA_REAL,
     const double IMax = NA_REAL,
     const Rcpp::NumericVector& theta = NA_REAL,
@@ -1015,8 +997,7 @@ Rcpp::List getDesign_tsssd(
     const std::string& typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
     const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& spendingTime = NA_REAL,
-    const double varianceRatio = 1) {
+    const Rcpp::NumericVector& spendingTime = NA_REAL) {
 
   std::vector<double> thetaVec(theta.begin(), theta.end());
   std::vector<double> infoRates(informationRates.begin(), informationRates.end());
@@ -1025,14 +1006,13 @@ Rcpp::List getDesign_tsssd(
   std::vector<double> userAlpha(userAlphaSpending.begin(), userAlphaSpending.end());
   std::vector<double> spendTime(spendingTime.begin(), spendingTime.end());
 
-  auto cpp_result = getDesign_tsssd_cpp(
+  auto cpp_result = getDesign_seamless_cpp(
     beta, IMax, thetaVec, static_cast<size_t>(M), r, corr_known,
     static_cast<size_t>(K), infoRates, effStopping, critValues,
-    alpha, typeAlphaSpending, parameterAlphaSpending, userAlpha,
-    spendTime, varianceRatio
+    alpha, typeAlphaSpending, parameterAlphaSpending, userAlpha, spendTime
   );
 
   Rcpp::List result = Rcpp::wrap(cpp_result);
-  result.attr("class") = "tsssd";
+  result.attr("class") = "seamless";
   return result;
 }
