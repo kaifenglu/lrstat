@@ -17,91 +17,6 @@
 
 using std::size_t;
 
-void swap_symmetric(FlatMatrix& A, size_t i, size_t j) {
-  if (A.nrow != A.ncol) {
-    throw std::invalid_argument("swap_symmetric: matrix must be square");
-  }
-  const size_t n = A.nrow;
-  if (i >= n || j >= n) {
-    throw std::invalid_argument("swap_symmetric: index out of range");
-  }
-  if (i == j) return;
-
-  // 1) swap entire columns i and j
-  for (size_t r = 0; r < n; ++r) {
-    double tmp = A(r, i);
-    A(r, i) = A(r, j);
-    A(r, j) = tmp;
-  }
-
-  // 2) swap entire rows i and j
-  for (size_t c = 0; c < n; ++c) {
-    double tmp = A(i, c);
-    A(i, c) = A(j, c);
-    A(j, c) = tmp;
-  }
-}
-
-// assumes FlatMatrix A is J x J symmetric, column-major, with operator()(r,c)
-std::vector<size_t> greedy_order_mvn_rect(
-    const FlatMatrix& Sigma,
-    const std::vector<double>& mu,
-    const std::vector<double>& lower,
-    const std::vector<double>& upper) {
-
-  const size_t J = mu.size();
-  std::vector<size_t> idx(J);
-  std::iota(idx.begin(), idx.end(), 0);
-
-  // Working Schur complement matrix
-  FlatMatrix A = Sigma;
-  for (size_t k = 0; k < J; ++k) {
-    // choose pivot among k..J-1
-    size_t best = k;
-    double best_score = -1.0;
-
-    for (size_t j = k; j < J; ++j) {
-      const size_t orig = idx[j];
-      const double v = A(j, j);
-      if (!(v > 0.0) || !std::isfinite(v)) continue;
-
-      const double sd = std::sqrt(v);
-      const double aj = (lower[orig] - mu[orig]) / sd;
-      const double bj = (upper[orig] - mu[orig]) / sd;
-
-      const double mass = boost_pnorm(bj) - boost_pnorm(aj);
-      if (mass > best_score) {
-        best_score = mass;
-        best = j;
-      }
-    }
-
-    // swap pivot into position k: idx and symmetric swap in A
-    if (best != k) {
-      std::swap(idx[k], idx[best]);
-      swap_symmetric(A, k, best);
-    }
-
-    // elimination step at k (update Schur complement)
-    const double pivot = A(k, k);
-    if (!(pivot > 0.0)) {
-      continue; // handle semidefinite / numerical failure as you prefer
-    }
-
-    for (size_t j = k + 1; j < J; ++j) {
-      A(k, j) /= pivot;
-    }
-    for (size_t j = k + 1; j < J; ++j) {
-      for (size_t l = j; l < J; ++l) {
-        A(j, l) -= A(k, j) * A(k, l) * pivot;
-      }
-    }
-  }
-
-  return idx; // ordering of original indices
-}
-
-
 GHaltonScramble make_scramble(size_t J,
                               std::uint64_t seed_rep,
                               const unsigned int* primes_,
@@ -217,7 +132,6 @@ double mvn_genz_contribution(size_t J,
                              const std::vector<double>& lower_std,
                              const std::vector<double>& upper_std,
                              const std::vector<double>& C,
-                             bool fast,
                              const double* w,
                              double* y) {
   size_t start = 0;
@@ -233,8 +147,8 @@ double mvn_genz_contribution(size_t J,
     const double a = lower_std[j] - m;
     const double b = upper_std[j] - m;
 
-    double d = fast ? pnorm_fast(a) : boost_pnorm(a);
-    double e = fast ? pnorm_fast(b) : boost_pnorm(b);
+    double d = pnorm_fast(a);
+    double e = pnorm_fast(b);
 
     const double emd = e - d;
     if (emd <= 0.0) return 0.0;
@@ -243,7 +157,7 @@ double mvn_genz_contribution(size_t J,
     if (j < J - 1) {
       double pp = d + w[j] * emd;
       pp = std::min(std::max(pp, MIN_PROB), MAX_PROB);
-      y[j] = (fast ? qnorm_acklam(pp) : boost_qnorm(pp));
+      y[j] = qnorm_acklam(pp);
     }
   }
 
@@ -256,7 +170,6 @@ double pmvn_sum_range_incremental(ReplicateAccumulator& acc,
                                   const std::vector<double>& lower_std,
                                   const std::vector<double>& upper_std,
                                   const std::vector<double>& C,
-                                  bool fast,
                                   size_t begin,
                                   size_t end,
                                   double* w_buf,
@@ -273,7 +186,7 @@ double pmvn_sum_range_incremental(ReplicateAccumulator& acc,
     // copy current u -> w
     for (size_t j = 0; j < dim; ++j) w_buf[j] = acc.G.u[j];
 
-    sum += mvn_genz_contribution(J, lower_std, upper_std, C, fast, w_buf, y_buf);
+    sum += mvn_genz_contribution(J, lower_std, upper_std, C, w_buf, y_buf);
 
     if (i + 1 < end) ghalton_incremental_next(acc.G, acc.S);
   }
@@ -288,12 +201,11 @@ void extend_replicate(ReplicateAccumulator& acc,
                       const std::vector<double>& lower_std,
                       const std::vector<double>& upper_std,
                       const std::vector<double>& C,
-                      bool fast,
                       double* w_buf,
                       double* y_buf) {
   if (n_target <= acc.n_done) return;
 
-  acc.sum += pmvn_sum_range_incremental(acc, J, lower_std, upper_std, C, fast,
+  acc.sum += pmvn_sum_range_incremental(acc, J, lower_std, upper_std, C,
                                         acc.n_done, n_target, w_buf, y_buf);
   acc.n_done = n_target;
 }
@@ -301,12 +213,11 @@ void extend_replicate(ReplicateAccumulator& acc,
 
 struct ExtendReplicatesWorker : public RcppParallel::Worker {
   std::vector<ReplicateAccumulator>& reps;
-  const std::size_t n_target;
-  const std::size_t J;
+  std::size_t n_target;
+  std::size_t J;
   const std::vector<double>& lower_std;
   const std::vector<double>& upper_std;
   const std::vector<double>& C;
-  const bool fast;
   std::vector<double>& phat;
 
   ExtendReplicatesWorker(std::vector<ReplicateAccumulator>& reps_,
@@ -315,7 +226,6 @@ struct ExtendReplicatesWorker : public RcppParallel::Worker {
                          const std::vector<double>& lower_std_,
                          const std::vector<double>& upper_std_,
                          const std::vector<double>& C_,
-                         bool fast_,
                          std::vector<double>& phat_)
     : reps(reps_),
       n_target(n_target_),
@@ -323,7 +233,6 @@ struct ExtendReplicatesWorker : public RcppParallel::Worker {
       lower_std(lower_std_),
       upper_std(upper_std_),
       C(C_),
-      fast(fast_),
       phat(phat_) {}
 
   void operator()(std::size_t begin, std::size_t end) {
@@ -333,7 +242,7 @@ struct ExtendReplicatesWorker : public RcppParallel::Worker {
     for (std::size_t rep = begin; rep < end; ++rep) {
       auto& acc = reps[rep];
       extend_replicate(acc, n_target, J, lower_std, upper_std, C,
-                       fast, w.data(), z.data());
+                       w.data(), z.data());
       phat[rep] = acc.sum / static_cast<double>(n_target);
     }
   }
@@ -355,7 +264,6 @@ PMVNResult pmvnorm_adaptive(size_t J,
                             const std::vector<double>& lower_std,
                             const std::vector<double>& upper_std,
                             const std::vector<double>& C,
-                            bool fast,
                             size_t n0,
                             size_t n_max,
                             size_t R,
@@ -363,12 +271,6 @@ PMVNResult pmvnorm_adaptive(size_t J,
                             double releps,
                             std::uint64_t seed,
                             bool parallel) {
-  if (J < 1) throw std::invalid_argument("J must be >= 1");
-  if (R < 2) throw std::invalid_argument("R must be >= 2");
-  if (n0 < 1) throw std::invalid_argument("n0 must be >= 1");
-  if (n_max < n0) throw std::invalid_argument("n_max must be >= n0");
-  if (abseps <= 0.0) throw std::invalid_argument("abseps must be positive");
-  if (releps < 0.0) throw std::invalid_argument("releps must be non-negative");
 
   const std::uint64_t base_seed = (seed == 0) ? seed_from_clock_u64() : seed;
 
@@ -398,7 +300,7 @@ PMVNResult pmvnorm_adaptive(size_t J,
     for (;;) {
       // Extend each replicate to n
       for (size_t rep = 0; rep < R; ++rep) {
-        extend_replicate(reps[rep], n, J, lower_std, upper_std, C, fast,
+        extend_replicate(reps[rep], n, J, lower_std, upper_std, C,
                          w.data(), y.data());
         phat[rep] = reps[rep].sum / static_cast<double>(n);
       }
@@ -417,7 +319,7 @@ PMVNResult pmvnorm_adaptive(size_t J,
     }
   } else {
     for (;;) {
-      ExtendReplicatesWorker worker(reps, n, J, lower_std, upper_std, C, fast, phat);
+      ExtendReplicatesWorker worker(reps, n, J, lower_std, upper_std, C, phat);
       RcppParallel::parallelFor(0, R, worker);
 
       mean_se_from_replicates(phat, pbar, se);
@@ -456,38 +358,16 @@ struct PMVNPrecomputed {
 PMVNPrecomputed precompute_pmvn(const std::vector<double>& lower,
                                 const std::vector<double>& upper,
                                 const std::vector<double>& mean,
-                                const FlatMatrix& sigma,
-                                const bool pivot) {
+                                const FlatMatrix& sigma) {
   size_t J = lower.size();
-  std::vector<double> lower_perm(J), upper_perm(J), mean_perm(J);
-  FlatMatrix sigma_perm(J, J);
-
-  std::vector<size_t> piv(J);
-  if (pivot) {
-    piv = greedy_order_mvn_rect(sigma, mean, lower, upper);
-  } else {
-    std::iota(piv.begin(), piv.end(), 0);
-  }
-  for (size_t j = 0; j < J; ++j) {
-    const size_t oj = piv[j];
-    lower_perm[j] = lower[oj];
-    upper_perm[j] = upper[oj];
-    mean_perm[j]  = mean[oj];
-  }
-
-  for (size_t j = 0; j < J; ++j) {
-    const size_t oj = piv[j];
-    for (size_t i = 0; i < J; ++i) {
-      sigma_perm(i, j) = sigma(piv[i], oj);
-    }
-  }
 
   // LDL' factorization in-place
-  int rank = cholesky2(sigma_perm, J, 1e-12);
+  FlatMatrix sigma_copy = sigma; // copy to modify
+  int rank = cholesky2(sigma_copy, J, 1e-12);
   if (rank <= 0) throw std::invalid_argument("Sigma is not positive definite");
   std::vector<double> sd(J);
   for (size_t j = 0; j < J; ++j) {
-    sd[j] = std::sqrt(sigma_perm(j,j));
+    sd[j] = std::sqrt(sigma_copy(j,j));
   }
 
   // inverse of D^(-1/2) * L * D^(1/2) in row-major order (lower tri part only)
@@ -496,7 +376,7 @@ PMVNPrecomputed precompute_pmvn(const std::vector<double>& lower,
   for (size_t j = 0; j < J; ++j) {
     double denom = sd[j];
     for (size_t k = 0; k < j; ++k) {
-      C[start + k] = sigma_perm(j,k) * sd[k] / denom;
+      C[start + k] = sigma_copy(j,k) * sd[k] / denom;
     }
     start += j;
   }
@@ -504,8 +384,8 @@ PMVNPrecomputed precompute_pmvn(const std::vector<double>& lower,
   // standardize lower and upper limits
   std::vector<double> lower_std(J), upper_std(J);
   for (size_t j = 0; j < J; ++j) {
-    lower_std[j] = (lower_perm[j] - mean_perm[j]) / sd[j];
-    upper_std[j] = (upper_perm[j] - mean_perm[j]) / sd[j];
+    lower_std[j] = (lower[j] - mean[j]) / sd[j];
+    upper_std[j] = (upper[j] - mean[j]) / sd[j];
   }
 
   return PMVNPrecomputed{J, lower_std, upper_std, sd, C};
@@ -513,12 +393,12 @@ PMVNPrecomputed precompute_pmvn(const std::vector<double>& lower,
 
 // use precomputed C/lower_std/upper_std and call the adaptive engine
 PMVNResult pmvnorm_with_precomp(const PMVNPrecomputed& P,
-                                bool fast, size_t n0, size_t n_max, size_t R,
+                                size_t n0, size_t n_max, size_t R,
                                 double abseps, double releps,
                                 uint64_t seed, bool parallel) {
 
   return pmvnorm_adaptive(P.J, P.lower_std, P.upper_std, P.C,
-                          fast, n0, n_max, R, abseps, releps, seed, parallel);
+                          n0, n_max, R, abseps, releps, seed, parallel);
 }
 
 // detect if sigma is compound symmetry with non-negative correlations
@@ -554,8 +434,6 @@ PMVNResult pmvnormcpp(const std::vector<double>& lower,
                       const std::vector<double>& upper,
                       const std::vector<double>& mean,
                       const FlatMatrix& sigma,
-                      bool pivot,
-                      bool fast,
                       size_t n0,
                       size_t n_max,
                       size_t R,
@@ -621,8 +499,8 @@ PMVNResult pmvnormcpp(const std::vector<double>& lower,
     return PMVNResult{p, "analytic", 0.0, 1};
   }
 
-  PMVNPrecomputed P = precompute_pmvn(lower, upper, mean, sigma, pivot);
-  return pmvnorm_with_precomp(P, fast, n0, n_max, R, abseps, releps, seed, parallel);
+  PMVNPrecomputed P = precompute_pmvn(lower, upper, mean, sigma);
+  return pmvnorm_with_precomp(P, n0, n_max, R, abseps, releps, seed, parallel);
 }
 
 
@@ -632,8 +510,6 @@ Rcpp::List pmvnormRcpp(
     const std::vector<double>& upper,
     const std::vector<double>& mean,
     const Rcpp::NumericMatrix& sigma,
-    bool pivot = false,
-    bool fast = true,
     size_t n0 = 1024,
     size_t n_max = 16384,
     size_t R = 8,
@@ -642,7 +518,7 @@ Rcpp::List pmvnormRcpp(
     uint64_t seed = 0,
     bool parallel = true) {
   auto sigma_fm = flatmatrix_from_Rmatrix(sigma);
-  auto out = pmvnormcpp(lower, upper, mean, sigma_fm, pivot, fast,
+  auto out = pmvnormcpp(lower, upper, mean, sigma_fm,
                         n0, n_max, R, abseps, releps, seed, parallel);
   return Rcpp::List::create(
     Rcpp::Named("prob") = out.prob,
@@ -656,8 +532,6 @@ Rcpp::List pmvnormRcpp(
 double qmvnormcpp(const double p,
                   const std::vector<double>& mean,
                   const FlatMatrix& sigma,
-                  bool pivot,
-                  bool fast,
                   size_t n0,
                   size_t n_max,
                   size_t R,
@@ -684,24 +558,24 @@ double qmvnormcpp(const double p,
   if (J == 1 || (J > 1 && is_compound_symmetry(sigma))) {
     auto f = [&](double x) {
       std::fill(upper.begin(), upper.end(), x);
-      auto res = pmvnormcpp(lower, upper, mean, sigma, pivot, fast,
+      auto res = pmvnormcpp(lower, upper, mean, sigma,
                             n0, n_max, R, abseps, releps, seed, parallel);
       return res.prob - p;
     };
-    return brent(f, x1, x2, 1e-4);
+    return brent(f, x1, x2, 1e-6);
   } else {
-    PMVNPrecomputed P = precompute_pmvn(lower, upper, mean, sigma, pivot);
+    PMVNPrecomputed P = precompute_pmvn(lower, upper, mean, sigma);
     std::vector<double> upper_std0 = P.upper_std;
     auto f = [&](double x) {
       // update upper limits in P and call adaptive engine
       for (size_t j = 0; j < J; ++j) {
         P.upper_std[j] = upper_std0[j]  + (x - upper0) / P.sd[j];
       }
-      auto res = pmvnorm_with_precomp(P, fast, n0, n_max, R,
-                                      abseps, releps, seed, parallel);
+      auto res = pmvnorm_with_precomp(P, n0, n_max, R, abseps, releps,
+                                      seed, parallel);
       return res.prob - p;
     };
-    return brent(f, x1, x2, 1e-4);
+    return brent(f, x1, x2, 1e-6);
   }
 }
 
@@ -710,8 +584,6 @@ double qmvnormRcpp(
     const double p,
     const std::vector<double>& mean,
     const Rcpp::NumericMatrix& sigma,
-    bool pivot = false,
-    bool fast = true,
     size_t n0 = 1024,
     size_t n_max = 16384,
     size_t R = 8,
@@ -720,7 +592,7 @@ double qmvnormRcpp(
     uint64_t seed = 0,
     bool parallel = true) {
   auto sigma_fm = flatmatrix_from_Rmatrix(sigma);
-  return qmvnormcpp(p, mean, sigma_fm, pivot, fast, n0, n_max, R,
+  return qmvnormcpp(p, mean, sigma_fm, n0, n_max, R,
                     abseps, releps, seed, parallel);
 }
 
