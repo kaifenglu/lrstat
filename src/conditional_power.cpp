@@ -19,11 +19,11 @@ using std::size_t;
 // Helper function to compute conditional power
 double getCPcpp(
     const double INew,
-    const int L,
+    const size_t L,
     const double zL,
     const std::vector<double>& theta,
     const double IMax,
-    const int kMax,
+    const size_t kMax,
     const std::vector<double>& informationRates,
     const std::vector<unsigned char>& efficacyStopping,
     const std::vector<unsigned char>& futilityStopping,
@@ -37,7 +37,7 @@ double getCPcpp(
     const double parameterBetaSpending,
     const std::vector<double>& spendingTime,
     const bool MullerSchafer,
-    const int kNew,
+    const size_t kNew,
     const std::vector<double>& informationRatesNew,
     const std::vector<unsigned char>& efficacyStoppingNew,
     const std::vector<unsigned char>& futilityStoppingNew,
@@ -65,54 +65,52 @@ double getCPcpp(
     throw std::invalid_argument("alpha must lie in [0.00001, 1)");
   }
 
-  size_t K = static_cast<size_t>(kMax);
-  size_t KNew = static_cast<size_t>(kNew);
 
   // informationRates: default to (1:kMax)/kMax if missing
-  std::vector<double> infoRates(K);
+  std::vector<double> infoRates(kMax);
   if (none_na(informationRates)) {
-    if (informationRates.size() != K)
+    if (informationRates.size() != kMax)
       throw std::invalid_argument("Invalid length for informationRates");
     if (informationRates[0] <= 0.0)
       throw std::invalid_argument("informationRates must be positive");
     if (any_nonincreasing(informationRates))
       throw std::invalid_argument("informationRates must be increasing");
-    if (informationRates[K-1] != 1.0)
+    if (informationRates[kMax-1] != 1.0)
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy
   } else {
-    for (size_t i = 0; i < K; ++i)
-      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(K);
+    for (size_t i = 0; i < kMax; ++i)
+      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(kMax);
   }
 
   // effStopping: default to all 1s if missing
   std::vector<unsigned char> effStopping;
   if (none_na(efficacyStopping)) {
-    if (efficacyStopping.size() != K)
+    if (efficacyStopping.size() != kMax)
       throw std::invalid_argument("Invalid length for efficacyStopping");
-    if (efficacyStopping[K-1] != 1)
+    if (efficacyStopping[kMax-1] != 1)
       throw std::invalid_argument("efficacyStopping must end with 1");
     effStopping = efficacyStopping; // copy
   } else {
-    effStopping.assign(K, 1);
+    effStopping.assign(kMax, 1);
   }
 
   // futStopping: default to all 1s if missing
   std::vector<unsigned char> futStopping;
   if (none_na(futilityStopping)) {
-    if (futilityStopping.size() != K)
+    if (futilityStopping.size() != kMax)
       throw std::invalid_argument("Invalid length for futilityStopping");
-    if (futilityStopping[K-1] != 1)
+    if (futilityStopping[kMax-1] != 1)
       throw std::invalid_argument("futilityStopping must end with 1");
     futStopping = futilityStopping; // copy
   } else {
-    futStopping.assign(K, 1);
+    futStopping.assign(kMax, 1);
   }
 
   bool missingCriticalValues = !none_na(criticalValues);
   bool missingFutilityBounds = !none_na(futilityBounds);
 
-  if (!missingCriticalValues && criticalValues.size() != K) {
+  if (!missingCriticalValues && criticalValues.size() != kMax) {
     throw std::invalid_argument("Invalid length for criticalValues");
   }
   if (missingCriticalValues && std::isnan(alpha)) {
@@ -140,28 +138,29 @@ double getCPcpp(
   if (missingCriticalValues && asf == "user") {
     if (!none_na(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be specified");
-    if (userAlphaSpending.size() != K)
+    if (userAlphaSpending.size() != kMax)
       throw std::invalid_argument("Invalid length of userAlphaSpending");
     if (userAlphaSpending[0] < 0.0)
       throw std::invalid_argument("userAlphaSpending must be nonnegative");
     if (any_nonincreasing(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be nondecreasing");
-    if (userAlphaSpending[K-1] != alpha)
+    if (userAlphaSpending[kMax-1] != alpha)
       throw std::invalid_argument("userAlphaSpending must end with specified alpha");
   }
 
   if (!missingFutilityBounds) {
-    if (!(futilityBounds.size() == K - 1 || futilityBounds.size() == K)) {
+    if (!(futilityBounds.size() == kMax - 1 || futilityBounds.size() == kMax)) {
       throw std::invalid_argument("Invalid length for futilityBounds");
     }
   }
   if (!missingCriticalValues && !missingFutilityBounds) {
-    for (size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < kMax - 1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         throw std::invalid_argument("futilityBounds must lie below criticalValues");
       }
     }
-    if (futilityBounds.size() == K && futilityBounds[K-1] != criticalValues[K-1]) {
+    if (futilityBounds.size() == kMax &&
+        futilityBounds[kMax-1] != criticalValues[kMax-1]) {
       throw std::invalid_argument(
           "futilityBounds must meet criticalValues at the final look");
     }
@@ -186,13 +185,13 @@ double getCPcpp(
 
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
-    if (spendingTime.size() != K)
+    if (spendingTime.size() != kMax)
       throw std::invalid_argument("Invalid length for spendingTime");
     if (spendingTime[0] <= 0.0)
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[K-1] != 1.0)
+    if (spendingTime[kMax-1] != 1.0)
       throw std::invalid_argument("spendingTime must end with 1");
     spendTime = spendingTime; // copy
   } else {
@@ -216,47 +215,47 @@ double getCPcpp(
   }
 
   if (MullerSchafer) {
-    if (KNew < 1) {
+    if (kNew < 1) {
       throw std::invalid_argument("kNew must be a positive integer");
     }
 
     // informationRatesNew: default to (1:kNew)/kNew if missing
-    infoRatesNew.resize(KNew);
+    infoRatesNew.resize(kNew);
     if (none_na(informationRatesNew)) {
-      if (informationRatesNew.size() != KNew)
+      if (informationRatesNew.size() != kNew)
         throw std::invalid_argument("Invalid length for informationRatesNew");
       if (informationRatesNew[0] <= 0.0)
         throw std::invalid_argument("informationRatesNew must be positive");
       if (any_nonincreasing(informationRatesNew))
         throw std::invalid_argument("informationRatesNew must be increasing");
-      if (informationRatesNew[KNew-1] != 1.0)
+      if (informationRatesNew[kNew-1] != 1.0)
         throw std::invalid_argument("informationRatesNew must end with 1");
       infoRatesNew = informationRatesNew; // copy
     } else {
-      for (size_t i = 0; i < KNew; ++i)
-        infoRatesNew[i] = static_cast<double>(i+1) / static_cast<double>(KNew);
+      for (size_t i = 0; i < kNew; ++i)
+        infoRatesNew[i] = static_cast<double>(i+1) / static_cast<double>(kNew);
     }
 
     // effStoppingNew: default to all 1s if missing
     if (none_na(efficacyStoppingNew)) {
-      if (efficacyStoppingNew.size() != KNew)
+      if (efficacyStoppingNew.size() != kNew)
         throw std::invalid_argument("Invalid length for efficacyStoppingNew");
-      if (efficacyStoppingNew[KNew-1] != 1)
+      if (efficacyStoppingNew[kNew-1] != 1)
         throw std::invalid_argument("efficacyStoppingNew must end with 1");
       effStoppingNew = efficacyStoppingNew; // copy
     } else {
-      effStoppingNew.assign(KNew, 1);
+      effStoppingNew.assign(kNew, 1);
     }
 
     // futStoppingNew: default to all 1s if missing
     if (none_na(futilityStoppingNew)) {
-      if (futilityStoppingNew.size() != KNew)
+      if (futilityStoppingNew.size() != kNew)
         throw std::invalid_argument("Invalid length for futilityStoppingNew");
-      if (futilityStoppingNew[KNew-1] != 1)
+      if (futilityStoppingNew[kNew-1] != 1)
         throw std::invalid_argument("futilityStoppingNew must end with 1");
       futStoppingNew = futilityStoppingNew; // copy
     } else {
-      futStoppingNew.assign(KNew, 1);
+      futStoppingNew.assign(kNew, 1);
     }
 
     if (!(asfNew == "of" || asfNew == "p" || asfNew == "wt" ||
@@ -288,13 +287,13 @@ double getCPcpp(
 
     // spendingTimeNew: default to informationRatesNew if missing
     if (none_na(spendingTimeNew)) {
-      if (spendingTimeNew.size() != KNew)
+      if (spendingTimeNew.size() != kNew)
         throw std::invalid_argument("Invalid length for spendingTimeNew");
       if (spendingTimeNew[0] <= 0.0)
         throw std::invalid_argument("spendingTimeNew must be positive");
       if (any_nonincreasing(spendingTimeNew))
         throw std::invalid_argument("spendingTimeNew must be increasing");
-      if (spendingTimeNew[KNew-1] != 1.0)
+      if (spendingTimeNew[kNew-1] != 1.0)
         throw std::invalid_argument("spendingTimeNew must end with 1");
     } else {
       spendTimeNew = infoRatesNew;
@@ -307,42 +306,42 @@ double getCPcpp(
   // ----------- End of Input Validation ----------- //
 
   // obtain critical values for the primary trial
-  std::vector<double> l(K, -6.0), zero(K, 0.0);
+  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   double alpha1 = alpha;
   if (missingCriticalValues) {
     bool haybittle = false;
-    if (K > 1 && criticalValues.size() == K) {
+    if (kMax > 1 && criticalValues.size() == kMax) {
       bool hasNaN = false;
-      for (size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < kMax - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
-      if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
+      if (!hasNaN && std::isnan(criticalValues[kMax-1])) haybittle = true;
     }
 
     if (haybittle) { // Haybittle & Peto
-      std::vector<double> u(K);
-      for (size_t i = 0; i < K - 1; ++i) {
+      std::vector<double> u(kMax);
+      for (size_t i = 0; i < kMax - 1; ++i) {
         u[i] = criticalValues[i];
         if (!effStopping[i]) u[i] = 6.0;
       }
 
       auto f = [&](double aval)->double {
-        u[K-1] = aval;
+        u[kMax-1] = aval;
         ListCpp probs = exitprobcpp(u, l, zero, infoRates);
         auto v = probs.get<std::vector<double>>("exitProbUpper");
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
       };
 
-      critValues[K-1] = brent(f, -5.0, 6.0, 1e-6);
+      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
     } else {
       critValues = getBoundcpp(kMax, infoRates, alpha, asf,
                                parameterAlphaSpending, userAlphaSpending,
                                spendTime, effStopping);
     }
   } else {
-    for (size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < kMax; ++i) {
       if (!effStopping[i]) critValues[i] = 6.0;
     }
     ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
@@ -352,12 +351,12 @@ double getCPcpp(
 
   // obtain futility bounds for the primary trial
   std::vector<double> futBounds = futilityBounds;
-  if (K > 1) {
+  if (kMax > 1) {
     if (missingFutilityBounds && bsf == "none") {
-      futBounds = std::vector<double>(K, -6.0);
-      futBounds[K-1] = critValues[K-1];
-    } else if (!missingFutilityBounds && futBounds.size() == K-1) {
-      futBounds.push_back(critValues[K-1]);
+      futBounds = std::vector<double>(kMax, -6.0);
+      futBounds[kMax-1] = critValues[kMax-1];
+    } else if (!missingFutilityBounds && futBounds.size() == kMax-1) {
+      futBounds.push_back(critValues[kMax-1]);
     }
   } else {
     if (missingFutilityBounds) {
@@ -366,20 +365,20 @@ double getCPcpp(
   }
 
   // multiplier for the boundaries under the alternative hypothesis
-  std::vector<double> w(K, std::sqrt(varianceRatio));
+  std::vector<double> w(kMax, std::sqrt(varianceRatio));
   if (!none_na(futBounds)) {
     // build delta prefix of length kMax
-    std::vector<double> delta(K);
+    std::vector<double> delta(kMax);
     if (theta.size() == 1) {
       std::fill(delta.begin(), delta.end(), theta[0]);
-    } else if (theta.size() >= K) {
-      std::memcpy(delta.data(), theta.data(), K * sizeof(double));
+    } else if (theta.size() >= kMax) {
+      std::memcpy(delta.data(), theta.data(), kMax * sizeof(double));
     } else {
       throw std::invalid_argument("Invalid length for theta");
     }
 
-    std::vector<double> information(K);
-    for (size_t i = 0; i < K; ++i) {
+    std::vector<double> information(kMax);
+    for (size_t i = 0; i < kMax; ++i) {
       information[i] = IMax * infoRates[i];
     }
 
@@ -389,9 +388,9 @@ double getCPcpp(
   }
 
   // compute transformed quantities for adaptation
-  size_t K1 = K - L;
-  std::vector<double> t1(K1), r1(K1), b1(K1), a1(K1, -6.0);
-  for (size_t l = 0; l < K1; ++l) {
+  size_t k1 = kMax - L;
+  std::vector<double> t1(k1), r1(k1), b1(k1), a1(k1, -6.0);
+  for (size_t l = 0; l < k1; ++l) {
     t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
     r1[l] = infoRates[L - 1] / infoRates[l + L];
     b1[l] = (critValues[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
@@ -400,25 +399,25 @@ double getCPcpp(
 
   double result = 0.0;
   if (!MullerSchafer) {
-    // construct theta1 of length K1 + 1
-    std::vector<double> theta1(K1 + 1);
+    // construct theta1 of length k1 + 1
+    std::vector<double> theta1(k1 + 1);
     if (theta.size() == 1) {
       std::fill(theta1.begin(), theta1.end(), theta[0]);
-    } else if (theta.size() == K + K1) {
+    } else if (theta.size() == kMax + k1) {
       theta1[0] = theta[L - 1];
-      for (size_t l = 0; l < K1; ++l) theta1[l + 1] = theta[K + l];
+      for (size_t l = 0; l < k1; ++l) theta1[l + 1] = theta[kMax + l];
     } else {
       throw std::invalid_argument("Invalid length for theta");
     }
 
     // compute a1 (futility bounds for secondary trial)
-    for (size_t l = 0; l < K1; ++l) {
+    for (size_t l = 0; l < k1; ++l) {
       a1[l] = (futBounds[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
       if (!futStopping[l + L]) a1[l] = -6.0;
     }
 
-    std::vector<double> mu(K1), I2(K1);
-    for (size_t l = 0; l < K1; ++l) {
+    std::vector<double> mu(k1), I2(k1);
+    for (size_t l = 0; l < k1; ++l) {
       double r = (IMax * infoRates[L - 1]) / (IMax * infoRates[L - 1] + INew * t1[l]);
       mu[l] = (theta1[l + 1] - r * theta1[0]) / (1.0 - r);
       I2[l] = INew * t1[l];
@@ -429,12 +428,12 @@ double getCPcpp(
     result = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
   } else {
     // Muller-Schafer branch
-    std::vector<double> theta1(KNew + 1);
+    std::vector<double> theta1(kNew + 1);
     if (theta.size() == 1) {
       std::fill(theta1.begin(), theta1.end(), theta[0]);
-    } else if (theta.size() == K + KNew) {
+    } else if (theta.size() == kMax + kNew) {
       theta1[0] = theta[L - 1];
-      for (size_t l = 0; l < KNew; ++l) theta1[l + 1] = theta[K + l];
+      for (size_t l = 0; l < kNew; ++l) theta1[l + 1] = theta[kMax + l];
     } else {
       throw std::invalid_argument("Invalid length for theta");
     }
@@ -450,8 +449,8 @@ double getCPcpp(
                           spendTimeNew, effStoppingNew);
 
     // conditional power
-    std::vector<double> mu(KNew), I2(KNew);
-    for (size_t l = 0; l < KNew; ++l) {
+    std::vector<double> mu(kNew), I2(kNew);
+    for (size_t l = 0; l < kNew; ++l) {
       double r = (IMax * infoRates[L - 1]) /
         (IMax * infoRates[L - 1] + INew * informationRatesNew[l]);
       mu[l] = (theta1[l + 1] - r * theta1[0]) / (1.0 - r);
@@ -507,8 +506,8 @@ double getCPcpp(
 //'   "none" for no early efficacy stopping.
 //'   Defaults to "sfOF".
 //' @param parameterAlphaSpending The parameter value of alpha spending
-//'   for the primary trial. Corresponds to Delta for "WT", rho for "sfKD",
-//'   and gamma for "sfHSD".
+//'   for the primary trial. Corresponds to \eqn{\Delta} for "WT",
+//'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
 //' @param userAlphaSpending The user defined alpha spending for the primary
 //'   trial. Cumulative alpha spent up to each stage.
 //' @param futilityBounds	The lower boundaries on the z-test statistic scale
@@ -523,8 +522,8 @@ double getCPcpp(
 //'   "none" for no early futility stopping.
 //'   Defaults to "none".
 //' @param parameterBetaSpending The parameter value of beta spending
-//'   for the primary trial. Corresponds to rho for "sfKD",
-//'   and gamma for "sfHSD".
+//'   for the primary trial. Corresponds to \eqn{\rho} for "sfKD",
+//'   and \eqn{\gamma} for "sfHSD".
 //' @param spendingTime The error spending time of the primary trial.
 //'   Defaults to missing, in which case, it is the same as
 //'   \code{informationRates}.
@@ -550,8 +549,8 @@ double getCPcpp(
 //'   "none" for no early efficacy stopping.
 //'   Defaults to "sfOF".
 //' @param parameterAlphaSpendingNew The parameter value of alpha spending
-//'   for the secondary trial. Corresponds to Delta for "WT", rho for "sfKD",
-//'   and gamma for "sfHSD".
+//'   for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
+//'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
 //' @param typeBetaSpendingNew The type of beta spending for the secondary
 //'   trial. One of the following:
 //'   "sfOF" for O'Brien-Fleming type spending function,
@@ -561,8 +560,8 @@ double getCPcpp(
 //'   "none" for no early futility stopping.
 //'   Defaults to "none".
 //' @param parameterBetaSpendingNew The parameter value of beta spending
-//'   for the secondary trial. Corresponds to rho for "sfKD",
-//'   and gamma for "sfHSD".
+//'   for the secondary trial. Corresponds to \eqn{\rho} for "sfKD",
+//'   and \eqn{\gamma} for "sfHSD".
 //' @param spendingTimeNew The error spending time of the secondary trial.
 //'   Defaults to missing, in which case, it is the same as
 //'   \code{informationRatesNew}.
@@ -699,12 +698,13 @@ double getCP(double INew = NA_REAL,
   auto futStoppingNew = convertLogicalVector(futilityStoppingNew);
   auto spendTimeNew = Rcpp::as<std::vector<double>>(spendingTimeNew);
   auto result = getCPcpp(
-    INew, L, zL, theta1, IMax, kMax, infoRates, effStopping,
+    INew, static_cast<size_t>(L), zL, theta1, IMax,
+    static_cast<size_t>(kMax), infoRates, effStopping,
     futStopping, critValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlpha, futBounds,
     typeBetaSpending, parameterBetaSpending, spendTime,
-    MullerSchafer, kNew, infoRatesNew, effStoppingNew,
-    futStoppingNew, typeAlphaSpendingNew,
+    MullerSchafer, static_cast<size_t>(kNew), infoRatesNew,
+    effStoppingNew, futStoppingNew, typeAlphaSpendingNew,
     parameterAlphaSpendingNew, typeBetaSpendingNew,
     parameterBetaSpendingNew, spendTimeNew, varianceRatio);
   return result;
