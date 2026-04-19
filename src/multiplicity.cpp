@@ -677,7 +677,7 @@ Rcpp::NumericMatrix fadjpsimcpp(const Rcpp::NumericMatrix& wgtmat,
 
 // Helper to compute repeated p-values for alpha spending approaches
 FlatMatrix repeatedPValuecpp1(
-    const int kMax,
+    const size_t kMax,
     const std::string& typeAlphaSpending,
     const double parameterAlphaSpending,
     const double maxInformation,
@@ -689,7 +689,6 @@ FlatMatrix repeatedPValuecpp1(
   if (kMax <= 0) {
     throw std::invalid_argument("kMax must be a positive integer");
   }
-  size_t K = static_cast<size_t>(kMax);
 
   // Convert typeAlphaSpending to lowercase
   std::string asf = typeAlphaSpending;
@@ -721,7 +720,7 @@ FlatMatrix repeatedPValuecpp1(
   size_t B = p.nrow;
   size_t k1 = p.ncol;
 
-  if (k1 > K) {
+  if (k1 > kMax) {
     throw std::invalid_argument("Number of columns in p must not exceed kMax");
   }
 
@@ -855,7 +854,7 @@ FlatMatrix repeatedPValuecpp1(
     // Spending time for error spending
     if (all_na) {  // use information rates
       for (size_t l = 0; l < L; ++l) {
-        if (l == K - 1 || i_vec[l] >= maxInformation) {
+        if (l == kMax - 1 || i_vec[l] >= maxInformation) {
           s1[l] = 1.0; // the last look is at or beyond maxInformation
         } else {
           s1[l] = i_vec[l] / maxInformation;
@@ -906,7 +905,7 @@ FlatMatrix repeatedPValuecpp1(
     const size_t k1;
     const std::string& asf;
     const double parameterAlphaSpending;
-    const size_t K;
+    const size_t kMax;
     const double maxInformation;
     const FlatMatrix& p;
     const FlatMatrix& info;
@@ -923,7 +922,7 @@ FlatMatrix repeatedPValuecpp1(
     SimulationWorker(const size_t k1_,
                      const std::string& asf_,
                      const double parameterAlphaSpending_,
-                     const size_t K_,
+                     const size_t kMax_,
                      const double maxInformation_,
                      const FlatMatrix& p_,
                      const FlatMatrix& info_,
@@ -932,7 +931,7 @@ FlatMatrix repeatedPValuecpp1(
                      FlatMatrix& repp_out_) :
 
       k1(k1_), asf(asf_), parameterAlphaSpending(parameterAlphaSpending_),
-      K(K_), maxInformation(maxInformation_),
+      kMax(kMax_), maxInformation(maxInformation_),
       p(p_), info(info_), spendTime(spendTime_),
       f(std::move(f_)),
       repp_out(repp_out_) {}
@@ -955,7 +954,7 @@ FlatMatrix repeatedPValuecpp1(
 
   // Instantiate the Worker with references to inputs and outputs
   SimulationWorker worker(
-      k1, asf, parameterAlphaSpending, K,
+      k1, asf, parameterAlphaSpending, kMax,
       maxInformation, p, info, spendTime,
       // bind f into std::function (capture the f we already have)
       std::function<std::vector<double>(const size_t)>(f),
@@ -984,7 +983,7 @@ Rcpp::NumericMatrix repeatedPValuecpp(
   auto spendingTime1 = flatmatrix_from_Rmatrix(spendingTime);
 
   auto repp = repeatedPValuecpp1(
-    kMax, typeAlphaSpending, parameterAlphaSpending,
+    static_cast<size_t>(kMax), typeAlphaSpending, parameterAlphaSpending,
     maxInformation, p1, information1, spendingTime1);
   return Rcpp::wrap(repp);
 }
@@ -996,19 +995,17 @@ IntMatrix fseqboncpp1(
     const std::vector<double>& w,
     const FlatMatrix& G,
     const double alpha,
-    const int kMax,
+    const size_t kMax,
     const std::vector<std::string>& typeAlphaSpending,
     const std::vector<double>& parameterAlphaSpending,
     const std::vector<double>& maxInformation,
     const BoolMatrix& incidenceMatrix,
-    const int kk1,
+    const size_t k1,
     const FlatMatrix& p,
     const FlatMatrix& information,
     const FlatMatrix& spendingTime) {
 
   size_t m = w.size();
-  size_t K = static_cast<size_t>(kMax);
-  size_t k1 = static_cast<size_t>(kk1);
 
   // Validation: w must be nonnegative
   if (std::any_of(w.begin(), w.end(), [](double val) { return val < 0.0; })) {
@@ -1059,7 +1056,7 @@ IntMatrix fseqboncpp1(
   }
 
   // Validation: kMax must be a positive integer
-  if (K <= 0) {
+  if (kMax <= 0) {
     throw std::invalid_argument("kMax must be a positive integer");
   }
 
@@ -1111,7 +1108,7 @@ IntMatrix fseqboncpp1(
   if (incidenceMatrix.ncol != m) {
     throw std::invalid_argument("Invalid number of columns for incidenceMatrix");
   }
-  if (incidenceMatrix.nrow != K) {
+  if (incidenceMatrix.nrow != kMax) {
     throw std::invalid_argument("Invalid number of rows for incidenceMatrix");
   }
 
@@ -1119,7 +1116,7 @@ IntMatrix fseqboncpp1(
   if (k1 <= 0) {
     throw std::invalid_argument("k1 must be a positive integer");
   }
-  if (k1 > K) {
+  if (k1 > kMax) {
     throw std::invalid_argument("k1 must be less than or equal to kMax");
   }
 
@@ -1190,7 +1187,7 @@ IntMatrix fseqboncpp1(
 
   std::vector<size_t> K0(m, 0); // max number of testable looks for hypothesis j
   for (size_t j = 0; j < m; ++j) {
-    for (size_t k = 0; k < K; ++k) {
+    for (size_t k = 0; k < kMax; ++k) {
       if (incidenceMatrix(k, j)) K0[j]++;
     }
   }
@@ -1600,8 +1597,9 @@ Rcpp::IntegerMatrix fseqboncpp(
   auto p1 = flatmatrix_from_Rmatrix(p);
   auto info1 = flatmatrix_from_Rmatrix(information);
   auto spendTime1 = flatmatrix_from_Rmatrix(spendingTime);
-  auto reject1 = fseqboncpp1(w1, G1, alpha, kMax, asf1, asfpar1, maxInfo1,
-                             incid1, k1, p1, info1, spendTime1);
+  auto reject1 = fseqboncpp1(w1, G1, alpha, static_cast<size_t>(kMax),
+                             asf1, asfpar1, maxInfo1, incid1,
+                             static_cast<size_t>(k1), p1, info1, spendTime1);
   return Rcpp::wrap(reject1);
 }
 
