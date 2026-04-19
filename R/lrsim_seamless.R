@@ -58,7 +58,7 @@
 #' @param nthreads Number of threads for parallel simulation.
 #'   Use 0 to accept the default RcppParallel behavior.
 #'
-#' @return An S3 object of class \code{"lrsim_tsssd"} with these components:
+#' @return An S3 object of class \code{"lrsim_seamless"} with these components:
 #'
 #' * \code{overview}: A list summarizing trial-level results and settings:
 #'     - \code{selectAsBest}: Probability of selecting each active arm as
@@ -116,7 +116,7 @@
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
-#' (sim1 = lrsim_tsssd(
+#' (sim1 = lrsim_seamless(
 #'   M = 2,
 #'   K = 2,
 #'   criticalValues = c(3.852050, 2.723811, 2.223982),
@@ -132,7 +132,7 @@
 #'   nthreads = 0))
 #'
 #' @export
-lrsim_tsssd <- function(
+lrsim_seamless <- function(
     M = 2,
     K = 1,
     criticalValues = NA,
@@ -162,7 +162,7 @@ lrsim_tsssd <- function(
     RcppParallel::setThreadOptions(min(nthreads, n_physical_cores))
   }
 
-  lrsim_tsssd_Rcpp(
+  lrsim_seamless_Rcpp(
     M, K, criticalValues, hazardRatioH0s,
     allocations, accrualTime, accrualIntensity,
     piecewiseSurvivalTime, stratumFraction, lambdas, gammas,
