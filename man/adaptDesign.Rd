@@ -52,10 +52,7 @@ the primary trial.}
 
 \item{theta}{The parameter value.}
 
-\item{IMax}{The maximum information of the primary trial. Must be
-provided if \code{futilityBounds} is missing and
-\code{typeBetaSpending} is not equal to "none", or
-if conditional power calculation is desired.}
+\item{IMax}{The maximum information of the primary trial. Must be provided.}
 
 \item{kMax}{The maximum number of stages of the primary trial.}
 
@@ -70,7 +67,8 @@ allowed at each stage of the primary trial. Defaults to \code{TRUE}
 if left unspecified.}
 
 \item{criticalValues}{The upper boundaries on the z-test statistic scale
-for efficacy stopping for the primary trial.}
+for efficacy stopping for the primary trial. If missing, boundaries
+will be computed based on the specified alpha spending function.}
 
 \item{alpha}{The significance level of the primary trial.
 Defaults to 0.025.}
@@ -89,8 +87,8 @@ trial. One of the following:
 Defaults to "sfOF".}
 
 \item{parameterAlphaSpending}{The parameter value of alpha spending
-for the primary trial. Corresponds to Delta for "WT", rho for "sfKD",
-and gamma for "sfHSD".}
+for the primary trial. Corresponds to \eqn{\Delta} for "WT",
+\eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".}
 
 \item{userAlphaSpending}{The user-defined alpha spending for the
 primary trial. Represents the cumulative alpha spent up to each stage.}
@@ -109,8 +107,8 @@ One of the following:
 Defaults to "none".}
 
 \item{parameterBetaSpending}{The parameter value of beta spending
-for the primary trial. Corresponds to rho for "sfKD",
-and gamma for "sfHSD".}
+for the primary trial. Corresponds to \eqn{\rho} for "sfKD",
+and \eqn{\gamma} for "sfHSD".}
 
 \item{spendingTime}{The error spending time of the primary trial.
 Defaults to missing, in which case it is assumed to be the same as
@@ -144,8 +142,8 @@ trial. One of the following:
 Defaults to "sfOF".}
 
 \item{parameterAlphaSpendingNew}{The parameter value of alpha spending
-for the secondary trial. Corresponds to Delta for "WT", rho for "sfKD",
-and gamma for "sfHSD".}
+for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
+\eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".}
 
 \item{typeBetaSpendingNew}{The type of beta spending for the secondary
 trial. One of the following:
@@ -158,8 +156,8 @@ trial. One of the following:
 Defaults to "none".}
 
 \item{parameterBetaSpendingNew}{The parameter value of beta spending
-for the secondary trial. Corresponds to rho for "sfKD",
-and gamma for "sfHSD".}
+for the secondary trial. Corresponds to \eqn{\rho} for "sfKD",
+and \eqn{\gamma} for "sfHSD".}
 
 \item{userBetaSpendingNew}{The user-defined cumulative beta spending.
 Represents the cumulative beta spent up to each stage of the
@@ -173,13 +171,20 @@ Defaults to missing, in which case it is assumed to be the same as
 variance under H1.}
 }
 \value{
-An \code{adaptDesign} object with two list components:
+An \code{adaptDesign} object with three list components:
 \itemize{
 \item \code{primaryTrial}: A list of selected information for the primary
-trial, including \code{L}, \code{zL}, \code{theta}, \code{kMax},
+trial, including \code{L}, \code{zL}, \code{theta},
+\code{maxInformation}, \code{kMax},
 \code{informationRates}, \code{efficacyBounds}, \code{futilityBounds},
+\code{information}, \code{alpha}, \code{conditionalAlpha},
+\code{conditionalPower}, \code{predictivePower}, and
 and \code{MullerSchafer}.
 \item \code{secondaryTrial}: A \code{design} object for the secondary trial.
+\item \code{integratedTrial}: A list of selected information for the integrated
+trial, including \code{L}, \code{zL}, \code{theta}, \code{maxInformation},
+\code{kMax}, \code{informationRates}, \code{efficacyBounds},
+\code{futilityBounds}, and \code{information}.
 }
 }
 \description{
@@ -194,45 +199,48 @@ spending function, and the number and spacing of interim looks.
 }
 \examples{
 
-# original group sequential design with 90\% power to detect delta = 6
-delta = 6
-sigma = 17
-n = 282
-(des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
-                  alpha = 0.05, typeAlphaSpending = "sfHSD",
-                  parameterAlphaSpending = -4))
+# two-arm randomized clinical trial with a normally distributed endpoint
+# 90\% power to detect mean difference of 15 with a standard deviation of 50
+# Design the Stage I Trial with 3 looks and Lan-DeMets O'Brien-Fleming type
+# spending function
+delta <- 15
+sigma <- 50
 
-# interim look results
-L = 1
-n1 = n/3
-delta1 = 4.5
-sigma1 = 20
-zL = delta1/sqrt(4/n1*sigma1^2)
+(des1 <- getDesignMeanDiff(
+  beta = 0.1, meanDiff = delta, stDev = sigma,
+  kMax = 3, alpha = 0.025, typeAlphaSpending = "sfOF"
+))
 
-t = des1$byStageResults$informationRates
+s1 <- des1$byStageResults$informationRates
+b1 <- des1$byStageResults$efficacyBounds
+n <- des1$overallResults$numberOfSubjects
 
-# conditional power with sample size increase
-(des2 = adaptDesign(
-  betaNew = NA, INew = 420/(4*sigma1^2),
-  L = L, zL = zL, theta = delta1,
-  IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
-  alpha = 0.05, typeAlphaSpending = "sfHSD",
-  parameterAlphaSpending = -4))
+# Monitoring the Stage I Trial
+L <- 1
+nL <- des1$byStageResults$numberOfSubjects[L]
+deltahat <- 8
+sigmahat <- 55
+sedeltahat <- sigmahat * sqrt( 4 / nL)
+zL <- deltahat / sedeltahat
 
-# Muller & Schafer (2001) method to design the secondary trial:
-# 3-look gamma(-2) spending with 84\% power at delta = 4.5 and sigma = 20
-(des2 = adaptDesign(
-  betaNew = 0.16, INew = NA,
-  L = L, zL = zL, theta = delta1,
-  IMax = n/(4*sigma1^2), kMax = 3, informationRates = t,
-  alpha = 0.05, typeAlphaSpending = "sfHSD",
-  parameterAlphaSpending = -4,
-  MullerSchafer = TRUE,
-  kNew = 3, typeAlphaSpendingNew = "sfHSD",
-  parameterAlphaSpendingNew = -2))
+# Making an Adaptive Change: Stage I to Stage II
+# revised clinically meaningful difference downward to 10 power the study
+# retain the standard deviation at the design stage
+# Muller & Schafer (2001) method to design the secondary trial
+# with 2 looks and Lan-DeMets Pocock type spending function
+# re-estimate sample size to reach 90\% conditional power
+deltaNew <- 10
 
-# incremental sample size for sigma = 20
-(nNew = 4*sigma1^2*des2$secondaryTrial$overallResults$information)
+(des2 <- adaptDesign(
+  betaNew = 0.1, L = L, zL = zL, theta = deltaNew,
+  IMax = n / (4 * sigma^2), kMax = 3, informationRates = s1,
+  alpha = 0.025, typeAlphaSpending = "sfOF",
+  MullerSchafer = TRUE, kNew = 2, typeAlphaSpendingNew = "sfP"
+))
+
+INew <- des2$secondaryTrial$overallResults$information
+(nNew <- ceiling(INew * 4 * sigma^2))
+(nTotal <- nL + nNew)
 
 }
 \references{
