@@ -16,8 +16,8 @@ getADRCI(
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   spendingTime = NA_real_,
-  L2 = NA_integer_,
-  zL2 = NA_real_,
+  Lc = NA_integer_,
+  zLc = NA_real_,
   INew = NA_real_,
   MullerSchafer = 0L,
   informationRatesNew = NA_real_,
@@ -62,16 +62,16 @@ trial. One of the following:
 Defaults to "sfOF".}
 
 \item{parameterAlphaSpending}{The parameter value of alpha spending
-for the primary trial. Corresponds to Delta for "WT", rho for "sfKD",
-and gamma for "sfHSD".}
+for the primary trial. Corresponds to \eqn{\Delta} for "WT",
+\eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".}
 
 \item{spendingTime}{The error spending time of the primary trial.
 Defaults to missing, in which case, it is the same as
 \code{informationRates}.}
 
-\item{L2}{The look of interest in the secondary trial.}
+\item{Lc}{The look of interest in the integrated trial.}
 
-\item{zL2}{The z-test statistic at the look of the secondary trial.}
+\item{zLc}{The z-test statistic at the look of the integrated trial.}
 
 \item{INew}{The maximum information of the secondary trial.}
 
@@ -97,8 +97,8 @@ trial. One of the following:
 Defaults to "sfOF".}
 
 \item{parameterAlphaSpendingNew}{The parameter value of alpha spending
-for the secondary trial. Corresponds to Delta for "WT",
-rho for "sfKD", and gamma for "sfHSD".}
+for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
+\eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".}
 
 \item{spendingTimeNew}{The error spending time of the secondary trial.
 up to look \code{L2}. Defaults to missing, in which case, it is
@@ -119,66 +119,68 @@ Obtains the repeated p-value, conservative point estimate,
 and repeated confidence interval for an adaptive group sequential trial.
 }
 \examples{
+# two-arm randomized clinical trial with a normally distributed endpoint
+# 90\% power to detect mean difference of 15 with a standard deviation of 50
+# Design the Stage I Trial with 3 looks and Lan-DeMets O'Brien-Fleming type
+# spending function
+delta <- 15
+sigma <- 50
 
-# original group sequential design with 90\% power to detect delta = 6
-delta = 6
-sigma = 17
-n = 282
-(des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
-                  alpha = 0.05, typeAlphaSpending = "sfHSD",
-                  parameterAlphaSpending = -4))
+(des1 <- getDesignMeanDiff(
+  beta = 0.1, meanDiff = delta, stDev = sigma,
+  kMax = 3, alpha = 0.025, typeAlphaSpending = "sfOF"
+))
 
-# interim look results
-L = 1
-n1 = n/3
-delta1 = 4.5
-sigma1 = 20
-zL = delta1/sqrt(4/n1*sigma1^2)
+s1 <- des1$byStageResults$informationRates
+b1 <- des1$byStageResults$efficacyBounds
+n <- des1$overallResults$numberOfSubjects
 
-t = des1$byStageResults$informationRates
+# Monitoring the Stage I Trial
+L <- 1
+nL <- des1$byStageResults$numberOfSubjects[L]
+deltahat <- 8
+sigmahat <- 55
+sedeltahat <- sigmahat * sqrt( 4 / nL)
+zL <- deltahat / sedeltahat
 
-# Muller & Schafer (2001) method to design the secondary trial:
-des2 = adaptDesign(
-  betaNew = 0.2, L = L, zL = zL, theta = 5,
-  kMax = 3, informationRates = t,
-  alpha = 0.05, typeAlphaSpending = "sfHSD",
-  parameterAlphaSpending = -4,
-  MullerSchafer = TRUE,
-  kNew = 3, typeAlphaSpendingNew = "sfHSD",
-  parameterAlphaSpendingNew = -2)
+# Making an Adaptive Change: Stage I to Stage II
+# revised clinically meaningful difference downward to 10 power the study
+# retain the standard deviation at the design stage
+# Muller & Schafer (2001) method to design the secondary trial
+# with 2 looks and Lan-DeMets Pocock type spending function
+# re-estimate sample size to reach 90\% conditional power
+deltaNew <- 10
 
-n2 = ceiling(des2$secondaryTrial$overallResults$information*4*20^2)
-ns = round(n2*(1:3)/3)
-(des2 = adaptDesign(
-  INew = n2/(4*20^2), L = L, zL = zL, theta = 5,
-  kMax = 3, informationRates = t,
-  alpha = 0.05, typeAlphaSpending = "sfHSD",
-  parameterAlphaSpending = -4,
-  MullerSchafer = TRUE,
-  kNew = 3, informationRatesNew = ns/n2,
-  typeAlphaSpendingNew = "sfHSD",
-  parameterAlphaSpendingNew = -2))
+(des2 <- adaptDesign(
+  betaNew = 0.1, L = L, zL = zL, theta = deltaNew,
+  IMax = n / (4 * sigma^2), kMax = 3, informationRates = s1,
+  alpha = 0.025, typeAlphaSpending = "sfOF",
+  MullerSchafer = TRUE, kNew = 2, typeAlphaSpendingNew = "sfP"
+))
 
-# termination at the second look of the secondary trial
-L2 = 2
-delta2 = 6.86
-sigma2 = 21.77
-zL2 = delta2/sqrt(4/197*sigma2^2)
+INew <- des2$secondaryTrial$overallResults$information
+(nNew <- ceiling(INew * 4 * sigma^2))
+(nTotal <- nL + nNew)
 
-t2 = des2$secondaryTrial$byStageResults$informationRates[1:L2]
+# Monitoring the Integrated Trial
+s2 <- des2$secondaryTrial$byStageResults$informationRates
 
-# repeated confidence interval
-getADRCI(L = L, zL = zL,
-         IMax = n/(4*sigma1^2), kMax = 3,
-         informationRates = t,
-         alpha = 0.05, typeAlphaSpending = "sfHSD",
-         parameterAlphaSpending = -4,
-         L2 = L2, zL2 = zL2,
-         INew = n2/(4*sigma2^2),
-         MullerSchafer = TRUE,
-         informationRatesNew = t2,
-         typeAlphaSpendingNew = "sfHSD",
-         parameterAlphaSpendingNew = -2)
+Lc <- 2
+deltahatc <- 9.5
+sigmahatc <- 52.759
+L2 <- Lc - L
+nL2 <-  nNew * s2[L2]
+nc <- nL + nL2
+sedeltahatc <- sigmahatc * sqrt(4 / nc)
+zLc <- deltahatc / sedeltahatc
+zL2 <- (zLc * sqrt(nc) - zL * sqrt(nL)) / sqrt(nL2)
+
+getADRCI(
+  L = L, zL = zL, IMax = n / (4 * sigmahatc^2), kMax = 3,
+  informationRates = s1, alpha = 0.025, typeAlphaSpending = "sfOF",
+  Lc = Lc, zLc = zLc, INew = nNew / (4 * sigmahatc^2),
+  MullerSchafer = TRUE, informationRatesNew = s2,
+  typeAlphaSpendingNew = "sfP")
 
 }
 \references{
