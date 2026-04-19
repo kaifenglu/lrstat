@@ -82,8 +82,8 @@ trial. One of the following:
 Defaults to "sfOF".}
 
 \item{parameterAlphaSpending}{The parameter value of alpha spending
-for the primary trial. Corresponds to Delta for "WT", rho for "sfKD",
-and gamma for "sfHSD".}
+for the primary trial. Corresponds to \eqn{\Delta} for "WT",
+\eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".}
 
 \item{userAlphaSpending}{The user defined alpha spending for the primary
 trial. Cumulative alpha spent up to each stage.}
@@ -102,8 +102,8 @@ One of the following:
 Defaults to "none".}
 
 \item{parameterBetaSpending}{The parameter value of beta spending
-for the primary trial. Corresponds to rho for "sfKD",
-and gamma for "sfHSD".}
+for the primary trial. Corresponds to \eqn{\rho} for "sfKD",
+and \eqn{\gamma} for "sfHSD".}
 
 \item{spendingTime}{The error spending time of the primary trial.
 Defaults to missing, in which case, it is the same as
@@ -137,8 +137,8 @@ trial. One of the following:
 Defaults to "sfOF".}
 
 \item{parameterAlphaSpendingNew}{The parameter value of alpha spending
-for the secondary trial. Corresponds to Delta for "WT", rho for "sfKD",
-and gamma for "sfHSD".}
+for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
+\eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".}
 
 \item{typeBetaSpendingNew}{The type of beta spending for the secondary
 trial. One of the following:
@@ -150,8 +150,8 @@ trial. One of the following:
 Defaults to "none".}
 
 \item{parameterBetaSpendingNew}{The parameter value of beta spending
-for the secondary trial. Corresponds to rho for "sfKD",
-and gamma for "sfHSD".}
+for the secondary trial. Corresponds to \eqn{\rho} for "sfKD",
+and \eqn{\gamma} for "sfHSD".}
 
 \item{spendingTimeNew}{The error spending time of the secondary trial.
 Defaults to missing, in which case, it is the same as

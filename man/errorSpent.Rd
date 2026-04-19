@@ -18,7 +18,7 @@ function, "sfKD" for Kim & DeMets spending function, and "sfHSD" for
 Hwang, Shi & DeCani spending function. Defaults to "sfOF".}
 
 \item{sfpar}{The parameter for the spending function. Corresponds to
-rho for "sfKD" and gamma for "sfHSD".}
+\eqn{\rho} for "sfKD" and \eqn{\gamma} for "sfHSD".}
 }
 \value{
 A vector of errors spent up to the interim look.

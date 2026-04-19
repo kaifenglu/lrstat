@@ -48,7 +48,8 @@ One of the following:
 Defaults to "sfOF".}
 
 \item{parameterAlphaSpending}{The parameter value of alpha spending.
-Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".}
+Corresponds to \eqn{\Delta} for "WT", \eqn{\rho} for "sfKD", and
+\eqn{\gamma} for "sfHSD".}
 
 \item{spendingTime}{The error spending time up to look \code{L}.
 Defaults to missing, in which case, it is the same as
