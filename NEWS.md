@@ -1,3 +1,16 @@
+# lrstat 0.3.2
+
+* removed the pivoting step for pmvnormr and qmvnormr to take advantage of independent increment structure of score process
+* removed the fast parameter for pmvnormr and qmvnormr so that the default is to use fast approximation
+* updated the point estimate for getRCI
+* renamed tsssd to seamless in the function names for two-stage seamless sequential design for treatment/dose selection
+* updated the critical values when typeAlphaSpending = "none" in getDesign_seamless
+* added integratedTrial to adaptDesign
+* updated the backward image confidence interval method to account for the case when astar > conditional_power
+* updated point estimate for repeated confidence interval
+* added functions for multi-arm multi-stage (MAMS) designs
+
+
 # lrstat 0.3.1
 
 * calculated eventsPerStage, dropoutPerStage, subjectsPerStage, and analysisTimePerstage in the lrsim output based on trials having the stage (i.e., did not stop before the stage).
