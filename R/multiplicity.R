@@ -320,7 +320,7 @@ repeatedPValue <- function(kMax,
 #'   Defaults to "sfOF" if not provided.
 #' @param parameterAlphaSpending The vector of parameter values for the
 #'   alpha spending functions for the hypotheses. Each element corresponds
-#'   to the value of rho for "sfKD" or gamma for "sfHSD".
+#'   to the value of \eqn{\rho} for "sfKD" or \eqn{\gamma} for "sfHSD".
 #'   Defaults to missing if not provided.
 #' @param maxInformation The vector of target maximum information for each
 #'   hypothesis. Defaults to a vector of 1s if not provided.
