@@ -5,7 +5,7 @@ Prints the summary statistics from simulation.
 ## Usage
 
 ``` r
-# S3 method for class 'lrsim_tsssd'
+# S3 method for class 'lrsim_seamless'
 print(x, ...)
 ```
 
@@ -13,7 +13,7 @@ print(x, ...)
 
 - x:
 
-  The lrsim_tsssd object to print.
+  The lrsim_seamless object to print.
 
 - ...:
 

@@ -1,4 +1,4 @@
-# Exit Probabilities for Two-Stage Seamless Sequential Design (TSSSD)
+# Exit Probabilities for Two-Stage Seamless Sequential Design
 
 Computes the exit (rejection) probabilities for a two-stage selection
 and testing design. In Phase 2, multiple active arms are compared
@@ -9,7 +9,7 @@ multiple looks.
 ## Usage
 
 ``` r
-exitprob_tsssd(
+exitprob_seamless(
   M = NA_integer_,
   r = 1,
   theta = NA_real_,
@@ -112,12 +112,12 @@ I <- c(110 / (2 * 1.0^2) * seq(1, 3)/3)
 b <- c(3.776606, 2.670463, 2.180424)
 
 # Type I error under the global null hypothesis
-p0 <- exitprob_tsssd(M = 2, theta = c(0, 0), K = 2, b = b, I = I)
+p0 <- exitprob_seamless(M = 2, theta = c(0, 0), K = 2, b = b, I = I)
 cumsum(p0$exitProb)
 #> [1] 0.000157278 0.006643135 0.025000008
 
 # Power under alternative: Treatment effects of 0.3 and 0.5
-p1 <- exitprob_tsssd(M = 2, theta = c(0.3, 0.5), K = 2, b = b, I = I)
+p1 <- exitprob_seamless(M = 2, theta = c(0.3, 0.5), K = 2, b = b, I = I)
 cumsum(p1$exitProb)
 #> [1] 0.05477555 0.62309680 0.90160747
 ```

@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lrstat</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,6 +39,18 @@
       <small>Source: <a href="https://github.com/kaifenglu/lrstat/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.2" id="lrstat-032">lrstat 0.3.2<a class="anchor" aria-label="anchor" href="#lrstat-032"></a></h2>
+<ul><li>removed the pivoting step for pmvnormr and qmvnormr to take advantage of independent increment structure of score process</li>
+<li>removed the fast parameter for pmvnormr and qmvnormr so that the default is to use fast approximation</li>
+<li>updated the point estimate for getRCI</li>
+<li>renamed tsssd to seamless in the function names for two-stage seamless sequential design for treatment/dose selection</li>
+<li>updated the critical values when typeAlphaSpending = “none” in getDesign_seamless</li>
+<li>added integratedTrial to adaptDesign</li>
+<li>updated the backward image confidence interval method to account for the case when astar &gt; conditional_power</li>
+<li>updated point estimate for repeated confidence interval</li>
+<li>added functions for multi-arm multi-stage (MAMS) designs</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.1" id="lrstat-031">lrstat 0.3.1<a class="anchor" aria-label="anchor" href="#lrstat-031"></a></h2><p class="text-muted">CRAN release: 2026-04-08</p>
 <ul><li>calculated eventsPerStage, dropoutPerStage, subjectsPerStage, and analysisTimePerstage in the lrsim output based on trials having the stage (i.e., did not stop before the stage).</li>

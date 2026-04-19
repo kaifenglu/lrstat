@@ -1,13 +1,12 @@
-# Efficacy Boundaries for Two-Stage Seamless Sequential Design (TSSSD)
+# Efficacy Boundaries for Multi-Arm Multi-Stage Design
 
-Calculates the efficacy stopping boundaries for a two-stage seamless
-sequential design, accounting for the selection of the best arm at the
-end of Phase 2 and sequential testing in Phase 3.
+Calculates the efficacy stopping boundaries for a multiple comparison
+sequential design.
 
 ## Usage
 
 ``` r
-getBound_tsssd(
+getBound_mams(
   M = NA_integer_,
   r = 1,
   corr_known = TRUE,
@@ -26,22 +25,21 @@ getBound_tsssd(
 
 - M:
 
-  Number of active treatment arms in Phase 2 (\\M \ge 2\\).
+  Number of active treatment arms.
 
 - r:
 
-  Randomization ratio of each active arm to the common control in Phase
-  2.
+  Randomization ratio of each active arm to the common control.
 
 - corr_known:
 
-  Logical. If `TRUE`, the correlation between Wald statistics in Phase 2
-  is derived from the randomization ratio \\r\\ as \\r / (r + 1)\\. If
-  `FALSE`, a conservative correlation of 0 is assumed.
+  Logical. If `TRUE`, the correlation between Wald statistics is derived
+  from the randomization ratio \\r\\ as \\r / (r + 1)\\. If `FALSE`, a
+  conservative correlation of 0 is assumed.
 
 - k:
 
-  The index of the current look in Phase 3.
+  The index of the current look.
 
 - informationRates:
 
@@ -74,8 +72,8 @@ getBound_tsssd(
 
 - spendingTime:
 
-  A numeric vector of length \\k+1\\ specifying the error spending time
-  at each analysis. Values must be strictly increasing and \\\le 1\\. If
+  A numeric vector of length \\k\\ specifying the error spending time at
+  each analysis. Values must be strictly increasing and \\\le 1\\. If
   omitted, defaults to `informationRates`.
 
 - efficacyStopping:
@@ -85,8 +83,8 @@ getBound_tsssd(
 
 ## Value
 
-A numeric vector of length \\k + 1\\ containing the critical values (on
-the standard normal Z-scale) for each analysis up to the current look.
+A numeric vector of length \\k\\ containing the critical values (on the
+standard normal Z-scale) for each analysis up to the current look.
 
 ## Details
 
@@ -106,8 +104,8 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 
 ``` r
 # Determine O'Brien-Fleming boundaries for a TSSSD with
-# 2 active arms in Phase 2 and 2 looks in Phase 3 (3 looks total).
-getBound_tsssd(M = 2, k = 2, informationRates = seq(1, 3)/3,
+# 2 active arms and 3 looks.
+getBound_mams(M = 2, k = 3, informationRates = seq(1, 3)/3,
               alpha = 0.025, typeAlphaSpending = "OF")
-#> [1] 3.776605 2.670463 2.180424
+#> [1] 3.886562 2.748214 2.243907
 ```

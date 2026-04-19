@@ -14,6 +14,7 @@
 <url><loc>https://kaifenglu.github.io/lrstat/reference/ClopperPearsonCI.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/accrual.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/adaptDesign.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/adaptDesign_mams.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/aml.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/assess_phregr.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/binary_tte_sim.html</loc></url>
@@ -23,7 +24,8 @@
 <url><loc>https://kaifenglu.github.io/lrstat/reference/dtpwexp.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/errorSpent.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/exitprob.html</loc></url>
-<url><loc>https://kaifenglu.github.io/lrstat/reference/exitprob_tsssd.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/exitprob_mams.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/exitprob_seamless.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/fadjpbon.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/fadjpdun.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/fadjpsim.html</loc></url>
@@ -39,7 +41,8 @@
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getADRCI.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getAccrualDurationFromN.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getBound.html</loc></url>
-<url><loc>https://kaifenglu.github.io/lrstat/reference/getBound_tsssd.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/getBound_mams.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/getBound_seamless.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getCI.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getCP.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getDesign.html</loc></url>
@@ -92,7 +95,8 @@
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getDesignUnorderedBinom.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getDesignUnorderedMultinom.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getDesignWilcoxon.html</loc></url>
-<url><loc>https://kaifenglu.github.io/lrstat/reference/getDesign_tsssd.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/getDesign_mams.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/getDesign_seamless.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getDurationFromNevents.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getNeventsFromHazardRatio.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getRCI.html</loc></url>
@@ -125,7 +129,7 @@
 <url><loc>https://kaifenglu.github.io/lrstat/reference/lrsim2e.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/lrsim2e3a.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/lrsim3a.html</loc></url>
-<url><loc>https://kaifenglu.github.io/lrstat/reference/lrsim_tsssd.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/lrsim_seamless.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/lrsimsub.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/lrstat-package.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/lrstat.html</loc></url>
@@ -199,6 +203,7 @@
 <url><loc>https://kaifenglu.github.io/lrstat/reference/powerRiskRatioExactEquiv.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.BOINTable.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.adaptDesign.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/print.adaptDesign_mams.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.assess_phregr.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.design.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.designANOVA.html</loc></url>
@@ -252,8 +257,9 @@
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.lrpower.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.lrpowerequiv.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.lrsim.html</loc></url>
-<url><loc>https://kaifenglu.github.io/lrstat/reference/print.lrsim_tsssd.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/print.lrsim_seamless.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.mTPI2Table.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/print.mams.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.nbpower.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.nbpower1s.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.nbpowerequiv.html</loc></url>
@@ -261,7 +267,7 @@
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.rmpower.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.rmpower1s.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.rmpowerequiv.html</loc></url>
-<url><loc>https://kaifenglu.github.io/lrstat/reference/print.tsssd.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/print.seamless.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/ptpwexp.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/pwexpcuts.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/pwexploglik.html</loc></url>

@@ -28,8 +28,8 @@ errorSpent(t, error = 0.025, sf = "sfOF", sfpar = NA_real_)
 
 - sfpar:
 
-  The parameter for the spending function. Corresponds to rho for "sfKD"
-  and gamma for "sfHSD".
+  The parameter for the spending function. Corresponds to \\\rho\\ for
+  "sfKD" and \\\gamma\\ for "sfHSD".
 
 ## Value
 

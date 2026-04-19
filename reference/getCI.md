@@ -63,8 +63,8 @@ getCI(
 
 - parameterAlphaSpending:
 
-  The parameter value of alpha spending. Corresponds to Delta for "WT",
-  rho for "sfKD", and gamma for "sfHSD".
+  The parameter value of alpha spending. Corresponds to \\\Delta\\ for
+  "WT", \\\rho\\ for "sfKD", and \\\gamma\\ for "sfHSD".
 
 - spendingTime:
 

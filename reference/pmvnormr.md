@@ -11,8 +11,6 @@ pmvnormr(
   upper,
   mean = NULL,
   sigma,
-  pivot = FALSE,
-  fast = TRUE,
   n0 = 1024,
   n_max = 16384,
   R = 8,
@@ -42,16 +40,6 @@ pmvnormr(
 - sigma:
 
   The covariance (or correlation) matrix of the distribution.
-
-- pivot:
-
-  Logical; if `TRUE`, applies an initial pivoting step to reorder the
-  integration variables for improved efficiency.
-
-- fast:
-
-  Logical; if `TRUE`, uses a fast approximation of the univariate normal
-  CDF and quantile functions.
 
 - n0:
 
@@ -119,9 +107,6 @@ To improve efficiency and accuracy, the QMC approach incorporates:
   [`mvtnorm::lpmvnorm`](https://rdrr.io/pkg/mvtnorm/man/lpmvnorm.html),
   reducing the \\J\\-dimensional integral to a \\(J-1)\\-dimensional
   problem over a hypercube.
-
-- Initial Pivoting (if requested): Reorders the integration variables to
-  minimize the variance of the integrand.
 
 - Adaptive Sampling: The number of samples per replication increases
   dynamically until the estimated error falls below `abseps` or

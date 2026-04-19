@@ -107,7 +107,8 @@ getCP(
 - parameterAlphaSpending:
 
   The parameter value of alpha spending for the primary trial.
-  Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
+  Corresponds to \\\Delta\\ for "WT", \\\rho\\ for "sfKD", and
+  \\\gamma\\ for "sfHSD".
 
 - userAlphaSpending:
 
@@ -131,7 +132,7 @@ getCP(
 - parameterBetaSpending:
 
   The parameter value of beta spending for the primary trial.
-  Corresponds to rho for "sfKD", and gamma for "sfHSD".
+  Corresponds to \\\rho\\ for "sfKD", and \\\gamma\\ for "sfHSD".
 
 - spendingTime:
 
@@ -174,7 +175,8 @@ getCP(
 - parameterAlphaSpendingNew:
 
   The parameter value of alpha spending for the secondary trial.
-  Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
+  Corresponds to \\\Delta\\ for "WT", \\\rho\\ for "sfKD", and
+  \\\gamma\\ for "sfHSD".
 
 - typeBetaSpendingNew:
 
@@ -187,7 +189,7 @@ getCP(
 - parameterBetaSpendingNew:
 
   The parameter value of beta spending for the secondary trial.
-  Corresponds to rho for "sfKD", and gamma for "sfHSD".
+  Corresponds to \\\rho\\ for "sfKD", and \\\gamma\\ for "sfHSD".
 
 - spendingTimeNew:
 

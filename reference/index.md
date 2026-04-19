@@ -10,6 +10,8 @@
   : Number of Enrolled Subjects
 - [`adaptDesign()`](https://kaifenglu.github.io/lrstat/reference/adaptDesign.md)
   : Adaptive Design at an Interim Look
+- [`adaptDesign_mams()`](https://kaifenglu.github.io/lrstat/reference/adaptDesign_mams.md)
+  : Adaptive Multi-Arm Multi-Stage Design
 - [`aml`](https://kaifenglu.github.io/lrstat/reference/aml.md) : Acute
   myelogenous leukemia survival data from the survival package
 - [`assess_phregr()`](https://kaifenglu.github.io/lrstat/reference/assess_phregr.md)
@@ -29,8 +31,10 @@
   : Error Spending
 - [`exitprob()`](https://kaifenglu.github.io/lrstat/reference/exitprob.md)
   : Stagewise Exit Probabilities
-- [`exitprob_tsssd()`](https://kaifenglu.github.io/lrstat/reference/exitprob_tsssd.md)
-  : Exit Probabilities for Two-Stage Seamless Sequential Design (TSSSD)
+- [`exitprob_mams()`](https://kaifenglu.github.io/lrstat/reference/exitprob_mams.md)
+  : Exit Probabilities for Multi-Arm Multi-Stage Design
+- [`exitprob_seamless()`](https://kaifenglu.github.io/lrstat/reference/exitprob_seamless.md)
+  : Exit Probabilities for Two-Stage Seamless Sequential Design
 - [`fadjpbon()`](https://kaifenglu.github.io/lrstat/reference/fadjpbon.md)
   : Adjusted p-Values for Bonferroni-Based Graphical Approaches
 - [`fadjpdun()`](https://kaifenglu.github.io/lrstat/reference/fadjpdun.md)
@@ -61,8 +65,10 @@
   : Accrual Duration to Enroll Target Number of Subjects
 - [`getBound()`](https://kaifenglu.github.io/lrstat/reference/getBound.md)
   : Efficacy Boundaries for Group Sequential Design
-- [`getBound_tsssd()`](https://kaifenglu.github.io/lrstat/reference/getBound_tsssd.md)
-  : Efficacy Boundaries for Two-Stage Seamless Sequential Design (TSSSD)
+- [`getBound_mams()`](https://kaifenglu.github.io/lrstat/reference/getBound_mams.md)
+  : Efficacy Boundaries for Multi-Arm Multi-Stage Design
+- [`getBound_seamless()`](https://kaifenglu.github.io/lrstat/reference/getBound_seamless.md)
+  : Efficacy Boundaries for Two-Stage Seamless Sequential Design
 - [`getCI()`](https://kaifenglu.github.io/lrstat/reference/getCI.md) :
   Confidence Interval After Trial Termination
 - [`getCP()`](https://kaifenglu.github.io/lrstat/reference/getCP.md) :
@@ -184,9 +190,10 @@
   Response
 - [`getDesignWilcoxon()`](https://kaifenglu.github.io/lrstat/reference/getDesignWilcoxon.md)
   : Group Sequential Design for Two-Sample Wilcoxon Test
-- [`getDesign_tsssd()`](https://kaifenglu.github.io/lrstat/reference/getDesign_tsssd.md)
+- [`getDesign_mams()`](https://kaifenglu.github.io/lrstat/reference/getDesign_mams.md)
+  : Power and Sample Size for Multi-Arm Multi-Stage Design
+- [`getDesign_seamless()`](https://kaifenglu.github.io/lrstat/reference/getDesign_seamless.md)
   : Power and Sample Size for Two-Stage Seamless Sequential Design
-  (TSSSD)
 - [`getDurationFromNevents()`](https://kaifenglu.github.io/lrstat/reference/getDurationFromNevents.md)
   : Range of Accrual Duration for Target Number of Events
 - [`getNeventsFromHazardRatio()`](https://kaifenglu.github.io/lrstat/reference/getNeventsFromHazardRatio.md)
@@ -250,7 +257,7 @@
   Arms
 - [`lrsim3a()`](https://kaifenglu.github.io/lrstat/reference/lrsim3a.md)
   : Log-Rank Test Simulation for Three Arms
-- [`lrsim_tsssd()`](https://kaifenglu.github.io/lrstat/reference/lrsim_tsssd.md)
+- [`lrsim_seamless()`](https://kaifenglu.github.io/lrstat/reference/lrsim_seamless.md)
   : Log-Rank Test Simulation for Multiple Active Arms vs. Common Control
 - [`lrsimsub()`](https://kaifenglu.github.io/lrstat/reference/lrsimsub.md)
   : Log-Rank Test Simulation for Enrichment Design

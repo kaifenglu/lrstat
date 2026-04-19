@@ -18,8 +18,8 @@ getADRCI(
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   spendingTime = NA_real_,
-  L2 = NA_integer_,
-  zL2 = NA_real_,
+  Lc = NA_integer_,
+  zLc = NA_real_,
   INew = NA_real_,
   MullerSchafer = 0L,
   informationRatesNew = NA_real_,
@@ -80,20 +80,21 @@ getADRCI(
 - parameterAlphaSpending:
 
   The parameter value of alpha spending for the primary trial.
-  Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
+  Corresponds to \\\Delta\\ for "WT", \\\rho\\ for "sfKD", and
+  \\\gamma\\ for "sfHSD".
 
 - spendingTime:
 
   The error spending time of the primary trial. Defaults to missing, in
   which case, it is the same as `informationRates`.
 
-- L2:
+- Lc:
 
-  The look of interest in the secondary trial.
+  The look of interest in the integrated trial.
 
-- zL2:
+- zLc:
 
-  The z-test statistic at the look of the secondary trial.
+  The z-test statistic at the look of the integrated trial.
 
 - INew:
 
@@ -127,7 +128,8 @@ getADRCI(
 - parameterAlphaSpendingNew:
 
   The parameter value of alpha spending for the secondary trial.
-  Corresponds to Delta for "WT", rho for "sfKD", and gamma for "sfHSD".
+  Corresponds to \\\Delta\\ for "WT", \\\rho\\ for "sfKD", and
+  \\\gamma\\ for "sfHSD".
 
 - spendingTimeNew:
 
@@ -166,107 +168,126 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ## Examples
 
 ``` r
-# original group sequential design with 90% power to detect delta = 6
-delta = 6
-sigma = 17
-n = 282
-(des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
-                  alpha = 0.05, typeAlphaSpending = "sfHSD",
-                  parameterAlphaSpending = -4))
-#>                                                                          
-#> Group-sequential design with 3 stages                                    
-#> theta: 6, maximum information: 0.24                                      
-#> Overall power: 0.9029, overall alpha (1-sided): 0.05                     
-#> Drift parameter: 2.963, inflation factor: 1.014                          
-#> Expected information under H1: 0.19, expected information under H0: 0.24 
-#> Alpha spending: HSD(gamma = -4), beta spending: None                     
-#>                                                                          
-#>                           Stage 1 Stage 2 Stage 3
-#> Information rate          0.333   0.667   1.000  
-#> Efficacy boundary (Z)     2.794   2.289   1.680  
-#> Cumulative rejection      0.1395  0.5588  0.9029 
-#> Cumulative alpha spent    0.0026  0.0125  0.0500 
-#> Efficacy boundary (theta) 9.797   5.676   3.401  
-#> Efficacy boundary (p)     0.0026  0.0110  0.0465 
-#> Information               0.08    0.16    0.24   
+# two-arm randomized clinical trial with a normally distributed endpoint
+# 90% power to detect mean difference of 15 with a standard deviation of 50
+# Design the Stage I Trial with 3 looks and Lan-DeMets O'Brien-Fleming type
+# spending function
+delta <- 15
+sigma <- 50
 
-# interim look results
-L = 1
-n1 = n/3
-delta1 = 4.5
-sigma1 = 20
-zL = delta1/sqrt(4/n1*sigma1^2)
+(des1 <- getDesignMeanDiff(
+  beta = 0.1, meanDiff = delta, stDev = sigma,
+  kMax = 3, alpha = 0.025, typeAlphaSpending = "sfOF"
+))
+#>                                                                                   
+#> Group-sequential design with 3 stages for two-sample mean difference              
+#> Mean difference under H0: 0, mean difference under H1: 15, standard deviation: 50 
+#> Overall power: 0.9003, overall alpha (1-sided): 0.025                             
+#> Drift parameter: 3.262, inflation factor: 1.012                                   
+#> Maximum information: 0.05, expected under H1: 0.04, expected under H0: 0.05       
+#> Maximum # subjects: 473, expected under H1: 379.2, expected under H0: 472         
+#> Allocation ratio: 1                                                               
+#> Alpha spending: Lan-DeMets O'Brien-Fleming, beta spending: None                   
+#>                                                                                   
+#>                               Stage 1 Stage 2 Stage 3
+#> Information rate              0.334   0.666   1.000  
+#> Efficacy boundary (Z)         3.706   2.513   1.993  
+#> Cumulative rejection          0.0343  0.5596  0.9003 
+#> Cumulative alpha spent        0.0001  0.0060  0.0250 
+#> Number of subjects            158.0   315.0   473.0  
+#> Efficacy boundary (mean diff) 29.484  14.159  9.163  
+#> Efficacy boundary (p)         0.0001  0.0060  0.0231 
+#> Information                   0.02    0.03    0.05   
 
-t = des1$byStageResults$informationRates
+s1 <- des1$byStageResults$informationRates
+b1 <- des1$byStageResults$efficacyBounds
+n <- des1$overallResults$numberOfSubjects
 
-# Muller & Schafer (2001) method to design the secondary trial:
-des2 = adaptDesign(
-  betaNew = 0.2, L = L, zL = zL, theta = 5,
-  kMax = 3, informationRates = t,
-  alpha = 0.05, typeAlphaSpending = "sfHSD",
-  parameterAlphaSpending = -4,
-  MullerSchafer = TRUE,
-  kNew = 3, typeAlphaSpendingNew = "sfHSD",
-  parameterAlphaSpendingNew = -2)
+# Monitoring the Stage I Trial
+L <- 1
+nL <- des1$byStageResults$numberOfSubjects[L]
+deltahat <- 8
+sigmahat <- 55
+sedeltahat <- sigmahat * sqrt( 4 / nL)
+zL <- deltahat / sedeltahat
 
-n2 = ceiling(des2$secondaryTrial$overallResults$information*4*20^2)
-ns = round(n2*(1:3)/3)
-(des2 = adaptDesign(
-  INew = n2/(4*20^2), L = L, zL = zL, theta = 5,
-  kMax = 3, informationRates = t,
-  alpha = 0.05, typeAlphaSpending = "sfHSD",
-  parameterAlphaSpending = -4,
-  MullerSchafer = TRUE,
-  kNew = 3, informationRatesNew = ns/n2,
-  typeAlphaSpendingNew = "sfHSD",
-  parameterAlphaSpendingNew = -2))
+# Making an Adaptive Change: Stage I to Stage II
+# revised clinically meaningful difference downward to 10 power the study
+# retain the standard deviation at the design stage
+# Muller & Schafer (2001) method to design the secondary trial
+# with 2 looks and Lan-DeMets Pocock type spending function
+# re-estimate sample size to reach 90% conditional power
+deltaNew <- 10
+
+(des2 <- adaptDesign(
+  betaNew = 0.1, L = L, zL = zL, theta = deltaNew,
+  IMax = n / (4 * sigma^2), kMax = 3, informationRates = s1,
+  alpha = 0.025, typeAlphaSpending = "sfOF",
+  MullerSchafer = TRUE, kNew = 2, typeAlphaSpendingNew = "sfP"
+))
 #>                                                      
 #> Primary trial:                                       
 #> Group-sequential design with 3 stages                
-#> Interim adaptation look: 1, z-statistic value: 1.091 
-#> Conditional type I error: 0.1033                     
+#> Interim adaptation look: 1, z-statistic value: 0.914 
+#> Conditional type I error: 0.0378                     
+#> Conditional power: 0.496, predictive power: 0.3877   
 #> Muller & Schafer method for secondary trial: TRUE    
 #>                                                      
 #>                       Stage 1 Stage 2 Stage 3
-#> Information rate      0.333   0.667   1.000  
-#> Efficacy boundary (Z) 2.794   2.289   1.680  
-#>                                                                          
-#> Secondary trial:                                                         
-#> Group-sequential design with 3 stages                                    
-#> theta: 5, maximum information: 0.18                                      
-#> Overall power: 0.8004, overall significance level (1-sided): 0.1033      
-#> Drift parameter: 2.151, inflation factor: 1.043                          
-#> Expected information under H1: 0.14, Expected information under H0: 0.18 
-#>                                                                          
-#>                           Stage 1 Stage 2 Stage 3
-#> Information rate          0.334   0.666   1.000  
-#> Efficacy boundary (Z)     2.160   1.783   1.351  
-#> Cumulative rejection      0.1798  0.5057  0.8004 
-#> Cumulative alpha spent    0.0154  0.0450  0.1033 
-#> Efficacy boundary (theta) 8.683   5.081   3.142  
-#> Efficacy boundary (p)     0.0154  0.0373  0.0883 
-#> Information               0.06    0.12    0.18   
+#> Information rate      0.334   0.666   1.000  
+#> Efficacy boundary (Z) 3.706   2.513   1.993  
+#> Information           0.02    0.03    0.05   
+#>                                                                         
+#> Secondary trial:                                                        
+#> Group-sequential design with 2 stages                                   
+#> theta: 10, maximum information: 0.1                                     
+#> Overall power: 0.9, overall significance level (1-sided): 0.0378        
+#> Drift parameter: 3.227, inflation factor: 1.113                         
+#> Expected information under H1: 0.07, Expected information under H0: 0.1 
+#>                                                                         
+#>                           Stage 1 Stage 2
+#> Information rate          0.500   1.000  
+#> Efficacy boundary (Z)     1.988   2.018  
+#> Cumulative rejection      0.6157  0.9000 
+#> Cumulative alpha spent    0.0234  0.0378 
+#> Efficacy boundary (theta) 8.711   6.253  
+#> Efficacy boundary (p)     0.0234  0.0218 
+#> Information               0.05    0.10   
+#>                                                      
+#> Integrated trial:                                    
+#> Group-sequential design with 3 stages                
+#> Interim adaptation look: 1, z-statistic value: 0.914 
+#>                                                      
+#>                       Stage 1 Stage 2 Stage 3
+#> Information rate      0.132   0.566   1.000  
+#> Efficacy boundary (Z) 3.706   2.182   2.212  
+#> Information           0.02    0.07    0.12   
 
-# termination at the second look of the secondary trial
-L2 = 2
-delta2 = 6.86
-sigma2 = 21.77
-zL2 = delta2/sqrt(4/197*sigma2^2)
+INew <- des2$secondaryTrial$overallResults$information
+(nNew <- ceiling(INew * 4 * sigma^2))
+#> [1] 1042
+(nTotal <- nL + nNew)
+#> [1] 1200
 
-t2 = des2$secondaryTrial$byStageResults$informationRates[1:L2]
+# Monitoring the Integrated Trial
+s2 <- des2$secondaryTrial$byStageResults$informationRates
 
-# repeated confidence interval
-getADRCI(L = L, zL = zL,
-         IMax = n/(4*sigma1^2), kMax = 3,
-         informationRates = t,
-         alpha = 0.05, typeAlphaSpending = "sfHSD",
-         parameterAlphaSpending = -4,
-         L2 = L2, zL2 = zL2,
-         INew = n2/(4*sigma2^2),
-         MullerSchafer = TRUE,
-         informationRatesNew = t2,
-         typeAlphaSpendingNew = "sfHSD",
-         parameterAlphaSpendingNew = -2)
+Lc <- 2
+deltahatc <- 9.5
+sigmahatc <- 52.759
+L2 <- Lc - L
+nL2 <-  nNew * s2[L2]
+nc <- nL + nL2
+sedeltahatc <- sigmahatc * sqrt(4 / nc)
+zLc <- deltahatc / sedeltahatc
+zL2 <- (zLc * sqrt(nc) - zL * sqrt(nL)) / sqrt(nL2)
+
+getADRCI(
+  L = L, zL = zL, IMax = n / (4 * sigmahatc^2), kMax = 3,
+  informationRates = s1, alpha = 0.025, typeAlphaSpending = "sfOF",
+  Lc = Lc, zLc = zLc, INew = nNew / (4 * sigmahatc^2),
+  MullerSchafer = TRUE, informationRatesNew = s2,
+  typeAlphaSpendingNew = "sfP")
 #>       pvalue thetahat cilevel     lower    upper
-#> 1 0.02051599  4.28911     0.9 0.9048009 11.32133
+#> 1 0.01674046 10.05375    0.95 0.6302625 18.18085
 ```

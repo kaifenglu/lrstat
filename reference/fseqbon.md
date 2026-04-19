@@ -52,8 +52,8 @@ fseqbon(
 - parameterAlphaSpending:
 
   The vector of parameter values for the alpha spending functions for
-  the hypotheses. Each element corresponds to the value of rho for
-  "sfKD" or gamma for "sfHSD". Defaults to missing if not provided.
+  the hypotheses. Each element corresponds to the value of \\\rho\\ for
+  "sfKD" or \\\gamma\\ for "sfHSD". Defaults to missing if not provided.
 
 - maxInformation:
 

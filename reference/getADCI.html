@@ -15,7 +15,7 @@ confidence interval after the end of an adaptive trial."><meta property="og:imag
 
     <a class="navbar-brand me-2" href="../index.html">lrstat</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,10 +61,10 @@ confidence interval after the end of an adaptive trial.</p>
 <span>  typeAlphaSpending <span class="op">=</span> <span class="st">"sfOF"</span>,</span>
 <span>  parameterAlphaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  spendingTime <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
-<span>  L2 <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
-<span>  zL2 <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  Lc <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
+<span>  zLc <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  INew <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
-<span>  MullerSchafer <span class="op">=</span> <span class="fl">0L</span>,</span>
+<span>  MullerSchafer <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  informationRatesNew <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  efficacyStoppingNew <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
 <span>  typeAlphaSpendingNew <span class="op">=</span> <span class="st">"sfOF"</span>,</span>
@@ -130,8 +130,8 @@ Defaults to "sfOF".</p></dd>
 
 <dt id="arg-parameteralphaspending">parameterAlphaSpending<a class="anchor" aria-label="anchor" href="#arg-parameteralphaspending"></a></dt>
 <dd><p>The parameter value of alpha spending
-for the primary trial. Corresponds to Delta for "WT", rho for "sfKD",
-and gamma for "sfHSD".</p></dd>
+for the primary trial. Corresponds to \(\Delta\) for "WT",
+\(\rho\) for "sfKD", and \(\gamma\) for "sfHSD".</p></dd>
 
 
 <dt id="arg-spendingtime">spendingTime<a class="anchor" aria-label="anchor" href="#arg-spendingtime"></a></dt>
@@ -140,13 +140,13 @@ Defaults to missing, in which case, it is the same as
 <code>informationRates</code>.</p></dd>
 
 
-<dt id="arg-l-">L2<a class="anchor" aria-label="anchor" href="#arg-l-"></a></dt>
-<dd><p>The termination look of the secondary trial.</p></dd>
+<dt id="arg-lc">Lc<a class="anchor" aria-label="anchor" href="#arg-lc"></a></dt>
+<dd><p>The termination look of the integrated trial.</p></dd>
 
 
-<dt id="arg-zl-">zL2<a class="anchor" aria-label="anchor" href="#arg-zl-"></a></dt>
+<dt id="arg-zlc">zLc<a class="anchor" aria-label="anchor" href="#arg-zlc"></a></dt>
 <dd><p>The z-test statistic at the termination look of the
-secondary trial.</p></dd>
+integrated trial.</p></dd>
 
 
 <dt id="arg-inew">INew<a class="anchor" aria-label="anchor" href="#arg-inew"></a></dt>
@@ -185,8 +185,8 @@ Defaults to "sfOF".</p></dd>
 
 <dt id="arg-parameteralphaspendingnew">parameterAlphaSpendingNew<a class="anchor" aria-label="anchor" href="#arg-parameteralphaspendingnew"></a></dt>
 <dd><p>The parameter value of alpha spending
-for the secondary trial. Corresponds to Delta for "WT",
-rho for "sfKD", and gamma for "sfHSD".</p></dd>
+for the secondary trial. Corresponds to \(\Delta\) for "WT",
+\(\rho\) for "sfKD", and \(\gamma\) for "sfHSD".</p></dd>
 
 
 <dt id="arg-spendingtimenew">spendingTimeNew<a class="anchor" aria-label="anchor" href="#arg-spendingtimenew"></a></dt>
@@ -220,110 +220,128 @@ Stat Med. 2013;32(23):3991-4005.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># original group sequential design with 90% power to detect delta = 6</span></span></span>
-<span class="r-in"><span><span class="va">delta</span> <span class="op">=</span> <span class="fl">6</span></span></span>
-<span class="r-in"><span><span class="va">sigma</span> <span class="op">=</span> <span class="fl">17</span></span></span>
-<span class="r-in"><span><span class="va">n</span> <span class="op">=</span> <span class="fl">282</span></span></span>
-<span class="r-in"><span><span class="op">(</span><span class="va">des1</span> <span class="op">=</span> <span class="fu"><a href="getDesign.html">getDesign</a></span><span class="op">(</span>IMax <span class="op">=</span> <span class="va">n</span><span class="op">/</span><span class="op">(</span><span class="fl">4</span><span class="op">*</span><span class="va">sigma</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>, theta <span class="op">=</span> <span class="va">delta</span>, kMax <span class="op">=</span> <span class="fl">3</span>,</span></span>
-<span class="r-in"><span>                  alpha <span class="op">=</span> <span class="fl">0.05</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"sfHSD"</span>,</span></span>
-<span class="r-in"><span>                  parameterAlphaSpending <span class="op">=</span> <span class="op">-</span><span class="fl">4</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Group-sequential design with 3 stages                                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> theta: 6, maximum information: 0.24                                      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9029, overall alpha (1-sided): 0.05                     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Drift parameter: 2.963, inflation factor: 1.014                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Expected information under H1: 0.19, expected information under H0: 0.24 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: HSD(gamma = -4), beta spending: None                     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                           Stage 1 Stage 2 Stage 3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Information rate          0.333   0.667   1.000  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z)     2.794   2.289   1.680  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative rejection      0.1395  0.5588  0.9029 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative alpha spent    0.0026  0.0125  0.0500 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (theta) 9.797   5.676   3.401  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (p)     0.0026  0.0110  0.0465 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Information               0.08    0.16    0.24   </span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># two-arm randomized clinical trial with a normally distributed endpoint</span></span></span>
+<span class="r-in"><span><span class="co"># 90% power to detect mean difference of 15 with a standard deviation of 50</span></span></span>
+<span class="r-in"><span><span class="co"># Design the Stage I Trial with 3 looks and Lan-DeMets O'Brien-Fleming type</span></span></span>
+<span class="r-in"><span><span class="co"># spending function</span></span></span>
+<span class="r-in"><span><span class="va">delta</span> <span class="op">&lt;-</span> <span class="fl">15</span></span></span>
+<span class="r-in"><span><span class="va">sigma</span> <span class="op">&lt;-</span> <span class="fl">50</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># interim look results</span></span></span>
-<span class="r-in"><span><span class="va">L</span> <span class="op">=</span> <span class="fl">1</span></span></span>
-<span class="r-in"><span><span class="va">n1</span> <span class="op">=</span> <span class="va">n</span><span class="op">/</span><span class="fl">3</span></span></span>
-<span class="r-in"><span><span class="va">delta1</span> <span class="op">=</span> <span class="fl">4.5</span></span></span>
-<span class="r-in"><span><span class="va">sigma1</span> <span class="op">=</span> <span class="fl">20</span></span></span>
-<span class="r-in"><span><span class="va">zL</span> <span class="op">=</span> <span class="va">delta1</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">4</span><span class="op">/</span><span class="va">n1</span><span class="op">*</span><span class="va">sigma1</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">(</span><span class="va">des1</span> <span class="op">&lt;-</span> <span class="fu"><a href="getDesignMeanDiff.html">getDesignMeanDiff</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  beta <span class="op">=</span> <span class="fl">0.1</span>, meanDiff <span class="op">=</span> <span class="va">delta</span>, stDev <span class="op">=</span> <span class="va">sigma</span>,</span></span>
+<span class="r-in"><span>  kMax <span class="op">=</span> <span class="fl">3</span>, alpha <span class="op">=</span> <span class="fl">0.025</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"sfOF"</span></span></span>
+<span class="r-in"><span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Group-sequential design with 3 stages for two-sample mean difference              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean difference under H0: 0, mean difference under H1: 15, standard deviation: 50 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9003, overall alpha (1-sided): 0.025                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Drift parameter: 3.262, inflation factor: 1.012                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Maximum information: 0.05, expected under H1: 0.04, expected under H0: 0.05       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Maximum # subjects: 473, expected under H1: 379.2, expected under H0: 472         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Allocation ratio: 1                                                               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: Lan-DeMets O'Brien-Fleming, beta spending: None                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                               Stage 1 Stage 2 Stage 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Information rate              0.334   0.666   1.000  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z)         3.706   2.513   1.993  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative rejection          0.0343  0.5596  0.9003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative alpha spent        0.0001  0.0060  0.0250 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of subjects            158.0   315.0   473.0  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (mean diff) 29.484  14.159  9.163  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (p)         0.0001  0.0060  0.0231 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Information                   0.02    0.03    0.05   </span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">t</span> <span class="op">=</span> <span class="va">des1</span><span class="op">$</span><span class="va">byStageResults</span><span class="op">$</span><span class="va">informationRates</span></span></span>
+<span class="r-in"><span><span class="va">s1</span> <span class="op">&lt;-</span> <span class="va">des1</span><span class="op">$</span><span class="va">byStageResults</span><span class="op">$</span><span class="va">informationRates</span></span></span>
+<span class="r-in"><span><span class="va">b1</span> <span class="op">&lt;-</span> <span class="va">des1</span><span class="op">$</span><span class="va">byStageResults</span><span class="op">$</span><span class="va">efficacyBounds</span></span></span>
+<span class="r-in"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="va">des1</span><span class="op">$</span><span class="va">overallResults</span><span class="op">$</span><span class="va">numberOfSubjects</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Muller &amp; Schafer (2001) method to design the secondary trial:</span></span></span>
-<span class="r-in"><span><span class="va">des2</span> <span class="op">=</span> <span class="fu"><a href="adaptDesign.html">adaptDesign</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  betaNew <span class="op">=</span> <span class="fl">0.2</span>, L <span class="op">=</span> <span class="va">L</span>, zL <span class="op">=</span> <span class="va">zL</span>, theta <span class="op">=</span> <span class="fl">5</span>,</span></span>
-<span class="r-in"><span>  kMax <span class="op">=</span> <span class="fl">3</span>, informationRates <span class="op">=</span> <span class="va">t</span>,</span></span>
-<span class="r-in"><span>  alpha <span class="op">=</span> <span class="fl">0.05</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"sfHSD"</span>,</span></span>
-<span class="r-in"><span>  parameterAlphaSpending <span class="op">=</span> <span class="op">-</span><span class="fl">4</span>,</span></span>
-<span class="r-in"><span>  MullerSchafer <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>  kNew <span class="op">=</span> <span class="fl">3</span>, typeAlphaSpendingNew <span class="op">=</span> <span class="st">"sfHSD"</span>,</span></span>
-<span class="r-in"><span>  parameterAlphaSpendingNew <span class="op">=</span> <span class="op">-</span><span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Monitoring the Stage I Trial</span></span></span>
+<span class="r-in"><span><span class="va">L</span> <span class="op">&lt;-</span> <span class="fl">1</span></span></span>
+<span class="r-in"><span><span class="va">nL</span> <span class="op">&lt;-</span> <span class="va">des1</span><span class="op">$</span><span class="va">byStageResults</span><span class="op">$</span><span class="va">numberOfSubjects</span><span class="op">[</span><span class="va">L</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">deltahat</span> <span class="op">&lt;-</span> <span class="fl">8</span></span></span>
+<span class="r-in"><span><span class="va">sigmahat</span> <span class="op">&lt;-</span> <span class="fl">55</span></span></span>
+<span class="r-in"><span><span class="va">sedeltahat</span> <span class="op">&lt;-</span> <span class="va">sigmahat</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span> <span class="fl">4</span> <span class="op">/</span> <span class="va">nL</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">zL</span> <span class="op">&lt;-</span> <span class="va">deltahat</span> <span class="op">/</span> <span class="va">sedeltahat</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">n2</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">ceiling</a></span><span class="op">(</span><span class="va">des2</span><span class="op">$</span><span class="va">secondaryTrial</span><span class="op">$</span><span class="va">overallResults</span><span class="op">$</span><span class="va">information</span><span class="op">*</span><span class="fl">4</span><span class="op">*</span><span class="fl">20</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ns</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">n2</span><span class="op">*</span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">)</span><span class="op">/</span><span class="fl">3</span><span class="op">)</span></span></span>
-<span class="r-in"><span> <span class="op">(</span><span class="va">des2</span> <span class="op">=</span> <span class="fu"><a href="adaptDesign.html">adaptDesign</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>   INew <span class="op">=</span> <span class="va">n2</span><span class="op">/</span><span class="op">(</span><span class="fl">4</span><span class="op">*</span><span class="fl">20</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>, L <span class="op">=</span> <span class="va">L</span>, zL <span class="op">=</span> <span class="va">zL</span>, theta <span class="op">=</span> <span class="fl">5</span>,</span></span>
-<span class="r-in"><span>   kMax <span class="op">=</span> <span class="fl">3</span>, informationRates <span class="op">=</span> <span class="va">t</span>,</span></span>
-<span class="r-in"><span>   alpha <span class="op">=</span> <span class="fl">0.05</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"sfHSD"</span>,</span></span>
-<span class="r-in"><span>   parameterAlphaSpending <span class="op">=</span> <span class="op">-</span><span class="fl">4</span>,</span></span>
-<span class="r-in"><span>   MullerSchafer <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>   kNew <span class="op">=</span> <span class="fl">3</span>, informationRatesNew <span class="op">=</span> <span class="va">ns</span><span class="op">/</span><span class="va">n2</span>,</span></span>
-<span class="r-in"><span>   typeAlphaSpendingNew <span class="op">=</span> <span class="st">"sfHSD"</span>,</span></span>
-<span class="r-in"><span>   parameterAlphaSpendingNew <span class="op">=</span> <span class="op">-</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Making an Adaptive Change: Stage I to Stage II</span></span></span>
+<span class="r-in"><span><span class="co"># revised clinically meaningful difference downward to 10 power the study</span></span></span>
+<span class="r-in"><span><span class="co"># retain the standard deviation at the design stage</span></span></span>
+<span class="r-in"><span><span class="co"># Muller &amp; Schafer (2001) method to design the secondary trial</span></span></span>
+<span class="r-in"><span><span class="co"># with 2 looks and Lan-DeMets Pocock type spending function</span></span></span>
+<span class="r-in"><span><span class="co"># re-estimate sample size to reach 90% conditional power</span></span></span>
+<span class="r-in"><span><span class="va">deltaNew</span> <span class="op">&lt;-</span> <span class="fl">10</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="op">(</span><span class="va">des2</span> <span class="op">&lt;-</span> <span class="fu"><a href="adaptDesign.html">adaptDesign</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  betaNew <span class="op">=</span> <span class="fl">0.1</span>, L <span class="op">=</span> <span class="va">L</span>, zL <span class="op">=</span> <span class="va">zL</span>, theta <span class="op">=</span> <span class="va">deltaNew</span>,</span></span>
+<span class="r-in"><span>  IMax <span class="op">=</span> <span class="va">n</span> <span class="op">/</span> <span class="op">(</span><span class="fl">4</span> <span class="op">*</span> <span class="va">sigma</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>, kMax <span class="op">=</span> <span class="fl">3</span>, informationRates <span class="op">=</span> <span class="va">s1</span>,</span></span>
+<span class="r-in"><span>  alpha <span class="op">=</span> <span class="fl">0.025</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"sfOF"</span>,</span></span>
+<span class="r-in"><span>  MullerSchafer <span class="op">=</span> <span class="cn">TRUE</span>, kNew <span class="op">=</span> <span class="fl">2</span>, typeAlphaSpendingNew <span class="op">=</span> <span class="st">"sfP"</span></span></span>
+<span class="r-in"><span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                      </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Primary trial:                                       </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Group-sequential design with 3 stages                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Interim adaptation look: 1, z-statistic value: 1.091 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Conditional type I error: 0.1033                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Interim adaptation look: 1, z-statistic value: 0.914 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Conditional type I error: 0.0378                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Conditional power: 0.496, predictive power: 0.3877   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Muller &amp; Schafer method for secondary trial: TRUE    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                      </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                       Stage 1 Stage 2 Stage 3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Information rate      0.333   0.667   1.000  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z) 2.794   2.289   1.680  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Secondary trial:                                                         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Group-sequential design with 3 stages                                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> theta: 5, maximum information: 0.18                                      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.8004, overall significance level (1-sided): 0.1033      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Drift parameter: 2.151, inflation factor: 1.043                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Expected information under H1: 0.14, Expected information under H0: 0.18 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                           Stage 1 Stage 2 Stage 3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Information rate          0.334   0.666   1.000  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z)     2.160   1.783   1.351  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative rejection      0.1798  0.5057  0.8004 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative alpha spent    0.0154  0.0450  0.1033 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (theta) 8.683   5.081   3.142  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (p)     0.0154  0.0373  0.0883 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Information               0.06    0.12    0.18   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Information rate      0.334   0.666   1.000  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z) 3.706   2.513   1.993  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Information           0.02    0.03    0.05   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Secondary trial:                                                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Group-sequential design with 2 stages                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> theta: 10, maximum information: 0.1                                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9, overall significance level (1-sided): 0.0378        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Drift parameter: 3.227, inflation factor: 1.113                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Expected information under H1: 0.07, Expected information under H0: 0.1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                           Stage 1 Stage 2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Information rate          0.500   1.000  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z)     1.988   2.018  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative rejection      0.6157  0.9000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative alpha spent    0.0234  0.0378 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (theta) 8.711   6.253  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (p)     0.0234  0.0218 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Information               0.05    0.10   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Integrated trial:                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Group-sequential design with 3 stages                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Interim adaptation look: 1, z-statistic value: 0.914 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       Stage 1 Stage 2 Stage 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Information rate      0.132   0.566   1.000  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z) 3.706   2.182   2.212  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Information           0.02    0.07    0.12   </span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># termination at the second look of the secondary trial</span></span></span>
-<span class="r-in"><span><span class="va">L2</span> <span class="op">=</span> <span class="fl">2</span></span></span>
-<span class="r-in"><span><span class="va">delta2</span> <span class="op">=</span> <span class="fl">6.86</span></span></span>
-<span class="r-in"><span><span class="va">sigma2</span> <span class="op">=</span> <span class="fl">21.77</span></span></span>
-<span class="r-in"><span><span class="va">zL2</span> <span class="op">=</span> <span class="va">delta2</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">4</span><span class="op">/</span><span class="fl">197</span><span class="op">*</span><span class="va">sigma2</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">INew</span> <span class="op">&lt;-</span> <span class="va">des2</span><span class="op">$</span><span class="va">secondaryTrial</span><span class="op">$</span><span class="va">overallResults</span><span class="op">$</span><span class="va">information</span></span></span>
+<span class="r-in"><span><span class="op">(</span><span class="va">nNew</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">ceiling</a></span><span class="op">(</span><span class="va">INew</span> <span class="op">*</span> <span class="fl">4</span> <span class="op">*</span> <span class="va">sigma</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1042</span>
+<span class="r-in"><span><span class="op">(</span><span class="va">nTotal</span> <span class="op">&lt;-</span> <span class="va">nL</span> <span class="op">+</span> <span class="va">nNew</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1200</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">t2</span> <span class="op">=</span> <span class="va">des2</span><span class="op">$</span><span class="va">secondaryTrial</span><span class="op">$</span><span class="va">byStageResults</span><span class="op">$</span><span class="va">informationRates</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="va">L2</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="co"># Monitoring the Integrated Trial</span></span></span>
+<span class="r-in"><span><span class="va">s2</span> <span class="op">&lt;-</span> <span class="va">des2</span><span class="op">$</span><span class="va">secondaryTrial</span><span class="op">$</span><span class="va">byStageResults</span><span class="op">$</span><span class="va">informationRates</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># confidence interval</span></span></span>
-<span class="r-in"><span><span class="fu">getADCI</span><span class="op">(</span>L <span class="op">=</span> <span class="va">L</span>, zL <span class="op">=</span> <span class="va">zL</span>,</span></span>
-<span class="r-in"><span>        IMax <span class="op">=</span> <span class="va">n</span><span class="op">/</span><span class="op">(</span><span class="fl">4</span><span class="op">*</span><span class="va">sigma1</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>, kMax <span class="op">=</span> <span class="fl">3</span>,</span></span>
-<span class="r-in"><span>        informationRates <span class="op">=</span> <span class="va">t</span>,</span></span>
-<span class="r-in"><span>        alpha <span class="op">=</span> <span class="fl">0.05</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"sfHSD"</span>,</span></span>
-<span class="r-in"><span>        parameterAlphaSpending <span class="op">=</span> <span class="op">-</span><span class="fl">4</span>,</span></span>
-<span class="r-in"><span>        L2 <span class="op">=</span> <span class="va">L2</span>, zL2 <span class="op">=</span> <span class="va">zL2</span>,</span></span>
-<span class="r-in"><span>        INew <span class="op">=</span> <span class="va">n2</span><span class="op">/</span><span class="op">(</span><span class="fl">4</span><span class="op">*</span><span class="va">sigma2</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>        MullerSchafer <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>        informationRatesNew <span class="op">=</span> <span class="va">t2</span>,</span></span>
-<span class="r-in"><span>        typeAlphaSpendingNew <span class="op">=</span> <span class="st">"sfHSD"</span>,</span></span>
-<span class="r-in"><span>        parameterAlphaSpendingNew <span class="op">=</span> <span class="op">-</span><span class="fl">2</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      pvalue thetahat cilevel    lower    upper</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.0161374 5.676008     0.9 1.357001 9.863836</span>
+<span class="r-in"><span><span class="va">Lc</span> <span class="op">&lt;-</span> <span class="fl">2</span></span></span>
+<span class="r-in"><span><span class="va">deltahatc</span> <span class="op">&lt;-</span> <span class="fl">9.5</span></span></span>
+<span class="r-in"><span><span class="va">sigmahatc</span> <span class="op">&lt;-</span> <span class="fl">52.759</span></span></span>
+<span class="r-in"><span><span class="va">L2</span> <span class="op">&lt;-</span> <span class="va">Lc</span> <span class="op">-</span> <span class="va">L</span></span></span>
+<span class="r-in"><span><span class="va">nL2</span> <span class="op">&lt;-</span>  <span class="va">nNew</span> <span class="op">*</span> <span class="va">s2</span><span class="op">[</span><span class="va">L2</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">nc</span> <span class="op">&lt;-</span> <span class="va">nL</span> <span class="op">+</span> <span class="va">nL2</span></span></span>
+<span class="r-in"><span><span class="va">sedeltahatc</span> <span class="op">&lt;-</span> <span class="va">sigmahatc</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">4</span> <span class="op">/</span> <span class="va">nc</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">zLc</span> <span class="op">&lt;-</span> <span class="va">deltahatc</span> <span class="op">/</span> <span class="va">sedeltahatc</span></span></span>
+<span class="r-in"><span><span class="va">zL2</span> <span class="op">&lt;-</span> <span class="op">(</span><span class="va">zLc</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">nc</span><span class="op">)</span> <span class="op">-</span> <span class="va">zL</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">nL</span><span class="op">)</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">nL2</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">getADCI</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  L <span class="op">=</span> <span class="va">L</span>, zL <span class="op">=</span> <span class="va">zL</span>, IMax <span class="op">=</span> <span class="va">n</span> <span class="op">/</span> <span class="op">(</span><span class="fl">4</span> <span class="op">*</span> <span class="va">sigmahatc</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>, kMax <span class="op">=</span> <span class="fl">3</span>,</span></span>
+<span class="r-in"><span>  informationRates <span class="op">=</span> <span class="va">s1</span>, alpha <span class="op">=</span> <span class="fl">0.025</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"sfOF"</span>,</span></span>
+<span class="r-in"><span>  Lc <span class="op">=</span> <span class="va">Lc</span>, zLc <span class="op">=</span> <span class="va">zLc</span>, INew <span class="op">=</span> <span class="va">nNew</span> <span class="op">/</span> <span class="op">(</span><span class="fl">4</span> <span class="op">*</span> <span class="va">sigmahatc</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  MullerSchafer <span class="op">=</span> <span class="cn">TRUE</span>, informationRatesNew <span class="op">=</span> <span class="va">s2</span>,</span></span>
+<span class="r-in"><span>  typeAlphaSpendingNew <span class="op">=</span> <span class="st">"sfP"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       pvalue thetahat cilevel    lower    upper</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.01237658 9.349566    0.95 1.216479 17.36533</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

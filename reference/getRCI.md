@@ -62,8 +62,8 @@ getRCI(
 
 - parameterAlphaSpending:
 
-  The parameter value of alpha spending. Corresponds to Delta for "WT",
-  rho for "sfKD", and gamma for "sfHSD".
+  The parameter value of alpha spending. Corresponds to \\\Delta\\ for
+  "WT", \\\rho\\ for "sfKD", and \\\gamma\\ for "sfHSD".
 
 - spendingTime:
 
@@ -133,5 +133,5 @@ getRCI(L = L, zL = zL, IMax = n/(4*sigma1^2),
        informationRates = c(1/3, 2/3), alpha = 0.05,
        typeAlphaSpending = "sfHSD", parameterAlphaSpending = -4)
 #>      pvalue thetahat cilevel    lower    upper
-#> 1 0.0374177 3.540495     0.9 0.322283 13.67772
+#> 1 0.0374177        7     0.9 0.322283 13.67772
 ```

@@ -1,12 +1,12 @@
-# Print Two-Stage Seamless Sequential Design
+# Print Multi-Arm Multi-Stage Design
 
-Prints the stopping boundaries and power for two-stage seamless
-sequential design.
+Prints the stopping boundaries and power for multi-arm multi-stage
+design.
 
 ## Usage
 
 ``` r
-# S3 method for class 'tsssd'
+# S3 method for class 'mams'
 print(x, ...)
 ```
 

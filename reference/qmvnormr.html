@@ -17,7 +17,7 @@ normal random vector \(X\)."><meta property="og:image" content="https://kaifengl
 
     <a class="navbar-brand me-2" href="../index.html">lrstat</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,8 +56,6 @@ normal random vector \(X\).</p>
 <span>  <span class="va">p</span>,</span>
 <span>  mean <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">sigma</span>,</span>
-<span>  pivot <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  fast <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  n0 <span class="op">=</span> <span class="fl">1024</span>,</span>
 <span>  n_max <span class="op">=</span> <span class="fl">16384</span>,</span>
 <span>  R <span class="op">=</span> <span class="fl">8</span>,</span>
@@ -84,16 +82,6 @@ appropriate length is used.</p></dd>
 
 <dt id="arg-sigma">sigma<a class="anchor" aria-label="anchor" href="#arg-sigma"></a></dt>
 <dd><p>The covariance (or correlation) matrix of the distribution.</p></dd>
-
-
-<dt id="arg-pivot">pivot<a class="anchor" aria-label="anchor" href="#arg-pivot"></a></dt>
-<dd><p>Logical; if <code>TRUE</code>, applies an initial pivoting step
-to reorder the integration variables for improved efficiency.</p></dd>
-
-
-<dt id="arg-fast">fast<a class="anchor" aria-label="anchor" href="#arg-fast"></a></dt>
-<dd><p>Logical; if <code>TRUE</code>, uses a fast approximation of the
-univariate normal CDF and quantile functions.</p></dd>
 
 
 <dt id="arg-n-">n0<a class="anchor" aria-label="anchor" href="#arg-n-"></a></dt>

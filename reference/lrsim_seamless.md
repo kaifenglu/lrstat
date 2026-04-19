@@ -8,7 +8,7 @@ pre-specified calendar times.
 ## Usage
 
 ``` r
-lrsim_tsssd(
+lrsim_seamless(
   M = 2,
   K = 1,
   criticalValues = NA,
@@ -168,7 +168,7 @@ lrsim_tsssd(
 
 ## Value
 
-An S3 object of class `"lrsim_tsssd"` with these components:
+An S3 object of class `"lrsim_seamless"` with these components:
 
 - `overview`: A list summarizing trial-level results and settings:
 
@@ -255,7 +255,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ## Examples
 
 ``` r
-(sim1 = lrsim_tsssd(
+(sim1 = lrsim_seamless(
   M = 2,
   K = 2,
   criticalValues = c(3.852050, 2.723811, 2.223982),
