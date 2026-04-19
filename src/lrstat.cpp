@@ -1092,7 +1092,7 @@ DataFrameCpp getDurationFromNeventscpp(
     const std::vector<double>& gamma2,
     const double followupTime,
     const bool fixedFollowup,
-    const int npoints = 23) {
+    const size_t npoints = 23) {
 
   // Input validation
   if (std::isnan(nevents)) throw std::invalid_argument("nevents must be provided");
@@ -1212,18 +1212,17 @@ DataFrameCpp getDurationFromNeventscpp(
   double t1 = brent(f2, t0, upper, 1e-6);
 
   // 3) Prepare grid of accrual durations ta (npoints) between t0 and t1
-  size_t npts = static_cast<size_t>(npoints);
-  std::vector<double> ta(npts), subjects(npts), ts(npts), tf(npts);
-  double dt = (t1 - t0) / static_cast<double>(npts - 1);
-  for (size_t i = 0; i < npts; ++i) {
+  std::vector<double> ta(npoints), subjects(npoints), ts(npoints), tf(npoints);
+  double dt = (t1 - t0) / static_cast<double>(npoints - 1);
+  for (size_t i = 0; i < npoints; ++i) {
     ta[i] = t0 + i * dt;
     subjects[i] = accrual1(ta[i], accrualTime, accrualIntensity, 1000.0);
   }
 
-  for (size_t i = 0; i < npts; ++i) {
+  for (size_t i = 0; i < npoints; ++i) {
     if (i == 0) {
       ts[i] = ta[i] + Tf1;
-    } else if (i == npts - 1) {
+    } else if (i == npoints - 1) {
       ts[i] = ta[i];
     } else {
       ts[i] = caltime1cpp(nevents, allocationRatioPlanned,
@@ -1238,7 +1237,7 @@ DataFrameCpp getDurationFromNeventscpp(
   // Build DataFrameCpp result
   DataFrameCpp out;
 
-  std::vector<double> nevents_vec(npts, nevents);
+  std::vector<double> nevents_vec(npoints, nevents);
   out.push_back(nevents_vec, "nevents");
   out.push_back(fixedFollowup, "fixedFollowup");
   out.push_back(ta, "accrualDuration");
@@ -1330,7 +1329,7 @@ Rcpp::DataFrame getDurationFromNevents(
   auto df = getDurationFromNeventscpp(
     nevents, allocationRatioPlanned, accrualT, accrualInt,
     pwSurvT, stratumFrac, lam1, lam2, gam1, gam2,
-    followupTime, fixedFollowup, npoints
+    followupTime, fixedFollowup, static_cast<size_t>(npoints)
   );
 
   return Rcpp::wrap(df);
@@ -1338,7 +1337,7 @@ Rcpp::DataFrame getDurationFromNevents(
 
 
 ListCpp lrpowercpp(
-    const int kMax,
+    const size_t kMax,
     const std::vector<double>& informationRates,
     const std::vector<unsigned char>& efficacyStopping,
     const std::vector<unsigned char>& futilityStopping,
@@ -1373,52 +1372,51 @@ ListCpp lrpowercpp(
   if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1))
     throw std::invalid_argument("alpha must lie in [0.00001, 1)");
   if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
-  size_t K = static_cast<size_t>(kMax);
 
   // informationRates: default to (1:kMax)/kMax if missing
-  std::vector<double> infoRates(K);
+  std::vector<double> infoRates(kMax);
   if (none_na(informationRates)) {
-    if (informationRates.size() != K)
+    if (informationRates.size() != kMax)
       throw std::invalid_argument("Invalid length for informationRates");
     if (informationRates[0] <= 0.0)
       throw std::invalid_argument("informationRates must be positive");
     if (any_nonincreasing(informationRates))
       throw std::invalid_argument("informationRates must be increasing");
-    if (informationRates[K-1] != 1.0)
+    if (informationRates[kMax-1] != 1.0)
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy
   } else {
-    for (size_t i = 0; i < K; ++i)
-      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(K);
+    for (size_t i = 0; i < kMax; ++i)
+      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(kMax);
   }
 
   // effStopping: default to all 1s if missing
   std::vector<unsigned char> effStopping;
   if (none_na(efficacyStopping)) {
-    if (efficacyStopping.size() != K)
+    if (efficacyStopping.size() != kMax)
       throw std::invalid_argument("Invalid length for efficacyStopping");
-    if (efficacyStopping[K-1] != 1)
+    if (efficacyStopping[kMax-1] != 1)
       throw std::invalid_argument("efficacyStopping must end with 1");
     effStopping = efficacyStopping; // copy
   } else {
-    effStopping.assign(K, 1);
+    effStopping.assign(kMax, 1);
   }
 
   // futStopping: default to all 1s if missing
   std::vector<unsigned char> futStopping;
   if (none_na(futilityStopping)) {
-    if (futilityStopping.size() != K)
+    if (futilityStopping.size() != kMax)
       throw std::invalid_argument("Invalid length for futilityStopping");
-    if (futilityStopping[K-1] != 1)
+    if (futilityStopping[kMax-1] != 1)
       throw std::invalid_argument("futilityStopping must end with 1");
     futStopping = futilityStopping; // copy
   } else {
-    futStopping.assign(K, 1);
+    futStopping.assign(kMax, 1);
   }
 
   bool missingCriticalValues = !none_na(criticalValues);
   bool missingFutilityBounds = !none_na(futilityBounds);
-  if (!missingCriticalValues && criticalValues.size() != K) {
+  if (!missingCriticalValues && criticalValues.size() != kMax) {
     throw std::invalid_argument("Invalid length for criticalValues");
   }
   if (missingCriticalValues && std::isnan(alpha)) {
@@ -1445,27 +1443,28 @@ ListCpp lrpowercpp(
   if (missingCriticalValues && asf == "user") {
     if (!none_na(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be specified");
-    if (userAlphaSpending.size() != K)
+    if (userAlphaSpending.size() != kMax)
       throw std::invalid_argument("Invalid length of userAlphaSpending");
     if (userAlphaSpending[0] < 0.0)
       throw std::invalid_argument("userAlphaSpending must be nonnegative");
     if (any_nonincreasing(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be nondecreasing");
-    if (userAlphaSpending[K-1] != alpha)
+    if (userAlphaSpending[kMax-1] != alpha)
       throw std::invalid_argument("userAlphaSpending must end with specified alpha");
   }
   if (!missingFutilityBounds) {
-    if (!(futilityBounds.size() == K - 1 || futilityBounds.size() == K)) {
+    if (!(futilityBounds.size() == kMax - 1 || futilityBounds.size() == kMax)) {
       throw std::invalid_argument("Invalid length for futilityBounds");
     }
   }
   if (!missingCriticalValues && !missingFutilityBounds) {
-    for (size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < kMax - 1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         throw std::invalid_argument("futilityBounds must lie below criticalValues");
       }
     }
-    if (futilityBounds.size() == K && futilityBounds[K-1] != criticalValues[K-1]) {
+    if (futilityBounds.size() == kMax &&
+        futilityBounds[kMax-1] != criticalValues[kMax-1]) {
       throw std::invalid_argument(
           "futilityBounds must meet criticalValues at the final look");
     }
@@ -1548,13 +1547,13 @@ ListCpp lrpowercpp(
 
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
-    if (spendingTime.size() != K)
+    if (spendingTime.size() != kMax)
       throw std::invalid_argument("Invalid length for spendingTime");
     if (spendingTime[0] <= 0.0)
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[K-1] != 1.0)
+    if (spendingTime[kMax-1] != 1.0)
       throw std::invalid_argument("spendingTime must end with 1");
     spendTime = spendingTime; // copy
   } else {
@@ -1605,34 +1604,34 @@ ListCpp lrpowercpp(
   }
 
   // --- Efficacy boundaries ---
-  std::vector<double> l(K, -6.0), zero(K, 0.0);
+  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
     bool haybittle = false;
-    if (K > 1 && criticalValues.size() == K) {
+    if (kMax > 1 && criticalValues.size() == kMax) {
       bool hasNaN = false;
-      for (size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < kMax - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
-      if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
+      if (!hasNaN && std::isnan(criticalValues[kMax-1])) haybittle = true;
     }
 
     if (haybittle) { // Haybittle & Peto
-      std::vector<double> u(K);
-      for (size_t i = 0; i < K - 1; ++i) {
+      std::vector<double> u(kMax);
+      for (size_t i = 0; i < kMax - 1; ++i) {
         u[i] = criticalValues[i];
         if (!effStopping[i]) u[i] = 6.0;
       }
 
       auto f = [&](double aval)->double {
-        u[K-1] = aval;
+        u[kMax-1] = aval;
         ListCpp probs = exitprobcpp(u, l, zero, infoRates);
         auto v = probs.get<std::vector<double>>("exitProbUpper");
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
       };
 
-      critValues[K-1] = brent(f, -5.0, 6.0, 1e-6);
+      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
     } else {
       critValues = getBoundcpp(kMax, infoRates, alpha, asf,
                                parameterAlphaSpending, userAlphaSpending,
@@ -1642,19 +1641,19 @@ ListCpp lrpowercpp(
 
   ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
   auto v = probs.get<std::vector<double>>("exitProbUpper");
-  std::vector<double> cumAlphaSpent(K);
+  std::vector<double> cumAlphaSpent(kMax);
   std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
   double alpha1 = missingCriticalValues ? alpha :
     std::round(cumAlphaSpent.back() * 1e6) / 1e6;
 
   // --- Futility boundaries ---
   std::vector<double> futBounds = futilityBounds;
-  if (K > 1) {
+  if (kMax > 1) {
     if (missingFutilityBounds && bsf == "none") {
-      futBounds = std::vector<double>(K, -6.0);
-      futBounds[K-1] = critValues[K-1];
-    } else if (!missingFutilityBounds && futBounds.size() == K-1) {
-      futBounds.push_back(critValues[K-1]);
+      futBounds = std::vector<double>(kMax, -6.0);
+      futBounds[kMax-1] = critValues[kMax-1];
+    } else if (!missingFutilityBounds && futBounds.size() == kMax-1) {
+      futBounds.push_back(critValues[kMax-1]);
     }
   } else {
     if (missingFutilityBounds) {
@@ -1669,10 +1668,10 @@ ListCpp lrpowercpp(
   if (!fixedFollowup || std::isnan(studyDuration))
     studyDuration1 = accrualDuration + followupTime;
 
-  std::vector<double> time(K), nsubjects(K), nsubjects1(K), nsubjects2(K);
-  std::vector<double> nevents(K), nevents1(K), nevents2(K);
-  std::vector<double> ndropouts(K), ndropouts1(K), ndropouts2(K);
-  std::vector<double> theta(K), I(K);
+  std::vector<double> time(kMax), nsubjects(kMax), nsubjects1(kMax), nsubjects2(kMax);
+  std::vector<double> nevents(kMax), nevents1(kMax), nevents2(kMax);
+  std::vector<double> ndropouts(kMax), ndropouts1(kMax), ndropouts2(kMax);
+  std::vector<double> theta(kMax), I(kMax);
 
   if (rho1 == 0 && rho2 == 0) {
     // ordinary log-rank test: can directly use information = phi*(1-phi)*events
@@ -1691,29 +1690,29 @@ ListCpp lrpowercpp(
 
     double totalEvents = extract_sum(lr_end, "nevents");
 
-    time[K - 1] = studyDuration1;
-    nsubjects[K - 1] = extract_sum(lr_end, "subjects");
-    nsubjects1[K - 1] = phi * nsubjects[K - 1];
-    nsubjects2[K - 1] = (1.0 - phi) * nsubjects[K - 1];
-    nevents[K - 1] = totalEvents;
-    nevents1[K - 1] = extract_sum(lr_end, "nevents1");
-    nevents2[K - 1] = extract_sum(lr_end, "nevents2");
-    ndropouts[K - 1] = extract_sum(lr_end, "ndropouts");
-    ndropouts1[K - 1] = extract_sum(lr_end, "ndropouts1");
-    ndropouts2[K - 1] = extract_sum(lr_end, "ndropouts2");
+    time[kMax - 1] = studyDuration1;
+    nsubjects[kMax - 1] = extract_sum(lr_end, "subjects");
+    nsubjects1[kMax - 1] = phi * nsubjects[kMax - 1];
+    nsubjects2[kMax - 1] = (1.0 - phi) * nsubjects[kMax - 1];
+    nevents[kMax - 1] = totalEvents;
+    nevents1[kMax - 1] = extract_sum(lr_end, "nevents1");
+    nevents2[kMax - 1] = extract_sum(lr_end, "nevents2");
+    ndropouts[kMax - 1] = extract_sum(lr_end, "ndropouts");
+    ndropouts1[kMax - 1] = extract_sum(lr_end, "ndropouts1");
+    ndropouts2[kMax - 1] = extract_sum(lr_end, "ndropouts2");
 
     if (su1 == 's') {
-      theta[K - 1] = theta1;
-      I[K - 1] = vtrt * totalEvents;
+      theta[kMax - 1] = theta1;
+      I[kMax - 1] = vtrt * totalEvents;
     } else {
       double uscore = extract_sum(lr_end, "uscore");
       double vscore = extract_sum(lr_end, "vscore");
-      theta[K - 1] = -uscore / vscore;
-      I[K - 1] = vscore;
+      theta[kMax - 1] = -uscore / vscore;
+      I[kMax - 1] = vscore;
     }
 
     // for interim analyses
-    for (size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < kMax - 1; ++i) {
       double nevents_target = totalEvents * infoRates[i];
 
       time[i] = caltime1cpp(
@@ -1763,23 +1762,23 @@ ListCpp lrpowercpp(
 
     double maxInformation = extract_sum(lr_end, "vscore");
 
-    time[K - 1] = studyDuration1;
-    nsubjects[K - 1] = extract_sum(lr_end, "subjects");
-    nsubjects1[K - 1] = phi * nsubjects[K - 1];
-    nsubjects2[K - 1] = (1.0 - phi) * nsubjects[K - 1];
-    nevents[K - 1] = extract_sum(lr_end, "nevents");
-    nevents1[K - 1] = extract_sum(lr_end, "nevents1");
-    nevents2[K - 1] = extract_sum(lr_end, "nevents2");
-    ndropouts[K - 1] = extract_sum(lr_end, "ndropouts");
-    ndropouts1[K - 1] = extract_sum(lr_end, "ndropouts1");
-    ndropouts2[K - 1] = extract_sum(lr_end, "ndropouts2");
+    time[kMax - 1] = studyDuration1;
+    nsubjects[kMax - 1] = extract_sum(lr_end, "subjects");
+    nsubjects1[kMax - 1] = phi * nsubjects[kMax - 1];
+    nsubjects2[kMax - 1] = (1.0 - phi) * nsubjects[kMax - 1];
+    nevents[kMax - 1] = extract_sum(lr_end, "nevents");
+    nevents1[kMax - 1] = extract_sum(lr_end, "nevents1");
+    nevents2[kMax - 1] = extract_sum(lr_end, "nevents2");
+    ndropouts[kMax - 1] = extract_sum(lr_end, "ndropouts");
+    ndropouts1[kMax - 1] = extract_sum(lr_end, "ndropouts1");
+    ndropouts2[kMax - 1] = extract_sum(lr_end, "ndropouts2");
 
     double uscore = extract_sum(lr_end, "uscore");
-    theta[K - 1] = -uscore / maxInformation;
-    I[K - 1] =  maxInformation;
+    theta[kMax - 1] = -uscore / maxInformation;
+    I[kMax - 1] =  maxInformation;
 
     // compute times by matching informationRates1 * maxInformation
-    for (size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < kMax - 1; ++i) {
       double information1 = maxInformation * infoRates[i];
 
       // solve for analysis time where total information equals information1
@@ -1822,15 +1821,15 @@ ListCpp lrpowercpp(
   }
 
   // --- Compute hazard-ratio estimates ---
-  std::vector<double> HR(K), vlogHR(K);
+  std::vector<double> HR(kMax), vlogHR(kMax);
   if (estimateHazardRatio) {
     if (su1 == 's') {
-      for (size_t i = 0; i < K; ++i) {
+      for (size_t i = 0; i < kMax; ++i) {
         HR[i] = hazardRatio;
         vlogHR[i] = 1.0 / I[i];
       }
     } else {
-      for (size_t i = 0; i < K; ++i) {
+      for (size_t i = 0; i < kMax; ++i) {
         DataFrameCpp df = lrstat1cpp(
           time[i], hazardRatioH0, allocationRatioPlanned,
           accrualTime, accrualIntensity,
@@ -1847,10 +1846,10 @@ ListCpp lrpowercpp(
 
   // --- compute stagewise exit probabilities and related metrics ---
   ListCpp exit_probs;
-  if (!missingFutilityBounds || bsf == "none" || K == 1) {
+  if (!missingFutilityBounds || bsf == "none" || kMax == 1) {
     exit_probs = exitprobcpp(critValues, futBounds, theta, I);
   } else {
-    std::vector<double> w(K, 1.0);
+    std::vector<double> w(kMax, 1.0);
     auto gp = getPower(alpha1, kMax, critValues, theta, I, bsf,
                        parameterBetaSpending, spendTime, futStopping, w);
 
@@ -1860,16 +1859,16 @@ ListCpp lrpowercpp(
     exit_probs = gp.get_list("probs");
   }
 
-  std::vector<double> efficacyP(K), futilityP(K);
-  for (size_t i = 0; i < K; ++i) {
+  std::vector<double> efficacyP(kMax), futilityP(kMax);
+  for (size_t i = 0; i < kMax; ++i) {
     efficacyP[i] = 1 - boost_pnorm(critValues[i]);
     futilityP[i] = 1 - boost_pnorm(futBounds[i]);
   }
 
   auto pu = exit_probs.get<std::vector<double>>("exitProbUpper");
   auto pl = exit_probs.get<std::vector<double>>("exitProbLower");
-  std::vector<double> ptotal(K);
-  for (size_t i = 0; i < K; ++i) ptotal[i] = pu[i] + pl[i];
+  std::vector<double> ptotal(kMax);
+  for (size_t i = 0; i < kMax; ++i) ptotal[i] = pu[i] + pl[i];
 
   double overallReject = std::accumulate(pu.begin(), pu.end(), 0.0);
   double expectedNumberOfEvents = 0.0;
@@ -1884,7 +1883,7 @@ ListCpp lrpowercpp(
   double expectedStudyDuration = 0.0;
   double expectedInformation = 0.0;
 
-  for (size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < kMax; ++i) {
     expectedNumberOfEvents += ptotal[i] * nevents[i];
     expectedNumberOfDropouts += ptotal[i] * ndropouts[i];
     expectedNumberOfSubjects += ptotal[i] * nsubjects[i];
@@ -1899,20 +1898,20 @@ ListCpp lrpowercpp(
   }
 
   // cummulative sums cpu and cpl
-  std::vector<double> cpu(K), cpl(K);
+  std::vector<double> cpu(kMax), cpl(kMax);
   std::partial_sum(pu.begin(), pu.end(), cpu.begin());
   std::partial_sum(pl.begin(), pl.end(), cpl.begin());
 
   // hazard ratio transforms for display if estimateHazardRatio
-  std::vector<double> hru(K), hrl(K);
+  std::vector<double> hru(kMax), hrl(kMax);
   if (estimateHazardRatio) {
-    for (size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < kMax; ++i) {
       hru[i] = hazardRatioH0 * std::exp(-critValues[i] * std::sqrt(vlogHR[i]));
       hrl[i] = hazardRatioH0 * std::exp(-futBounds[i] * std::sqrt(vlogHR[i]));
     }
   }
 
-  for (size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < kMax; ++i) {
     if (critValues[i] == 6.0) { hru[i] = NaN; effStopping[i] = 0; }
     if (futBounds[i] == -6.0) { hrl[i] = NaN; futStopping[i] = 0; }
   }
@@ -2421,7 +2420,7 @@ double getNeventsFromHazardRatio(
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
 
   auto D = getNeventsFromHazardRatiocpp(
-    beta, kMax, infoRates, effStopping, futStopping,
+    beta, static_cast<size_t>(kMax), infoRates, effStopping, futStopping,
     critValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlpha,
     futBounds, typeBetaSpending, parameterBetaSpending,
@@ -2434,7 +2433,7 @@ double getNeventsFromHazardRatio(
 
 ListCpp lrsamplesizecpp(
     const double beta,
-    const int kMax,
+    const size_t kMax,
     const std::vector<double>& informationRates,
     const std::vector<unsigned char>& efficacyStopping,
     const std::vector<unsigned char>& futilityStopping,
@@ -2473,53 +2472,52 @@ ListCpp lrsamplesizecpp(
     throw std::invalid_argument("beta must lie in [0.0001, 1-alpha)");
 
   if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
-  size_t K = static_cast<size_t>(kMax);
 
   // informationRates: default to (1:kMax)/kMax if missing
-  std::vector<double> infoRates(K);
+  std::vector<double> infoRates(kMax);
   if (none_na(informationRates)) {
-    if (informationRates.size() != K)
+    if (informationRates.size() != kMax)
       throw std::invalid_argument("Invalid length for informationRates");
     if (informationRates[0] <= 0.0)
       throw std::invalid_argument("informationRates must be positive");
     if (any_nonincreasing(informationRates))
       throw std::invalid_argument("informationRates must be increasing");
-    if (informationRates[K-1] != 1.0)
+    if (informationRates[kMax-1] != 1.0)
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy
   } else {
-    for (size_t i = 0; i < K; ++i)
-      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(K);
+    for (size_t i = 0; i < kMax; ++i)
+      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(kMax);
   }
 
   // effStopping: default to all 1s if missing
   std::vector<unsigned char> effStopping;
   if (none_na(efficacyStopping)) {
-    if (efficacyStopping.size() != K)
+    if (efficacyStopping.size() != kMax)
       throw std::invalid_argument("Invalid length for efficacyStopping");
-    if (efficacyStopping[K-1] != 1)
+    if (efficacyStopping[kMax-1] != 1)
       throw std::invalid_argument("efficacyStopping must end with 1");
     effStopping = efficacyStopping; // copy
   } else {
-    effStopping.assign(K, 1);
+    effStopping.assign(kMax, 1);
   }
 
   // futStopping: default to all 1s if missing
   std::vector<unsigned char> futStopping;
   if (none_na(futilityStopping)) {
-    if (futilityStopping.size() != K)
+    if (futilityStopping.size() != kMax)
       throw std::invalid_argument("Invalid length for futilityStopping");
-    if (futilityStopping[K-1] != 1)
+    if (futilityStopping[kMax-1] != 1)
       throw std::invalid_argument("futilityStopping must end with 1");
     futStopping = futilityStopping; // copy
   } else {
-    futStopping.assign(K, 1);
+    futStopping.assign(kMax, 1);
   }
 
   bool missingCriticalValues = !none_na(criticalValues);
   bool missingFutilityBounds = !none_na(futilityBounds);
 
-  if (!missingCriticalValues && criticalValues.size() != K) {
+  if (!missingCriticalValues && criticalValues.size() != kMax) {
     throw std::invalid_argument("Invalid length for criticalValues");
   }
   if (missingCriticalValues && std::isnan(alpha)) {
@@ -2547,29 +2545,29 @@ ListCpp lrsamplesizecpp(
   if (missingCriticalValues && asf == "user") {
     if (!none_na(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be specified");
-    if (userAlphaSpending.size() != K)
+    if (userAlphaSpending.size() != kMax)
       throw std::invalid_argument("Invalid length of userAlphaSpending");
     if (userAlphaSpending[0] < 0.0)
       throw std::invalid_argument("userAlphaSpending must be nonnegative");
     if (any_nonincreasing(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be nondecreasing");
-    if (userAlphaSpending[K-1] != alpha)
+    if (userAlphaSpending[kMax-1] != alpha)
       throw std::invalid_argument("userAlphaSpending must end with specified alpha");
   }
 
   if (!missingFutilityBounds) {
-    if (!(futilityBounds.size() == K - 1 || futilityBounds.size() == K)) {
+    if (!(futilityBounds.size() == kMax - 1 || futilityBounds.size() == kMax)) {
       throw std::invalid_argument("Invalid length for futilityBounds");
     }
   }
   if (!missingCriticalValues && !missingFutilityBounds) {
-    for (size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < kMax - 1; ++i) {
       if (futilityBounds[i] > criticalValues[i]) {
         throw std::invalid_argument("futilityBounds must lie below criticalValues");
       }
     }
-    if (futilityBounds.size() == K &&
-        futilityBounds[K-1] != criticalValues[K-1]) {
+    if (futilityBounds.size() == kMax &&
+        futilityBounds[kMax-1] != criticalValues[kMax-1]) {
       throw std::invalid_argument(
           "futilityBounds must meet criticalValues at the final look");
     }
@@ -2594,13 +2592,13 @@ ListCpp lrsamplesizecpp(
   if (missingFutilityBounds && bsf=="user") {
     if (!none_na(userBetaSpending))
       throw std::invalid_argument("userBetaSpending must be specified");
-    if (userBetaSpending.size() != K)
+    if (userBetaSpending.size() != kMax)
       throw std::invalid_argument("Invalid length of userBetaSpending");
     if (userBetaSpending[0] < 0.0)
       throw std::invalid_argument("userBetaSpending must be nonnegative");
     if (any_nonincreasing(userBetaSpending))
       throw std::invalid_argument("userBetaSpending must be nondecreasing");
-    if (userBetaSpending[K-1] != beta)
+    if (userBetaSpending[kMax-1] != beta)
       throw std::invalid_argument("userBetaSpending must end with specified beta");
   }
 
@@ -2676,13 +2674,13 @@ ListCpp lrsamplesizecpp(
 
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
-    if (spendingTime.size() != K)
+    if (spendingTime.size() != kMax)
       throw std::invalid_argument("Invalid length for spendingTime");
     if (spendingTime[0] <= 0.0)
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[K-1] != 1.0)
+    if (spendingTime[kMax-1] != 1.0)
       throw std::invalid_argument("spendingTime must end with 1");
     spendTime = spendingTime; // copy
   } else {
@@ -2724,34 +2722,34 @@ ListCpp lrsamplesizecpp(
   int predictTarget1 = (su1 == 's') ? 1 : 2;
 
   // --- Efficacy boundaries ---
-  std::vector<double> l(K, -6.0), zero(K, 0.0);
+  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
     bool haybittle = false;
-    if (K > 1 && criticalValues.size() == K) {
+    if (kMax > 1 && criticalValues.size() == kMax) {
       bool hasNaN = false;
-      for (size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < kMax - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
-      if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
+      if (!hasNaN && std::isnan(criticalValues[kMax-1])) haybittle = true;
     }
 
     if (haybittle) { // Haybittle & Peto
-      std::vector<double> u(K);
-      for (size_t i = 0; i < K - 1; ++i) {
+      std::vector<double> u(kMax);
+      for (size_t i = 0; i < kMax - 1; ++i) {
         u[i] = criticalValues[i];
         if (!effStopping[i]) u[i] = 6.0;
       }
 
       auto f = [&](double aval)->double {
-        u[K-1] = aval;
+        u[kMax-1] = aval;
         ListCpp probs = exitprobcpp(u, l, zero, infoRates);
         auto v = probs.get<std::vector<double>>("exitProbUpper");
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
       };
 
-      critValues[K-1] = brent(f, -5.0, 6.0, 1e-6);
+      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
     } else {
       critValues = getBoundcpp(kMax, infoRates, alpha, asf,
                                parameterAlphaSpending, userAlphaSpending,
@@ -2761,19 +2759,19 @@ ListCpp lrsamplesizecpp(
 
   ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
   auto v = probs.get<std::vector<double>>("exitProbUpper");
-  std::vector<double> cumAlphaSpent(K);
+  std::vector<double> cumAlphaSpent(kMax);
   std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
   double alpha1 = missingCriticalValues ? alpha :
     std::round(cumAlphaSpent.back() * 1e6) / 1e6;
 
   // --- Futility boundaries ---
   std::vector<double> futBounds = futilityBounds;
-  if (K > 1) {
+  if (kMax > 1) {
     if (missingFutilityBounds && bsf == "none") {
-      futBounds = std::vector<double>(K, -6.0);
-      futBounds[K-1] = critValues[K-1];
-    } else if (!missingFutilityBounds && futBounds.size() == K-1) {
-      futBounds.push_back(critValues[K-1]);
+      futBounds = std::vector<double>(kMax, -6.0);
+      futBounds[kMax-1] = critValues[kMax-1];
+    } else if (!missingFutilityBounds && futBounds.size() == kMax-1) {
+      futBounds.push_back(critValues[kMax-1]);
     }
   } else {
     if (missingFutilityBounds) {
@@ -2821,7 +2819,7 @@ ListCpp lrsamplesizecpp(
     std::vector<double> futBounds; // computed bounds (only meaningful when requested)
   };
 
-  auto betadiff_under_H1 = [K, infoRates, hazardRatio, hazardRatioH0,
+  auto betadiff_under_H1 = [kMax, infoRates, hazardRatio, hazardRatioH0,
                             phi, allocationRatioPlanned, accrualTime,
                             piecewiseSurvivalTime, stratumFraction,
                             lambda1x, lambda2x, gamma1x, gamma2x,
@@ -2837,7 +2835,7 @@ ListCpp lrsamplesizecpp(
      double studyDuration1 = accrDur + fu;
 
      // --- obtain theta and information at each look under H1 as in lrpowercpp
-     std::vector<double> theta(K), I(K);
+     std::vector<double> theta(kMax), I(kMax);
      if (rho1 == 0 && rho2 == 0) {
        double vtrt = phi * (1.0 - phi);
        double theta1 = -std::log(hazardRatio / hazardRatioH0);
@@ -2853,16 +2851,16 @@ ListCpp lrsamplesizecpp(
        double totalEvents = extract_sum(lr_end, "nevents");
 
        if (su1 == 's') {
-         theta[K - 1] = theta1;
-         I[K - 1] = vtrt * totalEvents;
+         theta[kMax - 1] = theta1;
+         I[kMax - 1] = vtrt * totalEvents;
        } else {
          double uscore = extract_sum(lr_end, "uscore");
          double vscore = extract_sum(lr_end, "vscore");
-         theta[K - 1] = -uscore / vscore;
-         I[K - 1] = vscore;
+         theta[kMax - 1] = -uscore / vscore;
+         I[kMax - 1] = vscore;
        }
 
-       for (size_t i = 0; i < K - 1; ++i) {
+       for (size_t i = 0; i < kMax - 1; ++i) {
          double nevents_target = totalEvents * infoRates[i];
 
          double time = caltime1cpp(
@@ -2902,10 +2900,10 @@ ListCpp lrsamplesizecpp(
        double maxInformation = extract_sum(lr_end, "vscore");
 
        double uscore = extract_sum(lr_end, "uscore");
-       theta[K - 1] = -uscore / maxInformation;
-       I[K - 1] =  maxInformation;
+       theta[kMax - 1] = -uscore / maxInformation;
+       I[kMax - 1] =  maxInformation;
 
-       for (size_t i = 0; i < K - 1; ++i) {
+       for (size_t i = 0; i < kMax - 1; ++i) {
          double information1 = maxInformation * infoRates[i];
 
          // solve for analysis time where total information equals information1
@@ -2943,7 +2941,7 @@ ListCpp lrsamplesizecpp(
      }
 
      // --- compute futility bounds and cumulative beta spending under H1
-     if (!missingFutilityBounds || bsf == "none" || K == 1) {
+     if (!missingFutilityBounds || bsf == "none" || kMax == 1) {
        // compute overall beta using the specified futility bounds
        ListCpp probs = exitprobcpp(critValues, futBounds, theta, I);
        auto v = probs.get<std::vector<double>>("exitProbUpper");
@@ -2952,12 +2950,12 @@ ListCpp lrsamplesizecpp(
        if (need_bounds) out.futBounds = futBounds;
        return out;
      } else {
-       std::vector<double> u1; u1.reserve(K);
-       std::vector<double> l1; l1.reserve(K);
+       std::vector<double> u1; u1.reserve(kMax);
+       std::vector<double> l1; l1.reserve(kMax);
        double thetaSqrtI0 = theta[0] * std::sqrt(I[0]);
 
        // compute cumulative beta spending under H1 similar to getPower
-       std::vector<double> futBounds1(K, -6.0);
+       std::vector<double> futBounds1(kMax, -6.0);
 
        double eps = 0.0;
 
@@ -2972,7 +2970,7 @@ ListCpp lrsamplesizecpp(
        }
 
        // subsequent stages
-       for (size_t k = 1; k < K; ++k) {
+       for (size_t k = 1; k < kMax; ++k) {
          if (futStopping[k]) {
            cb = (bsf == "user") ? userBetaSpending[k] :
            errorSpentcpp(spendTime[k], beta, bsf, parameterBetaSpending);
@@ -3008,7 +3006,7 @@ ListCpp lrsamplesizecpp(
                return g(x);
              };
              futBounds1[k] = brent(g_for_brent, -6.0, bk, 1e-6);
-           } else if (k < K - 1) {
+           } else if (k < kMax - 1) {
              out.value = -1.0;
              return out;
            }
@@ -3245,7 +3243,7 @@ ListCpp lrsamplesizecpp(
   double studyDuration = accrualDuration + followupTime;
 
   // The futility bound must meet the efficacy bound at the final look.
-  futBounds[K - 1] = critValues[K - 1];
+  futBounds[kMax - 1] = critValues[kMax - 1];
 
 
   ListCpp resultsH1; // results under H1 with final design parameters
@@ -3366,7 +3364,7 @@ ListCpp lrsamplesizecpp(
 
     // update informationRates
     if (rho1 == 0.0 && rho2 == 0.0) {
-      for (size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < kMax - 1; ++i) {
         double nevents = std::floor(D * infoRates[i] + 0.5);
         infoRates[i] = nevents / D;
       }
@@ -3382,7 +3380,7 @@ ListCpp lrsamplesizecpp(
 
       double maxInformation = extract_sum(lr_end, "vscore");
 
-      for (size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < kMax - 1; ++i) {
         // recompute analysis time from information target and then events
         double information1 = maxInformation * infoRates[i];
 
@@ -3817,7 +3815,7 @@ Rcpp::List lrsamplesize(
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
 
   auto out = lrsamplesizecpp(
-    beta, kMax, infoRates, effStopping, futStopping,
+    beta, static_cast<size_t>(kMax), infoRates, effStopping, futStopping,
     critValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlpha,
     futBounds, typeBetaSpending, parameterBetaSpending,
@@ -3847,7 +3845,7 @@ Rcpp::List lrsamplesize(
 
 
 ListCpp lrpowerequivcpp(
-    const int kMax,
+    const size_t kMax,
     const std::vector<double>& informationRates,
     const std::vector<double>& criticalValues,
     const double alpha,
@@ -3875,27 +3873,26 @@ ListCpp lrpowerequivcpp(
   if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1.0))
     throw std::invalid_argument("alpha must lie in [0.00001, 1)");
   if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
-  const size_t K = static_cast<size_t>(kMax);
 
   // information rates -> infoRates
-  std::vector<double> infoRates(K);
+  std::vector<double> infoRates(kMax);
   if (none_na(informationRates)) {
-    if (informationRates.size() != K)
+    if (informationRates.size() != kMax)
       throw std::invalid_argument("Invalid length for informationRates");
     if (informationRates[0] <= 0.0)
       throw std::invalid_argument("informationRates must be positive");
     if (any_nonincreasing(informationRates))
       throw std::invalid_argument("informationRates must be increasing");
-    if (informationRates[K-1] != 1.0)
+    if (informationRates[kMax-1] != 1.0)
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates;
   } else {
-    for (size_t i=0;i<K;++i)
-      infoRates[i] = static_cast<double>(i+1)/static_cast<double>(K);
+    for (size_t i=0;i<kMax;++i)
+      infoRates[i] = static_cast<double>(i+1)/static_cast<double>(kMax);
   }
 
   bool missingCriticalValues = !none_na(criticalValues);
-  if (!missingCriticalValues && criticalValues.size() != K)
+  if (!missingCriticalValues && criticalValues.size() != kMax)
     throw std::invalid_argument("Invalid length for criticalValues");
   if (missingCriticalValues && std::isnan(alpha))
     throw std::invalid_argument(
@@ -3919,13 +3916,13 @@ ListCpp lrpowerequivcpp(
   if (missingCriticalValues && asf == "user") {
     if (!none_na(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be specified");
-    if (userAlphaSpending.size() != K)
+    if (userAlphaSpending.size() != kMax)
       throw std::invalid_argument("Invalid length of userAlphaSpending");
     if (userAlphaSpending[0] < 0.0)
       throw std::invalid_argument("userAlphaSpending must be nonnegative");
     if (any_nonincreasing(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be nondecreasing");
-    if (userAlphaSpending[K-1] != alpha)
+    if (userAlphaSpending[kMax-1] != alpha)
       throw std::invalid_argument("userAlphaSpending must end with specified alpha");
   }
   if (std::isnan(hazardRatioLower))
@@ -3993,13 +3990,13 @@ ListCpp lrpowerequivcpp(
 
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
-    if (spendingTime.size() != K)
+    if (spendingTime.size() != kMax)
       throw std::invalid_argument("Invalid length for spendingTime");
     if (spendingTime[0] <= 0.0)
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[K-1] != 1.0)
+    if (spendingTime[kMax-1] != 1.0)
       throw std::invalid_argument("spendingTime must end with 1");
     spendTime = spendingTime; // copy
   } else {
@@ -4046,43 +4043,43 @@ ListCpp lrpowerequivcpp(
 
 
   // --- Obtain criticalValues
-  std::vector<double> u(K), l(K, -6.0), zero(K, 0.0);
+  std::vector<double> u(kMax), l(kMax, -6.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
     bool haybittle = false;
-    if (K > 1 && criticalValues.size() == K) {
+    if (kMax > 1 && criticalValues.size() == kMax) {
       bool hasNaN = false;
-      for (size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < kMax - 1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
-      if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
+      if (!hasNaN && std::isnan(criticalValues[kMax-1])) haybittle = true;
     }
     if (haybittle) {
-      for (size_t i = 0; i < K - 1; ++i) u[i] = criticalValues[i];
+      for (size_t i = 0; i < kMax - 1; ++i) u[i] = criticalValues[i];
       auto f = [&](double aval)->double {
-        u[K-1] = aval;
+        u[kMax-1] = aval;
         ListCpp p = exitprobcpp(u, l, zero, infoRates);
         auto v = p.get<std::vector<double>>("exitProbUpper");
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
       };
-      critValues[K - 1] = brent(f, -5.0, 6.0, 1e-6);
+      critValues[kMax - 1] = brent(f, -5.0, 6.0, 1e-6);
     } else {
-      std::vector<unsigned char> effStopping(K, 1);
+      std::vector<unsigned char> effStopping(kMax, 1);
       critValues = getBoundcpp(kMax, infoRates, alpha, asf,
                                parameterAlphaSpending, userAlphaSpending,
                                spendTime, effStopping);
     }
   }
 
-  std::vector<double> li(K, -6.0), ui(K, 6.0);
+  std::vector<double> li(kMax, -6.0), ui(kMax, 6.0);
   ListCpp probs = exitprobcpp(critValues, li, zero, infoRates);
   auto v = probs.get<std::vector<double>>("exitProbUpper");
-  std::vector<double> cumAlphaSpent(K);
+  std::vector<double> cumAlphaSpent(kMax);
   std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
 
-  std::vector<double> efficacyP(K);
-  for (size_t i = 0; i < K; ++i) {
+  std::vector<double> efficacyP(kMax);
+  for (size_t i = 0; i < kMax; ++i) {
     efficacyP[i] = 1.0 - boost_pnorm(critValues[i]);
   }
 
@@ -4094,10 +4091,10 @@ ListCpp lrpowerequivcpp(
   if (!fixedFollowup || std::isnan(studyDuration))
     studyDuration1 = accrualDuration + followupTime;
 
-  std::vector<double> time(K), nsubjects(K), nsubjects1(K), nsubjects2(K);
-  std::vector<double> nevents(K), nevents1(K), nevents2(K);
-  std::vector<double> ndropouts(K), ndropouts1(K), ndropouts2(K);
-  std::vector<double> HR(K), theta(K), I(K);
+  std::vector<double> time(kMax), nsubjects(kMax), nsubjects1(kMax), nsubjects2(kMax);
+  std::vector<double> nevents(kMax), nevents1(kMax), nevents2(kMax);
+  std::vector<double> ndropouts(kMax), ndropouts1(kMax), ndropouts2(kMax);
+  std::vector<double> HR(kMax), theta(kMax), I(kMax);
 
   if (su1 == 's') { // information is proportional to events
     double vtrt = phi * (1.0 - phi);
@@ -4115,19 +4112,19 @@ ListCpp lrpowerequivcpp(
 
     double totalEvents = extract_sum(lr_end, "nevents");
 
-    time[K-1] = studyDuration1;
-    nsubjects[K - 1] = extract_sum(lr_end, "subjects");
-    nsubjects1[K - 1] = phi * nsubjects[K - 1];
-    nsubjects2[K - 1] = (1.0 - phi) * nsubjects[K - 1];
-    nevents[K - 1] = totalEvents;
-    nevents1[K - 1] = extract_sum(lr_end, "nevents1");
-    nevents2[K - 1] = extract_sum(lr_end, "nevents2");
-    ndropouts[K - 1] = extract_sum(lr_end, "ndropouts");
-    ndropouts1[K - 1] = extract_sum(lr_end, "ndropouts1");
-    ndropouts2[K - 1] = extract_sum(lr_end, "ndropouts2");
-    I[K - 1] = vtrt * totalEvents;
+    time[kMax-1] = studyDuration1;
+    nsubjects[kMax - 1] = extract_sum(lr_end, "subjects");
+    nsubjects1[kMax - 1] = phi * nsubjects[kMax - 1];
+    nsubjects2[kMax - 1] = (1.0 - phi) * nsubjects[kMax - 1];
+    nevents[kMax - 1] = totalEvents;
+    nevents1[kMax - 1] = extract_sum(lr_end, "nevents1");
+    nevents2[kMax - 1] = extract_sum(lr_end, "nevents2");
+    ndropouts[kMax - 1] = extract_sum(lr_end, "ndropouts");
+    ndropouts1[kMax - 1] = extract_sum(lr_end, "ndropouts1");
+    ndropouts2[kMax - 1] = extract_sum(lr_end, "ndropouts2");
+    I[kMax - 1] = vtrt * totalEvents;
 
-    for (size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < kMax - 1; ++i) {
       double nevents_target = totalEvents * infoRates[i];
 
       time[i] = caltime1cpp(
@@ -4167,21 +4164,21 @@ ListCpp lrpowerequivcpp(
 
     double maxInformation = 1.0 / lr_end.get<double>("vlogHR")[0];
 
-    time[K-1] = studyDuration1;
-    nsubjects[K - 1] = lr_end.get<double>("subjects")[0];
-    nsubjects1[K - 1] = phi * nsubjects[K - 1];
-    nsubjects2[K - 1] = (1.0 - phi) * nsubjects[K - 1];
-    nevents[K - 1] = lr_end.get<double>("nevents")[0];
-    nevents1[K - 1] = lr_end.get<double>("nevents1")[0];
-    nevents2[K - 1] = lr_end.get<double>("nevents2")[0];
-    ndropouts[K - 1] = lr_end.get<double>("ndropouts")[0];
-    ndropouts1[K - 1] = lr_end.get<double>("ndropouts1")[0];
-    ndropouts2[K - 1] = lr_end.get<double>("ndropouts2")[0];
-    HR[K - 1] = lr_end.get<double>("HR")[0];
-    theta[K - 1] = std::log(HR[K - 1]);
-    I[K - 1] = maxInformation;
+    time[kMax-1] = studyDuration1;
+    nsubjects[kMax - 1] = lr_end.get<double>("subjects")[0];
+    nsubjects1[kMax - 1] = phi * nsubjects[kMax - 1];
+    nsubjects2[kMax - 1] = (1.0 - phi) * nsubjects[kMax - 1];
+    nevents[kMax - 1] = lr_end.get<double>("nevents")[0];
+    nevents1[kMax - 1] = lr_end.get<double>("nevents1")[0];
+    nevents2[kMax - 1] = lr_end.get<double>("nevents2")[0];
+    ndropouts[kMax - 1] = lr_end.get<double>("ndropouts")[0];
+    ndropouts1[kMax - 1] = lr_end.get<double>("ndropouts1")[0];
+    ndropouts2[kMax - 1] = lr_end.get<double>("ndropouts2")[0];
+    HR[kMax - 1] = lr_end.get<double>("HR")[0];
+    theta[kMax - 1] = std::log(HR[kMax - 1]);
+    I[kMax - 1] = maxInformation;
 
-    for (size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < kMax - 1; ++i) {
       double information1 = maxInformation * infoRates[i];
 
       auto g = [&](double t)->double {
@@ -4227,8 +4224,8 @@ ListCpp lrpowerequivcpp(
   // --- compute cumulative rejection under H1 ---
   double thetaLower = std::log(hazardRatioLower);
   double thetaUpper = std::log(hazardRatioUpper);
-  std::vector<double> sqrtI(K), b(K), a(K);
-  for (size_t i = 0; i < K; ++i) {
+  std::vector<double> sqrtI(kMax), b(kMax), a(kMax);
+  for (size_t i = 0; i < kMax; ++i) {
     sqrtI[i] = std::sqrt(I[i]);
     l[i] = critValues[i] + (thetaLower - theta[i]) * sqrtI[i];
     u[i] = -critValues[i] + (thetaUpper - theta[i]) * sqrtI[i];
@@ -4236,7 +4233,7 @@ ListCpp lrpowerequivcpp(
     a[i] = std::min(u[i], ui[i]);
   }
 
-  std::vector<double> cpl(K), cpu(K);
+  std::vector<double> cpl(kMax), cpu(kMax);
   ListCpp probs1 = exitprobcpp(b, li, zero, I);
   ListCpp probs2 = exitprobcpp(ui, a, zero, I);
   auto v1 = probs1.get<std::vector<double>>("exitProbUpper");
@@ -4245,14 +4242,14 @@ ListCpp lrpowerequivcpp(
   std::partial_sum(v2.begin(), v2.end(), cpu.begin());
 
   // index for the first crossing look (0-based)
-  size_t k = K;
-  for (size_t i = 0; i < K; ++i) {
+  size_t k = kMax;
+  for (size_t i = 0; i < kMax; ++i) {
     if (l[i] <= u[i]) { k = i; break; }
   }
 
-  std::vector<double> cp(K);
+  std::vector<double> cp(kMax);
   if (k == 0) { // crossing at the first look
-    for (size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < kMax; ++i) {
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   } else {
@@ -4269,44 +4266,44 @@ ListCpp lrpowerequivcpp(
     for (size_t i = 0; i < k; ++i) {
       cp[i] = cpl[i] + cpu[i] - cplx[i] - cpux[i];
     }
-    for (size_t i = k; i < K; ++i) {
+    for (size_t i = k; i < kMax; ++i) {
       cp[i] = cpl[i] + cpu[i] - 1.0;
     }
   }
 
   // incremental rejection probability at each stage
-  std::vector<double> rejectPerStage(K);
+  std::vector<double> rejectPerStage(kMax);
   rejectPerStage[0] = cp[0];
-  for (size_t i = 1; i < K; ++i) {
+  for (size_t i = 1; i < kMax; ++i) {
     rejectPerStage[i] = cp[i] - cp[i-1];
   }
 
   std::vector<double> q = rejectPerStage;
-  if (K > 1) q[K - 1] = 1.0 - cp[K - 2];
+  if (kMax > 1) q[kMax - 1] = 1.0 - cp[kMax - 2];
 
   // compute efficacy HR bounds
-  std::vector<double> efficacyHRLower(K), efficacyHRUpper(K);
-  for (size_t i = 0; i < K; ++i) {
+  std::vector<double> efficacyHRLower(kMax), efficacyHRUpper(kMax);
+  for (size_t i = 0; i < kMax; ++i) {
     double thetaBound = critValues[i] / sqrtI[i];
     efficacyHRLower[i] = std::exp(thetaLower + thetaBound);
     efficacyHRUpper[i] = std::exp(thetaUpper - thetaBound);
   }
 
   // cumulative attained alpha under H10 (at thetaLower)
-  for (size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < kMax; ++i) {
     l[i] = critValues[i];
     u[i] = -critValues[i] + (thetaUpper - thetaLower) * sqrtI[i];
     a[i] = std::min(u[i], ui[i]);
   }
   ListCpp probsH10 = exitprobcpp(ui, a, zero, I);
   auto vH10 = probsH10.get<std::vector<double>>("exitProbLower");
-  std::vector<double> cpuH10(K);
+  std::vector<double> cpuH10(kMax);
   std::partial_sum(vH10.begin(), vH10.end(), cpuH10.begin());
   std::vector<double> cplH10 = cumAlphaSpent;
 
-  std::vector<double> cpH10(K);
+  std::vector<double> cpH10(kMax);
   if (k == 0) {
-    for (size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < kMax; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   } else {
@@ -4323,13 +4320,13 @@ ListCpp lrpowerequivcpp(
     for (size_t i = 0; i < k; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - cplH10x[i] - cpuH10x[i];
     }
-    for (size_t i = k; i < K; ++i) {
+    for (size_t i = k; i < kMax; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - 1.0;
     }
   }
 
   // cumulative attained alpha under H20 (at thetaUpper)
-  for (size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < kMax; ++i) {
     l[i] = critValues[i] + (thetaLower - thetaUpper) * sqrtI[i];
     u[i] = -critValues[i];
     b[i] = std::max(l[i], li[i]);
@@ -4337,13 +4334,13 @@ ListCpp lrpowerequivcpp(
 
   ListCpp probsH20 = exitprobcpp(b, li, zero, I);
   auto vH20 = probsH20.get<std::vector<double>>("exitProbUpper");
-  std::vector<double> cplH20(K);
+  std::vector<double> cplH20(kMax);
   std::partial_sum(vH20.begin(), vH20.end(), cplH20.begin());
   std::vector<double> cpuH20 = cumAlphaSpent;
 
-  std::vector<double> cpH20(K);
+  std::vector<double> cpH20(kMax);
   if (k == 0) {
-    for (size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < kMax; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   } else {
@@ -4360,12 +4357,12 @@ ListCpp lrpowerequivcpp(
     for (size_t i = 0; i < k; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - cplH20x[i] - cpuH20x[i];
     }
-    for (size_t i = k; i < K; ++i) {
+    for (size_t i = k; i < kMax; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - 1.0;
     }
   }
 
-  double overallReject = cp[K-1];
+  double overallReject = cp[kMax-1];
   double expectedNumberOfEvents = 0.0;
   double expectedNumberOfDropouts = 0.0;
   double expectedNumberOfSubjects = 0.0;
@@ -4377,7 +4374,7 @@ ListCpp lrpowerequivcpp(
   double expectedNumberOfSubjects2 = 0.0;
   double expectedStudyDuration = 0.0;
   double expectedInformation = 0.0;
-  for (size_t i = 0; i < K; ++i) {
+  for (size_t i = 0; i < kMax; ++i) {
     expectedNumberOfEvents += q[i] * nevents[i];
     expectedNumberOfDropouts += q[i] * ndropouts[i];
     expectedNumberOfSubjects += q[i] * nsubjects[i];
@@ -4699,7 +4696,7 @@ Rcpp::List lrpowerequiv(
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
 
   auto out = lrpowerequivcpp(
-    kMax, infoRates, critValues, alpha, typeAlphaSpending,
+    static_cast<size_t>(kMax), infoRates, critValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlpha, hazardRatioLower,
     hazardRatioUpper, allocationRatioPlanned, accrualT,
     accrualInt, pwSurvT, stratumFrac, lam1, lam2,
@@ -4715,7 +4712,7 @@ Rcpp::List lrpowerequiv(
 
 ListCpp lrsamplesizeequivcpp(
     const double beta,
-    const int kMax,
+    const size_t kMax,
     const std::vector<double>& informationRates,
     const std::vector<double>& criticalValues,
     const double alpha,
@@ -4745,27 +4742,26 @@ ListCpp lrsamplesizeequivcpp(
   if (beta < 0.0001 || (!std::isnan(alpha) && beta >= 1.0 - alpha))
     throw std::invalid_argument("beta must lie in [0.0001, 1-alpha)");
   if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
-  const size_t K = static_cast<size_t>(kMax);
 
   // informationRates: default to (1:kMax)/kMax if missing
-  std::vector<double> infoRates(K);
+  std::vector<double> infoRates(kMax);
   if (none_na(informationRates)) {
-    if (informationRates.size() != K)
+    if (informationRates.size() != kMax)
       throw std::invalid_argument("Invalid length for informationRates");
     if (informationRates[0] <= 0.0)
       throw std::invalid_argument("informationRates must be positive");
     if (any_nonincreasing(informationRates))
       throw std::invalid_argument("informationRates must be increasing");
-    if (informationRates[K-1] != 1.0)
+    if (informationRates[kMax-1] != 1.0)
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy
   } else {
-    for (size_t i = 0; i < K; ++i)
-      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(K);
+    for (size_t i = 0; i < kMax; ++i)
+      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(kMax);
   }
 
   bool missingCriticalValues = !none_na(criticalValues);
-  if (!missingCriticalValues && criticalValues.size() != K) {
+  if (!missingCriticalValues && criticalValues.size() != kMax) {
     throw std::invalid_argument("Invalid length for criticalValues");
   }
   if (missingCriticalValues && std::isnan(alpha)) {
@@ -4791,13 +4787,13 @@ ListCpp lrsamplesizeequivcpp(
   if (missingCriticalValues && asf == "user") {
     if (!none_na(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be specified");
-    if (userAlphaSpending.size() != K)
+    if (userAlphaSpending.size() != kMax)
       throw std::invalid_argument("Invalid length of userAlphaSpending");
     if (userAlphaSpending[0] < 0.0)
       throw std::invalid_argument("userAlphaSpending must be nonnegative");
     if (any_nonincreasing(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be nondecreasing");
-    if (userAlphaSpending[K-1] != alpha)
+    if (userAlphaSpending[kMax-1] != alpha)
       throw std::invalid_argument("userAlphaSpending must end with specified alpha");
   }
   if (std::isnan(hazardRatioLower))
@@ -4858,13 +4854,13 @@ ListCpp lrsamplesizeequivcpp(
 
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
-    if (spendingTime.size() != K)
+    if (spendingTime.size() != kMax)
       throw std::invalid_argument("Invalid length for spendingTime");
     if (spendingTime[0] <= 0.0)
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[K-1] != 1.0)
+    if (spendingTime[kMax-1] != 1.0)
       throw std::invalid_argument("spendingTime must end with 1");
     spendTime = spendingTime; // copy
   } else {
@@ -4916,32 +4912,32 @@ ListCpp lrsamplesizeequivcpp(
 
 
   // --- Efficacy boundaries ---
-  std::vector<double> u(K), l(K, -6.0), zero(K, 0.0);
+  std::vector<double> u(kMax), l(kMax, -6.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
     bool haybittle = false;
-    if (K > 1 && criticalValues.size() == K) {
+    if (kMax > 1 && criticalValues.size() == kMax) {
       bool hasNaN = false;
-      for (size_t i = 0; i < K-1; ++i) {
+      for (size_t i = 0; i < kMax-1; ++i) {
         if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
       }
-      if (!hasNaN && std::isnan(criticalValues[K-1])) haybittle = true;
+      if (!hasNaN && std::isnan(criticalValues[kMax-1])) haybittle = true;
     }
 
     if (haybittle) {
-      for (size_t i = 0; i < K - 1; ++i) u[i] = criticalValues[i];
+      for (size_t i = 0; i < kMax - 1; ++i) u[i] = criticalValues[i];
 
       auto f = [&](double aval)->double {
-        u[K-1] = aval;
+        u[kMax-1] = aval;
         ListCpp probs = exitprobcpp(u, l, zero, infoRates);
         auto v = probs.get<std::vector<double>>("exitProbUpper");
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
       };
 
-      critValues[K-1] = brent(f, -5.0, 6.0, 1e-6);
+      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
     } else {
-      std::vector<unsigned char> effStopping(K, 1);
+      std::vector<unsigned char> effStopping(kMax, 1);
       critValues = getBoundcpp(kMax, infoRates, alpha, asf,
                                parameterAlphaSpending, userAlphaSpending,
                                spendTime, effStopping);
@@ -4953,7 +4949,7 @@ ListCpp lrsamplesizeequivcpp(
   double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
   double thetaLower = std::log(hazardRatioLower);
   double thetaUpper = std::log(hazardRatioUpper);
-  std::vector<double> li(K, -6.0), ui(K, 6.0);
+  std::vector<double> li(kMax, -6.0), ui(kMax, 6.0);
 
   // Which design parameter is unknown?
   enum Unknown { ACC_DUR, FUP_TIME, ACC_INT };
@@ -4985,7 +4981,7 @@ ListCpp lrsamplesizeequivcpp(
 
   // Helper: compute power under H1 given accrualDuration (accrDur),
   // followupTime (fu), and accrualIntensity (accrInt).
-  auto power_under_H1 = [K, infoRates, hazardRatio, thetaLower, thetaUpper,
+  auto power_under_H1 = [kMax, infoRates, hazardRatio, thetaLower, thetaUpper,
                          phi, allocationRatioPlanned, accrualTime,
                          piecewiseSurvivalTime, stratumFraction,
                          lambda1x, lambda2x, gamma1x, gamma2x,
@@ -4994,7 +4990,7 @@ ListCpp lrsamplesizeequivcpp(
 
     double studyDuration1 = accrDur + fu;
 
-    std::vector<double> theta(K), I(K);
+    std::vector<double> theta(kMax), I(kMax);
     if (su1 == 's') { // information is proportional to events
       double vtrt = phi * (1.0 - phi);
       double theta1 = std::log(hazardRatio);
@@ -5009,9 +5005,9 @@ ListCpp lrsamplesizeequivcpp(
         0.0, 0.0, 1);
 
       double totalEvents = extract_sum(lr_end, "nevents");
-      I[K - 1] = vtrt * totalEvents;
+      I[kMax - 1] = vtrt * totalEvents;
 
-      for (size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < kMax - 1; ++i) {
         double nevents_target = totalEvents * infoRates[i];
         I[i] = vtrt * nevents_target;
       }
@@ -5025,10 +5021,10 @@ ListCpp lrsamplesizeequivcpp(
         0.0, 0.0, 3);
 
       double maxInformation = 1.0 / lr_end.get<double>("vlogHR")[0];
-      theta[K - 1] = std::log(lr_end.get<double>("HR")[0]);
-      I[K - 1] = maxInformation;
+      theta[kMax - 1] = std::log(lr_end.get<double>("HR")[0]);
+      I[kMax - 1] = maxInformation;
 
-      for (size_t i = 0; i < K - 1; ++i) {
+      for (size_t i = 0; i < kMax - 1; ++i) {
         double information1 = maxInformation * infoRates[i];
 
         auto g = [allocationRatioPlanned, accrualTime, accrInt,
@@ -5061,8 +5057,8 @@ ListCpp lrsamplesizeequivcpp(
     }
 
     // --- compute power ---
-    std::vector<double> l(K), u(K), b(K), a(K);
-    for (size_t i = 0; i < K; ++i) {
+    std::vector<double> l(kMax), u(kMax), b(kMax), a(kMax);
+    for (size_t i = 0; i < kMax; ++i) {
       double sqrtIi = std::sqrt(I[i]);
       l[i] = critValues[i] + (thetaLower - theta[i]) * sqrtIi;
       u[i] = -critValues[i] + (thetaUpper - theta[i]) * sqrtIi;
@@ -5078,7 +5074,7 @@ ListCpp lrsamplesizeequivcpp(
     double p2 = std::accumulate(v2.begin(), v2.end(), 0.0);
 
     bool cross = false;
-    for (size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < kMax; ++i) {
       if (l[i] <= u[i]) { cross = true; break; }
     }
 
@@ -5420,7 +5416,7 @@ ListCpp lrsamplesizeequivcpp(
     }
 
     // update information rates to calculate new boundaries
-    for (size_t i = 0; i < K - 1; ++i) {
+    for (size_t i = 0; i < kMax - 1; ++i) {
       double nevents = std::floor(D * infoRates[i] + 0.5);
       infoRates[i] = nevents / D;
     }
@@ -5549,7 +5545,7 @@ Rcpp::List lrsamplesizeequiv(
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
 
   auto out = lrsamplesizeequivcpp(
-    beta, kMax, infoRates, critValues,
+    beta, static_cast<size_t>(kMax), infoRates, critValues,
     alpha, typeAlphaSpending, parameterAlphaSpending,
     userAlpha, hazardRatioLower, hazardRatioUpper,
     allocationRatioPlanned, accrualT, accrualInt,
