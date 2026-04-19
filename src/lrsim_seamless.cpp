@@ -20,7 +20,7 @@ using std::size_t;
 
 
 // Parallel entry function
-ListCpp lrsim_tsssd_cpp(
+ListCpp lrsim_seamless_cpp(
     const size_t M,
     const size_t K,
     const std::vector<double>& criticalValues,
@@ -915,7 +915,7 @@ ListCpp lrsim_tsssd_cpp(
 
 
 // [[Rcpp::export]]
-Rcpp::List lrsim_tsssd_Rcpp(
+Rcpp::List lrsim_seamless_Rcpp(
     const int M = 2,
     const int K = 1,
     const Rcpp::NumericVector& criticalValues = NA_REAL,
@@ -984,7 +984,7 @@ Rcpp::List lrsim_tsssd_Rcpp(
   std::vector<int> plannedE(plannedEvents.begin(), plannedEvents.end());
   std::vector<double> plannedT(plannedTime.begin(), plannedTime.end());
 
-  auto out = lrsim_tsssd_cpp(
+  auto out = lrsim_seamless_cpp(
     M, K, critValues, hrH0s, allocs, accrualT, accrualInt,
     pwSurvT, stratumFrac, lambdasVec, gammasVec,
     n, followupTime, fixedFollowup, rho1, rho2, plannedE, plannedT,
@@ -993,7 +993,7 @@ Rcpp::List lrsim_tsssd_Rcpp(
   thread_utils::drain_thread_warnings_to_R();
 
   Rcpp::List result = Rcpp::wrap(out);
-  result.attr("class") = "lrsim_tsssd";
+  result.attr("class") = "lrsim_seamless";
 
   return result;
 }
