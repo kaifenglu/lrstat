@@ -8,8 +8,6 @@ qmvnormr(
   p,
   mean = NULL,
   sigma,
-  pivot = FALSE,
-  fast = TRUE,
   n0 = 1024,
   n_max = 16384,
   R = 8,
@@ -27,12 +25,6 @@ qmvnormr(
 appropriate length is used.}
 
 \item{sigma}{The covariance (or correlation) matrix of the distribution.}
-
-\item{pivot}{Logical; if \code{TRUE}, applies an initial pivoting step
-to reorder the integration variables for improved efficiency.}
-
-\item{fast}{Logical; if \code{TRUE}, uses a fast approximation of the
-univariate normal CDF and quantile functions.}
 
 \item{n0}{Initial number of samples per replication for the Monte Carlo
 integration.}
