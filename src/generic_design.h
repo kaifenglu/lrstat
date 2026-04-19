@@ -26,7 +26,7 @@ ListCpp exitprobcpp(const std::vector<double>& b,
 
 
 std::vector<double> getBoundcpp(
-    const int k,
+    const std::size_t k,
     const std::vector<double>& informationRates,
     const double alpha,
     const std::string& typeAlphaSpending,
@@ -38,7 +38,7 @@ std::vector<double> getBoundcpp(
 
 class BoundCacheAlpha {
 public:
-  BoundCacheAlpha(int k,
+  BoundCacheAlpha(std::size_t k,
                   const std::vector<double>& infoRates,
                   const std::string& asf,
                   double asfpar,
@@ -58,7 +58,7 @@ private:
 
   int64_t discretize(double alpha) const;
 
-  int k_;
+  std::size_t k_;
   std::vector<double> infoRates_;
   std::string asf_;
   double asfpar_;
@@ -76,7 +76,7 @@ private:
 
 ListCpp getPower(
     const double alpha,
-    const int kMax,
+    const std::size_t kMax,
     const std::vector<double>& b,
     const std::vector<double>& theta,
     const std::vector<double>& I,
@@ -91,7 +91,7 @@ ListCpp getDesigncpp(
     const double beta,
     const double IMax,
     const double theta,
-    const int kMax,
+    const std::size_t kMax,
     const std::vector<double>& informationRates,
     const std::vector<unsigned char>& efficacyStopping,
     const std::vector<unsigned char>& futilityStopping,
@@ -114,7 +114,7 @@ ListCpp getDesignEquivcpp(
     const double thetaLower,
     const double thetaUpper,
     const double theta,
-    const int kMax,
+    const std::size_t kMax,
     const std::vector<double>& informationRates,
     const std::vector<double>& criticalValues,
     const double alpha,
@@ -127,11 +127,11 @@ ListCpp getDesignEquivcpp(
 ListCpp adaptDesigncpp(
     double betaNew,
     double INew,
-    const int L,
+    const std::size_t L,
     const double zL,
     const double theta,
     const double IMax,
-    const int kMax,
+    const std::size_t kMax,
     const std::vector<double>& informationRates,
     const std::vector<unsigned char>& efficacyStopping,
     const std::vector<unsigned char>& futilityStopping,
@@ -145,7 +145,7 @@ ListCpp adaptDesigncpp(
     const double parameterBetaSpending,
     const std::vector<double>& spendingTime,
     const bool MullerSchafer,
-    const int kNew,
+    const std::size_t kNew,
     const std::vector<double>& informationRatesNew,
     const std::vector<unsigned char>& efficacyStoppingNew,
     const std::vector<unsigned char>& futilityStoppingNew,
