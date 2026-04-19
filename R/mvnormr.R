@@ -7,10 +7,6 @@
 #' @param mean  The mean vector. If \code{NULL} (default), a zero vector of
 #'   appropriate length is used.
 #' @param sigma The covariance (or correlation) matrix of the distribution.
-#' @param pivot Logical; if \code{TRUE}, applies an initial pivoting step
-#'   to reorder the integration variables for improved efficiency.
-#' @param fast Logical; if \code{TRUE}, uses a fast approximation of the
-#'   univariate normal CDF and quantile functions.
 #' @param n0 Initial number of samples per replication for the Monte Carlo
 #'   integration.
 #' @param n_max Maximum number of samples allowed per replication.
@@ -40,9 +36,6 @@
 #' * Sequential Conditioning: Mimics the standardization and transformation
 #'   approach used in \code{mvtnorm::lpmvnorm}, reducing the \eqn{J}-dimensional
 #'   integral to a \eqn{(J-1)}-dimensional problem over a hypercube.
-#'
-#' * Initial Pivoting (if requested): Reorders the integration variables to
-#'   minimize the variance of the integrand.
 #'
 #' * Adaptive Sampling: The number of samples per replication increases
 #'   dynamically until the estimated error falls below \code{abseps} or
@@ -89,7 +82,6 @@
 #'
 #' @export
 pmvnormr <- function(lower, upper, mean = NULL, sigma,
-                     pivot = FALSE, fast = TRUE,
                      n0 = 1024, n_max = 16384, R = 8, abseps = 1e-4,
                      releps = 0.0, seed = 0, parallel = TRUE, nthreads = 0) {
   if (!is.matrix(sigma) && length(sigma) == 1)
@@ -106,7 +98,6 @@ pmvnormr <- function(lower, upper, mean = NULL, sigma,
   }
 
   out <- pmvnormRcpp(lower = lower, upper = upper, mean = mean, sigma = sigma,
-                     pivot = pivot, fast = fast,
                      n0 = n0, n_max = n_max, R = R, abseps = abseps,
                      releps = releps, seed = seed, parallel = parallel)
   prob <- out$prob
@@ -126,10 +117,6 @@ pmvnormr <- function(lower, upper, mean = NULL, sigma,
 #' @param mean  The mean vector. If \code{NULL} (default), a zero vector of
 #'   appropriate length is used.
 #' @param sigma The covariance (or correlation) matrix of the distribution.
-#' @param pivot Logical; if \code{TRUE}, applies an initial pivoting step
-#'   to reorder the integration variables for improved efficiency.
-#' @param fast Logical; if \code{TRUE}, uses a fast approximation of the
-#'   univariate normal CDF and quantile functions.
 #' @param n0 Initial number of samples per replication for the Monte Carlo
 #'   integration.
 #' @param n_max Maximum number of samples allowed per replication.
@@ -161,7 +148,7 @@ pmvnormr <- function(lower, upper, mean = NULL, sigma,
 #' qmvnormr(0.5, mean = mean, sigma = sigma)
 #'
 #' @export
-qmvnormr <- function(p, mean = NULL, sigma, pivot = FALSE, fast = TRUE,
+qmvnormr <- function(p, mean = NULL, sigma,
                      n0 = 1024, n_max = 16384, R = 8, abseps = 1e-4,
                      releps = 0.0, seed = 0, parallel = TRUE, nthreads = 0) {
   if (!is.matrix(sigma) && length(sigma) == 1)
@@ -177,7 +164,7 @@ qmvnormr <- function(p, mean = NULL, sigma, pivot = FALSE, fast = TRUE,
     RcppParallel::setThreadOptions(min(nthreads, n_physical_cores))
   }
 
-  qmvnormRcpp(p = p, mean = mean, sigma = sigma, pivot = pivot,
-              fast = fast, n0 = n0, n_max = n_max, R = R, abseps = abseps,
+  qmvnormRcpp(p = p, mean = mean, sigma = sigma,
+              n0 = n0, n_max = n_max, R = R, abseps = abseps,
               releps = releps, seed = seed, parallel = parallel)
 }
