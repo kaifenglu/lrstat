@@ -7,3 +7,4 @@ docs/
 src/*.o
 src/*.dll
 
+.positai

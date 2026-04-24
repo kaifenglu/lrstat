@@ -8,3 +8,5 @@ notes
 ^docs$
 ^_pkgdown\.yml$
 ^pkgdown$
+^\.positai$
+^\.claude$
