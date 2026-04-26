@@ -311,52 +311,54 @@ std::vector<double> getBound_seamless_cpp(
   size_t K = k + 1; // add the look at end of phase 2
 
   // infoRates: if missing create 1/K, 2/K, ..., k/K
+  size_t kMax = K;
   std::vector<double> infoRates(K);
   if (none_na(informationRates)) {
-    if (informationRates.size() < K)
+    kMax = informationRates.size();
+    if (kMax < K)
       throw std::invalid_argument("Insufficient length for informationRates");
 
-    infoRates.assign(informationRates.begin(), informationRates.begin() + K);
+    infoRates = informationRates;
     if (infoRates[0] <= 0.0)
       throw std::invalid_argument("informationRates must be positive");
     if (any_nonincreasing(infoRates))
       throw std::invalid_argument("informationRates must be increasing");
-    if (infoRates[K-1] > 1.0)
+    if (infoRates.back() > 1.0)
       throw std::invalid_argument("informationRates must not exceed 1");
   } else {
-    for (size_t i = 0; i < K; ++i) {
-      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(K);
+    for (size_t i = 0; i < kMax; ++i) {
+      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(kMax);
     }
   }
 
   // spendTime: default to infoRates if missing
-  std::vector<double> spendTime; spendTime.reserve(K);
+  std::vector<double> spendTime;
   if (none_na(spendingTime)) {
-    if (spendingTime.size() < K)
+    if (spendingTime.size() < kMax)
       throw std::invalid_argument("Insufficient length for spendingTime");
 
-    spendTime.assign(spendingTime.begin(), spendingTime.begin() + K);
+    spendTime = spendingTime;
     if (spendTime[0] <= 0.0)
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendTime[K-1] > 1.0)
+    if (spendTime.back() > 1.0)
       throw std::invalid_argument("spendingTime must not exceed 1");
   } else {
     spendTime = infoRates;
   }
 
   // effStopping: default to all 1s if missing
-  std::vector<unsigned char> effStopping; effStopping.reserve(K);
+  std::vector<unsigned char> effStopping;
   if (none_na(efficacyStopping)) {
-    if (efficacyStopping.size() < K)
+    if (efficacyStopping.size() < kMax)
       throw std::invalid_argument("Insufficient length for efficacyStopping");
 
-    effStopping.assign(efficacyStopping.begin(), efficacyStopping.begin() + K);
-    if (effStopping[K-1] != 1)
+    effStopping = efficacyStopping;
+    if (effStopping.back() != 1)
       throw std::invalid_argument("efficacyStopping must end with 1");
   } else {
-    effStopping.assign(K, 1);
+    effStopping.assign(kMax, 1);
   }
 
   // asf (alpha spending function) to lower-case
@@ -369,13 +371,13 @@ std::vector<double> getBound_seamless_cpp(
   if (asf == "user") {
     if (!none_na(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be specified");
-    if (userAlphaSpending.size() < K)
+    if (userAlphaSpending.size() < kMax)
       throw std::invalid_argument("Insufficient length of userAlphaSpending");
     if (userAlphaSpending[0] < 0.0)
       throw std::invalid_argument("userAlphaSpending must be nonnegative");
     if (any_nonincreasing(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be nondecreasing");
-    if (userAlphaSpending[K-1] > alpha)
+    if (userAlphaSpending.back() > alpha)
       throw std::invalid_argument("userAlphaSpending must not exceed alpha");
   }
 
@@ -388,14 +390,26 @@ std::vector<double> getBound_seamless_cpp(
     throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
   }
 
-  std::vector<double> criticalValues(K);
+  if (asf == "of" || asf == "p" || asf == "wt" || asf == "none") {
+    if (infoRates.back() != 1.0) {
+      throw std::invalid_argument(
+          "informationRates must end with 1 for OF, P, WT, or NONE");
+    }
+    if (spendTime.back() != 1.0) {
+      throw std::invalid_argument(
+          "spendingTime must end with 1 for OF, P, WT, or NONE");
+    }
+  }
+
+
+  std::vector<double> criticalValues(kMax);
 
   if (asf == "none") {
-    for (size_t i = 0; i < K-1; ++i) criticalValues[i] = 6.0;
+    for (size_t i = 0; i < kMax-1; ++i) criticalValues[i] = 6.0;
     std::vector<double> theta(M, 0.0);
 
     auto f = [&](double aval)->double {
-      criticalValues[K-1] = aval;
+      criticalValues[kMax-1] = aval;
       auto probs = exitprob_seamless_cpp(M, r, theta, corr_known, k,
                                       criticalValues, infoRates);
       auto v = probs.get<std::vector<double>>("exitProb");
@@ -403,8 +417,8 @@ std::vector<double> getBound_seamless_cpp(
       return cpu - alpha;
     };
 
-    criticalValues[K-1] = brent(f, 0.0, 6.0, 1e-6);
-    return criticalValues;
+    criticalValues[kMax-1] = brent(f, 0.0, 6.0, 1e-6);
+    return subset(criticalValues, 0, K);
   }
 
   if (asf == "of" || asf == "p" || asf == "wt") {
@@ -414,15 +428,15 @@ std::vector<double> getBound_seamless_cpp(
     else Delta = parameterAlphaSpending; // parameterAlphaSpending holds delta for WT
 
     // for a given multiplier, compute cumulative upper exit probability - alpha
-    std::vector<double> u(K);
+    std::vector<double> u(kMax);
     std::vector<double> theta(M, 0.0);
-    std::vector<double> u0(K);
-    for (size_t i = 0; i < K; ++i) {
+    std::vector<double> u0(kMax);
+    for (size_t i = 0; i < kMax; ++i) {
       u0[i] = std::pow(infoRates[i], Delta - 0.5);
     }
 
     auto f = [&](double aval)->double {
-      for (size_t i = 0; i < K; ++i) {
+      for (size_t i = 0; i < kMax; ++i) {
         u[i] = aval * u0[i];
         if (!effStopping[i]) u[i] = 6.0;
       }
@@ -434,11 +448,11 @@ std::vector<double> getBound_seamless_cpp(
     };
 
     double cwt = brent(f, 0.0, 10.0, 1e-6);
-    for (size_t i = 0; i < K; ++i) {
+    for (size_t i = 0; i < kMax; ++i) {
       criticalValues[i] = cwt * u0[i];
       if (!effStopping[i]) criticalValues[i] = 6.0;
     }
-    return criticalValues;
+    return subset(criticalValues, 0, K);
   }
 
   if (asf == "sfof" || asf == "sfp" || asf == "sfkd" ||
@@ -462,11 +476,11 @@ std::vector<double> getBound_seamless_cpp(
     }
 
     // Preallocate reusable buffers used by the root-finding lambda
-    std::vector<double> u_vec; u_vec.reserve(K);
+    std::vector<double> u_vec; u_vec.reserve(kMax);
     std::vector<double> theta_vec(M, 0.0);
 
     // subsequent stages
-    for (size_t k1 = 1; k1 < K; ++k1) {
+    for (size_t k1 = 1; k1 < kMax; ++k1) {
       // determine cumulative alpha at this stage
       if (asf == "user") cumAlpha = userAlphaSpending[k1];
       else cumAlpha = errorSpentcpp(spendTime[k1], alpha, asf,
@@ -508,7 +522,7 @@ std::vector<double> getBound_seamless_cpp(
       }
     }
 
-    return criticalValues;
+    return subset(criticalValues, 0, K);
   }
 
   throw std::invalid_argument("Invalid value for typeAlphaSpending");
@@ -544,9 +558,10 @@ std::vector<double> getBound_seamless_cpp(
 //' satisfies the alpha-spending requirement, given the selection of the
 //' "best" arm at the end of Phase 2.
 //'
-//' If \code{typeAlphaSpending} is specified as \code{"OF"} (O'Brien-Fleming),
-//' \code{"P"} (Pocock), or \code{"WT"} (Wang-Tsiatis), the boundaries are
-//' calculated assuming the looks are equally spaced in terms of information.
+//' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+//' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+//' and \code{spendingTime} must be of full length \code{kMax}, and
+//' \code{informationRates} and \code{spendingTime} must end with 1.
 //'
 //' @return A numeric vector of length \eqn{k + 1} containing the critical
 //' values (on the standard normal Z-scale) for each analysis up to the
