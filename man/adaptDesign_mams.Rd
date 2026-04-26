@@ -38,7 +38,8 @@ adaptDesign_mams(
 \arguments{
 \item{betaNew}{The type II error for the secondary trial.}
 
-\item{INew}{The maximum information of the secondary trial. Either
+\item{INew}{The maximum information for any active arm versus the common
+control in the secondary trial. Either
 \code{betaNew} or \code{INew} should be provided, while the other
 must be missing.}
 

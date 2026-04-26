@@ -70,16 +70,16 @@ Defaults to 0.025.}
 
 \item{typeAlphaSpending}{The type of alpha spending for the primary
 trial. One of the following:
-"OF" for O'Brien-Fleming boundaries,
-"P" for Pocock boundaries,
-"WT" for Wang & Tsiatis boundaries,
-"sfOF" for O'Brien-Fleming type spending function,
-"sfP" for Pocock type spending function,
-"sfKD" for Kim & DeMets spending function,
-"sfHSD" for Hwang, Shi & DeCani spending function,
-"user" for user defined spending, and
-"none" for no early efficacy stopping.
-Defaults to "sfOF".}
+\code{"OF"} for O'Brien-Fleming boundaries,
+\code{"P"} for Pocock boundaries,
+\code{"WT"} for Wang & Tsiatis boundaries,
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+\code{"user"} for user defined spending, and
+\code{"none"} for no early efficacy stopping.
+Defaults to \code{"sfOF"}.}
 
 \item{parameterAlphaSpending}{The parameter value of alpha spending
 for the primary trial. Corresponds to \eqn{\Delta} for "WT",
@@ -94,12 +94,12 @@ for futility stopping for the primary trial. Defaults to
 
 \item{typeBetaSpending}{The type of beta spending for the primary trial.
 One of the following:
-"sfOF" for O'Brien-Fleming type spending function,
-"sfP" for Pocock type spending function,
-"sfKD" for Kim & DeMets spending function,
-"sfHSD" for Hwang, Shi & DeCani spending function, and
-"none" for no early futility stopping.
-Defaults to "none".}
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+\code{"none"} for no early futility stopping.
+Defaults to \code{"none"}.}
 
 \item{parameterBetaSpending}{The parameter value of beta spending
 for the primary trial. Corresponds to \eqn{\rho} for "sfKD",
@@ -126,15 +126,15 @@ if left unspecified.}
 
 \item{typeAlphaSpendingNew}{The type of alpha spending for the secondary
 trial. One of the following:
-"OF" for O'Brien-Fleming boundaries,
-"P" for Pocock boundaries,
-"WT" for Wang & Tsiatis boundaries,
-"sfOF" for O'Brien-Fleming type spending function,
-"sfP" for Pocock type spending function,
-"sfKD" for Kim & DeMets spending function,
-"sfHSD" for Hwang, Shi & DeCani spending function, and
-"none" for no early efficacy stopping.
-Defaults to "sfOF".}
+\code{"OF"} for O'Brien-Fleming boundaries,
+\code{"P"} for Pocock boundaries,
+\code{"WT"} for Wang & Tsiatis boundaries,
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+\code{"none"} for no early efficacy stopping.
+Defaults to \code{"sfOF"}.}
 
 \item{parameterAlphaSpendingNew}{The parameter value of alpha spending
 for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
@@ -142,12 +142,12 @@ for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
 
 \item{typeBetaSpendingNew}{The type of beta spending for the secondary
 trial. One of the following:
-"sfOF" for O'Brien-Fleming type spending function,
-"sfP" for Pocock type spending function,
-"sfKD" for Kim & DeMets spending function,
-"sfHSD" for Hwang, Shi & DeCani spending function, and
-"none" for no early futility stopping.
-Defaults to "none".}
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+\code{"none"} for no early futility stopping.
+Defaults to \code{"none"}.}
 
 \item{parameterBetaSpendingNew}{The parameter value of beta spending
 for the secondary trial. Corresponds to \eqn{\rho} for "sfKD",

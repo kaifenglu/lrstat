@@ -58,8 +58,10 @@ Obtains the efficacy stopping boundaries for a group
 sequential design.
 }
 \details{
-If \code{typeAlphaSpending} is "OF", "P", or "WT", then the boundaries
-will be based on equally spaced looks.
+If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+\code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+and \code{spendingTime} must be of full length \code{kMax}, and
+\code{informationRates} and \code{spendingTime} must end with 1.
 }
 \examples{
 

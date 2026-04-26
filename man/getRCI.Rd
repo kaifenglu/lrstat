@@ -35,21 +35,21 @@ for efficacy stopping up to look \code{L}.}
 
 \item{alpha}{The significance level. Defaults to 0.025.}
 
-\item{typeAlphaSpending}{The type of alpha spending.
-One of the following:
-"OF" for O'Brien-Fleming boundaries,
-"P" for Pocock boundaries,
-"WT" for Wang & Tsiatis boundaries,
-"sfOF" for O'Brien-Fleming type spending function,
-"sfP" for Pocock type spending function,
-"sfKD" for Kim & DeMets spending function,
-"sfHSD" for Hwang, Shi & DeCani spending function, and
-"none" for no early efficacy stopping.
-Defaults to "sfOF".}
+\item{typeAlphaSpending}{The type of alpha spending. One of the following:
+\code{"OF"} for O'Brien-Fleming boundaries,
+\code{"P"} for Pocock boundaries,
+\code{"WT"} for Wang & Tsiatis boundaries,
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+\code{"user"} for user defined spending, and
+\code{"none"} for no early efficacy stopping.
+Defaults to \code{"sfOF"}.}
 
-\item{parameterAlphaSpending}{The parameter value of alpha spending.
-Corresponds to \eqn{\Delta} for "WT", \eqn{\rho} for "sfKD", and
-\eqn{\gamma} for "sfHSD".}
+\item{parameterAlphaSpending}{The parameter value for the alpha spending.
+Corresponds to \eqn{\Delta} for \code{"WT"}, \eqn{\rho} for \code{"sfKD"},
+and \eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{spendingTime}{The error spending time up to look \code{L}.
 Defaults to missing, in which case, it is the same as
@@ -64,6 +64,11 @@ A data frame with the following components:
 \item \code{lower}: Lower bound of repeated confidence interval.
 \item \code{upper}: Upper bound of repeated confidence interval.
 }
+
+If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+\code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+and \code{spendingTime} must be of full length \code{kMax}, and
+\code{informationRates} and \code{spendingTime} must end with 1.
 }
 \description{
 Obtains the repeated confidence interval

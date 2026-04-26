@@ -12,13 +12,15 @@ fractions.}
 
 \item{error}{The total error to spend.}
 
-\item{sf}{The spending function. One of the following: "sfOF" for
-O'Brien-Fleming type spending function, "sfP" for Pocock type spending
-function, "sfKD" for Kim & DeMets spending function, and "sfHSD" for
-Hwang, Shi & DeCani spending function. Defaults to "sfOF".}
+\item{sf}{The spending function. One of the following:
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function, and
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function.
+Defaults to \code{"sfOF"}.}
 
 \item{sfpar}{The parameter for the spending function. Corresponds to
-\eqn{\rho} for "sfKD" and \eqn{\gamma} for "sfHSD".}
+\eqn{\rho} for \code{"sfKD"} and \eqn{\gamma} for \code{"sfHSD"}.}
 }
 \value{
 A vector of errors spent up to the interim look.

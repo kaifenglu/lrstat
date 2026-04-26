@@ -29,16 +29,16 @@
 #'   Defaults to 0.025.
 #' @param typeAlphaSpending The type of alpha spending for the primary
 #'   trial. One of the following:
-#'   "OF" for O'Brien-Fleming boundaries,
-#'   "P" for Pocock boundaries,
-#'   "WT" for Wang & Tsiatis boundaries,
-#'   "sfOF" for O'Brien-Fleming type spending function,
-#'   "sfP" for Pocock type spending function,
-#'   "sfKD" for Kim & DeMets spending function,
-#'   "sfHSD" for Hwang, Shi & DeCani spending function,
-#'   "user" for user defined spending, and
-#'   "none" for no early efficacy stopping.
-#'   Defaults to "sfOF".
+#'   \code{"OF"} for O'Brien-Fleming boundaries,
+#'   \code{"P"} for Pocock boundaries,
+#'   \code{"WT"} for Wang & Tsiatis boundaries,
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+#'   \code{"user"} for user defined spending, and
+#'   \code{"none"} for no early efficacy stopping.
+#'   Defaults to \code{"sfOF"}.
 #' @param parameterAlphaSpending The parameter value of alpha spending
 #'   for the primary trial. Corresponds to \eqn{\Delta} for "WT",
 #'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
@@ -49,12 +49,12 @@
 #'   \code{rep(-6, kMax-1)} if left unspecified.
 #' @param typeBetaSpending The type of beta spending for the primary trial.
 #'   One of the following:
-#'   "sfOF" for O'Brien-Fleming type spending function,
-#'   "sfP" for Pocock type spending function,
-#'   "sfKD" for Kim & DeMets spending function,
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-#'   "none" for no early futility stopping.
-#'   Defaults to "none".
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+#'   \code{"none"} for no early futility stopping.
+#'   Defaults to \code{"none"}.
 #' @param parameterBetaSpending The parameter value of beta spending
 #'   for the primary trial. Corresponds to \eqn{\rho} for "sfKD",
 #'   and \eqn{\gamma} for "sfHSD".
@@ -73,26 +73,26 @@
 #'   if left unspecified.
 #' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 #'   trial. One of the following:
-#'   "OF" for O'Brien-Fleming boundaries,
-#'   "P" for Pocock boundaries,
-#'   "WT" for Wang & Tsiatis boundaries,
-#'   "sfOF" for O'Brien-Fleming type spending function,
-#'   "sfP" for Pocock type spending function,
-#'   "sfKD" for Kim & DeMets spending function,
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-#'   "none" for no early efficacy stopping.
-#'   Defaults to "sfOF".
+#'   \code{"OF"} for O'Brien-Fleming boundaries,
+#'   \code{"P"} for Pocock boundaries,
+#'   \code{"WT"} for Wang & Tsiatis boundaries,
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+#'   \code{"none"} for no early efficacy stopping.
+#'   Defaults to \code{"sfOF"}.
 #' @param parameterAlphaSpendingNew The parameter value of alpha spending
 #'   for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
 #'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
 #' @param typeBetaSpendingNew The type of beta spending for the secondary
 #'   trial. One of the following:
-#'   "sfOF" for O'Brien-Fleming type spending function,
-#'   "sfP" for Pocock type spending function,
-#'   "sfKD" for Kim & DeMets spending function,
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-#'   "none" for no early futility stopping.
-#'   Defaults to "none".
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+#'   \code{"none"} for no early futility stopping.
+#'   Defaults to \code{"none"}.
 #' @param parameterBetaSpendingNew The parameter value of beta spending
 #'   for the secondary trial. Corresponds to \eqn{\rho} for "sfKD",
 #'   and \eqn{\gamma} for "sfHSD".
@@ -206,20 +206,8 @@ getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_re
 #' @param criticalValues The upper boundaries on the z-test statistic scale
 #'   for efficacy stopping up to look \code{L}.
 #' @inheritParams param_alpha
-#' @param typeAlphaSpending The type of alpha spending.
-#'   One of the following:
-#'   "OF" for O'Brien-Fleming boundaries,
-#'   "P" for Pocock boundaries,
-#'   "WT" for Wang & Tsiatis boundaries,
-#'   "sfOF" for O'Brien-Fleming type spending function,
-#'   "sfP" for Pocock type spending function,
-#'   "sfKD" for Kim & DeMets spending function,
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-#'   "none" for no early efficacy stopping.
-#'   Defaults to "sfOF".
-#' @param parameterAlphaSpending The parameter value of alpha spending.
-#'   Corresponds to \eqn{\Delta} for "WT", \eqn{\rho} for "sfKD", and
-#'   \eqn{\gamma} for "sfHSD".
+#' @inheritParams param_typeAlphaSpending
+#' @inheritParams param_parameterAlphaSpending
 #' @param spendingTime The error spending time up to look \code{L}.
 #'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRates}.
@@ -235,6 +223,12 @@ getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_re
 #' * \code{lower}: Lower bound of confidence interval.
 #'
 #' * \code{upper}: Upper bound of confidence interval.
+#'
+#' @details
+#' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+#' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+#' and \code{spendingTime} must be of full length \code{kMax}, and
+#' \code{informationRates} and \code{spendingTime} must end with 1.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -284,20 +278,8 @@ getCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationRa
 #' @param criticalValues The upper boundaries on the z-test statistic scale
 #'   for efficacy stopping up to look \code{L}.
 #' @inheritParams param_alpha
-#' @param typeAlphaSpending The type of alpha spending.
-#'   One of the following:
-#'   "OF" for O'Brien-Fleming boundaries,
-#'   "P" for Pocock boundaries,
-#'   "WT" for Wang & Tsiatis boundaries,
-#'   "sfOF" for O'Brien-Fleming type spending function,
-#'   "sfP" for Pocock type spending function,
-#'   "sfKD" for Kim & DeMets spending function,
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-#'   "none" for no early efficacy stopping.
-#'   Defaults to "sfOF".
-#' @param parameterAlphaSpending The parameter value of alpha spending.
-#'   Corresponds to \eqn{\Delta} for "WT", \eqn{\rho} for "sfKD", and
-#'   \eqn{\gamma} for "sfHSD".
+#' @inheritParams param_typeAlphaSpending
+#' @inheritParams param_parameterAlphaSpending
 #' @param spendingTime The error spending time up to look \code{L}.
 #'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRates}.
@@ -313,6 +295,11 @@ getCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationRa
 #' * \code{lower}: Lower bound of repeated confidence interval.
 #'
 #' * \code{upper}: Upper bound of repeated confidence interval.
+#'
+#' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+#' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+#' and \code{spendingTime} must be of full length \code{kMax}, and
+#' \code{informationRates} and \code{spendingTime} must end with 1.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -368,27 +355,27 @@ getRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationR
 #'   Defaults to 0.025.
 #' @param typeAlphaSpending The type of alpha spending for the primary
 #'   trial. One of the following:
-#'   "OF" for O'Brien-Fleming boundaries,
-#'   "P" for Pocock boundaries,
-#'   "WT" for Wang & Tsiatis boundaries,
-#'   "sfOF" for O'Brien-Fleming type spending function,
-#'   "sfP" for Pocock type spending function,
-#'   "sfKD" for Kim & DeMets spending function,
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-#'   "none" for no early efficacy stopping.
-#'   Defaults to "sfOF".
+#'   \code{"OF"} for O'Brien-Fleming boundaries,
+#'   \code{"P"} for Pocock boundaries,
+#'   \code{"WT"} for Wang & Tsiatis boundaries,
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+#'   \code{"none"} for no early efficacy stopping.
+#'   Defaults to \code{"sfOF"}.
 #' @param parameterAlphaSpending The parameter value of alpha spending
 #'   for the primary trial. Corresponds to \eqn{\Delta} for "WT",
 #'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
 #' @param spendingTime The error spending time of the primary trial.
 #'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRates}.
+#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
+#'   for trial adaptation.
 #' @param Lc The termination look of the integrated trial.
 #' @param zLc The z-test statistic at the termination look of the
 #'   integrated trial.
 #' @param INew The maximum information of the secondary trial.
-#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
-#'   for trial adaptation.
 #' @param informationRatesNew The spacing of looks of the secondary trial
 #'   up to look \code{L2}.
 #' @param efficacyStoppingNew The indicators of whether efficacy stopping is
@@ -396,15 +383,15 @@ getRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationR
 #'   Defaults to true if left unspecified.
 #' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 #'   trial. One of the following:
-#'   "OF" for O'Brien-Fleming boundaries,
-#'   "P" for Pocock boundaries,
-#'   "WT" for Wang & Tsiatis boundaries,
-#'   "sfOF" for O'Brien-Fleming type spending function,
-#'   "sfP" for Pocock type spending function,
-#'   "sfKD" for Kim & DeMets spending function,
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-#'   "none" for no early efficacy stopping.
-#'   Defaults to "sfOF".
+#'   \code{"OF"} for O'Brien-Fleming boundaries,
+#'   \code{"P"} for Pocock boundaries,
+#'   \code{"WT"} for Wang & Tsiatis boundaries,
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+#'   \code{"none"} for no early efficacy stopping.
+#'   Defaults to \code{"sfOF"}.
 #' @param parameterAlphaSpendingNew The parameter value of alpha spending
 #'   for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
 #'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
@@ -423,6 +410,12 @@ getRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationR
 #' * \code{lower}: Lower bound of confidence interval.
 #'
 #' * \code{upper}: Upper bound of confidence interval.
+#'
+#' @details
+#' If \code{typeAlphaSpendingNew} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+#' \code{"none"}, then \code{informationRatesNew}, \code{efficacyStoppingNew},
+#' and \code{spendingTimeNew} must be of full length \code{kNew}, and
+#' \code{informationRatesNew} and \code{spendingTimeNew} must end with 1.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -493,13 +486,13 @@ getRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationR
 #' getADCI(
 #'   L = L, zL = zL, IMax = n / (4 * sigmahatc^2), kMax = 3,
 #'   informationRates = s1, alpha = 0.025, typeAlphaSpending = "sfOF",
-#'   Lc = Lc, zLc = zLc, INew = nNew / (4 * sigmahatc^2),
-#'   MullerSchafer = TRUE, informationRatesNew = s2,
+#'   MullerSchafer = TRUE, Lc = Lc, zLc = zLc,
+#'   INew = nNew / (4 * sigmahatc^2), informationRatesNew = s2,
 #'   typeAlphaSpendingNew = "sfP")
 #'
 #' @export
-getADCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.25, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, Lc = NA_integer_, zLc = NA_real_, INew = NA_real_, MullerSchafer = FALSE, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
-    .Call(`_lrstat_getADCI`, L, zL, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, Lc, zLc, INew, MullerSchafer, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
+getADCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.25, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, Lc = NA_integer_, zLc = NA_real_, INew = NA_real_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+    .Call(`_lrstat_getADCI`, L, zL, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, MullerSchafer, Lc, zLc, INew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
 }
 
 #' @title Repeated Confidence Interval After Adaptation
@@ -521,41 +514,41 @@ getADCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_i
 #'   Defaults to 0.025.
 #' @param typeAlphaSpending The type of alpha spending for the primary
 #'   trial. One of the following:
-#'   "OF" for O'Brien-Fleming boundaries,
-#'   "P" for Pocock boundaries,
-#'   "WT" for Wang & Tsiatis boundaries,
-#'   "sfOF" for O'Brien-Fleming type spending function,
-#'   "sfP" for Pocock type spending function,
-#'   "sfKD" for Kim & DeMets spending function,
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-#'   "none" for no early efficacy stopping.
-#'   Defaults to "sfOF".
+#'   \code{"OF"} for O'Brien-Fleming boundaries,
+#'   \code{"P"} for Pocock boundaries,
+#'   \code{"WT"} for Wang & Tsiatis boundaries,
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+#'   \code{"none"} for no early efficacy stopping.
+#'   Defaults to \code{"sfOF"}.
 #' @param parameterAlphaSpending The parameter value of alpha spending
 #'   for the primary trial. Corresponds to \eqn{\Delta} for "WT",
 #'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
 #' @param spendingTime The error spending time of the primary trial.
 #'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRates}.
+#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
+#'   for trial adaptation.
 #' @param Lc The look of interest in the integrated trial.
 #' @param zLc The z-test statistic at the look of the integrated trial.
 #' @param INew The maximum information of the secondary trial.
-#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
-#'   for trial adaptation.
 #' @param informationRatesNew The spacing of looks of the secondary trial.
 #' @param efficacyStoppingNew The indicators of whether efficacy stopping is
 #'   allowed at each look of the secondary trial up to look \code{L2}.
 #'   Defaults to true if left unspecified.
 #' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 #'   trial. One of the following:
-#'   "OF" for O'Brien-Fleming boundaries,
-#'   "P" for Pocock boundaries,
-#'   "WT" for Wang & Tsiatis boundaries,
-#'   "sfOF" for O'Brien-Fleming type spending function,
-#'   "sfP" for Pocock type spending function,
-#'   "sfKD" for Kim & DeMets spending function,
-#'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-#'   "none" for no early efficacy stopping.
-#'   Defaults to "sfOF".
+#'   \code{"OF"} for O'Brien-Fleming boundaries,
+#'   \code{"P"} for Pocock boundaries,
+#'   \code{"WT"} for Wang & Tsiatis boundaries,
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+#'   \code{"none"} for no early efficacy stopping.
+#'   Defaults to \code{"sfOF"}.
 #' @param parameterAlphaSpendingNew The parameter value of alpha spending
 #'   for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
 #'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
@@ -574,6 +567,12 @@ getADCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_i
 #' * \code{lower}: Lower bound of repeated confidence interval.
 #'
 #' * \code{upper}: Upper bound of repeated confidence interval.
+#'
+#' @details
+#' If \code{typeAlphaSpendingNew} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+#' \code{"none"}, then \code{informationRatesNew}, \code{efficacyStoppingNew},
+#' and \code{spendingTimeNew} must be of full length \code{kNew}, and
+#' \code{informationRatesNew} and \code{spendingTimeNew} must end with 1.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -644,13 +643,195 @@ getADCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_i
 #' getADRCI(
 #'   L = L, zL = zL, IMax = n / (4 * sigmahatc^2), kMax = 3,
 #'   informationRates = s1, alpha = 0.025, typeAlphaSpending = "sfOF",
-#'   Lc = Lc, zLc = zLc, INew = nNew / (4 * sigmahatc^2),
-#'   MullerSchafer = TRUE, informationRatesNew = s2,
+#'   MullerSchafer = TRUE, Lc = Lc, zLc = zLc,
+#'   INew = nNew / (4 * sigmahatc^2), informationRatesNew = s2,
 #'   typeAlphaSpendingNew = "sfP")
 #'
 #' @export
-getADRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, Lc = NA_integer_, zLc = NA_real_, INew = NA_real_, MullerSchafer = 0L, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
-    .Call(`_lrstat_getADRCI`, L, zL, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, Lc, zLc, INew, MullerSchafer, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
+getADRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, Lc = NA_integer_, zLc = NA_real_, INew = NA_real_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+    .Call(`_lrstat_getADRCI`, L, zL, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, MullerSchafer, Lc, zLc, INew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
+}
+
+#' @title Confidence Interval After Trial Termination
+#' @description Obtains the p-value, median unbiased point estimate, and
+#' confidence interval after the end of a group sequential trial.
+#'
+#' @param L The termination look.
+#' @param zL The vector of z-test statistics at the termination look.
+#' @param M Number of active treatment arms.
+#' @param r Randomization ratio of each active arm to the common control.
+#' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
+#'   statistics is derived from the randomization ratio \code{r}
+#'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
+#'   0 is used.
+#' @param IMax Maximum information for any active arm versus the common
+#'   control.
+#' @param informationRates The information rates up to look \code{L}.
+#' @param efficacyStopping Indicators of whether efficacy stopping is
+#'   allowed at each stage up to look \code{L}.
+#'   Defaults to true if left unspecified.
+#' @param criticalValues The matrix of by-level upper boundaries on the
+#'   z-test statistic scale for efficacy stopping up to look \code{L}.
+#'   The first column is for level \code{M}, the second column is for
+#'   level \code{M - 1}, and so on, with the last column for level 1.
+#'   If left unspecified, the critical values will be computed based
+#'   on the specified alpha spending function.
+#' @inheritParams param_alpha
+#' @inheritParams param_typeAlphaSpending
+#' @inheritParams param_parameterAlphaSpending
+#' @param spendingTime The error spending time up to look \code{L}.
+#'   Defaults to missing, in which case, it is the same as
+#'   \code{informationRates}.
+#'
+#' @return A data frame with the following components:
+#'
+#' * \code{level}: Number of individual hypotheses considered for multiplicity.
+#'
+#' * \code{index}: The index of the treatment arm among the M active arms.
+#'
+#' * \code{pvalue}: p-value for rejecting the null hypothesis.
+#'
+#' * \code{thetahat}: Median unbiased point estimate of the parameter.
+#'
+#' * \code{cilevel}: Confidence interval level.
+#'
+#' * \code{lower}: Lower bound of confidence interval.
+#'
+#' * \code{upper}: Upper bound of confidence interval.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#' Anastasios A. Tsiatis, Gary L. Rosner and Cyrus R. Mehta.
+#' Exact confidence intervals following a group sequential test.
+#' Biometrics 1984;40:797-803.
+#'
+#' @examples
+#' getCI_mams(
+#'   L = 2, zL = c(2.075, 2.264),
+#'   M = 2, r = 1, corr_known = FALSE,
+#'   IMax = 300 / 4, informationRates = c(1/2, 1),
+#'   alpha = 0.025, typeAlphaSpending = "sfOF")
+#'
+#' @export
+getCI_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_) {
+    .Call(`_lrstat_getCI_mams`, M, r, corr_known, L, zL, IMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime)
+}
+
+#' @title Confidence Interval After Adaptation for Multi-Arm Multi-Stage Design
+#' @description Obtains the p-value, conservative point estimate, and
+#' confidence interval after the end of an adaptive multi-arm multi-stage trial.
+#'
+#' @param M Number of active treatment arms in the primary trial.
+#' @param r Randomization ratio of each active arm to the common control
+#'   in the primary trial.
+#' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
+#'   statistics is derived from the randomization ratio \eqn{r}
+#'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
+#'   0 is assumed.
+#' @param L The interim adaptation look of the primary trial.
+#' @param zL The z-test statistics at the interim adaptation look of
+#'   the primary trial.
+#' @param IMax Maximum information for any active arm versus the common
+#'   control for the primary trial. Must be provided.
+#' @param kMax The maximum number of stages of the primary trial.
+#' @param informationRates The information rates of the primary trial.
+#' @param efficacyStopping Indicators of whether efficacy stopping is
+#'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
+#'   if left unspecified.
+#' @param criticalValues The matrix of by-level upper boundaries on the
+#'   z-test statistic scale for efficacy stopping up to look \code{L}
+#'   for the primary trial.
+#'   The first column is for level \code{M}, the second column is for
+#'   level \code{M - 1}, and so on, with the last column for level 1.
+#'   If left unspecified, the critical values will be computed based
+#'   on the specified alpha spending function.
+#' @param alpha The significance level of the primary trial.
+#'   Defaults to 0.025.
+#' @param typeAlphaSpending The type of alpha spending for the primary
+#'   trial. One of the following:
+#'   \code{"OF"} for O'Brien-Fleming boundaries,
+#'   \code{"P"} for Pocock boundaries,
+#'   \code{"WT"} for Wang & Tsiatis boundaries,
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+#'   \code{"none"} for no early efficacy stopping.
+#'   Defaults to \code{"sfOF"}.
+#' @param parameterAlphaSpending The parameter value of alpha spending
+#'   for the primary trial. Corresponds to \eqn{\Delta} for "WT",
+#'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
+#' @param spendingTime The error spending time of the primary trial.
+#'   Defaults to missing, in which case, it is the same as
+#'   \code{informationRates}.
+#' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
+#'   for trial adaptation.
+#' @param MNew The number of active treatment arms in the secondary trial.
+#' @param selected The indices of the selected treatment arms for the
+#'   secondary trial among the \code{M} active arms in the primary trial.
+#' @param rNew The randomization ratio of each active arm to the common control
+#'  in the secondary trial.
+#' @param Lc The termination look of the integrated trial.
+#' @param zLc The z-test statistics at the termination look of the
+#'   integrated trial.
+#' @param INew The maximum information for any active arm versus the common
+#'   control in the secondary trial.
+#' @param informationRatesNew The spacing of looks of the secondary trial
+#'   up to look \code{L2}.
+#' @param efficacyStoppingNew The indicators of whether efficacy stopping is
+#'   allowed at each look of the secondary trial up to look \code{L2}.
+#'   Defaults to \code{TRUE} if left unspecified.
+#' @param typeAlphaSpendingNew The type of alpha spending for the secondary
+#'   trial. One of the following:
+#'   \code{"OF"} for O'Brien-Fleming boundaries,
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+#'   \code{"none"} for no early efficacy stopping.
+#'   Defaults to \code{"sfOF"}.
+#' @param parameterAlphaSpendingNew The parameter value of alpha spending
+#'   for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
+#'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
+#' @param spendingTimeNew The error spending time of the secondary trial
+#'   up to look \code{L2}. Defaults to missing, in which case, it is
+#'   the same as \code{informationRatesNew}.
+#'
+#' @return A data frame with the following variables:
+#'
+#' * \code{level}: Number of individual hypotheses considered for multiplicity.
+#'
+#' * \code{index}: The index of the treatment arm among the \code{M} active arms.
+#'
+#' * \code{pvalue}: p-value for rejecting the null hypothesis.
+#'
+#' * \code{thetahat}: Median unbiased point estimate of the parameter.
+#'
+#' * \code{cilevel}: Confidence interval level.
+#'
+#' * \code{lower}: Lower bound of confidence interval.
+#'
+#' * \code{upper}: Upper bound of confidence interval.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#' Ping Gao, Yingqiu Li.
+#' Adaptive multiple comparison sequential design (AMCSD) for clinical trials.
+#' Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
+#'
+#' @examples
+#' getADCI_mams(
+#'   M = 2, r = 1, corr_known = FALSE, L = 1, zL = c(2.075, 2.264),
+#'   IMax = 300 / 4, kMax = 2, informationRates = c(0.5, 1),
+#'   alpha = 0.025, typeAlphaSpending = "sfOF",
+#'   MNew = 1, selected = 2, rNew = 1,
+#'   Lc = 2, zLc = 1.667, INew = 374 / 4)
+#'
+#' @export
+getADCI_mams <- function(M = NA_integer_, r = NA_real_, corr_known = TRUE, L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NULL, alpha = 0.25, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, MNew = NA_integer_, selected = NA_integer_, rNew = NA_real_, Lc = NA_integer_, zLc = NA_real_, INew = NA_real_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+    .Call(`_lrstat_getADCI_mams`, M, r, corr_known, L, zL, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, MullerSchafer, MNew, selected, rNew, Lc, zLc, INew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
 }
 
 #' @title Number of Enrolled Subjects
@@ -1729,12 +1910,14 @@ riskRatioExactCI <- function(n1 = NA_integer_, y1 = NA_integer_, n2 = NA_integer
 #' @param t A vector of spending times, typically equal to information
 #'   fractions.
 #' @param error The total error to spend.
-#' @param sf The spending function. One of the following: "sfOF" for
-#'   O'Brien-Fleming type spending function, "sfP" for Pocock type spending
-#'   function, "sfKD" for Kim & DeMets spending function, and "sfHSD" for
-#'   Hwang, Shi & DeCani spending function. Defaults to "sfOF".
+#' @param sf The spending function. One of the following:
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function, and
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function.
+#'   Defaults to \code{"sfOF"}.
 #' @param sfpar The parameter for the spending function. Corresponds to
-#'   \eqn{\rho} for "sfKD" and \eqn{\gamma} for "sfHSD".
+#'   \eqn{\rho} for \code{"sfKD"} and \eqn{\gamma} for \code{"sfHSD"}.
 #'
 #' @details
 #' This function implements a variety of error spending functions commonly
@@ -1858,8 +2041,10 @@ exitprob <- function(b, a = NA_real_, theta = 0L, I = NA_real_) {
 #' @inheritParams param_efficacyStopping
 #'
 #' @details
-#' If \code{typeAlphaSpending} is "OF", "P", or "WT", then the boundaries
-#' will be based on equally spaced looks.
+#' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+#' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+#' and \code{spendingTime} must be of full length \code{kMax}, and
+#' \code{informationRates} and \code{spendingTime} must end with 1.
 #'
 #' @return A numeric vector of critical values up to the current look.
 #'
@@ -4376,9 +4561,10 @@ exitprob_mams <- function(M = NA_integer_, r = 1, theta = NA_real_, corr_known =
 #' satisfies the alpha-spending requirement, given the selection of the
 #' "best" arm at the end of Phase 2.
 #'
-#' If \code{typeAlphaSpending} is specified as \code{"OF"} (O'Brien-Fleming),
-#' \code{"P"} (Pocock), or \code{"WT"} (Wang-Tsiatis), the boundaries are
-#' calculated assuming the looks are equally spaced in terms of information.
+#' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+#' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+#' and \code{spendingTime} must be of full length \code{kMax}, and
+#' \code{informationRates} and \code{spendingTime} must end with 1.
 #'
 #' @return A numeric vector of length \eqn{k} containing the critical
 #' values (on the standard normal Z-scale) for each analysis up to the
@@ -4510,7 +4696,8 @@ getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M
 #' the error spending function, and the number and spacing of interim looks.
 #'
 #' @param betaNew The type II error for the secondary trial.
-#' @param INew The maximum information of the secondary trial. Either
+#' @param INew The maximum information for any active arm versus the common
+#'   control in the secondary trial. Either
 #'   \code{betaNew} or \code{INew} should be provided, while the other
 #'   must be missing.
 #' @param M Number of active treatment arms in the primary trial.
@@ -7628,9 +7815,10 @@ exitprob_seamless <- function(M = NA_integer_, r = 1, theta = NA_real_, corr_kno
 #' satisfies the alpha-spending requirement, given the selection of the
 #' "best" arm at the end of Phase 2.
 #'
-#' If \code{typeAlphaSpending} is specified as \code{"OF"} (O'Brien-Fleming),
-#' \code{"P"} (Pocock), or \code{"WT"} (Wang-Tsiatis), the boundaries are
-#' calculated assuming the looks are equally spaced in terms of information.
+#' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+#' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+#' and \code{spendingTime} must be of full length \code{kMax}, and
+#' \code{informationRates} and \code{spendingTime} must end with 1.
 #'
 #' @return A numeric vector of length \eqn{k + 1} containing the critical
 #' values (on the standard normal Z-scale) for each analysis up to the

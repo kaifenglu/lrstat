@@ -77,9 +77,10 @@ The function determines critical values by solving for the boundary that
 satisfies the alpha-spending requirement, given the selection of the
 "best" arm at the end of Phase 2.
 
-If \code{typeAlphaSpending} is specified as \code{"OF"} (O'Brien-Fleming),
-\code{"P"} (Pocock), or \code{"WT"} (Wang-Tsiatis), the boundaries are
-calculated assuming the looks are equally spaced in terms of information.
+If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+\code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+and \code{spendingTime} must be of full length \code{kMax}, and
+\code{informationRates} and \code{spendingTime} must end with 1.
 }
 \examples{
 
