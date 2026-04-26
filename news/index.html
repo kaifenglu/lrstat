@@ -49,7 +49,11 @@
 <li>added integratedTrial to adaptDesign</li>
 <li>updated the backward image confidence interval method to account for the case when astar &gt; conditional_power</li>
 <li>updated point estimate for repeated confidence interval</li>
-<li>added functions for multi-arm multi-stage (MAMS) designs</li>
+<li>added functions for multi-arm multi-stage (MAMS) design and anlysis, including exitprob_mams, getBound_mams, getDesign_mams, adaptDesign_mams, getCI_mams, getADCI_mams</li>
+<li>ensured that if typeAlphaSpending is “OF”, “P”, “WT”, or “none”, then informationRates, efficacyStopping, and spendingTime must be of full length kMax, and informationRates and spendingTime must end with 1 for getBound, getBound_seamless, and getBound_mams</li>
+<li>ensured that if typeAlphaSpending is “OF”, “P”, “WT”, or “none”, then informationRates, efficacyStopping, and spendingTime must be of full length kMax, and informationRates and spendingTime must end with 1 for getCI, getRCI</li>
+<li>ensured that if typeAlphaSpendingNew is “OF”, “P”, “WT”, or “none”, then informationRatesNew, efficacyStoppingNew, and spendingTimeNew must be of full length kNew, and informationRatesNew and spendingTimeNew must end with 1 for getADCI, getADRCI</li>
+<li>moved up the position of parameter MullerSchafer in getADCI, getADRCI</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.1" id="lrstat-031">lrstat 0.3.1<a class="anchor" aria-label="anchor" href="#lrstat-031"></a></h2><p class="text-muted">CRAN release: 2026-04-08</p>

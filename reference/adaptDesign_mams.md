@@ -52,8 +52,9 @@ adaptDesign_mams(
 
 - INew:
 
-  The maximum information of the secondary trial. Either `betaNew` or
-  `INew` should be provided, while the other must be missing.
+  The maximum information for any active arm versus the common control
+  in the secondary trial. Either `betaNew` or `INew` should be provided,
+  while the other must be missing.
 
 - M:
 

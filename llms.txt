@@ -98,6 +98,9 @@ lrpower(kMax = 2, informationRates = c(0.8, 1),
   : Weight Matrix for All Intersection Hypotheses
 - [`getADCI()`](https://kaifenglu.github.io/lrstat/reference/getADCI.md)
   : Confidence Interval After Adaptation
+- [`getADCI_mams()`](https://kaifenglu.github.io/lrstat/reference/getADCI_mams.md)
+  : Confidence Interval After Adaptation for Multi-Arm Multi-Stage
+  Design
 - [`getADRCI()`](https://kaifenglu.github.io/lrstat/reference/getADRCI.md)
   : Repeated Confidence Interval After Adaptation
 - [`getAccrualDurationFromN()`](https://kaifenglu.github.io/lrstat/reference/getAccrualDurationFromN.md)
@@ -110,6 +113,8 @@ lrpower(kMax = 2, informationRates = c(0.8, 1),
   : Efficacy Boundaries for Two-Stage Seamless Sequential Design
 - [`getCI()`](https://kaifenglu.github.io/lrstat/reference/getCI.md) :
   Confidence Interval After Trial Termination
+- [`getCI_mams()`](https://kaifenglu.github.io/lrstat/reference/getCI_mams.md)
+  : Confidence Interval After Trial Termination
 - [`getCP()`](https://kaifenglu.github.io/lrstat/reference/getCP.md) :
   Conditional Power Allowing for Varying Parameter Values
 - [`getDesign()`](https://kaifenglu.github.io/lrstat/reference/getDesign.md)

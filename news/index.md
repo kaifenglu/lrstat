@@ -15,7 +15,22 @@
 - updated the backward image confidence interval method to account for
   the case when astar \> conditional_power
 - updated point estimate for repeated confidence interval
-- added functions for multi-arm multi-stage (MAMS) designs
+- added functions for multi-arm multi-stage (MAMS) design and anlysis,
+  including exitprob_mams, getBound_mams, getDesign_mams,
+  adaptDesign_mams, getCI_mams, getADCI_mams
+- ensured that if typeAlphaSpending is “OF”, “P”, “WT”, or “none”, then
+  informationRates, efficacyStopping, and spendingTime must be of full
+  length kMax, and informationRates and spendingTime must end with 1 for
+  getBound, getBound_seamless, and getBound_mams
+- ensured that if typeAlphaSpending is “OF”, “P”, “WT”, or “none”, then
+  informationRates, efficacyStopping, and spendingTime must be of full
+  length kMax, and informationRates and spendingTime must end with 1 for
+  getCI, getRCI
+- ensured that if typeAlphaSpendingNew is “OF”, “P”, “WT”, or “none”,
+  then informationRatesNew, efficacyStoppingNew, and spendingTimeNew
+  must be of full length kNew, and informationRatesNew and
+  spendingTimeNew must end with 1 for getADCI, getADRCI
+- moved up the position of parameter MullerSchafer in getADCI, getADRCI
 
 ## lrstat 0.3.1
 

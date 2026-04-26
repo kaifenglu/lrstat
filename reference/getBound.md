@@ -69,8 +69,10 @@ A numeric vector of critical values up to the current look.
 
 ## Details
 
-If `typeAlphaSpending` is "OF", "P", or "WT", then the boundaries will
-be based on equally spaced looks.
+If `typeAlphaSpending` is `"OF"`, `"P"`, `"WT"`, or `"none"`, then
+`informationRates`, `efficacyStopping`, and `spendingTime` must be of
+full length `kMax`, and `informationRates` and `spendingTime` must end
+with 1.
 
 ## Author
 

@@ -92,9 +92,10 @@ The function determines critical values by solving for the boundary that
 satisfies the alpha-spending requirement, given the selection of the
 "best" arm at the end of Phase 2.
 
-If `typeAlphaSpending` is specified as `"OF"` (O'Brien-Fleming), `"P"`
-(Pocock), or `"WT"` (Wang-Tsiatis), the boundaries are calculated
-assuming the looks are equally spaced in terms of information.
+If `typeAlphaSpending` is `"OF"`, `"P"`, `"WT"`, or `"none"`, then
+`informationRates`, `efficacyStopping`, and `spendingTime` must be of
+full length `kMax`, and `informationRates` and `spendingTime` must end
+with 1.
 
 ## Author
 

@@ -21,15 +21,16 @@ errorSpent(t, error = 0.025, sf = "sfOF", sfpar = NA_real_)
 
 - sf:
 
-  The spending function. One of the following: "sfOF" for
-  O'Brien-Fleming type spending function, "sfP" for Pocock type spending
-  function, "sfKD" for Kim & DeMets spending function, and "sfHSD" for
-  Hwang, Shi & DeCani spending function. Defaults to "sfOF".
+  The spending function. One of the following: `"sfOF"` for
+  O'Brien-Fleming type spending function, `"sfP"` for Pocock type
+  spending function, `"sfKD"` for Kim & DeMets spending function, and
+  `"sfHSD"` for Hwang, Shi & DeCani spending function. Defaults to
+  `"sfOF"`.
 
 - sfpar:
 
   The parameter for the spending function. Corresponds to \\\rho\\ for
-  "sfKD" and \\\gamma\\ for "sfHSD".
+  `"sfKD"` and \\\gamma\\ for `"sfHSD"`.
 
 ## Value
 

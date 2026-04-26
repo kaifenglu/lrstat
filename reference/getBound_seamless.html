@@ -147,9 +147,10 @@ current look.</p>
     <p>The function determines critical values by solving for the boundary that
 satisfies the alpha-spending requirement, given the selection of the
 "best" arm at the end of Phase 2.</p>
-<p>If <code>typeAlphaSpending</code> is specified as <code>"OF"</code> (O'Brien-Fleming),
-<code>"P"</code> (Pocock), or <code>"WT"</code> (Wang-Tsiatis), the boundaries are
-calculated assuming the looks are equally spaced in terms of information.</p>
+<p>If <code>typeAlphaSpending</code> is <code>"OF"</code>, <code>"P"</code>, <code>"WT"</code>, or
+<code>"none"</code>, then <code>informationRates</code>, <code>efficacyStopping</code>,
+and <code>spendingTime</code> must be of full length <code>kMax</code>, and
+<code>informationRates</code> and <code>spendingTime</code> must end with 1.</p>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>

@@ -18,10 +18,10 @@ getADRCI(
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   spendingTime = NA_real_,
+  MullerSchafer = FALSE,
   Lc = NA_integer_,
   zLc = NA_real_,
   INew = NA_real_,
-  MullerSchafer = 0L,
   informationRatesNew = NA_real_,
   efficacyStoppingNew = NA_integer_,
   typeAlphaSpendingNew = "sfOF",
@@ -70,12 +70,12 @@ getADRCI(
 - typeAlphaSpending:
 
   The type of alpha spending for the primary trial. One of the
-  following: "OF" for O'Brien-Fleming boundaries, "P" for Pocock
-  boundaries, "WT" for Wang & Tsiatis boundaries, "sfOF" for
-  O'Brien-Fleming type spending function, "sfP" for Pocock type spending
-  function, "sfKD" for Kim & DeMets spending function, "sfHSD" for
-  Hwang, Shi & DeCani spending function, and "none" for no early
-  efficacy stopping. Defaults to "sfOF".
+  following: `"OF"` for O'Brien-Fleming boundaries, `"P"` for Pocock
+  boundaries, `"WT"` for Wang & Tsiatis boundaries, `"sfOF"` for
+  O'Brien-Fleming type spending function, `"sfP"` for Pocock type
+  spending function, `"sfKD"` for Kim & DeMets spending function,
+  `"sfHSD"` for Hwang, Shi & DeCani spending function, and `"none"` for
+  no early efficacy stopping. Defaults to `"sfOF"`.
 
 - parameterAlphaSpending:
 
@@ -88,6 +88,11 @@ getADRCI(
   The error spending time of the primary trial. Defaults to missing, in
   which case, it is the same as `informationRates`.
 
+- MullerSchafer:
+
+  Whether to use the Muller and Schafer (2001) method for trial
+  adaptation.
+
 - Lc:
 
   The look of interest in the integrated trial.
@@ -99,11 +104,6 @@ getADRCI(
 - INew:
 
   The maximum information of the secondary trial.
-
-- MullerSchafer:
-
-  Whether to use the Muller and Schafer (2001) method for trial
-  adaptation.
 
 - informationRatesNew:
 
@@ -118,12 +118,12 @@ getADRCI(
 - typeAlphaSpendingNew:
 
   The type of alpha spending for the secondary trial. One of the
-  following: "OF" for O'Brien-Fleming boundaries, "P" for Pocock
-  boundaries, "WT" for Wang & Tsiatis boundaries, "sfOF" for
-  O'Brien-Fleming type spending function, "sfP" for Pocock type spending
-  function, "sfKD" for Kim & DeMets spending function, "sfHSD" for
-  Hwang, Shi & DeCani spending function, and "none" for no early
-  efficacy stopping. Defaults to "sfOF".
+  following: `"OF"` for O'Brien-Fleming boundaries, `"P"` for Pocock
+  boundaries, `"WT"` for Wang & Tsiatis boundaries, `"sfOF"` for
+  O'Brien-Fleming type spending function, `"sfP"` for Pocock type
+  spending function, `"sfKD"` for Kim & DeMets spending function,
+  `"sfHSD"` for Hwang, Shi & DeCani spending function, and `"none"` for
+  no early efficacy stopping. Defaults to `"sfOF"`.
 
 - parameterAlphaSpendingNew:
 
@@ -150,6 +150,13 @@ A data frame with the following variables:
 - `lower`: Lower bound of repeated confidence interval.
 
 - `upper`: Upper bound of repeated confidence interval.
+
+## Details
+
+If `typeAlphaSpendingNew` is `"OF"`, `"P"`, `"WT"`, or `"none"`, then
+`informationRatesNew`, `efficacyStoppingNew`, and `spendingTimeNew` must
+be of full length `kNew`, and `informationRatesNew` and
+`spendingTimeNew` must end with 1.
 
 ## References
 
@@ -285,8 +292,8 @@ zL2 <- (zLc * sqrt(nc) - zL * sqrt(nL)) / sqrt(nL2)
 getADRCI(
   L = L, zL = zL, IMax = n / (4 * sigmahatc^2), kMax = 3,
   informationRates = s1, alpha = 0.025, typeAlphaSpending = "sfOF",
-  Lc = Lc, zLc = zLc, INew = nNew / (4 * sigmahatc^2),
-  MullerSchafer = TRUE, informationRatesNew = s2,
+  MullerSchafer = TRUE, Lc = Lc, zLc = zLc,
+  INew = nNew / (4 * sigmahatc^2), informationRatesNew = s2,
   typeAlphaSpendingNew = "sfP")
 #>       pvalue thetahat cilevel     lower    upper
 #> 1 0.01674046 10.05375    0.95 0.6302625 18.18085

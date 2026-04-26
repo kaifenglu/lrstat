@@ -54,17 +54,18 @@ getCI(
 
 - typeAlphaSpending:
 
-  The type of alpha spending. One of the following: "OF" for
-  O'Brien-Fleming boundaries, "P" for Pocock boundaries, "WT" for Wang &
-  Tsiatis boundaries, "sfOF" for O'Brien-Fleming type spending function,
-  "sfP" for Pocock type spending function, "sfKD" for Kim & DeMets
-  spending function, "sfHSD" for Hwang, Shi & DeCani spending function,
-  and "none" for no early efficacy stopping. Defaults to "sfOF".
+  The type of alpha spending. One of the following: `"OF"` for
+  O'Brien-Fleming boundaries, `"P"` for Pocock boundaries, `"WT"` for
+  Wang & Tsiatis boundaries, `"sfOF"` for O'Brien-Fleming type spending
+  function, `"sfP"` for Pocock type spending function, `"sfKD"` for Kim
+  & DeMets spending function, `"sfHSD"` for Hwang, Shi & DeCani spending
+  function, `"user"` for user defined spending, and `"none"` for no
+  early efficacy stopping. Defaults to `"sfOF"`.
 
 - parameterAlphaSpending:
 
-  The parameter value of alpha spending. Corresponds to \\\Delta\\ for
-  "WT", \\\rho\\ for "sfKD", and \\\gamma\\ for "sfHSD".
+  The parameter value for the alpha spending. Corresponds to \\\Delta\\
+  for `"WT"`, \\\rho\\ for `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
 
 - spendingTime:
 
@@ -84,6 +85,13 @@ A data frame with the following components:
 - `lower`: Lower bound of confidence interval.
 
 - `upper`: Upper bound of confidence interval.
+
+## Details
+
+If `typeAlphaSpending` is `"OF"`, `"P"`, `"WT"`, or `"none"`, then
+`informationRates`, `efficacyStopping`, and `spendingTime` must be of
+full length `kMax`, and `informationRates` and `spendingTime` must end
+with 1.
 
 ## References
 
