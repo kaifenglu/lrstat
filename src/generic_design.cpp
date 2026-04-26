@@ -74,12 +74,14 @@ double errorSpentcpp(const double t,
 //' @param t A vector of spending times, typically equal to information
 //'   fractions.
 //' @param error The total error to spend.
-//' @param sf The spending function. One of the following: "sfOF" for
-//'   O'Brien-Fleming type spending function, "sfP" for Pocock type spending
-//'   function, "sfKD" for Kim & DeMets spending function, and "sfHSD" for
-//'   Hwang, Shi & DeCani spending function. Defaults to "sfOF".
+//' @param sf The spending function. One of the following:
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function, and
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function.
+//'   Defaults to \code{"sfOF"}.
 //' @param sfpar The parameter for the spending function. Corresponds to
-//'   \eqn{\rho} for "sfKD" and \eqn{\gamma} for "sfHSD".
+//'   \eqn{\rho} for \code{"sfKD"} and \eqn{\gamma} for \code{"sfHSD"}.
 //'
 //' @details
 //' This function implements a variety of error spending functions commonly
@@ -440,52 +442,55 @@ std::vector<double> getBoundcpp(
   if (k <= 0) throw std::invalid_argument("k must be provided and positive");
 
   // infoRates: if missing create 1/k, 2/k, ..., k/k
-  std::vector<double> infoRates(k);
+  size_t kMax = k;
+  std::vector<double> infoRates;
   if (none_na(informationRates)) {
-    if (informationRates.size() < k)
+    kMax = informationRates.size();
+    if (kMax < k)
       throw std::invalid_argument("Insufficient length for informationRates");
 
-    infoRates.assign(informationRates.begin(), informationRates.begin() + k);
+    infoRates = informationRates;
     if (infoRates[0] <= 0.0)
       throw std::invalid_argument("informationRates must be positive");
     if (any_nonincreasing(infoRates))
       throw std::invalid_argument("informationRates must be increasing");
-    if (infoRates[k-1] > 1.0)
+    if (infoRates.back() > 1.0)
       throw std::invalid_argument("informationRates must not exceed 1");
   } else {
-    for (size_t i = 0; i < k; ++i) {
-      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(k);
+    infoRates.resize(kMax);
+    for (size_t i = 0; i < kMax; ++i) {
+      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(kMax);
     }
   }
 
   // spendTime: default to infoRates if missing
-  std::vector<double> spendTime; spendTime.reserve(k);
+  std::vector<double> spendTime;
   if (none_na(spendingTime)) {
-    if (spendingTime.size() < k)
+    if (spendingTime.size() < kMax)
       throw std::invalid_argument("Insufficient length for spendingTime");
 
-    spendTime.assign(spendingTime.begin(), spendingTime.begin() + k);
+    spendTime = spendingTime;
     if (spendTime[0] <= 0.0)
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendTime[k-1] > 1.0)
+    if (spendTime.back() > 1.0)
       throw std::invalid_argument("spendingTime must not exceed 1");
   } else {
     spendTime = infoRates;
   }
 
   // effStopping: default to all 1s if missing
-  std::vector<unsigned char> effStopping; effStopping.reserve(k);
+  std::vector<unsigned char> effStopping;
   if (none_na(efficacyStopping)) {
-    if (efficacyStopping.size() < k)
+    if (efficacyStopping.size() < kMax)
       throw std::invalid_argument("Insufficient length for efficacyStopping");
 
-    effStopping.assign(efficacyStopping.begin(), efficacyStopping.begin() + k);
-    if (effStopping[k-1] != 1)
+    effStopping = efficacyStopping;
+    if (effStopping.back() != 1)
       throw std::invalid_argument("efficacyStopping must end with 1");
   } else {
-    effStopping.assign(k, 1);
+    effStopping.assign(kMax, 1);
   }
 
   // asf (alpha spending function) to lower-case
@@ -498,13 +503,13 @@ std::vector<double> getBoundcpp(
   if (asf == "user") {
     if (!none_na(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be specified");
-    if (userAlphaSpending.size() < k)
+    if (userAlphaSpending.size() < kMax)
       throw std::invalid_argument("Insufficient length of userAlphaSpending");
     if (userAlphaSpending[0] < 0.0)
       throw std::invalid_argument("userAlphaSpending must be nonnegative");
     if (any_nonincreasing(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be nondecreasing");
-    if (userAlphaSpending[k-1] > alpha)
+    if (userAlphaSpending.back() > alpha)
       throw std::invalid_argument("userAlphaSpending must not exceed alpha");
   }
 
@@ -517,12 +522,24 @@ std::vector<double> getBoundcpp(
     throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
   }
 
-  std::vector<double> criticalValues(k);
+  if (asf == "of" || asf == "p" || asf == "wt" || asf == "none") {
+    if (infoRates.back() != 1.0) {
+      throw std::invalid_argument(
+          "informationRates must end with 1 for OF, P, WT, or NONE");
+    }
+    if (spendTime.back() != 1.0) {
+      throw std::invalid_argument(
+          "spendingTime must end with 1 for OF, P, WT, or NONE");
+    }
+  }
+
+
+  std::vector<double> criticalValues(kMax);
 
   if (asf == "none") {
-    for (size_t i = 0; i < k-1; ++i) criticalValues[i] = 6.0;
-    criticalValues[k-1] = boost_qnorm(1.0 - alpha);
-    return criticalValues;
+    for (size_t i = 0; i < kMax-1; ++i) criticalValues[i] = 6.0;
+    criticalValues[kMax-1] = boost_qnorm(1.0 - alpha);
+    return subset(criticalValues, 0, k);
   }
 
   if (asf == "of" || asf == "p" || asf == "wt") {
@@ -532,16 +549,16 @@ std::vector<double> getBoundcpp(
     else Delta = parameterAlphaSpending; // parameterAlphaSpending holds delta for WT
 
     // for a given multiplier, compute cumulative upper exit probability - alpha
-    std::vector<double> u(k);
-    std::vector<double> l(k, -6.0);
-    std::vector<double> theta(k, 0.0);
-    std::vector<double> u0(k);
-    for (size_t i = 0; i < k; ++i) {
+    std::vector<double> u(kMax);
+    std::vector<double> l(kMax, -6.0);
+    std::vector<double> theta(kMax, 0.0);
+    std::vector<double> u0(kMax);
+    for (size_t i = 0; i < kMax; ++i) {
       u0[i] = std::pow(infoRates[i], Delta - 0.5);
     }
 
     auto f = [&](double aval)->double {
-      for (size_t i = 0; i < k; ++i) {
+      for (size_t i = 0; i < kMax; ++i) {
         u[i] = aval * u0[i];
         if (!effStopping[i]) u[i] = 6.0;
       }
@@ -553,11 +570,11 @@ std::vector<double> getBoundcpp(
     };
 
     double cwt = brent(f, 0.0, 10.0, 1e-6);
-    for (size_t i = 0; i < k; ++i) {
+    for (size_t i = 0; i < kMax; ++i) {
       criticalValues[i] = cwt * u0[i];
       if (!effStopping[i]) criticalValues[i] = 6.0;
     }
-    return criticalValues;
+    return subset(criticalValues, 0, k);
   }
 
   if (asf == "sfof" || asf == "sfp" || asf == "sfkd" ||
@@ -571,22 +588,23 @@ std::vector<double> getBoundcpp(
     else criticalValues[0] = boost_qnorm(1.0 - cumAlpha);
 
     // Preallocate reusable buffers used by the root-finding lambda
-    std::vector<double> u_vec; u_vec.reserve(k);
-    std::vector<double> l_vec(k, -6.0);
-    std::vector<double> theta_vec(k, 0.0);
+    std::vector<double> u_vec; u_vec.reserve(kMax);
+    std::vector<double> l_vec(kMax, -6.0);
+    std::vector<double> theta_vec(kMax, 0.0);
 
     // subsequent stages
-    for (size_t k1 = 1; k1 < k; ++k1) {
+    for (size_t k1 = 1; k1 < kMax; ++k1) {
       // determine cumulative alpha at this stage
       if (asf == "user") cumAlpha = userAlphaSpending[k1];
-      else cumAlpha = errorSpentcpp(spendTime[k1], alpha, asf,parameterAlphaSpending);
+      else cumAlpha = errorSpentcpp(spendTime[k1], alpha,
+                                    asf,parameterAlphaSpending);
 
       if (!effStopping[k1]) {
         criticalValues[k1] = 6.0;
         continue;
       }
 
-      // Ensure reusable buffers have size k1+1 and capacity >= k
+      // Ensure reusable buffers have size k1+1 and capacity >= kMax
       u_vec.resize(k1 + 1);
 
       // - copy already computed criticalValues[0..k1-1] into u_vec[0..k1-1]
@@ -618,7 +636,7 @@ std::vector<double> getBoundcpp(
       }
     }
 
-    return criticalValues;
+    return subset(criticalValues, 0, k);
   }
 
   throw std::invalid_argument("Invalid value for typeAlphaSpending");
@@ -643,8 +661,10 @@ std::vector<double> getBoundcpp(
 //' @inheritParams param_efficacyStopping
 //'
 //' @details
-//' If \code{typeAlphaSpending} is "OF", "P", or "WT", then the boundaries
-//' will be based on equally spaced looks.
+//' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+//' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+//' and \code{spendingTime} must be of full length \code{kMax}, and
+//' \code{informationRates} and \code{spendingTime} must end with 1.
 //'
 //' @return A numeric vector of critical values up to the current look.
 //'
