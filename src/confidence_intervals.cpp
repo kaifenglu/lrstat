@@ -65,37 +65,39 @@ DataFrameCpp getCIcpp(const size_t L,
   if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
   if (!none_na(informationRates))
     throw std::invalid_argument("informationRates must be provided");
-  if (informationRates.size() < L)
+
+  size_t kMax = informationRates.size();
+  if (kMax < L)
     throw std::invalid_argument("Insufficient length for informationRates");
   if (informationRates[0] <= 0.0)
     throw std::invalid_argument("informationRates must be positive");
   if (any_nonincreasing(informationRates))
     throw std::invalid_argument("informationRates must be increasing");
-  if (informationRates[L - 1] > 1.0)
+  if (informationRates.back() > 1.0)
     throw std::invalid_argument("informationRates must not exceed 1");
 
   // efficacyStopping: if provided, validate, otherwise default to all ones
   std::vector<unsigned char> effStopping;
   if (none_na(efficacyStopping)) {
-    if (efficacyStopping.size() < L)
+    if (efficacyStopping.size() < kMax)
       throw std::invalid_argument("Insufficient length for efficacyStopping");
-    if (efficacyStopping[L - 1] != 1)
+    if (efficacyStopping.back() != 1)
       throw std::invalid_argument("efficacyStopping must end with 1");
     effStopping = efficacyStopping;
   } else {
-    effStopping.assign(L, 1);
+    effStopping.assign(kMax, 1);
   }
 
   // spendingTime: if provided validate, otherwise use informationRates
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
-    if (spendingTime.size() < L)
+    if (spendingTime.size() < kMax)
       throw std::invalid_argument("Insufficient length for spendingTime");
     if (spendingTime[0] <= 0.0)
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[L - 1] > 1.0)
+    if (spendingTime.back() > 1.0)
       throw std::invalid_argument("spendingTime must not exceed 1");
     spendTime = spendingTime;
   } else {
@@ -124,6 +126,17 @@ DataFrameCpp getCIcpp(const size_t L,
   }
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
     throw std::invalid_argument("parameterAlphaSpending must be positive for sfKD");
+  }
+
+  if (asf == "of" || asf == "p" || asf == "wt" || asf == "none") {
+    if (informationRates.back() != 1.0) {
+      throw std::invalid_argument(
+          "informationRates must end with 1 for OF, P, WT, or NONE");
+    }
+    if (spendTime.back() != 1.0) {
+      throw std::invalid_argument(
+          "spendingTime must end with 1 for OF, P, WT, or NONE");
+    }
   }
 
   // critical values: if not provided, compute using getBoundcpp
@@ -158,14 +171,14 @@ DataFrameCpp getCIcpp(const size_t L,
   };
   double thetahat = brent(f_med, left, right, tol);
 
-  // lower bound: solve f_pvalue(theta) - (1-cilevel)/2 = 0, bracket [left, thetahat]
+  // lower bound: solve f_pvalue(theta) - (1-cilevel)/2 = 0, in [left, thetahat]
   double target_lower = (1.0 - cilevel) / 2.0;
   auto f_lower = [&](double theta)->double {
     return f_pvalue(theta, L, zL, b, I) - target_lower;
   };
   double lower = brent(f_lower, left, thetahat, tol);
 
-  // upper bound: solve f_pvalue(theta) - (1+cilevel)/2 = 0, bracket [thetahat, right]
+  // upper bound: solve f_pvalue(theta) - (1+cilevel)/2 = 0, in [thetahat, right]
   double target_upper = (1.0 + cilevel) / 2.0;
   auto f_upper = [&](double theta)->double {
     return f_pvalue(theta, L, zL, b, I) - target_upper;
@@ -199,20 +212,8 @@ DataFrameCpp getCIcpp(const size_t L,
 //' @param criticalValues The upper boundaries on the z-test statistic scale
 //'   for efficacy stopping up to look \code{L}.
 //' @inheritParams param_alpha
-//' @param typeAlphaSpending The type of alpha spending.
-//'   One of the following:
-//'   "OF" for O'Brien-Fleming boundaries,
-//'   "P" for Pocock boundaries,
-//'   "WT" for Wang & Tsiatis boundaries,
-//'   "sfOF" for O'Brien-Fleming type spending function,
-//'   "sfP" for Pocock type spending function,
-//'   "sfKD" for Kim & DeMets spending function,
-//'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-//'   "none" for no early efficacy stopping.
-//'   Defaults to "sfOF".
-//' @param parameterAlphaSpending The parameter value of alpha spending.
-//'   Corresponds to \eqn{\Delta} for "WT", \eqn{\rho} for "sfKD", and
-//'   \eqn{\gamma} for "sfHSD".
+//' @inheritParams param_typeAlphaSpending
+//' @inheritParams param_parameterAlphaSpending
 //' @param spendingTime The error spending time up to look \code{L}.
 //'   Defaults to missing, in which case, it is the same as
 //'   \code{informationRates}.
@@ -228,6 +229,12 @@ DataFrameCpp getCIcpp(const size_t L,
 //' * \code{lower}: Lower bound of confidence interval.
 //'
 //' * \code{upper}: Upper bound of confidence interval.
+//'
+//' @details
+//' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+//' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+//' and \code{spendingTime} must be of full length \code{kMax}, and
+//' \code{informationRates} and \code{spendingTime} must end with 1.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
@@ -303,37 +310,39 @@ DataFrameCpp getRCIcpp(
   if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
   if (!none_na(informationRates))
     throw std::invalid_argument("informationRates must be provided");
-  if (informationRates.size() < L)
+
+  size_t kMax = informationRates.size();
+  if (kMax < L)
     throw std::invalid_argument("Insufficient length for informationRates");
   if (informationRates[0] <= 0.0)
     throw std::invalid_argument("informationRates must be positive");
   if (any_nonincreasing(informationRates))
     throw std::invalid_argument("informationRates must be increasing");
-  if (informationRates[L - 1] > 1.0)
+  if (informationRates.back() > 1.0)
     throw std::invalid_argument("informationRates must not exceed 1");
 
   // efficacyStopping: if provided, validate, otherwise default to all ones
   std::vector<unsigned char> effStopping;
   if (none_na(efficacyStopping)) {
-    if (efficacyStopping.size() < L)
+    if (efficacyStopping.size() < kMax)
       throw std::invalid_argument("Insufficient length for efficacyStopping");
-    if (efficacyStopping[L - 1] != 1)
+    if (efficacyStopping.back() != 1)
       throw std::invalid_argument("efficacyStopping must end with 1");
     effStopping = efficacyStopping;
   } else {
-    effStopping.assign(L, 1);
+    effStopping.assign(kMax, 1);
   }
 
   // spendingTime: if provided validate, otherwise use informationRates
   std::vector<double> spendTime;
   if (none_na(spendingTime)) {
-    if (spendingTime.size() < L)
+    if (spendingTime.size() < kMax)
       throw std::invalid_argument("Insufficient length for spendingTime");
     if (spendingTime[0] <= 0.0)
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[L - 1] > 1.0)
+    if (spendingTime.back() > 1.0)
       throw std::invalid_argument("spendingTime must not exceed 1");
     spendTime = spendingTime;
   } else {
@@ -362,6 +371,17 @@ DataFrameCpp getRCIcpp(
   }
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
     throw std::invalid_argument("parameterAlphaSpending must be positive for sfKD");
+  }
+
+  if (asf == "of" || asf == "p" || asf == "wt" || asf == "none") {
+    if (informationRates.back() != 1.0) {
+      throw std::invalid_argument(
+          "informationRates must end with 1 for OF, P, WT, or NONE");
+    }
+    if (spendTime.back() != 1.0) {
+      throw std::invalid_argument(
+          "spendingTime must end with 1 for OF, P, WT, or NONE");
+    }
   }
 
   // critical values: if not provided, compute using getBoundcpp with caching
@@ -433,20 +453,8 @@ DataFrameCpp getRCIcpp(
 //' @param criticalValues The upper boundaries on the z-test statistic scale
 //'   for efficacy stopping up to look \code{L}.
 //' @inheritParams param_alpha
-//' @param typeAlphaSpending The type of alpha spending.
-//'   One of the following:
-//'   "OF" for O'Brien-Fleming boundaries,
-//'   "P" for Pocock boundaries,
-//'   "WT" for Wang & Tsiatis boundaries,
-//'   "sfOF" for O'Brien-Fleming type spending function,
-//'   "sfP" for Pocock type spending function,
-//'   "sfKD" for Kim & DeMets spending function,
-//'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-//'   "none" for no early efficacy stopping.
-//'   Defaults to "sfOF".
-//' @param parameterAlphaSpending The parameter value of alpha spending.
-//'   Corresponds to \eqn{\Delta} for "WT", \eqn{\rho} for "sfKD", and
-//'   \eqn{\gamma} for "sfHSD".
+//' @inheritParams param_typeAlphaSpending
+//' @inheritParams param_parameterAlphaSpending
 //' @param spendingTime The error spending time up to look \code{L}.
 //'   Defaults to missing, in which case, it is the same as
 //'   \code{informationRates}.
@@ -462,6 +470,11 @@ DataFrameCpp getRCIcpp(
 //' * \code{lower}: Lower bound of repeated confidence interval.
 //'
 //' * \code{upper}: Upper bound of repeated confidence interval.
+//'
+//' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+//' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+//' and \code{spendingTime} must be of full length \code{kMax}, and
+//' \code{informationRates} and \code{spendingTime} must end with 1.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
@@ -532,23 +545,19 @@ std::pair<size_t, double> f_bwimage(const double theta,
   // compute astar for the adapted secondary trial
   double astar = f_pvalue(theta, L2, zL2, b2, I2);
 
-  std::vector<double> sqrtI(kMax);
-  for (size_t i = 0; i < kMax; ++i) sqrtI[i] = std::sqrt(I[i]);
-  double zLsqrtIL = zL * sqrtI[L - 1];
-
   // prepare b1, a1, mu, I1 for the original secondary trial
   size_t k1 = kMax - L;
-  std::vector<double> I1(k1), sqrtI1(k1);
+  std::vector<double> I1(k1);
   for (size_t l = 0; l < k1; ++l) {
     I1[l] = I[l + L] - I[L - 1];
-    sqrtI1[l] = std::sqrt(I1[l]);
   }
 
   std::vector<double> b1(k1);
   std::vector<double> a1(k1, -6.0);
   std::vector<double> mu(k1, theta);
   for (size_t l = 0; l < k1; ++l) {
-    b1[l] = (b[l + L] * sqrtI[l + L] - zLsqrtIL) / sqrtI1[l];
+    double r1 = I[L - 1] / I[l + L];
+    b1[l] = (b[l + L] - zL * std::sqrt(r1)) / std::sqrt(1.0 - r1);
   }
 
   // compute exit probabilities for b1 / a1
@@ -564,18 +573,21 @@ std::pair<size_t, double> f_bwimage(const double theta,
   // find zJ
   double zJ;
   if (j == 1) {
-    zJ = (boost_qnorm(1.0 - astar) * sqrtI1[0] + zLsqrtIL) / sqrtI[0];
+    double r1 = I[L - 1] / I[L];
+    zJ = boost_qnorm(1.0 - astar) * std::sqrt(1.0 - r1) + zL * std::sqrt(r1);
   } else {
     // root find for z in stagewise exit probability difference
     auto f = [&](double z)->double {
-      double zj = (z * sqrtI[L + j - 1] - zLsqrtIL) / sqrtI1[j - 1];
+      double r1 = I[L - 1] / I[L + j - 1];
+      double zj = (z - zL * std::sqrt(r1)) / std::sqrt(1.0 - r1);
       return f_pvalue(theta, j, zj, b1, I1) - astar;
     };
 
     if (j < k1) {
       zJ = brent(f, b[L + j - 1], 6.0, 1e-6);
     } else {
-      double lo = (-6.0 * sqrtI1[j - 1] + zLsqrtIL) / sqrtI[L + j - 1];
+      double r1 = I[L - 1] / I[L + j - 1];
+      double lo = -6.0 * std::sqrt(1.0 - r1) + zL * std::sqrt(r1);
       zJ = brent(f, lo, 6.0, 1e-6);
     }
   }
@@ -613,10 +625,10 @@ DataFrameCpp getADCIcpp(
     const std::string& typeAlphaSpending,
     const double parameterAlphaSpending,
     const std::vector<double>& spendingTime,
+    const bool MullerSchafer,
     const size_t Lc,
     const double zLc,
     const double INew,
-    const bool MullerSchafer,
     const std::vector<double>& informationRatesNew,
     const std::vector<unsigned char>& efficacyStoppingNew,
     const std::string& typeAlphaSpendingNew,
@@ -722,15 +734,17 @@ DataFrameCpp getADCIcpp(
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
+  size_t kNew = L2;
   if (MullerSchafer) {
     if (none_na(informationRatesNew)) {
-      if (informationRatesNew.size() < L2)
+      kNew = informationRatesNew.size();
+      if (kNew < L2)
         throw std::invalid_argument("Invalid length for informationRatesNew");
       if (informationRatesNew[0] <= 0.0)
         throw std::invalid_argument("informationRatesNew must be positive");
       if (any_nonincreasing(informationRatesNew))
         throw std::invalid_argument("informationRatesNew must be increasing");
-      if (informationRatesNew[L2 - 1] > 1.0)
+      if (informationRatesNew.back() > 1.0)
         throw std::invalid_argument("informationRatesNew must not exceed 1");
     } else {
       throw std::invalid_argument(
@@ -738,13 +752,13 @@ DataFrameCpp getADCIcpp(
     }
 
     if (none_na(efficacyStoppingNew)) {
-      if (efficacyStoppingNew.size() < L2)
+      if (efficacyStoppingNew.size() < kNew)
         throw std::invalid_argument("Invalid length for efficacyStoppingNew");
-      if (efficacyStoppingNew[L2 - 1] != 1)
+      if (efficacyStoppingNew.back() != 1)
         throw std::invalid_argument("efficacyStoppingNew must end with 1");
       effStoppingNew = efficacyStoppingNew;
     } else {
-      effStoppingNew.assign(L2, 1);
+      effStoppingNew.assign(kNew, 1);
     }
 
     if (!(asfNew == "of" || asfNew == "p" || asfNew == "wt" ||
@@ -762,17 +776,28 @@ DataFrameCpp getADCIcpp(
           "parameterAlphaSpendingNew must be positive for sfKD");
 
     if (none_na(spendingTimeNew)) {
-      if (spendingTimeNew.size() < L2)
+      if (spendingTimeNew.size() < kNew)
         throw std::invalid_argument("Invalid length for spendingTimeNew");
       if (spendingTimeNew[0] <= 0.0)
         throw std::invalid_argument("spendingTimeNew must be positive");
       if (any_nonincreasing(spendingTimeNew))
         throw std::invalid_argument("spendingTimeNew must be increasing");
-      if (spendingTimeNew[L2 - 1] > 1.0)
+      if (spendingTimeNew.back() > 1.0)
         throw std::invalid_argument("spendingTimeNew must not exceed 1");
       spendTimeNew = spendingTimeNew;
     } else {
       spendTimeNew = informationRatesNew;
+    }
+
+    if (asfNew == "of" || asfNew == "p" || asfNew == "wt" || asfNew == "none") {
+      if (informationRatesNew.back() != 1.0) {
+        throw std::invalid_argument(
+            "informationRatesNew must end with 1 for OF, P, WT, or NONE");
+      }
+      if (spendTimeNew.back() != 1.0) {
+        throw std::invalid_argument(
+            "spendingTimeNew must end with 1 for OF, P, WT, or NONE");
+      }
     }
   }
 
@@ -915,27 +940,27 @@ DataFrameCpp getADCIcpp(
 //'   Defaults to 0.025.
 //' @param typeAlphaSpending The type of alpha spending for the primary
 //'   trial. One of the following:
-//'   "OF" for O'Brien-Fleming boundaries,
-//'   "P" for Pocock boundaries,
-//'   "WT" for Wang & Tsiatis boundaries,
-//'   "sfOF" for O'Brien-Fleming type spending function,
-//'   "sfP" for Pocock type spending function,
-//'   "sfKD" for Kim & DeMets spending function,
-//'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-//'   "none" for no early efficacy stopping.
-//'   Defaults to "sfOF".
+//'   \code{"OF"} for O'Brien-Fleming boundaries,
+//'   \code{"P"} for Pocock boundaries,
+//'   \code{"WT"} for Wang & Tsiatis boundaries,
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function,
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+//'   \code{"none"} for no early efficacy stopping.
+//'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpending The parameter value of alpha spending
 //'   for the primary trial. Corresponds to \eqn{\Delta} for "WT",
 //'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
 //' @param spendingTime The error spending time of the primary trial.
 //'   Defaults to missing, in which case, it is the same as
 //'   \code{informationRates}.
+//' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
+//'   for trial adaptation.
 //' @param Lc The termination look of the integrated trial.
 //' @param zLc The z-test statistic at the termination look of the
 //'   integrated trial.
 //' @param INew The maximum information of the secondary trial.
-//' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
-//'   for trial adaptation.
 //' @param informationRatesNew The spacing of looks of the secondary trial
 //'   up to look \code{L2}.
 //' @param efficacyStoppingNew The indicators of whether efficacy stopping is
@@ -943,15 +968,15 @@ DataFrameCpp getADCIcpp(
 //'   Defaults to true if left unspecified.
 //' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 //'   trial. One of the following:
-//'   "OF" for O'Brien-Fleming boundaries,
-//'   "P" for Pocock boundaries,
-//'   "WT" for Wang & Tsiatis boundaries,
-//'   "sfOF" for O'Brien-Fleming type spending function,
-//'   "sfP" for Pocock type spending function,
-//'   "sfKD" for Kim & DeMets spending function,
-//'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-//'   "none" for no early efficacy stopping.
-//'   Defaults to "sfOF".
+//'   \code{"OF"} for O'Brien-Fleming boundaries,
+//'   \code{"P"} for Pocock boundaries,
+//'   \code{"WT"} for Wang & Tsiatis boundaries,
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function,
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+//'   \code{"none"} for no early efficacy stopping.
+//'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpendingNew The parameter value of alpha spending
 //'   for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
 //'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
@@ -970,6 +995,12 @@ DataFrameCpp getADCIcpp(
 //' * \code{lower}: Lower bound of confidence interval.
 //'
 //' * \code{upper}: Upper bound of confidence interval.
+//'
+//' @details
+//' If \code{typeAlphaSpendingNew} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+//' \code{"none"}, then \code{informationRatesNew}, \code{efficacyStoppingNew},
+//' and \code{spendingTimeNew} must be of full length \code{kNew}, and
+//' \code{informationRatesNew} and \code{spendingTimeNew} must end with 1.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
@@ -1040,8 +1071,8 @@ DataFrameCpp getADCIcpp(
 //' getADCI(
 //'   L = L, zL = zL, IMax = n / (4 * sigmahatc^2), kMax = 3,
 //'   informationRates = s1, alpha = 0.025, typeAlphaSpending = "sfOF",
-//'   Lc = Lc, zLc = zLc, INew = nNew / (4 * sigmahatc^2),
-//'   MullerSchafer = TRUE, informationRatesNew = s2,
+//'   MullerSchafer = TRUE, Lc = Lc, zLc = zLc,
+//'   INew = nNew / (4 * sigmahatc^2), informationRatesNew = s2,
 //'   typeAlphaSpendingNew = "sfP")
 //'
 //' @export
@@ -1058,10 +1089,10 @@ Rcpp::DataFrame getADCI(
     const std::string& typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
     const Rcpp::NumericVector& spendingTime = NA_REAL,
+    const bool MullerSchafer = false,
     const int Lc = NA_INTEGER,
     const double zLc = NA_REAL,
     const double INew = NA_REAL,
-    const bool MullerSchafer = false,
     const Rcpp::NumericVector& informationRatesNew = NA_REAL,
     const Rcpp::LogicalVector& efficacyStoppingNew = NA_LOGICAL,
     const std::string& typeAlphaSpendingNew = "sfOF",
@@ -1077,7 +1108,7 @@ Rcpp::DataFrame getADCI(
   auto result = getADCIcpp(
     static_cast<size_t>(L), zL, IMax, static_cast<size_t>(kMax), infoRates,
     effStopping, critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
-    spendTime, static_cast<size_t>(Lc), zLc, INew, MullerSchafer,
+    spendTime, MullerSchafer, static_cast<size_t>(Lc), zLc, INew,
     infoRatesNew, effStoppingNew, typeAlphaSpendingNew,
     parameterAlphaSpendingNew, spendTimeNew);
   return Rcpp::wrap(result);
@@ -1097,10 +1128,10 @@ DataFrameCpp getADRCIcpp(
     const std::string& typeAlphaSpending,
     const double parameterAlphaSpending,
     const std::vector<double>& spendingTime,
+    const bool MullerSchafer,
     const size_t Lc,
     const double zLc,
     const double INew,
-    const bool MullerSchafer,
     const std::vector<double>& informationRatesNew,
     const std::vector<unsigned char>& efficacyStoppingNew,
     const std::string& typeAlphaSpendingNew,
@@ -1206,15 +1237,17 @@ DataFrameCpp getADRCIcpp(
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
+  size_t kNew = L2;
   if (MullerSchafer) {
     if (none_na(informationRatesNew)) {
-      if (informationRatesNew.size() < L2)
+      kNew = informationRatesNew.size();
+      if (kNew < L2)
         throw std::invalid_argument("Invalid length for informationRatesNew");
       if (informationRatesNew[0] <= 0.0)
         throw std::invalid_argument("informationRatesNew must be positive");
       if (any_nonincreasing(informationRatesNew))
         throw std::invalid_argument("informationRatesNew must be increasing");
-      if (informationRatesNew[L2 - 1] > 1.0)
+      if (informationRatesNew.back() > 1.0)
         throw std::invalid_argument("informationRatesNew must not exceed 1");
     } else {
       throw std::invalid_argument(
@@ -1222,13 +1255,13 @@ DataFrameCpp getADRCIcpp(
     }
 
     if (none_na(efficacyStoppingNew)) {
-      if (efficacyStoppingNew.size() < L2)
+      if (efficacyStoppingNew.size() < kNew)
         throw std::invalid_argument("Invalid length for efficacyStoppingNew");
-      if (efficacyStoppingNew[L2 - 1] != 1)
+      if (efficacyStoppingNew.back() != 1)
         throw std::invalid_argument("efficacyStoppingNew must end with 1");
       effStoppingNew = efficacyStoppingNew;
     } else {
-      effStoppingNew.assign(L2, 1);
+      effStoppingNew.assign(kNew, 1);
     }
 
     if (!(asfNew == "of" || asfNew == "p" || asfNew == "wt" ||
@@ -1246,17 +1279,28 @@ DataFrameCpp getADRCIcpp(
           "parameterAlphaSpendingNew must be positive for sfKD");
 
     if (none_na(spendingTimeNew)) {
-      if (spendingTimeNew.size() < L2)
+      if (spendingTimeNew.size() < kNew)
         throw std::invalid_argument("Invalid length for spendingTimeNew");
       if (spendingTimeNew[0] <= 0.0)
         throw std::invalid_argument("spendingTimeNew must be positive");
       if (any_nonincreasing(spendingTimeNew))
         throw std::invalid_argument("spendingTimeNew must be increasing");
-      if (spendingTimeNew[L2 - 1] > 1.0)
+      if (spendingTimeNew.back() > 1.0)
         throw std::invalid_argument("spendingTimeNew must not exceed 1");
       spendTimeNew = spendingTimeNew;
     } else {
       spendTimeNew = informationRatesNew;
+    }
+
+    if (asfNew == "of" || asfNew == "p" || asfNew == "wt" || asfNew == "none") {
+      if (informationRatesNew.back() != 1.0) {
+        throw std::invalid_argument(
+            "informationRatesNew must end with 1 for OF, P, WT, or NONE");
+      }
+      if (spendTimeNew.back() != 1.0) {
+        throw std::invalid_argument(
+            "spendingTimeNew must end with 1 for OF, P, WT, or NONE");
+      }
     }
   }
 
@@ -1394,7 +1438,8 @@ DataFrameCpp getADRCIcpp(
     // -------------------- Setup small alpha-only caches --------------------
     // cache for kMax
     BoundCacheAlpha cache_kMax(kMax, infoRates, asf, parameterAlphaSpending,
-                               std::vector<double>{}, spendTime, effStopping, 64, 12);
+                               std::vector<double>{}, spendTime, effStopping,
+                               64, 12);
     // cache for L2 (used inside g)
     BoundCacheAlpha cache_L2(L2, informationRatesNew, asfNew,
                              parameterAlphaSpendingNew, std::vector<double>{},
@@ -1530,41 +1575,41 @@ DataFrameCpp getADRCIcpp(
 //'   Defaults to 0.025.
 //' @param typeAlphaSpending The type of alpha spending for the primary
 //'   trial. One of the following:
-//'   "OF" for O'Brien-Fleming boundaries,
-//'   "P" for Pocock boundaries,
-//'   "WT" for Wang & Tsiatis boundaries,
-//'   "sfOF" for O'Brien-Fleming type spending function,
-//'   "sfP" for Pocock type spending function,
-//'   "sfKD" for Kim & DeMets spending function,
-//'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-//'   "none" for no early efficacy stopping.
-//'   Defaults to "sfOF".
+//'   \code{"OF"} for O'Brien-Fleming boundaries,
+//'   \code{"P"} for Pocock boundaries,
+//'   \code{"WT"} for Wang & Tsiatis boundaries,
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function,
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+//'   \code{"none"} for no early efficacy stopping.
+//'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpending The parameter value of alpha spending
 //'   for the primary trial. Corresponds to \eqn{\Delta} for "WT",
 //'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
 //' @param spendingTime The error spending time of the primary trial.
 //'   Defaults to missing, in which case, it is the same as
 //'   \code{informationRates}.
+//' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
+//'   for trial adaptation.
 //' @param Lc The look of interest in the integrated trial.
 //' @param zLc The z-test statistic at the look of the integrated trial.
 //' @param INew The maximum information of the secondary trial.
-//' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
-//'   for trial adaptation.
 //' @param informationRatesNew The spacing of looks of the secondary trial.
 //' @param efficacyStoppingNew The indicators of whether efficacy stopping is
 //'   allowed at each look of the secondary trial up to look \code{L2}.
 //'   Defaults to true if left unspecified.
 //' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 //'   trial. One of the following:
-//'   "OF" for O'Brien-Fleming boundaries,
-//'   "P" for Pocock boundaries,
-//'   "WT" for Wang & Tsiatis boundaries,
-//'   "sfOF" for O'Brien-Fleming type spending function,
-//'   "sfP" for Pocock type spending function,
-//'   "sfKD" for Kim & DeMets spending function,
-//'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-//'   "none" for no early efficacy stopping.
-//'   Defaults to "sfOF".
+//'   \code{"OF"} for O'Brien-Fleming boundaries,
+//'   \code{"P"} for Pocock boundaries,
+//'   \code{"WT"} for Wang & Tsiatis boundaries,
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function,
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+//'   \code{"none"} for no early efficacy stopping.
+//'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpendingNew The parameter value of alpha spending
 //'   for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
 //'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
@@ -1583,6 +1628,12 @@ DataFrameCpp getADRCIcpp(
 //' * \code{lower}: Lower bound of repeated confidence interval.
 //'
 //' * \code{upper}: Upper bound of repeated confidence interval.
+//'
+//' @details
+//' If \code{typeAlphaSpendingNew} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+//' \code{"none"}, then \code{informationRatesNew}, \code{efficacyStoppingNew},
+//' and \code{spendingTimeNew} must be of full length \code{kNew}, and
+//' \code{informationRatesNew} and \code{spendingTimeNew} must end with 1.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
@@ -1653,8 +1704,8 @@ DataFrameCpp getADRCIcpp(
 //' getADRCI(
 //'   L = L, zL = zL, IMax = n / (4 * sigmahatc^2), kMax = 3,
 //'   informationRates = s1, alpha = 0.025, typeAlphaSpending = "sfOF",
-//'   Lc = Lc, zLc = zLc, INew = nNew / (4 * sigmahatc^2),
-//'   MullerSchafer = TRUE, informationRatesNew = s2,
+//'   MullerSchafer = TRUE, Lc = Lc, zLc = zLc,
+//'   INew = nNew / (4 * sigmahatc^2), informationRatesNew = s2,
 //'   typeAlphaSpendingNew = "sfP")
 //'
 //' @export
@@ -1671,10 +1722,10 @@ Rcpp::DataFrame getADRCI(
     const std::string& typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
     const Rcpp::NumericVector& spendingTime = NA_REAL,
+    const bool MullerSchafer = false,
     const int Lc = NA_INTEGER,
     const double zLc = NA_REAL,
     const double INew = NA_REAL,
-    const bool MullerSchafer = 0,
     const Rcpp::NumericVector& informationRatesNew = NA_REAL,
     const Rcpp::LogicalVector& efficacyStoppingNew = NA_LOGICAL,
     const std::string& typeAlphaSpendingNew = "sfOF",
@@ -1692,7 +1743,7 @@ Rcpp::DataFrame getADRCI(
   auto result = getADRCIcpp(
     static_cast<size_t>(L), zL, IMax, static_cast<size_t>(kMax), infoRates,
     effStopping, critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
-    spendTime, static_cast<size_t>(Lc), zLc, INew, MullerSchafer,
+    spendTime, MullerSchafer, static_cast<size_t>(Lc), zLc, INew,
     infoRatesNew, effStoppingNew, typeAlphaSpendingNew,
     parameterAlphaSpendingNew, spendTimeNew);
   return Rcpp::wrap(result);
