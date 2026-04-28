@@ -65,10 +65,10 @@ DataFrameCpp getCI_mams_cpp(
     const std::vector<double>& spendingTime) {
 
   // Basic argument checks
-  if (L <= 0) throw std::invalid_argument("L must be a positive integer");
-  if (!none_na(zL)) throw std::invalid_argument("zL must be provided");
   if (M < 1) throw std::invalid_argument("M should be at least 1");
   if (r <= 0.0) throw std::invalid_argument("r should be positive");
+  if (L <= 0) throw std::invalid_argument("L must be a positive integer");
+  if (!none_na(zL)) throw std::invalid_argument("zL must be provided");
   if (std::isnan(IMax)) throw std::invalid_argument("IMax must be provided");
   if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
   if (!none_na(informationRates))
@@ -261,14 +261,14 @@ DataFrameCpp getCI_mams_cpp(
 //' @description Obtains the p-value, median unbiased point estimate, and
 //' confidence interval after the end of a group sequential trial.
 //'
-//' @param L The termination look.
-//' @param zL The vector of z-test statistics at the termination look.
 //' @param M Number of active treatment arms.
 //' @param r Randomization ratio of each active arm to the common control.
 //' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 //'   statistics is derived from the randomization ratio \code{r}
 //'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 //'   0 is used.
+//' @param L The termination look.
+//' @param zL The vector of z-test statistics at the termination look.
 //' @param IMax Maximum information for any active arm versus the common
 //'   control.
 //' @param informationRates The information rates up to look \code{L}.
@@ -307,9 +307,9 @@ DataFrameCpp getCI_mams_cpp(
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
 //' @references
-//' Anastasios A. Tsiatis, Gary L. Rosner and Cyrus R. Mehta.
-//' Exact confidence intervals following a group sequential test.
-//' Biometrics 1984;40:797-803.
+//' Ping Gao, Yingqiu Li.
+//' Adaptive multiple comparison sequential design (AMCSD) for clinical trials.
+//' Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
 //'
 //' @examples
 //' getCI_mams(
@@ -507,7 +507,7 @@ DataFrameCpp getADCI_mams_cpp(
       throw std::invalid_argument("informationRates must be positive");
     if (any_nonincreasing(informationRates))
       throw std::invalid_argument("informationRates must be increasing");
-    if (informationRates[kMax - 1] != 1.0)
+    if (informationRates.back() != 1.0)
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy if provided
   } else {
@@ -522,7 +522,7 @@ DataFrameCpp getADCI_mams_cpp(
   if (none_na(efficacyStopping)) {
     if (efficacyStopping.size() != kMax)
       throw std::invalid_argument("Invalid length for efficacyStopping");
-    if (efficacyStopping[kMax - 1] != 1)
+    if (efficacyStopping.back() != 1)
       throw std::invalid_argument("efficacyStopping must end with 1");
     effStopping = efficacyStopping; // copy if provided
   } else {
@@ -548,7 +548,7 @@ DataFrameCpp getADCI_mams_cpp(
 
   if (missingCriticalValues && !(asf == "of" || asf == "p" ||
       asf == "wt" || asf == "sfof" || asf == "sfp" ||
-      asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
+      asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
     throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
@@ -567,7 +567,7 @@ DataFrameCpp getADCI_mams_cpp(
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[kMax-1] != 1.0)
+    if (spendingTime.back() != 1.0)
       throw std::invalid_argument("spendingTime must end with 1");
     spendTime = spendingTime; // copy
   } else {
@@ -663,11 +663,11 @@ DataFrameCpp getADCI_mams_cpp(
     if (asfNew == "of" || asfNew == "none") {
       if (informationRatesNew.back() != 1.0) {
         throw std::invalid_argument(
-            "informationRatesNew must end with 1 for OF, P, WT, or NONE");
+            "informationRatesNew must end with 1 for OF or NONE");
       }
       if (spendTimeNew.back() != 1.0) {
         throw std::invalid_argument(
-            "spendingTimeNew must end with 1 for OF, P, WT, or NONE");
+            "spendingTimeNew must end with 1 for OF or NONE");
       }
     }
   }
@@ -828,7 +828,6 @@ DataFrameCpp getADCI_mams_cpp(
 
 
     std::vector<double> zero2(M2, 0.0);
-    std::vector<double> critValues2(k2, 6.0);
     FlatMatrix c2(M2, k2);
     c2.fill(6.0);
 
@@ -857,13 +856,17 @@ DataFrameCpp getADCI_mams_cpp(
       double cof = brent(g, 0.0, 6.0, 1e-6);
       for (size_t i = 0; i < k2; ++i) {
         if (effStopping2[i]) {
-          critValues2[i] = cof * sqrtIc[k2 - 1] / sqrtIc[i];
+          for (size_t j = 0; j < M2; ++j) {
+            size_t m = selectedNew2[j];
+            c2(j, i) = (cof * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[i];
+          }
         } else {
-          critValues2[i] = 6.0;
+          for (size_t j = 0; j < M2; ++j) {
+            c2(j, i) = 6.0;
+          }
         }
       }
     } else if (asf2 == "none") {
-      for (size_t i = 0; i < k2 - 1; ++i) critValues2[i] = 6.0;
       c2.fill(6.0);
       auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &zero2, &selectedNew2,
                 k2, c_alpha, sqrtIL, M2, rNew, corr_known]
@@ -879,7 +882,10 @@ DataFrameCpp getADCI_mams_cpp(
       };
 
       double cof = brent(g, 0.0, 6.0, 1e-6);
-      critValues2[k2 - 1] = cof;
+      for (size_t j = 0; j < M2; ++j) {
+        size_t m = selectedNew2[j];
+        c2(j, k2 - 1) = (cof * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[k2 - 1];
+      }
     } else {
       for (size_t i = 0; i < k2; ++i) {
         if (!effStopping2[i]) continue;
@@ -898,7 +904,11 @@ DataFrameCpp getADCI_mams_cpp(
           return p0 - cpu0[i];
         };
 
-        critValues2[i] = brent(g, 0.0, 6.0, 1e-6);
+        double cof = brent(g, 0.0, 6.0, 1e-6);
+        for (size_t j = 0; j < M2; ++j) {
+          size_t m = selectedNew2[j];
+          c2(j, i) = (cof * sqrtIc[i] - zL[m] * sqrtIL) / sqrtI2[i];
+        }
       }
     }
 
@@ -1013,8 +1023,8 @@ DataFrameCpp getADCI_mams_cpp(
 //'   \code{"none"} for no early efficacy stopping.
 //'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpending The parameter value of alpha spending
-//'   for the primary trial. Corresponds to \eqn{\Delta} for "WT",
-//'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
+//'   for the primary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
+//'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param spendingTime The error spending time of the primary trial.
 //'   Defaults to missing, in which case, it is the same as
 //'   \code{informationRates}.
@@ -1045,8 +1055,8 @@ DataFrameCpp getADCI_mams_cpp(
 //'   \code{"none"} for no early efficacy stopping.
 //'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpendingNew The parameter value of alpha spending
-//'   for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
-//'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
+//'   for the secondary trial. Corresponds to
+//'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param spendingTimeNew The error spending time of the secondary trial
 //'   up to look \code{L2}. Defaults to missing, in which case, it is
 //'   the same as \code{informationRatesNew}.
