@@ -1392,10 +1392,12 @@ ListCpp rmpowercpp(
 //' @inheritParams param_userAlphaSpending
 //' @inheritParams param_futilityBounds
 //' @param typeBetaSpending The type of beta spending. One of the following:
-//'   "sfOF" for O'Brien-Fleming type spending function, "sfP" for Pocock
-//'   type spending function, "sfKD" for Kim & DeMets spending function,
-//'   "sfHSD" for Hwang, Shi & DeCani spending function, and "none" for no
-//'   early futility stopping. Defaults to "none".
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function,
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+//'   \code{"none"} for no early futility stopping.
+//'   Defaults to \code{"none"}.
 //' @inheritParams param_parameterBetaSpending
 //' @param milestone The milestone time at which to calculate the
 //'   restricted mean survival time.
@@ -3061,10 +3063,12 @@ ListCpp rmpower1scpp(
 //' @inheritParams param_userAlphaSpending
 //' @inheritParams param_futilityBounds
 //' @param typeBetaSpending The type of beta spending. One of the following:
-//'   "sfOF" for O'Brien-Fleming type spending function, "sfP" for Pocock
-//'   type spending function, "sfKD" for Kim & DeMets spending function,
-//'   "sfHSD" for Hwang, Shi & DeCani spending function, and "none" for no
-//'   early futility stopping. Defaults to "none".
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function,
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+//'   \code{"none"} for no early futility stopping.
+//'   Defaults to \code{"none"}.
 //' @inheritParams param_parameterBetaSpending
 //' @param milestone The milestone time at which to calculate the
 //'   restricted mean survival time.
