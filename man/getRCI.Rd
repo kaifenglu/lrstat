@@ -35,15 +35,15 @@ for efficacy stopping up to look \code{L}.}
 
 \item{alpha}{The significance level. Defaults to 0.025.}
 
-\item{typeAlphaSpending}{The type of alpha spending. One of the following:
+\item{typeAlphaSpending}{The type of alpha spending for the trial.
+One of the following:
 \code{"OF"} for O'Brien-Fleming boundaries,
 \code{"P"} for Pocock boundaries,
 \code{"WT"} for Wang & Tsiatis boundaries,
 \code{"sfOF"} for O'Brien-Fleming type spending function,
 \code{"sfP"} for Pocock type spending function,
 \code{"sfKD"} for Kim & DeMets spending function,
-\code{"sfHSD"} for Hwang, Shi & DeCani spending function,
-\code{"user"} for user defined spending, and
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
 \code{"none"} for no early efficacy stopping.
 Defaults to \code{"sfOF"}.}
 
