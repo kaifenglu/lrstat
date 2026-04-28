@@ -4096,8 +4096,8 @@ print.adaptDesign_mams <- function(x, ...) {
                  paste(des3$selected, collapse = ", "))
 
   str4 <- paste0("Total number of looks: ", des3$kMax)
-  str5 <- paste0("Interim adaptation look: ", des1$L, ", ",
-                 "z-statistic value: ", paste(round(des1$zL, 3), collapse = ", "))
+  str5 <- paste0("Interim adaptation look: ", des3$L, ", ",
+                 "z-statistic value: ", paste(round(des3$zL, 3), collapse = ", "))
 
   df3a = data.frame(x = rep("", 6))
   colnames(df3a) = NULL
@@ -4144,5 +4144,217 @@ print.adaptDesign_mams <- function(x, ...) {
     cat("\nBy intersection hypothesis critical values for integrated trial\n")
     print(df3c, ..., na.print = "" , quote = FALSE)
   }
+  invisible(x)
+}
+
+
+
+#' @title Print Adaptive Two-Stage Seamless Sequential Design
+#' @description Prints the stopping boundaries and power for adaptive
+#' two-stage seamless sequential design.
+#'
+#' @param x The design object to print.
+#' @param ... Ensures that all arguments starting from "..." are named.
+#'
+#' @return A tabular printout of the design elements.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @export
+print.adaptDesign_seamless <- function(x, ...) {
+  des1 <- x$primaryTrial
+
+  str1 <- "Primary trial:"
+
+  if (des1$K>1) {
+    str2 <- "Phase 2/3 seamless group-sequential design"
+  } else {
+    str2 <- "Phase 2/3 seamless design"
+  }
+
+  str3 <- paste0("Number of active arms in phase 2: ", des1$M)
+
+  str4 <- paste0("Randomization ratio of each active vs. control: ", des1$r)
+
+  str5 <- paste0("Using correlation for critical value calculation: ",
+                 des1$corr_known)
+
+  str6 <- paste0("Max information for pairwise comparion: ",
+                 round(des1$maxInformation, 2))
+
+  str7 <- paste0("Number of looks in phase 3: ", des1$K)
+
+  str8 <- paste0("Interim adaptation look in Phase 3: ", des1$L, ", ",
+                 "z-statistic value: ", paste(round(des1$zL, 3), collapse = ", "))
+
+  str9 <- paste0("Conditional type I error: ", round(des1$conditionalAlpha, 4),
+                 ", conditional power: ", round(des1$conditionalPower, 3))
+
+  str10 <- paste0("Muller & Schafer method for secondary trial: ",
+                  des1$MullerSchafer)
+
+  df1a <- data.frame(x = rep("", 11))
+  colnames(df1a) = NULL
+  rownames(df1a) = c(str1, str2, str3, str4, str5, str6, str7, str8,
+                     str9, str10, "")
+
+  b <- data.frame(informationRates = des1$informationRates,
+                  efficacyBounds = des1$efficacyBounds,
+                  information = des1$information)
+
+  b[1:2] <- lapply(b[1:2], formatC, format = "f", digits = 3)
+  b[3] <- lapply(b[3], formatC, format = "f", digits = 2)
+
+  df1b = t(b)
+  rownames(df1b) = c("Information rate",
+                     "Efficacy boundary (Z)",
+                     "Information")
+
+  colnames(df1b) <- paste("Stage", seq_len(ncol(df1b)), sep=" ")
+
+
+  des2 = x$secondaryTrial
+  a = des2$overallResults
+  s = des2$byStageResults
+  k = a$kMax
+
+  str1 = "Secondary trial:"
+
+  if (k>1) {
+    str2 = paste0("Group-sequential design with ", k, " stages")
+  } else {
+    str2 = "Fixed design"
+  }
+
+  str3 <- paste0("theta: ", round(a$theta, 3), ", ",
+                 "maximum information: ", round(a$information, 2))
+
+  str4 <- paste0("Overall power: ",
+                 round(a$overallReject, 4), ", ",
+                 "overall significance level (1-sided): ",
+                 round(a$alpha, 4))
+
+  str5 <- paste0("Drift parameter: ", round(a$drift, 3), ", ",
+                 "inflation factor: ", round(a$inflationFactor, 3))
+
+  if (k>1) {
+    str6 <- paste0("Expected information under H1: ",
+                   round(a$expectedInformationH1, 2), ", ",
+                   "Expected information under H0: ",
+                   round(a$expectedInformationH0, 2))
+    df2a = data.frame(x = rep("", 7))
+    colnames(df2a) = NULL
+    rownames(df2a) = c(str1, str2, str3, str4, str5, str6, "")
+  } else {
+    df2a = data.frame(x = rep("", 6))
+    colnames(df2a) = NULL
+    rownames(df2a) = c(str1, str2, str3, str4, str5, "")
+  }
+
+
+  if (k>1) {
+    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
+               "cumulativeRejection", "cumulativeFutility",
+               "cumulativeAlphaSpent", "efficacyTheta", "futilityTheta",
+               "efficacyP", "futilityP", "information")]
+
+    # format number of digits after decimal for each column
+    j2 <- 11
+    j3 <- c(1,2,3,7,8)
+    j4 <- c(4,5,6,9,10)
+
+    b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
+    b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
+    b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
+
+    if (des2$settings$typeBetaSpending != 'none' ||
+        (k > 1 && any(des2$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+      df2b = t(b)
+      rownames(df2b) = c("Information rate",
+                         "Efficacy boundary (Z)",
+                         "Futility boundary (Z)",
+                         "Cumulative rejection",
+                         "Cumulative futility",
+                         "Cumulative alpha spent",
+                         "Efficacy boundary (theta)",
+                         "Futility boundary (theta)",
+                         "Efficacy boundary (p)",
+                         "Futility boundary (p)",
+                         "Information")
+
+    } else {
+      df2b = t(b[,c(1,2,4,6,7,9,11)])
+      rownames(df2b) = c("Information rate",
+                         "Efficacy boundary (Z)",
+                         "Cumulative rejection",
+                         "Cumulative alpha spent",
+                         "Efficacy boundary (theta)",
+                         "Efficacy boundary (p)",
+                         "Information")
+    }
+
+    colnames(df2b) <- paste("Stage", seq_len(ncol(df2b)), sep=" ")
+  } else {
+    b <- s[, c("efficacyBounds", "efficacyTheta", "efficacyP")]
+
+    # format number of digits after decimal for each column
+    j3 <- c(1,2)
+    j4 <- 3
+
+    b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
+    b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
+
+    df2b = t(b)
+
+    rownames(df2b) = c("Efficacy boundary (Z)",
+                       "Efficacy boundary (theta)",
+                       "Efficacy boundary (p)")
+
+    colnames(df2b) <- NA
+  }
+
+
+
+  des3 <- x$integratedTrial
+
+  str1 <- "Integrated trial:"
+
+  str2 <- "Adaptive Phase 2/3 seamless design"
+
+  str3 <- paste0("Total number of looks in Phase 3: ", des3$kMax - 1)
+  str4 <- paste0("Interim adaptation look in Phase 3: ", des3$L, ", ",
+                 "z-statistic value: ", paste(round(des3$zL, 3), collapse = ", "))
+
+  df3a = data.frame(x = rep("", 5))
+  colnames(df3a) = NULL
+  rownames(df3a) = c(str1, str2, str3, str4, "")
+
+  b <- data.frame(informationRates = des3$informationRates,
+                  efficacyBounds = des3$efficacyBounds,
+                  information = des3$information)
+
+  # format number of digits after decimal for each column
+  j2 <- 3
+  j3 <- c(1,2)
+
+  b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
+  b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
+
+  df3b = t(b)
+  rownames(df3b) = c("Information rate",
+                     "Efficacy bounds (Z)",
+                     "Information")
+
+  colnames(df3b) <- paste("Stage", seq_len(ncol(df3b)), sep=" ")
+
+
+  print(df1a, ..., na.print = "" , quote = FALSE )
+  print(df1b, ..., na.print = "" , quote = FALSE )
+  print(df2a, ..., na.print = "" , quote = FALSE )
+  print(df2b, ..., na.print = "" , quote = FALSE )
+  print(df3a, ..., na.print = "" , quote = FALSE )
+  print(df3b, ..., na.print = "" , quote = FALSE )
   invisible(x)
 }
