@@ -53,8 +53,10 @@ before the trial. If unspecified, defaults to \eqn{(1:(K+1)) / (K+1)}.}
 \item{efficacyStopping}{Indicators of whether efficacy stopping is allowed
 at each stage. Defaults to \code{TRUE} if left unspecified.}
 
-\item{criticalValues}{Upper boundaries on the z-test statistic scale
-for stopping for efficacy.}
+\item{criticalValues}{The upper boundaries on the max z-test statistic
+scale for Phase 2 and the z-test statistics for the selected arm
+in Phase 3 for the primary trial. If missing, boundaries
+will be computed based on the specified alpha spending function.}
 
 \item{alpha}{The significance level. Defaults to 0.025.}
 
