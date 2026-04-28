@@ -84,8 +84,8 @@ trial. One of the following:
 Defaults to \code{"sfOF"}.}
 
 \item{parameterAlphaSpending}{The parameter value of alpha spending
-for the primary trial. Corresponds to \eqn{\Delta} for "WT",
-\eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".}
+for the primary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
+\eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{spendingTime}{The error spending time of the primary trial.
 Defaults to missing, in which case, it is the same as
@@ -128,8 +128,8 @@ trial. One of the following:
 Defaults to \code{"sfOF"}.}
 
 \item{parameterAlphaSpendingNew}{The parameter value of alpha spending
-for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
-\eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".}
+for the secondary trial. Corresponds to
+\eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{spendingTimeNew}{The error spending time of the secondary trial
 up to look \code{L2}. Defaults to missing, in which case, it is
