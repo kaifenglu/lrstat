@@ -17,34 +17,6 @@
 using std::size_t;
 
 
-// Compute the p-value given theta, look L, observed z at look L (zL),
-// critical values vector b (length L) and information vector I (length L).
-double f_pvalue(const double theta,
-                const size_t L,
-                const double zL,
-                const std::vector<double>& b,
-                const std::vector<double>& I) {
-  // Build the vectors required by exitprobcpp:
-  // upper: first L-1 from b, last = zL
-  // lower: all -6.0
-  // mu: all = theta
-  std::vector<double> upper(L);
-  if (L > 1) {
-    std::memcpy(upper.data(), b.data(), (L - 1) * sizeof(double));
-  }
-  upper[L - 1] = zL;
-
-  std::vector<double> lower(L, -6.0);
-  std::vector<double> mu(L, theta);
-
-  ListCpp probs = exitprobcpp(upper, lower, mu, I);
-  auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
-  double sum_up = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
-
-  return sum_up;
-}
-
-
 // Helper to compute the confidence interval at the end of a group sequential trial
 DataFrameCpp getCIcpp(const size_t L,
                       const double zL,
@@ -212,7 +184,17 @@ DataFrameCpp getCIcpp(const size_t L,
 //' @param criticalValues The upper boundaries on the z-test statistic scale
 //'   for efficacy stopping up to look \code{L}.
 //' @inheritParams param_alpha
-//' @inheritParams param_typeAlphaSpending
+//' @param typeAlphaSpending The type of alpha spending for the trial.
+//'   One of the following:
+//'   \code{"OF"} for O'Brien-Fleming boundaries,
+//'   \code{"P"} for Pocock boundaries,
+//'   \code{"WT"} for Wang & Tsiatis boundaries,
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function,
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+//'   \code{"none"} for no early efficacy stopping.
+//'   Defaults to \code{"sfOF"}.
 //' @inheritParams param_parameterAlphaSpending
 //' @param spendingTime The error spending time up to look \code{L}.
 //'   Defaults to missing, in which case, it is the same as
@@ -453,6 +435,17 @@ DataFrameCpp getRCIcpp(
 //' @param criticalValues The upper boundaries on the z-test statistic scale
 //'   for efficacy stopping up to look \code{L}.
 //' @inheritParams param_alpha
+//' @param typeAlphaSpending The type of alpha spending for the trial.
+//'   One of the following:
+//'   \code{"OF"} for O'Brien-Fleming boundaries,
+//'   \code{"P"} for Pocock boundaries,
+//'   \code{"WT"} for Wang & Tsiatis boundaries,
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function,
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+//'   \code{"none"} for no early efficacy stopping.
+//'   Defaults to \code{"sfOF"}.
 //' @inheritParams param_typeAlphaSpending
 //' @inheritParams param_parameterAlphaSpending
 //' @param spendingTime The error spending time up to look \code{L}.
@@ -577,8 +570,8 @@ std::pair<size_t, double> f_bwimage(const double theta,
     zJ = boost_qnorm(1.0 - astar) * std::sqrt(1.0 - r1) + zL * std::sqrt(r1);
   } else {
     // root find for z in stagewise exit probability difference
+    double r1 = I[L - 1] / I[L + j - 1];
     auto f = [&](double z)->double {
-      double r1 = I[L - 1] / I[L + j - 1];
       double zj = (z - zL * std::sqrt(r1)) / std::sqrt(1.0 - r1);
       return f_pvalue(theta, j, zj, b1, I1) - astar;
     };
@@ -691,7 +684,7 @@ DataFrameCpp getADCIcpp(
 
   if (missingCriticalValues && !(asf == "of" || asf == "p" ||
       asf == "wt" || asf == "sfof" || asf == "sfp" ||
-      asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
+      asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
     throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
@@ -862,11 +855,11 @@ DataFrameCpp getADCIcpp(
     }
   } else { // conditional type I error
     size_t k1 = kMax - L;
-    std::vector<double> t1(k1), r1(k1), b1(k1), a1(k1, -6.0);
+    std::vector<double> t1(k1), b1(k1), a1(k1, -6.0);
     for (size_t l = 0; l < k1; ++l) {
       t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
-      r1[l] = infoRates[L - 1] / infoRates[l + L];
-      b1[l] = (b[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
+      double r1 = infoRates[L - 1] / infoRates[l + L];
+      b1[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
       if (!effStopping[l + L]) b1[l] = 6.0;
     }
     ListCpp probs = exitprobcpp(b1, a1, zero, t1);
@@ -950,8 +943,8 @@ DataFrameCpp getADCIcpp(
 //'   \code{"none"} for no early efficacy stopping.
 //'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpending The parameter value of alpha spending
-//'   for the primary trial. Corresponds to \eqn{\Delta} for "WT",
-//'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
+//'   for the primary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
+//'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param spendingTime The error spending time of the primary trial.
 //'   Defaults to missing, in which case, it is the same as
 //'   \code{informationRates}.
@@ -978,8 +971,8 @@ DataFrameCpp getADCIcpp(
 //'   \code{"none"} for no early efficacy stopping.
 //'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpendingNew The parameter value of alpha spending
-//'   for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
-//'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
+//'   for the secondary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
+//'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param spendingTimeNew The error spending time of the secondary trial
 //'   up to look \code{L2}. Defaults to missing, in which case, it is
 //'   the same as \code{informationRatesNew}.
@@ -1194,7 +1187,7 @@ DataFrameCpp getADRCIcpp(
 
   if (missingCriticalValues && !(asf == "of" || asf == "p" ||
       asf == "wt" || asf == "sfof" || asf == "sfp" ||
-      asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
+      asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
     throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
@@ -1365,11 +1358,11 @@ DataFrameCpp getADRCIcpp(
     }
   } else { // conditional type I error
     size_t k1 = kMax - L;
-    std::vector<double> t1(k1), r1(k1), b1(k1), a1(k1, -6.0);
+    std::vector<double> t1(k1), b1(k1), a1(k1, -6.0);
     for (size_t l = 0; l < k1; ++l) {
       t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
-      r1[l] = infoRates[L - 1] / infoRates[l + L];
-      b1[l] = (b[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
+      double r1 = infoRates[L - 1] / infoRates[l + L];
+      b1[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
       if (!effStopping[l + L]) b1[l] = 6.0;
     }
     ListCpp probs = exitprobcpp(b1, a1, zero, t1);
@@ -1453,12 +1446,12 @@ DataFrameCpp getADRCIcpp(
 
     size_t k1 = kMax - L;
 
-    std::vector<double> t1(k1), r1(k1), w1(k1), w2(k1);
+    std::vector<double> t1(k1), w1(k1), w2(k1);
     for (size_t l = 0; l < k1; ++l) {
       t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
-      r1[l] = infoRates[L - 1] / infoRates[l + L];
-      w1[l] = std::sqrt(r1[l]);
-      w2[l] = std::sqrt(1.0 - r1[l]);
+      double r1 = infoRates[L - 1] / infoRates[l + L];
+      w1[l] = std::sqrt(r1);
+      w2[l] = std::sqrt(1.0 - r1);
     }
 
     // interval for root-finding of theta
@@ -1585,8 +1578,8 @@ DataFrameCpp getADRCIcpp(
 //'   \code{"none"} for no early efficacy stopping.
 //'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpending The parameter value of alpha spending
-//'   for the primary trial. Corresponds to \eqn{\Delta} for "WT",
-//'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
+//'   for the primary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
+//'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param spendingTime The error spending time of the primary trial.
 //'   Defaults to missing, in which case, it is the same as
 //'   \code{informationRates}.
@@ -1611,8 +1604,8 @@ DataFrameCpp getADRCIcpp(
 //'   \code{"none"} for no early efficacy stopping.
 //'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpendingNew The parameter value of alpha spending
-//'   for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
-//'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
+//'   for the secondary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
+//'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param spendingTimeNew The error spending time of the secondary trial.
 //'   up to look \code{L2}. Defaults to missing, in which case, it is
 //'   the same as \code{informationRatesNew}.
