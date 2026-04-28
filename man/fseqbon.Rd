@@ -32,22 +32,23 @@ fseqbon(
 
 \item{typeAlphaSpending}{The vector of alpha spending functions for
 the hypotheses. Each element is one of the following:
-"sfOF" for O'Brien-Fleming type spending function,
-"sfP" for Pocock type spending function,
-"sfKD" for Kim & DeMets spending function,
-"sfHSD" for Hwang, Shi & DeCani spending function.
-Defaults to "sfOF" if not provided.}
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function.
+Defaults to \code{"sfOF"} if not provided.}
 
 \item{parameterAlphaSpending}{The vector of parameter values for the
 alpha spending functions for the hypotheses. Each element corresponds
-to the value of \eqn{\rho} for "sfKD" or \eqn{\gamma} for "sfHSD".
+to the value of \eqn{\rho} for \code{"sfKD"} or
+\eqn{\gamma} for \code{"sfHSD"}.
 Defaults to missing if not provided.}
 
 \item{maxInformation}{The vector of target maximum information for each
 hypothesis. Defaults to a vector of 1s if not provided.}
 
-\item{incidenceMatrix}{The kMax x m incidence matrix indicating whether the
-specific hypothesis will be tested at the given look.
+\item{incidenceMatrix}{The \code{kMax x m} incidence matrix indicating
+whether the specific hypothesis will be tested at the given look.
 If not provided, defaults to testing each hypothesis at all study looks.}
 
 \item{k1}{The number of study looks at the interim analysis.}
