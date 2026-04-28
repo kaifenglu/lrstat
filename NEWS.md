@@ -13,6 +13,12 @@
 * ensured that if typeAlphaSpending is "OF", "P", "WT", or "none", then informationRates, efficacyStopping, and spendingTime must be of full length kMax, and informationRates and spendingTime must end with 1 for getCI, getRCI
 * ensured that if typeAlphaSpendingNew is "OF", "P", "WT", or "none", then informationRatesNew, efficacyStoppingNew, and spendingTimeNew must be of full length kNew, and informationRatesNew and spendingTimeNew must end with 1 for getADCI, getADRCI
 * moved up the position of parameter MullerSchafer in getADCI, getADRCI
+* added getCP_seamless for conditional power calculation for two-stage seamless sequential design for treatment/dose selection
+* added getCP_mams for conditional power calculation for multi-arm multi-stage design
+* added adaptDesign_seamless for power and sample size calculation of adaptive two-stage seamless sequential design for treatment/dose selection
+* added getCI_seamless for confidence interval calculation for two-stage seamless sequential design for treatment/dose selection
+* added getADCI_seamless for confidence interval calculation using the backward image method for adaptive two-stage seamless sequential design for treatment/dose selection
+* moved the f_pvalue function from confidence_interval.cpp to generic_design.cpp
 
 # lrstat 0.3.1
 
