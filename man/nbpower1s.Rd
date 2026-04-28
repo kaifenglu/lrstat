@@ -74,10 +74,12 @@ for stopping for futility at stages \code{1, ..., kMax-1}. Defaults to
 non-binding for the calculation of critical values.}
 
 \item{typeBetaSpending}{The type of beta spending. One of the following:
-"sfOF" for O'Brien-Fleming type spending function, "sfP" for Pocock
-type spending function, "sfKD" for Kim & DeMets spending function,
-"sfHSD" for Hwang, Shi & DeCani spending function, and "none" for no
-early futility stopping. Defaults to "none".}
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+\code{"none"} for no early futility stopping.
+Defaults to \code{"none"}.}
 
 \item{parameterBetaSpending}{The parameter value for the beta spending.
 Corresponds to \eqn{\rho} for \code{"sfKD"}, and
