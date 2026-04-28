@@ -19,7 +19,7 @@ getBound_seamless(
 )
 }
 \arguments{
-\item{M}{Number of active treatment arms in Phase 2 (\eqn{M \ge 2}).}
+\item{M}{Number of active treatment arms in Phase 2.}
 
 \item{r}{Randomization ratio of each active arm to the common control
 in Phase 2.}
