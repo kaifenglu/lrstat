@@ -25,6 +25,12 @@ ListCpp exitprobcpp(const std::vector<double>& b,
                     const std::vector<double>& I);
 
 
+double f_pvalue(const double theta,
+                const size_t L,
+                const double zL,
+                const std::vector<double>& b,
+                const std::vector<double>& I);
+
 std::vector<double> getBoundcpp(
     const std::size_t k,
     const std::vector<double>& informationRates,

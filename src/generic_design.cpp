@@ -429,6 +429,34 @@ Rcpp::List exitprob(
 }
 
 
+// Compute the p-value given theta, look L, observed z at look L (zL),
+// critical values vector b (length L) and information vector I (length L).
+double f_pvalue(const double theta,
+                const size_t L,
+                const double zL,
+                const std::vector<double>& b,
+                const std::vector<double>& I) {
+  // Build the vectors required by exitprobcpp:
+  // upper: first L-1 from b, last = zL
+  // lower: all -6.0
+  // mu: all = theta
+  std::vector<double> upper(L);
+  if (L > 1) {
+    std::memcpy(upper.data(), b.data(), (L - 1) * sizeof(double));
+  }
+  upper[L - 1] = zL;
+
+  std::vector<double> lower(L, -6.0);
+  std::vector<double> mu(L, theta);
+
+  ListCpp probs = exitprobcpp(upper, lower, mu, I);
+  auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
+  double sum_up = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
+
+  return sum_up;
+}
+
+
 std::vector<double> getBoundcpp(
     const size_t k,
     const std::vector<double>& informationRates,
@@ -2777,19 +2805,19 @@ ListCpp adaptDesigncpp(double betaNew,
 //'   Defaults to 0.025.
 //' @param typeAlphaSpending The type of alpha spending for the primary
 //'   trial. One of the following:
-//'   "OF" for O'Brien-Fleming boundaries,
-//'   "P" for Pocock boundaries,
-//'   "WT" for Wang & Tsiatis boundaries,
-//'   "sfOF" for O'Brien-Fleming type spending function,
-//'   "sfP" for Pocock type spending function,
-//'   "sfKD" for Kim & DeMets spending function,
-//'   "sfHSD" for Hwang, Shi & DeCani spending function,
-//'   "user" for user defined spending, and
-//'   "none" for no early efficacy stopping.
-//'   Defaults to "sfOF".
+//'   \code{"OF"} for O'Brien-Fleming boundaries,
+//'   \code{"P"} for Pocock boundaries,
+//'   \code{"WT"} for Wang & Tsiatis boundaries,
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function,
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+//'   \code{"user"} for user defined spending, and
+//'   \code{"none"} for no early efficacy stopping.
+//'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpending The parameter value of alpha spending
-//'   for the primary trial. Corresponds to \eqn{\Delta} for "WT",
-//'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
+//'   for the primary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
+//'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param userAlphaSpending The user-defined alpha spending for the
 //'   primary trial. Represents the cumulative alpha spent up to each stage.
 //' @param futilityBounds The lower boundaries on the z-test statistic scale
@@ -2797,15 +2825,15 @@ ListCpp adaptDesigncpp(double betaNew,
 //'   \code{rep(-6, kMax-1)} if left unspecified.
 //' @param typeBetaSpending The type of beta spending for the primary trial.
 //'   One of the following:
-//'   "sfOF" for O'Brien-Fleming type spending function,
-//'   "sfP" for Pocock type spending function,
-//'   "sfKD" for Kim & DeMets spending function,
-//'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-//'   "none" for no early futility stopping.
-//'   Defaults to "none".
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function,
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+//'   \code{"none"} for no early futility stopping.
+//'   Defaults to \code{"none"}.
 //' @param parameterBetaSpending The parameter value of beta spending
-//'   for the primary trial. Corresponds to \eqn{\rho} for "sfKD",
-//'   and \eqn{\gamma} for "sfHSD".
+//'   for the primary trial. Corresponds to \eqn{\rho} for \code{"sfKD"},
+//'   and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param spendingTime The error spending time of the primary trial.
 //'   Defaults to missing, in which case it is assumed to be the same as
 //'   \code{informationRates}.
@@ -2821,30 +2849,30 @@ ListCpp adaptDesigncpp(double betaNew,
 //'   if left unspecified.
 //' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 //'   trial. One of the following:
-//'   "OF" for O'Brien-Fleming boundaries,
-//'   "P" for Pocock boundaries,
-//'   "WT" for Wang & Tsiatis boundaries,
-//'   "sfOF" for O'Brien-Fleming type spending function,
-//'   "sfP" for Pocock type spending function,
-//'   "sfKD" for Kim & DeMets spending function,
-//'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-//'   "none" for no early efficacy stopping.
-//'   Defaults to "sfOF".
+//'   \code{"OF"} for O'Brien-Fleming boundaries,
+//'   \code{"P"} for Pocock boundaries,
+//'   \code{"WT"} for Wang & Tsiatis boundaries,
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function,
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+//'   \code{"none"} for no early efficacy stopping.
+//'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpendingNew The parameter value of alpha spending
-//'   for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
-//'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
+//'   for the secondary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
+//'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param typeBetaSpendingNew The type of beta spending for the secondary
 //'   trial. One of the following:
-//'   "sfOF" for O'Brien-Fleming type spending function,
-//'   "sfP" for Pocock type spending function,
-//'   "sfKD" for Kim & DeMets spending function,
-//'   "sfHSD" for Hwang, Shi & DeCani spending function,
-//'   "user" for user defined spending, and
-//'   "none" for no early futility stopping.
-//'   Defaults to "none".
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function,
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+//'   \code{"user"} for user defined spending, and
+//'   \code{"none"} for no early futility stopping.
+//'   Defaults to \code{"none"}.
 //' @param parameterBetaSpendingNew The parameter value of beta spending
-//'   for the secondary trial. Corresponds to \eqn{\rho} for "sfKD",
-//'   and \eqn{\gamma} for "sfHSD".
+//'   for the secondary trial. Corresponds to \eqn{\rho} for \code{"sfKD"},
+//'   and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param userBetaSpendingNew The user-defined cumulative beta spending.
 //'   Represents the cumulative beta spent up to each stage of the
 //'   secondary trial.
