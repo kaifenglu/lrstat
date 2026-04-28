@@ -457,9 +457,10 @@ double getCPcpp(
       I2[l] = INew * informationRatesNew[l];
     }
 
+    std::vector<double> w1(kNew, std::sqrt(varianceRatio));
     ListCpp out = getPower(alphaNew, kNew, b2, mu, I2, bsfNew,
                            parameterBetaSpendingNew, spendTimeNew,
-                           futStoppingNew, w);
+                           futStoppingNew, w1);
     result = out.get<double>("power");
   }
 
@@ -506,8 +507,8 @@ double getCPcpp(
 //'   \code{"none"} for no early efficacy stopping.
 //'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpending The parameter value of alpha spending
-//'   for the primary trial. Corresponds to \eqn{\Delta} for "WT",
-//'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
+//'   for the primary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
+//'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param userAlphaSpending The user defined alpha spending for the primary
 //'   trial. Cumulative alpha spent up to each stage.
 //' @param futilityBounds	The lower boundaries on the z-test statistic scale
@@ -522,8 +523,8 @@ double getCPcpp(
 //'   \code{"none"} for no early futility stopping.
 //'   Defaults to \code{"none"}.
 //' @param parameterBetaSpending The parameter value of beta spending
-//'   for the primary trial. Corresponds to \eqn{\rho} for "sfKD",
-//'   and \eqn{\gamma} for "sfHSD".
+//'   for the primary trial. Corresponds to \eqn{\rho} for \code{"sfKD"},
+//'   and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param spendingTime The error spending time of the primary trial.
 //'   Defaults to missing, in which case, it is the same as
 //'   \code{informationRates}.
@@ -549,8 +550,8 @@ double getCPcpp(
 //'   \code{"none"} for no early efficacy stopping.
 //'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpendingNew The parameter value of alpha spending
-//'   for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
-//'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
+//'   for the secondary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
+//'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param typeBetaSpendingNew The type of beta spending for the secondary
 //'   trial. One of the following:
 //'   \code{"sfOF"} for O'Brien-Fleming type spending function,
@@ -560,8 +561,8 @@ double getCPcpp(
 //'   \code{"none"} for no early futility stopping.
 //'   Defaults to \code{"none"}.
 //' @param parameterBetaSpendingNew The parameter value of beta spending
-//'   for the secondary trial. Corresponds to \eqn{\rho} for "sfKD",
-//'   and \eqn{\gamma} for "sfHSD".
+//'   for the secondary trial. Corresponds to \eqn{\rho} for \code{"sfKD"},
+//'   and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param spendingTimeNew The error spending time of the secondary trial.
 //'   Defaults to missing, in which case, it is the same as
 //'   \code{informationRatesNew}.
@@ -579,7 +580,7 @@ double getCPcpp(
 //' A practical guide with examples.
 //' Stat Med. 2011;30:3267–3284.
 //'
-//' @seealso \code{\link{getDesign}}
+//' @seealso \code{\link{adaptDesign}}
 //'
 //' @examples
 //'
@@ -655,7 +656,7 @@ double getCPcpp(
 //'
 //' @export
 // [[Rcpp::export]]
-double getCP(double INew = NA_REAL,
+double getCP(const double INew = NA_REAL,
              const int L = NA_INTEGER,
              const double zL = NA_REAL,
              const Rcpp::NumericVector& theta = NA_REAL,
