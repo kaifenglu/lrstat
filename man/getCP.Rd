@@ -82,8 +82,8 @@ trial. One of the following:
 Defaults to \code{"sfOF"}.}
 
 \item{parameterAlphaSpending}{The parameter value of alpha spending
-for the primary trial. Corresponds to \eqn{\Delta} for "WT",
-\eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".}
+for the primary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
+\eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{userAlphaSpending}{The user defined alpha spending for the primary
 trial. Cumulative alpha spent up to each stage.}
@@ -102,8 +102,8 @@ One of the following:
 Defaults to \code{"none"}.}
 
 \item{parameterBetaSpending}{The parameter value of beta spending
-for the primary trial. Corresponds to \eqn{\rho} for "sfKD",
-and \eqn{\gamma} for "sfHSD".}
+for the primary trial. Corresponds to \eqn{\rho} for \code{"sfKD"},
+and \eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{spendingTime}{The error spending time of the primary trial.
 Defaults to missing, in which case, it is the same as
@@ -137,8 +137,8 @@ trial. One of the following:
 Defaults to \code{"sfOF"}.}
 
 \item{parameterAlphaSpendingNew}{The parameter value of alpha spending
-for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
-\eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".}
+for the secondary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
+\eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{typeBetaSpendingNew}{The type of beta spending for the secondary
 trial. One of the following:
@@ -150,8 +150,8 @@ trial. One of the following:
 Defaults to \code{"none"}.}
 
 \item{parameterBetaSpendingNew}{The parameter value of beta spending
-for the secondary trial. Corresponds to \eqn{\rho} for "sfKD",
-and \eqn{\gamma} for "sfHSD".}
+for the secondary trial. Corresponds to \eqn{\rho} for \code{"sfKD"},
+and \eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{spendingTimeNew}{The error spending time of the secondary trial.
 Defaults to missing, in which case, it is the same as
@@ -250,7 +250,7 @@ A practical guide with examples.
 Stat Med. 2011;30:3267–3284.
 }
 \seealso{
-\code{\link{getDesign}}
+\code{\link{adaptDesign}}
 }
 \author{
 Kaifeng Lu, \email{kaifenglu@gmail.com}
