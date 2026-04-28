@@ -26,7 +26,7 @@ getBound_seamless(
 
 - M:
 
-  Number of active treatment arms in Phase 2 (\\M \ge 2\\).
+  Number of active treatment arms in Phase 2.
 
 - r:
 

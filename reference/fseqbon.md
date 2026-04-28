@@ -44,16 +44,17 @@ fseqbon(
 - typeAlphaSpending:
 
   The vector of alpha spending functions for the hypotheses. Each
-  element is one of the following: "sfOF" for O'Brien-Fleming type
-  spending function, "sfP" for Pocock type spending function, "sfKD" for
-  Kim & DeMets spending function, "sfHSD" for Hwang, Shi & DeCani
-  spending function. Defaults to "sfOF" if not provided.
+  element is one of the following: `"sfOF"` for O'Brien-Fleming type
+  spending function, `"sfP"` for Pocock type spending function, `"sfKD"`
+  for Kim & DeMets spending function, `"sfHSD"` for Hwang, Shi & DeCani
+  spending function. Defaults to `"sfOF"` if not provided.
 
 - parameterAlphaSpending:
 
   The vector of parameter values for the alpha spending functions for
   the hypotheses. Each element corresponds to the value of \\\rho\\ for
-  "sfKD" or \\\gamma\\ for "sfHSD". Defaults to missing if not provided.
+  `"sfKD"` or \\\gamma\\ for `"sfHSD"`. Defaults to missing if not
+  provided.
 
 - maxInformation:
 
@@ -62,7 +63,7 @@ fseqbon(
 
 - incidenceMatrix:
 
-  The kMax x m incidence matrix indicating whether the specific
+  The `kMax x m` incidence matrix indicating whether the specific
   hypothesis will be tested at the given look. If not provided, defaults
   to testing each hypothesis at all study looks.
 

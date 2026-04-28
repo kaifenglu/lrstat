@@ -118,19 +118,19 @@ adaptDesign_mams(
 - typeAlphaSpending:
 
   The type of alpha spending for the primary trial. One of the
-  following: "OF" for O'Brien-Fleming boundaries, "P" for Pocock
-  boundaries, "WT" for Wang & Tsiatis boundaries, "sfOF" for
-  O'Brien-Fleming type spending function, "sfP" for Pocock type spending
-  function, "sfKD" for Kim & DeMets spending function, "sfHSD" for
-  Hwang, Shi & DeCani spending function, "user" for user defined
-  spending, and "none" for no early efficacy stopping. Defaults to
-  "sfOF".
+  following: `"OF"` for O'Brien-Fleming boundaries, `"P"` for Pocock
+  boundaries, `"WT"` for Wang & Tsiatis boundaries, `"sfOF"` for
+  O'Brien-Fleming type spending function, `"sfP"` for Pocock type
+  spending function, `"sfKD"` for Kim & DeMets spending function,
+  `"sfHSD"` for Hwang, Shi & DeCani spending function, `"user"` for user
+  defined spending, and `"none"` for no early efficacy stopping.
+  Defaults to `"sfOF"`.
 
 - parameterAlphaSpending:
 
   The parameter value of alpha spending for the primary trial.
-  Corresponds to \\\Delta\\ for "WT", \\\rho\\ for "sfKD", and
-  \\\gamma\\ for "sfHSD".
+  Corresponds to \\\Delta\\ for `"WT"`, \\\rho\\ for `"sfKD"`, and
+  \\\gamma\\ for `"sfHSD"`.
 
 - userAlphaSpending:
 
@@ -177,17 +177,16 @@ adaptDesign_mams(
 - typeAlphaSpendingNew:
 
   The type of alpha spending for the secondary trial. One of the
-  following: "OF" for O'Brien-Fleming boundaries, "sfOF" for
-  O'Brien-Fleming type spending function, "sfP" for Pocock type spending
-  function, "sfKD" for Kim & DeMets spending function, "sfHSD" for
-  Hwang, Shi & DeCani spending function, and "none" for no early
-  efficacy stopping. Defaults to "sfOF".
+  following: `"OF"` for O'Brien-Fleming boundaries, `"sfOF"` for
+  O'Brien-Fleming type spending function, `"sfP"` for Pocock type
+  spending function, `"sfKD"` for Kim & DeMets spending function,
+  `"sfHSD"` for Hwang, Shi & DeCani spending function, and `"none"` for
+  no early efficacy stopping. Defaults to `"sfOF"`.
 
 - parameterAlphaSpendingNew:
 
   The parameter value of alpha spending for the secondary trial.
-  Corresponds to \\\Delta\\ for "WT", \\\rho\\ for "sfKD", and
-  \\\gamma\\ for "sfHSD".
+  Corresponds to \\\rho\\ for `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
 
 - spendingTimeNew:
 

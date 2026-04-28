@@ -112,9 +112,9 @@ A data frame with the following components:
 
 ## References
 
-Anastasios A. Tsiatis, Gary L. Rosner and Cyrus R. Mehta. Exact
-confidence intervals following a group sequential test. Biometrics
-1984;40:797-803.
+Ping Gao, Yingqiu Li. Adaptive multiple comparison sequential design
+(AMCSD) for clinical trials. Journal of Biopharmaceutical Statistics,
+2024, 34(3), 424-440.
 
 ## Author
 

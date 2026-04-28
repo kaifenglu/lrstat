@@ -80,8 +80,8 @@ getADCI(
 - parameterAlphaSpending:
 
   The parameter value of alpha spending for the primary trial.
-  Corresponds to \\\Delta\\ for "WT", \\\rho\\ for "sfKD", and
-  \\\gamma\\ for "sfHSD".
+  Corresponds to \\\Delta\\ for `"WT"`, \\\rho\\ for `"sfKD"`, and
+  \\\gamma\\ for `"sfHSD"`.
 
 - spendingTime:
 
@@ -128,8 +128,8 @@ getADCI(
 - parameterAlphaSpendingNew:
 
   The parameter value of alpha spending for the secondary trial.
-  Corresponds to \\\Delta\\ for "WT", \\\rho\\ for "sfKD", and
-  \\\gamma\\ for "sfHSD".
+  Corresponds to \\\Delta\\ for `"WT"`, \\\rho\\ for `"sfKD"`, and
+  \\\gamma\\ for `"sfHSD"`.
 
 - spendingTimeNew:
 

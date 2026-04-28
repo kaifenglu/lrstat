@@ -12,6 +12,8 @@
   : Adaptive Design at an Interim Look
 - [`adaptDesign_mams()`](https://kaifenglu.github.io/lrstat/reference/adaptDesign_mams.md)
   : Adaptive Multi-Arm Multi-Stage Design
+- [`adaptDesign_seamless()`](https://kaifenglu.github.io/lrstat/reference/adaptDesign_seamless.md)
+  : Adaptive Two-Stage Seamless Sequential Design
 - [`aml`](https://kaifenglu.github.io/lrstat/reference/aml.md) : Acute
   myelogenous leukemia survival data from the survival package
 - [`assess_phregr()`](https://kaifenglu.github.io/lrstat/reference/assess_phregr.md)
@@ -62,6 +64,9 @@
 - [`getADCI_mams()`](https://kaifenglu.github.io/lrstat/reference/getADCI_mams.md)
   : Confidence Interval After Adaptation for Multi-Arm Multi-Stage
   Design
+- [`getADCI_seamless()`](https://kaifenglu.github.io/lrstat/reference/getADCI_seamless.md)
+  : Confidence Interval After Adaptation for Two-Stage Seamless
+  Sequential Design
 - [`getADRCI()`](https://kaifenglu.github.io/lrstat/reference/getADRCI.md)
   : Repeated Confidence Interval After Adaptation
 - [`getAccrualDurationFromN()`](https://kaifenglu.github.io/lrstat/reference/getAccrualDurationFromN.md)
@@ -76,8 +81,14 @@
   Confidence Interval After Trial Termination
 - [`getCI_mams()`](https://kaifenglu.github.io/lrstat/reference/getCI_mams.md)
   : Confidence Interval After Trial Termination
+- [`getCI_seamless()`](https://kaifenglu.github.io/lrstat/reference/getCI_seamless.md)
+  : Confidence Interval After Trial Termination for Seamless Design
 - [`getCP()`](https://kaifenglu.github.io/lrstat/reference/getCP.md) :
   Conditional Power Allowing for Varying Parameter Values
+- [`getCP_mams()`](https://kaifenglu.github.io/lrstat/reference/getCP_mams.md)
+  : Conditional Power for Multi-Arm Multi-Stage Design
+- [`getCP_seamless()`](https://kaifenglu.github.io/lrstat/reference/getCP_seamless.md)
+  : Conditional Power for Two-Stage Seamless Sequential Design
 - [`getDesign()`](https://kaifenglu.github.io/lrstat/reference/getDesign.md)
   : Power and Sample Size for a Generic Group Sequential Design
 - [`getDesignANOVA()`](https://kaifenglu.github.io/lrstat/reference/getDesignANOVA.md)

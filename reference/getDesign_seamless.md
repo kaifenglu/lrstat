@@ -76,8 +76,10 @@ getDesign_seamless(
 
 - criticalValues:
 
-  Upper boundaries on the z-test statistic scale for stopping for
-  efficacy.
+  The upper boundaries on the max z-test statistic scale for Phase 2 and
+  the z-test statistics for the selected arm in Phase 3 for the primary
+  trial. If missing, boundaries will be computed based on the specified
+  alpha spending function.
 
 - alpha:
 

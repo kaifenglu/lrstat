@@ -15,6 +15,7 @@
 <url><loc>https://kaifenglu.github.io/lrstat/reference/accrual.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/adaptDesign.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/adaptDesign_mams.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/adaptDesign_seamless.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/aml.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/assess_phregr.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/binary_tte_sim.html</loc></url>
@@ -39,6 +40,7 @@
 <url><loc>https://kaifenglu.github.io/lrstat/reference/fwgtmat.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getADCI.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getADCI_mams.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/getADCI_seamless.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getADRCI.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getAccrualDurationFromN.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getBound.html</loc></url>
@@ -46,7 +48,10 @@
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getBound_seamless.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getCI.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getCI_mams.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/getCI_seamless.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getCP.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/getCP_mams.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/getCP_seamless.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getDesign.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getDesignANOVA.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/getDesignANOVAContrast.html</loc></url>
@@ -206,6 +211,7 @@
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.BOINTable.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.adaptDesign.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.adaptDesign_mams.html</loc></url>
+<url><loc>https://kaifenglu.github.io/lrstat/reference/print.adaptDesign_seamless.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.assess_phregr.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.design.html</loc></url>
 <url><loc>https://kaifenglu.github.io/lrstat/reference/print.designANOVA.html</loc></url>

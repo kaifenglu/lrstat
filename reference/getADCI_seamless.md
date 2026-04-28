@@ -1,30 +1,28 @@
-# Confidence Interval After Adaptation for Multi-Arm Multi-Stage Design
+# Confidence Interval After Adaptation for Two-Stage Seamless Sequential Design
 
 Obtains the p-value, conservative point estimate, and confidence
-interval after the end of an adaptive multi-arm multi-stage trial.
+interval after the end of an adaptive two-stage seamless sequential
+design.
 
 ## Usage
 
 ``` r
-getADCI_mams(
+getADCI_seamless(
   M = NA_integer_,
   r = NA_real_,
   corr_known = TRUE,
   L = NA_integer_,
   zL = NA_real_,
   IMax = NA_real_,
-  kMax = NA_integer_,
+  K = NA_integer_,
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
-  criticalValues = NULL,
+  criticalValues = NA_real_,
   alpha = 0.25,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   spendingTime = NA_real_,
   MullerSchafer = FALSE,
-  MNew = NA_integer_,
-  selected = NA_integer_,
-  rNew = NA_real_,
   Lc = NA_integer_,
   zLc = NA_real_,
   INew = NA_real_,
@@ -40,40 +38,40 @@ getADCI_mams(
 
 - M:
 
-  Number of active treatment arms in the primary trial.
+  Number of active treatment arms in Phase 2.
 
 - r:
 
-  Randomization ratio of each active arm to the common control in the
-  primary trial.
+  Randomization ratio of each active arm to the common control in Phase
+  2.
 
 - corr_known:
 
-  Logical. If `TRUE`, the correlation between Wald statistics is derived
-  from the randomization ratio \\r\\ as \\r / (r + 1)\\. If `FALSE`, a
-  conservative correlation of 0 is assumed.
+  Logical. If `TRUE`, the correlation between Wald statistics in Phase 2
+  is derived from the randomization ratio `r` as \\r / (r + 1)\\. If
+  `FALSE`, a conservative correlation of 0 is used.
 
 - L:
 
-  The interim adaptation look of the primary trial.
+  The interim adaptation look in Phase 3.
 
 - zL:
 
-  The z-test statistics at the interim adaptation look of the primary
-  trial.
+  The z-test statistic at the interim adaptation look of Phase 3.
 
 - IMax:
 
   Maximum information for any active arm versus the common control for
-  the primary trial. Must be provided.
+  the original trial. Must be provided.
 
-- kMax:
+- K:
 
-  The maximum number of stages of the primary trial.
+  Number of sequential looks in Phase 3.
 
 - informationRates:
 
-  The information rates of the primary trial.
+  A numeric vector of information rates fixed before the trial. If
+  unspecified, defaults to \\(1:(K+1)) / (K+1)\\.
 
 - efficacyStopping:
 
@@ -82,12 +80,10 @@ getADCI_mams(
 
 - criticalValues:
 
-  The matrix of by-level upper boundaries on the z-test statistic scale
-  for efficacy stopping up to look `L` for the primary trial. The first
-  column is for level `M`, the second column is for level `M - 1`, and
-  so on, with the last column for level 1. If left unspecified, the
-  critical values will be computed based on the specified alpha spending
-  function.
+  The upper boundaries on the max z-test statistic scale for Phase 2 and
+  the z-test statistics for the selected arm in Phase 3 for the primary
+  trial. If missing, boundaries will be computed based on the specified
+  alpha spending function.
 
 - alpha:
 
@@ -119,27 +115,13 @@ getADCI_mams(
   Whether to use the Muller and Schafer (2001) method for trial
   adaptation.
 
-- MNew:
-
-  The number of active treatment arms in the secondary trial.
-
-- selected:
-
-  The indices of the selected treatment arms for the secondary trial
-  among the `M` active arms in the primary trial.
-
-- rNew:
-
-  The randomization ratio of each active arm to the common control in
-  the secondary trial.
-
 - Lc:
 
   The termination look of the integrated trial.
 
 - zLc:
 
-  The z-test statistics at the termination look of the integrated trial.
+  The z-test statistic at the termination look of the integrated trial.
 
 - INew:
 
@@ -180,10 +162,6 @@ getADCI_mams(
 
 A data frame with the following variables:
 
-- `level`: Number of individual hypotheses considered for multiplicity.
-
-- `index`: The index of the treatment arm among the `M` active arms.
-
 - `pvalue`: p-value for rejecting the null hypothesis.
 
 - `thetahat`: Median unbiased point estimate of the parameter.
@@ -207,12 +185,12 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ## Examples
 
 ``` r
-getADCI_mams(
-  M = 2, r = 1, corr_known = FALSE, L = 1, zL = c(2.075, 2.264),
-  IMax = 300 / 4, kMax = 2, informationRates = c(0.5, 1),
-  alpha = 0.025, typeAlphaSpending = "sfOF",
-  MNew = 1, selected = 2, rNew = 1,
-  Lc = 2, zLc = 1.667, INew = 374 / 4)
-#>   level index     pvalue  thetahat cilevel         lower     upper
-#> 1     1     2 0.02551277 0.1712693    0.95 -0.0007892748 0.3530049
+getADCI_seamless(
+  M = 2, r = 1, corr_known = FALSE,
+  L = 1, zL = -log(0.67) * sqrt(80 / 4),
+  IMax = 120 / 4, K = 2, informationRates = c(1/3, 2/3, 1),
+  alpha = 0.025, typeAlphaSpending = "OF",
+  Lc = 2, zLc = -log(0.677) * sqrt(236 / 4), INew = 236 / 4)
+#>        pvalue  thetahat cilevel      lower     upper
+#> 1 0.008471388 0.2557151    0.95 0.05573209 0.4420563
 ```

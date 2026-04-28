@@ -127,8 +127,10 @@ at each stage. Defaults to <code>TRUE</code> if left unspecified.</p></dd>
 
 
 <dt id="arg-criticalvalues">criticalValues<a class="anchor" aria-label="anchor" href="#arg-criticalvalues"></a></dt>
-<dd><p>Upper boundaries on the z-test statistic scale
-for stopping for efficacy.</p></dd>
+<dd><p>The upper boundaries on the max z-test statistic
+scale for Phase 2 and the z-test statistics for the selected arm
+in Phase 3 for the primary trial. If missing, boundaries
+will be computed based on the specified alpha spending function.</p></dd>
 
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
