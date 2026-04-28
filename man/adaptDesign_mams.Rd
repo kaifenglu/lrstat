@@ -83,20 +83,20 @@ Defaults to 0.025.}
 
 \item{typeAlphaSpending}{The type of alpha spending for the primary
 trial. One of the following:
-"OF" for O'Brien-Fleming boundaries,
-"P" for Pocock boundaries,
-"WT" for Wang & Tsiatis boundaries,
-"sfOF" for O'Brien-Fleming type spending function,
-"sfP" for Pocock type spending function,
-"sfKD" for Kim & DeMets spending function,
-"sfHSD" for Hwang, Shi & DeCani spending function,
-"user" for user defined spending, and
-"none" for no early efficacy stopping.
-Defaults to "sfOF".}
+\code{"OF"} for O'Brien-Fleming boundaries,
+\code{"P"} for Pocock boundaries,
+\code{"WT"} for Wang & Tsiatis boundaries,
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+\code{"user"} for user defined spending, and
+\code{"none"} for no early efficacy stopping.
+Defaults to \code{"sfOF"}.}
 
 \item{parameterAlphaSpending}{The parameter value of alpha spending
-for the primary trial. Corresponds to \eqn{\Delta} for "WT",
-\eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".}
+for the primary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
+\eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{userAlphaSpending}{The user-defined alpha spending for the
 primary trial. Represents the cumulative alpha spent up to each stage.}
@@ -126,17 +126,17 @@ if left unspecified.}
 
 \item{typeAlphaSpendingNew}{The type of alpha spending for the secondary
 trial. One of the following:
-"OF" for O'Brien-Fleming boundaries,
-"sfOF" for O'Brien-Fleming type spending function,
-"sfP" for Pocock type spending function,
-"sfKD" for Kim & DeMets spending function,
-"sfHSD" for Hwang, Shi & DeCani spending function, and
-"none" for no early efficacy stopping.
-Defaults to "sfOF".}
+\code{"OF"} for O'Brien-Fleming boundaries,
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+\code{"none"} for no early efficacy stopping.
+Defaults to \code{"sfOF"}.}
 
 \item{parameterAlphaSpendingNew}{The parameter value of alpha spending
-for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
-\eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".}
+for the secondary trial. Corresponds to
+\eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{spendingTimeNew}{The error spending time of the secondary trial.
 Defaults to missing, in which case it is assumed to be the same as
