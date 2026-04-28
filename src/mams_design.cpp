@@ -1444,10 +1444,11 @@ ListCpp adaptDesign_mams_cpp(
           return p0 - cpu0[i];
         };
 
-        critValues2[i] = brent(g, 0.0, 6.0, 1e-6);
+        double cof = brent(g, 0.0, 6.0, 1e-6);
+        critValues2[i] = cof;
         for (size_t j = 0; j < MNew; ++j) {
           size_t m = selectedNew[j];
-          c2(j, i) = (critValues2[i] * sqrtIc[i] - zL[m] * sqrtIL) / sqrtI2[i];
+          c2(j, i) = (cof * sqrtIc[i] - zL[m] * sqrtIL) / sqrtI2[i];
         }
       }
     }
@@ -1541,10 +1542,11 @@ ListCpp adaptDesign_mams_cpp(
             return p0 - cpu0[i];
           };
 
-          critValues2[i] = brent(g, 0.0, 6.0, 1e-6);
+          double cof = brent(g, 0.0, 6.0, 1e-6);
+          critValues2[i] = cof;
           for (size_t j = 0; j < MNew; ++j) {
             size_t m = selectedNew[j];
-            c2(j, i) = (critValues2[i] * sqrtIc[i] - zL[m] * sqrtIL) / sqrtI2[i];
+            c2(j, i) = (cof * sqrtIc[i] - zL[m] * sqrtIL) / sqrtI2[i];
           }
         }
       }
@@ -1944,19 +1946,19 @@ ListCpp adaptDesign_mams_cpp(
 //'   Defaults to 0.025.
 //' @param typeAlphaSpending The type of alpha spending for the primary
 //'   trial. One of the following:
-//'   "OF" for O'Brien-Fleming boundaries,
-//'   "P" for Pocock boundaries,
-//'   "WT" for Wang & Tsiatis boundaries,
-//'   "sfOF" for O'Brien-Fleming type spending function,
-//'   "sfP" for Pocock type spending function,
-//'   "sfKD" for Kim & DeMets spending function,
-//'   "sfHSD" for Hwang, Shi & DeCani spending function,
-//'   "user" for user defined spending, and
-//'   "none" for no early efficacy stopping.
-//'   Defaults to "sfOF".
+//'   \code{"OF"} for O'Brien-Fleming boundaries,
+//'   \code{"P"} for Pocock boundaries,
+//'   \code{"WT"} for Wang & Tsiatis boundaries,
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function,
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+//'   \code{"user"} for user defined spending, and
+//'   \code{"none"} for no early efficacy stopping.
+//'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpending The parameter value of alpha spending
-//'   for the primary trial. Corresponds to \eqn{\Delta} for "WT",
-//'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
+//'   for the primary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
+//'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param userAlphaSpending The user-defined alpha spending for the
 //'   primary trial. Represents the cumulative alpha spent up to each stage.
 //' @param spendingTime The error spending time of the primary trial.
@@ -1976,16 +1978,16 @@ ListCpp adaptDesign_mams_cpp(
 //'   if left unspecified.
 //' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 //'   trial. One of the following:
-//'   "OF" for O'Brien-Fleming boundaries,
-//'   "sfOF" for O'Brien-Fleming type spending function,
-//'   "sfP" for Pocock type spending function,
-//'   "sfKD" for Kim & DeMets spending function,
-//'   "sfHSD" for Hwang, Shi & DeCani spending function, and
-//'   "none" for no early efficacy stopping.
-//'   Defaults to "sfOF".
+//'   \code{"OF"} for O'Brien-Fleming boundaries,
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function,
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+//'   \code{"none"} for no early efficacy stopping.
+//'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpendingNew The parameter value of alpha spending
-//'   for the secondary trial. Corresponds to \eqn{\Delta} for "WT",
-//'   \eqn{\rho} for "sfKD", and \eqn{\gamma} for "sfHSD".
+//'   for the secondary trial. Corresponds to
+//'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param spendingTimeNew The error spending time of the secondary trial.
 //'   Defaults to missing, in which case it is assumed to be the same as
 //'   \code{informationRatesNew}.
