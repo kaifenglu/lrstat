@@ -19,6 +19,14 @@
 * added getCI_seamless for confidence interval calculation for two-stage seamless sequential design for treatment/dose selection
 * added getADCI_seamless for confidence interval calculation using the backward image method for adaptive two-stage seamless sequential design for treatment/dose selection
 * moved the f_pvalue function from confidence_interval.cpp to generic_design.cpp
+* updated infoRatesNew when informationRatesNew is not missing in adaptDesign_seamless_cpp and adaptDesign_mams_cpp
+* added default value of 1 for parameter r of adaptDesign_seamless
+* updated pmvnormmccpp to use s and T instead of Ivec
+* added byLevelBounds in the output of getDesign_mams
+* updated the condition for cpu0 calculation in adaptDesign_mams_cpp
+* updated the description for adaptDesign_mams output
+* updated the default value of r and rNew to 1 in adaptDesign_mams
+
 
 # lrstat 0.3.1
 
