@@ -257,14 +257,15 @@ DataFrameCpp getCI_mams_cpp(
 
 
 
-//' @title Confidence Interval After Trial Termination
-//' @description Obtains the p-value, median unbiased point estimate, and
-//' confidence interval after the end of a group sequential trial.
+//' @title Confidence Interval After Trial Termination for a Multi-Arm
+//' Multi-Stage Design
+//' @description Obtains the p-value, conservative point estimate, and
+//' confidence interval after the end of a multi-arm multi-stage trial.
 //'
 //' @param M Number of active treatment arms.
 //' @param r Randomization ratio of each active arm to the common control.
 //' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-//'   statistics is derived from the randomization ratio \code{r}
+//'   statistics is derived from the randomization ratio \eqn{r}
 //'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 //'   0 is used.
 //' @param L The termination look.
@@ -274,29 +275,45 @@ DataFrameCpp getCI_mams_cpp(
 //' @param informationRates The information rates up to look \code{L}.
 //' @param efficacyStopping Indicators of whether efficacy stopping is
 //'   allowed at each stage up to look \code{L}.
-//'   Defaults to true if left unspecified.
+//'   Defaults to \code{TRUE} if left unspecified.
 //' @param criticalValues The matrix of by-level upper boundaries on the
-//'   z-test statistic scale for efficacy stopping up to look \code{L}.
+//'   max z-test statistic scale for efficacy stopping up to look \code{L}.
 //'   The first column is for level \code{M}, the second column is for
 //'   level \code{M - 1}, and so on, with the last column for level 1.
 //'   If left unspecified, the critical values will be computed based
 //'   on the specified alpha spending function.
 //' @inheritParams param_alpha
-//' @inheritParams param_typeAlphaSpending
+//' @param typeAlphaSpending The type of alpha spending for the trial.
+//'   One of the following:
+//'   \code{"OF"} for O'Brien-Fleming boundaries,
+//'   \code{"P"} for Pocock boundaries,
+//'   \code{"WT"} for Wang & Tsiatis boundaries,
+//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+//'   \code{"sfP"} for Pocock type spending function,
+//'   \code{"sfKD"} for Kim & DeMets spending function,
+//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+//'   \code{"none"} for no early efficacy stopping.
+//'   Defaults to \code{"sfOF"}.
 //' @inheritParams param_parameterAlphaSpending
 //' @param spendingTime The error spending time up to look \code{L}.
 //'   Defaults to missing, in which case, it is the same as
 //'   \code{informationRates}.
 //'
+//' @details
+//' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+//' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+//' and \code{spendingTime} must be of full length \code{kMax}, and
+//' \code{informationRates} and \code{spendingTime} must end with 1.
+//'
 //' @return A data frame with the following components:
 //'
 //' * \code{level}: Number of individual hypotheses considered for multiplicity.
 //'
-//' * \code{index}: The index of the treatment arm among the M active arms.
+//' * \code{index}: The treatment arm with max Z among the active arms.
 //'
 //' * \code{pvalue}: p-value for rejecting the null hypothesis.
 //'
-//' * \code{thetahat}: Median unbiased point estimate of the parameter.
+//' * \code{thetahat}: Point estimate of the parameter.
 //'
 //' * \code{cilevel}: Confidence interval level.
 //'
@@ -818,7 +835,7 @@ DataFrameCpp getADCI_mams_cpp(
     if (!MullerSchafer) {
       std::partial_sum(v0.begin(), v0.end(), cpu0.begin());
     } else {
-      if (asf2 != "none" || asf2 != "of") {
+      if (asf2 != "none" && asf2 != "of") {
         for (size_t i = 0; i < k2; ++i) {
           cpu0[i] = errorSpentcpp(spendTimeNew[i], c_alpha,
                                   asfNew, parameterAlphaSpendingNew);
@@ -981,7 +998,8 @@ DataFrameCpp getADCI_mams_cpp(
 }
 
 
-//' @title Confidence Interval After Adaptation for Multi-Arm Multi-Stage Design
+//' @title Confidence Interval After Adaptation for a Multi-Arm Multi-Stage
+//' Design
 //' @description Obtains the p-value, conservative point estimate, and
 //' confidence interval after the end of an adaptive multi-arm multi-stage trial.
 //'
@@ -1003,7 +1021,7 @@ DataFrameCpp getADCI_mams_cpp(
 //'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 //'   if left unspecified.
 //' @param criticalValues The matrix of by-level upper boundaries on the
-//'   z-test statistic scale for efficacy stopping up to look \code{L}
+//'   max z-test statistic scale for efficacy stopping up to look \code{L}
 //'   for the primary trial.
 //'   The first column is for level \code{M}, the second column is for
 //'   level \code{M - 1}, and so on, with the last column for level 1.
@@ -1040,10 +1058,9 @@ DataFrameCpp getADCI_mams_cpp(
 //'   integrated trial.
 //' @param INew The maximum information for any active arm versus the common
 //'   control in the secondary trial.
-//' @param informationRatesNew The spacing of looks of the secondary trial
-//'   up to look \code{L2}.
+//' @param informationRatesNew The spacing of looks of the secondary trial.
 //' @param efficacyStoppingNew The indicators of whether efficacy stopping is
-//'   allowed at each look of the secondary trial up to look \code{L2}.
+//'   allowed at each look of the secondary trial.
 //'   Defaults to \code{TRUE} if left unspecified.
 //' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 //'   trial. One of the following:
@@ -1057,19 +1074,25 @@ DataFrameCpp getADCI_mams_cpp(
 //' @param parameterAlphaSpendingNew The parameter value of alpha spending
 //'   for the secondary trial. Corresponds to
 //'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
-//' @param spendingTimeNew The error spending time of the secondary trial
-//'   up to look \code{L2}. Defaults to missing, in which case, it is
+//' @param spendingTimeNew The error spending time of the secondary trial.
+//'   Defaults to missing, in which case, it is
 //'   the same as \code{informationRatesNew}.
+//'
+//' @details
+//' If typeAlphaSpendingNew is \code{"OF"} or \code{"none"}, then
+//' \code{informationRatesNew}, \code{efficacyStoppingNew}, and
+//' \code{spendingTimeNew} must be of full length \code{kNew}, and
+//' \code{informationRatesNew} and \code{spendingTimeNew} must end with 1.
 //'
 //' @return A data frame with the following variables:
 //'
 //' * \code{level}: Number of individual hypotheses considered for multiplicity.
 //'
-//' * \code{index}: The index of the treatment arm among the \code{M} active arms.
+//' * \code{index}: The treatment arm with max Z among the active arms.
 //'
 //' * \code{pvalue}: p-value for rejecting the null hypothesis.
 //'
-//' * \code{thetahat}: Median unbiased point estimate of the parameter.
+//' * \code{thetahat}: Point estimate of the parameter.
 //'
 //' * \code{cilevel}: Confidence interval level.
 //'
@@ -1096,7 +1119,7 @@ DataFrameCpp getADCI_mams_cpp(
 // [[Rcpp::export]]
 Rcpp::DataFrame getADCI_mams(
     const int M = NA_INTEGER,
-    const double r = NA_REAL,
+    const double r = 1,
     const bool corr_known = true,
     const int L = NA_INTEGER,
     const Rcpp::NumericVector& zL = NA_REAL,
@@ -1112,7 +1135,7 @@ Rcpp::DataFrame getADCI_mams(
     const bool MullerSchafer = false,
     const int MNew = NA_INTEGER,
     const Rcpp::IntegerVector& selected = NA_INTEGER,
-    const double rNew = NA_REAL,
+    const double rNew = 1,
     const int Lc = NA_INTEGER,
     const Rcpp::NumericVector& zLc = NA_REAL,
     const double INew = NA_REAL,
