@@ -2,11 +2,12 @@
 % Please edit documentation in R/RcppExports.R
 \name{getADCI_mams}
 \alias{getADCI_mams}
-\title{Confidence Interval After Adaptation for Multi-Arm Multi-Stage Design}
+\title{Confidence Interval After Adaptation for a Multi-Arm Multi-Stage
+Design}
 \usage{
 getADCI_mams(
   M = NA_integer_,
-  r = NA_real_,
+  r = 1,
   corr_known = TRUE,
   L = NA_integer_,
   zL = NA_real_,
@@ -22,7 +23,7 @@ getADCI_mams(
   MullerSchafer = FALSE,
   MNew = NA_integer_,
   selected = NA_integer_,
-  rNew = NA_real_,
+  rNew = 1,
   Lc = NA_integer_,
   zLc = NA_real_,
   INew = NA_real_,
@@ -61,7 +62,7 @@ allowed at each stage of the primary trial. Defaults to \code{TRUE}
 if left unspecified.}
 
 \item{criticalValues}{The matrix of by-level upper boundaries on the
-z-test statistic scale for efficacy stopping up to look \code{L}
+max z-test statistic scale for efficacy stopping up to look \code{L}
 for the primary trial.
 The first column is for level \code{M}, the second column is for
 level \code{M - 1}, and so on, with the last column for level 1.
@@ -110,11 +111,10 @@ integrated trial.}
 \item{INew}{The maximum information for any active arm versus the common
 control in the secondary trial.}
 
-\item{informationRatesNew}{The spacing of looks of the secondary trial
-up to look \code{L2}.}
+\item{informationRatesNew}{The spacing of looks of the secondary trial.}
 
 \item{efficacyStoppingNew}{The indicators of whether efficacy stopping is
-allowed at each look of the secondary trial up to look \code{L2}.
+allowed at each look of the secondary trial.
 Defaults to \code{TRUE} if left unspecified.}
 
 \item{typeAlphaSpendingNew}{The type of alpha spending for the secondary
@@ -131,17 +131,17 @@ Defaults to \code{"sfOF"}.}
 for the secondary trial. Corresponds to
 \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.}
 
-\item{spendingTimeNew}{The error spending time of the secondary trial
-up to look \code{L2}. Defaults to missing, in which case, it is
+\item{spendingTimeNew}{The error spending time of the secondary trial.
+Defaults to missing, in which case, it is
 the same as \code{informationRatesNew}.}
 }
 \value{
 A data frame with the following variables:
 \itemize{
 \item \code{level}: Number of individual hypotheses considered for multiplicity.
-\item \code{index}: The index of the treatment arm among the \code{M} active arms.
+\item \code{index}: The treatment arm with max Z among the active arms.
 \item \code{pvalue}: p-value for rejecting the null hypothesis.
-\item \code{thetahat}: Median unbiased point estimate of the parameter.
+\item \code{thetahat}: Point estimate of the parameter.
 \item \code{cilevel}: Confidence interval level.
 \item \code{lower}: Lower bound of confidence interval.
 \item \code{upper}: Upper bound of confidence interval.
@@ -150,6 +150,12 @@ A data frame with the following variables:
 \description{
 Obtains the p-value, conservative point estimate, and
 confidence interval after the end of an adaptive multi-arm multi-stage trial.
+}
+\details{
+If typeAlphaSpendingNew is \code{"OF"} or \code{"none"}, then
+\code{informationRatesNew}, \code{efficacyStoppingNew}, and
+\code{spendingTimeNew} must be of full length \code{kNew}, and
+\code{informationRatesNew} and \code{spendingTimeNew} must end with 1.
 }
 \examples{
 getADCI_mams(

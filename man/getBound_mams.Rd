@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getBound_mams}
 \alias{getBound_mams}
-\title{Efficacy Boundaries for Multi-Arm Multi-Stage Design}
+\title{Efficacy Boundaries for a Multi-Arm Multi-Stage Design}
 \usage{
 getBound_mams(
   M = NA_integer_,
@@ -67,13 +67,12 @@ values (on the standard normal Z-scale) for each analysis up to the
 current look.
 }
 \description{
-Calculates the efficacy stopping boundaries for a multiple
-comparison sequential design.
+Calculates the efficacy stopping boundaries for a multi-arm
+multi-stage design.
 }
 \details{
 The function determines critical values by solving for the boundary that
-satisfies the alpha-spending requirement, given the selection of the
-"best" arm at the end of Phase 2.
+satisfies the alpha-spending requirement.
 
 If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
 \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
@@ -87,6 +86,11 @@ and \code{spendingTime} must be of full length \code{kMax}, and
 getBound_mams(M = 2, k = 3, informationRates = seq(1, 3)/3,
               alpha = 0.025, typeAlphaSpending = "OF")
 
+}
+\references{
+Ping Gao, Yingqiu Li.
+Adaptive multiple comparison sequential design (AMCSD) for clinical trials.
+Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
 }
 \author{
 Kaifeng Lu, \email{kaifenglu@gmail.com}

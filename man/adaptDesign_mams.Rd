@@ -8,7 +8,7 @@ adaptDesign_mams(
   betaNew = NA_real_,
   INew = NA_real_,
   M = NA_integer_,
-  r = NA_real_,
+  r = 1,
   corr_known = TRUE,
   L = NA_integer_,
   zL = NA_real_,
@@ -26,7 +26,7 @@ adaptDesign_mams(
   MullerSchafer = FALSE,
   MNew = NA_integer_,
   selected = NA_integer_,
-  rNew = NA_real_,
+  rNew = 1,
   kNew = NA_integer_,
   informationRatesNew = NA_real_,
   efficacyStoppingNew = NA_integer_,
@@ -58,7 +58,7 @@ as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 \item{zL}{The z-test statistics at the interim adaptation look of
 the primary trial.}
 
-\item{theta}{A vector of length \eqn{M} representing the true treatment
+\item{theta}{A vector of length \eqn{M} representing the assumed treatment
 effects for each active arm versus the common control. The global null
 is \eqn{\theta_i = 0} for all \eqn{i}, and alternatives are one-sided:
 \eqn{\theta_i > 0} for at least one \eqn{i = 1, \ldots, M}.}
@@ -150,11 +150,20 @@ trial, including \code{M}, \code{r}, \code{corr_known}, \code{L},
 \code{zL}, \code{theta}, \code{maxInformation}, \code{kMax},
 \code{informationRates}, \code{efficacyBounds}, \code{information},
 \code{alpha}, \code{conditionalAlpha}, \code{conditionalPower},
-and \code{MullerSchafer}.
-\item \code{secondaryTrial}: A \code{design} object for the secondary trial.
+\code{MullerSchafer}, and \code{byLevelBounds}.
+\item \code{secondaryTrial}: A list of selected information for the secondary
+trial, including \code{overallReject}, \code{alpha}, \code{M}, \code{r},
+\code{selected}, \code{corr_known}, \code{kMax}, \code{maxInformation},
+\code{informationRates}, \code{cumulativeRejection},
+\code{cumulativeAlphaSpent}, \code{information},
+\code{typeAlphaSpending}, \code{parameterAlphaSpending},
+\code{spendingTime}, and \code{byHypothesisBounds}.
 \item \code{integratedTrial}: A list of selected information for the integrated
-trial, including \code{kMax}, \code{maxInformation}, \code{informationRates},
-\code{efficacyBounds}, and \code{information}.
+trial, including \code{M}, \code{r}, \code{corr_known}, \code{MNew},
+\code{rNew}, \code{selected}, \code{L}, \code{zL}, \code{theta},
+\code{maxInformation}, \code{kMax}, \code{informationRates},
+\code{efficacyBounds}, \code{information}, and
+\code{byIntersectionBounds}.
 }
 }
 \description{

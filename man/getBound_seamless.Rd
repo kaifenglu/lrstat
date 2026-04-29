@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getBound_seamless}
 \alias{getBound_seamless}
-\title{Efficacy Boundaries for Two-Stage Seamless Sequential Design}
+\title{Efficacy Boundaries for a Phase 2/3 Seamless Design}
 \usage{
 getBound_seamless(
   M = NA_integer_,
@@ -68,8 +68,8 @@ values (on the standard normal Z-scale) for each analysis up to the
 current look.
 }
 \description{
-Calculates the efficacy stopping boundaries for a two-stage
-seamless sequential design, accounting for the selection of the best arm
+Calculates the efficacy stopping boundaries for a phase 2/3
+seamless design, accounting for the selection of the best arm
 at the end of Phase 2 and sequential testing in Phase 3.
 }
 \details{
@@ -89,6 +89,11 @@ and \code{spendingTime} must be of full length \code{kMax}, and
 getBound_seamless(M = 2, k = 2, informationRates = seq(1, 3)/3,
                   alpha = 0.025, typeAlphaSpending = "OF")
 
+}
+\references{
+Ping Gao, Yingqiu Li.
+Adaptive two-stage seamless sequential design for clinical trials.
+Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.
 }
 \author{
 Kaifeng Lu, \email{kaifenglu@gmail.com}

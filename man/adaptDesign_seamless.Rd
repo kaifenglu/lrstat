@@ -2,13 +2,13 @@
 % Please edit documentation in R/RcppExports.R
 \name{adaptDesign_seamless}
 \alias{adaptDesign_seamless}
-\title{Adaptive Two-Stage Seamless Sequential Design}
+\title{Adaptive Phase 2/3 Seamless Design}
 \usage{
 adaptDesign_seamless(
   betaNew = NA_real_,
   INew = NA_real_,
   M = NA_integer_,
-  r = NA_real_,
+  r = 1,
   corr_known = TRUE,
   L = NA_integer_,
   zL = NA_real_,
@@ -35,7 +35,7 @@ adaptDesign_seamless(
 \arguments{
 \item{betaNew}{The type II error for the secondary trial.}
 
-\item{INew}{The maximum information for any active arm versus the common
+\item{INew}{The maximum information for the active arm versus the common
 control in the secondary trial. Either
 \code{betaNew} or \code{INew} should be provided, while the other
 must be missing.}
@@ -46,7 +46,7 @@ must be missing.}
 in Phase 2.}
 
 \item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
-statistics in Phase 2 is derived from the randomization ratio \code{r}
+statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 0 is used.}
 
@@ -55,10 +55,10 @@ as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 \item{zL}{The z-test statistic at the interim adaptation look of
 Phase 3.}
 
-\item{theta}{The treatment effect for the selected arm versus the
+\item{theta}{The assumed treatment effect for the selected arm versus the
 common control.}
 
-\item{IMax}{Maximum information for any active arm versus the common
+\item{IMax}{Maximum information for the active arm versus the common
 control for the original trial. Must be provided.}
 
 \item{K}{Number of sequential looks in Phase 3.}

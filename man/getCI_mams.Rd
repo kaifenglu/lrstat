@@ -2,7 +2,8 @@
 % Please edit documentation in R/RcppExports.R
 \name{getCI_mams}
 \alias{getCI_mams}
-\title{Confidence Interval After Trial Termination}
+\title{Confidence Interval After Trial Termination for a Multi-Arm
+Multi-Stage Design}
 \usage{
 getCI_mams(
   M = NA_integer_,
@@ -26,7 +27,7 @@ getCI_mams(
 \item{r}{Randomization ratio of each active arm to the common control.}
 
 \item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
-statistics is derived from the randomization ratio \code{r}
+statistics is derived from the randomization ratio \eqn{r}
 as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 0 is used.}
 
@@ -41,10 +42,10 @@ control.}
 
 \item{efficacyStopping}{Indicators of whether efficacy stopping is
 allowed at each stage up to look \code{L}.
-Defaults to true if left unspecified.}
+Defaults to \code{TRUE} if left unspecified.}
 
 \item{criticalValues}{The matrix of by-level upper boundaries on the
-z-test statistic scale for efficacy stopping up to look \code{L}.
+max z-test statistic scale for efficacy stopping up to look \code{L}.
 The first column is for level \code{M}, the second column is for
 level \code{M - 1}, and so on, with the last column for level 1.
 If left unspecified, the critical values will be computed based
@@ -52,15 +53,15 @@ on the specified alpha spending function.}
 
 \item{alpha}{The significance level. Defaults to 0.025.}
 
-\item{typeAlphaSpending}{The type of alpha spending. One of the following:
+\item{typeAlphaSpending}{The type of alpha spending for the trial.
+One of the following:
 \code{"OF"} for O'Brien-Fleming boundaries,
 \code{"P"} for Pocock boundaries,
 \code{"WT"} for Wang & Tsiatis boundaries,
 \code{"sfOF"} for O'Brien-Fleming type spending function,
 \code{"sfP"} for Pocock type spending function,
 \code{"sfKD"} for Kim & DeMets spending function,
-\code{"sfHSD"} for Hwang, Shi & DeCani spending function,
-\code{"user"} for user defined spending, and
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
 \code{"none"} for no early efficacy stopping.
 Defaults to \code{"sfOF"}.}
 
@@ -76,17 +77,23 @@ Defaults to missing, in which case, it is the same as
 A data frame with the following components:
 \itemize{
 \item \code{level}: Number of individual hypotheses considered for multiplicity.
-\item \code{index}: The index of the treatment arm among the M active arms.
+\item \code{index}: The treatment arm with max Z among the active arms.
 \item \code{pvalue}: p-value for rejecting the null hypothesis.
-\item \code{thetahat}: Median unbiased point estimate of the parameter.
+\item \code{thetahat}: Point estimate of the parameter.
 \item \code{cilevel}: Confidence interval level.
 \item \code{lower}: Lower bound of confidence interval.
 \item \code{upper}: Upper bound of confidence interval.
 }
 }
 \description{
-Obtains the p-value, median unbiased point estimate, and
-confidence interval after the end of a group sequential trial.
+Obtains the p-value, conservative point estimate, and
+confidence interval after the end of a multi-arm multi-stage trial.
+}
+\details{
+If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+\code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+and \code{spendingTime} must be of full length \code{kMax}, and
+\code{informationRates} and \code{spendingTime} must end with 1.
 }
 \examples{
 getCI_mams(

@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{exitprob_mams}
 \alias{exitprob_mams}
-\title{Exit Probabilities for Multi-Arm Multi-Stage Design}
+\title{Exit Probabilities for a Multi-Arm Multi-Stage Design}
 \usage{
 exitprob_mams(
   M = NA_integer_,
@@ -29,13 +29,13 @@ as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 
 \item{kMax}{Number of sequential looks.}
 
-\item{b}{A vector of critical values (length \eqn{kMax}).}
+\item{b}{A vector of critical values (length \code{kMax}).}
 
-\item{I}{A vector of information levels (length \eqn{kMax}) for any active
+\item{I}{A vector of information levels (length \code{kMax}) for any active
 arm versus the common control.}
 }
 \value{
-A vector \code{exitProb} of length \eqn{kMax} containing the
+A vector \code{exitProb} of length \code{kMax} containing the
 probability of rejection at each look.
 }
 \description{
@@ -50,12 +50,12 @@ statistics and all active arms share the same information level.
 
 # Setup: 2 active arms vs control and 3 sequential looks.
 
-# Information levels: equal spacing over 3 looks based on max 110 patients
-# per arm, SD = 1.0
-I <- c(95 / (2 * 1.0^2) * seq(1, 3)/3)
+# Information levels: equal spacing over 3 looks based on a maximum of
+# 95 patients per arm, SD = 1.0
+I <- 95 / (2 * 1.0^2) * seq(1, 3)/3
 
 # O'Brien-Fleming critical values
-b <- c(3.886563, 2.748215, 2.243908)
+b <- c(3.886562, 2.748214, 2.243907)
 
 # Type I error under the global null hypothesis
 p0 <- exitprob_mams(M = 2, theta = c(0, 0), kMax = 3, b = b, I = I)
@@ -65,6 +65,11 @@ cumsum(p0)
 p1 <- exitprob_mams(M = 2, theta = c(0.3, 0.5), kMax = 3, b = b, I = I)
 cumsum(p1)
 
+}
+\references{
+Ping Gao, Yingqiu Li.
+Adaptive multiple comparison sequential design (AMCSD) for clinical trials.
+Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
 }
 \author{
 Kaifeng Lu, \email{kaifenglu@gmail.com}

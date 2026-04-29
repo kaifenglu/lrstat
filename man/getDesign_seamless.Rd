@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getDesign_seamless}
 \alias{getDesign_seamless}
-\title{Power and Sample Size for Two-Stage Seamless Sequential Design}
+\title{Power and Sample Size for a Phase 2/3 Seamless Design}
 \usage{
 getDesign_seamless(
   beta = NA_real_,
@@ -41,7 +41,7 @@ is \eqn{\theta_i = 0} for all \eqn{i}, and alternatives are one-sided:
 in Phase 2.}
 
 \item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
-statistics in Phase 2 is derived from the randomization ratio \code{r}
+statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 0 is used.}
 
@@ -84,7 +84,7 @@ error spending time at each analysis. Values must be strictly increasing
 and ends at 1. If omitted, defaults to \code{informationRates}.}
 }
 \value{
-An S3 object of class \code{seamless} with these components:
+An S3 object of class \code{seamless} with the following components:
 \itemize{
 \item \code{overallResults}: A data frame containing:
 \itemize{
@@ -114,12 +114,12 @@ is permitted.
 \item \code{byArmResults}: A data frame containing:
 \itemize{
 \item \code{theta}: Parameter values for the active arms.
-\item \code{selectAsBest}: Probability an arm is selected as best in at
+\item \code{selectAsBest}: Probability an arm is selected as best at
 the end of phase 2.
 \item \code{powerByArm}: Probability of rejecting the null for each arm
 by trial end.
 \item \code{condPowerByArm}: Conditional power for each arm given it was
-selected as best at the end of phase 2.
+selected as the best at the end of phase 2.
 }
 \item \code{settings}: A list of input settings:
 \itemize{
@@ -133,7 +133,7 @@ alpha spending function.
 }
 \description{
 Computes either the maximum information and stopping
-boundaries for a generic two-stage seamless sequential design, or
+boundaries for a phase 2/3 seamless design, or
 the achieved power when the maximum information and stopping boundaries
 are provided.
 }

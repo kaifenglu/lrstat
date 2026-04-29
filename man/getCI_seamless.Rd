@@ -2,7 +2,8 @@
 % Please edit documentation in R/RcppExports.R
 \name{getCI_seamless}
 \alias{getCI_seamless}
-\title{Confidence Interval After Trial Termination for Seamless Design}
+\title{Confidence Interval After Trial Termination for a Phase 2/3
+Seamless Design}
 \usage{
 getCI_seamless(
   M = NA_integer_,
@@ -42,7 +43,7 @@ control.}
 
 \item{efficacyStopping}{Indicators of whether efficacy stopping is
 allowed at each stage up to look \code{L}.
-Defaults to true if left unspecified.}
+Defaults to \code{TRUE} if left unspecified.}
 
 \item{criticalValues}{The upper boundaries on the max z-test statistic
 scale for Phase 2 and the z-test statistics for the selected arm
@@ -75,15 +76,21 @@ Defaults to missing, in which case, it is the same as
 A data frame with the following components:
 \itemize{
 \item \code{pvalue}: p-value for rejecting the null hypothesis.
-\item \code{thetahat}: Median unbiased point estimate of the parameter.
+\item \code{thetahat}: Point estimate of the parameter.
 \item \code{cilevel}: Confidence interval level.
 \item \code{lower}: Lower bound of confidence interval.
 \item \code{upper}: Upper bound of confidence interval.
 }
 }
 \description{
-Obtains the p-value, median point estimate, and
-confidence interval after the end of a group sequential trial.
+Obtains the p-value, point estimate, and
+confidence interval after the end of a phase 2/3 seamless trial.
+}
+\details{
+If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+\code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+and \code{spendingTime} must be of full length \eqn{K + 1}, and
+\code{informationRates} and \code{spendingTime} must end with 1.
 }
 \examples{
 getCI_seamless(

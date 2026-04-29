@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getDesign_mams}
 \alias{getDesign_mams}
-\title{Power and Sample Size for Multi-Arm Multi-Stage Design}
+\title{Power and Sample Size for a Multi-Arm Multi-Stage Design}
 \usage{
 getDesign_mams(
   beta = NA_real_,
@@ -40,7 +40,7 @@ is \eqn{\theta_i = 0} for all \eqn{i}, and alternatives are one-sided:
 \item{r}{Randomization ratio of each active arm to the common control.}
 
 \item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
-statistics is derived from the randomization ratio \code{r}
+statistics is derived from the randomization ratio \eqn{r}
 as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 0 is used.}
 
@@ -77,28 +77,30 @@ and \eqn{\gamma} for \code{"sfHSD"}.}
 \item{userAlphaSpending}{The user defined alpha spending. Cumulative alpha
 spent up to each stage.}
 
-\item{spendingTime}{A numeric vector of length \eqn{kMax} specifying the
+\item{spendingTime}{A numeric vector of length \code{kMax} specifying the
 error spending time at each analysis. Values must be strictly increasing
 and ends at 1. If omitted, defaults to \code{informationRates}.}
 }
 \value{
-An S3 object of class \code{mams} with these components:
+An S3 object of class \code{mams} with the following components:
 \itemize{
 \item \code{overallResults}: A data frame containing:
 \itemize{
-\item \code{overallReject}: Overall probability of rejecting the null
-hypothesis.
+\item \code{overallReject}: Overall probability of rejecting the global
+null hypothesis.
 \item \code{alpha}: Overall significance level.
 \item \code{M}: Number of active arms.
 \item \code{r}: Randomization ratio per active arm versus control.
-\item \code{corr_known}: Whether the phase-2 correlation was assumed known.
+\item \code{corr_known}: Whether the correlation among Wald statistics
+was assumed known.
 \item \code{kMax}: Number of stages.
-\item \code{information}: Maximum information for any active arm versus control.
+\item \code{information}: Maximum information for any active arm versus
+control.
 }
 \item \code{byStageResults}: A data frame containing:
 \itemize{
 \item \code{informationRates}: Information rates at each analysis.
-\item \code{efficacyBounds}: Efficacy boundaries on the Z-scale.
+\item \code{efficacyBounds}: Efficacy boundaries on the max Z-scale.
 \item \code{rejectPerStage}: Probability of efficacy stopping at each stage.
 \item \code{cumulativeRejection}: Cumulative probability of efficacy stopping.
 \item \code{cumulativeAlphaSpent}: Cumulative alpha spent.
@@ -107,7 +109,7 @@ hypothesis.
 \item \code{information}: Cumulative information for any active arm versus
 control at each analysis.
 \item \code{efficacyStopping}: Indicator of whether efficacy stopping
-is permitted.
+is permitted at each stage.
 }
 \item \code{settings}: A list of input settings:
 \itemize{
@@ -117,11 +119,20 @@ alpha spending function.
 \item \code{userAlphaSpending}: User-specified alpha spending values.
 \item \code{spendingTime}: Error-spending times at each analysis.
 }
+\item \code{byLevelBounds}: A data frame containing the efficacy boundaries
+for each level of testing (i.e., number of active arms remaining) and
+each stage. Columns include:
+\itemize{
+\item \code{level}: Number of active arms remaining (1 to \eqn{M}).
+\item \code{stage}: Stage index (1 to \code{kMax}).
+\item \code{efficacyBounds}: Efficacy boundaries on the max Z-scale
+for the given level and stage.
+}
 }
 }
 \description{
 Computes either the maximum information and stopping
-boundaries for a generic multiple comparison sequential design, or
+boundaries for a multi-arm multi-stage design, or
 the achieved power when the maximum information and stopping boundaries
 are provided.
 }

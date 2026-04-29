@@ -2,12 +2,12 @@
 % Please edit documentation in R/RcppExports.R
 \name{getCP_mams}
 \alias{getCP_mams}
-\title{Conditional Power for Multi-Arm Multi-Stage Design}
+\title{Conditional Power for a Multi-Arm Multi-Stage Design}
 \usage{
 getCP_mams(
   INew = NA_real_,
   M = NA_integer_,
-  r = NA_real_,
+  r = 1,
   corr_known = TRUE,
   L = NA_integer_,
   zL = NA_real_,
@@ -25,7 +25,7 @@ getCP_mams(
   MullerSchafer = FALSE,
   MNew = NA_integer_,
   selected = NA_integer_,
-  rNew = NA_real_,
+  rNew = 1,
   kNew = NA_integer_,
   informationRatesNew = NA_real_,
   efficacyStoppingNew = NA_integer_,
@@ -53,7 +53,7 @@ as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 \item{zL}{The z-test statistics at the interim adaptation look of
 the primary trial.}
 
-\item{theta}{A vector of length \eqn{M} representing the true treatment
+\item{theta}{A vector of length \eqn{M} representing the assumed treatment
 effects for each active arm versus the common control. The global null
 is \eqn{\theta_i = 0} for all \eqn{i}, and alternatives are one-sided:
 \eqn{\theta_i > 0} for at least one \eqn{i = 1, \ldots, M}.}

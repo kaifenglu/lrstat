@@ -2,12 +2,12 @@
 % Please edit documentation in R/RcppExports.R
 \name{getCP_seamless}
 \alias{getCP_seamless}
-\title{Conditional Power for Two-Stage Seamless Sequential Design}
+\title{Conditional Power for a Phase 2/3 Seamless Design}
 \usage{
 getCP_seamless(
   INew = NA_real_,
   M = NA_integer_,
-  r = NA_real_,
+  r = 1,
   corr_known = TRUE,
   L = NA_integer_,
   zL = NA_real_,
@@ -32,7 +32,7 @@ getCP_seamless(
 )
 }
 \arguments{
-\item{INew}{The maximum information for any active arm versus the common
+\item{INew}{The maximum information for the active arm versus the common
 control in the secondary trial.}
 
 \item{M}{Number of active treatment arms in Phase 2.}
@@ -41,7 +41,7 @@ control in the secondary trial.}
 in Phase 2.}
 
 \item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
-statistics in Phase 2 is derived from the randomization ratio \code{r}
+statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 0 is used.}
 
@@ -50,10 +50,10 @@ as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 \item{zL}{The z-test statistic at the interim adaptation look of
 Phase 3.}
 
-\item{theta}{The treatment effect for the selected arm versus the
+\item{theta}{The assumed treatment effect for the selected arm versus the
 common control.}
 
-\item{IMax}{Maximum information for any active arm versus the common
+\item{IMax}{Maximum information for the active arm versus the common
 control for the original trial. Must be provided.}
 
 \item{K}{Number of sequential looks in Phase 3.}
@@ -141,7 +141,7 @@ number and spacing of interim looks.
 \examples{
 
 getCP_seamless(
-  INew = 49.5, M = 2, r = 1, corr_known = FALSE,
+  INew = 198 / 4, M = 2, r = 1, corr_known = FALSE,
   L = 1, zL = -log(0.67) * sqrt(80 / 4), theta = -log(0.691),
   IMax = 120 / 4, K = 2, informationRates = c(1/3, 2/3, 1),
   alpha = 0.025, typeAlphaSpending = "OF", kNew = 1)

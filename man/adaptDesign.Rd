@@ -50,7 +50,7 @@ must be missing.}
 \item{zL}{The z-test statistic at the interim adaptation look of
 the primary trial.}
 
-\item{theta}{The parameter value.}
+\item{theta}{The assumed parameter value.}
 
 \item{IMax}{The maximum information of the primary trial. Must be provided.}
 

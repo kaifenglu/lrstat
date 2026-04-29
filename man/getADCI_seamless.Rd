@@ -2,12 +2,12 @@
 % Please edit documentation in R/RcppExports.R
 \name{getADCI_seamless}
 \alias{getADCI_seamless}
-\title{Confidence Interval After Adaptation for Two-Stage Seamless
-Sequential Design}
+\title{Confidence Interval After Adaptation for a Phase 2/3 Seamless
+Design}
 \usage{
 getADCI_seamless(
   M = NA_integer_,
-  r = NA_real_,
+  r = 1,
   corr_known = TRUE,
   L = NA_integer_,
   zL = NA_real_,
@@ -38,7 +38,7 @@ getADCI_seamless(
 in Phase 2.}
 
 \item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
-statistics in Phase 2 is derived from the randomization ratio \code{r}
+statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 0 is used.}
 
@@ -47,7 +47,7 @@ as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 \item{zL}{The z-test statistic at the interim adaptation look of
 Phase 3.}
 
-\item{IMax}{Maximum information for any active arm versus the common
+\item{IMax}{Maximum information for the active arm versus the common
 control for the original trial. Must be provided.}
 
 \item{K}{Number of sequential looks in Phase 3.}
@@ -95,19 +95,20 @@ for trial adaptation.}
 \item{zLc}{The z-test statistic at the termination look of the
 integrated trial.}
 
-\item{INew}{The maximum information for any active arm versus the common
+\item{INew}{The maximum information for the active arm versus the common
 control in the secondary trial.}
 
-\item{informationRatesNew}{The spacing of looks of the secondary trial
-up to look \code{L2}.}
+\item{informationRatesNew}{The spacing of looks of the secondary trial.}
 
 \item{efficacyStoppingNew}{The indicators of whether efficacy stopping is
-allowed at each look of the secondary trial up to look \code{L2}.
+allowed at each look of the secondary trial.
 Defaults to \code{TRUE} if left unspecified.}
 
 \item{typeAlphaSpendingNew}{The type of alpha spending for the secondary
 trial. One of the following:
 \code{"OF"} for O'Brien-Fleming boundaries,
+\code{"P"} for Pocock boundaries,
+\code{"WT"} for Wang & Tsiatis boundaries,
 \code{"sfOF"} for O'Brien-Fleming type spending function,
 \code{"sfP"} for Pocock type spending function,
 \code{"sfKD"} for Kim & DeMets spending function,
@@ -116,18 +117,18 @@ trial. One of the following:
 Defaults to \code{"sfOF"}.}
 
 \item{parameterAlphaSpendingNew}{The parameter value of alpha spending
-for the secondary trial. Corresponds to
+for the secondary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
 \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.}
 
-\item{spendingTimeNew}{The error spending time of the secondary trial
-up to look \code{L2}. Defaults to missing, in which case, it is
+\item{spendingTimeNew}{The error spending time of the secondary trial.
+Defaults to missing, in which case, it is
 the same as \code{informationRatesNew}.}
 }
 \value{
 A data frame with the following variables:
 \itemize{
 \item \code{pvalue}: p-value for rejecting the null hypothesis.
-\item \code{thetahat}: Median unbiased point estimate of the parameter.
+\item \code{thetahat}: Point estimate of the parameter.
 \item \code{cilevel}: Confidence interval level.
 \item \code{lower}: Lower bound of confidence interval.
 \item \code{upper}: Upper bound of confidence interval.
@@ -135,8 +136,15 @@ A data frame with the following variables:
 }
 \description{
 Obtains the p-value, conservative point estimate, and
-confidence interval after the end of an adaptive two-stage seamless
-sequential design.
+confidence interval after the end of an adaptive phase 2/3 seamless
+design.
+}
+\details{
+If typeAlphaSpendingNew is \code{"OF"}, \code{"P"}, \code{"WT"},
+or \code{"none"}, then
+\code{informationRatesNew}, \code{efficacyStoppingNew}, and
+\code{spendingTimeNew} must be of full length \code{kNew}, and
+\code{informationRatesNew} and \code{spendingTimeNew} must end with 1.
 }
 \examples{
 getADCI_seamless(
