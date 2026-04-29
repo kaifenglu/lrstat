@@ -312,27 +312,27 @@ double getCP_seamless_cpp(
 }
 
 
-//' @title Conditional Power for Two-Stage Seamless Sequential Design
+//' @title Conditional Power for a Phase 2/3 Seamless Design
 //' @description Obtains the conditional power for specified incremental
 //' information given the interim results, parameter values, and
 //' data-dependent changes in the error spending function, as well as the
 //' number and spacing of interim looks.
 //'
-//' @param INew The maximum information for any active arm versus the common
+//' @param INew The maximum information for the active arm versus the common
 //'   control in the secondary trial.
 //' @param M Number of active treatment arms in Phase 2.
 //' @param r Randomization ratio of each active arm to the common control
 //'   in Phase 2.
 //' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-//'   statistics in Phase 2 is derived from the randomization ratio \code{r}
+//'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 //'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 //'   0 is used.
 //' @param L The interim adaptation look in Phase 3.
 //' @param zL The z-test statistic at the interim adaptation look of
 //'   Phase 3.
-//' @param theta The treatment effect for the selected arm versus the
+//' @param theta The assumed treatment effect for the selected arm versus the
 //'   common control.
-//' @param IMax Maximum information for any active arm versus the common
+//' @param IMax Maximum information for the active arm versus the common
 //'   control for the original trial. Must be provided.
 //' @param K Number of sequential looks in Phase 3.
 //' @param informationRates A numeric vector of information rates fixed
@@ -406,7 +406,7 @@ double getCP_seamless_cpp(
 //' @examples
 //'
 //' getCP_seamless(
-//'   INew = 49.5, M = 2, r = 1, corr_known = FALSE,
+//'   INew = 198 / 4, M = 2, r = 1, corr_known = FALSE,
 //'   L = 1, zL = -log(0.67) * sqrt(80 / 4), theta = -log(0.691),
 //'   IMax = 120 / 4, K = 2, informationRates = c(1/3, 2/3, 1),
 //'   alpha = 0.025, typeAlphaSpending = "OF", kNew = 1)
@@ -415,7 +415,7 @@ double getCP_seamless_cpp(
 // [[Rcpp::export]]
 double getCP_seamless(const double INew = NA_REAL,
                       const int M = NA_INTEGER,
-                      const double r = NA_REAL,
+                      const double r = 1,
                       const bool corr_known = true,
                       const int L = NA_INTEGER,
                       const double zL = NA_REAL,
