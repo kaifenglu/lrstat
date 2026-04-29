@@ -192,7 +192,7 @@ getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_re
     .Call(`_lrstat_getCP`, INew, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, typeBetaSpendingNew, parameterBetaSpendingNew, spendingTimeNew, varianceRatio)
 }
 
-#' @title Conditional Power for Multi-Arm Multi-Stage Design
+#' @title Conditional Power for a Multi-Arm Multi-Stage Design
 #' @description Obtains the conditional power for specified incremental
 #' information given the interim results, parameter values, and
 #' data-dependent changes in the selected treatment(s),
@@ -211,7 +211,7 @@ getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_re
 #' @param L The interim adaptation look of the primary trial.
 #' @param zL The z-test statistics at the interim adaptation look of
 #'   the primary trial.
-#' @param theta A vector of length \eqn{M} representing the true treatment
+#' @param theta A vector of length \eqn{M} representing the assumed treatment
 #'   effects for each active arm versus the common control. The global null
 #'   is \eqn{\theta_i = 0} for all \eqn{i}, and alternatives are one-sided:
 #'   \eqn{\theta_i > 0} for at least one \eqn{i = 1, \ldots, M}.
@@ -298,31 +298,31 @@ getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_re
 #'   MNew = 1, selected = 2, rNew = 1)
 #'
 #' @export
-getCP_mams <- function(INew = NA_real_, M = NA_integer_, r = NA_real_, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, MNew = NA_integer_, selected = NA_integer_, rNew = NA_real_, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+getCP_mams <- function(INew = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, MNew = NA_integer_, selected = NA_integer_, rNew = 1, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
     .Call(`_lrstat_getCP_mams`, INew, M, r, corr_known, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, MullerSchafer, MNew, selected, rNew, kNew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
 }
 
-#' @title Conditional Power for Two-Stage Seamless Sequential Design
+#' @title Conditional Power for a Phase 2/3 Seamless Design
 #' @description Obtains the conditional power for specified incremental
 #' information given the interim results, parameter values, and
 #' data-dependent changes in the error spending function, as well as the
 #' number and spacing of interim looks.
 #'
-#' @param INew The maximum information for any active arm versus the common
+#' @param INew The maximum information for the active arm versus the common
 #'   control in the secondary trial.
 #' @param M Number of active treatment arms in Phase 2.
 #' @param r Randomization ratio of each active arm to the common control
 #'   in Phase 2.
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-#'   statistics in Phase 2 is derived from the randomization ratio \code{r}
+#'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 #'   0 is used.
 #' @param L The interim adaptation look in Phase 3.
 #' @param zL The z-test statistic at the interim adaptation look of
 #'   Phase 3.
-#' @param theta The treatment effect for the selected arm versus the
+#' @param theta The assumed treatment effect for the selected arm versus the
 #'   common control.
-#' @param IMax Maximum information for any active arm versus the common
+#' @param IMax Maximum information for the active arm versus the common
 #'   control for the original trial. Must be provided.
 #' @param K Number of sequential looks in Phase 3.
 #' @param informationRates A numeric vector of information rates fixed
@@ -396,13 +396,13 @@ getCP_mams <- function(INew = NA_real_, M = NA_integer_, r = NA_real_, corr_know
 #' @examples
 #'
 #' getCP_seamless(
-#'   INew = 49.5, M = 2, r = 1, corr_known = FALSE,
+#'   INew = 198 / 4, M = 2, r = 1, corr_known = FALSE,
 #'   L = 1, zL = -log(0.67) * sqrt(80 / 4), theta = -log(0.691),
 #'   IMax = 120 / 4, K = 2, informationRates = c(1/3, 2/3, 1),
 #'   alpha = 0.025, typeAlphaSpending = "OF", kNew = 1)
 #'
 #' @export
-getCP_seamless <- function(INew = NA_real_, M = NA_integer_, r = NA_real_, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, K = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+getCP_seamless <- function(INew = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, K = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
     .Call(`_lrstat_getCP_seamless`, INew, M, r, corr_known, L, zL, theta, IMax, K, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
 }
 
@@ -887,14 +887,15 @@ getADRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_
     .Call(`_lrstat_getADRCI`, L, zL, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, MullerSchafer, Lc, zLc, INew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
 }
 
-#' @title Confidence Interval After Trial Termination
-#' @description Obtains the p-value, median unbiased point estimate, and
-#' confidence interval after the end of a group sequential trial.
+#' @title Confidence Interval After Trial Termination for a Multi-Arm
+#' Multi-Stage Design
+#' @description Obtains the p-value, conservative point estimate, and
+#' confidence interval after the end of a multi-arm multi-stage trial.
 #'
 #' @param M Number of active treatment arms.
 #' @param r Randomization ratio of each active arm to the common control.
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-#'   statistics is derived from the randomization ratio \code{r}
+#'   statistics is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 #'   0 is used.
 #' @param L The termination look.
@@ -904,29 +905,45 @@ getADRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_
 #' @param informationRates The information rates up to look \code{L}.
 #' @param efficacyStopping Indicators of whether efficacy stopping is
 #'   allowed at each stage up to look \code{L}.
-#'   Defaults to true if left unspecified.
+#'   Defaults to \code{TRUE} if left unspecified.
 #' @param criticalValues The matrix of by-level upper boundaries on the
-#'   z-test statistic scale for efficacy stopping up to look \code{L}.
+#'   max z-test statistic scale for efficacy stopping up to look \code{L}.
 #'   The first column is for level \code{M}, the second column is for
 #'   level \code{M - 1}, and so on, with the last column for level 1.
 #'   If left unspecified, the critical values will be computed based
 #'   on the specified alpha spending function.
 #' @inheritParams param_alpha
-#' @inheritParams param_typeAlphaSpending
+#' @param typeAlphaSpending The type of alpha spending for the trial.
+#'   One of the following:
+#'   \code{"OF"} for O'Brien-Fleming boundaries,
+#'   \code{"P"} for Pocock boundaries,
+#'   \code{"WT"} for Wang & Tsiatis boundaries,
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+#'   \code{"none"} for no early efficacy stopping.
+#'   Defaults to \code{"sfOF"}.
 #' @inheritParams param_parameterAlphaSpending
 #' @param spendingTime The error spending time up to look \code{L}.
 #'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRates}.
 #'
+#' @details
+#' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+#' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+#' and \code{spendingTime} must be of full length \code{kMax}, and
+#' \code{informationRates} and \code{spendingTime} must end with 1.
+#'
 #' @return A data frame with the following components:
 #'
 #' * \code{level}: Number of individual hypotheses considered for multiplicity.
 #'
-#' * \code{index}: The index of the treatment arm among the M active arms.
+#' * \code{index}: The treatment arm with max Z among the active arms.
 #'
 #' * \code{pvalue}: p-value for rejecting the null hypothesis.
 #'
-#' * \code{thetahat}: Median unbiased point estimate of the parameter.
+#' * \code{thetahat}: Point estimate of the parameter.
 #'
 #' * \code{cilevel}: Confidence interval level.
 #'
@@ -953,7 +970,8 @@ getCI_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer
     .Call(`_lrstat_getCI_mams`, M, r, corr_known, L, zL, IMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime)
 }
 
-#' @title Confidence Interval After Adaptation for Multi-Arm Multi-Stage Design
+#' @title Confidence Interval After Adaptation for a Multi-Arm Multi-Stage
+#' Design
 #' @description Obtains the p-value, conservative point estimate, and
 #' confidence interval after the end of an adaptive multi-arm multi-stage trial.
 #'
@@ -975,7 +993,7 @@ getCI_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer
 #'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 #'   if left unspecified.
 #' @param criticalValues The matrix of by-level upper boundaries on the
-#'   z-test statistic scale for efficacy stopping up to look \code{L}
+#'   max z-test statistic scale for efficacy stopping up to look \code{L}
 #'   for the primary trial.
 #'   The first column is for level \code{M}, the second column is for
 #'   level \code{M - 1}, and so on, with the last column for level 1.
@@ -1012,10 +1030,9 @@ getCI_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer
 #'   integrated trial.
 #' @param INew The maximum information for any active arm versus the common
 #'   control in the secondary trial.
-#' @param informationRatesNew The spacing of looks of the secondary trial
-#'   up to look \code{L2}.
+#' @param informationRatesNew The spacing of looks of the secondary trial.
 #' @param efficacyStoppingNew The indicators of whether efficacy stopping is
-#'   allowed at each look of the secondary trial up to look \code{L2}.
+#'   allowed at each look of the secondary trial.
 #'   Defaults to \code{TRUE} if left unspecified.
 #' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 #'   trial. One of the following:
@@ -1029,19 +1046,25 @@ getCI_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer
 #' @param parameterAlphaSpendingNew The parameter value of alpha spending
 #'   for the secondary trial. Corresponds to
 #'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
-#' @param spendingTimeNew The error spending time of the secondary trial
-#'   up to look \code{L2}. Defaults to missing, in which case, it is
+#' @param spendingTimeNew The error spending time of the secondary trial.
+#'   Defaults to missing, in which case, it is
 #'   the same as \code{informationRatesNew}.
+#'
+#' @details
+#' If typeAlphaSpendingNew is \code{"OF"} or \code{"none"}, then
+#' \code{informationRatesNew}, \code{efficacyStoppingNew}, and
+#' \code{spendingTimeNew} must be of full length \code{kNew}, and
+#' \code{informationRatesNew} and \code{spendingTimeNew} must end with 1.
 #'
 #' @return A data frame with the following variables:
 #'
 #' * \code{level}: Number of individual hypotheses considered for multiplicity.
 #'
-#' * \code{index}: The index of the treatment arm among the \code{M} active arms.
+#' * \code{index}: The treatment arm with max Z among the active arms.
 #'
 #' * \code{pvalue}: p-value for rejecting the null hypothesis.
 #'
-#' * \code{thetahat}: Median unbiased point estimate of the parameter.
+#' * \code{thetahat}: Point estimate of the parameter.
 #'
 #' * \code{cilevel}: Confidence interval level.
 #'
@@ -1065,13 +1088,14 @@ getCI_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer
 #'   Lc = 2, zLc = 1.667, INew = 374 / 4)
 #'
 #' @export
-getADCI_mams <- function(M = NA_integer_, r = NA_real_, corr_known = TRUE, L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NULL, alpha = 0.25, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, MNew = NA_integer_, selected = NA_integer_, rNew = NA_real_, Lc = NA_integer_, zLc = NA_real_, INew = NA_real_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+getADCI_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NULL, alpha = 0.25, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, MNew = NA_integer_, selected = NA_integer_, rNew = 1, Lc = NA_integer_, zLc = NA_real_, INew = NA_real_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
     .Call(`_lrstat_getADCI_mams`, M, r, corr_known, L, zL, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, MullerSchafer, MNew, selected, rNew, Lc, zLc, INew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
 }
 
-#' @title Confidence Interval After Trial Termination for Seamless Design
-#' @description Obtains the p-value, median point estimate, and
-#' confidence interval after the end of a group sequential trial.
+#' @title Confidence Interval After Trial Termination for a Phase 2/3
+#' Seamless Design
+#' @description Obtains the p-value, point estimate, and
+#' confidence interval after the end of a phase 2/3 seamless trial.
 #'
 #' @param M Number of active treatment arms in Phase 2.
 #' @param r Randomization ratio of each active arm to the common control
@@ -1087,7 +1111,7 @@ getADCI_mams <- function(M = NA_integer_, r = NA_real_, corr_known = TRUE, L = N
 #' @param informationRates The information rates up to look \code{L}.
 #' @param efficacyStopping Indicators of whether efficacy stopping is
 #'   allowed at each stage up to look \code{L}.
-#'   Defaults to true if left unspecified.
+#'   Defaults to \code{TRUE} if left unspecified.
 #' @param criticalValues The upper boundaries on the max z-test statistic
 #'   scale for Phase 2 and the z-test statistics for the selected arm
 #'   in Phase 3 up to look \code{L}. If missing, boundaries will be
@@ -1109,11 +1133,17 @@ getADCI_mams <- function(M = NA_integer_, r = NA_real_, corr_known = TRUE, L = N
 #'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRates}.
 #'
+#' @details
+#' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+#' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+#' and \code{spendingTime} must be of full length \eqn{K + 1}, and
+#' \code{informationRates} and \code{spendingTime} must end with 1.
+#'
 #' @return A data frame with the following components:
 #'
 #' * \code{pvalue}: p-value for rejecting the null hypothesis.
 #'
-#' * \code{thetahat}: Median unbiased point estimate of the parameter.
+#' * \code{thetahat}: Point estimate of the parameter.
 #'
 #' * \code{cilevel}: Confidence interval level.
 #'
@@ -1140,23 +1170,23 @@ getCI_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_int
     .Call(`_lrstat_getCI_seamless`, M, r, corr_known, L, zL, IMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime)
 }
 
-#' @title Confidence Interval After Adaptation for Two-Stage Seamless
-#' Sequential Design
+#' @title Confidence Interval After Adaptation for a Phase 2/3 Seamless
+#' Design
 #' @description Obtains the p-value, conservative point estimate, and
-#' confidence interval after the end of an adaptive two-stage seamless
-#' sequential design.
+#' confidence interval after the end of an adaptive phase 2/3 seamless
+#' design.
 #'
 #' @param M Number of active treatment arms in Phase 2.
 #' @param r Randomization ratio of each active arm to the common control
 #'   in Phase 2.
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-#'   statistics in Phase 2 is derived from the randomization ratio \code{r}
+#'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 #'   0 is used.
 #' @param L The interim adaptation look in Phase 3.
 #' @param zL The z-test statistic at the interim adaptation look of
 #'   Phase 3.
-#' @param IMax Maximum information for any active arm versus the common
+#' @param IMax Maximum information for the active arm versus the common
 #'   control for the original trial. Must be provided.
 #' @param K Number of sequential looks in Phase 3.
 #' @param informationRates A numeric vector of information rates fixed
@@ -1192,16 +1222,17 @@ getCI_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_int
 #' @param Lc The termination look of the integrated trial.
 #' @param zLc The z-test statistic at the termination look of the
 #'   integrated trial.
-#' @param INew The maximum information for any active arm versus the common
+#' @param INew The maximum information for the active arm versus the common
 #'   control in the secondary trial.
-#' @param informationRatesNew The spacing of looks of the secondary trial
-#'   up to look \code{L2}.
+#' @param informationRatesNew The spacing of looks of the secondary trial.
 #' @param efficacyStoppingNew The indicators of whether efficacy stopping is
-#'   allowed at each look of the secondary trial up to look \code{L2}.
+#'   allowed at each look of the secondary trial.
 #'   Defaults to \code{TRUE} if left unspecified.
 #' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 #'   trial. One of the following:
 #'   \code{"OF"} for O'Brien-Fleming boundaries,
+#'   \code{"P"} for Pocock boundaries,
+#'   \code{"WT"} for Wang & Tsiatis boundaries,
 #'   \code{"sfOF"} for O'Brien-Fleming type spending function,
 #'   \code{"sfP"} for Pocock type spending function,
 #'   \code{"sfKD"} for Kim & DeMets spending function,
@@ -1209,17 +1240,24 @@ getCI_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_int
 #'   \code{"none"} for no early efficacy stopping.
 #'   Defaults to \code{"sfOF"}.
 #' @param parameterAlphaSpendingNew The parameter value of alpha spending
-#'   for the secondary trial. Corresponds to
+#'   for the secondary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
 #'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
-#' @param spendingTimeNew The error spending time of the secondary trial
-#'   up to look \code{L2}. Defaults to missing, in which case, it is
+#' @param spendingTimeNew The error spending time of the secondary trial.
+#'   Defaults to missing, in which case, it is
 #'   the same as \code{informationRatesNew}.
+#'
+#' @details
+#' If typeAlphaSpendingNew is \code{"OF"}, \code{"P"}, \code{"WT"},
+#' or \code{"none"}, then
+#' \code{informationRatesNew}, \code{efficacyStoppingNew}, and
+#' \code{spendingTimeNew} must be of full length \code{kNew}, and
+#' \code{informationRatesNew} and \code{spendingTimeNew} must end with 1.
 #'
 #' @return A data frame with the following variables:
 #'
 #' * \code{pvalue}: p-value for rejecting the null hypothesis.
 #'
-#' * \code{thetahat}: Median unbiased point estimate of the parameter.
+#' * \code{thetahat}: Point estimate of the parameter.
 #'
 #' * \code{cilevel}: Confidence interval level.
 #'
@@ -1243,7 +1281,7 @@ getCI_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_int
 #'   Lc = 2, zLc = -log(0.677) * sqrt(236 / 4), INew = 236 / 4)
 #'
 #' @export
-getADCI_seamless <- function(M = NA_integer_, r = NA_real_, corr_known = TRUE, L = NA_integer_, zL = NA_real_, IMax = NA_real_, K = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.25, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, Lc = NA_integer_, zLc = NA_real_, INew = NA_real_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+getADCI_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, IMax = NA_real_, K = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.25, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, Lc = NA_integer_, zLc = NA_real_, INew = NA_real_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
     .Call(`_lrstat_getADCI_seamless`, M, r, corr_known, L, zL, IMax, K, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, MullerSchafer, Lc, zLc, INew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
 }
 
@@ -2825,7 +2863,7 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #' @param L The interim adaptation look of the primary trial.
 #' @param zL The z-test statistic at the interim adaptation look of
 #'   the primary trial.
-#' @param theta The parameter value.
+#' @param theta The assumed parameter value.
 #' @param IMax The maximum information of the primary trial. Must be provided.
 #' @param kMax The maximum number of stages of the primary trial.
 #' @param informationRates The information rates of the primary trial.
@@ -4903,7 +4941,7 @@ lrsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
     .Call(`_lrstat_lrsamplesizeequiv`, beta, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, hazardRatioLower, hazardRatioUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, typeOfComputation, spendingTime, rounding)
 }
 
-#' @title Exit Probabilities for Multi-Arm Multi-Stage Design
+#' @title Exit Probabilities for a Multi-Arm Multi-Stage Design
 #' @description Computes the exit (rejection) probabilities for a multi-arm
 #' multi-stage design.
 #'
@@ -4916,29 +4954,34 @@ lrsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 #'   0 is used.
 #' @param kMax Number of sequential looks.
-#' @param b A vector of critical values (length \eqn{kMax}).
-#' @param I A vector of information levels (length \eqn{kMax}) for any active
+#' @param b A vector of critical values (length \code{kMax}).
+#' @param I A vector of information levels (length \code{kMax}) for any active
 #'   arm versus the common control.
 #'
 #' @details
 #' The function assumes a multivariate normal distribution for the Wald
 #' statistics and all active arms share the same information level.
 #'
-#' @return A vector \code{exitProb} of length \eqn{kMax} containing the
+#' @return A vector \code{exitProb} of length \code{kMax} containing the
 #' probability of rejection at each look.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#' Ping Gao, Yingqiu Li.
+#' Adaptive multiple comparison sequential design (AMCSD) for clinical trials.
+#' Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
 #'
 #' @examples
 #'
 #' # Setup: 2 active arms vs control and 3 sequential looks.
 #'
-#' # Information levels: equal spacing over 3 looks based on max 110 patients
-#' # per arm, SD = 1.0
-#' I <- c(95 / (2 * 1.0^2) * seq(1, 3)/3)
+#' # Information levels: equal spacing over 3 looks based on a maximum of
+#' # 95 patients per arm, SD = 1.0
+#' I <- 95 / (2 * 1.0^2) * seq(1, 3)/3
 #'
 #' # O'Brien-Fleming critical values
-#' b <- c(3.886563, 2.748215, 2.243908)
+#' b <- c(3.886562, 2.748214, 2.243907)
 #'
 #' # Type I error under the global null hypothesis
 #' p0 <- exitprob_mams(M = 2, theta = c(0, 0), kMax = 3, b = b, I = I)
@@ -4953,9 +4996,9 @@ exitprob_mams <- function(M = NA_integer_, r = 1, theta = NA_real_, corr_known =
     .Call(`_lrstat_exitprob_mams`, M, r, theta, corr_known, kMax, b, I)
 }
 
-#' @title Efficacy Boundaries for Multi-Arm Multi-Stage Design
-#' @description Calculates the efficacy stopping boundaries for a multiple
-#' comparison sequential design.
+#' @title Efficacy Boundaries for a Multi-Arm Multi-Stage Design
+#' @description Calculates the efficacy stopping boundaries for a multi-arm
+#' multi-stage design.
 #'
 #' @param M Number of active treatment arms.
 #' @param r Randomization ratio of each active arm to the common control.
@@ -4977,8 +5020,7 @@ exitprob_mams <- function(M = NA_integer_, r = 1, theta = NA_real_, corr_known =
 #'
 #' @details
 #' The function determines critical values by solving for the boundary that
-#' satisfies the alpha-spending requirement, given the selection of the
-#' "best" arm at the end of Phase 2.
+#' satisfies the alpha-spending requirement.
 #'
 #' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
 #' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
@@ -4990,6 +5032,11 @@ exitprob_mams <- function(M = NA_integer_, r = 1, theta = NA_real_, corr_known =
 #' current look.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#' Ping Gao, Yingqiu Li.
+#' Adaptive multiple comparison sequential design (AMCSD) for clinical trials.
+#' Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
 #'
 #' @examples
 #'
@@ -5003,9 +5050,9 @@ getBound_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_inte
     .Call(`_lrstat_getBound_mams`, M, r, corr_known, k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, efficacyStopping)
 }
 
-#' @title Power and Sample Size for Multi-Arm Multi-Stage Design
+#' @title Power and Sample Size for a Multi-Arm Multi-Stage Design
 #' @description Computes either the maximum information and stopping
-#' boundaries for a generic multiple comparison sequential design, or
+#' boundaries for a multi-arm multi-stage design, or
 #' the achieved power when the maximum information and stopping boundaries
 #' are provided.
 #'
@@ -5021,7 +5068,7 @@ getBound_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_inte
 #' @param M Number of active treatment arms.
 #' @param r Randomization ratio of each active arm to the common control.
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-#'   statistics is derived from the randomization ratio \code{r}
+#'   statistics is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 #'   0 is used.
 #' @param kMax Number of sequential looks.
@@ -5035,25 +5082,27 @@ getBound_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_inte
 #' @inheritParams param_typeAlphaSpending
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
-#' @param spendingTime A numeric vector of length \eqn{kMax} specifying the
+#' @param spendingTime A numeric vector of length \code{kMax} specifying the
 #'   error spending time at each analysis. Values must be strictly increasing
 #'   and ends at 1. If omitted, defaults to \code{informationRates}.
 #'
-#' @return An S3 object of class \code{mams} with these components:
+#' @return An S3 object of class \code{mams} with the following components:
 #'
 #' * \code{overallResults}: A data frame containing:
-#'     - \code{overallReject}: Overall probability of rejecting the null
-#'       hypothesis.
+#'     - \code{overallReject}: Overall probability of rejecting the global
+#'       null hypothesis.
 #'     - \code{alpha}: Overall significance level.
 #'     - \code{M}: Number of active arms.
 #'     - \code{r}: Randomization ratio per active arm versus control.
-#'     - \code{corr_known}: Whether the phase-2 correlation was assumed known.
+#'     - \code{corr_known}: Whether the correlation among Wald statistics
+#'       was assumed known.
 #'     - \code{kMax}: Number of stages.
-#'     - \code{information}: Maximum information for any active arm versus control.
+#'     - \code{information}: Maximum information for any active arm versus
+#'       control.
 #'
 #' * \code{byStageResults}: A data frame containing:
 #'     - \code{informationRates}: Information rates at each analysis.
-#'     - \code{efficacyBounds}: Efficacy boundaries on the Z-scale.
+#'     - \code{efficacyBounds}: Efficacy boundaries on the max Z-scale.
 #'     - \code{rejectPerStage}: Probability of efficacy stopping at each stage.
 #'     - \code{cumulativeRejection}: Cumulative probability of efficacy stopping.
 #'     - \code{cumulativeAlphaSpent}: Cumulative alpha spent.
@@ -5062,7 +5111,7 @@ getBound_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_inte
 #'     - \code{information}: Cumulative information for any active arm versus
 #'       control at each analysis.
 #'     - \code{efficacyStopping}: Indicator of whether efficacy stopping
-#'       is permitted.
+#'       is permitted at each stage.
 #'
 #' * \code{settings}: A list of input settings:
 #'     - \code{typeAlphaSpending}: Type of alpha spending function.
@@ -5070,6 +5119,14 @@ getBound_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_inte
 #'       alpha spending function.
 #'     - \code{userAlphaSpending}: User-specified alpha spending values.
 #'     - \code{spendingTime}: Error-spending times at each analysis.
+#'
+#' * \code{byLevelBounds}: A data frame containing the efficacy boundaries
+#'   for each level of testing (i.e., number of active arms remaining) and
+#'   each stage. Columns include:
+#'     - \code{level}: Number of active arms remaining (1 to \eqn{M}).
+#'     - \code{stage}: Stage index (1 to \code{kMax}).
+#'     - \code{efficacyBounds}: Efficacy boundaries on the max Z-scale
+#'       for the given level and stage.
 #'
 #' @details If \code{corr_known} is \code{FALSE}, critical boundaries are
 #' computed assuming independence among the Wald statistics in each stage
@@ -5129,7 +5186,7 @@ getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M
 #' @param L The interim adaptation look of the primary trial.
 #' @param zL The z-test statistics at the interim adaptation look of
 #'   the primary trial.
-#' @param theta A vector of length \eqn{M} representing the true treatment
+#' @param theta A vector of length \eqn{M} representing the assumed treatment
 #'   effects for each active arm versus the common control. The global null
 #'   is \eqn{\theta_i = 0} for all \eqn{i}, and alternatives are one-sided:
 #'   \eqn{\theta_i > 0} for at least one \eqn{i = 1, \ldots, M}.
@@ -5200,13 +5257,22 @@ getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M
 #'   \code{zL}, \code{theta}, \code{maxInformation}, \code{kMax},
 #'   \code{informationRates}, \code{efficacyBounds}, \code{information},
 #'   \code{alpha}, \code{conditionalAlpha}, \code{conditionalPower},
-#'   and \code{MullerSchafer}.
+#'   \code{MullerSchafer}, and \code{byLevelBounds}.
 #'
-#' * \code{secondaryTrial}: A \code{design} object for the secondary trial.
+#' * \code{secondaryTrial}: A list of selected information for the secondary
+#'   trial, including \code{overallReject}, \code{alpha}, \code{M}, \code{r},
+#'   \code{selected}, \code{corr_known}, \code{kMax}, \code{maxInformation},
+#'   \code{informationRates}, \code{cumulativeRejection},
+#'   \code{cumulativeAlphaSpent}, \code{information},
+#'   \code{typeAlphaSpending}, \code{parameterAlphaSpending},
+#'   \code{spendingTime}, and \code{byHypothesisBounds}.
 #'
 #' * \code{integratedTrial}: A list of selected information for the integrated
-#'   trial, including \code{kMax}, \code{maxInformation}, \code{informationRates},
-#'   \code{efficacyBounds}, and \code{information}.
+#'   trial, including \code{M}, \code{r}, \code{corr_known}, \code{MNew},
+#'   \code{rNew}, \code{selected}, \code{L}, \code{zL}, \code{theta},
+#'   \code{maxInformation}, \code{kMax}, \code{informationRates},
+#'   \code{efficacyBounds}, \code{information}, and
+#'   \code{byIntersectionBounds}.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -5249,7 +5315,7 @@ getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M
 #'   MNew = 1, selected = 2, rNew = 1))
 #'
 #' @export
-adaptDesign_mams <- function(betaNew = NA_real_, INew = NA_real_, M = NA_integer_, r = NA_real_, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, MNew = NA_integer_, selected = NA_integer_, rNew = NA_real_, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+adaptDesign_mams <- function(betaNew = NA_real_, INew = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, MNew = NA_integer_, selected = NA_integer_, rNew = 1, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
     .Call(`_lrstat_adaptDesign_mams`, betaNew, INew, M, r, corr_known, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, MullerSchafer, MNew, selected, rNew, kNew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
 }
 
@@ -8129,14 +8195,14 @@ rmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
     .Call(`_lrstat_rmsamplesizeequiv`, beta, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, milestone, rmstDiffLower, rmstDiffUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding)
 }
 
-#' @title Exit Probabilities for Two-Stage Seamless Sequential Design
-#' @description Computes the exit (rejection) probabilities for a two-stage
-#' selection and testing design. In Phase 2, multiple active arms are
+#' @title Exit Probabilities for a Phase 2/3 Seamless Design
+#' @description Computes the exit (rejection) probabilities for a phase 2/3
+#' seamless design. In Phase 2, multiple active arms are
 #' compared against a common control arm. The best-performing arm is
 #' selected to proceed to Phase 3, where it is tested against the common
 #' control over multiple looks.
 #'
-#' @param M Number of active treatment arms in Phase 2 (\eqn{M \ge 2}).
+#' @param M Number of active treatment arms in Phase 2.
 #' @param r Randomization ratio of each active arm to the common control
 #'   in Phase 2.
 #' @param theta A vector of length \eqn{M} representing the true treatment
@@ -8156,7 +8222,7 @@ rmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
 #' @details
 #' The function assumes a multivariate normal distribution for the Wald
 #' statistics. The "best" arm is defined as the active arm with the largest
-#' score statistic at the end of Phase 2.
+#' Z-statistic at the end of Phase 2.
 #'
 #' \strong{Decision Rules:}
 #' * \strong{Phase 2}: The global null hypothesis is rejected if the Wald
@@ -8171,9 +8237,9 @@ rmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
 #' * All active arms share the same information level in Phase 2.
 #'
 #' * Exactly one active arm is selected at the end of Phase 2 based on the
-#'   largest observed statistic.
+#'   largest observed Z-statistic.
 #'
-#' @return A list containing:
+#' @return A list containing the following components:
 #'
 #' * \code{exitProb}: A vector of length \eqn{K + 1}. The first element is the
 #' probability of rejection in Phase 2; the remaining elements are the
@@ -8188,17 +8254,22 @@ rmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
+#' @references
+#' Ping Gao, Yingqiu Li.
+#' Adaptive two-stage seamless sequential design for clinical trials.
+#' Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.
+#'
 #' @examples
 #'
 #' # Setup: 2 active arms vs control in phase 2; 1 selected arm vs control
 #' # in phase 3. Phase 3 has 2 sequential looks.
 #'
-#' # Information levels: equal spacing over 3 looks based on max 110 patients
-#' # per arm, SD = 1.0
+#' # Information levels: equal spacing over 3 looks based on a maximum of
+#' # 110 patients per arm, SD = 1.0
 #' I <- c(110 / (2 * 1.0^2) * seq(1, 3)/3)
 #'
 #' # O'Brien-Fleming critical values
-#' b <- c(3.776606, 2.670463, 2.180424)
+#' b <- c(3.776605, 2.670463, 2.180424)
 #'
 #' # Type I error under the global null hypothesis
 #' p0 <- exitprob_seamless(M = 2, theta = c(0, 0), K = 2, b = b, I = I)
@@ -8213,9 +8284,9 @@ exitprob_seamless <- function(M = NA_integer_, r = 1, theta = NA_real_, corr_kno
     .Call(`_lrstat_exitprob_seamless`, M, r, theta, corr_known, K, b, I)
 }
 
-#' @title Efficacy Boundaries for Two-Stage Seamless Sequential Design
-#' @description Calculates the efficacy stopping boundaries for a two-stage
-#' seamless sequential design, accounting for the selection of the best arm
+#' @title Efficacy Boundaries for a Phase 2/3 Seamless Design
+#' @description Calculates the efficacy stopping boundaries for a phase 2/3
+#' seamless design, accounting for the selection of the best arm
 #' at the end of Phase 2 and sequential testing in Phase 3.
 #'
 #' @param M Number of active treatment arms in Phase 2.
@@ -8253,6 +8324,11 @@ exitprob_seamless <- function(M = NA_integer_, r = 1, theta = NA_real_, corr_kno
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
+#' @references
+#' Ping Gao, Yingqiu Li.
+#' Adaptive two-stage seamless sequential design for clinical trials.
+#' Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.
+#'
 #' @examples
 #'
 #' # Determine O'Brien-Fleming boundaries for a seamless design with
@@ -8265,9 +8341,9 @@ getBound_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_
     .Call(`_lrstat_getBound_seamless`, M, r, corr_known, k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, efficacyStopping)
 }
 
-#' @title Power and Sample Size for Two-Stage Seamless Sequential Design
+#' @title Power and Sample Size for a Phase 2/3 Seamless Design
 #' @description Computes either the maximum information and stopping
-#' boundaries for a generic two-stage seamless sequential design, or
+#' boundaries for a phase 2/3 seamless design, or
 #' the achieved power when the maximum information and stopping boundaries
 #' are provided.
 #'
@@ -8284,7 +8360,7 @@ getBound_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_
 #' @param r Randomization ratio of each active arm to the common control
 #'   in Phase 2.
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-#'   statistics in Phase 2 is derived from the randomization ratio \code{r}
+#'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 #'   0 is used.
 #' @param K Number of sequential looks in Phase 3.
@@ -8303,7 +8379,7 @@ getBound_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_
 #'   error spending time at each analysis. Values must be strictly increasing
 #'   and ends at 1. If omitted, defaults to \code{informationRates}.
 #'
-#' @return An S3 object of class \code{seamless} with these components:
+#' @return An S3 object of class \code{seamless} with the following components:
 #'
 #' * \code{overallResults}: A data frame containing:
 #'     - \code{overallReject}: Overall probability of rejecting the null
@@ -8330,12 +8406,12 @@ getBound_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_
 #'
 #' * \code{byArmResults}: A data frame containing:
 #'     - \code{theta}: Parameter values for the active arms.
-#'     - \code{selectAsBest}: Probability an arm is selected as best in at
+#'     - \code{selectAsBest}: Probability an arm is selected as best at
 #'       the end of phase 2.
 #'     - \code{powerByArm}: Probability of rejecting the null for each arm
 #'       by trial end.
 #'     - \code{condPowerByArm}: Conditional power for each arm given it was
-#'       selected as best at the end of phase 2.
+#'       selected as the best at the end of phase 2.
 #'
 #' * \code{settings}: A list of input settings:
 #'     - \code{typeAlphaSpending}: Type of alpha spending function.
@@ -8375,7 +8451,7 @@ getDesign_seamless <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real
     .Call(`_lrstat_getDesign_seamless`, beta, IMax, theta, M, r, corr_known, K, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime)
 }
 
-#' @title Adaptive Two-Stage Seamless Sequential Design
+#' @title Adaptive Phase 2/3 Seamless Design
 #' @description
 #' Calculates the conditional power for specified incremental
 #' information, given the interim results, parameter value,
@@ -8387,7 +8463,7 @@ getDesign_seamless <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real
 #' the error spending function, and the number and spacing of interim looks.
 #'
 #' @param betaNew The type II error for the secondary trial.
-#' @param INew The maximum information for any active arm versus the common
+#' @param INew The maximum information for the active arm versus the common
 #'   control in the secondary trial. Either
 #'   \code{betaNew} or \code{INew} should be provided, while the other
 #'   must be missing.
@@ -8395,15 +8471,15 @@ getDesign_seamless <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real
 #' @param r Randomization ratio of each active arm to the common control
 #'   in Phase 2.
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-#'   statistics in Phase 2 is derived from the randomization ratio \code{r}
+#'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 #'   0 is used.
 #' @param L The interim adaptation look in Phase 3.
 #' @param zL The z-test statistic at the interim adaptation look of
 #'   Phase 3.
-#' @param theta The treatment effect for the selected arm versus the
+#' @param theta The assumed treatment effect for the selected arm versus the
 #'   common control.
-#' @param IMax Maximum information for any active arm versus the common
+#' @param IMax Maximum information for the active arm versus the common
 #'   control for the original trial. Must be provided.
 #' @param K Number of sequential looks in Phase 3.
 #' @param informationRates A numeric vector of information rates fixed
@@ -8496,7 +8572,7 @@ getDesign_seamless <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real
 #'   alpha = 0.025, typeAlphaSpending = "OF", kNew = 1))
 #'
 #' @export
-adaptDesign_seamless <- function(betaNew = NA_real_, INew = NA_real_, M = NA_integer_, r = NA_real_, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, K = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+adaptDesign_seamless <- function(betaNew = NA_real_, INew = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, K = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
     .Call(`_lrstat_adaptDesign_seamless`, betaNew, INew, M, r, corr_known, L, zL, theta, IMax, K, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
 }
 
