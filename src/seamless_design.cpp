@@ -189,14 +189,14 @@ ListCpp exitprob_seamless_cpp(
 }
 
 
-//' @title Exit Probabilities for Two-Stage Seamless Sequential Design
-//' @description Computes the exit (rejection) probabilities for a two-stage
-//' selection and testing design. In Phase 2, multiple active arms are
+//' @title Exit Probabilities for a Phase 2/3 Seamless Design
+//' @description Computes the exit (rejection) probabilities for a phase 2/3
+//' seamless design. In Phase 2, multiple active arms are
 //' compared against a common control arm. The best-performing arm is
 //' selected to proceed to Phase 3, where it is tested against the common
 //' control over multiple looks.
 //'
-//' @param M Number of active treatment arms in Phase 2 (\eqn{M \ge 2}).
+//' @param M Number of active treatment arms in Phase 2.
 //' @param r Randomization ratio of each active arm to the common control
 //'   in Phase 2.
 //' @param theta A vector of length \eqn{M} representing the true treatment
@@ -216,7 +216,7 @@ ListCpp exitprob_seamless_cpp(
 //' @details
 //' The function assumes a multivariate normal distribution for the Wald
 //' statistics. The "best" arm is defined as the active arm with the largest
-//' score statistic at the end of Phase 2.
+//' Z-statistic at the end of Phase 2.
 //'
 //' \strong{Decision Rules:}
 //' * \strong{Phase 2}: The global null hypothesis is rejected if the Wald
@@ -231,9 +231,9 @@ ListCpp exitprob_seamless_cpp(
 //' * All active arms share the same information level in Phase 2.
 //'
 //' * Exactly one active arm is selected at the end of Phase 2 based on the
-//'   largest observed statistic.
+//'   largest observed Z-statistic.
 //'
-//' @return A list containing:
+//' @return A list containing the following components:
 //'
 //' * \code{exitProb}: A vector of length \eqn{K + 1}. The first element is the
 //' probability of rejection in Phase 2; the remaining elements are the
@@ -248,17 +248,22 @@ ListCpp exitprob_seamless_cpp(
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
+//' @references
+//' Ping Gao, Yingqiu Li.
+//' Adaptive two-stage seamless sequential design for clinical trials.
+//' Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.
+//'
 //' @examples
 //'
 //' # Setup: 2 active arms vs control in phase 2; 1 selected arm vs control
 //' # in phase 3. Phase 3 has 2 sequential looks.
 //'
-//' # Information levels: equal spacing over 3 looks based on max 110 patients
-//' # per arm, SD = 1.0
+//' # Information levels: equal spacing over 3 looks based on a maximum of
+//' # 110 patients per arm, SD = 1.0
 //' I <- c(110 / (2 * 1.0^2) * seq(1, 3)/3)
 //'
 //' # O'Brien-Fleming critical values
-//' b <- c(3.776606, 2.670463, 2.180424)
+//' b <- c(3.776605, 2.670463, 2.180424)
 //'
 //' # Type I error under the global null hypothesis
 //' p0 <- exitprob_seamless(M = 2, theta = c(0, 0), K = 2, b = b, I = I)
@@ -533,9 +538,9 @@ std::vector<double> getBound_seamless_cpp(
 }
 
 
-//' @title Efficacy Boundaries for Two-Stage Seamless Sequential Design
-//' @description Calculates the efficacy stopping boundaries for a two-stage
-//' seamless sequential design, accounting for the selection of the best arm
+//' @title Efficacy Boundaries for a Phase 2/3 Seamless Design
+//' @description Calculates the efficacy stopping boundaries for a phase 2/3
+//' seamless design, accounting for the selection of the best arm
 //' at the end of Phase 2 and sequential testing in Phase 3.
 //'
 //' @param M Number of active treatment arms in Phase 2.
@@ -572,6 +577,11 @@ std::vector<double> getBound_seamless_cpp(
 //' current look.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @references
+//' Ping Gao, Yingqiu Li.
+//' Adaptive two-stage seamless sequential design for clinical trials.
+//' Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.
 //'
 //' @examples
 //'
@@ -897,9 +907,9 @@ ListCpp getDesign_seamless_cpp(
 }
 
 
-//' @title Power and Sample Size for Two-Stage Seamless Sequential Design
+//' @title Power and Sample Size for a Phase 2/3 Seamless Design
 //' @description Computes either the maximum information and stopping
-//' boundaries for a generic two-stage seamless sequential design, or
+//' boundaries for a phase 2/3 seamless design, or
 //' the achieved power when the maximum information and stopping boundaries
 //' are provided.
 //'
@@ -916,7 +926,7 @@ ListCpp getDesign_seamless_cpp(
 //' @param r Randomization ratio of each active arm to the common control
 //'   in Phase 2.
 //' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-//'   statistics in Phase 2 is derived from the randomization ratio \code{r}
+//'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 //'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 //'   0 is used.
 //' @param K Number of sequential looks in Phase 3.
@@ -935,7 +945,7 @@ ListCpp getDesign_seamless_cpp(
 //'   error spending time at each analysis. Values must be strictly increasing
 //'   and ends at 1. If omitted, defaults to \code{informationRates}.
 //'
-//' @return An S3 object of class \code{seamless} with these components:
+//' @return An S3 object of class \code{seamless} with the following components:
 //'
 //' * \code{overallResults}: A data frame containing:
 //'     - \code{overallReject}: Overall probability of rejecting the null
@@ -962,12 +972,12 @@ ListCpp getDesign_seamless_cpp(
 //'
 //' * \code{byArmResults}: A data frame containing:
 //'     - \code{theta}: Parameter values for the active arms.
-//'     - \code{selectAsBest}: Probability an arm is selected as best in at
+//'     - \code{selectAsBest}: Probability an arm is selected as best at
 //'       the end of phase 2.
 //'     - \code{powerByArm}: Probability of rejecting the null for each arm
 //'       by trial end.
 //'     - \code{condPowerByArm}: Conditional power for each arm given it was
-//'       selected as best at the end of phase 2.
+//'       selected as the best at the end of phase 2.
 //'
 //' * \code{settings}: A list of input settings:
 //'     - \code{typeAlphaSpending}: Type of alpha spending function.
@@ -1201,6 +1211,7 @@ ListCpp adaptDesign_seamless_cpp(
         throw std::invalid_argument("informationRatesNew must be increasing");
       if (informationRatesNew.back() != 1.0)
         throw std::invalid_argument("informationRatesNew must end with 1");
+      infoRatesNew = informationRatesNew; // copy
     } else {
       for (size_t i = 0; i < kNew; ++i)
         infoRatesNew[i] = static_cast<double>(i+1) / static_cast<double>(kNew);
@@ -1437,7 +1448,7 @@ ListCpp adaptDesign_seamless_cpp(
 }
 
 
-//' @title Adaptive Two-Stage Seamless Sequential Design
+//' @title Adaptive Phase 2/3 Seamless Design
 //' @description
 //' Calculates the conditional power for specified incremental
 //' information, given the interim results, parameter value,
@@ -1449,7 +1460,7 @@ ListCpp adaptDesign_seamless_cpp(
 //' the error spending function, and the number and spacing of interim looks.
 //'
 //' @param betaNew The type II error for the secondary trial.
-//' @param INew The maximum information for any active arm versus the common
+//' @param INew The maximum information for the active arm versus the common
 //'   control in the secondary trial. Either
 //'   \code{betaNew} or \code{INew} should be provided, while the other
 //'   must be missing.
@@ -1457,15 +1468,15 @@ ListCpp adaptDesign_seamless_cpp(
 //' @param r Randomization ratio of each active arm to the common control
 //'   in Phase 2.
 //' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-//'   statistics in Phase 2 is derived from the randomization ratio \code{r}
+//'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 //'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 //'   0 is used.
 //' @param L The interim adaptation look in Phase 3.
 //' @param zL The z-test statistic at the interim adaptation look of
 //'   Phase 3.
-//' @param theta The treatment effect for the selected arm versus the
+//' @param theta The assumed treatment effect for the selected arm versus the
 //'   common control.
-//' @param IMax Maximum information for any active arm versus the common
+//' @param IMax Maximum information for the active arm versus the common
 //'   control for the original trial. Must be provided.
 //' @param K Number of sequential looks in Phase 3.
 //' @param informationRates A numeric vector of information rates fixed
@@ -1563,7 +1574,7 @@ Rcpp::List adaptDesign_seamless(
     double betaNew = NA_REAL,
     double INew = NA_REAL,
     const int M = NA_INTEGER,
-    const double r = NA_REAL,
+    const double r = 1,
     const bool corr_known = true,
     const int L = NA_INTEGER,
     const double zL = NA_REAL,
