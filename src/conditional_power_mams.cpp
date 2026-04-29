@@ -323,7 +323,7 @@ double getCP_mams_cpp(
     s2 = infoRatesNew;
     asf2 = asfNew;
     effStopping2 = effStoppingNew;
-    if (asf2 != "none" || asf2 != "of") {
+    if (asf2 != "none" && asf2 != "of") {
       for (size_t i = 0; i < k2; ++i) {
         cpu0[i] = errorSpentcpp(spendTimeNew[i], c_alpha,
                                 asfNew, parameterAlphaSpendingNew);
@@ -431,7 +431,7 @@ double getCP_mams_cpp(
 }
 
 
-//' @title Conditional Power for Multi-Arm Multi-Stage Design
+//' @title Conditional Power for a Multi-Arm Multi-Stage Design
 //' @description Obtains the conditional power for specified incremental
 //' information given the interim results, parameter values, and
 //' data-dependent changes in the selected treatment(s),
@@ -450,7 +450,7 @@ double getCP_mams_cpp(
 //' @param L The interim adaptation look of the primary trial.
 //' @param zL The z-test statistics at the interim adaptation look of
 //'   the primary trial.
-//' @param theta A vector of length \eqn{M} representing the true treatment
+//' @param theta A vector of length \eqn{M} representing the assumed treatment
 //'   effects for each active arm versus the common control. The global null
 //'   is \eqn{\theta_i = 0} for all \eqn{i}, and alternatives are one-sided:
 //'   \eqn{\theta_i > 0} for at least one \eqn{i = 1, \ldots, M}.
@@ -540,7 +540,7 @@ double getCP_mams_cpp(
 // [[Rcpp::export]]
 double getCP_mams(const double INew = NA_REAL,
                   const int M = NA_INTEGER,
-                  const double r = NA_REAL,
+                  const double r = 1,
                   const bool corr_known = true,
                   const int L = NA_INTEGER,
                   const Rcpp::NumericVector& zL = NA_REAL,
@@ -558,7 +558,7 @@ double getCP_mams(const double INew = NA_REAL,
                   const bool MullerSchafer = false,
                   const int MNew = NA_INTEGER,
                   const Rcpp::IntegerVector& selected = NA_INTEGER,
-                  const double rNew = NA_REAL,
+                  const double rNew = 1,
                   const int kNew = NA_INTEGER,
                   const Rcpp::NumericVector& informationRatesNew = NA_REAL,
                   const Rcpp::LogicalVector& efficacyStoppingNew = NA_LOGICAL,
