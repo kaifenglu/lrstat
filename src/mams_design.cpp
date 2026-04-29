@@ -26,14 +26,8 @@ PMVNResult pmvnormmccpp(const size_t M,
                         const std::vector<double>& theta,
                         const size_t kMax,
                         const FlatMatrix& b,
-                        const std::vector<double>& Ivec) {
-
-  // information fractions
-  std::vector<double> s(kMax);
-  double T = Ivec[kMax-1];
-  for (size_t k = 0; k < kMax; ++k) {
-    s[k] = Ivec[k] / T;
-  }
+                        const std::vector<double>& s,
+                        const double T) {
 
   double sqrtT = std::sqrt(T);
   std::vector<double> upper(M * kMax);
@@ -158,8 +152,14 @@ std::vector<double> exitprob_mams_cpp(
     double p = integrate3(f, breaks, 1e-6);
     pcumreject[0] = 1.0 - p;
   } else {
+    double T = Ivec.back();
+    std::vector<double> s(kMax);
     for (size_t k = 0; k < kMax; ++k) {
-      auto a = pmvnormmccpp(M, rho, theta, k + 1, b, Ivec);
+      s[k] = Ivec[k] / T;
+    }
+
+    for (size_t k = 0; k < kMax; ++k) {
+      auto a = pmvnormmccpp(M, rho, theta, k + 1, b, s, T);
       pcumreject[k] = 1.0 - a.prob;
     }
   }
@@ -174,7 +174,7 @@ std::vector<double> exitprob_mams_cpp(
 }
 
 
-//' @title Exit Probabilities for Multi-Arm Multi-Stage Design
+//' @title Exit Probabilities for a Multi-Arm Multi-Stage Design
 //' @description Computes the exit (rejection) probabilities for a multi-arm
 //' multi-stage design.
 //'
@@ -187,29 +187,34 @@ std::vector<double> exitprob_mams_cpp(
 //'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 //'   0 is used.
 //' @param kMax Number of sequential looks.
-//' @param b A vector of critical values (length \eqn{kMax}).
-//' @param I A vector of information levels (length \eqn{kMax}) for any active
+//' @param b A vector of critical values (length \code{kMax}).
+//' @param I A vector of information levels (length \code{kMax}) for any active
 //'   arm versus the common control.
 //'
 //' @details
 //' The function assumes a multivariate normal distribution for the Wald
 //' statistics and all active arms share the same information level.
 //'
-//' @return A vector \code{exitProb} of length \eqn{kMax} containing the
+//' @return A vector \code{exitProb} of length \code{kMax} containing the
 //' probability of rejection at each look.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @references
+//' Ping Gao, Yingqiu Li.
+//' Adaptive multiple comparison sequential design (AMCSD) for clinical trials.
+//' Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
 //'
 //' @examples
 //'
 //' # Setup: 2 active arms vs control and 3 sequential looks.
 //'
-//' # Information levels: equal spacing over 3 looks based on max 110 patients
-//' # per arm, SD = 1.0
-//' I <- c(95 / (2 * 1.0^2) * seq(1, 3)/3)
+//' # Information levels: equal spacing over 3 looks based on a maximum of
+//' # 95 patients per arm, SD = 1.0
+//' I <- 95 / (2 * 1.0^2) * seq(1, 3)/3
 //'
 //' # O'Brien-Fleming critical values
-//' b <- c(3.886563, 2.748215, 2.243908)
+//' b <- c(3.886562, 2.748214, 2.243907)
 //'
 //' # Type I error under the global null hypothesis
 //' p0 <- exitprob_mams(M = 2, theta = c(0, 0), kMax = 3, b = b, I = I)
@@ -489,9 +494,9 @@ std::vector<double> getBound_mams_cpp(
 }
 
 
-//' @title Efficacy Boundaries for Multi-Arm Multi-Stage Design
-//' @description Calculates the efficacy stopping boundaries for a multiple
-//' comparison sequential design.
+//' @title Efficacy Boundaries for a Multi-Arm Multi-Stage Design
+//' @description Calculates the efficacy stopping boundaries for a multi-arm
+//' multi-stage design.
 //'
 //' @param M Number of active treatment arms.
 //' @param r Randomization ratio of each active arm to the common control.
@@ -513,8 +518,7 @@ std::vector<double> getBound_mams_cpp(
 //'
 //' @details
 //' The function determines critical values by solving for the boundary that
-//' satisfies the alpha-spending requirement, given the selection of the
-//' "best" arm at the end of Phase 2.
+//' satisfies the alpha-spending requirement.
 //'
 //' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
 //' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
@@ -526,6 +530,11 @@ std::vector<double> getBound_mams_cpp(
 //' current look.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @references
+//' Ping Gao, Yingqiu Li.
+//' Adaptive multiple comparison sequential design (AMCSD) for clinical trials.
+//' Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
 //'
 //' @examples
 //'
@@ -872,9 +881,9 @@ ListCpp getDesign_mams_cpp(
 }
 
 
-//' @title Power and Sample Size for Multi-Arm Multi-Stage Design
+//' @title Power and Sample Size for a Multi-Arm Multi-Stage Design
 //' @description Computes either the maximum information and stopping
-//' boundaries for a generic multiple comparison sequential design, or
+//' boundaries for a multi-arm multi-stage design, or
 //' the achieved power when the maximum information and stopping boundaries
 //' are provided.
 //'
@@ -890,7 +899,7 @@ ListCpp getDesign_mams_cpp(
 //' @param M Number of active treatment arms.
 //' @param r Randomization ratio of each active arm to the common control.
 //' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-//'   statistics is derived from the randomization ratio \code{r}
+//'   statistics is derived from the randomization ratio \eqn{r}
 //'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 //'   0 is used.
 //' @param kMax Number of sequential looks.
@@ -904,25 +913,27 @@ ListCpp getDesign_mams_cpp(
 //' @inheritParams param_typeAlphaSpending
 //' @inheritParams param_parameterAlphaSpending
 //' @inheritParams param_userAlphaSpending
-//' @param spendingTime A numeric vector of length \eqn{kMax} specifying the
+//' @param spendingTime A numeric vector of length \code{kMax} specifying the
 //'   error spending time at each analysis. Values must be strictly increasing
 //'   and ends at 1. If omitted, defaults to \code{informationRates}.
 //'
-//' @return An S3 object of class \code{mams} with these components:
+//' @return An S3 object of class \code{mams} with the following components:
 //'
 //' * \code{overallResults}: A data frame containing:
-//'     - \code{overallReject}: Overall probability of rejecting the null
-//'       hypothesis.
+//'     - \code{overallReject}: Overall probability of rejecting the global
+//'       null hypothesis.
 //'     - \code{alpha}: Overall significance level.
 //'     - \code{M}: Number of active arms.
 //'     - \code{r}: Randomization ratio per active arm versus control.
-//'     - \code{corr_known}: Whether the phase-2 correlation was assumed known.
+//'     - \code{corr_known}: Whether the correlation among Wald statistics
+//'       was assumed known.
 //'     - \code{kMax}: Number of stages.
-//'     - \code{information}: Maximum information for any active arm versus control.
+//'     - \code{information}: Maximum information for any active arm versus
+//'       control.
 //'
 //' * \code{byStageResults}: A data frame containing:
 //'     - \code{informationRates}: Information rates at each analysis.
-//'     - \code{efficacyBounds}: Efficacy boundaries on the Z-scale.
+//'     - \code{efficacyBounds}: Efficacy boundaries on the max Z-scale.
 //'     - \code{rejectPerStage}: Probability of efficacy stopping at each stage.
 //'     - \code{cumulativeRejection}: Cumulative probability of efficacy stopping.
 //'     - \code{cumulativeAlphaSpent}: Cumulative alpha spent.
@@ -931,7 +942,7 @@ ListCpp getDesign_mams_cpp(
 //'     - \code{information}: Cumulative information for any active arm versus
 //'       control at each analysis.
 //'     - \code{efficacyStopping}: Indicator of whether efficacy stopping
-//'       is permitted.
+//'       is permitted at each stage.
 //'
 //' * \code{settings}: A list of input settings:
 //'     - \code{typeAlphaSpending}: Type of alpha spending function.
@@ -939,6 +950,14 @@ ListCpp getDesign_mams_cpp(
 //'       alpha spending function.
 //'     - \code{userAlphaSpending}: User-specified alpha spending values.
 //'     - \code{spendingTime}: Error-spending times at each analysis.
+//'
+//' * \code{byLevelBounds}: A data frame containing the efficacy boundaries
+//'   for each level of testing (i.e., number of active arms remaining) and
+//'   each stage. Columns include:
+//'     - \code{level}: Number of active arms remaining (1 to \eqn{M}).
+//'     - \code{stage}: Stage index (1 to \code{kMax}).
+//'     - \code{efficacyBounds}: Efficacy boundaries on the max Z-scale
+//'       for the given level and stage.
 //'
 //' @details If \code{corr_known} is \code{FALSE}, critical boundaries are
 //' computed assuming independence among the Wald statistics in each stage
@@ -1181,6 +1200,7 @@ ListCpp adaptDesign_mams_cpp(
         throw std::invalid_argument("informationRatesNew must be increasing");
       if (informationRatesNew[kNew-1] != 1.0)
         throw std::invalid_argument("informationRatesNew must end with 1");
+      infoRatesNew = informationRatesNew; // copy
     } else {
       for (size_t i = 0; i < kNew; ++i)
         infoRatesNew[i] = static_cast<double>(i+1) / static_cast<double>(kNew);
@@ -1344,10 +1364,9 @@ ListCpp adaptDesign_mams_cpp(
     asfpar2 = parameterAlphaSpendingNew;
     spendTime2 = spendTimeNew;
     effStopping2 = effStoppingNew;
-    if (asf2 != "none" || asf2 != "of") {
+    if (asf2 != "none" && asf2 != "of") {
       for (size_t i = 0; i < k2; ++i) {
-        cpu0[i] = errorSpentcpp(spendTimeNew[i], c_alpha,
-                                asfNew, parameterAlphaSpendingNew);
+        cpu0[i] = errorSpentcpp(spendTimeNew[i], c_alpha, asfNew, asfpar2);
       }
     }
   }
@@ -1368,8 +1387,8 @@ ListCpp adaptDesign_mams_cpp(
     }
 
     if (asf2 == "of") {
-      auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &zero2, &selectedNew,
-                &effStopping2, k2, c_alpha, sqrtIL, MNew, rNew, corr_known]
+      auto g = [&c2, I2, sqrtI2, sqrtIc, zL, zero2, selectedNew,
+                effStopping2, k2, c_alpha, sqrtIL, MNew, rNew, corr_known]
       (double x)->double {
         for (size_t i = 0; i < k2; ++i) {
           if (effStopping2[i]) {
@@ -1407,7 +1426,7 @@ ListCpp adaptDesign_mams_cpp(
     } else if (asf2 == "none") {
       for (size_t i = 0; i < k2 - 1; ++i) critValues2[i] = 6.0;
       c2.fill(6.0);
-      auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &zero2, &selectedNew,
+      auto g = [&c2, I2, sqrtI2, sqrtIc, zL, zero2, selectedNew,
                 k2, c_alpha, sqrtIL, MNew, rNew, corr_known]
       (double x)->double {
         for (size_t j = 0; j < MNew; ++j) {
@@ -1430,7 +1449,7 @@ ListCpp adaptDesign_mams_cpp(
       for (size_t i = 0; i < k2; ++i) {
         if (!effStopping2[i]) continue;
 
-        auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &cpu0, &zero2, &selectedNew,
+        auto g = [&c2, I2, sqrtI2, sqrtIc, zL, cpu0, zero2, selectedNew,
                   sqrtIL, i, MNew, rNew, corr_known]
         (double x)->double {
           // update critical values of the secondary trial at current look
@@ -1453,9 +1472,10 @@ ListCpp adaptDesign_mams_cpp(
       }
     }
   } else {
+
     // obtain required max information for the secondary trial given target power
     auto f = [&critValues2, &c2, &I2, &Ic, &sqrtI2, &sqrtIc,
-              &zL, &cpu0, &zero2, &theta2, &selectedNew, &s2, &effStopping2,
+              zL, cpu0, zero2, theta2, selectedNew, s2, effStopping2,
               betaNew, k2, asf2, c_alpha, IL, sqrtIL, MNew, rNew, corr_known]
     (double Inew)->double {
       for (size_t i = 0; i < k2; ++i) {
@@ -1466,8 +1486,8 @@ ListCpp adaptDesign_mams_cpp(
       }
 
       if (asf2 == "of") {
-        auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &zero2, &selectedNew,
-                  &effStopping2, k2, c_alpha, sqrtIL, MNew, rNew, corr_known]
+        auto g = [&c2, I2, sqrtI2, sqrtIc, zL, zero2, selectedNew,
+                  effStopping2, k2, c_alpha, sqrtIL, MNew, rNew, corr_known]
         (double x)->double {
           for (size_t i = 0; i < k2; ++i) {
             if (effStopping2[i]) {
@@ -1505,7 +1525,7 @@ ListCpp adaptDesign_mams_cpp(
       } else if (asf2 == "none") {
         for (size_t i = 0; i < k2 - 1; ++i) critValues2[i] = 6.0;
         c2.fill(6.0);
-        auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &zero2, &selectedNew,
+        auto g = [&c2, I2, sqrtI2, sqrtIc, zL, zero2, selectedNew,
                   k2, c_alpha, sqrtIL, MNew, rNew, corr_known]
         (double x)->double {
           for (size_t j = 0; j < MNew; ++j) {
@@ -1528,7 +1548,7 @@ ListCpp adaptDesign_mams_cpp(
         for (size_t i = 0; i < k2; ++i) {
           if (!effStopping2[i]) continue;
 
-          auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &cpu0, &zero2, &selectedNew,
+          auto g = [&c2, I2, sqrtI2, sqrtIc, zL, cpu0, zero2, selectedNew,
                     sqrtIL, i, MNew, rNew, corr_known]
           (double x)->double {
             // update critical values of the secondary trial at current look
@@ -1595,7 +1615,6 @@ ListCpp adaptDesign_mams_cpp(
     }
   }
 
-
   // integrated trial information and critical values
   size_t kc = L + k2;
   std::vector<double> Ic_full(kc);
@@ -1657,7 +1676,6 @@ ListCpp adaptDesign_mams_cpp(
 
     std::copy_n(cut.data(), kMax, efficacyBounds1.data() + (M - M1) * kMax);
   }
-
 
   // critical values for each intersection hypothesis
   size_t ntests = (1 << MNew) - 1; // 2^MNew - 1
@@ -1721,7 +1739,7 @@ ListCpp adaptDesign_mams_cpp(
     if (!MullerSchafer) {
       std::partial_sum(v0.begin(), v0.end(), cpu0.begin());
     } else {
-      if (asf2 != "none" || asf2 != "of") {
+      if (asf2 != "none" && asf2 != "of") {
         for (size_t i = 0; i < k2; ++i) {
           cpu0[i] = errorSpentcpp(spendTimeNew[i], c_alpha,
                                   asfNew, parameterAlphaSpendingNew);
@@ -1735,8 +1753,8 @@ ListCpp adaptDesign_mams_cpp(
     c2.fill(6.0);
 
     if (asf2 == "of") {
-      auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &zero2, &selectedNew2,
-                &effStopping2, k2, c_alpha, sqrtIL, M2, rNew, corr_known]
+      auto g = [&c2, I2, sqrtI2, sqrtIc, zL, zero2, selectedNew2,
+                effStopping2, k2, c_alpha, sqrtIL, M2, rNew, corr_known]
       (double x)->double {
         for (size_t i = 0; i < k2; ++i) {
           if (effStopping2[i]) {
@@ -1767,7 +1785,7 @@ ListCpp adaptDesign_mams_cpp(
     } else if (asf2 == "none") {
       for (size_t i = 0; i < k2 - 1; ++i) critValues2[i] = 6.0;
       c2.fill(6.0);
-      auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &zero2, &selectedNew2,
+      auto g = [&c2, I2, sqrtI2, sqrtIc, zL, zero2, selectedNew2,
                 k2, c_alpha, sqrtIL, M2, rNew, corr_known]
       (double x)->double {
         for (size_t j = 0; j < M2; ++j) {
@@ -1786,7 +1804,7 @@ ListCpp adaptDesign_mams_cpp(
       for (size_t i = 0; i < k2; ++i) {
         if (!effStopping2[i]) continue;
 
-        auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &cpu0, &zero2, &selectedNew2,
+        auto g = [&c2, I2, sqrtI2, sqrtIc, zL, cpu0, zero2, selectedNew2,
                   sqrtIL, i, M2, rNew, corr_known]
         (double x)->double {
           // update critical values of the secondary trial at current look
@@ -1928,7 +1946,7 @@ ListCpp adaptDesign_mams_cpp(
 //' @param L The interim adaptation look of the primary trial.
 //' @param zL The z-test statistics at the interim adaptation look of
 //'   the primary trial.
-//' @param theta A vector of length \eqn{M} representing the true treatment
+//' @param theta A vector of length \eqn{M} representing the assumed treatment
 //'   effects for each active arm versus the common control. The global null
 //'   is \eqn{\theta_i = 0} for all \eqn{i}, and alternatives are one-sided:
 //'   \eqn{\theta_i > 0} for at least one \eqn{i = 1, \ldots, M}.
@@ -1999,13 +2017,22 @@ ListCpp adaptDesign_mams_cpp(
 //'   \code{zL}, \code{theta}, \code{maxInformation}, \code{kMax},
 //'   \code{informationRates}, \code{efficacyBounds}, \code{information},
 //'   \code{alpha}, \code{conditionalAlpha}, \code{conditionalPower},
-//'   and \code{MullerSchafer}.
+//'   \code{MullerSchafer}, and \code{byLevelBounds}.
 //'
-//' * \code{secondaryTrial}: A \code{design} object for the secondary trial.
+//' * \code{secondaryTrial}: A list of selected information for the secondary
+//'   trial, including \code{overallReject}, \code{alpha}, \code{M}, \code{r},
+//'   \code{selected}, \code{corr_known}, \code{kMax}, \code{maxInformation},
+//'   \code{informationRates}, \code{cumulativeRejection},
+//'   \code{cumulativeAlphaSpent}, \code{information},
+//'   \code{typeAlphaSpending}, \code{parameterAlphaSpending},
+//'   \code{spendingTime}, and \code{byHypothesisBounds}.
 //'
 //' * \code{integratedTrial}: A list of selected information for the integrated
-//'   trial, including \code{kMax}, \code{maxInformation}, \code{informationRates},
-//'   \code{efficacyBounds}, and \code{information}.
+//'   trial, including \code{M}, \code{r}, \code{corr_known}, \code{MNew},
+//'   \code{rNew}, \code{selected}, \code{L}, \code{zL}, \code{theta},
+//'   \code{maxInformation}, \code{kMax}, \code{informationRates},
+//'   \code{efficacyBounds}, \code{information}, and
+//'   \code{byIntersectionBounds}.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
@@ -2053,7 +2080,7 @@ Rcpp::List adaptDesign_mams(
     double betaNew = NA_REAL,
     double INew = NA_REAL,
     const int M = NA_INTEGER,
-    const double r = NA_REAL,
+    const double r = 1,
     const bool corr_known = true,
     const int L = NA_INTEGER,
     const Rcpp::NumericVector& zL = NA_REAL,
@@ -2071,7 +2098,7 @@ Rcpp::List adaptDesign_mams(
     const bool MullerSchafer = false,
     const int MNew = NA_INTEGER,
     const Rcpp::IntegerVector& selected = NA_INTEGER,
-    const double rNew = NA_REAL,
+    const double rNew = 1,
     const int kNew = NA_INTEGER,
     const Rcpp::NumericVector& informationRatesNew = NA_REAL,
     const Rcpp::LogicalVector& efficacyStoppingNew = NA_LOGICAL,
