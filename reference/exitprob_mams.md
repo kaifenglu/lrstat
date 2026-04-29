@@ -1,4 +1,4 @@
-# Exit Probabilities for Multi-Arm Multi-Stage Design
+# Exit Probabilities for a Multi-Arm Multi-Stage Design
 
 Computes the exit (rejection) probabilities for a multi-arm multi-stage
 design.
@@ -44,22 +44,28 @@ exitprob_mams(
 
 - b:
 
-  A vector of critical values (length \\kMax\\).
+  A vector of critical values (length `kMax`).
 
 - I:
 
-  A vector of information levels (length \\kMax\\) for any active arm
+  A vector of information levels (length `kMax`) for any active arm
   versus the common control.
 
 ## Value
 
-A vector `exitProb` of length \\kMax\\ containing the probability of
+A vector `exitProb` of length `kMax` containing the probability of
 rejection at each look.
 
 ## Details
 
 The function assumes a multivariate normal distribution for the Wald
 statistics and all active arms share the same information level.
+
+## References
+
+Ping Gao, Yingqiu Li. Adaptive multiple comparison sequential design
+(AMCSD) for clinical trials. Journal of Biopharmaceutical Statistics,
+2024, 34(3), 424-440.
 
 ## Author
 
@@ -70,20 +76,20 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ``` r
 # Setup: 2 active arms vs control and 3 sequential looks.
 
-# Information levels: equal spacing over 3 looks based on max 110 patients
-# per arm, SD = 1.0
-I <- c(95 / (2 * 1.0^2) * seq(1, 3)/3)
+# Information levels: equal spacing over 3 looks based on a maximum of
+# 95 patients per arm, SD = 1.0
+I <- 95 / (2 * 1.0^2) * seq(1, 3)/3
 
 # O'Brien-Fleming critical values
-b <- c(3.886563, 2.748215, 2.243908)
+b <- c(3.886562, 2.748214, 2.243907)
 
 # Type I error under the global null hypothesis
 p0 <- exitprob_mams(M = 2, theta = c(0, 0), kMax = 3, b = b, I = I)
 cumsum(p0)
-#> [1] 0.0001007491 0.0058081431 0.0249999769
+#> [1] 0.0001007476 0.0058081554 0.0250000400
 
 # Power under alternative: Treatment effects of 0.3 and 0.5
 p1 <- exitprob_mams(M = 2, theta = c(0.3, 0.5), kMax = 3, b = b, I = I)
 cumsum(p1)
-#> [1] 0.03130476 0.55104497 0.90221780
+#> [1] 0.03130483 0.55104538 0.90221799
 ```

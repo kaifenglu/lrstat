@@ -1,4 +1,4 @@
-# Conditional Power for Two-Stage Seamless Sequential Design
+# Conditional Power for a Phase 2/3 Seamless Design
 
 Obtains the conditional power for specified incremental information
 given the interim results, parameter values, and data-dependent changes
@@ -11,7 +11,7 @@ interim looks.
 getCP_seamless(
   INew = NA_real_,
   M = NA_integer_,
-  r = NA_real_,
+  r = 1,
   corr_known = TRUE,
   L = NA_integer_,
   zL = NA_real_,
@@ -40,7 +40,7 @@ getCP_seamless(
 
 - INew:
 
-  The maximum information for any active arm versus the common control
+  The maximum information for the active arm versus the common control
   in the secondary trial.
 
 - M:
@@ -55,7 +55,7 @@ getCP_seamless(
 - corr_known:
 
   Logical. If `TRUE`, the correlation between Wald statistics in Phase 2
-  is derived from the randomization ratio `r` as \\r / (r + 1)\\. If
+  is derived from the randomization ratio \\r\\ as \\r / (r + 1)\\. If
   `FALSE`, a conservative correlation of 0 is used.
 
 - L:
@@ -68,11 +68,12 @@ getCP_seamless(
 
 - theta:
 
-  The treatment effect for the selected arm versus the common control.
+  The assumed treatment effect for the selected arm versus the common
+  control.
 
 - IMax:
 
-  Maximum information for any active arm versus the common control for
+  Maximum information for the active arm versus the common control for
   the original trial. Must be provided.
 
 - K:
@@ -189,7 +190,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 
 ``` r
 getCP_seamless(
-  INew = 49.5, M = 2, r = 1, corr_known = FALSE,
+  INew = 198 / 4, M = 2, r = 1, corr_known = FALSE,
   L = 1, zL = -log(0.67) * sqrt(80 / 4), theta = -log(0.691),
   IMax = 120 / 4, K = 2, informationRates = c(1/3, 2/3, 1),
   alpha = 0.025, typeAlphaSpending = "OF", kNew = 1)

@@ -1,7 +1,7 @@
-# Confidence Interval After Trial Termination for Seamless Design
+# Confidence Interval After Trial Termination for a Phase 2/3 Seamless Design
 
-Obtains the p-value, median point estimate, and confidence interval
-after the end of a group sequential trial.
+Obtains the p-value, point estimate, and confidence interval after the
+end of a phase 2/3 seamless trial.
 
 ## Usage
 
@@ -59,7 +59,7 @@ getCI_seamless(
 - efficacyStopping:
 
   Indicators of whether efficacy stopping is allowed at each stage up to
-  look `L`. Defaults to true if left unspecified.
+  look `L`. Defaults to `TRUE` if left unspecified.
 
 - criticalValues:
 
@@ -98,13 +98,20 @@ A data frame with the following components:
 
 - `pvalue`: p-value for rejecting the null hypothesis.
 
-- `thetahat`: Median unbiased point estimate of the parameter.
+- `thetahat`: Point estimate of the parameter.
 
 - `cilevel`: Confidence interval level.
 
 - `lower`: Lower bound of confidence interval.
 
 - `upper`: Upper bound of confidence interval.
+
+## Details
+
+If `typeAlphaSpending` is `"OF"`, `"P"`, `"WT"`, or `"none"`, then
+`informationRates`, `efficacyStopping`, and `spendingTime` must be of
+full length \\K + 1\\, and `informationRates` and `spendingTime` must
+end with 1.
 
 ## References
 

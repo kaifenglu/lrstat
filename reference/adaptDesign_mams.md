@@ -16,7 +16,7 @@ adaptDesign_mams(
   betaNew = NA_real_,
   INew = NA_real_,
   M = NA_integer_,
-  r = NA_real_,
+  r = 1,
   corr_known = TRUE,
   L = NA_integer_,
   zL = NA_real_,
@@ -34,7 +34,7 @@ adaptDesign_mams(
   MullerSchafer = FALSE,
   MNew = NA_integer_,
   selected = NA_integer_,
-  rNew = NA_real_,
+  rNew = 1,
   kNew = NA_integer_,
   informationRatesNew = NA_real_,
   efficacyStoppingNew = NA_integer_,
@@ -82,8 +82,8 @@ adaptDesign_mams(
 
 - theta:
 
-  A vector of length \\M\\ representing the true treatment effects for
-  each active arm versus the common control. The global null is
+  A vector of length \\M\\ representing the assumed treatment effects
+  for each active arm versus the common control. The global null is
   \\\theta_i = 0\\ for all \\i\\, and alternatives are one-sided:
   \\\theta_i \> 0\\ for at least one \\i = 1, \ldots, M\\.
 
@@ -200,14 +200,20 @@ An `adaptDesign_mams` object with three list components:
 - `primaryTrial`: A list of selected information for the primary trial,
   including `M`, `r`, `corr_known`, `L`, `zL`, `theta`,
   `maxInformation`, `kMax`, `informationRates`, `efficacyBounds`,
-  `information`, `alpha`, `conditionalAlpha`, `conditionalPower`, and
-  `MullerSchafer`.
+  `information`, `alpha`, `conditionalAlpha`, `conditionalPower`,
+  `MullerSchafer`, and `byLevelBounds`.
 
-- `secondaryTrial`: A `design` object for the secondary trial.
+- `secondaryTrial`: A list of selected information for the secondary
+  trial, including `overallReject`, `alpha`, `M`, `r`, `selected`,
+  `corr_known`, `kMax`, `maxInformation`, `informationRates`,
+  `cumulativeRejection`, `cumulativeAlphaSpent`, `information`,
+  `typeAlphaSpending`, `parameterAlphaSpending`, `spendingTime`, and
+  `byHypothesisBounds`.
 
 - `integratedTrial`: A list of selected information for the integrated
-  trial, including `kMax`, `maxInformation`, `informationRates`,
-  `efficacyBounds`, and `information`.
+  trial, including `M`, `r`, `corr_known`, `MNew`, `rNew`, `selected`,
+  `L`, `zL`, `theta`, `maxInformation`, `kMax`, `informationRates`,
+  `efficacyBounds`, `information`, and `byIntersectionBounds`.
 
 ## References
 

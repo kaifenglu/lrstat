@@ -1,4 +1,4 @@
-# Confidence Interval After Adaptation for Multi-Arm Multi-Stage Design
+# Confidence Interval After Adaptation for a Multi-Arm Multi-Stage Design
 
 Obtains the p-value, conservative point estimate, and confidence
 interval after the end of an adaptive multi-arm multi-stage trial.
@@ -8,7 +8,7 @@ interval after the end of an adaptive multi-arm multi-stage trial.
 ``` r
 getADCI_mams(
   M = NA_integer_,
-  r = NA_real_,
+  r = 1,
   corr_known = TRUE,
   L = NA_integer_,
   zL = NA_real_,
@@ -24,7 +24,7 @@ getADCI_mams(
   MullerSchafer = FALSE,
   MNew = NA_integer_,
   selected = NA_integer_,
-  rNew = NA_real_,
+  rNew = 1,
   Lc = NA_integer_,
   zLc = NA_real_,
   INew = NA_real_,
@@ -82,10 +82,10 @@ getADCI_mams(
 
 - criticalValues:
 
-  The matrix of by-level upper boundaries on the z-test statistic scale
-  for efficacy stopping up to look `L` for the primary trial. The first
-  column is for level `M`, the second column is for level `M - 1`, and
-  so on, with the last column for level 1. If left unspecified, the
+  The matrix of by-level upper boundaries on the max z-test statistic
+  scale for efficacy stopping up to look `L` for the primary trial. The
+  first column is for level `M`, the second column is for level `M - 1`,
+  and so on, with the last column for level 1. If left unspecified, the
   critical values will be computed based on the specified alpha spending
   function.
 
@@ -148,13 +148,12 @@ getADCI_mams(
 
 - informationRatesNew:
 
-  The spacing of looks of the secondary trial up to look `L2`.
+  The spacing of looks of the secondary trial.
 
 - efficacyStoppingNew:
 
   The indicators of whether efficacy stopping is allowed at each look of
-  the secondary trial up to look `L2`. Defaults to `TRUE` if left
-  unspecified.
+  the secondary trial. Defaults to `TRUE` if left unspecified.
 
 - typeAlphaSpendingNew:
 
@@ -172,9 +171,8 @@ getADCI_mams(
 
 - spendingTimeNew:
 
-  The error spending time of the secondary trial up to look `L2`.
-  Defaults to missing, in which case, it is the same as
-  `informationRatesNew`.
+  The error spending time of the secondary trial. Defaults to missing,
+  in which case, it is the same as `informationRatesNew`.
 
 ## Value
 
@@ -182,17 +180,24 @@ A data frame with the following variables:
 
 - `level`: Number of individual hypotheses considered for multiplicity.
 
-- `index`: The index of the treatment arm among the `M` active arms.
+- `index`: The treatment arm with max Z among the active arms.
 
 - `pvalue`: p-value for rejecting the null hypothesis.
 
-- `thetahat`: Median unbiased point estimate of the parameter.
+- `thetahat`: Point estimate of the parameter.
 
 - `cilevel`: Confidence interval level.
 
 - `lower`: Lower bound of confidence interval.
 
 - `upper`: Upper bound of confidence interval.
+
+## Details
+
+If typeAlphaSpendingNew is `"OF"` or `"none"`, then
+`informationRatesNew`, `efficacyStoppingNew`, and `spendingTimeNew` must
+be of full length `kNew`, and `informationRatesNew` and
+`spendingTimeNew` must end with 1.
 
 ## References
 

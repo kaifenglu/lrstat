@@ -60,6 +60,13 @@
 <li>added getCI_seamless for confidence interval calculation for two-stage seamless sequential design for treatment/dose selection</li>
 <li>added getADCI_seamless for confidence interval calculation using the backward image method for adaptive two-stage seamless sequential design for treatment/dose selection</li>
 <li>moved the f_pvalue function from confidence_interval.cpp to generic_design.cpp</li>
+<li>updated infoRatesNew when informationRatesNew is not missing in adaptDesign_seamless_cpp and adaptDesign_mams_cpp</li>
+<li>added default value of 1 for parameter r of adaptDesign_seamless</li>
+<li>updated pmvnormmccpp to use s and T instead of Ivec</li>
+<li>added byLevelBounds in the output of getDesign_mams</li>
+<li>updated the condition for cpu0 calculation in adaptDesign_mams_cpp</li>
+<li>updated the description for adaptDesign_mams output</li>
+<li>updated the default value of r and rNew to 1 in adaptDesign_mams</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.1" id="lrstat-031">lrstat 0.3.1<a class="anchor" aria-label="anchor" href="#lrstat-031"></a></h2><p class="text-muted">CRAN release: 2026-04-08</p>

@@ -1,7 +1,7 @@
-# Efficacy Boundaries for Multi-Arm Multi-Stage Design
+# Efficacy Boundaries for a Multi-Arm Multi-Stage Design
 
-Calculates the efficacy stopping boundaries for a multiple comparison
-sequential design.
+Calculates the efficacy stopping boundaries for a multi-arm multi-stage
+design.
 
 ## Usage
 
@@ -89,13 +89,18 @@ standard normal Z-scale) for each analysis up to the current look.
 ## Details
 
 The function determines critical values by solving for the boundary that
-satisfies the alpha-spending requirement, given the selection of the
-"best" arm at the end of Phase 2.
+satisfies the alpha-spending requirement.
 
 If `typeAlphaSpending` is `"OF"`, `"P"`, `"WT"`, or `"none"`, then
 `informationRates`, `efficacyStopping`, and `spendingTime` must be of
 full length `kMax`, and `informationRates` and `spendingTime` must end
 with 1.
+
+## References
+
+Ping Gao, Yingqiu Li. Adaptive multiple comparison sequential design
+(AMCSD) for clinical trials. Journal of Biopharmaceutical Statistics,
+2024, 34(3), 424-440.
 
 ## Author
 

@@ -1,8 +1,8 @@
-# Efficacy Boundaries for Two-Stage Seamless Sequential Design
+# Efficacy Boundaries for a Phase 2/3 Seamless Design
 
-Calculates the efficacy stopping boundaries for a two-stage seamless
-sequential design, accounting for the selection of the best arm at the
-end of Phase 2 and sequential testing in Phase 3.
+Calculates the efficacy stopping boundaries for a phase 2/3 seamless
+design, accounting for the selection of the best arm at the end of Phase
+2 and sequential testing in Phase 3.
 
 ## Usage
 
@@ -98,6 +98,12 @@ If `typeAlphaSpending` is `"OF"`, `"P"`, `"WT"`, or `"none"`, then
 `informationRates`, `efficacyStopping`, and `spendingTime` must be of
 full length `kMax`, and `informationRates` and `spendingTime` must end
 with 1.
+
+## References
+
+Ping Gao, Yingqiu Li. Adaptive two-stage seamless sequential design for
+clinical trials. Journal of Biopharmaceutical Statistics, 2025, 35(4),
+565-587.
 
 ## Author
 

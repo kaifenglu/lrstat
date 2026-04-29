@@ -1,15 +1,14 @@
-# Confidence Interval After Adaptation for Two-Stage Seamless Sequential Design
+# Confidence Interval After Adaptation for a Phase 2/3 Seamless Design
 
 Obtains the p-value, conservative point estimate, and confidence
-interval after the end of an adaptive two-stage seamless sequential
-design.
+interval after the end of an adaptive phase 2/3 seamless design.
 
 ## Usage
 
 ``` r
 getADCI_seamless(
   M = NA_integer_,
-  r = NA_real_,
+  r = 1,
   corr_known = TRUE,
   L = NA_integer_,
   zL = NA_real_,
@@ -48,7 +47,7 @@ getADCI_seamless(
 - corr_known:
 
   Logical. If `TRUE`, the correlation between Wald statistics in Phase 2
-  is derived from the randomization ratio `r` as \\r / (r + 1)\\. If
+  is derived from the randomization ratio \\r\\ as \\r / (r + 1)\\. If
   `FALSE`, a conservative correlation of 0 is used.
 
 - L:
@@ -61,7 +60,7 @@ getADCI_seamless(
 
 - IMax:
 
-  Maximum information for any active arm versus the common control for
+  Maximum information for the active arm versus the common control for
   the original trial. Must be provided.
 
 - K:
@@ -125,23 +124,23 @@ getADCI_seamless(
 
 - INew:
 
-  The maximum information for any active arm versus the common control
+  The maximum information for the active arm versus the common control
   in the secondary trial.
 
 - informationRatesNew:
 
-  The spacing of looks of the secondary trial up to look `L2`.
+  The spacing of looks of the secondary trial.
 
 - efficacyStoppingNew:
 
   The indicators of whether efficacy stopping is allowed at each look of
-  the secondary trial up to look `L2`. Defaults to `TRUE` if left
-  unspecified.
+  the secondary trial. Defaults to `TRUE` if left unspecified.
 
 - typeAlphaSpendingNew:
 
   The type of alpha spending for the secondary trial. One of the
-  following: `"OF"` for O'Brien-Fleming boundaries, `"sfOF"` for
+  following: `"OF"` for O'Brien-Fleming boundaries, `"P"` for Pocock
+  boundaries, `"WT"` for Wang & Tsiatis boundaries, `"sfOF"` for
   O'Brien-Fleming type spending function, `"sfP"` for Pocock type
   spending function, `"sfKD"` for Kim & DeMets spending function,
   `"sfHSD"` for Hwang, Shi & DeCani spending function, and `"none"` for
@@ -150,13 +149,13 @@ getADCI_seamless(
 - parameterAlphaSpendingNew:
 
   The parameter value of alpha spending for the secondary trial.
-  Corresponds to \\\rho\\ for `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
+  Corresponds to \\\Delta\\ for `"WT"`, \\\rho\\ for `"sfKD"`, and
+  \\\gamma\\ for `"sfHSD"`.
 
 - spendingTimeNew:
 
-  The error spending time of the secondary trial up to look `L2`.
-  Defaults to missing, in which case, it is the same as
-  `informationRatesNew`.
+  The error spending time of the secondary trial. Defaults to missing,
+  in which case, it is the same as `informationRatesNew`.
 
 ## Value
 
@@ -164,13 +163,20 @@ A data frame with the following variables:
 
 - `pvalue`: p-value for rejecting the null hypothesis.
 
-- `thetahat`: Median unbiased point estimate of the parameter.
+- `thetahat`: Point estimate of the parameter.
 
 - `cilevel`: Confidence interval level.
 
 - `lower`: Lower bound of confidence interval.
 
 - `upper`: Upper bound of confidence interval.
+
+## Details
+
+If typeAlphaSpendingNew is `"OF"`, `"P"`, `"WT"`, or `"none"`, then
+`informationRatesNew`, `efficacyStoppingNew`, and `spendingTimeNew` must
+be of full length `kNew`, and `informationRatesNew` and
+`spendingTimeNew` must end with 1.
 
 ## References
 

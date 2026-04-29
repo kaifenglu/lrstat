@@ -1,10 +1,9 @@
-# Exit Probabilities for Two-Stage Seamless Sequential Design
+# Exit Probabilities for a Phase 2/3 Seamless Design
 
-Computes the exit (rejection) probabilities for a two-stage selection
-and testing design. In Phase 2, multiple active arms are compared
-against a common control arm. The best-performing arm is selected to
-proceed to Phase 3, where it is tested against the common control over
-multiple looks.
+Computes the exit (rejection) probabilities for a phase 2/3 seamless
+design. In Phase 2, multiple active arms are compared against a common
+control arm. The best-performing arm is selected to proceed to Phase 3,
+where it is tested against the common control over multiple looks.
 
 ## Usage
 
@@ -24,7 +23,7 @@ exitprob_seamless(
 
 - M:
 
-  Number of active treatment arms in Phase 2 (\\M \ge 2\\).
+  Number of active treatment arms in Phase 2.
 
 - r:
 
@@ -59,7 +58,7 @@ exitprob_seamless(
 
 ## Value
 
-A list containing:
+A list containing the following components:
 
 - `exitProb`: A vector of length \\K + 1\\. The first element is the
   probability of rejection in Phase 2; the remaining elements are the
@@ -76,7 +75,7 @@ A list containing:
 
 The function assumes a multivariate normal distribution for the Wald
 statistics. The "best" arm is defined as the active arm with the largest
-score statistic at the end of Phase 2.
+Z-statistic at the end of Phase 2.
 
 **Decision Rules:**
 
@@ -92,7 +91,13 @@ score statistic at the end of Phase 2.
 - All active arms share the same information level in Phase 2.
 
 - Exactly one active arm is selected at the end of Phase 2 based on the
-  largest observed statistic.
+  largest observed Z-statistic.
+
+## References
+
+Ping Gao, Yingqiu Li. Adaptive two-stage seamless sequential design for
+clinical trials. Journal of Biopharmaceutical Statistics, 2025, 35(4),
+565-587.
 
 ## Author
 
@@ -104,20 +109,20 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 # Setup: 2 active arms vs control in phase 2; 1 selected arm vs control
 # in phase 3. Phase 3 has 2 sequential looks.
 
-# Information levels: equal spacing over 3 looks based on max 110 patients
-# per arm, SD = 1.0
+# Information levels: equal spacing over 3 looks based on a maximum of
+# 110 patients per arm, SD = 1.0
 I <- c(110 / (2 * 1.0^2) * seq(1, 3)/3)
 
 # O'Brien-Fleming critical values
-b <- c(3.776606, 2.670463, 2.180424)
+b <- c(3.776605, 2.670463, 2.180424)
 
 # Type I error under the global null hypothesis
 p0 <- exitprob_seamless(M = 2, theta = c(0, 0), K = 2, b = b, I = I)
 cumsum(p0$exitProb)
-#> [1] 0.000157278 0.006643135 0.025000008
+#> [1] 0.0001572786 0.0066431352 0.0250000087
 
 # Power under alternative: Treatment effects of 0.3 and 0.5
 p1 <- exitprob_seamless(M = 2, theta = c(0.3, 0.5), K = 2, b = b, I = I)
 cumsum(p1$exitProb)
-#> [1] 0.05477555 0.62309680 0.90160747
+#> [1] 0.05477567 0.62309681 0.90160747
 ```

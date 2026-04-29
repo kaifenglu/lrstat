@@ -68,7 +68,7 @@ adaptDesign(
 
 - theta:
 
-  The parameter value.
+  The assumed parameter value.
 
 - IMax:
 

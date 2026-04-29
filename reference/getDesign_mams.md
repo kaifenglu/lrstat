@@ -1,8 +1,8 @@
-# Power and Sample Size for Multi-Arm Multi-Stage Design
+# Power and Sample Size for a Multi-Arm Multi-Stage Design
 
 Computes either the maximum information and stopping boundaries for a
-generic multiple comparison sequential design, or the achieved power
-when the maximum information and stopping boundaries are provided.
+multi-arm multi-stage design, or the achieved power when the maximum
+information and stopping boundaries are provided.
 
 ## Usage
 
@@ -56,7 +56,7 @@ getDesign_mams(
 - corr_known:
 
   Logical. If `TRUE`, the correlation between Wald statistics is derived
-  from the randomization ratio `r` as \\r / (r + 1)\\. If `FALSE`, a
+  from the randomization ratio \\r\\ as \\r / (r + 1)\\. If `FALSE`, a
   conservative correlation of 0 is used.
 
 - kMax:
@@ -105,17 +105,17 @@ getDesign_mams(
 
 - spendingTime:
 
-  A numeric vector of length \\kMax\\ specifying the error spending time
+  A numeric vector of length `kMax` specifying the error spending time
   at each analysis. Values must be strictly increasing and ends at 1. If
   omitted, defaults to `informationRates`.
 
 ## Value
 
-An S3 object of class `mams` with these components:
+An S3 object of class `mams` with the following components:
 
 - `overallResults`: A data frame containing:
 
-  - `overallReject`: Overall probability of rejecting the null
+  - `overallReject`: Overall probability of rejecting the global null
     hypothesis.
 
   - `alpha`: Overall significance level.
@@ -124,7 +124,8 @@ An S3 object of class `mams` with these components:
 
   - `r`: Randomization ratio per active arm versus control.
 
-  - `corr_known`: Whether the phase-2 correlation was assumed known.
+  - `corr_known`: Whether the correlation among Wald statistics was
+    assumed known.
 
   - `kMax`: Number of stages.
 
@@ -135,7 +136,7 @@ An S3 object of class `mams` with these components:
 
   - `informationRates`: Information rates at each analysis.
 
-  - `efficacyBounds`: Efficacy boundaries on the Z-scale.
+  - `efficacyBounds`: Efficacy boundaries on the max Z-scale.
 
   - `rejectPerStage`: Probability of efficacy stopping at each stage.
 
@@ -151,7 +152,7 @@ An S3 object of class `mams` with these components:
     control at each analysis.
 
   - `efficacyStopping`: Indicator of whether efficacy stopping is
-    permitted.
+    permitted at each stage.
 
 - `settings`: A list of input settings:
 
@@ -163,6 +164,17 @@ An S3 object of class `mams` with these components:
   - `userAlphaSpending`: User-specified alpha spending values.
 
   - `spendingTime`: Error-spending times at each analysis.
+
+- `byLevelBounds`: A data frame containing the efficacy boundaries for
+  each level of testing (i.e., number of active arms remaining) and each
+  stage. Columns include:
+
+  - `level`: Number of active arms remaining (1 to \\M\\).
+
+  - `stage`: Stage index (1 to `kMax`).
+
+  - `efficacyBounds`: Efficacy boundaries on the max Z-scale for the
+    given level and stage.
 
 ## Details
 

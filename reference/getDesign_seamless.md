@@ -1,8 +1,8 @@
-# Power and Sample Size for Two-Stage Seamless Sequential Design
+# Power and Sample Size for a Phase 2/3 Seamless Design
 
 Computes either the maximum information and stopping boundaries for a
-generic two-stage seamless sequential design, or the achieved power when
-the maximum information and stopping boundaries are provided.
+phase 2/3 seamless design, or the achieved power when the maximum
+information and stopping boundaries are provided.
 
 ## Usage
 
@@ -57,7 +57,7 @@ getDesign_seamless(
 - corr_known:
 
   Logical. If `TRUE`, the correlation between Wald statistics in Phase 2
-  is derived from the randomization ratio `r` as \\r / (r + 1)\\. If
+  is derived from the randomization ratio \\r\\ as \\r / (r + 1)\\. If
   `FALSE`, a conservative correlation of 0 is used.
 
 - K:
@@ -113,7 +113,7 @@ getDesign_seamless(
 
 ## Value
 
-An S3 object of class `seamless` with these components:
+An S3 object of class `seamless` with the following components:
 
 - `overallResults`: A data frame containing:
 
@@ -159,14 +159,14 @@ An S3 object of class `seamless` with these components:
 
   - `theta`: Parameter values for the active arms.
 
-  - `selectAsBest`: Probability an arm is selected as best in at the end
-    of phase 2.
+  - `selectAsBest`: Probability an arm is selected as best at the end of
+    phase 2.
 
   - `powerByArm`: Probability of rejecting the null for each arm by
     trial end.
 
   - `condPowerByArm`: Conditional power for each arm given it was
-    selected as best at the end of phase 2.
+    selected as the best at the end of phase 2.
 
 - `settings`: A list of input settings:
 

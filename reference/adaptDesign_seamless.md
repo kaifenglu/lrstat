@@ -1,4 +1,4 @@
-# Adaptive Two-Stage Seamless Sequential Design
+# Adaptive Phase 2/3 Seamless Design
 
 Calculates the conditional power for specified incremental information,
 given the interim results, parameter value, data-dependent changes in
@@ -15,7 +15,7 @@ adaptDesign_seamless(
   betaNew = NA_real_,
   INew = NA_real_,
   M = NA_integer_,
-  r = NA_real_,
+  r = 1,
   corr_known = TRUE,
   L = NA_integer_,
   zL = NA_real_,
@@ -48,7 +48,7 @@ adaptDesign_seamless(
 
 - INew:
 
-  The maximum information for any active arm versus the common control
+  The maximum information for the active arm versus the common control
   in the secondary trial. Either `betaNew` or `INew` should be provided,
   while the other must be missing.
 
@@ -64,7 +64,7 @@ adaptDesign_seamless(
 - corr_known:
 
   Logical. If `TRUE`, the correlation between Wald statistics in Phase 2
-  is derived from the randomization ratio `r` as \\r / (r + 1)\\. If
+  is derived from the randomization ratio \\r\\ as \\r / (r + 1)\\. If
   `FALSE`, a conservative correlation of 0 is used.
 
 - L:
@@ -77,11 +77,12 @@ adaptDesign_seamless(
 
 - theta:
 
-  The treatment effect for the selected arm versus the common control.
+  The assumed treatment effect for the selected arm versus the common
+  control.
 
 - IMax:
 
-  Maximum information for any active arm versus the common control for
+  Maximum information for the active arm versus the common control for
   the original trial. Must be provided.
 
 - K:

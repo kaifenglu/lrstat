@@ -1,4 +1,4 @@
-# Conditional Power for Multi-Arm Multi-Stage Design
+# Conditional Power for a Multi-Arm Multi-Stage Design
 
 Obtains the conditional power for specified incremental information
 given the interim results, parameter values, and data-dependent changes
@@ -11,7 +11,7 @@ the number and spacing of interim looks.
 getCP_mams(
   INew = NA_real_,
   M = NA_integer_,
-  r = NA_real_,
+  r = 1,
   corr_known = TRUE,
   L = NA_integer_,
   zL = NA_real_,
@@ -29,7 +29,7 @@ getCP_mams(
   MullerSchafer = FALSE,
   MNew = NA_integer_,
   selected = NA_integer_,
-  rNew = NA_real_,
+  rNew = 1,
   kNew = NA_integer_,
   informationRatesNew = NA_real_,
   efficacyStoppingNew = NA_integer_,
@@ -72,8 +72,8 @@ getCP_mams(
 
 - theta:
 
-  A vector of length \\M\\ representing the true treatment effects for
-  each active arm versus the common control. The global null is
+  A vector of length \\M\\ representing the assumed treatment effects
+  for each active arm versus the common control. The global null is
   \\\theta_i = 0\\ for all \\i\\, and alternatives are one-sided:
   \\\theta_i \> 0\\ for at least one \\i = 1, \ldots, M\\.
 

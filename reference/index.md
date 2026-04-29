@@ -13,7 +13,7 @@
 - [`adaptDesign_mams()`](https://kaifenglu.github.io/lrstat/reference/adaptDesign_mams.md)
   : Adaptive Multi-Arm Multi-Stage Design
 - [`adaptDesign_seamless()`](https://kaifenglu.github.io/lrstat/reference/adaptDesign_seamless.md)
-  : Adaptive Two-Stage Seamless Sequential Design
+  : Adaptive Phase 2/3 Seamless Design
 - [`aml`](https://kaifenglu.github.io/lrstat/reference/aml.md) : Acute
   myelogenous leukemia survival data from the survival package
 - [`assess_phregr()`](https://kaifenglu.github.io/lrstat/reference/assess_phregr.md)
@@ -34,9 +34,9 @@
 - [`exitprob()`](https://kaifenglu.github.io/lrstat/reference/exitprob.md)
   : Stagewise Exit Probabilities
 - [`exitprob_mams()`](https://kaifenglu.github.io/lrstat/reference/exitprob_mams.md)
-  : Exit Probabilities for Multi-Arm Multi-Stage Design
+  : Exit Probabilities for a Multi-Arm Multi-Stage Design
 - [`exitprob_seamless()`](https://kaifenglu.github.io/lrstat/reference/exitprob_seamless.md)
-  : Exit Probabilities for Two-Stage Seamless Sequential Design
+  : Exit Probabilities for a Phase 2/3 Seamless Design
 - [`fadjpbon()`](https://kaifenglu.github.io/lrstat/reference/fadjpbon.md)
   : Adjusted p-Values for Bonferroni-Based Graphical Approaches
 - [`fadjpdun()`](https://kaifenglu.github.io/lrstat/reference/fadjpdun.md)
@@ -62,11 +62,10 @@
 - [`getADCI()`](https://kaifenglu.github.io/lrstat/reference/getADCI.md)
   : Confidence Interval After Adaptation
 - [`getADCI_mams()`](https://kaifenglu.github.io/lrstat/reference/getADCI_mams.md)
-  : Confidence Interval After Adaptation for Multi-Arm Multi-Stage
+  : Confidence Interval After Adaptation for a Multi-Arm Multi-Stage
   Design
 - [`getADCI_seamless()`](https://kaifenglu.github.io/lrstat/reference/getADCI_seamless.md)
-  : Confidence Interval After Adaptation for Two-Stage Seamless
-  Sequential Design
+  : Confidence Interval After Adaptation for a Phase 2/3 Seamless Design
 - [`getADRCI()`](https://kaifenglu.github.io/lrstat/reference/getADRCI.md)
   : Repeated Confidence Interval After Adaptation
 - [`getAccrualDurationFromN()`](https://kaifenglu.github.io/lrstat/reference/getAccrualDurationFromN.md)
@@ -74,21 +73,23 @@
 - [`getBound()`](https://kaifenglu.github.io/lrstat/reference/getBound.md)
   : Efficacy Boundaries for Group Sequential Design
 - [`getBound_mams()`](https://kaifenglu.github.io/lrstat/reference/getBound_mams.md)
-  : Efficacy Boundaries for Multi-Arm Multi-Stage Design
+  : Efficacy Boundaries for a Multi-Arm Multi-Stage Design
 - [`getBound_seamless()`](https://kaifenglu.github.io/lrstat/reference/getBound_seamless.md)
-  : Efficacy Boundaries for Two-Stage Seamless Sequential Design
+  : Efficacy Boundaries for a Phase 2/3 Seamless Design
 - [`getCI()`](https://kaifenglu.github.io/lrstat/reference/getCI.md) :
   Confidence Interval After Trial Termination
 - [`getCI_mams()`](https://kaifenglu.github.io/lrstat/reference/getCI_mams.md)
-  : Confidence Interval After Trial Termination
+  : Confidence Interval After Trial Termination for a Multi-Arm
+  Multi-Stage Design
 - [`getCI_seamless()`](https://kaifenglu.github.io/lrstat/reference/getCI_seamless.md)
-  : Confidence Interval After Trial Termination for Seamless Design
+  : Confidence Interval After Trial Termination for a Phase 2/3 Seamless
+  Design
 - [`getCP()`](https://kaifenglu.github.io/lrstat/reference/getCP.md) :
   Conditional Power Allowing for Varying Parameter Values
 - [`getCP_mams()`](https://kaifenglu.github.io/lrstat/reference/getCP_mams.md)
-  : Conditional Power for Multi-Arm Multi-Stage Design
+  : Conditional Power for a Multi-Arm Multi-Stage Design
 - [`getCP_seamless()`](https://kaifenglu.github.io/lrstat/reference/getCP_seamless.md)
-  : Conditional Power for Two-Stage Seamless Sequential Design
+  : Conditional Power for a Phase 2/3 Seamless Design
 - [`getDesign()`](https://kaifenglu.github.io/lrstat/reference/getDesign.md)
   : Power and Sample Size for a Generic Group Sequential Design
 - [`getDesignANOVA()`](https://kaifenglu.github.io/lrstat/reference/getDesignANOVA.md)
@@ -207,9 +208,9 @@
 - [`getDesignWilcoxon()`](https://kaifenglu.github.io/lrstat/reference/getDesignWilcoxon.md)
   : Group Sequential Design for Two-Sample Wilcoxon Test
 - [`getDesign_mams()`](https://kaifenglu.github.io/lrstat/reference/getDesign_mams.md)
-  : Power and Sample Size for Multi-Arm Multi-Stage Design
+  : Power and Sample Size for a Multi-Arm Multi-Stage Design
 - [`getDesign_seamless()`](https://kaifenglu.github.io/lrstat/reference/getDesign_seamless.md)
-  : Power and Sample Size for Two-Stage Seamless Sequential Design
+  : Power and Sample Size for a Phase 2/3 Seamless Design
 - [`getDurationFromNevents()`](https://kaifenglu.github.io/lrstat/reference/getDurationFromNevents.md)
   : Range of Accrual Duration for Target Number of Events
 - [`getNeventsFromHazardRatio()`](https://kaifenglu.github.io/lrstat/reference/getNeventsFromHazardRatio.md)

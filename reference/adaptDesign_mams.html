@@ -74,7 +74,7 @@ the error spending function, and the number and spacing of interim looks.</p>
 <span>  betaNew <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  INew <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  M <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
-<span>  r <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  r <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  corr_known <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  L <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
 <span>  zL <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
@@ -92,7 +92,7 @@ the error spending function, and the number and spacing of interim looks.</p>
 <span>  MullerSchafer <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  MNew <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
 <span>  selected <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
-<span>  rNew <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  rNew <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  kNew <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
 <span>  informationRatesNew <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  efficacyStoppingNew <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
@@ -143,7 +143,7 @@ the primary trial.</p></dd>
 
 
 <dt id="arg-theta">theta<a class="anchor" aria-label="anchor" href="#arg-theta"></a></dt>
-<dd><p>A vector of length \(M\) representing the true treatment
+<dd><p>A vector of length \(M\) representing the assumed treatment
 effects for each active arm versus the common control. The global null
 is \(\theta_i = 0\) for all \(i\), and alternatives are one-sided:
 \(\theta_i &gt; 0\) for at least one \(i = 1, \ldots, M\).</p></dd>
@@ -275,11 +275,20 @@ trial, including <code>M</code>, <code>r</code>, <code>corr_known</code>, <code>
 <code>zL</code>, <code>theta</code>, <code>maxInformation</code>, <code>kMax</code>,
 <code>informationRates</code>, <code>efficacyBounds</code>, <code>information</code>,
 <code>alpha</code>, <code>conditionalAlpha</code>, <code>conditionalPower</code>,
-and <code>MullerSchafer</code>.</p></li>
-<li><p><code>secondaryTrial</code>: A <code>design</code> object for the secondary trial.</p></li>
+<code>MullerSchafer</code>, and <code>byLevelBounds</code>.</p></li>
+<li><p><code>secondaryTrial</code>: A list of selected information for the secondary
+trial, including <code>overallReject</code>, <code>alpha</code>, <code>M</code>, <code>r</code>,
+<code>selected</code>, <code>corr_known</code>, <code>kMax</code>, <code>maxInformation</code>,
+<code>informationRates</code>, <code>cumulativeRejection</code>,
+<code>cumulativeAlphaSpent</code>, <code>information</code>,
+<code>typeAlphaSpending</code>, <code>parameterAlphaSpending</code>,
+<code>spendingTime</code>, and <code>byHypothesisBounds</code>.</p></li>
 <li><p><code>integratedTrial</code>: A list of selected information for the integrated
-trial, including <code>kMax</code>, <code>maxInformation</code>, <code>informationRates</code>,
-<code>efficacyBounds</code>, and <code>information</code>.</p></li>
+trial, including <code>M</code>, <code>r</code>, <code>corr_known</code>, <code>MNew</code>,
+<code>rNew</code>, <code>selected</code>, <code>L</code>, <code>zL</code>, <code>theta</code>,
+<code>maxInformation</code>, <code>kMax</code>, <code>informationRates</code>,
+<code>efficacyBounds</code>, <code>information</code>, and
+<code>byIntersectionBounds</code>.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

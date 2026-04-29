@@ -1,7 +1,7 @@
-# Confidence Interval After Trial Termination
+# Confidence Interval After Trial Termination for a Multi-Arm Multi-Stage Design
 
-Obtains the p-value, median unbiased point estimate, and confidence
-interval after the end of a group sequential trial.
+Obtains the p-value, conservative point estimate, and confidence
+interval after the end of a multi-arm multi-stage trial.
 
 ## Usage
 
@@ -36,7 +36,7 @@ getCI_mams(
 - corr_known:
 
   Logical. If `TRUE`, the correlation between Wald statistics is derived
-  from the randomization ratio `r` as \\r / (r + 1)\\. If `FALSE`, a
+  from the randomization ratio \\r\\ as \\r / (r + 1)\\. If `FALSE`, a
   conservative correlation of 0 is used.
 
 - L:
@@ -58,15 +58,15 @@ getCI_mams(
 - efficacyStopping:
 
   Indicators of whether efficacy stopping is allowed at each stage up to
-  look `L`. Defaults to true if left unspecified.
+  look `L`. Defaults to `TRUE` if left unspecified.
 
 - criticalValues:
 
-  The matrix of by-level upper boundaries on the z-test statistic scale
-  for efficacy stopping up to look `L`. The first column is for level
-  `M`, the second column is for level `M - 1`, and so on, with the last
-  column for level 1. If left unspecified, the critical values will be
-  computed based on the specified alpha spending function.
+  The matrix of by-level upper boundaries on the max z-test statistic
+  scale for efficacy stopping up to look `L`. The first column is for
+  level `M`, the second column is for level `M - 1`, and so on, with the
+  last column for level 1. If left unspecified, the critical values will
+  be computed based on the specified alpha spending function.
 
 - alpha:
 
@@ -74,13 +74,13 @@ getCI_mams(
 
 - typeAlphaSpending:
 
-  The type of alpha spending. One of the following: `"OF"` for
-  O'Brien-Fleming boundaries, `"P"` for Pocock boundaries, `"WT"` for
-  Wang & Tsiatis boundaries, `"sfOF"` for O'Brien-Fleming type spending
-  function, `"sfP"` for Pocock type spending function, `"sfKD"` for Kim
-  & DeMets spending function, `"sfHSD"` for Hwang, Shi & DeCani spending
-  function, `"user"` for user defined spending, and `"none"` for no
-  early efficacy stopping. Defaults to `"sfOF"`.
+  The type of alpha spending for the trial. One of the following: `"OF"`
+  for O'Brien-Fleming boundaries, `"P"` for Pocock boundaries, `"WT"`
+  for Wang & Tsiatis boundaries, `"sfOF"` for O'Brien-Fleming type
+  spending function, `"sfP"` for Pocock type spending function, `"sfKD"`
+  for Kim & DeMets spending function, `"sfHSD"` for Hwang, Shi & DeCani
+  spending function, and `"none"` for no early efficacy stopping.
+  Defaults to `"sfOF"`.
 
 - parameterAlphaSpending:
 
@@ -98,17 +98,24 @@ A data frame with the following components:
 
 - `level`: Number of individual hypotheses considered for multiplicity.
 
-- `index`: The index of the treatment arm among the M active arms.
+- `index`: The treatment arm with max Z among the active arms.
 
 - `pvalue`: p-value for rejecting the null hypothesis.
 
-- `thetahat`: Median unbiased point estimate of the parameter.
+- `thetahat`: Point estimate of the parameter.
 
 - `cilevel`: Confidence interval level.
 
 - `lower`: Lower bound of confidence interval.
 
 - `upper`: Upper bound of confidence interval.
+
+## Details
+
+If `typeAlphaSpending` is `"OF"`, `"P"`, `"WT"`, or `"none"`, then
+`informationRates`, `efficacyStopping`, and `spendingTime` must be of
+full length `kMax`, and `informationRates` and `spendingTime` must end
+with 1.
 
 ## References
 
