@@ -2788,7 +2788,7 @@ ListCpp adaptDesigncpp(double betaNew,
 //' @param L The interim adaptation look of the primary trial.
 //' @param zL The z-test statistic at the interim adaptation look of
 //'   the primary trial.
-//' @param theta The parameter value.
+//' @param theta The assumed parameter value.
 //' @param IMax The maximum information of the primary trial. Must be provided.
 //' @param kMax The maximum number of stages of the primary trial.
 //' @param informationRates The information rates of the primary trial.
