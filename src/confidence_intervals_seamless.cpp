@@ -207,9 +207,10 @@ DataFrameCpp getCI_seamless_cpp(
 }
 
 
-//' @title Confidence Interval After Trial Termination for Seamless Design
-//' @description Obtains the p-value, median point estimate, and
-//' confidence interval after the end of a group sequential trial.
+//' @title Confidence Interval After Trial Termination for a Phase 2/3
+//' Seamless Design
+//' @description Obtains the p-value, point estimate, and
+//' confidence interval after the end of a phase 2/3 seamless trial.
 //'
 //' @param M Number of active treatment arms in Phase 2.
 //' @param r Randomization ratio of each active arm to the common control
@@ -225,7 +226,7 @@ DataFrameCpp getCI_seamless_cpp(
 //' @param informationRates The information rates up to look \code{L}.
 //' @param efficacyStopping Indicators of whether efficacy stopping is
 //'   allowed at each stage up to look \code{L}.
-//'   Defaults to true if left unspecified.
+//'   Defaults to \code{TRUE} if left unspecified.
 //' @param criticalValues The upper boundaries on the max z-test statistic
 //'   scale for Phase 2 and the z-test statistics for the selected arm
 //'   in Phase 3 up to look \code{L}. If missing, boundaries will be
@@ -247,11 +248,17 @@ DataFrameCpp getCI_seamless_cpp(
 //'   Defaults to missing, in which case, it is the same as
 //'   \code{informationRates}.
 //'
+//' @details
+//' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
+//' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
+//' and \code{spendingTime} must be of full length \eqn{K + 1}, and
+//' \code{informationRates} and \code{spendingTime} must end with 1.
+//'
 //' @return A data frame with the following components:
 //'
 //' * \code{pvalue}: p-value for rejecting the null hypothesis.
 //'
-//' * \code{thetahat}: Median unbiased point estimate of the parameter.
+//' * \code{thetahat}: Point estimate of the parameter.
 //'
 //' * \code{cilevel}: Confidence interval level.
 //'
@@ -686,23 +693,23 @@ DataFrameCpp getADCI_seamless_cpp(
 }
 
 
-//' @title Confidence Interval After Adaptation for Two-Stage Seamless
-//' Sequential Design
+//' @title Confidence Interval After Adaptation for a Phase 2/3 Seamless
+//' Design
 //' @description Obtains the p-value, conservative point estimate, and
-//' confidence interval after the end of an adaptive two-stage seamless
-//' sequential design.
+//' confidence interval after the end of an adaptive phase 2/3 seamless
+//' design.
 //'
 //' @param M Number of active treatment arms in Phase 2.
 //' @param r Randomization ratio of each active arm to the common control
 //'   in Phase 2.
 //' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-//'   statistics in Phase 2 is derived from the randomization ratio \code{r}
+//'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 //'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 //'   0 is used.
 //' @param L The interim adaptation look in Phase 3.
 //' @param zL The z-test statistic at the interim adaptation look of
 //'   Phase 3.
-//' @param IMax Maximum information for any active arm versus the common
+//' @param IMax Maximum information for the active arm versus the common
 //'   control for the original trial. Must be provided.
 //' @param K Number of sequential looks in Phase 3.
 //' @param informationRates A numeric vector of information rates fixed
@@ -738,16 +745,17 @@ DataFrameCpp getADCI_seamless_cpp(
 //' @param Lc The termination look of the integrated trial.
 //' @param zLc The z-test statistic at the termination look of the
 //'   integrated trial.
-//' @param INew The maximum information for any active arm versus the common
+//' @param INew The maximum information for the active arm versus the common
 //'   control in the secondary trial.
-//' @param informationRatesNew The spacing of looks of the secondary trial
-//'   up to look \code{L2}.
+//' @param informationRatesNew The spacing of looks of the secondary trial.
 //' @param efficacyStoppingNew The indicators of whether efficacy stopping is
-//'   allowed at each look of the secondary trial up to look \code{L2}.
+//'   allowed at each look of the secondary trial.
 //'   Defaults to \code{TRUE} if left unspecified.
 //' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 //'   trial. One of the following:
 //'   \code{"OF"} for O'Brien-Fleming boundaries,
+//'   \code{"P"} for Pocock boundaries,
+//'   \code{"WT"} for Wang & Tsiatis boundaries,
 //'   \code{"sfOF"} for O'Brien-Fleming type spending function,
 //'   \code{"sfP"} for Pocock type spending function,
 //'   \code{"sfKD"} for Kim & DeMets spending function,
@@ -755,17 +763,24 @@ DataFrameCpp getADCI_seamless_cpp(
 //'   \code{"none"} for no early efficacy stopping.
 //'   Defaults to \code{"sfOF"}.
 //' @param parameterAlphaSpendingNew The parameter value of alpha spending
-//'   for the secondary trial. Corresponds to
+//'   for the secondary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
 //'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
-//' @param spendingTimeNew The error spending time of the secondary trial
-//'   up to look \code{L2}. Defaults to missing, in which case, it is
+//' @param spendingTimeNew The error spending time of the secondary trial.
+//'   Defaults to missing, in which case, it is
 //'   the same as \code{informationRatesNew}.
+//'
+//' @details
+//' If typeAlphaSpendingNew is \code{"OF"}, \code{"P"}, \code{"WT"},
+//' or \code{"none"}, then
+//' \code{informationRatesNew}, \code{efficacyStoppingNew}, and
+//' \code{spendingTimeNew} must be of full length \code{kNew}, and
+//' \code{informationRatesNew} and \code{spendingTimeNew} must end with 1.
 //'
 //' @return A data frame with the following variables:
 //'
 //' * \code{pvalue}: p-value for rejecting the null hypothesis.
 //'
-//' * \code{thetahat}: Median unbiased point estimate of the parameter.
+//' * \code{thetahat}: Point estimate of the parameter.
 //'
 //' * \code{cilevel}: Confidence interval level.
 //'
@@ -792,7 +807,7 @@ DataFrameCpp getADCI_seamless_cpp(
 // [[Rcpp::export]]
 Rcpp::DataFrame getADCI_seamless(
     const int M = NA_INTEGER,
-    const double r = NA_REAL,
+    const double r = 1,
     const bool corr_known = true,
     const int L = NA_INTEGER,
     const double zL = NA_REAL,
