@@ -444,17 +444,17 @@ double getCPcpp(
     double alphaNew = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
 
     // efficacy boundaries for secondary trial
-    auto b2 = getBoundcpp(kNew, informationRatesNew, alphaNew, asfNew,
+    auto b2 = getBoundcpp(kNew, infoRatesNew, alphaNew, asfNew,
                           parameterAlphaSpendingNew, std::vector<double>{},
                           spendTimeNew, effStoppingNew);
 
     // conditional power
     std::vector<double> mu(kNew), I2(kNew);
+    double IL = IMax * infoRates[L - 1];
     for (size_t l = 0; l < kNew; ++l) {
-      double r = (IMax * infoRates[L - 1]) /
-        (IMax * infoRates[L - 1] + INew * informationRatesNew[l]);
+      I2[l] = INew * infoRatesNew[l];
+      double r = IL / (IL + I2[l]);
       mu[l] = (theta1[l + 1] - r * theta1[0]) / (1.0 - r);
-      I2[l] = INew * informationRatesNew[l];
     }
 
     std::vector<double> w1(kNew, std::sqrt(varianceRatio));
