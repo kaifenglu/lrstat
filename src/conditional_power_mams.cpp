@@ -187,6 +187,7 @@ double getCP_mams_cpp(
         throw std::invalid_argument("informationRatesNew must be increasing");
       if (informationRatesNew[kNew-1] != 1.0)
         throw std::invalid_argument("informationRatesNew must end with 1");
+      infoRatesNew = informationRatesNew; // copy
     } else {
       for (size_t i = 0; i < kNew; ++i)
         infoRatesNew[i] = static_cast<double>(i+1) / static_cast<double>(kNew);
@@ -247,21 +248,17 @@ double getCP_mams_cpp(
     }
 
     if (haybittle) { // Haybittle & Peto
-      std::vector<double> u(kMax);
+      FlatMatrix b(M, kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
-        u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) critValues[i] = 6.0;
+        double* colptr = b.data_ptr() + i * M;
+        std::fill_n(colptr, M, critValues[i]);
       }
 
-      FlatMatrix b1(M, kMax);
+      double* last_col = b.data_ptr() + (kMax - 1) * M;
       auto f = [&](double x)->double {
-        u[kMax-1] = x;
-        for (size_t i = 0; i < kMax; ++i) {
-          for (size_t m = 0; m < M; ++m) {
-            b1(m, i) = u[i];
-          }
-        }
-        auto v = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b1, infoRates);
+        std::fill_n(last_col, M, x);
+        auto v = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
       };
@@ -280,13 +277,18 @@ double getCP_mams_cpp(
   FlatMatrix c1(M, k1);
   for (size_t i = 0; i < k1; ++i) {
     s1[i] = (infoRates[L + i] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
-    for (size_t m = 0; m < M; ++m) {
-      if (effStopping[L + i]) {
-        double r1 = infoRates[L - 1] / infoRates[L + i];
-        c1(m, i) = (critValues[L + i] - zL[m] * std::sqrt(r1)) / std::sqrt(1.0 - r1);
-      } else {
-        c1(m, i) = 6.0;
+    double* colptr = c1.data_ptr() + i * M; // start of column i
+    if (effStopping[L + i]) {
+      double cut = critValues[L + i];
+      double r1 = infoRates[L - 1] / infoRates[L + i];
+      double sqrt_r1 = std::sqrt(r1);
+      double denom = std::sqrt(1.0 - r1);
+      // write contiguous column
+      for (size_t m = 0; m < M; ++m) {
+        colptr[m] = (cut - zL[m] * sqrt_r1) / denom;
       }
+    } else {
+      std::fill_n(colptr, M, 6.0);
     }
   }
 
@@ -325,8 +327,8 @@ double getCP_mams_cpp(
     effStopping2 = effStoppingNew;
     if (asf2 != "none" && asf2 != "of") {
       for (size_t i = 0; i < k2; ++i) {
-        cpu0[i] = errorSpentcpp(spendTimeNew[i], c_alpha,
-                                asfNew, parameterAlphaSpendingNew);
+        cpu0[i] = errorSpentcpp(spendTimeNew[i], c_alpha, asfNew,
+                                parameterAlphaSpendingNew);
       }
     }
   }
@@ -344,20 +346,23 @@ double getCP_mams_cpp(
     sqrtIc[i] = std::sqrt(Ic[i]);
   }
 
+  std::vector<double> zscaled(MNew);
+  for (size_t j = 0; j < MNew; ++j) zscaled[j] = zL[selectedNew[j]] * sqrtIL;
+
   if (asf2 == "of") {
-    auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &zero2, &selectedNew,
-              &effStopping2, k2, c_alpha, sqrtIL, MNew, rNew, corr_known]
+    auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2, &effStopping2,
+              k2, c_alpha, MNew, rNew, corr_known]
     (double x)->double {
+      double col_const = x * sqrtIc[k2 - 1];
       for (size_t i = 0; i < k2; ++i) {
+        double* colptr = c2.data_ptr() + i * MNew;
         if (effStopping2[i]) {
+          double denom = sqrtI2[i];
           for (size_t j = 0; j < MNew; ++j) {
-            size_t m = selectedNew[j];
-            c2(j, i) = (x * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[i];
+            colptr[j] = (col_const - zscaled[j]) / denom;
           }
         } else {
-          for (size_t j = 0; j < MNew; ++j) {
-            c2(j, i) = 6.0;
-          }
+          std::fill_n(colptr, MNew, 6.0);
         }
       }
 
@@ -367,26 +372,28 @@ double getCP_mams_cpp(
     };
 
     double cof = brent(g, 0.0, 6.0, 1e-6);
+    double col_const = cof * sqrtIc[k2 - 1];
     for (size_t i = 0; i < k2; ++i) {
+      double* colptr = c2.data_ptr() + i * MNew;
       if (effStopping2[i]) {
+        double denom = sqrtI2[i];
         for (size_t j = 0; j < MNew; ++j) {
-          size_t m = selectedNew[j];
-          c2(j, i) = (cof * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[i];
+          colptr[j] = (col_const - zscaled[j]) / denom;
         }
       } else {
-        for (size_t j = 0; j < MNew; ++j) {
-          c2(j, i) = 6.0;
-        }
+        std::fill_n(colptr, MNew, 6.0);
       }
     }
   } else if (asf2 == "none") {
-    c2.fill(6.0);
-    auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &zero2, &selectedNew,
-              k2, c_alpha, sqrtIL, MNew, rNew, corr_known]
+    double denom = sqrtI2[k2 - 1];
+
+    auto g = [&c2, &I2, &sqrtIc, &zscaled, &zero2,
+              denom, k2, c_alpha, MNew, rNew, corr_known]
     (double x)->double {
+      double* colptr = c2.data_ptr() + (k2 - 1) * MNew;
+      double col_const = x * sqrtIc[k2 - 1];
       for (size_t j = 0; j < MNew; ++j) {
-        size_t m = selectedNew[j];
-        c2(j, k2 - 1) = (x * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[k2 - 1];
+        colptr[j] = (col_const - zscaled[j]) / denom;
       }
 
       auto v = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, k2, c2, I2);
@@ -395,21 +402,24 @@ double getCP_mams_cpp(
     };
 
     double cof = brent(g, 0.0, 6.0, 1e-6);
+    double* colptr = c2.data_ptr() + (k2 - 1) * MNew;
+    double col_const = cof * sqrtIc[k2 - 1];
     for (size_t j = 0; j < MNew; ++j) {
-      size_t m = selectedNew[j];
-      c2(j, k2 - 1) = (cof * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[k2 - 1];
+      colptr[j] = (col_const - zscaled[j]) / denom;
     }
   } else {
     for (size_t i = 0; i < k2; ++i) {
       if (!effStopping2[i]) continue;
+      double denom = sqrtI2[i];
 
-      auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &cpu0, &zero2, &selectedNew,
-                sqrtIL, i, MNew, rNew, corr_known]
+      auto g = [&c2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2,
+                denom, i, MNew, rNew, corr_known]
       (double x)->double {
+        double col_const = x * sqrtIc[i];
+        double* colptr = c2.data_ptr() + i * MNew;
         // update critical values of the secondary trial at current look
         for (size_t j = 0; j < MNew; ++j) {
-          size_t m = selectedNew[j];
-          c2(j, i) = (x * sqrtIc[i] - zL[m] * sqrtIL) / sqrtI2[i];
+          colptr[j] = (col_const - zscaled[j]) / denom;
         }
 
         auto v = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, i + 1, c2, I2);
@@ -418,9 +428,10 @@ double getCP_mams_cpp(
       };
 
       double cof = brent(g, 0.0, 6.0, 1e-6);
+      double col_const = cof * sqrtIc[i];
+      double* colptr = c2.data_ptr() + i * MNew;
       for (size_t j = 0; j < MNew; ++j) {
-        size_t m = selectedNew[j];
-        c2(j, i) = (cof * sqrtIc[i] - zL[m] * sqrtIL) / sqrtI2[i];
+        colptr[j] = (col_const - zscaled[j]) / denom;
       }
     }
   }
