@@ -171,6 +171,7 @@ double getCP_seamless_cpp(
         throw std::invalid_argument("informationRatesNew must be increasing");
       if (informationRatesNew.back() != 1.0)
         throw std::invalid_argument("informationRatesNew must end with 1");
+      infoRatesNew = informationRatesNew; // copy
     } else {
       for (size_t i = 0; i < kNew; ++i)
         infoRatesNew[i] = static_cast<double>(i+1) / static_cast<double>(kNew);
@@ -232,16 +233,14 @@ double getCP_seamless_cpp(
     }
 
     if (haybittle) { // Haybittle & Peto
-      std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
-        u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) critValues[i] = 6.0;
       }
 
       auto f = [&](double aval)->double {
-        u[kMax-1] = aval;
+        critValues[kMax-1] = aval;
         ListCpp probs = exitprob_seamless_cpp(
-          M, r, zero, corr_known, K, u, infoRates);
+          M, r, zero, corr_known, K, critValues, infoRates);
         auto v = probs.get<std::vector<double>>("exitProb");
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
@@ -270,12 +269,12 @@ double getCP_seamless_cpp(
 
   double result = 0.0;
   if (!MullerSchafer) {
-    std::vector<double> mu(k1, theta), I2(k1);
+    std::vector<double> theta1(k1, theta), I2(k1);
     for (size_t l = 0; l < k1; ++l) {
       I2[l] = INew * t1[l];
     }
 
-    ListCpp probs = exitprobcpp(b1, a1, mu, I2);
+    ListCpp probs = exitprobcpp(b1, a1, theta1, I2);
     auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
     result = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
   } else {
@@ -287,14 +286,14 @@ double getCP_seamless_cpp(
     double alphaNew = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
 
     // efficacy boundaries for secondary trial
-    auto b2 = getBoundcpp(kNew, informationRatesNew, alphaNew, asfNew,
+    auto b2 = getBoundcpp(kNew, infoRatesNew, alphaNew, asfNew,
                           parameterAlphaSpendingNew, std::vector<double>{},
                           spendTimeNew, effStoppingNew);
 
     // conditional power
-    std::vector<double> mu(kNew, theta), I2(kNew);
+    std::vector<double> theta2(kNew, theta), I2(kNew);
     for (size_t l = 0; l < kNew; ++l) {
-      I2[l] = INew * informationRatesNew[l];
+      I2[l] = INew * infoRatesNew[l];
     }
 
     std::string bsfNew = "none";
@@ -302,7 +301,7 @@ double getCP_seamless_cpp(
     std::vector<unsigned char> futStoppingNew(kNew, 1);
     std::vector<double> w1(kNew, 1.0);
 
-    ListCpp out = getPower(alphaNew, kNew, b2, mu, I2, bsfNew,
+    ListCpp out = getPower(alphaNew, kNew, b2, theta2, I2, bsfNew,
                            parameterBetaSpendingNew, spendTimeNew,
                            futStoppingNew, w1);
     result = out.get<double>("power");
