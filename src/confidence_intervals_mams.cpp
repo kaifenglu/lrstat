@@ -192,27 +192,28 @@ DataFrameCpp getCI_mams_cpp(
   double tol = 1.0e-6;
 
   // level-M test boundary
-  auto b1col = flatmatrix_get_column(bMat, 0);
+  const double* b1col_ptr = bMat.data_ptr(); // column 0
   FlatMatrix b1_matrix(1, L);
   for (size_t j = 0; j < L; ++j) {
-    b1_matrix(0, j) = b1col[j];
+    b1_matrix(0, j) = b1col_ptr[j];
   }
 
+  std::vector<double> zL_vec;           // reused for different levels
+  std::vector<double> zL1_vec(1);       // reuse single-element vector
   for (size_t h = 0; h < M; ++h) {
     level[h] = M - h;
     index[h] = order[h] + 1; // 1-based index for R
     double zLmax = zL[order[h]];
-    auto bcol = flatmatrix_get_column(bMat, h);
 
+    const double* bcol_ptr = bMat.data_ptr() + h * bMat.nrow;
     FlatMatrix b_matrix(level[h], L);
     for (size_t j = 0; j < L; ++j) {
-      for (size_t i = 0; i < level[h]; ++i) {
-        b_matrix(i, j) = bcol[j];
-      }
+      double* colptr = b_matrix.data_ptr() + j * b_matrix.nrow;
+      std::fill_n(colptr, level[h], bcol_ptr[j]);
     }
 
     // p-value at theta = 0
-    std::vector<double> zL_vec(level[h], zLmax);
+    zL_vec.assign(level[h], zLmax);
     pvalue[h] = f_pvalue_mams(0.0, level[h], r, corr_known, L, zL_vec,
                               b_matrix, I);
 
@@ -234,7 +235,7 @@ DataFrameCpp getCI_mams_cpp(
     lower[h] = brent(f_lower, left, thetahat[h], tol);
 
     // upper bound: solve f_pvalue(theta) - (1 + cilevel)/2 = 0
-    std::vector<double> zL1_vec(1, zLmax);
+    zL1_vec[0] = zLmax;
     auto f_upper = [&](double theta)->double {
       return f_pvalue_mams(theta, 1, r, corr_known, L, zL1_vec,
                            b1_matrix, I) - target_upper;
@@ -404,9 +405,13 @@ std::pair<size_t, double> f_bwimage_mams(const double theta,
 
   FlatMatrix b1(M, k1);
   for (size_t i = 0; i < k1; ++i) {
+    double r1 = I[L - 1] / I[L + i];
+    double sqrt_r1 = std::sqrt(r1);
+    double denom = std::sqrt(1.0 - r1);
+    double cut = b[L + i];
+    double* colptr = b1.data_ptr() + i * M; // contiguous column start
     for (size_t m = 0; m < M; ++m) {
-      double r1 = I[L - 1] / I[L + i];
-      b1(m, i) = (b[L + i] - zL[m] * std::sqrt(r1)) / std::sqrt(1.0 - r1);
+      colptr[m] = (cut - zL[m] * sqrt_r1) / denom;
     }
   }
 
@@ -422,12 +427,13 @@ std::pair<size_t, double> f_bwimage_mams(const double theta,
 
   // find zJ
   double r1 = I[L - 1] / I[L + j - 1];
+  std::vector<double> zj(M);
   auto f = [&](double z)->double {
-    std::vector<double> zj(M);
+    double sqrt_r1 = std::sqrt(r1);
+    double denom = std::sqrt(1.0 - r1);
     for (size_t m = 0; m < M; ++m) {
-      zj[m] = (z - zL[m] * std::sqrt(r1)) / std::sqrt(1.0 - r1);
+      zj[m] = (z - zL[m] * sqrt_r1) / denom;
     }
-
     return f_pvalue_mams(theta, M, r, corr_known, j, zj, b1, I1) - astar;
   };
 
@@ -467,9 +473,8 @@ double f_bwpvalue_mams(const double theta,
   std::vector<double> zJ(M, bw.second);
   FlatMatrix bMat(M, kMax);
   for (size_t i = 0; i < kMax; ++i) {
-    for (size_t m = 0; m < M; ++m) {
-      bMat(m, i) = b[i];
-    }
+    double* colptr = bMat.data_ptr() + i * M;
+    std::fill_n(colptr, M, b[i]);
   }
 
   return f_pvalue_mams(theta, M, r, corr_known, J, zJ, bMat, I);
@@ -782,7 +787,16 @@ DataFrameCpp getADCI_mams_cpp(
   double target_lower = (1.0 - cilevel) / 2.0;
   double target_upper = (1.0 + cilevel) / 2.0;
 
+  // build map from arm index -> position in selectedNew (or -1)
+  std::vector<int> idx_in_selected(M, -1);
+  for (size_t t = 0; t < selectedNew.size(); ++t)
+    idx_in_selected[selectedNew[t]] = static_cast<int>(t);
 
+  // reusable scratch buffers
+  std::vector<double> zL1; zL1.reserve(M);
+  std::vector<double> zL2; zL2.reserve(MNew);
+  std::vector<double> zL_1(1), zL2_1(1);
+  FlatMatrix c2_1(1, k2);
   for (size_t h = 0; h < MNew; ++h) {
     level[h] = MNew - h;
     index[h] = selectedNew[order[h]] + 1; // 1-based index in the original trial
@@ -790,18 +804,20 @@ DataFrameCpp getADCI_mams_cpp(
     // obtain the boundaries after excluding theta values that ranked higher
     std::vector<size_t> primary;
     std::vector<size_t> selectedNew2;
+    primary.reserve(M);
+    selectedNew2.reserve(MNew);
     for (size_t j = 0; j < M; ++j) {
-      auto it = std::find(selectedNew.begin(), selectedNew.end(), j);
-      if (it != selectedNew.end()) { // found in selectedNew
-        size_t pos = std::distance(selectedNew.begin(), it);
+      int pos = idx_in_selected[j];
+      if (pos >= 0) {
+        // pos refers to index in selectedNew; check whether its order is >= h
         for (size_t i = h; i < MNew; ++i) {
-          if (pos == order[i]) {
+          if (pos == static_cast<int>(order[i])) {
             selectedNew2.push_back(j);
             primary.push_back(j);
             break;
           }
         }
-      } else { // not found in selectedNew
+      } else {
         primary.push_back(j);
       }
     }
@@ -814,21 +830,24 @@ DataFrameCpp getADCI_mams_cpp(
     // compute conditional alpha for MAMS with the given M1 hypotheses
     FlatMatrix c1(M1, k1);
     for (size_t i = 0; i < k1; ++i) {
-      for (size_t j = 0; j < M1; ++j) {
-        size_t m = primary[j];
-        if (effStopping[L + i]) {
-          double r1 = infoRates[L - 1] / infoRates[L + i];
-          c1(j, i) = (critValues[L + i] - zL[m] * std::sqrt(r1)) /
-            std::sqrt(1.0 - r1);
-        } else {
-          c1(j, i) = 6.0;
+      double* colptr = c1.data_ptr() + i * M1;
+      if (effStopping[L + i]) {
+        double crit = critValues[L + i];
+        double r1 = infoRates[L - 1] / infoRates[L + i];
+        double sqrt_r1 = std::sqrt(r1);
+        double denom = std::sqrt(1.0 - r1);
+        for (size_t j = 0; j < M1; ++j) {
+          size_t m = primary[j];
+          colptr[j] = (crit - zL[m] * sqrt_r1) / denom;
         }
+      } else {
+        std::fill_n(colptr, M1, 6.0);
       }
     }
 
     // conditional type I error
-    std::vector<double> zero(M1, 0.0);
-    auto v0 = exitprob_mams_cpp(M1, r, zero, corr_known, k1, c1, I1);
+    std::vector<double> zero1(M1, 0.0);
+    auto v0 = exitprob_mams_cpp(M1, r, zero1, corr_known, k1, c1, I1);
     double c_alpha = std::accumulate(v0.begin(), v0.end(), 0.0);
 
     std::vector<double> cpu0(k2);
@@ -843,25 +862,27 @@ DataFrameCpp getADCI_mams_cpp(
       }
     }
 
-
     std::vector<double> zero2(M2, 0.0);
     FlatMatrix c2(M2, k2);
     c2.fill(6.0);
 
+    std::vector<double> zscaled(M2);
+    for (size_t j = 0; j < M2; ++j) zscaled[j] = zL[selectedNew2[j]] * sqrtIL;
+
     if (asf2 == "of") {
-      auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &zero2, &selectedNew2,
-                &effStopping2, k2, c_alpha, sqrtIL, M2, rNew, corr_known]
+      auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2, &effStopping2,
+                k2, c_alpha, M2, rNew, corr_known]
       (double x)->double {
+        double col_const = x * sqrtIc[k2 - 1];
         for (size_t i = 0; i < k2; ++i) {
+          double* colptr = c2.data_ptr() + i * M2;
           if (effStopping2[i]) {
+            double denom = sqrtI2[i];
             for (size_t j = 0; j < M2; ++j) {
-              size_t m = selectedNew2[j];
-              c2(j, i) = (x * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[i];
+              colptr[j] = (col_const - zscaled[j] ) / denom;
             }
           } else {
-            for (size_t j = 0; j < M2; ++j) {
-              c2(j, i) = 6.0;
-            }
+            std::fill_n(colptr, M2, 6.0);
           }
         }
 
@@ -871,26 +892,27 @@ DataFrameCpp getADCI_mams_cpp(
       };
 
       double cof = brent(g, 0.0, 6.0, 1e-6);
+      double col_const = cof * sqrtIc[k2 - 1];
       for (size_t i = 0; i < k2; ++i) {
+        double* colptr = c2.data_ptr() + i * M2;
         if (effStopping2[i]) {
+          double denom = sqrtI2[i];
           for (size_t j = 0; j < M2; ++j) {
-            size_t m = selectedNew2[j];
-            c2(j, i) = (cof * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[i];
+            colptr[j] = (col_const - zscaled[j] ) / denom;
           }
         } else {
-          for (size_t j = 0; j < M2; ++j) {
-            c2(j, i) = 6.0;
-          }
+          std::fill_n(colptr, M2, 6.0);
         }
       }
     } else if (asf2 == "none") {
-      c2.fill(6.0);
-      auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &zero2, &selectedNew2,
-                k2, c_alpha, sqrtIL, M2, rNew, corr_known]
+      double denom = sqrtI2[k2 - 1];
+      auto g = [&c2, &I2, &sqrtIc, &zscaled, &zero2,
+                denom, k2, c_alpha, M2, rNew, corr_known]
       (double x)->double {
+        double col_const = x * sqrtIc[k2 - 1];
+        double* colptr = c2.data_ptr() + (k2 - 1) * M2;
         for (size_t j = 0; j < M2; ++j) {
-          size_t m = selectedNew2[j];
-          c2(j, k2 - 1) = (x * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[k2 - 1];
+          colptr[j] = (col_const - zscaled[j]) / denom;
         }
 
         auto v = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, c2, I2);
@@ -899,21 +921,24 @@ DataFrameCpp getADCI_mams_cpp(
       };
 
       double cof = brent(g, 0.0, 6.0, 1e-6);
+      double col_const = cof * sqrtIc[k2 - 1];
+      double* colptr = c2.data_ptr() + (k2 - 1) * M2;
       for (size_t j = 0; j < M2; ++j) {
-        size_t m = selectedNew2[j];
-        c2(j, k2 - 1) = (cof * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[k2 - 1];
+        colptr[j] = (col_const - zscaled[j]) / denom;
       }
     } else {
       for (size_t i = 0; i < k2; ++i) {
         if (!effStopping2[i]) continue;
+        double denom = sqrtI2[i];
 
-        auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zL, &cpu0, &zero2, &selectedNew2,
-                  sqrtIL, i, M2, rNew, corr_known]
+        auto g = [&c2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2,
+                  denom, i, M2, rNew, corr_known]
         (double x)->double {
+          double col_const = x * sqrtIc[i];
+          double* colptr = c2.data_ptr() + i * M2;
           // update critical values of the secondary trial at current look
           for (size_t j = 0; j < M2; ++j) {
-            size_t m = selectedNew2[j];
-            c2(j, i) = (x * sqrtIc[i] - zL[m] * sqrtIL) / sqrtI2[i];
+            colptr[j] = (col_const - zscaled[j]) / denom;
           }
 
           auto v = exitprob_mams_cpp(M2, rNew, zero2, corr_known, i + 1, c2, I2);
@@ -922,28 +947,27 @@ DataFrameCpp getADCI_mams_cpp(
         };
 
         double cof = brent(g, 0.0, 6.0, 1e-6);
+        double col_const = cof * sqrtIc[i];
+        double* colptr = c2.data_ptr() + i * M2;
         for (size_t j = 0; j < M2; ++j) {
-          size_t m = selectedNew2[j];
-          c2(j, i) = (cof * sqrtIc[i] - zL[m] * sqrtIL) / sqrtI2[i];
+          colptr[j] = (col_const - zscaled[j]) / denom;
         }
       }
     }
 
 
-    std::vector<double> zL1(M1);
+    zL1.resize(M1);
     for (size_t i = 0; i < M1; ++i) {
-      size_t m = primary[i];
-      zL1[i] = zL[m];
+      zL1[i] = zL[primary[i]];
     }
 
     // construct the Z-statistic vector for the secondary trial
-    std::vector<double> zL2(M2);
-    double zLcmax = zLc[order[h]];
+    zL2.resize(M2);
+    double col_const = zLc[order[h]] * sqrtIc[L2 - 1];
+    double denom = sqrtI2[L2 - 1];
     for (size_t i = 0; i < M2; ++i) {
-      size_t m = selectedNew2[i];
-      zL2[i] = (zLcmax * sqrtIc[L2 - 1] - zL[m] * sqrtIL) / sqrtI2[L2 - 1];
+      zL2[i] = (col_const - zL[selectedNew2[i]] * sqrtIL) / denom;
     }
-
 
     pvalue[h] = f_bwpvalue_mams(0.0, M1, r, corr_known, kMax, L, zL1, critValues,
                                 I, M2, rNew, L2, zL2, c2, I2);
@@ -963,16 +987,14 @@ DataFrameCpp getADCI_mams_cpp(
     // find the index in {0, ..., M2-1} corresponding to the current hypothesis
     size_t j0 = 0;
     for (size_t j = 0; j < M2; ++j) {
-      size_t m = selectedNew2[j];
-      if (m == index[h] - 1) {
+      if (selectedNew2[j] == index[h] - 1) {
         j0 = j;
         break;
       }
     }
 
-    std::vector<double> zL_1(1, zL[index[h] - 1]);
-    std::vector<double> zL2_1(1, zL2[j0]);
-    FlatMatrix c2_1(1, k2);
+    zL_1[0] = zL[index[h] - 1];
+    zL2_1[0] = zL2[j0];
     for (size_t i = 0; i < k2; ++i) {
       c2_1(0, i) = c2(j0, i);
     }
