@@ -148,7 +148,7 @@ DataFrameCpp getCI_mams_cpp(
   }
 
 
-  // critical values: if not provided, compute using getBoundcpp
+  // critical values: if not provided, compute using getBound_mams_cpp
   FlatMatrix bMat(L, M); // level M, M-1, ...., 1 critical values
   if (none_na(criticalValues.data)) {
     if (criticalValues.nrow < L)
