@@ -54,6 +54,11 @@
 - updated the description for adaptDesign_mams output
 - updated the default value of r and rNew to 1 in adaptDesign_mams and
   getADCI_mams
+- updated stage‑1 covariance used for bound calculation in
+  getBound_seamless to account for corr_known when using alpha‑spending
+  functions
+- used memoization to avoid recalculating p0 and p1 in the lambda h for
+  preject_by_arm (exitprob_seamless)
 
 ## lrstat 0.3.1
 
