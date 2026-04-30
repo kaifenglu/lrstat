@@ -13,6 +13,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 using std::size_t;
@@ -39,13 +40,13 @@ ListCpp exitprob_seamless_cpp(
   if (K < 1) {
     throw std::invalid_argument("K should be at least 1");
   }
-  if (b.size() != K + 1) {
-    throw std::invalid_argument("b should have length K + 1");
+  if (b.size() < K + 1) {
+    throw std::invalid_argument("Insufficient length for b");
   }
 
   std::vector<double> Ivec; Ivec.reserve(K+1);
   if (none_na(I)) {
-    if (I.size() < K+1) throw std::invalid_argument("Insufficient length for I");
+    if (I.size() < K + 1) throw std::invalid_argument("Insufficient length for I");
 
     Ivec.assign(I.begin(), I.begin() + K + 1);
     if (Ivec[0] <= 0.0) throw std::invalid_argument("I must be positive");
@@ -92,6 +93,32 @@ ListCpp exitprob_seamless_cpp(
     sqrtI1[k] = std::sqrt(I1[k]);
   }
 
+  // precompute (M-1)x(M-1) sigma for conditional distribution used by f0
+  FlatMatrix sigma_m1;
+  if (M > 1) {
+    sigma_m1.resize(M - 1, M - 1);
+    double diag = 1.0 - rho * rho;
+    double off = rho * (1.0 - rho);
+    for (size_t j = 0; j < M - 1; ++j) {
+      double* colptr = sigma_m1.data_ptr() + j * sigma_m1.nrow;
+      // fill column with off
+      std::fill_n(colptr, M - 1, off);
+      colptr[j] = diag;
+    }
+  }
+
+  std::vector<double> b1(K);
+  std::vector<double> a1(K, -6.0);
+  std::vector<double> theta1(K);
+  std::vector<double> p1(K);
+  size_t m1 = (M > 1) ? M - 1 : 1;
+  std::vector<double> mean(m1);
+  std::vector<double> lower(m1, -6.0);
+  std::vector<double> upper(m1);
+  std::vector<double> breaks0 = {-6.0, 6.0};
+  std::vector<double> breaks1 = {b[0], 6.0};
+  std::vector<double> breaks = {-6.0, b[0]};
+
   for (size_t m = 0; m < M; ++m) { // loop over the selected arm in phase 2
     double mu = theta[m] * sqrtI0;
 
@@ -100,38 +127,29 @@ ListCpp exitprob_seamless_cpp(
     // then compute the probability of selecting arm m in phase 2 (i.e.,
     // the probability that the Wald statistic for arm m is larger than
     // the Wald statistics for the M - 1 non-selected arms in phase 2)
-    auto f0 = [M, m, mu, theta, sqrtI0, rho](double z0)->double {
+    // reuse temporary buffers for mean/lower/upper
+    auto f0 = [&theta, &sigma_m1, &mean, &lower, &upper, M, m, mu, sqrtI0, rho]
+    (double z0)->double {
       if (M > 1) {
-        std::vector<double> mean(M - 1), lower(M - 1, -6.0), upper(M - 1, z0);
-        size_t j = 0;
         double delta0 = z0 - mu;
+        size_t j = 0;
         for (size_t i = 0; i < M; ++i) {
-          if (i != m) {
-            mean[j] = theta[i] * sqrtI0 + rho * delta0;
-            ++j;
-          }
+          if (i == m) continue;
+          // mean_j = theta[i] * sqrtI0 + rho * delta0
+          mean[j++] = theta[i] * sqrtI0 + rho * delta0;
         }
-
-        FlatMatrix sigma(M - 1, M - 1);
-        for (size_t j = 0; j < M - 1; ++j) {
-          for (size_t i = 0; i < M - 1; ++i) {
-            sigma(i, j) = (i == j) ? 1.0 - rho * rho : rho * (1.0 - rho);
-          }
-        }
-
-        PMVNResult out = pmvnormcpp(lower, upper, mean, sigma,
+        // upper = z0 for all
+        std::fill_n(upper.data(), M - 1, z0);
+        // lower already filled with -6.0; reuse it
+        PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1,
                                     1024, 16384, 8, 1e-4, 0.0, 314159, true);
-        // multiply the density of the Wald statistic for arm m at z0
         return out.prob * boost_dnorm(z0, mu, 1.0);
       } else {
         return boost_dnorm(z0, mu, 1.0);
       }
     };
 
-    std::vector<double> breaks0 = {-6.0, 6.0};
     select_as_best[m] = integrate3(f0, breaks0, 1e-4);
-
-    std::vector<double> breaks1 = {b[0], 6.0};
     preject_by_arm(0, m) = integrate3(f0, breaks1, 1e-4);
 
     // compute the conditional distribution of the Wald statistics in phase 3
@@ -141,43 +159,62 @@ ListCpp exitprob_seamless_cpp(
     // a secondary group sequential trial with K looks, where the information
     // level at look k is I1[k], the critical value at look k is b1[k], and
     // the treatment effect is theta[m]
-    std::vector<double> a1(K, -6.0);
-    std::vector<double> theta1(K, theta[m]);
-    auto f1 = [K, b, a1, theta1, sqrtI, sqrtI0, sqrtI1, I1](double z0) {
-      std::vector<double> b1(K);
+    std::fill_n(theta1.begin(), K, theta[m]);
+    auto f1 = [&b1, &b, &a1, &theta1, &sqrtI, &I1, &sqrtI1, K, sqrtI0]
+    (double z0, std::vector<double>& out)->void {
       for (size_t k = 0; k < K; ++k) {
-        b1[k] = (b[k+1] * sqrtI[k+1] - z0 * sqrtI0) / sqrtI1[k];
-        if (b1[k] < -6.0) b1[k] = -6.0;
+        double val = (b[k+1] * sqrtI[k+1] - z0 * sqrtI0) / sqrtI1[k];
+        if (val < -6.0) val = -6.0;
+        b1[k] = val;
       }
-
       ListCpp probs = exitprobcpp(b1, a1, theta1, I1);
-      auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
-      return exitUpper;
+      out = probs.get<std::vector<double>>("exitProbUpper");
+    };
+
+    // prepare memoization structures; reserve to avoid rehashing
+    std::unordered_map<double, size_t> eval_idx;
+    eval_idx.reserve(1024);
+    std::vector<double> p0_list; // p0 for each unique z0 encountered
+    std::vector<double> p1_flat; // flattened p1 vectors: p1_flat[idx * K + k]
+    p0_list.reserve(1024);
+    p1_flat.reserve(1024 * K);
+
+    // helper that evaluates (p0,p1) for a z0 if not cached, returns index
+    auto eval_and_get_index = [&](double z0)->size_t {
+      auto it = eval_idx.find(z0);
+      if (it != eval_idx.end()) return it->second;
+
+      // not found -> compute
+      double p0 = f0(z0);            // cheap call to f0
+      // compute p1 into preallocated p1 vector (reuse p1)
+      f1(z0, p1);                    // p1 is preallocated vector<double> of size K
+
+      size_t idx = p0_list.size();
+      eval_idx.emplace(z0, idx);
+      p0_list.push_back(p0);
+
+      // append p1 values to flat vector
+      p1_flat.resize(p1_flat.size() + K);
+      for (size_t kk = 0; kk < K; ++kk) p1_flat[idx * K + kk] = p1[kk];
+
+      return idx;
     };
 
     // compute the joint distribution of the Wald statistic for arm m and the
     // Wald statistics for the M - 1 non-selected arms in phase 2, and then
     // compute the probability of selecting arm m in phase 2 and exiting at look k
     // in phase 3 for k = 1,...,K
-    auto g = [K, f0, f1](double z0)->std::vector<double> {
-      std::vector<double> vec(K);
-      double p0 = f0(z0);
-      std::vector<double> p1 = f1(z0);
-      for (size_t k = 0; k < K; ++k) {
-        vec[k] = p0 * p1[k];
-      }
-      return vec;
-    };
-
-    std::vector<double> breaks = {-6.0, b[0]};
+    // now for each look k we integrate scalar function that reuses cache
     for (size_t k = 0; k < K; ++k) {
-      auto h = [k, g](double z0)->double {
-        return g(z0)[k];
+      auto h = [&](double z0)->double {
+        size_t idx = eval_and_get_index(z0);
+        double p0 = p0_list[idx];
+        double p1k = p1_flat[idx * K + k];
+        return p0 * p1k;
       };
 
-      preject_by_arm(k+1, m) = integrate3(h, breaks, 1e-4);
-
-      preject[k+1] += preject_by_arm(k+1, m);
+      preject_by_arm(k + 1, m) = integrate3(h, breaks, 1e-4);
+      preject[k + 1] += preject_by_arm(k + 1, m);
     }
   }
 
@@ -412,14 +449,14 @@ std::vector<double> getBound_seamless_cpp(
 
 
   std::vector<double> criticalValues(kMax);
+  std::vector<double> zero(M, 0.0);
 
   if (asf == "none") {
     for (size_t i = 0; i < kMax-1; ++i) criticalValues[i] = 6.0;
-    std::vector<double> theta(M, 0.0);
 
     auto f = [&](double aval)->double {
       criticalValues[kMax-1] = aval;
-      auto probs = exitprob_seamless_cpp(M, r, theta, corr_known, k,
+      auto probs = exitprob_seamless_cpp(M, r, zero, corr_known, kMax - 1,
                                       criticalValues, infoRates);
       auto v = probs.get<std::vector<double>>("exitProb");
       double cpu = std::accumulate(v.begin(), v.end(), 0.0);
@@ -438,7 +475,6 @@ std::vector<double> getBound_seamless_cpp(
 
     // for a given multiplier, compute cumulative upper exit probability - alpha
     std::vector<double> u(kMax);
-    std::vector<double> theta(M, 0.0);
     std::vector<double> u0(kMax);
     for (size_t i = 0; i < kMax; ++i) {
       u0[i] = std::pow(infoRates[i], Delta - 0.5);
@@ -450,7 +486,8 @@ std::vector<double> getBound_seamless_cpp(
         if (!effStopping[i]) u[i] = 6.0;
       }
 
-      auto probs = exitprob_seamless_cpp(M, r, theta, corr_known, k, u, infoRates);
+      auto probs = exitprob_seamless_cpp(M, r, zero, corr_known, kMax - 1,
+                                         u, infoRates);
       auto v = probs.get<std::vector<double>>("exitProb");
       double cpu = std::accumulate(v.begin(), v.end(), 0.0);
       return cpu - alpha;
@@ -458,8 +495,8 @@ std::vector<double> getBound_seamless_cpp(
 
     double cwt = brent(f, 0.0, 10.0, 1e-6);
     for (size_t i = 0; i < kMax; ++i) {
-      criticalValues[i] = cwt * u0[i];
-      if (!effStopping[i]) criticalValues[i] = 6.0;
+      double val = cwt * u0[i];
+      criticalValues[i] = effStopping[i] ? val : 6.0;
     }
     return subset(criticalValues, 0, K);
   }
@@ -473,20 +510,16 @@ std::vector<double> getBound_seamless_cpp(
 
     if (!effStopping[0]) criticalValues[0] = 6.0;
     else {
-      std::vector<double> mean(M, 0.0);
       FlatMatrix sigma(M, M);
+      double rho = corr_known ? r / (r + 1.0) : 0;
       for (size_t j = 0; j < M; ++j) {
         for (size_t i = 0; i < M; ++i) {
-          sigma(i, j) = (i == j) ? 1.0 : r / (r + 1.0);
+          sigma(i, j) = (i == j) ? 1.0 : rho;
         }
       }
-      criticalValues[0] = qmvnormcpp(1.0 - cumAlpha, mean, sigma,
+      criticalValues[0] = qmvnormcpp(1.0 - cumAlpha, zero, sigma,
                                      1024, 16384, 8, 1e-4, 0.0, 314159, true);
     }
-
-    // Preallocate reusable buffers used by the root-finding lambda
-    std::vector<double> u_vec; u_vec.reserve(kMax);
-    std::vector<double> theta_vec(M, 0.0);
 
     // subsequent stages
     for (size_t k1 = 1; k1 < kMax; ++k1) {
@@ -500,19 +533,12 @@ std::vector<double> getBound_seamless_cpp(
         continue;
       }
 
-      // Ensure reusable buffers have size k1+1 and capacity >= K
-      u_vec.resize(k1 + 1);
-
-      // - copy already computed criticalValues[0..k1-1] into u_vec[0..k1-1]
-      // the last entry (u_vec[k1]) will be set by the lambda
-      std::memcpy(u_vec.data(), criticalValues.data(), k1 * sizeof(double));
-
       // Define lambda that only sets the last element of u_vec
       auto f = [&](double aval)->double {
         // set the last element to the current candidate critical value
-        u_vec[k1] = aval;
+        criticalValues[k1] = aval;
         auto probs = exitprob_seamless_cpp(
-          M, r, theta_vec, corr_known, k1, u_vec, infoRates);
+          M, r, zero, corr_known, k1, criticalValues, infoRates);
         auto v = probs.get<std::vector<double>>("exitProb");
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - cumAlpha;
@@ -775,16 +801,14 @@ ListCpp getDesign_seamless_cpp(
     }
 
     if (haybittle) { // Haybittle & Peto
-      std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
-        u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) critValues[i] = 6.0;
       }
 
       auto f = [&](double aval)->double {
-        u[kMax-1] = aval;
+        critValues[kMax-1] = aval;
         ListCpp probs = exitprob_seamless_cpp(
-          M, r, zero, corr_known, K, u, infoRates);
+          M, r, zero, corr_known, K, critValues, infoRates);
         auto v = probs.get<std::vector<double>>("exitProb");
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
@@ -808,9 +832,11 @@ ListCpp getDesign_seamless_cpp(
   double IMax1 = IMax;
   if (unknown == "IMax") {
     double maxtheta = *std::max_element(theta.begin(), theta.end());
-    auto f = [&](double aval)->double {
-      std::vector<double> theta1(M);
-      for (size_t i = 0; i < M; ++i) theta1[i] = theta[i] * aval / maxtheta;
+    std::vector<double> theta_norm(M);
+    for (size_t i = 0; i < M; ++i) theta_norm[i] = theta[i] / maxtheta;
+    std::vector<double> theta1(M);
+    auto f = [&](double x)->double {
+      for (size_t i = 0; i < M; ++i) theta1[i] = theta_norm[i] * x;
       ListCpp probs = exitprob_seamless_cpp(
         M, r, theta1, true, K, critValues, infoRates);
       auto v = probs.get<std::vector<double>>("exitProb");
@@ -824,8 +850,8 @@ ListCpp getDesign_seamless_cpp(
     for (size_t i = 0; i < kMax; ++i) info[i] = infoRates[i] * IMax1;
     probs = exitprob_seamless_cpp(M, r, theta, true, K, critValues, info);
   } else {
-    std::vector<double> info = infoRates;
-    for (double &x : info) x *= IMax1;
+    std::vector<double> info(kMax);
+    for (size_t i = 0; i < kMax; ++i) info[i] = infoRates[i] * IMax1;
     probs = exitprob_seamless_cpp(M, r, theta, true, K, critValues, info);
   }
 
@@ -854,9 +880,8 @@ ListCpp getDesign_seamless_cpp(
   std::vector<double> powerByArm(M, 0.0);
   for (size_t j = 0; j < M; ++j) {
     double p = 0.0;
-    for (size_t i = 0; i < kMax; ++i) {
-      p += exitProbByArm(i, j);
-    }
+    double* colptr = exitProbByArm.data_ptr() + j * exitProbByArm.nrow;
+    for (size_t i = 0; i < kMax; ++i) p += colptr[i];
     powerByArm[j] = p;
   }
   std::vector<double> condPowerByArm(M, 0.0);
@@ -1272,16 +1297,14 @@ ListCpp adaptDesign_seamless_cpp(
     }
 
     if (haybittle) { // Haybittle & Peto
-      std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
-        u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) critValues[i] = 6.0;
       }
 
       auto f = [&](double aval)->double {
-        u[kMax-1] = aval;
+        critValues[kMax-1] = aval;
         ListCpp probs = exitprob_seamless_cpp(
-          M, r, zero, corr_known, K, u, infoRates);
+          M, r, zero, corr_known, K, critValues, infoRates);
         auto v = probs.get<std::vector<double>>("exitProb");
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
@@ -1317,7 +1340,6 @@ ListCpp adaptDesign_seamless_cpp(
   ListCpp probs0 = exitprobcpp(b1, a1, zero1, t1);
   auto v0 = probs0.get<std::vector<double>>("exitProbUpper");
   double alphaNew = std::accumulate(v0.begin(), v0.end(), 0.0);
-
 
   std::vector<double> I1(k1);
   for (size_t l = 0; l < k1; ++l) {
