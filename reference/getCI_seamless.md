@@ -131,6 +131,6 @@ getCI_seamless(
   M = 2, r = 1, corr_known = FALSE,
   IMax = 300 / 4, informationRates = c(1/3, 2/3, 1),
   alpha = 0.025, typeAlphaSpending = "sfOF")
-#>      pvalue  thetahat cilevel       lower     upper
-#> 1 0.0342375 0.2005515    0.95 -0.01534547 0.4651547
+#>       pvalue  thetahat cilevel       lower     upper
+#> 1 0.03423737 0.2005516    0.95 -0.01534526 0.4651547
 ```
