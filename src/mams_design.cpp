@@ -585,7 +585,7 @@ ListCpp getDesign_mams_cpp(
     const size_t kMax,
     const std::vector<double>& informationRates,
     const std::vector<unsigned char>& efficacyStopping,
-    const std::vector<double>& criticalValues,
+    const FlatMatrix& criticalValues,
     const double alpha,
     const std::string& typeAlphaSpending,
     const double parameterAlphaSpending,
@@ -647,10 +647,13 @@ ListCpp getDesign_mams_cpp(
     effStopping.assign(kMax, 1);
   }
 
-  bool missingCriticalValues = !none_na(criticalValues);
+  bool missingCriticalValues = !none_na(criticalValues.data);
 
-  if (!missingCriticalValues && criticalValues.size() != kMax) {
-    throw std::invalid_argument("Invalid length for criticalValues");
+  if (!missingCriticalValues && criticalValues.nrow != kMax) {
+    throw std::invalid_argument("Invalid number of rows for criticalValues");
+  }
+  if (!missingCriticalValues && criticalValues.ncol != M) {
+    throw std::invalid_argument("Invalid number of columns for criticalValues");
   }
   if (missingCriticalValues && std::isnan(alpha)) {
     throw std::invalid_argument("alpha must be provided for missing criticalValues");
@@ -705,42 +708,71 @@ ListCpp getDesign_mams_cpp(
   // ----------- End of Input Validation ----------- //
 
   // set up efficacy bounds
-  std::vector<double> zero(M, 0.0);
-  std::vector<double> critValues = criticalValues;
-  FlatMatrix b(M, kMax);
-  bool haybittle = false;
-  if (missingCriticalValues) {
-    if (kMax > 1 && criticalValues.size() == kMax) {
-      bool hasNaN = false;
-      for (size_t i = 0; i < kMax - 1; ++i) {
-        if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
-      }
-      if (!hasNaN && std::isnan(criticalValues[kMax-1])) haybittle = true;
-    }
-
-    if (haybittle) { // Haybittle & Peto
-      for (size_t i = 0; i < kMax - 1; ++i) {
-        if (!effStopping[i]) critValues[i] = 6.0;
-        double* colptr = b.data_ptr() + i * M;
-        std::fill_n(colptr, M, critValues[i]);
-      }
-
-      double* last_col = b.data_ptr() + (kMax - 1) * M;
-      auto f = [&](double x)->double {
-        std::fill_n(last_col, M, x);
-        auto v = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
-        return cpu - alpha;
-      };
-
-      critValues[kMax-1] = brent(f, 0.0, 6.0, 1e-6);
-    } else {
-      critValues = getBound_mams_cpp(
-        M, r, corr_known, kMax, infoRates, alpha, asf, parameterAlphaSpending,
-        userAlphaSpending, spendTime, effStopping);
+  // construct by-level bounds
+  std::vector<int> level(M * kMax);
+  std::vector<int> stage(M * kMax);
+  std::vector<double> efficacyBounds(M * kMax);
+  for (size_t M1 = M; M1 > 0; --M1) {
+    for (size_t k = 0; k < kMax; ++k) {
+      size_t row = (M - M1) * kMax + k;
+      level[row] = M1;
+      stage[row] = k + 1;
     }
   }
 
+  bool correctDim = (criticalValues.nrow == kMax && criticalValues.ncol == M);
+  if (missingCriticalValues) {
+    std::vector<double> cut(kMax);
+    for (size_t M1 = M ; M1 > 0; --M1) {
+      std::vector<double> zero1(M1, 0.0);
+      FlatMatrix b1(M1, kMax);
+
+      bool haybittle = false;
+      if (correctDim) {
+        cut = flatmatrix_get_column(criticalValues, M - M1);
+
+        if (kMax > 1 && cut.size() == kMax) {
+          bool hasNaN = false;
+          for (size_t i = 0; i < kMax - 1; ++i) {
+            if (std::isnan(cut[i])) { hasNaN = true; break; }
+          }
+          if (!hasNaN && std::isnan(cut[kMax-1])) haybittle = true;
+        }
+      }
+
+      if (haybittle) { // Haybittle & Peto
+        for (size_t i = 0; i < kMax - 1; ++i) {
+          if (!effStopping[i]) cut[i] = 6.0;
+          double* colptr = b1.data_ptr() + i * M1;
+          std::fill_n(colptr, M1, cut[i]);
+        }
+
+        double* last_col = b1.data_ptr() + (kMax - 1) * M1;
+        auto f = [&](double x)->double {
+          std::fill_n(last_col, M1, x);
+          auto v = exitprob_mams_cpp(M1, r, zero1, corr_known, kMax, b1, infoRates);
+          double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+          return cpu - alpha;
+        };
+
+        cut[kMax - 1] = brent(f, 0.0, 6.0, 1e-6);
+      } else {
+        cut = getBound_mams_cpp(
+          M1, r, corr_known, kMax, infoRates, alpha, asf, parameterAlphaSpending,
+          userAlphaSpending, spendTime, effStopping);
+      }
+
+      std::copy_n(cut.data(), kMax, efficacyBounds.data() + (M - M1) * kMax);
+    }
+  } else {
+    efficacyBounds = criticalValues.data; // copy from input matrix
+  }
+
+  std::vector<double> critValues(kMax);
+  std::memcpy(critValues.data(), efficacyBounds.data(), kMax * sizeof(double));
+
+  std::vector<double> zero(M, 0.0);
+  FlatMatrix b(M, kMax);
   for (size_t i = 0; i < kMax; ++i) {
     double* colptr = b.data_ptr() + i * M;
     std::fill_n(colptr, M, critValues[i]);
@@ -793,48 +825,6 @@ ListCpp getDesign_mams_cpp(
     if (critValues[i] == 6.0) effStopping[i] = 0;
   }
 
-  // construct by-level bounds
-  std::vector<int> level(M * kMax);
-  std::vector<int> stage(M * kMax);
-  std::vector<double> efficacyBounds(M * kMax);
-  for (size_t M1 = M; M1 > 0; --M1) {
-    for (size_t k = 0; k < kMax; ++k) {
-      size_t row = (M - M1) * kMax + k;
-      level[row] = M1;
-      stage[row] = k + 1;
-    }
-  }
-
-  std::copy_n(critValues.data(), kMax, efficacyBounds.data());
-  for (size_t M1 = M - 1; M1 > 0; --M1) {
-    std::vector<double> zero1(M1, 0.0);
-    FlatMatrix b1(M1, kMax);
-    std::vector<double> cut = criticalValues;
-
-    if (haybittle) { // Haybittle & Peto
-      for (size_t i = 0; i < kMax - 1; ++i) {
-        if (!effStopping[i]) cut[i] = 6.0;
-        double* colptr = b1.data_ptr() + i * M1;
-        std::fill_n(colptr, M1, cut[i]);
-      }
-
-      double* last_col = b1.data_ptr() + (kMax - 1) * M1;
-      auto f = [&](double x)->double {
-        std::fill_n(last_col, M1, x);
-        auto v = exitprob_mams_cpp(M1, r, zero1, corr_known, kMax, b1, infoRates);
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
-        return cpu - alpha;
-      };
-
-      cut[kMax - 1] = brent(f, 0.0, 6.0, 1e-6);
-    } else {
-      cut = getBound_mams_cpp(
-        M1, r, corr_known, kMax, infoRates, alpha, asf, parameterAlphaSpending,
-        userAlphaSpending, spendTime, effStopping);
-    }
-
-    std::copy_n(cut.data(), kMax, efficacyBounds.data() + (M - M1) * kMax);
-  }
 
   DataFrameCpp overallResults;
   overallResults.push_back(overallReject, "overallReject");
@@ -901,9 +891,12 @@ ListCpp getDesign_mams_cpp(
 //' @param informationRates A numeric vector of information rates fixed
 //'   before the trial. If unspecified, defaults to \eqn{(1:kMax) / kMax}.
 //' @inheritParams param_efficacyStopping
-//' @param criticalValues The upper boundaries on the max z-test statistic
-//'   scale for efficacy stopping. If missing, boundaries will be computed
-//'   based on the specified information rates and alpha spending function.
+//' @param criticalValues The matrix of by-level upper boundaries on the
+//'   max z-test statistic scale for efficacy stopping.
+//'   The first column is for level \code{M}, the second column is for
+//'   level \code{M - 1}, and so on, with the last column for level 1.
+//'   If left unspecified, the critical values will be computed based
+//'   on the specified alpha spending function.
 //' @inheritParams param_alpha
 //' @inheritParams param_typeAlphaSpending
 //' @inheritParams param_parameterAlphaSpending
@@ -992,7 +985,7 @@ Rcpp::List getDesign_mams(
     const int kMax = 1,
     const Rcpp::NumericVector& informationRates = NA_REAL,
     const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
-    const Rcpp::NumericVector& criticalValues = NA_REAL,
+    const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues = R_NilValue,
     const double alpha = 0.025,
     const std::string& typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
@@ -1002,9 +995,18 @@ Rcpp::List getDesign_mams(
   std::vector<double> thetaVec(theta.begin(), theta.end());
   std::vector<double> infoRates(informationRates.begin(), informationRates.end());
   auto effStopping = convertLogicalVector(efficacyStopping);
-  std::vector<double> critValues(criticalValues.begin(), criticalValues.end());
   std::vector<double> userAlpha(userAlphaSpending.begin(), userAlphaSpending.end());
   std::vector<double> spendTime(spendingTime.begin(), spendingTime.end());
+
+  // Handle optional matrix safely
+  FlatMatrix critValues;
+  if (criticalValues.isNotNull()) {
+    Rcpp::NumericMatrix cm(criticalValues); // unwrap
+    critValues = flatmatrix_from_Rmatrix(cm);
+  } else {
+    critValues = FlatMatrix(1, 1);
+    critValues(0, 0) = std::numeric_limits<double>::quiet_NaN(); // placeholder
+  }
 
   auto cpp_result = getDesign_mams_cpp(
     beta, IMax, thetaVec, static_cast<size_t>(M), r, corr_known,
@@ -1031,7 +1033,7 @@ ListCpp adaptDesign_mams_cpp(
     const size_t kMax,
     const std::vector<double>& informationRates,
     const std::vector<unsigned char>& efficacyStopping,
-    const std::vector<double>& criticalValues,
+    const FlatMatrix& criticalValues,
     const double alpha,
     const std::string& typeAlphaSpending,
     const double parameterAlphaSpending,
@@ -1102,10 +1104,13 @@ ListCpp adaptDesign_mams_cpp(
     effStopping.assign(kMax, 1);
   }
 
-  bool missingCriticalValues = !none_na(criticalValues);
+  bool missingCriticalValues = !none_na(criticalValues.data);
 
-  if (!missingCriticalValues && criticalValues.size() != kMax) {
-    throw std::invalid_argument("Invalid length for criticalValues");
+  if (!missingCriticalValues && criticalValues.nrow != kMax) {
+    throw std::invalid_argument("Invalid number of rows for criticalValues");
+  }
+  if (!missingCriticalValues && criticalValues.ncol != M) {
+    throw std::invalid_argument("Invalid number of columns for criticalValues");
   }
   if (missingCriticalValues && std::isnan(alpha)) {
     throw std::invalid_argument("alpha must be provided for missing criticalValues");
@@ -1242,50 +1247,79 @@ ListCpp adaptDesign_mams_cpp(
   // ----------- End of Input Validation ----------- //
 
   // obtain critical values for the primary trial
-  std::vector<double> zero(M, 0.0);
-  std::vector<double> critValues = criticalValues;
-  double alpha1 = alpha;
-  FlatMatrix b(M, kMax);
-  bool haybittle = false;
-  if (missingCriticalValues) {
-    if (kMax > 1 && criticalValues.size() == kMax) {
-      bool hasNaN = false;
-      for (size_t i = 0; i < kMax - 1; ++i) {
-        if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
-      }
-      if (!hasNaN && std::isnan(criticalValues[kMax-1])) haybittle = true;
+  // by level critical values for the integrated trial
+  // construct by-level bounds for the primary trial
+  std::vector<int> level1(M * kMax);
+  std::vector<int> stage1(M * kMax);
+  std::vector<double> efficacyBounds1(M * kMax);
+  for (size_t M1 = M; M1 > 0; --M1) {
+    for (size_t k = 0; k < kMax; ++k) {
+      size_t row = (M - M1) * kMax + k;
+      level1[row] = M1;
+      stage1[row] = k + 1;
     }
+  }
 
-    if (haybittle) { // Haybittle & Peto
-      for (size_t i = 0; i < kMax - 1; ++i) {
-        if (!effStopping[i]) critValues[i] = 6.0;
-        double* colptr = b.data_ptr() + i * M;
-        std::fill_n(colptr, M, critValues[i]);
+  bool correctDim = (criticalValues.nrow == kMax && criticalValues.ncol == M);
+  if (missingCriticalValues) {
+    std::vector<double> cut(kMax);
+    for (size_t M1 = M ; M1 > 0; --M1) {
+      std::vector<double> zero1(M1, 0.0);
+      FlatMatrix b1(M1, kMax);
+
+      bool haybittle = false;
+      if (correctDim) {
+        cut = flatmatrix_get_column(criticalValues, M - M1);
+
+        if (kMax > 1 && cut.size() == kMax) {
+          bool hasNaN = false;
+          for (size_t i = 0; i < kMax - 1; ++i) {
+            if (std::isnan(cut[i])) { hasNaN = true; break; }
+          }
+          if (!hasNaN && std::isnan(cut[kMax-1])) haybittle = true;
+        }
       }
 
-      double* last_col = b.data_ptr() + (kMax - 1) * M;
-      auto f = [&](double x)->double {
-        std::fill_n(last_col, M, x);
-        auto v = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
-        return cpu - alpha;
-      };
+      if (haybittle) { // Haybittle & Peto
+        for (size_t i = 0; i < kMax - 1; ++i) {
+          if (!effStopping[i]) cut[i] = 6.0;
+          double* colptr = b1.data_ptr() + i * M1;
+          std::fill_n(colptr, M1, cut[i]);
+        }
 
-      critValues[kMax-1] = brent(f, 0.0, 6.0, 1e-6);
-    } else {
-      critValues = getBound_mams_cpp(
-        M, r, corr_known, kMax, infoRates, alpha, asf, parameterAlphaSpending,
-        userAlphaSpending, spendTime, effStopping);
+        double* last_col = b1.data_ptr() + (kMax - 1) * M1;
+        auto f = [&](double x)->double {
+          std::fill_n(last_col, M1, x);
+          auto v = exitprob_mams_cpp(M1, r, zero1, corr_known, kMax, b1, infoRates);
+          double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+          return cpu - alpha;
+        };
+
+        cut[kMax - 1] = brent(f, 0.0, 6.0, 1e-6);
+      } else {
+        cut = getBound_mams_cpp(
+          M1, r, corr_known, kMax, infoRates, alpha, asf, parameterAlphaSpending,
+          userAlphaSpending, spendTime, effStopping);
+      }
+
+      std::copy_n(cut.data(), kMax, efficacyBounds1.data() + (M - M1) * kMax);
     }
   } else {
-    for (size_t i = 0; i < kMax; ++i) {
-      if (!effStopping[i]) critValues[i] = 6.0;
-      double* colptr = b.data_ptr() + i * M;
-      std::fill_n(colptr, M, critValues[i]);
-    }
-    auto v = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
-    alpha1 = std::accumulate(v.begin(), v.end(), 0.0);
+    efficacyBounds1 = criticalValues.data; // copy from input matrix
   }
+
+  std::vector<double> critValues(kMax);
+  std::memcpy(critValues.data(), efficacyBounds1.data(), kMax * sizeof(double));
+
+  std::vector<double> zero(M, 0.0);
+  FlatMatrix b(M, kMax);
+  for (size_t i = 0; i < kMax; ++i) {
+    double* colptr = b.data_ptr() + i * M;
+    std::fill_n(colptr, M, critValues[i]);
+  }
+  auto v = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
+  double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+  double alpha1 = missingCriticalValues ? alpha : p0;
 
   // compute conditional alpha, conditional power, and predictive power
   size_t k1 = kMax - L;
@@ -1636,49 +1670,6 @@ ListCpp adaptDesign_mams_cpp(
   std::copy_n(critValues2.data(), k2, critValues_full.data() + L);
 
 
-  // by level critical values for the integrated trial
-  // construct by-level bounds for the primary trial
-  std::vector<int> level1(M * kMax);
-  std::vector<int> stage1(M * kMax);
-  for (size_t M1 = M; M1 > 0; --M1) {
-    for (size_t k = 0; k < kMax; ++k) {
-      size_t row = (M - M1) * kMax + k;
-      level1[row] = M1;
-      stage1[row] = k + 1;
-    }
-  }
-  std::vector<double> efficacyBounds1(M * kMax);
-  std::copy_n(critValues.data(), kMax, efficacyBounds1.data());
-  for (size_t M1 = M - 1; M1 > 0; --M1) {
-    std::vector<double> zero1(M1, 0.0);
-    std::vector<double> cut = criticalValues;
-    FlatMatrix b1(M1, kMax);
-
-    if (haybittle) { // Haybittle & Peto
-      for (size_t i = 0; i < kMax - 1; ++i) {
-        if (!effStopping[i]) cut[i] = 6.0;
-        double* colptr = b1.data_ptr() + i * M1;
-        std::fill_n(colptr, M1, cut[i]);
-      }
-
-      double* last_col = b1.data_ptr() + (kMax - 1) * M1;
-      auto f = [&](double x)->double {
-        std::fill_n(last_col, M1, x);
-        auto v = exitprob_mams_cpp(M1, r, zero1, corr_known, kMax, b1, infoRates);
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
-        return cpu - alpha;
-      };
-
-      cut[kMax-1] = brent(f, 0.0, 6.0, 1e-6);
-    } else {
-      cut = getBound_mams_cpp(
-        M1, r, corr_known, kMax, infoRates, alpha, asf, parameterAlphaSpending,
-        userAlphaSpending, spendTime, effStopping);
-    }
-
-    std::copy_n(cut.data(), kMax, efficacyBounds1.data() + (M - M1) * kMax);
-  }
-
   // critical values for each intersection hypothesis
   size_t ntests = (1 << MNew) - 1; // 2^MNew - 1
   std::vector<std::string> intersectHyp(ntests * kc);
@@ -1857,7 +1848,6 @@ ListCpp adaptDesign_mams_cpp(
     }
   }
 
-
   ListCpp des1;
   des1.push_back(M, "M");
   des1.push_back(r, "r");
@@ -1972,9 +1962,12 @@ ListCpp adaptDesign_mams_cpp(
 //' @param efficacyStopping Indicators of whether efficacy stopping is
 //'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 //'   if left unspecified.
-//' @param criticalValues The upper boundaries on the max z-test statistic
-//'   scale for efficacy stopping for the primary trial. If missing, boundaries
-//'   will be computed based on the specified alpha spending function.
+//' @param criticalValues The matrix of by-level upper boundaries on the
+//'   max z-test statistic scale for efficacy stopping for the primary trial.
+//'   The first column is for level \code{M}, the second column is for
+//'   level \code{M - 1}, and so on, with the last column for level 1.
+//'   If left unspecified, the critical values will be computed based
+//'   on the specified alpha spending function.
 //' @param alpha The significance level of the primary trial.
 //'   Defaults to 0.025.
 //' @param typeAlphaSpending The type of alpha spending for the primary
@@ -2104,7 +2097,7 @@ Rcpp::List adaptDesign_mams(
     const int kMax = NA_INTEGER,
     const Rcpp::NumericVector& informationRates = NA_REAL,
     const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
-    const Rcpp::NumericVector& criticalValues = NA_REAL,
+    const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues = R_NilValue,
     const double alpha = 0.025,
     const std::string& typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
@@ -2125,13 +2118,22 @@ Rcpp::List adaptDesign_mams(
   auto thetaVec = Rcpp::as<std::vector<double>>(theta);
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
   auto effStopping = convertLogicalVector(efficacyStopping);
-  auto critValues = Rcpp::as<std::vector<double>>(criticalValues);
   auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
   auto selectedNew = Rcpp::as<std::vector<int>>(selected);
   auto infoRatesNew = Rcpp::as<std::vector<double>>(informationRatesNew);
   auto effStoppingNew = convertLogicalVector(efficacyStoppingNew);
   auto spendTimeNew = Rcpp::as<std::vector<double>>(spendingTimeNew);
+
+  // Handle optional matrix safely
+  FlatMatrix critValues;
+  if (criticalValues.isNotNull()) {
+    Rcpp::NumericMatrix cm(criticalValues); // unwrap
+    critValues = flatmatrix_from_Rmatrix(cm);
+  } else {
+    critValues = FlatMatrix(1, 1);
+    critValues(0, 0) = std::numeric_limits<double>::quiet_NaN(); // placeholder
+  }
 
   auto cpp_result = adaptDesign_mams_cpp(
     betaNew, INew,  static_cast<size_t>(M), r, corr_known,
