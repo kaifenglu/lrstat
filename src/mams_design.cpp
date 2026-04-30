@@ -13,56 +13,11 @@
 #include <cstdint>
 #include <limits>
 #include <numeric>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 using std::size_t;
-
-
-PMVNResult pmvnormmccpp(const size_t M,
-                        const double rho,
-                        const std::vector<double>& theta,
-                        const size_t kMax,
-                        const FlatMatrix& b,
-                        const std::vector<double>& s,
-                        const double T) {
-
-  double sqrtT = std::sqrt(T);
-  std::vector<double> upper(M * kMax);
-  for (size_t k = 0; k < kMax; ++k) {
-    for (size_t m = 0; m < M; ++m) {
-      size_t idx = k * M + m;
-      upper[idx] = b(m, k) * sqrt(s[k]) - theta[m] * s[k] * sqrtT;
-    }
-  }
-
-  std::vector<double> lower(M * kMax, -6.0);
-  std::vector<double> zero(M * kMax, 0.0);
-
-  // covariance matrix for scaled Brownian motion
-  FlatMatrix sigma(M * kMax, M * kMax);
-  for (size_t k2 = 0; k2 < kMax; ++k2) {
-    for (size_t m2 = 0; m2 < M; ++m2) {
-      size_t idx2 = k2 * M + m2;
-      for (size_t k1 = 0; k1 < kMax; ++k1) {
-        size_t k = std::min(k1, k2);
-        for (size_t m1 = 0; m1 < M; ++m1) {
-          size_t idx1 = k1 * M + m1;
-          if (m1 == m2) {
-            sigma(idx1, idx2) = s[k];
-          } else {
-            sigma(idx1, idx2) = rho * s[k];
-          }
-        }
-      }
-    }
-  }
-
-  return pmvnormcpp(lower, upper, zero, sigma,
-                    1024, 16384, 8, 1e-4, 0.0, 314159, true);
-}
 
 
 std::vector<double> exitprob_mams_cpp(
@@ -153,13 +108,67 @@ std::vector<double> exitprob_mams_cpp(
     pcumreject[0] = 1.0 - p;
   } else {
     double T = Ivec.back();
+    double sqrtT = sqrtI.back();
     std::vector<double> s(kMax);
     for (size_t k = 0; k < kMax; ++k) {
       s[k] = Ivec[k] / T;
     }
 
+    std::size_t fullN = M * kMax;
+    std::vector<double> upper(fullN);
     for (size_t k = 0; k < kMax; ++k) {
-      auto a = pmvnormmccpp(M, rho, theta, k + 1, b, s, T);
+      for (size_t m = 0; m < M; ++m) {
+        size_t idx = k * M + m;
+        upper[idx] = b(m, k) * sqrt(s[k]) - theta[m] * s[k] * sqrtT;
+      }
+    }
+
+    std::vector<double> lower(fullN, -6.0);
+    std::vector<double> zero(fullN, 0.0);
+
+    // covariance matrix for scaled Brownian motion
+    FlatMatrix sigma(fullN, fullN);
+
+    for (size_t k2 = 0; k2 < kMax; ++k2) {
+      for (size_t k1 = 0; k1 < kMax; ++k1) {
+        size_t k = std::min(k1, k2);
+        double val_off = rho * s[k];    // value for off-diagonal (m1 != m2)
+        double val_diag = s[k];         // diagonal (m1 == m2)
+        // block row base and block col base:
+        std::size_t row_base = k1 * M;
+        std::size_t col_base = k2 * M;
+        // for each column (m2) inside the MxM block, fill contiguous column segment:
+        for (size_t m2 = 0; m2 < M; ++m2) {
+          // pointer to start of the column (col_index) at row row_base
+          double* dst_col = sigma.data_ptr() + (col_base + m2) * fullN + row_base;
+          // fill M entries in that column with off-diagonal value
+          std::fill_n(dst_col, M, val_off);
+          // overwrite the diagonal element (at offset m2 inside this block)
+          dst_col[m2] = val_diag;
+        }
+      }
+    }
+
+    std::vector<double> upper1, lower1, zero1;
+    FlatMatrix sigma1;
+    for (size_t k = 0; k < kMax; ++k) {
+      std::size_t nk = M * (k + 1);
+
+      upper1.resize(nk); lower1.resize(nk); zero1.resize(nk);
+      std::memcpy(upper1.data(), upper.data(), nk * sizeof(double));
+      std::memcpy(lower1.data(), lower.data(), nk * sizeof(double));
+      std::memcpy(zero1.data(), zero.data(), nk * sizeof(double));
+
+      sigma1.resize(nk, nk);               // reuses capacity if already large enough
+      // copy top-left into sigma1 (column-major): one memcpy per column
+      for (std::size_t c = 0; c < nk; ++c) {
+        const double* src = sigma.data_ptr() + c * fullN; // start of col c in sigma
+        double* dst = sigma1.data_ptr() + c * nk;         // start of col c in sigma1
+        std::memcpy(dst, src, nk * sizeof(double));
+      }
+
+      auto a = pmvnormcpp(lower1, upper1, zero1, sigma1,
+                          1024, 16384, 8, 1e-4, 0.0, 314159, true);
       pcumreject[k] = 1.0 - a.prob;
     }
   }
@@ -283,6 +292,7 @@ std::vector<double> getBound_mams_cpp(
     if (infoRates.back() > 1.0)
       throw std::invalid_argument("informationRates must not exceed 1");
   } else {
+    infoRates.resize(kMax);
     for (size_t i = 0; i < kMax; ++i) {
       infoRates[i] = static_cast<double>(i+1) / static_cast<double>(kMax);
     }
@@ -361,19 +371,19 @@ std::vector<double> getBound_mams_cpp(
 
   std::vector<double> criticalValues(kMax);
   FlatMatrix b(M, kMax);
+  b.fill(6.0);
 
   if (asf == "none") {
-    for (size_t i = 0; i < kMax-1; ++i) criticalValues[i] = 6.0;
-    std::vector<double> theta(M, 0.0);
-    b.fill(6.0);
-
+    std::vector<double> zero(M, 0.0);
+    double* colptr = b.data_ptr() + (kMax - 1) * M;
     auto f = [&](double x)->double {
-      for (size_t m = 0; m < M; ++m) b(m, kMax-1) = x;
-      auto v = exitprob_mams_cpp(M, r, theta, corr_known, kMax, b, infoRates);
+      std::fill_n(colptr, M, x);
+      auto v = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
       double cpu = std::accumulate(v.begin(), v.end(), 0.0);
       return cpu - alpha;
     };
 
+    for (size_t i = 0; i < kMax-1; ++i) criticalValues[i] = 6.0;
     criticalValues[kMax-1] = brent(f, 0.0, 6.0, 1e-6);
     return subset(criticalValues, 0, k);
   }
@@ -385,23 +395,22 @@ std::vector<double> getBound_mams_cpp(
     else Delta = parameterAlphaSpending; // parameterAlphaSpending holds delta for WT
 
     // for a given multiplier, compute cumulative upper exit probability - alpha
-    std::vector<double> u(kMax);
-    std::vector<double> zero(M, 0.0);
     std::vector<double> u0(kMax);
     for (size_t i = 0; i < kMax; ++i) {
       u0[i] = std::pow(infoRates[i], Delta - 0.5);
     }
 
+    std::vector<double> zero(M, 0.0);
+
     auto f = [&](double x)->double {
       for (size_t i = 0; i < kMax; ++i) {
-        u[i] = x * u0[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) continue;
+        double val = x * u0[i];
+
+        double* colptr = b.data_ptr() + i * M;
+        std::fill_n(colptr, M, val); // contiguous write of M doubles
       }
-      for (size_t i = 0; i < kMax; ++i) {
-        for (size_t m = 0; m < M; ++m) {
-          b(m, i) = u[i];
-        }
-      }
+
       auto v = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
       double cpu = std::accumulate(v.begin(), v.end(), 0.0);
       return cpu - alpha;
@@ -409,8 +418,9 @@ std::vector<double> getBound_mams_cpp(
 
     double cwt = brent(f, 0.0, 10.0, 1e-6);
     for (size_t i = 0; i < kMax; ++i) {
-      criticalValues[i] = cwt * u0[i];
-      if (!effStopping[i]) criticalValues[i] = 6.0;
+      double val = cwt * u0[i];
+      if (!effStopping[i]) val = 6.0;
+      criticalValues[i] = val;
     }
     return subset(criticalValues, 0, k);
   }
@@ -436,7 +446,6 @@ std::vector<double> getBound_mams_cpp(
     }
 
     // Preallocate reusable buffers used by the root-finding lambda
-    std::vector<double> u_vec; u_vec.reserve(kMax);
     std::vector<double> theta_vec(M, 0.0);
 
     // subsequent stages
@@ -451,25 +460,18 @@ std::vector<double> getBound_mams_cpp(
         continue;
       }
 
-      // Ensure reusable buffers have size k1+1 and capacity >= k
-      u_vec.resize(k1 + 1);
+      // Fill columns k1-1 with their known critical values
+      double val = criticalValues[k1 - 1];
+      double* col_ptr = b.data_ptr() + (k1 - 1) * M;   // column-major contiguous
+      std::fill_n(col_ptr, M, val);              // fast contiguous write
 
-      // - copy already computed criticalValues[0..k1-1] into u_vec[0..k1-1]
-      // the last entry (u_vec[k1]) will be set by the lambda
-      std::memcpy(u_vec.data(), criticalValues.data(), k1 * sizeof(double));
-
-      FlatMatrix b1(M, k1 + 1);
-      // Define lambda that only sets the last element of u_vec
+      // Define lambda that only sets the last column of b
+      double* last_col = b.data_ptr() + k1 * M;
       auto f = [&](double x)->double {
-        // set the last element to the current candidate critical value
-        u_vec[k1] = x;
-        for (size_t i = 0; i <= k1; ++i) {
-          for (size_t m = 0; m < M; ++m) {
-            b1(m, i) = u_vec[i];
-          }
-        }
+        // set the last column to the current candidate critical value
+        std::fill_n(last_col, M, x);  // fill last column fast
         auto v = exitprob_mams_cpp(M, r, theta_vec, corr_known,
-                                   k1 + 1, b1, infoRates);
+                                   k1 + 1, b, infoRates);
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - cumAlpha;
       };
@@ -717,19 +719,15 @@ ListCpp getDesign_mams_cpp(
     }
 
     if (haybittle) { // Haybittle & Peto
-      std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
-        u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) critValues[i] = 6.0;
+        double* colptr = b.data_ptr() + i * M;
+        std::fill_n(colptr, M, critValues[i]);
       }
 
+      double* last_col = b.data_ptr() + (kMax - 1) * M;
       auto f = [&](double x)->double {
-        u[kMax-1] = x;
-        for (size_t i = 0; i < kMax; ++i) {
-          for (size_t m = 0; m < M; ++m) {
-            b(m, i) = u[i];
-          }
-        }
+        std::fill_n(last_col, M, x);
         auto v = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
@@ -744,9 +742,8 @@ ListCpp getDesign_mams_cpp(
   }
 
   for (size_t i = 0; i < kMax; ++i) {
-    for (size_t m = 0; m < M; ++m) {
-      b(m, i) = critValues[i];
-    }
+    double* colptr = b.data_ptr() + i * M;
+    std::fill_n(colptr, M, critValues[i]);
   }
   auto v = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
   std::vector<double> cumAlphaSpent(kMax);
@@ -756,9 +753,11 @@ ListCpp getDesign_mams_cpp(
   double IMax1 = IMax;
   if (unknown == "IMax") {
     double maxtheta = *std::max_element(theta.begin(), theta.end());
+    std::vector<double> theta_norm(M);
+    for (size_t i = 0; i < M; ++i) theta_norm[i] = theta[i] / maxtheta;
+    std::vector<double> theta1(M);
     auto f = [&](double x)->double {
-      std::vector<double> theta1(M);
-      for (size_t i = 0; i < M; ++i) theta1[i] = theta[i] * x / maxtheta;
+      for (size_t i = 0; i < M; ++i) theta1[i] = theta_norm[i] * x;
       auto v = exitprob_mams_cpp(M, r, theta1, true, kMax, b, infoRates);
       double overallReject = std::accumulate(v.begin(), v.end(), 0.0);
       return overallReject - (1.0 - beta);
@@ -808,30 +807,26 @@ ListCpp getDesign_mams_cpp(
 
   std::copy_n(critValues.data(), kMax, efficacyBounds.data());
   for (size_t M1 = M - 1; M1 > 0; --M1) {
-    std::vector<double> zero(M1, 0.0);
+    std::vector<double> zero1(M1, 0.0);
+    FlatMatrix b1(M1, kMax);
     std::vector<double> cut = criticalValues;
-    FlatMatrix b(M1, kMax);
 
     if (haybittle) { // Haybittle & Peto
-      std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
-        u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) cut[i] = 6.0;
+        double* colptr = b1.data_ptr() + i * M1;
+        std::fill_n(colptr, M1, cut[i]);
       }
 
+      double* last_col = b1.data_ptr() + (kMax - 1) * M1;
       auto f = [&](double x)->double {
-        u[kMax-1] = x;
-        for (size_t i = 0; i < kMax; ++i) {
-          for (size_t m = 0; m < M1; ++m) {
-            b(m, i) = u[i];
-          }
-        }
-        auto v = exitprob_mams_cpp(M1, r, zero, corr_known, kMax, b, infoRates);
+        std::fill_n(last_col, M1, x);
+        auto v = exitprob_mams_cpp(M1, r, zero1, corr_known, kMax, b1, infoRates);
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
       };
 
-      cut[kMax-1] = brent(f, 0.0, 6.0, 1e-6);
+      cut[kMax - 1] = brent(f, 0.0, 6.0, 1e-6);
     } else {
       cut = getBound_mams_cpp(
         M1, r, corr_known, kMax, infoRates, alpha, asf, parameterAlphaSpending,
@@ -1250,6 +1245,7 @@ ListCpp adaptDesign_mams_cpp(
   std::vector<double> zero(M, 0.0);
   std::vector<double> critValues = criticalValues;
   double alpha1 = alpha;
+  FlatMatrix b(M, kMax);
   bool haybittle = false;
   if (missingCriticalValues) {
     if (kMax > 1 && criticalValues.size() == kMax) {
@@ -1261,21 +1257,16 @@ ListCpp adaptDesign_mams_cpp(
     }
 
     if (haybittle) { // Haybittle & Peto
-      std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
-        u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) critValues[i] = 6.0;
+        double* colptr = b.data_ptr() + i * M;
+        std::fill_n(colptr, M, critValues[i]);
       }
 
-      FlatMatrix b1(M, kMax);
+      double* last_col = b.data_ptr() + (kMax - 1) * M;
       auto f = [&](double x)->double {
-        u[kMax-1] = x;
-        for (size_t i = 0; i < kMax; ++i) {
-          for (size_t m = 0; m < M; ++m) {
-            b1(m, i) = u[i];
-          }
-        }
-        auto v = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b1, infoRates);
+        std::fill_n(last_col, M, x);
+        auto v = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
       };
@@ -1289,14 +1280,10 @@ ListCpp adaptDesign_mams_cpp(
   } else {
     for (size_t i = 0; i < kMax; ++i) {
       if (!effStopping[i]) critValues[i] = 6.0;
+      double* colptr = b.data_ptr() + i * M;
+      std::fill_n(colptr, M, critValues[i]);
     }
-    FlatMatrix b1(M, kMax);
-    for (size_t i = 0; i < kMax; ++i) {
-      for (size_t m = 0; m < M; ++m) {
-        b1(m, i) = critValues[i];
-      }
-    }
-    auto v = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b1, infoRates);
+    auto v = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
     alpha1 = std::accumulate(v.begin(), v.end(), 0.0);
   }
 
@@ -1306,13 +1293,18 @@ ListCpp adaptDesign_mams_cpp(
   FlatMatrix c1(M, k1);
   for (size_t i = 0; i < k1; ++i) {
     s1[i] = (infoRates[L + i] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
-    for (size_t m = 0; m < M; ++m) {
-      if (effStopping[L + i]) {
-        double r1 = infoRates[L - 1] / infoRates[L + i];
-        c1(m, i) = (critValues[L + i] - zL[m] * std::sqrt(r1)) / std::sqrt(1.0 - r1);
-      } else {
-        c1(m, i) = 6.0;
+    double* colptr = c1.data_ptr() + i * M; // start of column i
+    if (effStopping[L + i]) {
+      double cut = critValues[L + i];
+      double r1 = infoRates[L - 1] / infoRates[L + i];
+      double sqrt_r1 = std::sqrt(r1);
+      double denom = std::sqrt(1.0 - r1);
+      // write contiguous column
+      for (size_t m = 0; m < M; ++m) {
+        colptr[m] = (cut - zL[m] * sqrt_r1) / denom;
       }
+    } else {
+      std::fill_n(colptr, M, 6.0);
     }
   }
 
@@ -1378,6 +1370,9 @@ ListCpp adaptDesign_mams_cpp(
   FlatMatrix c2(MNew, k2);
   c2.fill(6.0);
 
+  std::vector<double> zscaled(MNew);
+  for (size_t j = 0; j < MNew; ++j) zscaled[j] = zL[selectedNew[j]] * sqrtIL;
+
   if (std::isnan(betaNew)) {
     for (size_t i = 0; i < k2; ++i) {
       I2[i] = INew * s2[i];
@@ -1387,19 +1382,19 @@ ListCpp adaptDesign_mams_cpp(
     }
 
     if (asf2 == "of") {
-      auto g = [&c2, I2, sqrtI2, sqrtIc, zL, zero2, selectedNew,
-                effStopping2, k2, c_alpha, sqrtIL, MNew, rNew, corr_known]
+      auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2, &effStopping2,
+                k2, c_alpha, MNew, rNew, corr_known]
       (double x)->double {
+        double col_const = x * sqrtIc[k2 - 1];
         for (size_t i = 0; i < k2; ++i) {
+          double* colptr = c2.data_ptr() + i * MNew;
           if (effStopping2[i]) {
+            double denom = sqrtI2[i];
             for (size_t j = 0; j < MNew; ++j) {
-              size_t m = selectedNew[j];
-              c2(j, i) = (x * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[i];
+              colptr[j] = (col_const - zscaled[j]) / denom;
             }
           } else {
-            for (size_t j = 0; j < MNew; ++j) {
-              c2(j, i) = 6.0;
-            }
+            std::fill_n(colptr, MNew, 6.0);
           }
         }
 
@@ -1409,29 +1404,31 @@ ListCpp adaptDesign_mams_cpp(
       };
 
       double cof = brent(g, 0.0, 6.0, 1e-6);
+      double col_const = cof * sqrtIc[k2 - 1];
       for (size_t i = 0; i < k2; ++i) {
+        double* colptr = c2.data_ptr() + i * MNew;
         if (effStopping2[i]) {
-          critValues2[i] = cof * sqrtIc[k2 - 1] / sqrtIc[i];
+          critValues2[i] = col_const / sqrtIc[i];
+          double denom = sqrtI2[i];
           for (size_t j = 0; j < MNew; ++j) {
-            size_t m = selectedNew[j];
-            c2(j, i) = (cof * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[i];
+            colptr[j] = (col_const - zscaled[j]) / denom;
           }
         } else {
           critValues2[i] = 6.0;
-          for (size_t j = 0; j < MNew; ++j) {
-            c2(j, i) = 6.0;
-          }
+          std::fill_n(colptr, MNew, 6.0);
         }
       }
     } else if (asf2 == "none") {
       for (size_t i = 0; i < k2 - 1; ++i) critValues2[i] = 6.0;
-      c2.fill(6.0);
-      auto g = [&c2, I2, sqrtI2, sqrtIc, zL, zero2, selectedNew,
-                k2, c_alpha, sqrtIL, MNew, rNew, corr_known]
+      double denom = sqrtI2[k2 - 1];
+
+      auto g = [&c2, &I2, &sqrtIc, &zscaled, &zero2,
+                denom, k2, c_alpha, MNew, rNew, corr_known]
       (double x)->double {
+        double* colptr = c2.data_ptr() + (k2 - 1) * MNew;
+        double col_const = x * sqrtIc[k2 - 1];
         for (size_t j = 0; j < MNew; ++j) {
-          size_t m = selectedNew[j];
-          c2(j, k2 - 1) = (x * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[k2 - 1];
+          colptr[j] = (col_const - zscaled[j]) / denom;
         }
 
         auto v = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, k2, c2, I2);
@@ -1441,21 +1438,24 @@ ListCpp adaptDesign_mams_cpp(
 
       double cof = brent(g, 0.0, 6.0, 1e-6);
       critValues2[k2 - 1] = cof;
+      double* colptr = c2.data_ptr() + (k2 - 1) * MNew;
+      double col_const = cof * sqrtIc[k2 - 1];
       for (size_t j = 0; j < MNew; ++j) {
-        size_t m = selectedNew[j];
-        c2(j, k2 - 1) = (cof * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[k2 - 1];
+        colptr[j] = (col_const - zscaled[j]) / denom;
       }
     } else {
       for (size_t i = 0; i < k2; ++i) {
         if (!effStopping2[i]) continue;
+        double denom = sqrtI2[i];
 
-        auto g = [&c2, I2, sqrtI2, sqrtIc, zL, cpu0, zero2, selectedNew,
-                  sqrtIL, i, MNew, rNew, corr_known]
+        auto g = [&c2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2,
+                  denom, i, MNew, rNew, corr_known]
         (double x)->double {
+          double col_const = x * sqrtIc[i];
+          double* colptr = c2.data_ptr() + i * MNew;
           // update critical values of the secondary trial at current look
           for (size_t j = 0; j < MNew; ++j) {
-            size_t m = selectedNew[j];
-            c2(j, i) = (x * sqrtIc[i] - zL[m] * sqrtIL) / sqrtI2[i];
+            colptr[j] = (col_const - zscaled[j]) / denom;
           }
 
           auto v = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, i + 1, c2, I2);
@@ -1464,19 +1464,19 @@ ListCpp adaptDesign_mams_cpp(
         };
 
         double cof = brent(g, 0.0, 6.0, 1e-6);
+        double col_const = cof * sqrtIc[i];
         critValues2[i] = cof;
+        double* colptr = c2.data_ptr() + i * MNew;
         for (size_t j = 0; j < MNew; ++j) {
-          size_t m = selectedNew[j];
-          c2(j, i) = (cof * sqrtIc[i] - zL[m] * sqrtIL) / sqrtI2[i];
+          colptr[j] = (col_const - zscaled[j]) / denom;
         }
       }
     }
   } else {
-
     // obtain required max information for the secondary trial given target power
     auto f = [&critValues2, &c2, &I2, &Ic, &sqrtI2, &sqrtIc,
-              zL, cpu0, zero2, theta2, selectedNew, s2, effStopping2,
-              betaNew, k2, asf2, c_alpha, IL, sqrtIL, MNew, rNew, corr_known]
+              &zscaled, &cpu0, &zero2, &theta2, &s2, &effStopping2,
+              betaNew, k2, asf2, c_alpha, IL, MNew, rNew, corr_known]
     (double Inew)->double {
       for (size_t i = 0; i < k2; ++i) {
         I2[i] = Inew * s2[i];
@@ -1486,19 +1486,19 @@ ListCpp adaptDesign_mams_cpp(
       }
 
       if (asf2 == "of") {
-        auto g = [&c2, I2, sqrtI2, sqrtIc, zL, zero2, selectedNew,
-                  effStopping2, k2, c_alpha, sqrtIL, MNew, rNew, corr_known]
+        auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2, &effStopping2,
+                  k2, c_alpha, MNew, rNew, corr_known]
         (double x)->double {
+          double col_const = x * sqrtIc[k2 - 1];
           for (size_t i = 0; i < k2; ++i) {
+            double* colptr = c2.data_ptr() + i * MNew;
             if (effStopping2[i]) {
+              double denom = sqrtI2[i];
               for (size_t j = 0; j < MNew; ++j) {
-                size_t m = selectedNew[j];
-                c2(j, i) = (x * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[i];
+                colptr[j] = (col_const - zscaled[j]) / denom;
               }
             } else {
-              for (size_t j = 0; j < MNew; ++j) {
-                c2(j, i) = 6.0;
-              }
+              std::fill_n(colptr, MNew, 6.0);
             }
           }
 
@@ -1508,29 +1508,31 @@ ListCpp adaptDesign_mams_cpp(
         };
 
         double cof = brent(g, 0.0, 6.0, 1e-6);
+        double col_const = cof * sqrtIc[k2 - 1];
         for (size_t i = 0; i < k2; ++i) {
+          double* colptr = c2.data_ptr() + i * MNew;
           if (effStopping2[i]) {
-            critValues2[i] = cof * sqrtIc[k2 - 1] / sqrtIc[i];
+            critValues2[i] = col_const / sqrtIc[i];
+            double denom = sqrtI2[i];
             for (size_t j = 0; j < MNew; ++j) {
-              size_t m = selectedNew[j];
-              c2(j, i) = (cof * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[i];
+              colptr[j] = (col_const - zscaled[j]) / denom;
             }
           } else {
             critValues2[i] = 6.0;
-            for (size_t j = 0; j < MNew; ++j) {
-              c2(j, i) = 6.0;
-            }
+            std::fill_n(colptr, MNew, 6.0);
           }
         }
       } else if (asf2 == "none") {
         for (size_t i = 0; i < k2 - 1; ++i) critValues2[i] = 6.0;
-        c2.fill(6.0);
-        auto g = [&c2, I2, sqrtI2, sqrtIc, zL, zero2, selectedNew,
-                  k2, c_alpha, sqrtIL, MNew, rNew, corr_known]
+        double denom = sqrtI2[k2 - 1];
+
+        auto g = [&c2, &I2, &sqrtIc, &zscaled, &zero2,
+                  denom, k2, c_alpha, MNew, rNew, corr_known]
         (double x)->double {
+          double col_const = x * sqrtIc[k2 - 1];
+          double* colptr = c2.data_ptr() + (k2 - 1) * MNew;
           for (size_t j = 0; j < MNew; ++j) {
-            size_t m = selectedNew[j];
-            c2(j, k2 - 1) = (x * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[k2 - 1];
+            colptr[j] = (col_const - zscaled[j]) / denom;
           }
 
           auto v = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, k2, c2, I2);
@@ -1540,21 +1542,24 @@ ListCpp adaptDesign_mams_cpp(
 
         double cof = brent(g, 0.0, 6.0, 1e-6);
         critValues2[k2 - 1] = cof;
+        double col_const = cof * sqrtIc[k2 - 1];
+        double* colptr = c2.data_ptr() + (k2 - 1) * MNew;
         for (size_t j = 0; j < MNew; ++j) {
-          size_t m = selectedNew[j];
-          c2(j, k2 - 1) = (cof * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[k2 - 1];
+          colptr[j] = (col_const - zscaled[j]) / denom;
         }
       } else {
         for (size_t i = 0; i < k2; ++i) {
           if (!effStopping2[i]) continue;
+          double denom = sqrtI2[i];
 
-          auto g = [&c2, I2, sqrtI2, sqrtIc, zL, cpu0, zero2, selectedNew,
-                    sqrtIL, i, MNew, rNew, corr_known]
+          auto g = [&c2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2,
+                    denom, i, MNew, rNew, corr_known]
           (double x)->double {
+            double col_const = x * sqrtIc[i];
+            double* colptr = c2.data_ptr() + i * MNew;
             // update critical values of the secondary trial at current look
             for (size_t j = 0; j < MNew; ++j) {
-              size_t m = selectedNew[j];
-              c2(j, i) = (x * sqrtIc[i] - zL[m] * sqrtIL) / sqrtI2[i];
+              colptr[j] = (col_const - zscaled[j]) / denom;
             }
 
             auto v = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, i + 1, c2, I2);
@@ -1563,10 +1568,11 @@ ListCpp adaptDesign_mams_cpp(
           };
 
           double cof = brent(g, 0.0, 6.0, 1e-6);
+          double col_const = cof * sqrtIc[i];
           critValues2[i] = cof;
+          double* colptr = c2.data_ptr() + i * MNew;
           for (size_t j = 0; j < MNew; ++j) {
-            size_t m = selectedNew[j];
-            c2(j, i) = (cof * sqrtIc[i] - zL[m] * sqrtIL) / sqrtI2[i];
+            colptr[j] = (col_const - zscaled[j]) / denom;
           }
         }
       }
@@ -1644,25 +1650,21 @@ ListCpp adaptDesign_mams_cpp(
   std::vector<double> efficacyBounds1(M * kMax);
   std::copy_n(critValues.data(), kMax, efficacyBounds1.data());
   for (size_t M1 = M - 1; M1 > 0; --M1) {
-    std::vector<double> zero(M1, 0.0);
+    std::vector<double> zero1(M1, 0.0);
     std::vector<double> cut = criticalValues;
-    FlatMatrix b(M1, kMax);
+    FlatMatrix b1(M1, kMax);
 
     if (haybittle) { // Haybittle & Peto
-      std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
-        u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) cut[i] = 6.0;
+        double* colptr = b1.data_ptr() + i * M1;
+        std::fill_n(colptr, M1, cut[i]);
       }
 
+      double* last_col = b1.data_ptr() + (kMax - 1) * M1;
       auto f = [&](double x)->double {
-        u[kMax-1] = x;
-        for (size_t i = 0; i < kMax; ++i) {
-          for (size_t m = 0; m < M1; ++m) {
-            b(m, i) = u[i];
-          }
-        }
-        auto v = exitprob_mams_cpp(M1, r, zero, corr_known, kMax, b, infoRates);
+        std::fill_n(last_col, M1, x);
+        auto v = exitprob_mams_cpp(M1, r, zero1, corr_known, kMax, b1, infoRates);
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
       };
@@ -1682,32 +1684,33 @@ ListCpp adaptDesign_mams_cpp(
   std::vector<std::string> intersectHyp(ntests * kc);
   std::vector<int> stage(ntests * kc);
   std::vector<double> efficacyBounds(ntests * kc);
+
+  std::vector<int> idx_in_selected(M, -1);
+  for (size_t t = 0; t < selectedNew.size(); ++t)
+    idx_in_selected[selectedNew[t]] = static_cast<int>(t);
+
   for (size_t h = 0; h < ntests; ++h) {
     size_t number = ntests - h;
 
-    // Binary representation of intersection hypothesis
-    std::vector<unsigned char> cc(MNew);
-    for (size_t j = 0; j < MNew; ++j) {
-      cc[j] = (number >> (MNew - 1 - j)) & 1;
-    }
-
-    size_t M2 = std::accumulate(cc.begin(), cc.end(), 0);
-    size_t M1 = M2 + (M - MNew);
-
-    // construct the vector of indices for the M1 hypotheses in the intersection,
-    // which includes all the non-selected arms and the selected arms that
-    // are in the intersection
     std::vector<size_t> primary;
     std::vector<size_t> selectedNew2;
+    primary.reserve(M); selectedNew2.reserve(MNew);
+
+    // Count M2 by popcount
+    size_t M2 = 0;
+    for (size_t b = 0; b < MNew; ++b) if ((number >> (MNew - 1 - b)) & 1u) ++M2;
+    size_t M1 = M2 + (M - MNew);
+
     for (size_t j = 0; j < M; ++j) {
-      auto it = std::find(selectedNew.begin(), selectedNew.end(), j);
-      if (it != selectedNew.end()) { // found in selectedNew
-        size_t idx = std::distance(selectedNew.begin(), it);
-        if (cc[idx] == 1) {
+      int pos = idx_in_selected[j];
+      if (pos >= 0) {
+        // arm j is among selectedNew; check corresponding bit in 'number'
+        if ((number >> (MNew - 1 - pos)) & 1u) {
           primary.push_back(j);
           selectedNew2.push_back(j);
         }
-      } else { // non-selected arms are always in the intersection
+      } else {
+        // non-selected arm always included
         primary.push_back(j);
       }
     }
@@ -1718,21 +1721,24 @@ ListCpp adaptDesign_mams_cpp(
     // compute conditional alpha for MAMS with the given M1 hypotheses
     FlatMatrix c1(M1, k1);
     for (size_t i = 0; i < k1; ++i) {
-      for (size_t j = 0; j < M1; ++j) {
-        size_t m = primary[j];
-        if (effStopping[L + i]) {
-          double r1 = infoRates[L - 1] / infoRates[L + i];
-          c1(j, i) = (critValues[L + i] - zL[m] * std::sqrt(r1)) /
-            std::sqrt(1.0 - r1);
-        } else {
-          c1(j, i) = 6.0;
+      double col_const = critValues[L + i];
+      double r1 = infoRates[L - 1] / infoRates[L + i];
+      double sqrt_r1 = std::sqrt(r1);
+      double denom = std::sqrt(1.0 - r1);
+      double* colptr = c1.data_ptr() + i * M1; // start of column i
+      if (effStopping[L + i]) {
+        for (size_t j = 0; j < M1; ++j) {
+          size_t m = primary[j];
+          colptr[j] = (col_const - zL[m] * sqrt_r1) / denom;
         }
+      } else {
+        std::fill_n(colptr, M1, 6.0);
       }
     }
 
     // conditional type I error
-    std::vector<double> zero(M1, 0.0);
-    auto v0 = exitprob_mams_cpp(M1, r, zero, corr_known, k1, c1, I1);
+    std::vector<double> zero1(M1, 0.0);
+    auto v0 = exitprob_mams_cpp(M1, r, zero1, corr_known, k1, c1, I1);
     double c_alpha = std::accumulate(v0.begin(), v0.end(), 0.0);
 
     std::vector<double> cpu0(k2);
@@ -1752,20 +1758,23 @@ ListCpp adaptDesign_mams_cpp(
     FlatMatrix c2(M2, k2);
     c2.fill(6.0);
 
+    std::vector<double> zscaled(M2);
+    for (size_t j = 0; j < M2; ++j) zscaled[j] = zL[selectedNew2[j]] * sqrtIL;
+
     if (asf2 == "of") {
-      auto g = [&c2, I2, sqrtI2, sqrtIc, zL, zero2, selectedNew2,
-                effStopping2, k2, c_alpha, sqrtIL, M2, rNew, corr_known]
+      auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2, &effStopping2,
+                k2, c_alpha, M2, rNew, corr_known]
       (double x)->double {
+        double col_const = x * sqrtIc[k2 - 1];
         for (size_t i = 0; i < k2; ++i) {
+          double* colptr = c2.data_ptr() + i * M2;
           if (effStopping2[i]) {
+            double denom = sqrtI2[i];
             for (size_t j = 0; j < M2; ++j) {
-              size_t m = selectedNew2[j];
-              c2(j, i) = (x * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[i];
+              colptr[j] = (col_const - zscaled[j]) / denom;
             }
           } else {
-            for (size_t j = 0; j < M2; ++j) {
-              c2(j, i) = 6.0;
-            }
+            std::fill_n(colptr, M2, 6.0);
           }
         }
 
@@ -1775,22 +1784,25 @@ ListCpp adaptDesign_mams_cpp(
       };
 
       double cof = brent(g, 0.0, 6.0, 1e-6);
+      double col_const = cof * sqrtIc[k2 - 1];
       for (size_t i = 0; i < k2; ++i) {
         if (effStopping2[i]) {
-          critValues2[i] = cof * sqrtIc[k2 - 1] / sqrtIc[i];
+          critValues2[i] = col_const / sqrtIc[i];
         } else {
           critValues2[i] = 6.0;
         }
       }
     } else if (asf2 == "none") {
       for (size_t i = 0; i < k2 - 1; ++i) critValues2[i] = 6.0;
-      c2.fill(6.0);
-      auto g = [&c2, I2, sqrtI2, sqrtIc, zL, zero2, selectedNew2,
-                k2, c_alpha, sqrtIL, M2, rNew, corr_known]
+      double denom = sqrtI2[k2 - 1];
+
+      auto g = [&c2, &I2, &sqrtIc, &zscaled, &zero2,
+                denom, k2, c_alpha, M2, rNew, corr_known]
       (double x)->double {
+        double col_const = x * sqrtIc[k2 - 1];
+        double* colptr = c2.data_ptr() + (k2 - 1) * M2;
         for (size_t j = 0; j < M2; ++j) {
-          size_t m = selectedNew2[j];
-          c2(j, k2 - 1) = (x * sqrtIc[k2 - 1] - zL[m] * sqrtIL) / sqrtI2[k2 - 1];
+          colptr[j] = (col_const - zscaled[j]) / denom;
         }
 
         auto v = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, c2, I2);
@@ -1803,14 +1815,16 @@ ListCpp adaptDesign_mams_cpp(
     } else {
       for (size_t i = 0; i < k2; ++i) {
         if (!effStopping2[i]) continue;
+        double denom = sqrtI2[i];
 
-        auto g = [&c2, I2, sqrtI2, sqrtIc, zL, cpu0, zero2, selectedNew2,
-                  sqrtIL, i, M2, rNew, corr_known]
+        auto g = [&c2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2,
+                  denom, i, M2, rNew, corr_known]
         (double x)->double {
+          double col_const = x * sqrtIc[i];
+          double* colptr = c2.data_ptr() + i * M2;
           // update critical values of the secondary trial at current look
           for (size_t j = 0; j < M2; ++j) {
-            size_t m = selectedNew2[j];
-            c2(j, i) = (x * sqrtIc[i] - zL[m] * sqrtIL) / sqrtI2[i];
+            colptr[j] = (col_const - zscaled[j]) / denom;
           }
 
           auto v = exitprob_mams_cpp(M2, rNew, zero2, corr_known, i + 1, c2, I2);
@@ -1828,14 +1842,15 @@ ListCpp adaptDesign_mams_cpp(
     for (size_t i = 0; i < kc; ++i) {
       size_t row = h * kc + i;
 
-      std::ostringstream oss;
-      oss << "{";
-      for (std::size_t i = 0; i < selectedNew2.size(); ++i) {
-        if (i) oss << ", ";
-        oss << selectedNew2[i] + 1;
+      std::string s;
+      s.reserve(3 + selectedNew2.size() * 4); // rough reservation
+      s.push_back('{');
+      for (size_t t = 0; t < selectedNew2.size(); ++t) {
+        if (t) { s.append(", "); }
+        s.append(std::to_string(selectedNew2[t] + 1));
       }
-      oss << "}";
-      intersectHyp[row] = oss.str();
+      s.push_back('}');
+      intersectHyp[row] = std::move(s);
 
       stage[row] = i + 1;
       efficacyBounds[row] = critValues_full[i];
