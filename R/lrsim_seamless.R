@@ -1,5 +1,5 @@
-#' @title Log-Rank Test Simulation for Multiple Active Arms vs. Common Control
-#' @description Simulate multi-arm group-sequential trials using a weighted
+#' @title Log-Rank Test Simulation for Phase 2/3 Seamless Design
+#' @description Simulate phase 2/3 seamless design using a weighted
 #' log-rank test. Analyses can be triggered either by the cumulative number
 #' of events (combined for an active arm and the common control) or by
 #' pre-specified calendar times.
@@ -91,7 +91,8 @@
 #'
 #' * \code{sumdata1}: Data frame summarizing each iteration, stage, and
 #'   treatment group:
-#'     - \code{iterationNumber}, \code{eventsNotAchieved}, \code{stageNumber},
+#'     - \code{iterationNumber}, \code{eventsNotAchieved},
+#'       \code{stopStage}, \code{stageNumber},
 #'       \code{analysisTime}, \code{treatmentGroup}, \code{accruals},
 #'       \code{events}, \code{dropouts}.
 #'     - For each stage the final row summarizes the overall study
@@ -99,19 +100,20 @@
 #'
 #' * \code{summdata2}: Data frame summarizing log-rank statistics by iteration,
 #'   stage, and active arm:
-#'     - \code{iterationNumber}, \code{stageNumber}, \code{analysisTime},
-#'       \code{activeArm}, \code{totalAccruals}, \code{totalEvents},
-#'       \code{totalDropouts}, \code{uscore}, \code{vscore},
-#'       \code{logRankStatistic}.
+#'     - \code{iterationNumber}, \code{stopStage}, \code{stageNumber},
+#'       \code{analysisTime}, \code{activeArm},
+#'       \code{totalAccruals}, \code{totalEvents}, \code{totalDropouts},
+#'       \code{uscore}, \code{vscore}, \code{logRankStatistic}, \code{reject}.
 #'     - For each active arm, total accruals, events, and dropouts refer to
 #'       the combined counts for that arm and the common control at that stage.
 #'
 #' * \code{rawdata} (present when \code{maxNumberOfRawDatasetsPerStage} > 0):
 #'   Subject-level data for selected replications with variables:
-#'     - \code{iterationNumber}, \code{stageNumber}, \code{analysisTime},
-#'       \code{subjectId}, \code{arrivalTime}, \code{stratum},
-#'       \code{treatmentGroup}, \code{survivalTime}, \code{dropoutTime},
-#'       \code{timeUnderObservation}, \code{event}, \code{dropoutEvent}.
+#'     - \code{iterationNumber}, \code{stopStage}, \code{stageNumber},
+#'       \code{analysisTime}, \code{subjectId}, \code{arrivalTime},
+#'       \code{stratum}, \code{treatmentGroup},
+#'       \code{survivalTime}, \code{dropoutTime}, \code{timeUnderObservation},
+#'       \code{event}, \code{dropoutEvent}.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -142,8 +144,8 @@ lrsim_seamless <- function(
     accrualIntensity = NA,
     piecewiseSurvivalTime = 0,
     stratumFraction = 1,
-    lambdas = list(NA, NA, NA),
-    gammas = list(0, 0, 0),
+    lambdas = NULL,
+    gammas = NULL,
     n = NA,
     followupTime = NA,
     fixedFollowup = FALSE,
