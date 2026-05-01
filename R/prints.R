@@ -4411,7 +4411,7 @@ print.lrsim_mams <- function(x, ...) {
   j <- 1:ncol(df2a)
   df2a[j] <- lapply(df2a[j], formatC, format = "f", digits = 3)
 
-  df2b <- as.data.frame(a$rejectByNum)
+  df2b <- as.data.frame(a$rejectByNumber)
   rownames(df2b) <- c(paste("Stage", 1:k, sep=" "), "Overall")
   colnames(df2b) <- paste("", 0:M, sep=" ")
   j <- 1:ncol(df2b)
