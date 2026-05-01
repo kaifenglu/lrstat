@@ -633,6 +633,7 @@ ListCpp lrsim_seamless_cpp(
   std::vector<int> sum1_dropouts; sum1_dropouts.reserve(ns1r);
 
   std::vector<int> sum2_iterNum; sum2_iterNum.reserve(ns2r);
+  std::vector<int> sum2_bestArm; sum2_bestArm.reserve(ns2r);
   std::vector<int> sum2_stopStage; sum2_stopStage.reserve(ns2r);
   std::vector<int> sum2_stageNum; sum2_stageNum.reserve(ns2r);
   std::vector<double> sum2_analysisT; sum2_analysisT.reserve(ns2r);
@@ -678,6 +679,8 @@ ListCpp lrsim_seamless_cpp(
     const auto& s2rows = results[iter].summary2Rows;
     for (const auto& r : s2rows) {
       sum2_iterNum.push_back(r.iterNum);
+      sum2_bestArm.push_back(0);
+      sum2_stopStage.push_back(0);
       sum2_stageNum.push_back(r.stageNum);
       sum2_analysisT.push_back(r.analysisT);
       sum2_actArm.push_back(r.actArm);
@@ -687,7 +690,6 @@ ListCpp lrsim_seamless_cpp(
       sum2_uscore.push_back(r.uscore);
       sum2_vscore.push_back(r.vscore);
       sum2_logRank.push_back(r.logRank);
-      sum2_stopStage.push_back(0);
       sum2_reject.push_back(0);
     }
 
@@ -755,6 +757,13 @@ ListCpp lrsim_seamless_cpp(
     }
     selectAsBest[best_arm] += 1.0;
 
+    for (size_t k = 0; k < kMax; ++k) {
+      for (size_t m = 0; m < M; ++m) {
+        size_t idx = i2 + k * M + m;
+        sum2_bestArm[idx] = static_cast<int>(best_arm + 1);
+      }
+    }
+
     // stage-1 totals (all active arms + control)
     const double events1 = sum1_E[i1 + M + 1];
     const double dropouts1 = sum1_D[i1 + M + 1];
@@ -773,12 +782,23 @@ ListCpp lrsim_seamless_cpp(
     // find stopping stage for this iter (default last stage)
     size_t stop_k = kMax - 1;
     const size_t base_m = i2 + best_arm;
-    for (size_t stage = 0; stage < kMax; ++stage) {
-      const size_t idx = base_m + stage * M;
-      if (logRank[idx] < -criticalValues[stage]) {
-        rejectByArm(stage, best_arm) += 1.0;
-        stop_k = stage;
-        reject[idx] = 1;
+    for (size_t k = 0; k < kMax; ++k) {
+      const size_t idx = base_m + k * M;
+      if (logRank[idx] < -criticalValues[k]) {
+        stop_k = k;
+        rejectByArm(k, M) += 1;
+        if (k == 0) {
+          for (size_t m = 0; m < M; ++m) {
+            size_t idx2 = i2 + k * M + m;
+            if (logRank[idx2] < -criticalValues[k]) {
+              reject[idx2] = 1;
+              rejectByArm(k, m) += 1;
+            }
+          }
+        } else {
+          reject[idx] = 1;
+          rejectByArm(k, best_arm) += 1;
+        }
         break;
       }
     }
@@ -848,7 +868,6 @@ ListCpp lrsim_seamless_cpp(
       eventsByArm(k, M) += eventsByArm(k, m);
       dropoutsByArm(k, M) += dropoutsByArm(k, m);
       subjectsByArm(k, M) += subjectsByArm(k, m);
-      rejectByArm(k, M) += rejectByArm(k, m);
     }
   }
 
@@ -893,6 +912,7 @@ ListCpp lrsim_seamless_cpp(
   overview.push_back(expNumDropouts, "expectedNumberOfDropouts");
   overview.push_back(expNumSubjects, "expectedNumberOfSubjects");
   overview.push_back(expStudyDur, "expectedStudyDuration");
+  overview.push_back(criticalValues, "criticalValues");
   overview.push_back(hazardRatioH0s, "hazardRatioH0s");
   overview.push_back(useEvents, "useEvents");
   overview.push_back(niters, "numberOfIterations");
@@ -916,6 +936,7 @@ ListCpp lrsim_seamless_cpp(
 
   DataFrameCpp sumdata2;
   sumdata2.push_back(std::move(sum2_iterNum), "iterationNumber");
+  sumdata2.push_back(std::move(sum2_bestArm), "bestArm");
   sumdata2.push_back(std::move(sum2_stopStage), "stopStage");
   sumdata2.push_back(std::move(sum2_stageNum), "stageNumber");
   sumdata2.push_back(std::move(sum2_analysisT), "analysisTime");
@@ -926,6 +947,7 @@ ListCpp lrsim_seamless_cpp(
   sumdata2.push_back(std::move(sum2_uscore), "uscore");
   sumdata2.push_back(std::move(sum2_vscore), "vscore");
   sumdata2.push_back(std::move(sum2_logRank), "logRankStatistic");
+  sumdata2.push_back(std::move(sum2_reject), "reject");
 
   ListCpp result;
   result.push_back(std::move(overview), "overview");
