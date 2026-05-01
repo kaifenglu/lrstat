@@ -80,6 +80,7 @@
 #'     - \code{expectedNumberOfSubjects}: Expected cumulative enrollments
 #'       at trial end.
 #'     - \code{expectedStudyDuration}: Expected study duration.
+#'     - \code{criticalValues}: The input critical values for each stage.
 #'     - \code{hazardRatioH0s}: The input hazard ratios under \eqn{H_0}.
 #'     - \code{useEvents}: Logical indicating whether analyses were event-driven.
 #'     - \code{numberOfIterations}: Number of simulation iterations performed.
@@ -100,8 +101,8 @@
 #'
 #' * \code{summdata2}: Data frame summarizing log-rank statistics by iteration,
 #'   stage, and active arm:
-#'     - \code{iterationNumber}, \code{stopStage}, \code{stageNumber},
-#'       \code{analysisTime}, \code{activeArm},
+#'     - \code{iterationNumber}, \code{bestArm}, \code{stopStage},
+#'       \code{stageNumber}, \code{analysisTime}, \code{activeArm},
 #'       \code{totalAccruals}, \code{totalEvents}, \code{totalDropouts},
 #'       \code{uscore}, \code{vscore}, \code{logRankStatistic}, \code{reject}.
 #'     - For each active arm, total accruals, events, and dropouts refer to
