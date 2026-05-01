@@ -4405,11 +4405,21 @@ print.lrsim_mams <- function(x, ...) {
   j <- 1:ncol(df1b)
   df1b[j] <- lapply(df1b[j], formatC, format = "f", digits = 3)
 
-  df2 <- as.data.frame(a$cumulativeRejection)
-  rownames(df2) <- paste("Stage", 1:k, sep=" ")
-  colnames(df2) <- c(paste("Active", 1:M, sep=" "), "Overall")
-  j <- 1:ncol(df2)
-  df2[j] <- lapply(df2[j], formatC, format = "f", digits = 3)
+  df2a <- as.data.frame(a$cumulativeRejection)
+  rownames(df2a) <- paste("Stage", 1:k, sep=" ")
+  colnames(df2a) <- c(paste("Active", 1:M, sep=" "), "Overall")
+  j <- 1:ncol(df2a)
+  df2a[j] <- lapply(df2a[j], formatC, format = "f", digits = 3)
+
+  df2b <- as.data.frame(a$rejectByNum)
+  rownames(df2b) <- c(paste("Stage", 1:k, sep=" "), "Overall")
+  colnames(df2b) <- paste("", 0:M, sep=" ")
+  j <- 1:ncol(df2b)
+  df2b[j] <- lapply(df2b[j], formatC, format = "f", digits = 3)
+
+  df2c <- a$rejectBySet
+  df2c[2] <- lapply(df2c[2], formatC, format = "f", digits = 3)
+  colnames(df2c) <- c("Set of active arms", "Probability of rejection")
 
   df3 <- as.data.frame(t(matrix(c(a$expectedNumberOfEvents,
                                   a$expectedNumberOfDropouts,
@@ -4448,7 +4458,15 @@ print.lrsim_mams <- function(x, ...) {
   cat("\n")
 
   cat("Cumulative probability of rejection by treatment\n")
-  print(df2, ..., na.print = "" , quote = FALSE )
+  print(df2a, ..., na.print = "" , quote = FALSE )
+  cat("\n")
+
+  cat("Probability of rejection by number of active arms\n")
+  print(df2b, ..., na.print = "" , quote = FALSE )
+  cat("\n")
+
+  cat("Overall probability of rejection by set of active arms\n")
+  print(df2c, ..., na.print = "" , quote = FALSE)
   cat("\n")
 
   print(df3, ..., na.print = "" , quote = FALSE, row.names= TRUE)
