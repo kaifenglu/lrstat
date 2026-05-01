@@ -142,8 +142,8 @@ among replications that reached that stage.
 \item \code{expectedNumberOfSubjects}: Expected cumulative enrollments
 at trial end.
 \item \code{expectedStudyDuration}: Expected study duration.
-\item \code{hazardRatioH0s}: The input hazard ratios under \eqn{H_0}.
 \item \code{criticalValues}: The input matrix of by-level critical boundaries.
+\item \code{hazardRatioH0s}: The input hazard ratios under \eqn{H_0}.
 \item \code{useEvents}: Logical indicating whether analyses were event-driven.
 \item \code{numberOfIterations}: Number of simulation iterations performed.
 \item \code{n}: Planned total sample size.
