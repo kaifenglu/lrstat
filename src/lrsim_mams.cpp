@@ -753,12 +753,15 @@ ListCpp lrsim_mams_cpp(
 
       // check whether there is any arm that crosses the efficacy boundary
       bool anyreject = false;
-      for (size_t m : I) {
+      for (auto it = I.begin(); it != I.end(); ) {
+        size_t m = *it;
         if (logRank[offset + m] < -cut) {
           anyreject = true;
           reject[offset + m] = 1;
           rejectByArm(k, m) += 1;
-          I.erase(m);
+          it = I.erase(it); // erase returns next iterator (C++11+)
+        } else {
+          ++it;
         }
       }
 
@@ -771,12 +774,15 @@ ListCpp lrsim_mams_cpp(
           anyreject = false;
           if (!I.empty()) {
             double cut = criticalValues(k, M - I.size());
-            for (size_t m : I) {
+            for (auto it = I.begin(); it != I.end(); ) {
+              size_t m = *it;
               if (logRank[offset + m] < -cut) {
                 anyreject = true;
                 reject[offset + m] = 1;
                 rejectByArm(k, m) += 1;
-                I.erase(m);
+                it = I.erase(it);
+              } else {
+                ++it;
               }
             }
           }
