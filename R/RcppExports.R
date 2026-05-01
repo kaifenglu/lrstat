@@ -4073,6 +4073,10 @@ binary_tte_simRcpp <- function(kMax1 = 1L, kMax2 = 1L, riskDiffH0 = 0, hazardRat
     .Call(`_lrstat_binary_tte_simRcpp`, kMax1, kMax2, riskDiffH0, hazardRatioH0, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, globalOddsRatio, pi1, pi2, lambda1, lambda2, gamma1, gamma2, delta1, delta2, upper1, upper2, n, plannedTime, plannedEvents, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
 
+lrsim_mams_Rcpp <- function(M = 2L, kMax = 1L, criticalValues = NULL, hazardRatioH0s = 1L, allocations = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambdas = NULL, gammas = NULL, n = NA_integer_, followupTime = NA_real_, fixedFollowup = FALSE, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = 0L) {
+    .Call(`_lrstat_lrsim_mams_Rcpp`, M, kMax, criticalValues, hazardRatioH0s, allocations, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambdas, gammas, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
+}
+
 lrsim_seamless_Rcpp <- function(M = 2L, K = 1L, criticalValues = NA_real_, hazardRatioH0s = 1L, allocations = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambdas = NULL, gammas = NULL, n = NA_integer_, followupTime = NA_real_, fixedFollowup = FALSE, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = 0L) {
     .Call(`_lrstat_lrsim_seamless_Rcpp`, M, K, criticalValues, hazardRatioH0s, allocations, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambdas, gammas, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
@@ -5075,9 +5079,12 @@ getBound_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_inte
 #' @param informationRates A numeric vector of information rates fixed
 #'   before the trial. If unspecified, defaults to \eqn{(1:kMax) / kMax}.
 #' @inheritParams param_efficacyStopping
-#' @param criticalValues The upper boundaries on the max z-test statistic
-#'   scale for efficacy stopping. If missing, boundaries will be computed
-#'   based on the specified information rates and alpha spending function.
+#' @param criticalValues The matrix of by-level upper boundaries on the
+#'   max z-test statistic scale for efficacy stopping.
+#'   The first column is for level \code{M}, the second column is for
+#'   level \code{M - 1}, and so on, with the last column for level 1.
+#'   If left unspecified, the critical values will be computed based
+#'   on the specified alpha spending function.
 #' @inheritParams param_alpha
 #' @inheritParams param_typeAlphaSpending
 #' @inheritParams param_parameterAlphaSpending
@@ -5155,7 +5162,7 @@ getBound_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_inte
 #'   alpha = 0.025, typeAlphaSpending = "OF"))
 #'
 #' @export
-getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_) {
+getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_) {
     .Call(`_lrstat_getDesign_mams`, beta, IMax, theta, M, r, corr_known, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime)
 }
 
@@ -5197,9 +5204,12 @@ getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M
 #' @param efficacyStopping Indicators of whether efficacy stopping is
 #'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 #'   if left unspecified.
-#' @param criticalValues The upper boundaries on the max z-test statistic
-#'   scale for efficacy stopping for the primary trial. If missing, boundaries
-#'   will be computed based on the specified alpha spending function.
+#' @param criticalValues The matrix of by-level upper boundaries on the
+#'   max z-test statistic scale for efficacy stopping for the primary trial.
+#'   The first column is for level \code{M}, the second column is for
+#'   level \code{M - 1}, and so on, with the last column for level 1.
+#'   If left unspecified, the critical values will be computed based
+#'   on the specified alpha spending function.
 #' @param alpha The significance level of the primary trial.
 #'   Defaults to 0.025.
 #' @param typeAlphaSpending The type of alpha spending for the primary
@@ -5315,7 +5325,7 @@ getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M
 #'   MNew = 1, selected = 2, rNew = 1))
 #'
 #' @export
-adaptDesign_mams <- function(betaNew = NA_real_, INew = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, MNew = NA_integer_, selected = NA_integer_, rNew = 1, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+adaptDesign_mams <- function(betaNew = NA_real_, INew = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, MNew = NA_integer_, selected = NA_integer_, rNew = 1, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
     .Call(`_lrstat_adaptDesign_mams`, betaNew, INew, M, r, corr_known, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, MullerSchafer, MNew, selected, rNew, kNew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
 }
 
