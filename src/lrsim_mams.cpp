@@ -726,6 +726,10 @@ ListCpp lrsim_mams_cpp(
   std::vector<double> expDropoutsByArm(M + 2);
   std::vector<double> expSubjectsByArm(M + 2);
 
+  size_t ntests = 1u << M; // number of possible rejection patterns among M arms
+  FlatMatrix rejectBySet(kMax, ntests);
+  FlatMatrix rejectByNum(kMax + 1, M + 1);
+
   int* stopr = raw_stopStage.data();
   int* stop1 = sum1_stopStage.data();
   const double* sum1_T = sum1_analysisT.data();
@@ -792,6 +796,27 @@ ListCpp lrsim_mams_cpp(
       }
     }
 
+    // record which hypotheses are rejected at the stopping stage for this iteration
+    const size_t offset = i2 + stop_k * M;
+    std::vector<unsigned char> cc(M);
+    for (size_t m = 0; m < M; ++m) {
+      cc[m] = reject[offset + m];
+    }
+    size_t num_reject = std::count(cc.begin(), cc.end(), 1);
+    rejectByNum(stop_k, num_reject) += 1;
+    for (size_t k = 0; k < kMax; ++k) {
+      if (k != stop_k) {
+        rejectByNum(k, 0) += 1; // no rejections at other stages
+        rejectBySet(k, 0) += 1; // empty set of rejections at other stages
+      }
+    }
+
+    size_t value = 0;
+    for (size_t m = 0; m < M; ++m) {
+      if (cc[m]) value |= (1u << m);
+    }
+    rejectBySet(stop_k, value) += 1;
+
     // assign stop stage for each iteration for the summary data sets
     for (size_t k = 0; k < kMax; ++k) {
       const size_t offset1 = i1 + k * (M + 2);
@@ -844,8 +869,58 @@ ListCpp lrsim_mams_cpp(
   for (size_t m = 0; m < M + 1; ++m) {
     for (size_t k = 0; k < kMax; ++k) {
       rejectByArm(k, m) /= niters;
+      rejectByNum(k, m) /= niters;
     }
   }
+
+  for (size_t s = 0; s < ntests; ++s) {
+    for (size_t k = 0; k < kMax; ++k) {
+      rejectBySet(k, s) /= niters;
+    }
+  }
+
+  // fill the last row of rejectByNum with column sums
+  for (size_t m = 1; m < M + 1; ++m) {
+    double sum = 0.0;
+    for (size_t k = 0; k < kMax; ++k) {
+      sum += rejectByNum(k, m);
+    }
+    rejectByNum(kMax, m) = sum;
+  }
+  double sum = 0.0;
+  for (size_t m = 1; m < M + 1; ++m) {
+    sum += rejectByNum(kMax, m);
+  }
+  rejectByNum(kMax, 0) = 1.0 - sum;
+
+  // build column sums of rejectBySet
+  std::vector<double> setSums(ntests);
+  for (size_t s = 1; s < ntests; ++s) {
+    double sum = 0.0;
+    for (size_t k = 0; k < kMax; ++k) {
+      sum += rejectBySet(k, s);
+    }
+    setSums[s] = sum;
+  }
+  setSums[0] = 1.0 - std::accumulate(setSums.begin() + 1, setSums.end(), 0.0);
+
+  std::vector<std::string> intersectHyp(ntests);
+  for (size_t s = 0; s < ntests; ++s) {
+    std::string str;
+    for (size_t m = 0; m < M; ++m) {
+      if (s & (1u << m)) {
+        if (!str.empty()) str += ",";
+        str += std::to_string(m + 1);
+      }
+    }
+    if (str.empty()) str = "none";
+    intersectHyp[s] = str;
+  }
+
+  DataFrameCpp rejectSetData;
+  rejectSetData.push_back(intersectHyp, "intersectionHypotheses");
+  rejectSetData.push_back(setSums, "rejectionProbability");
+
 
   FlatMatrix cumRejectByArm(kMax, M + 1);
   for (size_t m = 0; m < M + 1; ++m) {
@@ -879,6 +954,8 @@ ListCpp lrsim_mams_cpp(
   overview.push_back(overallReject, "overallReject");
   overview.push_back(std::move(rejectByArm), "rejectPerStage");
   overview.push_back(std::move(cumRejectByArm), "cumulativeRejection");
+  overview.push_back(std::move(rejectByNum), "rejectByNumber");
+  overview.push_back(std::move(rejectSetData), "rejectBySet");
   overview.push_back(std::move(eventsByArm), "numberOfEvents");
   overview.push_back(std::move(dropoutsByArm), "numberOfDropouts");
   overview.push_back(std::move(subjectsByArm), "numberOfSubjects");
