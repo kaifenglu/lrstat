@@ -204,6 +204,8 @@ An S3 object of class `"lrsim_seamless"` with these components:
 
   - `expectedStudyDuration`: Expected study duration.
 
+  - `criticalValues`: The input critical values for each stage.
+
   - `hazardRatioH0s`: The input hazard ratios under \\H_0\\.
 
   - `useEvents`: Logical indicating whether analyses were event-driven.
@@ -233,9 +235,9 @@ An S3 object of class `"lrsim_seamless"` with these components:
 - `summdata2`: Data frame summarizing log-rank statistics by iteration,
   stage, and active arm:
 
-  - `iterationNumber`, `stopStage`, `stageNumber`, `analysisTime`,
-    `activeArm`, `totalAccruals`, `totalEvents`, `totalDropouts`,
-    `uscore`, `vscore`, `logRankStatistic`, `reject`.
+  - `iterationNumber`, `bestArm`, `stopStage`, `stageNumber`,
+    `analysisTime`, `activeArm`, `totalAccruals`, `totalEvents`,
+    `totalDropouts`, `uscore`, `vscore`, `logRankStatistic`, `reject`.
 
   - For each active arm, total accruals, events, and dropouts refer to
     the combined counts for that arm and the common control at that
@@ -281,17 +283,18 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Expected study duration: 22.1                                
 #> n: 700, fixed follow-up: FALSE                               
 #> Number of simulations: 1000                                  
+#> Efficacy bounds (z-scale): 3.852, 2.724, 2.224               
 #>                                                              
 #>                             Arm 1 Arm 2
 #> Selected as best in phase 2 0.844 0.156
 #> 
 #>  activeArm stage cumReject nEvents nDropouts nSubjects analysisTime
-#>          1     1    0.0440    60.2       0.0     290.0         15.5
-#>          1     2    0.5600   100.3       0.0     386.8         20.7
-#>          1     3    0.8050   141.2       0.0     463.9         24.8
-#>          2     1    0.0030    53.7       0.0     269.6         14.8
-#>          2     2    0.0460    99.5       0.0     371.8         20.3
-#>          2     3    0.0970   147.1       0.0     455.8         24.6
+#>          1     1    0.0460    60.2       0.0     290.0         15.5
+#>          1     2    0.5620   100.3       0.0     386.8         20.7
+#>          1     3    0.8070   141.2       0.0     463.9         24.8
+#>          2     1    0.0040    53.7       0.0     269.6         14.8
+#>          2     2    0.0470    99.5       0.0     371.8         20.3
+#>          2     3    0.0980   147.1       0.0     455.8         24.6
 #>    Overall     1    0.0470    59.2       0.0     286.8         15.4
 #>    Overall     2    0.6060   100.2       0.0     384.4         20.6
 #>    Overall     3    0.9020   142.9       0.0     461.6         24.8

@@ -200,9 +200,9 @@ An S3 object of class `"lrsim_seamless"` with these components:
 
   - `expectedStudyDuration`: Expected study duration.
 
-  - `hazardRatioH0s`: The input hazard ratios under \\H_0\\.
-
   - `criticalValues`: The input matrix of by-level critical boundaries.
+
+  - `hazardRatioH0s`: The input hazard ratios under \\H_0\\.
 
   - `useEvents`: Logical indicating whether analyses were event-driven.
 
