@@ -287,6 +287,20 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Stage 2    0.287    0.269   0.390
 #> Stage 3    0.630    0.594   0.798
 #> 
+#> Probability of rejection by number of active arms
+#>             0     1     2
+#> Stage 1 0.987 0.010 0.003
+#> Stage 2 0.623 0.214 0.163
+#> Stage 3 0.592 0.148 0.260
+#> Overall 0.202 0.372 0.426
+#> 
+#> Overall probability of rejection by set of active arms
+#>   Set of active arms Probability of rejection
+#> 1               none                    0.202
+#> 2                  1                    0.204
+#> 3                  2                    0.168
+#> 4                1,2                    0.426
+#> 
 #>                            Active 1 Active 2 Control Total
 #> Expected # events             128.6    128.9   151.9 409.4
 #> Expected # dropouts             0.0      0.0     0.0   0.0
