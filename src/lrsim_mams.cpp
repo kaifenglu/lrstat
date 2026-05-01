@@ -887,8 +887,8 @@ ListCpp lrsim_mams_cpp(
   overview.push_back(std::move(expDropoutsByArm), "expectedNumberOfDropouts");
   overview.push_back(std::move(expSubjectsByArm), "expectedNumberOfSubjects");
   overview.push_back(std::move(expTimeByArm), "expectedStudyDuration");
-  overview.push_back(hazardRatioH0s, "hazardRatioH0s");
   overview.push_back(criticalValues, "criticalValues");
+  overview.push_back(hazardRatioH0s, "hazardRatioH0s");
   overview.push_back(useEvents, "useEvents");
   overview.push_back(niters, "numberOfIterations");
   overview.push_back(n, "n");

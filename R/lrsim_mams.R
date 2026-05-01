@@ -79,8 +79,8 @@
 #'     - \code{expectedNumberOfSubjects}: Expected cumulative enrollments
 #'       at trial end.
 #'     - \code{expectedStudyDuration}: Expected study duration.
-#'     - \code{hazardRatioH0s}: The input hazard ratios under \eqn{H_0}.
 #'     - \code{criticalValues}: The input matrix of by-level critical boundaries.
+#'     - \code{hazardRatioH0s}: The input hazard ratios under \eqn{H_0}.
 #'     - \code{useEvents}: Logical indicating whether analyses were event-driven.
 #'     - \code{numberOfIterations}: Number of simulation iterations performed.
 #'     - \code{n}: Planned total sample size.
