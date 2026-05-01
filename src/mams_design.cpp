@@ -1835,12 +1835,10 @@ ListCpp adaptDesign_mams_cpp(
 
       std::string s;
       s.reserve(3 + selectedNew2.size() * 4); // rough reservation
-      s.push_back('{');
       for (size_t t = 0; t < selectedNew2.size(); ++t) {
         if (t) { s.append(", "); }
         s.append(std::to_string(selectedNew2[t] + 1));
       }
-      s.push_back('}');
       intersectHyp[row] = std::move(s);
 
       stage[row] = i + 1;
