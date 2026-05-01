@@ -313,8 +313,10 @@ lrpower(kMax = 2, informationRates = c(0.8, 1),
   Arms
 - [`lrsim3a()`](https://kaifenglu.github.io/lrstat/reference/lrsim3a.md)
   : Log-Rank Test Simulation for Three Arms
+- [`lrsim_mams()`](https://kaifenglu.github.io/lrstat/reference/lrsim_mams.md)
+  : Log-Rank Test Simulation for Multi-Arm Multi-Stage Design
 - [`lrsim_seamless()`](https://kaifenglu.github.io/lrstat/reference/lrsim_seamless.md)
-  : Log-Rank Test Simulation for Multiple Active Arms vs. Common Control
+  : Log-Rank Test Simulation for Phase 2/3 Seamless Design
 - [`lrsimsub()`](https://kaifenglu.github.io/lrstat/reference/lrsimsub.md)
   : Log-Rank Test Simulation for Enrichment Design
 - [`lrstat-package`](https://kaifenglu.github.io/lrstat/reference/lrstat-package.md)

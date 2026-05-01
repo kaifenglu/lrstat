@@ -59,6 +59,11 @@
   functions
 - used memoization to avoid recalculating p0 and p1 in the lambda h for
   preject_by_arm (exitprob_seamless)
+- added stopStage to output data sets and added reject to sumdata2
+  output data set for lrsim_seamless
+- used NULL as the default value for lambdas and gammas for
+  lrsim_seamless
+- added lrsim_mams for simulation of multi-arm multi-stage design
 
 ## lrstat 0.3.1
 

@@ -1,6 +1,6 @@
-# Log-Rank Test Simulation for Phase 2/3 Seamless Design
+# Log-Rank Test Simulation for Multi-Arm Multi-Stage Design
 
-Simulate phase 2/3 seamless design using a weighted log-rank test.
+Simulate multi-arm multi-stage design using a weighted log-rank test.
 Analyses can be triggered either by the cumulative number of events
 (combined for an active arm and the common control) or by pre-specified
 calendar times.
@@ -8,10 +8,10 @@ calendar times.
 ## Usage
 
 ``` r
-lrsim_seamless(
+lrsim_mams(
   M = 2,
-  K = 1,
-  criticalValues = NA,
+  kMax = 1,
+  criticalValues = NULL,
   hazardRatioH0s = 1,
   allocations = 1,
   accrualTime = 0,
@@ -38,32 +38,32 @@ lrsim_seamless(
 
 - M:
 
-  Number of active treatment arms in Phase 2.
+  Number of active treatment arms.
 
-- K:
+- kMax:
 
-  Number of sequential looks in Phase 3.
+  Number of sequential looks.
 
 - criticalValues:
 
-  Numeric vector of length \\K + 1\\ giving the critical value for the
-  Wald statistic at each look (Look 1 through Look \\K + 1\\). Decision
-  rule:
+  The matrix of by-level upper boundaries on the max z-test statistic
+  scale for efficacy stopping. The first column is for level \\M\\, the
+  second column is for level \\M - 1\\, and so on, with the last column
+  for level 1. Decision rule:
 
   - At Look 1, compute the Wald statistic for each active arm versus the
     common control. If the maximum of these statistics exceeds the Look
-    1 critical value, stop for efficacy.
+    1 critical value, stop for efficacy and check whether there is any
+    other active arm which can be rejected using a relaxed boundary
+    under the closed testing principle.
 
-  - If the Look 1 stopping rule is not met, select the active arm with
-    the largest Wald statistic as the "best" arm and continue with that
-    arm only versus control at subsequent looks.
+  - If the Look 1 stopping rule is not met, continue to the next look;
+    if the maximum of Wald statistics at this look exceeds the
+    corresponding level \\M\\ critical value, stop for efficacy;
+    otherwise continue.
 
-  - For each look \\j = 2,\ldots,K+1\\, compare the selected arm to
-    control; if its Wald statistic exceeds the Look \\j\\ critical
-    value, stop for efficacy; otherwise continue.
-
-  - If no critical value is exceeded by Look \\K + 1\\, the procedure
-    ends without rejection.
+  - If no critical value is exceeded by Look `kMax`, the procedure ends
+    without rejection.
 
 - hazardRatioH0s:
 
@@ -172,27 +172,23 @@ An S3 object of class `"lrsim_seamless"` with these components:
 
 - `overview`: A list summarizing trial-level results and settings:
 
-  - `selectAsBest`: Probability of selecting each active arm as the best
-    arm at the end of phase 2.
-
   - `rejectPerStage`: Probability of rejecting the null for each active
     arm at each stage.
 
-  - `cumulativeRejection`: Cumulative probability of rejection by stage.
-
-  - `numberOfEvents`: Cumulative event counts by stage, including events
-    from all arms in stage 1 and events from the selected arm and
-    control in later stages.
-
-  - `numberOfDropouts`: Cumulative dropouts by stage.
-
-  - `numberOfSubjects`: Cumulative enrollments by stage.
-
-  - `analysisTime`: Average calendar time for each stage among
-    replications that reached that stage.
+  - `cumulativeRejection`: Cumulative probability of rejection for each
+    active arm by stage.
 
   - `overallReject`: Overall probability of rejecting the null by trial
     end.
+
+  - `numberOfEvents`: Cumulative event counts by stage and arm.
+
+  - `numberOfDropouts`: Cumulative dropouts by stage and arm.
+
+  - `numberOfSubjects`: Cumulative enrollments by stage and arm.
+
+  - `analysisTime`: Average calendar time for each stage by arm among
+    replications that reached that stage.
 
   - `expectedNumberOfEvents`: Expected cumulative events at trial end.
 
@@ -205,6 +201,8 @@ An S3 object of class `"lrsim_seamless"` with these components:
   - `expectedStudyDuration`: Expected study duration.
 
   - `hazardRatioH0s`: The input hazard ratios under \\H_0\\.
+
+  - `criticalValues`: The input matrix of by-level critical boundaries.
 
   - `useEvents`: Logical indicating whether analyses were event-driven.
 
@@ -256,43 +254,56 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ## Examples
 
 ``` r
-(sim1 = lrsim_seamless(
+(sim1 = lrsim_mams(
   M = 2,
-  K = 2,
-  criticalValues = c(3.852050, 2.723811, 2.223982),
+  kMax = 3,
+  criticalValues = matrix(c(3.879976, 2.734557, 2.246072,
+                            3.710303, 2.511427, 1.993047), 3, 2),
   accrualTime = c(0, 8),
   accrualIntensity = c(10, 28),
   piecewiseSurvivalTime = 0,
-  lambdas = list(log(2)/12*0.5, log(2)/12*0.7, log(2)/12),
+  lambdas = list(log(2)/12*0.75, log(2)/12*0.75, log(2)/12),
   n = 700,
-  plannedEvents = c(40, 80, 120),
+  plannedEvents = c(108, 216, 324),
   maxNumberOfIterations = 1000,
   maxNumberOfRawDatasetsPerStage = 1,
   seed = 314159,
   nthreads = 0))
-#>                                                              
-#> Phase 2/3 seamless group-sequential design for log-rank test 
-#> Empirical power: 0.902                                       
-#> Number of active arms in phase 2: 2                          
-#> Number of looks in phase 3: 2                                
-#> Expected # events: 114.6                                     
-#> Expected # dropouts: 0                                       
-#> Expected # subjects: 410.6                                   
-#> Expected study duration: 22.1                                
-#> n: 700, fixed follow-up: FALSE                               
-#> Number of simulations: 1000                                  
-#>                                                              
-#>                             Arm 1 Arm 2
-#> Selected as best in phase 2 0.844 0.156
+#>                                                
+#> Multi-arm multi-stage design for log-rank test 
+#> Empirical power: 0.798                         
+#> Number of active arms: 2                       
+#> Number of looks: 3                             
+#>                                                
+#> By level critical boundaries
+#>         Level 2 Level 1
+#> Stage 1   3.880   3.710
+#> Stage 2   2.735   2.511
+#> Stage 3   2.246   1.993
 #> 
-#>  activeArm stage cumReject nEvents nDropouts nSubjects analysisTime
-#>          1     1    0.0440    60.2       0.0     290.0         15.5
-#>          1     2    0.5600   100.3       0.0     386.8         20.7
-#>          1     3    0.8050   141.2       0.0     463.9         24.8
-#>          2     1    0.0030    53.7       0.0     269.6         14.8
-#>          2     2    0.0460    99.5       0.0     371.8         20.3
-#>          2     3    0.0970   147.1       0.0     455.8         24.6
-#>    Overall     1    0.0470    59.2       0.0     286.8         15.4
-#>    Overall     2    0.6060   100.2       0.0     384.4         20.6
-#>    Overall     3    0.9020   142.9       0.0     461.6         24.8
+#> Cumulative probability of rejection by treatment
+#>         Active 1 Active 2 Overall
+#> Stage 1    0.009    0.007   0.013
+#> Stage 2    0.287    0.269   0.390
+#> Stage 3    0.630    0.594   0.798
+#> 
+#>                            Active 1 Active 2 Control Total
+#> Expected # events             128.6    128.9   151.9 409.4
+#> Expected # dropouts             0.0      0.0     0.0   0.0
+#> Expected # subjects           232.0    232.0   232.0 696.0
+#> Expected study duration        37.9     37.9    37.9  37.9
+#> 
+#>                            Active 1 Active 2 Control Total
+#> Number of events   Stage 1     48.2     48.5    59.8 156.5
+#> Number of events   Stage 2     98.1     98.3   117.9 314.3
+#> Number of events   Stage 3    151.7    151.7   172.3 475.7
+#> Number of dropouts Stage 1      0.0      0.0     0.0   0.0
+#> Number of dropouts Stage 2      0.0      0.0     0.0   0.0
+#> Number of dropouts Stage 3      0.0      0.0     0.0   0.0
+#> Number of subjects Stage 1    159.8    159.7   159.8 479.3
+#> Number of subjects Stage 2    232.7    232.7   232.7 698.2
+#> Number of subjects Stage 3    233.3    233.3   233.3 700.0
+#> Analysis time      Stage 1     22.3     22.3    22.3  22.3
+#> Analysis time      Stage 2     31.2     31.2    31.2  31.2
+#> Analysis time      Stage 3     42.6     42.6    42.6  42.6
 ```
