@@ -4033,10 +4033,13 @@ print.lrsim_seamless <- function(x, ...) {
 
   str10 <- paste0("Number of simulations: ", a$numberOfIterations)
 
-  df1 = data.frame(x = rep("", 11))
+  str11 <- paste0("Efficacy bounds (z-scale): ",
+                   paste(round(a$criticalValues, 3), collapse = ", "))
+
+  df1 = data.frame(x = rep("", 12))
   colnames(df1) = NULL
   rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7, str8,
-                    str9, str10, "")
+                    str9, str10, str11, "")
 
   df2 <- t(data.frame(selectAsBest = a$selectAsBest))
   rownames(df2) <- "Selected as best in phase 2"
