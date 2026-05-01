@@ -2,7 +2,7 @@
 % Please edit documentation in R/lrsim_seamless.R
 \name{lrsim_seamless}
 \alias{lrsim_seamless}
-\title{Log-Rank Test Simulation for Multiple Active Arms vs. Common Control}
+\title{Log-Rank Test Simulation for Phase 2/3 Seamless Design}
 \usage{
 lrsim_seamless(
   M = 2,
@@ -14,8 +14,8 @@ lrsim_seamless(
   accrualIntensity = NA,
   piecewiseSurvivalTime = 0,
   stratumFraction = 1,
-  lambdas = list(NA, NA, NA),
-  gammas = list(0, 0, 0),
+  lambdas = NULL,
+  gammas = NULL,
   n = NA,
   followupTime = NA,
   fixedFollowup = FALSE,
@@ -155,7 +155,8 @@ at trial end.
 \item \code{sumdata1}: Data frame summarizing each iteration, stage, and
 treatment group:
 \itemize{
-\item \code{iterationNumber}, \code{eventsNotAchieved}, \code{stageNumber},
+\item \code{iterationNumber}, \code{eventsNotAchieved},
+\code{stopStage}, \code{stageNumber},
 \code{analysisTime}, \code{treatmentGroup}, \code{accruals},
 \code{events}, \code{dropouts}.
 \item For each stage the final row summarizes the overall study
@@ -164,25 +165,26 @@ treatment group:
 \item \code{summdata2}: Data frame summarizing log-rank statistics by iteration,
 stage, and active arm:
 \itemize{
-\item \code{iterationNumber}, \code{stageNumber}, \code{analysisTime},
-\code{activeArm}, \code{totalAccruals}, \code{totalEvents},
-\code{totalDropouts}, \code{uscore}, \code{vscore},
-\code{logRankStatistic}.
+\item \code{iterationNumber}, \code{stopStage}, \code{stageNumber},
+\code{analysisTime}, \code{activeArm},
+\code{totalAccruals}, \code{totalEvents}, \code{totalDropouts},
+\code{uscore}, \code{vscore}, \code{logRankStatistic}, \code{reject}.
 \item For each active arm, total accruals, events, and dropouts refer to
 the combined counts for that arm and the common control at that stage.
 }
 \item \code{rawdata} (present when \code{maxNumberOfRawDatasetsPerStage} > 0):
 Subject-level data for selected replications with variables:
 \itemize{
-\item \code{iterationNumber}, \code{stageNumber}, \code{analysisTime},
-\code{subjectId}, \code{arrivalTime}, \code{stratum},
-\code{treatmentGroup}, \code{survivalTime}, \code{dropoutTime},
-\code{timeUnderObservation}, \code{event}, \code{dropoutEvent}.
+\item \code{iterationNumber}, \code{stopStage}, \code{stageNumber},
+\code{analysisTime}, \code{subjectId}, \code{arrivalTime},
+\code{stratum}, \code{treatmentGroup},
+\code{survivalTime}, \code{dropoutTime}, \code{timeUnderObservation},
+\code{event}, \code{dropoutEvent}.
 }
 }
 }
 \description{
-Simulate multi-arm group-sequential trials using a weighted
+Simulate phase 2/3 seamless design using a weighted
 log-rank test. Analyses can be triggered either by the cumulative number
 of events (combined for an active arm and the common control) or by
 pre-specified calendar times.
