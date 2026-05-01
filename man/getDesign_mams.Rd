@@ -14,7 +14,7 @@ getDesign_mams(
   kMax = 1L,
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
-  criticalValues = NA_real_,
+  criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
@@ -52,9 +52,12 @@ before the trial. If unspecified, defaults to \eqn{(1:kMax) / kMax}.}
 \item{efficacyStopping}{Indicators of whether efficacy stopping is allowed
 at each stage. Defaults to \code{TRUE} if left unspecified.}
 
-\item{criticalValues}{The upper boundaries on the max z-test statistic
-scale for efficacy stopping. If missing, boundaries will be computed
-based on the specified information rates and alpha spending function.}
+\item{criticalValues}{The matrix of by-level upper boundaries on the
+max z-test statistic scale for efficacy stopping.
+The first column is for level \code{M}, the second column is for
+level \code{M - 1}, and so on, with the last column for level 1.
+If left unspecified, the critical values will be computed based
+on the specified alpha spending function.}
 
 \item{alpha}{The significance level. Defaults to 0.025.}
 
