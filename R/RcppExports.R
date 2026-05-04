@@ -123,27 +123,27 @@
 #' # respectively. The observed hazard ratio at the second interim
 #' # look is 0.81.
 #'
-#' trialsdt = as.Date("2020-03-04")                       # trial start date
-#' iadt = c(as.Date("2022-02-01"), as.Date("2022-11-01")) # interim dates
-#' mo1 = as.numeric(iadt - trialsdt + 1)/30.4375          # interim months
+#' trialsdt <- as.Date("2020-03-04")                       # trial start date
+#' iadt <- c(as.Date("2022-02-01"), as.Date("2022-11-01")) # interim dates
+#' mo1 <- as.numeric(iadt - trialsdt + 1)/30.4375          # interim months
 #'
 #' # Assume a piecewise Poisson enrollment process with a 8-month ramp-up
 #' # and 521 patients were enrolled after 17.94 months
-#' N = 521                   # total number of patients
-#' Ta = 17.94                # enrollment duration
-#' Ta1 = 8                   # assumed end of enrollment ramp-up
-#' enrate = N / (Ta - Ta1/2) # enrollment rate after ramp-up
+#' N <- 521                   # total number of patients
+#' Ta <- 17.94                # enrollment duration
+#' Ta1 <- 8                   # assumed end of enrollment ramp-up
+#' enrate <- N / (Ta - Ta1/2) # enrollment rate after ramp-up
 #'
 #' # Assume a median survival of 16.7 months for the control group, a
 #' # 5-month delay in treatment effect, and a hazard ratio of 0.7 after
 #' # the delay
-#' lam1 = log(2)/16.7  # control group hazard of exponential distribution
-#' t1 = 5              # months of delay in treatment effect
-#' hr = 0.7            # hazard ratio after delay
-#' lam2 = hr*lam1      # treatment group hazard after delay
+#' lam1 <- log(2)/16.7  # control group hazard of exponential distribution
+#' t1 <- 5              # months of delay in treatment effect
+#' hr <- 0.7            # hazard ratio after delay
+#' lam2 <- hr*lam1      # treatment group hazard after delay
 #'
 #' # Assume an annual dropout rate of 5%
-#' gam = -log(1-0.05)/12  # hazard for dropout
+#' gam <- -log(1-0.05)/12  # hazard for dropout
 #'
 #' # The original target number of events was 298 and the new target is 335
 #' mo2 <- caltime(
@@ -174,11 +174,11 @@
 #'   predictTarget = 3))
 #'
 #'
-#' hr2 = 0.81                    # observed hazard ratio at interim 2
-#' z2 = (-log(hr2))*sqrt(266/4)  # corresponding z-test statistic value
+#' hr2 <- 0.81                    # observed hazard ratio at interim 2
+#' z2 <- (-log(hr2))*sqrt(266/4)  # corresponding z-test statistic value
 #'
 #' # expected mean of -log(HR) at the original looks and the new final look
-#' theta = -log(lr1$HR[c(1,2,3,4)])
+#' theta <- -log(lr1$HR[c(1,2,3,4)])
 #'
 #' # conditional power with sample size increase
 #' getCP(INew = (335 - 266)/4,
@@ -464,19 +464,19 @@ getCP_seamless <- function(INew = NA_real_, M = NA_integer_, r = 1, corr_known =
 #' @examples
 #'
 #' # group sequential design with 90% power to detect delta = 6
-#' delta = 6
-#' sigma = 17
-#' n = 282
-#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
-#'                   alpha = 0.05, typeAlphaSpending = "sfHSD",
-#'                   parameterAlphaSpending = -4))
+#' delta <- 6
+#' sigma <- 17
+#' n <- 282
+#' (des1 <- getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
+#'                    alpha = 0.05, typeAlphaSpending = "sfHSD",
+#'                    parameterAlphaSpending = -4))
 #'
 #' # crossed the boundary at the second look
-#' L = 2
-#' n1 = n*2/3
-#' delta1 = 7
-#' sigma1 = 20
-#' zL = delta1/sqrt(4/n1*sigma1^2)
+#' L <- 2
+#' n1 <- n*2/3
+#' delta1 <- 7
+#' sigma1 <- 20
+#' zL <- delta1/sqrt(4/n1*sigma1^2)
 #'
 #' # confidence interval
 #' getCI(L = L, zL = zL, IMax = n/(4*sigma1^2),
@@ -547,19 +547,19 @@ getCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationRa
 #' @examples
 #'
 #' # group sequential design with 90% power to detect delta = 6
-#' delta = 6
-#' sigma = 17
-#' n = 282
-#' (des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
-#'                   alpha = 0.05, typeAlphaSpending = "sfHSD",
-#'                   parameterAlphaSpending = -4))
+#' delta <- 6
+#' sigma <- 17
+#' n <- 282
+#' (des1 <- getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
+#'                    alpha = 0.05, typeAlphaSpending = "sfHSD",
+#'                    parameterAlphaSpending = -4))
 #'
 #' # results at the second look
-#' L = 2
-#' n1 = n*2/3
-#' delta1 = 7
-#' sigma1 = 20
-#' zL = delta1/sqrt(4/n1*sigma1^2)
+#' L <- 2
+#' n1 <- n*2/3
+#' delta1 <- 7
+#' sigma1 <- 20
+#' zL <- delta1/sqrt(4/n1*sigma1^2)
 #'
 #' # repeated confidence interval
 #' getRCI(L = L, zL = zL, IMax = n/(4*sigma1^2),
@@ -2533,6 +2533,8 @@ getBound <- function(k = NA_integer_, informationRates = NA_real_, alpha = 0.025
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility bounds on the conditional power scale.
+#' @param futilityTheta The futility bounds on the parameter scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -2541,6 +2543,34 @@ getBound <- function(k = NA_integer_, informationRates = NA_real_, alpha = 0.025
 #'   same as \code{informationRates}.
 #' @param varianceRatio The ratio of the variance under H0 to the
 #'   variance under H1.
+#'
+#' @details
+#' The function determines efficacy and futility bounds based on the inputs
+#' provided, following a clear priority order.
+#'
+#' \strong{Efficacy bounds:}
+#' If \code{criticalValues} are supplied, they take precedence and all
+#' alpha-spending parameters are ignored. Otherwise, efficacy bounds are
+#' derived from the specified alpha-spending function.
+#'
+#' \strong{Futility bounds:}
+#' Futility inputs are evaluated in the following order of priority:
+#' \enumerate{
+#'   \item If \code{futilityBounds} are provided, they override all other
+#'   futility-related inputs (\code{futilityCP}, \code{futilityTheta},
+#'   and beta-spending parameters).
+#'
+#'   \item If \code{futilityBounds} are not provided but \code{futilityCP}
+#'   is specified, then \code{futilityTheta} and beta-spending parameters
+#'   are ignored.
+#'
+#'   \item If only \code{futilityTheta} is provided, beta-spending parameters
+#'   are ignored.
+#'
+#'   \item If none of \code{futilityBounds}, \code{futilityCP},
+#'   or \code{futilityTheta} are specified, futility bounds are computed
+#'   using the beta-spending approach.
+#' }
 #'
 #' @return An S3 class \code{design} object with three components:
 #'
@@ -2663,8 +2693,8 @@ getBound <- function(k = NA_integer_, informationRates = NA_real_, alpha = 0.025
 #'   typeBetaSpending = "sfP"))
 #'
 #' @export
-getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_, varianceRatio = 1) {
-    .Call(`_lrstat_getDesign`, beta, IMax, theta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime, varianceRatio)
+getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_, varianceRatio = 1) {
+    .Call(`_lrstat_getDesign`, beta, IMax, theta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime, varianceRatio)
 }
 
 #' @title Power and Sample Size for a Generic Group Sequential Equivalence
@@ -2841,7 +2871,7 @@ getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax =
 #'   alpha = 0.05, typeAlphaSpending = "sfOF"))
 #'
 #' @export
-getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_real_, thetaUpper = NA_real_, theta = 0, kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_) {
+getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_real_, thetaUpper = NA_real_, theta = 0, kMax = 1L, informationRates = NA_real_, criticalValues = NULL, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_) {
     .Call(`_lrstat_getDesignEquiv`, beta, IMax, thetaLower, thetaUpper, theta, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime)
 }
 
@@ -2898,6 +2928,10 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #' @param futilityBounds The lower boundaries on the z-test statistic scale
 #'   for futility stopping for the primary trial. Defaults to
 #'   \code{rep(-6, kMax-1)} if left unspecified.
+#' @param futilityCP The conditional power-based futility bounds for the
+#'   primary trial.
+#' @param futilityTheta The parameter value-based futility bounds for the
+#'   primary trial.
 #' @param typeBetaSpending The type of beta spending for the primary trial.
 #'   One of the following:
 #'   \code{"sfOF"} for O'Brien-Fleming type spending function,
@@ -2936,6 +2970,13 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #' @param parameterAlphaSpendingNew The parameter value of alpha spending
 #'   for the secondary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
 #'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
+#' @param futilityBoundsNew The lower boundaries on the z-test statistic
+#'   scale for futility stopping for the secondary trial. Defaults to
+#'   \code{rep(-6, kNew-1)} if left unspecified.
+#' @param futilityCPNew The conditional power-based futility bounds for the
+#'   secondary trial.
+#' @param futilityThetaNew The parameter value-based futility bounds for the
+#'   secondary trial.
 #' @param typeBetaSpendingNew The type of beta spending for the secondary
 #'   trial. One of the following:
 #'   \code{"sfOF"} for O'Brien-Fleming type spending function,
@@ -3035,8 +3076,8 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #' (nTotal <- nL + nNew)
 #'
 #' @export
-adaptDesign <- function(betaNew = NA_real_, INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, userBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_, varianceRatio = 1.0) {
-    .Call(`_lrstat_adaptDesign`, betaNew, INew, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaSpendingNew, spendingTimeNew, varianceRatio)
+adaptDesign <- function(betaNew = NA_real_, INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, futilityBoundsNew = NULL, futilityCPNew = NULL, futilityThetaNew = NULL, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, userBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_, varianceRatio = 1.0) {
+    .Call(`_lrstat_adaptDesign`, betaNew, INew, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsNew, futilityCPNew, futilityThetaNew, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaSpendingNew, spendingTimeNew, varianceRatio)
 }
 
 #' @title Stratified Difference in Milestone Survival Probabilities
@@ -3149,6 +3190,10 @@ kmstat <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilitySurvDiff A vector of length \code{kMax - 1} for the
+#'   futility bounds on the milestone survival difference scale.
 #' @param typeBetaSpending The type of beta spending. One of the following:
 #'   \code{"sfOF"} for O'Brien-Fleming type spending function,
 #'   \code{"sfP"} for Pocock type spending function,
@@ -3365,8 +3410,8 @@ kmstat <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #'         followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-kmpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, milestone = NA_real_, survDiffH0 = 0, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_) {
-    .Call(`_lrstat_kmpower`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, milestone, survDiffH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration)
+kmpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilitySurvDiff = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, milestone = NA_real_, survDiffH0 = 0, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_) {
+    .Call(`_lrstat_kmpower`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilitySurvDiff, typeBetaSpending, parameterBetaSpending, milestone, survDiffH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration)
 }
 
 #' @title Sample Size for Difference in Milestone Survival Probabilities
@@ -3388,6 +3433,10 @@ kmpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilitySurvDiff A vector of length \code{kMax - 1} for the
+#'   futility bounds on the milestone survival difference scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -3477,8 +3526,8 @@ kmpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #'              followupTime = 18, fixedFollowup = TRUE)
 #'
 #' @export
-kmsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, milestone = NA_real_, survDiffH0 = 0, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, rounding = TRUE) {
-    .Call(`_lrstat_kmsamplesize`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, milestone, survDiffH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding)
+kmsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilitySurvDiff = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, milestone = NA_real_, survDiffH0 = 0, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, rounding = TRUE) {
+    .Call(`_lrstat_kmsamplesize`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilitySurvDiff, typeBetaSpending, parameterBetaSpending, userBetaSpending, milestone, survDiffH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding)
 }
 
 #' @title Power for One-Sample Milestone Survival Probability
@@ -3496,6 +3545,10 @@ kmsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, eff
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilitySurv A vector of length \code{kMax - 1} for the
+#'   futility bounds on the milestone survival scale.
 #' @param typeBetaSpending The type of beta spending. One of the following:
 #'   \code{"sfOF"} for O'Brien-Fleming type spending function,
 #'   \code{"sfP"} for Pocock type spending function,
@@ -3650,8 +3703,8 @@ kmsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, eff
 #'
 #' @export
 #'
-kmpower1s <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, milestone = NA_real_, survH0 = NA_real_, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda = NA_real_, gamma = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_) {
-    .Call(`_lrstat_kmpower1s`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, milestone, survH0, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda, gamma, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration)
+kmpower1s <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilitySurv = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, milestone = NA_real_, survH0 = NA_real_, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda = NA_real_, gamma = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_) {
+    .Call(`_lrstat_kmpower1s`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilitySurv, typeBetaSpending, parameterBetaSpending, milestone, survH0, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda, gamma, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration)
 }
 
 #' @title Sample Size for One-Sample Milestone Survival Probability
@@ -3673,6 +3726,10 @@ kmpower1s <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping =
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilitySurv A vector of length \code{kMax - 1} for the
+#'   futility bounds on the milestone survival scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -3758,8 +3815,8 @@ kmpower1s <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping =
 #'                followupTime = 18, fixedFollowup = TRUE)
 #'
 #' @export
-kmsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, milestone = NA_real_, survH0 = NA_real_, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda = NA_real_, gamma = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, rounding = TRUE) {
-    .Call(`_lrstat_kmsamplesize1s`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, milestone, survH0, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda, gamma, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding)
+kmsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilitySurv = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, milestone = NA_real_, survH0 = NA_real_, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda = NA_real_, gamma = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, rounding = TRUE) {
+    .Call(`_lrstat_kmsamplesize1s`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilitySurv, typeBetaSpending, parameterBetaSpending, userBetaSpending, milestone, survH0, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda, gamma, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding)
 }
 
 #' @title Power for Equivalence in Milestone Survival Probability Difference
@@ -4041,7 +4098,7 @@ kmpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues 
 #'                   followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-kmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, milestone = NA_real_, survDiffLower = NA_real_, survDiffUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, spendingTime = NA_real_, rounding = 1L) {
+kmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, criticalValues = NULL, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, milestone = NA_real_, survDiffLower = NA_real_, survDiffUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, spendingTime = NA_real_, rounding = 1L) {
     .Call(`_lrstat_kmsamplesizeequiv`, beta, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, milestone, survDiffLower, survDiffUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding)
 }
 
@@ -4334,6 +4391,10 @@ getDurationFromNevents <- function(nevents = NA_real_, allocationRatioPlanned = 
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilityHR A vector of length \code{kMax - 1} for the
+#'   futility bounds on the hazard ratio scale.
 #' @param typeBetaSpending The type of beta spending. One of the following:
 #'   \code{"sfOF"} for O'Brien-Fleming type spending function,
 #'   \code{"sfP"} for Pocock type spending function,
@@ -4357,7 +4418,6 @@ getDurationFromNevents <- function(nevents = NA_real_, allocationRatioPlanned = 
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_rho1
 #' @inheritParams param_rho2
-#' @inheritParams param_estimateHazardRatio
 #' @inheritParams param_typeOfComputation
 #' @param spendingTime A vector of length \code{kMax} for the error spending
 #'   time at each analysis. Defaults to missing, in which case, it is the
@@ -4445,10 +4505,10 @@ getDurationFromNevents <- function(nevents = NA_real_, allocationRatioPlanned = 
 #'     - \code{analysisTime}: The average time since trial start.
 #'
 #'     - \code{efficacyHR}: The efficacy boundaries on the hazard ratio
-#'       scale if \code{estimateHazardRatio}.
+#'       scale.
 #'
 #'     - \code{futilityHR}: The futility boundaries on the hazard ratio
-#'       scale if \code{estimateHazardRatio}.
+#'       scale.
 #'
 #'     - \code{efficacyP}: The efficacy boundaries on the p-value scale.
 #'
@@ -4469,7 +4529,7 @@ getDurationFromNevents <- function(nevents = NA_real_, allocationRatioPlanned = 
 #'   \code{accrualTime}, \code{accuralIntensity},
 #'   \code{piecewiseSurvivalTime}, \code{stratumFraction},
 #'   \code{lambda1}, \code{lambda2}, \code{gamma1}, \code{gamma2},
-#'   \code{estimateHazardRatio}, and \code{spendingTime}.
+#'   and \code{spendingTime}.
 #'
 #' * \code{byTreatmentCounts}: A list containing the following counts by
 #'   treatment group:
@@ -4528,8 +4588,8 @@ getDurationFromNevents <- function(nevents = NA_real_, allocationRatioPlanned = 
 #'         followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, rho1 = 0, rho2 = 0, estimateHazardRatio = 1L, typeOfComputation = "", spendingTime = NA_real_, studyDuration = NA_real_) {
-    .Call(`_lrstat_lrpower`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, estimateHazardRatio, typeOfComputation, spendingTime, studyDuration)
+lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityHR = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, rho1 = 0, rho2 = 0, typeOfComputation = "", spendingTime = NA_real_, studyDuration = NA_real_) {
+    .Call(`_lrstat_lrpower`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityHR, typeBetaSpending, parameterBetaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, typeOfComputation, spendingTime, studyDuration)
 }
 
 #' @title Required Number of Events Given Hazard Ratio
@@ -4548,6 +4608,10 @@ lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilityHR A vector of length \code{kMax - 1} for the futility
+#'   bounds on the hazard ratio scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -4575,8 +4639,8 @@ lrpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #'   hazardRatio = 0.673)
 #'
 #' @export
-getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_, hazardRatioH0 = 1, hazardRatio = NA_real_, allocationRatioPlanned = 1, rounding = 1L) {
-    .Call(`_lrstat_getNeventsFromHazardRatio`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime, hazardRatioH0, hazardRatio, allocationRatioPlanned, rounding)
+getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityHR = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_, hazardRatioH0 = 1, hazardRatio = NA_real_, allocationRatioPlanned = 1, rounding = TRUE) {
+    .Call(`_lrstat_getNeventsFromHazardRatio`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityHR, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime, hazardRatioH0, hazardRatio, allocationRatioPlanned, rounding)
 }
 
 #' @title Log-Rank Test Sample Size
@@ -4600,6 +4664,10 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilityHR A vector of length \code{kMax - 1} for the
+#'   futility bounds on the hazard ratio scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -4618,7 +4686,6 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #' @inheritParams param_fixedFollowup
 #' @inheritParams param_rho1
 #' @inheritParams param_rho2
-#' @inheritParams param_estimateHazardRatio
 #' @inheritParams param_typeOfComputation
 #' @param spendingTime A vector of length \code{kMax} for the error spending
 #'   time at each analysis. Defaults to missing, in which case, it is the
@@ -4691,8 +4758,8 @@ getNeventsFromHazardRatio <- function(beta = 0.2, kMax = 1L, informationRates = 
 #'              followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-lrsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, rho1 = 0, rho2 = 0, estimateHazardRatio = TRUE, typeOfComputation = "", spendingTime = NA_real_, rounding = TRUE) {
-    .Call(`_lrstat_lrsamplesize`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, estimateHazardRatio, typeOfComputation, spendingTime, rounding)
+lrsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityHR = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, hazardRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, rho1 = 0, rho2 = 0, typeOfComputation = "", spendingTime = NA_real_, rounding = TRUE) {
+    .Call(`_lrstat_lrsamplesize`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityHR, typeBetaSpending, parameterBetaSpending, userBetaSpending, hazardRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, rho1, rho2, typeOfComputation, spendingTime, rounding)
 }
 
 #' @title Power for Equivalence in Hazard Ratio
@@ -4882,7 +4949,7 @@ lrsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, eff
 #'              followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-lrpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, hazardRatioLower = NA_real_, hazardRatioUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, typeOfComputation = "direct", spendingTime = NA_real_, studyDuration = NA_real_) {
+lrpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues = NULL, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, hazardRatioLower = NA_real_, hazardRatioUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, typeOfComputation = "direct", spendingTime = NA_real_, studyDuration = NA_real_) {
     .Call(`_lrstat_lrpowerequiv`, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, hazardRatioLower, hazardRatioUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, typeOfComputation, spendingTime, studyDuration)
 }
 
@@ -4941,7 +5008,7 @@ lrpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues 
 #'                   followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-lrsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, hazardRatioLower = NA_real_, hazardRatioUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, typeOfComputation = "direct", spendingTime = NA_real_, rounding = TRUE) {
+lrsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, criticalValues = NULL, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, hazardRatioLower = NA_real_, hazardRatioUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, typeOfComputation = "direct", spendingTime = NA_real_, rounding = TRUE) {
     .Call(`_lrstat_lrsamplesizeequiv`, beta, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, hazardRatioLower, hazardRatioUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, typeOfComputation, spendingTime, rounding)
 }
 
@@ -5917,10 +5984,10 @@ fadjpboncpp <- function(w, G, p) {
 #'
 #' @examples
 #'
-#' w = c(0.5,0.5,0,0)
-#' g = matrix(c(0,0,1,0, 0,0,0,1, 0,1,0,0, 1,0,0,0),
-#'            nrow=4, ncol=4, byrow=TRUE)
-#' (wgtmat = fwgtmat(w,g))
+#' w <- c(0.5,0.5,0,0)
+#' g <- matrix(c(0,0,1,0, 0,0,0,1, 0,1,0,0, 1,0,0,0),
+#'             nrow=4, ncol=4, byrow=TRUE)
+#' (wgtmat <- fwgtmat(w,g))
 #'
 #' @export
 fwgtmat <- function(w, G) {
@@ -6230,6 +6297,10 @@ nbstat <- function(time = NA_real_, rateRatioH0 = 1, allocationRatioPlanned = 1,
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilityRateRatio A vector of length \code{kMax - 1} for the
+#'   futility bounds on the rate ratio scale.
 #' @param typeBetaSpending The type of beta spending. One of the following:
 #'   \code{"sfOF"} for O'Brien-Fleming type spending function,
 #'   \code{"sfP"} for Pocock type spending function,
@@ -6449,8 +6520,8 @@ nbstat <- function(time = NA_real_, rateRatioH0 = 1, allocationRatioPlanned = 1,
 #'         followupTime = 0.5, fixedFollowup = TRUE)
 #'
 #' @export
-nbpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, rateRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa1 = NA_real_, kappa2 = NA_real_, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_, nullVariance = FALSE) {
-    .Call(`_lrstat_nbpower`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, rateRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, kappa1, kappa2, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration, nullVariance)
+nbpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityRateRatio = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, rateRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa1 = NA_real_, kappa2 = NA_real_, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_, nullVariance = FALSE) {
+    .Call(`_lrstat_nbpower`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityRateRatio, typeBetaSpending, parameterBetaSpending, rateRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, kappa1, kappa2, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration, nullVariance)
 }
 
 #' @title Sample Size for Negative Binomial Rate Ratio
@@ -6472,6 +6543,10 @@ nbpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilityRateRatio A vector of length \code{kMax - 1} for the
+#'   futility bounds on the rate ratio scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -6560,8 +6635,8 @@ nbpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #'              followupTime = 0.5, fixedFollowup = TRUE)
 #'
 #' @export
-nbsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, rateRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa1 = NA_real_, kappa2 = NA_real_, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, rounding = TRUE, nullVariance = FALSE) {
-    .Call(`_lrstat_nbsamplesize`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, rateRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, kappa1, kappa2, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding, nullVariance)
+nbsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityRateRatio = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, rateRatioH0 = 1, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa1 = NA_real_, kappa2 = NA_real_, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, rounding = TRUE, nullVariance = FALSE) {
+    .Call(`_lrstat_nbsamplesize`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityRateRatio, typeBetaSpending, parameterBetaSpending, userBetaSpending, rateRatioH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, kappa1, kappa2, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding, nullVariance)
 }
 
 #' @title Power for One-Sample Negative Binomial Rate
@@ -6579,6 +6654,10 @@ nbsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, eff
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilityRate A vector of length \code{kMax - 1} for the
+#'   futility bounds on the rate scale.
 #' @param typeBetaSpending The type of beta spending. One of the following:
 #'   \code{"sfOF"} for O'Brien-Fleming type spending function,
 #'   \code{"sfP"} for Pocock type spending function,
@@ -6736,8 +6815,8 @@ nbsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, eff
 #'           followupTime = 0.5, fixedFollowup = TRUE)
 #'
 #' @export
-nbpower1s <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, lambdaH0 = NA_real_, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa = NA_real_, lambda = NA_real_, gamma = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_) {
-    .Call(`_lrstat_nbpower1s`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, lambdaH0, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, kappa, lambda, gamma, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration)
+nbpower1s <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityRate = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, lambdaH0 = NA_real_, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa = NA_real_, lambda = NA_real_, gamma = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_) {
+    .Call(`_lrstat_nbpower1s`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityRate, typeBetaSpending, parameterBetaSpending, lambdaH0, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, kappa, lambda, gamma, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration)
 }
 
 #' @title Sample Size for One-Sample Negative Binomial Rate
@@ -6759,6 +6838,10 @@ nbpower1s <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping =
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilityRate A vector of length \code{kMax - 1} for the
+#'   futility bounds on the rate scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -6835,8 +6918,8 @@ nbpower1s <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping =
 #'                followupTime = 0.5, fixedFollowup = TRUE)
 #'
 #' @export
-nbsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, lambdaH0 = NA_real_, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa = NA_real_, lambda = NA_real_, gamma = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, rounding = TRUE) {
-    .Call(`_lrstat_nbsamplesize1s`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, lambdaH0, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, kappa, lambda, gamma, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding)
+nbsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityRate = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, lambdaH0 = NA_real_, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa = NA_real_, lambda = NA_real_, gamma = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, rounding = TRUE) {
+    .Call(`_lrstat_nbsamplesize1s`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityRate, typeBetaSpending, parameterBetaSpending, userBetaSpending, lambdaH0, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, kappa, lambda, gamma, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding)
 }
 
 #' @title Power for Equivalence in Negative Binomial Rate Ratio
@@ -7057,7 +7140,7 @@ nbsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'              followupTime = 0.5, fixedFollowup = TRUE)
 #'
 #' @export
-nbpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, rateRatioLower = NA_real_, rateRatioUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa1 = NA_real_, kappa2 = NA_real_, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_) {
+nbpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues = NULL, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, rateRatioLower = NA_real_, rateRatioUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa1 = NA_real_, kappa2 = NA_real_, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_) {
     .Call(`_lrstat_nbpowerequiv`, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, rateRatioLower, rateRatioUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, kappa1, kappa2, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration)
 }
 
@@ -7137,7 +7220,7 @@ nbpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues 
 #'                   followupTime = 0.5, fixedFollowup = TRUE)
 #'
 #' @export
-nbsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, rateRatioLower = NA_real_, rateRatioUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa1 = NA_real_, kappa2 = NA_real_, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, spendingTime = NA_real_, rounding = 1L) {
+nbsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, criticalValues = NULL, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, rateRatioLower = NA_real_, rateRatioUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, kappa1 = NA_real_, kappa2 = NA_real_, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, rounding = TRUE) {
     .Call(`_lrstat_nbsamplesizeequiv`, beta, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, rateRatioLower, rateRatioUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, kappa1, kappa2, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding)
 }
 
@@ -7310,6 +7393,10 @@ rmstat <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilityRmstDiff A vector of length \code{kMax - 1} for the
+#'   futility bounds on the restricted mean survival time difference scale.
 #' @param typeBetaSpending The type of beta spending. One of the following:
 #'   \code{"sfOF"} for O'Brien-Fleming type spending function,
 #'   \code{"sfP"} for Pocock type spending function,
@@ -7526,8 +7613,8 @@ rmstat <- function(time = NA_real_, milestone = NA_real_, allocationRatioPlanned
 #'         followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-rmpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, milestone = NA_real_, rmstDiffH0 = 0, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_) {
-    .Call(`_lrstat_rmpower`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, milestone, rmstDiffH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration)
+rmpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityRmstDiff = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, milestone = NA_real_, rmstDiffH0 = 0, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_) {
+    .Call(`_lrstat_rmpower`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityRmstDiff, typeBetaSpending, parameterBetaSpending, milestone, rmstDiffH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration)
 }
 
 #' @title Sample Size for Difference in Restricted Mean Survival Times
@@ -7549,6 +7636,10 @@ rmpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilityRmstDiff A vector of length \code{kMax - 1} for the
+#'   futility bounds on the restricted mean survival time difference scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -7638,8 +7729,8 @@ rmpower <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = N
 #'              followupTime = 18, fixedFollowup = TRUE)
 #'
 #' @export
-rmsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, milestone = NA_real_, rmstDiffH0 = 0, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, rounding = TRUE) {
-    .Call(`_lrstat_rmsamplesize`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, milestone, rmstDiffH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding)
+rmsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityRmstDiff = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, milestone = NA_real_, rmstDiffH0 = 0, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, rounding = TRUE) {
+    .Call(`_lrstat_rmsamplesize`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityRmstDiff, typeBetaSpending, parameterBetaSpending, userBetaSpending, milestone, rmstDiffH0, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding)
 }
 
 #' @title Power for One-Sample Restricted Mean Survival Time
@@ -7657,6 +7748,10 @@ rmsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, eff
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilityRmst A vector of length \code{kMax - 1} for the
+#'   futility bounds on the restricted mean survival time scale.
 #' @param typeBetaSpending The type of beta spending. One of the following:
 #'   \code{"sfOF"} for O'Brien-Fleming type spending function,
 #'   \code{"sfP"} for Pocock type spending function,
@@ -7810,8 +7905,8 @@ rmsamplesize <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, eff
 #'           followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-rmpower1s <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, milestone = NA_real_, rmstH0 = NA_real_, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda = NA_real_, gamma = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_) {
-    .Call(`_lrstat_rmpower1s`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, milestone, rmstH0, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda, gamma, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration)
+rmpower1s <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityRmst = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, milestone = NA_real_, rmstH0 = NA_real_, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda = NA_real_, gamma = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_) {
+    .Call(`_lrstat_rmpower1s`, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityRmst, typeBetaSpending, parameterBetaSpending, milestone, rmstH0, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda, gamma, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration)
 }
 
 #' @title Sample Size for One-Sample Restricted Mean Survival Time
@@ -7833,6 +7928,10 @@ rmpower1s <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping =
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilityRmst A vector of length \code{kMax - 1} for the
+#'   futility bounds on the restricted mean survival time scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -7918,8 +8017,8 @@ rmpower1s <- function(kMax = 1L, informationRates = NA_real_, efficacyStopping =
 #'                followupTime = 18, fixedFollowup = TRUE)
 #'
 #' @export
-rmsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, milestone = NA_real_, rmstH0 = NA_real_, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda = NA_real_, gamma = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, rounding = TRUE) {
-    .Call(`_lrstat_rmsamplesize1s`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, milestone, rmstH0, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda, gamma, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding)
+rmsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityRmst = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, milestone = NA_real_, rmstH0 = NA_real_, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda = NA_real_, gamma = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, rounding = TRUE) {
+    .Call(`_lrstat_rmsamplesize1s`, beta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityRmst, typeBetaSpending, parameterBetaSpending, userBetaSpending, milestone, rmstH0, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda, gamma, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding)
 }
 
 #' @title Power for Equivalence in Restricted Mean Survival Time Difference
@@ -8135,7 +8234,7 @@ rmsamplesize1s <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, e
 #'              followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-rmpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, milestone = NA_real_, rmstDiffLower = NA_real_, rmstDiffUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_) {
+rmpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues = NULL, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, milestone = NA_real_, rmstDiffLower = NA_real_, rmstDiffUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = FALSE, spendingTime = NA_real_, studyDuration = NA_real_) {
     .Call(`_lrstat_rmpowerequiv`, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, milestone, rmstDiffLower, rmstDiffUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, studyDuration)
 }
 
@@ -8201,7 +8300,7 @@ rmpowerequiv <- function(kMax = 1L, informationRates = NA_real_, criticalValues 
 #'                   followupTime = 18, fixedFollowup = FALSE)
 #'
 #' @export
-rmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, milestone = NA_real_, rmstDiffLower = NA_real_, rmstDiffUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, spendingTime = NA_real_, rounding = 1L) {
+rmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_, criticalValues = NULL, alpha = 0.05, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, milestone = NA_real_, rmstDiffLower = NA_real_, rmstDiffUpper = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, accrualDuration = NA_real_, followupTime = NA_real_, fixedFollowup = 0L, spendingTime = NA_real_, rounding = 1L) {
     .Call(`_lrstat_rmsamplesizeequiv`, beta, kMax, informationRates, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, milestone, rmstDiffLower, rmstDiffUpper, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, accrualDuration, followupTime, fixedFollowup, spendingTime, rounding)
 }
 
@@ -8677,7 +8776,7 @@ simon2stage <- function(alpha = NA_real_, beta = NA_real_, piH0 = NA_real_, pi =
 #'
 #' @examples
 #'
-#' a = simonBayesAnalysis(
+#' a <- simonBayesAnalysis(
 #'   nstrata = 10,
 #'   r = c(8,0,1,1,6,2,0,0,3,3),
 #'   n = c(19,10,26,8,14,7,8,5,4,14),
@@ -8804,7 +8903,7 @@ simonBayesAnalysis <- function(nstrata = NA_integer_, r = NA_real_, n = NA_real_
 #'
 #' @examples
 #'
-#' sim1 = simonBayesSim(
+#' sim1 <- simonBayesSim(
 #'   p = c(0.25, 0.25, 0.05),
 #'   accrualIntensity = 5,
 #'   stratumFraction = c(1/3, 1/3, 1/3),
