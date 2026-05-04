@@ -13,23 +13,25 @@
 struct ListCpp;
 
 
-double errorSpentcpp(const double t,
-                     const double error = 0.025,
-                     const std::string& sf = "sfOF",
-                     const double sfpar = 0.0);
+double errorSpentcpp(
+    const double t,
+    const double error = 0.025,
+    const std::string& sf = "sfOF",
+    const double sfpar = 0.0);
 
 
-ListCpp exitprobcpp(const std::vector<double>& b,
-                    const std::vector<double>& a,
-                    const std::vector<double>& theta,
-                    const std::vector<double>& I);
+ListCpp exitprobcpp(
+    const std::vector<double>& b,
+    const std::vector<double>& a,
+    const std::vector<double>& theta,
+    const std::vector<double>& I);
 
-
-double f_pvalue(const double theta,
-                const size_t L,
-                const double zL,
-                const std::vector<double>& b,
-                const std::vector<double>& I);
+double f_pvalue(
+    const double theta,
+    const size_t L,
+    const double zL,
+    const std::vector<double>& b,
+    const std::vector<double>& I);
 
 std::vector<double> getBoundcpp(
     const std::size_t k,
@@ -44,15 +46,16 @@ std::vector<double> getBoundcpp(
 
 class BoundCacheAlpha {
 public:
-  BoundCacheAlpha(std::size_t k,
-                  const std::vector<double>& infoRates,
-                  const std::string& asf,
-                  double asfpar,
-                  const std::vector<double>& userAlphaSpending,
-                  const std::vector<double>& spendTime,
-                  const std::vector<unsigned char>& effStopping,
-                  std::size_t maxEntries = 64,
-                  int alphaPrecision = 12);
+  BoundCacheAlpha(
+    std::size_t k,
+    const std::vector<double>& infoRates,
+    const std::string& asf,
+    double asfpar,
+    const std::vector<double>& userAlphaSpending,
+    const std::vector<double>& spendTime,
+    const std::vector<unsigned char>& effStopping,
+    std::size_t maxEntries = 64,
+    int alphaPrecision = 12);
 
   std::vector<double> get(double alpha);
 
@@ -107,6 +110,8 @@ ListCpp getDesigncpp(
     const double parameterAlphaSpending,
     const std::vector<double>& userAlphaSpending,
     const std::vector<double>& futilityBounds,
+    const std::vector<double>& futilityCP,
+    const std::vector<double>& futilityTheta,
     const std::string& typeBetaSpending,
     const double parameterBetaSpending,
     const std::vector<double>& userBetaSpending,
@@ -133,11 +138,11 @@ ListCpp getDesignEquivcpp(
 ListCpp adaptDesigncpp(
     double betaNew,
     double INew,
-    const std::size_t L,
+    const size_t L,
     const double zL,
     const double theta,
     const double IMax,
-    const std::size_t kMax,
+    const size_t kMax,
     const std::vector<double>& informationRates,
     const std::vector<unsigned char>& efficacyStopping,
     const std::vector<unsigned char>& futilityStopping,
@@ -147,16 +152,21 @@ ListCpp adaptDesigncpp(
     const double parameterAlphaSpending,
     const std::vector<double>& userAlphaSpending,
     const std::vector<double>& futilityBounds,
+    const std::vector<double>& futilityCP,
+    const std::vector<double>& futilityTheta,
     const std::string& typeBetaSpending,
     const double parameterBetaSpending,
     const std::vector<double>& spendingTime,
     const bool MullerSchafer,
-    const std::size_t kNew,
+    const size_t kNew,
     const std::vector<double>& informationRatesNew,
     const std::vector<unsigned char>& efficacyStoppingNew,
     const std::vector<unsigned char>& futilityStoppingNew,
     const std::string& typeAlphaSpendingNew,
     const double parameterAlphaSpendingNew,
+    const std::vector<double>& futilityBoundsNew,
+    const std::vector<double>& futilityCPNew,
+    const std::vector<double>& futilityThetaNew,
     const std::string& typeBetaSpendingNew,
     const double parameterBetaSpendingNew,
     const std::vector<double>& userBetaSpendingNew,
