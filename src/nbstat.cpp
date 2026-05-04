@@ -970,6 +970,8 @@ ListCpp nbpowercpp(
     const double parameterAlphaSpending,
     const std::vector<double>& userAlphaSpending,
     const std::vector<double>& futilityBounds,
+    const std::vector<double>& futilityCP,
+    const std::vector<double>& futilityRateRatio,
     const std::string& typeBetaSpending,
     const double parameterBetaSpending,
     const double rateRatioH0,
@@ -1037,7 +1039,9 @@ ListCpp nbpowercpp(
   }
 
   bool missingCriticalValues = !none_na(criticalValues);
-  bool missingFutilityBounds = !none_na(futilityBounds);
+  bool missingFutilityBounds = !none_na(futilityBounds) &&
+    !none_na(futilityCP) && !none_na(futilityRateRatio);
+
   if (!missingCriticalValues && criticalValues.size() != kMax) {
     throw std::invalid_argument("Invalid length for criticalValues");
   }
@@ -1074,22 +1078,31 @@ ListCpp nbpowercpp(
       throw std::invalid_argument("userAlphaSpending must end with specified alpha");
   }
   if (!missingFutilityBounds) {
-    if (!(futilityBounds.size() == kMax - 1 || futilityBounds.size() == kMax)) {
-      throw std::invalid_argument("Invalid length for futilityBounds");
-    }
-  }
-  if (!missingCriticalValues && !missingFutilityBounds) {
-    for (size_t i = 0; i < kMax - 1; ++i) {
-      if (futilityBounds[i] > criticalValues[i]) {
-        throw std::invalid_argument("futilityBounds must lie below criticalValues");
+    if (none_na(futilityBounds)) {
+      if (futilityBounds.size() < kMax - 1) {
+        throw std::invalid_argument("Insufficient length for futilityBounds");
+      }
+    } else if (none_na(futilityCP)) {
+      if (futilityCP.size() < kMax - 1) {
+        throw std::invalid_argument("Insufficient length for futilityCP");
+      }
+      for (size_t i = 0; i < kMax - 1; ++i) {
+        if (futilityCP[i] < 0.0 || futilityCP[i] > 1.0) {
+          throw std::invalid_argument("futilityCP must lie in [0, 1]");
+        }
+      }
+    } else {
+      if (futilityRateRatio.size() < kMax - 1) {
+        throw std::invalid_argument("Insufficient length for futilityRateRatio");
+      }
+      for (size_t i = 0; i < kMax - 1; ++i) {
+        if (futilityRateRatio[i] <= 0) {
+          throw std::invalid_argument("futilityRateRatio must be positive");
+        }
       }
     }
-    if (futilityBounds.size() == kMax &&
-        futilityBounds[kMax-1] != criticalValues[kMax-1]) {
-      throw std::invalid_argument(
-          "futilityBounds must meet criticalValues at the final look");
-    }
   }
+
 
   std::string bsf = typeBetaSpending;
   for (char &c : bsf) {
@@ -1194,65 +1207,6 @@ ListCpp nbpowercpp(
   auto lambda2v = expand1(lambda2, nstrata, "lambda2");
   auto gamma1x = expand_stratified(gamma1, nstrata, nintv, "gamma1");
   auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
-
-
-  // --- Efficacy boundaries ---
-  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
-  std::vector<double> critValues = criticalValues;
-  if (missingCriticalValues) {
-    bool haybittle = false;
-    if (kMax > 1 && criticalValues.size() == kMax) {
-      bool hasNaN = false;
-      for (size_t i = 0; i < kMax - 1; ++i) {
-        if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
-      }
-      if (!hasNaN && std::isnan(criticalValues[kMax-1])) haybittle = true;
-    }
-
-    if (haybittle) { // Haybittle & Peto
-      std::vector<double> u(kMax);
-      for (size_t i = 0; i < kMax - 1; ++i) {
-        u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
-      }
-
-      auto f = [&](double aval)->double {
-        u[kMax-1] = aval;
-        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
-        return cpu - alpha;
-      };
-
-      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
-    } else {
-      critValues = getBoundcpp(kMax, infoRates, alpha, asf,
-                               parameterAlphaSpending, userAlphaSpending,
-                               spendTime, effStopping);
-    }
-  }
-
-  ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
-  auto v = probs.get<std::vector<double>>("exitProbUpper");
-  std::vector<double> cumAlphaSpent(kMax);
-  std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
-  double alpha1 = missingCriticalValues ? alpha :
-    std::round(cumAlphaSpent.back() * 1e6) / 1e6;
-
-  // --- Futility boundaries ---
-  std::vector<double> futBounds = futilityBounds;
-  if (kMax > 1) {
-    if (missingFutilityBounds && bsf == "none") {
-      futBounds = std::vector<double>(kMax, -6.0);
-      futBounds[kMax-1] = critValues[kMax-1];
-    } else if (!missingFutilityBounds && futBounds.size() == kMax-1) {
-      futBounds.push_back(critValues[kMax-1]);
-    }
-  } else {
-    if (missingFutilityBounds) {
-      futBounds = critValues;
-    }
-  }
 
   // Randomization probability for treatment group
   double phi = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
@@ -1377,18 +1331,106 @@ ListCpp nbpowercpp(
     }
   }
 
+
+  // --- Efficacy boundaries ---
+  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> critValues = criticalValues;
+  if (missingCriticalValues) {
+    bool haybittle = false;
+    if (kMax > 1 && criticalValues.size() == kMax) {
+      bool hasNaN = false;
+      for (size_t i = 0; i < kMax - 1; ++i) {
+        if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
+      }
+      if (!hasNaN && std::isnan(criticalValues[kMax-1])) haybittle = true;
+    }
+
+    if (haybittle) { // Haybittle & Peto
+      std::vector<double> u(kMax);
+      for (size_t i = 0; i < kMax - 1; ++i) {
+        u[i] = criticalValues[i];
+        if (!effStopping[i]) u[i] = 6.0;
+      }
+
+      auto f = [&](double aval)->double {
+        u[kMax-1] = aval;
+        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
+        auto v = probs.get<std::vector<double>>("exitProbUpper");
+        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        return cpu - alpha;
+      };
+
+      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+    } else {
+      critValues = getBoundcpp(kMax, infoRates, alpha, asf,
+                               parameterAlphaSpending, userAlphaSpending,
+                               spendTime, effStopping);
+    }
+  }
+
+  ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
+  auto v = probs.get<std::vector<double>>("exitProbUpper");
+  std::vector<double> cumAlphaSpent(kMax);
+  std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
+  double alpha1 = missingCriticalValues ? alpha :
+    std::round(cumAlphaSpent.back() * 1e6) / 1e6;
+
+  // --- Futility boundaries ---
+  std::vector<double> futBounds(kMax, NaN);
+  if (kMax > 1) {
+    if (missingFutilityBounds && bsf == "none") {
+      futBounds = std::vector<double>(kMax, -6.0);
+      futBounds[kMax-1] = critValues[kMax-1];
+    } else if (!missingFutilityBounds) {
+      if (none_na(futilityBounds)) {
+        for (size_t i = 0; i < kMax - 1; ++i) {
+          if (futilityBounds[i] > critValues[i]) {
+            throw std::invalid_argument(
+                "futilityBounds must lie below criticalValues");
+          }
+        }
+        std::copy_n(futilityBounds.begin(), kMax-1, futBounds.begin());
+        futBounds[kMax-1] = critValues[kMax-1];
+      } else if (none_na(futilityCP)) {
+        double c2 = critValues[kMax - 1];
+        for (size_t i = 0; i < kMax - 1; ++i) {
+          double s1 = infoRates[i];
+          futBounds[i] = std::sqrt(s1) * (c2 - std::sqrt(1 - s1) *
+            boost_qnorm(1 - futilityCP[i]));
+          if (futBounds[i] > critValues[i]) {
+            throw std::invalid_argument("futilityCP values are too large to "
+                                          "be compatible with criticalValues");
+          }
+        }
+        futBounds[kMax-1] = critValues[kMax-1];
+      } else {
+        for (size_t i = 0; i < kMax - 1; ++i) {
+          futBounds[i] = (-std::log(futilityRateRatio[i] / rateRatioH0)) *
+            std::sqrt(I[i]) / w[i];
+          if (futBounds[i] > critValues[i]) {
+            throw std::invalid_argument("futilityRateRatio values are too small to "
+                                          "be compatible with criticalValues");
+          }
+        }
+        futBounds[kMax-1] = critValues[kMax-1];
+      }
+    }
+  } else {
+    if (missingFutilityBounds) {
+      futBounds = critValues;
+    }
+  }
+
   // --- compute exit probabilities ---
   ListCpp exit_probs;
   if (!missingFutilityBounds || bsf == "none" || kMax == 1) {
-    std::vector<double> critValues1 = critValues;
-    std::vector<double> futBounds1 = futBounds;
+    std::vector<double> u(kMax), l(kMax);
     for (size_t i = 0; i < kMax; ++i) {
-      critValues1[i] *= w[i];
-      futBounds1[i] *= w[i];
+      u[i] = critValues[i] * w[i];
+      l[i] = futBounds[i] * w[i];
     }
-    exit_probs = exitprobcpp(critValues1, futBounds1, theta, I);
+    exit_probs = exitprobcpp(u, l, theta, I);
   } else {
-    std::vector<double> w(kMax, 1.0);
     auto gp = getPower(alpha1, kMax, critValues, theta, I, bsf,
                        parameterBetaSpending, spendTime, futStopping, w);
     futBounds = gp.get<std::vector<double>>("futilityBounds");
@@ -1559,6 +1601,10 @@ ListCpp nbpowercpp(
 //' @inheritParams param_parameterAlphaSpending
 //' @inheritParams param_userAlphaSpending
 //' @inheritParams param_futilityBounds
+//' @param futilityCP A vector of length \code{kMax - 1} for the futility
+//'   bounds on the conditional power scale.
+//' @param futilityRateRatio A vector of length \code{kMax - 1} for the
+//'   futility bounds on the rate ratio scale.
 //' @param typeBetaSpending The type of beta spending. One of the following:
 //'   \code{"sfOF"} for O'Brien-Fleming type spending function,
 //'   \code{"sfP"} for Pocock type spending function,
@@ -1784,12 +1830,14 @@ Rcpp::List nbpower(
     const Rcpp::NumericVector& informationRates = NA_REAL,
     const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
     const Rcpp::LogicalVector& futilityStopping = NA_LOGICAL,
-    const Rcpp::NumericVector& criticalValues = NA_REAL,
+    const Rcpp::Nullable<Rcpp::NumericVector> criticalValues = R_NilValue,
     const double alpha = 0.025,
     const std::string& typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
     const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& futilityBounds = NA_REAL,
+    const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds = R_NilValue,
+    const Rcpp::Nullable<Rcpp::NumericVector> futilityCP = R_NilValue,
+    const Rcpp::Nullable<Rcpp::NumericVector> futilityRateRatio = R_NilValue,
     const std::string& typeBetaSpending = "none",
     const double parameterBetaSpending = NA_REAL,
     const double rateRatioH0 = 1,
@@ -1814,9 +1862,7 @@ Rcpp::List nbpower(
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
   auto effStopping = convertLogicalVector(efficacyStopping);
   auto futStopping = convertLogicalVector(futilityStopping);
-  auto critValues = Rcpp::as<std::vector<double>>(criticalValues);
   auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
-  auto futBounds = Rcpp::as<std::vector<double>>(futilityBounds);
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
   auto piecewiseTime = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
@@ -1829,11 +1875,37 @@ Rcpp::List nbpower(
   auto gam2 = Rcpp::as<std::vector<double>>(gamma2);
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
 
+  std::vector<double> critValues, futBounds, futCP, futRateRatio;
+  if (criticalValues.isNotNull()) {
+    critValues = Rcpp::as<std::vector<double>>(criticalValues);
+  } else {
+    critValues = std::vector<double>(1, NaN);
+  }
+
+  if (futilityBounds.isNotNull()) {
+    futBounds = Rcpp::as<std::vector<double>>(futilityBounds);
+  } else {
+    futBounds = std::vector<double>(1, NaN);
+  }
+
+  if (futilityCP.isNotNull()) {
+    futCP = Rcpp::as<std::vector<double>>(futilityCP);
+  } else {
+    futCP = std::vector<double>(1, NaN);
+  }
+
+  if (futilityRateRatio.isNotNull()) {
+    futRateRatio = Rcpp::as<std::vector<double>>(futilityRateRatio);
+  } else {
+    futRateRatio = std::vector<double>(1, NaN);
+  }
+
   ListCpp out = nbpowercpp(
     static_cast<size_t>(kMax), infoRates, effStopping, futStopping,
     critValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlpha,
-    futBounds, typeBetaSpending, parameterBetaSpending,
+    futBounds, futCP, futRateRatio,
+    typeBetaSpending, parameterBetaSpending,
     rateRatioH0, allocationRatioPlanned,
     accrualT, accrualInt, piecewiseTime, stratumFrac,
     kap1, kap2, lam1, lam2, gam1, gam2,
@@ -1858,6 +1930,8 @@ ListCpp nbsamplesizecpp(
     const double parameterAlphaSpending,
     const std::vector<double>& userAlphaSpending,
     const std::vector<double>& futilityBounds,
+    const std::vector<double>& futilityCP,
+    const std::vector<double>& futilityRateRatio,
     const std::string& typeBetaSpending,
     const double parameterBetaSpending,
     const std::vector<double>& userBetaSpending,
@@ -1928,7 +2002,9 @@ ListCpp nbsamplesizecpp(
   }
 
   bool missingCriticalValues = !none_na(criticalValues);
-  bool missingFutilityBounds = !none_na(futilityBounds);
+  bool missingFutilityBounds = !none_na(futilityBounds) &&
+    !none_na(futilityCP) && !none_na(futilityRateRatio);
+
   if (!missingCriticalValues && criticalValues.size() != kMax) {
     throw std::invalid_argument("Invalid length for criticalValues");
   }
@@ -1965,20 +2041,28 @@ ListCpp nbsamplesizecpp(
       throw std::invalid_argument("userAlphaSpending must end with specified alpha");
   }
   if (!missingFutilityBounds) {
-    if (!(futilityBounds.size() == kMax - 1 || futilityBounds.size() == kMax)) {
-      throw std::invalid_argument("Invalid length for futilityBounds");
-    }
-  }
-  if (!missingCriticalValues && !missingFutilityBounds) {
-    for (size_t i = 0; i < kMax - 1; ++i) {
-      if (futilityBounds[i] > criticalValues[i]) {
-        throw std::invalid_argument("futilityBounds must lie below criticalValues");
+    if (none_na(futilityBounds)) {
+      if (futilityBounds.size() < kMax - 1) {
+        throw std::invalid_argument("Insufficient length for futilityBounds");
       }
-    }
-    if (futilityBounds.size() == kMax &&
-        futilityBounds[kMax-1] != criticalValues[kMax-1]) {
-      throw std::invalid_argument(
-          "futilityBounds must meet criticalValues at the final look");
+    } else if (none_na(futilityCP)) {
+      if (futilityCP.size() < kMax - 1) {
+        throw std::invalid_argument("Insufficient length for futilityCP");
+      }
+      for (size_t i = 0; i < kMax - 1; ++i) {
+        if (futilityCP[i] < 0.0 || futilityCP[i] > 1.0) {
+          throw std::invalid_argument("futilityCP must lie in [0, 1]");
+        }
+      }
+    } else {
+      if (futilityRateRatio.size() < kMax - 1) {
+        throw std::invalid_argument("Insufficient length for futilityRateRatio");
+      }
+      for (size_t i = 0; i < kMax - 1; ++i) {
+        if (futilityRateRatio[i] <= 0) {
+          throw std::invalid_argument("futilityRateRatio must be positive");
+        }
+      }
     }
   }
 
@@ -2129,13 +2213,34 @@ ListCpp nbsamplesizecpp(
   }
 
   // --- Futility boundaries ---
-  std::vector<double> futBounds = futilityBounds;
+  std::vector<double> futBounds(kMax, NaN);
   if (kMax > 1) {
     if (missingFutilityBounds && bsf == "none") {
       futBounds = std::vector<double>(kMax, -6.0);
       futBounds[kMax-1] = critValues[kMax-1];
-    } else if (!missingFutilityBounds && futBounds.size() == kMax-1) {
-      futBounds.push_back(critValues[kMax-1]);
+    } else if (!missingFutilityBounds) {
+      if (none_na(futilityBounds)) {
+        for (size_t i = 0; i < kMax - 1; ++i) {
+          if (futilityBounds[i] > critValues[i]) {
+            throw std::invalid_argument(
+                "futilityBounds must lie below criticalValues");
+          }
+        }
+        std::copy_n(futilityBounds.begin(), kMax-1, futBounds.begin());
+        futBounds[kMax-1] = critValues[kMax-1];
+      } else if (none_na(futilityCP)) {
+        double c2 = critValues[kMax - 1];
+        for (size_t i = 0; i < kMax - 1; ++i) {
+          double s1 = infoRates[i];
+          futBounds[i] = std::sqrt(s1) * (c2 - std::sqrt(1 - s1) *
+            boost_qnorm(1 - futilityCP[i]));
+          if (futBounds[i] > critValues[i]) {
+            throw std::invalid_argument("futilityCP values are too large to "
+                                          "be compatible with criticalValues");
+          }
+        }
+        futBounds[kMax-1] = critValues[kMax-1];
+      }
     }
   } else {
     if (missingFutilityBounds) {
@@ -2164,6 +2269,12 @@ ListCpp nbsamplesizecpp(
   double theta1 = -std::log(rateRatio / rateRatioH0);
   std::vector<double> theta(kMax, theta1);
 
+  std::vector<double> futilityTheta(kMax - 1, NaN);
+  if (none_na(futilityRateRatio)) {
+    for (size_t i = 0; i < kMax - 1; ++i) {
+      futilityTheta[i] = -std::log(futilityRateRatio[i] / rateRatioH0);
+    }
+  }
 
   // Helper: compute information under H1 given accrualDuration (accrDur),
   // followupTime (fu), and accrualIntensity (accrInt).
@@ -2205,7 +2316,8 @@ ListCpp nbsamplesizecpp(
                             kappa1v, kappa2v, lambda1v, lambda2v, gamma1x, gamma2x,
                             fixedFollowup, nullVariance, nstrata,
                             critValues, futStopping, missingFutilityBounds,
-                            futBounds, beta, bsf, parameterBetaSpending,
+                            futBounds, futilityBounds, futilityCP, futilityRateRatio,
+                            beta, bsf, parameterBetaSpending,
                             userBetaSpending, spendTime]
     (double accrDur, double fu, const std::vector<double>& accrInt,
      bool need_bounds)-> BetaEval {
@@ -2280,7 +2392,23 @@ ListCpp nbsamplesizecpp(
     if (!missingFutilityBounds || bsf == "none" || kMax == 1) {
       // compute overall beta using the specified futility bounds
       std::vector<double> critValues1 = critValues;
-      std::vector<double> futBounds1 = futBounds;
+
+      std::vector<double> futBounds1(kMax, -6.0);
+      if (!none_na(futilityBounds) && !none_na(futilityCP) &&
+          none_na(futilityRateRatio)) {
+        for (size_t i = 0; i < kMax - 1; ++i) {
+          futBounds1[i] = (-std::log(futilityRateRatio[i] / rateRatioH0)) *
+            std::sqrt(I[i]) / w[i];
+          if (futBounds1[i] > critValues[i]) {
+            out.value = -1.0; // to decrease drift
+            return out;
+          }
+        }
+        futBounds1[kMax-1] = critValues[kMax-1];
+      } else {
+        std::copy_n(futBounds.begin(), kMax, futBounds1.begin());
+      }
+
       for (size_t k = 0; k < kMax - 1; ++k) {
         critValues1[k] *= w[k];
         futBounds1[k] *= w[k];
@@ -2366,6 +2494,7 @@ ListCpp nbsamplesizecpp(
 
 
   double maxInformation;
+
   if (!nullVariance) {
     // --- determine target maxInformation from group sequential design ---
     ListCpp design = getDesigncpp(
@@ -2373,7 +2502,8 @@ ListCpp nbsamplesizecpp(
       effStopping, futStopping,
       critValues, alpha, asf,
       parameterAlphaSpending, userAlphaSpending,
-      futBounds, bsf, parameterBetaSpending,
+      futBounds, futilityCP, futilityTheta,
+      bsf, parameterBetaSpending,
       userBetaSpending, spendTime, 1.0);
 
     auto byStageResults = design.get<DataFrameCpp>("byStageResults");
@@ -2632,7 +2762,8 @@ ListCpp nbsamplesizecpp(
     kMax, infoRates, effStopping, futStopping,
     critValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlphaSpending,
-    futBounds, typeBetaSpending, parameterBetaSpending,
+    futBounds, futilityCP, futilityRateRatio,
+    typeBetaSpending, parameterBetaSpending,
     rateRatioH0, allocationRatioPlanned,
     accrualTime, accrualIntensity,
     piecewiseSurvivalTime, stratumFraction,
@@ -2746,7 +2877,8 @@ ListCpp nbsamplesizecpp(
     kMax, infoRates, effStopping, futStopping,
     critValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlphaSpending,
-    futBounds, typeBetaSpending, parameterBetaSpending,
+    futBounds, futilityCP, futilityRateRatio,
+    typeBetaSpending, parameterBetaSpending,
     rateRatioH0, allocationRatioPlanned,
     accrualTime, accrualIntensity,
     piecewiseSurvivalTime, stratumFraction,
@@ -2789,6 +2921,10 @@ ListCpp nbsamplesizecpp(
 //' @inheritParams param_parameterAlphaSpending
 //' @inheritParams param_userAlphaSpending
 //' @inheritParams param_futilityBounds
+//' @param futilityCP A vector of length \code{kMax - 1} for the futility
+//'   bounds on the conditional power scale.
+//' @param futilityRateRatio A vector of length \code{kMax - 1} for the
+//'   futility bounds on the rate ratio scale.
 //' @inheritParams param_typeBetaSpending
 //' @inheritParams param_parameterBetaSpending
 //' @inheritParams param_userBetaSpending
@@ -2884,12 +3020,14 @@ Rcpp::List nbsamplesize(
     const Rcpp::NumericVector& informationRates = NA_REAL,
     const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
     const Rcpp::LogicalVector& futilityStopping = NA_LOGICAL,
-    const Rcpp::NumericVector& criticalValues = NA_REAL,
+    const Rcpp::Nullable<Rcpp::NumericVector> criticalValues = R_NilValue,
     const double alpha = 0.025,
     const std::string& typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
     const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& futilityBounds = NA_REAL,
+    const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds = R_NilValue,
+    const Rcpp::Nullable<Rcpp::NumericVector> futilityCP = R_NilValue,
+    const Rcpp::Nullable<Rcpp::NumericVector> futilityRateRatio = R_NilValue,
     const std::string& typeBetaSpending = "none",
     const double parameterBetaSpending = NA_REAL,
     const Rcpp::NumericVector& userBetaSpending = NA_REAL,
@@ -2915,9 +3053,7 @@ Rcpp::List nbsamplesize(
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
   auto effStopping = convertLogicalVector(efficacyStopping);
   auto futStopping = convertLogicalVector(futilityStopping);
-  auto critValues = Rcpp::as<std::vector<double>>(criticalValues);
   auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
-  auto futBounds = Rcpp::as<std::vector<double>>(futilityBounds);
   auto userBeta = Rcpp::as<std::vector<double>>(userBetaSpending);
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
@@ -2931,11 +3067,37 @@ Rcpp::List nbsamplesize(
   auto gam2 = Rcpp::as<std::vector<double>>(gamma2);
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
 
+  std::vector<double> critValues, futBounds, futCP, futRateRatio;
+  if (criticalValues.isNotNull()) {
+    critValues = Rcpp::as<std::vector<double>>(criticalValues);
+  } else {
+    critValues = std::vector<double>(1, NaN);
+  }
+
+  if (futilityBounds.isNotNull()) {
+    futBounds = Rcpp::as<std::vector<double>>(futilityBounds);
+  } else {
+    futBounds = std::vector<double>(1, NaN);
+  }
+
+  if (futilityCP.isNotNull()) {
+    futCP = Rcpp::as<std::vector<double>>(futilityCP);
+  } else {
+    futCP = std::vector<double>(1, NaN);
+  }
+
+  if (futilityRateRatio.isNotNull()) {
+    futRateRatio = Rcpp::as<std::vector<double>>(futilityRateRatio);
+  } else {
+    futRateRatio = std::vector<double>(1, NaN);
+  }
+
   auto out = nbsamplesizecpp(
     beta, static_cast<size_t>(kMax), infoRates, effStopping, futStopping,
     critValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlpha,
-    futBounds, typeBetaSpending, parameterBetaSpending,
+    futBounds, futCP, futRateRatio,
+    typeBetaSpending, parameterBetaSpending,
     userBeta, rateRatioH0, allocationRatioPlanned,
     accrualT, accrualInt, pwSurvT, stratumFrac,
     kap1, kap2, lam1, lam2, gam1, gam2,
@@ -2969,6 +3131,8 @@ ListCpp nbpower1scpp(
     const double parameterAlphaSpending,
     const std::vector<double>& userAlphaSpending,
     const std::vector<double>& futilityBounds,
+    const std::vector<double>& futilityCP,
+    const std::vector<double>& futilityRate,
     const std::string& typeBetaSpending,
     const double parameterBetaSpending,
     const double lambdaH0,
@@ -3031,7 +3195,9 @@ ListCpp nbpower1scpp(
   }
 
   bool missingCriticalValues = !none_na(criticalValues);
-  bool missingFutilityBounds = !none_na(futilityBounds);
+  bool missingFutilityBounds = !none_na(futilityBounds) &&
+    !none_na(futilityCP) && !none_na(futilityRate);
+
   if (!missingCriticalValues && criticalValues.size() != kMax)
     throw std::invalid_argument("Invalid length for criticalValues");
   if (missingCriticalValues && std::isnan(alpha))
@@ -3066,20 +3232,28 @@ ListCpp nbpower1scpp(
       throw std::invalid_argument("userAlphaSpending must end with specified alpha");
   }
   if (!missingFutilityBounds) {
-    if (!(futilityBounds.size() == kMax - 1 || futilityBounds.size() == kMax)) {
-      throw std::invalid_argument("Invalid length for futilityBounds");
-    }
-  }
-  if (!missingCriticalValues && !missingFutilityBounds) {
-    for (size_t i = 0; i < kMax - 1; ++i) {
-      if (futilityBounds[i] > criticalValues[i]) {
-        throw std::invalid_argument("futilityBounds must lie below criticalValues");
+    if (none_na(futilityBounds)) {
+      if (futilityBounds.size() < kMax - 1) {
+        throw std::invalid_argument("Insufficient length for futilityBounds");
       }
-    }
-    if (futilityBounds.size() == kMax &&
-        futilityBounds[kMax-1] != criticalValues[kMax-1]) {
-      throw std::invalid_argument(
-          "futilityBounds must meet criticalValues at the final look");
+    } else if (none_na(futilityCP)) {
+      if (futilityCP.size() < kMax - 1) {
+        throw std::invalid_argument("Insufficient length for futilityCP");
+      }
+      for (size_t i = 0; i < kMax - 1; ++i) {
+        if (futilityCP[i] < 0.0 || futilityCP[i] > 1.0) {
+          throw std::invalid_argument("futilityCP must lie in [0, 1]");
+        }
+      }
+    } else {
+      if (futilityRate.size() < kMax - 1) {
+        throw std::invalid_argument("Insufficient length for futilityRate");
+      }
+      for (size_t i = 0; i < kMax - 1; ++i) {
+        if (futilityRate[i] <= 0) {
+          throw std::invalid_argument("futilityRate must be positive");
+        }
+      }
     }
   }
 
@@ -3173,66 +3347,6 @@ ListCpp nbpower1scpp(
   auto lambdav = expand1(lambda, nstrata, "lambda");
   auto gammax = expand_stratified(gamma, nstrata, nintv, "gamma");
 
-
-  // --- obtain criticalValues if missing ---
-  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
-  std::vector<double> critValues = criticalValues;
-  if (missingCriticalValues) {
-    bool haybittle = false;
-    if (kMax > 1 && criticalValues.size() == kMax) {
-      bool hasNaN = false;
-      for (size_t i = 0; i < kMax - 1; ++i) {
-        if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
-      }
-      if (!hasNaN && std::isnan(criticalValues[kMax-1])) haybittle = true;
-    }
-
-    if (haybittle) { // Haybittle & Peto
-      std::vector<double> u(kMax);
-      for (size_t i = 0; i < kMax - 1; ++i) {
-        u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
-      }
-
-      auto f = [&](double aval)->double {
-        u[kMax-1] = aval;
-        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
-        return cpu - alpha;
-      };
-
-      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
-    } else {
-      critValues = getBoundcpp(kMax, infoRates, alpha, asf,
-                               parameterAlphaSpending, userAlphaSpending,
-                               spendTime, effStopping);
-    }
-  }
-
-  // compute cumulative alpha spent (and alpha1)
-  ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
-  auto v = probs.get<std::vector<double>>("exitProbUpper");
-  std::vector<double> cumAlphaSpent(kMax);
-  std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
-  double alpha1 = missingCriticalValues ? alpha :
-    std::round(cumAlphaSpent.back() * 1e6) / 1e6;
-
-  // futility bounds handling
-  std::vector<double> futBounds = futilityBounds;
-  if (kMax > 1) {
-    if (missingFutilityBounds && bsf == "none") {
-      futBounds = std::vector<double>(kMax, -6.0);
-      futBounds[kMax-1] = critValues[kMax-1];
-    } else if (!missingFutilityBounds && futBounds.size() == kMax-1) {
-      futBounds.push_back(critValues[kMax-1]);
-    }
-  } else {
-    if (missingFutilityBounds) {
-      futBounds = critValues;
-    }
-  }
-
   // studyDuration1
   double studyDuration1 = studyDuration;
   if (!fixedFollowup || std::isnan(studyDuration))
@@ -3314,6 +3428,97 @@ ListCpp nbpower1scpp(
     nevents[i]     = extract_sum(dfH1_i, "nevents1");
     ndropouts[i]   = extract_sum(dfH1_i, "ndropouts1");
     exposure[i]    = extract_sum(dfH1_i, "exposure1");
+  }
+
+
+  // --- obtain criticalValues if missing ---
+  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> critValues = criticalValues;
+  if (missingCriticalValues) {
+    bool haybittle = false;
+    if (kMax > 1 && criticalValues.size() == kMax) {
+      bool hasNaN = false;
+      for (size_t i = 0; i < kMax - 1; ++i) {
+        if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
+      }
+      if (!hasNaN && std::isnan(criticalValues[kMax-1])) haybittle = true;
+    }
+
+    if (haybittle) { // Haybittle & Peto
+      std::vector<double> u(kMax);
+      for (size_t i = 0; i < kMax - 1; ++i) {
+        u[i] = criticalValues[i];
+        if (!effStopping[i]) u[i] = 6.0;
+      }
+
+      auto f = [&](double aval)->double {
+        u[kMax-1] = aval;
+        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
+        auto v = probs.get<std::vector<double>>("exitProbUpper");
+        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        return cpu - alpha;
+      };
+
+      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+    } else {
+      critValues = getBoundcpp(kMax, infoRates, alpha, asf,
+                               parameterAlphaSpending, userAlphaSpending,
+                               spendTime, effStopping);
+    }
+  }
+
+  // compute cumulative alpha spent (and alpha1)
+  ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
+  auto v = probs.get<std::vector<double>>("exitProbUpper");
+  std::vector<double> cumAlphaSpent(kMax);
+  std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
+  double alpha1 = missingCriticalValues ? alpha :
+    std::round(cumAlphaSpent.back() * 1e6) / 1e6;
+
+  // futility bounds handling
+  std::vector<double> futBounds(kMax, NaN);
+  if (kMax > 1) {
+    if (missingFutilityBounds && bsf == "none") {
+      futBounds = std::vector<double>(kMax, -6.0);
+      futBounds[kMax-1] = critValues[kMax-1];
+    } else if (!missingFutilityBounds) {
+      if (none_na(futilityBounds)) {
+        for (size_t i = 0; i < kMax - 1; ++i) {
+          if (futilityBounds[i] > critValues[i]) {
+            throw std::invalid_argument(
+                "futilityBounds must lie below criticalValues");
+          }
+        }
+        std::copy_n(futilityBounds.begin(), kMax-1, futBounds.begin());
+        futBounds[kMax-1] = critValues[kMax-1];
+      } else if (none_na(futilityCP)) {
+        double c2 = critValues[kMax - 1];
+        for (size_t i = 0; i < kMax - 1; ++i) {
+          double s1 = infoRates[i];
+          futBounds[i] = std::sqrt(s1) * (c2 - std::sqrt(1 - s1) *
+            boost_qnorm(1 - futilityCP[i]));
+          if (futBounds[i] > critValues[i]) {
+            throw std::invalid_argument("futilityCP values are too large to "
+                                          "be compatible with criticalValues");
+          }
+        }
+        futBounds[kMax-1] = critValues[kMax-1];
+      } else {
+        for (size_t i = 0; i < kMax - 1; ++i) {
+          futBounds[i] = (-std::log(futilityRate[i] / lambdaH0)) *
+            std::sqrt(I[i]);
+          if (futBounds[i] > critValues[i]) {
+            throw std::invalid_argument("futilityRate values are too small to "
+                                          "be compatible with criticalValues");
+          }
+        }
+        futBounds[kMax-1] = critValues[kMax-1];
+      }
+    }
+  } else {
+    if (missingFutilityBounds) {
+      futBounds = critValues;
+    }
   }
 
   // compute exit probabilities
@@ -3456,6 +3661,10 @@ ListCpp nbpower1scpp(
 //' @inheritParams param_parameterAlphaSpending
 //' @inheritParams param_userAlphaSpending
 //' @inheritParams param_futilityBounds
+//' @param futilityCP A vector of length \code{kMax - 1} for the futility
+//'   bounds on the conditional power scale.
+//' @param futilityRate A vector of length \code{kMax - 1} for the
+//'   futility bounds on the rate scale.
 //' @param typeBetaSpending The type of beta spending. One of the following:
 //'   \code{"sfOF"} for O'Brien-Fleming type spending function,
 //'   \code{"sfP"} for Pocock type spending function,
@@ -3619,12 +3828,14 @@ Rcpp::List nbpower1s(
     const Rcpp::NumericVector& informationRates = NA_REAL,
     const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
     const Rcpp::LogicalVector& futilityStopping = NA_LOGICAL,
-    const Rcpp::NumericVector& criticalValues = NA_REAL,
+    const Rcpp::Nullable<Rcpp::NumericVector> criticalValues = R_NilValue,
     const double alpha = 0.025,
     const std::string& typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
     const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& futilityBounds = NA_REAL,
+    const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds = R_NilValue,
+    const Rcpp::Nullable<Rcpp::NumericVector> futilityCP = R_NilValue,
+    const Rcpp::Nullable<Rcpp::NumericVector> futilityRate = R_NilValue,
     const std::string& typeBetaSpending = "none",
     const double parameterBetaSpending = NA_REAL,
     const double lambdaH0 = NA_REAL,
@@ -3644,9 +3855,7 @@ Rcpp::List nbpower1s(
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
   auto effStopping = convertLogicalVector(efficacyStopping);
   auto futStopping = convertLogicalVector(futilityStopping);
-  auto critValues = Rcpp::as<std::vector<double>>(criticalValues);
   auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
-  auto futBounds = Rcpp::as<std::vector<double>>(futilityBounds);
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
   auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
@@ -3656,11 +3865,37 @@ Rcpp::List nbpower1s(
   auto gam = Rcpp::as<std::vector<double>>(gamma);
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
 
+  std::vector<double> critValues, futBounds, futCP, futRate;
+  if (criticalValues.isNotNull()) {
+    critValues = Rcpp::as<std::vector<double>>(criticalValues);
+  } else {
+    critValues = std::vector<double>(1, NaN);
+  }
+
+  if (futilityBounds.isNotNull()) {
+    futBounds = Rcpp::as<std::vector<double>>(futilityBounds);
+  } else {
+    futBounds = std::vector<double>(1, NaN);
+  }
+
+  if (futilityCP.isNotNull()) {
+    futCP = Rcpp::as<std::vector<double>>(futilityCP);
+  } else {
+    futCP = std::vector<double>(1, NaN);
+  }
+
+  if (futilityRate.isNotNull()) {
+    futRate = Rcpp::as<std::vector<double>>(futilityRate);
+  } else {
+    futRate = std::vector<double>(1, NaN);
+  }
+
   ListCpp out = nbpower1scpp(
     static_cast<size_t>(kMax), infoRates, effStopping, futStopping,
     critValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlpha,
-    futBounds, typeBetaSpending, parameterBetaSpending,
+    futBounds, futCP, futRate,
+    typeBetaSpending, parameterBetaSpending,
     lambdaH0, accrualT, accrualInt, pwSurvT, stratumFrac,
     kap, lam, gam,
     accrualDuration, followupTime, fixedFollowup,
@@ -3684,6 +3919,8 @@ ListCpp nbsamplesize1scpp(
     const double parameterAlphaSpending,
     const std::vector<double>& userAlphaSpending,
     const std::vector<double>& futilityBounds,
+    const std::vector<double>& futilityCP,
+    const std::vector<double>& futilityRate,
     const std::string& typeBetaSpending,
     const double parameterBetaSpending,
     const std::vector<double>& userBetaSpending,
@@ -3746,7 +3983,9 @@ ListCpp nbsamplesize1scpp(
   }
 
   bool missingCriticalValues = !none_na(criticalValues);
-  bool missingFutilityBounds = !none_na(futilityBounds);
+  bool missingFutilityBounds = !none_na(futilityBounds) &&
+    !none_na(futilityCP) && !none_na(futilityRate);
+
   if (!missingCriticalValues && criticalValues.size() != kMax) {
     throw std::invalid_argument("Invalid length for criticalValues");
   }
@@ -3783,20 +4022,28 @@ ListCpp nbsamplesize1scpp(
       throw std::invalid_argument("userAlphaSpending must end with specified alpha");
   }
   if (!missingFutilityBounds) {
-    if (!(futilityBounds.size() == kMax - 1 || futilityBounds.size() == kMax)) {
-      throw std::invalid_argument("Invalid length for futilityBounds");
-    }
-  }
-  if (!missingCriticalValues && !missingFutilityBounds) {
-    for (size_t i = 0; i < kMax - 1; ++i) {
-      if (futilityBounds[i] > criticalValues[i]) {
-        throw std::invalid_argument("futilityBounds must lie below criticalValues");
+    if (none_na(futilityBounds)) {
+      if (futilityBounds.size() < kMax - 1) {
+        throw std::invalid_argument("Insufficient length for futilityBounds");
       }
-    }
-    if (futilityBounds.size() == kMax &&
-        futilityBounds[kMax-1] != criticalValues[kMax-1]) {
-      throw std::invalid_argument(
-          "futilityBounds must meet criticalValues at the final look");
+    } else if (none_na(futilityCP)) {
+      if (futilityCP.size() < kMax - 1) {
+        throw std::invalid_argument("Insufficient length for futilityCP");
+      }
+      for (size_t i = 0; i < kMax - 1; ++i) {
+        if (futilityCP[i] < 0.0 || futilityCP[i] > 1.0) {
+          throw std::invalid_argument("futilityCP must lie in [0, 1]");
+        }
+      }
+    } else {
+      if (futilityRate.size() < kMax - 1) {
+        throw std::invalid_argument("Insufficient length for futilityRate");
+      }
+      for (size_t i = 0; i < kMax - 1; ++i) {
+        if (futilityRate[i] <= 0) {
+          throw std::invalid_argument("futilityRate must be positive");
+        }
+      }
     }
   }
 
@@ -3933,13 +4180,34 @@ ListCpp nbsamplesize1scpp(
   }
 
   // futility bounds handling
-  std::vector<double> futBounds = futilityBounds;
+  std::vector<double> futBounds(kMax, NaN);
   if (kMax > 1) {
     if (missingFutilityBounds && bsf == "none") {
       futBounds = std::vector<double>(kMax, -6.0);
       futBounds[kMax-1] = critValues[kMax-1];
-    } else if (!missingFutilityBounds && futBounds.size() == kMax-1) {
-      futBounds.push_back(critValues[kMax-1]);
+    } else if (!missingFutilityBounds) {
+      if (none_na(futilityBounds)) {
+        for (size_t i = 0; i < kMax - 1; ++i) {
+          if (futilityBounds[i] > critValues[i]) {
+            throw std::invalid_argument(
+                "futilityBounds must lie below criticalValues");
+          }
+        }
+        std::copy_n(futilityBounds.begin(), kMax-1, futBounds.begin());
+        futBounds[kMax-1] = critValues[kMax-1];
+      } else if (none_na(futilityCP)) {
+        double c2 = critValues[kMax - 1];
+        for (size_t i = 0; i < kMax - 1; ++i) {
+          double s1 = infoRates[i];
+          futBounds[i] = std::sqrt(s1) * (c2 - std::sqrt(1 - s1) *
+            boost_qnorm(1 - futilityCP[i]));
+          if (futBounds[i] > critValues[i]) {
+            throw std::invalid_argument("futilityCP values are too large to "
+                                          "be compatible with criticalValues");
+          }
+        }
+        futBounds[kMax-1] = critValues[kMax-1];
+      }
     }
   } else {
     if (missingFutilityBounds) {
@@ -3967,13 +4235,21 @@ ListCpp nbsamplesize1scpp(
   double theta1 = -(wg_log - std::log(lambdaH0));
   std::vector<double> theta(kMax, theta1);
 
+  std::vector<double> futilityTheta(kMax - 1, NaN);
+  if (none_na(futilityRate)) {
+    for (size_t i = 0; i < kMax - 1; ++i) {
+      futilityTheta[i] = -std::log(futilityRate[i] / lambdaH0);
+    }
+  }
+
   // get design under H1 (delegates much work)
   ListCpp design = getDesigncpp(
     beta, NaN, theta1, kMax, infoRates,
     effStopping, futStopping,
     critValues, alpha, asf,
     parameterAlphaSpending, userAlphaSpending,
-    futBounds, bsf, parameterBetaSpending,
+    futBounds, futilityCP, futilityTheta,
+    bsf, parameterBetaSpending,
     userBetaSpending, spendTime, 1.0);
 
   auto byStageResults = design.get<DataFrameCpp>("byStageResults");
@@ -4147,7 +4423,8 @@ ListCpp nbsamplesize1scpp(
     kMax, infoRates, effStopping, futStopping,
     critValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlphaSpending,
-    futBounds, typeBetaSpending, parameterBetaSpending,
+    futBounds, futilityCP, futilityRate,
+    typeBetaSpending, parameterBetaSpending,
     lambdaH0, accrualTime, accrualIntensity,
     piecewiseSurvivalTime, stratumFraction,
     kappa, lambda, gamma,
@@ -4258,7 +4535,8 @@ ListCpp nbsamplesize1scpp(
     kMax, infoRates, effStopping, futStopping,
     critValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlphaSpending,
-    futBounds, typeBetaSpending, parameterBetaSpending,
+    futBounds, futilityCP, futilityRate,
+    typeBetaSpending, parameterBetaSpending,
     lambdaH0, accrualTime, accrualIntensity,
     piecewiseSurvivalTime, stratumFraction,
     kappa, lambdaH0v, gamma,
@@ -4300,6 +4578,10 @@ ListCpp nbsamplesize1scpp(
 //' @inheritParams param_parameterAlphaSpending
 //' @inheritParams param_userAlphaSpending
 //' @inheritParams param_futilityBounds
+//' @param futilityCP A vector of length \code{kMax - 1} for the futility
+//'   bounds on the conditional power scale.
+//' @param futilityRate A vector of length \code{kMax - 1} for the
+//'   futility bounds on the rate scale.
 //' @inheritParams param_typeBetaSpending
 //' @inheritParams param_parameterBetaSpending
 //' @inheritParams param_userBetaSpending
@@ -4383,12 +4665,14 @@ Rcpp::List nbsamplesize1s(
     const Rcpp::NumericVector& informationRates = NA_REAL,
     const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
     const Rcpp::LogicalVector& futilityStopping = NA_LOGICAL,
-    const Rcpp::NumericVector& criticalValues = NA_REAL,
+    const Rcpp::Nullable<Rcpp::NumericVector> criticalValues = R_NilValue,
     const double alpha = 0.025,
     const std::string& typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
     const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& futilityBounds = NA_REAL,
+    const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds = R_NilValue,
+    const Rcpp::Nullable<Rcpp::NumericVector> futilityCP = R_NilValue,
+    const Rcpp::Nullable<Rcpp::NumericVector> futilityRate = R_NilValue,
     const std::string& typeBetaSpending = "none",
     const double parameterBetaSpending = NA_REAL,
     const Rcpp::NumericVector& userBetaSpending = NA_REAL,
@@ -4409,9 +4693,7 @@ Rcpp::List nbsamplesize1s(
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
   auto effStopping = convertLogicalVector(efficacyStopping);
   auto futStopping = convertLogicalVector(futilityStopping);
-  auto critValues = Rcpp::as<std::vector<double>>(criticalValues);
   auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
-  auto futBounds = Rcpp::as<std::vector<double>>(futilityBounds);
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
   auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
@@ -4422,11 +4704,37 @@ Rcpp::List nbsamplesize1s(
   auto userBeta = Rcpp::as<std::vector<double>>(userBetaSpending);
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
 
+  std::vector<double> critValues, futBounds, futCP, futRate;
+  if (criticalValues.isNotNull()) {
+    critValues = Rcpp::as<std::vector<double>>(criticalValues);
+  } else {
+    critValues = std::vector<double>(1, NaN);
+  }
+
+  if (futilityBounds.isNotNull()) {
+    futBounds = Rcpp::as<std::vector<double>>(futilityBounds);
+  } else {
+    futBounds = std::vector<double>(1, NaN);
+  }
+
+  if (futilityCP.isNotNull()) {
+    futCP = Rcpp::as<std::vector<double>>(futilityCP);
+  } else {
+    futCP = std::vector<double>(1, NaN);
+  }
+
+  if (futilityRate.isNotNull()) {
+    futRate = Rcpp::as<std::vector<double>>(futilityRate);
+  } else {
+    futRate = std::vector<double>(1, NaN);
+  }
+
   ListCpp out = nbsamplesize1scpp(
     beta, static_cast<size_t>(kMax), infoRates, effStopping, futStopping,
     critValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlpha,
-    futBounds, typeBetaSpending, parameterBetaSpending,
+    futBounds, futCP, futRate,
+    typeBetaSpending, parameterBetaSpending,
     userBeta, lambdaH0,
     accrualT, accrualInt, pwSurvT, stratumFrac,
     kap, lam, gam,
@@ -5262,7 +5570,7 @@ ListCpp nbpowerequivcpp(
 Rcpp::List nbpowerequiv(
     const int kMax = 1,
     const Rcpp::NumericVector& informationRates = NA_REAL,
-    const Rcpp::NumericVector& criticalValues = NA_REAL,
+    const Rcpp::Nullable<Rcpp::NumericVector> criticalValues = R_NilValue,
     const double alpha = 0.05,
     const std::string& typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
@@ -5287,7 +5595,6 @@ Rcpp::List nbpowerequiv(
     const double studyDuration = NA_REAL) {
 
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
-  auto critValues = Rcpp::as<std::vector<double>>(criticalValues);
   auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
@@ -5300,6 +5607,13 @@ Rcpp::List nbpowerequiv(
   auto gam1 = Rcpp::as<std::vector<double>>(gamma1);
   auto gam2 = Rcpp::as<std::vector<double>>(gamma2);
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
+
+  std::vector<double> critValues;
+  if (criticalValues.isNotNull()) {
+    critValues = Rcpp::as<std::vector<double>>(criticalValues);
+  } else {
+    critValues = std::vector<double>(1, NaN);
+  }
 
   ListCpp out = nbpowerequivcpp(
     static_cast<size_t>(kMax), infoRates, critValues, alpha, typeAlphaSpending,
@@ -5812,7 +6126,7 @@ Rcpp::List nbsamplesizeequiv(
     const double beta = 0.2,
     const int kMax = 1,
     const Rcpp::NumericVector& informationRates = NA_REAL,
-    const Rcpp::NumericVector& criticalValues = NA_REAL,
+    const Rcpp::Nullable<Rcpp::NumericVector> criticalValues = R_NilValue,
     const double alpha = 0.05,
     const std::string typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
@@ -5832,12 +6146,11 @@ Rcpp::List nbsamplesizeequiv(
     const Rcpp::NumericVector& gamma2 = 0,
     double accrualDuration = NA_REAL,
     double followupTime = NA_REAL,
-    const bool fixedFollowup = 0,
+    const bool fixedFollowup = false,
     const Rcpp::NumericVector& spendingTime = NA_REAL,
-    const bool rounding = 1) {
+    const bool rounding = true) {
 
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
-  auto critValues = Rcpp::as<std::vector<double>>(criticalValues);
   auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
@@ -5850,6 +6163,13 @@ Rcpp::List nbsamplesizeequiv(
   auto gam1 = Rcpp::as<std::vector<double>>(gamma1);
   auto gam2 = Rcpp::as<std::vector<double>>(gamma2);
   auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
+
+  std::vector<double> critValues;
+  if (criticalValues.isNotNull()) {
+    critValues = Rcpp::as<std::vector<double>>(criticalValues);
+  } else {
+    critValues = std::vector<double>(1, NaN);
+  }
 
   ListCpp out = nbsamplesizeequivcpp(
     beta, static_cast<size_t>(kMax), infoRates, critValues,
