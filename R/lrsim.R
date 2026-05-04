@@ -188,7 +188,7 @@
 #' @examples
 #' # Example 1: analyses based on number of events
 #'
-#' sim1 = lrsim(
+#' sim1 <- lrsim(
 #'   kMax = 2, informationRates = c(0.5, 1),
 #'   criticalValues = c(2.797, 1.977),
 #'   accrualIntensity = 11,
@@ -212,7 +212,7 @@
 #'
 #' # Example 2: analyses based on calendar time have similar power
 #'
-#' sim2 = lrsim(
+#' sim2 <- lrsim(
 #'   kMax = 2, informationRates = c(0.5, 1),
 #'   criticalValues = c(2.797, 1.977),
 #'   accrualIntensity = 11,
@@ -443,7 +443,7 @@ lrsim <- function(
 #'
 #' @examples
 #'
-#' sim1 = lrsim3a(
+#' sim1 <- lrsim3a(
 #'   kMax = 3,
 #'   allocation1 = 2,
 #'   allocation2 = 2,
@@ -466,34 +466,34 @@ lrsim <- function(
 #'
 #' @export
 lrsim3a <- function(
-  kMax = 1,
-  hazardRatioH013 = 1,
-  hazardRatioH023 = 1,
-  hazardRatioH012 = 1,
-  allocation1 = 1,
-  allocation2 = 1,
-  allocation3 = 1,
-  accrualTime = 0,
-  accrualIntensity = NA,
-  piecewiseSurvivalTime = 0,
-  stratumFraction = 1,
-  lambda1 = NA,
-  lambda2 = NA,
-  lambda3 = NA,
-  gamma1 = 0,
-  gamma2 = 0,
-  gamma3 = 0,
-  n = NA,
-  followupTime = NA,
-  fixedFollowup = FALSE,
-  rho1 = 0,
-  rho2 = 0,
-  plannedEvents = NA,
-  plannedTime = NA,
-  maxNumberOfIterations = 1000,
-  maxNumberOfRawDatasetsPerStage = 0,
-  seed = 0,
-  nthreads = 0) {
+    kMax = 1,
+    hazardRatioH013 = 1,
+    hazardRatioH023 = 1,
+    hazardRatioH012 = 1,
+    allocation1 = 1,
+    allocation2 = 1,
+    allocation3 = 1,
+    accrualTime = 0,
+    accrualIntensity = NA,
+    piecewiseSurvivalTime = 0,
+    stratumFraction = 1,
+    lambda1 = NA,
+    lambda2 = NA,
+    lambda3 = NA,
+    gamma1 = 0,
+    gamma2 = 0,
+    gamma3 = 0,
+    n = NA,
+    followupTime = NA,
+    fixedFollowup = FALSE,
+    rho1 = 0,
+    rho2 = 0,
+    plannedEvents = NA,
+    plannedTime = NA,
+    maxNumberOfIterations = 1000,
+    maxNumberOfRawDatasetsPerStage = 0,
+    seed = 0,
+    nthreads = 0) {
 
   # Respect user-requested number of threads (best effort)
   if (nthreads > 0) {
@@ -675,7 +675,7 @@ lrsim3a <- function(
 #'
 #' @examples
 #'
-#' sim1 = lrsim2e(
+#' sim1 <- lrsim2e(
 #'   kMax = 3,
 #'   kMaxpfs = 2,
 #'   allocation1 = 2,
@@ -700,36 +700,36 @@ lrsim3a <- function(
 #'
 #' @export
 lrsim2e <- function(
-  kMax = 1,
-  kMaxpfs = 1,
-  hazardRatioH0pfs = 1,
-  hazardRatioH0os = 1,
-  allocation1 = 1,
-  allocation2 = 1,
-  accrualTime = 0,
-  accrualIntensity = NA,
-  piecewiseSurvivalTime = 0,
-  stratumFraction = 1,
-  rho_pd_os = 0,
-  lambda1pfs = NA,
-  lambda2pfs = NA,
-  lambda1os = NA,
-  lambda2os = NA,
-  gamma1pfs = 0,
-  gamma2pfs = 0,
-  gamma1os = 0,
-  gamma2os = 0,
-  n = NA,
-  followupTime = NA,
-  fixedFollowup = FALSE,
-  rho1 = 0,
-  rho2 = 0,
-  plannedEvents = NA,
-  plannedTime = NA,
-  maxNumberOfIterations = 1000,
-  maxNumberOfRawDatasetsPerStage = 0,
-  seed = 0,
-  nthreads = 0) {
+    kMax = 1,
+    kMaxpfs = 1,
+    hazardRatioH0pfs = 1,
+    hazardRatioH0os = 1,
+    allocation1 = 1,
+    allocation2 = 1,
+    accrualTime = 0,
+    accrualIntensity = NA,
+    piecewiseSurvivalTime = 0,
+    stratumFraction = 1,
+    rho_pd_os = 0,
+    lambda1pfs = NA,
+    lambda2pfs = NA,
+    lambda1os = NA,
+    lambda2os = NA,
+    gamma1pfs = 0,
+    gamma2pfs = 0,
+    gamma1os = 0,
+    gamma2os = 0,
+    n = NA,
+    followupTime = NA,
+    fixedFollowup = FALSE,
+    rho1 = 0,
+    rho2 = 0,
+    plannedEvents = NA,
+    plannedTime = NA,
+    maxNumberOfIterations = 1000,
+    maxNumberOfRawDatasetsPerStage = 0,
+    seed = 0,
+    nthreads = 0) {
 
   # Respect user-requested number of threads (best effort)
   if (nthreads > 0) {
@@ -944,7 +944,7 @@ lrsim2e <- function(
 #'
 #' @examples
 #'
-#' sim1 = lrsim2e3a(
+#' sim1 <- lrsim2e3a(
 #'   kMax = 3,
 #'   kMaxpfs = 2,
 #'   allocation1 = 2,
@@ -972,45 +972,45 @@ lrsim2e <- function(
 #'
 #' @export
 lrsim2e3a <- function(
-  kMax = 1,
-  kMaxpfs = 1,
-  hazardRatioH013pfs = 1,
-  hazardRatioH023pfs = 1,
-  hazardRatioH012pfs = 1,
-  hazardRatioH013os = 1,
-  hazardRatioH023os = 1,
-  hazardRatioH012os = 1,
-  allocation1 = 1,
-  allocation2 = 1,
-  allocation3 = 1,
-  accrualTime = 0,
-  accrualIntensity = NA,
-  piecewiseSurvivalTime = 0,
-  stratumFraction = 1,
-  rho_pd_os = 0,
-  lambda1pfs = NA,
-  lambda2pfs = NA,
-  lambda3pfs = NA,
-  lambda1os = NA,
-  lambda2os = NA,
-  lambda3os = NA,
-  gamma1pfs = 0,
-  gamma2pfs = 0,
-  gamma3pfs = 0,
-  gamma1os = 0,
-  gamma2os = 0,
-  gamma3os = 0,
-  n = NA,
-  followupTime = NA,
-  fixedFollowup = FALSE,
-  rho1 = 0,
-  rho2 = 0,
-  plannedEvents = NA,
-  plannedTime = NA,
-  maxNumberOfIterations = 1000,
-  maxNumberOfRawDatasetsPerStage = 0,
-  seed = 0,
-  nthreads = 0) {
+    kMax = 1,
+    kMaxpfs = 1,
+    hazardRatioH013pfs = 1,
+    hazardRatioH023pfs = 1,
+    hazardRatioH012pfs = 1,
+    hazardRatioH013os = 1,
+    hazardRatioH023os = 1,
+    hazardRatioH012os = 1,
+    allocation1 = 1,
+    allocation2 = 1,
+    allocation3 = 1,
+    accrualTime = 0,
+    accrualIntensity = NA,
+    piecewiseSurvivalTime = 0,
+    stratumFraction = 1,
+    rho_pd_os = 0,
+    lambda1pfs = NA,
+    lambda2pfs = NA,
+    lambda3pfs = NA,
+    lambda1os = NA,
+    lambda2os = NA,
+    lambda3os = NA,
+    gamma1pfs = 0,
+    gamma2pfs = 0,
+    gamma3pfs = 0,
+    gamma1os = 0,
+    gamma2os = 0,
+    gamma3os = 0,
+    n = NA,
+    followupTime = NA,
+    fixedFollowup = FALSE,
+    rho1 = 0,
+    rho2 = 0,
+    plannedEvents = NA,
+    plannedTime = NA,
+    maxNumberOfIterations = 1000,
+    maxNumberOfRawDatasetsPerStage = 0,
+    seed = 0,
+    nthreads = 0) {
 
   # Respect user-requested number of threads (best effort)
   if (nthreads > 0) {
@@ -1194,7 +1194,7 @@ lrsim2e3a <- function(
 #'
 #' @examples
 #'
-#' sim1 = lrsimsub(
+#' sim1 <- lrsimsub(
 #'   kMax = 2,
 #'   kMaxitt = 2,
 #'   allocation1 = 1,
@@ -1223,37 +1223,37 @@ lrsim2e3a <- function(
 #'
 #' @export
 lrsimsub <- function(
-  kMax = 1,
-  kMaxitt = 1,
-  hazardRatioH0itt = 1,
-  hazardRatioH0pos = 1,
-  hazardRatioH0neg = 1,
-  allocation1 = 1,
-  allocation2 = 1,
-  accrualTime = 0,
-  accrualIntensity = NA,
-  piecewiseSurvivalTime = 0,
-  stratumFraction = 1,
-  p_pos = NA,
-  lambda1itt = NA,
-  lambda2itt = NA,
-  lambda1pos = NA,
-  lambda2pos = NA,
-  gamma1itt = 0,
-  gamma2itt = 0,
-  gamma1pos = 0,
-  gamma2pos = 0,
-  n = NA,
-  followupTime = NA,
-  fixedFollowup = FALSE,
-  rho1 = 0,
-  rho2 = 0,
-  plannedEvents = NA,
-  plannedTime = NA,
-  maxNumberOfIterations = 1000,
-  maxNumberOfRawDatasetsPerStage = 0,
-  seed = 0,
-  nthreads = 0) {
+    kMax = 1,
+    kMaxitt = 1,
+    hazardRatioH0itt = 1,
+    hazardRatioH0pos = 1,
+    hazardRatioH0neg = 1,
+    allocation1 = 1,
+    allocation2 = 1,
+    accrualTime = 0,
+    accrualIntensity = NA,
+    piecewiseSurvivalTime = 0,
+    stratumFraction = 1,
+    p_pos = NA,
+    lambda1itt = NA,
+    lambda2itt = NA,
+    lambda1pos = NA,
+    lambda2pos = NA,
+    gamma1itt = 0,
+    gamma2itt = 0,
+    gamma1pos = 0,
+    gamma2pos = 0,
+    n = NA,
+    followupTime = NA,
+    fixedFollowup = FALSE,
+    rho1 = 0,
+    rho2 = 0,
+    plannedEvents = NA,
+    plannedTime = NA,
+    maxNumberOfIterations = 1000,
+    maxNumberOfRawDatasetsPerStage = 0,
+    seed = 0,
+    nthreads = 0) {
 
   # Respect user-requested number of threads (best effort)
   if (nthreads > 0) {
@@ -1560,11 +1560,11 @@ lrsimsub <- function(
 #'
 #' @examples
 #'
-#' tcut = c(0, 12, 36, 48)
-#' surv = c(1, 0.95, 0.82, 0.74)
-#' lambda2 = (log(surv[1:3]) - log(surv[2:4]))/(tcut[2:4] - tcut[1:3])
+#' tcut <- c(0, 12, 36, 48)
+#' surv <- c(1, 0.95, 0.82, 0.74)
+#' lambda2 <- (log(surv[1:3]) - log(surv[2:4]))/(tcut[2:4] - tcut[1:3])
 #'
-#' sim1 = binary_tte_sim(
+#' sim1 <- binary_tte_sim(
 #'   kMax1 = 1,
 #'   kMax2 = 2,
 #'   accrualTime = seq(0, 8),
@@ -1591,34 +1591,34 @@ lrsimsub <- function(
 #'
 #' @export
 binary_tte_sim <- function(
-  kMax1 = 1,
-  kMax2 = 1,
-  riskDiffH0 = 0,
-  hazardRatioH0 = 1,
-  allocation1 = 1,
-  allocation2 = 1,
-  accrualTime = 0,
-  accrualIntensity = NA,
-  piecewiseSurvivalTime = 0,
-  stratumFraction = 1,
-  globalOddsRatio = NA,
-  pi1 = NA,
-  pi2 = NA,
-  lambda1 = NA,
-  lambda2 = NA,
-  gamma1 = NA,
-  gamma2 = NA,
-  delta1 = NA,
-  delta2 = NA,
-  upper1 = NA,
-  upper2 = NA,
-  n = NA,
-  plannedTime = NA,
-  plannedEvents = NA,
-  maxNumberOfIterations = 1000,
-  maxNumberOfRawDatasetsPerStage = 0,
-  seed = 0,
-  nthreads = 0) {
+    kMax1 = 1,
+    kMax2 = 1,
+    riskDiffH0 = 0,
+    hazardRatioH0 = 1,
+    allocation1 = 1,
+    allocation2 = 1,
+    accrualTime = 0,
+    accrualIntensity = NA,
+    piecewiseSurvivalTime = 0,
+    stratumFraction = 1,
+    globalOddsRatio = NA,
+    pi1 = NA,
+    pi2 = NA,
+    lambda1 = NA,
+    lambda2 = NA,
+    gamma1 = NA,
+    gamma2 = NA,
+    delta1 = NA,
+    delta2 = NA,
+    upper1 = NA,
+    upper2 = NA,
+    n = NA,
+    plannedTime = NA,
+    plannedEvents = NA,
+    maxNumberOfIterations = 1000,
+    maxNumberOfRawDatasetsPerStage = 0,
+    seed = 0,
+    nthreads = 0) {
 
   # Respect user-requested number of threads (best effort)
   if (nthreads > 0) {

@@ -118,7 +118,7 @@
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
-#' (sim1 = lrsim_mams(
+#' (sim1 <- lrsim_mams(
 #'   M = 2,
 #'   kMax = 3,
 #'   criticalValues = matrix(c(3.879976, 2.734557, 2.246072,

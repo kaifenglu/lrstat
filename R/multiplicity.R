@@ -26,15 +26,15 @@
 #'
 #' @export
 fadjpbon <- function(w, G, p) {
-  m = length(w)
+  m <- length(w)
 
   if (!is.matrix(p)) {
-    p = matrix(p, ncol=m)
+    p <- matrix(p, ncol=m)
   }
 
-  x = fadjpboncpp(w = w, G = G, p = p)
+  x <- fadjpboncpp(w = w, G = G, p = p)
   if (nrow(x) == 1) {
-    x = as.vector(x)
+    x <- as.vector(x)
   }
   x
 }
@@ -67,85 +67,85 @@ fadjpbon <- function(w, G, p) {
 #' w <- c(0.5,0.5,0,0)
 #' g <- matrix(c(0,0,1,0,0,0,0,1,0,1,0,0,1,0,0,0),
 #'             nrow=4, ncol=4, byrow=TRUE)
-#' wgtmat = fwgtmat(w,g)
+#' wgtmat <- fwgtmat(w,g)
 #'
-#' family = matrix(c(1,1,0,0,0,0,1,1), nrow=2, ncol=4, byrow=TRUE)
-#' corr = matrix(c(1,0.5,NA,NA, 0.5,1,NA,NA,
+#' family <- matrix(c(1,1,0,0,0,0,1,1), nrow=2, ncol=4, byrow=TRUE)
+#' corr <- matrix(c(1,0.5,NA,NA, 0.5,1,NA,NA,
 #'                 NA,NA,1,0.5, NA,NA,0.5,1),
 #'               nrow = 4, byrow = TRUE)
 #' fadjpdun(wgtmat, pvalues, family, corr)
 #'
 #' @export
 fadjpdun <- function(wgtmat, p, family = NULL, corr = NULL) {
-  ntests = nrow(wgtmat)
-  m = ncol(wgtmat)
+  ntests <- nrow(wgtmat)
+  m <- ncol(wgtmat)
 
   if (!is.matrix(p)) {
-    p = matrix(p, ncol=m)
+    p <- matrix(p, ncol=m)
   }
 
-  r = nrow(p)
+  r <- nrow(p)
 
   if (is.null(family)) {
-    family = matrix(1, 1, m)
+    family <- matrix(1, 1, m)
   } else if (!is.matrix(family)) {
-    family = matrix(family, ncol = m)
+    family <- matrix(family, ncol = m)
   }
 
   if (is.null(corr)) {
-    corr = 0.5*diag(m) + 0.5
+    corr <- 0.5*diag(m) + 0.5
   }
 
-  pinter = matrix(0, r, ntests)
-  incid = matrix(0, ntests, m)
+  pinter <- matrix(0, r, ntests)
+  incid <- matrix(0, ntests, m)
   for (i in 1:ntests) {
-    number = ntests - i + 1
-    cc = floor(number/2^(m - (1:m))) %% 2
-    w = wgtmat[i,]
+    number <- ntests - i + 1
+    cc <- floor(number/2^(m - (1:m))) %% 2
+    w <- wgtmat[i,]
 
-    J = which(cc == 1)
-    J1 = intersect(J, which(w > 0))
-    l = nrow(family)
+    J <- which(cc == 1)
+    J1 <- intersect(J, which(w > 0))
+    l <- nrow(family)
 
     if (length(J1) > 1) {
       if (r > 1) {
-        q = apply(p[,J1]/w[J1], 1, min)
+        q <- apply(p[,J1]/w[J1], 1, min)
       } else {
-        q = min(p[,J1]/w[J1])
+        q <- min(p[,J1]/w[J1])
       }
     } else {
-      q = p[,J1]/w[J1]
+      q <- p[,J1]/w[J1]
     }
 
     for (k in 1:r) {
-      aval = 0
+      aval <- 0
       for (h in 1:l) {
-        I_h = which(family[h,] == 1)
-        J_h = intersect(J1, I_h)
+        I_h <- which(family[h,] == 1)
+        J_h <- intersect(J1, I_h)
         if (length(J_h) > 0) {
-          sigma = corr[J_h, J_h]
-          upper = qnorm(1 - w[J_h]*q[k])
-          v = pmvnorm(upper = upper, sigma = sigma, algorithm = "Miwa")
-          aval = aval + (1 - v)
+          sigma <- corr[J_h, J_h]
+          upper <- qnorm(1 - w[J_h]*q[k])
+          v <- pmvnorm(upper = upper, sigma = sigma, algorithm = "Miwa")
+          aval <- aval + (1 - v)
         }
       }
-      pinter[k,i] = aval
+      pinter[k,i] <- aval
     }
 
-    incid[i,] = cc
+    incid[i,] <- cc
   }
 
 
-  x = matrix(0, r, m)
+  x <- matrix(0, r, m)
   for (j in 1:m) {
-    ind = matrix(rep(incid[,j], each=r), nrow=r)
-    x[,j] = apply(pinter*ind, 1, max)
+    ind <- matrix(rep(incid[,j], each=r), nrow=r)
+    x[,j] <- apply(pinter*ind, 1, max)
   }
-  x[x > 1] = 1
+  x[x > 1] <- 1
   x
 
   if (nrow(x) == 1) {
-    x = as.vector(x)
+    x <- as.vector(x)
   }
   x
 }
@@ -179,28 +179,28 @@ fadjpdun <- function(wgtmat, p, family = NULL, corr = NULL) {
 #' w <- c(0.5,0.5,0,0)
 #' g <- matrix(c(0,0,1,0,0,0,0,1,0,1,0,0,1,0,0,0),
 #'             nrow=4, ncol=4, byrow=TRUE)
-#' wgtmat = fwgtmat(w,g)
+#' wgtmat <- fwgtmat(w,g)
 #'
-#' family = matrix(c(1,1,0,0,0,0,1,1), nrow=2, ncol=4, byrow=TRUE)
+#' family <- matrix(c(1,1,0,0,0,0,1,1), nrow=2, ncol=4, byrow=TRUE)
 #' fadjpsim(wgtmat, pvalues, family)
 #'
 #' @export
 fadjpsim <- function(wgtmat, p, family = NULL) {
-  m = ncol(wgtmat)
+  m <- ncol(wgtmat)
 
   if (!is.matrix(p)) {
-    p = matrix(p, ncol=m)
+    p <- matrix(p, ncol=m)
   }
 
   if (is.null(family)) {
-    family = matrix(1, 1, m)
+    family <- matrix(1, 1, m)
   } else if (!is.matrix(family)) {
-    family = matrix(family, ncol = m)
+    family <- matrix(family, ncol = m)
   }
 
-  x = fadjpsimcpp(wgtmat = wgtmat, p = p, family = family)
+  x <- fadjpsimcpp(wgtmat = wgtmat, p = p, family = family)
   if (nrow(x) == 1) {
-    x = as.vector(x)
+    x <- as.vector(x)
   }
   x
 }
@@ -260,23 +260,23 @@ repeatedPValue <- function(kMax,
                            nthreads = 0) {
 
   if (is.matrix(p)) {
-    p1 = p
+    p1 <- p
   } else {
-    p1 = matrix(p, nrow=1)
+    p1 <- matrix(p, nrow=1)
   }
 
   if (is.matrix(information)) {
-    information1 = information
+    information1 <- information
   } else {
-    information1 = matrix(information, nrow=1)
+    information1 <- matrix(information, nrow=1)
   }
 
   if (is.null(spendingTime)) {
-    spendingTime1 = matrix(0, 1, 1)
+    spendingTime1 <- matrix(0, 1, 1)
   } else if (is.matrix(spendingTime)) {
-    spendingTime1 = spendingTime
+    spendingTime1 <- spendingTime
   } else {
-    spendingTime1 = matrix(spendingTime, nrow=1)
+    spendingTime1 <- matrix(spendingTime, nrow=1)
   }
 
   # Respect user-requested number of threads (best effort)
@@ -285,16 +285,16 @@ repeatedPValue <- function(kMax,
     RcppParallel::setThreadOptions(min(nthreads, n_physical_cores))
   }
 
-  repp1 = repeatedPValuecpp(
+  repp1 <- repeatedPValuecpp(
     kMax = kMax, typeAlphaSpending = typeAlphaSpending,
     parameterAlphaSpending = parameterAlphaSpending,
     maxInformation = maxInformation, p = p1,
     information = information1, spendingTime = spendingTime1)
 
   if (nrow(repp1) == 1) { # convert the result to a vector
-    repp = as.vector(repp1)
+    repp <- as.vector(repp1)
   } else {
-    repp = repp1
+    repp <- repp1
   }
 
   repp
@@ -379,26 +379,26 @@ fseqbon <- function(w, G, alpha = 0.025, kMax,
                     k1, p, information,
                     spendingTime = NULL,
                     nthreads = 0) {
-  m = length(w)
+  m <- length(w)
 
   if (is.null(typeAlphaSpending)) {
-    typeAlphaSpending = rep("sfOF", m)
+    typeAlphaSpending <- rep("sfOF", m)
   }
 
   if (is.null(parameterAlphaSpending)) {
-    parameterAlphaSpending = rep(NA, m)
+    parameterAlphaSpending <- rep(NA, m)
   }
 
   if (is.null(spendingTime)) {
-    spendingTime = matrix(0, 1, 1)
+    spendingTime <- matrix(0, 1, 1)
   }
 
   if (is.null(maxInformation)) {
-    maxInformation = rep(1, m)
+    maxInformation <- rep(1, m)
   }
 
   if (is.null(incidenceMatrix)) {
-    incidenceMatrix = matrix(1, nrow=kMax, ncol=m)
+    incidenceMatrix <- matrix(1, nrow=kMax, ncol=m)
   }
 
   # Respect user-requested number of threads (best effort)
@@ -417,9 +417,9 @@ fseqbon <- function(w, G, alpha = 0.025, kMax,
     spendingTime = spendingTime)
 
   if (nrow(reject1) == 1) { # convert the result to a vector
-    reject = as.vector(reject1)
+    reject <- as.vector(reject1)
   } else {
-    reject = reject1
+    reject <- reject1
   }
 
   reject
@@ -444,16 +444,16 @@ fseqbon <- function(w, G, alpha = 0.025, kMax,
 #'
 #' @examples
 #'
-#' p = c(0.0194, 0.0068, 0.0271, 0.0088, 0.0370, 0.0018, 0.0814, 0.0066)
-#' gamma = c(0.6, 0.6, 0.6, 1)
+#' p <- c(0.0194, 0.0068, 0.0271, 0.0088, 0.0370, 0.0018, 0.0814, 0.0066)
+#' gamma <- c(0.6, 0.6, 0.6, 1)
 #' fstp2seq(p, gamma, test="hochberg", retest=1)
 #'
 #' @export
 fstp2seq <- function(p, gamma, test="hochberg", retest=TRUE) {
   if (!is.matrix(p)) {
-    p = matrix(p, nrow=1)
+    p <- matrix(p, nrow=1)
   }
-  n = ncol(p)
+  n <- ncol(p)
 
   if (n %% 2 != 0) {
     stop("p must have an even number of columns")
@@ -464,22 +464,22 @@ fstp2seq <- function(p, gamma, test="hochberg", retest=TRUE) {
   }
 
   if (n == 2) {
-    gamma = 1
+    gamma <- 1
   } else if (length(gamma) == n/2 - 1) {
-    gamma = c(gamma, 1)
+    gamma <- c(gamma, 1)
   } else if (length(gamma) != n/2) {
     stop("The number of families must be half of the number of hypotheses")
   } else {
-    gamma[n/2] = 1
+    gamma[n/2] <- 1
   }
 
   if (!(tolower(test) %in% c("holm", "hochberg"))) {
     stop("test must be either Holm or Hochberg")
   }
 
-  x = fstp2seqcpp(p = p, gamma = gamma, test = test, retest = retest)
+  x <- fstp2seqcpp(p = p, gamma = gamma, test = test, retest = retest)
   if (nrow(x) == 1) {
-    x = as.vector(x)
+    x <- as.vector(x)
   }
   x
 }
@@ -511,25 +511,25 @@ fstp2seq <- function(p, gamma, test="hochberg", retest=TRUE) {
 #'
 #' @examples
 #'
-#' p = c(0.0194, 0.0068, 0.0271, 0.0088, 0.0370, 0.0018, 0.0814, 0.0066)
-#' family = matrix(c(1, 1, 0, 0, 0, 0, 0, 0,
-#'                   0, 0, 1, 1, 0, 0, 0, 0,
-#'                   0, 0, 0, 0, 1, 1, 0, 0,
-#'                   0, 0, 0, 0, 0, 0, 1, 1),
-#'                 nrow=4, byrow=TRUE)
+#' p <- c(0.0194, 0.0068, 0.0271, 0.0088, 0.0370, 0.0018, 0.0814, 0.0066)
+#' family <- matrix(c(1, 1, 0, 0, 0, 0, 0, 0,
+#'                    0, 0, 1, 1, 0, 0, 0, 0,
+#'                    0, 0, 0, 0, 1, 1, 0, 0,
+#'                    0, 0, 0, 0, 0, 0, 1, 1),
+#'                  nrow=4, byrow=TRUE)
 #'
-#' serial = matrix(c(0, 0, 0, 0, 0, 0, 0, 0,
-#'                   0, 0, 0, 0, 0, 0, 0, 0,
-#'                   1, 0, 0, 0, 0, 0, 0, 0,
-#'                   0, 1, 0, 0, 0, 0, 0, 0,
-#'                   0, 0, 1, 0, 0, 0, 0, 0,
-#'                   0, 0, 0, 1, 0, 0, 0, 0,
-#'                   0, 0, 0, 0, 1, 0, 0, 0,
-#'                   0, 0, 0, 0, 0, 1, 0, 0),
-#'                 nrow=8, byrow=TRUE)
+#' serial <- matrix(c(0, 0, 0, 0, 0, 0, 0, 0,
+#'                    0, 0, 0, 0, 0, 0, 0, 0,
+#'                    1, 0, 0, 0, 0, 0, 0, 0,
+#'                    0, 1, 0, 0, 0, 0, 0, 0,
+#'                    0, 0, 1, 0, 0, 0, 0, 0,
+#'                    0, 0, 0, 1, 0, 0, 0, 0,
+#'                    0, 0, 0, 0, 1, 0, 0, 0,
+#'                    0, 0, 0, 0, 0, 1, 0, 0),
+#'                  nrow=8, byrow=TRUE)
 #'
-#' parallel = matrix(0, 8, 8)
-#' gamma = c(0.6, 0.6, 0.6, 1)
+#' parallel <- matrix(0, 8, 8)
+#' gamma <- c(0.6, 0.6, 0.6, 1)
 #' fstdmix(p, family, serial, parallel, gamma, test = "hommel",
 #'         exhaust = FALSE)
 #'
@@ -537,16 +537,16 @@ fstp2seq <- function(p, gamma, test="hochberg", retest=TRUE) {
 fstdmix <- function(p, family = NULL, serial, parallel = NULL,
                     gamma, test = "hommel", exhaust = TRUE) {
   if (!is.matrix(p)) {
-    p = matrix(p, nrow=1)
+    p <- matrix(p, nrow=1)
   }
-  m = ncol(p)
+  m <- ncol(p)
 
   if (is.null(family)) {
-    family = matrix(1, 1, m)
+    family <- matrix(1, 1, m)
   } else if (!is.matrix(family)) {
-    family = matrix(family, ncol = m)
+    family <- matrix(family, ncol = m)
   }
-  k = nrow(family)
+  k <- nrow(family)
 
   if (ncol(family) != m) {
     stop("number of columns of family must be the number of hypotheses")
@@ -567,9 +567,9 @@ fstdmix <- function(p, family = NULL, serial, parallel = NULL,
   }
 
   if (is.null(parallel)) {
-    parallel = matrix(0, m, m)
+    parallel <- matrix(0, m, m)
   } else if (!is.matrix(parallel)) {
-    parallel = matrix(parallel, nrow=m, ncol=m)
+    parallel <- matrix(parallel, nrow=m, ncol=m)
   }
 
   if (nrow(parallel) != m || ncol(parallel) != m) {
@@ -585,25 +585,25 @@ fstdmix <- function(p, family = NULL, serial, parallel = NULL,
   }
 
   if (k == 1) {
-    gamma = 1
+    gamma <- 1
   } else if (length(gamma) == k - 1) {
-    gamma = c(gamma, 1)
+    gamma <- c(gamma, 1)
   } else if (length(gamma) != k) {
     stop("The length of gamma must match the number of families")
   } else {
-    gamma[k] = 1
+    gamma[k] <- 1
   }
 
   if (!(tolower(test) %in% c("holm", "hochberg", "hommel"))) {
     stop("test must be either Holm, Hochberg, or Hommel")
   }
 
-  x = fstdmixcpp(p = p, family = family, serial = serial,
-                 parallel = parallel, gamma = gamma, test = test,
-                 exhaust = exhaust)
+  x <- fstdmixcpp(p = p, family = family, serial = serial,
+                  parallel = parallel, gamma = gamma, test = test,
+                  exhaust = exhaust)
 
   if (nrow(x) == 1) {
-    x = as.vector(x)
+    x <- as.vector(x)
   }
   x
 }
@@ -642,41 +642,41 @@ fstdmix <- function(p, family = NULL, serial, parallel = NULL,
 #'
 #' @examples
 #'
-#' p = c(0.0194, 0.0068, 0.0271, 0.0088, 0.0370, 0.0018, 0.0814, 0.0066)
-#' family = matrix(c(1, 1, 0, 0, 0, 0, 0, 0,
-#'                   0, 0, 1, 1, 0, 0, 0, 0,
-#'                   0, 0, 0, 0, 1, 1, 0, 0,
-#'                   0, 0, 0, 0, 0, 0, 1, 1),
-#'                 nrow=4, byrow=TRUE)
+#' p <- c(0.0194, 0.0068, 0.0271, 0.0088, 0.0370, 0.0018, 0.0814, 0.0066)
+#' family <- matrix(c(1, 1, 0, 0, 0, 0, 0, 0,
+#'                    0, 0, 1, 1, 0, 0, 0, 0,
+#'                    0, 0, 0, 0, 1, 1, 0, 0,
+#'                    0, 0, 0, 0, 0, 0, 1, 1),
+#'                  nrow=4, byrow=TRUE)
 #'
-#' serial = matrix(c(0, 0, 0, 0, 0, 0, 0, 0,
-#'                   0, 0, 0, 0, 0, 0, 0, 0,
-#'                   1, 0, 0, 0, 0, 0, 0, 0,
-#'                   0, 1, 0, 0, 0, 0, 0, 0,
-#'                   0, 0, 1, 0, 0, 0, 0, 0,
-#'                   0, 0, 0, 1, 0, 0, 0, 0,
-#'                   0, 0, 0, 0, 1, 0, 0, 0,
-#'                   0, 0, 0, 0, 0, 1, 0, 0),
-#'                 nrow=8, byrow=TRUE)
+#' serial <- matrix(c(0, 0, 0, 0, 0, 0, 0, 0,
+#'                    0, 0, 0, 0, 0, 0, 0, 0,
+#'                    1, 0, 0, 0, 0, 0, 0, 0,
+#'                    0, 1, 0, 0, 0, 0, 0, 0,
+#'                    0, 0, 1, 0, 0, 0, 0, 0,
+#'                    0, 0, 0, 1, 0, 0, 0, 0,
+#'                    0, 0, 0, 0, 1, 0, 0, 0,
+#'                    0, 0, 0, 0, 0, 1, 0, 0),
+#'                  nrow=8, byrow=TRUE)
 #'
-#' parallel = matrix(0, 8, 8)
-#' gamma = c(0.6, 0.6, 0.6, 1)
+#' parallel <- matrix(0, 8, 8)
+#' gamma <- c(0.6, 0.6, 0.6, 1)
 #' fmodmix(p, family, serial, parallel, gamma, test = "hommel", exhaust = TRUE)
 #'
 #' @export
 fmodmix <- function(p, family = NULL, serial, parallel = NULL,
                     gamma, test = "hommel", exhaust = TRUE) {
   if (!is.matrix(p)) {
-    p = matrix(p, nrow=1)
+    p <- matrix(p, nrow=1)
   }
-  m = ncol(p)
+  m <- ncol(p)
 
   if (is.null(family)) {
-    family = matrix(1, 1, m)
+    family <- matrix(1, 1, m)
   } else if (!is.matrix(family)) {
-    family = matrix(family, ncol = m)
+    family <- matrix(family, ncol = m)
   }
-  k = nrow(family)
+  k <- nrow(family)
 
   if (ncol(family) != m) {
     stop("number of columns of family must be the number of hypotheses")
@@ -697,9 +697,9 @@ fmodmix <- function(p, family = NULL, serial, parallel = NULL,
   }
 
   if (is.null(parallel)) {
-    parallel = matrix(0, m, m)
+    parallel <- matrix(0, m, m)
   } else if (!is.matrix(parallel)) {
-    parallel = matrix(parallel, nrow=m, ncol=m)
+    parallel <- matrix(parallel, nrow=m, ncol=m)
   }
 
   if (nrow(parallel) != m || ncol(parallel) != m) {
@@ -715,25 +715,25 @@ fmodmix <- function(p, family = NULL, serial, parallel = NULL,
   }
 
   if (k == 1) {
-    gamma = 1
+    gamma <- 1
   } else if (length(gamma) == k - 1) {
-    gamma = c(gamma, 1)
+    gamma <- c(gamma, 1)
   } else if (length(gamma) != k) {
     stop("The length of gamma must match the number of families")
   } else {
-    gamma[k] = 1
+    gamma[k] <- 1
   }
 
   if (!(tolower(test) %in% c("holm", "hochberg", "hommel"))) {
     stop("test must be either Holm, Hochberg, or Hommel")
   }
 
-  x = fmodmixcpp(p = p, family = family, serial = serial,
-                 parallel = parallel, gamma = gamma, test = test,
-                 exhaust = exhaust)
+  x <- fmodmixcpp(p = p, family = family, serial = serial,
+                  parallel = parallel, gamma = gamma, test = test,
+                  exhaust = exhaust)
 
   if (nrow(x) == 1) {
-    x = as.vector(x)
+    x <- as.vector(x)
   }
   x
 }
@@ -775,12 +775,12 @@ ftrunc <- function(p, test = "hommel", gamma = 1) {
   }
 
   if (!is.matrix(p)) {
-    p = matrix(p, nrow=1)
+    p <- matrix(p, nrow=1)
   }
 
-  x = ftrunccpp(p = p, test = test, gamma = gamma)
+  x <- ftrunccpp(p = p, test = test, gamma = gamma)
   if (nrow(x) == 1) {
-    x = as.vector(x)
+    x <- as.vector(x)
   }
   x
 }
