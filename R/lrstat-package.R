@@ -133,7 +133,6 @@
 #' @importFrom Rcpp evalCpp
 #' @importFrom RcppParallel setThreadOptions RcppParallelLibs
 #' @importFrom parallel detectCores
-#' @importFrom mvtnorm pmvnorm
 #' @importFrom stats as.formula complete.cases dgamma dlogis dnorm formula integrate model.frame
 #' model.matrix na.omit na.pass optimize pbeta pchisq pf plogis pnorm pt
 #' qbeta qchisq qf qlogis qnorm qt runif terms uniroot var

@@ -125,7 +125,7 @@ fadjpdun <- function(wgtmat, p, family = NULL, corr = NULL) {
         if (length(J_h) > 0) {
           sigma <- corr[J_h, J_h]
           upper <- qnorm(1 - w[J_h]*q[k])
-          v <- pmvnorm(upper = upper, sigma = sigma, algorithm = "Miwa")
+          v <- pmvnormr(upper = upper, sigma = sigma)
           aval <- aval + (1 - v)
         }
       }
