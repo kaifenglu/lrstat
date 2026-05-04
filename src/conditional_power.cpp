@@ -590,27 +590,27 @@ double getCPcpp(
 //' # respectively. The observed hazard ratio at the second interim
 //' # look is 0.81.
 //'
-//' trialsdt = as.Date("2020-03-04")                       # trial start date
-//' iadt = c(as.Date("2022-02-01"), as.Date("2022-11-01")) # interim dates
-//' mo1 = as.numeric(iadt - trialsdt + 1)/30.4375          # interim months
+//' trialsdt <- as.Date("2020-03-04")                       # trial start date
+//' iadt <- c(as.Date("2022-02-01"), as.Date("2022-11-01")) # interim dates
+//' mo1 <- as.numeric(iadt - trialsdt + 1)/30.4375          # interim months
 //'
 //' # Assume a piecewise Poisson enrollment process with a 8-month ramp-up
 //' # and 521 patients were enrolled after 17.94 months
-//' N = 521                   # total number of patients
-//' Ta = 17.94                # enrollment duration
-//' Ta1 = 8                   # assumed end of enrollment ramp-up
-//' enrate = N / (Ta - Ta1/2) # enrollment rate after ramp-up
+//' N <- 521                   # total number of patients
+//' Ta <- 17.94                # enrollment duration
+//' Ta1 <- 8                   # assumed end of enrollment ramp-up
+//' enrate <- N / (Ta - Ta1/2) # enrollment rate after ramp-up
 //'
 //' # Assume a median survival of 16.7 months for the control group, a
 //' # 5-month delay in treatment effect, and a hazard ratio of 0.7 after
 //' # the delay
-//' lam1 = log(2)/16.7  # control group hazard of exponential distribution
-//' t1 = 5              # months of delay in treatment effect
-//' hr = 0.7            # hazard ratio after delay
-//' lam2 = hr*lam1      # treatment group hazard after delay
+//' lam1 <- log(2)/16.7  # control group hazard of exponential distribution
+//' t1 <- 5              # months of delay in treatment effect
+//' hr <- 0.7            # hazard ratio after delay
+//' lam2 <- hr*lam1      # treatment group hazard after delay
 //'
 //' # Assume an annual dropout rate of 5%
-//' gam = -log(1-0.05)/12  # hazard for dropout
+//' gam <- -log(1-0.05)/12  # hazard for dropout
 //'
 //' # The original target number of events was 298 and the new target is 335
 //' mo2 <- caltime(
@@ -641,11 +641,11 @@ double getCPcpp(
 //'   predictTarget = 3))
 //'
 //'
-//' hr2 = 0.81                    # observed hazard ratio at interim 2
-//' z2 = (-log(hr2))*sqrt(266/4)  # corresponding z-test statistic value
+//' hr2 <- 0.81                    # observed hazard ratio at interim 2
+//' z2 <- (-log(hr2))*sqrt(266/4)  # corresponding z-test statistic value
 //'
 //' # expected mean of -log(HR) at the original looks and the new final look
-//' theta = -log(lr1$HR[c(1,2,3,4)])
+//' theta <- -log(lr1$HR[c(1,2,3,4)])
 //'
 //' # conditional power with sample size increase
 //' getCP(INew = (335 - 266)/4,
