@@ -16,20 +16,20 @@
 #'
 #' @export
 fquantile <- function(S, probs, ...) {
-  Sinf = S(Inf, ...)
+  Sinf <- S(Inf, ...)
 
   if (any(probs > 1 - Sinf)) {
     stop(paste("probs must be less than or equal to", 1 - Sinf))
   }
 
   sapply(probs, function(p) {
-    q = 1 - p
+    q <- 1 - p
 
-    lower = 0
-    upper = 1
+    lower <- 0
+    upper <- 1
     while (S(upper, ...) > q) {
-      lower = upper
-      upper = 2*upper
+      lower <- upper
+      upper <- 2*upper
     }
 
     uniroot(f = function(t) S(t, ...) - q,
@@ -105,19 +105,19 @@ fquantile <- function(S, probs, ...) {
 #'
 #' @export
 pwexploglik <- function(tau, S, ...) {
-  J = length(tau) + 1
-  t = c(0, tau, Inf)
+  J <- length(tau) + 1
+  t <- c(0, tau, Inf)
 
-  surv = S(t, ...)
-  d = -diff(surv)
+  surv <- S(t, ...)
+  d <- -diff(surv)
 
-  ex = rep(0,J)
+  ex <- rep(0,J)
   for (j in 1:J) {
-    ex[j] = integrate(f = function(x) S(x, ...), t[j], t[j+1])$value
+    ex[j] <- integrate(f = function(x) S(x, ...), t[j], t[j+1])$value
   }
 
-  lambda = d/ex
-  loglik = sum(d*log(lambda)) - 1
+  lambda <- d/ex
+  loglik <- sum(d*log(lambda)) - 1
 
   list(piecewiseSurvivalTime = t[1:J], lambda = lambda, loglik = loglik)
 }
@@ -178,43 +178,43 @@ pwexploglik <- function(tau, S, ...) {
 #'
 #' @export
 pwexpcuts <- function(S, ..., tol = 0.0001) {
-  Sinf = S(Inf, ...)
-  tmax = fquantile(S, 0.999*(1 - Sinf), ...)
+  Sinf <- S(Inf, ...)
+  tmax <- fquantile(S, 0.999*(1 - Sinf), ...)
 
-  Jmax = 100
-  tau = rep(0, Jmax-1)
-  loglik = rep(0, Jmax-1)
+  Jmax <- 100
+  tau <- rep(0, Jmax-1)
+  loglik <- rep(0, Jmax-1)
   for (J in 2:Jmax) {
     if (J == 2) {
-      eps = tmax*1.0e-6
-      lower = eps
-      upper = tmax - eps
+      eps <- tmax*1.0e-6
+      lower <- eps
+      upper <- tmax - eps
 
-      x = optimize(f = function(x) pwexploglik(x, S, ...)$loglik,
-                   interval = c(lower, upper), maximum = TRUE)$maximum
+      x <- optimize(f = function(x) pwexploglik(x, S, ...)$loglik,
+                    interval = c(lower, upper), maximum = TRUE)$maximum
 
-      out = pwexploglik(x, S, ...)
-      tau[J-1] = out$piecewiseSurvivalTime[J]
-      loglik[J-1] = out$loglik
+      out <- pwexploglik(x, S, ...)
+      tau[J-1] <- out$piecewiseSurvivalTime[J]
+      loglik[J-1] <- out$loglik
     } else {
-      eps = (tmax - tau[J-2])*1.0e-6
-      lower = tau[J-2] + eps
-      upper = tmax - eps
+      eps <- (tmax - tau[J-2])*1.0e-6
+      lower <- tau[J-2] + eps
+      upper <- tmax - eps
 
-      x = optimize(f = function(x) {
+      x <- optimize(f = function(x) {
         pwexploglik(c(tau[1:(J-2)], x), S, ...)$loglik
       }, interval = c(lower, upper), maximum = TRUE)$maximum
 
-      out = pwexploglik(c(tau[1:(J-2)], x), S, ...)
-      tau[J-1] = out$piecewiseSurvivalTime[J]
-      loglik[J-1] = out$loglik
+      out <- pwexploglik(c(tau[1:(J-2)], x), S, ...)
+      tau[J-1] <- out$piecewiseSurvivalTime[J]
+      loglik[J-1] <- out$loglik
 
       if (abs((loglik[J-1] - loglik[J-2])/loglik[J-2]) < tol) break
     }
   }
 
   if (abs((out$lambda[J] - out$lambda[J-1])/out$lambda[J-1]) < tol) {
-    J = J - 1
+    J <- J - 1
   }
 
   list(piecewiseSurvivalTime = out$piecewiseSurvivalTime[1:J],
@@ -241,6 +241,10 @@ pwexpcuts <- function(S, ..., tol = 0.0001) {
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP A vector of length \code{kMax - 1} for the futility
+#'   bounds on the conditional power scale.
+#' @param futilityHR A vector of length \code{kMax - 1} for the futility
+#'   bounds on the hazard ratio scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -357,6 +361,8 @@ lrschoenfeld <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilityHR = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -387,9 +393,10 @@ lrschoenfeld <- function(
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, hazardRatioH0, hazardRatio,
+      futilityBounds, futilityCP, futilityHR,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime,
+      hazardRatioH0, hazardRatio,
       allocationRatioPlanned, rounding)
 
     durations <- getDurationFromNevents(
@@ -409,14 +416,14 @@ lrschoenfeld <- function(
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
+      futilityBounds, futilityCP, futilityHR,
+      typeBetaSpending, parameterBetaSpending, userBetaSpending,
       hazardRatioH0, allocationRatioPlanned,
       accrualTime, accrualIntensity,
       piecewiseSurvivalTime, stratumFraction,
       lambda1, lambda2, gamma1, gamma2,
       accrualDuration, followupTime,
-      fixedFollowup, 0, 0, 0, "schoenfeld",
+      fixedFollowup, 0, 0, "schoenfeld",
       spendingTime, rounding)
 
     lrp1 <- lrc1$resultsUnderH1
@@ -426,14 +433,14 @@ lrschoenfeld <- function(
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
+      futilityBounds, futilityCP, futilityHR,
+      typeBetaSpending, parameterBetaSpending, userBetaSpending,
       hazardRatioH0, allocationRatioPlanned,
       accrualTime, accrualIntensity,
       piecewiseSurvivalTime, stratumFraction,
       lambda1, lambda2, gamma1, gamma2,
       NA, followupTime,
-      fixedFollowup, 0, 0, 0, "schoenfeld",
+      fixedFollowup, 0, 0, "schoenfeld",
       spendingTime, rounding)
 
     lrp1 <- lrc1$resultsUnderH1
@@ -509,14 +516,14 @@ lrschoenfeld <- function(
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending,
+      futilityBounds, futilityCP, futilityHR,
+      typeBetaSpending, parameterBetaSpending,
       hazardRatioH0, allocationRatioPlanned,
       accrualTime, accrualIntensity,
       piecewiseSurvivalTime, stratumFraction,
       lambda1, lambda2, gamma1, gamma2,
       accrualDuration, followupTime,
-      fixedFollowup, 0, 0, 0, "schoenfeld",
+      fixedFollowup, 0, 0, "schoenfeld",
       spendingTime, studyDuration)
 
     lrs1 <- lrsim(

@@ -26,6 +26,8 @@
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility boundary on the conditional power scale.
+#' @param futilityMean The futility boundary on the mean scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -180,6 +182,8 @@ getDesignOneMean <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilityMean = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -210,180 +214,185 @@ getDesignOneMean <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
-  directionUpper = mean > meanH0
+  directionUpper <- mean > meanH0
 
-  theta = ifelse(directionUpper, mean - meanH0, meanH0 - mean)
+  theta <- ifelse(directionUpper, mean - meanH0, meanH0 - mean)
+  if (directionUpper) {
+    futilityTheta <- futilityMean - meanH0
+  } else {
+    futilityTheta <- meanH0 - futilityMean
+  }
 
   # variance for one sampling unit
-  v1 = stDev^2
+  v1 <- stDev^2
 
   if (is.na(beta)) { # power calculation
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- round(n*informationRates)/n
     }
 
-    des = getDesign(
+    des <- getDesign(
       beta = NA, IMax = n/v1, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, 1)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, 1)
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
-      b = qt(1-alpha, n-1)
-      ncp = theta*sqrt(n/v1)
-      power = pt(b, n-1, ncp, lower.tail = FALSE)
+      b <- qt(1-alpha, n-1)
+      ncp <- theta*sqrt(n/v1)
+      power <- pt(b, n-1, ncp, lower.tail = FALSE)
 
-      delta = b/sqrt(n/v1)
+      delta <- b/sqrt(n/v1)
 
-      des$overallResults$overallReject = power
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
+      des$overallResults$overallReject <- power
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
 
       if (directionUpper) {
-        des$byStageResults$efficacyMean = delta + meanH0
-        des$byStageResults$futilityMean = delta + meanH0
+        des$byStageResults$efficacyMean <- delta + meanH0
+        des$byStageResults$futilityMean <- delta + meanH0
       } else {
-        des$byStageResults$efficacyMean = -delta + meanH0
-        des$byStageResults$futilityMean = -delta + meanH0
+        des$byStageResults$efficacyMean <- -delta + meanH0
+        des$byStageResults$futilityMean <- -delta + meanH0
       }
     } else {
       if (directionUpper) {
-        des$byStageResults$efficacyMean =
+        des$byStageResults$efficacyMean <-
           des$byStageResults$efficacyTheta + meanH0
-        des$byStageResults$futilityMean =
+        des$byStageResults$futilityMean <-
           des$byStageResults$futilityTheta + meanH0
       } else {
-        des$byStageResults$efficacyMean =
+        des$byStageResults$efficacyMean <-
           -des$byStageResults$efficacyTheta + meanH0
-        des$byStageResults$futilityMean =
+        des$byStageResults$futilityMean <-
           -des$byStageResults$futilityTheta + meanH0
       }
     }
   } else { # sample size calculation
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
-      n0 = (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
+      n0 <- (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
 
-      n = uniroot(function(n) {
-        b = qt(1-alpha, n-1)
-        ncp = theta*sqrt(n/v1)
+      n <- uniroot(function(n) {
+        b <- qt(1-alpha, n-1)
+        ncp <- theta*sqrt(n/v1)
         pt(b, n-1, ncp, lower.tail = FALSE) - (1 - beta)
       }, c(n0, 2*n0))$root
 
-      if (rounding) n = ceiling(n - 1.0e-12)
+      if (rounding) n <- ceiling(n - 1.0e-12)
 
-      des = getDesign(
+      des <- getDesign(
         beta = NA, IMax = n/v1, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, 1)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, 1)
 
-      b = qt(1-alpha, n-1)
-      ncp = theta*sqrt(n/v1)
-      power = pt(b, n-1, ncp, lower.tail = FALSE)
+      b <- qt(1-alpha, n-1)
+      ncp <- theta*sqrt(n/v1)
+      power <- pt(b, n-1, ncp, lower.tail = FALSE)
 
-      delta = b/sqrt(n/v1)
+      delta <- b/sqrt(n/v1)
 
-      des$overallResults$overallReject = power
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
+      des$overallResults$overallReject <- power
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
       if (directionUpper) {
-        des$byStageResults$efficacyMean = delta + meanH0
-        des$byStageResults$futilityMean = delta + meanH0
+        des$byStageResults$efficacyMean <- delta + meanH0
+        des$byStageResults$futilityMean <- delta + meanH0
       } else {
-        des$byStageResults$efficacyMean = -delta + meanH0
-        des$byStageResults$futilityMean = -delta + meanH0
+        des$byStageResults$efficacyMean <- -delta + meanH0
+        des$byStageResults$futilityMean <- -delta + meanH0
       }
     } else {
-      des = getDesign(
+      des <- getDesign(
         beta, IMax = NA, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, 1)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, 1)
 
-      n = des$overallResults$information*v1
+      n <- des$overallResults$information*v1
 
       if (rounding) {
-        n = ceiling(n - 1.0e-12)
-        informationRates = des$byStageResults$informationRates
-        informationRates = round(n*informationRates)/n
+        n <- ceiling(n - 1.0e-12)
+        informationRates <- des$byStageResults$informationRates
+        informationRates <- round(n*informationRates)/n
 
-        des = getDesign(
+        des <- getDesign(
           beta = NA, IMax = n/v1, theta,
           kMax, informationRates,
           efficacyStopping, futilityStopping,
           criticalValues, alpha, typeAlphaSpending,
           parameterAlphaSpending, userAlphaSpending,
-          futilityBounds, typeBetaSpending,
-          parameterBetaSpending, userBetaSpending,
-          spendingTime, 1)
+          futilityBounds, futilityCP, futilityTheta,
+          typeBetaSpending, parameterBetaSpending,
+          userBetaSpending, spendingTime, 1)
       }
 
       if (directionUpper) {
-        des$byStageResults$efficacyMean =
+        des$byStageResults$efficacyMean <-
           des$byStageResults$efficacyTheta + meanH0
-        des$byStageResults$futilityMean =
+        des$byStageResults$futilityMean <-
           des$byStageResults$futilityTheta + meanH0
       } else {
-        des$byStageResults$efficacyMean =
+        des$byStageResults$efficacyMean <-
           -des$byStageResults$efficacyTheta + meanH0
-        des$byStageResults$futilityMean =
+        des$byStageResults$futilityMean <-
           -des$byStageResults$futilityTheta + meanH0
       }
     }
   }
 
-  des$overallResults$theta = theta
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$theta <- theta
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*v1
-  des$overallResults$expectedNumberOfSubjectsH0 =
+  des$overallResults$expectedNumberOfSubjectsH0 <-
     des$overallResults$expectedInformationH0*v1
-  des$overallResults$meanH0 = meanH0
-  des$overallResults$mean = mean
-  des$overallResults$stDev = stDev
+  des$overallResults$meanH0 <- meanH0
+  des$overallResults$mean <- mean
+  des$overallResults$stDev <- stDev
 
-  des$byStageResults$efficacyTheta = NULL
-  des$byStageResults$futilityTheta = NULL
-  des$byStageResults$numberOfSubjects =
+  des$byStageResults$efficacyTheta <- NULL
+  des$byStageResults$futilityTheta <- NULL
+  des$byStageResults$numberOfSubjects <-
     des$byStageResults$informationRates*n
 
-  des$settings$normalApproximation = normalApproximation
-  des$settings$rounding = rounding
-  des$settings$varianceRatio = NULL
+  des$settings$normalApproximation <- normalApproximation
+  des$settings$rounding <- rounding
+  des$settings$varianceRatio <- NULL
 
-  attr(des, "class") = "designOneMean"
+  attr(des, "class") <- "designOneMean"
 
   des
 }
@@ -417,6 +426,8 @@ getDesignOneMean <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility boundary on the conditional power scale.
+#' @param futilityPairedDiff The futility boundary on the paired difference scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -575,31 +586,33 @@ getDesignPairedMeanDiff <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilityPairedDiff = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
     spendingTime = NA_real_) {
 
-  des = getDesignOneMean(
+  des <- getDesignOneMean(
     beta, n, pairedDiffH0, pairedDiff, stDev,
     normalApproximation,
     rounding, kMax, informationRates,
     efficacyStopping, futilityStopping,
     criticalValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlphaSpending,
-    futilityBounds, typeBetaSpending,
-    parameterBetaSpending, userBetaSpending,
-    spendingTime)
+    futilityBounds, futilityCP, futilityPairedDiff,
+    typeBetaSpending, parameterBetaSpending,
+    userBetaSpending, spendingTime)
 
-  nov = names(des$overallResults)
+  nov <- names(des$overallResults)
   names(des$overallResults)[nov == "meanH0"] <- "pairedDiffH0"
   names(des$overallResults)[nov == "mean"] <- "pairedDiff"
 
-  nby = names(des$byStageResults)
+  nby <- names(des$byStageResults)
   names(des$byStageResults)[nby == "efficacyMean"] <- "efficacyPairedDiff"
   names(des$byStageResults)[nby == "futilityMean"] <- "futilityPairedDiff"
 
-  attr(des, "class") = "designPairedMeanDiff"
+  attr(des, "class") <- "designPairedMeanDiff"
 
   des
 }
@@ -633,6 +646,8 @@ getDesignPairedMeanDiff <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility boundary on the conditional power scale.
+#' @param futilityPairedRatio The futility boundary on the paired ratio scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -790,6 +805,8 @@ getDesignPairedMeanRatio <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilityPairedRatio = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -811,7 +828,15 @@ getDesignPairedMeanRatio <- function(
     stop("alpha must lie in [0.00001, 1)")
   }
 
-  des = getDesignPairedMeanDiff(
+  if (!anyNA(futilityPairedRatio)) {
+    for (x in futilityPairedRatio) {
+      if (x <= 0) {
+        stop("futilityPairedRatio must be positive")
+      }
+    }
+  }
+
+  des <- getDesignPairedMeanDiff(
     beta, n, pairedDiffH0 = log(pairedRatioH0),
     pairedDiff = log(pairedRatio),
     stDev = sqrt(log(1 + CV^2)),
@@ -820,25 +845,25 @@ getDesignPairedMeanRatio <- function(
     efficacyStopping, futilityStopping,
     criticalValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlphaSpending,
-    futilityBounds, typeBetaSpending,
-    parameterBetaSpending, userBetaSpending,
-    spendingTime)
+    futilityBounds, futilityCP, log(futilityPairedRatio),
+    typeBetaSpending, parameterBetaSpending,
+    userBetaSpending, spendingTime)
 
-  des$overallResults$pairedRatioH0 = pairedRatioH0
-  des$overallResults$pairedRatio = pairedRatio
-  des$overallResults$CV = CV
-  des$overallResults$pairedDiffH0 = NULL
-  des$overallResults$pairedDiff = NULL
-  des$overallResults$stDev = NULL
+  des$overallResults$pairedRatioH0 <- pairedRatioH0
+  des$overallResults$pairedRatio <- pairedRatio
+  des$overallResults$CV <- CV
+  des$overallResults$pairedDiffH0 <- NULL
+  des$overallResults$pairedDiff <- NULL
+  des$overallResults$stDev <- NULL
 
-  des$byStageResults$efficacyPairedRatio =
+  des$byStageResults$efficacyPairedRatio <-
     exp(des$byStageResults$efficacyPairedDiff)
-  des$byStageResults$futilityPairedRatio =
+  des$byStageResults$futilityPairedRatio <-
     exp(des$byStageResults$futilityPairedDiff)
-  des$byStageResults$efficacyPairedDiff = NULL
-  des$byStageResults$futilityPairedDiff = NULL
+  des$byStageResults$efficacyPairedDiff <- NULL
+  des$byStageResults$futilityPairedDiff <- NULL
 
-  attr(des, "class") = "designPairedMeanRatio"
+  attr(des, "class") <- "designPairedMeanRatio"
 
   des
 }
@@ -875,6 +900,8 @@ getDesignPairedMeanRatio <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility boundary on the conditional power scale.
+#' @param futilityMeanDiff The futility boundary on the mean difference scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -1036,6 +1063,8 @@ getDesignMeanDiff <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilityMeanDiff = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -1070,185 +1099,190 @@ getDesignMeanDiff <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
 
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
 
-  directionUpper = meanDiff > meanDiffH0
+  directionUpper <- meanDiff > meanDiffH0
 
-  theta = ifelse(directionUpper, meanDiff - meanDiffH0,
-                 meanDiffH0 - meanDiff)
+  theta <- ifelse(directionUpper, meanDiff - meanDiffH0,
+                  meanDiffH0 - meanDiff)
+  if (directionUpper) {
+    futilityTheta <- futilityMeanDiff - meanDiffH0
+  } else {
+    futilityTheta <- meanDiffH0 - futilityMeanDiff
+  }
 
   # variance for one sampling unit
-  v1 = stDev^2/(r*(1-r))
+  v1 <- stDev^2/(r*(1-r))
 
   if (is.na(beta)) { # power calculation
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- round(n*informationRates)/n
     }
 
-    des = getDesign(
+    des <- getDesign(
       beta = NA, IMax = n/v1, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, 1)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, 1)
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
-      b = qt(1-alpha, n-2)
-      ncp = theta*sqrt(n/v1)
-      power = pt(b, n-2, ncp, lower.tail = FALSE)
+      b <- qt(1-alpha, n-2)
+      ncp <- theta*sqrt(n/v1)
+      power <- pt(b, n-2, ncp, lower.tail = FALSE)
 
-      delta = b/sqrt(n/v1)
+      delta <- b/sqrt(n/v1)
 
-      des$overallResults$overallReject = power
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
+      des$overallResults$overallReject <- power
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
 
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff = delta + meanDiffH0
-        des$byStageResults$futilityMeanDiff = delta + meanDiffH0
+        des$byStageResults$efficacyMeanDiff <- delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff <- delta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff = -delta + meanDiffH0
-        des$byStageResults$futilityMeanDiff = -delta + meanDiffH0
+        des$byStageResults$efficacyMeanDiff <- -delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff <- -delta + meanDiffH0
       }
     } else {
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff =
+        des$byStageResults$efficacyMeanDiff <-
           des$byStageResults$efficacyTheta + meanDiffH0
-        des$byStageResults$futilityMeanDiff =
+        des$byStageResults$futilityMeanDiff <-
           des$byStageResults$futilityTheta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff =
+        des$byStageResults$efficacyMeanDiff <-
           -des$byStageResults$efficacyTheta + meanDiffH0
-        des$byStageResults$futilityMeanDiff =
+        des$byStageResults$futilityMeanDiff <-
           -des$byStageResults$futilityTheta + meanDiffH0
       }
     }
   } else { # sample size calculation
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
-      n0 = (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
+      n0 <- (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
 
-      n = uniroot(function(n) {
-        b = qt(1-alpha, n-2)
-        ncp = theta*sqrt(n/v1)
+      n <- uniroot(function(n) {
+        b <- qt(1-alpha, n-2)
+        ncp <- theta*sqrt(n/v1)
         pt(b, n-2, ncp, lower.tail = FALSE) - (1 - beta)
       }, c(n0, 2*n0))$root
 
-      if (rounding) n = ceiling(n - 1.0e-12)
+      if (rounding) n <- ceiling(n - 1.0e-12)
 
-      des = getDesign(
+      des <- getDesign(
         beta = NA, IMax = n/v1, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, 1)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, 1)
 
-      b = qt(1-alpha, n-2)
-      ncp = theta*sqrt(n/v1)
-      power = pt(b, n-2, ncp, lower.tail = FALSE)
+      b <- qt(1-alpha, n-2)
+      ncp <- theta*sqrt(n/v1)
+      power <- pt(b, n-2, ncp, lower.tail = FALSE)
 
-      delta = b/sqrt(n/v1)
+      delta <- b/sqrt(n/v1)
 
-      des$overallResults$overallReject = power
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
+      des$overallResults$overallReject <- power
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff = delta + meanDiffH0
-        des$byStageResults$futilityMeanDiff = delta + meanDiffH0
+        des$byStageResults$efficacyMeanDiff <- delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff <- delta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff = -delta + meanDiffH0
-        des$byStageResults$futilityMeanDiff = -delta + meanDiffH0
+        des$byStageResults$efficacyMeanDiff <- -delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff <- -delta + meanDiffH0
       }
     } else {
-      des = getDesign(
+      des <- getDesign(
         beta, IMax = NA, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, 1)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, 1)
 
-      n = des$overallResults$information*v1
+      n <- des$overallResults$information*v1
 
       if (rounding) {
-        n = ceiling(n - 1.0e-12)
-        informationRates = des$byStageResults$informationRates
-        informationRates = round(n*informationRates)/n
+        n <- ceiling(n - 1.0e-12)
+        informationRates <- des$byStageResults$informationRates
+        informationRates <- round(n*informationRates)/n
 
-        des = getDesign(
+        des <- getDesign(
           beta = NA, IMax = n/v1, theta,
           kMax, informationRates,
           efficacyStopping, futilityStopping,
           criticalValues, alpha, typeAlphaSpending,
           parameterAlphaSpending, userAlphaSpending,
-          futilityBounds, typeBetaSpending,
-          parameterBetaSpending, userBetaSpending,
-          spendingTime, 1)
+          futilityBounds, futilityCP, futilityTheta,
+          typeBetaSpending, parameterBetaSpending,
+          userBetaSpending, spendingTime, 1)
       }
 
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff =
+        des$byStageResults$efficacyMeanDiff <-
           des$byStageResults$efficacyTheta + meanDiffH0
-        des$byStageResults$futilityMeanDiff =
+        des$byStageResults$futilityMeanDiff <-
           des$byStageResults$futilityTheta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff =
+        des$byStageResults$efficacyMeanDiff <-
           -des$byStageResults$efficacyTheta + meanDiffH0
-        des$byStageResults$futilityMeanDiff =
+        des$byStageResults$futilityMeanDiff <-
           -des$byStageResults$futilityTheta + meanDiffH0
       }
     }
   }
 
-  des$overallResults$theta = theta
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$theta <- theta
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*v1
-  des$overallResults$expectedNumberOfSubjectsH0 =
+  des$overallResults$expectedNumberOfSubjectsH0 <-
     des$overallResults$expectedInformationH0*v1
-  des$overallResults$meanDiffH0 = meanDiffH0
-  des$overallResults$meanDiff = meanDiff
-  des$overallResults$stDev = stDev
+  des$overallResults$meanDiffH0 <- meanDiffH0
+  des$overallResults$meanDiff <- meanDiff
+  des$overallResults$stDev <- stDev
 
-  des$byStageResults$efficacyTheta = NULL
-  des$byStageResults$futilityTheta = NULL
-  des$byStageResults$numberOfSubjects =
+  des$byStageResults$efficacyTheta <- NULL
+  des$byStageResults$futilityTheta <- NULL
+  des$byStageResults$numberOfSubjects <-
     des$byStageResults$informationRates*n
 
-  des$settings$allocationRatioPlanned = allocationRatioPlanned
-  des$settings$normalApproximation = normalApproximation
-  des$settings$rounding = rounding
-  des$settings$varianceRatio = NULL
+  des$settings$allocationRatioPlanned <- allocationRatioPlanned
+  des$settings$normalApproximation <- normalApproximation
+  des$settings$rounding <- rounding
+  des$settings$varianceRatio <- NULL
 
-  attr(des, "class") = "designMeanDiff"
+  attr(des, "class") <- "designMeanDiff"
 
   des
 }
@@ -1286,6 +1320,8 @@ getDesignMeanDiff <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility boundary on the conditional power scale.
+#' @param futilityMeanRatio The futility boundary on the mean ratio scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -1439,6 +1475,8 @@ getDesignMeanRatio <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilityMeanRatio = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -1464,8 +1502,15 @@ getDesignMeanRatio <- function(
     stop("alpha must lie in [0.00001, 1)")
   }
 
+  if (!anyNA(futilityMeanRatio)) {
+    for (x in futilityMeanRatio) {
+      if (x <= 0) {
+        stop("futilityMeanRatio must be positive")
+      }
+    }
+  }
 
-  des = getDesignMeanDiff(
+  des <- getDesignMeanDiff(
     beta, n, meanDiffH0 = log(meanRatioH0),
     meanDiff = log(meanRatio),
     stDev = sqrt(log(1 + CV^2)),
@@ -1475,27 +1520,27 @@ getDesignMeanRatio <- function(
     efficacyStopping, futilityStopping,
     criticalValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlphaSpending,
-    futilityBounds, typeBetaSpending,
-    parameterBetaSpending, userBetaSpending,
-    spendingTime)
+    futilityBounds, futilityCP, log(futilityMeanRatio),
+    typeBetaSpending, parameterBetaSpending,
+    userBetaSpending, spendingTime)
 
-  des$overallResults$meanRatioH0 = meanRatioH0
-  des$overallResults$meanRatio = meanRatio
-  des$overallResults$CV = CV
+  des$overallResults$meanRatioH0 <- meanRatioH0
+  des$overallResults$meanRatio <- meanRatio
+  des$overallResults$CV <- CV
 
-  des$overallResults$meanDiffH0 = NULL
-  des$overallResults$meanDiff = NULL
-  des$overallResults$stDev = NULL
+  des$overallResults$meanDiffH0 <- NULL
+  des$overallResults$meanDiff <- NULL
+  des$overallResults$stDev <- NULL
 
-  des$byStageResults$efficacyMeanRatio =
+  des$byStageResults$efficacyMeanRatio <-
     exp(des$byStageResults$efficacyMeanDiff)
-  des$byStageResults$futilityMeanRatio =
+  des$byStageResults$futilityMeanRatio <-
     exp(des$byStageResults$futilityMeanDiff)
 
-  des$byStageResults$efficacyMeanDiff = NULL
-  des$byStageResults$futilityMeanDiff = NULL
+  des$byStageResults$efficacyMeanDiff <- NULL
+  des$byStageResults$futilityMeanDiff <- NULL
 
-  attr(des, "class") = "designMeanRatio"
+  attr(des, "class") <- "designMeanRatio"
 
   des
 }
@@ -1532,6 +1577,8 @@ getDesignMeanRatio <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility boundary on the conditional power scale.
+#' @param futilityMeanDiff The futility boundary on the mean difference scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -1687,6 +1734,8 @@ getDesignMeanDiffXO <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilityMeanDiff = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -1721,185 +1770,190 @@ getDesignMeanDiffXO <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
 
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
 
-  directionUpper = meanDiff > meanDiffH0
+  directionUpper <- meanDiff > meanDiffH0
 
-  theta = ifelse(directionUpper, meanDiff - meanDiffH0,
-                 meanDiffH0 - meanDiff)
+  theta <- ifelse(directionUpper, meanDiff - meanDiffH0,
+                  meanDiffH0 - meanDiff)
+  if (directionUpper) {
+    futilityTheta <- futilityMeanDiff - meanDiffH0
+  } else {
+    futilityTheta <- meanDiffH0 - futilityMeanDiff
+  }
 
   # variance for one sampling unit
-  v1 = stDev^2/(2*r*(1-r))
+  v1 <- stDev^2/(2*r*(1-r))
 
   if (is.na(beta)) { # power calculation
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- round(n*informationRates)/n
     }
 
-    des = getDesign(
+    des <- getDesign(
       beta = NA, IMax = n/v1, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, 1)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, 1)
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
-      b = qt(1-alpha, n-2)
-      ncp = theta*sqrt(n/v1)
-      power = pt(b, n-2, ncp, lower.tail = FALSE)
+      b <- qt(1-alpha, n-2)
+      ncp <- theta*sqrt(n/v1)
+      power <- pt(b, n-2, ncp, lower.tail = FALSE)
 
-      delta = b/sqrt(n/v1)
+      delta <- b/sqrt(n/v1)
 
-      des$overallResults$overallReject = power
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
+      des$overallResults$overallReject <- power
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
 
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff = delta + meanDiffH0
-        des$byStageResults$futilityMeanDiff = delta + meanDiffH0
+        des$byStageResults$efficacyMeanDiff <- delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff <- delta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff = -delta + meanDiffH0
-        des$byStageResults$futilityMeanDiff = -delta + meanDiffH0
+        des$byStageResults$efficacyMeanDiff <- -delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff <- -delta + meanDiffH0
       }
     } else {
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff =
+        des$byStageResults$efficacyMeanDiff <-
           des$byStageResults$efficacyTheta + meanDiffH0
-        des$byStageResults$futilityMeanDiff =
+        des$byStageResults$futilityMeanDiff <-
           des$byStageResults$futilityTheta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff =
+        des$byStageResults$efficacyMeanDiff <-
           -des$byStageResults$efficacyTheta + meanDiffH0
-        des$byStageResults$futilityMeanDiff =
+        des$byStageResults$futilityMeanDiff <-
           -des$byStageResults$futilityTheta + meanDiffH0
       }
     }
   } else { # sample size calculation
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
-      n0 = (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
+      n0 <- (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
 
-      n = uniroot(function(n) {
-        b = qt(1-alpha, n-2)
-        ncp = theta*sqrt(n/v1)
+      n <- uniroot(function(n) {
+        b <- qt(1-alpha, n-2)
+        ncp <- theta*sqrt(n/v1)
         pt(b, n-2, ncp, lower.tail = FALSE) - (1 - beta)
       }, c(n0, 2*n0))$root
 
-      if (rounding) n = ceiling(n - 1.0e-12)
+      if (rounding) n <- ceiling(n - 1.0e-12)
 
-      des = getDesign(
+      des <- getDesign(
         beta = NA, IMax = n/v1, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, 1)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, 1)
 
-      b = qt(1-alpha, n-2)
-      ncp = theta*sqrt(n/v1)
-      power = pt(b, n-2, ncp, lower.tail = FALSE)
+      b <- qt(1-alpha, n-2)
+      ncp <- theta*sqrt(n/v1)
+      power <- pt(b, n-2, ncp, lower.tail = FALSE)
 
-      delta = b/sqrt(n/v1)
+      delta <- b/sqrt(n/v1)
 
-      des$overallResults$overallReject = power
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
+      des$overallResults$overallReject <- power
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff = delta + meanDiffH0
-        des$byStageResults$futilityMeanDiff = delta + meanDiffH0
+        des$byStageResults$efficacyMeanDiff <- delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff <- delta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff = -delta + meanDiffH0
-        des$byStageResults$futilityMeanDiff = -delta + meanDiffH0
+        des$byStageResults$efficacyMeanDiff <- -delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff <- -delta + meanDiffH0
       }
     } else {
-      des = getDesign(
+      des <- getDesign(
         beta, IMax = NA, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, 1)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, 1)
 
-      n = des$overallResults$information*v1
+      n <- des$overallResults$information*v1
 
       if (rounding) {
-        n = ceiling(n - 1.0e-12)
-        informationRates = des$byStageResults$informationRates
-        informationRates = round(n*informationRates)/n
+        n <- ceiling(n - 1.0e-12)
+        informationRates <- des$byStageResults$informationRates
+        informationRates <- round(n*informationRates)/n
 
-        des = getDesign(
+        des <- getDesign(
           beta = NA, IMax = n/v1, theta,
           kMax, informationRates,
           efficacyStopping, futilityStopping,
           criticalValues, alpha, typeAlphaSpending,
           parameterAlphaSpending, userAlphaSpending,
-          futilityBounds, typeBetaSpending,
-          parameterBetaSpending, userBetaSpending,
-          spendingTime, 1)
+          futilityBounds, futilityCP, futilityTheta,
+          typeBetaSpending, parameterBetaSpending,
+          userBetaSpending, spendingTime, 1)
       }
 
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff =
+        des$byStageResults$efficacyMeanDiff <-
           des$byStageResults$efficacyTheta + meanDiffH0
-        des$byStageResults$futilityMeanDiff =
+        des$byStageResults$futilityMeanDiff <-
           des$byStageResults$futilityTheta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff =
+        des$byStageResults$efficacyMeanDiff <-
           -des$byStageResults$efficacyTheta + meanDiffH0
-        des$byStageResults$futilityMeanDiff =
+        des$byStageResults$futilityMeanDiff <-
           -des$byStageResults$futilityTheta + meanDiffH0
       }
     }
   }
 
-  des$overallResults$theta = theta
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$theta <- theta
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*v1
-  des$overallResults$expectedNumberOfSubjectsH0 =
+  des$overallResults$expectedNumberOfSubjectsH0 <-
     des$overallResults$expectedInformationH0*v1
-  des$overallResults$meanDiffH0 = meanDiffH0
-  des$overallResults$meanDiff = meanDiff
-  des$overallResults$stDev = stDev
+  des$overallResults$meanDiffH0 <- meanDiffH0
+  des$overallResults$meanDiff <- meanDiff
+  des$overallResults$stDev <- stDev
 
-  des$byStageResults$efficacyTheta = NULL
-  des$byStageResults$futilityTheta = NULL
-  des$byStageResults$numberOfSubjects =
+  des$byStageResults$efficacyTheta <- NULL
+  des$byStageResults$futilityTheta <- NULL
+  des$byStageResults$numberOfSubjects <-
     des$byStageResults$informationRates*n
 
-  des$settings$allocationRatioPlanned = allocationRatioPlanned
-  des$settings$normalApproximation = normalApproximation
-  des$settings$rounding = rounding
-  des$settings$varianceRatio = NULL
+  des$settings$allocationRatioPlanned <- allocationRatioPlanned
+  des$settings$normalApproximation <- normalApproximation
+  des$settings$rounding <- rounding
+  des$settings$varianceRatio <- NULL
 
-  attr(des, "class") = "designMeanDiffXO"
+  attr(des, "class") <- "designMeanDiffXO"
 
   des
 }
@@ -1937,6 +1991,8 @@ getDesignMeanDiffXO <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility boundary on the conditional power scale.
+#' @param futilityMeanRatio The futility boundary on the mean ratio scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -2090,6 +2146,8 @@ getDesignMeanRatioXO <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilityMeanRatio = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -2115,8 +2173,16 @@ getDesignMeanRatioXO <- function(
     stop("alpha must lie in [0.00001, 1)")
   }
 
+  if (!anyNA(futilityMeanRatio)) {
+    for (x in futilityMeanRatio) {
+      if (x <= 0) {
+        stop("futilityMeanRatio must be positive")
+      }
+    }
+  }
 
-  des = getDesignMeanDiffXO(
+
+  des <- getDesignMeanDiffXO(
     beta, n, meanDiffH0 = log(meanRatioH0),
     meanDiff = log(meanRatio),
     stDev = sqrt(log(1 + CV^2)),
@@ -2126,26 +2192,26 @@ getDesignMeanRatioXO <- function(
     efficacyStopping, futilityStopping,
     criticalValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, userAlphaSpending,
-    futilityBounds, typeBetaSpending,
-    parameterBetaSpending, userBetaSpending,
-    spendingTime)
+    futilityBounds, futilityCP, log(futilityMeanRatio),
+    typeBetaSpending, parameterBetaSpending,
+    userBetaSpending, spendingTime)
 
-  des$overallResults$meanRatioH0 = meanRatioH0
-  des$overallResults$meanRatio = meanRatio
-  des$overallResults$CV = CV
+  des$overallResults$meanRatioH0 <- meanRatioH0
+  des$overallResults$meanRatio <- meanRatio
+  des$overallResults$CV <- CV
 
-  des$overallResults$meanDiffH0 = NULL
-  des$overallResults$meanDiff = NULL
-  des$overallResults$stDev = NULL
+  des$overallResults$meanDiffH0 <- NULL
+  des$overallResults$meanDiff <- NULL
+  des$overallResults$stDev <- NULL
 
-  des$byStageResults$efficacyMeanRatio =
+  des$byStageResults$efficacyMeanRatio <-
     exp(des$byStageResults$efficacyMeanDiff)
-  des$byStageResults$futilityMeanRatio =
+  des$byStageResults$futilityMeanRatio <-
     exp(des$byStageResults$futilityMeanDiff)
-  des$byStageResults$efficacyMeanDiff = NULL
-  des$byStageResults$futilityMeanDiff = NULL
+  des$byStageResults$efficacyMeanDiff <- NULL
+  des$byStageResults$futilityMeanDiff <- NULL
 
-  attr(des, "class") = "designMeanRatioXO"
+  attr(des, "class") <- "designMeanRatioXO"
 
   des
 }
@@ -2350,25 +2416,25 @@ getDesignPairedMeanDiffEquiv <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
 
   # variance for one sampling unit
-  v1 = stDev^2
+  v1 <- stDev^2
 
   f <- function(n) { # power for two one-sided t-tests
-    b = qt(1-alpha, n-1)
-    ncpLower = (pairedDiff - pairedDiffLower)*sqrt(n/v1)
-    powerLower = pt(b, n-1, ncpLower, lower.tail = FALSE)
-    ncpUpper = (pairedDiffUpper - pairedDiff)*sqrt(n/v1)
-    powerUpper = pt(b, n-1, ncpUpper, lower.tail = FALSE)
-    power = powerLower + powerUpper - 1
+    b <- qt(1-alpha, n-1)
+    ncpLower <- (pairedDiff - pairedDiffLower)*sqrt(n/v1)
+    powerLower <- pt(b, n-1, ncpLower, lower.tail = FALSE)
+    ncpUpper <- (pairedDiffUpper - pairedDiff)*sqrt(n/v1)
+    powerUpper <- pt(b, n-1, ncpUpper, lower.tail = FALSE)
+    power <- powerLower + powerUpper - 1
     power
   }
 
   if (is.na(n)) { # calculate sample size
-    des = getDesignEquiv(
+    des <- getDesignEquiv(
       beta = beta, IMax = NA, thetaLower = pairedDiffLower,
       thetaUpper = pairedDiffUpper, theta = pairedDiff,
       kMax = kMax, informationRates = informationRates,
@@ -2377,20 +2443,20 @@ getDesignPairedMeanDiffEquiv <- function(
       userAlphaSpending = userAlphaSpending,
       spendingTime = spendingTime)
 
-    n = des$overallResults$information*v1
+    n <- des$overallResults$information*v1
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
-      n = uniroot(function(n) f(n) - (1-beta), c(0.5*n, 1.5*n))$root
+      n <- uniroot(function(n) f(n) - (1-beta), c(0.5*n, 1.5*n))$root
     }
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
-    informationRates = round(n*informationRates)/n
+    n <- ceiling(n - 1.0e-12)
+    informationRates <- round(n*informationRates)/n
   }
 
   if (is.na(beta) || rounding) { # calculate power
-    des = getDesignEquiv(
+    des <- getDesignEquiv(
       beta = NA, IMax = n/v1, thetaLower = pairedDiffLower,
       thetaUpper = pairedDiffUpper, theta = pairedDiff,
       kMax = kMax, informationRates = informationRates,
@@ -2401,50 +2467,50 @@ getDesignPairedMeanDiffEquiv <- function(
   }
 
   if (kMax == 1 && !normalApproximation) { # t-test for fixed design
-    power = f(n)
+    power <- f(n)
 
-    b = qt(1-alpha, n-1)
-    ncp = (pairedDiffUpper - pairedDiffLower)*sqrt(n/v1)
-    attainedAlpha = alpha - pt(b, n-1, ncp)
+    b <- qt(1-alpha, n-1)
+    ncp <- (pairedDiffUpper - pairedDiffLower)*sqrt(n/v1)
+    attainedAlpha <- alpha - pt(b, n-1, ncp)
 
-    des$overallResults$overallReject = power
-    des$overallResults$attainedAlpha = attainedAlpha
-    des$overallResults$information = n/v1
-    des$overallResults$expectedInformationH1 = n/v1
-    des$overallResults$expectedInformationH0 = n/v1
+    des$overallResults$overallReject <- power
+    des$overallResults$attainedAlpha <- attainedAlpha
+    des$overallResults$information <- n/v1
+    des$overallResults$expectedInformationH1 <- n/v1
+    des$overallResults$expectedInformationH0 <- n/v1
 
-    des$byStageResults$efficacyBounds = b
-    des$byStageResults$rejectPerStage = power
-    des$byStageResults$cumulativeRejection = power
-    des$byStageResults$cumulativeAttainedAlpha = attainedAlpha
-    des$byStageResults$efficacyPairedDiffLower = b*sqrt(v1/n) +
+    des$byStageResults$efficacyBounds <- b
+    des$byStageResults$rejectPerStage <- power
+    des$byStageResults$cumulativeRejection <- power
+    des$byStageResults$cumulativeAttainedAlpha <- attainedAlpha
+    des$byStageResults$efficacyPairedDiffLower <- b*sqrt(v1/n) +
       pairedDiffLower
-    des$byStageResults$efficacyPairedDiffUpper = -b*sqrt(v1/n) +
+    des$byStageResults$efficacyPairedDiffUpper <- -b*sqrt(v1/n) +
       pairedDiffUpper
-    des$byStageResults$information = n/v1
+    des$byStageResults$information <- n/v1
   } else {
-    des$overallResults$attainedAlpha =
+    des$overallResults$attainedAlpha <-
       des$overallResults$attainedAlphaH10
-    des$overallResults$expectedInformationH0 =
+    des$overallResults$expectedInformationH0 <-
       des$overallResults$expectedInformationH10
 
-    des$byStageResults$cumulativeAttainedAlpha =
+    des$byStageResults$cumulativeAttainedAlpha <-
       des$byStageResults$cumulativeAttainedAlphaH10
-    des$byStageResults$efficacyPairedDiffLower =
+    des$byStageResults$efficacyPairedDiffLower <-
       des$byStageResults$efficacyThetaLower
-    des$byStageResults$efficacyPairedDiffUpper =
+    des$byStageResults$efficacyPairedDiffUpper <-
       des$byStageResults$efficacyThetaUpper
   }
 
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*v1
-  des$overallResults$expectedNumberOfSubjectsH0 =
+  des$overallResults$expectedNumberOfSubjectsH0 <-
     des$overallResults$expectedInformationH0*v1
-  des$overallResults$pairedDiffLower = pairedDiffLower
-  des$overallResults$pairedDiffUpper = pairedDiffUpper
-  des$overallResults$pairedDiff = pairedDiff
-  des$overallResults$stDev = stDev
+  des$overallResults$pairedDiffLower <- pairedDiffLower
+  des$overallResults$pairedDiffUpper <- pairedDiffUpper
+  des$overallResults$pairedDiff <- pairedDiff
+  des$overallResults$stDev <- stDev
   des$overallResults <-
     des$overallResults[, c("overallReject", "alpha", "attainedAlpha",
                            "kMax", "information", "expectedInformationH1",
@@ -2453,7 +2519,7 @@ getDesignPairedMeanDiffEquiv <- function(
                            "expectedNumberOfSubjectsH0", "pairedDiffLower",
                            "pairedDiffUpper", "pairedDiff", "stDev")]
 
-  des$byStageResults$numberOfSubjects = n*informationRates
+  des$byStageResults$numberOfSubjects <- n*informationRates
   des$byStageResults <-
     des$byStageResults[, c("informationRates", "efficacyBounds",
                            "rejectPerStage", "cumulativeRejection",
@@ -2462,14 +2528,14 @@ getDesignPairedMeanDiffEquiv <- function(
                            "efficacyPairedDiffUpper", "efficacyP",
                            "information", "numberOfSubjects")]
 
-  des$settings$normalApproximation = normalApproximation
-  des$settings$rounding = rounding
+  des$settings$normalApproximation <- normalApproximation
+  des$settings$rounding <- rounding
   des$settings <-
     des$settings[c("typeAlphaSpending", "parameterAlphaSpending",
                    "userAlphaSpending", "spendingTime",
                    "normalApproximation", "rounding")]
 
-  attr(des, "class") = "designPairedMeanDiffEquiv"
+  attr(des, "class") <- "designPairedMeanDiffEquiv"
 
   des
 }
@@ -2661,7 +2727,7 @@ getDesignPairedMeanRatioEquiv <- function(
   }
 
 
-  des = getDesignPairedMeanDiffEquiv(
+  des <- getDesignPairedMeanDiffEquiv(
     beta, n, pairedDiffLower = log(pairedRatioLower),
     pairedDiffUpper = log(pairedRatioUpper),
     pairedDiff = log(pairedRatio),
@@ -2672,25 +2738,25 @@ getDesignPairedMeanRatioEquiv <- function(
     parameterAlphaSpending, userAlphaSpending,
     spendingTime)
 
-  des$overallResults$pairedRatioLower = pairedRatioLower
-  des$overallResults$pairedRatioUpper = pairedRatioUpper
-  des$overallResults$pairedRatio = pairedRatio
-  des$overallResults$CV = CV
+  des$overallResults$pairedRatioLower <- pairedRatioLower
+  des$overallResults$pairedRatioUpper <- pairedRatioUpper
+  des$overallResults$pairedRatio <- pairedRatio
+  des$overallResults$CV <- CV
 
-  des$overallResults$pairedDiffLower = NULL
-  des$overallResults$pairedDiffUpper = NULL
-  des$overallResults$pairedDiff = NULL
-  des$overallResults$stDev = NULL
+  des$overallResults$pairedDiffLower <- NULL
+  des$overallResults$pairedDiffUpper <- NULL
+  des$overallResults$pairedDiff <- NULL
+  des$overallResults$stDev <- NULL
 
-  des$byStageResults$efficacyPairedRatioLower =
+  des$byStageResults$efficacyPairedRatioLower <-
     exp(des$byStageResults$efficacyPairedDiffLower)
-  des$byStageResults$efficacyPairedRatioUpper =
+  des$byStageResults$efficacyPairedRatioUpper <-
     exp(des$byStageResults$efficacyPairedDiffUpper)
 
-  des$byStageResults$efficacyPairedDiffLower = NULL
-  des$byStageResults$efficacyPairedDiffUpper = NULL
+  des$byStageResults$efficacyPairedDiffLower <- NULL
+  des$byStageResults$efficacyPairedDiffUpper <- NULL
 
-  attr(des, "class") = "designPairedMeanRatioEquiv"
+  attr(des, "class") <- "designPairedMeanRatioEquiv"
 
   des
 }
@@ -2905,26 +2971,26 @@ getDesignMeanDiffEquiv <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
 
   # variance for one sampling unit
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
-  v1 = stDev^2/(r*(1-r))
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
+  v1 <- stDev^2/(r*(1-r))
 
   f <- function(n) { # power for two one-sided t-tests
-    b = qt(1-alpha, n-2)
-    ncpLower = (meanDiff - meanDiffLower)*sqrt(n/v1)
-    powerLower = pt(b, n-2, ncpLower, lower.tail = FALSE)
-    ncpUpper = (meanDiffUpper - meanDiff)*sqrt(n/v1)
-    powerUpper = pt(b, n-2, ncpUpper, lower.tail = FALSE)
-    power = powerLower + powerUpper - 1
+    b <- qt(1-alpha, n-2)
+    ncpLower <- (meanDiff - meanDiffLower)*sqrt(n/v1)
+    powerLower <- pt(b, n-2, ncpLower, lower.tail = FALSE)
+    ncpUpper <- (meanDiffUpper - meanDiff)*sqrt(n/v1)
+    powerUpper <- pt(b, n-2, ncpUpper, lower.tail = FALSE)
+    power <- powerLower + powerUpper - 1
     power
   }
 
   if (is.na(n)) { # calculate sample size
-    des = getDesignEquiv(
+    des <- getDesignEquiv(
       beta = beta, IMax = NA, thetaLower = meanDiffLower,
       thetaUpper = meanDiffUpper, theta = meanDiff,
       kMax = kMax, informationRates = informationRates,
@@ -2933,20 +2999,20 @@ getDesignMeanDiffEquiv <- function(
       userAlphaSpending = userAlphaSpending,
       spendingTime = spendingTime)
 
-    n = des$overallResults$information*v1
+    n <- des$overallResults$information*v1
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
-      n = uniroot(function(n) f(n) - (1-beta), c(0.5*n, 1.5*n))$root
+      n <- uniroot(function(n) f(n) - (1-beta), c(0.5*n, 1.5*n))$root
     }
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
-    informationRates = round(n*informationRates)/n
+    n <- ceiling(n - 1.0e-12)
+    informationRates <- round(n*informationRates)/n
   }
 
   if (is.na(beta) || rounding) { # calculate power
-    des = getDesignEquiv(
+    des <- getDesignEquiv(
       beta = NA, IMax = n/v1, thetaLower = meanDiffLower,
       thetaUpper = meanDiffUpper, theta = meanDiff,
       kMax = kMax, informationRates = informationRates,
@@ -2957,51 +3023,51 @@ getDesignMeanDiffEquiv <- function(
   }
 
   if (kMax == 1 && !normalApproximation) { # t-test for fixed design
-    power = f(n)
+    power <- f(n)
 
-    b = qt(1-alpha, n-2)
-    ncp = (meanDiffUpper - meanDiffLower)*sqrt(n/v1)
-    attainedAlpha = alpha - pt(b, n-2, ncp)
+    b <- qt(1-alpha, n-2)
+    ncp <- (meanDiffUpper - meanDiffLower)*sqrt(n/v1)
+    attainedAlpha <- alpha - pt(b, n-2, ncp)
 
-    des$overallResults$overallReject = power
-    des$overallResults$attainedAlpha = attainedAlpha
-    des$overallResults$information = n/v1
-    des$overallResults$expectedInformationH1 = n/v1
-    des$overallResults$expectedInformationH0 = n/v1
+    des$overallResults$overallReject <- power
+    des$overallResults$attainedAlpha <- attainedAlpha
+    des$overallResults$information <- n/v1
+    des$overallResults$expectedInformationH1 <- n/v1
+    des$overallResults$expectedInformationH0 <- n/v1
 
-    des$byStageResults$efficacyBounds = b
-    des$byStageResults$rejectPerStage = power
-    des$byStageResults$cumulativeRejection = power
-    des$byStageResults$cumulativeAttainedAlpha = attainedAlpha
-    des$byStageResults$efficacyMeanDiffLower = b*sqrt(v1/n) +
+    des$byStageResults$efficacyBounds <- b
+    des$byStageResults$rejectPerStage <- power
+    des$byStageResults$cumulativeRejection <- power
+    des$byStageResults$cumulativeAttainedAlpha <- attainedAlpha
+    des$byStageResults$efficacyMeanDiffLower <- b*sqrt(v1/n) +
       meanDiffLower
-    des$byStageResults$efficacyMeanDiffUpper = -b*sqrt(v1/n) +
+    des$byStageResults$efficacyMeanDiffUpper <- -b*sqrt(v1/n) +
       meanDiffUpper
-    des$byStageResults$information = n/v1
+    des$byStageResults$information <- n/v1
   } else {
-    des$overallResults$attainedAlpha =
+    des$overallResults$attainedAlpha <-
       des$overallResults$attainedAlphaH10
-    des$overallResults$expectedInformationH0 =
+    des$overallResults$expectedInformationH0 <-
       des$overallResults$expectedInformationH10
 
-    des$byStageResults$cumulativeAttainedAlpha =
+    des$byStageResults$cumulativeAttainedAlpha <-
       des$byStageResults$cumulativeAttainedAlphaH10
-    des$byStageResults$efficacyMeanDiffLower =
+    des$byStageResults$efficacyMeanDiffLower <-
       des$byStageResults$efficacyThetaLower
-    des$byStageResults$efficacyMeanDiffUpper =
+    des$byStageResults$efficacyMeanDiffUpper <-
       des$byStageResults$efficacyThetaUpper
   }
 
 
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*v1
-  des$overallResults$expectedNumberOfSubjectsH0 =
+  des$overallResults$expectedNumberOfSubjectsH0 <-
     des$overallResults$expectedInformationH0*v1
-  des$overallResults$meanDiffLower = meanDiffLower
-  des$overallResults$meanDiffUpper = meanDiffUpper
-  des$overallResults$meanDiff = meanDiff
-  des$overallResults$stDev = stDev
+  des$overallResults$meanDiffLower <- meanDiffLower
+  des$overallResults$meanDiffUpper <- meanDiffUpper
+  des$overallResults$meanDiff <- meanDiff
+  des$overallResults$stDev <- stDev
   des$overallResults <-
     des$overallResults[, c("overallReject", "alpha", "attainedAlpha",
                            "kMax", "information", "expectedInformationH1",
@@ -3010,7 +3076,7 @@ getDesignMeanDiffEquiv <- function(
                            "expectedNumberOfSubjectsH0", "meanDiffLower",
                            "meanDiffUpper", "meanDiff", "stDev")]
 
-  des$byStageResults$numberOfSubjects = n*informationRates
+  des$byStageResults$numberOfSubjects <- n*informationRates
   des$byStageResults <-
     des$byStageResults[, c("informationRates", "efficacyBounds",
                            "rejectPerStage", "cumulativeRejection",
@@ -3019,16 +3085,16 @@ getDesignMeanDiffEquiv <- function(
                            "efficacyMeanDiffUpper", "efficacyP",
                            "information", "numberOfSubjects")]
 
-  des$settings$allocationRatioPlanned = allocationRatioPlanned
-  des$settings$normalApproximation = normalApproximation
-  des$settings$rounding = rounding
+  des$settings$allocationRatioPlanned <- allocationRatioPlanned
+  des$settings$normalApproximation <- normalApproximation
+  des$settings$rounding <- rounding
   des$settings <-
     des$settings[c("typeAlphaSpending", "parameterAlphaSpending",
                    "userAlphaSpending", "spendingTime",
                    "allocationRatioPlanned",
                    "normalApproximation", "rounding")]
 
-  attr(des, "class") = "designMeanDiffEquiv"
+  attr(des, "class") <- "designMeanDiffEquiv"
 
   des
 }
@@ -3227,7 +3293,7 @@ getDesignMeanRatioEquiv <- function(
   }
 
 
-  des = getDesignMeanDiffEquiv(
+  des <- getDesignMeanDiffEquiv(
     beta, n, meanDiffLower = log(meanRatioLower),
     meanDiffUpper = log(meanRatioUpper),
     meanDiff = log(meanRatio),
@@ -3239,25 +3305,25 @@ getDesignMeanRatioEquiv <- function(
     parameterAlphaSpending, userAlphaSpending,
     spendingTime)
 
-  des$overallResults$meanRatioLower = meanRatioLower
-  des$overallResults$meanRatioUpper = meanRatioUpper
-  des$overallResults$meanRatio = meanRatio
-  des$overallResults$CV = CV
+  des$overallResults$meanRatioLower <- meanRatioLower
+  des$overallResults$meanRatioUpper <- meanRatioUpper
+  des$overallResults$meanRatio <- meanRatio
+  des$overallResults$CV <- CV
 
-  des$overallResults$meanDiffLower = NULL
-  des$overallResults$meanDiffUpper = NULL
-  des$overallResults$meanDiff = NULL
-  des$overallResults$stDev = NULL
+  des$overallResults$meanDiffLower <- NULL
+  des$overallResults$meanDiffUpper <- NULL
+  des$overallResults$meanDiff <- NULL
+  des$overallResults$stDev <- NULL
 
-  des$byStageResults$efficacyMeanRatioLower =
+  des$byStageResults$efficacyMeanRatioLower <-
     exp(des$byStageResults$efficacyMeanDiffLower)
-  des$byStageResults$efficacyMeanRatioUpper =
+  des$byStageResults$efficacyMeanRatioUpper <-
     exp(des$byStageResults$efficacyMeanDiffUpper)
 
-  des$byStageResults$efficacyMeanDiffLower = NULL
-  des$byStageResults$efficacyMeanDiffUpper = NULL
+  des$byStageResults$efficacyMeanDiffLower <- NULL
+  des$byStageResults$efficacyMeanDiffUpper <- NULL
 
-  attr(des, "class") = "designMeanRatioEquiv"
+  attr(des, "class") <- "designMeanRatioEquiv"
 
   des
 }
@@ -3472,26 +3538,26 @@ getDesignMeanDiffXOEquiv <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
 
   # variance for one sampling unit
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
-  v1 = stDev^2/(2*r*(1-r))
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
+  v1 <- stDev^2/(2*r*(1-r))
 
   f <- function(n) { # power for two one-sided t-tests
-    b = qt(1-alpha, n-2)
-    ncpLower = (meanDiff - meanDiffLower)*sqrt(n/v1)
-    powerLower = pt(b, n-2, ncpLower, lower.tail = FALSE)
-    ncpUpper = (meanDiffUpper - meanDiff)*sqrt(n/v1)
-    powerUpper = pt(b, n-2, ncpUpper, lower.tail = FALSE)
-    power = powerLower + powerUpper - 1
+    b <- qt(1-alpha, n-2)
+    ncpLower <- (meanDiff - meanDiffLower)*sqrt(n/v1)
+    powerLower <- pt(b, n-2, ncpLower, lower.tail = FALSE)
+    ncpUpper <- (meanDiffUpper - meanDiff)*sqrt(n/v1)
+    powerUpper <- pt(b, n-2, ncpUpper, lower.tail = FALSE)
+    power <- powerLower + powerUpper - 1
     power
   }
 
   if (is.na(n)) { # calculate sample size
-    des = getDesignEquiv(
+    des <- getDesignEquiv(
       beta = beta, IMax = NA, thetaLower = meanDiffLower,
       thetaUpper = meanDiffUpper, theta = meanDiff,
       kMax = kMax, informationRates = informationRates,
@@ -3500,20 +3566,20 @@ getDesignMeanDiffXOEquiv <- function(
       userAlphaSpending = userAlphaSpending,
       spendingTime = spendingTime)
 
-    n = des$overallResults$information*v1
+    n <- des$overallResults$information*v1
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
-      n = uniroot(function(n) f(n) - (1-beta), c(0.5*n, 1.5*n))$root
+      n <- uniroot(function(n) f(n) - (1-beta), c(0.5*n, 1.5*n))$root
     }
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
-    informationRates = round(n*informationRates)/n
+    n <- ceiling(n - 1.0e-12)
+    informationRates <- round(n*informationRates)/n
   }
 
   if (is.na(beta) || rounding) { # calculate power
-    des = getDesignEquiv(
+    des <- getDesignEquiv(
       beta = NA, IMax = n/v1, thetaLower = meanDiffLower,
       thetaUpper = meanDiffUpper, theta = meanDiff,
       kMax = kMax, informationRates = informationRates,
@@ -3524,51 +3590,51 @@ getDesignMeanDiffXOEquiv <- function(
   }
 
   if (kMax == 1 && !normalApproximation) { # t-test for fixed design
-    power = f(n)
+    power <- f(n)
 
-    b = qt(1-alpha, n-2)
-    ncp = (meanDiffUpper - meanDiffLower)*sqrt(n/v1)
-    attainedAlpha = alpha - pt(b, n-2, ncp)
+    b <- qt(1-alpha, n-2)
+    ncp <- (meanDiffUpper - meanDiffLower)*sqrt(n/v1)
+    attainedAlpha <- alpha - pt(b, n-2, ncp)
 
-    des$overallResults$overallReject = power
-    des$overallResults$attainedAlpha = attainedAlpha
-    des$overallResults$information = n/v1
-    des$overallResults$expectedInformationH1 = n/v1
-    des$overallResults$expectedInformationH0 = n/v1
+    des$overallResults$overallReject <- power
+    des$overallResults$attainedAlpha <- attainedAlpha
+    des$overallResults$information <- n/v1
+    des$overallResults$expectedInformationH1 <- n/v1
+    des$overallResults$expectedInformationH0 <- n/v1
 
-    des$byStageResults$efficacyBounds = b
-    des$byStageResults$rejectPerStage = power
-    des$byStageResults$cumulativeRejection = power
-    des$byStageResults$cumulativeAttainedAlpha = attainedAlpha
-    des$byStageResults$efficacyMeanDiffLower = b*sqrt(v1/n) +
+    des$byStageResults$efficacyBounds <- b
+    des$byStageResults$rejectPerStage <- power
+    des$byStageResults$cumulativeRejection <- power
+    des$byStageResults$cumulativeAttainedAlpha <- attainedAlpha
+    des$byStageResults$efficacyMeanDiffLower <- b*sqrt(v1/n) +
       meanDiffLower
-    des$byStageResults$efficacyMeanDiffUpper = -b*sqrt(v1/n) +
+    des$byStageResults$efficacyMeanDiffUpper <- -b*sqrt(v1/n) +
       meanDiffUpper
-    des$byStageResults$information = n/v1
+    des$byStageResults$information <- n/v1
   } else {
-    des$overallResults$attainedAlpha =
+    des$overallResults$attainedAlpha <-
       des$overallResults$attainedAlphaH10
-    des$overallResults$expectedInformationH0 =
+    des$overallResults$expectedInformationH0 <-
       des$overallResults$expectedInformationH10
 
-    des$byStageResults$cumulativeAttainedAlpha =
+    des$byStageResults$cumulativeAttainedAlpha <-
       des$byStageResults$cumulativeAttainedAlphaH10
-    des$byStageResults$efficacyMeanDiffLower =
+    des$byStageResults$efficacyMeanDiffLower <-
       des$byStageResults$efficacyThetaLower
-    des$byStageResults$efficacyMeanDiffUpper =
+    des$byStageResults$efficacyMeanDiffUpper <-
       des$byStageResults$efficacyThetaUpper
   }
 
 
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*v1
-  des$overallResults$expectedNumberOfSubjectsH0 =
+  des$overallResults$expectedNumberOfSubjectsH0 <-
     des$overallResults$expectedInformationH0*v1
-  des$overallResults$meanDiffLower = meanDiffLower
-  des$overallResults$meanDiffUpper = meanDiffUpper
-  des$overallResults$meanDiff = meanDiff
-  des$overallResults$stDev = stDev
+  des$overallResults$meanDiffLower <- meanDiffLower
+  des$overallResults$meanDiffUpper <- meanDiffUpper
+  des$overallResults$meanDiff <- meanDiff
+  des$overallResults$stDev <- stDev
   des$overallResults <-
     des$overallResults[, c("overallReject", "alpha", "attainedAlpha",
                            "kMax", "information", "expectedInformationH1",
@@ -3577,7 +3643,7 @@ getDesignMeanDiffXOEquiv <- function(
                            "expectedNumberOfSubjectsH0", "meanDiffLower",
                            "meanDiffUpper", "meanDiff", "stDev")]
 
-  des$byStageResults$numberOfSubjects = n*informationRates
+  des$byStageResults$numberOfSubjects <- n*informationRates
   des$byStageResults <-
     des$byStageResults[, c("informationRates", "efficacyBounds",
                            "rejectPerStage", "cumulativeRejection",
@@ -3586,16 +3652,16 @@ getDesignMeanDiffXOEquiv <- function(
                            "efficacyMeanDiffUpper", "efficacyP",
                            "information", "numberOfSubjects")]
 
-  des$settings$allocationRatioPlanned = allocationRatioPlanned
-  des$settings$normalApproximation = normalApproximation
-  des$settings$rounding = rounding
+  des$settings$allocationRatioPlanned <- allocationRatioPlanned
+  des$settings$normalApproximation <- normalApproximation
+  des$settings$rounding <- rounding
   des$settings <-
     des$settings[c("typeAlphaSpending", "parameterAlphaSpending",
                    "userAlphaSpending", "spendingTime",
                    "allocationRatioPlanned",
                    "normalApproximation", "rounding")]
 
-  attr(des, "class") = "designMeanDiffXOEquiv"
+  attr(des, "class") <- "designMeanDiffXOEquiv"
 
   des
 }
@@ -3793,7 +3859,7 @@ getDesignMeanRatioXOEquiv <- function(
   }
 
 
-  des = getDesignMeanDiffXOEquiv(
+  des <- getDesignMeanDiffXOEquiv(
     beta, n, meanDiffLower = log(meanRatioLower),
     meanDiffUpper = log(meanRatioUpper),
     meanDiff = log(meanRatio),
@@ -3805,25 +3871,25 @@ getDesignMeanRatioXOEquiv <- function(
     parameterAlphaSpending, userAlphaSpending,
     spendingTime)
 
-  des$overallResults$meanRatioLower = meanRatioLower
-  des$overallResults$meanRatioUpper = meanRatioUpper
-  des$overallResults$meanRatio = meanRatio
-  des$overallResults$CV = CV
+  des$overallResults$meanRatioLower <- meanRatioLower
+  des$overallResults$meanRatioUpper <- meanRatioUpper
+  des$overallResults$meanRatio <- meanRatio
+  des$overallResults$CV <- CV
 
-  des$overallResults$meanDiffLower = NULL
-  des$overallResults$meanDiffUpper = NULL
-  des$overallResults$meanDiff = NULL
-  des$overallResults$stDev = NULL
+  des$overallResults$meanDiffLower <- NULL
+  des$overallResults$meanDiffUpper <- NULL
+  des$overallResults$meanDiff <- NULL
+  des$overallResults$stDev <- NULL
 
-  des$byStageResults$efficacyMeanRatioLower =
+  des$byStageResults$efficacyMeanRatioLower <-
     exp(des$byStageResults$efficacyMeanDiffLower)
-  des$byStageResults$efficacyMeanRatioUpper =
+  des$byStageResults$efficacyMeanRatioUpper <-
     exp(des$byStageResults$efficacyMeanDiffUpper)
 
-  des$byStageResults$efficacyMeanDiffLower = NULL
-  des$byStageResults$efficacyMeanDiffUpper = NULL
+  des$byStageResults$efficacyMeanDiffLower <- NULL
+  des$byStageResults$efficacyMeanDiffUpper <- NULL
 
-  attr(des, "class") = "designMeanRatioXOEquiv"
+  attr(des, "class") <- "designMeanRatioXOEquiv"
 
   des
 }
@@ -3854,6 +3920,8 @@ getDesignMeanRatioXOEquiv <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility bounds on the conditional power scale.
+#' @param futilitypLarger The futility bounds on the pLarger scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -4040,6 +4108,8 @@ getDesignWilcoxon <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilitypLarger = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -4074,92 +4144,101 @@ getDesignWilcoxon <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
+  if (!anyNA(futilitypLarger) &&
+      (futilitypLarger <= 0 || futilitypLarger >= 1)) {
+    stop("futilitypLarger must lie between 0 and 1")
+  }
 
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
 
-  directionUpper = pLarger > 0.5
+  directionUpper <- pLarger > 0.5
 
-  theta = ifelse(directionUpper, pLarger - 0.5, 0.5 - pLarger)
+  theta <- ifelse(directionUpper, pLarger - 0.5, 0.5 - pLarger)
+  if (directionUpper) {
+    futilityTheta <- futilitypLarger - 0.5
+  } else {
+    futilityTheta <- 0.5 - futilitypLarger
+  }
 
   # variance for one sampling unit
-  v1 = 1/(12*r*(1-r))
+  v1 <- 1/(12*r*(1-r))
 
   if (is.na(beta)) { # power calculation
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- round(n*informationRates)/n
     }
 
-    des = getDesign(
+    des <- getDesign(
       beta = NA, IMax = n/v1, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, 1)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, 1)
   } else { # sample size calculation
-    des = getDesign(
+    des <- getDesign(
       beta, IMax = NA, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, 1)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, 1)
 
-    n = des$overallResults$information*v1
+    n <- des$overallResults$information*v1
 
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = des$byStageResults$informationRates
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- des$byStageResults$informationRates
+      informationRates <- round(n*informationRates)/n
 
-      des = getDesign(
+      des <- getDesign(
         beta = NA, IMax = n/v1, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, 1)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, 1)
     }
   }
 
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*v1
-  des$overallResults$expectedNumberOfSubjectsH0 =
+  des$overallResults$expectedNumberOfSubjectsH0 <-
     des$overallResults$expectedInformationH0*v1
-  des$overallResults$pLarger = pLarger
+  des$overallResults$pLarger <- pLarger
 
   if (directionUpper) {
-    des$byStageResults$efficacyPLarger =
+    des$byStageResults$efficacyPLarger <-
       des$byStageResults$efficacyTheta + 0.5
-    des$byStageResults$futilityPLarger =
+    des$byStageResults$futilityPLarger <-
       des$byStageResults$futilityTheta + 0.5
   } else {
-    des$byStageResults$efficacyPLarger =
+    des$byStageResults$efficacyPLarger <-
       -des$byStageResults$efficacyTheta + 0.5
-    des$byStageResults$futilityPLarger =
+    des$byStageResults$futilityPLarger <-
       -des$byStageResults$futilityTheta + 0.5
   }
-  des$byStageResults$efficacyTheta = NULL
-  des$byStageResults$futilityTheta = NULL
-  des$byStageResults$numberOfSubjects =
+  des$byStageResults$efficacyTheta <- NULL
+  des$byStageResults$futilityTheta <- NULL
+  des$byStageResults$numberOfSubjects <-
     des$byStageResults$informationRates*n
 
-  des$settings$allocationRatioPlanned = allocationRatioPlanned
-  des$settings$rounding = rounding
-  des$settings$varianceRatio = NULL
+  des$settings$allocationRatioPlanned <- allocationRatioPlanned
+  des$settings$rounding <- rounding
+  des$settings$varianceRatio <- NULL
 
-  attr(des, "class") = "designWilcoxon"
+  attr(des, "class") <- "designWilcoxon"
 
   des
 }
@@ -4209,6 +4288,8 @@ getDesignWilcoxon <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility bounds on the conditional power scale.
+#' @param futilityMeanDiff The futility bounds on the mean difference scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -4506,12 +4587,14 @@ getDesignMeanDiffMMRM <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilityMeanDiff = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
     spendingTime = NA_real_) {
 
-  nintervals = length(piecewiseSurvivalTime)
+  nintervals <- length(piecewiseSurvivalTime)
 
   if (is.na(beta) && is.na(accrualDuration)) {
     stop("beta and accrualDuration cannot be both missing")
@@ -4540,7 +4623,7 @@ getDesignMeanDiffMMRM <- function(
   }
 
   if (any(is.na(covar2))) {
-    covar2 = covar1
+    covar2 <- covar1
   } else if (!all(eigen(covar2)$values > 0)) {
     stop("covar2 must be positive definite")
   }
@@ -4590,11 +4673,11 @@ getDesignMeanDiffMMRM <- function(
   }
 
   if (length(gamma1) == 1) {
-    gamma1 = rep(gamma1, nintervals)
+    gamma1 <- rep(gamma1, nintervals)
   }
 
   if (length(gamma2) == 1) {
-    gamma2 = rep(gamma2, nintervals)
+    gamma2 <- rep(gamma2, nintervals)
   }
 
   if (!is.na(accrualDuration) && accrualDuration <= 0) {
@@ -4610,17 +4693,22 @@ getDesignMeanDiffMMRM <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
 
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
 
-  directionUpper = meanDiff > meanDiffH0
+  directionUpper <- meanDiff > meanDiffH0
 
-  theta = ifelse(directionUpper, meanDiff - meanDiffH0,
-                 meanDiffH0 - meanDiff)
+  theta <- ifelse(directionUpper, meanDiff - meanDiffH0,
+                  meanDiffH0 - meanDiff)
 
+  if (directionUpper) {
+    futilityTheta <- futilityMeanDiff - meanDiffH0
+  } else {
+    futilityTheta <- meanDiffH0 - futilityMeanDiff
+  }
 
   # function to obtain the info for mean difference
   f_info <- function(tau, k, t, covar1, covar2, accrualTime,
@@ -4628,47 +4716,47 @@ getDesignMeanDiffMMRM <- function(
                      gamma1, gamma2, accrualDuration, r) {
 
     # total number of enrolled subjects at interim analysis
-    n = accrual(tau, accrualTime, accrualIntensity, accrualDuration)
+    n <- accrual(tau, accrualTime, accrualIntensity, accrualDuration)
 
     # total number of enrolled subjects at each time point
-    ns = accrual(tau - t, accrualTime, accrualIntensity, accrualDuration)
+    ns <- accrual(tau - t, accrualTime, accrualIntensity, accrualDuration)
 
     # probability of not dropping out at each time point by treatment
-    q1 = ptpwexp(t, piecewiseSurvivalTime, gamma1, lower.tail = FALSE)
-    q2 = ptpwexp(t, piecewiseSurvivalTime, gamma2, lower.tail = FALSE)
+    q1 <- ptpwexp(t, piecewiseSurvivalTime, gamma1, lower.tail = FALSE)
+    q2 <- ptpwexp(t, piecewiseSurvivalTime, gamma2, lower.tail = FALSE)
 
     # number of subjects remaining at each time point by treatment
-    m1 = r*ns*q1
-    m2 = (1-r)*ns*q2
+    m1 <- r*ns*q1
+    m2 <- (1-r)*ns*q2
 
     # number of subjects dropping out at each time point by treatment
-    n1 = c(-diff(m1), m1[k])
-    n2 = c(-diff(m2), m2[k])
+    n1 <- c(-diff(m1), m1[k])
+    n2 <- c(-diff(m2), m2[k])
 
     # information matrix in each treatment group
-    I1 = 0
-    I2 = 0
-    I = matrix(0, k, k)
+    I1 <- 0
+    I2 <- 0
+    I <- matrix(0, k, k)
     for (j in 1:k) {
-      I[1:j, 1:j] = solve(covar1[1:j, 1:j])
-      I1 = I1 + n1[j]*I
-      I[1:j, 1:j] = solve(covar2[1:j, 1:j])
-      I2 = I2 + n2[j]*I
+      I[1:j, 1:j] <- solve(covar1[1:j, 1:j])
+      I1 <- I1 + n1[j]*I
+      I[1:j, 1:j] <- solve(covar2[1:j, 1:j])
+      I2 <- I2 + n2[j]*I
     }
 
     # variance for the treatment mean at the last time point by treatment
-    V1 = solve(I1)
-    V2 = solve(I2)
+    V1 <- solve(I1)
+    V2 <- solve(I2)
 
     # information for treatment difference
-    IMax = 1/(V1[k,k] + V2[k,k])
+    IMax <- 1/(V1[k,k] + V2[k,k])
 
     # variance for treatment difference for one sampling unit
-    v1 = (V1[k,k] + V2[k,k])*n
+    v1 <- (V1[k,k] + V2[k,k])*n
 
     # inflation factors for each treatment
-    phi1 = V1[k,k]/(covar1[k,k]/(r*n))
-    phi2 = V2[k,k]/(covar2[k,k]/((1-r)*n))
+    phi1 <- V1[k,k]/(covar1[k,k]/(r*n))
+    phi2 <- V2[k,k]/(covar2[k,k]/((1-r)*n))
 
     # information for treatment mean difference at the last time point
     list(IMax = IMax, v1 = v1, phi1 = phi1, phi2 = phi2)
@@ -4677,184 +4765,184 @@ getDesignMeanDiffMMRM <- function(
 
   # power calculation
   if (is.na(beta)) {
-    n = accrual(accrualDuration, accrualTime, accrualIntensity,
-                accrualDuration)
+    n <- accrual(accrualDuration, accrualTime, accrualIntensity,
+                 accrualDuration)
 
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      accrualDuration = getAccrualDurationFromN(n, accrualTime,
-                                                accrualIntensity)
+      n <- ceiling(n - 1.0e-12)
+      accrualDuration <- getAccrualDurationFromN(n, accrualTime,
+                                                 accrualIntensity)
     }
 
-    studyDuration = accrualDuration + t[k]
-    out = f_info(studyDuration, k, t, covar1, covar2, accrualTime,
-                 accrualIntensity, piecewiseSurvivalTime,
-                 gamma1, gamma2, accrualDuration, r)
-    IMax = out$IMax
-    phi1 = out$phi1
-    phi2 = out$phi2
+    studyDuration <- accrualDuration + t[k]
+    out <- f_info(studyDuration, k, t, covar1, covar2, accrualTime,
+                  accrualIntensity, piecewiseSurvivalTime,
+                  gamma1, gamma2, accrualDuration, r)
+    IMax <- out$IMax
+    phi1 <- out$phi1
+    phi2 <- out$phi2
 
-    des = getDesign(
+    des <- getDesign(
       beta = NA, IMax, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, 1)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, 1)
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
-      nu = n*r/phi1 + n*(1-r)/phi2 - 2
-      b = qt(1-alpha, nu)
-      ncp = theta*sqrt(IMax)
-      power = pt(b, nu, ncp, lower.tail = FALSE)
+      nu <- n*r/phi1 + n*(1-r)/phi2 - 2
+      b <- qt(1-alpha, nu)
+      ncp <- theta*sqrt(IMax)
+      power <- pt(b, nu, ncp, lower.tail = FALSE)
 
-      des$overallResults$overallReject = power
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
+      des$overallResults$overallReject <- power
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
 
-      delta = b/sqrt(IMax)
+      delta <- b/sqrt(IMax)
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff = delta + meanDiffH0
-        des$byStageResults$futilityMeanDiff = delta + meanDiffH0
+        des$byStageResults$efficacyMeanDiff <- delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff <- delta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff = -delta + meanDiffH0
-        des$byStageResults$futilityMeanDiff = -delta + meanDiffH0
+        des$byStageResults$efficacyMeanDiff <- -delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff <- -delta + meanDiffH0
       }
     } else {
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff =
+        des$byStageResults$efficacyMeanDiff <-
           des$byStageResults$efficacyTheta + meanDiffH0
-        des$byStageResults$futilityMeanDiff =
+        des$byStageResults$futilityMeanDiff <-
           des$byStageResults$futilityTheta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff =
+        des$byStageResults$efficacyMeanDiff <-
           -des$byStageResults$efficacyTheta + meanDiffH0
-        des$byStageResults$futilityMeanDiff =
+        des$byStageResults$futilityMeanDiff <-
           -des$byStageResults$futilityTheta + meanDiffH0
       }
     }
   } else { # sample size calculation
-    des = getDesign(
+    des <- getDesign(
       beta, IMax = NA, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, 1)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, 1)
 
-    IMax = des$overallResults$information
+    IMax <- des$overallResults$information
 
     # v1, phi1, phi2 for the last time point are not affected by the
     # accrual duration if everyone has a chance to complete the study
-    out = f_info(1 + t[k], k, t, covar1, covar2, accrualTime,
-                 accrualIntensity, piecewiseSurvivalTime,
-                 gamma1, gamma2, 1, r)
-    v1 = out$v1
-    phi1 = out$phi1
-    phi2 = out$phi2
+    out <- f_info(1 + t[k], k, t, covar1, covar2, accrualTime,
+                  accrualIntensity, piecewiseSurvivalTime,
+                  gamma1, gamma2, 1, r)
+    v1 <- out$v1
+    phi1 <- out$phi1
+    phi2 <- out$phi2
 
-    n = IMax*v1
+    n <- IMax*v1
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
       # power for t-test
-      f = function(n, r, phi1, phi2, alpha, theta, v1) {
-        nu = n*r/phi1 + n*(1-r)/phi2 - 2
-        b = qt(1-alpha, nu)
-        ncp = theta*sqrt(n/v1)
+      f <- function(n, r, phi1, phi2, alpha, theta, v1) {
+        nu <- n*r/phi1 + n*(1-r)/phi2 - 2
+        b <- qt(1-alpha, nu)
+        ncp <- theta*sqrt(n/v1)
         pt(b, nu, ncp, lower.tail = FALSE)
       }
 
-      n = uniroot(function(n) {
+      n <- uniroot(function(n) {
         f(n, r, phi1, phi2, alpha, theta, v1) - (1-beta)
       }, c(0.5*n, 1.5*n))$root
 
       if (rounding) {
-        n = ceiling(n - 1.0e-12)
+        n <- ceiling(n - 1.0e-12)
       }
 
       if (is.na(accrualDuration)) {
-        accrualDuration = getAccrualDurationFromN(n, accrualTime,
-                                                  accrualIntensity)
+        accrualDuration <- getAccrualDurationFromN(n, accrualTime,
+                                                   accrualIntensity)
       } else { # calculate accrualIntensity
-        accrualIntensity = uniroot(function(x) {
+        accrualIntensity <- uniroot(function(x) {
           accrual(accrualDuration, accrualTime, x*accrualIntensity,
                   accrualDuration) - n
         }, c(0.001, 240))$root*accrualIntensity
       }
 
       # final maximum information
-      IMax = n/v1
-      power = f(n, r, phi1, phi2, alpha, theta, v1)
+      IMax <- n/v1
+      power <- f(n, r, phi1, phi2, alpha, theta, v1)
 
-      des$overallResults$overallReject = power
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
+      des$overallResults$overallReject <- power
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
 
-      delta = b/sqrt(IMax)
+      delta <- b/sqrt(IMax)
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff = delta + meanDiffH0
-        des$byStageResults$futilityMeanDiff = delta + meanDiffH0
+        des$byStageResults$efficacyMeanDiff <- delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff <- delta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff = -delta + meanDiffH0
-        des$byStageResults$futilityMeanDiff = -delta + meanDiffH0
+        des$byStageResults$efficacyMeanDiff <- -delta + meanDiffH0
+        des$byStageResults$futilityMeanDiff <- -delta + meanDiffH0
       }
     } else {
       if (rounding) {
-        n = ceiling(n - 1.0e-12)
+        n <- ceiling(n - 1.0e-12)
       }
 
       if (is.na(accrualDuration)) {
-        accrualDuration = getAccrualDurationFromN(n, accrualTime,
-                                                  accrualIntensity)
+        accrualDuration <- getAccrualDurationFromN(n, accrualTime,
+                                                   accrualIntensity)
       } else { # calculate accrualIntensity
-        accrualIntensity = uniroot(function(x) {
+        accrualIntensity <- uniroot(function(x) {
           accrual(accrualDuration, accrualTime, x*accrualIntensity,
                   accrualDuration) - n
         }, c(0.001, 240))$root*accrualIntensity
       }
 
       # final maximum information
-      IMax = n/v1
+      IMax <- n/v1
 
-      des = getDesign(
+      des <- getDesign(
         beta = NA, IMax, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, 1)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, 1)
 
       if (directionUpper) {
-        des$byStageResults$efficacyMeanDiff =
+        des$byStageResults$efficacyMeanDiff <-
           des$byStageResults$efficacyTheta + meanDiffH0
-        des$byStageResults$futilityMeanDiff =
+        des$byStageResults$futilityMeanDiff <-
           des$byStageResults$futilityTheta + meanDiffH0
       } else {
-        des$byStageResults$efficacyMeanDiff =
+        des$byStageResults$efficacyMeanDiff <-
           -des$byStageResults$efficacyTheta + meanDiffH0
-        des$byStageResults$futilityMeanDiff =
+        des$byStageResults$futilityMeanDiff <-
           -des$byStageResults$futilityTheta + meanDiffH0
       }
     }
@@ -4862,67 +4950,67 @@ getDesignMeanDiffMMRM <- function(
 
 
   # timing of interim analysis
-  studyDuration = accrualDuration + t[k]
-  information = IMax*informationRates
-  analysisTime = rep(0, kMax)
+  studyDuration <- accrualDuration + t[k]
+  information <- IMax*informationRates
+  analysisTime <- rep(0, kMax)
 
   if (kMax > 1) {
     for (i in 1:(kMax-1)) {
-      analysisTime[i] = uniroot(function(tau) {
-        out = f_info(tau, k, t, covar1, covar2, accrualTime,
-                     accrualIntensity, piecewiseSurvivalTime,
-                     gamma1, gamma2, accrualDuration, r)
+      analysisTime[i] <- uniroot(function(tau) {
+        out <- f_info(tau, k, t, covar1, covar2, accrualTime,
+                      accrualIntensity, piecewiseSurvivalTime,
+                      gamma1, gamma2, accrualDuration, r)
         out$IMax - information[i]
       }, c(t[k]+0.001, studyDuration))$root # at least 1 completer
     }
   }
 
-  analysisTime[kMax] = studyDuration
+  analysisTime[kMax] <- studyDuration
 
-  numberOfSubjects = accrual(analysisTime, accrualTime, accrualIntensity,
-                             accrualDuration)
-  numberOfCompleters = accrual(analysisTime - t[k], accrualTime,
-                               accrualIntensity, accrualDuration)
+  numberOfSubjects <- accrual(analysisTime, accrualTime, accrualIntensity,
+                              accrualDuration)
+  numberOfCompleters <- accrual(analysisTime - t[k], accrualTime,
+                                accrualIntensity, accrualDuration)
 
-  p = des$byStageResults$rejectPerStage +
+  p <- des$byStageResults$rejectPerStage +
     des$byStageResults$futilityPerStage
 
-  pH0 = des$byStageResults$rejectPerStageH0 +
+  pH0 <- des$byStageResults$rejectPerStageH0 +
     des$byStageResults$futilityPerStageH0
 
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$studyDuration = studyDuration
-  des$overallResults$expectedNumberOfSubjectsH1 = sum(p*numberOfSubjects)
-  des$overallResults$expectedNumberOfSubjectsH0 = sum(pH0*numberOfSubjects)
-  des$overallResults$expectedStudyDurationH1 = sum(p*analysisTime)
-  des$overallResults$expectedStudyDurationH0 = sum(pH0*analysisTime)
-  des$overallResults$accrualDuration = accrualDuration
-  des$overallResults$followupTime = t[k]
-  des$overallResults$fixedFollowup = TRUE
-  des$overallResults$meanDiffH0 = meanDiffH0
-  des$overallResults$meanDiff = meanDiff
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$studyDuration <- studyDuration
+  des$overallResults$expectedNumberOfSubjectsH1 <- sum(p*numberOfSubjects)
+  des$overallResults$expectedNumberOfSubjectsH0 <- sum(pH0*numberOfSubjects)
+  des$overallResults$expectedStudyDurationH1 <- sum(p*analysisTime)
+  des$overallResults$expectedStudyDurationH0 <- sum(pH0*analysisTime)
+  des$overallResults$accrualDuration <- accrualDuration
+  des$overallResults$followupTime <- t[k]
+  des$overallResults$fixedFollowup <- TRUE
+  des$overallResults$meanDiffH0 <- meanDiffH0
+  des$overallResults$meanDiff <- meanDiff
 
-  des$byStageResults$numberOfSubjects = numberOfSubjects
-  des$byStageResults$numberOfCompleters = numberOfCompleters
-  des$byStageResults$analysisTime = analysisTime
-  des$byStageResults$efficacyTheta = NULL
-  des$byStageResults$futilityTheta = NULL
+  des$byStageResults$numberOfSubjects <- numberOfSubjects
+  des$byStageResults$numberOfCompleters <- numberOfCompleters
+  des$byStageResults$analysisTime <- analysisTime
+  des$byStageResults$efficacyTheta <- NULL
+  des$byStageResults$futilityTheta <- NULL
 
-  des$settings$allocationRatioPlanned = allocationRatioPlanned
-  des$settings$accrualTime = accrualTime
-  des$settings$accrualIntensity = accrualIntensity
-  des$settings$piecewiseSurvivalTime = piecewiseSurvivalTime
-  des$settings$gamma1 = gamma1
-  des$settings$gamma2 = gamma2
-  des$settings$k = k
-  des$settings$t = t
-  des$settings$covar1 = covar1
-  des$settings$covar2 = covar2
-  des$settings$normalApproximation = normalApproximation
-  des$settings$rounding = rounding
-  des$settings$varianceRatio = NULL
+  des$settings$allocationRatioPlanned <- allocationRatioPlanned
+  des$settings$accrualTime <- accrualTime
+  des$settings$accrualIntensity <- accrualIntensity
+  des$settings$piecewiseSurvivalTime <- piecewiseSurvivalTime
+  des$settings$gamma1 <- gamma1
+  des$settings$gamma2 <- gamma2
+  des$settings$k <- k
+  des$settings$t <- t
+  des$settings$covar1 <- covar1
+  des$settings$covar2 <- covar2
+  des$settings$normalApproximation <- normalApproximation
+  des$settings$rounding <- rounding
+  des$settings$varianceRatio <- NULL
 
-  attr(des, "class") = "designMeanDiffMMRM"
+  attr(des, "class") <- "designMeanDiffMMRM"
 
   des
 }
@@ -5102,7 +5190,7 @@ getDesignMeanDiffMMRM <- function(
 #'
 #' # Williams design for 4 treatments
 #'
-#' (design1 = getDesignMeanDiffCarryover(
+#' (design1 <- getDesignMeanDiffCarryover(
 #'   beta = 0.2, n = NA,
 #'   meanDiff = 0.5, stDev = 1,
 #'   design = matrix(c(1, 4, 2, 3,
@@ -5158,9 +5246,9 @@ getDesignMeanDiffCarryover <- function(
     stop("design must be provided")
   }
 
-  nseq = nrow(design)
-  nprd = ncol(design)
-  ntrt = length(unique(c(design)))
+  nseq <- nrow(design)
+  nprd <- ncol(design)
+  ntrt <- length(unique(c(design)))
 
   if (any(design <= 0 | design != round(design)) ||
       !all.equal(sort(unique(c(design))), 1:ntrt)) {
@@ -5169,7 +5257,7 @@ getDesignMeanDiffCarryover <- function(
   }
 
   if (any(is.na(trtpair))) {
-    trtpair = c(1, ntrt)
+    trtpair <- c(1, ntrt)
   } else if (length(trtpair) != 2 ||
              trtpair[1] == trtpair[2] ||
              !all(trtpair %in% 1:ntrt)) {
@@ -5179,23 +5267,23 @@ getDesignMeanDiffCarryover <- function(
 
   # number of model parameters consisting of the intercept, sequence effects,
   # period effects, direct treatment effects, and carryover treatment effects
-  q = 1 + (nseq-1) + (nprd-1) + (ntrt-1) + (ntrt-1)
+  q <- 1 + (nseq-1) + (nprd-1) + (ntrt-1) + (ntrt-1)
 
   # number of model parameters consisting of the intercept, sequence effects,
   # period effects, and direct treatment effects
-  q0 = 1 + (nseq-1) + (nprd-1) + (ntrt-1)
+  q0 <- 1 + (nseq-1) + (nprd-1) + (ntrt-1)
 
   # offset of direct treatment effect
-  l = 1 + (nseq-1) + (nprd-1)
+  l <- 1 + (nseq-1) + (nprd-1)
 
   # start of direct treatment effect
-  l1 = l + 1
+  l1 <- l + 1
 
   # end of direct treatment effect
-  m = 1 + (nseq-1) + (nprd-1) + (ntrt-1)
+  m <- 1 + (nseq-1) + (nprd-1) + (ntrt-1)
 
   if (any(is.na(cumdrop))) {
-    cumdrop = rep(0, nprd)
+    cumdrop <- rep(0, nprd)
   } else if (length(cumdrop) != nprd) {
     stop(paste("cumdrop should have", nprd, "elements"))
   }
@@ -5209,11 +5297,11 @@ getDesignMeanDiffCarryover <- function(
   }
 
   # observed data pattern probabilities
-  p = diff(c(cumdrop, 1))
+  p <- diff(c(cumdrop, 1))
 
 
   if (any(is.na(allocationRatioPlanned))) {
-    allocationRatioPlanned = rep(1, nrow(design))
+    allocationRatioPlanned <- rep(1, nrow(design))
   }
 
   if (length(allocationRatioPlanned) != nseq-1 &&
@@ -5223,7 +5311,7 @@ getDesignMeanDiffCarryover <- function(
   }
 
   if (length(allocationRatioPlanned) == nseq-1) {
-    allocationRatioPlanned = c(allocationRatioPlanned, 1)
+    allocationRatioPlanned <- c(allocationRatioPlanned, 1)
   }
 
   if (any(allocationRatioPlanned <= 0)) {
@@ -5236,82 +5324,82 @@ getDesignMeanDiffCarryover <- function(
 
 
   # treatment sequence randomization probabilities
-  r = allocationRatioPlanned/sum(allocationRatioPlanned)
+  r <- allocationRatioPlanned/sum(allocationRatioPlanned)
 
-  directionUpper = meanDiff > meanDiffH0
+  directionUpper <- meanDiff > meanDiffH0
 
-  theta = ifelse(directionUpper, meanDiff - meanDiffH0,
-                 meanDiffH0 - meanDiff)
+  theta <- ifelse(directionUpper, meanDiff - meanDiffH0,
+                  meanDiffH0 - meanDiff)
 
   # compound symmetry covariance matrix for repeated measures
-  Sigma = stDev^2/(1-corr) * ((1-corr)*diag(nprd) + corr)
+  Sigma <- stDev^2/(1-corr) * ((1-corr)*diag(nprd) + corr)
 
   # model design matrix with carryover effect
-  X = matrix(0, nseq*nprd, q)
-  X[,1] = 1
+  X <- matrix(0, nseq*nprd, q)
+  X[,1] <- 1
   for (i in 1:nseq) {
     for (j in 1:nprd) {
-      k = (i-1)*nprd + j
+      k <- (i-1)*nprd + j
 
       # sequence effects
       if (i < nseq) {
-        X[k, 1 + i] = 1
+        X[k, 1 + i] <- 1
       }
 
       # period effects
       if (j < nprd) {
-        X[k, 1 + (nseq-1) + j] = 1
+        X[k, 1 + (nseq-1) + j] <- 1
       }
 
       # direct treatment effects
       if (design[i,j] < ntrt) {
-        X[k, 1 + (nseq-1) + (nprd-1) + design[i,j]] = 1
+        X[k, 1 + (nseq-1) + (nprd-1) + design[i,j]] <- 1
       }
 
       # carryover treatment effects
       if (j > 1 && design[i,j-1] < ntrt) {
-        X[k, 1 + (nseq-1) + (nprd-1) + (ntrt-1) + design[i,j-1]] = 1
+        X[k, 1 + (nseq-1) + (nprd-1) + (ntrt-1) + design[i,j-1]] <- 1
       }
     }
   }
 
   # singular values of X
-  d = svdcpp(X, outtransform = FALSE, decreasing = FALSE)$d
-  tol = max(dim(X))*.Machine$double.eps
+  d <- svdcpp(X, outtransform = FALSE, decreasing = FALSE)$d
+  tol <- max(dim(X))*.Machine$double.eps
   if (carryover && sum(d >= tol * max(d)) < q) {
     stop("The crossover design is overparameterized for carryover effects")
   }
 
   if (carryover) {
     # information matrix for model parameters with carryover effects
-    I = 0
+    I <- 0
     for (i in 1:nseq) {
-      offset = (i-1)*nprd
-      J = 0
+      offset <- (i-1)*nprd
+      J <- 0
       for (j in 1:nprd) {
-        idx = offset + (1:j)
+        idx <- offset + (1:j)
 
         if (j==1) {
-          x = t(as.matrix(X[idx,]))
+          x <- t(as.matrix(X[idx,]))
         } else {
-          x = X[idx,]
+          x <- X[idx,]
         }
 
-        J = J + p[j]*t(x) %*% solve(Sigma[1:j,1:j]) %*% x
+        J <- J + p[j]*t(x) %*% solve(Sigma[1:j,1:j]) %*% x
       }
-      I = I + r[i]*J
+      I <- I + r[i]*J
     }
 
     # covariance matrix for model parameters with carryover effects
-    V = solve(I)
+    V <- solve(I)
 
     # variance for direct treatment effect for one sampling unit with carryover
     if (trtpair[2]==ntrt) {
-      v1 = V[l+trtpair[1], l+trtpair[1]]
+      v1 <- V[l+trtpair[1], l+trtpair[1]]
     } else if (trtpair[1]==ntrt) {
-      v1 = V[l+trtpair[2], l+trtpair[2]]
+      v1 <- V[l+trtpair[2], l+trtpair[2]]
     } else {
-      v1 = V[l+trtpair[1], l+trtpair[1]] +
+      v1 <- V[l+trtpair[1], l+trtpair[1]] +
         V[l+trtpair[2], l+trtpair[2]] -
         2*V[l+trtpair[1], l+trtpair[2]]
     }
@@ -5319,11 +5407,11 @@ getDesignMeanDiffCarryover <- function(
 
     # variance for carryover treatment effect for one sampling unit
     if (trtpair[2]==ntrt) {
-      v2 = V[m+trtpair[1], m+trtpair[1]]
+      v2 <- V[m+trtpair[1], m+trtpair[1]]
     } else if (trtpair[1]==ntrt) {
-      v2 = V[m+trtpair[2], m+trtpair[2]]
+      v2 <- V[m+trtpair[2], m+trtpair[2]]
     } else {
-      v2 = V[m+trtpair[1], m+trtpair[1]] +
+      v2 <- V[m+trtpair[1], m+trtpair[1]] +
         V[m+trtpair[2], m+trtpair[2]] -
         2*V[m+trtpair[1], m+trtpair[2]]
     }
@@ -5331,99 +5419,99 @@ getDesignMeanDiffCarryover <- function(
 
 
   # design matrix for model parameters without carryover effects
-  X0 = X[, 1:m]
+  X0 <- X[, 1:m]
   if (!carryover) {
     # singular values of X0
-    d0 = svdcpp(X0, outtransform = FALSE, decreasing = FALSE)$d
-    tol0 = max(dim(X0))*.Machine$double.eps
+    d0 <- svdcpp(X0, outtransform = FALSE, decreasing = FALSE)$d
+    tol0 <- max(dim(X0))*.Machine$double.eps
     if (sum(d0 >= tol0 * max(d0)) < q0) {
       stop("The crossover design is overparameterized")
     }
   }
 
   # information matrix for model parameters without carryover effects
-  I0 = 0
+  I0 <- 0
   for (i in 1:nseq) {
-    offset = (i-1)*nprd
-    J = 0
+    offset <- (i-1)*nprd
+    J <- 0
     for (j in 1:nprd) {
-      idx = offset+(1:j)
+      idx <- offset+(1:j)
 
       if (j==1) {
-        x = t(as.matrix(X0[idx,]))
+        x <- t(as.matrix(X0[idx,]))
       } else {
-        x = X0[idx,]
+        x <- X0[idx,]
       }
 
-      J = J + p[j]*t(x) %*% solve(Sigma[1:j,1:j]) %*% x
+      J <- J + p[j]*t(x) %*% solve(Sigma[1:j,1:j]) %*% x
     }
-    I0 = I0 + r[i]*J
+    I0 <- I0 + r[i]*J
   }
 
   # covariance matrix for model parameters without carryover effects
-  V0 = solve(I0)
+  V0 <- solve(I0)
 
   # variance for direct treatment effect for one sampling unit w/o carryover
   if (trtpair[2]==ntrt) {
-    v0 = V0[l+trtpair[1], l+trtpair[1]]
+    v0 <- V0[l+trtpair[1], l+trtpair[1]]
   } else if (trtpair[1]==ntrt) {
-    v0 = V0[l+trtpair[2], l+trtpair[2]]
+    v0 <- V0[l+trtpair[2], l+trtpair[2]]
   } else {
-    v0 = V0[l+trtpair[1], l+trtpair[1]] +
+    v0 <- V0[l+trtpair[1], l+trtpair[1]] +
       V0[l+trtpair[2], l+trtpair[2]] -
       2*V0[l+trtpair[1], l+trtpair[2]]
   }
 
   if (carryover) {
-    v = v1
+    v <- v1
   } else {
-    v = v0
+    v <- v0
   }
 
   # power for t test
-  f = function(n) {
+  f <- function(n) {
     # residual degrees of freedom after accounting for the subject effects
-    mean_nprd = sum(p*(1:nprd))
-    nu = n*mean_nprd - 1 - (n-1) - (nprd-1) - (ntrt-1) - (ntrt-1)*carryover
-    b = qt(1-alpha, nu)
-    ncp = theta*sqrt(n/v)
+    mean_nprd <- sum(p*(1:nprd))
+    nu <- n*mean_nprd - 1 - (n-1) - (nprd-1) - (ntrt-1) - (ntrt-1)*carryover
+    b <- qt(1-alpha, nu)
+    ncp <- theta*sqrt(n/v)
     pt(b, nu, ncp, lower.tail = FALSE)
   }
 
 
   if (is.na(n)) { # calculate the sample size
     if (normalApproximation) {
-      n = (qnorm(1-alpha) + qnorm(1-beta))^2*v/theta^2
+      n <- (qnorm(1-alpha) + qnorm(1-beta))^2*v/theta^2
     } else {
-      n0 = (qnorm(1-alpha) + qnorm(1-beta))^2*v/theta^2
-      n = uniroot(function(n) f(n) - (1-beta), c(0.5*n0, 1.5*n0))$root
+      n0 <- (qnorm(1-alpha) + qnorm(1-beta))^2*v/theta^2
+      n <- uniroot(function(n) f(n) - (1-beta), c(0.5*n0, 1.5*n0))$root
     }
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
+    n <- ceiling(n - 1.0e-12)
   }
 
   if (normalApproximation) {
-    power = pnorm(theta*sqrt(n/v) - qnorm(1-alpha))
+    power <- pnorm(theta*sqrt(n/v) - qnorm(1-alpha))
   } else {
-    power = f(n)
+    power <- f(n)
   }
 
-  rownames(design) = paste0("Seq", 1:nseq)
-  colnames(design) = paste0("Prd", 1:nprd)
+  rownames(design) <- paste0("Seq", 1:nseq)
+  colnames(design) <- paste0("Prd", 1:nprd)
 
   if (!normalApproximation) {
-    mean_nprd = sum(p*(1:nprd))
-    nu = n*mean_nprd - 1 - (n-1) - (nprd-1) - (ntrt-1) - (ntrt-1)*carryover
-    hw = qt(1-alpha, nu)*sqrt(v/n)
+    mean_nprd <- sum(p*(1:nprd))
+    nu <- n*mean_nprd - 1 - (n-1) - (nprd-1) - (ntrt-1) - (ntrt-1)*carryover
+    hw <- qt(1-alpha, nu)*sqrt(v/n)
   } else {
-    nu = Inf
-    hw = qnorm(1-alpha)*sqrt(v/n)
+    nu <- Inf
+    hw <- qnorm(1-alpha)*sqrt(v/n)
   }
 
   if (carryover) {
-    des = list(
+    des <- list(
       power = power, alpha = alpha, numberOfSubjects = n,
       trtpair = trtpair, carryover = carryover,
       meanDiffH0 = meanDiffH0, meanDiff = meanDiff,
@@ -5443,7 +5531,7 @@ getDesignMeanDiffCarryover <- function(
       normalApproximation = normalApproximation,
       rounding = rounding)
   } else {
-    des = list(
+    des <- list(
       power = power, alpha = alpha, numberOfSubjects = n,
       trtpair = trtpair, carryover = carryover,
       meanDiffH0 = meanDiffH0, meanDiff = meanDiff,
@@ -5459,7 +5547,7 @@ getDesignMeanDiffCarryover <- function(
       rounding = rounding)
   }
 
-  attr(des, "class") = "designMeanDiffCarryover"
+  attr(des, "class") <- "designMeanDiffCarryover"
 
   des
 }
@@ -5643,7 +5731,7 @@ getDesignMeanDiffCarryover <- function(
 #'
 #' # Williams design for 4 treatments
 #'
-#' (design1 = getDesignMeanDiffCarryoverEquiv(
+#' (design1 <- getDesignMeanDiffCarryoverEquiv(
 #'   beta = 0.2, n = NA,
 #'   meanDiffLower = -1.3, meanDiffUpper = 1.3,
 #'   meanDiff = 0, stDev = 2.2,
@@ -5717,9 +5805,9 @@ getDesignMeanDiffCarryoverEquiv <- function(
     stop("design must be provided")
   }
 
-  nseq = nrow(design)
-  nprd = ncol(design)
-  ntrt = length(unique(c(design)))
+  nseq <- nrow(design)
+  nprd <- ncol(design)
+  ntrt <- length(unique(c(design)))
 
   if (any(design <= 0 | design != round(design)) ||
       !all.equal(sort(unique(c(design))), 1:ntrt)) {
@@ -5728,7 +5816,7 @@ getDesignMeanDiffCarryoverEquiv <- function(
   }
 
   if (any(is.na(trtpair))) {
-    trtpair = c(1, ntrt)
+    trtpair <- c(1, ntrt)
   } else if (length(trtpair) != 2 ||
              trtpair[1] == trtpair[2] ||
              !all(trtpair %in% 1:ntrt)) {
@@ -5738,23 +5826,23 @@ getDesignMeanDiffCarryoverEquiv <- function(
 
   # number of model parameters consisting of the intercept, sequence effects,
   # period effects, direct treatment effects, and carryover treatment effects
-  q = 1 + (nseq-1) + (nprd-1) + (ntrt-1) + (ntrt-1)
+  q <- 1 + (nseq-1) + (nprd-1) + (ntrt-1) + (ntrt-1)
 
   # number of model parameters consisting of the intercept, sequence effects,
   # period effects, and direct treatment effects
-  q0 = 1 + (nseq-1) + (nprd-1) + (ntrt-1)
+  q0 <- 1 + (nseq-1) + (nprd-1) + (ntrt-1)
 
   # offset of direct treatment effect
-  l = 1 + (nseq-1) + (nprd-1)
+  l <- 1 + (nseq-1) + (nprd-1)
 
   # start of direct treatment effect
-  l1 = l + 1
+  l1 <- l + 1
 
   # end of direct treatment effect
-  m = 1 + (nseq-1) + (nprd-1) + (ntrt-1)
+  m <- 1 + (nseq-1) + (nprd-1) + (ntrt-1)
 
   if (any(is.na(cumdrop))) {
-    cumdrop = rep(0, nprd)
+    cumdrop <- rep(0, nprd)
   } else if (length(cumdrop) != nprd) {
     stop(paste("cumdrop should have", nprd, "elements"))
   }
@@ -5768,11 +5856,11 @@ getDesignMeanDiffCarryoverEquiv <- function(
   }
 
   # observed data pattern probabilities
-  p = diff(c(cumdrop, 1))
+  p <- diff(c(cumdrop, 1))
 
 
   if (any(is.na(allocationRatioPlanned))) {
-    allocationRatioPlanned = rep(1, nrow(design))
+    allocationRatioPlanned <- rep(1, nrow(design))
   }
 
   if (length(allocationRatioPlanned) != nseq-1 &&
@@ -5782,7 +5870,7 @@ getDesignMeanDiffCarryoverEquiv <- function(
   }
 
   if (length(allocationRatioPlanned) == nseq-1) {
-    allocationRatioPlanned = c(allocationRatioPlanned, 1)
+    allocationRatioPlanned <- c(allocationRatioPlanned, 1)
   }
 
   if (any(allocationRatioPlanned <= 0)) {
@@ -5795,78 +5883,78 @@ getDesignMeanDiffCarryoverEquiv <- function(
 
 
   # treatment sequence randomization probabilities
-  r = allocationRatioPlanned/sum(allocationRatioPlanned)
+  r <- allocationRatioPlanned/sum(allocationRatioPlanned)
 
 
   # compound symmetry covariance matrix for repeated measures
-  Sigma = stDev^2/(1-corr) * ((1-corr)*diag(nprd) + corr)
+  Sigma <- stDev^2/(1-corr) * ((1-corr)*diag(nprd) + corr)
 
   # model design matrix with carryover effect
-  X = matrix(0, nseq*nprd, q)
-  X[,1] = 1
+  X <- matrix(0, nseq*nprd, q)
+  X[,1] <- 1
   for (i in 1:nseq) {
     for (j in 1:nprd) {
-      k = (i-1)*nprd + j
+      k <- (i-1)*nprd + j
 
       # sequence effects
       if (i < nseq) {
-        X[k, 1 + i] = 1
+        X[k, 1 + i] <- 1
       }
 
       # period effects
       if (j < nprd) {
-        X[k, 1 + (nseq-1) + j] = 1
+        X[k, 1 + (nseq-1) + j] <- 1
       }
 
       # direct treatment effects
       if (design[i,j] < ntrt) {
-        X[k, 1 + (nseq-1) + (nprd-1) + design[i,j]] = 1
+        X[k, 1 + (nseq-1) + (nprd-1) + design[i,j]] <- 1
       }
 
       # carryover treatment effects
       if (j > 1 && design[i,j-1] < ntrt) {
-        X[k, 1 + (nseq-1) + (nprd-1) + (ntrt-1) + design[i,j-1]] = 1
+        X[k, 1 + (nseq-1) + (nprd-1) + (ntrt-1) + design[i,j-1]] <- 1
       }
     }
   }
 
   # singular values of X
-  d = svdcpp(X)$d
-  tol = max(dim(X))*.Machine$double.eps
+  d <- svdcpp(X)$d
+  tol <- max(dim(X))*.Machine$double.eps
   if (carryover && sum(d >= tol * max(d)) < q) {
     stop("The crossover design is overparameterized for carryover effects")
   }
 
   if (carryover) {
     # information matrix for model parameters with carryover effects
-    I = 0
+    I <- 0
     for (i in 1:nseq) {
-      offset = (i-1)*nprd
-      J = 0
+      offset <- (i-1)*nprd
+      J <- 0
       for (j in 1:nprd) {
-        idx = offset + (1:j)
+        idx <- offset + (1:j)
 
         if (j==1) {
-          x = t(as.matrix(X[idx,]))
+          x <- t(as.matrix(X[idx,]))
         } else {
-          x = X[idx,]
+          x <- X[idx,]
         }
 
-        J = J + p[j]*t(x) %*% solve(Sigma[1:j,1:j]) %*% x
+        J <- J + p[j]*t(x) %*% solve(Sigma[1:j,1:j]) %*% x
       }
-      I = I + r[i]*J
+      I <- I + r[i]*J
     }
 
     # covariance matrix for model parameters with carryover effects
-    V = solve(I)
+    V <- solve(I)
 
     # variance for direct treatment effect for one sampling unit with carryover
     if (trtpair[2]==ntrt) {
-      v1 = V[l+trtpair[1], l+trtpair[1]]
+      v1 <- V[l+trtpair[1], l+trtpair[1]]
     } else if (trtpair[1]==ntrt) {
-      v1 = V[l+trtpair[2], l+trtpair[2]]
+      v1 <- V[l+trtpair[2], l+trtpair[2]]
     } else {
-      v1 = V[l+trtpair[1], l+trtpair[1]] +
+      v1 <- V[l+trtpair[1], l+trtpair[1]] +
         V[l+trtpair[2], l+trtpair[2]] -
         2*V[l+trtpair[1], l+trtpair[2]]
     }
@@ -5874,11 +5962,11 @@ getDesignMeanDiffCarryoverEquiv <- function(
 
     # variance for carryover treatment effect for one sampling unit
     if (trtpair[2]==ntrt) {
-      v2 = V[m+trtpair[1], m+trtpair[1]]
+      v2 <- V[m+trtpair[1], m+trtpair[1]]
     } else if (trtpair[1]==ntrt) {
-      v2 = V[m+trtpair[2], m+trtpair[2]]
+      v2 <- V[m+trtpair[2], m+trtpair[2]]
     } else {
-      v2 = V[m+trtpair[1], m+trtpair[1]] +
+      v2 <- V[m+trtpair[1], m+trtpair[1]] +
         V[m+trtpair[2], m+trtpair[2]] -
         2*V[m+trtpair[1], m+trtpair[2]]
     }
@@ -5886,109 +5974,109 @@ getDesignMeanDiffCarryoverEquiv <- function(
 
 
   # design matrix for model parameters without carryover effects
-  X0 = X[, 1:m]
+  X0 <- X[, 1:m]
   if (!carryover) {
     # singular values of X0
-    d0 = svdcpp(X0)$d
-    tol0 = max(dim(X0))*.Machine$double.eps
+    d0 <- svdcpp(X0)$d
+    tol0 <- max(dim(X0))*.Machine$double.eps
     if (sum(d0 >= tol0 * max(d0)) < q0) {
       stop("The crossover design is overparameterized")
     }
   }
 
   # information matrix for model parameters without carryover effects
-  I0 = 0
+  I0 <- 0
   for (i in 1:nseq) {
-    offset = (i-1)*nprd
-    J = 0
+    offset <- (i-1)*nprd
+    J <- 0
     for (j in 1:nprd) {
-      idx = offset+(1:j)
+      idx <- offset+(1:j)
 
       if (j==1) {
-        x = t(as.matrix(X0[idx,]))
+        x <- t(as.matrix(X0[idx,]))
       } else {
-        x = X0[idx,]
+        x <- X0[idx,]
       }
 
-      J = J + p[j]*t(x) %*% solve(Sigma[1:j,1:j]) %*% x
+      J <- J + p[j]*t(x) %*% solve(Sigma[1:j,1:j]) %*% x
     }
-    I0 = I0 + r[i]*J
+    I0 <- I0 + r[i]*J
   }
 
   # covariance matrix for model parameters without carryover effects
-  V0 = solve(I0)
+  V0 <- solve(I0)
 
   # variance for direct treatment effect for one sampling unit w/o carryover
   if (trtpair[2]==ntrt) {
-    v0 = V0[l+trtpair[1], l+trtpair[1]]
+    v0 <- V0[l+trtpair[1], l+trtpair[1]]
   } else if (trtpair[1]==ntrt) {
-    v0 = V0[l+trtpair[2], l+trtpair[2]]
+    v0 <- V0[l+trtpair[2], l+trtpair[2]]
   } else {
-    v0 = V0[l+trtpair[1], l+trtpair[1]] +
+    v0 <- V0[l+trtpair[1], l+trtpair[1]] +
       V0[l+trtpair[2], l+trtpair[2]] -
       2*V0[l+trtpair[1], l+trtpair[2]]
   }
 
   if (carryover) {
-    v = v1
+    v <- v1
   } else {
-    v = v0
+    v <- v0
   }
 
   # power for two one-sided t-tests
-  f = function(n) {
+  f <- function(n) {
     # residual degrees of freedom after accounting for the subject effects
-    mean_nprd = sum(p*(1:nprd))
-    nu = n*mean_nprd - 1 - (n-1) - (nprd-1) - (ntrt-1) - (ntrt-1)*carryover
-    b = qt(1-alpha, nu)
-    ncpLower = (meanDiff - meanDiffLower)*sqrt(n/v)
-    powerLower = pt(b, nu, ncpLower, lower.tail = FALSE)
-    ncpUpper = (meanDiffUpper - meanDiff)*sqrt(n/v)
-    powerUpper = pt(b, nu, ncpUpper, lower.tail = FALSE)
-    power = powerLower + powerUpper - 1
+    mean_nprd <- sum(p*(1:nprd))
+    nu <- n*mean_nprd - 1 - (n-1) - (nprd-1) - (ntrt-1) - (ntrt-1)*carryover
+    b <- qt(1-alpha, nu)
+    ncpLower <- (meanDiff - meanDiffLower)*sqrt(n/v)
+    powerLower <- pt(b, nu, ncpLower, lower.tail = FALSE)
+    ncpUpper <- (meanDiffUpper - meanDiff)*sqrt(n/v)
+    powerUpper <- pt(b, nu, ncpUpper, lower.tail = FALSE)
+    power <- powerLower + powerUpper - 1
     power
   }
 
   if (is.na(n)) { # calculate the sample size
-    des = getDesignEquiv(
+    des <- getDesignEquiv(
       beta = beta, IMax = NA, thetaLower = meanDiffLower,
       thetaUpper = meanDiffUpper, theta = meanDiff)
 
-    n = des$overallResults$information*v
+    n <- des$overallResults$information*v
 
     if (!normalApproximation) {
-      n = uniroot(function(n) f(n) - (1-beta), c(0.5*n, 1.5*n))$root
+      n <- uniroot(function(n) f(n) - (1-beta), c(0.5*n, 1.5*n))$root
     }
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
+    n <- ceiling(n - 1.0e-12)
   }
 
   if (normalApproximation) {
-    des = getDesignEquiv(
+    des <- getDesignEquiv(
       beta = NA, IMax = n/v, thetaLower = meanDiffLower,
       thetaUpper = meanDiffUpper, theta = meanDiff)
 
-    power = des$overallResults$overallReject
+    power <- des$overallResults$overallReject
 
   } else {
-    power = f(n)
+    power <- f(n)
   }
 
-  rownames(design) = paste0("Seq", 1:nseq)
-  colnames(design) = paste0("Prd", 1:nprd)
+  rownames(design) <- paste0("Seq", 1:nseq)
+  colnames(design) <- paste0("Prd", 1:nprd)
 
   if (!normalApproximation) {
-    mean_nprd = sum(p*(1:nprd))
-    nu = n*mean_nprd - 1 - (n-1) - (nprd-1) - (ntrt-1) - (ntrt-1)*carryover
-    hw = qt(1-alpha, nu)*sqrt(v/n)
+    mean_nprd <- sum(p*(1:nprd))
+    nu <- n*mean_nprd - 1 - (n-1) - (nprd-1) - (ntrt-1) - (ntrt-1)*carryover
+    hw <- qt(1-alpha, nu)*sqrt(v/n)
   } else {
-    hw = qnorm(1-alpha)*sqrt(v/n)
+    hw <- qnorm(1-alpha)*sqrt(v/n)
   }
 
   if (carryover) {
-    des = list(
+    des <- list(
       power = power, alpha = alpha, numberOfSubjects = n,
       trtpair = trtpair, carryover = carryover,
       meanDiffLower = meanDiffLower,
@@ -6010,7 +6098,7 @@ getDesignMeanDiffCarryoverEquiv <- function(
       normalApproximation = normalApproximation,
       rounding = rounding)
   } else {
-    des = list(
+    des <- list(
       power = power, alpha = alpha, numberOfSubjects = n,
       trtpair = trtpair, carryover = carryover,
       meanDiffLower = meanDiffLower,
@@ -6028,7 +6116,7 @@ getDesignMeanDiffCarryoverEquiv <- function(
       rounding = rounding)
   }
 
-  attr(des, "class") = "designMeanDiffCarryoverEquiv"
+  attr(des, "class") <- "designMeanDiffCarryoverEquiv"
 
   des
 }
@@ -6133,7 +6221,7 @@ getDesignANOVA <- function(
   }
 
   if (any(is.na(allocationRatioPlanned))) {
-    allocationRatioPlanned = rep(1, ngroups)
+    allocationRatioPlanned <- rep(1, ngroups)
   }
 
   if (length(allocationRatioPlanned) != ngroups - 1 &&
@@ -6143,7 +6231,7 @@ getDesignANOVA <- function(
   }
 
   if (length(allocationRatioPlanned) == ngroups - 1) {
-    allocationRatioPlanned = c(allocationRatioPlanned, 1)
+    allocationRatioPlanned <- c(allocationRatioPlanned, 1)
   }
 
   if (any(allocationRatioPlanned <= 0)) {
@@ -6155,39 +6243,39 @@ getDesignANOVA <- function(
   }
 
 
-  r = allocationRatioPlanned/sum(allocationRatioPlanned)
+  r <- allocationRatioPlanned/sum(allocationRatioPlanned)
 
-  mubar = sum(r*means)
-  vmu = sum(r*(means - mubar)^2)
+  mubar <- sum(r*means)
+  vmu <- sum(r*(means - mubar)^2)
 
   # power for F-test
   f <- function(n) {
-    lambda = n*vmu/stDev^2
-    b = qf(1 - alpha, ngroups - 1, n - ngroups)
+    lambda <- n*vmu/stDev^2
+    b <- qf(1 - alpha, ngroups - 1, n - ngroups)
     pf(b, ngroups - 1, n - ngroups, lambda, lower.tail = FALSE)
   }
 
   if (is.na(n)) {
-    nu = ngroups - 1
-    n0 = (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/(vmu/stDev^2)
+    nu <- ngroups - 1
+    n0 <- (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/(vmu/stDev^2)
     while (f(n0) < 1-beta) n0 <- 2*n0
-    n = uniroot(function(n) f(n) - (1-beta), c(0.5*n0, n0))$root
+    n <- uniroot(function(n) f(n) - (1-beta), c(0.5*n0, n0))$root
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
+    n <- ceiling(n - 1.0e-12)
   }
 
-  power = f(n)
+  power <- f(n)
 
-  des = list(
+  des <- list(
     power = power, alpha = alpha, n = n,
     ngroups = ngroups, means = means, stDev = stDev,
     effectsize = vmu/stDev^2,
     allocationRatioPlanned = allocationRatioPlanned,
     rounding = rounding)
 
-  attr(des, "class") = "designANOVA"
+  attr(des, "class") <- "designANOVA"
 
   des
 }
@@ -6309,84 +6397,84 @@ getDesignTwoWayANOVA <- function(
   }
 
 
-  muA = as.numeric(rowMeans(means))
-  muB = as.numeric(colMeans(means))
-  mu = mean(means)
+  muA <- as.numeric(rowMeans(means))
+  muB <- as.numeric(colMeans(means))
+  mu <- mean(means)
 
-  vmuA = var(muA)*(nlevelsA - 1)/nlevelsA
-  vmuB = var(muB)*(nlevelsB - 1)/nlevelsB
+  vmuA <- var(muA)*(nlevelsA - 1)/nlevelsA
+  vmuB <- var(muB)*(nlevelsB - 1)/nlevelsB
 
-  mmuA = matrix(muA, nlevelsA, nlevelsB)
-  mmuB = matrix(muB, nlevelsA, nlevelsB, byrow = TRUE)
-  vmuAB = sum((means - mmuA - mmuB + mu)^2)/(nlevelsA*nlevelsB)
+  mmuA <- matrix(muA, nlevelsA, nlevelsB)
+  mmuB <- matrix(muB, nlevelsA, nlevelsB, byrow = TRUE)
+  vmuAB <- sum((means - mmuA - mmuB + mu)^2)/(nlevelsA*nlevelsB)
 
-  effectsizeA = vmuA/stDev^2
-  effectsizeB = vmuB/stDev^2
-  effectsizeAB = vmuAB/stDev^2
+  effectsizeA <- vmuA/stDev^2
+  effectsizeB <- vmuB/stDev^2
+  effectsizeAB <- vmuAB/stDev^2
 
 
   # power for F-test for Factor A
   fA <- function(n) {
-    lambda = n*effectsizeA
-    b = qf(1-alpha, nlevelsA - 1, n - nlevelsA*nlevelsB)
+    lambda <- n*effectsizeA
+    b <- qf(1-alpha, nlevelsA - 1, n - nlevelsA*nlevelsB)
     pf(b, nlevelsA - 1, n - nlevelsA*nlevelsB, lambda, lower.tail = FALSE)
   }
 
   # power for F-test for Factor A
   fB <- function(n) {
-    lambda = n*effectsizeB
-    b = qf(1-alpha, nlevelsB - 1, n - nlevelsA*nlevelsB)
+    lambda <- n*effectsizeB
+    b <- qf(1-alpha, nlevelsB - 1, n - nlevelsA*nlevelsB)
     pf(b, nlevelsB - 1, n - nlevelsA*nlevelsB, lambda, lower.tail = FALSE)
   }
 
   # power for F-test for Factor A and Factor B interaction
   fAB <- function(n) {
-    lambda = n*effectsizeAB
-    b = qf(1-alpha, (nlevelsA - 1)*(nlevelsB - 1), n - nlevelsA*nlevelsB)
+    lambda <- n*effectsizeAB
+    b <- qf(1-alpha, (nlevelsA - 1)*(nlevelsB - 1), n - nlevelsA*nlevelsB)
     pf(b, (nlevelsA - 1)*(nlevelsB - 1), n - nlevelsA*nlevelsB,
        lambda, lower.tail = FALSE)
   }
 
 
   if (is.na(n)) {
-    nu = nlevelsA - 1
-    n0 = (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/effectsizeA
-    n0 = max(n0, nlevelsA*nlevelsB + 1)
+    nu <- nlevelsA - 1
+    n0 <- (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/effectsizeA
+    n0 <- max(n0, nlevelsA*nlevelsB + 1)
     while (fA(n0) < 1-beta) n0 <- 2*n0
-    nA = uniroot(function(n) fA(n) - (1-beta), c(0.5*n0, n0))$root
+    nA <- uniroot(function(n) fA(n) - (1-beta), c(0.5*n0, n0))$root
 
-    nu = nlevelsB - 1
-    n0 = (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/effectsizeB
-    n0 = max(n0, nlevelsA*nlevelsB + 1)
+    nu <- nlevelsB - 1
+    n0 <- (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/effectsizeB
+    n0 <- max(n0, nlevelsA*nlevelsB + 1)
     while (fB(n0) < 1-beta) n0 <- 2*n0
-    nB = uniroot(function(n) fB(n) - (1-beta), c(0.5*n0, n0))$root
+    nB <- uniroot(function(n) fB(n) - (1-beta), c(0.5*n0, n0))$root
 
-    nu = (nlevelsA - 1)*(nlevelsB - 1)
-    n0 = (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/effectsizeAB
-    n0 = max(n0, nlevelsA*nlevelsB + 1)
+    nu <- (nlevelsA - 1)*(nlevelsB - 1)
+    n0 <- (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/effectsizeAB
+    n0 <- max(n0, nlevelsA*nlevelsB + 1)
     while (fAB(n0) < 1-beta) n0 <- 2*n0
-    nAB = uniroot(function(n) fAB(n) - (1-beta), c(0.5*n0, n0))$root
+    nAB <- uniroot(function(n) fAB(n) - (1-beta), c(0.5*n0, n0))$root
 
     # ensure that nA, nB, and nAB are multiples of 4
-    nA = ceiling(nA/4) * 4
-    nB = ceiling(nB/4) * 4
-    nAB = ceiling(nAB/4) * 4
+    nA <- ceiling(nA/4) * 4
+    nB <- ceiling(nB/4) * 4
+    nAB <- ceiling(nAB/4) * 4
   } else {
-    nA = n
-    nB = n
-    nAB = n
+    nA <- n
+    nB <- n
+    nAB <- n
   }
 
   if (rounding) {
-    nA = ceiling(nA - 1.0e-12)
-    nB = ceiling(nB - 1.0e-12)
-    nAB = ceiling(nAB - 1.0e-12)
+    nA <- ceiling(nA - 1.0e-12)
+    nB <- ceiling(nB - 1.0e-12)
+    nAB <- ceiling(nAB - 1.0e-12)
   }
 
-  m = unique(c(nA, nB, nAB))
-  powerdf = data.frame(n = m, powerA = sapply(m, fA),
-                       powerB = sapply(m, fB), powerAB = sapply(m, fAB))
-  des = list(
+  m <- unique(c(nA, nB, nAB))
+  powerdf <- data.frame(n = m, powerA = sapply(m, fA),
+                        powerB = sapply(m, fB), powerAB = sapply(m, fAB))
+  des <- list(
     alpha = alpha, nlevelsA = nlevelsA,
     nlevelsB = nlevelsB, means = means, stDev = stDev,
     effectsizeA = effectsizeA, effectsizeB = effectsizeB,
@@ -6394,7 +6482,7 @@ getDesignTwoWayANOVA <- function(
     rounding = rounding,
     powerdf = powerdf)
 
-  attr(des, "class") = "designTwoWayANOVA"
+  attr(des, "class") <- "designTwoWayANOVA"
 
   des
 }
@@ -6508,7 +6596,7 @@ getDesignANOVAContrast <- function(
   }
 
   if (any(is.na(allocationRatioPlanned))) {
-    allocationRatioPlanned = rep(1, ngroups)
+    allocationRatioPlanned <- rep(1, ngroups)
   }
 
   if (length(allocationRatioPlanned) != ngroups - 1 &&
@@ -6518,7 +6606,7 @@ getDesignANOVAContrast <- function(
   }
 
   if (length(allocationRatioPlanned) == ngroups - 1) {
-    allocationRatioPlanned = c(allocationRatioPlanned, 1)
+    allocationRatioPlanned <- c(allocationRatioPlanned, 1)
   }
 
   if (any(allocationRatioPlanned <= 0)) {
@@ -6530,35 +6618,35 @@ getDesignANOVAContrast <- function(
   }
 
 
-  r = allocationRatioPlanned/sum(allocationRatioPlanned)
+  r <- allocationRatioPlanned/sum(allocationRatioPlanned)
 
-  meanContrast = sum(contrast*means)
-  v1 = sum(contrast^2/r)*stDev^2
+  meanContrast <- sum(contrast*means)
+  v1 <- sum(contrast^2/r)*stDev^2
 
-  directionUpper = meanContrast > meanContrastH0
+  directionUpper <- meanContrast > meanContrastH0
 
-  theta = ifelse(directionUpper, meanContrast - meanContrastH0,
-                 meanContrastH0 - meanContrast)
+  theta <- ifelse(directionUpper, meanContrast - meanContrastH0,
+                  meanContrastH0 - meanContrast)
 
   # power for t-test
   f <- function(n) {
-    b = qt(1-alpha, n-ngroups)
-    ncp = theta*sqrt(n/v1)
-    power = pt(b, n-ngroups, ncp, lower.tail = FALSE)
+    b <- qt(1-alpha, n-ngroups)
+    ncp <- theta*sqrt(n/v1)
+    power <- pt(b, n-ngroups, ncp, lower.tail = FALSE)
   }
 
   if (is.na(n)) {
-    n0 = (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
-    n = uniroot(function(n) f(n) - (1-beta), c(n0, 2*n0))$root
+    n0 <- (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
+    n <- uniroot(function(n) f(n) - (1-beta), c(n0, 2*n0))$root
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
+    n <- ceiling(n - 1.0e-12)
   }
 
-  power = f(n)
+  power <- f(n)
 
-  des = list(
+  des <- list(
     power = power, alpha = alpha, n = n,
     ngroups = ngroups, means = means, stDev = stDev,
     contrast = contrast, meanContrastH0 = meanContrastH0,
@@ -6566,7 +6654,7 @@ getDesignANOVAContrast <- function(
     allocationRatioPlanned = allocationRatioPlanned,
     rounding = rounding)
 
-  attr(des, "class") = "designANOVAContrast"
+  attr(des, "class") <- "designANOVAContrast"
 
   des
 }
@@ -6690,36 +6778,36 @@ getDesignRepeatedANOVA <- function(
   }
 
 
-  vmu = var(means)*(ngroups-1)/ngroups
+  vmu <- var(means)*(ngroups-1)/ngroups
 
   # power for F-test
   f <- function(n) {
-    lambda = n*ngroups*vmu/(stDev^2*(1-corr))
-    b = qf(1 - alpha, ngroups - 1, (n-1)*(ngroups-1))
+    lambda <- n*ngroups*vmu/(stDev^2*(1-corr))
+    b <- qf(1 - alpha, ngroups - 1, (n-1)*(ngroups-1))
     pf(b, ngroups - 1, (n-1)*(ngroups-1), lambda, lower.tail = FALSE)
   }
 
   if (is.na(n)) {
-    nu = ngroups - 1
-    n0 = (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/
+    nu <- ngroups - 1
+    n0 <- (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/
       (ngroups*vmu/(stDev^2*(1-corr)))
     while (f(n0) < 1-beta) n0 <- 2*n0
-    n = uniroot(function(n) f(n) - (1-beta), c(0.5*n0, n0))$root
+    n <- uniroot(function(n) f(n) - (1-beta), c(0.5*n0, n0))$root
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
+    n <- ceiling(n - 1.0e-12)
   }
 
-  power = f(n)
+  power <- f(n)
 
-  des = list(
+  des <- list(
     power = power, alpha = alpha, n = n,
     ngroups = ngroups, means = means, stDev = stDev,
     corr = corr, effectsize = ngroups*vmu/(stDev^2*(1-corr)),
     rounding = rounding)
 
-  attr(des, "class") = "designRepeatedANOVA"
+  attr(des, "class") <- "designRepeatedANOVA"
 
   des
 }
@@ -6836,40 +6924,40 @@ getDesignRepeatedANOVAContrast <- function(
   }
 
 
-  meanContrast = sum(contrast*means)
-  v1 = sum(contrast^2)*stDev^2*(1-corr)
+  meanContrast <- sum(contrast*means)
+  v1 <- sum(contrast^2)*stDev^2*(1-corr)
 
-  directionUpper = meanContrast > meanContrastH0
+  directionUpper <- meanContrast > meanContrastH0
 
-  theta = ifelse(directionUpper, meanContrast - meanContrastH0,
-                 meanContrastH0 - meanContrast)
+  theta <- ifelse(directionUpper, meanContrast - meanContrastH0,
+                  meanContrastH0 - meanContrast)
 
   # power for t-test
   f <- function(n) {
-    b = qt(1-alpha, (n-1)*(ngroups-1))
-    ncp = theta*sqrt(n/v1)
-    power = pt(b, (n-1)*(ngroups-1), ncp, lower.tail = FALSE)
+    b <- qt(1-alpha, (n-1)*(ngroups-1))
+    ncp <- theta*sqrt(n/v1)
+    power <- pt(b, (n-1)*(ngroups-1), ncp, lower.tail = FALSE)
   }
 
   if (is.na(n)) {
-    n0 = (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
-    n = uniroot(function(n) f(n) - (1-beta), c(n0, 2*n0))$root
+    n0 <- (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
+    n <- uniroot(function(n) f(n) - (1-beta), c(n0, 2*n0))$root
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
+    n <- ceiling(n - 1.0e-12)
   }
 
-  power = f(n)
+  power <- f(n)
 
-  des = list(
+  des <- list(
     power = power, alpha = alpha, n = n,
     ngroups = ngroups, means = means, stDev = stDev, corr = corr,
     contrast = contrast, meanContrastH0 = meanContrastH0,
     meanContrast = meanContrast, effectsize = theta^2/v1,
     rounding = rounding)
 
-  attr(des, "class") = "designRepeatedANOVAContrast"
+  attr(des, "class") <- "designRepeatedANOVAContrast"
 
   des
 }
@@ -6904,6 +6992,8 @@ getDesignRepeatedANOVAContrast <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility bounds on the conditional power scale.
+#' @param futilitySlope The futility bounds on the slope scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -7075,6 +7165,8 @@ getDesignOneSlope <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilitySlope = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -7109,182 +7201,187 @@ getDesignOneSlope <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
-  directionUpper = slope > slopeH0
+  directionUpper <- slope > slopeH0
 
-  theta = ifelse(directionUpper, slope - slopeH0, slopeH0 - slope)
+  theta <- ifelse(directionUpper, slope - slopeH0, slopeH0 - slope)
+  if (directionUpper) {
+    futilityTheta <- futilitySlope - slopeH0
+  } else {
+    futilityTheta <- -futilitySlope + slopeH0
+  }
 
   # variance for one sampling unit
-  v1 = stDev^2/stDevCovariate^2
+  v1 <- stDev^2/stDevCovariate^2
 
   if (is.na(beta)) { # power calculation
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- round(n*informationRates)/n
     }
 
-    des = getDesign(
+    des <- getDesign(
       beta = NA, IMax = n/v1, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, 1)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, 1)
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
-      b = qt(1-alpha, n-2)
-      ncp = theta*sqrt(n/v1)
-      power = pt(b, n-2, ncp, lower.tail = FALSE)
+      b <- qt(1-alpha, n-2)
+      ncp <- theta*sqrt(n/v1)
+      power <- pt(b, n-2, ncp, lower.tail = FALSE)
 
-      delta = b/sqrt(n/v1)
+      delta <- b/sqrt(n/v1)
 
-      des$overallResults$overallReject = power
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
+      des$overallResults$overallReject <- power
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
 
       if (directionUpper) {
-        des$byStageResults$efficacySlope = delta + slopeH0
-        des$byStageResults$futilitySlope = delta + slopeH0
+        des$byStageResults$efficacySlope <- delta + slopeH0
+        des$byStageResults$futilitySlope <- delta + slopeH0
       } else {
-        des$byStageResults$efficacySlope = -delta + slopeH0
-        des$byStageResults$futilitySlope = -delta + slopeH0
+        des$byStageResults$efficacySlope <- -delta + slopeH0
+        des$byStageResults$futilitySlope <- -delta + slopeH0
       }
     } else {
       if (directionUpper) {
-        des$byStageResults$efficacySlope =
+        des$byStageResults$efficacySlope <-
           des$byStageResults$efficacyTheta + slopeH0
-        des$byStageResults$futilitySlope =
+        des$byStageResults$futilitySlope <-
           des$byStageResults$futilityTheta + slopeH0
       } else {
-        des$byStageResults$efficacySlope =
+        des$byStageResults$efficacySlope <-
           -des$byStageResults$efficacyTheta + slopeH0
-        des$byStageResults$futilitySlope =
+        des$byStageResults$futilitySlope <-
           -des$byStageResults$futilityTheta + slopeH0
       }
     }
   } else { # sample size calculation
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
-      n0 = (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
+      n0 <- (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
 
-      n = uniroot(function(n) {
-        b = qt(1-alpha, n-2)
-        ncp = theta*sqrt(n/v1)
+      n <- uniroot(function(n) {
+        b <- qt(1-alpha, n-2)
+        ncp <- theta*sqrt(n/v1)
         pt(b, n-2, ncp, lower.tail = FALSE) - (1 - beta)
       }, c(n0, 2*n0))$root
 
-      if (rounding) n = ceiling(n - 1.0e-12)
+      if (rounding) n <- ceiling(n - 1.0e-12)
 
-      des = getDesign(
+      des <- getDesign(
         beta = NA, IMax = n/v1, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, 1)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, 1)
 
-      b = qt(1-alpha, n-2)
-      ncp = theta*sqrt(n/v1)
-      power = pt(b, n-2, ncp, lower.tail = FALSE)
+      b <- qt(1-alpha, n-2)
+      ncp <- theta*sqrt(n/v1)
+      power <- pt(b, n-2, ncp, lower.tail = FALSE)
 
-      delta = b/sqrt(n/v1)
+      delta <- b/sqrt(n/v1)
 
-      des$overallResults$overallReject = power
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
+      des$overallResults$overallReject <- power
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
       if (directionUpper) {
-        des$byStageResults$efficacySlope = delta + slopeH0
-        des$byStageResults$futilitySlope = delta + slopeH0
+        des$byStageResults$efficacySlope <- delta + slopeH0
+        des$byStageResults$futilitySlope <- delta + slopeH0
       } else {
-        des$byStageResults$efficacySlope = -delta + slopeH0
-        des$byStageResults$futilitySlope = -delta + slopeH0
+        des$byStageResults$efficacySlope <- -delta + slopeH0
+        des$byStageResults$futilitySlope <- -delta + slopeH0
       }
     } else {
 
-      des = getDesign(
+      des <- getDesign(
         beta, IMax = NA, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, 1)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, 1)
 
-      n = des$overallResults$information*v1
+      n <- des$overallResults$information*v1
 
       if (rounding) {
-        n = ceiling(n - 1.0e-12)
-        informationRates = des$byStageResults$informationRates
-        informationRates = round(n*informationRates)/n
+        n <- ceiling(n - 1.0e-12)
+        informationRates <- des$byStageResults$informationRates
+        informationRates <- round(n*informationRates)/n
 
-        des = getDesign(
+        des <- getDesign(
           beta = NA, IMax = n/v1, theta,
           kMax, informationRates,
           efficacyStopping, futilityStopping,
           criticalValues, alpha, typeAlphaSpending,
           parameterAlphaSpending, userAlphaSpending,
-          futilityBounds, typeBetaSpending,
-          parameterBetaSpending, userBetaSpending,
-          spendingTime, 1)
+          futilityBounds, futilityCP, futilityTheta,
+          typeBetaSpending, parameterBetaSpending,
+          userBetaSpending, spendingTime, 1)
       }
 
       if (directionUpper) {
-        des$byStageResults$efficacySlope =
+        des$byStageResults$efficacySlope <-
           des$byStageResults$efficacyTheta + slopeH0
-        des$byStageResults$futilitySlope =
+        des$byStageResults$futilitySlope <-
           des$byStageResults$futilityTheta + slopeH0
       } else {
-        des$byStageResults$efficacySlope =
+        des$byStageResults$efficacySlope <-
           -des$byStageResults$efficacyTheta + slopeH0
-        des$byStageResults$futilitySlope =
+        des$byStageResults$futilitySlope <-
           -des$byStageResults$futilityTheta + slopeH0
       }
     }
   }
 
-  des$overallResults$theta = theta
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$theta <- theta
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*v1
-  des$overallResults$expectedNumberOfSubjectsH0 =
+  des$overallResults$expectedNumberOfSubjectsH0 <-
     des$overallResults$expectedInformationH0*v1
-  des$overallResults$slopeH0 = slopeH0
-  des$overallResults$slope = slope
-  des$overallResults$stDev = stDev
-  des$overallResults$stDevCovariate = stDevCovariate
+  des$overallResults$slopeH0 <- slopeH0
+  des$overallResults$slope <- slope
+  des$overallResults$stDev <- stDev
+  des$overallResults$stDevCovariate <- stDevCovariate
 
-  des$byStageResults$efficacyTheta = NULL
-  des$byStageResults$futilityTheta = NULL
-  des$byStageResults$numberOfSubjects =
+  des$byStageResults$efficacyTheta <- NULL
+  des$byStageResults$futilityTheta <- NULL
+  des$byStageResults$numberOfSubjects <-
     des$byStageResults$informationRates*n
 
-  des$settings$normalApproximation = normalApproximation
-  des$settings$rounding = rounding
-  des$settings$varianceRatio = NULL
+  des$settings$normalApproximation <- normalApproximation
+  des$settings$rounding <- rounding
+  des$settings$varianceRatio <- NULL
 
-  attr(des, "class") = "designOneSlope"
+  attr(des, "class") <- "designOneSlope"
 
   des
 }
@@ -7322,6 +7419,8 @@ getDesignOneSlope <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility bounds on the conditional power scale.
+#' @param futilitySlopeDiff The futility bounds on the slope difference scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -7508,6 +7607,8 @@ getDesignSlopeDiff <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilitySlopeDiff = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -7542,186 +7643,192 @@ getDesignSlopeDiff <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
 
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
 
-  directionUpper = slopeDiff > slopeDiffH0
+  directionUpper <- slopeDiff > slopeDiffH0
 
-  theta = ifelse(directionUpper, slopeDiff - slopeDiffH0,
-                 slopeDiffH0 - slopeDiff)
+  theta <- ifelse(directionUpper, slopeDiff - slopeDiffH0,
+                  slopeDiffH0 - slopeDiff)
+
+  if (directionUpper) {
+    futilityTheta <- futilitySlopeDiff - slopeDiffH0
+  } else {
+    futilityTheta <- -futilitySlopeDiff + slopeDiffH0
+  }
 
   # variance for one sampling unit
-  v1 = stDev^2/stDevCovariate^2/(r*(1-r))
+  v1 <- stDev^2/stDevCovariate^2/(r*(1-r))
 
   if (is.na(beta)) { # power calculation
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- round(n*informationRates)/n
     }
 
-    des = getDesign(
+    des <- getDesign(
       beta = NA, IMax = n/v1, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, 1)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, 1)
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
-      b = qt(1-alpha, n-4)
-      ncp = theta*sqrt(n/v1)
-      power = pt(b, n-4, ncp, lower.tail = FALSE)
+      b <- qt(1-alpha, n-4)
+      ncp <- theta*sqrt(n/v1)
+      power <- pt(b, n-4, ncp, lower.tail = FALSE)
 
-      delta = b/sqrt(n/v1)
+      delta <- b/sqrt(n/v1)
 
-      des$overallResults$overallReject = power
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
+      des$overallResults$overallReject <- power
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
 
       if (directionUpper) {
-        des$byStageResults$efficacySlopeDiff = delta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff = delta + slopeDiffH0
+        des$byStageResults$efficacySlopeDiff <- delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff <- delta + slopeDiffH0
       } else {
-        des$byStageResults$efficacySlopeDiff = -delta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff = -delta + slopeDiffH0
+        des$byStageResults$efficacySlopeDiff <- -delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff <- -delta + slopeDiffH0
       }
     } else {
       if (directionUpper) {
-        des$byStageResults$efficacySlopeDiff =
+        des$byStageResults$efficacySlopeDiff <-
           des$byStageResults$efficacyTheta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff =
+        des$byStageResults$futilitySlopeDiff <-
           des$byStageResults$futilityTheta + slopeDiffH0
       } else {
-        des$byStageResults$efficacySlopeDiff =
+        des$byStageResults$efficacySlopeDiff <-
           -des$byStageResults$efficacyTheta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff =
+        des$byStageResults$futilitySlopeDiff <-
           -des$byStageResults$futilityTheta + slopeDiffH0
       }
     }
   } else { # sample size calculation
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
-      n0 = (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
+      n0 <- (qnorm(1-alpha) + qnorm(1-beta))^2*v1/theta^2
 
-      n = uniroot(function(n) {
-        b = qt(1-alpha, n-4)
-        ncp = theta*sqrt(n/v1)
+      n <- uniroot(function(n) {
+        b <- qt(1-alpha, n-4)
+        ncp <- theta*sqrt(n/v1)
         pt(b, n-4, ncp, lower.tail = FALSE) - (1 - beta)
       }, c(n0, 2*n0))$root
 
-      if (rounding) n = ceiling(n - 1.0e-12)
+      if (rounding) n <- ceiling(n - 1.0e-12)
 
-      des = getDesign(
+      des <- getDesign(
         beta = NA, IMax = n/v1, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, 1)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, 1)
 
-      b = qt(1-alpha, n-4)
-      ncp = theta*sqrt(n/v1)
-      power = pt(b, n-4, ncp, lower.tail = FALSE)
+      b <- qt(1-alpha, n-4)
+      ncp <- theta*sqrt(n/v1)
+      power <- pt(b, n-4, ncp, lower.tail = FALSE)
 
-      delta = b/sqrt(n/v1)
+      delta <- b/sqrt(n/v1)
 
-      des$overallResults$overallReject = power
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
+      des$overallResults$overallReject <- power
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
       if (directionUpper) {
-        des$byStageResults$efficacySlopeDiff = delta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff = delta + slopeDiffH0
+        des$byStageResults$efficacySlopeDiff <- delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff <- delta + slopeDiffH0
       } else {
-        des$byStageResults$efficacySlopeDiff = -delta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff = -delta + slopeDiffH0
+        des$byStageResults$efficacySlopeDiff <- -delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff <- -delta + slopeDiffH0
       }
     } else {
-      des = getDesign(
+      des <- getDesign(
         beta, IMax = NA, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, 1)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, 1)
 
-      n = des$overallResults$information*v1
+      n <- des$overallResults$information*v1
 
       if (rounding) {
-        n = ceiling(n - 1.0e-12)
-        informationRates = des$byStageResults$informationRates
-        informationRates = round(n*informationRates)/n
+        n <- ceiling(n - 1.0e-12)
+        informationRates <- des$byStageResults$informationRates
+        informationRates <- round(n*informationRates)/n
 
-        des = getDesign(
+        des <- getDesign(
           beta = NA, IMax = n/v1, theta,
           kMax, informationRates,
           efficacyStopping, futilityStopping,
           criticalValues, alpha, typeAlphaSpending,
           parameterAlphaSpending, userAlphaSpending,
-          futilityBounds, typeBetaSpending,
-          parameterBetaSpending, userBetaSpending,
-          spendingTime, 1)
+          futilityBounds, futilityCP, futilityTheta,
+          typeBetaSpending, parameterBetaSpending,
+          userBetaSpending, spendingTime, 1)
       }
 
       if (directionUpper) {
-        des$byStageResults$efficacySlopeDiff =
+        des$byStageResults$efficacySlopeDiff <-
           des$byStageResults$efficacyTheta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff =
+        des$byStageResults$futilitySlopeDiff <-
           des$byStageResults$futilityTheta + slopeDiffH0
       } else {
-        des$byStageResults$efficacySlopeDiff =
+        des$byStageResults$efficacySlopeDiff <-
           -des$byStageResults$efficacyTheta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff =
+        des$byStageResults$futilitySlopeDiff <-
           -des$byStageResults$futilityTheta + slopeDiffH0
       }
     }
   }
 
-  des$overallResults$theta = theta
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$theta <- theta
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*v1
-  des$overallResults$expectedNumberOfSubjectsH0 =
+  des$overallResults$expectedNumberOfSubjectsH0 <-
     des$overallResults$expectedInformationH0*v1
-  des$overallResults$slopeDiffH0 = slopeDiffH0
-  des$overallResults$slopeDiff = slopeDiff
-  des$overallResults$stDev = stDev
-  des$overallResults$stDevCovariate = stDevCovariate
+  des$overallResults$slopeDiffH0 <- slopeDiffH0
+  des$overallResults$slopeDiff <- slopeDiff
+  des$overallResults$stDev <- stDev
+  des$overallResults$stDevCovariate <- stDevCovariate
 
-  des$byStageResults$efficacyTheta = NULL
-  des$byStageResults$futilityTheta = NULL
-  des$byStageResults$numberOfSubjects =
+  des$byStageResults$efficacyTheta <- NULL
+  des$byStageResults$futilityTheta <- NULL
+  des$byStageResults$numberOfSubjects <-
     des$byStageResults$informationRates*n
 
-  des$settings$allocationRatioPlanned = allocationRatioPlanned
-  des$settings$normalApproximation = normalApproximation
-  des$settings$rounding = rounding
-  des$settings$varianceRatio = NULL
+  des$settings$allocationRatioPlanned <- allocationRatioPlanned
+  des$settings$normalApproximation <- normalApproximation
+  des$settings$rounding <- rounding
+  des$settings$varianceRatio <- NULL
 
-  attr(des, "class") = "designSlopeDiff"
+  attr(des, "class") <- "designSlopeDiff"
 
   des
 }
@@ -7780,6 +7887,8 @@ getDesignSlopeDiff <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility bounds on the conditional power scale.
+#' @param futilitySlopeDiff The futility bounds on the slope difference scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -8069,16 +8178,18 @@ getDesignSlopeDiffMMRM <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilitySlopeDiff = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
     spendingTime = NA_real_) {
 
-  m = length(w)             # total number of periods
-  cumN = c(0, cumsum(N))    # cumulative number of visits
-  cumwN = c(0, cumsum(w*N)) # cumulative number of weeks
+  m <- length(w)             # total number of periods
+  cumN <- c(0, cumsum(N))    # cumulative number of visits
+  cumwN <- c(0, cumsum(w*N)) # cumulative number of weeks
 
-  nintervals = length(piecewiseSurvivalTime)
+  nintervals <- length(piecewiseSurvivalTime)
 
   if (is.na(beta) + is.na(accrualDuration) + is.na(followupTime) > 1) {
     stop(paste("At most one can be missing among beta, accrualDuration,",
@@ -8086,13 +8197,13 @@ getDesignSlopeDiffMMRM <- function(
   }
 
   if (is.na(beta)) {
-    unknown = "beta"
+    unknown <- "beta"
   } else if (is.na(accrualDuration)) {
-    unknown = "accrualDuration"
+    unknown <- "accrualDuration"
   } else if (is.na(followupTime)) {
-    unknown = "followupTime"
+    unknown <- "followupTime"
   } else {
-    unknown = "accrualIntensity"
+    unknown <- "accrualIntensity"
   }
 
   if (!is.na(beta) && (beta >= 1-alpha || beta < 0.0001)) {
@@ -8184,11 +8295,11 @@ getDesignSlopeDiffMMRM <- function(
   }
 
   if (length(gamma1) == 1) {
-    gamma1 = rep(gamma1, nintervals)
+    gamma1 <- rep(gamma1, nintervals)
   }
 
   if (length(gamma2) == 1) {
-    gamma2 = rep(gamma2, nintervals)
+    gamma2 <- rep(gamma2, nintervals)
   }
 
   if (!is.na(accrualDuration) && accrualDuration <= 0) {
@@ -8204,7 +8315,7 @@ getDesignSlopeDiffMMRM <- function(
   }
 
   if (fixedFollowup) {
-    i = findInterval(followupTime, cumwN)
+    i <- findInterval(followupTime, cumwN)
     if ((followupTime - cumwN[i]) %% w[i] != 0) {
       stop("followupTime must match a scheduled visit for fixedFollowup")
     }
@@ -8219,23 +8330,28 @@ getDesignSlopeDiffMMRM <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
 
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
 
-  directionUpper = slopeDiff > slopeDiffH0
+  directionUpper <- slopeDiff > slopeDiffH0
 
-  theta = ifelse(directionUpper, slopeDiff - slopeDiffH0,
-                 slopeDiffH0 - slopeDiff)
+  theta <- ifelse(directionUpper, slopeDiff - slopeDiffH0,
+                  slopeDiffH0 - slopeDiff)
 
+  if (directionUpper) {
+    futilityTheta <- futilitySlopeDiff - slopeDiffH0
+  } else {
+    futilityTheta <- -futilitySlopeDiff + slopeDiffH0
+  }
 
-  v11 = stDevIntercept^2
-  v12 = corrInterceptSlope*stDevIntercept*stDevSlope
-  v22 = stDevSlope^2
+  v11 <- stDevIntercept^2
+  v12 <- corrInterceptSlope*stDevIntercept*stDevSlope
+  v22 <- stDevSlope^2
 
-  G = matrix(c(v11, v12, v12, v22), 2, 2)
+  G <- matrix(c(v11, v12, v12, v22), 2, 2)
 
   # function to obtain the info for slope difference
   f_info <- function(tau, w, m, cumN, cumwN, stDev, G,
@@ -8244,60 +8360,60 @@ getDesignSlopeDiffMMRM <- function(
                      accrualDuration, followupTime, fixedFollowup, r) {
 
     # total number of enrolled subjects at interim analysis
-    n = accrual(tau, accrualTime, accrualIntensity, accrualDuration)
+    n <- accrual(tau, accrualTime, accrualIntensity, accrualDuration)
 
-    i = findInterval(tau, cumwN)  # period for tau
-    k = floor((tau - cumwN[i])/w[i]) + cumN[i] + 1  # interval for tau
+    i <- findInterval(tau, cumwN)  # period for tau
+    k <- floor((tau - cumwN[i])/w[i]) + cumN[i] + 1  # interval for tau
 
     # interval indicators
-    j = 1:k
+    j <- 1:k
     # period indicators for the visits at the start of the intervals
-    i = pmax(findInterval(j-2, cumN), 1)
+    i <- pmax(findInterval(j-2, cumN), 1)
     # time points for the visits up to time tau
     # 0, w[1], ..., N[1]*w[1], N[1]*w[1]+w[2], ..., N[1]*w[1]+N[2]*w[2], ...
-    t = cumwN[i] + (j - cumN[i] - 1)*w[i]
-    if (fixedFollowup) t = pmin(t, followupTime)
+    t <- cumwN[i] + (j - cumN[i] - 1)*w[i]
+    if (fixedFollowup) t <- pmin(t, followupTime)
 
     # total number of enrolled subjects at each time point
-    ns = accrual(tau - t, accrualTime, accrualIntensity, accrualDuration)
+    ns <- accrual(tau - t, accrualTime, accrualIntensity, accrualDuration)
 
     # probability of not dropping out at each time point by treatment
-    q1 = ptpwexp(t, piecewiseSurvivalTime, gamma1, lower.tail = FALSE)
-    q2 = ptpwexp(t, piecewiseSurvivalTime, gamma2, lower.tail = FALSE)
+    q1 <- ptpwexp(t, piecewiseSurvivalTime, gamma1, lower.tail = FALSE)
+    q2 <- ptpwexp(t, piecewiseSurvivalTime, gamma2, lower.tail = FALSE)
 
     # number of subjects remaining at each time point by treatment
-    m1 = r*ns*q1
-    m2 = (1-r)*ns*q2
+    m1 <- r*ns*q1
+    m2 <- (1-r)*ns*q2
 
     # number of subjects dropping out at each time point by treatment
-    n1 = c(-diff(m1), m1[k])
-    n2 = c(-diff(m2), m2[k])
+    n1 <- c(-diff(m1), m1[k])
+    n2 <- c(-diff(m2), m2[k])
 
-    Z = matrix(c(rep(1,k), t), k, 2)
-    covar = Z %*% G %*% t(Z) + stDev^2*diag(k)
+    Z <- matrix(c(rep(1,k), t), k, 2)
+    covar <- Z %*% G %*% t(Z) + stDev^2*diag(k)
 
-    X1 = matrix(c(rep(1,k), t, t), k, 3)
-    X2 = matrix(c(rep(1,k), t, rep(0,k)), k, 3)
+    X1 <- matrix(c(rep(1,k), t, t), k, 3)
+    X2 <- matrix(c(rep(1,k), t, rep(0,k)), k, 3)
 
     # information matrix per subject
-    I1 = 0
-    I2 = 0
+    I1 <- 0
+    I2 <- 0
     for (j in 1:k) {
-      x1 = X1[1:j, , drop=FALSE]
-      x2 = X2[1:j, , drop=FALSE]
-      I = solve(covar[1:j, 1:j])
-      I1 = I1 + n1[j]*t(x1) %*% I %*% x1
-      I2 = I2 + n2[j]*t(x2) %*% I %*% x2
+      x1 <- X1[1:j, , drop=FALSE]
+      x2 <- X2[1:j, , drop=FALSE]
+      I <- solve(covar[1:j, 1:j])
+      I1 <- I1 + n1[j]*t(x1) %*% I %*% x1
+      I2 <- I2 + n2[j]*t(x2) %*% I %*% x2
     }
 
     # variance for common intercept, control slope, and slope difference
-    V = solve(I1 + I2)
+    V <- solve(I1 + I2)
 
     # information for slope difference
-    IMax = 1/V[3,3]
+    IMax <- 1/V[3,3]
 
     # degrees of freedom for slope difference
-    nu = sum((n1 + n2)*(1:k)) - 2*n
+    nu <- sum((n1 + n2)*(1:k)) - 2*n
 
     list(IMax = IMax, nu = nu)
   }
@@ -8305,176 +8421,176 @@ getDesignSlopeDiffMMRM <- function(
 
   # power calculation
   if (is.na(beta)) {
-    n = accrual(accrualDuration, accrualTime, accrualIntensity,
-                accrualDuration)
+    n <- accrual(accrualDuration, accrualTime, accrualIntensity,
+                 accrualDuration)
 
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      accrualDuration = getAccrualDurationFromN(n, accrualTime,
-                                                accrualIntensity)
+      n <- ceiling(n - 1.0e-12)
+      accrualDuration <- getAccrualDurationFromN(n, accrualTime,
+                                                 accrualIntensity)
     }
 
-    studyDuration = accrualDuration + followupTime
-    out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
-                 accrualTime, accrualIntensity,
-                 piecewiseSurvivalTime, gamma1, gamma2,
-                 accrualDuration, followupTime, fixedFollowup, r)
+    studyDuration <- accrualDuration + followupTime
+    out <- f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                  accrualTime, accrualIntensity,
+                  piecewiseSurvivalTime, gamma1, gamma2,
+                  accrualDuration, followupTime, fixedFollowup, r)
 
-    IMax = out$IMax
-    nu = out$nu
+    IMax <- out$IMax
+    nu <- out$nu
 
-    des = getDesign(
+    des <- getDesign(
       beta = NA, IMax, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, 1)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, 1)
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
-      b = qt(1-alpha, nu)
-      ncp = theta*sqrt(IMax)
-      power = pt(b, nu, ncp, lower.tail = FALSE)
+      b <- qt(1-alpha, nu)
+      ncp <- theta*sqrt(IMax)
+      power <- pt(b, nu, ncp, lower.tail = FALSE)
 
-      des$overallResults$overallReject = power
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
+      des$overallResults$overallReject <- power
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
 
-      delta = b/sqrt(IMax)
+      delta <- b/sqrt(IMax)
       if (directionUpper) {
-        des$byStageResults$efficacySlopeDiff = delta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff = delta + slopeDiffH0
+        des$byStageResults$efficacySlopeDiff <- delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff <- delta + slopeDiffH0
       } else {
-        des$byStageResults$efficacySlopeDiff = -delta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff = -delta + slopeDiffH0
+        des$byStageResults$efficacySlopeDiff <- -delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff <- -delta + slopeDiffH0
       }
     } else {
       if (directionUpper) {
-        des$byStageResults$efficacySlopeDiff =
+        des$byStageResults$efficacySlopeDiff <-
           des$byStageResults$efficacyTheta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff =
+        des$byStageResults$futilitySlopeDiff <-
           des$byStageResults$futilityTheta + slopeDiffH0
       } else {
-        des$byStageResults$efficacySlopeDiff =
+        des$byStageResults$efficacySlopeDiff <-
           -des$byStageResults$efficacyTheta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff =
+        des$byStageResults$futilitySlopeDiff <-
           -des$byStageResults$futilityTheta + slopeDiffH0
       }
     }
   } else { # sample size calculation
-    des = getDesign(
+    des <- getDesign(
       beta, IMax = NA, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, 1)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, 1)
 
-    IMax = des$overallResults$information
+    IMax <- des$overallResults$information
 
     if (kMax == 1 && !normalApproximation) { # t-test for fixed design
       if (unknown == "accrualDuration") {
-        accrualDuration = uniroot(function(x) {
-          studyDuration = x + followupTime
-          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
-                       accrualTime, accrualIntensity,
-                       piecewiseSurvivalTime, gamma1, gamma2,
-                       x, followupTime, fixedFollowup, r)
+        accrualDuration <- uniroot(function(x) {
+          studyDuration <- x + followupTime
+          out <- f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                        accrualTime, accrualIntensity,
+                        piecewiseSurvivalTime, gamma1, gamma2,
+                        x, followupTime, fixedFollowup, r)
           out$IMax - IMax
         }, c(0.001, 240))$root
       } else if (unknown == "followupTime") {
-        followupTime = uniroot(function(x) {
-          studyDuration = accrualDuration + x
-          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
-                       accrualTime, accrualIntensity,
-                       piecewiseSurvivalTime, gamma1, gamma2,
-                       accrualDuration, followupTime, fixedFollowup, r)
+        followupTime <- uniroot(function(x) {
+          studyDuration <- accrualDuration + x
+          out <- f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                        accrualTime, accrualIntensity,
+                        piecewiseSurvivalTime, gamma1, gamma2,
+                        accrualDuration, followupTime, fixedFollowup, r)
           out$IMax - IMax
         }, c(0.001, 240))$root
       } else {
-        accrualIntensity = uniroot(function(x) {
-          studyDuration = accrualDuration + followupTime
-          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
-                       accrualTime, x*accrualIntensity,
-                       piecewiseSurvivalTime, gamma1, gamma2,
-                       accrualDuration, followupTime, fixedFollowup, r)
+        accrualIntensity <- uniroot(function(x) {
+          studyDuration <- accrualDuration + followupTime
+          out <- f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                        accrualTime, x*accrualIntensity,
+                        piecewiseSurvivalTime, gamma1, gamma2,
+                        accrualDuration, followupTime, fixedFollowup, r)
           out$IMax - IMax
         }, c(0.001, 240))$root*accrualIntensity
       }
 
-      studyDuration = accrualDuration + followupTime
-      out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
-                   accrualTime, accrualIntensity,
-                   piecewiseSurvivalTime, gamma1, gamma2,
-                   accrualDuration, followupTime, fixedFollowup, r)
+      studyDuration <- accrualDuration + followupTime
+      out <- f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                    accrualTime, accrualIntensity,
+                    piecewiseSurvivalTime, gamma1, gamma2,
+                    accrualDuration, followupTime, fixedFollowup, r)
 
-      nu = out$nu # this serves as the lower bound for degrees of freedom
+      nu <- out$nu # this serves as the lower bound for degrees of freedom
 
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
       # power for t-test
-      b = qt(1-alpha, nu)
+      b <- qt(1-alpha, nu)
 
-      info = uniroot(function(info) {
-        ncp = theta*sqrt(info)
+      info <- uniroot(function(info) {
+        ncp <- theta*sqrt(info)
         pt(b, nu, ncp, lower.tail = FALSE) - (1-beta)
       }, c(0.5*IMax, 1.5*IMax))$root
 
 
       if (unknown == "accrualDuration") {
-        accrualDuration = uniroot(function(x) {
-          studyDuration = x + followupTime
-          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
-                       accrualTime, accrualIntensity,
-                       piecewiseSurvivalTime, gamma1, gamma2,
-                       x, followupTime, fixedFollowup, r)
+        accrualDuration <- uniroot(function(x) {
+          studyDuration <- x + followupTime
+          out <- f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                        accrualTime, accrualIntensity,
+                        piecewiseSurvivalTime, gamma1, gamma2,
+                        x, followupTime, fixedFollowup, r)
           out$IMax - info
         }, c(0.5*accrualDuration, 1.5*accrualDuration))$root
       } else if (unknown == "followupTime") {
-        followupTime = uniroot(function(x) {
-          studyDuration = accrualDuration + x
-          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
-                       accrualTime, accrualIntensity,
-                       piecewiseSurvivalTime, gamma1, gamma2,
-                       accrualDuration, followupTime, fixedFollowup, r)
+        followupTime <- uniroot(function(x) {
+          studyDuration <- accrualDuration + x
+          out <- f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                        accrualTime, accrualIntensity,
+                        piecewiseSurvivalTime, gamma1, gamma2,
+                        accrualDuration, followupTime, fixedFollowup, r)
           out$IMax - info
         }, c(0.5*followupTime, 1.5*followupTime))$root
       } else {
-        accrualIntensity = uniroot(function(x) {
-          studyDuration = accrualDuration + followupTime
-          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
-                       accrualTime, x*accrualIntensity,
-                       piecewiseSurvivalTime, gamma1, gamma2,
-                       accrualDuration, followupTime, fixedFollowup, r)
+        accrualIntensity <- uniroot(function(x) {
+          studyDuration <- accrualDuration + followupTime
+          out <- f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                        accrualTime, x*accrualIntensity,
+                        piecewiseSurvivalTime, gamma1, gamma2,
+                        accrualDuration, followupTime, fixedFollowup, r)
           out$IMax - info
         }, c(0.5, 1.5))$root*accrualIntensity
       }
 
-      n = accrual(accrualDuration, accrualTime, accrualIntensity,
-                  accrualDuration)
+      n <- accrual(accrualDuration, accrualTime, accrualIntensity,
+                   accrualDuration)
 
       if (rounding) {
-        n = ceiling(n - 1.0e-12)
+        n <- ceiling(n - 1.0e-12)
 
         if (unknown == "accrualDuration" || unknown == "followupTime") {
-          accrualDuration = getAccrualDurationFromN(n, accrualTime,
-                                                    accrualIntensity)
+          accrualDuration <- getAccrualDurationFromN(n, accrualTime,
+                                                     accrualIntensity)
         } else {
-          accrualIntensity = uniroot(function(x) {
+          accrualIntensity <- uniroot(function(x) {
             accrual(accrualDuration, accrualTime, x*accrualIntensity,
                     accrualDuration) - n
           }, c(0.5, 1.5))$root*accrualIntensity
@@ -8482,75 +8598,75 @@ getDesignSlopeDiffMMRM <- function(
       }
 
       # update maximum information and degrees of freedom
-      studyDuration = accrualDuration + followupTime
-      out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
-                   accrualTime, accrualIntensity,
-                   piecewiseSurvivalTime, gamma1, gamma2,
-                   accrualDuration, followupTime, fixedFollowup, r)
+      studyDuration <- accrualDuration + followupTime
+      out <- f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                    accrualTime, accrualIntensity,
+                    piecewiseSurvivalTime, gamma1, gamma2,
+                    accrualDuration, followupTime, fixedFollowup, r)
 
-      IMax = out$IMax
-      nu = out$nu
-      b = qt(1-alpha, nu)
-      ncp = theta*sqrt(IMax)
-      power = pt(b, nu, ncp, lower.tail = FALSE)
+      IMax <- out$IMax
+      nu <- out$nu
+      b <- qt(1-alpha, nu)
+      ncp <- theta*sqrt(IMax)
+      power <- pt(b, nu, ncp, lower.tail = FALSE)
 
-      des$overallResults$overallReject = power
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
+      des$overallResults$overallReject <- power
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
 
-      delta = b/sqrt(IMax)
+      delta <- b/sqrt(IMax)
       if (directionUpper) {
-        des$byStageResults$efficacySlopeDiff = delta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff = delta + slopeDiffH0
+        des$byStageResults$efficacySlopeDiff <- delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff <- delta + slopeDiffH0
       } else {
-        des$byStageResults$efficacySlopeDiff = -delta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff = -delta + slopeDiffH0
+        des$byStageResults$efficacySlopeDiff <- -delta + slopeDiffH0
+        des$byStageResults$futilitySlopeDiff <- -delta + slopeDiffH0
       }
     } else {
       if (unknown == "accrualDuration") {
-        accrualDuration = uniroot(function(x) {
-          studyDuration = x + followupTime
-          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
-                       accrualTime, accrualIntensity,
-                       piecewiseSurvivalTime, gamma1, gamma2,
-                       x, followupTime, fixedFollowup, r)
+        accrualDuration <- uniroot(function(x) {
+          studyDuration <- x + followupTime
+          out <- f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                        accrualTime, accrualIntensity,
+                        piecewiseSurvivalTime, gamma1, gamma2,
+                        x, followupTime, fixedFollowup, r)
           out$IMax - IMax
         }, c(0.001, 240))$root
       } else if (unknown == "followupTime") {
-        followupTime = uniroot(function(x) {
-          studyDuration = accrualDuration + x
-          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
-                       accrualTime, accrualIntensity,
-                       piecewiseSurvivalTime, gamma1, gamma2,
-                       accrualDuration, followupTime, fixedFollowup, r)
+        followupTime <- uniroot(function(x) {
+          studyDuration <- accrualDuration + x
+          out <- f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                        accrualTime, accrualIntensity,
+                        piecewiseSurvivalTime, gamma1, gamma2,
+                        accrualDuration, followupTime, fixedFollowup, r)
           out$IMax - IMax
         }, c(0.001, 240))$root
       } else {
-        accrualIntensity = uniroot(function(x) {
-          studyDuration = accrualDuration + followupTime
-          out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
-                       accrualTime, x*accrualIntensity,
-                       piecewiseSurvivalTime, gamma1, gamma2,
-                       accrualDuration, followupTime, fixedFollowup, r)
+        accrualIntensity <- uniroot(function(x) {
+          studyDuration <- accrualDuration + followupTime
+          out <- f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                        accrualTime, x*accrualIntensity,
+                        piecewiseSurvivalTime, gamma1, gamma2,
+                        accrualDuration, followupTime, fixedFollowup, r)
           out$IMax - IMax
         }, c(0.001, 240))$root*accrualIntensity
       }
 
-      n = accrual(accrualDuration, accrualTime, accrualIntensity,
-                  accrualDuration)
+      n <- accrual(accrualDuration, accrualTime, accrualIntensity,
+                   accrualDuration)
 
       if (rounding) {
-        n = ceiling(n - 1.0e-12)
+        n <- ceiling(n - 1.0e-12)
 
         if (unknown == "accrualDuration" || unknown == "followupTime") {
-          accrualDuration = getAccrualDurationFromN(n, accrualTime,
-                                                    accrualIntensity)
+          accrualDuration <- getAccrualDurationFromN(n, accrualTime,
+                                                     accrualIntensity)
         } else {
-          accrualIntensity = uniroot(function(x) {
+          accrualIntensity <- uniroot(function(x) {
             accrual(accrualDuration, accrualTime, x*accrualIntensity,
                     accrualDuration) - n
           }, c(0.5, 1.5))$root*accrualIntensity
@@ -8558,34 +8674,34 @@ getDesignSlopeDiffMMRM <- function(
 
 
         # final maximum information
-        studyDuration = accrualDuration + followupTime
-        out = f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
-                     accrualTime, accrualIntensity,
-                     piecewiseSurvivalTime, gamma1, gamma2,
-                     accrualDuration, followupTime, fixedFollowup, r)
+        studyDuration <- accrualDuration + followupTime
+        out <- f_info(studyDuration, w, m, cumN, cumwN, stDev, G,
+                      accrualTime, accrualIntensity,
+                      piecewiseSurvivalTime, gamma1, gamma2,
+                      accrualDuration, followupTime, fixedFollowup, r)
 
-        IMax = out$IMax
+        IMax <- out$IMax
 
-        des = getDesign(
+        des <- getDesign(
           beta = NA, IMax, theta,
           kMax, informationRates,
           efficacyStopping, futilityStopping,
           criticalValues, alpha, typeAlphaSpending,
           parameterAlphaSpending, userAlphaSpending,
-          futilityBounds, typeBetaSpending,
-          parameterBetaSpending, userBetaSpending,
-          spendingTime, 1)
+          futilityBounds, futilityCP, futilityTheta,
+          typeBetaSpending, parameterBetaSpending,
+          userBetaSpending, spendingTime, 1)
       }
 
       if (directionUpper) {
-        des$byStageResults$efficacySlopeDiff =
+        des$byStageResults$efficacySlopeDiff <-
           des$byStageResults$efficacyTheta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff =
+        des$byStageResults$futilitySlopeDiff <-
           des$byStageResults$futilityTheta + slopeDiffH0
       } else {
-        des$byStageResults$efficacySlopeDiff =
+        des$byStageResults$efficacySlopeDiff <-
           -des$byStageResults$efficacyTheta + slopeDiffH0
-        des$byStageResults$futilitySlopeDiff =
+        des$byStageResults$futilitySlopeDiff <-
           -des$byStageResults$futilityTheta + slopeDiffH0
       }
     }
@@ -8593,70 +8709,70 @@ getDesignSlopeDiffMMRM <- function(
 
 
   # timing of interim analysis
-  studyDuration = accrualDuration + followupTime
-  information = IMax*informationRates
-  analysisTime = rep(0, kMax)
+  studyDuration <- accrualDuration + followupTime
+  information <- IMax*informationRates
+  analysisTime <- rep(0, kMax)
 
   if (kMax > 1) {
     for (i in 1:(kMax-1)) {
-      analysisTime[i] = uniroot(function(tau) {
-        out = f_info(tau, w, m, cumN, cumwN, stDev, G,
-                     accrualTime, accrualIntensity,
-                     piecewiseSurvivalTime, gamma1, gamma2,
-                     accrualDuration, followupTime, fixedFollowup, r)
+      analysisTime[i] <- uniroot(function(tau) {
+        out <- f_info(tau, w, m, cumN, cumwN, stDev, G,
+                      accrualTime, accrualIntensity,
+                      piecewiseSurvivalTime, gamma1, gamma2,
+                      accrualDuration, followupTime, fixedFollowup, r)
         out$IMax - information[i]
       }, c(w[1]+0.001, studyDuration))$root # at least one postbaseline visit
     }
   }
 
-  analysisTime[kMax] = studyDuration
+  analysisTime[kMax] <- studyDuration
 
-  numberOfSubjects = accrual(analysisTime, accrualTime, accrualIntensity,
-                             accrualDuration)
+  numberOfSubjects <- accrual(analysisTime, accrualTime, accrualIntensity,
+                              accrualDuration)
 
-  p = des$byStageResults$rejectPerStage +
+  p <- des$byStageResults$rejectPerStage +
     des$byStageResults$futilityPerStage
 
-  pH0 = des$byStageResults$rejectPerStageH0 +
+  pH0 <- des$byStageResults$rejectPerStageH0 +
     des$byStageResults$futilityPerStageH0
 
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$studyDuration = studyDuration
-  des$overallResults$expectedNumberOfSubjectsH1 = sum(p*numberOfSubjects)
-  des$overallResults$expectedNumberOfSubjectsH0 = sum(pH0*numberOfSubjects)
-  des$overallResults$expectedStudyDurationH1 = sum(p*analysisTime)
-  des$overallResults$expectedStudyDurationH0 = sum(pH0*analysisTime)
-  des$overallResults$accrualDuration = accrualDuration
-  des$overallResults$followupTime = followupTime
-  des$overallResults$fixedFollowup = fixedFollowup
-  des$overallResults$slopeDiffH0 = slopeDiffH0
-  des$overallResults$slopeDiff = slopeDiff
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$studyDuration <- studyDuration
+  des$overallResults$expectedNumberOfSubjectsH1 <- sum(p*numberOfSubjects)
+  des$overallResults$expectedNumberOfSubjectsH0 <- sum(pH0*numberOfSubjects)
+  des$overallResults$expectedStudyDurationH1 <- sum(p*analysisTime)
+  des$overallResults$expectedStudyDurationH0 <- sum(pH0*analysisTime)
+  des$overallResults$accrualDuration <- accrualDuration
+  des$overallResults$followupTime <- followupTime
+  des$overallResults$fixedFollowup <- fixedFollowup
+  des$overallResults$slopeDiffH0 <- slopeDiffH0
+  des$overallResults$slopeDiff <- slopeDiff
 
-  des$byStageResults$numberOfSubjects = numberOfSubjects
+  des$byStageResults$numberOfSubjects <- numberOfSubjects
   if (fixedFollowup) {
-    numberOfCompleters = accrual(analysisTime - followupTime, accrualTime,
-                                 accrualIntensity, accrualDuration)
-    des$byStageResults$numberOfCompleters = numberOfCompleters
+    numberOfCompleters <- accrual(analysisTime - followupTime, accrualTime,
+                                  accrualIntensity, accrualDuration)
+    des$byStageResults$numberOfCompleters <- numberOfCompleters
   }
-  des$byStageResults$analysisTime = analysisTime
-  des$byStageResults$efficacyTheta = NULL
-  des$byStageResults$futilityTheta = NULL
+  des$byStageResults$analysisTime <- analysisTime
+  des$byStageResults$efficacyTheta <- NULL
+  des$byStageResults$futilityTheta <- NULL
 
-  des$settings$allocationRatioPlanned = allocationRatioPlanned
-  des$settings$accrualTime = accrualTime
-  des$settings$accrualIntensity = accrualIntensity
-  des$settings$piecewiseSurvivalTime = piecewiseSurvivalTime
-  des$settings$gamma1 = gamma1
-  des$settings$gamma2 = gamma2
-  des$settings$w = w
-  des$settings$N = N
-  des$settings$stDev = stDev
-  des$settings$G = G
-  des$settings$normalApproximation = normalApproximation
-  des$settings$rounding = rounding
-  des$settings$varianceRatio = NULL
+  des$settings$allocationRatioPlanned <- allocationRatioPlanned
+  des$settings$accrualTime <- accrualTime
+  des$settings$accrualIntensity <- accrualIntensity
+  des$settings$piecewiseSurvivalTime <- piecewiseSurvivalTime
+  des$settings$gamma1 <- gamma1
+  des$settings$gamma2 <- gamma2
+  des$settings$w <- w
+  des$settings$N <- N
+  des$settings$stDev <- stDev
+  des$settings$G <- G
+  des$settings$normalApproximation <- normalApproximation
+  des$settings$rounding <- rounding
+  des$settings$varianceRatio <- NULL
 
-  attr(des, "class") = "designSlopeDiffMMRM"
+  attr(des, "class") <- "designSlopeDiffMMRM"
 
   des
 }
@@ -8742,11 +8858,11 @@ getDesignSlopeDiffMMRM <- function(
 #'
 #' @export
 hedgesg <- function(tstat, m, ntilde, cilevel = 0.95) {
-  d = 1/sqrt(ntilde)*tstat
-  g = (1 - 3/(4*m-1))*d
-  varg = 1/ntilde + g^2/(2*m)
-  lower = g - qnorm((1 + cilevel)/2)*sqrt(varg)
-  upper = g + qnorm((1 + cilevel)/2)*sqrt(varg)
+  d <- 1/sqrt(ntilde)*tstat
+  g <- (1 - 3/(4*m-1))*d
+  varg <- 1/ntilde + g^2/(2*m)
+  lower <- g - qnorm((1 + cilevel)/2)*sqrt(varg)
+  upper <- g + qnorm((1 + cilevel)/2)*sqrt(varg)
   data.frame(tstat, m, ntilde, g, varg, lower, upper, cilevel)
 }
 

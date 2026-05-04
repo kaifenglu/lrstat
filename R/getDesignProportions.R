@@ -26,6 +26,8 @@
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility bounds on the conditional power scale.
+#' @param futilitypi The futility bounds on the response probability scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -189,6 +191,8 @@ getDesignOneProportion <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilitypi = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -223,193 +227,208 @@ getDesignOneProportion <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
-  directionUpper = pi > piH0
+  if (!anyNA(futilitypi)) {
+    for (x in futilitypi) {
+      if (x <= 0 || x >= 1) {
+        stop("futilitypi must lie between 0 and 1")
+      }
+    }
+  }
 
-  theta = ifelse(directionUpper, pi - piH0, piH0 - pi)
-  v0 = piH0*(1-piH0)
-  v1 = pi*(1-pi)
-  varianceRatio = ifelse(nullVariance, v0/v1, 1)
+
+  directionUpper <- pi > piH0
+
+  theta <- ifelse(directionUpper, pi - piH0, piH0 - pi)
+  if (directionUpper) {
+    futilityTheta <- futilitypi - piH0
+  } else {
+    futilityTheta <- piH0 - futilitypi
+  }
+
+  v0 <- piH0*(1-piH0)
+  v1 <- pi*(1-pi)
+  varianceRatio <- ifelse(nullVariance, v0/v1, 1)
 
   if (!is.na(n)) { # power calculation
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- round(n*informationRates)/n
     }
 
-    des = getDesign(
+    des <- getDesign(
       beta = NA, IMax = n/v1, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, varianceRatio)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, varianceRatio)
 
     if (kMax == 1 && !normalApproximation) { # exact test for fixed design
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
-      a = powerOnePropExact(n, piH0, pi, alpha)
-      r = a$r
-      attainedAlpha = a$attainedAlpha
-      power = a$power
-      n = a$n
+      a <- powerOnePropExact(n, piH0, pi, alpha)
+      r <- a$r
+      attainedAlpha <- a$attainedAlpha
+      power <- a$power
+      n <- a$n
 
       if (directionUpper) {
-        b = (r/n - piH0)*sqrt(n/v1)
+        b <- (r/n - piH0)*sqrt(n/v1)
       } else {
-        b = (piH0 - r/n)*sqrt(n/v1)
+        b <- (piH0 - r/n)*sqrt(n/v1)
       }
 
-      des$overallResults$overallReject = power
-      des$overallResults$attainedAlpha = attainedAlpha
+      des$overallResults$overallReject <- power
+      des$overallResults$attainedAlpha <- attainedAlpha
 
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$cumulativeAlphaSpent = attainedAlpha
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
-      des$byStageResults$efficacyP = attainedAlpha
-      des$byStageResults$futilityP = attainedAlpha
-      des$byStageResults$efficacyResponses = r
-      des$byStageResults$futilityResponses = r
-      des$byStageResults$rejectPerStageH0 = attainedAlpha
-      des$byStageResults$futilityPerStageH0 = 1 - attainedAlpha
-      des$byStageResults$cumulativeRejectionH0 = attainedAlpha
-      des$byStageResults$cumulativeFutilityH0 = 1 - attainedAlpha
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$cumulativeAlphaSpent <- attainedAlpha
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
+      des$byStageResults$efficacyP <- attainedAlpha
+      des$byStageResults$futilityP <- attainedAlpha
+      des$byStageResults$efficacyResponses <- r
+      des$byStageResults$futilityResponses <- r
+      des$byStageResults$rejectPerStageH0 <- attainedAlpha
+      des$byStageResults$futilityPerStageH0 <- 1 - attainedAlpha
+      des$byStageResults$cumulativeRejectionH0 <- attainedAlpha
+      des$byStageResults$cumulativeFutilityH0 <- 1 - attainedAlpha
     } else {
-      ns = des$byStageResults$informationRates*n
+      ns <- des$byStageResults$informationRates*n
 
       if (directionUpper) {
-        des$byStageResults$efficacyResponses =
+        des$byStageResults$efficacyResponses <-
           ceiling(ns*(des$byStageResults$efficacyTheta + piH0))
-        des$byStageResults$futilityResponses =
+        des$byStageResults$futilityResponses <-
           ceiling(ns*(des$byStageResults$futilityTheta + piH0))
       } else {
-        des$byStageResults$efficacyResponses =
+        des$byStageResults$efficacyResponses <-
           floor(ns*(-des$byStageResults$efficacyTheta + piH0))
-        des$byStageResults$futilityResponses =
+        des$byStageResults$futilityResponses <-
           floor(ns*(-des$byStageResults$futilityTheta + piH0))
       }
     }
   } else { # sample size calculation
     if (kMax == 1 && !normalApproximation) { # exact test for fixed design
       if (!any(is.na(criticalValues))) {
-        alpha = 1 - pnorm(criticalValues)
+        alpha <- 1 - pnorm(criticalValues)
       }
 
-      a = samplesizeOnePropExact(beta, piH0, pi, alpha)
-      attainedAlpha = a$attainedAlpha
-      r = a$r
-      power = a$power
-      n = a$n
+      a <- samplesizeOnePropExact(beta, piH0, pi, alpha)
+      attainedAlpha <- a$attainedAlpha
+      r <- a$r
+      power <- a$power
+      n <- a$n
 
       if (directionUpper) {
-        b = (r/n - piH0)*sqrt(n/v1)
+        b <- (r/n - piH0)*sqrt(n/v1)
       } else {
-        b = (piH0 - r/n)*sqrt(n/v1)
+        b <- (piH0 - r/n)*sqrt(n/v1)
       }
 
-      des = getDesign(
+      des <- getDesign(
         beta = NA, IMax = n/v1, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, varianceRatio)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, varianceRatio)
 
-      des$overallResults$overallReject = power
-      des$overallResults$attainedAlpha = attainedAlpha
+      des$overallResults$overallReject <- power
+      des$overallResults$attainedAlpha <- attainedAlpha
 
-      des$byStageResults$rejectPerStage = power
-      des$byStageResults$futilityPerStage = 1 - power
-      des$byStageResults$cumulativeRejection = power
-      des$byStageResults$cumulativeFutility = 1 - power
-      des$byStageResults$cumulativeAlphaSpent = attainedAlpha
-      des$byStageResults$efficacyBounds = b
-      des$byStageResults$futilityBounds = b
-      des$byStageResults$efficacyP = attainedAlpha
-      des$byStageResults$futilityP = attainedAlpha
-      des$byStageResults$efficacyResponses = r
-      des$byStageResults$futilityResponses = r
-      des$byStageResults$rejectPerStageH0 = attainedAlpha
-      des$byStageResults$futilityPerStageH0 = 1 - attainedAlpha
-      des$byStageResults$cumulativeRejectionH0 = attainedAlpha
-      des$byStageResults$cumulativeFutilityH0 = 1 - attainedAlpha
+      des$byStageResults$rejectPerStage <- power
+      des$byStageResults$futilityPerStage <- 1 - power
+      des$byStageResults$cumulativeRejection <- power
+      des$byStageResults$cumulativeFutility <- 1 - power
+      des$byStageResults$cumulativeAlphaSpent <- attainedAlpha
+      des$byStageResults$efficacyBounds <- b
+      des$byStageResults$futilityBounds <- b
+      des$byStageResults$efficacyP <- attainedAlpha
+      des$byStageResults$futilityP <- attainedAlpha
+      des$byStageResults$efficacyResponses <- r
+      des$byStageResults$futilityResponses <- r
+      des$byStageResults$rejectPerStageH0 <- attainedAlpha
+      des$byStageResults$futilityPerStageH0 <- 1 - attainedAlpha
+      des$byStageResults$cumulativeRejectionH0 <- attainedAlpha
+      des$byStageResults$cumulativeFutilityH0 <- 1 - attainedAlpha
     } else {
-      des = getDesign(
+      des <- getDesign(
         beta, IMax = NA, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, varianceRatio)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, varianceRatio)
 
-      n = des$overallResults$information*v1
+      n <- des$overallResults$information*v1
 
       if (rounding) {
-        n = ceiling(n - 1.0e-12)
-        informationRates = des$byStageResults$informationRates
-        informationRates = round(n*informationRates)/n
+        n <- ceiling(n - 1.0e-12)
+        informationRates <- des$byStageResults$informationRates
+        informationRates <- round(n*informationRates)/n
 
-        des = getDesign(
+        des <- getDesign(
           beta = NA, IMax = n/v1, theta,
           kMax, informationRates,
           efficacyStopping, futilityStopping,
           criticalValues, alpha, typeAlphaSpending,
           parameterAlphaSpending, userAlphaSpending,
-          futilityBounds, typeBetaSpending,
-          parameterBetaSpending, userBetaSpending,
-          spendingTime, varianceRatio)
+          futilityBounds, futilityCP, futilityTheta,
+          typeBetaSpending, parameterBetaSpending,
+          userBetaSpending, spendingTime, varianceRatio)
       }
 
-      ns = des$byStageResults$informationRates*n
+      ns <- des$byStageResults$informationRates*n
 
       if (directionUpper) {
-        des$byStageResults$efficacyResponses =
+        des$byStageResults$efficacyResponses <-
           ceiling(ns*(des$byStageResults$efficacyTheta + piH0))
-        des$byStageResults$futilityResponses =
+        des$byStageResults$futilityResponses <-
           ceiling(ns*(des$byStageResults$futilityTheta + piH0))
       } else {
-        des$byStageResults$efficacyResponses =
+        des$byStageResults$efficacyResponses <-
           floor(ns*(-des$byStageResults$efficacyTheta + piH0))
-        des$byStageResults$futilityResponses =
+        des$byStageResults$futilityResponses <-
           floor(ns*(-des$byStageResults$futilityTheta + piH0))
       }
     }
   }
 
-  des$overallResults$theta = theta
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$theta <- theta
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*v1
-  des$overallResults$expectedNumberOfSubjectsH0 =
+  des$overallResults$expectedNumberOfSubjectsH0 <-
     des$overallResults$expectedInformationH0*v1
-  des$overallResults$piH0 = piH0
-  des$overallResults$pi = pi
+  des$overallResults$piH0 <- piH0
+  des$overallResults$pi <- pi
 
-  des$byStageResults$efficacyTheta = NULL
-  des$byStageResults$futilityTheta = NULL
-  des$byStageResults$numberOfSubjects =
+  des$byStageResults$efficacyTheta <- NULL
+  des$byStageResults$futilityTheta <- NULL
+  des$byStageResults$numberOfSubjects <-
     des$byStageResults$informationRates*n
 
-  des$settings$nullVariance = nullVariance
-  des$settings$varianceRatio = varianceRatio
-  des$settings$normalApproximation = normalApproximation
-  des$settings$rounding = rounding
+  des$settings$nullVariance <- nullVariance
+  des$settings$varianceRatio <- varianceRatio
+  des$settings$normalApproximation <- normalApproximation
+  des$settings$rounding <- rounding
 
-  attr(des, "class") = "designOneProportion"
+  attr(des, "class") <- "designOneProportion"
 
   des
 }
@@ -442,6 +461,8 @@ getDesignOneProportion <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility bounds on the conditional power scale.
+#' @param futilityRiskDiff The futility bounds on the risk difference scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -626,6 +647,8 @@ getDesignPairedPropMcNemar <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilityRiskDiff = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -668,91 +691,105 @@ getDesignPairedPropMcNemar <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
-  directionUpper = riskDiff > 0
+  if (!anyNA(futilityRiskDiff)) {
+    for (x in futilityRiskDiff) {
+      if (x <= -1 || x >= 1) {
+        stop("futilityRiskDiff must lie between -1 and 1")
+      }
+    }
+  }
 
-  theta = ifelse(directionUpper, riskDiff, -riskDiff)
+
+  directionUpper <- riskDiff > 0
+
+  theta <- ifelse(directionUpper, riskDiff, -riskDiff)
+  if (directionUpper) {
+    futilityTheta <- futilityRiskDiff
+  } else {
+    futilityTheta <- -futilityRiskDiff
+  }
 
   # variance for one sampling unit
-  v0 = pDiscordant
-  v1 = pDiscordant - riskDiff^2
-  varianceRatio = ifelse(nullVariance, v0/v1, 1)
+  v0 <- pDiscordant
+  v1 <- pDiscordant - riskDiff^2
+  varianceRatio <- ifelse(nullVariance, v0/v1, 1)
 
   if (!is.na(n)) { # power calculation
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- round(n*informationRates)/n
     }
 
-    des = getDesign(
+    des <- getDesign(
       beta = NA, IMax = n/v1, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, varianceRatio)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, varianceRatio)
   } else { # sample size calculation
-    des = getDesign(
+    des <- getDesign(
       beta, IMax = NA, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, varianceRatio)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, varianceRatio)
 
-    n = des$overallResults$information*v1
+    n <- des$overallResults$information*v1
 
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = des$byStageResults$informationRates
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- des$byStageResults$informationRates
+      informationRates <- round(n*informationRates)/n
 
-      des = getDesign(
+      des <- getDesign(
         beta = NA, IMax = n/v1, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, varianceRatio)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, varianceRatio)
     }
   }
 
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*v1
-  des$overallResults$expectedNumberOfSubjectsH0 =
+  des$overallResults$expectedNumberOfSubjectsH0 <-
     des$overallResults$expectedInformationH0*v1
-  des$overallResults$pDiscordant = pDiscordant
-  des$overallResults$riskDiff = riskDiff
+  des$overallResults$pDiscordant <- pDiscordant
+  des$overallResults$riskDiff <- riskDiff
 
   if (directionUpper) {
-    des$byStageResults$efficacyRiskDiff =
+    des$byStageResults$efficacyRiskDiff <-
       des$byStageResults$efficacyTheta
-    des$byStageResults$futilityRiskDiff =
+    des$byStageResults$futilityRiskDiff <-
       des$byStageResults$futilityTheta
   } else {
-    des$byStageResults$efficacyRiskDiff =
+    des$byStageResults$efficacyRiskDiff <-
       -des$byStageResults$efficacyTheta
-    des$byStageResults$futilityRiskDiff =
+    des$byStageResults$futilityRiskDiff <-
       -des$byStageResults$futilityTheta
   }
-  des$byStageResults$efficacyTheta = NULL
-  des$byStageResults$futilityTheta = NULL
-  des$byStageResults$numberOfSubjects =
+  des$byStageResults$efficacyTheta <- NULL
+  des$byStageResults$futilityTheta <- NULL
+  des$byStageResults$numberOfSubjects <-
     des$byStageResults$informationRates*n
 
-  des$settings$nullVariance = nullVariance
-  des$settings$rounding = rounding
+  des$settings$nullVariance <- nullVariance
+  des$settings$rounding <- rounding
 
-  attr(des, "class") = "designPairedPropMcNemar"
+  attr(des, "class") <- "designPairedPropMcNemar"
 
   des
 }
@@ -786,6 +823,8 @@ getDesignPairedPropMcNemar <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility bounds on the conditional power scale.
+#' @param futilityRiskDiff The futility bounds on the risk difference scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -961,6 +1000,8 @@ getDesignRiskDiff <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilityRiskDiff = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -1003,108 +1044,122 @@ getDesignRiskDiff <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
+  }
+
+  if (!anyNA(futilityRiskDiff)) {
+    for (x in futilityRiskDiff) {
+      if (x <= -1 || x >= 1) {
+        stop("futilityRiskDiff must lie between -1 and 1")
+      }
+    }
+  }
+
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
+
+  riskDiff <- pi1 - pi2
+
+  directionUpper <- riskDiff > riskDiffH0
+
+  theta <- ifelse(directionUpper, riskDiff - riskDiffH0,
+                  riskDiffH0 - riskDiff)
+
+  if (directionUpper) {
+    futilityTheta <- futilityRiskDiff - riskDiffH0
+  } else {
+    futilityTheta <- riskDiffH0 - futilityRiskDiff
   }
 
 
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
-
-  riskDiff = pi1 - pi2
-
-  directionUpper = riskDiff > riskDiffH0
-
-  theta = ifelse(directionUpper, riskDiff - riskDiffH0,
-                 riskDiffH0 - riskDiff)
-
   # restricted maximum likelihood estimates
-  mr = remlRiskDiff(r, r*pi1, 1-r, (1-r)*pi2, riskDiffH0)
-  p1 = mr[1]
-  p2 = mr[2]
+  mr <- remlRiskDiff(r, r*pi1, 1-r, (1-r)*pi2, riskDiffH0)
+  p1 <- mr[1]
+  p2 <- mr[2]
 
   # variance for one sampling unit
-  v0 = p1*(1-p1)/r + p2*(1-p2)/(1-r)
-  v1 = pi1*(1-pi1)/r + pi2*(1-pi2)/(1-r)
+  v0 <- p1*(1-p1)/r + p2*(1-p2)/(1-r)
+  v1 <- pi1*(1-pi1)/r + pi2*(1-pi2)/(1-r)
 
-  varianceRatio = ifelse(nullVariance, v0/v1, 1)
+  varianceRatio <- ifelse(nullVariance, v0/v1, 1)
 
   if (!is.na(n)) { # power calculation
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- round(n*informationRates)/n
     }
 
-    des = getDesign(
+    des <- getDesign(
       beta = NA, IMax = n/v1, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, varianceRatio)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, varianceRatio)
   } else { # sample size calculation
-    des = getDesign(
+    des <- getDesign(
       beta, IMax = NA, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, varianceRatio)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, varianceRatio)
 
-    n = des$overallResults$information*v1
+    n <- des$overallResults$information*v1
 
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = des$byStageResults$informationRates
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- des$byStageResults$informationRates
+      informationRates <- round(n*informationRates)/n
 
-      des = getDesign(
+      des <- getDesign(
         beta = NA, IMax = n/v1, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, varianceRatio)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, varianceRatio)
     }
   }
 
-  des$overallResults$theta = theta
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$theta <- theta
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*v1
-  des$overallResults$expectedNumberOfSubjectsH0 =
+  des$overallResults$expectedNumberOfSubjectsH0 <-
     des$overallResults$expectedInformationH0*v1
-  des$overallResults$riskDiffH0 = riskDiffH0
-  des$overallResults$pi1 = pi1
-  des$overallResults$pi2 = pi2
+  des$overallResults$riskDiffH0 <- riskDiffH0
+  des$overallResults$pi1 <- pi1
+  des$overallResults$pi2 <- pi2
 
   if (directionUpper) {
-    des$byStageResults$efficacyRiskDiff =
+    des$byStageResults$efficacyRiskDiff <-
       des$byStageResults$efficacyTheta + riskDiffH0
-    des$byStageResults$futilityRiskDiff =
+    des$byStageResults$futilityRiskDiff <-
       des$byStageResults$futilityTheta + riskDiffH0
   } else {
-    des$byStageResults$efficacyRiskDiff =
+    des$byStageResults$efficacyRiskDiff <-
       -des$byStageResults$efficacyTheta + riskDiffH0
-    des$byStageResults$futilityRiskDiff =
+    des$byStageResults$futilityRiskDiff <-
       -des$byStageResults$futilityTheta + riskDiffH0
   }
 
-  des$byStageResults$efficacyTheta = NULL
-  des$byStageResults$futilityTheta = NULL
-  des$byStageResults$numberOfSubjects =
+  des$byStageResults$efficacyTheta <- NULL
+  des$byStageResults$futilityTheta <- NULL
+  des$byStageResults$numberOfSubjects <-
     des$byStageResults$informationRates*n
 
-  des$settings$nullVariance = nullVariance
-  des$settings$varianceRatio = varianceRatio
-  des$settings$allocationRatioPlanned = allocationRatioPlanned
-  des$settings$rounding = rounding
+  des$settings$nullVariance <- nullVariance
+  des$settings$varianceRatio <- varianceRatio
+  des$settings$allocationRatioPlanned <- allocationRatioPlanned
+  des$settings$rounding <- rounding
 
-  attr(des, "class") = "designRiskDiff"
+  attr(des, "class") <- "designRiskDiff"
 
   des
 }
@@ -1138,6 +1193,8 @@ getDesignRiskDiff <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility bounds on the conditional power scale.
+#' @param futilityRiskRatio The futility bounds on the risk ratio scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -1314,6 +1371,8 @@ getDesignRiskRatio <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilityRiskRatio = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -1356,106 +1415,119 @@ getDesignRiskRatio <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
+  if (!anyNA(futilityRiskRatio)) {
+    for (x in futilityRiskRatio) {
+      if (x <= 0) {
+        stop("futilityRiskRatio must be positive")
+      }
+    }
+  }
 
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
 
-  riskRatio = pi1/pi2
+  riskRatio <- pi1/pi2
 
-  directionUpper = riskRatio > riskRatioH0
+  directionUpper <- riskRatio > riskRatioH0
 
-  theta = ifelse(directionUpper, log(riskRatio) - log(riskRatioH0),
-                 log(riskRatioH0) - log(riskRatio))
+  theta <- ifelse(directionUpper, log(riskRatio) - log(riskRatioH0),
+                  log(riskRatioH0) - log(riskRatio))
+
+  if (directionUpper) {
+    futilityTheta <- log(futilityRiskRatio) - log(riskRatioH0)
+  } else {
+    futilityTheta <- log(riskRatioH0) - log(futilityRiskRatio)
+  }
 
   # restricted maximum likelihood estimates
-  mr = remlRiskRatio(r, r*pi1, 1-r, (1-r)*pi2, riskRatioH0)
-  p1 = mr[1]
-  p2 = mr[2]
+  mr <- remlRiskRatio(r, r*pi1, 1-r, (1-r)*pi2, riskRatioH0)
+  p1 <- mr[1]
+  p2 <- mr[2]
 
   # variance for one sampling unit
-  v0 = (1-p1)/(r*p1) + (1-p2)/((1-r)*p2)
-  v1 = (1-pi1)/(r*pi1) + (1-pi2)/((1-r)*pi2)
-  varianceRatio = ifelse(nullVariance, v0/v1, 1)
+  v0 <- (1-p1)/(r*p1) + (1-p2)/((1-r)*p2)
+  v1 <- (1-pi1)/(r*pi1) + (1-pi2)/((1-r)*pi2)
+  varianceRatio <- ifelse(nullVariance, v0/v1, 1)
 
   if (!is.na(n)) { # power calculation
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- round(n*informationRates)/n
     }
 
-    des = getDesign(
+    des <- getDesign(
       beta = NA, IMax = n/v1, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, varianceRatio)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, varianceRatio)
   } else { # sample size calculation
-    des = getDesign(
+    des <- getDesign(
       beta, IMax = NA, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, varianceRatio)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, varianceRatio)
 
-    n = des$overallResults$information*v1
+    n <- des$overallResults$information*v1
 
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = des$byStageResults$informationRates
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- des$byStageResults$informationRates
+      informationRates <- round(n*informationRates)/n
 
-      des = getDesign(
+      des <- getDesign(
         beta = NA, IMax = n/v1, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, varianceRatio)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, varianceRatio)
     }
   }
 
-  des$overallResults$theta = theta
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$theta <- theta
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*v1
-  des$overallResults$expectedNumberOfSubjectsH0 =
+  des$overallResults$expectedNumberOfSubjectsH0 <-
     des$overallResults$expectedInformationH0*v1
-  des$overallResults$riskRatioH0 = riskRatioH0
-  des$overallResults$pi1 = pi1
-  des$overallResults$pi2 = pi2
+  des$overallResults$riskRatioH0 <- riskRatioH0
+  des$overallResults$pi1 <- pi1
+  des$overallResults$pi2 <- pi2
 
   if (directionUpper) {
-    des$byStageResults$efficacyRiskRatio =
+    des$byStageResults$efficacyRiskRatio <-
       exp(des$byStageResults$efficacyTheta)*riskRatioH0
-    des$byStageResults$futilityRiskRatio =
+    des$byStageResults$futilityRiskRatio <-
       exp(des$byStageResults$futilityTheta)*riskRatioH0
   } else {
-    des$byStageResults$efficacyRiskRatio =
+    des$byStageResults$efficacyRiskRatio <-
       exp(-des$byStageResults$efficacyTheta)*riskRatioH0
-    des$byStageResults$futilityRiskRatio =
+    des$byStageResults$futilityRiskRatio <-
       exp(-des$byStageResults$futilityTheta)*riskRatioH0
   }
 
-  des$byStageResults$efficacyTheta = NULL
-  des$byStageResults$futilityTheta = NULL
-  des$byStageResults$numberOfSubjects =
+  des$byStageResults$efficacyTheta <- NULL
+  des$byStageResults$futilityTheta <- NULL
+  des$byStageResults$numberOfSubjects <-
     des$byStageResults$informationRates*n
 
-  des$settings$nullVariance = nullVariance
-  des$settings$allocationRatioPlanned = allocationRatioPlanned
-  des$settings$rounding = rounding
+  des$settings$nullVariance <- nullVariance
+  des$settings$allocationRatioPlanned <- allocationRatioPlanned
+  des$settings$rounding <- rounding
 
-  attr(des, "class") = "designRiskRatio"
+  attr(des, "class") <- "designRiskRatio"
 
   des
 }
@@ -1490,6 +1562,8 @@ getDesignRiskRatio <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility bounds on the conditional power scale.
+#' @param futilityRiskRatio The futility bounds on the risk ratio scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -1668,6 +1742,8 @@ getDesignRiskRatioFM <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilityRiskRatio = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -1710,107 +1786,121 @@ getDesignRiskRatioFM <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
+  }
+
+  if (!anyNA(futilityRiskRatio)) {
+    for (x in futilityRiskRatio) {
+      if (x <= 0) {
+        stop("futilityRiskRatio must be positive")
+      }
+    }
   }
 
 
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
 
-  riskRatio = pi1/pi2
+  riskRatio <- pi1/pi2
 
-  directionUpper = riskRatio > riskRatioH0
+  directionUpper <- riskRatio > riskRatioH0
 
-  theta = ifelse(directionUpper, pi1 - riskRatioH0*pi2,
-                 -pi1 + riskRatioH0*pi2)
+  theta <- ifelse(directionUpper, pi1 - riskRatioH0*pi2,
+                  -pi1 + riskRatioH0*pi2)
+
+  if (directionUpper) {
+    futilityTheta <- (futilityRiskRatio - riskRatioH0) * pi2
+  } else {
+    futilityTheta <- (riskRatioH0 - futilityRiskRatio) * pi2
+  }
 
   # restricted maximum likelihood estimates
-  mr = remlRiskRatio(r, r*pi1, 1-r, (1-r)*pi2, riskRatioH0)
-  p1 = mr[1]
-  p2 = mr[2]
+  mr <- remlRiskRatio(r, r*pi1, 1-r, (1-r)*pi2, riskRatioH0)
+  p1 <- mr[1]
+  p2 <- mr[2]
 
   # variance for one sampling unit
-  v0 = p1*(1-p1)/r + riskRatioH0^2*p2*(1-p2)/(1-r)
-  v1 = pi1*(1-pi1)/r + riskRatioH0^2*pi2*(1-pi2)/(1-r)
+  v0 <- p1*(1-p1)/r + riskRatioH0^2*p2*(1-p2)/(1-r)
+  v1 <- pi1*(1-pi1)/r + riskRatioH0^2*pi2*(1-pi2)/(1-r)
 
-  varianceRatio = ifelse(nullVariance, v0/v1, 1)
+  varianceRatio <- ifelse(nullVariance, v0/v1, 1)
 
   if (!is.na(n)) { # power calculation
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- round(n*informationRates)/n
     }
 
-    des = getDesign(
+    des <- getDesign(
       beta = NA, IMax = n/v1, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, varianceRatio)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, varianceRatio)
   } else { # sample size calculation
-    des = getDesign(
+    des <- getDesign(
       beta, IMax = NA, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, varianceRatio)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, varianceRatio)
 
-    n = des$overallResults$information*v1
+    n <- des$overallResults$information*v1
 
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = des$byStageResults$informationRates
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- des$byStageResults$informationRates
+      informationRates <- round(n*informationRates)/n
 
-      des = getDesign(
+      des <- getDesign(
         beta = NA, IMax = n/v1, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, varianceRatio)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, varianceRatio)
     }
   }
 
-  des$overallResults$theta = theta
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$theta <- theta
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*v1
-  des$overallResults$expectedNumberOfSubjectsH0 =
+  des$overallResults$expectedNumberOfSubjectsH0 <-
     des$overallResults$expectedInformationH0*v1
-  des$overallResults$riskRatioH0 = riskRatioH0
-  des$overallResults$pi1 = pi1
-  des$overallResults$pi2 = pi2
+  des$overallResults$riskRatioH0 <- riskRatioH0
+  des$overallResults$pi1 <- pi1
+  des$overallResults$pi2 <- pi2
 
   if (directionUpper) {
-    des$byStageResults$efficacyRiskRatioScore =
+    des$byStageResults$efficacyRiskRatioScore <-
       des$byStageResults$efficacyTheta
-    des$byStageResults$futilityRiskRatioScore =
+    des$byStageResults$futilityRiskRatioScore <-
       des$byStageResults$futilityTheta
   } else {
-    des$byStageResults$efficacyRiskRatioScore =
+    des$byStageResults$efficacyRiskRatioScore <-
       -des$byStageResults$efficacyTheta
-    des$byStageResults$futilityRiskRatioScore =
+    des$byStageResults$futilityRiskRatioScore <-
       -des$byStageResults$futilityTheta
   }
 
-  des$byStageResults$efficacyTheta = NULL
-  des$byStageResults$futilityTheta = NULL
-  des$byStageResults$numberOfSubjects =
+  des$byStageResults$efficacyTheta <- NULL
+  des$byStageResults$futilityTheta <- NULL
+  des$byStageResults$numberOfSubjects <-
     des$byStageResults$informationRates*n
 
-  des$settings$nullVariance = nullVariance
-  des$settings$allocationRatioPlanned = allocationRatioPlanned
-  des$settings$rounding = rounding
+  des$settings$nullVariance <- nullVariance
+  des$settings$allocationRatioPlanned <- allocationRatioPlanned
+  des$settings$rounding <- rounding
 
-  attr(des, "class") = "designRiskRatioFM"
+  attr(des, "class") <- "designRiskRatioFM"
 
   des
 }
@@ -1844,6 +1934,8 @@ getDesignRiskRatioFM <- function(
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @inheritParams param_futilityBounds
+#' @param futilityCP The futility bounds on the conditional power scale.
+#' @param futilityOddsRatio The futility bounds on the odds ratio scale.
 #' @inheritParams param_typeBetaSpending
 #' @inheritParams param_parameterBetaSpending
 #' @inheritParams param_userBetaSpending
@@ -2022,6 +2114,8 @@ getDesignOddsRatio <- function(
     parameterAlphaSpending = NA_real_,
     userAlphaSpending = NA_real_,
     futilityBounds = NA_real_,
+    futilityCP = NA_real_,
+    futilityOddsRatio = NA_real_,
     typeBetaSpending = "none",
     parameterBetaSpending = NA_real_,
     userBetaSpending = NA_real_,
@@ -2064,107 +2158,121 @@ getDesignOddsRatio <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
+  }
+
+  if (!anyNA(futilityOddsRatio)) {
+    for (x in futilityOddsRatio) {
+      if (x <= 0) {
+        stop("futilityOddsRatio must be positive")
+      }
+    }
   }
 
 
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
 
-  oddsRatio = pi1*(1-pi2)/((1-pi1)*pi2)
+  oddsRatio <- pi1*(1-pi2)/((1-pi1)*pi2)
 
-  directionUpper = oddsRatio > oddsRatioH0
+  directionUpper <- oddsRatio > oddsRatioH0
 
-  theta = ifelse(directionUpper, log(oddsRatio) - log(oddsRatioH0),
-                 log(oddsRatioH0) - log(oddsRatio))
+  theta <- ifelse(directionUpper, log(oddsRatio) - log(oddsRatioH0),
+                  log(oddsRatioH0) - log(oddsRatio))
+
+  if (directionUpper) {
+    futilityTheta <- log(futilityOddsRatio) - log(oddsRatioH0);
+  } else {
+    futilityTheta <- log(oddsRatioH0) - log(futilityOddsRatio);
+  }
 
   # restricted maximum likelihood estimates
-  mr = remlOddsRatio(r, r*pi1, 1-r, (1-r)*pi2, oddsRatioH0)
-  p1 = mr[1]
-  p2 = mr[2]
+  mr <- remlOddsRatio(r, r*pi1, 1-r, (1-r)*pi2, oddsRatioH0)
+  p1 <- mr[1]
+  p2 <- mr[2]
 
   # variance for one sampling unit
-  v0 = 1/(r*p1*(1-p1)) + 1/((1-r)*p2*(1-p2))
-  v1 = 1/(r*pi1*(1-pi1)) + 1/((1-r)*pi2*(1-pi2))
+  v0 <- 1/(r*p1*(1-p1)) + 1/((1-r)*p2*(1-p2))
+  v1 <- 1/(r*pi1*(1-pi1)) + 1/((1-r)*pi2*(1-pi2))
 
-  varianceRatio = ifelse(nullVariance, v0/v1, 1)
+  varianceRatio <- ifelse(nullVariance, v0/v1, 1)
 
   if (!is.na(n)) { # power calculation
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- round(n*informationRates)/n
     }
 
-    des = getDesign(
+    des <- getDesign(
       beta = NA, IMax = n/v1, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, varianceRatio)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, varianceRatio)
   } else { # sample size calculation
-    des = getDesign(
+    des <- getDesign(
       beta, IMax = NA, theta,
       kMax, informationRates,
       efficacyStopping, futilityStopping,
       criticalValues, alpha, typeAlphaSpending,
       parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, typeBetaSpending,
-      parameterBetaSpending, userBetaSpending,
-      spendingTime, varianceRatio)
+      futilityBounds, futilityCP, futilityTheta,
+      typeBetaSpending, parameterBetaSpending,
+      userBetaSpending, spendingTime, varianceRatio)
 
-    n = des$overallResults$information*v1
+    n <- des$overallResults$information*v1
 
     if (rounding) {
-      n = ceiling(n - 1.0e-12)
-      informationRates = des$byStageResults$informationRates
-      informationRates = round(n*informationRates)/n
+      n <- ceiling(n - 1.0e-12)
+      informationRates <- des$byStageResults$informationRates
+      informationRates <- round(n*informationRates)/n
 
-      des = getDesign(
+      des <- getDesign(
         beta = NA, IMax = n/v1, theta,
         kMax, informationRates,
         efficacyStopping, futilityStopping,
         criticalValues, alpha, typeAlphaSpending,
         parameterAlphaSpending, userAlphaSpending,
-        futilityBounds, typeBetaSpending,
-        parameterBetaSpending, userBetaSpending,
-        spendingTime, varianceRatio)
+        futilityBounds, futilityCP, futilityTheta,
+        typeBetaSpending, parameterBetaSpending,
+        userBetaSpending, spendingTime, varianceRatio)
     }
   }
 
-  des$overallResults$theta = theta
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$theta <- theta
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*v1
-  des$overallResults$expectedNumberOfSubjectsH0 =
+  des$overallResults$expectedNumberOfSubjectsH0 <-
     des$overallResults$expectedInformationH0*v1
-  des$overallResults$oddsRatioH0 = oddsRatioH0
-  des$overallResults$pi1 = pi1
-  des$overallResults$pi2 = pi2
+  des$overallResults$oddsRatioH0 <- oddsRatioH0
+  des$overallResults$pi1 <- pi1
+  des$overallResults$pi2 <- pi2
 
   if (directionUpper) {
-    des$byStageResults$efficacyOddsRatio =
+    des$byStageResults$efficacyOddsRatio <-
       exp(des$byStageResults$efficacyTheta)*oddsRatioH0
-    des$byStageResults$futilityOddsRatio =
+    des$byStageResults$futilityOddsRatio <-
       exp(des$byStageResults$futilityTheta)*oddsRatioH0
   } else {
-    des$byStageResults$efficacyOddsRatio =
+    des$byStageResults$efficacyOddsRatio <-
       exp(-des$byStageResults$efficacyTheta)*oddsRatioH0
-    des$byStageResults$futilityOddsRatio =
+    des$byStageResults$futilityOddsRatio <-
       exp(-des$byStageResults$futilityTheta)*oddsRatioH0
   }
 
-  des$byStageResults$efficacyTheta = NULL
-  des$byStageResults$futilityTheta = NULL
-  des$byStageResults$numberOfSubjects =
+  des$byStageResults$efficacyTheta <- NULL
+  des$byStageResults$futilityTheta <- NULL
+  des$byStageResults$numberOfSubjects <-
     des$byStageResults$informationRates*n
 
-  des$settings$nullVariance = nullVariance
-  des$settings$allocationRatioPlanned = allocationRatioPlanned
-  des$settings$rounding = rounding
+  des$settings$nullVariance <- nullVariance
+  des$settings$allocationRatioPlanned <- allocationRatioPlanned
+  des$settings$rounding <- rounding
 
-  attr(des, "class") = "designOddsRatio"
+  attr(des, "class") <- "designOddsRatio"
 
   des
 }
@@ -2374,7 +2482,7 @@ getDesignRiskDiffEquiv <- function(
     stop("pi2 must lie between 0 and 1")
   }
 
-  riskDiff = pi1 - pi2
+  riskDiff <- pi1 - pi2
 
   if (riskDiffLower >= riskDiff) {
     stop("riskDiffLower must be less than pi1 - pi2")
@@ -2393,18 +2501,18 @@ getDesignRiskDiffEquiv <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
 
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
 
   # variance for one sampling unit under H1
-  vH1 = pi1*(1-pi1)/r + pi2*(1-pi2)/(1-r)
+  vH1 <- pi1*(1-pi1)/r + pi2*(1-pi2)/(1-r)
 
   # sample size calculation
   if (is.na(n)) {
-    des = getDesignEquiv(
+    des <- getDesignEquiv(
       beta = beta, IMax = NA, thetaLower = riskDiffLower,
       thetaUpper = riskDiffUpper, theta = riskDiff,
       kMax = kMax, informationRates = informationRates,
@@ -2413,16 +2521,16 @@ getDesignRiskDiffEquiv <- function(
       userAlphaSpending = userAlphaSpending,
       spendingTime = spendingTime)
 
-    n = des$overallResults$information*vH1
+    n <- des$overallResults$information*vH1
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
-    informationRates = round(n*informationRates)/n
+    n <- ceiling(n - 1.0e-12)
+    informationRates <- round(n*informationRates)/n
   }
 
   if (is.na(beta) || rounding) { # calculate power
-    des = getDesignEquiv(
+    des <- getDesignEquiv(
       beta = NA, IMax = n/vH1, thetaLower = riskDiffLower,
       thetaUpper = riskDiffUpper, theta = riskDiff,
       kMax = kMax, informationRates = informationRates,
@@ -2432,18 +2540,18 @@ getDesignRiskDiffEquiv <- function(
       spendingTime = spendingTime)
   }
 
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*vH1
-  des$overallResults$expectedNumberOfSubjectsH10 =
+  des$overallResults$expectedNumberOfSubjectsH10 <-
     des$overallResults$expectedInformationH10*vH1
-  des$overallResults$expectedNumberOfSubjectsH20 =
+  des$overallResults$expectedNumberOfSubjectsH20 <-
     des$overallResults$expectedInformationH20*vH1
-  des$overallResults$riskDiffLower = riskDiffLower
-  des$overallResults$riskDiffUpper = riskDiffUpper
-  des$overallResults$pi1 = pi1
-  des$overallResults$pi2 = pi2
-  des$overallResults$riskDiff = pi1 - pi2
+  des$overallResults$riskDiffLower <- riskDiffLower
+  des$overallResults$riskDiffUpper <- riskDiffUpper
+  des$overallResults$pi1 <- pi1
+  des$overallResults$pi2 <- pi2
+  des$overallResults$riskDiff <- pi1 - pi2
   des$overallResults <-
     des$overallResults[, c("overallReject", "alpha",
                            "attainedAlphaH10", "attainedAlphaH20",
@@ -2458,11 +2566,11 @@ getDesignRiskDiffEquiv <- function(
                            "riskDiffLower", "riskDiffUpper",
                            "pi1", "pi2", "riskDiff")]
 
-  des$byStageResults$efficacyRiskDiffLower =
+  des$byStageResults$efficacyRiskDiffLower <-
     des$byStageResults$efficacyThetaLower
-  des$byStageResults$efficacyRiskDiffUpper =
+  des$byStageResults$efficacyRiskDiffUpper <-
     des$byStageResults$efficacyThetaUpper
-  des$byStageResults$numberOfSubjects = n*informationRates
+  des$byStageResults$numberOfSubjects <- n*informationRates
   des$byStageResults <-
     des$byStageResults[, c("informationRates", "efficacyBounds",
                            "rejectPerStage", "cumulativeRejection",
@@ -2473,14 +2581,14 @@ getDesignRiskDiffEquiv <- function(
                            "efficacyRiskDiffUpper", "efficacyP",
                            "information", "numberOfSubjects")]
 
-  des$settings$allocationRatioPlanned = allocationRatioPlanned
-  des$settings$rounding = rounding
+  des$settings$allocationRatioPlanned <- allocationRatioPlanned
+  des$settings$rounding <- rounding
   des$settings <-
     des$settings[c("typeAlphaSpending", "parameterAlphaSpending",
                    "userAlphaSpending", "spendingTime",
                    "allocationRatioPlanned", "rounding")]
 
-  attr(des, "class") = "designRiskDiffEquiv"
+  attr(des, "class") <- "designRiskDiffEquiv"
 
   des
 }
@@ -2684,7 +2792,7 @@ getDesignRiskRatioEquiv <- function(
     stop("pi2 must lie between 0 and 1")
   }
 
-  riskRatio = pi1/pi2
+  riskRatio <- pi1/pi2
 
   if (riskRatioLower >= riskRatio) {
     stop("riskRatioLower must be less than pi1/pi2")
@@ -2703,18 +2811,18 @@ getDesignRiskRatioEquiv <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
 
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
 
   # variance for one sampling unit
-  vH1 = (1-pi1)/(r*pi1) + (1-pi2)/((1-r)*pi2)
+  vH1 <- (1-pi1)/(r*pi1) + (1-pi2)/((1-r)*pi2)
 
   # sample size calculation
   if (is.na(n)) {
-    des = getDesignEquiv(
+    des <- getDesignEquiv(
       beta = beta, IMax = NA, thetaLower = log(riskRatioLower),
       thetaUpper = log(riskRatioUpper), theta = log(riskRatio),
       kMax = kMax, informationRates = informationRates,
@@ -2723,16 +2831,16 @@ getDesignRiskRatioEquiv <- function(
       userAlphaSpending = userAlphaSpending,
       spendingTime = spendingTime)
 
-    n = des$overallResults$information*vH1
+    n <- des$overallResults$information*vH1
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
-    informationRates = round(n*informationRates)/n
+    n <- ceiling(n - 1.0e-12)
+    informationRates <- round(n*informationRates)/n
   }
 
   if (is.na(beta) || rounding) { # calculate power
-    des = getDesignEquiv(
+    des <- getDesignEquiv(
       beta = NA, IMax = n/vH1, thetaLower = log(riskRatioLower),
       thetaUpper = log(riskRatioUpper), theta = log(riskRatio),
       kMax = kMax, informationRates = informationRates,
@@ -2742,18 +2850,18 @@ getDesignRiskRatioEquiv <- function(
       spendingTime = spendingTime)
   }
 
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*vH1
-  des$overallResults$expectedNumberOfSubjectsH10 =
+  des$overallResults$expectedNumberOfSubjectsH10 <-
     des$overallResults$expectedInformationH10*vH1
-  des$overallResults$expectedNumberOfSubjectsH20 =
+  des$overallResults$expectedNumberOfSubjectsH20 <-
     des$overallResults$expectedInformationH20*vH1
-  des$overallResults$riskRatioLower = riskRatioLower
-  des$overallResults$riskRatioUpper = riskRatioUpper
-  des$overallResults$pi1 = pi1
-  des$overallResults$pi2 = pi2
-  des$overallResults$riskRatio = pi1/pi2
+  des$overallResults$riskRatioLower <- riskRatioLower
+  des$overallResults$riskRatioUpper <- riskRatioUpper
+  des$overallResults$pi1 <- pi1
+  des$overallResults$pi2 <- pi2
+  des$overallResults$riskRatio <- pi1/pi2
   des$overallResults <-
     des$overallResults[, c("overallReject", "alpha",
                            "attainedAlphaH10", "attainedAlphaH20",
@@ -2768,11 +2876,11 @@ getDesignRiskRatioEquiv <- function(
                            "riskRatioLower", "riskRatioUpper",
                            "pi1", "pi2", "riskRatio")]
 
-  des$byStageResults$efficacyRiskRatioLower =
+  des$byStageResults$efficacyRiskRatioLower <-
     exp(des$byStageResults$efficacyThetaLower)
-  des$byStageResults$efficacyRiskRatioUpper =
+  des$byStageResults$efficacyRiskRatioUpper <-
     exp(des$byStageResults$efficacyThetaUpper)
-  des$byStageResults$numberOfSubjects = n*informationRates
+  des$byStageResults$numberOfSubjects <- n*informationRates
   des$byStageResults <-
     des$byStageResults[, c("informationRates", "efficacyBounds",
                            "rejectPerStage", "cumulativeRejection",
@@ -2783,14 +2891,14 @@ getDesignRiskRatioEquiv <- function(
                            "efficacyRiskRatioUpper", "efficacyP",
                            "information", "numberOfSubjects")]
 
-  des$settings$allocationRatioPlanned = allocationRatioPlanned
-  des$settings$rounding = rounding
+  des$settings$allocationRatioPlanned <- allocationRatioPlanned
+  des$settings$rounding <- rounding
   des$settings <-
     des$settings[c("typeAlphaSpending", "parameterAlphaSpending",
                    "userAlphaSpending", "spendingTime",
                    "allocationRatioPlanned", "rounding")]
 
-  attr(des, "class") = "designRiskRatioEquiv"
+  attr(des, "class") <- "designRiskRatioEquiv"
 
   des
 }
@@ -2986,7 +3094,7 @@ getDesignOddsRatioEquiv <- function(
     stop("pi2 must lie between 0 and 1")
   }
 
-  oddsRatio = pi1*(1-pi2)/((1-pi1)*pi2)
+  oddsRatio <- pi1*(1-pi2)/((1-pi1)*pi2)
 
   if (oddsRatioLower >= oddsRatio) {
     stop("oddsRatioLower must be less than pi1*(1-pi2)/((1-pi1)*pi2)")
@@ -3005,18 +3113,18 @@ getDesignOddsRatioEquiv <- function(
   }
 
   if (any(is.na(informationRates))) {
-    informationRates = (1:kMax)/kMax
+    informationRates <- (1:kMax)/kMax
   }
 
 
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
 
   # variance for one sampling unit
-  vH1 = 1/(r*pi1*(1-pi1)) + 1/((1-r)*pi2*(1-pi2))
+  vH1 <- 1/(r*pi1*(1-pi1)) + 1/((1-r)*pi2*(1-pi2))
 
   # sample size calculation
   if (is.na(n)) {
-    des = getDesignEquiv(
+    des <- getDesignEquiv(
       beta = beta, IMax = NA, thetaLower = log(oddsRatioLower),
       thetaUpper = log(oddsRatioUpper), theta = log(oddsRatio),
       kMax = kMax, informationRates = informationRates,
@@ -3025,16 +3133,16 @@ getDesignOddsRatioEquiv <- function(
       userAlphaSpending = userAlphaSpending,
       spendingTime = spendingTime)
 
-    n = des$overallResults$information*vH1
+    n <- des$overallResults$information*vH1
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
-    informationRates = round(n*informationRates)/n
+    n <- ceiling(n - 1.0e-12)
+    informationRates <- round(n*informationRates)/n
   }
 
   if (is.na(beta) || rounding) { # calculate power
-    des = getDesignEquiv(
+    des <- getDesignEquiv(
       beta = NA, IMax = n/vH1, thetaLower = log(oddsRatioLower),
       thetaUpper = log(oddsRatioUpper), theta = log(oddsRatio),
       kMax = kMax, informationRates = informationRates,
@@ -3044,18 +3152,18 @@ getDesignOddsRatioEquiv <- function(
       spendingTime = spendingTime)
   }
 
-  des$overallResults$numberOfSubjects = n
-  des$overallResults$expectedNumberOfSubjectsH1 =
+  des$overallResults$numberOfSubjects <- n
+  des$overallResults$expectedNumberOfSubjectsH1 <-
     des$overallResults$expectedInformationH1*vH1
-  des$overallResults$expectedNumberOfSubjectsH10 =
+  des$overallResults$expectedNumberOfSubjectsH10 <-
     des$overallResults$expectedInformationH10*vH1
-  des$overallResults$expectedNumberOfSubjectsH20 =
+  des$overallResults$expectedNumberOfSubjectsH20 <-
     des$overallResults$expectedInformationH20*vH1
-  des$overallResults$oddsRatioLower = oddsRatioLower
-  des$overallResults$oddsRatioUpper = oddsRatioUpper
-  des$overallResults$pi1 = pi1
-  des$overallResults$pi2 = pi2
-  des$overallResults$oddsRatio = pi1*(1-pi2)/((1-pi1)*pi2)
+  des$overallResults$oddsRatioLower <- oddsRatioLower
+  des$overallResults$oddsRatioUpper <- oddsRatioUpper
+  des$overallResults$pi1 <- pi1
+  des$overallResults$pi2 <- pi2
+  des$overallResults$oddsRatio <- pi1*(1-pi2)/((1-pi1)*pi2)
   des$overallResults <-
     des$overallResults[, c("overallReject", "alpha",
                            "attainedAlphaH10", "attainedAlphaH20",
@@ -3070,11 +3178,11 @@ getDesignOddsRatioEquiv <- function(
                            "oddsRatioLower", "oddsRatioUpper",
                            "pi1", "pi2", "oddsRatio")]
 
-  des$byStageResults$efficacyOddsRatioLower =
+  des$byStageResults$efficacyOddsRatioLower <-
     exp(des$byStageResults$efficacyThetaLower)
-  des$byStageResults$efficacyOddsRatioUpper =
+  des$byStageResults$efficacyOddsRatioUpper <-
     exp(des$byStageResults$efficacyThetaUpper)
-  des$byStageResults$numberOfSubjects = n*informationRates
+  des$byStageResults$numberOfSubjects <- n*informationRates
   des$byStageResults <-
     des$byStageResults[, c("informationRates", "efficacyBounds",
                            "rejectPerStage", "cumulativeRejection",
@@ -3085,14 +3193,14 @@ getDesignOddsRatioEquiv <- function(
                            "efficacyOddsRatioUpper", "efficacyP",
                            "information", "numberOfSubjects")]
 
-  des$settings$allocationRatioPlanned = allocationRatioPlanned
-  des$settings$rounding = rounding
+  des$settings$allocationRatioPlanned <- allocationRatioPlanned
+  des$settings$rounding <- rounding
   des$settings <-
     des$settings[c("typeAlphaSpending", "parameterAlphaSpending",
                    "userAlphaSpending", "spendingTime",
                    "allocationRatioPlanned", "rounding")]
 
-  attr(des, "class") = "designOddsRatioEquiv"
+  attr(des, "class") <- "designOddsRatioEquiv"
 
   des
 }
@@ -3174,9 +3282,9 @@ getDesignFisherExact <- function(
   }
 
   if (!is.na(n)) { # power calculation
-    a = powerFisherExact(n, pi1, pi2, allocationRatioPlanned, alpha)
+    a <- powerFisherExact(n, pi1, pi2, allocationRatioPlanned, alpha)
   } else { # sample size calculation
-    a = samplesizeFisherExact(beta, pi1, pi2, allocationRatioPlanned, alpha)
+    a <- samplesizeFisherExact(beta, pi1, pi2, allocationRatioPlanned, alpha)
   }
 
   a
@@ -3232,11 +3340,11 @@ ClopperPearsonCI <- function(n, y, cilevel = 0.95) {
     stop("cilevel must lie between 0 and 1")
   }
 
-  alpha = 1 - cilevel
-  lower = 0
-  upper = 1
-  if (y > 0) lower = qbeta(alpha/2, y, n-y+1)
-  if (y < n) upper = qbeta(1-alpha/2, y+1, n-y)
+  alpha <- 1 - cilevel
+  lower <- 0
+  upper <- 1
+  if (y > 0) lower <- qbeta(alpha/2, y, n-y+1)
+  if (y < n) upper <- qbeta(1-alpha/2, y+1, n-y)
 
   data.frame(n = n, y = y, phat = y/n,
              lower = lower, upper = upper, cilevel = cilevel)
@@ -3358,53 +3466,53 @@ mTPI2Table <- function(
   }
 
 
-  settings = data.frame(nMax, pT, epsilon1, epsilon2, a, b, pExcessTox)
+  settings <- data.frame(nMax, pT, epsilon1, epsilon2, a, b, pExcessTox)
 
   # construct the data frame of subintervals with equal length
-  width = epsilon1 + epsilon2
-  l1 = floor((pT - epsilon1)/width)
-  delta1 = pT - epsilon1 - l1*width
-  l2 = floor((1 - pT - epsilon2)/width)
-  delta2 = 1 - pT - epsilon2 - l2*width
+  width <- epsilon1 + epsilon2
+  l1 <- floor((pT - epsilon1)/width)
+  delta1 <- pT - epsilon1 - l1*width
+  l2 <- floor((1 - pT - epsilon2)/width)
+  delta2 <- 1 - pT - epsilon2 - l2*width
 
-  df1 = data.frame(
+  df1 <- data.frame(
     lower = c(0, delta1 + (0:l1)*width, 1 - delta2 - (l2:0)*width),
     upper = c(delta1 + (0:l1)*width, 1 - delta2 - (l2:0)*width, 1),
     decision = c(rep("E", l1+1), "S", rep("D", l2+1)))
 
   # construct the decision table
-  df2 = data.frame()
+  df2 <- data.frame()
   for (n in 1:nMax) {
     for (y in 0:n) {
       # check the exclusion rule
       if (1 - pbeta(pT, a+y, b+n-y) > pExcessTox & y != 1) {
-        decision = "DU"
+        decision <- "DU"
       } else { # unit probability mass
-        num = pbeta(df1$upper, a+y, b+n-y) - pbeta(df1$lower, a+y, b+n-y)
-        den = df1$upper - df1$lower
-        postprob = num/den
-        i = which.max(postprob)
-        decision = df1$decision[i]
+        num <- pbeta(df1$upper, a+y, b+n-y) - pbeta(df1$lower, a+y, b+n-y)
+        den <- df1$upper - df1$lower
+        postprob <- num/den
+        i <- which.max(postprob)
+        decision <- df1$decision[i]
       }
-      df2 = rbind(df2, data.frame(n = n, y = y, decision = decision))
+      df2 <- rbind(df2, data.frame(n = n, y = y, decision = decision))
     }
   }
 
 
   # generate the plot for the decision table
-  df3 = matrix("", nrow = nMax+1, ncol = nMax,
-               dimnames = list(as.character(0:nMax),
-                               as.character(1:nMax)))
+  df3 <- matrix("", nrow = nMax+1, ncol = nMax,
+                dimnames = list(as.character(0:nMax),
+                                as.character(1:nMax)))
   for (i in 1:nrow(df2)) {
-    df3[df2$y[i]+1, df2$n[i]] = df2$decision[i]
+    df3[df2$y[i]+1, df2$n[i]] <- df2$decision[i]
   }
 
-  des = list(settings = settings,
-             subintervals = df1,
-             decisionDataFrame = df2,
-             decisionMatrix = as.data.frame(df3))
+  des <- list(settings = settings,
+              subintervals = df1,
+              decisionDataFrame = df2,
+              decisionMatrix = as.data.frame(df3))
 
-  attr(des, "class") = "mTPI2Table"
+  attr(des, "class") <- "mTPI2Table"
 
   des
 }
@@ -3520,48 +3628,48 @@ BOINTable <- function(
     stop("pExcessTox must lie between 0 and 1")
   }
 
-  lambda1 = log((1-phi1)/(1-pT))/log(pT*(1-phi1)/(phi1*(1-pT)))
-  lambda2 = log((1-pT)/(1-phi2))/log(phi2*(1-pT)/(pT*(1-phi2)))
+  lambda1 <- log((1-phi1)/(1-pT))/log(pT*(1-phi1)/(phi1*(1-pT)))
+  lambda2 <- log((1-pT)/(1-phi2))/log(phi2*(1-pT)/(pT*(1-phi2)))
 
-  settings = data.frame(nMax, pT, phi1 = phi1, phi2 = phi2,
-                        lambda1 = lambda1, lambda2 = lambda2,
-                        a, b, pExcessTox)
+  settings <- data.frame(nMax, pT, phi1 = phi1, phi2 = phi2,
+                         lambda1 = lambda1, lambda2 = lambda2,
+                         a, b, pExcessTox)
 
   # construct the decision table
-  df2 = data.frame()
+  df2 <- data.frame()
   for (n in 1:nMax) {
     for (y in 0:n) {
       # check the exclusion rule
       if (1 - pbeta(pT, a+y, b+n-y) > pExcessTox & n > 2) {
-        decision = "DU"
+        decision <- "DU"
       } else {
-        p = y/n
+        p <- y/n
         if (p <= lambda1) {
-          decision = "E"
+          decision <- "E"
         } else if (p < lambda2) {
-          decision = "S"
+          decision <- "S"
         } else {
-          decision = "D"
+          decision <- "D"
         }
       }
-      df2 = rbind(df2, data.frame(n = n, y = y, decision = decision))
+      df2 <- rbind(df2, data.frame(n = n, y = y, decision = decision))
     }
   }
 
 
   # generate the plot for the decision table
-  df3 = matrix("", nrow = nMax+1, ncol = nMax,
-               dimnames = list(as.character(0:nMax),
-                               as.character(1:nMax)))
+  df3 <- matrix("", nrow = nMax+1, ncol = nMax,
+                dimnames = list(as.character(0:nMax),
+                                as.character(1:nMax)))
   for (i in 1:nrow(df2)) {
-    df3[df2$y[i]+1, df2$n[i]] = df2$decision[i]
+    df3[df2$y[i]+1, df2$n[i]] <- df2$decision[i]
   }
 
-  des = list(settings = settings,
-             decisionDataFrame = df2,
-             decisionMatrix = as.data.frame(df3))
+  des <- list(settings = settings,
+              decisionDataFrame = df2,
+              decisionMatrix = as.data.frame(df3))
 
-  attr(des, "class") = "BOINTable"
+  attr(des, "class") <- "BOINTable"
 
   des
 }
@@ -3688,7 +3796,7 @@ getDesignOneMultinom <- function(
       stop("piH0 must sum up to < 1 if it has only", ncats-1, "elements")
     }
 
-    piH0 = c(piH0, 1 - sum(piH0))
+    piH0 <- c(piH0, 1 - sum(piH0))
   } else {
     if (sum(piH0) != 1) {
       stop(paste("piH0 must sum to 1 across", ncats, "categories"))
@@ -3712,7 +3820,7 @@ getDesignOneMultinom <- function(
       stop("pi must sum up to < 1 if it has only", ncats-1, "elements")
     }
 
-    pi = c(pi, 1 - sum(pi))
+    pi <- c(pi, 1 - sum(pi))
   } else {
     if (sum(pi) != 1) {
       stop(paste("pi must sum to 1 across", ncats, "categories"))
@@ -3723,29 +3831,29 @@ getDesignOneMultinom <- function(
     stop("alpha must lie in [0.00001, 1)")
   }
 
-  tau = sum((pi - piH0)^2/piH0)
+  tau <- sum((pi - piH0)^2/piH0)
 
-  nu = ncats - 1
-  b = qchisq(1-alpha, nu)
+  nu <- ncats - 1
+  b <- qchisq(1-alpha, nu)
 
   if (is.na(n)) {
-    n0 = (b - nu + qnorm(1-beta)*sqrt(2*nu))/tau
+    n0 <- (b - nu + qnorm(1-beta)*sqrt(2*nu))/tau
     while (pchisq(b, nu, n0*tau) > beta) n0 <- 2*n0
-    n = uniroot(function(n) pchisq(b, nu, n*tau) - beta, c(0.5*n0, n0))$root
+    n <- uniroot(function(n) pchisq(b, nu, n*tau) - beta, c(0.5*n0, n0))$root
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
+    n <- ceiling(n - 1.0e-12)
   }
 
-  power = pchisq(b, nu, n*tau, lower.tail = FALSE)
+  power <- pchisq(b, nu, n*tau, lower.tail = FALSE)
 
-  des = list(power = power, alpha = alpha, n = n,
-             ncats = ncats, piH0 = piH0, pi = pi,
-             effectsize = tau,
-             rounding = rounding)
+  des <- list(power = power, alpha = alpha, n = n,
+              ncats = ncats, piH0 = piH0, pi = pi,
+              effectsize = tau,
+              rounding = rounding)
 
-  attr(des, "class") = "designOneMultinom"
+  attr(des, "class") <- "designOneMultinom"
 
   des
 }
@@ -3880,7 +3988,7 @@ getDesignTwoMultinom <- function(
       stop("pi1 must sum up to < 1 if it has only", ncats-1, "elements")
     }
 
-    pi1 = c(pi1, 1 - sum(pi1))
+    pi1 <- c(pi1, 1 - sum(pi1))
   } else {
     if (sum(pi1) != 1) {
       stop(paste("pi1 must sum to 1 across", ncats, "categories"))
@@ -3904,7 +4012,7 @@ getDesignTwoMultinom <- function(
       stop("pi2 must sum up to < 1 if it has only", ncats-1, "elements")
     }
 
-    pi2 = c(pi2, 1 - sum(pi2))
+    pi2 <- c(pi2, 1 - sum(pi2))
   } else {
     if (sum(pi2) != 1) {
       stop(paste("pi2 must sum to 1 across", ncats, "categories"))
@@ -3920,32 +4028,32 @@ getDesignTwoMultinom <- function(
   }
 
 
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
 
-  tau = r*(1-r)*sum((pi1 - pi2)^2/(r*pi1 + (1-r)*pi2))
+  tau <- r*(1-r)*sum((pi1 - pi2)^2/(r*pi1 + (1-r)*pi2))
 
-  nu = ncats - 1
-  b = qchisq(1-alpha, nu)
+  nu <- ncats - 1
+  b <- qchisq(1-alpha, nu)
 
   if (is.na(n)) {
-    n0 = (b - nu + qnorm(1-beta)*sqrt(2*nu))/tau
+    n0 <- (b - nu + qnorm(1-beta)*sqrt(2*nu))/tau
     while (pchisq(b, nu, n0*tau) > beta) n0 <- 2*n0
-    n = uniroot(function(n) pchisq(b, nu, n*tau) - beta, c(0.5*n0, n0))$root
+    n <- uniroot(function(n) pchisq(b, nu, n*tau) - beta, c(0.5*n0, n0))$root
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
+    n <- ceiling(n - 1.0e-12)
   }
 
-  power = pchisq(b, nu, n*tau, lower.tail = FALSE)
+  power <- pchisq(b, nu, n*tau, lower.tail = FALSE)
 
-  des = list(power = power, alpha = alpha, n = n,
-             ncats = ncats, pi1 = pi1, pi2 = pi2,
-             effectsize = tau,
-             allocationRatioPlanned = allocationRatioPlanned,
-             rounding = rounding)
+  des <- list(power = power, alpha = alpha, n = n,
+              ncats = ncats, pi1 = pi1, pi2 = pi2,
+              effectsize = tau,
+              allocationRatioPlanned = allocationRatioPlanned,
+              rounding = rounding)
 
-  attr(des, "class") = "designTwoMultinom"
+  attr(des, "class") <- "designTwoMultinom"
 
   des
 }
@@ -4094,7 +4202,7 @@ getDesignTwoOrdinal <- function(
       stop("pi1 must sum up to < 1 if it has only", ncats-1, "elements")
     }
 
-    pi1 = c(pi1, 1 - sum(pi1))
+    pi1 <- c(pi1, 1 - sum(pi1))
   } else {
     if (sum(pi1) != 1) {
       stop(paste("pi1 must sum to 1 across", ncats, "categories"))
@@ -4118,7 +4226,7 @@ getDesignTwoOrdinal <- function(
       stop("pi2 must sum up to < 1 if it has only", ncats-1, "elements")
     }
 
-    pi2 = c(pi2, 1 - sum(pi2))
+    pi2 <- c(pi2, 1 - sum(pi2))
   } else {
     if (sum(pi2) != 1) {
       stop(paste("pi2 must sum to 1 across", ncats, "categories"))
@@ -4134,40 +4242,40 @@ getDesignTwoOrdinal <- function(
   }
 
 
-  r = allocationRatioPlanned/(1 + allocationRatioPlanned)
+  r <- allocationRatioPlanned/(1 + allocationRatioPlanned)
 
-  pi = r*pi1 + (1-r)*pi2
-  p = cumsum(pi)
-  w = p - 0.5*pi
+  pi <- r*pi1 + (1-r)*pi2
+  p <- cumsum(pi)
+  w <- p - 0.5*pi
 
-  riskDiff = sum(w*(pi1 - pi2))
+  riskDiff <- sum(w*(pi1 - pi2))
 
-  directionUpper = riskDiff > 0
+  directionUpper <- riskDiff > 0
 
-  theta = ifelse(directionUpper, riskDiff, -riskDiff)
+  theta <- ifelse(directionUpper, riskDiff, -riskDiff)
 
-  varH0 = (sum(w^2*pi) - sum(w*pi)^2)/(r*(1-r))
-  varH1 = (sum(w^2*pi1) - sum(w*pi1)^2)/r +
+  varH0 <- (sum(w^2*pi) - sum(w*pi)^2)/(r*(1-r))
+  varH1 <- (sum(w^2*pi1) - sum(w*pi1)^2)/r +
     (sum(w^2*pi2) - sum(w*pi2)^2)/(1-r)
 
 
   if (is.na(n)) {
-    n = (qnorm(1-alpha)*sqrt(varH0) + qnorm(1-beta)*sqrt(varH1))^2/theta^2
+    n <- (qnorm(1-alpha)*sqrt(varH0) + qnorm(1-beta)*sqrt(varH1))^2/theta^2
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
+    n <- ceiling(n - 1.0e-12)
   }
 
-  power = pnorm((sqrt(n)*theta - qnorm(1-alpha)*sqrt(varH0))/sqrt(varH1))
+  power <- pnorm((sqrt(n)*theta - qnorm(1-alpha)*sqrt(varH0))/sqrt(varH1))
 
-  des = list(power = power, alpha = alpha, n = n,
-             ncats = ncats, pi1 = pi1, pi2 = pi2,
-             meanscore1 = n*sum(w*pi1), meanscore2 = n*sum(w*pi2),
-             allocationRatioPlanned = allocationRatioPlanned,
-             rounding = rounding)
+  des <- list(power = power, alpha = alpha, n = n,
+              ncats = ncats, pi1 = pi1, pi2 = pi2,
+              meanscore1 = n*sum(w*pi1), meanscore2 = n*sum(w*pi2),
+              allocationRatioPlanned = allocationRatioPlanned,
+              rounding = rounding)
 
-  attr(des, "class") = "designTwoOrdinal"
+  attr(des, "class") <- "designTwoOrdinal"
 
   des
 }
@@ -4301,7 +4409,7 @@ getDesignOrderedBinom <- function(
   }
 
   if (any(is.na(w))) {
-    w = seq(1, ngroups)
+    w <- seq(1, ngroups)
   }
 
   if (length(w) != ngroups) {
@@ -4309,7 +4417,7 @@ getDesignOrderedBinom <- function(
   }
 
   if (any(is.na(allocationRatioPlanned))) {
-    allocationRatioPlanned = rep(1, ngroups)
+    allocationRatioPlanned <- rep(1, ngroups)
   }
 
   if (length(allocationRatioPlanned) != ngroups-1 &&
@@ -4319,7 +4427,7 @@ getDesignOrderedBinom <- function(
   }
 
   if (length(allocationRatioPlanned) == ngroups-1) {
-    allocationRatioPlanned = c(allocationRatioPlanned, 1)
+    allocationRatioPlanned <- c(allocationRatioPlanned, 1)
   }
 
   if (any(allocationRatioPlanned <= 0)) {
@@ -4332,34 +4440,34 @@ getDesignOrderedBinom <- function(
 
 
   # randomization probabilities
-  r = allocationRatioPlanned/sum(allocationRatioPlanned)
+  r <- allocationRatioPlanned/sum(allocationRatioPlanned)
 
-  wbar = sum(r*w)
-  pibar = sum(r*pi)
+  wbar <- sum(r*w)
+  pibar <- sum(r*pi)
 
-  theta = sum(r*(w-wbar)*(pi-pibar))
+  theta <- sum(r*(w-wbar)*(pi-pibar))
 
-  varH0 = pibar*(1-pibar)*sum(r*(w-wbar)^2)
-  varH1 = sum(r*(w-wbar)^2*pi*(1-pi))
+  varH0 <- pibar*(1-pibar)*sum(r*(w-wbar)^2)
+  varH1 <- sum(r*(w-wbar)^2*pi*(1-pi))
 
   if (is.na(n)) {
-    n = (qnorm(1-alpha/2)*sqrt(varH0) + qnorm(1-beta)*sqrt(varH1))^2/theta^2
+    n <- (qnorm(1-alpha/2)*sqrt(varH0) + qnorm(1-beta)*sqrt(varH1))^2/theta^2
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
+    n <- ceiling(n - 1.0e-12)
   }
 
-  power = pnorm((sqrt(n)*abs(theta) - qnorm(1-alpha/2)*sqrt(varH0))/
-                  sqrt(varH1))
+  power <- pnorm((sqrt(n)*abs(theta) - qnorm(1-alpha/2)*sqrt(varH0))/
+                   sqrt(varH1))
 
-  des = list(power = power, alpha = alpha, n = n,
-             ngroups = ngroups, pi = pi, w = w,
-             trendstat = n*sum(r*(w-wbar)*pi),
-             allocationRatioPlanned = allocationRatioPlanned,
-             rounding = rounding)
+  des <- list(power = power, alpha = alpha, n = n,
+              ngroups = ngroups, pi = pi, w = w,
+              trendstat = n*sum(r*(w-wbar)*pi),
+              allocationRatioPlanned = allocationRatioPlanned,
+              rounding = rounding)
 
-  attr(des, "class") = "designOrderedBinom"
+  attr(des, "class") <- "designOrderedBinom"
 
   des
 }
@@ -4485,7 +4593,7 @@ getDesignUnorderedBinom <- function(
   }
 
   if (any(is.na(allocationRatioPlanned))) {
-    allocationRatioPlanned = rep(1, ngroups)
+    allocationRatioPlanned <- rep(1, ngroups)
   }
 
   if (length(allocationRatioPlanned) != ngroups-1 &&
@@ -4495,7 +4603,7 @@ getDesignUnorderedBinom <- function(
   }
 
   if (length(allocationRatioPlanned) == ngroups-1) {
-    allocationRatioPlanned = c(allocationRatioPlanned, 1)
+    allocationRatioPlanned <- c(allocationRatioPlanned, 1)
   }
 
   if (any(allocationRatioPlanned <= 0)) {
@@ -4508,34 +4616,34 @@ getDesignUnorderedBinom <- function(
 
 
   # randomization probabilities
-  r = allocationRatioPlanned/sum(allocationRatioPlanned)
+  r <- allocationRatioPlanned/sum(allocationRatioPlanned)
 
-  pibar = sum(r*pi)
+  pibar <- sum(r*pi)
 
-  tau = sum(r*(pi - pibar)^2)/(pibar*(1-pibar))
+  tau <- sum(r*(pi - pibar)^2)/(pibar*(1-pibar))
 
-  nu = ngroups - 1
-  b = qchisq(1-alpha, nu)
+  nu <- ngroups - 1
+  b <- qchisq(1-alpha, nu)
 
   if (is.na(n)) {
-    n0 = (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/tau
+    n0 <- (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/tau
     while (pchisq(b, nu, n0*tau) > beta) n0 <- 2*n0
-    n = uniroot(function(n) pchisq(b, nu, n*tau) - beta, c(0.5*n0, n0))$root
+    n <- uniroot(function(n) pchisq(b, nu, n*tau) - beta, c(0.5*n0, n0))$root
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
+    n <- ceiling(n - 1.0e-12)
   }
 
-  power = pchisq(b, nu, n*tau, lower.tail = FALSE)
+  power <- pchisq(b, nu, n*tau, lower.tail = FALSE)
 
-  des = list(power = power, alpha = alpha, n = n,
-             ngroups = ngroups, pi = pi,
-             effectsize = tau,
-             allocationRatioPlanned = allocationRatioPlanned,
-             rounding = rounding)
+  des <- list(power = power, alpha = alpha, n = n,
+              ngroups = ngroups, pi = pi,
+              effectsize = tau,
+              allocationRatioPlanned = allocationRatioPlanned,
+              rounding = rounding)
 
-  attr(des, "class") = "designUnorderedBinom"
+  attr(des, "class") <- "designUnorderedBinom"
 
   des
 }
@@ -4694,7 +4802,7 @@ getDesignUnorderedMultinom <- function(
       stop("pi should sum up to <1 for any treatment group")
     }
 
-    pi = matrix(c(pi, 1-rowSums(pi)), ngroups, ncats)
+    pi <- matrix(c(pi, 1-rowSums(pi)), ngroups, ncats)
   } else {
     if (any(rowSums(pi) != 1)) {
       stop("pi should sum up to 1 for any treatment group")
@@ -4702,7 +4810,7 @@ getDesignUnorderedMultinom <- function(
   }
 
   if (any(is.na(allocationRatioPlanned))) {
-    allocationRatioPlanned = rep(1, ngroups)
+    allocationRatioPlanned <- rep(1, ngroups)
   }
 
   if (length(allocationRatioPlanned) != ngroups-1 &&
@@ -4712,7 +4820,7 @@ getDesignUnorderedMultinom <- function(
   }
 
   if (length(allocationRatioPlanned) == ngroups-1) {
-    allocationRatioPlanned = c(allocationRatioPlanned, 1)
+    allocationRatioPlanned <- c(allocationRatioPlanned, 1)
   }
 
   if (any(allocationRatioPlanned <= 0)) {
@@ -4725,36 +4833,36 @@ getDesignUnorderedMultinom <- function(
 
 
   # randomization probabilities
-  r = allocationRatioPlanned/sum(allocationRatioPlanned)
-  mr = matrix(r, ngroups, ncats)
+  r <- allocationRatioPlanned/sum(allocationRatioPlanned)
+  mr <- matrix(r, ngroups, ncats)
 
-  pibar = colSums(r*pi)
-  mpibar = matrix(pibar, ngroups, ncats, byrow = TRUE)
+  pibar <- colSums(r*pi)
+  mpibar <- matrix(pibar, ngroups, ncats, byrow = TRUE)
 
-  tau = sum(mr*(pi - mpibar)^2/mpibar)
+  tau <- sum(mr*(pi - mpibar)^2/mpibar)
 
-  nu = (ngroups-1)*(ncats-1)
-  b = qchisq(1-alpha, nu)
+  nu <- (ngroups-1)*(ncats-1)
+  b <- qchisq(1-alpha, nu)
 
   if (is.na(n)) {
-    n0 = (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/tau
+    n0 <- (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/tau
     while (pchisq(b, nu, n0*tau) > beta) n0 <- 2*n0
-    n = uniroot(function(n) pchisq(b, nu, n*tau) - beta, c(0.5*n0, n0))$root
+    n <- uniroot(function(n) pchisq(b, nu, n*tau) - beta, c(0.5*n0, n0))$root
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
+    n <- ceiling(n - 1.0e-12)
   }
 
-  power = pchisq(b, nu, n*tau, lower.tail = FALSE)
+  power <- pchisq(b, nu, n*tau, lower.tail = FALSE)
 
-  des = list(power = power, alpha = alpha, n = n,
-             ngroups = ngroups, ncats = ncats,
-             pi = pi, effectsize = tau,
-             allocationRatioPlanned = allocationRatioPlanned,
-             rounding = rounding)
+  des <- list(power = power, alpha = alpha, n = n,
+              ngroups = ngroups, ncats = ncats,
+              pi = pi, effectsize = tau,
+              allocationRatioPlanned = allocationRatioPlanned,
+              rounding = rounding)
 
-  attr(des, "class") = "designUnorderedMultinom"
+  attr(des, "class") <- "designUnorderedMultinom"
 
   des
 }
@@ -4948,7 +5056,7 @@ getDesignLogistic <- function(
   }
 
   if (ncovariates == 1 && !is.matrix(x)) {
-    x = as.matrix(x, ncol = 1)
+    x <- as.matrix(x, ncol = 1)
   }
 
   if (is.matrix(x) && nrow(x) != nconfigs) {
@@ -4976,7 +5084,7 @@ getDesignLogistic <- function(
       stop("pconfigs should sum up to <1")
     }
 
-    pconfigs = c(pconfigs, 1-sum(pconfigs))
+    pconfigs <- c(pconfigs, 1-sum(pconfigs))
   } else {
     if (abs(sum(pconfigs) - 1.0) > 1.0e-8) {
       stop("pconfigs should sum up to 1")
@@ -5012,48 +5120,48 @@ getDesignLogistic <- function(
   }
 
 
-  xmean = colSums(pconfigs*x)
-  names(xmean) = NULL
-  psi = log(oddsratios)
-  psi0 = qlogis(responseprob) - sum(xmean*psi)
-  psi0star = psi0 + psi[1]*xmean[1]
-  psistar = psi
-  psistar[1] = 0
+  xmean <- colSums(pconfigs*x)
+  names(xmean) <- NULL
+  psi <- log(oddsratios)
+  psi0 <- qlogis(responseprob) - sum(xmean*psi)
+  psi0star <- psi0 + psi[1]*xmean[1]
+  psistar <- psi
+  psistar[1] <- 0
 
-  theta = psi0 + as.numeric(x %*% psi)
-  thetastar = psi0star + as.numeric(x %*% psistar)
-
-
-  tau = 2*sum(pconfigs*(plogis(theta)*(theta - thetastar) -
-                          log(1 + exp(theta)) +
-                          log(1 + exp(thetastar))))
-
-  tau = tau*(1-corr^2)
+  theta <- psi0 + as.numeric(x %*% psi)
+  thetastar <- psi0star + as.numeric(x %*% psistar)
 
 
-  nu = 1
-  b = qchisq(1-alpha, nu)
+  tau <- 2*sum(pconfigs*(plogis(theta)*(theta - thetastar) -
+                           log(1 + exp(theta)) +
+                           log(1 + exp(thetastar))))
+
+  tau <- tau*(1-corr^2)
+
+
+  nu <- 1
+  b <- qchisq(1-alpha, nu)
 
   if (is.na(n)) {
-    n0 = (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/tau
+    n0 <- (qchisq(1-alpha, nu) - nu + qnorm(1-beta)*sqrt(2*nu))/tau
     while (pchisq(b, nu, n0*tau) > beta) n0 <- 2*n0
-    n = uniroot(function(n) pchisq(b, nu, n*tau) - beta, c(0.5*n0, n0))$root
+    n <- uniroot(function(n) pchisq(b, nu, n*tau) - beta, c(0.5*n0, n0))$root
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
+    n <- ceiling(n - 1.0e-12)
   }
 
-  power = pchisq(b, nu, n*tau, lower.tail = FALSE)
+  power <- pchisq(b, nu, n*tau, lower.tail = FALSE)
 
-  des = list(power = power, alpha = alpha, n = n,
-             ncovariates = ncovariates, nconfigs = nconfigs,
-             x = x, pconfigs = pconfigs, corr = corr,
-             oddsratios = oddsratios,
-             responseprob = responseprob, effectsize = tau,
-             rounding = rounding)
+  des <- list(power = power, alpha = alpha, n = n,
+              ncovariates = ncovariates, nconfigs = nconfigs,
+              x = x, pconfigs = pconfigs, corr = corr,
+              oddsratios = oddsratios,
+              responseprob = responseprob, effectsize = tau,
+              rounding = rounding)
 
-  attr(des, "class") = "designLogistic"
+  attr(des, "class") <- "designLogistic"
 
   des
 }
@@ -5225,7 +5333,7 @@ getDesignAgreement <- function(
       stop("p1 must sum up to < 1 if it has only", ncats-1, "elements")
     }
 
-    p1 = c(p1, 1 - sum(p1))
+    p1 <- c(p1, 1 - sum(p1))
   } else {
     if (sum(p1) != 1) {
       stop(paste("p1 must sum to 1 across", ncats, "categories"))
@@ -5233,7 +5341,7 @@ getDesignAgreement <- function(
   }
 
   if (any(is.na(p2))) {
-    p2 = p1
+    p2 <- p1
   }
 
   if (any(p2 <= 0 | p2 >= 1)) {
@@ -5249,7 +5357,7 @@ getDesignAgreement <- function(
       stop("p2 must sum up to < 1 if it has only", ncats-1, "elements")
     }
 
-    p2 = c(p2, 1 - sum(p2))
+    p2 <- c(p2, 1 - sum(p2))
   } else {
     if (sum(p2) != 1) {
       stop(paste("p2 must sum to 1 across", ncats, "categories"))
@@ -5261,92 +5369,92 @@ getDesignAgreement <- function(
   }
 
 
-  k = ncats
+  k <- ncats
 
   # obtain the maximum variance for given kappa and marginal probabilities
   fpi <- function(kappa, p1, p2) {
-    pe = sum(p1*p2)
-    po = pe + (1-pe)*kappa
+    pe <- sum(p1*p2)
+    po <- pe + (1-pe)*kappa
 
     # equation (3) in Flack et al (1988) as a function of cell probabilities
-    f.obj = rep(0, k^2)
+    f.obj <- rep(0, k^2)
     for (i in 1:k) {
       for (j in 1:k) {
-        t = (i-1)*k + j
+        t <- (i-1)*k + j
         if (i != j) {
-          f.obj[t] = (1-po)^2*(p1[i]+p2[j])^2
+          f.obj[t] <- (1-po)^2*(p1[i]+p2[j])^2
         } else {
-          f.obj[t] = -(1-po)*(p1[i]+p2[i])*(2*(1-pe) - (1-po)*(p1[i]+p2[i]))
+          f.obj[t] <- -(1-po)*(p1[i]+p2[i])*(2*(1-pe) - (1-po)*(p1[i]+p2[i]))
         }
       }
     }
 
     # row margin, column margin, and observed agreement
-    f.con = matrix(0, 2*k+1+k^2, k^2)
+    f.con <- matrix(0, 2*k+1+k^2, k^2)
     for (i in 1:k) {
       for (j in 1:k) {
-        t = (i-1)*k + j
-        f.con[i,t] = 1
-        f.con[k+j,t] = 1
-        if (i==j) f.con[2*k+1,t] = 1
+        t <- (i-1)*k + j
+        f.con[i,t] <- 1
+        f.con[k+j,t] <- 1
+        if (i==j) f.con[2*k+1,t] <- 1
       }
     }
 
     # nonnegative cell probabilities
-    f.con[(2*k+2):(2*k+1+k^2),] = diag(k^2)
+    f.con[(2*k+2):(2*k+1+k^2),] <- diag(k^2)
 
-    f.dir = c(rep("==", 2*k+1), rep(">=", k^2))
-    f.rhs = c(p1, p2, po, rep(0, k^2))
+    f.dir <- c(rep("==", 2*k+1), rep(">=", k^2))
+    f.rhs <- c(p1, p2, po, rep(0, k^2))
 
     # linear programming
-    opt = lpSolve::lp("max", f.obj, f.con, f.dir, f.rhs)
+    opt <- lpSolve::lp("max", f.obj, f.con, f.dir, f.rhs)
     matrix(opt$solution, k, k, byrow = TRUE)
   }
 
 
   # variance of kappa estimate for given cell probabilities
   fv1 <- function(pi) {
-    p1 = rowSums(pi)
-    p2 = colSums(pi)
-    pd = diag(pi)
-    po = sum(pd)
-    pe = sum(p1*p2)
+    p1 <- rowSums(pi)
+    p2 <- colSums(pi)
+    pd <- diag(pi)
+    po <- sum(pd)
+    pe <- sum(p1*p2)
 
-    mp1 = matrix(p1, k, k, byrow = TRUE)
-    mp2 = matrix(p2, k, k)
+    mp1 <- matrix(p1, k, k, byrow = TRUE)
+    mp2 <- matrix(p2, k, k)
 
-    q1 = po*(1-pe)^2
-    q2 = (1-po)^2*sum(pi*(mp1+mp2)^2)
-    q3 = 2*(1-po)*(1-pe)*sum(pd*(p1+p2))
-    q4 = (po*pe-2*pe+po)^2
-    v1 = (q1+q2-q3-q4)/(1-pe)^4
+    q1 <- po*(1-pe)^2
+    q2 <- (1-po)^2*sum(pi*(mp1+mp2)^2)
+    q3 <- 2*(1-po)*(1-pe)*sum(pd*(p1+p2))
+    q4 <- (po*pe-2*pe+po)^2
+    v1 <- (q1+q2-q3-q4)/(1-pe)^4
     v1
   }
 
 
-  piH0 = fpi(kappaH0, p1, p2)
-  v1H0 = fv1(piH0)
-  pi = fpi(kappa, p1, p2)
-  v1 = fv1(pi)
+  piH0 <- fpi(kappaH0, p1, p2)
+  v1H0 <- fv1(piH0)
+  pi <- fpi(kappa, p1, p2)
+  v1 <- fv1(pi)
 
-  theta = abs(kappa - kappaH0)
+  theta <- abs(kappa - kappaH0)
 
   if (is.na(n)) {
-    n = (qnorm(1-alpha)*sqrt(v1H0) + qnorm(1-beta)*sqrt(v1))^2/theta^2
+    n <- (qnorm(1-alpha)*sqrt(v1H0) + qnorm(1-beta)*sqrt(v1))^2/theta^2
   }
 
   if (rounding) {
-    n = ceiling(n - 1.0e-12)
+    n <- ceiling(n - 1.0e-12)
   }
 
-  power = pnorm((theta*sqrt(n) - qnorm(1-alpha)*sqrt(v1H0))/sqrt(v1))
+  power <- pnorm((theta*sqrt(n) - qnorm(1-alpha)*sqrt(v1H0))/sqrt(v1))
 
-  des = list(power = power, alpha = alpha, n = n,
-             ncats = ncats, kappaH0 = kappaH0, kappa = kappa,
-             p1 = p1, p2 = p2, piH0 = piH0, pi = pi,
-             rounding = rounding)
+  des <- list(power = power, alpha = alpha, n = n,
+              ncats = ncats, kappaH0 = kappaH0, kappa = kappa,
+              p1 = p1, p2 = p2, piH0 = piH0, pi = pi,
+              rounding = rounding)
 
-  attr(des, "class") = "designAgreement"
+  attr(des, "class") <- "designAgreement"
 
   des
 }
@@ -5440,9 +5548,9 @@ getDesignOneRateExact <- function(
 
 
   if (!is.na(n)) { # power calculation
-    des = powerOneRateExact(n, lambdaH0, lambda, D, alpha)
+    des <- powerOneRateExact(n, lambdaH0, lambda, D, alpha)
   } else { # sample size calculation
-    des = samplesizeOneRateExact(beta, lambdaH0, lambda, D, alpha)
+    des <- samplesizeOneRateExact(beta, lambdaH0, lambda, D, alpha)
   }
 
   des
@@ -5552,11 +5660,11 @@ getDesignRiskDiffExact <- function(
 
 
   if (!is.na(n)) { # power calculation
-    a = powerRiskDiffExact(n, riskDiffH0, pi1, pi2,
-                           allocationRatioPlanned, alpha)
+    a <- powerRiskDiffExact(n, riskDiffH0, pi1, pi2,
+                            allocationRatioPlanned, alpha)
   } else { # sample size calculation
-    a = samplesizeRiskDiffExact(beta, riskDiffH0, pi1, pi2,
-                                allocationRatioPlanned, alpha)
+    a <- samplesizeRiskDiffExact(beta, riskDiffH0, pi1, pi2,
+                                 allocationRatioPlanned, alpha)
   }
 
   a
@@ -5661,11 +5769,11 @@ getDesignRiskRatioExact <- function(
 
 
   if (!is.na(n)) { # power calculation
-    a = powerRiskRatioExact(n, riskRatioH0, pi1, pi2,
-                            allocationRatioPlanned, alpha)
+    a <- powerRiskRatioExact(n, riskRatioH0, pi1, pi2,
+                             allocationRatioPlanned, alpha)
   } else { # sample size calculation
-    a = samplesizeRiskRatioExact(beta, riskRatioH0, pi1, pi2,
-                                 allocationRatioPlanned, alpha)
+    a <- samplesizeRiskRatioExact(beta, riskRatioH0, pi1, pi2,
+                                  allocationRatioPlanned, alpha)
   }
 
   a
@@ -5793,11 +5901,11 @@ getDesignRiskDiffExactEquiv <- function(
 
 
   if (!is.na(n)) { # power calculation
-    a = powerRiskDiffExactEquiv(n, riskDiffLower, riskDiffUpper,
-                                pi1, pi2, allocationRatioPlanned, alpha)
+    a <- powerRiskDiffExactEquiv(n, riskDiffLower, riskDiffUpper,
+                                 pi1, pi2, allocationRatioPlanned, alpha)
   } else { # sample size calculation
-    a = samplesizeRiskDiffExactEquiv(beta, riskDiffLower, riskDiffUpper,
-                                     pi1, pi2, allocationRatioPlanned, alpha)
+    a <- samplesizeRiskDiffExactEquiv(beta, riskDiffLower, riskDiffUpper,
+                                      pi1, pi2, allocationRatioPlanned, alpha)
   }
 
   a
@@ -5921,12 +6029,12 @@ getDesignRiskRatioExactEquiv <- function(
 
 
   if (!is.na(n)) { # power calculation
-    a = powerRiskRatioExactEquiv(n, riskRatioLower, riskRatioUpper,
-                                 pi1, pi2, allocationRatioPlanned, alpha)
+    a <- powerRiskRatioExactEquiv(n, riskRatioLower, riskRatioUpper,
+                                  pi1, pi2, allocationRatioPlanned, alpha)
   } else { # sample size calculation
-    a = samplesizeRiskRatioExactEquiv(beta, riskRatioLower, riskRatioUpper,
-                                      pi1, pi2, allocationRatioPlanned,
-                                      alpha)
+    a <- samplesizeRiskRatioExactEquiv(beta, riskRatioLower, riskRatioUpper,
+                                       pi1, pi2, allocationRatioPlanned,
+                                       alpha)
   }
 
   a
