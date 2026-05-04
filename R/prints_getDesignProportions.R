@@ -36,7 +36,7 @@ print.designOneProportion <- function(x, ...) {
                  round(a$alpha, 4))
 
   if (x$settings$typeBetaSpending != 'none' ||
-      (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6)) ||
+      (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8)) ||
       (k == 1 && !x$settings$normalApproximation)) {
     str3 <- paste0(str3, ", ",
                    "attained alpha: ", round(a$attainedAlpha, 4))
@@ -165,7 +165,7 @@ print.designOneProportion <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (x$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df <- t(b)
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
@@ -266,7 +266,7 @@ print.designPairedPropMcNemar <- function(x, ...) {
                  round(a$alpha, 4))
 
   if (x$settings$typeBetaSpending != 'none' ||
-      (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+      (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
     str3 <- paste0(str3, ", ",
                    "attained alpha: ", round(a$attainedAlpha, 4))
   }
@@ -391,7 +391,7 @@ print.designPairedPropMcNemar <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (x$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df <- t(b)
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
@@ -483,7 +483,7 @@ print.designRiskDiff <- function(x, ...) {
                  round(a$alpha, 4))
 
   if (x$settings$typeBetaSpending != 'none' ||
-      (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+      (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
     str3 <- paste0(str3, ", ",
                    "attained alpha: ", round(a$attainedAlpha, 4))
   }
@@ -610,7 +610,7 @@ print.designRiskDiff <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (x$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df <- t(b)
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
@@ -701,7 +701,7 @@ print.designRiskRatio <- function(x, ...) {
                  round(a$alpha, 4))
 
   if (x$settings$typeBetaSpending != 'none' ||
-      (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+      (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
     str3 <- paste0(str3, ", ",
                    "attained alpha: ", round(a$attainedAlpha, 4))
   }
@@ -828,7 +828,7 @@ print.designRiskRatio <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (x$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df <- t(b)
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
@@ -920,7 +920,7 @@ print.designRiskRatioFM <- function(x, ...) {
                  round(a$alpha, 4))
 
   if (x$settings$typeBetaSpending != 'none' ||
-      (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+      (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
     str3 <- paste0(str3, ", ",
                    "attained alpha: ", round(a$attainedAlpha, 4))
   }
@@ -1047,7 +1047,7 @@ print.designRiskRatioFM <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (x$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df <- t(b)
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
@@ -1138,7 +1138,7 @@ print.designOddsRatio <- function(x, ...) {
                  round(a$alpha, 4))
 
   if (x$settings$typeBetaSpending != 'none' ||
-      (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+      (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
     str3 <- paste0(str3, ", ",
                    "attained alpha: ", round(a$attainedAlpha, 4))
   }
@@ -1265,7 +1265,7 @@ print.designOddsRatio <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (x$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df <- t(b)
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
