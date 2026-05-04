@@ -1203,7 +1203,6 @@ server <- function(input, output, session) {
         fixedFollowup = a$fixedFollowup,
         rho1 = a$rho1,
         rho2 = a$rho2,
-        estimateHazardRatio = 0,
         typeOfComputation = typeOfComputation(),
         rounding = input$rounding
       )$resultsUnderH1$overallResults$followupTime
@@ -1251,7 +1250,6 @@ server <- function(input, output, session) {
           fixedFollowup = a$fixedFollowup,
           rho1 = a$rho1,
           rho2 = a$rho2,
-          estimateHazardRatio = 0,
           typeOfComputation = typeOfComputation()
         )$overallResults$overallReject
       }
@@ -1283,7 +1281,6 @@ server <- function(input, output, session) {
           fixedFollowup = a$fixedFollowup,
           rho1 = a$rho1,
           rho2 = a$rho2,
-          estimateHazardRatio = 0,
           typeOfComputation = typeOfComputation()
         )$overallResults$overallReject
       }
@@ -1329,7 +1326,6 @@ server <- function(input, output, session) {
       fixedFollowup = a$fixedFollowup,
       rho1 = a$rho1,
       rho2 = a$rho2,
-      estimateHazardRatio = 0,
       typeOfComputation = typeOfComputation(),
       rounding = input$rounding
     )$resultsUnderH1$overallResults$accrualDuration
@@ -1375,7 +1371,6 @@ server <- function(input, output, session) {
           fixedFollowup = a$fixedFollowup,
           rho1 = a$rho1,
           rho2 = a$rho2,
-          estimateHazardRatio = 0,
           typeOfComputation = typeOfComputation())
 
         N[i] = lrx$overallResults$numberOfSubjects
@@ -1410,7 +1405,6 @@ server <- function(input, output, session) {
           fixedFollowup = a$fixedFollowup,
           rho1 = a$rho1,
           rho2 = a$rho2,
-          estimateHazardRatio = 0,
           typeOfComputation = typeOfComputation()
         )
 
@@ -1459,7 +1453,6 @@ server <- function(input, output, session) {
       fixedFollowup = a$fixedFollowup,
       rho1 = a$rho1,
       rho2 = a$rho2,
-      estimateHazardRatio = 0,
       typeOfComputation = typeOfComputation(),
       rounding = input$rounding
     )$resultsUnderH1$overallResults$accrualDuration
@@ -1519,7 +1512,6 @@ server <- function(input, output, session) {
             fixedFollowup = a$fixedFollowup,
             rho1 = a$rho1,
             rho2 = a$rho2,
-            estimateHazardRatio = 0,
             typeOfComputation = typeOfComputation(),
             rounding = input$rounding)$resultsUnderH1
 
@@ -1578,7 +1570,6 @@ server <- function(input, output, session) {
             fixedFollowup = a$fixedFollowup,
             rho1 = a$rho1,
             rho2 = a$rho2,
-            estimateHazardRatio = 0,
             typeOfComputation = typeOfComputation(),
             rounding = input$rounding)$resultsUnderH1
 
