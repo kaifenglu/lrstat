@@ -81,15 +81,18 @@
 #' pmvnormr(lower, upper, mean, sigma, seed = 314159)
 #'
 #' @export
-pmvnormr <- function(lower, upper, mean = NULL, sigma,
+pmvnormr <- function(lower = NULL, upper = NULL, mean = NULL, sigma,
                      n0 = 1024, n_max = 16384, R = 8, abseps = 1e-4,
                      releps = 0.0, seed = 0, parallel = TRUE, nthreads = 0) {
   if (!is.matrix(sigma) && length(sigma) == 1)
-    sigma = matrix(sigma, nrow = 1, ncol = 1)
+    sigma <- matrix(sigma, nrow = 1, ncol = 1)
   if (is.null(dim(sigma)) || length(dim(sigma)) != 2L)
     stop("sigma must be a matrix")
   if (nrow(sigma) != ncol(sigma)) stop("sigma must be square")
-  if (is.null(mean)) mean <- rep(0, nrow(sigma))
+  K <- nrow(sigma)
+  if (is.null(mean)) mean <- rep(0, K)
+  if (is.null(lower)) lower <- rep(-Inf, K)
+  if (is.null(upper)) upper <- rep(Inf, K)
 
   # Respect user-requested number of threads (best effort)
   if (nthreads > 0) {
@@ -152,7 +155,7 @@ qmvnormr <- function(p, mean = NULL, sigma,
                      n0 = 1024, n_max = 16384, R = 8, abseps = 1e-4,
                      releps = 0.0, seed = 0, parallel = TRUE, nthreads = 0) {
   if (!is.matrix(sigma) && length(sigma) == 1)
-    sigma = matrix(sigma, nrow = 1, ncol = 1)
+    sigma <- matrix(sigma, nrow = 1, ncol = 1)
   if (is.null(dim(sigma)) || length(dim(sigma)) != 2L)
     stop("sigma must be a matrix")
   if (nrow(sigma) != ncol(sigma)) stop("sigma must be square")
