@@ -1368,7 +1368,7 @@ ListCpp adaptDesign_seamless_cpp(
 
     des2 = getDesigncpp(betaNew, INew, theta, k1, t1, effStoppingNew,
                         futStoppingNew, b1, NaN, typeAlphaSpendingNew,
-                        parameterAlphaSpendingNew, {NaN}, a1,
+                        parameterAlphaSpendingNew, {NaN}, a1, {NaN}, {NaN},
                         typeBetaSpendingNew, parameterBetaSpendingNew,
                         userBetaSpendingNew, spendTimeNew, varianceRatio);
   } else {
@@ -1386,7 +1386,7 @@ ListCpp adaptDesign_seamless_cpp(
     std::vector<double> b1New(kNew, NaN), a1New(kNew, NaN);
     des2 = getDesigncpp(betaNew, INew, theta, kNew, infoRatesNew, effStoppingNew,
                         futStoppingNew, b1New, alphaNew, typeAlphaSpendingNew,
-                        parameterAlphaSpendingNew, {NaN}, a1New,
+                        parameterAlphaSpendingNew, {NaN}, a1New, {NaN}, {NaN},
                         typeBetaSpendingNew, parameterBetaSpendingNew,
                         userBetaSpendingNew, spendTimeNew, varianceRatio);
   }
