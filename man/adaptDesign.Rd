@@ -100,7 +100,7 @@ primary trial. Represents the cumulative alpha spent up to each stage.}
 
 \item{futilityBounds}{The lower boundaries on the z-test statistic scale
 for futility stopping for the primary trial. Defaults to
-\code{rep(-6, kMax-1)} if left unspecified.}
+\code{rep(-8, kMax-1)} if left unspecified.}
 
 \item{futilityCP}{The conditional power-based futility bounds for the
 primary trial.}
@@ -158,7 +158,7 @@ for the secondary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
 
 \item{futilityBoundsNew}{The lower boundaries on the z-test statistic
 scale for futility stopping for the secondary trial. Defaults to
-\code{rep(-6, kNew-1)} if left unspecified.}
+\code{rep(-8, kNew-1)} if left unspecified.}
 
 \item{futilityCPNew}{The conditional power-based futility bounds for the
 secondary trial.}

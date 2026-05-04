@@ -90,7 +90,7 @@ trial. Cumulative alpha spent up to each stage.}
 
 \item{futilityBounds}{The lower boundaries on the z-test statistic scale
 for futility stopping for the primary trial. Defaults to
-\code{rep(-6, kMax-1)} if left unspecified.}
+\code{rep(-8, kMax-1)} if left unspecified.}
 
 \item{typeBetaSpending}{The type of beta spending for the primary trial.
 One of the following:

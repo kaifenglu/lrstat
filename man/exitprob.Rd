@@ -10,7 +10,7 @@ exitprob(b, a = NA_real_, theta = 0L, I = NA_real_)
 \item{b}{Upper boundaries on the z-test statistic scale.}
 
 \item{a}{Lower boundaries on the z-test statistic scale. Defaults to
-\code{c(rep(-6.0, kMax-1), b[kMax])} if left unspecified, where
+\code{c(rep(-8.0, kMax-1), b[kMax])} if left unspecified, where
 \code{kMax = length(b)}.}
 
 \item{theta}{Stagewise parameter of interest, e.g., \code{-U/V} for

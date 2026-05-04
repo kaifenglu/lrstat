@@ -48,7 +48,7 @@ for stopping for efficacy.}
 
 \item{futilityBounds}{Lower boundaries on the z-test statistic scale
 for stopping for futility at stages \code{1, ..., kMax-1}. Defaults to
-\code{rep(-6, kMax-1)} if left unspecified. The futility bounds are
+\code{rep(-8, kMax-1)} if left unspecified. The futility bounds are
 non-binding for the calculation of critical values.}
 
 \item{hazardRatioH0}{Hazard ratio under the null hypothesis for the active
