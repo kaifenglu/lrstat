@@ -258,7 +258,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ## Examples
 
 ``` r
-(sim1 = lrsim_seamless(
+(sim1 <- lrsim_seamless(
   M = 2,
   K = 2,
   criticalValues = c(3.852050, 2.723811, 2.223982),

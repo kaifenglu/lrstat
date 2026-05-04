@@ -152,12 +152,12 @@ J R Stat Soc Series B. 1989;51:305-361.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># group sequential design with 90% power to detect delta = 6</span></span></span>
-<span class="r-in"><span><span class="va">delta</span> <span class="op">=</span> <span class="fl">6</span></span></span>
-<span class="r-in"><span><span class="va">sigma</span> <span class="op">=</span> <span class="fl">17</span></span></span>
-<span class="r-in"><span><span class="va">n</span> <span class="op">=</span> <span class="fl">282</span></span></span>
-<span class="r-in"><span><span class="op">(</span><span class="va">des1</span> <span class="op">=</span> <span class="fu"><a href="getDesign.html">getDesign</a></span><span class="op">(</span>IMax <span class="op">=</span> <span class="va">n</span><span class="op">/</span><span class="op">(</span><span class="fl">4</span><span class="op">*</span><span class="va">sigma</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>, theta <span class="op">=</span> <span class="va">delta</span>, kMax <span class="op">=</span> <span class="fl">3</span>,</span></span>
-<span class="r-in"><span>                  alpha <span class="op">=</span> <span class="fl">0.05</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"sfHSD"</span>,</span></span>
-<span class="r-in"><span>                  parameterAlphaSpending <span class="op">=</span> <span class="op">-</span><span class="fl">4</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">delta</span> <span class="op">&lt;-</span> <span class="fl">6</span></span></span>
+<span class="r-in"><span><span class="va">sigma</span> <span class="op">&lt;-</span> <span class="fl">17</span></span></span>
+<span class="r-in"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">282</span></span></span>
+<span class="r-in"><span><span class="op">(</span><span class="va">des1</span> <span class="op">&lt;-</span> <span class="fu"><a href="getDesign.html">getDesign</a></span><span class="op">(</span>IMax <span class="op">=</span> <span class="va">n</span><span class="op">/</span><span class="op">(</span><span class="fl">4</span><span class="op">*</span><span class="va">sigma</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>, theta <span class="op">=</span> <span class="va">delta</span>, kMax <span class="op">=</span> <span class="fl">3</span>,</span></span>
+<span class="r-in"><span>                   alpha <span class="op">=</span> <span class="fl">0.05</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"sfHSD"</span>,</span></span>
+<span class="r-in"><span>                   parameterAlphaSpending <span class="op">=</span> <span class="op">-</span><span class="fl">4</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                          </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Group-sequential design with 3 stages                                    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> theta: 6, maximum information: 0.24                                      </span>
@@ -176,11 +176,11 @@ J R Stat Soc Series B. 1989;51:305-361.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Information               0.08    0.16    0.24   </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># results at the second look</span></span></span>
-<span class="r-in"><span><span class="va">L</span> <span class="op">=</span> <span class="fl">2</span></span></span>
-<span class="r-in"><span><span class="va">n1</span> <span class="op">=</span> <span class="va">n</span><span class="op">*</span><span class="fl">2</span><span class="op">/</span><span class="fl">3</span></span></span>
-<span class="r-in"><span><span class="va">delta1</span> <span class="op">=</span> <span class="fl">7</span></span></span>
-<span class="r-in"><span><span class="va">sigma1</span> <span class="op">=</span> <span class="fl">20</span></span></span>
-<span class="r-in"><span><span class="va">zL</span> <span class="op">=</span> <span class="va">delta1</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">4</span><span class="op">/</span><span class="va">n1</span><span class="op">*</span><span class="va">sigma1</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">L</span> <span class="op">&lt;-</span> <span class="fl">2</span></span></span>
+<span class="r-in"><span><span class="va">n1</span> <span class="op">&lt;-</span> <span class="va">n</span><span class="op">*</span><span class="fl">2</span><span class="op">/</span><span class="fl">3</span></span></span>
+<span class="r-in"><span><span class="va">delta1</span> <span class="op">&lt;-</span> <span class="fl">7</span></span></span>
+<span class="r-in"><span><span class="va">sigma1</span> <span class="op">&lt;-</span> <span class="fl">20</span></span></span>
+<span class="r-in"><span><span class="va">zL</span> <span class="op">&lt;-</span> <span class="va">delta1</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">4</span><span class="op">/</span><span class="va">n1</span><span class="op">*</span><span class="va">sigma1</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># repeated confidence interval</span></span></span>
 <span class="r-in"><span><span class="fu">getRCI</span><span class="op">(</span>L <span class="op">=</span> <span class="va">L</span>, zL <span class="op">=</span> <span class="va">zL</span>, IMax <span class="op">=</span> <span class="va">n</span><span class="op">/</span><span class="op">(</span><span class="fl">4</span><span class="op">*</span><span class="va">sigma1</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>,</span></span>

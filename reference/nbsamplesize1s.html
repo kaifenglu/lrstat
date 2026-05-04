@@ -64,12 +64,14 @@ rates in a one-group negative binomial design.</p>
 <span>  informationRates <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  efficacyStopping <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
 <span>  futilityStopping <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
-<span>  criticalValues <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  criticalValues <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.025</span>,</span>
 <span>  typeAlphaSpending <span class="op">=</span> <span class="st">"sfOF"</span>,</span>
 <span>  parameterAlphaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  userAlphaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
-<span>  futilityBounds <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  futilityBounds <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futilityCP <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futilityRate <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  typeBetaSpending <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  parameterBetaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  userBetaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
@@ -155,6 +157,16 @@ spent up to each stage.</p></dd>
 for stopping for futility at stages <code>1, ..., kMax-1</code>. Defaults to
 <code>rep(-6, kMax-1)</code> if left unspecified. The futility bounds are
 non-binding for the calculation of critical values.</p></dd>
+
+
+<dt id="arg-futilitycp">futilityCP<a class="anchor" aria-label="anchor" href="#arg-futilitycp"></a></dt>
+<dd><p>A vector of length <code>kMax - 1</code> for the futility
+bounds on the conditional power scale.</p></dd>
+
+
+<dt id="arg-futilityrate">futilityRate<a class="anchor" aria-label="anchor" href="#arg-futilityrate"></a></dt>
+<dd><p>A vector of length <code>kMax - 1</code> for the
+futility bounds on the rate scale.</p></dd>
 
 
 <dt id="arg-typebetaspending">typeBetaSpending<a class="anchor" aria-label="anchor" href="#arg-typebetaspending"></a></dt>

@@ -296,7 +296,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ## Examples
 
 ``` r
-sim1 = lrsim3a(
+sim1 <- lrsim3a(
   kMax = 3,
   allocation1 = 2,
   allocation2 = 2,

@@ -1,7 +1,7 @@
-# Print Adaptive Two-Stage Seamless Sequential Design
+# Print Adaptive Phase 2/3 Seamless Design
 
-Prints the stopping boundaries and power for adaptive two-stage seamless
-sequential design.
+Prints the stopping boundaries and power for adaptive phase 2/3 seamless
+design.
 
 ## Usage
 

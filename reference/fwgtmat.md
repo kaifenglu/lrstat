@@ -29,10 +29,10 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ## Examples
 
 ``` r
-w = c(0.5,0.5,0,0)
-g = matrix(c(0,0,1,0, 0,0,0,1, 0,1,0,0, 1,0,0,0),
-           nrow=4, ncol=4, byrow=TRUE)
-(wgtmat = fwgtmat(w,g))
+w <- c(0.5,0.5,0,0)
+g <- matrix(c(0,0,1,0, 0,0,0,1, 0,1,0,0, 1,0,0,0),
+            nrow=4, ncol=4, byrow=TRUE)
+(wgtmat <- fwgtmat(w,g))
 #>       [,1] [,2] [,3] [,4]
 #>  [1,]  0.5  0.5  0.0  0.0
 #>  [2,]  0.5  0.5  0.0  0.0

@@ -22,12 +22,14 @@ adaptDesign(
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
   futilityStopping = NA_integer_,
-  criticalValues = NA_real_,
+  criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
-  futilityBounds = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityTheta = NULL,
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   spendingTime = NA_real_,
@@ -38,6 +40,9 @@ adaptDesign(
   futilityStoppingNew = NA_integer_,
   typeAlphaSpendingNew = "sfOF",
   parameterAlphaSpendingNew = NA_real_,
+  futilityBoundsNew = NULL,
+  futilityCPNew = NULL,
+  futilityThetaNew = NULL,
   typeBetaSpendingNew = "none",
   parameterBetaSpendingNew = NA_real_,
   userBetaSpendingNew = NA_real_,
@@ -130,6 +135,14 @@ adaptDesign(
   stopping for the primary trial. Defaults to `rep(-6, kMax-1)` if left
   unspecified.
 
+- futilityCP:
+
+  The conditional power-based futility bounds for the primary trial.
+
+- futilityTheta:
+
+  The parameter value-based futility bounds for the primary trial.
+
 - typeBetaSpending:
 
   The type of beta spending for the primary trial. One of the following:
@@ -186,6 +199,20 @@ adaptDesign(
   The parameter value of alpha spending for the secondary trial.
   Corresponds to \\\Delta\\ for `"WT"`, \\\rho\\ for `"sfKD"`, and
   \\\gamma\\ for `"sfHSD"`.
+
+- futilityBoundsNew:
+
+  The lower boundaries on the z-test statistic scale for futility
+  stopping for the secondary trial. Defaults to `rep(-6, kNew-1)` if
+  left unspecified.
+
+- futilityCPNew:
+
+  The conditional power-based futility bounds for the secondary trial.
+
+- futilityThetaNew:
+
+  The parameter value-based futility bounds for the secondary trial.
 
 - typeBetaSpendingNew:
 

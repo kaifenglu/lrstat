@@ -19,6 +19,8 @@ lrschoenfeld(
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
   futilityBounds = NA_real_,
+  futilityCP = NA_real_,
+  futilityHR = NA_real_,
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   userBetaSpending = NA_real_,
@@ -105,6 +107,16 @@ lrschoenfeld(
   futility at stages `1, ..., kMax-1`. Defaults to `rep(-6, kMax-1)` if
   left unspecified. The futility bounds are non-binding for the
   calculation of critical values.
+
+- futilityCP:
+
+  A vector of length `kMax - 1` for the futility bounds on the
+  conditional power scale.
+
+- futilityHR:
+
+  A vector of length `kMax - 1` for the futility bounds on the hazard
+  ratio scale.
 
 - typeBetaSpending:
 
@@ -302,8 +314,10 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Number of dropouts     0.7     1.4    
 #> Number of subjects     78.0    78.0   
 #> Analysis time          4.2     7.2    
+#> Efficacy boundary (HR) 0.217   0.487  
 #> Efficacy boundary (p)  0.0015  0.0245 
 #> Information            3.75    7.50   
+#> HR                     0.300   0.300  
 #> 
 #> $simulationResults
 #>                                                         
@@ -356,8 +370,10 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Number of dropouts     0.8     1.5    
 #> Number of subjects     78.0    78.0   
 #> Analysis time          4.5     8.0    
+#> Efficacy boundary (HR) 0.243   0.504  
 #> Efficacy boundary (p)  0.0018  0.0244 
 #> Information            4.25    8.25   
+#> HR                     0.300   0.300  
 #> 
 #> $simulationResults
 #>                                                         

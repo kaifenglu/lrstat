@@ -11,12 +11,14 @@ rmpower(
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
   futilityStopping = NA_integer_,
-  criticalValues = NA_real_,
+  criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
-  futilityBounds = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityRmstDiff = NULL,
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   milestone = NA_real_,
@@ -94,6 +96,16 @@ rmpower(
   futility at stages `1, ..., kMax-1`. Defaults to `rep(-6, kMax-1)` if
   left unspecified. The futility bounds are non-binding for the
   calculation of critical values.
+
+- futilityCP:
+
+  A vector of length `kMax - 1` for the futility bounds on the
+  conditional power scale.
+
+- futilityRmstDiff:
+
+  A vector of length `kMax - 1` for the futility bounds on the
+  restricted mean survival time difference scale.
 
 - typeBetaSpending:
 

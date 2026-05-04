@@ -1,7 +1,6 @@
-# Print Two-Stage Seamless Sequential Design
+# Print Phase 2/3 Seamless Design
 
-Prints the stopping boundaries and power for two-stage seamless
-sequential design.
+Prints the stopping boundaries and power for phase 2/3 seamless design.
 
 ## Usage
 

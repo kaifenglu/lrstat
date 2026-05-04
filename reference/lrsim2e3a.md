@@ -363,7 +363,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ## Examples
 
 ``` r
-sim1 = lrsim2e3a(
+sim1 <- lrsim2e3a(
   kMax = 3,
   kMaxpfs = 2,
   allocation1 = 2,

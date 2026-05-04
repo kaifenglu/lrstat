@@ -323,7 +323,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ``` r
 # Example 1: analyses based on number of events
 
-sim1 = lrsim(
+sim1 <- lrsim(
   kMax = 2, informationRates = c(0.5, 1),
   criticalValues = c(2.797, 1.977),
   accrualIntensity = 11,
@@ -413,7 +413,7 @@ head(sim1$rawdata)
 
 # Example 2: analyses based on calendar time have similar power
 
-sim2 = lrsim(
+sim2 <- lrsim(
   kMax = 2, informationRates = c(0.5, 1),
   criticalValues = c(2.797, 1.977),
   accrualIntensity = 11,

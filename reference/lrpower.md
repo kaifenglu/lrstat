@@ -11,12 +11,14 @@ lrpower(
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
   futilityStopping = NA_integer_,
-  criticalValues = NA_real_,
+  criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
-  futilityBounds = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityHR = NULL,
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   hazardRatioH0 = 1,
@@ -31,10 +33,9 @@ lrpower(
   gamma2 = 0L,
   accrualDuration = NA_real_,
   followupTime = NA_real_,
-  fixedFollowup = 0L,
+  fixedFollowup = FALSE,
   rho1 = 0,
   rho2 = 0,
-  estimateHazardRatio = 1L,
   typeOfComputation = "",
   spendingTime = NA_real_,
   studyDuration = NA_real_
@@ -99,6 +100,16 @@ lrpower(
   futility at stages `1, ..., kMax-1`. Defaults to `rep(-6, kMax-1)` if
   left unspecified. The futility bounds are non-binding for the
   calculation of critical values.
+
+- futilityCP:
+
+  A vector of length `kMax - 1` for the futility bounds on the
+  conditional power scale.
+
+- futilityHR:
+
+  A vector of length `kMax - 1` for the futility bounds on the hazard
+  ratio scale.
 
 - typeBetaSpending:
 
@@ -192,11 +203,6 @@ lrpower(
 
   The second parameter of the Fleming-Harrington family of weighted
   log-rank test. Defaults to 0 for conventional log-rank test.
-
-- estimateHazardRatio:
-
-  Whether to estimate the hazard ratio from weighted Cox regression
-  model and report the stopping boundaries on the hazard ratio scale.
 
 - typeOfComputation:
 
@@ -297,11 +303,9 @@ An S3 class `lrpower` object with 4 components:
 
   - `analysisTime`: The average time since trial start.
 
-  - `efficacyHR`: The efficacy boundaries on the hazard ratio scale if
-    `estimateHazardRatio`.
+  - `efficacyHR`: The efficacy boundaries on the hazard ratio scale.
 
-  - `futilityHR`: The futility boundaries on the hazard ratio scale if
-    `estimateHazardRatio`.
+  - `futilityHR`: The futility boundaries on the hazard ratio scale.
 
   - `efficacyP`: The efficacy boundaries on the p-value scale.
 
@@ -319,8 +323,8 @@ An S3 class `lrpower` object with 4 components:
   `typeAlphaSpending`, `parameterAlphaSpending`, `userAlphaSpending`,
   `typeBetaSpending`, `parameterBetaSpending`, `allocationRatioPlanned`,
   `accrualTime`, `accuralIntensity`, `piecewiseSurvivalTime`,
-  `stratumFraction`, `lambda1`, `lambda2`, `gamma1`, `gamma2`,
-  `estimateHazardRatio`, and `spendingTime`.
+  `stratumFraction`, `lambda1`, `lambda2`, `gamma1`, `gamma2`, and
+  `spendingTime`.
 
 - `byTreatmentCounts`: A list containing the following counts by
   treatment group:

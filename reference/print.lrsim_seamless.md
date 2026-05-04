@@ -1,4 +1,4 @@
-# Print Simulation Results for Two-Stage Seamless Sequential Design
+# Print Simulation Results for Phase 2/3 Seamless Design
 
 Prints the summary statistics from simulation.
 

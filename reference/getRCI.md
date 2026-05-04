@@ -104,12 +104,12 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 
 ``` r
 # group sequential design with 90% power to detect delta = 6
-delta = 6
-sigma = 17
-n = 282
-(des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
-                  alpha = 0.05, typeAlphaSpending = "sfHSD",
-                  parameterAlphaSpending = -4))
+delta <- 6
+sigma <- 17
+n <- 282
+(des1 <- getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
+                   alpha = 0.05, typeAlphaSpending = "sfHSD",
+                   parameterAlphaSpending = -4))
 #>                                                                          
 #> Group-sequential design with 3 stages                                    
 #> theta: 6, maximum information: 0.24                                      
@@ -128,11 +128,11 @@ n = 282
 #> Information               0.08    0.16    0.24   
 
 # results at the second look
-L = 2
-n1 = n*2/3
-delta1 = 7
-sigma1 = 20
-zL = delta1/sqrt(4/n1*sigma1^2)
+L <- 2
+n1 <- n*2/3
+delta1 <- 7
+sigma1 <- 20
+zL <- delta1/sqrt(4/n1*sigma1^2)
 
 # repeated confidence interval
 getRCI(L = L, zL = zL, IMax = n/(4*sigma1^2),

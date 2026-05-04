@@ -25,6 +25,8 @@ getDesignRiskRatio(
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
   futilityBounds = NA_real_,
+  futilityCP = NA_real_,
+  futilityRiskRatio = NA_real_,
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   userBetaSpending = NA_real_,
@@ -123,6 +125,14 @@ getDesignRiskRatio(
   futility at stages `1, ..., kMax-1`. Defaults to `rep(-6, kMax-1)` if
   left unspecified. The futility bounds are non-binding for the
   calculation of critical values.
+
+- futilityCP:
+
+  The futility bounds on the conditional power scale.
+
+- futilityRiskRatio:
+
+  The futility bounds on the risk ratio scale.
 
 - typeBetaSpending:
 

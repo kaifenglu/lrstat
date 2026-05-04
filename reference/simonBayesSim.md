@@ -181,7 +181,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ## Examples
 
 ``` r
-sim1 = simonBayesSim(
+sim1 <- simonBayesSim(
   p = c(0.25, 0.25, 0.05),
   accrualIntensity = 5,
   stratumFraction = c(1/3, 1/3, 1/3),

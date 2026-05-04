@@ -7,8 +7,8 @@ within a rectangular region defined by lower and upper bounds.
 
 ``` r
 pmvnormr(
-  lower,
-  upper,
+  lower = NULL,
+  upper = NULL,
   mean = NULL,
   sigma,
   n0 = 1024,

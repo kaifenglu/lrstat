@@ -24,6 +24,8 @@ getDesignPairedPropMcNemar(
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
   futilityBounds = NA_real_,
+  futilityCP = NA_real_,
+  futilityRiskDiff = NA_real_,
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   userBetaSpending = NA_real_,
@@ -114,6 +116,14 @@ getDesignPairedPropMcNemar(
   futility at stages `1, ..., kMax-1`. Defaults to `rep(-6, kMax-1)` if
   left unspecified. The futility bounds are non-binding for the
   calculation of critical values.
+
+- futilityCP:
+
+  The futility bounds on the conditional power scale.
+
+- futilityRiskDiff:
+
+  The futility bounds on the risk difference scale.
 
 - typeBetaSpending:
 

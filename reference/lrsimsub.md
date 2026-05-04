@@ -294,7 +294,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ## Examples
 
 ``` r
-sim1 = lrsimsub(
+sim1 <- lrsimsub(
   kMax = 2,
   kMaxitt = 2,
   allocation1 = 1,

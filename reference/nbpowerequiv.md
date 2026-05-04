@@ -8,7 +8,7 @@ Obtains the power for equivalence in negative binomial rate ratio.
 nbpowerequiv(
   kMax = 1L,
   informationRates = NA_real_,
-  criticalValues = NA_real_,
+  criticalValues = NULL,
   alpha = 0.05,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,

@@ -14,12 +14,14 @@ lrsamplesize(
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
   futilityStopping = NA_integer_,
-  criticalValues = NA_real_,
+  criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
-  futilityBounds = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityHR = NULL,
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   userBetaSpending = NA_real_,
@@ -38,7 +40,6 @@ lrsamplesize(
   fixedFollowup = FALSE,
   rho1 = 0,
   rho2 = 0,
-  estimateHazardRatio = TRUE,
   typeOfComputation = "",
   spendingTime = NA_real_,
   rounding = TRUE
@@ -107,6 +108,16 @@ lrsamplesize(
   futility at stages `1, ..., kMax-1`. Defaults to `rep(-6, kMax-1)` if
   left unspecified. The futility bounds are non-binding for the
   calculation of critical values.
+
+- futilityCP:
+
+  A vector of length `kMax - 1` for the futility bounds on the
+  conditional power scale.
+
+- futilityHR:
+
+  A vector of length `kMax - 1` for the futility bounds on the hazard
+  ratio scale.
 
 - typeBetaSpending:
 
@@ -206,11 +217,6 @@ lrsamplesize(
 
   The second parameter of the Fleming-Harrington family of weighted
   log-rank test. Defaults to 0 for conventional log-rank test.
-
-- estimateHazardRatio:
-
-  Whether to estimate the hazard ratio from weighted Cox regression
-  model and report the stopping boundaries on the hazard ratio scale.
 
 - typeOfComputation:
 
