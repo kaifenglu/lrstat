@@ -101,28 +101,29 @@ Z\_{2,2})\\ is \\ \left(\frac{3.179}{\sqrt{12.464}},
 \\u_2\\ by solving equation (1).
 
 ``` r
-library(mvtnorm)
 mu = c(0.900, 2.234, 2.662)
 sigma = matrix(c(1, 0.748, 0.370, 0.748, 1, 0.861, 0.370, 0.861, 1), 3, 3)
 u1 = 2.968
 alpha = 0.025
 f <- function(u2, u1, sigma, alpha) {
-  1 - pmvnorm(upper=c(u1, u2, u2), corr=sigma, algorithm="Miwa") - alpha
+  1 - pmvnormr(upper=c(u1, u2, u2), sigma=sigma) - alpha
 }
 (u2 = uniroot(f, c(1,3), u1, sigma, alpha)$root)
-#> [1] 2.136998
+#> [1] 2.137087
 ```
 
 The power can be estimated by plugging in the mean under the alternative
 hypothesis.
 
 ``` r
-1 - pmvnorm(upper=c(u1, u2, u2), corr=sigma, mean=mu, algorithm="Miwa")
-#> [1] 0.7243152
+1 - pmvnormr(upper=c(u1, u2, u2), mean=mu, sigma=sigma)
+#> [1] 0.7242813
+#> attr(,"method")
+#> [1] "qmc"
 #> attr(,"error")
-#> [1] NA
-#> attr(,"msg")
-#> [1] "Normal Completion"
+#> [1] 6.761881e-05
+#> attr(,"nsamples")
+#> [1] 49152
 ```
 
 For the simulation study, we use very large critical values for the

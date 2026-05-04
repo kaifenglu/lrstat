@@ -172,25 +172,26 @@ weights.</p>
 \right)
 \]</span> Now, we obtain the critical value <span class="math inline">\(u_2\)</span> by solving equation (1).</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://mvtnorm.R-forge.R-project.org" class="external-link">mvtnorm</a></span><span class="op">)</span></span>
-<span><span class="va">mu</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.900</span>, <span class="fl">2.234</span>, <span class="fl">2.662</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">mu</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.900</span>, <span class="fl">2.234</span>, <span class="fl">2.662</span><span class="op">)</span></span>
 <span><span class="va">sigma</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0.748</span>, <span class="fl">0.370</span>, <span class="fl">0.748</span>, <span class="fl">1</span>, <span class="fl">0.861</span>, <span class="fl">0.370</span>, <span class="fl">0.861</span>, <span class="fl">1</span><span class="op">)</span>, <span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="va">u1</span> <span class="op">=</span> <span class="fl">2.968</span></span>
 <span><span class="va">alpha</span> <span class="op">=</span> <span class="fl">0.025</span></span>
 <span><span class="va">f</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">u2</span>, <span class="va">u1</span>, <span class="va">sigma</span>, <span class="va">alpha</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fl">1</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/pkg/mvtnorm/man/pmvnorm.html" class="external-link">pmvnorm</a></span><span class="op">(</span>upper<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">u1</span>, <span class="va">u2</span>, <span class="va">u2</span><span class="op">)</span>, corr<span class="op">=</span><span class="va">sigma</span>, algorithm<span class="op">=</span><span class="st">"Miwa"</span><span class="op">)</span> <span class="op">-</span> <span class="va">alpha</span></span>
+<span>  <span class="fl">1</span> <span class="op">-</span> <span class="fu"><a href="../reference/pmvnormr.html">pmvnormr</a></span><span class="op">(</span>upper<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">u1</span>, <span class="va">u2</span>, <span class="va">u2</span><span class="op">)</span>, sigma<span class="op">=</span><span class="va">sigma</span><span class="op">)</span> <span class="op">-</span> <span class="va">alpha</span></span>
 <span><span class="op">}</span></span>
 <span><span class="op">(</span><span class="va">u2</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/uniroot.html" class="external-link">uniroot</a></span><span class="op">(</span><span class="va">f</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">3</span><span class="op">)</span>, <span class="va">u1</span>, <span class="va">sigma</span>, <span class="va">alpha</span><span class="op">)</span><span class="op">$</span><span class="va">root</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 2.136998</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 2.137087</span></span></code></pre></div>
 <p>The power can be estimated by plugging in the mean under the
 alternative hypothesis.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fl">1</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/pkg/mvtnorm/man/pmvnorm.html" class="external-link">pmvnorm</a></span><span class="op">(</span>upper<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">u1</span>, <span class="va">u2</span>, <span class="va">u2</span><span class="op">)</span>, corr<span class="op">=</span><span class="va">sigma</span>, mean<span class="op">=</span><span class="va">mu</span>, algorithm<span class="op">=</span><span class="st">"Miwa"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.7243152</span></span>
+<code class="sourceCode R"><span><span class="fl">1</span> <span class="op">-</span> <span class="fu"><a href="../reference/pmvnormr.html">pmvnormr</a></span><span class="op">(</span>upper<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">u1</span>, <span class="va">u2</span>, <span class="va">u2</span><span class="op">)</span>, mean<span class="op">=</span><span class="va">mu</span>, sigma<span class="op">=</span><span class="va">sigma</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.7242813</span></span>
+<span><span class="co">#&gt; attr(,"method")</span></span>
+<span><span class="co">#&gt; [1] "qmc"</span></span>
 <span><span class="co">#&gt; attr(,"error")</span></span>
-<span><span class="co">#&gt; [1] NA</span></span>
-<span><span class="co">#&gt; attr(,"msg")</span></span>
-<span><span class="co">#&gt; [1] "Normal Completion"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 6.761881e-05</span></span>
+<span><span class="co">#&gt; attr(,"nsamples")</span></span>
+<span><span class="co">#&gt; [1] 49152</span></span></code></pre></div>
 <p>For the simulation study, we use very large critical values for the
 FH(0,0) and FH(0,1) log-rank statistics at the interim and final
 analyses for each iteration, and then construct the maximum combo test
