@@ -494,10 +494,10 @@ FlatMatrix fwgtmatcpp(const std::vector<double>& w,
 //'
 //' @examples
 //'
-//' w = c(0.5,0.5,0,0)
-//' g = matrix(c(0,0,1,0, 0,0,0,1, 0,1,0,0, 1,0,0,0),
-//'            nrow=4, ncol=4, byrow=TRUE)
-//' (wgtmat = fwgtmat(w,g))
+//' w <- c(0.5,0.5,0,0)
+//' g <- matrix(c(0,0,1,0, 0,0,0,1, 0,1,0,0, 1,0,0,0),
+//'             nrow=4, ncol=4, byrow=TRUE)
+//' (wgtmat <- fwgtmat(w,g))
 //'
 //' @export
 // [[Rcpp::export]]
