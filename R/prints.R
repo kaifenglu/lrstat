@@ -13,14 +13,14 @@
 #'
 #' @export
 print.design <- function(x, ...) {
-  a = x$overallResults
-  s = x$byStageResults
-  k = a$kMax
+  a <- x$overallResults
+  s <- x$byStageResults
+  k <- a$kMax
 
   if (k>1) {
-    str1 = paste0("Group-sequential design with ", k, " stages")
+    str1 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str1 = "Fixed design"
+    str1 <- "Fixed design"
   }
 
   str2 <- paste0("theta: ", round(a$theta, 3), ", ",
@@ -46,74 +46,74 @@ print.design <- function(x, ...) {
                    "expected information under H0: ",
                    round(a$expectedInformationH0, 2))
 
-    asf = tolower(x$settings$typeAlphaSpending)
-    asfpar = round(x$settings$parameterAlphaSpending, 3)
-    asfuser = round(x$settings$userAlphaSpending, 4)
+    asf <- tolower(x$settings$typeAlphaSpending)
+    asfpar <- round(x$settings$parameterAlphaSpending, 3)
+    asfuser <- round(x$settings$userAlphaSpending, 4)
 
-    bsf = tolower(x$settings$typeBetaSpending)
-    bsfpar = round(x$settings$parameterBetaSpending, 3)
-    bsfuser = round(x$settings$userBetaSpending, 4)
+    bsf <- tolower(x$settings$typeBetaSpending)
+    bsfpar <- round(x$settings$parameterBetaSpending, 3)
+    bsfuser <- round(x$settings$userBetaSpending, 4)
 
     if (asf == "of") {
-      str6 = paste0("Alpha spending: O'Brien-Fleming")
+      str6 <- paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str6 = paste0("Alpha spending: Pocock")
+      str6 <- paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str6 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str6 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str6 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str6 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str6 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str6 <- paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str6 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str6 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str6 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str6 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str6 = paste0("Alpha spending: User defined(",
-                    paste(asfuser, collapse = ","), ")")
+      str6 <- paste0("Alpha spending: User defined(",
+                     paste(asfuser, collapse = ","), ")")
     } else {
-      str6 = "Alpha spending: None"
+      str6 <- "Alpha spending: None"
     }
 
     if (bsf == "of") {
-      str7 = paste0("beta spending: O'Brien-Fleming")
+      str7 <- paste0("beta spending: O'Brien-Fleming")
     } else if (bsf == "p") {
-      str7 = paste0("beta spending: Pocock")
+      str7 <- paste0("beta spending: Pocock")
     } else if (bsf == "wt") {
-      str7 = paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
+      str7 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
     } else if (bsf == "sfof") {
-      str7 = paste0("beta spending: Lan-DeMets O'Brien-Fleming")
+      str7 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
     } else if (bsf == "sfp") {
-      str7 = paste0("beta spending: Lan-DeMets Pocock")
+      str7 <- paste0("beta spending: Lan-DeMets Pocock")
     } else if (bsf == "sfkd") {
-      str7 = paste0("beta spending: KD(rho = ", bsfpar, ")")
+      str7 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
     } else if (bsf == "sfhsd") {
-      str7 = paste0("beta spending: HSD(gamma = ", bsfpar, ")")
+      str7 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
     } else if (bsf == "user") {
-      str7 = paste0("beta spending: User defined(",
-                    paste(bsfuser, collapse = ","), ")")
+      str7 <- paste0("beta spending: User defined(",
+                     paste(bsfuser, collapse = ","), ")")
     } else {
-      str7 = "beta spending: None"
+      str7 <- "beta spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str8 = paste0("Spending time: ",
-                    paste(round(x$settings$spendingTime, 3), collapse = ","))
-      df1 = data.frame(x = rep("", 8))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5,
-                        paste(str6, str7, sep = ", "), str8, "")
+      str8 <- paste0("Spending time: ",
+                     paste(round(x$settings$spendingTime, 3), collapse = ","))
+      df1 <- data.frame(x = rep("", 8))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5,
+                         paste(str6, str7, sep = ", "), str8, "")
     } else {
-      df1 = data.frame(x = rep("", 7))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5,
-                        paste(str6, str7, sep = ", "), "")
+      df1 <- data.frame(x = rep("", 7))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5,
+                         paste(str6, str7, sep = ", "), "")
     }
   } else {
-    df1 = data.frame(x = rep("", 5))
-    colnames(df1) = NULL
-    rownames(df1) = c(str1, str2, str3, str4, "")
+    df1 <- data.frame(x = rep("", 5))
+    colnames(df1) <- NULL
+    rownames(df1) <- c(str1, str2, str3, str4, "")
   }
 
 
@@ -135,30 +135,30 @@ print.design <- function(x, ...) {
 
     if (x$settings$typeBetaSpending != 'none' ||
         (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
-      df = t(b)
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Futility boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative futility",
-                       "Cumulative alpha spent",
-                       "Efficacy boundary (theta)",
-                       "Futility boundary (theta)",
-                       "Efficacy boundary (p)",
-                       "Futility boundary (p)",
-                       "Information",
-                       "Cumulative rejection under H0",
-                       "Cumulative futility under H0")
+      df <- t(b)
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Futility boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative futility",
+                        "Cumulative alpha spent",
+                        "Efficacy boundary (theta)",
+                        "Futility boundary (theta)",
+                        "Efficacy boundary (p)",
+                        "Futility boundary (p)",
+                        "Information",
+                        "Cumulative rejection under H0",
+                        "Cumulative futility under H0")
 
     } else {
-      df = t(b[,c(1,2,4,6,7,9,11)])
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative alpha spent",
-                       "Efficacy boundary (theta)",
-                       "Efficacy boundary (p)",
-                       "Information")
+      df <- t(b[,c(1,2,4,6,7,9,11)])
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative alpha spent",
+                        "Efficacy boundary (theta)",
+                        "Efficacy boundary (p)",
+                        "Information")
     }
 
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
@@ -172,11 +172,11 @@ print.design <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
+    df <- t(b)
 
-    rownames(df) = c("Efficacy boundary (Z)",
-                     "Efficacy boundary (theta)",
-                     "Efficacy boundary (p)")
+    rownames(df) <- c("Efficacy boundary (Z)",
+                      "Efficacy boundary (theta)",
+                      "Efficacy boundary (p)")
     colnames(df) <- NA
   }
 
@@ -201,14 +201,14 @@ print.design <- function(x, ...) {
 #'
 #' @export
 print.designEquiv <- function(x, ...) {
-  a = x$overallResults
-  s = x$byStageResults
-  k = a$kMax
+  a <- x$overallResults
+  s <- x$byStageResults
+  k <- a$kMax
 
   if (k>1) {
-    str1 = paste0("Group-sequential design with ", k, " stages")
+    str1 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str1 = "Fixed design"
+    str1 <- "Fixed design"
   }
 
   str1 <- paste(str1, "for equivalence test")
@@ -236,47 +236,47 @@ print.designEquiv <- function(x, ...) {
                    "under H20: ",
                    round(a$expectedInformationH20, 2))
 
-    asf = tolower(x$settings$typeAlphaSpending)
-    asfpar = round(x$settings$parameterAlphaSpending, 3)
-    asfuser = round(x$settings$userAlphaSpending, 4)
+    asf <- tolower(x$settings$typeAlphaSpending)
+    asfpar <- round(x$settings$parameterAlphaSpending, 3)
+    asfuser <- round(x$settings$userAlphaSpending, 4)
 
     if (asf == "of") {
-      str6 = paste0("Alpha spending: O'Brien-Fleming")
+      str6 <- paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str6 = paste0("Alpha spending: Pocock")
+      str6 <- paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str6 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str6 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str6 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str6 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str6 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str6 <- paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str6 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str6 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str6 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str6 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str6 = paste0("Alpha spending: User defined(",
-                    paste(asfuser, collapse = ","), ")")
+      str6 <- paste0("Alpha spending: User defined(",
+                     paste(asfuser, collapse = ","), ")")
     } else {
-      str6 = "Alpha spending: None"
+      str6 <- "Alpha spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str7 = paste0("Spending time: ",
-                    paste(round(x$settings$spendingTime, 3), collapse = ","))
-      df1 = data.frame(x = rep("", 8))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7, "")
+      str7 <- paste0("Spending time: ",
+                     paste(round(x$settings$spendingTime, 3), collapse = ","))
+      df1 <- data.frame(x = rep("", 8))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7, "")
     } else {
-      df1 = data.frame(x = rep("", 7))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, "")
+      df1 <- data.frame(x = rep("", 7))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, "")
     }
   } else {
-    df1 = data.frame(x = rep("", 5))
-    colnames(df1) = NULL
-    rownames(df1) = c(str1, str2, str3, str4, "")
+    df1 <- data.frame(x = rep("", 5))
+    colnames(df1) <- NULL
+    rownames(df1) <- c(str1, str2, str3, str4, "")
   }
 
 
@@ -296,17 +296,17 @@ print.designEquiv <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
-    rownames(df) = c("Information rate",
-                     "Boundary for each 1-sided test (Z)",
-                     "Cumulative rejection",
-                     "Cumulative alpha for each 1-sided test",
-                     "Cumulative alpha attained under H10",
-                     "Cumulative alpha attained under H20",
-                     "Boundary for lower limit (theta)",
-                     "Boundary for upper limit (theta)",
-                     "Boundary for each 1-sided test (p)",
-                     "Information")
+    df <- t(b)
+    rownames(df) <- c("Information rate",
+                      "Boundary for each 1-sided test (Z)",
+                      "Cumulative rejection",
+                      "Cumulative alpha for each 1-sided test",
+                      "Cumulative alpha attained under H10",
+                      "Cumulative alpha attained under H20",
+                      "Boundary for lower limit (theta)",
+                      "Boundary for upper limit (theta)",
+                      "Boundary for each 1-sided test (p)",
+                      "Information")
 
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
   } else {
@@ -320,12 +320,12 @@ print.designEquiv <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
+    df <- t(b)
 
-    rownames(df) = c("Boundary for each 1-sided test (Z)",
-                     "Boundary for lower limit (theta)",
-                     "Boundary for upper limit (theta)",
-                     "Boundary for each 1-sided test (p)")
+    rownames(df) <- c("Boundary for each 1-sided test (Z)",
+                      "Boundary for lower limit (theta)",
+                      "Boundary for upper limit (theta)",
+                      "Boundary for each 1-sided test (p)")
     colnames(df) <- NA
   }
 
@@ -350,26 +350,26 @@ print.designEquiv <- function(x, ...) {
 #'
 #' @export
 print.adaptDesign <- function(x, ...) {
-  des1 = x$primaryTrial
+  des1 <- x$primaryTrial
 
-  str1 = "Primary trial:"
-  str2 = paste0("Group-sequential design with ", des1$kMax, " stages")
-  str3 = paste0("Interim adaptation look: ",  des1$L, ", ",
-                "z-statistic value: ", round(des1$zL, 3))
+  str1 <- "Primary trial:"
+  str2 <- paste0("Group-sequential design with ", des1$kMax, " stages")
+  str3 <- paste0("Interim adaptation look: ",  des1$L, ", ",
+                 "z-statistic value: ", round(des1$zL, 3))
 
-  str4 = paste0("Conditional type I error: ",
-                round(des1$conditionalAlpha, 4))
+  str4 <- paste0("Conditional type I error: ",
+                 round(des1$conditionalAlpha, 4))
 
-  str5 = paste0("Conditional power: ", round(des1$conditionalPower, 3),
-                ", ", "predictive power: ",
-                round(des1$predictivePower, 4))
+  str5 <- paste0("Conditional power: ", round(des1$conditionalPower, 3),
+                 ", ", "predictive power: ",
+                 round(des1$predictivePower, 4))
 
-  str6 = paste0("Muller & Schafer method for secondary trial: ",
-                des1$MullerSchafer)
+  str6 <- paste0("Muller & Schafer method for secondary trial: ",
+                 des1$MullerSchafer)
 
-  df1a = data.frame(x = rep("", 7))
-  colnames(df1a) = NULL
-  rownames(df1a) = c(str1, str2, str3, str4, str5, str6, "")
+  df1a <- data.frame(x = rep("", 7))
+  colnames(df1a) <- NULL
+  rownames(df1a) <- c(str1, str2, str3, str4, str5, str6, "")
 
   b <- data.frame(informationRates = des1$informationRates,
                   efficacyBounds = des1$efficacyBounds,
@@ -380,32 +380,32 @@ print.adaptDesign <- function(x, ...) {
   b[4] <- lapply(b[4], formatC, format = "f", digits = 2)
 
   if (!all(des1$futilityBounds[1:(des1$kMax-1)] == -6)) {
-    df1b = t(b)
-    rownames(df1b) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Futility boundary (Z)",
-                       "Information")
+    df1b <- t(b)
+    rownames(df1b) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Futility boundary (Z)",
+                        "Information")
   } else {
-    df1b = t(b[c(1,2,4)])
-    rownames(df1b) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Information")
+    df1b <- t(b[c(1,2,4)])
+    rownames(df1b) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Information")
   }
 
   colnames(df1b) <- paste("Stage", seq_len(ncol(df1b)), sep=" ")
 
 
-  des2 = x$secondaryTrial
-  a = des2$overallResults
-  s = des2$byStageResults
-  k = a$kMax
+  des2 <- x$secondaryTrial
+  a <- des2$overallResults
+  s <- des2$byStageResults
+  k <- a$kMax
 
-  str1 = "Secondary trial:"
+  str1 <- "Secondary trial:"
 
   if (k>1) {
-    str2 = paste0("Group-sequential design with ", k, " stages")
+    str2 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str2 = "Fixed design"
+    str2 <- "Fixed design"
   }
 
   str3 <- paste0("theta: ", round(a$theta, 3), ", ",
@@ -424,13 +424,13 @@ print.adaptDesign <- function(x, ...) {
                    round(a$expectedInformationH1, 2), ", ",
                    "Expected information under H0: ",
                    round(a$expectedInformationH0, 2))
-    df2a = data.frame(x = rep("", 7))
-    colnames(df2a) = NULL
-    rownames(df2a) = c(str1, str2, str3, str4, str5, str6, "")
+    df2a <- data.frame(x = rep("", 7))
+    colnames(df2a) <- NULL
+    rownames(df2a) <- c(str1, str2, str3, str4, str5, str6, "")
   } else {
-    df2a = data.frame(x = rep("", 6))
-    colnames(df2a) = NULL
-    rownames(df2a) = c(str1, str2, str3, str4, str5, "")
+    df2a <- data.frame(x = rep("", 6))
+    colnames(df2a) <- NULL
+    rownames(df2a) <- c(str1, str2, str3, str4, str5, "")
   }
 
 
@@ -451,28 +451,28 @@ print.adaptDesign <- function(x, ...) {
 
     if (des2$settings$typeBetaSpending != 'none' ||
         (k > 1 && any(des2$byStageResults$futilityBounds[1:(k-1)] > -6))) {
-      df2b = t(b)
-      rownames(df2b) = c("Information rate",
-                         "Efficacy boundary (Z)",
-                         "Futility boundary (Z)",
-                         "Cumulative rejection",
-                         "Cumulative futility",
-                         "Cumulative alpha spent",
-                         "Efficacy boundary (theta)",
-                         "Futility boundary (theta)",
-                         "Efficacy boundary (p)",
-                         "Futility boundary (p)",
-                         "Information")
+      df2b <- t(b)
+      rownames(df2b) <- c("Information rate",
+                          "Efficacy boundary (Z)",
+                          "Futility boundary (Z)",
+                          "Cumulative rejection",
+                          "Cumulative futility",
+                          "Cumulative alpha spent",
+                          "Efficacy boundary (theta)",
+                          "Futility boundary (theta)",
+                          "Efficacy boundary (p)",
+                          "Futility boundary (p)",
+                          "Information")
 
     } else {
-      df2b = t(b[,c(1,2,4,6,7,9,11)])
-      rownames(df2b) = c("Information rate",
-                         "Efficacy boundary (Z)",
-                         "Cumulative rejection",
-                         "Cumulative alpha spent",
-                         "Efficacy boundary (theta)",
-                         "Efficacy boundary (p)",
-                         "Information")
+      df2b <- t(b[,c(1,2,4,6,7,9,11)])
+      rownames(df2b) <- c("Information rate",
+                          "Efficacy boundary (Z)",
+                          "Cumulative rejection",
+                          "Cumulative alpha spent",
+                          "Efficacy boundary (theta)",
+                          "Efficacy boundary (p)",
+                          "Information")
     }
 
     colnames(df2b) <- paste("Stage", seq_len(ncol(df2b)), sep=" ")
@@ -486,23 +486,23 @@ print.adaptDesign <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df2b = t(b)
+    df2b <- t(b)
 
-    rownames(df2b) = c("Efficacy boundary (Z)",
-                       "Efficacy boundary (theta)",
-                       "Efficacy boundary (p)")
+    rownames(df2b) <- c("Efficacy boundary (Z)",
+                        "Efficacy boundary (theta)",
+                        "Efficacy boundary (p)")
 
     colnames(df2b) <- NA
   }
 
-  des3 = x$integratedTrial
-  str1 = "Integrated trial:"
-  str2 = paste0("Group-sequential design with ", des3$kMax, " stages")
-  str3 = paste0("Interim adaptation look: ",  des3$L, ", ",
-                "z-statistic value: ", round(des3$zL, 3))
-  df3a = data.frame(x = rep("", 4))
-  colnames(df3a) = NULL
-  rownames(df3a) = c(str1, str2, str3, "")
+  des3 <- x$integratedTrial
+  str1 <- "Integrated trial:"
+  str2 <- paste0("Group-sequential design with ", des3$kMax, " stages")
+  str3 <- paste0("Interim adaptation look: ",  des3$L, ", ",
+                 "z-statistic value: ", round(des3$zL, 3))
+  df3a <- data.frame(x = rep("", 4))
+  colnames(df3a) <- NULL
+  rownames(df3a) <- c(str1, str2, str3, "")
 
   b <- data.frame(informationRates = des3$informationRates,
                   efficacyBounds = des3$efficacyBounds,
@@ -513,16 +513,16 @@ print.adaptDesign <- function(x, ...) {
   b[4] <- lapply(b[4], formatC, format = "f", digits = 2)
 
   if (!all(des3$futilityBounds[1:(des3$kMax-1)] == -6)) {
-    df3b = t(b)
-    rownames(df3b) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Futility boundary (Z)",
-                       "Information")
+    df3b <- t(b)
+    rownames(df3b) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Futility boundary (Z)",
+                        "Information")
   } else {
-    df3b = t(b[c(1,2,4)])
-    rownames(df3b) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Information")
+    df3b <- t(b[c(1,2,4)])
+    rownames(df3b) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Information")
   }
 
   colnames(df3b) <- paste("Stage", seq_len(ncol(df3b)), sep=" ")
@@ -554,14 +554,14 @@ print.adaptDesign <- function(x, ...) {
 #'
 #' @export
 print.lrpower <- function(x, ...) {
-  a = x$overallResults
-  s = x$byStageResults
-  k = a$kMax
+  a <- x$overallResults
+  s <- x$byStageResults
+  k <- a$kMax
 
   if (k>1) {
-    str1 = paste0("Group-sequential design with ", k, " stages")
+    str1 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str1 = "Fixed design"
+    str1 <- "Fixed design"
   }
 
   if (a$rho1 != 0 || a$rho2 != 0) {
@@ -629,219 +629,156 @@ print.lrpower <- function(x, ...) {
                  round(x$settings$allocationRatioPlanned, 3))
 
   if (k > 1) {
-    asf = tolower(x$settings$typeAlphaSpending)
-    asfpar = round(x$settings$parameterAlphaSpending, 3)
-    asfuser = round(x$settings$userAlphaSpending, 4)
+    asf <- tolower(x$settings$typeAlphaSpending)
+    asfpar <- round(x$settings$parameterAlphaSpending, 3)
+    asfuser <- round(x$settings$userAlphaSpending, 4)
 
-    bsf = tolower(x$settings$typeBetaSpending)
-    bsfpar = round(x$settings$parameterBetaSpending, 3)
+    bsf <- tolower(x$settings$typeBetaSpending)
+    bsfpar <- round(x$settings$parameterBetaSpending, 3)
 
     if (asf == "of") {
-      str10 = paste0("Alpha spending: O'Brien-Fleming")
+      str10 <- paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str10 = paste0("Alpha spending: Pocock")
+      str10 <- paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str10 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str10 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str10 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str10 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str10 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str10 <- paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str10 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str10 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str10 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str10 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str10 = paste0("Alpha spending: User defined(",
-                     paste(asfuser, collapse = ","), ")")
+      str10 <- paste0("Alpha spending: User defined(",
+                      paste(asfuser, collapse = ","), ")")
     } else {
-      str10 = "Alpha spending: None"
+      str10 <- "Alpha spending: None"
     }
 
     if (bsf == "of") {
-      str11 = paste0("beta spending: O'Brien-Fleming")
+      str11 <- paste0("beta spending: O'Brien-Fleming")
     } else if (bsf == "p") {
-      str11 = paste0("beta spending: Pocock")
+      str11 <- paste0("beta spending: Pocock")
     } else if (bsf == "wt") {
-      str11 = paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
+      str11 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
     } else if (bsf == "sfof") {
-      str11 = paste0("beta spending: Lan-DeMets O'Brien-Fleming")
+      str11 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
     } else if (bsf == "sfp") {
-      str11 = paste0("beta spending: Lan-DeMets Pocock")
+      str11 <- paste0("beta spending: Lan-DeMets Pocock")
     } else if (bsf == "sfkd") {
-      str11 = paste0("beta spending: KD(rho = ", bsfpar, ")")
+      str11 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
     } else if (bsf == "sfhsd") {
-      str11 = paste0("beta spending: HSD(gamma = ", bsfpar, ")")
+      str11 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
     } else if (bsf == "user") {
-      bsfuser = round(x$settings$userBetaSpending, 4)
-      str11 = paste0("beta spending: User defined(",
-                     paste(bsfuser, collapse = ","), ")")
+      bsfuser <- round(x$settings$userBetaSpending, 4)
+      str11 <- paste0("beta spending: User defined(",
+                      paste(bsfuser, collapse = ","), ")")
     } else {
-      str11 = "beta spending: None"
+      str11 <- "beta spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str12 = paste0("Spending time: ",
-                     paste(round(x$settings$spendingTime, 3), collapse = ","))
-      df1 = data.frame(x = rep("", 12))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, paste(str10, str11, sep = ", "),
-                        str12, "")
+      str12 <- paste0("Spending time: ",
+                      paste(round(x$settings$spendingTime, 3), collapse = ","))
+      df1 <- data.frame(x = rep("", 12))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, paste(str10, str11, sep = ", "),
+                         str12, "")
     } else {
-      df1 = data.frame(x = rep("", 11))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, paste(str10, str11, sep = ", "), "")
+      df1 <- data.frame(x = rep("", 11))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, paste(str10, str11, sep = ", "), "")
     }
   } else {
-    df1 = data.frame(x = rep("", 10))
-    colnames(df1) = NULL
-    rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                      str8, str9, "")
+    df1 <- data.frame(x = rep("", 10))
+    colnames(df1) <- NULL
+    rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                       str8, str9, "")
   }
 
   if (k>1) {
-    if (x$settings$estimateHazardRatio) {
-      b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-                 "cumulativeRejection", "cumulativeFutility",
-                 "cumulativeAlphaSpent",
-                 "numberOfEvents", "numberOfDropouts", "numberOfSubjects",
-                 "analysisTime", "efficacyHR", "futilityHR",
-                 "efficacyP", "futilityP", "information", "HR")]
 
-      # format number of digits after decimal for each column
-      j1 <- c(7,8,9,10)
-      j2 <- 15
-      j3 <- c(1,2,3,11,12,16)
-      j4 <- c(4,5,6,13,14)
+    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
+               "cumulativeRejection", "cumulativeFutility",
+               "cumulativeAlphaSpent",
+               "numberOfEvents", "numberOfDropouts", "numberOfSubjects",
+               "analysisTime", "efficacyHR", "futilityHR",
+               "efficacyP", "futilityP", "information", "HR")]
 
-      b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
-      b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
-      b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
-      b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
+    # format number of digits after decimal for each column
+    j1 <- c(7,8,9,10)
+    j2 <- 15
+    j3 <- c(1,2,3,11,12,16)
+    j4 <- c(4,5,6,13,14)
 
-      if (x$settings$typeBetaSpending != 'none' ||
-          (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
-        df = t(b)
-        rownames(df) = c("Information rate",
-                         "Efficacy boundary (Z)",
-                         "Futility boundary (Z)",
-                         "Cumulative rejection",
-                         "Cumulative futility",
-                         "Cumulative alpha spent",
-                         "Number of events",
-                         "Number of dropouts",
-                         "Number of subjects",
-                         "Analysis time",
-                         "Efficacy boundary (HR)",
-                         "Futility boundary (HR)",
-                         "Efficacy boundary (p)",
-                         "Futility boundary (p)",
-                         "Information",
-                         "HR")
+    b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
+    b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
+    b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
+    b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-      } else {
-        df = t(b[,c(1,2,4,6,7,8,9,10,11,13,15,16)])
-        rownames(df) = c("Information rate",
-                         "Efficacy boundary (Z)",
-                         "Cumulative rejection",
-                         "Cumulative alpha spent",
-                         "Number of events",
-                         "Number of dropouts",
-                         "Number of subjects",
-                         "Analysis time",
-                         "Efficacy boundary (HR)",
-                         "Efficacy boundary (p)",
-                         "Information",
-                         "HR")
-      }
+    if (x$settings$typeBetaSpending != 'none' ||
+        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+      df <- t(b)
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Futility boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative futility",
+                        "Cumulative alpha spent",
+                        "Number of events",
+                        "Number of dropouts",
+                        "Number of subjects",
+                        "Analysis time",
+                        "Efficacy boundary (HR)",
+                        "Futility boundary (HR)",
+                        "Efficacy boundary (p)",
+                        "Futility boundary (p)",
+                        "Information",
+                        "HR")
 
     } else {
-      b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-                 "cumulativeRejection", "cumulativeFutility",
-                 "cumulativeAlphaSpent",
-                 "numberOfEvents", "numberOfDropouts", "numberOfSubjects",
-                 "analysisTime", "efficacyP", "futilityP", "information")]
-
-      # format number of digits after decimal for each column
-      j1 <- c(7,8,9,10)
-      j2 <- 13
-      j3 <- c(1,2,3)
-      j4 <- c(4,5,6,11,12)
-
-      b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
-      b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
-      b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
-      b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
-
-      if (x$settings$typeBetaSpending != 'none' ||
-          (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
-        df = t(b)
-        rownames(df) = c("Information rate",
-                         "Efficacy boundary (Z)",
-                         "Futility boundary (Z)",
-                         "Cumulative rejection",
-                         "Cumulative futility",
-                         "Cumulative alpha spent",
-                         "Number of events",
-                         "Number of dropouts",
-                         "Number of subjects",
-                         "Analysis time",
-                         "Efficacy boundary (p)",
-                         "Futility boundary (p)",
-                         "Information")
-
-      } else {
-        df = t(b[,c(1,2,4,6,7,8,9,10,11,13)])
-        rownames(df) = c("Information rate",
-                         "Efficacy boundary (Z)",
-                         "Cumulative rejection",
-                         "Cumulative alpha spent",
-                         "Number of events",
-                         "Number of dropouts",
-                         "Number of subjects",
-                         "Analysis time",
-                         "Efficacy boundary (p)",
-                         "Information")
-      }
-
+      df <- t(b[,c(1,2,4,6,7,8,9,10,11,13,15,16)])
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative alpha spent",
+                        "Number of events",
+                        "Number of dropouts",
+                        "Number of subjects",
+                        "Analysis time",
+                        "Efficacy boundary (HR)",
+                        "Efficacy boundary (p)",
+                        "Information",
+                        "HR")
     }
+
+
 
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
   } else {
-    if (x$settings$estimateHazardRatio) {
-      b <- s[, c("efficacyBounds", "efficacyHR", "efficacyP",
-                 "HR")]
 
-      # format number of digits after decimal for each column
-      j3 <- c(1,2,4)
-      j4 <- 3
+    b <- s[, c("efficacyBounds", "efficacyHR", "efficacyP",
+               "HR")]
 
-      b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
-      b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
+    # format number of digits after decimal for each column
+    j3 <- c(1,2,4)
+    j4 <- 3
 
-      df = t(b)
+    b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
+    b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-      rownames(df) = c("Efficacy boundary (Z)",
-                       "Efficacy boundary (HR)",
-                       "Efficacy boundary (p)",
-                       "HR")
-    } else {
-      b <- s[, c("efficacyBounds", "efficacyP")]
+    df <- t(b)
 
-      # format number of digits after decimal for each column
-      j3 <- 1
-      j4 <- 2
+    rownames(df) <- c("Efficacy boundary (Z)",
+                      "Efficacy boundary (HR)",
+                      "Efficacy boundary (p)",
+                      "HR")
 
-      b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
-      b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
-
-      df = t(b)
-
-      rownames(df) = c("Efficacy boundary (Z)",
-                       "Efficacy boundary (p)")
-    }
 
     colnames(df) <- NA
   }
@@ -866,20 +803,20 @@ print.lrpower <- function(x, ...) {
 #'
 #' @export
 print.lrsim <- function(x, ...) {
-  a = x$overview
-  k = a$kMax
+  a <- x$overview
+  k <- a$kMax
 
   if (k>1) {
-    str1 = paste0("Group-sequential design with ", k, " stages")
+    str1 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str1 = "Fixed design"
+    str1 <- "Fixed design"
   }
 
   if (a$rho1 != 0 || a$rho2 != 0) {
     str1 <- paste0(str1, " for weighted log-rank test, FH(",
                    a$rho1, ", ", a$rho2, ")")
   } else {
-    str1 = paste0(str1, " for log-rank test")
+    str1 <- paste0(str1, " for log-rank test")
   }
 
   str2 <- paste0("Empirical power: ", round(a$overallReject, 4))
@@ -901,9 +838,9 @@ print.lrsim <- function(x, ...) {
 
   str8 <- paste0("Number of simulations: ", a$numberOfIterations)
 
-  df1 = data.frame(x = rep("", 9))
-  colnames(df1) = NULL
-  rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7, str8, "")
+  df1 <- data.frame(x = rep("", 9))
+  colnames(df1) <- NULL
+  rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7, str8, "")
 
 
   if (k>1) {
@@ -921,13 +858,13 @@ print.lrsim <- function(x, ...) {
     b[j1] <- lapply(b[j1], formatC, format = "f", digits = 1)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
-    rownames(df) = c("Cumulative rejection",
-                     "Cumulative futility",
-                     "Number of events",
-                     "Number of dropouts",
-                     "Number of subjects",
-                     "Analysis time")
+    df <- t(b)
+    rownames(df) <- c("Cumulative rejection",
+                      "Cumulative futility",
+                      "Number of events",
+                      "Number of dropouts",
+                      "Number of subjects",
+                      "Analysis time")
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
   }
 
@@ -958,14 +895,14 @@ print.lrsim <- function(x, ...) {
 #'
 #' @export
 print.nbpower <- function(x, ...) {
-  a = x$overallResults
-  s = x$byStageResults
-  k = a$kMax
+  a <- x$overallResults
+  s <- x$byStageResults
+  k <- a$kMax
 
   if (k>1) {
-    str1 = paste0("Group-sequential design with ", k, " stages")
+    str1 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str1 = "Fixed design"
+    str1 <- "Fixed design"
   }
 
   str1 <- paste(str1, "for negative binomial rate ratio")
@@ -1066,99 +1003,99 @@ print.nbpower <- function(x, ...) {
 
 
   if (k > 1) {
-    asf = tolower(x$settings$typeAlphaSpending)
-    asfpar = round(x$settings$parameterAlphaSpending, 3)
-    asfuser = round(x$settings$userAlphaSpending, 4)
+    asf <- tolower(x$settings$typeAlphaSpending)
+    asfpar <- round(x$settings$parameterAlphaSpending, 3)
+    asfuser <- round(x$settings$userAlphaSpending, 4)
 
-    bsf = tolower(x$settings$typeBetaSpending)
-    bsfpar = round(x$settings$parameterBetaSpending, 3)
+    bsf <- tolower(x$settings$typeBetaSpending)
+    bsfpar <- round(x$settings$parameterBetaSpending, 3)
 
     if (asf == "of") {
-      str14 = paste0("Alpha spending: O'Brien-Fleming")
+      str14 <- paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str14 = paste0("Alpha spending: Pocock")
+      str14 <- paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str14 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str14 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str14 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str14 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str14 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str14 <- paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str14 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str14 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str14 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str14 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str14 = paste0("Alpha spending: User defined(",
-                     paste(asfuser, collapse = ","), ")")
+      str14 <- paste0("Alpha spending: User defined(",
+                      paste(asfuser, collapse = ","), ")")
     } else {
-      str14 = "Alpha spending: None"
+      str14 <- "Alpha spending: None"
     }
 
     if (bsf == "of") {
-      str15 = paste0("beta spending: O'Brien-Fleming")
+      str15 <- paste0("beta spending: O'Brien-Fleming")
     } else if (bsf == "p") {
-      str15 = paste0("beta spending: Pocock")
+      str15 <- paste0("beta spending: Pocock")
     } else if (bsf == "wt") {
-      str15 = paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
+      str15 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
     } else if (bsf == "sfof") {
-      str15 = paste0("beta spending: Lan-DeMets O'Brien-Fleming")
+      str15 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
     } else if (bsf == "sfp") {
-      str15 = paste0("beta spending: Lan-DeMets Pocock")
+      str15 <- paste0("beta spending: Lan-DeMets Pocock")
     } else if (bsf == "sfkd") {
-      str15 = paste0("beta spending: KD(rho = ", bsfpar, ")")
+      str15 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
     } else if (bsf == "sfhsd") {
-      str15 = paste0("beta spending: HSD(gamma = ", bsfpar, ")")
+      str15 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
     } else if (bsf == "user") {
-      str15 = paste0("beta spending: User defined")
+      str15 <- paste0("beta spending: User defined")
     } else {
-      str15 = "beta spending: None"
+      str15 <- "beta spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str16 = paste0("Spending time: ",
-                     paste(round(x$settings$spendingTime, 3), collapse = ","))
+      str16 <- paste0("Spending time: ",
+                      paste(round(x$settings$spendingTime, 3), collapse = ","))
 
       if (length(x$settings$stratumFraction) > 1) {
-        df1 = data.frame(x = rep("", 17))
-        colnames(df1) = NULL
-        rownames(df1) = c(str1, str2, str3a, str3, str4, str5, str6, str7,
-                          str8, str9, str10, str11, str12, str13,
-                          paste(str14, str15, sep = ", "), str16, "")
+        df1 <- data.frame(x = rep("", 17))
+        colnames(df1) <- NULL
+        rownames(df1) <- c(str1, str2, str3a, str3, str4, str5, str6, str7,
+                           str8, str9, str10, str11, str12, str13,
+                           paste(str14, str15, sep = ", "), str16, "")
 
       } else {
-        df1 = data.frame(x = rep("", 16))
-        colnames(df1) = NULL
-        rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                          str8, str9, str10, str11, str12, str13,
-                          paste(str14, str15, sep = ", "), str16, "")
+        df1 <- data.frame(x = rep("", 16))
+        colnames(df1) <- NULL
+        rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                           str8, str9, str10, str11, str12, str13,
+                           paste(str14, str15, sep = ", "), str16, "")
       }
     } else {
       if (length(x$settings$stratumFraction) > 1) {
-        df1 = data.frame(x = rep("", 16))
-        colnames(df1) = NULL
-        rownames(df1) = c(str1, str2, str3a, str3, str4, str5, str6, str7,
-                          str8, str9, str10, str11, str12, str13,
-                          paste(str14, str15, sep = ", "), "")
+        df1 <- data.frame(x = rep("", 16))
+        colnames(df1) <- NULL
+        rownames(df1) <- c(str1, str2, str3a, str3, str4, str5, str6, str7,
+                           str8, str9, str10, str11, str12, str13,
+                           paste(str14, str15, sep = ", "), "")
       } else {
-        df1 = data.frame(x = rep("", 15))
-        colnames(df1) = NULL
-        rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                          str8, str9, str10, str11, str12, str13,
-                          paste(str14, str15, sep = ", "), "")
+        df1 <- data.frame(x = rep("", 15))
+        colnames(df1) <- NULL
+        rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                           str8, str9, str10, str11, str12, str13,
+                           paste(str14, str15, sep = ", "), "")
       }
     }
   } else {
     if (length(x$settings$stratumFraction) > 1) {
-      df1 = data.frame(x = rep("", 15))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3a, str3, str4, str5, str6, str7,
-                        str8, str9, str10, str11, str12, str13, "")
+      df1 <- data.frame(x = rep("", 15))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3a, str3, str4, str5, str6, str7,
+                         str8, str9, str10, str11, str12, str13, "")
     } else {
-      df1 = data.frame(x = rep("", 14))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, str11, str12, str13, "")
+      df1 <- data.frame(x = rep("", 14))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, str10, str11, str12, str13, "")
     }
   }
 
@@ -1183,38 +1120,38 @@ print.nbpower <- function(x, ...) {
 
     if (x$settings$typeBetaSpending != 'none' ||
         (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
-      df = t(b)
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Futility boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative futility",
-                       "Cumulative alpha spent",
-                       "Number of events",
-                       "Number of dropouts",
-                       "Number of subjects",
-                       "Exposure",
-                       "Analysis time",
-                       "Efficacy boundary (rate ratio)",
-                       "Futility boundary (rate ratio)",
-                       "Efficacy boundary (p)",
-                       "Futility boundary (p)",
-                       "Information")
+      df <- t(b)
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Futility boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative futility",
+                        "Cumulative alpha spent",
+                        "Number of events",
+                        "Number of dropouts",
+                        "Number of subjects",
+                        "Exposure",
+                        "Analysis time",
+                        "Efficacy boundary (rate ratio)",
+                        "Futility boundary (rate ratio)",
+                        "Efficacy boundary (p)",
+                        "Futility boundary (p)",
+                        "Information")
 
     } else {
-      df = t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative alpha spent",
-                       "Number of events",
-                       "Number of dropouts",
-                       "Number of subjects",
-                       "Exposure",
-                       "Analysis time",
-                       "Efficacy boundary (rate ratio)",
-                       "Efficacy boundary (p)",
-                       "Information")
+      df <- t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative alpha spent",
+                        "Number of events",
+                        "Number of dropouts",
+                        "Number of subjects",
+                        "Exposure",
+                        "Analysis time",
+                        "Efficacy boundary (rate ratio)",
+                        "Efficacy boundary (p)",
+                        "Information")
     }
 
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
@@ -1228,11 +1165,11 @@ print.nbpower <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
+    df <- t(b)
 
-    rownames(df) = c("Efficacy boundary (Z)",
-                     "Efficacy boundary (rate ratio)",
-                     "Efficacy boundary (p)")
+    rownames(df) <- c("Efficacy boundary (Z)",
+                      "Efficacy boundary (rate ratio)",
+                      "Efficacy boundary (p)")
     colnames(df) <- NA
   }
 
@@ -1259,14 +1196,14 @@ print.nbpower <- function(x, ...) {
 #'
 #' @export
 print.nbpowerequiv <- function(x, ...) {
-  a = x$overallResults
-  s = x$byStageResults
-  k = a$kMax
+  a <- x$overallResults
+  s <- x$byStageResults
+  k <- a$kMax
 
   if (k>1) {
-    str1 = paste0("Group-sequential design with ", k, " stages")
+    str1 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str1 = "Fixed design"
+    str1 <- "Fixed design"
   }
 
   str1 <- paste(str1, "for equivalence in negative binomial rate ratio")
@@ -1322,9 +1259,9 @@ print.nbpowerequiv <- function(x, ...) {
                    round(a$expectedExposure, 1))
 
     str9 <- paste0("Maximum information: ",
-                    round(a$information, 2), ", ",
-                    "expected information: ",
-                    round(a$expectedInformation, 2))
+                   round(a$information, 2), ", ",
+                   "expected information: ",
+                   round(a$expectedInformation, 2))
 
     str10 <- paste0("Total study duration: ",
                     round(a$studyDuration, 1), ", ",
@@ -1341,7 +1278,7 @@ print.nbpowerequiv <- function(x, ...) {
                    round(a$exposure, 1))
 
     str9 <- paste0("Information: ",
-                    round(a$information, 2))
+                   round(a$information, 2))
 
     str10 <- paste0("Study duration: ",
                     round(a$studyDuration, 1))
@@ -1357,74 +1294,74 @@ print.nbpowerequiv <- function(x, ...) {
                   round(x$settings$allocationRatioPlanned, 3))
 
   if (k > 1) {
-    asf = tolower(x$settings$typeAlphaSpending)
-    asfpar = round(x$settings$parameterAlphaSpending, 3)
-    asfuser = round(x$settings$userAlphaSpending, 4)
+    asf <- tolower(x$settings$typeAlphaSpending)
+    asfpar <- round(x$settings$parameterAlphaSpending, 3)
+    asfuser <- round(x$settings$userAlphaSpending, 4)
 
     if (asf == "of") {
-      str13 = paste0("Alpha spending: O'Brien-Fleming")
+      str13 <- paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str13 = paste0("Alpha spending: Pocock")
+      str13 <- paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str13 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str13 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str13 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str13 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str13 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str13 <- paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str13 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str13 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str13 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str13 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str13 = paste0("Alpha spending: User defined(",
-                     paste(asfuser, collapse = ","), ")")
+      str13 <- paste0("Alpha spending: User defined(",
+                      paste(asfuser, collapse = ","), ")")
     } else {
-      str13 = "Alpha spending: None"
+      str13 <- "Alpha spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str14 = paste0("Spending time: ",
-                     paste(round(x$settings$spendingTime, 3), collapse = ","))
+      str14 <- paste0("Spending time: ",
+                      paste(round(x$settings$spendingTime, 3), collapse = ","))
       if (length(x$settings$stratumFraction) > 1) {
-        df1 = data.frame(x = rep("", 16))
-        colnames(df1) = NULL
-        rownames(df1) = c(str1, str2, str3a, str3, str4, str5, str6, str7,
-                          str8, str9, str10, str11, str12,
-                          str13, str14, "")
+        df1 <- data.frame(x = rep("", 16))
+        colnames(df1) <- NULL
+        rownames(df1) <- c(str1, str2, str3a, str3, str4, str5, str6, str7,
+                           str8, str9, str10, str11, str12,
+                           str13, str14, "")
       } else {
-        df1 = data.frame(x = rep("", 15))
-        colnames(df1) = NULL
-        rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                          str8, str9, str10, str11, str12,
-                          str13, str14, "")
+        df1 <- data.frame(x = rep("", 15))
+        colnames(df1) <- NULL
+        rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                           str8, str9, str10, str11, str12,
+                           str13, str14, "")
       }
     } else {
       if (length(x$settings$stratumFraction) > 1) {
-        df1 = data.frame(x = rep("", 15))
-        colnames(df1) = NULL
-        rownames(df1) = c(str1, str2, str3a, str3, str4, str5, str6, str7,
-                          str8, str9, str10, str11, str12,
-                          str13, "")
+        df1 <- data.frame(x = rep("", 15))
+        colnames(df1) <- NULL
+        rownames(df1) <- c(str1, str2, str3a, str3, str4, str5, str6, str7,
+                           str8, str9, str10, str11, str12,
+                           str13, "")
       } else {
-        df1 = data.frame(x = rep("", 14))
-        colnames(df1) = NULL
-        rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                          str8, str9, str10, str11, str12,
-                          str13, "")
+        df1 <- data.frame(x = rep("", 14))
+        colnames(df1) <- NULL
+        rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                           str8, str9, str10, str11, str12,
+                           str13, "")
       }
     }
   } else {
     if (length(x$settings$stratumFraction) > 1) {
-      df1 = data.frame(x = rep("", 14))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3a, str3, str4, str5, str6, str7,
-                        str8, str9, str10, str11, str12, "")
+      df1 <- data.frame(x = rep("", 14))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3a, str3, str4, str5, str6, str7,
+                         str8, str9, str10, str11, str12, "")
     } else {
-      df1 = data.frame(x = rep("", 13))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, str11, str12, "")
+      df1 <- data.frame(x = rep("", 13))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, str10, str11, str12, "")
     }
   }
 
@@ -1449,22 +1386,22 @@ print.nbpowerequiv <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
-    rownames(df) = c("Information rate",
-                     "Boundary for each 1-sided test (Z)",
-                     "Cumulative rejection",
-                     "Cumulative alpha for each 1-sided test",
-                     "Cumulative alpha attained under H10",
-                     "Cumulative alpha attained under H20",
-                     "Number of events",
-                     "Number of dropouts",
-                     "Number of subjects",
-                     "Exposure",
-                     "Analysis time",
-                     "Boundary for lower limit (rate ratio)",
-                     "Boundary for upper limit (rate ratio)",
-                     "Boundary for each 1-sided test (p)",
-                     "Information")
+    df <- t(b)
+    rownames(df) <- c("Information rate",
+                      "Boundary for each 1-sided test (Z)",
+                      "Cumulative rejection",
+                      "Cumulative alpha for each 1-sided test",
+                      "Cumulative alpha attained under H10",
+                      "Cumulative alpha attained under H20",
+                      "Number of events",
+                      "Number of dropouts",
+                      "Number of subjects",
+                      "Exposure",
+                      "Analysis time",
+                      "Boundary for lower limit (rate ratio)",
+                      "Boundary for upper limit (rate ratio)",
+                      "Boundary for each 1-sided test (p)",
+                      "Information")
 
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
   } else {
@@ -1478,12 +1415,12 @@ print.nbpowerequiv <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
+    df <- t(b)
 
-    rownames(df) = c("Boundary for each 1-sided test (Z)",
-                     "Boundary for lower limit (rate ratio)",
-                     "Boundary for upper limit (rate ratio)",
-                     "Boundary for each 1-sided test (p)")
+    rownames(df) <- c("Boundary for each 1-sided test (Z)",
+                      "Boundary for lower limit (rate ratio)",
+                      "Boundary for upper limit (rate ratio)",
+                      "Boundary for each 1-sided test (p)")
     colnames(df) <- NA
   }
 
@@ -1510,14 +1447,14 @@ print.nbpowerequiv <- function(x, ...) {
 #'
 #' @export
 print.nbpower1s <- function(x, ...) {
-  a = x$overallResults
-  s = x$byStageResults
-  k = a$kMax
+  a <- x$overallResults
+  s <- x$byStageResults
+  k <- a$kMax
 
   if (k>1) {
-    str1 = paste0("Group-sequential design with ", k, " stages")
+    str1 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str1 = "Fixed design"
+    str1 <- "Fixed design"
   }
 
   str1 <- paste(str1, "for one-sample negative binomial rate")
@@ -1605,75 +1542,75 @@ print.nbpower1s <- function(x, ...) {
 
 
   if (k > 1) {
-    asf = tolower(x$settings$typeAlphaSpending)
-    asfpar = round(x$settings$parameterAlphaSpending, 3)
-    asfuser = round(x$settings$userAlphaSpending, 4)
+    asf <- tolower(x$settings$typeAlphaSpending)
+    asfpar <- round(x$settings$parameterAlphaSpending, 3)
+    asfuser <- round(x$settings$userAlphaSpending, 4)
 
-    bsf = tolower(x$settings$typeBetaSpending)
-    bsfpar = round(x$settings$parameterBetaSpending, 3)
+    bsf <- tolower(x$settings$typeBetaSpending)
+    bsfpar <- round(x$settings$parameterBetaSpending, 3)
 
     if (asf == "of") {
-      str12 = paste0("Alpha spending: O'Brien-Fleming")
+      str12 <- paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str12 = paste0("Alpha spending: Pocock")
+      str12 <- paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str12 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str12 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str12 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str12 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str12 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str12 <- paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str12 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str12 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str12 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str12 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str12 = paste0("Alpha spending: User defined(",
-                     paste(asfuser, collapse = ","), ")")
+      str12 <- paste0("Alpha spending: User defined(",
+                      paste(asfuser, collapse = ","), ")")
     } else {
-      str12 = "Alpha spending: None"
+      str12 <- "Alpha spending: None"
     }
 
     if (bsf == "of") {
-      str13 = paste0("beta spending: O'Brien-Fleming")
+      str13 <- paste0("beta spending: O'Brien-Fleming")
     } else if (bsf == "p") {
-      str13 = paste0("beta spending: Pocock")
+      str13 <- paste0("beta spending: Pocock")
     } else if (bsf == "wt") {
-      str13 = paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
+      str13 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
     } else if (bsf == "sfof") {
-      str13 = paste0("beta spending: Lan-DeMets O'Brien-Fleming")
+      str13 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
     } else if (bsf == "sfp") {
-      str13 = paste0("beta spending: Lan-DeMets Pocock")
+      str13 <- paste0("beta spending: Lan-DeMets Pocock")
     } else if (bsf == "sfkd") {
-      str13 = paste0("beta spending: KD(rho = ", bsfpar, ")")
+      str13 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
     } else if (bsf == "sfhsd") {
-      str13 = paste0("beta spending: HSD(gamma = ", bsfpar, ")")
+      str13 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
     } else if (bsf == "user") {
-      str13 = paste0("beta spending: User defined")
+      str13 <- paste0("beta spending: User defined")
     } else {
-      str13 = "beta spending: None"
+      str13 <- "beta spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str14 = paste0("Spending time: ",
-                     paste(round(x$settings$spendingTime, 3), collapse = ","))
-      df1 = data.frame(x = rep("", 14))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, str11,
-                        paste(str12, str13, sep = ", "), str14, "")
+      str14 <- paste0("Spending time: ",
+                      paste(round(x$settings$spendingTime, 3), collapse = ","))
+      df1 <- data.frame(x = rep("", 14))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, str10, str11,
+                         paste(str12, str13, sep = ", "), str14, "")
     } else {
-      df1 = data.frame(x = rep("", 13))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, str11,
-                        paste(str12, str13, sep = ", "), "")
+      df1 <- data.frame(x = rep("", 13))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, str10, str11,
+                         paste(str12, str13, sep = ", "), "")
     }
   } else {
-    df1 = data.frame(x = rep("", 12))
-    colnames(df1) = NULL
-    rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                      str8, str9, str10, str11, "")
+    df1 <- data.frame(x = rep("", 12))
+    colnames(df1) <- NULL
+    rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                       str8, str9, str10, str11, "")
   }
 
   if (k>1) {
@@ -1697,38 +1634,38 @@ print.nbpower1s <- function(x, ...) {
 
     if (x$settings$typeBetaSpending != 'none' ||
         (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
-      df = t(b)
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Futility boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative futility",
-                       "Cumulative alpha spent",
-                       "Number of events",
-                       "Number of dropouts",
-                       "Number of subjects",
-                       "Exposure",
-                       "Analysis time",
-                       "Efficacy boundary (rate)",
-                       "Futility boundary (rate)",
-                       "Efficacy boundary (p)",
-                       "Futility boundary (p)",
-                       "Information")
+      df <- t(b)
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Futility boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative futility",
+                        "Cumulative alpha spent",
+                        "Number of events",
+                        "Number of dropouts",
+                        "Number of subjects",
+                        "Exposure",
+                        "Analysis time",
+                        "Efficacy boundary (rate)",
+                        "Futility boundary (rate)",
+                        "Efficacy boundary (p)",
+                        "Futility boundary (p)",
+                        "Information")
 
     } else {
-      df = t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative alpha spent",
-                       "Number of events",
-                       "Number of dropouts",
-                       "Number of subjects",
-                       "Exposure",
-                       "Analysis time",
-                       "Efficacy boundary (rate)",
-                       "Efficacy boundary (p)",
-                       "Information")
+      df <- t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative alpha spent",
+                        "Number of events",
+                        "Number of dropouts",
+                        "Number of subjects",
+                        "Exposure",
+                        "Analysis time",
+                        "Efficacy boundary (rate)",
+                        "Efficacy boundary (p)",
+                        "Information")
     }
 
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
@@ -1742,11 +1679,11 @@ print.nbpower1s <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
+    df <- t(b)
 
-    rownames(df) = c("Efficacy boundary (Z)",
-                     "Efficacy boundary (rate)",
-                     "Efficacy boundary (p)")
+    rownames(df) <- c("Efficacy boundary (Z)",
+                      "Efficacy boundary (rate)",
+                      "Efficacy boundary (p)")
     colnames(df) <- NA
   }
 
@@ -1772,14 +1709,14 @@ print.nbpower1s <- function(x, ...) {
 #'
 #' @export
 print.kmpower <- function(x, ...) {
-  a = x$overallResults
-  s = x$byStageResults
-  k = a$kMax
+  a <- x$overallResults
+  s <- x$byStageResults
+  k <- a$kMax
 
   if (k>1) {
-    str1 = paste0("Group-sequential design with ", k, " stages")
+    str1 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str1 = "Fixed design"
+    str1 <- "Fixed design"
   }
 
   str1 <- paste0(str1, " for difference in milestone survival")
@@ -1842,77 +1779,77 @@ print.kmpower <- function(x, ...) {
                   round(x$settings$allocationRatioPlanned, 3))
 
   if (k > 1) {
-    asf = tolower(x$settings$typeAlphaSpending)
-    asfpar = round(x$settings$parameterAlphaSpending, 3)
-    asfuser = round(x$settings$userAlphaSpending, 4)
+    asf <- tolower(x$settings$typeAlphaSpending)
+    asfpar <- round(x$settings$parameterAlphaSpending, 3)
+    asfuser <- round(x$settings$userAlphaSpending, 4)
 
-    bsf = tolower(x$settings$typeBetaSpending)
-    bsfpar = round(x$settings$parameterBetaSpending, 3)
+    bsf <- tolower(x$settings$typeBetaSpending)
+    bsfpar <- round(x$settings$parameterBetaSpending, 3)
 
     if (asf == "of") {
-      str11 = paste0("Alpha spending: O'Brien-Fleming")
+      str11 <- paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str11 = paste0("Alpha spending: Pocock")
+      str11 <- paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str11 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str11 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str11 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str11 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str11 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str11 <- paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str11 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str11 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str11 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str11 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str11 = paste0("Alpha spending: User defined(",
-                     paste(asfuser, collapse = ","), ")")
+      str11 <- paste0("Alpha spending: User defined(",
+                      paste(asfuser, collapse = ","), ")")
     } else {
-      str11 = "Alpha spending: None"
+      str11 <- "Alpha spending: None"
     }
 
     if (bsf == "of") {
-      str12 = paste0("beta spending: O'Brien-Fleming")
+      str12 <- paste0("beta spending: O'Brien-Fleming")
     } else if (bsf == "p") {
-      str12 = paste0("beta spending: Pocock")
+      str12 <- paste0("beta spending: Pocock")
     } else if (bsf == "wt") {
-      str12 = paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
+      str12 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
     } else if (bsf == "sfof") {
-      str12 = paste0("beta spending: Lan-DeMets O'Brien-Fleming")
+      str12 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
     } else if (bsf == "sfp") {
-      str12 = paste0("beta spending: Lan-DeMets Pocock")
+      str12 <- paste0("beta spending: Lan-DeMets Pocock")
     } else if (bsf == "sfkd") {
-      str12 = paste0("beta spending: KD(rho = ", bsfpar, ")")
+      str12 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
     } else if (bsf == "sfhsd") {
-      str12 = paste0("beta spending: HSD(gamma = ", bsfpar, ")")
+      str12 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
     } else if (bsf == "user") {
-      bsfuser = round(x$settings$userBetaSpending, 4)
-      str12 = paste0("beta spending: User defined(",
-                     paste(bsfuser, collapse = ","), ")")
+      bsfuser <- round(x$settings$userBetaSpending, 4)
+      str12 <- paste0("beta spending: User defined(",
+                      paste(bsfuser, collapse = ","), ")")
     } else {
-      str12 = "beta spending: None"
+      str12 <- "beta spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str13 = paste0("Spending time: ",
-                     paste(round(x$settings$spendingTime, 3), collapse = ","))
-      df1 = data.frame(x = rep("", 13))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, paste(str11, str12, sep = ", "),
-                        str13, "")
+      str13 <- paste0("Spending time: ",
+                      paste(round(x$settings$spendingTime, 3), collapse = ","))
+      df1 <- data.frame(x = rep("", 13))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, str10, paste(str11, str12, sep = ", "),
+                         str13, "")
     } else {
-      df1 = data.frame(x = rep("", 12))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, paste(str11, str12, sep = ", "),
-                        "")
+      df1 <- data.frame(x = rep("", 12))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, str10, paste(str11, str12, sep = ", "),
+                         "")
     }
   } else {
-    df1 = data.frame(x = rep("", 11))
-    colnames(df1) = NULL
-    rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                      str8, str9, str10, "")
+    df1 <- data.frame(x = rep("", 11))
+    colnames(df1) <- NULL
+    rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                       str8, str9, str10, "")
   }
 
   if (k>1) {
@@ -1936,38 +1873,38 @@ print.kmpower <- function(x, ...) {
 
     if (x$settings$typeBetaSpending != 'none' ||
         (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
-      df = t(b)
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Futility boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative futility",
-                       "Cumulative alpha spent",
-                       "Number of events",
-                       "Number of dropouts",
-                       "Number of subjects",
-                       "Number of milestone subjects",
-                       "Analysis time",
-                       "Efficacy boundary (surv diff)",
-                       "Futility boundary (surv diff)",
-                       "Efficacy boundary (p)",
-                       "Futility boundary (p)",
-                       "Information")
+      df <- t(b)
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Futility boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative futility",
+                        "Cumulative alpha spent",
+                        "Number of events",
+                        "Number of dropouts",
+                        "Number of subjects",
+                        "Number of milestone subjects",
+                        "Analysis time",
+                        "Efficacy boundary (surv diff)",
+                        "Futility boundary (surv diff)",
+                        "Efficacy boundary (p)",
+                        "Futility boundary (p)",
+                        "Information")
 
     } else {
-      df = t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative alpha spent",
-                       "Number of events",
-                       "Number of dropouts",
-                       "Number of subjects",
-                       "Number of milestone subjects",
-                       "Analysis time",
-                       "Efficacy boundary (surv diff)",
-                       "Efficacy boundary (p)",
-                       "Information")
+      df <- t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative alpha spent",
+                        "Number of events",
+                        "Number of dropouts",
+                        "Number of subjects",
+                        "Number of milestone subjects",
+                        "Analysis time",
+                        "Efficacy boundary (surv diff)",
+                        "Efficacy boundary (p)",
+                        "Information")
     }
 
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
@@ -1982,11 +1919,11 @@ print.kmpower <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
+    df <- t(b)
 
-    rownames(df) = c("Efficacy boundary (Z)",
-                     "Efficacy boundary (surv diff)",
-                     "Efficacy boundary (p)")
+    rownames(df) <- c("Efficacy boundary (Z)",
+                      "Efficacy boundary (surv diff)",
+                      "Efficacy boundary (p)")
 
     colnames(df) <- NA
   }
@@ -2013,14 +1950,14 @@ print.kmpower <- function(x, ...) {
 #'
 #' @export
 print.rmpower <- function(x, ...) {
-  a = x$overallResults
-  s = x$byStageResults
-  k = a$kMax
+  a <- x$overallResults
+  s <- x$byStageResults
+  k <- a$kMax
 
   if (k>1) {
-    str1 = paste0("Group-sequential design with ", k, " stages")
+    str1 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str1 = "Fixed design"
+    str1 <- "Fixed design"
   }
 
   str1 <- paste0(str1, " for difference in restricted mean survival time")
@@ -2083,75 +2020,75 @@ print.rmpower <- function(x, ...) {
                   round(x$settings$allocationRatioPlanned, 3))
 
   if (k > 1) {
-    asf = tolower(x$settings$typeAlphaSpending)
-    asfpar = round(x$settings$parameterAlphaSpending, 3)
-    asfuser = round(x$settings$userAlphaSpending, 4)
+    asf <- tolower(x$settings$typeAlphaSpending)
+    asfpar <- round(x$settings$parameterAlphaSpending, 3)
+    asfuser <- round(x$settings$userAlphaSpending, 4)
 
-    bsf = tolower(x$settings$typeBetaSpending)
-    bsfpar = round(x$settings$parameterBetaSpending, 3)
+    bsf <- tolower(x$settings$typeBetaSpending)
+    bsfpar <- round(x$settings$parameterBetaSpending, 3)
 
     if (asf == "of") {
-      str11 = paste0("Alpha spending: O'Brien-Fleming")
+      str11 <- paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str11 = paste0("Alpha spending: Pocock")
+      str11 <- paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str11 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str11 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str11 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str11 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str11 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str11 <- paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str11 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str11 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str11 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str11 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str11 = paste0("Alpha spending: User defined(",
-                     paste(asfuser, collapse = ","), ")")
+      str11 <- paste0("Alpha spending: User defined(",
+                      paste(asfuser, collapse = ","), ")")
     } else {
-      str11 = "Alpha spending: None"
+      str11 <- "Alpha spending: None"
     }
 
     if (bsf == "of") {
-      str12 = paste0("beta spending: O'Brien-Fleming")
+      str12 <- paste0("beta spending: O'Brien-Fleming")
     } else if (bsf == "p") {
-      str12 = paste0("beta spending: Pocock")
+      str12 <- paste0("beta spending: Pocock")
     } else if (bsf == "wt") {
-      str12 = paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
+      str12 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
     } else if (bsf == "sfof") {
-      str12 = paste0("beta spending: Lan-DeMets O'Brien-Fleming")
+      str12 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
     } else if (bsf == "sfp") {
-      str12 = paste0("beta spending: Lan-DeMets Pocock")
+      str12 <- paste0("beta spending: Lan-DeMets Pocock")
     } else if (bsf == "sfkd") {
-      str12 = paste0("beta spending: KD(rho = ", bsfpar, ")")
+      str12 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
     } else if (bsf == "sfhsd") {
-      str12 = paste0("beta spending: HSD(gamma = ", bsfpar, ")")
+      str12 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
     } else if (bsf == "user") {
-      str12 = paste0("beta spending: User defined")
+      str12 <- paste0("beta spending: User defined")
     } else {
-      str12 = "beta spending: None"
+      str12 <- "beta spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str13 = paste0("Spending time: ",
-                     paste(round(x$settings$spendingTime, 3), collapse = ","))
-      df1 = data.frame(x = rep("", 13))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, paste(str11, str12, sep = ", "),
-                        str13, "")
+      str13 <- paste0("Spending time: ",
+                      paste(round(x$settings$spendingTime, 3), collapse = ","))
+      df1 <- data.frame(x = rep("", 13))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, str10, paste(str11, str12, sep = ", "),
+                         str13, "")
     } else {
-      df1 = data.frame(x = rep("", 12))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, paste(str11, str12, sep = ", "),
-                        "")
+      df1 <- data.frame(x = rep("", 12))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, str10, paste(str11, str12, sep = ", "),
+                         "")
     }
   } else {
-    df1 = data.frame(x = rep("", 11))
-    colnames(df1) = NULL
-    rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                      str8, str9, str10, "")
+    df1 <- data.frame(x = rep("", 11))
+    colnames(df1) <- NULL
+    rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                       str8, str9, str10, "")
   }
 
   if (k>1) {
@@ -2175,38 +2112,38 @@ print.rmpower <- function(x, ...) {
 
     if (x$settings$typeBetaSpending != 'none' ||
         (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
-      df = t(b)
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Futility boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative futility",
-                       "Cumulative alpha spent",
-                       "Number of events",
-                       "Number of dropouts",
-                       "Number of subjects",
-                       "Number of milestone subjects",
-                       "Analysis time",
-                       "Efficacy boundary (rmst diff)",
-                       "Futility boundary (rmst diff)",
-                       "Efficacy boundary (p)",
-                       "Futility boundary (p)",
-                       "Information")
+      df <- t(b)
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Futility boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative futility",
+                        "Cumulative alpha spent",
+                        "Number of events",
+                        "Number of dropouts",
+                        "Number of subjects",
+                        "Number of milestone subjects",
+                        "Analysis time",
+                        "Efficacy boundary (rmst diff)",
+                        "Futility boundary (rmst diff)",
+                        "Efficacy boundary (p)",
+                        "Futility boundary (p)",
+                        "Information")
 
     } else {
-      df = t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative alpha spent",
-                       "Number of events",
-                       "Number of dropouts",
-                       "Number of subjects",
-                       "Number of milestone subjects",
-                       "Analysis time",
-                       "Efficacy boundary (rmst diff)",
-                       "Efficacy boundary (p)",
-                       "Information")
+      df <- t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative alpha spent",
+                        "Number of events",
+                        "Number of dropouts",
+                        "Number of subjects",
+                        "Number of milestone subjects",
+                        "Analysis time",
+                        "Efficacy boundary (rmst diff)",
+                        "Efficacy boundary (p)",
+                        "Information")
     }
 
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
@@ -2221,11 +2158,11 @@ print.rmpower <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
+    df <- t(b)
 
-    rownames(df) = c("Efficacy boundary (Z)",
-                     "Efficacy boundary (rmst diff)",
-                     "Efficacy boundary (p)")
+    rownames(df) <- c("Efficacy boundary (Z)",
+                      "Efficacy boundary (rmst diff)",
+                      "Efficacy boundary (p)")
 
     colnames(df) <- NA
   }
@@ -2253,14 +2190,14 @@ print.rmpower <- function(x, ...) {
 #'
 #' @export
 print.kmpowerequiv <- function(x, ...) {
-  a = x$overallResults
-  s = x$byStageResults
-  k = a$kMax
+  a <- x$overallResults
+  s <- x$byStageResults
+  k <- a$kMax
 
   if (k>1) {
-    str1 = paste0("Group-sequential design with ", k, " stages")
+    str1 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str1 = "Fixed design"
+    str1 <- "Fixed design"
   }
 
   str1 <- paste(str1, "for equivalence in milestone survival difference")
@@ -2322,53 +2259,53 @@ print.kmpowerequiv <- function(x, ...) {
                  "fixed follow-up: ", a$fixedFollowup)
 
   str10 <- paste0("Allocation ratio: ",
-                 round(x$settings$allocationRatioPlanned, 3))
+                  round(x$settings$allocationRatioPlanned, 3))
 
   if (k > 1) {
-    asf = tolower(x$settings$typeAlphaSpending)
-    asfpar = round(x$settings$parameterAlphaSpending, 3)
-    asfuser = round(x$settings$userAlphaSpending, 4)
+    asf <- tolower(x$settings$typeAlphaSpending)
+    asfpar <- round(x$settings$parameterAlphaSpending, 3)
+    asfuser <- round(x$settings$userAlphaSpending, 4)
 
     if (asf == "of") {
-      str11 = paste0("Alpha spending: O'Brien-Fleming")
+      str11 <- paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str11 = paste0("Alpha spending: Pocock")
+      str11 <- paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str11 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str11 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str11 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str11 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str11 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str11 <- paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str11 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str11 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str11 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str11 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str11 = paste0("Alpha spending: User defined(",
-                     paste(asfuser, collapse = ","), ")")
+      str11 <- paste0("Alpha spending: User defined(",
+                      paste(asfuser, collapse = ","), ")")
     } else {
-      str11 = "Alpha spending: None"
+      str11 <- "Alpha spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str12 = paste0("Spending time: ",
-                     paste(round(x$settings$spendingTime, 3), collapse = ","))
-      df1 = data.frame(x = rep("", 13))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, str11, str12, "")
+      str12 <- paste0("Spending time: ",
+                      paste(round(x$settings$spendingTime, 3), collapse = ","))
+      df1 <- data.frame(x = rep("", 13))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, str10, str11, str12, "")
     } else {
-      df1 = data.frame(x = rep("", 12))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, str11, "")
+      df1 <- data.frame(x = rep("", 12))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, str10, str11, "")
     }
   } else {
-    df1 = data.frame(x = rep("", 11))
-    colnames(df1) = NULL
-    rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                      str8, str9, str10, "")
+    df1 <- data.frame(x = rep("", 11))
+    colnames(df1) <- NULL
+    rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                       str8, str9, str10, "")
   }
 
   if (k>1) {
@@ -2392,22 +2329,22 @@ print.kmpowerequiv <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
-    rownames(df) = c("Information rate",
-                     "Boundary for each 1-sided test (Z)",
-                     "Cumulative rejection",
-                     "Cumulative alpha for each 1-sided test",
-                     "Cumulative alpha attained under H10",
-                     "Cumulative alpha attained under H20",
-                     "Number of events",
-                     "Number of dropouts",
-                     "Number of subjects",
-                     "Number of milestone subjects",
-                     "Analysis time",
-                     "Boundary for lower limit (surv diff)",
-                     "Boundary for upper limit (surv diff)",
-                     "Boundary for each 1-sided test (p)",
-                     "Information")
+    df <- t(b)
+    rownames(df) <- c("Information rate",
+                      "Boundary for each 1-sided test (Z)",
+                      "Cumulative rejection",
+                      "Cumulative alpha for each 1-sided test",
+                      "Cumulative alpha attained under H10",
+                      "Cumulative alpha attained under H20",
+                      "Number of events",
+                      "Number of dropouts",
+                      "Number of subjects",
+                      "Number of milestone subjects",
+                      "Analysis time",
+                      "Boundary for lower limit (surv diff)",
+                      "Boundary for upper limit (surv diff)",
+                      "Boundary for each 1-sided test (p)",
+                      "Information")
 
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
   } else {
@@ -2421,12 +2358,12 @@ print.kmpowerequiv <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
+    df <- t(b)
 
-    rownames(df) = c("Boundary for each 1-sided test (Z)",
-                     "Boundary for lower limit (surv diff)",
-                     "Boundary for upper limit (surv diff)",
-                     "Boundary for each 1-sided test (p)")
+    rownames(df) <- c("Boundary for each 1-sided test (Z)",
+                      "Boundary for lower limit (surv diff)",
+                      "Boundary for upper limit (surv diff)",
+                      "Boundary for each 1-sided test (p)")
     colnames(df) <- NA
   }
 
@@ -2453,14 +2390,14 @@ print.kmpowerequiv <- function(x, ...) {
 #'
 #' @export
 print.rmpowerequiv <- function(x, ...) {
-  a = x$overallResults
-  s = x$byStageResults
-  k = a$kMax
+  a <- x$overallResults
+  s <- x$byStageResults
+  k <- a$kMax
 
   if (k>1) {
-    str1 = paste0("Group-sequential design with ", k, " stages")
+    str1 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str1 = "Fixed design"
+    str1 <- "Fixed design"
   }
 
   str1 <- paste(str1, paste("for equivalence in RMST difference"))
@@ -2525,50 +2462,50 @@ print.rmpowerequiv <- function(x, ...) {
                   round(x$settings$allocationRatioPlanned, 3))
 
   if (k > 1) {
-    asf = tolower(x$settings$typeAlphaSpending)
-    asfpar = round(x$settings$parameterAlphaSpending, 3)
-    asfuser = round(x$settings$userAlphaSpending, 4)
+    asf <- tolower(x$settings$typeAlphaSpending)
+    asfpar <- round(x$settings$parameterAlphaSpending, 3)
+    asfuser <- round(x$settings$userAlphaSpending, 4)
 
     if (asf == "of") {
-      str11 = paste0("Alpha spending: O'Brien-Fleming")
+      str11 <- paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str11 = paste0("Alpha spending: Pocock")
+      str11 <- paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str11 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str11 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str11 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str11 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str11 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str11 <- paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str11 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str11 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str11 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str11 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str11 = paste0("Alpha spending: User defined(",
-                     paste(asfuser, collapse = ","), ")")
+      str11 <- paste0("Alpha spending: User defined(",
+                      paste(asfuser, collapse = ","), ")")
     } else {
-      str11 = "Alpha spending: None"
+      str11 <- "Alpha spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str12 = paste0("Spending time: ",
-                     paste(round(x$settings$spendingTime, 3), collapse = ","))
-      df1 = data.frame(x = rep("", 13))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, str11, str12, "")
+      str12 <- paste0("Spending time: ",
+                      paste(round(x$settings$spendingTime, 3), collapse = ","))
+      df1 <- data.frame(x = rep("", 13))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, str10, str11, str12, "")
     } else {
-      df1 = data.frame(x = rep("", 12))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, str11, "")
+      df1 <- data.frame(x = rep("", 12))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, str10, str11, "")
     }
   } else {
-    df1 = data.frame(x = rep("", 11))
-    colnames(df1) = NULL
-    rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                      str8, str9, str10, "")
+    df1 <- data.frame(x = rep("", 11))
+    colnames(df1) <- NULL
+    rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                       str8, str9, str10, "")
   }
 
   if (k>1) {
@@ -2592,22 +2529,22 @@ print.rmpowerequiv <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
-    rownames(df) = c("Information rate",
-                     "Boundary for each 1-sided test (Z)",
-                     "Cumulative rejection",
-                     "Cumulative alpha for each 1-sided test",
-                     "Cumulative alpha attained under H10",
-                     "Cumulative alpha attained under H20",
-                     "Number of events",
-                     "Number of dropouts",
-                     "Number of subjects",
-                     "Number of milestone subjects",
-                     "Analysis time",
-                     "Boundary for lower limit (rmst diff)",
-                     "Boundary for upper limit (rmst diff)",
-                     "Boundary for each 1-sided test (p)",
-                     "Information")
+    df <- t(b)
+    rownames(df) <- c("Information rate",
+                      "Boundary for each 1-sided test (Z)",
+                      "Cumulative rejection",
+                      "Cumulative alpha for each 1-sided test",
+                      "Cumulative alpha attained under H10",
+                      "Cumulative alpha attained under H20",
+                      "Number of events",
+                      "Number of dropouts",
+                      "Number of subjects",
+                      "Number of milestone subjects",
+                      "Analysis time",
+                      "Boundary for lower limit (rmst diff)",
+                      "Boundary for upper limit (rmst diff)",
+                      "Boundary for each 1-sided test (p)",
+                      "Information")
 
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
   } else {
@@ -2621,12 +2558,12 @@ print.rmpowerequiv <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
+    df <- t(b)
 
-    rownames(df) = c("Boundary for each 1-sided test (Z)",
-                     "Boundary for lower limit (rmst diff)",
-                     "Boundary for upper limit (rmst diff)",
-                     "Boundary for each 1-sided test (p)")
+    rownames(df) <- c("Boundary for each 1-sided test (Z)",
+                      "Boundary for lower limit (rmst diff)",
+                      "Boundary for upper limit (rmst diff)",
+                      "Boundary for each 1-sided test (p)")
     colnames(df) <- NA
   }
 
@@ -2653,14 +2590,14 @@ print.rmpowerequiv <- function(x, ...) {
 #'
 #' @export
 print.lrpowerequiv <- function(x, ...) {
-  a = x$overallResults
-  s = x$byStageResults
-  k = a$kMax
+  a <- x$overallResults
+  s <- x$byStageResults
+  k <- a$kMax
 
   if (k>1) {
-    str1 = paste0("Group-sequential design with ", k, " stages")
+    str1 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str1 = "Fixed design"
+    str1 <- "Fixed design"
   }
 
   str1 <- paste(str1, "for equivalence in hazard ratio")
@@ -2727,50 +2664,50 @@ print.lrpowerequiv <- function(x, ...) {
                   round(x$settings$allocationRatioPlanned, 3))
 
   if (k > 1) {
-    asf = tolower(x$settings$typeAlphaSpending)
-    asfpar = round(x$settings$parameterAlphaSpending, 3)
-    asfuser = round(x$settings$userAlphaSpending, 4)
+    asf <- tolower(x$settings$typeAlphaSpending)
+    asfpar <- round(x$settings$parameterAlphaSpending, 3)
+    asfuser <- round(x$settings$userAlphaSpending, 4)
 
     if (asf == "of") {
-      str11 = paste0("Alpha spending: O'Brien-Fleming")
+      str11 <- paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str11 = paste0("Alpha spending: Pocock")
+      str11 <- paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str11 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str11 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str11 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str11 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str11 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str11 <- paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str11 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str11 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str11 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str11 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str11 = paste0("Alpha spending: User defined(",
-                     paste(asfuser, collapse = ","), ")")
+      str11 <- paste0("Alpha spending: User defined(",
+                      paste(asfuser, collapse = ","), ")")
     } else {
-      str11 = "Alpha spending: None"
+      str11 <- "Alpha spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str12 = paste0("Spending time: ",
-                     paste(round(x$settings$spendingTime, 3), collapse = ","))
-      df1 = data.frame(x = rep("", 13))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, str11, str12, "")
+      str12 <- paste0("Spending time: ",
+                      paste(round(x$settings$spendingTime, 3), collapse = ","))
+      df1 <- data.frame(x = rep("", 13))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, str10, str11, str12, "")
     } else {
-      df1 = data.frame(x = rep("", 12))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, str10, str11, "")
+      df1 <- data.frame(x = rep("", 12))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, str10, str11, "")
     }
   } else {
-    df1 = data.frame(x = rep("", 11))
-    colnames(df1) = NULL
-    rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                      str8, str9, str10, "")
+    df1 <- data.frame(x = rep("", 11))
+    colnames(df1) <- NULL
+    rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                       str8, str9, str10, "")
   }
 
   if (k>1) {
@@ -2793,22 +2730,22 @@ print.lrpowerequiv <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
-    rownames(df) = c("Information rate",
-                     "Boundary for each 1-sided test (Z)",
-                     "Cumulative rejection",
-                     "Cumulative alpha for each 1-sided test",
-                     "Cumulative alpha attained under H10",
-                     "Cumulative alpha attained under H20",
-                     "Number of events",
-                     "Number of dropouts",
-                     "Number of subjects",
-                     "Analysis time",
-                     "Boundary for lower limit (HR)",
-                     "Boundary for upper limit (HR)",
-                     "Boundary for each 1-sided test (p)",
-                     "Information",
-                     "HR")
+    df <- t(b)
+    rownames(df) <- c("Information rate",
+                      "Boundary for each 1-sided test (Z)",
+                      "Cumulative rejection",
+                      "Cumulative alpha for each 1-sided test",
+                      "Cumulative alpha attained under H10",
+                      "Cumulative alpha attained under H20",
+                      "Number of events",
+                      "Number of dropouts",
+                      "Number of subjects",
+                      "Analysis time",
+                      "Boundary for lower limit (HR)",
+                      "Boundary for upper limit (HR)",
+                      "Boundary for each 1-sided test (p)",
+                      "Information",
+                      "HR")
 
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
   } else {
@@ -2822,12 +2759,12 @@ print.lrpowerequiv <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
+    df <- t(b)
 
-    rownames(df) = c("Boundary for each 1-sided test (Z)",
-                     "Boundary for lower limit (HR)",
-                     "Boundary for upper limit (HR)",
-                     "Boundary for each 1-sided test (p)")
+    rownames(df) <- c("Boundary for each 1-sided test (Z)",
+                      "Boundary for lower limit (HR)",
+                      "Boundary for upper limit (HR)",
+                      "Boundary for each 1-sided test (p)")
     colnames(df) <- NA
   }
 
@@ -2854,14 +2791,14 @@ print.lrpowerequiv <- function(x, ...) {
 #'
 #' @export
 print.kmpower1s <- function(x, ...) {
-  a = x$overallResults
-  s = x$byStageResults
-  k = a$kMax
+  a <- x$overallResults
+  s <- x$byStageResults
+  k <- a$kMax
 
   if (k>1) {
-    str1 = paste0("Group-sequential design with ", k, " stages")
+    str1 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str1 = "Fixed design"
+    str1 <- "Fixed design"
   }
 
   str1 <- paste(str1, "for one-sample milestone survival probability")
@@ -2926,76 +2863,76 @@ print.kmpower1s <- function(x, ...) {
 
 
   if (k > 1) {
-    asf = tolower(x$settings$typeAlphaSpending)
-    asfpar = round(x$settings$parameterAlphaSpending, 3)
-    asfuser = round(x$settings$userAlphaSpending, 4)
+    asf <- tolower(x$settings$typeAlphaSpending)
+    asfpar <- round(x$settings$parameterAlphaSpending, 3)
+    asfuser <- round(x$settings$userAlphaSpending, 4)
 
-    bsf = tolower(x$settings$typeBetaSpending)
-    bsfpar = round(x$settings$parameterBetaSpending, 3)
+    bsf <- tolower(x$settings$typeBetaSpending)
+    bsfpar <- round(x$settings$parameterBetaSpending, 3)
 
     if (asf == "of") {
-      str10 = paste0("Alpha spending: O'Brien-Fleming")
+      str10 <- paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str10 = paste0("Alpha spending: Pocock")
+      str10 <- paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str10 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str10 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str10 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str10 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str10 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str10 <- paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str10 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str10 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str10 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str10 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str10 = paste0("Alpha spending: User defined(",
-                    paste(asfuser, collapse = ","), ")")
+      str10 <- paste0("Alpha spending: User defined(",
+                      paste(asfuser, collapse = ","), ")")
     } else {
-      str10 = "Alpha spending: None"
+      str10 <- "Alpha spending: None"
     }
 
     if (bsf == "of") {
-      str11 = paste0("beta spending: O'Brien-Fleming")
+      str11 <- paste0("beta spending: O'Brien-Fleming")
     } else if (bsf == "p") {
-      str11 = paste0("beta spending: Pocock")
+      str11 <- paste0("beta spending: Pocock")
     } else if (bsf == "wt") {
-      str11 = paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
+      str11 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
     } else if (bsf == "sfof") {
-      str11 = paste0("beta spending: Lan-DeMets O'Brien-Fleming")
+      str11 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
     } else if (bsf == "sfp") {
-      str11 = paste0("beta spending: Lan-DeMets Pocock")
+      str11 <- paste0("beta spending: Lan-DeMets Pocock")
     } else if (bsf == "sfkd") {
-      str11 = paste0("beta spending: KD(rho = ", bsfpar, ")")
+      str11 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
     } else if (bsf == "sfhsd") {
-      str11 = paste0("beta spending: HSD(gamma = ", bsfpar, ")")
+      str11 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
     } else if (bsf == "user") {
-      bsfuser = round(x$settings$userBetaSpending, 4)
-      str11 = paste0("beta spending: User defined(",
-                     paste(bsfuser, collapse = ","), ")")
+      bsfuser <- round(x$settings$userBetaSpending, 4)
+      str11 <- paste0("beta spending: User defined(",
+                      paste(bsfuser, collapse = ","), ")")
     } else {
-      str11 = "beta spending: None"
+      str11 <- "beta spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str12 = paste0("Spending time: ",
-                     paste(round(x$settings$spendingTime, 3), collapse = ","))
-      df1 = data.frame(x = rep("", 12))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, paste(str10, str11, sep = ", "),
-                        str12, "")
+      str12 <- paste0("Spending time: ",
+                      paste(round(x$settings$spendingTime, 3), collapse = ","))
+      df1 <- data.frame(x = rep("", 12))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, paste(str10, str11, sep = ", "),
+                         str12, "")
     } else {
-      df1 = data.frame(x = rep("", 11))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, paste(str10, str11, sep = ", "), "")
+      df1 <- data.frame(x = rep("", 11))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, paste(str10, str11, sep = ", "), "")
     }
   } else {
-    df1 = data.frame(x = rep("", 10))
-    colnames(df1) = NULL
-    rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                      str8, str9, "")
+    df1 <- data.frame(x = rep("", 10))
+    colnames(df1) <- NULL
+    rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                       str8, str9, "")
   }
 
   if (k>1) {
@@ -3019,38 +2956,38 @@ print.kmpower1s <- function(x, ...) {
 
     if (x$settings$typeBetaSpending != 'none' ||
         (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
-      df = t(b)
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Futility boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative futility",
-                       "Cumulative alpha spent",
-                       "Number of events",
-                       "Number of dropouts",
-                       "Number of subjects",
-                       "Number of milestone subjects",
-                       "Analysis time",
-                       "Efficacy boundary (surv)",
-                       "Futility boundary (surv)",
-                       "Efficacy boundary (p)",
-                       "Futility boundary (p)",
-                       "Information")
+      df <- t(b)
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Futility boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative futility",
+                        "Cumulative alpha spent",
+                        "Number of events",
+                        "Number of dropouts",
+                        "Number of subjects",
+                        "Number of milestone subjects",
+                        "Analysis time",
+                        "Efficacy boundary (surv)",
+                        "Futility boundary (surv)",
+                        "Efficacy boundary (p)",
+                        "Futility boundary (p)",
+                        "Information")
 
     } else {
-      df = t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative alpha spent",
-                       "Number of events",
-                       "Number of dropouts",
-                       "Number of subjects",
-                       "Number of milestone subjects",
-                       "Analysis time",
-                       "Efficacy boundary (surv)",
-                       "Efficacy boundary (p)",
-                       "Information")
+      df <- t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative alpha spent",
+                        "Number of events",
+                        "Number of dropouts",
+                        "Number of subjects",
+                        "Number of milestone subjects",
+                        "Analysis time",
+                        "Efficacy boundary (surv)",
+                        "Efficacy boundary (p)",
+                        "Information")
     }
 
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
@@ -3064,11 +3001,11 @@ print.kmpower1s <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
+    df <- t(b)
 
-    rownames(df) = c("Efficacy boundary (Z)",
-                     "Efficacy boundary (surv)",
-                     "Efficacy boundary (p)")
+    rownames(df) <- c("Efficacy boundary (Z)",
+                      "Efficacy boundary (surv)",
+                      "Efficacy boundary (p)")
     colnames(df) <- NA
   }
 
@@ -3094,14 +3031,14 @@ print.kmpower1s <- function(x, ...) {
 #'
 #' @export
 print.rmpower1s <- function(x, ...) {
-  a = x$overallResults
-  s = x$byStageResults
-  k = a$kMax
+  a <- x$overallResults
+  s <- x$byStageResults
+  k <- a$kMax
 
   if (k>1) {
-    str1 = paste0("Group-sequential design with ", k, " stages")
+    str1 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str1 = "Fixed design"
+    str1 <- "Fixed design"
   }
 
   str1 <- paste(str1, "for one-sample restricted mean survival time")
@@ -3167,74 +3104,74 @@ print.rmpower1s <- function(x, ...) {
 
 
   if (k > 1) {
-    asf = tolower(x$settings$typeAlphaSpending)
-    asfpar = round(x$settings$parameterAlphaSpending, 3)
-    asfuser = round(x$settings$userAlphaSpending, 4)
+    asf <- tolower(x$settings$typeAlphaSpending)
+    asfpar <- round(x$settings$parameterAlphaSpending, 3)
+    asfuser <- round(x$settings$userAlphaSpending, 4)
 
-    bsf = tolower(x$settings$typeBetaSpending)
-    bsfpar = round(x$settings$parameterBetaSpending, 3)
+    bsf <- tolower(x$settings$typeBetaSpending)
+    bsfpar <- round(x$settings$parameterBetaSpending, 3)
 
     if (asf == "of") {
-      str10 = paste0("Alpha spending: O'Brien-Fleming")
+      str10 <- paste0("Alpha spending: O'Brien-Fleming")
     } else if (asf == "p") {
-      str10 = paste0("Alpha spending: Pocock")
+      str10 <- paste0("Alpha spending: Pocock")
     } else if (asf == "wt") {
-      str10 = paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+      str10 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
     } else if (asf == "sfof") {
-      str10 = paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+      str10 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
     } else if (asf == "sfp") {
-      str10 = paste0("Alpha spending: Lan-DeMets Pocock")
+      str10 <- paste0("Alpha spending: Lan-DeMets Pocock")
     } else if (asf == "sfkd") {
-      str10 = paste0("Alpha spending: KD(rho = ", asfpar, ")")
+      str10 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
     } else if (asf == "sfhsd") {
-      str10 = paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+      str10 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
     } else if (asf == "user") {
-      str10 = paste0("Alpha spending: User defined(",
-                     paste(asfuser, collapse = ","), ")")
+      str10 <- paste0("Alpha spending: User defined(",
+                      paste(asfuser, collapse = ","), ")")
     } else {
-      str10 = "Alpha spending: None"
+      str10 <- "Alpha spending: None"
     }
 
     if (bsf == "of") {
-      str11 = paste0("beta spending: O'Brien-Fleming")
+      str11 <- paste0("beta spending: O'Brien-Fleming")
     } else if (bsf == "p") {
-      str11 = paste0("beta spending: Pocock")
+      str11 <- paste0("beta spending: Pocock")
     } else if (bsf == "wt") {
-      str11 = paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
+      str11 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
     } else if (bsf == "sfof") {
-      str11 = paste0("beta spending: Lan-DeMets O'Brien-Fleming")
+      str11 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
     } else if (bsf == "sfp") {
-      str11 = paste0("beta spending: Lan-DeMets Pocock")
+      str11 <- paste0("beta spending: Lan-DeMets Pocock")
     } else if (bsf == "sfkd") {
-      str11 = paste0("beta spending: KD(rho = ", bsfpar, ")")
+      str11 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
     } else if (bsf == "sfhsd") {
-      str11 = paste0("beta spending: HSD(gamma = ", bsfpar, ")")
+      str11 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
     } else if (bsf == "user") {
-      str11 = paste0("beta spending: User defined")
+      str11 <- paste0("beta spending: User defined")
     } else {
-      str11 = "beta spending: None"
+      str11 <- "beta spending: None"
     }
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
-      str12 = paste0("Spending time: ",
-                     paste(round(x$settings$spendingTime, 3), collapse = ","))
-      df1 = data.frame(x = rep("", 12))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, paste(str10, str11, sep = ", "),
-                        str12, "")
+      str12 <- paste0("Spending time: ",
+                      paste(round(x$settings$spendingTime, 3), collapse = ","))
+      df1 <- data.frame(x = rep("", 12))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, paste(str10, str11, sep = ", "),
+                         str12, "")
     } else {
-      df1 = data.frame(x = rep("", 11))
-      colnames(df1) = NULL
-      rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                        str8, str9, paste(str10, str11, sep = ", "), "")
+      df1 <- data.frame(x = rep("", 11))
+      colnames(df1) <- NULL
+      rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                         str8, str9, paste(str10, str11, sep = ", "), "")
     }
   } else {
-    df1 = data.frame(x = rep("", 10))
-    colnames(df1) = NULL
-    rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7,
-                      str8, str9, "")
+    df1 <- data.frame(x = rep("", 10))
+    colnames(df1) <- NULL
+    rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                       str8, str9, "")
   }
 
   if (k>1) {
@@ -3258,38 +3195,38 @@ print.rmpower1s <- function(x, ...) {
 
     if (x$settings$typeBetaSpending != 'none' ||
         (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
-      df = t(b)
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Futility boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative futility",
-                       "Cumulative alpha spent",
-                       "Number of events",
-                       "Number of dropouts",
-                       "Number of subjects",
-                       "Number of milestone subjects",
-                       "Analysis time",
-                       "Efficacy boundary (rmst)",
-                       "Futility boundary (rmst)",
-                       "Efficacy boundary (p)",
-                       "Futility boundary (p)",
-                       "Information")
+      df <- t(b)
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Futility boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative futility",
+                        "Cumulative alpha spent",
+                        "Number of events",
+                        "Number of dropouts",
+                        "Number of subjects",
+                        "Number of milestone subjects",
+                        "Analysis time",
+                        "Efficacy boundary (rmst)",
+                        "Futility boundary (rmst)",
+                        "Efficacy boundary (p)",
+                        "Futility boundary (p)",
+                        "Information")
 
     } else {
-      df = t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
-      rownames(df) = c("Information rate",
-                       "Efficacy boundary (Z)",
-                       "Cumulative rejection",
-                       "Cumulative alpha spent",
-                       "Number of events",
-                       "Number of dropouts",
-                       "Number of subjects",
-                       "Number of milestone subjects",
-                       "Analysis time",
-                       "Efficacy boundary (rmst)",
-                       "Efficacy boundary (p)",
-                       "Information")
+      df <- t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
+      rownames(df) <- c("Information rate",
+                        "Efficacy boundary (Z)",
+                        "Cumulative rejection",
+                        "Cumulative alpha spent",
+                        "Number of events",
+                        "Number of dropouts",
+                        "Number of subjects",
+                        "Number of milestone subjects",
+                        "Analysis time",
+                        "Efficacy boundary (rmst)",
+                        "Efficacy boundary (p)",
+                        "Information")
     }
 
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
@@ -3303,11 +3240,11 @@ print.rmpower1s <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df = t(b)
+    df <- t(b)
 
-    rownames(df) = c("Efficacy boundary (Z)",
-                     "Efficacy boundary (rmst)",
-                     "Efficacy boundary (p)")
+    rownames(df) <- c("Efficacy boundary (Z)",
+                      "Efficacy boundary (rmst)",
+                      "Efficacy boundary (p)")
     colnames(df) <- NA
   }
 
@@ -3640,9 +3577,9 @@ print.assess_phregr <- function(x, ...) {
 }
 
 
-#' @title Print Two-Stage Seamless Sequential Design
+#' @title Print Phase 2/3 Seamless Design
 #' @description Prints the stopping boundaries and power for
-#' two-stage seamless sequential design.
+#' phase 2/3 seamless design.
 #'
 #' @param x The design object to print.
 #' @param ... Ensures that all arguments starting from "..." are named.
@@ -3655,10 +3592,10 @@ print.assess_phregr <- function(x, ...) {
 #'
 #' @export
 print.seamless <- function(x, ...) {
-  a = x$overallResults
-  s = x$byStageResults
-  t = x$byArmResults
-  k = a$K
+  a <- x$overallResults
+  s <- x$byStageResults
+  t <- x$byArmResults
+  k <- a$K
 
   # overall results
   if (k>1) {
@@ -3683,9 +3620,9 @@ print.seamless <- function(x, ...) {
 
   str7 <- paste0("Number of looks in phase 3: ", a$K)
 
-  asf = tolower(x$settings$typeAlphaSpending)
-  asfpar = round(x$settings$parameterAlphaSpending, 3)
-  asfuser = round(x$settings$userAlphaSpending, 4)
+  asf <- tolower(x$settings$typeAlphaSpending)
+  asfpar <- round(x$settings$parameterAlphaSpending, 3)
+  asfuser <- round(x$settings$userAlphaSpending, 4)
 
   if (asf == "of") {
     str8 <- paste0("Alpha spending: O'Brien-Fleming")
@@ -3769,9 +3706,9 @@ print.seamless <- function(x, ...) {
 }
 
 
-#' @title Print Adaptive Two-Stage Seamless Sequential Design
+#' @title Print Adaptive Phase 2/3 Seamless Design
 #' @description Prints the stopping boundaries and power for adaptive
-#' two-stage seamless sequential design.
+#' phase 2/3 seamless design.
 #'
 #' @param x The design object to print.
 #' @param ... Ensures that all arguments starting from "..." are named.
@@ -3816,9 +3753,9 @@ print.adaptDesign_seamless <- function(x, ...) {
                   des1$MullerSchafer)
 
   df1a <- data.frame(x = rep("", 11))
-  colnames(df1a) = NULL
-  rownames(df1a) = c(str1, str2, str3, str4, str5, str6, str7, str8,
-                     str9, str10, "")
+  colnames(df1a) <- NULL
+  rownames(df1a) <- c(str1, str2, str3, str4, str5, str6, str7, str8,
+                      str9, str10, "")
 
   b <- data.frame(informationRates = des1$informationRates,
                   efficacyBounds = des1$efficacyBounds,
@@ -3827,25 +3764,25 @@ print.adaptDesign_seamless <- function(x, ...) {
   b[1:2] <- lapply(b[1:2], formatC, format = "f", digits = 3)
   b[3] <- lapply(b[3], formatC, format = "f", digits = 2)
 
-  df1b = t(b)
-  rownames(df1b) = c("Information rate",
-                     "Efficacy boundary (Z)",
-                     "Information")
+  df1b <- t(b)
+  rownames(df1b) <- c("Information rate",
+                      "Efficacy boundary (Z)",
+                      "Information")
 
   colnames(df1b) <- paste("Stage", seq_len(ncol(df1b)), sep=" ")
 
 
-  des2 = x$secondaryTrial
-  a = des2$overallResults
-  s = des2$byStageResults
-  k = a$kMax
+  des2 <- x$secondaryTrial
+  a <- des2$overallResults
+  s <- des2$byStageResults
+  k <- a$kMax
 
-  str1 = "Secondary trial:"
+  str1 <- "Secondary trial:"
 
   if (k>1) {
-    str2 = paste0("Group-sequential design with ", k, " stages")
+    str2 <- paste0("Group-sequential design with ", k, " stages")
   } else {
-    str2 = "Fixed design"
+    str2 <- "Fixed design"
   }
 
   str3 <- paste0("theta: ", round(a$theta, 3), ", ",
@@ -3864,13 +3801,13 @@ print.adaptDesign_seamless <- function(x, ...) {
                    round(a$expectedInformationH1, 2), ", ",
                    "Expected information under H0: ",
                    round(a$expectedInformationH0, 2))
-    df2a = data.frame(x = rep("", 7))
-    colnames(df2a) = NULL
-    rownames(df2a) = c(str1, str2, str3, str4, str5, str6, "")
+    df2a <- data.frame(x = rep("", 7))
+    colnames(df2a) <- NULL
+    rownames(df2a) <- c(str1, str2, str3, str4, str5, str6, "")
   } else {
-    df2a = data.frame(x = rep("", 6))
-    colnames(df2a) = NULL
-    rownames(df2a) = c(str1, str2, str3, str4, str5, "")
+    df2a <- data.frame(x = rep("", 6))
+    colnames(df2a) <- NULL
+    rownames(df2a) <- c(str1, str2, str3, str4, str5, "")
   }
 
 
@@ -3891,28 +3828,28 @@ print.adaptDesign_seamless <- function(x, ...) {
 
     if (des2$settings$typeBetaSpending != 'none' ||
         (k > 1 && any(des2$byStageResults$futilityBounds[1:(k-1)] > -6))) {
-      df2b = t(b)
-      rownames(df2b) = c("Information rate",
-                         "Efficacy boundary (Z)",
-                         "Futility boundary (Z)",
-                         "Cumulative rejection",
-                         "Cumulative futility",
-                         "Cumulative alpha spent",
-                         "Efficacy boundary (theta)",
-                         "Futility boundary (theta)",
-                         "Efficacy boundary (p)",
-                         "Futility boundary (p)",
-                         "Information")
+      df2b <- t(b)
+      rownames(df2b) <- c("Information rate",
+                          "Efficacy boundary (Z)",
+                          "Futility boundary (Z)",
+                          "Cumulative rejection",
+                          "Cumulative futility",
+                          "Cumulative alpha spent",
+                          "Efficacy boundary (theta)",
+                          "Futility boundary (theta)",
+                          "Efficacy boundary (p)",
+                          "Futility boundary (p)",
+                          "Information")
 
     } else {
-      df2b = t(b[,c(1,2,4,6,7,9,11)])
-      rownames(df2b) = c("Information rate",
-                         "Efficacy boundary (Z)",
-                         "Cumulative rejection",
-                         "Cumulative alpha spent",
-                         "Efficacy boundary (theta)",
-                         "Efficacy boundary (p)",
-                         "Information")
+      df2b <- t(b[,c(1,2,4,6,7,9,11)])
+      rownames(df2b) <- c("Information rate",
+                          "Efficacy boundary (Z)",
+                          "Cumulative rejection",
+                          "Cumulative alpha spent",
+                          "Efficacy boundary (theta)",
+                          "Efficacy boundary (p)",
+                          "Information")
     }
 
     colnames(df2b) <- paste("Stage", seq_len(ncol(df2b)), sep=" ")
@@ -3926,11 +3863,11 @@ print.adaptDesign_seamless <- function(x, ...) {
     b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-    df2b = t(b)
+    df2b <- t(b)
 
-    rownames(df2b) = c("Efficacy boundary (Z)",
-                       "Efficacy boundary (theta)",
-                       "Efficacy boundary (p)")
+    rownames(df2b) <- c("Efficacy boundary (Z)",
+                        "Efficacy boundary (theta)",
+                        "Efficacy boundary (p)")
 
     colnames(df2b) <- NA
   }
@@ -3947,9 +3884,9 @@ print.adaptDesign_seamless <- function(x, ...) {
   str4 <- paste0("Interim adaptation look in Phase 3: ", des3$L, ", ",
                  "z-statistic value: ", paste(round(des3$zL, 3), collapse = ", "))
 
-  df3a = data.frame(x = rep("", 5))
-  colnames(df3a) = NULL
-  rownames(df3a) = c(str1, str2, str3, str4, "")
+  df3a <- data.frame(x = rep("", 5))
+  colnames(df3a) <- NULL
+  rownames(df3a) <- c(str1, str2, str3, str4, "")
 
   b <- data.frame(informationRates = des3$informationRates,
                   efficacyBounds = des3$efficacyBounds,
@@ -3962,10 +3899,10 @@ print.adaptDesign_seamless <- function(x, ...) {
   b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
   b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
 
-  df3b = t(b)
-  rownames(df3b) = c("Information rate",
-                     "Efficacy bounds (Z)",
-                     "Information")
+  df3b <- t(b)
+  rownames(df3b) <- c("Information rate",
+                      "Efficacy bounds (Z)",
+                      "Information")
 
   colnames(df3b) <- paste("Stage", seq_len(ncol(df3b)), sep=" ")
 
@@ -3980,7 +3917,7 @@ print.adaptDesign_seamless <- function(x, ...) {
 }
 
 
-#' @title Print Simulation Results for Two-Stage Seamless Sequential Design
+#' @title Print Simulation Results for Phase 2/3 Seamless Design
 #' @description Prints the summary statistics from simulation.
 #'
 #' @param x The lrsim_seamless object to print.
@@ -3994,8 +3931,8 @@ print.adaptDesign_seamless <- function(x, ...) {
 #'
 #' @export
 print.lrsim_seamless <- function(x, ...) {
-  a = x$overview
-  k = a$K + 1
+  a <- x$overview
+  k <- a$K + 1
 
   if (k>1) {
     str1 <- paste0("Phase 2/3 seamless group-sequential design")
@@ -4034,12 +3971,12 @@ print.lrsim_seamless <- function(x, ...) {
   str10 <- paste0("Number of simulations: ", a$numberOfIterations)
 
   str11 <- paste0("Efficacy bounds (z-scale): ",
-                   paste(round(a$criticalValues, 3), collapse = ", "))
+                  paste(round(a$criticalValues, 3), collapse = ", "))
 
-  df1 = data.frame(x = rep("", 12))
-  colnames(df1) = NULL
-  rownames(df1) = c(str1, str2, str3, str4, str5, str6, str7, str8,
-                    str9, str10, str11, "")
+  df1 <- data.frame(x = rep("", 12))
+  colnames(df1) <- NULL
+  rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7, str8,
+                     str9, str10, str11, "")
 
   df2 <- t(data.frame(selectAsBest = a$selectAsBest))
   rownames(df2) <- "Selected as best in phase 2"
@@ -4082,10 +4019,10 @@ print.lrsim_seamless <- function(x, ...) {
 #'
 #' @export
 print.mams <- function(x, ...) {
-  a = x$overallResults
-  s = x$byStageResults
-  t = x$settings
-  k = a$kMax
+  a <- x$overallResults
+  s <- x$byStageResults
+  t <- x$settings
+  k <- a$kMax
 
   # overall results
   str1 <- "Multi-arm multi-stage design"
@@ -4107,9 +4044,9 @@ print.mams <- function(x, ...) {
 
   str7 <- paste0("Number of looks: ", a$kMax)
 
-  asf = tolower(x$settings$typeAlphaSpending)
-  asfpar = round(x$settings$parameterAlphaSpending, 3)
-  asfuser = round(x$settings$userAlphaSpending, 4)
+  asf <- tolower(x$settings$typeAlphaSpending)
+  asfpar <- round(x$settings$parameterAlphaSpending, 3)
+  asfuser <- round(x$settings$userAlphaSpending, 4)
 
   if (asf == "of") {
     str8 <- paste0("Alpha spending: O'Brien-Fleming")
@@ -4223,11 +4160,11 @@ print.adaptDesign_mams <- function(x, ...) {
                  ", conditional power: ", round(des1$conditionalPower, 3))
 
   str8 <- paste0("Muller & Schafer method for secondary trial: ",
-                  des1$MullerSchafer)
+                 des1$MullerSchafer)
 
   df1a <- data.frame(x = rep("", 9))
-  colnames(df1a) = NULL
-  rownames(df1a) = c(str1, str2, str3, str4, str5, str6, str7, str8, "")
+  colnames(df1a) <- NULL
+  rownames(df1a) <- c(str1, str2, str3, str4, str5, str6, str7, str8, "")
 
 
   b <- data.frame(informationRates = des1$informationRates,
@@ -4237,10 +4174,10 @@ print.adaptDesign_mams <- function(x, ...) {
   b[1:2] <- lapply(b[1:2], formatC, format = "f", digits = 3)
   b[3] <- lapply(b[3], formatC, format = "f", digits = 2)
 
-  df1b = t(b)
-  rownames(df1b) = c("Information rate",
-                     "Efficacy boundary (Z)",
-                     "Information")
+  df1b <- t(b)
+  rownames(df1b) <- c("Information rate",
+                      "Efficacy boundary (Z)",
+                      "Information")
 
   colnames(df1b) <- paste("Stage", seq_len(ncol(df1b)), sep=" ")
 
@@ -4249,7 +4186,7 @@ print.adaptDesign_mams <- function(x, ...) {
   colnames(df1c) <- c("Level", "Stage", "Boundary (Z)")
 
 
-  des2 = x$secondaryTrial
+  des2 <- x$secondaryTrial
 
   # overall results
   str1 <- "Secondary trial:"
@@ -4267,9 +4204,9 @@ print.adaptDesign_mams <- function(x, ...) {
                  "overall significance level (1-sided): ",
                  round(des2$alpha, 4))
 
-  df2a = data.frame(x = rep("", 7))
-  colnames(df2a) = NULL
-  rownames(df2a) = c(str1, str2, str3, str4, str5, str6, "")
+  df2a <- data.frame(x = rep("", 7))
+  colnames(df2a) <- NULL
+  rownames(df2a) <- c(str1, str2, str3, str4, str5, str6, "")
 
   b <- data.frame(informationRates = des2$informationRates,
                   cumulativeRejection = des2$cumulativeRejection,
@@ -4285,11 +4222,11 @@ print.adaptDesign_mams <- function(x, ...) {
   b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
   b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
-  df2b = t(b)
-  rownames(df2b) = c("Information rate",
-                     "Cumulative rejection",
-                     "Cumulative alpha spent",
-                     "Information")
+  df2b <- t(b)
+  rownames(df2b) <- c("Information rate",
+                      "Cumulative rejection",
+                      "Cumulative alpha spent",
+                      "Information")
 
   colnames(df2b) <- paste("Stage", seq_len(ncol(df2b)), sep=" ")
 
@@ -4313,9 +4250,9 @@ print.adaptDesign_mams <- function(x, ...) {
   str5 <- paste0("Interim adaptation look: ", des3$L, ", ",
                  "z-statistic value: ", paste(round(des3$zL, 3), collapse = ", "))
 
-  df3a = data.frame(x = rep("", 6))
-  colnames(df3a) = NULL
-  rownames(df3a) = c(str1, str2, str3, str4, str5, "")
+  df3a <- data.frame(x = rep("", 6))
+  colnames(df3a) <- NULL
+  rownames(df3a) <- c(str1, str2, str3, str4, str5, "")
 
   b <- data.frame(informationRates = des3$informationRates,
                   efficacyBounds = des3$efficacyBounds,
@@ -4328,10 +4265,10 @@ print.adaptDesign_mams <- function(x, ...) {
   b[j2] <- lapply(b[j2], formatC, format = "f", digits = 2)
   b[j3] <- lapply(b[j3], formatC, format = "f", digits = 3)
 
-  df3b = t(b)
-  rownames(df3b) = c("Information rate",
-                     "Efficacy bounds (Z)",
-                     "Information")
+  df3b <- t(b)
+  rownames(df3b) <- c("Information rate",
+                      "Efficacy bounds (Z)",
+                      "Information")
 
   colnames(df3b) <- paste("Stage", seq_len(ncol(df3b)), sep=" ")
 
