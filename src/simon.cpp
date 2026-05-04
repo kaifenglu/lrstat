@@ -564,7 +564,7 @@ ListCpp simonBayesAnalysiscpp(
 //'
 //' @examples
 //'
-//' a = simonBayesAnalysis(
+//' a <- simonBayesAnalysis(
 //'   nstrata = 10,
 //'   r = c(8,0,1,1,6,2,0,0,3,3),
 //'   n = c(19,10,26,8,14,7,8,5,4,14),
@@ -1081,7 +1081,7 @@ ListCpp simonBayesSimcpp(
 //'
 //' @examples
 //'
-//' sim1 = simonBayesSim(
+//' sim1 <- simonBayesSim(
 //'   p = c(0.25, 0.25, 0.05),
 //'   accrualIntensity = 5,
 //'   stratumFraction = c(1/3, 1/3, 1/3),
