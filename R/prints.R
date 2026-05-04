@@ -32,7 +32,7 @@ print.design <- function(x, ...) {
                  round(a$alpha, 4))
 
   if (x$settings$typeBetaSpending != 'none' ||
-      (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+      (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
     str3 <- paste0(str3, ", ",
                    "attained alpha: ", round(a$attainedAlpha, 4))
   }
@@ -134,7 +134,7 @@ print.design <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (x$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df <- t(b)
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
@@ -379,7 +379,7 @@ print.adaptDesign <- function(x, ...) {
   b[1:3] <- lapply(b[1:3], formatC, format = "f", digits = 3)
   b[4] <- lapply(b[4], formatC, format = "f", digits = 2)
 
-  if (!all(des1$futilityBounds[1:(des1$kMax-1)] == -6)) {
+  if (!all(des1$futilityBounds[1:(des1$kMax-1)] == -8)) {
     df1b <- t(b)
     rownames(df1b) <- c("Information rate",
                         "Efficacy boundary (Z)",
@@ -450,7 +450,7 @@ print.adaptDesign <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (des2$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(des2$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(des2$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df2b <- t(b)
       rownames(df2b) <- c("Information rate",
                           "Efficacy boundary (Z)",
@@ -512,7 +512,7 @@ print.adaptDesign <- function(x, ...) {
   b[1:3] <- lapply(b[1:3], formatC, format = "f", digits = 3)
   b[4] <- lapply(b[4], formatC, format = "f", digits = 2)
 
-  if (!all(des3$futilityBounds[1:(des3$kMax-1)] == -6)) {
+  if (!all(des3$futilityBounds[1:(des3$kMax-1)] == -8)) {
     df3b <- t(b)
     rownames(df3b) <- c("Information rate",
                         "Efficacy boundary (Z)",
@@ -722,7 +722,7 @@ print.lrpower <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (x$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df <- t(b)
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
@@ -1119,7 +1119,7 @@ print.nbpower <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (x$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df <- t(b)
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
@@ -1633,7 +1633,7 @@ print.nbpower1s <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (x$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df <- t(b)
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
@@ -1872,7 +1872,7 @@ print.kmpower <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (x$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df <- t(b)
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
@@ -2111,7 +2111,7 @@ print.rmpower <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (x$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df <- t(b)
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
@@ -2955,7 +2955,7 @@ print.kmpower1s <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (x$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df <- t(b)
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
@@ -3194,7 +3194,7 @@ print.rmpower1s <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (x$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(x$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df <- t(b)
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
@@ -3827,7 +3827,7 @@ print.adaptDesign_seamless <- function(x, ...) {
     b[j4] <- lapply(b[j4], formatC, format = "f", digits = 4)
 
     if (des2$settings$typeBetaSpending != 'none' ||
-        (k > 1 && any(des2$byStageResults$futilityBounds[1:(k-1)] > -6))) {
+        (k > 1 && any(des2$byStageResults$futilityBounds[1:(k-1)] > -8))) {
       df2b <- t(b)
       rownames(df2b) <- c("Information rate",
                           "Efficacy boundary (Z)",
