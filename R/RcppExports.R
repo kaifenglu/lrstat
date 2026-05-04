@@ -46,7 +46,7 @@
 #'   trial. Cumulative alpha spent up to each stage.
 #' @param futilityBounds	The lower boundaries on the z-test statistic scale
 #'   for futility stopping for the primary trial. Defaults to
-#'   \code{rep(-6, kMax-1)} if left unspecified.
+#'   \code{rep(-8, kMax-1)} if left unspecified.
 #' @param typeBetaSpending The type of beta spending for the primary trial.
 #'   One of the following:
 #'   \code{"sfOF"} for O'Brien-Fleming type spending function,
@@ -2437,7 +2437,7 @@ errorSpent <- function(t, error = 0.025, sf = "sfOF", sfpar = NA_real_) {
 #'
 #' @param b Upper boundaries on the z-test statistic scale.
 #' @param a Lower boundaries on the z-test statistic scale. Defaults to
-#'   \code{c(rep(-6.0, kMax-1), b[kMax])} if left unspecified, where
+#'   \code{c(rep(-8.0, kMax-1), b[kMax])} if left unspecified, where
 #'   \code{kMax = length(b)}.
 #' @param theta Stagewise parameter of interest, e.g., \code{-U/V} for
 #'   weighted log-rank test, where \code{U} is the mean and \code{V} is
@@ -2927,7 +2927,7 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #'   primary trial. Represents the cumulative alpha spent up to each stage.
 #' @param futilityBounds The lower boundaries on the z-test statistic scale
 #'   for futility stopping for the primary trial. Defaults to
-#'   \code{rep(-6, kMax-1)} if left unspecified.
+#'   \code{rep(-8, kMax-1)} if left unspecified.
 #' @param futilityCP The conditional power-based futility bounds for the
 #'   primary trial.
 #' @param futilityTheta The parameter value-based futility bounds for the
@@ -2972,7 +2972,7 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 #' @param futilityBoundsNew The lower boundaries on the z-test statistic
 #'   scale for futility stopping for the secondary trial. Defaults to
-#'   \code{rep(-6, kNew-1)} if left unspecified.
+#'   \code{rep(-8, kNew-1)} if left unspecified.
 #' @param futilityCPNew The conditional power-based futility bounds for the
 #'   secondary trial.
 #' @param futilityThetaNew The parameter value-based futility bounds for the

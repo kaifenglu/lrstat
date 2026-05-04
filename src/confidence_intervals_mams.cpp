@@ -217,8 +217,8 @@ DataFrameCpp getCI_mams_cpp(
     pvalue[h] = f_pvalue_mams(0.0, level[h], r, corr_known, L, zL_vec,
                               b_matrix, I);
 
-    double left = (zLmax - 6.0) / sqrtIL;
-    double right = (zLmax + 6.0) / sqrtIL;
+    double left = (zLmax - 8.0) / sqrtIL;
+    double right = (zLmax + 8.0) / sqrtIL;
 
     // median estimate thetahat: solve f_pvalue(theta) - 0.5 = 0
     auto f_med = [&](double theta)->double {
@@ -439,11 +439,11 @@ std::pair<size_t, double> f_bwimage_mams(const double theta,
 
   double zJ;
   if (j < k1) {
-    zJ = brent(f, b[L + j - 1], 6.0, 1e-6);
+    zJ = brent(f, b[L + j - 1], 8.0, 1e-6);
   } else {
     double zLmin = *std::min_element(zL.begin(), zL.end());
-    double lo = -6.0 * std::sqrt(1.0 - r1) + zLmin * std::sqrt(r1);
-    zJ = brent(f, lo, 6.0, 1e-6);
+    double lo = -8.0 * std::sqrt(1.0 - r1) + zLmin * std::sqrt(r1);
+    zJ = brent(f, lo, 8.0, 1e-6);
   }
 
   return std::make_pair(J, zJ);
@@ -707,7 +707,7 @@ DataFrameCpp getADCI_mams_cpp(
 
     for (size_t m = 0; m < M; ++m) {
       for (size_t i = 0; i < kMax; ++i) {
-        if (!effStopping[i]) efficacyBounds1(i, m) = 6.0;
+        if (!effStopping[i]) efficacyBounds1(i, m) = 8.0;
       }
     }
   } else {
@@ -841,7 +841,7 @@ DataFrameCpp getADCI_mams_cpp(
           colptr[j] = (crit - zL[m] * sqrt_r1) / denom;
         }
       } else {
-        std::fill_n(colptr, M1, 6.0);
+        std::fill_n(colptr, M1, 8.0);
       }
     }
 
@@ -864,7 +864,7 @@ DataFrameCpp getADCI_mams_cpp(
 
     std::vector<double> zero2(M2, 0.0);
     FlatMatrix c2(M2, k2);
-    c2.fill(6.0);
+    c2.fill(8.0);
 
     std::vector<double> zscaled(M2);
     for (size_t j = 0; j < M2; ++j) zscaled[j] = zL[selectedNew2[j]] * sqrtIL;
@@ -882,7 +882,7 @@ DataFrameCpp getADCI_mams_cpp(
               colptr[j] = (col_const - zscaled[j] ) / denom;
             }
           } else {
-            std::fill_n(colptr, M2, 6.0);
+            std::fill_n(colptr, M2, 8.0);
           }
         }
 
@@ -891,7 +891,7 @@ DataFrameCpp getADCI_mams_cpp(
         return p0 - c_alpha;
       };
 
-      double cof = brent(g, 0.0, 6.0, 1e-6);
+      double cof = brent(g, 0.0, 8.0, 1e-6);
       double col_const = cof * sqrtIc[k2 - 1];
       for (size_t i = 0; i < k2; ++i) {
         double* colptr = c2.data_ptr() + i * M2;
@@ -901,7 +901,7 @@ DataFrameCpp getADCI_mams_cpp(
             colptr[j] = (col_const - zscaled[j] ) / denom;
           }
         } else {
-          std::fill_n(colptr, M2, 6.0);
+          std::fill_n(colptr, M2, 8.0);
         }
       }
     } else if (asf2 == "none") {
@@ -920,7 +920,7 @@ DataFrameCpp getADCI_mams_cpp(
         return p0 - c_alpha;
       };
 
-      double cof = brent(g, 0.0, 6.0, 1e-6);
+      double cof = brent(g, 0.0, 8.0, 1e-6);
       double col_const = cof * sqrtIc[k2 - 1];
       double* colptr = c2.data_ptr() + (k2 - 1) * M2;
       for (size_t j = 0; j < M2; ++j) {
@@ -946,7 +946,7 @@ DataFrameCpp getADCI_mams_cpp(
           return p0 - cpu0[i];
         };
 
-        double cof = brent(g, 0.0, 6.0, 1e-6);
+        double cof = brent(g, 0.0, 8.0, 1e-6);
         double col_const = cof * sqrtIc[i];
         double* colptr = c2.data_ptr() + i * M2;
         for (size_t j = 0; j < M2; ++j) {

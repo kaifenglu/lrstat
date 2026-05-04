@@ -234,7 +234,7 @@ double getCP_seamless_cpp(
 
     if (haybittle) { // Haybittle & Peto
       for (size_t i = 0; i < kMax - 1; ++i) {
-        if (!effStopping[i]) critValues[i] = 6.0;
+        if (!effStopping[i]) critValues[i] = 8.0;
       }
 
       auto f = [&](double aval)->double {
@@ -246,7 +246,7 @@ double getCP_seamless_cpp(
         return cpu - alpha;
       };
 
-      critValues[kMax-1] = brent(f, 0.0, 6.0, 1e-6);
+      critValues[kMax-1] = brent(f, 0.0, 8.0, 1e-6);
     } else {
       critValues = getBound_seamless_cpp(
         M, r, corr_known, K, infoRates, alpha, asf, parameterAlphaSpending,
@@ -257,12 +257,12 @@ double getCP_seamless_cpp(
 
   // compute transformed quantities for adaptation
   size_t k1 = K - L;
-  std::vector<double> t1(k1), b1(k1), a1(k1, -6.0), zero1(k1, 0.0);
+  std::vector<double> t1(k1), b1(k1), a1(k1, -8.0), zero1(k1, 0.0);
   for (size_t l = 0; l < k1; ++l) {
     t1[l] = (infoRates[l + L + 1] - infoRates[L]) / (1.0 - infoRates[L]);
     double r1 = infoRates[L] / infoRates[l + L + 1];
     b1[l] = (critValues[l + L + 1] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
-    if (!effStopping[l + L + 1]) b1[l] = 6.0;
+    if (!effStopping[l + L + 1]) b1[l] = 8.0;
   }
 
   a1[k1-1] = b1[k1-1];

@@ -103,7 +103,7 @@ ListCpp lrsimcpp(
 
   std::vector<double> futBounds = futilityBounds;
   if (K > 1 && !none_na(futilityBounds))
-    futBounds = std::vector<double>(K - 1, -6.0);
+    futBounds = std::vector<double>(K - 1, -8.0);
   if (none_na(futBounds) && futBounds.size() < K - 1)
     throw std::invalid_argument("Invalid length for futilityBounds");
   if (none_na(criticalValues) && none_na(futBounds)) {
@@ -186,7 +186,7 @@ ListCpp lrsimcpp(
   auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
 
   // calculate total alpha once
-  std::vector<double> lb(K, -6.0), zero(K, 0.0);
+  std::vector<double> lb(K, -8.0), zero(K, 0.0);
   ListCpp exitprobs = exitprobcpp(criticalValues, lb, zero, infoRates);
   auto exitUpper = exitprobs.get<std::vector<double>>("exitProbUpper");
   double alpha = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
@@ -345,7 +345,7 @@ ListCpp lrsimcpp(
       std::partial_sum(stratumFraction.begin(), stratumFraction.end(), cumF.begin());
       std::vector<int> obsEvents(K);
       std::vector<double> analysisT(K), vscore(K);
-      std::vector<double> lb(K, -6.0), zero(K, 0.0), I(K);
+      std::vector<double> lb(K, -8.0), zero(K, 0.0), I(K);
       std::vector<double> totalte; totalte.reserve(N);
       std::vector<size_t> sub; sub.reserve(N);
       std::vector<double> critValues; critValues.reserve(K);
@@ -574,7 +574,7 @@ ListCpp lrsimcpp(
                   auto v = probs.get<std::vector<double>>("exitProbUpper");
                   return std::accumulate(v.begin(), v.end(), 0.0) - alpha;
                 };
-                critValues[nstages - 1] = brent(f, 0.0, 6.0, 1e-6);
+                critValues[nstages - 1] = brent(f, 0.0, 8.0, 1e-6);
               } else { // use vscore as information for weighted log-rank
                 std::copy_n(vscore.begin(), nstages, I.begin());
                 auto f = [&](double aval)->double {
@@ -583,7 +583,7 @@ ListCpp lrsimcpp(
                   auto v = probs.get<std::vector<double>>("exitProbUpper");
                   return std::accumulate(v.begin(), v.end(), 0.0) - alpha;
                 };
-                critValues[nstages - 1] = brent(f, 0.0, 6.0, 1e-6);
+                critValues[nstages - 1] = brent(f, 0.0, 8.0, 1e-6);
               }
             }
           }

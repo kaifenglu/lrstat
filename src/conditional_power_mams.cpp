@@ -250,7 +250,7 @@ double getCP_mams_cpp(
     if (haybittle) { // Haybittle & Peto
       FlatMatrix b(M, kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
-        if (!effStopping[i]) critValues[i] = 6.0;
+        if (!effStopping[i]) critValues[i] = 8.0;
         double* colptr = b.data_ptr() + i * M;
         std::fill_n(colptr, M, critValues[i]);
       }
@@ -263,7 +263,7 @@ double getCP_mams_cpp(
         return cpu - alpha;
       };
 
-      critValues[kMax-1] = brent(f, 0.0, 6.0, 1e-6);
+      critValues[kMax-1] = brent(f, 0.0, 8.0, 1e-6);
     } else {
       critValues = getBound_mams_cpp(
         M, r, corr_known, kMax, infoRates, alpha, asf, parameterAlphaSpending,
@@ -288,7 +288,7 @@ double getCP_mams_cpp(
         colptr[m] = (cut - zL[m] * sqrt_r1) / denom;
       }
     } else {
-      std::fill_n(colptr, M, 6.0);
+      std::fill_n(colptr, M, 8.0);
     }
   }
 
@@ -337,7 +337,7 @@ double getCP_mams_cpp(
   std::vector<double> Ic(k2); // information levels for integrated trial
   std::vector<double> sqrtI2(k2), sqrtIc(k2);
   FlatMatrix c2(MNew, k2);
-  c2.fill(6.0);
+  c2.fill(8.0);
 
   for (size_t i = 0; i < k2; ++i) {
     I2[i] = INew * s2[i];
@@ -362,7 +362,7 @@ double getCP_mams_cpp(
             colptr[j] = (col_const - zscaled[j]) / denom;
           }
         } else {
-          std::fill_n(colptr, MNew, 6.0);
+          std::fill_n(colptr, MNew, 8.0);
         }
       }
 
@@ -371,7 +371,7 @@ double getCP_mams_cpp(
       return p0 - c_alpha;
     };
 
-    double cof = brent(g, 0.0, 6.0, 1e-6);
+    double cof = brent(g, 0.0, 8.0, 1e-6);
     double col_const = cof * sqrtIc[k2 - 1];
     for (size_t i = 0; i < k2; ++i) {
       double* colptr = c2.data_ptr() + i * MNew;
@@ -381,7 +381,7 @@ double getCP_mams_cpp(
           colptr[j] = (col_const - zscaled[j]) / denom;
         }
       } else {
-        std::fill_n(colptr, MNew, 6.0);
+        std::fill_n(colptr, MNew, 8.0);
       }
     }
   } else if (asf2 == "none") {
@@ -401,7 +401,7 @@ double getCP_mams_cpp(
       return p0 - c_alpha;
     };
 
-    double cof = brent(g, 0.0, 6.0, 1e-6);
+    double cof = brent(g, 0.0, 8.0, 1e-6);
     double* colptr = c2.data_ptr() + (k2 - 1) * MNew;
     double col_const = cof * sqrtIc[k2 - 1];
     for (size_t j = 0; j < MNew; ++j) {
@@ -427,7 +427,7 @@ double getCP_mams_cpp(
         return p0 - cpu0[i];
       };
 
-      double cof = brent(g, 0.0, 6.0, 1e-6);
+      double cof = brent(g, 0.0, 8.0, 1e-6);
       double col_const = cof * sqrtIc[i];
       double* colptr = c2.data_ptr() + i * MNew;
       for (size_t j = 0; j < MNew; ++j) {

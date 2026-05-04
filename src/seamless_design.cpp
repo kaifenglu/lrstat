@@ -69,7 +69,7 @@ ListCpp exitprob_seamless_cpp(
     sqrtI[k] = std::sqrt(Ivec[k]);
   }
   double sqrtI0 = sqrtI[0];
-  std::vector<double> mean0(M), lower0(M, -6.0), upper0(M, b[0]);
+  std::vector<double> mean0(M), lower0(M, -8.0), upper0(M, b[0]);
   for (size_t m = 0; m < M; ++m) {
     mean0[m] = theta[m] * sqrtI0;
   }
@@ -108,16 +108,16 @@ ListCpp exitprob_seamless_cpp(
   }
 
   std::vector<double> b1(K);
-  std::vector<double> a1(K, -6.0);
+  std::vector<double> a1(K, -8.0);
   std::vector<double> theta1(K);
   std::vector<double> p1(K);
   size_t m1 = (M > 1) ? M - 1 : 1;
   std::vector<double> mean(m1);
-  std::vector<double> lower(m1, -6.0);
+  std::vector<double> lower(m1, -8.0);
   std::vector<double> upper(m1);
-  std::vector<double> breaks0 = {-6.0, 6.0};
-  std::vector<double> breaks1 = {b[0], 6.0};
-  std::vector<double> breaks = {-6.0, b[0]};
+  std::vector<double> breaks0 = {-8.0, 8.0};
+  std::vector<double> breaks1 = {b[0], 8.0};
+  std::vector<double> breaks = {-8.0, b[0]};
 
   for (size_t m = 0; m < M; ++m) { // loop over the selected arm in phase 2
     double mu = theta[m] * sqrtI0;
@@ -140,7 +140,7 @@ ListCpp exitprob_seamless_cpp(
         }
         // upper = z0 for all
         std::fill_n(upper.data(), M - 1, z0);
-        // lower already filled with -6.0; reuse it
+        // lower already filled with -8.0; reuse it
         PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1,
                                     1024, 16384, 8, 1e-4, 0.0, 314159, true);
         return out.prob * boost_dnorm(z0, mu, 1.0);
@@ -164,7 +164,7 @@ ListCpp exitprob_seamless_cpp(
     (double z0, std::vector<double>& out)->void {
       for (size_t k = 0; k < K; ++k) {
         double val = (b[k+1] * sqrtI[k+1] - z0 * sqrtI0) / sqrtI1[k];
-        if (val < -6.0) val = -6.0;
+        if (val < -8.0) val = -8.0;
         b1[k] = val;
       }
       ListCpp probs = exitprobcpp(b1, a1, theta1, I1);
@@ -452,7 +452,7 @@ std::vector<double> getBound_seamless_cpp(
   std::vector<double> zero(M, 0.0);
 
   if (asf == "none") {
-    for (size_t i = 0; i < kMax-1; ++i) criticalValues[i] = 6.0;
+    for (size_t i = 0; i < kMax-1; ++i) criticalValues[i] = 8.0;
 
     auto f = [&](double aval)->double {
       criticalValues[kMax-1] = aval;
@@ -463,7 +463,7 @@ std::vector<double> getBound_seamless_cpp(
       return cpu - alpha;
     };
 
-    criticalValues[kMax-1] = brent(f, 0.0, 6.0, 1e-6);
+    criticalValues[kMax-1] = brent(f, 0.0, 8.0, 1e-6);
     return subset(criticalValues, 0, K);
   }
 
@@ -483,7 +483,7 @@ std::vector<double> getBound_seamless_cpp(
     auto f = [&](double aval)->double {
       for (size_t i = 0; i < kMax; ++i) {
         u[i] = aval * u0[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) u[i] = 8.0;
       }
 
       auto probs = exitprob_seamless_cpp(M, r, zero, corr_known, kMax - 1,
@@ -496,7 +496,7 @@ std::vector<double> getBound_seamless_cpp(
     double cwt = brent(f, 0.0, 10.0, 1e-6);
     for (size_t i = 0; i < kMax; ++i) {
       double val = cwt * u0[i];
-      criticalValues[i] = effStopping[i] ? val : 6.0;
+      criticalValues[i] = effStopping[i] ? val : 8.0;
     }
     return subset(criticalValues, 0, K);
   }
@@ -508,7 +508,7 @@ std::vector<double> getBound_seamless_cpp(
     if (asf == "user") cumAlpha = userAlphaSpending[0];
     else cumAlpha = errorSpentcpp(spendTime[0], alpha, asf, parameterAlphaSpending);
 
-    if (!effStopping[0]) criticalValues[0] = 6.0;
+    if (!effStopping[0]) criticalValues[0] = 8.0;
     else {
       FlatMatrix sigma(M, M);
       double rho = corr_known ? r / (r + 1.0) : 0;
@@ -529,7 +529,7 @@ std::vector<double> getBound_seamless_cpp(
                                     parameterAlphaSpending);
 
       if (!effStopping[k1]) {
-        criticalValues[k1] = 6.0;
+        criticalValues[k1] = 8.0;
         continue;
       }
 
@@ -544,16 +544,16 @@ std::vector<double> getBound_seamless_cpp(
         return cpu - cumAlpha;
       };
 
-      double f_6 = f(6.0);
-      if (f_6 > 0.0) { // no alpha spent at current visit
-        criticalValues[k1] = 6.0;
+      double f_8 = f(8.0);
+      if (f_8 > 0.0) { // no alpha spent at current visit
+        criticalValues[k1] = 8.0;
       } else {
         auto f_for_brent = [&](double x)->double {
-          if (x == 6.0) return f_6; // avoid recomputation at 6.0
+          if (x == 8.0) return f_8; // avoid recomputation at 8.0
           return f(x);
         };
 
-        criticalValues[k1] = brent(f_for_brent, 0.0, 6.0, 1e-6);
+        criticalValues[k1] = brent(f_for_brent, 0.0, 8.0, 1e-6);
       }
     }
 
@@ -802,7 +802,7 @@ ListCpp getDesign_seamless_cpp(
 
     if (haybittle) { // Haybittle & Peto
       for (size_t i = 0; i < kMax - 1; ++i) {
-        if (!effStopping[i]) critValues[i] = 6.0;
+        if (!effStopping[i]) critValues[i] = 8.0;
       }
 
       auto f = [&](double aval)->double {
@@ -814,7 +814,7 @@ ListCpp getDesign_seamless_cpp(
         return cpu - alpha;
       };
 
-      critValues[kMax-1] = brent(f, 0.0, 6.0, 1e-6);
+      critValues[kMax-1] = brent(f, 0.0, 8.0, 1e-6);
     } else {
       critValues = getBound_seamless_cpp(
         M, r, corr_known, K, infoRates, alpha, asf, parameterAlphaSpending,
@@ -844,7 +844,7 @@ ListCpp getDesign_seamless_cpp(
       return overallReject - (1.0 - beta);
     };
 
-    double drift = brent(f, 0.0, 6.0, 1e-6);
+    double drift = brent(f, 0.0, 8.0, 1e-6);
     IMax1 = sq(drift / maxtheta);
     std::vector<double> info(kMax);
     for (size_t i = 0; i < kMax; ++i) info[i] = infoRates[i] * IMax1;
@@ -872,7 +872,7 @@ ListCpp getDesign_seamless_cpp(
   double overallReject = cpu[kMax-1];
 
   for (size_t i = 0; i < kMax; ++i) {
-    if (critValues[i] == 6.0) effStopping[i] = 0;
+    if (critValues[i] == 8.0) effStopping[i] = 0;
   }
 
   auto selectAsBest = probs.get<std::vector<double>>("selectAsBest");
@@ -1298,7 +1298,7 @@ ListCpp adaptDesign_seamless_cpp(
 
     if (haybittle) { // Haybittle & Peto
       for (size_t i = 0; i < kMax - 1; ++i) {
-        if (!effStopping[i]) critValues[i] = 6.0;
+        if (!effStopping[i]) critValues[i] = 8.0;
       }
 
       auto f = [&](double aval)->double {
@@ -1310,7 +1310,7 @@ ListCpp adaptDesign_seamless_cpp(
         return cpu - alpha;
       };
 
-      critValues[kMax-1] = brent(f, 0.0, 6.0, 1e-6);
+      critValues[kMax-1] = brent(f, 0.0, 8.0, 1e-6);
     } else {
       critValues = getBound_seamless_cpp(
         M, r, corr_known, K, infoRates, alpha, asf, parameterAlphaSpending,
@@ -1326,12 +1326,12 @@ ListCpp adaptDesign_seamless_cpp(
   double alpha1 = missingCriticalValues ? alpha : cumAlphaSpent[kMax-1];
 
   size_t k1 = K - L;
-  std::vector<double> t1(k1), b1(k1), a1(k1, -6.0), zero1(k1, 0.0);
+  std::vector<double> t1(k1), b1(k1), a1(k1, -8.0), zero1(k1, 0.0);
   for (size_t l = 0; l < k1; ++l) {
     t1[l] = (infoRates[l + L + 1] - infoRates[L]) / (1.0 - infoRates[L]);
     double r1 = infoRates[L] / infoRates[l + L + 1];
     b1[l] = (critValues[l + L + 1] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
-    if (!effStopping[l + L + 1]) b1[l] = 6.0;
+    if (!effStopping[l + L + 1]) b1[l] = 8.0;
   }
 
   a1[k1-1] = b1[k1-1];
@@ -1422,11 +1422,11 @@ ListCpp adaptDesign_seamless_cpp(
     bc[i] = critValues[i];
   }
   for (size_t i = L + 1; i < kc; ++i) {
-    if (b2[i - L - 1] != 6.0) {
+    if (b2[i - L - 1] != 8.0) {
       double r1 = IL / Ic[i];
       bc[i] = zL * std::sqrt(r1) + b2[i - L - 1] * std::sqrt(1.0 - r1);
     } else {
-      bc[i] = 6.0;
+      bc[i] = 8.0;
     }
   }
 

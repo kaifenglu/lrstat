@@ -1354,7 +1354,7 @@ IntMatrix fseqboncpp1(
     for (size_t j = 0; j < m; ++j) u_pre[j].resize(k1);
 
     // Preallocated helper vectors reused for "resuse" branch
-    std::vector<double> l_vec(k1, -6.0);
+    std::vector<double> l_vec(k1, -8.0);
     std::vector<double> theta_vec(k1, 0.0);
 
     // pointers to idx2
@@ -1404,15 +1404,15 @@ IntMatrix fseqboncpp1(
               return cpu - cumAlpha;
             };
 
-            double g_6 = g(6.0);
-            if (g_6 > 0.0) { // no alpha spent at current visit
-              u_vec[l] = 6.0;
+            double g_8 = g(8.0);
+            if (g_8 > 0.0) { // no alpha spent at current visit
+              u_vec[l] = 8.0;
             } else {
               auto g_for_brent = [&](double aval)->double {
-                if (aval == 6.0) return g_6; // avoid recomputation at 6.0
+                if (aval == 8.0) return g_8; // avoid recomputation at 8.0
                 return g(aval);
               };
-              u_vec[l] = brent(g_for_brent, -5.0, 6.0, 1e-6);
+              u_vec[l] = brent(g_for_brent, -5.0, 8.0, 1e-6);
             }
           }
 

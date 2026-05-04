@@ -168,10 +168,10 @@ DataFrameCpp getCI_seamless_cpp(
 
   double cilevel = 1.0 - 2.0 * alpha;
 
-  // initial bracketing interval for theta: (zL +/- 6) / sqrt(I_L)
+  // initial bracketing interval for theta: (zL +/- 8) / sqrt(I_L)
   double sqrtIL = std::sqrt(I[L]);
-  double left = (zL - 6.0) / sqrtIL;
-  double right = (zL + 6.0) / sqrtIL;
+  double left = (zL - 8.0) / sqrtIL;
+  double right = (zL + 8.0) / sqrtIL;
   double tol = 1.0e-6;
 
   // median-unbiased estimate thetahat: solve f_pvalue(theta) - 0.5 = 0
@@ -333,7 +333,7 @@ std::pair<size_t, double> f_bwimage_seamless(const double theta,
   }
 
   std::vector<double> b1(k1);
-  std::vector<double> a1(k1, -6.0);
+  std::vector<double> a1(k1, -8.0);
   std::vector<double> mu(k1, theta);
   for (size_t l = 0; l < k1; ++l) {
     double r1 = I[L] / I[l + L + 1];
@@ -363,11 +363,11 @@ std::pair<size_t, double> f_bwimage_seamless(const double theta,
     };
 
     if (j < k1) {
-      zJ = brent(f, b[L + j], 6.0, 1e-6);
+      zJ = brent(f, b[L + j], 8.0, 1e-6);
     } else {
       double r1 = I[L] / I[L + j];
-      double lo = -6.0 * std::sqrt(1.0 - r1) + zL * std::sqrt(r1);
-      zJ = brent(f, lo, 6.0, 1e-6);
+      double lo = -8.0 * std::sqrt(1.0 - r1) + zL * std::sqrt(r1);
+      zJ = brent(f, lo, 8.0, 1e-6);
     }
   }
 
@@ -622,17 +622,17 @@ DataFrameCpp getADCI_seamless_cpp(
       double t1 = (infoRates[l + L + 1] - infoRates[L]) / (1.0 - infoRates[L]);
       double r1 = infoRates[L] / infoRates[l + L + 1];
       b2[l] = (b[l + L + 1] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
-      if (!effStopping[l + L + 1]) b2[l] = 6.0;
+      if (!effStopping[l + L + 1]) b2[l] = 8.0;
       I2[l] = INew * t1;
     }
   } else { // conditional type I error
     size_t k1 = K - L;
-    std::vector<double> t1(k1), b1(k1), a1(k1, -6.0);
+    std::vector<double> t1(k1), b1(k1), a1(k1, -8.0);
     for (size_t l = 0; l < k1; ++l) {
       t1[l] = (infoRates[l + L + 1] - infoRates[L]) / (1.0 - infoRates[L]);
       double r1 = infoRates[L] / infoRates[l + L + 1];
       b1[l] = (b[l + L + 1] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
-      if (!effStopping[l + L + 1]) b1[l] = 6.0;
+      if (!effStopping[l + L + 1]) b1[l] = 8.0;
     }
 
     std::vector<double> zero1(k1, 0.0);

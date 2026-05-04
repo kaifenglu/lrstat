@@ -306,7 +306,7 @@ double getCPcpp(
   // ----------- End of Input Validation ----------- //
 
   // obtain critical values for the primary trial
-  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   double alpha1 = alpha;
   if (missingCriticalValues) {
@@ -323,7 +323,7 @@ double getCPcpp(
       std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
         u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) u[i] = 8.0;
       }
 
       auto f = [&](double aval)->double {
@@ -334,7 +334,7 @@ double getCPcpp(
         return cpu - alpha;
       };
 
-      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+      critValues[kMax-1] = brent(f, -5.0, 8.0, 1e-6);
     } else {
       critValues = getBoundcpp(kMax, infoRates, alpha, asf,
                                parameterAlphaSpending, userAlphaSpending,
@@ -342,7 +342,7 @@ double getCPcpp(
     }
   } else {
     for (size_t i = 0; i < kMax; ++i) {
-      if (!effStopping[i]) critValues[i] = 6.0;
+      if (!effStopping[i]) critValues[i] = 8.0;
     }
     ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
     auto v = probs.get<std::vector<double>>("exitProbUpper");
@@ -353,7 +353,7 @@ double getCPcpp(
   std::vector<double> futBounds = futilityBounds;
   if (kMax > 1) {
     if (missingFutilityBounds && bsf == "none") {
-      futBounds = std::vector<double>(kMax, -6.0);
+      futBounds = std::vector<double>(kMax, -8.0);
       futBounds[kMax-1] = critValues[kMax-1];
     } else if (!missingFutilityBounds && futBounds.size() == kMax-1) {
       futBounds.push_back(critValues[kMax-1]);
@@ -389,12 +389,12 @@ double getCPcpp(
 
   // compute transformed quantities for adaptation
   size_t k1 = kMax - L;
-  std::vector<double> t1(k1), r1(k1), b1(k1), a1(k1, -6.0);
+  std::vector<double> t1(k1), r1(k1), b1(k1), a1(k1, -8.0);
   for (size_t l = 0; l < k1; ++l) {
     t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
     r1[l] = infoRates[L - 1] / infoRates[l + L];
     b1[l] = (critValues[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
-    if (!effStopping[l+L]) b1[l] = 6.0;
+    if (!effStopping[l+L]) b1[l] = 8.0;
   }
 
   double result = 0.0;
@@ -413,7 +413,7 @@ double getCPcpp(
     // compute a1 (futility bounds for secondary trial)
     for (size_t l = 0; l < k1; ++l) {
       a1[l] = (futBounds[l + L] - std::sqrt(r1[l]) * zL) / std::sqrt(1.0 - r1[l]);
-      if (!futStopping[l + L]) a1[l] = -6.0;
+      if (!futStopping[l + L]) a1[l] = -8.0;
     }
 
     std::vector<double> mu(k1), I2(k1);
@@ -513,7 +513,7 @@ double getCPcpp(
 //'   trial. Cumulative alpha spent up to each stage.
 //' @param futilityBounds	The lower boundaries on the z-test statistic scale
 //'   for futility stopping for the primary trial. Defaults to
-//'   \code{rep(-6, kMax-1)} if left unspecified.
+//'   \code{rep(-8, kMax-1)} if left unspecified.
 //' @param typeBetaSpending The type of beta spending for the primary trial.
 //'   One of the following:
 //'   \code{"sfOF"} for O'Brien-Fleming type spending function,

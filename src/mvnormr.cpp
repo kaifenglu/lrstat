@@ -494,7 +494,7 @@ PMVNResult pmvnormcpp(const std::vector<double>& lower,
       return p * boost_dnorm(b, 0.0, sigma_b);
     };
 
-    std::vector<double> breaks = { -6.0 * sigma_b, 0.0, 6.0 * sigma_b };
+    std::vector<double> breaks = { -8.0 * sigma_b, 0.0, 8.0 * sigma_b };
     double p = integrate3(f, breaks, 1e-6);
     return PMVNResult{p, "analytic", 0.0, 1};
   }

@@ -902,7 +902,7 @@ ListCpp kmpowercpp(
 
 
   // --- Efficacy boundaries ---
-  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
     bool haybittle = false;
@@ -918,7 +918,7 @@ ListCpp kmpowercpp(
       std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
         u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) u[i] = 8.0;
       }
 
       auto f = [&](double aval)->double {
@@ -929,7 +929,7 @@ ListCpp kmpowercpp(
         return cpu - alpha;
       };
 
-      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+      critValues[kMax-1] = brent(f, -5.0, 8.0, 1e-6);
     } else {
       critValues = getBoundcpp(kMax, infoRates, alpha, asf,
                                parameterAlphaSpending, userAlphaSpending,
@@ -948,7 +948,7 @@ ListCpp kmpowercpp(
   std::vector<double> futBounds(kMax, NaN);
   if (kMax > 1) {
     if (missingFutilityBounds && bsf == "none") {
-      futBounds = std::vector<double>(kMax, -6.0);
+      futBounds = std::vector<double>(kMax, -8.0);
       futBounds[kMax-1] = critValues[kMax-1];
     } else if (!missingFutilityBounds) {
       if (none_na(futilityBounds)) {
@@ -1056,8 +1056,8 @@ ListCpp kmpowercpp(
   for (size_t i = 0; i < kMax; ++i) {
     sdu[i] = survDiffH0 + critValues[i] / std::sqrt(I[i]);
     sdl[i] = survDiffH0 + futBounds[i] / std::sqrt(I[i]);
-    if (critValues[i] == 6.0) { sdu[i] = NaN; effStopping[i] = 0; }
-    if (futBounds[i] == -6.0) { sdl[i] = NaN; futStopping[i] = 0; }
+    if (critValues[i] == 8.0) { sdu[i] = NaN; effStopping[i] = 0; }
+    if (futBounds[i] == -8.0) { sdl[i] = NaN; futStopping[i] = 0; }
   }
 
   // --- Build output DataFrames and Lists ---
@@ -1734,7 +1734,7 @@ ListCpp kmsamplesizecpp(
 
 
   // --- Efficacy boundaries ---
-  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
     bool haybittle = false;
@@ -1750,7 +1750,7 @@ ListCpp kmsamplesizecpp(
       std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
         u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) u[i] = 8.0;
       }
 
       auto f = [&](double aval)->double {
@@ -1761,7 +1761,7 @@ ListCpp kmsamplesizecpp(
         return cpu - alpha;
       };
 
-      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+      critValues[kMax-1] = brent(f, -5.0, 8.0, 1e-6);
     } else {
       critValues = getBoundcpp(kMax, infoRates, alpha, asf,
                                parameterAlphaSpending, userAlphaSpending,
@@ -1773,7 +1773,7 @@ ListCpp kmsamplesizecpp(
   std::vector<double> futBounds(kMax, NaN);
   if (kMax > 1) {
     if (missingFutilityBounds && bsf == "none") {
-      futBounds = std::vector<double>(kMax, -6.0);
+      futBounds = std::vector<double>(kMax, -8.0);
       futBounds[kMax-1] = critValues[kMax-1];
     } else if (!missingFutilityBounds) {
       if (none_na(futilityBounds)) {
@@ -2752,7 +2752,7 @@ ListCpp kmpower1scpp(
 
 
   // --- obtain criticalValues if missing ---
-  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
     bool haybittle = false;
@@ -2768,7 +2768,7 @@ ListCpp kmpower1scpp(
       std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
         u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) u[i] = 8.0;
       }
 
       auto f = [&](double aval)->double {
@@ -2779,7 +2779,7 @@ ListCpp kmpower1scpp(
         return cpu - alpha;
       };
 
-      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+      critValues[kMax-1] = brent(f, -5.0, 8.0, 1e-6);
     } else {
       critValues = getBoundcpp(kMax, infoRates, alpha, asf,
                                parameterAlphaSpending, userAlphaSpending,
@@ -2799,7 +2799,7 @@ ListCpp kmpower1scpp(
   std::vector<double> futBounds(kMax);
   if (kMax > 1) {
     if (missingFutilityBounds && bsf == "none") {
-      futBounds = std::vector<double>(kMax, -6.0);
+      futBounds = std::vector<double>(kMax, -8.0);
       futBounds[kMax-1] = critValues[kMax-1];
     } else if (!missingFutilityBounds) {
       if (none_na(futilityBounds)) {
@@ -2890,8 +2890,8 @@ ListCpp kmpower1scpp(
   for (size_t i = 0; i < kMax; ++i) {
     survu[i] = survH0 + critValues[i] / std::sqrt(I[i]);
     survl[i] = survH0 + futBounds[i] / std::sqrt(I[i]);
-    if (critValues[i] == 6.0) { survu[i] = NaN; effStopping[i] = 0; }
-    if (futBounds[i] == -6.0) { survl[i] = NaN; futStopping[i] = 0; }
+    if (critValues[i] == 8.0) { survu[i] = NaN; effStopping[i] = 0; }
+    if (futBounds[i] == -8.0) { survl[i] = NaN; futStopping[i] = 0; }
   }
 
   // Build byStageResults DataFrameCpp
@@ -3473,7 +3473,7 @@ ListCpp kmsamplesize1scpp(
 
 
   // --- obtain criticalValues if missing ---
-  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
     bool haybittle = false;
@@ -3489,7 +3489,7 @@ ListCpp kmsamplesize1scpp(
       std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
         u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) u[i] = 8.0;
       }
 
       auto f = [&](double aval)->double {
@@ -3500,7 +3500,7 @@ ListCpp kmsamplesize1scpp(
         return cpu - alpha;
       };
 
-      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+      critValues[kMax-1] = brent(f, -5.0, 8.0, 1e-6);
     } else {
       critValues = getBoundcpp(kMax, infoRates, alpha, asf,
                                parameterAlphaSpending, userAlphaSpending,
@@ -3512,7 +3512,7 @@ ListCpp kmsamplesize1scpp(
   std::vector<double> futBounds(kMax, NaN);
   if (kMax > 1) {
     if (missingFutilityBounds && bsf == "none") {
-      futBounds = std::vector<double>(kMax, -6.0);
+      futBounds = std::vector<double>(kMax, -8.0);
       futBounds[kMax-1] = critValues[kMax-1];
     } else if (!missingFutilityBounds) {
       if (none_na(futilityBounds)) {
@@ -4354,7 +4354,7 @@ ListCpp kmpowerequivcpp(
 
 
   // obtain criticalValues if missing
-  std::vector<double> u(kMax), l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> u(kMax), l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
     bool haybittle = false;
@@ -4378,7 +4378,7 @@ ListCpp kmpowerequivcpp(
         return cpu - alpha;
       };
 
-      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+      critValues[kMax-1] = brent(f, -5.0, 8.0, 1e-6);
     } else {
       std::vector<unsigned char> effStopping(kMax, 1);
       critValues = getBoundcpp(kMax, infoRates, alpha, asf,
@@ -4387,7 +4387,7 @@ ListCpp kmpowerequivcpp(
     }
   }
 
-  std::vector<double> li(kMax, -6.0), ui(kMax, 6.0);
+  std::vector<double> li(kMax, -8.0), ui(kMax, 8.0);
   ListCpp probs = exitprobcpp(critValues, li, zero, infoRates);
   auto v = probs.get<std::vector<double>>("exitProbUpper");
   std::vector<double> cumAlphaSpent(kMax);
@@ -5208,7 +5208,7 @@ ListCpp kmsamplesizeequivcpp(
 
 
   // obtain criticalValues if missing
-  std::vector<double> u(kMax), l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> u(kMax), l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
     bool haybittle = false;
@@ -5232,7 +5232,7 @@ ListCpp kmsamplesizeequivcpp(
         return cpu - alpha;
       };
 
-      critValues[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+      critValues[kMax-1] = brent(f, -5.0, 8.0, 1e-6);
     } else {
       std::vector<unsigned char> effStopping(kMax, 1);
       critValues = getBoundcpp(kMax, infoRates, alpha, asf,

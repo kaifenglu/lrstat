@@ -131,10 +131,10 @@ DataFrameCpp getCIcpp(const size_t L,
 
   double cilevel = 1.0 - 2.0 * alpha;
 
-  // initial bracketing interval for theta: (zL +/- 6) / sqrt(I_L)
+  // initial bracketing interval for theta: (zL +/- 8) / sqrt(I_L)
   double sqrtIL = std::sqrt(I[L - 1]);
-  double left = (zL - 6.0) / sqrtIL;
-  double right = (zL + 6.0) / sqrtIL;
+  double left = (zL - 8.0) / sqrtIL;
+  double right = (zL + 8.0) / sqrtIL;
   double tol = 1.0e-6;
 
   // median-unbiased estimate thetahat: solve f_pvalue(theta) - 0.5 = 0
@@ -546,7 +546,7 @@ std::pair<size_t, double> f_bwimage(const double theta,
   }
 
   std::vector<double> b1(k1);
-  std::vector<double> a1(k1, -6.0);
+  std::vector<double> a1(k1, -8.0);
   std::vector<double> mu(k1, theta);
   for (size_t l = 0; l < k1; ++l) {
     double r1 = I[L - 1] / I[l + L];
@@ -577,11 +577,11 @@ std::pair<size_t, double> f_bwimage(const double theta,
     };
 
     if (j < k1) {
-      zJ = brent(f, b[L + j - 1], 6.0, 1e-6);
+      zJ = brent(f, b[L + j - 1], 8.0, 1e-6);
     } else {
       double r1 = I[L - 1] / I[L + j - 1];
-      double lo = -6.0 * std::sqrt(1.0 - r1) + zL * std::sqrt(r1);
-      zJ = brent(f, lo, 6.0, 1e-6);
+      double lo = -8.0 * std::sqrt(1.0 - r1) + zL * std::sqrt(r1);
+      zJ = brent(f, lo, 8.0, 1e-6);
     }
   }
 
@@ -796,7 +796,7 @@ DataFrameCpp getADCIcpp(
 
 
   // obtain critical values for the primary trial
-  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> b = criticalValues;
   double alpha1 = alpha;
   if (missingCriticalValues) {
@@ -813,7 +813,7 @@ DataFrameCpp getADCIcpp(
       std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
         u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) u[i] = 8.0;
       }
 
       auto f = [&](double aval)->double {
@@ -824,14 +824,14 @@ DataFrameCpp getADCIcpp(
         return cpu - alpha;
       };
 
-      b[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+      b[kMax-1] = brent(f, -5.0, 8.0, 1e-6);
     } else {
       b = getBoundcpp(kMax, infoRates, alpha, asf, parameterAlphaSpending,
                       std::vector<double>{}, spendTime, effStopping);
     }
   } else {
     for (size_t i = 0; i < kMax; ++i) {
-      if (!effStopping[i]) b[i] = 6.0;
+      if (!effStopping[i]) b[i] = 8.0;
     }
     ListCpp probs = exitprobcpp(b, l, zero, infoRates);
     auto v = probs.get<std::vector<double>>("exitProbUpper");
@@ -850,17 +850,17 @@ DataFrameCpp getADCIcpp(
       double t1 = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       double r1 = infoRates[L - 1] / infoRates[l + L];
       b2[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
-      if (!effStopping[l + L]) b2[l] = 6.0;
+      if (!effStopping[l + L]) b2[l] = 8.0;
       I2[l] = INew * t1;
     }
   } else { // conditional type I error
     size_t k1 = kMax - L;
-    std::vector<double> t1(k1), b1(k1), a1(k1, -6.0);
+    std::vector<double> t1(k1), b1(k1), a1(k1, -8.0);
     for (size_t l = 0; l < k1; ++l) {
       t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       double r1 = infoRates[L - 1] / infoRates[l + L];
       b1[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
-      if (!effStopping[l + L]) b1[l] = 6.0;
+      if (!effStopping[l + L]) b1[l] = 8.0;
     }
     ListCpp probs = exitprobcpp(b1, a1, zero, t1);
     auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
@@ -1299,7 +1299,7 @@ DataFrameCpp getADRCIcpp(
 
 
   // obtain critical values for the primary trial
-  std::vector<double> l(kMax, -6.0), zero(kMax, 0.0);
+  std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> b = criticalValues;
   double alpha1 = alpha;
   if (missingCriticalValues) {
@@ -1316,7 +1316,7 @@ DataFrameCpp getADRCIcpp(
       std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
         u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 6.0;
+        if (!effStopping[i]) u[i] = 8.0;
       }
 
       auto f = [&](double aval)->double {
@@ -1327,14 +1327,14 @@ DataFrameCpp getADRCIcpp(
         return cpu - alpha;
       };
 
-      b[kMax-1] = brent(f, -5.0, 6.0, 1e-6);
+      b[kMax-1] = brent(f, -5.0, 8.0, 1e-6);
     } else {
       b = getBoundcpp(kMax, infoRates, alpha, asf, parameterAlphaSpending,
                       std::vector<double>{}, spendTime, effStopping);
     }
   } else {
     for (size_t i = 0; i < kMax; ++i) {
-      if (!effStopping[i]) b[i] = 6.0;
+      if (!effStopping[i]) b[i] = 8.0;
     }
     ListCpp probs = exitprobcpp(b, l, zero, infoRates);
     auto v = probs.get<std::vector<double>>("exitProbUpper");
@@ -1353,17 +1353,17 @@ DataFrameCpp getADRCIcpp(
       double t1 = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       double r1 = infoRates[L - 1] / infoRates[l + L];
       b2[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
-      if (!effStopping[l + L]) b2[l] = 6.0;
+      if (!effStopping[l + L]) b2[l] = 8.0;
       I2[l] = INew * t1;
     }
   } else { // conditional type I error
     size_t k1 = kMax - L;
-    std::vector<double> t1(k1), b1(k1), a1(k1, -6.0);
+    std::vector<double> t1(k1), b1(k1), a1(k1, -8.0);
     for (size_t l = 0; l < k1; ++l) {
       t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       double r1 = infoRates[L - 1] / infoRates[l + L];
       b1[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
-      if (!effStopping[l + L]) b1[l] = 6.0;
+      if (!effStopping[l + L]) b1[l] = 8.0;
     }
     ListCpp probs = exitprobcpp(b1, a1, zero, t1);
     auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
@@ -1460,7 +1460,7 @@ DataFrameCpp getADRCIcpp(
     double tol = 1.0e-6;
 
     std::vector<double> b1(k1);
-    std::vector<double> a1(k1, -6.0);
+    std::vector<double> a1(k1, -8.0);
     std::vector<double> b2_local(L2);
 
     thetahat = zL2 / sqrtI2;
@@ -1470,7 +1470,7 @@ DataFrameCpp getADRCIcpp(
       double zL1 = zL - theta * sqrtI1;
       for (size_t l = 0; l < k1; ++l) {
         b1[l] = (b[l + L] - w1[l] * zL1) / w2[l];
-        if (!effStopping[l + L]) b1[l] = 6.0;
+        if (!effStopping[l + L]) b1[l] = 8.0;
       }
       ListCpp probs = exitprobcpp(b1, a1, zero, t1);
       auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
@@ -1485,7 +1485,7 @@ DataFrameCpp getADRCIcpp(
       double zL1 = -zL + theta * sqrtI1;
       for (size_t l = 0; l < k1; ++l) {
         b1[l] = (b[l + L] - w1[l] * zL1) / w2[l];
-        if (!effStopping[l + L]) b1[l] = 6.0;
+        if (!effStopping[l + L]) b1[l] = 8.0;
       }
       ListCpp probs = exitprobcpp(b1, a1, zero, t1);
       auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
@@ -1503,7 +1503,7 @@ DataFrameCpp getADRCIcpp(
         double zL1 = zL - theta * sqrtI1;
         for (size_t l = 0; l < k1; ++l) {
           b1[l] = (u_local[l + L] - w1[l] * zL1) / w2[l];
-          if (!effStopping[l + L]) b1[l] = 6.0;
+          if (!effStopping[l + L]) b1[l] = 8.0;
         }
         ListCpp probs = exitprobcpp(b1, a1, zero, t1);
         auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
