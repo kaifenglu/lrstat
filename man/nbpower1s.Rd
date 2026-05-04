@@ -9,12 +9,14 @@ nbpower1s(
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
   futilityStopping = NA_integer_,
-  criticalValues = NA_real_,
+  criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
-  futilityBounds = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityRate = NULL,
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   lambdaH0 = NA_real_,
@@ -72,6 +74,12 @@ spent up to each stage.}
 for stopping for futility at stages \code{1, ..., kMax-1}. Defaults to
 \code{rep(-6, kMax-1)} if left unspecified. The futility bounds are
 non-binding for the calculation of critical values.}
+
+\item{futilityCP}{A vector of length \code{kMax - 1} for the futility
+bounds on the conditional power scale.}
+
+\item{futilityRate}{A vector of length \code{kMax - 1} for the
+futility bounds on the rate scale.}
 
 \item{typeBetaSpending}{The type of beta spending. One of the following:
 \code{"sfOF"} for O'Brien-Fleming type spending function,

@@ -2,7 +2,7 @@
 % Please edit documentation in R/prints.R
 \name{print.seamless}
 \alias{print.seamless}
-\title{Print Two-Stage Seamless Sequential Design}
+\title{Print Phase 2/3 Seamless Design}
 \usage{
 \method{print}{seamless}(x, ...)
 }
@@ -16,7 +16,7 @@ A tabular printout of the design elements.
 }
 \description{
 Prints the stopping boundaries and power for
-two-stage seamless sequential design.
+phase 2/3 seamless design.
 }
 \author{
 Kaifeng Lu, \email{kaifenglu@gmail.com}

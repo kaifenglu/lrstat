@@ -178,7 +178,7 @@ treatment effects.
 
 # Williams design for 4 treatments
 
-(design1 = getDesignMeanDiffCarryover(
+(design1 <- getDesignMeanDiffCarryover(
   beta = 0.2, n = NA,
   meanDiff = 0.5, stDev = 1,
   design = matrix(c(1, 4, 2, 3,

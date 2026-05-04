@@ -8,7 +8,7 @@ nbsamplesizeequiv(
   beta = 0.2,
   kMax = 1L,
   informationRates = NA_real_,
-  criticalValues = NA_real_,
+  criticalValues = NULL,
   alpha = 0.05,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
@@ -28,9 +28,9 @@ nbsamplesizeequiv(
   gamma2 = 0L,
   accrualDuration = NA_real_,
   followupTime = NA_real_,
-  fixedFollowup = 0L,
+  fixedFollowup = FALSE,
   spendingTime = NA_real_,
-  rounding = 1L
+  rounding = TRUE
 )
 }
 \arguments{

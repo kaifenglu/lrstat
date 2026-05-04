@@ -32,6 +32,8 @@ getDesignMeanDiffMMRM(
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
   futilityBounds = NA_real_,
+  futilityCP = NA_real_,
+  futilityMeanDiff = NA_real_,
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   userBetaSpending = NA_real_,
@@ -133,6 +135,10 @@ spent up to each stage.}
 for stopping for futility at stages \code{1, ..., kMax-1}. Defaults to
 \code{rep(-6, kMax-1)} if left unspecified. The futility bounds are
 non-binding for the calculation of critical values.}
+
+\item{futilityCP}{The futility bounds on the conditional power scale.}
+
+\item{futilityMeanDiff}{The futility bounds on the mean difference scale.}
 
 \item{typeBetaSpending}{The type of beta spending. One of the following:
 \code{"sfOF"} for O'Brien-Fleming type spending function,

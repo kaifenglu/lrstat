@@ -10,12 +10,14 @@ lrsamplesize(
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
   futilityStopping = NA_integer_,
-  criticalValues = NA_real_,
+  criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
-  futilityBounds = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityHR = NULL,
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   userBetaSpending = NA_real_,
@@ -34,7 +36,6 @@ lrsamplesize(
   fixedFollowup = FALSE,
   rho1 = 0,
   rho2 = 0,
-  estimateHazardRatio = TRUE,
   typeOfComputation = "",
   spendingTime = NA_real_,
   rounding = TRUE
@@ -84,6 +85,12 @@ spent up to each stage.}
 for stopping for futility at stages \code{1, ..., kMax-1}. Defaults to
 \code{rep(-6, kMax-1)} if left unspecified. The futility bounds are
 non-binding for the calculation of critical values.}
+
+\item{futilityCP}{A vector of length \code{kMax - 1} for the futility
+bounds on the conditional power scale.}
+
+\item{futilityHR}{A vector of length \code{kMax - 1} for the
+futility bounds on the hazard ratio scale.}
 
 \item{typeBetaSpending}{The type of beta spending. One of the following:
 \code{"sfOF"} for O'Brien-Fleming type spending function,
@@ -152,10 +159,6 @@ weighted log-rank test. Defaults to 0 for conventional log-rank test.}
 
 \item{rho2}{The second parameter of the Fleming-Harrington family of
 weighted log-rank test. Defaults to 0 for conventional log-rank test.}
-
-\item{estimateHazardRatio}{Whether to estimate the hazard ratio from
-weighted Cox regression model and report the stopping boundaries on
-the hazard ratio scale.}
 
 \item{typeOfComputation}{The type of computation,
 either \code{"direct"} for the direct approximation method,

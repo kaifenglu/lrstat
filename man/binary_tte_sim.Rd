@@ -302,11 +302,11 @@ subjects from the analysis of the binary endpoint.
 }
 \examples{
 
-tcut = c(0, 12, 36, 48)
-surv = c(1, 0.95, 0.82, 0.74)
-lambda2 = (log(surv[1:3]) - log(surv[2:4]))/(tcut[2:4] - tcut[1:3])
+tcut <- c(0, 12, 36, 48)
+surv <- c(1, 0.95, 0.82, 0.74)
+lambda2 <- (log(surv[1:3]) - log(surv[2:4]))/(tcut[2:4] - tcut[1:3])
 
-sim1 = binary_tte_sim(
+sim1 <- binary_tte_sim(
   kMax1 = 1,
   kMax2 = 2,
   accrualTime = seq(0, 8),

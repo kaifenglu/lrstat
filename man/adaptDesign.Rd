@@ -15,12 +15,14 @@ adaptDesign(
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
   futilityStopping = NA_integer_,
-  criticalValues = NA_real_,
+  criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
-  futilityBounds = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityTheta = NULL,
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   spendingTime = NA_real_,
@@ -31,6 +33,9 @@ adaptDesign(
   futilityStoppingNew = NA_integer_,
   typeAlphaSpendingNew = "sfOF",
   parameterAlphaSpendingNew = NA_real_,
+  futilityBoundsNew = NULL,
+  futilityCPNew = NULL,
+  futilityThetaNew = NULL,
   typeBetaSpendingNew = "none",
   parameterBetaSpendingNew = NA_real_,
   userBetaSpendingNew = NA_real_,
@@ -97,6 +102,12 @@ primary trial. Represents the cumulative alpha spent up to each stage.}
 for futility stopping for the primary trial. Defaults to
 \code{rep(-6, kMax-1)} if left unspecified.}
 
+\item{futilityCP}{The conditional power-based futility bounds for the
+primary trial.}
+
+\item{futilityTheta}{The parameter value-based futility bounds for the
+primary trial.}
+
 \item{typeBetaSpending}{The type of beta spending for the primary trial.
 One of the following:
 \code{"sfOF"} for O'Brien-Fleming type spending function,
@@ -144,6 +155,16 @@ Defaults to \code{"sfOF"}.}
 \item{parameterAlphaSpendingNew}{The parameter value of alpha spending
 for the secondary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
 \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.}
+
+\item{futilityBoundsNew}{The lower boundaries on the z-test statistic
+scale for futility stopping for the secondary trial. Defaults to
+\code{rep(-6, kNew-1)} if left unspecified.}
+
+\item{futilityCPNew}{The conditional power-based futility bounds for the
+secondary trial.}
+
+\item{futilityThetaNew}{The parameter value-based futility bounds for the
+secondary trial.}
 
 \item{typeBetaSpendingNew}{The type of beta spending for the secondary
 trial. One of the following:

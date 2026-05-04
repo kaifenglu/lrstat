@@ -2,7 +2,7 @@
 % Please edit documentation in R/prints.R
 \name{print.lrsim_seamless}
 \alias{print.lrsim_seamless}
-\title{Print Simulation Results for Two-Stage Seamless Sequential Design}
+\title{Print Simulation Results for Phase 2/3 Seamless Design}
 \usage{
 \method{print}{lrsim_seamless}(x, ...)
 }

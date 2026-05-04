@@ -52,7 +52,7 @@ Simon's Bayesian basket discovery trials.
 }
 \examples{
 
-a = simonBayesAnalysis(
+a <- simonBayesAnalysis(
   nstrata = 10,
   r = c(8,0,1,1,6,2,0,0,3,3),
   n = c(19,10,26,8,14,7,8,5,4,14),

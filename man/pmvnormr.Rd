@@ -5,8 +5,8 @@
 \title{Multivariate Normal Probabilities over a Hyperrectangle}
 \usage{
 pmvnormr(
-  lower,
-  upper,
+  lower = NULL,
+  upper = NULL,
   mean = NULL,
   sigma,
   n0 = 1024,

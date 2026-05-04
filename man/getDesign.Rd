@@ -12,12 +12,14 @@ getDesign(
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
   futilityStopping = NA_integer_,
-  criticalValues = NA_real_,
+  criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
-  futilityBounds = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityTheta = NULL,
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   userBetaSpending = NA_real_,
@@ -73,6 +75,10 @@ spent up to each stage.}
 for stopping for futility at stages \code{1, ..., kMax-1}. Defaults to
 \code{rep(-6, kMax-1)} if left unspecified. The futility bounds are
 non-binding for the calculation of critical values.}
+
+\item{futilityCP}{The futility bounds on the conditional power scale.}
+
+\item{futilityTheta}{The futility bounds on the parameter scale.}
 
 \item{typeBetaSpending}{The type of beta spending. One of the following:
 \code{"sfOF"} for O'Brien-Fleming type spending function,
@@ -168,6 +174,34 @@ Obtains the maximum information and stopping boundaries
 for a generic group sequential design assuming a constant treatment
 effect, or obtains the power given the maximum information and
 stopping boundaries.
+}
+\details{
+The function determines efficacy and futility bounds based on the inputs
+provided, following a clear priority order.
+
+\strong{Efficacy bounds:}
+If \code{criticalValues} are supplied, they take precedence and all
+alpha-spending parameters are ignored. Otherwise, efficacy bounds are
+derived from the specified alpha-spending function.
+
+\strong{Futility bounds:}
+Futility inputs are evaluated in the following order of priority:
+\enumerate{
+\item If \code{futilityBounds} are provided, they override all other
+futility-related inputs (\code{futilityCP}, \code{futilityTheta},
+and beta-spending parameters).
+
+\item If \code{futilityBounds} are not provided but \code{futilityCP}
+is specified, then \code{futilityTheta} and beta-spending parameters
+are ignored.
+
+\item If only \code{futilityTheta} is provided, beta-spending parameters
+are ignored.
+
+\item If none of \code{futilityBounds}, \code{futilityCP},
+or \code{futilityTheta} are specified, futility bounds are computed
+using the beta-spending approach.
+}
 }
 \examples{
 

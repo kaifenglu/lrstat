@@ -215,7 +215,7 @@ the analyses can be planned to occur at specified calendar times.
 }
 \examples{
 
-sim1 = lrsim2e(
+sim1 <- lrsim2e(
   kMax = 3,
   kMaxpfs = 2,
   allocation1 = 2,

@@ -262,7 +262,7 @@ specified calendar times.
 }
 \examples{
 
-sim1 = lrsim2e3a(
+sim1 <- lrsim2e3a(
   kMax = 3,
   kMaxpfs = 2,
   allocation1 = 2,

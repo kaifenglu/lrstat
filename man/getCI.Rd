@@ -78,19 +78,19 @@ and \code{spendingTime} must be of full length \code{kMax}, and
 \examples{
 
 # group sequential design with 90\% power to detect delta = 6
-delta = 6
-sigma = 17
-n = 282
-(des1 = getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
-                  alpha = 0.05, typeAlphaSpending = "sfHSD",
-                  parameterAlphaSpending = -4))
+delta <- 6
+sigma <- 17
+n <- 282
+(des1 <- getDesign(IMax = n/(4*sigma^2), theta = delta, kMax = 3,
+                   alpha = 0.05, typeAlphaSpending = "sfHSD",
+                   parameterAlphaSpending = -4))
 
 # crossed the boundary at the second look
-L = 2
-n1 = n*2/3
-delta1 = 7
-sigma1 = 20
-zL = delta1/sqrt(4/n1*sigma1^2)
+L <- 2
+n1 <- n*2/3
+delta1 <- 7
+sigma1 <- 20
+zL <- delta1/sqrt(4/n1*sigma1^2)
 
 # confidence interval
 getCI(L = L, zL = zL, IMax = n/(4*sigma1^2),

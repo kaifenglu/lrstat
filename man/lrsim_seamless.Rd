@@ -191,7 +191,7 @@ of events (combined for an active arm and the common control) or by
 pre-specified calendar times.
 }
 \examples{
-(sim1 = lrsim_seamless(
+(sim1 <- lrsim_seamless(
   M = 2,
   K = 2,
   criticalValues = c(3.852050, 2.723811, 2.223982),

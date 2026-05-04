@@ -2,7 +2,7 @@
 % Please edit documentation in R/prints.R
 \name{print.adaptDesign_seamless}
 \alias{print.adaptDesign_seamless}
-\title{Print Adaptive Two-Stage Seamless Sequential Design}
+\title{Print Adaptive Phase 2/3 Seamless Design}
 \usage{
 \method{print}{adaptDesign_seamless}(x, ...)
 }
@@ -16,7 +16,7 @@ A tabular printout of the design elements.
 }
 \description{
 Prints the stopping boundaries and power for adaptive
-two-stage seamless sequential design.
+phase 2/3 seamless design.
 }
 \author{
 Kaifeng Lu, \email{kaifenglu@gmail.com}
