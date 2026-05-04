@@ -210,7 +210,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Number of active arms in phase 2: 2                      
 #> Randomization ratio of each active vs. control: 1        
 #> Using correlation for critical value calculation: TRUE   
-#> Max information for pairwise comparion: 54.6651641304325 
+#> Max information for pairwise comparion: 54.6651722450444 
 #> Number of looks in phase 3: 2                            
 #> Alpha spending: O'Brien-Fleming                          
 #>                                                          
@@ -225,8 +225,8 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> 
 #>                           Arm 1  Arm 2 
 #> Treatment effect (theta)  0.300  0.500 
-#> Being the best in phase 2 0.1966 0.8033
-#> Power                     0.1353 0.7646
+#> Being the best in phase 2 0.1966 0.8034
+#> Power                     0.1353 0.7647
 #> Conditional power         0.6883 0.9518
 
 # Example 2: obtain power given the maximum information
@@ -255,7 +255,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> 
 #>                           Arm 1  Arm 2 
 #> Treatment effect (theta)  0.300  0.500 
-#> Being the best in phase 2 0.1959 0.8040
+#> Being the best in phase 2 0.1959 0.8041
 #> Power                     0.1354 0.7662
 #> Conditional power         0.6909 0.9529
 ```

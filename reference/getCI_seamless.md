@@ -132,5 +132,5 @@ getCI_seamless(
   IMax = 300 / 4, informationRates = c(1/3, 2/3, 1),
   alpha = 0.025, typeAlphaSpending = "sfOF")
 #>       pvalue  thetahat cilevel       lower     upper
-#> 1 0.03423737 0.2005516    0.95 -0.01534526 0.4651547
+#> 1 0.03423737 0.2005519    0.95 -0.01534503 0.4651547
 ```

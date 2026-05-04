@@ -218,6 +218,6 @@ getADCI_mams(
   alpha = 0.025, typeAlphaSpending = "sfOF",
   MNew = 1, selected = 2, rNew = 1,
   Lc = 2, zLc = 1.667, INew = 374 / 4)
-#>   level index     pvalue  thetahat cilevel         lower     upper
-#> 1     1     2 0.02551277 0.1712693    0.95 -0.0007892748 0.3530049
+#>   level index     pvalue  thetahat cilevel       lower     upper
+#> 1     1     2 0.02551278 0.1712693    0.95 -0.00078926 0.3530049
 ```

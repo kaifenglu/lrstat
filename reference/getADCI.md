@@ -295,5 +295,5 @@ getADCI(
   INew = nNew / (4 * sigmahatc^2), informationRatesNew = s2,
   typeAlphaSpendingNew = "sfP")
 #>       pvalue thetahat cilevel    lower    upper
-#> 1 0.01237658 9.349566    0.95 1.216479 17.36533
+#> 1 0.01237657 9.349566    0.95 1.216479 17.36533
 ```

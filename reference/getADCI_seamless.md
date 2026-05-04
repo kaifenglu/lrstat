@@ -198,5 +198,5 @@ getADCI_seamless(
   alpha = 0.025, typeAlphaSpending = "OF",
   Lc = 2, zLc = -log(0.677) * sqrt(236 / 4), INew = 236 / 4)
 #>        pvalue  thetahat cilevel      lower     upper
-#> 1 0.008471388 0.2557151    0.95 0.05573209 0.4420563
+#> 1 0.008471387 0.2557151    0.95 0.05573209 0.4420563
 ```

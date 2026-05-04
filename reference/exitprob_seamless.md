@@ -119,10 +119,10 @@ b <- c(3.776605, 2.670463, 2.180424)
 # Type I error under the global null hypothesis
 p0 <- exitprob_seamless(M = 2, theta = c(0, 0), K = 2, b = b, I = I)
 cumsum(p0$exitProb)
-#> [1] 0.0001572786 0.0066431352 0.0250000087
+#> [1] 0.0001572756 0.0066431322 0.0250000060
 
 # Power under alternative: Treatment effects of 0.3 and 0.5
 p1 <- exitprob_seamless(M = 2, theta = c(0.3, 0.5), K = 2, b = b, I = I)
 cumsum(p1$exitProb)
-#> [1] 0.05477567 0.62309681 0.90160747
+#> [1] 0.05477567 0.62309680 0.90160747
 ```

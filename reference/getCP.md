@@ -118,7 +118,7 @@ getCP(
 - futilityBounds:
 
   The lower boundaries on the z-test statistic scale for futility
-  stopping for the primary trial. Defaults to `rep(-6, kMax-1)` if left
+  stopping for the primary trial. Defaults to `rep(-8, kMax-1)` if left
   unspecified.
 
 - typeBetaSpending:
@@ -307,5 +307,5 @@ getCP(INew = (335 - 266)/4,
       IMax = 298/4, kMax = 3,
       informationRates = c(179, 266, 298)/298,
       alpha = 0.025, typeAlphaSpending = "sfOF")
-#> [1] 0.5550156
+#> [1] 0.5550158
 ```

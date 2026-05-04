@@ -86,7 +86,7 @@ b <- c(3.886562, 2.748214, 2.243907)
 # Type I error under the global null hypothesis
 p0 <- exitprob_mams(M = 2, theta = c(0, 0), kMax = 3, b = b, I = I)
 cumsum(p0)
-#> [1] 0.0001007476 0.0058081554 0.0250000400
+#> [1] 0.0001007465 0.0058081554 0.0250000399
 
 # Power under alternative: Treatment effects of 0.3 and 0.5
 p1 <- exitprob_mams(M = 2, theta = c(0.3, 0.5), kMax = 3, b = b, I = I)

@@ -98,7 +98,7 @@ kmsamplesize1s(
 - futilityBounds:
 
   Lower boundaries on the z-test statistic scale for stopping for
-  futility at stages `1, ..., kMax-1`. Defaults to `rep(-6, kMax-1)` if
+  futility at stages `1, ..., kMax-1`. Defaults to `rep(-8, kMax-1)` if
   left unspecified. The futility bounds are non-binding for the
   calculation of critical values.
 
@@ -239,7 +239,7 @@ kmsamplesize1s(beta = 0.2, kMax = 2,
 #> Maximum # events: 240.2, expected # events: 228.8                                   
 #> Maximum # subjects: 468, expected # subjects: 468                                   
 #> Maximum # milestone subjects: 41.9, expected # milestone subjects: 33               
-#> Maximum information: 1130.95, expected information: 992.77                          
+#> Maximum information: 1130.96, expected information: 992.77                          
 #> Total study duration: 26.5, expected study duration: 25.5                           
 #> Accrual duration: 22, follow-up duration: 4.5, fixed follow-up: FALSE               
 #> Alpha spending: Lan-DeMets O'Brien-Fleming, beta spending: None                     
@@ -256,7 +256,7 @@ kmsamplesize1s(beta = 0.2, kMax = 2,
 #> Analysis time                24.8    26.5   
 #> Efficacy boundary (surv)     0.375   0.360  
 #> Efficacy boundary (p)        0.0122  0.0214 
-#> Information                  904.76  1130.95
+#> Information                  904.76  1130.96
 #> 
 #> $resultsUnderH0
 #>                                                                                     
@@ -266,7 +266,7 @@ kmsamplesize1s(beta = 0.2, kMax = 2,
 #> Maximum # events: 268.9, expected # events: 268.6                                   
 #> Maximum # subjects: 468, expected # subjects: 468                                   
 #> Maximum # milestone subjects: 27.4, expected # milestone subjects: 27.3             
-#> Maximum information: 1130.95, expected information: 1128.19                         
+#> Maximum information: 1130.96, expected information: 1128.19                         
 #> Total study duration: 25.8, expected study duration: 25.7                           
 #> Accrual duration: 22, follow-up duration: 3.8, fixed follow-up: FALSE               
 #> Alpha spending: Lan-DeMets O'Brien-Fleming, beta spending: None                     
@@ -283,7 +283,7 @@ kmsamplesize1s(beta = 0.2, kMax = 2,
 #> Analysis time                24.3    25.8   
 #> Efficacy boundary (surv)     0.375   0.360  
 #> Efficacy boundary (p)        0.0122  0.0214 
-#> Information                  904.76  1130.95
+#> Information                  904.76  1130.96
 #> 
 
 # Example 2: Obtains accrual intensity given power, accrual duration, and
@@ -308,7 +308,7 @@ kmsamplesize1s(beta = 0.2, kMax = 2,
 #> Maximum # events: 190.9, expected # events: 172.4                                   
 #> Maximum # subjects: 275, expected # subjects: 275                                   
 #> Maximum # milestone subjects: 92.4, expected # milestone subjects: 64.3             
-#> Maximum information: 1130.95, expected information: 992.77                          
+#> Maximum information: 1130.96, expected information: 992.77                          
 #> Total study duration: 39, expected study duration: 33.8                             
 #> Accrual duration: 22, follow-up duration: 17, fixed follow-up: FALSE                
 #> Alpha spending: Lan-DeMets O'Brien-Fleming, beta spending: None                     
@@ -325,7 +325,7 @@ kmsamplesize1s(beta = 0.2, kMax = 2,
 #> Analysis time                30.5    39.0   
 #> Efficacy boundary (surv)     0.375   0.360  
 #> Efficacy boundary (p)        0.0122  0.0214 
-#> Information                  904.76  1130.95
+#> Information                  904.76  1130.96
 #> 
 #> $resultsUnderH0
 #>                                                                                     
@@ -335,7 +335,7 @@ kmsamplesize1s(beta = 0.2, kMax = 2,
 #> Maximum # events: 193, expected # events: 192.8                                     
 #> Maximum # subjects: 275, expected # subjects: 275                                   
 #> Maximum # milestone subjects: 46.9, expected # milestone subjects: 46.7             
-#> Maximum information: 1130.95, expected information: 1128.19                         
+#> Maximum information: 1130.96, expected information: 1128.19                         
 #> Total study duration: 33.1, expected study duration: 33                             
 #> Accrual duration: 22, follow-up duration: 11.1, fixed follow-up: FALSE              
 #> Alpha spending: Lan-DeMets O'Brien-Fleming, beta spending: None                     
@@ -352,7 +352,7 @@ kmsamplesize1s(beta = 0.2, kMax = 2,
 #> Analysis time                28.9    33.1   
 #> Efficacy boundary (surv)     0.375   0.360  
 #> Efficacy boundary (p)        0.0122  0.0214 
-#> Information                  904.76  1130.95
+#> Information                  904.76  1130.96
 #> 
 
 
@@ -378,7 +378,7 @@ kmsamplesize1s(beta = 0.2, kMax = 2,
 #> Maximum # events: 164.7, expected # events: 158.9                                   
 #> Maximum # subjects: 275, expected # subjects: 275                                   
 #> Maximum # milestone subjects: 90.8, expected # milestone subjects: 57.7             
-#> Maximum information: 1130.95, expected information: 992.77                          
+#> Maximum information: 1130.96, expected information: 992.77                          
 #> Total study duration: 31.8, expected study duration: 28.2                           
 #> Accrual duration: 14.6, follow-up duration: 18, fixed follow-up: TRUE               
 #> Alpha spending: Lan-DeMets O'Brien-Fleming, beta spending: None                     
@@ -395,7 +395,7 @@ kmsamplesize1s(beta = 0.2, kMax = 2,
 #> Analysis time                25.9    31.8   
 #> Efficacy boundary (surv)     0.375   0.360  
 #> Efficacy boundary (p)        0.0122  0.0214 
-#> Information                  904.76  1130.95
+#> Information                  904.76  1130.96
 #> 
 #> $resultsUnderH0
 #>                                                                                     
@@ -405,7 +405,7 @@ kmsamplesize1s(beta = 0.2, kMax = 2,
 #> Maximum # events: 166.1, expected # events: 166                                     
 #> Maximum # subjects: 243.4, expected # subjects: 243.4                               
 #> Maximum # milestone subjects: 67.6, expected # milestone subjects: 67.1             
-#> Maximum information: 1130.95, expected information: 1128.19                         
+#> Maximum information: 1130.96, expected information: 1128.19                         
 #> Total study duration: 31.4, expected study duration: 31.3                           
 #> Accrual duration: 13.4, follow-up duration: 18, fixed follow-up: TRUE               
 #> Alpha spending: Lan-DeMets O'Brien-Fleming, beta spending: None                     
@@ -422,6 +422,6 @@ kmsamplesize1s(beta = 0.2, kMax = 2,
 #> Analysis time                25.4    31.4   
 #> Efficacy boundary (surv)     0.375   0.360  
 #> Efficacy boundary (p)        0.0122  0.0214 
-#> Information                  904.76  1130.95
+#> Information                  904.76  1130.96
 #> 
 ```

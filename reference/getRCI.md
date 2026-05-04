@@ -138,6 +138,6 @@ zL <- delta1/sqrt(4/n1*sigma1^2)
 getRCI(L = L, zL = zL, IMax = n/(4*sigma1^2),
        informationRates = c(1/3, 2/3), alpha = 0.05,
        typeAlphaSpending = "sfHSD", parameterAlphaSpending = -4)
-#>      pvalue thetahat cilevel    lower    upper
-#> 1 0.0374177        7     0.9 0.322283 13.67772
+#>       pvalue thetahat cilevel    lower    upper
+#> 1 0.03741768        7     0.9 0.322283 13.67772
 ```

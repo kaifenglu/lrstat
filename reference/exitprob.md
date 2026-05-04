@@ -18,7 +18,7 @@ exitprob(b, a = NA_real_, theta = 0L, I = NA_real_)
 - a:
 
   Lower boundaries on the z-test statistic scale. Defaults to
-  `c(rep(-6.0, kMax-1), b[kMax])` if left unspecified, where
+  `c(rep(-8.0, kMax-1), b[kMax])` if left unspecified, where
   `kMax = length(b)`.
 
 - theta:
@@ -60,7 +60,7 @@ exitprob(b = c(3.471, 2.454, 2.004), theta = -log(0.6),
 #> [1] 0.0479605 0.4927446 0.3327286
 #> 
 #> $exitProbLower
-#> [1] 2.950612e-15 5.882715e-18 1.265665e-01
+#> [1] 5.302375e-23 2.428197e-26 1.265665e-01
 #> 
 
 exitprob(b = c(2.963, 2.359, 2.014),

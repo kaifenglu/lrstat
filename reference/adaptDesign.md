@@ -132,7 +132,7 @@ adaptDesign(
 - futilityBounds:
 
   The lower boundaries on the z-test statistic scale for futility
-  stopping for the primary trial. Defaults to `rep(-6, kMax-1)` if left
+  stopping for the primary trial. Defaults to `rep(-8, kMax-1)` if left
   unspecified.
 
 - futilityCP:
@@ -203,7 +203,7 @@ adaptDesign(
 - futilityBoundsNew:
 
   The lower boundaries on the z-test statistic scale for futility
-  stopping for the secondary trial. Defaults to `rep(-6, kNew-1)` if
+  stopping for the secondary trial. Defaults to `rep(-8, kNew-1)` if
   left unspecified.
 
 - futilityCPNew:

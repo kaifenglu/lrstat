@@ -102,7 +102,7 @@ rmsamplesize(
 - futilityBounds:
 
   Lower boundaries on the z-test statistic scale for stopping for
-  futility at stages `1, ..., kMax-1`. Defaults to `rep(-6, kMax-1)` if
+  futility at stages `1, ..., kMax-1`. Defaults to `rep(-8, kMax-1)` if
   left unspecified. The futility bounds are non-binding for the
   calculation of critical values.
 
@@ -352,7 +352,7 @@ rmsamplesize(beta = 0.2, kMax = 2, informationRates = c(0.8, 1),
 #> Number of events              832.1   1250.7 
 #> Number of dropouts            52.3    83.8   
 #> Number of subjects            1745.0  1745.0 
-#> Number of milestone subjects  63.8    408.1  
+#> Number of milestone subjects  63.8    408.2  
 #> Analysis time                 23.8    36.0   
 #> Efficacy boundary (rmst diff) 0.805   0.648  
 #> Efficacy boundary (p)         0.0122  0.0214 

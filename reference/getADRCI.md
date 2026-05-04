@@ -296,5 +296,5 @@ getADRCI(
   INew = nNew / (4 * sigmahatc^2), informationRatesNew = s2,
   typeAlphaSpendingNew = "sfP")
 #>       pvalue thetahat cilevel     lower    upper
-#> 1 0.01674046 10.05375    0.95 0.6302625 18.18085
+#> 1 0.01674044 10.05375    0.95 0.6302626 18.18085
 ```
