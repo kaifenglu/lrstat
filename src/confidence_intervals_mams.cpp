@@ -42,8 +42,9 @@ double f_pvalue_mams(const double theta,
   std::memcpy(last_col, zL.data(), M * sizeof(double));
 
   std::vector<double> mu(M, theta);
-  auto exitUpper = exitprob_mams_cpp(M, r, mu, corr_known, L, upper, I);
-  double sum_up = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
+  auto probs = exitprob_mams_cpp(M, r, mu, corr_known, L, upper, I);
+  auto v = probs.get<std::vector<double>>("exitProbUpper");
+  double sum_up = std::accumulate(v.begin(), v.end(), 0.0);
   return sum_up;
 }
 
@@ -417,7 +418,8 @@ std::pair<size_t, double> f_bwimage_mams(const double theta,
 
   // compute exit probabilities for b1
   std::vector<double> mu(M, theta);
-  auto pu = exitprob_mams_cpp(M, r, mu, corr_known, k1, b1, I1);
+  auto probs = exitprob_mams_cpp(M, r, mu, corr_known, k1, b1, I1);
+  auto pu = probs.get<std::vector<double>>("exitProbUpper");
 
   // find interval containing astar
   std::vector<double> cpu(k1);
@@ -847,7 +849,8 @@ DataFrameCpp getADCI_mams_cpp(
 
     // conditional type I error
     std::vector<double> zero1(M1, 0.0);
-    auto v0 = exitprob_mams_cpp(M1, r, zero1, corr_known, k1, c1, I1);
+    auto probs = exitprob_mams_cpp(M1, r, zero1, corr_known, k1, c1, I1);
+    auto v0 = probs.get<std::vector<double>>("exitProbUpper");
     double c_alpha = std::accumulate(v0.begin(), v0.end(), 0.0);
 
     std::vector<double> cpu0(k2);
@@ -886,7 +889,8 @@ DataFrameCpp getADCI_mams_cpp(
           }
         }
 
-        auto v = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, c2, I2);
+        auto probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, c2, I2);
+        auto v = probs.get<std::vector<double>>("exitProbUpper");
         double p0 = std::accumulate(v.begin(), v.end(), 0.0);
         return p0 - c_alpha;
       };
@@ -915,7 +919,8 @@ DataFrameCpp getADCI_mams_cpp(
           colptr[j] = (col_const - zscaled[j]) / denom;
         }
 
-        auto v = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, c2, I2);
+        auto probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, c2, I2);
+        auto v = probs.get<std::vector<double>>("exitProbUpper");
         double p0 = std::accumulate(v.begin(), v.end(), 0.0);
         return p0 - c_alpha;
       };
@@ -941,7 +946,8 @@ DataFrameCpp getADCI_mams_cpp(
             colptr[j] = (col_const - zscaled[j]) / denom;
           }
 
-          auto v = exitprob_mams_cpp(M2, rNew, zero2, corr_known, i + 1, c2, I2);
+          auto probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, i + 1, c2, I2);
+          auto v = probs.get<std::vector<double>>("exitProbUpper");
           double p0 = std::accumulate(v.begin(), v.end(), 0.0);
           return p0 - cpu0[i];
         };
