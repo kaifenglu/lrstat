@@ -284,14 +284,6 @@ NULL
 #' @keywords internal
 NULL
 
-#' Parameter Description: estimateHazardRatio
-#' @param estimateHazardRatio Whether to estimate the hazard ratio from
-#'   weighted Cox regression model and report the stopping boundaries on
-#'   the hazard ratio scale.
-#' @name param_estimateHazardRatio
-#' @keywords internal
-NULL
-
 #' Parameter Description: typeOfComputation
 #' @param typeOfComputation The type of computation,
 #'   either \code{"direct"} for the direct approximation method,
