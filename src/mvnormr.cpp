@@ -499,6 +499,10 @@ PMVNResult pmvnormcpp(const std::vector<double>& lower,
     return PMVNResult{p, "analytic", 0.0, 1};
   }
 
+  for (size_t j = 0; j < J; ++j) {
+    if (lower[j] >= upper[j]) return PMVNResult{0.0, "analytic", 0.0, 1};
+  }
+
   PMVNPrecomputed P = precompute_pmvn(lower, upper, mean, sigma);
   return pmvnorm_with_precomp(P, n0, n_max, R, abseps, releps, seed, parallel);
 }
