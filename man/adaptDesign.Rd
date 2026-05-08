@@ -33,9 +33,9 @@ adaptDesign(
   futilityStoppingNew = NA_integer_,
   typeAlphaSpendingNew = "sfOF",
   parameterAlphaSpendingNew = NA_real_,
-  futilityBoundsNew = NULL,
-  futilityCPNew = NULL,
-  futilityThetaNew = NULL,
+  futilityBoundsInt = NULL,
+  futilityCPInt = NULL,
+  futilityThetaInt = NULL,
   typeBetaSpendingNew = "none",
   parameterBetaSpendingNew = NA_real_,
   userBetaSpendingNew = NA_real_,
@@ -156,15 +156,14 @@ Defaults to \code{"sfOF"}.}
 for the secondary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
 \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.}
 
-\item{futilityBoundsNew}{The lower boundaries on the z-test statistic
-scale for futility stopping for the secondary trial. Defaults to
-\code{rep(-8, kNew-1)} if left unspecified.}
+\item{futilityBoundsInt}{The futility boundaries on the z statistic
+scale for new stages of the integrated trial.}
 
-\item{futilityCPNew}{The conditional power-based futility bounds for the
-secondary trial.}
+\item{futilityCPInt}{The conditional power-based futility bounds for
+new stages of the integrated trial.}
 
-\item{futilityThetaNew}{The parameter value-based futility bounds for the
-secondary trial.}
+\item{futilityThetaInt}{The parameter value-based futility bounds for the
+new stages of the integrated trial.}
 
 \item{typeBetaSpendingNew}{The type of beta spending for the secondary
 trial. One of the following:
@@ -201,7 +200,15 @@ trial, including \code{L}, \code{zL}, \code{theta},
 \code{information}, \code{alpha}, \code{conditionalAlpha},
 \code{conditionalPower}, \code{predictivePower}, and
 and \code{MullerSchafer}.
-\item \code{secondaryTrial}: A \code{design} object for the secondary trial.
+\item \code{secondaryTrial}: A list of selected information for the secondary
+trial, including \code{overallReject}, \code{alpha}, \code{kMax},
+\code{maxInformation}, \code{informationRates}, \code{efficacyBounds},
+\code{futilityBounds}, \code{cumulativeRejection},
+\code{cumulativeFutility}, \code{cumulativeAlphaSpent},
+\code{information}, \code{typeAlphaSpending},
+\code{parameterAlphaSpending}, \code{typeBetaSpending},
+\code{parameterBetaSpending}, \code{userBetaSpending}, and
+\code{spendingTime}.
 \item \code{integratedTrial}: A list of selected information for the integrated
 trial, including \code{L}, \code{zL}, \code{theta}, \code{maxInformation},
 \code{kMax}, \code{informationRates}, \code{efficacyBounds},
@@ -259,7 +266,7 @@ deltaNew <- 10
   MullerSchafer = TRUE, kNew = 2, typeAlphaSpendingNew = "sfP"
 ))
 
-INew <- des2$secondaryTrial$overallResults$information
+INew <- des2$maxInformation
 (nNew <- ceiling(INew * 4 * sigma^2))
 (nTotal <- nL + nNew)
 

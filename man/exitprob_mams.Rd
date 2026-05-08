@@ -10,8 +10,9 @@ exitprob_mams(
   theta = NA_real_,
   corr_known = TRUE,
   kMax = NA_integer_,
-  b = NA_real_,
-  I = NA_real_
+  b = NULL,
+  a = NULL,
+  I = NULL
 )
 }
 \arguments{
@@ -29,10 +30,12 @@ as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 
 \item{kMax}{Number of sequential looks.}
 
-\item{b}{A vector of critical values (length \code{kMax}).}
+\item{b}{A vector of efficacy boundaries for the max-Z statistics.}
 
-\item{I}{A vector of information levels (length \code{kMax}) for any active
-arm versus the common control.}
+\item{a}{A vector of futility boundaries for the max-Z statistics.}
+
+\item{I}{A vector of information levels for any active arm versus the
+common control.}
 }
 \value{
 A vector \code{exitProb} of length \code{kMax} containing the
@@ -59,11 +62,11 @@ b <- c(3.886562, 2.748214, 2.243907)
 
 # Type I error under the global null hypothesis
 p0 <- exitprob_mams(M = 2, theta = c(0, 0), kMax = 3, b = b, I = I)
-cumsum(p0)
+cumsum(p0$exitProbUpper)
 
 # Power under alternative: Treatment effects of 0.3 and 0.5
 p1 <- exitprob_mams(M = 2, theta = c(0.3, 0.5), kMax = 3, b = b, I = I)
-cumsum(p1)
+cumsum(p1$exitProbUpper)
 
 }
 \references{

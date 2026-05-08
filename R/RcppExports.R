@@ -47,6 +47,10 @@
 #' @param futilityBounds	The lower boundaries on the z-test statistic scale
 #'   for futility stopping for the primary trial. Defaults to
 #'   \code{rep(-8, kMax-1)} if left unspecified.
+#' @param futilityCP The conditional power-based futility bounds for the
+#'   primary trial.
+#' @param futilityTheta The parameter value-based futility bounds for the
+#'   primary trial.
 #' @param typeBetaSpending The type of beta spending for the primary trial.
 #'   One of the following:
 #'   \code{"sfOF"} for O'Brien-Fleming type spending function,
@@ -85,6 +89,12 @@
 #' @param parameterAlphaSpendingNew The parameter value of alpha spending
 #'   for the secondary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
 #'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
+#' @param futilityBoundsInt The futility boundaries on the z statistic
+#'   scale for new stages of the integrated trial.
+#' @param futilityCPInt The conditional power-based futility bounds for
+#'   new stages of the integrated trial.
+#' @param futilityThetaInt The parameter value-based futility bounds for the
+#'   new stages of the integrated trial.
 #' @param typeBetaSpendingNew The type of beta spending for the secondary
 #'   trial. One of the following:
 #'   \code{"sfOF"} for O'Brien-Fleming type spending function,
@@ -102,8 +112,9 @@
 #' @param varianceRatio The ratio of the variance under H0 to the variance
 #'   under H1.
 #'
-#' @return The conditional power given the interim results, parameter
-#' values, and data-dependent design changes.
+#' @return A vector of two conditional powers given the interim results and
+#' parameter values, one without design change and the other with
+#' data-dependent design changes.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -188,8 +199,8 @@
 #'       alpha = 0.025, typeAlphaSpending = "sfOF")
 #'
 #' @export
-getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NA_real_, typeBetaSpending = "none", parameterBetaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = 0L, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_, varianceRatio = 1) {
-    .Call(`_lrstat_getCP`, INew, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, typeBetaSpending, parameterBetaSpending, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, typeBetaSpendingNew, parameterBetaSpendingNew, spendingTimeNew, varianceRatio)
+getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, futilityBoundsInt = NULL, futilityCPInt = NULL, futilityThetaInt = NULL, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_, varianceRatio = 1) {
+    .Call(`_lrstat_getCP`, INew, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, spendingTimeNew, varianceRatio)
 }
 
 #' @title Conditional Power for a Multi-Arm Multi-Stage Design
@@ -222,6 +233,8 @@ getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_re
 #' @param efficacyStopping Indicators of whether efficacy stopping is
 #'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 #'   if left unspecified.
+#' @param futilityStopping Indicators of whether futility stopping is
+#'   allowed at each stage of the primary trial.
 #' @param criticalValues The upper boundaries on the max z-test statistic
 #'   scale for efficacy stopping for the primary trial. If missing, boundaries
 #'   will be computed based on the specified alpha spending function.
@@ -244,6 +257,24 @@ getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_re
 #'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 #' @param userAlphaSpending The user-defined alpha spending for the
 #'   primary trial. Represents the cumulative alpha spent up to each stage.
+#' @param futilityBounds The futility boundaries on the max-z statistic
+#'   scale for the primary trial. Defaults to \code{rep(-8, kMax-1)}
+#'   if left unspecified.
+#' @param futilityCP The conditional power-based futility bounds for the
+#'   primary trial.
+#' @param futilityTheta The parameter value-based futility bounds for the
+#'   primary trial.
+#' @param typeBetaSpending The type of beta spending for the primary trial.
+#'   One of the following:
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+#'   \code{"none"} for no early futility stopping.
+#'   Defaults to \code{"none"}.
+#' @param parameterBetaSpending The parameter value of beta spending
+#'   for the primary trial. Corresponds to \eqn{\rho} for \code{"sfKD"},
+#'   and \eqn{\gamma} for \code{"sfHSD"}.
 #' @param spendingTime The error spending time of the primary trial.
 #'   Defaults to missing, in which case it is assumed to be the same as
 #'   \code{informationRates}.
@@ -259,6 +290,9 @@ getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_re
 #' @param efficacyStoppingNew The indicators of whether efficacy stopping is
 #'   allowed at each look of the secondary trial. Defaults to \code{TRUE}
 #'   if left unspecified.
+#' @param futilityStoppingNew The indicators of whether futility stopping is
+#'   allowed at each look of the secondary trial. Defaults to \code{TRUE}
+#'   if left unspecified.
 #' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 #'   trial. One of the following:
 #'   \code{"OF"} for O'Brien-Fleming boundaries,
@@ -271,12 +305,30 @@ getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_re
 #' @param parameterAlphaSpendingNew The parameter value of alpha spending
 #'   for the secondary trial. Corresponds to
 #'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
+#' @param futilityBoundsInt The futility boundaries on the max-z statistic
+#'   scale for new stages of the integrated trial.
+#' @param futilityCPInt The conditional power-based futility bounds for
+#'   new stages of the integrated trial.
+#' @param futilityThetaInt The parameter value-based futility bounds for the
+#'   new stages of the integrated trial.
+#' @param typeBetaSpendingNew The type of beta spending for the secondary
+#'   trial. One of the following:
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+#'   \code{"none"} for no early futility stopping.
+#'   Defaults to \code{"none"}.
+#' @param parameterBetaSpendingNew The parameter value of beta spending
+#'   for the secondary trial. Corresponds to \eqn{\rho} for \code{"sfKD"},
+#'   and \eqn{\gamma} for \code{"sfHSD"}.
 #' @param spendingTimeNew The error spending time of the secondary trial.
 #'   Defaults to missing, in which case it is assumed to be the same as
 #'   \code{informationRatesNew}.
 #'
-#' @return The conditional power given the interim results, parameter
-#' values, and data-dependent design changes.
+#' @return A vector of two conditional powers given the interim results and
+#' parameter values, one without design change and the other with
+#' data-dependent design changes.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -298,8 +350,8 @@ getCP <- function(INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_re
 #'   MNew = 1, selected = 2, rNew = 1)
 #'
 #' @export
-getCP_mams <- function(INew = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, MNew = NA_integer_, selected = NA_integer_, rNew = 1, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
-    .Call(`_lrstat_getCP_mams`, INew, M, r, corr_known, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, MullerSchafer, MNew, selected, rNew, kNew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
+getCP_mams <- function(INew = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, MNew = NA_integer_, selected = NA_integer_, rNew = 1, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, futilityBoundsInt = NULL, futilityCPInt = NULL, futilityThetaInt = NULL, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+    .Call(`_lrstat_getCP_mams`, INew, M, r, corr_known, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, spendingTime, MullerSchafer, MNew, selected, rNew, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, spendingTimeNew)
 }
 
 #' @title Conditional Power for a Phase 2/3 Seamless Design
@@ -701,12 +753,12 @@ getRCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationR
 #'   MullerSchafer = TRUE, kNew = 2, typeAlphaSpendingNew = "sfP"
 #' ))
 #'
-#' INew <- des2$secondaryTrial$overallResults$information
+#' INew <- des2$secondaryTrial$maxInformation
 #' (nNew <- ceiling(INew * 4 * sigma^2))
 #' (nTotal <- nL + nNew)
 #'
 #' # Monitoring the Integrated Trial
-#' s2 <- des2$secondaryTrial$byStageResults$informationRates
+#' s2 <- des2$secondaryTrial$informationRates
 #'
 #' Lc <- 2
 #' deltahatc <- 9.5
@@ -858,12 +910,12 @@ getADCI <- function(L = NA_integer_, zL = NA_real_, IMax = NA_real_, kMax = NA_i
 #'   MullerSchafer = TRUE, kNew = 2, typeAlphaSpendingNew = "sfP"
 #' ))
 #'
-#' INew <- des2$secondaryTrial$overallResults$information
+#' INew <- des2$secondaryTrial$maxInformation
 #' (nNew <- ceiling(INew * 4 * sigma^2))
 #' (nTotal <- nL + nNew)
 #'
 #' # Monitoring the Integrated Trial
-#' s2 <- des2$secondaryTrial$byStageResults$informationRates
+#' s2 <- des2$secondaryTrial$informationRates
 #'
 #' Lc <- 2
 #' deltahatc <- 9.5
@@ -2970,13 +3022,12 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #' @param parameterAlphaSpendingNew The parameter value of alpha spending
 #'   for the secondary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
 #'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
-#' @param futilityBoundsNew The lower boundaries on the z-test statistic
-#'   scale for futility stopping for the secondary trial. Defaults to
-#'   \code{rep(-8, kNew-1)} if left unspecified.
-#' @param futilityCPNew The conditional power-based futility bounds for the
-#'   secondary trial.
-#' @param futilityThetaNew The parameter value-based futility bounds for the
-#'   secondary trial.
+#' @param futilityBoundsInt The futility boundaries on the z statistic
+#'   scale for new stages of the integrated trial.
+#' @param futilityCPInt The conditional power-based futility bounds for
+#'   new stages of the integrated trial.
+#' @param futilityThetaInt The parameter value-based futility bounds for the
+#'   new stages of the integrated trial.
 #' @param typeBetaSpendingNew The type of beta spending for the secondary
 #'   trial. One of the following:
 #'   \code{"sfOF"} for O'Brien-Fleming type spending function,
@@ -3008,7 +3059,15 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #'   \code{conditionalPower}, \code{predictivePower}, and
 #'   and \code{MullerSchafer}.
 #'
-#' * \code{secondaryTrial}: A \code{design} object for the secondary trial.
+#' * \code{secondaryTrial}: A list of selected information for the secondary
+#'   trial, including \code{overallReject}, \code{alpha}, \code{kMax},
+#'   \code{maxInformation}, \code{informationRates}, \code{efficacyBounds},
+#'   \code{futilityBounds}, \code{cumulativeRejection},
+#'   \code{cumulativeFutility}, \code{cumulativeAlphaSpent},
+#'   \code{information}, \code{typeAlphaSpending},
+#'   \code{parameterAlphaSpending}, \code{typeBetaSpending},
+#'   \code{parameterBetaSpending}, \code{userBetaSpending}, and
+#'   \code{spendingTime}.
 #'
 #' * \code{integratedTrial}: A list of selected information for the integrated
 #'   trial, including \code{L}, \code{zL}, \code{theta}, \code{maxInformation},
@@ -3071,13 +3130,13 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #'   MullerSchafer = TRUE, kNew = 2, typeAlphaSpendingNew = "sfP"
 #' ))
 #'
-#' INew <- des2$secondaryTrial$overallResults$information
+#' INew <- des2$maxInformation
 #' (nNew <- ceiling(INew * 4 * sigma^2))
 #' (nTotal <- nL + nNew)
 #'
 #' @export
-adaptDesign <- function(betaNew = NA_real_, INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, futilityBoundsNew = NULL, futilityCPNew = NULL, futilityThetaNew = NULL, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, userBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_, varianceRatio = 1.0) {
-    .Call(`_lrstat_adaptDesign`, betaNew, INew, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsNew, futilityCPNew, futilityThetaNew, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaSpendingNew, spendingTimeNew, varianceRatio)
+adaptDesign <- function(betaNew = NA_real_, INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, futilityBoundsInt = NULL, futilityCPInt = NULL, futilityThetaInt = NULL, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, userBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_, varianceRatio = 1.0) {
+    .Call(`_lrstat_adaptDesign`, betaNew, INew, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaSpendingNew, spendingTimeNew, varianceRatio)
 }
 
 #' @title Stratified Difference in Milestone Survival Probabilities
@@ -5025,9 +5084,10 @@ lrsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 #'   0 is used.
 #' @param kMax Number of sequential looks.
-#' @param b A vector of critical values (length \code{kMax}).
-#' @param I A vector of information levels (length \code{kMax}) for any active
-#'   arm versus the common control.
+#' @param b A vector of efficacy boundaries for the max-Z statistics.
+#' @param a A vector of futility boundaries for the max-Z statistics.
+#' @param I A vector of information levels for any active arm versus the
+#'   common control.
 #'
 #' @details
 #' The function assumes a multivariate normal distribution for the Wald
@@ -5056,15 +5116,15 @@ lrsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
 #'
 #' # Type I error under the global null hypothesis
 #' p0 <- exitprob_mams(M = 2, theta = c(0, 0), kMax = 3, b = b, I = I)
-#' cumsum(p0)
+#' cumsum(p0$exitProbUpper)
 #'
 #' # Power under alternative: Treatment effects of 0.3 and 0.5
 #' p1 <- exitprob_mams(M = 2, theta = c(0.3, 0.5), kMax = 3, b = b, I = I)
-#' cumsum(p1)
+#' cumsum(p1$exitProbUpper)
 #'
 #' @export
-exitprob_mams <- function(M = NA_integer_, r = 1, theta = NA_real_, corr_known = TRUE, kMax = NA_integer_, b = NA_real_, I = NA_real_) {
-    .Call(`_lrstat_exitprob_mams`, M, r, theta, corr_known, kMax, b, I)
+exitprob_mams <- function(M = NA_integer_, r = 1, theta = NA_real_, corr_known = TRUE, kMax = NA_integer_, b = NULL, a = NULL, I = NULL) {
+    .Call(`_lrstat_exitprob_mams`, M, r, theta, corr_known, kMax, b, a, I)
 }
 
 #' @title Efficacy Boundaries for a Multi-Arm Multi-Stage Design
@@ -5146,6 +5206,7 @@ getBound_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_inte
 #' @param informationRates A numeric vector of information rates fixed
 #'   before the trial. If unspecified, defaults to \eqn{(1:kMax) / kMax}.
 #' @inheritParams param_efficacyStopping
+#' @inheritParams param_futilityStopping
 #' @param criticalValues The matrix of by-level upper boundaries on the
 #'   max z-test statistic scale for efficacy stopping.
 #'   The first column is for level \code{M}, the second column is for
@@ -5156,6 +5217,17 @@ getBound_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_inte
 #' @inheritParams param_typeAlphaSpending
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
+#' @param futilityBounds A numeric vector of length \code{kMax - 1}
+#'   specifying the futility boundaries on the max z-test statistic scale
+#'   for futility stopping.
+#' @param futilityCP A numeric vector of length \code{kMax - 1} specifying
+#'   the futility boundaries on the conditional power scale for futility
+#'   stopping.
+#' @param futilityTheta A numeric vector of length \code{kMax - 1} specifying
+#'   the futility boundaries on the parameter scale for futility stopping.
+#' @inheritParams param_typeBetaSpending
+#' @inheritParams param_parameterBetaSpending
+#' @inheritParams param_userBetaSpending
 #' @param spendingTime A numeric vector of length \code{kMax} specifying the
 #'   error spending time at each analysis. Values must be strictly increasing
 #'   and ends at 1. If omitted, defaults to \code{informationRates}.
@@ -5166,6 +5238,9 @@ getBound_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_inte
 #'     - \code{overallReject}: Overall probability of rejecting the global
 #'       null hypothesis.
 #'     - \code{alpha}: Overall significance level.
+#'     - \code{attainedAlpha}: The attained significance level, which is
+#'       different from the overall significance level in the presence of
+#'       futility stopping.
 #'     - \code{M}: Number of active arms.
 #'     - \code{r}: Randomization ratio per active arm versus control.
 #'     - \code{corr_known}: Whether the correlation among Wald statistics
@@ -5173,26 +5248,47 @@ getBound_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_inte
 #'     - \code{kMax}: Number of stages.
 #'     - \code{information}: Maximum information for any active arm versus
 #'       control.
+#'     - \code{expectedInformationH1}: The expected information under H1.
+#'     - \code{expectedInformationH0}: The expected information under H0.
 #'
 #' * \code{byStageResults}: A data frame containing:
 #'     - \code{informationRates}: Information rates at each analysis.
 #'     - \code{efficacyBounds}: Efficacy boundaries on the max Z-scale.
+#'     - \code{futilityBounds}: Futility boundaries on the max Z-scale.
 #'     - \code{rejectPerStage}: Probability of efficacy stopping at each stage.
+#'     - \code{futilityPerStage}: Probability of futility stopping at each stage.
 #'     - \code{cumulativeRejection}: Cumulative probability of efficacy stopping.
+#'     - \code{cumulativeFutility}: Cumulative probability of futility stopping.
 #'     - \code{cumulativeAlphaSpent}: Cumulative alpha spent.
 #'     - \code{efficacyTheta}: Efficacy boundaries on the parameter scale.
+#'     - \code{futilityTheta}: Futility boundaries on the parameter scale.
 #'     - \code{efficacyP}: Efficacy boundaries on the p-value scale.
+#'     - \code{futilityP}: Futility boundaries on the p-value scale.
 #'     - \code{information}: Cumulative information for any active arm versus
 #'       control at each analysis.
 #'     - \code{efficacyStopping}: Indicator of whether efficacy stopping
 #'       is permitted at each stage.
+#'     - \code{futilityStopping}: Indicator of whether futility stopping
+#'       is permitted at each stage.
+#'     - \code{rejectPerStageH0}: The probability for efficacy stopping
+#'       under H0.
+#'     - \code{futilityPerStageH0}: The probability for futility stopping
+#'       under H0.
+#'     - \code{cumulativeRejectionH0}: The cumulative probability for
+#'       efficacy stopping under H0.
+#'     - \code{cumulativeFutilityH0}: The cumulative probability for
+#'       futility stopping under H0.
 #'
 #' * \code{settings}: A list of input settings:
-#'     - \code{typeAlphaSpending}: Type of alpha spending function.
-#'     - \code{parameterAlphaSpending}: Parameter value for the chosen
+#'     - \code{typeAlphaSpending}: The type of alpha spending.
+#'     - \code{parameterAlphaSpending}: The parameter value for the chosen
 #'       alpha spending function.
-#'     - \code{userAlphaSpending}: User-specified alpha spending values.
-#'     - \code{spendingTime}: Error-spending times at each analysis.
+#'     - \code{userAlphaSpending}: The user-specified alpha spending values.
+#'     - \code{typeBetaSpending}: The type of beta spending.
+#'     - \code{parameterBetaSpending}: The parameter value for the chosen
+#'       beta spending function.
+#'     - \code{userBetaSpending}: The user-specified beta spending values.
+#'     - \code{spendingTime}: The error-spending time at each analysis.
 #'
 #' * \code{byLevelBounds}: A data frame containing the efficacy boundaries
 #'   for each level of testing (i.e., number of active arms remaining) and
@@ -5229,8 +5325,8 @@ getBound_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_inte
 #'   alpha = 0.025, typeAlphaSpending = "OF"))
 #'
 #' @export
-getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_) {
-    .Call(`_lrstat_getDesign_mams`, beta, IMax, theta, M, r, corr_known, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime)
+getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_) {
+    .Call(`_lrstat_getDesign_mams`, beta, IMax, theta, M, r, corr_known, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime)
 }
 
 #' @title Adaptive Multi-Arm Multi-Stage Design
@@ -5271,6 +5367,8 @@ getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M
 #' @param efficacyStopping Indicators of whether efficacy stopping is
 #'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 #'   if left unspecified.
+#' @param futilityStopping Indicators of whether futility stopping is
+#'   allowed at each stage of the primary trial.
 #' @param criticalValues The matrix of by-level upper boundaries on the
 #'   max z-test statistic scale for efficacy stopping for the primary trial.
 #'   The first column is for level \code{M}, the second column is for
@@ -5296,6 +5394,24 @@ getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M
 #'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 #' @param userAlphaSpending The user-defined alpha spending for the
 #'   primary trial. Represents the cumulative alpha spent up to each stage.
+#' @param futilityBounds The futility boundaries on the max-z statistic
+#'   scale for the primary trial. Defaults to \code{rep(-8, kMax-1)}
+#'   if left unspecified.
+#' @param futilityCP The conditional power-based futility bounds for the
+#'   primary trial.
+#' @param futilityTheta The parameter value-based futility bounds for the
+#'   primary trial.
+#' @param typeBetaSpending The type of beta spending for the primary trial.
+#'   One of the following:
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
+#'   \code{"none"} for no early futility stopping.
+#'   Defaults to \code{"none"}.
+#' @param parameterBetaSpending The parameter value of beta spending
+#'   for the primary trial. Corresponds to \eqn{\rho} for \code{"sfKD"},
+#'   and \eqn{\gamma} for \code{"sfHSD"}.
 #' @param spendingTime The error spending time of the primary trial.
 #'   Defaults to missing, in which case it is assumed to be the same as
 #'   \code{informationRates}.
@@ -5311,6 +5427,9 @@ getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M
 #' @param efficacyStoppingNew The indicators of whether efficacy stopping is
 #'   allowed at each look of the secondary trial. Defaults to \code{TRUE}
 #'   if left unspecified.
+#' @param futilityStoppingNew The indicators of whether futility stopping is
+#'   allowed at each look of the secondary trial. Defaults to \code{TRUE}
+#'   if left unspecified.
 #' @param typeAlphaSpendingNew The type of alpha spending for the secondary
 #'   trial. One of the following:
 #'   \code{"OF"} for O'Brien-Fleming boundaries,
@@ -5323,6 +5442,27 @@ getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M
 #' @param parameterAlphaSpendingNew The parameter value of alpha spending
 #'   for the secondary trial. Corresponds to
 #'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
+#' @param futilityBoundsInt The futility boundaries on the max-z statistic
+#'   scale for new stages of the integrated trial.
+#' @param futilityCPInt The conditional power-based futility bounds for
+#'   new stages of the integrated trial.
+#' @param futilityThetaInt The parameter value-based futility bounds for the
+#'   new stages of the integrated trial.
+#' @param typeBetaSpendingNew The type of beta spending for the secondary
+#'   trial. One of the following:
+#'   \code{"sfOF"} for O'Brien-Fleming type spending function,
+#'   \code{"sfP"} for Pocock type spending function,
+#'   \code{"sfKD"} for Kim & DeMets spending function,
+#'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+#'   \code{"user"} for user defined spending, and
+#'   \code{"none"} for no early futility stopping.
+#'   Defaults to \code{"none"}.
+#' @param parameterBetaSpendingNew The parameter value of beta spending
+#'   for the secondary trial. Corresponds to \eqn{\rho} for \code{"sfKD"},
+#'   and \eqn{\gamma} for \code{"sfHSD"}.
+#' @param userBetaSpendingNew The user-defined cumulative beta spending.
+#'   Represents the cumulative beta spent up to each stage of the
+#'   secondary trial.
 #' @param spendingTimeNew The error spending time of the secondary trial.
 #'   Defaults to missing, in which case it is assumed to be the same as
 #'   \code{informationRatesNew}.
@@ -5332,9 +5472,13 @@ getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M
 #' * \code{primaryTrial}: A list of selected information for the primary
 #'   trial, including \code{M}, \code{r}, \code{corr_known}, \code{L},
 #'   \code{zL}, \code{theta}, \code{maxInformation}, \code{kMax},
-#'   \code{informationRates}, \code{efficacyBounds}, \code{information},
-#'   \code{alpha}, \code{conditionalAlpha}, \code{conditionalPower},
-#'   \code{MullerSchafer}, and \code{byLevelBounds}.
+#'   \code{informationRates}, \code{efficacyBounds}, \code{futilityBounds},
+#'   \code{information}, \code{alpha}, \code{conditionalAlpha},
+#'   \code{conditionalPower}, \code{MullerSchafer}, and \code{byLevelBounds},
+#'   where \code{byLevelBounds} is a data frame with columns \code{level},
+#'   \code{stage}, and \code{efficacyBounds}, representing the efficacy
+#'   bounds for each combination of the number of active arms and
+#'   the stage of analysis in the primary trial.
 #'
 #' * \code{secondaryTrial}: A list of selected information for the secondary
 #'   trial, including \code{overallReject}, \code{alpha}, \code{M}, \code{r},
@@ -5342,14 +5486,24 @@ getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M
 #'   \code{informationRates}, \code{cumulativeRejection},
 #'   \code{cumulativeAlphaSpent}, \code{information},
 #'   \code{typeAlphaSpending}, \code{parameterAlphaSpending},
-#'   \code{spendingTime}, and \code{byHypothesisBounds}.
+#'   \code{typeBetaSpending}, \code{parameterBetaSpending},
+#'   \code{userBetaSpending}, \code{spendingTime}, and
+#'   \code{byHypothesisBounds}, where \code{byHypothesisBounds} is a
+#'   data frame with columns \code{hypothesis}, \code{stage},
+#'   \code{efficacyBounds}, and \code{futilityBounds}, representing
+#'   the efficacy and futility bounds for each hypothesis and each
+#'   stage of analysis in the secondary trial.
 #'
 #' * \code{integratedTrial}: A list of selected information for the integrated
 #'   trial, including \code{M}, \code{r}, \code{corr_known}, \code{MNew},
 #'   \code{rNew}, \code{selected}, \code{L}, \code{zL}, \code{theta},
 #'   \code{maxInformation}, \code{kMax}, \code{informationRates},
-#'   \code{efficacyBounds}, \code{information}, and
-#'   \code{byIntersectionBounds}.
+#'   \code{efficacyBounds}, \code{futilityBounds}, \code{information},
+#'   and \code{byIntersectionBounds}, where \code{byIntersectionBounds} is
+#'   a data frame with columns \code{intersectionHypothesis}, \code{stage},
+#'   and \code{efficacyBounds}, representing the efficacy bounds for
+#'   each intersection hypothesis and each stage of analysis in the
+#'   integrated trial.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -5392,8 +5546,8 @@ getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M
 #'   MNew = 1, selected = 2, rNew = 1))
 #'
 #' @export
-adaptDesign_mams <- function(betaNew = NA_real_, INew = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, MNew = NA_integer_, selected = NA_integer_, rNew = 1, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
-    .Call(`_lrstat_adaptDesign_mams`, betaNew, INew, M, r, corr_known, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, MullerSchafer, MNew, selected, rNew, kNew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
+adaptDesign_mams <- function(betaNew = NA_real_, INew = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, MNew = NA_integer_, selected = NA_integer_, rNew = 1, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, futilityBoundsInt = NULL, futilityCPInt = NULL, futilityThetaInt = NULL, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, userBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
+    .Call(`_lrstat_adaptDesign_mams`, betaNew, INew, M, r, corr_known, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, spendingTime, MullerSchafer, MNew, selected, rNew, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaSpendingNew, spendingTimeNew)
 }
 
 #' @title REML Estimates of Individual Proportions With Specified Risk

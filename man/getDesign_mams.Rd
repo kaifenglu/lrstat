@@ -14,11 +14,18 @@ getDesign_mams(
   kMax = 1L,
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
+  futilityStopping = NA_integer_,
   criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityTheta = NULL,
+  typeBetaSpending = "none",
+  parameterBetaSpending = NA_real_,
+  userBetaSpending = NA_real_,
   spendingTime = NA_real_
 )
 }
@@ -52,6 +59,9 @@ before the trial. If unspecified, defaults to \eqn{(1:kMax) / kMax}.}
 \item{efficacyStopping}{Indicators of whether efficacy stopping is allowed
 at each stage. Defaults to \code{TRUE} if left unspecified.}
 
+\item{futilityStopping}{Indicators of whether futility stopping is allowed
+at each stage. Defaults to \code{TRUE} if left unspecified.}
+
 \item{criticalValues}{The matrix of by-level upper boundaries on the
 max z-test statistic scale for efficacy stopping.
 The first column is for level \code{M}, the second column is for
@@ -80,6 +90,33 @@ and \eqn{\gamma} for \code{"sfHSD"}.}
 \item{userAlphaSpending}{The user defined alpha spending. Cumulative alpha
 spent up to each stage.}
 
+\item{futilityBounds}{A numeric vector of length \code{kMax - 1}
+specifying the futility boundaries on the max z-test statistic scale
+for futility stopping.}
+
+\item{futilityCP}{A numeric vector of length \code{kMax - 1} specifying
+the futility boundaries on the conditional power scale for futility
+stopping.}
+
+\item{futilityTheta}{A numeric vector of length \code{kMax - 1} specifying
+the futility boundaries on the parameter scale for futility stopping.}
+
+\item{typeBetaSpending}{The type of beta spending. One of the following:
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+\code{"user"} for user defined spending, and
+\code{"none"} for no early futility stopping.
+Defaults to \code{"none"}.}
+
+\item{parameterBetaSpending}{The parameter value for the beta spending.
+Corresponds to \eqn{\rho} for \code{"sfKD"}, and
+\eqn{\gamma} for \code{"sfHSD"}.}
+
+\item{userBetaSpending}{The user defined beta spending. Cumulative beta
+spent up to each stage.}
+
 \item{spendingTime}{A numeric vector of length \code{kMax} specifying the
 error spending time at each analysis. Values must be strictly increasing
 and ends at 1. If omitted, defaults to \code{informationRates}.}
@@ -92,6 +129,9 @@ An S3 object of class \code{mams} with the following components:
 \item \code{overallReject}: Overall probability of rejecting the global
 null hypothesis.
 \item \code{alpha}: Overall significance level.
+\item \code{attainedAlpha}: The attained significance level, which is
+different from the overall significance level in the presence of
+futility stopping.
 \item \code{M}: Number of active arms.
 \item \code{r}: Randomization ratio per active arm versus control.
 \item \code{corr_known}: Whether the correlation among Wald statistics
@@ -99,28 +139,49 @@ was assumed known.
 \item \code{kMax}: Number of stages.
 \item \code{information}: Maximum information for any active arm versus
 control.
+\item \code{expectedInformationH1}: The expected information under H1.
+\item \code{expectedInformationH0}: The expected information under H0.
 }
 \item \code{byStageResults}: A data frame containing:
 \itemize{
 \item \code{informationRates}: Information rates at each analysis.
 \item \code{efficacyBounds}: Efficacy boundaries on the max Z-scale.
+\item \code{futilityBounds}: Futility boundaries on the max Z-scale.
 \item \code{rejectPerStage}: Probability of efficacy stopping at each stage.
+\item \code{futilityPerStage}: Probability of futility stopping at each stage.
 \item \code{cumulativeRejection}: Cumulative probability of efficacy stopping.
+\item \code{cumulativeFutility}: Cumulative probability of futility stopping.
 \item \code{cumulativeAlphaSpent}: Cumulative alpha spent.
 \item \code{efficacyTheta}: Efficacy boundaries on the parameter scale.
+\item \code{futilityTheta}: Futility boundaries on the parameter scale.
 \item \code{efficacyP}: Efficacy boundaries on the p-value scale.
+\item \code{futilityP}: Futility boundaries on the p-value scale.
 \item \code{information}: Cumulative information for any active arm versus
 control at each analysis.
 \item \code{efficacyStopping}: Indicator of whether efficacy stopping
 is permitted at each stage.
+\item \code{futilityStopping}: Indicator of whether futility stopping
+is permitted at each stage.
+\item \code{rejectPerStageH0}: The probability for efficacy stopping
+under H0.
+\item \code{futilityPerStageH0}: The probability for futility stopping
+under H0.
+\item \code{cumulativeRejectionH0}: The cumulative probability for
+efficacy stopping under H0.
+\item \code{cumulativeFutilityH0}: The cumulative probability for
+futility stopping under H0.
 }
 \item \code{settings}: A list of input settings:
 \itemize{
-\item \code{typeAlphaSpending}: Type of alpha spending function.
-\item \code{parameterAlphaSpending}: Parameter value for the chosen
+\item \code{typeAlphaSpending}: The type of alpha spending.
+\item \code{parameterAlphaSpending}: The parameter value for the chosen
 alpha spending function.
-\item \code{userAlphaSpending}: User-specified alpha spending values.
-\item \code{spendingTime}: Error-spending times at each analysis.
+\item \code{userAlphaSpending}: The user-specified alpha spending values.
+\item \code{typeBetaSpending}: The type of beta spending.
+\item \code{parameterBetaSpending}: The parameter value for the chosen
+beta spending function.
+\item \code{userBetaSpending}: The user-specified beta spending values.
+\item \code{spendingTime}: The error-spending time at each analysis.
 }
 \item \code{byLevelBounds}: A data frame containing the efficacy boundaries
 for each level of testing (i.e., number of active arms remaining) and
