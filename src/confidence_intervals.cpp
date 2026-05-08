@@ -1044,12 +1044,12 @@ DataFrameCpp getADCIcpp(
 //'   MullerSchafer = TRUE, kNew = 2, typeAlphaSpendingNew = "sfP"
 //' ))
 //'
-//' INew <- des2$secondaryTrial$overallResults$information
+//' INew <- des2$secondaryTrial$maxInformation
 //' (nNew <- ceiling(INew * 4 * sigma^2))
 //' (nTotal <- nL + nNew)
 //'
 //' # Monitoring the Integrated Trial
-//' s2 <- des2$secondaryTrial$byStageResults$informationRates
+//' s2 <- des2$secondaryTrial$informationRates
 //'
 //' Lc <- 2
 //' deltahatc <- 9.5
@@ -1677,12 +1677,12 @@ DataFrameCpp getADRCIcpp(
 //'   MullerSchafer = TRUE, kNew = 2, typeAlphaSpendingNew = "sfP"
 //' ))
 //'
-//' INew <- des2$secondaryTrial$overallResults$information
+//' INew <- des2$secondaryTrial$maxInformation
 //' (nNew <- ceiling(INew * 4 * sigma^2))
 //' (nTotal <- nL + nNew)
 //'
 //' # Monitoring the Integrated Trial
-//' s2 <- des2$secondaryTrial$byStageResults$informationRates
+//' s2 <- des2$secondaryTrial$informationRates
 //'
 //' Lc <- 2
 //' deltahatc <- 9.5
