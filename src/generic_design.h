@@ -84,16 +84,19 @@ private:
 
 
 ListCpp getPower(
-    const double alpha,
-    const std::size_t kMax,
-    const std::vector<double>& b,
+    const double alpha2,
+    const size_t k2,
+    const std::vector<double>& critValues2,
     const std::vector<double>& theta,
-    const std::vector<double>& I,
-    const std::string& bsf,
-    const double bsfpar,
-    const std::vector<double>& st,
-    const std::vector<unsigned char>& futilityStopping,
-    const std::vector<double>& w);
+    const std::vector<double>& Ic,
+    const std::string& bsf2,
+    const double bsfpar2,
+    const std::vector<double>& st2,
+    const std::vector<unsigned char>& futStopping2,
+    const std::vector<double>& wc,
+    const double IL = 0,
+    const double thetaL = 0,
+    const double zL = 0);
 
 
 ListCpp getDesigncpp(
@@ -164,9 +167,9 @@ ListCpp adaptDesigncpp(
     const std::vector<unsigned char>& futilityStoppingNew,
     const std::string& typeAlphaSpendingNew,
     const double parameterAlphaSpendingNew,
-    const std::vector<double>& futilityBoundsNew,
-    const std::vector<double>& futilityCPNew,
-    const std::vector<double>& futilityThetaNew,
+    const std::vector<double>& futilityBoundsInt,
+    const std::vector<double>& futilityCPInt,
+    const std::vector<double>& futilityThetaInt,
     const std::string& typeBetaSpendingNew,
     const double parameterBetaSpendingNew,
     const std::vector<double>& userBetaSpendingNew,
