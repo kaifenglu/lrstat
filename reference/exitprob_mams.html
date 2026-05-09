@@ -55,8 +55,9 @@ multi-stage design.</p>
 <span>  theta <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  corr_known <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  kMax <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
-<span>  b <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
-<span>  I <span class="op">=</span> <span class="cn">NA_real_</span></span>
+<span>  b <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  a <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  I <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -89,12 +90,16 @@ as \(r / (r + 1)\). If <code>FALSE</code>, a conservative correlation of
 
 
 <dt id="arg-b">b<a class="anchor" aria-label="anchor" href="#arg-b"></a></dt>
-<dd><p>A vector of critical values (length <code>kMax</code>).</p></dd>
+<dd><p>A vector of efficacy boundaries for the max-Z statistics.</p></dd>
+
+
+<dt id="arg-a">a<a class="anchor" aria-label="anchor" href="#arg-a"></a></dt>
+<dd><p>A vector of futility boundaries for the max-Z statistics.</p></dd>
 
 
 <dt id="arg-i">I<a class="anchor" aria-label="anchor" href="#arg-i"></a></dt>
-<dd><p>A vector of information levels (length <code>kMax</code>) for any active
-arm versus the common control.</p></dd>
+<dd><p>A vector of information levels for any active arm versus the
+common control.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -132,12 +137,12 @@ Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Type I error under the global null hypothesis</span></span></span>
 <span class="r-in"><span><span class="va">p0</span> <span class="op">&lt;-</span> <span class="fu">exitprob_mams</span><span class="op">(</span>M <span class="op">=</span> <span class="fl">2</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span>, kMax <span class="op">=</span> <span class="fl">3</span>, b <span class="op">=</span> <span class="va">b</span>, I <span class="op">=</span> <span class="va">I</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="va">p0</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="va">p0</span><span class="op">$</span><span class="va">exitProbUpper</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.0001007465 0.0058081554 0.0250000399</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Power under alternative: Treatment effects of 0.3 and 0.5</span></span></span>
 <span class="r-in"><span><span class="va">p1</span> <span class="op">&lt;-</span> <span class="fu">exitprob_mams</span><span class="op">(</span>M <span class="op">=</span> <span class="fl">2</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3</span>, <span class="fl">0.5</span><span class="op">)</span>, kMax <span class="op">=</span> <span class="fl">3</span>, b <span class="op">=</span> <span class="va">b</span>, I <span class="op">=</span> <span class="va">I</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="va">p1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="va">p1</span><span class="op">$</span><span class="va">exitProbUpper</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.03130483 0.55104538 0.90221799</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

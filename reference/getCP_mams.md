@@ -20,11 +20,17 @@ getCP_mams(
   kMax = NA_integer_,
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
-  criticalValues = NA_real_,
+  futilityStopping = NA_integer_,
+  criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityTheta = NULL,
+  typeBetaSpending = "none",
+  parameterBetaSpending = NA_real_,
   spendingTime = NA_real_,
   MullerSchafer = FALSE,
   MNew = NA_integer_,
@@ -33,8 +39,14 @@ getCP_mams(
   kNew = NA_integer_,
   informationRatesNew = NA_real_,
   efficacyStoppingNew = NA_integer_,
+  futilityStoppingNew = NA_integer_,
   typeAlphaSpendingNew = "sfOF",
   parameterAlphaSpendingNew = NA_real_,
+  futilityBoundsInt = NULL,
+  futilityCPInt = NULL,
+  futilityThetaInt = NULL,
+  typeBetaSpendingNew = "none",
+  parameterBetaSpendingNew = NA_real_,
   spendingTimeNew = NA_real_
 )
 ```
@@ -95,6 +107,11 @@ getCP_mams(
   Indicators of whether efficacy stopping is allowed at each stage of
   the primary trial. Defaults to `TRUE` if left unspecified.
 
+- futilityStopping:
+
+  Indicators of whether futility stopping is allowed at each stage of
+  the primary trial.
+
 - criticalValues:
 
   The upper boundaries on the max z-test statistic scale for efficacy
@@ -126,6 +143,32 @@ getCP_mams(
 
   The user-defined alpha spending for the primary trial. Represents the
   cumulative alpha spent up to each stage.
+
+- futilityBounds:
+
+  The futility boundaries on the max-z statistic scale for the primary
+  trial. Defaults to `rep(-8, kMax-1)` if left unspecified.
+
+- futilityCP:
+
+  The conditional power-based futility bounds for the primary trial.
+
+- futilityTheta:
+
+  The parameter value-based futility bounds for the primary trial.
+
+- typeBetaSpending:
+
+  The type of beta spending for the primary trial. One of the following:
+  `"sfOF"` for O'Brien-Fleming type spending function, `"sfP"` for
+  Pocock type spending function, `"sfKD"` for Kim & DeMets spending
+  function, `"sfHSD"` for Hwang, Shi & DeCani spending function, and
+  `"none"` for no early futility stopping. Defaults to `"none"`.
+
+- parameterBetaSpending:
+
+  The parameter value of beta spending for the primary trial.
+  Corresponds to \\\rho\\ for `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
 
 - spendingTime:
 
@@ -164,6 +207,11 @@ getCP_mams(
   The indicators of whether efficacy stopping is allowed at each look of
   the secondary trial. Defaults to `TRUE` if left unspecified.
 
+- futilityStoppingNew:
+
+  The indicators of whether futility stopping is allowed at each look of
+  the secondary trial. Defaults to `TRUE` if left unspecified.
+
 - typeAlphaSpendingNew:
 
   The type of alpha spending for the secondary trial. One of the
@@ -178,6 +226,35 @@ getCP_mams(
   The parameter value of alpha spending for the secondary trial.
   Corresponds to \\\rho\\ for `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
 
+- futilityBoundsInt:
+
+  The futility boundaries on the max-z statistic scale for new stages of
+  the integrated trial.
+
+- futilityCPInt:
+
+  The conditional power-based futility bounds for new stages of the
+  integrated trial.
+
+- futilityThetaInt:
+
+  The parameter value-based futility bounds for the new stages of the
+  integrated trial.
+
+- typeBetaSpendingNew:
+
+  The type of beta spending for the secondary trial. One of the
+  following: `"sfOF"` for O'Brien-Fleming type spending function,
+  `"sfP"` for Pocock type spending function, `"sfKD"` for Kim & DeMets
+  spending function, `"sfHSD"` for Hwang, Shi & DeCani spending
+  function, `"none"` for no early futility stopping. Defaults to
+  `"none"`.
+
+- parameterBetaSpendingNew:
+
+  The parameter value of beta spending for the secondary trial.
+  Corresponds to \\\rho\\ for `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
+
 - spendingTimeNew:
 
   The error spending time of the secondary trial. Defaults to missing,
@@ -185,7 +262,8 @@ getCP_mams(
 
 ## Value
 
-The conditional power given the interim results, parameter values, and
+A vector of two conditional powers given the interim results and
+parameter values, one without design change and the other with
 data-dependent design changes.
 
 ## References
@@ -212,5 +290,5 @@ getCP_mams(
   IMax = 324 / 4, kMax = 2, informationRates = c(1/2, 1),
   alpha = 0.025, typeAlphaSpending = "OF",
   MNew = 1, selected = 2, rNew = 1)
-#> [1] 0.8000917
+#> [1] 0.4955179 0.8000917
 ```

@@ -83,11 +83,17 @@ the error spending function, and the number and spacing of interim looks.</p>
 <span>  kMax <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
 <span>  informationRates <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  efficacyStopping <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
+<span>  futilityStopping <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
 <span>  criticalValues <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.025</span>,</span>
 <span>  typeAlphaSpending <span class="op">=</span> <span class="st">"sfOF"</span>,</span>
 <span>  parameterAlphaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  userAlphaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  futilityBounds <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futilityCP <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futilityTheta <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  typeBetaSpending <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  parameterBetaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  spendingTime <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  MullerSchafer <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  MNew <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
@@ -96,8 +102,15 @@ the error spending function, and the number and spacing of interim looks.</p>
 <span>  kNew <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
 <span>  informationRatesNew <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  efficacyStoppingNew <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
+<span>  futilityStoppingNew <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
 <span>  typeAlphaSpendingNew <span class="op">=</span> <span class="st">"sfOF"</span>,</span>
 <span>  parameterAlphaSpendingNew <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  futilityBoundsInt <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futilityCPInt <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futilityThetaInt <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  typeBetaSpendingNew <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  parameterBetaSpendingNew <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  userBetaSpendingNew <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  spendingTimeNew <span class="op">=</span> <span class="cn">NA_real_</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -168,6 +181,11 @@ allowed at each stage of the primary trial. Defaults to <code>TRUE</code>
 if left unspecified.</p></dd>
 
 
+<dt id="arg-futilitystopping">futilityStopping<a class="anchor" aria-label="anchor" href="#arg-futilitystopping"></a></dt>
+<dd><p>Indicators of whether futility stopping is
+allowed at each stage of the primary trial.</p></dd>
+
+
 <dt id="arg-criticalvalues">criticalValues<a class="anchor" aria-label="anchor" href="#arg-criticalvalues"></a></dt>
 <dd><p>The matrix of by-level upper boundaries on the
 max z-test statistic scale for efficacy stopping for the primary trial.
@@ -206,6 +224,39 @@ for the primary trial. Corresponds to \(\Delta\) for <code>"WT"</code>,
 <dt id="arg-useralphaspending">userAlphaSpending<a class="anchor" aria-label="anchor" href="#arg-useralphaspending"></a></dt>
 <dd><p>The user-defined alpha spending for the
 primary trial. Represents the cumulative alpha spent up to each stage.</p></dd>
+
+
+<dt id="arg-futilitybounds">futilityBounds<a class="anchor" aria-label="anchor" href="#arg-futilitybounds"></a></dt>
+<dd><p>The futility boundaries on the max-z statistic
+scale for the primary trial. Defaults to <code>rep(-8, kMax-1)</code>
+if left unspecified.</p></dd>
+
+
+<dt id="arg-futilitycp">futilityCP<a class="anchor" aria-label="anchor" href="#arg-futilitycp"></a></dt>
+<dd><p>The conditional power-based futility bounds for the
+primary trial.</p></dd>
+
+
+<dt id="arg-futilitytheta">futilityTheta<a class="anchor" aria-label="anchor" href="#arg-futilitytheta"></a></dt>
+<dd><p>The parameter value-based futility bounds for the
+primary trial.</p></dd>
+
+
+<dt id="arg-typebetaspending">typeBetaSpending<a class="anchor" aria-label="anchor" href="#arg-typebetaspending"></a></dt>
+<dd><p>The type of beta spending for the primary trial.
+One of the following:
+<code>"sfOF"</code> for O'Brien-Fleming type spending function,
+<code>"sfP"</code> for Pocock type spending function,
+<code>"sfKD"</code> for Kim &amp; DeMets spending function,
+<code>"sfHSD"</code> for Hwang, Shi &amp; DeCani spending function, and
+<code>"none"</code> for no early futility stopping.
+Defaults to <code>"none"</code>.</p></dd>
+
+
+<dt id="arg-parameterbetaspending">parameterBetaSpending<a class="anchor" aria-label="anchor" href="#arg-parameterbetaspending"></a></dt>
+<dd><p>The parameter value of beta spending
+for the primary trial. Corresponds to \(\rho\) for <code>"sfKD"</code>,
+and \(\gamma\) for <code>"sfHSD"</code>.</p></dd>
 
 
 <dt id="arg-spendingtime">spendingTime<a class="anchor" aria-label="anchor" href="#arg-spendingtime"></a></dt>
@@ -247,6 +298,12 @@ allowed at each look of the secondary trial. Defaults to <code>TRUE</code>
 if left unspecified.</p></dd>
 
 
+<dt id="arg-futilitystoppingnew">futilityStoppingNew<a class="anchor" aria-label="anchor" href="#arg-futilitystoppingnew"></a></dt>
+<dd><p>The indicators of whether futility stopping is
+allowed at each look of the secondary trial. Defaults to <code>TRUE</code>
+if left unspecified.</p></dd>
+
+
 <dt id="arg-typealphaspendingnew">typeAlphaSpendingNew<a class="anchor" aria-label="anchor" href="#arg-typealphaspendingnew"></a></dt>
 <dd><p>The type of alpha spending for the secondary
 trial. One of the following:
@@ -265,6 +322,45 @@ for the secondary trial. Corresponds to
 \(\rho\) for <code>"sfKD"</code>, and \(\gamma\) for <code>"sfHSD"</code>.</p></dd>
 
 
+<dt id="arg-futilityboundsint">futilityBoundsInt<a class="anchor" aria-label="anchor" href="#arg-futilityboundsint"></a></dt>
+<dd><p>The futility boundaries on the max-z statistic
+scale for new stages of the integrated trial.</p></dd>
+
+
+<dt id="arg-futilitycpint">futilityCPInt<a class="anchor" aria-label="anchor" href="#arg-futilitycpint"></a></dt>
+<dd><p>The conditional power-based futility bounds for
+new stages of the integrated trial.</p></dd>
+
+
+<dt id="arg-futilitythetaint">futilityThetaInt<a class="anchor" aria-label="anchor" href="#arg-futilitythetaint"></a></dt>
+<dd><p>The parameter value-based futility bounds for the
+new stages of the integrated trial.</p></dd>
+
+
+<dt id="arg-typebetaspendingnew">typeBetaSpendingNew<a class="anchor" aria-label="anchor" href="#arg-typebetaspendingnew"></a></dt>
+<dd><p>The type of beta spending for the secondary
+trial. One of the following:
+<code>"sfOF"</code> for O'Brien-Fleming type spending function,
+<code>"sfP"</code> for Pocock type spending function,
+<code>"sfKD"</code> for Kim &amp; DeMets spending function,
+<code>"sfHSD"</code> for Hwang, Shi &amp; DeCani spending function,
+<code>"user"</code> for user defined spending, and
+<code>"none"</code> for no early futility stopping.
+Defaults to <code>"none"</code>.</p></dd>
+
+
+<dt id="arg-parameterbetaspendingnew">parameterBetaSpendingNew<a class="anchor" aria-label="anchor" href="#arg-parameterbetaspendingnew"></a></dt>
+<dd><p>The parameter value of beta spending
+for the secondary trial. Corresponds to \(\rho\) for <code>"sfKD"</code>,
+and \(\gamma\) for <code>"sfHSD"</code>.</p></dd>
+
+
+<dt id="arg-userbetaspendingnew">userBetaSpendingNew<a class="anchor" aria-label="anchor" href="#arg-userbetaspendingnew"></a></dt>
+<dd><p>The user-defined cumulative beta spending.
+Represents the cumulative beta spent up to each stage of the
+secondary trial.</p></dd>
+
+
 <dt id="arg-spendingtimenew">spendingTimeNew<a class="anchor" aria-label="anchor" href="#arg-spendingtimenew"></a></dt>
 <dd><p>The error spending time of the secondary trial.
 Defaults to missing, in which case it is assumed to be the same as
@@ -276,22 +372,36 @@ Defaults to missing, in which case it is assumed to be the same as
     <p>An <code>adaptDesign_mams</code> object with three list components:</p><ul><li><p><code>primaryTrial</code>: A list of selected information for the primary
 trial, including <code>M</code>, <code>r</code>, <code>corr_known</code>, <code>L</code>,
 <code>zL</code>, <code>theta</code>, <code>maxInformation</code>, <code>kMax</code>,
-<code>informationRates</code>, <code>efficacyBounds</code>, <code>information</code>,
-<code>alpha</code>, <code>conditionalAlpha</code>, <code>conditionalPower</code>,
-<code>MullerSchafer</code>, and <code>byLevelBounds</code>.</p></li>
+<code>informationRates</code>, <code>efficacyBounds</code>, <code>futilityBounds</code>,
+<code>information</code>, <code>alpha</code>, <code>conditionalAlpha</code>,
+<code>conditionalPower</code>, <code>MullerSchafer</code>, and <code>byLevelBounds</code>,
+where <code>byLevelBounds</code> is a data frame with columns <code>level</code>,
+<code>stage</code>, and <code>efficacyBounds</code>, representing the efficacy
+bounds for each combination of the number of active arms and
+the stage of analysis in the primary trial.</p></li>
 <li><p><code>secondaryTrial</code>: A list of selected information for the secondary
 trial, including <code>overallReject</code>, <code>alpha</code>, <code>M</code>, <code>r</code>,
 <code>selected</code>, <code>corr_known</code>, <code>kMax</code>, <code>maxInformation</code>,
 <code>informationRates</code>, <code>cumulativeRejection</code>,
 <code>cumulativeAlphaSpent</code>, <code>information</code>,
 <code>typeAlphaSpending</code>, <code>parameterAlphaSpending</code>,
-<code>spendingTime</code>, and <code>byHypothesisBounds</code>.</p></li>
+<code>typeBetaSpending</code>, <code>parameterBetaSpending</code>,
+<code>userBetaSpending</code>, <code>spendingTime</code>, and
+<code>byHypothesisBounds</code>, where <code>byHypothesisBounds</code> is a
+data frame with columns <code>hypothesis</code>, <code>stage</code>,
+<code>efficacyBounds</code>, and <code>futilityBounds</code>, representing
+the efficacy and futility bounds for each hypothesis and each
+stage of analysis in the secondary trial.</p></li>
 <li><p><code>integratedTrial</code>: A list of selected information for the integrated
 trial, including <code>M</code>, <code>r</code>, <code>corr_known</code>, <code>MNew</code>,
 <code>rNew</code>, <code>selected</code>, <code>L</code>, <code>zL</code>, <code>theta</code>,
 <code>maxInformation</code>, <code>kMax</code>, <code>informationRates</code>,
-<code>efficacyBounds</code>, <code>information</code>, and
-<code>byIntersectionBounds</code>.</p></li>
+<code>efficacyBounds</code>, <code>futilityBounds</code>, <code>information</code>,
+and <code>byIntersectionBounds</code>, where <code>byIntersectionBounds</code> is
+a data frame with columns <code>intersectionHypothesis</code>, <code>stage</code>,
+and <code>efficacyBounds</code>, representing the efficacy bounds for
+each intersection hypothesis and each stage of analysis in the
+integrated trial.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -323,16 +433,17 @@ Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.</p>
 <span class="r-in"><span>  IMax <span class="op">=</span> <span class="fl">324</span> <span class="op">/</span> <span class="fl">4</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.75</span><span class="op">)</span>, <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.75</span><span class="op">)</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  M <span class="op">=</span> <span class="fl">2</span>, r <span class="op">=</span> <span class="fl">1</span>, kMax <span class="op">=</span> <span class="fl">2</span>, informationRates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">/</span><span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  alpha <span class="op">=</span> <span class="fl">0.025</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"OF"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Multi-arm multi-stage design                           </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.7994, overall alpha (1-sided): 0.025  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms: 2                               </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 81             </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks: 2                                     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: O'Brien-Fleming                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multi-arm multi-stage design                                               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.7994, overall alpha (1-sided): 0.025                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms: 2                                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 81                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks: 2                                                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Expected information under H1: 74.53, expected information under H0: 80.93 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: O'Brien-Fleming, beta spending: None                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                           Stage 1 Stage 2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Information rate          0.500   1.000  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z)     3.142   2.222  </span>
@@ -364,16 +475,19 @@ Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.</p>
 <span class="r-in"><span>  IMax <span class="op">=</span> <span class="fl">324</span> <span class="op">/</span> <span class="fl">4</span>, kMax <span class="op">=</span> <span class="fl">2</span>, informationRates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">/</span><span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  alpha <span class="op">=</span> <span class="fl">0.025</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"OF"</span>,</span></span>
 <span class="r-in"><span>  MNew <span class="op">=</span> <span class="fl">1</span>, selected <span class="op">=</span> <span class="fl">2</span>, rNew <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Primary trial:                                                  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Multi-arm multi-stage design with 2 active arm(s) and 2 look(s) </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1               </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: FALSE         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 81                      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Interim adaptation look: 1, z-statistic value: 0.6, 1.581       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Conditional type I error: 0.0597, conditional power: 0.496      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Muller &amp; Schafer method for secondary trial: FALSE              </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Primary trial:                                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multi-arm multi-stage design                               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms: 2                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: FALSE    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 81                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks: 2                                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Interim adaptation look: 1, z-statistic value: 0.6, 1.581  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> theta: 0.094, 0.248                                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Conditional type I error: 0.0597, conditional power: 0.496 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Muller &amp; Schafer method for secondary trial: FALSE         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                       Stage 1 Stage 2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Information rate      0.500   1.000  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z) 3.179   2.248  </span>
@@ -387,10 +501,10 @@ Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4     1     2        1.977</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Secondary trial:                                                 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Multi-arm multi-stage design with 1 active arm(s) and 1 look(s)  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Selected active arms: 2                                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multi-arm multi-stage design                                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of selected active arms: 1, selected active arms: 2       </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> theta: 0.094, 0.248, maximum information: 93.22                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Maximum information: 93.22                                       </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.8, overall significance level (1-sided): 0.0597 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                        Stage 1</span>
@@ -400,15 +514,16 @@ Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Information            93.22  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> By hypothesis critical values for secondary trial</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Hypothesis Stage Boundary (Z)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1          2     1        1.557</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Integrated trial:                                                                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Adaptive design with 2 active arm(s) before and 1 active arm(s) after adaptation </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Selected active arms after adaptation: 2                                         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Total number of looks: 2                                                         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Interim adaptation look: 1, z-statistic value: 0.6, 1.581                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Hypothesis Stage Efficacy boundary (Z) Futility boundary (Z)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1          2     1                 1.557                 1.557</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Integrated trial:                                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Adaptive multi-arm multi-stage design                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms before adaptation: 2                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of selected active arms: 1, selected active arms: 2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Total number of looks: 2                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Interim adaptation look: 1, z-statistic value: 0.6, 1.581  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                     Stage 1 Stage 2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Information rate    0.303   1.000  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy bounds (Z) 3.179   2.170  </span>

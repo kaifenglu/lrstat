@@ -65,11 +65,18 @@ are provided.</p>
 <span>  kMax <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>  informationRates <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  efficacyStopping <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
+<span>  futilityStopping <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
 <span>  criticalValues <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.025</span>,</span>
 <span>  typeAlphaSpending <span class="op">=</span> <span class="st">"sfOF"</span>,</span>
 <span>  parameterAlphaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  userAlphaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  futilityBounds <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futilityCP <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futilityTheta <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  typeBetaSpending <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  parameterBetaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  userBetaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  spendingTime <span class="op">=</span> <span class="cn">NA_real_</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -125,6 +132,11 @@ before the trial. If unspecified, defaults to \((1:kMax) / kMax\).</p></dd>
 at each stage. Defaults to <code>TRUE</code> if left unspecified.</p></dd>
 
 
+<dt id="arg-futilitystopping">futilityStopping<a class="anchor" aria-label="anchor" href="#arg-futilitystopping"></a></dt>
+<dd><p>Indicators of whether futility stopping is allowed
+at each stage. Defaults to <code>TRUE</code> if left unspecified.</p></dd>
+
+
 <dt id="arg-criticalvalues">criticalValues<a class="anchor" aria-label="anchor" href="#arg-criticalvalues"></a></dt>
 <dd><p>The matrix of by-level upper boundaries on the
 max z-test statistic scale for efficacy stopping.
@@ -163,6 +175,45 @@ and \(\gamma\) for <code>"sfHSD"</code>.</p></dd>
 spent up to each stage.</p></dd>
 
 
+<dt id="arg-futilitybounds">futilityBounds<a class="anchor" aria-label="anchor" href="#arg-futilitybounds"></a></dt>
+<dd><p>A numeric vector of length <code>kMax - 1</code>
+specifying the futility boundaries on the max z-test statistic scale
+for futility stopping.</p></dd>
+
+
+<dt id="arg-futilitycp">futilityCP<a class="anchor" aria-label="anchor" href="#arg-futilitycp"></a></dt>
+<dd><p>A numeric vector of length <code>kMax - 1</code> specifying
+the futility boundaries on the conditional power scale for futility
+stopping.</p></dd>
+
+
+<dt id="arg-futilitytheta">futilityTheta<a class="anchor" aria-label="anchor" href="#arg-futilitytheta"></a></dt>
+<dd><p>A numeric vector of length <code>kMax - 1</code> specifying
+the futility boundaries on the parameter scale for futility stopping.</p></dd>
+
+
+<dt id="arg-typebetaspending">typeBetaSpending<a class="anchor" aria-label="anchor" href="#arg-typebetaspending"></a></dt>
+<dd><p>The type of beta spending. One of the following:
+<code>"sfOF"</code> for O'Brien-Fleming type spending function,
+<code>"sfP"</code> for Pocock type spending function,
+<code>"sfKD"</code> for Kim &amp; DeMets spending function,
+<code>"sfHSD"</code> for Hwang, Shi &amp; DeCani spending function,
+<code>"user"</code> for user defined spending, and
+<code>"none"</code> for no early futility stopping.
+Defaults to <code>"none"</code>.</p></dd>
+
+
+<dt id="arg-parameterbetaspending">parameterBetaSpending<a class="anchor" aria-label="anchor" href="#arg-parameterbetaspending"></a></dt>
+<dd><p>The parameter value for the beta spending.
+Corresponds to \(\rho\) for <code>"sfKD"</code>, and
+\(\gamma\) for <code>"sfHSD"</code>.</p></dd>
+
+
+<dt id="arg-userbetaspending">userBetaSpending<a class="anchor" aria-label="anchor" href="#arg-userbetaspending"></a></dt>
+<dd><p>The user defined beta spending. Cumulative beta
+spent up to each stage.</p></dd>
+
+
 <dt id="arg-spendingtime">spendingTime<a class="anchor" aria-label="anchor" href="#arg-spendingtime"></a></dt>
 <dd><p>A numeric vector of length <code>kMax</code> specifying the
 error spending time at each analysis. Values must be strictly increasing
@@ -174,6 +225,9 @@ and ends at 1. If omitted, defaults to <code>informationRates</code>.</p></dd>
     <p>An S3 object of class <code>mams</code> with the following components:</p><ul><li><p><code>overallResults</code>: A data frame containing:</p><ul><li><p><code>overallReject</code>: Overall probability of rejecting the global
 null hypothesis.</p></li>
 <li><p><code>alpha</code>: Overall significance level.</p></li>
+<li><p><code>attainedAlpha</code>: The attained significance level, which is
+different from the overall significance level in the presence of
+futility stopping.</p></li>
 <li><p><code>M</code>: Number of active arms.</p></li>
 <li><p><code>r</code>: Randomization ratio per active arm versus control.</p></li>
 <li><p><code>corr_known</code>: Whether the correlation among Wald statistics
@@ -181,24 +235,45 @@ was assumed known.</p></li>
 <li><p><code>kMax</code>: Number of stages.</p></li>
 <li><p><code>information</code>: Maximum information for any active arm versus
 control.</p></li>
+<li><p><code>expectedInformationH1</code>: The expected information under H1.</p></li>
+<li><p><code>expectedInformationH0</code>: The expected information under H0.</p></li>
 </ul></li>
 <li><p><code>byStageResults</code>: A data frame containing:</p><ul><li><p><code>informationRates</code>: Information rates at each analysis.</p></li>
 <li><p><code>efficacyBounds</code>: Efficacy boundaries on the max Z-scale.</p></li>
+<li><p><code>futilityBounds</code>: Futility boundaries on the max Z-scale.</p></li>
 <li><p><code>rejectPerStage</code>: Probability of efficacy stopping at each stage.</p></li>
+<li><p><code>futilityPerStage</code>: Probability of futility stopping at each stage.</p></li>
 <li><p><code>cumulativeRejection</code>: Cumulative probability of efficacy stopping.</p></li>
+<li><p><code>cumulativeFutility</code>: Cumulative probability of futility stopping.</p></li>
 <li><p><code>cumulativeAlphaSpent</code>: Cumulative alpha spent.</p></li>
 <li><p><code>efficacyTheta</code>: Efficacy boundaries on the parameter scale.</p></li>
+<li><p><code>futilityTheta</code>: Futility boundaries on the parameter scale.</p></li>
 <li><p><code>efficacyP</code>: Efficacy boundaries on the p-value scale.</p></li>
+<li><p><code>futilityP</code>: Futility boundaries on the p-value scale.</p></li>
 <li><p><code>information</code>: Cumulative information for any active arm versus
 control at each analysis.</p></li>
 <li><p><code>efficacyStopping</code>: Indicator of whether efficacy stopping
 is permitted at each stage.</p></li>
+<li><p><code>futilityStopping</code>: Indicator of whether futility stopping
+is permitted at each stage.</p></li>
+<li><p><code>rejectPerStageH0</code>: The probability for efficacy stopping
+under H0.</p></li>
+<li><p><code>futilityPerStageH0</code>: The probability for futility stopping
+under H0.</p></li>
+<li><p><code>cumulativeRejectionH0</code>: The cumulative probability for
+efficacy stopping under H0.</p></li>
+<li><p><code>cumulativeFutilityH0</code>: The cumulative probability for
+futility stopping under H0.</p></li>
 </ul></li>
-<li><p><code>settings</code>: A list of input settings:</p><ul><li><p><code>typeAlphaSpending</code>: Type of alpha spending function.</p></li>
-<li><p><code>parameterAlphaSpending</code>: Parameter value for the chosen
+<li><p><code>settings</code>: A list of input settings:</p><ul><li><p><code>typeAlphaSpending</code>: The type of alpha spending.</p></li>
+<li><p><code>parameterAlphaSpending</code>: The parameter value for the chosen
 alpha spending function.</p></li>
-<li><p><code>userAlphaSpending</code>: User-specified alpha spending values.</p></li>
-<li><p><code>spendingTime</code>: Error-spending times at each analysis.</p></li>
+<li><p><code>userAlphaSpending</code>: The user-specified alpha spending values.</p></li>
+<li><p><code>typeBetaSpending</code>: The type of beta spending.</p></li>
+<li><p><code>parameterBetaSpending</code>: The parameter value for the chosen
+beta spending function.</p></li>
+<li><p><code>userBetaSpending</code>: The user-specified beta spending values.</p></li>
+<li><p><code>spendingTime</code>: The error-spending time at each analysis.</p></li>
 </ul></li>
 <li><p><code>byLevelBounds</code>: A data frame containing the efficacy boundaries
 for each level of testing (i.e., number of active arms remaining) and
@@ -234,16 +309,17 @@ Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.</p>
 <span class="r-in"><span>  beta <span class="op">=</span> <span class="fl">0.1</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3</span>, <span class="fl">0.5</span><span class="op">)</span>, M <span class="op">=</span> <span class="fl">2</span>, r <span class="op">=</span> <span class="fl">1.0</span>,</span></span>
 <span class="r-in"><span>  kMax <span class="op">=</span> <span class="fl">3</span>, informationRates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">/</span><span class="fl">3</span>,</span></span>
 <span class="r-in"><span>  alpha <span class="op">=</span> <span class="fl">0.025</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"OF"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Multi-arm multi-stage design                           </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9, overall alpha (1-sided): 0.025     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms: 2                               </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 47.15          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks: 3                                     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: O'Brien-Fleming                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multi-arm multi-stage design                                               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9, overall alpha (1-sided): 0.025                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms: 2                                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 47.15                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks: 3                                                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Expected information under H1: 38.07, expected information under H0: 47.05 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: O'Brien-Fleming, beta spending: None                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                           Stage 1 Stage 2 Stage 3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Information rate          0.333   0.667   1.000  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z)     3.887   2.748   2.244  </span>
@@ -267,16 +343,17 @@ Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.</p>
 <span class="r-in"><span>  IMax <span class="op">=</span> <span class="fl">110</span><span class="op">/</span><span class="op">(</span><span class="fl">2</span><span class="op">*</span><span class="fl">1</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3</span>, <span class="fl">0.5</span><span class="op">)</span>, M <span class="op">=</span> <span class="fl">2</span>, r <span class="op">=</span> <span class="fl">1.0</span>,</span></span>
 <span class="r-in"><span>  kMax <span class="op">=</span> <span class="fl">3</span>, informationRates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">/</span><span class="fl">3</span>,</span></span>
 <span class="r-in"><span>  alpha <span class="op">=</span> <span class="fl">0.025</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"OF"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Multi-arm multi-stage design                           </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9399, overall alpha (1-sided): 0.025  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms: 2                               </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 55             </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks: 3                                     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: O'Brien-Fleming                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multi-arm multi-stage design                                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9399, overall alpha (1-sided): 0.025                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms: 2                                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 55                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks: 3                                                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Expected information under H1: 42.6, expected information under H0: 54.89 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: O'Brien-Fleming, beta spending: None                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                           </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                           Stage 1 Stage 2 Stage 3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Information rate          0.333   0.667   1.000  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z)     3.887   2.748   2.244  </span>

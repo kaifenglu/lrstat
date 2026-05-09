@@ -235,7 +235,9 @@ deltaNew <- 10
 #>                                                      
 #> Primary trial:                                       
 #> Group-sequential design with 3 stages                
+#> Max information: 0.05                                
 #> Interim adaptation look: 1, z-statistic value: 0.914 
+#> theta: 10                                            
 #> Conditional type I error: 0.0378                     
 #> Conditional power: 0.496, predictive power: 0.3877   
 #> Muller & Schafer method for secondary trial: TRUE    
@@ -244,25 +246,22 @@ deltaNew <- 10
 #> Information rate      0.334   0.666   1.000  
 #> Efficacy boundary (Z) 3.706   2.513   1.993  
 #> Information           0.02    0.03    0.05   
-#>                                                                         
-#> Secondary trial:                                                        
-#> Group-sequential design with 2 stages                                   
-#> theta: 10, maximum information: 0.1                                     
-#> Overall power: 0.9, overall significance level (1-sided): 0.0378        
-#> Drift parameter: 3.227, inflation factor: 1.113                         
-#> Expected information under H1: 0.07, Expected information under H0: 0.1 
-#>                                                                         
-#>                           Stage 1 Stage 2
-#> Information rate          0.500   1.000  
-#> Efficacy boundary (Z)     1.988   2.018  
-#> Cumulative rejection      0.6157  0.9000 
-#> Cumulative alpha spent    0.0234  0.0378 
-#> Efficacy boundary (theta) 8.711   6.253  
-#> Efficacy boundary (p)     0.0234  0.0218 
-#> Information               0.05    0.10   
+#>                                                                  
+#> Secondary trial:                                                 
+#> Group-sequential design with 2 stages                            
+#> Maximum information: 0.1                                         
+#> Overall power: 0.9, overall significance level (1-sided): 0.0378 
+#>                                                                  
+#>                        Stage 1 Stage 2
+#> Information rate       0.500   1.000  
+#> Efficacy boundary (Z)  1.988   2.018  
+#> Cumulative rejection   0.6157  0.9000 
+#> Cumulative alpha spent 0.0234  0.0378 
+#> Information            0.05    0.10   
 #>                                                      
 #> Integrated trial:                                    
 #> Group-sequential design with 3 stages                
+#> Maximum information: 0.12                            
 #> Interim adaptation look: 1, z-statistic value: 0.914 
 #>                                                      
 #>                       Stage 1 Stage 2 Stage 3
@@ -270,14 +269,14 @@ deltaNew <- 10
 #> Efficacy boundary (Z) 3.706   2.182   2.212  
 #> Information           0.02    0.07    0.12   
 
-INew <- des2$secondaryTrial$overallResults$information
+INew <- des2$secondaryTrial$maxInformation
 (nNew <- ceiling(INew * 4 * sigma^2))
 #> [1] 1042
 (nTotal <- nL + nNew)
 #> [1] 1200
 
 # Monitoring the Integrated Trial
-s2 <- des2$secondaryTrial$byStageResults$informationRates
+s2 <- des2$secondaryTrial$informationRates
 
 Lc <- 2
 deltahatc <- 9.5

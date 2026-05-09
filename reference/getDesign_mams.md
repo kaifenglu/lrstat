@@ -17,11 +17,18 @@ getDesign_mams(
   kMax = 1L,
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
+  futilityStopping = NA_integer_,
   criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityTheta = NULL,
+  typeBetaSpending = "none",
+  parameterBetaSpending = NA_real_,
+  userBetaSpending = NA_real_,
   spendingTime = NA_real_
 )
 ```
@@ -73,6 +80,11 @@ getDesign_mams(
   Indicators of whether efficacy stopping is allowed at each stage.
   Defaults to `TRUE` if left unspecified.
 
+- futilityStopping:
+
+  Indicators of whether futility stopping is allowed at each stage.
+  Defaults to `TRUE` if left unspecified.
+
 - criticalValues:
 
   The matrix of by-level upper boundaries on the max z-test statistic
@@ -105,6 +117,40 @@ getDesign_mams(
   The user defined alpha spending. Cumulative alpha spent up to each
   stage.
 
+- futilityBounds:
+
+  A numeric vector of length `kMax - 1` specifying the futility
+  boundaries on the max z-test statistic scale for futility stopping.
+
+- futilityCP:
+
+  A numeric vector of length `kMax - 1` specifying the futility
+  boundaries on the conditional power scale for futility stopping.
+
+- futilityTheta:
+
+  A numeric vector of length `kMax - 1` specifying the futility
+  boundaries on the parameter scale for futility stopping.
+
+- typeBetaSpending:
+
+  The type of beta spending. One of the following: `"sfOF"` for
+  O'Brien-Fleming type spending function, `"sfP"` for Pocock type
+  spending function, `"sfKD"` for Kim & DeMets spending function,
+  `"sfHSD"` for Hwang, Shi & DeCani spending function, `"user"` for user
+  defined spending, and `"none"` for no early futility stopping.
+  Defaults to `"none"`.
+
+- parameterBetaSpending:
+
+  The parameter value for the beta spending. Corresponds to \\\rho\\ for
+  `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
+
+- userBetaSpending:
+
+  The user defined beta spending. Cumulative beta spent up to each
+  stage.
+
 - spendingTime:
 
   A numeric vector of length `kMax` specifying the error spending time
@@ -122,6 +168,10 @@ An S3 object of class `mams` with the following components:
 
   - `alpha`: Overall significance level.
 
+  - `attainedAlpha`: The attained significance level, which is different
+    from the overall significance level in the presence of futility
+    stopping.
+
   - `M`: Number of active arms.
 
   - `r`: Randomization ratio per active arm versus control.
@@ -134,21 +184,35 @@ An S3 object of class `mams` with the following components:
   - `information`: Maximum information for any active arm versus
     control.
 
+  - `expectedInformationH1`: The expected information under H1.
+
+  - `expectedInformationH0`: The expected information under H0.
+
 - `byStageResults`: A data frame containing:
 
   - `informationRates`: Information rates at each analysis.
 
   - `efficacyBounds`: Efficacy boundaries on the max Z-scale.
 
+  - `futilityBounds`: Futility boundaries on the max Z-scale.
+
   - `rejectPerStage`: Probability of efficacy stopping at each stage.
 
+  - `futilityPerStage`: Probability of futility stopping at each stage.
+
   - `cumulativeRejection`: Cumulative probability of efficacy stopping.
+
+  - `cumulativeFutility`: Cumulative probability of futility stopping.
 
   - `cumulativeAlphaSpent`: Cumulative alpha spent.
 
   - `efficacyTheta`: Efficacy boundaries on the parameter scale.
 
+  - `futilityTheta`: Futility boundaries on the parameter scale.
+
   - `efficacyP`: Efficacy boundaries on the p-value scale.
+
+  - `futilityP`: Futility boundaries on the p-value scale.
 
   - `information`: Cumulative information for any active arm versus
     control at each analysis.
@@ -156,16 +220,37 @@ An S3 object of class `mams` with the following components:
   - `efficacyStopping`: Indicator of whether efficacy stopping is
     permitted at each stage.
 
+  - `futilityStopping`: Indicator of whether futility stopping is
+    permitted at each stage.
+
+  - `rejectPerStageH0`: The probability for efficacy stopping under H0.
+
+  - `futilityPerStageH0`: The probability for futility stopping under
+    H0.
+
+  - `cumulativeRejectionH0`: The cumulative probability for efficacy
+    stopping under H0.
+
+  - `cumulativeFutilityH0`: The cumulative probability for futility
+    stopping under H0.
+
 - `settings`: A list of input settings:
 
-  - `typeAlphaSpending`: Type of alpha spending function.
+  - `typeAlphaSpending`: The type of alpha spending.
 
-  - `parameterAlphaSpending`: Parameter value for the chosen alpha
+  - `parameterAlphaSpending`: The parameter value for the chosen alpha
     spending function.
 
-  - `userAlphaSpending`: User-specified alpha spending values.
+  - `userAlphaSpending`: The user-specified alpha spending values.
 
-  - `spendingTime`: Error-spending times at each analysis.
+  - `typeBetaSpending`: The type of beta spending.
+
+  - `parameterBetaSpending`: The parameter value for the chosen beta
+    spending function.
+
+  - `userBetaSpending`: The user-specified beta spending values.
+
+  - `spendingTime`: The error-spending time at each analysis.
 
 - `byLevelBounds`: A data frame containing the efficacy boundaries for
   each level of testing (i.e., number of active arms remaining) and each
@@ -203,16 +288,17 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   beta = 0.1, theta = c(0.3, 0.5), M = 2, r = 1.0,
   kMax = 3, informationRates = seq(1, 3)/3,
   alpha = 0.025, typeAlphaSpending = "OF"))
-#>                                                        
-#> Multi-arm multi-stage design                           
-#> Overall power: 0.9, overall alpha (1-sided): 0.025     
-#> Number of active arms: 2                               
-#> Randomization ratio of each active vs. control: 1      
-#> Using correlation for critical value calculation: TRUE 
-#> Max information for pairwise comparion: 47.15          
-#> Number of looks: 3                                     
-#> Alpha spending: O'Brien-Fleming                        
-#>                                                        
+#>                                                                            
+#> Multi-arm multi-stage design                                               
+#> Overall power: 0.9, overall alpha (1-sided): 0.025                         
+#> Number of active arms: 2                                                   
+#> Randomization ratio of each active vs. control: 1                          
+#> Using correlation for critical value calculation: TRUE                     
+#> Max information for pairwise comparion: 47.15                              
+#> Number of looks: 3                                                         
+#> Expected information under H1: 38.07, expected information under H0: 47.05 
+#> Alpha spending: O'Brien-Fleming, beta spending: None                       
+#>                                                                            
 #>                           Stage 1 Stage 2 Stage 3
 #> Information rate          0.333   0.667   1.000  
 #> Efficacy boundary (Z)     3.887   2.748   2.244  
@@ -236,16 +322,17 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   IMax = 110/(2*1^2), theta = c(0.3, 0.5), M = 2, r = 1.0,
   kMax = 3, informationRates = seq(1, 3)/3,
   alpha = 0.025, typeAlphaSpending = "OF"))
-#>                                                        
-#> Multi-arm multi-stage design                           
-#> Overall power: 0.9399, overall alpha (1-sided): 0.025  
-#> Number of active arms: 2                               
-#> Randomization ratio of each active vs. control: 1      
-#> Using correlation for critical value calculation: TRUE 
-#> Max information for pairwise comparion: 55             
-#> Number of looks: 3                                     
-#> Alpha spending: O'Brien-Fleming                        
-#>                                                        
+#>                                                                           
+#> Multi-arm multi-stage design                                              
+#> Overall power: 0.9399, overall alpha (1-sided): 0.025                     
+#> Number of active arms: 2                                                  
+#> Randomization ratio of each active vs. control: 1                         
+#> Using correlation for critical value calculation: TRUE                    
+#> Max information for pairwise comparion: 55                                
+#> Number of looks: 3                                                        
+#> Expected information under H1: 42.6, expected information under H0: 54.89 
+#> Alpha spending: O'Brien-Fleming, beta spending: None                      
+#>                                                                           
 #>                           Stage 1 Stage 2 Stage 3
 #> Information rate          0.333   0.667   1.000  
 #> Efficacy boundary (Z)     3.887   2.748   2.244  

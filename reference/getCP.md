@@ -18,22 +18,27 @@ getCP(
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
   futilityStopping = NA_integer_,
-  criticalValues = NA_real_,
+  criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
-  futilityBounds = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityTheta = NULL,
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   spendingTime = NA_real_,
-  MullerSchafer = 0L,
+  MullerSchafer = FALSE,
   kNew = NA_integer_,
   informationRatesNew = NA_real_,
   efficacyStoppingNew = NA_integer_,
   futilityStoppingNew = NA_integer_,
   typeAlphaSpendingNew = "sfOF",
   parameterAlphaSpendingNew = NA_real_,
+  futilityBoundsInt = NULL,
+  futilityCPInt = NULL,
+  futilityThetaInt = NULL,
   typeBetaSpendingNew = "none",
   parameterBetaSpendingNew = NA_real_,
   spendingTimeNew = NA_real_,
@@ -121,6 +126,14 @@ getCP(
   stopping for the primary trial. Defaults to `rep(-8, kMax-1)` if left
   unspecified.
 
+- futilityCP:
+
+  The conditional power-based futility bounds for the primary trial.
+
+- futilityTheta:
+
+  The parameter value-based futility bounds for the primary trial.
+
 - typeBetaSpending:
 
   The type of beta spending for the primary trial. One of the following:
@@ -178,6 +191,21 @@ getCP(
   Corresponds to \\\Delta\\ for `"WT"`, \\\rho\\ for `"sfKD"`, and
   \\\gamma\\ for `"sfHSD"`.
 
+- futilityBoundsInt:
+
+  The futility boundaries on the z statistic scale for new stages of the
+  integrated trial.
+
+- futilityCPInt:
+
+  The conditional power-based futility bounds for new stages of the
+  integrated trial.
+
+- futilityThetaInt:
+
+  The parameter value-based futility bounds for the new stages of the
+  integrated trial.
+
 - typeBetaSpendingNew:
 
   The type of beta spending for the secondary trial. One of the
@@ -203,7 +231,8 @@ getCP(
 
 ## Value
 
-The conditional power given the interim results, parameter values, and
+A vector of two conditional powers given the interim results and
+parameter values, one without design change and the other with
 data-dependent design changes.
 
 ## References
@@ -307,5 +336,5 @@ getCP(INew = (335 - 266)/4,
       IMax = 298/4, kMax = 3,
       informationRates = c(179, 266, 298)/298,
       alpha = 0.025, typeAlphaSpending = "sfOF")
-#> [1] 0.5550158
+#> [1] 0.3662944 0.5550158
 ```

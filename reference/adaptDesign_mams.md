@@ -25,11 +25,17 @@ adaptDesign_mams(
   kMax = NA_integer_,
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
+  futilityStopping = NA_integer_,
   criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityTheta = NULL,
+  typeBetaSpending = "none",
+  parameterBetaSpending = NA_real_,
   spendingTime = NA_real_,
   MullerSchafer = FALSE,
   MNew = NA_integer_,
@@ -38,8 +44,15 @@ adaptDesign_mams(
   kNew = NA_integer_,
   informationRatesNew = NA_real_,
   efficacyStoppingNew = NA_integer_,
+  futilityStoppingNew = NA_integer_,
   typeAlphaSpendingNew = "sfOF",
   parameterAlphaSpendingNew = NA_real_,
+  futilityBoundsInt = NULL,
+  futilityCPInt = NULL,
+  futilityThetaInt = NULL,
+  typeBetaSpendingNew = "none",
+  parameterBetaSpendingNew = NA_real_,
+  userBetaSpendingNew = NA_real_,
   spendingTimeNew = NA_real_
 )
 ```
@@ -105,6 +118,11 @@ adaptDesign_mams(
   Indicators of whether efficacy stopping is allowed at each stage of
   the primary trial. Defaults to `TRUE` if left unspecified.
 
+- futilityStopping:
+
+  Indicators of whether futility stopping is allowed at each stage of
+  the primary trial.
+
 - criticalValues:
 
   The matrix of by-level upper boundaries on the max z-test statistic
@@ -138,6 +156,32 @@ adaptDesign_mams(
 
   The user-defined alpha spending for the primary trial. Represents the
   cumulative alpha spent up to each stage.
+
+- futilityBounds:
+
+  The futility boundaries on the max-z statistic scale for the primary
+  trial. Defaults to `rep(-8, kMax-1)` if left unspecified.
+
+- futilityCP:
+
+  The conditional power-based futility bounds for the primary trial.
+
+- futilityTheta:
+
+  The parameter value-based futility bounds for the primary trial.
+
+- typeBetaSpending:
+
+  The type of beta spending for the primary trial. One of the following:
+  `"sfOF"` for O'Brien-Fleming type spending function, `"sfP"` for
+  Pocock type spending function, `"sfKD"` for Kim & DeMets spending
+  function, `"sfHSD"` for Hwang, Shi & DeCani spending function, and
+  `"none"` for no early futility stopping. Defaults to `"none"`.
+
+- parameterBetaSpending:
+
+  The parameter value of beta spending for the primary trial.
+  Corresponds to \\\rho\\ for `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
 
 - spendingTime:
 
@@ -176,6 +220,11 @@ adaptDesign_mams(
   The indicators of whether efficacy stopping is allowed at each look of
   the secondary trial. Defaults to `TRUE` if left unspecified.
 
+- futilityStoppingNew:
+
+  The indicators of whether futility stopping is allowed at each look of
+  the secondary trial. Defaults to `TRUE` if left unspecified.
+
 - typeAlphaSpendingNew:
 
   The type of alpha spending for the secondary trial. One of the
@@ -190,6 +239,40 @@ adaptDesign_mams(
   The parameter value of alpha spending for the secondary trial.
   Corresponds to \\\rho\\ for `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
 
+- futilityBoundsInt:
+
+  The futility boundaries on the max-z statistic scale for new stages of
+  the integrated trial.
+
+- futilityCPInt:
+
+  The conditional power-based futility bounds for new stages of the
+  integrated trial.
+
+- futilityThetaInt:
+
+  The parameter value-based futility bounds for the new stages of the
+  integrated trial.
+
+- typeBetaSpendingNew:
+
+  The type of beta spending for the secondary trial. One of the
+  following: `"sfOF"` for O'Brien-Fleming type spending function,
+  `"sfP"` for Pocock type spending function, `"sfKD"` for Kim & DeMets
+  spending function, `"sfHSD"` for Hwang, Shi & DeCani spending
+  function, `"user"` for user defined spending, and `"none"` for no
+  early futility stopping. Defaults to `"none"`.
+
+- parameterBetaSpendingNew:
+
+  The parameter value of beta spending for the secondary trial.
+  Corresponds to \\\rho\\ for `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
+
+- userBetaSpendingNew:
+
+  The user-defined cumulative beta spending. Represents the cumulative
+  beta spent up to each stage of the secondary trial.
+
 - spendingTimeNew:
 
   The error spending time of the secondary trial. Defaults to missing,
@@ -202,20 +285,32 @@ An `adaptDesign_mams` object with three list components:
 - `primaryTrial`: A list of selected information for the primary trial,
   including `M`, `r`, `corr_known`, `L`, `zL`, `theta`,
   `maxInformation`, `kMax`, `informationRates`, `efficacyBounds`,
-  `information`, `alpha`, `conditionalAlpha`, `conditionalPower`,
-  `MullerSchafer`, and `byLevelBounds`.
+  `futilityBounds`, `information`, `alpha`, `conditionalAlpha`,
+  `conditionalPower`, `MullerSchafer`, and `byLevelBounds`, where
+  `byLevelBounds` is a data frame with columns `level`, `stage`, and
+  `efficacyBounds`, representing the efficacy bounds for each
+  combination of the number of active arms and the stage of analysis in
+  the primary trial.
 
 - `secondaryTrial`: A list of selected information for the secondary
   trial, including `overallReject`, `alpha`, `M`, `r`, `selected`,
   `corr_known`, `kMax`, `maxInformation`, `informationRates`,
   `cumulativeRejection`, `cumulativeAlphaSpent`, `information`,
-  `typeAlphaSpending`, `parameterAlphaSpending`, `spendingTime`, and
-  `byHypothesisBounds`.
+  `typeAlphaSpending`, `parameterAlphaSpending`, `typeBetaSpending`,
+  `parameterBetaSpending`, `userBetaSpending`, `spendingTime`, and
+  `byHypothesisBounds`, where `byHypothesisBounds` is a data frame with
+  columns `hypothesis`, `stage`, `efficacyBounds`, and `futilityBounds`,
+  representing the efficacy and futility bounds for each hypothesis and
+  each stage of analysis in the secondary trial.
 
 - `integratedTrial`: A list of selected information for the integrated
   trial, including `M`, `r`, `corr_known`, `MNew`, `rNew`, `selected`,
   `L`, `zL`, `theta`, `maxInformation`, `kMax`, `informationRates`,
-  `efficacyBounds`, `information`, and `byIntersectionBounds`.
+  `efficacyBounds`, `futilityBounds`, `information`, and
+  `byIntersectionBounds`, where `byIntersectionBounds` is a data frame
+  with columns `intersectionHypothesis`, `stage`, and `efficacyBounds`,
+  representing the efficacy bounds for each intersection hypothesis and
+  each stage of analysis in the integrated trial.
 
 ## References
 
@@ -246,16 +341,17 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   IMax = 324 / 4, theta = c(-log(0.75), -log(0.75)),
   M = 2, r = 1, kMax = 2, informationRates = c(1/2, 1),
   alpha = 0.025, typeAlphaSpending = "OF"))
-#>                                                        
-#> Multi-arm multi-stage design                           
-#> Overall power: 0.7994, overall alpha (1-sided): 0.025  
-#> Number of active arms: 2                               
-#> Randomization ratio of each active vs. control: 1      
-#> Using correlation for critical value calculation: TRUE 
-#> Max information for pairwise comparion: 81             
-#> Number of looks: 2                                     
-#> Alpha spending: O'Brien-Fleming                        
-#>                                                        
+#>                                                                            
+#> Multi-arm multi-stage design                                               
+#> Overall power: 0.7994, overall alpha (1-sided): 0.025                      
+#> Number of active arms: 2                                                   
+#> Randomization ratio of each active vs. control: 1                          
+#> Using correlation for critical value calculation: TRUE                     
+#> Max information for pairwise comparion: 81                                 
+#> Number of looks: 2                                                         
+#> Expected information under H1: 74.53, expected information under H0: 80.93 
+#> Alpha spending: O'Brien-Fleming, beta spending: None                       
+#>                                                                            
 #>                           Stage 1 Stage 2
 #> Information rate          0.500   1.000  
 #> Efficacy boundary (Z)     3.142   2.222  
@@ -287,16 +383,19 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   IMax = 324 / 4, kMax = 2, informationRates = c(1/2, 1),
   alpha = 0.025, typeAlphaSpending = "OF",
   MNew = 1, selected = 2, rNew = 1))
-#>                                                                 
-#> Primary trial:                                                  
-#> Multi-arm multi-stage design with 2 active arm(s) and 2 look(s) 
-#> Randomization ratio of each active vs. control: 1               
-#> Using correlation for critical value calculation: FALSE         
-#> Max information for pairwise comparion: 81                      
-#> Interim adaptation look: 1, z-statistic value: 0.6, 1.581       
-#> Conditional type I error: 0.0597, conditional power: 0.496      
-#> Muller & Schafer method for secondary trial: FALSE              
-#>                                                                 
+#>                                                            
+#> Primary trial:                                             
+#> Multi-arm multi-stage design                               
+#> Number of active arms: 2                                   
+#> Randomization ratio of each active vs. control: 1          
+#> Using correlation for critical value calculation: FALSE    
+#> Max information for pairwise comparion: 81                 
+#> Number of looks: 2                                         
+#> Interim adaptation look: 1, z-statistic value: 0.6, 1.581  
+#> theta: 0.094, 0.248                                        
+#> Conditional type I error: 0.0597, conditional power: 0.496 
+#> Muller & Schafer method for secondary trial: FALSE         
+#>                                                            
 #>                       Stage 1 Stage 2
 #> Information rate      0.500   1.000  
 #> Efficacy boundary (Z) 3.179   2.248  
@@ -310,10 +409,10 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> 4     1     2        1.977
 #>                                                                  
 #> Secondary trial:                                                 
-#> Multi-arm multi-stage design with 1 active arm(s) and 1 look(s)  
-#> Selected active arms: 2                                          
+#> Multi-arm multi-stage design                                     
+#> Number of selected active arms: 1, selected active arms: 2       
 #> Randomization ratio of each active vs. control: 1                
-#> theta: 0.094, 0.248, maximum information: 93.22                  
+#> Maximum information: 93.22                                       
 #> Overall power: 0.8, overall significance level (1-sided): 0.0597 
 #>                                                                  
 #>                        Stage 1
@@ -323,15 +422,16 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Information            93.22  
 #> 
 #> By hypothesis critical values for secondary trial
-#>   Hypothesis Stage Boundary (Z)
-#> 1          2     1        1.557
-#>                                                                                  
-#> Integrated trial:                                                                
-#> Adaptive design with 2 active arm(s) before and 1 active arm(s) after adaptation 
-#> Selected active arms after adaptation: 2                                         
-#> Total number of looks: 2                                                         
-#> Interim adaptation look: 1, z-statistic value: 0.6, 1.581                        
-#>                                                                                  
+#>   Hypothesis Stage Efficacy boundary (Z) Futility boundary (Z)
+#> 1          2     1                 1.557                 1.557
+#>                                                            
+#> Integrated trial:                                          
+#> Adaptive multi-arm multi-stage design                      
+#> Number of active arms before adaptation: 2                 
+#> Number of selected active arms: 1, selected active arms: 2 
+#> Total number of looks: 2                                   
+#> Interim adaptation look: 1, z-statistic value: 0.6, 1.581  
+#>                                                            
 #>                     Stage 1 Stage 2
 #> Information rate    0.303   1.000  
 #> Efficacy bounds (Z) 3.179   2.170  

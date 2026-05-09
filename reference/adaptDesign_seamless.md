@@ -221,8 +221,8 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Number of active arms in phase 2: 2                             
 #> Randomization ratio of each active vs. control: 1               
 #> Using correlation for critical value calculation: FALSE         
-#> Max information for pairwise comparion: 30                      
 #> Number of looks in phase 3: 2                                   
+#> Max information for pairwise comparion: 30                      
 #> Interim adaptation look in Phase 3: 1, z-statistic value: 1.791 
 #> Conditional type I error: 0.0935, conditional power: 0.44       
 #> Muller & Schafer method for secondary trial: FALSE              
@@ -246,6 +246,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Integrated trial:                                               
 #> Adaptive Phase 2/3 seamless design                              
 #> Total number of looks in Phase 3: 2                             
+#> Maximum information for pairwise comparion: 69.51               
 #> Interim adaptation look in Phase 3: 1, z-statistic value: 1.791 
 #>                                                                 
 #>                     Stage 1 Stage 2 Stage 3
