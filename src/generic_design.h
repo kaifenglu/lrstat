@@ -157,8 +157,6 @@ ListCpp adaptDesigncpp(
     const std::vector<double>& futilityBounds,
     const std::vector<double>& futilityCP,
     const std::vector<double>& futilityTheta,
-    const std::string& typeBetaSpending,
-    const double parameterBetaSpending,
     const std::vector<double>& spendingTime,
     const bool MullerSchafer,
     const size_t kNew,
