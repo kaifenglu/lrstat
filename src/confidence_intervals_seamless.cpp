@@ -40,7 +40,7 @@ double f_pvalue_seamless(const double theta,
 
   std::vector<double> mu(M, theta);
   auto probs = exitprob_seamless_cpp(M, r, mu, corr_known, L, upper, I);
-  auto exitUpper = probs.get<std::vector<double>>("exitProb");
+  auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
   double sum_up = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
   return sum_up;
 }
@@ -602,7 +602,7 @@ DataFrameCpp getADCI_seamless_cpp(
     std::vector<double> zero(M, 0.0);
     auto probs = exitprob_seamless_cpp(M, r, zero, corr_known, K,
                                        b, informationRates);
-    auto exitUpper = probs.get<std::vector<double>>("exitProb");
+    auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
     alpha1 = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
   } else {
     b = getBound_seamless_cpp(
