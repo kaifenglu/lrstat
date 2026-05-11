@@ -1380,27 +1380,23 @@ ListCpp getDesign_mams_cpp(
   double IMax1 = IMax;
   std::vector<double> information(kMax);
   if (unknown == "IMax") {
-    double sqrtt0 = std::sqrt(infoRates[0]);
     double maxtheta = *std::max_element(theta.begin(), theta.end());
-    std::vector<double> theta_norm(M);
-    for (size_t i = 0; i < M; ++i) theta_norm[i] = theta[i] / maxtheta;
-    std::vector<double> theta1(M);
     std::vector<double> mu0(M);
     std::vector<double> lo(M, -8.0), hi(M, critValues[0]);
 
     auto f = [&](double x)->double {
-      for (size_t i = 0; i < M; ++i) {
-        theta1[i] = theta_norm[i] * x;
+      double maxInformation = sq(x / maxtheta);
+      for (size_t i = 0; i < kMax; ++i) {
+        information[i] = infoRates[i] * maxInformation;
       }
+      double sqrtI0 = std::sqrt(information[0]);
 
       // compute stagewise exit probabilities
       if (!missingFutilityBounds || bsf == "none" || kMax == 1) {
         if (!none_na(futilityBounds) && !none_na(futilityCP)
               && none_na(futilityTheta)) {
-          double maxInformation = sq(x / maxtheta);
           for (size_t i = 0; i < kMax - 1; ++i) {
-            futBounds[i] = std::sqrt(infoRates[i] * maxInformation) *
-              futilityTheta[i];
+            futBounds[i] = std::sqrt(information[i]) * futilityTheta[i];
             if (futBounds[i] > critValues[i]) return -1.0; // to decrease drift
           }
           futBounds[kMax-1] = critValues[kMax-1];
@@ -1410,7 +1406,7 @@ ListCpp getDesign_mams_cpp(
           std::fill_n(a.data_ptr() + i * M, M, futBounds[i]);
         }
 
-        probs = exitprob_mams_cpp(M, r, theta1, true, kMax, b, a, infoRates);
+        probs = exitprob_mams_cpp(M, r, theta, true, kMax, b, a, information);
         v = probs.get<std::vector<double>>("exitProbUpper");
         double overallReject = std::accumulate(v.begin(), v.end(), 0.0);
         return (1.0 - overallReject) - beta;
@@ -1426,7 +1422,7 @@ ListCpp getDesign_mams_cpp(
           errorSpentcpp(spendTime[0], beta, bsf, parameterBetaSpending);
 
           for (size_t m = 0; m < M; ++m) {
-            mu0[m] = theta1[m] * sqrtt0;
+            mu0[m] = theta[m] * sqrtI0;
           }
           auto q = pmvnormcpp(lo, hi, mu0, sigma,
                               1024, 16384, 8, 1e-4, 0.0, 314159);
@@ -1447,7 +1443,7 @@ ListCpp getDesign_mams_cpp(
             // lambda expression for finding futility bound at stage k
             auto g = [&](double aval)->double {
               std::fill_n(a.data_ptr() + k * M, M, aval);
-              probs = exitprob_mams_cpp(M, r, theta1, true, k + 1, b, a, infoRates);
+              probs = exitprob_mams_cpp(M, r, theta, true, k + 1, b, a, information);
               v = probs.get<std::vector<double>>("exitProbLower");
               double cpl = std::accumulate(v.begin(), v.end(), 0.0);
               return cpl - cb;
@@ -1479,7 +1475,6 @@ ListCpp getDesign_mams_cpp(
 
     double drift = brent(f, 0.001, 8.0, 1e-6);
     IMax1 = sq(drift / maxtheta);
-    for (size_t i = 0; i < kMax; ++i) information[i] = infoRates[i] * IMax1;
     futBounds[kMax-1] = critValues[kMax-1];
     std::fill_n(a.data_ptr() + (kMax - 1) * M, M, futBounds[kMax - 1]);
     probs = exitprob_mams_cpp(M, r, theta, true, kMax, b, a, information);
@@ -1525,8 +1520,18 @@ ListCpp getDesign_mams_cpp(
   double overallReject = cpu.back();
   std::vector<double> ptotal(kMax);
   for (size_t i = 0; i < kMax; ++i) ptotal[i] = pu[i] + pl[i];
+
+  double multiplier = (M * r + 1.0) / (r + 1.0);
+  std::vector<double> informationOverall(kMax);
+  for (size_t i = 0; i < kMax; ++i) {
+    informationOverall[i] = information[i] * multiplier;
+  }
+  double IMaxOverall = informationOverall.back();
+
   double expectedInformationH1 = std::inner_product(
     ptotal.begin(), ptotal.end(), information.begin(), 0.0);
+  double expectedInformationOverallH1 = std::inner_product(
+    ptotal.begin(), ptotal.end(), informationOverall.begin(), 0.0);
 
   // stagewise exit probabilities under H0 with binding futility
   ListCpp probsH0 = exitprob_mams_cpp(M, r, zero, true, kMax, b, a, infoRates);
@@ -1540,6 +1545,8 @@ ListCpp getDesign_mams_cpp(
   for (size_t i = 0; i < kMax; ++i) ptotalH0[i] = puH0[i] + plH0[i];
   double expectedInformationH0 = std::inner_product(
     ptotalH0.begin(), ptotalH0.end(), information.begin(), 0.0);
+  double expectedInformationOverallH0 = std::inner_product(
+    ptotalH0.begin(), ptotalH0.end(), informationOverall.begin(), 0.0);
 
   for (size_t i = 0; i < kMax; ++i) {
     if (critValues[i] == 8) effStopping[i] = 0;
@@ -1557,6 +1564,11 @@ ListCpp getDesign_mams_cpp(
   overallResults.push_back(IMax1, "information");
   overallResults.push_back(expectedInformationH1, "expectedInformationH1");
   overallResults.push_back(expectedInformationH0, "expectedInformationH0");
+  overallResults.push_back(IMaxOverall, "informationOverall");
+  overallResults.push_back(expectedInformationOverallH1,
+                           "expectedInformationOverallH1");
+  overallResults.push_back(expectedInformationOverallH0,
+                           "expectedInformationOverallH0");
 
   DataFrameCpp byStageResults;
   byStageResults.push_back(std::move(infoRates), "informationRates");
@@ -1572,6 +1584,7 @@ ListCpp getDesign_mams_cpp(
   byStageResults.push_back(std::move(efficacyP), "efficacyP");
   byStageResults.push_back(std::move(futilityP), "futilityP");
   byStageResults.push_back(std::move(information), "information");
+  byStageResults.push_back(std::move(informationOverall), "informationOverall");
   byStageResults.push_back(std::move(effStopping), "efficacyStopping");
   byStageResults.push_back(std::move(futStopping), "futilityStopping");
   byStageResults.push_back(std::move(puH0), "rejectPerStageH0");
@@ -1844,8 +1857,6 @@ ListCpp adaptDesign_mams_cpp(
     const std::vector<double>& futilityBounds,
     const std::vector<double>& futilityCP,
     const std::vector<double>& futilityTheta,
-    const std::string& typeBetaSpending,
-    const double parameterBetaSpending,
     const std::vector<double>& spendingTime,
     const bool MullerSchafer,
     const size_t MNew,
@@ -1996,23 +2007,6 @@ ListCpp adaptDesign_mams_cpp(
         throw std::invalid_argument("Insufficient length for futilityTheta");
       }
     }
-  }
-
-  std::string bsf = typeBetaSpending;
-  for (char &c : bsf) {
-    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  }
-
-  if (missingFutilityBounds && !(bsf == "sfof" || bsf == "sfp" ||
-      bsf == "sfkd" || bsf == "sfhsd" || bsf == "none")) {
-    throw std::invalid_argument("Invalid value for typeBetaSpending");
-  }
-
-  if ((bsf == "sfkd" || bsf == "sfhsd") && std::isnan(parameterBetaSpending)) {
-    throw std::invalid_argument("Missing value for parameterBetaSpending");
-  }
-  if (bsf == "sfkd" && parameterBetaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterBetaSpending must be positive for sfKD");
   }
 
   std::vector<double> spendTime;
@@ -2317,7 +2311,7 @@ ListCpp adaptDesign_mams_cpp(
   // obtain futility bounds for the primary trial
   std::vector<double> futBounds(kMax);
   if (kMax > 1) {
-    if (missingFutilityBounds && bsf == "none") {
+    if (missingFutilityBounds) {
       std::fill_n(futBounds.begin(), kMax - 1, -8.0);
       futBounds[kMax-1] = critValues[kMax-1];
     } else if (!missingFutilityBounds) {
@@ -2363,13 +2357,6 @@ ListCpp adaptDesign_mams_cpp(
   // information for the primary trial
   std::vector<double> information1(kMax);
   for (size_t i = 0; i < kMax; ++i) information1[i] = infoRates[i] * IMax;
-
-  if (missingFutilityBounds && bsf != "none" && kMax > 1) { // beta-spending
-    ListCpp out = getPower_mams(M, r, theta, alpha1, kMax, critValues,
-                                information1, bsf, parameterBetaSpending,
-                                spendTime, futStopping, 0.0, zero);
-    futBounds = out.get<std::vector<double>>("futilityBounds");
-  }
 
   for (size_t i = 0; i < kMax; ++i) {
     std::fill_n(a.data_ptr() + i * M, M, futBounds[i]);
@@ -3272,17 +3259,6 @@ ListCpp adaptDesign_mams_cpp(
 //'   primary trial.
 //' @param futilityTheta The parameter value-based futility bounds for the
 //'   primary trial.
-//' @param typeBetaSpending The type of beta spending for the primary trial.
-//'   One of the following:
-//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
-//'   \code{"sfP"} for Pocock type spending function,
-//'   \code{"sfKD"} for Kim & DeMets spending function,
-//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
-//'   \code{"none"} for no early futility stopping.
-//'   Defaults to \code{"none"}.
-//' @param parameterBetaSpending The parameter value of beta spending
-//'   for the primary trial. Corresponds to \eqn{\rho} for \code{"sfKD"},
-//'   and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param spendingTime The error spending time of the primary trial.
 //'   Defaults to missing, in which case it is assumed to be the same as
 //'   \code{informationRates}.
@@ -3440,8 +3416,6 @@ Rcpp::List adaptDesign_mams(
     const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds = R_NilValue,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityCP = R_NilValue,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta = R_NilValue,
-    const std::string& typeBetaSpending = "none",
-    const double parameterBetaSpending = NA_REAL,
     const Rcpp::NumericVector& spendingTime = NA_REAL,
     const bool MullerSchafer = false,
     const int MNew = NA_INTEGER,
@@ -3528,8 +3502,7 @@ Rcpp::List adaptDesign_mams(
     static_cast<size_t>(L), zLVec, thetaVec, IMax,
     static_cast<size_t>(kMax), infoRates, effStopping, futStopping,
     critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
-    userAlpha, futBounds, futCP, futTheta, typeBetaSpending,
-    parameterBetaSpending, spendTime,
+    userAlpha, futBounds, futCP, futTheta, spendTime,
     MullerSchafer, static_cast<size_t>(MNew), selectedNew, rNew,
     static_cast<size_t>(kNew), infoRatesNew,
     effStoppingNew, futStoppingNew,
