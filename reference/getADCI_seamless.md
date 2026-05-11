@@ -197,5 +197,6 @@ getADCI_seamless(
   IMax = 120 / 4, K = 2, informationRates = c(1/3, 2/3, 1),
   alpha = 0.025, typeAlphaSpending = "OF",
   Lc = 2, zLc = -log(0.677) * sqrt(236 / 4), INew = 236 / 4)
-#> Error: Element with name 'exitProb' not found.
+#>        pvalue  thetahat cilevel      lower     upper
+#> 1 0.008471387 0.2557151    0.95 0.05573209 0.4420563
 ```
