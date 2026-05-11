@@ -40,8 +40,6 @@ std::vector<double> getCP_mams_cpp(
     const std::vector<double>& futilityBounds,
     const std::vector<double>& futilityCP,
     const std::vector<double>& futilityTheta,
-    const std::string& typeBetaSpending,
-    const double parameterBetaSpending,
     const std::vector<double>& spendingTime,
     const bool MullerSchafer,
     const size_t MNew,
@@ -181,23 +179,6 @@ std::vector<double> getCP_mams_cpp(
         throw std::invalid_argument("Insufficient length for futilityTheta");
       }
     }
-  }
-
-  std::string bsf = typeBetaSpending;
-  for (char &c : bsf) {
-    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  }
-
-  if (missingFutilityBounds && !(bsf == "sfof" || bsf == "sfp" ||
-      bsf == "sfkd" || bsf == "sfhsd" || bsf == "none")) {
-    throw std::invalid_argument("Invalid value for typeBetaSpending");
-  }
-
-  if ((bsf == "sfkd" || bsf == "sfhsd") && std::isnan(parameterBetaSpending)) {
-    throw std::invalid_argument("Missing value for parameterBetaSpending");
-  }
-  if (bsf == "sfkd" && parameterBetaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterBetaSpending must be positive for sfKD");
   }
 
   std::vector<double> spendTime;
@@ -447,15 +428,10 @@ std::vector<double> getCP_mams_cpp(
     std::fill_n(b.data_ptr() + i * M, M, critValues[i]);
   }
 
-  probs = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
-  v = probs.get<std::vector<double>>("exitProbUpper");
-  double p0 = std::accumulate(v.begin(), v.end(), 0.0);
-  double alpha1 = missingCriticalValues ? alpha : p0;
-
   // obtain futility bounds for the primary trial
   std::vector<double> futBounds(kMax);
   if (kMax > 1) {
-    if (missingFutilityBounds && bsf == "none") {
+    if (missingFutilityBounds) {
       std::fill_n(futBounds.begin(), kMax - 1, -8.0);
       futBounds[kMax-1] = critValues[kMax-1];
     } else if (!missingFutilityBounds) {
@@ -501,13 +477,6 @@ std::vector<double> getCP_mams_cpp(
   // information for the primary trial
   std::vector<double> information1(kMax);
   for (size_t i = 0; i < kMax; ++i) information1[i] = infoRates[i] * IMax;
-
-  if (missingFutilityBounds && bsf != "none" && kMax > 1) { // beta-spending
-    ListCpp out = getPower_mams(M, r, theta, alpha1, kMax, critValues,
-                                information1, bsf, parameterBetaSpending,
-                                spendTime, futStopping, 0.0, zero);
-    futBounds = out.get<std::vector<double>>("futilityBounds");
-  }
 
   for (size_t i = 0; i < kMax; ++i) {
     std::fill_n(a.data_ptr() + i * M, M, futBounds[i]);
@@ -841,17 +810,6 @@ std::vector<double> getCP_mams_cpp(
 //'   primary trial.
 //' @param futilityTheta The parameter value-based futility bounds for the
 //'   primary trial.
-//' @param typeBetaSpending The type of beta spending for the primary trial.
-//'   One of the following:
-//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
-//'   \code{"sfP"} for Pocock type spending function,
-//'   \code{"sfKD"} for Kim & DeMets spending function,
-//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
-//'   \code{"none"} for no early futility stopping.
-//'   Defaults to \code{"none"}.
-//' @param parameterBetaSpending The parameter value of beta spending
-//'   for the primary trial. Corresponds to \eqn{\rho} for \code{"sfKD"},
-//'   and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param spendingTime The error spending time of the primary trial.
 //'   Defaults to missing, in which case it is assumed to be the same as
 //'   \code{informationRates}.
@@ -949,8 +907,6 @@ Rcpp::NumericVector getCP_mams(
     const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds = R_NilValue,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityCP = R_NilValue,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta = R_NilValue,
-    const std::string& typeBetaSpending = "none",
-    const double parameterBetaSpending = NA_REAL,
     const Rcpp::NumericVector& spendingTime = NA_REAL,
     const bool MullerSchafer = false,
     const int MNew = NA_INTEGER,
@@ -1031,8 +987,7 @@ Rcpp::NumericVector getCP_mams(
     static_cast<size_t>(L), zLVec, thetaVec, IMax,
     static_cast<size_t>(kMax), infoRates, effStopping, futStopping,
     critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
-    userAlpha, futBounds, futCP, futTheta, typeBetaSpending,
-    parameterBetaSpending, spendTime,
+    userAlpha, futBounds, futCP, futTheta, spendTime,
     MullerSchafer, static_cast<size_t>(MNew), selectedNew, rNew,
     static_cast<size_t>(kNew), infoRatesNew,
     effStoppingNew, futStoppingNew,
