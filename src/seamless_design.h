@@ -20,6 +20,16 @@ ListCpp exitprob_seamless_cpp(
     const bool corr_known,
     const size_t K,
     const std::vector<double>& b,
+    const std::vector<double>& a,
+    const std::vector<double>& I);
+
+ListCpp exitprob_seamless_cpp(
+    const size_t M,
+    const double r,
+    const std::vector<double>& theta,
+    const bool corr_known,
+    const size_t K,
+    const std::vector<double>& b,
     const std::vector<double>& I);
 
 std::vector<double> getBound_seamless_cpp(
@@ -35,6 +45,19 @@ std::vector<double> getBound_seamless_cpp(
     const std::vector<double>& spendingTime,
     const std::vector<unsigned char>& efficacyStopping);
 
+ListCpp getPower_seamless(
+    const size_t M,
+    const double r,
+    const std::vector<double>& theta,
+    const double alpha,
+    const size_t K,
+    const std::vector<double>& critValues,
+    const std::vector<double>& I,
+    const std::string& bsf,
+    const double bsfpar,
+    const std::vector<double>& st,
+    const std::vector<unsigned char>& futStopping);
+
 ListCpp getDesign_seamless_cpp(
     const double beta,
     const double IMax,
@@ -45,12 +68,20 @@ ListCpp getDesign_seamless_cpp(
     const size_t K,
     const std::vector<double>& informationRates,
     const std::vector<unsigned char>& efficacyStopping,
+    const std::vector<unsigned char>& futilityStopping,
     const std::vector<double>& criticalValues,
     const double alpha,
     const std::string& typeAlphaSpending,
     const double parameterAlphaSpending,
     const std::vector<double>& userAlphaSpending,
+    const std::vector<double>& futilityBounds,
+    const std::vector<double>& futilityCP,
+    const std::vector<double>& futilityTheta,
+    const std::string& typeBetaSpending,
+    const double parameterBetaSpending,
+    const std::vector<double>& userBetaSpending,
     const std::vector<double>& spendingTime);
+
 
 ListCpp adaptDesign_seamless_cpp(
     double betaNew,
@@ -65,16 +96,27 @@ ListCpp adaptDesign_seamless_cpp(
     const size_t K,
     const std::vector<double>& informationRates,
     const std::vector<unsigned char>& efficacyStopping,
+    const std::vector<unsigned char>& futilityStopping,
     const std::vector<double>& criticalValues,
     const double alpha,
     const std::string& typeAlphaSpending,
     const double parameterAlphaSpending,
     const std::vector<double>& userAlphaSpending,
+    const std::vector<double>& futilityBounds,
+    const std::vector<double>& futilityCP,
+    const std::vector<double>& futilityTheta,
     const std::vector<double>& spendingTime,
     const bool MullerSchafer,
     const size_t kNew,
     const std::vector<double>& informationRatesNew,
     const std::vector<unsigned char>& efficacyStoppingNew,
+    const std::vector<unsigned char>& futilityStoppingNew,
     const std::string& typeAlphaSpendingNew,
     const double parameterAlphaSpendingNew,
+    const std::vector<double>& futilityBoundsInt,
+    const std::vector<double>& futilityCPInt,
+    const std::vector<double>& futilityThetaInt,
+    const std::string& typeBetaSpendingNew,
+    const double parameterBetaSpendingNew,
+    const std::vector<double>& userBetaSpendingNew,
     const std::vector<double>& spendingTimeNew);
