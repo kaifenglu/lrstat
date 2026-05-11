@@ -10,8 +10,9 @@ exitprob_seamless(
   theta = NA_real_,
   corr_known = TRUE,
   K = NA_integer_,
-  b = NA_real_,
-  I = NA_real_
+  b = NULL,
+  a = NULL,
+  I = NULL
 )
 }
 \arguments{
@@ -30,9 +31,16 @@ as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
 
 \item{K}{Number of sequential looks in Phase 3.}
 
-\item{b}{A vector of critical values (length \eqn{K+1}). The first element
-is for Phase 2; the remaining \eqn{K} elements are for the looks in
-Phase 3.}
+\item{b}{A vector of efficacy boundaries (length \eqn{K+1}). The first
+element is the efficacy boundary for the phase-2 max-Z statistic;
+the remaining \eqn{K} elements are efficacy boundaries for the selected
+arm in Phase 3.}
+
+\item{a}{An optional vector of futility boundaries (length \eqn{K+1}).
+The first element is the futility boundary for the phase-2 max-Z
+statistic; the remaining \eqn{K} elements are futility boundaries for
+the selected arm in Phase 3. If omitted, no futility stopping is
+applied.}
 
 \item{I}{A vector of information levels (length \eqn{K+1}) for any active
 arm versus the common control. The first element is for Phase 2;
@@ -41,63 +49,93 @@ the remaining \eqn{K} elements are for the looks in Phase 3.}
 \value{
 A list containing the following components:
 \itemize{
-\item \code{exitProb}: A vector of length \eqn{K + 1}. The first element is the
-probability of rejection in Phase 2; the remaining elements are the
-probabilities of rejection at each look in Phase 3.
-\item \code{exitProbByArm}: A \eqn{(K+1) \times M} matrix. The \eqn{(k, m)}-th
-entry represents the probability that the global null is rejected at
-look \eqn{k} given that arm \eqn{m} was selected as the best arm.
-\item \code{selectAsBest}: A vector of length \eqn{M} containing the probability
-that each active arm is selected to move on to Phase 3.
+\item \code{exitProbUpper}: A vector of length \eqn{K + 1}. The first element
+is the probability of stopping for efficacy in Phase 2; the remaining
+elements are the probabilities of stopping for efficacy at each look in
+Phase 3.
+\item \code{exitProbLower}: A vector of length \eqn{K + 1}. The first element
+is the probability of stopping for futility in Phase 2; the remaining
+elements are the probabilities of stopping for futility at each look in
+Phase 3.
+\item \code{exitProbByArmUpper}: A \eqn{(K+1) \times M} matrix. The
+\eqn{(k, m)}-th entry gives the probability of stopping for efficacy at
+look \eqn{k} given that arm \eqn{m} is selected as best.
+\item \code{exitProbByArmLower}: A \eqn{(K+1) \times M} matrix. The
+\eqn{(k, m)}-th entry gives the probability of stopping for futility at
+look \eqn{k} given that arm \eqn{m} is selected as best.
+\item \code{selectAsBest}: A vector of length \eqn{M} containing the
+probability that each active arm is selected to move on to Phase 3.
+}
+
+For backward compatibility, the list also contains:
+\itemize{
+\item \code{exitProb}: identical to \code{exitProbUpper}.
+\item \code{exitProbByArm}: identical to \code{exitProbByArmUpper}.
 }
 }
 \description{
-Computes the exit (rejection) probabilities for a phase 2/3
-seamless design. In Phase 2, multiple active arms are
-compared against a common control arm. The best-performing arm is
-selected to proceed to Phase 3, where it is tested against the common
-control over multiple looks.
+Computes the upper and lower exit probabilities for a phase
+2/3 seamless design. In Phase 2, multiple active arms are compared
+against a common control arm. If the phase-2 max-Z statistic crosses the
+efficacy boundary, the trial stops early for efficacy; if it falls below
+the futility boundary, the trial stops early for futility. Otherwise, the
+best-performing arm is selected to proceed to Phase 3, where it is tested
+against the common control over multiple looks with upper and optional
+lower stopping boundaries.
 }
 \details{
 The function assumes a multivariate normal distribution for the Wald
 statistics. The "best" arm is defined as the active arm with the largest
-Z-statistic at the end of Phase 2.
+Z-statistic at the end of Phase 2 among designs that continue beyond the
+phase-2 analysis.
 
 \strong{Decision Rules:}
 \itemize{
-\item \strong{Phase 2}: The global null hypothesis is rejected if the Wald
-statistic for the best arm, \eqn{Z(I_0)}, satisfies \eqn{Z(I_0) \ge b_0}.
-\item \strong{Phase 3}: If the trial continues, the hypothesis is rejected at
-look \eqn{k} if \eqn{Z(I_k) \ge b_k} and all previous
-looks (including Phase 2) failed to reject.
+\item \strong{Phase 2 efficacy stop}: reject if the phase-2 max-Z statistic
+satisfies \eqn{\max_m Z_m(I_0) \ge b_0}.
+\item \strong{Phase 2 futility stop}: stop for futility if the phase-2 max-Z
+statistic satisfies \eqn{\max_m Z_m(I_0) \le a_0}.
+\item \strong{Continue to Phase 3}: if \eqn{a_0 < \max_m Z_m(I_0) < b_0},
+select the arm with the largest phase-2 Z-statistic and continue with
+that arm only.
+\item \strong{Phase 3 efficacy stop}: at look \eqn{k}, reject if the selected
+arm's Z-statistic exceeds the efficacy boundary and no earlier stop has
+occurred.
+\item \strong{Phase 3 futility stop}: at look \eqn{k}, stop for futility if
+the selected arm's Z-statistic is below the futility boundary and no
+earlier stop has occurred.
 }
 
 \strong{Design Assumptions:}
 \itemize{
 \item All active arms share the same information level in Phase 2.
 \item Exactly one active arm is selected at the end of Phase 2 based on the
-largest observed Z-statistic.
+largest observed Z-statistic when the trial continues to Phase 3.
 }
 }
 \examples{
 
-# Setup: 2 active arms vs control in phase 2; 1 selected arm vs control
-# in phase 3. Phase 3 has 2 sequential looks.
+# Setup: 2 active arms vs control in Phase 2; 1 selected arm vs control
+# in Phase 3. Phase 3 has 2 sequential looks.
 
 # Information levels: equal spacing over 3 looks based on a maximum of
 # 110 patients per arm, SD = 1.0
 I <- c(110 / (2 * 1.0^2) * seq(1, 3)/3)
 
-# O'Brien-Fleming critical values
+# O'Brien-Fleming efficacy boundaries
 b <- c(3.776605, 2.670463, 2.180424)
 
-# Type I error under the global null hypothesis
+# No futility stopping
 p0 <- exitprob_seamless(M = 2, theta = c(0, 0), K = 2, b = b, I = I)
-cumsum(p0$exitProb)
+cumsum(p0$exitProbUpper)
 
-# Power under alternative: Treatment effects of 0.3 and 0.5
-p1 <- exitprob_seamless(M = 2, theta = c(0.3, 0.5), K = 2, b = b, I = I)
-cumsum(p1$exitProb)
+# Add futility stopping
+a <- c(0, 0.5, b[3])
+p1 <- exitprob_seamless(M = 2, theta = c(0.3, 0.5), K = 2, b = b, a = a, I = I)
+cbind(
+  cumulativeEfficacy = cumsum(p1$exitProbUpper),
+  cumulativeFutility = cumsum(p1$exitProbLower)
+)
 
 }
 \references{

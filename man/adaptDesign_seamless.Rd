@@ -17,18 +17,29 @@ adaptDesign_seamless(
   K = NA_integer_,
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
-  criticalValues = NA_real_,
+  futilityStopping = NA_integer_,
+  criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityTheta = NULL,
   spendingTime = NA_real_,
   MullerSchafer = FALSE,
   kNew = NA_integer_,
   informationRatesNew = NA_real_,
   efficacyStoppingNew = NA_integer_,
+  futilityStoppingNew = NA_integer_,
   typeAlphaSpendingNew = "sfOF",
   parameterAlphaSpendingNew = NA_real_,
+  futilityBoundsInt = NULL,
+  futilityCPInt = NULL,
+  futilityThetaInt = NULL,
+  typeBetaSpendingNew = "none",
+  parameterBetaSpendingNew = NA_real_,
+  userBetaSpendingNew = NA_real_,
   spendingTimeNew = NA_real_
 )
 }
@@ -70,6 +81,10 @@ before the trial. If unspecified, defaults to \eqn{(1:(K+1)) / (K+1)}.}
 allowed at each stage of the primary trial. Defaults to \code{TRUE}
 if left unspecified.}
 
+\item{futilityStopping}{Indicators of whether futility stopping is
+allowed at each stage of the primary trial. Defaults to \code{TRUE}
+if left unspecified.}
+
 \item{criticalValues}{The upper boundaries on the max z-test statistic
 scale for Phase 2 and the z-test statistics for the selected arm
 in Phase 3 for the primary trial. If missing, boundaries
@@ -98,6 +113,17 @@ for the primary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
 \item{userAlphaSpending}{The user-defined alpha spending for the
 primary trial. Represents the cumulative alpha spent up to each stage.}
 
+\item{futilityBounds}{The lower boundaries on the max-z statistic scale
+at end of phase 2 and the z-test statistic scale in phase 3
+for futility stopping for the primary trial. Defaults to
+\code{rep(-8, kMax-1)} if left unspecified.}
+
+\item{futilityCP}{The conditional power-based futility bounds for the
+primary trial.}
+
+\item{futilityTheta}{The parameter value-based futility bounds for the
+primary trial.}
+
 \item{spendingTime}{The error spending time of the primary trial.
 Defaults to missing, in which case it is assumed to be the same as
 \code{informationRates}.}
@@ -110,6 +136,10 @@ for trial adaptation.}
 \item{informationRatesNew}{The spacing of looks of the secondary trial.}
 
 \item{efficacyStoppingNew}{The indicators of whether efficacy stopping is
+allowed at each look of the secondary trial. Defaults to \code{TRUE}
+if left unspecified.}
+
+\item{futilityStoppingNew}{The indicators of whether futility stopping is
 allowed at each look of the secondary trial. Defaults to \code{TRUE}
 if left unspecified.}
 
@@ -129,6 +159,33 @@ Defaults to \code{"sfOF"}.}
 for the secondary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
 \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.}
 
+\item{futilityBoundsInt}{The futility boundaries on the z statistic
+scale for new stages of the integrated trial.}
+
+\item{futilityCPInt}{The conditional power-based futility bounds for
+new stages of the integrated trial.}
+
+\item{futilityThetaInt}{The parameter value-based futility bounds for the
+new stages of the integrated trial.}
+
+\item{typeBetaSpendingNew}{The type of beta spending for the secondary
+trial. One of the following:
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+\code{"user"} for user defined spending, and
+\code{"none"} for no early futility stopping.
+Defaults to \code{"none"}.}
+
+\item{parameterBetaSpendingNew}{The parameter value of beta spending
+for the secondary trial. Corresponds to \eqn{\rho} for \code{"sfKD"},
+and \eqn{\gamma} for \code{"sfHSD"}.}
+
+\item{userBetaSpendingNew}{The user-defined cumulative beta spending.
+Represents the cumulative beta spent up to each stage of the
+secondary trial.}
+
 \item{spendingTimeNew}{The error spending time of the secondary trial.
 Defaults to missing, in which case it is assumed to be the same as
 \code{informationRatesNew}.}
@@ -139,14 +196,23 @@ An \code{adaptDesign_seamless} object with three list components:
 \item \code{primaryTrial}: A list of selected information for the primary
 trial, including \code{M}, \code{r}, \code{corr_known}, \code{K},
 \code{L}, \code{zL}, \code{theta}, \code{maxInformation}, \code{kMax},
-\code{informationRates}, \code{efficacyBounds}, \code{information},
-\code{alpha}, \code{conditionalAlpha}, \code{conditionalPower},
-and \code{MullerSchafer}.
-\item \code{secondaryTrial}: A \code{design} object for the secondary trial.
+\code{informationRates}, \code{efficacyBounds}, \code{futilityBounds},
+\code{information}, \code{alpha}, \code{conditionalAlpha},
+\code{conditionalPower}, and \code{MullerSchafer}.
+\item \code{secondaryTrial}: A list of selected information for the seconary
+trial, including \code{overallReject}, \code{alpha}, \code{kMax},
+\code{maxInformation}, \code{informationRates}, \code{efficacyBounds},
+\code{futilityBounds}, \code{cumulativeRejection},
+\code{cumulativeFutility}, \code{cumulativeAlphaSpent},
+\code{information}, \code{typeAlphaSpending},
+\code{parameterAlphaSpending}, \code{typeBetaSpending},
+\code{parameterBetaSpending}, \code{userBetaSpending}, and
+\code{spendingTime}.
 \item \code{integratedTrial}: A list of selected information for the integrated
 trial, including \code{M}, \code{r}, \code{corr_known}, \code{K},
 \code{L}, \code{zL}, \code{theta}, \code{maxInformation}, \code{kMax},
-\code{informationRates}, \code{efficacyBounds}, and \code{information}.
+\code{informationRates}, \code{efficacyBounds}, \code{futilityBounds},
+and \code{information}.
 }
 }
 \description{

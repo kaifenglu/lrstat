@@ -14,11 +14,18 @@ getDesign_seamless(
   K = 1L,
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
-  criticalValues = NA_real_,
+  futilityStopping = NA_integer_,
+  criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityTheta = NULL,
+  typeBetaSpending = "none",
+  parameterBetaSpending = NA_real_,
+  userBetaSpending = NA_real_,
   spendingTime = NA_real_
 )
 }
@@ -53,10 +60,13 @@ before the trial. If unspecified, defaults to \eqn{(1:(K+1)) / (K+1)}.}
 \item{efficacyStopping}{Indicators of whether efficacy stopping is allowed
 at each stage. Defaults to \code{TRUE} if left unspecified.}
 
-\item{criticalValues}{The upper boundaries on the max z-test statistic
-scale for Phase 2 and the z-test statistics for the selected arm
-in Phase 3 for the primary trial. If missing, boundaries
-will be computed based on the specified alpha spending function.}
+\item{futilityStopping}{Indicators of whether futility stopping is allowed
+at each stage. Defaults to \code{TRUE} if left unspecified.}
+
+\item{criticalValues}{The upper boundaries on the max-Z statistic scale
+for Phase 2 and the Z statistics for the selected arm in Phase 3.
+If missing, boundaries will be computed based on the specified alpha
+spending function.}
 
 \item{alpha}{The significance level. Defaults to 0.025.}
 
@@ -79,9 +89,36 @@ and \eqn{\gamma} for \code{"sfHSD"}.}
 \item{userAlphaSpending}{The user defined alpha spending. Cumulative alpha
 spent up to each stage.}
 
+\item{futilityBounds}{A numeric vector of length \eqn{K} specifying
+futility boundaries on the max-Z scale at the end of Phase 2 and
+on the Z scale for the \eqn{K - 1} analyses in Phase 3. The final analysis
+uses the efficacy boundary as the futility boundary.}
+
+\item{futilityCP}{A numeric vector of length \eqn{K} specifying futility
+boundaries on the conditional power scale.}
+
+\item{futilityTheta}{A numeric vector of length \eqn{K} specifying futility
+boundaries on the parameter scale.}
+
+\item{typeBetaSpending}{The type of beta spending. One of the following:
+\code{"sfOF"} for O'Brien-Fleming type spending function,
+\code{"sfP"} for Pocock type spending function,
+\code{"sfKD"} for Kim & DeMets spending function,
+\code{"sfHSD"} for Hwang, Shi & DeCani spending function,
+\code{"user"} for user defined spending, and
+\code{"none"} for no early futility stopping.
+Defaults to \code{"none"}.}
+
+\item{parameterBetaSpending}{The parameter value for the beta spending.
+Corresponds to \eqn{\rho} for \code{"sfKD"}, and
+\eqn{\gamma} for \code{"sfHSD"}.}
+
+\item{userBetaSpending}{The user defined beta spending. Cumulative beta
+spent up to each stage.}
+
 \item{spendingTime}{A numeric vector of length \eqn{K+1} specifying the
 error spending time at each analysis. Values must be strictly increasing
-and ends at 1. If omitted, defaults to \code{informationRates}.}
+and end at 1. If omitted, defaults to \code{informationRates}.}
 }
 \value{
 An S3 object of class \code{seamless} with the following components:
@@ -91,71 +128,118 @@ An S3 object of class \code{seamless} with the following components:
 \item \code{overallReject}: Overall probability of rejecting the null
 hypothesis.
 \item \code{alpha}: Overall significance level.
-\item \code{M}: Number of active arms in phase 2.
-\item \code{r}: Randomization ratio per active arm versus control in phase 2.
+\item \code{attainedAlpha}: The attained significance level, which may
+differ from \code{alpha} in the presence of futility stopping.
+\item \code{M}: Number of active arms in Phase 2.
+\item \code{r}: Randomization ratio per active arm versus control in
+Phase 2.
 \item \code{corr_known}: Whether the phase-2 correlation was assumed known.
-\item \code{K}: Number of stages in phase 3.
-\item \code{information}: Maximum information for any active arm versus control.
+\item \code{K}: Number of looks in Phase 3.
+\item \code{information}: Maximum information for any active arm versus
+control.
+\item \code{expectedInformationH1}: Expected information under the
+alternative.
+\item \code{expectedInformationH0}: Expected information under the null.
+\item \code{informationOverall}: Maximum information for the overall study.
+\item \code{expectedInformationH1}: Expected information under the
+alternative for the overall study.
+\item \code{expectedInformationH0}: Expected information under the null
+for the overall study.
 }
 \item \code{byStageResults}: A data frame containing:
 \itemize{
 \item \code{informationRates}: Information rates at each analysis.
-\item \code{efficacyBounds}: Efficacy boundaries on the Z-scale.
+\item \code{efficacyBounds}: Efficacy boundaries on the Z scale.
+\item \code{futilityBounds}: Futility boundaries on the Z scale.
 \item \code{rejectPerStage}: Probability of efficacy stopping at each stage.
-\item \code{cumulativeRejection}: Cumulative probability of efficacy stopping.
+\item \code{futilityPerStage}: Probability of futility stopping at each
+stage.
+\item \code{cumulativeRejection}: Cumulative probability of efficacy
+stopping.
+\item \code{cumulativeFutility}: Cumulative probability of futility
+stopping.
 \item \code{cumulativeAlphaSpent}: Cumulative alpha spent.
 \item \code{efficacyTheta}: Efficacy boundaries on the parameter scale.
+\item \code{futilityTheta}: Futility boundaries on the parameter scale.
 \item \code{efficacyP}: Efficacy boundaries on the p-value scale.
-\item \code{information}: Cumulative information for any active arm versus
-control at each analysis.
-\item \code{efficacyStopping}: Indicator of whether efficacy stopping
-is permitted.
+\item \code{futilityP}: Futility boundaries on the p-value scale.
+\item \code{information}: Cumulative information at each analysis.
+\item \code{informationOverall}: Cumulative information for the overall
+study at each analysis.
+\item \code{efficacyStopping}: Indicator of whether efficacy stopping is
+permitted.
+\item \code{futilityStopping}: Indicator of whether futility stopping is
+permitted.
+\item \code{rejectPerStageH0}: Probability of efficacy stopping under the
+global null.
+\item \code{futilityPerStageH0}: Probability of futility stopping under the
+global null.
+\item \code{cumulativeRejectionH0}: Cumulative probability of efficacy
+stopping under the global null.
+\item \code{cumulativeFutilityH0}: Cumulative probability of futility
+stopping under the global null.
 }
 \item \code{byArmResults}: A data frame containing:
 \itemize{
 \item \code{theta}: Parameter values for the active arms.
-\item \code{selectAsBest}: Probability an arm is selected as best at
-the end of phase 2.
-\item \code{powerByArm}: Probability of rejecting the null for each arm
-by trial end.
+\item \code{selectAsBest}: Probability an arm is selected as best at the
+end of Phase 2.
+\item \code{powerByArm}: Probability of rejecting the null for each arm by
+trial end.
 \item \code{condPowerByArm}: Conditional power for each arm given it was
-selected as the best at the end of phase 2.
+selected as the best at the end of Phase 2.
 }
 \item \code{settings}: A list of input settings:
 \itemize{
 \item \code{typeAlphaSpending}: Type of alpha spending function.
-\item \code{parameterAlphaSpending}: Parameter value for the chosen
-alpha spending function.
+\item \code{parameterAlphaSpending}: Parameter value for the chosen alpha
+spending function.
 \item \code{userAlphaSpending}: User-specified alpha spending values.
+\item \code{typeBetaSpending}: Type of beta spending function.
+\item \code{parameterBetaSpending}: Parameter value for the chosen beta
+spending function.
+\item \code{userBetaSpending}: User-specified beta spending values.
 \item \code{spendingTime}: Error-spending times at each analysis.
 }
 }
 }
 \description{
 Computes either the maximum information and stopping
-boundaries for a phase 2/3 seamless design, or
-the achieved power when the maximum information and stopping boundaries
-are provided.
+boundaries for a phase 2/3 seamless design, or the achieved power when
+the maximum information and stopping boundaries are provided. Both
+efficacy and futility stopping can be incorporated.
 }
 \details{
 If \code{corr_known} is \code{FALSE}, critical boundaries are
-computed assuming independence among the phase-2 Wald statistics
+computed assuming independence among the Phase-2 Wald statistics
 (a conservative assumption). Power calculations, however, use the
 correlation implied by the randomization ratio \eqn{r}.
+
+Futility boundaries may be supplied directly on the Z scale, derived from
+conditional power, derived from parameter values, or computed from a beta
+spending function.
 }
 \examples{
 
-# Example 1: obtain the maximum information given power
+# Example 1: obtain the maximum information given power with no futility
 (design1 <- getDesign_seamless(
   beta = 0.1, theta = c(0.3, 0.5), M = 2, r = 1.0,
   K = 2, informationRates = seq(1, 3)/3,
   alpha = 0.025, typeAlphaSpending = "OF"))
 
-# Example 2: obtain power given the maximum information
+# Example 2: obtain power given the maximum information and a futility rule
 (design2 <- getDesign_seamless(
   IMax = 110/(2*1^2), theta = c(0.3, 0.5), M = 2, r = 1.0,
   K = 2, informationRates = seq(1, 3)/3,
-  alpha = 0.025, typeAlphaSpending = "OF"))
+  alpha = 0.025, typeAlphaSpending = "OF",
+  futilityBounds = c(0.0, 0.5)))
+
+# Example 3: derive futility boundaries using beta spending
+(design3 <- getDesign_seamless(
+  beta = 0.1, theta = c(0.3, 0.5), M = 2, r = 1.0,
+  K = 2, informationRates = seq(1, 3)/3,
+  alpha = 0.025, typeAlphaSpending = "OF",
+  typeBetaSpending = "sfOF"))
 
 }
 \references{

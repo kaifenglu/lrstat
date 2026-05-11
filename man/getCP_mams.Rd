@@ -25,8 +25,6 @@ getCP_mams(
   futilityBounds = NULL,
   futilityCP = NULL,
   futilityTheta = NULL,
-  typeBetaSpending = "none",
-  parameterBetaSpending = NA_real_,
   spendingTime = NA_real_,
   MullerSchafer = FALSE,
   MNew = NA_integer_,
@@ -120,19 +118,6 @@ primary trial.}
 
 \item{futilityTheta}{The parameter value-based futility bounds for the
 primary trial.}
-
-\item{typeBetaSpending}{The type of beta spending for the primary trial.
-One of the following:
-\code{"sfOF"} for O'Brien-Fleming type spending function,
-\code{"sfP"} for Pocock type spending function,
-\code{"sfKD"} for Kim & DeMets spending function,
-\code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
-\code{"none"} for no early futility stopping.
-Defaults to \code{"none"}.}
-
-\item{parameterBetaSpending}{The parameter value of beta spending
-for the primary trial. Corresponds to \eqn{\rho} for \code{"sfKD"},
-and \eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{spendingTime}{The error spending time of the primary trial.
 Defaults to missing, in which case it is assumed to be the same as
