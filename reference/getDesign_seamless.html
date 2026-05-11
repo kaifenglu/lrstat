@@ -6,12 +6,12 @@
     }
   };
 </script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Power and Sample Size for a Phase 2/3 Seamless Design — getDesign_seamless"><meta name="description" content="Computes either the maximum information and stopping
-boundaries for a phase 2/3 seamless design, or
-the achieved power when the maximum information and stopping boundaries
-are provided."><meta property="og:description" content="Computes either the maximum information and stopping
-boundaries for a phase 2/3 seamless design, or
-the achieved power when the maximum information and stopping boundaries
-are provided."><meta property="og:image" content="https://kaifenglu.github.io/lrstat/logo.svg"></head><body>
+boundaries for a phase 2/3 seamless design, or the achieved power when
+the maximum information and stopping boundaries are provided. Both
+efficacy and futility stopping can be incorporated."><meta property="og:description" content="Computes either the maximum information and stopping
+boundaries for a phase 2/3 seamless design, or the achieved power when
+the maximum information and stopping boundaries are provided. Both
+efficacy and futility stopping can be incorporated."><meta property="og:image" content="https://kaifenglu.github.io/lrstat/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -48,9 +48,9 @@ are provided."><meta property="og:image" content="https://kaifenglu.github.io/lr
 
     <div class="ref-description section level2">
     <p>Computes either the maximum information and stopping
-boundaries for a phase 2/3 seamless design, or
-the achieved power when the maximum information and stopping boundaries
-are provided.</p>
+boundaries for a phase 2/3 seamless design, or the achieved power when
+the maximum information and stopping boundaries are provided. Both
+efficacy and futility stopping can be incorporated.</p>
     </div>
 
     <div class="section level2">
@@ -65,11 +65,18 @@ are provided.</p>
 <span>  K <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>  informationRates <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  efficacyStopping <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
-<span>  criticalValues <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  futilityStopping <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
+<span>  criticalValues <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.025</span>,</span>
 <span>  typeAlphaSpending <span class="op">=</span> <span class="st">"sfOF"</span>,</span>
 <span>  parameterAlphaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  userAlphaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  futilityBounds <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futilityCP <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futilityTheta <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  typeBetaSpending <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  parameterBetaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  userBetaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  spendingTime <span class="op">=</span> <span class="cn">NA_real_</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -126,11 +133,16 @@ before the trial. If unspecified, defaults to \((1:(K+1)) / (K+1)\).</p></dd>
 at each stage. Defaults to <code>TRUE</code> if left unspecified.</p></dd>
 
 
+<dt id="arg-futilitystopping">futilityStopping<a class="anchor" aria-label="anchor" href="#arg-futilitystopping"></a></dt>
+<dd><p>Indicators of whether futility stopping is allowed
+at each stage. Defaults to <code>TRUE</code> if left unspecified.</p></dd>
+
+
 <dt id="arg-criticalvalues">criticalValues<a class="anchor" aria-label="anchor" href="#arg-criticalvalues"></a></dt>
-<dd><p>The upper boundaries on the max z-test statistic
-scale for Phase 2 and the z-test statistics for the selected arm
-in Phase 3 for the primary trial. If missing, boundaries
-will be computed based on the specified alpha spending function.</p></dd>
+<dd><p>The upper boundaries on the max-Z statistic scale
+for Phase 2 and the Z statistics for the selected arm in Phase 3.
+If missing, boundaries will be computed based on the specified alpha
+spending function.</p></dd>
 
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
@@ -162,10 +174,49 @@ and \(\gamma\) for <code>"sfHSD"</code>.</p></dd>
 spent up to each stage.</p></dd>
 
 
+<dt id="arg-futilitybounds">futilityBounds<a class="anchor" aria-label="anchor" href="#arg-futilitybounds"></a></dt>
+<dd><p>A numeric vector of length \(K\) specifying
+futility boundaries on the max-Z scale at the end of Phase 2 and
+on the Z scale for the \(K - 1\) analyses in Phase 3. The final analysis
+uses the efficacy boundary as the futility boundary.</p></dd>
+
+
+<dt id="arg-futilitycp">futilityCP<a class="anchor" aria-label="anchor" href="#arg-futilitycp"></a></dt>
+<dd><p>A numeric vector of length \(K\) specifying futility
+boundaries on the conditional power scale.</p></dd>
+
+
+<dt id="arg-futilitytheta">futilityTheta<a class="anchor" aria-label="anchor" href="#arg-futilitytheta"></a></dt>
+<dd><p>A numeric vector of length \(K\) specifying futility
+boundaries on the parameter scale.</p></dd>
+
+
+<dt id="arg-typebetaspending">typeBetaSpending<a class="anchor" aria-label="anchor" href="#arg-typebetaspending"></a></dt>
+<dd><p>The type of beta spending. One of the following:
+<code>"sfOF"</code> for O'Brien-Fleming type spending function,
+<code>"sfP"</code> for Pocock type spending function,
+<code>"sfKD"</code> for Kim &amp; DeMets spending function,
+<code>"sfHSD"</code> for Hwang, Shi &amp; DeCani spending function,
+<code>"user"</code> for user defined spending, and
+<code>"none"</code> for no early futility stopping.
+Defaults to <code>"none"</code>.</p></dd>
+
+
+<dt id="arg-parameterbetaspending">parameterBetaSpending<a class="anchor" aria-label="anchor" href="#arg-parameterbetaspending"></a></dt>
+<dd><p>The parameter value for the beta spending.
+Corresponds to \(\rho\) for <code>"sfKD"</code>, and
+\(\gamma\) for <code>"sfHSD"</code>.</p></dd>
+
+
+<dt id="arg-userbetaspending">userBetaSpending<a class="anchor" aria-label="anchor" href="#arg-userbetaspending"></a></dt>
+<dd><p>The user defined beta spending. Cumulative beta
+spent up to each stage.</p></dd>
+
+
 <dt id="arg-spendingtime">spendingTime<a class="anchor" aria-label="anchor" href="#arg-spendingtime"></a></dt>
 <dd><p>A numeric vector of length \(K+1\) specifying the
 error spending time at each analysis. Values must be strictly increasing
-and ends at 1. If omitted, defaults to <code>informationRates</code>.</p></dd>
+and end at 1. If omitted, defaults to <code>informationRates</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -173,45 +224,83 @@ and ends at 1. If omitted, defaults to <code>informationRates</code>.</p></dd>
     <p>An S3 object of class <code>seamless</code> with the following components:</p><ul><li><p><code>overallResults</code>: A data frame containing:</p><ul><li><p><code>overallReject</code>: Overall probability of rejecting the null
 hypothesis.</p></li>
 <li><p><code>alpha</code>: Overall significance level.</p></li>
-<li><p><code>M</code>: Number of active arms in phase 2.</p></li>
-<li><p><code>r</code>: Randomization ratio per active arm versus control in phase 2.</p></li>
+<li><p><code>attainedAlpha</code>: The attained significance level, which may
+differ from <code>alpha</code> in the presence of futility stopping.</p></li>
+<li><p><code>M</code>: Number of active arms in Phase 2.</p></li>
+<li><p><code>r</code>: Randomization ratio per active arm versus control in
+Phase 2.</p></li>
 <li><p><code>corr_known</code>: Whether the phase-2 correlation was assumed known.</p></li>
-<li><p><code>K</code>: Number of stages in phase 3.</p></li>
-<li><p><code>information</code>: Maximum information for any active arm versus control.</p></li>
+<li><p><code>K</code>: Number of looks in Phase 3.</p></li>
+<li><p><code>information</code>: Maximum information for any active arm versus
+control.</p></li>
+<li><p><code>expectedInformationH1</code>: Expected information under the
+alternative.</p></li>
+<li><p><code>expectedInformationH0</code>: Expected information under the null.</p></li>
+<li><p><code>informationOverall</code>: Maximum information for the overall study.</p></li>
+<li><p><code>expectedInformationH1</code>: Expected information under the
+alternative for the overall study.</p></li>
+<li><p><code>expectedInformationH0</code>: Expected information under the null
+for the overall study.</p></li>
 </ul></li>
 <li><p><code>byStageResults</code>: A data frame containing:</p><ul><li><p><code>informationRates</code>: Information rates at each analysis.</p></li>
-<li><p><code>efficacyBounds</code>: Efficacy boundaries on the Z-scale.</p></li>
+<li><p><code>efficacyBounds</code>: Efficacy boundaries on the Z scale.</p></li>
+<li><p><code>futilityBounds</code>: Futility boundaries on the Z scale.</p></li>
 <li><p><code>rejectPerStage</code>: Probability of efficacy stopping at each stage.</p></li>
-<li><p><code>cumulativeRejection</code>: Cumulative probability of efficacy stopping.</p></li>
+<li><p><code>futilityPerStage</code>: Probability of futility stopping at each
+stage.</p></li>
+<li><p><code>cumulativeRejection</code>: Cumulative probability of efficacy
+stopping.</p></li>
+<li><p><code>cumulativeFutility</code>: Cumulative probability of futility
+stopping.</p></li>
 <li><p><code>cumulativeAlphaSpent</code>: Cumulative alpha spent.</p></li>
 <li><p><code>efficacyTheta</code>: Efficacy boundaries on the parameter scale.</p></li>
+<li><p><code>futilityTheta</code>: Futility boundaries on the parameter scale.</p></li>
 <li><p><code>efficacyP</code>: Efficacy boundaries on the p-value scale.</p></li>
-<li><p><code>information</code>: Cumulative information for any active arm versus
-control at each analysis.</p></li>
-<li><p><code>efficacyStopping</code>: Indicator of whether efficacy stopping
-is permitted.</p></li>
+<li><p><code>futilityP</code>: Futility boundaries on the p-value scale.</p></li>
+<li><p><code>information</code>: Cumulative information at each analysis.</p></li>
+<li><p><code>informationOverall</code>: Cumulative information for the overall
+study at each analysis.</p></li>
+<li><p><code>efficacyStopping</code>: Indicator of whether efficacy stopping is
+permitted.</p></li>
+<li><p><code>futilityStopping</code>: Indicator of whether futility stopping is
+permitted.</p></li>
+<li><p><code>rejectPerStageH0</code>: Probability of efficacy stopping under the
+global null.</p></li>
+<li><p><code>futilityPerStageH0</code>: Probability of futility stopping under the
+global null.</p></li>
+<li><p><code>cumulativeRejectionH0</code>: Cumulative probability of efficacy
+stopping under the global null.</p></li>
+<li><p><code>cumulativeFutilityH0</code>: Cumulative probability of futility
+stopping under the global null.</p></li>
 </ul></li>
 <li><p><code>byArmResults</code>: A data frame containing:</p><ul><li><p><code>theta</code>: Parameter values for the active arms.</p></li>
-<li><p><code>selectAsBest</code>: Probability an arm is selected as best at
-the end of phase 2.</p></li>
-<li><p><code>powerByArm</code>: Probability of rejecting the null for each arm
-by trial end.</p></li>
+<li><p><code>selectAsBest</code>: Probability an arm is selected as best at the
+end of Phase 2.</p></li>
+<li><p><code>powerByArm</code>: Probability of rejecting the null for each arm by
+trial end.</p></li>
 <li><p><code>condPowerByArm</code>: Conditional power for each arm given it was
-selected as the best at the end of phase 2.</p></li>
+selected as the best at the end of Phase 2.</p></li>
 </ul></li>
 <li><p><code>settings</code>: A list of input settings:</p><ul><li><p><code>typeAlphaSpending</code>: Type of alpha spending function.</p></li>
-<li><p><code>parameterAlphaSpending</code>: Parameter value for the chosen
-alpha spending function.</p></li>
+<li><p><code>parameterAlphaSpending</code>: Parameter value for the chosen alpha
+spending function.</p></li>
 <li><p><code>userAlphaSpending</code>: User-specified alpha spending values.</p></li>
+<li><p><code>typeBetaSpending</code>: Type of beta spending function.</p></li>
+<li><p><code>parameterBetaSpending</code>: Parameter value for the chosen beta
+spending function.</p></li>
+<li><p><code>userBetaSpending</code>: User-specified beta spending values.</p></li>
 <li><p><code>spendingTime</code>: Error-spending times at each analysis.</p></li>
 </ul></li>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>If <code>corr_known</code> is <code>FALSE</code>, critical boundaries are
-computed assuming independence among the phase-2 Wald statistics
+computed assuming independence among the Phase-2 Wald statistics
 (a conservative assumption). Power calculations, however, use the
 correlation implied by the randomization ratio \(r\).</p>
+<p>Futility boundaries may be supplied directly on the Z scale, derived from
+conditional power, derived from parameter values, or computed from a beta
+spending function.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -227,65 +316,94 @@ Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Example 1: obtain the maximum information given power</span></span></span>
+<span class="r-in"><span><span class="co"># Example 1: obtain the maximum information given power with no futility</span></span></span>
 <span class="r-in"><span><span class="op">(</span><span class="va">design1</span> <span class="op">&lt;-</span> <span class="fu">getDesign_seamless</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  beta <span class="op">=</span> <span class="fl">0.1</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3</span>, <span class="fl">0.5</span><span class="op">)</span>, M <span class="op">=</span> <span class="fl">2</span>, r <span class="op">=</span> <span class="fl">1.0</span>,</span></span>
 <span class="r-in"><span>  K <span class="op">=</span> <span class="fl">2</span>, informationRates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">/</span><span class="fl">3</span>,</span></span>
 <span class="r-in"><span>  alpha <span class="op">=</span> <span class="fl">0.025</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"OF"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Phase 2/3 seamless group-sequential design               </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9, overall alpha (1-sided): 0.025       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms in phase 2: 2                      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 54.6651722450444 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks in phase 3: 2                            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: O'Brien-Fleming                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                           Stage 1 Stage 2 Stage 3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Information rate          0.333   0.667   1.000  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z)     3.777   2.670   2.180  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative rejection      0.0541  0.6198  0.9000 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative alpha spent    0.0002  0.0066  0.0250 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (theta) 0.885   0.442   0.295  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (p)     0.0001  0.0038  0.0146 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Information               18.22   36.44   54.67  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                           Arm 1  Arm 2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Treatment effect (theta)  0.300  0.500 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Being the best in phase 2 0.1966 0.8034</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Power                     0.1353 0.7647</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Conditional power         0.6883 0.9518</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in `[.data.frame`(b, 1, 2, 4, 6, 7, 9, 11, 12):</span> unused arguments (6, 7, 9, 11, 12)</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Example 2: obtain power given the maximum information</span></span></span>
+<span class="r-in"><span><span class="co"># Example 2: obtain power given the maximum information and a futility rule</span></span></span>
 <span class="r-in"><span><span class="op">(</span><span class="va">design2</span> <span class="op">&lt;-</span> <span class="fu">getDesign_seamless</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  IMax <span class="op">=</span> <span class="fl">110</span><span class="op">/</span><span class="op">(</span><span class="fl">2</span><span class="op">*</span><span class="fl">1</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3</span>, <span class="fl">0.5</span><span class="op">)</span>, M <span class="op">=</span> <span class="fl">2</span>, r <span class="op">=</span> <span class="fl">1.0</span>,</span></span>
 <span class="r-in"><span>  K <span class="op">=</span> <span class="fl">2</span>, informationRates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">/</span><span class="fl">3</span>,</span></span>
-<span class="r-in"><span>  alpha <span class="op">=</span> <span class="fl">0.025</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"OF"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Phase 2/3 seamless group-sequential design             </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9016, overall alpha (1-sided): 0.025  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms in phase 2: 2                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 55             </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks in phase 3: 2                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: O'Brien-Fleming                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                           Stage 1 Stage 2 Stage 3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Information rate          0.333   0.667   1.000  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z)     3.777   2.670   2.180  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative rejection      0.0548  0.6231  0.9016 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative alpha spent    0.0002  0.0066  0.0250 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (theta) 0.882   0.441   0.294  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (p)     0.0001  0.0038  0.0146 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Information               18.33   36.67   55.00  </span>
+<span class="r-in"><span>  alpha <span class="op">=</span> <span class="fl">0.025</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"OF"</span>,</span></span>
+<span class="r-in"><span>  futilityBounds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.0</span>, <span class="fl">0.5</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Phase 2/3 seamless group-sequential design                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.898, overall alpha (1-sided): 0.025                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms in phase 2: 2                                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks in phase 3: 2                                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 55                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Expected information under H1: 42.17, expected information under H0: 37.22   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for oveall study: 64.17                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Expected overall info under H1: 51.34, expected overall info under H0: 46.39 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: O'Brien-Fleming, beta spending: None                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                               Stage 1 Stage 2 Stage 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Information rate              0.333   0.667   1.000  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z)         3.777   2.670   2.180  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Futility boundary (Z)         0.000   0.500   2.180  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative rejection          0.0548  0.6229  0.8980 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative futility           0.0078  0.0140  0.1020 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative alpha spent        0.0002  0.0066  0.0250 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (theta)     0.882   0.441   0.294  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Futility boundary (theta)     0.000   0.083   0.294  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (p)         0.0001  0.0038  0.0146 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Futility boundary (p)         0.5000  0.3085  0.0146 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Information for pairwise comp 18.33   36.67   55.00  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Information for overall study 27.50   45.83   64.17  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative rejection under H0 0.0002  0.0066  0.0244 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative futility under H0  0.3333  0.6297  0.9756 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                           Arm 1  Arm 2 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Treatment effect (theta)  0.300  0.500 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Being the best in phase 2 0.1959 0.8041</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Power                     0.1354 0.7662</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Conditional power         0.6909 0.9529</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Power                     0.1349 0.7631</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Conditional power         0.6887 0.9490</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Example 3: derive futility boundaries using beta spending</span></span></span>
+<span class="r-in"><span><span class="op">(</span><span class="va">design3</span> <span class="op">&lt;-</span> <span class="fu">getDesign_seamless</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  beta <span class="op">=</span> <span class="fl">0.1</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3</span>, <span class="fl">0.5</span><span class="op">)</span>, M <span class="op">=</span> <span class="fl">2</span>, r <span class="op">=</span> <span class="fl">1.0</span>,</span></span>
+<span class="r-in"><span>  K <span class="op">=</span> <span class="fl">2</span>, informationRates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">/</span><span class="fl">3</span>,</span></span>
+<span class="r-in"><span>  alpha <span class="op">=</span> <span class="fl">0.025</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"OF"</span>,</span></span>
+<span class="r-in"><span>  typeBetaSpending <span class="op">=</span> <span class="st">"sfOF"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Phase 2/3 seamless group-sequential design                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9, overall alpha (1-sided): 0.025                           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms in phase 2: 2                                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks in phase 3: 2                                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 57.14                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Expected information under H1: 42.83, expected information under H0: 35.57   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for oveall study: 66.66                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Expected overall info under H1: 52.35, expected overall info under H0: 45.09 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: O'Brien-Fleming, beta spending: Lan-DeMets O'Brien-Fleming   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                               Stage 1 Stage 2 Stage 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Information rate              0.333   0.667   1.000  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z)         3.777   2.670   2.180  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Futility boundary (Z)         -0.149  1.262   2.180  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative rejection          0.0594  0.6437  0.9000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative futility           0.0044  0.0440  0.1000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative alpha spent        0.0002  0.0066  0.0250 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (theta)     0.865   0.433   0.288  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Futility boundary (theta)     -0.034  0.205   0.288  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (p)         0.0001  0.0038  0.0146 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Futility boundary (p)         0.5591  0.1034  0.0146 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Information for pairwise comp 19.05   38.09   57.14  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Information for overall study 28.57   47.61   66.66  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative rejection under H0 0.0002  0.0066  0.0230 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative futility under H0  0.2763  0.8494  0.9770 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                           Arm 1  Arm 2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Treatment effect (theta)  0.300  0.500 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Being the best in phase 2 0.1914 0.8086</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Power                     0.1325 0.7675</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Conditional power         0.6924 0.9491</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

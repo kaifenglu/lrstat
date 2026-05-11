@@ -20,18 +20,28 @@ getCP_seamless(
   K = NA_integer_,
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
-  criticalValues = NA_real_,
+  futilityStopping = NA_integer_,
+  criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityTheta = NULL,
   spendingTime = NA_real_,
   MullerSchafer = FALSE,
   kNew = NA_integer_,
   informationRatesNew = NA_real_,
   efficacyStoppingNew = NA_integer_,
+  futilityStoppingNew = NA_integer_,
   typeAlphaSpendingNew = "sfOF",
   parameterAlphaSpendingNew = NA_real_,
+  futilityBoundsInt = NULL,
+  futilityCPInt = NULL,
+  futilityThetaInt = NULL,
+  typeBetaSpendingNew = "none",
+  parameterBetaSpendingNew = NA_real_,
   spendingTimeNew = NA_real_
 )
 ```
@@ -90,6 +100,11 @@ getCP_seamless(
   Indicators of whether efficacy stopping is allowed at each stage of
   the primary trial. Defaults to `TRUE` if left unspecified.
 
+- futilityStopping:
+
+  Indicators of whether futility stopping is allowed at each stage of
+  the primary trial. Defaults to true if left unspecified.
+
 - criticalValues:
 
   The upper boundaries on the max z-test statistic scale for Phase 2 and
@@ -123,6 +138,20 @@ getCP_seamless(
   The user-defined alpha spending for the primary trial. Represents the
   cumulative alpha spent up to each stage.
 
+- futilityBounds:
+
+  The lower boundaries on the max z-test statistic scale for Phase 2 and
+  the z-test statistics for the selected arm in Phase 3 for the primary
+  trial.
+
+- futilityCP:
+
+  The conditional power-based futility bounds for the primary trial.
+
+- futilityTheta:
+
+  The parameter value-based futility bounds for the primary trial.
+
 - spendingTime:
 
   The error spending time of the primary trial. Defaults to missing, in
@@ -146,6 +175,11 @@ getCP_seamless(
   The indicators of whether efficacy stopping is allowed at each look of
   the secondary trial. Defaults to `TRUE` if left unspecified.
 
+- futilityStoppingNew:
+
+  The indicators of whether futility stopping is allowed at each look of
+  the secondary trial. Defaults to true if left unspecified.
+
 - typeAlphaSpendingNew:
 
   The type of alpha spending for the secondary trial. One of the
@@ -162,6 +196,35 @@ getCP_seamless(
   Corresponds to \\\Delta\\ for `"WT"`, \\\rho\\ for `"sfKD"`, and
   \\\gamma\\ for `"sfHSD"`.
 
+- futilityBoundsInt:
+
+  The futility boundaries on the z statistic scale for new stages of the
+  integrated trial.
+
+- futilityCPInt:
+
+  The conditional power-based futility bounds for new stages of the
+  integrated trial.
+
+- futilityThetaInt:
+
+  The parameter value-based futility bounds for the new stages of the
+  integrated trial.
+
+- typeBetaSpendingNew:
+
+  The type of beta spending for the secondary trial. One of the
+  following: `"sfOF"` for O'Brien-Fleming type spending function,
+  `"sfP"` for Pocock type spending function, `"sfKD"` for Kim & DeMets
+  spending function, `"sfHSD"` for Hwang, Shi & DeCani spending
+  function, and `"none"` for no early futility stopping. Defaults to
+  `"none"`.
+
+- parameterBetaSpendingNew:
+
+  The parameter value of beta spending for the secondary trial.
+  Corresponds to \\\rho\\ for `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
+
 - spendingTimeNew:
 
   The error spending time of the secondary trial. Defaults to missing,
@@ -169,7 +232,8 @@ getCP_seamless(
 
 ## Value
 
-The conditional power given the interim results, parameter values, and
+A vector of two conditional powers given the interim results and
+parameter values, one without design change and the other with
 data-dependent design changes.
 
 ## References
@@ -194,5 +258,5 @@ getCP_seamless(
   L = 1, zL = -log(0.67) * sqrt(80 / 4), theta = -log(0.691),
   IMax = 120 / 4, K = 2, informationRates = c(1/3, 2/3, 1),
   alpha = 0.025, typeAlphaSpending = "OF", kNew = 1)
-#> [1] 0.8999501
+#> Error: b must be provided
 ```

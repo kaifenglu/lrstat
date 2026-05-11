@@ -109,7 +109,7 @@ f <- function(u2, u1, sigma, alpha) {
   1 - pmvnormr(upper=c(u1, u2, u2), sigma=sigma) - alpha
 }
 (u2 = uniroot(f, c(1,3), u1, sigma, alpha)$root)
-#> [1] 2.137286
+#> [1] 2.137531
 ```
 
 The power can be estimated by plugging in the mean under the alternative
@@ -117,11 +117,11 @@ hypothesis.
 
 ``` r
 1 - pmvnormr(upper=c(u1, u2, u2), mean=mu, sigma=sigma)
-#> [1] 0.7242341
+#> [1] 0.7240786
 #> attr(,"method")
 #> [1] "qmc"
 #> attr(,"error")
-#> [1] 4.592377e-05
+#> [1] 5.939272e-05
 #> attr(,"nsamples")
 #> [1] 32768
 ```

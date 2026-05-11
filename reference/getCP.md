@@ -26,8 +26,6 @@ getCP(
   futilityBounds = NULL,
   futilityCP = NULL,
   futilityTheta = NULL,
-  typeBetaSpending = "none",
-  parameterBetaSpending = NA_real_,
   spendingTime = NA_real_,
   MullerSchafer = FALSE,
   kNew = NA_integer_,
@@ -133,19 +131,6 @@ getCP(
 - futilityTheta:
 
   The parameter value-based futility bounds for the primary trial.
-
-- typeBetaSpending:
-
-  The type of beta spending for the primary trial. One of the following:
-  `"sfOF"` for O'Brien-Fleming type spending function, `"sfP"` for
-  Pocock type spending function, `"sfKD"` for Kim & DeMets spending
-  function, `"sfHSD"` for Hwang, Shi & DeCani spending function, and
-  `"none"` for no early futility stopping. Defaults to `"none"`.
-
-- parameterBetaSpending:
-
-  The parameter value of beta spending for the primary trial.
-  Corresponds to \\\rho\\ for `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
 
 - spendingTime:
 

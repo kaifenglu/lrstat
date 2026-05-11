@@ -24,18 +24,29 @@ adaptDesign_seamless(
   K = NA_integer_,
   informationRates = NA_real_,
   efficacyStopping = NA_integer_,
-  criticalValues = NA_real_,
+  futilityStopping = NA_integer_,
+  criticalValues = NULL,
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
+  futilityBounds = NULL,
+  futilityCP = NULL,
+  futilityTheta = NULL,
   spendingTime = NA_real_,
   MullerSchafer = FALSE,
   kNew = NA_integer_,
   informationRatesNew = NA_real_,
   efficacyStoppingNew = NA_integer_,
+  futilityStoppingNew = NA_integer_,
   typeAlphaSpendingNew = "sfOF",
   parameterAlphaSpendingNew = NA_real_,
+  futilityBoundsInt = NULL,
+  futilityCPInt = NULL,
+  futilityThetaInt = NULL,
+  typeBetaSpendingNew = "none",
+  parameterBetaSpendingNew = NA_real_,
+  userBetaSpendingNew = NA_real_,
   spendingTimeNew = NA_real_
 )
 ```
@@ -99,6 +110,11 @@ adaptDesign_seamless(
   Indicators of whether efficacy stopping is allowed at each stage of
   the primary trial. Defaults to `TRUE` if left unspecified.
 
+- futilityStopping:
+
+  Indicators of whether futility stopping is allowed at each stage of
+  the primary trial. Defaults to `TRUE` if left unspecified.
+
 - criticalValues:
 
   The upper boundaries on the max z-test statistic scale for Phase 2 and
@@ -132,6 +148,20 @@ adaptDesign_seamless(
   The user-defined alpha spending for the primary trial. Represents the
   cumulative alpha spent up to each stage.
 
+- futilityBounds:
+
+  The lower boundaries on the max-z statistic scale at end of phase 2
+  and the z-test statistic scale in phase 3 for futility stopping for
+  the primary trial. Defaults to `rep(-8, kMax-1)` if left unspecified.
+
+- futilityCP:
+
+  The conditional power-based futility bounds for the primary trial.
+
+- futilityTheta:
+
+  The parameter value-based futility bounds for the primary trial.
+
 - spendingTime:
 
   The error spending time of the primary trial. Defaults to missing, in
@@ -155,6 +185,11 @@ adaptDesign_seamless(
   The indicators of whether efficacy stopping is allowed at each look of
   the secondary trial. Defaults to `TRUE` if left unspecified.
 
+- futilityStoppingNew:
+
+  The indicators of whether futility stopping is allowed at each look of
+  the secondary trial. Defaults to `TRUE` if left unspecified.
+
 - typeAlphaSpendingNew:
 
   The type of alpha spending for the secondary trial. One of the
@@ -171,6 +206,40 @@ adaptDesign_seamless(
   Corresponds to \\\Delta\\ for `"WT"`, \\\rho\\ for `"sfKD"`, and
   \\\gamma\\ for `"sfHSD"`.
 
+- futilityBoundsInt:
+
+  The futility boundaries on the z statistic scale for new stages of the
+  integrated trial.
+
+- futilityCPInt:
+
+  The conditional power-based futility bounds for new stages of the
+  integrated trial.
+
+- futilityThetaInt:
+
+  The parameter value-based futility bounds for the new stages of the
+  integrated trial.
+
+- typeBetaSpendingNew:
+
+  The type of beta spending for the secondary trial. One of the
+  following: `"sfOF"` for O'Brien-Fleming type spending function,
+  `"sfP"` for Pocock type spending function, `"sfKD"` for Kim & DeMets
+  spending function, `"sfHSD"` for Hwang, Shi & DeCani spending
+  function, `"user"` for user defined spending, and `"none"` for no
+  early futility stopping. Defaults to `"none"`.
+
+- parameterBetaSpendingNew:
+
+  The parameter value of beta spending for the secondary trial.
+  Corresponds to \\\rho\\ for `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
+
+- userBetaSpendingNew:
+
+  The user-defined cumulative beta spending. Represents the cumulative
+  beta spent up to each stage of the secondary trial.
+
 - spendingTimeNew:
 
   The error spending time of the secondary trial. Defaults to missing,
@@ -183,15 +252,21 @@ An `adaptDesign_seamless` object with three list components:
 - `primaryTrial`: A list of selected information for the primary trial,
   including `M`, `r`, `corr_known`, `K`, `L`, `zL`, `theta`,
   `maxInformation`, `kMax`, `informationRates`, `efficacyBounds`,
-  `information`, `alpha`, `conditionalAlpha`, `conditionalPower`, and
-  `MullerSchafer`.
+  `futilityBounds`, `information`, `alpha`, `conditionalAlpha`,
+  `conditionalPower`, and `MullerSchafer`.
 
-- `secondaryTrial`: A `design` object for the secondary trial.
+- `secondaryTrial`: A list of selected information for the seconary
+  trial, including `overallReject`, `alpha`, `kMax`, `maxInformation`,
+  `informationRates`, `efficacyBounds`, `futilityBounds`,
+  `cumulativeRejection`, `cumulativeFutility`, `cumulativeAlphaSpent`,
+  `information`, `typeAlphaSpending`, `parameterAlphaSpending`,
+  `typeBetaSpending`, `parameterBetaSpending`, `userBetaSpending`, and
+  `spendingTime`.
 
 - `integratedTrial`: A list of selected information for the integrated
   trial, including `M`, `r`, `corr_known`, `K`, `L`, `zL`, `theta`,
-  `maxInformation`, `kMax`, `informationRates`, `efficacyBounds`, and
-  `information`.
+  `maxInformation`, `kMax`, `informationRates`, `efficacyBounds`,
+  `futilityBounds`, and `information`.
 
 ## References
 
@@ -224,6 +299,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Number of looks in phase 3: 2                                   
 #> Max information for pairwise comparion: 30                      
 #> Interim adaptation look in Phase 3: 1, z-statistic value: 1.791 
+#> theta: 0.37                                                     
 #> Conditional type I error: 0.0935, conditional power: 0.44       
 #> Muller & Schafer method for secondary trial: FALSE              
 #>                                                                 
@@ -234,14 +310,11 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #>                                                                  
 #> Secondary trial:                                                 
 #> Fixed design                                                     
-#> theta: 0.37, maximum information: 49.51                          
+#> Maximum information: 49.51                                       
 #> Overall power: 0.9, overall significance level (1-sided): 0.0935 
-#> Drift parameter: 2.601, inflation factor: 1                      
 #>                                                                  
-#>                                 
-#> Efficacy boundary (Z)     1.319 
-#> Efficacy boundary (theta) 0.187 
-#> Efficacy boundary (p)     0.0935
+#>                            
+#> Efficacy boundary (Z) 1.319
 #>                                                                 
 #> Integrated trial:                                               
 #> Adaptive Phase 2/3 seamless design                              

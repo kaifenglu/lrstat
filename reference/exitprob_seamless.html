@@ -5,15 +5,21 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Exit Probabilities for a Phase 2/3 Seamless Design — exitprob_seamless"><meta name="description" content="Computes the exit (rejection) probabilities for a phase 2/3
-seamless design. In Phase 2, multiple active arms are
-compared against a common control arm. The best-performing arm is
-selected to proceed to Phase 3, where it is tested against the common
-control over multiple looks."><meta property="og:description" content="Computes the exit (rejection) probabilities for a phase 2/3
-seamless design. In Phase 2, multiple active arms are
-compared against a common control arm. The best-performing arm is
-selected to proceed to Phase 3, where it is tested against the common
-control over multiple looks."><meta property="og:image" content="https://kaifenglu.github.io/lrstat/logo.svg"></head><body>
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Exit Probabilities for a Phase 2/3 Seamless Design — exitprob_seamless"><meta name="description" content="Computes the upper and lower exit probabilities for a phase
+2/3 seamless design. In Phase 2, multiple active arms are compared
+against a common control arm. If the phase-2 max-Z statistic crosses the
+efficacy boundary, the trial stops early for efficacy; if it falls below
+the futility boundary, the trial stops early for futility. Otherwise, the
+best-performing arm is selected to proceed to Phase 3, where it is tested
+against the common control over multiple looks with upper and optional
+lower stopping boundaries."><meta property="og:description" content="Computes the upper and lower exit probabilities for a phase
+2/3 seamless design. In Phase 2, multiple active arms are compared
+against a common control arm. If the phase-2 max-Z statistic crosses the
+efficacy boundary, the trial stops early for efficacy; if it falls below
+the futility boundary, the trial stops early for futility. Otherwise, the
+best-performing arm is selected to proceed to Phase 3, where it is tested
+against the common control over multiple looks with upper and optional
+lower stopping boundaries."><meta property="og:image" content="https://kaifenglu.github.io/lrstat/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -49,11 +55,14 @@ control over multiple looks."><meta property="og:image" content="https://kaifeng
     </div>
 
     <div class="ref-description section level2">
-    <p>Computes the exit (rejection) probabilities for a phase 2/3
-seamless design. In Phase 2, multiple active arms are
-compared against a common control arm. The best-performing arm is
-selected to proceed to Phase 3, where it is tested against the common
-control over multiple looks.</p>
+    <p>Computes the upper and lower exit probabilities for a phase
+2/3 seamless design. In Phase 2, multiple active arms are compared
+against a common control arm. If the phase-2 max-Z statistic crosses the
+efficacy boundary, the trial stops early for efficacy; if it falls below
+the futility boundary, the trial stops early for futility. Otherwise, the
+best-performing arm is selected to proceed to Phase 3, where it is tested
+against the common control over multiple looks with upper and optional
+lower stopping boundaries.</p>
     </div>
 
     <div class="section level2">
@@ -64,8 +73,9 @@ control over multiple looks.</p>
 <span>  theta <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  corr_known <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  K <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
-<span>  b <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
-<span>  I <span class="op">=</span> <span class="cn">NA_real_</span></span>
+<span>  b <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  a <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  I <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -99,9 +109,18 @@ as \(r / (r + 1)\). If <code>FALSE</code>, a conservative correlation of
 
 
 <dt id="arg-b">b<a class="anchor" aria-label="anchor" href="#arg-b"></a></dt>
-<dd><p>A vector of critical values (length \(K+1\)). The first element
-is for Phase 2; the remaining \(K\) elements are for the looks in
-Phase 3.</p></dd>
+<dd><p>A vector of efficacy boundaries (length \(K+1\)). The first
+element is the efficacy boundary for the phase-2 max-Z statistic;
+the remaining \(K\) elements are efficacy boundaries for the selected
+arm in Phase 3.</p></dd>
+
+
+<dt id="arg-a">a<a class="anchor" aria-label="anchor" href="#arg-a"></a></dt>
+<dd><p>An optional vector of futility boundaries (length \(K+1\)).
+The first element is the futility boundary for the phase-2 max-Z
+statistic; the remaining \(K\) elements are futility boundaries for
+the selected arm in Phase 3. If omitted, no futility stopping is
+applied.</p></dd>
 
 
 <dt id="arg-i">I<a class="anchor" aria-label="anchor" href="#arg-i"></a></dt>
@@ -112,28 +131,47 @@ the remaining \(K\) elements are for the looks in Phase 3.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list containing the following components:</p><ul><li><p><code>exitProb</code>: A vector of length \(K + 1\). The first element is the
-probability of rejection in Phase 2; the remaining elements are the
-probabilities of rejection at each look in Phase 3.</p></li>
-<li><p><code>exitProbByArm</code>: A \((K+1) \times M\) matrix. The \((k, m)\)-th
-entry represents the probability that the global null is rejected at
-look \(k\) given that arm \(m\) was selected as the best arm.</p></li>
-<li><p><code>selectAsBest</code>: A vector of length \(M\) containing the probability
-that each active arm is selected to move on to Phase 3.</p></li>
+    <p>A list containing the following components:</p><ul><li><p><code>exitProbUpper</code>: A vector of length \(K + 1\). The first element
+is the probability of stopping for efficacy in Phase 2; the remaining
+elements are the probabilities of stopping for efficacy at each look in
+Phase 3.</p></li>
+<li><p><code>exitProbLower</code>: A vector of length \(K + 1\). The first element
+is the probability of stopping for futility in Phase 2; the remaining
+elements are the probabilities of stopping for futility at each look in
+Phase 3.</p></li>
+<li><p><code>exitProbByArmUpper</code>: A \((K+1) \times M\) matrix. The
+\((k, m)\)-th entry gives the probability of stopping for efficacy at
+look \(k\) given that arm \(m\) is selected as best.</p></li>
+<li><p><code>exitProbByArmLower</code>: A \((K+1) \times M\) matrix. The
+\((k, m)\)-th entry gives the probability of stopping for futility at
+look \(k\) given that arm \(m\) is selected as best.</p></li>
+<li><p><code>selectAsBest</code>: A vector of length \(M\) containing the
+probability that each active arm is selected to move on to Phase 3.</p></li>
+</ul><p>For backward compatibility, the list also contains:</p><ul><li><p><code>exitProb</code>: identical to <code>exitProbUpper</code>.</p></li>
+<li><p><code>exitProbByArm</code>: identical to <code>exitProbByArmUpper</code>.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The function assumes a multivariate normal distribution for the Wald
 statistics. The "best" arm is defined as the active arm with the largest
-Z-statistic at the end of Phase 2.</p>
-<p><strong>Decision Rules:</strong></p><ul><li><p><strong>Phase 2</strong>: The global null hypothesis is rejected if the Wald
-statistic for the best arm, \(Z(I_0)\), satisfies \(Z(I_0) \ge b_0\).</p></li>
-<li><p><strong>Phase 3</strong>: If the trial continues, the hypothesis is rejected at
-look \(k\) if \(Z(I_k) \ge b_k\) and all previous
-looks (including Phase 2) failed to reject.</p></li>
+Z-statistic at the end of Phase 2 among designs that continue beyond the
+phase-2 analysis.</p>
+<p><strong>Decision Rules:</strong></p><ul><li><p><strong>Phase 2 efficacy stop</strong>: reject if the phase-2 max-Z statistic
+satisfies \(\max_m Z_m(I_0) \ge b_0\).</p></li>
+<li><p><strong>Phase 2 futility stop</strong>: stop for futility if the phase-2 max-Z
+statistic satisfies \(\max_m Z_m(I_0) \le a_0\).</p></li>
+<li><p><strong>Continue to Phase 3</strong>: if \(a_0 &lt; \max_m Z_m(I_0) &lt; b_0\),
+select the arm with the largest phase-2 Z-statistic and continue with
+that arm only.</p></li>
+<li><p><strong>Phase 3 efficacy stop</strong>: at look \(k\), reject if the selected
+arm's Z-statistic exceeds the efficacy boundary and no earlier stop has
+occurred.</p></li>
+<li><p><strong>Phase 3 futility stop</strong>: at look \(k\), stop for futility if
+the selected arm's Z-statistic is below the futility boundary and no
+earlier stop has occurred.</p></li>
 </ul><p><strong>Design Assumptions:</strong></p><ul><li><p>All active arms share the same information level in Phase 2.</p></li>
 <li><p>Exactly one active arm is selected at the end of Phase 2 based on the
-largest observed Z-statistic.</p></li>
+largest observed Z-statistic when the trial continues to Phase 3.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -149,25 +187,32 @@ Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Setup: 2 active arms vs control in phase 2; 1 selected arm vs control</span></span></span>
-<span class="r-in"><span><span class="co"># in phase 3. Phase 3 has 2 sequential looks.</span></span></span>
+<span class="r-in"><span><span class="co"># Setup: 2 active arms vs control in Phase 2; 1 selected arm vs control</span></span></span>
+<span class="r-in"><span><span class="co"># in Phase 3. Phase 3 has 2 sequential looks.</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Information levels: equal spacing over 3 looks based on a maximum of</span></span></span>
 <span class="r-in"><span><span class="co"># 110 patients per arm, SD = 1.0</span></span></span>
 <span class="r-in"><span><span class="va">I</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">110</span> <span class="op">/</span> <span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="fl">1.0</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">/</span><span class="fl">3</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># O'Brien-Fleming critical values</span></span></span>
+<span class="r-in"><span><span class="co"># O'Brien-Fleming efficacy boundaries</span></span></span>
 <span class="r-in"><span><span class="va">b</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3.776605</span>, <span class="fl">2.670463</span>, <span class="fl">2.180424</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Type I error under the global null hypothesis</span></span></span>
+<span class="r-in"><span><span class="co"># No futility stopping</span></span></span>
 <span class="r-in"><span><span class="va">p0</span> <span class="op">&lt;-</span> <span class="fu">exitprob_seamless</span><span class="op">(</span>M <span class="op">=</span> <span class="fl">2</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span>, K <span class="op">=</span> <span class="fl">2</span>, b <span class="op">=</span> <span class="va">b</span>, I <span class="op">=</span> <span class="va">I</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="va">p0</span><span class="op">$</span><span class="va">exitProb</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="va">p0</span><span class="op">$</span><span class="va">exitProbUpper</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.0001572756 0.0066431322 0.0250000060</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Power under alternative: Treatment effects of 0.3 and 0.5</span></span></span>
-<span class="r-in"><span><span class="va">p1</span> <span class="op">&lt;-</span> <span class="fu">exitprob_seamless</span><span class="op">(</span>M <span class="op">=</span> <span class="fl">2</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3</span>, <span class="fl">0.5</span><span class="op">)</span>, K <span class="op">=</span> <span class="fl">2</span>, b <span class="op">=</span> <span class="va">b</span>, I <span class="op">=</span> <span class="va">I</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="va">p1</span><span class="op">$</span><span class="va">exitProb</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.05477567 0.62309680 0.90160747</span>
+<span class="r-in"><span><span class="co"># Add futility stopping</span></span></span>
+<span class="r-in"><span><span class="va">a</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.5</span>, <span class="va">b</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">p1</span> <span class="op">&lt;-</span> <span class="fu">exitprob_seamless</span><span class="op">(</span>M <span class="op">=</span> <span class="fl">2</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3</span>, <span class="fl">0.5</span><span class="op">)</span>, K <span class="op">=</span> <span class="fl">2</span>, b <span class="op">=</span> <span class="va">b</span>, a <span class="op">=</span> <span class="va">a</span>, I <span class="op">=</span> <span class="va">I</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  cumulativeEfficacy <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="va">p1</span><span class="op">$</span><span class="va">exitProbUpper</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  cumulativeFutility <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="va">p1</span><span class="op">$</span><span class="va">exitProbLower</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      cumulativeEfficacy cumulativeFutility</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1,]         0.05477567        0.007803144</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [2,]         0.62292767        0.014040545</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [3,]         0.89800885        0.101991188</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

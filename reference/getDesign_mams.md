@@ -288,25 +288,28 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   beta = 0.1, theta = c(0.3, 0.5), M = 2, r = 1.0,
   kMax = 3, informationRates = seq(1, 3)/3,
   alpha = 0.025, typeAlphaSpending = "OF"))
-#>                                                                            
-#> Multi-arm multi-stage design                                               
-#> Overall power: 0.9, overall alpha (1-sided): 0.025                         
-#> Number of active arms: 2                                                   
-#> Randomization ratio of each active vs. control: 1                          
-#> Using correlation for critical value calculation: TRUE                     
-#> Max information for pairwise comparion: 47.15                              
-#> Number of looks: 3                                                         
-#> Expected information under H1: 38.07, expected information under H0: 47.05 
-#> Alpha spending: O'Brien-Fleming, beta spending: None                       
-#>                                                                            
-#>                           Stage 1 Stage 2 Stage 3
-#> Information rate          0.333   0.667   1.000  
-#> Efficacy boundary (Z)     3.887   2.748   2.244  
-#> Cumulative rejection      0.0308  0.5470  0.9000 
-#> Cumulative alpha spent    0.0001  0.0058  0.0250 
-#> Efficacy boundary (theta) 0.980   0.490   0.327  
-#> Efficacy boundary (p)     0.0001  0.0030  0.0124 
-#> Information               15.72   31.43   47.15  
+#>                                                                             
+#> Multi-arm multi-stage design                                                
+#> Overall power: 0.9, overall alpha (1-sided): 0.025                          
+#> Number of active arms: 2                                                    
+#> Randomization ratio of each active vs. control: 1                           
+#> Using correlation for critical value calculation: TRUE                      
+#> Number of looks: 3                                                          
+#> Max information for pairwise comparion: 47.15                               
+#> Max information for overall study: 70.72                                    
+#> Expected information under H1: 38.07, expected information under H0: 47.05  
+#> Expected overall info under H1: 57.1, expected overall info under H0: 70.58 
+#> Alpha spending: O'Brien-Fleming, beta spending: None                        
+#>                                                                             
+#>                               Stage 1 Stage 2 Stage 3
+#> Information rate              0.333   0.667   1.000  
+#> Efficacy boundary (Z)         3.887   2.748   2.244  
+#> Cumulative rejection          0.0308  0.5470  0.9000 
+#> Cumulative alpha spent        0.0001  0.0058  0.0250 
+#> Efficacy boundary (theta)     0.980   0.490   0.327  
+#> Efficacy boundary (p)         0.0001  0.0030  0.0124 
+#> Information for pairwise comp 15.72   31.43   47.15  
+#> Information for overall study 23.57   47.15   70.72  
 #> 
 #> By level critical values
 #>   Level Stage Boundary (Z)
@@ -322,25 +325,28 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   IMax = 110/(2*1^2), theta = c(0.3, 0.5), M = 2, r = 1.0,
   kMax = 3, informationRates = seq(1, 3)/3,
   alpha = 0.025, typeAlphaSpending = "OF"))
-#>                                                                           
-#> Multi-arm multi-stage design                                              
-#> Overall power: 0.9399, overall alpha (1-sided): 0.025                     
-#> Number of active arms: 2                                                  
-#> Randomization ratio of each active vs. control: 1                         
-#> Using correlation for critical value calculation: TRUE                    
-#> Max information for pairwise comparion: 55                                
-#> Number of looks: 3                                                        
-#> Expected information under H1: 42.6, expected information under H0: 54.89 
-#> Alpha spending: O'Brien-Fleming, beta spending: None                      
-#>                                                                           
-#>                           Stage 1 Stage 2 Stage 3
-#> Information rate          0.333   0.667   1.000  
-#> Efficacy boundary (Z)     3.887   2.748   2.244  
-#> Cumulative rejection      0.0433  0.6329  0.9399 
-#> Cumulative alpha spent    0.0001  0.0058  0.0250 
-#> Efficacy boundary (theta) 0.908   0.454   0.303  
-#> Efficacy boundary (p)     0.0001  0.0030  0.0124 
-#> Information               18.33   36.67   55.00  
+#>                                                                             
+#> Multi-arm multi-stage design                                                
+#> Overall power: 0.9399, overall alpha (1-sided): 0.025                       
+#> Number of active arms: 2                                                    
+#> Randomization ratio of each active vs. control: 1                           
+#> Using correlation for critical value calculation: TRUE                      
+#> Number of looks: 3                                                          
+#> Max information for pairwise comparion: 55                                  
+#> Max information for overall study: 82.5                                     
+#> Expected information under H1: 42.6, expected information under H0: 54.89   
+#> Expected overall info under H1: 63.9, expected overall info under H0: 82.34 
+#> Alpha spending: O'Brien-Fleming, beta spending: None                        
+#>                                                                             
+#>                               Stage 1 Stage 2 Stage 3
+#> Information rate              0.333   0.667   1.000  
+#> Efficacy boundary (Z)         3.887   2.748   2.244  
+#> Cumulative rejection          0.0433  0.6329  0.9399 
+#> Cumulative alpha spent        0.0001  0.0058  0.0250 
+#> Efficacy boundary (theta)     0.908   0.454   0.303  
+#> Efficacy boundary (p)         0.0001  0.0030  0.0124 
+#> Information for pairwise comp 18.33   36.67   55.00  
+#> Information for overall study 27.50   55.00   82.50  
 #> 
 #> By level critical values
 #>   Level Stage Boundary (Z)

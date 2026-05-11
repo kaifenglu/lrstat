@@ -80,18 +80,29 @@ the error spending function, and the number and spacing of interim looks.</p>
 <span>  K <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
 <span>  informationRates <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  efficacyStopping <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
-<span>  criticalValues <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  futilityStopping <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
+<span>  criticalValues <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.025</span>,</span>
 <span>  typeAlphaSpending <span class="op">=</span> <span class="st">"sfOF"</span>,</span>
 <span>  parameterAlphaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  userAlphaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  futilityBounds <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futilityCP <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futilityTheta <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  spendingTime <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  MullerSchafer <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  kNew <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
 <span>  informationRatesNew <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  efficacyStoppingNew <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
+<span>  futilityStoppingNew <span class="op">=</span> <span class="cn">NA_integer_</span>,</span>
 <span>  typeAlphaSpendingNew <span class="op">=</span> <span class="st">"sfOF"</span>,</span>
 <span>  parameterAlphaSpendingNew <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  futilityBoundsInt <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futilityCPInt <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futilityThetaInt <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  typeBetaSpendingNew <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  parameterBetaSpendingNew <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  userBetaSpendingNew <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  spendingTimeNew <span class="op">=</span> <span class="cn">NA_real_</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -161,6 +172,12 @@ allowed at each stage of the primary trial. Defaults to <code>TRUE</code>
 if left unspecified.</p></dd>
 
 
+<dt id="arg-futilitystopping">futilityStopping<a class="anchor" aria-label="anchor" href="#arg-futilitystopping"></a></dt>
+<dd><p>Indicators of whether futility stopping is
+allowed at each stage of the primary trial. Defaults to <code>TRUE</code>
+if left unspecified.</p></dd>
+
+
 <dt id="arg-criticalvalues">criticalValues<a class="anchor" aria-label="anchor" href="#arg-criticalvalues"></a></dt>
 <dd><p>The upper boundaries on the max z-test statistic
 scale for Phase 2 and the z-test statistics for the selected arm
@@ -199,6 +216,23 @@ for the primary trial. Corresponds to \(\Delta\) for <code>"WT"</code>,
 primary trial. Represents the cumulative alpha spent up to each stage.</p></dd>
 
 
+<dt id="arg-futilitybounds">futilityBounds<a class="anchor" aria-label="anchor" href="#arg-futilitybounds"></a></dt>
+<dd><p>The lower boundaries on the max-z statistic scale
+at end of phase 2 and the z-test statistic scale in phase 3
+for futility stopping for the primary trial. Defaults to
+<code>rep(-8, kMax-1)</code> if left unspecified.</p></dd>
+
+
+<dt id="arg-futilitycp">futilityCP<a class="anchor" aria-label="anchor" href="#arg-futilitycp"></a></dt>
+<dd><p>The conditional power-based futility bounds for the
+primary trial.</p></dd>
+
+
+<dt id="arg-futilitytheta">futilityTheta<a class="anchor" aria-label="anchor" href="#arg-futilitytheta"></a></dt>
+<dd><p>The parameter value-based futility bounds for the
+primary trial.</p></dd>
+
+
 <dt id="arg-spendingtime">spendingTime<a class="anchor" aria-label="anchor" href="#arg-spendingtime"></a></dt>
 <dd><p>The error spending time of the primary trial.
 Defaults to missing, in which case it is assumed to be the same as
@@ -224,6 +258,12 @@ allowed at each look of the secondary trial. Defaults to <code>TRUE</code>
 if left unspecified.</p></dd>
 
 
+<dt id="arg-futilitystoppingnew">futilityStoppingNew<a class="anchor" aria-label="anchor" href="#arg-futilitystoppingnew"></a></dt>
+<dd><p>The indicators of whether futility stopping is
+allowed at each look of the secondary trial. Defaults to <code>TRUE</code>
+if left unspecified.</p></dd>
+
+
 <dt id="arg-typealphaspendingnew">typeAlphaSpendingNew<a class="anchor" aria-label="anchor" href="#arg-typealphaspendingnew"></a></dt>
 <dd><p>The type of alpha spending for the secondary
 trial. One of the following:
@@ -244,6 +284,45 @@ for the secondary trial. Corresponds to \(\Delta\) for <code>"WT"</code>,
 \(\rho\) for <code>"sfKD"</code>, and \(\gamma\) for <code>"sfHSD"</code>.</p></dd>
 
 
+<dt id="arg-futilityboundsint">futilityBoundsInt<a class="anchor" aria-label="anchor" href="#arg-futilityboundsint"></a></dt>
+<dd><p>The futility boundaries on the z statistic
+scale for new stages of the integrated trial.</p></dd>
+
+
+<dt id="arg-futilitycpint">futilityCPInt<a class="anchor" aria-label="anchor" href="#arg-futilitycpint"></a></dt>
+<dd><p>The conditional power-based futility bounds for
+new stages of the integrated trial.</p></dd>
+
+
+<dt id="arg-futilitythetaint">futilityThetaInt<a class="anchor" aria-label="anchor" href="#arg-futilitythetaint"></a></dt>
+<dd><p>The parameter value-based futility bounds for the
+new stages of the integrated trial.</p></dd>
+
+
+<dt id="arg-typebetaspendingnew">typeBetaSpendingNew<a class="anchor" aria-label="anchor" href="#arg-typebetaspendingnew"></a></dt>
+<dd><p>The type of beta spending for the secondary
+trial. One of the following:
+<code>"sfOF"</code> for O'Brien-Fleming type spending function,
+<code>"sfP"</code> for Pocock type spending function,
+<code>"sfKD"</code> for Kim &amp; DeMets spending function,
+<code>"sfHSD"</code> for Hwang, Shi &amp; DeCani spending function,
+<code>"user"</code> for user defined spending, and
+<code>"none"</code> for no early futility stopping.
+Defaults to <code>"none"</code>.</p></dd>
+
+
+<dt id="arg-parameterbetaspendingnew">parameterBetaSpendingNew<a class="anchor" aria-label="anchor" href="#arg-parameterbetaspendingnew"></a></dt>
+<dd><p>The parameter value of beta spending
+for the secondary trial. Corresponds to \(\rho\) for <code>"sfKD"</code>,
+and \(\gamma\) for <code>"sfHSD"</code>.</p></dd>
+
+
+<dt id="arg-userbetaspendingnew">userBetaSpendingNew<a class="anchor" aria-label="anchor" href="#arg-userbetaspendingnew"></a></dt>
+<dd><p>The user-defined cumulative beta spending.
+Represents the cumulative beta spent up to each stage of the
+secondary trial.</p></dd>
+
+
 <dt id="arg-spendingtimenew">spendingTimeNew<a class="anchor" aria-label="anchor" href="#arg-spendingtimenew"></a></dt>
 <dd><p>The error spending time of the secondary trial.
 Defaults to missing, in which case it is assumed to be the same as
@@ -255,14 +334,23 @@ Defaults to missing, in which case it is assumed to be the same as
     <p>An <code>adaptDesign_seamless</code> object with three list components:</p><ul><li><p><code>primaryTrial</code>: A list of selected information for the primary
 trial, including <code>M</code>, <code>r</code>, <code>corr_known</code>, <code>K</code>,
 <code>L</code>, <code>zL</code>, <code>theta</code>, <code>maxInformation</code>, <code>kMax</code>,
-<code>informationRates</code>, <code>efficacyBounds</code>, <code>information</code>,
-<code>alpha</code>, <code>conditionalAlpha</code>, <code>conditionalPower</code>,
-and <code>MullerSchafer</code>.</p></li>
-<li><p><code>secondaryTrial</code>: A <code>design</code> object for the secondary trial.</p></li>
+<code>informationRates</code>, <code>efficacyBounds</code>, <code>futilityBounds</code>,
+<code>information</code>, <code>alpha</code>, <code>conditionalAlpha</code>,
+<code>conditionalPower</code>, and <code>MullerSchafer</code>.</p></li>
+<li><p><code>secondaryTrial</code>: A list of selected information for the seconary
+trial, including <code>overallReject</code>, <code>alpha</code>, <code>kMax</code>,
+<code>maxInformation</code>, <code>informationRates</code>, <code>efficacyBounds</code>,
+<code>futilityBounds</code>, <code>cumulativeRejection</code>,
+<code>cumulativeFutility</code>, <code>cumulativeAlphaSpent</code>,
+<code>information</code>, <code>typeAlphaSpending</code>,
+<code>parameterAlphaSpending</code>, <code>typeBetaSpending</code>,
+<code>parameterBetaSpending</code>, <code>userBetaSpending</code>, and
+<code>spendingTime</code>.</p></li>
 <li><p><code>integratedTrial</code>: A list of selected information for the integrated
 trial, including <code>M</code>, <code>r</code>, <code>corr_known</code>, <code>K</code>,
 <code>L</code>, <code>zL</code>, <code>theta</code>, <code>maxInformation</code>, <code>kMax</code>,
-<code>informationRates</code>, <code>efficacyBounds</code>, and <code>information</code>.</p></li>
+<code>informationRates</code>, <code>efficacyBounds</code>, <code>futilityBounds</code>,
+and <code>information</code>.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -296,6 +384,7 @@ Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks in phase 3: 2                                   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 30                      </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Interim adaptation look in Phase 3: 1, z-statistic value: 1.791 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> theta: 0.37                                                     </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Conditional type I error: 0.0935, conditional power: 0.44       </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Muller &amp; Schafer method for secondary trial: FALSE              </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                 </span>
@@ -306,14 +395,11 @@ Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Secondary trial:                                                 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fixed design                                                     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> theta: 0.37, maximum information: 49.51                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Maximum information: 49.51                                       </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9, overall significance level (1-sided): 0.0935 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Drift parameter: 2.601, inflation factor: 1                      </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z)     1.319 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (theta) 0.187 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (p)     0.0935</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z) 1.319</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Integrated trial:                                               </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Adaptive Phase 2/3 seamless design                              </span>
