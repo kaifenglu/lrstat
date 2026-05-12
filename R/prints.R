@@ -118,11 +118,19 @@ print.design <- function(x, ...) {
 
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-               "cumulativeRejection", "cumulativeFutility",
-               "cumulativeAlphaSpent", "efficacyTheta", "futilityTheta",
-               "efficacyP", "futilityP", "information",
-               "cumulativeRejectionH0", "cumulativeFutilityH0")]
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "futilityBounds",
+               "cumulativeRejection",
+               "cumulativeFutility",
+               "cumulativeAlphaSpent",
+               "efficacyTheta",
+               "futilityTheta",
+               "efficacyP",
+               "futilityP",
+               "information",
+               "cumulativeRejectionH0",
+               "cumulativeFutilityH0")]
 
     # format number of digits after decimal for each column
     j2 <- 11
@@ -657,12 +665,22 @@ print.lrpower <- function(x, ...) {
 
   if (k>1) {
 
-    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-               "cumulativeRejection", "cumulativeFutility",
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "futilityBounds",
+               "cumulativeRejection",
+               "cumulativeFutility",
                "cumulativeAlphaSpent",
-               "numberOfEvents", "numberOfDropouts", "numberOfSubjects",
-               "analysisTime", "efficacyHR", "futilityHR",
-               "efficacyP", "futilityP", "information", "HR")]
+               "numberOfEvents",
+               "numberOfDropouts",
+               "numberOfSubjects",
+               "analysisTime",
+               "efficacyHR",
+               "futilityHR",
+               "efficacyP",
+               "futilityP",
+               "information",
+               "HR")]
 
     # format number of digits after decimal for each column
     j1 <- c(7,8,9,10)
@@ -716,8 +734,7 @@ print.lrpower <- function(x, ...) {
     colnames(df) <- paste("Stage", seq_len(ncol(df)), sep=" ")
   } else {
 
-    b <- s[, c("efficacyBounds", "efficacyHR", "efficacyP",
-               "HR")]
+    b <- s[, c("efficacyBounds", "efficacyHR", "efficacyP", "HR")]
 
     # format number of digits after decimal for each column
     j3 <- c(1,2,4)
@@ -1054,12 +1071,22 @@ print.nbpower <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-               "cumulativeRejection", "cumulativeFutility",
-               "cumulativeAlphaSpent", "numberOfEvents",
-               "numberOfDropouts", "numberOfSubjects", "exposure",
-               "analysisTime", "efficacyRateRatio", "futilityRateRatio",
-               "efficacyP", "futilityP", "information")]
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "futilityBounds",
+               "cumulativeRejection",
+               "cumulativeFutility",
+               "cumulativeAlphaSpent",
+               "numberOfEvents",
+               "numberOfDropouts",
+               "numberOfSubjects",
+               "exposure",
+               "analysisTime",
+               "efficacyRateRatio",
+               "futilityRateRatio",
+               "efficacyP",
+               "futilityP",
+               "information")]
 
     # format number of digits after decimal for each column
     j1 <- c(7,8,9,10,11)
@@ -1320,13 +1347,19 @@ print.nbpowerequiv <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds",
-               "cumulativeRejection", "cumulativeAlphaSpent",
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "cumulativeRejection",
+               "cumulativeAlphaSpent",
                "cumulativeAttainedAlphaH10",
-               "cumulativeAttainedAlphaH20", "numberOfEvents",
-               "numberOfDropouts", "numberOfSubjects",
-               "exposure", "analysisTime",
-               "efficacyRateRatioLower", "efficacyRateRatioUpper",
+               "cumulativeAttainedAlphaH20",
+               "numberOfEvents",
+               "numberOfDropouts",
+               "numberOfSubjects",
+               "exposure",
+               "analysisTime",
+               "efficacyRateRatioLower",
+               "efficacyRateRatioUpper",
                "efficacyP", "information")]
 
     # format number of digits after decimal for each column
@@ -1568,12 +1601,22 @@ print.nbpower1s <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-               "cumulativeRejection", "cumulativeFutility",
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "futilityBounds",
+               "cumulativeRejection",
+               "cumulativeFutility",
                "cumulativeAlphaSpent",
-               "numberOfEvents", "numberOfDropouts", "numberOfSubjects",
-               "exposure", "analysisTime", "efficacyRate", "futilityRate",
-               "efficacyP", "futilityP", "information")]
+               "numberOfEvents",
+               "numberOfDropouts",
+               "numberOfSubjects",
+               "exposure",
+               "analysisTime",
+               "efficacyRate",
+               "futilityRate",
+               "efficacyP",
+               "futilityP",
+               "information")]
 
     # format number of digits after decimal for each column
     j1 <- c(7,8,9,10,11)
@@ -1807,12 +1850,22 @@ print.kmpower <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-               "cumulativeRejection", "cumulativeFutility",
-               "cumulativeAlphaSpent", "numberOfEvents",
-               "numberOfDropouts", "numberOfSubjects", "numberOfMilestone",
-               "analysisTime", "efficacySurvDiff", "futilitySurvDiff",
-               "efficacyP", "futilityP", "information")]
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "futilityBounds",
+               "cumulativeRejection",
+               "cumulativeFutility",
+               "cumulativeAlphaSpent",
+               "numberOfEvents",
+               "numberOfDropouts",
+               "numberOfSubjects",
+               "numberOfMilestone",
+               "analysisTime",
+               "efficacySurvDiff",
+               "futilitySurvDiff",
+               "efficacyP",
+               "futilityP",
+               "information")]
 
     # format number of digits after decimal for each column
     j1 <- c(7,8,9,10,11)
@@ -2046,12 +2099,22 @@ print.rmpower <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-               "cumulativeRejection", "cumulativeFutility",
-               "cumulativeAlphaSpent", "numberOfEvents",
-               "numberOfDropouts", "numberOfSubjects", "numberOfMilestone",
-               "analysisTime", "efficacyRmstDiff", "futilityRmstDiff",
-               "efficacyP", "futilityP", "information")]
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "futilityBounds",
+               "cumulativeRejection",
+               "cumulativeFutility",
+               "cumulativeAlphaSpent",
+               "numberOfEvents",
+               "numberOfDropouts",
+               "numberOfSubjects",
+               "numberOfMilestone",
+               "analysisTime",
+               "efficacyRmstDiff",
+               "futilityRmstDiff",
+               "efficacyP",
+               "futilityP",
+               "information")]
 
     # format number of digits after decimal for each column
     j1 <- c(7,8,9,10,11)
@@ -2263,14 +2326,21 @@ print.kmpowerequiv <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds",
-               "cumulativeRejection", "cumulativeAlphaSpent",
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "cumulativeRejection",
+               "cumulativeAlphaSpent",
                "cumulativeAttainedAlphaH10",
-               "cumulativeAttainedAlphaH20", "numberOfEvents",
-               "numberOfDropouts", "numberOfSubjects",
-               "numberOfMilestone", "analysisTime",
-               "efficacySurvDiffLower", "efficacySurvDiffUpper",
-               "efficacyP", "information")]
+               "cumulativeAttainedAlphaH20",
+               "numberOfEvents",
+               "numberOfDropouts",
+               "numberOfSubjects",
+               "numberOfMilestone",
+               "analysisTime",
+               "efficacySurvDiffLower",
+               "efficacySurvDiffUpper",
+               "efficacyP",
+               "information")]
 
     # format number of digits after decimal for each column
     j1 <- c(7,8,9,10,11)
@@ -2463,14 +2533,21 @@ print.rmpowerequiv <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds",
-               "cumulativeRejection", "cumulativeAlphaSpent",
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "cumulativeRejection",
+               "cumulativeAlphaSpent",
                "cumulativeAttainedAlphaH10",
-               "cumulativeAttainedAlphaH20", "numberOfEvents",
-               "numberOfDropouts", "numberOfSubjects",
-               "numberOfMilestone", "analysisTime",
-               "efficacyRmstDiffLower", "efficacyRmstDiffUpper",
-               "efficacyP", "information")]
+               "cumulativeAttainedAlphaH20",
+               "numberOfEvents",
+               "numberOfDropouts",
+               "numberOfSubjects",
+               "numberOfMilestone",
+               "analysisTime",
+               "efficacyRmstDiffLower",
+               "efficacyRmstDiffUpper",
+               "efficacyP",
+               "information")]
 
     # format number of digits after decimal for each column
     j1 <- c(7,8,9,10,11)
@@ -2665,13 +2742,21 @@ print.lrpowerequiv <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds",
-               "cumulativeRejection", "cumulativeAlphaSpent",
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "cumulativeRejection",
+               "cumulativeAlphaSpent",
                "cumulativeAttainedAlphaH10",
-               "cumulativeAttainedAlphaH20", "numberOfEvents",
-               "numberOfDropouts", "numberOfSubjects",
-               "analysisTime", "efficacyHRLower", "efficacyHRUpper",
-               "efficacyP", "information", "HR")]
+               "cumulativeAttainedAlphaH20",
+               "numberOfEvents",
+               "numberOfDropouts",
+               "numberOfSubjects",
+               "analysisTime",
+               "efficacyHRLower",
+               "efficacyHRUpper",
+               "efficacyP",
+               "information",
+               "HR")]
 
     # format number of digits after decimal for each column
     j1 <- c(7,8,9,10)
@@ -2890,12 +2975,22 @@ print.kmpower1s <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-               "cumulativeRejection", "cumulativeFutility",
-               "cumulativeAlphaSpent", "numberOfEvents",
-               "numberOfDropouts", "numberOfSubjects", "numberOfMilestone",
-               "analysisTime", "efficacySurv", "futilitySurv",
-               "efficacyP", "futilityP", "information")]
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "futilityBounds",
+               "cumulativeRejection",
+               "cumulativeFutility",
+               "cumulativeAlphaSpent",
+               "numberOfEvents",
+               "numberOfDropouts",
+               "numberOfSubjects",
+               "numberOfMilestone",
+               "analysisTime",
+               "efficacySurv",
+               "futilitySurv",
+               "efficacyP",
+               "futilityP",
+               "information")]
 
     # format number of digits after decimal for each column
     j1 <- c(7,8,9,10,11)
@@ -3129,12 +3224,22 @@ print.rmpower1s <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-               "cumulativeRejection", "cumulativeFutility",
-               "cumulativeAlphaSpent", "numberOfEvents",
-               "numberOfDropouts", "numberOfSubjects", "numberOfMilestone",
-               "analysisTime", "efficacyRmst", "futilityRmst",
-               "efficacyP", "futilityP", "information")]
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "futilityBounds",
+               "cumulativeRejection",
+               "cumulativeFutility",
+               "cumulativeAlphaSpent",
+               "numberOfEvents",
+               "numberOfDropouts",
+               "numberOfSubjects",
+               "numberOfMilestone",
+               "analysisTime",
+               "efficacyRmst",
+               "futilityRmst",
+               "efficacyP",
+               "futilityP",
+               "information")]
 
     # format number of digits after decimal for each column
     j1 <- c(7,8,9,10,11)
@@ -4003,34 +4108,67 @@ print.lrsim_seamless <- function(x, ...) {
 
   str10 <- paste0("Number of simulations: ", a$numberOfIterations)
 
-  str11 <- paste0("Efficacy bounds (z-scale): ",
-                  paste(round(a$criticalValues, 3), collapse = ", "))
+  df1a <- data.frame(x = rep("", 11))
+  colnames(df1a) <- NULL
+  rownames(df1a) <- c(str1, str2, str3, str4, str5, str6, str7, str8,
+                      str9, str10, "")
 
-  df1 <- data.frame(x = rep("", 12))
-  colnames(df1) <- NULL
-  rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7, str8,
-                     str9, str10, str11, "")
+  b <- data.frame(efficacyBounds = a$criticalValues,
+                  futiltyBounds = c(a$futilityBounds, a$criticalValues[k]))
+  b[1:2] <- lapply(b[1:2], formatC, format = "f", digits = 3)
+  df1b <- t(b)
+  rownames(df1b) <- c("Efficacy bounds (z-scale)",
+                      "Futility bounds (z-scale)")
+  colnames(df1b) <- paste("Stage", seq_len(ncol(df1b)), sep=" ")
 
-  df2 <- t(data.frame(selectAsBest = a$selectAsBest))
-  rownames(df2) <- "Selected as best in phase 2"
-  colnames(df2) <- paste("Arm", seq_len(ncol(df2)), sep=" ")
+  df2a <- t(data.frame(selectAsBest = a$selectAsBest))
+  rownames(df2a) <- "Selected as best in phase 2"
+  colnames(df2a) <- paste("Arm", seq_len(ncol(df2a)), sep=" ")
+
+
+  reject <- rbind(a$rejectPerStage, a$cumulativeRejection[k, ])
+  futile <- c(a$futilityPerStage[, M+1], a$cumulativeFutility[k, M+1])
+  contin <- numeric(k+1)
+  contin[1] <- 1 - a$rejectPerStage[1, M+1] - a$futilityPerStage[1, M+1]
+  if (k > 2) {
+    for (i in 2:(k-1)) {
+      contin[i] <- contin[i-1] - a$rejectPerStage[i, M+1] -
+        a$futilityPerStage[i, M+1]
+    }
+  }
+  contin[k] <- 0
+  contin[k+1] <- NA
+
+  df2b <- as.data.frame(cbind(reject, futile, contin))
+  rownames(df2b) <- c(paste("Stage", 1:k, sep=" "), "Total")
+  colnames(df2b) <- c(paste("Reject Active", 1:M, sep=" "),
+                      "Overall Rejection",
+                      "Futility", "Continue")
+  j <- 1:ncol(df2b)
+  df2b[j] <- lapply(df2b[j], formatC, format = "f", digits = 4)
+
 
   df3 <- data.frame(activeArm = rep(c(seq(1, a$M), "Overall"), each = k),
                     stage = rep(seq(1, k), times = a$M + 1),
                     cumReject = c(a$cumulativeRejection),
+                    cumFutility = c(a$cumulativeFutility),
                     nEvents = c(a$numberOfEvents),
                     nDropouts = c(a$numberOfDropouts),
                     nSubjects = c(a$numberOfSubjects),
                     analysisTime = c(a$analysisTime))
 
   # format number of digits after decimal for each column
-  j1 <- c(4,5,6,7)
-  j4 <- 3
+  j1 <- c(5,6,7,8)
+  j4 <- c(3,4)
   df3[j1] <- lapply(df3[j1], formatC, format = "f", digits = 1)
   df3[j4] <- lapply(df3[j4], formatC, format = "f", digits = 4)
 
-  print(df1, ..., na.print = "" , quote = FALSE )
-  print(df2, ..., na.print = "" , quote = FALSE )
+  print(df1a, ..., na.print = "" , quote = FALSE )
+  print(df1b, ..., na.print = "" , quote = FALSE )
+  cat("\n")
+  print(df2a, ..., na.print = "" , quote = FALSE )
+  cat("\n")
+  print(df2b, ..., na.print = "" , quote = FALSE )
   cat("\n")
   print(df3, ..., na.print = "" , quote = FALSE, row.names= FALSE)
   invisible(x)
@@ -4088,9 +4226,9 @@ print.mams <- function(x, ...) {
 
 
   if (k > 1) {
-    str9 <- paste0("Expected information under H1: ",
+    str9 <- paste0("Expected pairwise info under H1: ",
                    round(a$expectedInformationH1, 2), ", ",
-                   "expected information under H0: ",
+                   "expected pairwise info under H0: ",
                    round(a$expectedInformationH0, 2))
 
     str10 <- paste0("Expected overall info under H1: ",
@@ -4485,20 +4623,41 @@ print.lrsim_mams <- function(x, ...) {
   j <- 1:ncol(df1b)
   df1b[j] <- lapply(df1b[j], formatC, format = "f", digits = 3)
 
-  df2a <- as.data.frame(a$cumulativeRejection)
-  rownames(df2a) <- paste("Stage", 1:k, sep=" ")
-  colnames(df2a) <- c(paste("Active", 1:M, sep=" "), "Overall")
-  j <- 1:ncol(df2a)
-  df2a[j] <- lapply(df2a[j], formatC, format = "f", digits = 3)
+  df2a <- as.data.frame(cbind(a$cumulativeRejection,
+                              a$cumulativeFutility[, M+1]))
 
-  df2b <- as.data.frame(a$rejectByNumber)
-  rownames(df2b) <- c(paste("Stage", 1:k, sep=" "), "Overall")
-  colnames(df2b) <- paste("", 0:M, sep=" ")
+  rownames(df2a) <- paste("Stage", 1:k, sep=" ")
+  colnames(df2a) <- c(paste("Reject Active", 1:M, sep=" "),
+                      "Overall Rejection", "Futility")
+  j <- 1:ncol(df2a)
+  df2a[j] <- lapply(df2a[j], formatC, format = "f", digits = 4)
+
+  reject <- c(a$rejectPerStage[, M+1], a$cumulativeRejection[k, M+1])
+  futile <- c(a$futilityPerStage[, M+1], a$cumulativeFutility[k, M+1])
+  contin <- numeric(k+1)
+  contin[1] <- 1 - a$rejectPerStage[1, M+1] - a$futilityPerStage[1, M+1]
+  if (k > 2) {
+    for (i in 2:(k-1)) {
+      contin[i] <- contin[i-1] - a$rejectPerStage[i, M+1] -
+        a$futilityPerStage[i, M+1]
+    }
+  }
+  contin[k] <- 0
+  contin[k+1] <- NA
+
+  df2b <- as.data.frame(cbind(a$rejectByNumber[,2:(M+1)],
+                              reject, futile, contin))
+  rownames(df2b) <- c(paste("Stage", 1:k, sep=" "), "Total")
+  colnames(df2b) <- c(paste("Reject", 1:M,
+                            c("Active", rep("Actives", (M-1))), sep=" "),
+                      "Overall Rejection",
+                      "Futility", "Continue")
   j <- 1:ncol(df2b)
-  df2b[j] <- lapply(df2b[j], formatC, format = "f", digits = 3)
+  df2b[j] <- lapply(df2b[j], formatC, format = "f", digits = 4)
+
 
   df2c <- a$rejectBySet
-  df2c[2] <- lapply(df2c[2], formatC, format = "f", digits = 3)
+  df2c[2] <- lapply(df2c[2], formatC, format = "f", digits = 4)
   colnames(df2c) <- c("Set of active arms", "Probability of rejection")
 
   df3 <- as.data.frame(t(matrix(c(a$expectedNumberOfEvents,
@@ -4537,11 +4696,11 @@ print.lrsim_mams <- function(x, ...) {
   print(df1b, ..., na.print = "" , quote = FALSE )
   cat("\n")
 
-  cat("Cumulative probability of rejection by treatment\n")
+  cat("Cumulative probability of rejection or futility by treatment\n")
   print(df2a, ..., na.print = "" , quote = FALSE )
   cat("\n")
 
-  cat("Probability of rejection by number of active arms\n")
+  cat("Detailed probability of trial termination at each look\n")
   print(df2b, ..., na.print = "" , quote = FALSE )
   cat("\n")
 
