@@ -303,25 +303,25 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Stage 2   2.735   2.511
 #> Stage 3   2.246   1.993
 #> 
-#> Cumulative probability of rejection by treatment
-#>         Active 1 Active 2 Overall
-#> Stage 1    0.009    0.007   0.013
-#> Stage 2    0.287    0.269   0.390
-#> Stage 3    0.626    0.590   0.794
+#> Cumulative probability of rejection or futility by treatment
+#>         Reject Active 1 Reject Active 2 Overall Rejection Futility
+#> Stage 1          0.0090          0.0070            0.0130   0.0210
+#> Stage 2          0.2870          0.2690            0.3900   0.0230
+#> Stage 3          0.6260          0.5900            0.7940   0.2060
 #> 
-#> Probability of rejection by number of active arms
-#>             0     1     2
-#> Stage 1 0.987 0.010 0.003
-#> Stage 2 0.623 0.214 0.163
-#> Stage 3 0.596 0.148 0.256
-#> Overall 0.206 0.372 0.422
+#> Detailed probability of trial termination at each look
+#>         Reject 1 Active Reject 2 Actives Overall Rejection Futility Continue
+#> Stage 1          0.0100           0.0030            0.0130   0.0210   0.9660
+#> Stage 2          0.2140           0.1630            0.3770   0.0020   0.5870
+#> Stage 3          0.1480           0.2560            0.4040   0.1830   0.0000
+#> Total            0.3720           0.4220            0.7940   0.2060       NA
 #> 
 #> Overall probability of rejection by set of active arms
 #>   Set of active arms Probability of rejection
-#> 1               none                    0.206
-#> 2                  1                    0.204
-#> 3                  2                    0.168
-#> 4                1,2                    0.422
+#> 1               none                   0.2060
+#> 2                  1                   0.2040
+#> 3                  2                   0.1680
+#> 4                1,2                   0.4220
 #> 
 #>                            Active 1 Active 2 Control Total
 #> Expected # events             126.4    126.8   149.3 402.5

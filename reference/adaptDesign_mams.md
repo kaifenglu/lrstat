@@ -326,19 +326,19 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   IMax = 324 / 4, theta = c(-log(0.75), -log(0.75)),
   M = 2, r = 1, kMax = 2, informationRates = c(1/2, 1),
   alpha = 0.025, typeAlphaSpending = "OF"))
-#>                                                                              
-#> Multi-arm multi-stage design                                                 
-#> Overall power: 0.7994, overall alpha (1-sided): 0.025                        
-#> Number of active arms: 2                                                     
-#> Randomization ratio of each active vs. control: 1                            
-#> Using correlation for critical value calculation: TRUE                       
-#> Number of looks: 2                                                           
-#> Max information for pairwise comparion: 81                                   
-#> Max information for overall study: 121.5                                     
-#> Expected information under H1: 74.53, expected information under H0: 80.93   
-#> Expected overall info under H1: 111.8, expected overall info under H0: 121.4 
-#> Alpha spending: O'Brien-Fleming, beta spending: None                         
-#>                                                                              
+#>                                                                                
+#> Multi-arm multi-stage design                                                   
+#> Overall power: 0.7994, overall alpha (1-sided): 0.025                          
+#> Number of active arms: 2                                                       
+#> Randomization ratio of each active vs. control: 1                              
+#> Using correlation for critical value calculation: TRUE                         
+#> Number of looks: 2                                                             
+#> Max information for pairwise comparion: 81                                     
+#> Max information for overall study: 121.5                                       
+#> Expected pairwise info under H1: 74.53, expected pairwise info under H0: 80.93 
+#> Expected overall info under H1: 111.8, expected overall info under H0: 121.4   
+#> Alpha spending: O'Brien-Fleming, beta spending: None                           
+#>                                                                                
 #>                               Stage 1 Stage 2
 #> Information rate              0.500   1.000  
 #> Efficacy boundary (Z)         3.142   2.222  

@@ -309,19 +309,19 @@ Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.</p>
 <span class="r-in"><span>  beta <span class="op">=</span> <span class="fl">0.1</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3</span>, <span class="fl">0.5</span><span class="op">)</span>, M <span class="op">=</span> <span class="fl">2</span>, r <span class="op">=</span> <span class="fl">1.0</span>,</span></span>
 <span class="r-in"><span>  kMax <span class="op">=</span> <span class="fl">3</span>, informationRates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">/</span><span class="fl">3</span>,</span></span>
 <span class="r-in"><span>  alpha <span class="op">=</span> <span class="fl">0.025</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"OF"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                             </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Multi-arm multi-stage design                                                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9, overall alpha (1-sided): 0.025                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms: 2                                                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1                           </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE                      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks: 3                                                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 47.15                               </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for overall study: 70.72                                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Expected information under H1: 38.07, expected information under H0: 47.05  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Expected overall info under H1: 57.1, expected overall info under H0: 70.58 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: O'Brien-Fleming, beta spending: None                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multi-arm multi-stage design                                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9, overall alpha (1-sided): 0.025                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms: 2                                                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks: 3                                                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 47.15                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for overall study: 70.72                                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Expected pairwise info under H1: 38.07, expected pairwise info under H0: 47.05 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Expected overall info under H1: 57.1, expected overall info under H0: 70.58    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: O'Brien-Fleming, beta spending: None                           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                               Stage 1 Stage 2 Stage 3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Information rate              0.333   0.667   1.000  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z)         3.887   2.748   2.244  </span>
@@ -346,19 +346,19 @@ Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.</p>
 <span class="r-in"><span>  IMax <span class="op">=</span> <span class="fl">110</span><span class="op">/</span><span class="op">(</span><span class="fl">2</span><span class="op">*</span><span class="fl">1</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3</span>, <span class="fl">0.5</span><span class="op">)</span>, M <span class="op">=</span> <span class="fl">2</span>, r <span class="op">=</span> <span class="fl">1.0</span>,</span></span>
 <span class="r-in"><span>  kMax <span class="op">=</span> <span class="fl">3</span>, informationRates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">/</span><span class="fl">3</span>,</span></span>
 <span class="r-in"><span>  alpha <span class="op">=</span> <span class="fl">0.025</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"OF"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                             </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Multi-arm multi-stage design                                                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9399, overall alpha (1-sided): 0.025                       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms: 2                                                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1                           </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE                      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks: 3                                                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 55                                  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for overall study: 82.5                                     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Expected information under H1: 42.6, expected information under H0: 54.89   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Expected overall info under H1: 63.9, expected overall info under H0: 82.34 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: O'Brien-Fleming, beta spending: None                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multi-arm multi-stage design                                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9399, overall alpha (1-sided): 0.025                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms: 2                                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks: 3                                                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for pairwise comparion: 55                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Max information for overall study: 82.5                                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Expected pairwise info under H1: 42.6, expected pairwise info under H0: 54.89 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Expected overall info under H1: 63.9, expected overall info under H0: 82.34   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha spending: O'Brien-Fleming, beta spending: None                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                               </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                               Stage 1 Stage 2 Stage 3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Information rate              0.333   0.667   1.000  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Efficacy boundary (Z)         3.887   2.748   2.244  </span>

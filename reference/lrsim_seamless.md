@@ -298,30 +298,5 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   maxNumberOfRawDatasetsPerStage = 1,
   seed = 314159,
   nthreads = 0))
-#>                                                              
-#> Phase 2/3 seamless group-sequential design for log-rank test 
-#> Empirical power: 0.9                                         
-#> Number of active arms in phase 2: 2                          
-#> Number of looks in phase 3: 2                                
-#> Expected # events: 114.1                                     
-#> Expected # dropouts: 0                                       
-#> Expected # subjects: 409.7                                   
-#> Expected study duration: 22                                  
-#> n: 700, fixed follow-up: FALSE                               
-#> Number of simulations: 1000                                  
-#> Efficacy bounds (z-scale): 3.852, 2.724, 2.224               
-#>                                                              
-#>                             Arm 1 Arm 2
-#> Selected as best in phase 2 0.844 0.156
-#> 
-#>  activeArm stage cumReject nEvents nDropouts nSubjects analysisTime
-#>          1     1    0.0460    60.2       0.0     290.0         15.5
-#>          1     2    0.5620   100.3       0.0     386.9         20.7
-#>          1     3    0.8050   141.2       0.0     464.0         24.8
-#>          2     1    0.0040    53.7       0.0     269.6         14.8
-#>          2     2    0.0470    99.5       0.0     371.8         20.3
-#>          2     3    0.0980   146.9       0.0     455.6         24.6
-#>    Overall     1    0.0470    59.2       0.0     286.8         15.4
-#>    Overall     2    0.6060   100.2       0.0     384.4         20.6
-#>    Overall     3    0.9000   142.8       0.0     461.7         24.8
+#> Error in print.lrsim_seamless(x): object 'M' not found
 ```

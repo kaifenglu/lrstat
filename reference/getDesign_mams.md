@@ -288,19 +288,19 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   beta = 0.1, theta = c(0.3, 0.5), M = 2, r = 1.0,
   kMax = 3, informationRates = seq(1, 3)/3,
   alpha = 0.025, typeAlphaSpending = "OF"))
-#>                                                                             
-#> Multi-arm multi-stage design                                                
-#> Overall power: 0.9, overall alpha (1-sided): 0.025                          
-#> Number of active arms: 2                                                    
-#> Randomization ratio of each active vs. control: 1                           
-#> Using correlation for critical value calculation: TRUE                      
-#> Number of looks: 3                                                          
-#> Max information for pairwise comparion: 47.15                               
-#> Max information for overall study: 70.72                                    
-#> Expected information under H1: 38.07, expected information under H0: 47.05  
-#> Expected overall info under H1: 57.1, expected overall info under H0: 70.58 
-#> Alpha spending: O'Brien-Fleming, beta spending: None                        
-#>                                                                             
+#>                                                                                
+#> Multi-arm multi-stage design                                                   
+#> Overall power: 0.9, overall alpha (1-sided): 0.025                             
+#> Number of active arms: 2                                                       
+#> Randomization ratio of each active vs. control: 1                              
+#> Using correlation for critical value calculation: TRUE                         
+#> Number of looks: 3                                                             
+#> Max information for pairwise comparion: 47.15                                  
+#> Max information for overall study: 70.72                                       
+#> Expected pairwise info under H1: 38.07, expected pairwise info under H0: 47.05 
+#> Expected overall info under H1: 57.1, expected overall info under H0: 70.58    
+#> Alpha spending: O'Brien-Fleming, beta spending: None                           
+#>                                                                                
 #>                               Stage 1 Stage 2 Stage 3
 #> Information rate              0.333   0.667   1.000  
 #> Efficacy boundary (Z)         3.887   2.748   2.244  
@@ -325,19 +325,19 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   IMax = 110/(2*1^2), theta = c(0.3, 0.5), M = 2, r = 1.0,
   kMax = 3, informationRates = seq(1, 3)/3,
   alpha = 0.025, typeAlphaSpending = "OF"))
-#>                                                                             
-#> Multi-arm multi-stage design                                                
-#> Overall power: 0.9399, overall alpha (1-sided): 0.025                       
-#> Number of active arms: 2                                                    
-#> Randomization ratio of each active vs. control: 1                           
-#> Using correlation for critical value calculation: TRUE                      
-#> Number of looks: 3                                                          
-#> Max information for pairwise comparion: 55                                  
-#> Max information for overall study: 82.5                                     
-#> Expected information under H1: 42.6, expected information under H0: 54.89   
-#> Expected overall info under H1: 63.9, expected overall info under H0: 82.34 
-#> Alpha spending: O'Brien-Fleming, beta spending: None                        
-#>                                                                             
+#>                                                                               
+#> Multi-arm multi-stage design                                                  
+#> Overall power: 0.9399, overall alpha (1-sided): 0.025                         
+#> Number of active arms: 2                                                      
+#> Randomization ratio of each active vs. control: 1                             
+#> Using correlation for critical value calculation: TRUE                        
+#> Number of looks: 3                                                            
+#> Max information for pairwise comparion: 55                                    
+#> Max information for overall study: 82.5                                       
+#> Expected pairwise info under H1: 42.6, expected pairwise info under H0: 54.89 
+#> Expected overall info under H1: 63.9, expected overall info under H0: 82.34   
+#> Alpha spending: O'Brien-Fleming, beta spending: None                          
+#>                                                                               
 #>                               Stage 1 Stage 2 Stage 3
 #> Information rate              0.333   0.667   1.000  
 #> Efficacy boundary (Z)         3.887   2.748   2.244  
