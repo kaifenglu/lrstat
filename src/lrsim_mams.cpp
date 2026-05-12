@@ -25,6 +25,7 @@ ListCpp lrsim_mams_cpp(
     const size_t M,
     const size_t kMax,
     const FlatMatrix& criticalValues,
+    const std::vector<double>& futilityBounds,
     const std::vector<double>& hazardRatioH0s,
     const std::vector<double>& allocations,
     const std::vector<double>& accrualTime,
@@ -46,6 +47,15 @@ ListCpp lrsim_mams_cpp(
 {
   if (M < 1) throw std::invalid_argument("M must be at least 1");
   if (kMax < 1) throw std::invalid_argument("kMax must be at least 1");
+  if (kMax > 1 && futilityBounds.size() < kMax - 1) {
+    throw std::invalid_argument("futilityBounds must have length >= kMax - 1");
+  }
+  for (size_t k = 0; k + 1 < kMax; ++k) {
+    if (futilityBounds[k] > criticalValues(k, 0)) {
+      throw std::invalid_argument(
+          "futilityBounds must lie below level-M criticalValues");
+    }
+  }
 
   // decide planning mode
   bool useEvents;
@@ -644,6 +654,7 @@ ListCpp lrsim_mams_cpp(
   std::vector<double> sum2_vscore; sum2_vscore.reserve(ns2r);
   std::vector<double> sum2_logRank; sum2_logRank.reserve(ns2r);
   std::vector<unsigned char> sum2_reject; sum2_reject.reserve(ns2r);
+  std::vector<unsigned char> sum2_futility; sum2_futility.reserve(ns2r);
 
   // raw final containers
   std::vector<int> raw_iterNum; raw_iterNum.reserve(nrr);
@@ -689,6 +700,7 @@ ListCpp lrsim_mams_cpp(
       sum2_logRank.push_back(r.logRank);
       sum2_stopStage.push_back(0);
       sum2_reject.push_back(0);
+      sum2_futility.push_back(0);
     }
 
     if (iter < maxRawIters) {
@@ -717,6 +729,7 @@ ListCpp lrsim_mams_cpp(
 
   std::vector<double> haveStage(kMax);
   FlatMatrix rejectByArm(kMax, M + 1);
+  FlatMatrix futilityByArm(kMax, M + 1);
   FlatMatrix timeByArm(kMax, M + 2);
   FlatMatrix eventsByArm(kMax, M + 2);
   FlatMatrix dropoutsByArm(kMax, M + 2);
@@ -739,6 +752,7 @@ ListCpp lrsim_mams_cpp(
   int* stop2 = sum2_stopStage.data();
   const double* logRank = sum2_logRank.data();
   unsigned char* reject = sum2_reject.data();
+  unsigned char* futility = sum2_futility.data();
 
   size_t rawnum = 0;
   for (size_t iter = 0; iter < niters; ++iter) {
@@ -747,6 +761,8 @@ ListCpp lrsim_mams_cpp(
 
     // find stopping stage for this iteration
     size_t stop_k = kMax - 1;
+    bool stoppedForFutility = false;
+
     for (size_t k = 0; k < kMax; ++k) {
       const size_t offset = i2 + k * M;
 
@@ -759,7 +775,7 @@ ListCpp lrsim_mams_cpp(
       bool anyreject = false;
       for (auto it = I.begin(); it != I.end(); ) {
         size_t m = *it;
-        if (logRank[offset + m] < -cut) {
+        if (-logRank[offset + m] > cut) {
           anyreject = true;
           reject[offset + m] = 1;
           rejectByArm(k, m) += 1;
@@ -777,10 +793,10 @@ ListCpp lrsim_mams_cpp(
         while (anyreject) {
           anyreject = false;
           if (!I.empty()) {
-            double cut = criticalValues(k, M - I.size());
+            double cut2 = criticalValues(k, M - I.size());
             for (auto it = I.begin(); it != I.end(); ) {
               size_t m = *it;
-              if (logRank[offset + m] < -cut) {
+              if (-logRank[offset + m] > cut2) {
                 anyreject = true;
                 reject[offset + m] = 1;
                 rejectByArm(k, m) += 1;
@@ -794,6 +810,31 @@ ListCpp lrsim_mams_cpp(
 
         break;
       }
+
+
+      bool allFutile = false;
+      if (k + 1 < kMax) {
+        allFutile = true;
+        for (size_t m = 0; m < M; ++m) {
+          if (-logRank[offset + m] > futilityBounds[k]) {
+            allFutile = false;
+            break;
+          }
+        }
+      } else {
+        allFutile = true; // final-stage futility if no active arm can be rejected
+      }
+
+      if (allFutile) {
+        stop_k = k;
+        stoppedForFutility = true;
+        futilityByArm(k, M) += 1;
+        for (size_t m = 0; m < M; ++m) {
+          futilityByArm(k, m) += 1;
+        }
+        break;
+      }
+
     }
 
     // record which hypotheses are rejected at the stopping stage for this iteration
@@ -830,6 +871,13 @@ ListCpp lrsim_mams_cpp(
       }
     }
 
+    if (stoppedForFutility) {
+      const size_t offset2 = i2 + stop_k * M;
+      for (size_t m = 0; m < M; ++m) {
+        futility[offset2 + m] = 1;
+      }
+    }
+
     if (iter < maxRawIters) {
       size_t n1 = 0;
       for (size_t k = 0; k < kMax; ++k) {
@@ -845,10 +893,10 @@ ListCpp lrsim_mams_cpp(
     // tally time and number of events/dropouts/subjects
     for (size_t k = 0; k <= stop_k; ++k) {
       haveStage[k] += 1;
-      const size_t offset = i1 + k * (M + 2);
+      const size_t offset1 = i1 + k * (M + 2);
 
       for (size_t m = 0; m < M + 2; ++m) {
-        size_t idx = offset + m;
+        size_t idx = offset1 + m;
         timeByArm(k, m) += sum1_T[idx];
         eventsByArm(k, m) += sum1_E[idx];
         dropoutsByArm(k, m) += sum1_D[idx];
@@ -869,6 +917,7 @@ ListCpp lrsim_mams_cpp(
   for (size_t m = 0; m < M + 1; ++m) {
     for (size_t k = 0; k < kMax; ++k) {
       rejectByArm(k, m) /= niters;
+      futilityByArm(k, m) /= niters;
       rejectByNum(k, m) /= niters;
     }
   }
@@ -923,13 +972,18 @@ ListCpp lrsim_mams_cpp(
 
 
   FlatMatrix cumRejectByArm(kMax, M + 1);
+  FlatMatrix cumFutilityByArm(kMax, M + 1);
   for (size_t m = 0; m < M + 1; ++m) {
     cumRejectByArm(0, m) = rejectByArm(0, m);
-    for (size_t k = 1; k < kMax; ++k)
+    cumFutilityByArm(0, m) = futilityByArm(0, m);
+    for (size_t k = 1; k < kMax; ++k) {
       cumRejectByArm(k, m) = cumRejectByArm(k - 1, m) + rejectByArm(k, m);
+      cumFutilityByArm(k, m) = cumFutilityByArm(k - 1, m) + futilityByArm(k, m);
+    }
   }
 
   double overallReject = cumRejectByArm(kMax - 1, M);
+  double overallFutility = cumFutilityByArm(kMax - 1, M);
 
   // convert counts to proportions / averages
   for (size_t m = 0; m < M + 2; ++m) {
@@ -949,11 +1003,14 @@ ListCpp lrsim_mams_cpp(
     }
   }
 
-
   ListCpp overview;
+
   overview.push_back(overallReject, "overallReject");
+  overview.push_back(overallFutility, "overallFutility");
   overview.push_back(std::move(rejectByArm), "rejectPerStage");
+  overview.push_back(std::move(futilityByArm), "futilityPerStage");
   overview.push_back(std::move(cumRejectByArm), "cumulativeRejection");
+  overview.push_back(std::move(cumFutilityByArm), "cumulativeFutility");
   overview.push_back(std::move(rejectByNum), "rejectByNumber");
   overview.push_back(std::move(rejectSetData), "rejectBySet");
   overview.push_back(std::move(eventsByArm), "numberOfEvents");
@@ -965,6 +1022,7 @@ ListCpp lrsim_mams_cpp(
   overview.push_back(std::move(expSubjectsByArm), "expectedNumberOfSubjects");
   overview.push_back(std::move(expTimeByArm), "expectedStudyDuration");
   overview.push_back(criticalValues, "criticalValues");
+  overview.push_back(futilityBounds, "futilityBounds");
   overview.push_back(hazardRatioH0s, "hazardRatioH0s");
   overview.push_back(useEvents, "useEvents");
   overview.push_back(niters, "numberOfIterations");
@@ -999,13 +1057,13 @@ ListCpp lrsim_mams_cpp(
   sumdata2.push_back(std::move(sum2_vscore), "vscore");
   sumdata2.push_back(std::move(sum2_logRank), "logRankStatistic");
   sumdata2.push_back(std::move(sum2_reject), "reject");
+  sumdata2.push_back(std::move(sum2_futility), "futility");
 
   ListCpp result;
   result.push_back(std::move(overview), "overview");
   result.push_back(std::move(sumdata1), "sumdata1");
   result.push_back(std::move(sumdata2), "sumdata2");
 
-  // attach raw data
   if (!raw_iterNum.empty()) {
     DataFrameCpp rawdata;
     rawdata.push_back(std::move(raw_iterNum), "iterationNumber");
@@ -1029,11 +1087,13 @@ ListCpp lrsim_mams_cpp(
 }
 
 
+
 // [[Rcpp::export]]
 Rcpp::List lrsim_mams_Rcpp(
     const int M = 2,
     const int kMax = 1,
     const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues = R_NilValue,
+    const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds = R_NilValue,
     const Rcpp::NumericVector& hazardRatioH0s = 1,
     const Rcpp::NumericVector& allocations = 1,
     const Rcpp::NumericVector& accrualTime = 0,
@@ -1062,6 +1122,16 @@ Rcpp::List lrsim_mams_Rcpp(
     critValues = flatmatrix_from_Rmatrix(cm);
   } else {
     throw std::invalid_argument("criticalValues must be provided");
+  }
+
+  std::vector<double> futBounds;
+  if (futilityBounds.isNotNull()) {
+    futBounds = Rcpp::as<std::vector<double>>(futilityBounds);
+    if (kMax > 1 && static_cast<int>(futBounds.size()) < kMax - 1) {
+      throw std::invalid_argument("futilityBounds must have length >= kMax - 1");
+    }
+  } else {
+    futBounds = std::vector<double>(std::max(0, kMax - 1), -8.0);
   }
 
   std::vector<double> hrH0s(hazardRatioH0s.begin(), hazardRatioH0s.end());
@@ -1110,7 +1180,7 @@ Rcpp::List lrsim_mams_Rcpp(
   std::vector<double> plannedT(plannedTime.begin(), plannedTime.end());
 
   auto out = lrsim_mams_cpp(
-    M, kMax, critValues, hrH0s, allocs, accrualT, accrualInt,
+    M, kMax, critValues, futBounds, hrH0s, allocs, accrualT, accrualInt,
     pwSurvT, stratumFrac, lambdasVec, gammasVec,
     n, followupTime, fixedFollowup, rho1, rho2, plannedE, plannedT,
     maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed);
