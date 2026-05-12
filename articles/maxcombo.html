@@ -180,18 +180,18 @@ weights.</p>
 <span>  <span class="fl">1</span> <span class="op">-</span> <span class="fu"><a href="../reference/pmvnormr.html">pmvnormr</a></span><span class="op">(</span>upper<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">u1</span>, <span class="va">u2</span>, <span class="va">u2</span><span class="op">)</span>, sigma<span class="op">=</span><span class="va">sigma</span><span class="op">)</span> <span class="op">-</span> <span class="va">alpha</span></span>
 <span><span class="op">}</span></span>
 <span><span class="op">(</span><span class="va">u2</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/uniroot.html" class="external-link">uniroot</a></span><span class="op">(</span><span class="va">f</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">3</span><span class="op">)</span>, <span class="va">u1</span>, <span class="va">sigma</span>, <span class="va">alpha</span><span class="op">)</span><span class="op">$</span><span class="va">root</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 2.137537</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 2.137165</span></span></code></pre></div>
 <p>The power can be estimated by plugging in the mean under the
 alternative hypothesis.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fl">1</span> <span class="op">-</span> <span class="fu"><a href="../reference/pmvnormr.html">pmvnormr</a></span><span class="op">(</span>upper<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">u1</span>, <span class="va">u2</span>, <span class="va">u2</span><span class="op">)</span>, mean<span class="op">=</span><span class="va">mu</span>, sigma<span class="op">=</span><span class="va">sigma</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.7240668</span></span>
+<span><span class="co">#&gt; [1] 0.7242443</span></span>
 <span><span class="co">#&gt; attr(,"method")</span></span>
 <span><span class="co">#&gt; [1] "qmc"</span></span>
 <span><span class="co">#&gt; attr(,"error")</span></span>
-<span><span class="co">#&gt; [1] 7.623178e-05</span></span>
+<span><span class="co">#&gt; [1] 9.743841e-05</span></span>
 <span><span class="co">#&gt; attr(,"nsamples")</span></span>
-<span><span class="co">#&gt; [1] 32768</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 49152</span></span></code></pre></div>
 <p>For the simulation study, we use very large critical values for the
 FH(0,0) and FH(0,1) log-rank statistics at the interim and final
 analyses for each iteration, and then construct the maximum combo test
@@ -227,7 +227,7 @@ produce identical simulated data.</p>
 <span><span class="va">w2max</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">w2max</span>, <span class="va">sim1</span><span class="op">$</span><span class="va">sumdata</span><span class="op">$</span><span class="va">stageNumber</span><span class="op">==</span><span class="fl">2</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">w1max</span> <span class="op">&gt;</span> <span class="va">u1</span><span class="op">)</span> <span class="op">|</span> <span class="op">(</span><span class="va">w2max</span> <span class="op">&gt;</span> <span class="va">u2</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.7252</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.7254</span></span></code></pre></div>
 <p>The analytic method yielded a power of about 72%, while the
 simulation method yielded a power of about 73%, both are close to that
 reported by <span class="citation">Prior (2020)</span>.</p>

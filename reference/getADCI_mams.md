@@ -1,4 +1,4 @@
-# Confidence Interval After Adaptation for a Multi-Arm Multi-Stage Design
+# Confidence Interval After Adaptation for Multi-Arm Multi-Stage Design
 
 Obtains the p-value, conservative point estimate, and confidence
 interval after the end of an adaptive multi-arm multi-stage trial.

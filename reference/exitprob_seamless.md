@@ -1,4 +1,4 @@
-# Exit Probabilities for a Phase 2/3 Seamless Design
+# Exit Probabilities for Phase 2/3 Seamless Design
 
 Computes the upper and lower exit probabilities for a phase 2/3 seamless
 design. In Phase 2, multiple active arms are compared against a common

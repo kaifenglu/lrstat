@@ -1,4 +1,4 @@
-# Power and Sample Size for a Phase 2/3 Seamless Design
+# Power and Sample Size for Phase 2/3 Seamless Design
 
 Computes either the maximum information and stopping boundaries for a
 phase 2/3 seamless design, or the achieved power when the maximum
@@ -305,7 +305,34 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   beta = 0.1, theta = c(0.3, 0.5), M = 2, r = 1.0,
   K = 2, informationRates = seq(1, 3)/3,
   alpha = 0.025, typeAlphaSpending = "OF"))
-#> Error in `[.data.frame`(b, 1, 2, 4, 6, 7, 9, 11, 12): unused arguments (6, 7, 9, 11, 12)
+#>                                                                             
+#> Phase 2/3 seamless group-sequential design                                  
+#> Overall power: 0.9, overall alpha (1-sided): 0.025                          
+#> Number of active arms in phase 2: 2                                         
+#> Randomization ratio of each active vs. control: 1                           
+#> Using correlation for critical value calculation: TRUE                      
+#> Number of looks in phase 3: 2                                               
+#> Max information for pairwise comparion: 54.67                               
+#> Expected information under H1: 42.39, expected information under H0: 54.54  
+#> Max information for oveall study: 63.78                                     
+#> Expected overall info under H1: 51.5, expected overall info under H0: 63.65 
+#> Alpha spending: O'Brien-Fleming, beta spending: None                        
+#>                                                                             
+#>                               Stage 1 Stage 2 Stage 3
+#> Information rate              0.333   0.667   1.000  
+#> Efficacy boundary (Z)         3.777   2.670   2.180  
+#> Cumulative rejection          0.0541  0.6198  0.9000 
+#> Cumulative alpha spent        0.0002  0.0066  0.0250 
+#> Efficacy boundary (theta)     0.885   0.442   0.295  
+#> Efficacy boundary (p)         0.0001  0.0038  0.0146 
+#> Information for pairwise comp 18.22   36.44   54.67  
+#> Information for overall study 27.33   45.55   63.78  
+#> 
+#>                           Arm 1  Arm 2 
+#> Treatment effect (theta)  0.300  0.500 
+#> Being the best in phase 2 0.1966 0.8034
+#> Power                     0.1353 0.7647
+#> Conditional power         0.6883 0.9518
 
 # Example 2: obtain power given the maximum information and a futility rule
 (design2 <- getDesign_seamless(

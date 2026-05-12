@@ -1,4 +1,4 @@
-# Conditional Power for a Multi-Arm Multi-Stage Design
+# Conditional Power for Multi-Arm Multi-Stage Design
 
 Obtains the conditional power for specified incremental information
 given the interim results, parameter values, and data-dependent changes

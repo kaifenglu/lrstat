@@ -12,6 +12,7 @@ lrsim_seamless(
   M = 2,
   K = 1,
   criticalValues = NA,
+  futilityBounds = NULL,
   hazardRatioH0s = 1,
   allocations = 1,
   accrualTime = 0,
@@ -64,6 +65,18 @@ lrsim_seamless(
 
   - If no critical value is exceeded by Look \\K + 1\\, the procedure
     ends without rejection.
+
+- futilityBounds:
+
+  Numeric vector of length \\K\\ giving the futility boundaries for
+  Phase 2 and the first \\K-1\\ looks in Phase 3. The study stops for
+  futility:
+
+  - in Phase 2 if all active treatment arms cross the phase-2 futility
+    boundary;
+
+  - in Phase 3 if the selected arm crosses the futility boundary at an
+    interim look; If omitted, no interim futility stopping is applied.
 
 - hazardRatioH0s:
 
@@ -178,7 +191,13 @@ An S3 object of class `"lrsim_seamless"` with these components:
   - `rejectPerStage`: Probability of rejecting the null for each active
     arm at each stage.
 
+  - `futilityPerStage`: Probability of futility stopping for each active
+    arm at each stage.
+
   - `cumulativeRejection`: Cumulative probability of rejection by stage.
+
+  - `cumulativeFutility`: Cumulative futility stopping probabilities by
+    stage.
 
   - `numberOfEvents`: Cumulative event counts by stage, including events
     from all arms in stage 1 and events from the selected arm and
@@ -194,6 +213,9 @@ An S3 object of class `"lrsim_seamless"` with these components:
   - `overallReject`: Overall probability of rejecting the null by trial
     end.
 
+  - `overallFutility`: Overall probability of stopping for futility by
+    trial end.
+
   - `expectedNumberOfEvents`: Expected cumulative events at trial end.
 
   - `expectedNumberOfDropouts`: Expected cumulative dropouts at trial
@@ -205,6 +227,8 @@ An S3 object of class `"lrsim_seamless"` with these components:
   - `expectedStudyDuration`: Expected study duration.
 
   - `criticalValues`: The input critical values for each stage.
+
+  - `futilityBounds`: The input futility boundaries for each stage.
 
   - `hazardRatioH0s`: The input hazard ratios under \\H_0\\.
 
@@ -237,7 +261,8 @@ An S3 object of class `"lrsim_seamless"` with these components:
 
   - `iterationNumber`, `bestArm`, `stopStage`, `stageNumber`,
     `analysisTime`, `activeArm`, `totalAccruals`, `totalEvents`,
-    `totalDropouts`, `uscore`, `vscore`, `logRankStatistic`, `reject`.
+    `totalDropouts`, `uscore`, `vscore`, `logRankStatistic`, `reject`,
+    `futility`.
 
   - For each active arm, total accruals, events, and dropouts refer to
     the combined counts for that arm and the common control at that
@@ -262,6 +287,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   M = 2,
   K = 2,
   criticalValues = c(3.852050, 2.723811, 2.223982),
+  futilityBounds = c(0, 0.5),
   accrualTime = c(0, 8),
   accrualIntensity = c(10, 28),
   piecewiseSurvivalTime = 0,
@@ -274,13 +300,13 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   nthreads = 0))
 #>                                                              
 #> Phase 2/3 seamless group-sequential design for log-rank test 
-#> Empirical power: 0.902                                       
+#> Empirical power: 0.9                                         
 #> Number of active arms in phase 2: 2                          
 #> Number of looks in phase 3: 2                                
-#> Expected # events: 114.6                                     
+#> Expected # events: 114.1                                     
 #> Expected # dropouts: 0                                       
-#> Expected # subjects: 410.6                                   
-#> Expected study duration: 22.1                                
+#> Expected # subjects: 409.7                                   
+#> Expected study duration: 22                                  
 #> n: 700, fixed follow-up: FALSE                               
 #> Number of simulations: 1000                                  
 #> Efficacy bounds (z-scale): 3.852, 2.724, 2.224               
@@ -290,12 +316,12 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> 
 #>  activeArm stage cumReject nEvents nDropouts nSubjects analysisTime
 #>          1     1    0.0460    60.2       0.0     290.0         15.5
-#>          1     2    0.5620   100.3       0.0     386.8         20.7
-#>          1     3    0.8070   141.2       0.0     463.9         24.8
+#>          1     2    0.5620   100.3       0.0     386.9         20.7
+#>          1     3    0.8050   141.2       0.0     464.0         24.8
 #>          2     1    0.0040    53.7       0.0     269.6         14.8
 #>          2     2    0.0470    99.5       0.0     371.8         20.3
-#>          2     3    0.0980   147.1       0.0     455.8         24.6
+#>          2     3    0.0980   146.9       0.0     455.6         24.6
 #>    Overall     1    0.0470    59.2       0.0     286.8         15.4
 #>    Overall     2    0.6060   100.2       0.0     384.4         20.6
-#>    Overall     3    0.9020   142.9       0.0     461.6         24.8
+#>    Overall     3    0.9000   142.8       0.0     461.7         24.8
 ```

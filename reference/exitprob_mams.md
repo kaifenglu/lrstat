@@ -1,4 +1,4 @@
-# Exit Probabilities for a Multi-Arm Multi-Stage Design
+# Exit Probabilities for Multi-Arm Multi-Stage Design
 
 Computes the exit (rejection) probabilities for a multi-arm multi-stage
 design.

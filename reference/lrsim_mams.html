@@ -5,10 +5,10 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Log-Rank Test Simulation for Multi-Arm Multi-Stage Design — lrsim_mams"><meta name="description" content="Simulate multi-arm multi-stage design using a weighted
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Log-Rank Test Simulation for Multi-Arm Multi-Stage Design — lrsim_mams"><meta name="description" content="Simulate a multi-arm multi-stage design using a weighted
 log-rank test. Analyses can be triggered either by the cumulative number
 of events (combined for an active arm and the common control) or by
-pre-specified calendar times."><meta property="og:description" content="Simulate multi-arm multi-stage design using a weighted
+pre-specified calendar times."><meta property="og:description" content="Simulate a multi-arm multi-stage design using a weighted
 log-rank test. Analyses can be triggered either by the cumulative number
 of events (combined for an active arm and the common control) or by
 pre-specified calendar times."><meta property="og:image" content="https://kaifenglu.github.io/lrstat/logo.svg"></head><body>
@@ -47,7 +47,7 @@ pre-specified calendar times."><meta property="og:image" content="https://kaifen
     </div>
 
     <div class="ref-description section level2">
-    <p>Simulate multi-arm multi-stage design using a weighted
+    <p>Simulate a multi-arm multi-stage design using a weighted
 log-rank test. Analyses can be triggered either by the cumulative number
 of events (combined for an active arm and the common control) or by
 pre-specified calendar times.</p>
@@ -59,6 +59,7 @@ pre-specified calendar times.</p>
 <span>  M <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  kMax <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  criticalValues <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  futilityBounds <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  hazardRatioH0s <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  allocations <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  accrualTime <span class="op">=</span> <span class="fl">0</span>,</span>
@@ -110,6 +111,15 @@ otherwise continue.</p></li>
 <li><p>If no critical value is exceeded by Look <code>kMax</code>, the procedure
 ends without rejection.</p></li>
 </ul></dd>
+
+
+<dt id="arg-futilitybounds">futilityBounds<a class="anchor" aria-label="anchor" href="#arg-futilitybounds"></a></dt>
+<dd><p>Numeric vector of length <code>kMax - 1</code> giving the
+futility boundaries on the max-Z scale for the first <code>kMax - 1</code>
+analyses. At an interim look, the study stops for futility if all active
+treatment arms cross the futility boundary. At the final look, the study
+is counted as stopping for futility if none of the active treatment arms
+can be rejected. If omitted, no interim futility stopping is applied.</p></dd>
 
 
 <dt id="arg-hazardratioh-s">hazardRatioH0s<a class="anchor" aria-label="anchor" href="#arg-hazardratioh-s"></a></dt>
@@ -220,12 +230,18 @@ Use 0 to accept the default RcppParallel behavior.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>An S3 object of class <code>"lrsim_seamless"</code> with these components:</p><ul><li><p><code>overview</code>: A list summarizing trial-level results and settings:</p><ul><li><p><code>rejectPerStage</code>: Probability of rejecting the null for each
+    <p>An S3 object of class <code>"lrsim_seamless"</code> with these components:</p><ul><li><p><code>overview</code>: A list summarizing trial-level results and settings:</p><ul><li><p><code>overallReject</code>: Overall probability of rejecting the null
+by trial end.</p></li>
+<li><p><code>overallFutility</code>: Overall probability of stopping for futility
+by trial end.</p></li>
+<li><p><code>rejectPerStage</code>: Probability of rejecting the null for each
 active arm at each stage.</p></li>
+<li><p><code>futilityPerStage</code>: Probability of futility stopping for each arm
+at each stage.</p></li>
 <li><p><code>cumulativeRejection</code>: Cumulative probability of rejection
 for each active arm by stage.</p></li>
-<li><p><code>overallReject</code>: Overall probability of rejecting the null
-by trial end.</p></li>
+<li><p><code>cumulativeFutility</code>: Cumulative probability of futility
+stopping for each active arm by stage.</p></li>
 <li><p><code>numberOfEvents</code>: Cumulative event counts by stage and arm.</p></li>
 <li><p><code>numberOfDropouts</code>: Cumulative dropouts by stage and arm.</p></li>
 <li><p><code>numberOfSubjects</code>: Cumulative enrollments by stage and arm.</p></li>
@@ -237,6 +253,7 @@ among replications that reached that stage.</p></li>
 at trial end.</p></li>
 <li><p><code>expectedStudyDuration</code>: Expected study duration.</p></li>
 <li><p><code>criticalValues</code>: The input matrix of by-level critical boundaries.</p></li>
+<li><p><code>futilityBounds</code>: The input vector of futility boundaries.</p></li>
 <li><p><code>hazardRatioH0s</code>: The input hazard ratios under \(H_0\).</p></li>
 <li><p><code>useEvents</code>: Logical indicating whether analyses were event-driven.</p></li>
 <li><p><code>numberOfIterations</code>: Number of simulation iterations performed.</p></li>
@@ -258,7 +275,8 @@ treatment group:</p><ul><li><p><code>iterationNumber</code>, <code>eventsNotAchi
 stage, and active arm:</p><ul><li><p><code>iterationNumber</code>, <code>stopStage</code>, <code>stageNumber</code>,
 <code>analysisTime</code>, <code>activeArm</code>,
 <code>totalAccruals</code>, <code>totalEvents</code>, <code>totalDropouts</code>,
-<code>uscore</code>, <code>vscore</code>, <code>logRankStatistic</code>, <code>reject</code>.</p></li>
+<code>uscore</code>, <code>vscore</code>, <code>logRankStatistic</code>,
+<code>reject</code>, <code>futility</code>.</p></li>
 <li><p>For each active arm, total accruals, events, and dropouts refer to
 the combined counts for that arm and the common control at that stage.</p></li>
 </ul></li>
@@ -282,6 +300,7 @@ Subject-level data for selected replications with variables:</p><ul><li><p><code
 <span class="r-in"><span>  kMax <span class="op">=</span> <span class="fl">3</span>,</span></span>
 <span class="r-in"><span>  criticalValues <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3.879976</span>, <span class="fl">2.734557</span>, <span class="fl">2.246072</span>,</span></span>
 <span class="r-in"><span>                            <span class="fl">3.710303</span>, <span class="fl">2.511427</span>, <span class="fl">1.993047</span><span class="op">)</span>, <span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  futilityBounds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.5</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  accrualTime <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">8</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  accrualIntensity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">28</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  piecewiseSurvivalTime <span class="op">=</span> <span class="fl">0</span>,</span></span>
@@ -294,7 +313,7 @@ Subject-level data for selected replications with variables:</p><ul><li><p><code
 <span class="r-in"><span>  nthreads <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Multi-arm multi-stage design for log-rank test </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Empirical power: 0.798                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Empirical power: 0.794                         </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms: 2                       </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks: 3                             </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                </span>
@@ -308,41 +327,41 @@ Subject-level data for selected replications with variables:</p><ul><li><p><code
 <span class="r-out co"><span class="r-pr">#&gt;</span>         Active 1 Active 2 Overall</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Stage 1    0.009    0.007   0.013</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Stage 2    0.287    0.269   0.390</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Stage 3    0.630    0.594   0.798</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Stage 3    0.626    0.590   0.794</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Probability of rejection by number of active arms</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             0     1     2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Stage 1 0.987 0.010 0.003</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Stage 2 0.623 0.214 0.163</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Stage 3 0.592 0.148 0.260</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Overall 0.202 0.372 0.426</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Stage 3 0.596 0.148 0.256</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Overall 0.206 0.372 0.422</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Overall probability of rejection by set of active arms</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Set of active arms Probability of rejection</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1               none                    0.202</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1               none                    0.206</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2                  1                    0.204</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3                  2                    0.168</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4                1,2                    0.426</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4                1,2                    0.422</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                            Active 1 Active 2 Control Total</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Expected # events             128.6    128.9   151.9 409.4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Expected # events             126.4    126.8   149.3 402.5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Expected # dropouts             0.0      0.0     0.0   0.0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Expected # subjects           232.0    232.0   232.0 696.0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Expected study duration        37.9     37.9    37.9  37.9</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Expected # subjects           230.5    230.5   230.5 691.5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Expected study duration        37.5     37.5    37.5  37.5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                            Active 1 Active 2 Control Total</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of events   Stage 1     48.2     48.5    59.8 156.5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of events   Stage 2     98.1     98.3   117.9 314.3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of events   Stage 3    151.7    151.7   172.3 475.7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of events   Stage 2     98.0     98.2   118.0 314.2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of events   Stage 3    151.6    151.7   172.4 475.7</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of dropouts Stage 1      0.0      0.0     0.0   0.0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of dropouts Stage 2      0.0      0.0     0.0   0.0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of dropouts Stage 3      0.0      0.0     0.0   0.0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of subjects Stage 1    159.8    159.7   159.8 479.3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of subjects Stage 2    232.7    232.7   232.7 698.2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Number of subjects Stage 3    233.3    233.3   233.3 700.0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of subjects Stage 2    232.7    232.7   232.7 698.1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of subjects Stage 3    233.4    233.3   233.3 700.0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Analysis time      Stage 1     22.3     22.3    22.3  22.3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Analysis time      Stage 2     31.2     31.2    31.2  31.2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Analysis time      Stage 3     42.6     42.6    42.6  42.6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Analysis time      Stage 3     42.5     42.5    42.5  42.5</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

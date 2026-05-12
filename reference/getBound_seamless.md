@@ -1,4 +1,4 @@
-# Efficacy Boundaries for a Phase 2/3 Seamless Design
+# Efficacy Boundaries for Phase 2/3 Seamless Design
 
 Calculates the efficacy stopping boundaries for a phase 2/3 seamless
 design, accounting for the selection of the best arm at the end of Phase

@@ -1,6 +1,6 @@
 # Log-Rank Test Simulation for Multi-Arm Multi-Stage Design
 
-Simulate multi-arm multi-stage design using a weighted log-rank test.
+Simulate a multi-arm multi-stage design using a weighted log-rank test.
 Analyses can be triggered either by the cumulative number of events
 (combined for an active arm and the common control) or by pre-specified
 calendar times.
@@ -12,6 +12,7 @@ lrsim_mams(
   M = 2,
   kMax = 1,
   criticalValues = NULL,
+  futilityBounds = NULL,
   hazardRatioH0s = 1,
   allocations = 1,
   accrualTime = 0,
@@ -64,6 +65,15 @@ lrsim_mams(
 
   - If no critical value is exceeded by Look `kMax`, the procedure ends
     without rejection.
+
+- futilityBounds:
+
+  Numeric vector of length `kMax - 1` giving the futility boundaries on
+  the max-Z scale for the first `kMax - 1` analyses. At an interim look,
+  the study stops for futility if all active treatment arms cross the
+  futility boundary. At the final look, the study is counted as stopping
+  for futility if none of the active treatment arms can be rejected. If
+  omitted, no interim futility stopping is applied.
 
 - hazardRatioH0s:
 
@@ -172,14 +182,23 @@ An S3 object of class `"lrsim_seamless"` with these components:
 
 - `overview`: A list summarizing trial-level results and settings:
 
+  - `overallReject`: Overall probability of rejecting the null by trial
+    end.
+
+  - `overallFutility`: Overall probability of stopping for futility by
+    trial end.
+
   - `rejectPerStage`: Probability of rejecting the null for each active
     arm at each stage.
+
+  - `futilityPerStage`: Probability of futility stopping for each arm at
+    each stage.
 
   - `cumulativeRejection`: Cumulative probability of rejection for each
     active arm by stage.
 
-  - `overallReject`: Overall probability of rejecting the null by trial
-    end.
+  - `cumulativeFutility`: Cumulative probability of futility stopping
+    for each active arm by stage.
 
   - `numberOfEvents`: Cumulative event counts by stage and arm.
 
@@ -201,6 +220,8 @@ An S3 object of class `"lrsim_seamless"` with these components:
   - `expectedStudyDuration`: Expected study duration.
 
   - `criticalValues`: The input matrix of by-level critical boundaries.
+
+  - `futilityBounds`: The input vector of futility boundaries.
 
   - `hazardRatioH0s`: The input hazard ratios under \\H_0\\.
 
@@ -233,7 +254,7 @@ An S3 object of class `"lrsim_seamless"` with these components:
 
   - `iterationNumber`, `stopStage`, `stageNumber`, `analysisTime`,
     `activeArm`, `totalAccruals`, `totalEvents`, `totalDropouts`,
-    `uscore`, `vscore`, `logRankStatistic`, `reject`.
+    `uscore`, `vscore`, `logRankStatistic`, `reject`, `futility`.
 
   - For each active arm, total accruals, events, and dropouts refer to
     the combined counts for that arm and the common control at that
@@ -259,6 +280,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   kMax = 3,
   criticalValues = matrix(c(3.879976, 2.734557, 2.246072,
                             3.710303, 2.511427, 1.993047), 3, 2),
+  futilityBounds = c(0, 0.5),
   accrualTime = c(0, 8),
   accrualIntensity = c(10, 28),
   piecewiseSurvivalTime = 0,
@@ -271,7 +293,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   nthreads = 0))
 #>                                                
 #> Multi-arm multi-stage design for log-rank test 
-#> Empirical power: 0.798                         
+#> Empirical power: 0.794                         
 #> Number of active arms: 2                       
 #> Number of looks: 3                             
 #>                                                
@@ -285,39 +307,39 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #>         Active 1 Active 2 Overall
 #> Stage 1    0.009    0.007   0.013
 #> Stage 2    0.287    0.269   0.390
-#> Stage 3    0.630    0.594   0.798
+#> Stage 3    0.626    0.590   0.794
 #> 
 #> Probability of rejection by number of active arms
 #>             0     1     2
 #> Stage 1 0.987 0.010 0.003
 #> Stage 2 0.623 0.214 0.163
-#> Stage 3 0.592 0.148 0.260
-#> Overall 0.202 0.372 0.426
+#> Stage 3 0.596 0.148 0.256
+#> Overall 0.206 0.372 0.422
 #> 
 #> Overall probability of rejection by set of active arms
 #>   Set of active arms Probability of rejection
-#> 1               none                    0.202
+#> 1               none                    0.206
 #> 2                  1                    0.204
 #> 3                  2                    0.168
-#> 4                1,2                    0.426
+#> 4                1,2                    0.422
 #> 
 #>                            Active 1 Active 2 Control Total
-#> Expected # events             128.6    128.9   151.9 409.4
+#> Expected # events             126.4    126.8   149.3 402.5
 #> Expected # dropouts             0.0      0.0     0.0   0.0
-#> Expected # subjects           232.0    232.0   232.0 696.0
-#> Expected study duration        37.9     37.9    37.9  37.9
+#> Expected # subjects           230.5    230.5   230.5 691.5
+#> Expected study duration        37.5     37.5    37.5  37.5
 #> 
 #>                            Active 1 Active 2 Control Total
 #> Number of events   Stage 1     48.2     48.5    59.8 156.5
-#> Number of events   Stage 2     98.1     98.3   117.9 314.3
-#> Number of events   Stage 3    151.7    151.7   172.3 475.7
+#> Number of events   Stage 2     98.0     98.2   118.0 314.2
+#> Number of events   Stage 3    151.6    151.7   172.4 475.7
 #> Number of dropouts Stage 1      0.0      0.0     0.0   0.0
 #> Number of dropouts Stage 2      0.0      0.0     0.0   0.0
 #> Number of dropouts Stage 3      0.0      0.0     0.0   0.0
 #> Number of subjects Stage 1    159.8    159.7   159.8 479.3
-#> Number of subjects Stage 2    232.7    232.7   232.7 698.2
-#> Number of subjects Stage 3    233.3    233.3   233.3 700.0
+#> Number of subjects Stage 2    232.7    232.7   232.7 698.1
+#> Number of subjects Stage 3    233.4    233.3   233.3 700.0
 #> Analysis time      Stage 1     22.3     22.3    22.3  22.3
 #> Analysis time      Stage 2     31.2     31.2    31.2  31.2
-#> Analysis time      Stage 3     42.6     42.6    42.6  42.6
+#> Analysis time      Stage 3     42.5     42.5    42.5  42.5
 ```

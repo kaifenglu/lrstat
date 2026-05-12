@@ -1,4 +1,4 @@
-# Efficacy Boundaries for a Multi-Arm Multi-Stage Design
+# Efficacy Boundaries for Multi-Arm Multi-Stage Design
 
 Calculates the efficacy stopping boundaries for a multi-arm multi-stage
 design.

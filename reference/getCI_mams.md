@@ -1,4 +1,4 @@
-# Confidence Interval After Trial Termination for a Multi-Arm Multi-Stage Design
+# Confidence Interval After Trial Termination for Multi-Arm Multi-Stage Design
 
 Obtains the p-value, conservative point estimate, and confidence
 interval after the end of a multi-arm multi-stage trial.

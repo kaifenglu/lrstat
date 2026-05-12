@@ -1,4 +1,4 @@
-# Confidence Interval After Trial Termination for a Phase 2/3 Seamless Design
+# Confidence Interval After Trial Termination for Phase 2/3 Seamless Design
 
 Obtains the p-value, point estimate, and confidence interval after the
 end of a phase 2/3 seamless trial.

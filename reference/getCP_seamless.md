@@ -1,4 +1,4 @@
-# Conditional Power for a Phase 2/3 Seamless Design
+# Conditional Power for Phase 2/3 Seamless Design
 
 Obtains the conditional power for specified incremental information
 given the interim results, parameter values, and data-dependent changes
@@ -258,5 +258,5 @@ getCP_seamless(
   L = 1, zL = -log(0.67) * sqrt(80 / 4), theta = -log(0.691),
   IMax = 120 / 4, K = 2, informationRates = c(1/3, 2/3, 1),
   alpha = 0.025, typeAlphaSpending = "OF", kNew = 1)
-#> Error: b must be provided
+#> [1] 0.4402320 0.6983309
 ```

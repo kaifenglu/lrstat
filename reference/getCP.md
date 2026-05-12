@@ -1,4 +1,4 @@
-# Conditional Power Allowing for Varying Parameter Values
+# Conditional Power for Generic Group Sequential Design
 
 Obtains the conditional power for specified incremental information
 given the interim results, parameter values, and data-dependent changes

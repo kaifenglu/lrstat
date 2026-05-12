@@ -1,4 +1,4 @@
-# Power and Sample Size for a Multi-Arm Multi-Stage Design
+# Power and Sample Size for Multi-Arm Multi-Stage Design
 
 Computes either the maximum information and stopping boundaries for a
 multi-arm multi-stage design, or the achieved power when the maximum
