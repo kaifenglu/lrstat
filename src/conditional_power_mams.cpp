@@ -749,7 +749,7 @@ std::vector<double> getCP_mams_cpp(
 }
 
 
-//' @title Conditional Power for a Multi-Arm Multi-Stage Design
+//' @title Conditional Power for Multi-Arm Multi-Stage Design
 //' @description Obtains the conditional power for specified incremental
 //' information given the interim results, parameter values, and
 //' data-dependent changes in the selected treatment(s),

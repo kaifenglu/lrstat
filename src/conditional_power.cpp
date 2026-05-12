@@ -605,7 +605,7 @@ std::vector<double> getCPcpp(
 }
 
 
-//' @title Conditional Power Allowing for Varying Parameter Values
+//' @title Conditional Power for Generic Group Sequential Design
 //' @description Obtains the conditional power for specified incremental
 //' information given the interim results, parameter values, and
 //' data-dependent changes in the error spending function, as well as the
