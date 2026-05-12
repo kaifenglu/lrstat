@@ -359,7 +359,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 
 # Example 3: derive futility boundaries using beta spending
 (design3 <- getDesign_mams(
-  beta = 0.1, theta = c(-log(0.5), -log(0.75)),
+  IMax = 27.22, theta = c(-log(0.5), -log(0.75)),
   M = 2, r = 1.0, corr_known = FALSE,
   kMax = 3, informationRates = seq(1, 3)/3,
   alpha = 0.025, typeAlphaSpending = "sfOF",
@@ -374,7 +374,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Max information for pairwise comparion: 27.22                                  
 #> Max information for overall study: 40.83                                       
 #> Expected pairwise info under H1: 21.02, expected pairwise info under H0: 16.43 
-#> Expected overall info under H1: 31.54, expected overall info under H0: 24.64   
+#> Expected overall info under H1: 31.53, expected overall info under H0: 24.64   
 #> Alpha spending: Lan-DeMets O'Brien-Fleming, beta spending: HSD(gamma = -2)     
 #>                                                                                
 #>                               Stage 1 Stage 2 Stage 3
@@ -385,13 +385,13 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Cumulative futility           0.0148  0.0437  0.1000 
 #> Cumulative alpha spent        0.0001  0.0060  0.0250 
 #> Efficacy boundary (theta)     1.288   0.645   0.436  
-#> Futility boundary (theta)     0.024   0.283   0.436  
+#> Futility boundary (theta)     0.025   0.283   0.436  
 #> Efficacy boundary (p)         0.0001  0.0030  0.0115 
 #> Futility boundary (p)         0.4706  0.1137  0.0115 
 #> Information for pairwise comp 9.07    18.15   27.22  
 #> Information for overall study 13.61   27.22   40.83  
 #> Cumulative rejection under H0 0.0001  0.0059  0.0218 
-#> Cumulative futility under H0  0.3632  0.8203  0.9782 
+#> Cumulative futility under H0  0.3633  0.8203  0.9782 
 #> 
 #> By level critical values
 #>   Level Stage Boundary (Z)
