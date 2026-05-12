@@ -278,68 +278,68 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 (sim1 <- lrsim_mams(
   M = 2,
   kMax = 3,
-  criticalValues = matrix(c(3.879976, 2.734557, 2.246072,
-                            3.710303, 2.511427, 1.993047), 3, 2),
-  futilityBounds = c(0, 0.5),
+  criticalValues = matrix(c(3.880, 2.747, 2.275,
+                            3.710, 2.511, 1.993), 3, 2),
+  futilityBounds = c(0.074, 1.207),
   accrualTime = c(0, 8),
   accrualIntensity = c(10, 28),
   piecewiseSurvivalTime = 0,
-  lambdas = list(log(2)/12*0.75, log(2)/12*0.75, log(2)/12),
+  lambdas = list(log(2)/12*0.5, log(2)/12*0.75, log(2)/12),
   n = 700,
-  plannedEvents = c(108, 216, 324),
-  maxNumberOfIterations = 1000,
+  plannedEvents = c(36, 72, 108),
+  maxNumberOfIterations = 10000,
   maxNumberOfRawDatasetsPerStage = 1,
   seed = 314159,
   nthreads = 0))
 #>                                                
 #> Multi-arm multi-stage design for log-rank test 
-#> Empirical power: 0.794                         
+#> Empirical power: 0.8963                        
 #> Number of active arms: 2                       
 #> Number of looks: 3                             
 #>                                                
 #> By level critical boundaries
 #>         Level 2 Level 1
 #> Stage 1   3.880   3.710
-#> Stage 2   2.735   2.511
-#> Stage 3   2.246   1.993
+#> Stage 2   2.747   2.511
+#> Stage 3   2.275   1.993
 #> 
 #> Cumulative probability of rejection or futility by treatment
 #>         Reject Active 1 Reject Active 2 Overall Rejection Futility
-#> Stage 1          0.0090          0.0070            0.0130   0.0210
-#> Stage 2          0.2870          0.2690            0.3900   0.0230
-#> Stage 3          0.6260          0.5900            0.7940   0.2060
+#> Stage 1          0.0244          0.0011            0.0248   0.0139
+#> Stage 2          0.5596          0.0928            0.5670   0.0422
+#> Stage 3          0.8870          0.1802            0.8963   0.1037
 #> 
 #> Detailed probability of trial termination at each look
 #>         Reject 1 Active Reject 2 Actives Overall Rejection Futility Continue
-#> Stage 1          0.0100           0.0030            0.0130   0.0210   0.9660
-#> Stage 2          0.2140           0.1630            0.3770   0.0020   0.5870
-#> Stage 3          0.1480           0.2560            0.4040   0.1830   0.0000
-#> Total            0.3720           0.4220            0.7940   0.2060       NA
+#> Stage 1          0.0241           0.0007            0.0248   0.0139   0.9613
+#> Stage 2          0.4575           0.0847            0.5422   0.0283   0.3908
+#> Stage 3          0.2438           0.0855            0.3293   0.0615   0.0000
+#> Total            0.7254           0.1709            0.8963   0.1037       NA
 #> 
 #> Overall probability of rejection by set of active arms
 #>   Set of active arms Probability of rejection
-#> 1               none                   0.2060
-#> 2                  1                   0.2040
-#> 3                  2                   0.1680
-#> 4                1,2                   0.4220
+#> 1               none                   0.1037
+#> 2                  1                   0.7161
+#> 3                  2                   0.0093
+#> 4                1,2                   0.1709
 #> 
 #>                            Active 1 Active 2 Control Total
-#> Expected # events             126.4    126.8   149.3 402.5
+#> Expected # events              31.0     43.1    53.7 127.8
 #> Expected # dropouts             0.0      0.0     0.0   0.0
-#> Expected # subjects           230.5    230.5   230.5 691.5
-#> Expected study duration        37.5     37.5    37.5  37.5
+#> Expected # subjects           148.4    148.4   148.4 445.2
+#> Expected study duration        21.0     21.0    21.0  21.0
 #> 
 #>                            Active 1 Active 2 Control Total
-#> Number of events   Stage 1     48.2     48.5    59.8 156.5
-#> Number of events   Stage 2     98.0     98.2   118.0 314.2
-#> Number of events   Stage 3    151.6    151.7   172.4 475.7
+#> Number of events   Stage 1     12.9     18.2    23.1  54.2
+#> Number of events   Stage 2     26.3     36.7    45.7 108.7
+#> Number of events   Stage 3     42.2     55.0    65.8 163.0
 #> Number of dropouts Stage 1      0.0      0.0     0.0   0.0
 #> Number of dropouts Stage 2      0.0      0.0     0.0   0.0
 #> Number of dropouts Stage 3      0.0      0.0     0.0   0.0
-#> Number of subjects Stage 1    159.8    159.7   159.8 479.3
-#> Number of subjects Stage 2    232.7    232.7   232.7 698.1
-#> Number of subjects Stage 3    233.4    233.3   233.3 700.0
-#> Analysis time      Stage 1     22.3     22.3    22.3  22.3
-#> Analysis time      Stage 2     31.2     31.2    31.2  31.2
-#> Analysis time      Stage 3     42.5     42.5    42.5  42.5
+#> Number of subjects Stage 1     89.4     89.4    89.4 268.3
+#> Number of subjects Stage 2    135.8    135.8   135.8 407.5
+#> Number of subjects Stage 3    172.0    172.0   172.0 516.1
+#> Analysis time      Stage 1     14.7     14.7    14.7  14.7
+#> Analysis time      Stage 2     19.7     19.7    19.7  19.7
+#> Analysis time      Stage 3     23.6     23.6    23.6  23.6
 ```

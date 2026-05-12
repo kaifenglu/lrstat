@@ -356,4 +356,49 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> 4     1     1        3.471
 #> 5     1     2        2.454
 #> 6     1     3        2.004
+
+# Example 3: derive futility boundaries using beta spending
+(design3 <- getDesign_mams(
+  beta = 0.1, theta = c(-log(0.5), -log(0.75)),
+  M = 2, r = 1.0, corr_known = FALSE,
+  kMax = 3, informationRates = seq(1, 3)/3,
+  alpha = 0.025, typeAlphaSpending = "sfOF",
+  typeBetaSpending = "sfHSD", parameterBetaSpending = -2))
+#>                                                                                
+#> Multi-arm multi-stage design                                                   
+#> Overall power: 0.9, overall alpha (1-sided): 0.025, attained alpha: 0.0218     
+#> Number of active arms: 2                                                       
+#> Randomization ratio of each active vs. control: 1                              
+#> Using correlation for critical value calculation: FALSE                        
+#> Number of looks: 3                                                             
+#> Max information for pairwise comparion: 27.22                                  
+#> Max information for overall study: 40.83                                       
+#> Expected pairwise info under H1: 21.02, expected pairwise info under H0: 16.43 
+#> Expected overall info under H1: 31.54, expected overall info under H0: 24.64   
+#> Alpha spending: Lan-DeMets O'Brien-Fleming, beta spending: HSD(gamma = -2)     
+#>                                                                                
+#>                               Stage 1 Stage 2 Stage 3
+#> Information rate              0.333   0.667   1.000  
+#> Efficacy boundary (Z)         3.880   2.747   2.275  
+#> Futility boundary (Z)         0.074   1.207   2.275  
+#> Cumulative rejection          0.0373  0.5873  0.9000 
+#> Cumulative futility           0.0148  0.0437  0.1000 
+#> Cumulative alpha spent        0.0001  0.0060  0.0250 
+#> Efficacy boundary (theta)     1.288   0.645   0.436  
+#> Futility boundary (theta)     0.024   0.283   0.436  
+#> Efficacy boundary (p)         0.0001  0.0030  0.0115 
+#> Futility boundary (p)         0.4706  0.1137  0.0115 
+#> Information for pairwise comp 9.07    18.15   27.22  
+#> Information for overall study 13.61   27.22   40.83  
+#> Cumulative rejection under H0 0.0001  0.0059  0.0218 
+#> Cumulative futility under H0  0.3632  0.8203  0.9782 
+#> 
+#> By level critical values
+#>   Level Stage Boundary (Z)
+#> 1     2     1        3.880
+#> 2     2     2        2.747
+#> 3     2     3        2.275
+#> 4     1     1        3.710
+#> 5     1     2        2.511
+#> 6     1     3        1.993
 ```

@@ -377,42 +377,43 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 
 # Example 3: derive futility boundaries using beta spending
 (design3 <- getDesign_seamless(
-  beta = 0.1, theta = c(0.3, 0.5), M = 2, r = 1.0,
+  beta = 0.1, theta = c(-log(0.5), -log(0.7)),
+  M = 2, r = 1.0, corr_known = FALSE,
   K = 2, informationRates = seq(1, 3)/3,
-  alpha = 0.025, typeAlphaSpending = "OF",
-  typeBetaSpending = "sfOF"))
+  alpha = 0.025, typeAlphaSpending = "sfOF",
+  typeBetaSpending = "sfHSD", parameterBetaSpending = -2))
 #>                                                                              
 #> Phase 2/3 seamless group-sequential design                                   
 #> Overall power: 0.9, overall alpha (1-sided): 0.025                           
 #> Number of active arms in phase 2: 2                                          
 #> Randomization ratio of each active vs. control: 1                            
-#> Using correlation for critical value calculation: TRUE                       
+#> Using correlation for critical value calculation: FALSE                      
 #> Number of looks in phase 3: 2                                                
-#> Max information for pairwise comparion: 57.14                                
-#> Expected information under H1: 42.83, expected information under H0: 35.57   
-#> Max information for oveall study: 66.66                                      
-#> Expected overall info under H1: 52.35, expected overall info under H0: 45.09 
-#> Alpha spending: O'Brien-Fleming, beta spending: Lan-DeMets O'Brien-Fleming   
+#> Max information for pairwise comparion: 31.37                                
+#> Expected information under H1: 23.46, expected information under H0: 17.88   
+#> Max information for oveall study: 36.6                                       
+#> Expected overall info under H1: 28.68, expected overall info under H0: 23.11 
+#> Alpha spending: Lan-DeMets O'Brien-Fleming, beta spending: HSD(gamma = -2)   
 #>                                                                              
 #>                               Stage 1 Stage 2 Stage 3
 #> Information rate              0.333   0.667   1.000  
-#> Efficacy boundary (Z)         3.777   2.670   2.180  
-#> Futility boundary (Z)         -0.149  1.262   2.180  
-#> Cumulative rejection          0.0594  0.6437  0.9000 
-#> Cumulative futility           0.0044  0.0440  0.1000 
-#> Cumulative alpha spent        0.0002  0.0066  0.0250 
-#> Efficacy boundary (theta)     0.865   0.433   0.288  
-#> Futility boundary (theta)     -0.034  0.205   0.288  
-#> Efficacy boundary (p)         0.0001  0.0038  0.0146 
-#> Futility boundary (p)         0.5591  0.1034  0.0146 
-#> Information for pairwise comp 19.05   38.09   57.14  
-#> Information for overall study 28.57   47.61   66.66  
-#> Cumulative rejection under H0 0.0002  0.0066  0.0230 
-#> Cumulative futility under H0  0.2763  0.8494  0.9770 
+#> Efficacy boundary (Z)         3.882   2.733   2.222  
+#> Futility boundary (Z)         0.259   1.201   2.222  
+#> Cumulative rejection          0.0522  0.6462  0.9000 
+#> Cumulative futility           0.0148  0.0437  0.1000 
+#> Cumulative alpha spent        0.0001  0.0060  0.0250 
+#> Efficacy boundary (theta)     1.201   0.598   0.397  
+#> Futility boundary (theta)     0.080   0.263   0.397  
+#> Efficacy boundary (p)         0.0001  0.0031  0.0131 
+#> Futility boundary (p)         0.3979  0.1149  0.0131 
+#> Information for pairwise comp 10.46   20.91   31.37  
+#> Information for overall study 15.69   26.14   36.60  
+#> Cumulative rejection under H0 0.0001  0.0055  0.0205 
+#> Cumulative futility under H0  0.4415  0.8431  0.9795 
 #> 
 #>                           Arm 1  Arm 2 
-#> Treatment effect (theta)  0.300  0.500 
-#> Being the best in phase 2 0.1914 0.8086
-#> Power                     0.1325 0.7675
-#> Conditional power         0.6924 0.9491
+#> Treatment effect (theta)  0.693  0.357 
+#> Being the best in phase 2 0.8617 0.1383
+#> Power                     0.8176 0.0824
+#> Conditional power         0.9488 0.5959
 ```
