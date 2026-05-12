@@ -1,5 +1,5 @@
 #' @title Log-Rank Test Simulation for Multi-Arm Multi-Stage Design
-#' @description Simulate multi-arm multi-stage design using a weighted
+#' @description Simulate a multi-arm multi-stage design using a weighted
 #' log-rank test. Analyses can be triggered either by the cumulative number
 #' of events (combined for an active arm and the common control) or by
 #' pre-specified calendar times.
@@ -22,6 +22,12 @@
 #'     otherwise continue.
 #'   - If no critical value is exceeded by Look \code{kMax}, the procedure
 #'     ends without rejection.
+#' @param futilityBounds Numeric vector of length \code{kMax - 1} giving the
+#'   futility boundaries on the max-Z scale for the first \code{kMax - 1}
+#'   analyses. At an interim look, the study stops for futility if all active
+#'   treatment arms cross the futility boundary. At the final look, the study
+#'   is counted as stopping for futility if none of the active treatment arms
+#'   can be rejected. If omitted, no interim futility stopping is applied.
 #' @param hazardRatioH0s Numeric vector of length \eqn{M}. Hazard ratios
 #'   under \eqn{H_0} for each active arm versus the common control. Defaults
 #'   to 1 for superiority tests.
@@ -63,12 +69,18 @@
 #' @return An S3 object of class \code{"lrsim_seamless"} with these components:
 #'
 #' * \code{overview}: A list summarizing trial-level results and settings:
-#'     - \code{rejectPerStage}: Probability of rejecting the null for each
-#'       active arm at each stage.
-#'     - \code{cumulativeRejection}: Cumulative probability of rejection
-#'       for each active arm by stage.
 #'     - \code{overallReject}: Overall probability of rejecting the null
 #'       by trial end.
+#'     - \code{overallFutility}: Overall probability of stopping for futility
+#'       by trial end.
+#'     - \code{rejectPerStage}: Probability of rejecting the null for each
+#'       active arm at each stage.
+#'     - \code{futilityPerStage}: Probability of futility stopping for each arm
+#'       at each stage.
+#'     - \code{cumulativeRejection}: Cumulative probability of rejection
+#'       for each active arm by stage.
+#'     - \code{cumulativeFutility}: Cumulative probability of futility
+#'       stopping for each active arm by stage.
 #'     - \code{numberOfEvents}: Cumulative event counts by stage and arm.
 #'     - \code{numberOfDropouts}: Cumulative dropouts by stage and arm.
 #'     - \code{numberOfSubjects}: Cumulative enrollments by stage and arm.
@@ -80,6 +92,7 @@
 #'       at trial end.
 #'     - \code{expectedStudyDuration}: Expected study duration.
 #'     - \code{criticalValues}: The input matrix of by-level critical boundaries.
+#'     - \code{futilityBounds}: The input vector of futility boundaries.
 #'     - \code{hazardRatioH0s}: The input hazard ratios under \eqn{H_0}.
 #'     - \code{useEvents}: Logical indicating whether analyses were event-driven.
 #'     - \code{numberOfIterations}: Number of simulation iterations performed.
@@ -103,7 +116,8 @@
 #'     - \code{iterationNumber}, \code{stopStage}, \code{stageNumber},
 #'       \code{analysisTime}, \code{activeArm},
 #'       \code{totalAccruals}, \code{totalEvents}, \code{totalDropouts},
-#'       \code{uscore}, \code{vscore}, \code{logRankStatistic}, \code{reject}.
+#'       \code{uscore}, \code{vscore}, \code{logRankStatistic},
+#'       \code{reject}, \code{futility}.
 #'     - For each active arm, total accruals, events, and dropouts refer to
 #'       the combined counts for that arm and the common control at that stage.
 #'
@@ -123,6 +137,7 @@
 #'   kMax = 3,
 #'   criticalValues = matrix(c(3.879976, 2.734557, 2.246072,
 #'                             3.710303, 2.511427, 1.993047), 3, 2),
+#'   futilityBounds = c(0, 0.5),
 #'   accrualTime = c(0, 8),
 #'   accrualIntensity = c(10, 28),
 #'   piecewiseSurvivalTime = 0,
@@ -139,6 +154,7 @@ lrsim_mams <- function(
     M = 2,
     kMax = 1,
     criticalValues = NULL,
+    futilityBounds = NULL,
     hazardRatioH0s = 1,
     allocations = 1,
     accrualTime = 0,
@@ -166,7 +182,7 @@ lrsim_mams <- function(
   }
 
   lrsim_mams_Rcpp(
-    M, kMax, criticalValues, hazardRatioH0s,
+    M, kMax, criticalValues, futilityBounds, hazardRatioH0s,
     allocations, accrualTime, accrualIntensity,
     piecewiseSurvivalTime, stratumFraction, lambdas, gammas,
     n, followupTime, fixedFollowup, rho1, rho2,

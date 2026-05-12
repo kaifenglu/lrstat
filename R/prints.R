@@ -151,7 +151,7 @@ print.design <- function(x, ...) {
                         "Cumulative futility under H0")
 
     } else {
-      df <- t(b[,c(1,2,4,6,7,9,11)])
+      df <- t(b[, c(1,2,4,6,7,9,11)])
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
                         "Cumulative rejection",
@@ -385,7 +385,7 @@ print.adaptDesign <- function(x, ...) {
                         "Futility boundary (Z)",
                         "Information")
   } else {
-    df1b <- t(b[c(1,2,4)])
+    df1b <- t(b[, c(1,2,4)])
     rownames(df1b) <- c("Information rate",
                         "Efficacy boundary (Z)",
                         "Information")
@@ -441,7 +441,7 @@ print.adaptDesign <- function(x, ...) {
                         "Information")
 
   } else {
-    df2b <- t(b[,c(1,2,4,6,7)])
+    df2b <- t(b[, c(1,2,4,6,7)])
     rownames(df2b) <- c("Information rate",
                         "Efficacy boundary (Z)",
                         "Cumulative rejection",
@@ -475,7 +475,7 @@ print.adaptDesign <- function(x, ...) {
                         "Futility boundary (Z)",
                         "Information")
   } else {
-    df3b <- t(b[c(1,2,4)])
+    df3b <- t(b[, c(1,2,4)])
     rownames(df3b) <- c("Information rate",
                         "Efficacy boundary (Z)",
                         "Information")
@@ -696,7 +696,7 @@ print.lrpower <- function(x, ...) {
                         "HR")
 
     } else {
-      df <- t(b[,c(1,2,4,6,7,8,9,10,11,13,15,16)])
+      df <- t(b[, c(1,2,4,6,7,8,9,10,11,13,15,16)])
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
                         "Cumulative rejection",
@@ -1093,7 +1093,7 @@ print.nbpower <- function(x, ...) {
                         "Information")
 
     } else {
-      df <- t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
+      df <- t(b[, c(1,2,4,6,7,8,9,10,11,12,14,16)])
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
                         "Cumulative rejection",
@@ -1607,7 +1607,7 @@ print.nbpower1s <- function(x, ...) {
                         "Information")
 
     } else {
-      df <- t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
+      df <- t(b[, c(1,2,4,6,7,8,9,10,11,12,14,16)])
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
                         "Cumulative rejection",
@@ -1846,7 +1846,7 @@ print.kmpower <- function(x, ...) {
                         "Information")
 
     } else {
-      df <- t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
+      df <- t(b[, c(1,2,4,6,7,8,9,10,11,12,14,16)])
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
                         "Cumulative rejection",
@@ -2085,7 +2085,7 @@ print.rmpower <- function(x, ...) {
                         "Information")
 
     } else {
-      df <- t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
+      df <- t(b[, c(1,2,4,6,7,8,9,10,11,12,14,16)])
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
                         "Cumulative rejection",
@@ -2929,7 +2929,7 @@ print.kmpower1s <- function(x, ...) {
                         "Information")
 
     } else {
-      df <- t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
+      df <- t(b[, c(1,2,4,6,7,8,9,10,11,12,14,16)])
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
                         "Cumulative rejection",
@@ -3168,7 +3168,7 @@ print.rmpower1s <- function(x, ...) {
                         "Information")
 
     } else {
-      df <- t(b[,c(1,2,4,6,7,8,9,10,11,12,14,16)])
+      df <- t(b[, c(1,2,4,6,7,8,9,10,11,12,14,16)])
       rownames(df) <- c("Information rate",
                         "Efficacy boundary (Z)",
                         "Cumulative rejection",
@@ -3707,7 +3707,7 @@ print.seamless <- function(x, ...) {
 
     colnames(df2) <- paste("Stage", seq_len(ncol(df2)), sep=" ")
   } else {
-    df2 <- t(b[1,2,4,6,7,9,11,12])
+    df2 <- t(b[, c(1,2,4,6,7,9,11,12)])
     rownames(df2) <- c("Information rate",
                        "Efficacy boundary (Z)",
                        "Cumulative rejection",
@@ -3869,7 +3869,7 @@ print.adaptDesign_seamless <- function(x, ...) {
                           "Information")
 
     } else {
-      df2b <- t(b[,c(1,2,4,6,7)])
+      df2b <- t(b[, c(1,2,4,6,7)])
       rownames(df2b) <- c("Information rate",
                           "Efficacy boundary (Z)",
                           "Cumulative rejection",
@@ -4475,9 +4475,9 @@ print.lrsim_mams <- function(x, ...) {
 
   str4 <- paste0("Number of looks: ", a$kMax)
 
-  df1 <- data.frame(x = rep("", 5))
-  colnames(df1) <- NULL
-  rownames(df1) <- c(str1, str2, str3, str4, "")
+  df1a <- data.frame(x = rep("", 5))
+  colnames(df1a) <- NULL
+  rownames(df1a) <- c(str1, str2, str3, str4, "")
 
   df1b <- data.frame(a$criticalValues)
   rownames(df1b) <- paste("Stage", 1:k, sep=" ")
@@ -4531,7 +4531,7 @@ print.lrsim_mams <- function(x, ...) {
   df4[j] <- lapply(df4[j], formatC, format = "f", digits = 1)
   df4
 
-  print(df1, ..., na.print = "" , quote = FALSE )
+  print(df1a, ..., na.print = "" , quote = FALSE )
 
   cat("By level critical boundaries\n")
   print(df1b, ..., na.print = "" , quote = FALSE )

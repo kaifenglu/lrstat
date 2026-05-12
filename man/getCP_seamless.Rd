@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getCP_seamless}
 \alias{getCP_seamless}
-\title{Conditional Power for a Phase 2/3 Seamless Design}
+\title{Conditional Power for Phase 2/3 Seamless Design}
 \usage{
 getCP_seamless(
   INew = NA_real_,

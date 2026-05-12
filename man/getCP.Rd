@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getCP}
 \alias{getCP}
-\title{Conditional Power Allowing for Varying Parameter Values}
+\title{Conditional Power for Generic Group Sequential Design}
 \usage{
 getCP(
   INew = NA_real_,

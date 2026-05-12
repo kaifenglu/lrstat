@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getCI_mams}
 \alias{getCI_mams}
-\title{Confidence Interval After Trial Termination for a Multi-Arm
+\title{Confidence Interval After Trial Termination for Multi-Arm
 Multi-Stage Design}
 \usage{
 getCI_mams(

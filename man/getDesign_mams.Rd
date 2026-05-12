@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getDesign_mams}
 \alias{getDesign_mams}
-\title{Power and Sample Size for a Multi-Arm Multi-Stage Design}
+\title{Power and Sample Size for Multi-Arm Multi-Stage Design}
 \usage{
 getDesign_mams(
   beta = NA_real_,

@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getADCI_seamless}
 \alias{getADCI_seamless}
-\title{Confidence Interval After Adaptation for a Phase 2/3 Seamless
+\title{Confidence Interval After Adaptation for Phase 2/3 Seamless
 Design}
 \usage{
 getADCI_seamless(

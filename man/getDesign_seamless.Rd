@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getDesign_seamless}
 \alias{getDesign_seamless}
-\title{Power and Sample Size for a Phase 2/3 Seamless Design}
+\title{Power and Sample Size for Phase 2/3 Seamless Design}
 \usage{
 getDesign_seamless(
   beta = NA_real_,

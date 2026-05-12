@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{exitprob_seamless}
 \alias{exitprob_seamless}
-\title{Exit Probabilities for a Phase 2/3 Seamless Design}
+\title{Exit Probabilities for Phase 2/3 Seamless Design}
 \usage{
 exitprob_seamless(
   M = NA_integer_,

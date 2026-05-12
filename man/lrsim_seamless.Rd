@@ -8,6 +8,7 @@ lrsim_seamless(
   M = 2,
   K = 1,
   criticalValues = NA,
+  futilityBounds = NULL,
   hazardRatioH0s = 1,
   allocations = 1,
   accrualTime = 0,
@@ -49,6 +50,17 @@ control; if its Wald statistic exceeds the Look \eqn{j} critical
 value, stop for efficacy; otherwise continue.
 \item If no critical value is exceeded by Look \eqn{K + 1}, the procedure
 ends without rejection.
+}}
+
+\item{futilityBounds}{Numeric vector of length \eqn{K} giving the futility
+boundaries for Phase 2 and the first \eqn{K-1} looks in Phase 3.
+The study stops for futility:
+\itemize{
+\item in Phase 2 if all active treatment arms cross the phase-2 futility
+boundary;
+\item in Phase 3 if the selected arm crosses the futility boundary at an
+interim look;
+If omitted, no interim futility stopping is applied.
 }}
 
 \item{hazardRatioH0s}{Numeric vector of length \eqn{M}. Hazard ratios
@@ -128,7 +140,11 @@ An S3 object of class \code{"lrsim_seamless"} with these components:
 the best arm at the end of phase 2.
 \item \code{rejectPerStage}: Probability of rejecting the null for each
 active arm at each stage.
+\item \code{futilityPerStage}: Probability of futility stopping for each
+active arm at each stage.
 \item \code{cumulativeRejection}: Cumulative probability of rejection by stage.
+\item \code{cumulativeFutility}: Cumulative futility stopping probabilities
+by stage.
 \item \code{numberOfEvents}: Cumulative event counts by stage, including
 events from all arms in stage 1 and events from the selected arm
 and control in later stages.
@@ -138,12 +154,15 @@ and control in later stages.
 replications that reached that stage.
 \item \code{overallReject}: Overall probability of rejecting the null
 by trial end.
+\item \code{overallFutility}: Overall probability of stopping for futility
+by trial end.
 \item \code{expectedNumberOfEvents}: Expected cumulative events at trial end.
 \item \code{expectedNumberOfDropouts}: Expected cumulative dropouts at trial end.
 \item \code{expectedNumberOfSubjects}: Expected cumulative enrollments
 at trial end.
 \item \code{expectedStudyDuration}: Expected study duration.
 \item \code{criticalValues}: The input critical values for each stage.
+\item \code{futilityBounds}: The input futility boundaries for each stage.
 \item \code{hazardRatioH0s}: The input hazard ratios under \eqn{H_0}.
 \item \code{useEvents}: Logical indicating whether analyses were event-driven.
 \item \code{numberOfIterations}: Number of simulation iterations performed.
@@ -169,7 +188,8 @@ stage, and active arm:
 \item \code{iterationNumber}, \code{bestArm}, \code{stopStage},
 \code{stageNumber}, \code{analysisTime}, \code{activeArm},
 \code{totalAccruals}, \code{totalEvents}, \code{totalDropouts},
-\code{uscore}, \code{vscore}, \code{logRankStatistic}, \code{reject}.
+\code{uscore}, \code{vscore}, \code{logRankStatistic},
+\code{reject}, \code{futility}.
 \item For each active arm, total accruals, events, and dropouts refer to
 the combined counts for that arm and the common control at that stage.
 }
@@ -195,6 +215,7 @@ pre-specified calendar times.
   M = 2,
   K = 2,
   criticalValues = c(3.852050, 2.723811, 2.223982),
+  futilityBounds = c(0, 0.5),
   accrualTime = c(0, 8),
   accrualIntensity = c(10, 28),
   piecewiseSurvivalTime = 0,

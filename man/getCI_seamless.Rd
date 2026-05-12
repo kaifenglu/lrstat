@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getCI_seamless}
 \alias{getCI_seamless}
-\title{Confidence Interval After Trial Termination for a Phase 2/3
+\title{Confidence Interval After Trial Termination for Phase 2/3
 Seamless Design}
 \usage{
 getCI_seamless(

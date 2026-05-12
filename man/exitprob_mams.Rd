@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{exitprob_mams}
 \alias{exitprob_mams}
-\title{Exit Probabilities for a Multi-Arm Multi-Stage Design}
+\title{Exit Probabilities for Multi-Arm Multi-Stage Design}
 \usage{
 exitprob_mams(
   M = NA_integer_,

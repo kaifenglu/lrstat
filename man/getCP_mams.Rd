@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getCP_mams}
 \alias{getCP_mams}
-\title{Conditional Power for a Multi-Arm Multi-Stage Design}
+\title{Conditional Power for Multi-Arm Multi-Stage Design}
 \usage{
 getCP_mams(
   INew = NA_real_,

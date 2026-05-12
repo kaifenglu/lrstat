@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getADCI_mams}
 \alias{getADCI_mams}
-\title{Confidence Interval After Adaptation for a Multi-Arm Multi-Stage
+\title{Confidence Interval After Adaptation for Multi-Arm Multi-Stage
 Design}
 \usage{
 getADCI_mams(

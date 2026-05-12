@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getBound_seamless}
 \alias{getBound_seamless}
-\title{Efficacy Boundaries for a Phase 2/3 Seamless Design}
+\title{Efficacy Boundaries for Phase 2/3 Seamless Design}
 \usage{
 getBound_seamless(
   M = NA_integer_,

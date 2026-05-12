@@ -1418,14 +1418,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // lrsim_mams_Rcpp
-Rcpp::List lrsim_mams_Rcpp(const int M, const int kMax, const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues, const Rcpp::NumericVector& hazardRatioH0s, const Rcpp::NumericVector& allocations, const Rcpp::NumericVector& accrualTime, const Rcpp::NumericVector& accrualIntensity, const Rcpp::NumericVector& piecewiseSurvivalTime, const Rcpp::NumericVector& stratumFraction, const Rcpp::Nullable<Rcpp::List> lambdas, const Rcpp::Nullable<Rcpp::List> gammas, const int n, const double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const Rcpp::IntegerVector& plannedEvents, const Rcpp::NumericVector& plannedTime, const int maxNumberOfIterations, const int maxNumberOfRawDatasetsPerStage, const int seed);
-RcppExport SEXP _lrstat_lrsim_mams_Rcpp(SEXP MSEXP, SEXP kMaxSEXP, SEXP criticalValuesSEXP, SEXP hazardRatioH0sSEXP, SEXP allocationsSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambdasSEXP, SEXP gammasSEXP, SEXP nSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP plannedEventsSEXP, SEXP plannedTimeSEXP, SEXP maxNumberOfIterationsSEXP, SEXP maxNumberOfRawDatasetsPerStageSEXP, SEXP seedSEXP) {
+Rcpp::List lrsim_mams_Rcpp(const int M, const int kMax, const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::NumericVector& hazardRatioH0s, const Rcpp::NumericVector& allocations, const Rcpp::NumericVector& accrualTime, const Rcpp::NumericVector& accrualIntensity, const Rcpp::NumericVector& piecewiseSurvivalTime, const Rcpp::NumericVector& stratumFraction, const Rcpp::Nullable<Rcpp::List> lambdas, const Rcpp::Nullable<Rcpp::List> gammas, const int n, const double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const Rcpp::IntegerVector& plannedEvents, const Rcpp::NumericVector& plannedTime, const int maxNumberOfIterations, const int maxNumberOfRawDatasetsPerStage, const int seed);
+RcppExport SEXP _lrstat_lrsim_mams_Rcpp(SEXP MSEXP, SEXP kMaxSEXP, SEXP criticalValuesSEXP, SEXP futilityBoundsSEXP, SEXP hazardRatioH0sSEXP, SEXP allocationsSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambdasSEXP, SEXP gammasSEXP, SEXP nSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP plannedEventsSEXP, SEXP plannedTimeSEXP, SEXP maxNumberOfIterationsSEXP, SEXP maxNumberOfRawDatasetsPerStageSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const int >::type M(MSEXP);
     Rcpp::traits::input_parameter< const int >::type kMax(kMaxSEXP);
     Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::NumericMatrix> >::type criticalValues(criticalValuesSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::NumericVector> >::type futilityBounds(futilityBoundsSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type hazardRatioH0s(hazardRatioH0sSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type allocations(allocationsSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type accrualTime(accrualTimeSEXP);
@@ -1444,19 +1445,20 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type maxNumberOfIterations(maxNumberOfIterationsSEXP);
     Rcpp::traits::input_parameter< const int >::type maxNumberOfRawDatasetsPerStage(maxNumberOfRawDatasetsPerStageSEXP);
     Rcpp::traits::input_parameter< const int >::type seed(seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(lrsim_mams_Rcpp(M, kMax, criticalValues, hazardRatioH0s, allocations, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambdas, gammas, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed));
+    rcpp_result_gen = Rcpp::wrap(lrsim_mams_Rcpp(M, kMax, criticalValues, futilityBounds, hazardRatioH0s, allocations, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambdas, gammas, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed));
     return rcpp_result_gen;
 END_RCPP
 }
 // lrsim_seamless_Rcpp
-Rcpp::List lrsim_seamless_Rcpp(const int M, const int K, const Rcpp::NumericVector& criticalValues, const Rcpp::NumericVector& hazardRatioH0s, const Rcpp::NumericVector& allocations, const Rcpp::NumericVector& accrualTime, const Rcpp::NumericVector& accrualIntensity, const Rcpp::NumericVector& piecewiseSurvivalTime, const Rcpp::NumericVector& stratumFraction, const Rcpp::Nullable<Rcpp::List> lambdas, const Rcpp::Nullable<Rcpp::List> gammas, const int n, const double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const Rcpp::IntegerVector& plannedEvents, const Rcpp::NumericVector& plannedTime, const int maxNumberOfIterations, const int maxNumberOfRawDatasetsPerStage, const int seed);
-RcppExport SEXP _lrstat_lrsim_seamless_Rcpp(SEXP MSEXP, SEXP KSEXP, SEXP criticalValuesSEXP, SEXP hazardRatioH0sSEXP, SEXP allocationsSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambdasSEXP, SEXP gammasSEXP, SEXP nSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP plannedEventsSEXP, SEXP plannedTimeSEXP, SEXP maxNumberOfIterationsSEXP, SEXP maxNumberOfRawDatasetsPerStageSEXP, SEXP seedSEXP) {
+Rcpp::List lrsim_seamless_Rcpp(const int M, const int K, const Rcpp::NumericVector& criticalValues, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::NumericVector& hazardRatioH0s, const Rcpp::NumericVector& allocations, const Rcpp::NumericVector& accrualTime, const Rcpp::NumericVector& accrualIntensity, const Rcpp::NumericVector& piecewiseSurvivalTime, const Rcpp::NumericVector& stratumFraction, const Rcpp::Nullable<Rcpp::List> lambdas, const Rcpp::Nullable<Rcpp::List> gammas, const int n, const double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const Rcpp::IntegerVector& plannedEvents, const Rcpp::NumericVector& plannedTime, const int maxNumberOfIterations, const int maxNumberOfRawDatasetsPerStage, const int seed);
+RcppExport SEXP _lrstat_lrsim_seamless_Rcpp(SEXP MSEXP, SEXP KSEXP, SEXP criticalValuesSEXP, SEXP futilityBoundsSEXP, SEXP hazardRatioH0sSEXP, SEXP allocationsSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambdasSEXP, SEXP gammasSEXP, SEXP nSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP plannedEventsSEXP, SEXP plannedTimeSEXP, SEXP maxNumberOfIterationsSEXP, SEXP maxNumberOfRawDatasetsPerStageSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const int >::type M(MSEXP);
     Rcpp::traits::input_parameter< const int >::type K(KSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type criticalValues(criticalValuesSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::NumericVector> >::type futilityBounds(futilityBoundsSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type hazardRatioH0s(hazardRatioH0sSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type allocations(allocationsSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type accrualTime(accrualTimeSEXP);
@@ -1475,7 +1477,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type maxNumberOfIterations(maxNumberOfIterationsSEXP);
     Rcpp::traits::input_parameter< const int >::type maxNumberOfRawDatasetsPerStage(maxNumberOfRawDatasetsPerStageSEXP);
     Rcpp::traits::input_parameter< const int >::type seed(seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(lrsim_seamless_Rcpp(M, K, criticalValues, hazardRatioH0s, allocations, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambdas, gammas, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed));
+    rcpp_result_gen = Rcpp::wrap(lrsim_seamless_Rcpp(M, K, criticalValues, futilityBounds, hazardRatioH0s, allocations, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambdas, gammas, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -3522,8 +3524,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lrstat_lrsim2e3aRcpp", (DL_FUNC) &_lrstat_lrsim2e3aRcpp, 38},
     {"_lrstat_lrsimsubRcpp", (DL_FUNC) &_lrstat_lrsimsubRcpp, 30},
     {"_lrstat_binary_tte_simRcpp", (DL_FUNC) &_lrstat_binary_tte_simRcpp, 27},
-    {"_lrstat_lrsim_mams_Rcpp", (DL_FUNC) &_lrstat_lrsim_mams_Rcpp, 21},
-    {"_lrstat_lrsim_seamless_Rcpp", (DL_FUNC) &_lrstat_lrsim_seamless_Rcpp, 21},
+    {"_lrstat_lrsim_mams_Rcpp", (DL_FUNC) &_lrstat_lrsim_mams_Rcpp, 22},
+    {"_lrstat_lrsim_seamless_Rcpp", (DL_FUNC) &_lrstat_lrsim_seamless_Rcpp, 22},
     {"_lrstat_kmsurv", (DL_FUNC) &_lrstat_kmsurv, 7},
     {"_lrstat_lrstat", (DL_FUNC) &_lrstat_lrstat, 17},
     {"_lrstat_caltime", (DL_FUNC) &_lrstat_caltime, 13},

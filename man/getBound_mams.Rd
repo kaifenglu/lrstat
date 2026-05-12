@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getBound_mams}
 \alias{getBound_mams}
-\title{Efficacy Boundaries for a Multi-Arm Multi-Stage Design}
+\title{Efficacy Boundaries for Multi-Arm Multi-Stage Design}
 \usage{
 getBound_mams(
   M = NA_integer_,
