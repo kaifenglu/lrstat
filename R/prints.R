@@ -4070,6 +4070,7 @@ print.adaptDesign_seamless <- function(x, ...) {
 #' @export
 print.lrsim_seamless <- function(x, ...) {
   a <- x$overview
+  M <- a$M
   k <- a$K + 1
 
   if (k>1) {
