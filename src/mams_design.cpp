@@ -474,7 +474,7 @@ FlatMatrix as_boundary_matrix(SEXP x, const char* arg, size_t M, size_t K,
       std::string(arg) + " must be either a numeric vector or numeric matrix");
 }
 
-//' @title Exit Probabilities for a Multi-Arm Multi-Stage Design
+//' @title Exit Probabilities for Multi-Arm Multi-Stage Design
 //' @description Computes the exit (rejection) probabilities for a multi-arm
 //' multi-stage design.
 //'
@@ -797,7 +797,7 @@ std::vector<double> getBound_mams_cpp(
 }
 
 
-//' @title Efficacy Boundaries for a Multi-Arm Multi-Stage Design
+//' @title Efficacy Boundaries for Multi-Arm Multi-Stage Design
 //' @description Calculates the efficacy stopping boundaries for a multi-arm
 //' multi-stage design.
 //'
@@ -1615,7 +1615,7 @@ ListCpp getDesign_mams_cpp(
 }
 
 
-//' @title Power and Sample Size for a Multi-Arm Multi-Stage Design
+//' @title Power and Sample Size for Multi-Arm Multi-Stage Design
 //' @description Computes either the maximum information and stopping
 //' boundaries for a multi-arm multi-stage design, or
 //' the achieved power when the maximum information and stopping boundaries

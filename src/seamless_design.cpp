@@ -292,7 +292,7 @@ ListCpp exitprob_seamless_cpp(
 }
 
 
-//' @title Exit Probabilities for a Phase 2/3 Seamless Design
+//' @title Exit Probabilities for Phase 2/3 Seamless Design
 //' @description Computes the upper and lower exit probabilities for a phase
 //' 2/3 seamless design. In Phase 2, multiple active arms are compared
 //' against a common control arm. If the phase-2 max-Z statistic crosses the
@@ -709,7 +709,7 @@ std::vector<double> getBound_seamless_cpp(
 }
 
 
-//' @title Efficacy Boundaries for a Phase 2/3 Seamless Design
+//' @title Efficacy Boundaries for Phase 2/3 Seamless Design
 //' @description Calculates the efficacy stopping boundaries for a phase 2/3
 //' seamless design, accounting for the selection of the best arm
 //' at the end of Phase 2 and sequential testing in Phase 3.
@@ -1541,7 +1541,7 @@ ListCpp getDesign_seamless_cpp(
 }
 
 
-//' @title Power and Sample Size for a Phase 2/3 Seamless Design
+//' @title Power and Sample Size for Phase 2/3 Seamless Design
 //' @description Computes either the maximum information and stopping
 //' boundaries for a phase 2/3 seamless design, or the achieved power when
 //' the maximum information and stopping boundaries are provided. Both
