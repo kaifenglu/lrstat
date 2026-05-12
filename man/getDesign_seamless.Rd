@@ -236,10 +236,11 @@ spending function.
 
 # Example 3: derive futility boundaries using beta spending
 (design3 <- getDesign_seamless(
-  beta = 0.1, theta = c(0.3, 0.5), M = 2, r = 1.0,
+  beta = 0.1, theta = c(-log(0.5), -log(0.7)),
+  M = 2, r = 1.0, corr_known = FALSE,
   K = 2, informationRates = seq(1, 3)/3,
-  alpha = 0.025, typeAlphaSpending = "OF",
-  typeBetaSpending = "sfOF"))
+  alpha = 0.025, typeAlphaSpending = "sfOF",
+  typeBetaSpending = "sfHSD", parameterBetaSpending = -2))
 
 }
 \references{
