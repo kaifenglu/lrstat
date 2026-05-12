@@ -209,7 +209,7 @@ std::vector<double> getCP_seamless_cpp(
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
-  size_t k1 = kMax - L;
+  size_t k1 = K - L;
   if (!MullerSchafer) {
     infoRatesNew.resize(k1);
     for (size_t i = 0; i < k1; ++i) {
@@ -385,7 +385,7 @@ std::vector<double> getCP_seamless_cpp(
         critValues[kMax-1] = aval;
         probs = exitprob_seamless_cpp(
           M, r, zero, corr_known, K, critValues, infoRates);
-        v = probs.get<std::vector<double>>("exitProb");
+        v = probs.get<std::vector<double>>("exitProbUpper");
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - alpha;
       };
@@ -446,9 +446,11 @@ std::vector<double> getCP_seamless_cpp(
     }
   }
 
+
   // information for the primary trial
   std::vector<double> information1(kMax);
   for (size_t i = 0; i < kMax; ++i) information1[i] = IMax * infoRates[i];
+
 
   std::vector<double> r1(k1), b1(k1), a1(k1, -8.0), zero1(k1, 0.0);
   for (size_t i = 0; i < k1; ++i) {
@@ -456,6 +458,7 @@ std::vector<double> getCP_seamless_cpp(
     b1[i] = (critValues[i + L + 1] - std::sqrt(r1[i]) * zL) / std::sqrt(1.0 - r1[i]);
     if (!effStoppingNew[i]) b1[i] = 8.0;
   }
+
 
   // conditional type I error
   probs = exitprobcpp(b1, a1, zero1, infoRatesNew);
@@ -596,7 +599,7 @@ std::vector<double> getCP_seamless_cpp(
 }
 
 
-//' @title Conditional Power for a Phase 2/3 Seamless Design
+//' @title Conditional Power for Phase 2/3 Seamless Design
 //' @description Obtains the conditional power for specified incremental
 //' information given the interim results, parameter values, and
 //' data-dependent changes in the error spending function, as well as the
