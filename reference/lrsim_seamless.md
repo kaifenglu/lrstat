@@ -298,5 +298,39 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   maxNumberOfRawDatasetsPerStage = 1,
   seed = 314159,
   nthreads = 0))
-#> Error in print.lrsim_seamless(x): object 'M' not found
+#>                                                              
+#> Phase 2/3 seamless group-sequential design for log-rank test 
+#> Empirical power: 0.8969                                      
+#> Number of active arms in phase 2: 2                          
+#> Number of looks in phase 3: 2                                
+#> Expected # events: 117.2                                     
+#> Expected # dropouts: 0                                       
+#> Expected # subjects: 417                                     
+#> Expected study duration: 22.2                                
+#> n: 700, fixed follow-up: FALSE                               
+#> Number of simulations: 10000                                 
+#>                                                              
+#>                           Stage 1 Stage 2 Stage 3
+#> Efficacy bounds (z-scale) 3.882   2.733   2.222  
+#> Futility bounds (z-scale) 0.259   1.201   2.222  
+#> 
+#>                              Arm 1  Arm 2
+#> Selected as best in phase 2 0.8277 0.1723
+#> 
+#>         Reject Active 1 Reject Active 2 Overall Rejection Futility Continue
+#> Stage 1          0.0391          0.0025            0.0406   0.0120   0.9474
+#> Stage 2          0.5396          0.0495            0.5891   0.0297   0.3286
+#> Stage 3          0.2092          0.0580            0.2672   0.0614   0.0000
+#> Total            0.7879          0.1100            0.8969   0.1031       NA
+#> 
+#>  activeArm stage cumReject cumFutility nEvents nDropouts nSubjects analysisTime
+#>          1     1    0.0391      0.0120    63.3       0.0     298.5         15.8
+#>          1     2    0.5787      0.0220   105.3       0.0     398.3         21.2
+#>          1     3    0.7879      0.0448   147.8       0.0     477.6         25.4
+#>          2     1    0.0025      0.0120    56.6       0.0     278.9         15.1
+#>          2     2    0.0520      0.0317   104.4       0.0     383.3         20.7
+#>          2     3    0.1100      0.0703   152.7       0.0     467.2         25.2
+#>    Overall     1    0.0406      0.0120    62.1       0.0     295.1         15.7
+#>    Overall     2    0.6297      0.0417   105.1       0.0     395.7         21.1
+#>    Overall     3    0.8969      0.1031   149.2       0.0     474.5         25.3
 ```
