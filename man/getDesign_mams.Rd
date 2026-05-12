@@ -220,6 +220,14 @@ correlation implied by the randomization ratio \eqn{r}.
   kMax = 3, informationRates = seq(1, 3)/3,
   alpha = 0.025, typeAlphaSpending = "OF"))
 
+# Example 3: derive futility boundaries using beta spending
+(design3 <- getDesign_mams(
+  beta = 0.1, theta = c(-log(0.5), -log(0.75)),
+  M = 2, r = 1.0, corr_known = FALSE,
+  kMax = 3, informationRates = seq(1, 3)/3,
+  alpha = 0.025, typeAlphaSpending = "sfOF",
+  typeBetaSpending = "sfHSD", parameterBetaSpending = -2))
+
 }
 \references{
 Ping Gao, Yingqiu Li.
