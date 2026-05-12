@@ -259,7 +259,7 @@ DataFrameCpp getCI_mams_cpp(
 
 
 
-//' @title Confidence Interval After Trial Termination for a Multi-Arm
+//' @title Confidence Interval After Trial Termination for Multi-Arm
 //' Multi-Stage Design
 //' @description Obtains the p-value, conservative point estimate, and
 //' confidence interval after the end of a multi-arm multi-stage trial.
@@ -1026,7 +1026,7 @@ DataFrameCpp getADCI_mams_cpp(
 }
 
 
-//' @title Confidence Interval After Adaptation for a Multi-Arm Multi-Stage
+//' @title Confidence Interval After Adaptation for Multi-Arm Multi-Stage
 //' Design
 //' @description Obtains the p-value, conservative point estimate, and
 //' confidence interval after the end of an adaptive multi-arm multi-stage trial.

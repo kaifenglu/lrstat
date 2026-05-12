@@ -207,7 +207,7 @@ DataFrameCpp getCI_seamless_cpp(
 }
 
 
-//' @title Confidence Interval After Trial Termination for a Phase 2/3
+//' @title Confidence Interval After Trial Termination for Phase 2/3
 //' Seamless Design
 //' @description Obtains the p-value, point estimate, and
 //' confidence interval after the end of a phase 2/3 seamless trial.
@@ -693,7 +693,7 @@ DataFrameCpp getADCI_seamless_cpp(
 }
 
 
-//' @title Confidence Interval After Adaptation for a Phase 2/3 Seamless
+//' @title Confidence Interval After Adaptation for Phase 2/3 Seamless
 //' Design
 //' @description Obtains the p-value, conservative point estimate, and
 //' confidence interval after the end of an adaptive phase 2/3 seamless
