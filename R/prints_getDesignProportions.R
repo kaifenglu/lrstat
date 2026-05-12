@@ -144,12 +144,20 @@ print.designOneProportion <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-               "cumulativeRejection", "cumulativeFutility",
-               "cumulativeAlphaSpent", "numberOfSubjects",
-               "efficacyResponses", "futilityResponses",
-               "efficacyP", "futilityP", "information",
-               "cumulativeRejectionH0", "cumulativeFutilityH0")]
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "futilityBounds",
+               "cumulativeRejection",
+               "cumulativeFutility",
+               "cumulativeAlphaSpent",
+               "numberOfSubjects",
+               "efficacyResponses",
+               "futilityResponses",
+               "efficacyP",
+               "futilityP",
+               "information",
+               "cumulativeRejectionH0",
+               "cumulativeFutilityH0")]
 
     # format number of digits after decimal for each column
     j0 <- c(8,9)
@@ -372,12 +380,20 @@ print.designPairedPropMcNemar <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-               "cumulativeRejection", "cumulativeFutility",
-               "cumulativeAlphaSpent", "numberOfSubjects",
-               "efficacyRiskDiff", "futilityRiskDiff",
-               "efficacyP", "futilityP", "information",
-               "cumulativeRejectionH0", "cumulativeFutilityH0")]
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "futilityBounds",
+               "cumulativeRejection",
+               "cumulativeFutility",
+               "cumulativeAlphaSpent",
+               "numberOfSubjects",
+               "efficacyRiskDiff",
+               "futilityRiskDiff",
+               "efficacyP",
+               "futilityP",
+               "information",
+               "cumulativeRejectionH0",
+               "cumulativeFutilityH0")]
 
     # format number of digits after decimal for each column
     j1 <- 7
@@ -591,12 +607,20 @@ print.designRiskDiff <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-               "cumulativeRejection", "cumulativeFutility",
-               "cumulativeAlphaSpent", "numberOfSubjects",
-               "efficacyRiskDiff", "futilityRiskDiff",
-               "efficacyP", "futilityP", "information",
-               "cumulativeRejectionH0", "cumulativeFutilityH0")]
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "futilityBounds",
+               "cumulativeRejection",
+               "cumulativeFutility",
+               "cumulativeAlphaSpent",
+               "numberOfSubjects",
+               "efficacyRiskDiff",
+               "futilityRiskDiff",
+               "efficacyP",
+               "futilityP",
+               "information",
+               "cumulativeRejectionH0",
+               "cumulativeFutilityH0")]
 
     # format number of digits after decimal for each column
     j1 <- 7
@@ -809,12 +833,20 @@ print.designRiskRatio <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-               "cumulativeRejection", "cumulativeFutility",
-               "cumulativeAlphaSpent", "numberOfSubjects",
-               "efficacyRiskRatio", "futilityRiskRatio",
-               "efficacyP", "futilityP", "information",
-               "cumulativeRejectionH0", "cumulativeFutilityH0")]
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "futilityBounds",
+               "cumulativeRejection",
+               "cumulativeFutility",
+               "cumulativeAlphaSpent",
+               "numberOfSubjects",
+               "efficacyRiskRatio",
+               "futilityRiskRatio",
+               "efficacyP",
+               "futilityP",
+               "information",
+               "cumulativeRejectionH0",
+               "cumulativeFutilityH0")]
 
     # format number of digits after decimal for each column
     j1 <- 7
@@ -1028,12 +1060,20 @@ print.designRiskRatioFM <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-               "cumulativeRejection", "cumulativeFutility",
-               "cumulativeAlphaSpent", "numberOfSubjects",
-               "efficacyRiskRatioScore", "futilityRiskRatioScore",
-               "efficacyP", "futilityP", "information",
-               "cumulativeRejectionH0", "cumulativeFutilityH0")]
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "futilityBounds",
+               "cumulativeRejection",
+               "cumulativeFutility",
+               "cumulativeAlphaSpent",
+               "numberOfSubjects",
+               "efficacyRiskRatioScore",
+               "futilityRiskRatioScore",
+               "efficacyP",
+               "futilityP",
+               "information",
+               "cumulativeRejectionH0",
+               "cumulativeFutilityH0")]
 
     # format number of digits after decimal for each column
     j1 <- 7
@@ -1246,12 +1286,20 @@ print.designOddsRatio <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds", "futilityBounds",
-               "cumulativeRejection", "cumulativeFutility",
-               "cumulativeAlphaSpent", "numberOfSubjects",
-               "efficacyOddsRatio", "futilityOddsRatio",
-               "efficacyP", "futilityP", "information",
-               "cumulativeRejectionH0", "cumulativeFutilityH0")]
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "futilityBounds",
+               "cumulativeRejection",
+               "cumulativeFutility",
+               "cumulativeAlphaSpent",
+               "numberOfSubjects",
+               "efficacyOddsRatio",
+               "futilityOddsRatio",
+               "efficacyP",
+               "futilityP",
+               "information",
+               "cumulativeRejectionH0",
+               "cumulativeFutilityH0")]
 
     # format number of digits after decimal for each column
     j1 <- 7
@@ -1443,12 +1491,17 @@ print.designRiskDiffEquiv <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds",
-               "cumulativeRejection", "cumulativeAlphaSpent",
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "cumulativeRejection",
+               "cumulativeAlphaSpent",
                "cumulativeAttainedAlphaH10",
-               "cumulativeAttainedAlphaH20", "numberOfSubjects",
-               "efficacyRiskDiffLower", "efficacyRiskDiffUpper",
-               "efficacyP", "information")]
+               "cumulativeAttainedAlphaH20",
+               "numberOfSubjects",
+               "efficacyRiskDiffLower",
+               "efficacyRiskDiffUpper",
+               "efficacyP",
+               "information")]
 
     # format number of digits after decimal for each column
     j1 <- 7
@@ -1625,11 +1678,15 @@ print.designRiskRatioEquiv <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds",
-               "cumulativeRejection", "cumulativeAlphaSpent",
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "cumulativeRejection",
+               "cumulativeAlphaSpent",
                "cumulativeAttainedAlphaH10",
-               "cumulativeAttainedAlphaH20", "numberOfSubjects",
-               "efficacyRiskRatioLower", "efficacyRiskRatioUpper",
+               "cumulativeAttainedAlphaH20",
+               "numberOfSubjects",
+               "efficacyRiskRatioLower",
+               "efficacyRiskRatioUpper",
                "efficacyP", "information")]
 
     # format number of digits after decimal for each column
@@ -1807,12 +1864,17 @@ print.designOddsRatioEquiv <- function(x, ...) {
   }
 
   if (k>1) {
-    b <- s[, c("informationRates", "efficacyBounds",
-               "cumulativeRejection", "cumulativeAlphaSpent",
+    b <- s[, c("informationRates",
+               "efficacyBounds",
+               "cumulativeRejection",
+               "cumulativeAlphaSpent",
                "cumulativeAttainedAlphaH10",
-               "cumulativeAttainedAlphaH20", "numberOfSubjects",
-               "efficacyOddsRatioLower", "efficacyOddsRatioUpper",
-               "efficacyP", "information")]
+               "cumulativeAttainedAlphaH20",
+               "numberOfSubjects",
+               "efficacyOddsRatioLower",
+               "efficacyOddsRatioUpper",
+               "efficacyP",
+               "information")]
 
     # format number of digits after decimal for each column
     j1 <- 7
