@@ -64,6 +64,11 @@
 - used NULL as the default value for lambdas and gammas for
   lrsim_seamless
 - added lrsim_mams for simulation of multi-arm multi-stage design
+- added futilityBounds, futilityCP, futilityTheta, futilityBoundsInt,
+  futilityCPInt, futilityThetaInt to adaptDesign, adaptDesign_seamless,
+  and adaptDesign_mams
+- removed typeBetaSpending and parameterBetaSpending from adaptDesign,
+  adaptDesign_seamless, and adaptDesign_mams
 
 ## lrstat 0.3.1
 
