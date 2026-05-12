@@ -5322,6 +5322,14 @@ getBound_mams <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_inte
 #'   kMax = 3, informationRates = seq(1, 3)/3,
 #'   alpha = 0.025, typeAlphaSpending = "OF"))
 #'
+#' # Example 3: derive futility boundaries using beta spending
+#' (design3 <- getDesign_mams(
+#'   beta = 0.1, theta = c(-log(0.5), -log(0.75)),
+#'   M = 2, r = 1.0, corr_known = FALSE,
+#'   kMax = 3, informationRates = seq(1, 3)/3,
+#'   alpha = 0.025, typeAlphaSpending = "sfOF",
+#'   typeBetaSpending = "sfHSD", parameterBetaSpending = -2))
+#'
 #' @export
 getDesign_mams <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_) {
     .Call(`_lrstat_getDesign_mams`, beta, IMax, theta, M, r, corr_known, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime)
@@ -8792,10 +8800,11 @@ getBound_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_
 #'
 #' # Example 3: derive futility boundaries using beta spending
 #' (design3 <- getDesign_seamless(
-#'   beta = 0.1, theta = c(0.3, 0.5), M = 2, r = 1.0,
+#'   beta = 0.1, theta = c(-log(0.5), -log(0.7)),
+#'   M = 2, r = 1.0, corr_known = FALSE,
 #'   K = 2, informationRates = seq(1, 3)/3,
-#'   alpha = 0.025, typeAlphaSpending = "OF",
-#'   typeBetaSpending = "sfOF"))
+#'   alpha = 0.025, typeAlphaSpending = "sfOF",
+#'   typeBetaSpending = "sfHSD", parameterBetaSpending = -2))
 #'
 #' @export
 getDesign_seamless <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, K = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_) {
