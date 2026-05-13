@@ -17,6 +17,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -64,12 +65,15 @@ struct ExitProbSolveMemo {
   std::unordered_map<std::string, ExitProbSummary> summary;
 };
 
+// Reinterpret a double as raw bits so repeated Brent evaluations can be memoized
+// by exact floating-point identity (including signed zero and NaN payloads).
 static inline std::uint64_t double_bits(double x) {
   std::uint64_t out;
   std::memcpy(&out, &x, sizeof(double));
   return out;
 }
 
+// Evaluate f(x) with exact-double memoization inside a single root solve.
 template <typename F>
 static double eval_with_scalar_cache(
     std::unordered_map<std::uint64_t, double>& cache,
@@ -85,6 +89,8 @@ static double eval_with_scalar_cache(
 
 template <typename T>
 static inline void append_pod(std::string& key, const T& value) {
+  static_assert(std::is_trivially_copyable<T>::value,
+                "append_pod requires trivially copyable types");
   const char* p = reinterpret_cast<const char*>(&value);
   key.append(p, sizeof(T));
 }
@@ -96,6 +102,9 @@ static inline void append_double_block(
   key.append(p, n * sizeof(double));
 }
 
+// Build a byte-serialized key for per-solve exit-probability memoization.
+// The key encodes scalar arguments and the first M*k entries of boundary/info
+// prefixes used by the current root-finding step.
 static std::string make_exitprob_key(
     const size_t M,
     const double r,
@@ -108,7 +117,7 @@ static std::string make_exitprob_key(
 
   std::string key;
   key.reserve(
-    4 * sizeof(std::size_t) + sizeof(double) + sizeof(unsigned char) +
+    4 * sizeof(std::size_t) + sizeof(double) + 2 * sizeof(unsigned char) +
     (theta.size() + 2 * M * k + k) * sizeof(double));
   append_pod(key, M);
   append_pod(key, r);
@@ -651,9 +660,8 @@ ExitProbResult exitprob_mams_impl(
       // just borrow the stored results.
       const bool use_chol1 = (k > 1);
       const bool use_chol2 = (k > 2);
-      const bool need_sigma1_matrix = (!use_chol1) || (use_chol1 && !cache);
-      const bool need_sigma2_matrix =
-        (k > 1) && ((!use_chol2) || (use_chol2 && !cache));
+      const bool need_sigma1_matrix = !use_chol1 || !cache;
+      const bool need_sigma2_matrix = (k > 1) && (!use_chol2 || !cache);
       PMVNCholFactor chol1_local, chol2_local;
       const PMVNCholFactor* pchol1 = nullptr;
       const PMVNCholFactor* pchol2 = nullptr;
@@ -669,10 +677,18 @@ ExitProbResult exitprob_mams_impl(
       }
       if (need_sigma2_matrix) {
         sigma2.resize(nk2, nk2);
-        for (std::size_t j = 0; j < nk2; ++j) {
-          const double* src = psigma->data_ptr() + j * fullN_src;
-          double*       dst = sigma2.data_ptr()  + j * nk2;
-          std::memcpy(dst, src, nk2 * sizeof(double));
+        if (need_sigma1_matrix) {
+          for (std::size_t j = 0; j < nk2; ++j) {
+            const double* src = sigma1.data_ptr() + j * nk;
+            double*       dst = sigma2.data_ptr() + j * nk2;
+            std::memcpy(dst, src, nk2 * sizeof(double));
+          }
+        } else {
+          for (std::size_t j = 0; j < nk2; ++j) {
+            const double* src = psigma->data_ptr() + j * fullN_src;
+            double*       dst = sigma2.data_ptr()  + j * nk2;
+            std::memcpy(dst, src, nk2 * sizeof(double));
+          }
         }
       }
 
@@ -1501,6 +1517,8 @@ GetPowerResult getPower_mams(
     pm_cache = make_exitprob_cache(M, r, true, kMax, I2);
   const ExitProbMAMSCache* pm_pcache = use_pm_cache ? &pm_cache : nullptr;
 
+  bool has_last_fx = false;
+  double last_fx = 0.0;
   auto f = [&](double x) -> double {
     memo.full.clear();
     memo.summary.clear();
@@ -1524,7 +1542,11 @@ GetPowerResult getPower_mams(
       auto gm = [&](double aval)->double { return eval_with_scalar_cache(g_cache, aval, g); };
 
       eps = gm(critValues[0]);
-      if (eps < 0.0) return -1.0; // to decrease drift
+      if (eps < 0.0) {
+        has_last_fx = true;
+        last_fx = x;
+        return -1.0; // to decrease drift
+      }
       futBounds[0] = brent(gm, -8.0, critValues[0], 1e-6);
     }
 
@@ -1567,12 +1589,16 @@ GetPowerResult getPower_mams(
         } else if (eps > 0.0) {
           futBounds[k] = brent(gm, -8.0, bk, 1e-6);
         } else if (k < kMax-1) {
+          has_last_fx = true;
+          last_fx = x;
           return -1.0; // to decrease beta
         } // else it is the final look, a[k] = b[k], so we need eps = g(bk) = 0
         // since eps < 0, it can be used to decrease beta more accurately
       }
     }
 
+    has_last_fx = true;
+    last_fx = x;
     return eps;
   };
 
@@ -1586,7 +1612,8 @@ GetPowerResult getPower_mams(
     throw std::invalid_argument("Power must be greater than alpha");
   } else {
     beta = brent(fm, 0.0001, 1.0 - alpha, 1e-6);
-    f(beta);
+    // Only re-evaluate if Brent's final probe was not exactly at the root.
+    if (!has_last_fx || double_bits(last_fx) != double_bits(beta)) f(beta);
     futBounds[kMax-1] = critValues[kMax-1];
     std::memcpy(a.data_ptr() + (kMax - 1) * M, b.data_ptr() + (kMax - 1) * M,
                 M * sizeof(double));
@@ -1963,6 +1990,8 @@ ListCpp getDesign_mams_cpp(
     ExitProbMAMSCache iter_cache;
     bool iter_cache_built = false;
     ExitProbSolveMemo iter_memo;
+    bool has_last_f = false;
+    double last_f = 0.0;
 
     auto f = [&](double x)->double {
       iter_memo.full.clear();
@@ -1987,7 +2016,11 @@ ListCpp getDesign_mams_cpp(
               && none_na(futilityTheta)) {
           for (size_t i = 0; i < kMax - 1; ++i) {
             futBounds[i] = std::sqrt(information[i]) * futilityTheta[i];
-            if (futBounds[i] > critValues[i]) return -1.0; // to decrease drift
+            if (futBounds[i] > critValues[i]) {
+              has_last_f = true;
+              last_f = x;
+              return -1.0; // to decrease drift
+            }
           }
           futBounds[kMax-1] = critValues[kMax-1];
         }
@@ -1999,6 +2032,8 @@ ListCpp getDesign_mams_cpp(
         const auto s = eval_exitprob_mams_summary_cached(
           M, r, theta, true, kMax, b, &a, information, pi_pcache, &iter_memo,
           true, false);
+        has_last_f = true;
+        last_f = x;
         return (1.0 - s.cumUpper) - beta;
       } else {
         // initialize futility bound to be updated
@@ -2017,7 +2052,11 @@ ListCpp getDesign_mams_cpp(
           auto q = pmvnormcpp(lo, hi, mu0, sigma,
                               1024, 16384, 8, 1e-4, 0.0, 314159);
           eps = q.prob - cb;
-          if (eps < 0.0) return -1.0; // to decrease drift
+          if (eps < 0.0) {
+            has_last_f = true;
+            last_f = x;
+            return -1.0; // to decrease drift
+          }
           futBounds[0] = qmvnormcpp(cb, mu0, sigma,
                                     1024, 16384, 8, 1e-4, 0.0, 314159);
         }
@@ -2052,11 +2091,15 @@ ListCpp getDesign_mams_cpp(
             } else if (eps > 0.0) {
               futBounds[k] = brent(gm, -8.0, bk, 1e-6);
             } else if (k < kMax-1) {
+              has_last_f = true;
+              last_f = x;
               return -1.0;
             }
           }
         }
 
+        has_last_f = true;
+        last_f = x;
         return eps;
       }
     };
@@ -2064,7 +2107,7 @@ ListCpp getDesign_mams_cpp(
     std::unordered_map<std::uint64_t, double> f_cache;
     auto fm = [&](double x)->double { return eval_with_scalar_cache(f_cache, x, f); };
     double drift = brent(fm, 0.001, 8.0, 1e-6);
-    f(drift);
+    if (!has_last_f || double_bits(last_f) != double_bits(drift)) f(drift);
     IMax1 = sq(drift / maxtheta);
     futBounds[kMax-1] = critValues[kMax-1];
     std::fill_n(a.data_ptr() + (kMax - 1) * M, M, futBounds[kMax - 1]);
