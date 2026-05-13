@@ -187,9 +187,9 @@ ListCpp lrsimcpp(
 
   // calculate total alpha once
   std::vector<double> lb(K, -8.0), zero(K, 0.0);
-  ListCpp exitprobs = exitprobcpp(criticalValues, lb, zero, infoRates);
-  auto exitUpper = exitprobs.get<std::vector<double>>("exitProbUpper");
-  double alpha = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
+  auto probs = exitprobcpp(criticalValues, lb, zero, infoRates);
+  double alpha = std::accumulate(probs.exitProbUpper.begin(),
+                                 probs.exitProbUpper.end(), 0.0);
 
   // generate seeds for each iteration to ensure reproducibility
   std::vector<uint64_t> seeds(maxIters);
@@ -566,22 +566,25 @@ ListCpp lrsimcpp(
               ub.resize(nstages);
               if (nstages > 1)
                 std::copy_n(critValues.begin(), nstages - 1, ub.begin());
+
+              ExitProbResult probs;
+
               if (rho1 == 0.0 && rho2 == 0.0) { // use events for std log-rank
                 std::copy_n(obsEvents.begin(), nstages, I.begin());
                 auto f = [&](double aval)->double {
                   ub[nstages - 1] = aval;
-                  ListCpp probs = exitprobcpp(ub, lb, zero, I);
-                  auto v = probs.get<std::vector<double>>("exitProbUpper");
-                  return std::accumulate(v.begin(), v.end(), 0.0) - alpha;
+                  probs = exitprobcpp(ub, lb, zero, I);
+                  return std::accumulate(probs.exitProbUpper.begin(),
+                                         probs.exitProbUpper.end(), 0.0) - alpha;
                 };
                 critValues[nstages - 1] = brent(f, 0.0, 8.0, 1e-6);
               } else { // use vscore as information for weighted log-rank
                 std::copy_n(vscore.begin(), nstages, I.begin());
                 auto f = [&](double aval)->double {
                   ub[nstages - 1] = aval;
-                  ListCpp probs = exitprobcpp(ub, lb, zero, I);
-                  auto v = probs.get<std::vector<double>>("exitProbUpper");
-                  return std::accumulate(v.begin(), v.end(), 0.0) - alpha;
+                  probs = exitprobcpp(ub, lb, zero, I);
+                  return std::accumulate(probs.exitProbUpper.begin(),
+                                         probs.exitProbUpper.end(), 0.0) - alpha;
                 };
                 critValues[nstages - 1] = brent(f, 0.0, 8.0, 1e-6);
               }

@@ -377,8 +377,7 @@ std::vector<double> getCP_mams_cpp(
 
   // ----------- End of Input Validation ----------- //
 
-  ListCpp probs;
-  std::vector<double> v;
+  ExitProbResult probs;
 
   // obtain critical values for the primary trial
   std::vector<double> zero(M, 0.0);
@@ -405,8 +404,8 @@ std::vector<double> getCP_mams_cpp(
       auto f = [&](double x)->double {
         std::fill_n(last_col, M, x);
         probs = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
@@ -513,7 +512,7 @@ std::vector<double> getCP_mams_cpp(
 
   // conditional type I error
   probs = exitprob_mams_cpp(M, r, zero, corr_known, k1, b1, I1);
-  auto v0 = probs.get<std::vector<double>>("exitProbUpper");
+  auto v0 = probs.exitProbUpper;
   double alphaNew = std::accumulate(v0.begin(), v0.end(), 0.0);
 
   // conditional power
@@ -533,8 +532,8 @@ std::vector<double> getCP_mams_cpp(
   }
 
   probs = exitprob_mams_cpp(M, r, theta, true, k1, b1, a1, I1);
-  auto v1 = probs.get<std::vector<double>>("exitProbUpper");
-  double conditionalPower = std::accumulate(v1.begin(), v1.end(), 0.0);
+  double conditionalPower = std::accumulate(probs.exitProbUpper.begin(),
+                                            probs.exitProbUpper.end(), 0.0);
 
 
   // secondary trial design
@@ -584,7 +583,7 @@ std::vector<double> getCP_mams_cpp(
   // first obtain the efficacy bounds for the secondary trial
   if (asf2 == "of") {
     auto g = [&b2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2,
-              &effStoppingNew, &probs, &v,
+              &effStoppingNew, &probs,
               k2, alphaNew, MNew, rNew, corr_known]
     (double aval)->double {
       double col_const = aval * sqrtIc[k2 - 1];
@@ -601,8 +600,8 @@ std::vector<double> getCP_mams_cpp(
       }
 
       probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
-      v = probs.get<std::vector<double>>("exitProbUpper");
-      double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+      double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                                  probs.exitProbUpper.end(), 0.0);
       return p0 - alphaNew;
     };
 
@@ -625,7 +624,7 @@ std::vector<double> getCP_mams_cpp(
     for (size_t i = 0; i < k2 - 1; ++i) critValues2[i] = 8.0;
     double denom = sqrtI2[k2 - 1];
 
-    auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs, &v,
+    auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs,
               denom, k2, alphaNew, MNew, rNew, corr_known]
     (double aval)->double {
       double* colptr = b2.data_ptr() + (k2 - 1) * MNew;
@@ -635,8 +634,8 @@ std::vector<double> getCP_mams_cpp(
       }
 
       probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
-      v = probs.get<std::vector<double>>("exitProbUpper");
-      double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+      double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                                  probs.exitProbUpper.end(), 0.0);
       return p0 - alphaNew;
     };
 
@@ -652,7 +651,7 @@ std::vector<double> getCP_mams_cpp(
       if (!effStoppingNew[i]) continue;
       double denom = sqrtI2[i];
 
-      auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs, &v,
+      auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs,
                 denom, i, MNew, rNew, corr_known]
       (double aval)->double {
         double col_const = aval * sqrtIc[i];
@@ -663,8 +662,8 @@ std::vector<double> getCP_mams_cpp(
         }
 
         probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, i + 1, b2, I2);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+        double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                                    probs.exitProbUpper.end(), 0.0);
         return p0 - cpu0[i];
       };
 
@@ -727,10 +726,10 @@ std::vector<double> getCP_mams_cpp(
   }
 
   if (missingFutilityBoundsInt && bsfNew != "none" && k2 > 1) { // beta-spending
-    ListCpp out = getPower_mams(
+    auto out = getPower_mams(
       MNew, rNew, theta2, alphaNew, k2, critValues2, Ic,
       bsfNew, parameterBetaSpendingNew, spendTimeNew, futStoppingNew, IL, zL);
-    futBounds2 = out.get<std::vector<double>>("futilityBounds");
+    futBounds2 = out.futilityBounds;
   }
 
   // update the actual futility bounds of the secondary trial
@@ -741,8 +740,8 @@ std::vector<double> getCP_mams_cpp(
   }
 
   probs = exitprob_mams_cpp(MNew, rNew, theta2, true, k2, b2, a2, I2);
-  v = probs.get<std::vector<double>>("exitProbUpper");
-  double conditionalPowerNew = std::accumulate(v.begin(), v.end(), 0.0);
+  double conditionalPowerNew = std::accumulate(probs.exitProbUpper.begin(),
+                                               probs.exitProbUpper.end(), 0.0);
 
   std::vector<double> result = {conditionalPower, conditionalPowerNew};
   return result;

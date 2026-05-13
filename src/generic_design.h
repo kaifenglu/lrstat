@@ -19,8 +19,12 @@ double errorSpentcpp(
     const std::string& sf = "sfOF",
     const double sfpar = 0.0);
 
+struct ExitProbResult {
+  std::vector<double> exitProbUpper;
+  std::vector<double> exitProbLower;
+};
 
-ListCpp exitprobcpp(
+ExitProbResult exitprobcpp(
     const std::vector<double>& b,
     const std::vector<double>& a,
     const std::vector<double>& theta,
@@ -83,7 +87,14 @@ private:
 };
 
 
-ListCpp getPower(
+struct GetPowerResult {
+  double power;
+  std::vector<double> futilityBounds;
+  ExitProbResult probs;
+};
+
+
+GetPowerResult getPower(
     const double alpha2,
     const size_t k2,
     const std::vector<double>& critValues2,

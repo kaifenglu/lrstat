@@ -158,7 +158,7 @@ std::vector<double> errorSpent(
 }
 
 
-ListCpp exitprobcpp(
+ExitProbResult exitprobcpp(
     const std::vector<double>& b,
     const std::vector<double>& a,
     const std::vector<double>& theta,
@@ -369,10 +369,10 @@ ListCpp exitprobcpp(
   }
 
   // return a list of stagewise exit probabilities
-  ListCpp exitProb;
-  exitProb.push_back(std::move(exitProbUpper), "exitProbUpper");
-  exitProb.push_back(std::move(exitProbLower), "exitProbLower");
-  return exitProb;
+  return ExitProbResult{
+    std::move(exitProbUpper),
+    std::move(exitProbLower)
+  };
 }
 
 
@@ -427,8 +427,11 @@ Rcpp::List exitprob(
   auto thetav = Rcpp::as<std::vector<double>>(theta);
   auto Iv = Rcpp::as<std::vector<double>>(I);
 
-  auto out = exitprobcpp(bv, av, thetav, Iv);
-  return Rcpp::wrap(out);
+  auto probs = exitprobcpp(bv, av, thetav, Iv);
+  ListCpp exitProb;
+  exitProb.push_back(std::move(probs.exitProbUpper), "exitProbUpper");
+  exitProb.push_back(std::move(probs.exitProbLower), "exitProbLower");
+  return Rcpp::wrap(exitProb);
 }
 
 
@@ -452,9 +455,9 @@ double f_pvalue(const double theta,
   std::vector<double> lower(L, -8.0);
   std::vector<double> mu(L, theta);
 
-  ListCpp probs = exitprobcpp(upper, lower, mu, I);
-  auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
-  double sum_up = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
+  auto probs = exitprobcpp(upper, lower, mu, I);
+  double sum_up = std::accumulate(probs.exitProbUpper.begin(),
+                                  probs.exitProbUpper.end(), 0.0);
 
   return sum_up;
 }
@@ -565,6 +568,7 @@ std::vector<double> getBoundcpp(
   }
 
 
+  ExitProbResult probs;
   std::vector<double> criticalValues(kMax);
 
   if (asf == "none") {
@@ -594,9 +598,9 @@ std::vector<double> getBoundcpp(
         if (!effStopping[i]) u[i] = 8.0;
       }
 
-      ListCpp probs = exitprobcpp(u, l, theta, infoRates);
-      auto v = probs.get<std::vector<double>>("exitProbUpper");
-      double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+      probs = exitprobcpp(u, l, theta, infoRates);
+      double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                   probs.exitProbUpper.end(), 0.0);
       return cpu - alpha;
     };
 
@@ -648,9 +652,9 @@ std::vector<double> getBoundcpp(
         u_vec[k1] = aval;
 
         // exitprobcpp expects exact-sized vectors
-        ListCpp probs = exitprobcpp(u_vec, l_vec, theta_vec, infoRates);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        probs = exitprobcpp(u_vec, l_vec, theta_vec, infoRates);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - cumAlpha;
       };
 
@@ -803,7 +807,7 @@ std::vector<double> BoundCacheAlpha::get(double alpha) {
 // futStoppingNew are parameters of the secondary trial, wc, thetac,
 // critValues2, futBounds2 and Ic are boundaries and information
 // of integrated trial.
-ListCpp getPower(
+GetPowerResult getPower(
     const double alphaNew,
     const size_t k2,
     const std::vector<double>& critValues2,
@@ -846,8 +850,7 @@ ListCpp getPower(
   std::vector<double> u; u.reserve(k2);
   std::vector<double> l; l.reserve(k2);
 
-  ListCpp probs;
-  std::vector<double> v;
+  ExitProbResult probs;
   std::vector<double> futBounds2(k2);
   auto f = [&](double x) -> double {
     // reset futility bounds
@@ -884,8 +887,8 @@ ListCpp getPower(
           l[k] = a2[k];
           u[k] = l[k];
           probs = exitprobcpp(u, l, theta2, I2);
-          v = probs.get<std::vector<double>>("exitProbLower");
-          double cpl = std::accumulate(v.begin(), v.end(), 0.0);
+          double cpl = std::accumulate(probs.exitProbLower.begin(),
+                                       probs.exitProbLower.end(), 0.0);
           return cpl - cb;
         };
 
@@ -930,11 +933,11 @@ ListCpp getPower(
     probs = exitprobcpp(b2, a2, theta2, I2);
   }
 
-  ListCpp result;
-  result.push_back(1.0 - beta, "power");
-  result.push_back(std::move(futBounds2), "futilityBounds");
-  result.push_back(std::move(probs), "probs");
-  return result;
+  return GetPowerResult{
+    1.0 - beta,
+    std::move(futBounds2),
+    std::move(probs)
+  };
 }
 
 
@@ -1149,6 +1152,7 @@ ListCpp getDesigncpp(
   // ----------- End of Input Validation ----------- //
 
   // set up efficacy bounds
+  ExitProbResult probs;
   std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
@@ -1170,9 +1174,9 @@ ListCpp getDesigncpp(
 
       auto f = [&](double aval)->double {
         u[kMax-1] = aval;
-        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        probs = exitprobcpp(u, l, zero, infoRates);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
@@ -1188,10 +1192,10 @@ ListCpp getDesigncpp(
     }
   }
 
-  ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
-  auto v = probs.get<std::vector<double>>("exitProbUpper");
+  probs = exitprobcpp(critValues, l, zero, infoRates);
   std::vector<double> cumAlphaSpent(kMax);
-  std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
+  std::partial_sum(probs.exitProbUpper.begin(),
+                   probs.exitProbUpper.end(), cumAlphaSpent.begin());
   double alpha1 = missingCriticalValues ? alpha : cumAlphaSpent[kMax-1];
 
   std::vector<double> w(kMax, std::sqrt(varianceRatio));
@@ -1277,8 +1281,8 @@ ListCpp getDesigncpp(
         }
 
         probs = exitprobcpp(u, l, delta, infoRates);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double overallReject = std::accumulate(v.begin(), v.end(), 0.0);
+        double overallReject = std::accumulate(probs.exitProbUpper.begin(),
+                                               probs.exitProbUpper.end(), 0.0);
         return (1.0 - overallReject) - beta;
       } else {
         // initialize futility bound to be updated
@@ -1315,8 +1319,8 @@ ListCpp getDesigncpp(
               l1[k] = aval * w[k];
               u1[k] = l1[k];
               probs = exitprobcpp(u1, l1, delta, infoRates);
-              v = probs.get<std::vector<double>>("exitProbLower");
-              double cpl = std::accumulate(v.begin(), v.end(), 0.0);
+              double cpl = std::accumulate(probs.exitProbLower.begin(),
+                                           probs.exitProbLower.end(), 0.0);
               return cpl - cb;
             };
 
@@ -1358,19 +1362,19 @@ ListCpp getDesigncpp(
         l[i] = futBounds[i] * w[i];
       }
       probs = exitprobcpp(u, l, delta, infoRates);
-      auto v = probs.get<std::vector<double>>("exitProbUpper");
-      double overallReject = std::accumulate(v.begin(), v.end(), 0.0);
+      double overallReject = std::accumulate(probs.exitProbUpper.begin(),
+                                             probs.exitProbUpper.end(), 0.0);
       beta1 = 1.0 - overallReject;
     } else {
-      ListCpp out = getPower(alpha1, kMax, critValues, delta, infoRates, bsf,
-                             parameterBetaSpending, spendTime, futStopping, w);
-      double overallReject = out.get<double>("power");
+      auto out = getPower(alpha1, kMax, critValues, delta, infoRates, bsf,
+                          parameterBetaSpending, spendTime, futStopping, w);
+      double overallReject = out.power;
       beta1 = 1.0 - overallReject;
-      futBounds = out.get<std::vector<double>>("futilityBounds");
+      futBounds = out.futilityBounds;
       for (size_t i = 0; i < kMax; ++i) {
         l[i] = futBounds[i] * w[i];
       }
-      probs = out.get_list("probs");
+      probs = out.probs;
     }
   }
 
@@ -1392,8 +1396,8 @@ ListCpp getDesigncpp(
   }
 
   // stagewise exit probabilities under H1
-  auto pu = probs.get<std::vector<double>>("exitProbUpper");
-  auto pl = probs.get<std::vector<double>>("exitProbLower");
+  auto pu = probs.exitProbUpper;
+  auto pl = probs.exitProbLower;
   std::vector<double> cpu(kMax), cpl(kMax);
   std::partial_sum(pu.begin(), pu.end(), cpu.begin());
   std::partial_sum(pl.begin(), pl.end(), cpl.begin());
@@ -1404,9 +1408,9 @@ ListCpp getDesigncpp(
     ptotal.begin(), ptotal.end(), information.begin(), 0.0);
 
   // stagewise exit probabilities under H0 with binding futility
-  ListCpp probsH0 = exitprobcpp(critValues, futBounds, zero, infoRates);
-  auto puH0 = probsH0.get<std::vector<double>>("exitProbUpper");
-  auto plH0 = probsH0.get<std::vector<double>>("exitProbLower");
+  auto probsH0 = exitprobcpp(critValues, futBounds, zero, infoRates);
+  auto puH0 = probsH0.exitProbUpper;
+  auto plH0 = probsH0.exitProbLower;
   std::vector<double> cpuH0(kMax), cplH0(kMax);
   std::partial_sum(puH0.begin(), puH0.end(), cpuH0.begin());
   std::partial_sum(plH0.begin(), plH0.end(), cplH0.begin());
@@ -1851,7 +1855,7 @@ ListCpp getDesignEquivcpp(
   }
 
   // ----------- End of Input Validation ----------- //
-
+  ExitProbResult probs;
   std::vector<double> u(kMax), l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
 
@@ -1873,9 +1877,9 @@ ListCpp getDesignEquivcpp(
 
       auto f = [&](double aval)->double {
         u[kMax-1] = aval;
-        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        probs = exitprobcpp(u, l, zero, infoRates);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
@@ -1889,10 +1893,10 @@ ListCpp getDesignEquivcpp(
   }
 
   std::vector<double> li(kMax, -8.0), ui(kMax, 8.0);
-  ListCpp probs = exitprobcpp(critValues, li, zero, infoRates);
-  auto v = probs.get<std::vector<double>>("exitProbUpper");
+  probs = exitprobcpp(critValues, li, zero, infoRates);
   std::vector<double> cumAlphaSpent(kMax);
-  std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
+  std::partial_sum(probs.exitProbUpper.begin(),
+                   probs.exitProbUpper.end(), cumAlphaSpent.begin());
 
   std::vector<double> efficacyP(kMax);
   for (size_t i = 0; i < kMax; ++i) {
@@ -1923,12 +1927,12 @@ ListCpp getDesignEquivcpp(
         a[i] = std::min(u[i], ui[i]); // ensure ui >= a
       }
 
-      ListCpp probs1 = exitprobcpp(b, li, zero, I);
-      ListCpp probs2 = exitprobcpp(ui, a, zero, I);
-      auto v1 = probs1.get<std::vector<double>>("exitProbUpper");
-      auto v2 = probs2.get<std::vector<double>>("exitProbLower");
-      double p1 = std::accumulate(v1.begin(), v1.end(), 0.0);
-      double p2 = std::accumulate(v2.begin(), v2.end(), 0.0);
+      auto probs1 = exitprobcpp(b, li, zero, I);
+      auto probs2 = exitprobcpp(ui, a, zero, I);
+      double p1 = std::accumulate(probs1.exitProbUpper.begin(),
+                                  probs1.exitProbUpper.end(), 0.0);
+      double p2 = std::accumulate(probs2.exitProbLower.begin(),
+                                  probs2.exitProbLower.end(), 0.0);
 
       bool cross = false;
       for (size_t i = 0; i < kMax; ++i) {
@@ -1939,11 +1943,11 @@ ListCpp getDesignEquivcpp(
       if (cross) {
         power = p1 + p2 - 1.0;
       } else {
-        ListCpp probs = exitprobcpp(l, u, zero, I);
-        auto v1x = probs.get<std::vector<double>>("exitProbUpper");
-        auto v2x = probs.get<std::vector<double>>("exitProbLower");
-        double p1x = std::accumulate(v1x.begin(), v1x.end(), 0.0);
-        double p2x = std::accumulate(v2x.begin(), v2x.end(), 0.0);
+        probs = exitprobcpp(l, u, zero, I);
+        double p1x = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
+        double p2x = std::accumulate(probs.exitProbLower.begin(),
+                                     probs.exitProbLower.end(), 0.0);
         power = p1 + p2 - p1x - p2x;
       }
 
@@ -1969,12 +1973,12 @@ ListCpp getDesignEquivcpp(
   }
 
   std::vector<double> cpl(kMax), cpu(kMax);
-  ListCpp probs1 = exitprobcpp(b, li, zero, I);
-  ListCpp probs2 = exitprobcpp(ui, a, zero, I);
-  auto v1 = probs1.get<std::vector<double>>("exitProbUpper");
-  auto v2 = probs2.get<std::vector<double>>("exitProbLower");
-  std::partial_sum(v1.begin(), v1.end(), cpl.begin());
-  std::partial_sum(v2.begin(), v2.end(), cpu.begin());
+  auto probs1 = exitprobcpp(b, li, zero, I);
+  auto probs2 = exitprobcpp(ui, a, zero, I);
+  std::partial_sum(probs1.exitProbUpper.begin(),
+                   probs1.exitProbUpper.end(), cpl.begin());
+  std::partial_sum(probs2.exitProbLower.begin(),
+                   probs2.exitProbLower.end(), cpu.begin());
 
   size_t k = kMax; // index for the first crossing look (0-based)
   for (size_t i = 0; i < kMax; ++i) {
@@ -1992,11 +1996,11 @@ ListCpp getDesignEquivcpp(
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
     std::vector I1 = subset(I, 0, k);
-    ListCpp probs = exitprobcpp(l1, u1, d1, I1);
-    auto v1x = probs.get<std::vector<double>>("exitProbUpper");
-    auto v2x = probs.get<std::vector<double>>("exitProbLower");
-    std::partial_sum(v1x.begin(), v1x.end(), cplx.begin());
-    std::partial_sum(v2x.begin(), v2x.end(), cpux.begin());
+    probs = exitprobcpp(l1, u1, d1, I1);
+    std::partial_sum(probs.exitProbUpper.begin(),
+                     probs.exitProbUpper.end(), cplx.begin());
+    std::partial_sum(probs.exitProbLower.begin(),
+                     probs.exitProbLower.end(), cpux.begin());
     for (size_t i = 0; i < k; ++i) {
       cp[i] = cpl[i] + cpu[i] - cplx[i] - cpux[i];
     }
@@ -2033,10 +2037,10 @@ ListCpp getDesignEquivcpp(
     u[i] = -critValues[i] + (thetaUpper - thetaLower) * sqrtI[i];
     a[i] = std::min(u[i], ui[i]);
   }
-  ListCpp probsH10 = exitprobcpp(ui, a, zero, I);
-  auto vH10 = probsH10.get<std::vector<double>>("exitProbLower");
+  auto probsH10 = exitprobcpp(ui, a, zero, I);
   std::vector<double> cpuH10(kMax);
-  std::partial_sum(vH10.begin(), vH10.end(), cpuH10.begin());
+  std::partial_sum(probsH10.exitProbLower.begin(),
+                   probsH10.exitProbLower.end(), cpuH10.begin());
   std::vector<double> cplH10 = cumAlphaSpent;
 
   std::vector<double> cpH10(kMax);
@@ -2050,11 +2054,11 @@ ListCpp getDesignEquivcpp(
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
     std::vector I1 = subset(I, 0, k);
-    ListCpp probs = exitprobcpp(l1, u1, d1, I1);
-    auto v1x = probs.get<std::vector<double>>("exitProbUpper");
-    auto v2x = probs.get<std::vector<double>>("exitProbLower");
-    std::partial_sum(v1x.begin(), v1x.end(), cplH10x.begin());
-    std::partial_sum(v2x.begin(), v2x.end(), cpuH10x.begin());
+    probs = exitprobcpp(l1, u1, d1, I1);
+    std::partial_sum(probs.exitProbUpper.begin(),
+                     probs.exitProbUpper.end(), cplH10x.begin());
+    std::partial_sum(probs.exitProbLower.begin(),
+                     probs.exitProbLower.end(), cpuH10x.begin());
     for (size_t i = 0; i < k; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - cplH10x[i] - cpuH10x[i];
     }
@@ -2080,10 +2084,10 @@ ListCpp getDesignEquivcpp(
     b[i] = std::max(l[i], li[i]);
   }
 
-  ListCpp probsH20 = exitprobcpp(b, li, zero, I);
-  auto vH20 = probsH20.get<std::vector<double>>("exitProbUpper");
+  auto probsH20 = exitprobcpp(b, li, zero, I);
   std::vector<double> cplH20(kMax);
-  std::partial_sum(vH20.begin(), vH20.end(), cplH20.begin());
+  std::partial_sum(probsH20.exitProbUpper.begin(),
+                   probsH20.exitProbUpper.end(), cplH20.begin());
   std::vector<double> cpuH20 = cumAlphaSpent;
 
   std::vector<double> cpH20(kMax);
@@ -2097,11 +2101,11 @@ ListCpp getDesignEquivcpp(
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
     std::vector I1 = subset(I, 0, k);
-    ListCpp probs = exitprobcpp(l1, u1, d1, I1);
-    auto v1x = probs.get<std::vector<double>>("exitProbUpper");
-    auto v2x = probs.get<std::vector<double>>("exitProbLower");
-    std::partial_sum(v1x.begin(), v1x.end(), cplH20x.begin());
-    std::partial_sum(v2x.begin(), v2x.end(), cpuH20x.begin());
+    probs = exitprobcpp(l1, u1, d1, I1);
+    std::partial_sum(probs.exitProbUpper.begin(),
+                     probs.exitProbUpper.end(), cplH20x.begin());
+    std::partial_sum(probs.exitProbLower.begin(),
+                     probs.exitProbLower.end(), cpuH20x.begin());
     for (size_t i = 0; i < k; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - cplH20x[i] - cpuH20x[i];
     }
@@ -2746,8 +2750,7 @@ ListCpp adaptDesigncpp(
   }
   // ----------- End of Input Validation ----------- //
 
-  ListCpp probs;
-  std::vector<double> v;
+  ExitProbResult probs;
 
   // obtain critical values for the primary trial
   std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
@@ -2773,8 +2776,8 @@ ListCpp adaptDesigncpp(
       auto f = [&](double aval)->double {
         u[kMax-1] = aval;
         probs = exitprobcpp(u, l, zero, infoRates);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
@@ -2789,8 +2792,8 @@ ListCpp adaptDesigncpp(
       if (!effStopping[i]) critValues[i] = 8.0;
     }
     probs = exitprobcpp(critValues, l, zero, infoRates);
-    v = probs.get<std::vector<double>>("exitProbUpper");
-    alpha1 = std::accumulate(v.begin(), v.end(), 0.0);
+    alpha1 = std::accumulate(probs.exitProbUpper.begin(),
+                             probs.exitProbUpper.end(), 0.0);
   }
 
   std::vector<double> w(kMax, std::sqrt(varianceRatio));
@@ -2853,7 +2856,7 @@ ListCpp adaptDesigncpp(
 
   // conditional type I error
   probs = exitprobcpp(b1, a1, zero1, infoRatesNew);
-  auto v0 = probs.get<std::vector<double>>("exitProbUpper");
+  auto v0 = probs.exitProbUpper;
   double alphaNew = std::accumulate(v0.begin(), v0.end(), 0.0);
 
   // conditional power and predictive power
@@ -2869,15 +2872,15 @@ ListCpp adaptDesigncpp(
 
   std::vector<double> theta1(k1, theta);
   probs = exitprobcpp(b1, a1, theta1, I1);
-  auto v1 = probs.get<std::vector<double>>("exitProbUpper");
-  double conditionalPower = std::accumulate(v1.begin(), v1.end(), 0.0);
+  double conditionalPower = std::accumulate(probs.exitProbUpper.begin(),
+                                            probs.exitProbUpper.end(), 0.0);
 
   // predictive power
   auto f = [&](double theta)->double {
     std::vector<double> theta1(k1, theta);
     probs = exitprobcpp(b1, a1, theta1, I1);
-    v = probs.get<std::vector<double>>("exitProbUpper");
-    return std::accumulate(v.begin(), v.end(), 0.0);
+    return std::accumulate(probs.exitProbUpper.begin(),
+                           probs.exitProbUpper.end(), 0.0);
   };
 
   double sigma = 1.0 / std::sqrt(IMax * infoRates[L - 1]);
@@ -2985,11 +2988,11 @@ ListCpp adaptDesigncpp(
     }
 
     if (missingFutilityBoundsInt && bsfNew != "none" && k2 > 1) { // beta-spending
-      ListCpp out = getPower(
+      auto out = getPower(
         alphaNew, k2, critValues2, theta2, Ic, bsfNew,
         parameterBetaSpendingNew, spendTimeNew, futStoppingNew,
         wc, IL, theta, zL);
-      futBounds2 = out.get<std::vector<double>>("futilityBounds");
+      futBounds2 = out.futilityBounds;
     }
 
     for (size_t i = 0; i < k2; ++i) {
@@ -3071,8 +3074,8 @@ ListCpp adaptDesigncpp(
         a2[k2 - 1] = b2[k2 - 1];
 
         probs = exitprobcpp(b2, a2, theta2, I2);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double overallReject = std::accumulate(v.begin(), v.end(), 0.0);
+        double overallReject = std::accumulate(probs.exitProbUpper.begin(),
+                                               probs.exitProbUpper.end(), 0.0);
         return (1.0 - overallReject) - betaNew;
       } else {
         // initialize futility bound to be updated
@@ -3112,8 +3115,8 @@ ListCpp adaptDesigncpp(
               l[k] = a2[k];
               u[k] = l[k];
               probs = exitprobcpp(u, l, theta2, I2);
-              v = probs.get<std::vector<double>>("exitProbLower");
-              double cpl = std::accumulate(v.begin(), v.end(), 0.0);
+              double cpl = std::accumulate(probs.exitProbLower.begin(),
+                                           probs.exitProbLower.end(), 0.0);
               return cpl - cb;
             };
 
@@ -3147,14 +3150,14 @@ ListCpp adaptDesigncpp(
 
 
   probs = exitprobcpp(b2, a2, theta2, I2);
-  v = probs.get<std::vector<double>>("exitProbUpper");
   std::vector<double> cpu1(k2);
-  std::partial_sum(v.begin(), v.end(), cpu1.begin());
+  std::partial_sum(probs.exitProbUpper.begin(),
+                   probs.exitProbUpper.end(), cpu1.begin());
   double p2 = cpu1.back();
 
-  auto v2 = probs.get<std::vector<double>>("exitProbLower");
   std::vector<double> cpu2(k2);
-  std::partial_sum(v2.begin(), v2.end(), cpu2.begin());
+  std::partial_sum(probs.exitProbLower.begin(),
+                   probs.exitProbLower.end(), cpu2.begin());
 
 
   // combined design

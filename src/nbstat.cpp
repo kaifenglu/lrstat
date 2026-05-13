@@ -1333,6 +1333,8 @@ ListCpp nbpowercpp(
 
 
   // --- Efficacy boundaries ---
+  ExitProbResult probs;
+
   std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
@@ -1354,9 +1356,9 @@ ListCpp nbpowercpp(
 
       auto f = [&](double aval)->double {
         u[kMax-1] = aval;
-        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        probs = exitprobcpp(u, l, zero, infoRates);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
@@ -1368,10 +1370,10 @@ ListCpp nbpowercpp(
     }
   }
 
-  ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
-  auto v = probs.get<std::vector<double>>("exitProbUpper");
+  probs = exitprobcpp(critValues, l, zero, infoRates);
   std::vector<double> cumAlphaSpent(kMax);
-  std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
+  std::partial_sum(probs.exitProbUpper.begin(),
+                   probs.exitProbUpper.end(), cumAlphaSpent.begin());
   double alpha1 = missingCriticalValues ? alpha :
     std::round(cumAlphaSpent.back() * 1e6) / 1e6;
 
@@ -1422,7 +1424,7 @@ ListCpp nbpowercpp(
   }
 
   // --- compute exit probabilities ---
-  ListCpp exit_probs;
+  ExitProbResult exit_probs;
   if (!missingFutilityBounds || bsf == "none" || kMax == 1) {
     std::vector<double> u(kMax), l(kMax);
     for (size_t i = 0; i < kMax; ++i) {
@@ -1433,8 +1435,8 @@ ListCpp nbpowercpp(
   } else {
     auto gp = getPower(alpha1, kMax, critValues, theta, I, bsf,
                        parameterBetaSpending, spendTime, futStopping, w);
-    futBounds = gp.get<std::vector<double>>("futilityBounds");
-    exit_probs = gp.get_list("probs");
+    futBounds = gp.futilityBounds;
+    exit_probs = gp.probs;
   }
 
   std::vector<double> efficacyP(kMax), futilityP(kMax);
@@ -1443,8 +1445,8 @@ ListCpp nbpowercpp(
     futilityP[i] = 1 - boost_pnorm(futBounds[i]);
   }
 
-  auto pu = exit_probs.get<std::vector<double>>("exitProbUpper");
-  auto pl = exit_probs.get<std::vector<double>>("exitProbLower");
+  auto pu = exit_probs.exitProbUpper;
+  auto pl = exit_probs.exitProbLower;
   std::vector<double> ptotal(kMax);
   for (size_t i = 0; i < kMax; ++i) ptotal[i] = pu[i] + pl[i];
 
@@ -2177,6 +2179,8 @@ ListCpp nbsamplesizecpp(
 
 
   // --- Efficacy boundaries ---
+  ExitProbResult probs;
+
   std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
@@ -2198,9 +2202,9 @@ ListCpp nbsamplesizecpp(
 
       auto f = [&](double aval)->double {
         u[kMax-1] = aval;
-        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        probs = exitprobcpp(u, l, zero, infoRates);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
@@ -2319,178 +2323,179 @@ ListCpp nbsamplesizecpp(
                             futBounds, futilityBounds, futilityCP, futilityRateRatio,
                             beta, bsf, parameterBetaSpending,
                             userBetaSpending, spendTime]
-    (double accrDur, double fu, const std::vector<double>& accrInt,
-     bool need_bounds)-> BetaEval {
+  (double accrDur, double fu, const std::vector<double>& accrInt,
+   bool need_bounds)-> BetaEval {
 
-       BetaEval out;
+     BetaEval out;
 
-    double studyDuration1 = accrDur + fu;
+     double studyDuration1 = accrDur + fu;
+     ExitProbResult probs;
 
-    // --- obtain time and information at each look under H1 as in nbpowercpp
-    std::vector<double> time(kMax), I(kMax);
-    std::vector<double> w(kMax, 1.0); // square root of information ratio
+     // --- obtain time and information at each look under H1 as in nbpowercpp
+     std::vector<double> time(kMax), I(kMax);
+     std::vector<double> w(kMax, 1.0); // square root of information ratio
 
-    // --- compute maxInformation and theta via nbstat at study end ---
-    ListCpp nb = nbstat1cpp(
-      studyDuration1, rateRatioH0, allocationRatioPlanned,
-      accrualTime, accrInt,
-      piecewiseSurvivalTime, stratumFraction,
-      kappa1v, kappa2v, lambda1v, lambda2v, gamma1x, gamma2x,
-      accrDur, fu, fixedFollowup, nullVariance);
+     // --- compute maxInformation and theta via nbstat at study end ---
+     ListCpp nb = nbstat1cpp(
+       studyDuration1, rateRatioH0, allocationRatioPlanned,
+       accrualTime, accrInt,
+       piecewiseSurvivalTime, stratumFraction,
+       kappa1v, kappa2v, lambda1v, lambda2v, gamma1x, gamma2x,
+       accrDur, fu, fixedFollowup, nullVariance);
 
-    DataFrameCpp dfH1 = nb.get<DataFrameCpp>("resultsUnderH1");
-    auto vlogRR_v = dfH1.get<double>("vlogRR");
+     DataFrameCpp dfH1 = nb.get<DataFrameCpp>("resultsUnderH1");
+     auto vlogRR_v = dfH1.get<double>("vlogRR");
 
-    double vvr = 0.0;
-    for (size_t h = 0; h < nstrata; ++h) {
-      vvr += stratumFraction[h] * stratumFraction[h] * vlogRR_v[h];
-    }
-    double maxInformation = 1.0 / vvr;
-    I[kMax - 1]           = maxInformation;
-    time[kMax - 1]        = studyDuration1;
+     double vvr = 0.0;
+     for (size_t h = 0; h < nstrata; ++h) {
+       vvr += stratumFraction[h] * stratumFraction[h] * vlogRR_v[h];
+     }
+     double maxInformation = 1.0 / vvr;
+     I[kMax - 1]           = maxInformation;
+     time[kMax - 1]        = studyDuration1;
 
-    if (nullVariance) {
-      DataFrameCpp dfH0 = nb.get<DataFrameCpp>("resultsUnderH0");
-      auto vlogRRH0_v = dfH0.get<double>("vlogRRH0");
-      double vvrH0 = 0.0;
-      for (size_t h = 0; h < nstrata; ++h) {
-        vvrH0 += stratumFraction[h] * stratumFraction[h] * vlogRRH0_v[h];
-      }
-      w[kMax-1] = std::sqrt(vvrH0 / vvr);
-    }
+     if (nullVariance) {
+       DataFrameCpp dfH0 = nb.get<DataFrameCpp>("resultsUnderH0");
+       auto vlogRRH0_v = dfH0.get<double>("vlogRRH0");
+       double vvrH0 = 0.0;
+       for (size_t h = 0; h < nstrata; ++h) {
+         vvrH0 += stratumFraction[h] * stratumFraction[h] * vlogRRH0_v[h];
+       }
+       w[kMax-1] = std::sqrt(vvrH0 / vvr);
+     }
 
-    for (size_t i = 0; i < kMax - 1; ++i) {
-      double information1 = maxInformation * infoRates[i];
-      I[i] = information1;
+     for (size_t i = 0; i < kMax - 1; ++i) {
+       double information1 = maxInformation * infoRates[i];
+       I[i] = information1;
 
-      // solve for analysis time where total information equals information1
-      auto g = [info_under_H1, accrDur, fu, accrInt, information1](double t)->double {
-        return info_under_H1(t, accrDur, fu, accrInt) - information1;
-      };
+       // solve for analysis time where total information equals information1
+       auto g = [info_under_H1, accrDur, fu, accrInt, information1](double t)->double {
+         return info_under_H1(t, accrDur, fu, accrInt) - information1;
+       };
 
-      time[i] = brent(g, 1e-6, studyDuration1, 1e-6);
+       time[i] = brent(g, 1e-6, studyDuration1, 1e-6);
 
-      ListCpp nb_i = nbstat1cpp(
-        time[i], rateRatioH0, allocationRatioPlanned,
-        accrualTime, accrInt,
-        piecewiseSurvivalTime, stratumFraction,
-        kappa1v, kappa2v, lambda1v, lambda2v, gamma1x, gamma2x,
-        accrDur, fu, fixedFollowup, nullVariance);
+       ListCpp nb_i = nbstat1cpp(
+         time[i], rateRatioH0, allocationRatioPlanned,
+         accrualTime, accrInt,
+         piecewiseSurvivalTime, stratumFraction,
+         kappa1v, kappa2v, lambda1v, lambda2v, gamma1x, gamma2x,
+         accrDur, fu, fixedFollowup, nullVariance);
 
-      if (nullVariance) {
-        DataFrameCpp dfH0_i = nb_i.get<DataFrameCpp>("resultsUnderH0");
-        auto vlogRRH0_v = dfH0_i.get<double>("vlogRRH0");
-        double vvrH0 = 0.0;
-        for (size_t h = 0; h < nstrata; ++h) {
-          vvrH0 += stratumFraction[h] * stratumFraction[h] * vlogRRH0_v[h];
-        }
-        w[i] = std::sqrt(vvrH0 * information1);
-      }
-    }
+       if (nullVariance) {
+         DataFrameCpp dfH0_i = nb_i.get<DataFrameCpp>("resultsUnderH0");
+         auto vlogRRH0_v = dfH0_i.get<double>("vlogRRH0");
+         double vvrH0 = 0.0;
+         for (size_t h = 0; h < nstrata; ++h) {
+           vvrH0 += stratumFraction[h] * stratumFraction[h] * vlogRRH0_v[h];
+         }
+         w[i] = std::sqrt(vvrH0 * information1);
+       }
+     }
 
-    // --- compute futility bounds and cumulative beta spending under H1
-    if (!missingFutilityBounds || bsf == "none" || kMax == 1) {
-      // compute overall beta using the specified futility bounds
-      std::vector<double> critValues1 = critValues;
+     // --- compute futility bounds and cumulative beta spending under H1
+     if (!missingFutilityBounds || bsf == "none" || kMax == 1) {
+       // compute overall beta using the specified futility bounds
+       std::vector<double> critValues1 = critValues;
 
-      std::vector<double> futBounds1(kMax, -8.0);
-      if (!none_na(futilityBounds) && !none_na(futilityCP) &&
-          none_na(futilityRateRatio)) {
-        for (size_t i = 0; i < kMax - 1; ++i) {
-          futBounds1[i] = (-std::log(futilityRateRatio[i] / rateRatioH0)) *
-            std::sqrt(I[i]) / w[i];
-          if (futBounds1[i] > critValues[i]) {
-            out.value = -1.0; // to decrease drift
-            return out;
-          }
-        }
-        futBounds1[kMax-1] = critValues[kMax-1];
-      } else {
-        std::copy_n(futBounds.begin(), kMax, futBounds1.begin());
-      }
+       std::vector<double> futBounds1(kMax, -8.0);
+       if (!none_na(futilityBounds) && !none_na(futilityCP) &&
+           none_na(futilityRateRatio)) {
+         for (size_t i = 0; i < kMax - 1; ++i) {
+           futBounds1[i] = (-std::log(futilityRateRatio[i] / rateRatioH0)) *
+             std::sqrt(I[i]) / w[i];
+           if (futBounds1[i] > critValues[i]) {
+             out.value = -1.0; // to decrease drift
+             return out;
+           }
+         }
+         futBounds1[kMax-1] = critValues[kMax-1];
+       } else {
+         std::copy_n(futBounds.begin(), kMax, futBounds1.begin());
+       }
 
-      for (size_t k = 0; k < kMax - 1; ++k) {
-        critValues1[k] *= w[k];
-        futBounds1[k] *= w[k];
-      }
-      ListCpp probs = exitprobcpp(critValues1, futBounds1, theta, I);
-      auto v = probs.get<std::vector<double>>("exitProbUpper");
-      double overallReject = std::accumulate(v.begin(), v.end(), 0.0);
-      out.value = (1.0 - overallReject) - beta;
-      if (need_bounds) out.futBounds = futBounds;
-      return out;
-    } else {
-      std::vector<double> u1; u1.reserve(kMax);
-      std::vector<double> l1; l1.reserve(kMax);
-      double thetaSqrtI0 = theta[0] * std::sqrt(I[0]);
+       for (size_t k = 0; k < kMax - 1; ++k) {
+         critValues1[k] *= w[k];
+         futBounds1[k] *= w[k];
+       }
+       probs = exitprobcpp(critValues1, futBounds1, theta, I);
+       double overallReject = std::accumulate(probs.exitProbUpper.begin(),
+                                              probs.exitProbUpper.end(), 0.0);
+       out.value = (1.0 - overallReject) - beta;
+       if (need_bounds) out.futBounds = futBounds;
+       return out;
+     } else {
+       std::vector<double> u1; u1.reserve(kMax);
+       std::vector<double> l1; l1.reserve(kMax);
+       double thetaSqrtI0 = theta[0] * std::sqrt(I[0]);
 
-      std::vector<double> critValues1 = critValues;
-      for (double &v : critValues1) v *= w[0];
+       std::vector<double> critValues1 = critValues;
+       for (double &v : critValues1) v *= w[0];
 
-      // compute cumulative beta spending under H1 similar to getPower
-      std::vector<double> futBounds1(kMax, -8.0), futBounds2(kMax, -8.0);
-      double eps = 0.0;
+       // compute cumulative beta spending under H1 similar to getPower
+       std::vector<double> futBounds1(kMax, -8.0), futBounds2(kMax, -8.0);
+       double eps = 0.0;
 
-      // first stage
-      double cb = (bsf == "user") ? userBetaSpending[0] :
-        errorSpentcpp(spendTime[0], beta, bsf, parameterBetaSpending);
+       // first stage
+       double cb = (bsf == "user") ? userBetaSpending[0] :
+         errorSpentcpp(spendTime[0], beta, bsf, parameterBetaSpending);
 
-      if (futStopping[0]) {
-        eps = boost_pnorm(critValues[0] * w[0] - thetaSqrtI0) - cb;
-        if (eps < 0.0) { out.value = -1.0; return out; }
-        futBounds1[0] = (boost_qnorm(cb) + thetaSqrtI0) / w[0];
-        futBounds2[0] = futBounds1[0] * w[0];
-      }
+       if (futStopping[0]) {
+         eps = boost_pnorm(critValues[0] * w[0] - thetaSqrtI0) - cb;
+         if (eps < 0.0) { out.value = -1.0; return out; }
+         futBounds1[0] = (boost_qnorm(cb) + thetaSqrtI0) / w[0];
+         futBounds2[0] = futBounds1[0] * w[0];
+       }
 
-      // subsequent stages
-      for (size_t k = 1; k < kMax; ++k) {
-        if (futStopping[k]) {
-          cb = (bsf == "user") ? userBetaSpending[k] :
-          errorSpentcpp(spendTime[k], beta, bsf, parameterBetaSpending);
+       // subsequent stages
+       for (size_t k = 1; k < kMax; ++k) {
+         if (futStopping[k]) {
+           cb = (bsf == "user") ? userBetaSpending[k] :
+           errorSpentcpp(spendTime[k], beta, bsf, parameterBetaSpending);
 
-          u1.resize(k + 1);
-          l1.resize(k + 1);
-          std::copy_n(critValues1.begin(), k, u1.begin());
-          std::copy_n(futBounds2.begin(), k, l1.begin());
-          u1[k] = 8.0;
+           u1.resize(k + 1);
+           l1.resize(k + 1);
+           std::copy_n(critValues1.begin(), k, u1.begin());
+           std::copy_n(futBounds2.begin(), k, l1.begin());
+           u1[k] = 8.0;
 
-          // lambda expression for finding futility bound at stage k
-          // g is an increasing function of the futility bound at stage k,
-          // and we want to find the root
-          auto g = [u1, l1, w, theta, I, cb, k](double aval) -> double {
-            auto l = l1;           // make a local copy each invocation
-            l[k] = aval * w[k];
-            ListCpp probs = exitprobcpp(u1, l, theta, I);
-            auto v = probs.get<std::vector<double>>("exitProbLower");
-            double cpl = std::accumulate(v.begin(), v.end(), 0.0);
-            return cpl - cb;
-          };
+           // lambda expression for finding futility bound at stage k
+           // g is an increasing function of the futility bound at stage k,
+           // and we want to find the root
+           auto g = [u1, l1, w, theta, I, cb, k, &probs](double aval) -> double {
+             auto l = l1;           // make a local copy each invocation
+             l[k] = aval * w[k];
+             probs = exitprobcpp(u1, l, theta, I);
+             double cpl = std::accumulate(probs.exitProbLower.begin(),
+                                          probs.exitProbLower.end(), 0.0);
+             return cpl - cb;
+           };
 
-          double bk = critValues[k];
-          eps = g(bk);
-          double g_minus8 = g(-8.0);
-          if (g_minus8 > 0.0) { // no beta spent at current visit
-            futBounds1[k] = -8.0;
-          } else if (eps > 0.0) {
-            auto g_for_brent = [g, bk, g_minus8, eps](double x)->double {
-              if (x == -8.0) return g_minus8;
-              if (x == bk) return eps;
-              return g(x);
-            };
-            futBounds1[k] = brent(g_for_brent, -8.0, bk, 1e-6);
-            futBounds2[k] = futBounds1[k] * w[k];
-          } else if (k < kMax - 1) {
-            out.value = -1.0;
-            return out;
-          }
-        }
-      }
+           double bk = critValues[k];
+           eps = g(bk);
+           double g_minus8 = g(-8.0);
+           if (g_minus8 > 0.0) { // no beta spent at current visit
+             futBounds1[k] = -8.0;
+           } else if (eps > 0.0) {
+             auto g_for_brent = [g, bk, g_minus8, eps](double x)->double {
+               if (x == -8.0) return g_minus8;
+               if (x == bk) return eps;
+               return g(x);
+             };
+             futBounds1[k] = brent(g_for_brent, -8.0, bk, 1e-6);
+             futBounds2[k] = futBounds1[k] * w[k];
+           } else if (k < kMax - 1) {
+             out.value = -1.0;
+             return out;
+           }
+         }
+       }
 
-      out.value = eps;
-      if (need_bounds) out.futBounds = futBounds1;
-      return out;
-    }
-  };
+       out.value = eps;
+       if (need_bounds) out.futBounds = futBounds1;
+       return out;
+     }
+   };
 
 
   double maxInformation;
@@ -3432,6 +3437,8 @@ ListCpp nbpower1scpp(
 
 
   // --- obtain criticalValues if missing ---
+  ExitProbResult probs;
+
   std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
@@ -3453,9 +3460,9 @@ ListCpp nbpower1scpp(
 
       auto f = [&](double aval)->double {
         u[kMax-1] = aval;
-        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        probs = exitprobcpp(u, l, zero, infoRates);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
@@ -3468,10 +3475,10 @@ ListCpp nbpower1scpp(
   }
 
   // compute cumulative alpha spent (and alpha1)
-  ListCpp probs = exitprobcpp(critValues, l, zero, infoRates);
-  auto v = probs.get<std::vector<double>>("exitProbUpper");
+  probs = exitprobcpp(critValues, l, zero, infoRates);
   std::vector<double> cumAlphaSpent(kMax);
-  std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
+  std::partial_sum(probs.exitProbUpper.begin(),
+                   probs.exitProbUpper.end(), cumAlphaSpent.begin());
   double alpha1 = missingCriticalValues ? alpha :
     std::round(cumAlphaSpent.back() * 1e6) / 1e6;
 
@@ -3522,15 +3529,15 @@ ListCpp nbpower1scpp(
   }
 
   // compute exit probabilities
-  ListCpp exit_probs;
+  ExitProbResult exit_probs;
   if (!missingFutilityBounds || bsf == "none" || kMax == 1) {
     exit_probs = exitprobcpp(critValues, futBounds, theta, I);
   } else {
     std::vector<double> w(kMax, 1.0);
     auto gp = getPower(alpha1, kMax, critValues, theta, I, bsf,
                        parameterBetaSpending, spendTime, futStopping, w);
-    futBounds = gp.get<std::vector<double>>("futilityBounds");
-    exit_probs = gp.get_list("probs");
+    futBounds = gp.futilityBounds;
+    exit_probs = gp.probs;
   }
 
   // efficacy/futility p-values
@@ -3540,8 +3547,8 @@ ListCpp nbpower1scpp(
     futilityP[i] = 1.0 - boost_pnorm(futBounds[i]);
   }
 
-  auto pu = exit_probs.get<std::vector<double>>("exitProbUpper");
-  auto pl = exit_probs.get<std::vector<double>>("exitProbLower");
+  auto pu = exit_probs.exitProbUpper;
+  auto pl = exit_probs.exitProbLower;
   std::vector<double> ptotal(kMax);
   for (size_t i = 0; i < kMax; ++i) ptotal[i] = pu[i] + pl[i];
 
@@ -4144,6 +4151,8 @@ ListCpp nbsamplesize1scpp(
 
 
   // --- obtain criticalValues if missing ---
+  ExitProbResult probs;
+
   std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
@@ -4165,9 +4174,9 @@ ListCpp nbsamplesize1scpp(
 
       auto f = [&](double aval)->double {
         u[kMax-1] = aval;
-        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        probs = exitprobcpp(u, l, zero, infoRates);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
@@ -4941,6 +4950,8 @@ ListCpp nbpowerequivcpp(
 
 
   // obtain criticalValues if missing
+  ExitProbResult probs;
+
   std::vector<double> u(kMax), l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
@@ -4959,9 +4970,9 @@ ListCpp nbpowerequivcpp(
 
       auto f = [&](double aval)->double {
         u[kMax-1] = aval;
-        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        probs = exitprobcpp(u, l, zero, infoRates);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
@@ -4975,10 +4986,10 @@ ListCpp nbpowerequivcpp(
   }
 
   std::vector<double> li(kMax, -8.0), ui(kMax, 8.0);
-  ListCpp probs = exitprobcpp(critValues, li, zero, infoRates);
-  auto v = probs.get<std::vector<double>>("exitProbUpper");
+  probs = exitprobcpp(critValues, li, zero, infoRates);
   std::vector<double> cumAlphaSpent(kMax);
-  std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
+  std::partial_sum(probs.exitProbUpper.begin(),
+                   probs.exitProbUpper.end(), cumAlphaSpent.begin());
 
   std::vector<double> efficacyP(kMax);
   for (size_t i = 0; i < kMax; ++i) {
@@ -5097,12 +5108,12 @@ ListCpp nbpowerequivcpp(
   }
 
   std::vector<double> cpl(kMax), cpu(kMax);
-  ListCpp probs1 = exitprobcpp(b, li, zero, I);
-  ListCpp probs2 = exitprobcpp(ui, a, zero, I);
-  auto v1 = probs1.get<std::vector<double>>("exitProbUpper");
-  auto v2 = probs2.get<std::vector<double>>("exitProbLower");
-  std::partial_sum(v1.begin(), v1.end(), cpl.begin());
-  std::partial_sum(v2.begin(), v2.end(), cpu.begin());
+  auto probs1 = exitprobcpp(b, li, zero, I);
+  auto probs2 = exitprobcpp(ui, a, zero, I);
+  std::partial_sum(probs1.exitProbUpper.begin(),
+                   probs1.exitProbUpper.end(), cpl.begin());
+  std::partial_sum(probs2.exitProbLower.begin(),
+                   probs2.exitProbLower.end(), cpu.begin());
 
   // index for the first crossing look (0-based)
   size_t k = kMax;
@@ -5121,11 +5132,11 @@ ListCpp nbpowerequivcpp(
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
     std::vector I1 = subset(I, 0, k);
-    ListCpp probs = exitprobcpp(l1, u1, d1, I1);
-    auto v1x = probs.get<std::vector<double>>("exitProbUpper");
-    auto v2x = probs.get<std::vector<double>>("exitProbLower");
-    std::partial_sum(v1x.begin(), v1x.end(), cplx.begin());
-    std::partial_sum(v2x.begin(), v2x.end(), cpux.begin());
+    auto probs = exitprobcpp(l1, u1, d1, I1);
+    std::partial_sum(probs.exitProbUpper.begin(),
+                     probs.exitProbUpper.end(), cplx.begin());
+    std::partial_sum(probs.exitProbLower.begin(),
+                     probs.exitProbLower.end(), cpux.begin());
     for (size_t i = 0; i < k; ++i) {
       cp[i] = cpl[i] + cpu[i] - cplx[i] - cpux[i];
     }
@@ -5158,10 +5169,10 @@ ListCpp nbpowerequivcpp(
     u[i] = -critValues[i] + (theta20 - theta10) * sqrtI[i];
     a[i] = std::min(u[i], ui[i]);
   }
-  ListCpp probsH10 = exitprobcpp(ui, a, zero, I);
-  auto vH10 = probsH10.get<std::vector<double>>("exitProbLower");
+  auto probsH10 = exitprobcpp(ui, a, zero, I);
   std::vector<double> cpuH10(kMax);
-  std::partial_sum(vH10.begin(), vH10.end(), cpuH10.begin());
+  std::partial_sum(probsH10.exitProbUpper.begin(),
+                   probsH10.exitProbUpper.end(), cpuH10.begin());
   std::vector<double> cplH10 = cumAlphaSpent;
 
   std::vector<double> cpH10(kMax);
@@ -5175,11 +5186,11 @@ ListCpp nbpowerequivcpp(
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
     std::vector I1 = subset(I, 0, k);
-    ListCpp probs = exitprobcpp(l1, u1, d1, I1);
-    auto v1x = probs.get<std::vector<double>>("exitProbUpper");
-    auto v2x = probs.get<std::vector<double>>("exitProbLower");
-    std::partial_sum(v1x.begin(), v1x.end(), cplH10x.begin());
-    std::partial_sum(v2x.begin(), v2x.end(), cpuH10x.begin());
+    auto probs = exitprobcpp(l1, u1, d1, I1);
+    std::partial_sum(probs.exitProbUpper.begin(),
+                     probs.exitProbUpper.end(), cplH10x.begin());
+    std::partial_sum(probs.exitProbLower.begin(),
+                     probs.exitProbLower.end(), cpuH10x.begin());
     for (size_t i = 0; i < k; ++i) {
       cpH10[i] = cplH10[i] + cpuH10[i] - cplH10x[i] - cpuH10x[i];
     }
@@ -5195,10 +5206,10 @@ ListCpp nbpowerequivcpp(
     b[i] = std::max(l[i], li[i]);
   }
 
-  ListCpp probsH20 = exitprobcpp(b, li, zero, I);
-  auto vH20 = probsH20.get<std::vector<double>>("exitProbUpper");
+  auto probsH20 = exitprobcpp(b, li, zero, I);
   std::vector<double> cplH20(kMax);
-  std::partial_sum(vH20.begin(), vH20.end(), cplH20.begin());
+  std::partial_sum(probsH20.exitProbUpper.begin(),
+                   probsH20.exitProbUpper.end(), cplH20.begin());
   std::vector<double> cpuH20 = cumAlphaSpent;
 
   std::vector<double> cpH20(kMax);
@@ -5212,11 +5223,11 @@ ListCpp nbpowerequivcpp(
     std::vector u1 = subset(u, 0, k);
     std::vector d1 = subset(zero, 0, k);
     std::vector I1 = subset(I, 0, k);
-    ListCpp probs = exitprobcpp(l1, u1, d1, I1);
-    auto v1x = probs.get<std::vector<double>>("exitProbUpper");
-    auto v2x = probs.get<std::vector<double>>("exitProbLower");
-    std::partial_sum(v1x.begin(), v1x.end(), cplH20x.begin());
-    std::partial_sum(v2x.begin(), v2x.end(), cpuH20x.begin());
+    auto probs = exitprobcpp(l1, u1, d1, I1);
+    std::partial_sum(probs.exitProbUpper.begin(),
+                     probs.exitProbUpper.end(), cplH20x.begin());
+    std::partial_sum(probs.exitProbLower.begin(),
+                     probs.exitProbLower.end(), cpuH20x.begin());
     for (size_t i = 0; i < k; ++i) {
       cpH20[i] = cplH20[i] + cpuH20[i] - cplH20x[i] - cpuH20x[i];
     }
@@ -5809,6 +5820,8 @@ ListCpp nbsamplesizeequivcpp(
 
 
   // obtain criticalValues if missing
+  ExitProbResult probs;
+
   std::vector<double> u(kMax), l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
@@ -5827,9 +5840,9 @@ ListCpp nbsamplesizeequivcpp(
 
       auto f = [&](double aval)->double {
         u[kMax-1] = aval;
-        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        probs = exitprobcpp(u, l, zero, infoRates);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 

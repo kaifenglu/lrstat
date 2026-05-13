@@ -40,8 +40,8 @@ double f_pvalue_seamless(const double theta,
 
   std::vector<double> mu(M, theta);
   auto probs = exitprob_seamless_cpp(M, r, mu, corr_known, L, upper, I);
-  auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
-  double sum_up = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
+  double sum_up = std::accumulate(probs.exitProbUpper.begin(),
+                                  probs.exitProbUpper.end(), 0.0);
   return sum_up;
 }
 
@@ -341,12 +341,12 @@ std::pair<size_t, double> f_bwimage_seamless(const double theta,
   }
 
   // compute exit probabilities for b1
-  ListCpp probs = exitprobcpp(b1, a1, mu, I1);
-  auto pu = probs.get<std::vector<double>>("exitProbUpper");
+  auto probs = exitprobcpp(b1, a1, mu, I1);
 
   // find interval containing astar
   std::vector<double> cpu(k1);
-  std::partial_sum(pu.begin(), pu.end(), cpu.begin());
+  std::partial_sum(probs.exitProbUpper.begin(),
+                   probs.exitProbUpper.end(), cpu.begin());
   size_t j = std::min(findInterval1(astar, cpu) + 1, k1);
   size_t J = L + j; // combined stage index in primary trial numbering
 
@@ -602,8 +602,8 @@ DataFrameCpp getADCI_seamless_cpp(
     std::vector<double> zero(M, 0.0);
     auto probs = exitprob_seamless_cpp(M, r, zero, corr_known, K,
                                        b, informationRates);
-    auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
-    alpha1 = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
+    alpha1 = std::accumulate(probs.exitProbUpper.begin(),
+                             probs.exitProbUpper.end(), 0.0);
   } else {
     b = getBound_seamless_cpp(
       M, r, corr_known, K, infoRates, alpha, asf, parameterAlphaSpending,
@@ -636,9 +636,9 @@ DataFrameCpp getADCI_seamless_cpp(
     }
 
     std::vector<double> zero1(k1, 0.0);
-    ListCpp probs = exitprobcpp(b1, a1, zero1, t1);
-    auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
-    double alphaNew = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
+    auto probs = exitprobcpp(b1, a1, zero1, t1);
+    double alphaNew = std::accumulate(probs.exitProbUpper.begin(),
+                                      probs.exitProbUpper.end(), 0.0);
 
     b2 = getBoundcpp(L2, informationRatesNew, alphaNew, asfNew,
                      parameterAlphaSpendingNew, std::vector<double>{},

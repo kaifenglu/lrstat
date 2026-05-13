@@ -554,12 +554,12 @@ std::pair<size_t, double> f_bwimage(const double theta,
   }
 
   // compute exit probabilities for b1 / a1
-  ListCpp probs = exitprobcpp(b1, a1, mu, I1);
-  auto pu = probs.get<std::vector<double>>("exitProbUpper");
+  auto probs = exitprobcpp(b1, a1, mu, I1);
 
   // find interval containing astar
   std::vector<double> cpu(k1);
-  std::partial_sum(pu.begin(), pu.end(), cpu.begin());
+  std::partial_sum(probs.exitProbUpper.begin(), probs.exitProbUpper.end(),
+                   cpu.begin());
   size_t j = std::min(findInterval1(astar, cpu) + 1, k1);
   size_t J = L + j; // combined stage index in primary trial numbering
 
@@ -796,6 +796,8 @@ DataFrameCpp getADCIcpp(
 
 
   // obtain critical values for the primary trial
+  ExitProbResult probs;
+
   std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> b = criticalValues;
   double alpha1 = alpha;
@@ -818,9 +820,9 @@ DataFrameCpp getADCIcpp(
 
       auto f = [&](double aval)->double {
         u[kMax-1] = aval;
-        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        probs = exitprobcpp(u, l, zero, infoRates);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
@@ -833,9 +835,9 @@ DataFrameCpp getADCIcpp(
     for (size_t i = 0; i < kMax; ++i) {
       if (!effStopping[i]) b[i] = 8.0;
     }
-    ListCpp probs = exitprobcpp(b, l, zero, infoRates);
-    auto v = probs.get<std::vector<double>>("exitProbUpper");
-    alpha1 = std::accumulate(v.begin(), v.end(), 0.0);
+    probs = exitprobcpp(b, l, zero, infoRates);
+    alpha1 = std::accumulate(probs.exitProbUpper.begin(),
+                             probs.exitProbUpper.end(), 0.0);
   }
 
 
@@ -862,9 +864,9 @@ DataFrameCpp getADCIcpp(
       b1[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
       if (!effStopping[l + L]) b1[l] = 8.0;
     }
-    ListCpp probs = exitprobcpp(b1, a1, zero, t1);
-    auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
-    double alphaNew = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
+    probs = exitprobcpp(b1, a1, zero, t1);
+    double alphaNew = std::accumulate(probs.exitProbUpper.begin(),
+                                      probs.exitProbUpper.end(), 0.0);
 
     b2 = getBoundcpp(L2, informationRatesNew, alphaNew, asfNew,
                      parameterAlphaSpendingNew, std::vector<double>{},
@@ -1299,6 +1301,8 @@ DataFrameCpp getADRCIcpp(
 
 
   // obtain critical values for the primary trial
+  ExitProbResult probs;
+
   std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
   std::vector<double> b = criticalValues;
   double alpha1 = alpha;
@@ -1321,9 +1325,9 @@ DataFrameCpp getADRCIcpp(
 
       auto f = [&](double aval)->double {
         u[kMax-1] = aval;
-        ListCpp probs = exitprobcpp(u, l, zero, infoRates);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        probs = exitprobcpp(u, l, zero, infoRates);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
@@ -1336,9 +1340,9 @@ DataFrameCpp getADRCIcpp(
     for (size_t i = 0; i < kMax; ++i) {
       if (!effStopping[i]) b[i] = 8.0;
     }
-    ListCpp probs = exitprobcpp(b, l, zero, infoRates);
-    auto v = probs.get<std::vector<double>>("exitProbUpper");
-    alpha1 = std::accumulate(v.begin(), v.end(), 0.0);
+    probs = exitprobcpp(b, l, zero, infoRates);
+    alpha1 = std::accumulate(probs.exitProbUpper.begin(),
+                             probs.exitProbUpper.end(), 0.0);
   }
 
 
@@ -1365,9 +1369,9 @@ DataFrameCpp getADRCIcpp(
       b1[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
       if (!effStopping[l + L]) b1[l] = 8.0;
     }
-    ListCpp probs = exitprobcpp(b1, a1, zero, t1);
-    auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
-    double alphaNew = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
+    probs = exitprobcpp(b1, a1, zero, t1);
+    double alphaNew = std::accumulate(probs.exitProbUpper.begin(),
+                                      probs.exitProbUpper.end(), 0.0);
 
     b2 = getBoundcpp(L2, informationRatesNew, alphaNew, asfNew,
                      parameterAlphaSpendingNew, std::vector<double>{},
@@ -1472,9 +1476,9 @@ DataFrameCpp getADRCIcpp(
         b1[l] = (b[l + L] - w1[l] * zL1) / w2[l];
         if (!effStopping[l + L]) b1[l] = 8.0;
       }
-      ListCpp probs = exitprobcpp(b1, a1, zero, t1);
-      auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
-      double alphaNew = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
+      probs = exitprobcpp(b1, a1, zero, t1);
+      double alphaNew = std::accumulate(probs.exitProbUpper.begin(),
+                                        probs.exitProbUpper.end(), 0.0);
       b2_local = cache_L2.get(alphaNew);
       return zL2 - theta * sqrtI2 - b2_local[L2 - 1];
     };
@@ -1487,9 +1491,9 @@ DataFrameCpp getADRCIcpp(
         b1[l] = (b[l + L] - w1[l] * zL1) / w2[l];
         if (!effStopping[l + L]) b1[l] = 8.0;
       }
-      ListCpp probs = exitprobcpp(b1, a1, zero, t1);
-      auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
-      double alphaNew = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
+      probs = exitprobcpp(b1, a1, zero, t1);
+      double alphaNew = std::accumulate(probs.exitProbUpper.begin(),
+                                        probs.exitProbUpper.end(), 0.0);
       b2_local = cache_L2.get(alphaNew);
       return -zL2 + theta * sqrtI2 - b2_local[L2 - 1];
     };
@@ -1505,9 +1509,9 @@ DataFrameCpp getADRCIcpp(
           b1[l] = (u_local[l + L] - w1[l] * zL1) / w2[l];
           if (!effStopping[l + L]) b1[l] = 8.0;
         }
-        ListCpp probs = exitprobcpp(b1, a1, zero, t1);
-        auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
-        double alphaNew = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
+        probs = exitprobcpp(b1, a1, zero, t1);
+        double alphaNew = std::accumulate(probs.exitProbUpper.begin(),
+                                          probs.exitProbUpper.end(), 0.0);
         b2_local = cache_L2.get(alphaNew);
         return zL2 - theta * sqrtI2 - b2_local[L2 - 1];
       };

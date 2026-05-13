@@ -13,7 +13,7 @@
 struct FlatMatrix;
 struct ListCpp;
 
-ListCpp exitprob_mams_cpp(
+ExitProbResult exitprob_mams_cpp(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -23,7 +23,7 @@ ListCpp exitprob_mams_cpp(
     const FlatMatrix& a,
     const std::vector<double>& I);
 
-ListCpp exitprob_mams_cpp(
+ExitProbResult exitprob_mams_cpp(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -45,7 +45,7 @@ std::vector<double> getBound_mams_cpp(
     const std::vector<double>& spendingTime,
     const std::vector<unsigned char>& efficacyStopping);
 
-ListCpp getPower_mams(
+GetPowerResult getPower_mams(
     const size_t M,
     const double r,
     const std::vector<double>& theta,

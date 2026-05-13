@@ -9,11 +9,17 @@
 #include <vector>        // std::vector
 
 #include "utilities.h"
+#include "dataframe_list.h"
 
-struct FlatMatrix;
-struct ListCpp;
+struct ExitProbSeamless {
+  std::vector<double> exitProbUpper;
+  std::vector<double> exitProbLower;
+  FlatMatrix exitProbByArmUpper;
+  FlatMatrix exitProbByArmLower;
+  std::vector<double> selectAsBest;
+};
 
-ListCpp exitprob_seamless_cpp(
+ExitProbSeamless exitprob_seamless_cpp(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -23,7 +29,7 @@ ListCpp exitprob_seamless_cpp(
     const std::vector<double>& a,
     const std::vector<double>& I);
 
-ListCpp exitprob_seamless_cpp(
+ExitProbSeamless exitprob_seamless_cpp(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -45,7 +51,13 @@ std::vector<double> getBound_seamless_cpp(
     const std::vector<double>& spendingTime,
     const std::vector<unsigned char>& efficacyStopping);
 
-ListCpp getPower_seamless(
+struct GetPowerSeamless {
+  double power;
+  std::vector<double> futilityBounds;
+  ExitProbSeamless probs;
+};
+
+GetPowerSeamless getPower_seamless(
     const size_t M,
     const double r,
     const std::vector<double>& theta,

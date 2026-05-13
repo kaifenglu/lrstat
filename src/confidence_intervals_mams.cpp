@@ -43,8 +43,8 @@ double f_pvalue_mams(const double theta,
 
   std::vector<double> mu(M, theta);
   auto probs = exitprob_mams_cpp(M, r, mu, corr_known, L, upper, I);
-  auto v = probs.get<std::vector<double>>("exitProbUpper");
-  double sum_up = std::accumulate(v.begin(), v.end(), 0.0);
+  double sum_up = std::accumulate(probs.exitProbUpper.begin(),
+                                  probs.exitProbUpper.end(), 0.0);
   return sum_up;
 }
 
@@ -419,11 +419,11 @@ std::pair<size_t, double> f_bwimage_mams(const double theta,
   // compute exit probabilities for b1
   std::vector<double> mu(M, theta);
   auto probs = exitprob_mams_cpp(M, r, mu, corr_known, k1, b1, I1);
-  auto pu = probs.get<std::vector<double>>("exitProbUpper");
 
   // find interval containing astar
   std::vector<double> cpu(k1);
-  std::partial_sum(pu.begin(), pu.end(), cpu.begin());
+  std::partial_sum(probs.exitProbUpper.begin(),
+                   probs.exitProbUpper.end(), cpu.begin());
   size_t j = std::min(findInterval1(astar, cpu) + 1, k1);
   size_t J = L + j; // combined stage index in primary trial numbering
 
@@ -697,6 +697,8 @@ DataFrameCpp getADCI_mams_cpp(
   }
 
 
+  ExitProbResult probs; // placeholder for exit probabilities if needed
+
   // obtain by-level critical values for the primary trial
   FlatMatrix efficacyBounds1(kMax, M);
   if (!none_na(criticalValues.data)) {
@@ -849,8 +851,8 @@ DataFrameCpp getADCI_mams_cpp(
 
     // conditional type I error
     std::vector<double> zero1(M1, 0.0);
-    auto probs = exitprob_mams_cpp(M1, r, zero1, corr_known, k1, c1, I1);
-    auto v0 = probs.get<std::vector<double>>("exitProbUpper");
+    probs = exitprob_mams_cpp(M1, r, zero1, corr_known, k1, c1, I1);
+    auto v0 = probs.exitProbUpper;
     double c_alpha = std::accumulate(v0.begin(), v0.end(), 0.0);
 
     std::vector<double> cpu0(k2);
@@ -873,7 +875,7 @@ DataFrameCpp getADCI_mams_cpp(
     for (size_t j = 0; j < M2; ++j) zscaled[j] = zL[selectedNew2[j]] * sqrtIL;
 
     if (asf2 == "of") {
-      auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2, &effStopping2,
+      auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2, &effStopping2, &probs,
                 k2, c_alpha, M2, rNew, corr_known]
       (double x)->double {
         double col_const = x * sqrtIc[k2 - 1];
@@ -889,9 +891,9 @@ DataFrameCpp getADCI_mams_cpp(
           }
         }
 
-        auto probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, c2, I2);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+        probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, c2, I2);
+        double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                                    probs.exitProbUpper.end(), 0.0);
         return p0 - c_alpha;
       };
 
@@ -910,7 +912,7 @@ DataFrameCpp getADCI_mams_cpp(
       }
     } else if (asf2 == "none") {
       double denom = sqrtI2[k2 - 1];
-      auto g = [&c2, &I2, &sqrtIc, &zscaled, &zero2,
+      auto g = [&c2, &I2, &sqrtIc, &zscaled, &zero2, &probs,
                 denom, k2, c_alpha, M2, rNew, corr_known]
       (double x)->double {
         double col_const = x * sqrtIc[k2 - 1];
@@ -919,9 +921,9 @@ DataFrameCpp getADCI_mams_cpp(
           colptr[j] = (col_const - zscaled[j]) / denom;
         }
 
-        auto probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, c2, I2);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+        probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, c2, I2);
+        double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                                    probs.exitProbUpper.end(), 0.0);
         return p0 - c_alpha;
       };
 
@@ -936,7 +938,7 @@ DataFrameCpp getADCI_mams_cpp(
         if (!effStopping2[i]) continue;
         double denom = sqrtI2[i];
 
-        auto g = [&c2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2,
+        auto g = [&c2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs,
                   denom, i, M2, rNew, corr_known]
         (double x)->double {
           double col_const = x * sqrtIc[i];
@@ -946,9 +948,9 @@ DataFrameCpp getADCI_mams_cpp(
             colptr[j] = (col_const - zscaled[j]) / denom;
           }
 
-          auto probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, i + 1, c2, I2);
-          auto v = probs.get<std::vector<double>>("exitProbUpper");
-          double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+          probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, i + 1, c2, I2);
+          double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                                      probs.exitProbUpper.end(), 0.0);
           return p0 - cpu0[i];
         };
 

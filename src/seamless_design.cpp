@@ -1,3 +1,4 @@
+#include "seamless_design.h"
 #include "dataframe_list.h"
 #include "thread_utils.h"
 #include "utilities.h"
@@ -21,7 +22,7 @@
 using std::size_t;
 
 
-ListCpp exitprob_seamless_cpp(
+ExitProbSeamless exitprob_seamless_cpp(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -208,9 +209,9 @@ ListCpp exitprob_seamless_cpp(
         a1[k] = lb;
       }
 
-      ListCpp probs = exitprobcpp(b1, a1, theta1, I1);
-      outU = probs.get<std::vector<double>>("exitProbUpper");
-      outL = probs.get<std::vector<double>>("exitProbLower");
+      auto probs = exitprobcpp(b1, a1, theta1, I1);
+      outU = probs.exitProbUpper;
+      outL = probs.exitProbLower;
     };
 
     // prepare memoization structures; reserve to avoid rehashing
@@ -267,16 +268,16 @@ ListCpp exitprob_seamless_cpp(
     }
   }
 
-  ListCpp result;
-  result.push_back(exitProbUpper, "exitProbUpper");
-  result.push_back(exitProbLower, "exitProbLower");
-  result.push_back(exitProbByArmUpper, "exitProbByArmUpper");
-  result.push_back(exitProbByArmLower, "exitProbByArmLower");
-  result.push_back(selectAsBest, "selectAsBest");
-  return result;
+  return ExitProbSeamless{
+    std::move(exitProbUpper),
+    std::move(exitProbLower),
+    std::move(exitProbByArmUpper),
+    std::move(exitProbByArmLower),
+    std::move(selectAsBest)
+  };
 }
 
-ListCpp exitprob_seamless_cpp(
+ExitProbSeamless exitprob_seamless_cpp(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -473,7 +474,13 @@ Rcpp::List exitprob_seamless(
   auto result = exitprob_seamless_cpp(
     M_, r, thetaVec, corr_known, K_, bVec, aVec, IVec);
 
-  return Rcpp::wrap(result);
+  ListCpp out;
+  out.push_back(result.exitProbUpper, "exitProbUpper");
+  out.push_back(result.exitProbLower, "exitProbLower");
+  out.push_back(result.exitProbByArmUpper, "exitProbByArmUpper");
+  out.push_back(result.exitProbByArmLower, "exitProbByArmLower");
+  out.push_back(result.selectAsBest, "selectAsBest");
+  return Rcpp::wrap(out);
 }
 
 
@@ -594,6 +601,7 @@ std::vector<double> getBound_seamless_cpp(
   }
 
 
+  ExitProbSeamless probs;
   std::vector<double> criticalValues(kMax);
   std::vector<double> zero(M, 0.0);
 
@@ -602,10 +610,10 @@ std::vector<double> getBound_seamless_cpp(
 
     auto f = [&](double aval)->double {
       criticalValues[kMax-1] = aval;
-      auto probs = exitprob_seamless_cpp(M, r, zero, corr_known, kMax - 1,
-                                         criticalValues, infoRates);
-      auto v = probs.get<std::vector<double>>("exitProbUpper");
-      double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+      probs = exitprob_seamless_cpp(M, r, zero, corr_known, kMax - 1,
+                                    criticalValues, infoRates);
+      double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                   probs.exitProbUpper.end(), 0.0);
       return cpu - alpha;
     };
 
@@ -632,10 +640,10 @@ std::vector<double> getBound_seamless_cpp(
         if (!effStopping[i]) u[i] = 8.0;
       }
 
-      auto probs = exitprob_seamless_cpp(M, r, zero, corr_known, kMax - 1,
-                                         u, infoRates);
-      auto v = probs.get<std::vector<double>>("exitProbUpper");
-      double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+      probs = exitprob_seamless_cpp(M, r, zero, corr_known, kMax - 1,
+                                    u, infoRates);
+      double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                   probs.exitProbUpper.end(), 0.0);
       return cpu - alpha;
     };
 
@@ -682,10 +690,10 @@ std::vector<double> getBound_seamless_cpp(
       auto f = [&](double aval)->double {
         // set the last element to the current candidate critical value
         criticalValues[k1] = aval;
-        auto probs = exitprob_seamless_cpp(
+        probs = exitprob_seamless_cpp(
           M, r, zero, corr_known, k1, criticalValues, infoRates);
-        auto v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - cumAlpha;
       };
 
@@ -791,7 +799,7 @@ Rcpp::NumericVector getBound_seamless(
 }
 
 
-ListCpp getPower_seamless(
+GetPowerSeamless getPower_seamless(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -852,8 +860,7 @@ ListCpp getPower_seamless(
     sigma0(i, i) = 1.0;
   }
 
-  ListCpp probs;
-  std::vector<double> v;
+  ExitProbSeamless probs;
   std::vector<double> futBounds(K + 1, -8.0);
   auto f = [&](double beta)->double {
     std::fill(futBounds.begin(), futBounds.end(), -8.0);
@@ -885,9 +892,10 @@ ListCpp getPower_seamless(
 
       auto g = [&](double aval)->double {
         futBounds[k] = aval;
-        probs = exitprob_seamless_cpp(M, r, theta, true, k, critValues, futBounds, I);
-        v = probs.get<std::vector<double>>("exitProbLower");
-        double cpl = std::accumulate(v.begin(), v.end(), 0.0);
+        probs = exitprob_seamless_cpp(M, r, theta, true, k, critValues,
+                                      futBounds, I);
+        double cpl = std::accumulate(probs.exitProbLower.begin(),
+                                     probs.exitProbLower.end(), 0.0);
         return cpl - cb;
       };
 
@@ -932,11 +940,11 @@ ListCpp getPower_seamless(
     probs = exitprob_seamless_cpp(M, r, theta, true, K, critValues, futBounds, I);
   }
 
-  ListCpp result;
-  result.push_back(1.0 - beta, "power");
-  result.push_back(std::move(futBounds), "futilityBounds");
-  result.push_back(std::move(probs), "probs");
-  return result;
+  return GetPowerSeamless{
+    1.0 - beta,
+    std::move(futBounds),
+    std::move(probs)
+  };
 }
 
 
@@ -1186,10 +1194,8 @@ ListCpp getDesign_seamless_cpp(
 
   // ----------- End of Input Validation ----------- //
 
-  ListCpp probs;
-  std::vector<double> v;
-
   // set up efficacy bounds
+  ExitProbSeamless probs;
   std::vector<double> zero(M, 0.0);
   std::vector<double> critValues = criticalValues;
   if (missingCriticalValues) {
@@ -1214,8 +1220,8 @@ ListCpp getDesign_seamless_cpp(
         critValues[kMax - 1] = aval;
         probs = exitprob_seamless_cpp(
           M, r, zero, corr_known, K, critValues, infoRates);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
@@ -1228,9 +1234,9 @@ ListCpp getDesign_seamless_cpp(
   }
 
   probs = exitprob_seamless_cpp(M, r, zero, corr_known, K, critValues, infoRates);
-  v = probs.get<std::vector<double>>("exitProbUpper");
   std::vector<double> cumAlphaSpent(kMax);
-  std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
+  std::partial_sum(probs.exitProbUpper.begin(),
+                   probs.exitProbUpper.end(), cumAlphaSpent.begin());
   double alpha1 = missingCriticalValues ? alpha : cumAlphaSpent.back();
 
   // set up futility bounds
@@ -1310,8 +1316,8 @@ ListCpp getDesign_seamless_cpp(
 
         probs = exitprob_seamless_cpp(
           M, r, theta, true, K, critValues, futBounds, information);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double overallReject = std::accumulate(v.begin(), v.end(), 0.0);
+        double overallReject = std::accumulate(probs.exitProbUpper.begin(),
+                                               probs.exitProbUpper.end(), 0.0);
         return (1.0 - overallReject) - beta;
       } else {
         std::fill(futBounds.begin(), futBounds.end(), -8.0);
@@ -1346,8 +1352,8 @@ ListCpp getDesign_seamless_cpp(
             futBounds[k] = aval;
             probs = exitprob_seamless_cpp(M, r, theta, true, k, critValues,
                                           futBounds, information);
-            v = probs.get<std::vector<double>>("exitProbLower");
-            double cpl = std::accumulate(v.begin(), v.end(), 0.0);
+            double cpl = std::accumulate(probs.exitProbLower.begin(),
+                                         probs.exitProbLower.end(), 0.0);
             return cpl - cb;
           };
 
@@ -1389,11 +1395,11 @@ ListCpp getDesign_seamless_cpp(
       probs = exitprob_seamless_cpp(M, r, theta, true, K, critValues,
                                     futBounds, information);
     } else {
-      ListCpp out = getPower_seamless(
+      auto out = getPower_seamless(
         M, r, theta, alpha1, K, critValues, information, bsf,
         parameterBetaSpending, spendTime, futStopping);
-      futBounds = out.get<std::vector<double>>("futilityBounds");
-      probs = out.get_list("probs");
+      futBounds = out.futilityBounds;
+      probs = out.probs;
     }
   }
 
@@ -1410,8 +1416,8 @@ ListCpp getDesign_seamless_cpp(
     futilityP[i] = 1.0 - boost_pnorm(futBounds[i]);
   }
 
-  auto pu = probs.get<std::vector<double>>("exitProbUpper");
-  auto pl = probs.get<std::vector<double>>("exitProbLower");
+  auto pu = probs.exitProbUpper;
+  auto pl = probs.exitProbLower;
 
   std::vector<double> cpu(kMax), cpl(kMax);
   std::partial_sum(pu.begin(), pu.end(), cpu.begin());
@@ -1436,10 +1442,10 @@ ListCpp getDesign_seamless_cpp(
   double expectedInformationOverallH1 = std::inner_product(
     ptotal.begin(), ptotal.end(), informationOverall.begin(), 0.0);
 
-  ListCpp probsH0 = exitprob_seamless_cpp(M, r, zero, true, K, critValues,
-                                          futBounds, infoRates);
-  auto puH0 = probsH0.get<std::vector<double>>("exitProbUpper");
-  auto plH0 = probsH0.get<std::vector<double>>("exitProbLower");
+  auto probsH0 = exitprob_seamless_cpp(M, r, zero, true, K, critValues,
+                                       futBounds, infoRates);
+  auto puH0 = probsH0.exitProbUpper;
+  auto plH0 = probsH0.exitProbLower;
 
   std::vector<double> cpuH0(kMax), cplH0(kMax);
   std::partial_sum(puH0.begin(), puH0.end(), cpuH0.begin());
@@ -1461,8 +1467,8 @@ ListCpp getDesign_seamless_cpp(
     if (futBounds[i] == -8.0) futStopping[i] = 0;
   }
 
-  auto selectAsBest = probs.get<std::vector<double>>("selectAsBest");
-  auto exitProbByArmUpper = probs.get<FlatMatrix>("exitProbByArmUpper");
+  auto selectAsBest = probs.selectAsBest;
+  auto exitProbByArmUpper = probs.exitProbByArmUpper;
   std::vector<double> powerByArm(M, 0.0);
   for (size_t j = 0; j < M; ++j) {
     double p = 0.0;
@@ -2175,8 +2181,8 @@ ListCpp adaptDesign_seamless_cpp(
 
   // ----------- End of Input Validation ----------- //
 
-  ListCpp probs;
-  std::vector<double> v;
+  ExitProbResult probs;
+  ExitProbSeamless probss;
 
   // set up efficacy bounds
   std::vector<double> zero(M, 0.0);
@@ -2199,10 +2205,10 @@ ListCpp adaptDesign_seamless_cpp(
 
       auto f = [&](double aval)->double {
         critValues[kMax-1] = aval;
-        probs = exitprob_seamless_cpp(
+        probss = exitprob_seamless_cpp(
           M, r, zero, corr_known, K, critValues, infoRates);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        double cpu = std::accumulate(probss.exitProbUpper.begin(),
+                                     probss.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
@@ -2216,9 +2222,9 @@ ListCpp adaptDesign_seamless_cpp(
     for (size_t i = 0; i < kMax - 1; ++i) {
       if (!effStopping[i]) critValues[i] = 8.0;
     }
-    probs = exitprob_seamless_cpp(M, r, zero, corr_known, K, critValues, infoRates);
-    v = probs.get<std::vector<double>>("exitProbUpper");
-    alpha1 = std::accumulate(v.begin(), v.end(), 0.0);
+    probss = exitprob_seamless_cpp(M, r, zero, corr_known, K, critValues, infoRates);
+    alpha1 = std::accumulate(probss.exitProbUpper.begin(),
+                             probss.exitProbUpper.end(), 0.0);
   }
 
   // obtain futility bounds for the primary trial
@@ -2278,7 +2284,7 @@ ListCpp adaptDesign_seamless_cpp(
 
   // conditional type I error
   probs = exitprobcpp(b1, a1, zero1, infoRatesNew);
-  auto v0 = probs.get<std::vector<double>>("exitProbUpper");
+  auto v0 = probs.exitProbUpper;
   double alphaNew = std::accumulate(v0.begin(), v0.end(), 0.0);
 
   // conditional power
@@ -2294,8 +2300,8 @@ ListCpp adaptDesign_seamless_cpp(
 
   std::vector<double> theta1(k1, theta);
   probs = exitprobcpp(b1, a1, theta1, I1);
-  auto v1 = probs.get<std::vector<double>>("exitProbUpper");
-  double conditionalPower = std::accumulate(v1.begin(), v1.end(), 0.0);
+  double conditionalPower = std::accumulate(probs.exitProbUpper.begin(),
+                                            probs.exitProbUpper.end(), 0.0);
 
   double IL = information1[L];
   double sqrtIL = std::sqrt(IL);
@@ -2396,11 +2402,11 @@ ListCpp adaptDesign_seamless_cpp(
 
     if (missingFutilityBoundsInt && bsfNew != "none" && k2 > 1) { // beta-spending
       std::vector<double> wc(k2, 1.0);
-      ListCpp out = getPower(
+      auto out = getPower(
         alphaNew, k2, critValues2, theta2, Ic, bsfNew,
         parameterBetaSpendingNew, spendTimeNew, futStoppingNew,
         wc, IL, theta, zL);
-      futBounds2 = out.get<std::vector<double>>("futilityBounds");
+      futBounds2 = out.futilityBounds;
     }
 
     for (size_t i = 0; i < k2; ++i) {
@@ -2481,8 +2487,8 @@ ListCpp adaptDesign_seamless_cpp(
         a2[k2 - 1] = b2[k2 - 1];
 
         probs = exitprobcpp(b2, a2, theta2, I2);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double overallReject = std::accumulate(v.begin(), v.end(), 0.0);
+        double overallReject = std::accumulate(probs.exitProbUpper.begin(),
+                                               probs.exitProbUpper.end(), 0.0);
         return (1.0 - overallReject) - betaNew;
       } else {
         // initialize futility bound to be updated
@@ -2522,8 +2528,8 @@ ListCpp adaptDesign_seamless_cpp(
               l[k] = a2[k];
               u[k] = l[k];
               probs = exitprobcpp(u, l, theta2, I2);
-              v = probs.get<std::vector<double>>("exitProbLower");
-              double cpl = std::accumulate(v.begin(), v.end(), 0.0);
+              double cpl = std::accumulate(probs.exitProbLower.begin(),
+                                           probs.exitProbLower.end(), 0.0);
               return cpl - cb;
             };
 
@@ -2557,14 +2563,14 @@ ListCpp adaptDesign_seamless_cpp(
 
 
   probs = exitprobcpp(b2, a2, theta2, I2);
-  v = probs.get<std::vector<double>>("exitProbUpper");
   std::vector<double> cpu1(k2);
-  std::partial_sum(v.begin(), v.end(), cpu1.begin());
+  std::partial_sum(probs.exitProbUpper.begin(),
+                   probs.exitProbUpper.end(), cpu1.begin());
   double p2 = cpu1.back();
 
-  auto v2 = probs.get<std::vector<double>>("exitProbLower");
   std::vector<double> cpu2(k2);
-  std::partial_sum(v2.begin(), v2.end(), cpu2.begin());
+  std::partial_sum(probs.exitProbLower.begin(),
+                   probs.exitProbLower.end(), cpu2.begin());
 
 
   // combined design

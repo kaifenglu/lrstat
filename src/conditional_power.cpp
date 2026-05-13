@@ -357,8 +357,7 @@ std::vector<double> getCPcpp(
   // ----------- End of Input Validation ----------- //
 
   // scratch space for probabilities and other vectors
-  ListCpp probs;
-  std::vector<double> v;
+  ExitProbResult probs;
 
   // obtain critical values for the primary trial
   std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
@@ -383,8 +382,8 @@ std::vector<double> getCPcpp(
       auto f = [&](double aval)->double {
         u[kMax-1] = aval;
         probs = exitprobcpp(u, l, zero, infoRates);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
@@ -460,7 +459,7 @@ std::vector<double> getCPcpp(
   }
 
   probs = exitprobcpp(b1, a1, zero1, infoRatesNew);
-  auto v0 = probs.get<std::vector<double>>("exitProbUpper");
+  auto v0 = probs.exitProbUpper;
   double alphaNew = std::accumulate(v0.begin(), v0.end(), 0.0);
 
   for (size_t i = 0; i < k1; ++i) {
@@ -479,9 +478,9 @@ std::vector<double> getCPcpp(
       thetav[L - 1] * information1[L - 1]) / I1[i];
   }
 
-  ListCpp probs1 = exitprobcpp(b1, a1, theta1, I1);
-  auto v1 = probs1.get<std::vector<double>>("exitProbUpper");
-  double conditionalPower = std::accumulate(v1.begin(), v1.end(), 0.0);
+  probs = exitprobcpp(b1, a1, theta1, I1);
+  double conditionalPower = std::accumulate(probs.exitProbUpper.begin(),
+                                            probs.exitProbUpper.end(), 0.0);
 
 
   // critical values for the secondary trial
@@ -584,11 +583,11 @@ std::vector<double> getCPcpp(
   }
 
   if (missingFutilityBoundsInt && bsfNew != "none" && k2 > 1) { // beta-spending
-    ListCpp out = getPower(
+    auto out = getPower(
       alphaNew, k2, critValues2, theta2, Ic, bsfNew,
       parameterBetaSpendingNew, spendTimeNew, futStoppingNew,
       wc, IL, thetaL, zL);
-    futBounds2 = out.get<std::vector<double>>("futilityBounds");
+    futBounds2 = out.futilityBounds;
   }
 
   for (size_t i = 0; i < k2 - 1; ++i) {
@@ -597,8 +596,8 @@ std::vector<double> getCPcpp(
   a2[k2 - 1] = b2[k2 - 1];
 
   probs = exitprobcpp(b2, a2, theta2, I2);
-  v = probs.get<std::vector<double>>("exitProbUpper");
-  double conditionalPowerNew = std::accumulate(v.begin(), v.end(), 0.0);
+  double conditionalPowerNew = std::accumulate(probs.exitProbUpper.begin(),
+                                               probs.exitProbUpper.end(), 0.0);
 
   std::vector<double> result = {conditionalPower, conditionalPowerNew};
   return result;

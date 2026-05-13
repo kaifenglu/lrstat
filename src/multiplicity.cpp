@@ -1360,6 +1360,8 @@ IntMatrix fseqboncpp1(
     // pointers to idx2
     const int* idx2_ptr = idx2.data_ptr(); // m x k1
 
+    ExitProbResult probs; // to store results from exitprobcpp
+
     size_t K3 = *std::max_element(K2.begin(), K2.end());
 
     for (size_t step = 0; step < K3; ++step) {  // loop over study look
@@ -1398,9 +1400,9 @@ IntMatrix fseqboncpp1(
             // small lambda that only sets last element
             auto g = [&](double aval)->double {
               u_vec[l] = aval;
-              ListCpp probs = exitprobcpp(u_vec, l_vec, theta_vec, t);
-              auto v = probs.get<std::vector<double>>("exitProbUpper");
-              double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+              probs = exitprobcpp(u_vec, l_vec, theta_vec, t);
+              double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                           probs.exitProbUpper.end(), 0.0);
               return cpu - cumAlpha;
             };
 

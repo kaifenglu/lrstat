@@ -361,8 +361,8 @@ std::vector<double> getCP_seamless_cpp(
   // ----------- End of Input Validation ----------- //
 
   // set up efficacy bounds
-  ListCpp probs;
-  std::vector<double> v;
+  ExitProbResult probs;
+  ExitProbSeamless probss;
 
   std::vector<double> zero(M, 0.0);
   std::vector<double> critValues = criticalValues;
@@ -383,10 +383,10 @@ std::vector<double> getCP_seamless_cpp(
 
       auto f = [&](double aval)->double {
         critValues[kMax-1] = aval;
-        probs = exitprob_seamless_cpp(
+        probss = exitprob_seamless_cpp(
           M, r, zero, corr_known, K, critValues, infoRates);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
@@ -462,7 +462,7 @@ std::vector<double> getCP_seamless_cpp(
 
   // conditional type I error
   probs = exitprobcpp(b1, a1, zero1, infoRatesNew);
-  auto v0 = probs.get<std::vector<double>>("exitProbUpper");
+  auto v0 = probs.exitProbUpper;
   double alphaNew = std::accumulate(v0.begin(), v0.end(), 0.0);
 
   // conditional power
@@ -478,8 +478,8 @@ std::vector<double> getCP_seamless_cpp(
 
   std::vector<double> theta1(k1, theta);
   probs = exitprobcpp(b1, a1, theta1, I1);
-  auto v1 = probs.get<std::vector<double>>("exitProbUpper");
-  double conditionalPower = std::accumulate(v1.begin(), v1.end(), 0.0);
+  double conditionalPower = std::accumulate(probs.exitProbUpper.begin(),
+                                            probs.exitProbUpper.end(), 0.0);
 
   double IL = information1[L];
   double sqrtIL = std::sqrt(IL);
@@ -578,11 +578,11 @@ std::vector<double> getCP_seamless_cpp(
 
   if (missingFutilityBoundsInt && bsfNew != "none" && k2 > 1) { // beta-spending
     std::vector<double> wc(k2, 1.0);
-    ListCpp out = getPower(
+    auto out = getPower(
       alphaNew, k2, critValues2, theta2, Ic, bsfNew,
       parameterBetaSpendingNew, spendTimeNew, futStoppingNew,
       wc, IL, theta, zL);
-    futBounds2 = out.get<std::vector<double>>("futilityBounds");
+    futBounds2 = out.futilityBounds;
   }
 
   for (size_t i = 0; i < k2 - 1; ++i) {
@@ -591,8 +591,8 @@ std::vector<double> getCP_seamless_cpp(
   a2[k2 - 1] = b2[k2 - 1];
 
   probs = exitprobcpp(b2, a2, theta2, I2);
-  v = probs.get<std::vector<double>>("exitProbUpper");
-  double conditionalPowerNew = std::accumulate(v.begin(), v.end(), 0.0);
+  double conditionalPowerNew = std::accumulate(probs.exitProbUpper.begin(),
+                                               probs.exitProbUpper.end(), 0.0);
 
   std::vector<double> result = {conditionalPower, conditionalPowerNew};
   return result;

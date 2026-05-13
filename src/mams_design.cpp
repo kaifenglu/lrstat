@@ -129,7 +129,7 @@ static ExitProbMAMSCache make_exitprob_cache(
 }
 
 
-static ListCpp exitprob_mams_impl(
+ExitProbResult exitprob_mams_impl(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -223,8 +223,7 @@ static ListCpp exitprob_mams_impl(
       }
     }
 
-    ListCpp probs;
-    std::vector<double> v;
+    ExitProbResult probs;
     std::vector<double> upper1, lower1, c;
     std::vector<double> upper1a, upper2;
     std::vector<double> lo(kMax, -8.0);
@@ -299,22 +298,22 @@ static ListCpp exitprob_mams_impl(
               if (upper2[j] < -8.0) upper2[j] = -8.0;
             }
             probs = exitprobcpp(upper2, lo, zero, Ivec);
-            v = probs.get<std::vector<double>>("exitProbUpper");
-            s_upper1 = 1.0 - std::accumulate(v.begin(), v.end(), 0.0);
+            s_upper1 = 1.0 - std::accumulate(probs.exitProbUpper.begin(),
+                                             probs.exitProbUpper.end(), 0.0);
             std::memcpy(upper1a.data(), upper2.data(), (k - 1) * sizeof(double));
           }
 
           upper1a[k - 1] = upper1[(k - 1) * M]; // arm 0; identical for all arms
           if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
           probs = exitprobcpp(upper1a, lo, zero, Ivec);
-          v = probs.get<std::vector<double>>("exitProbUpper");
-          s_upper2 = 1.0 - std::accumulate(v.begin(), v.end(), 0.0);
+          s_upper2 = 1.0 - std::accumulate(probs.exitProbUpper.begin(),
+                                           probs.exitProbUpper.end(), 0.0);
 
           upper1a[k - 1] = lower1[(k - 1) * M]; // arm 0; identical for all arms
           if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
           probs = exitprobcpp(upper1a, lo, zero, Ivec);
-          v = probs.get<std::vector<double>>("exitProbUpper");
-          s_lower = 1.0 - std::accumulate(v.begin(), v.end(), 0.0);
+          s_lower = 1.0 - std::accumulate(probs.exitProbUpper.begin(),
+                                          probs.exitProbUpper.end(), 0.0);
 
           const double pm = static_cast<double>(M);
           pupper1 = std::pow(s_upper1, pm);
@@ -330,22 +329,22 @@ static ListCpp exitprob_mams_impl(
                 if (upper2[j] < -8.0) upper2[j] = -8.0;
               }
               probs = exitprobcpp(upper2, lo, zero, Ivec);
-              v = probs.get<std::vector<double>>("exitProbUpper");
-              pupper1 *= (1.0 - std::accumulate(v.begin(), v.end(), 0.0));
+              pupper1 *= (1.0 - std::accumulate(probs.exitProbUpper.begin(),
+                                                probs.exitProbUpper.end(), 0.0));
               std::memcpy(upper1a.data(), upper2.data(), (k - 1) * sizeof(double));
             }
 
             upper1a[k - 1] = upper1[(k - 1) * M + m];
             if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
             probs = exitprobcpp(upper1a, lo, zero, Ivec);
-            v = probs.get<std::vector<double>>("exitProbUpper");
-            pupper2 *= (1.0 - std::accumulate(v.begin(), v.end(), 0.0));
+            pupper2 *= (1.0 - std::accumulate(probs.exitProbUpper.begin(),
+                                              probs.exitProbUpper.end(), 0.0));
 
             upper1a[k - 1] = lower1[(k - 1) * M + m];
             if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
             probs = exitprobcpp(upper1a, lo, zero, Ivec);
-            v = probs.get<std::vector<double>>("exitProbUpper");
-            plower *= (1.0 - std::accumulate(v.begin(), v.end(), 0.0));
+            plower *= (1.0 - std::accumulate(probs.exitProbUpper.begin(),
+                                             probs.exitProbUpper.end(), 0.0));
           }
         }
 
@@ -618,14 +617,14 @@ static ListCpp exitprob_mams_impl(
     }
   }
 
-  ListCpp exitProb;
-  exitProb.push_back(std::move(exitProbUpper), "exitProbUpper");
-  exitProb.push_back(std::move(exitProbLower), "exitProbLower");
-  return exitProb;
+  return ExitProbResult {
+    std::move(exitProbUpper),
+    std::move(exitProbLower)
+  };
 }
 
 // overload with default a matrix of -8.0
-static ListCpp exitprob_mams_impl(
+static ExitProbResult exitprob_mams_impl(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -645,7 +644,7 @@ static ListCpp exitprob_mams_impl(
 // Public 8-param overload matching the header declaration.
 // This is the function visible to other translation units.  Internal callers
 // that want to supply a precomputed cache use exitprob_mams_impl() directly.
-ListCpp exitprob_mams_cpp(
+ExitProbResult exitprob_mams_cpp(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -659,7 +658,7 @@ ListCpp exitprob_mams_cpp(
 
 
 //  Public 7-param overload with default a matrix of -8.0
-ListCpp exitprob_mams_cpp(
+ExitProbResult exitprob_mams_cpp(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -815,7 +814,10 @@ Rcpp::List exitprob_mams(
   FlatMatrix aMat = as_boundary_matrix(a, "a", M_, K, true);
 
   auto probs = exitprob_mams_cpp(M_, r, thetaVec, corr_known, K, bMat, aMat, IVec);
-  return Rcpp::wrap(probs);
+  ListCpp exitProb;
+  exitProb.push_back(std::move(probs.exitProbUpper), "exitProbUpper");
+  exitProb.push_back(std::move(probs.exitProbLower), "exitProbLower");
+  return Rcpp::wrap(exitProb);
 }
 
 
@@ -936,8 +938,7 @@ std::vector<double> getBound_mams_cpp(
   std::vector<double> criticalValues(kMax, 8.0);
   FlatMatrix b(M, kMax);
   b.fill(8.0);
-  ListCpp probs;
-  std::vector<double> v;
+  ExitProbResult probs;
 
   // Precompute sigma and per-stage Cholesky factors once for the full
   // (M, r, corr_known, infoRates) tuple.  All exitprob_mams_cpp calls within
@@ -955,8 +956,8 @@ std::vector<double> getBound_mams_cpp(
       std::fill_n(colptr, M, x);
       probs = exitprob_mams_impl(M, r, zero, corr_known, kMax, b, infoRates,
                                  pcache);
-      v = probs.get<std::vector<double>>("exitProbUpper");
-      double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+      double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                   probs.exitProbUpper.end(), 0.0);
       return cpu - alpha;
     };
 
@@ -985,8 +986,8 @@ std::vector<double> getBound_mams_cpp(
 
       probs = exitprob_mams_impl(M, r, zero, corr_known, kMax, b, infoRates,
                                  pcache);
-      v = probs.get<std::vector<double>>("exitProbUpper");
-      double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+      double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                   probs.exitProbUpper.end(), 0.0);
       return cpu - alpha;
     };
 
@@ -1039,8 +1040,8 @@ std::vector<double> getBound_mams_cpp(
         std::fill_n(last_col, M, x);  // fill last column fast
         probs = exitprob_mams_impl(M, r, zero, corr_known, k1 + 1, b, infoRates,
                                    pcache);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
         return cpu - cumAlpha;
       };
 
@@ -1149,7 +1150,7 @@ Rcpp::NumericVector getBound_mams(
 // of the primary trial, M, r, theta, alpha, kMax, bsf, bsfpar, st,
 // futStopping are parameters of the secondary trial, critValues,
 // futBounds and I are boundaries and information of integrated trial.
-ListCpp getPower_mams(
+GetPowerResult getPower_mams(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -1200,8 +1201,7 @@ ListCpp getPower_mams(
   }
 
   // reusable buffers for prefixes
-  ListCpp probs;
-  std::vector<double> v;
+  ExitProbResult probs;
   std::vector<double> futBounds(kMax);
 
   // I2 is fixed for the entire getPower_mams call.  Precompute sigma
@@ -1255,8 +1255,8 @@ ListCpp getPower_mams(
           }
           probs = exitprob_mams_impl(M, r, theta, true, k + 1, b, a, I2,
                                      pm_pcache);
-          v = probs.get<std::vector<double>>("exitProbLower");
-          double cpl = std::accumulate(v.begin(), v.end(), 0.0);
+          double cpl = std::accumulate(probs.exitProbLower.begin(),
+                                       probs.exitProbLower.end(), 0.0);
           return cpl - cb;
         };
 
@@ -1304,11 +1304,11 @@ ListCpp getPower_mams(
     probs = exitprob_mams_impl(M, r, theta, true, kMax, b, a, I2, pm_pcache);
   }
 
-  ListCpp result;
-  result.push_back(1.0 - beta, "power");
-  result.push_back(std::move(futBounds), "futilityBounds");
-  result.push_back(std::move(probs), "probs");
-  return result;
+  return GetPowerResult {
+    1.0 - beta,
+    std::move(futBounds),
+    std::move(probs)
+  };
 }
 
 
@@ -1522,8 +1522,7 @@ ListCpp getDesign_mams_cpp(
   }
 
   // ----------- End of Input Validation ----------- //
-  ListCpp probs;
-  std::vector<double> v;
+  ExitProbResult probs;
 
   // set up efficacy bounds
   // construct by-level bounds
@@ -1568,8 +1567,8 @@ ListCpp getDesign_mams_cpp(
         auto f = [&](double x)->double {
           std::fill_n(last_col, M1, x);
           probs = exitprob_mams_cpp(M1, r, zero1, corr_known, kMax, b1, infoRates);
-          v = probs.get<std::vector<double>>("exitProbUpper");
-          double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+          double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                       probs.exitProbUpper.end(), 0.0);
           return cpu - alpha;
         };
 
@@ -1596,9 +1595,9 @@ ListCpp getDesign_mams_cpp(
     std::fill_n(b.data_ptr() + i * M, M, critValues[i]);
   }
   probs = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
-  v = probs.get<std::vector<double>>("exitProbUpper");
   std::vector<double> cumAlphaSpent(kMax);
-  std::partial_sum(v.begin(), v.end(), cumAlphaSpent.begin());
+  std::partial_sum(probs.exitProbUpper.begin(),
+                   probs.exitProbUpper.end(), cumAlphaSpent.begin());
   double alpha1 = missingCriticalValues ? alpha : cumAlphaSpent[kMax-1];
 
   FlatMatrix sigma(M, M);
@@ -1698,8 +1697,8 @@ ListCpp getDesign_mams_cpp(
 
         probs = exitprob_mams_impl(M, r, theta, true, kMax, b, a, information,
                                    pi_pcache);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double overallReject = std::accumulate(v.begin(), v.end(), 0.0);
+        double overallReject = std::accumulate(probs.exitProbUpper.begin(),
+                                               probs.exitProbUpper.end(), 0.0);
         return (1.0 - overallReject) - beta;
       } else {
         // initialize futility bound to be updated
@@ -1736,8 +1735,8 @@ ListCpp getDesign_mams_cpp(
               std::fill_n(a.data_ptr() + k * M, M, aval);
               probs = exitprob_mams_impl(M, r, theta, true, k + 1, b, a,
                                          information, pi_pcache);
-              v = probs.get<std::vector<double>>("exitProbLower");
-              double cpl = std::accumulate(v.begin(), v.end(), 0.0);
+              double cpl = std::accumulate(probs.exitProbLower.begin(),
+                                           probs.exitProbLower.end(), 0.0);
               return cpl - cb;
             };
 
@@ -1781,14 +1780,14 @@ ListCpp getDesign_mams_cpp(
       }
       probs = exitprob_mams_cpp(M, r, theta, true, kMax, b, a, information);
     } else { // beta-spending
-      ListCpp out = getPower_mams(M, r, theta, alpha1, kMax, critValues,
+      auto out = getPower_mams(M, r, theta, alpha1, kMax, critValues,
                                   information, bsf, parameterBetaSpending,
                                   spendTime, futStopping, 0.0, zero);
-      futBounds = out.get<std::vector<double>>("futilityBounds");
+      futBounds = out.futilityBounds;
       for (size_t i = 0; i < kMax; ++i) {
         std::fill_n(a.data_ptr() + i * M, M, futBounds[i]);
       }
-      probs = out.get_list("probs");
+      probs = out.probs;
     }
   }
 
@@ -1806,8 +1805,8 @@ ListCpp getDesign_mams_cpp(
   }
 
   // stagewise exit probabilities under H1
-  auto pu = probs.get<std::vector<double>>("exitProbUpper");
-  auto pl = probs.get<std::vector<double>>("exitProbLower");
+  auto pu = probs.exitProbUpper;
+  auto pl = probs.exitProbLower;
   std::vector<double> cpu(kMax), cpl(kMax);
   std::partial_sum(pu.begin(), pu.end(), cpu.begin());
   std::partial_sum(pl.begin(), pl.end(), cpl.begin());
@@ -1828,9 +1827,9 @@ ListCpp getDesign_mams_cpp(
     ptotal.begin(), ptotal.end(), informationOverall.begin(), 0.0);
 
   // stagewise exit probabilities under H0 with binding futility
-  ListCpp probsH0 = exitprob_mams_cpp(M, r, zero, true, kMax, b, a, infoRates);
-  auto puH0 = probsH0.get<std::vector<double>>("exitProbUpper");
-  auto plH0 = probsH0.get<std::vector<double>>("exitProbLower");
+  auto probsH0 = exitprob_mams_cpp(M, r, zero, true, kMax, b, a, infoRates);
+  auto puH0 = probsH0.exitProbUpper;
+  auto plH0 = probsH0.exitProbLower;
   std::vector<double> cpuH0(kMax), cplH0(kMax);
   std::partial_sum(puH0.begin(), puH0.end(), cpuH0.begin());
   std::partial_sum(plH0.begin(), plH0.end(), cplH0.begin());
@@ -2527,8 +2526,7 @@ ListCpp adaptDesign_mams_cpp(
 
 
   // ----------- End of Input Validation ----------- //
-  ListCpp probs;
-  std::vector<double> v;
+  ExitProbResult probs;
 
   // obtain critical values for the primary trial
   // by level critical values for the integrated trial
@@ -2574,8 +2572,8 @@ ListCpp adaptDesign_mams_cpp(
         auto f = [&](double x)->double {
           std::fill_n(last_col, M1, x);
           probs = exitprob_mams_cpp(M1, r, zero1, corr_known, kMax, b1, infoRates);
-          v = probs.get<std::vector<double>>("exitProbUpper");
-          double cpu = std::accumulate(v.begin(), v.end(), 0.0);
+          double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                       probs.exitProbUpper.end(), 0.0);
           return cpu - alpha;
         };
 
@@ -2606,8 +2604,8 @@ ListCpp adaptDesign_mams_cpp(
     std::fill_n(b.data_ptr() + i * M, M, critValues[i]);
   }
   probs = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
-  v = probs.get<std::vector<double>>("exitProbUpper");
-  double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+  double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                              probs.exitProbUpper.end(), 0.0);
   double alpha1 = missingCriticalValues ? alpha : p0;
 
   // obtain futility bounds for the primary trial
@@ -2695,7 +2693,7 @@ ListCpp adaptDesign_mams_cpp(
 
   // conditional type I error
   probs = exitprob_mams_cpp(M, r, zero, corr_known, k1, b1, I1);
-  auto v0 = probs.get<std::vector<double>>("exitProbUpper");
+  auto v0 = probs.exitProbUpper;
   double alphaNew = std::accumulate(v0.begin(), v0.end(), 0.0);
 
   // conditional power
@@ -2715,8 +2713,8 @@ ListCpp adaptDesign_mams_cpp(
   }
 
   probs = exitprob_mams_cpp(M, r, theta, true, k1, b1, a1, I1);
-  auto v1 = probs.get<std::vector<double>>("exitProbUpper");
-  double conditionalPower = std::accumulate(v1.begin(), v1.end(), 0.0);
+  double conditionalPower = std::accumulate(probs.exitProbUpper.begin(),
+                                            probs.exitProbUpper.end(), 0.0);
 
   // secondary trial design
   double IL = information1[L - 1];
@@ -2768,7 +2766,7 @@ ListCpp adaptDesign_mams_cpp(
     // first obtain the efficacy bounds for the secondary trial
     if (asf2 == "of") {
       auto g = [&b2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2,
-                &effStoppingNew, &probs, &v,
+                &effStoppingNew, &probs,
                 k2, alphaNew, MNew, rNew, corr_known]
       (double aval)->double {
         double col_const = aval * sqrtIc[k2 - 1];
@@ -2785,8 +2783,8 @@ ListCpp adaptDesign_mams_cpp(
         }
 
         probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+        double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                                    probs.exitProbUpper.end(), 0.0);
         return p0 - alphaNew;
       };
 
@@ -2809,7 +2807,7 @@ ListCpp adaptDesign_mams_cpp(
       for (size_t i = 0; i < k2 - 1; ++i) critValues2[i] = 8.0;
       double denom = sqrtI2[k2 - 1];
 
-      auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs, &v,
+      auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs,
                 denom, k2, alphaNew, MNew, rNew, corr_known]
       (double aval)->double {
         double* colptr = b2.data_ptr() + (k2 - 1) * MNew;
@@ -2819,8 +2817,8 @@ ListCpp adaptDesign_mams_cpp(
         }
 
         probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+        double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                                    probs.exitProbUpper.end(), 0.0);
         return p0 - alphaNew;
       };
 
@@ -2836,7 +2834,7 @@ ListCpp adaptDesign_mams_cpp(
         if (!effStoppingNew[i]) continue;
         double denom = sqrtI2[i];
 
-        auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs, &v,
+        auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs,
                   denom, i, MNew, rNew, corr_known]
         (double aval)->double {
           double col_const = aval * sqrtIc[i];
@@ -2847,8 +2845,8 @@ ListCpp adaptDesign_mams_cpp(
           }
 
           probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, i + 1, b2, I2);
-          v = probs.get<std::vector<double>>("exitProbUpper");
-          double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+          double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                                      probs.exitProbUpper.end(), 0.0);
           return p0 - cpu0[i];
         };
 
@@ -2911,10 +2909,10 @@ ListCpp adaptDesign_mams_cpp(
     }
 
     if (missingFutilityBoundsInt && bsfNew != "none" && k2 > 1) { // beta-spending
-      ListCpp out = getPower_mams(
+      auto out = getPower_mams(
         MNew, rNew, theta2, alphaNew, k2, critValues2, Ic,
         bsfNew, parameterBetaSpendingNew, spendTimeNew, futStoppingNew, IL, zL);
-      futBounds2 = out.get<std::vector<double>>("futilityBounds");
+      futBounds2 = out.futilityBounds;
     }
 
     // update the actual futility bounds of the secondary trial
@@ -2932,7 +2930,7 @@ ListCpp adaptDesign_mams_cpp(
               &sqrtI2, &sqrtIc, &zscaled, &cpu0, &zero2, &theta2, &infoRatesNew,
               &effStoppingNew, &futStoppingNew, &spendTimeNew,
               &lo, &hi, &mu0, &sigma2, &userBetaSpendingNew,
-              &futilityBoundsInt, &futilityCPInt, &futilityThetaInt, &probs, &v,
+              &futilityBoundsInt, &futilityCPInt, &futilityThetaInt, &probs,
               betaNew, k2, asf2, alphaNew, IL, MNew, rNew, corr_known,
               missingFutilityBoundsInt, bsfNew, parameterBetaSpendingNew, maxtheta]
     (double x)->double {
@@ -2951,7 +2949,7 @@ ListCpp adaptDesign_mams_cpp(
       // first obtain the efficacy bounds for the secondary trial
       if (asf2 == "of") {
         auto g = [&b2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2,
-                  &effStoppingNew, &probs, &v,
+                  &effStoppingNew, &probs,
                   k2, alphaNew, MNew, rNew, corr_known]
         (double aval)->double {
           double col_const = aval * sqrtIc[k2 - 1];
@@ -2969,8 +2967,8 @@ ListCpp adaptDesign_mams_cpp(
           }
 
           probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
-          v = probs.get<std::vector<double>>("exitProbUpper");
-          double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+          double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                                      probs.exitProbUpper.end(), 0.0);
           return p0 - alphaNew;
         };
 
@@ -2994,7 +2992,7 @@ ListCpp adaptDesign_mams_cpp(
         for (size_t i = 0; i < k2 - 1; ++i) critValues2[i] = 8.0;
         double denom = sqrtI2[k2 - 1];
 
-        auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs, &v,
+        auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs,
                   denom, k2, alphaNew, MNew, rNew, corr_known]
         (double aval)->double {
           double* colptr = b2.data_ptr() + (k2 - 1) * MNew;
@@ -3005,8 +3003,8 @@ ListCpp adaptDesign_mams_cpp(
           }
 
           probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
-          v = probs.get<std::vector<double>>("exitProbUpper");
-          double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+          double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                                      probs.exitProbUpper.end(), 0.0);
           return p0 - alphaNew;
         };
 
@@ -3022,7 +3020,7 @@ ListCpp adaptDesign_mams_cpp(
           if (!effStoppingNew[i]) continue;
           double denom = sqrtI2[i];
 
-          auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs, &v,
+          auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs,
                     denom, i, MNew, rNew, corr_known]
           (double aval)->double {
             double col_const = aval * sqrtIc[i];
@@ -3034,8 +3032,8 @@ ListCpp adaptDesign_mams_cpp(
             }
 
             probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, i + 1, b2, I2);
-            v = probs.get<std::vector<double>>("exitProbUpper");
-            double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+            double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                                        probs.exitProbUpper.end(), 0.0);
             return p0 - cpu0[i];
           };
 
@@ -3106,8 +3104,8 @@ ListCpp adaptDesign_mams_cpp(
         }
 
         probs = exitprob_mams_cpp(MNew, rNew, theta2, true, k2, b2, a2, I2);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double overallReject = std::accumulate(v.begin(), v.end(), 0.0);
+        double overallReject = std::accumulate(probs.exitProbUpper.begin(),
+                                               probs.exitProbUpper.end(), 0.0);
         return (1.0 - overallReject) - betaNew;
       } else {
         // initialize futility bound to be updated
@@ -3154,8 +3152,8 @@ ListCpp adaptDesign_mams_cpp(
                 if (a2(m, k) > b2(m, k)) a2(m, k) = b2(m, k);
               }
               probs = exitprob_mams_cpp(MNew, rNew, theta2, true, k + 1, b2, a2, I2);
-              v = probs.get<std::vector<double>>("exitProbLower");
-              double cpl = std::accumulate(v.begin(), v.end(), 0.0);
+              double cpl = std::accumulate(probs.exitProbLower.begin(),
+                                           probs.exitProbLower.end(), 0.0);
               return cpl - cb;
             };
 
@@ -3192,9 +3190,9 @@ ListCpp adaptDesign_mams_cpp(
 
   // compute conditional power of the secondary trial
   probs = exitprob_mams_cpp(MNew, rNew, theta2, true, k2, b2, a2, I2);
-  v = probs.get<std::vector<double>>("exitProbUpper");
   std::vector<double> cpu1(k2);
-  std::partial_sum(v.begin(), v.end(), cpu1.begin());
+  std::partial_sum(probs.exitProbUpper.begin(),
+                   probs.exitProbUpper.end(), cpu1.begin());
   double p2 = cpu1.back();
 
   std::vector<int> hypothesis2(MNew * k2);
@@ -3288,7 +3286,7 @@ ListCpp adaptDesign_mams_cpp(
     // conditional type I error
     std::vector<double> zero1(M1, 0.0);
     probs = exitprob_mams_cpp(M1, r, zero1, corr_known, k1, b1, I1);
-    v0 = probs.get<std::vector<double>>("exitProbUpper");
+    v0 = probs.exitProbUpper;
     double alphaNew = std::accumulate(v0.begin(), v0.end(), 0.0);
 
     std::vector<double> cpu0(k2);
@@ -3311,7 +3309,7 @@ ListCpp adaptDesign_mams_cpp(
 
     if (asf2 == "of") {
       auto g = [&b2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2,
-                &effStoppingNew, &probs, &v,
+                &effStoppingNew, &probs,
                 k2, alphaNew, M2, rNew, corr_known]
       (double aval)->double {
         double col_const = aval * sqrtIc[k2 - 1];
@@ -3328,8 +3326,8 @@ ListCpp adaptDesign_mams_cpp(
         }
 
         probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, b2, I2);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+        double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                                    probs.exitProbUpper.end(), 0.0);
         return p0 - alphaNew;
       };
 
@@ -3346,7 +3344,7 @@ ListCpp adaptDesign_mams_cpp(
       for (size_t i = 0; i < k2 - 1; ++i) critValues2[i] = 8.0;
       double denom = sqrtI2[k2 - 1];
 
-      auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs, &v,
+      auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs,
                 denom, k2, alphaNew, M2, rNew, corr_known]
       (double aval)->double {
         double col_const = aval * sqrtIc[k2 - 1];
@@ -3356,8 +3354,8 @@ ListCpp adaptDesign_mams_cpp(
         }
 
         probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, b2, I2);
-        v = probs.get<std::vector<double>>("exitProbUpper");
-        double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+        double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                                    probs.exitProbUpper.end(), 0.0);
         return p0 - alphaNew;
       };
 
@@ -3368,7 +3366,7 @@ ListCpp adaptDesign_mams_cpp(
         if (!effStoppingNew[i]) continue;
         double denom = sqrtI2[i];
 
-        auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs, &v,
+        auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs,
                   denom, i, M2, rNew, corr_known]
         (double aval)->double {
           double col_const = aval * sqrtIc[i];
@@ -3379,8 +3377,8 @@ ListCpp adaptDesign_mams_cpp(
           }
 
           probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, i+1, b2, I2);
-          v = probs.get<std::vector<double>>("exitProbUpper");
-          double p0 = std::accumulate(v.begin(), v.end(), 0.0);
+          double p0 = std::accumulate(probs.exitProbUpper.begin(),
+                                      probs.exitProbUpper.end(), 0.0);
           return p0 - cpu0[i];
         };
 
