@@ -1,6 +1,13 @@
 # Changelog
 
+## lrstat 0.3.3
+
+- used cache for exitprob to improve the efficiency of the function when
+  called repeatedly with the same parameters
+
 ## lrstat 0.3.2
+
+CRAN release: 2026-05-13
 
 - removed the pivoting step for pmvnormr and qmvnormr to take advantage
   of independent increment structure of score process

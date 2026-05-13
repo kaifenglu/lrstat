@@ -224,7 +224,7 @@ nbsamplesizeequiv(beta = 0.1, kMax = 2, informationRates = c(0.5, 1),
 #> Boundary for each 1-sided test (Z)     2.538   1.662  
 #> Cumulative rejection                   0.0000  0.9000 
 #> Cumulative alpha for each 1-sided test 0.0056  0.0500 
-#> Cumulative alpha attained under H10    0.0000  0.0500 
+#> Cumulative alpha attained under H10    -0.9928 -0.9500
 #> Cumulative alpha attained under H20    0.0000  0.0500 
 #> Number of events                       231.7   771.7  
 #> Number of dropouts                     111.6   368.9  
@@ -266,7 +266,7 @@ nbsamplesizeequiv(beta = 0.2, kMax = 2, informationRates = c(0.5, 1),
 #> Boundary for each 1-sided test (Z)     2.538   1.662  
 #> Cumulative rejection                   0.0000  0.8000 
 #> Cumulative alpha for each 1-sided test 0.0056  0.0500 
-#> Cumulative alpha attained under H10    0.0000  0.0500 
+#> Cumulative alpha attained under H10    -0.9469 -0.9500
 #> Cumulative alpha attained under H20    0.0000  0.0500 
 #> Number of events                       378.7   958.0  
 #> Number of dropouts                     0.0     0.0    
