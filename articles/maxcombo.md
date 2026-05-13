@@ -109,7 +109,7 @@ f <- function(u2, u1, sigma, alpha) {
   1 - pmvnormr(upper=c(u1, u2, u2), sigma=sigma) - alpha
 }
 (u2 = uniroot(f, c(1,3), u1, sigma, alpha)$root)
-#> [1] 2.137072
+#> [1] 2.137235
 ```
 
 The power can be estimated by plugging in the mean under the alternative
@@ -117,11 +117,11 @@ hypothesis.
 
 ``` r
 1 - pmvnormr(upper=c(u1, u2, u2), mean=mu, sigma=sigma)
-#> [1] 0.7243426
+#> [1] 0.7242135
 #> attr(,"method")
 #> [1] "qmc"
 #> attr(,"error")
-#> [1] 7.327734e-05
+#> [1] 4.412093e-05
 #> attr(,"nsamples")
 #> [1] 32768
 ```
@@ -162,7 +162,7 @@ w2max = pmax(-sim1$sumdata$logRankStatistic, -sim2$sumdata$logRankStatistic)
 w2max = subset(w2max, sim1$sumdata$stageNumber==2)
 
 mean((w1max > u1) | (w2max > u2))
-#> [1] 0.7255
+#> [1] 0.7253
 ```
 
 The analytic method yielded a power of about 72%, while the simulation

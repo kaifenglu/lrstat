@@ -67,7 +67,7 @@
             
             <h4 data-toc-skip class="date">12/15/2021</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/kaifenglu/lrstat/blob/copilot/optimize-performance-getdesign-mams/vignettes/maxcombo.Rmd" class="external-link"><code>vignettes/maxcombo.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/kaifenglu/lrstat/blob/main/vignettes/maxcombo.Rmd" class="external-link"><code>vignettes/maxcombo.Rmd</code></a></small>
       <div class="d-none name"><code>maxcombo.Rmd</code></div>
     </div>
 
@@ -180,16 +180,16 @@ weights.</p>
 <span>  <span class="fl">1</span> <span class="op">-</span> <span class="fu"><a href="../reference/pmvnormr.html">pmvnormr</a></span><span class="op">(</span>upper<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">u1</span>, <span class="va">u2</span>, <span class="va">u2</span><span class="op">)</span>, sigma<span class="op">=</span><span class="va">sigma</span><span class="op">)</span> <span class="op">-</span> <span class="va">alpha</span></span>
 <span><span class="op">}</span></span>
 <span><span class="op">(</span><span class="va">u2</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/uniroot.html" class="external-link">uniroot</a></span><span class="op">(</span><span class="va">f</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">3</span><span class="op">)</span>, <span class="va">u1</span>, <span class="va">sigma</span>, <span class="va">alpha</span><span class="op">)</span><span class="op">$</span><span class="va">root</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 2.137072</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 2.137235</span></span></code></pre></div>
 <p>The power can be estimated by plugging in the mean under the
 alternative hypothesis.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fl">1</span> <span class="op">-</span> <span class="fu"><a href="../reference/pmvnormr.html">pmvnormr</a></span><span class="op">(</span>upper<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">u1</span>, <span class="va">u2</span>, <span class="va">u2</span><span class="op">)</span>, mean<span class="op">=</span><span class="va">mu</span>, sigma<span class="op">=</span><span class="va">sigma</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.7243426</span></span>
+<span><span class="co">#&gt; [1] 0.7242135</span></span>
 <span><span class="co">#&gt; attr(,"method")</span></span>
 <span><span class="co">#&gt; [1] "qmc"</span></span>
 <span><span class="co">#&gt; attr(,"error")</span></span>
-<span><span class="co">#&gt; [1] 7.327734e-05</span></span>
+<span><span class="co">#&gt; [1] 4.412093e-05</span></span>
 <span><span class="co">#&gt; attr(,"nsamples")</span></span>
 <span><span class="co">#&gt; [1] 32768</span></span></code></pre></div>
 <p>For the simulation study, we use very large critical values for the
@@ -227,7 +227,7 @@ produce identical simulated data.</p>
 <span><span class="va">w2max</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">w2max</span>, <span class="va">sim1</span><span class="op">$</span><span class="va">sumdata</span><span class="op">$</span><span class="va">stageNumber</span><span class="op">==</span><span class="fl">2</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">w1max</span> <span class="op">&gt;</span> <span class="va">u1</span><span class="op">)</span> <span class="op">|</span> <span class="op">(</span><span class="va">w2max</span> <span class="op">&gt;</span> <span class="va">u2</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.7255</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.7253</span></span></code></pre></div>
 <p>The analytic method yielded a power of about 72%, while the
 simulation method yielded a power of about 73%, both are close to that
 reported by <span class="citation">Prior (2020)</span>.</p>

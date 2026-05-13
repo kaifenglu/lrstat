@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/kaifenglu/lrstat/blob/copilot/optimize-performance-getdesign-mams/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/kaifenglu/lrstat/blob/main/DESCRIPTION)
 
 Lu K (2026). *lrstat: Power and Sample Size Calculation for
 Non-Proportional Hazards and Beyond*. R package version 0.3.3,
