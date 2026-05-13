@@ -22,7 +22,114 @@
 using std::size_t;
 
 
-ListCpp exitprob_mams_cpp(
+// ---- Precomputed sigma context -------------------------------------------//
+//                                                                           //
+// Holds the sigma_full matrix and per-stage Cholesky factors computed from  //
+// (M, r, corr_known, Ivec).  Building this once per Brent invocation and    //
+// passing it to subsequent exitprob_mams_cpp calls avoids repeated O(J^3)   //
+// Cholesky factorisations across inner Brent steps.                         //
+struct ExitProbMAMSCache {
+  size_t M    = 0;
+  size_t kMax = 0;
+  double rho  = 0.0;
+
+  // sqrtI[k] = sqrt(Ivec[k]), k = 0..kMax-1
+  std::vector<double> sqrtI;
+
+  // Full M*kMax × M*kMax correlation matrix (used to slice sigma1/sigma2
+  // at each stage without rebuilding from scratch every call).
+  FlatMatrix sigma_full;
+
+  // chol1[k] = Cholesky of sigma1 for stage k+1 (size M*(k+1) × M*(k+1)).
+  // Element [k] is valid for k >= 1 (stage 2 and above), where sigma1 is
+  // not compound-symmetric.
+  std::vector<PMVNCholFactor> chol1; // length kMax
+
+  // chol2[k] = Cholesky of sigma2 for stage k+1, size M*k × M*k.
+  // Element [k] is valid for k >= 2 (stage 3 and above), where sigma2 is
+  // also not compound-symmetric.  For k == 1 (stage 2), sigma2 is M×M
+  // compound-symmetric and pmvnormcpp's 1-D path is used instead.
+  std::vector<PMVNCholFactor> chol2; // length kMax
+};
+
+// Build an ExitProbMAMSCache for the given (M, r, corr_known, kMax, Ivec).
+// Cost: paid once; amortised over all inner Brent calls that share (M, r,
+// corr_known, Ivec).  Only meaningful for the correlated path
+// (corr_known == true, M > 1, kMax > 1).
+static ExitProbMAMSCache make_exitprob_cache(
+    const size_t M,
+    const double r,
+    const bool corr_known,
+    const size_t kMax,
+    const std::vector<double>& Ivec) {
+
+  ExitProbMAMSCache cache;
+  cache.M    = M;
+  cache.kMax = kMax;
+  cache.rho  = corr_known ? r / (r + 1.0) : 0.0;
+
+  const double T = Ivec.back();
+  cache.sqrtI.resize(kMax);
+  for (size_t k = 0; k < kMax; ++k)
+    cache.sqrtI[k] = std::sqrt(Ivec[k]);
+
+  // Build the full M*kMax × M*kMax correlation matrix once.
+  const std::size_t fullN = M * kMax;
+  cache.sigma_full.resize(fullN, fullN);
+
+  std::vector<double> s(kMax);
+  for (size_t k = 0; k < kMax; ++k) s[k] = Ivec[k] / T;
+
+  for (size_t k2 = 0; k2 < kMax; ++k2) {
+    for (size_t k1 = 0; k1 < kMax; ++k1) {
+      const size_t km    = std::min(k1, k2);
+      const double val_d = s[km];
+      const double val_o = cache.rho * s[km];
+      const std::size_t row_base = k1 * M;
+      const std::size_t col_base = k2 * M;
+      for (size_t m2 = 0; m2 < M; ++m2) {
+        double* dst =
+          cache.sigma_full.data_ptr() + (col_base + m2) * fullN + row_base;
+        std::fill_n(dst, M, val_o);
+        dst[m2] = val_d;
+      }
+    }
+  }
+
+  // Precompute per-stage Cholesky factors.
+  cache.chol1.resize(kMax);
+  cache.chol2.resize(kMax);
+  FlatMatrix sigma1, sigma2;
+
+  for (size_t k = 2; k <= kMax; ++k) {
+    // Slice sigma1 = top-left M*k × M*k block of sigma_full.
+    const size_t nk = M * k;
+    sigma1.resize(nk, nk);
+    for (std::size_t j = 0; j < nk; ++j) {
+      const double* src = cache.sigma_full.data_ptr() + j * fullN;
+      double*       dst = sigma1.data_ptr()           + j * nk;
+      std::memcpy(dst, src, nk * sizeof(double));
+    }
+    cache.chol1[k - 1] = precompute_chol(sigma1);
+
+    if (k > 2) {
+      // Slice sigma2 = top-left M*(k-1) × M*(k-1) block of sigma1.
+      const size_t nk2 = (k - 1) * M;
+      sigma2.resize(nk2, nk2);
+      for (std::size_t j = 0; j < nk2; ++j) {
+        const double* src = sigma1.data_ptr() + j * nk;
+        double*       dst = sigma2.data_ptr() + j * nk2;
+        std::memcpy(dst, src, nk2 * sizeof(double));
+      }
+      cache.chol2[k - 1] = precompute_chol(sigma2);
+    }
+  }
+
+  return cache;
+}
+
+
+static ListCpp exitprob_mams_impl(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -30,7 +137,8 @@ ListCpp exitprob_mams_cpp(
     const size_t kMax,
     const FlatMatrix& b,
     const FlatMatrix& a,
-    const std::vector<double>& I) {
+    const std::vector<double>& I,
+    const ExitProbMAMSCache* cache = nullptr) {
 
   if (M < 1) throw std::invalid_argument("M should be at least 1");
   if (r <= 0.0) throw std::invalid_argument("r should be positive");
@@ -93,6 +201,25 @@ ListCpp exitprob_mams_cpp(
         size_t idx = k * M + m;
         upper[idx] = b(m, k) - theta[m] * sqrtI[k];
         if (a(m, k) > -8.0) lower[idx] = a(m, k) - theta[m] * sqrtI[k];
+      }
+    }
+
+    // Detect when every stage has identical bounds across all arms.
+    // This holds when theta is uniform across arms and b/a is filled uniformly
+    // per stage (e.g. H0 calls from getBound_mams_cpp).  When true, all M
+    // per-arm exitprobcpp() products are equal, so we compute once and raise
+    // to the power M — reducing M exits to 1 per Gray-code iteration.
+    bool uniform_arms = (M > 1);
+    if (uniform_arms) {
+      for (size_t k = 0; k < kMax && uniform_arms; ++k) {
+        const double ref_u = upper[k * M];
+        const double ref_l = lower[k * M];
+        for (size_t m = 1; m < M; ++m) {
+          if (upper[k * M + m] != ref_u || lower[k * M + m] != ref_l) {
+            uniform_arms = false;
+            break;
+          }
+        }
       }
     }
 
@@ -160,30 +287,66 @@ ListCpp exitprob_mams_cpp(
           sign = -sign;
         }
 
-        double pupper1 = 1.0, pupper2 = 1.0, plower = 1.0;
-        for (size_t m = 0; m < M; ++m) {
+        double pupper1, pupper2, plower;
+        if (uniform_arms) {
+          // All M arms share identical bounds at every stage.
+          // Compute survival for arm 0 only, then raise to the power M.
+          double s_upper1 = 1.0, s_upper2 = 1.0, s_lower = 1.0;
+
           if (k > 1) {
-            for(size_t j = 0; j + 1 < k; ++j) {
-              upper2[j] = c[j * M + m];
+            for (size_t j = 0; j + 1 < k; ++j) {
+              upper2[j] = c[j * M]; // arm 0; identical for all arms
               if (upper2[j] < -8.0) upper2[j] = -8.0;
             }
             probs = exitprobcpp(upper2, lo, zero, Ivec);
             v = probs.get<std::vector<double>>("exitProbUpper");
-            pupper1 *= (1.0 - std::accumulate(v.begin(), v.end(), 0.0));
+            s_upper1 = 1.0 - std::accumulate(v.begin(), v.end(), 0.0);
             std::memcpy(upper1a.data(), upper2.data(), (k - 1) * sizeof(double));
           }
 
-          upper1a[k - 1] = upper1[(k - 1) * M + m];
+          upper1a[k - 1] = upper1[(k - 1) * M]; // arm 0; identical for all arms
           if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
           probs = exitprobcpp(upper1a, lo, zero, Ivec);
           v = probs.get<std::vector<double>>("exitProbUpper");
-          pupper2 *= (1.0 - std::accumulate(v.begin(), v.end(), 0.0));
+          s_upper2 = 1.0 - std::accumulate(v.begin(), v.end(), 0.0);
 
-          upper1a[k - 1] = lower1[(k - 1) * M + m];
+          upper1a[k - 1] = lower1[(k - 1) * M]; // arm 0; identical for all arms
           if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
           probs = exitprobcpp(upper1a, lo, zero, Ivec);
           v = probs.get<std::vector<double>>("exitProbUpper");
-          plower *= (1.0 - std::accumulate(v.begin(), v.end(), 0.0));
+          s_lower = 1.0 - std::accumulate(v.begin(), v.end(), 0.0);
+
+          const double pm = static_cast<double>(M);
+          pupper1 = std::pow(s_upper1, pm);
+          pupper2 = std::pow(s_upper2, pm);
+          plower  = std::pow(s_lower,  pm);
+        } else {
+          // General case: per-arm products
+          pupper1 = 1.0; pupper2 = 1.0; plower = 1.0;
+          for (size_t m = 0; m < M; ++m) {
+            if (k > 1) {
+              for (size_t j = 0; j + 1 < k; ++j) {
+                upper2[j] = c[j * M + m];
+                if (upper2[j] < -8.0) upper2[j] = -8.0;
+              }
+              probs = exitprobcpp(upper2, lo, zero, Ivec);
+              v = probs.get<std::vector<double>>("exitProbUpper");
+              pupper1 *= (1.0 - std::accumulate(v.begin(), v.end(), 0.0));
+              std::memcpy(upper1a.data(), upper2.data(), (k - 1) * sizeof(double));
+            }
+
+            upper1a[k - 1] = upper1[(k - 1) * M + m];
+            if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
+            probs = exitprobcpp(upper1a, lo, zero, Ivec);
+            v = probs.get<std::vector<double>>("exitProbUpper");
+            pupper2 *= (1.0 - std::accumulate(v.begin(), v.end(), 0.0));
+
+            upper1a[k - 1] = lower1[(k - 1) * M + m];
+            if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
+            probs = exitprobcpp(upper1a, lo, zero, Ivec);
+            v = probs.get<std::vector<double>>("exitProbUpper");
+            plower *= (1.0 - std::accumulate(v.begin(), v.end(), 0.0));
+          }
         }
 
         if (k > 1) vupper1 += sign * pupper1;
@@ -251,27 +414,37 @@ ListCpp exitprob_mams_cpp(
 
     std::vector<double> zero(fullN, 0.0);
 
-    // covariance matrix for scaled Brownian motion
-    FlatMatrix sigma(fullN, fullN);
+    // If a precomputed cache is supplied, sigma_full is already
+    // built.  Otherwise build it now (same cost as before).
+    FlatMatrix sigma_owned;       // only populated when cache == nullptr
+    const FlatMatrix* psigma;    // always points at the usable sigma_full
+    std::size_t fullN_src;       // column stride for psigma (may differ from fullN)
 
-    for (size_t k2 = 0; k2 < kMax; ++k2) {
-      for (size_t k1 = 0; k1 < kMax; ++k1) {
-        size_t k = std::min(k1, k2);
-        double val_off = rho * s[k];    // value for off-diagonal (m1 != m2)
-        double val_diag = s[k];         // diagonal (m1 == m2)
-        // block row base and block col base:
-        std::size_t row_base = k1 * M;
-        std::size_t col_base = k2 * M;
-        // for each column (m2) inside the MxM block, fill contiguous column segment:
-        for (size_t m2 = 0; m2 < M; ++m2) {
-          // pointer to start of the column (col_index) at row row_base
-          double* dst_col = sigma.data_ptr() + (col_base + m2) * fullN + row_base;
-          // fill M entries in that column with off-diagonal value
-          std::fill_n(dst_col, M, val_off);
-          // overwrite the diagonal element (at offset m2 inside this block)
-          dst_col[m2] = val_diag;
+    if (cache) {
+      // Borrow sigma_full from the cache.  Its stride equals M * cache->kMax
+      // which may exceed fullN when kMax_call < cache->kMax.
+      psigma    = &cache->sigma_full;
+      fullN_src = cache->M * cache->kMax;
+    } else {
+      // Build sigma_full (covariance matrix for scaled Brownian motion).
+      sigma_owned.resize(fullN, fullN);
+      for (size_t k2 = 0; k2 < kMax; ++k2) {
+        for (size_t k1 = 0; k1 < kMax; ++k1) {
+          size_t k = std::min(k1, k2);
+          double val_off = rho * s[k];   // value for off-diagonal (m1 != m2)
+          double val_diag = s[k];        // diagonal (m1 == m2)
+          std::size_t row_base = k1 * M;
+          std::size_t col_base = k2 * M;
+          for (size_t m2 = 0; m2 < M; ++m2) {
+            double* dst_col =
+              sigma_owned.data_ptr() + (col_base + m2) * fullN + row_base;
+            std::fill_n(dst_col, M, val_off);
+            dst_col[m2] = val_diag;
+          }
         }
       }
+      psigma    = &sigma_owned;
+      fullN_src = fullN;
     }
 
 
@@ -287,11 +460,13 @@ ListCpp exitprob_mams_cpp(
       std::memcpy(zero1.data(), zero.data(), nk * sizeof(double));
       std::fill_n(lower1m.data(), nk, -8.0);
 
-      sigma1.resize(nk, nk);               // reuses capacity if already large enough
-      // copy top-left into sigma1 (column-major): one memcpy per column
+      // Slice sigma1 from psigma (top-left nk × nk block).
+      // Use fullN_src as the column stride so the cache case works when
+      // kMax_call < cache->kMax.
+      sigma1.resize(nk, nk);
       for (std::size_t j = 0; j < nk; ++j) {
-        const double* src = sigma.data_ptr() + j * fullN; // start of col c in sigma
-        double* dst = sigma1.data_ptr() + j * nk;         // start of col c in sigma1
+        const double* src = psigma->data_ptr() + j * fullN_src;
+        double*       dst = sigma1.data_ptr()  + j * nk;
         std::memcpy(dst, src, nk * sizeof(double));
       }
 
@@ -302,28 +477,59 @@ ListCpp exitprob_mams_cpp(
         std::memcpy(zero2.data(), zero1.data(), nk2 * sizeof(double));
 
         sigma2.resize(nk2, nk2);
-        // copy top-left into sigma2 (column-major): one memcpy per column
         for (std::size_t j = 0; j < nk2; ++j) {
           const double* src = sigma1.data_ptr() + j * nk;
-          double* dst = sigma2.data_ptr() + j * nk2;
+          double*       dst = sigma2.data_ptr() + j * nk2;
           std::memcpy(dst, src, nk2 * sizeof(double));
+        }
+      }
+
+      // Precompute per-stage Cholesky factors for sigma1 and sigma2,
+      // outside the Gray-code loop so each factorisation happens at most once
+      // per stage rather than once per Gray-code iteration.
+      //
+      //   k == 1: sigma1 is M×M compound-symmetric → pmvnormcpp's 1-D path
+      //           is faster; skip Cholesky for sigma1.
+      //   k == 2: sigma2 is M×M compound-symmetric → keep pmvnormcpp for sigma2.
+      //   k > 1:  sigma1 is not compound-symmetric → always factorise.
+      //   k > 2:  sigma2 is not compound-symmetric → always factorise.
+      //
+      // If a cache was supplied the factorisations are already done;
+      // just borrow the stored results.
+      const bool use_chol1 = (k > 1);
+      const bool use_chol2 = (k > 2);
+      PMVNCholFactor chol1_local, chol2_local;
+      const PMVNCholFactor* pchol1 = nullptr;
+      const PMVNCholFactor* pchol2 = nullptr;
+
+      if (use_chol1) {
+        if (cache) {
+          pchol1 = &cache->chol1[k - 1];
+        } else {
+          chol1_local = precompute_chol(sigma1);
+          pchol1 = &chol1_local;
+        }
+      }
+      if (use_chol2) {
+        if (cache) {
+          pchol2 = &cache->chol2[k - 1];
+        } else {
+          chol2_local = precompute_chol(sigma2);
+          pchol2 = &chol2_local;
         }
       }
 
       // --- start of signed sums using Gray code ---
 
-      // working buffer (contiguous), initialized to b for first k - 1 looks
       c.resize(nk);
       if (k > 1) std::memcpy(c.data(), upper1.data(), nk2 * sizeof(double));
 
-      // collect active indices among 0..k-2 where a[i] != -8
-      std::vector<std::size_t> active;
+      std::vector<std::size_t> active; // collect active indices among 0..k-2
       for (std::size_t i = 0; i + 1 < k; ++i) {
         if (a(0, i) == -8.0) {
           // forced to b[i] (already set)
         } else {
-          active.push_back(i);
-          // initialize to a[i] for starting gray == 0 (all a)
+          active.push_back(i); // initialize to a[i] for starting gray == 0
           size_t j = i * M; // start of the block for index i
           std::memcpy(c.data() + j, lower1.data() + j, M * sizeof(double));
         }
@@ -333,8 +539,7 @@ ListCpp exitprob_mams_cpp(
       const std::uint64_t totalComb = (m == 0) ? 1ULL : (1ULL << m);
       double vupper1 = 0.0, vupper2 = 0.0, vlower = 0.0;
 
-      // initial sign: choose a for every active index, each contributes -1 => (-1)^m
-      double sign = ( (m % 2) ? -1.0 : 1.0 );
+      double sign = ( (m % 2) ? -1.0 : 1.0 ); // initial sign: (-1)^m
 
       std::uint64_t prevGray = 0;
       for (std::uint64_t i = 0; i < totalComb; ++i) {
@@ -352,8 +557,7 @@ ListCpp exitprob_mams_cpp(
           } else { // copy a[idx] into c
             std::memcpy(c.data() + j, lower1.data() + j, M * sizeof(double));
           }
-          // flip sign when one factor toggles between -1 and +1
-          sign = -sign;
+          sign = -sign; // flip sign when one factor toggles between -1 and +1
         }
 
         if (k > 1) {
@@ -361,27 +565,48 @@ ListCpp exitprob_mams_cpp(
           for (size_t j = 0; j < nk2; ++j) {
             if (upper2[j] < -8.0) upper2[j] = -8.0;
           }
-          auto rupper1 = pmvnormcpp(lower2, upper2, zero2, sigma2,
-                                    1024, 16384, 8, 1e-4, 0.0, 314159, true);
-          vupper1 += sign * rupper1.prob;
+          // use cached Cholesky for sigma2 when available (k > 2);
+          // fall back to pmvnormcpp for the compound-symmetric k==2 case.
+          double p1;
+          if (use_chol2) {
+            p1 = pmvnorm_with_chol(*pchol2, lower2, upper2, zero2,
+                                   1024, 16384, 8, 1e-4, 0.0, 314159, true).prob;
+          } else {
+            p1 = pmvnormcpp(lower2, upper2, zero2, sigma2,
+                            1024, 16384, 8, 1e-4, 0.0, 314159, true).prob;
+          }
+          vupper1 += sign * p1;
         }
 
         std::memcpy(c.data() + nk2, upper1.data() + nk2, M * sizeof(double));
         for (size_t j = 0; j < M; ++j) {
           if (c[nk2 + j] < -8.0) c[nk2 + j] = -8.0;
         }
-        auto rupper2 = pmvnormcpp(lower1m, c, zero1, sigma1,
-                                  1024, 16384, 8, 1e-4, 0.0, 314159, true);
-        vupper2 += sign * rupper2.prob;
+        // use cached Cholesky for sigma1 when available (k > 1);
+        // fall back to pmvnormcpp for the compound-symmetric k==1 case.
+        double p2;
+        if (use_chol1) {
+          p2 = pmvnorm_with_chol(*pchol1, lower1m, c, zero1,
+                                 1024, 16384, 8, 1e-4, 0.0, 314159, true).prob;
+        } else {
+          p2 = pmvnormcpp(lower1m, c, zero1, sigma1,
+                          1024, 16384, 8, 1e-4, 0.0, 314159, true).prob;
+        }
+        vupper2 += sign * p2;
 
         std::memcpy(c.data() + nk2, lower1.data() + nk2, M * sizeof(double));
         for (size_t j = 0; j < M; ++j) {
           if (c[nk2 + j] < -8.0) c[nk2 + j] = -8.0;
         }
-
-        auto rlower = pmvnormcpp(lower1m, c, zero1, sigma1,
-                                 1024, 16384, 8, 1e-4, 0.0, 314159, true);
-        vlower += sign * rlower.prob;
+        double p3;
+        if (use_chol1) {
+          p3 = pmvnorm_with_chol(*pchol1, lower1m, c, zero1,
+                                 1024, 16384, 8, 1e-4, 0.0, 314159, true).prob;
+        } else {
+          p3 = pmvnormcpp(lower1m, c, zero1, sigma1,
+                          1024, 16384, 8, 1e-4, 0.0, 314159, true).prob;
+        }
+        vlower += sign * p3;
 
         prevGray = gray;
       }
@@ -399,6 +624,37 @@ ListCpp exitprob_mams_cpp(
   return exitProb;
 }
 
+// Public 8-param overload matching the header declaration.
+// This is the function visible to other translation units.  Internal callers
+// that want to supply a precomputed cache use exitprob_mams_impl() directly.
+ListCpp exitprob_mams_cpp(
+    const size_t M,
+    const double r,
+    const std::vector<double>& theta,
+    const bool corr_known,
+    const size_t kMax,
+    const FlatMatrix& b,
+    const FlatMatrix& a,
+    const std::vector<double>& I) {
+  return exitprob_mams_impl(M, r, theta, corr_known, kMax, b, a, I, nullptr);
+}
+
+// overload with default a matrix of -8.0
+static ListCpp exitprob_mams_impl(
+    const size_t M,
+    const double r,
+    const std::vector<double>& theta,
+    const bool corr_known,
+    const size_t kMax,
+    const FlatMatrix& b,
+    const std::vector<double>& I,
+    const ExitProbMAMSCache* cache) {
+  if (!none_na(b.data)) throw std::invalid_argument("b must be provided");
+  double bmin = *std::min_element(b.data_ptr(), b.data_ptr() + b.nrow * b.ncol);
+  double amin = std::min(-8.0, bmin);
+  FlatMatrix a(M, kMax); a.fill(amin);
+  return exitprob_mams_impl(M, r, theta, corr_known, kMax, b, a, I, cache);
+}
 
 // overload with default a matrix of -8.0
 ListCpp exitprob_mams_cpp(
@@ -413,7 +669,7 @@ ListCpp exitprob_mams_cpp(
   double bmin = *std::min_element(b.data_ptr(), b.data_ptr() + b.nrow * b.ncol);
   double amin = std::min(-8.0, bmin);
   FlatMatrix a(M, kMax); a.fill(amin);
-  return exitprob_mams_cpp(M, r, theta, corr_known, kMax, b, a, I);
+  return exitprob_mams_impl(M, r, theta, corr_known, kMax, b, a, I, nullptr);
 }
 
 
@@ -685,11 +941,22 @@ std::vector<double> getBound_mams_cpp(
   ListCpp probs;
   std::vector<double> v;
 
+  // Precompute sigma and per-stage Cholesky factors once for the full
+  // (M, r, corr_known, infoRates) tuple.  All exitprob_mams_cpp calls within
+  // this function share the same infoRates, so a single cache built here is
+  // valid for every inner Brent step — avoiding O(J^3) refactorisations.
+  ExitProbMAMSCache mams_cache;
+  const bool use_mams_cache = (corr_known && M > 1 && kMax > 1);
+  if (use_mams_cache)
+    mams_cache = make_exitprob_cache(M, r, corr_known, kMax, infoRates);
+  const ExitProbMAMSCache* pcache = use_mams_cache ? &mams_cache : nullptr;
+
   if (asf == "none") {
     double* colptr = b.data_ptr() + (kMax - 1) * M;
     auto f = [&](double x)->double {
       std::fill_n(colptr, M, x);
-      probs = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
+      probs = exitprob_mams_impl(M, r, zero, corr_known, kMax, b, infoRates,
+                                 pcache);
       v = probs.get<std::vector<double>>("exitProbUpper");
       double cpu = std::accumulate(v.begin(), v.end(), 0.0);
       return cpu - alpha;
@@ -718,7 +985,8 @@ std::vector<double> getBound_mams_cpp(
         std::fill_n(b.data_ptr() + i * M, M, val); // contiguous write of M doubles
       }
 
-      probs = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
+      probs = exitprob_mams_impl(M, r, zero, corr_known, kMax, b, infoRates,
+                                 pcache);
       v = probs.get<std::vector<double>>("exitProbUpper");
       double cpu = std::accumulate(v.begin(), v.end(), 0.0);
       return cpu - alpha;
@@ -771,7 +1039,8 @@ std::vector<double> getBound_mams_cpp(
       auto f = [&](double x)->double {
         // set the last column to the current candidate critical value
         std::fill_n(last_col, M, x);  // fill last column fast
-        probs = exitprob_mams_cpp(M, r, zero, corr_known, k1 + 1, b, infoRates);
+        probs = exitprob_mams_impl(M, r, zero, corr_known, k1 + 1, b, infoRates,
+                                   pcache);
         v = probs.get<std::vector<double>>("exitProbUpper");
         double cpu = std::accumulate(v.begin(), v.end(), 0.0);
         return cpu - cumAlpha;
@@ -936,6 +1205,15 @@ ListCpp getPower_mams(
   ListCpp probs;
   std::vector<double> v;
   std::vector<double> futBounds(kMax);
+
+  // I2 is fixed for the entire getPower_mams call.  Precompute sigma
+  // and per-stage Cholesky factors once; reuse across all inner Brent steps.
+  ExitProbMAMSCache pm_cache;
+  const bool use_pm_cache = (M > 1 && kMax > 1);
+  if (use_pm_cache)
+    pm_cache = make_exitprob_cache(M, r, true, kMax, I2);
+  const ExitProbMAMSCache* pm_pcache = use_pm_cache ? &pm_cache : nullptr;
+
   auto f = [&](double x) -> double {
     // reset futility bounds
     std::fill(futBounds.begin(), futBounds.end(), -8.0);
@@ -977,7 +1255,8 @@ ListCpp getPower_mams(
             a(m, k) = (aval * sqrtI[k] - zscaled[m]) / sqrtI2[k];
             if (a(m, k) > b(m, k)) a(m, k) = b(m, k);
           }
-          probs = exitprob_mams_cpp(M, r, theta, true, k + 1, b, a, I2);
+          probs = exitprob_mams_impl(M, r, theta, true, k + 1, b, a, I2,
+                                     pm_pcache);
           v = probs.get<std::vector<double>>("exitProbLower");
           double cpl = std::accumulate(v.begin(), v.end(), 0.0);
           return cpl - cb;
@@ -1024,7 +1303,7 @@ ListCpp getPower_mams(
     futBounds[kMax-1] = critValues[kMax-1];
     std::memcpy(a.data_ptr() + (kMax - 1) * M, b.data_ptr() + (kMax - 1) * M,
                 M * sizeof(double));
-    probs = exitprob_mams_cpp(M, r, theta, true, kMax, b, a, I2);
+    probs = exitprob_mams_impl(M, r, theta, true, kMax, b, a, I2, pm_pcache);
   }
 
   ListCpp result;
@@ -1384,12 +1663,25 @@ ListCpp getDesign_mams_cpp(
     std::vector<double> mu0(M);
     std::vector<double> lo(M, -8.0), hi(M, critValues[0]);
 
+    // Cache is rebuilt per outer Brent step (information changes
+    // each iteration) and reused for all inner g calls in that step.
+    ExitProbMAMSCache iter_cache;
+    bool iter_cache_built = false;
+
     auto f = [&](double x)->double {
       double maxInformation = sq(x / maxtheta);
       for (size_t i = 0; i < kMax; ++i) {
         information[i] = infoRates[i] * maxInformation;
       }
       double sqrtI0 = std::sqrt(information[0]);
+
+      // Rebuild per-outer-iteration cache (information just changed).
+      if (M > 1 && kMax > 1) {
+        iter_cache = make_exitprob_cache(M, r, true, kMax, information);
+        iter_cache_built = true;
+      }
+      const ExitProbMAMSCache* pi_pcache =
+        iter_cache_built ? &iter_cache : nullptr;
 
       // compute stagewise exit probabilities
       if (!missingFutilityBounds || bsf == "none" || kMax == 1) {
@@ -1406,7 +1698,8 @@ ListCpp getDesign_mams_cpp(
           std::fill_n(a.data_ptr() + i * M, M, futBounds[i]);
         }
 
-        probs = exitprob_mams_cpp(M, r, theta, true, kMax, b, a, information);
+        probs = exitprob_mams_impl(M, r, theta, true, kMax, b, a, information,
+                                   pi_pcache);
         v = probs.get<std::vector<double>>("exitProbUpper");
         double overallReject = std::accumulate(v.begin(), v.end(), 0.0);
         return (1.0 - overallReject) - beta;
@@ -1443,7 +1736,8 @@ ListCpp getDesign_mams_cpp(
             // lambda expression for finding futility bound at stage k
             auto g = [&](double aval)->double {
               std::fill_n(a.data_ptr() + k * M, M, aval);
-              probs = exitprob_mams_cpp(M, r, theta, true, k + 1, b, a, information);
+              probs = exitprob_mams_impl(M, r, theta, true, k + 1, b, a,
+                                         information, pi_pcache);
               v = probs.get<std::vector<double>>("exitProbLower");
               double cpl = std::accumulate(v.begin(), v.end(), 0.0);
               return cpl - cb;
@@ -1477,7 +1771,9 @@ ListCpp getDesign_mams_cpp(
     IMax1 = sq(drift / maxtheta);
     futBounds[kMax-1] = critValues[kMax-1];
     std::fill_n(a.data_ptr() + (kMax - 1) * M, M, futBounds[kMax - 1]);
-    probs = exitprob_mams_cpp(M, r, theta, true, kMax, b, a, information);
+    // After Brent, iter_cache holds the cache for the converged information.
+    probs = exitprob_mams_impl(M, r, theta, true, kMax, b, a, information,
+                               iter_cache_built ? &iter_cache : nullptr);
   } else {
     for (size_t i = 0; i < kMax; ++i) information[i] = infoRates[i] * IMax1;
 
