@@ -165,7 +165,7 @@ struct ExitProbCppResult {
   std::vector<double> exitProbLower;
 };
 
-static ExitProbCppResult exitprobcpp_impl(
+ExitProbCppResult exitprobcpp_impl(
     const std::vector<double>& b,
     const std::vector<double>& a,
     const std::vector<double>& theta,
