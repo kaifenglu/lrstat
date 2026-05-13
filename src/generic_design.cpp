@@ -158,7 +158,14 @@ std::vector<double> errorSpent(
 }
 
 
-ListCpp exitprobcpp(
+namespace {
+
+struct ExitProbCppResult {
+  std::vector<double> exitProbUpper;
+  std::vector<double> exitProbLower;
+};
+
+static ExitProbCppResult exitprobcpp_impl(
     const std::vector<double>& b,
     const std::vector<double>& a,
     const std::vector<double>& theta,
@@ -368,11 +375,45 @@ ListCpp exitprobcpp(
     }
   }
 
-  // return a list of stagewise exit probabilities
+  return ExitProbCppResult{
+      std::move(exitProbUpper),
+      std::move(exitProbLower)
+  };
+}
+
+} // namespace
+
+
+ListCpp exitprobcpp(
+    const std::vector<double>& b,
+    const std::vector<double>& a,
+    const std::vector<double>& theta,
+    const std::vector<double>& I) {
+
+  auto probs = exitprobcpp_impl(b, a, theta, I);
   ListCpp exitProb;
-  exitProb.push_back(std::move(exitProbUpper), "exitProbUpper");
-  exitProb.push_back(std::move(exitProbLower), "exitProbLower");
+  exitProb.push_back(std::move(probs.exitProbUpper), "exitProbUpper");
+  exitProb.push_back(std::move(probs.exitProbLower), "exitProbLower");
   return exitProb;
+}
+
+
+double exitprobcpp_cum_upper(
+    const std::vector<double>& b,
+    const std::vector<double>& a,
+    const std::vector<double>& theta,
+    const std::vector<double>& I) {
+  auto probs = exitprobcpp_impl(b, a, theta, I);
+  return std::accumulate(probs.exitProbUpper.begin(), probs.exitProbUpper.end(), 0.0);
+}
+
+
+double exitprobcpp_survival_upper(
+    const std::vector<double>& b,
+    const std::vector<double>& a,
+    const std::vector<double>& theta,
+    const std::vector<double>& I) {
+  return 1.0 - exitprobcpp_cum_upper(b, a, theta, I);
 }
 
 
@@ -452,11 +493,7 @@ double f_pvalue(const double theta,
   std::vector<double> lower(L, -8.0);
   std::vector<double> mu(L, theta);
 
-  ListCpp probs = exitprobcpp(upper, lower, mu, I);
-  auto exitUpper = probs.get<std::vector<double>>("exitProbUpper");
-  double sum_up = std::accumulate(exitUpper.begin(), exitUpper.end(), 0.0);
-
-  return sum_up;
+  return exitprobcpp_cum_upper(upper, lower, mu, I);
 }
 
 
@@ -3535,4 +3572,3 @@ Rcpp::List adaptDesign(
   result.attr("class") = "adaptDesign";
   return result;
 }
-

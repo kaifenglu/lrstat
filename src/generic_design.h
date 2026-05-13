@@ -26,6 +26,18 @@ ListCpp exitprobcpp(
     const std::vector<double>& theta,
     const std::vector<double>& I);
 
+double exitprobcpp_cum_upper(
+    const std::vector<double>& b,
+    const std::vector<double>& a,
+    const std::vector<double>& theta,
+    const std::vector<double>& I);
+
+double exitprobcpp_survival_upper(
+    const std::vector<double>& b,
+    const std::vector<double>& a,
+    const std::vector<double>& theta,
+    const std::vector<double>& I);
+
 double f_pvalue(
     const double theta,
     const size_t L,

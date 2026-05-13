@@ -223,8 +223,6 @@ static ListCpp exitprob_mams_impl(
       }
     }
 
-    ListCpp probs;
-    std::vector<double> v;
     std::vector<double> upper1, lower1, c;
     std::vector<double> upper1a, upper2;
     std::vector<double> lo(kMax, -8.0);
@@ -298,23 +296,17 @@ static ListCpp exitprob_mams_impl(
               upper2[j] = c[j * M]; // arm 0; identical for all arms
               if (upper2[j] < -8.0) upper2[j] = -8.0;
             }
-            probs = exitprobcpp(upper2, lo, zero, Ivec);
-            v = probs.get<std::vector<double>>("exitProbUpper");
-            s_upper1 = 1.0 - std::accumulate(v.begin(), v.end(), 0.0);
+            s_upper1 = exitprobcpp_survival_upper(upper2, lo, zero, Ivec);
             std::memcpy(upper1a.data(), upper2.data(), (k - 1) * sizeof(double));
           }
 
           upper1a[k - 1] = upper1[(k - 1) * M]; // arm 0; identical for all arms
           if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
-          probs = exitprobcpp(upper1a, lo, zero, Ivec);
-          v = probs.get<std::vector<double>>("exitProbUpper");
-          s_upper2 = 1.0 - std::accumulate(v.begin(), v.end(), 0.0);
+          s_upper2 = exitprobcpp_survival_upper(upper1a, lo, zero, Ivec);
 
           upper1a[k - 1] = lower1[(k - 1) * M]; // arm 0; identical for all arms
           if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
-          probs = exitprobcpp(upper1a, lo, zero, Ivec);
-          v = probs.get<std::vector<double>>("exitProbUpper");
-          s_lower = 1.0 - std::accumulate(v.begin(), v.end(), 0.0);
+          s_lower = exitprobcpp_survival_upper(upper1a, lo, zero, Ivec);
 
           const double pm = static_cast<double>(M);
           pupper1 = std::pow(s_upper1, pm);
@@ -329,23 +321,17 @@ static ListCpp exitprob_mams_impl(
                 upper2[j] = c[j * M + m];
                 if (upper2[j] < -8.0) upper2[j] = -8.0;
               }
-              probs = exitprobcpp(upper2, lo, zero, Ivec);
-              v = probs.get<std::vector<double>>("exitProbUpper");
-              pupper1 *= (1.0 - std::accumulate(v.begin(), v.end(), 0.0));
+              pupper1 *= exitprobcpp_survival_upper(upper2, lo, zero, Ivec);
               std::memcpy(upper1a.data(), upper2.data(), (k - 1) * sizeof(double));
             }
 
             upper1a[k - 1] = upper1[(k - 1) * M + m];
             if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
-            probs = exitprobcpp(upper1a, lo, zero, Ivec);
-            v = probs.get<std::vector<double>>("exitProbUpper");
-            pupper2 *= (1.0 - std::accumulate(v.begin(), v.end(), 0.0));
+            pupper2 *= exitprobcpp_survival_upper(upper1a, lo, zero, Ivec);
 
             upper1a[k - 1] = lower1[(k - 1) * M + m];
             if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
-            probs = exitprobcpp(upper1a, lo, zero, Ivec);
-            v = probs.get<std::vector<double>>("exitProbUpper");
-            plower *= (1.0 - std::accumulate(v.begin(), v.end(), 0.0));
+            plower *= exitprobcpp_survival_upper(upper1a, lo, zero, Ivec);
           }
         }
 
@@ -1255,8 +1241,9 @@ ListCpp getPower_mams(
           }
           probs = exitprob_mams_impl(M, r, theta, true, k + 1, b, a, I2,
                                      pm_pcache);
-          v = probs.get<std::vector<double>>("exitProbLower");
-          double cpl = std::accumulate(v.begin(), v.end(), 0.0);
+          const auto& exitProbLower =
+            probs.get<std::vector<double>>("exitProbLower");
+          double cpl = std::accumulate(exitProbLower.begin(), exitProbLower.end(), 0.0);
           return cpl - cb;
         };
 
@@ -3817,4 +3804,3 @@ Rcpp::List adaptDesign_mams(
   result.attr("class") = "adaptDesign_mams";
   return result;
 }
-
