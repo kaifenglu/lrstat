@@ -428,6 +428,65 @@ bool is_compound_symmetry(const FlatMatrix& sigma) {
   return true;
 }
 
+// ---- precompute_chol: Cholesky/LDL^T factor only (no bounds) ------------//
+// Extracted from precompute_pmvn: the sigma-dependent portion only.
+// Allows callers to pay the O(J^3) factorisation cost exactly once and
+// reuse it across all Brent iterations that keep sigma fixed.
+PMVNCholFactor precompute_chol(const FlatMatrix& sigma) {
+  size_t J = sigma.nrow;
+  if (sigma.ncol != J)
+    throw std::invalid_argument("sigma must be square");
+
+  FlatMatrix sigma_copy = sigma; // cholesky2 modifies in-place
+  int rank = cholesky2(sigma_copy, J, 1e-12);
+  if (rank <= 0)
+    throw std::invalid_argument("Sigma is not positive definite");
+
+  std::vector<double> sd(J);
+  for (size_t j = 0; j < J; ++j)
+    sd[j] = std::sqrt(sigma_copy(j, j));
+
+  // Build the packed lower-triangular factor C (same indexing as
+  // precompute_pmvn) so that pmvnorm_adaptive can be called directly.
+  std::vector<double> C(J * (J - 1) / 2);
+  size_t start = 0;
+  for (size_t j = 0; j < J; ++j) {
+    for (size_t k = 0; k < j; ++k)
+      C[start + k] = sigma_copy(j, k) * sd[k] / sd[j];
+    start += j;
+  }
+
+  return PMVNCholFactor{J, std::move(sd), std::move(C)};
+}
+
+// ---- pmvnorm_with_chol: reuse cached Cholesky, O(J) per call ------------//
+PMVNResult pmvnorm_with_chol(const PMVNCholFactor& chol,
+                             const std::vector<double>& lower,
+                             const std::vector<double>& upper,
+                             const std::vector<double>& mean,
+                             size_t n0, size_t n_max, size_t R,
+                             double abseps, double releps,
+                             uint64_t seed, bool parallel) {
+  const size_t J = chol.J;
+  if (lower.size() != J || upper.size() != J || mean.size() != J)
+    throw std::invalid_argument("lower/upper/mean must have length J");
+
+  // Early exit: zero probability when any lower >= upper
+  for (size_t j = 0; j < J; ++j) {
+    if (lower[j] >= upper[j]) return PMVNResult{0.0, "analytic", 0.0, 1};
+  }
+
+  // Standardise bounds using the cached standard deviations (O(J))
+  std::vector<double> lower_std(J), upper_std(J);
+  for (size_t j = 0; j < J; ++j) {
+    lower_std[j] = (lower[j] - mean[j]) / chol.sd[j];
+    upper_std[j] = (upper[j] - mean[j]) / chol.sd[j];
+  }
+
+  return pmvnorm_adaptive(J, lower_std, upper_std, chol.C,
+                          n0, n_max, R, abseps, releps, seed, parallel);
+}
+
 // Main entry point: validate inputs, permute/standardize, factorize, and
 // call adaptive routine.
 PMVNResult pmvnormcpp(const std::vector<double>& lower,
