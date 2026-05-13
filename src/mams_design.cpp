@@ -624,21 +624,6 @@ static ListCpp exitprob_mams_impl(
   return exitProb;
 }
 
-// Public 8-param overload matching the header declaration.
-// This is the function visible to other translation units.  Internal callers
-// that want to supply a precomputed cache use exitprob_mams_impl() directly.
-ListCpp exitprob_mams_cpp(
-    const size_t M,
-    const double r,
-    const std::vector<double>& theta,
-    const bool corr_known,
-    const size_t kMax,
-    const FlatMatrix& b,
-    const FlatMatrix& a,
-    const std::vector<double>& I) {
-  return exitprob_mams_impl(M, r, theta, corr_known, kMax, b, a, I, nullptr);
-}
-
 // overload with default a matrix of -8.0
 static ListCpp exitprob_mams_impl(
     const size_t M,
@@ -656,7 +641,24 @@ static ListCpp exitprob_mams_impl(
   return exitprob_mams_impl(M, r, theta, corr_known, kMax, b, a, I, cache);
 }
 
-// overload with default a matrix of -8.0
+
+// Public 8-param overload matching the header declaration.
+// This is the function visible to other translation units.  Internal callers
+// that want to supply a precomputed cache use exitprob_mams_impl() directly.
+ListCpp exitprob_mams_cpp(
+    const size_t M,
+    const double r,
+    const std::vector<double>& theta,
+    const bool corr_known,
+    const size_t kMax,
+    const FlatMatrix& b,
+    const FlatMatrix& a,
+    const std::vector<double>& I) {
+  return exitprob_mams_impl(M, r, theta, corr_known, kMax, b, a, I, nullptr);
+}
+
+
+//  Public 7-param overload with default a matrix of -8.0
 ListCpp exitprob_mams_cpp(
     const size_t M,
     const double r,
@@ -665,11 +667,7 @@ ListCpp exitprob_mams_cpp(
     const size_t kMax,
     const FlatMatrix& b,
     const std::vector<double>& I) {
-  if (!none_na(b.data)) throw std::invalid_argument("b must be provided");
-  double bmin = *std::min_element(b.data_ptr(), b.data_ptr() + b.nrow * b.ncol);
-  double amin = std::min(-8.0, bmin);
-  FlatMatrix a(M, kMax); a.fill(amin);
-  return exitprob_mams_impl(M, r, theta, corr_known, kMax, b, a, I, nullptr);
+  return exitprob_mams_impl(M, r, theta, corr_known, kMax, b, I, nullptr);
 }
 
 
