@@ -10,3 +10,4 @@ notes
 ^pkgdown$
 ^\.positai$
 ^\.claude$
+^\.vscode$
