@@ -6,5 +6,5 @@ notes/
 docs/
 src/*.o
 src/*.dll
-
+testthat/testthat-backlog.md
 .positai
