@@ -133,26 +133,12 @@ struct PMVNResult {
   std::size_t nsamples;
 };
 
-// ---- Cached Cholesky factor for a fixed covariance matrix ----------------//
-//                                                                           //
-// Call precompute_chol() once per distinct sigma (O(J^3) work).  Then call  //
-// pmvnorm_with_chol() for each new (lower, upper, mean) triple, replacing   //
-// the O(J^3) factorisation inside pmvnormcpp with O(J) bound                //
-// standardisation.                                                          //
 struct PMVNCholFactor {
   std::size_t J = 0;
   std::vector<double> sd; // sqrt of each diagonal entry of D in L D L^T
-  std::vector<double> C;  // lower-triangular factor; packed, length J*(J-1)/2
+  std::vector<double> C;  // D^{-1/2} L D^{1/2}; packed, length J*(J-1)/2
 };
 
-// Returns true when sigma has compound symmetry with non-negative
-// off-diagonal entries.  pmvnormcpp uses a fast 1-D integration path for
-// such matrices; call pmvnormcpp rather than pmvnorm_with_chol in that case.
-bool is_compound_symmetry(const FlatMatrix& sigma);
-
-// Factorise sigma via Cholesky/LDL^T (O(J^3)) and return the result.
-// Call this once per unique sigma; reuse the result across multiple bound
-// evaluations that share the same sigma.
 PMVNCholFactor precompute_chol(const FlatMatrix& sigma);
 
 // Evaluate Pr(lower < X < upper) using a cached Cholesky factor.
@@ -171,6 +157,8 @@ PMVNResult pmvnorm_with_chol(const PMVNCholFactor& chol,
                              std::uint64_t seed    = 314159,
                              bool          parallel = true);
 
+
+bool is_compound_symmetry(const FlatMatrix& sigma);
 
 PMVNResult pmvnormcpp(const std::vector<double>& lower,
                       const std::vector<double>& upper,
