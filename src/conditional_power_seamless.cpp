@@ -385,8 +385,8 @@ std::vector<double> getCP_seamless_cpp(
         critValues[kMax-1] = aval;
         probss = exitprob_seamless_cpp(
           M, r, zero, corr_known, K, critValues, infoRates);
-        double cpu = std::accumulate(probs.exitProbUpper.begin(),
-                                     probs.exitProbUpper.end(), 0.0);
+        double cpu = std::accumulate(probss.exitProbUpper.begin(),
+                                     probss.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
