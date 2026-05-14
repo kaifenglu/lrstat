@@ -17,8 +17,6 @@
 #include <numeric>
 #include <stdexcept>
 #include <string>
-#include <type_traits>
-#include <unordered_map>
 #include <vector>
 
 using std::size_t;
@@ -53,84 +51,6 @@ struct ExitProbMAMSCache {
   // compound-symmetric and pmvnormcpp's 1-D path is used instead.
   std::vector<PMVNCholFactor> chol2; // length kMax
 };
-
-struct ExitProbSummary {
-  double cumUpper = 0.0;
-  double cumLower = 0.0;
-  unsigned char mask = 0; // bit0: cumUpper valid, bit1: cumLower valid
-};
-
-struct ExitProbSolveMemo {
-  std::unordered_map<std::string, ExitProbResult> full;
-  std::unordered_map<std::string, ExitProbSummary> summary;
-};
-
-// Reinterpret a double as raw bits so repeated Brent evaluations can be memoized
-// by exact floating-point identity (including signed zero and NaN payloads).
-static inline std::uint64_t double_bits(double x) {
-  std::uint64_t out;
-  std::memcpy(&out, &x, sizeof(double));
-  return out;
-}
-
-// Evaluate f(x) with exact-double memoization inside a single root solve.
-template <typename F>
-static double eval_with_scalar_cache(
-    std::unordered_map<std::uint64_t, double>& cache,
-    const double x,
-    F&& f) {
-  const std::uint64_t key = double_bits(x);
-  auto it = cache.find(key);
-  if (it != cache.end()) return it->second;
-  const double y = f(x);
-  cache.emplace(key, y);
-  return y;
-}
-
-template <typename T>
-static inline void append_pod(std::string& key, const T& value) {
-  static_assert(std::is_trivially_copyable<T>::value,
-                "append_pod requires trivially copyable types");
-  const char* p = reinterpret_cast<const char*>(&value);
-  key.append(p, sizeof(T));
-}
-
-static inline void append_double_block(
-    std::string& key, const double* ptr, const std::size_t n) {
-  if (n == 0) return;
-  const char* p = reinterpret_cast<const char*>(ptr);
-  key.append(p, n * sizeof(double));
-}
-
-// Build a byte-serialized key for per-solve exit-probability memoization.
-// The key encodes scalar arguments and the first M*k entries of boundary/info
-// prefixes used by the current root-finding step.
-static std::string make_exitprob_key(
-    const size_t M,
-    const double r,
-    const bool corr_known,
-    const size_t k,
-    const std::vector<double>& theta,
-    const FlatMatrix& b,
-    const FlatMatrix* a,
-    const std::vector<double>& I) {
-
-  std::string key;
-  key.reserve(
-    4 * sizeof(std::size_t) + sizeof(double) + 2 * sizeof(unsigned char) +
-    (theta.size() + 2 * M * k + k) * sizeof(double));
-  append_pod(key, M);
-  append_pod(key, r);
-  append_pod(key, corr_known);
-  append_pod(key, k);
-  append_double_block(key, theta.data(), theta.size());
-  append_double_block(key, b.data_ptr(), M * k);
-  const unsigned char has_a = (a != nullptr) ? 1 : 0;
-  append_pod(key, has_a);
-  if (a != nullptr) append_double_block(key, a->data_ptr(), M * k);
-  append_double_block(key, I.data(), k);
-  return key;
-}
 
 // Build an ExitProbMAMSCache for the given (M, r, corr_known, kMax, Ivec).
 // Cost: paid once; amortised over all inner Brent calls that share (M, r,
@@ -208,32 +128,6 @@ static ExitProbMAMSCache make_exitprob_cache(
   return cache;
 }
 
-static ExitProbResult eval_exitprob_mams_cached(
-    const size_t M,
-    const double r,
-    const std::vector<double>& theta,
-    const bool corr_known,
-    const size_t kMax,
-    const FlatMatrix& b,
-    const FlatMatrix* a,
-    const std::vector<double>& I,
-    const ExitProbMAMSCache* cache,
-    ExitProbSolveMemo* memo);
-
-static ExitProbSummary eval_exitprob_mams_summary_cached(
-    const size_t M,
-    const double r,
-    const std::vector<double>& theta,
-    const bool corr_known,
-    const size_t kMax,
-    const FlatMatrix& b,
-    const FlatMatrix* a,
-    const std::vector<double>& I,
-    const ExitProbMAMSCache* cache,
-    ExitProbSolveMemo* memo,
-    const bool needUpper,
-    const bool needLower);
-
 
 ExitProbResult exitprob_mams_impl(
     const size_t M,
@@ -244,10 +138,7 @@ ExitProbResult exitprob_mams_impl(
     const FlatMatrix& b,
     const FlatMatrix& a,
     const std::vector<double>& I,
-    const ExitProbMAMSCache* cache = nullptr,
-    const bool store_stagewise = true,
-    double* cum_upper = nullptr,
-    double* cum_lower = nullptr) {
+    const ExitProbMAMSCache* cache = nullptr) {
 
   if (M < 1) throw std::invalid_argument("M should be at least 1");
   if (r <= 0.0) throw std::invalid_argument("r should be positive");
@@ -293,13 +184,7 @@ ExitProbResult exitprob_mams_impl(
   };
 
 
-  std::vector<double> exitProbUpper, exitProbLower;
-  if (store_stagewise) {
-    exitProbUpper.resize(kMax);
-    exitProbLower.resize(kMax);
-  }
-  double cumUpper = 0.0;
-  double cumLower = 0.0;
+  std::vector<double> exitProbUpper(kMax), exitProbLower(kMax);
 
   if (rho == 0 || M == 1) {
     double T = Ivec.back();
@@ -311,37 +196,11 @@ ExitProbResult exitprob_mams_impl(
     std::size_t fullN = M * kMax;
     std::vector<double> upper(fullN);
     std::vector<double> lower(fullN, -8.0);
-    bool symmetric_arms = (M > 1);
-    if (symmetric_arms) {
-      for (size_t m = 1; m < M; ++m) {
-        if (theta[m] != theta[0]) {
-          symmetric_arms = false;
-          break;
-        }
-      }
-      for (size_t k = 0; k < kMax && symmetric_arms; ++k) {
-        for (size_t m = 1; m < M; ++m) {
-          if (b(m, k) != b(0, k) || a(m, k) != a(0, k)) {
-            symmetric_arms = false;
-            break;
-          }
-        }
-      }
-    }
-    if (symmetric_arms) {
-      for (size_t k = 0; k < kMax; ++k) {
-        const double ub = b(0, k) - theta[0] * sqrtI[k];
-        const double lb = (a(0, k) > -8.0) ? (a(0, k) - theta[0] * sqrtI[k]) : -8.0;
-        std::fill_n(upper.data() + k * M, M, ub);
-        std::fill_n(lower.data() + k * M, M, lb);
-      }
-    } else {
-      for (size_t k = 0; k < kMax; ++k) {
-        for (size_t m = 0; m < M; ++m) {
-          size_t idx = k * M + m;
-          upper[idx] = b(m, k) - theta[m] * sqrtI[k];
-          if (a(m, k) > -8.0) lower[idx] = a(m, k) - theta[m] * sqrtI[k];
-        }
+    for (size_t k = 0; k < kMax; ++k) {
+      for (size_t m = 0; m < M; ++m) {
+        size_t idx = k * M + m;
+        upper[idx] = b(m, k) - theta[m] * sqrtI[k];
+        if (a(m, k) > -8.0) lower[idx] = a(m, k) - theta[m] * sqrtI[k];
       }
     }
 
@@ -495,14 +354,10 @@ ExitProbResult exitprob_mams_impl(
         prevGray = gray;
       }
 
-      const double stageUpper = (k > 1) ? (vupper1 - vupper2) : (1.0 - vupper2);
-      const double stageLower = vlower;
-      if (store_stagewise) {
-        exitProbUpper[k - 1] = stageUpper;
-        exitProbLower[k - 1] = stageLower;
-      }
-      cumUpper += stageUpper;
-      cumLower += stageLower;
+      if (k > 1) exitProbUpper[k - 1] = vupper1 - vupper2;
+      else exitProbUpper[k - 1] = 1.0 - vupper2;
+
+      exitProbLower[k - 1] = vlower;
     }
   } else if (kMax == 1) {
     double sqrtrho = std::sqrt(rho);
@@ -521,7 +376,7 @@ ExitProbResult exitprob_mams_impl(
 
     std::vector<double> breaks = { -8.0, 0.0, 8.0 };
     double p1 = integrate3(f1, breaks, 1e-6);
-    const double stageUpper = 1.0 - p1;
+    exitProbUpper[0] = 1.0 - p1;
 
     auto f2 = [&](double z0) {
       double value = 1.0;
@@ -535,13 +390,7 @@ ExitProbResult exitprob_mams_impl(
     };
 
     double p2 = integrate3(f2, breaks, 1e-6);
-    const double stageLower = p2;
-    if (store_stagewise) {
-      exitProbUpper[0] = stageUpper;
-      exitProbLower[0] = stageLower;
-    }
-    cumUpper += stageUpper;
-    cumLower += stageLower;
+    exitProbLower[0] = p2;
   } else {
     double T = Ivec.back();
     double sqrtT = sqrtI.back();
@@ -553,41 +402,12 @@ ExitProbResult exitprob_mams_impl(
     std::size_t fullN = M * kMax;
     std::vector<double> upper(fullN);
     std::vector<double> lower(fullN, -8.0);
-    bool symmetric_arms = (M > 1);
-    if (symmetric_arms) {
-      for (size_t m = 1; m < M; ++m) {
-        if (theta[m] != theta[0]) {
-          symmetric_arms = false;
-          break;
-        }
-      }
-      for (size_t k = 0; k < kMax && symmetric_arms; ++k) {
-        for (size_t m = 1; m < M; ++m) {
-          if (b(m, k) != b(0, k) || a(m, k) != a(0, k)) {
-            symmetric_arms = false;
-            break;
-          }
-        }
-      }
-    }
-    if (symmetric_arms) {
-      for (size_t k = 0; k < kMax; ++k) {
-        const double scale = std::sqrt(s[k]);
-        const double shift = theta[0] * s[k] * sqrtT;
-        const double ub = b(0, k) * scale - shift;
-        const double lb = (a(0, k) > -8.0) ? (a(0, k) * scale - shift) : -8.0;
-        std::fill_n(upper.data() + k * M, M, ub);
-        std::fill_n(lower.data() + k * M, M, lb);
-      }
-    } else {
-      for (size_t k = 0; k < kMax; ++k) {
-        const double scale = std::sqrt(s[k]);
-        for (size_t m = 0; m < M; ++m) {
-          size_t idx = k * M + m;
-          upper[idx] = b(m, k) * scale - theta[m] * s[k] * sqrtT;
-          if (a(m, k) > -8.0)
-            lower[idx] = a(m, k) * scale - theta[m] * s[k] * sqrtT;
-        }
+    for (size_t k = 0; k < kMax; ++k) {
+      for (size_t m = 0; m < M; ++m) {
+        size_t idx = k * M + m;
+        upper[idx] = b(m, k) * sqrt(s[k]) - theta[m] * s[k] * sqrtT;
+        if (a(m, k) > -8.0)
+          lower[idx] = a(m, k) * sqrt(s[k]) - theta[m] * s[k] * sqrtT;
       }
     }
 
@@ -639,11 +459,28 @@ ExitProbResult exitprob_mams_impl(
       std::memcpy(zero1.data(), zero.data(), nk * sizeof(double));
       std::fill_n(lower1m.data(), nk, -8.0);
 
+      // Slice sigma1 from psigma (top-left nk × nk block).
+      // Use fullN_src as the column stride so the cache case works when
+      // kMax_call < cache->kMax.
+      sigma1.resize(nk, nk);
+      for (std::size_t j = 0; j < nk; ++j) {
+        const double* src = psigma->data_ptr() + j * fullN_src;
+        double*       dst = sigma1.data_ptr()  + j * nk;
+        std::memcpy(dst, src, nk * sizeof(double));
+      }
+
       size_t nk2 = (k - 1) * M;
       if (k > 1) {
         upper2.resize(nk2); lower2.resize(nk2); zero2.resize(nk2);
         std::fill_n(lower2.data(), nk2, -8.0);
         std::memcpy(zero2.data(), zero1.data(), nk2 * sizeof(double));
+
+        sigma2.resize(nk2, nk2);
+        for (std::size_t j = 0; j < nk2; ++j) {
+          const double* src = sigma1.data_ptr() + j * nk;
+          double*       dst = sigma2.data_ptr() + j * nk2;
+          std::memcpy(dst, src, nk2 * sizeof(double));
+        }
       }
 
       // Precompute per-stage Cholesky factors for sigma1 and sigma2,
@@ -660,37 +497,9 @@ ExitProbResult exitprob_mams_impl(
       // just borrow the stored results.
       const bool use_chol1 = (k > 1);
       const bool use_chol2 = (k > 2);
-      const bool need_sigma1_matrix = !use_chol1 || !cache;
-      const bool need_sigma2_matrix = (k > 1) && (!use_chol2 || !cache);
       PMVNCholFactor chol1_local, chol2_local;
       const PMVNCholFactor* pchol1 = nullptr;
       const PMVNCholFactor* pchol2 = nullptr;
-
-      if (need_sigma1_matrix) {
-        // Slice sigma1 from psigma (top-left nk × nk block).
-        sigma1.resize(nk, nk);
-        for (std::size_t j = 0; j < nk; ++j) {
-          const double* src = psigma->data_ptr() + j * fullN_src;
-          double*       dst = sigma1.data_ptr()  + j * nk;
-          std::memcpy(dst, src, nk * sizeof(double));
-        }
-      }
-      if (need_sigma2_matrix) {
-        sigma2.resize(nk2, nk2);
-        if (need_sigma1_matrix) {
-          for (std::size_t j = 0; j < nk2; ++j) {
-            const double* src = sigma1.data_ptr() + j * nk;
-            double*       dst = sigma2.data_ptr() + j * nk2;
-            std::memcpy(dst, src, nk2 * sizeof(double));
-          }
-        } else {
-          for (std::size_t j = 0; j < nk2; ++j) {
-            const double* src = psigma->data_ptr() + j * fullN_src;
-            double*       dst = sigma2.data_ptr()  + j * nk2;
-            std::memcpy(dst, src, nk2 * sizeof(double));
-          }
-        }
-      }
 
       if (use_chol1) {
         if (cache) {
@@ -801,19 +610,12 @@ ExitProbResult exitprob_mams_impl(
         prevGray = gray;
       }
 
-      const double stageUpper = (k > 1) ? (vupper1 - vupper2) : (1.0 - vupper2);
-      const double stageLower = vlower;
-      if (store_stagewise) {
-        exitProbUpper[k - 1] = stageUpper;
-        exitProbLower[k - 1] = stageLower;
-      }
-      cumUpper += stageUpper;
-      cumLower += stageLower;
+      if (k > 1) exitProbUpper[k - 1] = vupper1 - vupper2;
+      else exitProbUpper[k - 1] = 1.0 - vupper2;
+
+      exitProbLower[k - 1] = vlower;
     }
   }
-
-  if (cum_upper) *cum_upper = cumUpper;
-  if (cum_lower) *cum_lower = cumLower;
 
   return ExitProbResult {
     std::move(exitProbUpper),
@@ -830,109 +632,12 @@ static ExitProbResult exitprob_mams_impl(
     const size_t kMax,
     const FlatMatrix& b,
     const std::vector<double>& I,
-    const ExitProbMAMSCache* cache,
-    const bool store_stagewise = true,
-    double* cum_upper = nullptr,
-    double* cum_lower = nullptr) {
+    const ExitProbMAMSCache* cache) {
   if (!none_na(b.data)) throw std::invalid_argument("b must be provided");
   double bmin = *std::min_element(b.data_ptr(), b.data_ptr() + b.nrow * b.ncol);
   double amin = std::min(-8.0, bmin);
   FlatMatrix a(M, kMax); a.fill(amin);
-  return exitprob_mams_impl(
-    M, r, theta, corr_known, kMax, b, a, I, cache, store_stagewise,
-    cum_upper, cum_lower);
-}
-
-static ExitProbResult eval_exitprob_mams_cached(
-    const size_t M,
-    const double r,
-    const std::vector<double>& theta,
-    const bool corr_known,
-    const size_t kMax,
-    const FlatMatrix& b,
-    const FlatMatrix* a,
-    const std::vector<double>& I,
-    const ExitProbMAMSCache* cache,
-    ExitProbSolveMemo* memo) {
-  if (memo == nullptr) {
-    if (a != nullptr) {
-      return exitprob_mams_impl(M, r, theta, corr_known, kMax, b, *a, I, cache);
-    }
-    return exitprob_mams_impl(M, r, theta, corr_known, kMax, b, I, cache);
-  }
-
-  const std::string key = make_exitprob_key(M, r, corr_known, kMax, theta, b, a, I);
-  auto it = memo->full.find(key);
-  if (it != memo->full.end()) return it->second;
-
-  ExitProbResult out = (a != nullptr)
-    ? exitprob_mams_impl(M, r, theta, corr_known, kMax, b, *a, I, cache)
-    : exitprob_mams_impl(M, r, theta, corr_known, kMax, b, I, cache);
-  memo->full.emplace(key, out);
-  return out;
-}
-
-static ExitProbSummary eval_exitprob_mams_summary_cached(
-    const size_t M,
-    const double r,
-    const std::vector<double>& theta,
-    const bool corr_known,
-    const size_t kMax,
-    const FlatMatrix& b,
-    const FlatMatrix* a,
-    const std::vector<double>& I,
-    const ExitProbMAMSCache* cache,
-    ExitProbSolveMemo* memo,
-    const bool needUpper,
-    const bool needLower) {
-  ExitProbSummary out;
-  if (!needUpper && !needLower) return out;
-
-  const unsigned char reqMask =
-    static_cast<unsigned char>((needUpper ? 1U : 0U) | (needLower ? 2U : 0U));
-
-  std::string key;
-  if (memo != nullptr) {
-    key = make_exitprob_key(M, r, corr_known, kMax, theta, b, a, I);
-    auto sit = memo->summary.find(key);
-    if (sit != memo->summary.end() && (sit->second.mask & reqMask) == reqMask) {
-      return sit->second;
-    }
-    auto fit = memo->full.find(key);
-    if (fit != memo->full.end()) {
-      ExitProbSummary s;
-      if (needUpper) {
-        s.cumUpper = std::accumulate(
-          fit->second.exitProbUpper.begin(), fit->second.exitProbUpper.end(), 0.0);
-        s.mask |= 1U;
-      }
-      if (needLower) {
-        s.cumLower = std::accumulate(
-          fit->second.exitProbLower.begin(), fit->second.exitProbLower.end(), 0.0);
-        s.mask |= 2U;
-      }
-      memo->summary[key] = s;
-      return s;
-    }
-  }
-
-  double cumUpper = 0.0, cumLower = 0.0;
-  if (a != nullptr) {
-    exitprob_mams_impl(
-      M, r, theta, corr_known, kMax, b, *a, I, cache, false,
-      needUpper ? &cumUpper : nullptr,
-      needLower ? &cumLower : nullptr);
-  } else {
-    exitprob_mams_impl(
-      M, r, theta, corr_known, kMax, b, I, cache, false,
-      needUpper ? &cumUpper : nullptr,
-      needLower ? &cumLower : nullptr);
-  }
-  out.mask = reqMask;
-  out.cumUpper = cumUpper;
-  out.cumLower = cumLower;
-  if (memo != nullptr) memo->summary[key] = out;
-  return out;
+  return exitprob_mams_impl(M, r, theta, corr_known, kMax, b, a, I, cache);
 }
 
 
@@ -1233,7 +938,7 @@ std::vector<double> getBound_mams_cpp(
   std::vector<double> criticalValues(kMax, 8.0);
   FlatMatrix b(M, kMax);
   b.fill(8.0);
-  ExitProbSolveMemo memo;
+  ExitProbResult probs;
 
   // Precompute sigma and per-stage Cholesky factors once for the full
   // (M, r, corr_known, infoRates) tuple.  All exitprob_mams_cpp calls within
@@ -1247,17 +952,16 @@ std::vector<double> getBound_mams_cpp(
 
   if (asf == "none") {
     double* colptr = b.data_ptr() + (kMax - 1) * M;
-    std::unordered_map<std::uint64_t, double> f_cache;
     auto f = [&](double x)->double {
       std::fill_n(colptr, M, x);
-      const auto s = eval_exitprob_mams_summary_cached(
-        M, r, zero, corr_known, kMax, b, nullptr, infoRates, pcache, &memo,
-        true, false);
-      return s.cumUpper - alpha;
+      probs = exitprob_mams_impl(M, r, zero, corr_known, kMax, b, infoRates,
+                                 pcache);
+      double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                   probs.exitProbUpper.end(), 0.0);
+      return cpu - alpha;
     };
-    auto fm = [&](double x)->double { return eval_with_scalar_cache(f_cache, x, f); };
 
-    criticalValues[kMax-1] = brent(fm, 0.0, 8.0, 1e-6);
+    criticalValues[kMax-1] = brent(f, 0.0, 8.0, 1e-6);
     return subset(criticalValues, 0, k);
   }
 
@@ -1273,7 +977,6 @@ std::vector<double> getBound_mams_cpp(
       u0[i] = std::pow(infoRates[i], Delta - 0.5);
     }
 
-    std::unordered_map<std::uint64_t, double> f_cache;
     auto f = [&](double x)->double {
       for (size_t i = 0; i < kMax; ++i) {
         if (!effStopping[i]) continue;
@@ -1281,14 +984,14 @@ std::vector<double> getBound_mams_cpp(
         std::fill_n(b.data_ptr() + i * M, M, val); // contiguous write of M doubles
       }
 
-      const auto s = eval_exitprob_mams_summary_cached(
-        M, r, zero, corr_known, kMax, b, nullptr, infoRates, pcache, &memo,
-        true, false);
-      return s.cumUpper - alpha;
+      probs = exitprob_mams_impl(M, r, zero, corr_known, kMax, b, infoRates,
+                                 pcache);
+      double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                   probs.exitProbUpper.end(), 0.0);
+      return cpu - alpha;
     };
-    auto fm = [&](double x)->double { return eval_with_scalar_cache(f_cache, x, f); };
 
-    double cwt = brent(fm, 0.0, 10.0, 1e-6);
+    double cwt = brent(f, 0.0, 10.0, 1e-6);
     for (size_t i = 0; i < kMax; ++i) {
       if (effStopping[i]) criticalValues[i] = cwt * u0[i];
     }
@@ -1332,22 +1035,26 @@ std::vector<double> getBound_mams_cpp(
 
       // Define lambda that only sets the last column of b
       double* last_col = b.data_ptr() + k1 * M;
-      std::unordered_map<std::uint64_t, double> f_cache;
       auto f = [&](double x)->double {
         // set the last column to the current candidate critical value
         std::fill_n(last_col, M, x);  // fill last column fast
-        const auto s = eval_exitprob_mams_summary_cached(
-          M, r, zero, corr_known, k1 + 1, b, nullptr, infoRates, pcache, &memo,
-          true, false);
-        return s.cumUpper - cumAlpha;
+        probs = exitprob_mams_impl(M, r, zero, corr_known, k1 + 1, b, infoRates,
+                                   pcache);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
+        return cpu - cumAlpha;
       };
-      auto fm = [&](double x)->double { return eval_with_scalar_cache(f_cache, x, f); };
 
-      double f_8 = fm(8.0);
+      double f_8 = f(8.0);
       if (f_8 > 0.0) { // no alpha spent at current visit
         criticalValues[k1] = 8.0;
       } else {
-        criticalValues[k1] = brent(fm, 0.0, 8.0, 1e-6);
+        auto f_for_brent = [&](double x)->double {
+          if (x == 8.0) return f_8; // avoid recomputation at 8.0
+          return f(x);
+        };
+
+        criticalValues[k1] = brent(f_for_brent, 0.0, 8.0, 1e-6);
       }
     }
 
@@ -1459,27 +1166,16 @@ GetPowerResult getPower_mams(
     const std::vector<double>& zL) {
 
   std::vector<double> I2(kMax), sqrtI2(kMax), sqrtI(kMax);
-  std::vector<double> invSqrtI2(kMax), affineSlope(kMax);
   for (size_t k = 0; k < kMax; ++k) {
     I2[k] = I[k] - IL;
     sqrtI2[k] = std::sqrt(I2[k]);
     sqrtI[k] = std::sqrt(I[k]);
-    invSqrtI2[k] = 1.0 / sqrtI2[k];
-    affineSlope[k] = sqrtI[k] * invSqrtI2[k];
   }
 
   double sqrtIL = std::sqrt(IL);
   std::vector<double> zscaled(M);
   for (size_t m = 0; m < M; ++m) {
     zscaled[m] = zL[m] * sqrtIL;
-  }
-  std::vector<double> zscaledOver0(M);
-  for (size_t m = 0; m < M; ++m) zscaledOver0[m] = zscaled[m] * invSqrtI2[0];
-  std::vector<double> affineIntercept(kMax * M);
-  for (size_t k = 0; k < kMax; ++k) {
-    const double inv = invSqrtI2[k];
-    double* col = affineIntercept.data() + k * M;
-    for (size_t m = 0; m < M; ++m) col[m] = -zscaled[m] * inv;
   }
 
   FlatMatrix a(M, kMax);
@@ -1506,7 +1202,6 @@ GetPowerResult getPower_mams(
 
   // reusable buffers for prefixes
   ExitProbResult probs;
-  ExitProbSolveMemo memo;
   std::vector<double> futBounds(kMax);
 
   // I2 is fixed for the entire getPower_mams call.  Precompute sigma
@@ -1517,11 +1212,7 @@ GetPowerResult getPower_mams(
     pm_cache = make_exitprob_cache(M, r, true, kMax, I2);
   const ExitProbMAMSCache* pm_pcache = use_pm_cache ? &pm_cache : nullptr;
 
-  bool has_last_fx = false;
-  double last_fx = 0.0;
   auto f = [&](double x) -> double {
-    memo.full.clear();
-    memo.summary.clear();
     // reset futility bounds
     std::fill(futBounds.begin(), futBounds.end(), -8.0);
     double eps = 0.0, cb = 0.0;
@@ -1530,24 +1221,18 @@ GetPowerResult getPower_mams(
     if (futStopping[0]) {
       cb = errorSpentcpp(st[0], x, bsf, bsfpar);
 
-      std::unordered_map<std::uint64_t, double> g_cache;
       auto g = [&](double aval) -> double {
         for (size_t m = 0; m < M; ++m) {
-          hi[m] = affineSlope[0] * aval - zscaledOver0[m];
+          hi[m] = (aval * sqrtI[0] - zscaled[m]) / sqrtI2[0];
         }
 
         auto q = pmvnormcpp(lo, hi, mu0, sigma, 1024, 16384, 8, 1e-4, 0.0, 314159);
         return q.prob - cb;
       };
-      auto gm = [&](double aval)->double { return eval_with_scalar_cache(g_cache, aval, g); };
 
-      eps = gm(critValues[0]);
-      if (eps < 0.0) {
-        has_last_fx = true;
-        last_fx = x;
-        return -1.0; // to decrease drift
-      }
-      futBounds[0] = brent(gm, -8.0, critValues[0], 1e-6);
+      eps = g(critValues[0]);
+      if (eps < 0.0) return -1.0; // to decrease drift
+      futBounds[0] = brent(g, -8.0, critValues[0], 1e-6);
     }
 
     // subsequent stages
@@ -1555,70 +1240,68 @@ GetPowerResult getPower_mams(
       if (futStopping[k]) {
         cb = errorSpentcpp(st[k], x, bsf, bsfpar);
 
-        const double aval_prev = futBounds[k - 1];
-        const double slope_prev = affineSlope[k - 1];
-        const double* intercept_prev = affineIntercept.data() + (k - 1) * M;
         for (size_t m = 0; m < M; ++m) {
-          a(m, k-1) = slope_prev * aval_prev + intercept_prev[m];
+          a(m, k-1) = (futBounds[k-1] * sqrtI[k-1] - zscaled[m]) / sqrtI2[k-1];
           if (a(m, k-1) > b(m, k-1)) a(m, k-1) = b(m, k-1);
         }
 
         // lambda expression for finding futility bound at stage k
         // it is an increasing function in aval, and we want to find
         // the root where it crosses 0
-        std::unordered_map<std::uint64_t, double> g_cache;
-        const double slope_k = affineSlope[k];
-        const double* intercept_k = affineIntercept.data() + k * M;
         auto g = [&](double aval) -> double {
           for (size_t m = 0; m < M; ++m) {
-            a(m, k) = slope_k * aval + intercept_k[m];
+            a(m, k) = (aval * sqrtI[k] - zscaled[m]) / sqrtI2[k];
             if (a(m, k) > b(m, k)) a(m, k) = b(m, k);
           }
-          const auto s = eval_exitprob_mams_summary_cached(
-            M, r, theta, true, k + 1, b, &a, I2, pm_pcache, &memo, false, true);
-          return s.cumLower - cb;
+          probs = exitprob_mams_impl(M, r, theta, true, k + 1, b, a, I2,
+                                     pm_pcache);
+          double cpl = std::accumulate(probs.exitProbLower.begin(),
+                                       probs.exitProbLower.end(), 0.0);
+          return cpl - cb;
         };
-        auto gm = [&](double aval)->double { return eval_with_scalar_cache(g_cache, aval, g); };
 
         double bk = critValues[k];
-        eps = gm(bk);
-        double g_minus8 = gm(-8.0);
+        eps = g(bk);
+        double g_minus8 = g(-8.0);
 
         if (g_minus8 > 0.0) { // no beta spent at current visit
           futBounds[k] = -8.0;
         } else if (eps > 0.0) {
-          futBounds[k] = brent(gm, -8.0, bk, 1e-6);
+          auto g_for_brent = [&](double aval)->double {
+            if (aval == -8.0) return g_minus8;  // avoid recomputation at 8.0
+            if (aval == bk) return eps;         // avoid recomputation at b[k]
+            return g(aval);
+          };
+
+          futBounds[k] = brent(g_for_brent, -8.0, bk, 1e-6);
         } else if (k < kMax-1) {
-          has_last_fx = true;
-          last_fx = x;
           return -1.0; // to decrease beta
         } // else it is the final look, a[k] = b[k], so we need eps = g(bk) = 0
         // since eps < 0, it can be used to decrease beta more accurately
       }
     }
 
-    has_last_fx = true;
-    last_fx = x;
     return eps;
   };
 
-  std::unordered_map<std::uint64_t, double> f_cache;
-  auto fm = [&](double x)->double { return eval_with_scalar_cache(f_cache, x, f); };
-  double v1 = fm(0.0001), v2 = fm(1.0 - alpha);
+  double v1 = f(0.0001), v2 = f(1.0 - alpha);
   double beta = 0.0;
   if (v1 == -1.0 || (v1 < 0.0 && futBounds[kMax-1] == -8.0)) {
     throw std::invalid_argument("Power must be less than 0.9999");
   } else if (v2 > 0.0) {
     throw std::invalid_argument("Power must be greater than alpha");
   } else {
-    beta = brent(fm, 0.0001, 1.0 - alpha, 1e-6);
-    // Only re-evaluate if Brent's final probe was not exactly at the root.
-    if (!has_last_fx || double_bits(last_fx) != double_bits(beta)) f(beta);
+    auto f_for_brent = [&](double x)->double {
+      if (x == 0.0001) return v1;  // avoid recomputation at 0.0001
+      if (x == 1.0 - alpha) return v2;  // avoid recomputation at 1.0 - alpha
+      return f(x);
+    };
+
+    beta = brent(f_for_brent, 0.0001, 1.0 - alpha, 1e-6);
     futBounds[kMax-1] = critValues[kMax-1];
     std::memcpy(a.data_ptr() + (kMax - 1) * M, b.data_ptr() + (kMax - 1) * M,
                 M * sizeof(double));
-    probs = eval_exitprob_mams_cached(
-      M, r, theta, true, kMax, b, &a, I2, pm_pcache, &memo);
+    probs = exitprob_mams_impl(M, r, theta, true, kMax, b, a, I2, pm_pcache);
   }
 
   return GetPowerResult {
@@ -1874,12 +1557,6 @@ ListCpp getDesign_mams_cpp(
       if (haybittle) { // Haybittle & Peto
         std::vector<double> zero1(M1, 0.0);
         FlatMatrix b1(M1, kMax);
-        ExitProbMAMSCache hb_cache;
-        const bool use_hb_cache = (corr_known && M1 > 1 && kMax > 1);
-        if (use_hb_cache)
-          hb_cache = make_exitprob_cache(M1, r, corr_known, kMax, infoRates);
-        const ExitProbMAMSCache* hb_pcache = use_hb_cache ? &hb_cache : nullptr;
-        ExitProbSolveMemo hb_memo;
 
         for (size_t i = 0; i < kMax - 1; ++i) {
           if (!effStopping[i]) cut[i] = 8.0;
@@ -1887,17 +1564,15 @@ ListCpp getDesign_mams_cpp(
         }
 
         double* last_col = b1.data_ptr() + (kMax - 1) * M1;
-        std::unordered_map<std::uint64_t, double> hb_fcache;
         auto f = [&](double x)->double {
           std::fill_n(last_col, M1, x);
-          const auto s = eval_exitprob_mams_summary_cached(
-            M1, r, zero1, corr_known, kMax, b1, nullptr, infoRates,
-            hb_pcache, &hb_memo, true, false);
-          return s.cumUpper - alpha;
+          probs = exitprob_mams_cpp(M1, r, zero1, corr_known, kMax, b1, infoRates);
+          double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                       probs.exitProbUpper.end(), 0.0);
+          return cpu - alpha;
         };
-        auto fm = [&](double x)->double { return eval_with_scalar_cache(hb_fcache, x, f); };
 
-        cut[kMax - 1] = brent(fm, 0.0, 8.0, 1e-6);
+        cut[kMax - 1] = brent(f, 0.0, 8.0, 1e-6);
       } else {
         cut = getBound_mams_cpp(
           M1, r, corr_known, kMax, infoRates, alpha, asf,
@@ -1989,13 +1664,8 @@ ListCpp getDesign_mams_cpp(
     // each iteration) and reused for all inner g calls in that step.
     ExitProbMAMSCache iter_cache;
     bool iter_cache_built = false;
-    ExitProbSolveMemo iter_memo;
-    bool has_last_f = false;
-    double last_f = 0.0;
 
     auto f = [&](double x)->double {
-      iter_memo.full.clear();
-      iter_memo.summary.clear();
       double maxInformation = sq(x / maxtheta);
       for (size_t i = 0; i < kMax; ++i) {
         information[i] = infoRates[i] * maxInformation;
@@ -2016,11 +1686,7 @@ ListCpp getDesign_mams_cpp(
               && none_na(futilityTheta)) {
           for (size_t i = 0; i < kMax - 1; ++i) {
             futBounds[i] = std::sqrt(information[i]) * futilityTheta[i];
-            if (futBounds[i] > critValues[i]) {
-              has_last_f = true;
-              last_f = x;
-              return -1.0; // to decrease drift
-            }
+            if (futBounds[i] > critValues[i]) return -1.0; // to decrease drift
           }
           futBounds[kMax-1] = critValues[kMax-1];
         }
@@ -2029,12 +1695,11 @@ ListCpp getDesign_mams_cpp(
           std::fill_n(a.data_ptr() + i * M, M, futBounds[i]);
         }
 
-        const auto s = eval_exitprob_mams_summary_cached(
-          M, r, theta, true, kMax, b, &a, information, pi_pcache, &iter_memo,
-          true, false);
-        has_last_f = true;
-        last_f = x;
-        return (1.0 - s.cumUpper) - beta;
+        probs = exitprob_mams_impl(M, r, theta, true, kMax, b, a, information,
+                                   pi_pcache);
+        double overallReject = std::accumulate(probs.exitProbUpper.begin(),
+                                               probs.exitProbUpper.end(), 0.0);
+        return (1.0 - overallReject) - beta;
       } else {
         // initialize futility bound to be updated
         std::fill(futBounds.begin(), futBounds.end(), -8.0);
@@ -2052,11 +1717,7 @@ ListCpp getDesign_mams_cpp(
           auto q = pmvnormcpp(lo, hi, mu0, sigma,
                               1024, 16384, 8, 1e-4, 0.0, 314159);
           eps = q.prob - cb;
-          if (eps < 0.0) {
-            has_last_f = true;
-            last_f = x;
-            return -1.0; // to decrease drift
-          }
+          if (eps < 0.0) return -1.0; // to decrease drift
           futBounds[0] = qmvnormcpp(cb, mu0, sigma,
                                     1024, 16384, 8, 1e-4, 0.0, 314159);
         }
@@ -2070,54 +1731,46 @@ ListCpp getDesign_mams_cpp(
             std::fill_n(a.data_ptr() + (k - 1) * M, M, futBounds[k - 1]);
 
             // lambda expression for finding futility bound at stage k
-            std::unordered_map<std::uint64_t, double> g_cache;
             auto g = [&](double aval)->double {
               std::fill_n(a.data_ptr() + k * M, M, aval);
-              const auto s = eval_exitprob_mams_summary_cached(
-                M, r, theta, true, k + 1, b, &a, information, pi_pcache,
-                &iter_memo, false, true);
-              return s.cumLower - cb;
-            };
-            auto gm = [&](double aval)->double {
-              return eval_with_scalar_cache(g_cache, aval, g);
+              probs = exitprob_mams_impl(M, r, theta, true, k + 1, b, a,
+                                         information, pi_pcache);
+              double cpl = std::accumulate(probs.exitProbLower.begin(),
+                                           probs.exitProbLower.end(), 0.0);
+              return cpl - cb;
             };
 
             double bk = critValues[k];
-            eps = gm(bk);
-            double g_minus8 = gm(-8.0);
+            eps = g(bk);
+            double g_minus8 = g(-8.0);
 
             if (g_minus8 > 0.0) { // no beta spent at current visit
               futBounds[k] = -8.0;
             } else if (eps > 0.0) {
-              futBounds[k] = brent(gm, -8.0, bk, 1e-6);
+              auto g_for_brent = [&](double aval)->double {
+                if (aval == -8.0) return g_minus8;  // avoid recomputation at 8.0
+                if (aval == bk) return eps;         // avoid recomputation at b[k]
+                return g(aval);
+              };
+
+              futBounds[k] = brent(g_for_brent, -8.0, bk, 1e-6);
             } else if (k < kMax-1) {
-              has_last_f = true;
-              last_f = x;
               return -1.0;
             }
           }
         }
 
-        has_last_f = true;
-        last_f = x;
         return eps;
       }
     };
 
-    std::unordered_map<std::uint64_t, double> f_cache;
-    auto fm = [&](double x)->double { return eval_with_scalar_cache(f_cache, x, f); };
-    double drift = brent(fm, 0.001, 8.0, 1e-6);
-    if (!has_last_f || double_bits(last_f) != double_bits(drift)) f(drift);
+    double drift = brent(f, 0.001, 8.0, 1e-6);
     IMax1 = sq(drift / maxtheta);
     futBounds[kMax-1] = critValues[kMax-1];
     std::fill_n(a.data_ptr() + (kMax - 1) * M, M, futBounds[kMax - 1]);
-    if (M > 1 && kMax > 1) {
-      iter_cache = make_exitprob_cache(M, r, true, kMax, information);
-      iter_cache_built = true;
-    }
-    probs = eval_exitprob_mams_cached(
-      M, r, theta, true, kMax, b, &a, information,
-      iter_cache_built ? &iter_cache : nullptr, &iter_memo);
+    // After Brent, iter_cache holds the cache for the converged information.
+    probs = exitprob_mams_impl(M, r, theta, true, kMax, b, a, information,
+                               iter_cache_built ? &iter_cache : nullptr);
   } else {
     for (size_t i = 0; i < kMax; ++i) information[i] = infoRates[i] * IMax1;
 
@@ -4162,3 +3815,4 @@ Rcpp::List adaptDesign_mams(
   result.attr("class") = "adaptDesign_mams";
   return result;
 }
+
