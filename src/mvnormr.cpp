@@ -345,29 +345,17 @@ PMVNResult pmvnorm_adaptive(size_t J,
 }
 
 
-// helper struct to hold precomputed state
-struct PMVNPrecomputed {
-  size_t J;
-  std::vector<double> lower_std; // length J
-  std::vector<double> upper_std;
-  std::vector<double> sd;
-  std::vector<double> C;         // triangular factor (properly standardized)
-};
+PMVNCholFactor precompute_chol(const FlatMatrix& sigma) {
+  size_t J = sigma.nrow;
+  if (sigma.ncol != J) throw std::invalid_argument("sigma must be square");
 
-// permute/standardize/factorize and return PMVNPrecomputed struct
-PMVNPrecomputed precompute_pmvn(const std::vector<double>& lower,
-                                const std::vector<double>& upper,
-                                const std::vector<double>& mean,
-                                const FlatMatrix& sigma) {
-  size_t J = lower.size();
-
-  // LDL' factorization in-place
   FlatMatrix sigma_copy = sigma; // copy to modify
   int rank = cholesky2(sigma_copy, J, 1e-12);
   if (rank <= 0) throw std::invalid_argument("Sigma is not positive definite");
+
   std::vector<double> sd(J);
   for (size_t j = 0; j < J; ++j) {
-    sd[j] = std::sqrt(sigma_copy(j,j));
+    sd[j] = std::sqrt(sigma_copy(j, j));
   }
 
   // inverse of D^(-1/2) * L * D^(1/2) in row-major order (lower tri part only)
@@ -376,30 +364,42 @@ PMVNPrecomputed precompute_pmvn(const std::vector<double>& lower,
   for (size_t j = 0; j < J; ++j) {
     double denom = sd[j];
     for (size_t k = 0; k < j; ++k) {
-      C[start + k] = sigma_copy(j,k) * sd[k] / denom;
+      C[start + k] = sigma_copy(j, k) * sd[k] / denom;
     }
     start += j;
   }
 
-  // standardize lower and upper limits
-  std::vector<double> lower_std(J), upper_std(J);
+  return PMVNCholFactor{J, std::move(sd), std::move(C)};
+}
+
+
+PMVNResult pmvnorm_with_chol(const PMVNCholFactor& chol,
+                             const std::vector<double>& lower,
+                             const std::vector<double>& upper,
+                             const std::vector<double>& mean,
+                             size_t n0, size_t n_max, size_t R,
+                             double abseps, double releps,
+                             uint64_t seed, bool parallel) {
+  const size_t J = chol.J;
+  if (lower.size() != J || upper.size() != J || mean.size() != J)
+    throw std::invalid_argument("lower/upper/mean must have length J");
+
+  // Early exit: zero probability when any lower >= upper
   for (size_t j = 0; j < J; ++j) {
-    lower_std[j] = (lower[j] - mean[j]) / sd[j];
-    upper_std[j] = (upper[j] - mean[j]) / sd[j];
+    if (lower[j] >= upper[j]) return PMVNResult{0.0, "analytic", 0.0, 1};
   }
 
-  return PMVNPrecomputed{J, lower_std, upper_std, sd, C};
-}
+  // Standardise bounds using the cached standard deviations (O(J))
+  std::vector<double> lower_std(J), upper_std(J);
+  for (size_t j = 0; j < J; ++j) {
+    lower_std[j] = (lower[j] - mean[j]) / chol.sd[j];
+    upper_std[j] = (upper[j] - mean[j]) / chol.sd[j];
+  }
 
-// use precomputed C/lower_std/upper_std and call the adaptive engine
-PMVNResult pmvnorm_with_precomp(const PMVNPrecomputed& P,
-                                size_t n0, size_t n_max, size_t R,
-                                double abseps, double releps,
-                                uint64_t seed, bool parallel) {
-
-  return pmvnorm_adaptive(P.J, P.lower_std, P.upper_std, P.C,
+  return pmvnorm_adaptive(J, lower_std, upper_std, chol.C,
                           n0, n_max, R, abseps, releps, seed, parallel);
 }
+
 
 // detect if sigma is compound symmetry with non-negative correlations
 bool is_compound_symmetry(const FlatMatrix& sigma) {
@@ -428,64 +428,6 @@ bool is_compound_symmetry(const FlatMatrix& sigma) {
   return true;
 }
 
-// ---- precompute_chol: Cholesky/LDL^T factor only (no bounds) ------------//
-// Extracted from precompute_pmvn: the sigma-dependent portion only.
-// Allows callers to pay the O(J^3) factorisation cost exactly once and
-// reuse it across all Brent iterations that keep sigma fixed.
-PMVNCholFactor precompute_chol(const FlatMatrix& sigma) {
-  size_t J = sigma.nrow;
-  if (sigma.ncol != J)
-    throw std::invalid_argument("sigma must be square");
-
-  FlatMatrix sigma_copy = sigma; // cholesky2 modifies in-place
-  int rank = cholesky2(sigma_copy, J, 1e-12);
-  if (rank <= 0)
-    throw std::invalid_argument("Sigma is not positive definite");
-
-  std::vector<double> sd(J);
-  for (size_t j = 0; j < J; ++j)
-    sd[j] = std::sqrt(sigma_copy(j, j));
-
-  // Build the packed lower-triangular factor C (same indexing as
-  // precompute_pmvn) so that pmvnorm_adaptive can be called directly.
-  std::vector<double> C(J * (J - 1) / 2);
-  size_t start = 0;
-  for (size_t j = 0; j < J; ++j) {
-    for (size_t k = 0; k < j; ++k)
-      C[start + k] = sigma_copy(j, k) * sd[k] / sd[j];
-    start += j;
-  }
-
-  return PMVNCholFactor{J, std::move(sd), std::move(C)};
-}
-
-// ---- pmvnorm_with_chol: reuse cached Cholesky, O(J) per call ------------//
-PMVNResult pmvnorm_with_chol(const PMVNCholFactor& chol,
-                             const std::vector<double>& lower,
-                             const std::vector<double>& upper,
-                             const std::vector<double>& mean,
-                             size_t n0, size_t n_max, size_t R,
-                             double abseps, double releps,
-                             uint64_t seed, bool parallel) {
-  const size_t J = chol.J;
-  if (lower.size() != J || upper.size() != J || mean.size() != J)
-    throw std::invalid_argument("lower/upper/mean must have length J");
-
-  // Early exit: zero probability when any lower >= upper
-  for (size_t j = 0; j < J; ++j) {
-    if (lower[j] >= upper[j]) return PMVNResult{0.0, "analytic", 0.0, 1};
-  }
-
-  // Standardise bounds using the cached standard deviations (O(J))
-  std::vector<double> lower_std(J), upper_std(J);
-  for (size_t j = 0; j < J; ++j) {
-    lower_std[j] = (lower[j] - mean[j]) / chol.sd[j];
-    upper_std[j] = (upper[j] - mean[j]) / chol.sd[j];
-  }
-
-  return pmvnorm_adaptive(J, lower_std, upper_std, chol.C,
-                          n0, n_max, R, abseps, releps, seed, parallel);
-}
 
 // Main entry point: validate inputs, permute/standardize, factorize, and
 // call adaptive routine.
@@ -558,12 +500,8 @@ PMVNResult pmvnormcpp(const std::vector<double>& lower,
     return PMVNResult{p, "analytic", 0.0, 1};
   }
 
-  for (size_t j = 0; j < J; ++j) {
-    if (lower[j] >= upper[j]) return PMVNResult{0.0, "analytic", 0.0, 1};
-  }
-
-  PMVNPrecomputed P = precompute_pmvn(lower, upper, mean, sigma);
-  return pmvnorm_with_precomp(P, n0, n_max, R, abseps, releps, seed, parallel);
+  return pmvnorm_with_chol(precompute_chol(sigma), lower, upper, mean,
+                           n0, n_max, R, abseps, releps, seed, parallel);
 }
 
 
@@ -627,15 +565,13 @@ double qmvnormcpp(const double p,
     };
     return brent(f, x1, x2, 1e-6);
   } else {
-    PMVNPrecomputed P = precompute_pmvn(lower, upper, mean, sigma);
-    std::vector<double> upper_std0 = P.upper_std;
+    PMVNCholFactor chol = precompute_chol(sigma);
+    std::vector<double> lower(J, -std::numeric_limits<double>::infinity());
+    std::vector<double> upper(J);
     auto f = [&](double x) {
-      // update upper limits in P and call adaptive engine
-      for (size_t j = 0; j < J; ++j) {
-        P.upper_std[j] = upper_std0[j]  + (x - upper0) / P.sd[j];
-      }
-      auto res = pmvnorm_with_precomp(P, n0, n_max, R, abseps, releps,
-                                      seed, parallel);
+      std::fill(upper.begin(), upper.end(), x);
+      auto res = pmvnorm_with_chol(chol, lower, upper, mean,
+                                   n0, n_max, R, abseps, releps, seed, parallel);
       return res.prob - p;
     };
     return brent(f, x1, x2, 1e-6);
