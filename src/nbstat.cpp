@@ -5171,8 +5171,8 @@ ListCpp nbpowerequivcpp(
   }
   auto probsH10 = exitprobcpp(ui, a, zero, I);
   std::vector<double> cpuH10(kMax);
-  std::partial_sum(probsH10.exitProbUpper.begin(),
-                   probsH10.exitProbUpper.end(), cpuH10.begin());
+  std::partial_sum(probsH10.exitProbLower.begin(),
+                   probsH10.exitProbLower.end(), cpuH10.begin());
   std::vector<double> cplH10 = cumAlphaSpent;
 
   std::vector<double> cpH10(kMax);
