@@ -4,6 +4,7 @@
 lrstat.Rcheck
 notes/
 docs/
+.vscode/
 src/*.o
 src/*.dll
 tests/testthat-backlog.md
