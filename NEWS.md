@@ -1,6 +1,7 @@
 # lrstat 0.3.3
 
-* used cache for exitprob to improve the efficiency of the function when called repeatedly with the same parameters
+* used struct output to reduce overhead of returning multiple values for exitprobcpp, exitprob_seamless_cpp and exitprob_mams_cpp
+* allowed the retesting of an active hypothesis if its weight has increased due to the rejection of another hypothesis in fseqbon
 
 # lrstat 0.3.2
 
