@@ -64,8 +64,9 @@ fseqbon(
 - incidenceMatrix:
 
   The `kMax x m` incidence matrix indicating whether the specific
-  hypothesis will be tested at the given look. If not provided, defaults
-  to testing each hypothesis at all study looks.
+  hypothesis will be tested at the given look. Here \\m\\ is the number
+  of hypotheses. If not provided, defaults to testing each hypothesis at
+  all study looks.
 
 - k1:
 
@@ -73,17 +74,22 @@ fseqbon(
 
 - p:
 
-  The matrix of raw p-values for each hypothesis by study look.
+  The \\B k_1 \times m\\ matrix of raw p-values for each hypothesis by
+  study look. Here \\B\\ is the number of replications for simulations.
+  In other words, the number of rows must be a multiple of `k1`.
 
 - information:
 
-  The matrix of observed information for each hypothesis by study look.
+  The \\B k_1 \times m\\ matrix of observed information for each
+  hypothesis by study look.
 
 - spendingTime:
 
-  The spending time for alpha spending by study look. If not provided,
-  it is the same as `informationRates` calculated from `information` and
-  `maxInformation`.
+  The \\B k_1 \times m\\ matrix of spending time for alpha spending by
+  study look. Each element must be between 0 and 1, and the spending
+  time must be increasing by study look for each hypothesis. If not
+  provided, it is the same as `informationRates` calculated from
+  `information` and `maxInformation`.
 
 - nthreads:
 
@@ -94,6 +100,14 @@ fseqbon(
 
 A vector to indicate the first look the specific hypothesis is rejected
 (0 if the hypothesis is not rejected).
+
+## Details
+
+The procedure allows the user to retest an unrejected hypothesis at
+earlier looks if its weight increased after rejection of other
+hypotheses. In this case, the procedure will return the first look at
+which the specific hypothesis is rejected. If the hypothesis is not
+rejected at any look, it will return 0.
 
 ## References
 

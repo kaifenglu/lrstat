@@ -5,7 +5,7 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Group Sequential Trials Using Bonferroni-Based Graphical Approaches — fseqbon"><meta name="description" content="Obtains the test results for group sequential trials using
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Group Sequential Trials Using Bonferroni-Based Graphical Approaches — fseqbon"><meta name="description" content="Obtains the test results for group sequential trials using
 graphical approaches based on weighted Bonferroni tests."><meta property="og:description" content="Obtains the test results for group sequential trials using
 graphical approaches based on weighted Bonferroni tests."><meta property="og:image" content="https://kaifenglu.github.io/lrstat/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -112,6 +112,7 @@ hypothesis. Defaults to a vector of 1s if not provided.</p></dd>
 <dt id="arg-incidencematrix">incidenceMatrix<a class="anchor" aria-label="anchor" href="#arg-incidencematrix"></a></dt>
 <dd><p>The <code>kMax x m</code> incidence matrix indicating
 whether the specific hypothesis will be tested at the given look.
+Here \(m\) is the number of hypotheses.
 If not provided, defaults to testing each hypothesis at all study looks.</p></dd>
 
 
@@ -120,16 +121,20 @@ If not provided, defaults to testing each hypothesis at all study looks.</p></dd
 
 
 <dt id="arg-p">p<a class="anchor" aria-label="anchor" href="#arg-p"></a></dt>
-<dd><p>The matrix of raw p-values for each hypothesis by study look.</p></dd>
+<dd><p>The \(B k_1 \times m\) matrix of raw p-values for each hypothesis
+by study look. Here \(B\) is the number of replications for simulations.
+In other words, the number of rows must be a multiple of <code>k1</code>.</p></dd>
 
 
 <dt id="arg-information">information<a class="anchor" aria-label="anchor" href="#arg-information"></a></dt>
-<dd><p>The matrix of observed information for each hypothesis
-by study look.</p></dd>
+<dd><p>The \(B k_1 \times m\) matrix of observed information
+for each hypothesis by study look.</p></dd>
 
 
 <dt id="arg-spendingtime">spendingTime<a class="anchor" aria-label="anchor" href="#arg-spendingtime"></a></dt>
-<dd><p>The spending time for alpha spending by study look.
+<dd><p>The \(B k_1 \times m\) matrix of spending time for
+alpha spending by study look. Each element must be between 0 and 1,
+and the spending time must be increasing by study look for each hypothesis.
 If not provided, it is the same as <code>informationRates</code> calculated
 from <code>information</code> and <code>maxInformation</code>.</p></dd>
 
@@ -143,6 +148,14 @@ the default RcppParallel behavior).</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A vector to indicate the first look the specific hypothesis is
 rejected (0 if the hypothesis is not rejected).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The procedure allows the user to retest an unrejected hypothesis at
+earlier looks if its weight increased after rejection of other hypotheses.
+In this case, the procedure will return the first look at which the
+specific hypothesis is rejected. If the hypothesis is not rejected at
+any look, it will return 0.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
