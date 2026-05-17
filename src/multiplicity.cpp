@@ -989,8 +989,19 @@ Rcpp::NumericMatrix repeatedPValuecpp(
 }
 
 
-// Helper to compute the first rejection step for Bonferroni-based graphical
-// approaches in group sequential trials
+// Compute the first rejection study-look for each hypothesis under a
+// sequential Bonferroni graphical procedure.
+//
+// High-level flow:
+// 1) Validate/standardize inputs and expand per-hypothesis settings.
+// 2) For each simulation replicate b, build per-hypothesis test trajectories
+//    up to interim look k1 (p-values, information rates, spending times).
+// 3) At each study look, iteratively search for rejectable hypotheses,
+//    update graph weights/transitions after each rejection, and continue
+//    until no further rejection is possible at that look.
+//
+// Return value is a B x m integer matrix where each entry is the 1-based
+// study look of first rejection (0 if not rejected by look k1).
 IntMatrix fseqboncpp1(
     const std::vector<double>& w,
     const FlatMatrix& G,
@@ -1065,12 +1076,12 @@ IntMatrix fseqboncpp1(
   std::vector<double> asfpar = parameterAlphaSpending;
 
   if (asf.size() == 1) asf.resize(m, asf[0]);
-  if (asf.size() != static_cast<size_t>(m)) {
+  if (asf.size() != m) {
     throw std::invalid_argument("Invalid length for typeAlphaSpending");
   }
 
   if (asfpar.size() == 1) asfpar.resize(m, asfpar[0]);
-  if (asfpar.size() != static_cast<size_t>(m)) {
+  if (asfpar.size() != m) {
     throw std::invalid_argument("Invalid length for parameterAlphaSpending");
   }
 
@@ -1080,23 +1091,23 @@ IntMatrix fseqboncpp1(
       c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     }
 
-    if (!(asfi == "of" || asfi == "p" || asfi == "wt" ||
-        asfi == "sfof" || asfi == "sfp" || asfi == "sfkd" ||
+    if (!(asfi == "sfof" || asfi == "sfp" || asfi == "sfkd" ||
         asfi == "sfhsd" || asfi == "none")) {
       throw std::invalid_argument("Invalid value for typeAlphaSpending");
     }
 
-    if ((asfi == "wt" || asfi == "sfkd" || asfi == "sfhsd") && std::isnan(asfpar[i])) {
+    if ((asfi == "sfkd" || asfi == "sfhsd") && std::isnan(asfpar[i])) {
       throw std::invalid_argument("Missing value for parameterAlphaSpending");
     }
 
     if (asfi == "sfkd" && asfpar[i] <= 0) {
-      throw std::invalid_argument("parameterAlphaSpending must be positive for sfKD");
+      throw std::invalid_argument(
+          "parameterAlphaSpending must be positive for sfKD");
     }
   }
 
   // Validation: maxInformation must be positive for each hypothesis
-  if (maxInformation.size() != static_cast<size_t>(m)) {
+  if (maxInformation.size() != m) {
     throw std::invalid_argument("Invalid length for maxInformation");
   }
   if (std::any_of(maxInformation.begin(), maxInformation.end(),
@@ -1156,9 +1167,12 @@ IntMatrix fseqboncpp1(
   }
 
 
-  // Handle spending time
+  // Build spending-time matrix aligned to B * k1 rows.
+  // If spendingTime == matrix(0,1,1), treat as missing and derive spending
+  // from information rates later.
   FlatMatrix spendTime(B * k1, m);
-  if (spendingTime.nrow == 1 && spendingTime.ncol == 1 && spendingTime(0, 0) == 0) {
+  if (spendingTime.nrow == 1 && spendingTime.ncol == 1 &&
+      spendingTime(0, 0) == 0) {
     spendTime.fill(NaN);
   } else {
     if (spendingTime.ncol != m) {
@@ -1192,19 +1206,22 @@ IntMatrix fseqboncpp1(
     }
   }
 
-  //--- study look index and testable look index, and number of testable looks
+  // Precompute study-look <-> testable-look mappings at interim k1.
+  // idx1(l, j): study look index (0-based) for hypothesis j at testable look l.
+  // idx2(j, k): testable look index (0-based) for hypothesis j at study look k,
+  //             or -1 when hypothesis j is not testable at study look k.
   IntMatrix idx1(k1, m); // study look index for each testable look
   IntMatrix idx2(m, k1); // testable look index for each study look
   idx1.fill(-1); // initialize with -1 for non-existent test look
   idx2.fill(-1); // initialize with -1 for non-tested study look
-  std::vector<size_t> K1(m); // number of testable looks for hypothesis j at interim
+  std::vector<size_t> K1(m); // # of testable looks for each hypothesis at interim
   std::vector<size_t> K2(m); // last study look for each hypothesis at interim
   for (size_t j = 0; j < m; ++j) {
     size_t l = 0; // index for testable looks of hypothesis j
     for (size_t k = 0; k < k1; ++k) {
       if (incidenceMatrix(k, j)) {
-        idx1(l, j) = k; // study look index for the l-th testable look of hypothesis j
-        idx2(j, k) = l; // testable look index for the k-th study look of hypothesis j
+        idx1(l, j) = k; // study look index for the l-th testable look of hyp j
+        idx2(j, k) = l; // testable look index for the k-th study look of hyp j
         ++l;
       }
     }
@@ -1214,8 +1231,7 @@ IntMatrix fseqboncpp1(
     }
   }
 
-  // Implement the logic to determine which hypotheses are rejected at iteration b
-  // based on the p-values, information, spending time, and the graphical procedure.
+  // Per-replicate rejection engine used by the parallel worker.
   auto f = [&](const size_t b)->std::vector<int> {
     std::vector<size_t> L(m);
 
@@ -1284,7 +1300,8 @@ IntMatrix fseqboncpp1(
           throw std::invalid_argument("spendingTime must be increasing over time");
         }
         if (s_vec[Kj - 1] > 1.0) {
-          throw std::invalid_argument("spendingTime must be less than or equal to 1");
+          throw std::invalid_argument(
+              "spendingTime must be less than or equal to 1");
         }
       }
 
@@ -1293,7 +1310,7 @@ IntMatrix fseqboncpp1(
         auto it = std::lower_bound(i_vec.begin(), i_vec.end(), maxinfoj);
         if (it == i_vec.end()) { // none >= maxInformation
           L[j] = Kj;
-        } else { // first >= maxInformation, consider looks up to & including this one
+        } else { // first >= max info, consider looks up to & including this one
           L[j] = static_cast<size_t>(std::distance(i_vec.begin(), it)) + 1;
         }
       } else { // will use spending time, consider all testable looks
@@ -1318,7 +1335,7 @@ IntMatrix fseqboncpp1(
       if (all_na) { // use information rates
         for (size_t l = 0; l < Lj; ++l) {
           if (l == K0[j] - 1 || i_vec[l] >= maxinfoj) {
-            s1_col[l] = 1.0; // the last testable look is at or beyond maxInformation
+            s1_col[l] = 1.0; // the last testable look is at or beyond max info
           } else {
             s1_col[l] = i_vec[l] / maxinfoj;
           }
@@ -1344,14 +1361,21 @@ IntMatrix fseqboncpp1(
     std::vector<double> u_vec; u_vec.reserve(k1); // upper bound from getBoundcpp
 
     // temp vectors reuse across hypotheses
-    std::vector<double> t;
-    std::vector<double> s;
+    // Cache full t/s columns once per replicate. They are reused many times
+    // in the inner rejection search and do not change during replicate b.
+    std::vector<std::vector<double>> t_cols(m);
+    std::vector<std::vector<double>> s_cols(m);
+    for (size_t j = 0; j < m; ++j) {
+      t_cols[j] = flatmatrix_get_column(t1, j);
+      s_cols[j] = flatmatrix_get_column(s1, j);
+    }
+
     std::vector<unsigned char> x(k1, 1); // efficacyStopping for getBoundcpp
-    std::vector<double> w_pre(k1); // previous weights
+    std::vector<double> w_pre(m); // previous weights by hypothesis index
 
     // cached per-hypothesis previous upper bounds (u_pre[j] for hypothesis j)
-    std::vector<std::vector<double>> u_pre(m);
-    for (size_t j = 0; j < m; ++j) u_pre[j].resize(k1);
+    FlatMatrix u_pre(k1, m);
+    double* u_pre_ptr = u_pre.data_ptr();
 
     // Preallocated helper vectors reused for "resuse" branch
     std::vector<double> l_vec(k1, -8.0);
@@ -1367,33 +1391,37 @@ IntMatrix fseqboncpp1(
     for (size_t step = 0; step < K3; ++step) {  // loop over study look
       const int* idx2_col = idx2_ptr + step * m;
 
-      //Try to find a hypothesis that can be rejected at this step
+      //Try to find all hypotheses that can be rejected at this step
       for ([[maybe_unused]] size_t i : active) {
         bool found_reject = false;
         int found_j = -1;
+        size_t step_j = 0; // study look (1-based) for rejection of hypothesis j
 
         // scan all hypotheses j to find a rejectable one
         for (size_t j : active) {
           if (wx[j] < 1e-8) continue;  // weight too small or already rejected
-          size_t l = idx2_col[j];         // testable look index (0-based)
-          if (l < 0) continue;         // not testable at this study look
+          int l_int = idx2_col[j];     // testable look index (0-based) for
+                                       // hypothesis j at current study look
+          if (l_int < 0) continue;     // not testable at this study look
+          size_t l = static_cast<size_t>(l_int);
           if (l >= L[j]) continue;     // beyond L[j] considered at interim
-          size_t n = l + 1; // # of testable looks for hypothesis j at this study look
+          size_t n = l + 1; // # of testable looks for hyp j at this study look
 
           double alpha1 = wx[j] * alpha;
           const std::string& asf1 = asf[j];
           double asfpar1 = asfpar[j];
 
           // Compute upper bound
-          t = flatmatrix_get_column(t1, j);
-          s = flatmatrix_get_column(s1, j);
+          const std::vector<double>& t = t_cols[j];
+          const std::vector<double>& s = s_cols[j];
           if (wx[j] != w_pre[j]) {
             // weights changed, compute full u_vec
             u_vec = getBoundcpp(n, t, alpha1, asf1, asfpar1, user, s, x);
           } else {
             // reuse previous u_pre[j] prefix, only solve for last element
             u_vec.resize(n);
-            if (l > 0) std::memcpy(u_vec.data(), u_pre[j].data(), l * sizeof(double));
+            if (l > 0) std::memcpy(u_vec.data(), u_pre_ptr + j * k1,
+                l * sizeof(double));
             // compute cumulative alpha for this n
             double cumAlpha = errorSpentcpp(s[l], alpha1, asf1, asfpar1);
 
@@ -1419,14 +1447,34 @@ IntMatrix fseqboncpp1(
           }
 
           // cache computed u_vec for hypothesis j
-          std::memcpy(u_pre[j].data(), u_vec.data(), n * sizeof(double));
+          std::memcpy(u_pre_ptr + j * k1, u_vec.data(), n * sizeof(double));
 
           // test rejection
-          double alphastar = 1.0 - boost_pnorm(u_vec[l]);
-          if (p1(l, j) < alphastar) {
-            found_reject = true;
-            found_j = j;
-            break; // stop scanning j, we'll process rejection
+          if (wx[j] == w_pre[j]) {
+            // weight unchanged since last check, only need to check current look l
+            double alphastar = 1.0 - boost_pnorm(u_vec[l]);
+            if (p1(l, j) <= alphastar) {
+              found_reject = true;
+              found_j = j;
+              step_j = step + 1; // current study look (1-based)
+              break; // stop scanning j, we'll process rejection
+            }
+          } else {
+            // weight changed, need to check all previous looks up to l
+            bool reject_j = false;
+            for (size_t ll = 0; ll <= l; ++ll) {
+              double alphastar = 1.0 - boost_pnorm(u_vec[ll]);
+              if (p1(ll, j) <= alphastar) {
+                reject_j = true;
+                step_j = idx1(ll, j) + 1; // study look for this testable look
+                break;
+              }
+            }
+            if (reject_j) {
+              found_reject = true;
+              found_j = j;
+              break; // stop scanning j, we'll process rejection
+            }
           }
         } // end scan j
 
@@ -1438,7 +1486,7 @@ IntMatrix fseqboncpp1(
 
         // Process rejection of hypothesis found_j
         size_t j = found_j;
-        reject[j] = step + 1;
+        reject[j] = step_j;
         ++num_rejected;
 
         // Remove j from active set
@@ -1559,6 +1607,15 @@ IntMatrix fseqboncpp1(
   }; // end BootstrapWorker
 
   IntMatrix reject_mat(B, m); // B by m matrix to store rejection results
+
+  // Fast path: avoid parallel scheduling overhead for a single replicate.
+  if (B == 1) {
+    std::vector<int> out = f(0);
+    for (size_t j = 0; j < m; ++j) {
+      reject_mat(0, j) = out[j];
+    }
+    return reject_mat;
+  }
 
   // Instantiate the Worker with references to inputs and outputs
   SimulationWorker worker(
