@@ -7,5 +7,4 @@ docs/
 .vscode/
 src/*.o
 src/*.dll
-tests/testthat-backlog.md
 .positai

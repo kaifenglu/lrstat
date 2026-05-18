@@ -11,4 +11,3 @@ notes
 ^\.positai$
 ^\.claude$
 ^\.vscode$
-^tests/testthat-backlog\.md$
