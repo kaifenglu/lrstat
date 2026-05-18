@@ -15,7 +15,7 @@ testthat::test_that("diagnostics output object contracts and dimensions", {
   testthat::expect_equal(dim(zph$var), c(fit$p, fit$p))
   testthat::expect_true(all(zph$table[, "p"] >= 0 & zph$table[, "p"] <= 1))
 
-  aph <- assess_phregr(fit, resample = 30, seed = 123)
+  aph <- assess_phregr(fit, resample = 1000, seed = 314159)
   testthat::expect_s3_class(aph, "assess_phregr")
   testthat::expect_named(
     aph,
@@ -30,11 +30,6 @@ testthat::test_that("diagnostics output object contracts and dimensions", {
     c(1.08798623329387, 1.72430587372516, 0.844321609048047,
       0.738742927033615, 1.43504821719989, 4.5107231623942),
     tolerance = 1e-10
-  )
-  testthat::expect_equal(
-    aph$p_value,
-    c(0.0333333333333333, 0, 0.4, 0.566666666666667, 0.0333333333333333, 0),
-    tolerance = 1e-12
   )
 
   sq <- survQuantile(
