@@ -197,3 +197,161 @@ testthat::test_that("sequential procedures produce valid outcomes", {
     tolerance = 1e-5
   )
 })
+
+
+testthat::test_that("fseqbon lookback handling depends on visit schedule and alpha recycling", {
+  incidence_matrix <- matrix(
+    c(1, 0, 0, 0, 0,
+      0, 1, 1, 0, 0,
+      0, 0, 1, 1, 1),
+    nrow = 5,
+    ncol = 3
+  )
+  w <- c(0.001, 0.024, 0) / 0.025
+  g <- matrix(
+    c(0, 1, 0,
+      0, 0, 1,
+      1, 0, 0),
+    nrow = 3,
+    ncol = 3,
+    byrow = TRUE
+  )
+
+  max_information <- c(600, 120, 100)
+
+  information <- matrix(
+    c(600, 24, 8,
+      600, 54, 24,
+      600, 120, 48,
+      600, 120, 72,
+      600, 120, 100),
+    nrow = 5,
+    byrow = TRUE
+  )
+
+  # Scenario 1: PFS and OS p-values decrease over looks. OS is first
+  # rejected at the final look, and ORR can be rejected only via lookback
+  # after late alpha recycling from OS.
+  pvals_lookback_sensitive <- matrix(
+    c(0.006, 0.9, 0.9,
+      0.006, 0.006, 0.9,
+      0.006, 0.003, 0.03,
+      0.006, 0.003, 0.02,
+      0.006, 0.003, 0.001),
+    nrow = 5,
+    byrow = TRUE
+  )
+
+  out_true <- fseqbon(
+    w = w,
+    G = g,
+    alpha = 0.025,
+    kMax = 5,
+    typeAlphaSpending = rep("sfP", 3),
+    maxInformation = max_information,
+    incidenceMatrix = incidence_matrix,
+    k1 = 5,
+    p = pvals_lookback_sensitive,
+    information = information,
+    lookback = TRUE,
+    nthreads = 1
+  )
+  out_false <- fseqbon(
+    w = w,
+    G = g,
+    alpha = 0.025,
+    kMax = 5,
+    typeAlphaSpending = rep("sfP", 3),
+    maxInformation = max_information,
+    incidenceMatrix = incidence_matrix,
+    k1 = 5,
+    p = pvals_lookback_sensitive,
+    information = information,
+    lookback = FALSE,
+    nthreads = 1
+  )
+
+  testthat::expect_equal(out_true, c(1, 2, 5))
+  testthat::expect_equal(out_false, c(0, 2, 5))
+
+  # Scenario 2: ORR is already significant at look 1, so lookback toggle
+  # should not change the rejection pattern.
+  pvals_not_sensitive <- pvals_lookback_sensitive
+  pvals_not_sensitive[1, 1] <- 0.0008
+
+  out_true_2 <- fseqbon(
+    w = w,
+    G = g,
+    alpha = 0.025,
+    kMax = 5,
+    typeAlphaSpending = rep("sfP", 3),
+    maxInformation = max_information,
+    incidenceMatrix = incidence_matrix,
+    k1 = 5,
+    p = pvals_not_sensitive,
+    information = information,
+    lookback = TRUE,
+    nthreads = 1
+  )
+  out_false_2 <- fseqbon(
+    w = w,
+    G = g,
+    alpha = 0.025,
+    kMax = 5,
+    typeAlphaSpending = rep("sfP", 3),
+    maxInformation = max_information,
+    incidenceMatrix = incidence_matrix,
+    k1 = 5,
+    p = pvals_not_sensitive,
+    information = information,
+    lookback = FALSE,
+    nthreads = 1
+  )
+
+  testthat::expect_equal(out_true_2, c(1, 2, 5))
+  testthat::expect_equal(out_false_2, c(1, 2, 5))
+
+  # Scenario 3: sfOF spending with decreasing p-values over time for each
+  # tested endpoint, while retaining lookback sensitivity.
+  pvals_of_lookback_sensitive <- matrix(
+    c(0.0035, 0.9, 0.9,
+      0.0035, 0.0045, 0.9,
+      0.0035, 0.0020, 0.0030,
+      0.0035, 0.0020, 0.0015,
+      0.0035, 0.0020, 0.0005),
+    nrow = 5,
+    byrow = TRUE
+  )
+
+  out_true_3 <- fseqbon(
+    w = w,
+    G = g,
+    alpha = 0.025,
+    kMax = 5,
+    typeAlphaSpending = rep("sfOF", 3),
+    maxInformation = max_information,
+    incidenceMatrix = incidence_matrix,
+    k1 = 5,
+    p = pvals_of_lookback_sensitive,
+    information = information,
+    lookback = TRUE,
+    nthreads = 1
+  )
+  out_false_3 <- fseqbon(
+    w = w,
+    G = g,
+    alpha = 0.025,
+    kMax = 5,
+    typeAlphaSpending = rep("sfOF", 3),
+    maxInformation = max_information,
+    incidenceMatrix = incidence_matrix,
+    k1 = 5,
+    p = pvals_of_lookback_sensitive,
+    information = information,
+    lookback = FALSE,
+    nthreads = 1
+  )
+
+  testthat::expect_equal(out_true_3, c(1, 3, 3))
+  testthat::expect_equal(out_false_3, c(0, 3, 3))
+})
