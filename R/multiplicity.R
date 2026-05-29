@@ -340,13 +340,16 @@ repeatedPValue <- function(kMax,
 #'   and the spending time must be increasing by study look for each hypothesis.
 #'   If not provided, it is the same as \code{informationRates} calculated
 #'   from \code{information} and \code{maxInformation}.
+#' @param lookback Whether to allow retesting at earlier looks. It defaults to
+#'   \code{TRUE}.
 #' @param nthreads The number of threads to use in simulations (0 means
 #'   the default RcppParallel behavior).
 #'
 #' @details
-#' The procedure allows the user to retest an unrejected hypothesis at
-#' earlier looks if its weight increased after rejection of other hypotheses.
-#' In this case, the procedure will return the first look at which the
+#' When \code{lookback = TRUE}, the procedure allows the user to retest an
+#' unrejected hypothesis at earlier looks if its weight increased after
+#' rejection of other hypotheses.
+#' The procedure will return the first look at which the
 #' specific hypothesis is rejected. If the hypothesis is not rejected at
 #' any look, it will return 0.
 #'
@@ -390,6 +393,7 @@ fseqbon <- function(w, G, alpha = 0.025, kMax,
                     incidenceMatrix = NULL,
                     k1, p, information,
                     spendingTime = NULL,
+                    lookback = TRUE,
                     nthreads = 0) {
   m <- length(w)
 
@@ -426,7 +430,7 @@ fseqbon <- function(w, G, alpha = 0.025, kMax,
     maxInformation = maxInformation,
     incidenceMatrix = incidenceMatrix,
     k1 = k1, p = p, information = information,
-    spendingTime = spendingTime)
+    spendingTime = spendingTime, lookback = lookback)
 
   if (nrow(reject1) == 1) { # convert the result to a vector
     reject <- as.vector(reject1)

@@ -2172,8 +2172,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fseqboncpp
-Rcpp::IntegerMatrix fseqboncpp(const Rcpp::NumericVector& w, const Rcpp::NumericMatrix& G, const double alpha, const int kMax, const Rcpp::StringVector& typeAlphaSpending, const Rcpp::NumericVector& parameterAlphaSpending, const Rcpp::NumericVector& maxInformation, const Rcpp::LogicalMatrix& incidenceMatrix, const int k1, const Rcpp::NumericMatrix& p, const Rcpp::NumericMatrix& information, const Rcpp::NumericMatrix& spendingTime);
-RcppExport SEXP _lrstat_fseqboncpp(SEXP wSEXP, SEXP GSEXP, SEXP alphaSEXP, SEXP kMaxSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP maxInformationSEXP, SEXP incidenceMatrixSEXP, SEXP k1SEXP, SEXP pSEXP, SEXP informationSEXP, SEXP spendingTimeSEXP) {
+Rcpp::IntegerMatrix fseqboncpp(const Rcpp::NumericVector& w, const Rcpp::NumericMatrix& G, const double alpha, const int kMax, const Rcpp::StringVector& typeAlphaSpending, const Rcpp::NumericVector& parameterAlphaSpending, const Rcpp::NumericVector& maxInformation, const Rcpp::LogicalMatrix& incidenceMatrix, const int k1, const Rcpp::NumericMatrix& p, const Rcpp::NumericMatrix& information, const Rcpp::NumericMatrix& spendingTime, const bool lookback);
+RcppExport SEXP _lrstat_fseqboncpp(SEXP wSEXP, SEXP GSEXP, SEXP alphaSEXP, SEXP kMaxSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP maxInformationSEXP, SEXP incidenceMatrixSEXP, SEXP k1SEXP, SEXP pSEXP, SEXP informationSEXP, SEXP spendingTimeSEXP, SEXP lookbackSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2189,7 +2189,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type p(pSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type information(informationSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type spendingTime(spendingTimeSEXP);
-    rcpp_result_gen = Rcpp::wrap(fseqboncpp(w, G, alpha, kMax, typeAlphaSpending, parameterAlphaSpending, maxInformation, incidenceMatrix, k1, p, information, spendingTime));
+    Rcpp::traits::input_parameter< const bool >::type lookback(lookbackSEXP);
+    rcpp_result_gen = Rcpp::wrap(fseqboncpp(w, G, alpha, kMax, typeAlphaSpending, parameterAlphaSpending, maxInformation, incidenceMatrix, k1, p, information, spendingTime, lookback));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -3559,7 +3560,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lrstat_fwgtmat", (DL_FUNC) &_lrstat_fwgtmat, 2},
     {"_lrstat_fadjpsimcpp", (DL_FUNC) &_lrstat_fadjpsimcpp, 3},
     {"_lrstat_repeatedPValuecpp", (DL_FUNC) &_lrstat_repeatedPValuecpp, 7},
-    {"_lrstat_fseqboncpp", (DL_FUNC) &_lrstat_fseqboncpp, 12},
+    {"_lrstat_fseqboncpp", (DL_FUNC) &_lrstat_fseqboncpp, 13},
     {"_lrstat_fstp2seqcpp", (DL_FUNC) &_lrstat_fstp2seqcpp, 4},
     {"_lrstat_fstdmixcpp", (DL_FUNC) &_lrstat_fstdmixcpp, 7},
     {"_lrstat_fmodmixcpp", (DL_FUNC) &_lrstat_fmodmixcpp, 7},

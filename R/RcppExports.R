@@ -6151,8 +6151,8 @@ repeatedPValuecpp <- function(kMax, typeAlphaSpending, parameterAlphaSpending, m
     .Call(`_lrstat_repeatedPValuecpp`, kMax, typeAlphaSpending, parameterAlphaSpending, maxInformation, p, information, spendingTime)
 }
 
-fseqboncpp <- function(w, G, alpha, kMax, typeAlphaSpending, parameterAlphaSpending, maxInformation, incidenceMatrix, k1, p, information, spendingTime) {
-    .Call(`_lrstat_fseqboncpp`, w, G, alpha, kMax, typeAlphaSpending, parameterAlphaSpending, maxInformation, incidenceMatrix, k1, p, information, spendingTime)
+fseqboncpp <- function(w, G, alpha, kMax, typeAlphaSpending, parameterAlphaSpending, maxInformation, incidenceMatrix, k1, p, information, spendingTime, lookback) {
+    .Call(`_lrstat_fseqboncpp`, w, G, alpha, kMax, typeAlphaSpending, parameterAlphaSpending, maxInformation, incidenceMatrix, k1, p, information, spendingTime, lookback)
 }
 
 fstp2seqcpp <- function(p, gamma, test = "hochberg", retest = TRUE) {
@@ -8541,12 +8541,6 @@ rmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
 #'
 #' * \code{selectAsBest}: A vector of length \eqn{M} containing the
 #'   probability that each active arm is selected to move on to Phase 3.
-#'
-#' For backward compatibility, the list also contains:
-#'
-#' * \code{exitProb}: identical to \code{exitProbUpper}.
-#'
-#' * \code{exitProbByArm}: identical to \code{exitProbByArmUpper}.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'

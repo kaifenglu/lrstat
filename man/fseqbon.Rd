@@ -18,6 +18,7 @@ fseqbon(
   p,
   information,
   spendingTime = NULL,
+  lookback = TRUE,
   nthreads = 0
 )
 }
@@ -67,6 +68,9 @@ and the spending time must be increasing by study look for each hypothesis.
 If not provided, it is the same as \code{informationRates} calculated
 from \code{information} and \code{maxInformation}.}
 
+\item{lookback}{Whether to allow retesting at earlier looks. It defaults to
+\code{TRUE}.}
+
 \item{nthreads}{The number of threads to use in simulations (0 means
 the default RcppParallel behavior).}
 }
@@ -79,9 +83,10 @@ Obtains the test results for group sequential trials using
 graphical approaches based on weighted Bonferroni tests.
 }
 \details{
-The procedure allows the user to retest an unrejected hypothesis at
-earlier looks if its weight increased after rejection of other hypotheses.
-In this case, the procedure will return the first look at which the
+When \code{lookback = TRUE}, the procedure allows the user to retest an
+unrejected hypothesis at earlier looks if its weight increased after
+rejection of other hypotheses.
+The procedure will return the first look at which the
 specific hypothesis is rejected. If the hypothesis is not rejected at
 any look, it will return 0.
 }

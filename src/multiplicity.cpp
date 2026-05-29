@@ -1014,7 +1014,8 @@ IntMatrix fseqboncpp1(
     const size_t k1,
     const FlatMatrix& p,
     const FlatMatrix& information,
-    const FlatMatrix& spendingTime) {
+    const FlatMatrix& spendingTime,
+    const bool lookback) {
 
   size_t m = w.size();
 
@@ -1208,26 +1209,26 @@ IntMatrix fseqboncpp1(
 
   // Precompute study-look <-> testable-look mappings at interim k1.
   // idx1(l, j): study look index (0-based) for hypothesis j at testable look l.
-  // idx2(j, k): testable look index (0-based) for hypothesis j at study look k,
+  // idx2(k, j): testable look index (0-based) for hypothesis j at study look k,
   //             or -1 when hypothesis j is not testable at study look k.
   IntMatrix idx1(k1, m); // study look index for each testable look
-  IntMatrix idx2(m, k1); // testable look index for each study look
+  IntMatrix idx2(k1, m); // testable look index for each study look
   idx1.fill(-1); // initialize with -1 for non-existent test look
   idx2.fill(-1); // initialize with -1 for non-tested study look
-  std::vector<size_t> K1(m); // # of testable looks for each hypothesis at interim
-  std::vector<size_t> K2(m); // last study look for each hypothesis at interim
+  std::vector<size_t> K1(m); // last study look for each hypothesis at interim
+  std::vector<size_t> K2(m); // # of testable looks for each hypothesis at interim
   for (size_t j = 0; j < m; ++j) {
     size_t l = 0; // index for testable looks of hypothesis j
     for (size_t k = 0; k < k1; ++k) {
       if (incidenceMatrix(k, j)) {
         idx1(l, j) = k; // study look index for the l-th testable look of hyp j
-        idx2(j, k) = l; // testable look index for the k-th study look of hyp j
+        idx2(k, j) = l; // testable look index for the k-th study look of hyp j
         ++l;
       }
     }
-    K1[j] = l; // number of testable looks for hypothesis j (1-based)
+    K2[j] = l; // number of testable looks for hypothesis j (1-based)
     if (l > 0) {
-      K2[j] = idx1(l - 1, j) + 1;  // last study look for hypothesis j (1-based)
+      K1[j] = idx1(l - 1, j) + 1;  // last study look for hypothesis j (1-based)
     }
   }
 
@@ -1246,7 +1247,7 @@ IntMatrix fseqboncpp1(
     std::vector<double> i_vec; i_vec.reserve(k1);
     std::vector<double> s_vec; s_vec.reserve(k1);
     for (size_t j = 0; j < m; ++j) { // loop over hypotheses
-      size_t Kj = K1[j]; // number of testable looks for hypothesis j at interim
+      size_t Kj = K2[j]; // number of testable looks for hypothesis j at interim
       if (Kj == 0) continue; // no testable look, skip to next hypothesis
       double maxinfoj = maxInformation[j]; // maxInformation for hypothesis j
 
@@ -1381,15 +1382,11 @@ IntMatrix fseqboncpp1(
     std::vector<double> l_vec(k1, -8.0);
     std::vector<double> theta_vec(k1, 0.0);
 
-    // pointers to idx2
-    const int* idx2_ptr = idx2.data_ptr(); // m x k1
-
     ExitProbResult probs; // to store results from exitprobcpp
 
-    size_t K3 = *std::max_element(K2.begin(), K2.end());
+    size_t K3 = *std::max_element(K1.begin(), K1.end());
 
     for (size_t step = 0; step < K3; ++step) {  // loop over study look
-      const int* idx2_col = idx2_ptr + step * m;
 
       //Try to find all hypotheses that can be rejected at this step
       for ([[maybe_unused]] size_t i : active) {
@@ -1397,61 +1394,60 @@ IntMatrix fseqboncpp1(
         int found_j = -1;
         size_t step_j = 0; // study look (1-based) for rejection of hypothesis j
 
-        // scan all hypotheses j to find a rejectable one
-        for (size_t j : active) {
-          if (wx[j] < 1e-8) continue;  // weight too small or already rejected
-          int l_int = idx2_col[j];     // testable look index (0-based) for
-                                       // hypothesis j at current study look
-          if (l_int < 0) continue;     // not testable at this study look
-          size_t l = static_cast<size_t>(l_int);
-          if (l >= L[j]) continue;     // beyond L[j] considered at interim
-          size_t n = l + 1; // # of testable looks for hyp j at this study look
+        if (!lookback) {
+          // no lookback, only check hypotheses with testable look at current step
+          // scan all hypotheses j to find a rejectable one
+          for (size_t j : active) {
+            if (wx[j] < 1e-8) continue; // weight too small or already rejected
+            int l_int = idx2(step, j);  // testable look index (0-based) for
+                                        // hypothesis j at current study look
+            if (l_int < 0) continue;    // not testable at this study look
+            size_t l = static_cast<size_t>(l_int);
+            if (l >= L[j]) continue;    // beyond L[j] considered at interim
+            size_t n = l + 1; // # of testable looks for hyp j at this study look
 
-          double alpha1 = wx[j] * alpha;
-          const std::string& asf1 = asf[j];
-          double asfpar1 = asfpar[j];
+            double alpha1 = wx[j] * alpha;
+            const std::string& asf1 = asf[j];
+            double asfpar1 = asfpar[j];
 
-          // Compute upper bound
-          const std::vector<double>& t = t_cols[j];
-          const std::vector<double>& s = s_cols[j];
-          if (wx[j] != w_pre[j]) {
-            // weights changed, compute full u_vec
-            u_vec = getBoundcpp(n, t, alpha1, asf1, asfpar1, user, s, x);
-          } else {
-            // reuse previous u_pre[j] prefix, only solve for last element
-            u_vec.resize(n);
-            if (l > 0) std::memcpy(u_vec.data(), u_pre_ptr + j * k1,
-                l * sizeof(double));
-            // compute cumulative alpha for this n
-            double cumAlpha = errorSpentcpp(s[l], alpha1, asf1, asfpar1);
-
-            // small lambda that only sets last element
-            auto g = [&](double aval)->double {
-              u_vec[l] = aval;
-              probs = exitprobcpp(u_vec, l_vec, theta_vec, t);
-              double cpu = std::accumulate(probs.exitProbUpper.begin(),
-                                           probs.exitProbUpper.end(), 0.0);
-              return cpu - cumAlpha;
-            };
-
-            double g_8 = g(8.0);
-            if (g_8 > 0.0) { // no alpha spent at current visit
-              u_vec[l] = 8.0;
+            // Compute upper bound
+            const std::vector<double>& t = t_cols[j];
+            const std::vector<double>& s = s_cols[j];
+            if (wx[j] != w_pre[j]) {
+              // weights changed, compute full u_vec
+              u_vec = getBoundcpp(n, t, alpha1, asf1, asfpar1, user, s, x);
             } else {
-              auto g_for_brent = [&](double aval)->double {
-                if (aval == 8.0) return g_8; // avoid recomputation at 8.0
-                return g(aval);
+              // reuse previous u_pre[j] prefix, only solve for last element
+              u_vec.resize(n);
+              if (l > 0) std::memcpy(u_vec.data(), u_pre_ptr + j * k1,
+                  l * sizeof(double));
+              // compute cumulative alpha for this n
+              double cumAlpha = errorSpentcpp(s[l], alpha1, asf1, asfpar1);
+
+              // small lambda that only sets last element
+              auto g = [&](double aval)->double {
+                u_vec[l] = aval;
+                probs = exitprobcpp(u_vec, l_vec, theta_vec, t);
+                double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                             probs.exitProbUpper.end(), 0.0);
+                return cpu - cumAlpha;
               };
-              u_vec[l] = brent(g_for_brent, -5.0, 8.0, 1e-6);
+
+              double g_8 = g(8.0);
+              if (g_8 > 0.0) { // no alpha spent at current visit
+                u_vec[l] = 8.0;
+              } else {
+                auto g_for_brent = [&](double aval)->double {
+                  if (aval == 8.0) return g_8; // avoid recomputation at 8.0
+                  return g(aval);
+                };
+                u_vec[l] = brent(g_for_brent, -5.0, 8.0, 1e-6);
+              }
             }
-          }
 
-          // cache computed u_vec for hypothesis j
-          std::memcpy(u_pre_ptr + j * k1, u_vec.data(), n * sizeof(double));
+            // cache computed u_vec for hypothesis j
+            std::memcpy(u_pre_ptr + j * k1, u_vec.data(), n * sizeof(double));
 
-          // test rejection
-          if (wx[j] == w_pre[j]) {
-            // weight unchanged since last check, only need to check current look l
             double alphastar = 1.0 - boost_pnorm(u_vec[l]);
             if (p1(l, j) <= alphastar) {
               found_reject = true;
@@ -1459,24 +1455,104 @@ IntMatrix fseqboncpp1(
               step_j = step + 1; // current study look (1-based)
               break; // stop scanning j, we'll process rejection
             }
-          } else {
-            // weight changed, need to check all previous looks up to l
-            bool reject_j = false;
-            for (size_t ll = 0; ll <= l; ++ll) {
-              double alphastar = 1.0 - boost_pnorm(u_vec[ll]);
-              if (p1(ll, j) <= alphastar) {
-                reject_j = true;
-                step_j = idx1(ll, j) + 1; // study look for this testable look
-                break;
+          } // end scan j
+        } else {
+          // lookback, need to check all active hypotheses at each step
+          // scan all hypotheses j to find a rejectable one
+          for (size_t j : active) {
+            if (wx[j] < 1e-8) continue;  // weight too small or already rejected
+
+            // find the number of testable looks for hypothesis j at this study look
+            int l_int = -1;
+            for (size_t ll = 0; ll <= step; ++ll) {
+              int l_int_ll = idx2(ll, j); // testable look index at study look ll
+              if (l_int_ll >= 0) {
+                l_int = l_int_ll; // update the last testable look up to current step
               }
             }
-            if (reject_j) {
-              found_reject = true;
-              found_j = j;
-              break; // stop scanning j, we'll process rejection
+
+            if (l_int < 0) continue;     // not testable up to this study look
+            size_t l = static_cast<size_t>(l_int);
+            if (l >= L[j]) continue;     // beyond L[j] considered at interim
+            size_t n = l + 1; // # of testable looks for hyp j up to this study look
+
+            double alpha1 = wx[j] * alpha;
+            const std::string& asf1 = asf[j];
+            double asfpar1 = asfpar[j];
+
+            // Compute upper bound
+            const std::vector<double>& t = t_cols[j];
+            const std::vector<double>& s = s_cols[j];
+            if (wx[j] != w_pre[j]) {
+              // weights changed, compute full u_vec
+              u_vec = getBoundcpp(n, t, alpha1, asf1, asfpar1, user, s, x);
+              // cache computed u_vec for hypothesis j
+              std::memcpy(u_pre_ptr + j * k1, u_vec.data(), n * sizeof(double));
+            } else if (idx2(step, j) >= 0) {
+              // weights unchanged and testable at current study look,
+              // reuse previous u_pre[j] prefix, only solve for last element
+              u_vec.resize(n);
+              if (l > 0) std::memcpy(u_vec.data(), u_pre_ptr + j * k1,
+                  l * sizeof(double));
+              // compute cumulative alpha for this n
+              double cumAlpha = errorSpentcpp(s[l], alpha1, asf1, asfpar1);
+
+              // small lambda that only sets last element
+              auto g = [&](double aval)->double {
+                u_vec[l] = aval;
+                probs = exitprobcpp(u_vec, l_vec, theta_vec, t);
+                double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                             probs.exitProbUpper.end(), 0.0);
+                return cpu - cumAlpha;
+              };
+
+              double g_8 = g(8.0);
+              if (g_8 > 0.0) { // no alpha spent at current visit
+                u_vec[l] = 8.0;
+              } else {
+                auto g_for_brent = [&](double aval)->double {
+                  if (aval == 8.0) return g_8; // avoid recomputation at 8.0
+                  return g(aval);
+                };
+                u_vec[l] = brent(g_for_brent, -5.0, 8.0, 1e-6);
+              }
+              // cache computed u_vec for hypothesis j
+              std::memcpy(u_pre_ptr + j * k1, u_vec.data(), n * sizeof(double));
+            } else {
+              // no weight change and not testable at current study look,
+              // no need to test for rejection at current look
+              continue;
             }
-          }
-        } // end scan j
+
+            // test rejection
+            if (wx[j] == w_pre[j]) {
+              // weight unchanged since last check, only need to check current look l
+              double alphastar = 1.0 - boost_pnorm(u_vec[l]);
+              if (p1(l, j) <= alphastar) {
+                found_reject = true;
+                found_j = j;
+                step_j = step + 1; // current study look (1-based)
+                break; // stop scanning j, we'll process rejection
+              }
+            } else {
+              // weight changed, need to check all previous looks up to l
+              bool reject_j = false;
+              for (size_t ll = 0; ll <= l; ++ll) {
+                double alphastar = 1.0 - boost_pnorm(u_vec[ll]);
+                if (p1(ll, j) <= alphastar) {
+                  reject_j = true;
+                  step_j = idx1(ll, j) + 1; // study look for this testable look
+                  break;
+                }
+              }
+              if (reject_j) {
+                found_reject = true;
+                found_j = j;
+                break; // stop scanning j, we'll process rejection
+              }
+            }
+          } // end scan j
+        }
 
         if (!found_reject) { // no more rejections at this study look
           // remember current weights for next study look to check if weights changed
@@ -1556,6 +1632,7 @@ IntMatrix fseqboncpp1(
     const FlatMatrix& p;
     const FlatMatrix& info;
     const FlatMatrix& spendTime;
+    const bool lookback;
 
     // function f and other params that f needs are captured from outer scope
     // capture them by reference here so worker can call f(...)
@@ -1581,13 +1658,14 @@ IntMatrix fseqboncpp1(
                      const FlatMatrix& p_,
                      const FlatMatrix& info_,
                      const FlatMatrix& spendTime_,
+                     const bool lookback_,
                      decltype(f) f_,
                      IntMatrix& reject_out_) :
 
       m(m_), k1(k1_), w(w_), G(G_), alpha(alpha_),
       asf(asf_), asfpar(asfpar_), K0(K0_), K1(K1_), K2(K2_),
       idx1(idx1_), idx2(idx2_), maxInformation(maxInformation_),
-      p(p_), info(info_), spendTime(spendTime_),
+      p(p_), info(info_), spendTime(spendTime_), lookback(lookback_),
       f(std::move(f_)),
       reject_out(reject_out_) {}
 
@@ -1620,7 +1698,7 @@ IntMatrix fseqboncpp1(
   // Instantiate the Worker with references to inputs and outputs
   SimulationWorker worker(
       m, k1, w, G, alpha, asf, asfpar, K0, K1, K2,
-      idx1, idx2, maxInformation, p, info, spendTime,
+      idx1, idx2, maxInformation, p, info, spendTime, lookback,
       // bind f into std::function (capture the f we already have)
       std::function<std::vector<int>(const size_t)>(f),
       reject_mat
@@ -1646,7 +1724,8 @@ Rcpp::IntegerMatrix fseqboncpp(
     const int k1,
     const Rcpp::NumericMatrix& p,
     const Rcpp::NumericMatrix& information,
-    const Rcpp::NumericMatrix& spendingTime) {
+    const Rcpp::NumericMatrix& spendingTime,
+    const bool lookback) {
   auto w1 = Rcpp::as<std::vector<double>>(w);
   auto G1 = flatmatrix_from_Rmatrix(G);
   auto asf1 = Rcpp::as<std::vector<std::string>>(typeAlphaSpending);
@@ -1658,7 +1737,8 @@ Rcpp::IntegerMatrix fseqboncpp(
   auto spendTime1 = flatmatrix_from_Rmatrix(spendingTime);
   auto reject1 = fseqboncpp1(w1, G1, alpha, static_cast<size_t>(kMax),
                              asf1, asfpar1, maxInfo1, incid1,
-                             static_cast<size_t>(k1), p1, info1, spendTime1);
+                             static_cast<size_t>(k1),
+                             p1, info1, spendTime1, lookback);
   return Rcpp::wrap(reject1);
 }
 
