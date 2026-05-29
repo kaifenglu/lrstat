@@ -66,12 +66,6 @@ look \eqn{k} given that arm \eqn{m} is selected as best.
 \item \code{selectAsBest}: A vector of length \eqn{M} containing the
 probability that each active arm is selected to move on to Phase 3.
 }
-
-For backward compatibility, the list also contains:
-\itemize{
-\item \code{exitProb}: identical to \code{exitProbUpper}.
-\item \code{exitProbByArm}: identical to \code{exitProbByArmUpper}.
-}
 }
 \description{
 Computes the upper and lower exit probabilities for a phase

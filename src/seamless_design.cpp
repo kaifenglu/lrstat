@@ -382,12 +382,6 @@ ExitProbSeamless exitprob_seamless_cpp(
 //' * \code{selectAsBest}: A vector of length \eqn{M} containing the
 //'   probability that each active arm is selected to move on to Phase 3.
 //'
-//' For backward compatibility, the list also contains:
-//'
-//' * \code{exitProb}: identical to \code{exitProbUpper}.
-//'
-//' * \code{exitProbByArm}: identical to \code{exitProbByArmUpper}.
-//'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
 //' @references
