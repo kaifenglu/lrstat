@@ -62,6 +62,7 @@ graphical approaches based on weighted Bonferroni tests.</p>
 <span>  <span class="va">p</span>,</span>
 <span>  <span class="va">information</span>,</span>
 <span>  spendingTime <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  lookback <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  nthreads <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -139,6 +140,11 @@ If not provided, it is the same as <code>informationRates</code> calculated
 from <code>information</code> and <code>maxInformation</code>.</p></dd>
 
 
+<dt id="arg-lookback">lookback<a class="anchor" aria-label="anchor" href="#arg-lookback"></a></dt>
+<dd><p>Whether to allow retesting at earlier looks. It defaults to
+<code>TRUE</code>.</p></dd>
+
+
 <dt id="arg-nthreads">nthreads<a class="anchor" aria-label="anchor" href="#arg-nthreads"></a></dt>
 <dd><p>The number of threads to use in simulations (0 means
 the default RcppParallel behavior).</p></dd>
@@ -151,9 +157,10 @@ rejected (0 if the hypothesis is not rejected).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The procedure allows the user to retest an unrejected hypothesis at
-earlier looks if its weight increased after rejection of other hypotheses.
-In this case, the procedure will return the first look at which the
+    <p>When <code>lookback = TRUE</code>, the procedure allows the user to retest an
+unrejected hypothesis at earlier looks if its weight increased after
+rejection of other hypotheses.
+The procedure will return the first look at which the
 specific hypothesis is rejected. If the hypothesis is not rejected at
 any look, it will return 0.</p>
     </div>

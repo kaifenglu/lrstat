@@ -95,12 +95,6 @@ A list containing the following components:
 - `selectAsBest`: A vector of length \\M\\ containing the probability
   that each active arm is selected to move on to Phase 3.
 
-For backward compatibility, the list also contains:
-
-- `exitProb`: identical to `exitProbUpper`.
-
-- `exitProbByArm`: identical to `exitProbByArmUpper`.
-
 ## Details
 
 The function assumes a multivariate normal distribution for the Wald

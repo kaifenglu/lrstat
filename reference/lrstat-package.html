@@ -5,11 +5,15 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Power and Sample Size Calculation for Non-Proportional Hazards and Beyond — lrstat-package"><meta name="description" content="Performs power and sample size calculation for
-non-proportional hazards model using the Fleming-Harrington family
-of weighted log-rank tests."><meta property="og:description" content="Performs power and sample size calculation for
-non-proportional hazards model using the Fleming-Harrington family
-of weighted log-rank tests."><meta property="og:image" content="https://kaifenglu.github.io/lrstat/logo.svg"></head><body>
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Power and Sample Size Calculation for Non-Proportional Hazards and Beyond — lrstat-package"><meta name="description" content="A comprehensive clinical trial design and analysis package
+with a focus on non-proportional hazards and weighted log-rank methods,
+plus broad support for group sequential design, adaptive design,
+multiplicity, dose-finding, and endpoint-specific power and sample size
+calculations."><meta property="og:description" content="A comprehensive clinical trial design and analysis package
+with a focus on non-proportional hazards and weighted log-rank methods,
+plus broad support for group sequential design, adaptive design,
+multiplicity, dose-finding, and endpoint-specific power and sample size
+calculations."><meta property="og:image" content="https://kaifenglu.github.io/lrstat/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -45,101 +49,79 @@ of weighted log-rank tests."><meta property="og:image" content="https://kaifengl
     </div>
 
     <div class="ref-description section level2">
-    <p>Performs power and sample size calculation for
-non-proportional hazards model using the Fleming-Harrington family
-of weighted log-rank tests.</p>
+    <p>A comprehensive clinical trial design and analysis package
+with a focus on non-proportional hazards and weighted log-rank methods,
+plus broad support for group sequential design, adaptive design,
+multiplicity, dose-finding, and endpoint-specific power and sample size
+calculations.</p>
     </div>
 
 
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>For proportional hazards, the power is determined by the
-total number of events and the constant hazard ratio along with
-information rates and spending functions. For
-non-proportional hazards, the hazard ratio varies over time and
-the calendar time plays a key role in determining the mean and
-variance of the log-rank test score statistic. It requires an
-iterative algorithm to find the calendar time at which the
-targeted number of events will be reached for each interim
-analysis. The lrstat package uses the analytic method
-in Lu (2021) to find the mean and variance of the weighted
-log-rank test score statistic at each interim analysis. In
-addition, the package approximates the variance and covariance
-matrix of the sequentially calculated log-rank test statistics
-under the alternative hypothesis with that under the null hypothesis
-to take advantage of the independent increments structure in
-Tsiatis (1982) applicable for the Fleming-Harrington family
-of weighted log-rank tests.</p>
-<p>The most useful functions in the package are <code>lrstat</code>,
-<code>lrpower</code>, <code>lrsamplesize</code>, and <code>lrsim</code>, which calculate
-the mean and variance of log-rank test score statistic at a sequence
-of given calendar times, the power of the log-rank test, the sample
-size in terms of accrual duration and follow-up duration, and the
-log-rank test simulation, respectively. The <code>accrual</code> function
-calculates the number of patients accrued at given calendar times. The
-<code>caltime</code> function finds the calendar times to reach the targeted
-number of events. The <code>exitprob</code> function calculates the stagewise
-exit probabilities for specified boundaries with a varying mean
-parameter over time based on an adaptation of the recursive
-integration algorithm described in Chapter 19 of Jennison and
-Turnbull (2000).</p>
-<p>The development of the lrstat package is heavily influenced by
-the rpact package. We find their function arguments to be
-self-explanatory. We have used the same names whenever appropriate
-so that users familiar with the rpact package can learn the
-lrstat package quickly. However, there are notable differences:</p><ul><li><p>lrstat uses direct approximation, while rpact uses the Schoenfeld
-method for log-rank test power and sample size calculation.</p></li>
-<li><p>lrstat uses <code>accrualDuration</code> to explicitly set the end of
-accrual period, while rpact incorporates the end of accrual period
-in <code>accrualTime</code>.</p></li>
-<li><p>lrstat considers the trial a failure at the last stage if
-the log-rank test cannot reject the null hypothesis up to this
-stage and cannot stop for futility at an earlier stage.</p></li>
-<li><p>the <code>lrsim</code> function uses the variance of the log-rank
-test score statistic as the information.</p></li>
-</ul><p>In addition to the log-rank test power and sample size calculations,
-the lrstat package can also be used for the following tasks:</p><ul><li><p>design generic group sequential trials.</p></li>
-<li><p>design generic group sequential equivalence trials.</p></li>
-<li><p>design adaptive group sequential trials for changes in sample
-size, error spending function, number and spacing or future looks.</p></li>
-<li><p>calculate the terminating and repeated confidence intervals for
-standard and adaptive group sequential trials.</p></li>
-<li><p>calculate the conditional power for non-proportional hazards
-with or without design changes.</p></li>
-<li><p>perform multiplicity adjustment based on graphical approaches
-using weighted Bonferroni tests, Bonferroni mixture of weighted
-Simes test, and Bonferroni mixture of Dunnett test as well as
-group sequential trials with multiple hypotheses.</p></li>
-<li><p>perform multiplicity adjustment using stepwise gatekeeping
-procedures for two sequences of hypotheses and the standard or
-modified mixture gatekeeping procedures in the general case.</p></li>
-<li><p>design parallel-group trials with the primary endpoint
-analyzed using mixed-model for repeated measures (MMRM).</p></li>
-<li><p>design crossover trials to estimate direct treatment
-effects while accounting for carryover effects.</p></li>
-<li><p>design one-way repeated measures ANOVA trials.</p></li>
-<li><p>design two-way ANOVA trials.</p></li>
-<li><p>design Simon's 2-stage trials.</p></li>
-<li><p>design modified toxicity probability-2 (mTPI-2) trials.</p></li>
-<li><p>design Bayesian optimal interval (BOIN) trials.</p></li>
-<li><p>design group sequential trials for negative binomial
-endpoints with censoring.</p></li>
-<li><p>design trials using Wilcoxon, Fisher's exact, and McNemar's test.</p></li>
-<li><p>calculate Clopper-Pearson confidence interval for single
-proportions.</p></li>
-<li><p>calculate Brookmeyer-Crowley confidence interval for quantiles
-of censored survival data.</p></li>
-<li><p>calculate Miettinen &amp; Nurminen confidence interval for stratified
-risk difference, risk ratio, odds ratio, rate difference, and
-rate ratio.</p></li>
-<li><p>perform power and sample size calculation for logistic regression.</p></li>
-<li><p>perform power and sample size calculation for Cohen's kappa.</p></li>
-<li><p>calculate Hedges' g effect size.</p></li>
-<li><p>generate random numbers from truncated piecewise exponential
-distribution.</p></li>
-<li><p>perform power and sample size calculations for negative binomial
-data.</p></li>
-</ul></div>
+    <p>For proportional hazards, power is determined by the total number of
+events and the constant hazard ratio together with information rates and
+spending functions. For non-proportional hazards, the hazard ratio varies
+over time and calendar time determines the mean and variance of the
+weighted log-rank score statistic. The package uses the analytic approach
+in Lu (2021) and approximates the variance-covariance matrix of
+sequential statistics under the alternative by that under the null to
+leverage the independent increments structure in Tsiatis (1982) for the
+Fleming-Harrington family.</p>
+<p>The package capabilities can be grouped as follows:</p><ul><li><p><strong>Time-to-event design under proportional and
+non-proportional hazards:</strong> weighted log-rank statistics and design
+operating characteristics (for example <code>lrstat</code>, <code>lrpower</code>,
+<code>lrsamplesize</code>, <code>lrsim</code>, <code>lrschoenfeld</code>), including
+equivalence settings, event prediction, accrual modeling, and calendar
+time determination (for example <code>accrual</code>, <code>caltime</code>,
+<code>nevent</code>, <code>pevent</code>, <code>patrisk</code>, <code>natrisk</code>,
+<code>getDurationFromNevents</code>, <code>getNeventsFromHazardRatio</code>).</p></li>
+<li><p><strong>Group sequential and adaptive designs:</strong> standard,
+adaptive, multi-arm multi-stage (MAMS), and seamless frameworks,
+including boundaries, conditional power, confidence intervals, and
+exit probabilities (for example <code>getDesign</code>, <code>adaptDesign</code>,
+<code>getBound</code>, <code>getCP</code>, <code>getCI</code>, <code>getRCI</code>,
+<code>getADCI</code>, <code>getADRCI</code>, <code>exitprob</code>, and their
+<code>_mams</code> and <code>_seamless</code> variants).</p></li>
+<li><p><strong>Fixed and sequential sample size/power across endpoint
+types:</strong> binary, continuous, ordinal/multinomial, paired,
+crossover/carryover, MMRM, repeated measures ANOVA, two-way ANOVA,
+Wilcoxon, Fisher's exact, McNemar, one-sample exact, agreement,
+logistic regression, and negative binomial endpoints (for example
+<code>getDesign*</code>, <code>power*Exact</code>, <code>samplesize*Exact</code>,
+<code>kmpower</code>, <code>rmpower</code>, <code>nbpower</code>, and associated
+<code>*samplesize</code> and <code>*equiv</code> functions).</p></li>
+<li><p><strong>Multiplicity and graphical procedures:</strong> weighted
+Bonferroni and graph-based updates, Bonferroni mixtures of weighted
+Simes and Dunnett, and gatekeeping procedures for multiple hypotheses
+(for example <code>fadjpbon</code>, <code>fadjpsim</code>, <code>fadjpdun</code>,
+<code>fseqbon</code>, <code>fstp2seq</code>, <code>fstdmix</code>, <code>fmodmix</code>,
+<code>fwgtmat</code>, <code>updateGraph</code>).</p></li>
+<li><p><strong>Early-phase and dose-finding tools:</strong> Simon's two-stage,
+Bayesian Simon designs, mTPI-2, and BOIN utilities
+(for example <code>simon2stage</code>, <code>simonBayesAnalysis</code>,
+<code>simonBayesSim</code>, <code>mTPI2Table</code>, <code>BOINTable</code>).</p></li>
+<li><p><strong>Estimation, confidence intervals, and supporting
+utilities:</strong> Clopper-Pearson, exact risk ratio/risk difference,
+Brookmeyer-Crowley survival quantiles, Miettinen-Nurminen and REML
+intervals/statistics for stratified measures, Hedges' g,
+piecewise-exponential distribution tools, multivariate normal
+integration, and model diagnostics
+(for example <code>ClopperPearsonCI</code>, <code>riskRatioExactCI</code>,
+<code>riskDiffExactCI</code>, <code>survQuantile</code>, <code>mnRiskDiffCI</code>,
+<code>remlRiskDiff</code>, <code>hedgesg</code>, <code>dtpwexp</code>, <code>ptpwexp</code>,
+<code>qtpwexp</code>, <code>rtpwexp</code>, <code>pbvnorm</code>, <code>pmvnormr</code>,
+<code>qmvnormr</code>, <code>phregr</code>, <code>liferegr</code>,
+<code>residuals_phregr</code>, <code>survfit_phregr</code>, <code>zph_phregr</code>).</p></li>
+<li><p><strong>Interactive use:</strong> a bundled Shiny interface for
+exploratory design workflows (<code>runShinyApp_lrstat</code>).</p></li>
+</ul><p>The development of lrstat was strongly influenced by <code>rpact</code>, with
+argument naming aligned where possible for ease of adoption. Key
+differences include direct approximation (rather than Schoenfeld-based
+approximation) for weighted log-rank design calculations, explicit use of
+<code>accrualDuration</code> to define the accrual end, and treatment of final
+stage trial outcome when early futility stopping does not occur.</p>
+    </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
     <p>Anastasios A. Tsiatis. Repeated significance testing for a general class

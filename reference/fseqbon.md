@@ -19,6 +19,7 @@ fseqbon(
   p,
   information,
   spendingTime = NULL,
+  lookback = TRUE,
   nthreads = 0
 )
 ```
@@ -91,6 +92,10 @@ fseqbon(
   provided, it is the same as `informationRates` calculated from
   `information` and `maxInformation`.
 
+- lookback:
+
+  Whether to allow retesting at earlier looks. It defaults to `TRUE`.
+
 - nthreads:
 
   The number of threads to use in simulations (0 means the default
@@ -103,10 +108,10 @@ A vector to indicate the first look the specific hypothesis is rejected
 
 ## Details
 
-The procedure allows the user to retest an unrejected hypothesis at
-earlier looks if its weight increased after rejection of other
-hypotheses. In this case, the procedure will return the first look at
-which the specific hypothesis is rejected. If the hypothesis is not
+When `lookback = TRUE`, the procedure allows the user to retest an
+unrejected hypothesis at earlier looks if its weight increased after
+rejection of other hypotheses. The procedure will return the first look
+at which the specific hypothesis is rejected. If the hypothesis is not
 rejected at any look, it will return 0.
 
 ## References
