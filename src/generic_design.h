@@ -184,3 +184,26 @@ ListCpp adaptDesigncpp(
     const std::vector<double>& userBetaSpendingNew,
     const std::vector<double>& spendingTimeNew,
     const double varianceRatio = 1.0);
+
+
+ListCpp getDesign2cpp(
+    const double beta,
+    const double IMax,
+    const double theta,
+    const size_t kMax,
+    const std::vector<double>& informationRates,
+    const std::vector<unsigned char>& efficacyStopping,
+    const std::vector<unsigned char>& futilityStopping,
+    const std::vector<double>& criticalValues,
+    const double alpha,
+    const std::string& typeAlphaSpending,
+    const double parameterAlphaSpending,
+    const std::vector<double>& userAlphaSpending,
+    const bool symmetricBounds,
+    const double astar,
+    const std::vector<double>& futilityBounds,
+    const std::string& typeBetaSpending,
+    const double parameterBetaSpending,
+    const std::vector<double>& userBetaSpending,
+    const std::vector<double>& spendingTime,
+    const double varianceRatio = 1.0);
