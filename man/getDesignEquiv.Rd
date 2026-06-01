@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getDesignEquiv}
 \alias{getDesignEquiv}
-\title{Power and Sample Size for a Generic Group Sequential Equivalence
+\title{Power and Sample Size for Generic Group Sequential Equivalence
 Design}
 \usage{
 getDesignEquiv(

@@ -2572,7 +2572,7 @@ getBound <- function(k = NA_integer_, informationRates = NA_real_, alpha = 0.025
     .Call(`_lrstat_getBound`, k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, efficacyStopping)
 }
 
-#' @title Power and Sample Size for a Generic Group Sequential Design
+#' @title Power and Sample Size for Generic Group Sequential Design
 #' @description Obtains the maximum information and stopping boundaries
 #' for a generic group sequential design assuming a constant treatment
 #' effect, or obtains the power given the maximum information and
@@ -2758,7 +2758,7 @@ getDesign <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax =
     .Call(`_lrstat_getDesign`, beta, IMax, theta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime, varianceRatio)
 }
 
-#' @title Power and Sample Size for a Generic Group Sequential Equivalence
+#' @title Power and Sample Size for Generic Group Sequential Equivalence
 #' Design
 #'
 #' @description Obtains the maximum information and stopping boundaries
@@ -3135,6 +3135,192 @@ getDesignEquiv <- function(beta = NA_real_, IMax = NA_real_, thetaLower = NA_rea
 #' @export
 adaptDesign <- function(betaNew = NA_real_, INew = NA_real_, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, kMax = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, spendingTime = NA_real_, MullerSchafer = FALSE, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, futilityBoundsInt = NULL, futilityCPInt = NULL, futilityThetaInt = NULL, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, userBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_, varianceRatio = 1.0) {
     .Call(`_lrstat_adaptDesign`, betaNew, INew, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaSpendingNew, spendingTimeNew, varianceRatio)
+}
+
+#' @title Power and Sample Size for Group Sequential Design With
+#' Futility Stopping Under Null Hypothesis
+#' @description Obtains the maximum information and stopping boundaries
+#' for a generic group sequential design with futility stopping
+#' under the null hypothesis assuming a constant treatment
+#' effect, or obtains the power given the maximum information and
+#' stopping boundaries.
+#'
+#' @param beta The type II error.
+#' @param IMax The maximum information. Either \code{beta} or \code{IMax}
+#'   should be provided while the other one should be missing.
+#' @param theta The parameter value. Null hypothesis is at \code{theta = 0},
+#'   and the alternative hypothesis is one-sided for \code{theta > 0}.
+#' @inheritParams param_kMax
+#' @param informationRates The information rates. Fixed prior to the trial.
+#'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
+#' @inheritParams param_efficacyStopping
+#' @inheritParams param_futilityStopping
+#' @inheritParams param_criticalValues
+#' @inheritParams param_alpha
+#' @inheritParams param_typeAlphaSpending
+#' @inheritParams param_parameterAlphaSpending
+#' @inheritParams param_userAlphaSpending
+#' @param symmetricBounds If \code{TRUE}, futility bounds are set to the
+#'   negative of efficacy bounds at each analysis (subject to
+#'   \code{futilityStopping}). If \code{FALSE}, futility bounds are
+#'   determined by \code{futilityBounds} or beta spending.
+#' @param astar The overall futility stopping probability under the
+#'   null hypothesis.
+#' @inheritParams param_futilityBounds
+#' @inheritParams param_typeBetaSpending
+#' @inheritParams param_parameterBetaSpending
+#' @inheritParams param_userBetaSpending
+#' @param spendingTime A vector of length \code{kMax} for the error spending
+#'   time at each analysis. Defaults to missing, in which case, it is the
+#'   same as \code{informationRates}.
+#' @param varianceRatio The ratio of the variance under H0 to the
+#'   variance under H1.
+#'
+#' @details
+#' The futility stopping boundaries under the null hypothesis are non-binding.
+#' The function determines efficacy and futility bounds based on the inputs
+#' provided, following a clear priority order.
+#'
+#' \strong{Efficacy bounds:}
+#' If \code{criticalValues} are supplied, they take precedence and all
+#' alpha-spending parameters are ignored. Otherwise, efficacy bounds are
+#' derived from the specified alpha-spending function.
+#'
+#' \strong{Futility bounds:}
+#' Futility inputs are evaluated in the following order of priority:
+#' \enumerate{
+#'   \item If \code{futilityBounds} are provided, they override
+#'   beta-spending parameters.
+#'
+#'   \item If \code{futilityBounds} are not
+#'   specified, futility bounds are computed using the beta-spending approach
+#'   with astar being the maximum futility stopping probability under the
+#'   null hypothesis. If \code{typeBetaSpending == "none"},
+#'   then there is no futility stopping under the null hypothesis.
+#' }
+#'
+#' If \code{symmetricBounds = TRUE}, the futility bounds are set to
+#' \code{-efficacyBounds} and beta-spending inputs are ignored.
+#'
+#' @return An S3 class \code{design} object with three components:
+#'
+#' * \code{overallResults}: A data frame containing the following variables:
+#'
+#'     - \code{overallReject}: The overall rejection probability.
+#'
+#'     - \code{alpha}: The overall significance level.
+#'
+#'     - \code{attainedAlpha}: The attained significance level, which is
+#'       different from the overall significance level in the presence of
+#'       futility stopping.
+#'
+#'     - \code{astar}: The overall futility stopping probability under the
+#'       null hypothesis.
+#'
+#'     - \code{kMax}: The number of stages.
+#'
+#'     - \code{theta}: The parameter value.
+#'
+#'     - \code{information}: The maximum information.
+#'
+#'     - \code{expectedInformationH1}: The expected information under H1.
+#'
+#'     - \code{expectedInformationH0}: The expected information under H0.
+#'
+#'     - \code{drift}: The drift parameter, equal to
+#'       \code{theta*sqrt(information)}.
+#'
+#'     - \code{inflationFactor}: The inflation factor (relative to the
+#'       fixed design).
+#'
+#' * \code{byStageResults}: A data frame containing the following variables:
+#'
+#'     - \code{informationRates}: The information rates.
+#'
+#'     - \code{efficacyBounds}: The efficacy boundaries on the Z-scale.
+#'
+#'     - \code{futilityBounds}: The futility boundaries on the Z-scale.
+#'
+#'     - \code{rejectPerStage}: The probability for efficacy stopping.
+#'
+#'     - \code{futilityPerStage}: The probability for futility stopping.
+#'
+#'     - \code{cumulativeRejection}: The cumulative probability for efficacy
+#'       stopping.
+#'
+#'     - \code{cumulativeFutility}: The cumulative probability for futility
+#'       stopping.
+#'
+#'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
+#'
+#'     - \code{efficacyTheta}: The efficacy boundaries on the parameter
+#'       scale.
+#'
+#'     - \code{futilityTheta}: The futility boundaries on the parameter
+#'       scale.
+#'
+#'     - \code{efficacyP}: The efficacy boundaries on the p-value scale.
+#'
+#'     - \code{futilityP}: The futility boundaries on the p-value scale.
+#'
+#'     - \code{information}: The cumulative information.
+#'
+#'     - \code{efficacyStopping}: Whether to allow efficacy stopping.
+#'
+#'     - \code{futilityStopping}: Whether to allow futility stopping.
+#'
+#'     - \code{rejectPerStageH0}: The probability for efficacy stopping
+#'       under H0.
+#'
+#'     - \code{futilityPerStageH0}: The probability for futility stopping
+#'       under H0.
+#'
+#'     - \code{cumulativeRejectionH0}: The cumulative probability for
+#'       efficacy stopping under H0.
+#'
+#'     - \code{cumulativeFutilityH0}: The cumulative probability for
+#'       futility stopping under H0.
+#'
+#' * \code{settings}: A list containing the following input parameters:
+#'
+#'     - \code{typeAlphaSpending}: The type of alpha spending.
+#'
+#'     - \code{parameterAlphaSpending}: The parameter value for alpha
+#'       spending.
+#'
+#'     - \code{userAlphaSpending}: The user defined alpha spending.
+#'
+#'     - \code{typeBetaSpending}: The type of beta spending.
+#'
+#'     - \code{parameterBetaSpending}: The parameter value for beta
+#'       spending.
+#'
+#'     - \code{userBetaSpending}: The user defined beta spending.
+#'
+#'     - \code{spendingTime}: The error spending time at each analysis.
+#'
+#'     - \code{varianceRatio}: The ratio of the variance under H0
+#'       to the variance under H1.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @references
+#' Christopher Jennison, Bruce W. Turnbull.
+#' Group Sequential Methods with Applications to Clinical Trials.
+#' Chapman & Hall/CRC: Boca Raton, 2000, ISBN:0849303168
+#'
+#' @examples
+#'
+#' (design1 <- getDesign2(
+#'   beta = 0.149, theta = -log(0.65),
+#'   kMax = 2, informationRates = c(0.87, 1),
+#'   alpha = 0.004, typeAlphaSpending = "sfOF",
+#'   astar = 0.1, typeBetaSpending = "sfHSD",
+#'   parameterBetaSpending = -8))
+#'
+#' @export
+getDesign2 <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, symmetricBounds = TRUE, astar = 0.025, futilityBounds = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_, varianceRatio = 1) {
+    .Call(`_lrstat_getDesign2`, beta, IMax, theta, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, symmetricBounds, astar, futilityBounds, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime, varianceRatio)
 }
 
 #' @title Stratified Difference in Milestone Survival Probabilities
