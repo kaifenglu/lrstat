@@ -254,10 +254,10 @@ ExitProbResult exitprobcpp(
   std::vector<double> exitProbUpper(K), exitProbLower(K);
 
   // allocate working arrays at max sizes once
-  std::vector<double> x1(r1), x(r1);  // x1 is untrimmed, x is trimmed
-  std::vector<double> w(r2), z(r2), h(r2); // z, h for the current stage
+  std::vector<double> x1(r1), x(r1 + 2);  // x1 is untrimmed, x is trimmed
+  std::vector<double> w(r2 + 4), z(r2 + 4), h(r2 + 4); // z, h for the current stage
   std::vector<double> z0, h0; // z0, h0 for the previous stage
-  z0.reserve(r2); h0.reserve(r2);
+  z0.reserve(r2 + 4); h0.reserve(r2 + 4);
 
   size_t m0 = 0; // size of previous z0/h0
   // z0 and h0 are represented by the first m0 entries of z and h vectors.
@@ -632,7 +632,7 @@ std::vector<double> getBoundcpp(
       // determine cumulative alpha at this stage
       if (asf == "user") cumAlpha = userAlphaSpending[k1];
       else cumAlpha = errorSpentcpp(spendTime[k1], alpha,
-                                    asf,parameterAlphaSpending);
+                                    asf, parameterAlphaSpending);
 
       if (!effStopping[k1]) {
         criticalValues[k1] = 8.0;
@@ -721,6 +721,8 @@ Rcpp::NumericVector getBound(
     const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
     const Rcpp::NumericVector& spendingTime = NA_REAL,
     const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL) {
+
+  if (k <= 0) throw std::invalid_argument("k must be provided and positive");
 
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
   auto effStopping = convertLogicalVector(efficacyStopping);
@@ -1476,7 +1478,7 @@ ListCpp getDesigncpp(
 }
 
 
-//' @title Power and Sample Size for a Generic Group Sequential Design
+//' @title Power and Sample Size for Generic Group Sequential Design
 //' @description Obtains the maximum information and stopping boundaries
 //' for a generic group sequential design assuming a constant treatment
 //' effect, or obtains the power given the maximum information and
@@ -1711,6 +1713,10 @@ Rcpp::List getDesign(
     futTheta = Rcpp::as<std::vector<double>>(futilityTheta);
   } else {
     futTheta = std::vector<double>(1, NaN);
+  }
+
+  if (kMax < 1) {
+    throw std::invalid_argument("kMax must be a positive integer");
   }
 
   auto cpp_result = getDesigncpp(
@@ -2165,7 +2171,7 @@ ListCpp getDesignEquivcpp(
 }
 
 
-//' @title Power and Sample Size for a Generic Group Sequential Equivalence
+//' @title Power and Sample Size for Generic Group Sequential Equivalence
 //' Design
 //'
 //' @description Obtains the maximum information and stopping boundaries
@@ -2364,6 +2370,10 @@ Rcpp::List getDesignEquiv(
     critValues = Rcpp::as<std::vector<double>>(criticalValues);
   } else {
     critValues = std::vector<double>(1, NaN);
+  }
+
+  if (kMax < 1) {
+    throw std::invalid_argument("kMax must be a positive integer");
   }
 
   auto cpp_result = getDesignEquivcpp(
@@ -3521,6 +3531,11 @@ Rcpp::List adaptDesign(
     futThetaInt = std::vector<double>(1, NaN);
   }
 
+  if (L < 1) throw std::invalid_argument("L must be a positive integer");
+  if (kMax <= L) throw std::invalid_argument("kMax must be greater than L");
+  if (MullerSchafer && kNew < 1)
+    throw std::invalid_argument("kNew must be a positive integer");
+
   auto cpp_result = adaptDesigncpp(
     betaNew, INew, static_cast<size_t>(L), zL, theta, IMax,
     static_cast<size_t>(kMax), infoRates, effStopping,
@@ -3536,6 +3551,757 @@ Rcpp::List adaptDesign(
 
   Rcpp::List result = Rcpp::wrap(cpp_result);
   result.attr("class") = "adaptDesign";
+  return result;
+}
+
+
+// design for two-sided, asymmetric, lower bound spending under
+// the null hypothesis with non-binding lower bound
+ListCpp getDesign2cpp(
+    const double beta,
+    const double IMax,
+    const double theta,
+    const size_t kMax,
+    const std::vector<double>& informationRates,
+    const std::vector<unsigned char>& efficacyStopping,
+    const std::vector<unsigned char>& futilityStopping,
+    const std::vector<double>& criticalValues,
+    const double alpha,
+    const std::string& typeAlphaSpending,
+    const double parameterAlphaSpending,
+    const std::vector<double>& userAlphaSpending,
+    const bool symmetricBounds,
+    const double astar,
+    const std::vector<double>& futilityBounds,
+    const std::string& typeBetaSpending,
+    const double parameterBetaSpending,
+    const std::vector<double>& userBetaSpending,
+    const std::vector<double>& spendingTime,
+    const double varianceRatio) {
+
+  // ----------- Input Validation ----------- //
+  if (std::isnan(beta) && std::isnan(IMax)) {
+    throw std::invalid_argument("beta and IMax cannot be missing simultaneously");
+  }
+  if (!std::isnan(beta) && !std::isnan(IMax)) {
+    throw std::invalid_argument("Only one of beta and IMax should be provided");
+  }
+  if (!std::isnan(IMax) && IMax <= 0) {
+    throw std::invalid_argument("IMax must be positive");
+  }
+  if (std::isnan(theta)) {
+    throw std::invalid_argument("theta must be provided");
+  }
+  if (kMax < 1) {
+    throw std::invalid_argument("kMax must be a positive integer");
+  }
+
+  // Alpha and Beta must be within valid ranges
+  if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1)) {
+    throw std::invalid_argument("alpha must lie in [0.00001, 1)");
+  }
+  if (!std::isnan(beta) && (beta >= 1 - alpha || beta < 0.0001)) {
+    throw std::invalid_argument("beta must lie in [0.0001, 1-alpha)");
+  }
+
+  if (!std::isnan(astar) && (astar < 0.00001 || astar >= 1)) {
+    throw std::invalid_argument("astar must lie in [0.00001, 1)");
+  }
+
+  std::string unknown = std::isnan(beta) ? "beta" : "IMax";
+
+  // informationRates: default to (1:kMax)/kMax if missing
+  std::vector<double> infoRates(kMax);
+  if (none_na(informationRates)) {
+    if (informationRates.size() != kMax)
+      throw std::invalid_argument("Invalid length for informationRates");
+    if (informationRates[0] <= 0.0)
+      throw std::invalid_argument("informationRates must be positive");
+    if (any_nonincreasing(informationRates))
+      throw std::invalid_argument("informationRates must be increasing");
+    if (informationRates.back() != 1.0)
+      throw std::invalid_argument("informationRates must end with 1");
+    infoRates = informationRates; // copy
+  } else {
+    for (size_t i = 0; i < kMax; ++i)
+      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(kMax);
+  }
+
+  // effStopping: default to all 1s if missing
+  std::vector<unsigned char> effStopping;
+  if (none_na(efficacyStopping)) {
+    if (efficacyStopping.size() != kMax)
+      throw std::invalid_argument("Invalid length for efficacyStopping");
+    if (efficacyStopping.back() != 1)
+      throw std::invalid_argument("efficacyStopping must end with 1");
+    effStopping = efficacyStopping; // copy
+  } else {
+    effStopping.assign(kMax, 1);
+  }
+
+  // futStopping: default to all 1s if missing
+  std::vector<unsigned char> futStopping;
+  if (none_na(futilityStopping)) {
+    if (futilityStopping.size() != kMax)
+      throw std::invalid_argument("Invalid length for futilityStopping");
+    if (futilityStopping.back() != 1)
+      throw std::invalid_argument("futilityStopping must end with 1");
+    futStopping = futilityStopping; // copy
+  } else {
+    futStopping.assign(kMax, 1);
+  }
+
+  bool missingCriticalValues = !none_na(criticalValues);
+  bool missingFutilityBounds = !none_na(futilityBounds);
+
+  if (!missingCriticalValues && criticalValues.size() != kMax) {
+    throw std::invalid_argument("Invalid length for criticalValues");
+  }
+  if (missingCriticalValues && std::isnan(alpha)) {
+    throw std::invalid_argument("alpha must be provided for missing criticalValues");
+  }
+
+  std::string asf = typeAlphaSpending;
+  for (char &c : asf) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  }
+
+  if (missingCriticalValues && !(asf == "of" || asf == "p" ||
+      asf == "wt" || asf == "sfof" || asf == "sfp" ||
+      asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
+    throw std::invalid_argument("Invalid value for typeAlphaSpending");
+  }
+  if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
+      std::isnan(parameterAlphaSpending)) {
+    throw std::invalid_argument("Missing value for parameterAlphaSpending");
+  }
+  if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
+    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
+  }
+
+  if (missingCriticalValues && asf == "user") {
+    if (!none_na(userAlphaSpending))
+      throw std::invalid_argument("userAlphaSpending must be specified");
+    if (userAlphaSpending.size() != kMax)
+      throw std::invalid_argument("Invalid length of userAlphaSpending");
+    if (userAlphaSpending[0] < 0.0)
+      throw std::invalid_argument("userAlphaSpending must be nonnegative");
+    if (any_nonincreasing(userAlphaSpending))
+      throw std::invalid_argument("userAlphaSpending must be nondecreasing");
+    if (userAlphaSpending.back() != alpha)
+      throw std::invalid_argument("userAlphaSpending must end with specified alpha");
+  }
+
+  if (!missingFutilityBounds) {
+    if (futilityBounds.size() < kMax) {
+      throw std::invalid_argument("Insufficient length for futilityBounds");
+    }
+  }
+
+  std::string bsf = typeBetaSpending;
+  for (char &c : bsf) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  }
+
+  if (missingFutilityBounds && !(bsf == "of" || bsf == "p" ||
+       bsf == "wt" || bsf == "sfof" || bsf == "sfp" ||
+       bsf == "sfkd" || bsf == "sfhsd" || bsf == "user" || bsf == "none")) {
+    throw std::invalid_argument("Invalid value for typeBetaSpending");
+  }
+
+  if ((bsf == "wt" || bsf == "sfkd" || bsf == "sfhsd") &&
+      std::isnan(parameterBetaSpending)) {
+    throw std::invalid_argument("Missing value for parameterBetaSpending");
+  }
+  if (bsf == "sfkd" && parameterBetaSpending <= 0.0) {
+    throw std::invalid_argument ("parameterBetaSpending must be positive for sfKD");
+  }
+
+  if (bsf == "user") {
+    if (!none_na(userBetaSpending))
+      throw std::invalid_argument("userBetaSpending must be specified");
+    if (userBetaSpending.size() != kMax)
+      throw std::invalid_argument("Invalid length of userBetaSpending");
+    if (userBetaSpending[0] < 0.0)
+      throw std::invalid_argument("userBetaSpending must be nonnegative");
+    if (any_nonincreasing(userBetaSpending))
+      throw std::invalid_argument("userBetaSpending must be nondecreasing");
+    if (userBetaSpending.back() != astar)
+      throw std::invalid_argument("userBetaSpending must end with specified astar");
+  }
+
+  std::vector<double> spendTime;
+  if (none_na(spendingTime)) {
+    if (spendingTime.size() != kMax)
+      throw std::invalid_argument("Invalid length for spendingTime");
+    if (spendingTime[0] <= 0.0)
+      throw std::invalid_argument("spendingTime must be positive");
+    if (any_nonincreasing(spendingTime))
+      throw std::invalid_argument("spendingTime must be increasing");
+    if (spendingTime.back() != 1.0)
+      throw std::invalid_argument("spendingTime must end with 1");
+    spendTime = spendingTime; // copy
+  } else {
+    spendTime = infoRates;
+  }
+
+  if (varianceRatio <= 0.0) {
+    throw std::invalid_argument("varianceRatio must be positive");
+  }
+  // ----------- End of Input Validation ----------- //
+
+  // set up efficacy bounds
+  ExitProbResult probs;
+  std::vector<double> l(kMax, -8.0), zero(kMax, 0.0);
+  std::vector<double> critValues = criticalValues;
+  if (missingCriticalValues) {
+    bool haybittle = false;
+    if (kMax > 1 && criticalValues.size() == kMax) {
+      bool hasNaN = false;
+      for (size_t i = 0; i < kMax - 1; ++i) {
+        if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
+      }
+      if (!hasNaN && std::isnan(criticalValues[kMax-1])) haybittle = true;
+    }
+
+    if (haybittle) { // Haybittle & Peto
+      std::vector<double> u(kMax);
+      for (size_t i = 0; i < kMax - 1; ++i) {
+        u[i] = criticalValues[i];
+        if (!effStopping[i]) u[i] = 8.0;
+      }
+
+      auto f = [&](double aval)->double {
+        u[kMax-1] = aval;
+        probs = exitprobcpp(u, l, zero, infoRates);
+        double cpu = std::accumulate(probs.exitProbUpper.begin(),
+                                     probs.exitProbUpper.end(), 0.0);
+        return cpu - alpha;
+      };
+
+      critValues[kMax-1] = brent(f, -5.0, 8.0, 1e-6);
+    } else {
+      critValues = getBoundcpp(kMax, infoRates, alpha, asf,
+                               parameterAlphaSpending, userAlphaSpending,
+                               spendTime, effStopping);
+    }
+  } else {
+    for (size_t i = 0; i < kMax; ++i) {
+      if (!effStopping[i]) critValues[i] = 8.0;
+    }
+  }
+
+  probs = exitprobcpp(critValues, l, zero, infoRates);
+  std::vector<double> cumAlphaSpent(kMax);
+  std::partial_sum(probs.exitProbUpper.begin(),
+                   probs.exitProbUpper.end(), cumAlphaSpent.begin());
+  double alpha1 = missingCriticalValues ? alpha : cumAlphaSpent[kMax-1];
+
+  std::vector<double> w(kMax, std::sqrt(varianceRatio));
+
+  // set up futility bounds under the null hypothesis
+  std::vector<double> futBounds(kMax, NaN);
+  if (symmetricBounds) {
+    for (size_t i = 0; i < kMax; ++i) {
+      futBounds[i] = -critValues[i];
+      if (!futStopping[i]) futBounds[i] = -8.0;
+    }
+  } else {
+    if (kMax > 1) {
+      if (missingFutilityBounds && bsf == "none") {
+        std::fill_n(futBounds.begin(), kMax, -8.0);
+      } else if (missingFutilityBounds
+                   && (bsf == "of" || (bsf == "p" || bsf == "wt"))) {
+        double Delta;
+        if (bsf == "of") Delta = 0.0;
+        else if (bsf == "p") Delta = 0.5;
+        else Delta = parameterBetaSpending;
+
+        std::vector<double> l0(kMax);
+        for (size_t i = 0; i < kMax; ++i) {
+          l0[i] = -std::pow(infoRates[i], Delta - 0.5);
+        }
+
+        auto f = [&](double aval)->double {
+          for (size_t i = 0; i < kMax; ++i) {
+            futBounds[i] = aval * l0[i];
+            if (!futStopping[i]) futBounds[i] = -8.0;
+          }
+          probs = exitprobcpp(critValues, futBounds, zero, infoRates);
+          double cpl = std::accumulate(probs.exitProbLower.begin(),
+                                           probs.exitProbLower.end(), 0.0);
+          return cpl - astar;
+        };
+
+        double cwt = brent(f, 0.0, 10.0, 1e-6);
+        for (size_t i = 0; i < kMax; ++i) {
+          futBounds[i] = cwt * l0[i];
+          if (!futStopping[i]) futBounds[i] = -8.0;
+          if (futBounds[i] > critValues[i]) {
+            throw std::invalid_argument(
+                "astar, typeBetaSpending and parameterBetaSpending "
+                "values are not compatible with criticalValues");
+          }
+        }
+      } else if (missingFutilityBounds
+                   && (bsf == "sfof" || bsf == "sfp" || bsf == "sfkd" ||
+                     bsf == "sfhsd" || bsf == "user")) {
+
+        // stage 1
+        double cumBeta;
+        if (bsf == "user") cumBeta = userBetaSpending[0];
+        else cumBeta = errorSpentcpp(spendTime[0], astar,
+                                     bsf, parameterBetaSpending);
+
+        if (!futStopping[0]) {
+          futBounds[0] = -8.0;
+        } else {
+          futBounds[0] = boost_qnorm(cumBeta);
+          if (futBounds[0] > critValues[0]) {
+            throw std::invalid_argument(
+                "astar, typeBetaSpending and parameterBetaSpending "
+                "values are not compatible with criticalValues");
+          }
+        }
+
+        std::vector<double> u_vec; u_vec.reserve(kMax);
+
+        // subsequent stages
+        for (size_t k = 1; k < kMax; ++k) {
+          // determine cumulative beta at this stage
+          if (bsf == "user") cumBeta = userBetaSpending[k];
+          else cumBeta = errorSpentcpp(spendTime[k], astar,
+                                       bsf, parameterBetaSpending);
+
+          if (!futStopping[k]) {
+            futBounds[k] = -8.0;
+            continue;
+          }
+
+          // Ensure reusable buffers have size k1+1 and capacity >= kMax
+          u_vec.resize(k + 1);
+          std::memcpy(u_vec.data(), critValues.data(), (k + 1) * sizeof(double));
+
+          // Define lambda that only sets the most recent element of futBounds
+          auto f = [&](double aval)->double {
+            // set the last element to the current candidate futility value
+            futBounds[k] = aval;
+
+            probs = exitprobcpp(u_vec, futBounds, zero, infoRates);
+            double cpl = std::accumulate(probs.exitProbLower.begin(),
+                                         probs.exitProbLower.end(), 0.0);
+            return cpl - cumBeta;
+          };
+
+          double bk = critValues[k];
+          double f_crit = f(bk);
+          double f_minus8 = f(-8.0);
+          if (f_minus8 > 0.0) { // no astar spent at current visit
+            futBounds[k] = -8.0;
+          } else if (f_crit < 0.0) {
+            throw std::invalid_argument(
+                "astar, typeBetaSpending and parameterBetaSpending "
+                "values are not compatible with criticalValues");
+          } else {
+            auto f_for_brent = [&](double x)->double {
+              if (x == -8.0) return f_minus8; // avoid recomputation at -8.0 & bk
+              if (x == bk) return f_crit;
+              return f(x);
+            };
+            futBounds[k] = brent(f_for_brent, -8.0, bk, 1e-6);
+          }
+        }
+      } else if (!missingFutilityBounds) {
+        for (size_t i = 0; i < kMax; ++i) {
+          if (futilityBounds[i] > critValues[i]) {
+            throw std::invalid_argument(
+                "futilityBounds must lie below criticalValues");
+          }
+        }
+        std::copy_n(futilityBounds.begin(), kMax, futBounds.begin());
+      }
+    } else {
+      if (missingFutilityBounds) {
+        if (bsf != "none") futBounds[0] = boost_qnorm(astar);
+        else futBounds[0] = -8.0;
+      }
+    }
+  }
+
+
+  // multiplier for the boundaries under the alternative hypothesis
+  std::vector<double> u(kMax);
+  for (size_t i = 0; i < kMax; ++i) {
+    u[i] = critValues[i] * w[i];
+    l[i] = futBounds[i] * w[i];
+  }
+
+  double beta1 = beta;
+  double IMax1 = IMax;
+  double drift;
+  std::vector<double> delta(kMax);
+  if (unknown == "IMax") {
+    auto f = [&](double x)->double {
+      std::fill(delta.begin(), delta.end(), x);
+      probs = exitprobcpp(u, l, delta, infoRates);
+      double overallReject = std::accumulate(probs.exitProbUpper.begin(),
+                                             probs.exitProbUpper.end(), 0.0);
+      return (1.0 - overallReject) - beta;
+    };
+
+    drift = brent(f, 0.0, 8.0, 1e-6);
+    IMax1 = sq(drift / theta);
+    std::fill(delta.begin(), delta.end(), drift);
+    probs = exitprobcpp(u, l, delta, infoRates);
+    double overallReject = std::accumulate(probs.exitProbUpper.begin(),
+                                           probs.exitProbUpper.end(), 0.0);
+    beta1 = 1.0 - overallReject;
+  } else {
+    drift = theta * std::sqrt(IMax1);
+    std::fill(delta.begin(), delta.end(), drift);
+    probs = exitprobcpp(u, l, delta, infoRates);
+  }
+
+
+  double driftf = boost_qnorm(1.0 - alpha1) * w[0] + boost_qnorm(1.0 - beta1);
+  double inflationFactor = sq(drift / driftf);
+
+  // output the results
+  std::vector<double> information(kMax);
+  std::vector<double> efficacyTheta(kMax);
+  std::vector<double> futTheta(kMax);
+  std::vector<double> efficacyP(kMax);
+  std::vector<double> futilityP(kMax);
+  for (size_t i = 0; i < kMax; ++i) {
+    information[i] = IMax1 * infoRates[i];
+    double sqrtInformation = std::sqrt(information[i]);
+    efficacyTheta[i] = u[i] / sqrtInformation;
+    futTheta[i] = l[i] / sqrtInformation;
+    efficacyP[i] = 1.0 - boost_pnorm(critValues[i]);
+    futilityP[i] = 1.0 - boost_pnorm(futBounds[i]);
+  }
+
+  // stagewise exit probabilities under H1
+  auto pu = probs.exitProbUpper;
+  auto pl = probs.exitProbLower;
+  std::vector<double> cpu(kMax), cpl(kMax);
+  std::partial_sum(pu.begin(), pu.end(), cpu.begin());
+  std::partial_sum(pl.begin(), pl.end(), cpl.begin());
+  double overallReject = cpu.back();
+  std::vector<double> ptotal(kMax);
+  for (size_t i = 0; i < kMax; ++i) ptotal[i] = pu[i] + pl[i];
+  double expectedInformationH1 = std::inner_product(
+    ptotal.begin(), ptotal.end(), information.begin(), 0.0);
+
+  // stagewise exit probabilities under H0 with binding futility
+  auto probsH0 = exitprobcpp(critValues, futBounds, zero, infoRates);
+  auto puH0 = probsH0.exitProbUpper;
+  auto plH0 = probsH0.exitProbLower;
+  std::vector<double> cpuH0(kMax), cplH0(kMax);
+  std::partial_sum(puH0.begin(), puH0.end(), cpuH0.begin());
+  std::partial_sum(plH0.begin(), plH0.end(), cplH0.begin());
+  double overallRejectH0 = cpuH0[kMax-1];
+  std::vector<double> ptotalH0(kMax);
+  for (size_t i = 0; i < kMax; ++i) ptotalH0[i] = puH0[i] + plH0[i];
+  double expectedInformationH0 = std::inner_product(
+    ptotalH0.begin(), ptotalH0.end(), information.begin(), 0.0);
+
+  for (size_t i = 0; i < kMax; ++i) {
+    if (critValues[i] == 8) effStopping[i] = 0;
+    if (futBounds[i] == -8) futStopping[i] = 0;
+  }
+
+  DataFrameCpp overallResults;
+  overallResults.push_back(overallReject, "overallReject");
+  overallResults.push_back(alpha1, "alpha");
+  overallResults.push_back(overallRejectH0, "attainedAlpha");
+  overallResults.push_back(astar, "astar");
+  overallResults.push_back(kMax, "kMax");
+  overallResults.push_back(theta, "theta");
+  overallResults.push_back(IMax1, "information");
+  overallResults.push_back(expectedInformationH1, "expectedInformationH1");
+  overallResults.push_back(expectedInformationH0, "expectedInformationH0");
+  overallResults.push_back(drift, "drift");
+  overallResults.push_back(inflationFactor, "inflationFactor");
+
+  DataFrameCpp byStageResults;
+  byStageResults.push_back(std::move(infoRates), "informationRates");
+  byStageResults.push_back(std::move(critValues), "efficacyBounds");
+  byStageResults.push_back(std::move(futBounds), "futilityBounds");
+  byStageResults.push_back(std::move(pu), "rejectPerStage");
+  byStageResults.push_back(std::move(pl), "futilityPerStage");
+  byStageResults.push_back(std::move(cpu), "cumulativeRejection");
+  byStageResults.push_back(std::move(cpl), "cumulativeFutility");
+  byStageResults.push_back(std::move(cumAlphaSpent), "cumulativeAlphaSpent");
+  byStageResults.push_back(std::move(efficacyTheta), "efficacyTheta");
+  byStageResults.push_back(std::move(futTheta), "futilityTheta");
+  byStageResults.push_back(std::move(efficacyP), "efficacyP");
+  byStageResults.push_back(std::move(futilityP), "futilityP");
+  byStageResults.push_back(std::move(information), "information");
+  byStageResults.push_back(std::move(effStopping), "efficacyStopping");
+  byStageResults.push_back(std::move(futStopping), "futilityStopping");
+  byStageResults.push_back(std::move(puH0), "rejectPerStageH0");
+  byStageResults.push_back(std::move(plH0), "futilityPerStageH0");
+  byStageResults.push_back(std::move(cpuH0), "cumulativeRejectionH0");
+  byStageResults.push_back(std::move(cplH0), "cumulativeFutilityH0");
+
+  ListCpp settings;
+  settings.push_back(typeAlphaSpending, "typeAlphaSpending");
+  settings.push_back(parameterAlphaSpending, "parameterAlphaSpending");
+  settings.push_back(userAlphaSpending, "userAlphaSpending");
+  settings.push_back(typeBetaSpending, "typeBetaSpending");
+  settings.push_back(parameterBetaSpending, "parameterBetaSpending");
+  settings.push_back(userBetaSpending, "userBetaSpending");
+  settings.push_back(spendingTime, "spendingTime");
+  settings.push_back(varianceRatio, "varianceRatio");
+
+  ListCpp result;
+  result.push_back(std::move(byStageResults), "byStageResults");
+  result.push_back(std::move(overallResults), "overallResults");
+  result.push_back(std::move(settings), "settings");
+  return result;
+}
+
+
+//' @title Power and Sample Size for Group Sequential Design With
+//' Futility Stopping Under Null Hypothesis
+//' @description Obtains the maximum information and stopping boundaries
+//' for a generic group sequential design with futility stopping
+//' under the null hypothesis assuming a constant treatment
+//' effect, or obtains the power given the maximum information and
+//' stopping boundaries.
+//'
+//' @param beta The type II error.
+//' @param IMax The maximum information. Either \code{beta} or \code{IMax}
+//'   should be provided while the other one should be missing.
+//' @param theta The parameter value. Null hypothesis is at \code{theta = 0},
+//'   and the alternative hypothesis is one-sided for \code{theta > 0}.
+//' @inheritParams param_kMax
+//' @param informationRates The information rates. Fixed prior to the trial.
+//'   Defaults to \code{(1:kMax) / kMax} if left unspecified.
+//' @inheritParams param_efficacyStopping
+//' @inheritParams param_futilityStopping
+//' @inheritParams param_criticalValues
+//' @inheritParams param_alpha
+//' @inheritParams param_typeAlphaSpending
+//' @inheritParams param_parameterAlphaSpending
+//' @inheritParams param_userAlphaSpending
+//' @param symmetricBounds If \code{TRUE}, futility bounds are set to the
+//'   negative of efficacy bounds at each analysis (subject to
+//'   \code{futilityStopping}). If \code{FALSE}, futility bounds are
+//'   determined by \code{futilityBounds} or beta spending.
+//' @param astar The overall futility stopping probability under the
+//'   null hypothesis.
+//' @inheritParams param_futilityBounds
+//' @inheritParams param_typeBetaSpending
+//' @inheritParams param_parameterBetaSpending
+//' @inheritParams param_userBetaSpending
+//' @param spendingTime A vector of length \code{kMax} for the error spending
+//'   time at each analysis. Defaults to missing, in which case, it is the
+//'   same as \code{informationRates}.
+//' @param varianceRatio The ratio of the variance under H0 to the
+//'   variance under H1.
+//'
+//' @details
+//' The futility stopping boundaries under the null hypothesis are non-binding.
+//' The function determines efficacy and futility bounds based on the inputs
+//' provided, following a clear priority order.
+//'
+//' \strong{Efficacy bounds:}
+//' If \code{criticalValues} are supplied, they take precedence and all
+//' alpha-spending parameters are ignored. Otherwise, efficacy bounds are
+//' derived from the specified alpha-spending function.
+//'
+//' \strong{Futility bounds:}
+//' Futility inputs are evaluated in the following order of priority:
+//' \enumerate{
+//'   \item If \code{futilityBounds} are provided, they override
+//'   beta-spending parameters.
+//'
+//'   \item If \code{futilityBounds} are not
+//'   specified, futility bounds are computed using the beta-spending approach
+//'   with astar being the maximum futility stopping probability under the
+//'   null hypothesis. If \code{typeBetaSpending == "none"},
+//'   then there is no futility stopping under the null hypothesis.
+//' }
+//'
+//' If \code{symmetricBounds = TRUE}, the futility bounds are set to
+//' \code{-efficacyBounds} and beta-spending inputs are ignored.
+//'
+//' @return An S3 class \code{design} object with three components:
+//'
+//' * \code{overallResults}: A data frame containing the following variables:
+//'
+//'     - \code{overallReject}: The overall rejection probability.
+//'
+//'     - \code{alpha}: The overall significance level.
+//'
+//'     - \code{attainedAlpha}: The attained significance level, which is
+//'       different from the overall significance level in the presence of
+//'       futility stopping.
+//'
+//'     - \code{astar}: The overall futility stopping probability under the
+//'       null hypothesis.
+//'
+//'     - \code{kMax}: The number of stages.
+//'
+//'     - \code{theta}: The parameter value.
+//'
+//'     - \code{information}: The maximum information.
+//'
+//'     - \code{expectedInformationH1}: The expected information under H1.
+//'
+//'     - \code{expectedInformationH0}: The expected information under H0.
+//'
+//'     - \code{drift}: The drift parameter, equal to
+//'       \code{theta*sqrt(information)}.
+//'
+//'     - \code{inflationFactor}: The inflation factor (relative to the
+//'       fixed design).
+//'
+//' * \code{byStageResults}: A data frame containing the following variables:
+//'
+//'     - \code{informationRates}: The information rates.
+//'
+//'     - \code{efficacyBounds}: The efficacy boundaries on the Z-scale.
+//'
+//'     - \code{futilityBounds}: The futility boundaries on the Z-scale.
+//'
+//'     - \code{rejectPerStage}: The probability for efficacy stopping.
+//'
+//'     - \code{futilityPerStage}: The probability for futility stopping.
+//'
+//'     - \code{cumulativeRejection}: The cumulative probability for efficacy
+//'       stopping.
+//'
+//'     - \code{cumulativeFutility}: The cumulative probability for futility
+//'       stopping.
+//'
+//'     - \code{cumulativeAlphaSpent}: The cumulative alpha spent.
+//'
+//'     - \code{efficacyTheta}: The efficacy boundaries on the parameter
+//'       scale.
+//'
+//'     - \code{futilityTheta}: The futility boundaries on the parameter
+//'       scale.
+//'
+//'     - \code{efficacyP}: The efficacy boundaries on the p-value scale.
+//'
+//'     - \code{futilityP}: The futility boundaries on the p-value scale.
+//'
+//'     - \code{information}: The cumulative information.
+//'
+//'     - \code{efficacyStopping}: Whether to allow efficacy stopping.
+//'
+//'     - \code{futilityStopping}: Whether to allow futility stopping.
+//'
+//'     - \code{rejectPerStageH0}: The probability for efficacy stopping
+//'       under H0.
+//'
+//'     - \code{futilityPerStageH0}: The probability for futility stopping
+//'       under H0.
+//'
+//'     - \code{cumulativeRejectionH0}: The cumulative probability for
+//'       efficacy stopping under H0.
+//'
+//'     - \code{cumulativeFutilityH0}: The cumulative probability for
+//'       futility stopping under H0.
+//'
+//' * \code{settings}: A list containing the following input parameters:
+//'
+//'     - \code{typeAlphaSpending}: The type of alpha spending.
+//'
+//'     - \code{parameterAlphaSpending}: The parameter value for alpha
+//'       spending.
+//'
+//'     - \code{userAlphaSpending}: The user defined alpha spending.
+//'
+//'     - \code{typeBetaSpending}: The type of beta spending.
+//'
+//'     - \code{parameterBetaSpending}: The parameter value for beta
+//'       spending.
+//'
+//'     - \code{userBetaSpending}: The user defined beta spending.
+//'
+//'     - \code{spendingTime}: The error spending time at each analysis.
+//'
+//'     - \code{varianceRatio}: The ratio of the variance under H0
+//'       to the variance under H1.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @references
+//' Christopher Jennison, Bruce W. Turnbull.
+//' Group Sequential Methods with Applications to Clinical Trials.
+//' Chapman & Hall/CRC: Boca Raton, 2000, ISBN:0849303168
+//'
+//' @examples
+//'
+//' (design1 <- getDesign2(
+//'   beta = 0.149, theta = -log(0.65),
+//'   kMax = 2, informationRates = c(0.87, 1),
+//'   alpha = 0.004, typeAlphaSpending = "sfOF",
+//'   astar = 0.1, typeBetaSpending = "sfHSD",
+//'   parameterBetaSpending = -8))
+//'
+//' @export
+// [[Rcpp::export]]
+Rcpp::List getDesign2(
+    const double beta = NA_REAL,
+    const double IMax = NA_REAL,
+    const double theta = NA_REAL,
+    const int kMax = 1,
+    const Rcpp::NumericVector& informationRates = NA_REAL,
+    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
+    const Rcpp::LogicalVector& futilityStopping = NA_LOGICAL,
+    const Rcpp::Nullable<Rcpp::NumericVector> criticalValues = R_NilValue,
+    const double alpha = 0.025,
+    const std::string& typeAlphaSpending = "sfOF",
+    const double parameterAlphaSpending = NA_REAL,
+    const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
+    const bool symmetricBounds = true,
+    const double astar = 0.025,
+    const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds = R_NilValue,
+    const std::string& typeBetaSpending = "none",
+    const double parameterBetaSpending = NA_REAL,
+    const Rcpp::NumericVector& userBetaSpending = NA_REAL,
+    const Rcpp::NumericVector& spendingTime = NA_REAL,
+    const double varianceRatio = 1) {
+
+  auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
+  auto effStopping = convertLogicalVector(efficacyStopping);
+  auto futStopping = convertLogicalVector(futilityStopping);
+  auto userAlpha = Rcpp::as<std::vector<double>>(userAlphaSpending);
+  auto userBeta = Rcpp::as<std::vector<double>>(userBetaSpending);
+  auto spendTime = Rcpp::as<std::vector<double>>(spendingTime);
+
+  std::vector<double> critValues, futBounds;
+  if (criticalValues.isNotNull()) {
+    critValues = Rcpp::as<std::vector<double>>(criticalValues);
+  } else {
+    critValues = std::vector<double>(1, NaN);
+  }
+
+  if (futilityBounds.isNotNull()) {
+    futBounds = Rcpp::as<std::vector<double>>(futilityBounds);
+  } else {
+    futBounds = std::vector<double>(1, NaN);
+  }
+
+  if (kMax < 1) {
+    throw std::invalid_argument("kMax must be a positive integer");
+  }
+
+  auto cpp_result = getDesign2cpp(
+    beta, IMax, theta, static_cast<size_t>(kMax), infoRates,
+    effStopping, futStopping, critValues,
+    alpha, typeAlphaSpending, parameterAlphaSpending, userAlpha,
+    symmetricBounds, astar, futBounds,
+    typeBetaSpending, parameterBetaSpending, userBeta, spendTime, varianceRatio
+  );
+
+  Rcpp::List result = Rcpp::wrap(cpp_result);
+  result.attr("class") = "design";
   return result;
 }
 
