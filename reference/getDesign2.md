@@ -1,13 +1,14 @@
-# Power and Sample Size for Generic Group Sequential Design
+# Power and Sample Size for Group Sequential Design With Futility Stopping Under Null Hypothesis
 
 Obtains the maximum information and stopping boundaries for a generic
-group sequential design assuming a constant treatment effect, or obtains
-the power given the maximum information and stopping boundaries.
+group sequential design with futility stopping under the null hypothesis
+assuming a constant treatment effect, or obtains the power given the
+maximum information and stopping boundaries.
 
 ## Usage
 
 ``` r
-getDesign(
+getDesign2(
   beta = NA_real_,
   IMax = NA_real_,
   theta = NA_real_,
@@ -20,9 +21,9 @@ getDesign(
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
+  symmetricBounds = TRUE,
+  astar = 0.025,
   futilityBounds = NULL,
-  futilityCP = NULL,
-  futilityTheta = NULL,
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   userBetaSpending = NA_real_,
@@ -95,20 +96,22 @@ getDesign(
   The user defined alpha spending. Cumulative alpha spent up to each
   stage.
 
+- symmetricBounds:
+
+  If `TRUE`, futility bounds are set to the negative of efficacy bounds
+  at each analysis (subject to `futilityStopping`). If `FALSE`, futility
+  bounds are determined by `futilityBounds` or beta spending.
+
+- astar:
+
+  The overall futility stopping probability under the null hypothesis.
+
 - futilityBounds:
 
   Lower boundaries on the z-test statistic scale for stopping for
   futility at stages `1, ..., kMax-1`. Defaults to `rep(-8, kMax-1)` if
   left unspecified. The futility bounds are non-binding for the
   calculation of critical values.
-
-- futilityCP:
-
-  The futility bounds on the conditional power scale.
-
-- futilityTheta:
-
-  The futility bounds on the parameter scale.
 
 - typeBetaSpending:
 
@@ -152,6 +155,9 @@ An S3 class `design` object with three components:
   - `attainedAlpha`: The attained significance level, which is different
     from the overall significance level in the presence of futility
     stopping.
+
+  - `astar`: The overall futility stopping probability under the null
+    hypothesis.
 
   - `kMax`: The number of stages.
 
@@ -234,8 +240,9 @@ An S3 class `design` object with three components:
 
 ## Details
 
-The function determines efficacy and futility bounds based on the inputs
-provided, following a clear priority order.
+The futility stopping boundaries under the null hypothesis are
+non-binding. The function determines efficacy and futility bounds based
+on the inputs provided, following a clear priority order.
 
 **Efficacy bounds:** If `criticalValues` are supplied, they take
 precedence and all alpha-spending parameters are ignored. Otherwise,
@@ -244,19 +251,17 @@ efficacy bounds are derived from the specified alpha-spending function.
 **Futility bounds:** Futility inputs are evaluated in the following
 order of priority:
 
-1.  If `futilityBounds` are provided, they override all other
-    futility-related inputs (`futilityCP`, `futilityTheta`, and
-    beta-spending parameters).
+1.  If `futilityBounds` are provided, they override beta-spending
+    parameters.
 
-2.  If `futilityBounds` are not provided but `futilityCP` is specified,
-    then `futilityTheta` and beta-spending parameters are ignored.
+2.  If `futilityBounds` are not specified, futility bounds are computed
+    using the beta-spending approach with astar being the maximum
+    futility stopping probability under the null hypothesis. If
+    `typeBetaSpending == "none"`, then there is no futility stopping
+    under the null hypothesis.
 
-3.  If only `futilityTheta` is provided, beta-spending parameters are
-    ignored.
-
-4.  If none of `futilityBounds`, `futilityCP`, or `futilityTheta` are
-    specified, futility bounds are computed using the beta-spending
-    approach.
+If `symmetricBounds = TRUE`, the futility bounds are set to
+`-efficacyBounds` and beta-spending inputs are ignored.
 
 ## References
 
@@ -271,61 +276,32 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ## Examples
 
 ``` r
-# Example 1: obtain the maximum information given power
-(design1 <- getDesign(
-  beta = 0.2, theta = -log(0.7),
-  kMax = 2, informationRates = c(0.5,1),
-  alpha = 0.025, typeAlphaSpending = "sfOF",
-  typeBetaSpending = "sfP"))
-#>                                                                              
-#> Group-sequential design with 2 stages                                        
-#> theta: 0.357, maximum information: 71.97                                     
-#> Overall power: 0.8, overall alpha (1-sided): 0.025, attained alpha: 0.0205   
-#> Drift parameter: 3.026, inflation factor: 1.167                              
-#> Expected information under H1: 60.12, expected information under H0: 41.78   
-#> Alpha spending: Lan-DeMets O'Brien-Fleming, beta spending: Lan-DeMets Pocock 
-#>                                                                              
+(design1 <- getDesign2(
+  beta = 0.149, theta = -log(0.65),
+  kMax = 2, informationRates = c(0.87, 1),
+  alpha = 0.004, typeAlphaSpending = "sfOF",
+  astar = 0.1, typeBetaSpending = "sfHSD",
+  parameterBetaSpending = -8))
+#>                                                                             
+#> Group-sequential design with 2 stages                                       
+#> theta: 0.431, maximum information: 74.5                                     
+#> Overall power: 0.851, overall alpha (1-sided): 0.004, attained alpha: 0.004 
+#> Drift parameter: 3.718, inflation factor: 1.014                             
+#> Expected information under H1: 56.39, expected information under H0: 0.56   
+#> Alpha spending: Lan-DeMets O'Brien-Fleming, beta spending: HSD(gamma = -8)  
+#>                                                                             
 #>                               Stage 1 Stage 2
-#> Information rate              0.500   1.000  
-#> Efficacy boundary (Z)         2.963   1.969  
-#> Futility boundary (Z)         0.985   1.969  
-#> Cumulative rejection          0.2053  0.8000 
-#> Cumulative futility           0.1240  0.2000 
-#> Cumulative alpha spent        0.0015  0.0250 
-#> Efficacy boundary (theta)     0.494   0.232  
-#> Futility boundary (theta)     0.164   0.232  
-#> Efficacy boundary (p)         0.0015  0.0245 
-#> Futility boundary (p)         0.1624  0.0245 
-#> Information                   35.99   71.97  
-#> Cumulative rejection under H0 0.0015  0.0205 
-#> Cumulative futility under H0  0.8376  0.9795 
-
-# Example 2: obtain power given the maximum information
-(design2 <- getDesign(
-  IMax = 72.5, theta = -log(0.7),
-  kMax = 3, informationRates = c(0.5, 0.75, 1),
-  alpha = 0.025, typeAlphaSpending = "sfOF",
-  typeBetaSpending = "sfP"))
-#>                                                                              
-#> Group-sequential design with 3 stages                                        
-#> theta: 0.357, maximum information: 72.5                                      
-#> Overall power: 0.771, overall alpha (1-sided): 0.025, attained alpha: 0.0187 
-#> Drift parameter: 3.037, inflation factor: 1.263                              
-#> Expected information under H1: 51.82, expected information under H0: 39.54   
-#> Alpha spending: Lan-DeMets O'Brien-Fleming, beta spending: Lan-DeMets Pocock 
-#>                                                                              
-#>                               Stage 1 Stage 2 Stage 3
-#> Information rate              0.500   0.750   1.000  
-#> Efficacy boundary (Z)         2.963   2.359   2.014  
-#> Futility boundary (Z)         1.076   1.511   2.014  
-#> Cumulative rejection          0.2075  0.6018  0.7710 
-#> Cumulative futility           0.1420  0.1896  0.2290 
-#> Cumulative alpha spent        0.0015  0.0096  0.0250 
-#> Efficacy boundary (theta)     0.492   0.320   0.237  
-#> Futility boundary (theta)     0.179   0.205   0.237  
-#> Efficacy boundary (p)         0.0015  0.0092  0.0220 
-#> Futility boundary (p)         0.1410  0.0654  0.0220 
-#> Information                   36.25   54.38   72.50  
-#> Cumulative rejection under H0 0.0015  0.0093  0.0187 
-#> Cumulative futility under H0  0.8590  0.9488  0.9813 
+#> Information rate              0.870   1.000  
+#> Efficacy boundary (Z)         2.873   2.706  
+#> Futility boundary (Z)         -2.873  -2.706 
+#> Cumulative rejection          0.7240  0.8510 
+#> Cumulative futility           0.0000  0.0000 
+#> Cumulative alpha spent        0.0020  0.0040 
+#> Efficacy boundary (theta)     0.357   0.314  
+#> Futility boundary (theta)     -0.357  -0.314 
+#> Efficacy boundary (p)         0.0020  0.0034 
+#> Futility boundary (p)         0.9980  0.9966 
+#> Information                   64.81   74.50  
+#> Cumulative rejection under H0 0.0020  0.0040 
+#> Cumulative futility under H0  0.0020  0.0040 
 ```

@@ -6,6 +6,8 @@
   exitprobcpp, exitprob_seamless_cpp and exitprob_mams_cpp
 - allowed the retesting of an active hypothesis if its weight has
   increased due to the rejection of another hypothesis in fseqbon
+- added getDesign2 for futility boundary under the null hypothesis for
+  group sequential designs
 
 ## lrstat 0.3.2
 

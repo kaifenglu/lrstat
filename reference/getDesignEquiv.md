@@ -1,4 +1,4 @@
-# Power and Sample Size for a Generic Group Sequential Equivalence Design
+# Power and Sample Size for Generic Group Sequential Equivalence Design
 
 Obtains the maximum information and stopping boundaries for a generic
 group sequential equivalence design assuming a constant treatment

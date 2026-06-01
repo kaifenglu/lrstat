@@ -91,7 +91,10 @@
 - [`getCP_seamless()`](https://kaifenglu.github.io/lrstat/reference/getCP_seamless.md)
   : Conditional Power for Phase 2/3 Seamless Design
 - [`getDesign()`](https://kaifenglu.github.io/lrstat/reference/getDesign.md)
-  : Power and Sample Size for a Generic Group Sequential Design
+  : Power and Sample Size for Generic Group Sequential Design
+- [`getDesign2()`](https://kaifenglu.github.io/lrstat/reference/getDesign2.md)
+  : Power and Sample Size for Group Sequential Design With Futility
+  Stopping Under Null Hypothesis
 - [`getDesignANOVA()`](https://kaifenglu.github.io/lrstat/reference/getDesignANOVA.md)
   : Power and Sample Size for One-Way ANOVA
 - [`getDesignANOVAContrast()`](https://kaifenglu.github.io/lrstat/reference/getDesignANOVAContrast.md)
@@ -99,7 +102,7 @@
 - [`getDesignAgreement()`](https://kaifenglu.github.io/lrstat/reference/getDesignAgreement.md)
   : Power and Sample Size for Cohen's kappa
 - [`getDesignEquiv()`](https://kaifenglu.github.io/lrstat/reference/getDesignEquiv.md)
-  : Power and Sample Size for a Generic Group Sequential Equivalence
+  : Power and Sample Size for Generic Group Sequential Equivalence
   Design
 - [`getDesignFisherExact()`](https://kaifenglu.github.io/lrstat/reference/getDesignFisherExact.md)
   : Power and Sample Size for Fisher's Exact Test for Two Proportions

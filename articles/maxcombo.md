@@ -109,7 +109,7 @@ f <- function(u2, u1, sigma, alpha) {
   1 - pmvnormr(upper=c(u1, u2, u2), sigma=sigma) - alpha
 }
 (u2 = uniroot(f, c(1,3), u1, sigma, alpha)$root)
-#> [1] 2.136767
+#> [1] 2.137009
 ```
 
 The power can be estimated by plugging in the mean under the alternative
@@ -117,13 +117,13 @@ hypothesis.
 
 ``` r
 1 - pmvnormr(upper=c(u1, u2, u2), mean=mu, sigma=sigma)
-#> [1] 0.7241916
+#> [1] 0.7242221
 #> attr(,"method")
 #> [1] "qmc"
 #> attr(,"error")
-#> [1] 9.865902e-05
+#> [1] 8.598515e-05
 #> attr(,"nsamples")
-#> [1] 24576
+#> [1] 40960
 ```
 
 For the simulation study, we use very large critical values for the
