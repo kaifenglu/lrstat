@@ -176,7 +176,7 @@ are non-binding for the calculation of critical values.</p></dd>
 <dd><p>The type of beta spending function for determining
 futility bounds under the null hypothesis when <code>futilityBounds</code> is
 not provided. The same types as <code>typeAlphaSpending</code> are allowed,
-except that "none" corresponds to no futility stopping under
+except that <code>"none"</code> corresponds to no futility stopping under
 the null hypothesis.</p></dd>
 
 
@@ -188,7 +188,7 @@ and \(\gamma\) for <code>"sfHSD"</code>.</p></dd>
 
 <dt id="arg-userbetaspending">userBetaSpending<a class="anchor" aria-label="anchor" href="#arg-userbetaspending"></a></dt>
 <dd><p>A vector of length <code>kMax</code> for the user
-defined beta spending function when <code>typeBetaSpending = "user"</code>.
+defined beta spending function when <code>typeBetaSpending == "user"</code>.
 The last element must be equal to <code>astar</code> and the vector must be
 increasing.</p></dd>
 

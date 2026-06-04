@@ -117,7 +117,7 @@ getDesign2(
 
   The type of beta spending function for determining futility bounds
   under the null hypothesis when `futilityBounds` is not provided. The
-  same types as `typeAlphaSpending` are allowed, except that "none"
+  same types as `typeAlphaSpending` are allowed, except that `"none"`
   corresponds to no futility stopping under the null hypothesis.
 
 - parameterBetaSpending:
@@ -129,7 +129,7 @@ getDesign2(
 - userBetaSpending:
 
   A vector of length `kMax` for the user defined beta spending function
-  when `typeBetaSpending = "user"`. The last element must be equal to
+  when `typeBetaSpending == "user"`. The last element must be equal to
   `astar` and the vector must be increasing.
 
 - spendingTime:
