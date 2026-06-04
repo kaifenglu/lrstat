@@ -3,6 +3,8 @@
 * used struct output to reduce overhead of returning multiple values for exitprobcpp, exitprob_seamless_cpp and exitprob_mams_cpp
 * allowed the retesting of an active hypothesis if its weight has increased due to the rejection of another hypothesis in fseqbon
 * added getDesign2 for futility boundary under the null hypothesis for group sequential designs
+* fixed a typo in the settings output of phregr
+* improved README.md to add more details on the functions for the use of the package
 
 # lrstat 0.3.2
 
