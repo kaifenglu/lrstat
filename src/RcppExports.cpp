@@ -3158,21 +3158,21 @@ BEGIN_RCPP
 END_RCPP
 }
 // liferegRcpp
-Rcpp::List liferegRcpp(const Rcpp::DataFrame& data, const std::vector<std::string>& stratum, const std::string time, const std::string time2, const std::string event, const std::vector<std::string>& covariates, const std::string weight, const std::string offset, const std::string id, const std::string dist, const std::vector<double>& init, const bool robust, const bool plci, const double alpha, const int maxiter, const double eps);
+Rcpp::List liferegRcpp(const Rcpp::DataFrame& data, const std::vector<std::string>& stratum, const std::string& time, const std::string& time2, const std::string& event, const std::vector<std::string>& covariates, const std::string& weight, const std::string& offset, const std::string& id, const std::string& dist, const std::vector<double>& init, const bool robust, const bool plci, const double alpha, const int maxiter, const double eps);
 RcppExport SEXP _lrstat_liferegRcpp(SEXP dataSEXP, SEXP stratumSEXP, SEXP timeSEXP, SEXP time2SEXP, SEXP eventSEXP, SEXP covariatesSEXP, SEXP weightSEXP, SEXP offsetSEXP, SEXP idSEXP, SEXP distSEXP, SEXP initSEXP, SEXP robustSEXP, SEXP plciSEXP, SEXP alphaSEXP, SEXP maxiterSEXP, SEXP epsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< const std::vector<std::string>& >::type stratum(stratumSEXP);
-    Rcpp::traits::input_parameter< const std::string >::type time(timeSEXP);
-    Rcpp::traits::input_parameter< const std::string >::type time2(time2SEXP);
-    Rcpp::traits::input_parameter< const std::string >::type event(eventSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type time(timeSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type time2(time2SEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type event(eventSEXP);
     Rcpp::traits::input_parameter< const std::vector<std::string>& >::type covariates(covariatesSEXP);
-    Rcpp::traits::input_parameter< const std::string >::type weight(weightSEXP);
-    Rcpp::traits::input_parameter< const std::string >::type offset(offsetSEXP);
-    Rcpp::traits::input_parameter< const std::string >::type id(idSEXP);
-    Rcpp::traits::input_parameter< const std::string >::type dist(distSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type weight(weightSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type offset(offsetSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type id(idSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type dist(distSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type init(initSEXP);
     Rcpp::traits::input_parameter< const bool >::type robust(robustSEXP);
     Rcpp::traits::input_parameter< const bool >::type plci(plciSEXP);
