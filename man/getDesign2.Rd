@@ -88,7 +88,7 @@ are non-binding for the calculation of critical values.}
 \item{typeBetaSpending}{The type of beta spending function for determining
 futility bounds under the null hypothesis when \code{futilityBounds} is
 not provided. The same types as \code{typeAlphaSpending} are allowed,
-except that "none" corresponds to no futility stopping under
+except that \code{"none"} corresponds to no futility stopping under
 the null hypothesis.}
 
 \item{parameterBetaSpending}{The parameter for the beta spending function.
@@ -96,7 +96,7 @@ Corresponds to \eqn{\Delta} for \code{"WT"}, \eqn{\rho} for \code{"sfKD"},
 and \eqn{\gamma} for \code{"sfHSD"}.}
 
 \item{userBetaSpending}{A vector of length \code{kMax} for the user
-defined beta spending function when \code{typeBetaSpending = "user"}.
+defined beta spending function when \code{typeBetaSpending == "user"}.
 The last element must be equal to \code{astar} and the vector must be
 increasing.}
 

@@ -3173,13 +3173,13 @@ adaptDesign <- function(betaNew = NA_real_, INew = NA_real_, L = NA_integer_, zL
 #' @param typeBetaSpending The type of beta spending function for determining
 #'   futility bounds under the null hypothesis when \code{futilityBounds} is
 #'   not provided. The same types as \code{typeAlphaSpending} are allowed,
-#'   except that "none" corresponds to no futility stopping under
+#'   except that \code{"none"} corresponds to no futility stopping under
 #'   the null hypothesis.
 #' @param parameterBetaSpending The parameter for the beta spending function.
 #'   Corresponds to \eqn{\Delta} for \code{"WT"}, \eqn{\rho} for \code{"sfKD"},
 #'   and \eqn{\gamma} for \code{"sfHSD"}.
 #' @param userBetaSpending A vector of length \code{kMax} for the user
-#'   defined beta spending function when \code{typeBetaSpending = "user"}.
+#'   defined beta spending function when \code{typeBetaSpending == "user"}.
 #'   The last element must be equal to \code{astar} and the vector must be
 #'   increasing.
 #' @param spendingTime A vector of length \code{kMax} for the error spending
