@@ -80,26 +80,25 @@ determined by \code{futilityBounds} or beta spending.}
 \item{astar}{The overall futility stopping probability under the
 null hypothesis.}
 
-\item{futilityBounds}{Lower boundaries on the z-test statistic scale
-for stopping for futility at stages \code{1, ..., kMax-1}. Defaults to
-\code{rep(-8, kMax-1)} if left unspecified. The futility bounds are
-non-binding for the calculation of critical values.}
+\item{futilityBounds}{A vector of length \code{kMax} for the futility
+stopping boundaries on the Z-scale under the null hypothesis.
+Defaults to \code{rep(-8, kMax)} if left unspecified. The futility bounds
+are non-binding for the calculation of critical values.}
 
-\item{typeBetaSpending}{The type of beta spending. One of the following:
-\code{"sfOF"} for O'Brien-Fleming type spending function,
-\code{"sfP"} for Pocock type spending function,
-\code{"sfKD"} for Kim & DeMets spending function,
-\code{"sfHSD"} for Hwang, Shi & DeCani spending function,
-\code{"user"} for user defined spending, and
-\code{"none"} for no early futility stopping.
-Defaults to \code{"none"}.}
+\item{typeBetaSpending}{The type of beta spending function for determining
+futility bounds under the null hypothesis when \code{futilityBounds} is
+not provided. The same types as \code{typeAlphaSpending} are allowed,
+except that "none" corresponds to no futility stopping under
+the null hypothesis.}
 
-\item{parameterBetaSpending}{The parameter value for the beta spending.
-Corresponds to \eqn{\rho} for \code{"sfKD"}, and
-\eqn{\gamma} for \code{"sfHSD"}.}
+\item{parameterBetaSpending}{The parameter for the beta spending function.
+Corresponds to \eqn{\Delta} for \code{"WT"}, \eqn{\rho} for \code{"sfKD"},
+and \eqn{\gamma} for \code{"sfHSD"}.}
 
-\item{userBetaSpending}{The user defined beta spending. Cumulative beta
-spent up to each stage.}
+\item{userBetaSpending}{A vector of length \code{kMax} for the user
+defined beta spending function when \code{typeBetaSpending = "user"}.
+The last element must be equal to \code{astar} and the vector must be
+increasing.}
 
 \item{spendingTime}{A vector of length \code{kMax} for the error spending
 time at each analysis. Defaults to missing, in which case, it is the
@@ -201,8 +200,8 @@ beta-spending parameters.
 
 \item If \code{futilityBounds} are not
 specified, futility bounds are computed using the beta-spending approach
-with astar being the maximum futility stopping probability under the
-null hypothesis. If \code{typeBetaSpending == "none"},
+with \code{astar} being the maximum futility stopping probability under
+the null hypothesis. If \code{typeBetaSpending == "none"},
 then there is no futility stopping under the null hypothesis.
 }
 

@@ -4092,10 +4092,22 @@ ListCpp getDesign2cpp(
 //'   determined by \code{futilityBounds} or beta spending.
 //' @param astar The overall futility stopping probability under the
 //'   null hypothesis.
-//' @inheritParams param_futilityBounds
-//' @inheritParams param_typeBetaSpending
-//' @inheritParams param_parameterBetaSpending
-//' @inheritParams param_userBetaSpending
+//' @param futilityBounds A vector of length \code{kMax} for the futility
+//'   stopping boundaries on the Z-scale under the null hypothesis.
+//'   Defaults to \code{rep(-8, kMax)} if left unspecified. The futility bounds
+//'   are non-binding for the calculation of critical values.
+//' @param typeBetaSpending The type of beta spending function for determining
+//'   futility bounds under the null hypothesis when \code{futilityBounds} is
+//'   not provided. The same types as \code{typeAlphaSpending} are allowed,
+//'   except that \code{"none"} corresponds to no futility stopping under
+//'   the null hypothesis.
+//' @param parameterBetaSpending The parameter for the beta spending function.
+//'   Corresponds to \eqn{\Delta} for \code{"WT"}, \eqn{\rho} for \code{"sfKD"},
+//'   and \eqn{\gamma} for \code{"sfHSD"}.
+//' @param userBetaSpending A vector of length \code{kMax} for the user
+//'   defined beta spending function when \code{typeBetaSpending == "user"}.
+//'   The last element must be equal to \code{astar} and the vector must be
+//'   increasing.
 //' @param spendingTime A vector of length \code{kMax} for the error spending
 //'   time at each analysis. Defaults to missing, in which case, it is the
 //'   same as \code{informationRates}.
@@ -4120,8 +4132,8 @@ ListCpp getDesign2cpp(
 //'
 //'   \item If \code{futilityBounds} are not
 //'   specified, futility bounds are computed using the beta-spending approach
-//'   with astar being the maximum futility stopping probability under the
-//'   null hypothesis. If \code{typeBetaSpending == "none"},
+//'   with \code{astar} being the maximum futility stopping probability under
+//'   the null hypothesis. If \code{typeBetaSpending == "none"},
 //'   then there is no futility stopping under the null hypothesis.
 //' }
 //'
