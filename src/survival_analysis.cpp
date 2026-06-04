@@ -971,6 +971,35 @@ DataFrameCpp kmdiffcpp(const DataFrameCpp& data,
       }
     }
 
+    if (tstop11.empty() || tstop12.empty()) {
+      std::string stratumerr;
+      if (!has_stratum) {
+        stratumerr = "";
+      } else {
+        for (size_t j = 0; j < p_stratum; ++j) {
+          std::string s = stratum[j];
+          if (u_stratum.int_cols.count(s)) {
+            auto v = u_stratum.get<int>(s);
+            stratumerr += " " + s + " = " + std::to_string(v[i]);
+          } else if (u_stratum.numeric_cols.count(s)) {
+            auto v = u_stratum.get<double>(s);
+            stratumerr += " " + s + " = " + std::to_string(v[i]);
+          } else if (u_stratum.string_cols.count(s)) {
+            auto v = u_stratum.get<std::string>(s);
+            stratumerr += " " + s + " = " + v[i];
+          } else {
+            throw std::invalid_argument("unsupported type for stratum variable " + s);
+          }
+        }
+      }
+
+      std::string errmsg = "Each stratum must contain both treatment groups";
+      if (!stratumerr.empty()) {
+        errmsg += " for" + stratumerr;
+      }
+      throw std::invalid_argument(errmsg);
+    }
+
     double max_time11 = *std::max_element(tstop11.begin(), tstop11.end());
     double max_time12 = *std::max_element(tstop12.begin(), tstop12.end());
     if (milestone > std::min(max_time11, max_time12)) {
@@ -3576,14 +3605,14 @@ double liferegplloop(size_t p, const std::vector<double>& par, void *ex,
 // main liferegcpp function
 ListCpp liferegcpp(const DataFrameCpp& data,
                    const std::vector<std::string>& stratum,
-                   const std::string time,
-                   const std::string time2,
-                   const std::string event,
+                   const std::string& time,
+                   const std::string& time2,
+                   const std::string& event,
                    const std::vector<std::string>& covariates,
-                   const std::string weight,
-                   const std::string offset,
-                   const std::string id,
-                   const std::string dist,
+                   const std::string& weight,
+                   const std::string& offset,
+                   const std::string& id,
+                   const std::string& dist,
                    const std::vector<double>& init,
                    const bool robust,
                    const bool plci,
@@ -4231,14 +4260,14 @@ ListCpp liferegcpp(const DataFrameCpp& data,
 // [[Rcpp::export]]
 Rcpp::List liferegRcpp(const Rcpp::DataFrame& data,
                        const std::vector<std::string>& stratum,
-                       const std::string time,
-                       const std::string time2,
-                       const std::string event,
+                       const std::string& time,
+                       const std::string& time2,
+                       const std::string& event,
                        const std::vector<std::string>& covariates,
-                       const std::string weight,
-                       const std::string offset,
-                       const std::string id,
-                       const std::string dist,
+                       const std::string& weight,
+                       const std::string& offset,
+                       const std::string& id,
+                       const std::string& dist,
                        const std::vector<double>& init,
                        const bool robust,
                        const bool plci,
