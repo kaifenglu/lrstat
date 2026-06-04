@@ -67,35 +67,108 @@
 </div>
 <!-- badges: start -->
 <!-- badges: end -->
-<p>The goal of lrstat is to calculate power and sample size under non-proportional hazards using weighted log-rank tests both analytically and using simulations in a time-to-event group-sequential trial.</p>
-<p>It has built-in capabilities to use error-spending functions and can calcualte power, accrual duration, follow-up duration, and absolute accrual rates for the Fleming-Harrington’s class of weighting functions.</p>
+<p><code>lrstat</code> provides power and sample size methods for non-proportional hazards and many other clinical trial designs.</p>
+<p>The package is built around weighted log-rank methodology for time-to-event group sequential designs, with flexible accrual, event/dropout modeling, error-spending boundaries, and simulation support. It also includes design and inference tools for continuous, binary, count, and equivalence settings, including adaptive and multi-arm/multi-stage extensions.</p>
 <div class="section level2">
-<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>This is a basic example which shows you how to solve a common problem:</p>
+<p>Install the development version from GitHub:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"kaifenglu/lrstat"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="key-features">Key Features<a class="anchor" aria-label="anchor" href="#key-features"></a>
+</h2>
+<ul>
+<li>Weighted log-rank design and power under non-proportional hazards using the Fleming-Harrington class of weights.</li>
+<li>Group sequential design support with Lan-DeMets error spending and boundary calculations.</li>
+<li>Analytical and simulation-based operating characteristics for power, event counts, accrual duration, and follow-up duration.</li>
+<li>Support for adaptive group sequential updates (sample size, timing, error spending, future looks).</li>
+<li>Design modules for continuous, binary, count, and time-to-event endpoints, including equivalence settings.</li>
+<li>Specialized methods for crossover, repeated measures (MMRM), exact methods, and multi-arm/multi-stage workflows.</li>
+<li>Built-in datasets and a Shiny interface.</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="typical-workflow">Typical Workflow<a class="anchor" aria-label="anchor" href="#typical-workflow"></a>
+</h2>
+<ol style="list-style-type: decimal">
+<li>Specify design assumptions: accrual profile, event/dropout hazards, allocation, number/timing of looks, and spending function.</li>
+<li>Compute design characteristics with weighted log-rank functions such as <code><a href="reference/lrpower.html">lrpower()</a></code>, <code><a href="reference/lrsamplesize.html">lrsamplesize()</a></code>, <code><a href="reference/getBound.html">getBound()</a></code>, and related utilities.</li>
+<li>Optionally evaluate robustness via simulation (for example, <code><a href="reference/lrsim.html">lrsim()</a></code>) and compare alternative design scenarios.</li>
+<li>Summarize final design choices and explore sensitivity to delayed effects, accrual changes, or follow-up constraints.</li>
+</ol>
+</div>
+<div class="section level2">
+<h2 id="minimal-time-to-event-example">Minimal Time-to-Event Example<a class="anchor" aria-label="anchor" href="#minimal-time-to-event-example"></a>
+</h2>
+<p>The example below computes power for a two-look group sequential trial with a delayed treatment effect and FH(0,1) weighting.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://kaifenglu.github.io/lrstat/">lrstat</a></span><span class="op">)</span></span>
-<span><span class="co">## basic example code for a two-stage group sequential trial with interim</span></span>
-<span><span class="co">## analysis at 80% of total number of events using Lan-DeMets O'Brien-Fleming</span></span>
-<span><span class="co">## error-spending. The accrual has a ramp-up periof of 9 months before </span></span>
-<span><span class="co">## reaching 26 patients per month. The survival distribution for the treatment</span></span>
-<span><span class="co">## group has a delay effect of 6 months and a hazard ratio 0.58 after the delay. </span></span>
-<span><span class="co">## The annual dropout rate is 5%. The accrual duration is 22 months. </span></span>
-<span><span class="co">## The follow-up duration is 18 months for the last randomized patients. </span></span>
-<span><span class="co">## The FH(0,1) weighted log-rank test is used for power calculation. </span></span>
 <span></span>
-<span><span class="fu"><a href="reference/lrpower.html">lrpower</a></span><span class="op">(</span>kMax <span class="op">=</span> <span class="fl">2</span>, informationRates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.8</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span>        alpha <span class="op">=</span> <span class="fl">0.025</span>, typeAlphaSpending <span class="op">=</span> <span class="st">"sfOF"</span>,</span>
-<span>        allocationRatioPlanned <span class="op">=</span> <span class="fl">1</span>, accrualTime <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">9</span><span class="op">)</span>,</span>
-<span>        accrualIntensity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">26</span><span class="op">/</span><span class="fl">9</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">9</span><span class="op">)</span>, <span class="fl">26</span><span class="op">)</span>,</span>
-<span>        piecewiseSurvivalTime <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">6</span><span class="op">)</span>,</span>
-<span>        lambda1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.0533</span>, <span class="fl">0.0309</span><span class="op">)</span>,</span>
-<span>        lambda2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.0533</span>, <span class="fl">0.0533</span><span class="op">)</span>,</span>
-<span>        gamma1 <span class="op">=</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="fl">0.05</span><span class="op">)</span><span class="op">/</span><span class="fl">12</span>,</span>
-<span>        gamma2 <span class="op">=</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="fl">0.05</span><span class="op">)</span><span class="op">/</span><span class="fl">12</span>, </span>
-<span>        accrualDuration <span class="op">=</span> <span class="fl">22</span>,</span>
-<span>        followupTime <span class="op">=</span> <span class="fl">18</span>, fixedFollowup <span class="op">=</span> <span class="cn">FALSE</span>, </span>
-<span>        rho1 <span class="op">=</span> <span class="fl">0</span>, rho2 <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/lrpower.html">lrpower</a></span><span class="op">(</span></span>
+<span>  kMax <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  informationRates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.8</span>, <span class="fl">1</span><span class="op">)</span>,</span>
+<span>  alpha <span class="op">=</span> <span class="fl">0.025</span>,</span>
+<span>  typeAlphaSpending <span class="op">=</span> <span class="st">"sfOF"</span>,</span>
+<span>  allocationRatioPlanned <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  accrualTime <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">9</span><span class="op">)</span>,</span>
+<span>  accrualIntensity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">26</span> <span class="op">/</span> <span class="fl">9</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">9</span><span class="op">)</span>, <span class="fl">26</span><span class="op">)</span>,</span>
+<span>  piecewiseSurvivalTime <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">6</span><span class="op">)</span>,</span>
+<span>  lambda1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.0533</span>, <span class="fl">0.0309</span><span class="op">)</span>,</span>
+<span>  lambda2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.0533</span>, <span class="fl">0.0533</span><span class="op">)</span>,</span>
+<span>  gamma1 <span class="op">=</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="fl">0.05</span><span class="op">)</span> <span class="op">/</span> <span class="fl">12</span>,</span>
+<span>  gamma2 <span class="op">=</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="fl">0.05</span><span class="op">)</span> <span class="op">/</span> <span class="fl">12</span>,</span>
+<span>  accrualDuration <span class="op">=</span> <span class="fl">22</span>,</span>
+<span>  followupTime <span class="op">=</span> <span class="fl">18</span>,</span>
+<span>  fixedFollowup <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  rho1 <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  rho2 <span class="op">=</span> <span class="fl">1</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fit</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="additional-design-families">Additional Design Families<a class="anchor" aria-label="anchor" href="#additional-design-families"></a>
+</h2>
+<p><code>lrstat</code> includes broad design support beyond weighted log-rank settings, including:</p>
+<ul>
+<li>Continuous endpoints (for example, mean difference/ratio and MMRM-based designs).</li>
+<li>Binary endpoints (including exact methods and interval-based dose-finding tools such as mTPI-2 and BOIN helpers).</li>
+<li>Count endpoints (including negative binomial settings with censoring).</li>
+<li>Equivalence and adaptive group sequential variants across supported endpoint types.</li>
+</ul>
+<p>See the reference index for the full function catalog.</p>
+</div>
+<div class="section level2">
+<h2 id="shiny-app">Shiny App<a class="anchor" aria-label="anchor" href="#shiny-app"></a>
+</h2>
+<p>Launch the interactive application:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://kaifenglu.github.io/lrstat/">lrstat</a></span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/runShinyApp_lrstat.html">runShinyApp_lrstat</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
+</h2>
+<ul>
+<li>Website: <a href="https://kaifenglu.github.io/lrstat/" class="uri">https://kaifenglu.github.io/lrstat/</a>
+</li>
+<li>Function reference: <a href="https://kaifenglu.github.io/lrstat/reference/" class="uri">https://kaifenglu.github.io/lrstat/reference/</a>
+</li>
+<li>Vignettes: <a href="https://kaifenglu.github.io/lrstat/articles/" class="uri">https://kaifenglu.github.io/lrstat/articles/</a>
+</li>
+<li>Source code: <a href="https://github.com/kaifenglu/lrstat" class="external-link uri">https://github.com/kaifenglu/lrstat</a>
+</li>
+<li>Issue tracker: <a href="https://github.com/kaifenglu/lrstat/issues" class="external-link uri">https://github.com/kaifenglu/lrstat/issues</a>
+</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
+</h2>
+<p>If you use <code>lrstat</code> in analyses, reports, or publications, please cite the package and relevant methodological references documented in the function help pages and vignettes.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

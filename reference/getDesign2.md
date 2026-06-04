@@ -108,29 +108,29 @@ getDesign2(
 
 - futilityBounds:
 
-  Lower boundaries on the z-test statistic scale for stopping for
-  futility at stages `1, ..., kMax-1`. Defaults to `rep(-8, kMax-1)` if
-  left unspecified. The futility bounds are non-binding for the
-  calculation of critical values.
+  A vector of length `kMax` for the futility stopping boundaries on the
+  Z-scale under the null hypothesis. Defaults to `rep(-8, kMax)` if left
+  unspecified. The futility bounds are non-binding for the calculation
+  of critical values.
 
 - typeBetaSpending:
 
-  The type of beta spending. One of the following: `"sfOF"` for
-  O'Brien-Fleming type spending function, `"sfP"` for Pocock type
-  spending function, `"sfKD"` for Kim & DeMets spending function,
-  `"sfHSD"` for Hwang, Shi & DeCani spending function, `"user"` for user
-  defined spending, and `"none"` for no early futility stopping.
-  Defaults to `"none"`.
+  The type of beta spending function for determining futility bounds
+  under the null hypothesis when `futilityBounds` is not provided. The
+  same types as `typeAlphaSpending` are allowed, except that "none"
+  corresponds to no futility stopping under the null hypothesis.
 
 - parameterBetaSpending:
 
-  The parameter value for the beta spending. Corresponds to \\\rho\\ for
-  `"sfKD"`, and \\\gamma\\ for `"sfHSD"`.
+  The parameter for the beta spending function. Corresponds to
+  \\\Delta\\ for `"WT"`, \\\rho\\ for `"sfKD"`, and \\\gamma\\ for
+  `"sfHSD"`.
 
 - userBetaSpending:
 
-  The user defined beta spending. Cumulative beta spent up to each
-  stage.
+  A vector of length `kMax` for the user defined beta spending function
+  when `typeBetaSpending = "user"`. The last element must be equal to
+  `astar` and the vector must be increasing.
 
 - spendingTime:
 
@@ -255,7 +255,7 @@ order of priority:
     parameters.
 
 2.  If `futilityBounds` are not specified, futility bounds are computed
-    using the beta-spending approach with astar being the maximum
+    using the beta-spending approach with `astar` being the maximum
     futility stopping probability under the null hypothesis. If
     `typeBetaSpending == "none"`, then there is no futility stopping
     under the null hypothesis.

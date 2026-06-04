@@ -166,32 +166,31 @@ null hypothesis.</p></dd>
 
 
 <dt id="arg-futilitybounds">futilityBounds<a class="anchor" aria-label="anchor" href="#arg-futilitybounds"></a></dt>
-<dd><p>Lower boundaries on the z-test statistic scale
-for stopping for futility at stages <code>1, ..., kMax-1</code>. Defaults to
-<code>rep(-8, kMax-1)</code> if left unspecified. The futility bounds are
-non-binding for the calculation of critical values.</p></dd>
+<dd><p>A vector of length <code>kMax</code> for the futility
+stopping boundaries on the Z-scale under the null hypothesis.
+Defaults to <code>rep(-8, kMax)</code> if left unspecified. The futility bounds
+are non-binding for the calculation of critical values.</p></dd>
 
 
 <dt id="arg-typebetaspending">typeBetaSpending<a class="anchor" aria-label="anchor" href="#arg-typebetaspending"></a></dt>
-<dd><p>The type of beta spending. One of the following:
-<code>"sfOF"</code> for O'Brien-Fleming type spending function,
-<code>"sfP"</code> for Pocock type spending function,
-<code>"sfKD"</code> for Kim &amp; DeMets spending function,
-<code>"sfHSD"</code> for Hwang, Shi &amp; DeCani spending function,
-<code>"user"</code> for user defined spending, and
-<code>"none"</code> for no early futility stopping.
-Defaults to <code>"none"</code>.</p></dd>
+<dd><p>The type of beta spending function for determining
+futility bounds under the null hypothesis when <code>futilityBounds</code> is
+not provided. The same types as <code>typeAlphaSpending</code> are allowed,
+except that "none" corresponds to no futility stopping under
+the null hypothesis.</p></dd>
 
 
 <dt id="arg-parameterbetaspending">parameterBetaSpending<a class="anchor" aria-label="anchor" href="#arg-parameterbetaspending"></a></dt>
-<dd><p>The parameter value for the beta spending.
-Corresponds to \(\rho\) for <code>"sfKD"</code>, and
-\(\gamma\) for <code>"sfHSD"</code>.</p></dd>
+<dd><p>The parameter for the beta spending function.
+Corresponds to \(\Delta\) for <code>"WT"</code>, \(\rho\) for <code>"sfKD"</code>,
+and \(\gamma\) for <code>"sfHSD"</code>.</p></dd>
 
 
 <dt id="arg-userbetaspending">userBetaSpending<a class="anchor" aria-label="anchor" href="#arg-userbetaspending"></a></dt>
-<dd><p>The user defined beta spending. Cumulative beta
-spent up to each stage.</p></dd>
+<dd><p>A vector of length <code>kMax</code> for the user
+defined beta spending function when <code>typeBetaSpending = "user"</code>.
+The last element must be equal to <code>astar</code> and the vector must be
+increasing.</p></dd>
 
 
 <dt id="arg-spendingtime">spendingTime<a class="anchor" aria-label="anchor" href="#arg-spendingtime"></a></dt>
@@ -279,8 +278,8 @@ Futility inputs are evaluated in the following order of priority:</p><ol><li><p>
 beta-spending parameters.</p></li>
 <li><p>If <code>futilityBounds</code> are not
 specified, futility bounds are computed using the beta-spending approach
-with astar being the maximum futility stopping probability under the
-null hypothesis. If <code>typeBetaSpending == "none"</code>,
+with <code>astar</code> being the maximum futility stopping probability under
+the null hypothesis. If <code>typeBetaSpending == "none"</code>,
 then there is no futility stopping under the null hypothesis.</p></li>
 </ol><p>If <code>symmetricBounds = TRUE</code>, the futility bounds are set to
 <code>-efficacyBounds</code> and beta-spending inputs are ignored.</p>
