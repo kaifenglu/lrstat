@@ -109,10 +109,11 @@
 #' @importFrom RcppParallel setThreadOptions RcppParallelLibs
 #' @importFrom parallel detectCores
 #' @importFrom stats as.formula complete.cases dgamma dlogis dnorm formula
-#' integrate model.frame model.matrix na.omit na.pass optimize pbeta pchisq
-#' pf plogis pnorm pt qbeta qchisq qf qlogis qnorm qt runif terms uniroot var
+#' @importFrom stats integrate model.frame model.matrix na.omit na.pass
+#' @importFrom stats optimize pbeta pchisq pf plogis pnorm pt qbeta
+#' @importFrom stats qchisq qf qlogis qnorm qt runif terms uniroot var
 #' @importFrom ggplot2 aes annotate element_text geom_step ggplot labs
-#' scale_linewidth_manual theme theme_bw
+#' @importFrom ggplot2 scale_linewidth_manual theme theme_bw
 #' @importFrom lpSolve lp
 #' @importFrom rlang .data
 #' @importFrom shiny shinyAppDir
