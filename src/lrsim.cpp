@@ -261,7 +261,6 @@ ListCpp lrsimcpp(
     const double rho2;
     const std::vector<int>& plannedEvents;
     const std::vector<double>& plannedTime;
-    const size_t maxIters;
     const size_t maxRawIters; // save raw rows only for iter < maxRawIters
     const std::vector<uint64_t>& seeds;
     const bool useEvents;
@@ -294,7 +293,6 @@ ListCpp lrsimcpp(
       double rho2_,
       const std::vector<int>& plannedEvents_,
       const std::vector<double>& plannedTime_,
-      size_t maxIters_,
       size_t maxRawIters_,
       const std::vector<uint64_t>& seeds_,
       bool useEvents_,
@@ -323,7 +321,6 @@ ListCpp lrsimcpp(
         rho2(rho2_),
         plannedEvents(plannedEvents_),
         plannedTime(plannedTime_),
-        maxIters(maxIters_),
         maxRawIters(maxRawIters_),
         seeds(seeds_),
         useEvents(useEvents_),
@@ -665,7 +662,7 @@ ListCpp lrsimcpp(
       lambda1x, lambda2x, gamma1x, gamma2x,
       N, fu, fixedFollowup, rho1, rho2,
       plannedEvents, plannedTime,
-      maxIters, maxRawIters, seeds, useEvents, nstrata, alpha,
+      maxRawIters, seeds, useEvents, nstrata, alpha,
       &results
   );
 
@@ -1170,7 +1167,6 @@ ListCpp lrsim3acpp(
     const double rho2;
     const std::vector<int>& plannedEvents;
     const std::vector<double>& plannedTime;
-    const size_t maxIters;
     const size_t maxRawIters; // store raw for iter < maxRawIters
     const std::vector<uint64_t>& seeds;
     const bool useEvents;
@@ -1204,7 +1200,6 @@ ListCpp lrsim3acpp(
       double rho2_,
       const std::vector<int>& plannedEvents_,
       const std::vector<double>& plannedTime_,
-      size_t maxIters_,
       size_t maxRawIters_,
       const std::vector<uint64_t>& seeds_,
       bool useEvents_,
@@ -1234,7 +1229,6 @@ ListCpp lrsim3acpp(
         rho2(rho2_),
         plannedEvents(plannedEvents_),
         plannedTime(plannedTime_),
-        maxIters(maxIters_),
         maxRawIters(maxRawIters_),
         seeds(seeds_),
         useEvents(useEvents_),
@@ -1589,7 +1583,7 @@ ListCpp lrsim3acpp(
       lambda1x, lambda2x, lambda3x, gamma1x, gamma2x, gamma3x,
       N, fu, fixedFollowup, rho1, rho2,
       plannedEvents, plannedTime,
-      maxIters, maxRawIters, seeds, useEvents, nstrata,
+      maxRawIters, seeds, useEvents, nstrata,
       &results
   );
 
@@ -2093,7 +2087,6 @@ ListCpp lrsim2ecpp(
     const double rho2;
     const std::vector<int>& plannedEvents;
     const std::vector<double>& plannedTime;
-    const size_t maxIters;
     const size_t maxRawIters;
     const std::vector<uint64_t>& seeds;
     const bool useEvents;
@@ -2136,7 +2129,6 @@ ListCpp lrsim2ecpp(
       double rho2_,
       const std::vector<int>& plannedEvents_,
       const std::vector<double>& plannedTime_,
-      size_t maxIters_,
       size_t maxRawIters_,
       const std::vector<uint64_t>& seeds_,
       bool useEvents_,
@@ -2175,7 +2167,6 @@ ListCpp lrsim2ecpp(
         rho2(rho2_),
         plannedEvents(plannedEvents_),
         plannedTime(plannedTime_),
-        maxIters(maxIters_),
         maxRawIters(maxRawIters_),
         seeds(seeds_),
         useEvents(useEvents_),
@@ -2639,7 +2630,7 @@ ListCpp lrsim2ecpp(
       tau1pdx, tau2pdx, lambda1pd, lambda2pd, gamma1pd, gamma2pd,
       N, fu, fixedFollowup, rho1, rho2,
       plannedEvents, plannedTime,
-      maxIters, maxRawIters, seeds, useEvents, nstrata, rho_pd_os_pyth_comp,
+      maxRawIters, seeds, useEvents, nstrata, rho_pd_os_pyth_comp,
       &results
   );
 
@@ -3183,7 +3174,6 @@ ListCpp lrsim2e3acpp(
     const double rho2;
     const std::vector<int>& plannedEvents;
     const std::vector<double>& plannedTime;
-    const size_t maxIters;
     const size_t maxRawIters;
     const std::vector<uint64_t>& seeds;
     const bool useEvents;
@@ -3238,7 +3228,6 @@ ListCpp lrsim2e3acpp(
       double rho2_,
       const std::vector<int>& plannedEvents_,
       const std::vector<double>& plannedTime_,
-      size_t maxIters_,
       size_t maxRawIters_,
       const std::vector<uint64_t>& seeds_,
       bool useEvents_,
@@ -3289,7 +3278,6 @@ ListCpp lrsim2e3acpp(
         rho2(rho2_),
         plannedEvents(plannedEvents_),
         plannedTime(plannedTime_),
-        maxIters(maxIters_),
         maxRawIters(maxRawIters_),
         seeds(seeds_),
         useEvents(useEvents_),
@@ -3850,7 +3838,7 @@ ListCpp lrsim2e3acpp(
       gamma1pd, gamma2pd, gamma3pd,
       N, fu, fixedFollowup, rho1, rho2,
       plannedEvents, plannedTime,
-      maxIters, maxRawIters, seeds, useEvents, nstrata, rho_pd_os_pyth_comp,
+      maxRawIters, seeds, useEvents, nstrata, rho_pd_os_pyth_comp,
       &results
   );
 
@@ -4407,7 +4395,6 @@ ListCpp lrsimsubcpp(
     const double rho2;
     const std::vector<int>& plannedEvents;
     const std::vector<double>& plannedTime;
-    const size_t maxIters;
     const size_t maxRawIters;
     const std::vector<uint64_t>& seeds;
     const bool useEvents;
@@ -4455,7 +4442,6 @@ ListCpp lrsimsubcpp(
       double rho2_,
       const std::vector<int>& plannedEvents_,
       const std::vector<double>& plannedTime_,
-      size_t maxIters_,
       size_t maxRawIters_,
       const std::vector<uint64_t>& seeds_,
       bool useEvents_,
@@ -4500,7 +4486,6 @@ ListCpp lrsimsubcpp(
         rho2(rho2_),
         plannedEvents(plannedEvents_),
         plannedTime(plannedTime_),
-        maxIters(maxIters_),
         maxRawIters(maxRawIters_),
         seeds(seeds_),
         useEvents(useEvents_),
@@ -4893,7 +4878,7 @@ ListCpp lrsimsubcpp(
       gamma1posy, gamma2posy, gamma1negy, gamma2negy,
       N, fu, fixedFollowup, rho1, rho2,
       plannedEvents, plannedTime,
-      maxIters, maxRawIters, seeds, useEvents, nstrata,
+      maxRawIters, seeds, useEvents, nstrata,
       &results
   );
 
@@ -5353,7 +5338,6 @@ ListCpp binary_tte_sim_cpp(
     const size_t N;
     const std::vector<double>& plannedTime;
     const std::vector<int>& plannedEvents;
-    const size_t maxIters;
     const size_t maxRawIters;
     const std::vector<uint64_t>& seeds;
     const std::vector<double>& alpha1v;
@@ -5390,7 +5374,6 @@ ListCpp binary_tte_sim_cpp(
       size_t N_,
       const std::vector<double>& plannedTime_,
       const std::vector<int>& plannedEvents_,
-      size_t maxIters_,
       size_t maxRawIters_,
       const std::vector<uint64_t>& seeds_,
       const std::vector<double>& alpha1v_,
@@ -5423,7 +5406,6 @@ ListCpp binary_tte_sim_cpp(
         N(N_),
         plannedTime(plannedTime_),
         plannedEvents(plannedEvents_),
-        maxIters(maxIters_),
         maxRawIters(maxRawIters_),
         seeds(seeds_),
         alpha1v(alpha1v_),
@@ -5887,7 +5869,7 @@ ListCpp binary_tte_sim_cpp(
       lambda1x, lambda2x, gamma1x, gamma2x, delta1x, delta2x,
       upper1, upper2, N,
       plannedTime, plannedEvents,
-      maxIters, maxRawIters, seeds,
+      maxRawIters, seeds,
       alpha1v, alpha2v, globalOddsRatio1, nstrata,
       std::function<double(const double, const double, const double)>(f),
       &results

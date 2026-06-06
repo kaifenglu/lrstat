@@ -232,7 +232,6 @@ ListCpp lrsim_mams_cpp(
     const double rho2;
     const std::vector<int>& plannedEvents;
     const std::vector<double>& plannedTime;
-    const size_t maxIters;
     const size_t maxRawIters; // store raw for iter < maxRawIters
     const std::vector<uint64_t>& seeds;
     const bool useEvents;
@@ -260,7 +259,6 @@ ListCpp lrsim_mams_cpp(
       double rho2_,
       const std::vector<int>& plannedEvents_,
       const std::vector<double>& plannedTime_,
-      size_t maxIters_,
       size_t maxRawIters_,
       const std::vector<uint64_t>& seeds_,
       bool useEvents_,
@@ -284,7 +282,6 @@ ListCpp lrsim_mams_cpp(
         rho2(rho2_),
         plannedEvents(plannedEvents_),
         plannedTime(plannedTime_),
-        maxIters(maxIters_),
         maxRawIters(maxRawIters_),
         seeds(seeds_),
         useEvents(useEvents_),
@@ -614,7 +611,7 @@ ListCpp lrsim_mams_cpp(
       M, kMax, hrH0s, allocs, accrualTime, accrualIntensity,
       tau, stratumFraction, lambdasx, gammasx, n, fu,
       fixedFollowup, rho1, rho2, plannedEvents, plannedTime,
-      maxIters, maxRawIters, seeds, useEvents, nintv, nstrata,
+      maxRawIters, seeds, useEvents, nintv, nstrata,
       &results
   );
 
