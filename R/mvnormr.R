@@ -46,6 +46,10 @@
 #' setting \code{parallel = TRUE}, which distributes the replications across
 #' multiple CPU threads via \code{nthreads}.
 #'
+#' Positive semidefinite \code{sigma} matrices (including singular cases) are
+#' supported in the general covariance branch via minimal diagonal
+#' stabilization during factorization.
+#'
 #' @return The estimated probability with the following attributes:
 #'
 #' * \code{method}: \code{"exact"} for analytic methods or \code{"qmc"} for
@@ -83,7 +87,8 @@
 #' @export
 pmvnormr <- function(lower = NULL, upper = NULL, mean = NULL, sigma,
                      n0 = 1024, n_max = 16384, R = 8, abseps = 1e-4,
-                     releps = 0.0, seed = 0, parallel = TRUE, nthreads = 0) {
+                     releps = 0.0, seed = 314159,
+                     parallel = TRUE, nthreads = 0) {
   if (!is.matrix(sigma) && length(sigma) == 1)
     sigma <- matrix(sigma, nrow = 1, ncol = 1)
   if (is.null(dim(sigma)) || length(dim(sigma)) != 2L)
@@ -138,6 +143,10 @@ pmvnormr <- function(lower = NULL, upper = NULL, mean = NULL, sigma,
 #' the multivariate normal cumulative distribution function equals the
 #' target probability \eqn{p}.
 #'
+#' Positive semidefinite \code{sigma} matrices (including singular cases) are
+#' supported in the general covariance branch via minimal diagonal
+#' stabilization during factorization.
+#'
 #' @return A numeric value representing the calculated equicoordinate quantile.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
@@ -153,7 +162,8 @@ pmvnormr <- function(lower = NULL, upper = NULL, mean = NULL, sigma,
 #' @export
 qmvnormr <- function(p, mean = NULL, sigma,
                      n0 = 1024, n_max = 16384, R = 8, abseps = 1e-4,
-                     releps = 0.0, seed = 0, parallel = TRUE, nthreads = 0) {
+                     releps = 0.0, seed = 314159,
+                     parallel = TRUE, nthreads = 0) {
   if (!is.matrix(sigma) && length(sigma) == 1)
     sigma <- matrix(sigma, nrow = 1, ncol = 1)
   if (is.null(dim(sigma)) || length(dim(sigma)) != 2L)

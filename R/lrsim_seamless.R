@@ -34,17 +34,22 @@
 #' @param allocations Integer or integer vector of length \eqn{M + 1}.
 #'   Number of subjects per arm within a randomization block. A single value
 #'   implies equal allocation; defaults to 1.
+#'   The first \eqn{M} elements refer to the active arms
+#'   and the last element refers to the common control.
 #' @inheritParams param_accrualTime
 #' @inheritParams param_accrualIntensity
 #' @inheritParams param_piecewiseSurvivalTime
 #' @inheritParams param_stratumFraction
-#' @param lambdas List of length \eqn{M} (one element per arm). Each element
+#' @param lambdas List of length \eqn{M + 1} (one element per arm). Each element
 #'   is a scalar or a numeric vector of event hazard rates for the
 #'   corresponding arm, given by analysis interval and stratum as required
-#'   by the simulation.
-#' @param gammas List of length \eqn{M} (one element per arm). Each element
+#'   by the simulation. The first \eqn{M} elements refer to the active arms
+#'   and the last element refers to the common control.
+#' @param gammas List of length \eqn{M + 1} (one element per arm). Each element
 #'   is a scalar or a numeric vector of dropout hazard rates for the
 #'   corresponding arm, by analysis interval and stratum.
+#'   The first \eqn{M} elements refer to the active arms
+#'   and the last element refers to the common control.
 #' @param n Planned total sample size across all active arms and control.
 #' @inheritParams param_followupTime
 #' @inheritParams param_fixedFollowup
@@ -71,6 +76,10 @@
 #' * \code{overview}: A list summarizing trial-level results and settings:
 #'     - \code{selectAsBest}: Probability of selecting each active arm as
 #'       the best arm at the end of phase 2.
+#'     - \code{selectToStage2}: Probability of selecting each active arm
+#'       to enter stage 2.
+#'     - \code{selectAnyToStage2}: Probability of selecting any active arm
+#'       to enter stage 2.
 #'     - \code{rejectPerStage}: Probability of rejecting the null for each
 #'       active arm at each stage.
 #'     - \code{futilityPerStage}: Probability of futility stopping for each
@@ -100,6 +109,7 @@
 #'     - \code{useEvents}: Logical indicating whether analyses were event-driven.
 #'     - \code{numberOfIterations}: Number of simulation iterations performed.
 #'     - \code{n}: Planned total sample size.
+#'     - \code{allocations}: The input allocation ratios.
 #'     - \code{fixedFollowup}: Logical indicating whether fixed follow-up was used.
 #'     - \code{rho1}, \code{rho2}: Fleming–Harrington weighting parameters used.
 #'     - \code{M}: Number of active arms in Phase 2.

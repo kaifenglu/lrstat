@@ -3329,7 +3329,7 @@ print.rmpower1s <- function(x, ...) {
 print.liferegr <- function(x, ...) {
   lrchisq <- -2*(x$sumstat$loglik0 - x$sumstat$loglik1)
   degrees <- x$sumstat$nvar
-  pvalue <- sapply(1:nrow(x$sumstat), function(i) {
+  pvalue <- sapply(seq_len(nrow(x$sumstat)), function(i) {
     ifelse(degrees[i] > 0,
            pchisq(lrchisq[i], degrees[i], 0, lower.tail = FALSE),
            NA)
@@ -3422,7 +3422,7 @@ print.liferegr <- function(x, ...) {
 print.phregr <- function(x, ...) {
   lrchisq <- -2*(x$sumstat$loglik0 - x$sumstat$loglik1)
   degrees <- x$sumstat$p
-  pvalue <- sapply(1:nrow(x$sumstat), function(i) {
+  pvalue <- sapply(seq_len(nrow(x$sumstat)), function(i) {
     ifelse(degrees[i] > 0,
            pchisq(lrchisq[i], degrees[i], 0, lower.tail = FALSE),
            NA)
@@ -3517,7 +3517,7 @@ print.phregr <- function(x, ...) {
 print.logisregr <- function(x, ...) {
   lrchisq <- -2*(x$sumstat$loglik0 - x$sumstat$loglik1)
   degrees <- x$sumstat$p - 1
-  pvalue <- sapply(1:nrow(x$sumstat), function(i) {
+  pvalue <- sapply(seq_len(nrow(x$sumstat)), function(i) {
     ifelse(degrees[i] > 0,
            pchisq(lrchisq[i], degrees[i], 0, lower.tail = FALSE),
            NA)
@@ -4055,8 +4055,129 @@ print.adaptDesign_seamless <- function(x, ...) {
 }
 
 
-#' @title Print Simulation Results for Phase 2/3 Seamless Design
-#' @description Prints the summary statistics from simulation.
+#' @title Print Simulation Results for Phase 2/3 Seamless Design for Risk Difference
+#' @description Prints the summary statistics from simulation for risk difference.
+#'
+#' @param x The rdsim_seamless object to print.
+#' @param ... Ensures that all arguments starting from "..." are named.
+#'
+#' @return A tabular printout of the summary statistics from simulation runs.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @export
+print.rdsim_seamless <- function(x, ...) {
+  a <- x$overview
+  M <- a$M
+  k <- a$K + 1
+
+  if (k > 1) {
+    str1 <- "Phase 2/3 seamless group-sequential design"
+  } else {
+    str1 <- "Phase 2/3 seamless design"
+  }
+
+  str1 <- paste0(str1, " for risk difference")
+
+  str2 <- paste0("Empirical power: ", round(a$overallReject, 4))
+
+  str3 <- paste0("Number of active arms in phase 2: ", a$M)
+
+  str4 <- paste0("Number of looks in phase 3: ", a$K)
+
+  str5 <- paste0("Expected # events: ",
+                 round(a$expectedNumberOfEvents, 1))
+
+  str6 <- paste0("Expected # subjects: ",
+                 round(a$expectedNumberOfSubjects, 1))
+
+  str7 <- paste0("n: ", a$n)
+
+  str8 <- paste0("Variance under H0: ", a$nullVariance)
+
+  str9 <- paste0("Number of simulations: ", a$numberOfIterations)
+
+  df1a <- data.frame(x = rep("", 10))
+  colnames(df1a) <- NULL
+  rownames(df1a) <- c(str1, str2, str3, str4, str5, str6, str7, str8,
+                      str9, "")
+
+  b <- data.frame(efficacyBounds = a$criticalValues,
+                  futilityBounds = c(a$futilityBounds, a$criticalValues[k]))
+  b[1:2] <- lapply(b[1:2], formatC, format = "f", digits = 3)
+  df1b <- t(b)
+  rownames(df1b) <- c("Efficacy bounds (z-scale)",
+                      "Futility bounds (z-scale)")
+  colnames(df1b) <- paste("Stage", seq_len(ncol(df1b)), sep = " ")
+
+  df2a <- t(data.frame(selectAsBest = a$selectAsBest))
+  rownames(df2a) <- "Selected as best in phase 2"
+  colnames(df2a) <- paste("Arm", seq_len(ncol(df2a)), sep = " ")
+
+  df2a2 <- t(data.frame(selectToStage2 = a$selectToStage2))
+  rownames(df2a2) <- "Selected to enter stage 2"
+  colnames(df2a2) <- paste("Arm", seq_len(ncol(df2a2)), sep = " ")
+
+  df2a3 <- t(data.frame(selectAnyToStage2 = a$selectAnyToStage2))
+  rownames(df2a3) <- "Any active arm selected to enter stage 2"
+  colnames(df2a3) <- "Probability"
+
+
+  reject <- rbind(a$rejectPerStage, a$cumulativeRejection[k, ])
+  futile <- c(a$futilityPerStage[, M + 1], a$cumulativeFutility[k, M + 1])
+  contin <- numeric(k + 1)
+  contin[1] <- 1 - a$rejectPerStage[1, M + 1] - a$futilityPerStage[1, M + 1]
+  if (k > 2) {
+    for (i in 2:(k - 1)) {
+      contin[i] <- contin[i - 1] - a$rejectPerStage[i, M + 1] -
+        a$futilityPerStage[i, M + 1]
+    }
+  }
+  contin[k] <- 0
+  contin[k + 1] <- NA
+
+  df2b <- as.data.frame(cbind(reject, futile, contin))
+  rownames(df2b) <- c(paste("Stage", seq_len(k), sep = " "), "Total")
+  colnames(df2b) <- c(paste("Reject Active", seq_len(M), sep = " "),
+                      "Overall Rejection",
+                      "Futility", "Continue")
+  j <- seq_len(ncol(df2b))
+  df2b[j] <- lapply(df2b[j], formatC, format = "f", digits = 4)
+
+
+  df3 <- data.frame(activeArm = rep(c(seq(1, a$M), "Overall"), each = k),
+                    stage = rep(seq(1, k), times = a$M + 1),
+                    cumReject = c(a$cumulativeRejection),
+                    cumFutility = c(a$cumulativeFutility),
+                    nEvents = c(a$numberOfEvents),
+                    nSubjects = c(a$numberOfSubjects))
+
+  # format number of digits after decimal for each column
+  j1 <- c(5, 6)
+  j4 <- c(3, 4)
+  df3[j1] <- lapply(df3[j1], formatC, format = "f", digits = 1)
+  df3[j4] <- lapply(df3[j4], formatC, format = "f", digits = 4)
+
+  print(df1a, ..., na.print = "", quote = FALSE)
+  print(df1b, ..., na.print = "", quote = FALSE)
+  cat("\n")
+  print(df2a, ..., na.print = "", quote = FALSE)
+  cat("\n")
+  print(df2a2, ..., na.print = "", quote = FALSE)
+  cat("\n")
+  print(df2a3, ..., na.print = "", quote = FALSE)
+  cat("\n")
+  print(df2b, ..., na.print = "", quote = FALSE)
+  cat("\n")
+  print(df3, ..., na.print = "", quote = FALSE, row.names = FALSE)
+  invisible(x)
+}
+
+
+#' @title Print Simulation Results for Phase 2/3 Seamless Design for Logrank Test
+#' @description Prints the summary statistics from simulation for logrank test.
 #'
 #' @param x The lrsim_seamless object to print.
 #' @param ... Ensures that all arguments starting from "..." are named.
@@ -4126,6 +4247,14 @@ print.lrsim_seamless <- function(x, ...) {
   rownames(df2a) <- "Selected as best in phase 2"
   colnames(df2a) <- paste("Arm", seq_len(ncol(df2a)), sep=" ")
 
+  df2a2 <- t(data.frame(selectToStage2 = a$selectToStage2))
+  rownames(df2a2) <- "Selected to enter stage 2"
+  colnames(df2a2) <- paste("Arm", seq_len(ncol(df2a2)), sep = " ")
+
+  df2a3 <- t(data.frame(selectAnyToStage2 = a$selectAnyToStage2))
+  rownames(df2a3) <- "Any active arm selected to enter stage 2"
+  colnames(df2a3) <- "Probability"
+
 
   reject <- rbind(a$rejectPerStage, a$cumulativeRejection[k, ])
   futile <- c(a$futilityPerStage[, M+1], a$cumulativeFutility[k, M+1])
@@ -4141,11 +4270,11 @@ print.lrsim_seamless <- function(x, ...) {
   contin[k+1] <- NA
 
   df2b <- as.data.frame(cbind(reject, futile, contin))
-  rownames(df2b) <- c(paste("Stage", 1:k, sep=" "), "Total")
-  colnames(df2b) <- c(paste("Reject Active", 1:M, sep=" "),
+  rownames(df2b) <- c(paste("Stage", seq_len(k), sep=" "), "Total")
+  colnames(df2b) <- c(paste("Reject Active", seq_len(M), sep=" "),
                       "Overall Rejection",
                       "Futility", "Continue")
-  j <- 1:ncol(df2b)
+  j <- seq_len(ncol(df2b))
   df2b[j] <- lapply(df2b[j], formatC, format = "f", digits = 4)
 
 
@@ -4169,9 +4298,86 @@ print.lrsim_seamless <- function(x, ...) {
   cat("\n")
   print(df2a, ..., na.print = "" , quote = FALSE )
   cat("\n")
+  print(df2a2, ..., na.print = "" , quote = FALSE )
+  cat("\n")
+  print(df2a3, ..., na.print = "" , quote = FALSE )
+  cat("\n")
   print(df2b, ..., na.print = "" , quote = FALSE )
   cat("\n")
   print(df3, ..., na.print = "" , quote = FALSE, row.names= FALSE)
+  invisible(x)
+}
+
+
+#' @title Print Simulation Results for MCPMod Design for Log-Rank Test
+#' @description Prints the summary statistics from simulation for MCPMod design.
+#'
+#' @param x The lrsim_mcpmod object to print.
+#' @param ... Ensures that all arguments starting from "..." are named.
+#'
+#' @return A tabular printout of the summary statistics from simulation runs.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @export
+print.lrsim_mcpmod <- function(x, ...) {
+  a <- x$overview
+  M <- a$M
+  T <- ncol(a$candidateHazardRatios)
+
+  str1 <- "MCPMod design for log-rank test"
+  str2 <- paste0("Empirical power: ", round(a$overallReject, 4))
+  str3 <- paste0("Number of active arms: ", M)
+  str4 <- paste0("Number of candidate models: ", T)
+  str5 <- paste0("One-sided alpha: ", round(a$alpha, 4))
+  str6 <- paste0("Expected # events: ", round(a$expectedNumberOfEvents, 1))
+  str7 <- paste0("Expected # dropouts: ", round(a$expectedNumberOfDropouts, 1))
+  str8 <- paste0("Expected # subjects: ", round(a$expectedNumberOfSubjects, 1))
+  str9 <- paste0("Expected study duration: ", round(a$expectedStudyDuration, 1))
+  str10 <- paste0("n: ", a$n, ", fixed follow-up: ", a$fixedFollowup)
+
+  if (!is.na(a$plannedEvents)) {
+    str11 <- paste0("Planned total number of events: ", a$plannedEvents)
+  } else {
+    str11 <- paste0("Planned analysis time: ", round(a$plannedTime, 3))
+  }
+
+  str12 <- paste0("Number of simulations: ", a$numberOfIterations)
+
+  df1 <- data.frame(x = rep("", 13))
+  colnames(df1) <- NULL
+  rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
+                     str8, str9, str10, str11, str12, "")
+
+  s1 <- x$sumdata1
+  keep <- s1$treatmentGroup <= (M + 1)
+  labels <- c(paste("Active", seq_len(M)), "Control")
+  df2 <- data.frame(
+    treatmentGroup = labels,
+    accruals = as.numeric(tapply(s1$accruals[keep], s1$treatmentGroup[keep], mean)),
+    events = as.numeric(tapply(s1$events[keep], s1$treatmentGroup[keep], mean)),
+    dropouts = as.numeric(tapply(s1$dropouts[keep], s1$treatmentGroup[keep], mean))
+  )
+  df2[2:4] <- lapply(df2[2:4], formatC, format = "f", digits = 1)
+  colnames(df2) <- c("Treatment", "Expected # subjects", "Expected # events",
+                     "Expected # dropouts")
+
+  ev_not_achieved <- mean(as.numeric(s1$eventsNotAchieved[s1$treatmentGroup == (M + 2)]))
+  opt_model <- vapply(x$sumdata2, function(row) row$optimalModel, numeric(1))
+  df3 <- data.frame(
+    metric = c("Event target not achieved", paste("Selected model", seq_len(T))),
+    probability = c(ev_not_achieved, tabulate(opt_model, nbins = T) / length(opt_model))
+  )
+  df3[2] <- lapply(df3[2], formatC, format = "f", digits = 4)
+  colnames(df3) <- c("Metric", "Probability")
+
+  print(df1, ..., na.print = "", quote = FALSE)
+  cat("Average counts by treatment group\n")
+  print(df2, ..., na.print = "", quote = FALSE, row.names = FALSE)
+  cat("\n")
+  print(df3, ..., na.print = "", quote = FALSE, row.names = FALSE)
   invisible(x)
 }
 
@@ -4190,7 +4396,7 @@ print.lrsim_seamless <- function(x, ...) {
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @export
-print.mams <- function(x, ...) {
+print.multiarm <- function(x, ...) {
   a <- x$overallResults
   s <- x$byStageResults
   t <- x$settings
@@ -4415,7 +4621,7 @@ print.mams <- function(x, ...) {
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @export
-print.adaptDesign_mams <- function(x, ...) {
+print.adaptDesign_multiarm <- function(x, ...) {
   des1 <- x$primaryTrial
 
   str1 <- "Primary trial:"
@@ -4582,10 +4788,10 @@ print.adaptDesign_mams <- function(x, ...) {
 }
 
 
-#' @title Print Simulation Results for Multi-Arm Multi-Stage Design
-#' @description Prints the summary statistics from simulation.
+#' @title Print Simulation Results for Multi-Arm Multi-Stage Design for Logrank Test
+#' @description Prints the summary statistics from simulation for logrank test.
 #'
-#' @param x The lrsim_mams object to print.
+#' @param x The lrsim_multiarm object to print.
 #' @param ... Ensures that all arguments starting from "..." are named.
 #'
 #' @return A tabular printout of the summary statistics from simulation runs.
@@ -4595,7 +4801,7 @@ print.adaptDesign_mams <- function(x, ...) {
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @export
-print.lrsim_mams <- function(x, ...) {
+print.lrsim_multiarm <- function(x, ...) {
   a <- x$overview
   M <- a$M
   k <- a$kMax
@@ -4613,24 +4819,25 @@ print.lrsim_mams <- function(x, ...) {
   str3 <- paste0("Number of active arms: ", a$M)
 
   str4 <- paste0("Number of looks: ", a$kMax)
+  str5 <- paste0("Number of simulations: ", a$numberOfIterations)
 
-  df1a <- data.frame(x = rep("", 5))
+  df1a <- data.frame(x = rep("", 6))
   colnames(df1a) <- NULL
-  rownames(df1a) <- c(str1, str2, str3, str4, "")
+  rownames(df1a) <- c(str1, str2, str3, str4, str5, "")
 
   df1b <- data.frame(a$criticalValues)
-  rownames(df1b) <- paste("Stage", 1:k, sep=" ")
+  rownames(df1b) <- paste("Stage", seq_len(k), sep=" ")
   colnames(df1b) <- paste("Level", M:1, sep=" ")
-  j <- 1:ncol(df1b)
+  j <- seq_len(ncol(df1b))
   df1b[j] <- lapply(df1b[j], formatC, format = "f", digits = 3)
 
   df2a <- as.data.frame(cbind(a$cumulativeRejection,
                               a$cumulativeFutility[, M+1]))
 
-  rownames(df2a) <- paste("Stage", 1:k, sep=" ")
-  colnames(df2a) <- c(paste("Reject Active", 1:M, sep=" "),
+  rownames(df2a) <- paste("Stage", seq_len(k), sep=" ")
+  colnames(df2a) <- c(paste("Reject Active", seq_len(M), sep=" "),
                       "Overall Rejection", "Futility")
-  j <- 1:ncol(df2a)
+  j <- seq_len(ncol(df2a))
   df2a[j] <- lapply(df2a[j], formatC, format = "f", digits = 4)
 
   reject <- c(a$rejectPerStage[, M+1], a$cumulativeRejection[k, M+1])
@@ -4653,7 +4860,7 @@ print.lrsim_mams <- function(x, ...) {
                             c("Active", rep("Actives", (M-1))), sep=" "),
                       "Overall Rejection",
                       "Futility", "Continue")
-  j <- 1:ncol(df2b)
+  j <- seq_len(ncol(df2b))
   df2b[j] <- lapply(df2b[j], formatC, format = "f", digits = 4)
 
 
@@ -4672,7 +4879,7 @@ print.lrsim_mams <- function(x, ...) {
                                        "# subjects       ",
                                        "study duration   "), sep=" ")
   colnames(df3) <- c(paste("Active", 1:M, sep=" "), "Control", "Total")
-  j <- 1:ncol(df3)
+  j <- seq_len(ncol(df3))
   df3[j] <- lapply(df3[j], formatC, format = "f", digits = 1)
 
   df4a <- as.data.frame(a$numberOfEvents)
@@ -4687,9 +4894,8 @@ print.lrsim_mams <- function(x, ...) {
                          paste("Stage", rep(1:k, times = 4)))
   colnames(df4) <- c(paste("Active", 1:M, sep=" "), "Control", "Total")
 
-  j <- 1:ncol(df4)
+  j <- seq_len(ncol(df4))
   df4[j] <- lapply(df4[j], formatC, format = "f", digits = 1)
-  df4
 
   print(df1a, ..., na.print = "" , quote = FALSE )
 
@@ -4715,4 +4921,125 @@ print.lrsim_mams <- function(x, ...) {
   print(df4, ..., na.print = "" , quote = FALSE, row.names= TRUE)
   invisible(x)
 }
+
+#' @title Print Simulation Results for Multi-Arm Multi-Stage Design for Risk Difference
+#' @description Prints the summary statistics from risk-difference simulation.
+#'
+#' @param x The rdsim_multiarm object to print.
+#' @param ... Ensures that all arguments starting from "..." are named.
+#'
+#' @return A tabular printout of the summary statistics from simulation runs.
+#'
+#' @keywords internal
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @export
+print.rdsim_multiarm <- function(x, ...) {
+  a <- x$overview
+  M <- a$M
+  k <- a$kMax
+
+  str1 <- "Multi-arm multi-stage design for risk difference"
+  str2 <- paste0("Overall power: ", round(a$overallReject, 4))
+
+  str3 <- paste0("Number of active arms: ", a$M)
+  str4 <- paste0("Number of looks: ", a$kMax)
+
+  str5 <- paste0("n: ", a$n, ", null variance: ", a$nullVariance)
+  str6 <- paste0("Number of simulations: ", a$numberOfIterations)
+
+  df1a <- data.frame(x = rep("", 7))
+  colnames(df1a) <- NULL
+  rownames(df1a) <- c(str1, str2, str3, str4, str5, str6, "")
+
+  df1b <- data.frame(a$criticalValues)
+  rownames(df1b) <- paste("Stage", seq_len(k), sep = " ")
+  colnames(df1b) <- paste("Level", M:1, sep = " ")
+  j <- seq_len(ncol(df1b))
+  df1b[j] <- lapply(df1b[j], formatC, format = "f", digits = 3)
+
+  df2a <- as.data.frame(cbind(a$cumulativeRejection,
+                              a$cumulativeFutility[, M + 1]))
+  rownames(df2a) <- paste("Stage", seq_len(k), sep = " ")
+  colnames(df2a) <- c(paste("Reject Active", seq_len(M), sep = " "),
+                      "Overall Rejection", "Futility")
+  j <- seq_len(ncol(df2a))
+  df2a[j] <- lapply(df2a[j], formatC, format = "f", digits = 4)
+
+  reject <- c(a$rejectPerStage[, M + 1], a$cumulativeRejection[k, M + 1])
+  futile <- c(a$futilityPerStage[, M + 1], a$cumulativeFutility[k, M + 1])
+  contin <- numeric(k + 1)
+  contin[1] <- 1 - a$rejectPerStage[1, M + 1] - a$futilityPerStage[1, M + 1]
+  if (k > 2) {
+    for (i in 2:(k - 1)) {
+      contin[i] <- contin[i - 1] - a$rejectPerStage[i, M + 1] -
+        a$futilityPerStage[i, M + 1]
+    }
+  }
+  contin[k] <- 0
+  contin[k + 1] <- NA
+
+  df2b <- as.data.frame(cbind(a$rejectByNumber[,2:(M+1)],
+                              reject, futile, contin))
+  rownames(df2b) <- c(paste("Stage", 1:k, sep=" "), "Total")
+  colnames(df2b) <- c(paste("Reject", 1:M,
+                            c("Active", rep("Actives", (M-1))), sep=" "),
+                      "Overall Rejection",
+                      "Futility", "Continue")
+  j <- seq_len(ncol(df2b))
+  df2b[j] <- lapply(df2b[j], formatC, format = "f", digits = 4)
+
+
+  df2c <- a$rejectBySet
+  df2c[2] <- lapply(df2c[2], formatC, format = "f", digits = 4)
+  colnames(df2c) <- c("Set of active arms", "Probability of rejection")
+
+
+  df3 <- as.data.frame(t(matrix(c(a$expectedNumberOfEvents,
+                                  a$expectedNumberOfSubjects),
+                                ncol = 2)))
+
+  rownames(df3) <- paste("Expected", c("# events         ",
+                                       "# subjects       "), sep=" ")
+  colnames(df3) <- c(paste("Active", 1:M, sep=" "), "Control", "Total")
+  j <- seq_len(ncol(df3))
+  df3[j] <- lapply(df3[j], formatC, format = "f", digits = 1)
+
+  df4a <- as.data.frame(a$numberOfEvents)
+  df4b <- as.data.frame(a$numberOfSubjects)
+  df4 <- rbind(df4a, df4b)
+  rownames(df4) <- paste(rep(c("Number of events  ",
+                               "Number of subjects"), each = k),
+                         paste("Stage", rep(1:k, times = 2)))
+  colnames(df4) <- c(paste("Active", 1:M, sep=" "), "Control", "Total")
+
+  j <- seq_len(ncol(df4))
+  df4[j] <- lapply(df4[j], formatC, format = "f", digits = 1)
+
+  print(df1a, ..., na.print = "" , quote = FALSE )
+
+  cat("By level critical boundaries\n")
+  print(df1b, ..., na.print = "" , quote = FALSE )
+  cat("\n")
+
+  cat("Cumulative probability of rejection or futility by treatment\n")
+  print(df2a, ..., na.print = "" , quote = FALSE )
+  cat("\n")
+
+  cat("Detailed probability of trial termination at each look\n")
+  print(df2b, ..., na.print = "" , quote = FALSE )
+  cat("\n")
+
+  cat("Overall probability of rejection by set of active arms\n")
+  print(df2c, ..., na.print = "" , quote = FALSE)
+  cat("\n")
+
+  print(df3, ..., na.print = "" , quote = FALSE, row.names= TRUE)
+  cat("\n")
+
+  print(df4, ..., na.print = "" , quote = FALSE, row.names= TRUE)
+  invisible(x)
+}
+
 
