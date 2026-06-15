@@ -1,10 +1,14 @@
 # lrstat 0.3.3
 
-* used struct output to reduce overhead of returning multiple values for exitprobcpp, exitprob_seamless_cpp and exitprob_mams_cpp
+* used struct output to reduce overhead of returning multiple values for exitprobcpp, exitprob_seamless_cpp and exitprob_multiarm_cpp
 * allowed the retesting of an active hypothesis if its weight has increased due to the rejection of another hypothesis in fseqbon
 * added getDesign2 for futility boundary under the null hypothesis for group sequential designs
-* fixed a typo in the settings output of phregr
-* improved README.md to add more details on the functions for the use of the package
+* renamed mams to multiarm for more informative description
+* added rdsim_seamless for simulation of phase 2/3 seamless design for risk difference
+* added rdsim_multiarm for simulation of multi-arm multi-stage design for risk difference
+* added lrsim_mcpmod and print.lrsim_mcpmod for simulation and summary output of MCPMod design using the log-rank test
+* updated mvnormr to support positive semidefinite covariance matrix via minimal diagonal stabilization during factorization
+* used seed = 314159 as the default for pmvnormr and qmvnormr to ensure the same random numbers are generated and results are reproducible across different runs
 
 # lrstat 0.3.2
 
@@ -16,31 +20,31 @@
 * added integratedTrial to adaptDesign
 * updated the backward image confidence interval method to account for the case when astar > conditional_power
 * updated point estimate for repeated confidence interval
-* added functions for multi-arm multi-stage (MAMS) design and anlysis, including exitprob_mams, getBound_mams, getDesign_mams, adaptDesign_mams, getCI_mams, getADCI_mams
-* ensured that if typeAlphaSpending is "OF", "P", "WT", or "none", then informationRates, efficacyStopping, and spendingTime must be of full length kMax, and informationRates and spendingTime must end with 1 for getBound, getBound_seamless, and getBound_mams
+* added functions for multi-arm multi-stage (MAMS) design and anlysis, including exitprob_multiarm, getBound_multiarm, getDesign_multiarm, adaptDesign_multiarm, getCI_multiarm, getADCI_multiarm
+* ensured that if typeAlphaSpending is "OF", "P", "WT", or "none", then informationRates, efficacyStopping, and spendingTime must be of full length kMax, and informationRates and spendingTime must end with 1 for getBound, getBound_seamless, and getBound_multiarm
 * ensured that if typeAlphaSpending is "OF", "P", "WT", or "none", then informationRates, efficacyStopping, and spendingTime must be of full length kMax, and informationRates and spendingTime must end with 1 for getCI, getRCI
 * ensured that if typeAlphaSpendingNew is "OF", "P", "WT", or "none", then informationRatesNew, efficacyStoppingNew, and spendingTimeNew must be of full length kNew, and informationRatesNew and spendingTimeNew must end with 1 for getADCI, getADRCI
 * moved up the position of parameter MullerSchafer in getADCI, getADRCI
 * added getCP_seamless for conditional power calculation for two-stage seamless sequential design for treatment/dose selection
-* added getCP_mams for conditional power calculation for multi-arm multi-stage design
+* added getCP_multiarm for conditional power calculation for multi-arm multi-stage design
 * added adaptDesign_seamless for power and sample size calculation of adaptive two-stage seamless sequential design for treatment/dose selection
 * added getCI_seamless for confidence interval calculation for two-stage seamless sequential design for treatment/dose selection
 * added getADCI_seamless for confidence interval calculation using the backward image method for adaptive two-stage seamless sequential design for treatment/dose selection
 * moved the f_pvalue function from confidence_interval.cpp to generic_design.cpp
-* updated infoRatesNew when informationRatesNew is not missing in adaptDesign_seamless_cpp and adaptDesign_mams_cpp
+* updated infoRatesNew when informationRatesNew is not missing in adaptDesign_seamless_cpp and adaptDesign_multiarm_cpp
 * added default value of 1 for parameter r of adaptDesign_seamless
 * updated pmvnormmccpp to use s and T instead of Ivec
-* added byLevelBounds in the output of getDesign_mams
-* updated the condition for cpu0 calculation in adaptDesign_mams_cpp
-* updated the description for adaptDesign_mams output
-* updated the default value of r and rNew to 1 in adaptDesign_mams and getADCI_mams
+* added byLevelBounds in the output of getDesign_multiarm
+* updated the condition for cpu0 calculation in adaptDesign_multiarm_cpp
+* updated the description for adaptDesign_multiarm output
+* updated the default value of r and rNew to 1 in adaptDesign_multiarm and getADCI_multiarm
 * updated stage‑1 covariance used for bound calculation in getBound_seamless to account for corr_known when using alpha‑spending functions
 * used memoization to avoid recalculating p0 and p1 in the lambda h for preject_by_arm (exitprob_seamless)
 * added stopStage to output data sets and added bestArm and reject to sumdata2 output data set for lrsim_seamless
 * used NULL as the default value for lambdas and gammas for lrsim_seamless
-* added lrsim_mams for simulation of multi-arm multi-stage design
-* added futilityBounds, futilityCP, futilityTheta, futilityBoundsInt, futilityCPInt, futilityThetaInt to adaptDesign, adaptDesign_seamless, and adaptDesign_mams
-* removed typeBetaSpending and parameterBetaSpending from adaptDesign, adaptDesign_seamless, and adaptDesign_mams
+* added lrsim_multiarm for simulation of multi-arm multi-stage design
+* added futilityBounds, futilityCP, futilityTheta, futilityBoundsInt, futilityCPInt, futilityThetaInt to adaptDesign, adaptDesign_seamless, and adaptDesign_multiarm
+* removed typeBetaSpending and parameterBetaSpending from adaptDesign, adaptDesign_seamless, and adaptDesign_multiarm
 
 # lrstat 0.3.1
 

@@ -38,7 +38,7 @@ including boundaries, conditional power, confidence intervals, and
 exit probabilities (for example \code{getDesign}, \code{adaptDesign},
 \code{getBound}, \code{getCP}, \code{getCI}, \code{getRCI},
 \code{getADCI}, \code{getADRCI}, \code{exitprob}, and their
-\code{_mams} and \code{_seamless} variants).
+\code{_multiarm} and \code{_seamless} variants).
 \item \strong{Fixed and sequential sample size/power across endpoint
 types:} binary, continuous, ordinal/multinomial, paired,
 crossover/carryover, MMRM, repeated measures ANOVA, two-way ANOVA,

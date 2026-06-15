@@ -1,5 +1,5 @@
 #include "generic_design.h"
-#include "mams_design.h"
+#include "multiarm_design.h"
 #include "utilities.h"
 #include "dataframe_list.h"
 #include "mvnormr.h"
@@ -19,7 +19,7 @@ using std::size_t;
 
 
 // Helper function to compute conditional power
-std::vector<double> getCP_mams_cpp(
+std::vector<double> getCP_multiarm_cpp(
     const double INew,
     const size_t M,
     const double r,
@@ -403,7 +403,7 @@ std::vector<double> getCP_mams_cpp(
       double* last_col = b.data_ptr() + (kMax - 1) * M;
       auto f = [&](double x)->double {
         std::fill_n(last_col, M, x);
-        probs = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
+        probs = exitprob_multiarm_cpp(M, r, zero, corr_known, kMax, b, infoRates);
         double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                      probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
@@ -411,7 +411,7 @@ std::vector<double> getCP_mams_cpp(
 
       critValues[kMax-1] = brent(f, 0.0, 8.0, 1e-6);
     } else {
-      critValues = getBound_mams_cpp(
+      critValues = getBound_multiarm_cpp(
         M, r, corr_known, kMax, infoRates, alpha, asf,
         parameterAlphaSpending, userAlphaSpending, spendTime, effStopping);
     }
@@ -511,7 +511,7 @@ std::vector<double> getCP_mams_cpp(
   }
 
   // conditional type I error
-  probs = exitprob_mams_cpp(M, r, zero, corr_known, k1, b1, I1);
+  probs = exitprob_multiarm_cpp(M, r, zero, corr_known, k1, b1, I1);
   auto v0 = probs.exitProbUpper;
   double alphaNew = std::accumulate(v0.begin(), v0.end(), 0.0);
 
@@ -531,7 +531,7 @@ std::vector<double> getCP_mams_cpp(
     }
   }
 
-  probs = exitprob_mams_cpp(M, r, theta, true, k1, b1, a1, I1);
+  probs = exitprob_multiarm_cpp(M, r, theta, true, k1, b1, a1, I1);
   double conditionalPower = std::accumulate(probs.exitProbUpper.begin(),
                                             probs.exitProbUpper.end(), 0.0);
 
@@ -599,7 +599,7 @@ std::vector<double> getCP_mams_cpp(
         }
       }
 
-      probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
+      probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
       double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                   probs.exitProbUpper.end(), 0.0);
       return p0 - alphaNew;
@@ -633,7 +633,7 @@ std::vector<double> getCP_mams_cpp(
         colptr[j] = (col_const - zscaled[j]) / denom;
       }
 
-      probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
+      probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
       double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                   probs.exitProbUpper.end(), 0.0);
       return p0 - alphaNew;
@@ -661,7 +661,7 @@ std::vector<double> getCP_mams_cpp(
           colptr[j] = (col_const - zscaled[j]) / denom;
         }
 
-        probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, i + 1, b2, I2);
+        probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, i + 1, b2, I2);
         double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                     probs.exitProbUpper.end(), 0.0);
         return p0 - cpu0[i];
@@ -726,7 +726,7 @@ std::vector<double> getCP_mams_cpp(
   }
 
   if (missingFutilityBoundsInt && bsfNew != "none" && k2 > 1) { // beta-spending
-    auto out = getPower_mams(
+    auto out = getPower_multiarm(
       MNew, rNew, theta2, alphaNew, k2, critValues2, Ic,
       bsfNew, parameterBetaSpendingNew, spendTimeNew, futStoppingNew, IL, zL);
     futBounds2 = out.futilityBounds;
@@ -739,7 +739,7 @@ std::vector<double> getCP_mams_cpp(
     }
   }
 
-  probs = exitprob_mams_cpp(MNew, rNew, theta2, true, k2, b2, a2, I2);
+  probs = exitprob_multiarm_cpp(MNew, rNew, theta2, true, k2, b2, a2, I2);
   double conditionalPowerNew = std::accumulate(probs.exitProbUpper.begin(),
                                                probs.exitProbUpper.end(), 0.0);
 
@@ -871,11 +871,11 @@ std::vector<double> getCP_mams_cpp(
 //' Adaptive multiple comparison sequential design (AMCSD) for clinical trials.
 //' Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
 //'
-//' @seealso \code{\link{adaptDesign_mams}}
+//' @seealso \code{\link{adaptDesign_multiarm}}
 //'
 //' @examples
 //'
-//' getCP_mams(
+//' getCP_multiarm(
 //'   INew = 373 / 4, M = 2, r = 1, corr_known = FALSE,
 //'   L = 1, zL = c(-log(0.91), -log(0.78)) * sqrt(324 / 4 / 2),
 //'   theta = c(-log(0.91), -log(0.78)),
@@ -885,7 +885,7 @@ std::vector<double> getCP_mams_cpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::NumericVector getCP_mams(
+Rcpp::NumericVector getCP_multiarm(
     const double INew = NA_REAL,
     const int M = NA_INTEGER,
     const double r = 1,
@@ -981,7 +981,7 @@ Rcpp::NumericVector getCP_mams(
     futThetaInt = std::vector<double>(1, NaN);
   }
 
-  auto result = getCP_mams_cpp(
+  auto result = getCP_multiarm_cpp(
     INew,  static_cast<size_t>(M), r, corr_known,
     static_cast<size_t>(L), zLVec, thetaVec, IMax,
     static_cast<size_t>(kMax), infoRates, effStopping, futStopping,

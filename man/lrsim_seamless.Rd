@@ -69,7 +69,9 @@ to 1 for superiority tests.}
 
 \item{allocations}{Integer or integer vector of length \eqn{M + 1}.
 Number of subjects per arm within a randomization block. A single value
-implies equal allocation; defaults to 1.}
+implies equal allocation; defaults to 1.
+The first \eqn{M} elements refer to the active arms
+and the last element refers to the common control.}
 
 \item{accrualTime}{A vector that specifies the starting time of
 piecewise Poisson enrollment time intervals. Must start with 0, e.g.,
@@ -88,14 +90,17 @@ Defaults to 0 for exponential distribution.}
 \item{stratumFraction}{A vector of stratum fractions that sum to 1.
 Defaults to 1 for no stratification.}
 
-\item{lambdas}{List of length \eqn{M} (one element per arm). Each element
+\item{lambdas}{List of length \eqn{M + 1} (one element per arm). Each element
 is a scalar or a numeric vector of event hazard rates for the
 corresponding arm, given by analysis interval and stratum as required
-by the simulation.}
+by the simulation. The first \eqn{M} elements refer to the active arms
+and the last element refers to the common control.}
 
-\item{gammas}{List of length \eqn{M} (one element per arm). Each element
+\item{gammas}{List of length \eqn{M + 1} (one element per arm). Each element
 is a scalar or a numeric vector of dropout hazard rates for the
-corresponding arm, by analysis interval and stratum.}
+corresponding arm, by analysis interval and stratum.
+The first \eqn{M} elements refer to the active arms
+and the last element refers to the common control.}
 
 \item{n}{Planned total sample size across all active arms and control.}
 
@@ -138,6 +143,10 @@ An S3 object of class \code{"lrsim_seamless"} with these components:
 \itemize{
 \item \code{selectAsBest}: Probability of selecting each active arm as
 the best arm at the end of phase 2.
+\item \code{selectToStage2}: Probability of selecting each active arm
+to enter stage 2.
+\item \code{selectAnyToStage2}: Probability of selecting any active arm
+to enter stage 2.
 \item \code{rejectPerStage}: Probability of rejecting the null for each
 active arm at each stage.
 \item \code{futilityPerStage}: Probability of futility stopping for each
@@ -167,6 +176,7 @@ at trial end.
 \item \code{useEvents}: Logical indicating whether analyses were event-driven.
 \item \code{numberOfIterations}: Number of simulation iterations performed.
 \item \code{n}: Planned total sample size.
+\item \code{allocations}: The input allocation ratios.
 \item \code{fixedFollowup}: Logical indicating whether fixed follow-up was used.
 \item \code{rho1}, \code{rho2}: Fleming–Harrington weighting parameters used.
 \item \code{M}: Number of active arms in Phase 2.

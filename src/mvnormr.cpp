@@ -351,7 +351,44 @@ PMVNCholFactor precompute_chol(const FlatMatrix& sigma) {
 
   FlatMatrix sigma_copy = sigma; // copy to modify
   int rank = cholesky2(sigma_copy, J, 1e-12);
-  if (rank <= 0) throw std::invalid_argument("Sigma is not positive definite");
+
+  // Handle positive semidefinite covariance matrices by adding a tiny
+  // diagonal ridge until a stable full-rank factorization is obtained.
+  // This keeps the original fast path unchanged for positive-definite sigma.
+  if (rank < static_cast<int>(J)) {
+    double max_diag = 0.0;
+    for (size_t j = 0; j < J; ++j) {
+      const double d = sigma(j, j);
+      if (!std::isfinite(d) || d < 0.0) {
+        throw std::invalid_argument("sigma must have finite, non-negative diagonal");
+      }
+      if (d > max_diag) max_diag = d;
+    }
+
+    const double scale = std::max(1.0, max_diag);
+    double ridge = 1e-12 * scale;
+    bool ok = false;
+
+    for (size_t attempt = 0; attempt < 12; ++attempt) {
+      sigma_copy = sigma;
+      for (size_t j = 0; j < J; ++j) {
+        sigma_copy(j, j) += ridge;
+      }
+
+      rank = cholesky2(sigma_copy, J, 1e-12);
+      if (rank == static_cast<int>(J)) {
+        ok = true;
+        break;
+      }
+
+      ridge *= 10.0;
+    }
+
+    if (!ok) {
+      throw std::invalid_argument(
+        "sigma must be positive semidefinite (failed to stabilize factorization)");
+    }
+  }
 
   std::vector<double> sd(J);
   for (size_t j = 0; j < J; ++j) {
@@ -516,7 +553,7 @@ Rcpp::List pmvnormRcpp(
     size_t R = 8,
     double abseps = 1e-4,
     double releps = 0.0,
-    uint64_t seed = 0,
+    uint64_t seed = 314159,
     bool parallel = true) {
   auto sigma_fm = flatmatrix_from_Rmatrix(sigma);
   auto out = pmvnormcpp(lower, upper, mean, sigma_fm,
@@ -588,7 +625,7 @@ double qmvnormRcpp(
     size_t R = 8,
     double abseps = 1e-4,
     double releps = 0.0,
-    uint64_t seed = 0,
+    uint64_t seed = 314159,
     bool parallel = true) {
   auto sigma_fm = flatmatrix_from_Rmatrix(sigma);
   return qmvnormcpp(p, mean, sigma_fm, n0, n_max, R,

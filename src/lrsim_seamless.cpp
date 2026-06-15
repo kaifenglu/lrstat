@@ -323,7 +323,7 @@ ListCpp lrsim_seamless_cpp(
         out.summary2Rows.clear();
         out.rawRows.clear();
         if (iter < maxRawIters) out.reserveForRaw(kMax * n);
-        out.reserveForSummary1(kMax * M1); // all arms
+        out.reserveForSummary1(kMax * M2); // all arms and overall
         out.reserveForSummary2(kMax * M); // all pairwise comparisons with control
 
         std::fill(denom_per_stratum.begin(), denom_per_stratum.end(), sumAlloc);
@@ -725,6 +725,8 @@ ListCpp lrsim_seamless_cpp(
   const size_t rowsPerIter2 = kMax * M;
   const size_t niters = sum2_iterNum.size() / rowsPerIter2;
   std::vector<double> selectAsBest(M, 0.0);
+  std::vector<double> selectToStage2(M, 0.0);
+  double selectAnyToStage2 = 0.0;
   double expStudyDur = 0.0;
   double expNumEvents = 0.0;
   double expNumDropouts = 0.0;
@@ -824,6 +826,10 @@ ListCpp lrsim_seamless_cpp(
         futilityByArm(0, m) += 1;
       }
     } else {
+      // The selected best arm continues to stage 2 when not stopping in phase 2.
+      selectToStage2[best_arm] += 1.0;
+      selectAnyToStage2 += 1.0;
+
       for (size_t k = 1; k < kMax; ++k) {
         const size_t idx = i2 + k * M + best_arm;
 
@@ -838,7 +844,7 @@ ListCpp lrsim_seamless_cpp(
 
         bool futileNow = false;
         if (k < kMax - 1) {
-          futileNow = (logRank[idx] >= -futilityBounds[k]);
+          futileNow = (logRank[idx] > -futilityBounds[k]);
         } else { // final stage futile if selected arm cannot be rejected
           futileNow = !stoppedForEfficacy;
         }
@@ -934,6 +940,8 @@ ListCpp lrsim_seamless_cpp(
   expNumSubjects /= niters;
   expStudyDur /= niters;
   for (size_t m = 0; m < M; ++m) selectAsBest[m] /= niters;
+  for (size_t m = 0; m < M; ++m) selectToStage2[m] /= niters;
+  selectAnyToStage2 /= niters;
 
   for (size_t m = 0; m < M + 1; ++m) {
     for (size_t k = 0; k < kMax; ++k) {
@@ -964,6 +972,8 @@ ListCpp lrsim_seamless_cpp(
 
   ListCpp overview;
   overview.push_back(std::move(selectAsBest), "selectAsBest");
+  overview.push_back(std::move(selectToStage2), "selectToStage2");
+  overview.push_back(selectAnyToStage2, "selectAnyToStage2");
   overview.push_back(std::move(rejectByArm), "rejectPerStage");
   overview.push_back(std::move(futilityByArm), "futilityPerStage");
   overview.push_back(std::move(cumRejectByArm), "cumulativeRejection");
@@ -980,10 +990,11 @@ ListCpp lrsim_seamless_cpp(
   overview.push_back(expStudyDur, "expectedStudyDuration");
   overview.push_back(criticalValues, "criticalValues");
   overview.push_back(futilityBounds, "futilityBounds");
-  overview.push_back(hazardRatioH0s, "hazardRatioH0s");
+  overview.push_back(std::move(hrH0s), "hazardRatioH0s");
   overview.push_back(useEvents, "useEvents");
   overview.push_back(niters, "numberOfIterations");
   overview.push_back(n, "n");
+  overview.push_back(std::move(allocs), "allocations");
   overview.push_back(fixedFollowup, "fixedFollowup");
   overview.push_back(rho1, "rho1");
   overview.push_back(rho2, "rho2");

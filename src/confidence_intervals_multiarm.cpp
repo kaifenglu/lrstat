@@ -1,5 +1,5 @@
 #include "generic_design.h"
-#include "mams_design.h"
+#include "multiarm_design.h"
 #include "utilities.h"
 #include "dataframe_list.h"
 
@@ -22,7 +22,7 @@ using std::size_t;
 // number of active arms M, allocation ratio to common control r,
 // whether the correlation is known,
 // critical values vector b (length L), and information vector I (length L).
-double f_pvalue_mams(const double theta,
+double f_pvalue_multiarm(const double theta,
                      const size_t M,
                      const double r,
                      const bool corr_known,
@@ -42,7 +42,7 @@ double f_pvalue_mams(const double theta,
   std::memcpy(last_col, zL.data(), M * sizeof(double));
 
   std::vector<double> mu(M, theta);
-  auto probs = exitprob_mams_cpp(M, r, mu, corr_known, L, upper, I);
+  auto probs = exitprob_multiarm_cpp(M, r, mu, corr_known, L, upper, I);
   double sum_up = std::accumulate(probs.exitProbUpper.begin(),
                                   probs.exitProbUpper.end(), 0.0);
   return sum_up;
@@ -50,7 +50,7 @@ double f_pvalue_mams(const double theta,
 
 
 // Helper to compute the confidence interval at the end of a group sequential trial
-DataFrameCpp getCI_mams_cpp(
+DataFrameCpp getCI_multiarm_cpp(
     const size_t M,
     const double r,
     const bool corr_known,
@@ -149,7 +149,7 @@ DataFrameCpp getCI_mams_cpp(
   }
 
 
-  // critical values: if not provided, compute using getBound_mams_cpp
+  // critical values: if not provided, compute using getBound_multiarm_cpp
   FlatMatrix bMat(L, M); // level M, M-1, ...., 1 critical values
   if (none_na(criticalValues.data)) {
     if (criticalValues.nrow < L)
@@ -160,7 +160,7 @@ DataFrameCpp getCI_mams_cpp(
   } else {
     for (size_t i = 0; i < M; ++i) {
       size_t level = M - i;
-      auto v = getBound_mams_cpp(level, r, corr_known, L, informationRates,
+      auto v = getBound_multiarm_cpp(level, r, corr_known, L, informationRates,
                                  alpha, asf, parameterAlphaSpending,
                                  std::vector<double>{}, spendTime, effStopping);
       flatmatrix_set_column(bMat, i, v);
@@ -215,7 +215,7 @@ DataFrameCpp getCI_mams_cpp(
 
     // p-value at theta = 0
     zL_vec.assign(level[h], zLmax);
-    pvalue[h] = f_pvalue_mams(0.0, level[h], r, corr_known, L, zL_vec,
+    pvalue[h] = f_pvalue_multiarm(0.0, level[h], r, corr_known, L, zL_vec,
                               b_matrix, I);
 
     double left = (zLmax - 8.0) / sqrtIL;
@@ -223,14 +223,14 @@ DataFrameCpp getCI_mams_cpp(
 
     // median estimate thetahat: solve f_pvalue(theta) - 0.5 = 0
     auto f_med = [&](double theta)->double {
-      return f_pvalue_mams(theta, level[h], r, corr_known, L, zL_vec,
+      return f_pvalue_multiarm(theta, level[h], r, corr_known, L, zL_vec,
                            b_matrix, I) - 0.5;
     };
     thetahat[h] = brent(f_med, left, right, tol);
 
     // lower bound: solve f_pvalue(theta) - (1 - cilevel)/2 = 0
     auto f_lower = [&](double theta)->double {
-      return f_pvalue_mams(theta, level[h], r, corr_known, L, zL_vec,
+      return f_pvalue_multiarm(theta, level[h], r, corr_known, L, zL_vec,
                            b_matrix, I) - target_lower;
     };
     lower[h] = brent(f_lower, left, thetahat[h], tol);
@@ -238,7 +238,7 @@ DataFrameCpp getCI_mams_cpp(
     // upper bound: solve f_pvalue(theta) - (1 + cilevel)/2 = 0
     zL1_vec[0] = zLmax;
     auto f_upper = [&](double theta)->double {
-      return f_pvalue_mams(theta, 1, r, corr_known, L, zL1_vec,
+      return f_pvalue_multiarm(theta, 1, r, corr_known, L, zL1_vec,
                            b1_matrix, I) - target_upper;
     };
     upper[h] = brent(f_upper, thetahat[h], right, tol);
@@ -331,7 +331,7 @@ DataFrameCpp getCI_mams_cpp(
 //' Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
 //'
 //' @examples
-//' getCI_mams(
+//' getCI_multiarm(
 //'   L = 2, zL = c(2.075, 2.264),
 //'   M = 2, r = 1, corr_known = FALSE,
 //'   IMax = 300 / 4, informationRates = c(1/2, 1),
@@ -339,7 +339,7 @@ DataFrameCpp getCI_mams_cpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame getCI_mams(
+Rcpp::DataFrame getCI_multiarm(
     const int M = NA_INTEGER,
     const double r = 1,
     const bool corr_known = true,
@@ -369,7 +369,7 @@ Rcpp::DataFrame getCI_mams(
     critValues(0, 0) = std::numeric_limits<double>::quiet_NaN(); // placeholder
   }
 
-  auto result = getCI_mams_cpp(
+  auto result = getCI_multiarm_cpp(
     static_cast<size_t>(M), r, corr_known, static_cast<size_t>(L), zLVec,
     IMax, infoRates, effStopping, critValues, alpha, typeAlphaSpending,
     parameterAlphaSpending, spendTime);
@@ -378,7 +378,7 @@ Rcpp::DataFrame getCI_mams(
 
 
 // Compute the backward image (J, zJ)
-std::pair<size_t, double> f_bwimage_mams(const double theta,
+std::pair<size_t, double> f_bwimage_multiarm(const double theta,
                                          const size_t M,
                                          const double r,
                                          const bool corr_known,
@@ -395,7 +395,7 @@ std::pair<size_t, double> f_bwimage_mams(const double theta,
                                          const std::vector<double>& I2) {
 
   // compute astar for the adapted secondary trial
-  double astar = f_pvalue_mams(theta, M2, r2, corr_known, L2, zL2, b2, I2);
+  double astar = f_pvalue_multiarm(theta, M2, r2, corr_known, L2, zL2, b2, I2);
 
   // prepare b1, mu, I1 for the original secondary trial
   size_t k1 = kMax - L;
@@ -418,7 +418,7 @@ std::pair<size_t, double> f_bwimage_mams(const double theta,
 
   // compute exit probabilities for b1
   std::vector<double> mu(M, theta);
-  auto probs = exitprob_mams_cpp(M, r, mu, corr_known, k1, b1, I1);
+  auto probs = exitprob_multiarm_cpp(M, r, mu, corr_known, k1, b1, I1);
 
   // find interval containing astar
   std::vector<double> cpu(k1);
@@ -436,7 +436,7 @@ std::pair<size_t, double> f_bwimage_mams(const double theta,
     for (size_t m = 0; m < M; ++m) {
       zj[m] = (z - zL[m] * sqrt_r1) / denom;
     }
-    return f_pvalue_mams(theta, M, r, corr_known, j, zj, b1, I1) - astar;
+    return f_pvalue_multiarm(theta, M, r, corr_known, j, zj, b1, I1) - astar;
   };
 
   double zJ;
@@ -453,7 +453,7 @@ std::pair<size_t, double> f_bwimage_mams(const double theta,
 
 
 // compute backward p-value for adapted trial
-double f_bwpvalue_mams(const double theta,
+double f_bwpvalue_multiarm(const double theta,
                        const size_t M,
                        const double r,
                        const bool corr_known,
@@ -468,7 +468,7 @@ double f_bwpvalue_mams(const double theta,
                        const std::vector<double>& zL2,
                        const FlatMatrix& b2,
                        const std::vector<double>& I2) {
-  auto bw = f_bwimage_mams(theta, M, r, corr_known, kMax, L, zL, b, I,
+  auto bw = f_bwimage_multiarm(theta, M, r, corr_known, kMax, L, zL, b, I,
                            M2, r2, L2, zL2, b2, I2);
 
   size_t J = bw.first;
@@ -479,12 +479,12 @@ double f_bwpvalue_mams(const double theta,
     std::fill_n(colptr, M, b[i]);
   }
 
-  return f_pvalue_mams(theta, M, r, corr_known, J, zJ, bMat, I);
+  return f_pvalue_multiarm(theta, M, r, corr_known, J, zJ, bMat, I);
 }
 
 
 // Helper to compute confidence interval after the end of an adaptive trial
-DataFrameCpp getADCI_mams_cpp(
+DataFrameCpp getADCI_multiarm_cpp(
     const size_t M,
     const double r,
     const bool corr_known,
@@ -703,7 +703,7 @@ DataFrameCpp getADCI_mams_cpp(
   FlatMatrix efficacyBounds1(kMax, M);
   if (!none_na(criticalValues.data)) {
     for (size_t M1 = M; M1 > 0; --M1) {
-      auto cut = getBound_mams_cpp(
+      auto cut = getBound_multiarm_cpp(
         M1, r, corr_known, kMax, infoRates, alpha, asf, parameterAlphaSpending,
         std::vector<double>{}, spendTime, effStopping);
       flatmatrix_set_column(efficacyBounds1, M - M1, cut);
@@ -851,7 +851,7 @@ DataFrameCpp getADCI_mams_cpp(
 
     // conditional type I error
     std::vector<double> zero1(M1, 0.0);
-    probs = exitprob_mams_cpp(M1, r, zero1, corr_known, k1, c1, I1);
+    probs = exitprob_multiarm_cpp(M1, r, zero1, corr_known, k1, c1, I1);
     auto v0 = probs.exitProbUpper;
     double c_alpha = std::accumulate(v0.begin(), v0.end(), 0.0);
 
@@ -891,7 +891,7 @@ DataFrameCpp getADCI_mams_cpp(
           }
         }
 
-        probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, c2, I2);
+        probs = exitprob_multiarm_cpp(M2, rNew, zero2, corr_known, k2, c2, I2);
         double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                     probs.exitProbUpper.end(), 0.0);
         return p0 - c_alpha;
@@ -921,7 +921,7 @@ DataFrameCpp getADCI_mams_cpp(
           colptr[j] = (col_const - zscaled[j]) / denom;
         }
 
-        probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, c2, I2);
+        probs = exitprob_multiarm_cpp(M2, rNew, zero2, corr_known, k2, c2, I2);
         double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                     probs.exitProbUpper.end(), 0.0);
         return p0 - c_alpha;
@@ -948,7 +948,7 @@ DataFrameCpp getADCI_mams_cpp(
             colptr[j] = (col_const - zscaled[j]) / denom;
           }
 
-          probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, i + 1, c2, I2);
+          probs = exitprob_multiarm_cpp(M2, rNew, zero2, corr_known, i + 1, c2, I2);
           double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                       probs.exitProbUpper.end(), 0.0);
           return p0 - cpu0[i];
@@ -977,17 +977,17 @@ DataFrameCpp getADCI_mams_cpp(
       zL2[i] = (col_const - zL[selectedNew2[i]] * sqrtIL) / denom;
     }
 
-    pvalue[h] = f_bwpvalue_mams(0.0, M1, r, corr_known, kMax, L, zL1, critValues,
+    pvalue[h] = f_bwpvalue_multiarm(0.0, M1, r, corr_known, kMax, L, zL1, critValues,
                                 I, M2, rNew, L2, zL2, c2, I2);
 
     auto f_med = [&](double theta)->double {
-      return f_bwpvalue_mams(theta, M1, r, corr_known, kMax, L, zL1, critValues,
+      return f_bwpvalue_multiarm(theta, M1, r, corr_known, kMax, L, zL1, critValues,
                               I, M2, rNew, L2, zL2, c2, I2) - 0.5;
     };
     thetahat[h] = brent(f_med, left, right, tol);
 
     auto f_low = [&](double theta)->double {
-      return f_bwpvalue_mams(theta, M1, r, corr_known, kMax, L, zL1, critValues,
+      return f_bwpvalue_multiarm(theta, M1, r, corr_known, kMax, L, zL1, critValues,
                               I, M2, rNew, L2, zL2, c2, I2) - target_lower;
     };
     lower[h] = brent(f_low, left, thetahat[h], tol);
@@ -1008,7 +1008,7 @@ DataFrameCpp getADCI_mams_cpp(
     }
 
     auto f_high = [&](double theta)->double {
-      return f_bwpvalue_mams(theta, 1, r, corr_known, kMax, L, zL_1, critValues,
+      return f_bwpvalue_multiarm(theta, 1, r, corr_known, kMax, L, zL_1, critValues,
                               I, 1, rNew, L2, zL2_1, c2_1, I2) - target_upper;
     };
     upper[h] = brent(f_high, thetahat[h], right, tol);
@@ -1138,7 +1138,7 @@ DataFrameCpp getADCI_mams_cpp(
 //' Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
 //'
 //' @examples
-//' getADCI_mams(
+//' getADCI_multiarm(
 //'   M = 2, r = 1, corr_known = FALSE, L = 1, zL = c(2.075, 2.264),
 //'   IMax = 300 / 4, kMax = 2, informationRates = c(0.5, 1),
 //'   alpha = 0.025, typeAlphaSpending = "sfOF",
@@ -1147,7 +1147,7 @@ DataFrameCpp getADCI_mams_cpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame getADCI_mams(
+Rcpp::DataFrame getADCI_multiarm(
     const int M = NA_INTEGER,
     const double r = 1,
     const bool corr_known = true,
@@ -1198,7 +1198,7 @@ Rcpp::DataFrame getADCI_mams(
   auto effStoppingNew = convertLogicalVector(efficacyStoppingNew);
   std::vector<double> spendTimeNew(spendingTimeNew.begin(), spendingTimeNew.end());
 
-  auto result = getADCI_mams_cpp(
+  auto result = getADCI_multiarm_cpp(
     static_cast<size_t>(M), r, corr_known,
     static_cast<size_t>(L), zLVec, IMax, static_cast<size_t>(kMax), infoRates,
     effStopping, critValues, alpha, typeAlphaSpending, parameterAlphaSpending,

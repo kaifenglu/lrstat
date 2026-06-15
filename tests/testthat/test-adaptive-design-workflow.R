@@ -58,8 +58,8 @@ testthat::test_that("adaptDesign: workflow object contract and Rd example regres
 })
 
 
-testthat::test_that("adaptDesign_mams and adaptDesign_seamless: workflow objects contain required decision data", {
-  des_mams <- adaptDesign_mams(
+testthat::test_that("adaptDesign_multiarm and adaptDesign_seamless: workflow objects contain required decision data", {
+  des_multiarm <- adaptDesign_multiarm(
     betaNew = 0.2,
     M = 2,
     r = 1,
@@ -93,16 +93,16 @@ testthat::test_that("adaptDesign_mams and adaptDesign_seamless: workflow objects
     kNew = 1
   )
 
-  testthat::expect_s3_class(des_mams, "adaptDesign_mams")
-  testthat::expect_named(des_mams, c("primaryTrial", "secondaryTrial", "integratedTrial"))
-  testthat::expect_equal(des_mams$secondaryTrial$selected, 2L)
-  testthat::expect_equal(round(des_mams$primaryTrial$conditionalAlpha, 4), 0.0597)
-  testthat::expect_equal(round(des_mams$primaryTrial$conditionalPower, 4), 0.4955)
-  testthat::expect_equal(round(des_mams$secondaryTrial$maxInformation, 4), 93.2245)
-  testthat::expect_equal(round(des_mams$integratedTrial$maxInformation, 4), 133.7246)
-  testthat::expect_equal(nrow(des_mams$secondaryTrial$byHypothesisBounds), 1)
-  testthat::expect_equal(nrow(des_mams$integratedTrial$byIntersectionBounds), 2)
-  testthat::expect_true(all(des_mams$secondaryTrial$cumulativeAlphaSpent >= 0))
+  testthat::expect_s3_class(des_multiarm, "adaptDesign_multiarm")
+  testthat::expect_named(des_multiarm, c("primaryTrial", "secondaryTrial", "integratedTrial"))
+  testthat::expect_equal(des_multiarm$secondaryTrial$selected, 2L)
+  testthat::expect_equal(round(des_multiarm$primaryTrial$conditionalAlpha, 4), 0.0597)
+  testthat::expect_equal(round(des_multiarm$primaryTrial$conditionalPower, 4), 0.4955)
+  testthat::expect_equal(round(des_multiarm$secondaryTrial$maxInformation, 4), 93.2245)
+  testthat::expect_equal(round(des_multiarm$integratedTrial$maxInformation, 4), 133.7246)
+  testthat::expect_equal(nrow(des_multiarm$secondaryTrial$byHypothesisBounds), 1)
+  testthat::expect_equal(nrow(des_multiarm$integratedTrial$byIntersectionBounds), 2)
+  testthat::expect_true(all(des_multiarm$secondaryTrial$cumulativeAlphaSpent >= 0))
 
   testthat::expect_s3_class(des_seam, "adaptDesign_seamless")
   testthat::expect_named(des_seam, c("primaryTrial", "secondaryTrial", "integratedTrial"))
@@ -126,10 +126,10 @@ testthat::test_that("exit probability functions: probabilities are bounded and t
     I = c(81, 121, 160)
   )
 
-  I_mams <- 95 / 2 * seq(1, 3) / 3
-  b_mams <- c(3.886562, 2.748214, 2.243907)
-  p0_mams <- exitprob_mams(M = 2, theta = c(0, 0), kMax = 3, b = b_mams, I = I_mams)
-  p1_mams <- exitprob_mams(M = 2, theta = c(0.3, 0.5), kMax = 3, b = b_mams, I = I_mams)
+  I_multiarm <- 95 / 2 * seq(1, 3) / 3
+  b_multiarm <- c(3.886562, 2.748214, 2.243907)
+  p0_multiarm <- exitprob_multiarm(M = 2, theta = c(0, 0), kMax = 3, b = b_multiarm, I = I_multiarm)
+  p1_multiarm <- exitprob_multiarm(M = 2, theta = c(0.3, 0.5), kMax = 3, b = b_multiarm, I = I_multiarm)
 
   I_seam <- 110 / 2 * seq(1, 3) / 3
   b_seam <- c(3.776605, 2.670463, 2.180424)
@@ -150,11 +150,11 @@ testthat::test_that("exit probability functions: probabilities are bounded and t
   testthat::expect_true(all(out$exitProbLower >= 0 & out$exitProbLower <= 1))
   testthat::expect_equal(sum(out$exitProbUpper) + sum(out$exitProbLower), 1, tolerance = 1e-8)
 
-  testthat::expect_named(p0_mams, c("exitProbUpper", "exitProbLower"))
-  testthat::expect_true(all(p0_mams$exitProbUpper >= 0 & p0_mams$exitProbUpper <= 1))
-  testthat::expect_true(all(p1_mams$exitProbUpper >= 0 & p1_mams$exitProbUpper <= 1))
-  testthat::expect_true(sum(p1_mams$exitProbUpper) > sum(p0_mams$exitProbUpper))
-  testthat::expect_true(all(cumsum(p1_mams$exitProbUpper) <= 1 + 1e-10))
+  testthat::expect_named(p0_multiarm, c("exitProbUpper", "exitProbLower"))
+  testthat::expect_true(all(p0_multiarm$exitProbUpper >= 0 & p0_multiarm$exitProbUpper <= 1))
+  testthat::expect_true(all(p1_multiarm$exitProbUpper >= 0 & p1_multiarm$exitProbUpper <= 1))
+  testthat::expect_true(sum(p1_multiarm$exitProbUpper) > sum(p0_multiarm$exitProbUpper))
+  testthat::expect_true(all(cumsum(p1_multiarm$exitProbUpper) <= 1 + 1e-10))
 
   testthat::expect_named(
     p1_seam,
@@ -190,7 +190,7 @@ testthat::test_that("adaptive workflow and exit probability functions: invalid s
   )
 
   testthat::expect_error(
-    adaptDesign_mams(
+    adaptDesign_multiarm(
       betaNew = 0.2,
       M = 2,
       r = 1,
@@ -233,7 +233,7 @@ testthat::test_that("adaptive workflow and exit probability functions: invalid s
   )
 
   testthat::expect_error(
-    exitprob_mams(M = 2, theta = c(0, 0), kMax = 3, b = c(3, 2, 1), I = c(1, 1, 2)),
+    exitprob_multiarm(M = 2, theta = c(0, 0), kMax = 3, b = c(3, 2, 1), I = c(1, 1, 2)),
     regexp = "increasing"
   )
 

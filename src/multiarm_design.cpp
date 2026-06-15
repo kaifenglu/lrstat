@@ -22,7 +22,7 @@
 using std::size_t;
 
 
-ExitProbResult exitprob_mams_cpp(
+ExitProbResult exitprob_multiarm_cpp(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -98,7 +98,7 @@ ExitProbResult exitprob_mams_cpp(
 
     // Detect when every stage has identical bounds across all arms.
     // This holds when theta is uniform across arms and b/a is filled uniformly
-    // per stage (e.g. H0 calls from getBound_mams_cpp).  When true, all M
+    // per stage (e.g. H0 calls from getBound_multiarm_cpp).  When true, all M
     // per-arm exitprobcpp() products are equal, so we compute once and raise
     // to the power M — reducing M exits to 1 per Gray-code iteration.
     bool uniform_arms = (M > 1);
@@ -478,7 +478,7 @@ ExitProbResult exitprob_mams_cpp(
 }
 
 //  Public 7-param overload with default a matrix of -8.0
-ExitProbResult exitprob_mams_cpp(
+ExitProbResult exitprob_multiarm_cpp(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -491,7 +491,7 @@ ExitProbResult exitprob_mams_cpp(
   double bmin = *std::min_element(b.data_ptr(), b.data_ptr() + b.nrow * b.ncol);
   double amin = std::min(-8.0, bmin);
   FlatMatrix a(M, kMax); a.fill(amin);
-  return exitprob_mams_cpp(M, r, theta, corr_known, kMax, b, a, I);
+  return exitprob_multiarm_cpp(M, r, theta, corr_known, kMax, b, a, I);
 }
 
 
@@ -596,16 +596,16 @@ FlatMatrix as_boundary_matrix(SEXP x, const char* arg, size_t M, size_t K,
 //' b <- c(3.886562, 2.748214, 2.243907)
 //'
 //' # Type I error under the global null hypothesis
-//' p0 <- exitprob_mams(M = 2, theta = c(0, 0), kMax = 3, b = b, I = I)
+//' p0 <- exitprob_multiarm(M = 2, theta = c(0, 0), kMax = 3, b = b, I = I)
 //' cumsum(p0$exitProbUpper)
 //'
 //' # Power under alternative: Treatment effects of 0.3 and 0.5
-//' p1 <- exitprob_mams(M = 2, theta = c(0.3, 0.5), kMax = 3, b = b, I = I)
+//' p1 <- exitprob_multiarm(M = 2, theta = c(0.3, 0.5), kMax = 3, b = b, I = I)
 //' cumsum(p1$exitProbUpper)
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List exitprob_mams(
+Rcpp::List exitprob_multiarm(
     const int M = NA_INTEGER,
     const double r = 1,
     const Rcpp::NumericVector& theta = NA_REAL,
@@ -638,7 +638,7 @@ Rcpp::List exitprob_mams(
   FlatMatrix bMat = as_boundary_matrix(b, "b", M_, K, false);
   FlatMatrix aMat = as_boundary_matrix(a, "a", M_, K, true);
 
-  auto probs = exitprob_mams_cpp(M_, r, thetaVec, corr_known, K, bMat, aMat, IVec);
+  auto probs = exitprob_multiarm_cpp(M_, r, thetaVec, corr_known, K, bMat, aMat, IVec);
   ListCpp exitProb;
   exitProb.push_back(std::move(probs.exitProbUpper), "exitProbUpper");
   exitProb.push_back(std::move(probs.exitProbLower), "exitProbLower");
@@ -647,7 +647,7 @@ Rcpp::List exitprob_mams(
 
 
 
-std::vector<double> getBound_mams_cpp(
+std::vector<double> getBound_multiarm_cpp(
     const size_t M,
     const double r,
     const bool corr_known,
@@ -769,7 +769,7 @@ std::vector<double> getBound_mams_cpp(
     double* colptr = b.data_ptr() + (kMax - 1) * M;
     auto f = [&](double x)->double {
       std::fill_n(colptr, M, x);
-      probs = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
+      probs = exitprob_multiarm_cpp(M, r, zero, corr_known, kMax, b, infoRates);
       double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                    probs.exitProbUpper.end(), 0.0);
       return cpu - alpha;
@@ -798,7 +798,7 @@ std::vector<double> getBound_mams_cpp(
         std::fill_n(b.data_ptr() + i * M, M, val); // contiguous write of M doubles
       }
 
-      probs = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
+      probs = exitprob_multiarm_cpp(M, r, zero, corr_known, kMax, b, infoRates);
       double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                    probs.exitProbUpper.end(), 0.0);
       return cpu - alpha;
@@ -851,7 +851,7 @@ std::vector<double> getBound_mams_cpp(
       auto f = [&](double x)->double {
         // set the last column to the current candidate critical value
         std::fill_n(last_col, M, x);  // fill last column fast
-        probs = exitprob_mams_cpp(M, r, zero, corr_known, k1 + 1, b, infoRates);
+        probs = exitprob_multiarm_cpp(M, r, zero, corr_known, k1 + 1, b, infoRates);
         double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                      probs.exitProbUpper.end(), 0.0);
         return cpu - cumAlpha;
@@ -923,12 +923,12 @@ std::vector<double> getBound_mams_cpp(
 //'
 //' # Determine O'Brien-Fleming boundaries for a TSSSD with
 //' # 2 active arms and 3 looks.
-//' getBound_mams(M = 2, k = 3, informationRates = seq(1, 3)/3,
+//' getBound_multiarm(M = 2, k = 3, informationRates = seq(1, 3)/3,
 //'               alpha = 0.025, typeAlphaSpending = "OF")
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::NumericVector getBound_mams(
+Rcpp::NumericVector getBound_multiarm(
     const int M = NA_INTEGER,
     const double r = 1,
     const bool corr_known = true,
@@ -946,7 +946,7 @@ Rcpp::NumericVector getBound_mams(
   std::vector<double> spendTime(spendingTime.begin(), spendingTime.end());
   auto effStopping = convertLogicalVector(efficacyStopping);
 
-  auto result = getBound_mams_cpp(
+  auto result = getBound_multiarm_cpp(
     static_cast<size_t>(M), r, corr_known, static_cast<size_t>(k),
     infoRates, alpha, typeAlphaSpending, parameterAlphaSpending,
     userAlpha, spendTime, effStopping
@@ -962,7 +962,7 @@ Rcpp::NumericVector getBound_mams(
 // of the primary trial, M, r, theta, alpha, kMax, bsf, bsfpar, st,
 // futStopping are parameters of the secondary trial, critValues,
 // futBounds and I are boundaries and information of integrated trial.
-GetPowerResult getPower_mams(
+GetPowerResult getPower_multiarm(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -1057,7 +1057,7 @@ GetPowerResult getPower_mams(
             a(m, k) = (aval * sqrtI[k] - zscaled[m]) / sqrtI2[k];
             if (a(m, k) > b(m, k)) a(m, k) = b(m, k);
           }
-          probs = exitprob_mams_cpp(M, r, theta, true, k + 1, b, a, I2);
+          probs = exitprob_multiarm_cpp(M, r, theta, true, k + 1, b, a, I2);
           double cpl = std::accumulate(probs.exitProbLower.begin(),
                                        probs.exitProbLower.end(), 0.0);
           return cpl - cb;
@@ -1104,7 +1104,7 @@ GetPowerResult getPower_mams(
     futBounds[kMax-1] = critValues[kMax-1];
     std::memcpy(a.data_ptr() + (kMax - 1) * M, b.data_ptr() + (kMax - 1) * M,
                 M * sizeof(double));
-    probs = exitprob_mams_cpp(M, r, theta, true, kMax, b, a, I2);
+    probs = exitprob_multiarm_cpp(M, r, theta, true, kMax, b, a, I2);
   }
 
   return GetPowerResult {
@@ -1115,7 +1115,7 @@ GetPowerResult getPower_mams(
 }
 
 
-ListCpp getDesign_mams_cpp(
+ListCpp getDesign_multiarm_cpp(
     const double beta,
     const double IMax,
     const std::vector<double>& theta,
@@ -1369,7 +1369,7 @@ ListCpp getDesign_mams_cpp(
         double* last_col = b1.data_ptr() + (kMax - 1) * M1;
         auto f = [&](double x)->double {
           std::fill_n(last_col, M1, x);
-          probs = exitprob_mams_cpp(M1, r, zero1, corr_known, kMax, b1, infoRates);
+          probs = exitprob_multiarm_cpp(M1, r, zero1, corr_known, kMax, b1, infoRates);
           double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                        probs.exitProbUpper.end(), 0.0);
           return cpu - alpha;
@@ -1377,7 +1377,7 @@ ListCpp getDesign_mams_cpp(
 
         cut[kMax - 1] = brent(f, 0.0, 8.0, 1e-6);
       } else {
-        cut = getBound_mams_cpp(
+        cut = getBound_multiarm_cpp(
           M1, r, corr_known, kMax, infoRates, alpha, asf,
           parameterAlphaSpending, userAlphaSpending, spendTime, effStopping);
       }
@@ -1397,7 +1397,7 @@ ListCpp getDesign_mams_cpp(
   for (size_t i = 0; i < kMax; ++i) {
     std::fill_n(b.data_ptr() + i * M, M, critValues[i]);
   }
-  probs = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
+  probs = exitprob_multiarm_cpp(M, r, zero, corr_known, kMax, b, infoRates);
   std::vector<double> cumAlphaSpent(kMax);
   std::partial_sum(probs.exitProbUpper.begin(),
                    probs.exitProbUpper.end(), cumAlphaSpent.begin());
@@ -1485,7 +1485,7 @@ ListCpp getDesign_mams_cpp(
           std::fill_n(a.data_ptr() + i * M, M, futBounds[i]);
         }
 
-        probs = exitprob_mams_cpp(M, r, theta, true, kMax, b, a, information);
+        probs = exitprob_multiarm_cpp(M, r, theta, true, kMax, b, a, information);
         double overallReject = std::accumulate(probs.exitProbUpper.begin(),
                                                probs.exitProbUpper.end(), 0.0);
         return (1.0 - overallReject) - beta;
@@ -1522,7 +1522,7 @@ ListCpp getDesign_mams_cpp(
             // lambda expression for finding futility bound at stage k
             auto g = [&](double aval)->double {
               std::fill_n(a.data_ptr() + k * M, M, aval);
-              probs = exitprob_mams_cpp(M, r, theta, true, k + 1, b, a, information);
+              probs = exitprob_multiarm_cpp(M, r, theta, true, k + 1, b, a, information);
               double cpl = std::accumulate(probs.exitProbLower.begin(),
                                            probs.exitProbLower.end(), 0.0);
               return cpl - cb;
@@ -1556,7 +1556,7 @@ ListCpp getDesign_mams_cpp(
     IMax1 = sq(drift / maxtheta);
     futBounds[kMax-1] = critValues[kMax-1];
     std::fill_n(a.data_ptr() + (kMax - 1) * M, M, futBounds[kMax - 1]);
-    probs = exitprob_mams_cpp(M, r, theta, true, kMax, b, a, information);
+    probs = exitprob_multiarm_cpp(M, r, theta, true, kMax, b, a, information);
   } else {
     for (size_t i = 0; i < kMax; ++i) information[i] = infoRates[i] * IMax1;
 
@@ -1564,9 +1564,9 @@ ListCpp getDesign_mams_cpp(
       for (size_t i = 0; i < kMax; ++i) {
         std::fill_n(a.data_ptr() + i * M, M, futBounds[i]);
       }
-      probs = exitprob_mams_cpp(M, r, theta, true, kMax, b, a, information);
+      probs = exitprob_multiarm_cpp(M, r, theta, true, kMax, b, a, information);
     } else { // beta-spending
-      auto out = getPower_mams(M, r, theta, alpha1, kMax, critValues,
+      auto out = getPower_multiarm(M, r, theta, alpha1, kMax, critValues,
                                   information, bsf, parameterBetaSpending,
                                   spendTime, futStopping, 0.0, zero);
       futBounds = out.futilityBounds;
@@ -1613,7 +1613,7 @@ ListCpp getDesign_mams_cpp(
     ptotal.begin(), ptotal.end(), informationOverall.begin(), 0.0);
 
   // stagewise exit probabilities under H0 with binding futility
-  auto probsH0 = exitprob_mams_cpp(M, r, zero, true, kMax, b, a, infoRates);
+  auto probsH0 = exitprob_multiarm_cpp(M, r, zero, true, kMax, b, a, infoRates);
   auto puH0 = probsH0.exitProbUpper;
   auto plH0 = probsH0.exitProbLower;
   std::vector<double> cpuH0(kMax), cplH0(kMax);
@@ -1745,7 +1745,7 @@ ListCpp getDesign_mams_cpp(
 //'   error spending time at each analysis. Values must be strictly increasing
 //'   and ends at 1. If omitted, defaults to \code{informationRates}.
 //'
-//' @return An S3 object of class \code{mams} with the following components:
+//' @return An S3 object of class \code{multiarm} with the following components:
 //'
 //' * \code{overallResults}: A data frame containing:
 //'     - \code{overallReject}: Overall probability of rejecting the global
@@ -1826,19 +1826,19 @@ ListCpp getDesign_mams_cpp(
 //' @examples
 //'
 //' # Example 1: obtain the maximum information given power
-//' (design1 <- getDesign_mams(
+//' (design1 <- getDesign_multiarm(
 //'   beta = 0.1, theta = c(0.3, 0.5), M = 2, r = 1.0,
 //'   kMax = 3, informationRates = seq(1, 3)/3,
 //'   alpha = 0.025, typeAlphaSpending = "OF"))
 //'
 //' # Example 2: obtain power given the maximum information
-//' (design2 <- getDesign_mams(
+//' (design2 <- getDesign_multiarm(
 //'   IMax = 110/(2*1^2), theta = c(0.3, 0.5), M = 2, r = 1.0,
 //'   kMax = 3, informationRates = seq(1, 3)/3,
 //'   alpha = 0.025, typeAlphaSpending = "OF"))
 //'
 //' # Example 3: derive futility boundaries using beta spending
-//' (design3 <- getDesign_mams(
+//' (design3 <- getDesign_multiarm(
 //'   IMax = 27.22, theta = c(-log(0.5), -log(0.75)),
 //'   M = 2, r = 1.0, corr_known = FALSE,
 //'   kMax = 3, informationRates = seq(1, 3)/3,
@@ -1847,7 +1847,7 @@ ListCpp getDesign_mams_cpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List getDesign_mams(
+Rcpp::List getDesign_multiarm(
     const double beta = NA_REAL,
     const double IMax = NA_REAL,
     const Rcpp::NumericVector& theta = NA_REAL,
@@ -1908,7 +1908,7 @@ Rcpp::List getDesign_mams(
     futTheta = std::vector<double>(1, NaN);
   }
 
-  auto cpp_result = getDesign_mams_cpp(
+  auto cpp_result = getDesign_multiarm_cpp(
     beta, IMax, thetaVec, static_cast<size_t>(M), r, corr_known,
     static_cast<size_t>(kMax), infoRates, effStopping, futStopping,
     critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
@@ -1917,12 +1917,12 @@ Rcpp::List getDesign_mams(
   );
 
   Rcpp::List result = Rcpp::wrap(cpp_result);
-  result.attr("class") = "mams";
+  result.attr("class") = "multiarm";
   return result;
 }
 
 
-ListCpp adaptDesign_mams_cpp(
+ListCpp adaptDesign_multiarm_cpp(
     double betaNew,
     double INew,
     const size_t M,
@@ -2357,7 +2357,7 @@ ListCpp adaptDesign_mams_cpp(
         double* last_col = b1.data_ptr() + (kMax - 1) * M1;
         auto f = [&](double x)->double {
           std::fill_n(last_col, M1, x);
-          probs = exitprob_mams_cpp(M1, r, zero1, corr_known, kMax, b1, infoRates);
+          probs = exitprob_multiarm_cpp(M1, r, zero1, corr_known, kMax, b1, infoRates);
           double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                        probs.exitProbUpper.end(), 0.0);
           return cpu - alpha;
@@ -2365,7 +2365,7 @@ ListCpp adaptDesign_mams_cpp(
 
         cut[kMax - 1] = brent(f, 0.0, 8.0, 1e-6);
       } else {
-        cut = getBound_mams_cpp(
+        cut = getBound_multiarm_cpp(
           M1, r, corr_known, kMax, infoRates, alpha, asf,
           parameterAlphaSpending, userAlphaSpending, spendTime, effStopping);
       }
@@ -2389,7 +2389,7 @@ ListCpp adaptDesign_mams_cpp(
   for (size_t i = 0; i < kMax; ++i) {
     std::fill_n(b.data_ptr() + i * M, M, critValues[i]);
   }
-  probs = exitprob_mams_cpp(M, r, zero, corr_known, kMax, b, infoRates);
+  probs = exitprob_multiarm_cpp(M, r, zero, corr_known, kMax, b, infoRates);
   double p0 = std::accumulate(probs.exitProbUpper.begin(),
                               probs.exitProbUpper.end(), 0.0);
   double alpha1 = missingCriticalValues ? alpha : p0;
@@ -2478,7 +2478,7 @@ ListCpp adaptDesign_mams_cpp(
   }
 
   // conditional type I error
-  probs = exitprob_mams_cpp(M, r, zero, corr_known, k1, b1, I1);
+  probs = exitprob_multiarm_cpp(M, r, zero, corr_known, k1, b1, I1);
   auto v0 = probs.exitProbUpper;
   double alphaNew = std::accumulate(v0.begin(), v0.end(), 0.0);
 
@@ -2498,7 +2498,7 @@ ListCpp adaptDesign_mams_cpp(
     }
   }
 
-  probs = exitprob_mams_cpp(M, r, theta, true, k1, b1, a1, I1);
+  probs = exitprob_multiarm_cpp(M, r, theta, true, k1, b1, a1, I1);
   double conditionalPower = std::accumulate(probs.exitProbUpper.begin(),
                                             probs.exitProbUpper.end(), 0.0);
 
@@ -2568,7 +2568,7 @@ ListCpp adaptDesign_mams_cpp(
           }
         }
 
-        probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
+        probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
         double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                     probs.exitProbUpper.end(), 0.0);
         return p0 - alphaNew;
@@ -2602,7 +2602,7 @@ ListCpp adaptDesign_mams_cpp(
           colptr[j] = (col_const - zscaled[j]) / denom;
         }
 
-        probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
+        probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
         double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                     probs.exitProbUpper.end(), 0.0);
         return p0 - alphaNew;
@@ -2630,7 +2630,7 @@ ListCpp adaptDesign_mams_cpp(
             colptr[j] = (col_const - zscaled[j]) / denom;
           }
 
-          probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, i + 1, b2, I2);
+          probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, i + 1, b2, I2);
           double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                       probs.exitProbUpper.end(), 0.0);
           return p0 - cpu0[i];
@@ -2695,7 +2695,7 @@ ListCpp adaptDesign_mams_cpp(
     }
 
     if (missingFutilityBoundsInt && bsfNew != "none" && k2 > 1) { // beta-spending
-      auto out = getPower_mams(
+      auto out = getPower_multiarm(
         MNew, rNew, theta2, alphaNew, k2, critValues2, Ic,
         bsfNew, parameterBetaSpendingNew, spendTimeNew, futStoppingNew, IL, zL);
       futBounds2 = out.futilityBounds;
@@ -2752,7 +2752,7 @@ ListCpp adaptDesign_mams_cpp(
             }
           }
 
-          probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
+          probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
           double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                       probs.exitProbUpper.end(), 0.0);
           return p0 - alphaNew;
@@ -2788,7 +2788,7 @@ ListCpp adaptDesign_mams_cpp(
             if (colptr[j] < -8.0) colptr[j] = -8.0;
           }
 
-          probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
+          probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
           double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                       probs.exitProbUpper.end(), 0.0);
           return p0 - alphaNew;
@@ -2817,7 +2817,7 @@ ListCpp adaptDesign_mams_cpp(
               if (colptr[j] < -8.0) colptr[j] = -8.0;
             }
 
-            probs = exitprob_mams_cpp(MNew, rNew, zero2, corr_known, i + 1, b2, I2);
+            probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, i + 1, b2, I2);
             double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                         probs.exitProbUpper.end(), 0.0);
             return p0 - cpu0[i];
@@ -2889,7 +2889,7 @@ ListCpp adaptDesign_mams_cpp(
           }
         }
 
-        probs = exitprob_mams_cpp(MNew, rNew, theta2, true, k2, b2, a2, I2);
+        probs = exitprob_multiarm_cpp(MNew, rNew, theta2, true, k2, b2, a2, I2);
         double overallReject = std::accumulate(probs.exitProbUpper.begin(),
                                                probs.exitProbUpper.end(), 0.0);
         return (1.0 - overallReject) - betaNew;
@@ -2937,7 +2937,7 @@ ListCpp adaptDesign_mams_cpp(
                 a2(m, k) = (aval * sqrtIc[k] - zscaled[m]) / sqrtI2[k];
                 if (a2(m, k) > b2(m, k)) a2(m, k) = b2(m, k);
               }
-              probs = exitprob_mams_cpp(MNew, rNew, theta2, true, k + 1, b2, a2, I2);
+              probs = exitprob_multiarm_cpp(MNew, rNew, theta2, true, k + 1, b2, a2, I2);
               double cpl = std::accumulate(probs.exitProbLower.begin(),
                                            probs.exitProbLower.end(), 0.0);
               return cpl - cb;
@@ -2975,7 +2975,7 @@ ListCpp adaptDesign_mams_cpp(
   }
 
   // compute conditional power of the secondary trial
-  probs = exitprob_mams_cpp(MNew, rNew, theta2, true, k2, b2, a2, I2);
+  probs = exitprob_multiarm_cpp(MNew, rNew, theta2, true, k2, b2, a2, I2);
   std::vector<double> cpu1(k2);
   std::partial_sum(probs.exitProbUpper.begin(),
                    probs.exitProbUpper.end(), cpu1.begin());
@@ -3071,7 +3071,7 @@ ListCpp adaptDesign_mams_cpp(
 
     // conditional type I error
     std::vector<double> zero1(M1, 0.0);
-    probs = exitprob_mams_cpp(M1, r, zero1, corr_known, k1, b1, I1);
+    probs = exitprob_multiarm_cpp(M1, r, zero1, corr_known, k1, b1, I1);
     v0 = probs.exitProbUpper;
     double alphaNew = std::accumulate(v0.begin(), v0.end(), 0.0);
 
@@ -3111,7 +3111,7 @@ ListCpp adaptDesign_mams_cpp(
           }
         }
 
-        probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, b2, I2);
+        probs = exitprob_multiarm_cpp(M2, rNew, zero2, corr_known, k2, b2, I2);
         double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                     probs.exitProbUpper.end(), 0.0);
         return p0 - alphaNew;
@@ -3139,7 +3139,7 @@ ListCpp adaptDesign_mams_cpp(
           colptr[j] = (col_const - zscaled[j]) / denom;
         }
 
-        probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, k2, b2, I2);
+        probs = exitprob_multiarm_cpp(M2, rNew, zero2, corr_known, k2, b2, I2);
         double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                     probs.exitProbUpper.end(), 0.0);
         return p0 - alphaNew;
@@ -3162,7 +3162,7 @@ ListCpp adaptDesign_mams_cpp(
             colptr[j] = (col_const - zscaled[j]) / denom;
           }
 
-          probs = exitprob_mams_cpp(M2, rNew, zero2, corr_known, i+1, b2, I2);
+          probs = exitprob_multiarm_cpp(M2, rNew, zero2, corr_known, i+1, b2, I2);
           double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                       probs.exitProbUpper.end(), 0.0);
           return p0 - cpu0[i];
@@ -3400,7 +3400,7 @@ ListCpp adaptDesign_mams_cpp(
 //'   Defaults to missing, in which case it is assumed to be the same as
 //'   \code{informationRatesNew}.
 //'
-//' @return An \code{adaptDesign_mams} object with three list components:
+//' @return An \code{adaptDesign_multiarm} object with three list components:
 //'
 //' * \code{primaryTrial}: A list of selected information for the primary
 //'   trial, including \code{M}, \code{r}, \code{corr_known}, \code{L},
@@ -3445,7 +3445,7 @@ ListCpp adaptDesign_mams_cpp(
 //' Adaptive multiple comparison sequential design (AMCSD) for clinical trials.
 //' Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
 //'
-//' @seealso \code{\link{getDesign_mams}}
+//' @seealso \code{\link{getDesign_multiarm}}
 //'
 //' @examples
 //'
@@ -3457,7 +3457,7 @@ ListCpp adaptDesign_mams_cpp(
 //' # versus the common control. Under these assumptions, the trial has about
 //' # 80% power to detect the treatment effect in at least one active arm.
 //'
-//' (des1 <- getDesign_mams(
+//' (des1 <- getDesign_multiarm(
 //'   IMax = 324 / 4, theta = c(-log(0.75), -log(0.75)),
 //'   M = 2, r = 1, kMax = 2, informationRates = c(1/2, 1),
 //'   alpha = 0.025, typeAlphaSpending = "OF"))
@@ -3470,7 +3470,7 @@ ListCpp adaptDesign_mams_cpp(
 //' # indicates that the required total number of events for arm 2 versus control
 //' # at the final analysis should be increased from 324 to 535.
 //'
-//' (des2 <- adaptDesign_mams(
+//' (des2 <- adaptDesign_multiarm(
 //'   betaNew = 0.2, M = 2, r = 1, corr_known = FALSE,
 //'   L = 1, zL = c(-log(0.91), -log(0.78)) * sqrt(324 / 4 / 2),
 //'   theta = c(-log(0.91), -log(0.78)),
@@ -3480,7 +3480,7 @@ ListCpp adaptDesign_mams_cpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List adaptDesign_mams(
+Rcpp::List adaptDesign_multiarm(
     double betaNew = NA_REAL,
     double INew = NA_REAL,
     const int M = NA_INTEGER,
@@ -3583,7 +3583,7 @@ Rcpp::List adaptDesign_mams(
     futThetaInt = std::vector<double>(1, NaN);
   }
 
-  auto cpp_result = adaptDesign_mams_cpp(
+  auto cpp_result = adaptDesign_multiarm_cpp(
     betaNew, INew,  static_cast<size_t>(M), r, corr_known,
     static_cast<size_t>(L), zLVec, thetaVec, IMax,
     static_cast<size_t>(kMax), infoRates, effStopping, futStopping,
@@ -3598,7 +3598,7 @@ Rcpp::List adaptDesign_mams(
   );
 
   Rcpp::List result = Rcpp::wrap(cpp_result);
-  result.attr("class") = "adaptDesign_mams";
+  result.attr("class") = "adaptDesign_multiarm";
   return result;
 }
 

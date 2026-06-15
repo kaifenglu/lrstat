@@ -31,7 +31,7 @@ testthat::test_that("set.seed reproducibility across all LR simulation entry poi
   testthat::expect_equal(sim_a$sumdata$logRankStatistic, sim_b$sumdata$logRankStatistic)
 
   set.seed(102)
-  mams_a <- lrsim_mams(
+  multiarm_a <- lrsim_multiarm(
     M = 2,
     kMax = 3,
     criticalValues = matrix(c(3.880, 2.747, 2.275, 3.710, 2.511, 1.993), 3, 2),
@@ -46,7 +46,7 @@ testthat::test_that("set.seed reproducibility across all LR simulation entry poi
     nthreads = 1
   )
   set.seed(102)
-  mams_b <- lrsim_mams(
+  multiarm_b <- lrsim_multiarm(
     M = 2,
     kMax = 3,
     criticalValues = matrix(c(3.880, 2.747, 2.275, 3.710, 2.511, 1.993), 3, 2),
@@ -60,8 +60,8 @@ testthat::test_that("set.seed reproducibility across all LR simulation entry poi
     seed = 102,
     nthreads = 1
   )
-  testthat::expect_equal(mams_a$overview$overallReject, mams_b$overview$overallReject)
-  testthat::expect_equal(mams_a$sumdata2$logRankStatistic, mams_b$sumdata2$logRankStatistic)
+  testthat::expect_equal(multiarm_a$overview$overallReject, multiarm_b$overview$overallReject)
+  testthat::expect_equal(multiarm_a$sumdata2$logRankStatistic, multiarm_b$sumdata2$logRankStatistic)
 
   set.seed(103)
   seam_a <- lrsim_seamless(
@@ -289,7 +289,7 @@ testthat::test_that("simulation summaries contain expected fields and bounded pr
   testthat::expect_true(sim$overview$overallReject >= 0 && sim$overview$overallReject <= 1)
   testthat::expect_true(all(sim$sumdata$stageNumber %in% 1:2))
 
-  mams <- lrsim_mams(
+  multiarm <- lrsim_multiarm(
     M = 2,
     kMax = 3,
     criticalValues = matrix(c(3.880, 2.747, 2.275, 3.710, 2.511, 1.993), 3, 2),
@@ -303,10 +303,10 @@ testthat::test_that("simulation summaries contain expected fields and bounded pr
     seed = 202,
     nthreads = 1
   )
-  testthat::expect_s3_class(mams, "lrsim_mams")
-  testthat::expect_true(all(c("overview", "sumdata1", "sumdata2") %in% names(mams)))
-  testthat::expect_true(mams$overview$overallReject >= 0 && mams$overview$overallReject <= 1)
-  testthat::expect_true(mams$overview$overallFutility >= 0 && mams$overview$overallFutility <= 1)
+  testthat::expect_s3_class(multiarm, "lrsim_multiarm")
+  testthat::expect_true(all(c("overview", "sumdata1", "sumdata2") %in% names(multiarm)))
+  testthat::expect_true(multiarm$overview$overallReject >= 0 && multiarm$overview$overallReject <= 1)
+  testthat::expect_true(multiarm$overview$overallFutility >= 0 && multiarm$overview$overallFutility <= 1)
 
   seam <- lrsim_seamless(
     M = 2,
@@ -441,7 +441,7 @@ testthat::test_that("simulation functions reproduce seeded expected summary resu
   testthat::expect_equal(round(sim$overview$overallReject, 6), 0.783333)
   testthat::expect_equal(round(sim$overview$expectedNumberOfEvents, 1), 109.5)
 
-  mams <- lrsim_mams(
+  multiarm <- lrsim_multiarm(
     M = 2,
     kMax = 3,
     criticalValues = matrix(c(3.880, 2.747, 2.275, 3.710, 2.511, 1.993), 3, 2),
@@ -455,9 +455,9 @@ testthat::test_that("simulation functions reproduce seeded expected summary resu
     seed = 302,
     nthreads = 1
   )
-  testthat::expect_equal(round(mams$overview$overallReject, 2), 0.89)
-  testthat::expect_equal(round(mams$overview$overallFutility, 2), 0.11)
-  testthat::expect_equal(round(unname(mams$overview$expectedNumberOfEvents[4]), 2), 126.05)
+  testthat::expect_equal(round(multiarm$overview$overallReject, 2), 0.89)
+  testthat::expect_equal(round(multiarm$overview$overallFutility, 2), 0.11)
+  testthat::expect_equal(round(unname(multiarm$overview$expectedNumberOfEvents[4]), 2), 126.05)
 
   seam <- lrsim_seamless(
     M = 2,

@@ -5,7 +5,7 @@ testthat::test_that("getBound variants: documented numeric examples", {
     alpha = 0.025,
     typeAlphaSpending = "sfOF"
   )
-  bm <- getBound_mams(
+  bm <- getBound_multiarm(
     M = 2,
     k = 3,
     informationRates = seq(1, 3) / 3,
@@ -40,7 +40,7 @@ testthat::test_that("getBound variants: reject invalid information rates", {
     regexp = "increasing|strictly"
   )
   testthat::expect_error(
-    getBound_mams(M = 2, k = 3, informationRates = c(0.3, 0.9, 1.2), alpha = 0.025),
+    getBound_multiarm(M = 2, k = 3, informationRates = c(0.3, 0.9, 1.2), alpha = 0.025),
     regexp = "<= 1|less than or equal|information"
   )
   testthat::expect_error(
@@ -74,12 +74,12 @@ testthat::test_that("exitprob: documented numeric example and structure", {
 })
 
 
-testthat::test_that("exitprob_mams: null and alternative examples", {
+testthat::test_that("exitprob_multiarm: null and alternative examples", {
   I <- 95 / 2 * seq(1, 3) / 3
   b <- c(3.886562, 2.748214, 2.243907)
 
-  p0 <- exitprob_mams(M = 2, theta = c(0, 0), kMax = 3, b = b, I = I)
-  p1 <- exitprob_mams(M = 2, theta = c(0.3, 0.5), kMax = 3, b = b, I = I)
+  p0 <- exitprob_multiarm(M = 2, theta = c(0, 0), kMax = 3, b = b, I = I)
+  p1 <- exitprob_multiarm(M = 2, theta = c(0.3, 0.5), kMax = 3, b = b, I = I)
 
   testthat::expect_named(p0, c("exitProbUpper", "exitProbLower"))
   testthat::expect_equal(
@@ -252,7 +252,7 @@ testthat::test_that("getCI family: reject invalid information rates", {
   )
 
   testthat::expect_error(
-    getCI_mams(L = 2, zL = c(2.0, 2.1), M = 2, r = 1, corr_known = FALSE,
+    getCI_multiarm(L = 2, zL = c(2.0, 2.1), M = 2, r = 1, corr_known = FALSE,
                IMax = 75, informationRates = c(0.7, 0.6), alpha = 0.025),
     regexp = "increasing|strictly|information"
   )
@@ -265,8 +265,8 @@ testthat::test_that("getCI family: reject invalid information rates", {
 })
 
 
-testthat::test_that("getCI_mams and getCI_seamless: Rd example numeric regression", {
-  ci_mams <- getCI_mams(
+testthat::test_that("getCI_multiarm and getCI_seamless: Rd example numeric regression", {
+  ci_multiarm <- getCI_multiarm(
     L = 2,
     zL = c(2.075, 2.264),
     M = 2,
@@ -290,15 +290,15 @@ testthat::test_that("getCI_mams and getCI_seamless: Rd example numeric regressio
     typeAlphaSpending = "sfOF"
   )
 
-  testthat::expect_s3_class(ci_mams, "data.frame")
-  testthat::expect_named(ci_mams,
+  testthat::expect_s3_class(ci_multiarm, "data.frame")
+  testthat::expect_named(ci_multiarm,
                          c("level", "index", "pvalue", "thetahat", "cilevel", "lower", "upper"))
-  testthat::expect_equal(ci_mams$level, c(2L, 1L))
-  testthat::expect_equal(ci_mams$index, c(2L, 1L))
-  testthat::expect_equal(round(ci_mams$pvalue, 4), c(0.0241, 0.0196))
-  testthat::expect_equal(round(ci_mams$thetahat, 4), c(0.1979, 0.2389))
-  testthat::expect_equal(round(ci_mams$lower, 4), c(0.0017, 0.0119))
-  testthat::expect_equal(round(ci_mams$upper, 4), c(0.4874, 0.4657))
+  testthat::expect_equal(ci_multiarm$level, c(2L, 1L))
+  testthat::expect_equal(ci_multiarm$index, c(2L, 1L))
+  testthat::expect_equal(round(ci_multiarm$pvalue, 4), c(0.0241, 0.0196))
+  testthat::expect_equal(round(ci_multiarm$thetahat, 4), c(0.1979, 0.2389))
+  testthat::expect_equal(round(ci_multiarm$lower, 4), c(0.0017, 0.0119))
+  testthat::expect_equal(round(ci_multiarm$upper, 4), c(0.4874, 0.4657))
 
   testthat::expect_s3_class(ci_seam, "data.frame")
   testthat::expect_named(ci_seam, c("pvalue", "thetahat", "cilevel", "lower", "upper"))
@@ -369,7 +369,7 @@ testthat::test_that("getCP family: Rd example numeric regression", {
     typeAlphaSpending = "sfOF"
   )
 
-  cp_mams <- getCP_mams(
+  cp_multiarm <- getCP_multiarm(
     INew = 373 / 4,
     M = 2,
     r = 1,
@@ -404,10 +404,10 @@ testthat::test_that("getCP family: Rd example numeric regression", {
   )
 
   testthat::expect_equal(round(cp, 4), c(0.3663, 0.5550))
-  testthat::expect_equal(round(cp_mams, 4), c(0.4955, 0.8001))
+  testthat::expect_equal(round(cp_multiarm, 4), c(0.4955, 0.8001))
   testthat::expect_equal(round(cp_seam, 4), c(0.4402, 0.6983))
   testthat::expect_true(cp[2] > cp[1])
-  testthat::expect_true(cp_mams[2] > cp_mams[1])
+  testthat::expect_true(cp_multiarm[2] > cp_multiarm[1])
   testthat::expect_true(cp_seam[2] > cp_seam[1])
 })
 
@@ -420,7 +420,7 @@ testthat::test_that("getCP family: reject invalid information rates", {
   )
 
   testthat::expect_error(
-    getCP_mams(INew = 1, M = 2, r = 1, corr_known = FALSE, L = 1,
+    getCP_multiarm(INew = 1, M = 2, r = 1, corr_known = FALSE, L = 1,
                zL = c(1.5, 1.6), theta = c(0.1, 0.2), IMax = 10, kMax = 2,
                informationRates = c(0.8, 0.7), alpha = 0.025),
     regexp = "increasing|strictly|information"
@@ -519,7 +519,7 @@ testthat::test_that("getADCI, getADRCI, and adaptive variants: Rd example numeri
     typeAlphaSpendingNew = "sfP"
   )
 
-  adc_mams <- getADCI_mams(
+  adc_multiarm <- getADCI_multiarm(
     M = 2,
     r = 1,
     corr_known = FALSE,
@@ -566,13 +566,13 @@ testthat::test_that("getADCI, getADRCI, and adaptive variants: Rd example numeri
   testthat::expect_equal(round(adrc$lower, 4), 0.6303)
   testthat::expect_equal(round(adrc$upper, 4), 18.1808)
 
-  testthat::expect_s3_class(adc_mams, "data.frame")
-  testthat::expect_equal(adc_mams$level, 1L)
-  testthat::expect_equal(adc_mams$index, 2L)
-  testthat::expect_equal(round(adc_mams$pvalue, 4), 0.0255)
-  testthat::expect_equal(round(adc_mams$thetahat, 4), 0.1713)
-  testthat::expect_equal(round(adc_mams$lower, 4), -0.0008)
-  testthat::expect_equal(round(adc_mams$upper, 4), 0.3530)
+  testthat::expect_s3_class(adc_multiarm, "data.frame")
+  testthat::expect_equal(adc_multiarm$level, 1L)
+  testthat::expect_equal(adc_multiarm$index, 2L)
+  testthat::expect_equal(round(adc_multiarm$pvalue, 4), 0.0255)
+  testthat::expect_equal(round(adc_multiarm$thetahat, 4), 0.1713)
+  testthat::expect_equal(round(adc_multiarm$lower, 4), -0.0008)
+  testthat::expect_equal(round(adc_multiarm$upper, 4), 0.3530)
 
   testthat::expect_s3_class(adc_seam, "data.frame")
   testthat::expect_equal(round(adc_seam$pvalue, 4), 0.0085)
@@ -590,7 +590,7 @@ testthat::test_that("getADCI family: reject malformed new information rates", {
   )
 
   testthat::expect_error(
-    getADCI_mams(M = 2, r = 1, corr_known = FALSE, L = 1, zL = c(1.5, 1.6),
+    getADCI_multiarm(M = 2, r = 1, corr_known = FALSE, L = 1, zL = c(1.5, 1.6),
                  IMax = 10, kMax = 2, informationRates = c(0.5, 1), alpha = 0.025,
                  MNew = 1, selected = 3, rNew = 1, Lc = 2, zLc = 1.7, INew = 3),
     regexp = "Invalid value in selected|selected"

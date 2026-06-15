@@ -20,8 +20,8 @@ testthat::test_that("getDesign: documented example returns stable design object"
 })
 
 
-testthat::test_that("getDesign_mams: documented example returns stable mams object", {
-  design1 <- getDesign_mams(
+testthat::test_that("getDesign_multiarm: documented example returns stable multiarm object", {
+  design1 <- getDesign_multiarm(
     beta = 0.1,
     theta = c(0.3, 0.5),
     M = 2,
@@ -32,7 +32,7 @@ testthat::test_that("getDesign_mams: documented example returns stable mams obje
     typeAlphaSpending = "OF"
   )
 
-  testthat::expect_s3_class(design1, "mams")
+  testthat::expect_s3_class(design1, "multiarm")
   testthat::expect_named(design1,
                          c("byStageResults", "byLevelBounds", "overallResults", "settings"))
 
@@ -73,7 +73,7 @@ testthat::test_that("getDesign wrappers: invalid alpha is rejected", {
   )
 
   testthat::expect_error(
-    getDesign_mams(beta = 0.1, theta = c(0.3, 0.5), M = 2, kMax = 3,
+    getDesign_multiarm(beta = 0.1, theta = c(0.3, 0.5), M = 2, kMax = 3,
                    informationRates = seq(1, 3) / 3, alpha = -0.1),
     regexp = "alpha|significance"
   )

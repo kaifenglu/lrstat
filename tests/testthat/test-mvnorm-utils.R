@@ -60,7 +60,7 @@ testthat::test_that("singular or near-singular covariance handling is validated"
 
   testthat::expect_true(is.finite(p_sing))
   testthat::expect_true(p_sing >= 0 && p_sing <= 1)
-  testthat::expect_equal(as.numeric(p_sing), 0.341344746068543, tolerance = 1e-6)
+  testthat::expect_equal(as.numeric(p_sing), 0.682689492137086, tolerance = 1e-6)
 
   sigma_near <- matrix(c(1, 0.9999, 0.9999, 1), nrow = 2)
   p_near <- pmvnormr(lower = c(-1, -1), upper = c(1, 1), sigma = sigma_near,

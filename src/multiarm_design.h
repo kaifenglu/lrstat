@@ -13,7 +13,7 @@
 struct FlatMatrix;
 struct ListCpp;
 
-ExitProbResult exitprob_mams_cpp(
+ExitProbResult exitprob_multiarm_cpp(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -23,7 +23,7 @@ ExitProbResult exitprob_mams_cpp(
     const FlatMatrix& a,
     const std::vector<double>& I);
 
-ExitProbResult exitprob_mams_cpp(
+ExitProbResult exitprob_multiarm_cpp(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -32,7 +32,7 @@ ExitProbResult exitprob_mams_cpp(
     const FlatMatrix& b,
     const std::vector<double>& I);
 
-std::vector<double> getBound_mams_cpp(
+std::vector<double> getBound_multiarm_cpp(
     const size_t M,
     const double r,
     const bool corr_known,
@@ -45,7 +45,7 @@ std::vector<double> getBound_mams_cpp(
     const std::vector<double>& spendingTime,
     const std::vector<unsigned char>& efficacyStopping);
 
-GetPowerResult getPower_mams(
+GetPowerResult getPower_multiarm(
     const size_t M,
     const double r,
     const std::vector<double>& theta,
@@ -60,7 +60,7 @@ GetPowerResult getPower_mams(
     const double IL,
     const std::vector<double>& zL);
 
-ListCpp getDesign_mams_cpp(
+ListCpp getDesign_multiarm_cpp(
     const double beta,
     const double IMax,
     const std::vector<double>& theta,
@@ -84,7 +84,7 @@ ListCpp getDesign_mams_cpp(
     const std::vector<double>& userBetaSpending,
     const std::vector<double>& spendingTime);
 
-ListCpp adaptDesign_mams_cpp(
+ListCpp adaptDesign_multiarm_cpp(
     double betaNew,
     double INew,
     const size_t M,

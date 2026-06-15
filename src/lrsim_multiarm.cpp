@@ -21,7 +21,7 @@ using std::size_t;
 
 
 // Parallel entry function
-ListCpp lrsim_mams_cpp(
+ListCpp lrsim_multiarm_cpp(
     const size_t M,
     const size_t kMax,
     const FlatMatrix& criticalValues,
@@ -324,7 +324,7 @@ ListCpp lrsim_mams_cpp(
         out.summary2Rows.clear();
         out.rawRows.clear();
         if (iter < maxRawIters) out.reserveForRaw(kMax * n);
-        out.reserveForSummary1(kMax * M1); // all arms
+        out.reserveForSummary1(kMax * M2); // all arms and overall
         out.reserveForSummary2(kMax * M); // all pairwise comparisons with control
 
         std::fill(denom_per_stratum.begin(), denom_per_stratum.end(), sumAlloc);
@@ -1020,10 +1020,11 @@ ListCpp lrsim_mams_cpp(
   overview.push_back(std::move(expTimeByArm), "expectedStudyDuration");
   overview.push_back(criticalValues, "criticalValues");
   overview.push_back(futilityBounds, "futilityBounds");
-  overview.push_back(hazardRatioH0s, "hazardRatioH0s");
+  overview.push_back(std::move(hrH0s), "hazardRatioH0s");
   overview.push_back(useEvents, "useEvents");
   overview.push_back(niters, "numberOfIterations");
   overview.push_back(n, "n");
+  overview.push_back(std::move(allocs), "allocations");
   overview.push_back(fixedFollowup, "fixedFollowup");
   overview.push_back(rho1, "rho1");
   overview.push_back(rho2, "rho2");
@@ -1086,7 +1087,7 @@ ListCpp lrsim_mams_cpp(
 
 
 // [[Rcpp::export]]
-Rcpp::List lrsim_mams_Rcpp(
+Rcpp::List lrsim_multiarm_Rcpp(
     const int M = 2,
     const int kMax = 1,
     const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues = R_NilValue,
@@ -1176,7 +1177,7 @@ Rcpp::List lrsim_mams_Rcpp(
   std::vector<int> plannedE(plannedEvents.begin(), plannedEvents.end());
   std::vector<double> plannedT(plannedTime.begin(), plannedTime.end());
 
-  auto out = lrsim_mams_cpp(
+  auto out = lrsim_multiarm_cpp(
     M, kMax, critValues, futBounds, hrH0s, allocs, accrualT, accrualInt,
     pwSurvT, stratumFrac, lambdasVec, gammasVec,
     n, followupTime, fixedFollowup, rho1, rho2, plannedE, plannedT,
@@ -1185,7 +1186,7 @@ Rcpp::List lrsim_mams_Rcpp(
   thread_utils::drain_thread_warnings_to_R();
 
   Rcpp::List result = Rcpp::wrap(out);
-  result.attr("class") = "lrsim_mams";
+  result.attr("class") = "lrsim_multiarm";
 
   return result;
 }

@@ -6,45 +6,37 @@
 #'
 #' @param M Number of active treatment arms.
 #' @param kMax Number of sequential looks.
-#' @param criticalValues The matrix of by-level upper boundaries on the
-#'   max z-test statistic scale for efficacy stopping.
-#'   The first column is for level \eqn{M}, the second column is for
-#'   level \eqn{M - 1}, and so on, with the last column for level 1.
-#'   Decision rule:
-#'   - At Look 1, compute the Wald statistic for each active arm versus the
-#'     common control. If the maximum of these statistics exceeds the Look 1
-#'     critical value, stop for efficacy and check whether
-#'     there is any other active arm which can be rejected using
-#'     a relaxed boundary under the closed testing principle.
-#'   - If the Look 1 stopping rule is not met, continue to the next look;
-#'     if the maximum of Wald statistics at this look exceeds the
-#'     corresponding level \eqn{M} critical value, stop for efficacy;
-#'     otherwise continue.
-#'   - If no critical value is exceeded by Look \code{kMax}, the procedure
-#'     ends without rejection.
-#' @param futilityBounds Numeric vector of length \code{kMax - 1} giving the
-#'   futility boundaries on the max-Z scale for the first \code{kMax - 1}
-#'   analyses. At an interim look, the study stops for futility if all active
-#'   treatment arms cross the futility boundary. At the final look, the study
-#'   is counted as stopping for futility if none of the active treatment arms
-#'   can be rejected. If omitted, no interim futility stopping is applied.
-#' @param hazardRatioH0s Numeric vector of length \eqn{M}. Hazard ratios
+#' @param criticalValues Numeric matrix of dimension
+#'   \eqn{kMax \times M} giving the by-look critical values for the closed
+#'   testing procedure. The first column is used for the level-M test and the
+#'   last column for the level-1 test.
+#' @param futilityBounds Numeric vector of length \eqn{kMax - 1} giving the
+#'   futility boundaries on the Wald-statistic scale for the first
+#'   \eqn{kMax - 1} looks. At an interim look, the study stops for futility if
+#'   all active treatment arms fall below the futility boundary. If omitted,
+#'   no interim futility stopping is applied.
+#' @param hazardRatioH0s Scalar or numeric vector of length \eqn{M}. Hazard ratios
 #'   under \eqn{H_0} for each active arm versus the common control. Defaults
 #'   to 1 for superiority tests.
-#' @param allocations Integer or integer vector of length \eqn{M + 1}.
-#'   Number of subjects per arm within a randomization block. A single value
-#'   implies equal allocation; defaults to 1.
+#' @param allocations Integer or integer vector of length \eqn{M + 1}. Number
+#'   of subjects per arm within a randomization block. A single value implies
+#'   equal allocation; defaults to 1. The first \eqn{M} elements refer to the
+#'   active arms and the last element refers to the common control.
 #' @inheritParams param_accrualTime
 #' @inheritParams param_accrualIntensity
 #' @inheritParams param_piecewiseSurvivalTime
 #' @inheritParams param_stratumFraction
-#' @param lambdas List of length \eqn{M} (one element per arm). Each element
+#' @param lambdas List of length \eqn{M + 1} (one element per arm). Each element
 #'   is a scalar or a numeric vector of event hazard rates for the
 #'   corresponding arm, given by analysis interval and stratum as required
 #'   by the simulation.
-#' @param gammas List of length \eqn{M} (one element per arm). Each element
+#'   The first \eqn{M} elements refer to the active arms
+#'   and the last element refers to the common control.
+#' @param gammas List of length \eqn{M + 1} (one element per arm). Each element
 #'   is a scalar or a numeric vector of dropout hazard rates for the
 #'   corresponding arm, by analysis interval and stratum.
+#'   The first \eqn{M} elements refer to the active arms
+#'   and the last element refers to the common control.
 #' @param n Planned total sample size across all active arms and control.
 #' @inheritParams param_followupTime
 #' @inheritParams param_fixedFollowup
@@ -97,6 +89,7 @@
 #'     - \code{useEvents}: Logical indicating whether analyses were event-driven.
 #'     - \code{numberOfIterations}: Number of simulation iterations performed.
 #'     - \code{n}: Planned total sample size.
+#'     - \code{allocations}: The input allocation ratios.
 #'     - \code{fixedFollowup}: Logical indicating whether fixed follow-up was used.
 #'     - \code{rho1}, \code{rho2}: Fleming–Harrington weighting parameters used.
 #'     - \code{M}: Number of active arms in Phase 2.
@@ -132,7 +125,7 @@
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
 #' @examples
-#' (sim1 <- lrsim_mams(
+#' (sim1 <- lrsim_multiarm(
 #'   M = 2,
 #'   kMax = 3,
 #'   criticalValues = matrix(c(3.880, 2.747, 2.275,
@@ -150,7 +143,7 @@
 #'   nthreads = 0))
 #'
 #' @export
-lrsim_mams <- function(
+lrsim_multiarm <- function(
     M = 2,
     kMax = 1,
     criticalValues = NULL,
@@ -181,7 +174,7 @@ lrsim_mams <- function(
     RcppParallel::setThreadOptions(min(nthreads, n_physical_cores))
   }
 
-  lrsim_mams_Rcpp(
+  lrsim_multiarm_Rcpp(
     M, kMax, criticalValues, futilityBounds, hazardRatioH0s,
     allocations, accrualTime, accrualIntensity,
     piecewiseSurvivalTime, stratumFraction, lambdas, gammas,
