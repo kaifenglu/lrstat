@@ -12,7 +12,7 @@ interim looks.
 ## Usage
 
 ``` r
-adaptDesign_mams(
+adaptDesign_multiarm(
   betaNew = NA_real_,
   INew = NA_real_,
   M = NA_integer_,
@@ -265,7 +265,7 @@ adaptDesign_mams(
 
 ## Value
 
-An `adaptDesign_mams` object with three list components:
+An `adaptDesign_multiarm` object with three list components:
 
 - `primaryTrial`: A list of selected information for the primary trial,
   including `M`, `r`, `corr_known`, `L`, `zL`, `theta`,
@@ -305,7 +305,7 @@ Ping Gao, Yingqiu Li. Adaptive multiple comparison sequential design
 
 ## See also
 
-[`getDesign_mams`](https://kaifenglu.github.io/lrstat/reference/getDesign_mams.md)
+[`getDesign_multiarm`](https://kaifenglu.github.io/lrstat/reference/getDesign_multiarm.md)
 
 ## Author
 
@@ -322,7 +322,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 # versus the common control. Under these assumptions, the trial has about
 # 80% power to detect the treatment effect in at least one active arm.
 
-(des1 <- getDesign_mams(
+(des1 <- getDesign_multiarm(
   IMax = 324 / 4, theta = c(-log(0.75), -log(0.75)),
   M = 2, r = 1, kMax = 2, informationRates = c(1/2, 1),
   alpha = 0.025, typeAlphaSpending = "OF"))
@@ -364,7 +364,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 # indicates that the required total number of events for arm 2 versus control
 # at the final analysis should be increased from 324 to 535.
 
-(des2 <- adaptDesign_mams(
+(des2 <- adaptDesign_multiarm(
   betaNew = 0.2, M = 2, r = 1, corr_known = FALSE,
   L = 1, zL = c(-log(0.91), -log(0.78)) * sqrt(324 / 4 / 2),
   theta = c(-log(0.91), -log(0.78)),

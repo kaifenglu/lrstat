@@ -41,11 +41,18 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.3" id="lrstat-033">lrstat 0.3.3<a class="anchor" aria-label="anchor" href="#lrstat-033"></a></h2>
-<ul><li>used struct output to reduce overhead of returning multiple values for exitprobcpp, exitprob_seamless_cpp and exitprob_mams_cpp</li>
+<ul><li>used struct output to reduce overhead of returning multiple values for exitprobcpp, exitprob_seamless_cpp and exitprob_multiarm_cpp</li>
 <li>allowed the retesting of an active hypothesis if its weight has increased due to the rejection of another hypothesis in fseqbon</li>
 <li>added getDesign2 for futility boundary under the null hypothesis for group sequential designs</li>
-<li>fixed a typo in the settings output of phregr</li>
-<li>improved README.md to add more details on the functions for the use of the package</li>
+<li>renamed mams to multiarm for more informative description</li>
+<li>added rdsim_seamless for simulation of phase 2/3 seamless design for risk difference</li>
+<li>updated lrsim_seamless and rdsim_seamless to use rank-based phase-2 selection naming and outputs, including rankp0 in the wrapper inputs, overview output, and print methods</li>
+<li>updated seamless_design.cpp related functions to use rank-based treatment selection with rankp0 throughout seamless design, conditional power, confidence interval, and print outputs</li>
+<li>added rdsim_multiarm for simulation of multi-arm multi-stage design for risk difference</li>
+<li>added lrsim_mcpmod and print.lrsim_mcpmod for simulation and summary output of MCPMod design using the log-rank test</li>
+<li>updated mvnormr to support positive semidefinite covariance matrix via minimal diagonal stabilization during factorization</li>
+<li>used seed = 314159 as the default for pmvnormr and qmvnormr to ensure the same random numbers are generated and results are reproducible across different runs</li>
+<li>add the selection to Stage 2 probability in lrsim_seamless</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.2" id="lrstat-032">lrstat 0.3.2<a class="anchor" aria-label="anchor" href="#lrstat-032"></a></h2><p class="text-muted">CRAN release: 2026-05-13</p>
@@ -57,31 +64,31 @@
 <li>added integratedTrial to adaptDesign</li>
 <li>updated the backward image confidence interval method to account for the case when astar &gt; conditional_power</li>
 <li>updated point estimate for repeated confidence interval</li>
-<li>added functions for multi-arm multi-stage (MAMS) design and anlysis, including exitprob_mams, getBound_mams, getDesign_mams, adaptDesign_mams, getCI_mams, getADCI_mams</li>
-<li>ensured that if typeAlphaSpending is “OF”, “P”, “WT”, or “none”, then informationRates, efficacyStopping, and spendingTime must be of full length kMax, and informationRates and spendingTime must end with 1 for getBound, getBound_seamless, and getBound_mams</li>
+<li>added functions for multi-arm multi-stage (MAMS) design and anlysis, including exitprob_multiarm, getBound_multiarm, getDesign_multiarm, adaptDesign_multiarm, getCI_multiarm, getADCI_multiarm</li>
+<li>ensured that if typeAlphaSpending is “OF”, “P”, “WT”, or “none”, then informationRates, efficacyStopping, and spendingTime must be of full length kMax, and informationRates and spendingTime must end with 1 for getBound, getBound_seamless, and getBound_multiarm</li>
 <li>ensured that if typeAlphaSpending is “OF”, “P”, “WT”, or “none”, then informationRates, efficacyStopping, and spendingTime must be of full length kMax, and informationRates and spendingTime must end with 1 for getCI, getRCI</li>
 <li>ensured that if typeAlphaSpendingNew is “OF”, “P”, “WT”, or “none”, then informationRatesNew, efficacyStoppingNew, and spendingTimeNew must be of full length kNew, and informationRatesNew and spendingTimeNew must end with 1 for getADCI, getADRCI</li>
 <li>moved up the position of parameter MullerSchafer in getADCI, getADRCI</li>
 <li>added getCP_seamless for conditional power calculation for two-stage seamless sequential design for treatment/dose selection</li>
-<li>added getCP_mams for conditional power calculation for multi-arm multi-stage design</li>
+<li>added getCP_multiarm for conditional power calculation for multi-arm multi-stage design</li>
 <li>added adaptDesign_seamless for power and sample size calculation of adaptive two-stage seamless sequential design for treatment/dose selection</li>
 <li>added getCI_seamless for confidence interval calculation for two-stage seamless sequential design for treatment/dose selection</li>
 <li>added getADCI_seamless for confidence interval calculation using the backward image method for adaptive two-stage seamless sequential design for treatment/dose selection</li>
 <li>moved the f_pvalue function from confidence_interval.cpp to generic_design.cpp</li>
-<li>updated infoRatesNew when informationRatesNew is not missing in adaptDesign_seamless_cpp and adaptDesign_mams_cpp</li>
+<li>updated infoRatesNew when informationRatesNew is not missing in adaptDesign_seamless_cpp and adaptDesign_multiarm_cpp</li>
 <li>added default value of 1 for parameter r of adaptDesign_seamless</li>
 <li>updated pmvnormmccpp to use s and T instead of Ivec</li>
-<li>added byLevelBounds in the output of getDesign_mams</li>
-<li>updated the condition for cpu0 calculation in adaptDesign_mams_cpp</li>
-<li>updated the description for adaptDesign_mams output</li>
-<li>updated the default value of r and rNew to 1 in adaptDesign_mams and getADCI_mams</li>
+<li>added byLevelBounds in the output of getDesign_multiarm</li>
+<li>updated the condition for cpu0 calculation in adaptDesign_multiarm_cpp</li>
+<li>updated the description for adaptDesign_multiarm output</li>
+<li>updated the default value of r and rNew to 1 in adaptDesign_multiarm and getADCI_multiarm</li>
 <li>updated stage‑1 covariance used for bound calculation in getBound_seamless to account for corr_known when using alpha‑spending functions</li>
 <li>used memoization to avoid recalculating p0 and p1 in the lambda h for preject_by_arm (exitprob_seamless)</li>
 <li>added stopStage to output data sets and added bestArm and reject to sumdata2 output data set for lrsim_seamless</li>
 <li>used NULL as the default value for lambdas and gammas for lrsim_seamless</li>
-<li>added lrsim_mams for simulation of multi-arm multi-stage design</li>
-<li>added futilityBounds, futilityCP, futilityTheta, futilityBoundsInt, futilityCPInt, futilityThetaInt to adaptDesign, adaptDesign_seamless, and adaptDesign_mams</li>
-<li>removed typeBetaSpending and parameterBetaSpending from adaptDesign, adaptDesign_seamless, and adaptDesign_mams</li>
+<li>added lrsim_multiarm for simulation of multi-arm multi-stage design</li>
+<li>added futilityBounds, futilityCP, futilityTheta, futilityBoundsInt, futilityCPInt, futilityThetaInt to adaptDesign, adaptDesign_seamless, and adaptDesign_multiarm</li>
+<li>removed typeBetaSpending and parameterBetaSpending from adaptDesign, adaptDesign_seamless, and adaptDesign_multiarm</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.1" id="lrstat-031">lrstat 0.3.1<a class="anchor" aria-label="anchor" href="#lrstat-031"></a></h2><p class="text-muted">CRAN release: 2026-04-08</p>
@@ -506,7 +513,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

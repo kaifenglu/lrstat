@@ -1,6 +1,6 @@
-# Print Simulation Results for Phase 2/3 Seamless Design
+# Print Simulation Results for Phase 2/3 Seamless Design for Logrank Test
 
-Prints the summary statistics from simulation.
+Prints the summary statistics from simulation for logrank test.
 
 ## Usage
 

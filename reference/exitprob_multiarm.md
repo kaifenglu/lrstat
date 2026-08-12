@@ -6,7 +6,7 @@ design.
 ## Usage
 
 ``` r
-exitprob_mams(
+exitprob_multiarm(
   M = NA_integer_,
   r = 1,
   theta = NA_real_,
@@ -89,12 +89,12 @@ I <- 95 / (2 * 1.0^2) * seq(1, 3)/3
 b <- c(3.886562, 2.748214, 2.243907)
 
 # Type I error under the global null hypothesis
-p0 <- exitprob_mams(M = 2, theta = c(0, 0), kMax = 3, b = b, I = I)
+p0 <- exitprob_multiarm(M = 2, theta = c(0, 0), kMax = 3, b = b, I = I)
 cumsum(p0$exitProbUpper)
 #> [1] 0.0001007465 0.0058081554 0.0250000399
 
 # Power under alternative: Treatment effects of 0.3 and 0.5
-p1 <- exitprob_mams(M = 2, theta = c(0.3, 0.5), kMax = 3, b = b, I = I)
+p1 <- exitprob_multiarm(M = 2, theta = c(0.3, 0.5), kMax = 3, b = b, I = I)
 cumsum(p1$exitProbUpper)
 #> [1] 0.03130483 0.55104538 0.90221799
 ```

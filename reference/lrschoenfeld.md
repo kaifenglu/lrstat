@@ -35,10 +35,10 @@ lrschoenfeld(
   gamma1 = 0L,
   gamma2 = 0L,
   followupTime = NA_real_,
-  fixedFollowup = 0L,
+  fixedFollowup = FALSE,
   spendingTime = NA_real_,
-  rounding = 1L,
-  calibrate = 1L,
+  rounding = TRUE,
+  calibrate = TRUE,
   maxNumberOfIterations = 10000L,
   maxNumberOfRawDatasetsPerStage = 0L,
   seed = NA_integer_
@@ -289,8 +289,8 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   accrualIntensity = 20, hazardRatio = 0.3,
   lambda2 = 1.9/12,
   gamma1 = -log(1-0.1)/24, gamma2 = -log(1-0.1)/24,
-  fixedFollowup = 0, rounding = 1,
-  calibrate = 0, maxNumberOfIterations = 1000,
+  fixedFollowup = FALSE, rounding = TRUE,
+  calibrate = FALSE, maxNumberOfIterations = 1000,
   seed = 12345))
 #> $analyticalResults
 #>                                                                        
@@ -345,8 +345,8 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   accrualIntensity = 20, hazardRatio = 0.3,
   lambda2 = 1.9/12,
   gamma1 = -log(1-0.1)/24, gamma2 = -log(1-0.1)/24,
-  fixedFollowup = 0, rounding = 1,
-  calibrate = 1, maxNumberOfIterations = 1000,
+  fixedFollowup = FALSE, rounding = TRUE,
+  calibrate = TRUE, maxNumberOfIterations = 1000,
   seed = 12345))
 #> $analyticalResults
 #>                                                                        

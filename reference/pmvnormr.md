@@ -16,7 +16,7 @@ pmvnormr(
   R = 8,
   abseps = 1e-04,
   releps = 0,
-  seed = 0,
+  seed = 314159,
   parallel = TRUE,
   nthreads = 0
 )
@@ -116,6 +116,10 @@ The standard error is derived from \\R\\ independent replications. For
 high-dimensional problems, computations can be accelerated by setting
 `parallel = TRUE`, which distributes the replications across multiple
 CPU threads via `nthreads`.
+
+Positive semidefinite `sigma` matrices (including singular cases) are
+supported in the general covariance branch via minimal diagonal
+stabilization during factorization.
 
 ## Author
 

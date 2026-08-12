@@ -11,6 +11,7 @@ calendar times.
 lrsim_seamless(
   M = 2,
   K = 1,
+  rankp0 = 1,
   criticalValues = NA,
   futilityBounds = NULL,
   hazardRatioH0s = 1,
@@ -45,19 +46,26 @@ lrsim_seamless(
 
   Number of sequential looks in Phase 3.
 
+- rankp0:
+
+  Integer rank in phase 2 used to select the active arm. `rankp0 = 1`
+  selects the most efficacious arm by log-rank statistic, `rankp0 = 2`
+  selects the second most efficacious arm, and so on.
+
 - criticalValues:
 
   Numeric vector of length \\K + 1\\ giving the critical value for the
   Wald statistic at each look (Look 1 through Look \\K + 1\\). Decision
   rule:
 
-  - At Look 1, compute the Wald statistic for each active arm versus the
-    common control. If the maximum of these statistics exceeds the Look
+  - At Look 1, compute the Wald statistic (which equals the negative of
+    the logrank statistic) for each active arm versus the common
+    control. If the `rankp0`-th largest test statistic exceeds the Look
     1 critical value, stop for efficacy.
 
   - If the Look 1 stopping rule is not met, select the active arm with
-    the largest Wald statistic as the "best" arm and continue with that
-    arm only versus control at subsequent looks.
+    the `rankp0`-th largest Wald statistic and continue with that arm
+    only versus control at subsequent looks.
 
   - For each look \\j = 2,\ldots,K+1\\, compare the selected arm to
     control; if its Wald statistic exceeds the Look \\j\\ critical
@@ -72,8 +80,8 @@ lrsim_seamless(
   Phase 2 and the first \\K-1\\ looks in Phase 3. The study stops for
   futility:
 
-  - in Phase 2 if all active treatment arms cross the phase-2 futility
-    boundary;
+  - in Phase 2 if the selected treatment arm crosses the phase-2
+    futility boundary;
 
   - in Phase 3 if the selected arm crosses the futility boundary at an
     interim look; If omitted, no interim futility stopping is applied.
@@ -88,7 +96,8 @@ lrsim_seamless(
 
   Integer or integer vector of length \\M + 1\\. Number of subjects per
   arm within a randomization block. A single value implies equal
-  allocation; defaults to 1.
+  allocation; defaults to 1. The first \\M\\ elements refer to the
+  active arms and the last element refers to the common control.
 
 - accrualTime:
 
@@ -115,15 +124,19 @@ lrsim_seamless(
 
 - lambdas:
 
-  List of length \\M\\ (one element per arm). Each element is a scalar
-  or a numeric vector of event hazard rates for the corresponding arm,
-  given by analysis interval and stratum as required by the simulation.
+  List of length \\M + 1\\ (one element per arm). Each element is a
+  scalar or a numeric vector of event hazard rates for the corresponding
+  arm, given by analysis interval and stratum as required by the
+  simulation. The first \\M\\ elements refer to the active arms and the
+  last element refers to the common control.
 
 - gammas:
 
-  List of length \\M\\ (one element per arm). Each element is a scalar
-  or a numeric vector of dropout hazard rates for the corresponding arm,
-  by analysis interval and stratum.
+  List of length \\M + 1\\ (one element per arm). Each element is a
+  scalar or a numeric vector of dropout hazard rates for the
+  corresponding arm, by analysis interval and stratum. The first \\M\\
+  elements refer to the active arms and the last element refers to the
+  common control.
 
 - n:
 
@@ -185,8 +198,14 @@ An S3 object of class `"lrsim_seamless"` with these components:
 
 - `overview`: A list summarizing trial-level results and settings:
 
-  - `selectAsBest`: Probability of selecting each active arm as the best
-    arm at the end of phase 2.
+  - `selectionProb`: Probability of selecting each active arm at the
+    prespecified rank at the end of phase 2.
+
+  - `selectToStage2`: Probability of selecting each active arm to enter
+    stage 2.
+
+  - `selectAnyToStage2`: Probability of selecting any active arm to
+    enter stage 2.
 
   - `rejectPerStage`: Probability of rejecting the null for each active
     arm at each stage.
@@ -238,6 +257,8 @@ An S3 object of class `"lrsim_seamless"` with these components:
 
   - `n`: Planned total sample size.
 
+  - `allocations`: The input allocation ratios.
+
   - `fixedFollowup`: Logical indicating whether fixed follow-up was
     used.
 
@@ -246,6 +267,8 @@ An S3 object of class `"lrsim_seamless"` with these components:
   - `M`: Number of active arms in Phase 2.
 
   - `K`: Number of sequential looks in Phase 3.
+
+  - `rankp0`: Prespecified rank used for phase-2 arm selection.
 
 - `sumdata1`: Data frame summarizing each iteration, stage, and
   treatment group:
@@ -259,7 +282,7 @@ An S3 object of class `"lrsim_seamless"` with these components:
 - `summdata2`: Data frame summarizing log-rank statistics by iteration,
   stage, and active arm:
 
-  - `iterationNumber`, `bestArm`, `stopStage`, `stageNumber`,
+  - `iterationNumber`, `selectedArm`, `stopStage`, `stageNumber`,
     `analysisTime`, `activeArm`, `totalAccruals`, `totalEvents`,
     `totalDropouts`, `uscore`, `vscore`, `logRankStatistic`, `reject`,
     `futility`.
@@ -303,6 +326,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Empirical power: 0.8969                                      
 #> Number of active arms in phase 2: 2                          
 #> Number of looks in phase 3: 2                                
+#> Selected rank in phase 2: 1                                  
 #> Expected # events: 117.2                                     
 #> Expected # dropouts: 0                                       
 #> Expected # subjects: 417                                     
@@ -314,8 +338,14 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Efficacy bounds (z-scale) 3.882   2.733   2.222  
 #> Futility bounds (z-scale) 0.259   1.201   2.222  
 #> 
-#>                              Arm 1  Arm 2
-#> Selected as best in phase 2 0.8277 0.1723
+#>                                           Arm 1  Arm 2
+#> Selected at prespecified rank in phase 2 0.8277 0.1723
+#> 
+#>                            Arm 1  Arm 2
+#> Selected to enter stage 2 0.7816 0.1658
+#> 
+#>                                          Probability
+#> Any active arm selected to enter stage 2      0.9474
 #> 
 #>         Reject Active 1 Reject Active 2 Overall Rejection Futility Continue
 #> Stage 1          0.0391          0.0025            0.0406   0.0120   0.9474

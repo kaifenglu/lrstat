@@ -6,7 +6,7 @@ interval after the end of an adaptive multi-arm multi-stage trial.
 ## Usage
 
 ``` r
-getADCI_mams(
+getADCI_multiarm(
   M = NA_integer_,
   r = 1,
   corr_known = TRUE,
@@ -212,7 +212,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ## Examples
 
 ``` r
-getADCI_mams(
+getADCI_multiarm(
   M = 2, r = 1, corr_known = FALSE, L = 1, zL = c(2.075, 2.264),
   IMax = 300 / 4, kMax = 2, informationRates = c(0.5, 1),
   alpha = 0.025, typeAlphaSpending = "sfOF",

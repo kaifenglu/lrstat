@@ -80,10 +80,10 @@ under the proportional hazards assumption.</p>
 <span>  gamma1 <span class="op">=</span> <span class="fl">0L</span>,</span>
 <span>  gamma2 <span class="op">=</span> <span class="fl">0L</span>,</span>
 <span>  followupTime <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
-<span>  fixedFollowup <span class="op">=</span> <span class="fl">0L</span>,</span>
+<span>  fixedFollowup <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  spendingTime <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
-<span>  rounding <span class="op">=</span> <span class="fl">1L</span>,</span>
-<span>  calibrate <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>  rounding <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  calibrate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  maxNumberOfIterations <span class="op">=</span> <span class="fl">10000L</span>,</span>
 <span>  maxNumberOfRawDatasetsPerStage <span class="op">=</span> <span class="fl">0L</span>,</span>
 <span>  seed <span class="op">=</span> <span class="cn">NA_integer_</span></span>
@@ -349,8 +349,8 @@ empirical power using the calibrated number of events.</p>
 <span class="r-in"><span>  accrualIntensity <span class="op">=</span> <span class="fl">20</span>, hazardRatio <span class="op">=</span> <span class="fl">0.3</span>,</span></span>
 <span class="r-in"><span>  lambda2 <span class="op">=</span> <span class="fl">1.9</span><span class="op">/</span><span class="fl">12</span>,</span></span>
 <span class="r-in"><span>  gamma1 <span class="op">=</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="fl">0.1</span><span class="op">)</span><span class="op">/</span><span class="fl">24</span>, gamma2 <span class="op">=</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="fl">0.1</span><span class="op">)</span><span class="op">/</span><span class="fl">24</span>,</span></span>
-<span class="r-in"><span>  fixedFollowup <span class="op">=</span> <span class="fl">0</span>, rounding <span class="op">=</span> <span class="fl">1</span>,</span></span>
-<span class="r-in"><span>  calibrate <span class="op">=</span> <span class="fl">0</span>, maxNumberOfIterations <span class="op">=</span> <span class="fl">1000</span>,</span></span>
+<span class="r-in"><span>  fixedFollowup <span class="op">=</span> <span class="cn">FALSE</span>, rounding <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>  calibrate <span class="op">=</span> <span class="cn">FALSE</span>, maxNumberOfIterations <span class="op">=</span> <span class="fl">1000</span>,</span></span>
 <span class="r-in"><span>  seed <span class="op">=</span> <span class="fl">12345</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $analyticalResults</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                        </span>
@@ -405,8 +405,8 @@ empirical power using the calibrated number of events.</p>
 <span class="r-in"><span>  accrualIntensity <span class="op">=</span> <span class="fl">20</span>, hazardRatio <span class="op">=</span> <span class="fl">0.3</span>,</span></span>
 <span class="r-in"><span>  lambda2 <span class="op">=</span> <span class="fl">1.9</span><span class="op">/</span><span class="fl">12</span>,</span></span>
 <span class="r-in"><span>  gamma1 <span class="op">=</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="fl">0.1</span><span class="op">)</span><span class="op">/</span><span class="fl">24</span>, gamma2 <span class="op">=</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="fl">0.1</span><span class="op">)</span><span class="op">/</span><span class="fl">24</span>,</span></span>
-<span class="r-in"><span>  fixedFollowup <span class="op">=</span> <span class="fl">0</span>, rounding <span class="op">=</span> <span class="fl">1</span>,</span></span>
-<span class="r-in"><span>  calibrate <span class="op">=</span> <span class="fl">1</span>, maxNumberOfIterations <span class="op">=</span> <span class="fl">1000</span>,</span></span>
+<span class="r-in"><span>  fixedFollowup <span class="op">=</span> <span class="cn">FALSE</span>, rounding <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>  calibrate <span class="op">=</span> <span class="cn">TRUE</span>, maxNumberOfIterations <span class="op">=</span> <span class="fl">1000</span>,</span></span>
 <span class="r-in"><span>  seed <span class="op">=</span> <span class="fl">12345</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $analyticalResults</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                        </span>
@@ -466,7 +466,7 @@ empirical power using the calibrated number of events.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

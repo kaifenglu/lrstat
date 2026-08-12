@@ -6,7 +6,7 @@ design.
 ## Usage
 
 ``` r
-getBound_mams(
+getBound_multiarm(
   M = NA_integer_,
   r = 1,
   corr_known = TRUE,
@@ -111,7 +111,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ``` r
 # Determine O'Brien-Fleming boundaries for a TSSSD with
 # 2 active arms and 3 looks.
-getBound_mams(M = 2, k = 3, informationRates = seq(1, 3)/3,
+getBound_multiarm(M = 2, k = 3, informationRates = seq(1, 3)/3,
               alpha = 0.025, typeAlphaSpending = "OF")
 #> [1] 3.886562 2.748214 2.243907
 ```

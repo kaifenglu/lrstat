@@ -2,12 +2,12 @@
 
 Computes the upper and lower exit probabilities for a phase 2/3 seamless
 design. In Phase 2, multiple active arms are compared against a common
-control arm. If the phase-2 max-Z statistic crosses the efficacy
-boundary, the trial stops early for efficacy; if it falls below the
-futility boundary, the trial stops early for futility. Otherwise, the
-best-performing arm is selected to proceed to Phase 3, where it is
-tested against the common control over multiple looks with upper and
-optional lower stopping boundaries.
+control arm. If the test statistic for the arm ranked `rankp0` at the
+end of Phase 2 crosses the efficacy boundary, the trial stops early for
+efficacy; if it falls below the futility boundary, the trial stops early
+for futility. Otherwise, the arm is selected to proceed to Phase 3,
+where it is tested against the control over multiple looks with upper
+and optional lower stopping boundaries.
 
 ## Usage
 
@@ -20,7 +20,8 @@ exitprob_seamless(
   K = NA_integer_,
   b = NULL,
   a = NULL,
-  I = NULL
+  I = NULL,
+  rankp0 = 1L
 )
 ```
 
@@ -44,7 +45,9 @@ exitprob_seamless(
 
   Logical. If `TRUE`, the correlation between Wald statistics in Phase 2
   is derived from the randomization ratio \\r\\ as \\r / (r + 1)\\. If
-  `FALSE`, a conservative correlation of 0 is used.
+  `FALSE`, a conservative correlation of 0 is used, which is only valid
+  when `rankp0 = 1` (i.e., the arm with the largest Phase-2 Z-statistic
+  is selected for Phase 3).
 
 - K:
 
@@ -52,23 +55,30 @@ exitprob_seamless(
 
 - b:
 
-  A vector of efficacy boundaries (length \\K+1\\). The first element is
-  the efficacy boundary for the phase-2 max-Z statistic; the remaining
+  A vector of efficacy boundaries (length \\K + 1\\). The first element
+  is the efficacy boundary for the Phase-2 test statistic; the remaining
   \\K\\ elements are efficacy boundaries for the selected arm in Phase
   3.
 
 - a:
 
-  An optional vector of futility boundaries (length \\K+1\\). The first
-  element is the futility boundary for the phase-2 max-Z statistic; the
-  remaining \\K\\ elements are futility boundaries for the selected arm
-  in Phase 3. If omitted, no futility stopping is applied.
+  An optional vector of futility boundaries (length \\K + 1\\). The
+  first element is the futility boundary for the Phase-2 test statistic;
+  the remaining \\K\\ elements are futility boundaries for the selected
+  arm in Phase 3. If omitted, no futility stopping is applied.
 
 - I:
 
-  A vector of information levels (length \\K+1\\) for any active arm
+  A vector of information levels (length \\K + 1\\) for any active arm
   versus the common control. The first element is for Phase 2; the
   remaining \\K\\ elements are for the looks in Phase 3.
+
+- rankp0:
+
+  An integer between 1 and `M` specifying which ranked Phase-2 arm is
+  carried forward when the trial continues to Phase 3. `rankp0 = 1`
+  selects the largest Phase-2 Z-statistic, `rankp0 = 2` selects the
+  second largest, and so on.
 
 ## Value
 
@@ -84,35 +94,36 @@ A list containing the following components:
   elements are the probabilities of stopping for futility at each look
   in Phase 3.
 
-- `exitProbByArmUpper`: A \\(K+1) \times M\\ matrix. The \\(k, m)\\-th
+- `exitProbByArmUpper`: A \\(K + 1) \times M\\ matrix. The \\(k, m)\\-th
   entry gives the probability of stopping for efficacy at look \\k\\
-  given that arm \\m\\ is selected as best.
+  given that arm \\m\\ is selected at rank `rankp0`.
 
-- `exitProbByArmLower`: A \\(K+1) \times M\\ matrix. The \\(k, m)\\-th
+- `exitProbByArmLower`: A \\(K + 1) \times M\\ matrix. The \\(k, m)\\-th
   entry gives the probability of stopping for futility at look \\k\\
-  given that arm \\m\\ is selected as best.
+  given that arm \\m\\ is selected at rank `rankp0`.
 
-- `selectAsBest`: A vector of length \\M\\ containing the probability
-  that each active arm is selected to move on to Phase 3.
+- `selectionProb`: A vector of length \\M\\ containing the probability
+  that each active arm is selected at rank `rankp0`.
 
 ## Details
 
 The function assumes a multivariate normal distribution for the Wald
-statistics. The "best" arm is defined as the active arm with the largest
-Z-statistic at the end of Phase 2 among designs that continue beyond the
-phase-2 analysis.
+statistics. Among designs that continue beyond the Phase-2 analysis, the
+carried-forward arm is the one with rank `rankp0` based on the p-value
+of the Z-statistic at the end of Phase 2.
 
 **Decision Rules:**
 
-- **Phase 2 efficacy stop**: reject if the phase-2 max-Z statistic
-  satisfies \\\max_m Z_m(I_0) \ge b_0\\.
+- **Phase 2 efficacy stop**: reject if the Phase-2 test statistic for
+  the arm selected at rank `rankp0` satisfies \\Z\_{\[rankp0\]}(I_0) \ge
+  b_0\\.
 
-- **Phase 2 futility stop**: stop for futility if the phase-2 max-Z
-  statistic satisfies \\\max_m Z_m(I_0) \le a_0\\.
+- **Phase 2 futility stop**: stop for futility if the Phase-2 test
+  statistic for the arm selected at rank `rankp0` satisfies
+  \\Z\_{\[rankp0\]}(I_0) \le a_0\\.
 
-- **Continue to Phase 3**: if \\a_0 \< \max_m Z_m(I_0) \< b_0\\, select
-  the arm with the largest phase-2 Z-statistic and continue with that
-  arm only.
+- **Continue to Phase 3**: if \\a_0 \< Z\_{\[rankp0\]}(I_0) \< b_0\\,
+  continue with the arm selected at rank `rankp0` only.
 
 - **Phase 3 efficacy stop**: at look \\k\\, reject if the selected arm's
   Z-statistic exceeds the efficacy boundary and no earlier stop has
@@ -127,7 +138,8 @@ phase-2 analysis.
 - All active arms share the same information level in Phase 2.
 
 - Exactly one active arm is selected at the end of Phase 2 based on the
-  largest observed Z-statistic when the trial continues to Phase 3.
+  `rankp0`-th largest observed Z-statistic when the trial continues to
+  Phase 3.
 
 ## References
 
@@ -159,13 +171,14 @@ cumsum(p0$exitProbUpper)
 
 # Add futility stopping
 a <- c(0, 0.5, b[3])
-p1 <- exitprob_seamless(M = 2, theta = c(0.3, 0.5), K = 2, b = b, a = a, I = I)
+p1 <- exitprob_seamless(
+  M = 2, theta = c(0.3, 0.5), K = 2, b = b, a = a, I = I)
 cbind(
   cumulativeEfficacy = cumsum(p1$exitProbUpper),
   cumulativeFutility = cumsum(p1$exitProbLower)
 )
 #>      cumulativeEfficacy cumulativeFutility
-#> [1,]         0.05477567        0.007803144
+#> [1,]         0.05477566        0.007803144
 #> [2,]         0.62292767        0.014040545
 #> [3,]         0.89800885        0.101991188
 ```

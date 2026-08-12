@@ -32,7 +32,7 @@ The package capabilities can be grouped as follows:
   boundaries, conditional power, confidence intervals, and exit
   probabilities (for example `getDesign`, `adaptDesign`, `getBound`,
   `getCP`, `getCI`, `getRCI`, `getADCI`, `getADRCI`, `exitprob`, and
-  their `_mams` and `_seamless` variants).
+  their `_multiarm` and `_seamless` variants).
 
 - **Fixed and sequential sample size/power across endpoint types:**
   binary, continuous, ordinal/multinomial, paired, crossover/carryover,

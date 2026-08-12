@@ -8,7 +8,7 @@ calendar times.
 ## Usage
 
 ``` r
-lrsim_mams(
+lrsim_multiarm(
   M = 2,
   kMax = 1,
   criticalValues = NULL,
@@ -47,45 +47,30 @@ lrsim_mams(
 
 - criticalValues:
 
-  The matrix of by-level upper boundaries on the max z-test statistic
-  scale for efficacy stopping. The first column is for level \\M\\, the
-  second column is for level \\M - 1\\, and so on, with the last column
-  for level 1. Decision rule:
-
-  - At Look 1, compute the Wald statistic for each active arm versus the
-    common control. If the maximum of these statistics exceeds the Look
-    1 critical value, stop for efficacy and check whether there is any
-    other active arm which can be rejected using a relaxed boundary
-    under the closed testing principle.
-
-  - If the Look 1 stopping rule is not met, continue to the next look;
-    if the maximum of Wald statistics at this look exceeds the
-    corresponding level \\M\\ critical value, stop for efficacy;
-    otherwise continue.
-
-  - If no critical value is exceeded by Look `kMax`, the procedure ends
-    without rejection.
+  Numeric matrix of dimension \\kMax \times M\\ giving the by-look
+  critical values for the closed testing procedure. The first column is
+  used for the level-M test and the last column for the level-1 test.
 
 - futilityBounds:
 
-  Numeric vector of length `kMax - 1` giving the futility boundaries on
-  the max-Z scale for the first `kMax - 1` analyses. At an interim look,
-  the study stops for futility if all active treatment arms cross the
-  futility boundary. At the final look, the study is counted as stopping
-  for futility if none of the active treatment arms can be rejected. If
-  omitted, no interim futility stopping is applied.
+  Numeric vector of length \\kMax - 1\\ giving the futility boundaries
+  on the Wald-statistic scale for the first \\kMax - 1\\ looks. At an
+  interim look, the study stops for futility if all active treatment
+  arms fall below the futility boundary. If omitted, no interim futility
+  stopping is applied.
 
 - hazardRatioH0s:
 
-  Numeric vector of length \\M\\. Hazard ratios under \\H_0\\ for each
-  active arm versus the common control. Defaults to 1 for superiority
-  tests.
+  Scalar or numeric vector of length \\M\\. Hazard ratios under \\H_0\\
+  for each active arm versus the common control. Defaults to 1 for
+  superiority tests.
 
 - allocations:
 
   Integer or integer vector of length \\M + 1\\. Number of subjects per
   arm within a randomization block. A single value implies equal
-  allocation; defaults to 1.
+  allocation; defaults to 1. The first \\M\\ elements refer to the
+  active arms and the last element refers to the common control.
 
 - accrualTime:
 
@@ -112,15 +97,19 @@ lrsim_mams(
 
 - lambdas:
 
-  List of length \\M\\ (one element per arm). Each element is a scalar
-  or a numeric vector of event hazard rates for the corresponding arm,
-  given by analysis interval and stratum as required by the simulation.
+  List of length \\M + 1\\ (one element per arm). Each element is a
+  scalar or a numeric vector of event hazard rates for the corresponding
+  arm, given by analysis interval and stratum as required by the
+  simulation. The first \\M\\ elements refer to the active arms and the
+  last element refers to the common control.
 
 - gammas:
 
-  List of length \\M\\ (one element per arm). Each element is a scalar
-  or a numeric vector of dropout hazard rates for the corresponding arm,
-  by analysis interval and stratum.
+  List of length \\M + 1\\ (one element per arm). Each element is a
+  scalar or a numeric vector of dropout hazard rates for the
+  corresponding arm, by analysis interval and stratum. The first \\M\\
+  elements refer to the active arms and the last element refers to the
+  common control.
 
 - n:
 
@@ -231,6 +220,8 @@ An S3 object of class `"lrsim_seamless"` with these components:
 
   - `n`: Planned total sample size.
 
+  - `allocations`: The input allocation ratios.
+
   - `fixedFollowup`: Logical indicating whether fixed follow-up was
     used.
 
@@ -275,7 +266,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ## Examples
 
 ``` r
-(sim1 <- lrsim_mams(
+(sim1 <- lrsim_multiarm(
   M = 2,
   kMax = 3,
   criticalValues = matrix(c(3.880, 2.747, 2.275,
@@ -296,6 +287,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Empirical power: 0.8963                        
 #> Number of active arms: 2                       
 #> Number of looks: 3                             
+#> Number of simulations: 10000                   
 #>                                                
 #> By level critical boundaries
 #>         Level 2 Level 1

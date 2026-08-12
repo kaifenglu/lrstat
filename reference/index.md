@@ -10,7 +10,7 @@
   : Number of Enrolled Subjects
 - [`adaptDesign()`](https://kaifenglu.github.io/lrstat/reference/adaptDesign.md)
   : Adaptive Design at an Interim Look
-- [`adaptDesign_mams()`](https://kaifenglu.github.io/lrstat/reference/adaptDesign_mams.md)
+- [`adaptDesign_multiarm()`](https://kaifenglu.github.io/lrstat/reference/adaptDesign_multiarm.md)
   : Adaptive Multi-Arm Multi-Stage Design
 - [`adaptDesign_seamless()`](https://kaifenglu.github.io/lrstat/reference/adaptDesign_seamless.md)
   : Adaptive Phase 2/3 Seamless Design
@@ -33,7 +33,7 @@
   : Error Spending
 - [`exitprob()`](https://kaifenglu.github.io/lrstat/reference/exitprob.md)
   : Stagewise Exit Probabilities
-- [`exitprob_mams()`](https://kaifenglu.github.io/lrstat/reference/exitprob_mams.md)
+- [`exitprob_multiarm()`](https://kaifenglu.github.io/lrstat/reference/exitprob_multiarm.md)
   : Exit Probabilities for Multi-Arm Multi-Stage Design
 - [`exitprob_seamless()`](https://kaifenglu.github.io/lrstat/reference/exitprob_seamless.md)
   : Exit Probabilities for Phase 2/3 Seamless Design
@@ -61,7 +61,7 @@
   : Weight Matrix for All Intersection Hypotheses
 - [`getADCI()`](https://kaifenglu.github.io/lrstat/reference/getADCI.md)
   : Confidence Interval After Adaptation
-- [`getADCI_mams()`](https://kaifenglu.github.io/lrstat/reference/getADCI_mams.md)
+- [`getADCI_multiarm()`](https://kaifenglu.github.io/lrstat/reference/getADCI_multiarm.md)
   : Confidence Interval After Adaptation for Multi-Arm Multi-Stage
   Design
 - [`getADCI_seamless()`](https://kaifenglu.github.io/lrstat/reference/getADCI_seamless.md)
@@ -72,13 +72,13 @@
   : Accrual Duration to Enroll Target Number of Subjects
 - [`getBound()`](https://kaifenglu.github.io/lrstat/reference/getBound.md)
   : Efficacy Boundaries for Group Sequential Design
-- [`getBound_mams()`](https://kaifenglu.github.io/lrstat/reference/getBound_mams.md)
+- [`getBound_multiarm()`](https://kaifenglu.github.io/lrstat/reference/getBound_multiarm.md)
   : Efficacy Boundaries for Multi-Arm Multi-Stage Design
 - [`getBound_seamless()`](https://kaifenglu.github.io/lrstat/reference/getBound_seamless.md)
   : Efficacy Boundaries for Phase 2/3 Seamless Design
 - [`getCI()`](https://kaifenglu.github.io/lrstat/reference/getCI.md) :
   Confidence Interval After Trial Termination
-- [`getCI_mams()`](https://kaifenglu.github.io/lrstat/reference/getCI_mams.md)
+- [`getCI_multiarm()`](https://kaifenglu.github.io/lrstat/reference/getCI_multiarm.md)
   : Confidence Interval After Trial Termination for Multi-Arm
   Multi-Stage Design
 - [`getCI_seamless()`](https://kaifenglu.github.io/lrstat/reference/getCI_seamless.md)
@@ -86,7 +86,7 @@
   Design
 - [`getCP()`](https://kaifenglu.github.io/lrstat/reference/getCP.md) :
   Conditional Power for Generic Group Sequential Design
-- [`getCP_mams()`](https://kaifenglu.github.io/lrstat/reference/getCP_mams.md)
+- [`getCP_multiarm()`](https://kaifenglu.github.io/lrstat/reference/getCP_multiarm.md)
   : Conditional Power for Multi-Arm Multi-Stage Design
 - [`getCP_seamless()`](https://kaifenglu.github.io/lrstat/reference/getCP_seamless.md)
   : Conditional Power for Phase 2/3 Seamless Design
@@ -210,7 +210,7 @@
   Response
 - [`getDesignWilcoxon()`](https://kaifenglu.github.io/lrstat/reference/getDesignWilcoxon.md)
   : Group Sequential Design for Two-Sample Wilcoxon Test
-- [`getDesign_mams()`](https://kaifenglu.github.io/lrstat/reference/getDesign_mams.md)
+- [`getDesign_multiarm()`](https://kaifenglu.github.io/lrstat/reference/getDesign_multiarm.md)
   : Power and Sample Size for Multi-Arm Multi-Stage Design
 - [`getDesign_seamless()`](https://kaifenglu.github.io/lrstat/reference/getDesign_seamless.md)
   : Power and Sample Size for Phase 2/3 Seamless Design
@@ -277,7 +277,9 @@
   Arms
 - [`lrsim3a()`](https://kaifenglu.github.io/lrstat/reference/lrsim3a.md)
   : Log-Rank Test Simulation for Three Arms
-- [`lrsim_mams()`](https://kaifenglu.github.io/lrstat/reference/lrsim_mams.md)
+- [`lrsim_mcpmod()`](https://kaifenglu.github.io/lrstat/reference/lrsim_mcpmod.md)
+  : Log-Rank Test Simulation for MCPMod Design
+- [`lrsim_multiarm()`](https://kaifenglu.github.io/lrstat/reference/lrsim_multiarm.md)
   : Log-Rank Test Simulation for Multi-Arm Multi-Stage Design
 - [`lrsim_seamless()`](https://kaifenglu.github.io/lrstat/reference/lrsim_seamless.md)
   : Log-Rank Test Simulation for Phase 2/3 Seamless Design
@@ -351,6 +353,10 @@
   : Quantile Function of Truncated Piecewise Exponential Distribution
 - [`rawdata`](https://kaifenglu.github.io/lrstat/reference/rawdata.md) :
   A simulated time-to-event data set with 10 replications
+- [`rdsim_multiarm()`](https://kaifenglu.github.io/lrstat/reference/rdsim_multiarm.md)
+  : Risk Difference Simulation for Multi-Arm Multi-Stage Design
+- [`rdsim_seamless()`](https://kaifenglu.github.io/lrstat/reference/rdsim_seamless.md)
+  : Risk Difference Simulation for Phase 2/3 Seamless Design
 - [`remlOddsRatio()`](https://kaifenglu.github.io/lrstat/reference/remlOddsRatio.md)
   : REML Estimates of Individual Proportions With Specified Odds Ratio
 - [`remlRateDiff()`](https://kaifenglu.github.io/lrstat/reference/remlRateDiff.md)

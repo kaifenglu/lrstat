@@ -8,7 +8,7 @@ the number and spacing of interim looks.
 ## Usage
 
 ``` r
-getCP_mams(
+getCP_multiarm(
   INew = NA_real_,
   M = NA_integer_,
   r = 1,
@@ -259,7 +259,7 @@ Ping Gao, Yingqiu Li. Adaptive multiple comparison sequential design
 
 ## See also
 
-[`adaptDesign_mams`](https://kaifenglu.github.io/lrstat/reference/adaptDesign_mams.md)
+[`adaptDesign_multiarm`](https://kaifenglu.github.io/lrstat/reference/adaptDesign_multiarm.md)
 
 ## Author
 
@@ -268,7 +268,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ## Examples
 
 ``` r
-getCP_mams(
+getCP_multiarm(
   INew = 373 / 4, M = 2, r = 1, corr_known = FALSE,
   L = 1, zL = c(-log(0.91), -log(0.78)) * sqrt(324 / 4 / 2),
   theta = c(-log(0.91), -log(0.78)),

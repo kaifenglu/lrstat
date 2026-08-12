@@ -6,7 +6,7 @@ design.
 ## Usage
 
 ``` r
-# S3 method for class 'mams'
+# S3 method for class 'multiarm'
 print(x, ...)
 ```
 

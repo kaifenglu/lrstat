@@ -77,7 +77,8 @@ efficacy and futility stopping can be incorporated.</p>
 <span>  typeBetaSpending <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  parameterBetaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
 <span>  userBetaSpending <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
-<span>  spendingTime <span class="op">=</span> <span class="cn">NA_real_</span></span>
+<span>  spendingTime <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  rankp0 <span class="op">=</span> <span class="fl">1L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -116,7 +117,10 @@ in Phase 2.</p></dd>
 <dd><p>Logical. If <code>TRUE</code>, the correlation between Wald
 statistics in Phase 2 is derived from the randomization ratio \(r\)
 as \(r / (r + 1)\). If <code>FALSE</code>, a conservative correlation of
-0 is used.</p></dd>
+0 is used, which is only valid when <code>rankp0 = 1</code> (i.e., the arm
+with the largest Phase-2 Z-statistic is selected for Phase 3).
+This option is only used for critical value calculations; the
+correlation is always derived from \(r\) for power calculations.</p></dd>
 
 
 <dt id="arg-k">K<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
@@ -139,8 +143,9 @@ at each stage. Defaults to <code>TRUE</code> if left unspecified.</p></dd>
 
 
 <dt id="arg-criticalvalues">criticalValues<a class="anchor" aria-label="anchor" href="#arg-criticalvalues"></a></dt>
-<dd><p>The upper boundaries on the max-Z statistic scale
-for Phase 2 and the Z statistics for the selected arm in Phase 3.
+<dd><p>The upper boundaries on the Z-statistic scale
+for the rank-selected arm in Phase 2 and the Z statistics for the
+selected arm in Phase 3.
 If missing, boundaries will be computed based on the specified alpha
 spending function.</p></dd>
 
@@ -176,9 +181,10 @@ spent up to each stage.</p></dd>
 
 <dt id="arg-futilitybounds">futilityBounds<a class="anchor" aria-label="anchor" href="#arg-futilitybounds"></a></dt>
 <dd><p>A numeric vector of length \(K\) specifying
-futility boundaries on the max-Z scale at the end of Phase 2 and
-on the Z scale for the \(K - 1\) analyses in Phase 3. The final analysis
-uses the efficacy boundary as the futility boundary.</p></dd>
+futility boundaries on the Z scale at the end of Phase 2 for the
+rank-selected arm and on the Z scale for the \(K - 1\) analyses
+in Phase 3. The final analysis uses the efficacy boundary as the
+futility boundary.</p></dd>
 
 
 <dt id="arg-futilitycp">futilityCP<a class="anchor" aria-label="anchor" href="#arg-futilitycp"></a></dt>
@@ -218,6 +224,13 @@ spent up to each stage.</p></dd>
 error spending time at each analysis. Values must be strictly increasing
 and end at 1. If omitted, defaults to <code>informationRates</code>.</p></dd>
 
+
+<dt id="arg-rankp-">rankp0<a class="anchor" aria-label="anchor" href="#arg-rankp-"></a></dt>
+<dd><p>An integer between 1 and <code>M</code> specifying which ranked
+Phase-2 arm is carried forward. <code>rankp0 = 1</code> selects the largest
+Phase-2 Z-statistic, <code>rankp0 = 2</code> selects the second largest, and
+so on.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -230,6 +243,7 @@ differ from <code>alpha</code> in the presence of futility stopping.</p></li>
 <li><p><code>r</code>: Randomization ratio per active arm versus control in
 Phase 2.</p></li>
 <li><p><code>corr_known</code>: Whether the phase-2 correlation was assumed known.</p></li>
+<li><p><code>rankp0</code>: The rank of the selected arm at the end of Phase 2.</p></li>
 <li><p><code>K</code>: Number of looks in Phase 3.</p></li>
 <li><p><code>information</code>: Maximum information for any active arm versus
 control.</p></li>
@@ -274,12 +288,12 @@ stopping under the global null.</p></li>
 stopping under the global null.</p></li>
 </ul></li>
 <li><p><code>byArmResults</code>: A data frame containing:</p><ul><li><p><code>theta</code>: Parameter values for the active arms.</p></li>
-<li><p><code>selectAsBest</code>: Probability an arm is selected as best at the
+<li><p><code>selectionProb</code>: Probability an arm is selected at the
 end of Phase 2.</p></li>
 <li><p><code>powerByArm</code>: Probability of rejecting the null for each arm by
 trial end.</p></li>
 <li><p><code>condPowerByArm</code>: Conditional power for each arm given it was
-selected as the best at the end of Phase 2.</p></li>
+selected at rank <code>rankp0</code> at the end of Phase 2.</p></li>
 </ul></li>
 <li><p><code>settings</code>: A list of input settings:</p><ul><li><p><code>typeAlphaSpending</code>: Type of alpha spending function.</p></li>
 <li><p><code>parameterAlphaSpending</code>: Parameter value for the chosen alpha
@@ -296,8 +310,8 @@ spending function.</p></li>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>If <code>corr_known</code> is <code>FALSE</code>, critical boundaries are
 computed assuming independence among the Phase-2 Wald statistics
-(a conservative assumption). Power calculations, however, use the
-correlation implied by the randomization ratio \(r\).</p>
+(a conservative assumption when <code>rankp0 = 1</code>). Power calculations,
+however, use the correlation implied by the randomization ratio \(r\).</p>
 <p>Futility boundaries may be supplied directly on the Z scale, derived from
 conditional power, derived from parameter values, or computed from a beta
 spending function.</p>
@@ -325,6 +339,7 @@ Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Phase 2/3 seamless group-sequential design                                  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9, overall alpha (1-sided): 0.025                          </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms in phase 2: 2                                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Selected phase-2 rank carried forward: 1                                    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1                           </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE                      </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks in phase 3: 2                                               </span>
@@ -344,11 +359,11 @@ Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Information for pairwise comp 18.22   36.44   54.67  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Information for overall study 27.33   45.55   63.78  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                           Arm 1  Arm 2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Treatment effect (theta)  0.300  0.500 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Being the best in phase 2 0.1966 0.8034</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Power                     0.1353 0.7647</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Conditional power         0.6883 0.9518</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                            Arm 1  Arm 2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Treatment effect (theta)   0.300  0.500 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Selected at phase-2 rank 1 0.1966 0.8034</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Power                      0.1353 0.7647</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Conditional power          0.6883 0.9518</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Example 2: obtain power given the maximum information and a futility rule</span></span></span>
 <span class="r-in"><span><span class="op">(</span><span class="va">design2</span> <span class="op">&lt;-</span> <span class="fu">getDesign_seamless</span><span class="op">(</span></span></span>
@@ -358,8 +373,9 @@ Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.</p>
 <span class="r-in"><span>  futilityBounds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.0</span>, <span class="fl">0.5</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                              </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Phase 2/3 seamless group-sequential design                                   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.898, overall alpha (1-sided): 0.025                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.898, overall alpha (1-sided): 0.025, attained alpha: 0.0244 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms in phase 2: 2                                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Selected phase-2 rank carried forward: 1                                     </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1                            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: TRUE                       </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks in phase 3: 2                                                </span>
@@ -385,11 +401,11 @@ Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative rejection under H0 0.0002  0.0066  0.0244 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative futility under H0  0.3333  0.6297  0.9756 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                           Arm 1  Arm 2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Treatment effect (theta)  0.300  0.500 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Being the best in phase 2 0.1959 0.8041</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Power                     0.1349 0.7631</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Conditional power         0.6887 0.9490</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                            Arm 1  Arm 2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Treatment effect (theta)   0.300  0.500 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Selected at phase-2 rank 1 0.1959 0.8041</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Power                      0.1349 0.7631</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Conditional power          0.6887 0.9490</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Example 3: derive futility boundaries using beta spending</span></span></span>
 <span class="r-in"><span><span class="op">(</span><span class="va">design3</span> <span class="op">&lt;-</span> <span class="fu">getDesign_seamless</span><span class="op">(</span></span></span>
@@ -400,8 +416,9 @@ Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.</p>
 <span class="r-in"><span>  typeBetaSpending <span class="op">=</span> <span class="st">"sfHSD"</span>, parameterBetaSpending <span class="op">=</span> <span class="op">-</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                              </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Phase 2/3 seamless group-sequential design                                   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9, overall alpha (1-sided): 0.025                           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Overall power: 0.9, overall alpha (1-sided): 0.025, attained alpha: 0.0205   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of active arms in phase 2: 2                                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Selected phase-2 rank carried forward: 1                                     </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Randomization ratio of each active vs. control: 1                            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Using correlation for critical value calculation: FALSE                      </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of looks in phase 3: 2                                                </span>
@@ -427,11 +444,11 @@ Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative rejection under H0 0.0001  0.0055  0.0205 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Cumulative futility under H0  0.4415  0.8431  0.9795 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                           Arm 1  Arm 2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Treatment effect (theta)  0.693  0.357 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Being the best in phase 2 0.8617 0.1383</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Power                     0.8176 0.0824</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Conditional power         0.9488 0.5959</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                            Arm 1  Arm 2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Treatment effect (theta)   0.693  0.357 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Selected at phase-2 rank 1 0.8617 0.1383</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Power                      0.8176 0.0824</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Conditional power          0.9488 0.5959</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
@@ -444,7 +461,7 @@ Journal of Biopharmaceutical Statistics, 2025, 35(4), 565-587.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

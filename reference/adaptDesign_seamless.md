@@ -47,7 +47,8 @@ adaptDesign_seamless(
   typeBetaSpendingNew = "none",
   parameterBetaSpendingNew = NA_real_,
   userBetaSpendingNew = NA_real_,
-  spendingTimeNew = NA_real_
+  spendingTimeNew = NA_real_,
+  rankp0 = 1L
 )
 ```
 
@@ -76,7 +77,10 @@ adaptDesign_seamless(
 
   Logical. If `TRUE`, the correlation between Wald statistics in Phase 2
   is derived from the randomization ratio \\r\\ as \\r / (r + 1)\\. If
-  `FALSE`, a conservative correlation of 0 is used.
+  `FALSE`, a conservative correlation of 0 is used, which is only valid
+  when `rankp0 = 1` (i.e., the arm with the largest Phase-2 Z-statistic
+  is selected for Phase 3). This option is only used for critical value
+  calculations.
 
 - L:
 
@@ -117,10 +121,10 @@ adaptDesign_seamless(
 
 - criticalValues:
 
-  The upper boundaries on the max z-test statistic scale for Phase 2 and
-  the z-test statistics for the selected arm in Phase 3 for the primary
-  trial. If missing, boundaries will be computed based on the specified
-  alpha spending function.
+  The upper boundaries on the z-test statistic scale for the
+  rank-selected arm in Phase 2 and the z-test statistics for the
+  selected arm in Phase 3 for the primary trial. If missing, boundaries
+  will be computed based on the specified alpha spending function.
 
 - alpha:
 
@@ -150,9 +154,10 @@ adaptDesign_seamless(
 
 - futilityBounds:
 
-  The lower boundaries on the max-z statistic scale at end of phase 2
-  and the z-test statistic scale in phase 3 for futility stopping for
-  the primary trial. Defaults to `rep(-8, kMax-1)` if left unspecified.
+  The lower boundaries on the z-test statistic scale at the end of phase
+  2 for the rank-selected arm and on the z-test statistic scale in phase
+  3 for futility stopping for the primary trial. Defaults to
+  `rep(-8, kMax-1)` if left unspecified.
 
 - futilityCP:
 
@@ -245,6 +250,12 @@ adaptDesign_seamless(
   The error spending time of the secondary trial. Defaults to missing,
   in which case it is assumed to be the same as `informationRatesNew`.
 
+- rankp0:
+
+  An integer between 1 and `M` specifying which ranked Phase-2 arm is
+  carried forward. `rankp0 = 1` selects the largest Phase-2 Z-statistic,
+  `rankp0 = 2` selects the second largest, and so on.
+
 ## Value
 
 An `adaptDesign_seamless` object with three list components:
@@ -294,6 +305,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Primary trial:                                                  
 #> Phase 2/3 seamless group-sequential design                      
 #> Number of active arms in phase 2: 2                             
+#> Selected phase-2 rank carried forward: 1                        
 #> Randomization ratio of each active vs. control: 1               
 #> Using correlation for critical value calculation: FALSE         
 #> Number of looks in phase 3: 2                                   
@@ -318,6 +330,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #>                                                                 
 #> Integrated trial:                                               
 #> Adaptive Phase 2/3 seamless design                              
+#> Selected phase-2 rank carried forward: 1                        
 #> Total number of looks in Phase 3: 2                             
 #> Maximum information for pairwise comparion: 69.51               
 #> Interim adaptation look in Phase 3: 1, z-statistic value: 1.791 

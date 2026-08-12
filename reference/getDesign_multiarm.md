@@ -7,7 +7,7 @@ information and stopping boundaries are provided.
 ## Usage
 
 ``` r
-getDesign_mams(
+getDesign_multiarm(
   beta = NA_real_,
   IMax = NA_real_,
   theta = NA_real_,
@@ -159,7 +159,7 @@ getDesign_mams(
 
 ## Value
 
-An S3 object of class `mams` with the following components:
+An S3 object of class `multiarm` with the following components:
 
 - `overallResults`: A data frame containing:
 
@@ -284,7 +284,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 
 ``` r
 # Example 1: obtain the maximum information given power
-(design1 <- getDesign_mams(
+(design1 <- getDesign_multiarm(
   beta = 0.1, theta = c(0.3, 0.5), M = 2, r = 1.0,
   kMax = 3, informationRates = seq(1, 3)/3,
   alpha = 0.025, typeAlphaSpending = "OF"))
@@ -321,7 +321,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> 6     1     3        2.004
 
 # Example 2: obtain power given the maximum information
-(design2 <- getDesign_mams(
+(design2 <- getDesign_multiarm(
   IMax = 110/(2*1^2), theta = c(0.3, 0.5), M = 2, r = 1.0,
   kMax = 3, informationRates = seq(1, 3)/3,
   alpha = 0.025, typeAlphaSpending = "OF"))
@@ -358,7 +358,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> 6     1     3        2.004
 
 # Example 3: derive futility boundaries using beta spending
-(design3 <- getDesign_mams(
+(design3 <- getDesign_multiarm(
   IMax = 27.22, theta = c(-log(0.5), -log(0.75)),
   M = 2, r = 1.0, corr_known = FALSE,
   kMax = 3, informationRates = seq(1, 3)/3,

@@ -1,8 +1,8 @@
 # Efficacy Boundaries for Phase 2/3 Seamless Design
 
 Calculates the efficacy stopping boundaries for a phase 2/3 seamless
-design, accounting for the selection of the best arm at the end of Phase
-2 and sequential testing in Phase 3.
+design, accounting for rank-based treatment selection at the end of
+Phase 2 and sequential testing in Phase 3.
 
 ## Usage
 
@@ -18,7 +18,8 @@ getBound_seamless(
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
   spendingTime = NA_real_,
-  efficacyStopping = NA_integer_
+  efficacyStopping = NA_integer_,
+  rankp0 = 1L
 )
 ```
 
@@ -37,7 +38,9 @@ getBound_seamless(
 
   Logical. If `TRUE`, the correlation between Wald statistics in Phase 2
   is derived from the randomization ratio \\r\\ as \\r / (r + 1)\\. If
-  `FALSE`, a conservative correlation of 0 is assumed.
+  `FALSE`, a conservative correlation of 0 is used, which is only valid
+  when `rankp0 = 1` (i.e., the arm with the largest Phase-2 Z-statistic
+  is selected for Phase 3).
 
 - k:
 
@@ -83,6 +86,18 @@ getBound_seamless(
   Indicators of whether efficacy stopping is allowed at each stage.
   Defaults to `TRUE` if left unspecified.
 
+- rankp0:
+
+  An integer between 1 and `M` specifying the rank of the arm to be
+  selected at the end of Phase 2 for the purpose of determining the
+  boundaries. For example, if `rankp0` is 1, the boundaries are
+  determined based on the arm with the largest Z-statistic at the end of
+  Phase 2; if `rankp0` is 2, the boundaries are determined based on the
+  arm with the second largest Z-statistic at the end of Phase 2, and so
+  on. The default is 1, which corresponds to the common practice of
+  determining boundaries based on the top-ranked arm at the end of Phase
+  2.
+
 ## Value
 
 A numeric vector of length \\k + 1\\ containing the critical values (on
@@ -91,8 +106,8 @@ the standard normal Z-scale) for each analysis up to the current look.
 ## Details
 
 The function determines critical values by solving for the boundary that
-satisfies the alpha-spending requirement, given the selection of the
-"best" arm at the end of Phase 2.
+satisfies the alpha-spending requirement, given the selection of the arm
+at rank `rankp0` at the end of Phase 2.
 
 If `typeAlphaSpending` is `"OF"`, `"P"`, `"WT"`, or `"none"`, then
 `informationRates`, `efficacyStopping`, and `spendingTime` must be of

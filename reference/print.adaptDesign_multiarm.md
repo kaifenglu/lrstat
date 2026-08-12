@@ -6,7 +6,7 @@ multi-stage design.
 ## Usage
 
 ``` r
-# S3 method for class 'adaptDesign_mams'
+# S3 method for class 'adaptDesign_multiarm'
 print(x, ...)
 ```
 

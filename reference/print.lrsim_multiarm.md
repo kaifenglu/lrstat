@@ -1,11 +1,11 @@
-# Print Simulation Results for Multi-Arm Multi-Stage Design
+# Print Simulation Results for Multi-Arm Multi-Stage Design for Logrank Test
 
-Prints the summary statistics from simulation.
+Prints the summary statistics from simulation for logrank test.
 
 ## Usage
 
 ``` r
-# S3 method for class 'lrsim_mams'
+# S3 method for class 'lrsim_multiarm'
 print(x, ...)
 ```
 
@@ -13,7 +13,7 @@ print(x, ...)
 
 - x:
 
-  The lrsim_mams object to print.
+  The lrsim_multiarm object to print.
 
 - ...:
 

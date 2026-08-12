@@ -30,7 +30,8 @@ getDesign_seamless(
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   userBetaSpending = NA_real_,
-  spendingTime = NA_real_
+  spendingTime = NA_real_,
+  rankp0 = 1L
 )
 ```
 
@@ -66,7 +67,11 @@ getDesign_seamless(
 
   Logical. If `TRUE`, the correlation between Wald statistics in Phase 2
   is derived from the randomization ratio \\r\\ as \\r / (r + 1)\\. If
-  `FALSE`, a conservative correlation of 0 is used.
+  `FALSE`, a conservative correlation of 0 is used, which is only valid
+  when `rankp0 = 1` (i.e., the arm with the largest Phase-2 Z-statistic
+  is selected for Phase 3). This option is only used for critical value
+  calculations; the correlation is always derived from \\r\\ for power
+  calculations.
 
 - K:
 
@@ -89,9 +94,10 @@ getDesign_seamless(
 
 - criticalValues:
 
-  The upper boundaries on the max-Z statistic scale for Phase 2 and the
-  Z statistics for the selected arm in Phase 3. If missing, boundaries
-  will be computed based on the specified alpha spending function.
+  The upper boundaries on the Z-statistic scale for the rank-selected
+  arm in Phase 2 and the Z statistics for the selected arm in Phase 3.
+  If missing, boundaries will be computed based on the specified alpha
+  spending function.
 
 - alpha:
 
@@ -120,9 +126,9 @@ getDesign_seamless(
 - futilityBounds:
 
   A numeric vector of length \\K\\ specifying futility boundaries on the
-  max-Z scale at the end of Phase 2 and on the Z scale for the \\K - 1\\
-  analyses in Phase 3. The final analysis uses the efficacy boundary as
-  the futility boundary.
+  Z scale at the end of Phase 2 for the rank-selected arm and on the Z
+  scale for the \\K - 1\\ analyses in Phase 3. The final analysis uses
+  the efficacy boundary as the futility boundary.
 
 - futilityCP:
 
@@ -159,6 +165,12 @@ getDesign_seamless(
   at each analysis. Values must be strictly increasing and end at 1. If
   omitted, defaults to `informationRates`.
 
+- rankp0:
+
+  An integer between 1 and `M` specifying which ranked Phase-2 arm is
+  carried forward. `rankp0 = 1` selects the largest Phase-2 Z-statistic,
+  `rankp0 = 2` selects the second largest, and so on.
+
 ## Value
 
 An S3 object of class `seamless` with the following components:
@@ -178,6 +190,8 @@ An S3 object of class `seamless` with the following components:
   - `r`: Randomization ratio per active arm versus control in Phase 2.
 
   - `corr_known`: Whether the phase-2 correlation was assumed known.
+
+  - `rankp0`: The rank of the selected arm at the end of Phase 2.
 
   - `K`: Number of looks in Phase 3.
 
@@ -249,14 +263,14 @@ An S3 object of class `seamless` with the following components:
 
   - `theta`: Parameter values for the active arms.
 
-  - `selectAsBest`: Probability an arm is selected as best at the end of
-    Phase 2.
+  - `selectionProb`: Probability an arm is selected at the end of Phase
+    2.
 
   - `powerByArm`: Probability of rejecting the null for each arm by
     trial end.
 
   - `condPowerByArm`: Conditional power for each arm given it was
-    selected as the best at the end of Phase 2.
+    selected at rank `rankp0` at the end of Phase 2.
 
 - `settings`: A list of input settings:
 
@@ -280,8 +294,8 @@ An S3 object of class `seamless` with the following components:
 
 If `corr_known` is `FALSE`, critical boundaries are computed assuming
 independence among the Phase-2 Wald statistics (a conservative
-assumption). Power calculations, however, use the correlation implied by
-the randomization ratio \\r\\.
+assumption when `rankp0 = 1`). Power calculations, however, use the
+correlation implied by the randomization ratio \\r\\.
 
 Futility boundaries may be supplied directly on the Z scale, derived
 from conditional power, derived from parameter values, or computed from
@@ -309,6 +323,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Phase 2/3 seamless group-sequential design                                  
 #> Overall power: 0.9, overall alpha (1-sided): 0.025                          
 #> Number of active arms in phase 2: 2                                         
+#> Selected phase-2 rank carried forward: 1                                    
 #> Randomization ratio of each active vs. control: 1                           
 #> Using correlation for critical value calculation: TRUE                      
 #> Number of looks in phase 3: 2                                               
@@ -328,11 +343,11 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Information for pairwise comp 18.22   36.44   54.67  
 #> Information for overall study 27.33   45.55   63.78  
 #> 
-#>                           Arm 1  Arm 2 
-#> Treatment effect (theta)  0.300  0.500 
-#> Being the best in phase 2 0.1966 0.8034
-#> Power                     0.1353 0.7647
-#> Conditional power         0.6883 0.9518
+#>                            Arm 1  Arm 2 
+#> Treatment effect (theta)   0.300  0.500 
+#> Selected at phase-2 rank 1 0.1966 0.8034
+#> Power                      0.1353 0.7647
+#> Conditional power          0.6883 0.9518
 
 # Example 2: obtain power given the maximum information and a futility rule
 (design2 <- getDesign_seamless(
@@ -342,8 +357,9 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   futilityBounds = c(0.0, 0.5)))
 #>                                                                              
 #> Phase 2/3 seamless group-sequential design                                   
-#> Overall power: 0.898, overall alpha (1-sided): 0.025                         
+#> Overall power: 0.898, overall alpha (1-sided): 0.025, attained alpha: 0.0244 
 #> Number of active arms in phase 2: 2                                          
+#> Selected phase-2 rank carried forward: 1                                     
 #> Randomization ratio of each active vs. control: 1                            
 #> Using correlation for critical value calculation: TRUE                       
 #> Number of looks in phase 3: 2                                                
@@ -369,11 +385,11 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Cumulative rejection under H0 0.0002  0.0066  0.0244 
 #> Cumulative futility under H0  0.3333  0.6297  0.9756 
 #> 
-#>                           Arm 1  Arm 2 
-#> Treatment effect (theta)  0.300  0.500 
-#> Being the best in phase 2 0.1959 0.8041
-#> Power                     0.1349 0.7631
-#> Conditional power         0.6887 0.9490
+#>                            Arm 1  Arm 2 
+#> Treatment effect (theta)   0.300  0.500 
+#> Selected at phase-2 rank 1 0.1959 0.8041
+#> Power                      0.1349 0.7631
+#> Conditional power          0.6887 0.9490
 
 # Example 3: derive futility boundaries using beta spending
 (design3 <- getDesign_seamless(
@@ -384,8 +400,9 @@ Kaifeng Lu, <kaifenglu@gmail.com>
   typeBetaSpending = "sfHSD", parameterBetaSpending = -2))
 #>                                                                              
 #> Phase 2/3 seamless group-sequential design                                   
-#> Overall power: 0.9, overall alpha (1-sided): 0.025                           
+#> Overall power: 0.9, overall alpha (1-sided): 0.025, attained alpha: 0.0205   
 #> Number of active arms in phase 2: 2                                          
+#> Selected phase-2 rank carried forward: 1                                     
 #> Randomization ratio of each active vs. control: 1                            
 #> Using correlation for critical value calculation: FALSE                      
 #> Number of looks in phase 3: 2                                                
@@ -411,9 +428,9 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 #> Cumulative rejection under H0 0.0001  0.0055  0.0205 
 #> Cumulative futility under H0  0.4415  0.8431  0.9795 
 #> 
-#>                           Arm 1  Arm 2 
-#> Treatment effect (theta)  0.693  0.357 
-#> Being the best in phase 2 0.8617 0.1383
-#> Power                     0.8176 0.0824
-#> Conditional power         0.9488 0.5959
+#>                            Arm 1  Arm 2 
+#> Treatment effect (theta)   0.693  0.357 
+#> Selected at phase-2 rank 1 0.8617 0.1383
+#> Power                      0.8176 0.0824
+#> Conditional power          0.9488 0.5959
 ```

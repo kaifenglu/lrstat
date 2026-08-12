@@ -61,7 +61,7 @@ normal random vector \(X\).</p>
 <span>  R <span class="op">=</span> <span class="fl">8</span>,</span>
 <span>  abseps <span class="op">=</span> <span class="fl">1e-04</span>,</span>
 <span>  releps <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  seed <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">314159</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  nthreads <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -129,6 +129,9 @@ default RcppParallel behavior is used.</p></dd>
 applied to the <code>pmvnormr</code> function. It solves for the value where
 the multivariate normal cumulative distribution function equals the
 target probability \(p\).</p>
+<p>Positive semidefinite <code>sigma</code> matrices (including singular cases) are
+supported in the general covariance branch via minimal diagonal
+stabilization during factorization.</p>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
@@ -156,7 +159,7 @@ target probability \(p\).</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

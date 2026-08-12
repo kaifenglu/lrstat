@@ -6,7 +6,7 @@ interval after the end of a multi-arm multi-stage trial.
 ## Usage
 
 ``` r
-getCI_mams(
+getCI_multiarm(
   M = NA_integer_,
   r = 1,
   corr_known = TRUE,
@@ -130,7 +130,7 @@ Kaifeng Lu, <kaifenglu@gmail.com>
 ## Examples
 
 ``` r
-getCI_mams(
+getCI_multiarm(
   L = 2, zL = c(2.075, 2.264),
   M = 2, r = 1, corr_known = FALSE,
   IMax = 300 / 4, informationRates = c(1/2, 1),
