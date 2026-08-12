@@ -9,6 +9,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <Rcpp.h>
@@ -23,6 +24,7 @@ using std::size_t;
 ListCpp lrsim_seamless_cpp(
     const size_t M,
     const size_t K,
+    const size_t rankp0,
     const std::vector<double>& criticalValues,
     const std::vector<double>& futilityBounds,
     const std::vector<double>& hazardRatioH0s,
@@ -45,6 +47,9 @@ ListCpp lrsim_seamless_cpp(
     const int seed)
 {
   if (M < 1) throw std::invalid_argument("M must be at least 1");
+  if (rankp0 < 1 || rankp0 > M) {
+    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
+  }
   if (K < 1) throw std::invalid_argument("K must be at least 1");
   size_t kMax = K + 1;
   if (K > 0 && futilityBounds.size() < K) {
@@ -639,7 +644,7 @@ ListCpp lrsim_seamless_cpp(
   std::vector<int> sum1_dropouts; sum1_dropouts.reserve(ns1r);
 
   std::vector<int> sum2_iterNum; sum2_iterNum.reserve(ns2r);
-  std::vector<int> sum2_bestArm; sum2_bestArm.reserve(ns2r);
+  std::vector<int> sum2_selectedArm; sum2_selectedArm.reserve(ns2r);
   std::vector<int> sum2_stopStage; sum2_stopStage.reserve(ns2r);
   std::vector<int> sum2_stageNum; sum2_stageNum.reserve(ns2r);
   std::vector<double> sum2_analysisT; sum2_analysisT.reserve(ns2r);
@@ -686,7 +691,7 @@ ListCpp lrsim_seamless_cpp(
     const auto& s2rows = results[iter].summary2Rows;
     for (const auto& r : s2rows) {
       sum2_iterNum.push_back(r.iterNum);
-      sum2_bestArm.push_back(0);
+      sum2_selectedArm.push_back(0);
       sum2_stopStage.push_back(0);
       sum2_stageNum.push_back(r.stageNum);
       sum2_analysisT.push_back(r.analysisT);
@@ -724,7 +729,7 @@ ListCpp lrsim_seamless_cpp(
   const size_t rowsPerIter1 = kMax * (M + 2);
   const size_t rowsPerIter2 = kMax * M;
   const size_t niters = sum2_iterNum.size() / rowsPerIter2;
-  std::vector<double> selectAsBest(M, 0.0);
+  std::vector<double> selectionProb(M, 0.0);
   std::vector<double> selectToStage2(M, 0.0);
   double selectAnyToStage2 = 0.0;
   double expStudyDur = 0.0;
@@ -751,7 +756,7 @@ ListCpp lrsim_seamless_cpp(
   const int* sum2_totD = sum2_totDropouts.data();
   const int* sum2_totA = sum2_totAccruals.data();
   int* stop2 = sum2_stopStage.data();
-  int* bestArmVec = sum2_bestArm.data();
+  int* selectedArmVec = sum2_selectedArm.data();
   const double* logRank = sum2_logRank.data();
   unsigned char* reject = sum2_reject.data();
   unsigned char* futility = sum2_futility.data();
@@ -761,19 +766,22 @@ ListCpp lrsim_seamless_cpp(
     const size_t i1 = iter * rowsPerIter1;
     const size_t i2 = iter * rowsPerIter2;
 
-    // choose best arm (min log-rank among M arms at stage 1)
-    size_t best_arm = 0;
-    double min_lr = logRank[i2];
-    for (size_t m = 1; m < M; ++m) {
-      double v = logRank[i2 + m];
-      if (v < min_lr) { min_lr = v; best_arm = m; }
+    // choose rankp0-th arm by phase-2 log-rank (smaller is better)
+    std::vector<std::pair<double, size_t>> ranked(M);
+    for (size_t m = 0; m < M; ++m) {
+      ranked[m] = std::make_pair(logRank[i2 + m], m);
     }
-    selectAsBest[best_arm] += 1.0;
+    std::stable_sort(ranked.begin(), ranked.end(),
+      [](const std::pair<double, size_t>& a, const std::pair<double, size_t>& b) {
+        return a.first < b.first;
+      });
+    size_t selected_arm = ranked[rankp0 - 1].second;
+    selectionProb[selected_arm] += 1.0;
 
     for (size_t k = 0; k < kMax; ++k) {
       for (size_t m = 0; m < M; ++m) {
         size_t idx = i2 + k * M + m;
-        bestArmVec[idx] = static_cast<int>(best_arm + 1);
+        selectedArmVec[idx] = static_cast<int>(selected_arm + 1);
       }
     }
 
@@ -783,9 +791,9 @@ ListCpp lrsim_seamless_cpp(
     const double subjects1 = sum1_A[i1 + M + 1];
 
     // stage-1 totals for selected active arm + control
-    const double events2 = sum2_totE[i2 + best_arm];
-    const double dropouts2 = sum2_totD[i2 + best_arm];
-    const double subjects2 = sum2_totA[i2 + best_arm];
+    const double events2 = sum2_totE[i2 + selected_arm];
+    const double dropouts2 = sum2_totD[i2 + selected_arm];
+    const double subjects2 = sum2_totA[i2 + selected_arm];
 
     // stage-1 totals for non-selected active arms
     const double devents1 = events1 - events2;
@@ -798,20 +806,16 @@ ListCpp lrsim_seamless_cpp(
     bool stoppedForEfficacy = false;
 
     const size_t phase2_offset = i2;
-    bool anyRejectP2 = false;
-    bool allFutileP2 = true;
-
-    for (size_t m = 0; m < M; ++m) {
-      double z = logRank[phase2_offset + m];
-      if (z < -criticalValues[0]) anyRejectP2 = true;
-      if (z < -futilityBounds[0]) allFutileP2 = false;
-    }
+    const double selectedZP2 = logRank[phase2_offset + selected_arm];
+    bool anyRejectP2 = (selectedZP2 < -criticalValues[0]);
+    bool allFutileP2 = (selectedZP2 > -futilityBounds[0]);
 
     if (anyRejectP2) {
       stop_k = 0;
       stoppedForEfficacy = true;
       rejectByArm(0, M) += 1;
-      for (size_t m = 0; m < M; ++m) {
+      for (size_t r = rankp0 - 1; r < M; ++r) {
+        const size_t m = ranked[r].second;
         size_t idx2 = i2 + m;
         if (logRank[idx2] < -criticalValues[0]) {
           reject[idx2] = 1;
@@ -826,18 +830,18 @@ ListCpp lrsim_seamless_cpp(
         futilityByArm(0, m) += 1;
       }
     } else {
-      // The selected best arm continues to stage 2 when not stopping in phase 2.
-      selectToStage2[best_arm] += 1.0;
+      // The selected arm continues to stage 2 when not stopping in phase 2.
+      selectToStage2[selected_arm] += 1.0;
       selectAnyToStage2 += 1.0;
 
       for (size_t k = 1; k < kMax; ++k) {
-        const size_t idx = i2 + k * M + best_arm;
+        const size_t idx = i2 + k * M + selected_arm;
 
         if (logRank[idx] < -criticalValues[k]) {
           stop_k = k;
           stoppedForEfficacy = true;
           reject[idx] = 1;
-          rejectByArm(k, best_arm) += 1;
+          rejectByArm(k, selected_arm) += 1;
           rejectByArm(k, M) += 1;
           break;
         }
@@ -852,7 +856,7 @@ ListCpp lrsim_seamless_cpp(
         if (futileNow) {
           stop_k = k;
           stoppedForFutility = true;
-          futilityByArm(k, best_arm) += 1;
+          futilityByArm(k, selected_arm) += 1;
           futilityByArm(k, M) += 1;
           break;
         }
@@ -898,7 +902,7 @@ ListCpp lrsim_seamless_cpp(
       expNumDropouts += dropouts1;
       expNumSubjects += subjects1;
     } else {
-      const size_t idx = i2 + stop_k * M + best_arm;
+      const size_t idx = i2 + stop_k * M + selected_arm;
       expStudyDur += sum2T[idx];
       expNumEvents += devents1 + sum2_totE[idx];
       expNumDropouts += ddropouts1 + sum2_totD[idx];
@@ -906,20 +910,20 @@ ListCpp lrsim_seamless_cpp(
     }
 
     // everyone reaches stage 1 by definition
-    haveStage(0, best_arm) += 1.0;
-    timeByArm(0, best_arm) += sum1_T[i1];
-    eventsByArm(0, best_arm) += events1;
-    dropoutsByArm(0, best_arm) += dropouts1;
-    subjectsByArm(0, best_arm) += subjects1;
+    haveStage(0, selected_arm) += 1.0;
+    timeByArm(0, selected_arm) += sum1_T[i1];
+    eventsByArm(0, selected_arm) += events1;
+    dropoutsByArm(0, selected_arm) += dropouts1;
+    subjectsByArm(0, selected_arm) += subjects1;
 
     // subsequent stages up to stop_k
     for (size_t j = 1; j <= stop_k; ++j) {
-      const size_t idx = i2 + j * M + best_arm;
-      haveStage(j, best_arm) += 1.0;
-      timeByArm(j, best_arm) += sum2T[idx];
-      eventsByArm(j, best_arm) += devents1 + sum2_totE[idx];
-      dropoutsByArm(j, best_arm) += ddropouts1 + sum2_totD[idx];
-      subjectsByArm(j, best_arm) += dsubjects1 + sum2_totA[idx];
+      const size_t idx = i2 + j * M + selected_arm;
+      haveStage(j, selected_arm) += 1.0;
+      timeByArm(j, selected_arm) += sum2T[idx];
+      eventsByArm(j, selected_arm) += devents1 + sum2_totE[idx];
+      dropoutsByArm(j, selected_arm) += ddropouts1 + sum2_totD[idx];
+      subjectsByArm(j, selected_arm) += dsubjects1 + sum2_totA[idx];
     }
   }
 
@@ -939,7 +943,7 @@ ListCpp lrsim_seamless_cpp(
   expNumDropouts /= niters;
   expNumSubjects /= niters;
   expStudyDur /= niters;
-  for (size_t m = 0; m < M; ++m) selectAsBest[m] /= niters;
+  for (size_t m = 0; m < M; ++m) selectionProb[m] /= niters;
   for (size_t m = 0; m < M; ++m) selectToStage2[m] /= niters;
   selectAnyToStage2 /= niters;
 
@@ -971,7 +975,7 @@ ListCpp lrsim_seamless_cpp(
   double overallFutility = cumFutilityByArm(kMax - 1, M);
 
   ListCpp overview;
-  overview.push_back(std::move(selectAsBest), "selectAsBest");
+  overview.push_back(std::move(selectionProb), "selectionProb");
   overview.push_back(std::move(selectToStage2), "selectToStage2");
   overview.push_back(selectAnyToStage2, "selectAnyToStage2");
   overview.push_back(std::move(rejectByArm), "rejectPerStage");
@@ -1000,6 +1004,7 @@ ListCpp lrsim_seamless_cpp(
   overview.push_back(rho2, "rho2");
   overview.push_back(M, "M");
   overview.push_back(K, "K");
+  overview.push_back(rankp0, "rankp0");
 
   DataFrameCpp sumdata1;
   sumdata1.push_back(std::move(sum1_iterNum), "iterationNumber");
@@ -1014,7 +1019,7 @@ ListCpp lrsim_seamless_cpp(
 
   DataFrameCpp sumdata2;
   sumdata2.push_back(std::move(sum2_iterNum), "iterationNumber");
-  sumdata2.push_back(std::move(sum2_bestArm), "bestArm");
+  sumdata2.push_back(std::move(sum2_selectedArm), "selectedArm");
   sumdata2.push_back(std::move(sum2_stopStage), "stopStage");
   sumdata2.push_back(std::move(sum2_stageNum), "stageNumber");
   sumdata2.push_back(std::move(sum2_analysisT), "analysisTime");
@@ -1061,6 +1066,7 @@ ListCpp lrsim_seamless_cpp(
 Rcpp::List lrsim_seamless_Rcpp(
     const int M = 2,
     const int K = 1,
+    const int rankp0 = 1,
     const Rcpp::NumericVector& criticalValues = NA_REAL,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds = R_NilValue,
     const Rcpp::NumericVector& hazardRatioH0s = 1,
@@ -1140,7 +1146,8 @@ Rcpp::List lrsim_seamless_Rcpp(
   std::vector<double> plannedT(plannedTime.begin(), plannedTime.end());
 
   auto out = lrsim_seamless_cpp(
-    M, K, critValues, futBounds, hrH0s, allocs, accrualT, accrualInt,
+    M, K, static_cast<size_t>(rankp0), critValues, futBounds,
+    hrH0s, allocs, accrualT, accrualInt,
     pwSurvT, stratumFrac, lambdasVec, gammasVec,
     n, followupTime, fixedFollowup, rho1, rho2, plannedE, plannedT,
     maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed);
