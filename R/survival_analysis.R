@@ -204,8 +204,12 @@ liferegr <- function(data, stratum = "", time = "time", time2 = "",
   # select complete cases for the relevant variables
   elements <- unique(c(stratum, covariates, weight, offset, id))
   elements <- elements[elements != ""]
-  fml_all <- formula(paste("~", paste(elements, collapse = "+")))
-  var_all <- all.vars(fml_all)
+  if (length(elements) == 0) {
+    var_all <- character(0)
+  } else {
+    fml_all <- reformulate(elements)
+    var_all <- all.vars(fml_all)
+  }
 
   # check if the input data contains the required columns
   missing_cols <- setdiff(var_all, names(df))
