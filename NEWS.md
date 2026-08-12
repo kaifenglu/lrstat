@@ -5,10 +5,13 @@
 * added getDesign2 for futility boundary under the null hypothesis for group sequential designs
 * renamed mams to multiarm for more informative description
 * added rdsim_seamless for simulation of phase 2/3 seamless design for risk difference
+* updated lrsim_seamless and rdsim_seamless to use rank-based phase-2 selection naming and outputs, including rankp0 in the wrapper inputs, overview output, and print methods
+* updated seamless_design.cpp related functions to use rank-based treatment selection with rankp0 throughout seamless design, conditional power, confidence interval, and print outputs
 * added rdsim_multiarm for simulation of multi-arm multi-stage design for risk difference
 * added lrsim_mcpmod and print.lrsim_mcpmod for simulation and summary output of MCPMod design using the log-rank test
 * updated mvnormr to support positive semidefinite covariance matrix via minimal diagonal stabilization during factorization
 * used seed = 314159 as the default for pmvnormr and qmvnormr to ensure the same random numbers are generated and results are reproducible across different runs
+- add the selection to Stage 2 probability in lrsim_seamless
 
 # lrstat 0.3.2
 
