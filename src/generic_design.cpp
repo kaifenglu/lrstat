@@ -559,11 +559,11 @@ std::vector<double> getBoundcpp(
   if (asf == "of" || asf == "p" || asf == "wt" || asf == "none") {
     if (infoRates.back() != 1.0) {
       throw std::invalid_argument(
-          "informationRates must end with 1 for OF, P, WT, or NONE");
+          "informationRates must end with 1 for OF, P, WT, or none");
     }
     if (spendTime.back() != 1.0) {
       throw std::invalid_argument(
-          "spendingTime must end with 1 for OF, P, WT, or NONE");
+          "spendingTime must end with 1 for OF, P, WT, or none");
     }
   }
 
