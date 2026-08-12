@@ -11,7 +11,8 @@
 * added lrsim_mcpmod and print.lrsim_mcpmod for simulation and summary output of MCPMod design using the log-rank test
 * updated mvnormr to support positive semidefinite covariance matrix via minimal diagonal stabilization during factorization
 * used seed = 314159 as the default for pmvnormr and qmvnormr to ensure the same random numbers are generated and results are reproducible across different runs
-- add the selection to Stage 2 probability in lrsim_seamless
+* added the selection to Stage 2 probability in lrsim_seamless
+* fixed liferegr to handle empty optional variable inputs (stratum, covariates, weight, offset, id) without triggering a formula parse error from an empty right-hand side
 
 # lrstat 0.3.2
 
