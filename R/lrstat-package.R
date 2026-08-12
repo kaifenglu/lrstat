@@ -111,7 +111,8 @@
 #' @importFrom stats as.formula complete.cases dgamma dlogis dnorm formula
 #' @importFrom stats integrate model.frame model.matrix na.omit na.pass
 #' @importFrom stats optimize pbeta pchisq pf plogis pnorm pt qbeta
-#' @importFrom stats qchisq qf qlogis qnorm qt runif terms uniroot var
+#' @importFrom stats qchisq qf qlogis qnorm qt reformulate runif terms
+#' @importFrom stats uniroot var
 #' @importFrom ggplot2 aes annotate element_text geom_step ggplot labs
 #' @importFrom ggplot2 scale_linewidth_manual theme theme_bw
 #' @importFrom lpSolve lp
