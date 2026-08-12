@@ -346,7 +346,9 @@ getCP_multiarm <- function(INew = NA_real_, M = NA_integer_, r = 1, corr_known =
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 #'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-#'   0 is used.
+#'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+#'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+#'   This option is only used for critical value calculations.
 #' @param L The interim adaptation look in Phase 3.
 #' @param zL The z-test statistic at the interim adaptation look of
 #'   Phase 3.
@@ -363,9 +365,9 @@ getCP_multiarm <- function(INew = NA_real_, M = NA_integer_, r = 1, corr_known =
 #' @param futilityStopping Indicators of whether futility stopping is
 #'   allowed at each stage of the primary trial. Defaults to true
 #'   if left unspecified.
-#' @param criticalValues The upper boundaries on the max z-test statistic
-#'   scale for Phase 2 and the z-test statistics for the selected arm
-#'   in Phase 3 for the primary trial. If missing, boundaries
+#' @param criticalValues The upper boundaries on the z-test statistic scale
+#'   for the rank-selected arm in Phase 2 and the z-test statistics for the
+#'   selected arm in Phase 3 for the primary trial. If missing, boundaries
 #'   will be computed based on the specified alpha spending function.
 #' @param alpha The significance level of the primary trial.
 #'   Defaults to 0.025.
@@ -386,9 +388,9 @@ getCP_multiarm <- function(INew = NA_real_, M = NA_integer_, r = 1, corr_known =
 #'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 #' @param userAlphaSpending The user-defined alpha spending for the
 #'   primary trial. Represents the cumulative alpha spent up to each stage.
-#' @param futilityBounds	The lower boundaries on the  max z-test statistic
-#'   scale for Phase 2 and the z-test statistics for the selected arm
-#'   in Phase 3 for the primary trial.
+#' @param futilityBounds The lower boundaries on the z-test statistic
+#'   scale for the rank-selected arm in Phase 2 and the z-test statistics
+#'   for the selected arm in Phase 3 for the primary trial.
 #' @param futilityCP The conditional power-based futility bounds for the
 #'   primary trial.
 #' @param futilityTheta The parameter value-based futility bounds for the
@@ -440,6 +442,10 @@ getCP_multiarm <- function(INew = NA_real_, M = NA_integer_, r = 1, corr_known =
 #' @param spendingTimeNew The error spending time of the secondary trial.
 #'   Defaults to missing, in which case it is assumed to be the same as
 #'   \code{informationRatesNew}.
+#' @param rankp0 An integer between 1 and \code{M} specifying which ranked
+#'   Phase-2 arm is carried forward when the trial continues to Phase 3.
+#'   \code{rankp0 = 1} selects the largest Phase-2 Z-statistic,
+#'   \code{rankp0 = 2} selects the second largest, and so on.
 #'
 #' @return A vector of two conditional powers given the interim results and
 #' parameter values, one without design change and the other with
@@ -463,8 +469,8 @@ getCP_multiarm <- function(INew = NA_real_, M = NA_integer_, r = 1, corr_known =
 #'   alpha = 0.025, typeAlphaSpending = "OF", kNew = 1)
 #'
 #' @export
-getCP_seamless <- function(INew = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, K = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, spendingTime = NA_real_, MullerSchafer = FALSE, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, futilityBoundsInt = NULL, futilityCPInt = NULL, futilityThetaInt = NULL, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
-    .Call(`_lrstat_getCP_seamless`, INew, M, r, corr_known, L, zL, theta, IMax, K, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, spendingTimeNew)
+getCP_seamless <- function(INew = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, K = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, spendingTime = NA_real_, MullerSchafer = FALSE, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, futilityBoundsInt = NULL, futilityCPInt = NULL, futilityThetaInt = NULL, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_, rankp0 = 1L) {
+    .Call(`_lrstat_getCP_seamless`, INew, M, r, corr_known, L, zL, theta, IMax, K, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, spendingTimeNew, rankp0)
 }
 
 #' @title Confidence Interval After Trial Termination
@@ -1164,7 +1170,9 @@ getADCI_multiarm <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_i
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 #'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-#'   0 is assumed.
+#'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+#'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+#'   This option is only used for critical value calculations.
 #' @param L The termination look in Phase 3.
 #' @param zL The z-test statistic at the termination look.
 #' @param IMax Maximum information for any active arm versus the common
@@ -1173,8 +1181,9 @@ getADCI_multiarm <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_i
 #' @param efficacyStopping Indicators of whether efficacy stopping is
 #'   allowed at each stage up to look \code{L}.
 #'   Defaults to \code{TRUE} if left unspecified.
-#' @param criticalValues The upper boundaries on the max z-test statistic
-#'   scale for Phase 2 and the z-test statistics for the selected arm
+#' @param criticalValues The upper boundaries on the z-test statistic
+#'   scale for the rank-selected arm in Phase 2 and the z-test statistics
+#'   for the selected arm
 #'   in Phase 3 up to look \code{L}. If missing, boundaries will be
 #'   computed based on the specified alpha spending function.
 #' @inheritParams param_alpha
@@ -1193,6 +1202,10 @@ getADCI_multiarm <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_i
 #' @param spendingTime The error spending time up to look \code{L}.
 #'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRates}.
+#' @param rankp0 An integer between 1 and \code{M} specifying which ranked
+#'   Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
+#'   Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
+#'   so on.
 #'
 #' @details
 #' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
@@ -1221,14 +1234,13 @@ getADCI_multiarm <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_i
 #'
 #' @examples
 #' getCI_seamless(
-#'   L = 2, zL = 2.075,
-#'   M = 2, r = 1, corr_known = FALSE,
+#'   L = 2, zL = 2.075, M = 2, r = 1, corr_known = FALSE,
 #'   IMax = 300 / 4, informationRates = c(1/3, 2/3, 1),
 #'   alpha = 0.025, typeAlphaSpending = "sfOF")
 #'
 #' @export
-getCI_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_) {
-    .Call(`_lrstat_getCI_seamless`, M, r, corr_known, L, zL, IMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime)
+getCI_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, IMax = NA_real_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, rankp0 = 1L) {
+    .Call(`_lrstat_getCI_seamless`, M, r, corr_known, L, zL, IMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, rankp0)
 }
 
 #' @title Confidence Interval After Adaptation for Phase 2/3 Seamless
@@ -1243,7 +1255,9 @@ getCI_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_int
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 #'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-#'   0 is used.
+#'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+#'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+#'   This option is only used for critical value calculations.
 #' @param L The interim adaptation look in Phase 3.
 #' @param zL The z-test statistic at the interim adaptation look of
 #'   Phase 3.
@@ -1255,8 +1269,9 @@ getCI_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_int
 #' @param efficacyStopping Indicators of whether efficacy stopping is
 #'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 #'   if left unspecified.
-#' @param criticalValues The upper boundaries on the max z-test statistic
-#'   scale for Phase 2 and the z-test statistics for the selected arm
+#' @param criticalValues The upper boundaries on the z-test statistic
+#'   scale for the rank-selected arm in Phase 2 and the z-test statistics
+#'   for the selected arm
 #'   in Phase 3 for the primary trial. If missing, boundaries
 #'   will be computed based on the specified alpha spending function.
 #' @param alpha The significance level of the primary trial.
@@ -1306,13 +1321,17 @@ getCI_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_int
 #' @param spendingTimeNew The error spending time of the secondary trial.
 #'   Defaults to missing, in which case, it is
 #'   the same as \code{informationRatesNew}.
+#' @param rankp0 An integer between 1 and \code{M} specifying which ranked
+#'   Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
+#'   Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
+#'   so on.
 #'
 #' @details
 #' If typeAlphaSpendingNew is \code{"OF"}, \code{"P"}, \code{"WT"},
-#' or \code{"none"}, then
-#' \code{informationRatesNew}, \code{efficacyStoppingNew}, and
-#' \code{spendingTimeNew} must be of full length \code{kNew}, and
-#' \code{informationRatesNew} and \code{spendingTimeNew} must end with 1.
+#' or \code{"none"}, then \code{informationRatesNew},
+#' \code{efficacyStoppingNew}, and \code{spendingTimeNew} must be of full
+#' length \code{kNew}, and \code{informationRatesNew} and
+#' \code{spendingTimeNew} must end with 1.
 #'
 #' @return A data frame with the following variables:
 #'
@@ -1342,8 +1361,8 @@ getCI_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_int
 #'   Lc = 2, zLc = -log(0.677) * sqrt(236 / 4), INew = 236 / 4)
 #'
 #' @export
-getADCI_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, IMax = NA_real_, K = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.25, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, Lc = NA_integer_, zLc = NA_real_, INew = NA_real_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
-    .Call(`_lrstat_getADCI_seamless`, M, r, corr_known, L, zL, IMax, K, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, MullerSchafer, Lc, zLc, INew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew)
+getADCI_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, IMax = NA_real_, K = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, criticalValues = NA_real_, alpha = 0.25, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, spendingTime = NA_real_, MullerSchafer = FALSE, Lc = NA_integer_, zLc = NA_real_, INew = NA_real_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, spendingTimeNew = NA_real_, rankp0 = 1L) {
+    .Call(`_lrstat_getADCI_seamless`, M, r, corr_known, L, zL, IMax, K, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, MullerSchafer, Lc, zLc, INew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew, rankp0)
 }
 
 #' @title Number of Enrolled Subjects
@@ -4393,8 +4412,8 @@ lrsim_multiarm_Rcpp <- function(M = 2L, kMax = 1L, criticalValues = NULL, futili
     .Call(`_lrstat_lrsim_multiarm_Rcpp`, M, kMax, criticalValues, futilityBounds, hazardRatioH0s, allocations, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambdas, gammas, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
 
-lrsim_seamless_Rcpp <- function(M = 2L, K = 1L, criticalValues = NA_real_, futilityBounds = NULL, hazardRatioH0s = 1L, allocations = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambdas = NULL, gammas = NULL, n = NA_integer_, followupTime = NA_real_, fixedFollowup = FALSE, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = 0L) {
-    .Call(`_lrstat_lrsim_seamless_Rcpp`, M, K, criticalValues, futilityBounds, hazardRatioH0s, allocations, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambdas, gammas, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
+lrsim_seamless_Rcpp <- function(M = 2L, K = 1L, rankp0 = 1L, criticalValues = NA_real_, futilityBounds = NULL, hazardRatioH0s = 1L, allocations = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambdas = NULL, gammas = NULL, n = NA_integer_, followupTime = NA_real_, fixedFollowup = FALSE, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = 0L) {
+    .Call(`_lrstat_lrsim_seamless_Rcpp`, M, K, rankp0, criticalValues, futilityBounds, hazardRatioH0s, allocations, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambdas, gammas, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
 
 #' @title Kaplan-Meier Survival Probability Based on Pooled Sample
@@ -7579,8 +7598,8 @@ rdsim_multiarm_Rcpp <- function(M = 2L, kMax = 1L, criticalValues = NULL, futili
     .Call(`_lrstat_rdsim_multiarm_Rcpp`, M, kMax, criticalValues, futilityBounds, riskDiffH0s, allocations, pis, nullVariance, n, plannedSubjects, maxNumberOfIterations, seed)
 }
 
-rdsim_seamless_Rcpp <- function(M = 2L, K = 1L, criticalValues = NA_real_, futilityBounds = NULL, riskDiffH0s = 1L, allocations = 1L, pis = NA_real_, nullVariance = TRUE, n = NA_integer_, plannedSubjects = NA_integer_, maxNumberOfIterations = 1000L, seed = 0L) {
-    .Call(`_lrstat_rdsim_seamless_Rcpp`, M, K, criticalValues, futilityBounds, riskDiffH0s, allocations, pis, nullVariance, n, plannedSubjects, maxNumberOfIterations, seed)
+rdsim_seamless_Rcpp <- function(M = 2L, K = 1L, rankp0 = 1L, criticalValues = NA_real_, futilityBounds = NULL, riskDiffH0s = 1L, allocations = 1L, pis = NA_real_, nullVariance = TRUE, n = NA_integer_, plannedSubjects = NA_integer_, maxNumberOfIterations = 1000L, seed = 0L) {
+    .Call(`_lrstat_rdsim_seamless_Rcpp`, M, K, rankp0, criticalValues, futilityBounds, riskDiffH0s, allocations, pis, nullVariance, n, plannedSubjects, maxNumberOfIterations, seed)
 }
 
 #' @title Restricted Mean Survival Time
@@ -8666,11 +8685,12 @@ rmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
 #' @title Exit Probabilities for Phase 2/3 Seamless Design
 #' @description Computes the upper and lower exit probabilities for a phase
 #' 2/3 seamless design. In Phase 2, multiple active arms are compared
-#' against a common control arm. If the phase-2 max-Z statistic crosses the
+#' against a common control arm. If the test statistic for the arm
+#' ranked \code{rankp0} at the end of Phase 2 crosses the
 #' efficacy boundary, the trial stops early for efficacy; if it falls below
-#' the futility boundary, the trial stops early for futility. Otherwise, the
-#' best-performing arm is selected to proceed to Phase 3, where it is tested
-#' against the common control over multiple looks with upper and optional
+#' the futility boundary, the trial stops early for futility. Otherwise,
+#' the arm is selected to proceed to Phase 3, where it is tested against
+#' the control over multiple looks with upper and optional
 #' lower stopping boundaries.
 #'
 #' @param M Number of active treatment arms in Phase 2.
@@ -8681,38 +8701,44 @@ rmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 #'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-#'   0 is used.
+#'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+#'   with the largest Phase-2 Z-statistic is selected for Phase 3).
 #' @param K Number of sequential looks in Phase 3.
-#' @param b A vector of efficacy boundaries (length \eqn{K+1}). The first
-#'   element is the efficacy boundary for the phase-2 max-Z statistic;
+#' @param b A vector of efficacy boundaries (length \eqn{K + 1}). The first
+#'   element is the efficacy boundary for the Phase-2 test statistic;
 #'   the remaining \eqn{K} elements are efficacy boundaries for the selected
 #'   arm in Phase 3.
-#' @param a An optional vector of futility boundaries (length \eqn{K+1}).
-#'   The first element is the futility boundary for the phase-2 max-Z
-#'   statistic; the remaining \eqn{K} elements are futility boundaries for
-#'   the selected arm in Phase 3. If omitted, no futility stopping is
-#'   applied.
-#' @param I A vector of information levels (length \eqn{K+1}) for any active
+#' @param a An optional vector of futility boundaries (length \eqn{K + 1}).
+#'   The first element is the futility boundary for the Phase-2 test statistic;
+#'   the remaining \eqn{K} elements are futility boundaries for the selected
+#'   arm in Phase 3. If omitted, no futility stopping is applied.
+#' @param I A vector of information levels (length \eqn{K + 1}) for any active
 #'   arm versus the common control. The first element is for Phase 2;
 #'   the remaining \eqn{K} elements are for the looks in Phase 3.
+#' @param rankp0 An integer between 1 and \code{M} specifying which ranked
+#'   Phase-2 arm is carried forward when the trial continues to Phase 3.
+#'   \code{rankp0 = 1} selects the largest Phase-2 Z-statistic,
+#'   \code{rankp0 = 2} selects the second largest, and so on.
 #'
 #' @details
 #' The function assumes a multivariate normal distribution for the Wald
-#' statistics. The "best" arm is defined as the active arm with the largest
-#' Z-statistic at the end of Phase 2 among designs that continue beyond the
-#' phase-2 analysis.
+#' statistics. Among designs that continue beyond the Phase-2 analysis,
+#' the carried-forward arm is the one with rank \code{rankp0} based on the
+#' p-value of the Z-statistic at the end of Phase 2.
 #'
 #' \strong{Decision Rules:}
 #'
-#' * \strong{Phase 2 efficacy stop}: reject if the phase-2 max-Z statistic
-#'   satisfies \eqn{\max_m Z_m(I_0) \ge b_0}.
+#' * \strong{Phase 2 efficacy stop}: reject if the Phase-2 test statistic
+#'   for the arm selected at rank \code{rankp0} satisfies
+#'   \eqn{Z_{[rankp0]}(I_0) \ge b_0}.
 #'
-#' * \strong{Phase 2 futility stop}: stop for futility if the phase-2 max-Z
-#'   statistic satisfies \eqn{\max_m Z_m(I_0) \le a_0}.
+#' * \strong{Phase 2 futility stop}: stop for futility if the Phase-2 test
+#'   statistic for the arm selected at rank \code{rankp0} satisfies
+#'   \eqn{Z_{[rankp0]}(I_0) \le a_0}.
 #'
-#' * \strong{Continue to Phase 3}: if \eqn{a_0 < \max_m Z_m(I_0) < b_0},
-#'   select the arm with the largest phase-2 Z-statistic and continue with
-#'   that arm only.
+#' * \strong{Continue to Phase 3}: if
+#'   \eqn{a_0 < Z_{[rankp0]}(I_0) < b_0}, continue with the arm selected
+#'   at rank \code{rankp0} only.
 #'
 #' * \strong{Phase 3 efficacy stop}: at look \eqn{k}, reject if the selected
 #'   arm's Z-statistic exceeds the efficacy boundary and no earlier stop has
@@ -8727,7 +8753,8 @@ rmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
 #' * All active arms share the same information level in Phase 2.
 #'
 #' * Exactly one active arm is selected at the end of Phase 2 based on the
-#'   largest observed Z-statistic when the trial continues to Phase 3.
+#'   \code{rankp0}-th largest observed Z-statistic when the trial continues
+#'   to Phase 3.
 #'
 #' @return A list containing the following components:
 #'
@@ -8741,16 +8768,16 @@ rmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
 #'   elements are the probabilities of stopping for futility at each look in
 #'   Phase 3.
 #'
-#' * \code{exitProbByArmUpper}: A \eqn{(K+1) \times M} matrix. The
+#' * \code{exitProbByArmUpper}: A \eqn{(K + 1) \times M} matrix. The
 #'   \eqn{(k, m)}-th entry gives the probability of stopping for efficacy at
-#'   look \eqn{k} given that arm \eqn{m} is selected as best.
+#'   look \eqn{k} given that arm \eqn{m} is selected at rank \code{rankp0}.
 #'
-#' * \code{exitProbByArmLower}: A \eqn{(K+1) \times M} matrix. The
+#' * \code{exitProbByArmLower}: A \eqn{(K + 1) \times M} matrix. The
 #'   \eqn{(k, m)}-th entry gives the probability of stopping for futility at
-#'   look \eqn{k} given that arm \eqn{m} is selected as best.
+#'   look \eqn{k} given that arm \eqn{m} is selected at rank \code{rankp0}.
 #'
-#' * \code{selectAsBest}: A vector of length \eqn{M} containing the
-#'   probability that each active arm is selected to move on to Phase 3.
+#' * \code{selectionProb}: A vector of length \eqn{M} containing the
+#'   probability that each active arm is selected at rank \code{rankp0}.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -8777,20 +8804,21 @@ rmsamplesizeequiv <- function(beta = 0.2, kMax = 1L, informationRates = NA_real_
 #'
 #' # Add futility stopping
 #' a <- c(0, 0.5, b[3])
-#' p1 <- exitprob_seamless(M = 2, theta = c(0.3, 0.5), K = 2, b = b, a = a, I = I)
+#' p1 <- exitprob_seamless(
+#'   M = 2, theta = c(0.3, 0.5), K = 2, b = b, a = a, I = I)
 #' cbind(
 #'   cumulativeEfficacy = cumsum(p1$exitProbUpper),
 #'   cumulativeFutility = cumsum(p1$exitProbLower)
 #' )
 #'
 #' @export
-exitprob_seamless <- function(M = NA_integer_, r = 1, theta = NA_real_, corr_known = TRUE, K = NA_integer_, b = NULL, a = NULL, I = NULL) {
-    .Call(`_lrstat_exitprob_seamless`, M, r, theta, corr_known, K, b, a, I)
+exitprob_seamless <- function(M = NA_integer_, r = 1, theta = NA_real_, corr_known = TRUE, K = NA_integer_, b = NULL, a = NULL, I = NULL, rankp0 = 1L) {
+    .Call(`_lrstat_exitprob_seamless`, M, r, theta, corr_known, K, b, a, I, rankp0)
 }
 
 #' @title Efficacy Boundaries for Phase 2/3 Seamless Design
 #' @description Calculates the efficacy stopping boundaries for a phase 2/3
-#' seamless design, accounting for the selection of the best arm
+#' seamless design, accounting for rank-based treatment selection
 #' at the end of Phase 2 and sequential testing in Phase 3.
 #'
 #' @param M Number of active treatment arms in Phase 2.
@@ -8799,7 +8827,8 @@ exitprob_seamless <- function(M = NA_integer_, r = 1, theta = NA_real_, corr_kno
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 #'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-#'   0 is assumed.
+#'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+#'   with the largest Phase-2 Z-statistic is selected for Phase 3).
 #' @param k The index of the current look in Phase 3.
 #' @param informationRates A numeric vector of information rates up to the
 #'   current look. Values must be strictly increasing and \eqn{\le 1}.
@@ -8811,11 +8840,19 @@ exitprob_seamless <- function(M = NA_integer_, r = 1, theta = NA_real_, corr_kno
 #'   error spending time at each analysis. Values must be strictly increasing
 #'   and \eqn{\le 1}. If omitted, defaults to \code{informationRates}.
 #' @inheritParams param_efficacyStopping
+#' @param rankp0 An integer between 1 and \code{M} specifying the rank of the
+#'   arm to be selected at the end of Phase 2 for the purpose of determining
+#'   the boundaries. For example, if \code{rankp0} is 1, the boundaries are
+#'   determined based on the arm with the largest Z-statistic at the end of
+#'   Phase 2; if \code{rankp0} is 2, the boundaries are determined based on the
+#'   arm with the second largest Z-statistic at the end of Phase 2, and
+#'   so on. The default is 1, which corresponds to the common practice of
+#'   determining boundaries based on the top-ranked arm at the end of Phase 2.
 #'
 #' @details
 #' The function determines critical values by solving for the boundary that
 #' satisfies the alpha-spending requirement, given the selection of the
-#' "best" arm at the end of Phase 2.
+#' arm at rank \code{rankp0} at the end of Phase 2.
 #'
 #' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
 #' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
@@ -8841,8 +8878,8 @@ exitprob_seamless <- function(M = NA_integer_, r = 1, theta = NA_real_, corr_kno
 #'                   alpha = 0.025, typeAlphaSpending = "OF")
 #'
 #' @export
-getBound_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_integer_, informationRates = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, efficacyStopping = NA_integer_) {
-    .Call(`_lrstat_getBound_seamless`, M, r, corr_known, k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, efficacyStopping)
+getBound_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_integer_, informationRates = NA_real_, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, spendingTime = NA_real_, efficacyStopping = NA_integer_, rankp0 = 1L) {
+    .Call(`_lrstat_getBound_seamless`, M, r, corr_known, k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, efficacyStopping, rankp0)
 }
 
 #' @title Power and Sample Size for Phase 2/3 Seamless Design
@@ -8866,14 +8903,18 @@ getBound_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 #'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-#'   0 is used.
+#'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+#'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+#'   This option is only used for critical value calculations; the
+#'   correlation is always derived from \eqn{r} for power calculations.
 #' @param K Number of sequential looks in Phase 3.
 #' @param informationRates A numeric vector of information rates fixed
 #'   before the trial. If unspecified, defaults to \eqn{(1:(K+1)) / (K+1)}.
 #' @inheritParams param_efficacyStopping
 #' @inheritParams param_futilityStopping
-#' @param criticalValues The upper boundaries on the max-Z statistic scale
-#'   for Phase 2 and the Z statistics for the selected arm in Phase 3.
+#' @param criticalValues The upper boundaries on the Z-statistic scale
+#'   for the rank-selected arm in Phase 2 and the Z statistics for the
+#'   selected arm in Phase 3.
 #'   If missing, boundaries will be computed based on the specified alpha
 #'   spending function.
 #' @inheritParams param_alpha
@@ -8881,9 +8922,10 @@ getBound_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_
 #' @inheritParams param_parameterAlphaSpending
 #' @inheritParams param_userAlphaSpending
 #' @param futilityBounds A numeric vector of length \eqn{K} specifying
-#'   futility boundaries on the max-Z scale at the end of Phase 2 and
-#'   on the Z scale for the \eqn{K - 1} analyses in Phase 3. The final analysis
-#'   uses the efficacy boundary as the futility boundary.
+#'   futility boundaries on the Z scale at the end of Phase 2 for the
+#'   rank-selected arm and on the Z scale for the \eqn{K - 1} analyses
+#'   in Phase 3. The final analysis uses the efficacy boundary as the
+#'   futility boundary.
 #' @param futilityCP A numeric vector of length \eqn{K} specifying futility
 #'   boundaries on the conditional power scale.
 #' @param futilityTheta A numeric vector of length \eqn{K} specifying futility
@@ -8894,6 +8936,10 @@ getBound_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_
 #' @param spendingTime A numeric vector of length \eqn{K+1} specifying the
 #'   error spending time at each analysis. Values must be strictly increasing
 #'   and end at 1. If omitted, defaults to \code{informationRates}.
+#' @param rankp0 An integer between 1 and \code{M} specifying which ranked
+#'   Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
+#'   Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
+#'   so on.
 #'
 #' @return An S3 object of class \code{seamless} with the following components:
 #'
@@ -8907,6 +8953,7 @@ getBound_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_
 #'     - \code{r}: Randomization ratio per active arm versus control in
 #'       Phase 2.
 #'     - \code{corr_known}: Whether the phase-2 correlation was assumed known.
+#'     - \code{rankp0}: The rank of the selected arm at the end of Phase 2.
 #'     - \code{K}: Number of looks in Phase 3.
 #'     - \code{information}: Maximum information for any active arm versus
 #'       control.
@@ -8953,12 +9000,12 @@ getBound_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_
 #'
 #' * \code{byArmResults}: A data frame containing:
 #'     - \code{theta}: Parameter values for the active arms.
-#'     - \code{selectAsBest}: Probability an arm is selected as best at the
+#'     - \code{selectionProb}: Probability an arm is selected at the
 #'       end of Phase 2.
 #'     - \code{powerByArm}: Probability of rejecting the null for each arm by
 #'       trial end.
 #'     - \code{condPowerByArm}: Conditional power for each arm given it was
-#'       selected as the best at the end of Phase 2.
+#'       selected at rank \code{rankp0} at the end of Phase 2.
 #'
 #' * \code{settings}: A list of input settings:
 #'     - \code{typeAlphaSpending}: Type of alpha spending function.
@@ -8971,10 +9018,11 @@ getBound_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_
 #'     - \code{userBetaSpending}: User-specified beta spending values.
 #'     - \code{spendingTime}: Error-spending times at each analysis.
 #'
-#' @details If \code{corr_known} is \code{FALSE}, critical boundaries are
+#' @details
+#' If \code{corr_known} is \code{FALSE}, critical boundaries are
 #' computed assuming independence among the Phase-2 Wald statistics
-#' (a conservative assumption). Power calculations, however, use the
-#' correlation implied by the randomization ratio \eqn{r}.
+#' (a conservative assumption when \code{rankp0 = 1}). Power calculations,
+#' however, use the correlation implied by the randomization ratio \eqn{r}.
 #'
 #' Futility boundaries may be supplied directly on the Z scale, derived from
 #' conditional power, derived from parameter values, or computed from a beta
@@ -9011,8 +9059,8 @@ getBound_seamless <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_
 #'   typeBetaSpending = "sfHSD", parameterBetaSpending = -2))
 #'
 #' @export
-getDesign_seamless <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, K = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_) {
-    .Call(`_lrstat_getDesign_seamless`, beta, IMax, theta, M, r, corr_known, K, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime)
+getDesign_seamless <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, K = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_, rankp0 = 1L) {
+    .Call(`_lrstat_getDesign_seamless`, beta, IMax, theta, M, r, corr_known, K, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime, rankp0)
 }
 
 #' @title Adaptive Phase 2/3 Seamless Design
@@ -9037,7 +9085,9 @@ getDesign_seamless <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 #'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-#'   0 is used.
+#'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+#'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+#'   This option is only used for critical value calculations.
 #' @param L The interim adaptation look in Phase 3.
 #' @param zL The z-test statistic at the interim adaptation look of
 #'   Phase 3.
@@ -9054,10 +9104,10 @@ getDesign_seamless <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real
 #' @param futilityStopping Indicators of whether futility stopping is
 #'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 #'   if left unspecified.
-#' @param criticalValues The upper boundaries on the max z-test statistic
-#'   scale for Phase 2 and the z-test statistics for the selected arm
-#'   in Phase 3 for the primary trial. If missing, boundaries
-#'   will be computed based on the specified alpha spending function.
+#' @param criticalValues The upper boundaries on the z-test statistic
+#'   scale for the rank-selected arm in Phase 2 and the z-test statistics
+#'   for the selected arm in Phase 3 for the primary trial. If missing,
+#'   boundaries will be computed based on the specified alpha spending function.
 #' @param alpha The significance level of the primary trial.
 #'   Defaults to 0.025.
 #' @param typeAlphaSpending The type of alpha spending for the primary
@@ -9077,10 +9127,10 @@ getDesign_seamless <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real
 #'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 #' @param userAlphaSpending The user-defined alpha spending for the
 #'   primary trial. Represents the cumulative alpha spent up to each stage.
-#' @param futilityBounds The lower boundaries on the max-z statistic scale
-#'   at end of phase 2 and the z-test statistic scale in phase 3
-#'   for futility stopping for the primary trial. Defaults to
-#'   \code{rep(-8, kMax-1)} if left unspecified.
+#' @param futilityBounds The lower boundaries on the z-test statistic scale
+#'   at the end of phase 2 for the rank-selected arm and on the z-test
+#'   statistic scale in phase 3 for futility stopping for the primary trial.
+#'   Defaults to \code{rep(-8, kMax-1)} if left unspecified.
 #' @param futilityCP The conditional power-based futility bounds for the
 #'   primary trial.
 #' @param futilityTheta The parameter value-based futility bounds for the
@@ -9136,6 +9186,10 @@ getDesign_seamless <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real
 #' @param spendingTimeNew The error spending time of the secondary trial.
 #'   Defaults to missing, in which case it is assumed to be the same as
 #'   \code{informationRatesNew}.
+#' @param rankp0 An integer between 1 and \code{M} specifying which ranked
+#'   Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
+#'   Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
+#'   so on.
 #'
 #' @return An \code{adaptDesign_seamless} object with three list components:
 #'
@@ -9180,8 +9234,8 @@ getDesign_seamless <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real
 #'   alpha = 0.025, typeAlphaSpending = "OF", kNew = 1))
 #'
 #' @export
-adaptDesign_seamless <- function(betaNew = NA_real_, INew = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, K = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, spendingTime = NA_real_, MullerSchafer = FALSE, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, futilityBoundsInt = NULL, futilityCPInt = NULL, futilityThetaInt = NULL, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, userBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_) {
-    .Call(`_lrstat_adaptDesign_seamless`, betaNew, INew, M, r, corr_known, L, zL, theta, IMax, K, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaSpendingNew, spendingTimeNew)
+adaptDesign_seamless <- function(betaNew = NA_real_, INew = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, L = NA_integer_, zL = NA_real_, theta = NA_real_, IMax = NA_real_, K = NA_integer_, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, spendingTime = NA_real_, MullerSchafer = FALSE, kNew = NA_integer_, informationRatesNew = NA_real_, efficacyStoppingNew = NA_integer_, futilityStoppingNew = NA_integer_, typeAlphaSpendingNew = "sfOF", parameterAlphaSpendingNew = NA_real_, futilityBoundsInt = NULL, futilityCPInt = NULL, futilityThetaInt = NULL, typeBetaSpendingNew = "none", parameterBetaSpendingNew = NA_real_, userBetaSpendingNew = NA_real_, spendingTimeNew = NA_real_, rankp0 = 1L) {
+    .Call(`_lrstat_adaptDesign_seamless`, betaNew, INew, M, r, corr_known, L, zL, theta, IMax, K, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaSpendingNew, spendingTimeNew, rankp0)
 }
 
 #' @title Simon's Two-Stage Design
