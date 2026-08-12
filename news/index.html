@@ -52,7 +52,8 @@
 <li>added lrsim_mcpmod and print.lrsim_mcpmod for simulation and summary output of MCPMod design using the log-rank test</li>
 <li>updated mvnormr to support positive semidefinite covariance matrix via minimal diagonal stabilization during factorization</li>
 <li>used seed = 314159 as the default for pmvnormr and qmvnormr to ensure the same random numbers are generated and results are reproducible across different runs</li>
-<li>add the selection to Stage 2 probability in lrsim_seamless</li>
+<li>added the selection to Stage 2 probability in lrsim_seamless</li>
+<li>fixed liferegr to handle empty optional variable inputs (stratum, covariates, weight, offset, id) without triggering a formula parse error from an empty right-hand side</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.2" id="lrstat-032">lrstat 0.3.2<a class="anchor" aria-label="anchor" href="#lrstat-032"></a></h2><p class="text-muted">CRAN release: 2026-05-13</p>
