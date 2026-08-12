@@ -103,11 +103,11 @@ DataFrameCpp getCIcpp(const size_t L,
   if (asf == "of" || asf == "p" || asf == "wt" || asf == "none") {
     if (informationRates.back() != 1.0) {
       throw std::invalid_argument(
-          "informationRates must end with 1 for OF, P, WT, or NONE");
+          "informationRates must end with 1 for OF, P, WT, or none");
     }
     if (spendTime.back() != 1.0) {
       throw std::invalid_argument(
-          "spendingTime must end with 1 for OF, P, WT, or NONE");
+          "spendingTime must end with 1 for OF, P, WT, or none");
     }
   }
 
@@ -358,11 +358,11 @@ DataFrameCpp getRCIcpp(
   if (asf == "of" || asf == "p" || asf == "wt" || asf == "none") {
     if (informationRates.back() != 1.0) {
       throw std::invalid_argument(
-          "informationRates must end with 1 for OF, P, WT, or NONE");
+          "informationRates must end with 1 for OF, P, WT, or none");
     }
     if (spendTime.back() != 1.0) {
       throw std::invalid_argument(
-          "spendingTime must end with 1 for OF, P, WT, or NONE");
+          "spendingTime must end with 1 for OF, P, WT, or none");
     }
   }
 
@@ -785,11 +785,11 @@ DataFrameCpp getADCIcpp(
     if (asfNew == "of" || asfNew == "p" || asfNew == "wt" || asfNew == "none") {
       if (informationRatesNew.back() != 1.0) {
         throw std::invalid_argument(
-            "informationRatesNew must end with 1 for OF, P, WT, or NONE");
+            "informationRatesNew must end with 1 for OF, P, WT, or none");
       }
       if (spendTimeNew.back() != 1.0) {
         throw std::invalid_argument(
-            "spendingTimeNew must end with 1 for OF, P, WT, or NONE");
+            "spendingTimeNew must end with 1 for OF, P, WT, or none");
       }
     }
   }
@@ -1290,11 +1290,11 @@ DataFrameCpp getADRCIcpp(
     if (asfNew == "of" || asfNew == "p" || asfNew == "wt" || asfNew == "none") {
       if (informationRatesNew.back() != 1.0) {
         throw std::invalid_argument(
-            "informationRatesNew must end with 1 for OF, P, WT, or NONE");
+            "informationRatesNew must end with 1 for OF, P, WT, or none");
       }
       if (spendTimeNew.back() != 1.0) {
         throw std::invalid_argument(
-            "spendingTimeNew must end with 1 for OF, P, WT, or NONE");
+            "spendingTimeNew must end with 1 for OF, P, WT, or none");
       }
     }
   }

@@ -140,11 +140,11 @@ DataFrameCpp getCI_multiarm_cpp(
   if (asf == "of" || asf == "p" || asf == "wt" || asf == "none") {
     if (informationRates.back() != 1.0) {
       throw std::invalid_argument(
-          "informationRates must end with 1 for OF, P, WT, or NONE");
+          "informationRates must end with 1 for OF, P, WT, or none");
     }
     if (spendTime.back() != 1.0) {
       throw std::invalid_argument(
-          "spendingTime must end with 1 for OF, P, WT, or NONE");
+          "spendingTime must end with 1 for OF, P, WT, or none");
     }
   }
 
@@ -687,11 +687,11 @@ DataFrameCpp getADCI_multiarm_cpp(
     if (asfNew == "of" || asfNew == "none") {
       if (informationRatesNew.back() != 1.0) {
         throw std::invalid_argument(
-            "informationRatesNew must end with 1 for OF or NONE");
+            "informationRatesNew must end with 1 for OF or none");
       }
       if (spendTimeNew.back() != 1.0) {
         throw std::invalid_argument(
-            "spendingTimeNew must end with 1 for OF or NONE");
+            "spendingTimeNew must end with 1 for OF or none");
       }
     }
   }
