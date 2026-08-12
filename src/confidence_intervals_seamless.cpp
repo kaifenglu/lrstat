@@ -30,7 +30,8 @@ double f_pvalue_seamless(const double theta,
                          const size_t L,
                          const double zL,
                          const std::vector<double>& b,
-                         const std::vector<double>& I) {
+                         const std::vector<double>& I,
+                         const size_t rankp0) {
   // Build the components required by exitprobcpp:
   // upper vector: first L components from b, last component = zL
   // theta vector: all = theta scalar
@@ -39,7 +40,7 @@ double f_pvalue_seamless(const double theta,
   upper[L] = zL;
 
   std::vector<double> mu(M, theta);
-  auto probs = exitprob_seamless_cpp(M, r, mu, corr_known, L, upper, I);
+  auto probs = exitprob_seamless_cpp(M, r, mu, corr_known, L, upper, I, rankp0);
   double sum_up = std::accumulate(probs.exitProbUpper.begin(),
                                   probs.exitProbUpper.end(), 0.0);
   return sum_up;
@@ -60,10 +61,17 @@ DataFrameCpp getCI_seamless_cpp(
     const double alpha,
     const std::string& typeAlphaSpending,
     const double parameterAlphaSpending,
-    const std::vector<double>& spendingTime) {
+    const std::vector<double>& spendingTime,
+    const size_t rankp0) {
 
   // Basic argument checks
   if (M < 1) throw std::invalid_argument("M should be at least 1");
+  if (rankp0 < 1 || rankp0 > M) {
+    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
+  }
+  if (rankp0 > 1 && !corr_known) {
+    throw std::invalid_argument("corr_known must be true when rankp0 > 1");
+  }
   if (r <= 0.0) throw std::invalid_argument("r should be positive");
   if (L <= 0) throw std::invalid_argument("L must be a positive integer");
   if (std::isnan(zL)) throw std::invalid_argument("zL must be provided");
@@ -138,11 +146,11 @@ DataFrameCpp getCI_seamless_cpp(
   if (asf == "of" || asf == "p" || asf == "wt" || asf == "none") {
     if (informationRates.back() != 1.0) {
       throw std::invalid_argument(
-          "informationRates must end with 1 for OF, P, WT, or NONE");
+          "informationRates must end with 1 for OF, P, WT, or none");
     }
     if (spendTime.back() != 1.0) {
       throw std::invalid_argument(
-          "spendingTime must end with 1 for OF, P, WT, or NONE");
+          "spendingTime must end with 1 for OF, P, WT, or none");
     }
   }
 
@@ -156,7 +164,7 @@ DataFrameCpp getCI_seamless_cpp(
   } else {
     b = getBound_seamless_cpp(
       M, r, corr_known, L, informationRates, alpha, asf, parameterAlphaSpending,
-      std::vector<double>{}, spendTime, effStopping);
+      std::vector<double>{}, spendTime, effStopping, rankp0);
   }
 
   // Build full information vector I = IMax * informationRates
@@ -164,7 +172,7 @@ DataFrameCpp getCI_seamless_cpp(
   for (size_t i = 0; i <= L; ++i) I[i] = IMax * informationRates[i];
 
   // p-value at theta = 0
-  double pvalue = f_pvalue_seamless(0.0, M, r, corr_known, L, zL, b, I);
+  double pvalue = f_pvalue_seamless(0.0, M, r, corr_known, L, zL, b, I, rankp0);
 
   double cilevel = 1.0 - 2.0 * alpha;
 
@@ -176,22 +184,23 @@ DataFrameCpp getCI_seamless_cpp(
 
   // median-unbiased estimate thetahat: solve f_pvalue(theta) - 0.5 = 0
   auto f_med = [&](double theta)->double {
-    return f_pvalue_seamless(theta, M, r, corr_known, L, zL, b, I) - 0.5;
+    return f_pvalue_seamless(theta, M, r, corr_known, L, zL, b, I, rankp0) - 0.5;
   };
   double thetahat = brent(f_med, left, right, tol);
 
   // lower bound: solve f_pvalue(theta) - (1-cilevel)/2 = 0, in [left, thetahat]
   double target_lower = (1.0 - cilevel) / 2.0;
   auto f_lower = [&](double theta)->double {
-    return f_pvalue_seamless(theta, M, r, corr_known, L, zL, b, I) - target_lower;
+    return f_pvalue_seamless(theta, M, r, corr_known, L, zL, b, I, rankp0) -
+      target_lower;
   };
   double lower = brent(f_lower, left, thetahat, tol);
 
   // upper bound: solve f_pvalue(theta) - (1+cilevel)/2 = 0, in [thetahat, right]
-  // conservative approach by setting M = 1 in Phase 2
   double target_upper = (1.0 + cilevel) / 2.0;
   auto f_upper = [&](double theta)->double {
-    return f_pvalue_seamless(theta, 1, r, corr_known, L, zL, b, I) - target_upper;
+    return f_pvalue_seamless(theta, 1, r, corr_known, L, zL, b, I, 1) -
+      target_upper;
   };
   double upper = brent(f_upper, thetahat, right, tol);
 
@@ -218,7 +227,9 @@ DataFrameCpp getCI_seamless_cpp(
 //' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 //'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 //'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-//'   0 is assumed.
+//'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+//'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+//'   This option is only used for critical value calculations.
 //' @param L The termination look in Phase 3.
 //' @param zL The z-test statistic at the termination look.
 //' @param IMax Maximum information for any active arm versus the common
@@ -227,8 +238,9 @@ DataFrameCpp getCI_seamless_cpp(
 //' @param efficacyStopping Indicators of whether efficacy stopping is
 //'   allowed at each stage up to look \code{L}.
 //'   Defaults to \code{TRUE} if left unspecified.
-//' @param criticalValues The upper boundaries on the max z-test statistic
-//'   scale for Phase 2 and the z-test statistics for the selected arm
+//' @param criticalValues The upper boundaries on the z-test statistic
+//'   scale for the rank-selected arm in Phase 2 and the z-test statistics
+//'   for the selected arm
 //'   in Phase 3 up to look \code{L}. If missing, boundaries will be
 //'   computed based on the specified alpha spending function.
 //' @inheritParams param_alpha
@@ -247,6 +259,10 @@ DataFrameCpp getCI_seamless_cpp(
 //' @param spendingTime The error spending time up to look \code{L}.
 //'   Defaults to missing, in which case, it is the same as
 //'   \code{informationRates}.
+//' @param rankp0 An integer between 1 and \code{M} specifying which ranked
+//'   Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
+//'   Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
+//'   so on.
 //'
 //' @details
 //' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
@@ -275,8 +291,7 @@ DataFrameCpp getCI_seamless_cpp(
 //'
 //' @examples
 //' getCI_seamless(
-//'   L = 2, zL = 2.075,
-//'   M = 2, r = 1, corr_known = FALSE,
+//'   L = 2, zL = 2.075, M = 2, r = 1, corr_known = FALSE,
 //'   IMax = 300 / 4, informationRates = c(1/3, 2/3, 1),
 //'   alpha = 0.025, typeAlphaSpending = "sfOF")
 //'
@@ -295,7 +310,8 @@ Rcpp::DataFrame getCI_seamless(
     const double alpha = 0.025,
     const std::string& typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& spendingTime = NA_REAL) {
+    const Rcpp::NumericVector& spendingTime = NA_REAL,
+    const int rankp0 = 1) {
 
   std::vector<double> infoRates(informationRates.begin(), informationRates.end());
   auto effStopping = convertLogicalVector(efficacyStopping);
@@ -305,7 +321,7 @@ Rcpp::DataFrame getCI_seamless(
   auto result = getCI_seamless_cpp(
     static_cast<size_t>(M), r, corr_known, static_cast<size_t>(L), zL,
     IMax, infoRates, effStopping, critValues, alpha, typeAlphaSpending,
-    parameterAlphaSpending, spendTime);
+    parameterAlphaSpending, spendTime, static_cast<size_t>(rankp0));
   return Rcpp::wrap(result);
 }
 
@@ -388,9 +404,11 @@ double f_bwpvalue_seamless(const double theta,
                            const size_t L2,
                            const double zL2,
                            const std::vector<double>& b2,
-                           const std::vector<double>& I2) {
+                           const std::vector<double>& I2,
+                           const size_t rankp0) {
   auto bw = f_bwimage_seamless(theta, K, L, zL, b, I, L2, zL2, b2, I2);
-  return f_pvalue_seamless(theta, M, r, corr_known, bw.first, bw.second, b, I);
+  return f_pvalue_seamless(
+    theta, M, r, corr_known, bw.first, bw.second, b, I, rankp0);
 }
 
 
@@ -418,10 +436,17 @@ DataFrameCpp getADCI_seamless_cpp(
     const std::vector<unsigned char>& efficacyStoppingNew,
     const std::string& typeAlphaSpendingNew,
     const double parameterAlphaSpendingNew,
-    const std::vector<double>& spendingTimeNew) {
+    const std::vector<double>& spendingTimeNew,
+    const size_t rankp0) {
 
   // Input validation and defaults
   if (M < 1) throw std::invalid_argument("M should be at least 1");
+  if (rankp0 < 1 || rankp0 > M) {
+    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
+  }
+  if (rankp0 > 1 && !corr_known) {
+    throw std::invalid_argument("corr_known must be true when rankp0 > 1");
+  }
   if (r <= 0.0) throw std::invalid_argument("r should be positive");
   if (L <= 0) throw std::invalid_argument("L must be a positive integer");
   if (std::isnan(zL)) throw std::invalid_argument("zL must be provided");
@@ -582,11 +607,11 @@ DataFrameCpp getADCI_seamless_cpp(
     if (asfNew == "of" || asfNew == "p" || asfNew == "wt" || asfNew == "none") {
       if (informationRatesNew.back() != 1.0) {
         throw std::invalid_argument(
-            "informationRatesNew must end with 1 for OF, P, WT, or NONE");
+            "informationRatesNew must end with 1 for OF, P, WT, or none");
       }
       if (spendTimeNew.back() != 1.0) {
         throw std::invalid_argument(
-            "spendingTimeNew must end with 1 for OF, P, WT, or NONE");
+            "spendingTimeNew must end with 1 for OF, P, WT, or none");
       }
     }
   }
@@ -601,13 +626,13 @@ DataFrameCpp getADCI_seamless_cpp(
     b = criticalValues;
     std::vector<double> zero(M, 0.0);
     auto probs = exitprob_seamless_cpp(M, r, zero, corr_known, K,
-                                       b, informationRates);
+                                       b, informationRates, rankp0);
     alpha1 = std::accumulate(probs.exitProbUpper.begin(),
                              probs.exitProbUpper.end(), 0.0);
   } else {
     b = getBound_seamless_cpp(
       M, r, corr_known, K, infoRates, alpha, asf, parameterAlphaSpending,
-      std::vector<double>{}, spendTime, effStopping);
+      std::vector<double>{}, spendTime, effStopping, rankp0);
     alpha1 = alpha;
   }
 
@@ -655,7 +680,7 @@ DataFrameCpp getADCI_seamless_cpp(
   double zL2 = (zLc * std::sqrt(I[L] + I2[L2 - 1]) -
                 zL * std::sqrt(I[L])) / std::sqrt(I2[L2 - 1]);
   double pvalue = f_bwpvalue_seamless(0.0, M, r, corr_known, K, L, zL, b, I,
-                                      L2, zL2, b2, I2);
+                                      L2, zL2, b2, I2, rankp0);
 
   // interval brackets and root-finding to obtain thetahat, lower, upper
   double sqrtIL = std::sqrt(I[L]);
@@ -665,21 +690,21 @@ DataFrameCpp getADCI_seamless_cpp(
 
   auto f_med = [&](double theta)->double {
     return f_bwpvalue_seamless(theta, M, r, corr_known, K, L, zL, b, I,
-                               L2, zL2, b2, I2) - 0.5;
+                               L2, zL2, b2, I2, rankp0) - 0.5;
   };
   double thetahat = brent(f_med, left, right, tol);
 
   double target_lower = (1.0 - cilevel) / 2.0;
   auto f_low = [&](double theta)->double {
     return f_bwpvalue_seamless(theta, M, r, corr_known, K, L, zL, b, I,
-                               L2, zL2, b2, I2) - target_lower;
+                               L2, zL2, b2, I2, rankp0) - target_lower;
   };
   double lower = brent(f_low, left, thetahat, tol);
 
   double target_upper = (1.0 + cilevel) / 2.0;
   auto f_high = [&](double theta)->double {
     return f_bwpvalue_seamless(theta, M, r, corr_known, K, L, zL, b, I,
-                               L2, zL2, b2, I2) - target_upper;
+                               L2, zL2, b2, I2, rankp0) - target_upper;
   };
   double upper = brent(f_high, thetahat, right, tol);
 
@@ -705,7 +730,9 @@ DataFrameCpp getADCI_seamless_cpp(
 //' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 //'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 //'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-//'   0 is used.
+//'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+//'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+//'   This option is only used for critical value calculations.
 //' @param L The interim adaptation look in Phase 3.
 //' @param zL The z-test statistic at the interim adaptation look of
 //'   Phase 3.
@@ -717,8 +744,9 @@ DataFrameCpp getADCI_seamless_cpp(
 //' @param efficacyStopping Indicators of whether efficacy stopping is
 //'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 //'   if left unspecified.
-//' @param criticalValues The upper boundaries on the max z-test statistic
-//'   scale for Phase 2 and the z-test statistics for the selected arm
+//' @param criticalValues The upper boundaries on the z-test statistic
+//'   scale for the rank-selected arm in Phase 2 and the z-test statistics
+//'   for the selected arm
 //'   in Phase 3 for the primary trial. If missing, boundaries
 //'   will be computed based on the specified alpha spending function.
 //' @param alpha The significance level of the primary trial.
@@ -768,13 +796,17 @@ DataFrameCpp getADCI_seamless_cpp(
 //' @param spendingTimeNew The error spending time of the secondary trial.
 //'   Defaults to missing, in which case, it is
 //'   the same as \code{informationRatesNew}.
+//' @param rankp0 An integer between 1 and \code{M} specifying which ranked
+//'   Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
+//'   Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
+//'   so on.
 //'
 //' @details
 //' If typeAlphaSpendingNew is \code{"OF"}, \code{"P"}, \code{"WT"},
-//' or \code{"none"}, then
-//' \code{informationRatesNew}, \code{efficacyStoppingNew}, and
-//' \code{spendingTimeNew} must be of full length \code{kNew}, and
-//' \code{informationRatesNew} and \code{spendingTimeNew} must end with 1.
+//' or \code{"none"}, then \code{informationRatesNew},
+//' \code{efficacyStoppingNew}, and \code{spendingTimeNew} must be of full
+//' length \code{kNew}, and \code{informationRatesNew} and
+//' \code{spendingTimeNew} must end with 1.
 //'
 //' @return A data frame with the following variables:
 //'
@@ -828,7 +860,8 @@ Rcpp::DataFrame getADCI_seamless(
     const Rcpp::LogicalVector& efficacyStoppingNew = NA_LOGICAL,
     const std::string& typeAlphaSpendingNew = "sfOF",
     const double parameterAlphaSpendingNew = NA_REAL,
-    const Rcpp::NumericVector& spendingTimeNew = NA_REAL) {
+    const Rcpp::NumericVector& spendingTimeNew = NA_REAL,
+    const int rankp0 = 1) {
 
   std::vector<double> infoRates(informationRates.begin(), informationRates.end());
   auto effStopping = convertLogicalVector(efficacyStopping);
@@ -845,6 +878,7 @@ Rcpp::DataFrame getADCI_seamless(
     effStopping, critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
     spendTime, MullerSchafer, static_cast<size_t>(Lc), zLc,
     INew, infoRatesNew, effStoppingNew,
-    typeAlphaSpendingNew, parameterAlphaSpendingNew, spendTimeNew);
+    typeAlphaSpendingNew, parameterAlphaSpendingNew, spendTimeNew,
+    static_cast<size_t>(rankp0));
   return Rcpp::wrap(result);
 }

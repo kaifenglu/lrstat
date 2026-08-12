@@ -52,13 +52,20 @@ std::vector<double> getCP_seamless_cpp(
     const std::vector<double>& futilityThetaInt,
     const std::string& typeBetaSpendingNew,
     const double parameterBetaSpendingNew,
-    const std::vector<double>& spendingTimeNew) {
+    const std::vector<double>& spendingTimeNew,
+    const size_t rankp0) {
 
   // Basic validations
   if (std::isnan(INew)) throw std::invalid_argument("INew must be provided");
   if (INew <= 0.0) throw std::invalid_argument("INew must be positive");
 
   if (M < 1) throw std::invalid_argument("M must be at least 1");
+  if (rankp0 < 1 || rankp0 > M) {
+    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
+  }
+  if (rankp0 > 1 && !corr_known) {
+    throw std::invalid_argument("corr_known must be true when rankp0 > 1");
+  }
   if (r <= 0.0) throw std::invalid_argument("r must be positive");
   if (L < 1) throw std::invalid_argument("L must be at least 1");
   if (std::isnan(zL)) throw std::invalid_argument("zL must be provided");
@@ -384,7 +391,7 @@ std::vector<double> getCP_seamless_cpp(
       auto f = [&](double aval)->double {
         critValues[kMax-1] = aval;
         probss = exitprob_seamless_cpp(
-          M, r, zero, corr_known, K, critValues, infoRates);
+          M, r, zero, corr_known, K, critValues, infoRates, rankp0);
         double cpu = std::accumulate(probss.exitProbUpper.begin(),
                                      probss.exitProbUpper.end(), 0.0);
         return cpu - alpha;
@@ -394,7 +401,7 @@ std::vector<double> getCP_seamless_cpp(
     } else {
       critValues = getBound_seamless_cpp(
         M, r, corr_known, K, infoRates, alpha, asf, parameterAlphaSpending,
-        userAlphaSpending, spendTime, effStopping);
+        userAlphaSpending, spendTime, effStopping, rankp0);
     }
   } else {
     for (size_t i = 0; i < kMax; ++i) {
@@ -478,8 +485,8 @@ std::vector<double> getCP_seamless_cpp(
 
   std::vector<double> theta1(k1, theta);
   probs = exitprobcpp(b1, a1, theta1, I1);
-  double conditionalPower = std::accumulate(probs.exitProbUpper.begin(),
-                                            probs.exitProbUpper.end(), 0.0);
+  auto v1 = probs.exitProbUpper;
+  double conditionalPower = std::accumulate(v1.begin(), v1.end(), 0.0);
 
   double IL = information1[L];
   double sqrtIL = std::sqrt(IL);
@@ -613,7 +620,9 @@ std::vector<double> getCP_seamless_cpp(
 //' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 //'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 //'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-//'   0 is used.
+//'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+//'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+//'   This option is only used for critical value calculations.
 //' @param L The interim adaptation look in Phase 3.
 //' @param zL The z-test statistic at the interim adaptation look of
 //'   Phase 3.
@@ -630,9 +639,9 @@ std::vector<double> getCP_seamless_cpp(
 //' @param futilityStopping Indicators of whether futility stopping is
 //'   allowed at each stage of the primary trial. Defaults to true
 //'   if left unspecified.
-//' @param criticalValues The upper boundaries on the max z-test statistic
-//'   scale for Phase 2 and the z-test statistics for the selected arm
-//'   in Phase 3 for the primary trial. If missing, boundaries
+//' @param criticalValues The upper boundaries on the z-test statistic scale
+//'   for the rank-selected arm in Phase 2 and the z-test statistics for the
+//'   selected arm in Phase 3 for the primary trial. If missing, boundaries
 //'   will be computed based on the specified alpha spending function.
 //' @param alpha The significance level of the primary trial.
 //'   Defaults to 0.025.
@@ -653,9 +662,9 @@ std::vector<double> getCP_seamless_cpp(
 //'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param userAlphaSpending The user-defined alpha spending for the
 //'   primary trial. Represents the cumulative alpha spent up to each stage.
-//' @param futilityBounds	The lower boundaries on the  max z-test statistic
-//'   scale for Phase 2 and the z-test statistics for the selected arm
-//'   in Phase 3 for the primary trial.
+//' @param futilityBounds The lower boundaries on the z-test statistic
+//'   scale for the rank-selected arm in Phase 2 and the z-test statistics
+//'   for the selected arm in Phase 3 for the primary trial.
 //' @param futilityCP The conditional power-based futility bounds for the
 //'   primary trial.
 //' @param futilityTheta The parameter value-based futility bounds for the
@@ -707,6 +716,10 @@ std::vector<double> getCP_seamless_cpp(
 //' @param spendingTimeNew The error spending time of the secondary trial.
 //'   Defaults to missing, in which case it is assumed to be the same as
 //'   \code{informationRatesNew}.
+//' @param rankp0 An integer between 1 and \code{M} specifying which ranked
+//'   Phase-2 arm is carried forward when the trial continues to Phase 3.
+//'   \code{rankp0 = 1} selects the largest Phase-2 Z-statistic,
+//'   \code{rankp0 = 2} selects the second largest, and so on.
 //'
 //' @return A vector of two conditional powers given the interim results and
 //' parameter values, one without design change and the other with
@@ -765,7 +778,8 @@ Rcpp::NumericVector getCP_seamless(
     const Rcpp::Nullable<Rcpp::NumericVector> futilityThetaInt = R_NilValue,
     const std::string& typeBetaSpendingNew = "none",
     const double parameterBetaSpendingNew = NA_REAL,
-    const Rcpp::NumericVector& spendingTimeNew = NA_REAL) {
+    const Rcpp::NumericVector& spendingTimeNew = NA_REAL,
+    const int rankp0 = 1) {
 
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
   auto effStopping = convertLogicalVector(efficacyStopping);
@@ -832,7 +846,7 @@ Rcpp::NumericVector getCP_seamless(
     effStoppingNew, futStoppingNew, typeAlphaSpendingNew,
     parameterAlphaSpendingNew, futBoundsInt, futCPInt, futThetaInt,
     typeBetaSpendingNew, parameterBetaSpendingNew,
-    spendTimeNew
+    spendTimeNew, static_cast<size_t>(rankp0)
   );
 
   return Rcpp::wrap(result);
