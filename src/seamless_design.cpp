@@ -30,7 +30,8 @@ ExitProbSeamless exitprob_seamless_cpp(
     const size_t K,
     const std::vector<double>& b,
     const std::vector<double>& a,
-    const std::vector<double>& I) {
+    const std::vector<double>& I,
+    const size_t rankp0) {
 
   if (M < 1) {
     throw std::invalid_argument("M should be at least 1");
@@ -68,13 +69,22 @@ ExitProbSeamless exitprob_seamless_cpp(
     std::iota(Ivec.begin(), Ivec.end(), 1.0);
   }
 
+  if (rankp0 < 1 || rankp0 > M) {
+    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
+  }
+  size_t rankZ0 = M - rankp0 + 1;
+
+  if (rankp0 > 1 && !corr_known) {
+    throw std::invalid_argument("corr_known must be true when rankp0 > 1");
+  }
+
   double rho = corr_known ? r / (r + 1.0) : 0;
 
   std::vector<double> exitProbUpper(K + 1, 0.0);
   std::vector<double> exitProbLower(K + 1, 0.0);
   FlatMatrix exitProbByArmUpper(K + 1, M);
   FlatMatrix exitProbByArmLower(K + 1, M);
-  std::vector<double> selectAsBest(M, 0.0);
+  std::vector<double> selectionProb(M, 0.0);
 
   // information quantities for each pairwise comparison with control
   std::vector<double> sqrtI(K + 1);
@@ -83,37 +93,6 @@ ExitProbSeamless exitprob_seamless_cpp(
   }
   double sqrtI0 = sqrtI[0];
 
-  // mean vector of the Wald statistics for the M active arms in phase 2
-  std::vector<double> mean0(M);
-  for (size_t m = 0; m < M; ++m) {
-    mean0[m] = theta[m] * sqrtI0;
-  }
-
-  // covariance matrix of the Wald statistics for the M active arms in phase 2
-  FlatMatrix sigma0(M, M);
-  sigma0.fill(rho);
-  for (size_t i = 0; i < M; ++i) {
-    sigma0(i, i) = 1.0;
-  }
-
-  // -------- phase 2 upper exit: reject if max Z >= b[0] --------
-  {
-    std::vector<double> lower0(M, -8.0), upper0(M, b[0]);
-    PMVNResult out0 = pmvnormcpp(lower0, upper0, mean0, sigma0,
-                                 1024, 16384, 8, 1e-4, 0.0, 314159, true);
-    exitProbUpper[0] = 1.0 - out0.prob;
-  }
-
-  // -------- phase 2 lower exit: stop for futility if max Z <= a[0] --------
-  {
-    std::vector<double> lower0(M, -8.0), upper0(M, a[0]);
-    PMVNResult out0 = pmvnormcpp(lower0, upper0, mean0, sigma0,
-                                 1024, 16384, 8, 1e-4, 0.0, 314159, true);
-    exitProbLower[0] = out0.prob;
-  }
-
-  // compute the exit probabilities at the K looks in phase 3
-
   // information increments for the selected arm in phase 3
   std::vector<double> I1(K), sqrtI1(K);
   for (size_t k = 0; k < K; ++k) {
@@ -121,6 +100,11 @@ ExitProbSeamless exitprob_seamless_cpp(
     sqrtI1[k] = std::sqrt(I1[k]);
   }
 
+  // boundaries in phase 3 given the selected arm in phase 2
+  std::vector<double> b1(K);
+  std::vector<double> a1(K);
+  std::vector<double> theta1(K);
+  std::vector<double> p1u(K), p1l(K);
 
   // conditional covariance among non-selected arms in phase 2 given selected arm
   FlatMatrix sigma_m1;
@@ -136,14 +120,9 @@ ExitProbSeamless exitprob_seamless_cpp(
     }
   }
 
-  std::vector<double> b1(K);
-  std::vector<double> a1(K);
-  std::vector<double> theta1(K);
-  std::vector<double> p1u(K), p1l(K);
-
   size_t m1 = (M > 1) ? M - 1 : 1;
   std::vector<double> mean(m1);
-  std::vector<double> lower(m1, -8.0);
+  std::vector<double> lower(m1);
   std::vector<double> upper(m1);
 
   // integration intervals for z0
@@ -151,6 +130,7 @@ ExitProbSeamless exitprob_seamless_cpp(
   std::vector<double> breaks_reject = {b[0], 8.0};
   std::vector<double> breaks_futility = {-8.0, a[0]};
   std::vector<double> breaks_continue = {a[0], b[0]};
+  std::vector<unsigned char> c(m1);
 
   for (size_t m = 0; m < M; ++m) { // loop over the selected arm in phase 2
     double mu = theta[m] * sqrtI0;
@@ -158,35 +138,70 @@ ExitProbSeamless exitprob_seamless_cpp(
     // compute the conditional distribution of the Wald statistics for the
     // M - 1 non-selected arms in phase 2 given that arm m is selected, and
     // then compute the probability of selecting arm m in phase 2 (i.e.,
-    // the probability that the Wald statistic for arm m is larger than
-    // the Wald statistics for the M - 1 non-selected arms in phase 2)
+    // the probability that the Wald statistic for arm m is the rankZ0-th
+    // smallest among the M Wald statistics for the M active arms in phase 2)
     // reuse temporary buffers for mean/lower/upper
 
-    // density contribution for arm m being selected as best at phase 2 value z0
-    auto f0 = [&theta, &sigma_m1, &mean, &lower, &upper, M, m, mu, sqrtI0, rho]
+    // density contribution for arm m being selected at phase 2 value z0
+    auto f0 = [&theta, &sigma_m1, &mean, &lower, &upper, &c, M, m, mu,
+               sqrtI0, rho, rankZ0]
     (double z0)->double {
       if (M > 1) {
-        double delta0 = z0 - mu;
+        // conditional mean vector for the M - 1 non-selected arms given arm m
+        double delta0 = rho * (z0 - mu);
         size_t j = 0;
         for (size_t i = 0; i < M; ++i) {
           if (i == m) continue;
-          mean[j++] = theta[i] * sqrtI0 + rho * delta0;
+          mean[j++] = theta[i] * sqrtI0 + delta0;
         }
-        std::fill_n(upper.data(), M - 1, z0);
-        PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1,
-                                    1024, 16384, 8, 1e-4, 0.0, 314159, true);
-        return out.prob * boost_dnorm(z0, mu, 1.0);
+
+        if (rankZ0 == M) { // select the arm with the largest value at z0
+          std::fill_n(lower.data(), M - 1, -8.0);
+          std::fill_n(upper.data(), M - 1, z0);
+          PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
+          return out.prob * boost_dnorm(z0, mu, 1.0);
+        } else if (rankZ0 == 1) { // select the arm with the smallest value at z0
+          std::fill_n(lower.data(), M - 1, z0);
+          std::fill_n(upper.data(), M - 1, 8.0);
+          PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
+          return out.prob * boost_dnorm(z0, mu, 1.0);
+        } else { // select the arm with the rankZ0-th smallest value at z0
+          // conditional probability of selecting arm m given arm m has value z0
+          double cp = 0.0;
+
+          // traverse all combinations of the rankZ0 - 1 arms below z0
+          std::fill(c.begin(), c.end(), 0);
+          for (size_t i = 0; i < rankZ0 - 1; ++i) c[i] = 1;
+
+          do {
+            for (size_t i = 0; i < M - 1; ++i) {
+              if (c[i]) {
+                lower[i] = -8.0;
+                upper[i] = z0;
+              } else {
+                lower[i] = z0;
+                upper[i] = 8.0;
+              }
+            }
+            PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
+            cp += out.prob;
+          } while (std::prev_permutation(c.begin(), c.end()));
+
+          return cp * boost_dnorm(z0, mu, 1.0);
+        }
       } else {
         return boost_dnorm(z0, mu, 1.0);
       }
     };
 
     // overall selection probability
-    selectAsBest[m] = integrate3(f0, breaks_select, 1e-4);
+    selectionProb[m] = integrate3(f0, breaks_select, 1e-4);
 
     // phase 2 efficacy and futility by arm selected
     exitProbByArmUpper(0, m) = integrate3(f0, breaks_reject, 1e-4);
     exitProbByArmLower(0, m) = integrate3(f0, breaks_futility, 1e-4);
+    exitProbUpper[0] += exitProbByArmUpper(0, m);
+    exitProbLower[0] += exitProbByArmLower(0, m);
 
     // compute the conditional distribution of the Wald statistics in phase 3
     // given that arm m is selected in phase 2, and then compute the probability
@@ -238,10 +253,8 @@ ExitProbSeamless exitprob_seamless_cpp(
 
       p1u_flat.resize(p1u_flat.size() + K);
       p1l_flat.resize(p1l_flat.size() + K);
-      for (size_t kk = 0; kk < K; ++kk) {
-        p1u_flat[idx * K + kk] = p1u[kk];
-        p1l_flat[idx * K + kk] = p1l[kk];
-      }
+      std::memcpy(p1u_flat.data() + idx * K, p1u.data(), K * sizeof(double));
+      std::memcpy(p1l_flat.data() + idx * K, p1l.data(), K * sizeof(double));
 
       return idx;
     };
@@ -273,7 +286,7 @@ ExitProbSeamless exitprob_seamless_cpp(
     std::move(exitProbLower),
     std::move(exitProbByArmUpper),
     std::move(exitProbByArmLower),
-    std::move(selectAsBest)
+    std::move(selectionProb)
   };
 }
 
@@ -284,23 +297,25 @@ ExitProbSeamless exitprob_seamless_cpp(
     const bool corr_known,
     const size_t K,
     const std::vector<double>& b,
-    const std::vector<double>& I) {
+    const std::vector<double>& I,
+    const size_t rankp0) {
 
   if (!none_na(b)) throw std::invalid_argument("b must be provided");
   double amin = std::min(-8.0, *std::min_element(b.begin(), b.end()));
   std::vector<double> a(K + 1, amin);
-  return exitprob_seamless_cpp(M, r, theta, corr_known, K, b, a, I);
+  return exitprob_seamless_cpp(M, r, theta, corr_known, K, b, a, I, rankp0);
 }
 
 
 //' @title Exit Probabilities for Phase 2/3 Seamless Design
 //' @description Computes the upper and lower exit probabilities for a phase
 //' 2/3 seamless design. In Phase 2, multiple active arms are compared
-//' against a common control arm. If the phase-2 max-Z statistic crosses the
+//' against a common control arm. If the test statistic for the arm
+//' ranked \code{rankp0} at the end of Phase 2 crosses the
 //' efficacy boundary, the trial stops early for efficacy; if it falls below
-//' the futility boundary, the trial stops early for futility. Otherwise, the
-//' best-performing arm is selected to proceed to Phase 3, where it is tested
-//' against the common control over multiple looks with upper and optional
+//' the futility boundary, the trial stops early for futility. Otherwise,
+//' the arm is selected to proceed to Phase 3, where it is tested against
+//' the control over multiple looks with upper and optional
 //' lower stopping boundaries.
 //'
 //' @param M Number of active treatment arms in Phase 2.
@@ -311,38 +326,44 @@ ExitProbSeamless exitprob_seamless_cpp(
 //' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 //'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 //'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-//'   0 is used.
+//'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+//'   with the largest Phase-2 Z-statistic is selected for Phase 3).
 //' @param K Number of sequential looks in Phase 3.
-//' @param b A vector of efficacy boundaries (length \eqn{K+1}). The first
-//'   element is the efficacy boundary for the phase-2 max-Z statistic;
+//' @param b A vector of efficacy boundaries (length \eqn{K + 1}). The first
+//'   element is the efficacy boundary for the Phase-2 test statistic;
 //'   the remaining \eqn{K} elements are efficacy boundaries for the selected
 //'   arm in Phase 3.
-//' @param a An optional vector of futility boundaries (length \eqn{K+1}).
-//'   The first element is the futility boundary for the phase-2 max-Z
-//'   statistic; the remaining \eqn{K} elements are futility boundaries for
-//'   the selected arm in Phase 3. If omitted, no futility stopping is
-//'   applied.
-//' @param I A vector of information levels (length \eqn{K+1}) for any active
+//' @param a An optional vector of futility boundaries (length \eqn{K + 1}).
+//'   The first element is the futility boundary for the Phase-2 test statistic;
+//'   the remaining \eqn{K} elements are futility boundaries for the selected
+//'   arm in Phase 3. If omitted, no futility stopping is applied.
+//' @param I A vector of information levels (length \eqn{K + 1}) for any active
 //'   arm versus the common control. The first element is for Phase 2;
 //'   the remaining \eqn{K} elements are for the looks in Phase 3.
+//' @param rankp0 An integer between 1 and \code{M} specifying which ranked
+//'   Phase-2 arm is carried forward when the trial continues to Phase 3.
+//'   \code{rankp0 = 1} selects the largest Phase-2 Z-statistic,
+//'   \code{rankp0 = 2} selects the second largest, and so on.
 //'
 //' @details
 //' The function assumes a multivariate normal distribution for the Wald
-//' statistics. The "best" arm is defined as the active arm with the largest
-//' Z-statistic at the end of Phase 2 among designs that continue beyond the
-//' phase-2 analysis.
+//' statistics. Among designs that continue beyond the Phase-2 analysis,
+//' the carried-forward arm is the one with rank \code{rankp0} based on the
+//' p-value of the Z-statistic at the end of Phase 2.
 //'
 //' \strong{Decision Rules:}
 //'
-//' * \strong{Phase 2 efficacy stop}: reject if the phase-2 max-Z statistic
-//'   satisfies \eqn{\max_m Z_m(I_0) \ge b_0}.
+//' * \strong{Phase 2 efficacy stop}: reject if the Phase-2 test statistic
+//'   for the arm selected at rank \code{rankp0} satisfies
+//'   \eqn{Z_{[rankp0]}(I_0) \ge b_0}.
 //'
-//' * \strong{Phase 2 futility stop}: stop for futility if the phase-2 max-Z
-//'   statistic satisfies \eqn{\max_m Z_m(I_0) \le a_0}.
+//' * \strong{Phase 2 futility stop}: stop for futility if the Phase-2 test
+//'   statistic for the arm selected at rank \code{rankp0} satisfies
+//'   \eqn{Z_{[rankp0]}(I_0) \le a_0}.
 //'
-//' * \strong{Continue to Phase 3}: if \eqn{a_0 < \max_m Z_m(I_0) < b_0},
-//'   select the arm with the largest phase-2 Z-statistic and continue with
-//'   that arm only.
+//' * \strong{Continue to Phase 3}: if
+//'   \eqn{a_0 < Z_{[rankp0]}(I_0) < b_0}, continue with the arm selected
+//'   at rank \code{rankp0} only.
 //'
 //' * \strong{Phase 3 efficacy stop}: at look \eqn{k}, reject if the selected
 //'   arm's Z-statistic exceeds the efficacy boundary and no earlier stop has
@@ -357,7 +378,8 @@ ExitProbSeamless exitprob_seamless_cpp(
 //' * All active arms share the same information level in Phase 2.
 //'
 //' * Exactly one active arm is selected at the end of Phase 2 based on the
-//'   largest observed Z-statistic when the trial continues to Phase 3.
+//'   \code{rankp0}-th largest observed Z-statistic when the trial continues
+//'   to Phase 3.
 //'
 //' @return A list containing the following components:
 //'
@@ -371,16 +393,16 @@ ExitProbSeamless exitprob_seamless_cpp(
 //'   elements are the probabilities of stopping for futility at each look in
 //'   Phase 3.
 //'
-//' * \code{exitProbByArmUpper}: A \eqn{(K+1) \times M} matrix. The
+//' * \code{exitProbByArmUpper}: A \eqn{(K + 1) \times M} matrix. The
 //'   \eqn{(k, m)}-th entry gives the probability of stopping for efficacy at
-//'   look \eqn{k} given that arm \eqn{m} is selected as best.
+//'   look \eqn{k} given that arm \eqn{m} is selected at rank \code{rankp0}.
 //'
-//' * \code{exitProbByArmLower}: A \eqn{(K+1) \times M} matrix. The
+//' * \code{exitProbByArmLower}: A \eqn{(K + 1) \times M} matrix. The
 //'   \eqn{(k, m)}-th entry gives the probability of stopping for futility at
-//'   look \eqn{k} given that arm \eqn{m} is selected as best.
+//'   look \eqn{k} given that arm \eqn{m} is selected at rank \code{rankp0}.
 //'
-//' * \code{selectAsBest}: A vector of length \eqn{M} containing the
-//'   probability that each active arm is selected to move on to Phase 3.
+//' * \code{selectionProb}: A vector of length \eqn{M} containing the
+//'   probability that each active arm is selected at rank \code{rankp0}.
 //'
 //' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 //'
@@ -407,7 +429,8 @@ ExitProbSeamless exitprob_seamless_cpp(
 //'
 //' # Add futility stopping
 //' a <- c(0, 0.5, b[3])
-//' p1 <- exitprob_seamless(M = 2, theta = c(0.3, 0.5), K = 2, b = b, a = a, I = I)
+//' p1 <- exitprob_seamless(
+//'   M = 2, theta = c(0.3, 0.5), K = 2, b = b, a = a, I = I)
 //' cbind(
 //'   cumulativeEfficacy = cumsum(p1$exitProbUpper),
 //'   cumulativeFutility = cumsum(p1$exitProbLower)
@@ -423,7 +446,8 @@ Rcpp::List exitprob_seamless(
     const int K = NA_INTEGER,
     SEXP b = R_NilValue,
     SEXP a = R_NilValue,
-    SEXP I = R_NilValue) {
+    SEXP I = R_NilValue,
+    const int rankp0 = 1) {
 
   if (M == NA_INTEGER || M < 1) {
     throw std::invalid_argument("M must be a positive integer");
@@ -465,15 +489,20 @@ Rcpp::List exitprob_seamless(
     IVec.assign(Iv.begin(), Iv.end());
   }
 
+  if (rankp0 == NA_INTEGER || rankp0 < 1 || rankp0 > M) {
+    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
+  }
+  size_t rankp0_ = static_cast<size_t>(rankp0);
+
   auto result = exitprob_seamless_cpp(
-    M_, r, thetaVec, corr_known, K_, bVec, aVec, IVec);
+    M_, r, thetaVec, corr_known, K_, bVec, aVec, IVec, rankp0_);
 
   ListCpp out;
   out.push_back(result.exitProbUpper, "exitProbUpper");
   out.push_back(result.exitProbLower, "exitProbLower");
   out.push_back(result.exitProbByArmUpper, "exitProbByArmUpper");
   out.push_back(result.exitProbByArmLower, "exitProbByArmLower");
-  out.push_back(result.selectAsBest, "selectAsBest");
+  out.push_back(result.selectionProb, "selectionProb");
   return Rcpp::wrap(out);
 }
 
@@ -489,7 +518,8 @@ std::vector<double> getBound_seamless_cpp(
     const double parameterAlphaSpending,
     const std::vector<double>& userAlphaSpending,
     const std::vector<double>& spendingTime,
-    const std::vector<unsigned char>& efficacyStopping) {
+    const std::vector<unsigned char>& efficacyStopping,
+    const size_t rankp0) {
 
   if (M < 1) {
     throw std::invalid_argument("M should be at least 1");
@@ -501,7 +531,7 @@ std::vector<double> getBound_seamless_cpp(
     throw std::invalid_argument("k should be at least 1");
   }
 
-  size_t K = k + 1; // add the look at end of phase 2
+  size_t K = k + 1; // add the look in phase 2
 
   // infoRates: if missing create 1/K, 2/K, ..., k/K
   size_t kMax = K;
@@ -586,14 +616,22 @@ std::vector<double> getBound_seamless_cpp(
   if (asf == "of" || asf == "p" || asf == "wt" || asf == "none") {
     if (infoRates.back() != 1.0) {
       throw std::invalid_argument(
-          "informationRates must end with 1 for OF, P, WT, or NONE");
+          "informationRates must end with 1 for OF, P, WT, or none");
     }
     if (spendTime.back() != 1.0) {
       throw std::invalid_argument(
-          "spendingTime must end with 1 for OF, P, WT, or NONE");
+          "spendingTime must end with 1 for OF, P, WT, or none");
     }
   }
 
+  if (rankp0 < 1 || rankp0 > M) {
+    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
+  }
+  size_t rankZ0 = M - rankp0 + 1; // convert rankp0 to rankZ
+
+  if (rankp0 > 1 && !corr_known) {
+    throw std::invalid_argument("corr_known must be true when rankp0 > 1");
+  }
 
   ExitProbSeamless probs;
   std::vector<double> criticalValues(kMax);
@@ -605,7 +643,7 @@ std::vector<double> getBound_seamless_cpp(
     auto f = [&](double aval)->double {
       criticalValues[kMax-1] = aval;
       probs = exitprob_seamless_cpp(M, r, zero, corr_known, kMax - 1,
-                                    criticalValues, infoRates);
+                                    criticalValues, infoRates, rankp0);
       double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                    probs.exitProbUpper.end(), 0.0);
       return cpu - alpha;
@@ -635,7 +673,7 @@ std::vector<double> getBound_seamless_cpp(
       }
 
       probs = exitprob_seamless_cpp(M, r, zero, corr_known, kMax - 1,
-                                    u, infoRates);
+                                    u, infoRates, rankp0);
       double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                    probs.exitProbUpper.end(), 0.0);
       return cpu - alpha;
@@ -658,14 +696,101 @@ std::vector<double> getBound_seamless_cpp(
 
     if (!effStopping[0]) criticalValues[0] = 8.0;
     else {
-      FlatMatrix sigma(M, M);
       double rho = corr_known ? r / (r + 1.0) : 0;
-      sigma.fill(rho);
-      for (size_t i = 0; i < M; ++i) {
-        sigma(i, i) = 1.0;
+
+      if (rankp0 == 1) {
+        FlatMatrix sigma(M, M);
+        sigma.fill(rho);
+        for (size_t i = 0; i < M; ++i) {
+          sigma(i, i) = 1.0;
+        }
+        criticalValues[0] = qmvnormcpp(1.0 - cumAlpha, zero, sigma);
+      } else {
+        // conditional covariance among non-selected arms in phase 2 given selected arm
+        FlatMatrix sigma_m1;
+        if (M > 1) {
+          sigma_m1.resize(M - 1, M - 1);
+          double diag = 1.0 - rho * rho;
+          double off = rho * (1.0 - rho);
+          for (size_t j = 0; j < M - 1; ++j) {
+            double* colptr = sigma_m1.data_ptr() + j * sigma_m1.nrow;
+            // fill column with off
+            std::fill_n(colptr, M - 1, off);
+            colptr[j] = diag;
+          }
+        }
+
+        size_t m1 = (M > 1) ? M - 1 : 1;
+        std::vector<double> mean(m1);
+        std::vector<double> lower(m1);
+        std::vector<double> upper(m1);
+        std::vector<double> breaks_reject = {8.0, 8.0};
+        std::vector<unsigned char> c(m1);
+
+        auto f = [&](double b0) { // lambda to compute cumulative upper exit
+          // probability - cumAlpha in phase 2
+          breaks_reject[0] = b0;
+          double exitProbUpperStage1 = 0.0;
+          for (size_t m = 0; m < M; ++m) { // loop over the selected arm in phase 2
+
+            // density contribution for arm m being selected at phase 2 value z0
+            auto f0 = [&sigma_m1, &mean, &lower, &upper, &c, M, m, rho, rankZ0]
+            (double z0)->double {
+              if (M > 1) {
+                // conditional mean vector for the M - 1 non-selected arms given arm m
+                size_t j = 0;
+                for (size_t i = 0; i < M; ++i) {
+                  if (i == m) continue;
+                  mean[j++] = rho * z0;
+                }
+
+                if (rankZ0 == M) { // select the arm with the largest value at z0
+                  std::fill_n(lower.data(), M - 1, -8.0);
+                  std::fill_n(upper.data(), M - 1, z0);
+                  PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
+                  return out.prob * boost_dnorm(z0, 0.0, 1.0);
+                } else if (rankZ0 == 1) { // select the arm with the smallest value
+                  std::fill_n(lower.data(), M - 1, z0);
+                  std::fill_n(upper.data(), M - 1, 8.0);
+                  PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
+                  return out.prob * boost_dnorm(z0, 0.0, 1.0);
+                } else { // select the arm with the rankZ0-th smallest value at z0
+                  // conditional probability of selecting arm m given arm m
+                  double cp = 0.0;
+
+                  // enumerate all combinations of the rankZ0 - 1 arms below z0
+                  std::fill(c.begin(), c.end(), 0);
+                  for (size_t i = 0; i < rankZ0 - 1; ++i) c[i] = 1;
+
+                  do {
+                    for (size_t i = 0; i < M - 1; ++i) {
+                      if (c[i]) {
+                        lower[i] = -8.0;
+                        upper[i] = z0;
+                      } else {
+                        lower[i] = z0;
+                        upper[i] = 8.0;
+                      }
+                    }
+                    PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
+                    cp += out.prob;
+                  } while (std::prev_permutation(c.begin(), c.end()));
+
+                  return cp * boost_dnorm(z0, 0.0, 1.0);
+                }
+              } else {
+                return boost_dnorm(z0, 0.0, 1.0);
+              }
+            };
+
+            exitProbUpperStage1 += integrate3(f0, breaks_reject, 1e-4);
+          }
+
+          return exitProbUpperStage1 - cumAlpha;
+        };
+
+        criticalValues[0] = brent(f, 0.0, 8.0, 1e-6);
       }
-      criticalValues[0] = qmvnormcpp(1.0 - cumAlpha, zero, sigma,
-                                     1024, 16384, 8, 1e-4, 0.0, 314159, true);
     }
 
     // subsequent stages
@@ -685,7 +810,7 @@ std::vector<double> getBound_seamless_cpp(
         // set the last element to the current candidate critical value
         criticalValues[k1] = aval;
         probs = exitprob_seamless_cpp(
-          M, r, zero, corr_known, k1, criticalValues, infoRates);
+          M, r, zero, corr_known, k1, criticalValues, infoRates, rankp0);
         double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                      probs.exitProbUpper.end(), 0.0);
         return cpu - cumAlpha;
@@ -713,7 +838,7 @@ std::vector<double> getBound_seamless_cpp(
 
 //' @title Efficacy Boundaries for Phase 2/3 Seamless Design
 //' @description Calculates the efficacy stopping boundaries for a phase 2/3
-//' seamless design, accounting for the selection of the best arm
+//' seamless design, accounting for rank-based treatment selection
 //' at the end of Phase 2 and sequential testing in Phase 3.
 //'
 //' @param M Number of active treatment arms in Phase 2.
@@ -722,7 +847,8 @@ std::vector<double> getBound_seamless_cpp(
 //' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 //'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 //'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-//'   0 is assumed.
+//'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+//'   with the largest Phase-2 Z-statistic is selected for Phase 3).
 //' @param k The index of the current look in Phase 3.
 //' @param informationRates A numeric vector of information rates up to the
 //'   current look. Values must be strictly increasing and \eqn{\le 1}.
@@ -734,11 +860,19 @@ std::vector<double> getBound_seamless_cpp(
 //'   error spending time at each analysis. Values must be strictly increasing
 //'   and \eqn{\le 1}. If omitted, defaults to \code{informationRates}.
 //' @inheritParams param_efficacyStopping
+//' @param rankp0 An integer between 1 and \code{M} specifying the rank of the
+//'   arm to be selected at the end of Phase 2 for the purpose of determining
+//'   the boundaries. For example, if \code{rankp0} is 1, the boundaries are
+//'   determined based on the arm with the largest Z-statistic at the end of
+//'   Phase 2; if \code{rankp0} is 2, the boundaries are determined based on the
+//'   arm with the second largest Z-statistic at the end of Phase 2, and
+//'   so on. The default is 1, which corresponds to the common practice of
+//'   determining boundaries based on the top-ranked arm at the end of Phase 2.
 //'
 //' @details
 //' The function determines critical values by solving for the boundary that
 //' satisfies the alpha-spending requirement, given the selection of the
-//' "best" arm at the end of Phase 2.
+//' arm at rank \code{rankp0} at the end of Phase 2.
 //'
 //' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
 //' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
@@ -776,7 +910,8 @@ Rcpp::NumericVector getBound_seamless(
     const double parameterAlphaSpending = NA_REAL,
     const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
     const Rcpp::NumericVector& spendingTime = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL) {
+    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
+    const int rankp0 = 1) {
 
   std::vector<double> infoRates(informationRates.begin(), informationRates.end());
   auto effStopping = convertLogicalVector(efficacyStopping);
@@ -786,13 +921,14 @@ Rcpp::NumericVector getBound_seamless(
   auto result = getBound_seamless_cpp(
     static_cast<size_t>(M), r, corr_known, static_cast<size_t>(k),
     infoRates, alpha, typeAlphaSpending, parameterAlphaSpending,
-    userAlpha, spendTime, effStopping
+    userAlpha, spendTime, effStopping, static_cast<size_t>(rankp0)
   );
 
   return Rcpp::wrap(result);
 }
 
 
+// obtain futility bounds and power
 GetPowerSeamless getPower_seamless(
     const size_t M,
     const double r,
@@ -804,7 +940,8 @@ GetPowerSeamless getPower_seamless(
     const std::string& bsf,
     const double bsfpar,
     const std::vector<double>& st,
-    const std::vector<unsigned char>& futStopping) {
+    const std::vector<unsigned char>& futStopping,
+    const size_t rankp0) {
 
   if (M < 1) {
     throw std::invalid_argument("M should be at least 1");
@@ -821,17 +958,20 @@ GetPowerSeamless getPower_seamless(
   if (K < 1) {
     throw std::invalid_argument("K should be at least 1");
   }
-  if (critValues.size() < K + 1) {
-    throw std::invalid_argument("Insufficient length for critValues");
+  if (critValues.size() != K + 1) {
+    throw std::invalid_argument("Invalid length for critValues");
   }
-  if (I.size() < K + 1) {
-    throw std::invalid_argument("Insufficient length for I");
+  if (I.size() != K + 1) {
+    throw std::invalid_argument("Invalid length for I");
   }
-  if (st.size() < K + 1) {
-    throw std::invalid_argument("Insufficient length for st");
+  if (st.size() != K + 1) {
+    throw std::invalid_argument("Invalid length for st");
   }
-  if (futStopping.size() < K + 1) {
-    throw std::invalid_argument("Insufficient length for futStopping");
+  if (futStopping.size() != K + 1) {
+    throw std::invalid_argument("Invalid length for futStopping");
+  }
+  if (rankp0 < 1 || rankp0 > M) {
+    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
   }
   if (I[0] <= 0.0) {
     throw std::invalid_argument("I must be positive");
@@ -839,58 +979,154 @@ GetPowerSeamless getPower_seamless(
   if (any_nonincreasing(I)) {
     throw std::invalid_argument("I must be increasing");
   }
+  if (st[0] <= 0.0) {
+    throw std::invalid_argument("st must be positive");
+  }
+  if (any_nonincreasing(st)) {
+    throw std::invalid_argument("st must be increasing");
+  }
+  if (st.back() != 1.0) {
+    throw std::invalid_argument("st must end with 1");
+  }
 
+  double rho = r / (r + 1.0);
 
   double sqrtI0 = std::sqrt(I[0]);
-  std::vector<double> lo(M, -8.0), hi(M, 8.0);
-  std::vector<double> mean0(M);
+  std::vector<double> lo(M, -8.0), hi(M, critValues[0]);
+  std::vector<double> mu0(M);
   for (size_t m = 0; m < M; ++m) {
-    mean0[m] = theta[m] * sqrtI0;
+    mu0[m] = theta[m] * sqrtI0;
   }
 
   FlatMatrix sigma0(M, M);
-  sigma0.fill(r / (r + 1.0));
+  sigma0.fill(rho);
   for (size_t i = 0; i < M; ++i) {
     sigma0(i, i) = 1.0;
   }
+
+  // conditional covariance among non-selected arms in phase 2 given selected
+  FlatMatrix sigma_m1;
+  if (M > 1) {
+    sigma_m1.resize(M - 1, M - 1);
+    double diag = 1.0 - rho * rho;
+    double off = rho * (1.0 - rho);
+    for (size_t j = 0; j < M - 1; ++j) {
+      double* colptr = sigma_m1.data_ptr() + j * sigma_m1.nrow;
+      // fill column with off
+      std::fill_n(colptr, M - 1, off);
+      colptr[j] = diag;
+    }
+  }
+
+  size_t m1 = (M > 1) ? M - 1 : 1;
+  std::vector<double> mean(m1);
+  std::vector<double> lower(m1);
+  std::vector<double> upper(m1);
+  std::vector<double> breaks_futility = {-8.0, -8.0};
+  size_t rankZ0 = M - rankp0 + 1;
+  std::vector<unsigned char> c(m1);
+
 
   ExitProbSeamless probs;
   std::vector<double> futBounds(K + 1, -8.0);
   auto f = [&](double beta)->double {
     std::fill(futBounds.begin(), futBounds.end(), -8.0);
 
-    double eps = 0.0;
-    double cb = 0.0;
+    double eps = 0.0, cumBeta = 0.0;
 
-    // stage 0: futility on phase-2 max-Z scale
+    // stage 0: futility for the arm selected at rankp0 in phase 2
     if (futStopping[0]) {
-      cb = errorSpentcpp(st[0], beta, bsf, bsfpar);
+      cumBeta = errorSpentcpp(st[0], beta, bsf, bsfpar);
 
-      auto g = [&](double aval)->double {
-        std::fill(hi.begin(), hi.end(), aval);
-        PMVNResult out0 = pmvnormcpp(lo, hi, mean0, sigma0,
-                                     1024, 16384, 8, 1e-4, 0.0, 314159, true);
-        return out0.prob - cb;
-      };
+      if (rankp0 == 1) {
+        PMVNResult out = pmvnormcpp(lo, hi, mu0, sigma0);
+        eps = out.prob - cumBeta;
+        if (eps < 0.0) return -1.0;
+        futBounds[0] = qmvnormcpp(cumBeta, mu0, sigma0);
+      } else {
+        auto g = [&](double a0)->double {
+          breaks_futility[1] = a0;
+          double exitProbLowerStage1 = 0.0;
+          for (size_t m = 0; m < M; ++m) { // loop over the selected arm in phase 2
+            double mu = theta[m] * sqrtI0;
 
-      eps = g(critValues[0]);
-      if (eps < 0.0) return -1.0;
-      futBounds[0] = brent(g, -8.0, critValues[0], 1e-6);
+            // density contribution for arm m being selected at phase 2 value z0
+            auto f0 = [&theta, &sigma_m1, &mean, &lower, &upper, &c, M, m, mu,
+                       sqrtI0, rho, rankZ0]
+            (double z0)->double {
+              if (M > 1) {
+                // conditional means for the M - 1 non-selected arms given arm m
+                double delta0 = rho * (z0 - mu);
+                size_t j = 0;
+                for (size_t i = 0; i < M; ++i) {
+                  if (i == m) continue;
+                  mean[j++] = theta[i] * sqrtI0 + delta0;
+                }
+
+                if (rankZ0 == M) { // select the arm with the largest value at z0
+                  std::fill_n(lower.data(), M - 1, -8.0);
+                  std::fill_n(upper.data(), M - 1, z0);
+                  PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
+                  return out.prob * boost_dnorm(z0, mu, 1.0);
+                } else if (rankZ0 == 1) { // select the arm with the smallest value
+                  std::fill_n(lower.data(), M - 1, z0);
+                  std::fill_n(upper.data(), M - 1, 8.0);
+                  PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
+                  return out.prob * boost_dnorm(z0, mu, 1.0);
+                } else { // select the arm with the rankZ0-th smallest value at z0
+                  // conditional probability of selecting arm m given arm m at z0
+                  double cp = 0.0;
+
+                  // enumerate all combinations of the rankZ0 - 1 arms below z0
+                  std::fill(c.begin(), c.end(), 0);
+                  for (size_t i = 0; i < rankZ0 - 1; ++i) c[i] = 1;
+
+                  do {
+                    for (size_t i = 0; i < M - 1; ++i) {
+                      if (c[i]) {
+                        lower[i] = -8.0;
+                        upper[i] = z0;
+                      } else {
+                        lower[i] = z0;
+                        upper[i] = 8.0;
+                      }
+                    }
+                    PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
+                    cp += out.prob;
+                  } while (std::prev_permutation(c.begin(), c.end()));
+
+                  return cp * boost_dnorm(z0, mu, 1.0);
+                }
+              } else {
+                return boost_dnorm(z0, mu, 1.0);
+              }
+            };
+
+            exitProbLowerStage1 += integrate3(f0, breaks_futility, 1e-4);
+          }
+
+          return exitProbLowerStage1 - cumBeta;
+        };
+
+        eps = g(critValues[0]);
+        if (eps < 0.0) return -1.0;
+        futBounds[0] = brent(g, -8.0, critValues[0], 1e-6);
+      }
     }
 
     // stages 1..K
     for (size_t k = 1; k < K + 1; ++k) {
       if (!futStopping[k]) continue;
 
-      cb = errorSpentcpp(st[k], beta, bsf, bsfpar);
+      cumBeta = errorSpentcpp(st[k], beta, bsf, bsfpar);
 
       auto g = [&](double aval)->double {
         futBounds[k] = aval;
         probs = exitprob_seamless_cpp(M, r, theta, true, k, critValues,
-                                      futBounds, I);
+                                      futBounds, I, rankp0);
         double cpl = std::accumulate(probs.exitProbLower.begin(),
                                      probs.exitProbLower.end(), 0.0);
-        return cpl - cb;
+        return cpl - cumBeta;
       };
 
       double bk = critValues[k];
@@ -931,7 +1167,8 @@ GetPowerSeamless getPower_seamless(
 
     beta = brent(f_for_brent, 0.0001, 1.0 - alpha, 1e-6);
     futBounds[K] = critValues[K];
-    probs = exitprob_seamless_cpp(M, r, theta, true, K, critValues, futBounds, I);
+    probs = exitprob_seamless_cpp(M, r, theta, true, K, critValues,
+                                  futBounds, I, rankp0);
   }
 
   return GetPowerSeamless{
@@ -940,7 +1177,6 @@ GetPowerSeamless getPower_seamless(
     std::move(probs)
   };
 }
-
 
 
 ListCpp getDesign_seamless_cpp(
@@ -965,7 +1201,8 @@ ListCpp getDesign_seamless_cpp(
     const std::string& typeBetaSpending,
     const double parameterBetaSpending,
     const std::vector<double>& userBetaSpending,
-    const std::vector<double>& spendingTime) {
+    const std::vector<double>& spendingTime,
+    const size_t rankp0) {
 
   // ----------- Input Validation ----------- //
   if (std::isnan(beta) && std::isnan(IMax)) {
@@ -979,6 +1216,12 @@ ListCpp getDesign_seamless_cpp(
   }
   if (M < 1) {
     throw std::invalid_argument("M must be at least 1");
+  }
+  if (rankp0 < 1 || rankp0 > M) {
+    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
+  }
+  if (rankp0 > 1 && !corr_known) {
+    throw std::invalid_argument("corr_known must be true when rankp0 > 1");
   }
   if (r <= 0.0) {
     throw std::invalid_argument("r must be positive");
@@ -1213,7 +1456,7 @@ ListCpp getDesign_seamless_cpp(
       auto f = [&](double aval)->double {
         critValues[kMax - 1] = aval;
         probs = exitprob_seamless_cpp(
-          M, r, zero, corr_known, K, critValues, infoRates);
+          M, r, zero, corr_known, K, critValues, infoRates, rankp0);
         double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                      probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
@@ -1223,11 +1466,12 @@ ListCpp getDesign_seamless_cpp(
     } else {
       critValues = getBound_seamless_cpp(
         M, r, corr_known, K, infoRates, alpha, asf, parameterAlphaSpending,
-        userAlphaSpending, spendTime, effStopping);
+        userAlphaSpending, spendTime, effStopping, rankp0);
     }
   }
 
-  probs = exitprob_seamless_cpp(M, r, zero, corr_known, K, critValues, infoRates);
+  probs = exitprob_seamless_cpp(M, r, zero, corr_known, K, critValues,
+                                infoRates, rankp0);
   std::vector<double> cumAlphaSpent(kMax);
   std::partial_sum(probs.exitProbUpper.begin(),
                    probs.exitProbUpper.end(), cumAlphaSpent.begin());
@@ -1283,6 +1527,8 @@ ListCpp getDesign_seamless_cpp(
 
   if (unknown == "IMax") {
     double maxtheta = *std::max_element(theta.begin(), theta.end());
+
+    double rho = r / (r + 1.0);
     std::vector<double> lo(M, -8.0), hi(M, critValues[0]);
     std::vector<double> mu0(M);
     FlatMatrix sigma0(M, M);
@@ -1290,6 +1536,28 @@ ListCpp getDesign_seamless_cpp(
     for (size_t i = 0; i < M; ++i) {
       sigma0(i, i) = 1.0;
     }
+
+    // conditional covariance among non-selected arms in phase 2 given selected
+    FlatMatrix sigma_m1;
+    if (M > 1) {
+      sigma_m1.resize(M - 1, M - 1);
+      double diag = 1.0 - rho * rho;
+      double off = rho * (1.0 - rho);
+      for (size_t j = 0; j < M - 1; ++j) {
+        double* colptr = sigma_m1.data_ptr() + j * sigma_m1.nrow;
+        // fill column with off
+        std::fill_n(colptr, M - 1, off);
+        colptr[j] = diag;
+      }
+    }
+
+    size_t m1 = (M > 1) ? M - 1 : 1;
+    std::vector<double> mean(m1);
+    std::vector<double> lower(m1);
+    std::vector<double> upper(m1);
+    std::vector<double> breaks_futility = {-8.0, -8.0};
+    size_t rankZ0 = M - rankp0 + 1;
+    std::vector<unsigned char> c(m1);
 
     auto f = [&](double x)->double {
       double maxInformation = sq(x / maxtheta);
@@ -1309,46 +1577,114 @@ ListCpp getDesign_seamless_cpp(
         }
 
         probs = exitprob_seamless_cpp(
-          M, r, theta, true, K, critValues, futBounds, information);
+          M, r, theta, true, K, critValues, futBounds, information, rankp0);
         double overallReject = std::accumulate(probs.exitProbUpper.begin(),
                                                probs.exitProbUpper.end(), 0.0);
         return (1.0 - overallReject) - beta;
       } else {
         std::fill(futBounds.begin(), futBounds.end(), -8.0);
 
-        double eps = 0.0, cb = 0.0;
+        double eps = 0.0, cumBeta = 0.0;
 
-        // stage 0: futility on phase-2 max-Z scale
+        // stage 0: futility for the arm selected at rankp0 in phase 2
         if (futStopping[0]) {
-          cb = (bsf == "user") ? userBetaSpending[0] :
+          cumBeta = (bsf == "user") ? userBetaSpending[0] :
           errorSpentcpp(spendTime[0], beta, bsf, parameterBetaSpending);
 
-          for (size_t m = 0; m < M; ++m) {
-            mu0[m] = theta[m] * sqrtI0;
-          }
+          if (rankp0 == 1) {
+            for (size_t m = 0; m < M; ++m) {
+              mu0[m] = theta[m] * sqrtI0;
+            }
 
-          auto q = pmvnormcpp(lo, hi, mu0, sigma0,
-                              1024, 16384, 8, 1e-4, 0.0, 314159);
-          eps = q.prob - cb;
-          if (eps < 0.0) return -1.0;
-          futBounds[0] = qmvnormcpp(cb, mu0, sigma0,
-                                    1024, 16384, 8, 1e-4, 0.0, 314159);
+            PMVNResult out = pmvnormcpp(lo, hi, mu0, sigma0);
+            eps = out.prob - cumBeta;
+            if (eps < 0.0) return -1.0;
+            futBounds[0] = qmvnormcpp(cumBeta, mu0, sigma0);
+          } else {
+            auto g = [&](double a0)->double {
+              breaks_futility[1] = a0;
+              double exitProbLowerStage1 = 0.0;
+              for (size_t m = 0; m < M; ++m) { // loop over the selected arm in phase 2
+                double mu = theta[m] * sqrtI0;
+
+                // density contribution for arm m being selected at phase 2 value z0
+                auto f0 = [&theta, &sigma_m1, &mean, &lower, &upper, &c, M, m, mu,
+                           sqrtI0, rho, rankZ0]
+                (double z0)->double {
+                  if (M > 1) {
+                    // conditional means for the M - 1 non-selected arms given arm m
+                    double delta0 = rho * (z0 - mu);
+                    size_t j = 0;
+                    for (size_t i = 0; i < M; ++i) {
+                      if (i == m) continue;
+                      mean[j++] = theta[i] * sqrtI0 + delta0;
+                    }
+
+                    if (rankZ0 == M) { // select the arm with the largest value at z0
+                      std::fill_n(lower.data(), M - 1, -8.0);
+                      std::fill_n(upper.data(), M - 1, z0);
+                      PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
+                      return out.prob * boost_dnorm(z0, mu, 1.0);
+                    } else if (rankZ0 == 1) { // select the arm with the smallest value
+                      std::fill_n(lower.data(), M - 1, z0);
+                      std::fill_n(upper.data(), M - 1, 8.0);
+                      PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
+                      return out.prob * boost_dnorm(z0, mu, 1.0);
+                    } else { // select the arm with the rankZ0-th smallest value at z0
+                      // conditional probability of selecting arm m given arm m at z0
+                      double cp = 0.0;
+
+                      // enumerate all combinations of the rankZ0 - 1 arms below z0
+                      std::fill(c.begin(), c.end(), 0);
+                      for (size_t i = 0; i < rankZ0 - 1; ++i) c[i] = 1;
+
+                      do {
+                        for (size_t i = 0; i < M - 1; ++i) {
+                          if (c[i]) {
+                            lower[i] = -8.0;
+                            upper[i] = z0;
+                          } else {
+                            lower[i] = z0;
+                            upper[i] = 8.0;
+                          }
+                        }
+                        PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
+                        cp += out.prob;
+                      } while (std::prev_permutation(c.begin(), c.end()));
+
+                      return cp * boost_dnorm(z0, mu, 1.0);
+                    }
+                  } else {
+                    return boost_dnorm(z0, mu, 1.0);
+                  }
+                };
+
+                exitProbLowerStage1 += integrate3(f0, breaks_futility, 1e-4);
+              }
+
+              return exitProbLowerStage1 - cumBeta;
+            };
+
+            eps = g(critValues[0]);
+            if (eps < 0.0) return -1.0;
+            futBounds[0] = brent(g, -8.0, critValues[0], 1e-6);
+          }
         }
 
         // stages 1..K
         for (size_t k = 1; k < K + 1; ++k) {
           if (!futStopping[k]) continue;
 
-          cb = (bsf == "user") ? userBetaSpending[k] :
+          cumBeta = (bsf == "user") ? userBetaSpending[k] :
             errorSpentcpp(spendTime[k], beta, bsf, parameterBetaSpending);
 
           auto g = [&](double aval)->double {
             futBounds[k] = aval;
             probs = exitprob_seamless_cpp(M, r, theta, true, k, critValues,
-                                          futBounds, information);
+                                          futBounds, information, rankp0);
             double cpl = std::accumulate(probs.exitProbLower.begin(),
                                          probs.exitProbLower.end(), 0.0);
-            return cpl - cb;
+            return cpl - cumBeta;
           };
 
           double bk = critValues[k];
@@ -1377,7 +1713,7 @@ ListCpp getDesign_seamless_cpp(
     IMax1 = sq(drift / maxtheta);
     futBounds[kMax-1] = critValues[kMax-1];
     probs = exitprob_seamless_cpp(M, r, theta, true, K, critValues,
-                                  futBounds, information);
+                                  futBounds, information, rankp0);
   } else {
     for (size_t i = 0; i < kMax; ++i) information[i] = infoRates[i] * IMax1;
 
@@ -1387,11 +1723,11 @@ ListCpp getDesign_seamless_cpp(
       }
       futBounds[kMax - 1] = critValues[kMax - 1];
       probs = exitprob_seamless_cpp(M, r, theta, true, K, critValues,
-                                    futBounds, information);
+                                    futBounds, information, rankp0);
     } else {
       auto out = getPower_seamless(
         M, r, theta, alpha1, K, critValues, information, bsf,
-        parameterBetaSpending, spendTime, futStopping);
+        parameterBetaSpending, spendTime, futStopping, rankp0);
       futBounds = out.futilityBounds;
       probs = out.probs;
     }
@@ -1437,7 +1773,7 @@ ListCpp getDesign_seamless_cpp(
     ptotal.begin(), ptotal.end(), informationOverall.begin(), 0.0);
 
   auto probsH0 = exitprob_seamless_cpp(M, r, zero, true, K, critValues,
-                                       futBounds, infoRates);
+                                       futBounds, infoRates, rankp0);
   auto puH0 = probsH0.exitProbUpper;
   auto plH0 = probsH0.exitProbLower;
 
@@ -1461,7 +1797,7 @@ ListCpp getDesign_seamless_cpp(
     if (futBounds[i] == -8.0) futStopping[i] = 0;
   }
 
-  auto selectAsBest = probs.selectAsBest;
+  auto selectionProb = probs.selectionProb;
   auto exitProbByArmUpper = probs.exitProbByArmUpper;
   std::vector<double> powerByArm(M, 0.0);
   for (size_t j = 0; j < M; ++j) {
@@ -1473,8 +1809,8 @@ ListCpp getDesign_seamless_cpp(
 
   std::vector<double> condPowerByArm(M, 0.0);
   for (size_t j = 0; j < M; ++j) {
-    if (selectAsBest[j] > 0.0) {
-      condPowerByArm[j] = powerByArm[j] / selectAsBest[j];
+    if (selectionProb[j] > 0.0) {
+      condPowerByArm[j] = powerByArm[j] / selectionProb[j];
     }
   }
 
@@ -1485,6 +1821,7 @@ ListCpp getDesign_seamless_cpp(
   overallResults.push_back(M, "M");
   overallResults.push_back(r, "r");
   overallResults.push_back(corr_known, "corr_known");
+  overallResults.push_back(rankp0, "rankp0");
   overallResults.push_back(K, "K");
   overallResults.push_back(IMax1, "information");
   overallResults.push_back(expectedInformationH1, "expectedInformationH1");
@@ -1519,7 +1856,7 @@ ListCpp getDesign_seamless_cpp(
 
   DataFrameCpp byArmResults;
   byArmResults.push_back(theta, "theta");
-  byArmResults.push_back(std::move(selectAsBest), "selectAsBest");
+  byArmResults.push_back(std::move(selectionProb), "selectionProb");
   byArmResults.push_back(std::move(powerByArm), "powerByArm");
   byArmResults.push_back(std::move(condPowerByArm), "condPowerByArm");
 
@@ -1562,14 +1899,18 @@ ListCpp getDesign_seamless_cpp(
 //' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 //'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 //'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-//'   0 is used.
+//'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+//'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+//'   This option is only used for critical value calculations; the
+//'   correlation is always derived from \eqn{r} for power calculations.
 //' @param K Number of sequential looks in Phase 3.
 //' @param informationRates A numeric vector of information rates fixed
 //'   before the trial. If unspecified, defaults to \eqn{(1:(K+1)) / (K+1)}.
 //' @inheritParams param_efficacyStopping
 //' @inheritParams param_futilityStopping
-//' @param criticalValues The upper boundaries on the max-Z statistic scale
-//'   for Phase 2 and the Z statistics for the selected arm in Phase 3.
+//' @param criticalValues The upper boundaries on the Z-statistic scale
+//'   for the rank-selected arm in Phase 2 and the Z statistics for the
+//'   selected arm in Phase 3.
 //'   If missing, boundaries will be computed based on the specified alpha
 //'   spending function.
 //' @inheritParams param_alpha
@@ -1577,9 +1918,10 @@ ListCpp getDesign_seamless_cpp(
 //' @inheritParams param_parameterAlphaSpending
 //' @inheritParams param_userAlphaSpending
 //' @param futilityBounds A numeric vector of length \eqn{K} specifying
-//'   futility boundaries on the max-Z scale at the end of Phase 2 and
-//'   on the Z scale for the \eqn{K - 1} analyses in Phase 3. The final analysis
-//'   uses the efficacy boundary as the futility boundary.
+//'   futility boundaries on the Z scale at the end of Phase 2 for the
+//'   rank-selected arm and on the Z scale for the \eqn{K - 1} analyses
+//'   in Phase 3. The final analysis uses the efficacy boundary as the
+//'   futility boundary.
 //' @param futilityCP A numeric vector of length \eqn{K} specifying futility
 //'   boundaries on the conditional power scale.
 //' @param futilityTheta A numeric vector of length \eqn{K} specifying futility
@@ -1590,6 +1932,10 @@ ListCpp getDesign_seamless_cpp(
 //' @param spendingTime A numeric vector of length \eqn{K+1} specifying the
 //'   error spending time at each analysis. Values must be strictly increasing
 //'   and end at 1. If omitted, defaults to \code{informationRates}.
+//' @param rankp0 An integer between 1 and \code{M} specifying which ranked
+//'   Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
+//'   Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
+//'   so on.
 //'
 //' @return An S3 object of class \code{seamless} with the following components:
 //'
@@ -1603,6 +1949,7 @@ ListCpp getDesign_seamless_cpp(
 //'     - \code{r}: Randomization ratio per active arm versus control in
 //'       Phase 2.
 //'     - \code{corr_known}: Whether the phase-2 correlation was assumed known.
+//'     - \code{rankp0}: The rank of the selected arm at the end of Phase 2.
 //'     - \code{K}: Number of looks in Phase 3.
 //'     - \code{information}: Maximum information for any active arm versus
 //'       control.
@@ -1649,12 +1996,12 @@ ListCpp getDesign_seamless_cpp(
 //'
 //' * \code{byArmResults}: A data frame containing:
 //'     - \code{theta}: Parameter values for the active arms.
-//'     - \code{selectAsBest}: Probability an arm is selected as best at the
+//'     - \code{selectionProb}: Probability an arm is selected at the
 //'       end of Phase 2.
 //'     - \code{powerByArm}: Probability of rejecting the null for each arm by
 //'       trial end.
 //'     - \code{condPowerByArm}: Conditional power for each arm given it was
-//'       selected as the best at the end of Phase 2.
+//'       selected at rank \code{rankp0} at the end of Phase 2.
 //'
 //' * \code{settings}: A list of input settings:
 //'     - \code{typeAlphaSpending}: Type of alpha spending function.
@@ -1667,10 +2014,11 @@ ListCpp getDesign_seamless_cpp(
 //'     - \code{userBetaSpending}: User-specified beta spending values.
 //'     - \code{spendingTime}: Error-spending times at each analysis.
 //'
-//' @details If \code{corr_known} is \code{FALSE}, critical boundaries are
+//' @details
+//' If \code{corr_known} is \code{FALSE}, critical boundaries are
 //' computed assuming independence among the Phase-2 Wald statistics
-//' (a conservative assumption). Power calculations, however, use the
-//' correlation implied by the randomization ratio \eqn{r}.
+//' (a conservative assumption when \code{rankp0 = 1}). Power calculations,
+//' however, use the correlation implied by the randomization ratio \eqn{r}.
 //'
 //' Futility boundaries may be supplied directly on the Z scale, derived from
 //' conditional power, derived from parameter values, or computed from a beta
@@ -1730,7 +2078,8 @@ Rcpp::List getDesign_seamless(
     const std::string& typeBetaSpending = "none",
     const double parameterBetaSpending = NA_REAL,
     const Rcpp::NumericVector& userBetaSpending = NA_REAL,
-    const Rcpp::NumericVector& spendingTime = NA_REAL) {
+    const Rcpp::NumericVector& spendingTime = NA_REAL,
+    const int rankp0 = 1) {
 
   std::vector<double> thetaVec(theta.begin(), theta.end());
   std::vector<double> infoRates(informationRates.begin(), informationRates.end());
@@ -1770,7 +2119,7 @@ Rcpp::List getDesign_seamless(
     static_cast<size_t>(K), infoRates, effStopping, futStopping, critValues,
     alpha, typeAlphaSpending, parameterAlphaSpending, userAlpha,
     futBounds, futCP, futTheta, typeBetaSpending,
-    parameterBetaSpending, userBeta, spendTime
+    parameterBetaSpending, userBeta, spendTime, static_cast<size_t>(rankp0)
   );
 
   Rcpp::List result = Rcpp::wrap(cpp_result);
@@ -1815,7 +2164,8 @@ ListCpp adaptDesign_seamless_cpp(
     const std::string& typeBetaSpendingNew,
     const double parameterBetaSpendingNew,
     const std::vector<double>& userBetaSpendingNew,
-    const std::vector<double>& spendingTimeNew) {
+    const std::vector<double>& spendingTimeNew,
+    const size_t rankp0) {
 
 
   // ----------- Start of Input Validation ----------- //
@@ -1830,6 +2180,12 @@ ListCpp adaptDesign_seamless_cpp(
   }
 
   if (M < 1) throw std::invalid_argument("M must be at least 1");
+  if (rankp0 < 1 || rankp0 > M) {
+    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
+  }
+  if (rankp0 > 1 && !corr_known) {
+    throw std::invalid_argument("corr_known must be true when rankp0 > 1");
+  }
   if (r <= 0.0) throw std::invalid_argument("r must be positive");
   if (std::isnan(zL)) throw std::invalid_argument("zL must be provided");
   if (std::isnan(theta)) throw std::invalid_argument("theta must be provided");
@@ -2200,7 +2556,7 @@ ListCpp adaptDesign_seamless_cpp(
       auto f = [&](double aval)->double {
         critValues[kMax-1] = aval;
         probss = exitprob_seamless_cpp(
-          M, r, zero, corr_known, K, critValues, infoRates);
+          M, r, zero, corr_known, K, critValues, infoRates, rankp0);
         double cpu = std::accumulate(probss.exitProbUpper.begin(),
                                      probss.exitProbUpper.end(), 0.0);
         return cpu - alpha;
@@ -2210,13 +2566,14 @@ ListCpp adaptDesign_seamless_cpp(
     } else {
       critValues = getBound_seamless_cpp(
         M, r, corr_known, K, infoRates, alpha, asf, parameterAlphaSpending,
-        userAlphaSpending, spendTime, effStopping);
+        userAlphaSpending, spendTime, effStopping, rankp0);
     }
   } else {
     for (size_t i = 0; i < kMax - 1; ++i) {
       if (!effStopping[i]) critValues[i] = 8.0;
     }
-    probss = exitprob_seamless_cpp(M, r, zero, corr_known, K, critValues, infoRates);
+    probss = exitprob_seamless_cpp(M, r, zero, corr_known, K, critValues,
+                                   infoRates, rankp0);
     alpha1 = std::accumulate(probss.exitProbUpper.begin(),
                              probss.exitProbUpper.end(), 0.0);
   }
@@ -2294,8 +2651,8 @@ ListCpp adaptDesign_seamless_cpp(
 
   std::vector<double> theta1(k1, theta);
   probs = exitprobcpp(b1, a1, theta1, I1);
-  double conditionalPower = std::accumulate(probs.exitProbUpper.begin(),
-                                            probs.exitProbUpper.end(), 0.0);
+  auto v1 = probs.exitProbUpper;
+  double conditionalPower = std::accumulate(v1.begin(), v1.end(), 0.0);
 
   double IL = information1[L];
   double sqrtIL = std::sqrt(IL);
@@ -2488,24 +2845,24 @@ ListCpp adaptDesign_seamless_cpp(
         // initialize futility bound to be updated
         std::fill(futBounds2.begin(), futBounds2.end(), -8.0);
         std::fill(a2.begin(), a2.end(), -8.0);
-        double eps = 0.0, cb = 0.0;
+        double eps = 0.0, cumBeta = 0.0;
 
         // first stage
         if (futStoppingNew[0]) {
-          cb = (bsfNew == "user") ? userBetaSpendingNew[0] :
+          cumBeta = (bsfNew == "user") ? userBetaSpendingNew[0] :
           errorSpentcpp(spendTimeNew[0], betaNew, bsfNew,
                         parameterBetaSpendingNew);
 
-          eps = boost_pnorm(b2[0] - mu0) - cb;
+          eps = boost_pnorm(b2[0] - mu0) - cumBeta;
           if (eps < 0.0) return -1.0; // to decrease beta
-          a2[0] = boost_qnorm(cb) + mu0;
+          a2[0] = boost_qnorm(cumBeta) + mu0;
           futBounds2[0] = (a2[0] * sqrtI2[0] + zscaled) / sqrtIc[0];
         }
 
         // subsequent stages
         for (size_t k = 1; k < k2; ++k) {
           if (futStoppingNew[k]) {
-            cb = (bsfNew == "user") ? userBetaSpendingNew[k] :
+            cumBeta = (bsfNew == "user") ? userBetaSpendingNew[k] :
             errorSpentcpp(spendTimeNew[k], betaNew, bsfNew,
                           parameterBetaSpendingNew);
 
@@ -2524,7 +2881,7 @@ ListCpp adaptDesign_seamless_cpp(
               probs = exitprobcpp(u, l, theta2, I2);
               double cpl = std::accumulate(probs.exitProbLower.begin(),
                                            probs.exitProbLower.end(), 0.0);
-              return cpl - cb;
+              return cpl - cumBeta;
             };
 
             double bk = critValues2[k];
@@ -2589,6 +2946,7 @@ ListCpp adaptDesign_seamless_cpp(
   des1.push_back(M, "M");
   des1.push_back(r, "r");
   des1.push_back(corr_known, "corr_known");
+  des1.push_back(rankp0, "rankp0");
   des1.push_back(K, "K");
   des1.push_back(L, "L");
   des1.push_back(zL, "zL");
@@ -2627,6 +2985,7 @@ ListCpp adaptDesign_seamless_cpp(
   des3.push_back(M, "M");
   des3.push_back(r, "r");
   des3.push_back(corr_known, "corr_known");
+  des3.push_back(rankp0, "rankp0");
   des3.push_back(K, "K");
   des3.push_back(L, "L");
   des3.push_back(zL, "zL");
@@ -2668,7 +3027,9 @@ ListCpp adaptDesign_seamless_cpp(
 //' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 //'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 //'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-//'   0 is used.
+//'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+//'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+//'   This option is only used for critical value calculations.
 //' @param L The interim adaptation look in Phase 3.
 //' @param zL The z-test statistic at the interim adaptation look of
 //'   Phase 3.
@@ -2685,10 +3046,10 @@ ListCpp adaptDesign_seamless_cpp(
 //' @param futilityStopping Indicators of whether futility stopping is
 //'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 //'   if left unspecified.
-//' @param criticalValues The upper boundaries on the max z-test statistic
-//'   scale for Phase 2 and the z-test statistics for the selected arm
-//'   in Phase 3 for the primary trial. If missing, boundaries
-//'   will be computed based on the specified alpha spending function.
+//' @param criticalValues The upper boundaries on the z-test statistic
+//'   scale for the rank-selected arm in Phase 2 and the z-test statistics
+//'   for the selected arm in Phase 3 for the primary trial. If missing,
+//'   boundaries will be computed based on the specified alpha spending function.
 //' @param alpha The significance level of the primary trial.
 //'   Defaults to 0.025.
 //' @param typeAlphaSpending The type of alpha spending for the primary
@@ -2708,10 +3069,10 @@ ListCpp adaptDesign_seamless_cpp(
 //'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
 //' @param userAlphaSpending The user-defined alpha spending for the
 //'   primary trial. Represents the cumulative alpha spent up to each stage.
-//' @param futilityBounds The lower boundaries on the max-z statistic scale
-//'   at end of phase 2 and the z-test statistic scale in phase 3
-//'   for futility stopping for the primary trial. Defaults to
-//'   \code{rep(-8, kMax-1)} if left unspecified.
+//' @param futilityBounds The lower boundaries on the z-test statistic scale
+//'   at the end of phase 2 for the rank-selected arm and on the z-test
+//'   statistic scale in phase 3 for futility stopping for the primary trial.
+//'   Defaults to \code{rep(-8, kMax-1)} if left unspecified.
 //' @param futilityCP The conditional power-based futility bounds for the
 //'   primary trial.
 //' @param futilityTheta The parameter value-based futility bounds for the
@@ -2767,6 +3128,10 @@ ListCpp adaptDesign_seamless_cpp(
 //' @param spendingTimeNew The error spending time of the secondary trial.
 //'   Defaults to missing, in which case it is assumed to be the same as
 //'   \code{informationRatesNew}.
+//' @param rankp0 An integer between 1 and \code{M} specifying which ranked
+//'   Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
+//'   Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
+//'   so on.
 //'
 //' @return An \code{adaptDesign_seamless} object with three list components:
 //'
@@ -2848,7 +3213,8 @@ Rcpp::List adaptDesign_seamless(
     const std::string& typeBetaSpendingNew = "none",
     const double parameterBetaSpendingNew = NA_REAL,
     const Rcpp::NumericVector& userBetaSpendingNew = NA_REAL,
-    const Rcpp::NumericVector& spendingTimeNew = NA_REAL) {
+    const Rcpp::NumericVector& spendingTimeNew = NA_REAL,
+    const int rankp0 = 1) {
 
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
   auto effStopping = convertLogicalVector(efficacyStopping);
@@ -2916,7 +3282,7 @@ Rcpp::List adaptDesign_seamless(
     effStoppingNew, futStoppingNew, typeAlphaSpendingNew,
     parameterAlphaSpendingNew, futBoundsInt, futCPInt, futThetaInt,
     typeBetaSpendingNew, parameterBetaSpendingNew, userBetaNew,
-    spendTimeNew
+    spendTimeNew, static_cast<size_t>(rankp0)
   );
 
   Rcpp::List result = Rcpp::wrap(cpp_result);
