@@ -38,7 +38,8 @@ getCP_seamless(
   futilityThetaInt = NULL,
   typeBetaSpendingNew = "none",
   parameterBetaSpendingNew = NA_real_,
-  spendingTimeNew = NA_real_
+  spendingTimeNew = NA_real_,
+  rankp0 = 1L
 )
 }
 \arguments{
@@ -53,7 +54,9 @@ in Phase 2.}
 \item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
 statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-0 is used.}
+0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+with the largest Phase-2 Z-statistic is selected for Phase 3).
+This option is only used for critical value calculations.}
 
 \item{L}{The interim adaptation look in Phase 3.}
 
@@ -79,9 +82,9 @@ if left unspecified.}
 allowed at each stage of the primary trial. Defaults to true
 if left unspecified.}
 
-\item{criticalValues}{The upper boundaries on the max z-test statistic
-scale for Phase 2 and the z-test statistics for the selected arm
-in Phase 3 for the primary trial. If missing, boundaries
+\item{criticalValues}{The upper boundaries on the z-test statistic scale
+for the rank-selected arm in Phase 2 and the z-test statistics for the
+selected arm in Phase 3 for the primary trial. If missing, boundaries
 will be computed based on the specified alpha spending function.}
 
 \item{alpha}{The significance level of the primary trial.
@@ -107,9 +110,9 @@ for the primary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
 \item{userAlphaSpending}{The user-defined alpha spending for the
 primary trial. Represents the cumulative alpha spent up to each stage.}
 
-\item{futilityBounds}{The lower boundaries on the  max z-test statistic
-scale for Phase 2 and the z-test statistics for the selected arm
-in Phase 3 for the primary trial.}
+\item{futilityBounds}{The lower boundaries on the z-test statistic
+scale for the rank-selected arm in Phase 2 and the z-test statistics
+for the selected arm in Phase 3 for the primary trial.}
 
 \item{futilityCP}{The conditional power-based futility bounds for the
 primary trial.}
@@ -177,6 +180,11 @@ and \eqn{\gamma} for \code{"sfHSD"}.}
 \item{spendingTimeNew}{The error spending time of the secondary trial.
 Defaults to missing, in which case it is assumed to be the same as
 \code{informationRatesNew}.}
+
+\item{rankp0}{An integer between 1 and \code{M} specifying which ranked
+Phase-2 arm is carried forward when the trial continues to Phase 3.
+\code{rankp0 = 1} selects the largest Phase-2 Z-statistic,
+\code{rankp0 = 2} selects the second largest, and so on.}
 }
 \value{
 A vector of two conditional powers given the interim results and

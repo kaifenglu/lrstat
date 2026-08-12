@@ -15,7 +15,8 @@ getBound_seamless(
   parameterAlphaSpending = NA_real_,
   userAlphaSpending = NA_real_,
   spendingTime = NA_real_,
-  efficacyStopping = NA_integer_
+  efficacyStopping = NA_integer_,
+  rankp0 = 1L
 )
 }
 \arguments{
@@ -27,7 +28,8 @@ in Phase 2.}
 \item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
 statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-0 is assumed.}
+0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+with the largest Phase-2 Z-statistic is selected for Phase 3).}
 
 \item{k}{The index of the current look in Phase 3.}
 
@@ -61,6 +63,15 @@ and \eqn{\le 1}. If omitted, defaults to \code{informationRates}.}
 
 \item{efficacyStopping}{Indicators of whether efficacy stopping is allowed
 at each stage. Defaults to \code{TRUE} if left unspecified.}
+
+\item{rankp0}{An integer between 1 and \code{M} specifying the rank of the
+arm to be selected at the end of Phase 2 for the purpose of determining
+the boundaries. For example, if \code{rankp0} is 1, the boundaries are
+determined based on the arm with the largest Z-statistic at the end of
+Phase 2; if \code{rankp0} is 2, the boundaries are determined based on the
+arm with the second largest Z-statistic at the end of Phase 2, and
+so on. The default is 1, which corresponds to the common practice of
+determining boundaries based on the top-ranked arm at the end of Phase 2.}
 }
 \value{
 A numeric vector of length \eqn{k + 1} containing the critical
@@ -69,13 +80,13 @@ current look.
 }
 \description{
 Calculates the efficacy stopping boundaries for a phase 2/3
-seamless design, accounting for the selection of the best arm
+seamless design, accounting for rank-based treatment selection
 at the end of Phase 2 and sequential testing in Phase 3.
 }
 \details{
 The function determines critical values by solving for the boundary that
 satisfies the alpha-spending requirement, given the selection of the
-"best" arm at the end of Phase 2.
+arm at rank \code{rankp0} at the end of Phase 2.
 
 If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
 \code{"none"}, then \code{informationRates}, \code{efficacyStopping},

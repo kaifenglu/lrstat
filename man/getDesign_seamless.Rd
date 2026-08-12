@@ -26,7 +26,8 @@ getDesign_seamless(
   typeBetaSpending = "none",
   parameterBetaSpending = NA_real_,
   userBetaSpending = NA_real_,
-  spendingTime = NA_real_
+  spendingTime = NA_real_,
+  rankp0 = 1L
 )
 }
 \arguments{
@@ -50,7 +51,10 @@ in Phase 2.}
 \item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
 statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-0 is used.}
+0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+with the largest Phase-2 Z-statistic is selected for Phase 3).
+This option is only used for critical value calculations; the
+correlation is always derived from \eqn{r} for power calculations.}
 
 \item{K}{Number of sequential looks in Phase 3.}
 
@@ -63,8 +67,9 @@ at each stage. Defaults to \code{TRUE} if left unspecified.}
 \item{futilityStopping}{Indicators of whether futility stopping is allowed
 at each stage. Defaults to \code{TRUE} if left unspecified.}
 
-\item{criticalValues}{The upper boundaries on the max-Z statistic scale
-for Phase 2 and the Z statistics for the selected arm in Phase 3.
+\item{criticalValues}{The upper boundaries on the Z-statistic scale
+for the rank-selected arm in Phase 2 and the Z statistics for the
+selected arm in Phase 3.
 If missing, boundaries will be computed based on the specified alpha
 spending function.}
 
@@ -90,9 +95,10 @@ and \eqn{\gamma} for \code{"sfHSD"}.}
 spent up to each stage.}
 
 \item{futilityBounds}{A numeric vector of length \eqn{K} specifying
-futility boundaries on the max-Z scale at the end of Phase 2 and
-on the Z scale for the \eqn{K - 1} analyses in Phase 3. The final analysis
-uses the efficacy boundary as the futility boundary.}
+futility boundaries on the Z scale at the end of Phase 2 for the
+rank-selected arm and on the Z scale for the \eqn{K - 1} analyses
+in Phase 3. The final analysis uses the efficacy boundary as the
+futility boundary.}
 
 \item{futilityCP}{A numeric vector of length \eqn{K} specifying futility
 boundaries on the conditional power scale.}
@@ -119,6 +125,11 @@ spent up to each stage.}
 \item{spendingTime}{A numeric vector of length \eqn{K+1} specifying the
 error spending time at each analysis. Values must be strictly increasing
 and end at 1. If omitted, defaults to \code{informationRates}.}
+
+\item{rankp0}{An integer between 1 and \code{M} specifying which ranked
+Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
+Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
+so on.}
 }
 \value{
 An S3 object of class \code{seamless} with the following components:
@@ -134,6 +145,7 @@ differ from \code{alpha} in the presence of futility stopping.
 \item \code{r}: Randomization ratio per active arm versus control in
 Phase 2.
 \item \code{corr_known}: Whether the phase-2 correlation was assumed known.
+\item \code{rankp0}: The rank of the selected arm at the end of Phase 2.
 \item \code{K}: Number of looks in Phase 3.
 \item \code{information}: Maximum information for any active arm versus
 control.
@@ -182,12 +194,12 @@ stopping under the global null.
 \item \code{byArmResults}: A data frame containing:
 \itemize{
 \item \code{theta}: Parameter values for the active arms.
-\item \code{selectAsBest}: Probability an arm is selected as best at the
+\item \code{selectionProb}: Probability an arm is selected at the
 end of Phase 2.
 \item \code{powerByArm}: Probability of rejecting the null for each arm by
 trial end.
 \item \code{condPowerByArm}: Conditional power for each arm given it was
-selected as the best at the end of Phase 2.
+selected at rank \code{rankp0} at the end of Phase 2.
 }
 \item \code{settings}: A list of input settings:
 \itemize{
@@ -212,8 +224,8 @@ efficacy and futility stopping can be incorporated.
 \details{
 If \code{corr_known} is \code{FALSE}, critical boundaries are
 computed assuming independence among the Phase-2 Wald statistics
-(a conservative assumption). Power calculations, however, use the
-correlation implied by the randomization ratio \eqn{r}.
+(a conservative assumption when \code{rankp0 = 1}). Power calculations,
+however, use the correlation implied by the randomization ratio \eqn{r}.
 
 Futility boundaries may be supplied directly on the Z scale, derived from
 conditional power, derived from parameter values, or computed from a beta

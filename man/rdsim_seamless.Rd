@@ -7,6 +7,7 @@
 rdsim_seamless(
   M = 2,
   K = 1,
+  rankp0 = 1,
   criticalValues = NA,
   futilityBounds = NULL,
   riskDiffH0s = 0,
@@ -25,15 +26,20 @@ rdsim_seamless(
 
 \item{K}{Number of sequential looks in Phase 3.}
 
+\item{rankp0}{Integer rank in phase 2 used to select the active arm.
+\code{rankp0 = 1} selects the most efficacious arm by risk-difference
+statistic, \code{rankp0 = 2} selects the second most efficacious arm,
+and so on.}
+
 \item{criticalValues}{Numeric vector of length \eqn{K + 1} giving the
 critical value for the Wald statistic at each look (Look 1 through
 Look \eqn{K + 1}). Decision rule:
 \itemize{
 \item At Look 1, compute the Wald statistic for each active arm versus the
-common control. If the maximum of these statistics exceeds the Look 1
-critical value, stop for efficacy.
+common control. If the \code{rankp0}-th largest test statistic
+exceeds the Look 1 critical value, stop for efficacy.
 \item If the Look 1 stopping rule is not met, select the active arm with the
-largest Wald statistic as the "best" arm and continue with that arm
+\code{rankp0}-th largest Wald statistic and continue with that arm
 only versus control at subsequent looks.
 \item For each look \eqn{j = 2,\ldots,K+1}, compare the selected arm to
 control; if its Wald statistic exceeds the Look \eqn{j} critical
@@ -46,7 +52,7 @@ ends without rejection.
 boundaries for Phase 2 and the first \eqn{K-1} looks in Phase 3.
 The study stops for futility:
 \itemize{
-\item in Phase 2 if all active treatment arms cross the phase-2 futility
+\item in Phase 2 if the selected treatment arm crosses the phase-2 futility
 boundary;
 \item in Phase 3 if the selected arm crosses the futility boundary at an
 interim look;
@@ -63,7 +69,7 @@ implies equal allocation; defaults to 1.
 The first \eqn{M} elements refer to the active arms
 and the last element refers to the common control.}
 
-\item{pis}{Numeric vector of length \eqn{M+1}. Each element corresponds
+\item{pis}{Numeric vector of length \eqn{M + 1}. Each element corresponds
 to the response rate for a treatment arm. The first \eqn{M} elements
 refer to the active arms and the last element refers to the common control.}
 
@@ -90,8 +96,8 @@ An S3 object of class \code{"rdsim_seamless"} with these components:
 \itemize{
 \item \code{overview}: A list summarizing trial-level results and settings:
 \itemize{
-\item \code{selectAsBest}: Probability of selecting each active arm as
-the best arm at the end of phase 2.
+\item \code{selectionProb}: Probability of selecting each active arm at
+the prespecified rank at the end of phase 2.
 \item \code{selectToStage2}: Probability of selecting each active arm
 to enter stage 2.
 \item \code{selectAnyToStage2}: Probability of selecting any active arm
@@ -127,6 +133,7 @@ at trial end.
 each look for the first active arm and the common control combined.
 \item \code{M}: Number of active arms in Phase 2.
 \item \code{K}: Number of sequential looks in Phase 3.
+\item \code{rankp0}: Prespecified rank used for phase-2 arm selection.
 }
 \item \code{sumdata1}: Data frame summarizing each iteration, stage, and
 treatment group:
@@ -139,7 +146,7 @@ treatment group:
 \item \code{summdata2}: Data frame summarizing test statistics by iteration,
 stage, and active arm:
 \itemize{
-\item \code{iterationNumber}, \code{bestArm}, \code{stopStage},
+\item \code{iterationNumber}, \code{selectedArm}, \code{stopStage},
 \code{stageNumber}, \code{activeArm},
 \code{totalAccruals}, \code{totalEvents},
 \code{riskDiff}, \code{vriskDiff}, \code{riskDiffZ},

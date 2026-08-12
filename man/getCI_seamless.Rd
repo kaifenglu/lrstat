@@ -18,7 +18,8 @@ getCI_seamless(
   alpha = 0.025,
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
-  spendingTime = NA_real_
+  spendingTime = NA_real_,
+  rankp0 = 1L
 )
 }
 \arguments{
@@ -30,7 +31,9 @@ in Phase 2.}
 \item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
 statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-0 is assumed.}
+0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
+with the largest Phase-2 Z-statistic is selected for Phase 3).
+This option is only used for critical value calculations.}
 
 \item{L}{The termination look in Phase 3.}
 
@@ -45,8 +48,9 @@ control.}
 allowed at each stage up to look \code{L}.
 Defaults to \code{TRUE} if left unspecified.}
 
-\item{criticalValues}{The upper boundaries on the max z-test statistic
-scale for Phase 2 and the z-test statistics for the selected arm
+\item{criticalValues}{The upper boundaries on the z-test statistic
+scale for the rank-selected arm in Phase 2 and the z-test statistics
+for the selected arm
 in Phase 3 up to look \code{L}. If missing, boundaries will be
 computed based on the specified alpha spending function.}
 
@@ -71,6 +75,11 @@ and \eqn{\gamma} for \code{"sfHSD"}.}
 \item{spendingTime}{The error spending time up to look \code{L}.
 Defaults to missing, in which case, it is the same as
 \code{informationRates}.}
+
+\item{rankp0}{An integer between 1 and \code{M} specifying which ranked
+Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
+Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
+so on.}
 }
 \value{
 A data frame with the following components:
@@ -94,8 +103,7 @@ and \code{spendingTime} must be of full length \eqn{K + 1}, and
 }
 \examples{
 getCI_seamless(
-  L = 2, zL = 2.075,
-  M = 2, r = 1, corr_known = FALSE,
+  L = 2, zL = 2.075, M = 2, r = 1, corr_known = FALSE,
   IMax = 300 / 4, informationRates = c(1/3, 2/3, 1),
   alpha = 0.025, typeAlphaSpending = "sfOF")
 
