@@ -3670,31 +3670,33 @@ print.seamless <- function(x, ...) {
 
   if (x$settings$typeBetaSpending != 'none' ||
       (any(x$byStageResults$futilityBounds[1:k] > -8))) {
-    str3 <- paste0(str2, ", ",
+    str2 <- paste0(str2, ", ",
                    "attained alpha: ", round(a$attainedAlpha, 4))
   }
 
   str3 <- paste0("Number of active arms in phase 2: ", a$M)
 
-  str4 <- paste0("Randomization ratio of each active vs. control: ", a$r)
+  str4 <- paste0("Selected phase-2 rank carried forward: ", a$rankp0)
 
-  str5 <- paste0("Using correlation for critical value calculation: ",
+  str5 <- paste0("Randomization ratio of each active vs. control: ", a$r)
+
+  str6 <- paste0("Using correlation for critical value calculation: ",
                  a$corr_known)
 
-  str6 <- paste0("Number of looks in phase 3: ", a$K)
+  str7 <- paste0("Number of looks in phase 3: ", a$K)
 
-  str7 <- paste0("Max information for pairwise comparion: ",
+  str8 <- paste0("Max information for pairwise comparion: ",
                  round(a$information, 2))
 
-  str8 <- paste0("Expected information under H1: ",
+  str9 <- paste0("Expected information under H1: ",
                  round(a$expectedInformationH1, 2), ", ",
                  "expected information under H0: ",
                  round(a$expectedInformationH0, 2))
 
-  str9 <- paste0("Max information for oveall study: ",
+  str10 <- paste0("Max information for oveall study: ",
                  round(a$informationOverall, 2))
 
-  str10 <- paste0("Expected overall info under H1: ",
+  str11 <- paste0("Expected overall info under H1: ",
                   round(a$expectedInformationOverallH1, 2), ", ",
                   "expected overall info under H0: ",
                   round(a$expectedInformationOverallH0, 2))
@@ -3708,62 +3710,64 @@ print.seamless <- function(x, ...) {
   bsfuser <- round(x$settings$userBetaSpending, 4)
 
   if (asf == "of") {
-    str11 <- paste0("Alpha spending: O'Brien-Fleming")
+    str12 <- paste0("Alpha spending: O'Brien-Fleming")
   } else if (asf == "p") {
-    str11 <- paste0("Alpha spending: Pocock")
+    str12 <- paste0("Alpha spending: Pocock")
   } else if (asf == "wt") {
-    str11 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
+    str12 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
   } else if (asf == "sfof") {
-    str11 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
+    str12 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
   } else if (asf == "sfp") {
-    str11 <- paste0("Alpha spending: Lan-DeMets Pocock")
+    str12 <- paste0("Alpha spending: Lan-DeMets Pocock")
   } else if (asf == "sfkd") {
-    str11 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
+    str12 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
   } else if (asf == "sfhsd") {
-    str11 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
+    str12 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
   } else if (asf == "user") {
-    str11 <- paste0("Alpha spending: User defined(",
+    str12 <- paste0("Alpha spending: User defined(",
                    paste(asfuser, collapse = ","), ")")
   } else {
-    str11 <- "Alpha spending: None"
+    str12 <- "Alpha spending: None"
   }
 
   if (bsf == "of") {
-    str12 <- paste0("beta spending: O'Brien-Fleming")
+    str13 <- paste0("beta spending: O'Brien-Fleming")
   } else if (bsf == "p") {
-    str12 <- paste0("beta spending: Pocock")
+    str13 <- paste0("beta spending: Pocock")
   } else if (bsf == "wt") {
-    str12 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
+    str13 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
   } else if (bsf == "sfof") {
-    str12 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
+    str13 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
   } else if (bsf == "sfp") {
-    str12 <- paste0("beta spending: Lan-DeMets Pocock")
+    str13 <- paste0("beta spending: Lan-DeMets Pocock")
   } else if (bsf == "sfkd") {
-    str12 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
+    str13 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
   } else if (bsf == "sfhsd") {
-    str12 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
+    str13 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
   } else if (bsf == "user") {
-    str12 <- paste0("beta spending: User defined(",
+    str13 <- paste0("beta spending: User defined(",
                     paste(bsfuser, collapse = ","), ")")
   } else {
-    str12 <- "beta spending: None"
+    str13 <- "beta spending: None"
   }
 
   if (!any(is.na(x$settings$spendingTime)) &&
       !all(x$settings$spendingTime == s$informationRates)) {
-    str13 <- paste0("Spending time: ",
+    str14 <- paste0("Spending time: ",
                    paste(round(x$settings$spendingTime, 3), collapse = ","))
-    df1 <- data.frame(x = rep("", 14))
+    info_rows <- c(str1, str2, str3, str4, str5, str6, str7, str8, str9,
+                   str10, str11, paste(str12, str13, sep = ", "),
+                   str14, "")
+    df1 <- data.frame(x = rep("", length(info_rows)))
     colnames(df1) <- NULL
-    rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
-                       str8, str9, str10,
-                       paste(str11, str12, sep = ", "), str13, "")
+    rownames(df1) <- info_rows
   } else {
-    df1 <- data.frame(x = rep("", 12))
+    info_rows <- c(str1, str2, str3, str4, str5, str6, str7, str8, str9,
+                   str10, str11, paste(str12, str13, sep = ", "),
+                   "")
+    df1 <- data.frame(x = rep("", length(info_rows)))
     colnames(df1) <- NULL
-    rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7,
-                       str8, str9, str10,
-                       paste(str11, str12, sep = ", "), "")
+    rownames(df1) <- info_rows
   }
 
   # by stage results
@@ -3833,7 +3837,7 @@ print.seamless <- function(x, ...) {
 
   df3 <- t(t)
   rownames(df3) <- c("Treatment effect (theta)",
-                     "Being the best in phase 2",
+                     paste0("Selected at phase-2 rank ", a$rankp0),
                      "Power",
                      "Conditional power")
   colnames(df3) <- paste("Arm", seq_len(ncol(df3)), sep=" ")
@@ -3873,31 +3877,34 @@ print.adaptDesign_seamless <- function(x, ...) {
 
   str3 <- paste0("Number of active arms in phase 2: ", des1$M)
 
-  str4 <- paste0("Randomization ratio of each active vs. control: ", des1$r)
+  str4 <- paste0("Selected phase-2 rank carried forward: ", des1$rankp0)
 
-  str5 <- paste0("Using correlation for critical value calculation: ",
+  str5 <- paste0("Randomization ratio of each active vs. control: ", des1$r)
+
+  str6 <- paste0("Using correlation for critical value calculation: ",
                  des1$corr_known)
 
-  str6 <- paste0("Number of looks in phase 3: ", des1$K)
+  str7 <- paste0("Number of looks in phase 3: ", des1$K)
 
-  str7 <- paste0("Max information for pairwise comparion: ",
+  str8 <- paste0("Max information for pairwise comparion: ",
                  round(des1$maxInformation, 2))
 
-  str8 <- paste0("Interim adaptation look in Phase 3: ", des1$L, ", ",
+  str9 <- paste0("Interim adaptation look in Phase 3: ", des1$L, ", ",
                  "z-statistic value: ", paste(round(des1$zL, 3), collapse = ", "))
 
-  str9 <- paste0("theta: ", round(des1$theta, 3))
+  str10 <- paste0("theta: ", round(des1$theta, 3))
 
-  str10 <- paste0("Conditional type I error: ", round(des1$conditionalAlpha, 4),
+  str11 <- paste0("Conditional type I error: ", round(des1$conditionalAlpha, 4),
                   ", conditional power: ", round(des1$conditionalPower, 3))
 
-  str11 <- paste0("Muller & Schafer method for secondary trial: ",
+  str12 <- paste0("Muller & Schafer method for secondary trial: ",
                   des1$MullerSchafer)
 
-  df1a <- data.frame(x = rep("", 12))
+  info_rows <- c(str1, str2, str3, str4, str5, str6, str7, str8, str9,
+                 str10, str11, str12, "")
+  df1a <- data.frame(x = rep("", length(info_rows)))
   colnames(df1a) <- NULL
-  rownames(df1a) <- c(str1, str2, str3, str4, str5, str6, str7, str8,
-                      str9, str10, str11, "")
+  rownames(df1a) <- info_rows
 
   b <- data.frame(informationRates = des1$informationRates,
                   efficacyBounds = des1$efficacyBounds,
@@ -4006,16 +4013,17 @@ print.adaptDesign_seamless <- function(x, ...) {
 
   str2 <- "Adaptive Phase 2/3 seamless design"
 
-  str3 <- paste0("Total number of looks in Phase 3: ", des3$kMax - 1)
-  str4 <- paste0("Maximum information for pairwise comparion: ",
+  str3 <- paste0("Selected phase-2 rank carried forward: ", des3$rankp0)
+  str4 <- paste0("Total number of looks in Phase 3: ", des3$kMax - 1)
+  str5 <- paste0("Maximum information for pairwise comparion: ",
                  round(des3$maxInformation, 2))
 
-  str5 <- paste0("Interim adaptation look in Phase 3: ", des3$L, ", ",
+  str6 <- paste0("Interim adaptation look in Phase 3: ", des3$L, ", ",
                  "z-statistic value: ", paste(round(des3$zL, 3), collapse = ", "))
 
-  df3a <- data.frame(x = rep("", 6))
+  df3a <- data.frame(x = rep("", 7))
   colnames(df3a) <- NULL
-  rownames(df3a) <- c(str1, str2, str3, str4, str5, "")
+  rownames(df3a) <- c(str1, str2, str3, str4, str5, str6, "")
 
   b <- data.frame(informationRates = des3$informationRates,
                   efficacyBounds = des3$efficacyBounds,
@@ -4087,22 +4095,24 @@ print.rdsim_seamless <- function(x, ...) {
 
   str4 <- paste0("Number of looks in phase 3: ", a$K)
 
-  str5 <- paste0("Expected # events: ",
+  str5 <- paste0("Selected rank in phase 2: ", a$rankp0)
+
+  str6 <- paste0("Expected # events: ",
                  round(a$expectedNumberOfEvents, 1))
 
-  str6 <- paste0("Expected # subjects: ",
+  str7 <- paste0("Expected # subjects: ",
                  round(a$expectedNumberOfSubjects, 1))
 
-  str7 <- paste0("n: ", a$n)
+  str8 <- paste0("n: ", a$n)
 
-  str8 <- paste0("Variance under H0: ", a$nullVariance)
+  str9 <- paste0("Variance under H0: ", a$nullVariance)
 
-  str9 <- paste0("Number of simulations: ", a$numberOfIterations)
+  str10 <- paste0("Number of simulations: ", a$numberOfIterations)
 
-  df1a <- data.frame(x = rep("", 10))
+  df1a <- data.frame(x = rep("", 11))
   colnames(df1a) <- NULL
   rownames(df1a) <- c(str1, str2, str3, str4, str5, str6, str7, str8,
-                      str9, "")
+                      str9, str10, "")
 
   b <- data.frame(efficacyBounds = a$criticalValues,
                   futilityBounds = c(a$futilityBounds, a$criticalValues[k]))
@@ -4112,8 +4122,8 @@ print.rdsim_seamless <- function(x, ...) {
                       "Futility bounds (z-scale)")
   colnames(df1b) <- paste("Stage", seq_len(ncol(df1b)), sep = " ")
 
-  df2a <- t(data.frame(selectAsBest = a$selectAsBest))
-  rownames(df2a) <- "Selected as best in phase 2"
+  df2a <- t(data.frame(selectionProb = a$selectionProb))
+  rownames(df2a) <- "Selected at prespecified rank in phase 2"
   colnames(df2a) <- paste("Arm", seq_len(ncol(df2a)), sep = " ")
 
   df2a2 <- t(data.frame(selectToStage2 = a$selectToStage2))
@@ -4213,27 +4223,29 @@ print.lrsim_seamless <- function(x, ...) {
 
   str4 <- paste0("Number of looks in phase 3: ", a$K)
 
-  str5 <- paste0("Expected # events: ",
+  str5 <- paste0("Selected rank in phase 2: ", a$rankp0)
+
+  str6 <- paste0("Expected # events: ",
                  round(a$expectedNumberOfEvents, 1))
 
-  str6 <- paste0("Expected # dropouts: ",
+  str7 <- paste0("Expected # dropouts: ",
                  round(a$expectedNumberOfDropouts, 1))
 
-  str7 <- paste0("Expected # subjects: ",
+  str8 <- paste0("Expected # subjects: ",
                  round(a$expectedNumberOfSubjects, 1))
 
-  str8 <- paste0("Expected study duration: ",
+  str9 <- paste0("Expected study duration: ",
                  round(a$expectedStudyDuration, 1))
 
-  str9 <- paste0("n: ", a$n, ", ",
+  str10 <- paste0("n: ", a$n, ", ",
                  "fixed follow-up: ", a$fixedFollowup)
 
-  str10 <- paste0("Number of simulations: ", a$numberOfIterations)
+  str11 <- paste0("Number of simulations: ", a$numberOfIterations)
 
-  df1a <- data.frame(x = rep("", 11))
+  df1a <- data.frame(x = rep("", 12))
   colnames(df1a) <- NULL
   rownames(df1a) <- c(str1, str2, str3, str4, str5, str6, str7, str8,
-                      str9, str10, "")
+                      str9, str10, str11, "")
 
   b <- data.frame(efficacyBounds = a$criticalValues,
                   futiltyBounds = c(a$futilityBounds, a$criticalValues[k]))
@@ -4243,8 +4255,8 @@ print.lrsim_seamless <- function(x, ...) {
                       "Futility bounds (z-scale)")
   colnames(df1b) <- paste("Stage", seq_len(ncol(df1b)), sep=" ")
 
-  df2a <- t(data.frame(selectAsBest = a$selectAsBest))
-  rownames(df2a) <- "Selected as best in phase 2"
+  df2a <- t(data.frame(selectionProb = a$selectionProb))
+  rownames(df2a) <- "Selected at prespecified rank in phase 2"
   colnames(df2a) <- paste("Arm", seq_len(ncol(df2a)), sep=" ")
 
   df2a2 <- t(data.frame(selectToStage2 = a$selectToStage2))
