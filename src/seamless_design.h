@@ -16,7 +16,7 @@ struct ExitProbSeamless {
   std::vector<double> exitProbLower;
   FlatMatrix exitProbByArmUpper;
   FlatMatrix exitProbByArmLower;
-  std::vector<double> selectAsBest;
+  std::vector<double> selectionProb;
 };
 
 ExitProbSeamless exitprob_seamless_cpp(
@@ -27,7 +27,8 @@ ExitProbSeamless exitprob_seamless_cpp(
     const size_t K,
     const std::vector<double>& b,
     const std::vector<double>& a,
-    const std::vector<double>& I);
+    const std::vector<double>& I,
+    const size_t rankp0 = 1);
 
 ExitProbSeamless exitprob_seamless_cpp(
     const size_t M,
@@ -36,7 +37,8 @@ ExitProbSeamless exitprob_seamless_cpp(
     const bool corr_known,
     const size_t K,
     const std::vector<double>& b,
-    const std::vector<double>& I);
+    const std::vector<double>& I,
+    const size_t rankp0 = 1);
 
 std::vector<double> getBound_seamless_cpp(
     const size_t M,
@@ -49,7 +51,8 @@ std::vector<double> getBound_seamless_cpp(
     const double parameterAlphaSpending,
     const std::vector<double>& userAlphaSpending,
     const std::vector<double>& spendingTime,
-    const std::vector<unsigned char>& efficacyStopping);
+    const std::vector<unsigned char>& efficacyStopping,
+    const size_t rankp0 = 1);
 
 struct GetPowerSeamless {
   double power;
@@ -68,7 +71,8 @@ GetPowerSeamless getPower_seamless(
     const std::string& bsf,
     const double bsfpar,
     const std::vector<double>& st,
-    const std::vector<unsigned char>& futStopping);
+    const std::vector<unsigned char>& futStopping,
+    const size_t rankp0 = 1);
 
 ListCpp getDesign_seamless_cpp(
     const double beta,
@@ -92,7 +96,8 @@ ListCpp getDesign_seamless_cpp(
     const std::string& typeBetaSpending,
     const double parameterBetaSpending,
     const std::vector<double>& userBetaSpending,
-    const std::vector<double>& spendingTime);
+    const std::vector<double>& spendingTime,
+    const size_t rankp0 = 1);
 
 
 ListCpp adaptDesign_seamless_cpp(
@@ -131,4 +136,5 @@ ListCpp adaptDesign_seamless_cpp(
     const std::string& typeBetaSpendingNew,
     const double parameterBetaSpendingNew,
     const std::vector<double>& userBetaSpendingNew,
-    const std::vector<double>& spendingTimeNew);
+    const std::vector<double>& spendingTimeNew,
+    const size_t rankp0 = 1);
