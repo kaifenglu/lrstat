@@ -159,13 +159,13 @@ testthat::test_that("exit probability functions: probabilities are bounded and t
   testthat::expect_named(
     p1_seam,
     c("exitProbUpper", "exitProbLower", "exitProbByArmUpper",
-      "exitProbByArmLower", "selectAsBest")
+      "exitProbByArmLower", "selectionProb")
   )
   testthat::expect_equal(dim(p0_seam$exitProbByArmUpper), c(3, 2))
   testthat::expect_equal(dim(p1_seam$exitProbByArmLower), c(3, 2))
   testthat::expect_true(all(p1_seam$exitProbUpper >= 0 & p1_seam$exitProbUpper <= 1))
   testthat::expect_true(all(p1_seam$exitProbLower >= 0 & p1_seam$exitProbLower <= 1))
-  testthat::expect_equal(sum(p1_seam$selectAsBest), 1, tolerance = 1e-8)
+  testthat::expect_equal(sum(p1_seam$selectionProb), 1, tolerance = 1e-8)
   testthat::expect_equal(
     sum(p1_seam$exitProbUpper) + sum(p1_seam$exitProbLower),
     1,

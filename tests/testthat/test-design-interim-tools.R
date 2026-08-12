@@ -108,12 +108,12 @@ testthat::test_that("exitprob_seamless: documented examples and dimensions", {
   testthat::expect_named(
     p0,
     c("exitProbUpper", "exitProbLower", "exitProbByArmUpper",
-      "exitProbByArmLower", "selectAsBest")
+      "exitProbByArmLower", "selectionProb")
   )
   testthat::expect_equal(dim(p0$exitProbByArmUpper), c(3, 2))
   testthat::expect_equal(dim(p0$exitProbByArmLower), c(3, 2))
-  testthat::expect_length(p0$selectAsBest, 2)
-  testthat::expect_equal(sum(p0$selectAsBest), 1, tolerance = 1e-8)
+  testthat::expect_length(p0$selectionProb, 2)
+  testthat::expect_equal(sum(p0$selectionProb), 1, tolerance = 1e-8)
 
   testthat::expect_equal(
     p0$exitProbUpper,
