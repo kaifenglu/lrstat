@@ -4432,8 +4432,8 @@ binary_tte_simRcpp <- function(kMax1 = 1L, kMax2 = 1L, riskDiffH0 = 0, hazardRat
     .Call(`_lrstat_binary_tte_simRcpp`, kMax1, kMax2, riskDiffH0, hazardRatioH0, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, globalOddsRatio, pi1, pi2, lambda1, lambda2, gamma1, gamma2, delta1, delta2, upper1, upper2, n, plannedTime, plannedEvents, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
 
-lrsim_bmTrtSel_Rcpp <- function(phase2SampleSizePerArm = NA_integer_, phase3SampleSizePerArmMin = NA_integer_, phase3SampleSizePerArmMax = NA_integer_, responseProbControl = NA_real_, responseProbTreatments = NA_real_, toxicityProbTreatments = NA_real_, corrEfficacyToxicity = 0.5, hazardRateControl = NA_real_, hazardRateTreatments = matrix(), studyDurationPhase3 = NA_real_, toxicityWeight = NA_real_, toxicityUpperLimit = NA_real_, efficacyThreshold = 0, safetyThreshold = 0, methods = NULL, accrualRatePhase2 = NA_real_, accrualRatePhase3 = NA_real_, followupTimePhase2 = 0, maxNumberOfIterations = 1000L, seed = 0L) {
-    .Call(`_lrstat_lrsim_bmTrtSel_Rcpp`, phase2SampleSizePerArm, phase3SampleSizePerArmMin, phase3SampleSizePerArmMax, responseProbControl, responseProbTreatments, toxicityProbTreatments, corrEfficacyToxicity, hazardRateControl, hazardRateTreatments, studyDurationPhase3, toxicityWeight, toxicityUpperLimit, efficacyThreshold, safetyThreshold, methods, accrualRatePhase2, accrualRatePhase3, followupTimePhase2, maxNumberOfIterations, seed)
+lrsim_bmTrtSel_Rcpp <- function(phase2SampleSizePerArm = NA_integer_, phase3SampleSizePerArmMin = NA_integer_, phase3SampleSizePerArmMax = NA_integer_, responseProbControl = NA_real_, responseProbTreatments = NA_real_, toxicityProbTreatments = NA_real_, corrEfficacyToxicity = 0.5, hazardRateControl = NA_real_, hazardRateTreatments = matrix(), studyDurationPhase3 = NA_real_, toxicityWeight = NA_real_, toxicityUpperLimit = NA_real_, efficacyThreshold = 0, safetyThreshold = 0, useUniformPrior = TRUE, methods = NULL, accrualRatePhase2 = NA_real_, accrualRatePhase3 = NA_real_, followupTimePhase2 = 0, maxNumberOfIterations = 1000L, seed = 0L) {
+    .Call(`_lrstat_lrsim_bmTrtSel_Rcpp`, phase2SampleSizePerArm, phase3SampleSizePerArmMin, phase3SampleSizePerArmMax, responseProbControl, responseProbTreatments, toxicityProbTreatments, corrEfficacyToxicity, hazardRateControl, hazardRateTreatments, studyDurationPhase3, toxicityWeight, toxicityUpperLimit, efficacyThreshold, safetyThreshold, useUniformPrior, methods, accrualRatePhase2, accrualRatePhase3, followupTimePhase2, maxNumberOfIterations, seed)
 }
 
 lrsim_mcpmod_Rcpp <- function(M = 2L, alpha = 0.05, hazardRatioH0s = 1L, allocations = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambdas = NULL, candidateHazardRatios = NULL, gammas = NULL, n = NA_integer_, followupTime = NA_real_, fixedFollowup = FALSE, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = 0L) {
@@ -6118,14 +6118,6 @@ getBound_multiarm <- function(M = NA_integer_, r = 1, corr_known = TRUE, k = NA_
 #'   IMax = 110/(2*1^2), theta = c(0.3, 0.5), M = 2, r = 1.0,
 #'   kMax = 3, informationRates = seq(1, 3)/3,
 #'   alpha = 0.025, typeAlphaSpending = "OF"))
-#'
-#' # Example 3: derive futility boundaries using beta spending
-#' (design3 <- getDesign_multiarm(
-#'   IMax = 27.22, theta = c(-log(0.5), -log(0.75)),
-#'   M = 2, r = 1.0, corr_known = FALSE,
-#'   kMax = 3, informationRates = seq(1, 3)/3,
-#'   alpha = 0.025, typeAlphaSpending = "sfOF",
-#'   typeBetaSpending = "sfHSD", parameterBetaSpending = -2))
 #'
 #' @export
 getDesign_multiarm <- function(beta = NA_real_, IMax = NA_real_, theta = NA_real_, M = NA_integer_, r = 1, corr_known = TRUE, kMax = 1L, informationRates = NA_real_, efficacyStopping = NA_integer_, futilityStopping = NA_integer_, criticalValues = NULL, alpha = 0.025, typeAlphaSpending = "sfOF", parameterAlphaSpending = NA_real_, userAlphaSpending = NA_real_, futilityBounds = NULL, futilityCP = NULL, futilityTheta = NULL, typeBetaSpending = "none", parameterBetaSpending = NA_real_, userBetaSpending = NA_real_, spendingTime = NA_real_) {

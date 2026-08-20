@@ -49,6 +49,9 @@
 #' @param safetyThreshold The threshold for the posterior probability that the
 #'   toxicity rate of a dose is below \code{toxicityUpperLimit}. Use 0 when
 #'   the safety criterion is not applied.
+#' @param useUniformPrior Whether to use the uniform Beta(1,1) prior (the
+#'   default) or the Jeffreys Beta(0.5,0.5) prior for the beta-binomial
+#'   posterior used in dose selection.
 #' @param methods A character vector naming the testing procedures to evaluate
 #'   for the confirmatory analysis. Any subset of \code{"ctdunnett"},
 #'   \code{"ctsimes"}, \code{"ctpooled"}, \code{"cer"}, \code{"TSSSP.k"},
@@ -103,12 +106,6 @@
 #'   - \code{prob.rej.any}: A vector of length \code{ngrid} giving the
 #'     probability of rejecting any null hypothesis.
 #'
-#'   - \code{elapsedTime}: The total thread time in seconds attributed to the
-#'     method, summed over all simulated trials and stage 2 sample sizes. Work
-#'     shared across methods, in particular the log-rank tests and the data
-#'     generation, is excluded, so these are incremental costs rather than a
-#'     decomposition of the total run time.
-#'
 #'   The method names are
 #'   \code{ctdunnett}, \code{ctsimes}, and \code{ctpooled} for the closed
 #'   testing procedure with the inverse normal combination of stage 1 and
@@ -134,8 +131,10 @@
 #' correlated. The long-term endpoint is exponential with a rate determined by
 #' the realized short-term response status.
 #'
-#' Dose selection uses a beta-binomial model with independent uniform priors.
-#' A dose enters the acceptable set when the posterior probability that its
+#' Dose selection uses a beta-binomial model with independent priors, either
+#' uniform Beta(1,1) or Jeffreys Beta(0.5,0.5) depending on
+#' \code{useUniformPrior}. A dose enters the acceptable set when
+#' the posterior probability that its
 #' response rate exceeds that of the control is above \code{efficacyThreshold}
 #' and the posterior probability that its toxicity rate is below
 #' \code{toxicityUpperLimit} is above \code{safetyThreshold}. Among the
@@ -194,9 +193,6 @@
 #' sim$pcs
 #' sim$byMethod$ctdunnett$gpower
 #'
-#' # timing comparison across methods
-#' sapply(sim$byMethod, function(m) m$elapsedTime)
-#'
 #' @export
 lrsim_bmTrtSel <- function(
     phase2SampleSizePerArm = NA_integer_,
@@ -213,6 +209,7 @@ lrsim_bmTrtSel <- function(
     toxicityUpperLimit = NA_real_,
     efficacyThreshold = 0,
     safetyThreshold = 0,
+    useUniformPrior = TRUE,
     methods = c("ctdunnett", "ctsimes", "ctpooled", "cer",
                 "TSSSP.k", "TSSSP.uk", "naive", "ph3only"),
     accrualRatePhase2 = NA_real_,
@@ -243,6 +240,7 @@ lrsim_bmTrtSel <- function(
     toxicityUpperLimit = toxicityUpperLimit,
     efficacyThreshold = efficacyThreshold,
     safetyThreshold = safetyThreshold,
+    useUniformPrior = useUniformPrior,
     methods = methods,
     accrualRatePhase2 = accrualRatePhase2,
     accrualRatePhase3 = accrualRatePhase3,

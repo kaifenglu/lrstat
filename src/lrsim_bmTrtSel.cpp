@@ -7,7 +7,6 @@
 #include "seamless_design.h"
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -69,6 +68,10 @@ double beta_ineq(double a, double b, double c, double d, double tol = 1e-4) {
 //        control in response rate; 0 disables the efficacy criterion.
 // ct:    threshold for the posterior probability that the toxicity rate of a
 //        dose is below phi_t; 0 disables the safety criterion.
+// uniform_prior: true for the uniform Beta(1,1) prior (exact posterior
+//        comparison via beta_ineq_exact); false for the Jeffreys Beta(0.5,
+//        0.5) prior, whose non-integer posterior parameters require the
+//        numerical integration in beta_ineq.
 //
 // Returns a 0/1 indicator vector of length ndose flagging the selected dose.
 // It is all zeros when no dose satisfies both criteria.
@@ -80,14 +83,16 @@ std::vector<int> get_decision(
     const std::vector<double>& n,
     double phi_t,
     double ce,
-    double ct) {
+    double ct,
+    bool uniform_prior) {
   size_t ndose = xe.size();
+  double prior = uniform_prior ? 1.0 : 0.5;
 
-  // posterior means under a beta-binomial model with uniform prior
+  // posterior means under a beta-binomial model with the chosen prior
   std::vector<double> ppe(ndose), ppt(ndose);
   for (size_t i = 0; i < ndose; ++i) {
-    ppe[i] = (1.0 + xe[i])/(2.0 + n[i+1]);
-    ppt[i] = (1.0 + xt[i])/(2.0 + n[i+1]);
+    ppe[i] = (prior + xe[i])/(2.0*prior + n[i+1]);
+    ppt[i] = (prior + xt[i])/(2.0*prior + n[i+1]);
   }
 
   // the set of doses satisfying the safety and efficacy criteria
@@ -95,11 +100,14 @@ std::vector<int> get_decision(
   if (ce != 0.0 || ct != 0.0) {
     for (size_t i = 0; i < ndose; ++i) {
       // P(response rate of dose i > response rate of control)
-      double probe = beta_ineq_exact(1.0 + xe[i], 1.0 + n[i+1] - xe[i],
-                                     1.0 + x0, 1.0 + n[0] - x0);
+      double probe = uniform_prior ?
+        beta_ineq_exact(prior + xe[i], prior + n[i+1] - xe[i],
+                        prior + x0, prior + n[0] - x0) :
+        beta_ineq(prior + xe[i], prior + n[i+1] - xe[i],
+                  prior + x0, prior + n[0] - x0);
 
       // P(toxicity rate of dose i < phi_t)
-      double probt = boost::math::ibeta(1.0 + xt[i], 1.0 + n[i+1] - xt[i],
+      double probt = boost::math::ibeta(prior + xt[i], prior + n[i+1] - xt[i],
                                         phi_t);
 
       if (probe > ce && probt > ct) {
@@ -141,18 +149,11 @@ const char* const METHOD_NAME[NMETHOD] = {
   "TSSSP.k", "TSSSP.uk", "naive", "ph3only"
 };
 
-using clk = std::chrono::steady_clock;
-
-inline double elapsed_since(clk::time_point t0) {
-  return std::chrono::duration<double>(clk::now() - t0).count();
-}
-
 // per-trial storage so that worker threads never touch shared state
 struct TrialResult {
   bool completed = false;
   std::vector<int> select;
   std::vector<IntMatrix> rej;  // one ngrid by M matrix per requested method
-  std::vector<double> elapsed; // thread time attributed to each method
   IntMatrix events;
 };
 
@@ -197,6 +198,7 @@ struct SimWorker : public RcppParallel::Worker {
   const BoolMatrix& family;
   const FlatMatrix& corr;
   const StageBoundaries& sb;
+  const bool uniform_prior;
 
   std::vector<TrialResult>* results;
 
@@ -213,6 +215,7 @@ struct SimWorker : public RcppParallel::Worker {
             const WeightMatrix& wgtmat1_,
             const BoolMatrix& family_, const FlatMatrix& corr_,
             const StageBoundaries& sb_,
+            bool uniform_prior_,
             std::vector<TrialResult>* results_)
     : M(M_), n1(n1_), n2min(n2min_), n2max(n2max_), p0(p0_), pe(pe_), pt(pt_),
       rho(rho_), the0(the0_), the1(the1_), T_max(T_max_), w(w_),
@@ -221,6 +224,7 @@ struct SimWorker : public RcppParallel::Worker {
       T_ph2followup(T_ph2followup_), seeds(seeds_), use(use_),
       wgtmat(wgtmat_),
       wgtmat1(wgtmat1_), family(family_), corr(corr_), sb(sb_),
+      uniform_prior(uniform_prior_),
       results(results_)
   {}
 
@@ -259,7 +263,6 @@ struct SimWorker : public RcppParallel::Worker {
         TrialResult& out = (*results)[iter];
         out.select.assign(M, 0);
         out.rej.assign(NMETHOD, IntMatrix());
-        out.elapsed.assign(NMETHOD, 0.0);
         for (size_t m = 0; m < NMETHOD; ++m) {
           if (use[m]) out.rej[m].resize(ngrid, M);
         }
@@ -320,7 +323,8 @@ struct SimWorker : public RcppParallel::Worker {
           xe1[k] = s;
         }
 
-        out.select = get_decision(x01, xe1, xt, w, narms, phi_t, ce, ct);
+        out.select = get_decision(x01, xe1, xt, w, narms, phi_t, ce, ct,
+                                  uniform_prior);
 
         size_t obd = 0;
         bool selected = false;
@@ -375,19 +379,14 @@ struct SimWorker : public RcppParallel::Worker {
 
         LocalPValues dunnett1, simes1, pooled1;
         if (use[M_CTDUNNETT]) {
-          auto t0 = clk::now();
           dunnett1 = fadjpcpp(wgtmat, family, corr, allInt, allHyp,
                               wgtmat, stg1_p, "dunnett");
-          out.elapsed[M_CTDUNNETT] += elapsed_since(t0);
         }
         if (use[M_CTSIMES]) {
-          auto t0 = clk::now();
           simes1 = fadjpcpp(wgtmat, family, corr, allInt, allHyp,
                             wgtmat, stg1_p, "simes");
-          out.elapsed[M_CTSIMES] += elapsed_since(t0);
         }
         if (use[M_CTPOOLED]) {
-          auto t0 = clk::now();
           for (size_t i = 0; i < ntests; ++i) {
             arms.clear();
             for (size_t k = 0; k < M; ++k) {
@@ -396,7 +395,6 @@ struct SimWorker : public RcppParallel::Worker {
             pooled_p[i] = boost_pnorm(zg(arms, 0, n1), 0.0, 1.0, false);
           }
           pooled1 = LocalPValues{allInt, wgtmat.inthyp, pooled_p};
-          out.elapsed[M_CTPOOLED] += elapsed_since(t0);
         }
 
         // only intersection hypotheses containing the selected dose can keep
@@ -453,11 +451,9 @@ struct SimWorker : public RcppParallel::Worker {
           const std::vector<double> infoRates{t1, 1.0};
 
           auto combtest = [&](size_t m, const LocalPValues& stg1_loc_p) {
-            auto t0 = clk::now();
             PCStage2Result rej = fPCrejcpp(noStg1Rej, stg2_elemhyp, stg1_loc_p,
                                            stg2, ALPHA_ONE_SIDED, info_frac);
             for (size_t k = 0; k < M; ++k) out.rej[m](n2i, k) = rej.rej_elem[k];
-            out.elapsed[m] += elapsed_since(t0);
           };
 
           if (use[M_CTDUNNETT]) combtest(M_CTDUNNETT, dunnett1);
@@ -465,19 +461,14 @@ struct SimWorker : public RcppParallel::Worker {
           if (use[M_CTPOOLED]) combtest(M_CTPOOLED, pooled1);
 
           if (use[M_PH3ONLY]) {
-            auto t0 = clk::now();
             if (p2 < ALPHA_ONE_SIDED) out.rej[M_PH3ONLY](n2i, obd) = 1;
-            out.elapsed[M_PH3ONLY] += elapsed_since(t0);
           }
 
           if (use[M_NAIVE]) {
-            auto t0 = clk::now();
             if (p_cum < ALPHA_ONE_SIDED) out.rej[M_NAIVE](n2i, obd) = 1;
-            out.elapsed[M_NAIVE] += elapsed_since(t0);
           }
 
           if (use[M_CER]) {
-            auto t0 = clk::now();
             // stage boundaries are precomputed once outside the loop since
             // rejection at the end of phase 2 is not allowed
             CER cer = fCERcpp(M, wgtmat, family, corr, t1, sb.stg1_bnd,
@@ -489,25 +480,20 @@ struct SimWorker : public RcppParallel::Worker {
               cer.stg1_elemhyp_r_idx, stg2_elemhyp, nb.inthyp,
               nb.stg2_bnd_new, std::vector<double>{p_cum});
             for (size_t k = 0; k < M; ++k) out.rej[M_CER](n2i, k) = rej_cer[k];
-            out.elapsed[M_CER] += elapsed_since(t0);
           }
 
           if (use[M_TSSSP_K]) {
-            auto t0 = clk::now();
             std::vector<double> bk = getBound_seamless_cpp(
               M, 1.0, true, 1, infoRates, ALPHA_ONE_SIDED, "none", NA_dbl,
               emptyv, emptyv, effStopping, 1);
             if (zgn > bk[1]) out.rej[M_TSSSP_K](n2i, obd) = 1;
-            out.elapsed[M_TSSSP_K] += elapsed_since(t0);
           }
 
           if (use[M_TSSSP_UK]) {
-            auto t0 = clk::now();
             std::vector<double> buk = getBound_seamless_cpp(
               M, 1.0, false, 1, infoRates, ALPHA_ONE_SIDED, "none", NA_dbl,
               emptyv, emptyv, effStopping, 1);
             if (zgn > buk[1]) out.rej[M_TSSSP_UK](n2i, obd) = 1;
-            out.elapsed[M_TSSSP_UK] += elapsed_since(t0);
           }
         }
 
@@ -540,6 +526,7 @@ ListCpp lrsim_bmTrtSel_cpp(
     const double phi_t,
     const double ce,
     const double ct,
+    const bool uniform_prior,
     const double acc_rate1,
     const double acc_rate2,
     const double T_ph2followup,
@@ -638,14 +625,14 @@ ListCpp lrsim_bmTrtSel_cpp(
 
   std::vector<TrialResult> results(ntrial);
   SimWorker worker(M, n1, n2min, n2max, p0, pe, pt, rho, the0, the1, T_max, w,
-                   phi_t, ce, ct, acc_rate1, acc_rate2, T_ph2followup,
-                   seeds, use, wgtmat, wgtmat1, family, corr, sb, &results);
+                   phi_t, ce, ct, acc_rate1, acc_rate2,
+                   T_ph2followup, seeds, use, wgtmat, wgtmat1, family, corr,
+                   sb, uniform_prior, &results);
   RcppParallel::parallelFor(0, ntrial, worker);
 
   std::vector<int> select_count(ntr, 0);
   std::vector<IntMatrix> rej_each(NMETHOD);
   std::vector<std::vector<int>> rej_any(NMETHOD);
-  std::vector<double> elapsed(NMETHOD, 0.0);
   for (size_t m = 0; m < NMETHOD; ++m) {
     if (!use[m]) continue;
     rej_each[m].resize(ngrid, ntr);
@@ -661,7 +648,6 @@ ListCpp lrsim_bmTrtSel_cpp(
 
     for (size_t m = 0; m < NMETHOD; ++m) {
       if (!use[m]) continue;
-      elapsed[m] += out.elapsed[m];
       for (size_t n2i = 0; n2i < ngrid; ++n2i) {
         for (size_t k = 0; k < ntr; ++k) {
           rej_each[m](n2i, k) += out.rej[m](n2i, k);
@@ -735,7 +721,6 @@ ListCpp lrsim_bmTrtSel_cpp(
     res.push_back(std::move(gpower), "gpower");
     res.push_back(std::move(prob_rej_each), "prob.rej.each");
     res.push_back(std::move(prob_rej_any), "prob.rej.any");
-    res.push_back(elapsed[m], "elapsedTime");
 
     methodNames.push_back(METHOD_NAME[m]);
     byMethod.push_back(std::move(res), METHOD_NAME[m]);
@@ -772,6 +757,7 @@ Rcpp::List lrsim_bmTrtSel_Rcpp(
     const double toxicityUpperLimit = NA_REAL,
     const double efficacyThreshold = 0,
     const double safetyThreshold = 0,
+    const bool useUniformPrior = true,
     const Rcpp::Nullable<Rcpp::CharacterVector> methods = R_NilValue,
     const double accrualRatePhase2 = NA_REAL,
     const double accrualRatePhase3 = NA_REAL,
@@ -799,7 +785,7 @@ Rcpp::List lrsim_bmTrtSel_Rcpp(
     static_cast<size_t>(phase3SampleSizePerArmMax),
     responseProbControl, pe, pt, corrEfficacyToxicity, the0, the1,
     studyDurationPhase3, toxicityWeight, toxicityUpperLimit,
-    efficacyThreshold, safetyThreshold,
+    efficacyThreshold, safetyThreshold, useUniformPrior,
     accrualRatePhase2, accrualRatePhase3, followupTimePhase2, methodVec,
     static_cast<size_t>(maxNumberOfIterations), seed);
 

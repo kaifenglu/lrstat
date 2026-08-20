@@ -219,6 +219,16 @@ ExitProbResult exitprobcpp(
     std::iota(I1.begin(), I1.end(), 1.0);
   }
 
+  // a single stage needs no Jennison-Turnbull grid: the exit probabilities
+  // are plain normal tail probabilities
+  if (K == 1) {
+    double thetaSqrtI0 = theta1[0] * std::sqrt(I1[0]);
+    ExitProbResult result;
+    result.exitProbUpper = {boost_pnorm(-b[0] + thetaSqrtI0)};
+    result.exitProbLower = {boost_pnorm(a1[0] - thetaSqrtI0)};
+    return result;
+  }
+
   // Precompute shifts (constant across stages)
   std::vector<double> shift(r1);
   for (size_t i = 0; i < r1; ++i) {

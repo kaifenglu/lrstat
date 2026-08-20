@@ -20,6 +20,7 @@ lrsim_bmTrtSel(
   toxicityUpperLimit = NA_real_,
   efficacyThreshold = 0,
   safetyThreshold = 0,
+  useUniformPrior = TRUE,
   methods = c("ctdunnett", "ctsimes", "ctpooled", "cer", "TSSSP.k", "TSSSP.uk", "naive",
     "ph3only"),
   accrualRatePhase2 = NA_real_,
@@ -85,6 +86,10 @@ efficacy criterion is not applied.}
 toxicity rate of a dose is below \code{toxicityUpperLimit}. Use 0 when
 the safety criterion is not applied.}
 
+\item{useUniformPrior}{Whether to use the uniform Beta(1,1) prior (the
+default) or the Jeffreys Beta(0.5,0.5) prior for the beta-binomial
+posterior used in dose selection.}
+
 \item{methods}{A character vector naming the testing procedures to evaluate
 for the confirmatory analysis. Any subset of \code{"ctdunnett"},
 \code{"ctsimes"}, \code{"ctpooled"}, \code{"cer"}, \code{"TSSSP.k"},
@@ -138,11 +143,6 @@ probability of rejecting the null hypothesis for each dose conditional
 on that dose being selected.
 \item \code{prob.rej.any}: A vector of length \code{ngrid} giving the
 probability of rejecting any null hypothesis.
-\item \code{elapsedTime}: The total thread time in seconds attributed to the
-method, summed over all simulated trials and stage 2 sample sizes. Work
-shared across methods, in particular the log-rank tests and the data
-generation, is excluded, so these are incremental costs rather than a
-decomposition of the total run time.
 }
 
 The method names are
@@ -181,8 +181,10 @@ probabilities are \eqn{p_T(d)} and \eqn{p_E(d)} while the two endpoints are
 correlated. The long-term endpoint is exponential with a rate determined by
 the realized short-term response status.
 
-Dose selection uses a beta-binomial model with independent uniform priors.
-A dose enters the acceptable set when the posterior probability that its
+Dose selection uses a beta-binomial model with independent priors, either
+uniform Beta(1,1) or Jeffreys Beta(0.5,0.5) depending on
+\code{useUniformPrior}. A dose enters the acceptable set when
+the posterior probability that its
 response rate exceeds that of the control is above \code{efficacyThreshold}
 and the posterior probability that its toxicity rate is below
 \code{toxicityUpperLimit} is above \code{safetyThreshold}. Among the
@@ -229,9 +231,6 @@ sim <- lrsim_bmTrtSel(
 
 sim$pcs
 sim$byMethod$ctdunnett$gpower
-
-# timing comparison across methods
-sapply(sim$byMethod, function(m) m$elapsedTime)
 
 }
 \references{

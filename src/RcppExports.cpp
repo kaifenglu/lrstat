@@ -1568,8 +1568,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // lrsim_bmTrtSel_Rcpp
-Rcpp::List lrsim_bmTrtSel_Rcpp(const int phase2SampleSizePerArm, const int phase3SampleSizePerArmMin, const int phase3SampleSizePerArmMax, const double responseProbControl, const Rcpp::NumericVector& responseProbTreatments, const Rcpp::NumericVector& toxicityProbTreatments, const double corrEfficacyToxicity, const Rcpp::NumericVector& hazardRateControl, const Rcpp::NumericMatrix& hazardRateTreatments, const double studyDurationPhase3, const double toxicityWeight, const double toxicityUpperLimit, const double efficacyThreshold, const double safetyThreshold, const Rcpp::Nullable<Rcpp::CharacterVector> methods, const double accrualRatePhase2, const double accrualRatePhase3, const double followupTimePhase2, const int maxNumberOfIterations, const int seed);
-RcppExport SEXP _lrstat_lrsim_bmTrtSel_Rcpp(SEXP phase2SampleSizePerArmSEXP, SEXP phase3SampleSizePerArmMinSEXP, SEXP phase3SampleSizePerArmMaxSEXP, SEXP responseProbControlSEXP, SEXP responseProbTreatmentsSEXP, SEXP toxicityProbTreatmentsSEXP, SEXP corrEfficacyToxicitySEXP, SEXP hazardRateControlSEXP, SEXP hazardRateTreatmentsSEXP, SEXP studyDurationPhase3SEXP, SEXP toxicityWeightSEXP, SEXP toxicityUpperLimitSEXP, SEXP efficacyThresholdSEXP, SEXP safetyThresholdSEXP, SEXP methodsSEXP, SEXP accrualRatePhase2SEXP, SEXP accrualRatePhase3SEXP, SEXP followupTimePhase2SEXP, SEXP maxNumberOfIterationsSEXP, SEXP seedSEXP) {
+Rcpp::List lrsim_bmTrtSel_Rcpp(const int phase2SampleSizePerArm, const int phase3SampleSizePerArmMin, const int phase3SampleSizePerArmMax, const double responseProbControl, const Rcpp::NumericVector& responseProbTreatments, const Rcpp::NumericVector& toxicityProbTreatments, const double corrEfficacyToxicity, const Rcpp::NumericVector& hazardRateControl, const Rcpp::NumericMatrix& hazardRateTreatments, const double studyDurationPhase3, const double toxicityWeight, const double toxicityUpperLimit, const double efficacyThreshold, const double safetyThreshold, const bool useUniformPrior, const Rcpp::Nullable<Rcpp::CharacterVector> methods, const double accrualRatePhase2, const double accrualRatePhase3, const double followupTimePhase2, const int maxNumberOfIterations, const int seed);
+RcppExport SEXP _lrstat_lrsim_bmTrtSel_Rcpp(SEXP phase2SampleSizePerArmSEXP, SEXP phase3SampleSizePerArmMinSEXP, SEXP phase3SampleSizePerArmMaxSEXP, SEXP responseProbControlSEXP, SEXP responseProbTreatmentsSEXP, SEXP toxicityProbTreatmentsSEXP, SEXP corrEfficacyToxicitySEXP, SEXP hazardRateControlSEXP, SEXP hazardRateTreatmentsSEXP, SEXP studyDurationPhase3SEXP, SEXP toxicityWeightSEXP, SEXP toxicityUpperLimitSEXP, SEXP efficacyThresholdSEXP, SEXP safetyThresholdSEXP, SEXP useUniformPriorSEXP, SEXP methodsSEXP, SEXP accrualRatePhase2SEXP, SEXP accrualRatePhase3SEXP, SEXP followupTimePhase2SEXP, SEXP maxNumberOfIterationsSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1587,13 +1587,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type toxicityUpperLimit(toxicityUpperLimitSEXP);
     Rcpp::traits::input_parameter< const double >::type efficacyThreshold(efficacyThresholdSEXP);
     Rcpp::traits::input_parameter< const double >::type safetyThreshold(safetyThresholdSEXP);
+    Rcpp::traits::input_parameter< const bool >::type useUniformPrior(useUniformPriorSEXP);
     Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::CharacterVector> >::type methods(methodsSEXP);
     Rcpp::traits::input_parameter< const double >::type accrualRatePhase2(accrualRatePhase2SEXP);
     Rcpp::traits::input_parameter< const double >::type accrualRatePhase3(accrualRatePhase3SEXP);
     Rcpp::traits::input_parameter< const double >::type followupTimePhase2(followupTimePhase2SEXP);
     Rcpp::traits::input_parameter< const int >::type maxNumberOfIterations(maxNumberOfIterationsSEXP);
     Rcpp::traits::input_parameter< const int >::type seed(seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(lrsim_bmTrtSel_Rcpp(phase2SampleSizePerArm, phase3SampleSizePerArmMin, phase3SampleSizePerArmMax, responseProbControl, responseProbTreatments, toxicityProbTreatments, corrEfficacyToxicity, hazardRateControl, hazardRateTreatments, studyDurationPhase3, toxicityWeight, toxicityUpperLimit, efficacyThreshold, safetyThreshold, methods, accrualRatePhase2, accrualRatePhase3, followupTimePhase2, maxNumberOfIterations, seed));
+    rcpp_result_gen = Rcpp::wrap(lrsim_bmTrtSel_Rcpp(phase2SampleSizePerArm, phase3SampleSizePerArmMin, phase3SampleSizePerArmMax, responseProbControl, responseProbTreatments, toxicityProbTreatments, corrEfficacyToxicity, hazardRateControl, hazardRateTreatments, studyDurationPhase3, toxicityWeight, toxicityUpperLimit, efficacyThreshold, safetyThreshold, useUniformPrior, methods, accrualRatePhase2, accrualRatePhase3, followupTimePhase2, maxNumberOfIterations, seed));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -3805,7 +3806,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lrstat_lrsim2e3aRcpp", (DL_FUNC) &_lrstat_lrsim2e3aRcpp, 38},
     {"_lrstat_lrsimsubRcpp", (DL_FUNC) &_lrstat_lrsimsubRcpp, 30},
     {"_lrstat_binary_tte_simRcpp", (DL_FUNC) &_lrstat_binary_tte_simRcpp, 27},
-    {"_lrstat_lrsim_bmTrtSel_Rcpp", (DL_FUNC) &_lrstat_lrsim_bmTrtSel_Rcpp, 20},
+    {"_lrstat_lrsim_bmTrtSel_Rcpp", (DL_FUNC) &_lrstat_lrsim_bmTrtSel_Rcpp, 21},
     {"_lrstat_lrsim_mcpmod_Rcpp", (DL_FUNC) &_lrstat_lrsim_mcpmod_Rcpp, 19},
     {"_lrstat_lrsim_multiarm_Rcpp", (DL_FUNC) &_lrstat_lrsim_multiarm_Rcpp, 22},
     {"_lrstat_lrsim_seamless_Rcpp", (DL_FUNC) &_lrstat_lrsim_seamless_Rcpp, 23},

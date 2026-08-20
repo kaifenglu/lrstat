@@ -4404,13 +4404,6 @@ print.lrsim_bmTrtSel <- function(x, ...) {
   df6[j] <- lapply(df6[j], formatC, format = "f", digits = 4)
   colnames(df6)[1:2] <- c("Method", "n2")
 
-  # method comparison: incremental computing cost
-  elapsed <- sapply(methods, function(m) x$byMethod[[m]]$elapsedTime)
-  df7 <- data.frame(Method = labels,
-                    Seconds = formatC(elapsed, format = "f", digits = 3),
-                    Percent = formatC(100*elapsed/sum(elapsed),
-                                      format = "f", digits = 1))
-
   print(df1, ..., na.print = "", quote = FALSE)
   cat("Average number of events in the selected dose and the control arm\n")
   print(df3, ..., na.print = "", quote = FALSE)
@@ -4422,9 +4415,6 @@ print.lrsim_bmTrtSel <- function(x, ...) {
   print(df5, ..., na.print = "", quote = FALSE)
   cat("\nProbability of rejecting each dose given that it was selected\n")
   print(df6, ..., na.print = "", quote = FALSE, row.names = FALSE)
-  cat("\nThread time attributed to each method, excluding the shared",
-      "data generation and log-rank tests\n")
-  print(df7, ..., na.print = "", quote = FALSE, row.names = FALSE)
   if ("naive" %in% methods) {
     cat("\nNaive does not control the familywise error rate because it reuses",
         "the stage 1 data used for selection;",

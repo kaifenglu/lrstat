@@ -1827,14 +1827,6 @@ ListCpp getDesign_multiarm_cpp(
 //'   kMax = 3, informationRates = seq(1, 3)/3,
 //'   alpha = 0.025, typeAlphaSpending = "OF"))
 //'
-//' # Example 3: derive futility boundaries using beta spending
-//' (design3 <- getDesign_multiarm(
-//'   IMax = 27.22, theta = c(-log(0.5), -log(0.75)),
-//'   M = 2, r = 1.0, corr_known = FALSE,
-//'   kMax = 3, informationRates = seq(1, 3)/3,
-//'   alpha = 0.025, typeAlphaSpending = "sfOF",
-//'   typeBetaSpending = "sfHSD", parameterBetaSpending = -2))
-//'
 //' @export
 // [[Rcpp::export]]
 Rcpp::List getDesign_multiarm(
