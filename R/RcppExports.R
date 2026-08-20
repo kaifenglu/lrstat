@@ -4408,6 +4408,10 @@ logisregRcpp <- function(data, event, covariates, freq, weight, offset, id, link
     .Call(`_lrstat_logisregRcpp`, data, event, covariates, freq, weight, offset, id, link, init, robust, firth, flic, plci, alpha, maxiter, eps)
 }
 
+lpMaxEqRcpp <- function(objective, equality, rhs) {
+    .Call(`_lrstat_lpMaxEqRcpp`, objective, equality, rhs)
+}
+
 lrsimRcpp <- function(kMax = 1L, informationRates = NA_real_, criticalValues = NA_real_, futilityBounds = NA_real_, hazardRatioH0 = 1, allocation1 = 1L, allocation2 = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, n = NA_integer_, followupTime = NA_real_, fixedFollowup = FALSE, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = 0L) {
     .Call(`_lrstat_lrsimRcpp`, kMax, informationRates, criticalValues, futilityBounds, hazardRatioH0, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }

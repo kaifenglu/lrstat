@@ -5390,7 +5390,7 @@ getDesignAgreement <- function(
     }
 
     # row margin, column margin, and observed agreement
-    f.con <- matrix(0, 2*k+1+k^2, k^2)
+    f.con <- matrix(0, 2*k+1, k^2)
     for (i in 1:k) {
       for (j in 1:k) {
         t <- (i-1)*k + j
@@ -5400,15 +5400,10 @@ getDesignAgreement <- function(
       }
     }
 
-    # nonnegative cell probabilities
-    f.con[(2*k+2):(2*k+1+k^2),] <- diag(k^2)
+    f.rhs <- c(p1, p2, po)
 
-    f.dir <- c(rep("==", 2*k+1), rep(">=", k^2))
-    f.rhs <- c(p1, p2, po, rep(0, k^2))
-
-    # linear programming
-    opt <- lpSolve::lp("max", f.obj, f.con, f.dir, f.rhs)
-    matrix(opt$solution, k, k, byrow = TRUE)
+    # linear programming; the native solver accepts equality constraints
+    matrix(lpMaxEqRcpp(f.obj, f.con, f.rhs), k, k, byrow = TRUE)
   }
 
 

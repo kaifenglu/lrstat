@@ -1331,6 +1331,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// lpMaxEqRcpp
+Rcpp::NumericVector lpMaxEqRcpp(const Rcpp::NumericVector& objective, const Rcpp::NumericMatrix& equality, const Rcpp::NumericVector& rhs);
+RcppExport SEXP _lrstat_lpMaxEqRcpp(SEXP objectiveSEXP, SEXP equalitySEXP, SEXP rhsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type objective(objectiveSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type equality(equalitySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type rhs(rhsSEXP);
+    rcpp_result_gen = Rcpp::wrap(lpMaxEqRcpp(objective, equality, rhs));
+    return rcpp_result_gen;
+END_RCPP
+}
 // lrsimRcpp
 Rcpp::List lrsimRcpp(const int kMax, const Rcpp::NumericVector& informationRates, const Rcpp::NumericVector& criticalValues, const Rcpp::NumericVector& futilityBounds, const double hazardRatioH0, const int allocation1, const int allocation2, const Rcpp::NumericVector& accrualTime, const Rcpp::NumericVector& accrualIntensity, const Rcpp::NumericVector& piecewiseSurvivalTime, const Rcpp::NumericVector& stratumFraction, const Rcpp::NumericVector& lambda1, const Rcpp::NumericVector& lambda2, const Rcpp::NumericVector& gamma1, const Rcpp::NumericVector& gamma2, const int n, const double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const Rcpp::IntegerVector& plannedEvents, const Rcpp::NumericVector& plannedTime, const int maxNumberOfIterations, const int maxNumberOfRawDatasetsPerStage, const int seed);
 RcppExport SEXP _lrstat_lrsimRcpp(SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP criticalValuesSEXP, SEXP futilityBoundsSEXP, SEXP hazardRatioH0SEXP, SEXP allocation1SEXP, SEXP allocation2SEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP nSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP plannedEventsSEXP, SEXP plannedTimeSEXP, SEXP maxNumberOfIterationsSEXP, SEXP maxNumberOfRawDatasetsPerStageSEXP, SEXP seedSEXP) {
@@ -3800,6 +3813,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lrstat_kmpowerequiv", (DL_FUNC) &_lrstat_kmpowerequiv, 24},
     {"_lrstat_kmsamplesizeequiv", (DL_FUNC) &_lrstat_kmsamplesizeequiv, 25},
     {"_lrstat_logisregRcpp", (DL_FUNC) &_lrstat_logisregRcpp, 16},
+    {"_lrstat_lpMaxEqRcpp", (DL_FUNC) &_lrstat_lpMaxEqRcpp, 3},
     {"_lrstat_lrsimRcpp", (DL_FUNC) &_lrstat_lrsimRcpp, 25},
     {"_lrstat_lrsim3aRcpp", (DL_FUNC) &_lrstat_lrsim3aRcpp, 27},
     {"_lrstat_lrsim2eRcpp", (DL_FUNC) &_lrstat_lrsim2eRcpp, 29},

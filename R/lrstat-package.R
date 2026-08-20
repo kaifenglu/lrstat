@@ -116,7 +116,6 @@
 #' @importFrom ggplot2 aes annotate element_text geom_step ggplot labs
 #' @importFrom ggplot2 scale_linewidth_manual theme theme_bw
 #' @importFrom plotly layout plot_ly
-#' @importFrom lpSolve lp
 #' @importFrom rlang .data
 #' @importFrom shiny shinyAppDir
 #'

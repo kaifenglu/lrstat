@@ -12,7 +12,6 @@ Imports:
     RcppParallel (>= 5.1.5), 
     parallel (>= 3.5),
     rlang (>= 1.0.6),
-    lpSolve (>= 5.6.1),
     ggplot2 (>= 3.3.6),
     plotly (>= 4.10.1),
     shiny (>= 1.7.1),
