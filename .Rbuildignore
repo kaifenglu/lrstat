@@ -1,0 +1,14 @@
+^renv$
+^renv\.lock$
+^.*\.Rproj$
+^\.Rproj\.user$
+notes
+^data-raw$
+^\.github$
+^docs$
+^_pkgdown\.yml$
+^pkgdown$
+^\.positai$
+^\.claude$
+^\.vscode$
+^\.rlib$
