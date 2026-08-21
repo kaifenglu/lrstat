@@ -1,5 +1,7 @@
 # lrstat 0.3.3
 
+* avoided redundant per-iteration heap allocation of the within-family p-value/weight buffers in `fadjpsim`'s Simes-based p-value adjustment
+* avoided redundant recomputation of the transform gradient across requested probabilities in `survQuantile`'s Brookmeyer-Crowley confidence interval calculation
 * simplified graphical and adaptive multiple-testing p-value adjustment interfaces by making p-values the first argument and automatically supplying equal intersection weights, a single family, and default within-family correlations when these inputs are omitted
 * added public R wrappers with `nthreads` controls for the multi-arm and seamless design, conditional power, and confidence interval functions
 * renamed the corresponding internal Rcpp entry points with the `_Rcpp` suffix and moved their documentation to the R wrapper files

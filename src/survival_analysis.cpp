@@ -213,6 +213,26 @@ DataFrameCpp survQuantilecpp(const std::vector<double>& time,
   std::vector<double> z(n0, NaN), grad(n0, NaN);
   double zcrit = boost_qnorm((1.0 + cilevel) / 2.0);
 
+  // grad[i] depends only on surv0[i], not on probs[j]; compute once
+  for (size_t i = 0; i < n0; ++i) {
+    if (nrisk0[i] > nevent0[i]) {
+      switch (code) {
+      case 2: // log
+        grad[i] = 1.0 / surv0[i];
+        break;
+      case 3: // loglog / log-log / cloglog
+        grad[i] = 1.0 / (surv0[i] * std::log(surv0[i]));
+        break;
+      case 4: // logit
+        grad[i] = 1.0 / (surv0[i] * (1.0 - surv0[i]));
+        break;
+      case 5: // arcsin / asin / asinsqrt
+        grad[i] = 1.0 / (2.0 * std::sqrt(surv0[i] * (1.0 - surv0[i])));
+        break;
+      }
+    }
+  }
+
   size_t m = probs.size();
   std::vector<double> quantile(m), lower(m), upper(m);
   for (size_t j = 0; j < m; ++j) {
@@ -225,24 +245,20 @@ DataFrameCpp survQuantilecpp(const std::vector<double>& time,
           break;
 
         case 2: // log
-          grad[i] = 1.0 / surv0[i];
           z[i] = (std::log(surv0[i]) - std::log(q)) / (grad[i] * sesurv0[i]);
           break;
 
         case 3: // loglog / log-log / cloglog
-          grad[i] = 1.0 / (surv0[i] * std::log(surv0[i]));
           z[i] = (std::log(-std::log(surv0[i])) - std::log(-std::log(q))) /
             (grad[i] * sesurv0[i]);
           break;
 
         case 4: // logit
-          grad[i] = 1.0 / (surv0[i] * (1.0 - surv0[i]));
           z[i] = (boost_qlogis(surv0[i]) - boost_qlogis(q)) /
             (grad[i] * sesurv0[i]);
           break;
 
         case 5: // arcsin / asin / asinsqrt
-          grad[i] = 1.0 / (2.0 * std::sqrt(surv0[i] * (1.0 - surv0[i])));
           z[i] = (std::asin(std::sqrt(surv0[i])) - std::asin(std::sqrt(q))) /
             (grad[i] * sesurv0[i]);
           break;

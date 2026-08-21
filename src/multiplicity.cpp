@@ -522,6 +522,8 @@ AdjustedPValues fadjpsimcpp(
   std::vector<double> pbuf; pbuf.reserve(m);
   std::vector<double> cw; cw.reserve(m);
   std::vector<size_t> idx; idx.reserve(m);
+  std::vector<double> p1; p1.reserve(m);
+  std::vector<double> w1; w1.reserve(m);
 
   // Main loop over subsets
   for (size_t i = 0; i < ntests; ++i) {
@@ -568,9 +570,8 @@ AdjustedPValues fadjpsimcpp(
       for (size_t block = 0; block < nhyps1.size(); ++block) {
         size_t t = nhyps1[block];
         // snapshot original block to avoid in-place overwrite corruption
-        // p1 and w1 are small (<= m) and allocated on the heap but
-        // re-used across iterations
-        std::vector<double> p1(t), w1(t); // within family block
+        // p1 and w1 are reusable buffers (reserved to m, resized per block)
+        p1.resize(t); w1.resize(t); // within family block
         for (size_t u = 0; u < t; ++u) {
           p1[u] = pbuf[s + u];
           w1[u] = wbuf[s + u];
