@@ -1,5 +1,6 @@
 # lrstat 0.3.3
 
+* renamed the `cJ1`/`cJ2`/`cJ2_new` output fields of `fStageBound`/`fNewBound` to `stg1_coef`/`stg2_coef`/`stg2_coef_new` for consistency with the `stg1_bnd`/`stg2_bnd`/`stg2_bnd_new` naming
 * reduced per-iteration buffer allocation in `fadjpsim`'s Simes p-value adjustment by reusing preallocated vectors instead of allocating new ones for each family block
 * avoided recomputing the transform gradient for each probability in `survQuantile`, computing it once per event time instead
 * simplified graphical and adaptive multiple-testing p-value adjustment interfaces by making p-values the first argument and automatically supplying equal intersection weights, a single family, and default within-family correlations when these inputs are omitted

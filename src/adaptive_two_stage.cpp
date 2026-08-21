@@ -581,8 +581,8 @@ Rcpp::List fStageBoundRcpp(const int m,
                             alpha, alpha1, info_frac);
   ListCpp result;
   result.push_back(std::move(out.inthyp), "inthyp");
-  result.push_back(std::move(out.cJ1), "cJ1");
-  result.push_back(std::move(out.cJ2), "cJ2");
+  result.push_back(std::move(out.stg1_coef), "stg1_coef");
+  result.push_back(std::move(out.stg2_coef), "stg2_coef");
   result.push_back(std::move(out.stg1_bnd), "stg1_bnd");
   result.push_back(std::move(out.stg2_bnd), "stg2_bnd");
   return Rcpp::wrap(result);
@@ -915,7 +915,7 @@ Rcpp::List fNewBoundRcpp(const int m,
                           stg1_p, Jplus, CER, I2, wgt2_pair, info_frac_new);
   ListCpp result;
   result.push_back(std::move(out.inthyp), "inthyp");
-  result.push_back(std::move(out.cJ2_new), "cJ2_new");
+  result.push_back(std::move(out.stg2_coef_new), "stg2_coef_new");
   result.push_back(std::move(out.stg2_bnd_new), "stg2_bnd_new");
   return Rcpp::wrap(result);
 }

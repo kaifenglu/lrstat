@@ -87,7 +87,7 @@ testthat::test_that("fStageBound returns valid stage-wise boundary matrices", {
 
   testthat::expect_named(
     stage_bounds,
-    c("inthyp", "cJ1", "cJ2", "stg1_bnd", "stg2_bnd")
+    c("inthyp", "stg1_coef", "stg2_coef", "stg1_bnd", "stg2_bnd")
   )
   testthat::expect_equal(dim(stage_bounds$inthyp), c(15L, 4L))
   testthat::expect_equal(dim(stage_bounds$stg1_bnd), c(15L, 4L))
@@ -190,7 +190,7 @@ testthat::test_that("fNewBound and fCERrej complete the conditional-error workfl
     cumulative_pvalues
   )
 
-  testthat::expect_named(adapted_bounds, c("inthyp", "cJ2_new", "stg2_bnd_new"))
+  testthat::expect_named(adapted_bounds, c("inthyp", "stg2_coef_new", "stg2_bnd_new"))
   testthat::expect_equal(ncol(adapted_bounds$inthyp), 4L)
   testthat::expect_equal(dim(adapted_bounds$stg2_bnd_new), dim(adapted_bounds$inthyp))
   testthat::expect_true(all(adapted_bounds$stg2_bnd_new >= 0 & adapted_bounds$stg2_bnd_new <= 1))

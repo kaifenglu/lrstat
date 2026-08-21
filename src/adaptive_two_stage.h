@@ -39,8 +39,8 @@ struct PCStage2Result {
 
 struct StageBoundaries {
   IntMatrix inthyp;
-  std::vector<double> cJ1;
-  std::vector<double> cJ2;
+  std::vector<double> stg1_coef;
+  std::vector<double> stg2_coef;
   FlatMatrix stg1_bnd;
   FlatMatrix stg2_bnd;
 };
@@ -54,7 +54,7 @@ struct CER {
 
 struct AdjustedBoundaries {
   IntMatrix inthyp;
-  std::vector<double> cJ2_new;
+  std::vector<double> stg2_coef_new;
   FlatMatrix stg2_bnd_new;
 };
 
