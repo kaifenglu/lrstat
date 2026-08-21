@@ -82,7 +82,7 @@
 #'                   0.3, 0.4, 1, 0.5, 0.3,
 #'                   0.2, 0.3, 0.5, 1, 0.4,
 #'                   0.1, 0.2, 0.3, 0.4, 1), nrow = n)
-#' pmvnormr(lower, upper, mean, sigma, seed = 314159)
+#' pmvnormr(lower, upper, mean, sigma, seed = 314159, nthreads = 1)
 #'
 #' @export
 pmvnormr <- function(lower = NULL, upper = NULL, mean = NULL, sigma,
@@ -157,7 +157,7 @@ pmvnormr <- function(lower = NULL, upper = NULL, mean = NULL, sigma,
 #' mean <- rep(0, n)
 #' sigma <- matrix(0.5, n, n)
 #' diag(sigma) <- 1
-#' qmvnormr(0.5, mean = mean, sigma = sigma)
+#' qmvnormr(0.5, mean = mean, sigma = sigma, nthreads = 1)
 #'
 #' @export
 qmvnormr <- function(p, mean = NULL, sigma,

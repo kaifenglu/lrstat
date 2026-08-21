@@ -2,9 +2,10 @@
 #' @description Obtains the adjusted p-values for graphical approaches
 #' using weighted Bonferroni tests.
 #'
-#' @param wgtmat A list containing the weight matrix and the indicator matrix
-#'   for intersection hypotheses.
 #' @param p The raw p-values for elementary hypotheses.
+#' @param wgtmat A list containing the weight matrix and the indicator matrix
+#'   for intersection hypotheses. If \code{NULL}, equal weights are assigned
+#'   within each intersection hypothesis.
 #'
 #' @return A list with the following components:
 #' * \code{inthyp}: The indicator matrix for the intersection hypotheses.
@@ -26,17 +27,21 @@
 #' G <- matrix(c(0,0,1,0,0,0,0,1,0,1,0,0,1,0,0,0),
 #'             nrow=4, ncol=4, byrow=TRUE)
 #' wgtmat <- fwgtmat(w,G)
-#' fadjpbon(wgtmat, pvalues)
+#' fadjpbon(pvalues, wgtmat)
 #'
 #' @export
-fadjpbon <- function(wgtmat, p) {
-  m <- ncol(wgtmat$wgtmat)
+fadjpbon <- function(p, wgtmat = NULL) {
+  m <- if (is.matrix(p)) ncol(p) else length(p)
 
   if (!is.matrix(p)) {
     p <- matrix(p, ncol=m)
   }
 
-  x <- fadjpbonRcpp(wgtmat = wgtmat, p = p)
+  if (is.null(wgtmat)) {
+    wgtmat <- fDefaultWgtmat(m)
+  }
+
+  x <- fadjpbonRcpp(p = p, wgtmat = wgtmat)
   if (nrow(x$padj) == 1) {
     x$padj <- as.vector(x$padj)
     x$pinter <- as.vector(x$pinter)
@@ -49,10 +54,12 @@ fadjpbon <- function(wgtmat, p) {
 #' @description Obtains the adjusted p-values for graphical approaches
 #' using weighted Simes tests.
 #'
-#' @param wgtmat A list containing the weight matrix and the indicator matrix
-#'   for intersection hypotheses.
 #' @param p The raw p-values for elementary hypotheses.
+#' @param wgtmat A list containing the weight matrix and the indicator matrix
+#'   for intersection hypotheses. If \code{NULL}, equal weights are assigned
+#'   within each intersection hypothesis.
 #' @param family The matrix of family indicators for elementary hypotheses.
+#'   Defaults to one family containing all elementary hypotheses.
 #'
 #' @return A list with the following components:
 #' * \code{inthyp}: The indicator matrix for the intersection hypotheses.
@@ -80,14 +87,18 @@ fadjpbon <- function(wgtmat, p) {
 #' wgtmat <- fwgtmat(w,G)
 #'
 #' family <- matrix(c(1,1,0,0,0,0,1,1), nrow=2, ncol=4, byrow=TRUE)
-#' fadjpsim(wgtmat, pvalues, family)
+#' fadjpsim(pvalues, wgtmat, family)
 #'
 #' @export
-fadjpsim <- function(wgtmat, p, family = NULL) {
-  m <- ncol(wgtmat$wgtmat)
+fadjpsim <- function(p, wgtmat = NULL, family = NULL) {
+  m <- if (is.matrix(p)) ncol(p) else length(p)
 
   if (!is.matrix(p)) {
     p <- matrix(p, ncol=m)
+  }
+
+  if (is.null(wgtmat)) {
+    wgtmat <- fDefaultWgtmat(m)
   }
 
   if (is.null(family)) {
@@ -96,7 +107,7 @@ fadjpsim <- function(wgtmat, p, family = NULL) {
     family <- matrix(family, ncol = m)
   }
 
-  x <- fadjpsimRcpp(wgtmat = wgtmat, p = p, family = family)
+  x <- fadjpsimRcpp(p = p, wgtmat = wgtmat, family = family)
   if (nrow(x$padj) == 1) {
     x$padj <- as.vector(x$padj)
     x$pinter <- as.vector(x$pinter)
@@ -109,12 +120,18 @@ fadjpsim <- function(wgtmat, p, family = NULL) {
 #' @description Obtains the adjusted p-values for graphical approaches
 #' using weighted Dunnett tests.
 #'
-#' @param wgtmat A list containing the weight matrix and the indicator matrix
-#'   for intersection hypotheses.
 #' @param p The raw p-values for elementary hypotheses.
+#' @param wgtmat A list containing the weight matrix and the indicator matrix
+#'   for intersection hypotheses. If \code{NULL}, equal weights are assigned
+#'   within each intersection hypothesis.
 #' @param family The matrix of family indicators for elementary hypotheses.
+#'   Defaults to one family containing all elementary hypotheses.
 #' @param corr The correlation matrix that should be used for the parametric
-#'   test. Can contain NAs for unknown correlations between families.
+#'   test. Can contain NAs for unknown correlations between families. By
+#'   default, within-family correlations are 0.5 and between-family
+#'   correlations are missing.
+#' @param nthreads The number of threads to use in simulations (0 means
+#'   the default RcppParallel behavior).
 #'
 #' @return A list with the following components:
 #' * \code{inthyp}: The indicator matrix for the intersection hypotheses.
@@ -142,14 +159,19 @@ fadjpsim <- function(wgtmat, p, family = NULL) {
 #' corr <- matrix(c(1,0.5,NA,NA, 0.5,1,NA,NA,
 #'                 NA,NA,1,0.5, NA,NA,0.5,1),
 #'               nrow = 4, byrow = TRUE)
-#' fadjpdun(wgtmat, pvalues, family, corr)
+#' fadjpdun(pvalues, wgtmat, family, corr, nthreads = 1)
 #'
 #' @export
-fadjpdun <- function(wgtmat, p, family = NULL, corr = NULL) {
-  m <- ncol(wgtmat$wgtmat)
+fadjpdun <- function(p, wgtmat = NULL, family = NULL, corr = NULL,
+                      nthreads = 0) {
+  m <- if (is.matrix(p)) ncol(p) else length(p)
 
   if (!is.matrix(p)) {
     p <- matrix(p, ncol=m)
+  }
+
+  if (is.null(wgtmat)) {
+    wgtmat <- fDefaultWgtmat(m)
   }
 
   if (is.null(family)) {
@@ -159,10 +181,21 @@ fadjpdun <- function(wgtmat, p, family = NULL, corr = NULL) {
   }
 
   if (is.null(corr)) {
-    corr <- 0.5*diag(m) + 0.5
+    corr <- matrix(NA_real_, m, m)
+    diag(corr) <- 1
+    for (h in seq_len(nrow(family))) {
+      idx <- which(family[h, ] != 0)
+      corr[idx, idx] <- 0.5
+    }
+    diag(corr) <- 1
   }
 
-  x <- fadjpdunRcpp(wgtmat = wgtmat, p = p, family = family, corr = corr)
+  if (nthreads > 0) {
+    n_physical_cores <- parallel::detectCores(logical = FALSE)
+    RcppParallel::setThreadOptions(min(nthreads, n_physical_cores))
+  }
+
+  x <- fadjpdunRcpp(p = p, wgtmat = wgtmat, family = family, corr = corr)
   if (nrow(x$padj) == 1) {
     x$padj <- as.vector(x$padj)
     x$pinter <- as.vector(x$pinter)

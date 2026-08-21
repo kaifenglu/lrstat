@@ -243,7 +243,7 @@ pre-specified calendar times.
   maxNumberOfIterations = 10000,
   maxNumberOfRawDatasetsPerStage = 1,
   seed = 314159,
-  nthreads = 0))
+  nthreads = 1))
 
 }
 \author{

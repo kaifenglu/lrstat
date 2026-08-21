@@ -69,7 +69,7 @@ n <- 5
 mean <- rep(0, n)
 sigma <- matrix(0.5, n, n)
 diag(sigma) <- 1
-qmvnormr(0.5, mean = mean, sigma = sigma)
+qmvnormr(0.5, mean = mean, sigma = sigma, nthreads = 1)
 
 }
 \author{

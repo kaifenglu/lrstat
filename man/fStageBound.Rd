@@ -4,7 +4,16 @@
 \alias{fStageBound}
 \title{Compute stage-wise bounds for multiple testing}
 \usage{
-fStageBound(m, wgtmat, family = NULL, corr = NULL, alpha, alpha1, info_frac)
+fStageBound(
+  m,
+  wgtmat,
+  family = NULL,
+  corr = NULL,
+  alpha,
+  alpha1,
+  info_frac,
+  nthreads = 0
+)
 }
 \arguments{
 \item{m}{Number of hypotheses}
@@ -23,6 +32,9 @@ family.}
 \item{alpha1}{Significance level for the first stage}
 
 \item{info_frac}{Information fraction for the first stage}
+
+\item{nthreads}{The number of threads to use in simulations (0 means
+the default RcppParallel behavior).}
 }
 \value{
 A list containing the stage 1 and stage 2 bounds for the individual
@@ -50,7 +62,8 @@ corr <- matrix(c(1, 0.5, NA, NA,
                nrow = 4, byrow = TRUE)
 alpha <- 0.025
 alpha1 <- errorSpent(0.5, alpha, "sfOF")
-fStageBound(4, wgtmat, family, corr, alpha, alpha1, 0.5)
+fStageBound(4, wgtmat, family, corr, alpha, alpha1, 0.5,
+            nthreads = 1)
 
 }
 \references{

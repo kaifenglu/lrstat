@@ -14,7 +14,8 @@ fNewBound(
   CER,
   stg2_elemhyp_idx,
   stg2_wgtmat,
-  info_frac_new
+  info_frac_new,
+  nthreads = 0
 )
 }
 \arguments{
@@ -39,6 +40,9 @@ in stage 1.}
 \item{stg2_wgtmat}{Weight matrix for the intersection hypotheses in stage 2.}
 
 \item{info_frac_new}{New information fraction for stage 1 after adaptation.}
+
+\item{nthreads}{The number of threads to use in simulations (0 means
+the default RcppParallel behavior).}
 }
 \value{
 A list containing the adapted intersection hypotheses and their new
@@ -76,7 +80,7 @@ stage2_weight_matrix <- fwgtmat(
 fNewBound(4, wgtmat, family, corr, stage1_pvalues,
           conditional_error_rates$stg1_inthyp_nr_idx,
           conditional_error_rates$CER, c(2, 4),
-          stage2_weight_matrix, 0.4)
+          stage2_weight_matrix, 0.4, nthreads = 1)
 
 }
 \references{

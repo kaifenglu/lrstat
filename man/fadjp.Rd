@@ -5,36 +5,46 @@
 \title{Compute stage-wise local p-values}
 \usage{
 fadjp(
-  wgtmat,
-  family,
-  corr,
+  stg2_p,
+  wgtmat = NULL,
+  family = NULL,
+  corr = NULL,
   stg1_inthyp_nr,
   stg2_elemhyp,
-  stg2_wgtmat,
-  stg2_p,
-  test = "dunnett"
+  stg2_wgtmat = NULL,
+  test = "dunnett",
+  nthreads = 0
 )
 }
 \arguments{
-\item{wgtmat}{Weight matrix for the stage 1 intersection hypotheses.}
+\item{stg2_p}{Stage 2 p-values for the elementary hypotheses.}
+
+\item{wgtmat}{Weight matrix for the stage 1 intersection hypotheses. If
+\code{NULL}, equal weights are assigned within each intersection
+hypothesis.}
 
 \item{family}{Family matrix indicating which hypotheses belong to which
 families. The correlation is known only for hypotheses belonging to the
-same family.}
+same family. Defaults to one family containing all elementary hypotheses.}
 
-\item{corr}{Correlation matrix for the test statistics.}
+\item{corr}{Correlation matrix for the test statistics. If \code{NULL},
+within-family correlations are 0.5 and between-family correlations are
+missing.}
 
 \item{stg1_inthyp_nr}{Indices of the stage 1 intersection hypotheses that
 were not rejected.}
 
 \item{stg2_elemhyp}{Indices of the elementary hypotheses tested at stage 2.}
 
-\item{stg2_wgtmat}{Weight matrix for the stage 2 intersection hypotheses.}
-
-\item{stg2_p}{Stage 2 p-values for the elementary hypotheses.}
+\item{stg2_wgtmat}{Weight matrix for the stage 2 intersection hypotheses.
+If \code{NULL}, equal weights are assigned within each intersection
+hypothesis.}
 
 \item{test}{P-value combination method. It can start with \code{"bon"},
 \code{"sim"}, or \code{"dun"}; the default is \code{"dunnett"}.}
+
+\item{nthreads}{The number of threads to use in simulations (0 means
+the default RcppParallel behavior).}
 }
 \value{
 A list containing \code{inthyp_idx}, the indices of the stage 1
@@ -69,8 +79,9 @@ corr <- matrix(c(1, 0.5, NA, NA,
                  NA, NA, 1, 0.5,
                  NA, NA, 0.5, 1),
                nrow = 4, byrow = TRUE)
-fadjp(wgtmat, family, corr, 1:15, 1:4, wgtmat,
-      c(0.00045, 0.0952, 0.0225, 0.1104))
+fadjp(c(0.00045, 0.0952, 0.0225, 0.1104),
+      wgtmat, family, corr, 1:15, 1:4, wgtmat,
+      test = "dunnett", nthreads = 1)
 
 }
 \references{

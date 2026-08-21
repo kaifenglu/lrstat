@@ -56,8 +56,8 @@ corr <- matrix(c(1, 0.5, NA, NA,
 alpha <- 0.025
 alpha1 <- errorSpent(0.5, alpha, "sfOF")
 stage1_pvalues <- c(0.00045, 0.0952, 0.0225, 0.1104)
-stage1_loc_p <- fadjp(wgtmat, family, corr, 1:15, 1:4,
-                      wgtmat, stage1_pvalues)
+stage1_loc_p <- fadjp(stage1_pvalues, wgtmat, family, corr,
+                      1:15, 1:4, wgtmat)
 stage1_rejections <- fPCStage1(4, stage1_loc_p, alpha1)
 
 adapted_graph <- updateGraph(initial_weights,
@@ -67,10 +67,9 @@ stage2_weight_matrix <- fwgtmat(
   adapted_graph$w[adapted_graph$I],
   adapted_graph$G[adapted_graph$I, adapted_graph$I])
 stage2_pvalues <- c(0.1121, 0.0112, 0.1153)
-stage2_loc_p <- fadjp(wgtmat, family, corr,
+stage2_loc_p <- fadjp(stage2_pvalues, wgtmat, family, corr,
                       stage1_rejections$stg1_inthyp_nr_idx,
-                      adapted_graph$I, stage2_weight_matrix,
-                      stage2_pvalues)
+                      adapted_graph$I, stage2_weight_matrix)
 fPCrej(stage1_rejections$stg1_elemhyp_r_idx,
        adapted_graph$I, stage1_loc_p,
        stage2_loc_p, alpha, 0.5)
@@ -80,9 +79,9 @@ stage2_weight_matrix_reweighted <- fwgtmat(
   w = c(0.5, 0.25, 0.25),
   G = adapted_graph$G[adapted_graph$I, adapted_graph$I])
 stage2_loc_p_reweighted <- fadjp(
-  wgtmat, family, corr, stage1_rejections$stg1_inthyp_nr_idx,
-  adapted_graph$I, stage2_weight_matrix_reweighted,
-  stage2_pvalues)
+  stage2_pvalues, wgtmat, family, corr,
+  stage1_rejections$stg1_inthyp_nr_idx, adapted_graph$I,
+  stage2_weight_matrix_reweighted)
 fPCrej(stage1_rejections$stg1_elemhyp_r_idx,
        adapted_graph$I, stage1_loc_p,
        stage2_loc_p_reweighted, alpha, 0.5)

@@ -170,7 +170,7 @@ Simulate phase 2/3 seamless design testing for risk difference.
   plannedSubjects = c(280, 560),
   maxNumberOfIterations = 10000,
   seed = 314159,
-  nthreads = 0))
+  nthreads = 1))
 
 }
 \author{

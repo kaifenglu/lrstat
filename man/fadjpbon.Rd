@@ -4,13 +4,14 @@
 \alias{fadjpbon}
 \title{Adjusted p-Values for Bonferroni-Based Graphical Approaches}
 \usage{
-fadjpbon(wgtmat, p)
+fadjpbon(p, wgtmat = NULL)
 }
 \arguments{
-\item{wgtmat}{A list containing the weight matrix and the indicator matrix
-for intersection hypotheses.}
-
 \item{p}{The raw p-values for elementary hypotheses.}
+
+\item{wgtmat}{A list containing the weight matrix and the indicator matrix
+for intersection hypotheses. If \code{NULL}, equal weights are assigned
+within each intersection hypothesis.}
 }
 \value{
 A list with the following components:
@@ -32,7 +33,7 @@ w <- c(0.5,0.5,0,0)
 G <- matrix(c(0,0,1,0,0,0,0,1,0,1,0,0,1,0,0,0),
             nrow=4, ncol=4, byrow=TRUE)
 wgtmat <- fwgtmat(w,G)
-fadjpbon(wgtmat, pvalues)
+fadjpbon(pvalues, wgtmat)
 
 }
 \references{

@@ -12,7 +12,8 @@ fCER(
   info_frac,
   stg1_bnd,
   stg2_bnd,
-  stg1_p
+  stg1_p,
+  nthreads = 0
 )
 }
 \arguments{
@@ -34,6 +35,9 @@ intersection hypothesis.}
 intersection hypothesis.}
 
 \item{stg1_p}{P-values for the elementary hypotheses in stage 1.}
+
+\item{nthreads}{The number of threads to use in simulations (0 means
+the default RcppParallel behavior).}
 }
 \value{
 A list containing the conditional error rates and the hypotheses
@@ -60,9 +64,11 @@ corr <- matrix(c(1, 0.5, NA, NA,
                  NA, NA, 0.5, 1),
                nrow = 4, byrow = TRUE)
 bounds <- fStageBound(4, wgtmat, family, corr, 0.025,
-                      errorSpent(0.5, 0.025, "sfOF"), 0.5)
+                      errorSpent(0.5, 0.025, "sfOF"),
+                      0.5, nthreads = 1)
 fCER(4, wgtmat, family, corr, 0.5, bounds$stg1_bnd,
-     bounds$stg2_bnd, c(0.00045, 0.0952, 0.0225, 0.1104))
+     bounds$stg2_bnd, c(0.00045, 0.0952, 0.0225, 0.1104),
+     nthreads = 1)
 
 }
 \references{

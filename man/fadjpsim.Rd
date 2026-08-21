@@ -4,15 +4,17 @@
 \alias{fadjpsim}
 \title{Adjusted p-Values for Simes-Based Graphical Approaches}
 \usage{
-fadjpsim(wgtmat, p, family = NULL)
+fadjpsim(p, wgtmat = NULL, family = NULL)
 }
 \arguments{
-\item{wgtmat}{A list containing the weight matrix and the indicator matrix
-for intersection hypotheses.}
-
 \item{p}{The raw p-values for elementary hypotheses.}
 
-\item{family}{The matrix of family indicators for elementary hypotheses.}
+\item{wgtmat}{A list containing the weight matrix and the indicator matrix
+for intersection hypotheses. If \code{NULL}, equal weights are assigned
+within each intersection hypothesis.}
+
+\item{family}{The matrix of family indicators for elementary hypotheses.
+Defaults to one family containing all elementary hypotheses.}
 }
 \value{
 A list with the following components:
@@ -36,7 +38,7 @@ G <- matrix(c(0,0,1,0,0,0,0,1,0,1,0,0,1,0,0,0),
 wgtmat <- fwgtmat(w,G)
 
 family <- matrix(c(1,1,0,0,0,0,1,1), nrow=2, ncol=4, byrow=TRUE)
-fadjpsim(wgtmat, pvalues, family)
+fadjpsim(pvalues, wgtmat, family)
 
 }
 \references{

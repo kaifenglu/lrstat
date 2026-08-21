@@ -113,7 +113,7 @@ sigma <- matrix(c(1, 0.5, 0.3, 0.2, 0.1,
                   0.3, 0.4, 1, 0.5, 0.3,
                   0.2, 0.3, 0.5, 1, 0.4,
                   0.1, 0.2, 0.3, 0.4, 1), nrow = n)
-pmvnormr(lower, upper, mean, sigma, seed = 314159)
+pmvnormr(lower, upper, mean, sigma, seed = 314159, nthreads = 1)
 
 }
 \author{

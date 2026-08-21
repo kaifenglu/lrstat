@@ -172,7 +172,8 @@ sims <- lapply(1:6, function(i) {
     n = 300, plannedEvents = 242,
     maxNumberOfIterations = 1000,
     maxNumberOfRawDatasetsPerStage = 10,
-    seed = 314159
+    seed = 314159,
+    nthreads = 1
   )
 })
 

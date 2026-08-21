@@ -39,8 +39,9 @@ corr <- matrix(c(1, 0.5, NA, NA,
                  NA, NA, 0.5, 1),
                nrow = 4, byrow = TRUE)
 stage1_local_pvalues <- fadjp(
-  wgtmat, family, corr, 1:15, 1:4, wgtmat,
-  c(0.00045, 0.0952, 0.0225, 0.1104))
+  c(0.00045, 0.0952, 0.0225, 0.1104),
+  wgtmat, family, corr,
+  1:15, 1:4, wgtmat)
 fPCStage1(4, stage1_local_pvalues,
           errorSpent(0.5, 0.025, "sfOF"))
 

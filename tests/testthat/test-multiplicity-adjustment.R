@@ -57,7 +57,7 @@ testthat::test_that("Bonferroni, Dunnett, and Simes benchmarks match known refer
   )
 
   # Bonferroni (fadjpbon).
-  bon <- fadjpbon(wgtmat, pvalues)$padj
+  bon <- fadjpbon(pvalues, wgtmat)$padj
   testthat::expect_equal(nrow(bon), 2L)
   testthat::expect_equal(ncol(bon), 4L)
   testthat::expect_true(all(bon >= 0 & bon <= 1))
@@ -72,7 +72,7 @@ testthat::test_that("Bonferroni, Dunnett, and Simes benchmarks match known refer
   testthat::expect_true(all(bon >= pvalues))
 
   # Dunnett (fadjpdun).
-  dun <- fadjpdun(wgtmat, pvalues, family, corr)$padj
+  dun <- fadjpdun(pvalues, wgtmat, family, corr)$padj
   testthat::expect_equal(dim(dun), c(2L, 4L))
   testthat::expect_true(all(dun >= 0 & dun <= 1))
   testthat::expect_equal(
@@ -85,7 +85,7 @@ testthat::test_that("Bonferroni, Dunnett, and Simes benchmarks match known refer
   testthat::expect_true(all(dun >= pvalues))
 
   # Simes (fadjpsim).
-  sim <- fadjpsim(wgtmat, pvalues, family)$padj
+  sim <- fadjpsim(pvalues, wgtmat, family)$padj
   testthat::expect_equal(dim(sim), c(2L, 4L))
   testthat::expect_true(all(sim >= 0 & sim <= 1))
   testthat::expect_equal(
@@ -99,6 +99,14 @@ testthat::test_that("Bonferroni, Dunnett, and Simes benchmarks match known refer
 
   # Dunnett is at least as powerful as Bonferroni (adjusted p-values are <=).
   testthat::expect_true(all(dun <= bon + 1e-10))
+
+  # Omitted correlation uses 0.5 within families and NA between families.
+  testthat::expect_equal(fadjpdun(pvalues, wgtmat, family)$padj, dun)
+
+  default_bon <- fadjpbon(pvalues)$padj
+  testthat::expect_equal(default_bon, fadjpbon(pvalues, fDefaultWgtmat(4))$padj)
+  testthat::expect_equal(fadjpsim(pvalues, wgtmat)$padj,
+                         fadjpsim(pvalues, wgtmat, matrix(1, 1, 4))$padj)
 })
 
 

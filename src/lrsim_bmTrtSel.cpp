@@ -141,13 +141,17 @@ constexpr double ALPHA_ONE_SIDED = 0.025;
 
 enum : size_t {
   M_CTDUNNETT = 0, M_CTSIMES, M_CTPOOLED, M_CER,
-  M_TSSSP_K, M_TSSSP_UK, M_NAIVE, M_PH3ONLY, NMETHOD
+  M_TSSSP_K, M_TSSSP_UK, M_TSSSP_K_RANK, M_TSSSP_UK_RANK,
+  M_NAIVE, M_PH3ONLY, NMETHOD
 };
 
 const char* const METHOD_NAME[NMETHOD] = {
   "ctdunnett", "ctsimes", "ctpooled", "cer",
-  "TSSSP.k", "TSSSP.uk", "naive", "ph3only"
+  "TSSSP.k", "TSSSP.uk", "TSSSP.k.rank", "TSSSP.uk.rank", "naive",
+  "ph3only"
 };
+
+const double SINGLE_ARM_BOUND = boost_qnorm(1.0 - ALPHA_ONE_SIDED);
 
 // per-trial storage so that worker threads never touch shared state
 struct TrialResult {
@@ -379,12 +383,12 @@ struct SimWorker : public RcppParallel::Worker {
 
         LocalPValues dunnett1, simes1, pooled1;
         if (use[M_CTDUNNETT]) {
-          dunnett1 = fadjpcpp(wgtmat, family, corr, allInt, allHyp,
-                              wgtmat, stg1_p, "dunnett");
+          dunnett1 = fadjpcpp(stg1_p, wgtmat, family, corr, allInt, allHyp,
+                              wgtmat, "dunnett");
         }
         if (use[M_CTSIMES]) {
-          simes1 = fadjpcpp(wgtmat, family, corr, allInt, allHyp,
-                            wgtmat, stg1_p, "simes");
+          simes1 = fadjpcpp(stg1_p, wgtmat, family, corr, allInt, allHyp,
+                            wgtmat, "simes");
         }
         if (use[M_CTPOOLED]) {
           for (size_t i = 0; i < ntests; ++i) {
@@ -412,7 +416,8 @@ struct SimWorker : public RcppParallel::Worker {
         const bool needStg2 = use[M_CTDUNNETT] || use[M_CTSIMES] ||
           use[M_CTPOOLED] || use[M_PH3ONLY];
         const bool needCum = use[M_NAIVE] || use[M_CER] ||
-          use[M_TSSSP_K] || use[M_TSSSP_UK];
+          use[M_TSSSP_K] || use[M_TSSSP_UK] ||
+          use[M_TSSSP_K_RANK] || use[M_TSSSP_UK_RANK];
 
         for (size_t n2i = 0; n2i < ngrid; ++n2i) {
           const size_t n2cur = n2min + n2i;
@@ -450,6 +455,11 @@ struct SimWorker : public RcppParallel::Worker {
           t1 = std::min(std::max(t1, 1e-6), 1.0 - 1e-6);
           const std::vector<double> infoRates{t1, 1.0};
 
+          const size_t rankp = static_cast<size_t>(std::count_if(
+              stg1_p.begin(), stg1_p.end(), [&](double p) {
+                return p < stg1_p[obd];
+              }));
+
           auto combtest = [&](size_t m, const LocalPValues& stg1_loc_p) {
             PCStage2Result rej = fPCrejcpp(noStg1Rej, stg2_elemhyp, stg1_loc_p,
                                            stg2, ALPHA_ONE_SIDED, info_frac);
@@ -482,18 +492,49 @@ struct SimWorker : public RcppParallel::Worker {
             for (size_t k = 0; k < M; ++k) out.rej[M_CER](n2i, k) = rej_cer[k];
           }
 
-          if (use[M_TSSSP_K]) {
-            std::vector<double> bk = getBound_seamless_cpp(
+          const bool needFullTssspK = use[M_TSSSP_K] ||
+            (use[M_TSSSP_K_RANK] && rankp == 0);
+          const bool needFullTssspUk = use[M_TSSSP_UK] ||
+            (use[M_TSSSP_UK_RANK] && rankp == 0);
+          std::vector<double> bk, buk;
+          if (needFullTssspK) {
+            bk = getBound_seamless_cpp(
               M, 1.0, true, 1, infoRates, ALPHA_ONE_SIDED, "none", NA_dbl,
               emptyv, emptyv, effStopping, 1);
-            if (zgn > bk[1]) out.rej[M_TSSSP_K](n2i, obd) = 1;
+            if (use[M_TSSSP_K] && zgn > bk[1]) {
+              out.rej[M_TSSSP_K](n2i, obd) = 1;
+            }
+            if (use[M_TSSSP_K_RANK] && rankp == 0 && zgn > bk[1]) {
+              out.rej[M_TSSSP_K_RANK](n2i, obd) = 1;
+            }
           }
 
-          if (use[M_TSSSP_UK]) {
-            std::vector<double> buk = getBound_seamless_cpp(
+          if (use[M_TSSSP_K_RANK] && rankp > 0) {
+            const double rankBound = M - rankp == 1 ? SINGLE_ARM_BOUND :
+              getBound_seamless_cpp(
+                M - rankp, 1.0, true, 1, infoRates, ALPHA_ONE_SIDED,
+                "none", NA_dbl, emptyv, emptyv, effStopping, 1)[1];
+            if (zgn > rankBound) out.rej[M_TSSSP_K_RANK](n2i, obd) = 1;
+          }
+
+          if (needFullTssspUk) {
+            buk = getBound_seamless_cpp(
               M, 1.0, false, 1, infoRates, ALPHA_ONE_SIDED, "none", NA_dbl,
               emptyv, emptyv, effStopping, 1);
-            if (zgn > buk[1]) out.rej[M_TSSSP_UK](n2i, obd) = 1;
+            if (use[M_TSSSP_UK] && zgn > buk[1]) {
+              out.rej[M_TSSSP_UK](n2i, obd) = 1;
+            }
+            if (use[M_TSSSP_UK_RANK] && rankp == 0 && zgn > buk[1]) {
+              out.rej[M_TSSSP_UK_RANK](n2i, obd) = 1;
+            }
+          }
+
+          if (use[M_TSSSP_UK_RANK] && rankp > 0) {
+            const double rankBound = M - rankp == 1 ? SINGLE_ARM_BOUND :
+              getBound_seamless_cpp(
+                M - rankp, 1.0, false, 1, infoRates, ALPHA_ONE_SIDED,
+                "none", NA_dbl, emptyv, emptyv, effStopping, 1)[1];
+            if (zgn > rankBound) out.rej[M_TSSSP_UK_RANK](n2i, obd) = 1;
           }
         }
 
@@ -595,18 +636,11 @@ ListCpp lrsim_bmTrtSel_cpp(
     if (pe[k] - w*pt[k] > pe[true_id] - w*pt[true_id]) true_id = k;
   }
 
-  // equally weighted Bonferroni-Holm graph for the closed testing procedure
-  std::vector<double> wts(ntr, 1.0/static_cast<double>(ntr));
-  FlatMatrix G(ntr, ntr);
-  for (size_t i = 0; i < ntr; ++i) {
-    for (size_t j = 0; j < ntr; ++j) {
-      if (i != j) G(i, j) = 1.0/static_cast<double>(ntr - 1);
-    }
-  }
-  WeightMatrix wgtmat = fwgtmatcpp(wts, G);
+  // Equal weights within each intersection hypothesis.
+  WeightMatrix wgtmat = fDefaultWgtmatcpp(ntr);
 
   // single hypothesis retained at stage 2 after treatment selection
-  WeightMatrix wgtmat1 = fwgtmatcpp({1.0}, FlatMatrix(1, 1));
+  WeightMatrix wgtmat1 = fDefaultWgtmatcpp(1);
 
   BoolMatrix family(1, ntr);
   family.fill(1);

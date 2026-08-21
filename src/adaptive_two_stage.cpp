@@ -19,13 +19,13 @@ using std::size_t;
 
 // Helper to compute adjusted p-values for graphical approaches
 LocalPValues fadjpcpp(
+  const std::vector<double>& stg2_p,
     const WeightMatrix& wgtmat,
     const BoolMatrix& family,
     const FlatMatrix& corr,
     const std::vector<size_t>& stg1_inthyp_nr,
     const std::vector<size_t>& stg2_elemhyp,
     const WeightMatrix& stg2_wgtmat,
-    const std::vector<double>& stg2_p,
     const std::string& test) {
 
   // Normalize test string
@@ -81,11 +81,11 @@ LocalPValues fadjpcpp(
 
   AdjustedPValues adj_p;
   if (test1.compare(0, 3, "bon") == 0) { // Bonferroni
-    adj_p = fadjpboncpp(stg2_wgtmat, stg2_pmat);
+    adj_p = fadjpboncpp(stg2_pmat, stg2_wgtmat);
   } else if (test1.compare(0, 3, "sim") == 0) { // Simes
-    adj_p = fadjpsimcpp(stg2_wgtmat, stg2_pmat, family2);
+    adj_p = fadjpsimcpp(stg2_pmat, stg2_wgtmat, family2);
   } else if (test1.compare(0, 3, "dun") == 0) { // Dunnett
-    adj_p = fadjpduncpp(stg2_wgtmat, stg2_pmat, family2, corr2);
+    adj_p = fadjpduncpp(stg2_pmat, stg2_wgtmat, family2, corr2);
   } else {
     throw std::invalid_argument(
         "test must be 'bonferroni', 'simes', or 'dunnett'");
@@ -120,32 +120,97 @@ LocalPValues fadjpcpp(
   };
 }
 
+LocalPValues fadjpcpp(
+    const std::vector<double>& stg2_p,
+    const BoolMatrix& family,
+    const FlatMatrix& corr,
+    const std::vector<size_t>& stg1_inthyp_nr,
+    const std::vector<size_t>& stg2_elemhyp,
+    const std::string& test) {
+  return fadjpcpp(stg2_p, fDefaultWgtmatcpp(family.ncol), family, corr,
+                  stg1_inthyp_nr, stg2_elemhyp,
+                  fDefaultWgtmatcpp(stg2_p.size()), test);
+}
+
+LocalPValues fadjpcpp(
+    const std::vector<double>& stg2_p,
+    const WeightMatrix& wgtmat,
+    const std::vector<size_t>& stg1_inthyp_nr,
+    const std::vector<size_t>& stg2_elemhyp,
+    const WeightMatrix& stg2_wgtmat,
+    const std::string& test) {
+  const BoolMatrix family = fDefaultFamilycpp(wgtmat.inthyp.ncol);
+  return fadjpcpp(stg2_p, wgtmat, family, fDefaultCorrcpp(family),
+                  stg1_inthyp_nr, stg2_elemhyp, stg2_wgtmat, test);
+}
+
+LocalPValues fadjpcpp(
+    const std::vector<double>& stg2_p,
+    const WeightMatrix& wgtmat,
+    const BoolMatrix& family,
+    const std::vector<size_t>& stg1_inthyp_nr,
+    const std::vector<size_t>& stg2_elemhyp,
+    const WeightMatrix& stg2_wgtmat,
+    const std::string& test) {
+  return fadjpcpp(stg2_p, wgtmat, family, fDefaultCorrcpp(family),
+                  stg1_inthyp_nr, stg2_elemhyp, stg2_wgtmat, test);
+}
+
 
 // [[Rcpp::export]]
-Rcpp::List fadjpRcpp(const Rcpp::List& wgtmat,
-                     const Rcpp::LogicalMatrix& family,
-                     const Rcpp::NumericMatrix& corr,
+Rcpp::List fadjpRcpp(const std::vector<double>& stg2_p,
+                     const Rcpp::Nullable<Rcpp::List>& wgtmat,
+                     const Rcpp::Nullable<Rcpp::LogicalMatrix>& family,
+                     const Rcpp::Nullable<Rcpp::NumericMatrix>& corr,
                      const std::vector<int>& stg1_inthyp_nr,
                      const std::vector<int>& stg2_elemhyp,
-                     const Rcpp::List& stg2_wgtmat,
-                     const std::vector<double>& stg2_p,
+                     const Rcpp::Nullable<Rcpp::List>& stg2_wgtmat,
                      const std::string& test = "dunnett") {
-  ListPtr wgtmat_ptr = listcpp_from_rlist(wgtmat);
-  WeightMatrix wgt_pair;
-  wgt_pair.inthyp = wgtmat_ptr->get<IntMatrix>("inthyp");
-  wgt_pair.wgtmat = wgtmat_ptr->get<FlatMatrix>("wgtmat");
-  auto family1 = boolmatrix_from_Rmatrix(family);
-  auto corr1 = flatmatrix_from_Rmatrix(corr);
-  auto Jplus = validateConvertIdx(stg1_inthyp_nr, wgt_pair.inthyp.nrow,
+  size_t m;
+  if (!wgtmat.isNull()) {
+    Rcpp::List wgtmat_list(wgtmat.get());
+    ListPtr wgtmat_ptr = listcpp_from_rlist(wgtmat_list);
+    m = wgtmat_ptr->get<IntMatrix>("inthyp").ncol;
+  } else if (!family.isNull()) {
+    Rcpp::LogicalMatrix family_matrix(family.get());
+    m = static_cast<size_t>(family_matrix.ncol());
+  } else if (!corr.isNull()) {
+    Rcpp::NumericMatrix corr_matrix(corr.get());
+    m = static_cast<size_t>(corr_matrix.ncol());
+  } else {
+    throw std::invalid_argument(
+        "At least one of wgtmat, family, or corr must be provided");
+  }
+  BoolMatrix family1 = fDefaultFamilycpp(m);
+  if (!family.isNull()) {
+    Rcpp::LogicalMatrix family_matrix(family.get());
+    family1 = boolmatrix_from_Rmatrix(family_matrix);
+  }
+  FlatMatrix corr1 = fDefaultCorrcpp(family1);
+  if (!corr.isNull()) {
+    Rcpp::NumericMatrix corr_matrix(corr.get());
+    corr1 = flatmatrix_from_Rmatrix(corr_matrix);
+  }
+  auto Jplus = validateConvertIdx(stg1_inthyp_nr, (size_t{1} << m) - 1,
                                   "stg1_inthyp_nr");
-  auto I2 = validateConvertIdx(stg2_elemhyp, wgt_pair.inthyp.ncol,
+  auto I2 = validateConvertIdx(stg2_elemhyp, m,
                                "stg2_elemhyp");
-  auto stg2_wgtmat_ptr = listcpp_from_rlist(stg2_wgtmat);
-  WeightMatrix stg2_wgt_pair;
-  stg2_wgt_pair.inthyp = stg2_wgtmat_ptr->get<IntMatrix>("inthyp");
-  stg2_wgt_pair.wgtmat = stg2_wgtmat_ptr->get<FlatMatrix>("wgtmat");
-  auto out = fadjpcpp(wgt_pair, family1, corr1, Jplus, I2,
-                      stg2_wgt_pair, stg2_p, test);
+  WeightMatrix wgt_pair = fDefaultWgtmatcpp(m);
+  if (!wgtmat.isNull()) {
+    Rcpp::List wgtmat_list(wgtmat.get());
+    ListPtr wgtmat_ptr = listcpp_from_rlist(wgtmat_list);
+    wgt_pair.inthyp = wgtmat_ptr->get<IntMatrix>("inthyp");
+    wgt_pair.wgtmat = wgtmat_ptr->get<FlatMatrix>("wgtmat");
+  }
+  WeightMatrix stg2_wgt_pair = fDefaultWgtmatcpp(stg2_p.size());
+  if (!stg2_wgtmat.isNull()) {
+    Rcpp::List stg2_wgtmat_list(stg2_wgtmat.get());
+    ListPtr stg2_wgtmat_ptr = listcpp_from_rlist(stg2_wgtmat_list);
+    stg2_wgt_pair.inthyp = stg2_wgtmat_ptr->get<IntMatrix>("inthyp");
+    stg2_wgt_pair.wgtmat = stg2_wgtmat_ptr->get<FlatMatrix>("wgtmat");
+  }
+  auto out = fadjpcpp(stg2_p, wgt_pair, family1, corr1, Jplus, I2,
+                      stg2_wgt_pair, test);
   for (size_t& i : out.inthyp_idx) ++i;
   ListCpp result;
   result.push_back(std::move(out.inthyp_idx), "inthyp_idx");

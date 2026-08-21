@@ -1,5 +1,10 @@
 # lrstat 0.3.3
 
+* simplified graphical and adaptive multiple-testing p-value adjustment interfaces by making p-values the first argument and automatically supplying equal intersection weights, a single family, and default within-family correlations when these inputs are omitted
+* added public R wrappers with `nthreads` controls for the multi-arm and seamless design, conditional power, and confidence interval functions
+* renamed the corresponding internal Rcpp entry points with the `_Rcpp` suffix and moved their documentation to the R wrapper files
+* simplified one-active-arm `getBound_multiarm` and `getBound_seamless` calculations by delegating to `getBound`
+* added rank-adjusted TSSSP methods to `lrsim_bmTrtSel` and improved TSSSP boundary computation efficiency, including cached single-arm boundaries
 * replaced the lpSolve dependency in getDesignAgreement with a native C++17 simplex solver exposed through Rcpp, preserving the documented design results and adding regression tests for the agreement constraints
 * added lrsim_bmTrtSel and print.lrsim_bmTrtSel for simulation and summary output of phase 2/3 seamless design selecting one dose at the end of phase 2 based on the posterior benefit-risk tradeoff of correlated binary efficacy and toxicity endpoints, and comparing the closed testing procedures with inverse normal combination, the conditional error rate method, the two-stage seamless design boundaries, and the unadjusted tests for the confirmatory analysis of the long-term endpoint
 * added unit tests for the adaptive two-stage multiple testing functions

@@ -95,7 +95,7 @@
 #'   plannedSubjects = c(146, 292, 324),
 #'   maxNumberOfIterations = 10000,
 #'   seed = 314159,
-#'   nthreads = 0))
+#'   nthreads = 1))
 #'
 #' @export
 rdsim_multiarm <- function(

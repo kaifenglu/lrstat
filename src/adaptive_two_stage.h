@@ -60,14 +60,39 @@ struct AdjustedBoundaries {
 
 
 LocalPValues fadjpcpp(
+  const std::vector<double>& stg2_p,
     const WeightMatrix& wgtmat,
     const BoolMatrix& family,
     const FlatMatrix& corr,
     const std::vector<size_t>& stg1_inthyp_nr,
     const std::vector<size_t>& stg2_elemhyp,
     const WeightMatrix& stg2_wgtmat,
-    const std::vector<double>& stg2_p,
+  const std::string& test);
+
+LocalPValues fadjpcpp(
+  const std::vector<double>& stg2_p,
+  const BoolMatrix& family,
+  const FlatMatrix& corr,
+  const std::vector<size_t>& stg1_inthyp_nr,
+  const std::vector<size_t>& stg2_elemhyp,
     const std::string& test);
+
+LocalPValues fadjpcpp(
+  const std::vector<double>& stg2_p,
+  const WeightMatrix& wgtmat,
+  const std::vector<size_t>& stg1_inthyp_nr,
+  const std::vector<size_t>& stg2_elemhyp,
+  const WeightMatrix& stg2_wgtmat,
+  const std::string& test);
+
+LocalPValues fadjpcpp(
+  const std::vector<double>& stg2_p,
+  const WeightMatrix& wgtmat,
+  const BoolMatrix& family,
+  const std::vector<size_t>& stg1_inthyp_nr,
+  const std::vector<size_t>& stg2_elemhyp,
+  const WeightMatrix& stg2_wgtmat,
+  const std::string& test);
 
 PCStage1Result fPCStage1cpp(
     const size_t m,

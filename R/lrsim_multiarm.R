@@ -140,7 +140,7 @@
 #'   maxNumberOfIterations = 10000,
 #'   maxNumberOfRawDatasetsPerStage = 1,
 #'   seed = 314159,
-#'   nthreads = 0))
+#'   nthreads = 1))
 #'
 #' @export
 lrsim_multiarm <- function(

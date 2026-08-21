@@ -4,18 +4,25 @@
 \alias{fadjpdun}
 \title{Adjusted p-Values for Dunnett-Based Graphical Approaches}
 \usage{
-fadjpdun(wgtmat, p, family = NULL, corr = NULL)
+fadjpdun(p, wgtmat = NULL, family = NULL, corr = NULL, nthreads = 0)
 }
 \arguments{
-\item{wgtmat}{A list containing the weight matrix and the indicator matrix
-for intersection hypotheses.}
-
 \item{p}{The raw p-values for elementary hypotheses.}
 
-\item{family}{The matrix of family indicators for elementary hypotheses.}
+\item{wgtmat}{A list containing the weight matrix and the indicator matrix
+for intersection hypotheses. If \code{NULL}, equal weights are assigned
+within each intersection hypothesis.}
+
+\item{family}{The matrix of family indicators for elementary hypotheses.
+Defaults to one family containing all elementary hypotheses.}
 
 \item{corr}{The correlation matrix that should be used for the parametric
-test. Can contain NAs for unknown correlations between families.}
+test. Can contain NAs for unknown correlations between families. By
+default, within-family correlations are 0.5 and between-family
+correlations are missing.}
+
+\item{nthreads}{The number of threads to use in simulations (0 means
+the default RcppParallel behavior).}
 }
 \value{
 A list with the following components:
@@ -42,7 +49,7 @@ family <- matrix(c(1,1,0,0,0,0,1,1), nrow=2, ncol=4, byrow=TRUE)
 corr <- matrix(c(1,0.5,NA,NA, 0.5,1,NA,NA,
                 NA,NA,1,0.5, NA,NA,0.5,1),
               nrow = 4, byrow = TRUE)
-fadjpdun(wgtmat, pvalues, family, corr)
+fadjpdun(pvalues, wgtmat, family, corr, nthreads = 1)
 
 }
 \references{

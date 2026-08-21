@@ -100,7 +100,7 @@ ExitProbResult exitprob_multiarm_cpp(
     // This holds when theta is uniform across arms and b/a is filled uniformly
     // per stage (e.g. H0 calls from getBound_multiarm_cpp).  When true, all M
     // per-arm exitprobcpp() products are equal, so we compute once and raise
-    // to the power M — reducing M exits to 1 per Gray-code iteration.
+    // to the power M - reducing M exits to 1 per Gray-code iteration.
     bool uniform_arms = (M > 1);
     if (uniform_arms) {
       for (size_t k = 0; k < kMax && uniform_arms; ++k) {
@@ -546,60 +546,8 @@ FlatMatrix as_boundary_matrix(SEXP x, const char* arg, size_t M, size_t K,
       std::string(arg) + " must be either a numeric vector or numeric matrix");
 }
 
-//' @title Exit Probabilities for Multi-Arm Multi-Stage Design
-//' @description Computes the exit (rejection) probabilities for a multi-arm
-//' multi-stage design.
-//'
-//' @param M Number of active treatment arms.
-//' @param r Randomization ratio of each active arm to the common control.
-//' @param theta A vector of length \eqn{M} representing the true treatment
-//'   effects for each active arm versus the common control.
-//' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-//'   statistics is derived from the randomization ratio \eqn{r}
-//'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-//'   0 is used.
-//' @param kMax Number of sequential looks.
-//' @param b A vector of efficacy boundaries for the max-Z statistics.
-//' @param a A vector of futility boundaries for the max-Z statistics.
-//' @param I A vector of information levels for any active arm versus the
-//'   common control.
-//'
-//' @details
-//' The function assumes a multivariate normal distribution for the Wald
-//' statistics and all active arms share the same information level.
-//'
-//' @return A vector \code{exitProb} of length \code{kMax} containing the
-//' probability of rejection at each look.
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @references
-//' Ping Gao, Yingqiu Li.
-//' Adaptive multiple comparison sequential design (AMCSD) for clinical trials.
-//' Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
-//'
-//' @examples
-//'
-//' # Setup: 2 active arms vs control and 3 sequential looks.
-//'
-//' # Information levels: equal spacing over 3 looks based on a maximum of
-//' # 95 patients per arm, SD = 1.0
-//' I <- 95 / (2 * 1.0^2) * seq(1, 3)/3
-//'
-//' # O'Brien-Fleming critical values
-//' b <- c(3.886562, 2.748214, 2.243907)
-//'
-//' # Type I error under the global null hypothesis
-//' p0 <- exitprob_multiarm(M = 2, theta = c(0, 0), kMax = 3, b = b, I = I)
-//' cumsum(p0$exitProbUpper)
-//'
-//' # Power under alternative: Treatment effects of 0.3 and 0.5
-//' p1 <- exitprob_multiarm(M = 2, theta = c(0.3, 0.5), kMax = 3, b = b, I = I)
-//' cumsum(p1$exitProbUpper)
-//'
-//' @export
 // [[Rcpp::export]]
-Rcpp::List exitprob_multiarm(
+Rcpp::List exitprob_multiarm_Rcpp(
     const int M = NA_INTEGER,
     const double r = 1,
     const Rcpp::NumericVector& theta = NA_REAL,
@@ -632,7 +580,8 @@ Rcpp::List exitprob_multiarm(
   FlatMatrix bMat = as_boundary_matrix(b, "b", M_, K, false);
   FlatMatrix aMat = as_boundary_matrix(a, "a", M_, K, true);
 
-  auto probs = exitprob_multiarm_cpp(M_, r, thetaVec, corr_known, K, bMat, aMat, IVec);
+  auto probs = exitprob_multiarm_cpp(M_, r, thetaVec, corr_known, K,
+                                     bMat, aMat, IVec);
   ListCpp exitProb;
   exitProb.push_back(std::move(probs.exitProbUpper), "exitProbUpper");
   exitProb.push_back(std::move(probs.exitProbLower), "exitProbLower");
@@ -657,6 +606,15 @@ std::vector<double> getBound_multiarm_cpp(
   if (M < 1) throw std::invalid_argument("M should be at least 1");
   if (r <= 0.0) throw std::invalid_argument("r should be positive");
   if (k < 1) throw std::invalid_argument("k should be at least 1");
+
+  // With one active arm, the multi-arm design reduces to a generic design.
+  if (M == 1) {
+    return getBoundcpp(
+      k, informationRates, alpha, typeAlphaSpending,
+      parameterAlphaSpending, userAlphaSpending, spendingTime,
+      efficacyStopping);
+  }
+
   if (alpha < 0.00001 || alpha >= 1) {
     throw std::invalid_argument("alpha must lie in [0.00001, 1)");
   }
@@ -870,58 +828,8 @@ std::vector<double> getBound_multiarm_cpp(
 }
 
 
-//' @title Efficacy Boundaries for Multi-Arm Multi-Stage Design
-//' @description Calculates the efficacy stopping boundaries for a multi-arm
-//' multi-stage design.
-//'
-//' @param M Number of active treatment arms.
-//' @param r Randomization ratio of each active arm to the common control.
-//' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-//'   statistics is derived from the randomization ratio \eqn{r}
-//'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-//'   0 is assumed.
-//' @param k The index of the current look.
-//' @param informationRates A numeric vector of information rates up to the
-//'   current look. Values must be strictly increasing and \eqn{\le 1}.
-//' @inheritParams param_alpha
-//' @inheritParams param_typeAlphaSpending
-//' @inheritParams param_parameterAlphaSpending
-//' @inheritParams param_userAlphaSpending
-//' @param spendingTime A numeric vector of length \eqn{k} specifying the
-//'   error spending time at each analysis. Values must be strictly increasing
-//'   and \eqn{\le 1}. If omitted, defaults to \code{informationRates}.
-//' @inheritParams param_efficacyStopping
-//'
-//' @details
-//' The function determines critical values by solving for the boundary that
-//' satisfies the alpha-spending requirement.
-//'
-//' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
-//' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
-//' and \code{spendingTime} must be of full length \code{kMax}, and
-//' \code{informationRates} and \code{spendingTime} must end with 1.
-//'
-//' @return A numeric vector of length \eqn{k} containing the critical
-//' values (on the standard normal Z-scale) for each analysis up to the
-//' current look.
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @references
-//' Ping Gao, Yingqiu Li.
-//' Adaptive multiple comparison sequential design (AMCSD) for clinical trials.
-//' Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
-//'
-//' @examples
-//'
-//' # Determine O'Brien-Fleming boundaries for a TSSSD with
-//' # 2 active arms and 3 looks.
-//' getBound_multiarm(M = 2, k = 3, informationRates = seq(1, 3)/3,
-//'               alpha = 0.025, typeAlphaSpending = "OF")
-//'
-//' @export
 // [[Rcpp::export]]
-Rcpp::NumericVector getBound_multiarm(
+Rcpp::NumericVector getBound_multiarm_Rcpp(
     const int M = NA_INTEGER,
     const double r = 1,
     const bool corr_known = true,
@@ -1362,7 +1270,8 @@ ListCpp getDesign_multiarm_cpp(
         double* last_col = b1.data_ptr() + (kMax - 1) * M1;
         auto f = [&](double x)->double {
           std::fill_n(last_col, M1, x);
-          probs = exitprob_multiarm_cpp(M1, r, zero1, corr_known, kMax, b1, infoRates);
+          probs = exitprob_multiarm_cpp(M1, r, zero1, corr_known,
+                                        kMax, b1, infoRates);
           double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                        probs.exitProbUpper.end(), 0.0);
           return cpu - alpha;
@@ -1512,7 +1421,8 @@ ListCpp getDesign_multiarm_cpp(
             // lambda expression for finding futility bound at stage k
             auto g = [&](double aval)->double {
               std::fill_n(a.data_ptr() + k * M, M, aval);
-              probs = exitprob_multiarm_cpp(M, r, theta, true, k + 1, b, a, information);
+              probs = exitprob_multiarm_cpp(M, r, theta, true, k + 1,
+                                            b, a, information);
               double cpl = std::accumulate(probs.exitProbLower.begin(),
                                            probs.exitProbLower.end(), 0.0);
               return cpl - cb;
@@ -1684,152 +1594,8 @@ ListCpp getDesign_multiarm_cpp(
 }
 
 
-//' @title Power and Sample Size for Multi-Arm Multi-Stage Design
-//' @description Computes either the maximum information and stopping
-//' boundaries for a multi-arm multi-stage design, or
-//' the achieved power when the maximum information and stopping boundaries
-//' are provided.
-//'
-//' @param beta Type II error rate. Provide either \code{beta} or \code{IMax};
-//'   the other should be missing.
-//' @param IMax Maximum information for any active arm versus the common
-//'   control. Provide either \code{IMax} or \code{beta}; the other should
-//'   be missing.
-//' @param theta A vector of length \eqn{M} representing the true treatment
-//'   effects for each active arm versus the common control. The global null
-//'   is \eqn{\theta_i = 0} for all \eqn{i}, and alternatives are one-sided:
-//'   \eqn{\theta_i > 0} for at least one \eqn{i = 1, \ldots, M}.
-//' @param M Number of active treatment arms.
-//' @param r Randomization ratio of each active arm to the common control.
-//' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-//'   statistics is derived from the randomization ratio \eqn{r}
-//'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-//'   0 is used.
-//' @param kMax Number of sequential looks.
-//' @param informationRates A numeric vector of information rates fixed
-//'   before the trial. If unspecified, defaults to \eqn{(1:kMax) / kMax}.
-//' @inheritParams param_efficacyStopping
-//' @inheritParams param_futilityStopping
-//' @param criticalValues The matrix of by-level upper boundaries on the
-//'   max z-test statistic scale for efficacy stopping.
-//'   The first column is for level \code{M}, the second column is for
-//'   level \code{M - 1}, and so on, with the last column for level 1.
-//'   If left unspecified, the critical values will be computed based
-//'   on the specified alpha spending function.
-//' @inheritParams param_alpha
-//' @inheritParams param_typeAlphaSpending
-//' @inheritParams param_parameterAlphaSpending
-//' @inheritParams param_userAlphaSpending
-//' @param futilityBounds A numeric vector of length \code{kMax - 1}
-//'   specifying the futility boundaries on the max z-test statistic scale
-//'   for futility stopping.
-//' @param futilityCP A numeric vector of length \code{kMax - 1} specifying
-//'   the futility boundaries on the conditional power scale for futility
-//'   stopping.
-//' @param futilityTheta A numeric vector of length \code{kMax - 1} specifying
-//'   the futility boundaries on the parameter scale for futility stopping.
-//' @inheritParams param_typeBetaSpending
-//' @inheritParams param_parameterBetaSpending
-//' @inheritParams param_userBetaSpending
-//' @param spendingTime A numeric vector of length \code{kMax} specifying the
-//'   error spending time at each analysis. Values must be strictly increasing
-//'   and ends at 1. If omitted, defaults to \code{informationRates}.
-//'
-//' @return An S3 object of class \code{multiarm} with the following components:
-//'
-//' * \code{overallResults}: A data frame containing:
-//'     - \code{overallReject}: Overall probability of rejecting the global
-//'       null hypothesis.
-//'     - \code{alpha}: Overall significance level.
-//'     - \code{attainedAlpha}: The attained significance level, which is
-//'       different from the overall significance level in the presence of
-//'       futility stopping.
-//'     - \code{M}: Number of active arms.
-//'     - \code{r}: Randomization ratio per active arm versus control.
-//'     - \code{corr_known}: Whether the correlation among Wald statistics
-//'       was assumed known.
-//'     - \code{kMax}: Number of stages.
-//'     - \code{information}: Maximum information for any active arm versus
-//'       control.
-//'     - \code{expectedInformationH1}: The expected information under H1.
-//'     - \code{expectedInformationH0}: The expected information under H0.
-//'
-//' * \code{byStageResults}: A data frame containing:
-//'     - \code{informationRates}: Information rates at each analysis.
-//'     - \code{efficacyBounds}: Efficacy boundaries on the max Z-scale.
-//'     - \code{futilityBounds}: Futility boundaries on the max Z-scale.
-//'     - \code{rejectPerStage}: Probability of efficacy stopping at each stage.
-//'     - \code{futilityPerStage}: Probability of futility stopping at each stage.
-//'     - \code{cumulativeRejection}: Cumulative probability of efficacy stopping.
-//'     - \code{cumulativeFutility}: Cumulative probability of futility stopping.
-//'     - \code{cumulativeAlphaSpent}: Cumulative alpha spent.
-//'     - \code{efficacyTheta}: Efficacy boundaries on the parameter scale.
-//'     - \code{futilityTheta}: Futility boundaries on the parameter scale.
-//'     - \code{efficacyP}: Efficacy boundaries on the p-value scale.
-//'     - \code{futilityP}: Futility boundaries on the p-value scale.
-//'     - \code{information}: Cumulative information for any active arm versus
-//'       control at each analysis.
-//'     - \code{efficacyStopping}: Indicator of whether efficacy stopping
-//'       is permitted at each stage.
-//'     - \code{futilityStopping}: Indicator of whether futility stopping
-//'       is permitted at each stage.
-//'     - \code{rejectPerStageH0}: The probability for efficacy stopping
-//'       under H0.
-//'     - \code{futilityPerStageH0}: The probability for futility stopping
-//'       under H0.
-//'     - \code{cumulativeRejectionH0}: The cumulative probability for
-//'       efficacy stopping under H0.
-//'     - \code{cumulativeFutilityH0}: The cumulative probability for
-//'       futility stopping under H0.
-//'
-//' * \code{settings}: A list of input settings:
-//'     - \code{typeAlphaSpending}: The type of alpha spending.
-//'     - \code{parameterAlphaSpending}: The parameter value for the chosen
-//'       alpha spending function.
-//'     - \code{userAlphaSpending}: The user-specified alpha spending values.
-//'     - \code{typeBetaSpending}: The type of beta spending.
-//'     - \code{parameterBetaSpending}: The parameter value for the chosen
-//'       beta spending function.
-//'     - \code{userBetaSpending}: The user-specified beta spending values.
-//'     - \code{spendingTime}: The error-spending time at each analysis.
-//'
-//' * \code{byLevelBounds}: A data frame containing the efficacy boundaries
-//'   for each level of testing (i.e., number of active arms remaining) and
-//'   each stage. Columns include:
-//'     - \code{level}: Number of active arms remaining (1 to \eqn{M}).
-//'     - \code{stage}: Stage index (1 to \code{kMax}).
-//'     - \code{efficacyBounds}: Efficacy boundaries on the max Z-scale
-//'       for the given level and stage.
-//'
-//' @details If \code{corr_known} is \code{FALSE}, critical boundaries are
-//' computed assuming independence among the Wald statistics in each stage
-//' (a conservative assumption). Power calculations, however, use the
-//' correlation implied by the randomization ratio \eqn{r}.
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @references
-//' Ping Gao, Yingqiu Li.
-//' Adaptive multiple comparison sequential design (AMCSD) for clinical trials.
-//' Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
-//'
-//' @examples
-//'
-//' # Example 1: obtain the maximum information given power
-//' (design1 <- getDesign_multiarm(
-//'   beta = 0.1, theta = c(0.3, 0.5), M = 2, r = 1.0,
-//'   kMax = 3, informationRates = seq(1, 3)/3,
-//'   alpha = 0.025, typeAlphaSpending = "OF"))
-//'
-//' # Example 2: obtain power given the maximum information
-//' (design2 <- getDesign_multiarm(
-//'   IMax = 110/(2*1^2), theta = c(0.3, 0.5), M = 2, r = 1.0,
-//'   kMax = 3, informationRates = seq(1, 3)/3,
-//'   alpha = 0.025, typeAlphaSpending = "OF"))
-//'
-//' @export
 // [[Rcpp::export]]
-Rcpp::List getDesign_multiarm(
+Rcpp::List getDesign_multiarm_Rcpp(
     const double beta = NA_REAL,
     const double IMax = NA_REAL,
     const Rcpp::NumericVector& theta = NA_REAL,
@@ -2339,7 +2105,8 @@ ListCpp adaptDesign_multiarm_cpp(
         double* last_col = b1.data_ptr() + (kMax - 1) * M1;
         auto f = [&](double x)->double {
           std::fill_n(last_col, M1, x);
-          probs = exitprob_multiarm_cpp(M1, r, zero1, corr_known, kMax, b1, infoRates);
+          probs = exitprob_multiarm_cpp(M1, r, zero1, corr_known,
+                                        kMax, b1, infoRates);
           double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                        probs.exitProbUpper.end(), 0.0);
           return cpu - alpha;
@@ -2611,7 +2378,8 @@ ListCpp adaptDesign_multiarm_cpp(
             colptr[j] = (col_const - zscaled[j]) / denom;
           }
 
-          probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, i + 1, b2, I2);
+          probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known,
+                                        i + 1, b2, I2);
           double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                       probs.exitProbUpper.end(), 0.0);
           return p0 - cpu0[i];
@@ -2797,7 +2565,8 @@ ListCpp adaptDesign_multiarm_cpp(
               if (colptr[j] < -8.0) colptr[j] = -8.0;
             }
 
-            probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, i + 1, b2, I2);
+            probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known,
+                                          i + 1, b2, I2);
             double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                         probs.exitProbUpper.end(), 0.0);
             return p0 - cpu0[i];
@@ -2915,7 +2684,8 @@ ListCpp adaptDesign_multiarm_cpp(
                 a2(m, k) = (aval * sqrtIc[k] - zscaled[m]) / sqrtI2[k];
                 if (a2(m, k) > b2(m, k)) a2(m, k) = b2(m, k);
               }
-              probs = exitprob_multiarm_cpp(MNew, rNew, theta2, true, k + 1, b2, a2, I2);
+              probs = exitprob_multiarm_cpp(MNew, rNew, theta2, true,
+                                            k + 1, b2, a2, I2);
               double cpl = std::accumulate(probs.exitProbLower.begin(),
                                            probs.exitProbLower.end(), 0.0);
               return cpl - cb;
@@ -3251,214 +3021,8 @@ ListCpp adaptDesign_multiarm_cpp(
 }
 
 
-//' @title Adaptive Multi-Arm Multi-Stage Design
-//' @description
-//' Calculates the conditional power for specified incremental
-//' information, given the interim results, parameter value,
-//' data-dependent changes in treatment selection,
-//' the error spending function, and
-//' the number and spacing of interim looks. Conversely,
-//' calculates the incremental information required to attain
-//' a specified conditional power, given the interim results,
-//' parameter value, data-dependent changes in treatment selection,
-//' the error spending function, and the number and spacing of interim looks.
-//'
-//' @param betaNew The type II error for the secondary trial.
-//' @param INew The maximum information for any active arm versus the common
-//'   control in the secondary trial. Either
-//'   \code{betaNew} or \code{INew} should be provided, while the other
-//'   must be missing.
-//' @param M Number of active treatment arms in the primary trial.
-//' @param r Randomization ratio of each active arm to the common control
-//'   in the primary trial.
-//' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
-//'   statistics is derived from the randomization ratio \eqn{r}
-//'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-//'   0 is assumed.
-//' @param L The interim adaptation look of the primary trial.
-//' @param zL The z-test statistics at the interim adaptation look of
-//'   the primary trial.
-//' @param theta A vector of length \eqn{M} representing the assumed treatment
-//'   effects for each active arm versus the common control. The global null
-//'   is \eqn{\theta_i = 0} for all \eqn{i}, and alternatives are one-sided:
-//'   \eqn{\theta_i > 0} for at least one \eqn{i = 1, \ldots, M}.
-//' @param IMax Maximum information for any active arm versus the common
-//'   control for the primary trial. Must be provided.
-//' @param kMax The maximum number of stages of the primary trial.
-//' @param informationRates The information rates of the primary trial.
-//' @param efficacyStopping Indicators of whether efficacy stopping is
-//'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
-//'   if left unspecified.
-//' @param futilityStopping Indicators of whether futility stopping is
-//'   allowed at each stage of the primary trial.
-//' @param criticalValues The matrix of by-level upper boundaries on the
-//'   max z-test statistic scale for efficacy stopping for the primary trial.
-//'   The first column is for level \code{M}, the second column is for
-//'   level \code{M - 1}, and so on, with the last column for level 1.
-//'   If left unspecified, the critical values will be computed based
-//'   on the specified alpha spending function.
-//' @param alpha The significance level of the primary trial.
-//'   Defaults to 0.025.
-//' @param typeAlphaSpending The type of alpha spending for the primary
-//'   trial. One of the following:
-//'   \code{"OF"} for O'Brien-Fleming boundaries,
-//'   \code{"P"} for Pocock boundaries,
-//'   \code{"WT"} for Wang & Tsiatis boundaries,
-//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
-//'   \code{"sfP"} for Pocock type spending function,
-//'   \code{"sfKD"} for Kim & DeMets spending function,
-//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function,
-//'   \code{"user"} for user defined spending, and
-//'   \code{"none"} for no early efficacy stopping.
-//'   Defaults to \code{"sfOF"}.
-//' @param parameterAlphaSpending The parameter value of alpha spending
-//'   for the primary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
-//'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
-//' @param userAlphaSpending The user-defined alpha spending for the
-//'   primary trial. Represents the cumulative alpha spent up to each stage.
-//' @param futilityBounds The futility boundaries on the max-z statistic
-//'   scale for the primary trial. Defaults to \code{rep(-8, kMax-1)}
-//'   if left unspecified.
-//' @param futilityCP The conditional power-based futility bounds for the
-//'   primary trial.
-//' @param futilityTheta The parameter value-based futility bounds for the
-//'   primary trial.
-//' @param spendingTime The error spending time of the primary trial.
-//'   Defaults to missing, in which case it is assumed to be the same as
-//'   \code{informationRates}.
-//' @param MullerSchafer Whether to use the Muller and Schafer (2001) method
-//'   for trial adaptation.
-//' @param MNew Number of active treatment arms in the secondary trial.
-//' @param selected The indices of the selected active treatment arms for
-//'   the secondary trial.
-//' @param rNew Randomization ratio of each active arm to the common control
-//'   in the secondary trial.
-//' @param kNew The number of looks of the secondary trial.
-//' @param informationRatesNew The spacing of looks of the secondary trial.
-//' @param efficacyStoppingNew The indicators of whether efficacy stopping is
-//'   allowed at each look of the secondary trial. Defaults to \code{TRUE}
-//'   if left unspecified.
-//' @param futilityStoppingNew The indicators of whether futility stopping is
-//'   allowed at each look of the secondary trial. Defaults to \code{TRUE}
-//'   if left unspecified.
-//' @param typeAlphaSpendingNew The type of alpha spending for the secondary
-//'   trial. One of the following:
-//'   \code{"OF"} for O'Brien-Fleming boundaries,
-//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
-//'   \code{"sfP"} for Pocock type spending function,
-//'   \code{"sfKD"} for Kim & DeMets spending function,
-//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function, and
-//'   \code{"none"} for no early efficacy stopping.
-//'   Defaults to \code{"sfOF"}.
-//' @param parameterAlphaSpendingNew The parameter value of alpha spending
-//'   for the secondary trial. Corresponds to
-//'   \eqn{\rho} for \code{"sfKD"}, and \eqn{\gamma} for \code{"sfHSD"}.
-//' @param futilityBoundsInt The futility boundaries on the max-z statistic
-//'   scale for new stages of the integrated trial.
-//' @param futilityCPInt The conditional power-based futility bounds for
-//'   new stages of the integrated trial.
-//' @param futilityThetaInt The parameter value-based futility bounds for the
-//'   new stages of the integrated trial.
-//' @param typeBetaSpendingNew The type of beta spending for the secondary
-//'   trial. One of the following:
-//'   \code{"sfOF"} for O'Brien-Fleming type spending function,
-//'   \code{"sfP"} for Pocock type spending function,
-//'   \code{"sfKD"} for Kim & DeMets spending function,
-//'   \code{"sfHSD"} for Hwang, Shi & DeCani spending function,
-//'   \code{"user"} for user defined spending, and
-//'   \code{"none"} for no early futility stopping.
-//'   Defaults to \code{"none"}.
-//' @param parameterBetaSpendingNew The parameter value of beta spending
-//'   for the secondary trial. Corresponds to \eqn{\rho} for \code{"sfKD"},
-//'   and \eqn{\gamma} for \code{"sfHSD"}.
-//' @param userBetaSpendingNew The user-defined cumulative beta spending.
-//'   Represents the cumulative beta spent up to each stage of the
-//'   secondary trial.
-//' @param spendingTimeNew The error spending time of the secondary trial.
-//'   Defaults to missing, in which case it is assumed to be the same as
-//'   \code{informationRatesNew}.
-//'
-//' @return An \code{adaptDesign_multiarm} object with three list components:
-//'
-//' * \code{primaryTrial}: A list of selected information for the primary
-//'   trial, including \code{M}, \code{r}, \code{corr_known}, \code{L},
-//'   \code{zL}, \code{theta}, \code{maxInformation}, \code{kMax},
-//'   \code{informationRates}, \code{efficacyBounds}, \code{futilityBounds},
-//'   \code{information}, \code{alpha}, \code{conditionalAlpha},
-//'   \code{conditionalPower}, \code{MullerSchafer}, and \code{byLevelBounds},
-//'   where \code{byLevelBounds} is a data frame with columns \code{level},
-//'   \code{stage}, and \code{efficacyBounds}, representing the efficacy
-//'   bounds for each combination of the number of active arms and
-//'   the stage of analysis in the primary trial.
-//'
-//' * \code{secondaryTrial}: A list of selected information for the secondary
-//'   trial, including \code{overallReject}, \code{alpha}, \code{M}, \code{r},
-//'   \code{selected}, \code{corr_known}, \code{kMax}, \code{maxInformation},
-//'   \code{informationRates}, \code{cumulativeRejection},
-//'   \code{cumulativeAlphaSpent}, \code{information},
-//'   \code{typeAlphaSpending}, \code{parameterAlphaSpending},
-//'   \code{typeBetaSpending}, \code{parameterBetaSpending},
-//'   \code{userBetaSpending}, \code{spendingTime}, and
-//'   \code{byHypothesisBounds}, where \code{byHypothesisBounds} is a
-//'   data frame with columns \code{hypothesis}, \code{stage},
-//'   \code{efficacyBounds}, and \code{futilityBounds}, representing
-//'   the efficacy and futility bounds for each hypothesis and each
-//'   stage of analysis in the secondary trial.
-//'
-//' * \code{integratedTrial}: A list of selected information for the integrated
-//'   trial, including \code{M}, \code{r}, \code{corr_known}, \code{MNew},
-//'   \code{rNew}, \code{selected}, \code{L}, \code{zL}, \code{theta},
-//'   \code{maxInformation}, \code{kMax}, \code{informationRates},
-//'   \code{efficacyBounds}, \code{futilityBounds}, \code{information},
-//'   and \code{byIntersectionBounds}, where \code{byIntersectionBounds} is
-//'   a data frame with columns \code{intersectionHypothesis}, \code{stage},
-//'   and \code{efficacyBounds}, representing the efficacy bounds for
-//'   each intersection hypothesis and each stage of analysis in the
-//'   integrated trial.
-//'
-//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
-//'
-//' @references
-//' Ping Gao, Yingqiu Li.
-//' Adaptive multiple comparison sequential design (AMCSD) for clinical trials.
-//' Journal of Biopharmaceutical Statistics, 2024, 34(3), 424-440.
-//'
-//' @seealso \code{\link{getDesign_multiarm}}
-//'
-//' @examples
-//'
-//' # Two active treatment arms are compared with a common control in a
-//' # two-look time-to-event design using O'Brien–Fleming–type alpha spending.
-//' # Suppose each active arm has a true hazard ratio of 0.75 versus control,
-//' # and the total number of events across all three arms at the final analysis
-//' # is 486. This corresponds to approximately 324 events for each active arm
-//' # versus the common control. Under these assumptions, the trial has about
-//' # 80% power to detect the treatment effect in at least one active arm.
-//'
-//' (des1 <- getDesign_multiarm(
-//'   IMax = 324 / 4, theta = c(-log(0.75), -log(0.75)),
-//'   M = 2, r = 1, kMax = 2, informationRates = c(1/2, 1),
-//'   alpha = 0.025, typeAlphaSpending = "OF"))
-//'
-//' # Now assume that, at the interim analysis, the observed hazard ratios for
-//' # the two active arms versus control are 0.91 and 0.78, respectively. Using
-//' # the rule “drop any arm with an observed hazard ratio > 0.9”, arm 1 is
-//' # dropped. We then aim to achieve 80% conditional power to detect a hazard
-//' # ratio of 0.78 for the remaining arm at the final look. The analysis below
-//' # indicates that the required total number of events for arm 2 versus control
-//' # at the final analysis should be increased from 324 to 535.
-//'
-//' (des2 <- adaptDesign_multiarm(
-//'   betaNew = 0.2, M = 2, r = 1, corr_known = FALSE,
-//'   L = 1, zL = c(-log(0.91), -log(0.78)) * sqrt(324 / 4 / 2),
-//'   theta = c(-log(0.91), -log(0.78)),
-//'   IMax = 324 / 4, kMax = 2, informationRates = c(1/2, 1),
-//'   alpha = 0.025, typeAlphaSpending = "OF",
-//'   MNew = 1, selected = 2, rNew = 1))
-//'
-//' @export
 // [[Rcpp::export]]
-Rcpp::List adaptDesign_multiarm(
+Rcpp::List adaptDesign_multiarm_Rcpp(
     double betaNew = NA_REAL,
     double INew = NA_REAL,
     const int M = NA_INTEGER,

@@ -21,8 +21,8 @@ lrsim_bmTrtSel(
   efficacyThreshold = 0,
   safetyThreshold = 0,
   useUniformPrior = TRUE,
-  methods = c("ctdunnett", "ctsimes", "ctpooled", "cer", "TSSSP.k", "TSSSP.uk", "naive",
-    "ph3only"),
+  methods = c("ctdunnett", "ctsimes", "ctpooled", "cer", "TSSSP.k", "TSSSP.uk",
+    "TSSSP.k.rank", "TSSSP.uk.rank", "naive", "ph3only"),
   accrualRatePhase2 = NA_real_,
   accrualRatePhase3 = NA_real_,
   followupTimePhase2 = 0,
@@ -93,9 +93,10 @@ posterior used in dose selection.}
 \item{methods}{A character vector naming the testing procedures to evaluate
 for the confirmatory analysis. Any subset of \code{"ctdunnett"},
 \code{"ctsimes"}, \code{"ctpooled"}, \code{"cer"}, \code{"TSSSP.k"},
-\code{"TSSSP.uk"}, \code{"naive"}, and \code{"ph3only"}. Restricting the
-set skips the corresponding computation entirely, which matters because
-the methods differ by orders of magnitude in cost.}
+\code{"TSSSP.uk"}, \code{"TSSSP.k.rank"}, \code{"TSSSP.uk.rank"},
+\code{"naive"}, and \code{"ph3only"}. Restricting the set skips the
+corresponding computation entirely, which matters because the methods
+differ by orders of magnitude in cost.}
 
 \item{accrualRatePhase2}{The accrual rate per arm during phase II. Arrival
 times follow a homogeneous Poisson process.}
@@ -150,8 +151,10 @@ The method names are
 testing procedure with the inverse normal combination of stage 1 and
 stage 2 p-values, using the Dunnett, Simes, and pooled log-rank local
 tests respectively; \code{cer} for the conditional error rate method;
-\code{TSSSP.k} and \code{TSSSP.uk} for the two-stage seamless design
-boundaries with known and unknown correlation; \code{naive} for the
+\code{TSSSP.k} and \code{TSSSP.uk} for the original two-stage seamless
+design boundaries with known and unknown correlation; \code{TSSSP.k.rank}
+and \code{TSSSP.uk.rank} for rank-adjusted versions of those boundaries;
+\code{naive} for the
 unadjusted log-rank test on the combined stage 1 and stage 2 data; and
 \code{ph3only} for the unadjusted log-rank test on the stage 2 data only.
 Because dose selection uses stage 1 data only, \code{ph3only} is based on
@@ -223,11 +226,14 @@ sim <- lrsim_bmTrtSel(
   toxicityUpperLimit = 1,
   efficacyThreshold = 0,
   safetyThreshold = 0,
+  methods = c("ctdunnett", "ctsimes", "ctpooled",
+              "cer", "naive", "ph3only"),
   accrualRatePhase2 = 3,
   accrualRatePhase3 = 6,
   followupTimePhase2 = 6,
   maxNumberOfIterations = 100,
-  seed = 314159)
+  seed = 314159,
+  nthreads = 1)
 
 sim$pcs
 sim$byMethod$ctdunnett$gpower
@@ -237,6 +243,10 @@ sim$byMethod$ctdunnett$gpower
 Liyun Jiang and Ying Yuan. Seamless phase II/III design: a useful strategy
 to reduce the sample size for dose optimization. Journal of the National
 Cancer Institute. 2023, 115(9):1092-1098.
+
+Ping Gao and Yingqiu Li. Adaptive two-stage seamless sequential design for
+clinical trials. Journal of Biopharmaceutical Statistics. 2025, 35(4),
+565-587.
 
 Cyrus Mehta, Ajoy Mukhopadhyay, and Martin Posch. Graph Based, Adaptive,
 Multiarm, Multiple Endpoint, Two-Stage Designs. Statistics in Medicine.

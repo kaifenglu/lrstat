@@ -12,20 +12,20 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // fadjpRcpp
-Rcpp::List fadjpRcpp(const Rcpp::List& wgtmat, const Rcpp::LogicalMatrix& family, const Rcpp::NumericMatrix& corr, const std::vector<int>& stg1_inthyp_nr, const std::vector<int>& stg2_elemhyp, const Rcpp::List& stg2_wgtmat, const std::vector<double>& stg2_p, const std::string& test);
-RcppExport SEXP _lrstat_fadjpRcpp(SEXP wgtmatSEXP, SEXP familySEXP, SEXP corrSEXP, SEXP stg1_inthyp_nrSEXP, SEXP stg2_elemhypSEXP, SEXP stg2_wgtmatSEXP, SEXP stg2_pSEXP, SEXP testSEXP) {
+Rcpp::List fadjpRcpp(const std::vector<double>& stg2_p, const Rcpp::Nullable<Rcpp::List>& wgtmat, const Rcpp::Nullable<Rcpp::LogicalMatrix>& family, const Rcpp::Nullable<Rcpp::NumericMatrix>& corr, const std::vector<int>& stg1_inthyp_nr, const std::vector<int>& stg2_elemhyp, const Rcpp::Nullable<Rcpp::List>& stg2_wgtmat, const std::string& test);
+RcppExport SEXP _lrstat_fadjpRcpp(SEXP stg2_pSEXP, SEXP wgtmatSEXP, SEXP familySEXP, SEXP corrSEXP, SEXP stg1_inthyp_nrSEXP, SEXP stg2_elemhypSEXP, SEXP stg2_wgtmatSEXP, SEXP testSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type wgtmat(wgtmatSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::LogicalMatrix& >::type family(familySEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type corr(corrSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type stg2_p(stg2_pSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::List>& >::type wgtmat(wgtmatSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::LogicalMatrix>& >::type family(familySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::NumericMatrix>& >::type corr(corrSEXP);
     Rcpp::traits::input_parameter< const std::vector<int>& >::type stg1_inthyp_nr(stg1_inthyp_nrSEXP);
     Rcpp::traits::input_parameter< const std::vector<int>& >::type stg2_elemhyp(stg2_elemhypSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type stg2_wgtmat(stg2_wgtmatSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type stg2_p(stg2_pSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::List>& >::type stg2_wgtmat(stg2_wgtmatSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type test(testSEXP);
-    rcpp_result_gen = Rcpp::wrap(fadjpRcpp(wgtmat, family, corr, stg1_inthyp_nr, stg2_elemhyp, stg2_wgtmat, stg2_p, test));
+    rcpp_result_gen = Rcpp::wrap(fadjpRcpp(stg2_p, wgtmat, family, corr, stg1_inthyp_nr, stg2_elemhyp, stg2_wgtmat, test));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -170,9 +170,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// getCP_multiarm
-Rcpp::NumericVector getCP_multiarm(const double INew, const int M, const double r, const bool corr_known, const int L, const Rcpp::NumericVector& zL, const Rcpp::NumericVector& theta, const double IMax, const int kMax, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::LogicalVector& futilityStopping, const Rcpp::Nullable<Rcpp::NumericVector> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::Nullable<Rcpp::NumericVector> futilityCP, const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta, const Rcpp::NumericVector& spendingTime, const bool MullerSchafer, const int MNew, const Rcpp::IntegerVector& selected, const double rNew, const int kNew, const Rcpp::NumericVector& informationRatesNew, const Rcpp::LogicalVector& efficacyStoppingNew, const Rcpp::LogicalVector& futilityStoppingNew, const std::string& typeAlphaSpendingNew, const double parameterAlphaSpendingNew, const Rcpp::Nullable<Rcpp::NumericVector> futilityBoundsInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityCPInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityThetaInt, const std::string& typeBetaSpendingNew, const double parameterBetaSpendingNew, const Rcpp::NumericVector& spendingTimeNew);
-RcppExport SEXP _lrstat_getCP_multiarm(SEXP INewSEXP, SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP thetaSEXP, SEXP IMaxSEXP, SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP futilityCPSEXP, SEXP futilityThetaSEXP, SEXP spendingTimeSEXP, SEXP MullerSchaferSEXP, SEXP MNewSEXP, SEXP selectedSEXP, SEXP rNewSEXP, SEXP kNewSEXP, SEXP informationRatesNewSEXP, SEXP efficacyStoppingNewSEXP, SEXP futilityStoppingNewSEXP, SEXP typeAlphaSpendingNewSEXP, SEXP parameterAlphaSpendingNewSEXP, SEXP futilityBoundsIntSEXP, SEXP futilityCPIntSEXP, SEXP futilityThetaIntSEXP, SEXP typeBetaSpendingNewSEXP, SEXP parameterBetaSpendingNewSEXP, SEXP spendingTimeNewSEXP) {
+// getCP_multiarm_Rcpp
+Rcpp::NumericVector getCP_multiarm_Rcpp(const double INew, const int M, const double r, const bool corr_known, const int L, const Rcpp::NumericVector& zL, const Rcpp::NumericVector& theta, const double IMax, const int kMax, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::LogicalVector& futilityStopping, const Rcpp::Nullable<Rcpp::NumericVector> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::Nullable<Rcpp::NumericVector> futilityCP, const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta, const Rcpp::NumericVector& spendingTime, const bool MullerSchafer, const int MNew, const Rcpp::IntegerVector& selected, const double rNew, const int kNew, const Rcpp::NumericVector& informationRatesNew, const Rcpp::LogicalVector& efficacyStoppingNew, const Rcpp::LogicalVector& futilityStoppingNew, const std::string& typeAlphaSpendingNew, const double parameterAlphaSpendingNew, const Rcpp::Nullable<Rcpp::NumericVector> futilityBoundsInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityCPInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityThetaInt, const std::string& typeBetaSpendingNew, const double parameterBetaSpendingNew, const Rcpp::NumericVector& spendingTimeNew);
+RcppExport SEXP _lrstat_getCP_multiarm_Rcpp(SEXP INewSEXP, SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP thetaSEXP, SEXP IMaxSEXP, SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP futilityCPSEXP, SEXP futilityThetaSEXP, SEXP spendingTimeSEXP, SEXP MullerSchaferSEXP, SEXP MNewSEXP, SEXP selectedSEXP, SEXP rNewSEXP, SEXP kNewSEXP, SEXP informationRatesNewSEXP, SEXP efficacyStoppingNewSEXP, SEXP futilityStoppingNewSEXP, SEXP typeAlphaSpendingNewSEXP, SEXP parameterAlphaSpendingNewSEXP, SEXP futilityBoundsIntSEXP, SEXP futilityCPIntSEXP, SEXP futilityThetaIntSEXP, SEXP typeBetaSpendingNewSEXP, SEXP parameterBetaSpendingNewSEXP, SEXP spendingTimeNewSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -213,13 +213,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const std::string& >::type typeBetaSpendingNew(typeBetaSpendingNewSEXP);
     Rcpp::traits::input_parameter< const double >::type parameterBetaSpendingNew(parameterBetaSpendingNewSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type spendingTimeNew(spendingTimeNewSEXP);
-    rcpp_result_gen = Rcpp::wrap(getCP_multiarm(INew, M, r, corr_known, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, spendingTime, MullerSchafer, MNew, selected, rNew, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, spendingTimeNew));
+    rcpp_result_gen = Rcpp::wrap(getCP_multiarm_Rcpp(INew, M, r, corr_known, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, spendingTime, MullerSchafer, MNew, selected, rNew, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, spendingTimeNew));
     return rcpp_result_gen;
 END_RCPP
 }
-// getCP_seamless
-Rcpp::NumericVector getCP_seamless(const double INew, const int M, const double r, const bool corr_known, const int L, const double zL, const double theta, const double IMax, const int K, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::LogicalVector& futilityStopping, const Rcpp::Nullable<Rcpp::NumericVector> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::Nullable<Rcpp::NumericVector> futilityCP, const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta, const Rcpp::NumericVector& spendingTime, const bool MullerSchafer, const int kNew, const Rcpp::NumericVector& informationRatesNew, const Rcpp::LogicalVector& efficacyStoppingNew, const Rcpp::LogicalVector& futilityStoppingNew, const std::string& typeAlphaSpendingNew, const double parameterAlphaSpendingNew, const Rcpp::Nullable<Rcpp::NumericVector> futilityBoundsInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityCPInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityThetaInt, const std::string& typeBetaSpendingNew, const double parameterBetaSpendingNew, const Rcpp::NumericVector& spendingTimeNew, const int rankp0);
-RcppExport SEXP _lrstat_getCP_seamless(SEXP INewSEXP, SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP thetaSEXP, SEXP IMaxSEXP, SEXP KSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP futilityCPSEXP, SEXP futilityThetaSEXP, SEXP spendingTimeSEXP, SEXP MullerSchaferSEXP, SEXP kNewSEXP, SEXP informationRatesNewSEXP, SEXP efficacyStoppingNewSEXP, SEXP futilityStoppingNewSEXP, SEXP typeAlphaSpendingNewSEXP, SEXP parameterAlphaSpendingNewSEXP, SEXP futilityBoundsIntSEXP, SEXP futilityCPIntSEXP, SEXP futilityThetaIntSEXP, SEXP typeBetaSpendingNewSEXP, SEXP parameterBetaSpendingNewSEXP, SEXP spendingTimeNewSEXP, SEXP rankp0SEXP) {
+// getCP_seamless_Rcpp
+Rcpp::NumericVector getCP_seamless_Rcpp(const double INew, const int M, const double r, const bool corr_known, const int L, const double zL, const double theta, const double IMax, const int K, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::LogicalVector& futilityStopping, const Rcpp::Nullable<Rcpp::NumericVector> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::Nullable<Rcpp::NumericVector> futilityCP, const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta, const Rcpp::NumericVector& spendingTime, const bool MullerSchafer, const int kNew, const Rcpp::NumericVector& informationRatesNew, const Rcpp::LogicalVector& efficacyStoppingNew, const Rcpp::LogicalVector& futilityStoppingNew, const std::string& typeAlphaSpendingNew, const double parameterAlphaSpendingNew, const Rcpp::Nullable<Rcpp::NumericVector> futilityBoundsInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityCPInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityThetaInt, const std::string& typeBetaSpendingNew, const double parameterBetaSpendingNew, const Rcpp::NumericVector& spendingTimeNew, const int rankp0);
+RcppExport SEXP _lrstat_getCP_seamless_Rcpp(SEXP INewSEXP, SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP thetaSEXP, SEXP IMaxSEXP, SEXP KSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP futilityCPSEXP, SEXP futilityThetaSEXP, SEXP spendingTimeSEXP, SEXP MullerSchaferSEXP, SEXP kNewSEXP, SEXP informationRatesNewSEXP, SEXP efficacyStoppingNewSEXP, SEXP futilityStoppingNewSEXP, SEXP typeAlphaSpendingNewSEXP, SEXP parameterAlphaSpendingNewSEXP, SEXP futilityBoundsIntSEXP, SEXP futilityCPIntSEXP, SEXP futilityThetaIntSEXP, SEXP typeBetaSpendingNewSEXP, SEXP parameterBetaSpendingNewSEXP, SEXP spendingTimeNewSEXP, SEXP rankp0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -258,7 +258,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type parameterBetaSpendingNew(parameterBetaSpendingNewSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type spendingTimeNew(spendingTimeNewSEXP);
     Rcpp::traits::input_parameter< const int >::type rankp0(rankp0SEXP);
-    rcpp_result_gen = Rcpp::wrap(getCP_seamless(INew, M, r, corr_known, L, zL, theta, IMax, K, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, spendingTimeNew, rankp0));
+    rcpp_result_gen = Rcpp::wrap(getCP_seamless_Rcpp(INew, M, r, corr_known, L, zL, theta, IMax, K, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, spendingTimeNew, rankp0));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -362,9 +362,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// getCI_multiarm
-Rcpp::DataFrame getCI_multiarm(const int M, const double r, const bool corr_known, const int L, const Rcpp::NumericVector& zL, const double IMax, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& spendingTime);
-RcppExport SEXP _lrstat_getCI_multiarm(SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP IMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP spendingTimeSEXP) {
+// getCI_multiarm_Rcpp
+Rcpp::DataFrame getCI_multiarm_Rcpp(const int M, const double r, const bool corr_known, const int L, const Rcpp::NumericVector& zL, const double IMax, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& spendingTime);
+RcppExport SEXP _lrstat_getCI_multiarm_Rcpp(SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP IMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP spendingTimeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -381,13 +381,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const std::string& >::type typeAlphaSpending(typeAlphaSpendingSEXP);
     Rcpp::traits::input_parameter< const double >::type parameterAlphaSpending(parameterAlphaSpendingSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type spendingTime(spendingTimeSEXP);
-    rcpp_result_gen = Rcpp::wrap(getCI_multiarm(M, r, corr_known, L, zL, IMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime));
+    rcpp_result_gen = Rcpp::wrap(getCI_multiarm_Rcpp(M, r, corr_known, L, zL, IMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime));
     return rcpp_result_gen;
 END_RCPP
 }
-// getADCI_multiarm
-Rcpp::DataFrame getADCI_multiarm(const int M, const double r, const bool corr_known, const int L, const Rcpp::NumericVector& zL, const double IMax, const int kMax, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& spendingTime, const bool MullerSchafer, const int MNew, const Rcpp::IntegerVector& selected, const double rNew, const int Lc, const Rcpp::NumericVector& zLc, const double INew, const Rcpp::NumericVector& informationRatesNew, const Rcpp::LogicalVector& efficacyStoppingNew, const std::string& typeAlphaSpendingNew, const double parameterAlphaSpendingNew, const Rcpp::NumericVector& spendingTimeNew);
-RcppExport SEXP _lrstat_getADCI_multiarm(SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP IMaxSEXP, SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP spendingTimeSEXP, SEXP MullerSchaferSEXP, SEXP MNewSEXP, SEXP selectedSEXP, SEXP rNewSEXP, SEXP LcSEXP, SEXP zLcSEXP, SEXP INewSEXP, SEXP informationRatesNewSEXP, SEXP efficacyStoppingNewSEXP, SEXP typeAlphaSpendingNewSEXP, SEXP parameterAlphaSpendingNewSEXP, SEXP spendingTimeNewSEXP) {
+// getADCI_multiarm_Rcpp
+Rcpp::DataFrame getADCI_multiarm_Rcpp(const int M, const double r, const bool corr_known, const int L, const Rcpp::NumericVector& zL, const double IMax, const int kMax, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& spendingTime, const bool MullerSchafer, const int MNew, const Rcpp::IntegerVector& selected, const double rNew, const int Lc, const Rcpp::NumericVector& zLc, const double INew, const Rcpp::NumericVector& informationRatesNew, const Rcpp::LogicalVector& efficacyStoppingNew, const std::string& typeAlphaSpendingNew, const double parameterAlphaSpendingNew, const Rcpp::NumericVector& spendingTimeNew);
+RcppExport SEXP _lrstat_getADCI_multiarm_Rcpp(SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP IMaxSEXP, SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP spendingTimeSEXP, SEXP MullerSchaferSEXP, SEXP MNewSEXP, SEXP selectedSEXP, SEXP rNewSEXP, SEXP LcSEXP, SEXP zLcSEXP, SEXP INewSEXP, SEXP informationRatesNewSEXP, SEXP efficacyStoppingNewSEXP, SEXP typeAlphaSpendingNewSEXP, SEXP parameterAlphaSpendingNewSEXP, SEXP spendingTimeNewSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -417,13 +417,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const std::string& >::type typeAlphaSpendingNew(typeAlphaSpendingNewSEXP);
     Rcpp::traits::input_parameter< const double >::type parameterAlphaSpendingNew(parameterAlphaSpendingNewSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type spendingTimeNew(spendingTimeNewSEXP);
-    rcpp_result_gen = Rcpp::wrap(getADCI_multiarm(M, r, corr_known, L, zL, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, MullerSchafer, MNew, selected, rNew, Lc, zLc, INew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew));
+    rcpp_result_gen = Rcpp::wrap(getADCI_multiarm_Rcpp(M, r, corr_known, L, zL, IMax, kMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, MullerSchafer, MNew, selected, rNew, Lc, zLc, INew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew));
     return rcpp_result_gen;
 END_RCPP
 }
-// getCI_seamless
-Rcpp::DataFrame getCI_seamless(const int M, const double r, const bool corr_known, const int L, const double zL, const double IMax, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::NumericVector& criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& spendingTime, const int rankp0);
-RcppExport SEXP _lrstat_getCI_seamless(SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP IMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP spendingTimeSEXP, SEXP rankp0SEXP) {
+// getCI_seamless_Rcpp
+Rcpp::DataFrame getCI_seamless_Rcpp(const int M, const double r, const bool corr_known, const int L, const double zL, const double IMax, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::NumericVector& criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& spendingTime, const int rankp0);
+RcppExport SEXP _lrstat_getCI_seamless_Rcpp(SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP IMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP spendingTimeSEXP, SEXP rankp0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -441,13 +441,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type parameterAlphaSpending(parameterAlphaSpendingSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type spendingTime(spendingTimeSEXP);
     Rcpp::traits::input_parameter< const int >::type rankp0(rankp0SEXP);
-    rcpp_result_gen = Rcpp::wrap(getCI_seamless(M, r, corr_known, L, zL, IMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, rankp0));
+    rcpp_result_gen = Rcpp::wrap(getCI_seamless_Rcpp(M, r, corr_known, L, zL, IMax, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, rankp0));
     return rcpp_result_gen;
 END_RCPP
 }
-// getADCI_seamless
-Rcpp::DataFrame getADCI_seamless(const int M, const double r, const bool corr_known, const int L, const double zL, const double IMax, const int K, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::NumericVector& criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& spendingTime, const bool MullerSchafer, const int Lc, const double zLc, const double INew, const Rcpp::NumericVector& informationRatesNew, const Rcpp::LogicalVector& efficacyStoppingNew, const std::string& typeAlphaSpendingNew, const double parameterAlphaSpendingNew, const Rcpp::NumericVector& spendingTimeNew, const int rankp0);
-RcppExport SEXP _lrstat_getADCI_seamless(SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP IMaxSEXP, SEXP KSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP spendingTimeSEXP, SEXP MullerSchaferSEXP, SEXP LcSEXP, SEXP zLcSEXP, SEXP INewSEXP, SEXP informationRatesNewSEXP, SEXP efficacyStoppingNewSEXP, SEXP typeAlphaSpendingNewSEXP, SEXP parameterAlphaSpendingNewSEXP, SEXP spendingTimeNewSEXP, SEXP rankp0SEXP) {
+// getADCI_seamless_Rcpp
+Rcpp::DataFrame getADCI_seamless_Rcpp(const int M, const double r, const bool corr_known, const int L, const double zL, const double IMax, const int K, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::NumericVector& criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& spendingTime, const bool MullerSchafer, const int Lc, const double zLc, const double INew, const Rcpp::NumericVector& informationRatesNew, const Rcpp::LogicalVector& efficacyStoppingNew, const std::string& typeAlphaSpendingNew, const double parameterAlphaSpendingNew, const Rcpp::NumericVector& spendingTimeNew, const int rankp0);
+RcppExport SEXP _lrstat_getADCI_seamless_Rcpp(SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP IMaxSEXP, SEXP KSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP spendingTimeSEXP, SEXP MullerSchaferSEXP, SEXP LcSEXP, SEXP zLcSEXP, SEXP INewSEXP, SEXP informationRatesNewSEXP, SEXP efficacyStoppingNewSEXP, SEXP typeAlphaSpendingNewSEXP, SEXP parameterAlphaSpendingNewSEXP, SEXP spendingTimeNewSEXP, SEXP rankp0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -475,7 +475,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type parameterAlphaSpendingNew(parameterAlphaSpendingNewSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type spendingTimeNew(spendingTimeNewSEXP);
     Rcpp::traits::input_parameter< const int >::type rankp0(rankp0SEXP);
-    rcpp_result_gen = Rcpp::wrap(getADCI_seamless(M, r, corr_known, L, zL, IMax, K, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, MullerSchafer, Lc, zLc, INew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew, rankp0));
+    rcpp_result_gen = Rcpp::wrap(getADCI_seamless_Rcpp(M, r, corr_known, L, zL, IMax, K, informationRates, efficacyStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, spendingTime, MullerSchafer, Lc, zLc, INew, informationRatesNew, efficacyStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, spendingTimeNew, rankp0));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2206,9 +2206,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// exitprob_multiarm
-Rcpp::List exitprob_multiarm(const int M, const double r, const Rcpp::NumericVector& theta, const bool corr_known, const int kMax, SEXP b, SEXP a, SEXP I);
-RcppExport SEXP _lrstat_exitprob_multiarm(SEXP MSEXP, SEXP rSEXP, SEXP thetaSEXP, SEXP corr_knownSEXP, SEXP kMaxSEXP, SEXP bSEXP, SEXP aSEXP, SEXP ISEXP) {
+// exitprob_multiarm_Rcpp
+Rcpp::List exitprob_multiarm_Rcpp(const int M, const double r, const Rcpp::NumericVector& theta, const bool corr_known, const int kMax, SEXP b, SEXP a, SEXP I);
+RcppExport SEXP _lrstat_exitprob_multiarm_Rcpp(SEXP MSEXP, SEXP rSEXP, SEXP thetaSEXP, SEXP corr_knownSEXP, SEXP kMaxSEXP, SEXP bSEXP, SEXP aSEXP, SEXP ISEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2220,13 +2220,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< SEXP >::type b(bSEXP);
     Rcpp::traits::input_parameter< SEXP >::type a(aSEXP);
     Rcpp::traits::input_parameter< SEXP >::type I(ISEXP);
-    rcpp_result_gen = Rcpp::wrap(exitprob_multiarm(M, r, theta, corr_known, kMax, b, a, I));
+    rcpp_result_gen = Rcpp::wrap(exitprob_multiarm_Rcpp(M, r, theta, corr_known, kMax, b, a, I));
     return rcpp_result_gen;
 END_RCPP
 }
-// getBound_multiarm
-Rcpp::NumericVector getBound_multiarm(const int M, const double r, const bool corr_known, const int k, const Rcpp::NumericVector& informationRates, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::NumericVector& spendingTime, const Rcpp::LogicalVector& efficacyStopping);
-RcppExport SEXP _lrstat_getBound_multiarm(SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP kSEXP, SEXP informationRatesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP spendingTimeSEXP, SEXP efficacyStoppingSEXP) {
+// getBound_multiarm_Rcpp
+Rcpp::NumericVector getBound_multiarm_Rcpp(const int M, const double r, const bool corr_known, const int k, const Rcpp::NumericVector& informationRates, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::NumericVector& spendingTime, const Rcpp::LogicalVector& efficacyStopping);
+RcppExport SEXP _lrstat_getBound_multiarm_Rcpp(SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP kSEXP, SEXP informationRatesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP spendingTimeSEXP, SEXP efficacyStoppingSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2241,13 +2241,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type userAlphaSpending(userAlphaSpendingSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type spendingTime(spendingTimeSEXP);
     Rcpp::traits::input_parameter< const Rcpp::LogicalVector& >::type efficacyStopping(efficacyStoppingSEXP);
-    rcpp_result_gen = Rcpp::wrap(getBound_multiarm(M, r, corr_known, k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, efficacyStopping));
+    rcpp_result_gen = Rcpp::wrap(getBound_multiarm_Rcpp(M, r, corr_known, k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, efficacyStopping));
     return rcpp_result_gen;
 END_RCPP
 }
-// getDesign_multiarm
-Rcpp::List getDesign_multiarm(const double beta, const double IMax, const Rcpp::NumericVector& theta, const int M, const double r, const bool corr_known, const int kMax, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::LogicalVector& futilityStopping, const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::Nullable<Rcpp::NumericVector> futilityCP, const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta, const std::string& typeBetaSpending, const double parameterBetaSpending, const Rcpp::NumericVector& userBetaSpending, const Rcpp::NumericVector& spendingTime);
-RcppExport SEXP _lrstat_getDesign_multiarm(SEXP betaSEXP, SEXP IMaxSEXP, SEXP thetaSEXP, SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP futilityCPSEXP, SEXP futilityThetaSEXP, SEXP typeBetaSpendingSEXP, SEXP parameterBetaSpendingSEXP, SEXP userBetaSpendingSEXP, SEXP spendingTimeSEXP) {
+// getDesign_multiarm_Rcpp
+Rcpp::List getDesign_multiarm_Rcpp(const double beta, const double IMax, const Rcpp::NumericVector& theta, const int M, const double r, const bool corr_known, const int kMax, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::LogicalVector& futilityStopping, const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::Nullable<Rcpp::NumericVector> futilityCP, const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta, const std::string& typeBetaSpending, const double parameterBetaSpending, const Rcpp::NumericVector& userBetaSpending, const Rcpp::NumericVector& spendingTime);
+RcppExport SEXP _lrstat_getDesign_multiarm_Rcpp(SEXP betaSEXP, SEXP IMaxSEXP, SEXP thetaSEXP, SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP futilityCPSEXP, SEXP futilityThetaSEXP, SEXP typeBetaSpendingSEXP, SEXP parameterBetaSpendingSEXP, SEXP userBetaSpendingSEXP, SEXP spendingTimeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2273,13 +2273,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type parameterBetaSpending(parameterBetaSpendingSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type userBetaSpending(userBetaSpendingSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type spendingTime(spendingTimeSEXP);
-    rcpp_result_gen = Rcpp::wrap(getDesign_multiarm(beta, IMax, theta, M, r, corr_known, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime));
+    rcpp_result_gen = Rcpp::wrap(getDesign_multiarm_Rcpp(beta, IMax, theta, M, r, corr_known, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime));
     return rcpp_result_gen;
 END_RCPP
 }
-// adaptDesign_multiarm
-Rcpp::List adaptDesign_multiarm(double betaNew, double INew, const int M, const double r, const bool corr_known, const int L, const Rcpp::NumericVector& zL, const Rcpp::NumericVector& theta, const double IMax, const int kMax, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::LogicalVector& futilityStopping, const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::Nullable<Rcpp::NumericVector> futilityCP, const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta, const Rcpp::NumericVector& spendingTime, const bool MullerSchafer, const int MNew, const Rcpp::IntegerVector& selected, const double rNew, const int kNew, const Rcpp::NumericVector& informationRatesNew, const Rcpp::LogicalVector& efficacyStoppingNew, const Rcpp::LogicalVector& futilityStoppingNew, const std::string& typeAlphaSpendingNew, const double parameterAlphaSpendingNew, const Rcpp::Nullable<Rcpp::NumericVector> futilityBoundsInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityCPInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityThetaInt, const std::string& typeBetaSpendingNew, const double parameterBetaSpendingNew, const Rcpp::NumericVector& userBetaSpendingNew, const Rcpp::NumericVector& spendingTimeNew);
-RcppExport SEXP _lrstat_adaptDesign_multiarm(SEXP betaNewSEXP, SEXP INewSEXP, SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP thetaSEXP, SEXP IMaxSEXP, SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP futilityCPSEXP, SEXP futilityThetaSEXP, SEXP spendingTimeSEXP, SEXP MullerSchaferSEXP, SEXP MNewSEXP, SEXP selectedSEXP, SEXP rNewSEXP, SEXP kNewSEXP, SEXP informationRatesNewSEXP, SEXP efficacyStoppingNewSEXP, SEXP futilityStoppingNewSEXP, SEXP typeAlphaSpendingNewSEXP, SEXP parameterAlphaSpendingNewSEXP, SEXP futilityBoundsIntSEXP, SEXP futilityCPIntSEXP, SEXP futilityThetaIntSEXP, SEXP typeBetaSpendingNewSEXP, SEXP parameterBetaSpendingNewSEXP, SEXP userBetaSpendingNewSEXP, SEXP spendingTimeNewSEXP) {
+// adaptDesign_multiarm_Rcpp
+Rcpp::List adaptDesign_multiarm_Rcpp(double betaNew, double INew, const int M, const double r, const bool corr_known, const int L, const Rcpp::NumericVector& zL, const Rcpp::NumericVector& theta, const double IMax, const int kMax, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::LogicalVector& futilityStopping, const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::Nullable<Rcpp::NumericVector> futilityCP, const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta, const Rcpp::NumericVector& spendingTime, const bool MullerSchafer, const int MNew, const Rcpp::IntegerVector& selected, const double rNew, const int kNew, const Rcpp::NumericVector& informationRatesNew, const Rcpp::LogicalVector& efficacyStoppingNew, const Rcpp::LogicalVector& futilityStoppingNew, const std::string& typeAlphaSpendingNew, const double parameterAlphaSpendingNew, const Rcpp::Nullable<Rcpp::NumericVector> futilityBoundsInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityCPInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityThetaInt, const std::string& typeBetaSpendingNew, const double parameterBetaSpendingNew, const Rcpp::NumericVector& userBetaSpendingNew, const Rcpp::NumericVector& spendingTimeNew);
+RcppExport SEXP _lrstat_adaptDesign_multiarm_Rcpp(SEXP betaNewSEXP, SEXP INewSEXP, SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP thetaSEXP, SEXP IMaxSEXP, SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP futilityCPSEXP, SEXP futilityThetaSEXP, SEXP spendingTimeSEXP, SEXP MullerSchaferSEXP, SEXP MNewSEXP, SEXP selectedSEXP, SEXP rNewSEXP, SEXP kNewSEXP, SEXP informationRatesNewSEXP, SEXP efficacyStoppingNewSEXP, SEXP futilityStoppingNewSEXP, SEXP typeAlphaSpendingNewSEXP, SEXP parameterAlphaSpendingNewSEXP, SEXP futilityBoundsIntSEXP, SEXP futilityCPIntSEXP, SEXP futilityThetaIntSEXP, SEXP typeBetaSpendingNewSEXP, SEXP parameterBetaSpendingNewSEXP, SEXP userBetaSpendingNewSEXP, SEXP spendingTimeNewSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2322,7 +2322,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type parameterBetaSpendingNew(parameterBetaSpendingNewSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type userBetaSpendingNew(userBetaSpendingNewSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type spendingTimeNew(spendingTimeNewSEXP);
-    rcpp_result_gen = Rcpp::wrap(adaptDesign_multiarm(betaNew, INew, M, r, corr_known, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, spendingTime, MullerSchafer, MNew, selected, rNew, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaSpendingNew, spendingTimeNew));
+    rcpp_result_gen = Rcpp::wrap(adaptDesign_multiarm_Rcpp(betaNew, INew, M, r, corr_known, L, zL, theta, IMax, kMax, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, spendingTime, MullerSchafer, MNew, selected, rNew, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaSpendingNew, spendingTimeNew));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2340,6 +2340,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fDefaultWgtmat
+Rcpp::List fDefaultWgtmat(const size_t m);
+RcppExport SEXP _lrstat_fDefaultWgtmat(SEXP mSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const size_t >::type m(mSEXP);
+    rcpp_result_gen = Rcpp::wrap(fDefaultWgtmat(m));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fwgtmat
 Rcpp::List fwgtmat(const Rcpp::NumericVector& w, const Rcpp::NumericMatrix& G);
 RcppExport SEXP _lrstat_fwgtmat(SEXP wSEXP, SEXP GSEXP) {
@@ -2353,41 +2364,41 @@ BEGIN_RCPP
 END_RCPP
 }
 // fadjpbonRcpp
-Rcpp::List fadjpbonRcpp(const Rcpp::List& wgtmat, const Rcpp::NumericMatrix& p);
-RcppExport SEXP _lrstat_fadjpbonRcpp(SEXP wgtmatSEXP, SEXP pSEXP) {
+Rcpp::List fadjpbonRcpp(const Rcpp::NumericMatrix& p, const Rcpp::Nullable<Rcpp::List>& wgtmat);
+RcppExport SEXP _lrstat_fadjpbonRcpp(SEXP pSEXP, SEXP wgtmatSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type wgtmat(wgtmatSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type p(pSEXP);
-    rcpp_result_gen = Rcpp::wrap(fadjpbonRcpp(wgtmat, p));
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::List>& >::type wgtmat(wgtmatSEXP);
+    rcpp_result_gen = Rcpp::wrap(fadjpbonRcpp(p, wgtmat));
     return rcpp_result_gen;
 END_RCPP
 }
 // fadjpsimRcpp
-Rcpp::List fadjpsimRcpp(const Rcpp::List& wgtmat, const Rcpp::NumericMatrix& p, const Rcpp::LogicalMatrix& family);
-RcppExport SEXP _lrstat_fadjpsimRcpp(SEXP wgtmatSEXP, SEXP pSEXP, SEXP familySEXP) {
+Rcpp::List fadjpsimRcpp(const Rcpp::NumericMatrix& p, const Rcpp::Nullable<Rcpp::List>& wgtmat, const Rcpp::Nullable<Rcpp::LogicalMatrix>& family);
+RcppExport SEXP _lrstat_fadjpsimRcpp(SEXP pSEXP, SEXP wgtmatSEXP, SEXP familySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type wgtmat(wgtmatSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type p(pSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::LogicalMatrix& >::type family(familySEXP);
-    rcpp_result_gen = Rcpp::wrap(fadjpsimRcpp(wgtmat, p, family));
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::List>& >::type wgtmat(wgtmatSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::LogicalMatrix>& >::type family(familySEXP);
+    rcpp_result_gen = Rcpp::wrap(fadjpsimRcpp(p, wgtmat, family));
     return rcpp_result_gen;
 END_RCPP
 }
 // fadjpdunRcpp
-Rcpp::List fadjpdunRcpp(const Rcpp::List& wgtmat, const Rcpp::NumericMatrix& p, const Rcpp::LogicalMatrix& family, const Rcpp::NumericMatrix& corr);
-RcppExport SEXP _lrstat_fadjpdunRcpp(SEXP wgtmatSEXP, SEXP pSEXP, SEXP familySEXP, SEXP corrSEXP) {
+Rcpp::List fadjpdunRcpp(const Rcpp::NumericMatrix& p, const Rcpp::Nullable<Rcpp::List>& wgtmat, const Rcpp::Nullable<Rcpp::LogicalMatrix>& family, const Rcpp::Nullable<Rcpp::NumericMatrix>& corr);
+RcppExport SEXP _lrstat_fadjpdunRcpp(SEXP pSEXP, SEXP wgtmatSEXP, SEXP familySEXP, SEXP corrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type wgtmat(wgtmatSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type p(pSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::LogicalMatrix& >::type family(familySEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type corr(corrSEXP);
-    rcpp_result_gen = Rcpp::wrap(fadjpdunRcpp(wgtmat, p, family, corr));
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::List>& >::type wgtmat(wgtmatSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::LogicalMatrix>& >::type family(familySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::NumericMatrix>& >::type corr(corrSEXP);
+    rcpp_result_gen = Rcpp::wrap(fadjpdunRcpp(p, wgtmat, family, corr));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -3126,9 +3137,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// exitprob_seamless
-Rcpp::List exitprob_seamless(const int M, const double r, const Rcpp::NumericVector& theta, const bool corr_known, const int K, SEXP b, SEXP a, SEXP I, const int rankp0);
-RcppExport SEXP _lrstat_exitprob_seamless(SEXP MSEXP, SEXP rSEXP, SEXP thetaSEXP, SEXP corr_knownSEXP, SEXP KSEXP, SEXP bSEXP, SEXP aSEXP, SEXP ISEXP, SEXP rankp0SEXP) {
+// exitprob_seamless_Rcpp
+Rcpp::List exitprob_seamless_Rcpp(const int M, const double r, const Rcpp::NumericVector& theta, const bool corr_known, const int K, SEXP b, SEXP a, SEXP I, const int rankp0);
+RcppExport SEXP _lrstat_exitprob_seamless_Rcpp(SEXP MSEXP, SEXP rSEXP, SEXP thetaSEXP, SEXP corr_knownSEXP, SEXP KSEXP, SEXP bSEXP, SEXP aSEXP, SEXP ISEXP, SEXP rankp0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -3141,13 +3152,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< SEXP >::type a(aSEXP);
     Rcpp::traits::input_parameter< SEXP >::type I(ISEXP);
     Rcpp::traits::input_parameter< const int >::type rankp0(rankp0SEXP);
-    rcpp_result_gen = Rcpp::wrap(exitprob_seamless(M, r, theta, corr_known, K, b, a, I, rankp0));
+    rcpp_result_gen = Rcpp::wrap(exitprob_seamless_Rcpp(M, r, theta, corr_known, K, b, a, I, rankp0));
     return rcpp_result_gen;
 END_RCPP
 }
-// getBound_seamless
-Rcpp::NumericVector getBound_seamless(const int M, const double r, const bool corr_known, const int k, const Rcpp::NumericVector& informationRates, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::NumericVector& spendingTime, const Rcpp::LogicalVector& efficacyStopping, const int rankp0);
-RcppExport SEXP _lrstat_getBound_seamless(SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP kSEXP, SEXP informationRatesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP spendingTimeSEXP, SEXP efficacyStoppingSEXP, SEXP rankp0SEXP) {
+// getBound_seamless_Rcpp
+Rcpp::NumericVector getBound_seamless_Rcpp(const int M, const double r, const bool corr_known, const int k, const Rcpp::NumericVector& informationRates, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::NumericVector& spendingTime, const Rcpp::LogicalVector& efficacyStopping, const int rankp0);
+RcppExport SEXP _lrstat_getBound_seamless_Rcpp(SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP kSEXP, SEXP informationRatesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP spendingTimeSEXP, SEXP efficacyStoppingSEXP, SEXP rankp0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -3163,13 +3174,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type spendingTime(spendingTimeSEXP);
     Rcpp::traits::input_parameter< const Rcpp::LogicalVector& >::type efficacyStopping(efficacyStoppingSEXP);
     Rcpp::traits::input_parameter< const int >::type rankp0(rankp0SEXP);
-    rcpp_result_gen = Rcpp::wrap(getBound_seamless(M, r, corr_known, k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, efficacyStopping, rankp0));
+    rcpp_result_gen = Rcpp::wrap(getBound_seamless_Rcpp(M, r, corr_known, k, informationRates, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, spendingTime, efficacyStopping, rankp0));
     return rcpp_result_gen;
 END_RCPP
 }
-// getDesign_seamless
-Rcpp::List getDesign_seamless(const double beta, const double IMax, const Rcpp::NumericVector& theta, const int M, const double r, const bool corr_known, const int K, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::LogicalVector& futilityStopping, const Rcpp::Nullable<Rcpp::NumericVector> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::Nullable<Rcpp::NumericVector> futilityCP, const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta, const std::string& typeBetaSpending, const double parameterBetaSpending, const Rcpp::NumericVector& userBetaSpending, const Rcpp::NumericVector& spendingTime, const int rankp0);
-RcppExport SEXP _lrstat_getDesign_seamless(SEXP betaSEXP, SEXP IMaxSEXP, SEXP thetaSEXP, SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP KSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP futilityCPSEXP, SEXP futilityThetaSEXP, SEXP typeBetaSpendingSEXP, SEXP parameterBetaSpendingSEXP, SEXP userBetaSpendingSEXP, SEXP spendingTimeSEXP, SEXP rankp0SEXP) {
+// getDesign_seamless_Rcpp
+Rcpp::List getDesign_seamless_Rcpp(const double beta, const double IMax, const Rcpp::NumericVector& theta, const int M, const double r, const bool corr_known, const int K, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::LogicalVector& futilityStopping, const Rcpp::Nullable<Rcpp::NumericVector> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::Nullable<Rcpp::NumericVector> futilityCP, const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta, const std::string& typeBetaSpending, const double parameterBetaSpending, const Rcpp::NumericVector& userBetaSpending, const Rcpp::NumericVector& spendingTime, const int rankp0);
+RcppExport SEXP _lrstat_getDesign_seamless_Rcpp(SEXP betaSEXP, SEXP IMaxSEXP, SEXP thetaSEXP, SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP KSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP futilityCPSEXP, SEXP futilityThetaSEXP, SEXP typeBetaSpendingSEXP, SEXP parameterBetaSpendingSEXP, SEXP userBetaSpendingSEXP, SEXP spendingTimeSEXP, SEXP rankp0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -3196,13 +3207,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type userBetaSpending(userBetaSpendingSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type spendingTime(spendingTimeSEXP);
     Rcpp::traits::input_parameter< const int >::type rankp0(rankp0SEXP);
-    rcpp_result_gen = Rcpp::wrap(getDesign_seamless(beta, IMax, theta, M, r, corr_known, K, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime, rankp0));
+    rcpp_result_gen = Rcpp::wrap(getDesign_seamless_Rcpp(beta, IMax, theta, M, r, corr_known, K, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, typeBetaSpending, parameterBetaSpending, userBetaSpending, spendingTime, rankp0));
     return rcpp_result_gen;
 END_RCPP
 }
-// adaptDesign_seamless
-Rcpp::List adaptDesign_seamless(double betaNew, double INew, const int M, const double r, const bool corr_known, const int L, const double zL, const double theta, const double IMax, const int K, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::LogicalVector& futilityStopping, const Rcpp::Nullable<Rcpp::NumericVector> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::Nullable<Rcpp::NumericVector> futilityCP, const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta, const Rcpp::NumericVector& spendingTime, const bool MullerSchafer, const int kNew, const Rcpp::NumericVector& informationRatesNew, const Rcpp::LogicalVector& efficacyStoppingNew, const Rcpp::LogicalVector& futilityStoppingNew, const std::string& typeAlphaSpendingNew, const double parameterAlphaSpendingNew, const Rcpp::Nullable<Rcpp::NumericVector> futilityBoundsInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityCPInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityThetaInt, const std::string& typeBetaSpendingNew, const double parameterBetaSpendingNew, const Rcpp::NumericVector& userBetaSpendingNew, const Rcpp::NumericVector& spendingTimeNew, const int rankp0);
-RcppExport SEXP _lrstat_adaptDesign_seamless(SEXP betaNewSEXP, SEXP INewSEXP, SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP thetaSEXP, SEXP IMaxSEXP, SEXP KSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP futilityCPSEXP, SEXP futilityThetaSEXP, SEXP spendingTimeSEXP, SEXP MullerSchaferSEXP, SEXP kNewSEXP, SEXP informationRatesNewSEXP, SEXP efficacyStoppingNewSEXP, SEXP futilityStoppingNewSEXP, SEXP typeAlphaSpendingNewSEXP, SEXP parameterAlphaSpendingNewSEXP, SEXP futilityBoundsIntSEXP, SEXP futilityCPIntSEXP, SEXP futilityThetaIntSEXP, SEXP typeBetaSpendingNewSEXP, SEXP parameterBetaSpendingNewSEXP, SEXP userBetaSpendingNewSEXP, SEXP spendingTimeNewSEXP, SEXP rankp0SEXP) {
+// adaptDesign_seamless_Rcpp
+Rcpp::List adaptDesign_seamless_Rcpp(double betaNew, double INew, const int M, const double r, const bool corr_known, const int L, const double zL, const double theta, const double IMax, const int K, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::LogicalVector& futilityStopping, const Rcpp::Nullable<Rcpp::NumericVector> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::Nullable<Rcpp::NumericVector> futilityCP, const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta, const Rcpp::NumericVector& spendingTime, const bool MullerSchafer, const int kNew, const Rcpp::NumericVector& informationRatesNew, const Rcpp::LogicalVector& efficacyStoppingNew, const Rcpp::LogicalVector& futilityStoppingNew, const std::string& typeAlphaSpendingNew, const double parameterAlphaSpendingNew, const Rcpp::Nullable<Rcpp::NumericVector> futilityBoundsInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityCPInt, const Rcpp::Nullable<Rcpp::NumericVector> futilityThetaInt, const std::string& typeBetaSpendingNew, const double parameterBetaSpendingNew, const Rcpp::NumericVector& userBetaSpendingNew, const Rcpp::NumericVector& spendingTimeNew, const int rankp0);
+RcppExport SEXP _lrstat_adaptDesign_seamless_Rcpp(SEXP betaNewSEXP, SEXP INewSEXP, SEXP MSEXP, SEXP rSEXP, SEXP corr_knownSEXP, SEXP LSEXP, SEXP zLSEXP, SEXP thetaSEXP, SEXP IMaxSEXP, SEXP KSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP futilityCPSEXP, SEXP futilityThetaSEXP, SEXP spendingTimeSEXP, SEXP MullerSchaferSEXP, SEXP kNewSEXP, SEXP informationRatesNewSEXP, SEXP efficacyStoppingNewSEXP, SEXP futilityStoppingNewSEXP, SEXP typeAlphaSpendingNewSEXP, SEXP parameterAlphaSpendingNewSEXP, SEXP futilityBoundsIntSEXP, SEXP futilityCPIntSEXP, SEXP futilityThetaIntSEXP, SEXP typeBetaSpendingNewSEXP, SEXP parameterBetaSpendingNewSEXP, SEXP userBetaSpendingNewSEXP, SEXP spendingTimeNewSEXP, SEXP rankp0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -3243,7 +3254,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type userBetaSpendingNew(userBetaSpendingNewSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type spendingTimeNew(spendingTimeNewSEXP);
     Rcpp::traits::input_parameter< const int >::type rankp0(rankp0SEXP);
-    rcpp_result_gen = Rcpp::wrap(adaptDesign_seamless(betaNew, INew, M, r, corr_known, L, zL, theta, IMax, K, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaSpendingNew, spendingTimeNew, rankp0));
+    rcpp_result_gen = Rcpp::wrap(adaptDesign_seamless_Rcpp(betaNew, INew, M, r, corr_known, L, zL, theta, IMax, K, informationRates, efficacyStopping, futilityStopping, criticalValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlphaSpending, futilityBounds, futilityCP, futilityTheta, spendingTime, MullerSchafer, kNew, informationRatesNew, efficacyStoppingNew, futilityStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew, futilityBoundsInt, futilityCPInt, futilityThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaSpendingNew, spendingTimeNew, rankp0));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -3764,16 +3775,16 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lrstat_fNewBoundRcpp", (DL_FUNC) &_lrstat_fNewBoundRcpp, 10},
     {"_lrstat_fCERrejRcpp", (DL_FUNC) &_lrstat_fCERrejRcpp, 5},
     {"_lrstat_getCP", (DL_FUNC) &_lrstat_getCP, 32},
-    {"_lrstat_getCP_multiarm", (DL_FUNC) &_lrstat_getCP_multiarm, 37},
-    {"_lrstat_getCP_seamless", (DL_FUNC) &_lrstat_getCP_seamless, 35},
+    {"_lrstat_getCP_multiarm_Rcpp", (DL_FUNC) &_lrstat_getCP_multiarm_Rcpp, 37},
+    {"_lrstat_getCP_seamless_Rcpp", (DL_FUNC) &_lrstat_getCP_seamless_Rcpp, 35},
     {"_lrstat_getCI", (DL_FUNC) &_lrstat_getCI, 10},
     {"_lrstat_getRCI", (DL_FUNC) &_lrstat_getRCI, 10},
     {"_lrstat_getADCI", (DL_FUNC) &_lrstat_getADCI, 20},
     {"_lrstat_getADRCI", (DL_FUNC) &_lrstat_getADRCI, 20},
-    {"_lrstat_getCI_multiarm", (DL_FUNC) &_lrstat_getCI_multiarm, 13},
-    {"_lrstat_getADCI_multiarm", (DL_FUNC) &_lrstat_getADCI_multiarm, 26},
-    {"_lrstat_getCI_seamless", (DL_FUNC) &_lrstat_getCI_seamless, 14},
-    {"_lrstat_getADCI_seamless", (DL_FUNC) &_lrstat_getADCI_seamless, 24},
+    {"_lrstat_getCI_multiarm_Rcpp", (DL_FUNC) &_lrstat_getCI_multiarm_Rcpp, 13},
+    {"_lrstat_getADCI_multiarm_Rcpp", (DL_FUNC) &_lrstat_getADCI_multiarm_Rcpp, 26},
+    {"_lrstat_getCI_seamless_Rcpp", (DL_FUNC) &_lrstat_getCI_seamless_Rcpp, 14},
+    {"_lrstat_getADCI_seamless_Rcpp", (DL_FUNC) &_lrstat_getADCI_seamless_Rcpp, 24},
     {"_lrstat_accrual", (DL_FUNC) &_lrstat_accrual, 4},
     {"_lrstat_getAccrualDurationFromN", (DL_FUNC) &_lrstat_getAccrualDurationFromN, 3},
     {"_lrstat_patrisk", (DL_FUNC) &_lrstat_patrisk, 4},
@@ -3848,11 +3859,12 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lrstat_remlRateRatio", (DL_FUNC) &_lrstat_remlRateRatio, 5},
     {"_lrstat_zstatRateRatio", (DL_FUNC) &_lrstat_zstatRateRatio, 5},
     {"_lrstat_mnRateRatioCI", (DL_FUNC) &_lrstat_mnRateRatioCI, 5},
-    {"_lrstat_exitprob_multiarm", (DL_FUNC) &_lrstat_exitprob_multiarm, 8},
-    {"_lrstat_getBound_multiarm", (DL_FUNC) &_lrstat_getBound_multiarm, 11},
-    {"_lrstat_getDesign_multiarm", (DL_FUNC) &_lrstat_getDesign_multiarm, 22},
-    {"_lrstat_adaptDesign_multiarm", (DL_FUNC) &_lrstat_adaptDesign_multiarm, 39},
+    {"_lrstat_exitprob_multiarm_Rcpp", (DL_FUNC) &_lrstat_exitprob_multiarm_Rcpp, 8},
+    {"_lrstat_getBound_multiarm_Rcpp", (DL_FUNC) &_lrstat_getBound_multiarm_Rcpp, 11},
+    {"_lrstat_getDesign_multiarm_Rcpp", (DL_FUNC) &_lrstat_getDesign_multiarm_Rcpp, 22},
+    {"_lrstat_adaptDesign_multiarm_Rcpp", (DL_FUNC) &_lrstat_adaptDesign_multiarm_Rcpp, 39},
     {"_lrstat_updateGraph", (DL_FUNC) &_lrstat_updateGraph, 4},
+    {"_lrstat_fDefaultWgtmat", (DL_FUNC) &_lrstat_fDefaultWgtmat, 1},
     {"_lrstat_fwgtmat", (DL_FUNC) &_lrstat_fwgtmat, 2},
     {"_lrstat_fadjpbonRcpp", (DL_FUNC) &_lrstat_fadjpbonRcpp, 2},
     {"_lrstat_fadjpsimRcpp", (DL_FUNC) &_lrstat_fadjpsimRcpp, 3},
@@ -3883,10 +3895,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lrstat_rmsamplesize1s", (DL_FUNC) &_lrstat_rmsamplesize1s, 29},
     {"_lrstat_rmpowerequiv", (DL_FUNC) &_lrstat_rmpowerequiv, 24},
     {"_lrstat_rmsamplesizeequiv", (DL_FUNC) &_lrstat_rmsamplesizeequiv, 25},
-    {"_lrstat_exitprob_seamless", (DL_FUNC) &_lrstat_exitprob_seamless, 9},
-    {"_lrstat_getBound_seamless", (DL_FUNC) &_lrstat_getBound_seamless, 12},
-    {"_lrstat_getDesign_seamless", (DL_FUNC) &_lrstat_getDesign_seamless, 23},
-    {"_lrstat_adaptDesign_seamless", (DL_FUNC) &_lrstat_adaptDesign_seamless, 37},
+    {"_lrstat_exitprob_seamless_Rcpp", (DL_FUNC) &_lrstat_exitprob_seamless_Rcpp, 9},
+    {"_lrstat_getBound_seamless_Rcpp", (DL_FUNC) &_lrstat_getBound_seamless_Rcpp, 12},
+    {"_lrstat_getDesign_seamless_Rcpp", (DL_FUNC) &_lrstat_getDesign_seamless_Rcpp, 23},
+    {"_lrstat_adaptDesign_seamless_Rcpp", (DL_FUNC) &_lrstat_adaptDesign_seamless_Rcpp, 37},
     {"_lrstat_simon2stage", (DL_FUNC) &_lrstat_simon2stage, 5},
     {"_lrstat_simonBayesAnalysis", (DL_FUNC) &_lrstat_simonBayesAnalysis, 7},
     {"_lrstat_simonBayesSim", (DL_FUNC) &_lrstat_simonBayesSim, 14},

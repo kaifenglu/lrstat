@@ -158,6 +158,67 @@ Rcpp::List updateGraph(const std::vector<double>& w,
 }
 
 
+// Helper to compute the default weight matrix for graphical approaches
+WeightMatrix fDefaultWgtmatcpp(size_t m) {
+  const size_t ntests = (size_t{1} << m) - 1;
+  WeightMatrix out;
+  out.inthyp.resize(ntests, m);
+  out.wgtmat.resize(ntests, m);
+
+  for (size_t i = 0; i < ntests; ++i) {
+    const size_t number = ntests - i;
+    size_t nactive = 0;
+
+    for (size_t k = 0; k < m; ++k) {
+      const int bit = static_cast<int>(
+        (number >> (m - 1 - k)) & size_t{1});
+      out.inthyp(i, k) = bit;
+      nactive += static_cast<size_t>(bit);
+    }
+
+    const double weight = 1.0 / static_cast<double>(nactive);
+    for (size_t k = 0; k < m; ++k) {
+      if (out.inthyp(i, k)) {
+        out.wgtmat(i, k) = weight;
+      }
+    }
+  }
+
+  return out;
+}
+
+BoolMatrix fDefaultFamilycpp(const size_t m) {
+  BoolMatrix family(1, m);
+  family.fill(1);
+  return family;
+}
+
+FlatMatrix fDefaultCorrcpp(const BoolMatrix& family) {
+  const size_t m = family.ncol;
+  FlatMatrix corr(m, m);
+  corr.fill(NaN);
+
+  for (size_t j = 0; j < m; ++j) {
+    corr(j, j) = 1.0;
+    for (size_t i = 0; i < j; ++i) {
+      bool same_family = false;
+      for (size_t h = 0; h < family.nrow; ++h) {
+        if (family(h, i) && family(h, j)) {
+          same_family = true;
+          break;
+        }
+      }
+      if (same_family) {
+        corr(i, j) = 0.5;
+        corr(j, i) = 0.5;
+      }
+    }
+  }
+
+  return corr;
+}
+
+
 // Helper to compute the full weight matrix for graphical approaches
 WeightMatrix fwgtmatcpp(const std::vector<double>& w,
                         const FlatMatrix& G) {
@@ -214,8 +275,8 @@ WeightMatrix fwgtmatcpp(const std::vector<double>& w,
   FlatMatrix g = G;             // mutable transition matrix
   FlatMatrix g1(m, m); // temp transition matrix, reused (zeroed when needed)
   FlatMatrix gtrmat(gtr_nrow, gtr_ncol); // store first half of transition matrix
-  FlatMatrix wgtmat(ntests, m); // output
   IntMatrix inthyp(ntests, m); // store intersection hypotheses
+  FlatMatrix wgtmat(ntests, m); // store weights of elementary hypotheses
 
   std::vector<size_t> active; // indices of active hypotheses in intersection
   active.reserve(m);
@@ -306,6 +367,33 @@ WeightMatrix fwgtmatcpp(const std::vector<double>& w,
   return WeightMatrix{inthyp, wgtmat};
 }
 
+//' @title Default Weight Matrix for All Intersection Hypotheses
+//' @description Obtains the default weight matrix for all intersection
+//' hypotheses, assigning equal weights to the elementary hypotheses within
+//' each intersection hypothesis.
+//'
+//' @param m The number of elementary hypotheses.
+//'
+//' @return A list with the following components:
+//' * \code{inthyp}: The indicator matrix for the intersection hypotheses.
+//' * \code{wgtmat}: The default weight matrix for the elementary hypotheses.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @examples
+//'
+//' fDefaultWgtmat(3)
+//'
+//' @export
+// [[Rcpp::export]]
+Rcpp::List fDefaultWgtmat(const size_t m) {
+  auto out = fDefaultWgtmatcpp(m);
+  ListCpp result;
+  result.push_back(out.inthyp, "inthyp");
+  result.push_back(out.wgtmat, "wgtmat");
+  return Rcpp::wrap(result);
+}
+
 //' @title Weight Matrix for All Intersection Hypotheses
 //' @description Obtains the weight matrix for all intersection hypotheses.
 //'
@@ -339,11 +427,11 @@ Rcpp::List fwgtmat(const Rcpp::NumericVector& w,
 
 // Helper to compute adjusted p-values for Bonferroni-based graphical approaches
 AdjustedPValues fadjpboncpp(
-    const WeightMatrix& wgtmat,
-    const FlatMatrix& p) {
+    const FlatMatrix& p,
+    const WeightMatrix& wgtmat) {
 
   size_t ntests = wgtmat.inthyp.nrow;
-  size_t m = wgtmat.inthyp.ncol;
+  size_t m = p.ncol;
   size_t niters = p.nrow;
 
   // Output matrix initialized to 0
@@ -378,16 +466,29 @@ AdjustedPValues fadjpboncpp(
   return AdjustedPValues{wgtmat.inthyp, pinter, padj};
 }
 
+AdjustedPValues fadjpboncpp(const FlatMatrix& p) {
+  return fadjpboncpp(p, fDefaultWgtmatcpp(p.ncol));
+}
+
 
 // [[Rcpp::export]]
-Rcpp::List fadjpbonRcpp(const Rcpp::List& wgtmat,
-                        const Rcpp::NumericMatrix& p) {
-  ListPtr wgtmat_ptr = listcpp_from_rlist(wgtmat);
+Rcpp::List fadjpbonRcpp(const Rcpp::NumericMatrix& p,
+                        const Rcpp::Nullable<Rcpp::List>& wgtmat = R_NilValue) {
+  auto p1 = flatmatrix_from_Rmatrix(p);
+  if (wgtmat.isNull()) {
+    auto out = fadjpboncpp(p1);
+    ListCpp result;
+    result.push_back(std::move(out.inthyp), "inthyp");
+    result.push_back(std::move(out.pinter), "pinter");
+    result.push_back(std::move(out.padj), "padj");
+    return Rcpp::wrap(result);
+  }
+  Rcpp::List wgtmat_list(wgtmat.get());
+  ListPtr wgtmat_ptr = listcpp_from_rlist(wgtmat_list);
   WeightMatrix wgt_pair;
   wgt_pair.inthyp = wgtmat_ptr->get<IntMatrix>("inthyp");
   wgt_pair.wgtmat = wgtmat_ptr->get<FlatMatrix>("wgtmat");
-  auto p1 = flatmatrix_from_Rmatrix(p);
-  auto out = fadjpboncpp(wgt_pair, p1);
+  auto out = fadjpboncpp(p1, wgt_pair);
   ListCpp result;
   result.push_back(std::move(out.inthyp), "inthyp");
   result.push_back(std::move(out.pinter), "pinter");
@@ -398,12 +499,12 @@ Rcpp::List fadjpbonRcpp(const Rcpp::List& wgtmat,
 
 // Helper to compute adjusted p-values for Simes-based graphical approaches
 AdjustedPValues fadjpsimcpp(
-    const WeightMatrix& wgtmat,
     const FlatMatrix& p,
+    const WeightMatrix& wgtmat,
     const BoolMatrix& family) {
 
   size_t ntests = wgtmat.inthyp.nrow;
-  size_t m = wgtmat.inthyp.ncol;
+  size_t m = p.ncol;
   size_t niters = p.nrow;
   size_t nfams = family.nrow;
 
@@ -520,18 +621,44 @@ AdjustedPValues fadjpsimcpp(
   return AdjustedPValues{wgtmat.inthyp, pinter, padj};
 }
 
+AdjustedPValues fadjpsimcpp(
+    const FlatMatrix& p,
+    const BoolMatrix& family) {
+  return fadjpsimcpp(p, fDefaultWgtmatcpp(p.ncol), family);
+}
+
+AdjustedPValues fadjpsimcpp(
+    const FlatMatrix& p,
+    const WeightMatrix& wgtmat) {
+  return fadjpsimcpp(p, wgtmat, fDefaultFamilycpp(p.ncol));
+}
+
 
 // [[Rcpp::export]]
-Rcpp::List fadjpsimRcpp(const Rcpp::List& wgtmat,
-                        const Rcpp::NumericMatrix& p,
-                        const Rcpp::LogicalMatrix& family) {
-  ListPtr wgtmat_ptr = listcpp_from_rlist(wgtmat);
+Rcpp::List fadjpsimRcpp(
+    const Rcpp::NumericMatrix& p,
+    const Rcpp::Nullable<Rcpp::List>& wgtmat = R_NilValue,
+    const Rcpp::Nullable<Rcpp::LogicalMatrix>& family = R_NilValue) {
+  auto p1 = flatmatrix_from_Rmatrix(p);
+  BoolMatrix family1 = fDefaultFamilycpp(p1.ncol);
+  if (!family.isNull()) {
+    Rcpp::LogicalMatrix family_matrix(family.get());
+    family1 = boolmatrix_from_Rmatrix(family_matrix);
+  }
+  if (wgtmat.isNull()) {
+    auto out = fadjpsimcpp(p1, family1);
+    ListCpp result;
+    result.push_back(std::move(out.inthyp), "inthyp");
+    result.push_back(std::move(out.pinter), "pinter");
+    result.push_back(std::move(out.padj), "padj");
+    return Rcpp::wrap(result);
+  }
+  Rcpp::List wgtmat_list(wgtmat.get());
+  ListPtr wgtmat_ptr = listcpp_from_rlist(wgtmat_list);
   WeightMatrix wgt_pair;
   wgt_pair.inthyp = wgtmat_ptr->get<IntMatrix>("inthyp");
   wgt_pair.wgtmat = wgtmat_ptr->get<FlatMatrix>("wgtmat");
-  auto p1 = flatmatrix_from_Rmatrix(p);
-  auto family1 = boolmatrix_from_Rmatrix(family);
-  auto out = fadjpsimcpp(wgt_pair, p1, family1);
+  auto out = fadjpsimcpp(p1, wgt_pair, family1);
   ListCpp result;
   result.push_back(std::move(out.inthyp), "inthyp");
   result.push_back(std::move(out.pinter), "pinter");
@@ -542,13 +669,13 @@ Rcpp::List fadjpsimRcpp(const Rcpp::List& wgtmat,
 
 // Helper to compute adjusted p-values for Dunnett-based graphical approaches
 AdjustedPValues fadjpduncpp(
-    const WeightMatrix& wgtmat,
     const FlatMatrix& p,
+    const WeightMatrix& wgtmat,
     const BoolMatrix& family,
     const FlatMatrix& corr) {
 
   size_t ntests = wgtmat.inthyp.nrow;
-  size_t m = wgtmat.inthyp.ncol;
+  size_t m = p.ncol;
   size_t niters = p.nrow;
   size_t nfams = family.nrow;
 
@@ -659,20 +786,70 @@ AdjustedPValues fadjpduncpp(
   return AdjustedPValues{wgtmat.inthyp, pinter, padj};
 }
 
+AdjustedPValues fadjpduncpp(
+    const FlatMatrix& p,
+    const BoolMatrix& family,
+    const FlatMatrix& corr) {
+  return fadjpduncpp(p, fDefaultWgtmatcpp(p.ncol), family, corr);
+}
+
+AdjustedPValues fadjpduncpp(
+    const FlatMatrix& p,
+    const WeightMatrix& wgtmat,
+    const BoolMatrix& family) {
+  return fadjpduncpp(p, wgtmat, family, fDefaultCorrcpp(family));
+}
+
+AdjustedPValues fadjpduncpp(
+    const FlatMatrix& p,
+    const BoolMatrix& family) {
+  return fadjpduncpp(p, fDefaultWgtmatcpp(p.ncol), family,
+                      fDefaultCorrcpp(family));
+}
+
+AdjustedPValues fadjpduncpp(
+    const FlatMatrix& p,
+    const WeightMatrix& wgtmat) {
+  const BoolMatrix family = fDefaultFamilycpp(p.ncol);
+  return fadjpduncpp(p, wgtmat, family, fDefaultCorrcpp(family));
+}
+
+AdjustedPValues fadjpduncpp(const FlatMatrix& p) {
+  return fadjpduncpp(p, fDefaultWgtmatcpp(p.ncol));
+}
+
 
 // [[Rcpp::export]]
-Rcpp::List fadjpdunRcpp(const Rcpp::List& wgtmat,
-                        const Rcpp::NumericMatrix& p,
-                        const Rcpp::LogicalMatrix& family,
-                        const Rcpp::NumericMatrix& corr) {
-  ListPtr wgtmat_ptr = listcpp_from_rlist(wgtmat);
+Rcpp::List fadjpdunRcpp(
+    const Rcpp::NumericMatrix& p,
+    const Rcpp::Nullable<Rcpp::List>& wgtmat = R_NilValue,
+    const Rcpp::Nullable<Rcpp::LogicalMatrix>& family = R_NilValue,
+    const Rcpp::Nullable<Rcpp::NumericMatrix>& corr = R_NilValue) {
+  auto p1 = flatmatrix_from_Rmatrix(p);
+  BoolMatrix family1 = fDefaultFamilycpp(p1.ncol);
+  if (!family.isNull()) {
+    Rcpp::LogicalMatrix family_matrix(family.get());
+    family1 = boolmatrix_from_Rmatrix(family_matrix);
+  }
+  FlatMatrix corr1 = fDefaultCorrcpp(family1);
+  if (!corr.isNull()) {
+    Rcpp::NumericMatrix corr_matrix(corr.get());
+    corr1 = flatmatrix_from_Rmatrix(corr_matrix);
+  }
+  if (wgtmat.isNull()) {
+    auto out = fadjpduncpp(p1, family1, corr1);
+    ListCpp result;
+    result.push_back(std::move(out.inthyp), "inthyp");
+    result.push_back(std::move(out.pinter), "pinter");
+    result.push_back(std::move(out.padj), "padj");
+    return Rcpp::wrap(result);
+  }
+  Rcpp::List wgtmat_list(wgtmat.get());
+  ListPtr wgtmat_ptr = listcpp_from_rlist(wgtmat_list);
   WeightMatrix wgt_pair;
   wgt_pair.inthyp = wgtmat_ptr->get<IntMatrix>("inthyp");
   wgt_pair.wgtmat = wgtmat_ptr->get<FlatMatrix>("wgtmat");
-  auto p1 = flatmatrix_from_Rmatrix(p);
-  auto family1 = boolmatrix_from_Rmatrix(family);
-  auto corr1 = flatmatrix_from_Rmatrix(corr);
-  auto out = fadjpduncpp(wgt_pair, p1, family1, corr1);
+  auto out = fadjpduncpp(p1, wgt_pair, family1, corr1);
   ListCpp result;
   result.push_back(std::move(out.inthyp), "inthyp");
   result.push_back(std::move(out.pinter), "pinter");

@@ -36,9 +36,14 @@ adaptive_two_stage_setup <- function() {
 testthat::test_that("fadjp returns stage-wise local p-values", {
   setup <- adaptive_two_stage_setup()
   local_pvalues <- lrstat:::fadjp(
-    setup$wgtmat, setup$family, setup$corr,
-    1:15, 1:4, setup$wgtmat,
-    c(0.00045, 0.0952, 0.0225, 0.1104)
+    c(0.00045, 0.0952, 0.0225, 0.1104), setup$wgtmat, setup$family,
+    setup$corr, 1:15, 1:4, setup$wgtmat
+  )
+
+  default_corr_pvalues <- lrstat:::fadjp(
+    c(0.00045, 0.0952, 0.0225, 0.1104), wgtmat = setup$wgtmat,
+    family = setup$family, stg1_inthyp_nr = 1:15, stg2_elemhyp = 1:4,
+    stg2_wgtmat = setup$wgtmat
   )
 
   testthat::expect_named(local_pvalues, c("inthyp_idx", "inthyp", "pinter"))
@@ -46,15 +51,15 @@ testthat::test_that("fadjp returns stage-wise local p-values", {
   testthat::expect_equal(dim(local_pvalues$inthyp), c(15L, 4L))
   testthat::expect_length(local_pvalues$pinter, 15L)
   testthat::expect_true(all(local_pvalues$pinter >= 0 & local_pvalues$pinter <= 1))
+  testthat::expect_equal(default_corr_pvalues$pinter, local_pvalues$pinter)
 })
 
 
 testthat::test_that("fPCStage1 identifies stage 1 rejections and retained intersections", {
   setup <- adaptive_two_stage_setup()
   local_pvalues <- lrstat:::fadjp(
-    setup$wgtmat, setup$family, setup$corr,
-    1:15, 1:4, setup$wgtmat,
-    c(0.00045, 0.0952, 0.0225, 0.1104)
+    c(0.00045, 0.0952, 0.0225, 0.1104), setup$wgtmat, setup$family,
+    setup$corr, 1:15, 1:4, setup$wgtmat
   )
   stage1 <- lrstat:::fPCStage1(4, local_pvalues, errorSpent(0.5, 0.025, "sfOF"))
 
@@ -123,9 +128,8 @@ testthat::test_that("fCER computes conditional error rates from stage bounds", {
 testthat::test_that("fPCrej combines stage p-values and preserves rejection decisions", {
   setup <- adaptive_two_stage_setup()
   stage1_local_pvalues <- lrstat:::fadjp(
-    setup$wgtmat, setup$family, setup$corr,
-    1:15, 1:4, setup$wgtmat,
-    c(0.00045, 0.0952, 0.0225, 0.1104)
+    c(0.00045, 0.0952, 0.0225, 0.1104), setup$wgtmat, setup$family,
+    setup$corr, 1:15, 1:4, setup$wgtmat
   )
   stage1 <- lrstat:::fPCStage1(4, stage1_local_pvalues, errorSpent(0.5, 0.025, "sfOF"))
   adapted_graph <- updateGraph(
@@ -136,9 +140,8 @@ testthat::test_that("fPCrej combines stage p-values and preserves rejection deci
     adapted_graph$G[adapted_graph$I, adapted_graph$I]
   )
   stage2_local_pvalues <- lrstat:::fadjp(
-    setup$wgtmat, setup$family, setup$corr,
-    stage1$stg1_inthyp_nr_idx, adapted_graph$I,
-    stage2_weight_matrix, c(0.1121, 0.0112, 0.1153)
+    c(0.1121, 0.0112, 0.1153), setup$wgtmat, setup$family, setup$corr,
+    stage1$stg1_inthyp_nr_idx, adapted_graph$I, stage2_weight_matrix
   )
   combined <- lrstat:::fPCrej(
     stage1$stg1_elemhyp_r_idx, adapted_graph$I,

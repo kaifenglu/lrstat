@@ -45,23 +45,59 @@ Graph updateGraphcpp(const std::vector<double>& w,
                      const std::vector<size_t>& I,
                      const size_t j);
 
+WeightMatrix fDefaultWgtmatcpp(size_t m);
+
+BoolMatrix fDefaultFamilycpp(size_t m);
+
+FlatMatrix fDefaultCorrcpp(const BoolMatrix& family);
+
 WeightMatrix fwgtmatcpp(const std::vector<double>& w,
                         const FlatMatrix& G);
 
 AdjustedPValues fadjpboncpp(
-    const WeightMatrix& wgtmat,
-    const FlatMatrix& p);
+  const FlatMatrix& p,
+  const WeightMatrix& wgtmat);
+
+AdjustedPValues fadjpboncpp(const FlatMatrix& p);
 
 AdjustedPValues fadjpsimcpp(
-    const WeightMatrix& wgtmat,
-    const FlatMatrix& p,
-    const BoolMatrix& family);
+  const FlatMatrix& p,
+  const WeightMatrix& wgtmat,
+  const BoolMatrix& family);
+
+AdjustedPValues fadjpsimcpp(
+  const FlatMatrix& p,
+  const BoolMatrix& family);
+
+AdjustedPValues fadjpsimcpp(
+  const FlatMatrix& p,
+  const WeightMatrix& wgtmat);
 
 AdjustedPValues fadjpduncpp(
-    const WeightMatrix& wgtmat,
-    const FlatMatrix& p,
-    const BoolMatrix& family,
-    const FlatMatrix& corr);
+  const FlatMatrix& p,
+  const WeightMatrix& wgtmat,
+  const BoolMatrix& family,
+  const FlatMatrix& corr);
+
+AdjustedPValues fadjpduncpp(
+  const FlatMatrix& p,
+  const BoolMatrix& family,
+  const FlatMatrix& corr);
+
+AdjustedPValues fadjpduncpp(
+  const FlatMatrix& p,
+  const WeightMatrix& wgtmat,
+  const BoolMatrix& family);
+
+AdjustedPValues fadjpduncpp(
+  const FlatMatrix& p,
+  const BoolMatrix& family);
+
+AdjustedPValues fadjpduncpp(
+  const FlatMatrix& p,
+  const WeightMatrix& wgtmat);
+
+AdjustedPValues fadjpduncpp(const FlatMatrix& p);
 
 FlatMatrix repeatedPValuecpp(
     const size_t kMax,
