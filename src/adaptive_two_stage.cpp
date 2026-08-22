@@ -516,6 +516,13 @@ StageBoundaries fStageBoundcpp(
     // alpha1 = 0 means no stage 1 efficacy stopping, so the boundary is 0
     cJ1[i] = (alpha1 > 0.0) ? brent(f1, 0.00001, 0.99999, 1e-5) : 0.0;
 
+    // cJ1[i] == 0 (no stage 1 efficacy stopping) leaves the stage 1
+    // dimensions unconstrained (upper bound +Inf); marginalize them out of
+    // the integral instead of relying on boost_qnorm's finite clamp for
+    // p == 1, which would leave a spurious residual dependence on
+    // info_frac through the stage1/stage2 cross-correlation term
+    const bool stg1Unconstrained = (cJ1[i] == 0.0);
+
     // solve for c2
     auto f2 = [&](double c) {
       double sum2 = 0.0;
@@ -523,18 +530,33 @@ StageBoundaries fStageBoundcpp(
         J_h = J_h_list[h];
         size_t k = J_h.size();
         if (k > 0) {
-          const auto& lower2ref = lower2_list[h];
-          const auto& mean2ref = mean2_list[h];
-          const auto& sigma2ref = sigma2_list[h];
+          double v2;
+          if (stg1Unconstrained) {
+            const auto& lower1ref = lower1_list[h];
+            const auto& mean1ref = mean1_list[h];
+            const auto& sigma1ref = sigma1_list[h];
 
-          upper2.resize(2*k);
-          for (size_t t = 0; t < k; ++t) {
-            size_t j = J_h[t];
-            upper2[t] = boost_qnorm(1.0 - wgtmat.wgtmat(i, j) * cJ1[i]);
-            upper2[t + k] = boost_qnorm(1.0 - wgtmat.wgtmat(i, j) * c);
+            upper1.resize(k);
+            for (size_t t = 0; t < k; ++t) {
+              size_t j = J_h[t];
+              upper1[t] = boost_qnorm(1.0 - wgtmat.wgtmat(i, j) * c);
+            }
+
+            v2 = pmvnormcpp(lower1ref, upper1, mean1ref, sigma1ref).prob;
+          } else {
+            const auto& lower2ref = lower2_list[h];
+            const auto& mean2ref = mean2_list[h];
+            const auto& sigma2ref = sigma2_list[h];
+
+            upper2.resize(2*k);
+            for (size_t t = 0; t < k; ++t) {
+              size_t j = J_h[t];
+              upper2[t] = boost_qnorm(1.0 - wgtmat.wgtmat(i, j) * cJ1[i]);
+              upper2[t + k] = boost_qnorm(1.0 - wgtmat.wgtmat(i, j) * c);
+            }
+
+            v2 = pmvnormcpp(lower2ref, upper2, mean2ref, sigma2ref).prob;
           }
-
-          double v2 = pmvnormcpp(lower2ref, upper2, mean2ref, sigma2ref).prob;
           sum2 += (1.0 - v2);
         }
       }

@@ -1,5 +1,7 @@
 # lrstat 0.3.3
 
+* fixed `fStageBound` to marginalize out unconstrained stage 1 dimensions when `alpha1 = 0` instead of relying on `boost_qnorm`'s finite clamp at probability 1, which had left the stage 2 boundary with a spurious dependence on `info_frac`
+* added `finthyp` to construct the intersection-hypothesis indicator matrix for a given number of elementary hypotheses, matching the row order used by `fwgtmat` and `fDefaultWgtmat`, for use when migrating custom weight matrices to the new `fadjpbon`/`fadjpsim`/`fadjpdun` interfaces
 * renamed the `cJ1`/`cJ2`/`cJ2_new` output fields of `fStageBound`/`fNewBound` to `stg1_coef`/`stg2_coef`/`stg2_coef_new` for consistency with the `stg1_bnd`/`stg2_bnd`/`stg2_bnd_new` naming
 * reduced per-iteration buffer allocation in `fadjpsim`'s Simes p-value adjustment by reusing preallocated vectors instead of allocating new ones for each family block
 * avoided recomputing the transform gradient for each probability in `survQuantile`, computing it once per event time instead

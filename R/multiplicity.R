@@ -1,3 +1,28 @@
+#' @title Indicator Matrix for All Intersection Hypotheses
+#' @description Obtains the indicator matrix for all intersection hypotheses
+#' formed from a given number of elementary hypotheses, matching the row
+#' order used by \code{fwgtmat} and \code{fDefaultWgtmat}.
+#'
+#' @param m The number of elementary hypotheses.
+#'
+#' @return The \eqn{(2^m-1) \times m} indicator matrix for the intersection
+#'   hypotheses, with row 1 the global intersection (all hypotheses active)
+#'   and the last row the singleton \code{{m}}.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#'
+#' finthyp(3)
+#'
+#' @export
+finthyp <- function(m) {
+  ntests <- 2^m - 1
+  numbers <- ntests:1
+  sapply(seq_len(m), function(j) bitwAnd(bitwShiftR(numbers, m - j), 1L))
+}
+
+
 #' @title Adjusted p-Values for Bonferroni-Based Graphical Approaches
 #' @description Obtains the adjusted p-values for graphical approaches
 #' using weighted Bonferroni tests.
