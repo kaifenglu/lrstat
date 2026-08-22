@@ -2,6 +2,7 @@
 .Rhistory
 .RData
 lrstat.Rcheck
+lrstat.Rproj
 notes/
 docs/
 .vscode/
@@ -9,3 +10,4 @@ src/*.o
 src/*.so
 src/*.dll
 .positai
+
