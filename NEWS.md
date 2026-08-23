@@ -1,5 +1,6 @@
 # lrstat 0.3.3
 
+* corrected conditional Type I error calculations in `adaptDesign`, `adaptDesign_multiarm`, `adaptDesign_seamless`, `getCP`, `getCP_multiarm`, and `getCP_seamless` to use normalized post-adaptation information rates consistently, including when the Müller–Schäfer method is selected
 * fixed `fStageBound` to marginalize out unconstrained stage 1 dimensions when `alpha1 = 0` instead of relying on `boost_qnorm`'s finite clamp at probability 1, which had left the stage 2 boundary with a spurious dependence on `info_frac`
 * added `finthyp` to construct the intersection-hypothesis indicator matrix for a given number of elementary hypotheses, matching the row order used by `fwgtmat` and `fDefaultWgtmat`, for use when migrating custom weight matrices to the new `fadjpbon`/`fadjpsim`/`fadjpdun` interfaces
 * renamed the `cJ1`/`cJ2`/`cJ2_new` output fields of `fStageBound`/`fNewBound` to `stg1_coef`/`stg2_coef`/`stg2_coef_new` for consistency with the `stg1_bnd`/`stg2_bnd`/`stg2_bnd_new` naming

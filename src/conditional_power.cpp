@@ -202,12 +202,13 @@ std::vector<double> getCPcpp(
   }
 
   size_t k1 = kMax - L;
+  std::vector<double> t1(k1);
+  for (size_t i = 0; i < k1; ++i) {
+    t1[i] = (infoRates[L + i] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
+  }
+
   if (!MullerSchafer) {
-    infoRatesNew.resize(k1);
-    for (size_t i = 0; i < k1; ++i) {
-      infoRatesNew[i] =
-        (infoRates[L + i] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
-    }
+    infoRatesNew = t1;
 
     effStoppingNew.resize(k1);
     std::memcpy(effStoppingNew.data(), effStopping.data() + L,
@@ -458,7 +459,7 @@ std::vector<double> getCPcpp(
     if (!effStoppingNew[i]) b1[i] = 8.0;
   }
 
-  probs = exitprobcpp(b1, a1, zero1, infoRatesNew);
+  probs = exitprobcpp(b1, a1, zero1, t1);
   auto v0 = probs.exitProbUpper;
   double alphaNew = std::accumulate(v0.begin(), v0.end(), 0.0);
 

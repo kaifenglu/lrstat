@@ -48,11 +48,11 @@ testthat::test_that("adaptDesign: workflow object contract and Rd example regres
   testthat::expect_equal(round(des2$integratedTrial$maxInformation, 4), 0.1199)
   testthat::expect_equal(
     round(des2$secondaryTrial$efficacyBounds, 4),
-    c(1.9876, 2.0179)
+    c(1.9875, 2.0178)
   )
   testthat::expect_equal(
     round(des2$integratedTrial$efficacyBounds, 4),
-    c(3.7060, 2.1820, 2.2121)
+    c(3.7060, 2.1819, 2.2120)
   )
   testthat::expect_true(all(diff(des2$integratedTrial$information) > 0))
 })

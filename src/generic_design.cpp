@@ -2596,12 +2596,13 @@ ListCpp adaptDesigncpp(
   }
 
   size_t k1 = kMax - L;
+  std::vector<double> t1(k1);
+  for (size_t i = 0; i < k1; ++i) {
+    t1[i] = (infoRates[L + i] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
+  }
+
   if (!MullerSchafer) {
-    infoRatesNew.resize(k1);
-    for (size_t i = 0; i < k1; ++i) {
-      infoRatesNew[i] =
-        (infoRates[L + i] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
-    }
+    infoRatesNew = t1;
 
     effStoppingNew.resize(k1);
     std::memcpy(effStoppingNew.data(), effStopping.data() + L,
@@ -2875,7 +2876,7 @@ ListCpp adaptDesigncpp(
   }
 
   // conditional type I error
-  probs = exitprobcpp(b1, a1, zero1, infoRatesNew);
+  probs = exitprobcpp(b1, a1, zero1, t1);
   auto v0 = probs.exitProbUpper;
   double alphaNew = std::accumulate(v0.begin(), v0.end(), 0.0);
 
@@ -3430,7 +3431,7 @@ ListCpp adaptDesigncpp(
 //' zL <- deltahat / sedeltahat
 //'
 //' # Making an Adaptive Change: Stage I to Stage II
-//' # revised clinically meaningful difference downward to 10 power the study
+//' # revised clinically meaningful difference downward to 10
 //' # retain the standard deviation at the design stage
 //' # Muller & Schafer (2001) method to design the secondary trial
 //' # with 2 looks and Lan-DeMets Pocock type spending function

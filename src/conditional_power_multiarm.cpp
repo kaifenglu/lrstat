@@ -231,13 +231,14 @@ std::vector<double> getCP_multiarm_cpp(
 
 
   size_t k1 = kMax - L;
-  std::vector<double> s1(k1);
+  std::vector<double> t1(k1);
   for (size_t i = 0; i < k1; ++i) {
-    s1[i] = (infoRates[L + i] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
+    t1[i] = (infoRates[L + i] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
   }
 
   if (!MullerSchafer) {
-    infoRatesNew = s1;
+    infoRatesNew = t1;
+
     effStoppingNew.resize(k1);
     std::memcpy(effStoppingNew.data(), effStopping.data() + L,
                 k1 * sizeof(unsigned char));
@@ -264,7 +265,7 @@ std::vector<double> getCP_multiarm_cpp(
       if (spendingTimeNew.back() != 1.0)
         throw std::invalid_argument("spendingTimeNew must end with 1");
     } else {
-      spendTimeNew = s1;
+      spendTimeNew = t1;
     }
 
   } else {
@@ -506,7 +507,7 @@ std::vector<double> getCP_multiarm_cpp(
   double INew1 = IMax * (1.0 - infoRates[L - 1]);
   std::vector<double> I1(k1);
   for (size_t i = 0; i < k1; ++i) {
-    I1[i] = INew1 * s1[i];
+    I1[i] = INew1 * t1[i];
   }
 
   // conditional type I error

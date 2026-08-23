@@ -1999,12 +1999,13 @@ ListCpp adaptDesign_seamless_cpp(
   }
 
   size_t k1 = K - L;
+  std::vector<double> t1(k1);
+  for (size_t i = 0; i < k1; ++i) {
+    t1[i] = (infoRates[L + 1 + i] - infoRates[L]) / (1.0 - infoRates[L]);
+  }
+
   if (!MullerSchafer) {
-    infoRatesNew.resize(k1);
-    for (size_t i = 0; i < k1; ++i) {
-      infoRatesNew[i] =
-        (infoRates[L + 1 + i] - infoRates[L]) / (1.0 - infoRates[L]);
-    }
+    infoRatesNew = t1;
 
     effStoppingNew.resize(k1);
     std::memcpy(effStoppingNew.data(), effStopping.data() + L + 1,
@@ -2274,7 +2275,7 @@ ListCpp adaptDesign_seamless_cpp(
   }
 
   // conditional type I error
-  probs = exitprobcpp(b1, a1, zero1, infoRatesNew);
+  probs = exitprobcpp(b1, a1, zero1, t1);
   auto v0 = probs.exitProbUpper;
   double alphaNew = std::accumulate(v0.begin(), v0.end(), 0.0);
 
