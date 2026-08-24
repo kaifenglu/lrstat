@@ -26,8 +26,11 @@
   seamless design, conditional power, and confidence interval functions
 * simplified one-active-arm `getBound_multiarm` and `getBound_seamless`
   calculations by delegating to `getBound`
-* added rank-adjusted TSSSP methods to `lrsim_bmTrtSel` and improved TSSSP
-  boundary computation efficiency, including cached single-arm boundaries
+* added rank-adjusted and conditional-error-updated TSSSD methods to
+  `lrsim_bmTrtSel` (`TSSSD.k`, `TSSSD.uk`, `TSSSD.k.rank`, `TSSSD.uk.rank`,
+  `TSSSD.k.ce`, `TSSSD.uk.ce`, `TSSSD.k.rank.ce`, `TSSSD.uk.rank.ce`) and
+  improved TSSSD boundary computation efficiency, including cached single-arm
+  boundaries and precomputed CE nominal boundaries
 * replaced the lpSolve dependency in getDesignAgreement with a native C++17
   simplex solver exposed through Rcpp, preserving the documented design results
   and adding regression tests for the agreement constraints

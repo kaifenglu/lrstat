@@ -54,8 +54,10 @@
 #'   posterior used in dose selection.
 #' @param methods A character vector naming the testing procedures to evaluate
 #'   for the confirmatory analysis. Any subset of \code{"ctdunnett"},
-#'   \code{"ctsimes"}, \code{"ctpooled"}, \code{"cer"}, \code{"TSSSP.k"},
-#'   \code{"TSSSP.uk"}, \code{"TSSSP.k.rank"}, \code{"TSSSP.uk.rank"},
+#'   \code{"ctsimes"}, \code{"ctpooled"}, \code{"cer"}, \code{"TSSSD.k"},
+#'   \code{"TSSSD.uk"}, \code{"TSSSD.k.rank"}, \code{"TSSSD.uk.rank"},
+#'   \code{"TSSSD.k.ce"}, \code{"TSSSD.uk.ce"},
+#'   \code{"TSSSD.k.rank.ce"}, \code{"TSSSD.uk.rank.ce"},
 #'   \code{"naive"}, and \code{"ph3only"}. Restricting the set skips the
 #'   corresponding computation entirely, which matters because the methods
 #'   differ by orders of magnitude in cost.
@@ -112,9 +114,13 @@
 #'   testing procedure with the inverse normal combination of stage 1 and
 #'   stage 2 p-values, using the Dunnett, Simes, and pooled log-rank local
 #'   tests respectively; \code{cer} for the conditional error rate method;
-#'   \code{TSSSP.k} and \code{TSSSP.uk} for the original two-stage seamless
-#'   design boundaries with known and unknown correlation; \code{TSSSP.k.rank}
-#'   and \code{TSSSP.uk.rank} for rank-adjusted versions of those boundaries;
+#'   \code{TSSSD.k} and \code{TSSSD.uk} for the original two-stage seamless
+#'   design boundaries with known and unknown correlation; \code{TSSSD.k.rank}
+#'   and \code{TSSSD.uk.rank} for rank-adjusted versions of those boundaries;
+#'   \code{TSSSD.k.ce}, \code{TSSSD.uk.ce}, \code{TSSSD.k.rank.ce}, and
+#'   \code{TSSSD.uk.rank.ce} for conditional-error updates that start from
+#'   nominal boundaries based on \code{n1/(n1+n2)} and then update boundaries
+#'   using the observed stage 1 z-statistic and observed information fraction;
 #'   \code{naive} for the
 #'   unadjusted log-rank test on the combined stage 1 and stage 2 data; and
 #'   \code{ph3only} for the unadjusted log-rank test on the stage 2 data only.
@@ -221,7 +227,9 @@ lrsim_bmTrtSel <- function(
     safetyThreshold = 0,
     useUniformPrior = TRUE,
     methods = c("ctdunnett", "ctsimes", "ctpooled", "cer",
-                "TSSSP.k", "TSSSP.uk", "TSSSP.k.rank", "TSSSP.uk.rank",
+                "TSSSD.k", "TSSSD.uk", "TSSSD.k.rank", "TSSSD.uk.rank",
+                "TSSSD.k.ce", "TSSSD.uk.ce",
+                "TSSSD.k.rank.ce", "TSSSD.uk.rank.ce",
                 "naive", "ph3only"),
     accrualRatePhase2 = NA_real_,
     accrualRatePhase3 = NA_real_,

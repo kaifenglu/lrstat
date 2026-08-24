@@ -4346,7 +4346,13 @@ print.lrsim_bmTrtSel <- function(x, ...) {
   methods <- x$methods
   known <- c(ctdunnett = "CT-Dunnett", ctsimes = "CT-Simes",
              ctpooled = "CT-Pooled", cer = "CER",
-             TSSSP.k = "TSSSP-K", TSSSP.uk = "TSSSP-UK",
+             TSSSD.k = "TSSSD-K", TSSSD.uk = "TSSSD-UK",
+             TSSSD.k.rank = "TSSSD-K-Rank",
+             TSSSD.uk.rank = "TSSSD-UK-Rank",
+             TSSSD.k.ce = "TSSSD-K-CE",
+             TSSSD.uk.ce = "TSSSD-UK-CE",
+             TSSSD.k.rank.ce = "TSSSD-K-Rank-CE",
+             TSSSD.uk.rank.ce = "TSSSD-UK-Rank-CE",
              naive = "Naive", ph3only = "Ph3Only")
   labels <- unname(known[methods])
 
@@ -4380,14 +4386,23 @@ print.lrsim_bmTrtSel <- function(x, ...) {
   colnames(df3) <- c("Stage 1", "Stage 2", "Total")
 
   # method comparison: generalized power for the true OBD
-  df4 <- as.data.frame(sapply(methods, function(m) x$byMethod[[m]]$gpower))
+  gpower_mat <- do.call(cbind, lapply(methods, function(m)
+    x$byMethod[[m]]$gpower))
+  if (is.null(dim(gpower_mat))) {
+    gpower_mat <- matrix(gpower_mat, nrow = ngrid)
+  }
+  df4 <- as.data.frame(gpower_mat)
   rownames(df4) <- paste("n2 =", n2)
   colnames(df4) <- labels
   df4[] <- lapply(df4, formatC, format = "f", digits = 4)
 
   # method comparison: rejection of any dose
-  df5 <- as.data.frame(sapply(methods, function(m)
+  rejany_mat <- do.call(cbind, lapply(methods, function(m)
     x$byMethod[[m]]$prob.rej.any))
+  if (is.null(dim(rejany_mat))) {
+    rejany_mat <- matrix(rejany_mat, nrow = ngrid)
+  }
+  df5 <- as.data.frame(rejany_mat)
   rownames(df5) <- paste("n2 =", n2)
   colnames(df5) <- labels
   df5[] <- lapply(df5, formatC, format = "f", digits = 4)

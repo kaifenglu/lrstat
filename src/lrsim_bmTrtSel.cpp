@@ -137,18 +137,24 @@ enum : size_t {
   M_CTSIMES,
   M_CTPOOLED,
   M_CER,
-  M_TSSSP_K,
-  M_TSSSP_UK,
-  M_TSSSP_K_RANK,
-  M_TSSSP_UK_RANK,
+  M_TSSSD_K,
+  M_TSSSD_UK,
+  M_TSSSD_K_RANK,
+  M_TSSSD_UK_RANK,
+  M_TSSSD_K_CE,
+  M_TSSSD_UK_CE,
+  M_TSSSD_K_RANK_CE,
+  M_TSSSD_UK_RANK_CE,
   M_NAIVE,
   M_PH3ONLY,
   NMETHOD
 };
 
 const char *const METHOD_NAME[NMETHOD] = {
-    "ctdunnett", "ctsimes",      "ctpooled",      "cer",   "TSSSP.k",
-    "TSSSP.uk",  "TSSSP.k.rank", "TSSSP.uk.rank", "naive", "ph3only"};
+    "ctdunnett", "ctsimes",      "ctpooled",      "cer",   "TSSSD.k",
+    "TSSSD.uk",  "TSSSD.k.rank", "TSSSD.uk.rank", "TSSSD.k.ce",
+    "TSSSD.uk.ce", "TSSSD.k.rank.ce", "TSSSD.uk.rank.ce", "naive",
+    "ph3only"};
 
 const double SINGLE_ARM_BOUND = boost_qnorm(1.0 - ALPHA_ONE_SIDED);
 
@@ -237,7 +243,7 @@ struct SimWorker : public RcppParallel::Worker {
     std::vector<std::vector<double>> ytime(narm, std::vector<double>(ntot));
     std::vector<std::vector<int>> yevent(narm, std::vector<int>(ntot));
     std::vector<double> xt(M), xe1(M), narms(narm, static_cast<double>(n1));
-    std::vector<double> stg1_p(M), pooled_p(ntests);
+    std::vector<double> stg1_p(M), stg1_z(M), pooled_p(ntests);
 
     std::vector<size_t> allInt(ntests), allHyp(M);
     std::iota(allInt.begin(), allInt.end(), static_cast<size_t>(0));
@@ -247,6 +253,38 @@ struct SimWorker : public RcppParallel::Worker {
     const std::vector<unsigned char> effStopping = {0, 1};
     const std::vector<double> emptyv;
 
+    // Precompute nominal boundaries for CE-updated TSSSD methods.
+    // These depend only on phase-2 and phase-3 sample sizes (n1, n2cur).
+    const bool needTsssdCe = use[M_TSSSD_K_CE] || use[M_TSSSD_UK_CE] ||
+                             use[M_TSSSD_K_RANK_CE] ||
+                             use[M_TSSSD_UK_RANK_CE];
+    std::vector<double> tNominal(ngrid, 0.5);
+    // Indexed by effective hypothesis count minus one:
+    // [0] => mEff=1, [M-1] => mEff=M.
+    std::vector<std::vector<double>> tsssdKnownNomByEff(
+      M, std::vector<double>(ngrid, SINGLE_ARM_BOUND));
+    std::vector<std::vector<double>> tsssdUnknownNomByEff(
+      M, std::vector<double>(ngrid, SINGLE_ARM_BOUND));
+    if (needTsssdCe) {
+      for (size_t n2i = 0; n2i < ngrid; ++n2i) {
+        const size_t n2cur = n2min + n2i;
+        const size_t nend = n1 + n2cur;
+        const double tnom = static_cast<double>(n1) / static_cast<double>(nend);
+        tNominal[n2i] = std::min(std::max(tnom, 1e-6), 1.0 - 1e-6);
+        const std::vector<double> infoRatesNominal{tNominal[n2i], 1.0};
+        for (size_t mEff = 2; mEff <= M; ++mEff) {
+          const size_t effIdx = mEff - 1;
+          tsssdKnownNomByEff[effIdx][n2i] =
+              getBound_seamless_cpp(mEff, 1.0, true, 1, infoRatesNominal,
+                                    ALPHA_ONE_SIDED, "none", NA_dbl, emptyv,
+                                    emptyv, effStopping, 1)[1];
+          tsssdUnknownNomByEff[effIdx][n2i] =
+              getBound_seamless_cpp(mEff, 1.0, false, 1, infoRatesNominal,
+                                    ALPHA_ONE_SIDED, "none", NA_dbl, emptyv,
+                                    emptyv, effStopping, 1)[1];
+        }
+      }
+    }
     for (size_t iter = begin; iter < end; ++iter) {
       try {
         boost::random::mt19937_64 rng(seeds[iter]);
@@ -384,7 +422,8 @@ struct SimWorker : public RcppParallel::Worker {
         std::vector<size_t> arms;
         for (size_t k = 0; k < M; ++k) {
           arms.assign(1, k + 1);
-          stg1_p[k] = boost_pnorm(zg(arms, 0, n1), 0.0, 1.0, false);
+          stg1_z[k] = zg(arms, 0, n1);
+          stg1_p[k] = boost_pnorm(stg1_z[k], 0.0, 1.0, false);
         }
 
         LocalPValues dunnett1, simes1, pooled1;
@@ -425,9 +464,11 @@ struct SimWorker : public RcppParallel::Worker {
 
         const bool needStg2 = use[M_CTDUNNETT] || use[M_CTSIMES] ||
                               use[M_CTPOOLED] || use[M_PH3ONLY];
-        const bool needCum = use[M_NAIVE] || use[M_CER] || use[M_TSSSP_K] ||
-                             use[M_TSSSP_UK] || use[M_TSSSP_K_RANK] ||
-                             use[M_TSSSP_UK_RANK];
+                          const bool needCum = use[M_NAIVE] || use[M_CER] || use[M_TSSSD_K] ||
+                                   use[M_TSSSD_UK] || use[M_TSSSD_K_RANK] ||
+                                   use[M_TSSSD_UK_RANK] || use[M_TSSSD_K_CE] ||
+                                   use[M_TSSSD_UK_CE] || use[M_TSSSD_K_RANK_CE] ||
+                                   use[M_TSSSD_UK_RANK_CE];
 
         for (size_t n2i = 0; n2i < ngrid; ++n2i) {
           const size_t n2cur = n2min + n2i;
@@ -473,6 +514,7 @@ struct SimWorker : public RcppParallel::Worker {
           const size_t rankp = static_cast<size_t>(
               std::count_if(stg1_p.begin(), stg1_p.end(),
                             [&](double p) { return p < stg1_p[obd]; }));
+              const double z1Selected = stg1_z[obd];
 
           auto combtest = [&](size_t m, const LocalPValues &stg1_loc_p) {
             PCStage2Result rej =
@@ -514,24 +556,24 @@ struct SimWorker : public RcppParallel::Worker {
               out.rej[M_CER](n2i, k) = rej_cer[k];
           }
 
-          const bool needFullTssspK =
-              use[M_TSSSP_K] || (use[M_TSSSP_K_RANK] && rankp == 0);
-          const bool needFullTssspUk =
-              use[M_TSSSP_UK] || (use[M_TSSSP_UK_RANK] && rankp == 0);
+          const bool needFullTsssdK =
+              use[M_TSSSD_K] || (use[M_TSSSD_K_RANK] && rankp == 0);
+          const bool needFullTsssdUk =
+              use[M_TSSSD_UK] || (use[M_TSSSD_UK_RANK] && rankp == 0);
           std::vector<double> bk, buk;
-          if (needFullTssspK) {
+          if (needFullTsssdK) {
             bk = getBound_seamless_cpp(M, 1.0, true, 1, infoRates,
                                        ALPHA_ONE_SIDED, "none", NA_dbl, emptyv,
                                        emptyv, effStopping, 1);
-            if (use[M_TSSSP_K] && zgn > bk[1]) {
-              out.rej[M_TSSSP_K](n2i, obd) = 1;
+            if (use[M_TSSSD_K] && zgn > bk[1]) {
+              out.rej[M_TSSSD_K](n2i, obd) = 1;
             }
-            if (use[M_TSSSP_K_RANK] && rankp == 0 && zgn > bk[1]) {
-              out.rej[M_TSSSP_K_RANK](n2i, obd) = 1;
+            if (use[M_TSSSD_K_RANK] && rankp == 0 && zgn > bk[1]) {
+              out.rej[M_TSSSD_K_RANK](n2i, obd) = 1;
             }
           }
 
-          if (use[M_TSSSP_K_RANK] && rankp > 0) {
+          if (use[M_TSSSD_K_RANK] && rankp > 0) {
             const double rankBound =
                 M - rankp == 1
                     ? SINGLE_ARM_BOUND
@@ -539,22 +581,22 @@ struct SimWorker : public RcppParallel::Worker {
                                             ALPHA_ONE_SIDED, "none", NA_dbl,
                                             emptyv, emptyv, effStopping, 1)[1];
             if (zgn > rankBound)
-              out.rej[M_TSSSP_K_RANK](n2i, obd) = 1;
+              out.rej[M_TSSSD_K_RANK](n2i, obd) = 1;
           }
 
-          if (needFullTssspUk) {
+          if (needFullTsssdUk) {
             buk = getBound_seamless_cpp(M, 1.0, false, 1, infoRates,
                                         ALPHA_ONE_SIDED, "none", NA_dbl, emptyv,
                                         emptyv, effStopping, 1);
-            if (use[M_TSSSP_UK] && zgn > buk[1]) {
-              out.rej[M_TSSSP_UK](n2i, obd) = 1;
+            if (use[M_TSSSD_UK] && zgn > buk[1]) {
+              out.rej[M_TSSSD_UK](n2i, obd) = 1;
             }
-            if (use[M_TSSSP_UK_RANK] && rankp == 0 && zgn > buk[1]) {
-              out.rej[M_TSSSP_UK_RANK](n2i, obd) = 1;
+            if (use[M_TSSSD_UK_RANK] && rankp == 0 && zgn > buk[1]) {
+              out.rej[M_TSSSD_UK_RANK](n2i, obd) = 1;
             }
           }
 
-          if (use[M_TSSSP_UK_RANK] && rankp > 0) {
+          if (use[M_TSSSD_UK_RANK] && rankp > 0) {
             const double rankBound =
                 M - rankp == 1
                     ? SINGLE_ARM_BOUND
@@ -562,7 +604,46 @@ struct SimWorker : public RcppParallel::Worker {
                                             ALPHA_ONE_SIDED, "none", NA_dbl,
                                             emptyv, emptyv, effStopping, 1)[1];
             if (zgn > rankBound)
-              out.rej[M_TSSSP_UK_RANK](n2i, obd) = 1;
+              out.rej[M_TSSSD_UK_RANK](n2i, obd) = 1;
+          }
+
+          if (needTsssdCe) {
+            auto ceAdjustedBoundary = [&](double c2Nominal) {
+              const double sqrtTnom = std::sqrt(tNominal[n2i]);
+              const double sqrt1mTnom = std::sqrt(1.0 - tNominal[n2i]);
+              const double b1 = (c2Nominal - z1Selected * sqrtTnom) / sqrt1mTnom;
+              return b1 * std::sqrt(1.0 - t1) + z1Selected * std::sqrt(t1);
+            };
+
+            if (use[M_TSSSD_K_CE]) {
+              const double c2New =
+                  ceAdjustedBoundary(tsssdKnownNomByEff[M - 1][n2i]);
+              if (zgn > c2New)
+                out.rej[M_TSSSD_K_CE](n2i, obd) = 1;
+            }
+
+            if (use[M_TSSSD_UK_CE]) {
+              const double c2New =
+                  ceAdjustedBoundary(tsssdUnknownNomByEff[M - 1][n2i]);
+              if (zgn > c2New)
+                out.rej[M_TSSSD_UK_CE](n2i, obd) = 1;
+            }
+
+            const size_t mEff = M - rankp;
+            const size_t effIdx = mEff - 1;
+            if (use[M_TSSSD_K_RANK_CE]) {
+              const double c2New =
+                  ceAdjustedBoundary(tsssdKnownNomByEff[effIdx][n2i]);
+              if (zgn > c2New)
+                out.rej[M_TSSSD_K_RANK_CE](n2i, obd) = 1;
+            }
+
+            if (use[M_TSSSD_UK_RANK_CE]) {
+              const double c2New =
+                  ceAdjustedBoundary(tsssdUnknownNomByEff[effIdx][n2i]);
+              if (zgn > c2New)
+                out.rej[M_TSSSD_UK_RANK_CE](n2i, obd) = 1;
+            }
           }
         }
 
