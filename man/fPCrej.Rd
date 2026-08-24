@@ -73,14 +73,14 @@ stage1_loc_p <- fPCStagewise(
   stg1_inthyp_nr = 1:15, stg2_elemhyp = 1:4,
   stg2_wgtmat = wgtmat, test = "dunnett",
   nthreads = 1)
-stage1_rejections <- fPCStage1(stg1_loc_p, alpha1)
+stage1_rejections <- fPCStage1(stage1_loc_p, alpha1)
 
 adapted_graph <- updateGraph(initial_weights,
                              transition_matrix,
                              I = 1:4, j = 1)
 stage2_weight_matrix <- fwgtmat(
-  adapted_graph$w[adapted_graph$I],
-  adapted_graph$G[adapted_graph$I, adapted_graph$I])
+  w = adapted_graph$w[adapted_graph$I],
+  G = adapted_graph$G[adapted_graph$I, adapted_graph$I])
 stage2_pvalues <- c(0.1121, 0.0112, 0.1153)
 stage2_loc_p <- fPCStagewise(
   stg2_p = stage2_pvalues, wgtmat = wgtmat,
