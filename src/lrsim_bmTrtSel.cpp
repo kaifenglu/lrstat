@@ -464,11 +464,11 @@ struct SimWorker : public RcppParallel::Worker {
 
         const bool needStg2 = use[M_CTDUNNETT] || use[M_CTSIMES] ||
                               use[M_CTPOOLED] || use[M_PH3ONLY];
-                          const bool needCum = use[M_NAIVE] || use[M_CER] || use[M_TSSSD_K] ||
-                                   use[M_TSSSD_UK] || use[M_TSSSD_K_RANK] ||
-                                   use[M_TSSSD_UK_RANK] || use[M_TSSSD_K_CE] ||
-                                   use[M_TSSSD_UK_CE] || use[M_TSSSD_K_RANK_CE] ||
-                                   use[M_TSSSD_UK_RANK_CE];
+        const bool needCum = use[M_NAIVE] || use[M_CER] || use[M_TSSSD_K] ||
+                             use[M_TSSSD_UK] || use[M_TSSSD_K_RANK] ||
+                             use[M_TSSSD_UK_RANK] || use[M_TSSSD_K_CE] ||
+                             use[M_TSSSD_UK_CE] || use[M_TSSSD_K_RANK_CE] ||
+                             use[M_TSSSD_UK_RANK_CE];
 
         for (size_t n2i = 0; n2i < ngrid; ++n2i) {
           const size_t n2cur = n2min + n2i;
@@ -609,9 +609,9 @@ struct SimWorker : public RcppParallel::Worker {
 
           if (needTsssdCe) {
             auto ceAdjustedBoundary = [&](double c2Nominal) {
-              const double sqrtTnom = std::sqrt(tNominal[n2i]);
-              const double sqrt1mTnom = std::sqrt(1.0 - tNominal[n2i]);
-              const double b1 = (c2Nominal - z1Selected * sqrtTnom) / sqrt1mTnom;
+              double sqrtTnom = std::sqrt(tNominal[n2i]);
+              double sqrt1mTnom = std::sqrt(1.0 - tNominal[n2i]);
+              double b1 = (c2Nominal - z1Selected * sqrtTnom) / sqrt1mTnom;
               return b1 * std::sqrt(1.0 - t1) + z1Selected * std::sqrt(t1);
             };
 
