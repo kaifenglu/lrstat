@@ -1,5 +1,5 @@
-#include "utilities.h"
 #include "dataframe_list.h"
+#include "utilities.h"
 
 #include <algorithm>     // any_of, distance, fill, min, min_element
 #include <cmath>         // fabs, isnan
@@ -17,31 +17,28 @@
 
 using std::size_t;
 
-
 // Hash function for caching pfutile results
 struct PfutileKey {
   double p;
   int n1, n2, r1, r;
 
-  bool operator==(const PfutileKey& other) const {
-    return n1 == other.n1 && n2 == other.n2 &&
-      r1 == other.r1 && r == other.r &&
-      std::abs(p - other.p) < 1e-10;
+  bool operator==(const PfutileKey &other) const {
+    return n1 == other.n1 && n2 == other.n2 && r1 == other.r1 && r == other.r &&
+           std::abs(p - other.p) < 1e-10;
   }
 };
 
 namespace std {
-template<>
-struct hash<PfutileKey> {
-  size_t operator()(const PfutileKey& k) const {
+template <> struct hash<PfutileKey> {
+  size_t operator()(const PfutileKey &k) const {
     size_t seed = 0;
 
     // Hash combine pattern (better distribution)
-    auto hash_combine = [](size_t& seed, size_t hash) {
+    auto hash_combine = [](size_t &seed, size_t hash) {
       seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
     };
 
-    hash_combine(seed, hash<double>()(k.p));    // Include p!
+    hash_combine(seed, hash<double>()(k.p)); // Include p!
     hash_combine(seed, hash<int>()(k.n1));
     hash_combine(seed, hash<int>()(k.n2));
     hash_combine(seed, hash<int>()(k.r1));
@@ -50,7 +47,7 @@ struct hash<PfutileKey> {
     return seed;
   }
 };
-}
+} // namespace std
 
 // Optimized pfutile with reusable distribution objects
 class PfutileCalculator {
@@ -86,8 +83,8 @@ public:
 };
 
 // Binary search for maximum r satisfying beta constraint
-int find_max_r(PfutileCalculator& calc, double pi, int n1, int n2,
-               int r1, double beta) {
+int find_max_r(PfutileCalculator &calc, double pi, int n1, int n2, int r1,
+               double beta) {
   int r_lower = r1;
   int r_upper = r1 + n2;
   int r_best = -1;
@@ -111,40 +108,41 @@ int find_max_r(PfutileCalculator& calc, double pi, int n1, int n2,
     if (betastar <= beta) {
       // Constraint satisfied at r_mid
       r_best = r_mid;
-      r_lower = r_mid + 1;  // Try larger r (search right)
+      r_lower = r_mid + 1; // Try larger r (search right)
     } else {
       // Constraint violated at r_mid
-      r_upper = r_mid - 1;  // Try smaller r (search left)
+      r_upper = r_mid - 1; // Try smaller r (search left)
     }
   }
 
   return r_best;
 }
 
-DataFrameCpp simon2stagecpp(
-    const double alpha,
-    const double beta,
-    const double piH0,
-    const double pi,
-    const int n_max) {
+DataFrameCpp simon2stagecpp(const double alpha, const double beta,
+                            const double piH0, const double pi,
+                            const int n_max) {
 
   // Input validation
-  if (std::isnan(alpha)) throw std::invalid_argument("alpha must be provided");
+  if (std::isnan(alpha))
+    throw std::invalid_argument("alpha must be provided");
 
   if (alpha < 0.00001 || alpha >= 1.0)
     throw std::invalid_argument("alpha must lie in [0.00001, 1)");
 
-  if (std::isnan(beta)) throw std::invalid_argument("beta must be provided");
+  if (std::isnan(beta))
+    throw std::invalid_argument("beta must be provided");
 
   if (beta >= 1.0 - alpha || beta < 0.0001)
     throw std::invalid_argument("beta must lie in [0.0001, 1-alpha)");
 
-  if (std::isnan(piH0)) throw std::invalid_argument("piH0 must be provided");
+  if (std::isnan(piH0))
+    throw std::invalid_argument("piH0 must be provided");
 
   if (piH0 <= 0.0 || piH0 >= 1.0)
     throw std::invalid_argument("piH0 must lie between 0 and 1");
 
-  if (std::isnan(pi)) throw std::invalid_argument("pi must be provided");
+  if (std::isnan(pi))
+    throw std::invalid_argument("pi must be provided");
 
   if (pi <= piH0 || pi >= 1.0)
     throw std::invalid_argument("pi must lie between piH0 and 1");
@@ -153,8 +151,8 @@ DataFrameCpp simon2stagecpp(
   double z1 = boost_qnorm(1.0 - alpha);
   double z2 = boost_qnorm(1.0 - beta);
 
-  int n_min = static_cast<int>(std::floor(p * (1.0 - p) *
-                               std::pow((z1 + z2) / (pi - piH0), 2)));
+  int n_min = static_cast<int>(
+      std::floor(p * (1.0 - p) * std::pow((z1 + z2) / (pi - piH0), 2)));
   int n_max1 = static_cast<int>(std::ceil(2.0 * n_min));
 
   int n_lower = static_cast<int>(std::floor(0.5 * n_min));
@@ -216,7 +214,6 @@ DataFrameCpp simon2stagecpp(
         }
       }
     }
-
 
     if (exist) {
       nx.push_back(n);
@@ -324,7 +321,6 @@ DataFrameCpp simon2stagecpp(
   return result;
 }
 
-
 //' @title Simon's Two-Stage Design
 //' @description Obtains Simon's two-stage minimax, admissible, and
 //' optimal designs.
@@ -378,26 +374,19 @@ DataFrameCpp simon2stagecpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame simon2stage(
-    const double alpha = NA_REAL,
-    const double beta = NA_REAL,
-    const double piH0 = NA_REAL,
-    const double pi = NA_REAL,
-    const int n_max = 110) {
+Rcpp::DataFrame simon2stage(const double alpha = NA_REAL,
+                            const double beta = NA_REAL,
+                            const double piH0 = NA_REAL,
+                            const double pi = NA_REAL, const int n_max = 110) {
   auto result = simon2stagecpp(alpha, beta, piH0, pi, n_max);
   return Rcpp::wrap(result);
 }
 
-
 // Helper for the analyis of Simon's Bayesian basket trials
-ListCpp simonBayesAnalysiscpp(
-    const int nstrata1,
-    const std::vector<double>& r,
-    const std::vector<double>& n,
-    const double lambda,
-    const double gamma,
-    const double phi,
-    const double plo) {
+ListCpp simonBayesAnalysiscpp(const int nstrata1, const std::vector<double> &r,
+                              const std::vector<double> &n, const double lambda,
+                              const double gamma, const double phi,
+                              const double plo) {
 
   if (nstrata1 == INT_MIN) {
     throw std::invalid_argument("nstrata must be provided.");
@@ -467,17 +456,19 @@ ListCpp simonBayesAnalysiscpp(
       cc[j] = (number >> (nstrata - 1 - j)) & 1u;
     }
 
-    bool all_ones = std::all_of(cc.begin(), cc.end(), [](int x) { return x == 1; });
-    bool all_zeros = std::all_of(cc.begin(), cc.end(), [](int x) { return x == 0; });
+    bool all_ones =
+        std::all_of(cc.begin(), cc.end(), [](int x) { return x == 1; });
+    bool all_zeros =
+        std::all_of(cc.begin(), cc.end(), [](int x) { return x == 0; });
 
     if (all_ones || all_zeros) {
       prior[i] = lambda * (gamma * (cc[0] == 1) + (1 - gamma) * (cc[0] == 0)) +
-        (1 - lambda) * (std::pow(gamma, nstrata) * (cc[0] == 1) +
-        std::pow(1 - gamma, nstrata) * (cc[0] == 0));
+                 (1 - lambda) * (std::pow(gamma, nstrata) * (cc[0] == 1) +
+                                 std::pow(1 - gamma, nstrata) * (cc[0] == 0));
     } else {
       double y = std::accumulate(cc.begin(), cc.end(), 0.0);
-      prior[i] = (1 - lambda) * std::pow(gamma, y) *
-        std::pow(1 - gamma, nstrata - y);
+      prior[i] =
+          (1 - lambda) * std::pow(gamma, y) * std::pow(1 - gamma, nstrata - y);
     }
 
     std::vector<double> x(nstrata);
@@ -528,7 +519,6 @@ ListCpp simonBayesAnalysiscpp(
   return result;
 }
 
-
 //' @title Analysis of Simon's Bayesian Basket Trials
 //' @description Obtains the prior and posterior probabilities for
 //' Simon's Bayesian basket discovery trials.
@@ -575,44 +565,38 @@ ListCpp simonBayesAnalysiscpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List simonBayesAnalysis(
-    const int nstrata = NA_INTEGER,
-    const Rcpp::NumericVector& r = NA_REAL,
-    const Rcpp::NumericVector& n = NA_REAL,
-    const double lambda = NA_REAL,
-    const double gamma = NA_REAL,
-    const double phi = NA_REAL,
-    const double plo = NA_REAL) {
+Rcpp::List simonBayesAnalysis(const int nstrata = NA_INTEGER,
+                              const Rcpp::NumericVector &r = NA_REAL,
+                              const Rcpp::NumericVector &n = NA_REAL,
+                              const double lambda = NA_REAL,
+                              const double gamma = NA_REAL,
+                              const double phi = NA_REAL,
+                              const double plo = NA_REAL) {
   auto r1 = Rcpp::as<std::vector<double>>(r);
   auto n1 = Rcpp::as<std::vector<double>>(n);
   auto result = simonBayesAnalysiscpp(nstrata, r1, n1, lambda, gamma, phi, plo);
   return Rcpp::wrap(result);
 }
 
-
 // Helper for the simulation of Simon's Bayesian basket trials
-ListCpp simonBayesSimcpp(
-    const std::vector<double>& p,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
-    const std::vector<double>& stratumFraction,
-    const double lambda,
-    const double gamma,
-    const double phi,
-    const double plo,
-    const double T,
-    const int maxSubjects,
-    const std::vector<int>& plannedSubjects,
-    const int maxNumberOfIterations,
-    const int maxNumberOfRawDatasets,
-    const int seed) {
+ListCpp simonBayesSimcpp(const std::vector<double> &p,
+                         const std::vector<double> &accrualTime,
+                         const std::vector<double> &accrualIntensity,
+                         const std::vector<double> &stratumFraction,
+                         const double lambda, const double gamma,
+                         const double phi, const double plo, const double T,
+                         const int maxSubjects,
+                         const std::vector<int> &plannedSubjects,
+                         const int maxNumberOfIterations,
+                         const int maxNumberOfRawDatasets, const int seed) {
 
   size_t nstrata = stratumFraction.size();
 
   if (!none_na(p)) {
     throw std::invalid_argument("p must be provided.");
   }
-  if (std::any_of(p.begin(), p.end(), [](double x) { return x <= 0 || x >= 1; })) {
+  if (std::any_of(p.begin(), p.end(),
+                  [](double x) { return x <= 0 || x >= 1; })) {
     throw std::invalid_argument("p must lie between 0 and 1.");
   }
 
@@ -638,8 +622,8 @@ ListCpp simonBayesSimcpp(
     throw std::invalid_argument("stratumFraction must be positive.");
   }
 
-  double sum_stratumFraction = std::accumulate(stratumFraction.begin(),
-                                               stratumFraction.end(), 0.0);
+  double sum_stratumFraction =
+      std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
   if (std::fabs(sum_stratumFraction - 1.0) > 1.0e-8) {
     throw std::invalid_argument("stratumFraction must sum to 1.");
   }
@@ -703,14 +687,14 @@ ListCpp simonBayesSimcpp(
   for (size_t i = 0; i < p.size(); ++i) {
     act[i] = (p[i] == phi) ? 1 : 0;
   }
-  size_t nactive = static_cast<size_t>(std::accumulate(act.begin(), act.end(), 0));
+  size_t nactive =
+      static_cast<size_t>(std::accumulate(act.begin(), act.end(), 0));
 
   std::vector<double> cumStratumFraction(nstrata);
   std::partial_sum(stratumFraction.begin(), stratumFraction.end(),
                    cumStratumFraction.begin());
   std::vector<double> post_stratum(nstrata), n(nstrata), r(nstrata);
   std::vector<unsigned char> open(nstrata), pos(nstrata), neg(nstrata);
-
 
   std::vector<double> arrivalTime(maxSubjects);
   std::vector<int> stratum(maxSubjects), y(maxSubjects);
@@ -719,7 +703,8 @@ ListCpp simonBayesSimcpp(
   std::vector<double> nact(maxNumberOfIterations), nopen(maxNumberOfIterations);
   std::vector<double> tpos(maxNumberOfIterations), fneg(maxNumberOfIterations);
   std::vector<double> fpos(maxNumberOfIterations), tneg(maxNumberOfIterations);
-  std::vector<int> numberOfStrata(maxNumberOfIterations, static_cast<int>(nstrata));
+  std::vector<int> numberOfStrata(maxNumberOfIterations,
+                                  static_cast<int>(nstrata));
 
   // cache for the patient-level raw data to extract
   size_t K = plannedSubjects.size();
@@ -757,7 +742,7 @@ ListCpp simonBayesSimcpp(
     std::fill(pos.begin(), pos.end(), 0);
     std::fill(neg.begin(), neg.end(), 0);
 
-    size_t k = 0;      // index of the number of subjects included in analysis
+    size_t k = 0; // index of the number of subjects included in analysis
     size_t stage = 0;
     double enrollt = 0.0;
     for (size_t i = 0; i < 100000; ++i) {
@@ -769,13 +754,14 @@ ListCpp simonBayesSimcpp(
       u = unif(rng);
       size_t j = 0;
       for (; j < nstrata; ++j) {
-        if (cumStratumFraction[j] > u) break;
+        if (cumStratumFraction[j] > u)
+          break;
       }
 
       // if the stratum is open, generate the response for the subject
       if (open[j]) {
         arrivalTime[k] = enrollt;
-        stratum[k] = j+1;
+        stratum[k] = j + 1;
         y[k] = (unif(rng) < p[j]) ? 1 : 0;
 
         // update the number of subjects and responders in the stratum
@@ -802,16 +788,19 @@ ListCpp simonBayesSimcpp(
           }
 
           // calculate the posterior probabilities
-          ListCpp a = simonBayesAnalysiscpp(nstrata, r, n, lambda, gamma, phi, plo);
+          ListCpp a =
+              simonBayesAnalysiscpp(nstrata, r, n, lambda, gamma, phi, plo);
           post_stratum = a.get<std::vector<double>>("post_stratum");
 
           // whether to close the stratum due to positive or negative results
           for (size_t l = 0; l < nstrata; ++l) {
             if (open[l]) {
               if (post_stratum[l] > T) {
-                pos[l] = 1; open[l] = 0;
+                pos[l] = 1;
+                open[l] = 0;
               } else if (post_stratum[l] < 1 - T) {
-                neg[l] = 1; open[l] = 0;
+                neg[l] = 1;
+                open[l] = 0;
               }
             }
 
@@ -834,8 +823,9 @@ ListCpp simonBayesSimcpp(
         }
 
         // stop the trial if all strata are closed or max subjects reached
-        bool all_closed = std::all_of(open.begin(), open.end(),
-                                      [](unsigned char val) { return val == 0; });
+        bool all_closed =
+            std::all_of(open.begin(), open.end(),
+                        [](unsigned char val) { return val == 0; });
 
         if (all_closed || (k == static_cast<size_t>(maxSubjects))) {
           iterationNumber[iter] = iter + 1;
@@ -967,7 +957,6 @@ ListCpp simonBayesSimcpp(
   return result;
 }
 
-
 //' @title Simulation of Simon's Bayesian Basket Trials
 //' @description Obtains the simulated raw and summary data for Simon's
 //' Bayesian basket discovery trials.
@@ -1097,29 +1086,25 @@ ListCpp simonBayesSimcpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List simonBayesSim(
-    const Rcpp::NumericVector& p = NA_REAL,
-    const Rcpp::NumericVector& accrualTime = 0,
-    const Rcpp::NumericVector& accrualIntensity = NA_REAL,
-    const Rcpp::NumericVector& stratumFraction = 1,
-    const double lambda = NA_REAL,
-    const double gamma = NA_REAL,
-    const double phi = NA_REAL,
-    const double plo = NA_REAL,
-    const double T = NA_REAL,
-    const int maxSubjects = NA_INTEGER,
-    const Rcpp::IntegerVector& plannedSubjects = NA_INTEGER,
-    const int maxNumberOfIterations = 1000,
-    const int maxNumberOfRawDatasets = 1,
-    const int seed = 0) {
+Rcpp::List
+simonBayesSim(const Rcpp::NumericVector &p = NA_REAL,
+              const Rcpp::NumericVector &accrualTime = 0,
+              const Rcpp::NumericVector &accrualIntensity = NA_REAL,
+              const Rcpp::NumericVector &stratumFraction = 1,
+              const double lambda = NA_REAL, const double gamma = NA_REAL,
+              const double phi = NA_REAL, const double plo = NA_REAL,
+              const double T = NA_REAL, const int maxSubjects = NA_INTEGER,
+              const Rcpp::IntegerVector &plannedSubjects = NA_INTEGER,
+              const int maxNumberOfIterations = 1000,
+              const int maxNumberOfRawDatasets = 1, const int seed = 0) {
   auto p1 = Rcpp::as<std::vector<double>>(p);
   auto accrualTime1 = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualIntensity1 = Rcpp::as<std::vector<double>>(accrualIntensity);
   auto stratumFraction1 = Rcpp::as<std::vector<double>>(stratumFraction);
   auto plannedSubjects1 = Rcpp::as<std::vector<int>>(plannedSubjects);
   auto result = simonBayesSimcpp(
-    p1, accrualTime1, accrualIntensity1, stratumFraction1,
-    lambda, gamma, phi, plo, T, maxSubjects, plannedSubjects1,
-    maxNumberOfIterations, maxNumberOfRawDatasets, seed);
+      p1, accrualTime1, accrualIntensity1, stratumFraction1, lambda, gamma, phi,
+      plo, T, maxSubjects, plannedSubjects1, maxNumberOfIterations,
+      maxNumberOfRawDatasets, seed);
   return Rcpp::wrap(result);
 }

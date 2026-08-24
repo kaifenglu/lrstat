@@ -1,32 +1,29 @@
-#include "generic_design.h"
-#include "utilities.h"
-#include "dataframe_list.h"
-#include "mvnormr.h"
-#include "multiplicity.h"
 #include "adaptive_two_stage.h"
+#include "dataframe_list.h"
+#include "generic_design.h"
+#include "multiplicity.h"
+#include "mvnormr.h"
+#include "utilities.h"
 
-#include <algorithm>     // find
-#include <cmath>         // sqrt
-#include <stdexcept>     // invalid_argument
-#include <string>        // string
-#include <utility>       // pair, make_pair
-#include <vector>        // vector
+#include <algorithm> // find
+#include <cmath>     // sqrt
+#include <stdexcept> // invalid_argument
+#include <string>    // string
+#include <utility>   // pair, make_pair
+#include <vector>    // vector
 
 #include <Rcpp.h>
 
 using std::size_t;
 
-
 // Helper to compute adjusted p-values for graphical approaches
-LocalPValues fadjpcpp(
-  const std::vector<double>& stg2_p,
-    const WeightMatrix& wgtmat,
-    const BoolMatrix& family,
-    const FlatMatrix& corr,
-    const std::vector<size_t>& stg1_inthyp_nr,
-    const std::vector<size_t>& stg2_elemhyp,
-    const WeightMatrix& stg2_wgtmat,
-    const std::string& test) {
+LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
+                             const WeightMatrix &wgtmat,
+                             const BoolMatrix &family, const FlatMatrix &corr,
+                             const std::vector<size_t> &stg1_inthyp_nr,
+                             const std::vector<size_t> &stg2_elemhyp,
+                             const WeightMatrix &stg2_wgtmat,
+                             const std::string &test) {
 
   // Normalize test string
   std::string test1 = test;
@@ -55,7 +52,8 @@ LocalPValues fadjpcpp(
         break;
       }
     }
-    if (has_hypothesis) active_fams.push_back(h);
+    if (has_hypothesis)
+      active_fams.push_back(h);
   }
 
   size_t nfams2 = active_fams.size();
@@ -116,56 +114,50 @@ LocalPValues fadjpcpp(
   }
 
   return LocalPValues{std::move(inthyp_idx), std::move(inthyp2),
-                      std::move(pinter)
-  };
+                      std::move(pinter)};
 }
 
-LocalPValues fadjpcpp(
-    const std::vector<double>& stg2_p,
-    const BoolMatrix& family,
-    const FlatMatrix& corr,
-    const std::vector<size_t>& stg1_inthyp_nr,
-    const std::vector<size_t>& stg2_elemhyp,
-    const std::string& test) {
-  return fadjpcpp(stg2_p, fDefaultWgtmatcpp(family.ncol), family, corr,
-                  stg1_inthyp_nr, stg2_elemhyp,
-                  fDefaultWgtmatcpp(stg2_p.size()), test);
+LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
+                             const BoolMatrix &family, const FlatMatrix &corr,
+                             const std::vector<size_t> &stg1_inthyp_nr,
+                             const std::vector<size_t> &stg2_elemhyp,
+                             const std::string &test) {
+  return fPCStagewiseCpp(stg2_p, fDefaultWgtmatcpp(family.ncol), family, corr,
+                         stg1_inthyp_nr, stg2_elemhyp,
+                         fDefaultWgtmatcpp(stg2_p.size()), test);
 }
 
-LocalPValues fadjpcpp(
-    const std::vector<double>& stg2_p,
-    const WeightMatrix& wgtmat,
-    const std::vector<size_t>& stg1_inthyp_nr,
-    const std::vector<size_t>& stg2_elemhyp,
-    const WeightMatrix& stg2_wgtmat,
-    const std::string& test) {
+LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
+                             const WeightMatrix &wgtmat,
+                             const std::vector<size_t> &stg1_inthyp_nr,
+                             const std::vector<size_t> &stg2_elemhyp,
+                             const WeightMatrix &stg2_wgtmat,
+                             const std::string &test) {
   const BoolMatrix family = fDefaultFamilycpp(wgtmat.inthyp.ncol);
-  return fadjpcpp(stg2_p, wgtmat, family, fDefaultCorrcpp(family),
-                  stg1_inthyp_nr, stg2_elemhyp, stg2_wgtmat, test);
+  return fPCStagewiseCpp(stg2_p, wgtmat, family, fDefaultCorrcpp(family),
+                         stg1_inthyp_nr, stg2_elemhyp, stg2_wgtmat, test);
 }
 
-LocalPValues fadjpcpp(
-    const std::vector<double>& stg2_p,
-    const WeightMatrix& wgtmat,
-    const BoolMatrix& family,
-    const std::vector<size_t>& stg1_inthyp_nr,
-    const std::vector<size_t>& stg2_elemhyp,
-    const WeightMatrix& stg2_wgtmat,
-    const std::string& test) {
-  return fadjpcpp(stg2_p, wgtmat, family, fDefaultCorrcpp(family),
-                  stg1_inthyp_nr, stg2_elemhyp, stg2_wgtmat, test);
+LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
+                             const WeightMatrix &wgtmat,
+                             const BoolMatrix &family,
+                             const std::vector<size_t> &stg1_inthyp_nr,
+                             const std::vector<size_t> &stg2_elemhyp,
+                             const WeightMatrix &stg2_wgtmat,
+                             const std::string &test) {
+  return fPCStagewiseCpp(stg2_p, wgtmat, family, fDefaultCorrcpp(family),
+                         stg1_inthyp_nr, stg2_elemhyp, stg2_wgtmat, test);
 }
-
 
 // [[Rcpp::export]]
-Rcpp::List fadjpRcpp(const std::vector<double>& stg2_p,
-                     const Rcpp::Nullable<Rcpp::List>& wgtmat,
-                     const Rcpp::Nullable<Rcpp::LogicalMatrix>& family,
-                     const Rcpp::Nullable<Rcpp::NumericMatrix>& corr,
-                     const std::vector<int>& stg1_inthyp_nr,
-                     const std::vector<int>& stg2_elemhyp,
-                     const Rcpp::Nullable<Rcpp::List>& stg2_wgtmat,
-                     const std::string& test = "dunnett") {
+Rcpp::List fPCStagewiseRcpp(const std::vector<double> &stg2_p,
+                            const Rcpp::Nullable<Rcpp::List> &wgtmat,
+                            const Rcpp::Nullable<Rcpp::LogicalMatrix> &family,
+                            const Rcpp::Nullable<Rcpp::NumericMatrix> &corr,
+                            const std::vector<int> &stg1_inthyp_nr,
+                            const std::vector<int> &stg2_elemhyp,
+                            const Rcpp::Nullable<Rcpp::List> &stg2_wgtmat,
+                            const std::string &test = "dunnett") {
   size_t m;
   if (!wgtmat.isNull()) {
     Rcpp::List wgtmat_list(wgtmat.get());
@@ -193,8 +185,7 @@ Rcpp::List fadjpRcpp(const std::vector<double>& stg2_p,
   }
   auto Jplus = validateConvertIdx(stg1_inthyp_nr, (size_t{1} << m) - 1,
                                   "stg1_inthyp_nr");
-  auto I2 = validateConvertIdx(stg2_elemhyp, m,
-                               "stg2_elemhyp");
+  auto I2 = validateConvertIdx(stg2_elemhyp, m, "stg2_elemhyp");
   WeightMatrix wgt_pair = fDefaultWgtmatcpp(m);
   if (!wgtmat.isNull()) {
     Rcpp::List wgtmat_list(wgtmat.get());
@@ -209,9 +200,10 @@ Rcpp::List fadjpRcpp(const std::vector<double>& stg2_p,
     stg2_wgt_pair.inthyp = stg2_wgtmat_ptr->get<IntMatrix>("inthyp");
     stg2_wgt_pair.wgtmat = stg2_wgtmat_ptr->get<FlatMatrix>("wgtmat");
   }
-  auto out = fadjpcpp(stg2_p, wgt_pair, family1, corr1, Jplus, I2,
-                      stg2_wgt_pair, test);
-  for (size_t& i : out.inthyp_idx) ++i;
+  auto out = fPCStagewiseCpp(stg2_p, wgt_pair, family1, corr1, Jplus, I2,
+                             stg2_wgt_pair, test);
+  for (size_t &i : out.inthyp_idx)
+    ++i;
   ListCpp result;
   result.push_back(std::move(out.inthyp_idx), "inthyp_idx");
   result.push_back(std::move(out.inthyp), "inthyp");
@@ -219,20 +211,20 @@ Rcpp::List fadjpRcpp(const std::vector<double>& stg2_p,
   return Rcpp::wrap(result);
 }
 
+PCStage1Result fPCStage1cpp(const LocalPValues &stg1_loc_p,
+                            const double alpha1) {
 
-PCStage1Result fPCStage1cpp(
-    const size_t m,
-    const LocalPValues& stg1_loc_p,
-    const double alpha1) {
-
+  size_t m = stg1_loc_p.inthyp.ncol;
   size_t ntests = (1 << m) - 1;
 
   // identify rejected intersection hypotheses
   std::vector<unsigned char> rejint(ntests, 0);
   std::vector<size_t> Jplus;
   for (size_t i = 0; i < ntests; ++i) {
-    if (stg1_loc_p.pinter[i] <= alpha1) rejint[i] = 1;
-    if (!rejint[i]) Jplus.push_back(i);
+    if (stg1_loc_p.pinter[i] <= alpha1)
+      rejint[i] = 1;
+    if (!rejint[i])
+      Jplus.push_back(i);
   }
 
   std::vector<unsigned char> rejind(m, 1);
@@ -262,18 +254,17 @@ PCStage1Result fPCStage1cpp(
   return PCStage1Result{std::move(I1r), std::move(Jplus), std::move(inthyp2)};
 }
 
-
 // [[Rcpp::export]]
-Rcpp::List fPCStage1Rcpp(const int m,
-                         const Rcpp::List& stg1_loc_p,
-                         const double alpha1) {
+Rcpp::List fPCStage1Rcpp(const Rcpp::List &stg1_loc_p, const double alpha1) {
   ListPtr stg1_loc_p_ptr = listcpp_from_rlist(stg1_loc_p);
   LocalPValues stg1_loc_p_pair;
   stg1_loc_p_pair.inthyp = stg1_loc_p_ptr->get<IntMatrix>("inthyp");
   stg1_loc_p_pair.pinter = stg1_loc_p_ptr->get<std::vector<double>>("pinter");
-  auto out = fPCStage1cpp(static_cast<size_t>(m), stg1_loc_p_pair, alpha1);
-  for (size_t& i : out.stg1_elemhyp_r_idx) ++i;
-  for (size_t& i : out.stg1_inthyp_nr_idx) ++i;
+  auto out = fPCStage1cpp(stg1_loc_p_pair, alpha1);
+  for (size_t &i : out.stg1_elemhyp_r_idx)
+    ++i;
+  for (size_t &i : out.stg1_inthyp_nr_idx)
+    ++i;
   ListCpp result;
   result.push_back(std::move(out.stg1_elemhyp_r_idx), "stg1_elemhyp_r_idx");
   result.push_back(std::move(out.stg1_inthyp_nr_idx), "stg1_inthyp_nr_idx");
@@ -281,14 +272,11 @@ Rcpp::List fPCStage1Rcpp(const int m,
   return Rcpp::wrap(result);
 }
 
-
-PCStage2Result fPCrejcpp(
-    const std::vector<size_t>& stg1_elemhyp_r_idx,
-    const std::vector<size_t>& stg2_elemhyp_idx,
-    const LocalPValues& stg1_loc_p,
-    const LocalPValues& stg2_loc_p,
-    const double alpha,
-    const double info_frac) {
+PCStage2Result fPCRejCpp(const LocalPValues &stg1_loc_p,
+                         const LocalPValues &stg2_loc_p,
+                         const std::vector<size_t> &stg1_elemhyp_r_idx,
+                         const std::vector<size_t> &stg2_elemhyp_idx,
+                         const double alpha, const double info_frac) {
 
   size_t m = stg1_loc_p.inthyp.ncol;
   size_t m2 = stg2_elemhyp_idx.size();
@@ -299,23 +287,25 @@ PCStage2Result fPCrejcpp(
 
   std::vector<double> stg1_pinter(s);
   std::vector<double> stg2_pinter(s);
-  std::vector<double> cum_pinter(s);
+  std::vector<double> comb_pinter(s);
   std::vector<int> rej_inter(s, 0);
   for (size_t index = 0; index < s; ++index) {
     size_t i = stg2_loc_p.inthyp_idx[index];
     stg1_pinter[index] = stg1_loc_p.pinter[i];
     stg2_pinter[index] = stg2_loc_p.pinter[index];
-    cum_pinter[index] = 1.0 - boost_pnorm(
-      sqrtt * boost_qnorm(1.0 - stg1_pinter[index]) +
-        sqrt1minust * boost_qnorm(1.0 - stg2_pinter[index]));
-    if (cum_pinter[index] <= alpha) {
+    comb_pinter[index] =
+        1.0 - boost_pnorm(sqrtt * boost_qnorm(1.0 - stg1_pinter[index]) +
+                          sqrt1minust * boost_qnorm(1.0 - stg2_pinter[index]));
+    if (comb_pinter[index] <= alpha) {
       rej_inter[index] = 1;
     }
   }
 
   std::vector<int> rej_elem(m);
-  for (int i : stg1_elemhyp_r_idx) rej_elem[i] = 1;
-  for (int i : stg2_elemhyp_idx) rej_elem[i] = 1;
+  for (int i : stg1_elemhyp_r_idx)
+    rej_elem[i] = 1;
+  for (int i : stg2_elemhyp_idx)
+    rej_elem[i] = 1;
   for (size_t index = 0; index < s; ++index) {
     if (!rej_inter[index]) {
       for (size_t j2 = 0; j2 < m2; ++j2) {
@@ -332,20 +322,17 @@ PCStage2Result fPCrejcpp(
   result.inthyp = stg2_loc_p.inthyp;
   result.stg1_pinter = std::move(stg1_pinter);
   result.stg2_pinter = std::move(stg2_pinter);
-  result.cum_pinter = std::move(cum_pinter);
+  result.comb_pinter = std::move(comb_pinter);
   result.rej_elem = std::move(rej_elem);
   return result;
 }
 
-
 // [[Rcpp::export]]
-Rcpp::List fPCrejRcpp(
-    const std::vector<int>& stg1_elemhyp_r_idx,
-    const std::vector<int>& stg2_elemhyp_idx,
-    const Rcpp::List& stg1_loc_p,
-    const Rcpp::List& stg2_loc_p,
-    const double alpha,
-    const double info_frac) {
+Rcpp::List fPCRejRcpp(const Rcpp::List &stg1_loc_p,
+                      const Rcpp::List &stg2_loc_p,
+                      const std::vector<int> &stg1_elemhyp_r_idx,
+                      const std::vector<int> &stg2_elemhyp_idx,
+                      const double alpha, const double info_frac) {
 
   ListPtr stg1_loc_p_ptr = listcpp_from_rlist(stg1_loc_p);
   LocalPValues stg1_loc_p_tuple;
@@ -354,45 +341,43 @@ Rcpp::List fPCrejRcpp(
   int m = stg1_loc_p_tuple.inthyp.ncol;
   int ntests = stg1_loc_p_tuple.pinter.size();
   auto stg1_inthyp_idx = stg1_loc_p_ptr->get<std::vector<int>>("inthyp_idx");
-  stg1_loc_p_tuple.inthyp_idx = validateConvertIdx(stg1_inthyp_idx, ntests,
-                                                   "stg1_inthyp_idx");
+  stg1_loc_p_tuple.inthyp_idx =
+      validateConvertIdx(stg1_inthyp_idx, ntests, "stg1_inthyp_idx");
 
   ListPtr stg2_loc_p_ptr = listcpp_from_rlist(stg2_loc_p);
   LocalPValues stg2_loc_p_tuple;
   stg2_loc_p_tuple.inthyp = stg2_loc_p_ptr->get<IntMatrix>("inthyp");
   stg2_loc_p_tuple.pinter = stg2_loc_p_ptr->get<std::vector<double>>("pinter");
   auto stg2_inthyp_idx = stg2_loc_p_ptr->get<std::vector<int>>("inthyp_idx");
-  stg2_loc_p_tuple.inthyp_idx = validateConvertIdx(stg2_inthyp_idx, ntests,
-                                                   "stg2_inthyp_idx");
+  stg2_loc_p_tuple.inthyp_idx =
+      validateConvertIdx(stg2_inthyp_idx, ntests, "stg2_inthyp_idx");
 
   auto I1r = validateConvertIdx(stg1_elemhyp_r_idx, m, "stg1_elemhyp_r_idx");
-  auto I2 = validateConvertIdx(stg2_elemhyp_idx, m,"stg2_elemhyp_idx");
-  auto out = fPCrejcpp(I1r, I2, stg1_loc_p_tuple, stg2_loc_p_tuple,
-                       alpha, info_frac);
-  for (size_t& i : out.stg1_inthyp_nr_idx) ++i;
-  for (size_t& i : out.stg2_elemhyp_idx) ++i;
+  auto I2 = validateConvertIdx(stg2_elemhyp_idx, m, "stg2_elemhyp_idx");
+  auto out =
+      fPCRejCpp(stg1_loc_p_tuple, stg2_loc_p_tuple, I1r, I2, alpha, info_frac);
+  for (size_t &i : out.stg1_inthyp_nr_idx)
+    ++i;
+  for (size_t &i : out.stg2_elemhyp_idx)
+    ++i;
   ListCpp result;
   result.push_back(std::move(out.stg1_inthyp_nr_idx), "stg1_inthyp_nr_idx");
   result.push_back(std::move(out.stg2_elemhyp_idx), "stg2_elemhyp_idx");
   result.push_back(std::move(out.inthyp), "inthyp");
   result.push_back(std::move(out.stg1_pinter), "stg1_pinter");
   result.push_back(std::move(out.stg2_pinter), "stg2_pinter");
-  result.push_back(std::move(out.cum_pinter), "cum_pinter");
+  result.push_back(std::move(out.comb_pinter), "comb_pinter");
   result.push_back(std::move(out.rej_elem), "rej_elem");
   return Rcpp::wrap(result);
 }
 
-
 // Helper to compute adjusted p-values for Dunnett-based graphical approaches
-StageBoundaries fStageBoundcpp(
-    const size_t m,
-    const WeightMatrix& wgtmat,
-    const BoolMatrix& family,
-    const FlatMatrix& corr,
-    const double alpha,
-    const double alpha1,
-    const double info_frac) {
+StageBoundaries fCERStageBoundCpp(const WeightMatrix &wgtmat,
+                                  const BoolMatrix &family,
+                                  const FlatMatrix &corr, const double alpha,
+                                  const double alpha1, const double info_frac) {
 
+  size_t m = wgtmat.inthyp.ncol;
   size_t ntests = (1 << m) - 1;
   size_t nfams = family.nrow;
 
@@ -441,7 +426,8 @@ StageBoundaries fStageBoundcpp(
     for (size_t h = 0; h < nfams; ++h) {
       J_h.clear();
       for (size_t j : J) {
-        if (family(h,j)) J_h.push_back(j);
+        if (family(h, j))
+          J_h.push_back(j);
       }
       J_h_list[h] = J_h;
 
@@ -465,15 +451,15 @@ StageBoundaries fStageBoundcpp(
         }
         sigma1_list[h] = sigma1;
 
-        lower2.resize(2*k);
-        lower2.assign(2*k, -POS_INF);
+        lower2.resize(2 * k);
+        lower2.assign(2 * k, -POS_INF);
         lower2_list[h] = lower2;
 
-        mean2.resize(2*k);
-        mean2.assign(2*k, 0.0);
+        mean2.resize(2 * k);
+        mean2.assign(2 * k, 0.0);
         mean2_list[h] = mean2;
 
-        sigma2.resize(2*k, 2*k);
+        sigma2.resize(2 * k, 2 * k);
         for (size_t t1 = 0; t1 < k; ++t1) {
           for (size_t t2 = 0; t2 < k; ++t2) {
             size_t j1 = J_h[t1];
@@ -496,9 +482,9 @@ StageBoundaries fStageBoundcpp(
         J_h = J_h_list[h];
         size_t k = J_h.size();
         if (k > 0) {
-          const auto& lower1ref = lower1_list[h];
-          const auto& mean1ref = mean1_list[h];
-          const auto& sigma1ref = sigma1_list[h];
+          const auto &lower1ref = lower1_list[h];
+          const auto &mean1ref = mean1_list[h];
+          const auto &sigma1ref = sigma1_list[h];
 
           upper1.resize(k);
           for (size_t t = 0; t < k; ++t) {
@@ -532,9 +518,9 @@ StageBoundaries fStageBoundcpp(
         if (k > 0) {
           double v2;
           if (stg1Unconstrained) {
-            const auto& lower1ref = lower1_list[h];
-            const auto& mean1ref = mean1_list[h];
-            const auto& sigma1ref = sigma1_list[h];
+            const auto &lower1ref = lower1_list[h];
+            const auto &mean1ref = mean1_list[h];
+            const auto &sigma1ref = sigma1_list[h];
 
             upper1.resize(k);
             for (size_t t = 0; t < k; ++t) {
@@ -544,11 +530,11 @@ StageBoundaries fStageBoundcpp(
 
             v2 = pmvnormcpp(lower1ref, upper1, mean1ref, sigma1ref).prob;
           } else {
-            const auto& lower2ref = lower2_list[h];
-            const auto& mean2ref = mean2_list[h];
-            const auto& sigma2ref = sigma2_list[h];
+            const auto &lower2ref = lower2_list[h];
+            const auto &mean2ref = mean2_list[h];
+            const auto &sigma2ref = sigma2_list[h];
 
-            upper2.resize(2*k);
+            upper2.resize(2 * k);
             for (size_t t = 0; t < k; ++t) {
               size_t j = J_h[t];
               upper2[t] = boost_qnorm(1.0 - wgtmat.wgtmat(i, j) * cJ1[i]);
@@ -578,29 +564,24 @@ StageBoundaries fStageBoundcpp(
     }
   } // end subsets
 
-  return StageBoundaries{
-    std::move(wgtmat.inthyp), std::move(cJ1), std::move(cJ2),
-    std::move(wcJ1), std::move(wcJ2)
-  };
+  return StageBoundaries{std::move(wgtmat.inthyp), std::move(cJ1),
+                         std::move(cJ2), std::move(wcJ1), std::move(wcJ2)};
 }
 
-
 // [[Rcpp::export]]
-Rcpp::List fStageBoundRcpp(const int m,
-                           const Rcpp::List& wgtmat,
-                           const Rcpp::LogicalMatrix& family,
-                           const Rcpp::NumericMatrix& corr,
-                           const double alpha,
-                           const double alpha1,
-                           const double info_frac) {
+Rcpp::List fCERStageBoundRcpp(const Rcpp::List &wgtmat,
+                              const Rcpp::LogicalMatrix &family,
+                              const Rcpp::NumericMatrix &corr,
+                              const double alpha, const double alpha1,
+                              const double info_frac) {
   ListPtr wgtmat_ptr = listcpp_from_rlist(wgtmat);
   WeightMatrix wgt_pair;
   wgt_pair.inthyp = wgtmat_ptr->get<IntMatrix>("inthyp");
   wgt_pair.wgtmat = wgtmat_ptr->get<FlatMatrix>("wgtmat");
   auto family1 = boolmatrix_from_Rmatrix(family);
   auto corr1 = flatmatrix_from_Rmatrix(corr);
-  auto out = fStageBoundcpp(static_cast<size_t>(m), wgt_pair, family1, corr1,
-                            alpha, alpha1, info_frac);
+  auto out =
+      fCERStageBoundCpp(wgt_pair, family1, corr1, alpha, alpha1, info_frac);
   ListCpp result;
   result.push_back(std::move(out.inthyp), "inthyp");
   result.push_back(std::move(out.stg1_coef), "stg1_coef");
@@ -610,18 +591,13 @@ Rcpp::List fStageBoundRcpp(const int m,
   return Rcpp::wrap(result);
 }
 
-
 // Helper to compute adjusted p-values for Dunnett-based graphical approaches
-CER fCERcpp(
-    const size_t m,
-    const WeightMatrix& wgtmat,
-    const BoolMatrix& family,
-    const FlatMatrix& corr,
-    const double info_frac,
-    const FlatMatrix& stg1_bnd,
-    const FlatMatrix& stg2_bnd,
-    const std::vector<double>& stg1_p) {
+CER fCERCerCpp(const std::vector<double> &stg1_p, const WeightMatrix &wgtmat,
+               const BoolMatrix &family, const FlatMatrix &corr,
+               const double info_frac, const FlatMatrix &stg1_bnd,
+               const FlatMatrix &stg2_bnd) {
 
+  size_t m = wgtmat.inthyp.ncol;
   size_t ntests = (1 << m) - 1;
   size_t nfams = family.nrow;
 
@@ -639,7 +615,8 @@ CER fCERcpp(
         break;
       }
     }
-    if (!rejint[i]) Jplus.push_back(i);
+    if (!rejint[i])
+      Jplus.push_back(i);
   }
 
   std::vector<unsigned char> rejind(m, 1);
@@ -682,7 +659,8 @@ CER fCERcpp(
     for (size_t h = 0; h < nfams; ++h) {
       J_h.clear();
       for (size_t j : J) {
-        if (family(h,j)) J_h.push_back(j);
+        if (family(h, j))
+          J_h.push_back(j);
       }
 
       size_t k = J_h.size();
@@ -720,20 +698,16 @@ CER fCERcpp(
   } // end subsets
 
   return CER{std::move(I1r), std::move(Jplus), std::move(inthyp2),
-             std::move(bJ)
-  };
+             std::move(bJ)};
 }
 
-
 // [[Rcpp::export]]
-Rcpp::List fCERRcpp(const int m,
-                    const Rcpp::List& wgtmat,
-                    const Rcpp::LogicalMatrix& family,
-                    const Rcpp::NumericMatrix& corr,
-                    const double info_frac,
-                    const Rcpp::NumericMatrix& stg1_bnd,
-                    const Rcpp::NumericMatrix& stg2_bnd,
-                    const std::vector<double>& stg1_p) {
+Rcpp::List fCERCerRcpp(const std::vector<double> &stg1_p,
+                       const Rcpp::List &wgtmat,
+                       const Rcpp::LogicalMatrix &family,
+                       const Rcpp::NumericMatrix &corr, const double info_frac,
+                       const Rcpp::NumericMatrix &stg1_bnd,
+                       const Rcpp::NumericMatrix &stg2_bnd) {
   ListPtr wgtmat_ptr = listcpp_from_rlist(wgtmat);
   WeightMatrix wgt_pair;
   wgt_pair.inthyp = wgtmat_ptr->get<IntMatrix>("inthyp");
@@ -742,11 +716,13 @@ Rcpp::List fCERRcpp(const int m,
   auto corr1 = flatmatrix_from_Rmatrix(corr);
   auto stg1_bnd1 = flatmatrix_from_Rmatrix(stg1_bnd);
   auto stg2_bnd1 = flatmatrix_from_Rmatrix(stg2_bnd);
-  auto out = fCERcpp(static_cast<size_t>(m), wgt_pair, family1,
-                     corr1, info_frac, stg1_bnd1, stg2_bnd1, stg1_p);
+  auto out = fCERCerCpp(stg1_p, wgt_pair, family1, corr1, info_frac, stg1_bnd1,
+                        stg2_bnd1);
   // convert to 1-based indices
-  for (size_t& i : out.stg1_elemhyp_r_idx) ++i;
-  for (size_t& i : out.stg1_inthyp_nr_idx) ++i;
+  for (size_t &i : out.stg1_elemhyp_r_idx)
+    ++i;
+  for (size_t &i : out.stg1_inthyp_nr_idx)
+    ++i;
   ListCpp result;
   result.push_back(std::move(out.stg1_elemhyp_r_idx), "stg1_elemhyp_r_idx");
   result.push_back(std::move(out.stg1_inthyp_nr_idx), "stg1_inthyp_nr_idx");
@@ -755,20 +731,16 @@ Rcpp::List fCERRcpp(const int m,
   return Rcpp::wrap(result);
 }
 
-
 // Helper to compute adjusted p-values for Dunnett-based graphical approaches
-AdjustedBoundaries fNewBoundcpp(
-    const size_t m,
-    const WeightMatrix& wgtmat,
-    const BoolMatrix& family,
-    const FlatMatrix& corr,
-    const std::vector<double>& stg1_p,
-    const std::vector<size_t>& stg1_inthyp_nr_idx,
-    const std::vector<double>& CER,
-    const std::vector<size_t>& stg2_elemhyp_idx,
-    const WeightMatrix& stg2_wgtmat,
-    const double info_frac_new) {
+AdjustedBoundaries
+fCERNewBoundCpp(const std::vector<double> &stg1_p, const WeightMatrix &wgtmat,
+                const BoolMatrix &family, const FlatMatrix &corr,
+                const std::vector<size_t> &stg1_inthyp_nr_idx,
+                const std::vector<double> &CER,
+                const std::vector<size_t> &stg2_elemhyp_idx,
+                const WeightMatrix &stg2_wgtmat, const double info_frac_new) {
 
+  size_t m = wgtmat.inthyp.ncol;
   size_t nfams = family.nrow;
   size_t m2 = stg2_elemhyp_idx.size();
   size_t ntests2 = (1 << m2) - 1;
@@ -816,7 +788,8 @@ AdjustedBoundaries fNewBoundcpp(
 
       size_t i2 = 0;
       for (size_t j2 = 0; j2 < m2; ++j2) {
-        if (cc2[j2]) i2 |= (1 << (m2 - 1 - j2));
+        if (cc2[j2])
+          i2 |= (1 << (m2 - 1 - j2));
       }
       i2 = ntests2 - i2;
 
@@ -834,7 +807,8 @@ AdjustedBoundaries fNewBoundcpp(
       for (size_t h = 0; h < nfams; ++h) {
         J2_h.clear();
         for (size_t j2 : J2) {
-          if (family(h, stg2_elemhyp_idx[j2])) J2_h.push_back(j2);
+          if (family(h, stg2_elemhyp_idx[j2]))
+            J2_h.push_back(j2);
         }
         J2_h_list[h] = J2_h;
 
@@ -850,7 +824,7 @@ AdjustedBoundaries fNewBoundcpp(
               size_t j1 = J2_h[t1];
               size_t j2 = J2_h[t2];
               sigma(t1, t2) = (1.0 - info_frac_new) *
-                corr(stg2_elemhyp_idx[j1], stg2_elemhyp_idx[j2]);
+                              corr(stg2_elemhyp_idx[j1], stg2_elemhyp_idx[j2]);
             }
           }
           sigma_list[h] = sigma;
@@ -863,14 +837,15 @@ AdjustedBoundaries fNewBoundcpp(
           J2_h = J2_h_list[h];
           size_t k = J2_h.size();
           if (k > 0) {
-            const auto& lowerref = lower_list[h];
-            const auto& sigmaref = sigma_list[h];
+            const auto &lowerref = lower_list[h];
+            const auto &sigmaref = sigma_list[h];
 
             mean.resize(k);
             upper.resize(k);
             for (size_t t = 0; t < k; ++t) {
               size_t j2 = J2_h[t];
-              mean[t] = sqrttnew * boost_qnorm(1.0 - stg1_p[stg2_elemhyp_idx[j2]]);
+              mean[t] =
+                  sqrttnew * boost_qnorm(1.0 - stg1_p[stg2_elemhyp_idx[j2]]);
               upper[t] = boost_qnorm(1.0 - stg2_wgtmat.wgtmat(i2, j2) * c);
             }
 
@@ -889,8 +864,8 @@ AdjustedBoundaries fNewBoundcpp(
         if (k > 0) {
           for (size_t t = 0; t < k; ++t) {
             size_t j2 = J2_h[t];
-            wcJ2(index, stg2_elemhyp_idx[j2]) = stg2_wgtmat.wgtmat(i2, j2) *
-              cJ2[index];
+            wcJ2(index, stg2_elemhyp_idx[j2]) =
+                stg2_wgtmat.wgtmat(i2, j2) * cJ2[index];
           }
         }
       }
@@ -900,31 +875,27 @@ AdjustedBoundaries fNewBoundcpp(
   }
 
   return AdjustedBoundaries{std::move(inthyp2), std::move(cJ2),
-                            std::move(wcJ2)
-  };
+                            std::move(wcJ2)};
 }
 
-
 // [[Rcpp::export]]
-Rcpp::List fNewBoundRcpp(const int m,
-                         const Rcpp::List& wgtmat,
-                         const Rcpp::LogicalMatrix& family,
-                         const Rcpp::NumericMatrix& corr,
-                         const std::vector<double>& stg1_p,
-                         const std::vector<int>& stg1_inthyp_nr_idx,
-                         const std::vector<double>& CER,
-                         const std::vector<int>& stg2_elemhyp_idx,
-                         const Rcpp::List& stg2_wgtmat,
-                         const double info_frac_new) {
+Rcpp::List fCERNewBoundRcpp(
+    const std::vector<double> &stg1_p, const Rcpp::List &wgtmat,
+    const Rcpp::LogicalMatrix &family, const Rcpp::NumericMatrix &corr,
+    const std::vector<int> &stg1_inthyp_nr_idx, const std::vector<double> &CER,
+    const std::vector<int> &stg2_elemhyp_idx, const Rcpp::List &stg2_wgtmat,
+    const double info_frac_new) {
 
   ListPtr wgtmat_ptr = listcpp_from_rlist(wgtmat);
   WeightMatrix wgt_pair;
   wgt_pair.inthyp = wgtmat_ptr->get<IntMatrix>("inthyp");
   wgt_pair.wgtmat = wgtmat_ptr->get<FlatMatrix>("wgtmat");
 
+  int m = wgtmat_ptr->get<IntMatrix>("inthyp").ncol;
   int ntests = (1 << m) - 1;
 
-  auto Jplus = validateConvertIdx(stg1_inthyp_nr_idx, ntests, "stg1_inthyp_nr_idx");
+  auto Jplus =
+      validateConvertIdx(stg1_inthyp_nr_idx, ntests, "stg1_inthyp_nr_idx");
   auto I2 = validateConvertIdx(stg2_elemhyp_idx, m, "stg2_elemhyp_idx");
 
   ListPtr wgtmat2_ptr = listcpp_from_rlist(stg2_wgtmat);
@@ -933,8 +904,8 @@ Rcpp::List fNewBoundRcpp(const int m,
   wgt2_pair.wgtmat = wgtmat2_ptr->get<FlatMatrix>("wgtmat");
   auto family1 = boolmatrix_from_Rmatrix(family);
   auto corr1 = flatmatrix_from_Rmatrix(corr);
-  auto out = fNewBoundcpp(static_cast<size_t>(m), wgt_pair, family1, corr1,
-                          stg1_p, Jplus, CER, I2, wgt2_pair, info_frac_new);
+  auto out = fCERNewBoundCpp(stg1_p, wgt_pair, family1, corr1, Jplus, CER, I2,
+                             wgt2_pair, info_frac_new);
   ListCpp result;
   result.push_back(std::move(out.inthyp), "inthyp");
   result.push_back(std::move(out.stg2_coef_new), "stg2_coef_new");
@@ -942,13 +913,11 @@ Rcpp::List fNewBoundRcpp(const int m,
   return Rcpp::wrap(result);
 }
 
-
-std::vector<int> fCERrejcpp(
-    const std::vector<size_t>& stg1_elemhyp_r_idx,
-    const std::vector<size_t>& stg2_elemhyp_idx,
-    const IntMatrix& stg2_inthyp,
-    const FlatMatrix& stg2_bnd_new,
-    const std::vector<double>& cum_p) {
+std::vector<int> fCERRejCpp(const std::vector<double> &cum_p,
+                            const std::vector<size_t> &stg1_elemhyp_r_idx,
+                            const std::vector<size_t> &stg2_elemhyp_idx,
+                            const IntMatrix &stg2_inthyp,
+                            const FlatMatrix &stg2_bnd_new) {
 
   size_t s = stg2_inthyp.nrow;
   size_t m = stg2_inthyp.ncol;
@@ -965,8 +934,10 @@ std::vector<int> fCERrejcpp(
   }
 
   std::vector<int> rej_elem(m);
-  for (int i : stg1_elemhyp_r_idx) rej_elem[i] = 1;
-  for (int i : stg2_elemhyp_idx) rej_elem[i] = 1;
+  for (int i : stg1_elemhyp_r_idx)
+    rej_elem[i] = 1;
+  for (int i : stg2_elemhyp_idx)
+    rej_elem[i] = 1;
   for (size_t index = 0; index < s; ++index) {
     if (!rej_inter[index]) {
       for (size_t j2 = 0; j2 < m2; ++j2) {
@@ -980,14 +951,12 @@ std::vector<int> fCERrejcpp(
   return rej_elem;
 }
 
-
 // [[Rcpp::export]]
-Rcpp::LogicalVector fCERrejRcpp(
-    const std::vector<int>& stg1_elemhyp_r_idx,
-    const std::vector<int>& stg2_elemhyp_idx,
-    const Rcpp::IntegerMatrix& stg2_inthyp,
-    const Rcpp::NumericMatrix& stg2_bnd_new,
-    const std::vector<double>& cum_p) {
+Rcpp::LogicalVector fCERRejRcpp(const std::vector<double> &cum_p,
+                                const std::vector<int> &stg1_elemhyp_r_idx,
+                                const std::vector<int> &stg2_elemhyp_idx,
+                                const Rcpp::IntegerMatrix &stg2_inthyp,
+                                const Rcpp::NumericMatrix &stg2_bnd_new) {
 
   int m = stg2_inthyp.ncol();
   auto I1r = validateConvertIdx(stg1_elemhyp_r_idx, m, "stg1_elemhyp_r_idx");
@@ -995,6 +964,6 @@ Rcpp::LogicalVector fCERrejRcpp(
   auto inthyp2 = intmatrix_from_Rmatrix(stg2_inthyp);
   auto wcJ2 = flatmatrix_from_Rmatrix(stg2_bnd_new);
 
-  auto out = fCERrejcpp(I1r, I2, inthyp2, wcJ2, cum_p);
+  auto out = fCERRejCpp(cum_p, I1r, I2, inthyp2, wcJ2);
   return Rcpp::wrap(out);
 }

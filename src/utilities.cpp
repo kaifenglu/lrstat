@@ -15,40 +15,49 @@
 #include <vector>     // vector
 
 #include <Rcpp.h>
-#include <boost/math/distributions/normal.hpp>
-#include <boost/math/distributions/logistic.hpp>
-#include <boost/math/distributions/extreme_value.hpp>
 #include <boost/math/distributions/chi_squared.hpp>
+#include <boost/math/distributions/extreme_value.hpp>
+#include <boost/math/distributions/logistic.hpp>
+#include <boost/math/distributions/normal.hpp>
 #include <boost/math/distributions/students_t.hpp>
 #include <boost/math/quadrature/tanh_sinh.hpp>
 #include <boost/math/tools/minima.hpp>
 
 using std::size_t;
 
-
 double boost_pnorm(double q, double mean, double sd, bool lower_tail) {
-  if (std::isnan(q)) return std::numeric_limits<double>::quiet_NaN();
-  if (sd <= 0) throw std::invalid_argument("Standard deviation must be positive.");
+  if (std::isnan(q))
+    return std::numeric_limits<double>::quiet_NaN();
+  if (sd <= 0)
+    throw std::invalid_argument("Standard deviation must be positive.");
 
   double z = (q - mean) / sd;
   if (lower_tail) {
-    if (z <= -EXTREME_Z) return 0.0;
-    if (z >= EXTREME_Z) return 1.0;
+    if (z <= -EXTREME_Z)
+      return 0.0;
+    if (z >= EXTREME_Z)
+      return 1.0;
   } else {
-    if (z >= EXTREME_Z) return 0.0;
-    if (z <= -EXTREME_Z) return 1.0;
+    if (z >= EXTREME_Z)
+      return 0.0;
+    if (z <= -EXTREME_Z)
+      return 1.0;
   }
 
   boost::math::normal_distribution<> dist(mean, sd);
-  if (lower_tail) return boost::math::cdf(dist, q);
-  else return boost::math::cdf(boost::math::complement(dist, q));
+  if (lower_tail)
+    return boost::math::cdf(dist, q);
+  else
+    return boost::math::cdf(boost::math::complement(dist, q));
 }
 
 double boost_qnorm(double p, double mean, double sd, bool lower_tail) {
-  if (std::isnan(p)) return std::numeric_limits<double>::quiet_NaN();
-  if (sd <= 0) throw std::invalid_argument("Standard deviation must be positive.");
-  if (p < 0.0 || p > 1.0) throw std::invalid_argument(
-      "Probability must be between 0 and 1.");
+  if (std::isnan(p))
+    return std::numeric_limits<double>::quiet_NaN();
+  if (sd <= 0)
+    throw std::invalid_argument("Standard deviation must be positive.");
+  if (p < 0.0 || p > 1.0)
+    throw std::invalid_argument("Probability must be between 0 and 1.");
 
   // Clamp extreme probabilities to avoid overflow in boost::math::quantile
   bool at_extreme = false;
@@ -80,108 +89,141 @@ double boost_qnorm(double p, double mean, double sd, bool lower_tail) {
 
   // Safe to call boost quantile
   boost::math::normal_distribution<> dist(mean, sd);
-  return lower_tail ? boost::math::quantile(dist, p) :
-    boost::math::quantile(dist, 1.0 - p);
+  return lower_tail ? boost::math::quantile(dist, p)
+                    : boost::math::quantile(dist, 1.0 - p);
 }
 
 double boost_dnorm(double x, double mean, double sd) {
-  if (std::isnan(x)) return std::numeric_limits<double>::quiet_NaN();
-  if (sd <= 0) throw std::invalid_argument("Standard deviation must be positive.");
+  if (std::isnan(x))
+    return std::numeric_limits<double>::quiet_NaN();
+  if (sd <= 0)
+    throw std::invalid_argument("Standard deviation must be positive.");
   boost::math::normal_distribution<> dist(mean, sd);
   return boost::math::pdf(dist, x);
 }
 
 double boost_plogis(double q, double location, double scale, bool lower_tail) {
-  if (std::isnan(q)) return std::numeric_limits<double>::quiet_NaN();
-  if (scale <= 0) throw std::invalid_argument("Scale must be positive.");
+  if (std::isnan(q))
+    return std::numeric_limits<double>::quiet_NaN();
+  if (scale <= 0)
+    throw std::invalid_argument("Scale must be positive.");
   boost::math::logistic_distribution<> dist(location, scale);
-  if (lower_tail) return boost::math::cdf(dist, q);
-  else return boost::math::cdf(boost::math::complement(dist, q));
+  if (lower_tail)
+    return boost::math::cdf(dist, q);
+  else
+    return boost::math::cdf(boost::math::complement(dist, q));
 }
 
 double boost_qlogis(double p, double location, double scale, bool lower_tail) {
-  if (std::isnan(p)) return std::numeric_limits<double>::quiet_NaN();
-  if (scale <= 0) throw std::invalid_argument("Scale must be positive.");
-  if (p < 0.0 || p > 1.0) throw std::invalid_argument(
-      "Probability must be between 0 and 1.");
+  if (std::isnan(p))
+    return std::numeric_limits<double>::quiet_NaN();
+  if (scale <= 0)
+    throw std::invalid_argument("Scale must be positive.");
+  if (p < 0.0 || p > 1.0)
+    throw std::invalid_argument("Probability must be between 0 and 1.");
   boost::math::logistic_distribution<> dist(location, scale);
-  return lower_tail ? boost::math::quantile(dist, p) :
-    boost::math::quantile(dist, 1.0 - p);
+  return lower_tail ? boost::math::quantile(dist, p)
+                    : boost::math::quantile(dist, 1.0 - p);
 }
 
 double boost_dlogis(double x, double location, double scale) {
-  if (std::isnan(x)) return std::numeric_limits<double>::quiet_NaN();
-  if (scale <= 0) throw std::invalid_argument("Scale must be positive.");
+  if (std::isnan(x))
+    return std::numeric_limits<double>::quiet_NaN();
+  if (scale <= 0)
+    throw std::invalid_argument("Scale must be positive.");
   boost::math::logistic_distribution<> dist(location, scale);
   return boost::math::pdf(dist, x);
 }
 
-double boost_pextreme(double q, double location, double scale, bool lower_tail) {
-  if (std::isnan(q)) return std::numeric_limits<double>::quiet_NaN();
-  if (scale <= 0) throw std::invalid_argument("Scale must be positive.");
+double boost_pextreme(double q, double location, double scale,
+                      bool lower_tail) {
+  if (std::isnan(q))
+    return std::numeric_limits<double>::quiet_NaN();
+  if (scale <= 0)
+    throw std::invalid_argument("Scale must be positive.");
   boost::math::extreme_value_distribution<> dist(location, scale);
   // keep semantics consistent with complementary log-log link
-  if (lower_tail) return boost::math::cdf(complement(dist, 2.0 * location - q));
-  else return boost::math::cdf(dist, 2.0 * location - q);
+  if (lower_tail)
+    return boost::math::cdf(complement(dist, 2.0 * location - q));
+  else
+    return boost::math::cdf(dist, 2.0 * location - q);
 }
 
-double boost_qextreme(double p, double location, double scale, bool lower_tail) {
-  if (std::isnan(p)) return std::numeric_limits<double>::quiet_NaN();
-  if (scale <= 0) throw std::invalid_argument("Scale must be positive.");
-  if (p < 0.0 || p > 1.0) throw std::invalid_argument(
-      "Probability must be between 0 and 1.");
+double boost_qextreme(double p, double location, double scale,
+                      bool lower_tail) {
+  if (std::isnan(p))
+    return std::numeric_limits<double>::quiet_NaN();
+  if (scale <= 0)
+    throw std::invalid_argument("Scale must be positive.");
+  if (p < 0.0 || p > 1.0)
+    throw std::invalid_argument("Probability must be between 0 and 1.");
   boost::math::extreme_value_distribution<> dist(location, scale);
-  return lower_tail? -boost::math::quantile(complement(dist, p)) :
-    -boost::math::quantile(complement(dist, 1.0 - p));
+  return lower_tail ? -boost::math::quantile(complement(dist, p))
+                    : -boost::math::quantile(complement(dist, 1.0 - p));
 }
 
 double boost_dextreme(double x, double location, double scale) {
-  if (std::isnan(x)) return std::numeric_limits<double>::quiet_NaN();
-  if (scale <= 0) throw std::invalid_argument("Scale must be positive.");
+  if (std::isnan(x))
+    return std::numeric_limits<double>::quiet_NaN();
+  if (scale <= 0)
+    throw std::invalid_argument("Scale must be positive.");
   boost::math::extreme_value_distribution<> dist(location, scale);
   return boost::math::pdf(dist, -x);
 }
 
 double boost_pchisq(double q, double df, bool lower_tail) {
-  if (std::isnan(q)) return std::numeric_limits<double>::quiet_NaN();
-  if (df <= 0) throw std::invalid_argument("Degrees of freedom must be positive.");
+  if (std::isnan(q))
+    return std::numeric_limits<double>::quiet_NaN();
+  if (df <= 0)
+    throw std::invalid_argument("Degrees of freedom must be positive.");
   if (std::isinf(q)) {
-    if (q > 0.0) return lower_tail ? 1.0 : 0.0;
-    else return lower_tail ? 0.0 : 1.0;
+    if (q > 0.0)
+      return lower_tail ? 1.0 : 0.0;
+    else
+      return lower_tail ? 0.0 : 1.0;
   }
   boost::math::chi_squared_distribution<> dist(df);
-  if (lower_tail) return boost::math::cdf(dist, q);
-  else return boost::math::cdf(boost::math::complement(dist, q));
+  if (lower_tail)
+    return boost::math::cdf(dist, q);
+  else
+    return boost::math::cdf(boost::math::complement(dist, q));
 }
 
 double boost_qchisq(double p, double df, bool lower_tail) {
-  if (std::isnan(p)) return std::numeric_limits<double>::quiet_NaN();
-  if (df <= 0) throw std::invalid_argument("Degrees of freedom must be positive.");
-  if (p < 0.0 || p > 1.0) throw std::invalid_argument(
-      "Probability must be between 0 and 1.");
+  if (std::isnan(p))
+    return std::numeric_limits<double>::quiet_NaN();
+  if (df <= 0)
+    throw std::invalid_argument("Degrees of freedom must be positive.");
+  if (p < 0.0 || p > 1.0)
+    throw std::invalid_argument("Probability must be between 0 and 1.");
   boost::math::chi_squared_distribution<> dist(df);
-  return lower_tail ? boost::math::quantile(dist, p) :
-    boost::math::quantile(dist, 1.0 - p);
+  return lower_tail ? boost::math::quantile(dist, p)
+                    : boost::math::quantile(dist, 1.0 - p);
 }
 
 double boost_pt(double q, double df, bool lower_tail) {
-  if (std::isnan(q)) return std::numeric_limits<double>::quiet_NaN();
-  if (df <= 0) throw std::invalid_argument("Degrees of freedom must be positive.");
+  if (std::isnan(q))
+    return std::numeric_limits<double>::quiet_NaN();
+  if (df <= 0)
+    throw std::invalid_argument("Degrees of freedom must be positive.");
   boost::math::students_t_distribution<> dist(df);
-  if (lower_tail) return boost::math::cdf(dist, q);
-  else return boost::math::cdf(boost::math::complement(dist, q));
+  if (lower_tail)
+    return boost::math::cdf(dist, q);
+  else
+    return boost::math::cdf(boost::math::complement(dist, q));
 }
 
 double boost_qt(double p, double df, bool lower_tail) {
-  if (std::isnan(p)) return std::numeric_limits<double>::quiet_NaN();
-  if (df <= 0) throw std::invalid_argument("Degrees of freedom must be positive.");
-  if (p < 0.0 || p > 1.0) throw std::invalid_argument(
-      "Probability must be between 0 and 1.");
+  if (std::isnan(p))
+    return std::numeric_limits<double>::quiet_NaN();
+  if (df <= 0)
+    throw std::invalid_argument("Degrees of freedom must be positive.");
+  if (p < 0.0 || p > 1.0)
+    throw std::invalid_argument("Probability must be between 0 and 1.");
   boost::math::students_t_distribution<> dist(df);
-  return lower_tail ? boost::math::quantile(dist, p) :
-    boost::math::quantile(dist, 1.0 - p);
+  return lower_tail ? boost::math::quantile(dist, p)
+                    : boost::math::quantile(dist, 1.0 - p);
 }
-
 
 // Fast normal CDF approximation
 // see https://doi.org/10.2139/ssrn.2842681
@@ -194,12 +236,13 @@ inline constexpr double m2dpi = -0.6366197723675813824329; // -2.0 / pi
 
 // [[Rcpp::export]]
 double pnorm_fast(double x) {
-  if (!std::isfinite(x)) return (x > 0 ? 1.0 : 0.0);
+  if (!std::isfinite(x))
+    return (x > 0 ? 1.0 : 0.0);
 
-  const double x2  = x * x;
-  const double x4  = x2 * x2;
-  const double x6  = x4 * x2;
-  const double x8  = x6 * x2;
+  const double x2 = x * x;
+  const double x4 = x2 * x2;
+  const double x6 = x4 * x2;
+  const double x8 = x6 * x2;
   const double x10 = x8 * x2;
 
   double tmp = 1.0 + g2 * x2 + g4 * x4 + g6 * x6 + g8 * x8 + g10 * x10;
@@ -207,105 +250,92 @@ double pnorm_fast(double x) {
   return 0.5 + 0.5 * ((x > 0) - (x < 0)) * std::sqrt(t);
 }
 
-
 // Approximate inverse standard normal CDF (qnorm).
 // Based on Peter John Acklam's rational approximation.
 // Good accuracy for double precision when p in (0,1).
 // [[Rcpp::export]]
 double qnorm_acklam(double p) {
   // Coefficients in rational approximations
-  static constexpr double a[] = {
-    -3.969683028665376e+01,
-    2.209460984245205e+02,
-    -2.759285104469687e+02,
-    1.383577518672690e+02,
-    -3.066479806614716e+01,
-    2.506628277459239e+00
-  };
-  static constexpr double b[] = {
-    -5.447609879822406e+01,
-    1.615858368580409e+02,
-    -1.556989798598866e+02,
-    6.680131188771972e+01,
-    -1.328068155288572e+01
-  };
-  static constexpr double c[] = {
-    -7.784894002430293e-03,
-    -3.223964580411365e-01,
-    -2.400758277161838e+00,
-    -2.549732539343734e+00,
-    4.374664141464968e+00,
-    2.938163982698783e+00
-  };
-  static constexpr double d[] = {
-    7.784695709041462e-03,
-    3.224671290700398e-01,
-    2.445134137142996e+00,
-    3.754408661907416e+00
-  };
+  static constexpr double a[] = {-3.969683028665376e+01, 2.209460984245205e+02,
+                                 -2.759285104469687e+02, 1.383577518672690e+02,
+                                 -3.066479806614716e+01, 2.506628277459239e+00};
+  static constexpr double b[] = {-5.447609879822406e+01, 1.615858368580409e+02,
+                                 -1.556989798598866e+02, 6.680131188771972e+01,
+                                 -1.328068155288572e+01};
+  static constexpr double c[] = {-7.784894002430293e-03, -3.223964580411365e-01,
+                                 -2.400758277161838e+00, -2.549732539343734e+00,
+                                 4.374664141464968e+00,  2.938163982698783e+00};
+  static constexpr double d[] = {7.784695709041462e-03, 3.224671290700398e-01,
+                                 2.445134137142996e+00, 3.754408661907416e+00};
 
   // Protect against invalid inputs; caller should clamp too.
   p = std::min(std::max(p, 1e-300), 1.0 - 1e-16);
 
   // Define break-points.
-  constexpr double plow  = 0.02425;
+  constexpr double plow = 0.02425;
   constexpr double phigh = 1.0 - plow;
 
   double q, r;
   if (p < plow) {
     // Rational approximation for lower region.
     q = std::sqrt(-2.0 * std::log(p));
-    return (((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) /
-      ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1.0);
+    return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q +
+            c[5]) /
+           ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1.0);
   } else if (p > phigh) {
     // Rational approximation for upper region.
     q = std::sqrt(-2.0 * std::log(1.0 - p));
-    return -(((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) /
-      ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1.0);
+    return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q +
+             c[5]) /
+           ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1.0);
   } else {
     // Rational approximation for central region.
     q = p - 0.5;
     r = q * q;
-    return (((((a[0]*r + a[1])*r + a[2])*r + a[3])*r + a[4])*r + a[5]) * q /
-      (((((b[0]*r + b[1])*r + b[2])*r + b[3])*r + b[4])*r + 1.0);
+    return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r +
+            a[5]) *
+           q /
+           (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1.0);
   }
 }
 
-
 std::vector<size_t> seqcpp(size_t start, size_t end) {
-  if (start > end) throw std::invalid_argument(
-      "start must be less than or equal to end for the sequence function.");
+  if (start > end)
+    throw std::invalid_argument(
+        "start must be less than or equal to end for the sequence function.");
   size_t size = end - start + 1;
   std::vector<size_t> result(size);
   std::iota(result.begin(), result.end(), start);
   return result;
 }
 
-std::vector<unsigned char> convertLogicalVector(const Rcpp::LogicalVector& vec) {
+std::vector<unsigned char>
+convertLogicalVector(const Rcpp::LogicalVector &vec) {
   size_t n = vec.size();
   std::vector<unsigned char> result;
   result.resize(n);
   for (size_t i = 0; i < n; ++i) {
     int v = vec[i];
-    if (v == NA_LOGICAL) result[i] = 255; // NA representation
-    else result[i] = v ? 1 : 0; // TRUE -> 1, FALSE -> 0
+    if (v == NA_LOGICAL)
+      result[i] = 255; // NA representation
+    else
+      result[i] = v ? 1 : 0; // TRUE -> 1, FALSE -> 0
   }
   return result;
 }
 
-std::vector<size_t> which(const std::vector<unsigned char>& vec) {
+std::vector<size_t> which(const std::vector<unsigned char> &vec) {
   std::vector<size_t> indices;
   indices.reserve(vec.size());
   for (size_t i = 0; i < vec.size(); ++i) {
-    if (vec[i] != 0 && vec[i] != 255) indices.push_back(i);
+    if (vec[i] != 0 && vec[i] != 255)
+      indices.push_back(i);
   }
   return indices;
 }
 
-std::vector<double> expand1(
-    const std::vector<double>& v,
-    const size_t nintervals,
-    const char* name) {
+std::vector<double> expand1(const std::vector<double> &v,
+                            const size_t nintervals, const char *name) {
   if (v.size() == 1) {
     return std::vector<double>(nintervals, v[0]);
   } else if (v.size() == nintervals) {
@@ -315,11 +345,8 @@ std::vector<double> expand1(
   }
 }
 
-FlatMatrix expand_stratified(
-    const std::vector<double>& v,
-    const size_t nstrata,
-    const size_t nintv,
-    const char* name) {
+FlatMatrix expand_stratified(const std::vector<double> &v, const size_t nstrata,
+                             const size_t nintv, const char *name) {
 
   FlatMatrix out(nintv, nstrata);
   if (v.size() == 1) {
@@ -336,108 +363,101 @@ FlatMatrix expand_stratified(
   return out;
 }
 
-void expand_stratified_to_slice(
-    const std::vector<double>& v,
-    FlatArray& out,
-    size_t slice_index,
-    size_t nstrata,
-    size_t nintv,
-    const char* name) {
+void expand_stratified_to_slice(const std::vector<double> &v, FlatArray &out,
+                                size_t slice_index, size_t nstrata,
+                                size_t nintv, const char *name) {
 
-  double* dst = out.slice_ptr(slice_index);
+  double *dst = out.slice_ptr(slice_index);
   if (v.size() == 1) {
     for (size_t i = 0; i < nintv * nstrata; ++i) {
       dst[i] = v[0];
     }
   } else if (v.size() == nintv) {
-    const double* src = v.data();
+    const double *src = v.data();
     for (size_t s = 0; s < nstrata; ++s) {
       std::memcpy(dst + s * nintv, src, nintv * sizeof(double));
     }
   } else if (v.size() == nstrata * nintv) {
-    const double* src = v.data();
+    const double *src = v.data();
     std::memcpy(dst, src, nintv * nstrata * sizeof(double));
   } else {
     throw std::invalid_argument(std::string("Invalid length for ") + name);
   }
 }
 
+size_t findInterval1(const double x, const std::vector<double> &v,
+                     bool rightmost_closed, bool all_inside, bool left_open) {
 
-size_t findInterval1(const double x,
-                     const std::vector<double>& v,
-                     bool rightmost_closed,
-                     bool all_inside,
-                     bool left_open) {
-
-  const double* v_begin = v.data();
-  const double* v_end   = v_begin + v.size();
+  const double *v_begin = v.data();
+  const double *v_end = v_begin + v.size();
   const size_t nv = v.size();
 
-  const double* pos = left_open ? std::lower_bound(v_begin, v_end, x) :
-    std::upper_bound(v_begin, v_end, x);
+  const double *pos = left_open ? std::lower_bound(v_begin, v_end, x)
+                                : std::upper_bound(v_begin, v_end, x);
   size_t idx = static_cast<size_t>(pos - v_begin);
   if (rightmost_closed) {
     if (left_open) {
-      if (x == v[0]) idx = 1;
+      if (x == v[0])
+        idx = 1;
     } else {
-      if (x == v[nv - 1]) idx = nv - 1;
+      if (x == v[nv - 1])
+        idx = nv - 1;
     }
   }
   if (all_inside) {
-    if (idx == 0) idx = 1;
-    else if (idx == nv) idx = nv - 1;
+    if (idx == 0)
+      idx = 1;
+    else if (idx == nv)
+      idx = nv - 1;
   }
 
   return idx;
 }
 
-
-std::vector<size_t> findInterval3(const std::vector<double>& x,
-                                  const std::vector<double>& v,
-                                  bool rightmost_closed,
-                                  bool all_inside,
+std::vector<size_t> findInterval3(const std::vector<double> &x,
+                                  const std::vector<double> &v,
+                                  bool rightmost_closed, bool all_inside,
                                   bool left_open) {
   std::vector<size_t> out(x.size());
-  const double* v_begin = v.data();
-  const double* v_end   = v_begin + v.size();
+  const double *v_begin = v.data();
+  const double *v_end = v_begin + v.size();
   const size_t n = x.size();
   const size_t nv = v.size();
 
   for (size_t i = 0; i < n; ++i) {
     double xi = x[i];
-    const double* pos = left_open ? std::lower_bound(v_begin, v_end, xi) :
-      std::upper_bound(v_begin, v_end, xi);
+    const double *pos = left_open ? std::lower_bound(v_begin, v_end, xi)
+                                  : std::upper_bound(v_begin, v_end, xi);
     size_t idx = static_cast<size_t>(pos - v_begin);
     if (rightmost_closed) {
       if (left_open) {
-        if (nv > 0 && xi == v[0]) idx = 1;
+        if (nv > 0 && xi == v[0])
+          idx = 1;
       } else {
-        if (nv > 0 && xi == v[nv - 1]) idx = nv - 1;
+        if (nv > 0 && xi == v[nv - 1])
+          idx = nv - 1;
       }
     }
     if (all_inside) {
-      if (idx == 0) idx = 1;
-      else if (idx == nv) idx = nv - 1;
+      if (idx == 0)
+        idx = 1;
+      else if (idx == nv)
+        idx = nv - 1;
     }
     out[i] = idx;
   }
   return out;
 }
 
-
-double extract_sum(const DataFrameCpp& df, const char* name) {
+double extract_sum(const DataFrameCpp &df, const char *name) {
   auto vec = df.get<double>(name);
   return std::accumulate(vec.begin(), vec.end(), 0.0);
 };
 
-
-
-double dtpwexpcpp1(
-    const double q,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda,
-    const double lowerBound,
-    const bool logd) {
+double dtpwexpcpp1(const double q,
+                   const std::vector<double> &piecewiseSurvivalTime,
+                   const std::vector<double> &lambda, const double lowerBound,
+                   const bool logd) {
   double d;
   if (q <= lowerBound) {
     d = 0.0;
@@ -450,24 +470,23 @@ double dtpwexpcpp1(
     } else {
       v = lambda[i0] * (piecewiseSurvivalTime[i0 + 1] - lowerBound);
       for (size_t j = i0 + 1; j < i1; ++j) {
-        v += lambda[j] * (piecewiseSurvivalTime[j + 1] - piecewiseSurvivalTime[j]);
+        v += lambda[j] *
+             (piecewiseSurvivalTime[j + 1] - piecewiseSurvivalTime[j]);
       }
       v += lambda[i1] * (q - piecewiseSurvivalTime[i1]);
     }
     d = lambda[i1] * std::exp(-v);
   }
-  if (logd) d = std::log(d);
+  if (logd)
+    d = std::log(d);
   return d;
 }
 
-
 // [[Rcpp::export]]
-std::vector<double> dtpwexpcpp(
-    const std::vector<double>& q,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda,
-    const double lowerBound,
-    const bool logd) {
+std::vector<double> dtpwexpcpp(const std::vector<double> &q,
+                               const std::vector<double> &piecewiseSurvivalTime,
+                               const std::vector<double> &lambda,
+                               const double lowerBound, const bool logd) {
   size_t m = piecewiseSurvivalTime.size();
   size_t i0 = findInterval1(lowerBound, piecewiseSurvivalTime) - 1;
   size_t m1 = m - i0;
@@ -475,7 +494,7 @@ std::vector<double> dtpwexpcpp(
   for (size_t j = 1; j < m1; ++j) {
     size_t jj = j + i0 - 1;
     double lb = (j == 1) ? lowerBound : piecewiseSurvivalTime[jj];
-    ch[j] = ch[j-1] + lambda[jj] * (piecewiseSurvivalTime[jj+1] - lb);
+    ch[j] = ch[j - 1] + lambda[jj] * (piecewiseSurvivalTime[jj + 1] - lb);
   }
 
   size_t n = q.size();
@@ -502,14 +521,10 @@ std::vector<double> dtpwexpcpp(
   return d;
 }
 
-
-double ptpwexpcpp1(
-    const double q,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda,
-    const double lowerBound,
-    const bool lowertail,
-    const bool logp) {
+double ptpwexpcpp1(const double q,
+                   const std::vector<double> &piecewiseSurvivalTime,
+                   const std::vector<double> &lambda, const double lowerBound,
+                   const bool lowertail, const bool logp) {
   double p;
   if (q <= lowerBound) {
     p = 0.0;
@@ -522,29 +537,28 @@ double ptpwexpcpp1(
     } else {
       v = lambda[i0 - 1] * (piecewiseSurvivalTime[i0] - lowerBound);
       for (size_t j = i0; j < i1 - 1; ++j) {
-        v += lambda[j] * (piecewiseSurvivalTime[j + 1] -
-          piecewiseSurvivalTime[j]);
+        v += lambda[j] *
+             (piecewiseSurvivalTime[j + 1] - piecewiseSurvivalTime[j]);
       }
       v += lambda[i1 - 1] * (q - piecewiseSurvivalTime[i1 - 1]);
     }
     p = 1.0 - std::exp(-v);
   }
 
-  if (!lowertail) p = 1.0 - p;
-  if (logp) p = std::log(p);
+  if (!lowertail)
+    p = 1.0 - p;
+  if (logp)
+    p = std::log(p);
 
   return p;
 }
 
-
 // [[Rcpp::export]]
-std::vector<double> ptpwexpcpp(
-    const std::vector<double>& q,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda,
-    const double lowerBound,
-    const bool lowertail,
-    const bool logp) {
+std::vector<double> ptpwexpcpp(const std::vector<double> &q,
+                               const std::vector<double> &piecewiseSurvivalTime,
+                               const std::vector<double> &lambda,
+                               const double lowerBound, const bool lowertail,
+                               const bool logp) {
   size_t m = piecewiseSurvivalTime.size();
   size_t i0 = findInterval1(lowerBound, piecewiseSurvivalTime) - 1;
   size_t m1 = m - i0;
@@ -552,7 +566,7 @@ std::vector<double> ptpwexpcpp(
   for (size_t j = 1; j < m1; ++j) {
     size_t jj = j + i0 - 1;
     double lb = (j == 1) ? lowerBound : piecewiseSurvivalTime[jj];
-    ch[j] = ch[j-1] + lambda[jj] * (piecewiseSurvivalTime[jj+1] - lb);
+    ch[j] = ch[j - 1] + lambda[jj] * (piecewiseSurvivalTime[jj + 1] - lb);
   }
 
   size_t n = q.size();
@@ -585,46 +599,43 @@ std::vector<double> ptpwexpcpp(
   return p;
 }
 
-
 // [[Rcpp::export]]
-std::vector<double> qtpwexpcpp(
-    const std::vector<double>& p,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda,
-    const double lowerBound,
-    const bool lowertail,
-    const bool logp) {
+std::vector<double> qtpwexpcpp(const std::vector<double> &p,
+                               const std::vector<double> &piecewiseSurvivalTime,
+                               const std::vector<double> &lambda,
+                               const double lowerBound, const bool lowertail,
+                               const bool logp) {
   size_t n = p.size();
   std::vector<double> q(n);
   for (size_t h = 0; h < n; ++h) {
-    q[h] = qtpwexpcpp1(p[h], piecewiseSurvivalTime, lambda,
-                       lowerBound, lowertail, logp);
+    q[h] = qtpwexpcpp1(p[h], piecewiseSurvivalTime, lambda, lowerBound,
+                       lowertail, logp);
   }
 
   return q;
 }
 
-
 // mean and variance of a truncated piecewise exponential distribution
-ListCpp mtpwexpcpp(
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda,
-    const double lowerBound) {
+ListCpp mtpwexpcpp(const std::vector<double> &piecewiseSurvivalTime,
+                   const std::vector<double> &lambda, const double lowerBound) {
 
   if (piecewiseSurvivalTime[0] != 0)
     throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
   if (any_nonincreasing(piecewiseSurvivalTime))
     throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
-  if (!none_na(lambda)) throw std::invalid_argument("lambda must be provided");
+  if (!none_na(lambda))
+    throw std::invalid_argument("lambda must be provided");
   if (lambda.size() != piecewiseSurvivalTime.size())
     throw std::invalid_argument("Invalid length for lambda");
   for (double v : lambda) {
-    if (v < 0) throw std::invalid_argument("lambda must be nonnegative");
+    if (v < 0)
+      throw std::invalid_argument("lambda must be nonnegative");
   }
-  if (lowerBound < 0) throw std::invalid_argument("lowerBound must be nonnegative");
+  if (lowerBound < 0)
+    throw std::invalid_argument("lowerBound must be nonnegative");
 
   size_t m = piecewiseSurvivalTime.size();
-  if (lambda[m-1] == 0.0) {
+  if (lambda[m - 1] == 0.0) {
     throw std::invalid_argument("The last hazard rate must be positive");
   }
 
@@ -633,16 +644,16 @@ ListCpp mtpwexpcpp(
   double s1 = 0.0, s2 = 0.0, v = 0.0;
   for (size_t j = i0; j < m; ++j) {
     double lb = (j == i0) ? lowerBound : piecewiseSurvivalTime[j];
-    double ub = (j == m-1) ? POS_INF : piecewiseSurvivalTime[j+1];
+    double ub = (j == m - 1) ? POS_INF : piecewiseSurvivalTime[j + 1];
 
     if (j > i0) {
-      double lb0 = (j == i0 + 1) ? lowerBound : piecewiseSurvivalTime[j-1];
-      v += lambda[j-1] * (piecewiseSurvivalTime[j] - lb0);
+      double lb0 = (j == i0 + 1) ? lowerBound : piecewiseSurvivalTime[j - 1];
+      v += lambda[j - 1] * (piecewiseSurvivalTime[j] - lb0);
     }
 
     if (lambda[j] == 0.0) {
       s1 += std::exp(-v) * (ub - lb);
-      s2 += std::exp(-v) * (ub*ub - lb*lb);
+      s2 += std::exp(-v) * (ub * ub - lb * lb);
     } else {
       double a1, a2;
       if (j < m - 1) {
@@ -669,7 +680,6 @@ ListCpp mtpwexpcpp(
   return result;
 }
 
-
 //' @title Mean and Variance of Truncated Piecewise Exponential Distribution
 //' @description Obtains the mean and variance from a truncated piecewise
 //' exponential distribution.
@@ -690,10 +700,9 @@ ListCpp mtpwexpcpp(
 //'
 //' @export
 //  [[Rcpp::export]]
-Rcpp::List mtpwexp(
-    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
-    const Rcpp::NumericVector& lambda = NA_REAL,
-    const double lowerBound = 0) {
+Rcpp::List mtpwexp(const Rcpp::NumericVector &piecewiseSurvivalTime = 0,
+                   const Rcpp::NumericVector &lambda = NA_REAL,
+                   const double lowerBound = 0) {
 
   auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
   auto lam = Rcpp::as<std::vector<double>>(lambda);
@@ -702,24 +711,24 @@ Rcpp::List mtpwexp(
   return Rcpp::wrap(out);
 }
 
-
 // Integrate a function f(theta) with respect to a normal density of theta:
 //   integrate[f(theta) * dnorm(theta, mu, sigma), a, b) /
 //             (pnorm(b, mu, sigma) - pnorm(a, mu, sigma)), {theta, a, b}].
-double intnorm(const std::function<double(double)>& f,
-               double mu, double sigma, double a, double b) {
+double intnorm(const std::function<double(double)> &f, double mu, double sigma,
+               double a, double b) {
 
   size_t r = 18, r1 = 6 * r - 1;
-  double a1 = (a - mu) / sigma , b1 = (b - mu) / sigma;
+  double a1 = (a - mu) / sigma, b1 = (b - mu) / sigma;
 
   std::vector<double> x1(r1);
   for (size_t i = 0; i < r1; ++i) {
     if (i < r - 1) {
       x1[i] = -3.0 - 4.0 * std::log(static_cast<double>(r) / (i + 1.0));
     } else if (i < 5 * r) {
-      x1[i] = -3.0 + 3.0 * ( (i + 1.0 - r) / (2.0 * r) );
+      x1[i] = -3.0 + 3.0 * ((i + 1.0 - r) / (2.0 * r));
     } else {
-      x1[i] = 3.0 + 4.0 * std::log(static_cast<double>(r) / (6.0 * r - i - 1.0));
+      x1[i] =
+          3.0 + 4.0 * std::log(static_cast<double>(r) / (6.0 * r - i - 1.0));
     }
   }
 
@@ -737,15 +746,18 @@ double intnorm(const std::function<double(double)>& f,
   std::vector<double> x(m1);
   x[0] = a1;
   x[m1 - 1] = b1;
-  for (size_t i = 1; i < m1 - 1; ++i) x[i] = x1[i + i1 - 1];
+  for (size_t i = 1; i < m1 - 1; ++i)
+    x[i] = x1[i + i1 - 1];
 
   // derive the grid points for z
   size_t m = 2 * m1 - 1;
   std::vector<double> z(m), w(m);
   // odd points
-  for (size_t i = 0; i < m1; ++i) z[2*i] = x[i];
+  for (size_t i = 0; i < m1; ++i)
+    z[2 * i] = x[i];
   // even points (midpoints)
-  for (size_t i = 0; i < m1 - 1; ++i) z[2*i + 1] = 0.5 * (z[2*i] + z[2*i + 2]);
+  for (size_t i = 0; i < m1 - 1; ++i)
+    z[2 * i + 1] = 0.5 * (z[2 * i] + z[2 * i + 2]);
 
   // weights w as Simpson-like composite rule (same formulas)
   // first weight
@@ -775,74 +787,64 @@ double intnorm(const std::function<double(double)>& f,
   return aval / denom;
 }
 
-
-std::pair<double, double> mini(const std::function<double(double)>& f,
+std::pair<double, double> mini(const std::function<double(double)> &f,
                                double x1, double x2) {
 
   // Validate inputs
-  if (!(x1 < x2)) throw std::invalid_argument("mini: require x1 < x2");
+  if (!(x1 < x2))
+    throw std::invalid_argument("mini: require x1 < x2");
 
   // Use Boost's brent_find_minima
   return boost::math::tools::brent_find_minima(
-    f, x1, x2, std::numeric_limits<double>::digits10);
+      f, x1, x2, std::numeric_limits<double>::digits10);
 }
 
-
 // Integrate f over multiple intervals defined by breaks, i.e. sum of integrals
-double integrate3(const std::function<double(double)>& f,
-                  const std::vector<double>& breaks, double tol) {
+double integrate3(const std::function<double(double)> &f,
+                  const std::vector<double> &breaks, double tol) {
 
   boost::math::quadrature::tanh_sinh<double> integrator_ts;
 
   double sum = 0.0;
   for (size_t i = 0; i + 1 < breaks.size(); ++i) {
     double a = breaks[i];
-    double b = breaks[i+1];
-    if (b <= a) continue;
+    double b = breaks[i + 1];
+    if (b <= a)
+      continue;
     double val = integrator_ts.integrate(f, a, b, tol);
     sum += val;
   }
   return sum;
 }
 
-
-
 // 2D adaptive quadrature using 3x3 and 5x5 tensor-product Gauss rules
 // 1D Gauss nodes
-static const double x3[3] = { -0.774596669241483,
-                              0.0,
-                              0.774596669241483 };
+static const double x3[3] = {-0.774596669241483, 0.0, 0.774596669241483};
 
-static const double w3[3] = { 0.555555555555556,
-                              0.888888888888889,
-                              0.555555555555556 };
+static const double w3[3] = {0.555555555555556, 0.888888888888889,
+                             0.555555555555556};
 
-static const double x5[5] = { -0.906179845938664,
-                              -0.538469310105683,
-                              0.0,
-                              0.538469310105683,
-                              0.906179845938664 };
+static const double x5[5] = {-0.906179845938664, -0.538469310105683, 0.0,
+                             0.538469310105683, 0.906179845938664};
 
-static const double w5[5] = { 0.236926885056189,
-                              0.478628670499366,
-                              0.568888888888889,
-                              0.478628670499366,
-                              0.236926885056189 };
+static const double w5[5] = {0.236926885056189, 0.478628670499366,
+                             0.568888888888889, 0.478628670499366,
+                             0.236926885056189};
 
 // structure to store a region
 struct Region {
   double ax, bx, ay, by;
-  double I_low;    // 3x3 rule
-  double I_high;   // 5x5 rule
-  double err;      // |I_high - I_low|
+  double I_low;  // 3x3 rule
+  double I_high; // 5x5 rule
+  double err;    // |I_high - I_low|
 };
 
 // compute 3x3 and 5x5 tensor-product Gauss rules on a region
-static void eval_region(const std::function<double(double,double)>& f,
-                        double ax, double bx, double ay, double by,
-                        double &I3, double &I5) {
-  double cx = 0.5*(ax + bx), dx = 0.5*(bx - ax);
-  double cy = 0.5*(ay + by), dy = 0.5*(by - ay);
+static void eval_region(const std::function<double(double, double)> &f,
+                        double ax, double bx, double ay, double by, double &I3,
+                        double &I5) {
+  double cx = 0.5 * (ax + bx), dx = 0.5 * (bx - ax);
+  double cy = 0.5 * (ay + by), dy = 0.5 * (by - ay);
 
   I3 = 0.0;
   I5 = 0.0;
@@ -851,25 +853,25 @@ static void eval_region(const std::function<double(double,double)>& f,
   double f3[3][3];
 
   // 3x3 Gauss
-  for(size_t i=0;i<3;++i){
+  for (size_t i = 0; i < 3; ++i) {
     double xi = cx + dx * x3[i];
-    for(size_t j=0;j<3;++j){
+    for (size_t j = 0; j < 3; ++j) {
       double yj = cy + dy * x3[j];
-      f3[i][j] = f(xi,yj);
-      I3 += w3[i]*w3[j]*f3[i][j];
+      f3[i][j] = f(xi, yj);
+      I3 += w3[i] * w3[j] * f3[i][j];
     }
   }
-  I3 *= dx*dy;
+  I3 *= dx * dy;
 
   // 5×5 rule
-  for(size_t i=0;i<5;++i){
+  for (size_t i = 0; i < 5; ++i) {
     double xi = cx + dx * x5[i];
-    for(size_t j=0;j<5;++j){
+    for (size_t j = 0; j < 5; ++j) {
       double yj = cy + dy * x5[j];
-      if (i==2 && j==2) {
-        I5 += w5[i]*w5[j] * f3[1][1];
+      if (i == 2 && j == 2) {
+        I5 += w5[i] * w5[j] * f3[1][1];
       } else {
-        I5 += w5[i]*w5[j] * f(xi,yj);
+        I5 += w5[i] * w5[j] * f(xi, yj);
       }
     }
   }
@@ -878,28 +880,27 @@ static void eval_region(const std::function<double(double,double)>& f,
 
 // priority comparison: larger error first
 struct RegionCompare {
-  bool operator()(const Region& a, const Region& b) const {
-    return a.err < b.err;   // max-heap
+  bool operator()(const Region &a, const Region &b) const {
+    return a.err < b.err; // max-heap
   }
 };
 
-double quad2d(const std::function<double(double,double)>& f,
-              double ax, double bx, double ay, double by, double tol) {
+double quad2d(const std::function<double(double, double)> &f, double ax,
+              double bx, double ay, double by, double tol) {
   size_t maxRegions = 1000000;
 
   double I3, I5;
   eval_region(f, ax, bx, ay, by, I3, I5);
 
   double global_value = I5;
-  double global_err   = std::fabs(I5 - I3);
+  double global_err = std::fabs(I5 - I3);
 
   std::priority_queue<Region, std::vector<Region>, RegionCompare> pq;
 
   pq.push({ax, bx, ay, by, I3, I5, global_err});
 
-  while(global_err > tol && global_err > std::fabs(global_value) * tol &&
-        pq.size() < maxRegions)
-  {
+  while (global_err > tol && global_err > std::fabs(global_value) * tol &&
+         pq.size() < maxRegions) {
     Region R = pq.top();
     pq.pop();
 
@@ -909,12 +910,14 @@ double quad2d(const std::function<double(double,double)>& f,
     bool splitX = (dx >= dy);
 
     Region R1 = R, R2 = R;
-    if(splitX){
-      double m = 0.5*(R.ax + R.bx);
-      R1.bx = m; R2.ax = m;
+    if (splitX) {
+      double m = 0.5 * (R.ax + R.bx);
+      R1.bx = m;
+      R2.ax = m;
     } else {
-      double m = 0.5*(R.ay + R.by);
-      R1.by = m; R2.ay = m;
+      double m = 0.5 * (R.ay + R.by);
+      R1.by = m;
+      R2.ay = m;
     }
 
     eval_region(f, R1.ax, R1.bx, R1.ay, R1.by, R1.I_low, R1.I_high);
@@ -925,7 +928,7 @@ double quad2d(const std::function<double(double,double)>& f,
 
     // update global integral & error incrementally
     global_value += (R1.I_high + R2.I_high) - R.I_high;
-    global_err   += (R1.err + R2.err) - R.err;
+    global_err += (R1.err + R2.err) - R.err;
 
     pq.push(R1);
     pq.push(R2);
@@ -934,13 +937,13 @@ double quad2d(const std::function<double(double,double)>& f,
   return global_value;
 }
 
-
 // [[Rcpp::export]]
-double pbvnormcpp(const std::vector<double>& lower,
-                  const std::vector<double>& upper,
-                  const double rho) {
-  if (!none_na(lower)) throw std::invalid_argument("lower must be provided");
-  if (!none_na(upper)) throw std::invalid_argument("upper must be provided");
+double pbvnormcpp(const std::vector<double> &lower,
+                  const std::vector<double> &upper, const double rho) {
+  if (!none_na(lower))
+    throw std::invalid_argument("lower must be provided");
+  if (!none_na(upper))
+    throw std::invalid_argument("upper must be provided");
 
   auto lowerv = expand1(lower, 2, "lower");
   auto upperv = expand1(upper, 2, "upper");
@@ -961,7 +964,7 @@ double pbvnormcpp(const std::vector<double>& lower,
   double a2 = lowerv[1];
   double b2 = upperv[1];
   double s = std::sqrt(1.0 - rho * rho);
-  auto f = [&](double x)->double {
+  auto f = [&](double x) -> double {
     double a = (a2 - rho * x) / s;
     double b = (b2 - rho * x) / s;
     double t1 = boost_dnorm(x);
@@ -972,10 +975,9 @@ double pbvnormcpp(const std::vector<double>& lower,
   return integrate3(f, breaks, 1e-8);
 }
 
-
-ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
-                     const std::vector<double>& hazard_pfs,
-                     const std::vector<double>& hazard_os,
+ListCpp hazard_pdcpp(const std::vector<double> &piecewiseSurvivalTime,
+                     const std::vector<double> &hazard_pfs,
+                     const std::vector<double> &hazard_os,
                      const double rho_pd_os) {
 
   if (piecewiseSurvivalTime[0] != 0)
@@ -984,13 +986,17 @@ ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
     throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
   size_t n = piecewiseSurvivalTime.size();
 
-  if (!none_na(hazard_pfs)) throw std::invalid_argument("hazard_pfs must be provided");
-  if (!none_na(hazard_os)) throw std::invalid_argument("hazard_os must be provided");
+  if (!none_na(hazard_pfs))
+    throw std::invalid_argument("hazard_pfs must be provided");
+  if (!none_na(hazard_os))
+    throw std::invalid_argument("hazard_os must be provided");
   for (double v : hazard_pfs) {
-    if (v <= 0) throw std::invalid_argument("hazard_pfs must be positive");
+    if (v <= 0)
+      throw std::invalid_argument("hazard_pfs must be positive");
   }
   for (double v : hazard_os) {
-    if (v <= 0) throw std::invalid_argument("hazard_os must be positive");
+    if (v <= 0)
+      throw std::invalid_argument("hazard_os must be positive");
   }
   auto hazard_pfsv = expand1(hazard_pfs, n, "hazard_pfs");
   auto hazard_osv = expand1(hazard_os, n, "hazard_os");
@@ -1004,14 +1010,16 @@ ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
 
   // append additional time points for pfs quantiles
   std::vector<double> p(10);
-  for (size_t i=0; i<9; ++i) p[i] = (i+1.0)/10.0;
+  for (size_t i = 0; i < 9; ++i)
+    p[i] = (i + 1.0) / 10.0;
   p[9] = 0.95;
 
-  std::vector<double> u(n+10);
-  for (size_t i=0; i<n-1; ++i) u[i] = piecewiseSurvivalTime[i+1];
-  u[n-1] = piecewiseSurvivalTime[n-1] + std::log(2.0)/hazard_pfsv[n-1];
-  for (size_t i=0; i<10; ++i) {
-    u[n+i] = qtpwexpcpp1(p[i], piecewiseSurvivalTime, hazard_pfsv);
+  std::vector<double> u(n + 10);
+  for (size_t i = 0; i < n - 1; ++i)
+    u[i] = piecewiseSurvivalTime[i + 1];
+  u[n - 1] = piecewiseSurvivalTime[n - 1] + std::log(2.0) / hazard_pfsv[n - 1];
+  for (size_t i = 0; i < 10; ++i) {
+    u[n + i] = qtpwexpcpp1(p[i], piecewiseSurvivalTime, hazard_pfsv);
   }
 
   // obtain sorted and unique time points
@@ -1022,11 +1030,13 @@ ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
   // shifted time points
   std::vector<double> u1(m);
   u1[0] = 0;
-  for (size_t i=1; i<m; ++i) u1[i] = u[i-1];
+  for (size_t i = 1; i < m; ++i)
+    u1[i] = u[i - 1];
 
   // get corresponding hazards
   std::vector<size_t> index = findInterval3(u1, piecewiseSurvivalTime);
-  for (size_t i=0; i<m; ++i) index[i] = index[i] - 1;
+  for (size_t i = 0; i < m; ++i)
+    index[i] = index[i] - 1;
   std::vector<double> hazard_pfs1 = subset(hazard_pfsv, index);
   std::vector<double> hazard_os1 = subset(hazard_osv, index);
 
@@ -1034,7 +1044,7 @@ ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
   double t;
   std::vector<double> hazard_pd(m);
   std::vector<double> v(0), hazard(0), haz_pfs(0), haz_os(0);
-  auto f = [&](double haz)->double {
+  auto f = [&](double haz) -> double {
     std::vector<double> haz_pd = hazard;
     haz_pd.push_back(haz);
     std::vector<double> lower(2);
@@ -1048,7 +1058,7 @@ ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
   };
 
   double tol = 1e-6;
-  for (size_t i=0; i<m; ++i) {
+  for (size_t i = 0; i < m; ++i) {
     t = u[i];
     v.push_back(u1[i]);
     haz_pfs.push_back(hazard_pfs1[i]);
@@ -1065,7 +1075,6 @@ ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
   result.push_back(rho_pd_os, "rho_pd_os");
   return result;
 }
-
 
 //' @title Hazard Function for Progressive Disease (PD) Given Correlation
 //' Between PD and OS
@@ -1159,11 +1168,10 @@ ListCpp hazard_pdcpp(const std::vector<double>& piecewiseSurvivalTime,
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List hazard_pd(
-    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
-    const Rcpp::NumericVector& hazard_pfs = NA_REAL,
-    const Rcpp::NumericVector& hazard_os = NA_REAL,
-    const double rho_pd_os = 0.5) {
+Rcpp::List hazard_pd(const Rcpp::NumericVector &piecewiseSurvivalTime = 0,
+                     const Rcpp::NumericVector &hazard_pfs = NA_REAL,
+                     const Rcpp::NumericVector &hazard_os = NA_REAL,
+                     const double rho_pd_os = 0.5) {
 
   auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
   auto haz_pfs = Rcpp::as<std::vector<double>>(hazard_pfs);
@@ -1173,13 +1181,10 @@ Rcpp::List hazard_pd(
   return Rcpp::wrap(out);
 }
 
-
-
 double pdf_pfs(const double time,
-               const std::vector<double>& piecewiseSurvivalTime,
-               const std::vector<double>& hazard_pd,
-               const std::vector<double>& hazard_os,
-               const double rho_pd_os) {
+               const std::vector<double> &piecewiseSurvivalTime,
+               const std::vector<double> &hazard_pd,
+               const std::vector<double> &hazard_os, const double rho_pd_os) {
   double s = std::sqrt(1.0 - rho_pd_os * rho_pd_os);
   double u1 = ptpwexpcpp1(time, piecewiseSurvivalTime, hazard_pd);
   double u2 = ptpwexpcpp1(time, piecewiseSurvivalTime, hazard_os);
@@ -1194,10 +1199,9 @@ double pdf_pfs(const double time,
 };
 
 double sdf_pfs(const double time,
-               const std::vector<double>& piecewiseSurvivalTime,
-               const std::vector<double>& hazard_pd,
-               const std::vector<double>& hazard_os,
-               const double rho_pd_os) {
+               const std::vector<double> &piecewiseSurvivalTime,
+               const std::vector<double> &hazard_pd,
+               const std::vector<double> &hazard_os, const double rho_pd_os) {
   double u1 = ptpwexpcpp1(time, piecewiseSurvivalTime, hazard_pd);
   double u2 = ptpwexpcpp1(time, piecewiseSurvivalTime, hazard_os);
   double z1 = boost_qnorm(u1);
@@ -1208,13 +1212,13 @@ double sdf_pfs(const double time,
   return p;
 };
 
-double upper_pfs(const std::vector<double>& piecewiseSurvivalTime,
-                 const std::vector<double>& hazard_pd,
-                 const std::vector<double>& hazard_os,
-                 const double rho_pd_os) {
+double upper_pfs(const std::vector<double> &piecewiseSurvivalTime,
+                 const std::vector<double> &hazard_pd,
+                 const std::vector<double> &hazard_os, const double rho_pd_os) {
   double tol = 1e-12;
   double upper = 1.0;
-  double p = sdf_pfs(upper, piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
+  double p =
+      sdf_pfs(upper, piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
   while (p > tol) {
     upper *= 2.0;
     p = sdf_pfs(upper, piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
@@ -1222,16 +1226,18 @@ double upper_pfs(const std::vector<double>& piecewiseSurvivalTime,
   return upper;
 }
 
-ListCpp m_pfs(const std::vector<double>& piecewiseSurvivalTime,
-              const std::vector<double>& hazard_pd,
-              const std::vector<double>& hazard_os,
-              const double rho_pd_os) {
-  double upper = upper_pfs(piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
-  auto fm_pfs = [&](double t)->double {
-    return t * pdf_pfs(t, piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
+ListCpp m_pfs(const std::vector<double> &piecewiseSurvivalTime,
+              const std::vector<double> &hazard_pd,
+              const std::vector<double> &hazard_os, const double rho_pd_os) {
+  double upper =
+      upper_pfs(piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
+  auto fm_pfs = [&](double t) -> double {
+    return t *
+           pdf_pfs(t, piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
   };
-  auto fm2_pfs = [&](double t)->double {
-    return t*t * pdf_pfs(t, piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
+  auto fm2_pfs = [&](double t) -> double {
+    return t * t *
+           pdf_pfs(t, piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
   };
 
   double tol = 1e-5;
@@ -1240,7 +1246,8 @@ ListCpp m_pfs(const std::vector<double>& piecewiseSurvivalTime,
   std::vector<double> breaks;
   breaks.reserve(piecewiseSurvivalTime.size() + 1);
   for (double t : piecewiseSurvivalTime) {
-    if (t >= upper) continue;
+    if (t >= upper)
+      continue;
     breaks.push_back(t);
   }
   breaks.push_back(upper);
@@ -1253,9 +1260,9 @@ ListCpp m_pfs(const std::vector<double>& piecewiseSurvivalTime,
   return result;
 }
 
-double cor_pfs_os(const std::vector<double>& piecewiseSurvivalTime,
-                  const std::vector<double>& hazard_pd,
-                  const std::vector<double>& hazard_os,
+double cor_pfs_os(const std::vector<double> &piecewiseSurvivalTime,
+                  const std::vector<double> &hazard_pd,
+                  const std::vector<double> &hazard_os,
                   const double rho_pd_os) {
   ListCpp mv1 = m_pfs(piecewiseSurvivalTime, hazard_pd, hazard_os, rho_pd_os);
   double m1 = mv1.get<double>("mean");
@@ -1270,7 +1277,7 @@ double cor_pfs_os(const std::vector<double>& piecewiseSurvivalTime,
   double c2 = 1.0 / (2.0 * s * s);
 
   // integrand for the joint moment
-  auto f = [&](double u1, double u2)->double {
+  auto f = [&](double u1, double u2) -> double {
     double t1 = qtpwexpcpp1(u1, piecewiseSurvivalTime, hazard_pd);
     double t2 = qtpwexpcpp1(u2, piecewiseSurvivalTime, hazard_os);
     double z1 = boost_qnorm(u1);
@@ -1278,7 +1285,7 @@ double cor_pfs_os(const std::vector<double>& piecewiseSurvivalTime,
     double a1 = std::min(t1, t2) * t2;
 
     // joint density of standard bivariate normal
-    double a2 = c1 * exp(-c2 * (z1*z1 - 2.0*rho_pd_os*z1*z2 + z2*z2));
+    double a2 = c1 * exp(-c2 * (z1 * z1 - 2.0 * rho_pd_os * z1 * z2 + z2 * z2));
     double a3 = boost_dnorm(z1) * boost_dnorm(z2);
     return a1 * a2 / a3;
   };
@@ -1290,10 +1297,9 @@ double cor_pfs_os(const std::vector<double>& piecewiseSurvivalTime,
   return cov / sqrt(v1 * v2);
 }
 
-
-double corr_pfs_oscpp(const std::vector<double>& piecewiseSurvivalTime,
-                      const std::vector<double>& hazard_pfs,
-                      const std::vector<double>& hazard_os,
+double corr_pfs_oscpp(const std::vector<double> &piecewiseSurvivalTime,
+                      const std::vector<double> &hazard_pfs,
+                      const std::vector<double> &hazard_os,
                       const double rho_pd_os) {
 
   if (piecewiseSurvivalTime[0] != 0)
@@ -1302,13 +1308,17 @@ double corr_pfs_oscpp(const std::vector<double>& piecewiseSurvivalTime,
     throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
   size_t n = piecewiseSurvivalTime.size();
 
-  if (!none_na(hazard_pfs)) throw std::invalid_argument("hazard_pfs must be provided");
-  if (!none_na(hazard_os)) throw std::invalid_argument("hazard_os must be provided");
+  if (!none_na(hazard_pfs))
+    throw std::invalid_argument("hazard_pfs must be provided");
+  if (!none_na(hazard_os))
+    throw std::invalid_argument("hazard_os must be provided");
   for (double v : hazard_pfs) {
-    if (v <= 0) throw std::invalid_argument("hazard_pfs must be positive");
+    if (v <= 0)
+      throw std::invalid_argument("hazard_pfs must be positive");
   }
   for (double v : hazard_os) {
-    if (v <= 0) throw std::invalid_argument("hazard_os must be positive");
+    if (v <= 0)
+      throw std::invalid_argument("hazard_os must be positive");
   }
   auto hazard_pfsv = expand1(hazard_pfs, n, "hazard_pfs");
   auto hazard_osv = expand1(hazard_os, n, "hazard_os");
@@ -1320,14 +1330,14 @@ double corr_pfs_oscpp(const std::vector<double>& piecewiseSurvivalTime,
   if (rho_pd_os <= -1 || rho_pd_os >= 1)
     throw std::invalid_argument("corr_pd_os must lie between -1 and 1");
 
-  ListCpp a = hazard_pdcpp(piecewiseSurvivalTime, hazard_pfsv, hazard_osv, rho_pd_os);
+  ListCpp a =
+      hazard_pdcpp(piecewiseSurvivalTime, hazard_pfsv, hazard_osv, rho_pd_os);
   std::vector<double> u = a.get<std::vector<double>>("piecewiseSurvivalTime");
   std::vector<double> hazard_pd1 = a.get<std::vector<double>>("hazard_pd");
   std::vector<double> hazard_os1 = a.get<std::vector<double>>("hazard_os");
 
   return cor_pfs_os(u, hazard_pd1, hazard_os1, rho_pd_os);
 }
-
 
 //' @title Correlation Between PFS and OS Given Correlation Between PD and OS
 //'
@@ -1368,11 +1378,10 @@ double corr_pfs_oscpp(const std::vector<double>& piecewiseSurvivalTime,
 //'
 //' @export
 // [[Rcpp::export]]
-double corr_pfs_os(
-    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
-    const Rcpp::NumericVector& hazard_pfs = NA_REAL,
-    const Rcpp::NumericVector& hazard_os = NA_REAL,
-    const double rho_pd_os = NA_REAL) {
+double corr_pfs_os(const Rcpp::NumericVector &piecewiseSurvivalTime = 0,
+                   const Rcpp::NumericVector &hazard_pfs = NA_REAL,
+                   const Rcpp::NumericVector &hazard_os = NA_REAL,
+                   const double rho_pd_os = NA_REAL) {
 
   auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
   auto haz_pfs = Rcpp::as<std::vector<double>>(hazard_pfs);
@@ -1381,26 +1390,29 @@ double corr_pfs_os(
   return corr_pfs_oscpp(pwSurvT, haz_pfs, haz_os, rho_pd_os);
 }
 
-
-
-ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
-                      const std::vector<double>& hazard_itt,
-                      const std::vector<double>& hazard_pos,
+ListCpp hazard_subcpp(const std::vector<double> &piecewiseSurvivalTime,
+                      const std::vector<double> &hazard_itt,
+                      const std::vector<double> &hazard_pos,
                       const double p_pos) {
 
   if (piecewiseSurvivalTime[0] != 0)
     throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
   if (any_nonincreasing(piecewiseSurvivalTime))
     throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
-  if (!none_na(hazard_itt)) throw std::invalid_argument("hazard_itt must be provided");
-  if (!none_na(hazard_pos)) throw std::invalid_argument("hazard_pos must be provided");
+  if (!none_na(hazard_itt))
+    throw std::invalid_argument("hazard_itt must be provided");
+  if (!none_na(hazard_pos))
+    throw std::invalid_argument("hazard_pos must be provided");
   for (double v : hazard_itt) {
-    if (v <= 0) throw std::invalid_argument("hazard_itt must be positive");
+    if (v <= 0)
+      throw std::invalid_argument("hazard_itt must be positive");
   }
   for (double v : hazard_pos) {
-    if (v <= 0) throw std::invalid_argument("hazard_pos must be positive");
+    if (v <= 0)
+      throw std::invalid_argument("hazard_pos must be positive");
   }
-  if (std::isnan(p_pos)) throw std::invalid_argument("p_pos must be provided");
+  if (std::isnan(p_pos))
+    throw std::invalid_argument("p_pos must be provided");
   if (p_pos <= 0 || p_pos >= 1)
     throw std::invalid_argument("p_pos must lie between 0 and 1");
 
@@ -1410,14 +1422,16 @@ ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
 
   // append additional time points for pfs quantiles
   std::vector<double> p(10);
-  for (size_t i=0; i<9; ++i) p[i] = (i+1.0)/10.0;
+  for (size_t i = 0; i < 9; ++i)
+    p[i] = (i + 1.0) / 10.0;
   p[9] = 0.95;
 
-  std::vector<double> u(n+10);
-  for (size_t i=0; i<n-1; ++i) u[i] = piecewiseSurvivalTime[i+1];
-  u[n-1] = piecewiseSurvivalTime[n-1] + std::log(2.0)/hazard_ittv[n-1];
-  for (size_t i=0; i<10; ++i) {
-    u[n+i] = qtpwexpcpp1(p[i], piecewiseSurvivalTime, hazard_ittv);
+  std::vector<double> u(n + 10);
+  for (size_t i = 0; i < n - 1; ++i)
+    u[i] = piecewiseSurvivalTime[i + 1];
+  u[n - 1] = piecewiseSurvivalTime[n - 1] + std::log(2.0) / hazard_ittv[n - 1];
+  for (size_t i = 0; i < 10; ++i) {
+    u[n + i] = qtpwexpcpp1(p[i], piecewiseSurvivalTime, hazard_ittv);
   }
 
   // obtain sorted and unique time points
@@ -1428,11 +1442,13 @@ ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
   // shifted time points
   std::vector<double> u1(m);
   u1[0] = 0;
-  for (size_t i=1; i<m; ++i) u1[i] = u[i-1];
+  for (size_t i = 1; i < m; ++i)
+    u1[i] = u[i - 1];
 
   // get corresponding hazards
   std::vector<size_t> index = findInterval3(u1, piecewiseSurvivalTime);
-  for (size_t i=0; i<m; ++i) index[i] = index[i] - 1;
+  for (size_t i = 0; i < m; ++i)
+    index[i] = index[i] - 1;
   std::vector<double> hazard_itt1 = subset(hazard_ittv, index);
   std::vector<double> hazard_pos1 = subset(hazard_posv, index);
 
@@ -1440,7 +1456,7 @@ ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
   double t;
   std::vector<double> hazard_neg(m);
   std::vector<double> v(0), hazard(0), haz_itt(0), haz_pos(0);
-  auto f = [&](double haz)->double {
+  auto f = [&](double haz) -> double {
     std::vector<double> haz_neg = hazard;
     haz_neg.push_back(haz);
     double a = ptpwexpcpp1(t, v, haz_pos, 0, 1, 0);
@@ -1450,7 +1466,7 @@ ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
   };
 
   double tol = 1e-6;
-  for (size_t i=0; i<m; ++i) {
+  for (size_t i = 0; i < m; ++i) {
     t = u[i];
     v.push_back(u1[i]);
     haz_itt.push_back(hazard_itt1[i]);
@@ -1467,7 +1483,6 @@ ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
   result.push_back(p_pos, "p_pos");
   return result;
 }
-
 
 //' @title Hazard Function for Sub Population
 //'
@@ -1541,11 +1556,10 @@ ListCpp hazard_subcpp(const std::vector<double>& piecewiseSurvivalTime,
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List hazard_sub(
-    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
-    const Rcpp::NumericVector& hazard_itt = NA_REAL,
-    const Rcpp::NumericVector& hazard_pos = NA_REAL,
-    const double p_pos = NA_REAL) {
+Rcpp::List hazard_sub(const Rcpp::NumericVector &piecewiseSurvivalTime = 0,
+                      const Rcpp::NumericVector &hazard_itt = NA_REAL,
+                      const Rcpp::NumericVector &hazard_pos = NA_REAL,
+                      const double p_pos = NA_REAL) {
 
   auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
   auto haz_itt = Rcpp::as<std::vector<double>>(hazard_itt);
@@ -1555,10 +1569,9 @@ Rcpp::List hazard_sub(
   return Rcpp::wrap(out);
 }
 
-
 // bygroup: group-by helper that builds lookup tables and combined indices
-ListCpp bygroup(const DataFrameCpp& data,
-                const std::vector<std::string>& variables) {
+ListCpp bygroup(const DataFrameCpp &data,
+                const std::vector<std::string> &variables) {
 
   size_t n = data.nrows();
   size_t p = variables.size();
@@ -1584,12 +1597,12 @@ ListCpp bygroup(const DataFrameCpp& data,
   ListCpp lookups_per_variable; // will contain a std::vector for each variable
 
   for (size_t i = 0; i < p; ++i) {
-    const std::string& var = variables[i];
+    const std::string &var = variables[i];
     if (!data.containElementNamed(var))
       throw std::invalid_argument("Data must contain variable: " + var);
 
     if (data.int_cols.count(var)) {
-      const auto& col = data.int_cols.at(var);
+      const auto &col = data.int_cols.at(var);
       auto w = unique_sorted(col);
       nlevels[i] = w.size();
       auto idx = matchcpp(col, w); // indices 0..(levels-1)
@@ -1603,7 +1616,7 @@ ListCpp bygroup(const DataFrameCpp& data,
       intmatrix_set_column(indices, i, idx);
       lookups_per_variable.push_back(std::move(w), var);
     } else if (data.numeric_cols.count(var)) {
-      const auto& col = data.numeric_cols.at(var);
+      const auto &col = data.numeric_cols.at(var);
       auto w = unique_sorted(col);
       nlevels[i] = w.size();
       auto idx = matchcpp(col, w);
@@ -1615,7 +1628,7 @@ ListCpp bygroup(const DataFrameCpp& data,
       intmatrix_set_column(indices, i, idx);
       lookups_per_variable.push_back(std::move(w), var);
     } else if (data.bool_cols.count(var)) {
-      const auto& col = data.bool_cols.at(var);
+      const auto &col = data.bool_cols.at(var);
       auto w = unique_sorted(col);
       nlevels[i] = w.size();
       auto idx = matchcpp(col, w);
@@ -1627,7 +1640,7 @@ ListCpp bygroup(const DataFrameCpp& data,
       intmatrix_set_column(indices, i, idx);
       lookups_per_variable.push_back(std::move(w), var);
     } else if (data.string_cols.count(var)) {
-      const auto& col = data.string_cols.at(var);
+      const auto &col = data.string_cols.at(var);
       auto w = unique_sorted(col);
       nlevels[i] = w.size();
       auto idx = matchcpp(col, w);
@@ -1639,7 +1652,7 @@ ListCpp bygroup(const DataFrameCpp& data,
       intmatrix_set_column(indices, i, idx);
       lookups_per_variable.push_back(std::move(w), var);
     } else if (data.size_t_cols.count(var)) {
-      const auto& col = data.size_t_cols.at(var);
+      const auto &col = data.size_t_cols.at(var);
       auto w = unique_sorted(col);
       nlevels[i] = w.size();
       auto idx = matchcpp(col, w);
@@ -1651,19 +1664,21 @@ ListCpp bygroup(const DataFrameCpp& data,
       intmatrix_set_column(indices, i, idx);
       lookups_per_variable.push_back(std::move(w), var);
     } else {
-      throw std::invalid_argument("Unsupported variable type in bygroup: " + var);
+      throw std::invalid_argument("Unsupported variable type in bygroup: " +
+                                  var);
     }
   } // end for variables
 
   // compute combined index
   std::vector<int> combined_index(n, 0);
   size_t orep = 1;
-  for (size_t i = 0; i < p; ++i) orep *= nlevels[i];
+  for (size_t i = 0; i < p; ++i)
+    orep *= nlevels[i];
   size_t lookup_nrows = orep;
 
   for (size_t i = 0; i < p; ++i) {
     orep /= nlevels[i];
-    const int* col_ptr = indices.data_ptr() + i * n;
+    const int *col_ptr = indices.data_ptr() + i * n;
     for (size_t j = 0; j < n; ++j) {
       combined_index[j] += col_ptr[j] * orep;
     }
@@ -1673,56 +1688,61 @@ ListCpp bygroup(const DataFrameCpp& data,
   DataFrameCpp lookup_df;
   size_t repeat_each = lookup_nrows;
   for (size_t i = 0; i < p; ++i) {
-    const std::string& var = variables[i];
+    const std::string &var = variables[i];
     size_t nlevels_i = nlevels[i];
     repeat_each /= nlevels_i;
-    size_t times = lookup_nrows / ( nlevels_i * repeat_each );
+    size_t times = lookup_nrows / (nlevels_i * repeat_each);
 
     VarLookupInfo info = var_info[i];
     if (info.type == 0) {
-      const int* base = int_flat.data() + info.offset;
+      const int *base = int_flat.data() + info.offset;
       std::vector<int> col(lookup_nrows);
       size_t idxw = 0;
       for (size_t t = 0; t < times; ++t) {
         for (size_t level = 0; level < nlevels_i; ++level)
-          for (size_t r = 0; r < repeat_each; ++r) col[idxw++] = base[level];
+          for (size_t r = 0; r < repeat_each; ++r)
+            col[idxw++] = base[level];
       }
       lookup_df.push_back(std::move(col), var);
     } else if (info.type == 1) {
-      const double* base = dbl_flat.data() + info.offset;
+      const double *base = dbl_flat.data() + info.offset;
       std::vector<double> col(lookup_nrows);
       size_t idxw = 0;
       for (size_t t = 0; t < times; ++t) {
         for (size_t level = 0; level < nlevels_i; ++level)
-          for (size_t r = 0; r < repeat_each; ++r) col[idxw++] = base[level];
+          for (size_t r = 0; r < repeat_each; ++r)
+            col[idxw++] = base[level];
       }
       lookup_df.push_back(std::move(col), var);
     } else if (info.type == 2) {
-      const unsigned char* base = bool_flat.data() + info.offset;
+      const unsigned char *base = bool_flat.data() + info.offset;
       std::vector<unsigned char> col(lookup_nrows);
       size_t idxw = 0;
       for (size_t t = 0; t < times; ++t) {
         for (size_t level = 0; level < nlevels_i; ++level) {
-          for (size_t r = 0; r < repeat_each; ++r) col[idxw++] = base[level];
+          for (size_t r = 0; r < repeat_each; ++r)
+            col[idxw++] = base[level];
         }
       }
       lookup_df.push_back(std::move(col), var);
     } else if (info.type == 3) { // string
-      const std::string* base = str_flat.data() + info.offset;
+      const std::string *base = str_flat.data() + info.offset;
       std::vector<std::string> col(lookup_nrows);
       size_t idxw = 0;
       for (size_t t = 0; t < times; ++t) {
         for (size_t level = 0; level < nlevels_i; ++level)
-          for (size_t r = 0; r < repeat_each; ++r) col[idxw++] = base[level];
+          for (size_t r = 0; r < repeat_each; ++r)
+            col[idxw++] = base[level];
       }
       lookup_df.push_back(std::move(col), var);
     } else { // size_t
-      const size_t* base = size_t_flat.data() + info.offset;
+      const size_t *base = size_t_flat.data() + info.offset;
       std::vector<size_t> col(lookup_nrows);
       size_t idxw = 0;
       for (size_t t = 0; t < times; ++t) {
         for (size_t level = 0; level < nlevels_i; ++level)
-          for (size_t r = 0; r < repeat_each; ++r) col[idxw++] = base[level];
+          for (size_t r = 0; r < repeat_each; ++r)
+            col[idxw++] = base[level];
       }
       lookup_df.push_back(std::move(col), var);
     }
@@ -1736,10 +1756,10 @@ ListCpp bygroup(const DataFrameCpp& data,
   return result;
 }
 
-
 // --------------------------- Linear algebra helpers (FlatMatrix-backed) ----
 
-std::vector<double> mat_vec_mult(const FlatMatrix& A, const std::vector<double>& x) {
+std::vector<double> mat_vec_mult(const FlatMatrix &A,
+                                 const std::vector<double> &x) {
   size_t m = A.nrow;
   size_t p = A.ncol;
   if (x.size() != p)
@@ -1748,29 +1768,33 @@ std::vector<double> mat_vec_mult(const FlatMatrix& A, const std::vector<double>&
   for (size_t c = 0; c < p; ++c) {
     double xc = x[c];
     size_t offset = c * m;
-    const double* colptr = A.data_ptr() + offset;
-    for (size_t r = 0; r < m; ++r) result[r] += colptr[r] * xc;
+    const double *colptr = A.data_ptr() + offset;
+    for (size_t r = 0; r < m; ++r)
+      result[r] += colptr[r] * xc;
   }
   return result;
 }
 
-FlatMatrix mat_mat_mult(const FlatMatrix& A, const FlatMatrix& B) {
+FlatMatrix mat_mat_mult(const FlatMatrix &A, const FlatMatrix &B) {
   size_t m = A.nrow;
   size_t k = A.ncol;
   size_t k2 = B.nrow;
   size_t n = B.ncol;
-  if (k != k2) throw std::invalid_argument("Matrix dimensions mismatch");
-  if (m == 0 || k == 0 || n == 0) return FlatMatrix();
+  if (k != k2)
+    throw std::invalid_argument("Matrix dimensions mismatch");
+  if (m == 0 || k == 0 || n == 0)
+    return FlatMatrix();
   FlatMatrix C(m, n);
   // Column-major: For each column j in B/C, compute
   // C[:,j] = sum_{t=0..k-1} A[:,t] * B[t,j]
   for (size_t j = 0; j < n; ++j) {
-    const double* bcol = B.data_ptr() + j * k;
-    double* ccol = C.data_ptr() + j * m;
+    const double *bcol = B.data_ptr() + j * k;
+    double *ccol = C.data_ptr() + j * m;
     for (size_t t = 0; t < k; ++t) {
-      const double* acol = A.data_ptr() + t * m;
+      const double *acol = A.data_ptr() + t * m;
       double scale = bcol[t];
-      if (scale == 0.0) continue;
+      if (scale == 0.0)
+        continue;
       for (size_t i = 0; i < m; ++i) {
         ccol[i] += acol[i] * scale;
       }
@@ -1780,18 +1804,19 @@ FlatMatrix mat_mat_mult(const FlatMatrix& A, const FlatMatrix& B) {
 }
 
 // Transpose a FlatMatrix (double)
-FlatMatrix transpose(const FlatMatrix& M) {
-  if (M.nrow == 0 || M.ncol == 0) return FlatMatrix();
+FlatMatrix transpose(const FlatMatrix &M) {
+  if (M.nrow == 0 || M.ncol == 0)
+    return FlatMatrix();
 
   const size_t src_nrow = M.nrow;
   const size_t src_ncol = M.ncol;
   FlatMatrix out(src_ncol, src_nrow); // swapped dims
 
-  const double* src = M.data_ptr();
-  double* dst = out.data_ptr();
+  const double *src = M.data_ptr();
+  double *dst = out.data_ptr();
 
   for (size_t c = 0; c < src_ncol; ++c) {
-    const double* src_col = src + c * src_nrow;
+    const double *src_col = src + c * src_nrow;
     for (size_t r = 0; r < src_nrow; ++r) {
       dst[r * src_ncol + c] = src_col[r];
     }
@@ -1801,18 +1826,19 @@ FlatMatrix transpose(const FlatMatrix& M) {
 }
 
 // Transpose an IntMatrix (int)
-IntMatrix transpose(const IntMatrix& M) {
-  if (M.nrow == 0 || M.ncol == 0) return IntMatrix();
+IntMatrix transpose(const IntMatrix &M) {
+  if (M.nrow == 0 || M.ncol == 0)
+    return IntMatrix();
 
   const size_t src_nrow = M.nrow;
   const size_t src_ncol = M.ncol;
   IntMatrix out(src_ncol, src_nrow); // swapped dims
 
-  const int* src = M.data_ptr();
-  int* dst = out.data_ptr();
+  const int *src = M.data_ptr();
+  int *dst = out.data_ptr();
 
   for (size_t c = 0; c < src_ncol; ++c) {
-    const int* src_col = src + c * src_nrow;
+    const int *src_col = src + c * src_nrow;
     for (size_t r = 0; r < src_nrow; ++r) {
       dst[r * src_ncol + c] = src_col[r];
     }
@@ -1822,18 +1848,19 @@ IntMatrix transpose(const IntMatrix& M) {
 }
 
 // Transpose an SztMatrix (std::size_t)
-SztMatrix transpose(const SztMatrix& M) {
-  if (M.nrow == 0 || M.ncol == 0) return SztMatrix();
+SztMatrix transpose(const SztMatrix &M) {
+  if (M.nrow == 0 || M.ncol == 0)
+    return SztMatrix();
 
   const size_t src_nrow = M.nrow;
   const size_t src_ncol = M.ncol;
   SztMatrix out(src_ncol, src_nrow); // swapped dims
 
-  const size_t* src = M.data_ptr();
-  size_t* dst = out.data_ptr();
+  const size_t *src = M.data_ptr();
+  size_t *dst = out.data_ptr();
 
   for (size_t c = 0; c < src_ncol; ++c) {
-    const size_t* src_col = src + c * src_nrow;
+    const size_t *src_col = src + c * src_nrow;
     for (size_t r = 0; r < src_nrow; ++r) {
       dst[r * src_ncol + c] = src_col[r];
     }
@@ -1843,18 +1870,19 @@ SztMatrix transpose(const SztMatrix& M) {
 }
 
 // Transpose a BoolMatrix (unsigned char)
-BoolMatrix transpose(const BoolMatrix& M) {
-  if (M.nrow == 0 || M.ncol == 0) return BoolMatrix();
+BoolMatrix transpose(const BoolMatrix &M) {
+  if (M.nrow == 0 || M.ncol == 0)
+    return BoolMatrix();
 
   const size_t src_nrow = M.nrow;
   const size_t src_ncol = M.ncol;
   BoolMatrix out(src_ncol, src_nrow); // swapped dims
 
-  const unsigned char* src = M.data_ptr();
-  unsigned char* dst = out.data_ptr();
+  const unsigned char *src = M.data_ptr();
+  unsigned char *dst = out.data_ptr();
 
   for (size_t c = 0; c < src_ncol; ++c) {
-    const unsigned char* src_col = src + c * src_nrow;
+    const unsigned char *src_col = src + c * src_nrow;
     for (size_t r = 0; r < src_nrow; ++r) {
       dst[r * src_ncol + c] = src_col[r];
     }
@@ -1863,46 +1891,52 @@ BoolMatrix transpose(const BoolMatrix& M) {
   return out;
 }
 
-double quadsym(const std::vector<double>& u, const FlatMatrix& v) {
+double quadsym(const std::vector<double> &u, const FlatMatrix &v) {
   size_t p = u.size();
-  const double* vptr = v.data_ptr();
-  const double* uptr = u.data();
+  const double *vptr = v.data_ptr();
+  const double *uptr = u.data();
   double sum = 0.0;
 
   for (size_t j = 0; j < p; ++j) {
-    const double* col = vptr + j * p;
+    const double *col = vptr + j * p;
     // diagonal term
     sum += uptr[j] * uptr[j] * col[j]; // col[j] == v(j,j)
     // off-diagonals i < j. Access column j contiguous for i = 0..j-1
     double s = 0.0;
-    for (size_t i = 0; i < j; ++i) s += col[i] * uptr[i];
+    for (size_t i = 0; i < j; ++i)
+      s += col[i] * uptr[i];
     sum += 2.0 * uptr[j] * s; // account for symmetric pair (i,j) and (j,i)
   }
   return sum;
 }
 
 // cholesky2: in-place working on FlatMatrix (n x n), returns rank * nonneg
-int cholesky2(FlatMatrix& matrix, size_t n, double toler) {
-  double* base = matrix.data_ptr();
+int cholesky2(FlatMatrix &matrix, size_t n, double toler) {
+  double *base = matrix.data_ptr();
   double eps = 0.0;
   for (size_t i = 0; i < n; ++i) {
     double val = matrix(i, i);
-    if (val > eps) eps = val;
+    if (val > eps)
+      eps = val;
   }
-  if (eps == 0.0) eps = toler; else eps *= toler;
+  if (eps == 0.0)
+    eps = toler;
+  else
+    eps *= toler;
   int nonneg = 1;
   int rank = 0;
 
   for (size_t i = 0; i < n; ++i) {
-    double* col_i = base + i * n;
+    double *col_i = base + i * n;
     double pivot = col_i[i];
     if (std::isinf(pivot) || pivot < eps) {
       col_i[i] = 0.0;
-      if (pivot < -8.0 * eps) nonneg = -1;
+      if (pivot < -8.0 * eps)
+        nonneg = -1;
     } else {
       ++rank;
       for (size_t j = i + 1; j < n; ++j) {
-        double* col_j = base + j * n;
+        double *col_j = base + j * n;
         double temp = col_i[j] / pivot;
         col_i[j] = temp;
         col_j[j] -= temp * temp * pivot;
@@ -1915,61 +1949,62 @@ int cholesky2(FlatMatrix& matrix, size_t n, double toler) {
   return rank * nonneg;
 }
 
-
 // chsolve2 assumes matrix holds the representation produced by cholesky2
-void chsolve2(FlatMatrix& matrix, size_t n, double* y) {
+void chsolve2(FlatMatrix &matrix, size_t n, double *y) {
   // Forward substitution L * z = y
-  double* base = matrix.data_ptr();
-  for (size_t j = 0; j < n-1; ++j) {
+  double *base = matrix.data_ptr();
+  for (size_t j = 0; j < n - 1; ++j) {
     double yj = y[j];
-    if (yj == 0.0) continue;
-    double* col_j = base + j * n;
+    if (yj == 0.0)
+      continue;
+    double *col_j = base + j * n;
     for (size_t i = j + 1; i < n; ++i) {
       y[i] -= yj * col_j[i];
     }
   }
   // Now y holds z; solve L^T * x = z
-  if (n == 0) return;
-  for (int i = n; i-- > 0; ) {
-    double* col_i = base + i * n;
+  if (n == 0)
+    return;
+  for (int i = n; i-- > 0;) {
+    double *col_i = base + i * n;
     double diag = col_i[i];
     if (diag == 0.0) {
       y[i] = 0.0;
     } else {
       double temp = y[i] / diag;
-      for (size_t j = i + 1; j < n; ++j) temp -= y[j] * col_i[j];
+      for (size_t j = i + 1; j < n; ++j)
+        temp -= y[j] * col_i[j];
       y[i] = temp;
     }
   }
 }
 
-
 // invsympd: returns the inverse of a symmetric positive definite matrix
-FlatMatrix invsympd(const FlatMatrix& matrix, size_t n, double toler) {
+FlatMatrix invsympd(const FlatMatrix &matrix, size_t n, double toler) {
   FlatMatrix v = matrix; // copy
   cholesky2(v, n, toler);
   FlatMatrix iv(n, n);
   for (size_t i = 0; i < n; ++i) {
-    iv(i,i) = 1.0;
-    double* ycol = iv.data_ptr() + i * n;
+    iv(i, i) = 1.0;
+    double *ycol = iv.data_ptr() + i * n;
     chsolve2(v, n, ycol);
   }
   return iv;
 }
 
-
 // invchol assumes matrix holds the representation produced by cholesky2
-FlatMatrix invchol(FlatMatrix& matrix, size_t n) {
+FlatMatrix invchol(FlatMatrix &matrix, size_t n) {
   // Forward substitution L * z = y
-  double* base = matrix.data_ptr();
+  double *base = matrix.data_ptr();
   FlatMatrix iv(n, n);
   for (size_t k = 0; k < n; ++k) {
-    iv(k,k) = 1.0;
-    double* y = iv.data_ptr() + k * n;
-    for (size_t j = 0; j < n-1; ++j) {
+    iv(k, k) = 1.0;
+    double *y = iv.data_ptr() + k * n;
+    for (size_t j = 0; j < n - 1; ++j) {
       double yj = y[j];
-      if (yj == 0.0) continue;
-      double* col_j = base + j * n;
+      if (yj == 0.0)
+        continue;
+      double *col_j = base + j * n;
       for (size_t i = j + 1; i < n; ++i) {
         y[i] -= yj * col_j[i];
       }
@@ -1978,18 +2013,17 @@ FlatMatrix invchol(FlatMatrix& matrix, size_t n) {
   return iv;
 }
 
-
 // Householder vector
 // Given an n-vector x, this function computes an n-vector v with v(1) = 1
 // such that (I - 2*v*t(v)/t(v)*v)*x is zero in all but the first component.
-std::vector<double> house(const std::vector<double>& x) {
+std::vector<double> house(const std::vector<double> &x) {
   size_t n = x.size();
   double sumxx = std::inner_product(x.begin(), x.end(), x.begin(), 0.0);
   double mu = std::sqrt(sumxx);
   std::vector<double> v = x;
   if (mu > 0.0) {
-    double beta = x[0] + std::copysign(1.0, x[0])*mu;
-    for (size_t i=1; i<n; ++i) {
+    double beta = x[0] + std::copysign(1.0, x[0]) * mu;
+    for (size_t i = 1; i < n; ++i) {
       v[i] /= beta;
     }
   }
@@ -2001,8 +2035,8 @@ std::vector<double> house(const std::vector<double>& x) {
 // Given an m-by-n matrix A and a nonzero m-vector v with v(1) = 1,
 // the following algorithm overwrites A with P*A where
 // P = I - 2*v*t(v)/t(v)*v.
-void row_house(FlatMatrix& A, const size_t i1, const size_t i2, const size_t j1,
-               const size_t j2, const std::vector<double>& v) {
+void row_house(FlatMatrix &A, const size_t i1, const size_t i2, const size_t j1,
+               const size_t j2, const std::vector<double> &v) {
   if (i1 < 0 || i1 > i2 || i2 >= A.nrow) {
     throw std::invalid_argument("Invalid row indices i1 and i2");
   }
@@ -2010,20 +2044,20 @@ void row_house(FlatMatrix& A, const size_t i1, const size_t i2, const size_t j1,
     throw std::invalid_argument("Invalid column indices j1 and j2");
   }
 
-  size_t m = i2-i1+1, n = j2-j1+1;
+  size_t m = i2 - i1 + 1, n = j2 - j1 + 1;
   double sumvv = std::inner_product(v.begin(), v.end(), v.begin(), 0.0);
   double beta = -2.0 / sumvv;
   std::vector<double> w(n);
-  for (size_t j=0; j<n; ++j) {
-    for (size_t i=0; i<m; ++i) {
-      w[j] += A(i+i1,j+j1)*v[i];
+  for (size_t j = 0; j < n; ++j) {
+    for (size_t i = 0; i < m; ++i) {
+      w[j] += A(i + i1, j + j1) * v[i];
     }
     w[j] *= beta;
   }
 
-  for (size_t j=0; j<n; ++j) {
-    for (size_t i=0; i<m; ++i) {
-      A(i+i1,j+j1) += v[i]*w[j];
+  for (size_t j = 0; j < n; ++j) {
+    for (size_t i = 0; i < m; ++i) {
+      A(i + i1, j + j1) += v[i] * w[j];
     }
   }
 }
@@ -2032,8 +2066,8 @@ void row_house(FlatMatrix& A, const size_t i1, const size_t i2, const size_t j1,
 // Given an m-by-n matrix A and a nonzero n-vector v with v(1) = 1,
 // the following algorithm overwrites A with A*P where
 // P = I - 2*v*t(v)/t(v)*v.
-void col_house(FlatMatrix& A, const size_t i1, const size_t i2, const size_t j1,
-               const size_t j2, const std::vector<double>& v) {
+void col_house(FlatMatrix &A, const size_t i1, const size_t i2, const size_t j1,
+               const size_t j2, const std::vector<double> &v) {
   if (i1 < 0 || i1 > i2 || i2 >= A.nrow) {
     throw std::invalid_argument("Invalid row indices i1 and i2");
   }
@@ -2041,21 +2075,21 @@ void col_house(FlatMatrix& A, const size_t i1, const size_t i2, const size_t j1,
     throw std::invalid_argument("Invalid column indices j1 and j2");
   }
 
-  size_t m = i2-i1+1, n = j2-j1+1;
+  size_t m = i2 - i1 + 1, n = j2 - j1 + 1;
   double sumvv = std::inner_product(v.begin(), v.end(), v.begin(), 0.0);
   double beta = -2.0 / sumvv;
   std::vector<double> w(m);
-  for (size_t j=0; j<n; ++j) {
-    for (size_t i=0; i<m; ++i) {
-      w[i] += A(i+i1,j+j1)*v[j];
+  for (size_t j = 0; j < n; ++j) {
+    for (size_t i = 0; i < m; ++i) {
+      w[i] += A(i + i1, j + j1) * v[j];
     }
   }
-  for (size_t i=0; i<m; ++i) {
+  for (size_t i = 0; i < m; ++i) {
     w[i] *= beta;
   }
-  for (size_t j=0; j<n; ++j) {
-    for (size_t i=0; i<m; ++i) {
-      A(i+i1,j+j1) += w[i]*v[j];
+  for (size_t j = 0; j < n; ++j) {
+    for (size_t i = 0; i < m; ++i) {
+      A(i + i1, j + j1) += w[i] * v[j];
     }
   }
 }
@@ -2068,18 +2102,23 @@ std::vector<double> givens(const double a, const double b) {
   double c, s, tau;
 
   if (b == 0.0) {
-    c = 1.0; s = 0.0;
+    c = 1.0;
+    s = 0.0;
   } else {
     if (std::fabs(b) > std::fabs(a)) {
       double d = -std::copysign(1.0, b);
-      tau = -a/b; s = d*1.0/std::sqrt(1.0 + tau*tau); c = s*tau;
+      tau = -a / b;
+      s = d * 1.0 / std::sqrt(1.0 + tau * tau);
+      c = s * tau;
     } else {
       double d = std::copysign(1.0, a);
-      tau = -b/a; c = d*1.0/std::sqrt(1.0 + tau*tau); s = c*tau;
+      tau = -b / a;
+      c = d * 1.0 / std::sqrt(1.0 + tau * tau);
+      s = c * tau;
     }
   }
 
-  std::vector<double> result = {c,s};
+  std::vector<double> result = {c, s};
   return result;
 }
 
@@ -2087,9 +2126,8 @@ std::vector<double> givens(const double a, const double b) {
 // the following algorithm overwrites A with the matrix
 //               |  c   s  |^T  A
 //               | -s   c  |
-void row_rot(FlatMatrix& A, const size_t i1, const size_t i2,
-             const size_t j1, const size_t j2,
-             const double c, const double s) {
+void row_rot(FlatMatrix &A, const size_t i1, const size_t i2, const size_t j1,
+             const size_t j2, const double c, const double s) {
   if (i1 < 0 || i1 >= i2 || i2 >= A.nrow) {
     throw std::invalid_argument("Invalid row indices i1 and i2");
   }
@@ -2097,13 +2135,13 @@ void row_rot(FlatMatrix& A, const size_t i1, const size_t i2,
     throw std::invalid_argument("Invalid column indices j1 and j2");
   }
 
-  size_t q = j2-j1+1;
-  for (size_t j=0; j<q; ++j) {
-    size_t jj1 = j+j1;
-    double tau1 = A(i1,jj1);
-    double tau2 = A(i2,jj1);
-    A(i1,jj1) = c*tau1 - s*tau2;
-    A(i2,jj1) = s*tau1 + c*tau2;
+  size_t q = j2 - j1 + 1;
+  for (size_t j = 0; j < q; ++j) {
+    size_t jj1 = j + j1;
+    double tau1 = A(i1, jj1);
+    double tau2 = A(i2, jj1);
+    A(i1, jj1) = c * tau1 - s * tau2;
+    A(i2, jj1) = s * tau1 + c * tau2;
   }
 }
 
@@ -2111,9 +2149,8 @@ void row_rot(FlatMatrix& A, const size_t i1, const size_t i2,
 // the following algorithm overwrites A with the matrix
 //               A  |  c   s  |
 //                  | -s   c  |
-void col_rot(FlatMatrix& A, const size_t i1, const size_t i2,
-             const size_t j1, const size_t j2,
-             const double c, const double s) {
+void col_rot(FlatMatrix &A, const size_t i1, const size_t i2, const size_t j1,
+             const size_t j2, const double c, const double s) {
   if (i1 < 0 || i1 > i2 || i2 >= A.nrow) {
     throw std::invalid_argument("Invalid row indices i1 and i2");
   }
@@ -2121,13 +2158,13 @@ void col_rot(FlatMatrix& A, const size_t i1, const size_t i2,
     throw std::invalid_argument("Invalid column indices j1 and j2");
   }
 
-  size_t q = i2-i1+1;
-  for (size_t i=0; i<q; ++i) {
-    size_t ii1 = i+i1;
-    double tau1 = A(ii1,j1);
-    double tau2 = A(ii1,j2);
-    A(ii1,j1) = c*tau1 - s*tau2;
-    A(ii1,j2) = s*tau1 + c*tau2;
+  size_t q = i2 - i1 + 1;
+  for (size_t i = 0; i < q; ++i) {
+    size_t ii1 = i + i1;
+    double tau1 = A(ii1, j1);
+    double tau2 = A(ii1, j2);
+    A(ii1, j1) = c * tau1 - s * tau2;
+    A(ii1, j2) = s * tau1 + c * tau2;
   }
 }
 
@@ -2138,100 +2175,106 @@ void col_rot(FlatMatrix& A, const size_t i1, const size_t i2,
 // V = V_1 ... V_{n-2}. The essential part of U_j's Householder vector
 // is stored in A((j+1):m, j), while the essential part of V_j's
 // Householder vector is stored in A(j, (j+2):n).
-ListCpp house_bidiag(FlatMatrix& A, const bool outtransform = true) {
+ListCpp house_bidiag(FlatMatrix &A, const bool outtransform = true) {
   size_t m = A.nrow, n = A.ncol;
   if (m < n) {
-    throw std::invalid_argument("The input matrix must have # rows >= # columns");
+    throw std::invalid_argument(
+        "The input matrix must have # rows >= # columns");
   }
 
   double tol = 1e-12;
   bool bidiag = true;
-  for (size_t j=2; j<n; ++j) {
-    for (size_t i=0; i<j-1; ++i) {
-      if (std::fabs(A(i,j)) > tol) {
-        bidiag = false; break;
+  for (size_t j = 2; j < n; ++j) {
+    for (size_t i = 0; i < j - 1; ++i) {
+      if (std::fabs(A(i, j)) > tol) {
+        bidiag = false;
+        break;
       }
     }
   }
-  for (size_t j=0; j<n-1; ++j) {
-    for (size_t i=j+1; i<n; ++i) {
-      if (std::fabs(A(i,j)) > tol) {
-        bidiag = false; break;
+  for (size_t j = 0; j < n - 1; ++j) {
+    for (size_t i = j + 1; i < n; ++i) {
+      if (std::fabs(A(i, j)) > tol) {
+        bidiag = false;
+        break;
       }
     }
   }
-  for (size_t j=0; j<n; ++j) {
-    for (size_t i=n; i<m-1; ++i) {
-      if (std::fabs(A(i,j)) > tol) {
-        bidiag = false; break;
+  for (size_t j = 0; j < n; ++j) {
+    for (size_t i = n; i < m - 1; ++i) {
+      if (std::fabs(A(i, j)) > tol) {
+        bidiag = false;
+        break;
       }
     }
   }
 
-  FlatMatrix B(n,n);
-  FlatMatrix U(m,m), V(n,n);
-  for (size_t i=0; i<m; ++i) U(i,i) = 1.0;
-  for (size_t i=0; i<n; ++i) V(i,i) = 1.0;
+  FlatMatrix B(n, n);
+  FlatMatrix U(m, m), V(n, n);
+  for (size_t i = 0; i < m; ++i)
+    U(i, i) = 1.0;
+  for (size_t i = 0; i < n; ++i)
+    V(i, i) = 1.0;
 
   if (bidiag) {
     B = A;
   } else {
-    for (size_t j=0; j<n; ++j) {
-      std::vector<double> v(m-j);
-      for (size_t i=0; i<m-j; ++i) {
-        v[i] = A(i+j,j);
+    for (size_t j = 0; j < n; ++j) {
+      std::vector<double> v(m - j);
+      for (size_t i = 0; i < m - j; ++i) {
+        v[i] = A(i + j, j);
       }
       v = house(v);
 
-      row_house(A, j, m-1, j, n-1, v);
+      row_house(A, j, m - 1, j, n - 1, v);
 
       // update the sub-diagonal elements of column j
-      for (size_t i=1; i<m-j; ++i) {
-        A(i+j,j) = v[i];
+      for (size_t i = 1; i < m - j; ++i) {
+        A(i + j, j) = v[i];
       }
 
-      if (j < n-2) {
-        std::vector<double> v(n-j-1);
-        for (size_t i=0; i<n-j-1; ++i) {
-          v[i] = A(j,i+j+1);
+      if (j < n - 2) {
+        std::vector<double> v(n - j - 1);
+        for (size_t i = 0; i < n - j - 1; ++i) {
+          v[i] = A(j, i + j + 1);
         }
         v = house(v);
 
-        col_house(A, j, m-1, j+1, n-1, v);
+        col_house(A, j, m - 1, j + 1, n - 1, v);
 
         // update the elements of row j
-        for (size_t i=1; i<n-j-1; ++i) {
-          A(j,i+j+1) = v[i];
+        for (size_t i = 1; i < n - j - 1; ++i) {
+          A(j, i + j + 1) = v[i];
         }
       }
     }
 
     if (outtransform) {
-      for (size_t j = n; j-- > 0; ) {
-        std::vector<double> v(m-j);
+      for (size_t j = n; j-- > 0;) {
+        std::vector<double> v(m - j);
         v[0] = 1.0;
-        for (size_t i=1; i<m-j; ++i) {
-          v[i] = A(i+j,j);
+        for (size_t i = 1; i < m - j; ++i) {
+          v[i] = A(i + j, j);
         }
 
-        row_house(U, j, m-1, j, m-1, v);
+        row_house(U, j, m - 1, j, m - 1, v);
       }
 
-      for (size_t j = n-2; j-- > 0; ) {
-        std::vector<double> v(n-j-1);
+      for (size_t j = n - 2; j-- > 0;) {
+        std::vector<double> v(n - j - 1);
         v[0] = 1.0;
-        for (size_t i = 1; i < n-j-1; ++i) {
-          v[i] = A(j,i+j+1);
+        for (size_t i = 1; i < n - j - 1; ++i) {
+          v[i] = A(j, i + j + 1);
         }
 
-        row_house(V, j+1, n-1, j+1, n-1, v);
+        row_house(V, j + 1, n - 1, j + 1, n - 1, v);
       }
     }
 
-    for (size_t j=0; j<n; ++j) {
-      B(j,j) = A(j,j);
-      if (j<n-1) {
-        B(j,j+1) = A(j,j+1);
+    for (size_t j = 0; j < n; ++j) {
+      B(j, j) = A(j, j);
+      if (j < n - 1) {
+        B(j, j + 1) = A(j, j + 1);
       }
     }
   }
@@ -2249,24 +2292,28 @@ ListCpp house_bidiag(FlatMatrix& A, const bool outtransform = true) {
 
 // Given a bidiagonal matrix with a zero diagonal, premultiplication
 // by a sequence of Givens transformations to zero the entire row
-ListCpp zero_diagonal(FlatMatrix& B, const size_t k, const bool outtransform = true) {
+ListCpp zero_diagonal(FlatMatrix &B, const size_t k,
+                      const bool outtransform = true) {
   size_t n = B.nrow;
   if (B.ncol != n) {
     throw std::invalid_argument("The input matrix must be a square matrix");
   }
-  if (k < 0 || k >= n-1) {
+  if (k < 0 || k >= n - 1) {
     throw std::invalid_argument("Invalid value for index k");
   }
-  FlatMatrix U(n,n);
-  for (size_t i=0; i<n; ++i) U(i,i) = 1.0;
+  FlatMatrix U(n, n);
+  for (size_t i = 0; i < n; ++i)
+    U(i, i) = 1.0;
 
-  for (size_t j=k+1; j<n; ++j) {
-    std::vector<double> v = givens(B(k,j), B(j,j));
+  for (size_t j = k + 1; j < n; ++j) {
+    std::vector<double> v = givens(B(k, j), B(j, j));
     double w = v[0];
-    v[0] = -v[1]; v[1] = w;
-    size_t j1 = j < n-1 ? j+1 : n-1;
+    v[0] = -v[1];
+    v[1] = w;
+    size_t j1 = j < n - 1 ? j + 1 : n - 1;
     row_rot(B, k, j, j, j1, v[0], v[1]);
-    if (outtransform) col_rot(U, k, j, k, j, v[0], v[1]);
+    if (outtransform)
+      col_rot(U, k, j, k, j, v[0], v[1]);
   }
 
   ListCpp result;
@@ -2285,11 +2332,12 @@ ListCpp zero_diagonal(FlatMatrix& B, const size_t k, const bool outtransform = t
 // bidiagonal matrix t(U)*B*V, where U and V are orthogonal and V
 // is essentially the orthogonal matrix that would be obtained by
 // applying Algorithm 8.2.2 in Golub and Van Loan (1989) to T = t(B)*B.
-ListCpp svd_step(FlatMatrix& B, const bool outtransform = true) {
+ListCpp svd_step(FlatMatrix &B, const bool outtransform = true) {
   size_t n = B.ncol;
-  FlatMatrix U(n,n), V(n,n);
-  for (size_t i=0; i<n; ++i) {
-    U(i,i) = 1.0; V(i,i) = 1.0;
+  FlatMatrix U(n, n), V(n, n);
+  for (size_t i = 0; i < n; ++i) {
+    U(i, i) = 1.0;
+    V(i, i) = 1.0;
   }
 
   if (n == 1) {
@@ -2304,31 +2352,33 @@ ListCpp svd_step(FlatMatrix& B, const bool outtransform = true) {
     return result;
   }
 
-  double f1 = (n > 2) ? B(n-3,n-2) : 0.0;
-  double f2 = B(n-2,n-1);
-  double d1 = B(n-2,n-2), d2 = B(n-1,n-1);
-  double a1 = f1*f1 + d1*d1, a2 = f2*f2 + d2*d2, b1 = f2*d1;
-  double d = 0.5*(a1-a2);
-  double mu = a2 + d - std::copysign(1.0, d)*std::sqrt(d*d + b1*b1);
-  double y = B(0,0)*B(0,0) - mu;
-  double z = B(0,0)*B(0,1);
+  double f1 = (n > 2) ? B(n - 3, n - 2) : 0.0;
+  double f2 = B(n - 2, n - 1);
+  double d1 = B(n - 2, n - 2), d2 = B(n - 1, n - 1);
+  double a1 = f1 * f1 + d1 * d1, a2 = f2 * f2 + d2 * d2, b1 = f2 * d1;
+  double d = 0.5 * (a1 - a2);
+  double mu = a2 + d - std::copysign(1.0, d) * std::sqrt(d * d + b1 * b1);
+  double y = B(0, 0) * B(0, 0) - mu;
+  double z = B(0, 0) * B(0, 1);
   std::vector<double> v(2);
-  for (size_t k=0; k<n-1; ++k) {
-    v = givens(y,z);
-    size_t k1 = k > 0 ? k-1 : 0;
-    col_rot(B, k1, k+1, k, k+1, v[0], v[1]);
-    if (outtransform) col_rot(V, 0, k+1, k, k+1, v[0], v[1]);
+  for (size_t k = 0; k < n - 1; ++k) {
+    v = givens(y, z);
+    size_t k1 = k > 0 ? k - 1 : 0;
+    col_rot(B, k1, k + 1, k, k + 1, v[0], v[1]);
+    if (outtransform)
+      col_rot(V, 0, k + 1, k, k + 1, v[0], v[1]);
 
-    y = B(k,k);
-    z = B(k+1,k);
-    v = givens(y,z);
-    size_t k2 = k < n-2 ? k+2 : n-1;
-    row_rot(B, k, k+1, k, k2, v[0], v[1]);
-    if (outtransform) col_rot(U, 0, k+1, k, k+1, v[0], v[1]);
+    y = B(k, k);
+    z = B(k + 1, k);
+    v = givens(y, z);
+    size_t k2 = k < n - 2 ? k + 2 : n - 1;
+    row_rot(B, k, k + 1, k, k2, v[0], v[1]);
+    if (outtransform)
+      col_rot(U, 0, k + 1, k, k + 1, v[0], v[1]);
 
-    if (k < n-2) {
-      y = B(k,k+1);
-      z = B(k,k+2);
+    if (k < n - 2) {
+      y = B(k, k + 1);
+      z = B(k, k + 2);
     }
   }
 
@@ -2343,16 +2393,18 @@ ListCpp svd_step(FlatMatrix& B, const bool outtransform = true) {
   return result;
 }
 
-ListCpp svdcpp1(const FlatMatrix& X, const bool outtransform,
+ListCpp svdcpp1(const FlatMatrix &X, const bool outtransform,
                 const bool decreasing) {
   size_t m1 = X.nrow, n1 = X.ncol, m, n;
   if (m1 >= n1) {
-    m = m1; n = n1;
+    m = m1;
+    n = n1;
   } else {
-    m = n1; n = m1;
+    m = n1;
+    n = m1;
   }
 
-  FlatMatrix Y(m,n);
+  FlatMatrix Y(m, n);
   if (m1 >= n1) {
     Y = X;
   } else {
@@ -2362,9 +2414,11 @@ ListCpp svdcpp1(const FlatMatrix& X, const bool outtransform,
   ListCpp a = house_bidiag(Y, outtransform);
   FlatMatrix B = a.get<FlatMatrix>("B");
 
-  FlatMatrix U(m,m), V(n,n);
-  for (size_t i=0; i<m; ++i) U(i,i) = 1.0;
-  for (size_t i=0; i<n; ++i) V(i,i) = 1.0;
+  FlatMatrix U(m, m), V(n, n);
+  for (size_t i = 0; i < m; ++i)
+    U(i, i) = 1.0;
+  for (size_t i = 0; i < n; ++i)
+    V(i, i) = 1.0;
   if (outtransform) {
     U = a.get<FlatMatrix>("U");
     V = a.get<FlatMatrix>("V");
@@ -2373,9 +2427,10 @@ ListCpp svdcpp1(const FlatMatrix& X, const bool outtransform,
   double tol = 1e-12;
   size_t p, q = 0;
   while (q < n) {
-    for (size_t i=1; i<n; ++i) {
-      if (std::fabs(B(i-1,i)) <= tol*(std::fabs(B(i-1,i-1)) + std::fabs(B(i,i)))) {
-        B(i-1,i) = 0.0;
+    for (size_t i = 1; i < n; ++i) {
+      if (std::fabs(B(i - 1, i)) <=
+          tol * (std::fabs(B(i - 1, i - 1)) + std::fabs(B(i, i)))) {
+        B(i - 1, i) = 0.0;
       }
     }
 
@@ -2391,8 +2446,8 @@ ListCpp svdcpp1(const FlatMatrix& X, const bool outtransform,
 
     // Find last nonzero superdiagonal entry B(i-1, i) scanning i = n-1 ... 1
     if (n >= 2) {
-      for (size_t i = n; i-- > 1; ) {          // i: n-1, ..., 1
-        if (B(i-1, i) != 0.0) {
+      for (size_t i = n; i-- > 1;) { // i: n-1, ..., 1
+        if (B(i - 1, i) != 0.0) {
           q = n - i - 1;
           break;
         }
@@ -2404,34 +2459,33 @@ ListCpp svdcpp1(const FlatMatrix& X, const bool outtransform,
     // We search for a zero superdiagonal in the active part.
     const size_t active = n - q;
     if (active >= 2) {
-      for (size_t i = active - 1; i-- > 1; ) { // i: active-2, ..., 1
-        if (B(i-1, i) == 0.0) {
+      for (size_t i = active - 1; i-- > 1;) { // i: active-2, ..., 1
+        if (B(i - 1, i) == 0.0) {
           p = i;
           break;
         }
       }
     }
 
-
     if (q < n) {
       // if any diagonal entry in B22 is zero, then zero the superdiagonal
       // entry in the same row
-      FlatMatrix B22 = subset_flatmatrix(B, p, n-q, p, n-q);
-      for (size_t i=0; i<n-p-q-1; ++i) {
-        if (std::fabs(B22(i,i)) < tol) {
+      FlatMatrix B22 = subset_flatmatrix(B, p, n - q, p, n - q);
+      for (size_t i = 0; i < n - p - q - 1; ++i) {
+        if (std::fabs(B22(i, i)) < tol) {
           ListCpp b = zero_diagonal(B22, i, outtransform);
           if (outtransform) {
             FlatMatrix Z = b.get<FlatMatrix>("U");
-            FlatMatrix W = subset_flatmatrix(U, 0, m, p, n-q);
-            for (size_t k=0; k<n-p-q; ++k) {
-              for (size_t j=0; j<m; ++j) {
-                U(j,k+p) = 0.0;
+            FlatMatrix W = subset_flatmatrix(U, 0, m, p, n - q);
+            for (size_t k = 0; k < n - p - q; ++k) {
+              for (size_t j = 0; j < m; ++j) {
+                U(j, k + p) = 0.0;
               }
             }
-            for (size_t k=0; k<n-p-q; ++k) {
-              for (size_t l=0; l<n-p-q; ++l) {
-                for (size_t j=0; j<m; ++j) {
-                  U(j,k+p) += W(j,l)*Z(l,k);
+            for (size_t k = 0; k < n - p - q; ++k) {
+              for (size_t l = 0; l < n - p - q; ++l) {
+                for (size_t j = 0; j < m; ++j) {
+                  U(j, k + p) += W(j, l) * Z(l, k);
                 }
               }
             }
@@ -2443,39 +2497,39 @@ ListCpp svdcpp1(const FlatMatrix& X, const bool outtransform,
       ListCpp c = svd_step(B22, outtransform);
 
       // update B22
-      for (size_t j=0; j<n-p-q; ++j) {
-        for (size_t i=0; i<n-p-q; ++i) {
-          B(i+p,j+p) = B22(i,j);
+      for (size_t j = 0; j < n - p - q; ++j) {
+        for (size_t i = 0; i < n - p - q; ++i) {
+          B(i + p, j + p) = B22(i, j);
         }
       }
 
       if (outtransform) {
         FlatMatrix Z1 = c.get<FlatMatrix>("U");
-        FlatMatrix W1 = subset_flatmatrix(U, 0, m, p, n-q);
-        for (size_t j=0; j<n-p-q; ++j) {
-          for (size_t i=0; i<m; ++i) {
-            U(i,j+p) = 0.0;
+        FlatMatrix W1 = subset_flatmatrix(U, 0, m, p, n - q);
+        for (size_t j = 0; j < n - p - q; ++j) {
+          for (size_t i = 0; i < m; ++i) {
+            U(i, j + p) = 0.0;
           }
         }
-        for (size_t j=0; j<n-p-q; ++j) {
-          for (size_t k=0; k<n-p-q; ++k) {
-            for (size_t i=0; i<m; ++i) {
-              U(i,j+p) += W1(i,k)*Z1(k,j);
+        for (size_t j = 0; j < n - p - q; ++j) {
+          for (size_t k = 0; k < n - p - q; ++k) {
+            for (size_t i = 0; i < m; ++i) {
+              U(i, j + p) += W1(i, k) * Z1(k, j);
             }
           }
         }
 
         FlatMatrix Z2 = c.get<FlatMatrix>("V");
-        FlatMatrix W2 = subset_flatmatrix(V, 0, n, p, n-q);
-        for (size_t j=0; j<n-p-q; ++j) {
-          for (size_t i=0; i<n; ++i) {
-            V(i,j+p) = 0.0;
+        FlatMatrix W2 = subset_flatmatrix(V, 0, n, p, n - q);
+        for (size_t j = 0; j < n - p - q; ++j) {
+          for (size_t i = 0; i < n; ++i) {
+            V(i, j + p) = 0.0;
           }
         }
-        for (size_t j=0; j<n-p-q; ++j) {
-          for (size_t k=0; k<n-p-q; ++k) {
-            for (size_t i=0; i<n; ++i) {
-              V(i,j+p) += W2(i,k)*Z2(k,j);
+        for (size_t j = 0; j < n - p - q; ++j) {
+          for (size_t k = 0; k < n - p - q; ++k) {
+            for (size_t i = 0; i < n; ++i) {
+              V(i, j + p) += W2(i, k) * Z2(k, j);
             }
           }
         }
@@ -2484,42 +2538,47 @@ ListCpp svdcpp1(const FlatMatrix& X, const bool outtransform,
   }
 
   std::vector<double> d(n);
-  for (size_t i=0; i<n; ++i) d[i] = B(i,i);
+  for (size_t i = 0; i < n; ++i)
+    d[i] = B(i, i);
 
   // ensure the singular values are positive
-  for (size_t i=0; i<n; ++i) {
+  for (size_t i = 0; i < n; ++i) {
     if (d[i] < 0.0) {
       d[i] = -d[i];
-      for (size_t j=0; j<n; ++j) V(j,i) = -V(j,i);
+      for (size_t j = 0; j < n; ++j)
+        V(j, i) = -V(j, i);
     }
   }
 
   if (decreasing) {
     // order the singular values from the largest to the smallest
     // and the arrange the associated vectors accordingly
-    std::vector<size_t> order = seqcpp(0, n-1);
-    std::sort(order.begin(), order.end(), [&](size_t i, size_t j) {
-      return d[i] > d[j];
-    });
+    std::vector<size_t> order = seqcpp(0, n - 1);
+    std::sort(order.begin(), order.end(),
+              [&](size_t i, size_t j) { return d[i] > d[j]; });
 
     subset_in_place(d, order);
     if (outtransform) {
       FlatMatrix Z = U;
       FlatMatrix W = V;
-      for (size_t i=0; i<n; ++i) {
+      for (size_t i = 0; i < n; ++i) {
         size_t k = order[i];
-        for (size_t j=0; j<m; ++j) U(j,i) = Z(j,k);
-        for (size_t j=0; j<n; ++j) V(j,i) = W(j,k);
+        for (size_t j = 0; j < m; ++j)
+          U(j, i) = Z(j, k);
+        for (size_t j = 0; j < n; ++j)
+          V(j, i) = W(j, k);
       }
     }
   }
 
   // switch U and V if m1 < n1
-  FlatMatrix U1(m1,m1), V1(n1,n1);
+  FlatMatrix U1(m1, m1), V1(n1, n1);
   if (m1 >= n1) {
-    U1 = U; V1 = V;
+    U1 = U;
+    V1 = V;
   } else {
-    U1 = V; V1 = U;
+    U1 = V;
+    V1 = U;
   }
 
   ListCpp result;
@@ -2574,14 +2633,12 @@ ListCpp svdcpp1(const FlatMatrix& X, const bool outtransform,
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List svdcpp(const Rcpp::NumericMatrix& X,
-                  const bool outtransform = true,
+Rcpp::List svdcpp(const Rcpp::NumericMatrix &X, const bool outtransform = true,
                   const bool decreasing = true) {
   auto fm = flatmatrix_from_Rmatrix(X);
   auto cpp_result = svdcpp1(fm, outtransform, decreasing);
   return Rcpp::wrap(cpp_result);
 }
-
 
 //' @title Converting a decimal to a fraction
 //' @description Converts a decimal to a fraction based on the algorithm
@@ -2608,7 +2665,7 @@ std::vector<double> float_to_fraction(const double x,
     v[0] = n;
     v[1] = 1;
   } else if (1 - tol < x1) {
-    v[0] = n+1;
+    v[0] = n + 1;
     v[1] = 1;
   } else {
     // The lower fraction is 0/1
@@ -2646,4 +2703,3 @@ std::vector<double> float_to_fraction(const double x,
 
   return v;
 }
-

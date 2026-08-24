@@ -1,29 +1,26 @@
-#include "generic_design.h"
-#include "utilities.h"
-#include "dataframe_list.h"
-#include "mvnormr.h"
 #include "multiplicity.h"
+#include "dataframe_list.h"
+#include "generic_design.h"
+#include "mvnormr.h"
+#include "utilities.h"
 
-#include <algorithm>     // any_of, distance, fill, max_element, min, sort
-#include <cctype>        // tolower
-#include <cmath>         // fabs, isnan
-#include <cstring>       // memcpy
-#include <numeric>       // accumulate
-#include <stdexcept>     // invalid_argument
-#include <string>        // string
-#include <vector>        // vector
+#include <algorithm> // any_of, distance, fill, max_element, min, sort
+#include <cctype>    // tolower
+#include <cmath>     // fabs, isnan
+#include <cstring>   // memcpy
+#include <numeric>   // accumulate
+#include <stdexcept> // invalid_argument
+#include <string>    // string
+#include <vector>    // vector
 
 #include <Rcpp.h>
 #include <RcppParallel.h>
 
 using std::size_t;
 
-
 // Helper to update graph for graphical approaches
-Graph updateGraphcpp(const std::vector<double>& w,
-                     const FlatMatrix& G,
-                     const std::vector<size_t>& I,
-                     const size_t j) {
+Graph updateGraphcpp(const std::vector<double> &w, const FlatMatrix &G,
+                     const std::vector<size_t> &I, const size_t j) {
 
   size_t m = w.size();
 
@@ -59,7 +56,8 @@ Graph updateGraphcpp(const std::vector<double>& w,
   }
   for (size_t i = 0; i < m; ++i) {
     if (rowsum[i] > 1.0 + 1e-8) {
-      throw std::invalid_argument("Row sums of G must be less than or equal to 1");
+      throw std::invalid_argument(
+          "Row sums of G must be less than or equal to 1");
     }
   }
 
@@ -72,21 +70,25 @@ Graph updateGraphcpp(const std::vector<double>& w,
 
   // Check validity of elements of I, create zero-based indexing, and remove j
   std::vector<unsigned char> seen(m, 0); // 0/1 marks presence
-  std::vector<size_t> I_new; I_new.reserve(I.size()); // new I after removing j
+  std::vector<size_t> I_new;
+  I_new.reserve(I.size()); // new I after removing j
   for (size_t i : I) {
     if (seen[i]) {
-      throw std::invalid_argument("The index set I must not contain duplicates.");
+      throw std::invalid_argument(
+          "The index set I must not contain duplicates.");
     }
     seen[i] = 1;
-    if (i != j) I_new.push_back(i); // new I excludes index j
+    if (i != j)
+      I_new.push_back(i); // new I excludes index j
   }
 
   // Check that j belongs to I
-  if (!seen[j]) throw std::invalid_argument("j must be in I.");
+  if (!seen[j])
+    throw std::invalid_argument("j must be in I.");
 
   // Update weights
   const double w_j = w[j];
-  std::vector<double> wx = w;  // copy w
+  std::vector<double> wx = w; // copy w
   for (size_t i : I_new) {
     wx[i] += w_j * G(j, i);
   }
@@ -95,14 +97,15 @@ Graph updateGraphcpp(const std::vector<double>& w,
   // Update transition matrix
   std::vector<double> denom(m);
   for (size_t l : I_new) {
-    denom[l] =  1.0 - G(l, j) * G(j, l);
+    denom[l] = 1.0 - G(l, j) * G(j, l);
   }
 
   FlatMatrix g(m, m);
   for (size_t k : I_new) {
     double g_jk = G(j, k);
     for (size_t l : I_new) {
-      if (l == k) continue;
+      if (l == k)
+        continue;
       double dl = denom[l];
       if (dl > 1e-12) {
         g(l, k) = (G(l, k) + G(l, j) * g_jk) / dl;
@@ -138,25 +141,25 @@ Graph updateGraphcpp(const std::vector<double>& w,
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List updateGraph(const std::vector<double>& w,
-                       const Rcpp::NumericMatrix& G,
-                       const std::vector<int>& I,
+Rcpp::List updateGraph(const std::vector<double> &w,
+                       const Rcpp::NumericMatrix &G, const std::vector<int> &I,
                        const int j) {
 
   int m = w.size();
   auto I1 = validateConvertIdx(I, m, "I");
-  if (j <= 0) throw std::invalid_argument("j must be positive");
+  if (j <= 0)
+    throw std::invalid_argument("j must be positive");
   size_t j1 = j - 1;
   auto G1 = flatmatrix_from_Rmatrix(G);
   auto out = updateGraphcpp(w, G1, I1, j1);
-  for (size_t& i : out.I) ++i;
+  for (size_t &i : out.I)
+    ++i;
   ListCpp result;
   result.push_back(std::move(out.w), "w");
   result.push_back(std::move(out.G), "G");
   result.push_back(std::move(out.I), "I");
   return Rcpp::wrap(result);
 }
-
 
 // Helper to compute the default weight matrix for graphical approaches
 WeightMatrix fDefaultWgtmatcpp(size_t m) {
@@ -170,8 +173,7 @@ WeightMatrix fDefaultWgtmatcpp(size_t m) {
     size_t nactive = 0;
 
     for (size_t k = 0; k < m; ++k) {
-      const int bit = static_cast<int>(
-        (number >> (m - 1 - k)) & size_t{1});
+      const int bit = static_cast<int>((number >> (m - 1 - k)) & size_t{1});
       out.inthyp(i, k) = bit;
       nactive += static_cast<size_t>(bit);
     }
@@ -193,7 +195,7 @@ BoolMatrix fDefaultFamilycpp(const size_t m) {
   return family;
 }
 
-FlatMatrix fDefaultCorrcpp(const BoolMatrix& family) {
+FlatMatrix fDefaultCorrcpp(const BoolMatrix &family) {
   const size_t m = family.ncol;
   FlatMatrix corr(m, m);
   corr.fill(NaN);
@@ -218,10 +220,8 @@ FlatMatrix fDefaultCorrcpp(const BoolMatrix& family) {
   return corr;
 }
 
-
 // Helper to compute the full weight matrix for graphical approaches
-WeightMatrix fwgtmatcpp(const std::vector<double>& w,
-                        const FlatMatrix& G) {
+WeightMatrix fwgtmatcpp(const std::vector<double> &w, const FlatMatrix &G) {
   size_t m = w.size();
   size_t ntests = (1 << m) - 1;
   size_t gtr_nrow = (ntests + 1) / 2;
@@ -259,7 +259,8 @@ WeightMatrix fwgtmatcpp(const std::vector<double>& w,
   }
   for (size_t i = 0; i < m; ++i) {
     if (rowsum[i] > 1.0 + 1e-8) {
-      throw std::invalid_argument("Row sums of G must be less than or equal to 1");
+      throw std::invalid_argument(
+          "Row sums of G must be less than or equal to 1");
     }
   }
 
@@ -271,11 +272,11 @@ WeightMatrix fwgtmatcpp(const std::vector<double>& w,
   }
 
   // Preallocations and initial copies
-  std::vector<double> wx = w;   // dynamic weights, reused
-  FlatMatrix g = G;             // mutable transition matrix
+  std::vector<double> wx = w; // dynamic weights, reused
+  FlatMatrix g = G;           // mutable transition matrix
   FlatMatrix g1(m, m); // temp transition matrix, reused (zeroed when needed)
-  FlatMatrix gtrmat(gtr_nrow, gtr_ncol); // store first half of transition matrix
-  IntMatrix inthyp(ntests, m); // store intersection hypotheses
+  FlatMatrix gtrmat(gtr_nrow, gtr_ncol); // first half of transition matrix
+  IntMatrix inthyp(ntests, m);           // store intersection hypotheses
   FlatMatrix wgtmat(ntests, m); // store weights of elementary hypotheses
 
   std::vector<size_t> active; // indices of active hypotheses in intersection
@@ -287,7 +288,7 @@ WeightMatrix fwgtmatcpp(const std::vector<double>& w,
 
   for (size_t i = 0; i < ntests; ++i) {
     if (i >= 1) {
-      int number = ntests - i;  // original mapping
+      int number = ntests - i; // original mapping
 
       // Build list of active indices
       active.clear();
@@ -296,10 +297,15 @@ WeightMatrix fwgtmatcpp(const std::vector<double>& w,
       for (size_t k = 0; k < m; ++k) {
         int bit = (number >> (m - 1 - k)) & 1;
         inthyp(i, k) = bit;
-        if (bit) active.push_back(k);
-        else if (!found_zero) { j = k; found_zero = true; }
+        if (bit)
+          active.push_back(k);
+        else if (!found_zero) {
+          j = k;
+          found_zero = true;
+        }
       }
-      if (!found_zero) j = 0;
+      if (!found_zero)
+        j = 0;
 
       // index of the super set, with j-th bit set to 0 and others flipped
       size_t ip = ((~number) & mask) & ~(1 << (m - 1 - j));
@@ -327,14 +333,15 @@ WeightMatrix fwgtmatcpp(const std::vector<double>& w,
 
       // Update the transition matrix
       for (size_t l : active) {
-        denom[l] =  1.0 - g(l, j) * g(j, l);
+        denom[l] = 1.0 - g(l, j) * g(j, l);
       }
 
       g1.fill(0.0); // ensure g1 is zeroed before use
       for (size_t k : active) {
         double g_jk = g(j, k);
         for (size_t l : active) {
-          if (l == k) continue;
+          if (l == k)
+            continue;
           double dl = denom[l];
           if (dl > 1e-12) {
             g1(l, k) = (g(l, k) + g(l, j) * g_jk) / dl;
@@ -342,7 +349,7 @@ WeightMatrix fwgtmatcpp(const std::vector<double>& w,
         }
       }
 
-      std::swap(g.data, g1.data);  // copy g1 to g for next iteration
+      std::swap(g.data, g1.data); // copy g1 to g for next iteration
     } else {
       for (size_t k = 0; k < m; ++k) {
         inthyp(i, k) = 1;
@@ -413,8 +420,7 @@ Rcpp::List fDefaultWgtmat(const size_t m) {
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List fwgtmat(const Rcpp::NumericVector& w,
-                   const Rcpp::NumericMatrix& G) {
+Rcpp::List fwgtmat(const Rcpp::NumericVector &w, const Rcpp::NumericMatrix &G) {
   auto w1 = Rcpp::as<std::vector<double>>(w);
   auto G1 = flatmatrix_from_Rmatrix(G);
   auto out = fwgtmatcpp(w1, G1);
@@ -424,11 +430,8 @@ Rcpp::List fwgtmat(const Rcpp::NumericVector& w,
   return Rcpp::wrap(result);
 }
 
-
 // Helper to compute adjusted p-values for Bonferroni-based graphical approaches
-AdjustedPValues fadjpboncpp(
-    const FlatMatrix& p,
-    const WeightMatrix& wgtmat) {
+AdjustedPValues fadjpboncpp(const FlatMatrix &p, const WeightMatrix &wgtmat) {
 
   size_t ntests = wgtmat.inthyp.nrow;
   size_t m = p.ncol;
@@ -441,24 +444,29 @@ AdjustedPValues fadjpboncpp(
 
   // Main loop over subsets
   for (size_t i = 0; i < ntests; ++i) {
-    double* pinter_col = &pinter.data[i * niters]; // contiguous column
+    double *pinter_col = &pinter.data[i * niters]; // contiguous column
 
     for (size_t j = 0; j < m; ++j) {
       double w = wgtmat.wgtmat(i, j);
-      if (w == 0 || wgtmat.inthyp(i, j) == 0) continue;
+      if (w == 0 || wgtmat.inthyp(i, j) == 0)
+        continue;
       for (size_t iter = 0; iter < niters; ++iter) {
         double v = p(iter, j) / w;
-        if (v < pinter_col[iter]) pinter_col[iter] = v;
+        if (v < pinter_col[iter])
+          pinter_col[iter] = v;
       }
     }
 
-    // Update padj columns for active hypotheses (each hyp[t] gets max over subsets)
+    // Update padj columns for active hypotheses (each hyp[t] gets max over
+    // subsets)
     for (size_t j = 0; j < m; ++j) {
-      if (wgtmat.inthyp(i, j) == 0) continue;
-      double* padj_col = &padj.data[j * niters]; // contiguous column
+      if (wgtmat.inthyp(i, j) == 0)
+        continue;
+      double *padj_col = &padj.data[j * niters]; // contiguous column
       for (size_t iter = 0; iter < niters; ++iter) {
         double v = pinter_col[iter];
-        if (v > padj_col[iter]) padj_col[iter] = v;
+        if (v > padj_col[iter])
+          padj_col[iter] = v;
       }
     }
   } // end subsets
@@ -466,14 +474,13 @@ AdjustedPValues fadjpboncpp(
   return AdjustedPValues{wgtmat.inthyp, pinter, padj};
 }
 
-AdjustedPValues fadjpboncpp(const FlatMatrix& p) {
+AdjustedPValues fadjpboncpp(const FlatMatrix &p) {
   return fadjpboncpp(p, fDefaultWgtmatcpp(p.ncol));
 }
 
-
 // [[Rcpp::export]]
-Rcpp::List fadjpbonRcpp(const Rcpp::NumericMatrix& p,
-                        const Rcpp::Nullable<Rcpp::List>& wgtmat = R_NilValue) {
+Rcpp::List fadjpbonRcpp(const Rcpp::NumericMatrix &p,
+                        const Rcpp::Nullable<Rcpp::List> &wgtmat = R_NilValue) {
   auto p1 = flatmatrix_from_Rmatrix(p);
   if (wgtmat.isNull()) {
     auto out = fadjpboncpp(p1);
@@ -496,12 +503,9 @@ Rcpp::List fadjpbonRcpp(const Rcpp::NumericMatrix& p,
   return Rcpp::wrap(result);
 }
 
-
 // Helper to compute adjusted p-values for Simes-based graphical approaches
-AdjustedPValues fadjpsimcpp(
-    const FlatMatrix& p,
-    const WeightMatrix& wgtmat,
-    const BoolMatrix& family) {
+AdjustedPValues fadjpsimcpp(const FlatMatrix &p, const WeightMatrix &wgtmat,
+                            const BoolMatrix &family) {
 
   size_t ntests = wgtmat.inthyp.nrow;
   size_t m = p.ncol;
@@ -518,19 +522,26 @@ AdjustedPValues fadjpsimcpp(
   FlatMatrix pinter(niters, ntests);
 
   // Reusable buffers sized up to m
-  std::vector<double> wbuf; wbuf.reserve(m);
-  std::vector<double> pbuf; pbuf.reserve(m);
-  std::vector<double> cw; cw.reserve(m);
-  std::vector<size_t> idx; idx.reserve(m);
-  std::vector<double> p1; p1.reserve(m);
-  std::vector<double> w1; w1.reserve(m);
+  std::vector<double> wbuf;
+  wbuf.reserve(m);
+  std::vector<double> pbuf;
+  pbuf.reserve(m);
+  std::vector<double> cw;
+  cw.reserve(m);
+  std::vector<size_t> idx;
+  idx.reserve(m);
+  std::vector<double> p1;
+  p1.reserve(m);
+  std::vector<double> w1;
+  w1.reserve(m);
 
   // Main loop over subsets
   for (size_t i = 0; i < ntests; ++i) {
     std::vector<size_t> nhyps0(nfams, 0);
     std::vector<size_t> hyp;
     for (size_t j = 0; j < m; ++j) {
-      if (!wgtmat.inthyp(i,j)) continue;
+      if (!wgtmat.inthyp(i, j))
+        continue;
       for (size_t k = 0; k < nfams; ++k) {
         if (family(k, j)) {
           nhyps0[k]++;
@@ -541,7 +552,8 @@ AdjustedPValues fadjpsimcpp(
     }
     std::vector<size_t> nhyps1;
     for (size_t k = 0; k < nfams; ++k) {
-      if (nhyps0[k] > 0) nhyps1.push_back(nhyps0[k]);
+      if (nhyps0[k] > 0)
+        nhyps1.push_back(nhyps0[k]);
     }
 
     size_t nhyps = hyp.size();
@@ -553,7 +565,7 @@ AdjustedPValues fadjpsimcpp(
       wbuf[t] = wgtmat.wgtmat(i, col);
     }
 
-    double* pinter_col = &pinter.data[i * niters]; // contiguous column
+    double *pinter_col = &pinter.data[i * niters]; // contiguous column
     // For each iteration (row of p), compute pinter(iter, i)
     for (size_t iter = 0; iter < niters; ++iter) {
       // Extract p-values for active hypotheses in the same hyp order
@@ -571,17 +583,17 @@ AdjustedPValues fadjpsimcpp(
         size_t t = nhyps1[block];
         // snapshot original block to avoid in-place overwrite corruption
         // p1 and w1 are reusable buffers (reserved to m, resized per block)
-        p1.resize(t); w1.resize(t); // within family block
+        p1.resize(t);
+        w1.resize(t); // within family block
         for (size_t u = 0; u < t; ++u) {
           p1[u] = pbuf[s + u];
           w1[u] = wbuf[s + u];
         }
 
         // obtain index ordering of the snapshot
-        idx = seqcpp(0, t-1);
-        std::sort(idx.begin(), idx.end(), [&p1](size_t a, size_t b) {
-          return p1[a] < p1[b];
-        });
+        idx = seqcpp(0, t - 1);
+        std::sort(idx.begin(), idx.end(),
+                  [&p1](size_t a, size_t b) { return p1[a] < p1[b]; });
 
         // copy sorted p and compute cumulative weights from the snapshot
         double cum = 0.0;
@@ -590,8 +602,8 @@ AdjustedPValues fadjpsimcpp(
           double pv = p1[src];
           double wv = w1[src];
           cum += wv;
-          pbuf[s + j] = pv;    // write sorted p-values into pbuf
-          cw[s + j] = cum;     // cumulative weights
+          pbuf[s + j] = pv; // write sorted p-values into pbuf
+          cw[s + j] = cum;  // cumulative weights
         }
         s += t;
       }
@@ -602,19 +614,22 @@ AdjustedPValues fadjpsimcpp(
         double cj = cw[j];
         if (cj > 0.0) {
           double ratio = pbuf[j] / cj;
-          if (ratio < q) q = ratio;
+          if (ratio < q)
+            q = ratio;
         }
       }
       pinter_col[iter] = q;
     } // end iter loop
 
-    // Update padj columns for active hypotheses (each hyp[t] gets max over subsets)
+    // Update padj columns for active hypotheses (each hyp[t] gets max over
+    // subsets)
     for (size_t t = 0; t < nhyps; ++t) {
       size_t col = hyp[t];
-      double* padj_col = &padj.data[col * niters]; // contiguous column
+      double *padj_col = &padj.data[col * niters]; // contiguous column
       for (size_t iter = 0; iter < niters; ++iter) {
         double v = pinter_col[iter];
-        if (v > padj_col[iter]) padj_col[iter] = v;
+        if (v > padj_col[iter])
+          padj_col[iter] = v;
       }
     }
   } // end subsets
@@ -622,24 +637,19 @@ AdjustedPValues fadjpsimcpp(
   return AdjustedPValues{wgtmat.inthyp, pinter, padj};
 }
 
-AdjustedPValues fadjpsimcpp(
-    const FlatMatrix& p,
-    const BoolMatrix& family) {
+AdjustedPValues fadjpsimcpp(const FlatMatrix &p, const BoolMatrix &family) {
   return fadjpsimcpp(p, fDefaultWgtmatcpp(p.ncol), family);
 }
 
-AdjustedPValues fadjpsimcpp(
-    const FlatMatrix& p,
-    const WeightMatrix& wgtmat) {
+AdjustedPValues fadjpsimcpp(const FlatMatrix &p, const WeightMatrix &wgtmat) {
   return fadjpsimcpp(p, wgtmat, fDefaultFamilycpp(p.ncol));
 }
 
-
 // [[Rcpp::export]]
-Rcpp::List fadjpsimRcpp(
-    const Rcpp::NumericMatrix& p,
-    const Rcpp::Nullable<Rcpp::List>& wgtmat = R_NilValue,
-    const Rcpp::Nullable<Rcpp::LogicalMatrix>& family = R_NilValue) {
+Rcpp::List
+fadjpsimRcpp(const Rcpp::NumericMatrix &p,
+             const Rcpp::Nullable<Rcpp::List> &wgtmat = R_NilValue,
+             const Rcpp::Nullable<Rcpp::LogicalMatrix> &family = R_NilValue) {
   auto p1 = flatmatrix_from_Rmatrix(p);
   BoolMatrix family1 = fDefaultFamilycpp(p1.ncol);
   if (!family.isNull()) {
@@ -667,13 +677,9 @@ Rcpp::List fadjpsimRcpp(
   return Rcpp::wrap(result);
 }
 
-
 // Helper to compute adjusted p-values for Dunnett-based graphical approaches
-AdjustedPValues fadjpduncpp(
-    const FlatMatrix& p,
-    const WeightMatrix& wgtmat,
-    const BoolMatrix& family,
-    const FlatMatrix& corr) {
+AdjustedPValues fadjpduncpp(const FlatMatrix &p, const WeightMatrix &wgtmat,
+                            const BoolMatrix &family, const FlatMatrix &corr) {
 
   size_t ntests = wgtmat.inthyp.nrow;
   size_t m = p.ncol;
@@ -701,7 +707,7 @@ AdjustedPValues fadjpduncpp(
 
   // Main loop over subsets
   for (size_t i = 0; i < ntests; ++i) {
-    double* pinter_col = &pinter.data[i * niters]; // contiguous column
+    double *pinter_col = &pinter.data[i * niters]; // contiguous column
 
     J.clear();
     for (size_t j = 0; j < m; ++j) {
@@ -713,7 +719,8 @@ AdjustedPValues fadjpduncpp(
     for (size_t h = 0; h < nfams; ++h) {
       J_h.clear();
       for (size_t j : J) {
-        if (family(h,j)) J_h.push_back(j);
+        if (family(h, j))
+          J_h.push_back(j);
       }
       J_h_list[h] = J_h;
 
@@ -751,12 +758,13 @@ AdjustedPValues fadjpduncpp(
           for (size_t j : J_h) {
             sumw += wgtmat.wgtmat(i, j);
             double ratio = p(iter, j) / wgtmat.wgtmat(i, j);
-            if (ratio < q) q = ratio;
+            if (ratio < q)
+              q = ratio;
           }
 
-          const auto& lowerref = lower_list[h];
-          const auto& meanref = mean_list[h];
-          const auto& sigmaref = sigma_list[h];
+          const auto &lowerref = lower_list[h];
+          const auto &meanref = mean_list[h];
+          const auto &sigmaref = sigma_list[h];
 
           upper.resize(k);
           for (size_t t = 0; t < k; ++t) {
@@ -766,7 +774,8 @@ AdjustedPValues fadjpduncpp(
 
           double v1 = pmvnormcpp(lowerref, upper, meanref, sigmaref).prob;
           double v2 = (1.0 - v1) / sumw;
-          if (v2 < aval) aval = v2;
+          if (v2 < aval)
+            aval = v2;
         }
       }
 
@@ -775,11 +784,13 @@ AdjustedPValues fadjpduncpp(
 
     // Update padj columns for active hypotheses
     for (size_t j = 0; j < m; ++j) {
-      if (!wgtmat.inthyp(i,j)) continue;
-      double* padj_col = &padj.data[j * niters]; // contiguous column
+      if (!wgtmat.inthyp(i, j))
+        continue;
+      double *padj_col = &padj.data[j * niters]; // contiguous column
       for (size_t iter = 0; iter < niters; ++iter) {
         double v = pinter_col[iter];
-        if (v > padj_col[iter]) padj_col[iter] = v;
+        if (v > padj_col[iter])
+          padj_col[iter] = v;
       }
     }
   } // end subsets
@@ -787,45 +798,36 @@ AdjustedPValues fadjpduncpp(
   return AdjustedPValues{wgtmat.inthyp, pinter, padj};
 }
 
-AdjustedPValues fadjpduncpp(
-    const FlatMatrix& p,
-    const BoolMatrix& family,
-    const FlatMatrix& corr) {
+AdjustedPValues fadjpduncpp(const FlatMatrix &p, const BoolMatrix &family,
+                            const FlatMatrix &corr) {
   return fadjpduncpp(p, fDefaultWgtmatcpp(p.ncol), family, corr);
 }
 
-AdjustedPValues fadjpduncpp(
-    const FlatMatrix& p,
-    const WeightMatrix& wgtmat,
-    const BoolMatrix& family) {
+AdjustedPValues fadjpduncpp(const FlatMatrix &p, const WeightMatrix &wgtmat,
+                            const BoolMatrix &family) {
   return fadjpduncpp(p, wgtmat, family, fDefaultCorrcpp(family));
 }
 
-AdjustedPValues fadjpduncpp(
-    const FlatMatrix& p,
-    const BoolMatrix& family) {
+AdjustedPValues fadjpduncpp(const FlatMatrix &p, const BoolMatrix &family) {
   return fadjpduncpp(p, fDefaultWgtmatcpp(p.ncol), family,
-                      fDefaultCorrcpp(family));
+                     fDefaultCorrcpp(family));
 }
 
-AdjustedPValues fadjpduncpp(
-    const FlatMatrix& p,
-    const WeightMatrix& wgtmat) {
+AdjustedPValues fadjpduncpp(const FlatMatrix &p, const WeightMatrix &wgtmat) {
   const BoolMatrix family = fDefaultFamilycpp(p.ncol);
   return fadjpduncpp(p, wgtmat, family, fDefaultCorrcpp(family));
 }
 
-AdjustedPValues fadjpduncpp(const FlatMatrix& p) {
+AdjustedPValues fadjpduncpp(const FlatMatrix &p) {
   return fadjpduncpp(p, fDefaultWgtmatcpp(p.ncol));
 }
 
-
 // [[Rcpp::export]]
-Rcpp::List fadjpdunRcpp(
-    const Rcpp::NumericMatrix& p,
-    const Rcpp::Nullable<Rcpp::List>& wgtmat = R_NilValue,
-    const Rcpp::Nullable<Rcpp::LogicalMatrix>& family = R_NilValue,
-    const Rcpp::Nullable<Rcpp::NumericMatrix>& corr = R_NilValue) {
+Rcpp::List
+fadjpdunRcpp(const Rcpp::NumericMatrix &p,
+             const Rcpp::Nullable<Rcpp::List> &wgtmat = R_NilValue,
+             const Rcpp::Nullable<Rcpp::LogicalMatrix> &family = R_NilValue,
+             const Rcpp::Nullable<Rcpp::NumericMatrix> &corr = R_NilValue) {
   auto p1 = flatmatrix_from_Rmatrix(p);
   BoolMatrix family1 = fDefaultFamilycpp(p1.ncol);
   if (!family.isNull()) {
@@ -858,16 +860,13 @@ Rcpp::List fadjpdunRcpp(
   return Rcpp::wrap(result);
 }
 
-
 // Helper to compute repeated p-values for alpha spending approaches
-FlatMatrix repeatedPValuecpp(
-    const size_t kMax,
-    const std::string& typeAlphaSpending,
-    const double parameterAlphaSpending,
-    const double maxInformation,
-    const FlatMatrix& p,
-    const FlatMatrix& information,
-    const FlatMatrix& spendingTime) {
+FlatMatrix repeatedPValuecpp(const size_t kMax,
+                             const std::string &typeAlphaSpending,
+                             const double parameterAlphaSpending,
+                             const double maxInformation, const FlatMatrix &p,
+                             const FlatMatrix &information,
+                             const FlatMatrix &spendingTime) {
 
   // Validation: kMax must be a positive integer
   if (kMax <= 0) {
@@ -882,7 +881,7 @@ FlatMatrix repeatedPValuecpp(
 
   // Validation: typeAlphaSpending
   if (!(asf == "of" || asf == "p" || asf == "wt" || asf == "sfof" ||
-      asf == "sfp" || asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
+        asf == "sfp" || asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
     throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
 
@@ -892,7 +891,8 @@ FlatMatrix repeatedPValuecpp(
     throw std::invalid_argument("Missing value for parameterAlphaSpending");
   }
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
-    throw std::invalid_argument("parameterAlphaSpending must be positive for sfKD");
+    throw std::invalid_argument(
+        "parameterAlphaSpending must be positive for sfKD");
   }
 
   // Validation: maxInformation
@@ -917,24 +917,26 @@ FlatMatrix repeatedPValuecpp(
     throw std::invalid_argument("Invalid number of rows for information");
   }
 
-  const double* in_ptr = information.data_ptr();
-  double* info_ptr = info.data_ptr();
+  const double *in_ptr = information.data_ptr();
+  double *info_ptr = info.data_ptr();
   if (information.nrow == B) {
     // shapes match -> fast block copy
     std::memcpy(info_ptr, in_ptr, B * k1 * sizeof(double));
   } else {
     // information.nrow == 1 -> broadcast the single row to all B rows
-    // For each column k, value = in_ptr[k], destination column is info_ptr + k*B
+    // For each column k, value = in_ptr[k], destination column is info_ptr +
+    // k*B
     for (size_t k = 0; k < k1; ++k) {
-      double v = in_ptr[k];                    // source scalar for column k
-      double* dst_col = info_ptr + k * B;      // column-major base
-      std::fill_n(dst_col, B, v);              // efficient bulk write
+      double v = in_ptr[k];               // source scalar for column k
+      double *dst_col = info_ptr + k * B; // column-major base
+      std::fill_n(dst_col, B, v);         // efficient bulk write
     }
   }
 
   // Process spendingTime matrix with possible broadcasting and NA handling
   FlatMatrix spendTime(B, k1);
-  if (spendingTime.nrow == 1 && spendingTime.ncol == 1 && spendingTime(0, 0) == 0) {
+  if (spendingTime.nrow == 1 && spendingTime.ncol == 1 &&
+      spendingTime(0, 0) == 0) {
     spendTime.fill(NaN);
   } else {
     if (spendingTime.ncol != k1) {
@@ -944,24 +946,24 @@ FlatMatrix repeatedPValuecpp(
       throw std::invalid_argument("Invalid number of rows for spendingTime");
     }
 
-    const double* sp_ptr = spendingTime.data_ptr();
-    double* spend_ptr = spendTime.data_ptr();
+    const double *sp_ptr = spendingTime.data_ptr();
+    double *spend_ptr = spendTime.data_ptr();
     if (spendingTime.nrow == B) {
       // shapes match -> fast block copy
       std::memcpy(spend_ptr, sp_ptr, B * k1 * sizeof(double));
     } else {
       // spendingTime.nrow == 1 -> broadcast the single row to all B rows
-      // For each column k, value = sp_ptr[k], destination column is spend_ptr + k*B
+      // For each column k, value = sp_ptr[k], destination column is spend_ptr +
+      // k*B
       for (size_t k = 0; k < k1; ++k) {
-        double v = sp_ptr[k];                    // source scalar for column k
-        double* dst_col = spend_ptr + k * B;     // column-major base
-        std::fill_n(dst_col, B, v);              // efficient bulk write
+        double v = sp_ptr[k];                // source scalar for column k
+        double *dst_col = spend_ptr + k * B; // column-major base
+        std::fill_n(dst_col, B, v);          // efficient bulk write
       }
     }
   }
 
-
-  auto f = [&](const size_t b)-> std::vector<double> {
+  auto f = [&](const size_t b) -> std::vector<double> {
     std::vector<double> p_vec(k1), i_vec(k1), s_vec(k1);
     for (size_t k = 0; k < k1; ++k) {
       p_vec[k] = p(b, k);
@@ -971,17 +973,17 @@ FlatMatrix repeatedPValuecpp(
 
     // Validation: p-values must be between 0 and 1 and not NA
     if (std::any_of(p_vec.begin(), p_vec.end(),
-                    [](double v){ return std::isnan(v); })) {
+                    [](double v) { return std::isnan(v); })) {
       throw std::invalid_argument("p-values must be provided");
     }
     if (std::any_of(p_vec.begin(), p_vec.end(),
-                    [](double v){ return v < 0 || v > 1; })) {
+                    [](double v) { return v < 0 || v > 1; })) {
       throw std::invalid_argument("p-values must be between 0 and 1");
     }
 
     // Validation: information must be positive, increasing, and not NA
     if (std::any_of(i_vec.begin(), i_vec.end(),
-                    [](double v){ return std::isnan(v); })) {
+                    [](double v) { return std::isnan(v); })) {
       throw std::invalid_argument("information must be provided");
     }
     if (i_vec[0] <= 0.0) {
@@ -991,30 +993,31 @@ FlatMatrix repeatedPValuecpp(
       throw std::invalid_argument("information must be increasing over time");
     }
 
-    // Validation: spendingTime must be positive, increasing, and not exceeding 1
+    // Validation: spendingTime must be positive, increasing, and not exceeding
+    // 1
     bool all_na = std::all_of(s_vec.data(), s_vec.data() + k1,
-                              [](double v){ return std::isnan(v); });
+                              [](double v) { return std::isnan(v); });
 
     if (!all_na) {
       if (std::any_of(s_vec.data(), s_vec.data() + k1,
-                      [](double v){ return std::isnan(v); })) {
+                      [](double v) { return std::isnan(v); })) {
         throw std::invalid_argument("spendingTime must be provided");
       }
       if (s_vec[0] <= 0.0) {
         throw std::invalid_argument("spendingTime must be positive");
       }
       if (any_nonincreasing(s_vec)) {
-        throw std::invalid_argument("spendingTime must be increasing over time");
+        throw std::invalid_argument(
+            "spendingTime must be increasing over time");
       }
       if (s_vec[k1 - 1] > 1.0) {
         throw std::invalid_argument("spendingTime must not exceed 1");
       }
     }
 
-
     // Determine L based on maxInformation and spendingTime
     size_t L;
-    if (all_na) {  // use information rates
+    if (all_na) { // use information rates
       // Find if any information >= maxInformation
       auto it = std::lower_bound(i_vec.begin(), i_vec.end(), maxInformation);
       if (it == i_vec.end()) { // none >= maxInformation
@@ -1022,7 +1025,7 @@ FlatMatrix repeatedPValuecpp(
       } else {
         L = static_cast<size_t>(std::distance(i_vec.begin(), it)) + 1;
       }
-    } else {  // use spending time
+    } else { // use spending time
       L = k1;
     }
 
@@ -1030,13 +1033,13 @@ FlatMatrix repeatedPValuecpp(
     std::memcpy(p1.data(), p_vec.data(), L * sizeof(double));
 
     // Information time for forming covariance matrix of test statistics
-    double info_L = i_vec[L-1];
+    double info_L = i_vec[L - 1];
     for (size_t l = 0; l < L; ++l) {
       t1[l] = i_vec[l] / info_L;
     }
 
     // Spending time for error spending
-    if (all_na) {  // use information rates
+    if (all_na) { // use information rates
       for (size_t l = 0; l < L; ++l) {
         if (l == kMax - 1 || i_vec[l] >= maxInformation) {
           s1[l] = 1.0; // the last look is at or beyond maxInformation
@@ -1044,7 +1047,7 @@ FlatMatrix repeatedPValuecpp(
           s1[l] = i_vec[l] / maxInformation;
         }
       }
-    } else {  // using spending time
+    } else { // using spending time
       std::memcpy(s1.data(), s_vec.data(), L * sizeof(double));
     }
 
@@ -1057,11 +1060,12 @@ FlatMatrix repeatedPValuecpp(
       std::vector<double> s0(s1.begin(), s1.begin() + i + 1);
       std::vector<unsigned char> x(i + 1, 1);
 
-      BoundCacheAlpha cache(i + 1, t0, asf, parameterAlphaSpending,
-                            empty_user, s0, x, 64, 12);
+      BoundCacheAlpha cache(i + 1, t0, asf, parameterAlphaSpending, empty_user,
+                            s0, x, 64, 12);
 
-      // Lambda function for root finding to solve for the repeated p-value at step i
-      auto g = [&](double a)->double {
+      // Lambda function for root finding to solve for the repeated p-value at
+      // step i
+      auto g = [&](double a) -> double {
         auto u = cache.get(a);
         return 1.0 - boost_pnorm(u[i]) - pvalue;
       };
@@ -1083,42 +1087,35 @@ FlatMatrix repeatedPValuecpp(
     return repp;
   };
 
-
   struct SimulationWorker : public RcppParallel::Worker {
     // references to read-only inputs (no mutation)
     const size_t k1;
-    const std::string& asf;
+    const std::string &asf;
     const double parameterAlphaSpending;
     const size_t kMax;
     const double maxInformation;
-    const FlatMatrix& p;
-    const FlatMatrix& info;
-    const FlatMatrix& spendTime;
+    const FlatMatrix &p;
+    const FlatMatrix &info;
+    const FlatMatrix &spendTime;
 
     // function f and other params that f needs are captured from outer scope
     // capture them by reference here so worker can call f(...)
     std::function<std::vector<double>(const size_t)> f;
 
     // result references (each iteration writes unique index into these)
-    FlatMatrix& repp_out; // B by k1 matrix to store repeated p-values
+    FlatMatrix &repp_out; // B by k1 matrix to store repeated p-values
 
     // constructor
-    SimulationWorker(const size_t k1_,
-                     const std::string& asf_,
-                     const double parameterAlphaSpending_,
-                     const size_t kMax_,
-                     const double maxInformation_,
-                     const FlatMatrix& p_,
-                     const FlatMatrix& info_,
-                     const FlatMatrix& spendTime_,
-                     decltype(f) f_,
-                     FlatMatrix& repp_out_) :
+    SimulationWorker(const size_t k1_, const std::string &asf_,
+                     const double parameterAlphaSpending_, const size_t kMax_,
+                     const double maxInformation_, const FlatMatrix &p_,
+                     const FlatMatrix &info_, const FlatMatrix &spendTime_,
+                     decltype(f) f_, FlatMatrix &repp_out_)
+        :
 
-      k1(k1_), asf(asf_), parameterAlphaSpending(parameterAlphaSpending_),
-      kMax(kMax_), maxInformation(maxInformation_),
-      p(p_), info(info_), spendTime(spendTime_),
-      f(std::move(f_)),
-      repp_out(repp_out_) {}
+          k1(k1_), asf(asf_), parameterAlphaSpending(parameterAlphaSpending_),
+          kMax(kMax_), maxInformation(maxInformation_), p(p_), info(info_),
+          spendTime(spendTime_), f(std::move(f_)), repp_out(repp_out_) {}
 
     // operator() processes a range of bootstrap iterations [begin, end)
     void operator()(size_t begin, size_t end) {
@@ -1138,12 +1135,9 @@ FlatMatrix repeatedPValuecpp(
 
   // Instantiate the Worker with references to inputs and outputs
   SimulationWorker worker(
-      k1, asf, parameterAlphaSpending, kMax,
-      maxInformation, p, info, spendTime,
+      k1, asf, parameterAlphaSpending, kMax, maxInformation, p, info, spendTime,
       // bind f into std::function (capture the f we already have)
-      std::function<std::vector<double>(const size_t)>(f),
-      repp_mat
-  );
+      std::function<std::vector<double>(const size_t)>(f), repp_mat);
 
   // Run the parallel loop over iterations
   RcppParallel::parallelFor(0, B, worker, 1 /*grain size*/);
@@ -1151,27 +1145,23 @@ FlatMatrix repeatedPValuecpp(
   return worker.repp_out;
 }
 
-
 // [[Rcpp::export]]
-Rcpp::NumericMatrix repeatedPValueRcpp(
-    const int kMax,
-    const std::string& typeAlphaSpending,
-    const double parameterAlphaSpending,
-    const double maxInformation,
-    const Rcpp::NumericMatrix& p,
-    const Rcpp::NumericMatrix& information,
-    const Rcpp::NumericMatrix& spendingTime) {
+Rcpp::NumericMatrix
+repeatedPValueRcpp(const int kMax, const std::string &typeAlphaSpending,
+                   const double parameterAlphaSpending,
+                   const double maxInformation, const Rcpp::NumericMatrix &p,
+                   const Rcpp::NumericMatrix &information,
+                   const Rcpp::NumericMatrix &spendingTime) {
 
   auto p1 = flatmatrix_from_Rmatrix(p);
   auto information1 = flatmatrix_from_Rmatrix(information);
   auto spendingTime1 = flatmatrix_from_Rmatrix(spendingTime);
 
-  auto repp = repeatedPValuecpp(
-    static_cast<size_t>(kMax), typeAlphaSpending, parameterAlphaSpending,
-    maxInformation, p1, information1, spendingTime1);
+  auto repp = repeatedPValuecpp(static_cast<size_t>(kMax), typeAlphaSpending,
+                                parameterAlphaSpending, maxInformation, p1,
+                                information1, spendingTime1);
   return Rcpp::wrap(repp);
 }
-
 
 // Compute the first rejection study-look for each hypothesis under a
 // sequential Bonferroni graphical procedure.
@@ -1186,20 +1176,14 @@ Rcpp::NumericMatrix repeatedPValueRcpp(
 //
 // Return value is a B x m integer matrix where each entry is the 1-based
 // study look of first rejection (0 if not rejected by look k1).
-IntMatrix fseqboncpp(
-    const std::vector<double>& w,
-    const FlatMatrix& G,
-    const double alpha,
-    const size_t kMax,
-    const std::vector<std::string>& typeAlphaSpending,
-    const std::vector<double>& parameterAlphaSpending,
-    const std::vector<double>& maxInformation,
-    const BoolMatrix& incidenceMatrix,
-    const size_t k1,
-    const FlatMatrix& p,
-    const FlatMatrix& information,
-    const FlatMatrix& spendingTime,
-    const bool lookback) {
+IntMatrix fseqboncpp(const std::vector<double> &w, const FlatMatrix &G,
+                     const double alpha, const size_t kMax,
+                     const std::vector<std::string> &typeAlphaSpending,
+                     const std::vector<double> &parameterAlphaSpending,
+                     const std::vector<double> &maxInformation,
+                     const BoolMatrix &incidenceMatrix, const size_t k1,
+                     const FlatMatrix &p, const FlatMatrix &information,
+                     const FlatMatrix &spendingTime, const bool lookback) {
 
   size_t m = w.size();
 
@@ -1235,7 +1219,8 @@ IntMatrix fseqboncpp(
   }
   for (size_t i = 0; i < m; ++i) {
     if (rowsum[i] > 1.0 + 1e-8) {
-      throw std::invalid_argument("Row sums of G must be less than or equal to 1");
+      throw std::invalid_argument(
+          "Row sums of G must be less than or equal to 1");
     }
   }
 
@@ -1260,24 +1245,26 @@ IntMatrix fseqboncpp(
   std::vector<std::string> asf = typeAlphaSpending;
   std::vector<double> asfpar = parameterAlphaSpending;
 
-  if (asf.size() == 1) asf.resize(m, asf[0]);
+  if (asf.size() == 1)
+    asf.resize(m, asf[0]);
   if (asf.size() != m) {
     throw std::invalid_argument("Invalid length for typeAlphaSpending");
   }
 
-  if (asfpar.size() == 1) asfpar.resize(m, asfpar[0]);
+  if (asfpar.size() == 1)
+    asfpar.resize(m, asfpar[0]);
   if (asfpar.size() != m) {
     throw std::invalid_argument("Invalid length for parameterAlphaSpending");
   }
 
   for (size_t i = 0; i < m; ++i) {
-    std::string& asfi = asf[i];
+    std::string &asfi = asf[i];
     for (char &c : asfi) {
       c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     }
 
     if (!(asfi == "sfof" || asfi == "sfp" || asfi == "sfkd" ||
-        asfi == "sfhsd" || asfi == "none")) {
+          asfi == "sfhsd" || asfi == "none")) {
       throw std::invalid_argument("Invalid value for typeAlphaSpending");
     }
 
@@ -1302,7 +1289,8 @@ IntMatrix fseqboncpp(
 
   // Validation: incidenceMatrix dimension
   if (incidenceMatrix.ncol != m) {
-    throw std::invalid_argument("Invalid number of columns for incidenceMatrix");
+    throw std::invalid_argument(
+        "Invalid number of columns for incidenceMatrix");
   }
   if (incidenceMatrix.nrow != kMax) {
     throw std::invalid_argument("Invalid number of rows for incidenceMatrix");
@@ -1315,7 +1303,6 @@ IntMatrix fseqboncpp(
   if (k1 > kMax) {
     throw std::invalid_argument("k1 must be less than or equal to kMax");
   }
-
 
   // Validation: p matrix dimension
   if (p.ncol != m) {
@@ -1338,19 +1325,17 @@ IntMatrix fseqboncpp(
   FlatMatrix info(B * k1, m);
   if (information.nrow == k1 && B > 1) {
     // replicate information for B iterations
-    const double* src_ptr = information.data_ptr();
-    double* dst_ptr = info.data_ptr();
-    for (size_t j = 0; j < m; ++ j) {
+    const double *src_ptr = information.data_ptr();
+    double *dst_ptr = info.data_ptr();
+    for (size_t j = 0; j < m; ++j) {
       for (size_t b = 0; b < B; ++b) {
-        std::memcpy(dst_ptr + (b * k1) + j * (B * k1),
-                    src_ptr + j * k1,
+        std::memcpy(dst_ptr + (b * k1) + j * (B * k1), src_ptr + j * k1,
                     k1 * sizeof(double));
       }
     }
   } else {
     info = information;
   }
-
 
   // Build spending-time matrix aligned to B * k1 rows.
   // If spendingTime == matrix(0,1,1), treat as missing and derive spending
@@ -1369,12 +1354,11 @@ IntMatrix fseqboncpp(
 
     if (spendingTime.nrow == k1 && B > 1) {
       // replicate spendingTime for B iterations
-      const double* src_ptr = spendingTime.data_ptr();
-      double* dst_ptr = spendTime.data_ptr();
-      for (size_t j = 0; j < m; ++ j) {
+      const double *src_ptr = spendingTime.data_ptr();
+      double *dst_ptr = spendTime.data_ptr();
+      for (size_t j = 0; j < m; ++j) {
         for (size_t b = 0; b < B; ++b) {
-          std::memcpy(dst_ptr + (b * k1) + j * (B * k1),
-                      src_ptr + j * k1,
+          std::memcpy(dst_ptr + (b * k1) + j * (B * k1), src_ptr + j * k1,
                       k1 * sizeof(double));
         }
       }
@@ -1383,11 +1367,11 @@ IntMatrix fseqboncpp(
     }
   }
 
-
   std::vector<size_t> K0(m, 0); // max number of testable looks for hypothesis j
   for (size_t j = 0; j < m; ++j) {
     for (size_t k = 0; k < kMax; ++k) {
-      if (incidenceMatrix(k, j)) K0[j]++;
+      if (incidenceMatrix(k, j))
+        K0[j]++;
     }
   }
 
@@ -1395,12 +1379,12 @@ IntMatrix fseqboncpp(
   // idx1(l, j): study look index (0-based) for hypothesis j at testable look l.
   // idx2(k, j): testable look index (0-based) for hypothesis j at study look k,
   //             or -1 when hypothesis j is not testable at study look k.
-  IntMatrix idx1(k1, m); // study look index for each testable look
-  IntMatrix idx2(k1, m); // testable look index for each study look
-  idx1.fill(-1); // initialize with -1 for non-existent test look
-  idx2.fill(-1); // initialize with -1 for non-tested study look
+  IntMatrix idx1(k1, m);     // study look index for each testable look
+  IntMatrix idx2(k1, m);     // testable look index for each study look
+  idx1.fill(-1);             // initialize with -1 for non-existent test look
+  idx2.fill(-1);             // initialize with -1 for non-tested study look
   std::vector<size_t> K1(m); // last study look for each hypothesis at interim
-  std::vector<size_t> K2(m); // # of testable looks for each hypothesis at interim
+  std::vector<size_t> K2(m); // testable looks for each hypothesis at interim
   for (size_t j = 0; j < m; ++j) {
     size_t l = 0; // index for testable looks of hypothesis j
     for (size_t k = 0; k < k1; ++k) {
@@ -1412,27 +1396,34 @@ IntMatrix fseqboncpp(
     }
     K2[j] = l; // number of testable looks for hypothesis j (1-based)
     if (l > 0) {
-      K1[j] = idx1(l - 1, j) + 1;  // last study look for hypothesis j (1-based)
+      K1[j] = idx1(l - 1, j) + 1; // last study look for hypothesis j (1-based)
     }
   }
 
   // Per-replicate rejection engine used by the parallel worker.
-  auto f = [&](const size_t b)->std::vector<int> {
+  auto f = [&](const size_t b) -> std::vector<int> {
     std::vector<size_t> L(m);
 
     FlatMatrix p1(k1, m), t1(k1, m), s1(k1, m);
-    p1.fill(NaN); t1.fill(NaN); s1.fill(NaN);
-    double* p1_ptr = p1.data_ptr();
-    double* t1_ptr = t1.data_ptr();
-    double* s1_ptr = s1.data_ptr();
+    p1.fill(NaN);
+    t1.fill(NaN);
+    s1.fill(NaN);
+    double *p1_ptr = p1.data_ptr();
+    double *t1_ptr = t1.data_ptr();
+    double *s1_ptr = s1.data_ptr();
 
-    // Extract p-values, information, and spending time vectors for each hypothesis
-    std::vector<double> p_vec; p_vec.reserve(k1);
-    std::vector<double> i_vec; i_vec.reserve(k1);
-    std::vector<double> s_vec; s_vec.reserve(k1);
+    // Extract p-values, information, and spending time vectors for each
+    // hypothesis
+    std::vector<double> p_vec;
+    p_vec.reserve(k1);
+    std::vector<double> i_vec;
+    i_vec.reserve(k1);
+    std::vector<double> s_vec;
+    s_vec.reserve(k1);
     for (size_t j = 0; j < m; ++j) { // loop over hypotheses
       size_t Kj = K2[j]; // number of testable looks for hypothesis j at interim
-      if (Kj == 0) continue; // no testable look, skip to next hypothesis
+      if (Kj == 0)
+        continue; // no testable look, skip to next hypothesis
       double maxinfoj = maxInformation[j]; // maxInformation for hypothesis j
 
       p_vec.resize(Kj);
@@ -1444,7 +1435,8 @@ IntMatrix fseqboncpp(
         // row index in p, info, and spendTime for iteration b and study look k
         size_t h = b * k1 + k;
         if (std::isnan(p(h, j))) {
-          throw std::invalid_argument("p must be provided at each testable look");
+          throw std::invalid_argument(
+              "p must be provided at each testable look");
         }
         if (std::isnan(info(h, j))) {
           throw std::invalid_argument(
@@ -1457,7 +1449,7 @@ IntMatrix fseqboncpp(
 
       // Validate p values
       if (std::any_of(p_vec.begin(), p_vec.end(),
-                      [](double v){ return v < 0.0 || v > 1.0; })) {
+                      [](double v) { return v < 0.0 || v > 1.0; })) {
         throw std::invalid_argument("p must lie between 0 and 1");
       }
 
@@ -1471,10 +1463,10 @@ IntMatrix fseqboncpp(
 
       // Validate spending time
       bool all_na = std::all_of(s_vec.begin(), s_vec.end(),
-                                [](double v){ return std::isnan(v); });
+                                [](double v) { return std::isnan(v); });
       if (!all_na) {
         if (std::any_of(s_vec.begin(), s_vec.end(),
-                        [](double v){ return std::isnan(v); })) {
+                        [](double v) { return std::isnan(v); })) {
           throw std::invalid_argument(
               "spendingTime must be provided at each testable look");
         }
@@ -1482,7 +1474,8 @@ IntMatrix fseqboncpp(
           throw std::invalid_argument("spendingTime must be positive");
         }
         if (any_nonincreasing(s_vec)) {
-          throw std::invalid_argument("spendingTime must be increasing over time");
+          throw std::invalid_argument(
+              "spendingTime must be increasing over time");
         }
         if (s_vec[Kj - 1] > 1.0) {
           throw std::invalid_argument(
@@ -1491,7 +1484,7 @@ IntMatrix fseqboncpp(
       }
 
       // Determine L[j]: number of looks to consider for hypothesis j at interim
-      if (all_na) { // will use information rates, no need to check s_vec further
+      if (all_na) { // use information rates, no need to check s_vec further
         auto it = std::lower_bound(i_vec.begin(), i_vec.end(), maxinfoj);
         if (it == i_vec.end()) { // none >= maxInformation
           L[j] = Kj;
@@ -1504,9 +1497,9 @@ IntMatrix fseqboncpp(
       size_t Lj = L[j];
 
       // Copy p values in one block (p_vec contiguous)
-      double* p1_col = p1_ptr + j * k1; // column j begins at offset j * k1
-      double* t1_col = t1_ptr + j * k1;
-      double* s1_col = s1_ptr + j * k1;
+      double *p1_col = p1_ptr + j * k1; // column j begins at offset j * k1
+      double *t1_col = t1_ptr + j * k1;
+      double *s1_col = s1_ptr + j * k1;
 
       std::memcpy(p1_col, p_vec.data(), Lj * sizeof(double));
 
@@ -1530,20 +1523,21 @@ IntMatrix fseqboncpp(
       }
     }
 
-    size_t num_rejected = 0; // number of hypotheses rejected so far
+    size_t num_rejected = 0;       // number of hypotheses rejected so far
     std::vector<int> reject(m, 0); // first look when the hypothesis is rejected
-    std::vector<double> wx = w; // current weights for hypotheses, updated in-place
-    FlatMatrix g = G; // current transition matrix, updated in-place
-    FlatMatrix g1(m, m); // temporary transition matrix for update
+    std::vector<double> wx = w;    // current weights, updated in-place
+    FlatMatrix g = G;         // current transition matrix, updated in-place
+    FlatMatrix g1(m, m);      // temporary transition matrix for update
     std::vector<double> user; // empty userAlphaSpending for getBoundcpp
 
-    std::vector<size_t> active(m); // currently active hypotheses
+    std::vector<size_t> active(m);              // currently active hypotheses
     std::iota(active.begin(), active.end(), 0); // initialize with 0,1,...,m-1
     std::vector<int> pos(m); // position map: pos[idx] = index in active or -1
     std::iota(pos.begin(), pos.end(), 0); // initialize with 0,1,...,m-1
 
-    std::vector<double> denom(m); // temp denominator for transition matrix update
-    std::vector<double> u_vec; u_vec.reserve(k1); // upper bound from getBoundcpp
+    std::vector<double> denom(m); // temp denom for transition matrix update
+    std::vector<double> u_vec;
+    u_vec.reserve(k1); // upper bound from getBoundcpp
 
     // temp vectors reuse across hypotheses
     // Cache full t/s columns once per replicate. They are reused many times
@@ -1556,11 +1550,11 @@ IntMatrix fseqboncpp(
     }
 
     std::vector<unsigned char> x(k1, 1); // efficacyStopping for getBoundcpp
-    std::vector<double> w_pre(m); // previous weights by hypothesis index
+    std::vector<double> w_pre(m);        // previous weights by hypothesis index
 
     // cached per-hypothesis previous upper bounds (u_pre[j] for hypothesis j)
     FlatMatrix u_pre(k1, m);
-    double* u_pre_ptr = u_pre.data_ptr();
+    double *u_pre_ptr = u_pre.data_ptr();
 
     // Preallocated helper vectors reused for "resuse" branch
     std::vector<double> l_vec(k1, -8.0);
@@ -1570,46 +1564,50 @@ IntMatrix fseqboncpp(
 
     size_t K3 = *std::max_element(K1.begin(), K1.end());
 
-    for (size_t step = 0; step < K3; ++step) {  // loop over study look
+    for (size_t step = 0; step < K3; ++step) { // loop over study look
 
-      //Try to find all hypotheses that can be rejected at this step
+      // Try to find all hypotheses that can be rejected at this step
       for ([[maybe_unused]] size_t i : active) {
         bool found_reject = false;
         int found_j = -1;
         size_t step_j = 0; // study look (1-based) for rejection of hypothesis j
 
         if (!lookback) {
-          // no lookback, only check hypotheses with testable look at current step
-          // scan all hypotheses j to find a rejectable one
+          // no lookback, only check hypotheses with testable look at current
+          // step scan all hypotheses j to find a rejectable one
           for (size_t j : active) {
-            if (wx[j] < 1e-8) continue; // weight too small or already rejected
-            int l_int = idx2(step, j);  // testable look index (0-based) for
+            if (wx[j] < 1e-8)
+              continue;                // weight too small or already rejected
+            int l_int = idx2(step, j); // testable look index (0-based) for
             // hypothesis j at current study look
-            if (l_int < 0) continue;    // not testable at this study look
+            if (l_int < 0)
+              continue; // not testable at this study look
             size_t l = static_cast<size_t>(l_int);
-            if (l >= L[j]) continue;    // beyond L[j] considered at interim
-            size_t n = l + 1; // # of testable looks for hyp j at this study look
+            if (l >= L[j])
+              continue;       // beyond L[j] considered at interim
+            size_t n = l + 1; // testable looks for hyp j at this study look
 
             double alpha1 = wx[j] * alpha;
-            const std::string& asf1 = asf[j];
+            const std::string &asf1 = asf[j];
             double asfpar1 = asfpar[j];
 
             // Compute upper bound
-            const std::vector<double>& t = t_cols[j];
-            const std::vector<double>& s = s_cols[j];
+            const std::vector<double> &t = t_cols[j];
+            const std::vector<double> &s = s_cols[j];
             if (wx[j] != w_pre[j]) {
               // weights changed, compute full u_vec
               u_vec = getBoundcpp(n, t, alpha1, asf1, asfpar1, user, s, x);
             } else {
               // reuse previous u_pre[j] prefix, only solve for last element
               u_vec.resize(n);
-              if (l > 0) std::memcpy(u_vec.data(), u_pre_ptr + j * k1,
-                  l * sizeof(double));
+              if (l > 0)
+                std::memcpy(u_vec.data(), u_pre_ptr + j * k1,
+                            l * sizeof(double));
               // compute cumulative alpha for this n
               double cumAlpha = errorSpentcpp(s[l], alpha1, asf1, asfpar1);
 
               // small lambda that only sets last element
-              auto g = [&](double aval)->double {
+              auto g = [&](double aval) -> double {
                 u_vec[l] = aval;
                 probs = exitprobcpp(u_vec, l_vec, theta_vec, t);
                 double cpu = std::accumulate(probs.exitProbUpper.begin(),
@@ -1621,8 +1619,9 @@ IntMatrix fseqboncpp(
               if (g_8 > 0.0) { // no alpha spent at current visit
                 u_vec[l] = 8.0;
               } else {
-                auto g_for_brent = [&](double aval)->double {
-                  if (aval == 8.0) return g_8; // avoid recomputation at 8.0
+                auto g_for_brent = [&](double aval) -> double {
+                  if (aval == 8.0)
+                    return g_8; // avoid recomputation at 8.0
                   return g(aval);
                 };
                 u_vec[l] = brent(g_for_brent, -5.0, 8.0, 1e-6);
@@ -1637,36 +1636,41 @@ IntMatrix fseqboncpp(
               found_reject = true;
               found_j = j;
               step_j = step + 1; // current study look (1-based)
-              break; // stop scanning j, we'll process rejection
+              break;             // stop scanning j, we'll process rejection
             }
           } // end scan j
         } else {
           // lookback, need to check all active hypotheses at each step
           // scan all hypotheses j to find a rejectable one
           for (size_t j : active) {
-            if (wx[j] < 1e-8) continue;  // weight too small or already rejected
+            if (wx[j] < 1e-8)
+              continue; // weight too small or already rejected
 
-            // find the number of testable looks for hypothesis j at this study look
+            // find the number of testable looks for hypothesis j at this study
+            // look
             int l_int = -1;
             for (size_t ll = 0; ll <= step; ++ll) {
-              int l_int_ll = idx2(ll, j); // testable look index at study look ll
+              int l_int_ll = idx2(ll, j); // testable look at study look ll
               if (l_int_ll >= 0) {
-                l_int = l_int_ll; // update the last testable look up to current step
+                // update the last testable look up to current step
+                l_int = l_int_ll;
               }
             }
 
-            if (l_int < 0) continue;     // not testable up to this study look
+            if (l_int < 0)
+              continue; // not testable up to this study look
             size_t l = static_cast<size_t>(l_int);
-            if (l >= L[j]) continue;     // beyond L[j] considered at interim
-            size_t n = l + 1; // # of testable looks for hyp j up to this study look
+            if (l >= L[j])
+              continue;       // beyond L[j] considered at interim
+            size_t n = l + 1; // testable looks for hyp j up to this study look
 
             double alpha1 = wx[j] * alpha;
-            const std::string& asf1 = asf[j];
+            const std::string &asf1 = asf[j];
             double asfpar1 = asfpar[j];
 
             // Compute upper bound
-            const std::vector<double>& t = t_cols[j];
-            const std::vector<double>& s = s_cols[j];
+            const std::vector<double> &t = t_cols[j];
+            const std::vector<double> &s = s_cols[j];
             if (wx[j] != w_pre[j]) {
               // weights changed, compute full u_vec
               u_vec = getBoundcpp(n, t, alpha1, asf1, asfpar1, user, s, x);
@@ -1676,13 +1680,14 @@ IntMatrix fseqboncpp(
               // weights unchanged and testable at current study look,
               // reuse previous u_pre[j] prefix, only solve for last element
               u_vec.resize(n);
-              if (l > 0) std::memcpy(u_vec.data(), u_pre_ptr + j * k1,
-                  l * sizeof(double));
+              if (l > 0)
+                std::memcpy(u_vec.data(), u_pre_ptr + j * k1,
+                            l * sizeof(double));
               // compute cumulative alpha for this n
               double cumAlpha = errorSpentcpp(s[l], alpha1, asf1, asfpar1);
 
               // small lambda that only sets last element
-              auto g = [&](double aval)->double {
+              auto g = [&](double aval) -> double {
                 u_vec[l] = aval;
                 probs = exitprobcpp(u_vec, l_vec, theta_vec, t);
                 double cpu = std::accumulate(probs.exitProbUpper.begin(),
@@ -1694,8 +1699,9 @@ IntMatrix fseqboncpp(
               if (g_8 > 0.0) { // no alpha spent at current visit
                 u_vec[l] = 8.0;
               } else {
-                auto g_for_brent = [&](double aval)->double {
-                  if (aval == 8.0) return g_8; // avoid recomputation at 8.0
+                auto g_for_brent = [&](double aval) -> double {
+                  if (aval == 8.0)
+                    return g_8; // avoid recomputation at 8.0
                   return g(aval);
                 };
                 u_vec[l] = brent(g_for_brent, -5.0, 8.0, 1e-6);
@@ -1710,13 +1716,14 @@ IntMatrix fseqboncpp(
 
             // test rejection
             if (wx[j] == w_pre[j]) {
-              // weight unchanged since last check, only need to check current look l
+              // weight unchanged since last check, only need to check current
+              // look l
               double alphastar = 1.0 - boost_pnorm(u_vec[l]);
               if (p1(l, j) <= alphastar) {
                 found_reject = true;
                 found_j = j;
                 step_j = step + 1; // current study look (1-based)
-                break; // stop scanning j, we'll process rejection
+                break;             // stop scanning j, we'll process rejection
               }
             } else {
               // weight changed, need to check all previous looks up to l
@@ -1739,7 +1746,8 @@ IntMatrix fseqboncpp(
         }
 
         if (!found_reject) { // no more rejections at this study look
-          // remember current weights for next study look to check if weights changed
+          // remember current weights for next study look to check if weights
+          // changed
           w_pre = wx;
           break;
         }
@@ -1770,14 +1778,15 @@ IntMatrix fseqboncpp(
 
         // Update transition matrix for active hypotheses
         for (size_t l : active) {
-          denom[l] =  1.0 - g(l, j) * g(j, l);
+          denom[l] = 1.0 - g(l, j) * g(j, l);
         }
 
         g1.fill(0.0); // reset g1 to 0 before filling
         for (size_t k : active) {
           double g_jk = g(j, k);
           for (size_t l : active) {
-            if (l == k) continue;
+            if (l == k)
+              continue;
             double dl = denom[l];
             if (dl > 1e-12) {
               g1(l, k) = (g(l, k) + g(l, j) * g_jk) / dl;
@@ -1785,37 +1794,38 @@ IntMatrix fseqboncpp(
           }
         }
 
-        std::swap(g.data, g1.data);  // copy g1 to g for next iteration
+        std::swap(g.data, g1.data); // copy g1 to g for next iteration
 
         // Stop if all hypotheses rejected
-        if (num_rejected == m) break;
+        if (num_rejected == m)
+          break;
       } // end attempt loop
 
-      if (num_rejected == m) break;
+      if (num_rejected == m)
+        break;
     } // end study look loop
 
     return reject;
   };
 
-
   struct SimulationWorker : public RcppParallel::Worker {
     // references to read-only inputs (no mutation)
     const size_t m;
     const size_t k1;
-    const std::vector<double>& w;
-    const FlatMatrix& G;
+    const std::vector<double> &w;
+    const FlatMatrix &G;
     const double alpha;
-    const std::vector<std::string>& asf;
-    const std::vector<double>& asfpar;
-    const std::vector<size_t>& K0;
-    const std::vector<size_t>& K1;
-    const std::vector<size_t>& K2;
-    const IntMatrix& idx1;
-    const IntMatrix& idx2;
-    const std::vector<double>& maxInformation;
-    const FlatMatrix& p;
-    const FlatMatrix& info;
-    const FlatMatrix& spendTime;
+    const std::vector<std::string> &asf;
+    const std::vector<double> &asfpar;
+    const std::vector<size_t> &K0;
+    const std::vector<size_t> &K1;
+    const std::vector<size_t> &K2;
+    const IntMatrix &idx1;
+    const IntMatrix &idx2;
+    const std::vector<double> &maxInformation;
+    const FlatMatrix &p;
+    const FlatMatrix &info;
+    const FlatMatrix &spendTime;
     const bool lookback;
 
     // function f and other params that f needs are captured from outer scope
@@ -1823,36 +1833,28 @@ IntMatrix fseqboncpp(
     std::function<std::vector<int>(const size_t)> f;
 
     // result references (each iteration writes unique index into these)
-    IntMatrix& reject_out; // B by m matrix to store rejection results
+    IntMatrix &reject_out; // B by m matrix to store rejection results
 
     // constructor
-    SimulationWorker(const size_t m_,
-                     const size_t k1_,
-                     const std::vector<double>& w_,
-                     const FlatMatrix& G_,
-                     const double alpha_,
-                     const std::vector<std::string>& asf_,
-                     const std::vector<double>& asfpar_,
-                     const std::vector<size_t>& K0_,
-                     const std::vector<size_t>& K1_,
-                     const std::vector<size_t>& K2_,
-                     const IntMatrix& idx1_,
-                     const IntMatrix& idx2_,
-                     const std::vector<double>& maxInformation_,
-                     const FlatMatrix& p_,
-                     const FlatMatrix& info_,
-                     const FlatMatrix& spendTime_,
-                     const bool lookback_,
-                     decltype(f) f_,
-                     IntMatrix& reject_out_) :
+    SimulationWorker(const size_t m_, const size_t k1_,
+                     const std::vector<double> &w_, const FlatMatrix &G_,
+                     const double alpha_, const std::vector<std::string> &asf_,
+                     const std::vector<double> &asfpar_,
+                     const std::vector<size_t> &K0_,
+                     const std::vector<size_t> &K1_,
+                     const std::vector<size_t> &K2_, const IntMatrix &idx1_,
+                     const IntMatrix &idx2_,
+                     const std::vector<double> &maxInformation_,
+                     const FlatMatrix &p_, const FlatMatrix &info_,
+                     const FlatMatrix &spendTime_, const bool lookback_,
+                     decltype(f) f_, IntMatrix &reject_out_)
+        :
 
-      m(m_), k1(k1_), w(w_), G(G_), alpha(alpha_),
-      asf(asf_), asfpar(asfpar_), K0(K0_), K1(K1_), K2(K2_),
-      idx1(idx1_), idx2(idx2_), maxInformation(maxInformation_),
-      p(p_), info(info_), spendTime(spendTime_), lookback(lookback_),
-      f(std::move(f_)),
-      reject_out(reject_out_) {}
-
+          m(m_), k1(k1_), w(w_), G(G_), alpha(alpha_), asf(asf_),
+          asfpar(asfpar_), K0(K0_), K1(K1_), K2(K2_), idx1(idx1_), idx2(idx2_),
+          maxInformation(maxInformation_), p(p_), info(info_),
+          spendTime(spendTime_), lookback(lookback_), f(std::move(f_)),
+          reject_out(reject_out_) {}
 
     // operator() processes a range of bootstrap iterations [begin, end)
     void operator()(size_t begin, size_t end) {
@@ -1881,12 +1883,10 @@ IntMatrix fseqboncpp(
 
   // Instantiate the Worker with references to inputs and outputs
   SimulationWorker worker(
-      m, k1, w, G, alpha, asf, asfpar, K0, K1, K2,
-      idx1, idx2, maxInformation, p, info, spendTime, lookback,
+      m, k1, w, G, alpha, asf, asfpar, K0, K1, K2, idx1, idx2, maxInformation,
+      p, info, spendTime, lookback,
       // bind f into std::function (capture the f we already have)
-      std::function<std::vector<int>(const size_t)>(f),
-      reject_mat
-  );
+      std::function<std::vector<int>(const size_t)>(f), reject_mat);
 
   // Run the parallel loop over iterations
   RcppParallel::parallelFor(0, B, worker, 1 /*grain size*/);
@@ -1894,22 +1894,18 @@ IntMatrix fseqboncpp(
   return worker.reject_out;
 }
 
-
 // [[Rcpp::export]]
-Rcpp::IntegerMatrix fseqbonRcpp(
-    const Rcpp::NumericVector& w,
-    const Rcpp::NumericMatrix& G,
-    const double alpha,
-    const int kMax,
-    const Rcpp::StringVector& typeAlphaSpending,
-    const Rcpp::NumericVector& parameterAlphaSpending,
-    const Rcpp::NumericVector& maxInformation,
-    const Rcpp::LogicalMatrix& incidenceMatrix,
-    const int k1,
-    const Rcpp::NumericMatrix& p,
-    const Rcpp::NumericMatrix& information,
-    const Rcpp::NumericMatrix& spendingTime,
-    const bool lookback) {
+Rcpp::IntegerMatrix
+fseqbonRcpp(const Rcpp::NumericVector &w, const Rcpp::NumericMatrix &G,
+            const double alpha, const int kMax,
+            const Rcpp::StringVector &typeAlphaSpending,
+            const Rcpp::NumericVector &parameterAlphaSpending,
+            const Rcpp::NumericVector &maxInformation,
+            const Rcpp::LogicalMatrix &incidenceMatrix, const int k1,
+            const Rcpp::NumericMatrix &p,
+            const Rcpp::NumericMatrix &information,
+            const Rcpp::NumericMatrix &spendingTime, const bool lookback) {
+
   auto w1 = Rcpp::as<std::vector<double>>(w);
   auto G1 = flatmatrix_from_Rmatrix(G);
   auto asf1 = Rcpp::as<std::vector<std::string>>(typeAlphaSpending);
@@ -1919,21 +1915,15 @@ Rcpp::IntegerMatrix fseqbonRcpp(
   auto p1 = flatmatrix_from_Rmatrix(p);
   auto info1 = flatmatrix_from_Rmatrix(information);
   auto spendTime1 = flatmatrix_from_Rmatrix(spendingTime);
-  auto reject1 = fseqboncpp(w1, G1, alpha, static_cast<size_t>(kMax),
-                            asf1, asfpar1, maxInfo1, incid1,
-                            static_cast<size_t>(k1),
+  auto reject1 = fseqboncpp(w1, G1, alpha, static_cast<size_t>(kMax), asf1,
+                            asfpar1, maxInfo1, incid1, static_cast<size_t>(k1),
                             p1, info1, spendTime1, lookback);
   return Rcpp::wrap(reject1);
 }
 
-
-
 // Converts step-down p-values to sequential adjusted p-values
-FlatMatrix fstp2seqcpp(
-    const FlatMatrix& p,
-    const std::vector<double>& gamma,
-    const std::string& test,
-    const bool retest) {
+FlatMatrix fstp2seqcpp(const FlatMatrix &p, const std::vector<double> &gamma,
+                       const std::string &test, const bool retest) {
 
   // Validate dimensions
   size_t nreps = p.nrow;
@@ -1952,7 +1942,7 @@ FlatMatrix fstp2seqcpp(
 
   // Validate p-values in [0, 1]
   if (std::any_of(p.data.begin(), p.data.end(),
-                  [](double v){ return v < 0.0 || v > 1.0; })) {
+                  [](double v) { return v < 0.0 || v > 1.0; })) {
     throw std::invalid_argument("p-values must be between 0 and 1");
   }
 
@@ -1965,8 +1955,8 @@ FlatMatrix fstp2seqcpp(
     double inv_factor = 1.0 / (1.0 + gamma_j);
 
     for (size_t iter = 0; iter < nreps; ++iter) {
-      double x1 = p(iter, 2*j);
-      double x2 = p(iter, 2*j+1);
+      double x1 = p(iter, 2 * j);
+      double x2 = p(iter, 2 * j + 1);
       double val = 2.0 * std::max(x1, x2) * inv_factor;
       if (is_holm) {
         val = std::max(val, 2.0 * std::min(x1, x2));
@@ -1991,8 +1981,8 @@ FlatMatrix fstp2seqcpp(
   FlatMatrix padj(nreps, n);
 
   // Preallocate reusable vectors
-  std::vector<double> a_row(m);        // current row of a
-  std::vector<double> a_cummax(m);     // cumulative max
+  std::vector<double> a_row(m);    // current row of a
+  std::vector<double> a_cummax(m); // cumulative max
   for (size_t iter = 0; iter < nreps; ++iter) {
     // Extract row iter from a and compute cumulative max
     for (size_t j = 0; j < m; ++j) {
@@ -2015,10 +2005,10 @@ FlatMatrix fstp2seqcpp(
 
         // max over j ∈ [s, i] of p(iter, 2*j) / d(s, j)
         for (size_t j = s; j <= i; ++j) {
-          lhs = std::max(lhs, p(iter, 2*j) / d(s, j));
+          lhs = std::max(lhs, p(iter, 2 * j) / d(s, j));
         }
 
-        double rhs = 2.0 * p(iter, 2*s+1) / (1.0 + gamma[s]);
+        double rhs = 2.0 * p(iter, 2 * s + 1) / (1.0 + gamma[s]);
         if (lhs < rhs) {
           t2_even = std::min(t2_even, lhs);
         }
@@ -2034,15 +2024,15 @@ FlatMatrix fstp2seqcpp(
 
           // max over j ∈ [s, m-1] of p(iter, 2*j+1) / d(s, j)
           for (size_t j = s; j < m; ++j) {
-            lhs = std::max(lhs, p(iter, 2*j+1) / d(s, j));
+            lhs = std::max(lhs, p(iter, 2 * j + 1) / d(s, j));
           }
 
           // max over j ∈ [s, i] of p(iter, 2*j)
           for (size_t j = s; j <= i; ++j) {
-            lhs = std::max(lhs, p(iter, 2*j));
+            lhs = std::max(lhs, p(iter, 2 * j));
           }
 
-          double rhs = 2.0 * p(iter, 2*s) / (1.0 + gamma[s]);
+          double rhs = 2.0 * p(iter, 2 * s) / (1.0 + gamma[s]);
           if (lhs < rhs) {
             t3_even = std::min(t3_even, lhs);
           }
@@ -2053,7 +2043,7 @@ FlatMatrix fstp2seqcpp(
         result_even = std::min(t1, t2_even);
       }
 
-      padj(iter, 2*i) = result_even;
+      padj(iter, 2 * i) = result_even;
 
       // --- Compute padj(iter, 2*i+1) (odd index) ---
       double t2_odd = 1.0;
@@ -2062,10 +2052,10 @@ FlatMatrix fstp2seqcpp(
 
         // max over j ∈ [s, i] of p(iter, 2*j+1) / d(s, j)
         for (size_t j = s; j <= i; ++j) {
-          lhs = std::max(lhs, p(iter, 2*j+1) / d(s, j));
+          lhs = std::max(lhs, p(iter, 2 * j + 1) / d(s, j));
         }
 
-        double rhs = 2.0 * p(iter, 2*s) / (1.0 + gamma[s]);
+        double rhs = 2.0 * p(iter, 2 * s) / (1.0 + gamma[s]);
         if (lhs < rhs) {
           t2_odd = std::min(t2_odd, lhs);
         }
@@ -2081,15 +2071,15 @@ FlatMatrix fstp2seqcpp(
 
           // max over j ∈ [s, m-1] of p(iter, 2*j) / d(s, j)
           for (size_t j = s; j < m; ++j) {
-            lhs = std::max(lhs, p(iter, 2*j) / d(s, j));
+            lhs = std::max(lhs, p(iter, 2 * j) / d(s, j));
           }
 
           // max over j ∈ [s, i] of p(iter, 2*j+1)
           for (size_t j = s; j <= i; ++j) {
-            lhs = std::max(lhs, p(iter, 2*j+1));
+            lhs = std::max(lhs, p(iter, 2 * j + 1));
           }
 
-          double rhs = 2.0 * p(iter, 2*s+1) / (1.0 + gamma[s]);
+          double rhs = 2.0 * p(iter, 2 * s + 1) / (1.0 + gamma[s]);
           if (lhs < rhs) {
             t3_odd = std::min(t3_odd, lhs);
           }
@@ -2100,20 +2090,18 @@ FlatMatrix fstp2seqcpp(
         result_odd = std::min(t1, t2_odd);
       }
 
-      padj(iter, 2*i+1) = result_odd;
+      padj(iter, 2 * i + 1) = result_odd;
     }
   }
 
   return padj;
 }
 
-
 // [[Rcpp::export]]
-Rcpp::NumericMatrix fstp2seqRcpp(
-    const Rcpp::NumericMatrix& p,
-    const Rcpp::NumericVector& gamma,
-    const std::string& test = "hochberg",
-    const bool retest = true) {
+Rcpp::NumericMatrix fstp2seqRcpp(const Rcpp::NumericMatrix &p,
+                                 const Rcpp::NumericVector &gamma,
+                                 const std::string &test = "hochberg",
+                                 const bool retest = true) {
 
   auto p1 = flatmatrix_from_Rmatrix(p);
   auto gamma1 = Rcpp::as<std::vector<double>>(gamma);
@@ -2121,16 +2109,15 @@ Rcpp::NumericMatrix fstp2seqRcpp(
   return Rcpp::wrap(padj1);
 }
 
-
 // Helper: compute row sums for BoolMatrix
-std::vector<size_t> boolmatrix_rowsums(const BoolMatrix& mat) {
+std::vector<size_t> boolmatrix_rowsums(const BoolMatrix &mat) {
   size_t nrow = mat.nrow;
   size_t ncol = mat.ncol;
   std::vector<size_t> sums(nrow, 0);
-  const unsigned char* data = mat.data_ptr();
+  const unsigned char *data = mat.data_ptr();
 
   for (size_t j = 0; j < ncol; ++j) {
-    const unsigned char* col = data + j * nrow;
+    const unsigned char *col = data + j * nrow;
     for (size_t i = 0; i < nrow; ++i) {
       sums[i] += col[i];
     }
@@ -2138,16 +2125,11 @@ std::vector<size_t> boolmatrix_rowsums(const BoolMatrix& mat) {
   return sums;
 }
 
-
 // Helper for adjusted p-values for standard mixture gatekeeping procedures
-AdjustedPValues fstdmixcpp(
-    const FlatMatrix& p,
-    const BoolMatrix& family,
-    const BoolMatrix& serial,
-    const BoolMatrix& parallel,
-    const std::vector<double>& gamma,
-    const std::string& test,
-    const bool exhaust) {
+AdjustedPValues fstdmixcpp(const FlatMatrix &p, const BoolMatrix &family,
+                           const BoolMatrix &serial, const BoolMatrix &parallel,
+                           const std::vector<double> &gamma,
+                           const std::string &test, const bool exhaust) {
 
   // Validate inputs
   size_t nreps = p.nrow;
@@ -2173,13 +2155,13 @@ AdjustedPValues fstdmixcpp(
 
   // Validate gamma in [0, 1]
   if (std::any_of(gamma.begin(), gamma.end(),
-                  [](double g){ return g < 0.0 || g > 1.0; })) {
+                  [](double g) { return g < 0.0 || g > 1.0; })) {
     throw std::invalid_argument("gamma values must be between 0 and 1");
   }
 
   // Validate p-values in [0, 1]
   if (std::any_of(p.data.begin(), p.data.end(),
-                  [](double v){ return v < 0.0 || v > 1.0; })) {
+                  [](double v) { return v < 0.0 || v > 1.0; })) {
     throw std::invalid_argument("p-values must be between 0 and 1");
   }
 
@@ -2269,7 +2251,8 @@ AdjustedPValues fstdmixcpp(
             break;
           }
         }
-        if (hit) cc1[j] = 0;
+        if (hit)
+          cc1[j] = 0;
 
         // if none of the parallel predecessors are testable, remove j
         hit = true;
@@ -2279,7 +2262,8 @@ AdjustedPValues fstdmixcpp(
             break;
           }
         }
-        if (hit) cc1[j] = 0;
+        if (hit)
+          cc1[j] = 0;
       }
     }
 
@@ -2291,8 +2275,9 @@ AdjustedPValues fstdmixcpp(
     // Error rate function divided by alpha
     std::vector<double> errf(nfamily);
     for (size_t j = 0; j < nfamily; ++j) {
-      errf[j] = nhyps0[j] > 0 ?
-      gamma[j] + (1.0 - gamma[j]) * nhyps0[j] / nhyps[j] : 0.0;
+      errf[j] = nhyps0[j] > 0
+                    ? gamma[j] + (1.0 - gamma[j]) * nhyps0[j] / nhyps[j]
+                    : 0.0;
     }
 
     // Allocated fraction of alpha for each family
@@ -2303,7 +2288,7 @@ AdjustedPValues fstdmixcpp(
     }
 
     size_t kmax = 0; // last family with positive allocation (1-based index)
-    for (size_t j = nfamily; j-- > 0; ) {
+    for (size_t j = nfamily; j-- > 0;) {
       if (coef[j] > 0.0) {
         kmax = j + 1;
         break;
@@ -2332,7 +2317,8 @@ AdjustedPValues fstdmixcpp(
 
     size_t nfamily2 = sub.size();
 
-    // Subset of active families after removing those without testable hypotheses
+    // Subset of active families after removing those without testable
+    // hypotheses
     BoolMatrix family2(nfamily2, m);
     std::vector<size_t> nhyps2(nfamily2);
     for (size_t j = 0; j < nfamily2; ++j) {
@@ -2373,7 +2359,8 @@ AdjustedPValues fstdmixcpp(
     for (size_t j = 0; j < nfamily2; ++j) {
       gam2[j] = gamma[sub[j]];
     }
-    if (exhaust) gam2[nfamily2 - 1] = 1.0;
+    if (exhaust)
+      gam2[nfamily2 - 1] = 1.0;
 
     // Bonferroni part of weights
     std::vector<double> coef2(nfamily2);
@@ -2505,16 +2492,14 @@ AdjustedPValues fstdmixcpp(
   return AdjustedPValues{incid, pinter, padj};
 }
 
-
 // [[Rcpp::export]]
-Rcpp::List fstdmixRcpp(
-    const Rcpp::NumericMatrix& p,
-    const Rcpp::LogicalMatrix& family,
-    const Rcpp::LogicalMatrix& serial,
-    const Rcpp::LogicalMatrix& parallel,
-    const Rcpp::NumericVector& gamma,
-    const std::string& test = "hommel",
-    const bool exhaust = true) {
+Rcpp::List fstdmixRcpp(const Rcpp::NumericMatrix &p,
+                       const Rcpp::LogicalMatrix &family,
+                       const Rcpp::LogicalMatrix &serial,
+                       const Rcpp::LogicalMatrix &parallel,
+                       const Rcpp::NumericVector &gamma,
+                       const std::string &test = "hommel",
+                       const bool exhaust = true) {
   auto p1 = flatmatrix_from_Rmatrix(p);
   auto family1 = boolmatrix_from_Rmatrix(family);
   auto serial1 = boolmatrix_from_Rmatrix(serial);
@@ -2528,16 +2513,11 @@ Rcpp::List fstdmixRcpp(
   return Rcpp::wrap(result);
 }
 
-
 // Helper for adjusted p-values for modified mixture gatekeeping procedures
-AdjustedPValues fmodmixcpp(
-    const FlatMatrix& p,
-    const BoolMatrix& family,
-    const BoolMatrix& serial,
-    const BoolMatrix& parallel,
-    const std::vector<double>& gamma,
-    const std::string& test,
-    const bool exhaust) {
+AdjustedPValues fmodmixcpp(const FlatMatrix &p, const BoolMatrix &family,
+                           const BoolMatrix &serial, const BoolMatrix &parallel,
+                           const std::vector<double> &gamma,
+                           const std::string &test, const bool exhaust) {
 
   // Validate inputs
   size_t nreps = p.nrow;
@@ -2563,13 +2543,13 @@ AdjustedPValues fmodmixcpp(
 
   // Validate gamma in [0, 1]
   if (std::any_of(gamma.begin(), gamma.end(),
-                  [](double g){ return g < 0.0 || g > 1.0; })) {
+                  [](double g) { return g < 0.0 || g > 1.0; })) {
     throw std::invalid_argument("gamma values must be between 0 and 1");
   }
 
   // Validate p-values in [0, 1]
   if (std::any_of(p.data.begin(), p.data.end(),
-                  [](double v){ return v < 0.0 || v > 1.0; })) {
+                  [](double v) { return v < 0.0 || v > 1.0; })) {
     throw std::invalid_argument("p-values must be between 0 and 1");
   }
 
@@ -2659,7 +2639,8 @@ AdjustedPValues fmodmixcpp(
             break;
           }
         }
-        if (hit) cc1[j] = 0;
+        if (hit)
+          cc1[j] = 0;
 
         // if none of the parallel predecessors are testable, remove j
         hit = true;
@@ -2669,7 +2650,8 @@ AdjustedPValues fmodmixcpp(
             break;
           }
         }
-        if (hit) cc1[j] = 0;
+        if (hit)
+          cc1[j] = 0;
       }
     }
 
@@ -2688,13 +2670,16 @@ AdjustedPValues fmodmixcpp(
       nstar[j] = 0;
 
       for (size_t k = 0; k < m; ++k) {
-        if (family(j, k) && cc1[k]) kstar[j]++;
-        if (family(j, k) && cc2[k]) nstar[j]++;
+        if (family(j, k) && cc1[k])
+          kstar[j]++;
+        if (family(j, k) && cc2[k])
+          nstar[j]++;
       }
 
-      // DIFFERENCE from stdmix: uses kstar and nstar instead of nhyps0 and nhyps
-      errf[j] = kstar[j] > 0 ?
-      gamma[j] + (1.0 - gamma[j]) * kstar[j] / nstar[j] : 0.0;
+      // DIFFERENCE from stdmix: uses kstar and nstar instead of nhyps0 and
+      // nhyps
+      errf[j] = kstar[j] > 0 ? gamma[j] + (1.0 - gamma[j]) * kstar[j] / nstar[j]
+                             : 0.0;
     }
 
     // Allocated fraction of alpha for each family
@@ -2705,7 +2690,7 @@ AdjustedPValues fmodmixcpp(
     }
 
     size_t kmax = 0; // last family with positive allocation (1-based index)
-    for (size_t j = nfamily; j-- > 0; ) {
+    for (size_t j = nfamily; j-- > 0;) {
       if (coef[j] > 0.0) {
         kmax = j + 1;
         break;
@@ -2734,7 +2719,8 @@ AdjustedPValues fmodmixcpp(
 
     size_t nfamily2 = sub.size();
 
-    // Subset of active families after removing those without testable hypotheses
+    // Subset of active families after removing those without testable
+    // hypotheses
     BoolMatrix family2(nfamily2, m);
     std::vector<size_t> nhyps2(nfamily2);
     for (size_t j = 0; j < nfamily2; ++j) {
@@ -2775,7 +2761,8 @@ AdjustedPValues fmodmixcpp(
     for (size_t j = 0; j < nfamily2; ++j) {
       gam2[j] = gamma[sub[j]];
     }
-    if (exhaust) gam2[nfamily2 - 1] = 1.0;
+    if (exhaust)
+      gam2[nfamily2 - 1] = 1.0;
 
     // Bonferroni part of weights
     // (KEY DIFFERENCE from stdmix: uses nstar instead of nhyps)
@@ -2908,16 +2895,14 @@ AdjustedPValues fmodmixcpp(
   return AdjustedPValues{incid, pinter, padj};
 }
 
-
 // [[Rcpp::export]]
-Rcpp::List fmodmixRcpp(
-    const Rcpp::NumericMatrix& p,
-    const Rcpp::LogicalMatrix& family,
-    const Rcpp::LogicalMatrix& serial,
-    const Rcpp::LogicalMatrix& parallel,
-    const Rcpp::NumericVector& gamma,
-    const std::string& test = "hommel",
-    const bool exhaust = true) {
+Rcpp::List fmodmixRcpp(const Rcpp::NumericMatrix &p,
+                       const Rcpp::LogicalMatrix &family,
+                       const Rcpp::LogicalMatrix &serial,
+                       const Rcpp::LogicalMatrix &parallel,
+                       const Rcpp::NumericVector &gamma,
+                       const std::string &test = "hommel",
+                       const bool exhaust = true) {
   auto p1 = flatmatrix_from_Rmatrix(p);
   auto family1 = boolmatrix_from_Rmatrix(family);
   auto serial1 = boolmatrix_from_Rmatrix(serial);
@@ -2931,12 +2916,9 @@ Rcpp::List fmodmixRcpp(
   return Rcpp::wrap(result);
 }
 
-
 // Helper to compute truncated adjusted p-values for multiple testing
-AdjustedPValues ftrunccpp(
-    const FlatMatrix& p,
-    const std::string& test,
-    const double gamma) {
+AdjustedPValues ftrunccpp(const FlatMatrix &p, const std::string &test,
+                          const double gamma) {
 
   // Validate inputs
   size_t niters = p.nrow;
@@ -2948,7 +2930,7 @@ AdjustedPValues ftrunccpp(
 
   // Validate p-values in [0, 1]
   if (std::any_of(p.data.begin(), p.data.end(),
-                  [](double v){ return v < 0.0 || v > 1.0; })) {
+                  [](double v) { return v < 0.0 || v > 1.0; })) {
     throw std::invalid_argument("p-values must be between 0 and 1");
   }
 
@@ -2974,8 +2956,10 @@ AdjustedPValues ftrunccpp(
   double tbon = (1.0 - gamma) / m;
 
   // Preallocate reusable vectors
-  std::vector<size_t> hyp_indices; hyp_indices.reserve(m);
-  std::vector<double> p1; p1.reserve(m);
+  std::vector<size_t> hyp_indices;
+  hyp_indices.reserve(m);
+  std::vector<double> p1;
+  p1.reserve(m);
 
   // Process each intersection hypothesis
   for (size_t i = 0; i < ntests; ++i) {
@@ -3056,12 +3040,10 @@ AdjustedPValues ftrunccpp(
   return AdjustedPValues{incid, pinter, padj};
 }
 
-
 // [[Rcpp::export]]
-Rcpp::List ftruncRcpp(
-    const Rcpp::NumericMatrix& p,
-    const std::string& test = "hommel",
-    const double gamma = 1.0) {
+Rcpp::List ftruncRcpp(const Rcpp::NumericMatrix &p,
+                      const std::string &test = "hommel",
+                      const double gamma = 1.0) {
   auto p1 = flatmatrix_from_Rmatrix(p);
   auto out = ftrunccpp(p1, test, gamma);
   ListCpp result;

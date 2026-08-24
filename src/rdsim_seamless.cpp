@@ -1,7 +1,7 @@
-#include "miettinen_nurminen.h"
-#include "utilities.h"
 #include "dataframe_list.h"
+#include "miettinen_nurminen.h"
 #include "thread_utils.h"
+#include "utilities.h"
 
 #include <algorithm>
 #include <cmath>
@@ -16,38 +16,35 @@
 #include <RcppParallel.h>
 #include <boost/random.hpp>
 
-
 using std::size_t;
 
-
 // Parallel entry function
-ListCpp rdsim_seamless_cpp(
-    const size_t M,
-    const size_t K,
-    const size_t rankp0,
-    const std::vector<double>& criticalValues,
-    const std::vector<double>& futilityBounds,
-    const std::vector<double>& riskDiffH0s,
-    const std::vector<double>& allocations,
-    const std::vector<double>& pis,
-    const bool nullVariance,
-    const size_t n,
-    const std::vector<int>& plannedSubjects,
-    const int maxNumberOfIterations,
-    const int seed)
-{
-  if (M < 1) throw std::invalid_argument("M must be at least 1");
+ListCpp rdsim_seamless_cpp(const size_t M, const size_t K, const size_t rankp0,
+                           const std::vector<double> &criticalValues,
+                           const std::vector<double> &futilityBounds,
+                           const std::vector<double> &riskDiffH0s,
+                           const std::vector<double> &allocations,
+                           const std::vector<double> &pis,
+                           const bool nullVariance, const size_t n,
+                           const std::vector<int> &plannedSubjects,
+                           const int maxNumberOfIterations, const int seed) {
+  if (M < 1)
+    throw std::invalid_argument("M must be at least 1");
+  if (M < 1)
+    throw std::invalid_argument("M must be at least 1");
   if (rankp0 < 1 || rankp0 > M) {
     throw std::invalid_argument("rankp0 must be an integer between 1 and M");
   }
-  if (K < 1) throw std::invalid_argument("K must be at least 1");
+  if (K < 1)
+    throw std::invalid_argument("K must be at least 1");
   size_t kMax = K + 1;
   if (K > 0 && futilityBounds.size() < K) {
     throw std::invalid_argument("futilityBounds must have length >= K");
   }
   for (size_t k = 0; k < K; ++k) {
     if (futilityBounds[k] > criticalValues[k]) {
-      throw std::invalid_argument("futilityBounds must lie below criticalValues");
+      throw std::invalid_argument(
+          "futilityBounds must lie below criticalValues");
     }
   }
 
@@ -63,7 +60,8 @@ ListCpp rdsim_seamless_cpp(
 
   for (size_t m = 0; m < M + 1; ++m) {
     std::string nm = std::string("pis[") + std::to_string(m) + "]";
-    if (std::isnan(pis[m])) throw std::invalid_argument(nm + "must be provided");
+    if (std::isnan(pis[m]))
+      throw std::invalid_argument(nm + "must be provided");
     if (pis[m] <= 0.0 || pis[m] >= 1.0) {
       throw std::invalid_argument(nm + "must lies in (0,1)");
     }
@@ -71,10 +69,12 @@ ListCpp rdsim_seamless_cpp(
 
   if (static_cast<int>(n) == INT_MIN)
     throw std::invalid_argument("n must be provided");
-  if (n <= 0) throw std::invalid_argument("n must be a positive integer");
+  if (n <= 0)
+    throw std::invalid_argument("n must be a positive integer");
 
   // cum number of patients enrolled at each stage for arm 1 & control combined
-  int maxN = static_cast<int>(std::round((allocs[0] + allocs[M]) / sumAlloc * n));
+  int maxN =
+      static_cast<int>(std::round((allocs[0] + allocs[M]) / sumAlloc * n));
   if (plannedSubjects[0] <= 0)
     throw std::invalid_argument("plannedSubjects must be positive");
   if (plannedSubjects.size() != kMax)
@@ -82,8 +82,8 @@ ListCpp rdsim_seamless_cpp(
   if (any_nonincreasing(plannedSubjects))
     throw std::invalid_argument("plannedSubjects must be increasing");
   if (plannedSubjects.back() != maxN)
-    throw std::invalid_argument(
-        "plannedSubjects must end with sample size for arm 1 & control combined");
+    throw std::invalid_argument("plannedSubjects must end with sample size for "
+                                "arm 1 & control combined");
 
   // number of new patients enrolled in each stage for arm 1 & control combined
   std::vector<int> stagewiseSubjects(kMax);
@@ -93,14 +93,16 @@ ListCpp rdsim_seamless_cpp(
   }
 
   if (maxNumberOfIterations < 1)
-    throw std::invalid_argument("maxNumberOfIterations must be a positive integer");
+    throw std::invalid_argument(
+        "maxNumberOfIterations must be a positive integer");
 
   size_t maxIters = static_cast<size_t>(maxNumberOfIterations);
 
   // generate seeds for each iteration to ensure reproducibility
   std::vector<uint64_t> seeds(maxIters);
   boost::random::mt19937_64 master_rng(static_cast<uint64_t>(seed));
-  for (size_t iter = 0; iter < maxIters; ++iter) seeds[iter] = master_rng();
+  for (size_t iter = 0; iter < maxIters; ++iter)
+    seeds[iter] = master_rng();
 
   // One summary (stage-level) row produced by an iteration
   struct StageSummary1Row {
@@ -116,60 +118,51 @@ ListCpp rdsim_seamless_cpp(
     int stageNum = 0;
     int actArm = 1;
     int totAccruals = 0, totEvents = 0;
-    double riskDiff = 0.0, vriskDiff = 0.0,  z = 0.0;
+    double riskDiff = 0.0, vriskDiff = 0.0, z = 0.0;
   };
 
   // Per-iteration container written exclusively by the worker thread
   struct IterationResult {
     std::vector<StageSummary1Row> summary1Rows;
     std::vector<StageSummary2Row> summary2Rows;
-    void reserveForSummary1(size_t approxRows) { summary1Rows.reserve(approxRows); }
-    void reserveForSummary2(size_t approxRows) { summary2Rows.reserve(approxRows); }
+    void reserveForSummary1(size_t approxRows) {
+      summary1Rows.reserve(approxRows);
+    }
+    void reserveForSummary2(size_t approxRows) {
+      summary2Rows.reserve(approxRows);
+    }
   };
 
   // pre-size per-iteration results
   std::vector<IterationResult> results;
   results.resize(maxIters);
 
-
   // Worker that runs simulation iterations [begin, end)
   struct SimWorker : public RcppParallel::Worker {
     // inputs (const refs)
     const size_t M;
     const size_t kMax;
-    const std::vector<double>& rdH0s;
-    const std::vector<double>& allocs;
-    const std::vector<double>& pis;
+    const std::vector<double> &rdH0s;
+    const std::vector<double> &allocs;
+    const std::vector<double> &pis;
     const bool nullVariance;
     const size_t n;
-    const std::vector<int>& stagewiseSubjects;
-    const std::vector<uint64_t>& seeds;
+    const std::vector<int> &stagewiseSubjects;
+    const std::vector<uint64_t> &seeds;
 
     // output pointer (pre-sized vector of IterationResult)
-    std::vector<IterationResult>* results;
+    std::vector<IterationResult> *results;
 
-    SimWorker(
-      size_t M_,
-      size_t kMax_,
-      const std::vector<double>& rdH0s_,
-      const std::vector<double>& allocs_,
-      const std::vector<double>& pis_,
-      bool nullVariance_,
-      size_t n_,
-      const std::vector<int>& stagewiseSubjects_,
-      const std::vector<uint64_t>& seeds_,
-      std::vector<IterationResult>* results_)
-      : M(M_),
-        kMax(kMax_),
-        rdH0s(rdH0s_),
-        allocs(allocs_),
-        pis(pis_),
-        nullVariance(nullVariance_),
-        n(n_),
-        stagewiseSubjects(stagewiseSubjects_),
-        seeds(seeds_),
-        results(results_)
-    {}
+    SimWorker(size_t M_, size_t kMax_, const std::vector<double> &rdH0s_,
+              const std::vector<double> &allocs_,
+              const std::vector<double> &pis_, bool nullVariance_, size_t n_,
+              const std::vector<int> &stagewiseSubjects_,
+              const std::vector<uint64_t> &seeds_,
+              std::vector<IterationResult> *results_)
+        : M(M_), kMax(kMax_), rdH0s(rdH0s_), allocs(allocs_), pis(pis_),
+          nullVariance(nullVariance_), n(n_),
+          stagewiseSubjects(stagewiseSubjects_), seeds(seeds_),
+          results(results_) {}
 
     void operator()(std::size_t begin, std::size_t end) {
       // local buffers reused by this worker
@@ -184,17 +177,18 @@ ListCpp rdsim_seamless_cpp(
         boost::random::mt19937_64 rng_local(seeds[iter]);
 
         // per-iteration output container
-        IterationResult& out = (*results)[iter];
+        IterationResult &out = (*results)[iter];
         out.summary1Rows.clear();
         out.summary2Rows.clear();
         out.reserveForSummary1(kMax * M2); // all arms & overall
-        out.reserveForSummary2(kMax * M); // all pairwise comparisons with control
+        out.reserveForSummary2(kMax * M);  // pairwise comparisons with control
 
         for (size_t k = 0; k < kMax; ++k) {
-          // number of new patients enrolled in stage k for arm 1 & control combined
-          // per unit allocation, i.e. per "allocation share" in stage k
+          // number of new patients enrolled in stage k for arm 1 & control
+          // combined per unit allocation, i.e. per "allocation share" in stage
+          // k
           const double stageSize = static_cast<double>(stagewiseSubjects[k]) /
-            (allocs[0] + allocs[M]);
+                                   (allocs[0] + allocs[M]);
 
           accruals[M1] = 0; // overall accruals/events for all arms combined
           events[M1] = 0;
@@ -247,14 +241,15 @@ ListCpp rdsim_seamless_cpp(
             if (nullVariance) {
               const double r = allocs[m] / (allocs[m] + allocs[M]);
               // restricted maximum likelihood estimates
-              mr = remlRiskDiff(r, r * pis[m], 1.0 - r, (1.0 - r) * pis[M], rdH0s[m]);
+              mr = remlRiskDiff(r, r * pis[m], 1.0 - r, (1.0 - r) * pis[M],
+                                rdH0s[m]);
               const double pT = mr[0];
               const double pC = mr[1];
-              vrd = pT * (1.0 - pT) / accruals[m] +
-                pC * (1.0 - pC) / accruals[M];
+              vrd =
+                  pT * (1.0 - pT) / accruals[m] + pC * (1.0 - pC) / accruals[M];
             } else {
               vrd = phat[m] * (1.0 - phat[m]) / accruals[m] +
-                phat[M] * (1.0 - phat[M]) / accruals[M];
+                    phat[M] * (1.0 - phat[M]) / accruals[M];
             }
             const double z = (rd - rdH0s[m]) / std::sqrt(vrd);
             sr2.riskDiff = rd;
@@ -268,10 +263,8 @@ ListCpp rdsim_seamless_cpp(
   }; // SimWorker
 
   // run worker in parallel
-  SimWorker worker(
-      M, kMax, rdH0s, allocs, pis, nullVariance, n, stagewiseSubjects, seeds,
-      &results
-  );
+  SimWorker worker(M, kMax, rdH0s, allocs, pis, nullVariance, n,
+                   stagewiseSubjects, seeds, &results);
 
   RcppParallel::parallelFor(0, maxIters, worker);
 
@@ -283,32 +276,50 @@ ListCpp rdsim_seamless_cpp(
   }
 
   // prepare final containers (reserve capacities)
-  std::vector<int> sum1_iterNum; sum1_iterNum.reserve(ns1r);
-  std::vector<int> sum1_stopStage; sum1_stopStage.reserve(ns1r);
-  std::vector<int> sum1_stageNum; sum1_stageNum.reserve(ns1r);
-  std::vector<int> sum1_trtGrp; sum1_trtGrp.reserve(ns1r);
-  std::vector<int> sum1_accruals; sum1_accruals.reserve(ns1r);
-  std::vector<int> sum1_events; sum1_events.reserve(ns1r);
-  std::vector<double> sum1_phat; sum1_phat.reserve(ns1r);
+  std::vector<int> sum1_iterNum;
+  sum1_iterNum.reserve(ns1r);
+  std::vector<int> sum1_stopStage;
+  sum1_stopStage.reserve(ns1r);
+  std::vector<int> sum1_stageNum;
+  sum1_stageNum.reserve(ns1r);
+  std::vector<int> sum1_trtGrp;
+  sum1_trtGrp.reserve(ns1r);
+  std::vector<int> sum1_accruals;
+  sum1_accruals.reserve(ns1r);
+  std::vector<int> sum1_events;
+  sum1_events.reserve(ns1r);
+  std::vector<double> sum1_phat;
+  sum1_phat.reserve(ns1r);
 
-  std::vector<int> sum2_iterNum; sum2_iterNum.reserve(ns2r);
-  std::vector<int> sum2_selectedArm; sum2_selectedArm.reserve(ns2r);
-  std::vector<int> sum2_stopStage; sum2_stopStage.reserve(ns2r);
-  std::vector<int> sum2_stageNum; sum2_stageNum.reserve(ns2r);
-  std::vector<int> sum2_actArm; sum2_actArm.reserve(ns2r);
-  std::vector<int> sum2_totAccruals; sum2_totAccruals.reserve(ns2r);
-  std::vector<int> sum2_totEvents; sum2_totEvents.reserve(ns2r);
-  std::vector<double> sum2_riskDiff; sum2_riskDiff.reserve(ns2r);
-  std::vector<double> sum2_vriskDiff; sum2_vriskDiff.reserve(ns2r);
-  std::vector<double> sum2_z; sum2_z.reserve(ns2r);
-  std::vector<unsigned char> sum2_reject; sum2_reject.reserve(ns2r);
-  std::vector<unsigned char> sum2_futility; sum2_futility.reserve(ns2r);
-
+  std::vector<int> sum2_iterNum;
+  sum2_iterNum.reserve(ns2r);
+  std::vector<int> sum2_selectedArm;
+  sum2_selectedArm.reserve(ns2r);
+  std::vector<int> sum2_stopStage;
+  sum2_stopStage.reserve(ns2r);
+  std::vector<int> sum2_stageNum;
+  sum2_stageNum.reserve(ns2r);
+  std::vector<int> sum2_actArm;
+  sum2_actArm.reserve(ns2r);
+  std::vector<int> sum2_totAccruals;
+  sum2_totAccruals.reserve(ns2r);
+  std::vector<int> sum2_totEvents;
+  sum2_totEvents.reserve(ns2r);
+  std::vector<double> sum2_riskDiff;
+  sum2_riskDiff.reserve(ns2r);
+  std::vector<double> sum2_vriskDiff;
+  sum2_vriskDiff.reserve(ns2r);
+  std::vector<double> sum2_z;
+  sum2_z.reserve(ns2r);
+  std::vector<unsigned char> sum2_reject;
+  sum2_reject.reserve(ns2r);
+  std::vector<unsigned char> sum2_futility;
+  sum2_futility.reserve(ns2r);
 
   // flatten by iteration in order (preserves iteration order)
   for (size_t iter = 0; iter < maxIters; ++iter) {
-    const auto& s1rows = results[iter].summary1Rows;
-    for (const auto& r : s1rows) {
+    const auto &s1rows = results[iter].summary1Rows;
+    for (const auto &r : s1rows) {
       sum1_iterNum.push_back(r.iterNum);
       sum1_stopStage.push_back(0);
       sum1_stageNum.push_back(r.stageNum);
@@ -318,8 +329,8 @@ ListCpp rdsim_seamless_cpp(
       sum1_phat.push_back(r.phat);
     }
 
-    const auto& s2rows = results[iter].summary2Rows;
-    for (const auto& r : s2rows) {
+    const auto &s2rows = results[iter].summary2Rows;
+    for (const auto &r : s2rows) {
       sum2_iterNum.push_back(r.iterNum);
       sum2_selectedArm.push_back(0);
       sum2_stopStage.push_back(0);
@@ -350,16 +361,16 @@ ListCpp rdsim_seamless_cpp(
   FlatMatrix eventsByArm(kMax, M + 1);
   FlatMatrix subjectsByArm(kMax, M + 1);
 
-  int* stop1 = sum1_stopStage.data();
-  const int* sum1_E = sum1_events.data();
-  const int* sum1_A = sum1_accruals.data();
-  int* stop2 = sum2_stopStage.data();
-  int* selectedArmVec = sum2_selectedArm.data();
-  const int* sum2_totE = sum2_totEvents.data();
-  const int* sum2_totA = sum2_totAccruals.data();
-  const double* zstat = sum2_z.data();
-  unsigned char* reject = sum2_reject.data();
-  unsigned char* futility = sum2_futility.data();
+  int *stop1 = sum1_stopStage.data();
+  const int *sum1_E = sum1_events.data();
+  const int *sum1_A = sum1_accruals.data();
+  int *stop2 = sum2_stopStage.data();
+  int *selectedArmVec = sum2_selectedArm.data();
+  const int *sum2_totE = sum2_totEvents.data();
+  const int *sum2_totA = sum2_totAccruals.data();
+  const double *zstat = sum2_z.data();
+  unsigned char *reject = sum2_reject.data();
+  unsigned char *futility = sum2_futility.data();
 
   for (size_t iter = 0; iter < niters; ++iter) {
     const size_t i1 = iter * rowsPerIter1;
@@ -370,10 +381,10 @@ ListCpp rdsim_seamless_cpp(
     for (size_t m = 0; m < M; ++m) {
       ranked[m] = std::make_pair(zstat[i2 + m], m);
     }
-    std::stable_sort(ranked.begin(), ranked.end(),
-      [](const std::pair<double, size_t>& a, const std::pair<double, size_t>& b) {
-        return a.first > b.first;
-      });
+    std::stable_sort(
+        ranked.begin(), ranked.end(),
+        [](const std::pair<double, size_t> &a,
+           const std::pair<double, size_t> &b) { return a.first > b.first; });
     size_t selected_arm = ranked[rankp0 - 1].second;
     selectionProb[selected_arm] += 1.0;
 
@@ -516,8 +527,10 @@ ListCpp rdsim_seamless_cpp(
   // convert counts to proportions / averages
   expNumEvents /= niters;
   expNumSubjects /= niters;
-  for (size_t m = 0; m < M; ++m) selectionProb[m] /= niters;
-  for (size_t m = 0; m < M; ++m) selectToStage2[m] /= niters;
+  for (size_t m = 0; m < M; ++m)
+    selectionProb[m] /= niters;
+  for (size_t m = 0; m < M; ++m)
+    selectToStage2[m] /= niters;
   selectAnyToStage2 /= niters;
 
   for (size_t m = 0; m < M + 1; ++m) {
@@ -603,22 +616,17 @@ ListCpp rdsim_seamless_cpp(
   return result;
 }
 
-
 // [[Rcpp::export]]
 Rcpp::List rdsim_seamless_Rcpp(
-    const int M = 2,
-    const int K = 1,
-    const int rankp0 = 1,
-    const Rcpp::NumericVector& criticalValues = NA_REAL,
+    const int M = 2, const int K = 1, const int rankp0 = 1,
+    const Rcpp::NumericVector &criticalValues = NA_REAL,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds = R_NilValue,
-    const Rcpp::NumericVector& riskDiffH0s = 1,
-    const Rcpp::NumericVector& allocations = 1,
-    const Rcpp::NumericVector& pis = NA_REAL,
-    const bool nullVariance = true,
+    const Rcpp::NumericVector &riskDiffH0s = 1,
+    const Rcpp::NumericVector &allocations = 1,
+    const Rcpp::NumericVector &pis = NA_REAL, const bool nullVariance = true,
     const int n = NA_INTEGER,
-    const Rcpp::IntegerVector& plannedSubjects = NA_INTEGER,
-    const int maxNumberOfIterations = 1000,
-    const int seed = 0) {
+    const Rcpp::IntegerVector &plannedSubjects = NA_INTEGER,
+    const int maxNumberOfIterations = 1000, const int seed = 0) {
 
   std::vector<double> critValues(criticalValues.begin(), criticalValues.end());
 
@@ -635,12 +643,12 @@ Rcpp::List rdsim_seamless_Rcpp(
   std::vector<double> rdH0s(riskDiffH0s.begin(), riskDiffH0s.end());
   std::vector<double> allocs(allocations.begin(), allocations.end());
   std::vector<double> ps(pis.begin(), pis.end());
-  std::vector<int> plannedSubjects_vec(plannedSubjects.begin(), plannedSubjects.end());
+  std::vector<int> plannedSubjects_vec(plannedSubjects.begin(),
+                                       plannedSubjects.end());
 
   auto out = rdsim_seamless_cpp(
-    M, K, static_cast<size_t>(rankp0), critValues, futBounds,
-    rdH0s, allocs, ps, nullVariance,
-    n, plannedSubjects_vec, maxNumberOfIterations, seed);
+      M, K, static_cast<size_t>(rankp0), critValues, futBounds, rdH0s, allocs,
+      ps, nullVariance, n, plannedSubjects_vec, maxNumberOfIterations, seed);
 
   thread_utils::drain_thread_warnings_to_R();
 

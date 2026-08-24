@@ -4,20 +4,24 @@
 \alias{fPCStage1}
 \title{Determine stage 1 rejections for adaptive multiple testing}
 \usage{
-fPCStage1(m, stg1_loc_p, alpha1)
+fPCStage1(stg1_loc_p, alpha1)
 }
 \arguments{
-\item{m}{Number of elementary hypotheses.}
-
-\item{stg1_loc_p}{A list returned by \code{fadjp}, containing the stage 1
-intersection hypotheses and local p-values.}
+\item{stg1_loc_p}{A list returned by \code{fPCStagewise}, containing the
+stage 1 intersection hypotheses and local p-values.}
 
 \item{alpha1}{Stage 1 significance level.}
 }
 \value{
-A list containing \code{stg1_elemhyp_r_idx}, the rejected
-elementary hypotheses, \code{stg1_inthyp_nr_idx}, the unrejected
-intersection hypotheses, and \code{inthyp}, their indicator matrix.
+A list containing:
+\itemize{
+\item \code{stg1_elemhyp_r_idx}: The 1-based indices of elementary hypotheses
+rejected in stage 1.
+\item \code{stg1_inthyp_nr_idx}: The 1-based indices of intersection
+hypotheses not rejected in stage 1.
+\item \code{inthyp}: The indicator matrix of those non-rejected intersection
+hypotheses.
+}
 }
 \description{
 Determine the elementary hypotheses rejected at stage 1 and
@@ -38,12 +42,14 @@ corr <- matrix(c(1, 0.5, NA, NA,
                  NA, NA, 1, 0.5,
                  NA, NA, 0.5, 1),
                nrow = 4, byrow = TRUE)
-stage1_local_pvalues <- fadjp(
-  c(0.00045, 0.0952, 0.0225, 0.1104),
-  wgtmat, family, corr,
-  1:15, 1:4, wgtmat)
-fPCStage1(4, stage1_local_pvalues,
-          errorSpent(0.5, 0.025, "sfOF"))
+stage1_local_pvalues <- fPCStagewise(
+  stg2_p = c(0.00045, 0.0952, 0.0225, 0.1104),
+  wgtmat = wgtmat, family = family, corr = corr,
+  stg1_inthyp_nr = 1:15, stg2_elemhyp = 1:4,
+  stg2_wgtmat = wgtmat, test = "dunnett",
+  nthreads = 1)
+fPCStage1(stg1_loc_p = stage1_local_pvalues,
+          alpha1 = errorSpent(0.5, 0.025, "sfOF"))
 
 }
 \references{

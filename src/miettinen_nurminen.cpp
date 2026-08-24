@@ -1,6 +1,6 @@
 #include "miettinen_nurminen.h"
-#include "utilities.h"
 #include "dataframe_list.h"
+#include "utilities.h"
 
 #include <algorithm>     // any_of, distance, fill, min, min_element
 #include <cctype>        // tolower
@@ -10,14 +10,13 @@
 #include <numeric>       // accumulate
 #include <stdexcept>     // invalid_argument
 #include <string>        // string
-#include <vector>        // vector
 #include <unordered_map> // unordered_map
 #include <utility>       // make_pair, pair
+#include <vector>        // vector
 
 #include <Rcpp.h>
 
 using std::size_t;
-
 
 //' @title REML Estimates of Individual Proportions With Specified Risk
 //' difference
@@ -41,11 +40,10 @@ using std::size_t;
 //'
 //' @export
 // [[Rcpp::export]]
-std::vector<double> remlRiskDiff(const double n1,
-                                 const double y1,
-                                 const double n2,
-                                 const double y2,
+std::vector<double> remlRiskDiff(const double n1, const double y1,
+                                 const double n2, const double y2,
                                  const double riskDiffH0 = 0.0) {
+
   double n = n1 + n2;
   double y = y1 + y2;
 
@@ -68,13 +66,14 @@ std::vector<double> remlRiskDiff(const double n1,
     const double denom3_sq = denom3 * denom3;
     const double denom3_cu = denom3_sq * denom3;
 
-    double q = (L2 * L2 * L2) / denom3_cu -
-      (L1 * L2) / (6.0 * (L3 * L3)) + L0 / (2.0 * L3);
+    double q = (L2 * L2 * L2) / denom3_cu - (L1 * L2) / (6.0 * (L3 * L3)) +
+               L0 / (2.0 * L3);
 
     double inside = (L2 * L2) / denom3_sq - L1 / denom3;
 
     // If inside is negative (numerical error), clamp to zero
-    if (inside < 0.0) inside = 0.0;
+    if (inside < 0.0)
+      inside = 0.0;
     double sign = (q > 0.0) ? 1.0 : -1.0;
     double p = sign * std::sqrt(inside);
 
@@ -85,7 +84,8 @@ std::vector<double> remlRiskDiff(const double n1,
       // ratio passed to acos
       double ratio = q / (p * p * p);
 
-      // clamp ratio to [-1,1] to avoid NaN from acos due to small numerical overshoot
+      // clamp ratio to [-1,1] to avoid NaN from acos due to small
+      // numerical overshoot
       ratio = std::max(-1.0, std::min(1.0, ratio));
 
       const double PI = std::acos(-1.0);
@@ -100,7 +100,6 @@ std::vector<double> remlRiskDiff(const double n1,
   std::vector<double> result = {p1, p2};
   return result;
 }
-
 
 //' @title Miettinen-Nurminen Score Test Statistic for Two-Sample Risk
 //' difference
@@ -129,10 +128,10 @@ std::vector<double> remlRiskDiff(const double n1,
 //'
 //' @export
 // [[Rcpp::export]]
-double zstatRiskDiff(const std::vector<double>& n1,
-                     const std::vector<double>& y1,
-                     const std::vector<double>& n2,
-                     const std::vector<double>& y2,
+double zstatRiskDiff(const std::vector<double> &n1,
+                     const std::vector<double> &y1,
+                     const std::vector<double> &n2,
+                     const std::vector<double> &y2,
                      const double riskDiffH0 = 0.0) {
 
   double num = 0.0, den = 0.0;
@@ -153,20 +152,22 @@ double zstatRiskDiff(const std::vector<double>& n1,
   return num / std::sqrt(den);
 }
 
-
-DataFrameCpp mnRiskDiffCIcpp(const std::vector<double>& n1,
-                             const std::vector<double>& y1,
-                             const std::vector<double>& n2,
-                             const std::vector<double>& y2,
+DataFrameCpp mnRiskDiffCIcpp(const std::vector<double> &n1,
+                             const std::vector<double> &y1,
+                             const std::vector<double> &n2,
+                             const std::vector<double> &y2,
                              const double cilevel = 0.95) {
+
   // Input validation
   const size_t k = n1.size();
   if (y1.size() != k || n2.size() != k || y2.size() != k) {
     throw std::invalid_argument("All input vectors must have the same length");
   }
   for (size_t i = 0; i < k; ++i) {
-    if (!(n1[i] > 0.0)) throw std::invalid_argument("n1 must be positive");
-    if (!(n2[i] > 0.0)) throw std::invalid_argument("n2 must be positive");
+    if (!(n1[i] > 0.0))
+      throw std::invalid_argument("n1 must be positive");
+    if (!(n2[i] > 0.0))
+      throw std::invalid_argument("n2 must be positive");
     if (!(y1[i] >= 0.0 && y1[i] <= n1[i]))
       throw std::invalid_argument("y1 must be between 0 and n1");
     if (!(y2[i] >= 0.0 && y2[i] <= n2[i]))
@@ -174,7 +175,6 @@ DataFrameCpp mnRiskDiffCIcpp(const std::vector<double>& n1,
   }
   if (!(cilevel > 0.0 && cilevel < 1.0))
     throw std::invalid_argument("cilevel must lie between 0 and 1");
-
 
   double sum_w = 0.0, estimate = 0.0;
   for (size_t i = 0; i < k; ++i) {
@@ -203,8 +203,6 @@ DataFrameCpp mnRiskDiffCIcpp(const std::vector<double>& n1,
 
   return df;
 }
-
-
 
 //' @title Miettinen-Nurminen Score Confidence Interval for
 //' Two-Sample Risk Difference
@@ -259,16 +257,14 @@ DataFrameCpp mnRiskDiffCIcpp(const std::vector<double>& n1,
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame mnRiskDiffCI(const std::vector<double>& n1,
-                             const std::vector<double>& y1,
-                             const std::vector<double>& n2,
-                             const std::vector<double>& y2,
+Rcpp::DataFrame mnRiskDiffCI(const std::vector<double> &n1,
+                             const std::vector<double> &y1,
+                             const std::vector<double> &n2,
+                             const std::vector<double> &y2,
                              const double cilevel = 0.95) {
   auto df = mnRiskDiffCIcpp(n1, y1, n2, y2, cilevel);
   return Rcpp::wrap(df);
 }
-
-
 
 //' @title REML Estimates of Individual Proportions With Specified Risk
 //' Ratio
@@ -292,11 +288,10 @@ Rcpp::DataFrame mnRiskDiffCI(const std::vector<double>& n1,
 //'
 //' @export
 // [[Rcpp::export]]
-std::vector<double> remlRiskRatio(const double n1,
-                                  const double y1,
-                                  const double n2,
-                                  const double y2,
+std::vector<double> remlRiskRatio(const double n1, const double y1,
+                                  const double n2, const double y2,
                                   const double riskRatioH0 = 1.0) {
+
   double n = n1 + n2;
   double y = y1 + y2;
 
@@ -322,7 +317,6 @@ std::vector<double> remlRiskRatio(const double n1,
   std::vector<double> result = {p1, p2};
   return result;
 }
-
 
 //' @title Miettinen-Nurminen Score Test Statistic for Two-Sample Risk Ratio
 //' @description Obtains the Miettinen-Nurminen score test statistic for
@@ -350,10 +344,10 @@ std::vector<double> remlRiskRatio(const double n1,
 //'
 //' @export
 // [[Rcpp::export]]
-double zstatRiskRatio(const std::vector<double>& n1,
-                      const std::vector<double>& y1,
-                      const std::vector<double>& n2,
-                      const std::vector<double>& y2,
+double zstatRiskRatio(const std::vector<double> &n1,
+                      const std::vector<double> &y1,
+                      const std::vector<double> &n2,
+                      const std::vector<double> &y2,
                       const double riskRatioH0 = 1.0) {
 
   double num = 0.0, den = 0.0;
@@ -366,7 +360,7 @@ double zstatRiskRatio(const std::vector<double>& n1,
     double p1i = ppi[0];
     double p2i = ppi[1];
     double mvi = p1i * (1.0 - p1i) / n1[i] +
-      p2i * (1.0 - p2i) / n2[i] * riskRatioH0 * riskRatioH0;
+                 p2i * (1.0 - p2i) / n2[i] * riskRatioH0 * riskRatioH0;
     mvi = std::max(mvi * ni / (ni - 1.0), 1e-8);
     num += wi * mdi;
     den += wi * wi * mvi;
@@ -375,20 +369,22 @@ double zstatRiskRatio(const std::vector<double>& n1,
   return num / std::sqrt(den);
 }
 
-
-DataFrameCpp mnRiskRatioCIcpp(const std::vector<double>& n1,
-                              const std::vector<double>& y1,
-                              const std::vector<double>& n2,
-                              const std::vector<double>& y2,
+DataFrameCpp mnRiskRatioCIcpp(const std::vector<double> &n1,
+                              const std::vector<double> &y1,
+                              const std::vector<double> &n2,
+                              const std::vector<double> &y2,
                               const double cilevel = 0.95) {
+
   // Input validation
   const size_t k = n1.size();
   if (y1.size() != k || n2.size() != k || y2.size() != k) {
     throw std::invalid_argument("All input vectors must have the same length");
   }
   for (size_t i = 0; i < k; ++i) {
-    if (!(n1[i] > 0.0)) throw std::invalid_argument("n1 must be positive");
-    if (!(n2[i] > 0.0)) throw std::invalid_argument("n2 must be positive");
+    if (!(n1[i] > 0.0))
+      throw std::invalid_argument("n1 must be positive");
+    if (!(n2[i] > 0.0))
+      throw std::invalid_argument("n2 must be positive");
     if (!(y1[i] >= 0.0 && y1[i] <= n1[i]))
       throw std::invalid_argument("y1 must be between 0 and n1");
     if (!(y2[i] >= 0.0 && y2[i] <= n2[i]))
@@ -437,7 +433,8 @@ DataFrameCpp mnRiskRatioCIcpp(const std::vector<double>& n1,
 
   double estimate, lower, upper;
   if (any_both_zero) {
-    // If any stratum has zero events in both groups, the risk ratio is undefined
+    // If any stratum has zero events in both groups, the risk ratio is
+    // undefined
     estimate = NaN;
     lower = NaN;
     upper = NaN;
@@ -449,8 +446,8 @@ DataFrameCpp mnRiskRatioCIcpp(const std::vector<double>& n1,
     auto f2 = [&](double r) { return zstatRiskRatio(n1, y1, n2, y2, r) + b; };
     upper = brent(f2, 0.001, 1000.0, 1e-6);
   } else if (all_y2_zero) {
-    // If all events in the control group are zero, the risk ratio is infinite and
-    // the lower limit is finite
+    // If all events in the control group are zero, the risk ratio is infinite
+    // and the lower limit is finite
     estimate = POS_INF;
     upper = POS_INF;
     auto f1 = [&](double r) { return zstatRiskRatio(n1, y1, n2, y2, r) - b; };
@@ -474,7 +471,6 @@ DataFrameCpp mnRiskRatioCIcpp(const std::vector<double>& n1,
 
   return df;
 }
-
 
 //' @title Miettinen-Nurminen Score Confidence Interval for
 //' Two-Sample Risk Ratio
@@ -529,16 +525,15 @@ DataFrameCpp mnRiskRatioCIcpp(const std::vector<double>& n1,
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame mnRiskRatioCI(const std::vector<double>& n1,
-                              const std::vector<double>& y1,
-                              const std::vector<double>& n2,
-                              const std::vector<double>& y2,
+Rcpp::DataFrame mnRiskRatioCI(const std::vector<double> &n1,
+                              const std::vector<double> &y1,
+                              const std::vector<double> &n2,
+                              const std::vector<double> &y2,
                               const double cilevel = 0.95) {
 
   auto df = mnRiskRatioCIcpp(n1, y1, n2, y2, cilevel);
   return Rcpp::wrap(df);
 }
-
 
 //' @title REML Estimates of Individual Proportions With Specified Odds
 //' Ratio
@@ -562,11 +557,10 @@ Rcpp::DataFrame mnRiskRatioCI(const std::vector<double>& n1,
 //'
 //' @export
 // [[Rcpp::export]]
-std::vector<double> remlOddsRatio(const double n1,
-                                  const double y1,
-                                  const double n2,
-                                  const double y2,
+std::vector<double> remlOddsRatio(const double n1, const double y1,
+                                  const double n2, const double y2,
                                   const double oddsRatioH0 = 1.0) {
+
   double n = n1 + n2;
   double y = y1 + y2;
 
@@ -592,8 +586,6 @@ std::vector<double> remlOddsRatio(const double n1,
   std::vector<double> result = {p1, p2};
   return result;
 }
-
-
 
 //' @title Miettinen-Nurminen Score Test Statistic for Two-Sample Odds Ratio
 //' @description Obtains the Miettinen-Nurminen score test statistic for
@@ -621,10 +613,10 @@ std::vector<double> remlOddsRatio(const double n1,
 //'
 //' @export
 // [[Rcpp::export]]
-double zstatOddsRatio(const std::vector<double>& n1,
-                      const std::vector<double>& y1,
-                      const std::vector<double>& n2,
-                      const std::vector<double>& y2,
+double zstatOddsRatio(const std::vector<double> &n1,
+                      const std::vector<double> &y1,
+                      const std::vector<double> &n2,
+                      const std::vector<double> &y2,
                       const double oddsRatioH0 = 1.0) {
 
   double num = 0.0, den = 0.0;
@@ -647,11 +639,10 @@ double zstatOddsRatio(const std::vector<double>& n1,
   return num / std::sqrt(den);
 }
 
-
-DataFrameCpp mnOddsRatioCIcpp(const std::vector<double>& n1,
-                              const std::vector<double>& y1,
-                              const std::vector<double>& n2,
-                              const std::vector<double>& y2,
+DataFrameCpp mnOddsRatioCIcpp(const std::vector<double> &n1,
+                              const std::vector<double> &y1,
+                              const std::vector<double> &n2,
+                              const std::vector<double> &y2,
                               const double cilevel = 0.95) {
 
   // Input validation
@@ -660,8 +651,10 @@ DataFrameCpp mnOddsRatioCIcpp(const std::vector<double>& n1,
     throw std::invalid_argument("All input vectors must have the same length");
   }
   for (size_t i = 0; i < k; ++i) {
-    if (!(n1[i] > 0.0)) throw std::invalid_argument("n1 must be positive");
-    if (!(n2[i] > 0.0)) throw std::invalid_argument("n2 must be positive");
+    if (!(n1[i] > 0.0))
+      throw std::invalid_argument("n1 must be positive");
+    if (!(n2[i] > 0.0))
+      throw std::invalid_argument("n2 must be positive");
     if (!(y1[i] >= 0.0 && y1[i] <= n1[i]))
       throw std::invalid_argument("y1 must be between 0 and n1");
     if (!(y2[i] >= 0.0 && y2[i] <= n2[i]))
@@ -755,7 +748,6 @@ DataFrameCpp mnOddsRatioCIcpp(const std::vector<double>& n1,
   return df;
 }
 
-
 //' @title Miettinen-Nurminen Score Confidence Interval for
 //' Two-Sample Odds Ratio
 //' @description Obtains the Miettinen-Nurminen score confidence
@@ -808,16 +800,15 @@ DataFrameCpp mnOddsRatioCIcpp(const std::vector<double>& n1,
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame mnOddsRatioCI(const std::vector<double>& n1,
-                              const std::vector<double>& y1,
-                              const std::vector<double>& n2,
-                              const std::vector<double>& y2,
+Rcpp::DataFrame mnOddsRatioCI(const std::vector<double> &n1,
+                              const std::vector<double> &y1,
+                              const std::vector<double> &n2,
+                              const std::vector<double> &y2,
                               const double cilevel = 0.95) {
 
   auto df = mnOddsRatioCIcpp(n1, y1, n2, y2, cilevel);
   return Rcpp::wrap(df);
 }
-
 
 //' @title REML Estimates of Individual Rates With Specified Rate
 //' Difference
@@ -841,11 +832,10 @@ Rcpp::DataFrame mnOddsRatioCI(const std::vector<double>& n1,
 //'
 //' @export
 // [[Rcpp::export]]
-std::vector<double> remlRateDiff(const double t1,
-                                 const double y1,
-                                 const double t2,
-                                 const double y2,
+std::vector<double> remlRateDiff(const double t1, const double y1,
+                                 const double t2, const double y2,
                                  const double rateDiffH0 = 0.0) {
+
   double t = t1 + t2;
   double y = y1 + y2;
 
@@ -871,7 +861,6 @@ std::vector<double> remlRateDiff(const double t1,
   std::vector<double> result = {r1, r2};
   return result;
 }
-
 
 //' @title Miettinen-Nurminen Score Test Statistic for Two-Sample Rate
 //' Difference
@@ -899,10 +888,10 @@ std::vector<double> remlRateDiff(const double t1,
 //'
 //' @export
 // [[Rcpp::export]]
-double zstatRateDiff(const std::vector<double>& t1,
-                     const std::vector<double>& y1,
-                     const std::vector<double>& t2,
-                     const std::vector<double>& y2,
+double zstatRateDiff(const std::vector<double> &t1,
+                     const std::vector<double> &y1,
+                     const std::vector<double> &t2,
+                     const std::vector<double> &y2,
                      const double rateDiffH0 = 0.0) {
 
   double num = 0.0, den = 0.0;
@@ -923,11 +912,10 @@ double zstatRateDiff(const std::vector<double>& t1,
   return num / std::sqrt(den);
 }
 
-
-DataFrameCpp mnRateDiffCIcpp(const std::vector<double>& t1,
-                             const std::vector<double>& y1,
-                             const std::vector<double>& t2,
-                             const std::vector<double>& y2,
+DataFrameCpp mnRateDiffCIcpp(const std::vector<double> &t1,
+                             const std::vector<double> &y1,
+                             const std::vector<double> &t2,
+                             const std::vector<double> &y2,
                              const double cilevel = 0.95) {
 
   // Input validation
@@ -936,8 +924,10 @@ DataFrameCpp mnRateDiffCIcpp(const std::vector<double>& t1,
     throw std::invalid_argument("All input vectors must have the same length");
   }
   for (size_t i = 0; i < k; ++i) {
-    if (!(t1[i] > 0.0)) throw std::invalid_argument("t1 must be positive");
-    if (!(t2[i] > 0.0)) throw std::invalid_argument("t2 must be positive");
+    if (!(t1[i] > 0.0))
+      throw std::invalid_argument("t1 must be positive");
+    if (!(t2[i] > 0.0))
+      throw std::invalid_argument("t2 must be positive");
     if (!(y1[i] >= 0.0))
       throw std::invalid_argument("y1 must be nonnegative");
     if (!(y2[i] >= 0.0))
@@ -973,7 +963,6 @@ DataFrameCpp mnRateDiffCIcpp(const std::vector<double>& t1,
 
   return df;
 }
-
 
 //' @title Miettinen-Nurminen Score Confidence Interval for
 //' Two-Sample Rate Difference
@@ -1026,17 +1015,15 @@ DataFrameCpp mnRateDiffCIcpp(const std::vector<double>& t1,
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame mnRateDiffCI(const std::vector<double>& t1,
-                             const std::vector<double>& y1,
-                             const std::vector<double>& t2,
-                             const std::vector<double>& y2,
+Rcpp::DataFrame mnRateDiffCI(const std::vector<double> &t1,
+                             const std::vector<double> &y1,
+                             const std::vector<double> &t2,
+                             const std::vector<double> &y2,
                              const double cilevel = 0.95) {
 
   auto df = mnRateDiffCIcpp(t1, y1, t2, y2, cilevel);
   return Rcpp::wrap(df);
 }
-
-
 
 //' @title REML Estimates of Individual Rates With Specified Rate Ratio
 //' @description Obtains the restricted maximum likelihood estimates of
@@ -1059,10 +1046,8 @@ Rcpp::DataFrame mnRateDiffCI(const std::vector<double>& t1,
 //'
 //' @export
 // [[Rcpp::export]]
-std::vector<double> remlRateRatio(const double t1,
-                                  const double y1,
-                                  const double t2,
-                                  const double y2,
+std::vector<double> remlRateRatio(const double t1, const double y1,
+                                  const double t2, const double y2,
                                   const double rateRatioH0 = 1.0) {
 
   double r2 = (y1 + y2) / (t1 * rateRatioH0 + t2);
@@ -1071,7 +1056,6 @@ std::vector<double> remlRateRatio(const double t1,
   std::vector<double> result = {r1, r2};
   return result;
 }
-
 
 //' @title Miettinen-Nurminen Score Test Statistic for Two-Sample Rate Ratio
 //' @description Obtains the Miettinen-Nurminen score test statistic for
@@ -1098,10 +1082,10 @@ std::vector<double> remlRateRatio(const double t1,
 //'
 //' @export
 // [[Rcpp::export]]
-double zstatRateRatio(const std::vector<double>& t1,
-                      const std::vector<double>& y1,
-                      const std::vector<double>& t2,
-                      const std::vector<double>& y2,
+double zstatRateRatio(const std::vector<double> &t1,
+                      const std::vector<double> &y1,
+                      const std::vector<double> &t2,
+                      const std::vector<double> &y2,
                       const double rateRatioH0 = 1.0) {
 
   double num = 0.0, den = 0.0;
@@ -1122,11 +1106,10 @@ double zstatRateRatio(const std::vector<double>& t1,
   return num / std::sqrt(den);
 }
 
-
-DataFrameCpp mnRateRatioCIcpp(const std::vector<double>& t1,
-                              const std::vector<double>& y1,
-                              const std::vector<double>& t2,
-                              const std::vector<double>& y2,
+DataFrameCpp mnRateRatioCIcpp(const std::vector<double> &t1,
+                              const std::vector<double> &y1,
+                              const std::vector<double> &t2,
+                              const std::vector<double> &y2,
                               const double cilevel = 0.95) {
 
   // Input validation
@@ -1135,8 +1118,10 @@ DataFrameCpp mnRateRatioCIcpp(const std::vector<double>& t1,
     throw std::invalid_argument("All input vectors must have the same length");
   }
   for (size_t i = 0; i < k; ++i) {
-    if (!(t1[i] > 0.0)) throw std::invalid_argument("t1 must be positive");
-    if (!(t2[i] > 0.0)) throw std::invalid_argument("t2 must be positive");
+    if (!(t1[i] > 0.0))
+      throw std::invalid_argument("t1 must be positive");
+    if (!(t2[i] > 0.0))
+      throw std::invalid_argument("t2 must be positive");
     if (!(y1[i] >= 0.0))
       throw std::invalid_argument("y1 must be nonnegative");
     if (!(y2[i] >= 0.0))
@@ -1216,7 +1201,6 @@ DataFrameCpp mnRateRatioCIcpp(const std::vector<double>& t1,
   return df;
 }
 
-
 //' @title Miettinen-Nurminen Score Confidence Interval for
 //' Two-Sample Rate Ratio
 //' @description Obtains the Miettinen-Nurminen score confidence
@@ -1268,10 +1252,10 @@ DataFrameCpp mnRateRatioCIcpp(const std::vector<double>& t1,
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame mnRateRatioCI(const std::vector<double>& t1,
-                              const std::vector<double>& y1,
-                              const std::vector<double>& t2,
-                              const std::vector<double>& y2,
+Rcpp::DataFrame mnRateRatioCI(const std::vector<double> &t1,
+                              const std::vector<double> &y1,
+                              const std::vector<double> &t2,
+                              const std::vector<double> &y2,
                               const double cilevel = 0.95) {
 
   auto df = mnRateRatioCIcpp(t1, y1, t2, y2, cilevel);

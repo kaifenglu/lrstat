@@ -33,14 +33,14 @@ adaptive_two_stage_setup <- function() {
 }
 
 
-testthat::test_that("fadjp returns stage-wise local p-values", {
+testthat::test_that("fPCStagewise returns stage-wise local p-values", {
   setup <- adaptive_two_stage_setup()
-  local_pvalues <- lrstat:::fadjp(
+  local_pvalues <- lrstat:::fPCStagewise(
     c(0.00045, 0.0952, 0.0225, 0.1104), setup$wgtmat, setup$family,
     setup$corr, 1:15, 1:4, setup$wgtmat
   )
 
-  default_corr_pvalues <- lrstat:::fadjp(
+  default_corr_pvalues <- lrstat:::fPCStagewise(
     c(0.00045, 0.0952, 0.0225, 0.1104), wgtmat = setup$wgtmat,
     family = setup$family, stg1_inthyp_nr = 1:15, stg2_elemhyp = 1:4,
     stg2_wgtmat = setup$wgtmat
@@ -50,18 +50,21 @@ testthat::test_that("fadjp returns stage-wise local p-values", {
   testthat::expect_equal(local_pvalues$inthyp_idx, seq_len(15))
   testthat::expect_equal(dim(local_pvalues$inthyp), c(15L, 4L))
   testthat::expect_length(local_pvalues$pinter, 15L)
-  testthat::expect_true(all(local_pvalues$pinter >= 0 & local_pvalues$pinter <= 1))
+  testthat::expect_true(
+    all(local_pvalues$pinter >= 0 & local_pvalues$pinter <= 1)
+  )
   testthat::expect_equal(default_corr_pvalues$pinter, local_pvalues$pinter)
 })
 
 
-testthat::test_that("fPCStage1 identifies stage 1 rejections and retained intersections", {
+testthat::test_that(
+  "fPCStage1 identifies stage 1 rejections and retained intersections", {
   setup <- adaptive_two_stage_setup()
-  local_pvalues <- lrstat:::fadjp(
+  local_pvalues <- lrstat:::fPCStagewise(
     c(0.00045, 0.0952, 0.0225, 0.1104), setup$wgtmat, setup$family,
     setup$corr, 1:15, 1:4, setup$wgtmat
   )
-  stage1 <- lrstat:::fPCStage1(4, local_pvalues, errorSpent(0.5, 0.025, "sfOF"))
+  stage1 <- lrstat:::fPCStage1(local_pvalues, errorSpent(0.5, 0.025, "sfOF"))
 
   testthat::expect_named(
     stage1,
@@ -77,10 +80,11 @@ testthat::test_that("fPCStage1 identifies stage 1 rejections and retained inters
 })
 
 
-testthat::test_that("fStageBound returns valid stage-wise boundary matrices", {
+testthat::test_that(
+  "fCERStageBound returns valid stage-wise boundary matrices", {
   setup <- adaptive_two_stage_setup()
-  stage_bounds <- lrstat:::fStageBound(
-    4, setup$wgtmat, setup$family, setup$corr,
+  stage_bounds <- lrstat:::fCERStageBound(
+    setup$wgtmat, setup$family, setup$corr,
     alpha = 0.025, alpha1 = errorSpent(0.5, 0.025, "sfOF"),
     info_frac = 0.5
   )
@@ -92,27 +96,31 @@ testthat::test_that("fStageBound returns valid stage-wise boundary matrices", {
   testthat::expect_equal(dim(stage_bounds$inthyp), c(15L, 4L))
   testthat::expect_equal(dim(stage_bounds$stg1_bnd), c(15L, 4L))
   testthat::expect_equal(dim(stage_bounds$stg2_bnd), c(15L, 4L))
-  testthat::expect_true(all(stage_bounds$stg1_bnd >= 0 & stage_bounds$stg1_bnd <= 1))
-  testthat::expect_true(all(stage_bounds$stg2_bnd >= 0 & stage_bounds$stg2_bnd <= 1))
+  testthat::expect_true(
+    all(stage_bounds$stg1_bnd >= 0 & stage_bounds$stg1_bnd <= 1)
+  )
+  testthat::expect_true(
+    all(stage_bounds$stg2_bnd >= 0 & stage_bounds$stg2_bnd <= 1)
+  )
   testthat::expect_error(
-    lrstat:::fStageBound(4, setup$wgtmat, setup$family, setup$corr,
+    lrstat:::fCERStageBound(setup$wgtmat, setup$family, setup$corr,
                 alpha = 0.025, alpha1 = 0.025, info_frac = 0.5),
     regexp = "alpha1 must be in"
   )
 })
 
 
-testthat::test_that("fCER computes conditional error rates from stage bounds", {
+testthat::test_that(
+  "fCERCer computes conditional error rates from stage bounds", {
   setup <- adaptive_two_stage_setup()
-  stage_bounds <- lrstat:::fStageBound(
-    4, setup$wgtmat, setup$family, setup$corr,
+  stage_bounds <- lrstat:::fCERStageBound(
+    setup$wgtmat, setup$family, setup$corr,
     alpha = 0.025, alpha1 = errorSpent(0.5, 0.025, "sfOF"),
     info_frac = 0.5
   )
-  conditional_error <- lrstat:::fCER(
-    4, setup$wgtmat, setup$family, setup$corr, 0.5,
-    stage_bounds$stg1_bnd, stage_bounds$stg2_bnd,
-    c(0.00045, 0.0952, 0.0225, 0.1104)
+  conditional_error <- lrstat:::fCERCer(
+    c(0.00045, 0.0952, 0.0225, 0.1104), setup$wgtmat, setup$family,
+    setup$corr, 0.5, stage_bounds$stg1_bnd, stage_bounds$stg2_bnd
   )
 
   testthat::expect_named(
@@ -120,18 +128,25 @@ testthat::test_that("fCER computes conditional error rates from stage bounds", {
     c("stg1_elemhyp_r_idx", "stg1_inthyp_nr_idx", "inthyp", "CER")
   )
   testthat::expect_equal(ncol(conditional_error$inthyp), 4L)
-  testthat::expect_equal(nrow(conditional_error$inthyp), length(conditional_error$CER))
-  testthat::expect_true(all(conditional_error$CER >= 0 & conditional_error$CER <= 1))
+  testthat::expect_equal(
+    nrow(conditional_error$inthyp), length(conditional_error$CER)
+  )
+  testthat::expect_true(
+    all(conditional_error$CER >= 0 & conditional_error$CER <= 1)
+  )
 })
 
 
-testthat::test_that("fPCrej combines stage p-values and preserves rejection decisions", {
+testthat::test_that(
+  "fPCRej combines stage p-values and preserves rejection decisions", {
   setup <- adaptive_two_stage_setup()
-  stage1_local_pvalues <- lrstat:::fadjp(
+  stage1_local_pvalues <- lrstat:::fPCStagewise(
     c(0.00045, 0.0952, 0.0225, 0.1104), setup$wgtmat, setup$family,
     setup$corr, 1:15, 1:4, setup$wgtmat
   )
-  stage1 <- lrstat:::fPCStage1(4, stage1_local_pvalues, errorSpent(0.5, 0.025, "sfOF"))
+  stage1 <- lrstat:::fPCStage1(
+    stage1_local_pvalues, errorSpent(0.5, 0.025, "sfOF")
+  )
   adapted_graph <- updateGraph(
     setup$initial_weights, setup$transition_matrix, I = 1:4, j = 1
   )
@@ -139,44 +154,47 @@ testthat::test_that("fPCrej combines stage p-values and preserves rejection deci
     adapted_graph$w[adapted_graph$I],
     adapted_graph$G[adapted_graph$I, adapted_graph$I]
   )
-  stage2_local_pvalues <- lrstat:::fadjp(
+  stage2_local_pvalues <- lrstat:::fPCStagewise(
     c(0.1121, 0.0112, 0.1153), setup$wgtmat, setup$family, setup$corr,
     stage1$stg1_inthyp_nr_idx, adapted_graph$I, stage2_weight_matrix
   )
-  combined <- lrstat:::fPCrej(
-    stage1$stg1_elemhyp_r_idx, adapted_graph$I,
-    stage1_local_pvalues, stage2_local_pvalues, 0.025, 0.5
+  combined <- lrstat:::fPCRej(
+    stage1_local_pvalues, stage2_local_pvalues,
+    stage1$stg1_elemhyp_r_idx, adapted_graph$I, 0.025, 0.5
   )
 
   testthat::expect_named(
     combined,
     c("stg1_inthyp_nr_idx", "stg2_elemhyp_idx", "inthyp",
-      "stg1_pinter", "stg2_pinter", "cum_pinter", "rej_elem")
+      "stg1_pinter", "stg2_pinter", "comb_pinter", "rej_elem")
   )
   testthat::expect_equal(combined$stg2_elemhyp_idx, adapted_graph$I)
   testthat::expect_equal(length(combined$rej_elem), 4L)
   testthat::expect_true(all(combined$rej_elem %in% 0:1))
-  testthat::expect_true(all(combined$cum_pinter >= 0 & combined$cum_pinter <= 1))
+  testthat::expect_true(
+    all(combined$comb_pinter >= 0 & combined$comb_pinter <= 1)
+  )
 })
 
 
-testthat::test_that("fNewBound and fCERrej complete the conditional-error workflow", {
+testthat::test_that(
+  "fCERNewBound and fCERRej complete the conditional-error workflow", {
   setup <- adaptive_two_stage_setup()
-  stage_bounds <- lrstat:::fStageBound(
-    4, setup$wgtmat, setup$family, setup$corr,
+  stage_bounds <- lrstat:::fCERStageBound(
+    setup$wgtmat, setup$family, setup$corr,
     alpha = 0.025, alpha1 = errorSpent(0.5, 0.025, "sfOF"),
     info_frac = 0.5
   )
   stage1_pvalues <- c(0.00045, 0.0952, 0.0225, 0.1104)
-  conditional_error <- lrstat:::fCER(
-    4, setup$wgtmat, setup$family, setup$corr, 0.5,
-    stage_bounds$stg1_bnd, stage_bounds$stg2_bnd, stage1_pvalues
+  conditional_error <- lrstat:::fCERCer(
+    stage1_pvalues, setup$wgtmat, setup$family, setup$corr, 0.5,
+    stage_bounds$stg1_bnd, stage_bounds$stg2_bnd
   )
   stage2_weight_matrix <- fwgtmat(
     c(0.5, 0.5), matrix(c(0, 1, 1, 0), 2, 2, byrow = TRUE)
   )
-  adapted_bounds <- lrstat:::fNewBound(
-    4, setup$wgtmat, setup$family, setup$corr, stage1_pvalues,
+  adapted_bounds <- lrstat:::fCERNewBound(
+    stage1_pvalues, setup$wgtmat, setup$family, setup$corr,
     conditional_error$stg1_inthyp_nr_idx, conditional_error$CER,
     c(2, 4), stage2_weight_matrix, 0.4
   )
@@ -184,16 +202,21 @@ testthat::test_that("fNewBound and fCERrej complete the conditional-error workfl
     sqrt(0.4) * qnorm(1 - c(0.0952, 0.1104)) +
       sqrt(1 - 0.4) * qnorm(1 - c(0.0299, 0.0586))
   )
-  rejection <- lrstat:::fCERrej(
-    conditional_error$stg1_elemhyp_r_idx, c(2, 4),
-    adapted_bounds$inthyp, adapted_bounds$stg2_bnd_new,
-    cumulative_pvalues
+  rejection <- lrstat:::fCERRej(
+    cumulative_pvalues, conditional_error$stg1_elemhyp_r_idx, c(2, 4),
+    adapted_bounds$inthyp, adapted_bounds$stg2_bnd_new
   )
 
-  testthat::expect_named(adapted_bounds, c("inthyp", "stg2_coef_new", "stg2_bnd_new"))
+  testthat::expect_named(
+    adapted_bounds, c("inthyp", "stg2_coef_new", "stg2_bnd_new")
+  )
   testthat::expect_equal(ncol(adapted_bounds$inthyp), 4L)
-  testthat::expect_equal(dim(adapted_bounds$stg2_bnd_new), dim(adapted_bounds$inthyp))
-  testthat::expect_true(all(adapted_bounds$stg2_bnd_new >= 0 & adapted_bounds$stg2_bnd_new <= 1))
+  testthat::expect_equal(
+    dim(adapted_bounds$stg2_bnd_new), dim(adapted_bounds$inthyp)
+  )
+  testthat::expect_true(
+    all(adapted_bounds$stg2_bnd_new >= 0 & adapted_bounds$stg2_bnd_new <= 1)
+  )
   testthat::expect_type(rejection, "logical")
   testthat::expect_length(rejection, 4L)
 })

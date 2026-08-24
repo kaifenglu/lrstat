@@ -1,40 +1,41 @@
+#include "dataframe_list.h"
 #include "generic_design.h"
 #include "utilities.h"
-#include "dataframe_list.h"
 
-#include <algorithm>     // any_of, fill
-#include <cctype>        // tolower
-#include <cmath>         // isnan
-#include <cstring>       // memcpy
-#include <numeric>       // accumulate
-#include <stdexcept>     // invalid_argument
-#include <string>        // string
-#include <vector>        // vector
-#include <utility>       // pair, make_pair
+#include <algorithm> // any_of, fill
+#include <cctype>    // tolower
+#include <cmath>     // isnan
+#include <cstring>   // memcpy
+#include <numeric>   // accumulate
+#include <stdexcept> // invalid_argument
+#include <string>    // string
+#include <utility>   // pair, make_pair
+#include <vector>    // vector
 
 #include <Rcpp.h>
 
 using std::size_t;
 
-
-// Helper to compute the confidence interval at the end of a group sequential trial
-DataFrameCpp getCIcpp(const size_t L,
-                      const double zL,
-                      const double IMax,
-                      const std::vector<double>& informationRates,
-                      const std::vector<unsigned char>& efficacyStopping,
-                      const std::vector<double>& criticalValues,
-                      const double alpha,
-                      const std::string& typeAlphaSpending,
+// Helper to compute the confidence interval at the end of a group sequential
+// trial
+DataFrameCpp getCIcpp(const size_t L, const double zL, const double IMax,
+                      const std::vector<double> &informationRates,
+                      const std::vector<unsigned char> &efficacyStopping,
+                      const std::vector<double> &criticalValues,
+                      const double alpha, const std::string &typeAlphaSpending,
                       const double parameterAlphaSpending,
-                      const std::vector<double>& spendingTime) {
+                      const std::vector<double> &spendingTime) {
 
   // Basic argument checks
-  if (L <= 0) throw std::invalid_argument("L must be a positive integer");
+  if (L <= 0)
+    throw std::invalid_argument("L must be a positive integer");
 
-  if (std::isnan(zL)) throw std::invalid_argument("zL must be provided");
-  if (std::isnan(IMax)) throw std::invalid_argument("IMax must be provided");
-  if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
+  if (std::isnan(zL))
+    throw std::invalid_argument("zL must be provided");
+  if (std::isnan(IMax))
+    throw std::invalid_argument("IMax must be provided");
+  if (IMax <= 0.0)
+    throw std::invalid_argument("IMax must be positive");
   if (!none_na(informationRates))
     throw std::invalid_argument("informationRates must be provided");
 
@@ -77,7 +78,8 @@ DataFrameCpp getCIcpp(const size_t L,
   }
 
   // alpha checks
-  if (std::isnan(alpha)) throw std::invalid_argument("alpha must be provided");
+  if (std::isnan(alpha))
+    throw std::invalid_argument("alpha must be provided");
   if (alpha < 0.00001 || alpha >= 0.5)
     throw std::invalid_argument("alpha must lie in [0.00001, 0.5)");
 
@@ -87,9 +89,9 @@ DataFrameCpp getCIcpp(const size_t L,
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
-  if (!none_na(criticalValues) && !(asf == "of" || asf == "p" ||
-      asf == "wt" || asf == "sfof" || asf == "sfp" ||
-      asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
+  if (!none_na(criticalValues) &&
+      !(asf == "of" || asf == "p" || asf == "wt" || asf == "sfof" ||
+        asf == "sfp" || asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
     throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
@@ -97,7 +99,8 @@ DataFrameCpp getCIcpp(const size_t L,
     throw std::invalid_argument("Missing value for parameterAlphaSpending");
   }
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
-    throw std::invalid_argument("parameterAlphaSpending must be positive for sfKD");
+    throw std::invalid_argument(
+        "parameterAlphaSpending must be positive for sfKD");
   }
 
   if (asf == "of" || asf == "p" || asf == "wt" || asf == "none") {
@@ -124,7 +127,8 @@ DataFrameCpp getCIcpp(const size_t L,
 
   // Build full information vector I = IMax * informationRates
   std::vector<double> I(L);
-  for (size_t i = 0; i < L; ++i) I[i] = IMax * informationRates[i];
+  for (size_t i = 0; i < L; ++i)
+    I[i] = IMax * informationRates[i];
 
   // p-value at theta = 0
   double pvalue = f_pvalue(0.0, L, zL, b, I);
@@ -138,21 +142,22 @@ DataFrameCpp getCIcpp(const size_t L,
   double tol = 1.0e-6;
 
   // median-unbiased estimate thetahat: solve f_pvalue(theta) - 0.5 = 0
-  auto f_med = [&](double theta)->double {
+  auto f_med = [&](double theta) -> double {
     return f_pvalue(theta, L, zL, b, I) - 0.5;
   };
   double thetahat = brent(f_med, left, right, tol);
 
   // lower bound: solve f_pvalue(theta) - (1-cilevel)/2 = 0, in [left, thetahat]
   double target_lower = (1.0 - cilevel) / 2.0;
-  auto f_lower = [&](double theta)->double {
+  auto f_lower = [&](double theta) -> double {
     return f_pvalue(theta, L, zL, b, I) - target_lower;
   };
   double lower = brent(f_lower, left, thetahat, tol);
 
-  // upper bound: solve f_pvalue(theta) - (1+cilevel)/2 = 0, in [thetahat, right]
+  // upper bound: solve f_pvalue(theta) - (1+cilevel)/2 = 0, in [thetahat,
+  // right]
   double target_upper = (1.0 + cilevel) / 2.0;
-  auto f_upper = [&](double theta)->double {
+  auto f_upper = [&](double theta) -> double {
     return f_pvalue(theta, L, zL, b, I) - target_upper;
   };
   double upper = brent(f_upper, thetahat, right, tol);
@@ -167,8 +172,6 @@ DataFrameCpp getCIcpp(const size_t L,
 
   return df;
 }
-
-
 
 //' @title Confidence Interval After Trial Termination
 //' @description Obtains the p-value, median unbiased point estimate, and
@@ -249,17 +252,15 @@ DataFrameCpp getCIcpp(const size_t L,
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame getCI(
-    const int L = NA_INTEGER,
-    const double zL = NA_REAL,
-    const double IMax = NA_REAL,
-    const Rcpp::NumericVector& informationRates = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
-    const Rcpp::NumericVector& criticalValues = NA_REAL,
-    const double alpha = 0.025,
-    const std::string& typeAlphaSpending = "sfOF",
-    const double parameterAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& spendingTime = NA_REAL) {
+Rcpp::DataFrame getCI(const int L = NA_INTEGER, const double zL = NA_REAL,
+                      const double IMax = NA_REAL,
+                      const Rcpp::NumericVector &informationRates = NA_REAL,
+                      const Rcpp::LogicalVector &efficacyStopping = NA_LOGICAL,
+                      const Rcpp::NumericVector &criticalValues = NA_REAL,
+                      const double alpha = 0.025,
+                      const std::string &typeAlphaSpending = "sfOF",
+                      const double parameterAlphaSpending = NA_REAL,
+                      const Rcpp::NumericVector &spendingTime = NA_REAL) {
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
   auto effStopping = convertLogicalVector(efficacyStopping);
   auto critValues = Rcpp::as<std::vector<double>>(criticalValues);
@@ -270,26 +271,25 @@ Rcpp::DataFrame getCI(
   return Rcpp::wrap(result);
 }
 
-
 // Helper to compute repeated confidence interval
-DataFrameCpp getRCIcpp(
-    const size_t L,
-    const double zL,
-    const double IMax,
-    const std::vector<double>& informationRates,
-    const std::vector<unsigned char>& efficacyStopping,
-    const std::vector<double>& criticalValues,
-    const double alpha,
-    const std::string& typeAlphaSpending,
-    const double parameterAlphaSpending,
-    const std::vector<double>& spendingTime) {
+DataFrameCpp getRCIcpp(const size_t L, const double zL, const double IMax,
+                       const std::vector<double> &informationRates,
+                       const std::vector<unsigned char> &efficacyStopping,
+                       const std::vector<double> &criticalValues,
+                       const double alpha, const std::string &typeAlphaSpending,
+                       const double parameterAlphaSpending,
+                       const std::vector<double> &spendingTime) {
 
   // Basic argument checks
-  if (L <= 0) throw std::invalid_argument("L must be a positive integer");
+  if (L <= 0)
+    throw std::invalid_argument("L must be a positive integer");
 
-  if (std::isnan(zL)) throw std::invalid_argument("zL must be provided");
-  if (std::isnan(IMax)) throw std::invalid_argument("IMax must be provided");
-  if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
+  if (std::isnan(zL))
+    throw std::invalid_argument("zL must be provided");
+  if (std::isnan(IMax))
+    throw std::invalid_argument("IMax must be provided");
+  if (IMax <= 0.0)
+    throw std::invalid_argument("IMax must be positive");
   if (!none_na(informationRates))
     throw std::invalid_argument("informationRates must be provided");
 
@@ -332,7 +332,8 @@ DataFrameCpp getRCIcpp(
   }
 
   // alpha checks
-  if (std::isnan(alpha)) throw std::invalid_argument("alpha must be provided");
+  if (std::isnan(alpha))
+    throw std::invalid_argument("alpha must be provided");
   if (alpha < 0.00001 || alpha >= 0.5)
     throw std::invalid_argument("alpha must lie in [0.00001, 0.5)");
 
@@ -342,9 +343,9 @@ DataFrameCpp getRCIcpp(
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
-  if (!none_na(criticalValues) && !(asf == "of" || asf == "p" ||
-      asf == "wt" || asf == "sfof" || asf == "sfp" ||
-      asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
+  if (!none_na(criticalValues) &&
+      !(asf == "of" || asf == "p" || asf == "wt" || asf == "sfof" ||
+        asf == "sfp" || asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
     throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
@@ -352,7 +353,8 @@ DataFrameCpp getRCIcpp(
     throw std::invalid_argument("Missing value for parameterAlphaSpending");
   }
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
-    throw std::invalid_argument("parameterAlphaSpending must be positive for sfKD");
+    throw std::invalid_argument(
+        "parameterAlphaSpending must be positive for sfKD");
   }
 
   if (asf == "of" || asf == "p" || asf == "wt" || asf == "none") {
@@ -380,19 +382,20 @@ DataFrameCpp getRCIcpp(
 
   // Build full information vector I = IMax * informationRates
   std::vector<double> I(L);
-  for (size_t i = 0; i < L; ++i) I[i] = IMax * informationRates[i];
+  for (size_t i = 0; i < L; ++i)
+    I[i] = IMax * informationRates[i];
 
   // repeated confidence interval
-  double sqrtIL = std::sqrt(I[L-1]);
+  double sqrtIL = std::sqrt(I[L - 1]);
   double thetahat = zL / sqrtIL;
-  double lower = (zL - b[L-1]) / sqrtIL;
-  double upper = (zL + b[L-1]) / sqrtIL;
+  double lower = (zL - b[L - 1]) / sqrtIL;
+  double upper = (zL + b[L - 1]) / sqrtIL;
 
   // repeated p-value: alpha for which the lower bound of theta is zero:
   // Solve f(aval) = zL - u[ L-1 ] = 0 for aval in (1e-6, 0.999999)
-  auto f = [&](double aval)->double {
+  auto f = [&](double aval) -> double {
     std::vector<double> u_local = cache.get(aval);
-    return zL - u_local[L-1];
+    return zL - u_local[L - 1];
   };
 
   double pvalue;
@@ -419,7 +422,6 @@ DataFrameCpp getRCIcpp(
 
   return df;
 }
-
 
 //' @title Repeated Confidence Interval for Group Sequential Design
 //' @description Obtains the repeated confidence interval
@@ -501,17 +503,16 @@ DataFrameCpp getRCIcpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame getRCI(
-    const int L = NA_INTEGER,
-    const double zL = NA_REAL,
-    const double IMax = NA_REAL,
-    const Rcpp::NumericVector& informationRates = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
-    const Rcpp::NumericVector& criticalValues = NA_REAL,
-    const double alpha = 0.025,
-    const std::string& typeAlphaSpending = "sfOF",
-    const double parameterAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& spendingTime = NA_REAL) {
+Rcpp::DataFrame getRCI(const int L = NA_INTEGER, const double zL = NA_REAL,
+                       const double IMax = NA_REAL,
+                       const Rcpp::NumericVector &informationRates = NA_REAL,
+                       const Rcpp::LogicalVector &efficacyStopping = NA_LOGICAL,
+                       const Rcpp::NumericVector &criticalValues = NA_REAL,
+                       const double alpha = 0.025,
+                       const std::string &typeAlphaSpending = "sfOF",
+                       const double parameterAlphaSpending = NA_REAL,
+                       const Rcpp::NumericVector &spendingTime = NA_REAL) {
+
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
   auto effStopping = convertLogicalVector(efficacyStopping);
   auto critValues = Rcpp::as<std::vector<double>>(criticalValues);
@@ -522,18 +523,12 @@ Rcpp::DataFrame getRCI(
   return Rcpp::wrap(result);
 }
 
-
 // Compute the backward image (J, zJ)
-std::pair<size_t, double> f_bwimage(const double theta,
-                                    const size_t kMax,
-                                    const size_t L,
-                                    const double zL,
-                                    const std::vector<double>& b,
-                                    const std::vector<double>& I,
-                                    const size_t L2,
-                                    const double zL2,
-                                    const std::vector<double>& b2,
-                                    const std::vector<double>& I2) {
+std::pair<size_t, double>
+f_bwimage(const double theta, const size_t kMax, const size_t L,
+          const double zL, const std::vector<double> &b,
+          const std::vector<double> &I, const size_t L2, const double zL2,
+          const std::vector<double> &b2, const std::vector<double> &I2) {
 
   // compute astar for the adapted secondary trial
   double astar = f_pvalue(theta, L2, zL2, b2, I2);
@@ -571,7 +566,7 @@ std::pair<size_t, double> f_bwimage(const double theta,
   } else {
     // root find for z in stagewise exit probability difference
     double r1 = I[L - 1] / I[L + j - 1];
-    auto f = [&](double z)->double {
+    auto f = [&](double z) -> double {
       double zj = (z - zL * std::sqrt(r1)) / std::sqrt(1.0 - r1);
       return f_pvalue(theta, j, zj, b1, I1) - astar;
     };
@@ -588,52 +583,44 @@ std::pair<size_t, double> f_bwimage(const double theta,
   return std::make_pair(J, zJ);
 }
 
-
 // compute backward p-value for adapted trial
-double f_bwpvalue(const double theta,
-                  const size_t kMax,
-                  const size_t L,
-                  const double zL,
-                  const std::vector<double>& b,
-                  const std::vector<double>& I,
-                  const size_t L2,
-                  const double zL2,
-                  const std::vector<double>& b2,
-                  const std::vector<double>& I2) {
+double f_bwpvalue(const double theta, const size_t kMax, const size_t L,
+                  const double zL, const std::vector<double> &b,
+                  const std::vector<double> &I, const size_t L2,
+                  const double zL2, const std::vector<double> &b2,
+                  const std::vector<double> &I2) {
+
   auto bw = f_bwimage(theta, kMax, L, zL, b, I, L2, zL2, b2, I2);
   return f_pvalue(theta, bw.first, bw.second, b, I);
 }
 
-
 // Helper to compute confidence interval after the end of an adaptive trial
-DataFrameCpp getADCIcpp(
-    const size_t L,
-    const double zL,
-    const double IMax,
-    const size_t kMax,
-    const std::vector<double>& informationRates,
-    const std::vector<unsigned char>& efficacyStopping,
-    const std::vector<double>& criticalValues,
-    const double alpha,
-    const std::string& typeAlphaSpending,
-    const double parameterAlphaSpending,
-    const std::vector<double>& spendingTime,
-    const bool MullerSchafer,
-    const size_t Lc,
-    const double zLc,
-    const double INew,
-    const std::vector<double>& informationRatesNew,
-    const std::vector<unsigned char>& efficacyStoppingNew,
-    const std::string& typeAlphaSpendingNew,
-    const double parameterAlphaSpendingNew,
-    const std::vector<double>& spendingTimeNew) {
+DataFrameCpp
+getADCIcpp(const size_t L, const double zL, const double IMax,
+           const size_t kMax, const std::vector<double> &informationRates,
+           const std::vector<unsigned char> &efficacyStopping,
+           const std::vector<double> &criticalValues, const double alpha,
+           const std::string &typeAlphaSpending,
+           const double parameterAlphaSpending,
+           const std::vector<double> &spendingTime, const bool MullerSchafer,
+           const size_t Lc, const double zLc, const double INew,
+           const std::vector<double> &informationRatesNew,
+           const std::vector<unsigned char> &efficacyStoppingNew,
+           const std::string &typeAlphaSpendingNew,
+           const double parameterAlphaSpendingNew,
+           const std::vector<double> &spendingTimeNew) {
 
   // Input validation and defaults
-  if (L <= 0) throw std::invalid_argument("L must be provided and positive");
-  if (std::isnan(zL)) throw std::invalid_argument("zL must be provided");
-  if (std::isnan(IMax)) throw std::invalid_argument("IMax must be provided");
-  if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
-  if (kMax <= L) throw std::invalid_argument("kMax must be greater than L");
+  if (L <= 0)
+    throw std::invalid_argument("L must be provided and positive");
+  if (std::isnan(zL))
+    throw std::invalid_argument("zL must be provided");
+  if (std::isnan(IMax))
+    throw std::invalid_argument("IMax must be provided");
+  if (IMax <= 0.0)
+    throw std::invalid_argument("IMax must be positive");
+  if (kMax <= L)
+    throw std::invalid_argument("kMax must be greater than L");
 
   // informationRates: default to (1:kMax)/kMax if missing
   std::vector<double> infoRates(kMax);
@@ -671,7 +658,8 @@ DataFrameCpp getADCIcpp(
     throw std::invalid_argument("Invalid length for criticalValues");
   }
   if (missingCriticalValues && std::isnan(alpha)) {
-    throw std::invalid_argument("alpha must be provided for missing criticalValues");
+    throw std::invalid_argument(
+        "alpha must be provided for missing criticalValues");
   }
   if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 0.5)) {
     throw std::invalid_argument("alpha must lie in [0.00001, 0.5)");
@@ -682,9 +670,9 @@ DataFrameCpp getADCIcpp(
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
-  if (missingCriticalValues && !(asf == "of" || asf == "p" ||
-      asf == "wt" || asf == "sfof" || asf == "sfp" ||
-      asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
+  if (missingCriticalValues &&
+      !(asf == "of" || asf == "p" || asf == "wt" || asf == "sfof" ||
+        asf == "sfp" || asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
     throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
@@ -692,7 +680,8 @@ DataFrameCpp getADCIcpp(
     throw std::invalid_argument("Missing value for parameterAlphaSpending");
   }
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
+    throw std::invalid_argument(
+        "parameterAlphaSpending must be positive for sfKD");
   }
 
   std::vector<double> spendTime;
@@ -703,19 +692,22 @@ DataFrameCpp getADCIcpp(
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[kMax-1] != 1.0)
+    if (spendingTime[kMax - 1] != 1.0)
       throw std::invalid_argument("spendingTime must end with 1");
     spendTime = spendingTime; // copy
   } else {
     spendTime = infoRates;
   }
 
-
   // Now handle new trial inputs
-  if (Lc <= L) throw std::invalid_argument("Lc must be greater than L");
-  if (std::isnan(zLc)) throw std::invalid_argument("zLc must be provided");
-  if (std::isnan(INew)) throw std::invalid_argument("INew must be provided");
-  if (INew <= 0.0) throw std::invalid_argument("INew must be positive");
+  if (Lc <= L)
+    throw std::invalid_argument("Lc must be greater than L");
+  if (std::isnan(zLc))
+    throw std::invalid_argument("zLc must be provided");
+  if (std::isnan(INew))
+    throw std::invalid_argument("INew must be provided");
+  if (INew <= 0.0)
+    throw std::invalid_argument("INew must be positive");
 
   size_t L2 = Lc - L;
 
@@ -755,14 +747,15 @@ DataFrameCpp getADCIcpp(
     }
 
     if (!(asfNew == "of" || asfNew == "p" || asfNew == "wt" ||
-        asfNew == "sfof" || asfNew == "sfp" ||
-        asfNew == "sfkd" || asfNew == "sfhsd" || asfNew == "none")) {
+          asfNew == "sfof" || asfNew == "sfp" || asfNew == "sfkd" ||
+          asfNew == "sfhsd" || asfNew == "none")) {
       throw std::invalid_argument("Invalid value for typeAlphaSpendingNew");
     }
 
     if ((asfNew == "wt" || asfNew == "sfkd" || asfNew == "sfhsd") &&
         std::isnan(parameterAlphaSpendingNew))
-      throw std::invalid_argument("Missing value for parameterAlphaSpendingNew");
+      throw std::invalid_argument(
+          "Missing value for parameterAlphaSpendingNew");
 
     if (asfNew == "sfkd" && parameterAlphaSpendingNew <= 0.0)
       throw std::invalid_argument(
@@ -794,7 +787,6 @@ DataFrameCpp getADCIcpp(
     }
   }
 
-
   // obtain critical values for the primary trial
   ExitProbResult probs;
 
@@ -806,53 +798,61 @@ DataFrameCpp getADCIcpp(
     if (kMax > 1 && criticalValues.size() == kMax) {
       bool hasNaN = false;
       for (size_t i = 0; i < kMax - 1; ++i) {
-        if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
+        if (std::isnan(criticalValues[i])) {
+          hasNaN = true;
+          break;
+        }
       }
-      if (!hasNaN && std::isnan(criticalValues[kMax-1])) haybittle = true;
+      if (!hasNaN && std::isnan(criticalValues[kMax - 1]))
+        haybittle = true;
     }
 
     if (haybittle) { // Haybittle & Peto
       std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
         u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 8.0;
+        if (!effStopping[i])
+          u[i] = 8.0;
       }
 
-      auto f = [&](double aval)->double {
-        u[kMax-1] = aval;
+      auto f = [&](double aval) -> double {
+        u[kMax - 1] = aval;
         probs = exitprobcpp(u, l, zero, infoRates);
         double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                      probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
-      b[kMax-1] = brent(f, -5.0, 8.0, 1e-6);
+      b[kMax - 1] = brent(f, -5.0, 8.0, 1e-6);
     } else {
       b = getBoundcpp(kMax, infoRates, alpha, asf, parameterAlphaSpending,
                       std::vector<double>{}, spendTime, effStopping);
     }
   } else {
     for (size_t i = 0; i < kMax; ++i) {
-      if (!effStopping[i]) b[i] = 8.0;
+      if (!effStopping[i])
+        b[i] = 8.0;
     }
     probs = exitprobcpp(b, l, zero, infoRates);
     alpha1 = std::accumulate(probs.exitProbUpper.begin(),
                              probs.exitProbUpper.end(), 0.0);
   }
 
-
   // Primary information vector
   std::vector<double> I(kMax);
-  for (size_t i = 0; i < kMax; ++i) I[i] = IMax * informationRates[i];
+  for (size_t i = 0; i < kMax; ++i)
+    I[i] = IMax * informationRates[i];
 
   // compute b2 and I2 for secondary trial depending on MullerSchafer
   std::vector<double> b2(L2), I2(L2);
   if (!MullerSchafer) {
     for (size_t l = 0; l < L2; ++l) {
-      double t1 = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
+      double t1 =
+          (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       double r1 = infoRates[L - 1] / infoRates[l + L];
       b2[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
-      if (!effStopping[l + L]) b2[l] = 8.0;
+      if (!effStopping[l + L])
+        b2[l] = 8.0;
       I2[l] = INew * t1;
     }
   } else { // conditional type I error
@@ -862,7 +862,8 @@ DataFrameCpp getADCIcpp(
       t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       double r1 = infoRates[L - 1] / infoRates[l + L];
       b1[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
-      if (!effStopping[l + L]) b1[l] = 8.0;
+      if (!effStopping[l + L])
+        b1[l] = 8.0;
     }
     probs = exitprobcpp(b1, a1, zero, t1);
     double alphaNew = std::accumulate(probs.exitProbUpper.begin(),
@@ -872,15 +873,17 @@ DataFrameCpp getADCIcpp(
                      parameterAlphaSpendingNew, std::vector<double>{},
                      spendTimeNew, effStoppingNew);
 
-    for (size_t l = 0; l < L2; ++l) I2[l] = INew * informationRatesNew[l];
+    for (size_t l = 0; l < L2; ++l)
+      I2[l] = INew * informationRatesNew[l];
   }
 
   // confidence level
   double cilevel = 1.0 - 2.0 * alpha1;
 
   // compute pvalue under theta=0 using f_bwpvalue
-  double zL2 = (zLc * std::sqrt(I[L - 1] + I2[L2 - 1]) -
-                zL * std::sqrt(I[L - 1])) / std::sqrt(I2[L2 - 1]);
+  double zL2 =
+      (zLc * std::sqrt(I[L - 1] + I2[L2 - 1]) - zL * std::sqrt(I[L - 1])) /
+      std::sqrt(I2[L2 - 1]);
   double pvalue = f_bwpvalue(0.0, kMax, L, zL, b, I, L2, zL2, b2, I2);
 
   // interval brackets and root-finding to obtain thetahat, lower, upper
@@ -889,19 +892,19 @@ DataFrameCpp getADCIcpp(
   double right = (zL + b[L - 1]) / sqrtIL;
   double tol = 1.0e-6;
 
-  auto f_med = [&](double theta)->double {
+  auto f_med = [&](double theta) -> double {
     return f_bwpvalue(theta, kMax, L, zL, b, I, L2, zL2, b2, I2) - 0.5;
   };
   double thetahat = brent(f_med, left, right, tol);
 
   double target_lower = (1.0 - cilevel) / 2.0;
-  auto f_low = [&](double theta)->double {
+  auto f_low = [&](double theta) -> double {
     return f_bwpvalue(theta, kMax, L, zL, b, I, L2, zL2, b2, I2) - target_lower;
   };
   double lower = brent(f_low, left, thetahat, tol);
 
   double target_upper = (1.0 + cilevel) / 2.0;
-  auto f_high = [&](double theta)->double {
+  auto f_high = [&](double theta) -> double {
     return f_bwpvalue(theta, kMax, L, zL, b, I, L2, zL2, b2, I2) - target_upper;
   };
   double upper = brent(f_high, thetahat, right, tol);
@@ -914,7 +917,6 @@ DataFrameCpp getADCIcpp(
   df.push_back(upper, "upper");
   return df;
 }
-
 
 //' @title Confidence Interval After Adaptation
 //' @description Obtains the p-value, median unbiased point estimate, and
@@ -1072,27 +1074,23 @@ DataFrameCpp getADCIcpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame getADCI(
-    const int L = NA_INTEGER,
-    const double zL = NA_REAL,
-    const double IMax = NA_REAL,
-    const int kMax = NA_INTEGER,
-    const Rcpp::NumericVector& informationRates = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
-    const Rcpp::NumericVector& criticalValues = NA_REAL,
-    const double alpha = 0.25,
-    const std::string& typeAlphaSpending = "sfOF",
-    const double parameterAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& spendingTime = NA_REAL,
-    const bool MullerSchafer = false,
-    const int Lc = NA_INTEGER,
-    const double zLc = NA_REAL,
-    const double INew = NA_REAL,
-    const Rcpp::NumericVector& informationRatesNew = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStoppingNew = NA_LOGICAL,
-    const std::string& typeAlphaSpendingNew = "sfOF",
-    const double parameterAlphaSpendingNew = NA_REAL,
-    const Rcpp::NumericVector& spendingTimeNew = NA_REAL) {
+Rcpp::DataFrame
+getADCI(const int L = NA_INTEGER, const double zL = NA_REAL,
+        const double IMax = NA_REAL, const int kMax = NA_INTEGER,
+        const Rcpp::NumericVector &informationRates = NA_REAL,
+        const Rcpp::LogicalVector &efficacyStopping = NA_LOGICAL,
+        const Rcpp::NumericVector &criticalValues = NA_REAL,
+        const double alpha = 0.25,
+        const std::string &typeAlphaSpending = "sfOF",
+        const double parameterAlphaSpending = NA_REAL,
+        const Rcpp::NumericVector &spendingTime = NA_REAL,
+        const bool MullerSchafer = false, const int Lc = NA_INTEGER,
+        const double zLc = NA_REAL, const double INew = NA_REAL,
+        const Rcpp::NumericVector &informationRatesNew = NA_REAL,
+        const Rcpp::LogicalVector &efficacyStoppingNew = NA_LOGICAL,
+        const std::string &typeAlphaSpendingNew = "sfOF",
+        const double parameterAlphaSpendingNew = NA_REAL,
+        const Rcpp::NumericVector &spendingTimeNew = NA_REAL) {
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
   auto effStopping = convertLogicalVector(efficacyStopping);
   auto critValues = Rcpp::as<std::vector<double>>(criticalValues);
@@ -1101,44 +1099,41 @@ Rcpp::DataFrame getADCI(
   auto effStoppingNew = convertLogicalVector(efficacyStoppingNew);
   auto spendTimeNew = Rcpp::as<std::vector<double>>(spendingTimeNew);
   auto result = getADCIcpp(
-    static_cast<size_t>(L), zL, IMax, static_cast<size_t>(kMax), infoRates,
-    effStopping, critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
-    spendTime, MullerSchafer, static_cast<size_t>(Lc), zLc, INew,
-    infoRatesNew, effStoppingNew, typeAlphaSpendingNew,
-    parameterAlphaSpendingNew, spendTimeNew);
+      static_cast<size_t>(L), zL, IMax, static_cast<size_t>(kMax), infoRates,
+      effStopping, critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
+      spendTime, MullerSchafer, static_cast<size_t>(Lc), zLc, INew,
+      infoRatesNew, effStoppingNew, typeAlphaSpendingNew,
+      parameterAlphaSpendingNew, spendTimeNew);
   return Rcpp::wrap(result);
 }
 
-
 // Helper to calculate repeated confidence interval after adaptation
-DataFrameCpp getADRCIcpp(
-    const size_t L,
-    const double zL,
-    const double IMax,
-    const size_t kMax,
-    const std::vector<double>& informationRates,
-    const std::vector<unsigned char>& efficacyStopping,
-    const std::vector<double>& criticalValues,
-    const double alpha,
-    const std::string& typeAlphaSpending,
-    const double parameterAlphaSpending,
-    const std::vector<double>& spendingTime,
-    const bool MullerSchafer,
-    const size_t Lc,
-    const double zLc,
-    const double INew,
-    const std::vector<double>& informationRatesNew,
-    const std::vector<unsigned char>& efficacyStoppingNew,
-    const std::string& typeAlphaSpendingNew,
-    const double parameterAlphaSpendingNew,
-    const std::vector<double>& spendingTimeNew) {
+DataFrameCpp
+getADRCIcpp(const size_t L, const double zL, const double IMax,
+            const size_t kMax, const std::vector<double> &informationRates,
+            const std::vector<unsigned char> &efficacyStopping,
+            const std::vector<double> &criticalValues, const double alpha,
+            const std::string &typeAlphaSpending,
+            const double parameterAlphaSpending,
+            const std::vector<double> &spendingTime, const bool MullerSchafer,
+            const size_t Lc, const double zLc, const double INew,
+            const std::vector<double> &informationRatesNew,
+            const std::vector<unsigned char> &efficacyStoppingNew,
+            const std::string &typeAlphaSpendingNew,
+            const double parameterAlphaSpendingNew,
+            const std::vector<double> &spendingTimeNew) {
 
   // Input validation and defaults
-  if (L <= 0) throw std::invalid_argument("L must be provided and positive");
-  if (std::isnan(zL)) throw std::invalid_argument("zL must be provided");
-  if (std::isnan(IMax)) throw std::invalid_argument("IMax must be provided");
-  if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
-  if (kMax <= L) throw std::invalid_argument("kMax must be greater than L");
+  if (L <= 0)
+    throw std::invalid_argument("L must be provided and positive");
+  if (std::isnan(zL))
+    throw std::invalid_argument("zL must be provided");
+  if (std::isnan(IMax))
+    throw std::invalid_argument("IMax must be provided");
+  if (IMax <= 0.0)
+    throw std::invalid_argument("IMax must be positive");
+  if (kMax <= L)
+    throw std::invalid_argument("kMax must be greater than L");
 
   // informationRates: default to (1:kMax)/kMax if missing
   std::vector<double> infoRates(kMax);
@@ -1176,7 +1171,8 @@ DataFrameCpp getADRCIcpp(
     throw std::invalid_argument("Invalid length for criticalValues");
   }
   if (missingCriticalValues && std::isnan(alpha)) {
-    throw std::invalid_argument("alpha must be provided for missing criticalValues");
+    throw std::invalid_argument(
+        "alpha must be provided for missing criticalValues");
   }
   if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 0.5)) {
     throw std::invalid_argument("alpha must lie in [0.00001, 0.5)");
@@ -1187,9 +1183,9 @@ DataFrameCpp getADRCIcpp(
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
-  if (missingCriticalValues && !(asf == "of" || asf == "p" ||
-      asf == "wt" || asf == "sfof" || asf == "sfp" ||
-      asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
+  if (missingCriticalValues &&
+      !(asf == "of" || asf == "p" || asf == "wt" || asf == "sfof" ||
+        asf == "sfp" || asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
     throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
@@ -1197,7 +1193,8 @@ DataFrameCpp getADRCIcpp(
     throw std::invalid_argument("Missing value for parameterAlphaSpending");
   }
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
+    throw std::invalid_argument(
+        "parameterAlphaSpending must be positive for sfKD");
   }
 
   std::vector<double> spendTime;
@@ -1208,19 +1205,22 @@ DataFrameCpp getADRCIcpp(
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[kMax-1] != 1.0)
+    if (spendingTime[kMax - 1] != 1.0)
       throw std::invalid_argument("spendingTime must end with 1");
     spendTime = spendingTime; // copy
   } else {
     spendTime = infoRates;
   }
 
-
   // Now handle new trial inputs
-  if (Lc <= L) throw std::invalid_argument("Lc must be greater than L");
-  if (std::isnan(zLc)) throw std::invalid_argument("zLc must be provided");
-  if (std::isnan(INew)) throw std::invalid_argument("INew must be provided");
-  if (INew <= 0.0) throw std::invalid_argument("INew must be positive");
+  if (Lc <= L)
+    throw std::invalid_argument("Lc must be greater than L");
+  if (std::isnan(zLc))
+    throw std::invalid_argument("zLc must be provided");
+  if (std::isnan(INew))
+    throw std::invalid_argument("INew must be provided");
+  if (INew <= 0.0)
+    throw std::invalid_argument("INew must be positive");
 
   size_t L2 = Lc - L;
 
@@ -1260,14 +1260,15 @@ DataFrameCpp getADRCIcpp(
     }
 
     if (!(asfNew == "of" || asfNew == "p" || asfNew == "wt" ||
-        asfNew == "sfof" || asfNew == "sfp" ||
-        asfNew == "sfkd" || asfNew == "sfhsd" || asfNew == "none")) {
+          asfNew == "sfof" || asfNew == "sfp" || asfNew == "sfkd" ||
+          asfNew == "sfhsd" || asfNew == "none")) {
       throw std::invalid_argument("Invalid value for typeAlphaSpendingNew");
     }
 
     if ((asfNew == "wt" || asfNew == "sfkd" || asfNew == "sfhsd") &&
         std::isnan(parameterAlphaSpendingNew))
-      throw std::invalid_argument("Missing value for parameterAlphaSpendingNew");
+      throw std::invalid_argument(
+          "Missing value for parameterAlphaSpendingNew");
 
     if (asfNew == "sfkd" && parameterAlphaSpendingNew <= 0.0)
       throw std::invalid_argument(
@@ -1299,7 +1300,6 @@ DataFrameCpp getADRCIcpp(
     }
   }
 
-
   // obtain critical values for the primary trial
   ExitProbResult probs;
 
@@ -1311,53 +1311,61 @@ DataFrameCpp getADRCIcpp(
     if (kMax > 1 && criticalValues.size() == kMax) {
       bool hasNaN = false;
       for (size_t i = 0; i < kMax - 1; ++i) {
-        if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
+        if (std::isnan(criticalValues[i])) {
+          hasNaN = true;
+          break;
+        }
       }
-      if (!hasNaN && std::isnan(criticalValues[kMax-1])) haybittle = true;
+      if (!hasNaN && std::isnan(criticalValues[kMax - 1]))
+        haybittle = true;
     }
 
     if (haybittle) { // Haybittle & Peto
       std::vector<double> u(kMax);
       for (size_t i = 0; i < kMax - 1; ++i) {
         u[i] = criticalValues[i];
-        if (!effStopping[i]) u[i] = 8.0;
+        if (!effStopping[i])
+          u[i] = 8.0;
       }
 
-      auto f = [&](double aval)->double {
-        u[kMax-1] = aval;
+      auto f = [&](double aval) -> double {
+        u[kMax - 1] = aval;
         probs = exitprobcpp(u, l, zero, infoRates);
         double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                      probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
-      b[kMax-1] = brent(f, -5.0, 8.0, 1e-6);
+      b[kMax - 1] = brent(f, -5.0, 8.0, 1e-6);
     } else {
       b = getBoundcpp(kMax, infoRates, alpha, asf, parameterAlphaSpending,
                       std::vector<double>{}, spendTime, effStopping);
     }
   } else {
     for (size_t i = 0; i < kMax; ++i) {
-      if (!effStopping[i]) b[i] = 8.0;
+      if (!effStopping[i])
+        b[i] = 8.0;
     }
     probs = exitprobcpp(b, l, zero, infoRates);
     alpha1 = std::accumulate(probs.exitProbUpper.begin(),
                              probs.exitProbUpper.end(), 0.0);
   }
 
-
   // Primary information vector
   std::vector<double> I(kMax);
-  for (size_t i = 0; i < kMax; ++i) I[i] = IMax * informationRates[i];
+  for (size_t i = 0; i < kMax; ++i)
+    I[i] = IMax * informationRates[i];
 
   // compute b2 and I2 for secondary trial depending on MullerSchafer
   std::vector<double> b2(L2), I2(L2);
   if (!MullerSchafer) {
     for (size_t l = 0; l < L2; ++l) {
-      double t1 = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
+      double t1 =
+          (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       double r1 = infoRates[L - 1] / infoRates[l + L];
       b2[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
-      if (!effStopping[l + L]) b2[l] = 8.0;
+      if (!effStopping[l + L])
+        b2[l] = 8.0;
       I2[l] = INew * t1;
     }
   } else { // conditional type I error
@@ -1367,7 +1375,8 @@ DataFrameCpp getADRCIcpp(
       t1[l] = (infoRates[l + L] - infoRates[L - 1]) / (1.0 - infoRates[L - 1]);
       double r1 = infoRates[L - 1] / infoRates[l + L];
       b1[l] = (b[l + L] - std::sqrt(r1) * zL) / std::sqrt(1.0 - r1);
-      if (!effStopping[l + L]) b1[l] = 8.0;
+      if (!effStopping[l + L])
+        b1[l] = 8.0;
     }
     probs = exitprobcpp(b1, a1, zero, t1);
     double alphaNew = std::accumulate(probs.exitProbUpper.begin(),
@@ -1377,14 +1386,16 @@ DataFrameCpp getADRCIcpp(
                      parameterAlphaSpendingNew, std::vector<double>{},
                      spendTimeNew, effStoppingNew);
 
-    for (size_t l = 0; l < L2; ++l) I2[l] = INew * informationRatesNew[l];
+    for (size_t l = 0; l < L2; ++l)
+      I2[l] = INew * informationRatesNew[l];
   }
 
   // confidence level
   double cilevel = 1.0 - 2.0 * alpha1;
 
-  double zL2 = (zLc * std::sqrt(I[L - 1] + I2[L2 - 1]) -
-                zL * std::sqrt(I[L - 1])) / std::sqrt(I2[L2 - 1]);
+  double zL2 =
+      (zLc * std::sqrt(I[L - 1] + I2[L2 - 1]) - zL * std::sqrt(I[L - 1])) /
+      std::sqrt(I2[L2 - 1]);
 
   // compute repeated pvalue, thetahat, lower, upper
   double lower = NAN, upper = NAN, thetahat = NAN, pvalue = NAN;
@@ -1393,7 +1404,7 @@ DataFrameCpp getADRCIcpp(
     // simple combination formula
     double I1 = IMax * infoRates[L - 1];
     double I2 = INew * (infoRates[L + L2 - 1] - infoRates[L - 1]) /
-      (1.0 - infoRates[L - 1]);
+                (1.0 - infoRates[L - 1]);
     double r1 = infoRates[L - 1] / infoRates[L + L2 - 1];
     double w1 = std::sqrt(r1);
     double w2 = std::sqrt(1.0 - r1);
@@ -1408,12 +1419,15 @@ DataFrameCpp getADRCIcpp(
 
     // create cache_J for J
     std::vector<double> t_prefix(J);
-    for (size_t i = 0; i < J; ++i) t_prefix[i] = infoRates[i];
+    for (size_t i = 0; i < J; ++i)
+      t_prefix[i] = infoRates[i];
     BoundCacheAlpha cache_J(J, t_prefix, asf, parameterAlphaSpending,
-                            std::vector<double>{}, spendTime, effStopping, 64, 12);
+                            std::vector<double>{}, spendTime, effStopping, 64,
+                            12);
 
-    // repeated p-value: solve f(aval) = c1 - u[J-1] = 0 for aval in (1e-6, 0.999999)
-    auto f_alpha = [&](double aval)->double {
+    // repeated p-value: solve f(aval) = c1 - u[J-1] = 0 for aval in (1e-6,
+    // 0.999999)
+    auto f_alpha = [&](double aval) -> double {
       std::vector<double> u_local = cache_J.get(aval);
       return c1 - u_local[J - 1];
     };
@@ -1470,11 +1484,12 @@ DataFrameCpp getADRCIcpp(
     thetahat = zL2 / sqrtI2;
 
     // lower: root of f1(theta) = 0 on [left, thetahat]
-    auto f1 = [&](double theta)->double {
+    auto f1 = [&](double theta) -> double {
       double zL1 = zL - theta * sqrtI1;
       for (size_t l = 0; l < k1; ++l) {
         b1[l] = (b[l + L] - w1[l] * zL1) / w2[l];
-        if (!effStopping[l + L]) b1[l] = 8.0;
+        if (!effStopping[l + L])
+          b1[l] = 8.0;
       }
       probs = exitprobcpp(b1, a1, zero, t1);
       double alphaNew = std::accumulate(probs.exitProbUpper.begin(),
@@ -1485,11 +1500,12 @@ DataFrameCpp getADRCIcpp(
     lower = brent(f1, left, thetahat, tol);
 
     // upper: root of f2(theta) = 0 on [thetahat, right]
-    auto f2 = [&](double theta)->double {
+    auto f2 = [&](double theta) -> double {
       double zL1 = -zL + theta * sqrtI1;
       for (size_t l = 0; l < k1; ++l) {
         b1[l] = (b[l + L] - w1[l] * zL1) / w2[l];
-        if (!effStopping[l + L]) b1[l] = 8.0;
+        if (!effStopping[l + L])
+          b1[l] = 8.0;
       }
       probs = exitprobcpp(b1, a1, zero, t1);
       double alphaNew = std::accumulate(probs.exitProbUpper.begin(),
@@ -1500,14 +1516,15 @@ DataFrameCpp getADRCIcpp(
     upper = brent(f2, thetahat, right, tol);
 
     // repeated p-value: more complex, uses nested root-find (brent)
-    auto f = [&](double aval)->double {
+    auto f = [&](double aval) -> double {
       std::vector<double> u_local = cache_kMax.get(aval);
 
-      auto g = [&](double theta)->double {
+      auto g = [&](double theta) -> double {
         double zL1 = zL - theta * sqrtI1;
         for (size_t l = 0; l < k1; ++l) {
           b1[l] = (u_local[l + L] - w1[l] * zL1) / w2[l];
-          if (!effStopping[l + L]) b1[l] = 8.0;
+          if (!effStopping[l + L])
+            b1[l] = 8.0;
         }
         probs = exitprobcpp(b1, a1, zero, t1);
         double alphaNew = std::accumulate(probs.exitProbUpper.begin(),
@@ -1529,11 +1546,13 @@ DataFrameCpp getADRCIcpp(
       int count = 0;
       while (true) {
         double f_right = f(right_p);
-        if (f_right > 0.0) break;
+        if (f_right > 0.0)
+          break;
         left_p = right_p;
         right_p = (left_p + 1.0) / 2.0;
         ++count;
-        if (count > 18) break;
+        if (count > 18)
+          break;
       }
       if (count <= 18) {
         pvalue = brent(f, left_p, right_p, 1.0e-6);
@@ -1551,7 +1570,6 @@ DataFrameCpp getADRCIcpp(
   df.push_back(upper, "upper");
   return df;
 }
-
 
 //' @title Repeated Confidence Interval After Adaptation
 //' @description Obtains the repeated p-value, conservative point estimate,
@@ -1707,27 +1725,23 @@ DataFrameCpp getADRCIcpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame getADRCI(
-    const int L = NA_INTEGER,
-    const double zL = NA_REAL,
-    const double IMax = NA_REAL,
-    const int kMax = NA_INTEGER,
-    const Rcpp::NumericVector& informationRates = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
-    const Rcpp::NumericVector& criticalValues = NA_REAL,
-    const double alpha = 0.025,
-    const std::string& typeAlphaSpending = "sfOF",
-    const double parameterAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& spendingTime = NA_REAL,
-    const bool MullerSchafer = false,
-    const int Lc = NA_INTEGER,
-    const double zLc = NA_REAL,
-    const double INew = NA_REAL,
-    const Rcpp::NumericVector& informationRatesNew = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStoppingNew = NA_LOGICAL,
-    const std::string& typeAlphaSpendingNew = "sfOF",
-    const double parameterAlphaSpendingNew = NA_REAL,
-    const Rcpp::NumericVector& spendingTimeNew = NA_REAL) {
+Rcpp::DataFrame
+getADRCI(const int L = NA_INTEGER, const double zL = NA_REAL,
+         const double IMax = NA_REAL, const int kMax = NA_INTEGER,
+         const Rcpp::NumericVector &informationRates = NA_REAL,
+         const Rcpp::LogicalVector &efficacyStopping = NA_LOGICAL,
+         const Rcpp::NumericVector &criticalValues = NA_REAL,
+         const double alpha = 0.025,
+         const std::string &typeAlphaSpending = "sfOF",
+         const double parameterAlphaSpending = NA_REAL,
+         const Rcpp::NumericVector &spendingTime = NA_REAL,
+         const bool MullerSchafer = false, const int Lc = NA_INTEGER,
+         const double zLc = NA_REAL, const double INew = NA_REAL,
+         const Rcpp::NumericVector &informationRatesNew = NA_REAL,
+         const Rcpp::LogicalVector &efficacyStoppingNew = NA_LOGICAL,
+         const std::string &typeAlphaSpendingNew = "sfOF",
+         const double parameterAlphaSpendingNew = NA_REAL,
+         const Rcpp::NumericVector &spendingTimeNew = NA_REAL) {
 
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
   auto effStopping = convertLogicalVector(efficacyStopping);
@@ -1738,10 +1752,10 @@ Rcpp::DataFrame getADRCI(
   auto spendTimeNew = Rcpp::as<std::vector<double>>(spendingTimeNew);
 
   auto result = getADRCIcpp(
-    static_cast<size_t>(L), zL, IMax, static_cast<size_t>(kMax), infoRates,
-    effStopping, critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
-    spendTime, MullerSchafer, static_cast<size_t>(Lc), zLc, INew,
-    infoRatesNew, effStoppingNew, typeAlphaSpendingNew,
-    parameterAlphaSpendingNew, spendTimeNew);
+      static_cast<size_t>(L), zL, IMax, static_cast<size_t>(kMax), infoRates,
+      effStopping, critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
+      spendTime, MullerSchafer, static_cast<size_t>(Lc), zLc, INew,
+      infoRatesNew, effStoppingNew, typeAlphaSpendingNew,
+      parameterAlphaSpendingNew, spendTimeNew);
   return Rcpp::wrap(result);
 }

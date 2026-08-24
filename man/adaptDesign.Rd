@@ -237,7 +237,7 @@ sedeltahat <- sigmahat * sqrt( 4 / nL)
 zL <- deltahat / sedeltahat
 
 # Making an Adaptive Change: Stage I to Stage II
-# revised clinically meaningful difference downward to 10 power the study
+# revised clinically meaningful difference downward to 10
 # retain the standard deviation at the design stage
 # Muller & Schafer (2001) method to design the secondary trial
 # with 2 looks and Lan-DeMets Pocock type spending function

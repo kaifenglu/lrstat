@@ -1,35 +1,31 @@
+#include "dataframe_list.h"
 #include "generic_design.h"
 #include "multiarm_design.h"
 #include "utilities.h"
-#include "dataframe_list.h"
 
-#include <algorithm>     // any_of, fill
-#include <cctype>        // tolower
-#include <cmath>         // isnan
-#include <cstring>       // memcpy
-#include <numeric>       // accumulate
-#include <stdexcept>     // invalid_argument
-#include <string>        // string
-#include <vector>        // vector
-#include <utility>       // pair, make_pair
+#include <algorithm> // any_of, fill
+#include <cctype>    // tolower
+#include <cmath>     // isnan
+#include <cstring>   // memcpy
+#include <numeric>   // accumulate
+#include <stdexcept> // invalid_argument
+#include <string>    // string
+#include <utility>   // pair, make_pair
+#include <vector>    // vector
 
 #include <Rcpp.h>
 
 using std::size_t;
 
-
 // Compute the p-value given theta, look L, observed z at look L (zL),
 // number of active arms M, allocation ratio to common control r,
 // whether the correlation is known,
 // critical values vector b (length L), and information vector I (length L).
-double f_pvalue_multiarm(const double theta,
-                     const size_t M,
-                     const double r,
-                     const bool corr_known,
-                     const size_t L,
-                     const std::vector<double>& zL,
-                     const FlatMatrix& b,
-                     const std::vector<double>& I) {
+double f_pvalue_multiarm(const double theta, const size_t M, const double r,
+                         const bool corr_known, const size_t L,
+                         const std::vector<double> &zL, const FlatMatrix &b,
+                         const std::vector<double> &I) {
+
   // Build the components required by exitprobcpp:
   // upper flatmatrix: first L-1 columns from b, last column = zL
   // theta vector: all = theta scalar
@@ -38,7 +34,7 @@ double f_pvalue_multiarm(const double theta,
     const std::size_t bytes = (L - 1) * M * sizeof(double);
     std::memcpy(upper.data_ptr(), b.data_ptr(), bytes);
   }
-  double* last_col = upper.data_ptr() + FlatMatrix::idx_col(0, L - 1, M);
+  double *last_col = upper.data_ptr() + FlatMatrix::idx_col(0, L - 1, M);
   std::memcpy(last_col, zL.data(), M * sizeof(double));
 
   std::vector<double> mu(M, theta);
@@ -48,30 +44,30 @@ double f_pvalue_multiarm(const double theta,
   return sum_up;
 }
 
-
-// Helper to compute the confidence interval at the end of a group sequential trial
+// Helper to compute the confidence interval at the end of a group sequential
+// trial
 DataFrameCpp getCI_multiarm_cpp(
-    const size_t M,
-    const double r,
-    const bool corr_known,
-    const size_t L,
-    const std::vector<double>& zL,
-    const double IMax,
-    const std::vector<double>& informationRates,
-    const std::vector<unsigned char>& efficacyStopping,
-    const FlatMatrix& criticalValues,
-    const double alpha,
-    const std::string& typeAlphaSpending,
-    const double parameterAlphaSpending,
-    const std::vector<double>& spendingTime) {
+    const size_t M, const double r, const bool corr_known, const size_t L,
+    const std::vector<double> &zL, const double IMax,
+    const std::vector<double> &informationRates,
+    const std::vector<unsigned char> &efficacyStopping,
+    const FlatMatrix &criticalValues, const double alpha,
+    const std::string &typeAlphaSpending, const double parameterAlphaSpending,
+    const std::vector<double> &spendingTime) {
 
   // Basic argument checks
-  if (M < 1) throw std::invalid_argument("M should be at least 1");
-  if (r <= 0.0) throw std::invalid_argument("r should be positive");
-  if (L <= 0) throw std::invalid_argument("L must be a positive integer");
-  if (!none_na(zL)) throw std::invalid_argument("zL must be provided");
-  if (std::isnan(IMax)) throw std::invalid_argument("IMax must be provided");
-  if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
+  if (M < 1)
+    throw std::invalid_argument("M should be at least 1");
+  if (r <= 0.0)
+    throw std::invalid_argument("r should be positive");
+  if (L <= 0)
+    throw std::invalid_argument("L must be a positive integer");
+  if (!none_na(zL))
+    throw std::invalid_argument("zL must be provided");
+  if (std::isnan(IMax))
+    throw std::invalid_argument("IMax must be provided");
+  if (IMax <= 0.0)
+    throw std::invalid_argument("IMax must be positive");
   if (!none_na(informationRates))
     throw std::invalid_argument("informationRates must be provided");
 
@@ -114,7 +110,8 @@ DataFrameCpp getCI_multiarm_cpp(
   }
 
   // alpha checks
-  if (std::isnan(alpha)) throw std::invalid_argument("alpha must be provided");
+  if (std::isnan(alpha))
+    throw std::invalid_argument("alpha must be provided");
   if (alpha < 0.00001 || alpha >= 0.5)
     throw std::invalid_argument("alpha must lie in [0.00001, 0.5)");
 
@@ -124,9 +121,9 @@ DataFrameCpp getCI_multiarm_cpp(
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
-  if (!none_na(criticalValues.data) && !(asf == "of" || asf == "p" ||
-      asf == "wt" || asf == "sfof" || asf == "sfp" ||
-      asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
+  if (!none_na(criticalValues.data) &&
+      !(asf == "of" || asf == "p" || asf == "wt" || asf == "sfof" ||
+        asf == "sfp" || asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
     throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
@@ -134,7 +131,8 @@ DataFrameCpp getCI_multiarm_cpp(
     throw std::invalid_argument("Missing value for parameterAlphaSpending");
   }
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
-    throw std::invalid_argument("parameterAlphaSpending must be positive for sfKD");
+    throw std::invalid_argument(
+        "parameterAlphaSpending must be positive for sfKD");
   }
 
   if (asf == "of" || asf == "p" || asf == "wt" || asf == "none") {
@@ -148,7 +146,6 @@ DataFrameCpp getCI_multiarm_cpp(
     }
   }
 
-
   // critical values: if not provided, compute using getBound_multiarm_cpp
   FlatMatrix bMat(L, M); // level M, M-1, ...., 1 critical values
   if (none_na(criticalValues.data)) {
@@ -160,24 +157,23 @@ DataFrameCpp getCI_multiarm_cpp(
   } else {
     for (size_t i = 0; i < M; ++i) {
       size_t level = M - i;
-      auto v = getBound_multiarm_cpp(level, r, corr_known, L, informationRates,
-                                 alpha, asf, parameterAlphaSpending,
-                                 std::vector<double>{}, spendTime, effStopping);
+      auto v =
+          getBound_multiarm_cpp(level, r, corr_known, L, informationRates,
+                                alpha, asf, parameterAlphaSpending,
+                                std::vector<double>{}, spendTime, effStopping);
       flatmatrix_set_column(bMat, i, v);
     }
   }
 
-
   // Build full information vector I = IMax * informationRates
   std::vector<double> I(L);
-  for (size_t i = 0; i < L; ++i) I[i] = IMax * informationRates[i];
+  for (size_t i = 0; i < L; ++i)
+    I[i] = IMax * informationRates[i];
 
   // sort zL in descending order
-  std::vector<size_t> order = seqcpp(0, M-1);
-  std::sort(order.begin(), order.end(), [&](size_t i, size_t j) {
-    return zL[i] > zL[j];
-  });
-
+  std::vector<size_t> order = seqcpp(0, M - 1);
+  std::sort(order.begin(), order.end(),
+            [&](size_t i, size_t j) { return zL[i] > zL[j]; });
 
   std::vector<size_t> level(M);
   std::vector<size_t> index(M);
@@ -186,60 +182,63 @@ DataFrameCpp getCI_multiarm_cpp(
   std::vector<double> lower(M);
   std::vector<double> upper(M);
 
-  double sqrtIL = std::sqrt(I[L-1]);
+  double sqrtIL = std::sqrt(I[L - 1]);
   double cilevel = 1.0 - 2.0 * alpha;
   double target_lower = (1.0 - cilevel) / 2.0;
   double target_upper = (1.0 + cilevel) / 2.0;
   double tol = 1.0e-6;
 
   // level-M test boundary
-  const double* b1col_ptr = bMat.data_ptr(); // column 0
+  const double *b1col_ptr = bMat.data_ptr(); // column 0
   FlatMatrix b1_matrix(1, L);
   for (size_t j = 0; j < L; ++j) {
     b1_matrix(0, j) = b1col_ptr[j];
   }
 
-  std::vector<double> zL_vec;           // reused for different levels
-  std::vector<double> zL1_vec(1);       // reuse single-element vector
+  std::vector<double> zL_vec;     // reused for different levels
+  std::vector<double> zL1_vec(1); // reuse single-element vector
   for (size_t h = 0; h < M; ++h) {
     level[h] = M - h;
     index[h] = order[h] + 1; // 1-based index for R
     double zLmax = zL[order[h]];
 
-    const double* bcol_ptr = bMat.data_ptr() + h * bMat.nrow;
+    const double *bcol_ptr = bMat.data_ptr() + h * bMat.nrow;
     FlatMatrix b_matrix(level[h], L);
     for (size_t j = 0; j < L; ++j) {
-      double* colptr = b_matrix.data_ptr() + j * b_matrix.nrow;
+      double *colptr = b_matrix.data_ptr() + j * b_matrix.nrow;
       std::fill_n(colptr, level[h], bcol_ptr[j]);
     }
 
     // p-value at theta = 0
     zL_vec.assign(level[h], zLmax);
-    pvalue[h] = f_pvalue_multiarm(0.0, level[h], r, corr_known, L, zL_vec,
-                              b_matrix, I);
+    pvalue[h] =
+        f_pvalue_multiarm(0.0, level[h], r, corr_known, L, zL_vec, b_matrix, I);
 
     double left = (zLmax - 8.0) / sqrtIL;
     double right = (zLmax + 8.0) / sqrtIL;
 
     // median estimate thetahat: solve f_pvalue(theta) - 0.5 = 0
-    auto f_med = [&](double theta)->double {
+    auto f_med = [&](double theta) -> double {
       return f_pvalue_multiarm(theta, level[h], r, corr_known, L, zL_vec,
-                           b_matrix, I) - 0.5;
+                               b_matrix, I) -
+             0.5;
     };
     thetahat[h] = brent(f_med, left, right, tol);
 
     // lower bound: solve f_pvalue(theta) - (1 - cilevel)/2 = 0
-    auto f_lower = [&](double theta)->double {
+    auto f_lower = [&](double theta) -> double {
       return f_pvalue_multiarm(theta, level[h], r, corr_known, L, zL_vec,
-                           b_matrix, I) - target_lower;
+                               b_matrix, I) -
+             target_lower;
     };
     lower[h] = brent(f_lower, left, thetahat[h], tol);
 
     // upper bound: solve f_pvalue(theta) - (1 + cilevel)/2 = 0
     zL1_vec[0] = zLmax;
-    auto f_upper = [&](double theta)->double {
-      return f_pvalue_multiarm(theta, 1, r, corr_known, L, zL1_vec,
-                           b1_matrix, I) - target_upper;
+    auto f_upper = [&](double theta) -> double {
+      return f_pvalue_multiarm(theta, 1, r, corr_known, L, zL1_vec, b1_matrix,
+                               I) -
+             target_upper;
     };
     upper[h] = brent(f_upper, thetahat[h], right, tol);
   }
@@ -257,26 +256,21 @@ DataFrameCpp getCI_multiarm_cpp(
   return df;
 }
 
-
-
 // [[Rcpp::export]]
 Rcpp::DataFrame getCI_multiarm_Rcpp(
-    const int M = NA_INTEGER,
-    const double r = 1,
-    const bool corr_known = true,
-    const int L = NA_INTEGER,
-    const Rcpp::NumericVector& zL = NA_REAL,
+    const int M = NA_INTEGER, const double r = 1, const bool corr_known = true,
+    const int L = NA_INTEGER, const Rcpp::NumericVector &zL = NA_REAL,
     const double IMax = NA_REAL,
-    const Rcpp::NumericVector& informationRates = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
+    const Rcpp::NumericVector &informationRates = NA_REAL,
+    const Rcpp::LogicalVector &efficacyStopping = NA_LOGICAL,
     const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues = R_NilValue,
-    const double alpha = 0.025,
-    const std::string& typeAlphaSpending = "sfOF",
+    const double alpha = 0.025, const std::string &typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& spendingTime = NA_REAL) {
+    const Rcpp::NumericVector &spendingTime = NA_REAL) {
 
   std::vector<double> zLVec(zL.begin(), zL.end());
-  std::vector<double> infoRates(informationRates.begin(), informationRates.end());
+  std::vector<double> infoRates(informationRates.begin(),
+                                informationRates.end());
   auto effStopping = convertLogicalVector(efficacyStopping);
   std::vector<double> spendTime(spendingTime.begin(), spendingTime.end());
 
@@ -291,29 +285,19 @@ Rcpp::DataFrame getCI_multiarm_Rcpp(
   }
 
   auto result = getCI_multiarm_cpp(
-    static_cast<size_t>(M), r, corr_known, static_cast<size_t>(L), zLVec,
-    IMax, infoRates, effStopping, critValues, alpha, typeAlphaSpending,
-    parameterAlphaSpending, spendTime);
+      static_cast<size_t>(M), r, corr_known, static_cast<size_t>(L), zLVec,
+      IMax, infoRates, effStopping, critValues, alpha, typeAlphaSpending,
+      parameterAlphaSpending, spendTime);
   return Rcpp::wrap(result);
 }
 
-
 // Compute the backward image (J, zJ)
-std::pair<size_t, double> f_bwimage_multiarm(const double theta,
-                                         const size_t M,
-                                         const double r,
-                                         const bool corr_known,
-                                         const size_t kMax,
-                                         const size_t L,
-                                         const std::vector<double>& zL,
-                                         const std::vector<double>& b,
-                                         const std::vector<double>& I,
-                                         const size_t M2,
-                                         const double r2,
-                                         const size_t L2,
-                                         const std::vector<double>& zL2,
-                                         const FlatMatrix& b2,
-                                         const std::vector<double>& I2) {
+std::pair<size_t, double> f_bwimage_multiarm(
+    const double theta, const size_t M, const double r, const bool corr_known,
+    const size_t kMax, const size_t L, const std::vector<double> &zL,
+    const std::vector<double> &b, const std::vector<double> &I, const size_t M2,
+    const double r2, const size_t L2, const std::vector<double> &zL2,
+    const FlatMatrix &b2, const std::vector<double> &I2) {
 
   // compute astar for the adapted secondary trial
   double astar = f_pvalue_multiarm(theta, M2, r2, corr_known, L2, zL2, b2, I2);
@@ -331,7 +315,7 @@ std::pair<size_t, double> f_bwimage_multiarm(const double theta,
     double sqrt_r1 = std::sqrt(r1);
     double denom = std::sqrt(1.0 - r1);
     double cut = b[L + i];
-    double* colptr = b1.data_ptr() + i * M; // contiguous column start
+    double *colptr = b1.data_ptr() + i * M; // contiguous column start
     for (size_t m = 0; m < M; ++m) {
       colptr[m] = (cut - zL[m] * sqrt_r1) / denom;
     }
@@ -343,15 +327,15 @@ std::pair<size_t, double> f_bwimage_multiarm(const double theta,
 
   // find interval containing astar
   std::vector<double> cpu(k1);
-  std::partial_sum(probs.exitProbUpper.begin(),
-                   probs.exitProbUpper.end(), cpu.begin());
+  std::partial_sum(probs.exitProbUpper.begin(), probs.exitProbUpper.end(),
+                   cpu.begin());
   size_t j = std::min(findInterval1(astar, cpu) + 1, k1);
   size_t J = L + j; // combined stage index in primary trial numbering
 
   // find zJ
   double r1 = I[L - 1] / I[L + j - 1];
   std::vector<double> zj(M);
-  auto f = [&](double z)->double {
+  auto f = [&](double z) -> double {
     double sqrt_r1 = std::sqrt(r1);
     double denom = std::sqrt(1.0 - r1);
     for (size_t m = 0; m < M; ++m) {
@@ -372,76 +356,64 @@ std::pair<size_t, double> f_bwimage_multiarm(const double theta,
   return std::make_pair(J, zJ);
 }
 
-
 // compute backward p-value for adapted trial
-double f_bwpvalue_multiarm(const double theta,
-                       const size_t M,
-                       const double r,
-                       const bool corr_known,
-                       const size_t kMax,
-                       const size_t L,
-                       const std::vector<double>& zL,
-                       const std::vector<double>& b,
-                       const std::vector<double>& I,
-                       const size_t M2,
-                       const double r2,
-                       const size_t L2,
-                       const std::vector<double>& zL2,
-                       const FlatMatrix& b2,
-                       const std::vector<double>& I2) {
-  auto bw = f_bwimage_multiarm(theta, M, r, corr_known, kMax, L, zL, b, I,
-                           M2, r2, L2, zL2, b2, I2);
+double f_bwpvalue_multiarm(const double theta, const size_t M, const double r,
+                           const bool corr_known, const size_t kMax,
+                           const size_t L, const std::vector<double> &zL,
+                           const std::vector<double> &b,
+                           const std::vector<double> &I, const size_t M2,
+                           const double r2, const size_t L2,
+                           const std::vector<double> &zL2, const FlatMatrix &b2,
+                           const std::vector<double> &I2) {
+
+  auto bw = f_bwimage_multiarm(theta, M, r, corr_known, kMax, L, zL, b, I, M2,
+                               r2, L2, zL2, b2, I2);
 
   size_t J = bw.first;
   std::vector<double> zJ(M, bw.second);
   FlatMatrix bMat(M, kMax);
   for (size_t i = 0; i < kMax; ++i) {
-    double* colptr = bMat.data_ptr() + i * M;
+    double *colptr = bMat.data_ptr() + i * M;
     std::fill_n(colptr, M, b[i]);
   }
 
   return f_pvalue_multiarm(theta, M, r, corr_known, J, zJ, bMat, I);
 }
 
-
 // Helper to compute confidence interval after the end of an adaptive trial
 DataFrameCpp getADCI_multiarm_cpp(
-    const size_t M,
-    const double r,
-    const bool corr_known,
-    const size_t L,
-    const std::vector<double>& zL,
-    const double IMax,
-    const size_t kMax,
-    const std::vector<double>& informationRates,
-    const std::vector<unsigned char>& efficacyStopping,
-    const FlatMatrix& criticalValues,
-    const double alpha,
-    const std::string& typeAlphaSpending,
-    const double parameterAlphaSpending,
-    const std::vector<double>& spendingTime,
-    const bool MullerSchafer,
-    const size_t MNew,
-    const std::vector<int>& selected,
-    const double rNew,
-    const size_t Lc,
-    const std::vector<double>& zLc,
-    const double INew,
-    const std::vector<double>& informationRatesNew,
-    const std::vector<unsigned char>& efficacyStoppingNew,
-    const std::string& typeAlphaSpendingNew,
+    const size_t M, const double r, const bool corr_known, const size_t L,
+    const std::vector<double> &zL, const double IMax, const size_t kMax,
+    const std::vector<double> &informationRates,
+    const std::vector<unsigned char> &efficacyStopping,
+    const FlatMatrix &criticalValues, const double alpha,
+    const std::string &typeAlphaSpending, const double parameterAlphaSpending,
+    const std::vector<double> &spendingTime, const bool MullerSchafer,
+    const size_t MNew, const std::vector<int> &selected, const double rNew,
+    const size_t Lc, const std::vector<double> &zLc, const double INew,
+    const std::vector<double> &informationRatesNew,
+    const std::vector<unsigned char> &efficacyStoppingNew,
+    const std::string &typeAlphaSpendingNew,
     const double parameterAlphaSpendingNew,
-    const std::vector<double>& spendingTimeNew) {
+    const std::vector<double> &spendingTimeNew) {
 
   // Input validation and defaults
-  if (M < 1) throw std::invalid_argument("M must be at least 1");
-  if (r <= 0.0) throw std::invalid_argument("r must be positive");
-  if (L <= 0) throw std::invalid_argument("L must be provided and positive");
-  if (!none_na(zL)) throw std::invalid_argument("zL must be provided");
-  if (zL.size() != M) throw std::invalid_argument("Invalid length for zL");
-  if (std::isnan(IMax)) throw std::invalid_argument("IMax must be provided");
-  if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
-  if (kMax <= L) throw std::invalid_argument("kMax must be greater than L");
+  if (M < 1)
+    throw std::invalid_argument("M must be at least 1");
+  if (r <= 0.0)
+    throw std::invalid_argument("r must be positive");
+  if (L <= 0)
+    throw std::invalid_argument("L must be provided and positive");
+  if (!none_na(zL))
+    throw std::invalid_argument("zL must be provided");
+  if (zL.size() != M)
+    throw std::invalid_argument("Invalid length for zL");
+  if (std::isnan(IMax))
+    throw std::invalid_argument("IMax must be provided");
+  if (IMax <= 0.0)
+    throw std::invalid_argument("IMax must be positive");
+  if (kMax <= L)
+    throw std::invalid_argument("kMax must be greater than L");
 
   // informationRates: default to (1:kMax)/kMax if missing
   std::vector<double> infoRates(kMax);
@@ -475,12 +447,13 @@ DataFrameCpp getADCI_multiarm_cpp(
   }
 
   bool missingCriticalValues = !none_na(criticalValues.data);
-  if (!missingCriticalValues && (criticalValues.ncol != M ||
-      criticalValues.nrow != kMax)) {
+  if (!missingCriticalValues &&
+      (criticalValues.ncol != M || criticalValues.nrow != kMax)) {
     throw std::invalid_argument("Invalid dimension for criticalValues");
   }
   if (missingCriticalValues && std::isnan(alpha)) {
-    throw std::invalid_argument("alpha must be provided for missing criticalValues");
+    throw std::invalid_argument(
+        "alpha must be provided for missing criticalValues");
   }
   if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 0.5)) {
     throw std::invalid_argument("alpha must lie in [0.00001, 0.5)");
@@ -491,9 +464,9 @@ DataFrameCpp getADCI_multiarm_cpp(
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
-  if (missingCriticalValues && !(asf == "of" || asf == "p" ||
-      asf == "wt" || asf == "sfof" || asf == "sfp" ||
-      asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
+  if (missingCriticalValues &&
+      !(asf == "of" || asf == "p" || asf == "wt" || asf == "sfof" ||
+        asf == "sfp" || asf == "sfkd" || asf == "sfhsd" || asf == "none")) {
     throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
@@ -501,7 +474,8 @@ DataFrameCpp getADCI_multiarm_cpp(
     throw std::invalid_argument("Missing value for parameterAlphaSpending");
   }
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
+    throw std::invalid_argument(
+        "parameterAlphaSpending must be positive for sfKD");
   }
 
   std::vector<double> spendTime;
@@ -519,7 +493,6 @@ DataFrameCpp getADCI_multiarm_cpp(
     spendTime = infoRates;
   }
 
-
   // Now handle new trial inputs
   std::vector<size_t> selectedNew;
   std::vector<double> infoRatesNew;
@@ -531,7 +504,8 @@ DataFrameCpp getADCI_multiarm_cpp(
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
-  if (MNew < 1) throw std::invalid_argument("MNew must be at least 1");
+  if (MNew < 1)
+    throw std::invalid_argument("MNew must be at least 1");
   for (auto i : selected) {
     if (i < 1 || i > static_cast<int>(M)) {
       throw std::invalid_argument("Invalid value in selected");
@@ -542,12 +516,17 @@ DataFrameCpp getADCI_multiarm_cpp(
   if (selectedNew.size() != MNew)
     throw std::invalid_argument("Length of selected does not match MNew");
 
-  if (rNew <= 0.0) throw std::invalid_argument("rNew must be positive");
+  if (rNew <= 0.0)
+    throw std::invalid_argument("rNew must be positive");
 
-  if (Lc <= L) throw std::invalid_argument("Lc must be greater than L");
-  if (!none_na(zLc)) throw std::invalid_argument("zLc must be provided");
-  if (std::isnan(INew)) throw std::invalid_argument("INew must be provided");
-  if (INew <= 0.0) throw std::invalid_argument("INew must be positive");
+  if (Lc <= L)
+    throw std::invalid_argument("Lc must be greater than L");
+  if (!none_na(zLc))
+    throw std::invalid_argument("zLc must be provided");
+  if (std::isnan(INew))
+    throw std::invalid_argument("INew must be provided");
+  if (INew <= 0.0)
+    throw std::invalid_argument("INew must be positive");
 
   size_t L2 = Lc - L;
 
@@ -579,13 +558,14 @@ DataFrameCpp getADCI_multiarm_cpp(
     }
 
     if (!(asfNew == "of" || asfNew == "sfof" || asfNew == "sfp" ||
-        asfNew == "sfkd" || asfNew == "sfhsd" || asfNew == "none")) {
+          asfNew == "sfkd" || asfNew == "sfhsd" || asfNew == "none")) {
       throw std::invalid_argument("Invalid value for typeAlphaSpendingNew");
     }
 
     if ((asfNew == "sfkd" || asfNew == "sfhsd") &&
         std::isnan(parameterAlphaSpendingNew))
-      throw std::invalid_argument("Missing value for parameterAlphaSpendingNew");
+      throw std::invalid_argument(
+          "Missing value for parameterAlphaSpendingNew");
 
     if (asfNew == "sfkd" && parameterAlphaSpendingNew <= 0.0)
       throw std::invalid_argument(
@@ -617,22 +597,23 @@ DataFrameCpp getADCI_multiarm_cpp(
     }
   }
 
-
   ExitProbResult probs; // placeholder for exit probabilities if needed
 
   // obtain by-level critical values for the primary trial
   FlatMatrix efficacyBounds1(kMax, M);
   if (!none_na(criticalValues.data)) {
     for (size_t M1 = M; M1 > 0; --M1) {
-      auto cut = getBound_multiarm_cpp(
-        M1, r, corr_known, kMax, infoRates, alpha, asf, parameterAlphaSpending,
-        std::vector<double>{}, spendTime, effStopping);
+      auto cut =
+          getBound_multiarm_cpp(M1, r, corr_known, kMax, infoRates, alpha, asf,
+                                parameterAlphaSpending, std::vector<double>{},
+                                spendTime, effStopping);
       flatmatrix_set_column(efficacyBounds1, M - M1, cut);
     }
 
     for (size_t m = 0; m < M; ++m) {
       for (size_t i = 0; i < kMax; ++i) {
-        if (!effStopping[i]) efficacyBounds1(i, m) = 8.0;
+        if (!effStopping[i])
+          efficacyBounds1(i, m) = 8.0;
       }
     }
   } else {
@@ -641,15 +622,13 @@ DataFrameCpp getADCI_multiarm_cpp(
 
   // Primary information vector
   std::vector<double> I(kMax);
-  for (size_t i = 0; i < kMax; ++i) I[i] = IMax * informationRates[i];
-
+  for (size_t i = 0; i < kMax; ++i)
+    I[i] = IMax * informationRates[i];
 
   // sort zLc in descending order
   std::vector<size_t> order = seqcpp(0, MNew - 1);
-  std::sort(order.begin(), order.end(), [&](size_t i, size_t j) {
-    return zLc[i] > zLc[j];
-  });
-
+  std::sort(order.begin(), order.end(),
+            [&](size_t i, size_t j) { return zLc[i] > zLc[j]; });
 
   size_t k1 = kMax - L;
   std::vector<double> s1(k1);
@@ -666,7 +645,6 @@ DataFrameCpp getADCI_multiarm_cpp(
 
   double IL = IMax * infoRates[L - 1];
   double sqrtIL = std::sqrt(IL);
-
 
   size_t k2 = MullerSchafer ? kNew : k1;
   std::vector<double> s2(k2);
@@ -718,8 +696,10 @@ DataFrameCpp getADCI_multiarm_cpp(
     idx_in_selected[selectedNew[t]] = static_cast<int>(t);
 
   // reusable scratch buffers
-  std::vector<double> zL1; zL1.reserve(M);
-  std::vector<double> zL2; zL2.reserve(MNew);
+  std::vector<double> zL1;
+  zL1.reserve(M);
+  std::vector<double> zL2;
+  zL2.reserve(MNew);
   std::vector<double> zL_1(1), zL2_1(1);
   FlatMatrix c2_1(1, k2);
   for (size_t h = 0; h < MNew; ++h) {
@@ -755,7 +735,7 @@ DataFrameCpp getADCI_multiarm_cpp(
     // compute conditional alpha for MAMS with the given M1 hypotheses
     FlatMatrix c1(M1, k1);
     for (size_t i = 0; i < k1; ++i) {
-      double* colptr = c1.data_ptr() + i * M1;
+      double *colptr = c1.data_ptr() + i * M1;
       if (effStopping[L + i]) {
         double crit = critValues[L + i];
         double r1 = infoRates[L - 1] / infoRates[L + i];
@@ -782,8 +762,8 @@ DataFrameCpp getADCI_multiarm_cpp(
     } else {
       if (asf2 != "none" && asf2 != "of") {
         for (size_t i = 0; i < k2; ++i) {
-          cpu0[i] = errorSpentcpp(spendTimeNew[i], c_alpha,
-                                  asfNew, parameterAlphaSpendingNew);
+          cpu0[i] = errorSpentcpp(spendTimeNew[i], c_alpha, asfNew,
+                                  parameterAlphaSpendingNew);
         }
       }
     }
@@ -793,19 +773,19 @@ DataFrameCpp getADCI_multiarm_cpp(
     c2.fill(8.0);
 
     std::vector<double> zscaled(M2);
-    for (size_t j = 0; j < M2; ++j) zscaled[j] = zL[selectedNew2[j]] * sqrtIL;
+    for (size_t j = 0; j < M2; ++j)
+      zscaled[j] = zL[selectedNew2[j]] * sqrtIL;
 
     if (asf2 == "of") {
-      auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2, &effStopping2, &probs,
-                k2, c_alpha, M2, rNew, corr_known]
-      (double x)->double {
+      auto g = [&c2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2, &effStopping2,
+                &probs, k2, c_alpha, M2, rNew, corr_known](double x) -> double {
         double col_const = x * sqrtIc[k2 - 1];
         for (size_t i = 0; i < k2; ++i) {
-          double* colptr = c2.data_ptr() + i * M2;
+          double *colptr = c2.data_ptr() + i * M2;
           if (effStopping2[i]) {
             double denom = sqrtI2[i];
             for (size_t j = 0; j < M2; ++j) {
-              colptr[j] = (col_const - zscaled[j] ) / denom;
+              colptr[j] = (col_const - zscaled[j]) / denom;
             }
           } else {
             std::fill_n(colptr, M2, 8.0);
@@ -821,11 +801,11 @@ DataFrameCpp getADCI_multiarm_cpp(
       double cof = brent(g, 0.0, 8.0, 1e-6);
       double col_const = cof * sqrtIc[k2 - 1];
       for (size_t i = 0; i < k2; ++i) {
-        double* colptr = c2.data_ptr() + i * M2;
+        double *colptr = c2.data_ptr() + i * M2;
         if (effStopping2[i]) {
           double denom = sqrtI2[i];
           for (size_t j = 0; j < M2; ++j) {
-            colptr[j] = (col_const - zscaled[j] ) / denom;
+            colptr[j] = (col_const - zscaled[j]) / denom;
           }
         } else {
           std::fill_n(colptr, M2, 8.0);
@@ -833,11 +813,10 @@ DataFrameCpp getADCI_multiarm_cpp(
       }
     } else if (asf2 == "none") {
       double denom = sqrtI2[k2 - 1];
-      auto g = [&c2, &I2, &sqrtIc, &zscaled, &zero2, &probs,
-                denom, k2, c_alpha, M2, rNew, corr_known]
-      (double x)->double {
+      auto g = [&c2, &I2, &sqrtIc, &zscaled, &zero2, &probs, denom, k2, c_alpha,
+                M2, rNew, corr_known](double x) -> double {
         double col_const = x * sqrtIc[k2 - 1];
-        double* colptr = c2.data_ptr() + (k2 - 1) * M2;
+        double *colptr = c2.data_ptr() + (k2 - 1) * M2;
         for (size_t j = 0; j < M2; ++j) {
           colptr[j] = (col_const - zscaled[j]) / denom;
         }
@@ -850,26 +829,27 @@ DataFrameCpp getADCI_multiarm_cpp(
 
       double cof = brent(g, 0.0, 8.0, 1e-6);
       double col_const = cof * sqrtIc[k2 - 1];
-      double* colptr = c2.data_ptr() + (k2 - 1) * M2;
+      double *colptr = c2.data_ptr() + (k2 - 1) * M2;
       for (size_t j = 0; j < M2; ++j) {
         colptr[j] = (col_const - zscaled[j]) / denom;
       }
     } else {
       for (size_t i = 0; i < k2; ++i) {
-        if (!effStopping2[i]) continue;
+        if (!effStopping2[i])
+          continue;
         double denom = sqrtI2[i];
 
-        auto g = [&c2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs,
-                  denom, i, M2, rNew, corr_known]
-        (double x)->double {
+        auto g = [&c2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs, denom, i,
+                  M2, rNew, corr_known](double x) -> double {
           double col_const = x * sqrtIc[i];
-          double* colptr = c2.data_ptr() + i * M2;
+          double *colptr = c2.data_ptr() + i * M2;
           // update critical values of the secondary trial at current look
           for (size_t j = 0; j < M2; ++j) {
             colptr[j] = (col_const - zscaled[j]) / denom;
           }
 
-          probs = exitprob_multiarm_cpp(M2, rNew, zero2, corr_known, i + 1, c2, I2);
+          probs =
+              exitprob_multiarm_cpp(M2, rNew, zero2, corr_known, i + 1, c2, I2);
           double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                       probs.exitProbUpper.end(), 0.0);
           return p0 - cpu0[i];
@@ -877,13 +857,12 @@ DataFrameCpp getADCI_multiarm_cpp(
 
         double cof = brent(g, 0.0, 8.0, 1e-6);
         double col_const = cof * sqrtIc[i];
-        double* colptr = c2.data_ptr() + i * M2;
+        double *colptr = c2.data_ptr() + i * M2;
         for (size_t j = 0; j < M2; ++j) {
           colptr[j] = (col_const - zscaled[j]) / denom;
         }
       }
     }
-
 
     zL1.resize(M1);
     for (size_t i = 0; i < M1; ++i) {
@@ -898,18 +877,20 @@ DataFrameCpp getADCI_multiarm_cpp(
       zL2[i] = (col_const - zL[selectedNew2[i]] * sqrtIL) / denom;
     }
 
-    pvalue[h] = f_bwpvalue_multiarm(0.0, M1, r, corr_known, kMax, L, zL1, critValues,
-                                I, M2, rNew, L2, zL2, c2, I2);
+    pvalue[h] = f_bwpvalue_multiarm(0.0, M1, r, corr_known, kMax, L, zL1,
+                                    critValues, I, M2, rNew, L2, zL2, c2, I2);
 
-    auto f_med = [&](double theta)->double {
-      return f_bwpvalue_multiarm(theta, M1, r, corr_known, kMax, L, zL1, critValues,
-                              I, M2, rNew, L2, zL2, c2, I2) - 0.5;
+    auto f_med = [&](double theta) -> double {
+      return f_bwpvalue_multiarm(theta, M1, r, corr_known, kMax, L, zL1,
+                                 critValues, I, M2, rNew, L2, zL2, c2, I2) -
+             0.5;
     };
     thetahat[h] = brent(f_med, left, right, tol);
 
-    auto f_low = [&](double theta)->double {
-      return f_bwpvalue_multiarm(theta, M1, r, corr_known, kMax, L, zL1, critValues,
-                              I, M2, rNew, L2, zL2, c2, I2) - target_lower;
+    auto f_low = [&](double theta) -> double {
+      return f_bwpvalue_multiarm(theta, M1, r, corr_known, kMax, L, zL1,
+                                 critValues, I, M2, rNew, L2, zL2, c2, I2) -
+             target_lower;
     };
     lower[h] = brent(f_low, left, thetahat[h], tol);
 
@@ -928,9 +909,10 @@ DataFrameCpp getADCI_multiarm_cpp(
       c2_1(0, i) = c2(j0, i);
     }
 
-    auto f_high = [&](double theta)->double {
-      return f_bwpvalue_multiarm(theta, 1, r, corr_known, kMax, L, zL_1, critValues,
-                              I, 1, rNew, L2, zL2_1, c2_1, I2) - target_upper;
+    auto f_high = [&](double theta) -> double {
+      return f_bwpvalue_multiarm(theta, 1, r, corr_known, kMax, L, zL_1,
+                                 critValues, I, 1, rNew, L2, zL2_1, c2_1, I2) -
+             target_upper;
     };
     upper[h] = brent(f_high, thetahat[h], right, tol);
   }
@@ -948,38 +930,30 @@ DataFrameCpp getADCI_multiarm_cpp(
   return df;
 }
 
-
 // [[Rcpp::export]]
 Rcpp::DataFrame getADCI_multiarm_Rcpp(
-    const int M = NA_INTEGER,
-    const double r = 1,
-    const bool corr_known = true,
-    const int L = NA_INTEGER,
-    const Rcpp::NumericVector& zL = NA_REAL,
-    const double IMax = NA_REAL,
-    const int kMax = NA_INTEGER,
-    const Rcpp::NumericVector& informationRates = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
+    const int M = NA_INTEGER, const double r = 1, const bool corr_known = true,
+    const int L = NA_INTEGER, const Rcpp::NumericVector &zL = NA_REAL,
+    const double IMax = NA_REAL, const int kMax = NA_INTEGER,
+    const Rcpp::NumericVector &informationRates = NA_REAL,
+    const Rcpp::LogicalVector &efficacyStopping = NA_LOGICAL,
     const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues = R_NilValue,
-    const double alpha = 0.25,
-    const std::string& typeAlphaSpending = "sfOF",
+    const double alpha = 0.25, const std::string &typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& spendingTime = NA_REAL,
-    const bool MullerSchafer = false,
-    const int MNew = NA_INTEGER,
-    const Rcpp::IntegerVector& selected = NA_INTEGER,
-    const double rNew = 1,
-    const int Lc = NA_INTEGER,
-    const Rcpp::NumericVector& zLc = NA_REAL,
+    const Rcpp::NumericVector &spendingTime = NA_REAL,
+    const bool MullerSchafer = false, const int MNew = NA_INTEGER,
+    const Rcpp::IntegerVector &selected = NA_INTEGER, const double rNew = 1,
+    const int Lc = NA_INTEGER, const Rcpp::NumericVector &zLc = NA_REAL,
     const double INew = NA_REAL,
-    const Rcpp::NumericVector& informationRatesNew = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStoppingNew = NA_LOGICAL,
-    const std::string& typeAlphaSpendingNew = "sfOF",
+    const Rcpp::NumericVector &informationRatesNew = NA_REAL,
+    const Rcpp::LogicalVector &efficacyStoppingNew = NA_LOGICAL,
+    const std::string &typeAlphaSpendingNew = "sfOF",
     const double parameterAlphaSpendingNew = NA_REAL,
-    const Rcpp::NumericVector& spendingTimeNew = NA_REAL) {
+    const Rcpp::NumericVector &spendingTimeNew = NA_REAL) {
 
   std::vector<double> zLVec(zL.begin(), zL.end());
-  std::vector<double> infoRates(informationRates.begin(), informationRates.end());
+  std::vector<double> infoRates(informationRates.begin(),
+                                informationRates.end());
   auto effStopping = convertLogicalVector(efficacyStopping);
 
   // Handle optional matrix safely
@@ -999,14 +973,15 @@ Rcpp::DataFrame getADCI_multiarm_Rcpp(
   std::vector<double> infoRatesNew(informationRatesNew.begin(),
                                    informationRatesNew.end());
   auto effStoppingNew = convertLogicalVector(efficacyStoppingNew);
-  std::vector<double> spendTimeNew(spendingTimeNew.begin(), spendingTimeNew.end());
+  std::vector<double> spendTimeNew(spendingTimeNew.begin(),
+                                   spendingTimeNew.end());
 
   auto result = getADCI_multiarm_cpp(
-    static_cast<size_t>(M), r, corr_known,
-    static_cast<size_t>(L), zLVec, IMax, static_cast<size_t>(kMax), infoRates,
-    effStopping, critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
-    spendTime, MullerSchafer, static_cast<size_t>(MNew), selectedNew, rNew,
-    static_cast<size_t>(Lc), zLcVec, INew, infoRatesNew, effStoppingNew,
-    typeAlphaSpendingNew, parameterAlphaSpendingNew, spendTimeNew);
+      static_cast<size_t>(M), r, corr_known, static_cast<size_t>(L), zLVec,
+      IMax, static_cast<size_t>(kMax), infoRates, effStopping, critValues,
+      alpha, typeAlphaSpending, parameterAlphaSpending, spendTime,
+      MullerSchafer, static_cast<size_t>(MNew), selectedNew, rNew,
+      static_cast<size_t>(Lc), zLcVec, INew, infoRatesNew, effStoppingNew,
+      typeAlphaSpendingNew, parameterAlphaSpendingNew, spendTimeNew);
   return Rcpp::wrap(result);
 }

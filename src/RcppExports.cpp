@@ -11,9 +11,9 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// fadjpRcpp
-Rcpp::List fadjpRcpp(const std::vector<double>& stg2_p, const Rcpp::Nullable<Rcpp::List>& wgtmat, const Rcpp::Nullable<Rcpp::LogicalMatrix>& family, const Rcpp::Nullable<Rcpp::NumericMatrix>& corr, const std::vector<int>& stg1_inthyp_nr, const std::vector<int>& stg2_elemhyp, const Rcpp::Nullable<Rcpp::List>& stg2_wgtmat, const std::string& test);
-RcppExport SEXP _lrstat_fadjpRcpp(SEXP stg2_pSEXP, SEXP wgtmatSEXP, SEXP familySEXP, SEXP corrSEXP, SEXP stg1_inthyp_nrSEXP, SEXP stg2_elemhypSEXP, SEXP stg2_wgtmatSEXP, SEXP testSEXP) {
+// fPCStagewiseRcpp
+Rcpp::List fPCStagewiseRcpp(const std::vector<double>& stg2_p, const Rcpp::Nullable<Rcpp::List>& wgtmat, const Rcpp::Nullable<Rcpp::LogicalMatrix>& family, const Rcpp::Nullable<Rcpp::NumericMatrix>& corr, const std::vector<int>& stg1_inthyp_nr, const std::vector<int>& stg2_elemhyp, const Rcpp::Nullable<Rcpp::List>& stg2_wgtmat, const std::string& test);
+RcppExport SEXP _lrstat_fPCStagewiseRcpp(SEXP stg2_pSEXP, SEXP wgtmatSEXP, SEXP familySEXP, SEXP corrSEXP, SEXP stg1_inthyp_nrSEXP, SEXP stg2_elemhypSEXP, SEXP stg2_wgtmatSEXP, SEXP testSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -25,106 +25,102 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const std::vector<int>& >::type stg2_elemhyp(stg2_elemhypSEXP);
     Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::List>& >::type stg2_wgtmat(stg2_wgtmatSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type test(testSEXP);
-    rcpp_result_gen = Rcpp::wrap(fadjpRcpp(stg2_p, wgtmat, family, corr, stg1_inthyp_nr, stg2_elemhyp, stg2_wgtmat, test));
+    rcpp_result_gen = Rcpp::wrap(fPCStagewiseRcpp(stg2_p, wgtmat, family, corr, stg1_inthyp_nr, stg2_elemhyp, stg2_wgtmat, test));
     return rcpp_result_gen;
 END_RCPP
 }
 // fPCStage1Rcpp
-Rcpp::List fPCStage1Rcpp(const int m, const Rcpp::List& stg1_loc_p, const double alpha1);
-RcppExport SEXP _lrstat_fPCStage1Rcpp(SEXP mSEXP, SEXP stg1_loc_pSEXP, SEXP alpha1SEXP) {
+Rcpp::List fPCStage1Rcpp(const Rcpp::List& stg1_loc_p, const double alpha1);
+RcppExport SEXP _lrstat_fPCStage1Rcpp(SEXP stg1_loc_pSEXP, SEXP alpha1SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const int >::type m(mSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type stg1_loc_p(stg1_loc_pSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha1(alpha1SEXP);
-    rcpp_result_gen = Rcpp::wrap(fPCStage1Rcpp(m, stg1_loc_p, alpha1));
+    rcpp_result_gen = Rcpp::wrap(fPCStage1Rcpp(stg1_loc_p, alpha1));
     return rcpp_result_gen;
 END_RCPP
 }
-// fPCrejRcpp
-Rcpp::List fPCrejRcpp(const std::vector<int>& stg1_elemhyp_r_idx, const std::vector<int>& stg2_elemhyp_idx, const Rcpp::List& stg1_loc_p, const Rcpp::List& stg2_loc_p, const double alpha, const double info_frac);
-RcppExport SEXP _lrstat_fPCrejRcpp(SEXP stg1_elemhyp_r_idxSEXP, SEXP stg2_elemhyp_idxSEXP, SEXP stg1_loc_pSEXP, SEXP stg2_loc_pSEXP, SEXP alphaSEXP, SEXP info_fracSEXP) {
+// fPCRejRcpp
+Rcpp::List fPCRejRcpp(const Rcpp::List& stg1_loc_p, const Rcpp::List& stg2_loc_p, const std::vector<int>& stg1_elemhyp_r_idx, const std::vector<int>& stg2_elemhyp_idx, const double alpha, const double info_frac);
+RcppExport SEXP _lrstat_fPCRejRcpp(SEXP stg1_loc_pSEXP, SEXP stg2_loc_pSEXP, SEXP stg1_elemhyp_r_idxSEXP, SEXP stg2_elemhyp_idxSEXP, SEXP alphaSEXP, SEXP info_fracSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::vector<int>& >::type stg1_elemhyp_r_idx(stg1_elemhyp_r_idxSEXP);
-    Rcpp::traits::input_parameter< const std::vector<int>& >::type stg2_elemhyp_idx(stg2_elemhyp_idxSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type stg1_loc_p(stg1_loc_pSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type stg2_loc_p(stg2_loc_pSEXP);
+    Rcpp::traits::input_parameter< const std::vector<int>& >::type stg1_elemhyp_r_idx(stg1_elemhyp_r_idxSEXP);
+    Rcpp::traits::input_parameter< const std::vector<int>& >::type stg2_elemhyp_idx(stg2_elemhyp_idxSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const double >::type info_frac(info_fracSEXP);
-    rcpp_result_gen = Rcpp::wrap(fPCrejRcpp(stg1_elemhyp_r_idx, stg2_elemhyp_idx, stg1_loc_p, stg2_loc_p, alpha, info_frac));
+    rcpp_result_gen = Rcpp::wrap(fPCRejRcpp(stg1_loc_p, stg2_loc_p, stg1_elemhyp_r_idx, stg2_elemhyp_idx, alpha, info_frac));
     return rcpp_result_gen;
 END_RCPP
 }
-// fStageBoundRcpp
-Rcpp::List fStageBoundRcpp(const int m, const Rcpp::List& wgtmat, const Rcpp::LogicalMatrix& family, const Rcpp::NumericMatrix& corr, const double alpha, const double alpha1, const double info_frac);
-RcppExport SEXP _lrstat_fStageBoundRcpp(SEXP mSEXP, SEXP wgtmatSEXP, SEXP familySEXP, SEXP corrSEXP, SEXP alphaSEXP, SEXP alpha1SEXP, SEXP info_fracSEXP) {
+// fCERStageBoundRcpp
+Rcpp::List fCERStageBoundRcpp(const Rcpp::List& wgtmat, const Rcpp::LogicalMatrix& family, const Rcpp::NumericMatrix& corr, const double alpha, const double alpha1, const double info_frac);
+RcppExport SEXP _lrstat_fCERStageBoundRcpp(SEXP wgtmatSEXP, SEXP familySEXP, SEXP corrSEXP, SEXP alphaSEXP, SEXP alpha1SEXP, SEXP info_fracSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const int >::type m(mSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type wgtmat(wgtmatSEXP);
     Rcpp::traits::input_parameter< const Rcpp::LogicalMatrix& >::type family(familySEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type corr(corrSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha1(alpha1SEXP);
     Rcpp::traits::input_parameter< const double >::type info_frac(info_fracSEXP);
-    rcpp_result_gen = Rcpp::wrap(fStageBoundRcpp(m, wgtmat, family, corr, alpha, alpha1, info_frac));
+    rcpp_result_gen = Rcpp::wrap(fCERStageBoundRcpp(wgtmat, family, corr, alpha, alpha1, info_frac));
     return rcpp_result_gen;
 END_RCPP
 }
-// fCERRcpp
-Rcpp::List fCERRcpp(const int m, const Rcpp::List& wgtmat, const Rcpp::LogicalMatrix& family, const Rcpp::NumericMatrix& corr, const double info_frac, const Rcpp::NumericMatrix& stg1_bnd, const Rcpp::NumericMatrix& stg2_bnd, const std::vector<double>& stg1_p);
-RcppExport SEXP _lrstat_fCERRcpp(SEXP mSEXP, SEXP wgtmatSEXP, SEXP familySEXP, SEXP corrSEXP, SEXP info_fracSEXP, SEXP stg1_bndSEXP, SEXP stg2_bndSEXP, SEXP stg1_pSEXP) {
+// fCERCerRcpp
+Rcpp::List fCERCerRcpp(const std::vector<double>& stg1_p, const Rcpp::List& wgtmat, const Rcpp::LogicalMatrix& family, const Rcpp::NumericMatrix& corr, const double info_frac, const Rcpp::NumericMatrix& stg1_bnd, const Rcpp::NumericMatrix& stg2_bnd);
+RcppExport SEXP _lrstat_fCERCerRcpp(SEXP stg1_pSEXP, SEXP wgtmatSEXP, SEXP familySEXP, SEXP corrSEXP, SEXP info_fracSEXP, SEXP stg1_bndSEXP, SEXP stg2_bndSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const int >::type m(mSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type stg1_p(stg1_pSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type wgtmat(wgtmatSEXP);
     Rcpp::traits::input_parameter< const Rcpp::LogicalMatrix& >::type family(familySEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type corr(corrSEXP);
     Rcpp::traits::input_parameter< const double >::type info_frac(info_fracSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type stg1_bnd(stg1_bndSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type stg2_bnd(stg2_bndSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type stg1_p(stg1_pSEXP);
-    rcpp_result_gen = Rcpp::wrap(fCERRcpp(m, wgtmat, family, corr, info_frac, stg1_bnd, stg2_bnd, stg1_p));
+    rcpp_result_gen = Rcpp::wrap(fCERCerRcpp(stg1_p, wgtmat, family, corr, info_frac, stg1_bnd, stg2_bnd));
     return rcpp_result_gen;
 END_RCPP
 }
-// fNewBoundRcpp
-Rcpp::List fNewBoundRcpp(const int m, const Rcpp::List& wgtmat, const Rcpp::LogicalMatrix& family, const Rcpp::NumericMatrix& corr, const std::vector<double>& stg1_p, const std::vector<int>& stg1_inthyp_nr_idx, const std::vector<double>& CER, const std::vector<int>& stg2_elemhyp_idx, const Rcpp::List& stg2_wgtmat, const double info_frac_new);
-RcppExport SEXP _lrstat_fNewBoundRcpp(SEXP mSEXP, SEXP wgtmatSEXP, SEXP familySEXP, SEXP corrSEXP, SEXP stg1_pSEXP, SEXP stg1_inthyp_nr_idxSEXP, SEXP CERSEXP, SEXP stg2_elemhyp_idxSEXP, SEXP stg2_wgtmatSEXP, SEXP info_frac_newSEXP) {
+// fCERNewBoundRcpp
+Rcpp::List fCERNewBoundRcpp(const std::vector<double>& stg1_p, const Rcpp::List& wgtmat, const Rcpp::LogicalMatrix& family, const Rcpp::NumericMatrix& corr, const std::vector<int>& stg1_inthyp_nr_idx, const std::vector<double>& CER, const std::vector<int>& stg2_elemhyp_idx, const Rcpp::List& stg2_wgtmat, const double info_frac_new);
+RcppExport SEXP _lrstat_fCERNewBoundRcpp(SEXP stg1_pSEXP, SEXP wgtmatSEXP, SEXP familySEXP, SEXP corrSEXP, SEXP stg1_inthyp_nr_idxSEXP, SEXP CERSEXP, SEXP stg2_elemhyp_idxSEXP, SEXP stg2_wgtmatSEXP, SEXP info_frac_newSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const int >::type m(mSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type stg1_p(stg1_pSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type wgtmat(wgtmatSEXP);
     Rcpp::traits::input_parameter< const Rcpp::LogicalMatrix& >::type family(familySEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type corr(corrSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type stg1_p(stg1_pSEXP);
     Rcpp::traits::input_parameter< const std::vector<int>& >::type stg1_inthyp_nr_idx(stg1_inthyp_nr_idxSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type CER(CERSEXP);
     Rcpp::traits::input_parameter< const std::vector<int>& >::type stg2_elemhyp_idx(stg2_elemhyp_idxSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type stg2_wgtmat(stg2_wgtmatSEXP);
     Rcpp::traits::input_parameter< const double >::type info_frac_new(info_frac_newSEXP);
-    rcpp_result_gen = Rcpp::wrap(fNewBoundRcpp(m, wgtmat, family, corr, stg1_p, stg1_inthyp_nr_idx, CER, stg2_elemhyp_idx, stg2_wgtmat, info_frac_new));
+    rcpp_result_gen = Rcpp::wrap(fCERNewBoundRcpp(stg1_p, wgtmat, family, corr, stg1_inthyp_nr_idx, CER, stg2_elemhyp_idx, stg2_wgtmat, info_frac_new));
     return rcpp_result_gen;
 END_RCPP
 }
-// fCERrejRcpp
-Rcpp::LogicalVector fCERrejRcpp(const std::vector<int>& stg1_elemhyp_r_idx, const std::vector<int>& stg2_elemhyp_idx, const Rcpp::IntegerMatrix& stg2_inthyp, const Rcpp::NumericMatrix& stg2_bnd_new, const std::vector<double>& cum_p);
-RcppExport SEXP _lrstat_fCERrejRcpp(SEXP stg1_elemhyp_r_idxSEXP, SEXP stg2_elemhyp_idxSEXP, SEXP stg2_inthypSEXP, SEXP stg2_bnd_newSEXP, SEXP cum_pSEXP) {
+// fCERRejRcpp
+Rcpp::LogicalVector fCERRejRcpp(const std::vector<double>& cum_p, const std::vector<int>& stg1_elemhyp_r_idx, const std::vector<int>& stg2_elemhyp_idx, const Rcpp::IntegerMatrix& stg2_inthyp, const Rcpp::NumericMatrix& stg2_bnd_new);
+RcppExport SEXP _lrstat_fCERRejRcpp(SEXP cum_pSEXP, SEXP stg1_elemhyp_r_idxSEXP, SEXP stg2_elemhyp_idxSEXP, SEXP stg2_inthypSEXP, SEXP stg2_bnd_newSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type cum_p(cum_pSEXP);
     Rcpp::traits::input_parameter< const std::vector<int>& >::type stg1_elemhyp_r_idx(stg1_elemhyp_r_idxSEXP);
     Rcpp::traits::input_parameter< const std::vector<int>& >::type stg2_elemhyp_idx(stg2_elemhyp_idxSEXP);
     Rcpp::traits::input_parameter< const Rcpp::IntegerMatrix& >::type stg2_inthyp(stg2_inthypSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type stg2_bnd_new(stg2_bnd_newSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type cum_p(cum_pSEXP);
-    rcpp_result_gen = Rcpp::wrap(fCERrejRcpp(stg1_elemhyp_r_idx, stg2_elemhyp_idx, stg2_inthyp, stg2_bnd_new, cum_p));
+    rcpp_result_gen = Rcpp::wrap(fCERRejRcpp(cum_p, stg1_elemhyp_r_idx, stg2_elemhyp_idx, stg2_inthyp, stg2_bnd_new));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -3767,13 +3763,13 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_lrstat_fadjpRcpp", (DL_FUNC) &_lrstat_fadjpRcpp, 8},
-    {"_lrstat_fPCStage1Rcpp", (DL_FUNC) &_lrstat_fPCStage1Rcpp, 3},
-    {"_lrstat_fPCrejRcpp", (DL_FUNC) &_lrstat_fPCrejRcpp, 6},
-    {"_lrstat_fStageBoundRcpp", (DL_FUNC) &_lrstat_fStageBoundRcpp, 7},
-    {"_lrstat_fCERRcpp", (DL_FUNC) &_lrstat_fCERRcpp, 8},
-    {"_lrstat_fNewBoundRcpp", (DL_FUNC) &_lrstat_fNewBoundRcpp, 10},
-    {"_lrstat_fCERrejRcpp", (DL_FUNC) &_lrstat_fCERrejRcpp, 5},
+    {"_lrstat_fPCStagewiseRcpp", (DL_FUNC) &_lrstat_fPCStagewiseRcpp, 8},
+    {"_lrstat_fPCStage1Rcpp", (DL_FUNC) &_lrstat_fPCStage1Rcpp, 2},
+    {"_lrstat_fPCRejRcpp", (DL_FUNC) &_lrstat_fPCRejRcpp, 6},
+    {"_lrstat_fCERStageBoundRcpp", (DL_FUNC) &_lrstat_fCERStageBoundRcpp, 6},
+    {"_lrstat_fCERCerRcpp", (DL_FUNC) &_lrstat_fCERCerRcpp, 7},
+    {"_lrstat_fCERNewBoundRcpp", (DL_FUNC) &_lrstat_fCERNewBoundRcpp, 9},
+    {"_lrstat_fCERRejRcpp", (DL_FUNC) &_lrstat_fCERRejRcpp, 5},
     {"_lrstat_getCP", (DL_FUNC) &_lrstat_getCP, 32},
     {"_lrstat_getCP_multiarm_Rcpp", (DL_FUNC) &_lrstat_getCP_multiarm_Rcpp, 37},
     {"_lrstat_getCP_seamless_Rcpp", (DL_FUNC) &_lrstat_getCP_seamless_Rcpp, 35},

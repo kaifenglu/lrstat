@@ -1,8 +1,8 @@
 #include "dataframe_list.h"
-#include "thread_utils.h"
-#include "utilities.h"
 #include "generic_design.h"
 #include "mvnormr.h"
+#include "thread_utils.h"
+#include "utilities.h"
 
 #include <Rcpp.h>
 #include <RcppParallel.h>
@@ -21,27 +21,32 @@
 
 using std::size_t;
 
+ExitProbResult exitprob_multiarm_cpp(const size_t M, const double r,
+                                     const std::vector<double> &theta,
+                                     const bool corr_known, const size_t kMax,
+                                     const FlatMatrix &b, const FlatMatrix &a,
+                                     const std::vector<double> &I) {
 
-ExitProbResult exitprob_multiarm_cpp(
-    const size_t M,
-    const double r,
-    const std::vector<double>& theta,
-    const bool corr_known,
-    const size_t kMax,
-    const FlatMatrix& b,
-    const FlatMatrix& a,
-    const std::vector<double>& I) {
-
-  if (M < 1) throw std::invalid_argument("M should be at least 1");
-  if (r <= 0.0) throw std::invalid_argument("r should be positive");
-  if (theta.size() != M) throw std::invalid_argument("theta should have length M");
-  if (kMax < 1) throw std::invalid_argument("kMax should be at least 1");
-  if (!none_na(b.data)) throw std::invalid_argument("b must be provided");
-  if (!none_na(a.data)) throw std::invalid_argument("a must be provided");
-  if (b.nrow != M) throw std::invalid_argument("b should have M rows");
-  if (b.ncol < kMax) throw std::invalid_argument("Insufficient columns for b");
-  if (a.nrow != M) throw std::invalid_argument("a should have M rows");
-  if (a.ncol < kMax) throw std::invalid_argument("Insufficient columns for a");
+  if (M < 1)
+    throw std::invalid_argument("M should be at least 1");
+  if (r <= 0.0)
+    throw std::invalid_argument("r should be positive");
+  if (theta.size() != M)
+    throw std::invalid_argument("theta should have length M");
+  if (kMax < 1)
+    throw std::invalid_argument("kMax should be at least 1");
+  if (!none_na(b.data))
+    throw std::invalid_argument("b must be provided");
+  if (!none_na(a.data))
+    throw std::invalid_argument("a must be provided");
+  if (b.nrow != M)
+    throw std::invalid_argument("b should have M rows");
+  if (b.ncol < kMax)
+    throw std::invalid_argument("Insufficient columns for b");
+  if (a.nrow != M)
+    throw std::invalid_argument("a should have M rows");
+  if (a.ncol < kMax)
+    throw std::invalid_argument("Insufficient columns for a");
   for (size_t k = 0; k < kMax; ++k) {
     for (size_t m = 0; m < M; ++m) {
       if (b(m, k) < a(m, k)) {
@@ -50,12 +55,16 @@ ExitProbResult exitprob_multiarm_cpp(
     }
   }
 
-  std::vector<double> Ivec; Ivec.reserve(kMax);
+  std::vector<double> Ivec;
+  Ivec.reserve(kMax);
   if (none_na(I)) {
-    if (I.size() < kMax) throw std::invalid_argument("Insufficient length for I");
+    if (I.size() < kMax)
+      throw std::invalid_argument("Insufficient length for I");
     Ivec.assign(I.begin(), I.begin() + kMax);
-    if (Ivec[0] <= 0.0) throw std::invalid_argument("I must be positive");
-    if (any_nonincreasing(Ivec)) throw std::invalid_argument("I must be increasing");
+    if (Ivec[0] <= 0.0)
+      throw std::invalid_argument("I must be positive");
+    if (any_nonincreasing(Ivec))
+      throw std::invalid_argument("I must be increasing");
   } else {
     Ivec.resize(kMax);
     std::iota(Ivec.begin(), Ivec.end(), 1.0);
@@ -71,10 +80,12 @@ ExitProbResult exitprob_multiarm_cpp(
   auto lowest_bit_index = [](std::uint64_t x) -> int {
     // x must be non-zero. trailing-zero count by shifting.
     int pos = 0;
-    while ((x & 1ULL) == 0ULL) { x >>= 1; ++pos; }
+    while ((x & 1ULL) == 0ULL) {
+      x >>= 1;
+      ++pos;
+    }
     return pos;
   };
-
 
   std::vector<double> exitProbUpper(kMax), exitProbLower(kMax);
 
@@ -92,7 +103,8 @@ ExitProbResult exitprob_multiarm_cpp(
       for (size_t m = 0; m < M; ++m) {
         size_t idx = k * M + m;
         upper[idx] = b(m, k) - theta[m] * sqrtI[k];
-        if (a(m, k) > -8.0) lower[idx] = a(m, k) - theta[m] * sqrtI[k];
+        if (a(m, k) > -8.0)
+          lower[idx] = a(m, k) - theta[m] * sqrtI[k];
       }
     }
 
@@ -123,7 +135,8 @@ ExitProbResult exitprob_multiarm_cpp(
     for (size_t k = 1; k <= kMax; ++k) {
       std::size_t nk = M * k;
 
-      upper1.resize(nk); lower1.resize(nk);
+      upper1.resize(nk);
+      lower1.resize(nk);
       std::memcpy(upper1.data(), upper.data(), nk * sizeof(double));
       std::memcpy(lower1.data(), lower.data(), nk * sizeof(double));
 
@@ -135,7 +148,8 @@ ExitProbResult exitprob_multiarm_cpp(
       // working buffer (contiguous), initialized to b for first k - 1 looks
       c.resize(nk);
       size_t nk2 = (k - 1) * M;
-      if (k > 1) std::memcpy(c.data(), upper1.data(), nk2 * sizeof(double));
+      if (k > 1)
+        std::memcpy(c.data(), upper1.data(), nk2 * sizeof(double));
 
       // collect active indices among 0..k-2 where a[i] != -8
       std::vector<std::size_t> active;
@@ -154,8 +168,9 @@ ExitProbResult exitprob_multiarm_cpp(
       const std::uint64_t totalComb = (m == 0) ? 1ULL : (1ULL << m);
       double vupper1 = 0.0, vupper2 = 0.0, vlower = 0.0;
 
-      // initial sign: choose a for every active index, each contributes -1 => (-1)^m
-      double sign = ( (m % 2) ? -1.0 : 1.0 );
+      // initial sign: choose a for every active index, each contributes -1 =>
+      // (-1)^m
+      double sign = ((m % 2) ? -1.0 : 1.0);
 
       std::uint64_t prevGray = 0;
 
@@ -169,7 +184,7 @@ ExitProbResult exitprob_multiarm_cpp(
           const std::size_t idx = active[bitPos];
           const bool choseB = ((gray >> bitPos) & 1ULL) != 0ULL;
           size_t j = idx * M; // start of the block for index idx
-          if (choseB) { // copy b[idx] into c
+          if (choseB) {       // copy b[idx] into c
             std::memcpy(c.data() + j, upper1.data() + j, M * sizeof(double));
           } else { // copy a[idx] into c
             std::memcpy(c.data() + j, lower1.data() + j, M * sizeof(double));
@@ -187,22 +202,26 @@ ExitProbResult exitprob_multiarm_cpp(
           if (k > 1) {
             for (size_t j = 0; j + 1 < k; ++j) {
               upper2[j] = c[j * M]; // arm 0; identical for all arms
-              if (upper2[j] < -8.0) upper2[j] = -8.0;
+              if (upper2[j] < -8.0)
+                upper2[j] = -8.0;
             }
             probs = exitprobcpp(upper2, lo, zero, Ivec);
             s_upper1 = 1.0 - std::accumulate(probs.exitProbUpper.begin(),
                                              probs.exitProbUpper.end(), 0.0);
-            std::memcpy(upper1a.data(), upper2.data(), (k - 1) * sizeof(double));
+            std::memcpy(upper1a.data(), upper2.data(),
+                        (k - 1) * sizeof(double));
           }
 
           upper1a[k - 1] = upper1[(k - 1) * M]; // arm 0; identical for all arms
-          if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
+          if (upper1a[k - 1] < -8.0)
+            upper1a[k - 1] = -8.0;
           probs = exitprobcpp(upper1a, lo, zero, Ivec);
           s_upper2 = 1.0 - std::accumulate(probs.exitProbUpper.begin(),
                                            probs.exitProbUpper.end(), 0.0);
 
           upper1a[k - 1] = lower1[(k - 1) * M]; // arm 0; identical for all arms
-          if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
+          if (upper1a[k - 1] < -8.0)
+            upper1a[k - 1] = -8.0;
           probs = exitprobcpp(upper1a, lo, zero, Ivec);
           s_lower = 1.0 - std::accumulate(probs.exitProbUpper.begin(),
                                           probs.exitProbUpper.end(), 0.0);
@@ -210,44 +229,54 @@ ExitProbResult exitprob_multiarm_cpp(
           const double pm = static_cast<double>(M);
           pupper1 = std::pow(s_upper1, pm);
           pupper2 = std::pow(s_upper2, pm);
-          plower  = std::pow(s_lower,  pm);
+          plower = std::pow(s_lower, pm);
         } else {
           // General case: per-arm products
-          pupper1 = 1.0; pupper2 = 1.0; plower = 1.0;
+          pupper1 = 1.0;
+          pupper2 = 1.0;
+          plower = 1.0;
           for (size_t m = 0; m < M; ++m) {
             if (k > 1) {
               for (size_t j = 0; j + 1 < k; ++j) {
                 upper2[j] = c[j * M + m];
-                if (upper2[j] < -8.0) upper2[j] = -8.0;
+                if (upper2[j] < -8.0)
+                  upper2[j] = -8.0;
               }
               probs = exitprobcpp(upper2, lo, zero, Ivec);
-              pupper1 *= (1.0 - std::accumulate(probs.exitProbUpper.begin(),
-                                                probs.exitProbUpper.end(), 0.0));
-              std::memcpy(upper1a.data(), upper2.data(), (k - 1) * sizeof(double));
+              pupper1 *=
+                  (1.0 - std::accumulate(probs.exitProbUpper.begin(),
+                                         probs.exitProbUpper.end(), 0.0));
+              std::memcpy(upper1a.data(), upper2.data(),
+                          (k - 1) * sizeof(double));
             }
 
             upper1a[k - 1] = upper1[(k - 1) * M + m];
-            if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
+            if (upper1a[k - 1] < -8.0)
+              upper1a[k - 1] = -8.0;
             probs = exitprobcpp(upper1a, lo, zero, Ivec);
             pupper2 *= (1.0 - std::accumulate(probs.exitProbUpper.begin(),
                                               probs.exitProbUpper.end(), 0.0));
 
             upper1a[k - 1] = lower1[(k - 1) * M + m];
-            if (upper1a[k - 1] < -8.0) upper1a[k - 1] = -8.0;
+            if (upper1a[k - 1] < -8.0)
+              upper1a[k - 1] = -8.0;
             probs = exitprobcpp(upper1a, lo, zero, Ivec);
             plower *= (1.0 - std::accumulate(probs.exitProbUpper.begin(),
                                              probs.exitProbUpper.end(), 0.0));
           }
         }
 
-        if (k > 1) vupper1 += sign * pupper1;
+        if (k > 1)
+          vupper1 += sign * pupper1;
         vupper2 += sign * pupper2;
         vlower += sign * plower;
         prevGray = gray;
       }
 
-      if (k > 1) exitProbUpper[k - 1] = vupper1 - vupper2;
-      else exitProbUpper[k - 1] = 1.0 - vupper2;
+      if (k > 1)
+        exitProbUpper[k - 1] = vupper1 - vupper2;
+      else
+        exitProbUpper[k - 1] = 1.0 - vupper2;
 
       exitProbLower[k - 1] = vlower;
     }
@@ -260,13 +289,14 @@ ExitProbResult exitprob_multiarm_cpp(
       for (size_t m = 0; m < M; ++m) {
         double upper = (b(m, 0) - theta[m] * sqrtI0 - sqrtrho * z0) / sqrt1mr;
         double mass = boost_pnorm(upper);
-        if (mass <= 0.0) return 0.0;
+        if (mass <= 0.0)
+          return 0.0;
         value *= mass;
       }
       return value * boost_dnorm(z0);
     };
 
-    std::vector<double> breaks = { -8.0, 0.0, 8.0 };
+    std::vector<double> breaks = {-8.0, 0.0, 8.0};
     double p1 = integrate3(f1, breaks, 1e-6);
     exitProbUpper[0] = 1.0 - p1;
 
@@ -275,7 +305,8 @@ ExitProbResult exitprob_multiarm_cpp(
       for (size_t m = 0; m < M; ++m) {
         double upper = (a(m, 0) - theta[m] * sqrtI0 - sqrtrho * z0) / sqrt1mr;
         double mass = boost_pnorm(upper);
-        if (mass <= 0.0) return 0.0;
+        if (mass <= 0.0)
+          return 0.0;
         value *= mass;
       }
       return value * boost_dnorm(z0);
@@ -311,15 +342,17 @@ ExitProbResult exitprob_multiarm_cpp(
     for (size_t k2 = 0; k2 < kMax; ++k2) {
       for (size_t k1 = 0; k1 < kMax; ++k1) {
         size_t k = std::min(k1, k2);
-        double val_off = rho * s[k];    // value for off-diagonal (m1 != m2)
-        double val_diag = s[k];         // diagonal (m1 == m2)
+        double val_off = rho * s[k]; // value for off-diagonal (m1 != m2)
+        double val_diag = s[k];      // diagonal (m1 == m2)
         // block row base and block col base:
         std::size_t row_base = k1 * M;
         std::size_t col_base = k2 * M;
-        // for each column (m2) inside the MxM block, fill contiguous column segment:
+        // for each column (m2) inside the MxM block, fill contiguous column
+        // segment:
         for (size_t m2 = 0; m2 < M; ++m2) {
           // pointer to start of the column (col_index) at row row_base
-          double* dst_col = sigma.data_ptr() + (col_base + m2) * fullN + row_base;
+          double *dst_col =
+              sigma.data_ptr() + (col_base + m2) * fullN + row_base;
           // fill M entries in that column with off-diagonal value
           std::fill_n(dst_col, M, val_off);
           // overwrite the diagonal element (at offset m2 inside this block)
@@ -336,8 +369,8 @@ ExitProbResult exitprob_multiarm_cpp(
     // copy top-left into sigma1 (column-major): one memcpy per column
     FlatMatrix sigma1(M, M);
     for (std::size_t j = 0; j < M; ++j) {
-      const double* src = sigma.data_ptr() + j * fullN;
-      double* dst = sigma1.data_ptr() + j * M;
+      const double *src = sigma.data_ptr() + j * fullN;
+      double *dst = sigma1.data_ptr() + j * M;
       std::memcpy(dst, src, M * sizeof(double));
     }
 
@@ -346,7 +379,10 @@ ExitProbResult exitprob_multiarm_cpp(
     for (size_t k = 1; k <= kMax; ++k) {
       std::size_t nk = M * k;
 
-      upper1.resize(nk); lower1.resize(nk); zero1.resize(nk); lower1m.resize(nk);
+      upper1.resize(nk);
+      lower1.resize(nk);
+      zero1.resize(nk);
+      lower1m.resize(nk);
       std::memcpy(upper1.data(), upper.data(), nk * sizeof(double));
       std::memcpy(lower1.data(), lower.data(), nk * sizeof(double));
       std::memcpy(zero1.data(), zero.data(), nk * sizeof(double));
@@ -354,7 +390,9 @@ ExitProbResult exitprob_multiarm_cpp(
 
       size_t nk2 = (k - 1) * M;
       if (k > 1) {
-        upper2.resize(nk2); lower2.resize(nk2); zero2.resize(nk2);
+        upper2.resize(nk2);
+        lower2.resize(nk2);
+        zero2.resize(nk2);
         std::fill_n(lower2.data(), nk2, -8.0);
         std::memcpy(zero2.data(), zero1.data(), nk2 * sizeof(double));
       }
@@ -362,20 +400,21 @@ ExitProbResult exitprob_multiarm_cpp(
       const bool use_chol1 = (k > 1);
       const bool use_chol2 = (k > 2);
 
-      if (use_chol2) chol2 = chol1; // same as chol1 from the previous stage
+      if (use_chol2)
+        chol2 = chol1; // same as chol1 from the previous stage
 
       if (use_chol1) {
-        chol1.J  = nk;
+        chol1.J = nk;
         chol1.sd = subset(chol.sd, 0, nk);
-        chol1.C  = subset(chol.C, 0, nk * (nk - 1) / 2);
+        chol1.C = subset(chol.C, 0, nk * (nk - 1) / 2);
       }
 
       // --- start of signed sums using Gray code ---
 
-
       // working buffer (contiguous), initialized to b for first k - 1 looks
       c.resize(nk);
-      if (k > 1) std::memcpy(c.data(), upper1.data(), nk2 * sizeof(double));
+      if (k > 1)
+        std::memcpy(c.data(), upper1.data(), nk2 * sizeof(double));
 
       // collect active indices among 0..k-2 where a[i] != -8
       std::vector<std::size_t> active;
@@ -394,8 +433,9 @@ ExitProbResult exitprob_multiarm_cpp(
       const std::uint64_t totalComb = (m == 0) ? 1ULL : (1ULL << m);
       double vupper1 = 0.0, vupper2 = 0.0, vlower = 0.0;
 
-      // initial sign: choose a for every active index, each contributes -1 => (-1)^m
-      double sign = ( (m % 2) ? -1.0 : 1.0 );
+      // initial sign: choose a for every active index, each contributes -1 =>
+      // (-1)^m
+      double sign = ((m % 2) ? -1.0 : 1.0);
 
       std::uint64_t prevGray = 0;
       for (std::uint64_t i = 0; i < totalComb; ++i) {
@@ -408,7 +448,7 @@ ExitProbResult exitprob_multiarm_cpp(
           const std::size_t idx = active[bitPos];
           const bool choseB = ((gray >> bitPos) & 1ULL) != 0ULL;
           size_t j = idx * M; // start of the block for index idx
-          if (choseB) { // copy b[idx] into c
+          if (choseB) {       // copy b[idx] into c
             std::memcpy(c.data() + j, upper1.data() + j, M * sizeof(double));
           } else { // copy a[idx] into c
             std::memcpy(c.data() + j, lower1.data() + j, M * sizeof(double));
@@ -420,7 +460,8 @@ ExitProbResult exitprob_multiarm_cpp(
         if (k > 1) {
           std::memcpy(upper2.data(), c.data(), nk2 * sizeof(double));
           for (size_t j = 0; j < nk2; ++j) {
-            if (upper2[j] < -8.0) upper2[j] = -8.0;
+            if (upper2[j] < -8.0)
+              upper2[j] = -8.0;
           }
           double p1;
           if (use_chol2) {
@@ -433,7 +474,8 @@ ExitProbResult exitprob_multiarm_cpp(
 
         std::memcpy(c.data() + nk2, upper1.data() + nk2, M * sizeof(double));
         for (size_t j = 0; j < M; ++j) {
-          if (c[nk2 + j] < -8.0) c[nk2 + j] = -8.0;
+          if (c[nk2 + j] < -8.0)
+            c[nk2 + j] = -8.0;
         }
         double p2;
         if (use_chol1) {
@@ -445,7 +487,8 @@ ExitProbResult exitprob_multiarm_cpp(
 
         std::memcpy(c.data() + nk2, lower1.data() + nk2, M * sizeof(double));
         for (size_t j = 0; j < M; ++j) {
-          if (c[nk2 + j] < -8.0) c[nk2 + j] = -8.0;
+          if (c[nk2 + j] < -8.0)
+            c[nk2 + j] = -8.0;
         }
         double p3;
         if (use_chol1) {
@@ -458,39 +501,36 @@ ExitProbResult exitprob_multiarm_cpp(
         prevGray = gray;
       }
 
-      if (k > 1) exitProbUpper[k - 1] = vupper1 - vupper2;
-      else exitProbUpper[k - 1] = 1.0 - vupper2;
+      if (k > 1)
+        exitProbUpper[k - 1] = vupper1 - vupper2;
+      else
+        exitProbUpper[k - 1] = 1.0 - vupper2;
 
       exitProbLower[k - 1] = vlower;
     }
   }
 
-  return ExitProbResult {
-    std::move(exitProbUpper),
-    std::move(exitProbLower)
-  };
+  return ExitProbResult{std::move(exitProbUpper), std::move(exitProbLower)};
 }
 
 //  Public 7-param overload with default a matrix of -8.0
-ExitProbResult exitprob_multiarm_cpp(
-    const size_t M,
-    const double r,
-    const std::vector<double>& theta,
-    const bool corr_known,
-    const size_t kMax,
-    const FlatMatrix& b,
-    const std::vector<double>& I) {
+ExitProbResult exitprob_multiarm_cpp(const size_t M, const double r,
+                                     const std::vector<double> &theta,
+                                     const bool corr_known, const size_t kMax,
+                                     const FlatMatrix &b,
+                                     const std::vector<double> &I) {
 
-  if (!none_na(b.data)) throw std::invalid_argument("b must be provided");
+  if (!none_na(b.data))
+    throw std::invalid_argument("b must be provided");
   double bmin = *std::min_element(b.data_ptr(), b.data_ptr() + b.nrow * b.ncol);
   double amin = std::min(-8.0, bmin);
-  FlatMatrix a(M, kMax); a.fill(amin);
+  FlatMatrix a(M, kMax);
+  a.fill(amin);
   return exitprob_multiarm_cpp(M, r, theta, corr_known, kMax, b, a, I);
 }
 
-
 // helper function
-FlatMatrix as_boundary_matrix(SEXP x, const char* arg, size_t M, size_t K,
+FlatMatrix as_boundary_matrix(SEXP x, const char *arg, size_t M, size_t K,
                               bool allow_default = false) {
   if (x == R_NilValue) {
     if (allow_default) {
@@ -538,8 +578,8 @@ FlatMatrix as_boundary_matrix(SEXP x, const char* arg, size_t M, size_t K,
       return out;
     }
 
-    throw std::invalid_argument(
-        std::string(arg) + " vector must have length 1, kMax, or M*kMax");
+    throw std::invalid_argument(std::string(arg) +
+                                " vector must have length 1, kMax, or M*kMax");
   }
 
   throw std::invalid_argument(
@@ -547,15 +587,12 @@ FlatMatrix as_boundary_matrix(SEXP x, const char* arg, size_t M, size_t K,
 }
 
 // [[Rcpp::export]]
-Rcpp::List exitprob_multiarm_Rcpp(
-    const int M = NA_INTEGER,
-    const double r = 1,
-    const Rcpp::NumericVector& theta = NA_REAL,
-    const bool corr_known = true,
-    const int kMax = NA_INTEGER,
-    SEXP b = R_NilValue,
-    SEXP a = R_NilValue,
-    SEXP I = R_NilValue) {
+Rcpp::List exitprob_multiarm_Rcpp(const int M = NA_INTEGER, const double r = 1,
+                                  const Rcpp::NumericVector &theta = NA_REAL,
+                                  const bool corr_known = true,
+                                  const int kMax = NA_INTEGER,
+                                  SEXP b = R_NilValue, SEXP a = R_NilValue,
+                                  SEXP I = R_NilValue) {
 
   if (M == NA_INTEGER || M < 1) {
     throw std::invalid_argument("M must be a positive integer");
@@ -580,39 +617,34 @@ Rcpp::List exitprob_multiarm_Rcpp(
   FlatMatrix bMat = as_boundary_matrix(b, "b", M_, K, false);
   FlatMatrix aMat = as_boundary_matrix(a, "a", M_, K, true);
 
-  auto probs = exitprob_multiarm_cpp(M_, r, thetaVec, corr_known, K,
-                                     bMat, aMat, IVec);
+  auto probs =
+      exitprob_multiarm_cpp(M_, r, thetaVec, corr_known, K, bMat, aMat, IVec);
   ListCpp exitProb;
   exitProb.push_back(std::move(probs.exitProbUpper), "exitProbUpper");
   exitProb.push_back(std::move(probs.exitProbLower), "exitProbLower");
   return Rcpp::wrap(exitProb);
 }
 
-
-
 std::vector<double> getBound_multiarm_cpp(
-    const size_t M,
-    const double r,
-    const bool corr_known,
-    const size_t k,
-    const std::vector<double>& informationRates,
-    const double alpha,
-    const std::string& typeAlphaSpending,
-    const double parameterAlphaSpending,
-    const std::vector<double>& userAlphaSpending,
-    const std::vector<double>& spendingTime,
-    const std::vector<unsigned char>& efficacyStopping) {
+    const size_t M, const double r, const bool corr_known, const size_t k,
+    const std::vector<double> &informationRates, const double alpha,
+    const std::string &typeAlphaSpending, const double parameterAlphaSpending,
+    const std::vector<double> &userAlphaSpending,
+    const std::vector<double> &spendingTime,
+    const std::vector<unsigned char> &efficacyStopping) {
 
-  if (M < 1) throw std::invalid_argument("M should be at least 1");
-  if (r <= 0.0) throw std::invalid_argument("r should be positive");
-  if (k < 1) throw std::invalid_argument("k should be at least 1");
+  if (M < 1)
+    throw std::invalid_argument("M should be at least 1");
+  if (r <= 0.0)
+    throw std::invalid_argument("r should be positive");
+  if (k < 1)
+    throw std::invalid_argument("k should be at least 1");
 
   // With one active arm, the multi-arm design reduces to a generic design.
   if (M == 1) {
-    return getBoundcpp(
-      k, informationRates, alpha, typeAlphaSpending,
-      parameterAlphaSpending, userAlphaSpending, spendingTime,
-      efficacyStopping);
+    return getBoundcpp(k, informationRates, alpha, typeAlphaSpending,
+                       parameterAlphaSpending, userAlphaSpending, spendingTime,
+                       efficacyStopping);
   }
 
   if (alpha < 0.00001 || alpha >= 1) {
@@ -637,7 +669,7 @@ std::vector<double> getBound_multiarm_cpp(
   } else {
     infoRates.resize(kMax);
     for (size_t i = 0; i < kMax; ++i) {
-      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(kMax);
+      infoRates[i] = static_cast<double>(i + 1) / static_cast<double>(kMax);
     }
   }
 
@@ -697,7 +729,8 @@ std::vector<double> getBound_multiarm_cpp(
   }
 
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
+    throw std::invalid_argument(
+        "parameterAlphaSpending must be positive for sfKD");
   }
 
   if (asf == "of" || asf == "p" || asf == "wt" || asf == "none") {
@@ -718,8 +751,8 @@ std::vector<double> getBound_multiarm_cpp(
   ExitProbResult probs;
 
   if (asf == "none") {
-    double* colptr = b.data_ptr() + (kMax - 1) * M;
-    auto f = [&](double x)->double {
+    double *colptr = b.data_ptr() + (kMax - 1) * M;
+    auto f = [&](double x) -> double {
       std::fill_n(colptr, M, x);
       probs = exitprob_multiarm_cpp(M, r, zero, corr_known, kMax, b, infoRates);
       double cpu = std::accumulate(probs.exitProbUpper.begin(),
@@ -727,15 +760,18 @@ std::vector<double> getBound_multiarm_cpp(
       return cpu - alpha;
     };
 
-    criticalValues[kMax-1] = brent(f, 0.0, 8.0, 1e-6);
+    criticalValues[kMax - 1] = brent(f, 0.0, 8.0, 1e-6);
     return subset(criticalValues, 0, k);
   }
 
   if (asf == "of" || asf == "p" || asf == "wt") {
     double Delta;
-    if (asf == "of") Delta = 0.0;
-    else if (asf == "p") Delta = 0.5;
-    else Delta = parameterAlphaSpending; // parameterAlphaSpending holds delta for WT
+    if (asf == "of")
+      Delta = 0.0;
+    else if (asf == "p")
+      Delta = 0.5;
+    else
+      Delta = parameterAlphaSpending;
 
     // for a given multiplier, compute cumulative upper exit probability - alpha
     std::vector<double> u0(kMax);
@@ -743,11 +779,13 @@ std::vector<double> getBound_multiarm_cpp(
       u0[i] = std::pow(infoRates[i], Delta - 0.5);
     }
 
-    auto f = [&](double x)->double {
+    auto f = [&](double x) -> double {
       for (size_t i = 0; i < kMax; ++i) {
-        if (!effStopping[i]) continue;
+        if (!effStopping[i])
+          continue;
         double val = x * u0[i];
-        std::fill_n(b.data_ptr() + i * M, M, val); // contiguous write of M doubles
+        std::fill_n(b.data_ptr() + i * M, M,
+                    val); // contiguous write of M doubles
       }
 
       probs = exitprob_multiarm_cpp(M, r, zero, corr_known, kMax, b, infoRates);
@@ -758,19 +796,24 @@ std::vector<double> getBound_multiarm_cpp(
 
     double cwt = brent(f, 0.0, 10.0, 1e-6);
     for (size_t i = 0; i < kMax; ++i) {
-      if (effStopping[i]) criticalValues[i] = cwt * u0[i];
+      if (effStopping[i])
+        criticalValues[i] = cwt * u0[i];
     }
     return subset(criticalValues, 0, k);
   }
 
-  if (asf == "sfof" || asf == "sfp" || asf == "sfkd" ||
-      asf == "sfhsd" || asf == "user") {
+  if (asf == "sfof" || asf == "sfp" || asf == "sfkd" || asf == "sfhsd" ||
+      asf == "user") {
     // stage 1
     double cumAlpha;
-    if (asf == "user") cumAlpha = userAlphaSpending[0];
-    else cumAlpha = errorSpentcpp(spendTime[0], alpha, asf, parameterAlphaSpending);
+    if (asf == "user")
+      cumAlpha = userAlphaSpending[0];
+    else
+      cumAlpha =
+          errorSpentcpp(spendTime[0], alpha, asf, parameterAlphaSpending);
 
-    if (!effStopping[0]) criticalValues[0] = 8.0;
+    if (!effStopping[0])
+      criticalValues[0] = 8.0;
     else {
       std::vector<double> mean(M, 0.0);
       FlatMatrix sigma(M, M);
@@ -785,24 +828,28 @@ std::vector<double> getBound_multiarm_cpp(
     // Preallocate reusable buffers used by the root-finding lambda
     // subsequent stages
     for (size_t k1 = 1; k1 < kMax; ++k1) {
-      if (!effStopping[k1]) continue;
+      if (!effStopping[k1])
+        continue;
 
       // determine cumulative alpha at this stage
-      if (asf == "user") cumAlpha = userAlphaSpending[k1];
-      else cumAlpha = errorSpentcpp(spendTime[k1], alpha, asf,
-                                    parameterAlphaSpending);
+      if (asf == "user")
+        cumAlpha = userAlphaSpending[k1];
+      else
+        cumAlpha =
+            errorSpentcpp(spendTime[k1], alpha, asf, parameterAlphaSpending);
 
       // Fill columns k1-1 with their known critical values
       double val = criticalValues[k1 - 1];
-      double* col_ptr = b.data_ptr() + (k1 - 1) * M;   // column-major contiguous
-      std::fill_n(col_ptr, M, val);              // fast contiguous write
+      double *col_ptr = b.data_ptr() + (k1 - 1) * M; // column-major contiguous
+      std::fill_n(col_ptr, M, val);                  // fast contiguous write
 
       // Define lambda that only sets the last column of b
-      double* last_col = b.data_ptr() + k1 * M;
-      auto f = [&](double x)->double {
+      double *last_col = b.data_ptr() + k1 * M;
+      auto f = [&](double x) -> double {
         // set the last column to the current candidate critical value
-        std::fill_n(last_col, M, x);  // fill last column fast
-        probs = exitprob_multiarm_cpp(M, r, zero, corr_known, k1 + 1, b, infoRates);
+        std::fill_n(last_col, M, x); // fill last column fast
+        probs =
+            exitprob_multiarm_cpp(M, r, zero, corr_known, k1 + 1, b, infoRates);
         double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                      probs.exitProbUpper.end(), 0.0);
         return cpu - cumAlpha;
@@ -812,8 +859,9 @@ std::vector<double> getBound_multiarm_cpp(
       if (f_8 > 0.0) { // no alpha spent at current visit
         criticalValues[k1] = 8.0;
       } else {
-        auto f_for_brent = [&](double x)->double {
-          if (x == 8.0) return f_8; // avoid recomputation at 8.0
+        auto f_for_brent = [&](double x) -> double {
+          if (x == 8.0)
+            return f_8; // avoid recomputation at 8.0
           return f(x);
         };
 
@@ -827,31 +875,28 @@ std::vector<double> getBound_multiarm_cpp(
   throw std::invalid_argument("Invalid value for typeAlphaSpending");
 }
 
-
 // [[Rcpp::export]]
 Rcpp::NumericVector getBound_multiarm_Rcpp(
-    const int M = NA_INTEGER,
-    const double r = 1,
-    const bool corr_known = true,
+    const int M = NA_INTEGER, const double r = 1, const bool corr_known = true,
     const int k = NA_INTEGER,
-    const Rcpp::NumericVector& informationRates = NA_REAL,
-    const double alpha = 0.025,
-    const std::string& typeAlphaSpending = "sfOF",
+    const Rcpp::NumericVector &informationRates = NA_REAL,
+    const double alpha = 0.025, const std::string &typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& spendingTime = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL) {
+    const Rcpp::NumericVector &userAlphaSpending = NA_REAL,
+    const Rcpp::NumericVector &spendingTime = NA_REAL,
+    const Rcpp::LogicalVector &efficacyStopping = NA_LOGICAL) {
 
-  std::vector<double> infoRates(informationRates.begin(), informationRates.end());
-  std::vector<double> userAlpha(userAlphaSpending.begin(), userAlphaSpending.end());
+  std::vector<double> infoRates(informationRates.begin(),
+                                informationRates.end());
+  std::vector<double> userAlpha(userAlphaSpending.begin(),
+                                userAlphaSpending.end());
   std::vector<double> spendTime(spendingTime.begin(), spendingTime.end());
   auto effStopping = convertLogicalVector(efficacyStopping);
 
-  auto result = getBound_multiarm_cpp(
-    static_cast<size_t>(M), r, corr_known, static_cast<size_t>(k),
-    infoRates, alpha, typeAlphaSpending, parameterAlphaSpending,
-    userAlpha, spendTime, effStopping
-  );
+  auto result = getBound_multiarm_cpp(static_cast<size_t>(M), r, corr_known,
+                                      static_cast<size_t>(k), infoRates, alpha,
+                                      typeAlphaSpending, parameterAlphaSpending,
+                                      userAlpha, spendTime, effStopping);
 
   return Rcpp::wrap(result);
 }
@@ -863,20 +908,14 @@ Rcpp::NumericVector getBound_multiarm_Rcpp(
 // of the primary trial, M, r, theta, alpha, kMax, bsf, bsfpar, st,
 // futStopping are parameters of the secondary trial, critValues,
 // futBounds and I are boundaries and information of integrated trial.
-GetPowerResult getPower_multiarm(
-    const size_t M,
-    const double r,
-    const std::vector<double>& theta,
-    const double alpha,
-    const size_t kMax,
-    const std::vector<double>& critValues,
-    const std::vector<double>& I,
-    const std::string& bsf,
-    const double bsfpar,
-    const std::vector<double>& st,
-    const std::vector<unsigned char>& futStopping,
-    const double IL,
-    const std::vector<double>& zL) {
+GetPowerResult
+getPower_multiarm(const size_t M, const double r,
+                  const std::vector<double> &theta, const double alpha,
+                  const size_t kMax, const std::vector<double> &critValues,
+                  const std::vector<double> &I, const std::string &bsf,
+                  const double bsfpar, const std::vector<double> &st,
+                  const std::vector<unsigned char> &futStopping,
+                  const double IL, const std::vector<double> &zL) {
 
   std::vector<double> I2(kMax), sqrtI2(kMax), sqrtI(kMax);
   for (size_t k = 0; k < kMax; ++k) {
@@ -936,7 +975,8 @@ GetPowerResult getPower_multiarm(
       };
 
       eps = g(critValues[0]);
-      if (eps < 0.0) return -1.0; // to decrease drift
+      if (eps < 0.0)
+        return -1.0; // to decrease drift
       futBounds[0] = brent(g, -8.0, critValues[0], 1e-6);
     }
 
@@ -946,8 +986,8 @@ GetPowerResult getPower_multiarm(
         cb = errorSpentcpp(st[k], x, bsf, bsfpar);
 
         for (size_t m = 0; m < M; ++m) {
-          a(m, k-1) = (futBounds[k-1] * sqrtI[k-1] - zscaled[m]) / sqrtI2[k-1];
-          if (a(m, k-1) > b(m, k-1)) a(m, k-1) = b(m, k-1);
+          a(m, k - 1) =
+              (futBounds[k - 1] * sqrtI[k - 1] - zscaled[m]) / sqrtI2[k - 1];
         }
 
         // lambda expression for finding futility bound at stage k
@@ -956,7 +996,8 @@ GetPowerResult getPower_multiarm(
         auto g = [&](double aval) -> double {
           for (size_t m = 0; m < M; ++m) {
             a(m, k) = (aval * sqrtI[k] - zscaled[m]) / sqrtI2[k];
-            if (a(m, k) > b(m, k)) a(m, k) = b(m, k);
+            if (a(m, k) > b(m, k))
+              a(m, k) = b(m, k);
           }
           probs = exitprob_multiarm_cpp(M, r, theta, true, k + 1, b, a, I2);
           double cpl = std::accumulate(probs.exitProbLower.begin(),
@@ -971,14 +1012,16 @@ GetPowerResult getPower_multiarm(
         if (g_minus8 > 0.0) { // no beta spent at current visit
           futBounds[k] = -8.0;
         } else if (eps > 0.0) {
-          auto g_for_brent = [&](double aval)->double {
-            if (aval == -8.0) return g_minus8;  // avoid recomputation at 8.0
-            if (aval == bk) return eps;         // avoid recomputation at b[k]
+          auto g_for_brent = [&](double aval) -> double {
+            if (aval == -8.0)
+              return g_minus8; // avoid recomputation at 8.0
+            if (aval == bk)
+              return eps; // avoid recomputation at b[k]
             return g(aval);
           };
 
           futBounds[k] = brent(g_for_brent, -8.0, bk, 1e-6);
-        } else if (k < kMax-1) {
+        } else if (k < kMax - 1) {
           return -1.0; // to decrease beta
         } // else it is the final look, a[k] = b[k], so we need eps = g(bk) = 0
         // since eps < 0, it can be used to decrease beta more accurately
@@ -990,59 +1033,49 @@ GetPowerResult getPower_multiarm(
 
   double v1 = f(0.0001), v2 = f(1.0 - alpha);
   double beta = 0.0;
-  if (v1 == -1.0 || (v1 < 0.0 && futBounds[kMax-1] == -8.0)) {
+  if (v1 == -1.0 || (v1 < 0.0 && futBounds[kMax - 1] == -8.0)) {
     throw std::invalid_argument("Power must be less than 0.9999");
   } else if (v2 > 0.0) {
     throw std::invalid_argument("Power must be greater than alpha");
   } else {
-    auto f_for_brent = [&](double x)->double {
-      if (x == 0.0001) return v1;  // avoid recomputation at 0.0001
-      if (x == 1.0 - alpha) return v2;  // avoid recomputation at 1.0 - alpha
+    auto f_for_brent = [&](double x) -> double {
+      if (x == 0.0001)
+        return v1; // avoid recomputation at 0.0001
+      if (x == 1.0 - alpha)
+        return v2; // avoid recomputation at 1.0 - alpha
       return f(x);
     };
 
     beta = brent(f_for_brent, 0.0001, 1.0 - alpha, 1e-6);
-    futBounds[kMax-1] = critValues[kMax-1];
+    futBounds[kMax - 1] = critValues[kMax - 1];
     std::memcpy(a.data_ptr() + (kMax - 1) * M, b.data_ptr() + (kMax - 1) * M,
                 M * sizeof(double));
     probs = exitprob_multiarm_cpp(M, r, theta, true, kMax, b, a, I2);
   }
 
-  return GetPowerResult {
-    1.0 - beta,
-    std::move(futBounds),
-    std::move(probs)
-  };
+  return GetPowerResult{1.0 - beta, std::move(futBounds), std::move(probs)};
 }
 
-
 ListCpp getDesign_multiarm_cpp(
-    const double beta,
-    const double IMax,
-    const std::vector<double>& theta,
-    const size_t M,
-    const double r,
-    const bool corr_known,
-    const size_t kMax,
-    const std::vector<double>& informationRates,
-    const std::vector<unsigned char>& efficacyStopping,
-    const std::vector<unsigned char>& futilityStopping,
-    const FlatMatrix& criticalValues,
-    const double alpha,
-    const std::string& typeAlphaSpending,
-    const double parameterAlphaSpending,
-    const std::vector<double>& userAlphaSpending,
-    const std::vector<double>& futilityBounds,
-    const std::vector<double>& futilityCP,
-    const std::vector<double>& futilityTheta,
-    const std::string& typeBetaSpending,
-    const double parameterBetaSpending,
-    const std::vector<double>& userBetaSpending,
-    const std::vector<double>& spendingTime) {
+    const double beta, const double IMax, const std::vector<double> &theta,
+    const size_t M, const double r, const bool corr_known, const size_t kMax,
+    const std::vector<double> &informationRates,
+    const std::vector<unsigned char> &efficacyStopping,
+    const std::vector<unsigned char> &futilityStopping,
+    const FlatMatrix &criticalValues, const double alpha,
+    const std::string &typeAlphaSpending, const double parameterAlphaSpending,
+    const std::vector<double> &userAlphaSpending,
+    const std::vector<double> &futilityBounds,
+    const std::vector<double> &futilityCP,
+    const std::vector<double> &futilityTheta,
+    const std::string &typeBetaSpending, const double parameterBetaSpending,
+    const std::vector<double> &userBetaSpending,
+    const std::vector<double> &spendingTime) {
 
   // ----------- Input Validation ----------- //
   if (std::isnan(beta) && std::isnan(IMax))
-    throw std::invalid_argument("beta and IMax cannot be missing simultaneously");
+    throw std::invalid_argument(
+        "beta and IMax cannot be missing simultaneously");
 
   if (!std::isnan(beta) && !std::isnan(IMax))
     throw std::invalid_argument("Only one of beta and IMax should be provided");
@@ -1050,11 +1083,16 @@ ListCpp getDesign_multiarm_cpp(
   if (!std::isnan(IMax) && IMax <= 0)
     throw std::invalid_argument("IMax must be positive");
 
-  if (M < 1) throw std::invalid_argument("M must be at least 1");
-  if (r <= 0.0) throw std::invalid_argument("r must be positive");
-  if (!none_na(theta)) throw std::invalid_argument("theta must be provided");
-  if (theta.size() != M) throw std::invalid_argument("theta should have length M");
-  if (kMax < 1) throw std::invalid_argument("kMax must be at least 1");
+  if (M < 1)
+    throw std::invalid_argument("M must be at least 1");
+  if (r <= 0.0)
+    throw std::invalid_argument("r must be positive");
+  if (!none_na(theta))
+    throw std::invalid_argument("theta must be provided");
+  if (theta.size() != M)
+    throw std::invalid_argument("theta should have length M");
+  if (kMax < 1)
+    throw std::invalid_argument("kMax must be at least 1");
 
   // Alpha and Beta must be within valid ranges
   if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1)) {
@@ -1080,7 +1118,7 @@ ListCpp getDesign_multiarm_cpp(
     infoRates = informationRates; // copy
   } else {
     for (size_t i = 0; i < kMax; ++i)
-      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(kMax);
+      infoRates[i] = static_cast<double>(i + 1) / static_cast<double>(kMax);
   }
 
   // effStopping: default to all 1s if missing
@@ -1108,8 +1146,8 @@ ListCpp getDesign_multiarm_cpp(
   }
 
   bool missingCriticalValues = !none_na(criticalValues.data);
-  bool missingFutilityBounds = !none_na(futilityBounds)
-    && !none_na(futilityCP) && !none_na(futilityTheta);
+  bool missingFutilityBounds = !none_na(futilityBounds) &&
+                               !none_na(futilityCP) && !none_na(futilityTheta);
 
   if (!missingCriticalValues && criticalValues.nrow != kMax) {
     throw std::invalid_argument("Invalid number of rows for criticalValues");
@@ -1118,7 +1156,8 @@ ListCpp getDesign_multiarm_cpp(
     throw std::invalid_argument("Invalid number of columns for criticalValues");
   }
   if (missingCriticalValues && std::isnan(alpha)) {
-    throw std::invalid_argument("alpha must be provided for missing criticalValues");
+    throw std::invalid_argument(
+        "alpha must be provided for missing criticalValues");
   }
 
   std::string asf = typeAlphaSpending;
@@ -1126,9 +1165,10 @@ ListCpp getDesign_multiarm_cpp(
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
-  if (missingCriticalValues && !(asf == "of" || asf == "p" ||
-      asf == "wt" || asf == "sfof" || asf == "sfp" ||
-      asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
+  if (missingCriticalValues &&
+      !(asf == "of" || asf == "p" || asf == "wt" || asf == "sfof" ||
+        asf == "sfp" || asf == "sfkd" || asf == "sfhsd" || asf == "user" ||
+        asf == "none")) {
     throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
@@ -1136,7 +1176,8 @@ ListCpp getDesign_multiarm_cpp(
     throw std::invalid_argument("Missing value for parameterAlphaSpending");
   }
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
+    throw std::invalid_argument(
+        "parameterAlphaSpending must be positive for sfKD");
   }
 
   if (missingCriticalValues && asf == "user") {
@@ -1149,7 +1190,8 @@ ListCpp getDesign_multiarm_cpp(
     if (any_nonincreasing(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be nondecreasing");
     if (userAlphaSpending.back() != alpha)
-      throw std::invalid_argument("userAlphaSpending must end with specified alpha");
+      throw std::invalid_argument(
+          "userAlphaSpending must end with specified alpha");
   }
 
   if (!missingFutilityBounds) {
@@ -1179,13 +1221,15 @@ ListCpp getDesign_multiarm_cpp(
   }
 
   if (unknown == "IMax") {
-    if (missingFutilityBounds && !(bsf == "sfof" || bsf == "sfp" ||
-        bsf == "sfkd" || bsf == "sfhsd" || bsf == "user" || bsf == "none")) {
+    if (missingFutilityBounds &&
+        !(bsf == "sfof" || bsf == "sfp" || bsf == "sfkd" || bsf == "sfhsd" ||
+          bsf == "user" || bsf == "none")) {
       throw std::invalid_argument("Invalid value for typeBetaSpending");
     }
   } else {
-    if (missingFutilityBounds && !(bsf == "sfof" || bsf == "sfp" ||
-        bsf == "sfkd" || bsf == "sfhsd" || bsf == "none")) {
+    if (missingFutilityBounds &&
+        !(bsf == "sfof" || bsf == "sfp" || bsf == "sfkd" || bsf == "sfhsd" ||
+          bsf == "none")) {
       throw std::invalid_argument("Invalid value for typeBetaSpending");
     }
   }
@@ -1194,7 +1238,8 @@ ListCpp getDesign_multiarm_cpp(
     throw std::invalid_argument("Missing value for parameterBetaSpending");
   }
   if (bsf == "sfkd" && parameterBetaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterBetaSpending must be positive for sfKD");
+    throw std::invalid_argument(
+        "parameterBetaSpending must be positive for sfKD");
   }
 
   if (unknown == "IMax" && bsf == "user") {
@@ -1207,7 +1252,8 @@ ListCpp getDesign_multiarm_cpp(
     if (any_nonincreasing(userBetaSpending))
       throw std::invalid_argument("userBetaSpending must be nondecreasing");
     if (userBetaSpending.back() != beta)
-      throw std::invalid_argument("userBetaSpending must end with specified beta");
+      throw std::invalid_argument(
+          "userBetaSpending must end with specified beta");
   }
 
   std::vector<double> spendTime;
@@ -1218,7 +1264,7 @@ ListCpp getDesign_multiarm_cpp(
       throw std::invalid_argument("spendingTime must be positive");
     if (any_nonincreasing(spendingTime))
       throw std::invalid_argument("spendingTime must be increasing");
-    if (spendingTime[kMax-1] != 1.0)
+    if (spendingTime[kMax - 1] != 1.0)
       throw std::invalid_argument("spendingTime must end with 1");
     spendTime = spendingTime; // copy
   } else {
@@ -1244,7 +1290,7 @@ ListCpp getDesign_multiarm_cpp(
   bool correctDim = (criticalValues.nrow == kMax && criticalValues.ncol == M);
   if (missingCriticalValues) {
     std::vector<double> cut(kMax);
-    for (size_t M1 = M ; M1 > 0; --M1) {
+    for (size_t M1 = M; M1 > 0; --M1) {
       bool haybittle = false;
       if (correctDim) {
         cut = flatmatrix_get_column(criticalValues, M - M1);
@@ -1252,9 +1298,13 @@ ListCpp getDesign_multiarm_cpp(
         if (kMax > 1 && cut.size() == kMax) {
           bool hasNaN = false;
           for (size_t i = 0; i < kMax - 1; ++i) {
-            if (std::isnan(cut[i])) { hasNaN = true; break; }
+            if (std::isnan(cut[i])) {
+              hasNaN = true;
+              break;
+            }
           }
-          if (!hasNaN && std::isnan(cut[kMax-1])) haybittle = true;
+          if (!hasNaN && std::isnan(cut[kMax - 1]))
+            haybittle = true;
         }
       }
 
@@ -1263,15 +1313,16 @@ ListCpp getDesign_multiarm_cpp(
         FlatMatrix b1(M1, kMax);
 
         for (size_t i = 0; i < kMax - 1; ++i) {
-          if (!effStopping[i]) cut[i] = 8.0;
+          if (!effStopping[i])
+            cut[i] = 8.0;
           std::fill_n(b1.data_ptr() + i * M1, M1, cut[i]);
         }
 
-        double* last_col = b1.data_ptr() + (kMax - 1) * M1;
-        auto f = [&](double x)->double {
+        double *last_col = b1.data_ptr() + (kMax - 1) * M1;
+        auto f = [&](double x) -> double {
           std::fill_n(last_col, M1, x);
-          probs = exitprob_multiarm_cpp(M1, r, zero1, corr_known,
-                                        kMax, b1, infoRates);
+          probs = exitprob_multiarm_cpp(M1, r, zero1, corr_known, kMax, b1,
+                                        infoRates);
           double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                        probs.exitProbUpper.end(), 0.0);
           return cpu - alpha;
@@ -1279,9 +1330,9 @@ ListCpp getDesign_multiarm_cpp(
 
         cut[kMax - 1] = brent(f, 0.0, 8.0, 1e-6);
       } else {
-        cut = getBound_multiarm_cpp(
-          M1, r, corr_known, kMax, infoRates, alpha, asf,
-          parameterAlphaSpending, userAlphaSpending, spendTime, effStopping);
+        cut = getBound_multiarm_cpp(M1, r, corr_known, kMax, infoRates, alpha,
+                                    asf, parameterAlphaSpending,
+                                    userAlphaSpending, spendTime, effStopping);
       }
 
       std::copy_n(cut.data(), kMax, efficacyBounds.data() + (M - M1) * kMax);
@@ -1294,16 +1345,17 @@ ListCpp getDesign_multiarm_cpp(
   std::memcpy(critValues.data(), efficacyBounds.data(), kMax * sizeof(double));
 
   std::vector<double> zero(M, 0.0);
-  FlatMatrix a(M, kMax); a.fill(-8.0);
+  FlatMatrix a(M, kMax);
+  a.fill(-8.0);
   FlatMatrix b(M, kMax);
   for (size_t i = 0; i < kMax; ++i) {
     std::fill_n(b.data_ptr() + i * M, M, critValues[i]);
   }
   probs = exitprob_multiarm_cpp(M, r, zero, corr_known, kMax, b, infoRates);
   std::vector<double> cumAlphaSpent(kMax);
-  std::partial_sum(probs.exitProbUpper.begin(),
-                   probs.exitProbUpper.end(), cumAlphaSpent.begin());
-  double alpha1 = missingCriticalValues ? alpha : cumAlphaSpent[kMax-1];
+  std::partial_sum(probs.exitProbUpper.begin(), probs.exitProbUpper.end(),
+                   cumAlphaSpent.begin());
+  double alpha1 = missingCriticalValues ? alpha : cumAlphaSpent[kMax - 1];
 
   FlatMatrix sigma(M, M);
   sigma.fill(r / (r + 1.0));
@@ -1316,7 +1368,7 @@ ListCpp getDesign_multiarm_cpp(
   if (kMax > 1) {
     if (missingFutilityBounds && bsf == "none") {
       std::fill_n(futBounds.begin(), kMax - 1, -8.0);
-      futBounds[kMax-1] = critValues[kMax-1];
+      futBounds[kMax - 1] = critValues[kMax - 1];
     } else if (!missingFutilityBounds) {
       if (none_na(futilityBounds)) {
         for (size_t i = 0; i < kMax - 1; ++i) {
@@ -1325,29 +1377,29 @@ ListCpp getDesign_multiarm_cpp(
                 "futilityBounds must lie below criticalValues");
           }
         }
-        std::copy_n(futilityBounds.begin(), kMax-1, futBounds.begin());
-        futBounds[kMax-1] = critValues[kMax-1];
+        std::copy_n(futilityBounds.begin(), kMax - 1, futBounds.begin());
+        futBounds[kMax - 1] = critValues[kMax - 1];
       } else if (none_na(futilityCP)) {
         double c2 = critValues[kMax - 1];
         for (size_t i = 0; i < kMax - 1; ++i) {
           double q = qmvnormcpp(1 - futilityCP[i], zero, sigma);
-          futBounds[i] = std::sqrt(infoRates[i]) *
-            (c2 - std::sqrt(1 - infoRates[i]) * q);
+          futBounds[i] =
+              std::sqrt(infoRates[i]) * (c2 - std::sqrt(1 - infoRates[i]) * q);
           if (futBounds[i] > critValues[i]) {
             throw std::invalid_argument("futilityCP values are too large to "
-                                          "be compatible with criticalValues");
+                                        "be compatible with criticalValues");
           }
         }
-        futBounds[kMax-1] = critValues[kMax-1];
+        futBounds[kMax - 1] = critValues[kMax - 1];
       } else if (!std::isnan(IMax)) {
         for (size_t i = 0; i < kMax - 1; ++i) {
           futBounds[i] = std::sqrt(infoRates[i] * IMax) * futilityTheta[i];
           if (futBounds[i] > critValues[i]) {
             throw std::invalid_argument("futilityTheta values are too large to "
-                                          "be compatible with criticalValues");
+                                        "be compatible with criticalValues");
           }
         }
-        futBounds[kMax-1] = critValues[kMax-1];
+        futBounds[kMax - 1] = critValues[kMax - 1];
       }
     }
   } else {
@@ -1356,7 +1408,6 @@ ListCpp getDesign_multiarm_cpp(
     }
   }
 
-
   double IMax1 = IMax;
   std::vector<double> information(kMax);
   if (unknown == "IMax") {
@@ -1364,7 +1415,7 @@ ListCpp getDesign_multiarm_cpp(
     std::vector<double> mu0(M);
     std::vector<double> lo(M, -8.0), hi(M, critValues[0]);
 
-     auto f = [&](double x)->double {
+    auto f = [&](double x) -> double {
       double maxInformation = sq(x / maxtheta);
       for (size_t i = 0; i < kMax; ++i) {
         information[i] = infoRates[i] * maxInformation;
@@ -1373,20 +1424,22 @@ ListCpp getDesign_multiarm_cpp(
 
       // compute stagewise exit probabilities
       if (!missingFutilityBounds || bsf == "none" || kMax == 1) {
-        if (!none_na(futilityBounds) && !none_na(futilityCP)
-              && none_na(futilityTheta)) {
+        if (!none_na(futilityBounds) && !none_na(futilityCP) &&
+            none_na(futilityTheta)) {
           for (size_t i = 0; i < kMax - 1; ++i) {
             futBounds[i] = std::sqrt(information[i]) * futilityTheta[i];
-            if (futBounds[i] > critValues[i]) return -1.0; // to decrease drift
+            if (futBounds[i] > critValues[i])
+              return -1.0; // to decrease drift
           }
-          futBounds[kMax-1] = critValues[kMax-1];
+          futBounds[kMax - 1] = critValues[kMax - 1];
         }
 
         for (size_t i = 0; i < kMax; ++i) {
           std::fill_n(a.data_ptr() + i * M, M, futBounds[i]);
         }
 
-        probs = exitprob_multiarm_cpp(M, r, theta, true, kMax, b, a, information);
+        probs =
+            exitprob_multiarm_cpp(M, r, theta, true, kMax, b, a, information);
         double overallReject = std::accumulate(probs.exitProbUpper.begin(),
                                                probs.exitProbUpper.end(), 0.0);
         return (1.0 - overallReject) - beta;
@@ -1398,31 +1451,34 @@ ListCpp getDesign_multiarm_cpp(
 
         // first stage
         if (futStopping[0]) {
-          cb = (bsf == "user") ? userBetaSpending[0] :
-          errorSpentcpp(spendTime[0], beta, bsf, parameterBetaSpending);
+          cb = (bsf == "user") ? userBetaSpending[0]
+                               : errorSpentcpp(spendTime[0], beta, bsf,
+                                               parameterBetaSpending);
 
           for (size_t m = 0; m < M; ++m) {
             mu0[m] = theta[m] * sqrtI0;
           }
           auto q = pmvnormcpp(lo, hi, mu0, sigma);
           eps = q.prob - cb;
-          if (eps < 0.0) return -1.0; // to decrease drift
+          if (eps < 0.0)
+            return -1.0; // to decrease drift
           futBounds[0] = qmvnormcpp(cb, mu0, sigma);
         }
 
         // subsequent stages
         for (size_t k = 1; k < kMax; ++k) {
           if (futStopping[k]) {
-            cb = (bsf == "user") ? userBetaSpending[k] :
-            errorSpentcpp(spendTime[k], beta, bsf, parameterBetaSpending);
+            cb = (bsf == "user") ? userBetaSpending[k]
+                                 : errorSpentcpp(spendTime[k], beta, bsf,
+                                                 parameterBetaSpending);
 
             std::fill_n(a.data_ptr() + (k - 1) * M, M, futBounds[k - 1]);
 
             // lambda expression for finding futility bound at stage k
-            auto g = [&](double aval)->double {
+            auto g = [&](double aval) -> double {
               std::fill_n(a.data_ptr() + k * M, M, aval);
-              probs = exitprob_multiarm_cpp(M, r, theta, true, k + 1,
-                                            b, a, information);
+              probs = exitprob_multiarm_cpp(M, r, theta, true, k + 1, b, a,
+                                            information);
               double cpl = std::accumulate(probs.exitProbLower.begin(),
                                            probs.exitProbLower.end(), 0.0);
               return cpl - cb;
@@ -1435,14 +1491,16 @@ ListCpp getDesign_multiarm_cpp(
             if (g_minus8 > 0.0) { // no beta spent at current visit
               futBounds[k] = -8.0;
             } else if (eps > 0.0) {
-              auto g_for_brent = [&](double aval)->double {
-                if (aval == -8.0) return g_minus8;  // avoid recomputation at 8.0
-                if (aval == bk) return eps;         // avoid recomputation at b[k]
+              auto g_for_brent = [&](double aval) -> double {
+                if (aval == -8.0)
+                  return g_minus8; // avoid recomputation at 8.0
+                if (aval == bk)
+                  return eps; // avoid recomputation at b[k]
                 return g(aval);
               };
 
               futBounds[k] = brent(g_for_brent, -8.0, bk, 1e-6);
-            } else if (k < kMax-1) {
+            } else if (k < kMax - 1) {
               return -1.0;
             }
           }
@@ -1454,11 +1512,12 @@ ListCpp getDesign_multiarm_cpp(
 
     double drift = brent(f, 0.001, 8.0, 1e-6);
     IMax1 = sq(drift / maxtheta);
-    futBounds[kMax-1] = critValues[kMax-1];
+    futBounds[kMax - 1] = critValues[kMax - 1];
     std::fill_n(a.data_ptr() + (kMax - 1) * M, M, futBounds[kMax - 1]);
     probs = exitprob_multiarm_cpp(M, r, theta, true, kMax, b, a, information);
   } else {
-    for (size_t i = 0; i < kMax; ++i) information[i] = infoRates[i] * IMax1;
+    for (size_t i = 0; i < kMax; ++i)
+      information[i] = infoRates[i] * IMax1;
 
     if (!missingFutilityBounds || bsf == "none" || kMax == 1) {
       for (size_t i = 0; i < kMax; ++i) {
@@ -1467,8 +1526,8 @@ ListCpp getDesign_multiarm_cpp(
       probs = exitprob_multiarm_cpp(M, r, theta, true, kMax, b, a, information);
     } else { // beta-spending
       auto out = getPower_multiarm(M, r, theta, alpha1, kMax, critValues,
-                                  information, bsf, parameterBetaSpending,
-                                  spendTime, futStopping, 0.0, zero);
+                                   information, bsf, parameterBetaSpending,
+                                   spendTime, futStopping, 0.0, zero);
       futBounds = out.futilityBounds;
       for (size_t i = 0; i < kMax; ++i) {
         std::fill_n(a.data_ptr() + i * M, M, futBounds[i]);
@@ -1476,7 +1535,6 @@ ListCpp getDesign_multiarm_cpp(
       probs = out.probs;
     }
   }
-
 
   // output the results
   std::vector<double> efficacyTheta(kMax);
@@ -1498,7 +1556,8 @@ ListCpp getDesign_multiarm_cpp(
   std::partial_sum(pl.begin(), pl.end(), cpl.begin());
   double overallReject = cpu.back();
   std::vector<double> ptotal(kMax);
-  for (size_t i = 0; i < kMax; ++i) ptotal[i] = pu[i] + pl[i];
+  for (size_t i = 0; i < kMax; ++i)
+    ptotal[i] = pu[i] + pl[i];
 
   double multiplier = (M * r + 1.0) / (r + 1.0);
   std::vector<double> informationOverall(kMax);
@@ -1508,9 +1567,9 @@ ListCpp getDesign_multiarm_cpp(
   double IMaxOverall = informationOverall.back();
 
   double expectedInformationH1 = std::inner_product(
-    ptotal.begin(), ptotal.end(), information.begin(), 0.0);
+      ptotal.begin(), ptotal.end(), information.begin(), 0.0);
   double expectedInformationOverallH1 = std::inner_product(
-    ptotal.begin(), ptotal.end(), informationOverall.begin(), 0.0);
+      ptotal.begin(), ptotal.end(), informationOverall.begin(), 0.0);
 
   // stagewise exit probabilities under H0 with binding futility
   auto probsH0 = exitprob_multiarm_cpp(M, r, zero, true, kMax, b, a, infoRates);
@@ -1519,17 +1578,20 @@ ListCpp getDesign_multiarm_cpp(
   std::vector<double> cpuH0(kMax), cplH0(kMax);
   std::partial_sum(puH0.begin(), puH0.end(), cpuH0.begin());
   std::partial_sum(plH0.begin(), plH0.end(), cplH0.begin());
-  double overallRejectH0 = cpuH0[kMax-1];
+  double overallRejectH0 = cpuH0[kMax - 1];
   std::vector<double> ptotalH0(kMax);
-  for (size_t i = 0; i < kMax; ++i) ptotalH0[i] = puH0[i] + plH0[i];
+  for (size_t i = 0; i < kMax; ++i)
+    ptotalH0[i] = puH0[i] + plH0[i];
   double expectedInformationH0 = std::inner_product(
-    ptotalH0.begin(), ptotalH0.end(), information.begin(), 0.0);
+      ptotalH0.begin(), ptotalH0.end(), information.begin(), 0.0);
   double expectedInformationOverallH0 = std::inner_product(
-    ptotalH0.begin(), ptotalH0.end(), informationOverall.begin(), 0.0);
+      ptotalH0.begin(), ptotalH0.end(), informationOverall.begin(), 0.0);
 
   for (size_t i = 0; i < kMax; ++i) {
-    if (critValues[i] == 8) effStopping[i] = 0;
-    if (futBounds[i] == -8) futStopping[i] = 0;
+    if (critValues[i] == 8)
+      effStopping[i] = 0;
+    if (futBounds[i] == -8)
+      futStopping[i] = 0;
   }
 
   DataFrameCpp overallResults;
@@ -1593,38 +1655,35 @@ ListCpp getDesign_multiarm_cpp(
   return result;
 }
 
-
 // [[Rcpp::export]]
 Rcpp::List getDesign_multiarm_Rcpp(
-    const double beta = NA_REAL,
-    const double IMax = NA_REAL,
-    const Rcpp::NumericVector& theta = NA_REAL,
-    const int M = NA_INTEGER,
-    const double r = 1,
-    const bool corr_known = true,
-    const int kMax = 1,
-    const Rcpp::NumericVector& informationRates = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
-    const Rcpp::LogicalVector& futilityStopping = NA_LOGICAL,
+    const double beta = NA_REAL, const double IMax = NA_REAL,
+    const Rcpp::NumericVector &theta = NA_REAL, const int M = NA_INTEGER,
+    const double r = 1, const bool corr_known = true, const int kMax = 1,
+    const Rcpp::NumericVector &informationRates = NA_REAL,
+    const Rcpp::LogicalVector &efficacyStopping = NA_LOGICAL,
+    const Rcpp::LogicalVector &futilityStopping = NA_LOGICAL,
     const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues = R_NilValue,
-    const double alpha = 0.025,
-    const std::string& typeAlphaSpending = "sfOF",
+    const double alpha = 0.025, const std::string &typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
+    const Rcpp::NumericVector &userAlphaSpending = NA_REAL,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds = R_NilValue,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityCP = R_NilValue,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta = R_NilValue,
-    const std::string& typeBetaSpending = "none",
+    const std::string &typeBetaSpending = "none",
     const double parameterBetaSpending = NA_REAL,
-    const Rcpp::NumericVector& userBetaSpending = NA_REAL,
-    const Rcpp::NumericVector& spendingTime = NA_REAL) {
+    const Rcpp::NumericVector &userBetaSpending = NA_REAL,
+    const Rcpp::NumericVector &spendingTime = NA_REAL) {
 
   std::vector<double> thetaVec(theta.begin(), theta.end());
-  std::vector<double> infoRates(informationRates.begin(), informationRates.end());
+  std::vector<double> infoRates(informationRates.begin(),
+                                informationRates.end());
   auto effStopping = convertLogicalVector(efficacyStopping);
   auto futStopping = convertLogicalVector(futilityStopping);
-  std::vector<double> userAlpha(userAlphaSpending.begin(), userAlphaSpending.end());
-  std::vector<double> userBeta(userBetaSpending.begin(), userBetaSpending.end());
+  std::vector<double> userAlpha(userAlphaSpending.begin(),
+                                userAlphaSpending.end());
+  std::vector<double> userBeta(userBetaSpending.begin(),
+                               userBetaSpending.end());
   std::vector<double> spendTime(spendingTime.begin(), spendingTime.end());
 
   // Handle optional matrix safely
@@ -1657,78 +1716,75 @@ Rcpp::List getDesign_multiarm_Rcpp(
   }
 
   auto cpp_result = getDesign_multiarm_cpp(
-    beta, IMax, thetaVec, static_cast<size_t>(M), r, corr_known,
-    static_cast<size_t>(kMax), infoRates, effStopping, futStopping,
-    critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
-    userAlpha, futBounds, futCP, futTheta, typeBetaSpending,
-    parameterBetaSpending, userBeta, spendTime
-  );
+      beta, IMax, thetaVec, static_cast<size_t>(M), r, corr_known,
+      static_cast<size_t>(kMax), infoRates, effStopping, futStopping,
+      critValues, alpha, typeAlphaSpending, parameterAlphaSpending, userAlpha,
+      futBounds, futCP, futTheta, typeBetaSpending, parameterBetaSpending,
+      userBeta, spendTime);
 
   Rcpp::List result = Rcpp::wrap(cpp_result);
   result.attr("class") = "multiarm";
   return result;
 }
 
-
 ListCpp adaptDesign_multiarm_cpp(
-    double betaNew,
-    double INew,
-    const size_t M,
-    const double r,
-    const bool corr_known,
-    const size_t L,
-    const std::vector<double>& zL,
-    const std::vector<double>& theta,
-    const double IMax,
-    const size_t kMax,
-    const std::vector<double>& informationRates,
-    const std::vector<unsigned char>& efficacyStopping,
-    const std::vector<unsigned char>& futilityStopping,
-    const FlatMatrix& criticalValues,
-    const double alpha,
-    const std::string& typeAlphaSpending,
-    const double parameterAlphaSpending,
-    const std::vector<double>& userAlphaSpending,
-    const std::vector<double>& futilityBounds,
-    const std::vector<double>& futilityCP,
-    const std::vector<double>& futilityTheta,
-    const std::vector<double>& spendingTime,
-    const bool MullerSchafer,
-    const size_t MNew,
-    const std::vector<int>& selected,
-    const double rNew,
-    const size_t kNew,
-    const std::vector<double>& informationRatesNew,
-    const std::vector<unsigned char>& efficacyStoppingNew,
-    const std::vector<unsigned char>& futilityStoppingNew,
-    const std::string& typeAlphaSpendingNew,
+    double betaNew, double INew, const size_t M, const double r,
+    const bool corr_known, const size_t L, const std::vector<double> &zL,
+    const std::vector<double> &theta, const double IMax, const size_t kMax,
+    const std::vector<double> &informationRates,
+    const std::vector<unsigned char> &efficacyStopping,
+    const std::vector<unsigned char> &futilityStopping,
+    const FlatMatrix &criticalValues, const double alpha,
+    const std::string &typeAlphaSpending, const double parameterAlphaSpending,
+    const std::vector<double> &userAlphaSpending,
+    const std::vector<double> &futilityBounds,
+    const std::vector<double> &futilityCP,
+    const std::vector<double> &futilityTheta,
+    const std::vector<double> &spendingTime, const bool MullerSchafer,
+    const size_t MNew, const std::vector<int> &selected, const double rNew,
+    const size_t kNew, const std::vector<double> &informationRatesNew,
+    const std::vector<unsigned char> &efficacyStoppingNew,
+    const std::vector<unsigned char> &futilityStoppingNew,
+    const std::string &typeAlphaSpendingNew,
     const double parameterAlphaSpendingNew,
-    const std::vector<double>& futilityBoundsInt,
-    const std::vector<double>& futilityCPInt,
-    const std::vector<double>& futilityThetaInt,
-    const std::string& typeBetaSpendingNew,
+    const std::vector<double> &futilityBoundsInt,
+    const std::vector<double> &futilityCPInt,
+    const std::vector<double> &futilityThetaInt,
+    const std::string &typeBetaSpendingNew,
     const double parameterBetaSpendingNew,
-    const std::vector<double>& userBetaSpendingNew,
-    const std::vector<double>& spendingTimeNew) {
+    const std::vector<double> &userBetaSpendingNew,
+    const std::vector<double> &spendingTimeNew) {
 
   // ----------- Start of Input Validation ----------- //
   if (std::isnan(betaNew) && std::isnan(INew))
-    throw std::invalid_argument("betaNew and INew cannot be missing simultaneously");
+    throw std::invalid_argument(
+        "betaNew and INew cannot be missing simultaneously");
   if (!std::isnan(betaNew) && !std::isnan(INew))
-    throw std::invalid_argument("Only one of betaNew and INew should be provided");
+    throw std::invalid_argument(
+        "Only one of betaNew and INew should be provided");
   if (!std::isnan(INew) && INew <= 0.0)
     throw std::invalid_argument("INew must be positive");
 
-  if (M < 1) throw std::invalid_argument("M must be at least 1");
-  if (r <= 0.0) throw std::invalid_argument("r must be positive");
-  if (L < 1) throw std::invalid_argument("L must be at least 1");
-  if (!none_na(zL)) throw std::invalid_argument("zL must be provided");
-  if (zL.size() != M) throw std::invalid_argument("Invalid length for zL");
-  if (!none_na(theta)) throw std::invalid_argument("theta must be provided");
-  if (theta.size() != M) throw std::invalid_argument("Invalid length for theta");
-  if (std::isnan(IMax)) throw std::invalid_argument("IMax must be provided");
-  if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
-  if (kMax <= L) throw std::invalid_argument("kMax must be greater than L");
+  if (M < 1)
+    throw std::invalid_argument("M must be at least 1");
+  if (r <= 0.0)
+    throw std::invalid_argument("r must be positive");
+  if (L < 1)
+    throw std::invalid_argument("L must be at least 1");
+  if (!none_na(zL))
+    throw std::invalid_argument("zL must be provided");
+  if (zL.size() != M)
+    throw std::invalid_argument("Invalid length for zL");
+  if (!none_na(theta))
+    throw std::invalid_argument("theta must be provided");
+  if (theta.size() != M)
+    throw std::invalid_argument("Invalid length for theta");
+  if (std::isnan(IMax))
+    throw std::invalid_argument("IMax must be provided");
+  if (IMax <= 0.0)
+    throw std::invalid_argument("IMax must be positive");
+  if (kMax <= L)
+    throw std::invalid_argument("kMax must be greater than L");
 
   if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1)) {
     throw std::invalid_argument("alpha must lie in [0.00001, 1)");
@@ -1751,7 +1807,7 @@ ListCpp adaptDesign_multiarm_cpp(
     infoRates = informationRates; // copy
   } else {
     for (size_t i = 0; i < kMax; ++i)
-      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(kMax);
+      infoRates[i] = static_cast<double>(i + 1) / static_cast<double>(kMax);
   }
 
   // effStopping: default to all 1s if missing
@@ -1779,8 +1835,8 @@ ListCpp adaptDesign_multiarm_cpp(
   }
 
   bool missingCriticalValues = !none_na(criticalValues.data);
-  bool missingFutilityBounds = !none_na(futilityBounds)
-    && !none_na(futilityCP) && !none_na(futilityTheta);
+  bool missingFutilityBounds = !none_na(futilityBounds) &&
+                               !none_na(futilityCP) && !none_na(futilityTheta);
 
   if (!missingCriticalValues && criticalValues.nrow != kMax) {
     throw std::invalid_argument("Invalid number of rows for criticalValues");
@@ -1789,7 +1845,8 @@ ListCpp adaptDesign_multiarm_cpp(
     throw std::invalid_argument("Invalid number of columns for criticalValues");
   }
   if (missingCriticalValues && std::isnan(alpha)) {
-    throw std::invalid_argument("alpha must be provided for missing criticalValues");
+    throw std::invalid_argument(
+        "alpha must be provided for missing criticalValues");
   }
 
   std::string asf = typeAlphaSpending;
@@ -1797,9 +1854,10 @@ ListCpp adaptDesign_multiarm_cpp(
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
-  if (missingCriticalValues && !(asf == "of" || asf == "p" ||
-      asf == "wt" || asf == "sfof" || asf == "sfp" ||
-      asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
+  if (missingCriticalValues &&
+      !(asf == "of" || asf == "p" || asf == "wt" || asf == "sfof" ||
+        asf == "sfp" || asf == "sfkd" || asf == "sfhsd" || asf == "user" ||
+        asf == "none")) {
     throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
@@ -1807,7 +1865,8 @@ ListCpp adaptDesign_multiarm_cpp(
     throw std::invalid_argument("Missing value for parameterAlphaSpending");
   }
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
+    throw std::invalid_argument(
+        "parameterAlphaSpending must be positive for sfKD");
   }
 
   if (missingCriticalValues && asf == "user") {
@@ -1820,7 +1879,8 @@ ListCpp adaptDesign_multiarm_cpp(
     if (any_nonincreasing(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be nondecreasing");
     if (userAlphaSpending.back() != alpha)
-      throw std::invalid_argument("userAlphaSpending must end with specified alpha");
+      throw std::invalid_argument(
+          "userAlphaSpending must end with specified alpha");
   }
 
   if (!missingFutilityBounds) {
@@ -1876,10 +1936,12 @@ ListCpp adaptDesign_multiarm_cpp(
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
-  bool missingFutilityBoundsInt = !none_na(futilityBoundsInt)
-    && !none_na(futilityCPInt) && !none_na(futilityThetaInt);
+  bool missingFutilityBoundsInt = !none_na(futilityBoundsInt) &&
+                                  !none_na(futilityCPInt) &&
+                                  !none_na(futilityThetaInt);
 
-  if (MNew < 1) throw std::invalid_argument("MNew must be at least 1");
+  if (MNew < 1)
+    throw std::invalid_argument("MNew must be at least 1");
   for (auto i : selected) {
     if (i < 1 || i > static_cast<int>(M)) {
       throw std::invalid_argument("Invalid value in selected");
@@ -1890,7 +1952,8 @@ ListCpp adaptDesign_multiarm_cpp(
   if (selectedNew.size() != MNew)
     throw std::invalid_argument("Length of selected does not match MNew");
 
-  if (rNew <= 0.0) throw std::invalid_argument("rNew must be positive");
+  if (rNew <= 0.0)
+    throw std::invalid_argument("rNew must be positive");
 
   size_t k1 = kMax - L;
   std::vector<double> t1(k1);
@@ -1931,7 +1994,8 @@ ListCpp adaptDesign_multiarm_cpp(
     }
 
   } else {
-    if (kNew < 1) throw std::invalid_argument("kNew must be at least 1");
+    if (kNew < 1)
+      throw std::invalid_argument("kNew must be at least 1");
 
     // informationRatesNew: default to (1:kNew)/kNew if missing
     infoRatesNew.resize(kNew);
@@ -1947,7 +2011,8 @@ ListCpp adaptDesign_multiarm_cpp(
       infoRatesNew = informationRatesNew; // copy
     } else {
       for (size_t i = 0; i < kNew; ++i)
-        infoRatesNew[i] = static_cast<double>(i+1) / static_cast<double>(kNew);
+        infoRatesNew[i] =
+            static_cast<double>(i + 1) / static_cast<double>(kNew);
     }
 
     // effStoppingNew: default to all 1s if missing
@@ -1973,15 +2038,16 @@ ListCpp adaptDesign_multiarm_cpp(
     }
 
     if (!(asfNew == "of" || asfNew == "sfof" || asfNew == "sfp" ||
-        asfNew == "sfkd" || asfNew == "sfhsd" || asfNew == "none")) {
+          asfNew == "sfkd" || asfNew == "sfhsd" || asfNew == "none")) {
       throw std::invalid_argument("Invalid value for typeAlphaSpendingNew");
     }
     if ((asfNew == "sfkd" || asfNew == "sfhsd") &&
         std::isnan(parameterAlphaSpendingNew)) {
-      throw std::invalid_argument("Missing value for parameterAlphaSpendingNew");
+      throw std::invalid_argument(
+          "Missing value for parameterAlphaSpendingNew");
     }
     if (asfNew == "sfkd" && parameterAlphaSpendingNew <= 0.0) {
-      throw std::invalid_argument (
+      throw std::invalid_argument(
           "parameterAlphaSpendingNew must be positive for sfKD");
     }
 
@@ -2005,7 +2071,8 @@ ListCpp adaptDesign_multiarm_cpp(
   if (!missingFutilityBoundsInt) {
     if (none_na(futilityBoundsInt)) {
       if (futilityBoundsInt.size() < k2 - 1) {
-        throw std::invalid_argument("Insufficient length for futilityBoundsInt");
+        throw std::invalid_argument(
+            "Insufficient length for futilityBoundsInt");
       }
     } else if (none_na(futilityCPInt)) {
       if (futilityCPInt.size() < k2 - 1) {
@@ -2024,14 +2091,15 @@ ListCpp adaptDesign_multiarm_cpp(
   }
 
   if (std::isnan(INew)) {
-    if (missingFutilityBoundsInt && !(bsfNew == "sfof" || bsfNew == "sfp" ||
-        bsfNew == "sfkd" || bsfNew == "sfhsd" || bsfNew == "user" ||
-        bsfNew == "none")) {
+    if (missingFutilityBoundsInt &&
+        !(bsfNew == "sfof" || bsfNew == "sfp" || bsfNew == "sfkd" ||
+          bsfNew == "sfhsd" || bsfNew == "user" || bsfNew == "none")) {
       throw std::invalid_argument("Invalid value for typeBetaSpendingNew");
     }
   } else {
-    if (missingFutilityBoundsInt && !(bsfNew == "sfof" || bsfNew == "sfp" ||
-        bsfNew == "sfkd" || bsfNew == "sfhsd" || bsfNew == "none")) {
+    if (missingFutilityBoundsInt &&
+        !(bsfNew == "sfof" || bsfNew == "sfp" || bsfNew == "sfkd" ||
+          bsfNew == "sfhsd" || bsfNew == "none")) {
       throw std::invalid_argument("Invalid value for typeBetaSpendingNew");
     }
   }
@@ -2059,7 +2127,6 @@ ListCpp adaptDesign_multiarm_cpp(
           "userBetaSpendingNew must end with specified betaNew");
   }
 
-
   // ----------- End of Input Validation ----------- //
   ExitProbResult probs;
 
@@ -2080,7 +2147,7 @@ ListCpp adaptDesign_multiarm_cpp(
   bool correctDim = (criticalValues.nrow == kMax && criticalValues.ncol == M);
   if (missingCriticalValues) {
     std::vector<double> cut(kMax);
-    for (size_t M1 = M ; M1 > 0; --M1) {
+    for (size_t M1 = M; M1 > 0; --M1) {
       bool haybittle = false;
       if (correctDim) {
         cut = flatmatrix_get_column(criticalValues, M - M1);
@@ -2088,9 +2155,13 @@ ListCpp adaptDesign_multiarm_cpp(
         if (kMax > 1 && cut.size() == kMax) {
           bool hasNaN = false;
           for (size_t i = 0; i < kMax - 1; ++i) {
-            if (std::isnan(cut[i])) { hasNaN = true; break; }
+            if (std::isnan(cut[i])) {
+              hasNaN = true;
+              break;
+            }
           }
-          if (!hasNaN && std::isnan(cut[kMax-1])) haybittle = true;
+          if (!hasNaN && std::isnan(cut[kMax - 1]))
+            haybittle = true;
         }
       }
 
@@ -2099,15 +2170,16 @@ ListCpp adaptDesign_multiarm_cpp(
         FlatMatrix b1(M1, kMax);
 
         for (size_t i = 0; i < kMax - 1; ++i) {
-          if (!effStopping[i]) cut[i] = 8.0;
+          if (!effStopping[i])
+            cut[i] = 8.0;
           std::fill_n(b1.data_ptr() + i * M1, M1, cut[i]);
         }
 
-        double* last_col = b1.data_ptr() + (kMax - 1) * M1;
-        auto f = [&](double x)->double {
+        double *last_col = b1.data_ptr() + (kMax - 1) * M1;
+        auto f = [&](double x) -> double {
           std::fill_n(last_col, M1, x);
-          probs = exitprob_multiarm_cpp(M1, r, zero1, corr_known,
-                                        kMax, b1, infoRates);
+          probs = exitprob_multiarm_cpp(M1, r, zero1, corr_known, kMax, b1,
+                                        infoRates);
           double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                        probs.exitProbUpper.end(), 0.0);
           return cpu - alpha;
@@ -2115,9 +2187,9 @@ ListCpp adaptDesign_multiarm_cpp(
 
         cut[kMax - 1] = brent(f, 0.0, 8.0, 1e-6);
       } else {
-        cut = getBound_multiarm_cpp(
-          M1, r, corr_known, kMax, infoRates, alpha, asf,
-          parameterAlphaSpending, userAlphaSpending, spendTime, effStopping);
+        cut = getBound_multiarm_cpp(M1, r, corr_known, kMax, infoRates, alpha,
+                                    asf, parameterAlphaSpending,
+                                    userAlphaSpending, spendTime, effStopping);
       }
 
       std::copy_n(cut.data(), kMax, efficacyBounds1.data() + (M - M1) * kMax);
@@ -2132,9 +2204,11 @@ ListCpp adaptDesign_multiarm_cpp(
   std::vector<double> zero(M, 0.0);
   FlatMatrix sigma(M, M);
   sigma.fill(r / (1.0 + r));
-  for (size_t i = 0; i < M; ++i) sigma(i, i) = 1.0;
+  for (size_t i = 0; i < M; ++i)
+    sigma(i, i) = 1.0;
 
-  FlatMatrix a(M, kMax); a.fill(-8.0);
+  FlatMatrix a(M, kMax);
+  a.fill(-8.0);
   FlatMatrix b(M, kMax);
   for (size_t i = 0; i < kMax; ++i) {
     std::fill_n(b.data_ptr() + i * M, M, critValues[i]);
@@ -2149,7 +2223,7 @@ ListCpp adaptDesign_multiarm_cpp(
   if (kMax > 1) {
     if (missingFutilityBounds) {
       std::fill_n(futBounds.begin(), kMax - 1, -8.0);
-      futBounds[kMax-1] = critValues[kMax-1];
+      futBounds[kMax - 1] = critValues[kMax - 1];
     } else if (!missingFutilityBounds) {
       if (none_na(futilityBounds)) {
         for (size_t i = 0; i < kMax - 1; ++i) {
@@ -2158,29 +2232,29 @@ ListCpp adaptDesign_multiarm_cpp(
                 "futilityBounds must lie below criticalValues");
           }
         }
-        std::copy_n(futilityBounds.begin(), kMax-1, futBounds.begin());
-        futBounds[kMax-1] = critValues[kMax-1];
+        std::copy_n(futilityBounds.begin(), kMax - 1, futBounds.begin());
+        futBounds[kMax - 1] = critValues[kMax - 1];
       } else if (none_na(futilityCP)) {
         double c2 = critValues[kMax - 1];
         for (size_t i = 0; i < kMax - 1; ++i) {
           double q = qmvnormcpp(1 - futilityCP[i], zero, sigma);
-          futBounds[i] = std::sqrt(infoRates[i]) *
-            (c2 - std::sqrt(1 - infoRates[i]) * q);
+          futBounds[i] =
+              std::sqrt(infoRates[i]) * (c2 - std::sqrt(1 - infoRates[i]) * q);
           if (futBounds[i] > critValues[i]) {
             throw std::invalid_argument("futilityCP values are too large to "
-                                          "be compatible with criticalValues");
+                                        "be compatible with criticalValues");
           }
         }
-        futBounds[kMax-1] = critValues[kMax-1];
+        futBounds[kMax - 1] = critValues[kMax - 1];
       } else {
         for (size_t i = 0; i < kMax - 1; ++i) {
           futBounds[i] = std::sqrt(infoRates[i] * IMax) * futilityTheta[i];
           if (futBounds[i] > critValues[i]) {
             throw std::invalid_argument("futilityTheta values are too large to "
-                                          "be compatible with criticalValues");
+                                        "be compatible with criticalValues");
           }
         }
-        futBounds[kMax-1] = critValues[kMax-1];
+        futBounds[kMax - 1] = critValues[kMax - 1];
       }
     }
   } else {
@@ -2191,7 +2265,8 @@ ListCpp adaptDesign_multiarm_cpp(
 
   // information for the primary trial
   std::vector<double> information1(kMax);
-  for (size_t i = 0; i < kMax; ++i) information1[i] = infoRates[i] * IMax;
+  for (size_t i = 0; i < kMax; ++i)
+    information1[i] = infoRates[i] * IMax;
 
   for (size_t i = 0; i < kMax; ++i) {
     std::fill_n(a.data_ptr() + i * M, M, futBounds[i]);
@@ -2204,7 +2279,7 @@ ListCpp adaptDesign_multiarm_cpp(
   a1.fill(-8.0);
   for (size_t i = 0; i < k1; ++i) {
     r1[i] = infoRates[L - 1] / infoRates[L + i];
-    double* bptr = b1.data_ptr() + i * M; // start of column i of b1
+    double *bptr = b1.data_ptr() + i * M; // start of column i of b1
     if (effStopping[L + i]) {
       double cut = critValues[L + i];
       r1[i] = infoRates[L - 1] / infoRates[L + i];
@@ -2233,7 +2308,7 @@ ListCpp adaptDesign_multiarm_cpp(
 
   // conditional power
   for (size_t i = 0; i < k1; ++i) {
-    double* aptr = a1.data_ptr() + i * M; // start of column i of a1
+    double *aptr = a1.data_ptr() + i * M; // start of column i of a1
     if (futStopping[L + i]) {
       double cut = futBounds[L + i];
       double sqrt_r1 = std::sqrt(r1[i]);
@@ -2258,7 +2333,8 @@ ListCpp adaptDesign_multiarm_cpp(
   std::vector<double> zero2(MNew, 0.0);
   FlatMatrix sigma2(MNew, MNew);
   sigma2.fill(rNew / (rNew + 1.0));
-  for (size_t i = 0; i < MNew; ++i) sigma2(i, i) = 1.0;
+  for (size_t i = 0; i < MNew; ++i)
+    sigma2(i, i) = 1.0;
 
   std::string asf2;
   double asfpar2;
@@ -2282,11 +2358,14 @@ ListCpp adaptDesign_multiarm_cpp(
   std::vector<double> sqrtI2(k2), sqrtIc(k2);
   std::vector<double> critValues2(k2, 8.0); // for integrated trial
   std::vector<double> futBounds2(k2, -8.0); // for integrated trial
-  FlatMatrix b2(MNew, k2); b2.fill(8.0);  // for secondary trial
-  FlatMatrix a2(MNew, k2); a2.fill(-8.0); // for secondary trial
+  FlatMatrix b2(MNew, k2);
+  b2.fill(8.0); // for secondary trial
+  FlatMatrix a2(MNew, k2);
+  a2.fill(-8.0); // for secondary trial
 
   std::vector<double> zscaled(MNew);
-  for (size_t j = 0; j < MNew; ++j) zscaled[j] = zL[selectedNew[j]] * sqrtIL;
+  for (size_t j = 0; j < MNew; ++j)
+    zscaled[j] = zL[selectedNew[j]] * sqrtIL;
 
   double maxtheta = *std::max_element(theta.begin(), theta.end());
 
@@ -2300,13 +2379,12 @@ ListCpp adaptDesign_multiarm_cpp(
 
     // first obtain the efficacy bounds for the secondary trial
     if (asf2 == "of") {
-      auto g = [&b2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2,
-                &effStoppingNew, &probs,
-                k2, alphaNew, MNew, rNew, corr_known]
-      (double aval)->double {
+      auto g = [&b2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2, &effStoppingNew,
+                &probs, k2, alphaNew, MNew, rNew,
+                corr_known](double aval) -> double {
         double col_const = aval * sqrtIc[k2 - 1];
         for (size_t i = 0; i < k2; ++i) {
-          double* colptr = b2.data_ptr() + i * MNew;
+          double *colptr = b2.data_ptr() + i * MNew;
           if (effStoppingNew[i]) {
             double denom = sqrtI2[i];
             for (size_t j = 0; j < MNew; ++j) {
@@ -2317,7 +2395,8 @@ ListCpp adaptDesign_multiarm_cpp(
           }
         }
 
-        probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
+        probs =
+            exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
         double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                     probs.exitProbUpper.end(), 0.0);
         return p0 - alphaNew;
@@ -2326,7 +2405,7 @@ ListCpp adaptDesign_multiarm_cpp(
       double cof = brent(g, 0.0, 8.0, 1e-6);
       double col_const = cof * sqrtIc[k2 - 1];
       for (size_t i = 0; i < k2; ++i) {
-        double* colptr = b2.data_ptr() + i * MNew;
+        double *colptr = b2.data_ptr() + i * MNew;
         if (effStoppingNew[i]) {
           critValues2[i] = col_const / sqrtIc[i];
           double denom = sqrtI2[i];
@@ -2339,19 +2418,20 @@ ListCpp adaptDesign_multiarm_cpp(
         }
       }
     } else if (asf2 == "none") {
-      for (size_t i = 0; i < k2 - 1; ++i) critValues2[i] = 8.0;
+      for (size_t i = 0; i < k2 - 1; ++i)
+        critValues2[i] = 8.0;
       double denom = sqrtI2[k2 - 1];
 
-      auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs,
-                denom, k2, alphaNew, MNew, rNew, corr_known]
-      (double aval)->double {
-        double* colptr = b2.data_ptr() + (k2 - 1) * MNew;
+      auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs, denom, k2,
+                alphaNew, MNew, rNew, corr_known](double aval) -> double {
+        double *colptr = b2.data_ptr() + (k2 - 1) * MNew;
         double col_const = aval * sqrtIc[k2 - 1];
         for (size_t j = 0; j < MNew; ++j) {
           colptr[j] = (col_const - zscaled[j]) / denom;
         }
 
-        probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
+        probs =
+            exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
         double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                     probs.exitProbUpper.end(), 0.0);
         return p0 - alphaNew;
@@ -2359,28 +2439,28 @@ ListCpp adaptDesign_multiarm_cpp(
 
       double cof = brent(g, 0.0, 8.0, 1e-6);
       critValues2[k2 - 1] = cof;
-      double* colptr = b2.data_ptr() + (k2 - 1) * MNew;
+      double *colptr = b2.data_ptr() + (k2 - 1) * MNew;
       double col_const = cof * sqrtIc[k2 - 1];
       for (size_t j = 0; j < MNew; ++j) {
         colptr[j] = (col_const - zscaled[j]) / denom;
       }
     } else {
       for (size_t i = 0; i < k2; ++i) {
-        if (!effStoppingNew[i]) continue;
+        if (!effStoppingNew[i])
+          continue;
         double denom = sqrtI2[i];
 
-        auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs,
-                  denom, i, MNew, rNew, corr_known]
-        (double aval)->double {
+        auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs, denom, i,
+                  MNew, rNew, corr_known](double aval) -> double {
           double col_const = aval * sqrtIc[i];
-          double* colptr = b2.data_ptr() + i * MNew;
+          double *colptr = b2.data_ptr() + i * MNew;
           // update critical values of the secondary trial at current look
           for (size_t j = 0; j < MNew; ++j) {
             colptr[j] = (col_const - zscaled[j]) / denom;
           }
 
-          probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known,
-                                        i + 1, b2, I2);
+          probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, i + 1,
+                                        b2, I2);
           double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                       probs.exitProbUpper.end(), 0.0);
           return p0 - cpu0[i];
@@ -2389,7 +2469,7 @@ ListCpp adaptDesign_multiarm_cpp(
         double cof = brent(g, 0.0, 8.0, 1e-6);
         double col_const = cof * sqrtIc[i];
         critValues2[i] = cof;
-        double* colptr = b2.data_ptr() + i * MNew;
+        double *colptr = b2.data_ptr() + i * MNew;
         for (size_t j = 0; j < MNew; ++j) {
           colptr[j] = (col_const - zscaled[j]) / denom;
         }
@@ -2400,7 +2480,7 @@ ListCpp adaptDesign_multiarm_cpp(
     if (k2 > 1) {
       if (missingFutilityBoundsInt && bsfNew == "none") {
         std::fill_n(futBounds2.begin(), k2 - 1, -8.0);
-        futBounds2[k2-1] = critValues2[k2-1];
+        futBounds2[k2 - 1] = critValues2[k2 - 1];
       } else if (!missingFutilityBoundsInt) {
         if (none_na(futilityBoundsInt)) {
           for (size_t i = 0; i < k2 - 1; ++i) {
@@ -2410,8 +2490,8 @@ ListCpp adaptDesign_multiarm_cpp(
                   "for the integrated trial");
             }
           }
-          std::copy_n(futilityBoundsInt.begin(), k2-1, futBounds2.begin());
-          futBounds2[k2-1] = critValues2[k2-1];
+          std::copy_n(futilityBoundsInt.begin(), k2 - 1, futBounds2.begin());
+          futBounds2[k2 - 1] = critValues2[k2 - 1];
         } else if (none_na(futilityCPInt)) {
           double c2 = critValues2[k2 - 1];
           for (size_t i = 0; i < k2 - 1; ++i) {
@@ -2424,7 +2504,7 @@ ListCpp adaptDesign_multiarm_cpp(
                   "critical values for the integrated trial");
             }
           }
-          futBounds2[k2-1] = critValues2[k2-1];
+          futBounds2[k2 - 1] = critValues2[k2 - 1];
         } else {
           for (size_t i = 0; i < k2 - 1; ++i) {
             futBounds2[i] = std::sqrt(Ic[i]) * futilityThetaInt[i];
@@ -2434,7 +2514,7 @@ ListCpp adaptDesign_multiarm_cpp(
                   "critical values for the integrated trial");
             }
           }
-          futBounds2[k2-1] = critValues2[k2-1];
+          futBounds2[k2 - 1] = critValues2[k2 - 1];
         }
       }
     } else {
@@ -2443,10 +2523,11 @@ ListCpp adaptDesign_multiarm_cpp(
       }
     }
 
-    if (missingFutilityBoundsInt && bsfNew != "none" && k2 > 1) { // beta-spending
+    if (missingFutilityBoundsInt && bsfNew != "none" &&
+        k2 > 1) { // beta-spending
       auto out = getPower_multiarm(
-        MNew, rNew, theta2, alphaNew, k2, critValues2, Ic,
-        bsfNew, parameterBetaSpendingNew, spendTimeNew, futStoppingNew, IL, zL);
+          MNew, rNew, theta2, alphaNew, k2, critValues2, Ic, bsfNew,
+          parameterBetaSpendingNew, spendTimeNew, futStoppingNew, IL, zL);
       futBounds2 = out.futilityBounds;
     }
 
@@ -2458,17 +2539,17 @@ ListCpp adaptDesign_multiarm_cpp(
     }
 
   } else { // unknown information, sample size calculation problem
-    // obtain required max information for the secondary trial given target power
+    // obtain required max information for the secondary trial given target
+    // power
     std::vector<double> lo(MNew, -8.0), hi(MNew), mu0(MNew);
 
-    auto f = [&critValues2, &futBounds2, &b2, &a2, &I2, &Ic,
-              &sqrtI2, &sqrtIc, &zscaled, &cpu0, &zero2, &theta2, &infoRatesNew,
-              &effStoppingNew, &futStoppingNew, &spendTimeNew,
-              &lo, &hi, &mu0, &sigma2, &userBetaSpendingNew,
-              &futilityBoundsInt, &futilityCPInt, &futilityThetaInt, &probs,
-              betaNew, k2, asf2, alphaNew, IL, MNew, rNew, corr_known,
-              missingFutilityBoundsInt, bsfNew, parameterBetaSpendingNew, maxtheta]
-    (double x)->double {
+    auto f = [&critValues2, &futBounds2, &b2, &a2, &I2, &Ic, &sqrtI2, &sqrtIc,
+              &zscaled, &cpu0, &zero2, &theta2, &infoRatesNew, &effStoppingNew,
+              &futStoppingNew, &spendTimeNew, &lo, &hi, &mu0, &sigma2,
+              &userBetaSpendingNew, &futilityBoundsInt, &futilityCPInt,
+              &futilityThetaInt, &probs, betaNew, k2, asf2, alphaNew, IL, MNew,
+              rNew, corr_known, missingFutilityBoundsInt, bsfNew,
+              parameterBetaSpendingNew, maxtheta](double x) -> double {
       double Inew = sq(x / maxtheta);
       for (size_t i = 0; i < k2; ++i) {
         I2[i] = Inew * infoRatesNew[i];
@@ -2483,25 +2564,26 @@ ListCpp adaptDesign_multiarm_cpp(
 
       // first obtain the efficacy bounds for the secondary trial
       if (asf2 == "of") {
-        auto g = [&b2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2,
-                  &effStoppingNew, &probs,
-                  k2, alphaNew, MNew, rNew, corr_known]
-        (double aval)->double {
+        auto g = [&b2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2, &effStoppingNew,
+                  &probs, k2, alphaNew, MNew, rNew,
+                  corr_known](double aval) -> double {
           double col_const = aval * sqrtIc[k2 - 1];
           for (size_t i = 0; i < k2; ++i) {
-            double* colptr = b2.data_ptr() + i * MNew;
+            double *colptr = b2.data_ptr() + i * MNew;
             if (effStoppingNew[i]) {
               double denom = sqrtI2[i];
               for (size_t j = 0; j < MNew; ++j) {
                 colptr[j] = (col_const - zscaled[j]) / denom;
-                if (colptr[j] < -8.0) colptr[j] = -8.0;
+                if (colptr[j] < -8.0)
+                  colptr[j] = -8.0;
               }
             } else {
               std::fill_n(colptr, MNew, 8.0);
             }
           }
 
-          probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
+          probs =
+              exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
           double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                       probs.exitProbUpper.end(), 0.0);
           return p0 - alphaNew;
@@ -2510,13 +2592,14 @@ ListCpp adaptDesign_multiarm_cpp(
         double cof = brent(g, 0.0, 8.0, 1e-6);
         double col_const = cof * sqrtIc[k2 - 1];
         for (size_t i = 0; i < k2; ++i) {
-          double* colptr = b2.data_ptr() + i * MNew;
+          double *colptr = b2.data_ptr() + i * MNew;
           if (effStoppingNew[i]) {
             critValues2[i] = col_const / sqrtIc[i];
             double denom = sqrtI2[i];
             for (size_t j = 0; j < MNew; ++j) {
               colptr[j] = (col_const - zscaled[j]) / denom;
-              if (colptr[j] < -8.0) colptr[j] = -8.0;
+              if (colptr[j] < -8.0)
+                colptr[j] = -8.0;
             }
           } else {
             critValues2[i] = 8.0;
@@ -2524,20 +2607,22 @@ ListCpp adaptDesign_multiarm_cpp(
           }
         }
       } else if (asf2 == "none") {
-        for (size_t i = 0; i < k2 - 1; ++i) critValues2[i] = 8.0;
+        for (size_t i = 0; i < k2 - 1; ++i)
+          critValues2[i] = 8.0;
         double denom = sqrtI2[k2 - 1];
 
-        auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs,
-                  denom, k2, alphaNew, MNew, rNew, corr_known]
-        (double aval)->double {
-          double* colptr = b2.data_ptr() + (k2 - 1) * MNew;
+        auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs, denom, k2,
+                  alphaNew, MNew, rNew, corr_known](double aval) -> double {
+          double *colptr = b2.data_ptr() + (k2 - 1) * MNew;
           double col_const = aval * sqrtIc[k2 - 1];
           for (size_t j = 0; j < MNew; ++j) {
             colptr[j] = (col_const - zscaled[j]) / denom;
-            if (colptr[j] < -8.0) colptr[j] = -8.0;
+            if (colptr[j] < -8.0)
+              colptr[j] = -8.0;
           }
 
-          probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
+          probs =
+              exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, k2, b2, I2);
           double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                       probs.exitProbUpper.end(), 0.0);
           return p0 - alphaNew;
@@ -2545,29 +2630,30 @@ ListCpp adaptDesign_multiarm_cpp(
 
         double cof = brent(g, 0.0, 8.0, 1e-6);
         critValues2[k2 - 1] = cof;
-        double* colptr = b2.data_ptr() + (k2 - 1) * MNew;
+        double *colptr = b2.data_ptr() + (k2 - 1) * MNew;
         double col_const = cof * sqrtIc[k2 - 1];
         for (size_t j = 0; j < MNew; ++j) {
           colptr[j] = (col_const - zscaled[j]) / denom;
         }
       } else {
         for (size_t i = 0; i < k2; ++i) {
-          if (!effStoppingNew[i]) continue;
+          if (!effStoppingNew[i])
+            continue;
           double denom = sqrtI2[i];
 
-          auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs,
-                    denom, i, MNew, rNew, corr_known]
-          (double aval)->double {
+          auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs, denom,
+                    i, MNew, rNew, corr_known](double aval) -> double {
             double col_const = aval * sqrtIc[i];
-            double* colptr = b2.data_ptr() + i * MNew;
+            double *colptr = b2.data_ptr() + i * MNew;
             // update critical values of the secondary trial at current look
             for (size_t j = 0; j < MNew; ++j) {
               colptr[j] = (col_const - zscaled[j]) / denom;
-              if (colptr[j] < -8.0) colptr[j] = -8.0;
+              if (colptr[j] < -8.0)
+                colptr[j] = -8.0;
             }
 
-            probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known,
-                                          i + 1, b2, I2);
+            probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, i + 1,
+                                          b2, I2);
             double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                         probs.exitProbUpper.end(), 0.0);
             return p0 - cpu0[i];
@@ -2576,7 +2662,7 @@ ListCpp adaptDesign_multiarm_cpp(
           double cof = brent(g, 0.0, 8.0, 1e-6);
           double col_const = cof * sqrtIc[i];
           critValues2[i] = cof;
-          double* colptr = b2.data_ptr() + i * MNew;
+          double *colptr = b2.data_ptr() + i * MNew;
           for (size_t j = 0; j < MNew; ++j) {
             colptr[j] = (col_const - zscaled[j]) / denom;
           }
@@ -2587,7 +2673,7 @@ ListCpp adaptDesign_multiarm_cpp(
       if (k2 > 1) {
         if (missingFutilityBoundsInt && bsfNew == "none") {
           std::fill_n(futBounds2.begin(), k2 - 1, -8.0);
-          futBounds2[k2-1] = critValues2[k2-1];
+          futBounds2[k2 - 1] = critValues2[k2 - 1];
         } else if (!missingFutilityBoundsInt) {
           if (none_na(futilityBoundsInt)) {
             for (size_t i = 0; i < k2 - 1; ++i) {
@@ -2597,8 +2683,8 @@ ListCpp adaptDesign_multiarm_cpp(
                     "for the integrated trial");
               }
             }
-            std::copy_n(futilityBoundsInt.begin(), k2-1, futBounds2.begin());
-            futBounds2[k2-1] = critValues2[k2-1];
+            std::copy_n(futilityBoundsInt.begin(), k2 - 1, futBounds2.begin());
+            futBounds2[k2 - 1] = critValues2[k2 - 1];
           } else if (none_na(futilityCPInt)) {
             double c2 = critValues2[k2 - 1];
             for (size_t i = 0; i < k2 - 1; ++i) {
@@ -2611,17 +2697,17 @@ ListCpp adaptDesign_multiarm_cpp(
                     "critical values for the integrated trial");
               }
             }
-            futBounds2[k2-1] = critValues2[k2-1];
+            futBounds2[k2 - 1] = critValues2[k2 - 1];
           } else {
             for (size_t i = 0; i < k2 - 1; ++i) {
               futBounds2[i] = std::sqrt(Ic[i]) * futilityThetaInt[i];
               if (futBounds2[i] > critValues2[i]) {
                 throw std::invalid_argument(
-                    "futilityThetaInt values are too large to be compatible with "
-                    "critical values for the integrated trial");
+                    "futilityThetaInt values are too large to be compatible "
+                    "with critical values for the integrated trial");
               }
             }
-            futBounds2[k2-1] = critValues2[k2-1];
+            futBounds2[k2 - 1] = critValues2[k2 - 1];
           }
         }
       } else {
@@ -2634,7 +2720,8 @@ ListCpp adaptDesign_multiarm_cpp(
         for (size_t i = 0; i < k2; ++i) {
           for (size_t m = 0; m < MNew; ++m) {
             a2(m, i) = (futBounds2[i] * sqrtIc[i] - zscaled[m]) / sqrtI2[i];
-            if (a2(m, i) > b2(m, i)) a2(m, i) = b2(m, i);
+            if (a2(m, i) > b2(m, i))
+              a2(m, i) = b2(m, i);
           }
         }
 
@@ -2649,9 +2736,10 @@ ListCpp adaptDesign_multiarm_cpp(
 
         // first stage
         if (futStoppingNew[0]) {
-          cb = (bsfNew == "user") ? userBetaSpendingNew[0] :
-          errorSpentcpp(spendTimeNew[0], betaNew, bsfNew,
-                        parameterBetaSpendingNew);
+          cb = (bsfNew == "user")
+                   ? userBetaSpendingNew[0]
+                   : errorSpentcpp(spendTimeNew[0], betaNew, bsfNew,
+                                   parameterBetaSpendingNew);
 
           auto g = [&](double aval) -> double {
             for (size_t m = 0; m < MNew; ++m) {
@@ -2663,30 +2751,35 @@ ListCpp adaptDesign_multiarm_cpp(
           };
 
           eps = g(critValues2[0]);
-          if (eps < 0.0) return -1.0; // to decrease drift
+          if (eps < 0.0)
+            return -1.0; // to decrease drift
           futBounds2[0] = brent(g, -8.0, critValues2[0], 1e-6);
         }
 
         // subsequent stages
         for (size_t k = 1; k < k2; ++k) {
           if (futStoppingNew[k]) {
-            cb = (bsfNew == "user") ? userBetaSpendingNew[k] :
-            errorSpentcpp(spendTimeNew[k], betaNew, bsfNew,
-                          parameterBetaSpendingNew);
+            cb = (bsfNew == "user")
+                     ? userBetaSpendingNew[k]
+                     : errorSpentcpp(spendTimeNew[k], betaNew, bsfNew,
+                                     parameterBetaSpendingNew);
 
             for (size_t m = 0; m < MNew; ++m) {
-              a2(m, k-1) = (futBounds2[k-1] *sqrtIc[k-1] - zscaled[m]) /sqrtI2[k-1];
-              if (a2(m, k-1) > b2(m, k-1)) a2(m, k-1) = b2(m, k-1);
+              a2(m, k - 1) = (futBounds2[k - 1] * sqrtIc[k - 1] - zscaled[m]) /
+                             sqrtI2[k - 1];
+              if (a2(m, k - 1) > b2(m, k - 1))
+                a2(m, k - 1) = b2(m, k - 1);
             }
 
             // lambda expression for finding futility bound at stage k
-            auto g = [&](double aval)->double {
+            auto g = [&](double aval) -> double {
               for (size_t m = 0; m < MNew; ++m) {
                 a2(m, k) = (aval * sqrtIc[k] - zscaled[m]) / sqrtI2[k];
-                if (a2(m, k) > b2(m, k)) a2(m, k) = b2(m, k);
+                if (a2(m, k) > b2(m, k))
+                  a2(m, k) = b2(m, k);
               }
-              probs = exitprob_multiarm_cpp(MNew, rNew, theta2, true,
-                                            k + 1, b2, a2, I2);
+              probs = exitprob_multiarm_cpp(MNew, rNew, theta2, true, k + 1, b2,
+                                            a2, I2);
               double cpl = std::accumulate(probs.exitProbLower.begin(),
                                            probs.exitProbLower.end(), 0.0);
               return cpl - cb;
@@ -2698,14 +2791,16 @@ ListCpp adaptDesign_multiarm_cpp(
             if (g_minus8 > 0.0) { // no beta spent at current visit
               futBounds2[k] = -8.0;
             } else if (eps > 0.0) {
-              auto g_for_brent = [&](double aval)->double {
-                if (aval == -8.0) return g_minus8;  // avoid recomputation at 8.0
-                if (aval == bk) return eps;         // avoid recomputation at b[k]
+              auto g_for_brent = [&](double aval) -> double {
+                if (aval == -8.0)
+                  return g_minus8; // avoid recomputation at 8.0
+                if (aval == bk)
+                  return eps; // avoid recomputation at b[k]
                 return g(aval);
               };
 
               futBounds2[k] = brent(g_for_brent, -8.0, bk, 1e-6);
-            } else if (k < k2-1) {
+            } else if (k < k2 - 1) {
               return -1.0;
             }
           }
@@ -2718,16 +2813,16 @@ ListCpp adaptDesign_multiarm_cpp(
     double drift = brent(f, 0.001, 8.0, 1e-6);
     INew = sq(drift / maxtheta);
 
-    futBounds2[k2-1] = critValues2[k2-1];
-    std::memcpy(a2.data_ptr() + (k2-1) * MNew, b2.data_ptr() + (k2-1) * MNew,
-                MNew * sizeof(double));
+    futBounds2[k2 - 1] = critValues2[k2 - 1];
+    std::memcpy(a2.data_ptr() + (k2 - 1) * MNew,
+                b2.data_ptr() + (k2 - 1) * MNew, MNew * sizeof(double));
   }
 
   // compute conditional power of the secondary trial
   probs = exitprob_multiarm_cpp(MNew, rNew, theta2, true, k2, b2, a2, I2);
   std::vector<double> cpu1(k2);
-  std::partial_sum(probs.exitProbUpper.begin(),
-                   probs.exitProbUpper.end(), cpu1.begin());
+  std::partial_sum(probs.exitProbUpper.begin(), probs.exitProbUpper.end(),
+                   cpu1.begin());
   double p2 = cpu1.back();
 
   std::vector<int> hypothesis2(MNew * k2);
@@ -2752,7 +2847,8 @@ ListCpp adaptDesign_multiarm_cpp(
 
   double IMaxc = Ic_full.back();
   std::vector<double> infoRates_full(kc);
-  for (size_t i = 0; i < kc; ++i) infoRates_full[i] = Ic_full[i] / IMaxc;
+  for (size_t i = 0; i < kc; ++i)
+    infoRates_full[i] = Ic_full[i] / IMaxc;
 
   std::vector<double> critValues_full(kc);
   std::copy_n(critValues.data(), L, critValues_full.data());
@@ -2777,11 +2873,16 @@ ListCpp adaptDesign_multiarm_cpp(
 
     std::vector<size_t> primary;
     std::vector<size_t> selectedNew2;
-    primary.reserve(M); selectedNew2.reserve(MNew);
+    primary.reserve(M);
+    selectedNew2.reserve(MNew);
 
     // Count M2 by popcount
     size_t M2 = 0;
-    for (size_t b = 0; b < MNew; ++b) if ((number >> (MNew - 1 - b)) & 1u) ++M2;
+    for (size_t b = 0; b < MNew; ++b) {
+      if ((number >> (MNew - 1 - b)) & 1u)
+        ++M2;
+    }
+
     size_t M1 = M2 + (M - MNew);
 
     for (size_t j = 0; j < M; ++j) {
@@ -2799,16 +2900,18 @@ ListCpp adaptDesign_multiarm_cpp(
     }
 
     std::vector<double> critValues(kMax);
-    std::copy_n(efficacyBounds1.data() + (M - M1) * kMax, kMax, critValues.data());
+    std::copy_n(efficacyBounds1.data() + (M - M1) * kMax, kMax,
+                critValues.data());
 
     // compute conditional alpha for MAMS with the given M1 hypotheses
-    FlatMatrix b1(M1, k1); b1.fill(8.0);
+    FlatMatrix b1(M1, k1);
+    b1.fill(8.0);
     for (size_t i = 0; i < k1; ++i) {
       double col_const = critValues[L + i];
       double r1 = infoRates[L - 1] / infoRates[L + i];
       double sqrt_r1 = std::sqrt(r1);
       double denom = std::sqrt(1.0 - r1);
-      double* colptr = b1.data_ptr() + i * M1; // start of column i
+      double *colptr = b1.data_ptr() + i * M1; // start of column i
       if (effStopping[L + i]) {
         for (size_t j = 0; j < M1; ++j) {
           colptr[j] = (col_const - zL[primary[j]] * sqrt_r1) / denom;
@@ -2837,19 +2940,20 @@ ListCpp adaptDesign_multiarm_cpp(
 
     std::vector<double> zero2(M2, 0.0);
     std::vector<double> critValues2(k2, 8.0);
-    FlatMatrix b2(M2, k2); b2.fill(8.0);
+    FlatMatrix b2(M2, k2);
+    b2.fill(8.0);
 
     std::vector<double> zscaled(M2);
-    for (size_t j = 0; j < M2; ++j) zscaled[j] = zL[selectedNew2[j]] * sqrtIL;
+    for (size_t j = 0; j < M2; ++j)
+      zscaled[j] = zL[selectedNew2[j]] * sqrtIL;
 
     if (asf2 == "of") {
-      auto g = [&b2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2,
-                &effStoppingNew, &probs,
-                k2, alphaNew, M2, rNew, corr_known]
-      (double aval)->double {
+      auto g = [&b2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2, &effStoppingNew,
+                &probs, k2, alphaNew, M2, rNew,
+                corr_known](double aval) -> double {
         double col_const = aval * sqrtIc[k2 - 1];
         for (size_t i = 0; i < k2; ++i) {
-          double* colptr = b2.data_ptr() + i * M2;
+          double *colptr = b2.data_ptr() + i * M2;
           if (effStoppingNew[i]) {
             double denom = sqrtI2[i];
             for (size_t j = 0; j < M2; ++j) {
@@ -2876,14 +2980,14 @@ ListCpp adaptDesign_multiarm_cpp(
         }
       }
     } else if (asf2 == "none") {
-      for (size_t i = 0; i < k2 - 1; ++i) critValues2[i] = 8.0;
+      for (size_t i = 0; i < k2 - 1; ++i)
+        critValues2[i] = 8.0;
       double denom = sqrtI2[k2 - 1];
 
-      auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs,
-                denom, k2, alphaNew, M2, rNew, corr_known]
-      (double aval)->double {
+      auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs, denom, k2,
+                alphaNew, M2, rNew, corr_known](double aval) -> double {
         double col_const = aval * sqrtIc[k2 - 1];
-        double* colptr = b2.data_ptr() + (k2 - 1) * M2;
+        double *colptr = b2.data_ptr() + (k2 - 1) * M2;
         for (size_t j = 0; j < M2; ++j) {
           colptr[j] = (col_const - zscaled[j]) / denom;
         }
@@ -2898,20 +3002,21 @@ ListCpp adaptDesign_multiarm_cpp(
       critValues2[k2 - 1] = cof;
     } else {
       for (size_t i = 0; i < k2; ++i) {
-        if (!effStoppingNew[i]) continue;
+        if (!effStoppingNew[i])
+          continue;
         double denom = sqrtI2[i];
 
-        auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs,
-                  denom, i, M2, rNew, corr_known]
-        (double aval)->double {
+        auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs, denom, i,
+                  M2, rNew, corr_known](double aval) -> double {
           double col_const = aval * sqrtIc[i];
-          double* colptr = b2.data_ptr() + i * M2;
+          double *colptr = b2.data_ptr() + i * M2;
           // update critical values of the secondary trial at current look
           for (size_t j = 0; j < M2; ++j) {
             colptr[j] = (col_const - zscaled[j]) / denom;
           }
 
-          probs = exitprob_multiarm_cpp(M2, rNew, zero2, corr_known, i+1, b2, I2);
+          probs =
+              exitprob_multiarm_cpp(M2, rNew, zero2, corr_known, i + 1, b2, I2);
           double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                       probs.exitProbUpper.end(), 0.0);
           return p0 - cpu0[i];
@@ -2930,7 +3035,9 @@ ListCpp adaptDesign_multiarm_cpp(
       std::string s;
       s.reserve(3 + selectedNew2.size() * 4); // rough reservation
       for (size_t t = 0; t < selectedNew2.size(); ++t) {
-        if (t) { s.append(", "); }
+        if (t) {
+          s.append(", ");
+        }
         s.append(std::to_string(selectedNew2[t] + 1));
       }
       intersectHyp[row] = std::move(s);
@@ -3021,48 +3128,39 @@ ListCpp adaptDesign_multiarm_cpp(
   return result;
 }
 
-
 // [[Rcpp::export]]
 Rcpp::List adaptDesign_multiarm_Rcpp(
-    double betaNew = NA_REAL,
-    double INew = NA_REAL,
-    const int M = NA_INTEGER,
-    const double r = 1,
-    const bool corr_known = true,
-    const int L = NA_INTEGER,
-    const Rcpp::NumericVector& zL = NA_REAL,
-    const Rcpp::NumericVector& theta = NA_REAL,
-    const double IMax = NA_REAL,
+    double betaNew = NA_REAL, double INew = NA_REAL, const int M = NA_INTEGER,
+    const double r = 1, const bool corr_known = true, const int L = NA_INTEGER,
+    const Rcpp::NumericVector &zL = NA_REAL,
+    const Rcpp::NumericVector &theta = NA_REAL, const double IMax = NA_REAL,
     const int kMax = NA_INTEGER,
-    const Rcpp::NumericVector& informationRates = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
-    const Rcpp::LogicalVector& futilityStopping = NA_LOGICAL,
+    const Rcpp::NumericVector &informationRates = NA_REAL,
+    const Rcpp::LogicalVector &efficacyStopping = NA_LOGICAL,
+    const Rcpp::LogicalVector &futilityStopping = NA_LOGICAL,
     const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues = R_NilValue,
-    const double alpha = 0.025,
-    const std::string& typeAlphaSpending = "sfOF",
+    const double alpha = 0.025, const std::string &typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
+    const Rcpp::NumericVector &userAlphaSpending = NA_REAL,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds = R_NilValue,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityCP = R_NilValue,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta = R_NilValue,
-    const Rcpp::NumericVector& spendingTime = NA_REAL,
-    const bool MullerSchafer = false,
-    const int MNew = NA_INTEGER,
-    const Rcpp::IntegerVector& selected = NA_INTEGER,
-    const double rNew = 1,
+    const Rcpp::NumericVector &spendingTime = NA_REAL,
+    const bool MullerSchafer = false, const int MNew = NA_INTEGER,
+    const Rcpp::IntegerVector &selected = NA_INTEGER, const double rNew = 1,
     const int kNew = NA_INTEGER,
-    const Rcpp::NumericVector& informationRatesNew = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStoppingNew = NA_LOGICAL,
-    const Rcpp::LogicalVector& futilityStoppingNew = NA_LOGICAL,
-    const std::string& typeAlphaSpendingNew = "sfOF",
+    const Rcpp::NumericVector &informationRatesNew = NA_REAL,
+    const Rcpp::LogicalVector &efficacyStoppingNew = NA_LOGICAL,
+    const Rcpp::LogicalVector &futilityStoppingNew = NA_LOGICAL,
+    const std::string &typeAlphaSpendingNew = "sfOF",
     const double parameterAlphaSpendingNew = NA_REAL,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityBoundsInt = R_NilValue,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityCPInt = R_NilValue,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityThetaInt = R_NilValue,
-    const std::string& typeBetaSpendingNew = "none",
+    const std::string &typeBetaSpendingNew = "none",
     const double parameterBetaSpendingNew = NA_REAL,
-    const Rcpp::NumericVector& userBetaSpendingNew = NA_REAL,
-    const Rcpp::NumericVector& spendingTimeNew = NA_REAL) {
+    const Rcpp::NumericVector &userBetaSpendingNew = NA_REAL,
+    const Rcpp::NumericVector &spendingTimeNew = NA_REAL) {
 
   auto zLVec = Rcpp::as<std::vector<double>>(zL);
   auto thetaVec = Rcpp::as<std::vector<double>>(theta);
@@ -3127,21 +3225,17 @@ Rcpp::List adaptDesign_multiarm_Rcpp(
   }
 
   auto cpp_result = adaptDesign_multiarm_cpp(
-    betaNew, INew,  static_cast<size_t>(M), r, corr_known,
-    static_cast<size_t>(L), zLVec, thetaVec, IMax,
-    static_cast<size_t>(kMax), infoRates, effStopping, futStopping,
-    critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
-    userAlpha, futBounds, futCP, futTheta, spendTime,
-    MullerSchafer, static_cast<size_t>(MNew), selectedNew, rNew,
-    static_cast<size_t>(kNew), infoRatesNew,
-    effStoppingNew, futStoppingNew,
-    typeAlphaSpendingNew, parameterAlphaSpendingNew,
-    futBoundsInt, futCPInt, futThetaInt, typeBetaSpendingNew,
-    parameterBetaSpendingNew, userBetaNew, spendTimeNew
-  );
+      betaNew, INew, static_cast<size_t>(M), r, corr_known,
+      static_cast<size_t>(L), zLVec, thetaVec, IMax, static_cast<size_t>(kMax),
+      infoRates, effStopping, futStopping, critValues, alpha, typeAlphaSpending,
+      parameterAlphaSpending, userAlpha, futBounds, futCP, futTheta, spendTime,
+      MullerSchafer, static_cast<size_t>(MNew), selectedNew, rNew,
+      static_cast<size_t>(kNew), infoRatesNew, effStoppingNew, futStoppingNew,
+      typeAlphaSpendingNew, parameterAlphaSpendingNew, futBoundsInt, futCPInt,
+      futThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, userBetaNew,
+      spendTimeNew);
 
   Rcpp::List result = Rcpp::wrap(cpp_result);
   result.attr("class") = "adaptDesign_multiarm";
   return result;
 }
-

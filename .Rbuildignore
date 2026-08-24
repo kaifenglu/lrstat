@@ -12,3 +12,4 @@ notes
 ^\.claude$
 ^\.vscode$
 ^\.rlib$
+^\.clang-format$

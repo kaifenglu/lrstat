@@ -1,6 +1,6 @@
-#include "utilities.h"
 #include "dataframe_list.h"
 #include "miettinen_nurminen.h"
+#include "utilities.h"
 
 #include <algorithm>     // any_of, distance, fill, min, min_element
 #include <cctype>        // tolower
@@ -10,15 +10,14 @@
 #include <numeric>       // accumulate
 #include <stdexcept>     // invalid_argument
 #include <string>        // string
-#include <vector>        // vector
 #include <unordered_map> // unordered_map
 #include <utility>       // make_pair, pair
+#include <vector>        // vector
 
 #include <Rcpp.h>
 #include <boost/math/distributions/binomial.hpp>
 #include <boost/math/distributions/poisson.hpp>
 #include <boost/random.hpp>
-
 
 struct OneSampleExactResult {
   double attainedAlpha;
@@ -28,11 +27,8 @@ struct OneSampleExactResult {
 };
 
 // Exact one-proportion power/alpha
-OneSampleExactResult powerOnePropExactcpp(
-    const int n,
-    const double piH0,
-    const double pi,
-    const double alpha) {
+OneSampleExactResult powerOnePropExactcpp(const int n, const double piH0,
+                                          const double pi, const double alpha) {
 
   using boost::math::binomial_distribution;
 
@@ -77,7 +73,6 @@ OneSampleExactResult powerOnePropExactcpp(
   return out;
 }
 
-
 //' @title Power for Binomial One-Sample Exact Test
 //' @description Obtains the power for binomial one-sample exact test.
 //'
@@ -101,11 +96,10 @@ OneSampleExactResult powerOnePropExactcpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame powerOnePropExact(
-    const int n = NA_INTEGER,
-    const double piH0 = NA_REAL,
-    const double pi = NA_REAL,
-    const double alpha = 0.025) {
+Rcpp::DataFrame powerOnePropExact(const int n = NA_INTEGER,
+                                  const double piH0 = NA_REAL,
+                                  const double pi = NA_REAL,
+                                  const double alpha = 0.025) {
 
   auto out = powerOnePropExactcpp(n, piH0, pi, alpha);
 
@@ -121,15 +115,10 @@ Rcpp::DataFrame powerOnePropExact(
   return Rcpp::wrap(df);
 }
 
-
-
-OneSampleExactResult samplesizeOnePropExactcpp(
-    const double beta,
-    const double piH0,
-    const double pi,
-    const double alpha,
-    const int max_n_search,
-    const int window) {
+OneSampleExactResult
+samplesizeOnePropExactcpp(const double beta, const double piH0, const double pi,
+                          const double alpha, const int max_n_search,
+                          const int window) {
 
   // Normal quantiles
   double z0 = boost_qnorm(1.0 - alpha);
@@ -142,14 +131,16 @@ OneSampleExactResult samplesizeOnePropExactcpp(
 
   double n0 = tau * vmin;
 
-  if (n0 > 0.5 * max_n_search) throw std::invalid_argument(
-      std::string("Initial sample size estimate (") +
+  if (n0 > 0.5 * max_n_search)
+    throw std::invalid_argument(
+        std::string("Initial sample size estimate (") +
         std::to_string(static_cast<int>(std::floor(n0))) +
         ") is too large for exact test; consider normal approximation.");
 
   // Choose starting integer n
   int start_n = static_cast<int>(std::floor(n0));
-  if (start_n < 1) start_n = 1;
+  if (start_n < 1)
+    start_n = 1;
 
   double target = 1.0 - beta;
 
@@ -157,10 +148,12 @@ OneSampleExactResult samplesizeOnePropExactcpp(
   std::unordered_map<int, double> power_cache;
   power_cache.reserve(1024);
 
-  auto power_at = [&](int n)->double {
-    if (n <= 0) return 0.0;
+  auto power_at = [&](int n) -> double {
+    if (n <= 0)
+      return 0.0;
     auto it = power_cache.find(n);
-    if (it != power_cache.end()) return it->second;
+    if (it != power_cache.end())
+      return it->second;
     auto res = powerOnePropExactcpp(n, piH0, pi, alpha);
     double p = res.power;
     power_cache.emplace(n, p);
@@ -175,32 +168,40 @@ OneSampleExactResult samplesizeOnePropExactcpp(
     p_n = power_at(n);
   }
 
-  // Linear upward scan from candidate to max_n_search, enforcing window criterion
+  // Linear upward scan from candidate to max_n_search, enforcing window
+  // criterion
   int found_n = -1;
   for (int nn = n + 1; nn <= max_n_search; ++nn) {
     double p_nn = power_at(nn);
-    if (p_nn < target) continue;
+    if (p_nn < target)
+      continue;
 
     // verify next window-1 sizes are also >= target
     bool ok = true;
     int fail_at = -1;
     for (int j = 1; j < window; ++j) {
       double pj = power_at(nn + j);
-      if (pj < target) { ok = false; fail_at = j; break; }
+      if (pj < target) {
+        ok = false;
+        fail_at = j;
+        break;
+      }
     }
-    if (ok) { found_n = nn; break; }
+    if (ok) {
+      found_n = nn;
+      break;
+    }
     n += fail_at; // skip ahead by fail_at for next iteration
   }
 
   if (found_n == -1) {
     throw std::runtime_error("No sample size <= max_n_search satisfies the "
-                               "windowed power criterion");
+                             "windowed power criterion");
   }
 
   auto out = powerOnePropExactcpp(found_n, piH0, pi, alpha);
   return out;
 }
-
 
 //' @title Sample Size for Binomial One-Sample Exact Test
 //' @description Obtains the sample size for binomial one-sample exact test.
@@ -232,16 +233,13 @@ OneSampleExactResult samplesizeOnePropExactcpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame samplesizeOnePropExact(
-    const double beta = 0.2,
-    const double piH0 = NA_REAL,
-    const double pi = NA_REAL,
-    const double alpha = 0.025,
-    const int max_n_search = 1000,
-    const int window = 10) {
+Rcpp::DataFrame
+samplesizeOnePropExact(const double beta = 0.2, const double piH0 = NA_REAL,
+                       const double pi = NA_REAL, const double alpha = 0.025,
+                       const int max_n_search = 1000, const int window = 10) {
 
-  auto out = samplesizeOnePropExactcpp(
-    beta, piH0, pi, alpha, max_n_search, window);
+  auto out =
+      samplesizeOnePropExactcpp(beta, piH0, pi, alpha, max_n_search, window);
 
   DataFrameCpp df;
   df.push_back(alpha, "alpha");
@@ -255,14 +253,9 @@ Rcpp::DataFrame samplesizeOnePropExact(
   return Rcpp::wrap(df);
 }
 
-
-
-OneSampleExactResult powerOneRateExactcpp(
-    const int n,
-    const double lambdaH0,
-    const double lambda,
-    const double D,
-    const double alpha) {
+OneSampleExactResult powerOneRateExactcpp(const int n, const double lambdaH0,
+                                          const double lambda, const double D,
+                                          const double alpha) {
 
   using boost::math::poisson_distribution;
 
@@ -309,7 +302,6 @@ OneSampleExactResult powerOneRateExactcpp(
   return out;
 }
 
-
 //' @title Power for Poisson One-Sample Exact Test
 //' @description Obtains the power for Poisson one-sample exact test.
 //'
@@ -335,12 +327,11 @@ OneSampleExactResult powerOneRateExactcpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame powerOneRateExact(
-    const int n = NA_INTEGER,
-    const double lambdaH0 = NA_REAL,
-    const double lambda = NA_REAL,
-    const double D = 1,
-    const double alpha = 0.025) {
+Rcpp::DataFrame powerOneRateExact(const int n = NA_INTEGER,
+                                  const double lambdaH0 = NA_REAL,
+                                  const double lambda = NA_REAL,
+                                  const double D = 1,
+                                  const double alpha = 0.025) {
 
   auto out = powerOneRateExactcpp(n, lambdaH0, lambda, D, alpha);
 
@@ -357,16 +348,11 @@ Rcpp::DataFrame powerOneRateExact(
   return Rcpp::wrap(df);
 }
 
-
-
-OneSampleExactResult samplesizeOneRateExactcpp(
-    const double beta,
-    const double lambdaH0,
-    const double lambda,
-    const double D,
-    const double alpha,
-    const int max_n_search,
-    const int window) {
+OneSampleExactResult
+samplesizeOneRateExactcpp(const double beta, const double lambdaH0,
+                          const double lambda, const double D,
+                          const double alpha, const int max_n_search,
+                          const int window) {
 
   // Normal quantiles
   double z0 = boost_qnorm(1.0 - alpha);
@@ -380,14 +366,16 @@ OneSampleExactResult samplesizeOneRateExactcpp(
 
   double n0 = tau * vmin;
 
-  if (n0 > 0.5 * max_n_search) throw std::invalid_argument(
-      std::string("Initial sample size estimate (") +
+  if (n0 > 0.5 * max_n_search)
+    throw std::invalid_argument(
+        std::string("Initial sample size estimate (") +
         std::to_string(static_cast<int>(std::floor(n0))) +
         ") is too large for exact test; consider normal approximation.");
 
   // Choose starting integer n
   int start_n = static_cast<int>(std::floor(n0));
-  if (start_n < 1) start_n = 1;
+  if (start_n < 1)
+    start_n = 1;
 
   double target = 1.0 - beta;
 
@@ -395,10 +383,12 @@ OneSampleExactResult samplesizeOneRateExactcpp(
   std::unordered_map<int, double> power_cache;
   power_cache.reserve(1024);
 
-  auto power_at = [&](int n)->double {
-    if (n <= 0) return 0.0;
+  auto power_at = [&](int n) -> double {
+    if (n <= 0)
+      return 0.0;
     auto it = power_cache.find(n);
-    if (it != power_cache.end()) return it->second;
+    if (it != power_cache.end())
+      return it->second;
     auto res = powerOneRateExactcpp(n, lambdaH0, lambda, D, alpha);
     double p = res.power;
     power_cache.emplace(n, p);
@@ -413,32 +403,40 @@ OneSampleExactResult samplesizeOneRateExactcpp(
     p_n = power_at(n);
   }
 
-  // Linear upward scan from candidate to max_n_search, enforcing window criterion
+  // Linear upward scan from candidate to max_n_search, enforcing window
+  // criterion
   int found_n = -1;
   for (int nn = n + 1; nn <= max_n_search; ++nn) {
     double p_nn = power_at(nn);
-    if (p_nn < target) continue;
+    if (p_nn < target)
+      continue;
 
     // verify next window-1 sizes are also >= target
     bool ok = true;
     int fail_at = -1;
     for (int j = 1; j < window; ++j) {
       double pj = power_at(nn + j);
-      if (pj < target) { ok = false; fail_at = j; break; }
+      if (pj < target) {
+        ok = false;
+        fail_at = j;
+        break;
+      }
     }
-    if (ok) { found_n = nn; break; }
+    if (ok) {
+      found_n = nn;
+      break;
+    }
     n += fail_at; // skip ahead by fail_at for next iteration
   }
 
   if (found_n == -1) {
     throw std::runtime_error("No sample size <= max_n_search satisfies the "
-                               "windowed power criterion");
+                             "windowed power criterion");
   }
 
   auto out = powerOneRateExactcpp(found_n, lambdaH0, lambda, D, alpha);
   return out;
 }
-
 
 //' @title Sample Size for Poisson One-Sample Exact Test
 //' @description Obtains the sample size for Poisson one-sample exact test.
@@ -472,17 +470,14 @@ OneSampleExactResult samplesizeOneRateExactcpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame samplesizeOneRateExact(
-    const double beta = 0.2,
-    const double lambdaH0 = NA_REAL,
-    const double lambda = NA_REAL,
-    const double D = 1,
-    const double alpha = 0.025,
-    const int max_n_search = 1000,
-    const int window = 10) {
+Rcpp::DataFrame
+samplesizeOneRateExact(const double beta = 0.2, const double lambdaH0 = NA_REAL,
+                       const double lambda = NA_REAL, const double D = 1,
+                       const double alpha = 0.025,
+                       const int max_n_search = 1000, const int window = 10) {
 
-  auto out = samplesizeOneRateExactcpp(
-    beta, lambdaH0, lambda, D, alpha, max_n_search, window);
+  auto out = samplesizeOneRateExactcpp(beta, lambdaH0, lambda, D, alpha,
+                                       max_n_search, window);
 
   DataFrameCpp df;
   df.push_back(alpha, "alpha");
@@ -497,44 +492,44 @@ Rcpp::DataFrame samplesizeOneRateExact(
   return Rcpp::wrap(df);
 }
 
-
-
 // log choose(n,k) using lgamma for stability
 double log_choose(int n, int k) {
-  if (k < 0 || k > n) return -std::numeric_limits<double>::infinity();
-  return std::lgamma(static_cast<double>(n) + 1.0)
-    - std::lgamma(static_cast<double>(k) + 1.0)
-    - std::lgamma(static_cast<double>(n - k) + 1.0);
+  if (k < 0 || k > n)
+    return -std::numeric_limits<double>::infinity();
+  return std::lgamma(static_cast<double>(n) + 1.0) -
+         std::lgamma(static_cast<double>(k) + 1.0) -
+         std::lgamma(static_cast<double>(n - k) + 1.0);
 }
 
 // hypergeometric pmf: P(X = x) where X ~ Hypergeom(n1, n2, m) but expressed
 // via choose(n1, x) * choose(n2, m-x) / choose(n1+n2, m)
 double hypergeom_pmf(int x, int n1, int n2, int m) {
   // bounds check
-  if (x < 0 || x > n1) return 0.0;
+  if (x < 0 || x > n1)
+    return 0.0;
   int y = m - x;
-  if (y < 0 || y > n2) return 0.0;
+  if (y < 0 || y > n2)
+    return 0.0;
   double ln = log_choose(n1, x) + log_choose(n2, y) - log_choose(n1 + n2, m);
   return std::exp(ln);
 }
 
 // binomial pmf: choose(n,k) p^k (1-p)^(n-k)
 double binomial_pmf(int k, int n, double p) {
-  if (k < 0 || k > n) return 0.0;
-  if (p <= 0.0) return (k == 0) ? 1.0 : 0.0;
-  if (p >= 1.0) return (k == n) ? 1.0 : 0.0;
+  if (k < 0 || k > n)
+    return 0.0;
+  if (p <= 0.0)
+    return (k == 0) ? 1.0 : 0.0;
+  if (p >= 1.0)
+    return (k == n) ? 1.0 : 0.0;
   double ln = log_choose(n, k) + k * std::log(p) + (n - k) * std::log(1.0 - p);
   return std::exp(ln);
 }
 
-
 // computes Fisher-exact power for two proportions (conditional test)
-double powerFisherExactcpp(
-    const int n,
-    const double pi1,
-    const double pi2,
-    const double allocationRatioPlanned,
-    const double alpha) {
+double powerFisherExactcpp(const int n, const double pi1, const double pi2,
+                           const double allocationRatioPlanned,
+                           const double alpha) {
 
   // determine sample split: n1 = round(n * r), n2 = n - n1
   double r = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
@@ -574,7 +569,8 @@ double powerFisherExactcpp(
     idxs.reserve(k + 1);
     idxs.push_back(0);
     for (size_t i = 1; i < k; ++i) {
-      if (p0sorted[i] != p0sorted[i - 1]) idxs.push_back(i);
+      if (p0sorted[i] != p0sorted[i - 1])
+        idxs.push_back(i);
     }
     size_t k1 = idxs.size();
     idxs.push_back(k); // sentinel for end
@@ -585,15 +581,18 @@ double powerFisherExactcpp(
     for (size_t gi = 0; gi < k1; ++gi) {
       size_t start = idxs[gi];
       size_t end = idxs[gi + 1]; // exclusive
-      for (size_t j = start; j < end; ++j) s += p0sorted[j];
+      for (size_t j = start; j < end; ++j)
+        s += p0sorted[j];
       cp0[gi] = s;
     }
 
     // reject only if the smallest table-probability cumulative is <= alpha
-    if (cp0[0] > alpha) continue;
+    if (cp0[0] > alpha)
+      continue;
 
     // find group index i where cp0[i] > alpha (first group exceeding alpha)
-    size_t i_grp = std::upper_bound(cp0.begin() + 1, cp0.end(), alpha) - cp0.begin();
+    size_t i_grp =
+        std::upper_bound(cp0.begin() + 1, cp0.end(), alpha) - cp0.begin();
     // i_grp is the index of first cp0 > alpha, or k1 if none
 
     // compute unconditional alternative probabilities for corresponding x:
@@ -613,7 +612,6 @@ double powerFisherExactcpp(
 
   return power;
 }
-
 
 //' @title Power for Fisher's Exact Test for Two Proportions
 //' @description Obtains the power given sample size for Fisher's exact
@@ -652,15 +650,14 @@ double powerFisherExactcpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame powerFisherExact(
-    const int n = NA_INTEGER,
-    const double pi1 = NA_REAL,
-    const double pi2 = NA_REAL,
-    const double allocationRatioPlanned = 1,
-    const double alpha = 0.05) {
+Rcpp::DataFrame powerFisherExact(const int n = NA_INTEGER,
+                                 const double pi1 = NA_REAL,
+                                 const double pi2 = NA_REAL,
+                                 const double allocationRatioPlanned = 1,
+                                 const double alpha = 0.05) {
 
-  double power = powerFisherExactcpp(
-    n, pi1, pi2, allocationRatioPlanned, alpha);
+  double power =
+      powerFisherExactcpp(n, pi1, pi2, allocationRatioPlanned, alpha);
 
   DataFrameCpp df;
   df.push_back(alpha, "alpha");
@@ -673,15 +670,12 @@ Rcpp::DataFrame powerFisherExact(
   return df;
 }
 
-
-DataFrameCpp samplesizeFisherExactcpp(
-    const double beta,
-    const double pi1,
-    const double pi2,
-    const double allocationRatioPlanned,
-    const double alpha,
-    const int max_n_search,
-    const int window) {
+DataFrameCpp samplesizeFisherExactcpp(const double beta, const double pi1,
+                                      const double pi2,
+                                      const double allocationRatioPlanned,
+                                      const double alpha,
+                                      const int max_n_search,
+                                      const int window) {
 
   // allocation ratio r for group1 (fraction of total sample)
   double r = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
@@ -689,22 +683,25 @@ DataFrameCpp samplesizeFisherExactcpp(
 
   // normal approx estimate n0
   double z0 = boost_qnorm(1.0 - alpha);
-  double z1  = boost_qnorm(1.0 - beta);
+  double z1 = boost_qnorm(1.0 - beta);
 
   double delta0 = std::asin(std::sqrt(pi1)) - std::asin(std::sqrt(pi2));
-  if (delta0 == 0.0) throw std::invalid_argument(
-    "pi1 and pi2 are equal; sample size is not finite");
+  if (delta0 == 0.0)
+    throw std::invalid_argument(
+        "pi1 and pi2 are equal; sample size is not finite");
 
   double n0 = sq(z0 + z1) * v1 / (delta0 * delta0);
 
-  if (n0 > 0.5 * max_n_search) throw std::invalid_argument(
-      std::string("Initial sample size estimate (") +
+  if (n0 > 0.5 * max_n_search)
+    throw std::invalid_argument(
+        std::string("Initial sample size estimate (") +
         std::to_string(static_cast<int>(std::floor(n0))) +
         ") is too large for exact test; consider normal approximation.");
 
   // Choose starting integer n
   int start_n = static_cast<int>(std::floor(n0));
-  if (start_n < 1) start_n = 1;
+  if (start_n < 1)
+    start_n = 1;
 
   double target = 1.0 - beta;
 
@@ -712,10 +709,12 @@ DataFrameCpp samplesizeFisherExactcpp(
   std::unordered_map<int, double> power_cache;
   power_cache.reserve(4096);
 
-  auto power_at = [&](int n)->double {
-    if (n <= 0) return 0.0;
+  auto power_at = [&](int n) -> double {
+    if (n <= 0)
+      return 0.0;
     auto it = power_cache.find(n);
-    if (it != power_cache.end()) return it->second;
+    if (it != power_cache.end())
+      return it->second;
     double p = powerFisherExactcpp(n, pi1, pi2, allocationRatioPlanned, alpha);
     power_cache.emplace(n, p);
     return p;
@@ -729,26 +728,35 @@ DataFrameCpp samplesizeFisherExactcpp(
     p_n = power_at(n);
   }
 
-  // Linear upward scan from candidate to max_n_search, enforcing window criterion
+  // Linear upward scan from candidate to max_n_search, enforcing window
+  // criterion
   int found_n = -1;
   for (int nn = n + 1; nn <= max_n_search; ++nn) {
     double p_nn = power_at(nn);
-    if (p_nn < target) continue;
+    if (p_nn < target)
+      continue;
 
     // verify next window-1 sizes are also >= target
     bool ok = true;
     int fail_at = -1;
     for (int j = 1; j < window; ++j) {
       double pj = power_at(nn + j);
-      if (pj < target) { ok = false; fail_at = j; break; }
+      if (pj < target) {
+        ok = false;
+        fail_at = j;
+        break;
+      }
     }
-    if (ok) { found_n = nn; break; }
+    if (ok) {
+      found_n = nn;
+      break;
+    }
     n += fail_at; // skip ahead by fail_at for next iteration
   }
 
   if (found_n == -1) {
     throw std::runtime_error("No sample size <= max_n_search satisfies the "
-                               "windowed power criterion");
+                             "windowed power criterion");
   }
 
   // construct DataFrameCpp result using cached power
@@ -763,7 +771,6 @@ DataFrameCpp samplesizeFisherExactcpp(
   df.push_back(allocationRatioPlanned, "allocationRatioPlanned");
   return df;
 }
-
 
 //' @title Sample Size for Fisher's Exact Test for Two Proportions
 //' @description Obtains the sample size given power for Fisher's exact
@@ -809,21 +816,19 @@ DataFrameCpp samplesizeFisherExactcpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame samplesizeFisherExact(
-    const double beta = NA_REAL,
-    const double pi1 = NA_REAL,
-    const double pi2 = NA_REAL,
-    const double allocationRatioPlanned = 1,
-    const double alpha = 0.05,
-    const int max_n_search = 1000,
-    const int window = 10) {
+Rcpp::DataFrame samplesizeFisherExact(const double beta = NA_REAL,
+                                      const double pi1 = NA_REAL,
+                                      const double pi2 = NA_REAL,
+                                      const double allocationRatioPlanned = 1,
+                                      const double alpha = 0.05,
+                                      const int max_n_search = 1000,
+                                      const int window = 10) {
 
-  auto df = samplesizeFisherExactcpp(
-    beta, pi1, pi2, allocationRatioPlanned, alpha, max_n_search, window);
+  auto df = samplesizeFisherExactcpp(beta, pi1, pi2, allocationRatioPlanned,
+                                     alpha, max_n_search, window);
 
   return Rcpp::wrap(df);
 }
-
 
 // -------------------- small helpers --------------------
 
@@ -831,29 +836,28 @@ std::vector<double> make_log_choose(int n) {
   std::vector<double> lg(n + 1);
   double lnNfact = std::lgamma(static_cast<double>(n) + 1.0);
   for (int k = 0; k <= n; ++k) {
-    lg[k] = lnNfact - std::lgamma(static_cast<double>(k) + 1.0)
-    - std::lgamma(static_cast<double>(n - k) + 1.0);
+    lg[k] = lnNfact - std::lgamma(static_cast<double>(k) + 1.0) -
+            std::lgamma(static_cast<double>(n - k) + 1.0);
   }
   return lg;
 }
 
-double binomial_pmf_from_logchoose(
-    int k, int n, double p, const std::vector<double>& logchoose) {
-  if (k < 0 || k > n) return 0.0;
-  if (p <= 0.0) return (k == 0) ? 1.0 : 0.0;
-  if (p >= 1.0) return (k == n) ? 1.0 : 0.0;
+double binomial_pmf_from_logchoose(int k, int n, double p,
+                                   const std::vector<double> &logchoose) {
+  if (k < 0 || k > n)
+    return 0.0;
+  if (p <= 0.0)
+    return (k == 0) ? 1.0 : 0.0;
+  if (p >= 1.0)
+    return (k == n) ? 1.0 : 0.0;
   return std::exp(logchoose[k] + k * std::log(p) + (n - k) * std::log(1.0 - p));
 }
 
-
-DataFrameCpp powerRiskDiffExactcpp(
-    const int n,
-    const double riskDiffH0,
-    const double pi1,
-    const double pi2,
-    const double allocationRatioPlanned,
-    const double alpha,
-    const bool calculateAttainedAlpha) {
+DataFrameCpp powerRiskDiffExactcpp(const int n, const double riskDiffH0,
+                                   const double pi1, const double pi2,
+                                   const double allocationRatioPlanned,
+                                   const double alpha,
+                                   const bool calculateAttainedAlpha) {
 
   double r = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
   int n1 = static_cast<int>(std::round(n * r));
@@ -862,9 +866,12 @@ DataFrameCpp powerRiskDiffExactcpp(
   size_t k = (n1 + 1) * (n2 + 1);
 
   // Precompute T and flattened mapping (flat_y1, flat_y2)
-  std::vector<double> T; T.reserve(k);
-  std::vector<int> flat_y1; flat_y1.reserve(k);
-  std::vector<int> flat_y2; flat_y2.reserve(k);
+  std::vector<double> T;
+  T.reserve(k);
+  std::vector<int> flat_y1;
+  flat_y1.reserve(k);
+  std::vector<int> flat_y2;
+  flat_y2.reserve(k);
 
   for (int y1 = 0; y1 <= n1; ++y1) {
     for (int y2 = 0; y2 <= n2; ++y2) {
@@ -873,8 +880,9 @@ DataFrameCpp powerRiskDiffExactcpp(
       double p2_hat = static_cast<double>(y2) / static_cast<double>(n2);
       double md = p1_hat - p2_hat - riskDiffH0;
       double mv = pp[0] * (1.0 - pp[0]) / static_cast<double>(n1) +
-        pp[1] * (1.0 - pp[1]) / static_cast<double>(n2);
-      if (mv < 1.0e-8) mv = 1.0e-8;
+                  pp[1] * (1.0 - pp[1]) / static_cast<double>(n2);
+      if (mv < 1.0e-8)
+        mv = 1.0e-8;
       T.push_back(md / std::sqrt(mv));
       flat_y1.push_back(y1);
       flat_y2.push_back(y2);
@@ -889,17 +897,26 @@ DataFrameCpp powerRiskDiffExactcpp(
 
   // Build Tsorted and find unique group boundaries (idx)
   std::vector<double> Tsorted(k);
-  for (size_t i = 0; i < k; ++i) Tsorted[i] = T[order[i]];
+  for (size_t i = 0; i < k; ++i)
+    Tsorted[i] = T[order[i]];
 
-  std::vector<size_t> idx; idx.reserve(k / 4 + 4);
+  std::vector<size_t> idx;
+  idx.reserve(k / 4 + 4);
   idx.push_back(0);
-  for (size_t i = 1; i < k; ++i) if (Tsorted[i] != Tsorted[i - 1]) idx.push_back(i);
+  for (size_t i = 1; i < k; ++i) {
+    if (Tsorted[i] != Tsorted[i - 1])
+      idx.push_back(i);
+  }
+
   size_t k1 = idx.size();
-  std::vector<double> Tunique; Tunique.reserve(k1);
-  for (size_t i = 0; i < k1; ++i) Tunique.push_back(Tsorted[idx[i]]);
+  std::vector<double> Tunique;
+  Tunique.reserve(k1);
+  for (size_t i = 0; i < k1; ++i)
+    Tunique.push_back(Tsorted[idx[i]]);
   idx.push_back(k); // sentinel
 
-  // Determine direction: higher T means better response if pi1 - pi2 > riskDiffH0
+  // Determine direction: higher T means better response if pi1 - pi2 >
+  // riskDiffH0
   bool directionUpper = (pi1 - pi2) > riskDiffH0;
 
   // Precompute log-choose tables for n1 and n2 to speed repeated
@@ -908,11 +925,11 @@ DataFrameCpp powerRiskDiffExactcpp(
   std::vector<double> logchoose_n2 = make_log_choose(n2);
 
   // Flatten mapping from order positions back to flattened index -> y1,y2
-  // but we already have flat_y1/flat_y2; we'll use order[j] to identify which (y1,y2)
-  // that corresponds to j-th smallest T.
+  // but we already have flat_y1/flat_y2; we'll use order[j] to identify
+  // which (y1,y2) that corresponds to j-th smallest T.
 
   // f(p2) computes the critical value (signed)
-  auto f = [&](double p2)->double {
+  auto f = [&](double p2) -> double {
     double p1 = p2 + riskDiffH0;
 
     // compute q1 and q2 arrays
@@ -926,17 +943,20 @@ DataFrameCpp powerRiskDiffExactcpp(
     if (directionUpper) {
       double s = 0.0;
       size_t i_group;
-      for (i_group = k1; i_group-- > 0; ) {
+      for (i_group = k1; i_group-- > 0;) {
         // sum all entries in group i_group
         for (size_t j = idx[i_group]; j < idx[i_group + 1]; ++j) {
           size_t flatIndex = order[j];
           s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
         }
-        if (s > alpha) break;
+        if (s > alpha)
+          break;
       }
       double aval;
-      if (i_group == k1 - 1) aval = Tunique[k1 - 1] + 1.0; // impossible to reject
-      else aval = Tunique[i_group + 1];
+      if (i_group == k1 - 1)
+        aval = Tunique[k1 - 1] + 1.0; // impossible to reject
+      else
+        aval = Tunique[i_group + 1];
       return -aval; // negate to make it a minimization problem
     } else {
       double s = 0.0;
@@ -946,11 +966,14 @@ DataFrameCpp powerRiskDiffExactcpp(
           size_t flatIndex = order[j];
           s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
         }
-        if (s > alpha) break;
+        if (s > alpha)
+          break;
       }
       double aval;
-      if (i_group == 0) aval = Tunique[0] - 1.0; // impossible to reject
-      else aval = Tunique[i_group - 1];
+      if (i_group == 0)
+        aval = Tunique[0] - 1.0; // impossible to reject
+      else
+        aval = Tunique[i_group - 1];
       return aval;
     }
   };
@@ -958,7 +981,8 @@ DataFrameCpp powerRiskDiffExactcpp(
   // Domain for p2
   double pi2lower = std::max(0.0, -riskDiffH0);
   double pi2upper = std::min(1.0, 1.0 - riskDiffH0);
-  if (pi2upper < pi2lower) std::swap(pi2upper, pi2lower);
+  if (pi2upper < pi2lower)
+    std::swap(pi2upper, pi2lower);
 
   // Partition domain into K subintervals, run local minimizer on each,
   // pick global best
@@ -977,12 +1001,17 @@ DataFrameCpp powerRiskDiffExactcpp(
 
   // pick interval with minimal b
   int best_i = 0;
-  for (size_t i = 1; i < K; ++i) if (b[i] < b[best_i]) best_i = i;
+  for (size_t i = 1; i < K; ++i) {
+    if (b[i] < b[best_i])
+      best_i = i;
+  }
+
   double pi2star = a[best_i];
   double t = directionUpper ? -b[best_i] : b[best_i];
 
-  // g(p1, p2) computes the rejection probability (power) for given probabilities
-  auto g = [&](double p1_val, double p2_val)->double {
+  // g(p1, p2) computes the rejection probability (power) for given
+  // probabilities
+  auto g = [&](double p1_val, double p2_val) -> double {
     std::vector<double> q1(n1 + 1), q2(n2 + 1);
     for (int y = 0; y <= n1; ++y)
       q1[y] = binomial_pmf_from_logchoose(y, n1, p1_val, logchoose_n1);
@@ -1004,8 +1033,9 @@ DataFrameCpp powerRiskDiffExactcpp(
   DataFrameCpp result;
 
   if (calculateAttainedAlpha) {
-    // h(p2) = -preject under H0 -> minimize h to find maximal preject (attained alpha)
-    auto h = [&](double p2)->double {
+    // h(p2) = -preject under H0 -> minimize h to find maximal preject
+    // (attained alpha)
+    auto h = [&](double p2) -> double {
       double p1 = p2 + riskDiffH0;
       return -g(p1, p2);
     };
@@ -1019,7 +1049,11 @@ DataFrameCpp powerRiskDiffExactcpp(
       b[i] = res.second;
     }
     size_t best2 = 0;
-    for (size_t i = 1; i < K; ++i) if (b[i] < b[best2]) best2 = i;
+    for (size_t i = 1; i < K; ++i) {
+      if (b[i] < b[best2])
+        best2 = i;
+    }
+
     double attainedAlpha = -b[best2];
 
     result.push_back(alpha, "alpha");
@@ -1046,7 +1080,6 @@ DataFrameCpp powerRiskDiffExactcpp(
 
   return result;
 }
-
 
 //' @title Power for Exact Unconditional Test of Risk Difference
 //' @description Obtains the power given sample size for exact unconditional
@@ -1098,32 +1131,25 @@ DataFrameCpp powerRiskDiffExactcpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame powerRiskDiffExact(
-    const int n = NA_INTEGER,
-    const double riskDiffH0 = 0,
-    const double pi1 = NA_REAL,
-    const double pi2 = NA_REAL,
-    const double allocationRatioPlanned = 1,
-    const double alpha = 0.025,
-    const bool calculateAttainedAlpha = true) {
+Rcpp::DataFrame powerRiskDiffExact(const int n = NA_INTEGER,
+                                   const double riskDiffH0 = 0,
+                                   const double pi1 = NA_REAL,
+                                   const double pi2 = NA_REAL,
+                                   const double allocationRatioPlanned = 1,
+                                   const double alpha = 0.025,
+                                   const bool calculateAttainedAlpha = true) {
 
-  auto df = powerRiskDiffExactcpp(
-    n, riskDiffH0, pi1, pi2, allocationRatioPlanned, alpha,
-    calculateAttainedAlpha);
+  auto df =
+      powerRiskDiffExactcpp(n, riskDiffH0, pi1, pi2, allocationRatioPlanned,
+                            alpha, calculateAttainedAlpha);
 
   return Rcpp::wrap(df);
 }
 
-
 DataFrameCpp samplesizeRiskDiffExactcpp(
-    const double beta,
-    const double riskDiffH0,
-    const double pi1,
-    const double pi2,
-    const double allocationRatioPlanned,
-    const double alpha,
-    const bool calculateAttainedAlpha,
-    const int max_n_search,
+    const double beta, const double riskDiffH0, const double pi1,
+    const double pi2, const double allocationRatioPlanned, const double alpha,
+    const bool calculateAttainedAlpha, const int max_n_search,
     const int window) {
 
   // allocation ratio r for group1 (fraction of total sample)
@@ -1141,20 +1167,23 @@ DataFrameCpp samplesizeRiskDiffExactcpp(
   double z1 = boost_qnorm(1.0 - beta);
 
   double theta = std::fabs(pi1 - pi2 - riskDiffH0);
-  if (theta <= 0.0) throw std::invalid_argument(
-    "pi1 - pi2 equals riskDiffH0; sample size is not finite");
+  if (theta <= 0.0)
+    throw std::invalid_argument(
+        "pi1 - pi2 equals riskDiffH0; sample size is not finite");
 
   // Normal-approximate continuous sample size
   double n0 = sq(z0 * std::sqrt(v0) + z1 * std::sqrt(v1)) / (theta * theta);
 
-  if (n0 > 0.5 * max_n_search) throw std::invalid_argument(
-      std::string("Initial sample size estimate (") +
+  if (n0 > 0.5 * max_n_search)
+    throw std::invalid_argument(
+        std::string("Initial sample size estimate (") +
         std::to_string(static_cast<int>(std::floor(n0))) +
         ") is too large for exact test; consider normal approximation.");
 
   // Choose starting integer n
   int start_n = static_cast<int>(std::floor(n0));
-  if (start_n < 1) start_n = 1;
+  if (start_n < 1)
+    start_n = 1;
 
   double target = 1.0 - beta;
 
@@ -1162,12 +1191,14 @@ DataFrameCpp samplesizeRiskDiffExactcpp(
   std::unordered_map<int, double> power_cache;
   power_cache.reserve(1024);
 
-  auto power_at = [&](int n)->double {
-    if (n <= 0) return 0.0;
+  auto power_at = [&](int n) -> double {
+    if (n <= 0)
+      return 0.0;
     auto it = power_cache.find(n);
-    if (it != power_cache.end()) return it->second;
+    if (it != power_cache.end())
+      return it->second;
     DataFrameCpp df = powerRiskDiffExactcpp(
-      n, riskDiffH0, pi1, pi2, allocationRatioPlanned, alpha, false);
+        n, riskDiffH0, pi1, pi2, allocationRatioPlanned, alpha, false);
     double p = df.get<double>("power")[0];
     power_cache.emplace(n, p);
     return p;
@@ -1181,32 +1212,41 @@ DataFrameCpp samplesizeRiskDiffExactcpp(
     p_n = power_at(n);
   }
 
-  // Linear upward scan from candidate to max_n_search, enforcing window criterion
+  // Linear upward scan from candidate to max_n_search, enforcing window
+  // criterion
   int found_n = -1;
   for (int nn = n + 1; nn <= max_n_search; ++nn) {
     double p_nn = power_at(nn);
-    if (p_nn < target) continue;
+    if (p_nn < target)
+      continue;
 
     // verify next window-1 sizes are also >= target
     bool ok = true;
     int fail_at = -1;
     for (int j = 1; j < window; ++j) {
       double pj = power_at(nn + j);
-      if (pj < target) { ok = false; fail_at = j; break; }
+      if (pj < target) {
+        ok = false;
+        fail_at = j;
+        break;
+      }
     }
-    if (ok) { found_n = nn; break; }
+    if (ok) {
+      found_n = nn;
+      break;
+    }
     n += fail_at; // skip ahead by fail_at for next iteration
   }
 
   if (found_n == -1) {
     throw std::runtime_error("No sample size <= max_n_search satisfies the "
-                               "windowed power criterion");
+                             "windowed power criterion");
   }
 
   // Return final DataFrame
-  DataFrameCpp final_df = powerRiskDiffExactcpp(
-    found_n, riskDiffH0, pi1, pi2, allocationRatioPlanned, alpha,
-    calculateAttainedAlpha);
+  DataFrameCpp final_df = powerRiskDiffExactcpp(found_n, riskDiffH0, pi1, pi2,
+                                                allocationRatioPlanned, alpha,
+                                                calculateAttainedAlpha);
   return final_df;
 }
 
@@ -1268,32 +1308,24 @@ DataFrameCpp samplesizeRiskDiffExactcpp(
 //' @export
 // [[Rcpp::export]]
 Rcpp::DataFrame samplesizeRiskDiffExact(
-    const double beta = NA_REAL,
-    const double riskDiffH0 = 0,
-    const double pi1 = NA_REAL,
-    const double pi2 = NA_REAL,
-    const double allocationRatioPlanned = 1,
-    const double alpha = 0.025,
-    const bool calculateAttainedAlpha = true,
-    const int max_n_search = 1000,
+    const double beta = NA_REAL, const double riskDiffH0 = 0,
+    const double pi1 = NA_REAL, const double pi2 = NA_REAL,
+    const double allocationRatioPlanned = 1, const double alpha = 0.025,
+    const bool calculateAttainedAlpha = true, const int max_n_search = 1000,
     const int window = 10) {
 
   auto df = samplesizeRiskDiffExactcpp(
-    beta, riskDiffH0, pi1, pi2, allocationRatioPlanned, alpha,
-    calculateAttainedAlpha, max_n_search, window);
+      beta, riskDiffH0, pi1, pi2, allocationRatioPlanned, alpha,
+      calculateAttainedAlpha, max_n_search, window);
 
   return Rcpp::wrap(df);
 }
 
-
-DataFrameCpp powerRiskRatioExactcpp(
-    const int n,
-    const double riskRatioH0,
-    const double pi1,
-    const double pi2,
-    const double allocationRatioPlanned,
-    const double alpha,
-    const bool calculateAttainedAlpha) {
+DataFrameCpp powerRiskRatioExactcpp(const int n, const double riskRatioH0,
+                                    const double pi1, const double pi2,
+                                    const double allocationRatioPlanned,
+                                    const double alpha,
+                                    const bool calculateAttainedAlpha) {
 
   double r = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
   int n1 = static_cast<int>(std::round(n * r));
@@ -1302,9 +1334,12 @@ DataFrameCpp powerRiskRatioExactcpp(
   size_t k = (n1 + 1) * (n2 + 1);
 
   // Precompute T and flattened mapping (flat_y1, flat_y2)
-  std::vector<double> T; T.reserve(k);
-  std::vector<int> flat_y1; flat_y1.reserve(k);
-  std::vector<int> flat_y2; flat_y2.reserve(k);
+  std::vector<double> T;
+  T.reserve(k);
+  std::vector<int> flat_y1;
+  flat_y1.reserve(k);
+  std::vector<int> flat_y2;
+  flat_y2.reserve(k);
 
   for (int y1 = 0; y1 <= n1; ++y1) {
     for (int y2 = 0; y2 <= n2; ++y2) {
@@ -1314,8 +1349,10 @@ DataFrameCpp powerRiskRatioExactcpp(
       double p2hat = static_cast<double>(y2) / static_cast<double>(n2);
       double md = p1hat - p2hat * riskRatioH0;
       double mv = p1 * (1.0 - p1) / static_cast<double>(n1) +
-        (riskRatioH0 * riskRatioH0) * p2 * (1.0 - p2) / static_cast<double>(n2);
-      if (mv < 1e-8) mv = 1e-8;
+                  (riskRatioH0 * riskRatioH0) * p2 * (1.0 - p2) /
+                      static_cast<double>(n2);
+      if (mv < 1e-8)
+        mv = 1e-8;
       T.push_back(md / std::sqrt(mv));
       flat_y1.push_back(y1);
       flat_y2.push_back(y2);
@@ -1330,17 +1367,25 @@ DataFrameCpp powerRiskRatioExactcpp(
 
   // Build Tsorted and find unique group boundaries (idx)
   std::vector<double> Tsorted(k);
-  for (size_t i = 0; i < k; ++i) Tsorted[i] = T[order[i]];
+  for (size_t i = 0; i < k; ++i)
+    Tsorted[i] = T[order[i]];
 
-  std::vector<size_t> idx; idx.reserve(k / 4 + 4);
+  std::vector<size_t> idx;
+  idx.reserve(k / 4 + 4);
   idx.push_back(0);
-  for (size_t i = 1; i < k; ++i) if (Tsorted[i] != Tsorted[i - 1]) idx.push_back(i);
+  for (size_t i = 1; i < k; ++i) {
+    if (Tsorted[i] != Tsorted[i - 1])
+      idx.push_back(i);
+  }
   size_t k1 = idx.size();
-  std::vector<double> Tunique; Tunique.reserve(k1);
-  for (size_t i = 0; i < k1; ++i) Tunique.push_back(Tsorted[idx[i]]);
+  std::vector<double> Tunique;
+  Tunique.reserve(k1);
+  for (size_t i = 0; i < k1; ++i)
+    Tunique.push_back(Tsorted[idx[i]]);
   idx.push_back(k); // sentinel
 
-  // determine direction: higher T means better response if pi1 / pi2 > riskRatioH0
+  // determine direction: higher T means better response if
+  // pi1 / pi2 > riskRatioH0
   bool directionUpper = (pi1 / pi2) > riskRatioH0;
 
   // Precompute log-choose tables for n1 and n2 to speed repeated
@@ -1349,11 +1394,11 @@ DataFrameCpp powerRiskRatioExactcpp(
   std::vector<double> logchoose_n2 = make_log_choose(n2);
 
   // Flatten mapping from order positions back to flattened index -> y1,y2
-  // but we already have flat_y1/flat_y2; we'll use order[j] to identify which (y1,y2)
-  // that corresponds to j-th smallest T.
+  // but we already have flat_y1/flat_y2; we'll use order[j] to identify
+  // which (y1,y2) that corresponds to j-th smallest T.
 
   // f(p2) computes the critical value (signed)
-  auto f = [&](double p2)->double {
+  auto f = [&](double p2) -> double {
     double p1 = p2 * riskRatioH0;
 
     // compute q1 and q2 arrays
@@ -1367,17 +1412,20 @@ DataFrameCpp powerRiskRatioExactcpp(
     if (directionUpper) {
       double s = 0.0;
       size_t i_group;
-      for (i_group = k1; i_group-- > 0; ) {
+      for (i_group = k1; i_group-- > 0;) {
         // sum all entries in group i_group
         for (size_t j = idx[i_group]; j < idx[i_group + 1]; ++j) {
           size_t flatIndex = order[j];
           s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
         }
-        if (s > alpha) break;
+        if (s > alpha)
+          break;
       }
       double aval;
-      if (i_group == k1 - 1) aval = Tunique[k1 - 1] + 1.0; // impossible to reject
-      else aval = Tunique[i_group + 1];
+      if (i_group == k1 - 1)
+        aval = Tunique[k1 - 1] + 1.0; // impossible to reject
+      else
+        aval = Tunique[i_group + 1];
       return -aval; // negate to make it a minimization problem
     } else {
       double s = 0.0;
@@ -1387,11 +1435,14 @@ DataFrameCpp powerRiskRatioExactcpp(
           size_t flatIndex = order[j];
           s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
         }
-        if (s > alpha) break;
+        if (s > alpha)
+          break;
       }
       double aval;
-      if (i_group == 0) aval = Tunique[0] - 1.0; // impossible to reject
-      else aval = Tunique[i_group - 1];
+      if (i_group == 0)
+        aval = Tunique[0] - 1.0; // impossible to reject
+      else
+        aval = Tunique[i_group - 1];
       return aval;
     }
   };
@@ -1399,7 +1450,8 @@ DataFrameCpp powerRiskRatioExactcpp(
   // domain for p2
   double pi2lower = 0.0;
   double pi2upper = std::min(1.0, 1.0 / riskRatioH0);
-  if (pi2upper < pi2lower) std::swap(pi2upper, pi2lower);
+  if (pi2upper < pi2lower)
+    std::swap(pi2upper, pi2lower);
 
   // Partition domain into K subintervals, run local minimizer on each,
   // pick global best
@@ -1418,12 +1470,16 @@ DataFrameCpp powerRiskRatioExactcpp(
 
   // pick interval with minimal b
   size_t best_i = 0;
-  for (size_t i = 1; i < K; ++i) if (b[i] < b[best_i]) best_i = i;
+  for (size_t i = 1; i < K; ++i) {
+    if (b[i] < b[best_i])
+      best_i = i;
+  }
+
   double pi2star = a[best_i];
   double t = directionUpper ? -b[best_i] : b[best_i];
 
   // g(p1,p2) computes the rejection probability (power) for given probabilities
-  auto g = [&](double p1_val, double p2_val)->double {
+  auto g = [&](double p1_val, double p2_val) -> double {
     std::vector<double> q1(n1 + 1), q2(n2 + 1);
     for (int y = 0; y <= n1; ++y)
       q1[y] = binomial_pmf_from_logchoose(y, n1, p1_val, logchoose_n1);
@@ -1445,8 +1501,9 @@ DataFrameCpp powerRiskRatioExactcpp(
   DataFrameCpp result;
 
   if (calculateAttainedAlpha) {
-    // h(p2) = -preject under H0 -> minimize h to find maximal preject (attained alpha)
-    auto h = [&](double p2)->double {
+    // h(p2) = -preject under H0 -> minimize h to find maximal preject
+    // (attained alpha)
+    auto h = [&](double p2) -> double {
       double p1 = p2 * riskRatioH0;
       return -g(p1, p2);
     };
@@ -1459,7 +1516,11 @@ DataFrameCpp powerRiskRatioExactcpp(
       b[i] = res.second;
     }
     size_t best2 = 0;
-    for (size_t i = 1; i < K; ++i) if (b[i] < b[best2]) best2 = i;
+    for (size_t i = 1; i < K; ++i) {
+      if (b[i] < b[best2])
+        best2 = i;
+    }
+
     double attainedAlpha = -b[best2];
 
     result.push_back(alpha, "alpha");
@@ -1486,7 +1547,6 @@ DataFrameCpp powerRiskRatioExactcpp(
 
   return result;
 }
-
 
 //' @title Power for Exact Unconditional Test of Risk Ratio
 //' @description Obtains the power given sample size for exact unconditional
@@ -1538,32 +1598,25 @@ DataFrameCpp powerRiskRatioExactcpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame powerRiskRatioExact(
-    const int n = NA_INTEGER,
-    const double riskRatioH0 = 1,
-    const double pi1 = NA_REAL,
-    const double pi2 = NA_REAL,
-    const double allocationRatioPlanned = 1,
-    const double alpha = 0.025,
-    const bool calculateAttainedAlpha = true) {
+Rcpp::DataFrame powerRiskRatioExact(const int n = NA_INTEGER,
+                                    const double riskRatioH0 = 1,
+                                    const double pi1 = NA_REAL,
+                                    const double pi2 = NA_REAL,
+                                    const double allocationRatioPlanned = 1,
+                                    const double alpha = 0.025,
+                                    const bool calculateAttainedAlpha = true) {
 
-  auto df = powerRiskRatioExactcpp(
-    n, riskRatioH0, pi1, pi2, allocationRatioPlanned, alpha,
-    calculateAttainedAlpha);
+  auto df =
+      powerRiskRatioExactcpp(n, riskRatioH0, pi1, pi2, allocationRatioPlanned,
+                             alpha, calculateAttainedAlpha);
 
   return Rcpp::wrap(df);
 }
 
-
 DataFrameCpp samplesizeRiskRatioExactcpp(
-    const double beta,
-    const double riskRatioH0,
-    const double pi1,
-    const double pi2,
-    const double allocationRatioPlanned,
-    const double alpha,
-    const bool calculateAttainedAlpha,
-    const int max_n_search,
+    const double beta, const double riskRatioH0, const double pi1,
+    const double pi2, const double allocationRatioPlanned, const double alpha,
+    const bool calculateAttainedAlpha, const int max_n_search,
     const int window) {
 
   // allocation ratio r for group1 (fraction of total sample)
@@ -1581,20 +1634,23 @@ DataFrameCpp samplesizeRiskRatioExactcpp(
   double z1 = boost_qnorm(1.0 - beta);
 
   double theta = std::fabs(std::log(pi1 / pi2) - std::log(riskRatioH0));
-  if (theta <= 0.0) throw std::invalid_argument(
-    "pi1 / pi2 equals riskRatioH0; sample size is not finite");
+  if (theta <= 0.0)
+    throw std::invalid_argument(
+        "pi1 / pi2 equals riskRatioH0; sample size is not finite");
 
   // Normal-approximate continuous sample size
   double n0 = sq(z0 * std::sqrt(v0) + z1 * std::sqrt(v1)) / (theta * theta);
 
-  if (n0 > 0.5 * max_n_search) throw std::invalid_argument(
-      std::string("Initial sample size estimate (") +
+  if (n0 > 0.5 * max_n_search)
+    throw std::invalid_argument(
+        std::string("Initial sample size estimate (") +
         std::to_string(static_cast<int>(std::floor(n0))) +
         ") is too large for exact test; consider normal approximation.");
 
   // Choose starting integer n
   int start_n = static_cast<int>(std::floor(n0));
-  if (start_n < 1) start_n = 1;
+  if (start_n < 1)
+    start_n = 1;
 
   double target = 1.0 - beta;
 
@@ -1602,12 +1658,14 @@ DataFrameCpp samplesizeRiskRatioExactcpp(
   std::unordered_map<int, double> power_cache;
   power_cache.reserve(1024);
 
-  auto power_at = [&](int n)->double {
-    if (n <= 0) return 0.0;
+  auto power_at = [&](int n) -> double {
+    if (n <= 0)
+      return 0.0;
     auto it = power_cache.find(n);
-    if (it != power_cache.end()) return it->second;
+    if (it != power_cache.end())
+      return it->second;
     DataFrameCpp df = powerRiskRatioExactcpp(
-      n, riskRatioH0, pi1, pi2, allocationRatioPlanned, alpha, false);
+        n, riskRatioH0, pi1, pi2, allocationRatioPlanned, alpha, false);
     double p = df.get<double>("power")[0];
     power_cache.emplace(n, p);
     return p;
@@ -1621,35 +1679,43 @@ DataFrameCpp samplesizeRiskRatioExactcpp(
     p_n = power_at(n);
   }
 
-  // Linear upward scan from candidate to max_n_search, enforcing window criterion
+  // Linear upward scan from candidate to max_n_search, enforcing window
+  // criterion
   int found_n = -1;
   for (int nn = n + 1; nn <= max_n_search; ++nn) {
     double p_nn = power_at(nn);
-    if (p_nn < target) continue;
+    if (p_nn < target)
+      continue;
 
     // verify next window-1 sizes are also >= target
     bool ok = true;
     int fail_at = -1;
     for (int j = 1; j < window; ++j) {
       double pj = power_at(nn + j);
-      if (pj < target) { ok = false; fail_at = j; break; }
+      if (pj < target) {
+        ok = false;
+        fail_at = j;
+        break;
+      }
     }
-    if (ok) { found_n = nn; break; }
+    if (ok) {
+      found_n = nn;
+      break;
+    }
     n += fail_at; // skip ahead by fail_at for next iteration
   }
 
   if (found_n == -1) {
     throw std::runtime_error("No sample size <= max_n_search satisfies the "
-                               "windowed power criterion");
+                             "windowed power criterion");
   }
 
   // Return final DataFrame
-  DataFrameCpp final_df = powerRiskRatioExactcpp(
-    found_n, riskRatioH0, pi1, pi2, allocationRatioPlanned, alpha,
-    calculateAttainedAlpha);
+  DataFrameCpp final_df = powerRiskRatioExactcpp(found_n, riskRatioH0, pi1, pi2,
+                                                 allocationRatioPlanned, alpha,
+                                                 calculateAttainedAlpha);
   return final_df;
 }
-
 
 //' @title Sample Size for Exact Unconditional Test of Risk Ratio
 //' @description Obtains the sample size given power for exact unconditional
@@ -1709,35 +1775,25 @@ DataFrameCpp samplesizeRiskRatioExactcpp(
 //' @export
 // [[Rcpp::export]]
 Rcpp::DataFrame samplesizeRiskRatioExact(
-    const double beta = NA_REAL,
-    const double riskRatioH0 = 1,
-    const double pi1 = NA_REAL,
-    const double pi2 = NA_REAL,
-    const double allocationRatioPlanned = 1,
-    const double alpha = 0.025,
-    const bool calculateAttainedAlpha = true,
-    const int max_n_search = 1000,
+    const double beta = NA_REAL, const double riskRatioH0 = 1,
+    const double pi1 = NA_REAL, const double pi2 = NA_REAL,
+    const double allocationRatioPlanned = 1, const double alpha = 0.025,
+    const bool calculateAttainedAlpha = true, const int max_n_search = 1000,
     const int window = 10) {
 
   auto df = samplesizeRiskRatioExactcpp(
-    beta, riskRatioH0, pi1, pi2, allocationRatioPlanned, alpha,
-    calculateAttainedAlpha, max_n_search, window);
+      beta, riskRatioH0, pi1, pi2, allocationRatioPlanned, alpha,
+      calculateAttainedAlpha, max_n_search, window);
 
   return Rcpp::wrap(df);
 }
 
-
-
-
-DataFrameCpp powerRiskDiffExactEquivcpp(
-    const int n,
-    const double riskDiffLower,
-    const double riskDiffUpper,
-    const double pi1,
-    const double pi2,
-    const double allocationRatioPlanned,
-    const double alpha,
-    const bool calculateAttainedAlpha) {
+DataFrameCpp powerRiskDiffExactEquivcpp(const int n, const double riskDiffLower,
+                                        const double riskDiffUpper,
+                                        const double pi1, const double pi2,
+                                        const double allocationRatioPlanned,
+                                        const double alpha,
+                                        const bool calculateAttainedAlpha) {
 
   double r = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
   int n1 = static_cast<int>(std::round(n * r));
@@ -1750,9 +1806,12 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
   std::vector<double> logc_n2 = make_log_choose(n2);
 
   // Build T1 (for riskDiffLower) and flat y maps
-  std::vector<double> T1; T1.reserve(k);
-  std::vector<int> flat_y1; flat_y1.reserve(k);
-  std::vector<int> flat_y2; flat_y2.reserve(k);
+  std::vector<double> T1;
+  T1.reserve(k);
+  std::vector<int> flat_y1;
+  flat_y1.reserve(k);
+  std::vector<int> flat_y2;
+  flat_y2.reserve(k);
 
   for (int y1 = 0; y1 <= n1; ++y1) {
     for (int y2 = 0; y2 <= n2; ++y2) {
@@ -1761,8 +1820,9 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
       double p2hat = static_cast<double>(y2) / static_cast<double>(n2);
       double md = p1hat - p2hat - riskDiffLower;
       double mv = pp[0] * (1.0 - pp[0]) / static_cast<double>(n1) +
-        pp[1] * (1.0 - pp[1]) / static_cast<double>(n2);
-      if (mv < 1e-8) mv = 1e-8;
+                  pp[1] * (1.0 - pp[1]) / static_cast<double>(n2);
+      if (mv < 1e-8)
+        mv = 1e-8;
       T1.push_back(md / std::sqrt(mv));
       flat_y1.push_back(y1);
       flat_y2.push_back(y2);
@@ -1773,21 +1833,28 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
   std::vector<size_t> order1(k);
   std::iota(order1.begin(), order1.end(), 0);
   std::sort(order1.begin(), order1.end(),
-            [&](size_t a, size_t b){ return T1[a] < T1[b]; });
+            [&](size_t a, size_t b) { return T1[a] < T1[b]; });
 
   std::vector<double> T1sorted(k);
-  for (size_t i = 0; i < k; ++i) T1sorted[i] = T1[order1[i]];
+  for (size_t i = 0; i < k; ++i)
+    T1sorted[i] = T1[order1[i]];
 
-  std::vector<size_t> idx1; idx1.reserve(k/4 + 4);
+  std::vector<size_t> idx1;
+  idx1.reserve(k / 4 + 4);
   idx1.push_back(0);
-  for (size_t i = 1; i < k; ++i) if (T1sorted[i] != T1sorted[i-1]) idx1.push_back(i);
+  for (size_t i = 1; i < k; ++i) {
+    if (T1sorted[i] != T1sorted[i - 1])
+      idx1.push_back(i);
+  }
   size_t k1 = idx1.size();
-  std::vector<double> T1unique; T1unique.reserve(k1);
-  for (size_t i = 0; i < k1; ++i) T1unique.push_back(T1sorted[idx1[i]]);
+  std::vector<double> T1unique;
+  T1unique.reserve(k1);
+  for (size_t i = 0; i < k1; ++i)
+    T1unique.push_back(T1sorted[idx1[i]]);
   idx1.push_back(k); // sentinel
 
   // f1: given p2 under H10, compute signed critical value (-aval)
-  auto f1 = [&](double p2)->double {
+  auto f1 = [&](double p2) -> double {
     double p1 = p2 + riskDiffLower;
 
     // compute binomial pmfs for rows and cols
@@ -1800,20 +1867,24 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
     // iterate groups from largest T downwards, accumulating group probabilities
     double s = 0.0;
     size_t i_group;
-    for (i_group = k1; i_group-- > 0; ) {
+    for (i_group = k1; i_group-- > 0;) {
       for (size_t j = idx1[i_group]; j < idx1[i_group + 1]; ++j) {
         size_t flatIndex = order1[j];
         s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
       }
-      if (s > alpha) break;
+      if (s > alpha)
+        break;
     }
     double aval;
-    if (i_group == k1 - 1) aval = T1unique[k1 - 1] + 1.0; // cannot reject
-    else aval = T1unique[i_group + 1];
+    if (i_group == k1 - 1)
+      aval = T1unique[k1 - 1] + 1.0; // cannot reject
+    else
+      aval = T1unique[i_group + 1];
     return -aval;
   };
 
-  // find critical value for H10 by partitioned minimization over p2 in valid domain
+  // find critical value for H10 by partitioned minimization over p2 in
+  // valid domain
   double pi2lower1 = std::max(0.0, -riskDiffLower);
   double pi2upper1 = std::min(1.0, 1.0 - riskDiffLower);
   size_t K = 100;
@@ -1827,10 +1898,11 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
     a1[i] = res.first;
     b1[i] = res.second;
   }
-  double t1 = - *std::min_element(b1.begin(), b1.end());
+  double t1 = -*std::min_element(b1.begin(), b1.end());
 
   // -------------------- T2 (for riskDiffUpper) --------------------
-  std::vector<double> T2; T2.reserve(k);
+  std::vector<double> T2;
+  T2.reserve(k);
   // Reuse flat_y1, flat_y2 ordering (same layout)
   for (int y1 = 0; y1 <= n1; ++y1) {
     for (int y2 = 0; y2 <= n2; ++y2) {
@@ -1839,8 +1911,9 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
       double p2hat = static_cast<double>(y2) / static_cast<double>(n2);
       double md = p1hat - p2hat - riskDiffUpper;
       double mv = pp[0] * (1.0 - pp[0]) / static_cast<double>(n1) +
-        pp[1] * (1.0 - pp[1]) / static_cast<double>(n2);
-      if (mv < 1e-8) mv = 1e-8;
+                  pp[1] * (1.0 - pp[1]) / static_cast<double>(n2);
+      if (mv < 1e-8)
+        mv = 1e-8;
       T2.push_back(md / std::sqrt(mv));
     }
   }
@@ -1857,20 +1930,27 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
     std::vector<size_t> order2(k);
     std::iota(order2.begin(), order2.end(), 0);
     std::sort(order2.begin(), order2.end(),
-              [&](size_t a, size_t b){ return T2[a] < T2[b]; });
+              [&](size_t a, size_t b) { return T2[a] < T2[b]; });
 
     std::vector<double> T2sorted(k);
-    for (size_t i = 0; i < k; ++i) T2sorted[i] = T2[order2[i]];
+    for (size_t i = 0; i < k; ++i)
+      T2sorted[i] = T2[order2[i]];
 
-    std::vector<size_t> idx2; idx2.reserve(k/4 + 4);
+    std::vector<size_t> idx2;
+    idx2.reserve(k / 4 + 4);
     idx2.push_back(0);
-    for (size_t i = 1; i < k; ++i) if (T2sorted[i] != T2sorted[i-1]) idx2.push_back(i);
+    for (size_t i = 1; i < k; ++i) {
+      if (T2sorted[i] != T2sorted[i - 1])
+        idx2.push_back(i);
+    }
     size_t k2 = idx2.size();
-    std::vector<double> T2unique; T2unique.reserve(k2);
-    for (size_t i = 0; i < k2; ++i) T2unique.push_back(T2sorted[idx2[i]]);
+    std::vector<double> T2unique;
+    T2unique.reserve(k2);
+    for (size_t i = 0; i < k2; ++i)
+      T2unique.push_back(T2sorted[idx2[i]]);
     idx2.push_back(k);
 
-    auto f2 = [&](double p2)->double {
+    auto f2 = [&](double p2) -> double {
       double p1 = p2 + riskDiffUpper;
 
       std::vector<double> q1(n1 + 1), q2(n2 + 1);
@@ -1886,12 +1966,15 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
           size_t flatIndex = order2[j];
           s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
         }
-        if (s > alpha) break;
+        if (s > alpha)
+          break;
       }
 
       double aval;
-      if (i_group == 0) aval = T2unique[0] - 1.0;
-      else aval = T2unique[i_group - 1];
+      if (i_group == 0)
+        aval = T2unique[0] - 1.0;
+      else
+        aval = T2unique[i_group - 1];
       return aval;
     };
 
@@ -1908,8 +1991,9 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
   }
 
   // -------------------- compute power under (pi1,pi2) --------------------
-  // g(p1, p2) computes the rejection probability (power) for given probabilities
-  auto g = [&](double p1_val, double p2_val)->double {
+  // g(p1, p2) computes the rejection probability (power) for given
+  // probabilities
+  auto g = [&](double p1_val, double p2_val) -> double {
     std::vector<double> q1(n1 + 1), q2(n2 + 1);
     for (int x = 0; x <= n1; ++x)
       q1[x] = binomial_pmf_from_logchoose(x, n1, p1_val, logc_n1);
@@ -1927,12 +2011,12 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
 
   double power = g(pi1, pi2);
 
-
   DataFrameCpp out;
 
   if (calculateAttainedAlpha) {
-    // h10 function: for a given p2, compute -preject under H10 (for use with mini)
-    auto h10 = [&](double p2)->double {
+    // h10 function: for a given p2, compute -preject under H10
+    // (for use with mini)
+    auto h10 = [&](double p2) -> double {
       double p1 = p2 + riskDiffLower;
       return -g(p1, p2);
     };
@@ -1944,14 +2028,15 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
       auto res = mini(h10, lo, hi);
       b1[i] = res.second;
     }
-    double attainedAlphaH10 = - *std::min_element(b1.begin(), b1.end());
+    double attainedAlphaH10 = -*std::min_element(b1.begin(), b1.end());
 
     double attainedAlphaH20;
     if (riskDiffLower == -riskDiffUpper) {
       attainedAlphaH20 = attainedAlphaH10;
     } else {
-      // h20 function: for a given p2, compute -preject under H20 (for use with mini)
-      auto h20 = [&](double p2)->double {
+      // h20 function: for a given p2, compute -preject under H20
+      // (for use with mini)
+      auto h20 = [&](double p2) -> double {
         double p1 = p2 + riskDiffUpper;
         return -g(p1, p2);
       };
@@ -1965,7 +2050,7 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
         b2[i] = res.second;
       }
 
-      attainedAlphaH20 = - *std::min_element(b2.begin(), b2.end());
+      attainedAlphaH20 = -*std::min_element(b2.begin(), b2.end());
     }
 
     out.push_back(alpha, "alpha");
@@ -1997,7 +2082,6 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
 
   return out;
 }
-
 
 //' @title Power for Exact Unconditional Test of Equivalence in Risk
 //' Difference
@@ -2064,42 +2148,33 @@ DataFrameCpp powerRiskDiffExactEquivcpp(
 //' @export
 // [[Rcpp::export]]
 Rcpp::DataFrame powerRiskDiffExactEquiv(
-    const int n = NA_INTEGER,
-    const double riskDiffLower = NA_REAL,
-    const double riskDiffUpper = NA_REAL,
-    const double pi1 = NA_REAL,
-    const double pi2 = NA_REAL,
-    const double allocationRatioPlanned = 1,
-    const double alpha = 0.05,
-    const bool calculateAttainedAlpha = true) {
+    const int n = NA_INTEGER, const double riskDiffLower = NA_REAL,
+    const double riskDiffUpper = NA_REAL, const double pi1 = NA_REAL,
+    const double pi2 = NA_REAL, const double allocationRatioPlanned = 1,
+    const double alpha = 0.05, const bool calculateAttainedAlpha = true) {
 
-  auto df = powerRiskDiffExactEquivcpp(
-    n, riskDiffLower, riskDiffUpper, pi1, pi2, allocationRatioPlanned,
-    alpha, calculateAttainedAlpha);
+  auto df = powerRiskDiffExactEquivcpp(n, riskDiffLower, riskDiffUpper, pi1,
+                                       pi2, allocationRatioPlanned, alpha,
+                                       calculateAttainedAlpha);
 
   return Rcpp::wrap(df);
 }
 
-
 DataFrameCpp samplesizeRiskDiffExactEquivcpp(
-    const double beta,
-    const double riskDiffLower,
-    const double riskDiffUpper,
-    const double pi1,
-    const double pi2,
-    const double allocationRatioPlanned,
-    const double alpha,
-    const bool calculateAttainedAlpha,
-    const int max_n_search,
-    const int window) {
+    const double beta, const double riskDiffLower, const double riskDiffUpper,
+    const double pi1, const double pi2, const double allocationRatioPlanned,
+    const double alpha, const bool calculateAttainedAlpha,
+    const int max_n_search, const int window) {
 
   // allocation ratio r for group1 (fraction of total sample)
   double r = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
 
   double diff = pi1 - pi2;
   double theta = std::min(diff - riskDiffLower, riskDiffUpper - diff);
-  if (theta <= 0.0) throw std::invalid_argument(
-    "pi1 - pi2 is outside or on the equivalence margins; sample size is not finite");
+  if (theta <= 0.0)
+    throw std::invalid_argument(
+        "pi1 - pi2 is outside or on the equivalence margins; "
+        "sample size is not finite");
 
   double v1 = pi1 * (1.0 - pi1) / r + pi2 * (1.0 - pi2) / (1.0 - r);
   double z0 = boost_qnorm(1.0 - alpha);
@@ -2108,14 +2183,16 @@ DataFrameCpp samplesizeRiskDiffExactEquivcpp(
   // Normal-approximate continuous sample size
   double n0 = sq(z0 + z1) * v1 / (theta * theta);
 
-  if (n0 > 0.5 * max_n_search) throw std::invalid_argument(
-      std::string("Initial sample size estimate (") +
+  if (n0 > 0.5 * max_n_search)
+    throw std::invalid_argument(
+        std::string("Initial sample size estimate (") +
         std::to_string(static_cast<int>(std::floor(n0))) +
         ") is too large for exact test; consider normal approximation.");
 
   // Choose starting integer n
   int start_n = static_cast<int>(std::floor(n0));
-  if (start_n < 1) start_n = 1;
+  if (start_n < 1)
+    start_n = 1;
 
   double target = 1.0 - beta;
 
@@ -2123,13 +2200,15 @@ DataFrameCpp samplesizeRiskDiffExactEquivcpp(
   std::unordered_map<int, double> power_cache;
   power_cache.reserve(1024);
 
-  auto power_at = [&](int n)->double {
-    if (n <= 0) return 0.0;
+  auto power_at = [&](int n) -> double {
+    if (n <= 0)
+      return 0.0;
     auto it = power_cache.find(n);
-    if (it != power_cache.end()) return it->second;
-    DataFrameCpp df = powerRiskDiffExactEquivcpp(
-      n, riskDiffLower, riskDiffUpper, pi1, pi2, allocationRatioPlanned,
-      alpha, false);
+    if (it != power_cache.end())
+      return it->second;
+    DataFrameCpp df =
+        powerRiskDiffExactEquivcpp(n, riskDiffLower, riskDiffUpper, pi1, pi2,
+                                   allocationRatioPlanned, alpha, false);
     double p = df.get<double>("power")[0];
     power_cache.emplace(n, p);
     return p;
@@ -2143,35 +2222,43 @@ DataFrameCpp samplesizeRiskDiffExactEquivcpp(
     p_n = power_at(n);
   }
 
-  // Linear upward scan from candidate to max_n_search, enforcing window criterion
+  // Linear upward scan from candidate to max_n_search, enforcing window
+  // criterion
   int found_n = -1;
   for (int nn = n + 1; nn <= max_n_search; ++nn) {
     double p_nn = power_at(nn);
-    if (p_nn < target) continue;
+    if (p_nn < target)
+      continue;
 
     // verify next window-1 sizes are also >= target
     bool ok = true;
     int fail_at = -1;
     for (int j = 1; j < window; ++j) {
       double pj = power_at(nn + j);
-      if (pj < target) { ok = false; fail_at = j; break; }
+      if (pj < target) {
+        ok = false;
+        fail_at = j;
+        break;
+      }
     }
-    if (ok) { found_n = nn; break; }
+    if (ok) {
+      found_n = nn;
+      break;
+    }
     n += fail_at; // skip ahead by fail_at for next iteration
   }
 
   if (found_n == -1) {
     throw std::runtime_error("No sample size <= max_n_search satisfies the "
-                               "windowed power criterion");
+                             "windowed power criterion");
   }
 
   // Return final DataFrame
   DataFrameCpp final_df = powerRiskDiffExactEquivcpp(
-    found_n, riskDiffLower, riskDiffUpper, pi1, pi2, allocationRatioPlanned,
-    alpha, calculateAttainedAlpha);
+      found_n, riskDiffLower, riskDiffUpper, pi1, pi2, allocationRatioPlanned,
+      alpha, calculateAttainedAlpha);
   return final_df;
 }
-
 
 //' @title Sample Size for Exact Unconditional Test of Equivalence in Risk
 //' Difference
@@ -2241,35 +2328,23 @@ DataFrameCpp samplesizeRiskDiffExactEquivcpp(
 //' @export
 // [[Rcpp::export]]
 Rcpp::DataFrame samplesizeRiskDiffExactEquiv(
-    const double beta = NA_REAL,
-    const double riskDiffLower = NA_REAL,
-    const double riskDiffUpper = NA_REAL,
-    const double pi1 = NA_REAL,
-    const double pi2 = NA_REAL,
-    const double allocationRatioPlanned = 1,
-    const double alpha = 0.05,
-    const bool calculateAttainedAlpha = true,
-    const int max_n_search = 1000,
-    const int window = 10) {
+    const double beta = NA_REAL, const double riskDiffLower = NA_REAL,
+    const double riskDiffUpper = NA_REAL, const double pi1 = NA_REAL,
+    const double pi2 = NA_REAL, const double allocationRatioPlanned = 1,
+    const double alpha = 0.05, const bool calculateAttainedAlpha = true,
+    const int max_n_search = 1000, const int window = 10) {
 
   auto df = samplesizeRiskDiffExactEquivcpp(
-    beta, riskDiffLower, riskDiffUpper, pi1, pi2, allocationRatioPlanned,
-    alpha, calculateAttainedAlpha, max_n_search, window);
+      beta, riskDiffLower, riskDiffUpper, pi1, pi2, allocationRatioPlanned,
+      alpha, calculateAttainedAlpha, max_n_search, window);
 
   return Rcpp::wrap(df);
 }
 
-
-
 DataFrameCpp powerRiskRatioExactEquivcpp(
-    const int n,
-    const double riskRatioLower,
-    const double riskRatioUpper,
-    const double pi1,
-    const double pi2,
-    const double allocationRatioPlanned,
-    const double alpha,
-    const bool calculateAttainedAlpha) {
+    const int n, const double riskRatioLower, const double riskRatioUpper,
+    const double pi1, const double pi2, const double allocationRatioPlanned,
+    const double alpha, const bool calculateAttainedAlpha) {
 
   double r = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
   int n1 = static_cast<int>(std::round(n * r));
@@ -2281,9 +2356,12 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
   std::vector<double> logc_n2 = make_log_choose(n2);
 
   // Build T1 (for riskRatioLower) and flat y maps
-  std::vector<double> T1; T1.reserve(k);
-  std::vector<int> flat_y1; flat_y1.reserve(k);
-  std::vector<int> flat_y2; flat_y2.reserve(k);
+  std::vector<double> T1;
+  T1.reserve(k);
+  std::vector<int> flat_y1;
+  flat_y1.reserve(k);
+  std::vector<int> flat_y2;
+  flat_y2.reserve(k);
 
   for (int y1 = 0; y1 <= n1; ++y1) {
     for (int y2 = 0; y2 <= n2; ++y2) {
@@ -2291,9 +2369,11 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
       double p1hat = static_cast<double>(y1) / static_cast<double>(n1);
       double p2hat = static_cast<double>(y2) / static_cast<double>(n2);
       double md = p1hat - p2hat * riskRatioLower;
-      double mv = pp[0] * (1.0 - pp[0]) / static_cast<double>(n1) +
-        sq(riskRatioLower) * pp[1] * (1.0 - pp[1]) / static_cast<double>(n2);
-      if (mv < 1e-8) mv = 1e-8;
+      double mv =
+          pp[0] * (1.0 - pp[0]) / static_cast<double>(n1) +
+          sq(riskRatioLower) * pp[1] * (1.0 - pp[1]) / static_cast<double>(n2);
+      if (mv < 1e-8)
+        mv = 1e-8;
       T1.push_back(md / std::sqrt(mv));
       flat_y1.push_back(y1);
       flat_y2.push_back(y2);
@@ -2304,21 +2384,28 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
   std::vector<size_t> order1(k);
   std::iota(order1.begin(), order1.end(), 0);
   std::sort(order1.begin(), order1.end(),
-            [&](size_t a, size_t b){ return T1[a] < T1[b]; });
+            [&](size_t a, size_t b) { return T1[a] < T1[b]; });
 
   std::vector<double> T1sorted(k);
-  for (size_t i = 0; i < k; ++i) T1sorted[i] = T1[order1[i]];
+  for (size_t i = 0; i < k; ++i)
+    T1sorted[i] = T1[order1[i]];
 
-  std::vector<size_t> idx1; idx1.reserve(k/4 + 4);
+  std::vector<size_t> idx1;
+  idx1.reserve(k / 4 + 4);
   idx1.push_back(0);
-  for (size_t i = 1; i < k; ++i) if (T1sorted[i] != T1sorted[i-1]) idx1.push_back(i);
+  for (size_t i = 1; i < k; ++i) {
+    if (T1sorted[i] != T1sorted[i - 1])
+      idx1.push_back(i);
+  }
   size_t k1 = idx1.size();
-  std::vector<double> T1unique; T1unique.reserve(k1);
-  for (size_t i = 0; i < k1; ++i) T1unique.push_back(T1sorted[idx1[i]]);
+  std::vector<double> T1unique;
+  T1unique.reserve(k1);
+  for (size_t i = 0; i < k1; ++i)
+    T1unique.push_back(T1sorted[idx1[i]]);
   idx1.push_back(k); // sentinel
 
   // f1: given p2 under H10, compute signed critical value (-aval)
-  auto f1 = [&](double p2)->double {
+  auto f1 = [&](double p2) -> double {
     double p1 = p2 * riskRatioLower;
 
     // compute binomial pmfs for rows and cols
@@ -2331,20 +2418,24 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
     // iterate groups from largest T downwards, accumulating group probabilities
     double s = 0.0;
     size_t i_group;
-    for (i_group = k1; i_group-- > 0; ) {
+    for (i_group = k1; i_group-- > 0;) {
       for (size_t j = idx1[i_group]; j < idx1[i_group + 1]; ++j) {
         size_t flatIndex = order1[j];
         s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
       }
-      if (s > alpha) break;
+      if (s > alpha)
+        break;
     }
     double aval;
-    if (i_group == k1 - 1) aval = T1unique[k1 - 1] + 1.0; // cannot reject
-    else aval = T1unique[i_group + 1];
+    if (i_group == k1 - 1)
+      aval = T1unique[k1 - 1] + 1.0; // cannot reject
+    else
+      aval = T1unique[i_group + 1];
     return -aval;
   };
 
-  // find critical value for H10 by partitioned minimization over p2 in valid domain
+  // find critical value for H10 by partitioned minimization over p2 in
+  // valid domain
   double pi2lower1 = 0;
   double pi2upper1 = std::min(1.0, 1.0 / riskRatioLower);
   size_t K = 100;
@@ -2358,10 +2449,11 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
     a1[i] = res.first;
     b1[i] = res.second;
   }
-  double t1 = - *std::min_element(b1.begin(), b1.end());
+  double t1 = -*std::min_element(b1.begin(), b1.end());
 
   // -------------------- T2 (for riskRatioUpper) --------------------
-  std::vector<double> T2; T2.reserve(k);
+  std::vector<double> T2;
+  T2.reserve(k);
   // Reuse flat_y1, flat_y2 ordering (same layout)
   for (int y1 = 0; y1 <= n1; ++y1) {
     for (int y2 = 0; y2 <= n2; ++y2) {
@@ -2369,9 +2461,11 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
       double p1hat = static_cast<double>(y1) / static_cast<double>(n1);
       double p2hat = static_cast<double>(y2) / static_cast<double>(n2);
       double md = p1hat - p2hat * riskRatioUpper;
-      double mv = pp[0] * (1.0 - pp[0]) / static_cast<double>(n1) +
-        sq(riskRatioUpper) * pp[1] * (1.0 - pp[1]) / static_cast<double>(n2);
-      if (mv < 1e-8) mv = 1e-8;
+      double mv =
+          pp[0] * (1.0 - pp[0]) / static_cast<double>(n1) +
+          sq(riskRatioUpper) * pp[1] * (1.0 - pp[1]) / static_cast<double>(n2);
+      if (mv < 1e-8)
+        mv = 1e-8;
       T2.push_back(md / std::sqrt(mv));
     }
   }
@@ -2388,20 +2482,27 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
     std::vector<size_t> order2(k);
     std::iota(order2.begin(), order2.end(), 0);
     std::sort(order2.begin(), order2.end(),
-              [&](size_t a, size_t b){ return T2[a] < T2[b]; });
+              [&](size_t a, size_t b) { return T2[a] < T2[b]; });
 
     std::vector<double> T2sorted(k);
-    for (size_t i = 0; i < k; ++i) T2sorted[i] = T2[order2[i]];
+    for (size_t i = 0; i < k; ++i)
+      T2sorted[i] = T2[order2[i]];
 
-    std::vector<size_t> idx2; idx2.reserve(k/4 + 4);
+    std::vector<size_t> idx2;
+    idx2.reserve(k / 4 + 4);
     idx2.push_back(0);
-    for (size_t i = 1; i < k; ++i) if (T2sorted[i] != T2sorted[i-1]) idx2.push_back(i);
+    for (size_t i = 1; i < k; ++i) {
+      if (T2sorted[i] != T2sorted[i - 1])
+        idx2.push_back(i);
+    }
     size_t k2 = idx2.size();
-    std::vector<double> T2unique; T2unique.reserve(k2);
-    for (size_t i = 0; i < k2; ++i) T2unique.push_back(T2sorted[idx2[i]]);
+    std::vector<double> T2unique;
+    T2unique.reserve(k2);
+    for (size_t i = 0; i < k2; ++i)
+      T2unique.push_back(T2sorted[idx2[i]]);
     idx2.push_back(k);
 
-    auto f2 = [&](double p2)->double {
+    auto f2 = [&](double p2) -> double {
       double p1 = p2 * riskRatioUpper;
 
       std::vector<double> q1(n1 + 1), q2(n2 + 1);
@@ -2417,12 +2518,15 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
           size_t flatIndex = order2[j];
           s += q1[flat_y1[flatIndex]] * q2[flat_y2[flatIndex]];
         }
-        if (s > alpha) break;
+        if (s > alpha)
+          break;
       }
 
       double aval;
-      if (i_group == 0) aval = T2unique[0] - 1.0;
-      else aval = T2unique[i_group - 1];
+      if (i_group == 0)
+        aval = T2unique[0] - 1.0;
+      else
+        aval = T2unique[i_group - 1];
       return aval;
     };
 
@@ -2439,8 +2543,9 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
   }
 
   // -------------------- compute power under (pi1,pi2) --------------------
-  // g(p1, p2) computes the rejection probability (power) for given probabilities
-  auto g = [&](double p1_val, double p2_val)->double {
+  // g(p1, p2) computes the rejection probability (power) for given
+  // probabilities
+  auto g = [&](double p1_val, double p2_val) -> double {
     std::vector<double> q1(n1 + 1), q2(n2 + 1);
     for (int x = 0; x <= n1; ++x)
       q1[x] = binomial_pmf_from_logchoose(x, n1, p1_val, logc_n1);
@@ -2458,12 +2563,12 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
 
   double power = g(pi1, pi2);
 
-
   DataFrameCpp out;
 
   if (calculateAttainedAlpha) {
-    // h10 function: for a given p2, compute -preject under H10 (for use with mini)
-    auto h10 = [&](double p2)->double {
+    // h10 function: for a given p2, compute -preject under H10
+    // (for use with mini)
+    auto h10 = [&](double p2) -> double {
       double p1 = p2 * riskRatioLower;
       return -g(p1, p2);
     };
@@ -2475,14 +2580,15 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
       auto res = mini(h10, lo, hi);
       b1[i] = res.second;
     }
-    double attainedAlphaH10 = - *std::min_element(b1.begin(), b1.end());
+    double attainedAlphaH10 = -*std::min_element(b1.begin(), b1.end());
 
     double attainedAlphaH20;
     if (std::fabs(riskRatioLower * riskRatioUpper - 1.0) < 1e-8) {
       attainedAlphaH20 = attainedAlphaH10;
     } else {
-      // h20 function: for a given p2, compute -preject under H20 (for use with mini)
-      auto h20 = [&](double p2)->double {
+      // h20 function: for a given p2, compute -preject under H20
+      // (for use with mini)
+      auto h20 = [&](double p2) -> double {
         double p1 = p2 * riskRatioUpper;
         return -g(p1, p2);
       };
@@ -2496,7 +2602,7 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
         b2[i] = res.second;
       }
 
-      attainedAlphaH20 = - *std::min_element(b2.begin(), b2.end());
+      attainedAlphaH20 = -*std::min_element(b2.begin(), b2.end());
     }
 
     out.push_back(alpha, "alpha");
@@ -2528,7 +2634,6 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
 
   return out;
 }
-
 
 //' @title Power for Exact Unconditional Test of Equivalence in Risk
 //' Ratio
@@ -2595,34 +2700,23 @@ DataFrameCpp powerRiskRatioExactEquivcpp(
 //' @export
 // [[Rcpp::export]]
 Rcpp::DataFrame powerRiskRatioExactEquiv(
-    const int n = NA_INTEGER,
-    const double riskRatioLower = NA_REAL,
-    const double riskRatioUpper = NA_REAL,
-    const double pi1 = NA_REAL,
-    const double pi2 = NA_REAL,
-    const double allocationRatioPlanned = 1,
-    const double alpha = 0.05,
-    const bool calculateAttainedAlpha = true) {
+    const int n = NA_INTEGER, const double riskRatioLower = NA_REAL,
+    const double riskRatioUpper = NA_REAL, const double pi1 = NA_REAL,
+    const double pi2 = NA_REAL, const double allocationRatioPlanned = 1,
+    const double alpha = 0.05, const bool calculateAttainedAlpha = true) {
 
-  auto df = powerRiskRatioExactEquivcpp(
-    n, riskRatioLower, riskRatioUpper, pi1, pi2, allocationRatioPlanned,
-    alpha, calculateAttainedAlpha);
+  auto df = powerRiskRatioExactEquivcpp(n, riskRatioLower, riskRatioUpper, pi1,
+                                        pi2, allocationRatioPlanned, alpha,
+                                        calculateAttainedAlpha);
 
   return Rcpp::wrap(df);
 }
 
-
 DataFrameCpp samplesizeRiskRatioExactEquivcpp(
-    const double beta,
-    const double riskRatioLower,
-    const double riskRatioUpper,
-    const double pi1,
-    const double pi2,
-    const double allocationRatioPlanned,
-    const double alpha,
-    const bool calculateAttainedAlpha,
-    const int max_n_search,
-    const int window) {
+    const double beta, const double riskRatioLower, const double riskRatioUpper,
+    const double pi1, const double pi2, const double allocationRatioPlanned,
+    const double alpha, const bool calculateAttainedAlpha,
+    const int max_n_search, const int window) {
 
   // allocation ratio r for group1 (fraction of total sample)
   double r = allocationRatioPlanned / (1.0 + allocationRatioPlanned);
@@ -2630,8 +2724,10 @@ DataFrameCpp samplesizeRiskRatioExactEquivcpp(
   double ratio = pi1 / pi2;
   double theta = std::min(std::log(ratio) - std::log(riskRatioLower),
                           std::log(riskRatioUpper) - std::log(ratio));
-  if (theta <= 0.0) throw std::invalid_argument(
-    "pi1 / pi2 is outside or on the equivalence margins; sample size is not finite");
+  if (theta <= 0.0)
+    throw std::invalid_argument(
+        "pi1 / pi2 is outside or on the equivalence margins; "
+        "sample size is not finite");
 
   double v1 = (1.0 - pi1) / (r * pi1) + (1.0 - pi2) / ((1.0 - r) * pi2);
   double z0 = boost_qnorm(1.0 - alpha);
@@ -2640,14 +2736,16 @@ DataFrameCpp samplesizeRiskRatioExactEquivcpp(
   // Normal-approximate continuous sample size
   double n0 = sq(z0 + z1) * v1 / (theta * theta);
 
-  if (n0 > 0.5 * max_n_search) throw std::invalid_argument(
-      std::string("Initial sample size estimate (") +
+  if (n0 > 0.5 * max_n_search)
+    throw std::invalid_argument(
+        std::string("Initial sample size estimate (") +
         std::to_string(static_cast<int>(std::floor(n0))) +
         ") is too large for exact test; consider normal approximation.");
 
   // Choose starting integer n
   int start_n = static_cast<int>(std::floor(n0));
-  if (start_n < 1) start_n = 1;
+  if (start_n < 1)
+    start_n = 1;
 
   double target = 1.0 - beta;
 
@@ -2655,13 +2753,15 @@ DataFrameCpp samplesizeRiskRatioExactEquivcpp(
   std::unordered_map<int, double> power_cache;
   power_cache.reserve(1024);
 
-  auto power_at = [&](int n)->double {
-    if (n <= 0) return 0.0;
+  auto power_at = [&](int n) -> double {
+    if (n <= 0)
+      return 0.0;
     auto it = power_cache.find(n);
-    if (it != power_cache.end()) return it->second;
-    DataFrameCpp df = powerRiskRatioExactEquivcpp(
-      n, riskRatioLower, riskRatioUpper, pi1, pi2, allocationRatioPlanned,
-      alpha, false);
+    if (it != power_cache.end())
+      return it->second;
+    DataFrameCpp df =
+        powerRiskRatioExactEquivcpp(n, riskRatioLower, riskRatioUpper, pi1, pi2,
+                                    allocationRatioPlanned, alpha, false);
     double p = df.get<double>("power")[0];
     power_cache.emplace(n, p);
     return p;
@@ -2675,35 +2775,43 @@ DataFrameCpp samplesizeRiskRatioExactEquivcpp(
     p_n = power_at(n);
   }
 
-  // Linear upward scan from candidate to max_n_search, enforcing window criterion
+  // Linear upward scan from candidate to max_n_search, enforcing window
+  // criterion
   int found_n = -1;
   for (int nn = n + 1; nn <= max_n_search; ++nn) {
     double p_nn = power_at(nn);
-    if (p_nn < target) continue;
+    if (p_nn < target)
+      continue;
 
     // verify next window-1 sizes are also >= target
     bool ok = true;
     int fail_at = -1;
     for (int j = 1; j < window; ++j) {
       double pj = power_at(nn + j);
-      if (pj < target) { ok = false; fail_at = j; break; }
+      if (pj < target) {
+        ok = false;
+        fail_at = j;
+        break;
+      }
     }
-    if (ok) { found_n = nn; break; }
+    if (ok) {
+      found_n = nn;
+      break;
+    }
     n += fail_at; // skip ahead by fail_at for next iteration
   }
 
   if (found_n == -1) {
     throw std::runtime_error("No sample size <= max_n_search satisfies the "
-                               "windowed power criterion");
+                             "windowed power criterion");
   }
 
   // Return final DataFrame
   DataFrameCpp final_df = powerRiskRatioExactEquivcpp(
-    found_n, riskRatioLower, riskRatioUpper, pi1, pi2, allocationRatioPlanned,
-    alpha, calculateAttainedAlpha);
+      found_n, riskRatioLower, riskRatioUpper, pi1, pi2, allocationRatioPlanned,
+      alpha, calculateAttainedAlpha);
   return final_df;
 }
-
 
 //' @title Sample Size for Exact Unconditional Test of Equivalence in Risk
 //' Ratio
@@ -2773,37 +2881,28 @@ DataFrameCpp samplesizeRiskRatioExactEquivcpp(
 //' @export
 // [[Rcpp::export]]
 Rcpp::DataFrame samplesizeRiskRatioExactEquiv(
-    const double beta = NA_REAL,
-    const double riskRatioLower = NA_REAL,
-    const double riskRatioUpper = NA_REAL,
-    const double pi1 = NA_REAL,
-    const double pi2 = NA_REAL,
-    const double allocationRatioPlanned = 1,
-    const double alpha = 0.05,
-    const bool calculateAttainedAlpha = true,
-    const int max_n_search = 1000,
-    const int window = 10) {
+    const double beta = NA_REAL, const double riskRatioLower = NA_REAL,
+    const double riskRatioUpper = NA_REAL, const double pi1 = NA_REAL,
+    const double pi2 = NA_REAL, const double allocationRatioPlanned = 1,
+    const double alpha = 0.05, const bool calculateAttainedAlpha = true,
+    const int max_n_search = 1000, const int window = 10) {
 
   auto df = samplesizeRiskRatioExactEquivcpp(
-    beta, riskRatioLower, riskRatioUpper, pi1, pi2, allocationRatioPlanned,
-    alpha, calculateAttainedAlpha, max_n_search, window);
+      beta, riskRatioLower, riskRatioUpper, pi1, pi2, allocationRatioPlanned,
+      alpha, calculateAttainedAlpha, max_n_search, window);
 
   return Rcpp::wrap(df);
 }
 
-
-DataFrameCpp riskDiffExactPValuecpp(
-    const int n1,
-    const int y1,
-    const int n2,
-    const int y2,
-    const double riskDiffH0,
-    bool directionUpper) {
+DataFrameCpp riskDiffExactPValuecpp(const int n1, const int y1, const int n2,
+                                    const int y2, const double riskDiffH0,
+                                    bool directionUpper) {
 
   size_t k = (n1 + 1) * (n2 + 1);
 
   // Precompute T for all tables (row-major: index = y1*(n2+1) + y2)
-  std::vector<double> T; T.reserve(k);
+  std::vector<double> T;
+  T.reserve(k);
   for (int x = 0; x <= n1; ++x) {
     for (int y = 0; y <= n2; ++y) {
       auto pp = remlRiskDiff(n1, x, n2, y, riskDiffH0);
@@ -2811,8 +2910,9 @@ DataFrameCpp riskDiffExactPValuecpp(
       double p2hat = static_cast<double>(y) / static_cast<double>(n2);
       double md = p1hat - p2hat - riskDiffH0;
       double mv = pp[0] * (1.0 - pp[0]) / static_cast<double>(n1) +
-        pp[1] * (1.0 - pp[1]) / static_cast<double>(n2);
-      if (mv < 1e-8) mv = 1e-8;
+                  pp[1] * (1.0 - pp[1]) / static_cast<double>(n2);
+      if (mv < 1e-8)
+        mv = 1e-8;
       T.push_back(md / std::sqrt(mv));
     }
   }
@@ -2820,7 +2920,7 @@ DataFrameCpp riskDiffExactPValuecpp(
   // observed z-stat and observed difference
   double Tobs = T[y1 * (n2 + 1) + y2];
   double riskDiff = static_cast<double>(y1) / static_cast<double>(n1) -
-    static_cast<double>(y2) / static_cast<double>(n2);
+                    static_cast<double>(y2) / static_cast<double>(n2);
 
   // precompute log-choose tables for speed
   std::vector<double> logc_n1 = make_log_choose(n1);
@@ -2829,7 +2929,7 @@ DataFrameCpp riskDiffExactPValuecpp(
   // f(p2) returns -s where s is the total probability under
   // H0 (p1 = p2 + riskDiffH0) of all tables with statistic as or
   // more extreme than observed according to directionUpper.
-  auto f = [&](double p2)->double {
+  auto f = [&](double p2) -> double {
     double p1 = p2 + riskDiffH0;
 
     // compute binomial pmfs for margins
@@ -2889,7 +2989,10 @@ DataFrameCpp riskDiffExactPValuecpp(
 
   // pick best (minimum b)
   size_t best = 0;
-  for (size_t i = 1; i < K; ++i) if (b[i] < b[best]) best = i;
+  for (size_t i = 1; i < K; ++i) {
+    if (b[i] < b[best])
+      best = i;
+  }
 
   double pi2star = a[best];
   double pvalue = -b[best];
@@ -2903,7 +3006,6 @@ DataFrameCpp riskDiffExactPValuecpp(
   out.push_back(pi2star, "pi2star");
   return out;
 }
-
 
 //' @title P-Value for Exact Unconditional Test of Risk Difference
 //' @description Obtains the p-value for exact unconditional
@@ -2942,25 +3044,17 @@ DataFrameCpp riskDiffExactPValuecpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame riskDiffExactPValue(
-    const int n1 = NA_INTEGER,
-    const int y1 = NA_INTEGER,
-    const int n2 = NA_INTEGER,
-    const int y2 = NA_INTEGER,
-    const double riskDiffH0 = 0,
-    bool directionUpper = true) {
+Rcpp::DataFrame
+riskDiffExactPValue(const int n1 = NA_INTEGER, const int y1 = NA_INTEGER,
+                    const int n2 = NA_INTEGER, const int y2 = NA_INTEGER,
+                    const double riskDiffH0 = 0, bool directionUpper = true) {
 
   auto df = riskDiffExactPValuecpp(n1, y1, n2, y2, riskDiffH0, directionUpper);
   return Rcpp::wrap(df);
 }
 
-
-DataFrameCpp riskDiffExactCIcpp(
-    const int n1,
-    const int y1,
-    const int n2,
-    const int y2,
-    const double cilevel) {
+DataFrameCpp riskDiffExactCIcpp(const int n1, const int y1, const int n2,
+                                const int y2, const double cilevel) {
 
   // estimate (risk difference)
   double p1 = static_cast<double>(y1) / static_cast<double>(n1);
@@ -2970,13 +3064,13 @@ DataFrameCpp riskDiffExactCIcpp(
   double alpha = 1.0 - cilevel; // two-sided alpha
   double target = alpha / 2.0;
 
-  auto f1 = [&](double riskDiff)->double {
+  auto f1 = [&](double riskDiff) -> double {
     auto df = riskDiffExactPValuecpp(n1, y1, n2, y2, riskDiff, true);
     double pvalue = df.get<double>("pvalue")[0];
     return pvalue - target;
   };
 
-  auto f2 = [&](double riskDiff)->double {
+  auto f2 = [&](double riskDiff) -> double {
     auto df = riskDiffExactPValuecpp(n1, y1, n2, y2, riskDiff, false);
     double pvalue = df.get<double>("pvalue")[0];
     return pvalue - target;
@@ -2994,7 +3088,6 @@ DataFrameCpp riskDiffExactCIcpp(
   result.push_back(cilevel, "cilevel");
   return result;
 }
-
 
 //' @title Exact Unconditional Confidence Interval for Risk Difference
 //' @description Obtains the exact unconditional confidence interval for
@@ -3026,38 +3119,36 @@ DataFrameCpp riskDiffExactCIcpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame riskDiffExactCI(
-    const int n1 = NA_INTEGER,
-    const int y1 = NA_INTEGER,
-    const int n2 = NA_INTEGER,
-    const int y2 = NA_INTEGER,
-    const double cilevel = 0.95) {
+Rcpp::DataFrame riskDiffExactCI(const int n1 = NA_INTEGER,
+                                const int y1 = NA_INTEGER,
+                                const int n2 = NA_INTEGER,
+                                const int y2 = NA_INTEGER,
+                                const double cilevel = 0.95) {
 
   auto df = riskDiffExactCIcpp(n1, y1, n2, y2, cilevel);
   return Rcpp::wrap(df);
 }
 
-DataFrameCpp riskRatioExactPValuecpp(
-    const int n1,
-    const int y1,
-    const int n2,
-    const int y2,
-    const double riskRatioH0,
-    bool directionUpper) {
+DataFrameCpp riskRatioExactPValuecpp(const int n1, const int y1, const int n2,
+                                     const int y2, const double riskRatioH0,
+                                     bool directionUpper) {
 
   size_t k = (n1 + 1) * (n2 + 1);
 
   // Precompute T for all tables (row-major: index = y1*(n2+1) + y2)
-  std::vector<double> T; T.reserve(k);
+  std::vector<double> T;
+  T.reserve(k);
   for (int x = 0; x <= n1; ++x) {
     for (int y = 0; y <= n2; ++y) {
       auto pp = remlRiskRatio(n1, x, n2, y, riskRatioH0);
       double p1hat = static_cast<double>(x) / static_cast<double>(n1);
       double p2hat = static_cast<double>(y) / static_cast<double>(n2);
       double md = p1hat - p2hat * riskRatioH0;
-      double mv = pp[0] * (1.0 - pp[0]) / static_cast<double>(n1) +
-        sq(riskRatioH0) * pp[1] * (1.0 - pp[1]) / static_cast<double>(n2);
-      if (mv < 1e-8) mv = 1e-8;
+      double mv =
+          pp[0] * (1.0 - pp[0]) / static_cast<double>(n1) +
+          sq(riskRatioH0) * pp[1] * (1.0 - pp[1]) / static_cast<double>(n2);
+      if (mv < 1e-8)
+        mv = 1e-8;
       T.push_back(md / std::sqrt(mv));
     }
   }
@@ -3075,7 +3166,7 @@ DataFrameCpp riskRatioExactPValuecpp(
   // f(p2) returns -s where s is the total probability under
   // H0 (p1 = p2 * riskRatioH0) of all tables with statistic as or
   // more extreme than observed according to directionUpper.
-  auto f = [&](double p2)->double {
+  auto f = [&](double p2) -> double {
     double p1 = p2 * riskRatioH0;
 
     // compute binomial pmfs for margins
@@ -3135,7 +3226,10 @@ DataFrameCpp riskRatioExactPValuecpp(
 
   // pick best (minimum b)
   size_t best = 0;
-  for (size_t i = 1; i < K; ++i) if (b[i] < b[best]) best = i;
+  for (size_t i = 1; i < K; ++i) {
+    if (b[i] < b[best])
+      best = i;
+  }
 
   double pi2star = a[best];
   double pvalue = -b[best];
@@ -3149,7 +3243,6 @@ DataFrameCpp riskRatioExactPValuecpp(
   out.push_back(pi2star, "pi2star");
   return out;
 }
-
 
 //' @title P-Value for Exact Unconditional Test of Risk Ratio
 //' @description Obtains the p-value for exact unconditional
@@ -3188,25 +3281,18 @@ DataFrameCpp riskRatioExactPValuecpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame riskRatioExactPValue(
-    const int n1 = NA_INTEGER,
-    const int y1 = NA_INTEGER,
-    const int n2 = NA_INTEGER,
-    const int y2 = NA_INTEGER,
-    const double riskRatioH0 = 1,
-    bool directionUpper = true) {
+Rcpp::DataFrame
+riskRatioExactPValue(const int n1 = NA_INTEGER, const int y1 = NA_INTEGER,
+                     const int n2 = NA_INTEGER, const int y2 = NA_INTEGER,
+                     const double riskRatioH0 = 1, bool directionUpper = true) {
 
-  auto df = riskRatioExactPValuecpp(n1, y1, n2, y2, riskRatioH0, directionUpper);
+  auto df =
+      riskRatioExactPValuecpp(n1, y1, n2, y2, riskRatioH0, directionUpper);
   return Rcpp::wrap(df);
 }
 
-
-DataFrameCpp riskRatioExactCIcpp(
-    const int n1,
-    const int y1,
-    const int n2,
-    const int y2,
-    const double cilevel) {
+DataFrameCpp riskRatioExactCIcpp(const int n1, const int y1, const int n2,
+                                 const int y2, const double cilevel) {
 
   // estimate (risk difference)
   double p1 = static_cast<double>(y1) / static_cast<double>(n1);
@@ -3216,13 +3302,13 @@ DataFrameCpp riskRatioExactCIcpp(
   double alpha = 1.0 - cilevel; // two-sided alpha
   double target = alpha / 2.0;
 
-  auto f1 = [&](double riskRatio)->double {
+  auto f1 = [&](double riskRatio) -> double {
     auto df = riskRatioExactPValuecpp(n1, y1, n2, y2, riskRatio, true);
     double pvalue = df.get<double>("pvalue")[0];
     return pvalue - target;
   };
 
-  auto f2 = [&](double riskRatio)->double {
+  auto f2 = [&](double riskRatio) -> double {
     auto df = riskRatioExactPValuecpp(n1, y1, n2, y2, riskRatio, false);
     double pvalue = df.get<double>("pvalue")[0];
     return pvalue - target;
@@ -3240,7 +3326,6 @@ DataFrameCpp riskRatioExactCIcpp(
   result.push_back(cilevel, "cilevel");
   return result;
 }
-
 
 //' @title Exact Unconditional Confidence Interval for Risk Ratio
 //' @description Obtains the exact unconditional confidence interval for
@@ -3272,12 +3357,11 @@ DataFrameCpp riskRatioExactCIcpp(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame riskRatioExactCI(
-    const int n1 = NA_INTEGER,
-    const int y1 = NA_INTEGER,
-    const int n2 = NA_INTEGER,
-    const int y2 = NA_INTEGER,
-    const double cilevel = 0.95) {
+Rcpp::DataFrame riskRatioExactCI(const int n1 = NA_INTEGER,
+                                 const int y1 = NA_INTEGER,
+                                 const int n2 = NA_INTEGER,
+                                 const int y2 = NA_INTEGER,
+                                 const double cilevel = 0.95) {
 
   auto df = riskRatioExactCIcpp(n1, y1, n2, y2, cilevel);
   return Rcpp::wrap(df);

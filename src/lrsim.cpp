@@ -1,8 +1,8 @@
+#include "dataframe_list.h"
 #include "enrollment_event.h"
 #include "generic_design.h"
-#include "utilities.h"
-#include "dataframe_list.h"
 #include "thread_utils.h"
+#include "utilities.h"
 
 #include <algorithm>
 #include <cmath>
@@ -16,39 +16,27 @@
 #include <RcppParallel.h>
 #include <boost/random.hpp>
 
-
 using std::size_t;
-
 
 // The parallel entry function
 ListCpp lrsimcpp(
-    const int kMax,
-    const std::vector<double>& informationRates,
-    const std::vector<double>& criticalValues,
-    const std::vector<double>& futilityBounds,
-    const double hazardRatioH0,
-    const int allocation1,
-    const int allocation2,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& stratumFraction,
-    const std::vector<double>& lambda1,
-    const std::vector<double>& lambda2,
-    const std::vector<double>& gamma1,
-    const std::vector<double>& gamma2,
-    const int n,
-    const double followupTime,
-    const bool fixedFollowup,
-    const double rho1,
-    const double rho2,
-    const std::vector<int>& plannedEvents,
-    const std::vector<double>& plannedTime,
-    const int maxNumberOfIterations,
-    const int maxNumberOfRawDatasetsPerStage,
-    const int seed)
-{
-  if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
+    const int kMax, const std::vector<double> &informationRates,
+    const std::vector<double> &criticalValues,
+    const std::vector<double> &futilityBounds, const double hazardRatioH0,
+    const int allocation1, const int allocation2,
+    const std::vector<double> &accrualTime,
+    const std::vector<double> &accrualIntensity,
+    const std::vector<double> &piecewiseSurvivalTime,
+    const std::vector<double> &stratumFraction,
+    const std::vector<double> &lambda1, const std::vector<double> &lambda2,
+    const std::vector<double> &gamma1, const std::vector<double> &gamma2,
+    const int n, const double followupTime, const bool fixedFollowup,
+    const double rho1, const double rho2, const std::vector<int> &plannedEvents,
+    const std::vector<double> &plannedTime, const int maxNumberOfIterations,
+    const int maxNumberOfRawDatasetsPerStage, const int seed) {
+
+  if (kMax < 1)
+    throw std::invalid_argument("kMax must be a positive integer");
   size_t K = static_cast<size_t>(kMax);
 
   // whether to plan the analyses based on events or calendar time
@@ -70,7 +58,8 @@ ListCpp lrsimcpp(
     if (any_nonincreasing(plannedTime))
       throw std::invalid_argument("plannedTime must be increasing");
   } else {
-    throw std::invalid_argument("Either plannedEvents or plannedTime must be given");
+    throw std::invalid_argument(
+        "Either plannedEvents or plannedTime must be given");
   }
 
   // validate informationRates and set defaults
@@ -82,7 +71,7 @@ ListCpp lrsimcpp(
       throw std::invalid_argument("informationRates must be positive");
     if (any_nonincreasing(informationRates))
       throw std::invalid_argument("informationRates must be increasing");
-    if (informationRates[K-1] != 1.0)
+    if (informationRates[K - 1] != 1.0)
       throw std::invalid_argument("informationRates must end with 1");
     infoRates = informationRates; // copy
   } else if (useEvents) {
@@ -109,7 +98,8 @@ ListCpp lrsimcpp(
   if (none_na(criticalValues) && none_na(futBounds)) {
     for (size_t i = 0; i < K - 1; ++i) {
       if (futBounds[i] > criticalValues[i]) {
-        throw std::invalid_argument("futilityBounds must lie below criticalValues");
+        throw std::invalid_argument(
+            "futilityBounds must lie below criticalValues");
       }
     }
   }
@@ -128,42 +118,56 @@ ListCpp lrsimcpp(
   if (accrualIntensity.size() != accrualTime.size())
     throw std::invalid_argument("Invalid length for accrualIntensity");
   for (double v : accrualIntensity) {
-    if (v < 0.0) throw std::invalid_argument("accrualIntensity must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("accrualIntensity must be non-negative");
   }
   if (piecewiseSurvivalTime[0] != 0.0)
     throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
   if (any_nonincreasing(piecewiseSurvivalTime))
     throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
   for (double v : stratumFraction) {
-    if (v <= 0.0) throw std::invalid_argument("stratumFraction must be positive");
+    if (v <= 0.0)
+      throw std::invalid_argument("stratumFraction must be positive");
   }
-  double sumf = std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
+  double sumf =
+      std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
   if (std::fabs(sumf - 1.0) > 1e-12)
     throw std::invalid_argument("stratumFraction must sum to 1");
-  if (!none_na(lambda1)) throw std::invalid_argument("lambda1 must be provided");
-  if (!none_na(lambda2)) throw std::invalid_argument("lambda2 must be provided");
+  if (!none_na(lambda1))
+    throw std::invalid_argument("lambda1 must be provided");
+  if (!none_na(lambda2))
+    throw std::invalid_argument("lambda2 must be provided");
   for (double v : lambda1) {
-    if (v < 0.0) throw std::invalid_argument("lambda1 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda1 must be non-negative");
   }
   for (double v : lambda2) {
-    if (v < 0.0) throw std::invalid_argument("lambda2 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda2 must be non-negative");
   }
   for (double v : gamma1) {
-    if (v < 0.0) throw std::invalid_argument("gamma1 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma1 must be non-negative");
   }
   for (double v : gamma2) {
-    if (v < 0.0) throw std::invalid_argument("gamma2 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma2 must be non-negative");
   }
-  if (n == INT_MIN) throw std::invalid_argument("n must be provided");
-  if (n <= 0) throw std::invalid_argument("n must be a positive integer");
+  if (n == INT_MIN)
+    throw std::invalid_argument("n must be provided");
+  if (n <= 0)
+    throw std::invalid_argument("n must be a positive integer");
   if (fixedFollowup && std::isnan(followupTime))
-    throw std::invalid_argument("followupTime must be provided for fixed follow-up");
+    throw std::invalid_argument(
+        "followupTime must be provided for fixed follow-up");
   if (fixedFollowup && followupTime <= 0.0)
-    throw std::invalid_argument("followupTime must be positive for fixed follow-up");
+    throw std::invalid_argument(
+        "followupTime must be positive for fixed follow-up");
   if (rho1 < 0.0 || rho2 < 0.0)
     throw std::invalid_argument("rho parameters must be non-negative");
   if (maxNumberOfIterations < 1)
-    throw std::invalid_argument("maxNumberOfIterations must be a positive integer");
+    throw std::invalid_argument(
+        "maxNumberOfIterations must be a positive integer");
   if (maxNumberOfRawDatasetsPerStage < 0)
     throw std::invalid_argument(
         "maxNumberOfRawDatasetsPerStage must be a non-negative integer");
@@ -176,7 +180,7 @@ ListCpp lrsimcpp(
   size_t maxRawIters = static_cast<size_t>(maxNumberOfRawDatasetsPerStage);
   size_t nstrata = stratumFraction.size();
   size_t nintv = piecewiseSurvivalTime.size();
-  const std::vector<double>& tau = piecewiseSurvivalTime;
+  const std::vector<double> &tau = piecewiseSurvivalTime;
   const double fu = followupTime;
 
   // expand stratified inputs
@@ -194,8 +198,8 @@ ListCpp lrsimcpp(
   // generate seeds for each iteration to ensure reproducibility
   std::vector<uint64_t> seeds(maxIters);
   boost::random::mt19937_64 master_rng(static_cast<uint64_t>(seed));
-  for (size_t iter = 0; iter < maxIters; ++iter) seeds[iter] = master_rng();
-
+  for (size_t iter = 0; iter < maxIters; ++iter)
+    seeds[iter] = master_rng();
 
   // One summary (stage-level) row produced by an iteration
   struct StageSummaryRow {
@@ -209,7 +213,6 @@ ListCpp lrsimcpp(
     double uscore = 0.0, vscore = 0.0, logRank = 0.0;
     unsigned char rejPerStage = 0, futPerStage = 0;
   };
-
 
   // One subject-level (raw) row for a particular iteration and stage
   struct RawDatasetRow {
@@ -227,7 +230,9 @@ ListCpp lrsimcpp(
   struct IterationResult {
     std::vector<StageSummaryRow> summaryRows;
     std::vector<RawDatasetRow> rawRows; // populated only for first M iterations
-    void reserveForSummary(size_t approxRows) { summaryRows.reserve(approxRows); }
+    void reserveForSummary(size_t approxRows) {
+      summaryRows.reserve(approxRows);
+    }
     void reserveForRaw(size_t approxRows) { rawRows.reserve(approxRows); }
   };
 
@@ -235,99 +240,66 @@ ListCpp lrsimcpp(
   std::vector<IterationResult> results;
   results.resize(maxIters);
 
-
   // Parallel worker
   struct SimWorker : public RcppParallel::Worker {
     // inputs (const refs)
     const size_t K;
-    const std::vector<double>& infoRates;
-    const std::vector<double>& criticalValues;
-    const std::vector<double>& futBounds;
+    const std::vector<double> &infoRates;
+    const std::vector<double> &criticalValues;
+    const std::vector<double> &futBounds;
     const double hazardRatioH0;
     const int allocation1;
     const int allocation2;
-    const std::vector<double>& accrualTime;
-    const std::vector<double>& accrualIntensity;
-    const std::vector<double>& tau;
-    const std::vector<double>& stratumFraction;
-    const FlatMatrix& lambda1x;
-    const FlatMatrix& lambda2x;
-    const FlatMatrix& gamma1x;
-    const FlatMatrix& gamma2x;
+    const std::vector<double> &accrualTime;
+    const std::vector<double> &accrualIntensity;
+    const std::vector<double> &tau;
+    const std::vector<double> &stratumFraction;
+    const FlatMatrix &lambda1x;
+    const FlatMatrix &lambda2x;
+    const FlatMatrix &gamma1x;
+    const FlatMatrix &gamma2x;
     const size_t N;
     const double fu;
     const bool fixedFollowup;
     const double rho1;
     const double rho2;
-    const std::vector<int>& plannedEvents;
-    const std::vector<double>& plannedTime;
+    const std::vector<int> &plannedEvents;
+    const std::vector<double> &plannedTime;
     const size_t maxRawIters; // save raw rows only for iter < maxRawIters
-    const std::vector<uint64_t>& seeds;
+    const std::vector<uint64_t> &seeds;
     const bool useEvents;
     const size_t nstrata;
     const double alpha;
 
     // output pointer (pre-sized vector of IterationResult with length maxIters)
-    std::vector<IterationResult>* results;
+    std::vector<IterationResult> *results;
 
-    SimWorker(
-      size_t K_,
-      const std::vector<double>& infoRates_,
-      const std::vector<double>& criticalValues_,
-      const std::vector<double>& futBounds_,
-      double hazardRatioH0_,
-      int allocation1_,
-      int allocation2_,
-      const std::vector<double>& accrualTime_,
-      const std::vector<double>& accrualIntensity_,
-      const std::vector<double>& tau_,
-      const std::vector<double>& stratumFraction_,
-      const FlatMatrix& lambda1x_,
-      const FlatMatrix& lambda2x_,
-      const FlatMatrix& gamma1x_,
-      const FlatMatrix& gamma2x_,
-      size_t N_,
-      double fu_,
-      bool fixedFollowup_,
-      double rho1_,
-      double rho2_,
-      const std::vector<int>& plannedEvents_,
-      const std::vector<double>& plannedTime_,
-      size_t maxRawIters_,
-      const std::vector<uint64_t>& seeds_,
-      bool useEvents_,
-      size_t nstrata_,
-      double alpha_,
-      std::vector<IterationResult>* results_)
-      : K(K_),
-        infoRates(infoRates_),
-        criticalValues(criticalValues_),
-        futBounds(futBounds_),
-        hazardRatioH0(hazardRatioH0_),
-        allocation1(allocation1_),
-        allocation2(allocation2_),
-        accrualTime(accrualTime_),
-        accrualIntensity(accrualIntensity_),
-        tau(tau_),
-        stratumFraction(stratumFraction_),
-        lambda1x(lambda1x_),
-        lambda2x(lambda2x_),
-        gamma1x(gamma1x_),
-        gamma2x(gamma2x_),
-        N(N_),
-        fu(fu_),
-        fixedFollowup(fixedFollowup_),
-        rho1(rho1_),
-        rho2(rho2_),
-        plannedEvents(plannedEvents_),
-        plannedTime(plannedTime_),
-        maxRawIters(maxRawIters_),
-        seeds(seeds_),
-        useEvents(useEvents_),
-        nstrata(nstrata_),
-        alpha(alpha_),
-        results(results_)
-    {}
+    SimWorker(size_t K_, const std::vector<double> &infoRates_,
+              const std::vector<double> &criticalValues_,
+              const std::vector<double> &futBounds_, double hazardRatioH0_,
+              int allocation1_, int allocation2_,
+              const std::vector<double> &accrualTime_,
+              const std::vector<double> &accrualIntensity_,
+              const std::vector<double> &tau_,
+              const std::vector<double> &stratumFraction_,
+              const FlatMatrix &lambda1x_, const FlatMatrix &lambda2x_,
+              const FlatMatrix &gamma1x_, const FlatMatrix &gamma2x_, size_t N_,
+              double fu_, bool fixedFollowup_, double rho1_, double rho2_,
+              const std::vector<int> &plannedEvents_,
+              const std::vector<double> &plannedTime_, size_t maxRawIters_,
+              const std::vector<uint64_t> &seeds_, bool useEvents_,
+              size_t nstrata_, double alpha_,
+              std::vector<IterationResult> *results_)
+        : K(K_), infoRates(infoRates_), criticalValues(criticalValues_),
+          futBounds(futBounds_), hazardRatioH0(hazardRatioH0_),
+          allocation1(allocation1_), allocation2(allocation2_),
+          accrualTime(accrualTime_), accrualIntensity(accrualIntensity_),
+          tau(tau_), stratumFraction(stratumFraction_), lambda1x(lambda1x_),
+          lambda2x(lambda2x_), gamma1x(gamma1x_), gamma2x(gamma2x_), N(N_),
+          fu(fu_), fixedFollowup(fixedFollowup_), rho1(rho1_), rho2(rho2_),
+          plannedEvents(plannedEvents_), plannedTime(plannedTime_),
+          maxRawIters(maxRawIters_), seeds(seeds_), useEvents(useEvents_),
+          nstrata(nstrata_), alpha(alpha_), results(results_) {}
 
     void operator()(std::size_t begin, std::size_t end) {
       // local buffers reused
@@ -339,14 +311,19 @@ ListCpp lrsimcpp(
       std::vector<int> n1(nstrata), n2(nstrata);
       std::vector<double> km(nstrata);
       std::vector<double> cumF(nstrata);
-      std::partial_sum(stratumFraction.begin(), stratumFraction.end(), cumF.begin());
+      std::partial_sum(stratumFraction.begin(), stratumFraction.end(),
+                       cumF.begin());
       std::vector<int> obsEvents(K);
       std::vector<double> analysisT(K), vscore(K);
       std::vector<double> lb(K, -8.0), zero(K, 0.0), I(K);
-      std::vector<double> totalte; totalte.reserve(N);
-      std::vector<size_t> sub; sub.reserve(N);
-      std::vector<double> critValues; critValues.reserve(K);
-      std::vector<double> ub; ub.reserve(K);
+      std::vector<double> totalte;
+      totalte.reserve(N);
+      std::vector<size_t> sub;
+      sub.reserve(N);
+      std::vector<double> critValues;
+      critValues.reserve(K);
+      std::vector<double> ub;
+      ub.reserve(K);
 
       for (size_t iter = begin; iter < end; ++iter) {
         // deterministic per-iteration RNG
@@ -354,10 +331,11 @@ ListCpp lrsimcpp(
         boost::random::uniform_real_distribution<double> unif(0.0, 1.0);
 
         // reset per-iteration results
-        IterationResult& out = (*results)[iter];
+        IterationResult &out = (*results)[iter];
         out.summaryRows.clear();
         out.rawRows.clear();
-        if (iter < maxRawIters) out.reserveForRaw(K * N);
+        if (iter < maxRawIters)
+          out.reserveForRaw(K * N);
         out.reserveForSummary(K);
 
         // reset block randomization
@@ -379,9 +357,17 @@ ListCpp lrsimcpp(
           u = unif(rng_local);
           double denom = static_cast<double>(b1[j] + b2[j]);
           double p = static_cast<double>(b1[j]) / denom;
-          if (u <= p) { trtGrp[i] = 1; --b1[j]; }
-          else { trtGrp[i] = 2; --b2[j]; }
-          if (b1[j] + b2[j] == 0) { b1[j] = allocation1; b2[j] = allocation2; }
+          if (u <= p) {
+            trtGrp[i] = 1;
+            --b1[j];
+          } else {
+            trtGrp[i] = 2;
+            --b2[j];
+          }
+          if (b1[j] + b2[j] == 0) {
+            b1[j] = allocation1;
+            b2[j] = allocation2;
+          }
 
           auto lam1 = flatmatrix_get_column_view(lambda1x, j);
           auto lam2 = flatmatrix_get_column_view(lambda2x, j);
@@ -389,27 +375,41 @@ ListCpp lrsimcpp(
           auto gam2 = flatmatrix_get_column_view(gamma2x, j);
 
           u = unif(rng_local);
-          if (trtGrp[i] == 1) survivalT[i] = qtpwexpcpp1(u, tau, lam1);
-          else survivalT[i] = qtpwexpcpp1(u, tau, lam2);
+          if (trtGrp[i] == 1)
+            survivalT[i] = qtpwexpcpp1(u, tau, lam1);
+          else
+            survivalT[i] = qtpwexpcpp1(u, tau, lam2);
 
           u = unif(rng_local);
-          if (trtGrp[i] == 1) dropoutT[i] = qtpwexpcpp1(u, tau, gam1);
-          else dropoutT[i] = qtpwexpcpp1(u, tau, gam2);
+          if (trtGrp[i] == 1)
+            dropoutT[i] = qtpwexpcpp1(u, tau, gam1);
+          else
+            dropoutT[i] = qtpwexpcpp1(u, tau, gam2);
 
           double sv = survivalT[i], dr = dropoutT[i];
           if (fixedFollowup) {
             if (sv <= dr && sv <= fu) {
-              timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+              timeObs[i] = sv;
+              event[i] = 1;
+              dropEv[i] = 0;
             } else if (dr <= sv && dr <= fu) {
-              timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+              timeObs[i] = dr;
+              event[i] = 0;
+              dropEv[i] = 1;
             } else {
-              timeObs[i] = fu; event[i] = 0; dropEv[i] = 0;
+              timeObs[i] = fu;
+              event[i] = 0;
+              dropEv[i] = 0;
             }
           } else {
             if (sv <= dr) {
-              timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+              timeObs[i] = sv;
+              event[i] = 1;
+              dropEv[i] = 0;
             } else {
-              timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+              timeObs[i] = dr;
+              event[i] = 0;
+              dropEv[i] = 1;
             }
           }
           totalT[i] = arrivalT[i] + timeObs[i];
@@ -423,12 +423,15 @@ ListCpp lrsimcpp(
           totalte.clear();
           int nevents = 0;
           for (size_t i = 0; i < N; ++i) {
-            if (event[i]) { ++nevents; totalte.push_back(totalT[i]); }
+            if (event[i]) {
+              ++nevents;
+              totalte.push_back(totalT[i]);
+            }
           }
           if (nevents == 0) {
             thread_utils::push_thread_warning(
-              std::string("No events for iteration ") + std::to_string(iter + 1) +
-                " skipping this iteration.");
+                std::string("No events for iteration ") +
+                std::to_string(iter + 1) + " skipping this iteration.");
             // keep out.summaryRows empty to signal skipped iteration
             out.summaryRows.clear();
             out.rawRows.clear();
@@ -437,7 +440,10 @@ ListCpp lrsimcpp(
           std::sort(totalte.begin(), totalte.end());
           size_t j;
           for (j = 0; j < K; ++j) {
-            if (plannedEvents[j] >= nevents) { nstages = j + 1; break; }
+            if (plannedEvents[j] >= nevents) {
+              nstages = j + 1;
+              break;
+            }
           }
           if (j == K) {
             // observed >= planned: analyses at planned events
@@ -461,7 +467,8 @@ ListCpp lrsimcpp(
           evNotAch = false;
         }
 
-        // per-stage calculations; optionally collect raw rows if iter < maxRawIters
+        // per-stage calculations; optionally collect raw rows if iter <
+        // maxRawIters
         int nstops = 0; // number of stopping stages for this iteration
         size_t stopStage = nstages;
         for (size_t k = 0; k < nstages; ++k) {
@@ -476,36 +483,59 @@ ListCpp lrsimcpp(
           for (size_t i = 0; i < N; ++i) {
             double ar = arrivalT[i], sv = survivalT[i], dr = dropoutT[i];
             if (ar > time) {
-              timeObs[i] = time - ar; event[i] = 0; dropEv[i] = 0; continue;
+              timeObs[i] = time - ar;
+              event[i] = 0;
+              dropEv[i] = 0;
+              continue;
             }
 
             if (fixedFollowup) {
               if (ar + sv <= time && sv <= dr && sv <= fu) {
-                timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+                timeObs[i] = sv;
+                event[i] = 1;
+                dropEv[i] = 0;
               } else if (ar + dr <= time && dr <= sv && dr <= fu) {
-                timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+                timeObs[i] = dr;
+                event[i] = 0;
+                dropEv[i] = 1;
               } else if (ar + fu <= time && fu <= sv && fu <= dr) {
-                timeObs[i] = fu; event[i] = 0; dropEv[i] = 0;
+                timeObs[i] = fu;
+                event[i] = 0;
+                dropEv[i] = 0;
               } else {
-                timeObs[i] = time - ar; event[i] = 0; dropEv[i] = 0;
+                timeObs[i] = time - ar;
+                event[i] = 0;
+                dropEv[i] = 0;
               }
             } else {
               if (ar + sv <= time && sv <= dr) {
-                timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+                timeObs[i] = sv;
+                event[i] = 1;
+                dropEv[i] = 0;
               } else if (ar + dr <= time && dr <= sv) {
-                timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+                timeObs[i] = dr;
+                event[i] = 0;
+                dropEv[i] = 1;
               } else {
-                timeObs[i] = time - ar; event[i] = 0; dropEv[i] = 0;
+                timeObs[i] = time - ar;
+                event[i] = 0;
+                dropEv[i] = 0;
               }
             }
 
             size_t h = static_cast<size_t>(stratum[i] - 1);
             if (trtGrp[i] == 1) {
               ++n1[h];
-              if (event[i]) ++events1; else if (dropEv[i]) ++dropouts1;
+              if (event[i])
+                ++events1;
+              else if (dropEv[i])
+                ++dropouts1;
             } else {
               ++n2[h];
-              if (event[i]) ++events2; else if (dropEv[i]) ++dropouts2;
+              if (event[i])
+                ++events2;
+              else if (dropEv[i])
+                ++dropouts2;
             }
           } // end censoring
 
@@ -517,7 +547,11 @@ ListCpp lrsimcpp(
 
           // collect indices with positive observed time and sort them
           sub.clear();
-          for (size_t i = 0; i < N; ++i) if (timeObs[i] > 0.0) sub.push_back(i);
+          for (size_t i = 0; i < N; ++i) {
+            if (timeObs[i] > 0.0)
+              sub.push_back(i);
+          }
+
           std::sort(sub.begin(), sub.end(), [&](size_t a, size_t b) {
             return timeObs[a] < timeObs[b];
           });
@@ -547,7 +581,10 @@ ListCpp lrsimcpp(
               vs += wh * wh * n1a * n2h / (nta * nta);
             }
 
-            if (trtGrp[idx] == 1) --n1[h]; else --n2[h];
+            if (trtGrp[idx] == 1)
+              --n1[h];
+            else
+              --n2[h];
           }
 
           double z = (vs > 0.0) ? (us / std::sqrt(vs)) : 0.0;
@@ -568,29 +605,33 @@ ListCpp lrsimcpp(
 
               if (rho1 == 0.0 && rho2 == 0.0) { // use events for std log-rank
                 std::copy_n(obsEvents.begin(), nstages, I.begin());
-                auto f = [&](double aval)->double {
+                auto f = [&](double aval) -> double {
                   ub[nstages - 1] = aval;
                   probs = exitprobcpp(ub, lb, zero, I);
                   return std::accumulate(probs.exitProbUpper.begin(),
-                                         probs.exitProbUpper.end(), 0.0) - alpha;
+                                         probs.exitProbUpper.end(), 0.0) -
+                         alpha;
                 };
                 critValues[nstages - 1] = brent(f, 0.0, 8.0, 1e-6);
               } else { // use vscore as information for weighted log-rank
                 std::copy_n(vscore.begin(), nstages, I.begin());
-                auto f = [&](double aval)->double {
+                auto f = [&](double aval) -> double {
                   ub[nstages - 1] = aval;
                   probs = exitprobcpp(ub, lb, zero, I);
                   return std::accumulate(probs.exitProbUpper.begin(),
-                                         probs.exitProbUpper.end(), 0.0) - alpha;
+                                         probs.exitProbUpper.end(), 0.0) -
+                         alpha;
                 };
                 critValues[nstages - 1] = brent(f, 0.0, 8.0, 1e-6);
               }
             }
           }
 
-          // make decisions using -z because we are testing for a hazard ratio < 1
+          // make decisions using -z because we are testing for a hazard ratio <
+          // 1
           double reject = 0, futility = 0;
-          if (-z > critValues[k]) reject = 1;
+          if (-z > critValues[k])
+            reject = 1;
           else if ((k < nstages - 1 && -z < futBounds[k]) || (k == nstages - 1))
             futility = 1;
 
@@ -601,12 +642,12 @@ ListCpp lrsimcpp(
             }
           }
 
-
           // optionally append raw rows for this stage
           if (iter < maxRawIters) { // only for first maxRawIters iterations
             for (size_t i = 0; i < N; ++i) {
               // skip subjects who haven't been enrolled by analysis time
-              if (arrivalT[i] > time) continue;
+              if (arrivalT[i] > time)
+                continue;
               RawDatasetRow rr;
               rr.iterNum = static_cast<int>(iter + 1);
               rr.stopStage = static_cast<int>(stopStage);
@@ -624,7 +665,6 @@ ListCpp lrsimcpp(
               out.rawRows.push_back(std::move(rr));
             }
           }
-
 
           // append summary row
           StageSummaryRow sr;
@@ -653,18 +693,13 @@ ListCpp lrsimcpp(
     } // operator()
   }; // SimWorker
 
-
   // create and run worker
-  SimWorker worker(
-      K, informationRates, criticalValues, futBounds,
-      hazardRatioH0, allocation1, allocation2,
-      accrualTime, accrualIntensity, tau, stratumFraction,
-      lambda1x, lambda2x, gamma1x, gamma2x,
-      N, fu, fixedFollowup, rho1, rho2,
-      plannedEvents, plannedTime,
-      maxRawIters, seeds, useEvents, nstrata, alpha,
-      &results
-  );
+  SimWorker worker(K, informationRates, criticalValues, futBounds,
+                   hazardRatioH0, allocation1, allocation2, accrualTime,
+                   accrualIntensity, tau, stratumFraction, lambda1x, lambda2x,
+                   gamma1x, gamma2x, N, fu, fixedFollowup, rho1, rho2,
+                   plannedEvents, plannedTime, maxRawIters, seeds, useEvents,
+                   nstrata, alpha, &results);
 
   RcppParallel::parallelFor(0, maxIters, worker);
 
@@ -674,49 +709,82 @@ ListCpp lrsimcpp(
     nsr += results[iter].summaryRows.size();
     nrr += results[iter].rawRows.size();
   }
-  if (nsr == 0) throw std::runtime_error(
-    "No iterations with observed events. Unable to produce output.");
+  if (nsr == 0)
+    throw std::runtime_error(
+        "No iterations with observed events. Unable to produce output.");
 
   // allocate final containers
-  std::vector<int> sum_iterNum; sum_iterNum.reserve(nsr);
-  std::vector<unsigned char> sum_evNotArch; sum_evNotArch.reserve(nsr);
-  std::vector<int> sum_stopStage; sum_stopStage.reserve(nsr);
-  std::vector<int> sum_stageNum; sum_stageNum.reserve(nsr);
-  std::vector<double> sum_analysisT; sum_analysisT.reserve(nsr);
-  std::vector<int> sum_accruals1; sum_accruals1.reserve(nsr);
-  std::vector<int> sum_accruals2; sum_accruals2.reserve(nsr);
-  std::vector<int> sum_totAccruals; sum_totAccruals.reserve(nsr);
-  std::vector<int> sum_events1; sum_events1.reserve(nsr);
-  std::vector<int> sum_events2; sum_events2.reserve(nsr);
-  std::vector<int> sum_totEvents; sum_totEvents.reserve(nsr);
-  std::vector<int> sum_dropouts1; sum_dropouts1.reserve(nsr);
-  std::vector<int> sum_dropouts2; sum_dropouts2.reserve(nsr);
-  std::vector<int> sum_totDropouts; sum_totDropouts.reserve(nsr);
-  std::vector<double> sum_uscore; sum_uscore.reserve(nsr);
-  std::vector<double> sum_vscore; sum_vscore.reserve(nsr);
-  std::vector<double> sum_logRank; sum_logRank.reserve(nsr);
-  std::vector<unsigned char> sum_rejPerStage; sum_rejPerStage.reserve(nsr);
-  std::vector<unsigned char> sum_futPerStage; sum_futPerStage.reserve(nsr);
+  std::vector<int> sum_iterNum;
+  sum_iterNum.reserve(nsr);
+  std::vector<unsigned char> sum_evNotArch;
+  sum_evNotArch.reserve(nsr);
+  std::vector<int> sum_stopStage;
+  sum_stopStage.reserve(nsr);
+  std::vector<int> sum_stageNum;
+  sum_stageNum.reserve(nsr);
+  std::vector<double> sum_analysisT;
+  sum_analysisT.reserve(nsr);
+  std::vector<int> sum_accruals1;
+  sum_accruals1.reserve(nsr);
+  std::vector<int> sum_accruals2;
+  sum_accruals2.reserve(nsr);
+  std::vector<int> sum_totAccruals;
+  sum_totAccruals.reserve(nsr);
+  std::vector<int> sum_events1;
+  sum_events1.reserve(nsr);
+  std::vector<int> sum_events2;
+  sum_events2.reserve(nsr);
+  std::vector<int> sum_totEvents;
+  sum_totEvents.reserve(nsr);
+  std::vector<int> sum_dropouts1;
+  sum_dropouts1.reserve(nsr);
+  std::vector<int> sum_dropouts2;
+  sum_dropouts2.reserve(nsr);
+  std::vector<int> sum_totDropouts;
+  sum_totDropouts.reserve(nsr);
+  std::vector<double> sum_uscore;
+  sum_uscore.reserve(nsr);
+  std::vector<double> sum_vscore;
+  sum_vscore.reserve(nsr);
+  std::vector<double> sum_logRank;
+  sum_logRank.reserve(nsr);
+  std::vector<unsigned char> sum_rejPerStage;
+  sum_rejPerStage.reserve(nsr);
+  std::vector<unsigned char> sum_futPerStage;
+  sum_futPerStage.reserve(nsr);
 
   // final raw containers
-  std::vector<int> raw_iterNum; raw_iterNum.reserve(nrr);
-  std::vector<int> raw_stopStage; raw_stopStage.reserve(nrr);
-  std::vector<int> raw_stageNum; raw_stageNum.reserve(nrr);
-  std::vector<double> raw_analysisT; raw_analysisT.reserve(nrr);
-  std::vector<int> raw_subjectId; raw_subjectId.reserve(nrr);
-  std::vector<double> raw_arrivalT; raw_arrivalT.reserve(nrr);
-  std::vector<int> raw_stratum; raw_stratum.reserve(nrr);
-  std::vector<int> raw_trtGrp; raw_trtGrp.reserve(nrr);
-  std::vector<double> raw_survivalT; raw_survivalT.reserve(nrr);
-  std::vector<double> raw_dropoutT; raw_dropoutT.reserve(nrr);
-  std::vector<double> raw_timeObs; raw_timeObs.reserve(nrr);
-  std::vector<unsigned char> raw_event; raw_event.reserve(nrr);
-  std::vector<unsigned char> raw_dropEv; raw_dropEv.reserve(nrr);
+  std::vector<int> raw_iterNum;
+  raw_iterNum.reserve(nrr);
+  std::vector<int> raw_stopStage;
+  raw_stopStage.reserve(nrr);
+  std::vector<int> raw_stageNum;
+  raw_stageNum.reserve(nrr);
+  std::vector<double> raw_analysisT;
+  raw_analysisT.reserve(nrr);
+  std::vector<int> raw_subjectId;
+  raw_subjectId.reserve(nrr);
+  std::vector<double> raw_arrivalT;
+  raw_arrivalT.reserve(nrr);
+  std::vector<int> raw_stratum;
+  raw_stratum.reserve(nrr);
+  std::vector<int> raw_trtGrp;
+  raw_trtGrp.reserve(nrr);
+  std::vector<double> raw_survivalT;
+  raw_survivalT.reserve(nrr);
+  std::vector<double> raw_dropoutT;
+  raw_dropoutT.reserve(nrr);
+  std::vector<double> raw_timeObs;
+  raw_timeObs.reserve(nrr);
+  std::vector<unsigned char> raw_event;
+  raw_event.reserve(nrr);
+  std::vector<unsigned char> raw_dropEv;
+  raw_dropEv.reserve(nrr);
 
   // flatten
   for (size_t iter = 0; iter < maxIters; ++iter) {
-    const auto& srows = results[iter].summaryRows;
-    for (const auto& r : srows) {
+    const auto &srows = results[iter].summaryRows;
+    for (const auto &r : srows) {
       sum_iterNum.push_back(r.iterNum);
       sum_evNotArch.push_back(r.evNotAch);
       sum_stopStage.push_back(r.stopStage);
@@ -739,8 +807,8 @@ ListCpp lrsimcpp(
     }
 
     if (iter < maxRawIters) {
-      const auto& rraw = results[iter].rawRows;
-      for (const auto& rr : rraw) {
+      const auto &rraw = results[iter].rawRows;
+      for (const auto &rr : rraw) {
         raw_iterNum.push_back(rr.iterNum);
         raw_stopStage.push_back(rr.stopStage);
         raw_stageNum.push_back(rr.stageNum);
@@ -902,34 +970,27 @@ ListCpp lrsimcpp(
   return result;
 }
 
-
 // [[Rcpp::export]]
-Rcpp::List lrsimRcpp(
-    const int kMax = 1,
-    const Rcpp::NumericVector& informationRates = NA_REAL,
-    const Rcpp::NumericVector& criticalValues = NA_REAL,
-    const Rcpp::NumericVector& futilityBounds = NA_REAL,
-    const double hazardRatioH0 = 1,
-    const int allocation1 = 1,
-    const int allocation2 = 1,
-    const Rcpp::NumericVector& accrualTime = 0,
-    const Rcpp::NumericVector& accrualIntensity = NA_REAL,
-    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
-    const Rcpp::NumericVector& stratumFraction = 1,
-    const Rcpp::NumericVector& lambda1 = NA_REAL,
-    const Rcpp::NumericVector& lambda2 = NA_REAL,
-    const Rcpp::NumericVector& gamma1 = 0,
-    const Rcpp::NumericVector& gamma2 = 0,
-    const int n = NA_INTEGER,
-    const double followupTime = NA_REAL,
-    const bool fixedFollowup = false,
-    const double rho1 = 0,
-    const double rho2 = 0,
-    const Rcpp::IntegerVector& plannedEvents = NA_INTEGER,
-    const Rcpp::NumericVector& plannedTime = NA_REAL,
-    const int maxNumberOfIterations = 1000,
-    const int maxNumberOfRawDatasetsPerStage = 0,
-    const int seed = 0) {
+Rcpp::List
+lrsimRcpp(const int kMax = 1,
+          const Rcpp::NumericVector &informationRates = NA_REAL,
+          const Rcpp::NumericVector &criticalValues = NA_REAL,
+          const Rcpp::NumericVector &futilityBounds = NA_REAL,
+          const double hazardRatioH0 = 1, const int allocation1 = 1,
+          const int allocation2 = 1, const Rcpp::NumericVector &accrualTime = 0,
+          const Rcpp::NumericVector &accrualIntensity = NA_REAL,
+          const Rcpp::NumericVector &piecewiseSurvivalTime = 0,
+          const Rcpp::NumericVector &stratumFraction = 1,
+          const Rcpp::NumericVector &lambda1 = NA_REAL,
+          const Rcpp::NumericVector &lambda2 = NA_REAL,
+          const Rcpp::NumericVector &gamma1 = 0,
+          const Rcpp::NumericVector &gamma2 = 0, const int n = NA_INTEGER,
+          const double followupTime = NA_REAL, const bool fixedFollowup = false,
+          const double rho1 = 0, const double rho2 = 0,
+          const Rcpp::IntegerVector &plannedEvents = NA_INTEGER,
+          const Rcpp::NumericVector &plannedTime = NA_REAL,
+          const int maxNumberOfIterations = 1000,
+          const int maxNumberOfRawDatasetsPerStage = 0, const int seed = 0) {
 
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
   auto critValues = Rcpp::as<std::vector<double>>(criticalValues);
@@ -946,11 +1007,10 @@ Rcpp::List lrsimRcpp(
   auto plannedT = Rcpp::as<std::vector<double>>(plannedTime);
 
   auto out = lrsimcpp(
-    kMax, infoRates, critValues, futBounds, hazardRatioH0,
-    allocation1, allocation2, accrualT, accrualInt,
-    pwSurvT, stratumFrac, lam1, lam2, gam1, gam2,
-    n, followupTime, fixedFollowup, rho1, rho2, plannedE, plannedT,
-    maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed);
+      kMax, infoRates, critValues, futBounds, hazardRatioH0, allocation1,
+      allocation2, accrualT, accrualInt, pwSurvT, stratumFrac, lam1, lam2, gam1,
+      gam2, n, followupTime, fixedFollowup, rho1, rho2, plannedE, plannedT,
+      maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed);
 
   thread_utils::drain_thread_warnings_to_R();
 
@@ -960,39 +1020,24 @@ Rcpp::List lrsimRcpp(
   return result;
 }
 
-
-
 // Parallel entry function
 ListCpp lrsim3acpp(
-    const int kMax,
-    const double hazardRatioH013,
-    const double hazardRatioH023,
-    const double hazardRatioH012,
-    const int allocation1,
-    const int allocation2,
-    const int allocation3,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& stratumFraction,
-    const std::vector<double>& lambda1,
-    const std::vector<double>& lambda2,
-    const std::vector<double>& lambda3,
-    const std::vector<double>& gamma1,
-    const std::vector<double>& gamma2,
-    const std::vector<double>& gamma3,
-    const int n,
-    const double followupTime,
-    const bool fixedFollowup,
-    const double rho1,
-    const double rho2,
-    const std::vector<int>& plannedEvents,
-    const std::vector<double>& plannedTime,
-    const int maxNumberOfIterations,
-    const int maxNumberOfRawDatasetsPerStage,
-    const int seed)
-{
-  if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
+    const int kMax, const double hazardRatioH013, const double hazardRatioH023,
+    const double hazardRatioH012, const int allocation1, const int allocation2,
+    const int allocation3, const std::vector<double> &accrualTime,
+    const std::vector<double> &accrualIntensity,
+    const std::vector<double> &piecewiseSurvivalTime,
+    const std::vector<double> &stratumFraction,
+    const std::vector<double> &lambda1, const std::vector<double> &lambda2,
+    const std::vector<double> &lambda3, const std::vector<double> &gamma1,
+    const std::vector<double> &gamma2, const std::vector<double> &gamma3,
+    const int n, const double followupTime, const bool fixedFollowup,
+    const double rho1, const double rho2, const std::vector<int> &plannedEvents,
+    const std::vector<double> &plannedTime, const int maxNumberOfIterations,
+    const int maxNumberOfRawDatasetsPerStage, const int seed) {
+
+  if (kMax < 1)
+    throw std::invalid_argument("kMax must be a positive integer");
   size_t K = static_cast<size_t>(kMax);
 
   // decide planning mode
@@ -1014,11 +1059,13 @@ ListCpp lrsim3acpp(
     if (any_nonincreasing(plannedTime))
       throw std::invalid_argument("plannedTime must be increasing");
   } else {
-    throw std::invalid_argument("Either plannedEvents or plannedTime must be given");
+    throw std::invalid_argument(
+        "Either plannedEvents or plannedTime must be given");
   }
 
   // validate other input parameters
-  if (hazardRatioH013 <= 0.0 || hazardRatioH023 <= 0.0 || hazardRatioH012 <= 0.0)
+  if (hazardRatioH013 <= 0.0 || hazardRatioH023 <= 0.0 ||
+      hazardRatioH012 <= 0.0)
     throw std::invalid_argument("hazardRatioH0 parameters must be positive");
   if (allocation1 < 1 || allocation2 < 1 || allocation3 < 1)
     throw std::invalid_argument("allocations must be positive integers");
@@ -1031,49 +1078,66 @@ ListCpp lrsim3acpp(
   if (accrualIntensity.size() != accrualTime.size())
     throw std::invalid_argument("Invalid length for accrualIntensity");
   for (double v : accrualIntensity) {
-    if (v < 0.0) throw std::invalid_argument("accrualIntensity must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("accrualIntensity must be non-negative");
   }
   if (piecewiseSurvivalTime[0] != 0.0)
     throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
   if (any_nonincreasing(piecewiseSurvivalTime))
     throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
   for (double v : stratumFraction) {
-    if (v <= 0.0) throw std::invalid_argument("stratumFraction must be positive");
+    if (v <= 0.0)
+      throw std::invalid_argument("stratumFraction must be positive");
   }
-  double sumf = std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
+  double sumf =
+      std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
   if (std::fabs(sumf - 1.0) > 1e-12)
     throw std::invalid_argument("stratumFraction must sum to 1");
-  if (!none_na(lambda1)) throw std::invalid_argument("lambda1 must be provided");
-  if (!none_na(lambda2)) throw std::invalid_argument("lambda2 must be provided");
-  if (!none_na(lambda3)) throw std::invalid_argument("lambda3 must be provided");
+  if (!none_na(lambda1))
+    throw std::invalid_argument("lambda1 must be provided");
+  if (!none_na(lambda2))
+    throw std::invalid_argument("lambda2 must be provided");
+  if (!none_na(lambda3))
+    throw std::invalid_argument("lambda3 must be provided");
   for (double v : lambda1) {
-    if (v < 0.0) throw std::invalid_argument("lambda1 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda1 must be non-negative");
   }
   for (double v : lambda2) {
-    if (v < 0.0) throw std::invalid_argument("lambda2 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda2 must be non-negative");
   }
   for (double v : lambda3) {
-    if (v < 0.0) throw std::invalid_argument("lambda3 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda3 must be non-negative");
   }
   for (double v : gamma1) {
-    if (v < 0.0) throw std::invalid_argument("gamma1 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma1 must be non-negative");
   }
   for (double v : gamma2) {
-    if (v < 0.0) throw std::invalid_argument("gamma2 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma2 must be non-negative");
   }
   for (double v : gamma3) {
-    if (v < 0.0) throw std::invalid_argument("gamma3 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma3 must be non-negative");
   }
-  if (n == INT_MIN) throw std::invalid_argument("n must be provided");
-  if (n <= 0) throw std::invalid_argument("n must be a positive integer");
+  if (n == INT_MIN)
+    throw std::invalid_argument("n must be provided");
+  if (n <= 0)
+    throw std::invalid_argument("n must be a positive integer");
   if (fixedFollowup && std::isnan(followupTime))
-    throw std::invalid_argument("followupTime must be provided for fixed follow-up");
+    throw std::invalid_argument(
+        "followupTime must be provided for fixed follow-up");
   if (fixedFollowup && followupTime <= 0.0)
-    throw std::invalid_argument("followupTime must be positive for fixed follow-up");
+    throw std::invalid_argument(
+        "followupTime must be positive for fixed follow-up");
   if (rho1 < 0.0 || rho2 < 0.0)
     throw std::invalid_argument("rho parameters must be non-negative");
   if (maxNumberOfIterations < 1)
-    throw std::invalid_argument("maxNumberOfIterations must be a positive integer");
+    throw std::invalid_argument(
+        "maxNumberOfIterations must be a positive integer");
   if (maxNumberOfRawDatasetsPerStage < 0)
     throw std::invalid_argument(
         "maxNumberOfRawDatasetsPerStage must be a non-negative integer");
@@ -1086,7 +1150,7 @@ ListCpp lrsim3acpp(
   size_t maxRawIters = static_cast<size_t>(maxNumberOfRawDatasetsPerStage);
   size_t nstrata = stratumFraction.size();
   size_t nintv = piecewiseSurvivalTime.size();
-  const std::vector<double>& tau = piecewiseSurvivalTime;
+  const std::vector<double> &tau = piecewiseSurvivalTime;
   const double fu = followupTime;
 
   // expand stratified inputs
@@ -1100,7 +1164,8 @@ ListCpp lrsim3acpp(
   // generate seeds for each iteration to ensure reproducibility
   std::vector<uint64_t> seeds(maxIters);
   boost::random::mt19937_64 master_rng(static_cast<uint64_t>(seed));
-  for (size_t iter = 0; iter < maxIters; ++iter) seeds[iter] = master_rng();
+  for (size_t iter = 0; iter < maxIters; ++iter)
+    seeds[iter] = master_rng();
 
   // One summary (stage-level) row produced by an iteration
   struct StageSummaryRow {
@@ -1131,14 +1196,15 @@ ListCpp lrsim3acpp(
   struct IterationResult {
     std::vector<StageSummaryRow> summaryRows;
     std::vector<RawDatasetRow> rawRows; // populated only for first M iterations
-    void reserveForSummary(size_t approxRows) { summaryRows.reserve(approxRows); }
+    void reserveForSummary(size_t approxRows) {
+      summaryRows.reserve(approxRows);
+    }
     void reserveForRaw(size_t approxRows) { rawRows.reserve(approxRows); }
   };
 
   // pre-size per-iteration results
   std::vector<IterationResult> results;
   results.resize(maxIters);
-
 
   // Worker that runs simulation iterations [begin, end)
   struct SimWorker : public RcppParallel::Worker {
@@ -1150,91 +1216,57 @@ ListCpp lrsim3acpp(
     const int allocation1;
     const int allocation2;
     const int allocation3;
-    const std::vector<double>& accrualTime;
-    const std::vector<double>& accrualIntensity;
-    const std::vector<double>& tau;
-    const std::vector<double>& stratumFraction;
-    const FlatMatrix& lambda1x;
-    const FlatMatrix& lambda2x;
-    const FlatMatrix& lambda3x;
-    const FlatMatrix& gamma1x;
-    const FlatMatrix& gamma2x;
-    const FlatMatrix& gamma3x;
+    const std::vector<double> &accrualTime;
+    const std::vector<double> &accrualIntensity;
+    const std::vector<double> &tau;
+    const std::vector<double> &stratumFraction;
+    const FlatMatrix &lambda1x;
+    const FlatMatrix &lambda2x;
+    const FlatMatrix &lambda3x;
+    const FlatMatrix &gamma1x;
+    const FlatMatrix &gamma2x;
+    const FlatMatrix &gamma3x;
     const size_t N;
     const double fu;
     const bool fixedFollowup;
     const double rho1;
     const double rho2;
-    const std::vector<int>& plannedEvents;
-    const std::vector<double>& plannedTime;
+    const std::vector<int> &plannedEvents;
+    const std::vector<double> &plannedTime;
     const size_t maxRawIters; // store raw for iter < maxRawIters
-    const std::vector<uint64_t>& seeds;
+    const std::vector<uint64_t> &seeds;
     const bool useEvents;
     const size_t nstrata;
 
     // output pointer (pre-sized vector of IterationResult)
-    std::vector<IterationResult>* results;
+    std::vector<IterationResult> *results;
 
-    SimWorker(
-      size_t K_,
-      double hazardRatioH013_,
-      double hazardRatioH023_,
-      double hazardRatioH012_,
-      int allocation1_,
-      int allocation2_,
-      int allocation3_,
-      const std::vector<double>& accrualTime_,
-      const std::vector<double>& accrualIntensity_,
-      const std::vector<double>& tau_,
-      const std::vector<double>& stratumFraction_,
-      const FlatMatrix& lambda1x_,
-      const FlatMatrix& lambda2x_,
-      const FlatMatrix& lambda3x_,
-      const FlatMatrix& gamma1x_,
-      const FlatMatrix& gamma2x_,
-      const FlatMatrix& gamma3x_,
-      size_t N_,
-      double fu_,
-      bool fixedFollowup_,
-      double rho1_,
-      double rho2_,
-      const std::vector<int>& plannedEvents_,
-      const std::vector<double>& plannedTime_,
-      size_t maxRawIters_,
-      const std::vector<uint64_t>& seeds_,
-      bool useEvents_,
-      size_t nstrata_,
-      std::vector<IterationResult>* results_)
-      : K(K_),
-        hazardRatioH013(hazardRatioH013_),
-        hazardRatioH023(hazardRatioH023_),
-        hazardRatioH012(hazardRatioH012_),
-        allocation1(allocation1_),
-        allocation2(allocation2_),
-        allocation3(allocation3_),
-        accrualTime(accrualTime_),
-        accrualIntensity(accrualIntensity_),
-        tau(tau_),
-        stratumFraction(stratumFraction_),
-        lambda1x(lambda1x_),
-        lambda2x(lambda2x_),
-        lambda3x(lambda3x_),
-        gamma1x(gamma1x_),
-        gamma2x(gamma2x_),
-        gamma3x(gamma3x_),
-        N(N_),
-        fu(fu_),
-        fixedFollowup(fixedFollowup_),
-        rho1(rho1_),
-        rho2(rho2_),
-        plannedEvents(plannedEvents_),
-        plannedTime(plannedTime_),
-        maxRawIters(maxRawIters_),
-        seeds(seeds_),
-        useEvents(useEvents_),
-        nstrata(nstrata_),
-        results(results_)
-    {}
+    SimWorker(size_t K_, double hazardRatioH013_, double hazardRatioH023_,
+              double hazardRatioH012_, int allocation1_, int allocation2_,
+              int allocation3_, const std::vector<double> &accrualTime_,
+              const std::vector<double> &accrualIntensity_,
+              const std::vector<double> &tau_,
+              const std::vector<double> &stratumFraction_,
+              const FlatMatrix &lambda1x_, const FlatMatrix &lambda2x_,
+              const FlatMatrix &lambda3x_, const FlatMatrix &gamma1x_,
+              const FlatMatrix &gamma2x_, const FlatMatrix &gamma3x_, size_t N_,
+              double fu_, bool fixedFollowup_, double rho1_, double rho2_,
+              const std::vector<int> &plannedEvents_,
+              const std::vector<double> &plannedTime_, size_t maxRawIters_,
+              const std::vector<uint64_t> &seeds_, bool useEvents_,
+              size_t nstrata_, std::vector<IterationResult> *results_)
+        : K(K_), hazardRatioH013(hazardRatioH013_),
+          hazardRatioH023(hazardRatioH023_), hazardRatioH012(hazardRatioH012_),
+          allocation1(allocation1_), allocation2(allocation2_),
+          allocation3(allocation3_), accrualTime(accrualTime_),
+          accrualIntensity(accrualIntensity_), tau(tau_),
+          stratumFraction(stratumFraction_), lambda1x(lambda1x_),
+          lambda2x(lambda2x_), lambda3x(lambda3x_), gamma1x(gamma1x_),
+          gamma2x(gamma2x_), gamma3x(gamma3x_), N(N_), fu(fu_),
+          fixedFollowup(fixedFollowup_), rho1(rho1_), rho2(rho2_),
+          plannedEvents(plannedEvents_), plannedTime(plannedTime_),
+          maxRawIters(maxRawIters_), seeds(seeds_), useEvents(useEvents_),
+          nstrata(nstrata_), results(results_) {}
 
     void operator()(std::size_t begin, std::size_t end) {
       // local buffers reused by this worker
@@ -1246,11 +1278,14 @@ ListCpp lrsim3acpp(
       std::vector<int> n1(nstrata), n2(nstrata), n3(nstrata);
       std::vector<double> km13(nstrata), km23(nstrata), km12(nstrata);
       std::vector<double> cumF(nstrata);
-      std::partial_sum(stratumFraction.begin(), stratumFraction.end(), cumF.begin());
+      std::partial_sum(stratumFraction.begin(), stratumFraction.end(),
+                       cumF.begin());
 
       std::vector<double> analysisT(K);
-      std::vector<double> totalte; totalte.reserve(N);
-      std::vector<size_t> sub; sub.reserve(N);
+      std::vector<double> totalte;
+      totalte.reserve(N);
+      std::vector<size_t> sub;
+      sub.reserve(N);
 
       for (size_t iter = begin; iter < end; ++iter) {
         // deterministic per-iteration RNG
@@ -1258,10 +1293,11 @@ ListCpp lrsim3acpp(
         boost::random::uniform_real_distribution<double> unif(0.0, 1.0);
 
         // per-iteration output container
-        IterationResult& out = (*results)[iter];
+        IterationResult &out = (*results)[iter];
         out.summaryRows.clear();
         out.rawRows.clear();
-        if (iter < maxRawIters) out.reserveForRaw(K * N);
+        if (iter < maxRawIters)
+          out.reserveForRaw(K * N);
         out.reserveForSummary(K);
 
         // reset block randomization
@@ -1286,11 +1322,20 @@ ListCpp lrsim3acpp(
           double denom = static_cast<double>(b1[j] + b2[j] + b3[j]);
           double p1 = static_cast<double>(b1[j]) / denom;
           double p2 = static_cast<double>(b1[j] + b2[j]) / denom;
-          if (u <= p1) { trtGrp[i] = 1; --b1[j]; }
-          else if (u <= p2) { trtGrp[i] = 2; --b2[j]; }
-          else { trtGrp[i] = 3; --b3[j]; }
+          if (u <= p1) {
+            trtGrp[i] = 1;
+            --b1[j];
+          } else if (u <= p2) {
+            trtGrp[i] = 2;
+            --b2[j];
+          } else {
+            trtGrp[i] = 3;
+            --b3[j];
+          }
           if (b1[j] + b2[j] + b3[j] == 0) {
-            b1[j] = allocation1; b2[j] = allocation2; b3[j] = allocation3;
+            b1[j] = allocation1;
+            b2[j] = allocation2;
+            b3[j] = allocation3;
           }
 
           auto lam1 = flatmatrix_get_column_view(lambda1x, j);
@@ -1302,31 +1347,47 @@ ListCpp lrsim3acpp(
 
           // survival time
           u = unif(rng_local);
-          if (trtGrp[i] == 1) survivalT[i] = qtpwexpcpp1(u, tau, lam1);
-          else if (trtGrp[i] == 2) survivalT[i] = qtpwexpcpp1(u, tau, lam2);
-          else survivalT[i] = qtpwexpcpp1(u, tau, lam3);
+          if (trtGrp[i] == 1)
+            survivalT[i] = qtpwexpcpp1(u, tau, lam1);
+          else if (trtGrp[i] == 2)
+            survivalT[i] = qtpwexpcpp1(u, tau, lam2);
+          else
+            survivalT[i] = qtpwexpcpp1(u, tau, lam3);
 
           // dropout time
           u = unif(rng_local);
-          if (trtGrp[i] == 1) dropoutT[i] = qtpwexpcpp1(u, tau, gam1);
-          else if (trtGrp[i] == 2) dropoutT[i] = qtpwexpcpp1(u, tau, gam2);
-          else dropoutT[i] = qtpwexpcpp1(u, tau, gam3);
+          if (trtGrp[i] == 1)
+            dropoutT[i] = qtpwexpcpp1(u, tau, gam1);
+          else if (trtGrp[i] == 2)
+            dropoutT[i] = qtpwexpcpp1(u, tau, gam2);
+          else
+            dropoutT[i] = qtpwexpcpp1(u, tau, gam3);
 
           // initial observed time and event indicator
           double sv = survivalT[i], dr = dropoutT[i];
           if (fixedFollowup) {
             if (sv <= dr && sv <= fu) {
-              timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+              timeObs[i] = sv;
+              event[i] = 1;
+              dropEv[i] = 0;
             } else if (dr <= sv && dr <= fu) {
-              timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+              timeObs[i] = dr;
+              event[i] = 0;
+              dropEv[i] = 1;
             } else {
-              timeObs[i] = fu; event[i] = 0; dropEv[i] = 0;
+              timeObs[i] = fu;
+              event[i] = 0;
+              dropEv[i] = 0;
             }
           } else {
             if (sv <= dr) {
-              timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+              timeObs[i] = sv;
+              event[i] = 1;
+              dropEv[i] = 0;
             } else {
-              timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+              timeObs[i] = dr;
+              event[i] = 0;
+              dropEv[i] = 1;
             }
           }
           totalT[i] = arrivalT[i] + timeObs[i];
@@ -1341,13 +1402,14 @@ ListCpp lrsim3acpp(
           int nevents = 0; // events involving arm1 or arm3 in this iteration
           for (size_t i = 0; i < N; ++i) {
             if (event[i] && (trtGrp[i] == 1 || trtGrp[i] == 3)) {
-              ++nevents; totalte.push_back(totalT[i]);
+              ++nevents;
+              totalte.push_back(totalT[i]);
             }
           }
           if (nevents == 0) {
             thread_utils::push_thread_warning(
-              std::string("No events for iteration ") + std::to_string(iter + 1) +
-                " skipping this iteration.");
+                std::string("No events for iteration ") +
+                std::to_string(iter + 1) + " skipping this iteration.");
             // leave out.summaryRows empty to signal skipped iteration
             out.summaryRows.clear();
             out.rawRows.clear();
@@ -1357,7 +1419,10 @@ ListCpp lrsim3acpp(
 
           size_t j;
           for (j = 0; j < K; ++j) {
-            if (plannedEvents[j] >= nevents) { nstages = j + 1; break; }
+            if (plannedEvents[j] >= nevents) {
+              nstages = j + 1;
+              break;
+            }
           }
 
           if (j == K) {
@@ -1393,39 +1458,65 @@ ListCpp lrsim3acpp(
             double ar = arrivalT[i], sv = survivalT[i], dr = dropoutT[i];
 
             if (ar > time) {
-              timeObs[i] = time - ar; event[i] = 0; dropEv[i] = 0; continue;
+              timeObs[i] = time - ar;
+              event[i] = 0;
+              dropEv[i] = 0;
+              continue;
             }
 
             if (fixedFollowup) {
               if (ar + sv <= time && sv <= dr && sv <= fu) {
-                timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+                timeObs[i] = sv;
+                event[i] = 1;
+                dropEv[i] = 0;
               } else if (ar + dr <= time && dr <= sv && dr <= fu) {
-                timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+                timeObs[i] = dr;
+                event[i] = 0;
+                dropEv[i] = 1;
               } else if (ar + fu <= time && fu <= sv && fu <= dr) {
-                timeObs[i] = fu; event[i] = 0; dropEv[i] = 0;
+                timeObs[i] = fu;
+                event[i] = 0;
+                dropEv[i] = 0;
               } else {
-                timeObs[i] = time - ar; event[i] = 0; dropEv[i] = 0;
+                timeObs[i] = time - ar;
+                event[i] = 0;
+                dropEv[i] = 0;
               }
             } else {
               if (ar + sv <= time && sv <= dr) {
-                timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+                timeObs[i] = sv;
+                event[i] = 1;
+                dropEv[i] = 0;
               } else if (ar + dr <= time && dr <= sv) {
-                timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+                timeObs[i] = dr;
+                event[i] = 0;
+                dropEv[i] = 1;
               } else {
-                timeObs[i] = time - ar; event[i] = 0; dropEv[i] = 0;
+                timeObs[i] = time - ar;
+                event[i] = 0;
+                dropEv[i] = 0;
               }
             }
 
             size_t h = static_cast<size_t>(stratum[i] - 1);
             if (trtGrp[i] == 1) {
               ++n1[h];
-              if (event[i]) ++events1; else if (dropEv[i]) ++dropouts1;
+              if (event[i])
+                ++events1;
+              else if (dropEv[i])
+                ++dropouts1;
             } else if (trtGrp[i] == 2) {
               ++n2[h];
-              if (event[i]) ++events2; else if (dropEv[i]) ++dropouts2;
+              if (event[i])
+                ++events2;
+              else if (dropEv[i])
+                ++dropouts2;
             } else {
               ++n3[h];
-              if (event[i]) ++events3; else if (dropEv[i]) ++dropouts3;
+              if (event[i])
+                ++events3;
+              else if (dropEv[i])
+                ++dropouts3;
             }
           }
 
@@ -1438,7 +1529,11 @@ ListCpp lrsim3acpp(
 
           // collect indices with positive observed time and sort them
           sub.clear();
-          for (size_t i = 0; i < N; ++i) if (timeObs[i] > 0.0) sub.push_back(i);
+          for (size_t i = 0; i < N; ++i) {
+            if (timeObs[i] > 0.0)
+              sub.push_back(i);
+          }
+
           std::sort(sub.begin(), sub.end(), [&](size_t a, size_t b) {
             return timeObs[a] < timeObs[b];
           });
@@ -1511,9 +1606,12 @@ ListCpp lrsim3acpp(
             } // event[idx]
 
             // reduce risk set
-            if (trtGrp[idx] == 1) --n1[h];
-            else if (trtGrp[idx] == 2) --n2[h];
-            else --n3[h];
+            if (trtGrp[idx] == 1)
+              --n1[h];
+            else if (trtGrp[idx] == 2)
+              --n2[h];
+            else
+              --n3[h];
           } // end events loop
 
           double z13 = (vs13 > 0.0 ? us13 / std::sqrt(vs13) : 0.0);
@@ -1524,7 +1622,8 @@ ListCpp lrsim3acpp(
           if (iter < maxRawIters) { // only for first maxRawIters iterations
             for (size_t i = 0; i < N; ++i) {
               // skip subjects who haven't been enrolled by analysis time
-              if (arrivalT[i] > time) continue;
+              if (arrivalT[i] > time)
+                continue;
               RawDatasetRow rr;
               rr.iterNum = static_cast<int>(iter + 1);
               rr.stageNum = static_cast<int>(k + 1);
@@ -1576,16 +1675,12 @@ ListCpp lrsim3acpp(
   }; // SimWorker
 
   // run worker in parallel
-  SimWorker worker(
-      K, hazardRatioH013, hazardRatioH023, hazardRatioH012,
-      allocation1, allocation2, allocation3,
-      accrualTime, accrualIntensity, tau, stratumFraction,
-      lambda1x, lambda2x, lambda3x, gamma1x, gamma2x, gamma3x,
-      N, fu, fixedFollowup, rho1, rho2,
-      plannedEvents, plannedTime,
-      maxRawIters, seeds, useEvents, nstrata,
-      &results
-  );
+  SimWorker worker(K, hazardRatioH013, hazardRatioH023, hazardRatioH012,
+                   allocation1, allocation2, allocation3, accrualTime,
+                   accrualIntensity, tau, stratumFraction, lambda1x, lambda2x,
+                   lambda3x, gamma1x, gamma2x, gamma3x, N, fu, fixedFollowup,
+                   rho1, rho2, plannedEvents, plannedTime, maxRawIters, seeds,
+                   useEvents, nstrata, &results);
 
   RcppParallel::parallelFor(0, maxIters, worker);
 
@@ -1595,55 +1690,93 @@ ListCpp lrsim3acpp(
     nsr += results[iter].summaryRows.size();
     nrr += results[iter].rawRows.size();
   }
-  if (nsr == 0) throw std::runtime_error(
-    "No iterations with observed events for arm 1 or arm 3. "
-    "Unable to produce output.");
+  if (nsr == 0)
+    throw std::runtime_error(
+        "No iterations with observed events for arm 1 or arm 3. "
+        "Unable to produce output.");
 
   // prepare final containers (reserve capacities)
-  std::vector<int> sum_iterNum; sum_iterNum.reserve(nsr);
-  std::vector<unsigned char> sum_evNotArch; sum_evNotArch.reserve(nsr);
-  std::vector<int> sum_stageNum; sum_stageNum.reserve(nsr);
-  std::vector<double> sum_analysisT; sum_analysisT.reserve(nsr);
-  std::vector<int> sum_accruals1; sum_accruals1.reserve(nsr);
-  std::vector<int> sum_accruals2; sum_accruals2.reserve(nsr);
-  std::vector<int> sum_accruals3; sum_accruals3.reserve(nsr);
-  std::vector<int> sum_totAccruals; sum_totAccruals.reserve(nsr);
-  std::vector<int> sum_events1; sum_events1.reserve(nsr);
-  std::vector<int> sum_events2; sum_events2.reserve(nsr);
-  std::vector<int> sum_events3; sum_events3.reserve(nsr);
-  std::vector<int> sum_totEvents; sum_totEvents.reserve(nsr);
-  std::vector<int> sum_dropouts1; sum_dropouts1.reserve(nsr);
-  std::vector<int> sum_dropouts2; sum_dropouts2.reserve(nsr);
-  std::vector<int> sum_dropouts3; sum_dropouts3.reserve(nsr);
-  std::vector<int> sum_totDropouts; sum_totDropouts.reserve(nsr);
-  std::vector<double> sum_uscore13; sum_uscore13.reserve(nsr);
-  std::vector<double> sum_vscore13; sum_vscore13.reserve(nsr);
-  std::vector<double> sum_logRank13; sum_logRank13.reserve(nsr);
-  std::vector<double> sum_uscore23; sum_uscore23.reserve(nsr);
-  std::vector<double> sum_vscore23; sum_vscore23.reserve(nsr);
-  std::vector<double> sum_logRank23; sum_logRank23.reserve(nsr);
-  std::vector<double> sum_uscore12; sum_uscore12.reserve(nsr);
-  std::vector<double> sum_vscore12; sum_vscore12.reserve(nsr);
-  std::vector<double> sum_logRank12; sum_logRank12.reserve(nsr);
+  std::vector<int> sum_iterNum;
+  sum_iterNum.reserve(nsr);
+  std::vector<unsigned char> sum_evNotArch;
+  sum_evNotArch.reserve(nsr);
+  std::vector<int> sum_stageNum;
+  sum_stageNum.reserve(nsr);
+  std::vector<double> sum_analysisT;
+  sum_analysisT.reserve(nsr);
+  std::vector<int> sum_accruals1;
+  sum_accruals1.reserve(nsr);
+  std::vector<int> sum_accruals2;
+  sum_accruals2.reserve(nsr);
+  std::vector<int> sum_accruals3;
+  sum_accruals3.reserve(nsr);
+  std::vector<int> sum_totAccruals;
+  sum_totAccruals.reserve(nsr);
+  std::vector<int> sum_events1;
+  sum_events1.reserve(nsr);
+  std::vector<int> sum_events2;
+  sum_events2.reserve(nsr);
+  std::vector<int> sum_events3;
+  sum_events3.reserve(nsr);
+  std::vector<int> sum_totEvents;
+  sum_totEvents.reserve(nsr);
+  std::vector<int> sum_dropouts1;
+  sum_dropouts1.reserve(nsr);
+  std::vector<int> sum_dropouts2;
+  sum_dropouts2.reserve(nsr);
+  std::vector<int> sum_dropouts3;
+  sum_dropouts3.reserve(nsr);
+  std::vector<int> sum_totDropouts;
+  sum_totDropouts.reserve(nsr);
+  std::vector<double> sum_uscore13;
+  sum_uscore13.reserve(nsr);
+  std::vector<double> sum_vscore13;
+  sum_vscore13.reserve(nsr);
+  std::vector<double> sum_logRank13;
+  sum_logRank13.reserve(nsr);
+  std::vector<double> sum_uscore23;
+  sum_uscore23.reserve(nsr);
+  std::vector<double> sum_vscore23;
+  sum_vscore23.reserve(nsr);
+  std::vector<double> sum_logRank23;
+  sum_logRank23.reserve(nsr);
+  std::vector<double> sum_uscore12;
+  sum_uscore12.reserve(nsr);
+  std::vector<double> sum_vscore12;
+  sum_vscore12.reserve(nsr);
+  std::vector<double> sum_logRank12;
+  sum_logRank12.reserve(nsr);
 
   // raw final containers
-  std::vector<int> raw_iterNum; raw_iterNum.reserve(nrr);
-  std::vector<int> raw_stageNum; raw_stageNum.reserve(nrr);
-  std::vector<double> raw_analysisT; raw_analysisT.reserve(nrr);
-  std::vector<int> raw_subjectId; raw_subjectId.reserve(nrr);
-  std::vector<double> raw_arrivalT; raw_arrivalT.reserve(nrr);
-  std::vector<int> raw_stratum; raw_stratum.reserve(nrr);
-  std::vector<int> raw_trtGrp; raw_trtGrp.reserve(nrr);
-  std::vector<double> raw_survivalT; raw_survivalT.reserve(nrr);
-  std::vector<double> raw_dropoutT; raw_dropoutT.reserve(nrr);
-  std::vector<double> raw_timeObs; raw_timeObs.reserve(nrr);
-  std::vector<unsigned char> raw_event; raw_event.reserve(nrr);
-  std::vector<unsigned char> raw_dropEv; raw_dropEv.reserve(nrr);
+  std::vector<int> raw_iterNum;
+  raw_iterNum.reserve(nrr);
+  std::vector<int> raw_stageNum;
+  raw_stageNum.reserve(nrr);
+  std::vector<double> raw_analysisT;
+  raw_analysisT.reserve(nrr);
+  std::vector<int> raw_subjectId;
+  raw_subjectId.reserve(nrr);
+  std::vector<double> raw_arrivalT;
+  raw_arrivalT.reserve(nrr);
+  std::vector<int> raw_stratum;
+  raw_stratum.reserve(nrr);
+  std::vector<int> raw_trtGrp;
+  raw_trtGrp.reserve(nrr);
+  std::vector<double> raw_survivalT;
+  raw_survivalT.reserve(nrr);
+  std::vector<double> raw_dropoutT;
+  raw_dropoutT.reserve(nrr);
+  std::vector<double> raw_timeObs;
+  raw_timeObs.reserve(nrr);
+  std::vector<unsigned char> raw_event;
+  raw_event.reserve(nrr);
+  std::vector<unsigned char> raw_dropEv;
+  raw_dropEv.reserve(nrr);
 
   // flatten by iteration in order (preserves iteration order)
   for (size_t iter = 0; iter < maxIters; ++iter) {
-    const auto& srows = results[iter].summaryRows;
-    for (const auto& r : srows) {
+    const auto &srows = results[iter].summaryRows;
+    for (const auto &r : srows) {
       sum_iterNum.push_back(r.iterNum);
       sum_evNotArch.push_back(r.evNotAch);
       sum_stageNum.push_back(r.stageNum);
@@ -1672,8 +1805,8 @@ ListCpp lrsim3acpp(
     }
 
     if (iter < maxRawIters) {
-      const auto& rraw = results[iter].rawRows;
-      for (const auto& rr : rraw) {
+      const auto &rraw = results[iter].rawRows;
+      for (const auto &rr : rraw) {
         raw_iterNum.push_back(rr.iterNum);
         raw_stageNum.push_back(rr.stageNum);
         raw_analysisT.push_back(rr.analysisT);
@@ -1743,36 +1876,27 @@ ListCpp lrsim3acpp(
   return result;
 }
 
-
 // [[Rcpp::export]]
 Rcpp::List lrsim3aRcpp(
-    const int kMax = 1,
-    const double hazardRatioH013 = 1,
-    const double hazardRatioH023 = 1,
-    const double hazardRatioH012 = 1,
-    const int allocation1 = 1,
-    const int allocation2 = 1,
-    const int allocation3 = 1,
-    const Rcpp::NumericVector& accrualTime = 0,
-    const Rcpp::NumericVector& accrualIntensity = NA_REAL,
-    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
-    const Rcpp::NumericVector& stratumFraction = 1,
-    const Rcpp::NumericVector& lambda1 = NA_REAL,
-    const Rcpp::NumericVector& lambda2 = NA_REAL,
-    const Rcpp::NumericVector& lambda3 = NA_REAL,
-    const Rcpp::NumericVector& gamma1 = 0,
-    const Rcpp::NumericVector& gamma2 = 0,
-    const Rcpp::NumericVector& gamma3 = 0,
-    const int n = NA_INTEGER,
-    const double followupTime = NA_REAL,
-    const bool fixedFollowup = false,
-    const double rho1 = 0,
-    const double rho2 = 0,
-    const Rcpp::IntegerVector& plannedEvents = NA_INTEGER,
-    const Rcpp::NumericVector& plannedTime = NA_REAL,
+    const int kMax = 1, const double hazardRatioH013 = 1,
+    const double hazardRatioH023 = 1, const double hazardRatioH012 = 1,
+    const int allocation1 = 1, const int allocation2 = 1,
+    const int allocation3 = 1, const Rcpp::NumericVector &accrualTime = 0,
+    const Rcpp::NumericVector &accrualIntensity = NA_REAL,
+    const Rcpp::NumericVector &piecewiseSurvivalTime = 0,
+    const Rcpp::NumericVector &stratumFraction = 1,
+    const Rcpp::NumericVector &lambda1 = NA_REAL,
+    const Rcpp::NumericVector &lambda2 = NA_REAL,
+    const Rcpp::NumericVector &lambda3 = NA_REAL,
+    const Rcpp::NumericVector &gamma1 = 0,
+    const Rcpp::NumericVector &gamma2 = 0,
+    const Rcpp::NumericVector &gamma3 = 0, const int n = NA_INTEGER,
+    const double followupTime = NA_REAL, const bool fixedFollowup = false,
+    const double rho1 = 0, const double rho2 = 0,
+    const Rcpp::IntegerVector &plannedEvents = NA_INTEGER,
+    const Rcpp::NumericVector &plannedTime = NA_REAL,
     const int maxNumberOfIterations = 1000,
-    const int maxNumberOfRawDatasetsPerStage = 0,
-    const int seed = 0) {
+    const int maxNumberOfRawDatasetsPerStage = 0, const int seed = 0) {
 
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
@@ -1787,55 +1911,42 @@ Rcpp::List lrsim3aRcpp(
   auto plannedE = Rcpp::as<std::vector<int>>(plannedEvents);
   auto plannedT = Rcpp::as<std::vector<double>>(plannedTime);
 
-  auto out = lrsim3acpp(
-    kMax, hazardRatioH013, hazardRatioH023, hazardRatioH012,
-    allocation1, allocation2, allocation3, accrualT, accrualInt,
-    pwSurvT, stratumFrac, lam1, lam2, lam3, gam1, gam2, gam3,
-    n, followupTime, fixedFollowup, rho1, rho2, plannedE, plannedT,
-    maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed);
+  auto out =
+      lrsim3acpp(kMax, hazardRatioH013, hazardRatioH023, hazardRatioH012,
+                 allocation1, allocation2, allocation3, accrualT, accrualInt,
+                 pwSurvT, stratumFrac, lam1, lam2, lam3, gam1, gam2, gam3, n,
+                 followupTime, fixedFollowup, rho1, rho2, plannedE, plannedT,
+                 maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed);
 
   thread_utils::drain_thread_warnings_to_R();
   return Rcpp::wrap(out);
 }
 
-
 // The parallel entry function
 ListCpp lrsim2ecpp(
-    const int kMax,
-    const int kMaxpfs,
-    const double hazardRatioH0pfs,
-    const double hazardRatioH0os,
-    const int allocation1,
-    const int allocation2,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& stratumFraction,
-    const double rho_pd_os,
-    const std::vector<double>& lambda1pfs,
-    const std::vector<double>& lambda2pfs,
-    const std::vector<double>& lambda1os,
-    const std::vector<double>& lambda2os,
-    const std::vector<double>& gamma1pfs,
-    const std::vector<double>& gamma2pfs,
-    const std::vector<double>& gamma1os,
-    const std::vector<double>& gamma2os,
-    const int n,
-    const double followupTime,
-    const bool fixedFollowup,
-    const double rho1,
-    const double rho2,
-    const std::vector<int>& plannedEvents,
-    const std::vector<double>& plannedTime,
-    const int maxNumberOfIterations,
-    const int maxNumberOfRawDatasetsPerStage,
-    const int seed) {
+    const int kMax, const int kMaxpfs, const double hazardRatioH0pfs,
+    const double hazardRatioH0os, const int allocation1, const int allocation2,
+    const std::vector<double> &accrualTime,
+    const std::vector<double> &accrualIntensity,
+    const std::vector<double> &piecewiseSurvivalTime,
+    const std::vector<double> &stratumFraction, const double rho_pd_os,
+    const std::vector<double> &lambda1pfs,
+    const std::vector<double> &lambda2pfs, const std::vector<double> &lambda1os,
+    const std::vector<double> &lambda2os, const std::vector<double> &gamma1pfs,
+    const std::vector<double> &gamma2pfs, const std::vector<double> &gamma1os,
+    const std::vector<double> &gamma2os, const int n, const double followupTime,
+    const bool fixedFollowup, const double rho1, const double rho2,
+    const std::vector<int> &plannedEvents,
+    const std::vector<double> &plannedTime, const int maxNumberOfIterations,
+    const int maxNumberOfRawDatasetsPerStage, const int seed) {
 
-  if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
+  if (kMax < 1)
+    throw std::invalid_argument("kMax must be a positive integer");
   size_t K = static_cast<size_t>(kMax);
 
   int kMaxpfsx = kMaxpfs;
-  if (kMaxpfsx < 0) kMaxpfsx = kMax;
+  if (kMaxpfsx < 0)
+    kMaxpfsx = kMax;
   if (kMaxpfsx > kMax)
     throw std::invalid_argument("kMaxpfs must be less than or equal to kMax");
   size_t Kpfs = static_cast<size_t>(kMaxpfsx);
@@ -1850,14 +1961,16 @@ ListCpp lrsim2ecpp(
       throw std::invalid_argument("Invalid length for plannedEvents");
     if (Kpfs > 1) {
       for (size_t i = 1; i < Kpfs; ++i) {
-        if (plannedEvents[i] <= plannedEvents[i-1])
-          throw std::invalid_argument("plannedEvents for PFS must be increasing");
+        if (plannedEvents[i] <= plannedEvents[i - 1])
+          throw std::invalid_argument(
+              "plannedEvents for PFS must be increasing");
       }
     }
     if (K - Kpfs > 1) {
       for (size_t i = Kpfs + 1; i < plannedEvents.size(); ++i) {
-        if (plannedEvents[i] <= plannedEvents[i-1])
-          throw std::invalid_argument("plannedEvents for OS must be increasing");
+        if (plannedEvents[i] <= plannedEvents[i - 1])
+          throw std::invalid_argument(
+              "plannedEvents for OS must be increasing");
       }
     }
   } else if (none_na(plannedTime)) {
@@ -1869,7 +1982,8 @@ ListCpp lrsim2ecpp(
     if (any_nonincreasing(plannedTime))
       throw std::invalid_argument("plannedTime must be increasing");
   } else {
-    throw std::invalid_argument("Either plannedEvents or plannedTime must be given");
+    throw std::invalid_argument(
+        "Either plannedEvents or plannedTime must be given");
   }
 
   // validate other parameters
@@ -1888,58 +2002,78 @@ ListCpp lrsim2ecpp(
   if (accrualIntensity.size() != accrualTime.size())
     throw std::invalid_argument("Invalid length for accrualIntensity");
   for (double v : accrualIntensity) {
-    if (v < 0.0) throw std::invalid_argument("accrualIntensity must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("accrualIntensity must be non-negative");
   }
   if (piecewiseSurvivalTime[0] != 0.0)
     throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
   if (any_nonincreasing(piecewiseSurvivalTime))
     throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
   for (double v : stratumFraction) {
-    if (v <= 0.0) throw std::invalid_argument("stratumFraction must be positive");
+    if (v <= 0.0)
+      throw std::invalid_argument("stratumFraction must be positive");
   }
-  double sumf = std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
+  double sumf =
+      std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
   if (std::fabs(sumf - 1.0) > 1e-12)
     throw std::invalid_argument("stratumFraction must sum to 1");
   if (rho_pd_os <= -1.0 || rho_pd_os >= 1.0)
     throw std::invalid_argument("rho_pd_os must lie in (-1, 1)");
-  if (!none_na(lambda1pfs)) throw std::invalid_argument("lambda1pfs must be provided");
-  if (!none_na(lambda2pfs)) throw std::invalid_argument("lambda2pfs must be provided");
-  if (!none_na(lambda1os)) throw std::invalid_argument("lambda1os must be provided");
-  if (!none_na(lambda2os)) throw std::invalid_argument("lambda2os must be provided");
+  if (!none_na(lambda1pfs))
+    throw std::invalid_argument("lambda1pfs must be provided");
+  if (!none_na(lambda2pfs))
+    throw std::invalid_argument("lambda2pfs must be provided");
+  if (!none_na(lambda1os))
+    throw std::invalid_argument("lambda1os must be provided");
+  if (!none_na(lambda2os))
+    throw std::invalid_argument("lambda2os must be provided");
   for (double v : lambda1pfs) {
-    if (v < 0.0) throw std::invalid_argument("lambda1pfs must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda1pfs must be non-negative");
   }
   for (double v : lambda2pfs) {
-    if (v < 0.0) throw std::invalid_argument("lambda2pfs must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda2pfs must be non-negative");
   }
   for (double v : lambda1os) {
-    if (v < 0.0) throw std::invalid_argument("lambda1os must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda1os must be non-negative");
   }
   for (double v : lambda2os) {
-    if (v < 0.0) throw std::invalid_argument("lambda2os must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda2os must be non-negative");
   }
   for (double v : gamma1pfs) {
-    if (v < 0.0) throw std::invalid_argument("gamma1pfs must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma1pfs must be non-negative");
   }
   for (double v : gamma2pfs) {
-    if (v < 0.0) throw std::invalid_argument("gamma2pfs must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma2pfs must be non-negative");
   }
   for (double v : gamma1os) {
-    if (v < 0.0) throw std::invalid_argument("gamma1os must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma1os must be non-negative");
   }
   for (double v : gamma2os) {
-    if (v < 0.0) throw std::invalid_argument("gamma2os must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma2os must be non-negative");
   }
-  if (n == INT_MIN) throw std::invalid_argument("n must be provided");
-  if (n <= 0) throw std::invalid_argument("n must be positive");
+  if (n == INT_MIN)
+    throw std::invalid_argument("n must be provided");
+  if (n <= 0)
+    throw std::invalid_argument("n must be positive");
   if (fixedFollowup && std::isnan(followupTime))
-    throw std::invalid_argument("followupTime must be provided for fixed follow-up");
+    throw std::invalid_argument(
+        "followupTime must be provided for fixed follow-up");
   if (fixedFollowup && followupTime <= 0.0)
-    throw std::invalid_argument("followupTime must be positive for fixed follow-up");
+    throw std::invalid_argument(
+        "followupTime must be positive for fixed follow-up");
   if (rho1 < 0.0 || rho2 < 0.0)
     throw std::invalid_argument("rho parameters must be non-negative");
   if (maxNumberOfIterations < 1)
-    throw std::invalid_argument("maxNumberOfIterations must be a positive integer");
+    throw std::invalid_argument(
+        "maxNumberOfIterations must be a positive integer");
   if (maxNumberOfRawDatasetsPerStage < 0)
     throw std::invalid_argument(
         "maxNumberOfRawDatasetsPerStage must be a non-negative integer");
@@ -1953,19 +2087,21 @@ ListCpp lrsim2ecpp(
   size_t nstrata = stratumFraction.size();
   size_t nintv = piecewiseSurvivalTime.size();
   size_t nintv2 = (nintv == 1 ? 10u : nintv + 10u);
-  const std::vector<double>& tau = piecewiseSurvivalTime;
+  const std::vector<double> &tau = piecewiseSurvivalTime;
   const double fu = followupTime;
   const double rho_pd_os_pyth_comp = std::sqrt(1 - rho_pd_os * rho_pd_os);
 
   // expand stratified inputs to nested vectors (per-stratum vectors)
-  auto lambda1pfsx = expand_stratified(lambda1pfs, nstrata, nintv, "lambda1pfs");
-  auto lambda2pfsx = expand_stratified(lambda2pfs, nstrata, nintv, "lambda2pfs");
-  auto lambda1osx  = expand_stratified(lambda1os,  nstrata, nintv, "lambda1os");
-  auto lambda2osx  = expand_stratified(lambda2os,  nstrata, nintv, "lambda2os");
-  auto gamma1pfsx  = expand_stratified(gamma1pfs,  nstrata, nintv, "gamma1pfs");
-  auto gamma2pfsx  = expand_stratified(gamma2pfs,  nstrata, nintv, "gamma2pfs");
-  auto gamma1osx   = expand_stratified(gamma1os,   nstrata, nintv, "gamma1os");
-  auto gamma2osx   = expand_stratified(gamma2os,   nstrata, nintv, "gamma2os");
+  auto lambda1pfsx =
+      expand_stratified(lambda1pfs, nstrata, nintv, "lambda1pfs");
+  auto lambda2pfsx =
+      expand_stratified(lambda2pfs, nstrata, nintv, "lambda2pfs");
+  auto lambda1osx = expand_stratified(lambda1os, nstrata, nintv, "lambda1os");
+  auto lambda2osx = expand_stratified(lambda2os, nstrata, nintv, "lambda2os");
+  auto gamma1pfsx = expand_stratified(gamma1pfs, nstrata, nintv, "gamma1pfs");
+  auto gamma2pfsx = expand_stratified(gamma2pfs, nstrata, nintv, "gamma2pfs");
+  auto gamma1osx = expand_stratified(gamma1os, nstrata, nintv, "gamma1os");
+  auto gamma2osx = expand_stratified(gamma2os, nstrata, nintv, "gamma2os");
 
   // compute P(D) hazard piecewise for each stratum using hazard_pdcpp
   FlatMatrix tau1pdx(nintv2, nstrata);
@@ -2012,8 +2148,8 @@ ListCpp lrsim2ecpp(
   // generate seeds for each iteration to ensure reproducibility
   std::vector<uint64_t> seeds(maxIters);
   boost::random::mt19937_64 master_rng(static_cast<uint64_t>(seed));
-  for (size_t iter = 0; iter < maxIters; ++iter) seeds[iter] = master_rng();
-
+  for (size_t iter = 0; iter < maxIters; ++iter)
+    seeds[iter] = master_rng();
 
   // Per-stage summary row
   struct StageSummaryRow {
@@ -2044,7 +2180,9 @@ ListCpp lrsim2ecpp(
   struct IterationResult {
     std::vector<StageSummaryRow> summaryRows;
     std::vector<RawDatasetRow> rawRows;
-    void reserveForSummary(size_t approxRows) { summaryRows.reserve(approxRows); }
+    void reserveForSummary(size_t approxRows) {
+      summaryRows.reserve(approxRows);
+    }
     void reserveForRaw(size_t approxRows) { rawRows.reserve(approxRows); }
   };
 
@@ -2060,120 +2198,77 @@ ListCpp lrsim2ecpp(
     const double hazardRatioH0os;
     const int allocation1;
     const int allocation2;
-    const std::vector<double>& accrualTime;
-    const std::vector<double>& accrualIntensity;
-    const std::vector<double>& tau;
-    const std::vector<double>& stratumFraction;
+    const std::vector<double> &accrualTime;
+    const std::vector<double> &accrualIntensity;
+    const std::vector<double> &tau;
+    const std::vector<double> &stratumFraction;
     const double rho_pd_os;
-    const FlatMatrix& lambda1pfsx;
-    const FlatMatrix& lambda2pfsx;
-    const FlatMatrix& lambda1osx;
-    const FlatMatrix& lambda2osx;
-    const FlatMatrix& gamma1pfsx;
-    const FlatMatrix& gamma2pfsx;
-    const FlatMatrix& gamma1osx;
-    const FlatMatrix& gamma2osx;
-    const FlatMatrix& tau1pdx;
-    const FlatMatrix& tau2pdx;
-    const FlatMatrix& lambda1pd;
-    const FlatMatrix& lambda2pd;
-    const FlatMatrix& gamma1pd;
-    const FlatMatrix& gamma2pd;
+    const FlatMatrix &lambda1pfsx;
+    const FlatMatrix &lambda2pfsx;
+    const FlatMatrix &lambda1osx;
+    const FlatMatrix &lambda2osx;
+    const FlatMatrix &gamma1pfsx;
+    const FlatMatrix &gamma2pfsx;
+    const FlatMatrix &gamma1osx;
+    const FlatMatrix &gamma2osx;
+    const FlatMatrix &tau1pdx;
+    const FlatMatrix &tau2pdx;
+    const FlatMatrix &lambda1pd;
+    const FlatMatrix &lambda2pd;
+    const FlatMatrix &gamma1pd;
+    const FlatMatrix &gamma2pd;
 
     const size_t N;
     const double fu;
     const bool fixedFollowup;
     const double rho1;
     const double rho2;
-    const std::vector<int>& plannedEvents;
-    const std::vector<double>& plannedTime;
+    const std::vector<int> &plannedEvents;
+    const std::vector<double> &plannedTime;
     const size_t maxRawIters;
-    const std::vector<uint64_t>& seeds;
+    const std::vector<uint64_t> &seeds;
     const bool useEvents;
     const size_t nstrata;
     const double rho_pd_os_pyth_comp;
 
     // output pointer to local results
-    std::vector<IterationResult>* results;
+    std::vector<IterationResult> *results;
 
-    SimWorker(
-      size_t K_,
-      size_t Kpfs_,
-      double hazardRatioH0pfs_,
-      double hazardRatioH0os_,
-      int allocation1_,
-      int allocation2_,
-      const std::vector<double>& accrualTime_,
-      const std::vector<double>& accrualIntensity_,
-      const std::vector<double>& tau_,
-      const std::vector<double>& stratumFraction_,
-      double rho_pd_os_,
-      const FlatMatrix& lambda1pfsx_,
-      const FlatMatrix& lambda2pfsx_,
-      const FlatMatrix& lambda1osx_,
-      const FlatMatrix& lambda2osx_,
-      const FlatMatrix& gamma1pfsx_,
-      const FlatMatrix& gamma2pfsx_,
-      const FlatMatrix& gamma1osx_,
-      const FlatMatrix& gamma2osx_,
-      const FlatMatrix& tau1pdx_,
-      const FlatMatrix& tau2pdx_,
-      const FlatMatrix& lambda1pd_,
-      const FlatMatrix& lambda2pd_,
-      const FlatMatrix& gamma1pd_,
-      const FlatMatrix& gamma2pd_,
-      size_t N_,
-      double fu_,
-      bool fixedFollowup_,
-      double rho1_,
-      double rho2_,
-      const std::vector<int>& plannedEvents_,
-      const std::vector<double>& plannedTime_,
-      size_t maxRawIters_,
-      const std::vector<uint64_t>& seeds_,
-      bool useEvents_,
-      size_t nstrata_,
-      const double rho_pd_os_pyth_comp_,
-      std::vector<IterationResult>* results_)
-      : K(K_),
-        Kpfs(Kpfs_),
-        hazardRatioH0pfs(hazardRatioH0pfs_),
-        hazardRatioH0os(hazardRatioH0os_),
-        allocation1(allocation1_),
-        allocation2(allocation2_),
-        accrualTime(accrualTime_),
-        accrualIntensity(accrualIntensity_),
-        tau(tau_),
-        stratumFraction(stratumFraction_),
-        rho_pd_os(rho_pd_os_),
-        lambda1pfsx(lambda1pfsx_),
-        lambda2pfsx(lambda2pfsx_),
-        lambda1osx(lambda1osx_),
-        lambda2osx(lambda2osx_),
-        gamma1pfsx(gamma1pfsx_),
-        gamma2pfsx(gamma2pfsx_),
-        gamma1osx(gamma1osx_),
-        gamma2osx(gamma2osx_),
-        tau1pdx(tau1pdx_),
-        tau2pdx(tau2pdx_),
-        lambda1pd(lambda1pd_),
-        lambda2pd(lambda2pd_),
-        gamma1pd(gamma1pd_),
-        gamma2pd(gamma2pd_),
-        N(N_),
-        fu(fu_),
-        fixedFollowup(fixedFollowup_),
-        rho1(rho1_),
-        rho2(rho2_),
-        plannedEvents(plannedEvents_),
-        plannedTime(plannedTime_),
-        maxRawIters(maxRawIters_),
-        seeds(seeds_),
-        useEvents(useEvents_),
-        nstrata(nstrata_),
-        rho_pd_os_pyth_comp(rho_pd_os_pyth_comp_),
-        results(results_)
-    {}
+    SimWorker(size_t K_, size_t Kpfs_, double hazardRatioH0pfs_,
+              double hazardRatioH0os_, int allocation1_, int allocation2_,
+              const std::vector<double> &accrualTime_,
+              const std::vector<double> &accrualIntensity_,
+              const std::vector<double> &tau_,
+              const std::vector<double> &stratumFraction_, double rho_pd_os_,
+              const FlatMatrix &lambda1pfsx_, const FlatMatrix &lambda2pfsx_,
+              const FlatMatrix &lambda1osx_, const FlatMatrix &lambda2osx_,
+              const FlatMatrix &gamma1pfsx_, const FlatMatrix &gamma2pfsx_,
+              const FlatMatrix &gamma1osx_, const FlatMatrix &gamma2osx_,
+              const FlatMatrix &tau1pdx_, const FlatMatrix &tau2pdx_,
+              const FlatMatrix &lambda1pd_, const FlatMatrix &lambda2pd_,
+              const FlatMatrix &gamma1pd_, const FlatMatrix &gamma2pd_,
+              size_t N_, double fu_, bool fixedFollowup_, double rho1_,
+              double rho2_, const std::vector<int> &plannedEvents_,
+              const std::vector<double> &plannedTime_, size_t maxRawIters_,
+              const std::vector<uint64_t> &seeds_, bool useEvents_,
+              size_t nstrata_, const double rho_pd_os_pyth_comp_,
+              std::vector<IterationResult> *results_)
+        : K(K_), Kpfs(Kpfs_), hazardRatioH0pfs(hazardRatioH0pfs_),
+          hazardRatioH0os(hazardRatioH0os_), allocation1(allocation1_),
+          allocation2(allocation2_), accrualTime(accrualTime_),
+          accrualIntensity(accrualIntensity_), tau(tau_),
+          stratumFraction(stratumFraction_), rho_pd_os(rho_pd_os_),
+          lambda1pfsx(lambda1pfsx_), lambda2pfsx(lambda2pfsx_),
+          lambda1osx(lambda1osx_), lambda2osx(lambda2osx_),
+          gamma1pfsx(gamma1pfsx_), gamma2pfsx(gamma2pfsx_),
+          gamma1osx(gamma1osx_), gamma2osx(gamma2osx_), tau1pdx(tau1pdx_),
+          tau2pdx(tau2pdx_), lambda1pd(lambda1pd_), lambda2pd(lambda2pd_),
+          gamma1pd(gamma1pd_), gamma2pd(gamma2pd_), N(N_), fu(fu_),
+          fixedFollowup(fixedFollowup_), rho1(rho1_), rho2(rho2_),
+          plannedEvents(plannedEvents_), plannedTime(plannedTime_),
+          maxRawIters(maxRawIters_), seeds(seeds_), useEvents(useEvents_),
+          nstrata(nstrata_), rho_pd_os_pyth_comp(rho_pd_os_pyth_comp_),
+          results(results_) {}
 
     void operator()(std::size_t begin, std::size_t end) {
       // local buffers
@@ -2189,14 +2284,20 @@ ListCpp lrsim2ecpp(
       std::vector<int> n1(nstrata), n2(nstrata), n1x(nstrata), n2x(nstrata);
       std::vector<double> km(nstrata);
       std::vector<double> cumF(nstrata);
-      std::partial_sum(stratumFraction.begin(), stratumFraction.end(), cumF.begin());
+      std::partial_sum(stratumFraction.begin(), stratumFraction.end(),
+                       cumF.begin());
 
       std::vector<double> analysisT(K);
-      std::vector<double> analysisT1; analysisT1.reserve(Kpfs);
-      std::vector<double> analysisT2; analysisT2.reserve(K - Kpfs);
-      std::vector<double> totalte1; totalte1.reserve(N);
-      std::vector<double> totalte2; totalte2.reserve(N);
-      std::vector<size_t> sub; sub.reserve(N);
+      std::vector<double> analysisT1;
+      analysisT1.reserve(Kpfs);
+      std::vector<double> analysisT2;
+      analysisT2.reserve(K - Kpfs);
+      std::vector<double> totalte1;
+      totalte1.reserve(N);
+      std::vector<double> totalte2;
+      totalte2.reserve(N);
+      std::vector<size_t> sub;
+      sub.reserve(N);
 
       for (size_t iter = begin; iter < end; ++iter) {
         // RNG for this iteration
@@ -2204,10 +2305,11 @@ ListCpp lrsim2ecpp(
         boost::random::uniform_real_distribution<double> unif(0.0, 1.0);
         boost::random::normal_distribution<double> norm(0.0, 1.0);
 
-        IterationResult& out = (*results)[iter];
+        IterationResult &out = (*results)[iter];
         out.summaryRows.clear();
         out.rawRows.clear();
-        if (iter < maxRawIters) out.reserveForRaw(K * N);
+        if (iter < maxRawIters)
+          out.reserveForRaw(K * N);
         out.reserveForSummary(K * 2); // up to two endpoints per stage
 
         // reset blocks
@@ -2229,9 +2331,17 @@ ListCpp lrsim2ecpp(
           u = unif(rng_local);
           double denom = static_cast<double>(b1[j] + b2[j]);
           double p = static_cast<double>(b1[j]) / denom;
-          if (u <= p) { trtGrp[i] = 1; --b1[j]; }
-          else { trtGrp[i] = 2; --b2[j]; }
-          if (b1[j] + b2[j] == 0) { b1[j] = allocation1; b2[j] = allocation2; }
+          if (u <= p) {
+            trtGrp[i] = 1;
+            --b1[j];
+          } else {
+            trtGrp[i] = 2;
+            --b2[j];
+          }
+          if (b1[j] + b2[j] == 0) {
+            b1[j] = allocation1;
+            b2[j] = allocation2;
+          }
 
           auto lam1pd = flatmatrix_get_column_view(lambda1pd, j);
           auto lam2pd = flatmatrix_get_column_view(lambda2pd, j);
@@ -2258,7 +2368,8 @@ ListCpp lrsim2ecpp(
             survivalT2[i] = qtpwexpcpp1(u2, tau, lam2os);
           }
           // PFS includes death
-          if (survivalT1[i] > survivalT2[i]) survivalT1[i] = survivalT2[i];
+          if (survivalT1[i] > survivalT2[i])
+            survivalT1[i] = survivalT2[i];
 
           // dropout times
           u1 = unif(rng_local);
@@ -2270,36 +2381,57 @@ ListCpp lrsim2ecpp(
             dropoutT1[i] = qtpwexpcpp1(u1, tau, gam2pd);
             dropoutT2[i] = qtpwexpcpp1(u2, tau, gam2os);
           }
-          if (dropoutT1[i] > dropoutT2[i]) dropoutT1[i] = dropoutT2[i];
+          if (dropoutT1[i] > dropoutT2[i])
+            dropoutT1[i] = dropoutT2[i];
 
           // initial observed times/events
           double sv1 = survivalT1[i], sv2 = survivalT2[i];
           double dr1 = dropoutT1[i], dr2 = dropoutT2[i];
           if (fixedFollowup) {
             if (sv1 <= dr1 && sv1 <= fu) {
-              timeObs1[i] = sv1; event1[i] = 1; dropEv1[i] = 0;
+              timeObs1[i] = sv1;
+              event1[i] = 1;
+              dropEv1[i] = 0;
             } else if (dr1 <= sv1 && dr1 <= fu) {
-              timeObs1[i] = dr1; event1[i] = 0; dropEv1[i] = 1;
+              timeObs1[i] = dr1;
+              event1[i] = 0;
+              dropEv1[i] = 1;
             } else {
-              timeObs1[i] = fu; event1[i] = 0; dropEv1[i] = 0;
+              timeObs1[i] = fu;
+              event1[i] = 0;
+              dropEv1[i] = 0;
             }
             if (sv2 <= dr2 && sv2 <= fu) {
-              timeObs2[i] = sv2; event2[i] = 1; dropEv2[i] = 0;
+              timeObs2[i] = sv2;
+              event2[i] = 1;
+              dropEv2[i] = 0;
             } else if (dr2 <= sv2 && dr2 <= fu) {
-              timeObs2[i] = dr2; event2[i] = 0; dropEv2[i] = 1;
+              timeObs2[i] = dr2;
+              event2[i] = 0;
+              dropEv2[i] = 1;
             } else {
-              timeObs2[i] = fu; event2[i] = 0; dropEv2[i] = 0;
+              timeObs2[i] = fu;
+              event2[i] = 0;
+              dropEv2[i] = 0;
             }
           } else {
             if (sv1 <= dr1) {
-              timeObs1[i] = sv1; event1[i] = 1; dropEv1[i] = 0;
+              timeObs1[i] = sv1;
+              event1[i] = 1;
+              dropEv1[i] = 0;
             } else {
-              timeObs1[i] = dr1; event1[i] = 0; dropEv1[i] = 1;
+              timeObs1[i] = dr1;
+              event1[i] = 0;
+              dropEv1[i] = 1;
             }
             if (sv2 <= dr2) {
-              timeObs2[i] = sv2; event2[i] = 1; dropEv2[i] = 0;
+              timeObs2[i] = sv2;
+              event2[i] = 1;
+              dropEv2[i] = 0;
             } else {
-              timeObs2[i] = dr2; event2[i] = 0; dropEv2[i] = 1;
+              timeObs2[i] = dr2;
+              event2[i] = 0;
+              dropEv2[i] = 1;
             }
           }
           totalT1[i] = arrivalT[i] + timeObs1[i];
@@ -2312,16 +2444,23 @@ ListCpp lrsim2ecpp(
         bool ev2NotAch = false;
 
         if (useEvents) {
-          totalte1.clear(); totalte2.clear();
+          totalte1.clear();
+          totalte2.clear();
           int nevents1 = 0, nevents2 = 0;
           for (size_t i = 0; i < N; ++i) {
-            if (event1[i]) { ++nevents1; totalte1.push_back(totalT1[i]); }
-            if (event2[i]) { ++nevents2; totalte2.push_back(totalT2[i]); }
+            if (event1[i]) {
+              ++nevents1;
+              totalte1.push_back(totalT1[i]);
+            }
+            if (event2[i]) {
+              ++nevents2;
+              totalte2.push_back(totalT2[i]);
+            }
           }
           if (nevents1 == 0 || nevents2 == 0) {
             thread_utils::push_thread_warning(
-              std::string("No events for iteration ") + std::to_string(iter + 1) +
-                " skipping this iteration.");
+                std::string("No events for iteration ") +
+                std::to_string(iter + 1) + " skipping this iteration.");
             out.summaryRows.clear();
             out.rawRows.clear();
             continue;
@@ -2334,7 +2473,8 @@ ListCpp lrsim2ecpp(
           size_t j1 = 0;
           if (Kpfs > 0) {
             for (j1 = 0; j1 < Kpfs; ++j1) {
-              if (plannedEvents[j1] >= nevents1) break;
+              if (plannedEvents[j1] >= nevents1)
+                break;
             }
 
             if (j1 == Kpfs) { // total number of PFS events exceeds planned
@@ -2354,22 +2494,26 @@ ListCpp lrsim2ecpp(
           size_t j2 = 0;
           if (K > Kpfs) {
             for (j2 = 0; j2 < (K - Kpfs); ++j2) {
-              if (plannedEvents[Kpfs + j2] >= nevents2) break;
+              if (plannedEvents[Kpfs + j2] >= nevents2)
+                break;
             }
 
             if (j2 == (K - Kpfs)) { // total number of OS events exceeds planned
               for (size_t k = 0; k < (K - Kpfs); ++k) {
-                analysisT2.push_back(totalte2[plannedEvents[Kpfs + k] - 1] + 1e-12);
+                analysisT2.push_back(totalte2[plannedEvents[Kpfs + k] - 1] +
+                                     1e-12);
               }
             } else {
               for (size_t k = 0; k < j2; ++k) {
-                analysisT2.push_back(totalte2[plannedEvents[Kpfs + k] - 1] + 1e-12);
+                analysisT2.push_back(totalte2[plannedEvents[Kpfs + k] - 1] +
+                                     1e-12);
               }
               analysisT2.push_back(totalte2.back() + 1e-12);
             }
           }
 
-          // combine PFS and OS looks to determine nstages and analysisTime array
+          // combine PFS and OS looks to determine nstages and analysisTime
+          // array
           if (Kpfs == 0) { // only OS looks
             nstages = analysisT2.size();
             std::copy_n(analysisT2.begin(), nstages, analysisT.begin());
@@ -2379,11 +2523,11 @@ ListCpp lrsim2ecpp(
           } else { // mixed
             if (analysisT2.back() > analysisT1.back()) {
               // OS looks after last PFS look contribute.
-              // NOTE: In this case, the observed number of PFS events must exceed
-              // the planned number of PFS events at look Kpfs, because otherwise
-              // the last PFS event would be observed at analysisT1.back().
-              // However, since the last OS event occurred on or after
-              // analysisT2.back() > analysisT1.back(), this is a
+              // NOTE: In this case, the observed number of PFS events must
+              // exceed the planned number of PFS events at look Kpfs, because
+              // otherwise the last PFS event would be observed at
+              // analysisT1.back(). However, since the last OS event occurred on
+              // or after analysisT2.back() > analysisT1.back(), this is a
               // contradiction as death is part of PFS event definition.
               // It follows that analysisT1.size() == Kpfs in this case.
 
@@ -2393,10 +2537,12 @@ ListCpp lrsim2ecpp(
               nstages = Kpfs + (analysisT2.size() - l);
               // copy PFS looks unchanged and append relevant OS looks
               // keep PFS looks [0 .. Kpfs-1], then OS looks from l onwards,
-              // which are the ones after last PFS look mapped to Kpfs + l onwards
+              // which are the ones after last PFS look mapped to Kpfs + l
+              // onwards
               std::copy_n(analysisT1.begin(), Kpfs, analysisT.begin());
               size_t count = analysisT2.size() - l;
-              std::copy_n(analysisT2.begin() + l, count, analysisT.begin() + Kpfs);
+              std::copy_n(analysisT2.begin() + l, count,
+                          analysisT.begin() + Kpfs);
             } else {
               // only PFS looks matter
               nstages = analysisT1.size();
@@ -2405,8 +2551,10 @@ ListCpp lrsim2ecpp(
           }
 
           // evNotAch: check PFS and OS targetse
-          if (Kpfs > 0 && nevents1 < plannedEvents[Kpfs - 1]) ev1NotAch = true;
-          if (Kpfs < K && nevents2 < plannedEvents[K - 1]) ev2NotAch = true;
+          if (Kpfs > 0 && nevents1 < plannedEvents[Kpfs - 1])
+            ev1NotAch = true;
+          if (Kpfs < K && nevents2 < plannedEvents[K - 1])
+            ev2NotAch = true;
         } else { // calendar time
           std::copy_n(plannedTime.begin(), K, analysisT.begin());
         }
@@ -2428,60 +2576,106 @@ ListCpp lrsim2ecpp(
             double dr1 = dropoutT1[i], dr2 = dropoutT2[i];
 
             if (ar > time) {
-              timeObs1[i] = time - ar; event1[i] = 0; dropEv1[i] = 0;
-              timeObs2[i] = time - ar; event2[i] = 0; dropEv2[i] = 0;
+              timeObs1[i] = time - ar;
+              event1[i] = 0;
+              dropEv1[i] = 0;
+              timeObs2[i] = time - ar;
+              event2[i] = 0;
+              dropEv2[i] = 0;
               continue;
             }
 
             // endpoint 1 censoring
             if (fixedFollowup) {
               if (ar + sv1 <= time && sv1 <= dr1 && sv1 <= fu) {
-                timeObs1[i] = sv1; event1[i] = 1; dropEv1[i] = 0;
+                timeObs1[i] = sv1;
+                event1[i] = 1;
+                dropEv1[i] = 0;
               } else if (ar + dr1 <= time && dr1 <= sv1 && dr1 <= fu) {
-                timeObs1[i] = dr1; event1[i] = 0; dropEv1[i] = 1;
+                timeObs1[i] = dr1;
+                event1[i] = 0;
+                dropEv1[i] = 1;
               } else if (ar + fu <= time && fu <= sv1 && fu <= dr1) {
-                timeObs1[i] = fu; event1[i] = 0; dropEv1[i] = 0;
+                timeObs1[i] = fu;
+                event1[i] = 0;
+                dropEv1[i] = 0;
               } else {
-                timeObs1[i] = time - ar; event1[i] = 0; dropEv1[i] = 0;
+                timeObs1[i] = time - ar;
+                event1[i] = 0;
+                dropEv1[i] = 0;
               }
             } else {
               if (ar + sv1 <= time && sv1 <= dr1) {
-                timeObs1[i] = sv1; event1[i] = 1; dropEv1[i] = 0;
+                timeObs1[i] = sv1;
+                event1[i] = 1;
+                dropEv1[i] = 0;
               } else if (ar + dr1 <= time && dr1 <= sv1) {
-                timeObs1[i] = dr1; event1[i] = 0; dropEv1[i] = 1;
+                timeObs1[i] = dr1;
+                event1[i] = 0;
+                dropEv1[i] = 1;
               } else {
-                timeObs1[i] = time - ar; event1[i] = 0; dropEv1[i] = 0;
+                timeObs1[i] = time - ar;
+                event1[i] = 0;
+                dropEv1[i] = 0;
               }
             }
 
             // endpoint2 censoring
             if (fixedFollowup) {
               if (ar + sv2 <= time && sv2 <= dr2 && sv2 <= fu) {
-                timeObs2[i] = sv2; event2[i] = 1; dropEv2[i] = 0;
+                timeObs2[i] = sv2;
+                event2[i] = 1;
+                dropEv2[i] = 0;
               } else if (ar + dr2 <= time && dr2 <= sv2 && dr2 <= fu) {
-                timeObs2[i] = dr2; event2[i] = 0; dropEv2[i] = 1;
+                timeObs2[i] = dr2;
+                event2[i] = 0;
+                dropEv2[i] = 1;
               } else if (ar + fu <= time && fu <= sv2 && fu <= dr2) {
-                timeObs2[i] = fu; event2[i] = 0; dropEv2[i] = 0;
+                timeObs2[i] = fu;
+                event2[i] = 0;
+                dropEv2[i] = 0;
               } else {
-                timeObs2[i] = time - ar; event2[i] = 0; dropEv2[i] = 0;
+                timeObs2[i] = time - ar;
+                event2[i] = 0;
+                dropEv2[i] = 0;
               }
             } else {
               if (ar + sv2 <= time && sv2 <= dr2) {
-                timeObs2[i] = sv2; event2[i] = 1; dropEv2[i] = 0;
+                timeObs2[i] = sv2;
+                event2[i] = 1;
+                dropEv2[i] = 0;
               } else if (ar + dr2 <= time && dr2 <= sv2) {
-                timeObs2[i] = dr2; event2[i] = 0; dropEv2[i] = 1;
+                timeObs2[i] = dr2;
+                event2[i] = 0;
+                dropEv2[i] = 1;
               } else {
-                timeObs2[i] = time - ar; event2[i] = 0; dropEv2[i] = 0;
+                timeObs2[i] = time - ar;
+                event2[i] = 0;
+                dropEv2[i] = 0;
               }
             }
 
             size_t h = static_cast<size_t>(stratum[i] - 1);
-            if (trtGrp[i] == 1) { ++n1x[h];
-              if (event1[i]) ++events1e1; else if (dropEv1[i]) ++dropouts1e1;
-              if (event2[i]) ++events1e2; else if (dropEv2[i]) ++dropouts1e2;
-            } else { ++n2x[h];
-              if (event1[i]) ++events2e1; else if (dropEv1[i]) ++dropouts2e1;
-              if (event2[i]) ++events2e2; else if (dropEv2[i]) ++dropouts2e2;
+            if (trtGrp[i] == 1) {
+              ++n1x[h];
+              if (event1[i])
+                ++events1e1;
+              else if (dropEv1[i])
+                ++dropouts1e1;
+              if (event2[i])
+                ++events1e2;
+              else if (dropEv2[i])
+                ++dropouts1e2;
+            } else {
+              ++n2x[h];
+              if (event1[i])
+                ++events2e1;
+              else if (dropEv1[i])
+                ++dropouts2e1;
+              if (event2[i])
+                ++events2e2;
+              else if (dropEv2[i])
+                ++dropouts2e2;
             }
           }
 
@@ -2498,7 +2692,8 @@ ListCpp lrsim2ecpp(
           if (iter < maxRawIters) {
             for (size_t i = 0; i < N; ++i) {
               // skip subjects who haven't been enrolled by analysis time
-              if (arrivalT[i] > time) continue;
+              if (arrivalT[i] > time)
+                continue;
               RawDatasetRow rr1;
               rr1.iterNum = static_cast<int>(iter + 1);
               rr1.stageNum = static_cast<int>(k + 1);
@@ -2540,7 +2735,8 @@ ListCpp lrsim2ecpp(
             if (endpt == 1) {
               hazardRatioH0 = hazardRatioH0pfs;
               for (size_t i = 0; i < N; ++i) {
-                if (timeObs1[i] > 0.0) sub.push_back(i);
+                if (timeObs1[i] > 0.0)
+                  sub.push_back(i);
               }
               std::sort(sub.begin(), sub.end(), [&](size_t a, size_t b) {
                 return timeObs1[a] < timeObs1[b];
@@ -2548,14 +2744,16 @@ ListCpp lrsim2ecpp(
             } else {
               hazardRatioH0 = hazardRatioH0os;
               for (size_t i = 0; i < N; ++i) {
-                if (timeObs2[i] > 0.0) sub.push_back(i);
+                if (timeObs2[i] > 0.0)
+                  sub.push_back(i);
               }
               std::sort(sub.begin(), sub.end(), [&](size_t a, size_t b) {
                 return timeObs2[a] < timeObs2[b];
               });
             }
 
-            n1 = n1x; n2 = n2x;
+            n1 = n1x;
+            n2 = n2x;
             std::fill(km.begin(), km.end(), 1.0);
             double us = 0.0, vs = 0.0;
 
@@ -2581,7 +2779,10 @@ ListCpp lrsim2ecpp(
                 vs += wh * wh * n1a * n2h / (nta * nta);
               }
 
-              if (trtGrp[idx] == 1) --n1[h]; else --n2[h];
+              if (trtGrp[idx] == 1)
+                --n1[h];
+              else
+                --n2[h];
             } // log-rank
 
             double z = (vs > 0.0 ? us / std::sqrt(vs) : 0.0);
@@ -2611,7 +2812,9 @@ ListCpp lrsim2ecpp(
               sr.dropouts2 = dropouts2e2;
               sr.totDropouts = totDropoutse2;
             }
-            sr.uscore = us; sr.vscore = vs; sr.logRank = z;
+            sr.uscore = us;
+            sr.vscore = vs;
+            sr.logRank = z;
             out.summaryRows.push_back(std::move(sr));
           } // endpoints loop
         } // per-stage
@@ -2621,18 +2824,12 @@ ListCpp lrsim2ecpp(
 
   // construct and run worker
   SimWorker worker(
-      K, Kpfs, hazardRatioH0pfs, hazardRatioH0os,
-      allocation1, allocation2,
-      accrualTime, accrualIntensity, tau, stratumFraction,
-      rho_pd_os,
-      lambda1pfsx, lambda2pfsx, lambda1osx, lambda2osx,
-      gamma1pfsx, gamma2pfsx, gamma1osx, gamma2osx,
-      tau1pdx, tau2pdx, lambda1pd, lambda2pd, gamma1pd, gamma2pd,
-      N, fu, fixedFollowup, rho1, rho2,
-      plannedEvents, plannedTime,
-      maxRawIters, seeds, useEvents, nstrata, rho_pd_os_pyth_comp,
-      &results
-  );
+      K, Kpfs, hazardRatioH0pfs, hazardRatioH0os, allocation1, allocation2,
+      accrualTime, accrualIntensity, tau, stratumFraction, rho_pd_os,
+      lambda1pfsx, lambda2pfsx, lambda1osx, lambda2osx, gamma1pfsx, gamma2pfsx,
+      gamma1osx, gamma2osx, tau1pdx, tau2pdx, lambda1pd, lambda2pd, gamma1pd,
+      gamma2pd, N, fu, fixedFollowup, rho1, rho2, plannedEvents, plannedTime,
+      maxRawIters, seeds, useEvents, nstrata, rho_pd_os_pyth_comp, &results);
 
   RcppParallel::parallelFor(0, maxIters, worker);
 
@@ -2642,47 +2839,79 @@ ListCpp lrsim2ecpp(
     nsr += results[iter].summaryRows.size();
     nrr += results[iter].rawRows.size();
   }
-  if (nsr == 0) throw std::runtime_error(
-    "No iterations with observed events. Unable to produce output.");
+  if (nsr == 0)
+    throw std::runtime_error(
+        "No iterations with observed events. Unable to produce output.");
 
   // prepare final containers
-  std::vector<int> sum_iterNum; sum_iterNum.reserve(nsr);
-  std::vector<unsigned char> sum_ev1NotAch; sum_ev1NotAch.reserve(nsr);
-  std::vector<unsigned char> sum_ev2NotAch; sum_ev2NotAch.reserve(nsr);
-  std::vector<int> sum_stageNum; sum_stageNum.reserve(nsr);
-  std::vector<double> sum_analysisT; sum_analysisT.reserve(nsr);
-  std::vector<int> sum_accruals1; sum_accruals1.reserve(nsr);
-  std::vector<int> sum_accruals2; sum_accruals2.reserve(nsr);
-  std::vector<int> sum_totAccruals; sum_totAccruals.reserve(nsr);
-  std::vector<std::string> sum_endpt; sum_endpt.reserve(nsr);
-  std::vector<int> sum_events1; sum_events1.reserve(nsr);
-  std::vector<int> sum_events2; sum_events2.reserve(nsr);
-  std::vector<int> sum_totEvents; sum_totEvents.reserve(nsr);
-  std::vector<int> sum_dropouts1; sum_dropouts1.reserve(nsr);
-  std::vector<int> sum_dropouts2; sum_dropouts2.reserve(nsr);
-  std::vector<int> sum_totDropouts; sum_totDropouts.reserve(nsr);
-  std::vector<double> sum_uscore; sum_uscore.reserve(nsr);
-  std::vector<double> sum_vscore; sum_vscore.reserve(nsr);
-  std::vector<double> sum_logRank; sum_logRank.reserve(nsr);
+  std::vector<int> sum_iterNum;
+  sum_iterNum.reserve(nsr);
+  std::vector<unsigned char> sum_ev1NotAch;
+  sum_ev1NotAch.reserve(nsr);
+  std::vector<unsigned char> sum_ev2NotAch;
+  sum_ev2NotAch.reserve(nsr);
+  std::vector<int> sum_stageNum;
+  sum_stageNum.reserve(nsr);
+  std::vector<double> sum_analysisT;
+  sum_analysisT.reserve(nsr);
+  std::vector<int> sum_accruals1;
+  sum_accruals1.reserve(nsr);
+  std::vector<int> sum_accruals2;
+  sum_accruals2.reserve(nsr);
+  std::vector<int> sum_totAccruals;
+  sum_totAccruals.reserve(nsr);
+  std::vector<std::string> sum_endpt;
+  sum_endpt.reserve(nsr);
+  std::vector<int> sum_events1;
+  sum_events1.reserve(nsr);
+  std::vector<int> sum_events2;
+  sum_events2.reserve(nsr);
+  std::vector<int> sum_totEvents;
+  sum_totEvents.reserve(nsr);
+  std::vector<int> sum_dropouts1;
+  sum_dropouts1.reserve(nsr);
+  std::vector<int> sum_dropouts2;
+  sum_dropouts2.reserve(nsr);
+  std::vector<int> sum_totDropouts;
+  sum_totDropouts.reserve(nsr);
+  std::vector<double> sum_uscore;
+  sum_uscore.reserve(nsr);
+  std::vector<double> sum_vscore;
+  sum_vscore.reserve(nsr);
+  std::vector<double> sum_logRank;
+  sum_logRank.reserve(nsr);
 
   // raw final containers
-  std::vector<int> raw_iterNum; raw_iterNum.reserve(nrr);
-  std::vector<int> raw_stageNum; raw_stageNum.reserve(nrr);
-  std::vector<double> raw_analysisT; raw_analysisT.reserve(nrr);
-  std::vector<int> raw_subjectId; raw_subjectId.reserve(nrr);
-  std::vector<double> raw_arrivalT; raw_arrivalT.reserve(nrr);
-  std::vector<int> raw_stratum; raw_stratum.reserve(nrr);
-  std::vector<int> raw_trtGrp; raw_trtGrp.reserve(nrr);
-  std::vector<std::string> raw_endpt; raw_endpt.reserve(nrr);
-  std::vector<double> raw_survivalT; raw_survivalT.reserve(nrr);
-  std::vector<double> raw_dropoutT; raw_dropoutT.reserve(nrr);
-  std::vector<double> raw_timeObs; raw_timeObs.reserve(nrr);
-  std::vector<unsigned char> raw_event; raw_event.reserve(nrr);
-  std::vector<unsigned char> raw_dropEv; raw_dropEv.reserve(nrr);
+  std::vector<int> raw_iterNum;
+  raw_iterNum.reserve(nrr);
+  std::vector<int> raw_stageNum;
+  raw_stageNum.reserve(nrr);
+  std::vector<double> raw_analysisT;
+  raw_analysisT.reserve(nrr);
+  std::vector<int> raw_subjectId;
+  raw_subjectId.reserve(nrr);
+  std::vector<double> raw_arrivalT;
+  raw_arrivalT.reserve(nrr);
+  std::vector<int> raw_stratum;
+  raw_stratum.reserve(nrr);
+  std::vector<int> raw_trtGrp;
+  raw_trtGrp.reserve(nrr);
+  std::vector<std::string> raw_endpt;
+  raw_endpt.reserve(nrr);
+  std::vector<double> raw_survivalT;
+  raw_survivalT.reserve(nrr);
+  std::vector<double> raw_dropoutT;
+  raw_dropoutT.reserve(nrr);
+  std::vector<double> raw_timeObs;
+  raw_timeObs.reserve(nrr);
+  std::vector<unsigned char> raw_event;
+  raw_event.reserve(nrr);
+  std::vector<unsigned char> raw_dropEv;
+  raw_dropEv.reserve(nrr);
 
   for (size_t iter = 0; iter < maxIters; ++iter) {
-    const auto& srows = results[iter].summaryRows;
-    for (const auto& r : srows) {
+    const auto &srows = results[iter].summaryRows;
+    for (const auto &r : srows) {
       sum_iterNum.push_back(r.iterNum);
       sum_ev1NotAch.push_back(r.evNotAch1);
       sum_ev2NotAch.push_back(r.evNotAch2);
@@ -2704,8 +2933,8 @@ ListCpp lrsim2ecpp(
     }
 
     if (iter < maxRawIters) {
-      const auto& rraw = results[iter].rawRows;
-      for (const auto& rr : rraw) {
+      const auto &rraw = results[iter].rawRows;
+      for (const auto &rr : rraw) {
         raw_iterNum.push_back(rr.iterNum);
         raw_stageNum.push_back(rr.stageNum);
         raw_analysisT.push_back(rr.analysisT);
@@ -2768,38 +2997,29 @@ ListCpp lrsim2ecpp(
   return result;
 }
 
-
 // [[Rcpp::export]]
 Rcpp::List lrsim2eRcpp(
-    const int kMax = 1,
-    const int kMaxpfs = 1,
-    const double hazardRatioH0pfs = 1,
-    const double hazardRatioH0os = 1,
-    const int allocation1 = 1,
-    const int allocation2 = 1,
-    const Rcpp::NumericVector& accrualTime = 0,
-    const Rcpp::NumericVector& accrualIntensity = NA_REAL,
-    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
-    const Rcpp::NumericVector& stratumFraction = 1,
-    const double rho_pd_os = 0,
-    const Rcpp::NumericVector& lambda1pfs = NA_REAL,
-    const Rcpp::NumericVector& lambda2pfs = NA_REAL,
-    const Rcpp::NumericVector& lambda1os = NA_REAL,
-    const Rcpp::NumericVector& lambda2os = NA_REAL,
-    const Rcpp::NumericVector& gamma1pfs = 0,
-    const Rcpp::NumericVector& gamma2pfs = 0,
-    const Rcpp::NumericVector& gamma1os = 0,
-    const Rcpp::NumericVector& gamma2os = 0,
-    const int n = NA_INTEGER,
-    const double followupTime = NA_REAL,
-    const bool fixedFollowup = false,
-    const double rho1 = 0,
-    const double rho2 = 0,
-    const Rcpp::IntegerVector& plannedEvents = NA_INTEGER,
-    const Rcpp::NumericVector& plannedTime = NA_REAL,
+    const int kMax = 1, const int kMaxpfs = 1,
+    const double hazardRatioH0pfs = 1, const double hazardRatioH0os = 1,
+    const int allocation1 = 1, const int allocation2 = 1,
+    const Rcpp::NumericVector &accrualTime = 0,
+    const Rcpp::NumericVector &accrualIntensity = NA_REAL,
+    const Rcpp::NumericVector &piecewiseSurvivalTime = 0,
+    const Rcpp::NumericVector &stratumFraction = 1, const double rho_pd_os = 0,
+    const Rcpp::NumericVector &lambda1pfs = NA_REAL,
+    const Rcpp::NumericVector &lambda2pfs = NA_REAL,
+    const Rcpp::NumericVector &lambda1os = NA_REAL,
+    const Rcpp::NumericVector &lambda2os = NA_REAL,
+    const Rcpp::NumericVector &gamma1pfs = 0,
+    const Rcpp::NumericVector &gamma2pfs = 0,
+    const Rcpp::NumericVector &gamma1os = 0,
+    const Rcpp::NumericVector &gamma2os = 0, const int n = NA_INTEGER,
+    const double followupTime = NA_REAL, const bool fixedFollowup = false,
+    const double rho1 = 0, const double rho2 = 0,
+    const Rcpp::IntegerVector &plannedEvents = NA_INTEGER,
+    const Rcpp::NumericVector &plannedTime = NA_REAL,
     const int maxNumberOfIterations = 1000,
-    const int maxNumberOfRawDatasetsPerStage = 0,
-    const int seed = 0) {
+    const int maxNumberOfRawDatasetsPerStage = 0, const int seed = 0) {
 
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
@@ -2817,66 +3037,46 @@ Rcpp::List lrsim2eRcpp(
   auto plannedT = Rcpp::as<std::vector<double>>(plannedTime);
 
   auto out = lrsim2ecpp(
-    kMax, kMaxpfs, hazardRatioH0pfs, hazardRatioH0os,
-    allocation1, allocation2, accrualT, accrualInt,
-    pwSurvT, stratumFrac, rho_pd_os,
-    lam1pfs, lam2pfs, lam1os, lam2os,
-    gam1pfs, gam2pfs, gam1os, gam2os,
-    n, followupTime, fixedFollowup, rho1, rho2,
-    plannedE, plannedT, maxNumberOfIterations,
-    maxNumberOfRawDatasetsPerStage, seed);
+      kMax, kMaxpfs, hazardRatioH0pfs, hazardRatioH0os, allocation1,
+      allocation2, accrualT, accrualInt, pwSurvT, stratumFrac, rho_pd_os,
+      lam1pfs, lam2pfs, lam1os, lam2os, gam1pfs, gam2pfs, gam1os, gam2os, n,
+      followupTime, fixedFollowup, rho1, rho2, plannedE, plannedT,
+      maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed);
 
   thread_utils::drain_thread_warnings_to_R();
 
   return Rcpp::wrap(out);
 }
 
-
 ListCpp lrsim2e3acpp(
-    const int kMax,
-    const int kMaxpfs,
-    const double hazardRatioH013pfs,
-    const double hazardRatioH023pfs,
-    const double hazardRatioH012pfs,
-    const double hazardRatioH013os,
-    const double hazardRatioH023os,
-    const double hazardRatioH012os,
-    const int allocation1,
-    const int allocation2,
-    const int allocation3,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& stratumFraction,
-    const double rho_pd_os,
-    const std::vector<double>& lambda1pfs,
-    const std::vector<double>& lambda2pfs,
-    const std::vector<double>& lambda3pfs,
-    const std::vector<double>& lambda1os,
-    const std::vector<double>& lambda2os,
-    const std::vector<double>& lambda3os,
-    const std::vector<double>& gamma1pfs,
-    const std::vector<double>& gamma2pfs,
-    const std::vector<double>& gamma3pfs,
-    const std::vector<double>& gamma1os,
-    const std::vector<double>& gamma2os,
-    const std::vector<double>& gamma3os,
-    const int n,
-    const double followupTime,
-    const bool fixedFollowup,
-    const double rho1,
-    const double rho2,
-    const std::vector<int>& plannedEvents,
-    const std::vector<double>& plannedTime,
-    const int maxNumberOfIterations,
-    const int maxNumberOfRawDatasetsPerStage,
-    const int seed)
-{
-  if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
+    const int kMax, const int kMaxpfs, const double hazardRatioH013pfs,
+    const double hazardRatioH023pfs, const double hazardRatioH012pfs,
+    const double hazardRatioH013os, const double hazardRatioH023os,
+    const double hazardRatioH012os, const int allocation1,
+    const int allocation2, const int allocation3,
+    const std::vector<double> &accrualTime,
+    const std::vector<double> &accrualIntensity,
+    const std::vector<double> &piecewiseSurvivalTime,
+    const std::vector<double> &stratumFraction, const double rho_pd_os,
+    const std::vector<double> &lambda1pfs,
+    const std::vector<double> &lambda2pfs,
+    const std::vector<double> &lambda3pfs, const std::vector<double> &lambda1os,
+    const std::vector<double> &lambda2os, const std::vector<double> &lambda3os,
+    const std::vector<double> &gamma1pfs, const std::vector<double> &gamma2pfs,
+    const std::vector<double> &gamma3pfs, const std::vector<double> &gamma1os,
+    const std::vector<double> &gamma2os, const std::vector<double> &gamma3os,
+    const int n, const double followupTime, const bool fixedFollowup,
+    const double rho1, const double rho2, const std::vector<int> &plannedEvents,
+    const std::vector<double> &plannedTime, const int maxNumberOfIterations,
+    const int maxNumberOfRawDatasetsPerStage, const int seed) {
+
+  if (kMax < 1)
+    throw std::invalid_argument("kMax must be a positive integer");
   size_t K = static_cast<size_t>(kMax);
 
   int kMaxpfsx = kMaxpfs;
-  if (kMaxpfsx < 0) kMaxpfsx = kMax;
+  if (kMaxpfsx < 0)
+    kMaxpfsx = kMax;
   if (kMaxpfsx > kMax)
     throw std::invalid_argument("kMaxpfs must be less than or equal to kMax");
   size_t Kpfs = static_cast<size_t>(kMaxpfsx);
@@ -2890,14 +3090,16 @@ ListCpp lrsim2e3acpp(
       throw std::invalid_argument("Invalid length for plannedEvents");
     if (Kpfs > 1) {
       for (size_t i = 1; i < Kpfs; ++i) {
-        if (plannedEvents[i] <= plannedEvents[i-1])
-          throw std::invalid_argument("plannedEvents for PFS must be increasing");
+        if (plannedEvents[i] <= plannedEvents[i - 1])
+          throw std::invalid_argument(
+              "plannedEvents for PFS must be increasing");
       }
     }
     if (K - Kpfs > 1) {
       for (size_t i = Kpfs + 1; i < plannedEvents.size(); ++i) {
-        if (plannedEvents[i] <= plannedEvents[i-1])
-          throw std::invalid_argument("plannedEvents for OS must be increasing");
+        if (plannedEvents[i] <= plannedEvents[i - 1])
+          throw std::invalid_argument(
+              "plannedEvents for OS must be increasing");
       }
     }
   } else if (none_na(plannedTime)) {
@@ -2909,7 +3111,8 @@ ListCpp lrsim2e3acpp(
     if (any_nonincreasing(plannedTime))
       throw std::invalid_argument("plannedTime must be increasing");
   } else {
-    throw std::invalid_argument("Either plannedEvents or plannedTime must be given");
+    throw std::invalid_argument(
+        "Either plannedEvents or plannedTime must be given");
   }
 
   if (hazardRatioH013pfs <= 0.0 || hazardRatioH023pfs <= 0.0 ||
@@ -2929,73 +3132,99 @@ ListCpp lrsim2e3acpp(
   if (accrualIntensity.size() != accrualTime.size())
     throw std::invalid_argument("Invalid length for accrualIntensity");
   for (double v : accrualIntensity) {
-    if (v < 0.0) throw std::invalid_argument("accrualIntensity must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("accrualIntensity must be non-negative");
   }
   if (piecewiseSurvivalTime[0] != 0.0)
     throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
   if (any_nonincreasing(piecewiseSurvivalTime))
     throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
   for (double v : stratumFraction) {
-    if (v <= 0.0) throw std::invalid_argument("stratumFraction must be positive");
+    if (v <= 0.0)
+      throw std::invalid_argument("stratumFraction must be positive");
   }
-  double sumf = std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
+  double sumf =
+      std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
   if (std::fabs(sumf - 1.0) > 1e-12)
     throw std::invalid_argument("stratumFraction must sum to 1");
   if (rho_pd_os <= -1.0 || rho_pd_os >= 1.0)
     throw std::invalid_argument("rho_pd_os must lie in (-1, 1)");
 
-  if (!none_na(lambda1pfs)) throw std::invalid_argument("lambda1pfs must be provided");
-  if (!none_na(lambda2pfs)) throw std::invalid_argument("lambda2pfs must be provided");
-  if (!none_na(lambda3pfs)) throw std::invalid_argument("lambda3pfs must be provided");
-  if (!none_na(lambda1os)) throw std::invalid_argument("lambda1os must be provided");
-  if (!none_na(lambda2os)) throw std::invalid_argument("lambda2os must be provided");
-  if (!none_na(lambda3os)) throw std::invalid_argument("lambda3os must be provided");
+  if (!none_na(lambda1pfs))
+    throw std::invalid_argument("lambda1pfs must be provided");
+  if (!none_na(lambda2pfs))
+    throw std::invalid_argument("lambda2pfs must be provided");
+  if (!none_na(lambda3pfs))
+    throw std::invalid_argument("lambda3pfs must be provided");
+  if (!none_na(lambda1os))
+    throw std::invalid_argument("lambda1os must be provided");
+  if (!none_na(lambda2os))
+    throw std::invalid_argument("lambda2os must be provided");
+  if (!none_na(lambda3os))
+    throw std::invalid_argument("lambda3os must be provided");
   for (double v : lambda1pfs) {
-    if (v < 0.0) throw std::invalid_argument("lambda1pfs must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda1pfs must be non-negative");
   }
   for (double v : lambda2pfs) {
-    if (v < 0.0) throw std::invalid_argument("lambda2pfs must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda2pfs must be non-negative");
   }
   for (double v : lambda3pfs) {
-    if (v < 0.0) throw std::invalid_argument("lambda3pfs must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda3pfs must be non-negative");
   }
   for (double v : lambda1os) {
-    if (v < 0.0) throw std::invalid_argument("lambda1os must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda1os must be non-negative");
   }
   for (double v : lambda2os) {
-    if (v < 0.0) throw std::invalid_argument("lambda2os must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda2os must be non-negative");
   }
   for (double v : lambda3os) {
-    if (v < 0.0) throw std::invalid_argument("lambda3os must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda3os must be non-negative");
   }
   for (double v : gamma1pfs) {
-    if (v < 0.0) throw std::invalid_argument("gamma1pfs must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma1pfs must be non-negative");
   }
   for (double v : gamma2pfs) {
-    if (v < 0.0) throw std::invalid_argument("gamma2pfs must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma2pfs must be non-negative");
   }
   for (double v : gamma3pfs) {
-    if (v < 0.0) throw std::invalid_argument("gamma3pfs must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma3pfs must be non-negative");
   }
   for (double v : gamma1os) {
-    if (v < 0.0) throw std::invalid_argument("gamma1os must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma1os must be non-negative");
   }
   for (double v : gamma2os) {
-    if (v < 0.0) throw std::invalid_argument("gamma2os must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma2os must be non-negative");
   }
   for (double v : gamma3os) {
-    if (v < 0.0) throw std::invalid_argument("gamma3os must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma3os must be non-negative");
   }
-  if (n == INT_MIN) throw std::invalid_argument("n must be provided");
-  if (n <= 0) throw std::invalid_argument("n must be positive");
+  if (n == INT_MIN)
+    throw std::invalid_argument("n must be provided");
+  if (n <= 0)
+    throw std::invalid_argument("n must be positive");
   if (fixedFollowup && std::isnan(followupTime))
-    throw std::invalid_argument("followupTime must be provided for fixed follow-up");
+    throw std::invalid_argument(
+        "followupTime must be provided for fixed follow-up");
   if (fixedFollowup && followupTime <= 0.0)
-    throw std::invalid_argument("followupTime must be positive for fixed follow-up");
+    throw std::invalid_argument(
+        "followupTime must be positive for fixed follow-up");
   if (rho1 < 0.0 || rho2 < 0.0)
     throw std::invalid_argument("rho parameters must be non-negative");
   if (maxNumberOfIterations < 1)
-    throw std::invalid_argument("maxNumberOfIterations must be a positive integer");
+    throw std::invalid_argument(
+        "maxNumberOfIterations must be a positive integer");
   if (maxNumberOfRawDatasetsPerStage < 0)
     throw std::invalid_argument(
         "maxNumberOfRawDatasetsPerStage must be a non-negative integer");
@@ -3009,23 +3238,26 @@ ListCpp lrsim2e3acpp(
   size_t nstrata = stratumFraction.size();
   size_t nintv = piecewiseSurvivalTime.size();
   size_t nintv2 = (nintv == 1 ? 10u : nintv + 10u);
-  const std::vector<double>& tau = piecewiseSurvivalTime;
+  const std::vector<double> &tau = piecewiseSurvivalTime;
   const double fu = followupTime;
   const double rho_pd_os_pyth_comp = std::sqrt(1 - rho_pd_os * rho_pd_os);
 
   // expand stratified inputs (main thread)
-  auto lambda1pfsx = expand_stratified(lambda1pfs, nstrata, nintv, "lambda1pfs");
-  auto lambda2pfsx = expand_stratified(lambda2pfs, nstrata, nintv, "lambda2pfs");
-  auto lambda3pfsx = expand_stratified(lambda3pfs, nstrata, nintv, "lambda3pfs");
-  auto lambda1osx  = expand_stratified(lambda1os,  nstrata, nintv, "lambda1os");
-  auto lambda2osx  = expand_stratified(lambda2os,  nstrata, nintv, "lambda2os");
-  auto lambda3osx  = expand_stratified(lambda3os,  nstrata, nintv, "lambda3os");
-  auto gamma1pfsx  = expand_stratified(gamma1pfs,  nstrata, nintv, "gamma1pfs");
-  auto gamma2pfsx  = expand_stratified(gamma2pfs,  nstrata, nintv, "gamma2pfs");
-  auto gamma3pfsx  = expand_stratified(gamma3pfs,  nstrata, nintv, "gamma3pfs");
-  auto gamma1osx   = expand_stratified(gamma1os,   nstrata, nintv, "gamma1os");
-  auto gamma2osx   = expand_stratified(gamma2os,   nstrata, nintv, "gamma2os");
-  auto gamma3osx   = expand_stratified(gamma3os,   nstrata, nintv, "gamma3os");
+  auto lambda1pfsx =
+      expand_stratified(lambda1pfs, nstrata, nintv, "lambda1pfs");
+  auto lambda2pfsx =
+      expand_stratified(lambda2pfs, nstrata, nintv, "lambda2pfs");
+  auto lambda3pfsx =
+      expand_stratified(lambda3pfs, nstrata, nintv, "lambda3pfs");
+  auto lambda1osx = expand_stratified(lambda1os, nstrata, nintv, "lambda1os");
+  auto lambda2osx = expand_stratified(lambda2os, nstrata, nintv, "lambda2os");
+  auto lambda3osx = expand_stratified(lambda3os, nstrata, nintv, "lambda3os");
+  auto gamma1pfsx = expand_stratified(gamma1pfs, nstrata, nintv, "gamma1pfs");
+  auto gamma2pfsx = expand_stratified(gamma2pfs, nstrata, nintv, "gamma2pfs");
+  auto gamma3pfsx = expand_stratified(gamma3pfs, nstrata, nintv, "gamma3pfs");
+  auto gamma1osx = expand_stratified(gamma1os, nstrata, nintv, "gamma1os");
+  auto gamma2osx = expand_stratified(gamma2os, nstrata, nintv, "gamma2os");
+  auto gamma3osx = expand_stratified(gamma3os, nstrata, nintv, "gamma3os");
 
   // compute pd hazards per stratum & arm (main thread)
   FlatMatrix tau1pdx(nintv2, nstrata);
@@ -3084,8 +3316,8 @@ ListCpp lrsim2e3acpp(
   // seeds for reproducibility
   std::vector<uint64_t> seeds(maxIters);
   boost::random::mt19937_64 master_rng(static_cast<uint64_t>(seed));
-  for (size_t iter = 0; iter < maxIters; ++iter) seeds[iter] = master_rng();
-
+  for (size_t iter = 0; iter < maxIters; ++iter)
+    seeds[iter] = master_rng();
 
   // One summary (stage-level) row produced by an iteration
   struct StageSummaryRow {
@@ -3118,7 +3350,9 @@ ListCpp lrsim2e3acpp(
   struct IterationResult {
     std::vector<StageSummaryRow> summaryRows;
     std::vector<RawDatasetRow> rawRows;
-    void reserveForSummary(size_t approxRows) { summaryRows.reserve(approxRows); }
+    void reserveForSummary(size_t approxRows) {
+      summaryRows.reserve(approxRows);
+    }
     void reserveForRaw(size_t approxRows) { rawRows.reserve(approxRows); }
   };
 
@@ -3140,151 +3374,96 @@ ListCpp lrsim2e3acpp(
     const int allocation1;
     const int allocation2;
     const int allocation3;
-    const std::vector<double>& accrualTime;
-    const std::vector<double>& accrualIntensity;
-    const std::vector<double>& tau;
-    const std::vector<double>& stratumFraction;
+    const std::vector<double> &accrualTime;
+    const std::vector<double> &accrualIntensity;
+    const std::vector<double> &tau;
+    const std::vector<double> &stratumFraction;
     const double rho_pd_os;
-    const FlatMatrix& lambda1pfsx;
-    const FlatMatrix& lambda2pfsx;
-    const FlatMatrix& lambda3pfsx;
-    const FlatMatrix& lambda1osx;
-    const FlatMatrix& lambda2osx;
-    const FlatMatrix& lambda3osx;
-    const FlatMatrix& gamma1pfsx;
-    const FlatMatrix& gamma2pfsx;
-    const FlatMatrix& gamma3pfsx;
-    const FlatMatrix& gamma1osx;
-    const FlatMatrix& gamma2osx;
-    const FlatMatrix& gamma3osx;
-    const FlatMatrix& tau1pdx;
-    const FlatMatrix& tau2pdx;
-    const FlatMatrix& tau3pdx;
-    const FlatMatrix& lambda1pd;
-    const FlatMatrix& lambda2pd;
-    const FlatMatrix& lambda3pd;
-    const FlatMatrix& gamma1pd;
-    const FlatMatrix& gamma2pd;
-    const FlatMatrix& gamma3pd;
+    const FlatMatrix &lambda1pfsx;
+    const FlatMatrix &lambda2pfsx;
+    const FlatMatrix &lambda3pfsx;
+    const FlatMatrix &lambda1osx;
+    const FlatMatrix &lambda2osx;
+    const FlatMatrix &lambda3osx;
+    const FlatMatrix &gamma1pfsx;
+    const FlatMatrix &gamma2pfsx;
+    const FlatMatrix &gamma3pfsx;
+    const FlatMatrix &gamma1osx;
+    const FlatMatrix &gamma2osx;
+    const FlatMatrix &gamma3osx;
+    const FlatMatrix &tau1pdx;
+    const FlatMatrix &tau2pdx;
+    const FlatMatrix &tau3pdx;
+    const FlatMatrix &lambda1pd;
+    const FlatMatrix &lambda2pd;
+    const FlatMatrix &lambda3pd;
+    const FlatMatrix &gamma1pd;
+    const FlatMatrix &gamma2pd;
+    const FlatMatrix &gamma3pd;
 
     const size_t N;
     const double fu;
     const bool fixedFollowup;
     const double rho1;
     const double rho2;
-    const std::vector<int>& plannedEvents;
-    const std::vector<double>& plannedTime;
+    const std::vector<int> &plannedEvents;
+    const std::vector<double> &plannedTime;
     const size_t maxRawIters;
-    const std::vector<uint64_t>& seeds;
+    const std::vector<uint64_t> &seeds;
     const bool useEvents;
     const size_t nstrata;
     const double rho_pd_os_pyth_comp;
 
     // Output pointer
-    std::vector<IterationResult>* results;
+    std::vector<IterationResult> *results;
 
-    SimWorker(
-      size_t K_,
-      size_t Kpfs_,
-      double hazardRatioH013pfs_,
-      double hazardRatioH023pfs_,
-      double hazardRatioH012pfs_,
-      double hazardRatioH013os_,
-      double hazardRatioH023os_,
-      double hazardRatioH012os_,
-      int allocation1_,
-      int allocation2_,
-      int allocation3_,
-      const std::vector<double>& accrualTime_,
-      const std::vector<double>& accrualIntensity_,
-      const std::vector<double>& tau_,
-      const std::vector<double>& stratumFraction_,
-      double rho_pd_os_,
-      const FlatMatrix& lambda1pfsx_,
-      const FlatMatrix& lambda2pfsx_,
-      const FlatMatrix& lambda3pfsx_,
-      const FlatMatrix& lambda1osx_,
-      const FlatMatrix& lambda2osx_,
-      const FlatMatrix& lambda3osx_,
-      const FlatMatrix& gamma1pfsx_,
-      const FlatMatrix& gamma2pfsx_,
-      const FlatMatrix& gamma3pfsx_,
-      const FlatMatrix& gamma1osx_,
-      const FlatMatrix& gamma2osx_,
-      const FlatMatrix& gamma3osx_,
-      const FlatMatrix& tau1pdx_,
-      const FlatMatrix& tau2pdx_,
-      const FlatMatrix& tau3pdx_,
-      const FlatMatrix& lambda1pd_,
-      const FlatMatrix& lambda2pd_,
-      const FlatMatrix& lambda3pd_,
-      const FlatMatrix& gamma1pd_,
-      const FlatMatrix& gamma2pd_,
-      const FlatMatrix& gamma3pd_,
-      size_t N_,
-      double fu_,
-      bool fixedFollowup_,
-      double rho1_,
-      double rho2_,
-      const std::vector<int>& plannedEvents_,
-      const std::vector<double>& plannedTime_,
-      size_t maxRawIters_,
-      const std::vector<uint64_t>& seeds_,
-      bool useEvents_,
-      size_t nstrata_,
-      double rho_pd_os_pyth_comp_,
-      std::vector<IterationResult>* results_)
-      : K(K_),
-        Kpfs(Kpfs_),
-        hazardRatioH013pfs(hazardRatioH013pfs_),
-        hazardRatioH023pfs(hazardRatioH023pfs_),
-        hazardRatioH012pfs(hazardRatioH012pfs_),
-        hazardRatioH013os(hazardRatioH013os_),
-        hazardRatioH023os(hazardRatioH023os_),
-        hazardRatioH012os(hazardRatioH012os_),
-        allocation1(allocation1_),
-        allocation2(allocation2_),
-        allocation3(allocation3_),
-        accrualTime(accrualTime_),
-        accrualIntensity(accrualIntensity_),
-        tau(tau_),
-        stratumFraction(stratumFraction_),
-        rho_pd_os(rho_pd_os_),
-        lambda1pfsx(lambda1pfsx_),
-        lambda2pfsx(lambda2pfsx_),
-        lambda3pfsx(lambda3pfsx_),
-        lambda1osx(lambda1osx_),
-        lambda2osx(lambda2osx_),
-        lambda3osx(lambda3osx_),
-        gamma1pfsx(gamma1pfsx_),
-        gamma2pfsx(gamma2pfsx_),
-        gamma3pfsx(gamma3pfsx_),
-        gamma1osx(gamma1osx_),
-        gamma2osx(gamma2osx_),
-        gamma3osx(gamma3osx_),
-        tau1pdx(tau1pdx_),
-        tau2pdx(tau2pdx_),
-        tau3pdx(tau3pdx_),
-        lambda1pd(lambda1pd_),
-        lambda2pd(lambda2pd_),
-        lambda3pd(lambda3pd_),
-        gamma1pd(gamma1pd_),
-        gamma2pd(gamma2pd_),
-        gamma3pd(gamma3pd_),
-        N(N_),
-        fu(fu_),
-        fixedFollowup(fixedFollowup_),
-        rho1(rho1_),
-        rho2(rho2_),
-        plannedEvents(plannedEvents_),
-        plannedTime(plannedTime_),
-        maxRawIters(maxRawIters_),
-        seeds(seeds_),
-        useEvents(useEvents_),
-        nstrata(nstrata_),
-        rho_pd_os_pyth_comp(rho_pd_os_pyth_comp_),
-        results(results_)
-    {}
+    SimWorker(size_t K_, size_t Kpfs_, double hazardRatioH013pfs_,
+              double hazardRatioH023pfs_, double hazardRatioH012pfs_,
+              double hazardRatioH013os_, double hazardRatioH023os_,
+              double hazardRatioH012os_, int allocation1_, int allocation2_,
+              int allocation3_, const std::vector<double> &accrualTime_,
+              const std::vector<double> &accrualIntensity_,
+              const std::vector<double> &tau_,
+              const std::vector<double> &stratumFraction_, double rho_pd_os_,
+              const FlatMatrix &lambda1pfsx_, const FlatMatrix &lambda2pfsx_,
+              const FlatMatrix &lambda3pfsx_, const FlatMatrix &lambda1osx_,
+              const FlatMatrix &lambda2osx_, const FlatMatrix &lambda3osx_,
+              const FlatMatrix &gamma1pfsx_, const FlatMatrix &gamma2pfsx_,
+              const FlatMatrix &gamma3pfsx_, const FlatMatrix &gamma1osx_,
+              const FlatMatrix &gamma2osx_, const FlatMatrix &gamma3osx_,
+              const FlatMatrix &tau1pdx_, const FlatMatrix &tau2pdx_,
+              const FlatMatrix &tau3pdx_, const FlatMatrix &lambda1pd_,
+              const FlatMatrix &lambda2pd_, const FlatMatrix &lambda3pd_,
+              const FlatMatrix &gamma1pd_, const FlatMatrix &gamma2pd_,
+              const FlatMatrix &gamma3pd_, size_t N_, double fu_,
+              bool fixedFollowup_, double rho1_, double rho2_,
+              const std::vector<int> &plannedEvents_,
+              const std::vector<double> &plannedTime_, size_t maxRawIters_,
+              const std::vector<uint64_t> &seeds_, bool useEvents_,
+              size_t nstrata_, double rho_pd_os_pyth_comp_,
+              std::vector<IterationResult> *results_)
+        : K(K_), Kpfs(Kpfs_), hazardRatioH013pfs(hazardRatioH013pfs_),
+          hazardRatioH023pfs(hazardRatioH023pfs_),
+          hazardRatioH012pfs(hazardRatioH012pfs_),
+          hazardRatioH013os(hazardRatioH013os_),
+          hazardRatioH023os(hazardRatioH023os_),
+          hazardRatioH012os(hazardRatioH012os_), allocation1(allocation1_),
+          allocation2(allocation2_), allocation3(allocation3_),
+          accrualTime(accrualTime_), accrualIntensity(accrualIntensity_),
+          tau(tau_), stratumFraction(stratumFraction_), rho_pd_os(rho_pd_os_),
+          lambda1pfsx(lambda1pfsx_), lambda2pfsx(lambda2pfsx_),
+          lambda3pfsx(lambda3pfsx_), lambda1osx(lambda1osx_),
+          lambda2osx(lambda2osx_), lambda3osx(lambda3osx_),
+          gamma1pfsx(gamma1pfsx_), gamma2pfsx(gamma2pfsx_),
+          gamma3pfsx(gamma3pfsx_), gamma1osx(gamma1osx_), gamma2osx(gamma2osx_),
+          gamma3osx(gamma3osx_), tau1pdx(tau1pdx_), tau2pdx(tau2pdx_),
+          tau3pdx(tau3pdx_), lambda1pd(lambda1pd_), lambda2pd(lambda2pd_),
+          lambda3pd(lambda3pd_), gamma1pd(gamma1pd_), gamma2pd(gamma2pd_),
+          gamma3pd(gamma3pd_), N(N_), fu(fu_), fixedFollowup(fixedFollowup_),
+          rho1(rho1_), rho2(rho2_), plannedEvents(plannedEvents_),
+          plannedTime(plannedTime_), maxRawIters(maxRawIters_), seeds(seeds_),
+          useEvents(useEvents_), nstrata(nstrata_),
+          rho_pd_os_pyth_comp(rho_pd_os_pyth_comp_), results(results_) {}
 
     void operator()(std::size_t begin, std::size_t end) {
       // Local per-worker buffers
@@ -3301,14 +3480,20 @@ ListCpp lrsim2e3acpp(
       std::vector<int> n1x(nstrata), n2x(nstrata), n3x(nstrata);
       std::vector<double> km13(nstrata), km23(nstrata), km12(nstrata);
       std::vector<double> cumF(nstrata);
-      std::partial_sum(stratumFraction.begin(), stratumFraction.end(), cumF.begin());
+      std::partial_sum(stratumFraction.begin(), stratumFraction.end(),
+                       cumF.begin());
 
       std::vector<double> analysisT(K);
-      std::vector<double> analysisT1; analysisT1.reserve(Kpfs);
-      std::vector<double> analysisT2; analysisT2.reserve(K - Kpfs);
-      std::vector<double> totalte1; totalte1.reserve(N);
-      std::vector<double> totalte2; totalte2.reserve(N);
-      std::vector<size_t> sub; sub.reserve(N);
+      std::vector<double> analysisT1;
+      analysisT1.reserve(Kpfs);
+      std::vector<double> analysisT2;
+      analysisT2.reserve(K - Kpfs);
+      std::vector<double> totalte1;
+      totalte1.reserve(N);
+      std::vector<double> totalte2;
+      totalte2.reserve(N);
+      std::vector<size_t> sub;
+      sub.reserve(N);
 
       for (size_t iter = begin; iter < end; ++iter) {
         // deterministic per-iteration RNG
@@ -3316,10 +3501,11 @@ ListCpp lrsim2e3acpp(
         boost::random::uniform_real_distribution<double> unif(0.0, 1.0);
         boost::random::normal_distribution<double> norm(0.0, 1.0);
 
-        IterationResult& out = (*results)[iter];
+        IterationResult &out = (*results)[iter];
         out.summaryRows.clear();
         out.rawRows.clear();
-        if (iter < maxRawIters) out.reserveForRaw(K * N);
+        if (iter < maxRawIters)
+          out.reserveForRaw(K * N);
         out.reserveForSummary(K * 2);
 
         // reset blocks
@@ -3344,11 +3530,20 @@ ListCpp lrsim2e3acpp(
           double denom = static_cast<double>(b1[j] + b2[j] + b3[j]);
           double p1 = static_cast<double>(b1[j]) / denom;
           double p2 = static_cast<double>(b1[j] + b2[j]) / denom;
-          if (u <= p1) { trtGrp[i] = 1; --b1[j]; }
-          else if (u <= p2) { trtGrp[i] = 2; --b2[j]; }
-          else { trtGrp[i] = 3; --b3[j]; }
+          if (u <= p1) {
+            trtGrp[i] = 1;
+            --b1[j];
+          } else if (u <= p2) {
+            trtGrp[i] = 2;
+            --b2[j];
+          } else {
+            trtGrp[i] = 3;
+            --b3[j];
+          }
           if (b1[j] + b2[j] + b3[j] == 0) {
-            b1[j] = allocation1; b2[j] = allocation2; b3[j] = allocation3;
+            b1[j] = allocation1;
+            b2[j] = allocation2;
+            b3[j] = allocation3;
           }
 
           // correlated normals -> uniforms
@@ -3385,7 +3580,8 @@ ListCpp lrsim2e3acpp(
             survivalT1[i] = qtpwexpcpp1(u1, tau3pd, lam3pd);
             survivalT2[i] = qtpwexpcpp1(u2, tau, lam3os);
           }
-          if (survivalT1[i] > survivalT2[i]) survivalT1[i] = survivalT2[i];
+          if (survivalT1[i] > survivalT2[i])
+            survivalT1[i] = survivalT2[i];
 
           // dropout times (independent)
           u1 = unif(rng_local);
@@ -3400,36 +3596,57 @@ ListCpp lrsim2e3acpp(
             dropoutT1[i] = qtpwexpcpp1(u1, tau, gam3pd);
             dropoutT2[i] = qtpwexpcpp1(u2, tau, gam3os);
           }
-          if (dropoutT1[i] > dropoutT2[i]) dropoutT1[i] = dropoutT2[i];
+          if (dropoutT1[i] > dropoutT2[i])
+            dropoutT1[i] = dropoutT2[i];
 
           // initial observed times/events (both endpoints)
           double sv1 = survivalT1[i], sv2 = survivalT2[i];
           double dr1 = dropoutT1[i], dr2 = dropoutT2[i];
           if (fixedFollowup) {
             if (sv1 <= dr1 && sv1 <= fu) {
-              timeObs1[i] = sv1; event1[i] = 1; dropEv1[i] = 0;
+              timeObs1[i] = sv1;
+              event1[i] = 1;
+              dropEv1[i] = 0;
             } else if (dr1 <= sv1 && dr1 <= fu) {
-              timeObs1[i] = dr1; event1[i] = 0; dropEv1[i] = 1;
+              timeObs1[i] = dr1;
+              event1[i] = 0;
+              dropEv1[i] = 1;
             } else {
-              timeObs1[i] = fu; event1[i] = 0; dropEv1[i] = 0;
+              timeObs1[i] = fu;
+              event1[i] = 0;
+              dropEv1[i] = 0;
             }
             if (sv2 <= dr2 && sv2 <= fu) {
-              timeObs2[i] = sv2; event2[i] = 1; dropEv2[i] = 0;
+              timeObs2[i] = sv2;
+              event2[i] = 1;
+              dropEv2[i] = 0;
             } else if (dr2 <= sv2 && dr2 <= fu) {
-              timeObs2[i] = dr2; event2[i] = 0; dropEv2[i] = 1;
+              timeObs2[i] = dr2;
+              event2[i] = 0;
+              dropEv2[i] = 1;
             } else {
-              timeObs2[i] = fu; event2[i] = 0; dropEv2[i] = 0;
+              timeObs2[i] = fu;
+              event2[i] = 0;
+              dropEv2[i] = 0;
             }
           } else {
             if (sv1 <= dr1) {
-              timeObs1[i] = sv1; event1[i] = 1; dropEv1[i] = 0;
+              timeObs1[i] = sv1;
+              event1[i] = 1;
+              dropEv1[i] = 0;
             } else {
-              timeObs1[i] = dr1; event1[i] = 0; dropEv1[i] = 1;
+              timeObs1[i] = dr1;
+              event1[i] = 0;
+              dropEv1[i] = 1;
             }
             if (sv2 <= dr2) {
-              timeObs2[i] = sv2; event2[i] = 1; dropEv2[i] = 0;
+              timeObs2[i] = sv2;
+              event2[i] = 1;
+              dropEv2[i] = 0;
             } else {
-              timeObs2[i] = dr2; event2[i] = 0; dropEv2[i] = 1;
+              timeObs2[i] = dr2;
+              event2[i] = 0;
+              dropEv2[i] = 1;
             }
           }
           totalT1[i] = arrivalT[i] + timeObs1[i];
@@ -3442,20 +3659,23 @@ ListCpp lrsim2e3acpp(
         bool ev2NotAch = false;
 
         if (useEvents) {
-          totalte1.clear(); totalte2.clear();
+          totalte1.clear();
+          totalte2.clear();
           int nevents1 = 0, nevents2 = 0;
           for (size_t i = 0; i < N; ++i) {
             if (event1[i] && (trtGrp[i] == 1 || trtGrp[i] == 3)) {
-              ++nevents1; totalte1.push_back(totalT1[i]);
+              ++nevents1;
+              totalte1.push_back(totalT1[i]);
             }
             if (event2[i] && (trtGrp[i] == 1 || trtGrp[i] == 3)) {
-              ++nevents2; totalte2.push_back(totalT2[i]);
+              ++nevents2;
+              totalte2.push_back(totalT2[i]);
             }
           }
           if (nevents1 == 0 || nevents2 == 0) {
             thread_utils::push_thread_warning(
-              std::string("No events for iteration ") + std::to_string(iter + 1) +
-                " skipping this iteration.");
+                std::string("No events for iteration ") +
+                std::to_string(iter + 1) + " skipping this iteration.");
             out.summaryRows.clear();
             out.rawRows.clear();
             continue;
@@ -3463,13 +3683,13 @@ ListCpp lrsim2e3acpp(
           std::sort(totalte1.begin(), totalte1.end());
           std::sort(totalte2.begin(), totalte2.end());
 
-
           // PFS looks
           analysisT1.clear();
           size_t j1 = 0;
           if (Kpfs > 0) {
             for (j1 = 0; j1 < Kpfs; ++j1) {
-              if (plannedEvents[j1] >= nevents1) break;
+              if (plannedEvents[j1] >= nevents1)
+                break;
             }
 
             if (j1 == Kpfs) { // total number of PFS events exceeds planned
@@ -3489,22 +3709,26 @@ ListCpp lrsim2e3acpp(
           size_t j2 = 0;
           if (K > Kpfs) {
             for (j2 = 0; j2 < (K - Kpfs); ++j2) {
-              if (plannedEvents[Kpfs + j2] >= nevents2) break;
+              if (plannedEvents[Kpfs + j2] >= nevents2)
+                break;
             }
 
             if (j2 == (K - Kpfs)) { // total number of OS events exceeds planned
               for (size_t k = 0; k < (K - Kpfs); ++k) {
-                analysisT2.push_back(totalte2[plannedEvents[Kpfs + k] - 1] + 1e-12);
+                analysisT2.push_back(totalte2[plannedEvents[Kpfs + k] - 1] +
+                                     1e-12);
               }
             } else {
               for (size_t k = 0; k < j2; ++k) {
-                analysisT2.push_back(totalte2[plannedEvents[Kpfs + k] - 1] + 1e-12);
+                analysisT2.push_back(totalte2[plannedEvents[Kpfs + k] - 1] +
+                                     1e-12);
               }
               analysisT2.push_back(totalte2.back() + 1e-12);
             }
           }
 
-          // combine PFS and OS looks to determine nstages and analysisTime array
+          // combine PFS and OS looks to determine nstages and analysisTime
+          // array
           if (Kpfs == 0) { // only OS looks
             nstages = analysisT2.size();
             std::copy_n(analysisT2.begin(), nstages, analysisT.begin());
@@ -3514,11 +3738,11 @@ ListCpp lrsim2e3acpp(
           } else { // mixed
             if (analysisT2.back() > analysisT1.back()) {
               // OS looks after last PFS look contribute.
-              // NOTE: In this case, the observed number of PFS events must exceed
-              // the planned number of PFS events at look Kpfs, because otherwise
-              // the last PFS event would be observed at analysisT1.back().
-              // However, since the last OS event occurred on or after
-              // analysisT2.back() > analysisT1.back(), this is a
+              // NOTE: In this case, the observed number of PFS events must
+              // exceed the planned number of PFS events at look Kpfs, because
+              // otherwise the last PFS event would be observed at
+              // analysisT1.back(). However, since the last OS event occurred on
+              // or after analysisT2.back() > analysisT1.back(), this is a
               // contradiction as death is part of PFS event definition.
               // It follows that analysisT1.size() == Kpfs in this case.
 
@@ -3528,10 +3752,12 @@ ListCpp lrsim2e3acpp(
               nstages = Kpfs + (analysisT2.size() - l);
               // copy PFS looks unchanged and append relevant OS looks
               // keep PFS looks [0 .. Kpfs-1], then OS looks from l onwards,
-              // which are the ones after last PFS look mapped to Kpfs + l onwards
+              // which are the ones after last PFS look mapped to Kpfs + l
+              // onwards
               std::copy_n(analysisT1.begin(), Kpfs, analysisT.begin());
               size_t count = analysisT2.size() - l;
-              std::copy_n(analysisT2.begin() + l, count, analysisT.begin() + Kpfs);
+              std::copy_n(analysisT2.begin() + l, count,
+                          analysisT.begin() + Kpfs);
             } else {
               // only PFS looks matter
               nstages = analysisT1.size();
@@ -3540,8 +3766,10 @@ ListCpp lrsim2e3acpp(
           }
 
           // evNotAch: check PFS and OS targetse
-          if (Kpfs > 0 && nevents1 < plannedEvents[Kpfs - 1]) ev1NotAch = true;
-          if (Kpfs < K && nevents2 < plannedEvents[K - 1]) ev2NotAch = true;
+          if (Kpfs > 0 && nevents1 < plannedEvents[Kpfs - 1])
+            ev1NotAch = true;
+          if (Kpfs < K && nevents2 < plannedEvents[K - 1])
+            ev2NotAch = true;
         } else { // calendar time
           std::copy_n(plannedTime.begin(), K, analysisT.begin());
         }
@@ -3566,63 +3794,116 @@ ListCpp lrsim2e3acpp(
             double dr1 = dropoutT1[i], dr2 = dropoutT2[i];
 
             if (ar > time) {
-              timeObs1[i] = time - ar; event1[i] = 0; dropEv1[i] = 0;
-              timeObs2[i] = time - ar; event2[i] = 0; dropEv2[i] = 0;
+              timeObs1[i] = time - ar;
+              event1[i] = 0;
+              dropEv1[i] = 0;
+              timeObs2[i] = time - ar;
+              event2[i] = 0;
+              dropEv2[i] = 0;
               continue;
             }
 
             // endpoint 1 censoring
             if (fixedFollowup) {
               if (ar + sv1 <= time && sv1 <= dr1 && sv1 <= fu) {
-                timeObs1[i] = sv1; event1[i] = 1; dropEv1[i] = 0;
+                timeObs1[i] = sv1;
+                event1[i] = 1;
+                dropEv1[i] = 0;
               } else if (ar + dr1 <= time && dr1 <= sv1 && dr1 <= fu) {
-                timeObs1[i] = dr1; event1[i] = 0; dropEv1[i] = 1;
+                timeObs1[i] = dr1;
+                event1[i] = 0;
+                dropEv1[i] = 1;
               } else if (ar + fu <= time && fu <= sv1 && fu <= dr1) {
-                timeObs1[i] = fu; event1[i] = 0; dropEv1[i] = 0;
+                timeObs1[i] = fu;
+                event1[i] = 0;
+                dropEv1[i] = 0;
               } else {
-                timeObs1[i] = time - ar; event1[i] = 0; dropEv1[i] = 0;
+                timeObs1[i] = time - ar;
+                event1[i] = 0;
+                dropEv1[i] = 0;
               }
             } else {
               if (ar + sv1 <= time && sv1 <= dr1) {
-                timeObs1[i] = sv1; event1[i] = 1; dropEv1[i] = 0;
+                timeObs1[i] = sv1;
+                event1[i] = 1;
+                dropEv1[i] = 0;
               } else if (ar + dr1 <= time && dr1 <= sv1) {
-                timeObs1[i] = dr1; event1[i] = 0; dropEv1[i] = 1;
+                timeObs1[i] = dr1;
+                event1[i] = 0;
+                dropEv1[i] = 1;
               } else {
-                timeObs1[i] = time - ar; event1[i] = 0; dropEv1[i] = 0;
+                timeObs1[i] = time - ar;
+                event1[i] = 0;
+                dropEv1[i] = 0;
               }
             }
 
             // endpoint2 censoring
             if (fixedFollowup) {
               if (ar + sv2 <= time && sv2 <= dr2 && sv2 <= fu) {
-                timeObs2[i] = sv2; event2[i] = 1; dropEv2[i] = 0;
+                timeObs2[i] = sv2;
+                event2[i] = 1;
+                dropEv2[i] = 0;
               } else if (ar + dr2 <= time && dr2 <= sv2 && dr2 <= fu) {
-                timeObs2[i] = dr2; event2[i] = 0; dropEv2[i] = 1;
+                timeObs2[i] = dr2;
+                event2[i] = 0;
+                dropEv2[i] = 1;
               } else if (ar + fu <= time && fu <= sv2 && fu <= dr2) {
-                timeObs2[i] = fu; event2[i] = 0; dropEv2[i] = 0;
+                timeObs2[i] = fu;
+                event2[i] = 0;
+                dropEv2[i] = 0;
               } else {
-                timeObs2[i] = time - ar; event2[i] = 0; dropEv2[i] = 0;
+                timeObs2[i] = time - ar;
+                event2[i] = 0;
+                dropEv2[i] = 0;
               }
             } else {
               if (ar + sv2 <= time && sv2 <= dr2) {
-                timeObs2[i] = sv2; event2[i] = 1; dropEv2[i] = 0;
+                timeObs2[i] = sv2;
+                event2[i] = 1;
+                dropEv2[i] = 0;
               } else if (ar + dr2 <= time && dr2 <= sv2) {
-                timeObs2[i] = dr2; event2[i] = 0; dropEv2[i] = 1;
+                timeObs2[i] = dr2;
+                event2[i] = 0;
+                dropEv2[i] = 1;
               } else {
-                timeObs2[i] = time - ar; event2[i] = 0; dropEv2[i] = 0;
+                timeObs2[i] = time - ar;
+                event2[i] = 0;
+                dropEv2[i] = 0;
               }
             }
 
             size_t h = static_cast<size_t>(stratum[i] - 1);
-            if (trtGrp[i] == 1) { ++n1x[h];
-              if (event1[i]) ++events1e1; else if (dropEv1[i]) ++dropouts1e1;
-              if (event2[i]) ++events1e2; else if (dropEv2[i]) ++dropouts1e2;
-            } else if (trtGrp[i] == 2) { ++n2x[h];
-              if (event1[i]) ++events2e1; else if (dropEv1[i]) ++dropouts2e1;
-              if (event2[i]) ++events2e2; else if (dropEv2[i]) ++dropouts2e2;
-            } else { ++n3x[h];
-              if (event1[i]) ++events3e1; else if (dropEv1[i]) ++dropouts3e1;
-              if (event2[i]) ++events3e2; else if (dropEv2[i]) ++dropouts3e2;
+            if (trtGrp[i] == 1) {
+              ++n1x[h];
+              if (event1[i])
+                ++events1e1;
+              else if (dropEv1[i])
+                ++dropouts1e1;
+              if (event2[i])
+                ++events1e2;
+              else if (dropEv2[i])
+                ++dropouts1e2;
+            } else if (trtGrp[i] == 2) {
+              ++n2x[h];
+              if (event1[i])
+                ++events2e1;
+              else if (dropEv1[i])
+                ++dropouts2e1;
+              if (event2[i])
+                ++events2e2;
+              else if (dropEv2[i])
+                ++dropouts2e2;
+            } else {
+              ++n3x[h];
+              if (event1[i])
+                ++events3e1;
+              else if (dropEv1[i])
+                ++dropouts3e1;
+              if (event2[i])
+                ++events3e2;
+              else if (dropEv2[i])
+                ++dropouts3e2;
             }
           } // censoring loop
 
@@ -3640,7 +3921,8 @@ ListCpp lrsim2e3acpp(
           if (iter < maxRawIters) {
             for (size_t i = 0; i < N; ++i) {
               // skip subjects who haven't been enrolled by analysis time
-              if (arrivalT[i] > time) continue;
+              if (arrivalT[i] > time)
+                continue;
               RawDatasetRow rr1;
               rr1.iterNum = static_cast<int>(iter + 1);
               rr1.stageNum = static_cast<int>(k + 1);
@@ -3684,7 +3966,8 @@ ListCpp lrsim2e3acpp(
               h23 = hazardRatioH023pfs;
               h12 = hazardRatioH012pfs;
               for (size_t i = 0; i < N; ++i) {
-                if (timeObs1[i] > 0.0) sub.push_back(i);
+                if (timeObs1[i] > 0.0)
+                  sub.push_back(i);
               }
               std::sort(sub.begin(), sub.end(), [&](size_t a, size_t b) {
                 return timeObs1[a] < timeObs1[b];
@@ -3694,7 +3977,8 @@ ListCpp lrsim2e3acpp(
               h23 = hazardRatioH023os;
               h12 = hazardRatioH012os;
               for (size_t i = 0; i < N; ++i) {
-                if (timeObs2[i] > 0.0) sub.push_back(i);
+                if (timeObs2[i] > 0.0)
+                  sub.push_back(i);
               }
               std::sort(sub.begin(), sub.end(), [&](size_t a, size_t b) {
                 return timeObs2[a] < timeObs2[b];
@@ -3702,8 +3986,9 @@ ListCpp lrsim2e3acpp(
             }
 
             // restore risk sets
-            n1 = n1x; n2 = n2x; n3 = n3x;
-
+            n1 = n1x;
+            n2 = n2x;
+            n3 = n3x;
 
             std::fill(km13.begin(), km13.end(), 1.0);
             std::fill(km23.begin(), km23.end(), 1.0);
@@ -3739,7 +4024,8 @@ ListCpp lrsim2e3acpp(
                 if (trtGrp[idx] == 1 || trtGrp[idx] == 3) {
                   double wh = 1.0;
                   if (rho1 != 0.0 || rho2 != 0.0) {
-                    wh = std::pow(km13[h], rho1) * std::pow(1.0 - km13[h], rho2);
+                    wh =
+                        std::pow(km13[h], rho1) * std::pow(1.0 - km13[h], rho2);
                     km13[h] *= (1.0 - 1.0 / nt13);
                   }
                   double treated = (trtGrp[idx] == 1 ? 1.0 : 0.0);
@@ -3750,7 +4036,8 @@ ListCpp lrsim2e3acpp(
                 if (trtGrp[idx] == 2 || trtGrp[idx] == 3) {
                   double wh = 1.0;
                   if (rho1 != 0.0 || rho2 != 0.0) {
-                    wh = std::pow(km23[h], rho1) * std::pow(1.0 - km23[h], rho2);
+                    wh =
+                        std::pow(km23[h], rho1) * std::pow(1.0 - km23[h], rho2);
                     km23[h] *= (1.0 - 1.0 / nt23);
                   }
                   double treated = (trtGrp[idx] == 2 ? 1.0 : 0.0);
@@ -3761,7 +4048,8 @@ ListCpp lrsim2e3acpp(
                 if (trtGrp[idx] == 1 || trtGrp[idx] == 2) {
                   double wh = 1.0;
                   if (rho1 != 0.0 || rho2 != 0.0) {
-                    wh = std::pow(km12[h], rho1) * std::pow(1.0 - km12[h], rho2);
+                    wh =
+                        std::pow(km12[h], rho1) * std::pow(1.0 - km12[h], rho2);
                     km12[h] *= (1.0 - 1.0 / nt12);
                   }
                   double treated = (trtGrp[idx] == 1 ? 1.0 : 0.0);
@@ -3771,9 +4059,12 @@ ListCpp lrsim2e3acpp(
               }
 
               // reduce risk set
-              if (trtGrp[idx] == 1) --n1[h];
-              else if (trtGrp[idx] == 2) --n2[h];
-              else --n3[h];
+              if (trtGrp[idx] == 1)
+                --n1[h];
+              else if (trtGrp[idx] == 2)
+                --n2[h];
+              else
+                --n3[h];
             } // events loop
 
             double z13 = (vs13 > 0.0 ? (us13 / std::sqrt(vs13)) : 0.0);
@@ -3811,9 +4102,15 @@ ListCpp lrsim2e3acpp(
               sr.dropouts3 = dropouts3e2;
               sr.totDropouts = totDropoutse2;
             }
-            sr.uscore13 = us13; sr.vscore13 = vs13; sr.logRank13 = z13;
-            sr.uscore23 = us23; sr.vscore23 = vs23; sr.logRank23 = z23;
-            sr.uscore12 = us12; sr.vscore12 = vs12; sr.logRank12 = z12;
+            sr.uscore13 = us13;
+            sr.vscore13 = vs13;
+            sr.logRank13 = z13;
+            sr.uscore23 = us23;
+            sr.vscore23 = vs23;
+            sr.logRank23 = z23;
+            sr.uscore12 = us12;
+            sr.vscore12 = vs12;
+            sr.logRank12 = z12;
             out.summaryRows.push_back(std::move(sr));
           } // endpoints loop
         } // per-stage
@@ -3823,24 +4120,15 @@ ListCpp lrsim2e3acpp(
 
   // construct and run worker
   SimWorker worker(
-      K, Kpfs,
-      hazardRatioH013pfs, hazardRatioH023pfs, hazardRatioH012pfs,
-      hazardRatioH013os, hazardRatioH023os, hazardRatioH012os,
-      allocation1, allocation2, allocation3,
-      accrualTime, accrualIntensity, tau, stratumFraction,
-      rho_pd_os,
-      lambda1pfsx, lambda2pfsx, lambda3pfsx,
-      lambda1osx, lambda2osx, lambda3osx,
-      gamma1pfsx, gamma2pfsx, gamma3pfsx,
-      gamma1osx, gamma2osx, gamma3osx,
-      tau1pdx, tau2pdx, tau3pdx,
-      lambda1pd, lambda2pd, lambda3pd,
-      gamma1pd, gamma2pd, gamma3pd,
-      N, fu, fixedFollowup, rho1, rho2,
-      plannedEvents, plannedTime,
-      maxRawIters, seeds, useEvents, nstrata, rho_pd_os_pyth_comp,
-      &results
-  );
+      K, Kpfs, hazardRatioH013pfs, hazardRatioH023pfs, hazardRatioH012pfs,
+      hazardRatioH013os, hazardRatioH023os, hazardRatioH012os, allocation1,
+      allocation2, allocation3, accrualTime, accrualIntensity, tau,
+      stratumFraction, rho_pd_os, lambda1pfsx, lambda2pfsx, lambda3pfsx,
+      lambda1osx, lambda2osx, lambda3osx, gamma1pfsx, gamma2pfsx, gamma3pfsx,
+      gamma1osx, gamma2osx, gamma3osx, tau1pdx, tau2pdx, tau3pdx, lambda1pd,
+      lambda2pd, lambda3pd, gamma1pd, gamma2pd, gamma3pd, N, fu, fixedFollowup,
+      rho1, rho2, plannedEvents, plannedTime, maxRawIters, seeds, useEvents,
+      nstrata, rho_pd_os_pyth_comp, &results);
 
   RcppParallel::parallelFor(0, maxIters, worker);
 
@@ -3850,56 +4138,97 @@ ListCpp lrsim2e3acpp(
     nsr += results[iter].summaryRows.size();
     nrr += results[iter].rawRows.size();
   }
-  if (nsr == 0) throw std::runtime_error(
-    "No iterations with observed events. Unable to produce output.");
+  if (nsr == 0)
+    throw std::runtime_error(
+        "No iterations with observed events. Unable to produce output.");
 
   // Final containers
-  std::vector<int> sum_iterNum; sum_iterNum.reserve(nsr);
-  std::vector<unsigned char> sum_ev1NotAch; sum_ev1NotAch.reserve(nsr);
-  std::vector<unsigned char> sum_ev2NotAch; sum_ev2NotAch.reserve(nsr);
-  std::vector<int> sum_stageNum; sum_stageNum.reserve(nsr);
-  std::vector<double> sum_analysisT; sum_analysisT.reserve(nsr);
-  std::vector<int> sum_accruals1; sum_accruals1.reserve(nsr);
-  std::vector<int> sum_accruals2; sum_accruals2.reserve(nsr);
-  std::vector<int> sum_accruals3; sum_accruals3.reserve(nsr);
-  std::vector<int> sum_totAccruals; sum_totAccruals.reserve(nsr);
-  std::vector<std::string> sum_endpt; sum_endpt.reserve(nsr);
-  std::vector<int> sum_events1; sum_events1.reserve(nsr);
-  std::vector<int> sum_events2; sum_events2.reserve(nsr);
-  std::vector<int> sum_events3; sum_events3.reserve(nsr);
-  std::vector<int> sum_totEvents; sum_totEvents.reserve(nsr);
-  std::vector<int> sum_dropouts1; sum_dropouts1.reserve(nsr);
-  std::vector<int> sum_dropouts2; sum_dropouts2.reserve(nsr);
-  std::vector<int> sum_dropouts3; sum_dropouts3.reserve(nsr);
-  std::vector<int> sum_totDropouts; sum_totDropouts.reserve(nsr);
-  std::vector<double> sum_uscore13; sum_uscore13.reserve(nsr);
-  std::vector<double> sum_vscore13; sum_vscore13.reserve(nsr);
-  std::vector<double> sum_logRank13; sum_logRank13.reserve(nsr);
-  std::vector<double> sum_uscore23; sum_uscore23.reserve(nsr);
-  std::vector<double> sum_vscore23; sum_vscore23.reserve(nsr);
-  std::vector<double> sum_logRank23; sum_logRank23.reserve(nsr);
-  std::vector<double> sum_uscore12; sum_uscore12.reserve(nsr);
-  std::vector<double> sum_vscore12; sum_vscore12.reserve(nsr);
-  std::vector<double> sum_logRank12; sum_logRank12.reserve(nsr);
+  std::vector<int> sum_iterNum;
+  sum_iterNum.reserve(nsr);
+  std::vector<unsigned char> sum_ev1NotAch;
+  sum_ev1NotAch.reserve(nsr);
+  std::vector<unsigned char> sum_ev2NotAch;
+  sum_ev2NotAch.reserve(nsr);
+  std::vector<int> sum_stageNum;
+  sum_stageNum.reserve(nsr);
+  std::vector<double> sum_analysisT;
+  sum_analysisT.reserve(nsr);
+  std::vector<int> sum_accruals1;
+  sum_accruals1.reserve(nsr);
+  std::vector<int> sum_accruals2;
+  sum_accruals2.reserve(nsr);
+  std::vector<int> sum_accruals3;
+  sum_accruals3.reserve(nsr);
+  std::vector<int> sum_totAccruals;
+  sum_totAccruals.reserve(nsr);
+  std::vector<std::string> sum_endpt;
+  sum_endpt.reserve(nsr);
+  std::vector<int> sum_events1;
+  sum_events1.reserve(nsr);
+  std::vector<int> sum_events2;
+  sum_events2.reserve(nsr);
+  std::vector<int> sum_events3;
+  sum_events3.reserve(nsr);
+  std::vector<int> sum_totEvents;
+  sum_totEvents.reserve(nsr);
+  std::vector<int> sum_dropouts1;
+  sum_dropouts1.reserve(nsr);
+  std::vector<int> sum_dropouts2;
+  sum_dropouts2.reserve(nsr);
+  std::vector<int> sum_dropouts3;
+  sum_dropouts3.reserve(nsr);
+  std::vector<int> sum_totDropouts;
+  sum_totDropouts.reserve(nsr);
+  std::vector<double> sum_uscore13;
+  sum_uscore13.reserve(nsr);
+  std::vector<double> sum_vscore13;
+  sum_vscore13.reserve(nsr);
+  std::vector<double> sum_logRank13;
+  sum_logRank13.reserve(nsr);
+  std::vector<double> sum_uscore23;
+  sum_uscore23.reserve(nsr);
+  std::vector<double> sum_vscore23;
+  sum_vscore23.reserve(nsr);
+  std::vector<double> sum_logRank23;
+  sum_logRank23.reserve(nsr);
+  std::vector<double> sum_uscore12;
+  sum_uscore12.reserve(nsr);
+  std::vector<double> sum_vscore12;
+  sum_vscore12.reserve(nsr);
+  std::vector<double> sum_logRank12;
+  sum_logRank12.reserve(nsr);
 
   // raw final containers
-  std::vector<int> raw_iterNum; raw_iterNum.reserve(nrr);
-  std::vector<int> raw_stageNum; raw_stageNum.reserve(nrr);
-  std::vector<double> raw_analysisT; raw_analysisT.reserve(nrr);
-  std::vector<int> raw_subjectId; raw_subjectId.reserve(nrr);
-  std::vector<double> raw_arrivalT; raw_arrivalT.reserve(nrr);
-  std::vector<int> raw_stratum; raw_stratum.reserve(nrr);
-  std::vector<int> raw_trtGrp; raw_trtGrp.reserve(nrr);
-  std::vector<std::string> raw_endpt; raw_endpt.reserve(nrr);
-  std::vector<double> raw_survivalT; raw_survivalT.reserve(nrr);
-  std::vector<double> raw_dropoutT; raw_dropoutT.reserve(nrr);
-  std::vector<double> raw_timeObs; raw_timeObs.reserve(nrr);
-  std::vector<unsigned char> raw_event; raw_event.reserve(nrr);
-  std::vector<unsigned char> raw_dropEv; raw_dropEv.reserve(nrr);
+  std::vector<int> raw_iterNum;
+  raw_iterNum.reserve(nrr);
+  std::vector<int> raw_stageNum;
+  raw_stageNum.reserve(nrr);
+  std::vector<double> raw_analysisT;
+  raw_analysisT.reserve(nrr);
+  std::vector<int> raw_subjectId;
+  raw_subjectId.reserve(nrr);
+  std::vector<double> raw_arrivalT;
+  raw_arrivalT.reserve(nrr);
+  std::vector<int> raw_stratum;
+  raw_stratum.reserve(nrr);
+  std::vector<int> raw_trtGrp;
+  raw_trtGrp.reserve(nrr);
+  std::vector<std::string> raw_endpt;
+  raw_endpt.reserve(nrr);
+  std::vector<double> raw_survivalT;
+  raw_survivalT.reserve(nrr);
+  std::vector<double> raw_dropoutT;
+  raw_dropoutT.reserve(nrr);
+  std::vector<double> raw_timeObs;
+  raw_timeObs.reserve(nrr);
+  std::vector<unsigned char> raw_event;
+  raw_event.reserve(nrr);
+  std::vector<unsigned char> raw_dropEv;
+  raw_dropEv.reserve(nrr);
 
   for (size_t iter = 0; iter < maxIters; ++iter) {
-    const auto& srows = results[iter].summaryRows;
-    for (const auto& r : srows) {
+    const auto &srows = results[iter].summaryRows;
+    for (const auto &r : srows) {
       sum_iterNum.push_back(r.iterNum);
       sum_ev1NotAch.push_back(r.evNotAch1);
       sum_ev2NotAch.push_back(r.evNotAch2);
@@ -3930,8 +4259,8 @@ ListCpp lrsim2e3acpp(
     }
 
     if (iter < maxRawIters) {
-      const auto& rraw = results[iter].rawRows;
-      for (const auto& rr : rraw) {
+      const auto &rraw = results[iter].rawRows;
+      for (const auto &rr : rraw) {
         raw_iterNum.push_back(rr.iterNum);
         raw_stageNum.push_back(rr.stageNum);
         raw_analysisT.push_back(rr.analysisT);
@@ -4003,47 +4332,35 @@ ListCpp lrsim2e3acpp(
   return result;
 }
 
-
 // [[Rcpp::export]]
 Rcpp::List lrsim2e3aRcpp(
-    const int kMax = 1,
-    const int kMaxpfs = 1,
-    const double hazardRatioH013pfs = 1,
-    const double hazardRatioH023pfs = 1,
-    const double hazardRatioH012pfs = 1,
-    const double hazardRatioH013os = 1,
-    const double hazardRatioH023os = 1,
-    const double hazardRatioH012os = 1,
-    const int allocation1 = 1,
-    const int allocation2 = 1,
-    const int allocation3 = 1,
-    const Rcpp::NumericVector& accrualTime = 0,
-    const Rcpp::NumericVector& accrualIntensity = NA_REAL,
-    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
-    const Rcpp::NumericVector& stratumFraction = 1,
-    const double rho_pd_os = 0,
-    const Rcpp::NumericVector& lambda1pfs = NA_REAL,
-    const Rcpp::NumericVector& lambda2pfs = NA_REAL,
-    const Rcpp::NumericVector& lambda3pfs = NA_REAL,
-    const Rcpp::NumericVector& lambda1os = NA_REAL,
-    const Rcpp::NumericVector& lambda2os = NA_REAL,
-    const Rcpp::NumericVector& lambda3os = NA_REAL,
-    const Rcpp::NumericVector& gamma1pfs = 0,
-    const Rcpp::NumericVector& gamma2pfs = 0,
-    const Rcpp::NumericVector& gamma3pfs = 0,
-    const Rcpp::NumericVector& gamma1os = 0,
-    const Rcpp::NumericVector& gamma2os = 0,
-    const Rcpp::NumericVector& gamma3os = 0,
-    const int n = NA_INTEGER,
-    const double followupTime = NA_REAL,
-    const bool fixedFollowup = false,
-    const double rho1 = 0,
-    const double rho2 = 0,
-    const Rcpp::IntegerVector& plannedEvents = NA_INTEGER,
-    const Rcpp::NumericVector& plannedTime = NA_REAL,
+    const int kMax = 1, const int kMaxpfs = 1,
+    const double hazardRatioH013pfs = 1, const double hazardRatioH023pfs = 1,
+    const double hazardRatioH012pfs = 1, const double hazardRatioH013os = 1,
+    const double hazardRatioH023os = 1, const double hazardRatioH012os = 1,
+    const int allocation1 = 1, const int allocation2 = 1,
+    const int allocation3 = 1, const Rcpp::NumericVector &accrualTime = 0,
+    const Rcpp::NumericVector &accrualIntensity = NA_REAL,
+    const Rcpp::NumericVector &piecewiseSurvivalTime = 0,
+    const Rcpp::NumericVector &stratumFraction = 1, const double rho_pd_os = 0,
+    const Rcpp::NumericVector &lambda1pfs = NA_REAL,
+    const Rcpp::NumericVector &lambda2pfs = NA_REAL,
+    const Rcpp::NumericVector &lambda3pfs = NA_REAL,
+    const Rcpp::NumericVector &lambda1os = NA_REAL,
+    const Rcpp::NumericVector &lambda2os = NA_REAL,
+    const Rcpp::NumericVector &lambda3os = NA_REAL,
+    const Rcpp::NumericVector &gamma1pfs = 0,
+    const Rcpp::NumericVector &gamma2pfs = 0,
+    const Rcpp::NumericVector &gamma3pfs = 0,
+    const Rcpp::NumericVector &gamma1os = 0,
+    const Rcpp::NumericVector &gamma2os = 0,
+    const Rcpp::NumericVector &gamma3os = 0, const int n = NA_INTEGER,
+    const double followupTime = NA_REAL, const bool fixedFollowup = false,
+    const double rho1 = 0, const double rho2 = 0,
+    const Rcpp::IntegerVector &plannedEvents = NA_INTEGER,
+    const Rcpp::NumericVector &plannedTime = NA_REAL,
     const int maxNumberOfIterations = 1000,
-    const int maxNumberOfRawDatasetsPerStage = 0,
-    const int seed = 0) {
+    const int maxNumberOfRawDatasetsPerStage = 0, const int seed = 0) {
 
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
@@ -4065,58 +4382,45 @@ Rcpp::List lrsim2e3aRcpp(
   auto plannedT = Rcpp::as<std::vector<double>>(plannedTime);
 
   auto out = lrsim2e3acpp(
-    kMax, kMaxpfs, hazardRatioH013pfs, hazardRatioH023pfs,
-    hazardRatioH012pfs, hazardRatioH013os, hazardRatioH023os,
-    hazardRatioH012os, allocation1, allocation2, allocation3,
-    accrualT, accrualInt, pwSurvTime, stratumFrac, rho_pd_os,
-    lam1pfs, lam2pfs, lam3pfs, lam1os, lam2os, lam3os,
-    gam1pfs, gam2pfs, gam3pfs, gam1os, gam2os, gam3os, n,
-    followupTime, fixedFollowup, rho1, rho2, plannedE, plannedT,
-    maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed);
+      kMax, kMaxpfs, hazardRatioH013pfs, hazardRatioH023pfs, hazardRatioH012pfs,
+      hazardRatioH013os, hazardRatioH023os, hazardRatioH012os, allocation1,
+      allocation2, allocation3, accrualT, accrualInt, pwSurvTime, stratumFrac,
+      rho_pd_os, lam1pfs, lam2pfs, lam3pfs, lam1os, lam2os, lam3os, gam1pfs,
+      gam2pfs, gam3pfs, gam1os, gam2os, gam3os, n, followupTime, fixedFollowup,
+      rho1, rho2, plannedE, plannedT, maxNumberOfIterations,
+      maxNumberOfRawDatasetsPerStage, seed);
 
   thread_utils::drain_thread_warnings_to_R();
 
   return Rcpp::wrap(out);
 }
 
-
 ListCpp lrsimsubcpp(
-    const int kMax,
-    const int kMaxitt,
-    const double hazardRatioH0itt,
-    const double hazardRatioH0pos,
-    const double hazardRatioH0neg,
-    const int allocation1,
-    const int allocation2,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& stratumFraction,
-    const std::vector<double>& p_pos,
-    const std::vector<double>& lambda1itt,
-    const std::vector<double>& lambda2itt,
-    const std::vector<double>& lambda1pos,
-    const std::vector<double>& lambda2pos,
-    const std::vector<double>& gamma1itt,
-    const std::vector<double>& gamma2itt,
-    const std::vector<double>& gamma1pos,
-    const std::vector<double>& gamma2pos,
-    const int n,
-    const double followupTime,
-    const bool fixedFollowup,
-    const double rho1,
-    const double rho2,
-    const std::vector<int>& plannedEvents,
-    const std::vector<double>& plannedTime,
-    const int maxNumberOfIterations,
-    const int maxNumberOfRawDatasetsPerStage,
-    const int seed)
-{
-  if (kMax < 1) throw std::invalid_argument("kMax must be a positive integer");
+    const int kMax, const int kMaxitt, const double hazardRatioH0itt,
+    const double hazardRatioH0pos, const double hazardRatioH0neg,
+    const int allocation1, const int allocation2,
+    const std::vector<double> &accrualTime,
+    const std::vector<double> &accrualIntensity,
+    const std::vector<double> &piecewiseSurvivalTime,
+    const std::vector<double> &stratumFraction,
+    const std::vector<double> &p_pos, const std::vector<double> &lambda1itt,
+    const std::vector<double> &lambda2itt,
+    const std::vector<double> &lambda1pos,
+    const std::vector<double> &lambda2pos, const std::vector<double> &gamma1itt,
+    const std::vector<double> &gamma2itt, const std::vector<double> &gamma1pos,
+    const std::vector<double> &gamma2pos, const int n,
+    const double followupTime, const bool fixedFollowup, const double rho1,
+    const double rho2, const std::vector<int> &plannedEvents,
+    const std::vector<double> &plannedTime, const int maxNumberOfIterations,
+    const int maxNumberOfRawDatasetsPerStage, const int seed) {
+
+  if (kMax < 1)
+    throw std::invalid_argument("kMax must be a positive integer");
   size_t K = static_cast<size_t>(kMax);
 
   int kMaxittx = kMaxitt;
-  if (kMaxittx < 0) kMaxittx = kMax;
+  if (kMaxittx < 0)
+    kMaxittx = kMax;
   if (kMaxittx > kMax)
     throw std::invalid_argument("kMaxitt must be less than or equal to kMax");
   size_t Kitt = static_cast<size_t>(kMaxittx);
@@ -4130,13 +4434,14 @@ ListCpp lrsimsubcpp(
       throw std::invalid_argument("Invalid length for plannedEvents");
     if (Kitt > 1) {
       for (size_t i = 1; i < Kitt; ++i) {
-        if (plannedEvents[i] <= plannedEvents[i-1])
-          throw std::invalid_argument("plannedEvents for ITT must be increasing");
+        if (plannedEvents[i] <= plannedEvents[i - 1])
+          throw std::invalid_argument(
+              "plannedEvents for ITT must be increasing");
       }
     }
     if (K - Kitt > 1) {
       for (size_t i = Kitt + 1; i < plannedEvents.size(); ++i) {
-        if (plannedEvents[i] <= plannedEvents[i-1])
+        if (plannedEvents[i] <= plannedEvents[i - 1])
           throw std::invalid_argument(
               "plannedEvents for biomarker+ must be increasing");
       }
@@ -4150,7 +4455,8 @@ ListCpp lrsimsubcpp(
     if (any_nonincreasing(plannedTime))
       throw std::invalid_argument("plannedTime must be increasing");
   } else {
-    throw std::invalid_argument("Either plannedEvents or plannedTime must be given");
+    throw std::invalid_argument(
+        "Either plannedEvents or plannedTime must be given");
   }
 
   if (hazardRatioH0itt <= 0.0)
@@ -4170,61 +4476,82 @@ ListCpp lrsimsubcpp(
   if (accrualIntensity.size() != accrualTime.size())
     throw std::invalid_argument("Invalid length for accrualIntensity");
   for (double v : accrualIntensity) {
-    if (v < 0.0) throw std::invalid_argument("accrualIntensity must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("accrualIntensity must be non-negative");
   }
   if (piecewiseSurvivalTime[0] != 0.0)
     throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
   if (any_nonincreasing(piecewiseSurvivalTime))
     throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
   for (double v : stratumFraction) {
-    if (v <= 0.0) throw std::invalid_argument("stratumFraction must be positive");
+    if (v <= 0.0)
+      throw std::invalid_argument("stratumFraction must be positive");
   }
-  double sumf = std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
+  double sumf =
+      std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
   if (std::fabs(sumf - 1.0) > 1e-12)
     throw std::invalid_argument("stratumFraction must sum to 1");
-  if (!none_na(p_pos)) throw std::invalid_argument("p_pos must be provided");
+  if (!none_na(p_pos))
+    throw std::invalid_argument("p_pos must be provided");
   for (double v : p_pos) {
     if (!(v > 0.0 && v < 1.0))
       throw std::invalid_argument("p_pos must lie between 0 and 1");
   }
-  if (!none_na(lambda1itt)) throw std::invalid_argument("lambda1itt must be provided");
-  if (!none_na(lambda2itt)) throw std::invalid_argument("lambda2itt must be provided");
-  if (!none_na(lambda1pos)) throw std::invalid_argument("lambda1pos must be provided");
-  if (!none_na(lambda2pos)) throw std::invalid_argument("lambda2pos must be provided");
+  if (!none_na(lambda1itt))
+    throw std::invalid_argument("lambda1itt must be provided");
+  if (!none_na(lambda2itt))
+    throw std::invalid_argument("lambda2itt must be provided");
+  if (!none_na(lambda1pos))
+    throw std::invalid_argument("lambda1pos must be provided");
+  if (!none_na(lambda2pos))
+    throw std::invalid_argument("lambda2pos must be provided");
   for (double v : lambda1itt) {
-    if (v < 0.0) throw std::invalid_argument("lambda1itt must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda1itt must be non-negative");
   }
   for (double v : lambda2itt) {
-    if (v < 0.0) throw std::invalid_argument("lambda2itt must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda2itt must be non-negative");
   }
   for (double v : lambda1pos) {
-    if (v < 0.0) throw std::invalid_argument("lambda1pos must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda1pos must be non-negative");
   }
   for (double v : lambda2pos) {
-    if (v < 0.0) throw std::invalid_argument("lambda2pos must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda2pos must be non-negative");
   }
   for (double v : gamma1itt) {
-    if (v < 0.0) throw std::invalid_argument("gamma1itt must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma1itt must be non-negative");
   }
   for (double v : gamma2itt) {
-    if (v < 0.0) throw std::invalid_argument("gamma2itt must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma2itt must be non-negative");
   }
   for (double v : gamma1pos) {
-    if (v < 0.0) throw std::invalid_argument("gamma1pos must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma1pos must be non-negative");
   }
   for (double v : gamma2pos) {
-    if (v < 0.0) throw std::invalid_argument("gamma2pos must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma2pos must be non-negative");
   }
-  if (n == INT_MIN) throw std::invalid_argument("n must be provided");
-  if (n <= 0) throw std::invalid_argument("n must be positive");
+  if (n == INT_MIN)
+    throw std::invalid_argument("n must be provided");
+  if (n <= 0)
+    throw std::invalid_argument("n must be positive");
   if (fixedFollowup && std::isnan(followupTime))
-    throw std::invalid_argument("followupTime must be provided for fixed follow-up");
+    throw std::invalid_argument(
+        "followupTime must be provided for fixed follow-up");
   if (fixedFollowup && followupTime <= 0.0)
-    throw std::invalid_argument("followupTime must be positive for fixed follow-up");
+    throw std::invalid_argument(
+        "followupTime must be positive for fixed follow-up");
   if (rho1 < 0.0 || rho2 < 0.0)
     throw std::invalid_argument("rho parameters must be non-negative");
   if (maxNumberOfIterations < 1)
-    throw std::invalid_argument("maxNumberOfIterations must be a positive integer");
+    throw std::invalid_argument(
+        "maxNumberOfIterations must be a positive integer");
   if (maxNumberOfRawDatasetsPerStage < 0)
     throw std::invalid_argument(
         "maxNumberOfRawDatasetsPerStage must be a non-negative integer");
@@ -4238,19 +4565,23 @@ ListCpp lrsimsubcpp(
   size_t nstrata = stratumFraction.size();
   size_t nintv = piecewiseSurvivalTime.size();
   size_t nintv2 = (nintv == 1 ? 10u : nintv + 10u);
-  const std::vector<double>& tau = piecewiseSurvivalTime;
+  const std::vector<double> &tau = piecewiseSurvivalTime;
   const double fu = followupTime;
 
   std::vector<double> p_posv = expand1(p_pos, nstrata, "p_pos");
 
-  auto lambda1ittx = expand_stratified(lambda1itt, nstrata, nintv, "lambda1itt");
-  auto lambda2ittx = expand_stratified(lambda2itt, nstrata, nintv, "lambda2itt");
-  auto lambda1posx = expand_stratified(lambda1pos, nstrata, nintv, "lambda1pos");
-  auto lambda2posx = expand_stratified(lambda2pos, nstrata, nintv, "lambda2pos");
-  auto gamma1ittx  = expand_stratified(gamma1itt,  nstrata, nintv, "gamma1itt");
-  auto gamma2ittx  = expand_stratified(gamma2itt,  nstrata, nintv, "gamma2itt");
-  auto gamma1posx  = expand_stratified(gamma1pos,  nstrata, nintv, "gamma1pos");
-  auto gamma2posx  = expand_stratified(gamma2pos,  nstrata, nintv, "gamma2pos");
+  auto lambda1ittx =
+      expand_stratified(lambda1itt, nstrata, nintv, "lambda1itt");
+  auto lambda2ittx =
+      expand_stratified(lambda2itt, nstrata, nintv, "lambda2itt");
+  auto lambda1posx =
+      expand_stratified(lambda1pos, nstrata, nintv, "lambda1pos");
+  auto lambda2posx =
+      expand_stratified(lambda2pos, nstrata, nintv, "lambda2pos");
+  auto gamma1ittx = expand_stratified(gamma1itt, nstrata, nintv, "gamma1itt");
+  auto gamma2ittx = expand_stratified(gamma2itt, nstrata, nintv, "gamma2itt");
+  auto gamma1posx = expand_stratified(gamma1pos, nstrata, nintv, "gamma1pos");
+  auto gamma2posx = expand_stratified(gamma2pos, nstrata, nintv, "gamma2pos");
 
   // compute subpopulation hazards via hazard_subcpp (main thread)
   FlatMatrix tau1posy(nintv2, nstrata);
@@ -4313,8 +4644,8 @@ ListCpp lrsimsubcpp(
   // prepare per-iteration seed vector
   std::vector<uint64_t> seeds(maxIters);
   boost::random::mt19937_64 master_rng(static_cast<uint64_t>(seed));
-  for (size_t iter = 0; iter < maxIters; ++iter) seeds[iter] = master_rng();
-
+  for (size_t iter = 0; iter < maxIters; ++iter)
+    seeds[iter] = master_rng();
 
   // One summary (stage-level) row produced by an iteration
   struct StageSummaryRow {
@@ -4345,7 +4676,9 @@ ListCpp lrsimsubcpp(
   struct IterationResult {
     std::vector<StageSummaryRow> summaryRows;
     std::vector<RawDatasetRow> rawRows;
-    void reserveForSummary(size_t approxRows) { summaryRows.reserve(approxRows); }
+    void reserveForSummary(size_t approxRows) {
+      summaryRows.reserve(approxRows);
+    }
     void reserveForRaw(size_t approxRows) { rawRows.reserve(approxRows); }
   };
 
@@ -4362,136 +4695,88 @@ ListCpp lrsimsubcpp(
     const double hazardRatioH0neg;
     const int allocation1;
     const int allocation2;
-    const std::vector<double>& accrualTime;
-    const std::vector<double>& accrualIntensity;
-    const std::vector<double>& tau;
-    const std::vector<double>& stratumFraction;
-    const std::vector<double>& p_posv;
-    const FlatMatrix& lambda1ittx;
-    const FlatMatrix& lambda2ittx;
-    const FlatMatrix& lambda1posx;
-    const FlatMatrix& lambda2posx;
-    const FlatMatrix& gamma1ittx;
-    const FlatMatrix& gamma2ittx;
-    const FlatMatrix& gamma1posx;
-    const FlatMatrix& gamma2posx;
-    const FlatMatrix& tau1posy;
-    const FlatMatrix& tau2posy;
-    const FlatMatrix& tau1negy;
-    const FlatMatrix& tau2negy;
-    const FlatMatrix& lambda1posy;
-    const FlatMatrix& lambda2posy;
-    const FlatMatrix& lambda1negy;
-    const FlatMatrix& lambda2negy;
-    const FlatMatrix& gamma1posy;
-    const FlatMatrix& gamma2posy;
-    const FlatMatrix& gamma1negy;
-    const FlatMatrix& gamma2negy;
+    const std::vector<double> &accrualTime;
+    const std::vector<double> &accrualIntensity;
+    const std::vector<double> &tau;
+    const std::vector<double> &stratumFraction;
+    const std::vector<double> &p_posv;
+    const FlatMatrix &lambda1ittx;
+    const FlatMatrix &lambda2ittx;
+    const FlatMatrix &lambda1posx;
+    const FlatMatrix &lambda2posx;
+    const FlatMatrix &gamma1ittx;
+    const FlatMatrix &gamma2ittx;
+    const FlatMatrix &gamma1posx;
+    const FlatMatrix &gamma2posx;
+    const FlatMatrix &tau1posy;
+    const FlatMatrix &tau2posy;
+    const FlatMatrix &tau1negy;
+    const FlatMatrix &tau2negy;
+    const FlatMatrix &lambda1posy;
+    const FlatMatrix &lambda2posy;
+    const FlatMatrix &lambda1negy;
+    const FlatMatrix &lambda2negy;
+    const FlatMatrix &gamma1posy;
+    const FlatMatrix &gamma2posy;
+    const FlatMatrix &gamma1negy;
+    const FlatMatrix &gamma2negy;
 
     const size_t N;
     const double fu;
     const bool fixedFollowup;
     const double rho1;
     const double rho2;
-    const std::vector<int>& plannedEvents;
-    const std::vector<double>& plannedTime;
+    const std::vector<int> &plannedEvents;
+    const std::vector<double> &plannedTime;
     const size_t maxRawIters;
-    const std::vector<uint64_t>& seeds;
+    const std::vector<uint64_t> &seeds;
     const bool useEvents;
     const size_t nstrata;
 
-    std::vector<IterationResult>* results;
+    std::vector<IterationResult> *results;
 
-    SimWorker(
-      size_t K_,
-      size_t Kitt_,
-      double hazardRatioH0itt_,
-      double hazardRatioH0pos_,
-      double hazardRatioH0neg_,
-      int allocation1_,
-      int allocation2_,
-      const std::vector<double>& accrualTime_,
-      const std::vector<double>& accrualIntensity_,
-      const std::vector<double>& tau_,
-      const std::vector<double>& stratumFraction_,
-      const std::vector<double>& p_posv_,
-      const FlatMatrix& lambda1ittx_,
-      const FlatMatrix& lambda2ittx_,
-      const FlatMatrix& lambda1posx_,
-      const FlatMatrix& lambda2posx_,
-      const FlatMatrix& gamma1ittx_,
-      const FlatMatrix& gamma2ittx_,
-      const FlatMatrix& gamma1posx_,
-      const FlatMatrix& gamma2posx_,
-      const FlatMatrix& tau1posy_,
-      const FlatMatrix& tau2posy_,
-      const FlatMatrix& tau1negy_,
-      const FlatMatrix& tau2negy_,
-      const FlatMatrix& lambda1posy_,
-      const FlatMatrix& lambda2posy_,
-      const FlatMatrix& lambda1negy_,
-      const FlatMatrix& lambda2negy_,
-      const FlatMatrix& gamma1posy_,
-      const FlatMatrix& gamma2posy_,
-      const FlatMatrix& gamma1negy_,
-      const FlatMatrix& gamma2negy_,
-      size_t N_,
-      double fu_,
-      bool fixedFollowup_,
-      double rho1_,
-      double rho2_,
-      const std::vector<int>& plannedEvents_,
-      const std::vector<double>& plannedTime_,
-      size_t maxRawIters_,
-      const std::vector<uint64_t>& seeds_,
-      bool useEvents_,
-      size_t nstrata_,
-      std::vector<IterationResult>* results_)
-      : K(K_),
-        Kitt(Kitt_),
-        hazardRatioH0itt(hazardRatioH0itt_),
-        hazardRatioH0pos(hazardRatioH0pos_),
-        hazardRatioH0neg(hazardRatioH0neg_),
-        allocation1(allocation1_),
-        allocation2(allocation2_),
-        accrualTime(accrualTime_),
-        accrualIntensity(accrualIntensity_),
-        tau(tau_),
-        stratumFraction(stratumFraction_),
-        p_posv(p_posv_),
-        lambda1ittx(lambda1ittx_),
-        lambda2ittx(lambda2ittx_),
-        lambda1posx(lambda1posx_),
-        lambda2posx(lambda2posx_),
-        gamma1ittx(gamma1ittx_),
-        gamma2ittx(gamma2ittx_),
-        gamma1posx(gamma1posx_),
-        gamma2posx(gamma2posx_),
-        tau1posy(tau1posy_),
-        tau2posy(tau2posy_),
-        tau1negy(tau1negy_),
-        tau2negy(tau2negy_),
-        lambda1posy(lambda1posy_),
-        lambda2posy(lambda2posy_),
-        lambda1negy(lambda1negy_),
-        lambda2negy(lambda2negy_),
-        gamma1posy(gamma1posy_),
-        gamma2posy(gamma2posy_),
-        gamma1negy(gamma1negy_),
-        gamma2negy(gamma2negy_),
-        N(N_),
-        fu(fu_),
-        fixedFollowup(fixedFollowup_),
-        rho1(rho1_),
-        rho2(rho2_),
-        plannedEvents(plannedEvents_),
-        plannedTime(plannedTime_),
-        maxRawIters(maxRawIters_),
-        seeds(seeds_),
-        useEvents(useEvents_),
-        nstrata(nstrata_),
-        results(results_)
-    {}
+    SimWorker(size_t K_, size_t Kitt_, double hazardRatioH0itt_,
+              double hazardRatioH0pos_, double hazardRatioH0neg_,
+              int allocation1_, int allocation2_,
+              const std::vector<double> &accrualTime_,
+              const std::vector<double> &accrualIntensity_,
+              const std::vector<double> &tau_,
+              const std::vector<double> &stratumFraction_,
+              const std::vector<double> &p_posv_,
+              const FlatMatrix &lambda1ittx_, const FlatMatrix &lambda2ittx_,
+              const FlatMatrix &lambda1posx_, const FlatMatrix &lambda2posx_,
+              const FlatMatrix &gamma1ittx_, const FlatMatrix &gamma2ittx_,
+              const FlatMatrix &gamma1posx_, const FlatMatrix &gamma2posx_,
+              const FlatMatrix &tau1posy_, const FlatMatrix &tau2posy_,
+              const FlatMatrix &tau1negy_, const FlatMatrix &tau2negy_,
+              const FlatMatrix &lambda1posy_, const FlatMatrix &lambda2posy_,
+              const FlatMatrix &lambda1negy_, const FlatMatrix &lambda2negy_,
+              const FlatMatrix &gamma1posy_, const FlatMatrix &gamma2posy_,
+              const FlatMatrix &gamma1negy_, const FlatMatrix &gamma2negy_,
+              size_t N_, double fu_, bool fixedFollowup_, double rho1_,
+              double rho2_, const std::vector<int> &plannedEvents_,
+              const std::vector<double> &plannedTime_, size_t maxRawIters_,
+              const std::vector<uint64_t> &seeds_, bool useEvents_,
+              size_t nstrata_, std::vector<IterationResult> *results_)
+        : K(K_), Kitt(Kitt_), hazardRatioH0itt(hazardRatioH0itt_),
+          hazardRatioH0pos(hazardRatioH0pos_),
+          hazardRatioH0neg(hazardRatioH0neg_), allocation1(allocation1_),
+          allocation2(allocation2_), accrualTime(accrualTime_),
+          accrualIntensity(accrualIntensity_), tau(tau_),
+          stratumFraction(stratumFraction_), p_posv(p_posv_),
+          lambda1ittx(lambda1ittx_), lambda2ittx(lambda2ittx_),
+          lambda1posx(lambda1posx_), lambda2posx(lambda2posx_),
+          gamma1ittx(gamma1ittx_), gamma2ittx(gamma2ittx_),
+          gamma1posx(gamma1posx_), gamma2posx(gamma2posx_), tau1posy(tau1posy_),
+          tau2posy(tau2posy_), tau1negy(tau1negy_), tau2negy(tau2negy_),
+          lambda1posy(lambda1posy_), lambda2posy(lambda2posy_),
+          lambda1negy(lambda1negy_), lambda2negy(lambda2negy_),
+          gamma1posy(gamma1posy_), gamma2posy(gamma2posy_),
+          gamma1negy(gamma1negy_), gamma2negy(gamma2negy_), N(N_), fu(fu_),
+          fixedFollowup(fixedFollowup_), rho1(rho1_), rho2(rho2_),
+          plannedEvents(plannedEvents_), plannedTime(plannedTime_),
+          maxRawIters(maxRawIters_), seeds(seeds_), useEvents(useEvents_),
+          nstrata(nstrata_), results(results_) {}
 
     void operator()(std::size_t begin, std::size_t end) {
       // local buffers
@@ -4504,25 +4789,33 @@ ListCpp lrsimsubcpp(
       std::vector<int> n1(nstrata), n2(nstrata);
       std::vector<double> km(nstrata);
       std::vector<double> cumF(nstrata);
-      std::partial_sum(stratumFraction.begin(), stratumFraction.end(), cumF.begin());
+      std::partial_sum(stratumFraction.begin(), stratumFraction.end(),
+                       cumF.begin());
 
       std::vector<double> analysisT(K);
-      std::vector<double> analysisT1; analysisT1.reserve(Kitt);
-      std::vector<double> analysisT2; analysisT2.reserve(K - Kitt);
-      std::vector<double> totalte; totalte.reserve(N);
-      std::vector<double> totaltepos; totaltepos.reserve(N);
-      std::vector<size_t> set; set.reserve(N);
-      std::vector<size_t> sub; sub.reserve(N);
+      std::vector<double> analysisT1;
+      analysisT1.reserve(Kitt);
+      std::vector<double> analysisT2;
+      analysisT2.reserve(K - Kitt);
+      std::vector<double> totalte;
+      totalte.reserve(N);
+      std::vector<double> totaltepos;
+      totaltepos.reserve(N);
+      std::vector<size_t> set;
+      set.reserve(N);
+      std::vector<size_t> sub;
+      sub.reserve(N);
 
       for (size_t iter = begin; iter < end; ++iter) {
         // per-iteration RNG
         boost::random::mt19937_64 rng_local(seeds[iter]);
         boost::random::uniform_real_distribution<double> unif(0.0, 1.0);
 
-        IterationResult& out = (*results)[iter];
+        IterationResult &out = (*results)[iter];
         out.summaryRows.clear();
         out.rawRows.clear();
-        if (iter < maxRawIters) out.reserveForRaw(K * N);
+        if (iter < maxRawIters)
+          out.reserveForRaw(K * N);
         out.reserveForSummary(K * 3);
 
         // reset block randomization
@@ -4549,9 +4842,17 @@ ListCpp lrsimsubcpp(
           u = unif(rng_local);
           double denom = static_cast<double>(b1[j] + b2[j]);
           double p = static_cast<double>(b1[j]) / denom;
-          if (u <= p) { trtGrp[i] = 1; --b1[j]; }
-          else { trtGrp[i] = 2; --b2[j]; }
-          if (b1[j] + b2[j] == 0) { b1[j] = allocation1; b2[j] = allocation2; }
+          if (u <= p) {
+            trtGrp[i] = 1;
+            --b1[j];
+          } else {
+            trtGrp[i] = 2;
+            --b2[j];
+          }
+          if (b1[j] + b2[j] == 0) {
+            b1[j] = allocation1;
+            b2[j] = allocation2;
+          }
 
           auto tau1pos = flatmatrix_get_column_view(tau1posy, j);
           auto tau2pos = flatmatrix_get_column_view(tau2posy, j);
@@ -4569,38 +4870,56 @@ ListCpp lrsimsubcpp(
           // survival time
           u = unif(rng_local);
           if (marker[i]) {
-            if (trtGrp[i] == 1) survivalT[i] = qtpwexpcpp1(u, tau1pos, lam1pos);
-            else survivalT[i] = qtpwexpcpp1(u, tau2pos, lam2pos);
+            if (trtGrp[i] == 1)
+              survivalT[i] = qtpwexpcpp1(u, tau1pos, lam1pos);
+            else
+              survivalT[i] = qtpwexpcpp1(u, tau2pos, lam2pos);
           } else {
-            if (trtGrp[i] == 1) survivalT[i] = qtpwexpcpp1(u, tau1neg, lam1neg);
-            else survivalT[i] = qtpwexpcpp1(u, tau2neg, lam2neg);
+            if (trtGrp[i] == 1)
+              survivalT[i] = qtpwexpcpp1(u, tau1neg, lam1neg);
+            else
+              survivalT[i] = qtpwexpcpp1(u, tau2neg, lam2neg);
           }
 
           // dropout time
           u = unif(rng_local);
           if (marker[i]) {
-            if (trtGrp[i] == 1) dropoutT[i] = qtpwexpcpp1(u, tau1pos, gam1pos);
-            else dropoutT[i] = qtpwexpcpp1(u, tau2pos, gam2pos);
+            if (trtGrp[i] == 1)
+              dropoutT[i] = qtpwexpcpp1(u, tau1pos, gam1pos);
+            else
+              dropoutT[i] = qtpwexpcpp1(u, tau2pos, gam2pos);
           } else {
-            if (trtGrp[i] == 1) dropoutT[i] = qtpwexpcpp1(u, tau1neg, gam1neg);
-            else dropoutT[i] = qtpwexpcpp1(u, tau2neg, gam2neg);
+            if (trtGrp[i] == 1)
+              dropoutT[i] = qtpwexpcpp1(u, tau1neg, gam1neg);
+            else
+              dropoutT[i] = qtpwexpcpp1(u, tau2neg, gam2neg);
           }
 
           // observed time and event
           double sv = survivalT[i], dr = dropoutT[i];
           if (fixedFollowup) {
             if (sv <= dr && sv <= fu) {
-              timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+              timeObs[i] = sv;
+              event[i] = 1;
+              dropEv[i] = 0;
             } else if (dr <= sv && dr <= fu) {
-              timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+              timeObs[i] = dr;
+              event[i] = 0;
+              dropEv[i] = 1;
             } else {
-              timeObs[i] = fu; event[i] = 0; dropEv[i] = 0;
+              timeObs[i] = fu;
+              event[i] = 0;
+              dropEv[i] = 0;
             }
           } else {
             if (sv <= dr) {
-              timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+              timeObs[i] = sv;
+              event[i] = 1;
+              dropEv[i] = 0;
             } else {
-              timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+              timeObs[i] = dr;
+              event[i] = 0;
+              dropEv[i] = 1;
             }
           }
           totalT[i] = arrivalT[i] + timeObs[i];
@@ -4611,20 +4930,23 @@ ListCpp lrsimsubcpp(
         bool ev1NotAch = false, ev2NotAch = false;
 
         if (useEvents) {
-          totalte.clear(); totaltepos.clear();
+          totalte.clear();
+          totaltepos.clear();
           int nevents = 0, neventspos = 0;
           for (size_t i = 0; i < N; ++i) {
             if (event[i]) {
-              ++nevents; totalte.push_back(totalT[i]);
+              ++nevents;
+              totalte.push_back(totalT[i]);
             }
             if (event[i] && marker[i]) {
-              ++neventspos; totaltepos.push_back(totalT[i]);
+              ++neventspos;
+              totaltepos.push_back(totalT[i]);
             }
           }
           if (nevents == 0 || neventspos == 0) {
             thread_utils::push_thread_warning(
-              std::string("No events for iteration ") + std::to_string(iter+1) +
-                " skipping this iteration.");
+                std::string("No events for iteration ") +
+                std::to_string(iter + 1) + " skipping this iteration.");
             out.summaryRows.clear();
             out.rawRows.clear();
             continue;
@@ -4637,7 +4959,8 @@ ListCpp lrsimsubcpp(
           size_t j1 = 0;
           if (Kitt > 0) {
             for (j1 = 0; j1 < Kitt; ++j1) {
-              if (plannedEvents[j1] >= nevents) break;
+              if (plannedEvents[j1] >= nevents)
+                break;
             }
             if (j1 == Kitt) {
               for (size_t k = 0; k < Kitt; ++k) {
@@ -4656,15 +4979,18 @@ ListCpp lrsimsubcpp(
           size_t j2 = 0;
           if (K > Kitt) {
             for (j2 = 0; j2 < (K - Kitt); ++j2) {
-              if (plannedEvents[Kitt + j2] >= neventspos) break;
+              if (plannedEvents[Kitt + j2] >= neventspos)
+                break;
             }
             if (j2 == (K - Kitt)) {
               for (size_t k = 0; k < (K - Kitt); ++k) {
-                analysisT2.push_back(totaltepos[plannedEvents[Kitt + k] - 1] + 1e-12);
+                analysisT2.push_back(totaltepos[plannedEvents[Kitt + k] - 1] +
+                                     1e-12);
               }
             } else {
               for (size_t k = 0; k < j2; ++k) {
-                analysisT2.push_back(totaltepos[plannedEvents[Kitt + k] - 1] + 1e-12);
+                analysisT2.push_back(totaltepos[plannedEvents[Kitt + k] - 1] +
+                                     1e-12);
               }
               analysisT2.push_back(totaltepos.back() + 1e-12);
             }
@@ -4673,34 +4999,40 @@ ListCpp lrsimsubcpp(
           // combine
           if (Kitt == 0) {
             nstages = analysisT2.size();
-            for (size_t k = 0; k < nstages; ++k) analysisT[k] = analysisT2[k];
+            for (size_t k = 0; k < nstages; ++k)
+              analysisT[k] = analysisT2[k];
           } else if (K == Kitt) {
             nstages = analysisT1.size();
-            for (size_t k = 0; k < nstages; ++k) analysisT[k] = analysisT1[k];
+            for (size_t k = 0; k < nstages; ++k)
+              analysisT[k] = analysisT1[k];
           } else {
             if (analysisT2.back() > analysisT1.back()) {
-              // NOTE: In this case, the observed number of ITT events must exceed
-              // the planned number of ITT events at look Kitt, because otherwise
-              // the last ITT event would be observed at analysisTime1.back().
-              // However, since the last biomarker+ event occurred on or after
-              // analysisTime2.back() > analysisTime1.back(), this is a
-              // contradiction as biomarker+ event is part of ITT event.
-              // It follows that analysisTime1.size() == Kitt in this case.
+              // NOTE: In this case, the observed number of ITT events must
+              // exceed the planned number of ITT events at look Kitt, because
+              // otherwise the last ITT event would be observed at
+              // analysisTime1.back(). However, since the last biomarker+ event
+              // occurred on or after analysisTime2.back() >
+              // analysisTime1.back(), this is a contradiction as biomarker+
+              // event is part of ITT event. It follows that
+              // analysisTime1.size() == Kitt in this case.
 
               // find first biomarker+ look after last ITT look
               size_t l = findInterval1(analysisT1.back(), analysisT2);
               nstages = Kitt + (analysisT2.size() - l);
               std::copy_n(analysisT1.begin(), Kitt, analysisT.begin());
               size_t count = analysisT2.size() - l;
-              std::copy_n(analysisT2.begin() + l, count, analysisT.begin() + Kitt);
+              std::copy_n(analysisT2.begin() + l, count,
+                          analysisT.begin() + Kitt);
             } else {
               nstages = analysisT1.size();
               std::copy_n(analysisT1.begin(), nstages, analysisT.begin());
             }
           }
 
-          if (Kitt > 0 && nevents < plannedEvents[Kitt - 1]) ev1NotAch = true;
-          if (Kitt < K && neventspos < plannedEvents[K - 1]) ev2NotAch = true;
+          if (Kitt > 0 && nevents < plannedEvents[Kitt - 1])
+            ev1NotAch = true;
+          if (Kitt < K && neventspos < plannedEvents[K - 1])
+            ev2NotAch = true;
         } else {
           nstages = K;
           std::copy_n(plannedTime.begin(), K, analysisT.begin());
@@ -4713,25 +5045,42 @@ ListCpp lrsimsubcpp(
           for (size_t i = 0; i < N; ++i) {
             double ar = arrivalT[i], sv = survivalT[i], dr = dropoutT[i];
             if (ar > time) {
-              timeObs[i] = time - ar; event[i] = 0; dropEv[i] = 0; continue;
+              timeObs[i] = time - ar;
+              event[i] = 0;
+              dropEv[i] = 0;
+              continue;
             }
             if (fixedFollowup) {
               if (ar + sv <= time && sv <= dr && sv <= fu) {
-                timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+                timeObs[i] = sv;
+                event[i] = 1;
+                dropEv[i] = 0;
               } else if (ar + dr <= time && dr <= sv && dr <= fu) {
-                timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+                timeObs[i] = dr;
+                event[i] = 0;
+                dropEv[i] = 1;
               } else if (ar + fu <= time && fu <= sv && fu <= dr) {
-                timeObs[i] = fu; event[i] = 0; dropEv[i] = 0;
+                timeObs[i] = fu;
+                event[i] = 0;
+                dropEv[i] = 0;
               } else {
-                timeObs[i] = time - ar; event[i] = 0; dropEv[i] = 0;
+                timeObs[i] = time - ar;
+                event[i] = 0;
+                dropEv[i] = 0;
               }
             } else {
               if (ar + sv <= time && sv <= dr) {
-                timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+                timeObs[i] = sv;
+                event[i] = 1;
+                dropEv[i] = 0;
               } else if (ar + dr <= time && dr <= sv) {
-                timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+                timeObs[i] = dr;
+                event[i] = 0;
+                dropEv[i] = 1;
               } else {
-                timeObs[i] = time - ar; event[i] = 0; dropEv[i] = 0;
+                timeObs[i] = time - ar;
+                event[i] = 0;
+                dropEv[i] = 0;
               }
             }
           } // censoring loop
@@ -4740,7 +5089,8 @@ ListCpp lrsimsubcpp(
           if (iter < maxRawIters) {
             for (size_t i = 0; i < N; ++i) {
               // skip subjects who haven't been enrolled by analysis time
-              if (arrivalT[i] > time) continue;
+              if (arrivalT[i] > time)
+                continue;
               RawDatasetRow rr;
               rr.iterNum = static_cast<int>(iter + 1);
               rr.stageNum = static_cast<int>(k + 1);
@@ -4765,13 +5115,20 @@ ListCpp lrsimsubcpp(
             set.clear();
             if (pop == 1) {
               hazardRatioH0 = hazardRatioH0itt;
-              for (size_t i = 0; i < N; ++i) set.push_back(i);
+              for (size_t i = 0; i < N; ++i)
+                set.push_back(i);
             } else if (pop == 2) {
               hazardRatioH0 = hazardRatioH0pos;
-              for (size_t i = 0; i < N; ++i) if (marker[i]) set.push_back(i);
+              for (size_t i = 0; i < N; ++i) {
+                if (marker[i])
+                  set.push_back(i);
+              }
             } else {
               hazardRatioH0 = hazardRatioH0neg;
-              for (size_t i = 0; i < N; ++i) if (!marker[i]) set.push_back(i);
+              for (size_t i = 0; i < N; ++i) {
+                if (!marker[i])
+                  set.push_back(i);
+              }
             }
 
             // reset risk sets per stratum
@@ -4781,14 +5138,21 @@ ListCpp lrsimsubcpp(
 
             for (size_t i = 0; i < set.size(); ++i) {
               size_t idx = set[i];
-              if (arrivalT[idx] > time) continue;
+              if (arrivalT[idx] > time)
+                continue;
               size_t h = static_cast<size_t>(stratum[idx] - 1);
               if (trtGrp[idx] == 1) {
                 ++n1[h];
-                if (event[idx]) ++events1; else if (dropEv[idx]) ++dropouts1;
+                if (event[idx])
+                  ++events1;
+                else if (dropEv[idx])
+                  ++dropouts1;
               } else {
                 ++n2[h];
-                if (event[idx]) ++events2; else if (dropEv[idx]) ++dropouts2;
+                if (event[idx])
+                  ++events2;
+                else if (dropEv[idx])
+                  ++dropouts2;
               }
             }
 
@@ -4802,7 +5166,8 @@ ListCpp lrsimsubcpp(
             sub.clear();
             for (size_t i = 0; i < set.size(); ++i) {
               size_t idx = set[i];
-              if (timeObs[idx] > 0.0) sub.push_back(idx);
+              if (timeObs[idx] > 0.0)
+                sub.push_back(idx);
             }
             // sort by observed time ascending
             std::sort(sub.begin(), sub.end(), [&](size_t a, size_t b) {
@@ -4834,7 +5199,10 @@ ListCpp lrsimsubcpp(
               }
 
               // reduce risk set
-              if (trtGrp[idx] == 1) --n1[h]; else --n2[h];
+              if (trtGrp[idx] == 1)
+                --n1[h];
+              else
+                --n2[h];
             } // events loop
 
             double z = (vs > 0.0 ? us / std::sqrt(vs) : 0.0);
@@ -4867,20 +5235,15 @@ ListCpp lrsimsubcpp(
   }; // SimWorker
 
   // construct and run worker
-  SimWorker worker(
-      K, Kitt, hazardRatioH0itt, hazardRatioH0pos, hazardRatioH0neg,
-      allocation1, allocation2,
-      accrualTime, accrualIntensity, tau, stratumFraction, p_posv,
-      lambda1ittx, lambda2ittx, lambda1posx, lambda2posx,
-      gamma1ittx, gamma2ittx, gamma1posx, gamma2posx,
-      tau1posy, tau2posy, tau1negy, tau2negy,
-      lambda1posy, lambda2posy, lambda1negy, lambda2negy,
-      gamma1posy, gamma2posy, gamma1negy, gamma2negy,
-      N, fu, fixedFollowup, rho1, rho2,
-      plannedEvents, plannedTime,
-      maxRawIters, seeds, useEvents, nstrata,
-      &results
-  );
+  SimWorker worker(K, Kitt, hazardRatioH0itt, hazardRatioH0pos,
+                   hazardRatioH0neg, allocation1, allocation2, accrualTime,
+                   accrualIntensity, tau, stratumFraction, p_posv, lambda1ittx,
+                   lambda2ittx, lambda1posx, lambda2posx, gamma1ittx,
+                   gamma2ittx, gamma1posx, gamma2posx, tau1posy, tau2posy,
+                   tau1negy, tau2negy, lambda1posy, lambda2posy, lambda1negy,
+                   lambda2negy, gamma1posy, gamma2posy, gamma1negy, gamma2negy,
+                   N, fu, fixedFollowup, rho1, rho2, plannedEvents, plannedTime,
+                   maxRawIters, seeds, useEvents, nstrata, &results);
 
   RcppParallel::parallelFor(0, maxIters, worker);
 
@@ -4890,54 +5253,86 @@ ListCpp lrsimsubcpp(
     nsr += results[iter].summaryRows.size();
     nrr += results[iter].rawRows.size();
   }
-  if (nsr == 0) throw std::runtime_error(
-    "No iterations with observed events. Unable to produce output.");
+  if (nsr == 0)
+    throw std::runtime_error(
+        "No iterations with observed events. Unable to produce output.");
 
   // Prepare final containers
-  std::vector<int> sum_iterNum; sum_iterNum.reserve(nsr);
-  std::vector<unsigned char> sum_ev1NotAch; sum_ev1NotAch.reserve(nsr);
-  std::vector<unsigned char> sum_ev2NotAch; sum_ev2NotAch.reserve(nsr);
-  std::vector<int> sum_stageNum; sum_stageNum.reserve(nsr);
-  std::vector<double> sum_analysisT; sum_analysisT.reserve(nsr);
-  std::vector<std::string> sum_pop; sum_pop.reserve(nsr);
-  std::vector<int> sum_accruals1; sum_accruals1.reserve(nsr);
-  std::vector<int> sum_accruals2; sum_accruals2.reserve(nsr);
-  std::vector<int> sum_totAccruals; sum_totAccruals.reserve(nsr);
-  std::vector<int> sum_events1; sum_events1.reserve(nsr);
-  std::vector<int> sum_events2; sum_events2.reserve(nsr);
-  std::vector<int> sum_totEvents; sum_totEvents.reserve(nsr);
-  std::vector<int> sum_dropouts1; sum_dropouts1.reserve(nsr);
-  std::vector<int> sum_dropouts2; sum_dropouts2.reserve(nsr);
-  std::vector<int> sum_totDropouts; sum_totDropouts.reserve(nsr);
-  std::vector<double> sum_uscore; sum_uscore.reserve(nsr);
-  std::vector<double> sum_vscore; sum_vscore.reserve(nsr);
-  std::vector<double> sum_logRank; sum_logRank.reserve(nsr);
+  std::vector<int> sum_iterNum;
+  sum_iterNum.reserve(nsr);
+  std::vector<unsigned char> sum_ev1NotAch;
+  sum_ev1NotAch.reserve(nsr);
+  std::vector<unsigned char> sum_ev2NotAch;
+  sum_ev2NotAch.reserve(nsr);
+  std::vector<int> sum_stageNum;
+  sum_stageNum.reserve(nsr);
+  std::vector<double> sum_analysisT;
+  sum_analysisT.reserve(nsr);
+  std::vector<std::string> sum_pop;
+  sum_pop.reserve(nsr);
+  std::vector<int> sum_accruals1;
+  sum_accruals1.reserve(nsr);
+  std::vector<int> sum_accruals2;
+  sum_accruals2.reserve(nsr);
+  std::vector<int> sum_totAccruals;
+  sum_totAccruals.reserve(nsr);
+  std::vector<int> sum_events1;
+  sum_events1.reserve(nsr);
+  std::vector<int> sum_events2;
+  sum_events2.reserve(nsr);
+  std::vector<int> sum_totEvents;
+  sum_totEvents.reserve(nsr);
+  std::vector<int> sum_dropouts1;
+  sum_dropouts1.reserve(nsr);
+  std::vector<int> sum_dropouts2;
+  sum_dropouts2.reserve(nsr);
+  std::vector<int> sum_totDropouts;
+  sum_totDropouts.reserve(nsr);
+  std::vector<double> sum_uscore;
+  sum_uscore.reserve(nsr);
+  std::vector<double> sum_vscore;
+  sum_vscore.reserve(nsr);
+  std::vector<double> sum_logRank;
+  sum_logRank.reserve(nsr);
 
   // raw final containers
-  std::vector<int> raw_iterNum; raw_iterNum.reserve(nrr);
-  std::vector<int> raw_stageNum; raw_stageNum.reserve(nrr);
-  std::vector<double> raw_analysisT; raw_analysisT.reserve(nrr);
-  std::vector<int> raw_subjectId; raw_subjectId.reserve(nrr);
-  std::vector<double> raw_arrivalT; raw_arrivalT.reserve(nrr);
-  std::vector<int> raw_stratum; raw_stratum.reserve(nrr);
-  std::vector<unsigned char> raw_marker; raw_marker.reserve(nrr);
-  std::vector<int> raw_trtGrp; raw_trtGrp.reserve(nrr);
-  std::vector<double> raw_survivalT; raw_survivalT.reserve(nrr);
-  std::vector<double> raw_dropoutT; raw_dropoutT.reserve(nrr);
-  std::vector<double> raw_timeObs; raw_timeObs.reserve(nrr);
-  std::vector<unsigned char> raw_event; raw_event.reserve(nrr);
-  std::vector<unsigned char> raw_dropEv; raw_dropEv.reserve(nrr);
+  std::vector<int> raw_iterNum;
+  raw_iterNum.reserve(nrr);
+  std::vector<int> raw_stageNum;
+  raw_stageNum.reserve(nrr);
+  std::vector<double> raw_analysisT;
+  raw_analysisT.reserve(nrr);
+  std::vector<int> raw_subjectId;
+  raw_subjectId.reserve(nrr);
+  std::vector<double> raw_arrivalT;
+  raw_arrivalT.reserve(nrr);
+  std::vector<int> raw_stratum;
+  raw_stratum.reserve(nrr);
+  std::vector<unsigned char> raw_marker;
+  raw_marker.reserve(nrr);
+  std::vector<int> raw_trtGrp;
+  raw_trtGrp.reserve(nrr);
+  std::vector<double> raw_survivalT;
+  raw_survivalT.reserve(nrr);
+  std::vector<double> raw_dropoutT;
+  raw_dropoutT.reserve(nrr);
+  std::vector<double> raw_timeObs;
+  raw_timeObs.reserve(nrr);
+  std::vector<unsigned char> raw_event;
+  raw_event.reserve(nrr);
+  std::vector<unsigned char> raw_dropEv;
+  raw_dropEv.reserve(nrr);
 
   for (size_t iter = 0; iter < maxIters; ++iter) {
-    const auto& srows = results[iter].summaryRows;
-    for (const auto& r : srows) {
+    const auto &srows = results[iter].summaryRows;
+    for (const auto &r : srows) {
       sum_iterNum.push_back(r.iterNum);
       sum_ev1NotAch.push_back(r.ev1NotAch);
       sum_ev2NotAch.push_back(r.ev2NotAch);
       sum_stageNum.push_back(r.stageNum);
       sum_analysisT.push_back(r.analysisT);
-      sum_pop.push_back(r.pop == 1 ? "ITT" : (r.pop == 2 ? "Biomarker+" :
-                                                "Biomarker-"));
+      sum_pop.push_back(
+          r.pop == 1 ? "ITT" : (r.pop == 2 ? "Biomarker+" : "Biomarker-"));
       sum_accruals1.push_back(r.accruals1);
       sum_accruals2.push_back(r.accruals2);
       sum_totAccruals.push_back(r.totAccruals);
@@ -4953,8 +5348,8 @@ ListCpp lrsimsubcpp(
     }
 
     if (iter < maxRawIters) {
-      const auto& rraw = results[iter].rawRows;
-      for (const auto& rr : rraw) {
+      const auto &rraw = results[iter].rawRows;
+      for (const auto &rr : rraw) {
         raw_iterNum.push_back(rr.iterNum);
         raw_stageNum.push_back(rr.stageNum);
         raw_analysisT.push_back(rr.analysisT);
@@ -5017,39 +5412,30 @@ ListCpp lrsimsubcpp(
   return result;
 }
 
-
 // [[Rcpp::export]]
 Rcpp::List lrsimsubRcpp(
-    const int kMax = 1,
-    const int kMaxitt = 1,
-    const double hazardRatioH0itt = 1,
-    const double hazardRatioH0pos = 1,
-    const double hazardRatioH0neg = 1,
-    const int allocation1 = 1,
-    const int allocation2 = 1,
-    const Rcpp::NumericVector& accrualTime = 0,
-    const Rcpp::NumericVector& accrualIntensity = NA_REAL,
-    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
-    const Rcpp::NumericVector& stratumFraction = 1,
-    const Rcpp::NumericVector& p_pos = NA_REAL,
-    const Rcpp::NumericVector& lambda1itt = NA_REAL,
-    const Rcpp::NumericVector& lambda2itt = NA_REAL,
-    const Rcpp::NumericVector& lambda1pos = NA_REAL,
-    const Rcpp::NumericVector& lambda2pos = NA_REAL,
-    const Rcpp::NumericVector& gamma1itt = 0,
-    const Rcpp::NumericVector& gamma2itt = 0,
-    const Rcpp::NumericVector& gamma1pos = 0,
-    const Rcpp::NumericVector& gamma2pos = 0,
-    const int n = NA_INTEGER,
-    const double followupTime = NA_REAL,
-    const bool fixedFollowup = false,
-    const double rho1 = 0,
-    const double rho2 = 0,
-    const Rcpp::IntegerVector& plannedEvents = NA_INTEGER,
-    const Rcpp::NumericVector& plannedTime = NA_REAL,
+    const int kMax = 1, const int kMaxitt = 1,
+    const double hazardRatioH0itt = 1, const double hazardRatioH0pos = 1,
+    const double hazardRatioH0neg = 1, const int allocation1 = 1,
+    const int allocation2 = 1, const Rcpp::NumericVector &accrualTime = 0,
+    const Rcpp::NumericVector &accrualIntensity = NA_REAL,
+    const Rcpp::NumericVector &piecewiseSurvivalTime = 0,
+    const Rcpp::NumericVector &stratumFraction = 1,
+    const Rcpp::NumericVector &p_pos = NA_REAL,
+    const Rcpp::NumericVector &lambda1itt = NA_REAL,
+    const Rcpp::NumericVector &lambda2itt = NA_REAL,
+    const Rcpp::NumericVector &lambda1pos = NA_REAL,
+    const Rcpp::NumericVector &lambda2pos = NA_REAL,
+    const Rcpp::NumericVector &gamma1itt = 0,
+    const Rcpp::NumericVector &gamma2itt = 0,
+    const Rcpp::NumericVector &gamma1pos = 0,
+    const Rcpp::NumericVector &gamma2pos = 0, const int n = NA_INTEGER,
+    const double followupTime = NA_REAL, const bool fixedFollowup = false,
+    const double rho1 = 0, const double rho2 = 0,
+    const Rcpp::IntegerVector &plannedEvents = NA_INTEGER,
+    const Rcpp::NumericVector &plannedTime = NA_REAL,
     const int maxNumberOfIterations = 1000,
-    const int maxNumberOfRawDatasetsPerStage = 0,
-    const int seed = 0) {
+    const int maxNumberOfRawDatasetsPerStage = 0, const int seed = 0) {
 
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
@@ -5068,52 +5454,37 @@ Rcpp::List lrsimsubRcpp(
   auto plannedT = Rcpp::as<std::vector<double>>(plannedTime);
 
   auto out = lrsimsubcpp(
-    kMax, kMaxitt, hazardRatioH0itt, hazardRatioH0pos,
-    hazardRatioH0neg, allocation1, allocation2,
-    accrualT, accrualInt, pwSurvTime, stratumFrac, pPos,
-    lam1itt, lam2itt, lam1pos, lam2pos,
-    gam1itt, gam2itt, gam1pos, gam2pos,
-    n, followupTime, fixedFollowup, rho1, rho2,
-    plannedE, plannedT, maxNumberOfIterations,
-    maxNumberOfRawDatasetsPerStage, seed);
+      kMax, kMaxitt, hazardRatioH0itt, hazardRatioH0pos, hazardRatioH0neg,
+      allocation1, allocation2, accrualT, accrualInt, pwSurvTime, stratumFrac,
+      pPos, lam1itt, lam2itt, lam1pos, lam2pos, gam1itt, gam2itt, gam1pos,
+      gam2pos, n, followupTime, fixedFollowup, rho1, rho2, plannedE, plannedT,
+      maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed);
 
   thread_utils::drain_thread_warnings_to_R();
 
   return Rcpp::wrap(out);
 }
 
-
 ListCpp binary_tte_sim_cpp(
-    const int kMax1,
-    const int kMax2,
-    const double riskDiffH0,
-    const double hazardRatioH0,
-    const int allocation1,
-    const int allocation2,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& stratumFraction,
-    const double globalOddsRatio,
-    const std::vector<double>& pi1,
-    const std::vector<double>& pi2,
-    const std::vector<double>& lambda1,
-    const std::vector<double>& lambda2,
-    const std::vector<double>& gamma1,
-    const std::vector<double>& gamma2,
-    const std::vector<double>& delta1,
-    const std::vector<double>& delta2,
-    const double upper1,
-    const double upper2,
-    const int n,
-    const std::vector<double>& plannedTime,
-    const std::vector<int>& plannedEvents,
-    const int maxNumberOfIterations,
-    const int maxNumberOfRawDatasetsPerStage,
-    const int seed)
-{
-  if (kMax1 < 1) throw std::invalid_argument("kMax1 must be a positive integer");
-  if (kMax2 < 1) throw std::invalid_argument("kMax2 must be a positive integer");
+    const int kMax1, const int kMax2, const double riskDiffH0,
+    const double hazardRatioH0, const int allocation1, const int allocation2,
+    const std::vector<double> &accrualTime,
+    const std::vector<double> &accrualIntensity,
+    const std::vector<double> &piecewiseSurvivalTime,
+    const std::vector<double> &stratumFraction, const double globalOddsRatio,
+    const std::vector<double> &pi1, const std::vector<double> &pi2,
+    const std::vector<double> &lambda1, const std::vector<double> &lambda2,
+    const std::vector<double> &gamma1, const std::vector<double> &gamma2,
+    const std::vector<double> &delta1, const std::vector<double> &delta2,
+    const double upper1, const double upper2, const int n,
+    const std::vector<double> &plannedTime,
+    const std::vector<int> &plannedEvents, const int maxNumberOfIterations,
+    const int maxNumberOfRawDatasetsPerStage, const int seed) {
+
+  if (kMax1 < 1)
+    throw std::invalid_argument("kMax1 must be a positive integer");
+  if (kMax2 < 1)
+    throw std::invalid_argument("kMax2 must be a positive integer");
   size_t K1 = static_cast<size_t>(kMax1);
   size_t K2 = static_cast<size_t>(kMax2);
 
@@ -5132,22 +5503,27 @@ ListCpp binary_tte_sim_cpp(
   if (accrualTime.size() != accrualIntensity.size())
     throw std::invalid_argument("Invalid length for accrualIntensity");
   for (double v : accrualIntensity) {
-    if (v < 0.0) throw std::invalid_argument("accrualIntensity must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("accrualIntensity must be non-negative");
   }
   if (piecewiseSurvivalTime[0] != 0.0)
     throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
   if (any_nonincreasing(piecewiseSurvivalTime))
     throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
   for (double v : stratumFraction) {
-    if (v <= 0.0) throw std::invalid_argument("stratumFraction must be positive");
+    if (v <= 0.0)
+      throw std::invalid_argument("stratumFraction must be positive");
   }
-  double sumf = std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
+  double sumf =
+      std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
   if (std::fabs(sumf - 1.0) > 1e-12)
     throw std::invalid_argument("stratumFraction must sum to 1");
   if (globalOddsRatio <= 0.0)
     throw std::invalid_argument("globalOddsRatio must be positive");
-  if (!none_na(pi1)) throw std::invalid_argument("pi1 must be provided");
-  if (!none_na(pi2)) throw std::invalid_argument("pi2 must be provided");
+  if (!none_na(pi1))
+    throw std::invalid_argument("pi1 must be provided");
+  if (!none_na(pi2))
+    throw std::invalid_argument("pi2 must be provided");
   for (double v : pi1) {
     if (!(v > 0.0 && v < 1.0))
       throw std::invalid_argument("pi1 must lie between 0 and 1");
@@ -5156,30 +5532,42 @@ ListCpp binary_tte_sim_cpp(
     if (!(v > 0.0 && v < 1.0))
       throw std::invalid_argument("pi2 must lie between 0 and 1");
   }
-  if (!none_na(lambda1)) throw std::invalid_argument("lambda1 must be provided");
-  if (!none_na(lambda2)) throw std::invalid_argument("lambda2 must be provided");
+  if (!none_na(lambda1))
+    throw std::invalid_argument("lambda1 must be provided");
+  if (!none_na(lambda2))
+    throw std::invalid_argument("lambda2 must be provided");
   for (double v : lambda1) {
-    if (v < 0.0) throw std::invalid_argument("lambda1 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda1 must be non-negative");
   }
   for (double v : lambda2) {
-    if (v < 0.0) throw std::invalid_argument("lambda2 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("lambda2 must be non-negative");
   }
   for (double v : gamma1) {
-    if (v < 0.0) throw std::invalid_argument("gamma1 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma1 must be non-negative");
   }
   for (double v : gamma2) {
-    if (v < 0.0) throw std::invalid_argument("gamma2 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("gamma2 must be non-negative");
   }
   for (double v : delta1) {
-    if (v < 0.0) throw std::invalid_argument("delta1 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("delta1 must be non-negative");
   }
   for (double v : delta2) {
-    if (v < 0.0) throw std::invalid_argument("delta2 must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("delta2 must be non-negative");
   }
-  if (upper1 <= 0.0) throw std::invalid_argument("upper1 must be positive");
-  if (upper2 <= 0.0) throw std::invalid_argument("upper2 must be positive");
-  if (n == INT_MIN) throw std::invalid_argument("n must be provided");
-  if (n <= 0) throw std::invalid_argument("n must be positive");
+  if (upper1 <= 0.0)
+    throw std::invalid_argument("upper1 must be positive");
+  if (upper2 <= 0.0)
+    throw std::invalid_argument("upper2 must be positive");
+  if (n == INT_MIN)
+    throw std::invalid_argument("n must be provided");
+  if (n <= 0)
+    throw std::invalid_argument("n must be positive");
   if (!none_na(plannedTime))
     throw std::invalid_argument("plannedTime must be given for endpoint 1");
   if (plannedTime[0] <= 0.0)
@@ -5197,7 +5585,8 @@ ListCpp binary_tte_sim_cpp(
   if (any_nonincreasing(plannedEvents))
     throw std::invalid_argument("plannedEvents must be increasing");
   if (maxNumberOfIterations < 1)
-    throw std::invalid_argument("maxNumberOfIterations must be a positive integer");
+    throw std::invalid_argument(
+        "maxNumberOfIterations must be a positive integer");
   if (maxNumberOfRawDatasetsPerStage < 0)
     throw std::invalid_argument(
         "maxNumberOfRawDatasetsPerStage must be a non-negative integer");
@@ -5210,17 +5599,17 @@ ListCpp binary_tte_sim_cpp(
   size_t maxRawIters = static_cast<size_t>(maxNumberOfRawDatasetsPerStage);
   size_t nstrata = stratumFraction.size();
   size_t nintv = piecewiseSurvivalTime.size();
-  const std::vector<double>& tau = piecewiseSurvivalTime;
+  const std::vector<double> &tau = piecewiseSurvivalTime;
 
   // expand per-stratum inputs on main thread
   auto pi1v = expand1(pi1, nstrata, "pi1");
   auto pi2v = expand1(pi2, nstrata, "pi2");
   auto lambda1x = expand_stratified(lambda1, nstrata, nintv, "lambda1");
   auto lambda2x = expand_stratified(lambda2, nstrata, nintv, "lambda2");
-  auto gamma1x  = expand_stratified(gamma1,  nstrata, nintv, "gamma1");
-  auto gamma2x  = expand_stratified(gamma2,  nstrata, nintv, "gamma2");
-  auto delta1x  = expand_stratified(delta1,  nstrata, nintv, "delta1");
-  auto delta2x  = expand_stratified(delta2,  nstrata, nintv, "delta2");
+  auto gamma1x = expand_stratified(gamma1, nstrata, nintv, "gamma1");
+  auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
+  auto delta1x = expand_stratified(delta1, nstrata, nintv, "delta1");
+  auto delta2x = expand_stratified(delta2, nstrata, nintv, "delta2");
 
   // per-iteration result struct and raw row struct defined inside the function
   // endpoint 1 (binary)
@@ -5244,7 +5633,6 @@ ListCpp binary_tte_sim_cpp(
     int dropouts1 = 0, dropouts2 = 0, totDropouts = 0;
     double uscore = 0.0, vscore = 0.0, logRank = 0.0;
   };
-
 
   // endpoint1 raw
   struct RawDataset1Row {
@@ -5277,8 +5665,12 @@ ListCpp binary_tte_sim_cpp(
     std::vector<StageSummary2Row> summary2Rows;
     std::vector<RawDataset1Row> raw1Rows;
     std::vector<RawDataset2Row> raw2Rows;
-    void reserveForSummary1(size_t approxRows) { summary1Rows.reserve(approxRows); }
-    void reserveForSummary2(size_t approxRows) { summary2Rows.reserve(approxRows); }
+    void reserveForSummary1(size_t approxRows) {
+      summary1Rows.reserve(approxRows);
+    }
+    void reserveForSummary2(size_t approxRows) {
+      summary2Rows.reserve(approxRows);
+    }
     void reserveForRaw1(size_t approxRows) { raw1Rows.reserve(approxRows); }
     void reserveForRaw2(size_t approxRows) { raw2Rows.reserve(approxRows); }
   };
@@ -5287,7 +5679,8 @@ ListCpp binary_tte_sim_cpp(
   std::vector<IterationResult> results;
   results.resize(maxIters);
 
-  // Precompute logistic intercepts alpha per stratum for latent response sampling
+  // Precompute logistic intercepts alpha per stratum for latent response
+  // sampling
   std::vector<double> alpha1v(nstrata), alpha2v(nstrata);
   for (size_t s = 0; s < nstrata; ++s) {
     alpha1v[s] = std::log(pi1v[s] / (1.0 - pi1v[s]));
@@ -5296,7 +5689,8 @@ ListCpp binary_tte_sim_cpp(
 
   double globalOddsRatio1 = globalOddsRatio - 1.0;
 
-  auto f = [globalOddsRatio, globalOddsRatio1](double v, double u, double t)->double {
+  auto f = [globalOddsRatio, globalOddsRatio1](double v, double u,
+                                               double t) -> double {
     double c1 = 1.0 + globalOddsRatio1 * (u + v);
     double c2 = 4.0 * v * globalOddsRatio * globalOddsRatio1;
     double c3 = 2.0 * c1 * globalOddsRatio1 - c2;
@@ -5306,11 +5700,11 @@ ListCpp binary_tte_sim_cpp(
     return numerator / denominator - t;
   };
 
-
   // seeds
   std::vector<uint64_t> seeds(maxIters);
   boost::random::mt19937_64 master_rng(static_cast<uint64_t>(seed));
-  for (size_t iter = 0; iter < maxIters; ++iter) seeds[iter] = master_rng();
+  for (size_t iter = 0; iter < maxIters; ++iter)
+    seeds[iter] = master_rng();
 
   // Worker
   struct SimWorker : public RcppParallel::Worker {
@@ -5320,101 +5714,65 @@ ListCpp binary_tte_sim_cpp(
     const double riskDiffH0;
     const double hazardRatioH0;
     const int allocation1, allocation2;
-    const std::vector<double>& accrualTime;
-    const std::vector<double>& accrualIntensity;
-    const std::vector<double>& tau;
-    const std::vector<double>& stratumFraction;
+    const std::vector<double> &accrualTime;
+    const std::vector<double> &accrualIntensity;
+    const std::vector<double> &tau;
+    const std::vector<double> &stratumFraction;
     const double globalOddsRatio;
-    const std::vector<double>& pi1v;
-    const std::vector<double>& pi2v;
-    const FlatMatrix& lambda1x;
-    const FlatMatrix& lambda2x;
-    const FlatMatrix& gamma1x;
-    const FlatMatrix& gamma2x;
-    const FlatMatrix& delta1x;
-    const FlatMatrix& delta2x;
+    const std::vector<double> &pi1v;
+    const std::vector<double> &pi2v;
+    const FlatMatrix &lambda1x;
+    const FlatMatrix &lambda2x;
+    const FlatMatrix &gamma1x;
+    const FlatMatrix &gamma2x;
+    const FlatMatrix &delta1x;
+    const FlatMatrix &delta2x;
     const double upper1;
     const double upper2;
     const size_t N;
-    const std::vector<double>& plannedTime;
-    const std::vector<int>& plannedEvents;
+    const std::vector<double> &plannedTime;
+    const std::vector<int> &plannedEvents;
     const size_t maxRawIters;
-    const std::vector<uint64_t>& seeds;
-    const std::vector<double>& alpha1v;
-    const std::vector<double>& alpha2v;
+    const std::vector<uint64_t> &seeds;
+    const std::vector<double> &alpha1v;
+    const std::vector<double> &alpha2v;
     const double globalOddsRatio1;
     const size_t nstrata;
 
     std::function<double(const double, const double, const double)> f;
 
-    std::vector<IterationResult>* results;
+    std::vector<IterationResult> *results;
 
-    SimWorker(
-      size_t K1_,
-      size_t K2_,
-      double riskDiffH0_,
-      double hazardRatioH0_,
-      int allocation1_,
-      int allocation2_,
-      const std::vector<double>& accrualTime_,
-      const std::vector<double>& accrualIntensity_,
-      const std::vector<double>& tau_,
-      const std::vector<double>& stratumFraction_,
-      double globalOddsRatio_,
-      const std::vector<double>& pi1v_,
-      const std::vector<double>& pi2v_,
-      const FlatMatrix& lambda1x_,
-      const FlatMatrix& lambda2x_,
-      const FlatMatrix& gamma1x_,
-      const FlatMatrix& gamma2x_,
-      const FlatMatrix& delta1x_,
-      const FlatMatrix& delta2x_,
-      double upper1_,
-      double upper2_,
-      size_t N_,
-      const std::vector<double>& plannedTime_,
-      const std::vector<int>& plannedEvents_,
-      size_t maxRawIters_,
-      const std::vector<uint64_t>& seeds_,
-      const std::vector<double>& alpha1v_,
-      const std::vector<double>& alpha2v_,
-      double globalOddsRatio1_,
-      size_t nstrata_,
-      decltype(f) f_,
-      std::vector<IterationResult>* results_)
-      : K1(K1_),
-        K2(K2_),
-        riskDiffH0(riskDiffH0_),
-        hazardRatioH0(hazardRatioH0_),
-        allocation1(allocation1_),
-        allocation2(allocation2_),
-        accrualTime(accrualTime_),
-        accrualIntensity(accrualIntensity_),
-        tau(tau_),
-        stratumFraction(stratumFraction_),
-        globalOddsRatio(globalOddsRatio_),
-        pi1v(pi1v_),
-        pi2v(pi2v_),
-        lambda1x(lambda1x_),
-        lambda2x(lambda2x_),
-        gamma1x(gamma1x_),
-        gamma2x(gamma2x_),
-        delta1x(delta1x_),
-        delta2x(delta2x_),
-        upper1(upper1_),
-        upper2(upper2_),
-        N(N_),
-        plannedTime(plannedTime_),
-        plannedEvents(plannedEvents_),
-        maxRawIters(maxRawIters_),
-        seeds(seeds_),
-        alpha1v(alpha1v_),
-        alpha2v(alpha2v_),
-        globalOddsRatio1(globalOddsRatio1_),
-        nstrata(nstrata_),
-        f(std::move(f_)),
-        results(results_)
-    {}
+    SimWorker(size_t K1_, size_t K2_, double riskDiffH0_, double hazardRatioH0_,
+              int allocation1_, int allocation2_,
+              const std::vector<double> &accrualTime_,
+              const std::vector<double> &accrualIntensity_,
+              const std::vector<double> &tau_,
+              const std::vector<double> &stratumFraction_,
+              double globalOddsRatio_, const std::vector<double> &pi1v_,
+              const std::vector<double> &pi2v_, const FlatMatrix &lambda1x_,
+              const FlatMatrix &lambda2x_, const FlatMatrix &gamma1x_,
+              const FlatMatrix &gamma2x_, const FlatMatrix &delta1x_,
+              const FlatMatrix &delta2x_, double upper1_, double upper2_,
+              size_t N_, const std::vector<double> &plannedTime_,
+              const std::vector<int> &plannedEvents_, size_t maxRawIters_,
+              const std::vector<uint64_t> &seeds_,
+              const std::vector<double> &alpha1v_,
+              const std::vector<double> &alpha2v_, double globalOddsRatio1_,
+              size_t nstrata_, decltype(f) f_,
+              std::vector<IterationResult> *results_)
+        : K1(K1_), K2(K2_), riskDiffH0(riskDiffH0_),
+          hazardRatioH0(hazardRatioH0_), allocation1(allocation1_),
+          allocation2(allocation2_), accrualTime(accrualTime_),
+          accrualIntensity(accrualIntensity_), tau(tau_),
+          stratumFraction(stratumFraction_), globalOddsRatio(globalOddsRatio_),
+          pi1v(pi1v_), pi2v(pi2v_), lambda1x(lambda1x_), lambda2x(lambda2x_),
+          gamma1x(gamma1x_), gamma2x(gamma2x_), delta1x(delta1x_),
+          delta2x(delta2x_), upper1(upper1_), upper2(upper2_), N(N_),
+          plannedTime(plannedTime_), plannedEvents(plannedEvents_),
+          maxRawIters(maxRawIters_), seeds(seeds_), alpha1v(alpha1v_),
+          alpha2v(alpha2v_), globalOddsRatio1(globalOddsRatio1_),
+          nstrata(nstrata_), f(std::move(f_)), results(results_) {}
 
     void operator()(std::size_t begin, std::size_t end) {
       // local buffers per worker
@@ -5431,23 +5789,29 @@ ListCpp binary_tte_sim_cpp(
       std::vector<int> b1(nstrata), b2(nstrata);
       std::vector<int> n1(nstrata), n2(nstrata);
       std::vector<double> cumF(nstrata);
-      std::partial_sum(stratumFraction.begin(), stratumFraction.end(), cumF.begin());
+      std::partial_sum(stratumFraction.begin(), stratumFraction.end(),
+                       cumF.begin());
 
       std::vector<double> n11(nstrata), n21(nstrata);
       std::vector<double> n1s(nstrata), n2s(nstrata), nss(nstrata);
 
-      std::vector<double> analysisT1; analysisT1.reserve(K1);
-      std::vector<double> analysisT2; analysisT2.reserve(K2);
-      std::vector<double> totalte; totalte.reserve(N);
-      std::vector<size_t> set; set.reserve(N);
-      std::vector<size_t> sub; sub.reserve(N);
+      std::vector<double> analysisT1;
+      analysisT1.reserve(K1);
+      std::vector<double> analysisT2;
+      analysisT2.reserve(K2);
+      std::vector<double> totalte;
+      totalte.reserve(N);
+      std::vector<size_t> set;
+      set.reserve(N);
+      std::vector<size_t> sub;
+      sub.reserve(N);
 
       for (size_t iter = begin; iter < end; ++iter) {
         // per-iteration RNG
         boost::random::mt19937_64 rng_local(seeds[iter]);
         boost::random::uniform_real_distribution<double> unif(0.0, 1.0);
 
-        IterationResult& out = (*results)[iter];
+        IterationResult &out = (*results)[iter];
         out.summary1Rows.clear();
         out.summary2Rows.clear();
         out.raw1Rows.clear();
@@ -5479,8 +5843,17 @@ ListCpp binary_tte_sim_cpp(
           u = unif(rng_local);
           double denom = static_cast<double>(b1[j] + b2[j]);
           double p = static_cast<double>(b1[j]) / denom;
-          if (u <= p) { trtGrp[i] = 1; --b1[j]; } else { trtGrp[i] = 2; --b2[j]; }
-          if (b1[j] + b2[j] == 0) { b1[j] = allocation1; b2[j] = allocation2; }
+          if (u <= p) {
+            trtGrp[i] = 1;
+            --b1[j];
+          } else {
+            trtGrp[i] = 2;
+            --b2[j];
+          }
+          if (b1[j] + b2[j] == 0) {
+            b1[j] = allocation1;
+            b2[j] = allocation2;
+          }
 
           auto lam1 = flatmatrix_get_column_view(lambda1x, j);
           auto lam2 = flatmatrix_get_column_view(lambda2x, j);
@@ -5493,15 +5866,16 @@ ListCpp binary_tte_sim_cpp(
           // See equations (2.9.1), (3.3.3a) and (3.3.3b) in Nelson,
           // "An Introduction to Copulas", second edition, 2006
           // according to (3.3.3a), solving (2.9.1) for v given u and t, we have
-          //   ((theta-1)-1/2*((1+(theta-1)*(u+v))^2-4*u*v*theta*(theta-1))^(-1/2)*
+          //   ((theta-1)-1/2*((1+(theta-1)*(u+v))^2-4*u*v*theta*(theta-1))^
+          //   (-1/2)*
           //   (2*(1+(theta-1)*(u+v))*(theta-1)-4*v*theta*(theta-1))) /
           //   (2*(theta-1)) = t
           // which can be rearranged to a quadratic equation in v:
           //               a * v^2 + b * v + c = 0,
           // where
           //   a = theta + t * (1 - t) * (theta - 1)^2,
-          //   b = -(theta - 2 * t * (1 - t) * (theta - 1) * (1 - (theta + 1) * u)),
-          //   c = t * (1 - t) * (1 + (theta - 1) * u)^2.
+          //   b = -(theta - 2 * t * (1 - t) * (theta - 1) * (1 - (theta + 1) *
+          //   u)), c = t * (1 - t) * (1 + (theta - 1) * u)^2.
           // The solution to the quadratic equation is given by
           //   v = (-b +/- sqrt(b^2 - 4*a*c)) / (2*a).
           // The feasible root is the one that satisfies equation (2.9.1).
@@ -5511,11 +5885,13 @@ ListCpp binary_tte_sim_cpp(
           if (globalOddsRatio != 1.0) {
             double s = t_plack * (1.0 - t_plack);
             double a = globalOddsRatio + s * sq(globalOddsRatio1);
-            double b = -(globalOddsRatio - 2.0 * s * globalOddsRatio1 *
-                         (1.0 - (globalOddsRatio + 1.0) * u_plack));
+            double b = -(globalOddsRatio -
+                         2.0 * s * globalOddsRatio1 *
+                             (1.0 - (globalOddsRatio + 1.0) * u_plack));
             double c = s * sq(1.0 + globalOddsRatio1 * u_plack);
             double disc = b * b - 4.0 * a * c;
-            if (disc < 0.0) disc = 0.0;
+            if (disc < 0.0)
+              disc = 0.0;
             double sqrtdisc = std::sqrt(disc);
             double v1 = (-b + sqrtdisc) / (2.0 * a);
             double v2 = (-b - sqrtdisc) / (2.0 * a);
@@ -5525,8 +5901,9 @@ ListCpp binary_tte_sim_cpp(
           // latentResp and survival time: inverse CDF
 
           // latent response (inverse CDF sampling from logistic distribution)
-          // Let X denote the latent variable following a logistic distribution with
-          // location parameter loc and scale 1, then the probability of response is
+          // Let X denote the latent variable following a logistic distribution
+          // with location parameter loc and scale 1, then the probability of
+          // response is
           //   P(X <= 0) = exp(-loc) / (1 + exp(-loc)).
           // Given the definition of alpha1 and alpha2, we have
           //   loc = -alpha for the treatmentGroup.
@@ -5536,7 +5913,8 @@ ListCpp binary_tte_sim_cpp(
           // which leads to
           //   x = loc + log(u / (1 - u))
 
-          // survival time (inverse CDF sampling from p.w. exponential distribution)
+          // survival time (inverse CDF sampling from p.w. exponential
+          // distribution)
           if (trtGrp[i] == 1) {
             latentResp[i] = -alpha1v[j] + std::log(u_plack / (1.0 - u_plack));
             survivalT[i] = qtpwexpcpp1(v_plack, tau, lam1);
@@ -5547,8 +5925,10 @@ ListCpp binary_tte_sim_cpp(
 
           // dropout time
           u = unif(rng_local);
-          if (trtGrp[i] == 1) dropoutT[i] = qtpwexpcpp1(u, tau, gam1);
-          else dropoutT[i] = qtpwexpcpp1(u, tau, gam2);
+          if (trtGrp[i] == 1)
+            dropoutT[i] = qtpwexpcpp1(u, tau, gam1);
+          else
+            dropoutT[i] = qtpwexpcpp1(u, tau, gam2);
 
           // treatment discontinuation and ptfu1Time for endpoint 1
           u = unif(rng_local);
@@ -5556,15 +5936,19 @@ ListCpp binary_tte_sim_cpp(
             trtDiscT[i] = qtpwexpcpp1(u, tau, del1);
             ptfu1T[i] = std::min(trtDiscT[i], upper1);
           } else {
-             trtDiscT[i] = qtpwexpcpp1(u, tau, del2);
-             ptfu1T[i] = std::min(trtDiscT[i], upper2);
+            trtDiscT[i] = qtpwexpcpp1(u, tau, del2);
+            ptfu1T[i] = std::min(trtDiscT[i], upper2);
           }
 
           // endpoint 2 observed time/event preliminary
           if (survivalT[i] <= dropoutT[i]) {
-            timeObs[i] = survivalT[i]; event[i] = 1; dropEv[i] = 0;
+            timeObs[i] = survivalT[i];
+            event[i] = 1;
+            dropEv[i] = 0;
           } else {
-            timeObs[i] = dropoutT[i]; event[i] = 0; dropEv[i] = 1;
+            timeObs[i] = dropoutT[i];
+            event[i] = 0;
+            dropEv[i] = 1;
           }
 
           totalT[i] = arrivalT[i] + timeObs[i];
@@ -5613,7 +5997,10 @@ ListCpp binary_tte_sim_cpp(
               }
 
               size_t h = static_cast<size_t>(stratum[i] - 1);
-              if (trtGrp[i] == 1) ++n1[h]; else ++n2[h];
+              if (trtGrp[i] == 1)
+                ++n1[h];
+              else
+                ++n2[h];
             }
           }
 
@@ -5621,7 +6008,8 @@ ListCpp binary_tte_sim_cpp(
           if (iter < maxRawIters) {
             for (size_t i = 0; i < N; ++i) {
               // skip subjects who haven't been enrolled by analysis time
-              if (arrivalT[i] > time) continue;
+              if (arrivalT[i] > time)
+                continue;
               RawDataset1Row rr;
               rr.iterNum = static_cast<int>(iter + 1);
               rr.stageNum = static_cast<int>(k + 1);
@@ -5654,14 +6042,14 @@ ListCpp binary_tte_sim_cpp(
           std::fill(n2s.begin(), n2s.end(), 0.0);
           std::fill(nss.begin(), nss.end(), 0.0);
           for (size_t i = 0; i < N; ++i) {
-            if (responder[i] == 255) continue;
+            if (responder[i] == 255)
+              continue;
             size_t h = static_cast<size_t>(stratum[i] - 1);
             ++nss[h];
             if (trtGrp[i] == 1) {
               ++n1s[h];
               n11[h] += (responder[i] == 1 ? 1.0 : 0.0);
-            }
-            else {
+            } else {
               ++n2s[h];
               n21[h] += (responder[i] == 1 ? 1.0 : 0.0);
             }
@@ -5670,15 +6058,17 @@ ListCpp binary_tte_sim_cpp(
           // Mantel-Haenszel risk difference (Sato variance) computation
           double A = 0.0, B = 0.0, P = 0.0, Q = 0.0;
           for (size_t h = 0; h < nstrata; ++h) {
-            if (n1s[h] <= 0.0 || n2s[h] <= 0.0 || nss[h] <= 0.0) continue;
+            if (n1s[h] <= 0.0 || n2s[h] <= 0.0 || nss[h] <= 0.0)
+              continue;
             double dh = (n11[h] / n1s[h]) - (n21[h] / n2s[h]);
             double wh = (n1s[h] * n2s[h]) / nss[h];
             A += dh * wh;
             B += wh;
             P += (n1s[h] * n1s[h] * n21[h] - n2s[h] * n2s[h] * n11[h] +
-              n1s[h] * n2s[h] * (n2s[h] - n1s[h]) * 0.5) / (nss[h] * nss[h]);
+                  n1s[h] * n2s[h] * (n2s[h] - n1s[h]) * 0.5) /
+                 (nss[h] * nss[h]);
             Q += (n11[h] * (n2s[h] - n21[h]) + n21[h] * (n1s[h] - n11[h])) *
-              0.5 / nss[h];
+                 0.5 / nss[h];
           }
 
           double riskDiff = A / B;
@@ -5688,9 +6078,12 @@ ListCpp binary_tte_sim_cpp(
           // collect source counts
           int source1 = 0, source2 = 0, source3 = 0;
           for (size_t i = 0; i < N; ++i) {
-            if (source[i] == 1) ++source1;
-            else if (source[i] == 2) ++source2;
-            else if (source[i] == 3) ++source3;
+            if (source[i] == 1)
+              ++source1;
+            else if (source[i] == 2)
+              ++source2;
+            else if (source[i] == 3)
+              ++source3;
           }
 
           // append summary row for binary endpoint
@@ -5710,19 +6103,26 @@ ListCpp binary_tte_sim_cpp(
           sr.y1 = std::accumulate(n11.begin(), n11.end(), 0.0);
           sr.y2 = std::accumulate(n21.begin(), n21.end(), 0.0);
           sr.y = sr.y1 + sr.y2;
-          sr.riskDiff = riskDiff; sr.seRiskDiff = seRiskDiff; sr.z = z;
+          sr.riskDiff = riskDiff;
+          sr.seRiskDiff = seRiskDiff;
+          sr.z = z;
           out.summary1Rows.push_back(std::move(sr));
         } // end endpoint1 stages
 
-        // Endpoint 2 (TTE): determine analysis times by planned and observed events
+        // Endpoint 2 (TTE): determine analysis times by planned and observed
+        // events
         totalte.clear();
         int nevents = 0;
         for (size_t i = 0; i < N; ++i) {
-          if (event[i]) { ++nevents; totalte.push_back(totalT[i]); }
+          if (event[i]) {
+            ++nevents;
+            totalte.push_back(totalT[i]);
+          }
         }
         if (nevents == 0) {
-          thread_utils::push_thread_warning(std::string("No events for iteration ") +
-            std::to_string(iter+1) + " skipping this iteration.");
+          thread_utils::push_thread_warning(
+              std::string("No events for iteration ") +
+              std::to_string(iter + 1) + " skipping this iteration.");
           out.summary1Rows.clear();
           out.summary2Rows.clear();
           out.raw1Rows.clear();
@@ -5735,7 +6135,10 @@ ListCpp binary_tte_sim_cpp(
         analysisT2.clear();
         size_t j = 0;
         for (j = 0; j < K2; ++j) {
-          if (plannedEvents[j] >= nevents) { nstages2 = j + 1; break; }
+          if (plannedEvents[j] >= nevents) {
+            nstages2 = j + 1;
+            break;
+          }
         }
         if (j == K2) {
           for (size_t k = 0; k < nstages2; ++k) {
@@ -5760,24 +6163,39 @@ ListCpp binary_tte_sim_cpp(
           for (size_t i = 0; i < N; ++i) {
             double ar = arrivalT[i], sv = survivalT[i], dr = dropoutT[i];
             if (ar > time) {
-              timeObs[i] = time - ar; event[i] = 0; dropEv[i] = 0; continue;
+              timeObs[i] = time - ar;
+              event[i] = 0;
+              dropEv[i] = 0;
+              continue;
             }
 
             if (ar + sv <= time && sv <= dr) {
-              timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+              timeObs[i] = sv;
+              event[i] = 1;
+              dropEv[i] = 0;
             } else if (ar + dr <= time && dr <= sv) {
-              timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+              timeObs[i] = dr;
+              event[i] = 0;
+              dropEv[i] = 1;
             } else {
-              timeObs[i] = time - ar; event[i] = 0; dropEv[i] = 0;
+              timeObs[i] = time - ar;
+              event[i] = 0;
+              dropEv[i] = 0;
             }
 
             size_t h = static_cast<size_t>(stratum[i] - 1);
             if (trtGrp[i] == 1) {
               ++n1[h];
-              if (event[i]) ++events1; else if (dropEv[i]) ++dropouts1;
+              if (event[i])
+                ++events1;
+              else if (dropEv[i])
+                ++dropouts1;
             } else {
               ++n2[h];
-              if (event[i]) ++events2; else if (dropEv[i]) ++dropouts2;
+              if (event[i])
+                ++events2;
+              else if (dropEv[i])
+                ++dropouts2;
             }
           }
 
@@ -5785,7 +6203,8 @@ ListCpp binary_tte_sim_cpp(
           if (iter < maxRawIters) {
             for (size_t i = 0; i < N; ++i) {
               // skip subjects who haven't been enrolled by analysis time
-              if (arrivalT[i] > time) continue;
+              if (arrivalT[i] > time)
+                continue;
               RawDataset2Row rr;
               rr.iterNum = static_cast<int>(iter + 1);
               rr.stageNum = static_cast<int>(k + 1);
@@ -5811,7 +6230,11 @@ ListCpp binary_tte_sim_cpp(
 
           // sort by observed time
           sub.clear();
-          for (size_t i = 0; i < N; ++i) if (timeObs[i] > 0.0) sub.push_back(i);
+          for (size_t i = 0; i < N; ++i) {
+            if (timeObs[i] > 0.0)
+              sub.push_back(i);
+          }
+
           std::sort(sub.begin(), sub.end(), [&](size_t a, size_t b) {
             return timeObs[a] < timeObs[b];
           });
@@ -5831,7 +6254,10 @@ ListCpp binary_tte_sim_cpp(
               us += (treated - n1a / nta);
               vs += (n1a * n2h) / (nta * nta);
             }
-            if (trtGrp[idx] == 1) --n1[h]; else --n2[h];
+            if (trtGrp[idx] == 1)
+              --n1[h];
+            else
+              --n2[h];
           }
 
           double z = (vs > 0.0 ? (us / std::sqrt(vs)) : 0.0);
@@ -5862,18 +6288,13 @@ ListCpp binary_tte_sim_cpp(
 
   // construct and run worker
   SimWorker worker(
-      K1, K2, riskDiffH0, hazardRatioH0,
-      allocation1, allocation2,
-      accrualTime, accrualIntensity, tau, stratumFraction,
-      globalOddsRatio, pi1v, pi2v,
-      lambda1x, lambda2x, gamma1x, gamma2x, delta1x, delta2x,
-      upper1, upper2, N,
-      plannedTime, plannedEvents,
-      maxRawIters, seeds,
-      alpha1v, alpha2v, globalOddsRatio1, nstrata,
+      K1, K2, riskDiffH0, hazardRatioH0, allocation1, allocation2, accrualTime,
+      accrualIntensity, tau, stratumFraction, globalOddsRatio, pi1v, pi2v,
+      lambda1x, lambda2x, gamma1x, gamma2x, delta1x, delta2x, upper1, upper2, N,
+      plannedTime, plannedEvents, maxRawIters, seeds, alpha1v, alpha2v,
+      globalOddsRatio1, nstrata,
       std::function<double(const double, const double, const double)>(f),
-      &results
-  );
+      &results);
 
   RcppParallel::parallelFor(0, maxIters, worker);
 
@@ -5885,84 +6306,147 @@ ListCpp binary_tte_sim_cpp(
     nrr1 += results[iter].raw1Rows.size();
     nrr2 += results[iter].raw2Rows.size();
   }
-  if (nsr2 == 0) throw std::runtime_error(
-    "No iterations with observed events. Unable to produce output.");
+  if (nsr2 == 0)
+    throw std::runtime_error(
+        "No iterations with observed events. Unable to produce output.");
 
   // finalize summary and raw containers for both endpoints
   // Endpoint1 summary
-  std::vector<int> sum1_iterNum; sum1_iterNum.reserve(nsr1);
-  std::vector<int> sum1_stageNum; sum1_stageNum.reserve(nsr1);
-  std::vector<double> sum1_analysisT; sum1_analysisT.reserve(nsr1);
-  std::vector<int> sum1_accruals1; sum1_accruals1.reserve(nsr1);
-  std::vector<int> sum1_accruals2; sum1_accruals2.reserve(nsr1);
-  std::vector<int> sum1_totAccruals; sum1_totAccruals.reserve(nsr1);
-  std::vector<int> sum1_source1; sum1_source1.reserve(nsr1);
-  std::vector<int> sum1_source2; sum1_source2.reserve(nsr1);
-  std::vector<int> sum1_source3; sum1_source3.reserve(nsr1);
-  std::vector<double> sum1_n1; sum1_n1.reserve(nsr1);
-  std::vector<double> sum1_n2; sum1_n2.reserve(nsr1);
-  std::vector<double> sum1_n; sum1_n.reserve(nsr1);
-  std::vector<double> sum1_y1; sum1_y1.reserve(nsr1);
-  std::vector<double> sum1_y2; sum1_y2.reserve(nsr1);
-  std::vector<double> sum1_y; sum1_y.reserve(nsr1);
-  std::vector<double> sum1_riskDiff; sum1_riskDiff.reserve(nsr1);
-  std::vector<double> sum1_seRiskDiff; sum1_seRiskDiff.reserve(nsr1);
-  std::vector<double> sum1_z; sum1_z.reserve(nsr1);
+  std::vector<int> sum1_iterNum;
+  sum1_iterNum.reserve(nsr1);
+  std::vector<int> sum1_stageNum;
+  sum1_stageNum.reserve(nsr1);
+  std::vector<double> sum1_analysisT;
+  sum1_analysisT.reserve(nsr1);
+  std::vector<int> sum1_accruals1;
+  sum1_accruals1.reserve(nsr1);
+  std::vector<int> sum1_accruals2;
+  sum1_accruals2.reserve(nsr1);
+  std::vector<int> sum1_totAccruals;
+  sum1_totAccruals.reserve(nsr1);
+  std::vector<int> sum1_source1;
+  sum1_source1.reserve(nsr1);
+  std::vector<int> sum1_source2;
+  sum1_source2.reserve(nsr1);
+  std::vector<int> sum1_source3;
+  sum1_source3.reserve(nsr1);
+  std::vector<double> sum1_n1;
+  sum1_n1.reserve(nsr1);
+  std::vector<double> sum1_n2;
+  sum1_n2.reserve(nsr1);
+  std::vector<double> sum1_n;
+  sum1_n.reserve(nsr1);
+  std::vector<double> sum1_y1;
+  sum1_y1.reserve(nsr1);
+  std::vector<double> sum1_y2;
+  sum1_y2.reserve(nsr1);
+  std::vector<double> sum1_y;
+  sum1_y.reserve(nsr1);
+  std::vector<double> sum1_riskDiff;
+  sum1_riskDiff.reserve(nsr1);
+  std::vector<double> sum1_seRiskDiff;
+  sum1_seRiskDiff.reserve(nsr1);
+  std::vector<double> sum1_z;
+  sum1_z.reserve(nsr1);
 
   // Endpoint2 summary
-  std::vector<int> sum2_iterNum; sum2_iterNum.reserve(nsr2);
-  std::vector<unsigned char> sum2_evNotAch; sum2_evNotAch.reserve(nsr2);
-  std::vector<int> sum2_stageNum; sum2_stageNum.reserve(nsr2);
-  std::vector<double> sum2_analysisT; sum2_analysisT.reserve(nsr2);
-  std::vector<int> sum2_accruals1; sum2_accruals1.reserve(nsr2);
-  std::vector<int> sum2_accruals2; sum2_accruals2.reserve(nsr2);
-  std::vector<int> sum2_totAccruals; sum2_totAccruals.reserve(nsr2);
-  std::vector<int> sum2_events1; sum2_events1.reserve(nsr2);
-  std::vector<int> sum2_events2; sum2_events2.reserve(nsr2);
-  std::vector<int> sum2_totEvents; sum2_totEvents.reserve(nsr2);
-  std::vector<int> sum2_dropouts1; sum2_dropouts1.reserve(nsr2);
-  std::vector<int> sum2_dropouts2; sum2_dropouts2.reserve(nsr2);
-  std::vector<int> sum2_totDropouts; sum2_totDropouts.reserve(nsr2);
-  std::vector<double> sum2_uscore; sum2_uscore.reserve(nsr2);
-  std::vector<double> sum2_vscore; sum2_vscore.reserve(nsr2);
-  std::vector<double> sum2_logRank; sum2_logRank.reserve(nsr2);
+  std::vector<int> sum2_iterNum;
+  sum2_iterNum.reserve(nsr2);
+  std::vector<unsigned char> sum2_evNotAch;
+  sum2_evNotAch.reserve(nsr2);
+  std::vector<int> sum2_stageNum;
+  sum2_stageNum.reserve(nsr2);
+  std::vector<double> sum2_analysisT;
+  sum2_analysisT.reserve(nsr2);
+  std::vector<int> sum2_accruals1;
+  sum2_accruals1.reserve(nsr2);
+  std::vector<int> sum2_accruals2;
+  sum2_accruals2.reserve(nsr2);
+  std::vector<int> sum2_totAccruals;
+  sum2_totAccruals.reserve(nsr2);
+  std::vector<int> sum2_events1;
+  sum2_events1.reserve(nsr2);
+  std::vector<int> sum2_events2;
+  sum2_events2.reserve(nsr2);
+  std::vector<int> sum2_totEvents;
+  sum2_totEvents.reserve(nsr2);
+  std::vector<int> sum2_dropouts1;
+  sum2_dropouts1.reserve(nsr2);
+  std::vector<int> sum2_dropouts2;
+  sum2_dropouts2.reserve(nsr2);
+  std::vector<int> sum2_totDropouts;
+  sum2_totDropouts.reserve(nsr2);
+  std::vector<double> sum2_uscore;
+  sum2_uscore.reserve(nsr2);
+  std::vector<double> sum2_vscore;
+  sum2_vscore.reserve(nsr2);
+  std::vector<double> sum2_logRank;
+  sum2_logRank.reserve(nsr2);
 
   // raw containers for endpoint 1
-  std::vector<int> raw1_iterNum; raw1_iterNum.reserve(nrr1);
-  std::vector<int> raw1_stageNum; raw1_stageNum.reserve(nrr1);
-  std::vector<double> raw1_analysisT; raw1_analysisT.reserve(nrr1);
-  std::vector<int> raw1_subjectId; raw1_subjectId.reserve(nrr1);
-  std::vector<double> raw1_arrivalT; raw1_arrivalT.reserve(nrr1);
-  std::vector<int> raw1_stratum; raw1_stratum.reserve(nrr1);
-  std::vector<int> raw1_trtGrp; raw1_trtGrp.reserve(nrr1);
-  std::vector<double> raw1_survivalT; raw1_survivalT.reserve(nrr1);
-  std::vector<double> raw1_dropoutT; raw1_dropoutT.reserve(nrr1);
-  std::vector<double> raw1_trtDiscT; raw1_trtDiscT.reserve(nrr1);
-  std::vector<double> raw1_upper; raw1_upper.reserve(nrr1);
-  std::vector<double> raw1_ptfu1T; raw1_ptfu1T.reserve(nrr1);
-  std::vector<double> raw1_timeObs; raw1_timeObs.reserve(nrr1);
-  std::vector<double> raw1_latentResp; raw1_latentResp.reserve(nrr1);
-  std::vector<unsigned char> raw1_responder; raw1_responder.reserve(nrr1);
-  std::vector<int> raw1_source; raw1_source.reserve(nrr1);
+  std::vector<int> raw1_iterNum;
+  raw1_iterNum.reserve(nrr1);
+  std::vector<int> raw1_stageNum;
+  raw1_stageNum.reserve(nrr1);
+  std::vector<double> raw1_analysisT;
+  raw1_analysisT.reserve(nrr1);
+  std::vector<int> raw1_subjectId;
+  raw1_subjectId.reserve(nrr1);
+  std::vector<double> raw1_arrivalT;
+  raw1_arrivalT.reserve(nrr1);
+  std::vector<int> raw1_stratum;
+  raw1_stratum.reserve(nrr1);
+  std::vector<int> raw1_trtGrp;
+  raw1_trtGrp.reserve(nrr1);
+  std::vector<double> raw1_survivalT;
+  raw1_survivalT.reserve(nrr1);
+  std::vector<double> raw1_dropoutT;
+  raw1_dropoutT.reserve(nrr1);
+  std::vector<double> raw1_trtDiscT;
+  raw1_trtDiscT.reserve(nrr1);
+  std::vector<double> raw1_upper;
+  raw1_upper.reserve(nrr1);
+  std::vector<double> raw1_ptfu1T;
+  raw1_ptfu1T.reserve(nrr1);
+  std::vector<double> raw1_timeObs;
+  raw1_timeObs.reserve(nrr1);
+  std::vector<double> raw1_latentResp;
+  raw1_latentResp.reserve(nrr1);
+  std::vector<unsigned char> raw1_responder;
+  raw1_responder.reserve(nrr1);
+  std::vector<int> raw1_source;
+  raw1_source.reserve(nrr1);
 
   // raw containers for endpoint 2
-  std::vector<int> raw2_iterNum; raw2_iterNum.reserve(nrr2);
-  std::vector<int> raw2_stageNum; raw2_stageNum.reserve(nrr2);
-  std::vector<double> raw2_analysisT; raw2_analysisT.reserve(nrr2);
-  std::vector<int> raw2_subjectId; raw2_subjectId.reserve(nrr2);
-  std::vector<double> raw2_arrivalT; raw2_arrivalT.reserve(nrr2);
-  std::vector<int> raw2_stratum; raw2_stratum.reserve(nrr2);
-  std::vector<int> raw2_trtGrp; raw2_trtGrp.reserve(nrr2);
-  std::vector<double> raw2_survivalT; raw2_survivalT.reserve(nrr2);
-  std::vector<double> raw2_dropoutT; raw2_dropoutT.reserve(nrr2);
-  std::vector<double> raw2_timeObs; raw2_timeObs.reserve(nrr2);
-  std::vector<unsigned char> raw2_event; raw2_event.reserve(nrr2);
-  std::vector<unsigned char> raw2_dropEv; raw2_dropEv.reserve(nrr2);
+  std::vector<int> raw2_iterNum;
+  raw2_iterNum.reserve(nrr2);
+  std::vector<int> raw2_stageNum;
+  raw2_stageNum.reserve(nrr2);
+  std::vector<double> raw2_analysisT;
+  raw2_analysisT.reserve(nrr2);
+  std::vector<int> raw2_subjectId;
+  raw2_subjectId.reserve(nrr2);
+  std::vector<double> raw2_arrivalT;
+  raw2_arrivalT.reserve(nrr2);
+  std::vector<int> raw2_stratum;
+  raw2_stratum.reserve(nrr2);
+  std::vector<int> raw2_trtGrp;
+  raw2_trtGrp.reserve(nrr2);
+  std::vector<double> raw2_survivalT;
+  raw2_survivalT.reserve(nrr2);
+  std::vector<double> raw2_dropoutT;
+  raw2_dropoutT.reserve(nrr2);
+  std::vector<double> raw2_timeObs;
+  raw2_timeObs.reserve(nrr2);
+  std::vector<unsigned char> raw2_event;
+  raw2_event.reserve(nrr2);
+  std::vector<unsigned char> raw2_dropEv;
+  raw2_dropEv.reserve(nrr2);
 
   // flatten preserving iteration order
   for (size_t iter = 0; iter < maxIters; ++iter) {
-    const auto& s1rows = results[iter].summary1Rows;
-    for (const auto& r : s1rows) {
+    const auto &s1rows = results[iter].summary1Rows;
+    for (const auto &r : s1rows) {
       sum1_iterNum.push_back(r.iterNum);
       sum1_stageNum.push_back(r.stageNum);
       sum1_analysisT.push_back(r.analysisT);
@@ -5983,8 +6467,8 @@ ListCpp binary_tte_sim_cpp(
       sum1_z.push_back(r.z);
     }
 
-    const auto& s2rows = results[iter].summary2Rows;
-    for (const auto& r : s2rows) {
+    const auto &s2rows = results[iter].summary2Rows;
+    for (const auto &r : s2rows) {
       sum2_iterNum.push_back(r.iterNum);
       sum2_evNotAch.push_back(r.evNotAch);
       sum2_stageNum.push_back(r.stageNum);
@@ -6004,8 +6488,8 @@ ListCpp binary_tte_sim_cpp(
     }
 
     if (iter < maxRawIters) {
-      const auto& r1raw = results[iter].raw1Rows;
-      for (const auto& rr : r1raw) {
+      const auto &r1raw = results[iter].raw1Rows;
+      for (const auto &rr : r1raw) {
         raw1_iterNum.push_back(rr.iterNum);
         raw1_stageNum.push_back(rr.stageNum);
         raw1_analysisT.push_back(rr.analysisT);
@@ -6024,8 +6508,8 @@ ListCpp binary_tte_sim_cpp(
         raw1_source.push_back(rr.source);
       }
 
-      const auto& r2raw = results[iter].raw2Rows;
-      for (const auto& rr : r2raw) {
+      const auto &r2raw = results[iter].raw2Rows;
+      for (const auto &rr : r2raw) {
         raw2_iterNum.push_back(rr.iterNum);
         raw2_stageNum.push_back(rr.stageNum);
         raw2_analysisT.push_back(rr.analysisT);
@@ -6124,36 +6608,27 @@ ListCpp binary_tte_sim_cpp(
   return result;
 }
 
-
 // [[Rcpp::export]]
 Rcpp::List binary_tte_simRcpp(
-    const int kMax1 = 1,
-    const int kMax2 = 1,
-    const double riskDiffH0 = 0,
-    const double hazardRatioH0 = 1,
-    const int allocation1 = 1,
-    const int allocation2 = 1,
-    const Rcpp::NumericVector& accrualTime = 0,
-    const Rcpp::NumericVector& accrualIntensity = NA_REAL,
-    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
-    const Rcpp::NumericVector& stratumFraction = 1,
-    const double globalOddsRatio = 1,
-    const Rcpp::NumericVector& pi1 = NA_REAL,
-    const Rcpp::NumericVector& pi2 = NA_REAL,
-    const Rcpp::NumericVector& lambda1 = NA_REAL,
-    const Rcpp::NumericVector& lambda2 = NA_REAL,
-    const Rcpp::NumericVector& gamma1 = 0,
-    const Rcpp::NumericVector& gamma2 = 0,
-    const Rcpp::NumericVector& delta1 = 0,
-    const Rcpp::NumericVector& delta2 = 0,
-    const double upper1 = NA_REAL,
-    const double upper2 = NA_REAL,
-    const int n = NA_INTEGER,
-    const Rcpp::NumericVector& plannedTime = NA_REAL,
-    const Rcpp::IntegerVector& plannedEvents = NA_INTEGER,
+    const int kMax1 = 1, const int kMax2 = 1, const double riskDiffH0 = 0,
+    const double hazardRatioH0 = 1, const int allocation1 = 1,
+    const int allocation2 = 1, const Rcpp::NumericVector &accrualTime = 0,
+    const Rcpp::NumericVector &accrualIntensity = NA_REAL,
+    const Rcpp::NumericVector &piecewiseSurvivalTime = 0,
+    const Rcpp::NumericVector &stratumFraction = 1,
+    const double globalOddsRatio = 1, const Rcpp::NumericVector &pi1 = NA_REAL,
+    const Rcpp::NumericVector &pi2 = NA_REAL,
+    const Rcpp::NumericVector &lambda1 = NA_REAL,
+    const Rcpp::NumericVector &lambda2 = NA_REAL,
+    const Rcpp::NumericVector &gamma1 = 0,
+    const Rcpp::NumericVector &gamma2 = 0,
+    const Rcpp::NumericVector &delta1 = 0,
+    const Rcpp::NumericVector &delta2 = 0, const double upper1 = NA_REAL,
+    const double upper2 = NA_REAL, const int n = NA_INTEGER,
+    const Rcpp::NumericVector &plannedTime = NA_REAL,
+    const Rcpp::IntegerVector &plannedEvents = NA_INTEGER,
     const int maxNumberOfIterations = 1000,
-    const int maxNumberOfRawDatasetsPerStage = 0,
-    const int seed = 0) {
+    const int maxNumberOfRawDatasetsPerStage = 0, const int seed = 0) {
 
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
   auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
@@ -6171,11 +6646,10 @@ Rcpp::List binary_tte_simRcpp(
   auto plannedT = Rcpp::as<std::vector<double>>(plannedTime);
 
   auto out = binary_tte_sim_cpp(
-    kMax1, kMax2, riskDiffH0, hazardRatioH0, allocation1, allocation2,
-    accrualT, accrualInt, pwSurvT, stratumFrac, globalOddsRatio,
-    pi1v, pi2v, lam1, lam2, gam1, gam2, del1, del2,
-    upper1, upper2, n, plannedT, plannedE,
-    maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed);
+      kMax1, kMax2, riskDiffH0, hazardRatioH0, allocation1, allocation2,
+      accrualT, accrualInt, pwSurvT, stratumFrac, globalOddsRatio, pi1v, pi2v,
+      lam1, lam2, gam1, gam2, del1, del2, upper1, upper2, n, plannedT, plannedE,
+      maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed);
 
   thread_utils::drain_thread_warnings_to_R();
 

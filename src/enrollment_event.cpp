@@ -1,25 +1,22 @@
 #include "enrollment_event.h"
-#include "utilities.h"
 #include "dataframe_list.h"
+#include "utilities.h"
 
-#include <algorithm>    // max, min
-#include <cmath>        // exp
-#include <cstddef>      // size_t
-#include <limits>       // numeric_limits
-#include <stdexcept>    // invalid_argument
-#include <utility>      // make_pair, pair
-#include <vector>       // vector
+#include <algorithm> // max, min
+#include <cmath>     // exp
+#include <cstddef>   // size_t
+#include <limits>    // numeric_limits
+#include <stdexcept> // invalid_argument
+#include <utility>   // make_pair, pair
+#include <vector>    // vector
 
 #include <Rcpp.h>
 
 using std::size_t;
 
-
-double accrual1(
-    const double time,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
-    const double accrualDuration) {
+double accrual1(const double time, const std::vector<double> &accrualTime,
+                const std::vector<double> &accrualIntensity,
+                const double accrualDuration) {
 
   // up to end of enrollment
   double t = std::max(std::min(time, accrualDuration), 0.0);
@@ -39,7 +36,6 @@ double accrual1(
 
   return n;
 }
-
 
 //' @title Number of Enrolled Subjects
 //' @description Obtains the number of subjects enrolled by given calendar
@@ -72,11 +68,10 @@ double accrual1(
 //'
 //' @export
 // [[Rcpp::export]]
-std::vector<double> accrual(
-    const std::vector<double>& time,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity,
-    const double accrualDuration) {
+std::vector<double> accrual(const std::vector<double> &time,
+                            const std::vector<double> &accrualTime,
+                            const std::vector<double> &accrualIntensity,
+                            const double accrualDuration) {
 
   size_t k = time.size();
   std::vector<double> n(k);
@@ -87,24 +82,22 @@ std::vector<double> accrual(
   return n;
 }
 
-
-double getAccrualDurationFromN1(
-    const double nsubjects,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity) {
+double getAccrualDurationFromN1(const double nsubjects,
+                                const std::vector<double> &accrualTime,
+                                const std::vector<double> &accrualIntensity) {
 
   size_t J = accrualTime.size();
   std::vector<double> p(J);
   p[0] = 0;
   for (size_t j = 0; j < J - 1; ++j) {
-    p[j + 1] = p[j] + accrualIntensity[j] * (accrualTime[j + 1] - accrualTime[j]);
+    p[j + 1] =
+        p[j] + accrualIntensity[j] * (accrualTime[j + 1] - accrualTime[j]);
   }
 
   size_t m = findInterval1(nsubjects, p) - 1;
   double t = accrualTime[m] + (nsubjects - p[m]) / accrualIntensity[m];
   return t;
 }
-
 
 //' @title Accrual Duration to Enroll Target Number of Subjects
 //' @description Obtains the accrual duration to enroll the target number
@@ -124,20 +117,20 @@ double getAccrualDurationFromN1(
 //'
 //' @export
 // [[Rcpp::export]]
-std::vector<double> getAccrualDurationFromN(
-    const std::vector<double>& nsubjects,
-    const std::vector<double>& accrualTime,
-    const std::vector<double>& accrualIntensity) {
+std::vector<double>
+getAccrualDurationFromN(const std::vector<double> &nsubjects,
+                        const std::vector<double> &accrualTime,
+                        const std::vector<double> &accrualIntensity) {
 
   size_t I = nsubjects.size();
   std::vector<double> t(I);
   for (size_t i = 0; i < I; ++i) {
-    t[i] = getAccrualDurationFromN1(nsubjects[i], accrualTime, accrualIntensity);
+    t[i] =
+        getAccrualDurationFromN1(nsubjects[i], accrualTime, accrualIntensity);
   }
 
   return t;
 }
-
 
 //' @title Probability of Being at Risk
 //' @description Obtains the probability of being at risk at given analysis
@@ -165,11 +158,10 @@ std::vector<double> getAccrualDurationFromN(
 //'
 //' @export
 // [[Rcpp::export]]
-std::vector<double> patrisk(
-    const std::vector<double>& time,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda,
-    const std::vector<double>& gamma) {
+std::vector<double> patrisk(const std::vector<double> &time,
+                            const std::vector<double> &piecewiseSurvivalTime,
+                            const std::vector<double> &lambda,
+                            const std::vector<double> &gamma) {
 
   size_t J = piecewiseSurvivalTime.size();
   auto lambdax = expand1(lambda, J, "lambda");
@@ -184,7 +176,6 @@ std::vector<double> patrisk(
 
   return p;
 }
-
 
 //' @title Probability of Having an Event
 //' @description Obtains the probability of having an event at given analysis
@@ -212,11 +203,10 @@ std::vector<double> patrisk(
 //'
 //' @export
 // [[Rcpp::export]]
-std::vector<double> pevent(
-    const std::vector<double>& time,
-    const std::vector<double>& piecewiseSurvivalTime,
-    const std::vector<double>& lambda,
-    const std::vector<double>& gamma) {
+std::vector<double> pevent(const std::vector<double> &time,
+                           const std::vector<double> &piecewiseSurvivalTime,
+                           const std::vector<double> &lambda,
+                           const std::vector<double> &gamma) {
 
   size_t J = piecewiseSurvivalTime.size();
   auto lambdax = expand1(lambda, J, "lambda");
@@ -231,7 +221,6 @@ std::vector<double> pevent(
 
   return a;
 }
-
 
 //' @title Number of Subjects at Risk
 //' @description Obtains the number of subjects at risk at given analysis
@@ -278,19 +267,18 @@ std::vector<double> pevent(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::NumericMatrix natrisk(
-    const Rcpp::NumericVector& t = NA_REAL,
-    const double allocationRatioPlanned = 1,
-    const Rcpp::NumericVector& accrualTime = 0,
-    const Rcpp::NumericVector& accrualIntensity = NA_REAL,
-    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
-    const Rcpp::NumericVector& lambda1 = NA_REAL,
-    const Rcpp::NumericVector& lambda2 = NA_REAL,
-    const Rcpp::NumericVector& gamma1 = 0,
-    const Rcpp::NumericVector& gamma2 = 0,
-    const double accrualDuration = NA_REAL,
-    const double maxFollowupTime = NA_REAL,
-    const double time = NA_REAL) {
+Rcpp::NumericMatrix
+natrisk(const Rcpp::NumericVector &t = NA_REAL,
+        const double allocationRatioPlanned = 1,
+        const Rcpp::NumericVector &accrualTime = 0,
+        const Rcpp::NumericVector &accrualIntensity = NA_REAL,
+        const Rcpp::NumericVector &piecewiseSurvivalTime = 0,
+        const Rcpp::NumericVector &lambda1 = NA_REAL,
+        const Rcpp::NumericVector &lambda2 = NA_REAL,
+        const Rcpp::NumericVector &gamma1 = 0,
+        const Rcpp::NumericVector &gamma2 = 0,
+        const double accrualDuration = NA_REAL,
+        const double maxFollowupTime = NA_REAL, const double time = NA_REAL) {
 
   auto t1 = Rcpp::as<std::vector<double>>(t);
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
@@ -310,11 +298,9 @@ Rcpp::NumericMatrix natrisk(
   size_t k = t1.size();
   FlatMatrix n(k, 2);
   for (size_t i = 0; i < k; ++i) {
-    auto result = natrisk1(
-      t1[i], allocationRatioPlanned, accrualT, accrualInt,
-      pwSurvT, lambda1x, lambda2x, gamma1x, gamma2x,
-      accrualDuration, maxFollowupTime, time
-    );
+    auto result = natrisk1(t1[i], allocationRatioPlanned, accrualT, accrualInt,
+                           pwSurvT, lambda1x, lambda2x, gamma1x, gamma2x,
+                           accrualDuration, maxFollowupTime, time);
 
     n(i, 0) = result.first;  // Patients at risk in active treatment
     n(i, 1) = result.second; // Patients at risk in control
@@ -322,8 +308,6 @@ Rcpp::NumericMatrix natrisk(
 
   return Rcpp::wrap(n);
 }
-
-
 
 //' @title Number of Subjects Having an Event by Calendar Time
 //' @description Obtains the number of subjects having an event by given
@@ -351,16 +335,15 @@ Rcpp::NumericMatrix natrisk(
 //' the number of patients having an event by calendar time \eqn{\tau} is
 //' calculated as \eqn{I_1 + I_2}, where
 //' \deqn{I_1 = \phi_g A(\tau - T_{\rm{fmax}}) P_g(T_{\rm{fmax}}),} and
-//' \deqn{I_2 = \phi_g \int_{\tau - T_{\rm{fmax}}}^{\tau} a(u) P_g(\tau - u) du,}
-//' where \eqn{\phi_g} is the probability of randomization to treatment group \eqn{g},
-//' \eqn{A(\tau - T_{\rm{fmax}})} is the number of patients enrolled by
-//' calendar time \eqn{\tau - T_{\rm{fmax}}},
-//' \eqn{P_g(T_{\rm{fmax}})} is the probability of having an event by
-//' the maximum follow-up time \eqn{T_{\rm{fmax}}} for a patient in
-//' treatment group \eqn{g} after enrollment,
-//' \eqn{a(u)} is the accrual intensity at calendar time \eqn{u},
-//' and \eqn{P_g(\tau - u)} is the probability of having an event by
-//' calendar time \eqn{\tau} for a patient in treatment group \eqn{g}
+//' \deqn{I_2 = \phi_g \int_{\tau - T_{\rm{fmax}}}^{\tau} a(u) P_g(\tau - u)
+//' du,} where \eqn{\phi_g} is the probability of randomization to treatment
+//' group \eqn{g}, \eqn{A(\tau - T_{\rm{fmax}})} is the number of patients
+//' enrolled by calendar time \eqn{\tau - T_{\rm{fmax}}},
+//' \eqn{P_g(T_{\rm{fmax}})} is the probability of having an event by the
+//' maximum follow-up time \eqn{T_{\rm{fmax}}} for a patient in treatment group
+//' \eqn{g} after enrollment, \eqn{a(u)} is the accrual intensity at calendar
+//' time \eqn{u}, and \eqn{P_g(\tau - u)} is the probability of having an event
+//' by calendar time \eqn{\tau} for a patient in treatment group \eqn{g}
 //' enrolled at calendar time \eqn{u}.
 //'
 //' @examples
@@ -375,18 +358,18 @@ Rcpp::NumericMatrix natrisk(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::NumericMatrix nevent(
-    const Rcpp::NumericVector& time = NA_REAL,
-    const double allocationRatioPlanned = 1,
-    const Rcpp::NumericVector& accrualTime = 0,
-    const Rcpp::NumericVector& accrualIntensity = NA_REAL,
-    const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
-    const Rcpp::NumericVector& lambda1 = NA_REAL,
-    const Rcpp::NumericVector& lambda2 = NA_REAL,
-    const Rcpp::NumericVector& gamma1 = 0,
-    const Rcpp::NumericVector& gamma2 = 0,
-    const double accrualDuration = NA_REAL,
-    const double maxFollowupTime = NA_REAL) {
+Rcpp::NumericMatrix
+nevent(const Rcpp::NumericVector &time = NA_REAL,
+       const double allocationRatioPlanned = 1,
+       const Rcpp::NumericVector &accrualTime = 0,
+       const Rcpp::NumericVector &accrualIntensity = NA_REAL,
+       const Rcpp::NumericVector &piecewiseSurvivalTime = 0,
+       const Rcpp::NumericVector &lambda1 = NA_REAL,
+       const Rcpp::NumericVector &lambda2 = NA_REAL,
+       const Rcpp::NumericVector &gamma1 = 0,
+       const Rcpp::NumericVector &gamma2 = 0,
+       const double accrualDuration = NA_REAL,
+       const double maxFollowupTime = NA_REAL) {
 
   auto time1 = Rcpp::as<std::vector<double>>(time);
   auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
@@ -406,11 +389,9 @@ Rcpp::NumericMatrix nevent(
   size_t k = time1.size();
   FlatMatrix d(k, 2);
   for (size_t i = 0; i < k; ++i) {
-    auto result = nevent1(
-      time1[i], allocationRatioPlanned, accrualT, accrualInt,
-      pwSurvT, lambda1x, lambda2x, gamma1x, gamma2x,
-      accrualDuration, maxFollowupTime
-    );
+    auto result = nevent1(time1[i], allocationRatioPlanned, accrualT,
+                          accrualInt, pwSurvT, lambda1x, lambda2x, gamma1x,
+                          gamma2x, accrualDuration, maxFollowupTime);
 
     d(i, 0) = result.first;  // Active treatment group
     d(i, 1) = result.second; // Control group

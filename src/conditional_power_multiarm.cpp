@@ -1,77 +1,76 @@
+#include "dataframe_list.h"
 #include "generic_design.h"
 #include "multiarm_design.h"
-#include "utilities.h"
-#include "dataframe_list.h"
 #include "mvnormr.h"
+#include "utilities.h"
 
-#include <algorithm>     // any_of, fill
-#include <cctype>        // tolower
-#include <cmath>         // isnan
-#include <cstring>       // memcpy
-#include <numeric>       // accumulate
-#include <stdexcept>     // invalid_argument
-#include <string>        // string
-#include <vector>        // vector
+#include <algorithm> // any_of, fill
+#include <cctype>    // tolower
+#include <cmath>     // isnan
+#include <cstring>   // memcpy
+#include <numeric>   // accumulate
+#include <stdexcept> // invalid_argument
+#include <string>    // string
+#include <vector>    // vector
 
 #include <Rcpp.h>
 
 using std::size_t;
 
-
 // Helper function to compute conditional power
 std::vector<double> getCP_multiarm_cpp(
-    const double INew,
-    const size_t M,
-    const double r,
-    const bool corr_known,
-    const size_t L,
-    const std::vector<double>& zL,
-    const std::vector<double>& theta,
-    const double IMax,
-    const size_t kMax,
-    const std::vector<double>& informationRates,
-    const std::vector<unsigned char>& efficacyStopping,
-    const std::vector<unsigned char>& futilityStopping,
-    const std::vector<double>& criticalValues,
-    const double alpha,
-    const std::string& typeAlphaSpending,
-    const double parameterAlphaSpending,
-    const std::vector<double>& userAlphaSpending,
-    const std::vector<double>& futilityBounds,
-    const std::vector<double>& futilityCP,
-    const std::vector<double>& futilityTheta,
-    const std::vector<double>& spendingTime,
-    const bool MullerSchafer,
-    const size_t MNew,
-    const std::vector<int>& selected,
-    const double rNew,
-    const size_t kNew,
-    const std::vector<double>& informationRatesNew,
-    const std::vector<unsigned char>& efficacyStoppingNew,
-    const std::vector<unsigned char>& futilityStoppingNew,
-    const std::string& typeAlphaSpendingNew,
+    const double INew, const size_t M, const double r, const bool corr_known,
+    const size_t L, const std::vector<double> &zL,
+    const std::vector<double> &theta, const double IMax, const size_t kMax,
+    const std::vector<double> &informationRates,
+    const std::vector<unsigned char> &efficacyStopping,
+    const std::vector<unsigned char> &futilityStopping,
+    const std::vector<double> &criticalValues, const double alpha,
+    const std::string &typeAlphaSpending, const double parameterAlphaSpending,
+    const std::vector<double> &userAlphaSpending,
+    const std::vector<double> &futilityBounds,
+    const std::vector<double> &futilityCP,
+    const std::vector<double> &futilityTheta,
+    const std::vector<double> &spendingTime, const bool MullerSchafer,
+    const size_t MNew, const std::vector<int> &selected, const double rNew,
+    const size_t kNew, const std::vector<double> &informationRatesNew,
+    const std::vector<unsigned char> &efficacyStoppingNew,
+    const std::vector<unsigned char> &futilityStoppingNew,
+    const std::string &typeAlphaSpendingNew,
     const double parameterAlphaSpendingNew,
-    const std::vector<double>& futilityBoundsInt,
-    const std::vector<double>& futilityCPInt,
-    const std::vector<double>& futilityThetaInt,
-    const std::string& typeBetaSpendingNew,
+    const std::vector<double> &futilityBoundsInt,
+    const std::vector<double> &futilityCPInt,
+    const std::vector<double> &futilityThetaInt,
+    const std::string &typeBetaSpendingNew,
     const double parameterBetaSpendingNew,
-    const std::vector<double>& spendingTimeNew) {
+    const std::vector<double> &spendingTimeNew) {
 
   // Basic validations
-  if (std::isnan(INew)) throw std::invalid_argument("INew must be provided");
-  if (INew <= 0.0) throw std::invalid_argument("INew must be positive");
+  if (std::isnan(INew))
+    throw std::invalid_argument("INew must be provided");
+  if (INew <= 0.0)
+    throw std::invalid_argument("INew must be positive");
 
-  if (M < 1) throw std::invalid_argument("M must be at least 1");
-  if (r <= 0.0) throw std::invalid_argument("r must be positive");
-  if (L < 1) throw std::invalid_argument("L must be at least 1");
-  if (!none_na(zL)) throw std::invalid_argument("zL must be provided");
-  if (zL.size() != M) throw std::invalid_argument("Invalid length for zL");
-  if (!none_na(theta)) throw std::invalid_argument("theta must be provided");
-  if (theta.size() != M) throw std::invalid_argument("Invalid length for theta");
-  if (std::isnan(IMax)) throw std::invalid_argument("IMax must be provided");
-  if (IMax <= 0.0) throw std::invalid_argument("IMax must be positive");
-  if (kMax <= L) throw std::invalid_argument("kMax must be greater than L");
+  if (M < 1)
+    throw std::invalid_argument("M must be at least 1");
+  if (r <= 0.0)
+    throw std::invalid_argument("r must be positive");
+  if (L < 1)
+    throw std::invalid_argument("L must be at least 1");
+  if (!none_na(zL))
+    throw std::invalid_argument("zL must be provided");
+  if (zL.size() != M)
+    throw std::invalid_argument("Invalid length for zL");
+  if (!none_na(theta))
+    throw std::invalid_argument("theta must be provided");
+  if (theta.size() != M)
+    throw std::invalid_argument("Invalid length for theta");
+  if (std::isnan(IMax))
+    throw std::invalid_argument("IMax must be provided");
+  if (IMax <= 0.0)
+    throw std::invalid_argument("IMax must be positive");
+  if (kMax <= L)
+    throw std::invalid_argument("kMax must be greater than L");
 
   if (!std::isnan(alpha) && (alpha < 0.00001 || alpha >= 1)) {
     throw std::invalid_argument("alpha must lie in [0.00001, 1)");
@@ -91,7 +90,7 @@ std::vector<double> getCP_multiarm_cpp(
     infoRates = informationRates; // copy
   } else {
     for (size_t i = 0; i < kMax; ++i)
-      infoRates[i] = static_cast<double>(i+1) / static_cast<double>(kMax);
+      infoRates[i] = static_cast<double>(i + 1) / static_cast<double>(kMax);
   }
 
   // effStopping: default to all 1s if missing
@@ -119,14 +118,15 @@ std::vector<double> getCP_multiarm_cpp(
   }
 
   bool missingCriticalValues = !none_na(criticalValues);
-  bool missingFutilityBounds = !none_na(futilityBounds)
-    && !none_na(futilityCP) && !none_na(futilityTheta);
+  bool missingFutilityBounds = !none_na(futilityBounds) &&
+                               !none_na(futilityCP) && !none_na(futilityTheta);
 
   if (!missingCriticalValues && criticalValues.size() != kMax) {
     throw std::invalid_argument("Invalid length for criticalValues");
   }
   if (missingCriticalValues && std::isnan(alpha)) {
-    throw std::invalid_argument("alpha must be provided for missing criticalValues");
+    throw std::invalid_argument(
+        "alpha must be provided for missing criticalValues");
   }
 
   std::string asf = typeAlphaSpending;
@@ -134,9 +134,10 @@ std::vector<double> getCP_multiarm_cpp(
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
-  if (missingCriticalValues && !(asf == "of" || asf == "p" ||
-      asf == "wt" || asf == "sfof" || asf == "sfp" ||
-      asf == "sfkd" || asf == "sfhsd" || asf == "user" || asf == "none")) {
+  if (missingCriticalValues &&
+      !(asf == "of" || asf == "p" || asf == "wt" || asf == "sfof" ||
+        asf == "sfp" || asf == "sfkd" || asf == "sfhsd" || asf == "user" ||
+        asf == "none")) {
     throw std::invalid_argument("Invalid value for typeAlphaSpending");
   }
   if ((asf == "wt" || asf == "sfkd" || asf == "sfhsd") &&
@@ -144,7 +145,8 @@ std::vector<double> getCP_multiarm_cpp(
     throw std::invalid_argument("Missing value for parameterAlphaSpending");
   }
   if (asf == "sfkd" && parameterAlphaSpending <= 0.0) {
-    throw std::invalid_argument ("parameterAlphaSpending must be positive for sfKD");
+    throw std::invalid_argument(
+        "parameterAlphaSpending must be positive for sfKD");
   }
 
   if (missingCriticalValues && asf == "user") {
@@ -157,7 +159,8 @@ std::vector<double> getCP_multiarm_cpp(
     if (any_nonincreasing(userAlphaSpending))
       throw std::invalid_argument("userAlphaSpending must be nondecreasing");
     if (userAlphaSpending.back() != alpha)
-      throw std::invalid_argument("userAlphaSpending must end with specified alpha");
+      throw std::invalid_argument(
+          "userAlphaSpending must end with specified alpha");
   }
 
   if (!missingFutilityBounds) {
@@ -213,10 +216,12 @@ std::vector<double> getCP_multiarm_cpp(
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
 
-  bool missingFutilityBoundsInt = !none_na(futilityBoundsInt)
-    && !none_na(futilityCPInt) && !none_na(futilityThetaInt);
+  bool missingFutilityBoundsInt = !none_na(futilityBoundsInt) &&
+                                  !none_na(futilityCPInt) &&
+                                  !none_na(futilityThetaInt);
 
-  if (MNew < 1) throw std::invalid_argument("MNew must be at least 1");
+  if (MNew < 1)
+    throw std::invalid_argument("MNew must be at least 1");
   for (auto i : selected) {
     if (i < 1 || i > static_cast<int>(M)) {
       throw std::invalid_argument("Invalid value in selected");
@@ -227,8 +232,8 @@ std::vector<double> getCP_multiarm_cpp(
   if (selectedNew.size() != MNew)
     throw std::invalid_argument("Length of selected does not match MNew");
 
-  if (rNew <= 0.0) throw std::invalid_argument("rNew must be positive");
-
+  if (rNew <= 0.0)
+    throw std::invalid_argument("rNew must be positive");
 
   size_t k1 = kMax - L;
   std::vector<double> t1(k1);
@@ -269,7 +274,8 @@ std::vector<double> getCP_multiarm_cpp(
     }
 
   } else {
-    if (kNew < 1) throw std::invalid_argument("kNew must be at least 1");
+    if (kNew < 1)
+      throw std::invalid_argument("kNew must be at least 1");
 
     // informationRatesNew: default to (1:kNew)/kNew if missing
     infoRatesNew.resize(kNew);
@@ -285,7 +291,8 @@ std::vector<double> getCP_multiarm_cpp(
       infoRatesNew = informationRatesNew; // copy
     } else {
       for (size_t i = 0; i < kNew; ++i)
-        infoRatesNew[i] = static_cast<double>(i+1) / static_cast<double>(kNew);
+        infoRatesNew[i] =
+            static_cast<double>(i + 1) / static_cast<double>(kNew);
     }
 
     // effStoppingNew: default to all 1s if missing
@@ -311,15 +318,16 @@ std::vector<double> getCP_multiarm_cpp(
     }
 
     if (!(asfNew == "of" || asfNew == "sfof" || asfNew == "sfp" ||
-        asfNew == "sfkd" || asfNew == "sfhsd" || asfNew == "none")) {
+          asfNew == "sfkd" || asfNew == "sfhsd" || asfNew == "none")) {
       throw std::invalid_argument("Invalid value for typeAlphaSpendingNew");
     }
     if ((asfNew == "sfkd" || asfNew == "sfhsd") &&
         std::isnan(parameterAlphaSpendingNew)) {
-      throw std::invalid_argument("Missing value for parameterAlphaSpendingNew");
+      throw std::invalid_argument(
+          "Missing value for parameterAlphaSpendingNew");
     }
     if (asfNew == "sfkd" && parameterAlphaSpendingNew <= 0.0) {
-      throw std::invalid_argument (
+      throw std::invalid_argument(
           "parameterAlphaSpendingNew must be positive for sfKD");
     }
 
@@ -343,7 +351,8 @@ std::vector<double> getCP_multiarm_cpp(
   if (!missingFutilityBoundsInt) {
     if (none_na(futilityBoundsInt)) {
       if (futilityBoundsInt.size() < k2 - 1) {
-        throw std::invalid_argument("Insufficient length for futilityBoundsInt");
+        throw std::invalid_argument(
+            "Insufficient length for futilityBoundsInt");
       }
     } else if (none_na(futilityCPInt)) {
       if (futilityCPInt.size() < k2 - 1) {
@@ -361,8 +370,9 @@ std::vector<double> getCP_multiarm_cpp(
     }
   }
 
-  if (missingFutilityBoundsInt && !(bsfNew == "sfof" || bsfNew == "sfp" ||
-      bsfNew == "sfkd" || bsfNew == "sfhsd" || bsfNew == "none")) {
+  if (missingFutilityBoundsInt &&
+      !(bsfNew == "sfof" || bsfNew == "sfp" || bsfNew == "sfkd" ||
+        bsfNew == "sfhsd" || bsfNew == "none")) {
     throw std::invalid_argument("Invalid value for typeBetaSpendingNew");
   }
 
@@ -374,7 +384,6 @@ std::vector<double> getCP_multiarm_cpp(
     throw std::invalid_argument(
         "parameterBetaSpendingNew must be positive for sfKD");
   }
-
 
   // ----------- End of Input Validation ----------- //
 
@@ -388,41 +397,49 @@ std::vector<double> getCP_multiarm_cpp(
     if (kMax > 1 && criticalValues.size() == kMax) {
       bool hasNaN = false;
       for (size_t i = 0; i < kMax - 1; ++i) {
-        if (std::isnan(criticalValues[i])) { hasNaN = true; break; }
+        if (std::isnan(criticalValues[i])) {
+          hasNaN = true;
+          break;
+        }
       }
-      if (!hasNaN && std::isnan(criticalValues[kMax-1])) haybittle = true;
+      if (!hasNaN && std::isnan(criticalValues[kMax - 1]))
+        haybittle = true;
     }
 
     if (haybittle) { // Haybittle & Peto
       FlatMatrix b(M, kMax);
 
       for (size_t i = 0; i < kMax - 1; ++i) {
-        if (!effStopping[i]) critValues[i] = 8.0;
+        if (!effStopping[i])
+          critValues[i] = 8.0;
         std::fill_n(b.data_ptr() + i * M, M, critValues[i]);
       }
 
-      double* last_col = b.data_ptr() + (kMax - 1) * M;
-      auto f = [&](double x)->double {
+      double *last_col = b.data_ptr() + (kMax - 1) * M;
+      auto f = [&](double x) -> double {
         std::fill_n(last_col, M, x);
-        probs = exitprob_multiarm_cpp(M, r, zero, corr_known, kMax, b, infoRates);
+        probs =
+            exitprob_multiarm_cpp(M, r, zero, corr_known, kMax, b, infoRates);
         double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                      probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
       };
 
-      critValues[kMax-1] = brent(f, 0.0, 8.0, 1e-6);
+      critValues[kMax - 1] = brent(f, 0.0, 8.0, 1e-6);
     } else {
       critValues = getBound_multiarm_cpp(
-        M, r, corr_known, kMax, infoRates, alpha, asf,
-        parameterAlphaSpending, userAlphaSpending, spendTime, effStopping);
+          M, r, corr_known, kMax, infoRates, alpha, asf, parameterAlphaSpending,
+          userAlphaSpending, spendTime, effStopping);
     }
   }
 
   FlatMatrix sigma(M, M);
   sigma.fill(r / (1.0 + r));
-  for (size_t i = 0; i < M; ++i) sigma(i, i) = 1.0;
+  for (size_t i = 0; i < M; ++i)
+    sigma(i, i) = 1.0;
 
-  FlatMatrix a(M, kMax); a.fill(-8.0);
+  FlatMatrix a(M, kMax);
+  a.fill(-8.0);
   FlatMatrix b(M, kMax);
   for (size_t i = 0; i < kMax; ++i) {
     std::fill_n(b.data_ptr() + i * M, M, critValues[i]);
@@ -433,7 +450,7 @@ std::vector<double> getCP_multiarm_cpp(
   if (kMax > 1) {
     if (missingFutilityBounds) {
       std::fill_n(futBounds.begin(), kMax - 1, -8.0);
-      futBounds[kMax-1] = critValues[kMax-1];
+      futBounds[kMax - 1] = critValues[kMax - 1];
     } else if (!missingFutilityBounds) {
       if (none_na(futilityBounds)) {
         for (size_t i = 0; i < kMax - 1; ++i) {
@@ -442,29 +459,29 @@ std::vector<double> getCP_multiarm_cpp(
                 "futilityBounds must lie below criticalValues");
           }
         }
-        std::copy_n(futilityBounds.begin(), kMax-1, futBounds.begin());
-        futBounds[kMax-1] = critValues[kMax-1];
+        std::copy_n(futilityBounds.begin(), kMax - 1, futBounds.begin());
+        futBounds[kMax - 1] = critValues[kMax - 1];
       } else if (none_na(futilityCP)) {
         double c2 = critValues[kMax - 1];
         for (size_t i = 0; i < kMax - 1; ++i) {
           double q = qmvnormcpp(1 - futilityCP[i], zero, sigma);
-          futBounds[i] = std::sqrt(infoRates[i]) *
-            (c2 - std::sqrt(1 - infoRates[i]) * q);
+          futBounds[i] =
+              std::sqrt(infoRates[i]) * (c2 - std::sqrt(1 - infoRates[i]) * q);
           if (futBounds[i] > critValues[i]) {
             throw std::invalid_argument("futilityCP values are too large to "
-                                          "be compatible with criticalValues");
+                                        "be compatible with criticalValues");
           }
         }
-        futBounds[kMax-1] = critValues[kMax-1];
+        futBounds[kMax - 1] = critValues[kMax - 1];
       } else {
         for (size_t i = 0; i < kMax - 1; ++i) {
           futBounds[i] = std::sqrt(infoRates[i] * IMax) * futilityTheta[i];
           if (futBounds[i] > critValues[i]) {
             throw std::invalid_argument("futilityTheta values are too large to "
-                                          "be compatible with criticalValues");
+                                        "be compatible with criticalValues");
           }
         }
-        futBounds[kMax-1] = critValues[kMax-1];
+        futBounds[kMax - 1] = critValues[kMax - 1];
       }
     }
   } else {
@@ -475,7 +492,8 @@ std::vector<double> getCP_multiarm_cpp(
 
   // information for the primary trial
   std::vector<double> information1(kMax);
-  for (size_t i = 0; i < kMax; ++i) information1[i] = infoRates[i] * IMax;
+  for (size_t i = 0; i < kMax; ++i)
+    information1[i] = infoRates[i] * IMax;
 
   for (size_t i = 0; i < kMax; ++i) {
     std::fill_n(a.data_ptr() + i * M, M, futBounds[i]);
@@ -488,7 +506,7 @@ std::vector<double> getCP_multiarm_cpp(
   a1.fill(-8.0);
   for (size_t i = 0; i < k1; ++i) {
     r1[i] = infoRates[L - 1] / infoRates[L + i];
-    double* bptr = b1.data_ptr() + i * M; // start of column i of b1
+    double *bptr = b1.data_ptr() + i * M; // start of column i of b1
     if (effStopping[L + i]) {
       double cut = critValues[L + i];
       r1[i] = infoRates[L - 1] / infoRates[L + i];
@@ -517,7 +535,7 @@ std::vector<double> getCP_multiarm_cpp(
 
   // conditional power
   for (size_t i = 0; i < k1; ++i) {
-    double* aptr = a1.data_ptr() + i * M; // start of column i of a1
+    double *aptr = a1.data_ptr() + i * M; // start of column i of a1
     if (futStopping[L + i]) {
       double cut = futBounds[L + i];
       double sqrt_r1 = std::sqrt(r1[i]);
@@ -535,7 +553,6 @@ std::vector<double> getCP_multiarm_cpp(
   double conditionalPower = std::accumulate(probs.exitProbUpper.begin(),
                                             probs.exitProbUpper.end(), 0.0);
 
-
   // secondary trial design
   double IL = information1[L - 1];
   double sqrtIL = std::sqrt(IL);
@@ -543,7 +560,8 @@ std::vector<double> getCP_multiarm_cpp(
   std::vector<double> zero2(MNew, 0.0);
   FlatMatrix sigma2(MNew, MNew);
   sigma2.fill(rNew / (rNew + 1.0));
-  for (size_t i = 0; i < MNew; ++i) sigma2(i, i) = 1.0;
+  for (size_t i = 0; i < MNew; ++i)
+    sigma2(i, i) = 1.0;
 
   std::string asf2;
   double asfpar2;
@@ -567,11 +585,14 @@ std::vector<double> getCP_multiarm_cpp(
   std::vector<double> sqrtI2(k2), sqrtIc(k2);
   std::vector<double> critValues2(k2, 8.0); // for integrated trial
   std::vector<double> futBounds2(k2, -8.0); // for integrated trial
-  FlatMatrix b2(MNew, k2); b2.fill(8.0);  // for secondary trial
-  FlatMatrix a2(MNew, k2); a2.fill(-8.0); // for secondary trial
+  FlatMatrix b2(MNew, k2);
+  b2.fill(8.0); // for secondary trial
+  FlatMatrix a2(MNew, k2);
+  a2.fill(-8.0); // for secondary trial
 
   std::vector<double> zscaled(MNew);
-  for (size_t j = 0; j < MNew; ++j) zscaled[j] = zL[selectedNew[j]] * sqrtIL;
+  for (size_t j = 0; j < MNew; ++j)
+    zscaled[j] = zL[selectedNew[j]] * sqrtIL;
 
   for (size_t i = 0; i < k2; ++i) {
     I2[i] = INew * infoRatesNew[i];
@@ -582,13 +603,12 @@ std::vector<double> getCP_multiarm_cpp(
 
   // first obtain the efficacy bounds for the secondary trial
   if (asf2 == "of") {
-    auto g = [&b2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2,
-              &effStoppingNew, &probs,
-              k2, alphaNew, MNew, rNew, corr_known]
-    (double aval)->double {
+    auto g = [&b2, &I2, &sqrtI2, &sqrtIc, &zscaled, &zero2, &effStoppingNew,
+              &probs, k2, alphaNew, MNew, rNew,
+              corr_known](double aval) -> double {
       double col_const = aval * sqrtIc[k2 - 1];
       for (size_t i = 0; i < k2; ++i) {
-        double* colptr = b2.data_ptr() + i * MNew;
+        double *colptr = b2.data_ptr() + i * MNew;
         if (effStoppingNew[i]) {
           double denom = sqrtI2[i];
           for (size_t j = 0; j < MNew; ++j) {
@@ -608,7 +628,7 @@ std::vector<double> getCP_multiarm_cpp(
     double cof = brent(g, 0.0, 8.0, 1e-6);
     double col_const = cof * sqrtIc[k2 - 1];
     for (size_t i = 0; i < k2; ++i) {
-      double* colptr = b2.data_ptr() + i * MNew;
+      double *colptr = b2.data_ptr() + i * MNew;
       if (effStoppingNew[i]) {
         critValues2[i] = col_const / sqrtIc[i];
         double denom = sqrtI2[i];
@@ -621,13 +641,13 @@ std::vector<double> getCP_multiarm_cpp(
       }
     }
   } else if (asf2 == "none") {
-    for (size_t i = 0; i < k2 - 1; ++i) critValues2[i] = 8.0;
+    for (size_t i = 0; i < k2 - 1; ++i)
+      critValues2[i] = 8.0;
     double denom = sqrtI2[k2 - 1];
 
-    auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs,
-              denom, k2, alphaNew, MNew, rNew, corr_known]
-    (double aval)->double {
-      double* colptr = b2.data_ptr() + (k2 - 1) * MNew;
+    auto g = [&b2, &I2, &sqrtIc, &zscaled, &zero2, &probs, denom, k2, alphaNew,
+              MNew, rNew, corr_known](double aval) -> double {
+      double *colptr = b2.data_ptr() + (k2 - 1) * MNew;
       double col_const = aval * sqrtIc[k2 - 1];
       for (size_t j = 0; j < MNew; ++j) {
         colptr[j] = (col_const - zscaled[j]) / denom;
@@ -641,27 +661,28 @@ std::vector<double> getCP_multiarm_cpp(
 
     double cof = brent(g, 0.0, 8.0, 1e-6);
     critValues2[k2 - 1] = cof;
-    double* colptr = b2.data_ptr() + (k2 - 1) * MNew;
+    double *colptr = b2.data_ptr() + (k2 - 1) * MNew;
     double col_const = cof * sqrtIc[k2 - 1];
     for (size_t j = 0; j < MNew; ++j) {
       colptr[j] = (col_const - zscaled[j]) / denom;
     }
   } else {
     for (size_t i = 0; i < k2; ++i) {
-      if (!effStoppingNew[i]) continue;
+      if (!effStoppingNew[i])
+        continue;
       double denom = sqrtI2[i];
 
-      auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs,
-                denom, i, MNew, rNew, corr_known]
-      (double aval)->double {
+      auto g = [&b2, &I2, &sqrtIc, &zscaled, &cpu0, &zero2, &probs, denom, i,
+                MNew, rNew, corr_known](double aval) -> double {
         double col_const = aval * sqrtIc[i];
-        double* colptr = b2.data_ptr() + i * MNew;
+        double *colptr = b2.data_ptr() + i * MNew;
         // update critical values of the secondary trial at current look
         for (size_t j = 0; j < MNew; ++j) {
           colptr[j] = (col_const - zscaled[j]) / denom;
         }
 
-        probs = exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, i + 1, b2, I2);
+        probs =
+            exitprob_multiarm_cpp(MNew, rNew, zero2, corr_known, i + 1, b2, I2);
         double p0 = std::accumulate(probs.exitProbUpper.begin(),
                                     probs.exitProbUpper.end(), 0.0);
         return p0 - cpu0[i];
@@ -670,7 +691,7 @@ std::vector<double> getCP_multiarm_cpp(
       double cof = brent(g, 0.0, 8.0, 1e-6);
       double col_const = cof * sqrtIc[i];
       critValues2[i] = cof;
-      double* colptr = b2.data_ptr() + i * MNew;
+      double *colptr = b2.data_ptr() + i * MNew;
       for (size_t j = 0; j < MNew; ++j) {
         colptr[j] = (col_const - zscaled[j]) / denom;
       }
@@ -681,7 +702,7 @@ std::vector<double> getCP_multiarm_cpp(
   if (k2 > 1) {
     if (missingFutilityBoundsInt && bsfNew == "none") {
       std::fill_n(futBounds2.begin(), k2 - 1, -8.0);
-      futBounds2[k2-1] = critValues2[k2-1];
+      futBounds2[k2 - 1] = critValues2[k2 - 1];
     } else if (!missingFutilityBoundsInt) {
       if (none_na(futilityBoundsInt)) {
         for (size_t i = 0; i < k2 - 1; ++i) {
@@ -691,8 +712,8 @@ std::vector<double> getCP_multiarm_cpp(
                 "for the integrated trial");
           }
         }
-        std::copy_n(futilityBoundsInt.begin(), k2-1, futBounds2.begin());
-        futBounds2[k2-1] = critValues2[k2-1];
+        std::copy_n(futilityBoundsInt.begin(), k2 - 1, futBounds2.begin());
+        futBounds2[k2 - 1] = critValues2[k2 - 1];
       } else if (none_na(futilityCPInt)) {
         double c2 = critValues2[k2 - 1];
         for (size_t i = 0; i < k2 - 1; ++i) {
@@ -705,7 +726,7 @@ std::vector<double> getCP_multiarm_cpp(
                 "critical values for the integrated trial");
           }
         }
-        futBounds2[k2-1] = critValues2[k2-1];
+        futBounds2[k2 - 1] = critValues2[k2 - 1];
       } else {
         for (size_t i = 0; i < k2 - 1; ++i) {
           futBounds2[i] = std::sqrt(Ic[i]) * futilityThetaInt[i];
@@ -715,7 +736,7 @@ std::vector<double> getCP_multiarm_cpp(
                 "critical values for the integrated trial");
           }
         }
-        futBounds2[k2-1] = critValues2[k2-1];
+        futBounds2[k2 - 1] = critValues2[k2 - 1];
       }
     }
   } else {
@@ -725,9 +746,9 @@ std::vector<double> getCP_multiarm_cpp(
   }
 
   if (missingFutilityBoundsInt && bsfNew != "none" && k2 > 1) { // beta-spending
-    auto out = getPower_multiarm(
-      MNew, rNew, theta2, alphaNew, k2, critValues2, Ic,
-      bsfNew, parameterBetaSpendingNew, spendTimeNew, futStoppingNew, IL, zL);
+    auto out = getPower_multiarm(MNew, rNew, theta2, alphaNew, k2, critValues2,
+                                 Ic, bsfNew, parameterBetaSpendingNew,
+                                 spendTimeNew, futStoppingNew, IL, zL);
     futBounds2 = out.futilityBounds;
   }
 
@@ -746,46 +767,38 @@ std::vector<double> getCP_multiarm_cpp(
   return result;
 }
 
-
 // [[Rcpp::export]]
 Rcpp::NumericVector getCP_multiarm_Rcpp(
-    const double INew = NA_REAL,
-    const int M = NA_INTEGER,
-    const double r = 1,
-    const bool corr_known = true,
-    const int L = NA_INTEGER,
-    const Rcpp::NumericVector& zL = NA_REAL,
-    const Rcpp::NumericVector& theta = NA_REAL,
-    const double IMax = NA_REAL,
+    const double INew = NA_REAL, const int M = NA_INTEGER, const double r = 1,
+    const bool corr_known = true, const int L = NA_INTEGER,
+    const Rcpp::NumericVector &zL = NA_REAL,
+    const Rcpp::NumericVector &theta = NA_REAL, const double IMax = NA_REAL,
     const int kMax = NA_INTEGER,
-    const Rcpp::NumericVector& informationRates = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStopping = NA_LOGICAL,
-    const Rcpp::LogicalVector& futilityStopping = NA_LOGICAL,
+    const Rcpp::NumericVector &informationRates = NA_REAL,
+    const Rcpp::LogicalVector &efficacyStopping = NA_LOGICAL,
+    const Rcpp::LogicalVector &futilityStopping = NA_LOGICAL,
     const Rcpp::Nullable<Rcpp::NumericVector> criticalValues = R_NilValue,
-    const double alpha = 0.025,
-    const std::string& typeAlphaSpending = "sfOF",
+    const double alpha = 0.025, const std::string &typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector& userAlphaSpending = NA_REAL,
+    const Rcpp::NumericVector &userAlphaSpending = NA_REAL,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds = R_NilValue,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityCP = R_NilValue,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityTheta = R_NilValue,
-    const Rcpp::NumericVector& spendingTime = NA_REAL,
-    const bool MullerSchafer = false,
-    const int MNew = NA_INTEGER,
-    const Rcpp::IntegerVector& selected = NA_INTEGER,
-    const double rNew = 1,
+    const Rcpp::NumericVector &spendingTime = NA_REAL,
+    const bool MullerSchafer = false, const int MNew = NA_INTEGER,
+    const Rcpp::IntegerVector &selected = NA_INTEGER, const double rNew = 1,
     const int kNew = NA_INTEGER,
-    const Rcpp::NumericVector& informationRatesNew = NA_REAL,
-    const Rcpp::LogicalVector& efficacyStoppingNew = NA_LOGICAL,
-    const Rcpp::LogicalVector& futilityStoppingNew = NA_LOGICAL,
-    const std::string& typeAlphaSpendingNew = "sfOF",
+    const Rcpp::NumericVector &informationRatesNew = NA_REAL,
+    const Rcpp::LogicalVector &efficacyStoppingNew = NA_LOGICAL,
+    const Rcpp::LogicalVector &futilityStoppingNew = NA_LOGICAL,
+    const std::string &typeAlphaSpendingNew = "sfOF",
     const double parameterAlphaSpendingNew = NA_REAL,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityBoundsInt = R_NilValue,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityCPInt = R_NilValue,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityThetaInt = R_NilValue,
-    const std::string& typeBetaSpendingNew = "none",
+    const std::string &typeBetaSpendingNew = "none",
     const double parameterBetaSpendingNew = NA_REAL,
-    const Rcpp::NumericVector& spendingTimeNew = NA_REAL) {
+    const Rcpp::NumericVector &spendingTimeNew = NA_REAL) {
 
   auto zLVec = Rcpp::as<std::vector<double>>(zL);
   auto thetaVec = Rcpp::as<std::vector<double>>(theta);
@@ -845,18 +858,14 @@ Rcpp::NumericVector getCP_multiarm_Rcpp(
   }
 
   auto result = getCP_multiarm_cpp(
-    INew,  static_cast<size_t>(M), r, corr_known,
-    static_cast<size_t>(L), zLVec, thetaVec, IMax,
-    static_cast<size_t>(kMax), infoRates, effStopping, futStopping,
-    critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
-    userAlpha, futBounds, futCP, futTheta, spendTime,
-    MullerSchafer, static_cast<size_t>(MNew), selectedNew, rNew,
-    static_cast<size_t>(kNew), infoRatesNew,
-    effStoppingNew, futStoppingNew,
-    typeAlphaSpendingNew, parameterAlphaSpendingNew,
-    futBoundsInt, futCPInt, futThetaInt, typeBetaSpendingNew,
-    parameterBetaSpendingNew, spendTimeNew
-  );
+      INew, static_cast<size_t>(M), r, corr_known, static_cast<size_t>(L),
+      zLVec, thetaVec, IMax, static_cast<size_t>(kMax), infoRates, effStopping,
+      futStopping, critValues, alpha, typeAlphaSpending, parameterAlphaSpending,
+      userAlpha, futBounds, futCP, futTheta, spendTime, MullerSchafer,
+      static_cast<size_t>(MNew), selectedNew, rNew, static_cast<size_t>(kNew),
+      infoRatesNew, effStoppingNew, futStoppingNew, typeAlphaSpendingNew,
+      parameterAlphaSpendingNew, futBoundsInt, futCPInt, futThetaInt,
+      typeBetaSpendingNew, parameterBetaSpendingNew, spendTimeNew);
 
   return Rcpp::wrap(result);
 }

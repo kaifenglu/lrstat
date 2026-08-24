@@ -1,7 +1,7 @@
-#include "miettinen_nurminen.h"
-#include "utilities.h"
 #include "dataframe_list.h"
+#include "miettinen_nurminen.h"
 #include "thread_utils.h"
+#include "utilities.h"
 
 #include <algorithm>
 #include <cmath>
@@ -17,23 +17,20 @@
 
 using std::size_t;
 
+ListCpp rdsim_multiarm_cpp(const size_t M, const size_t kMax,
+                           const FlatMatrix &criticalValues,
+                           const std::vector<double> &futilityBounds,
+                           const std::vector<double> &riskDiffH0s,
+                           const std::vector<double> &allocations,
+                           const std::vector<double> &pis,
+                           const bool nullVariance, const size_t n,
+                           const std::vector<int> &plannedSubjects,
+                           const int maxNumberOfIterations, const int seed) {
 
-ListCpp rdsim_multiarm_cpp(
-    const size_t M,
-    const size_t kMax,
-    const FlatMatrix& criticalValues,
-    const std::vector<double>& futilityBounds,
-    const std::vector<double>& riskDiffH0s,
-    const std::vector<double>& allocations,
-    const std::vector<double>& pis,
-    const bool nullVariance,
-    const size_t n,
-    const std::vector<int>& plannedSubjects,
-    const int maxNumberOfIterations,
-    const int seed)
-{
-  if (M < 1) throw std::invalid_argument("M must be at least 1");
-  if (kMax < 1) throw std::invalid_argument("kMax must be at least 1");
+  if (M < 1)
+    throw std::invalid_argument("M must be at least 1");
+  if (kMax < 1)
+    throw std::invalid_argument("kMax must be at least 1");
   if (criticalValues.nrow != kMax || criticalValues.ncol != M) {
     throw std::invalid_argument("criticalValues must have dimension kMax x M");
   }
@@ -42,7 +39,8 @@ ListCpp rdsim_multiarm_cpp(
   }
   for (size_t k = 0; k + 1 < kMax; ++k) {
     if (futilityBounds[k] > criticalValues(k, 0)) {
-      throw std::invalid_argument("futilityBounds must lie below criticalValues");
+      throw std::invalid_argument(
+          "futilityBounds must lie below criticalValues");
     }
   }
 
@@ -57,7 +55,8 @@ ListCpp rdsim_multiarm_cpp(
   }
   for (size_t m = 0; m < M + 1; ++m) {
     std::string nm = std::string("pis[") + std::to_string(m) + "]";
-    if (std::isnan(pis[m])) throw std::invalid_argument(nm + " must be provided");
+    if (std::isnan(pis[m]))
+      throw std::invalid_argument(nm + " must be provided");
     if (pis[m] <= 0.0 || pis[m] >= 1.0) {
       throw std::invalid_argument(nm + " must lies in (0,1)");
     }
@@ -65,7 +64,8 @@ ListCpp rdsim_multiarm_cpp(
 
   if (static_cast<int>(n) == INT_MIN)
     throw std::invalid_argument("n must be provided");
-  if (n <= 0) throw std::invalid_argument("n must be a positive integer");
+  if (n <= 0)
+    throw std::invalid_argument("n must be a positive integer");
 
   if (plannedSubjects.size() != kMax)
     throw std::invalid_argument("Invalid length for plannedSubjects");
@@ -73,14 +73,16 @@ ListCpp rdsim_multiarm_cpp(
     throw std::invalid_argument("plannedSubjects must be positive");
   if (any_nonincreasing(plannedSubjects))
     throw std::invalid_argument("plannedSubjects must be increasing");
-  int maxN = static_cast<int>(std::round((allocs[0] + allocs[M]) / sumAlloc * n));
+  int maxN =
+      static_cast<int>(std::round((allocs[0] + allocs[M]) / sumAlloc * n));
   if (plannedSubjects.back() != maxN) {
-    throw std::invalid_argument(
-      "plannedSubjects must end with sample size for arm 1 & control combined");
+    throw std::invalid_argument("plannedSubjects must end with sample size for "
+                                "arm 1 & control combined");
   }
 
   if (maxNumberOfIterations < 1)
-    throw std::invalid_argument("maxNumberOfIterations must be a positive integer");
+    throw std::invalid_argument(
+        "maxNumberOfIterations must be a positive integer");
 
   const size_t maxIters = static_cast<size_t>(maxNumberOfIterations);
   std::vector<int> stagewiseSubjects(kMax);
@@ -91,7 +93,8 @@ ListCpp rdsim_multiarm_cpp(
 
   std::vector<uint64_t> seeds(maxIters);
   boost::random::mt19937_64 master_rng(static_cast<uint64_t>(seed));
-  for (size_t iter = 0; iter < maxIters; ++iter) seeds[iter] = master_rng();
+  for (size_t iter = 0; iter < maxIters; ++iter)
+    seeds[iter] = master_rng();
 
   struct StageSummary1Row {
     int iterNum = 0;
@@ -118,8 +121,12 @@ ListCpp rdsim_multiarm_cpp(
   struct IterationResult {
     std::vector<StageSummary1Row> summary1Rows;
     std::vector<StageSummary2Row> summary2Rows;
-    void reserveForSummary1(size_t approxRows) { summary1Rows.reserve(approxRows); }
-    void reserveForSummary2(size_t approxRows) { summary2Rows.reserve(approxRows); }
+    void reserveForSummary1(size_t approxRows) {
+      summary1Rows.reserve(approxRows);
+    }
+    void reserveForSummary2(size_t approxRows) {
+      summary2Rows.reserve(approxRows);
+    }
   };
 
   std::vector<IterationResult> results;
@@ -128,34 +135,23 @@ ListCpp rdsim_multiarm_cpp(
   struct SimWorker : public RcppParallel::Worker {
     const size_t M;
     const size_t kMax;
-    const std::vector<double>& rdH0s;
-    const std::vector<double>& allocs;
-    const std::vector<double>& pis;
+    const std::vector<double> &rdH0s;
+    const std::vector<double> &allocs;
+    const std::vector<double> &pis;
     const bool nullVariance;
-    const std::vector<int>& stagewiseSubjects;
-    const std::vector<uint64_t>& seeds;
-    std::vector<IterationResult>* results;
+    const std::vector<int> &stagewiseSubjects;
+    const std::vector<uint64_t> &seeds;
+    std::vector<IterationResult> *results;
 
-    SimWorker(
-      size_t M_,
-      size_t kMax_,
-      const std::vector<double>& rdH0s_,
-      const std::vector<double>& allocs_,
-      const std::vector<double>& pis_,
-      bool nullVariance_,
-      const std::vector<int>& stagewiseSubjects_,
-      const std::vector<uint64_t>& seeds_,
-      std::vector<IterationResult>* results_)
-      : M(M_),
-        kMax(kMax_),
-        rdH0s(rdH0s_),
-        allocs(allocs_),
-        pis(pis_),
-        nullVariance(nullVariance_),
-        stagewiseSubjects(stagewiseSubjects_),
-        seeds(seeds_),
-        results(results_)
-    {}
+    SimWorker(size_t M_, size_t kMax_, const std::vector<double> &rdH0s_,
+              const std::vector<double> &allocs_,
+              const std::vector<double> &pis_, bool nullVariance_,
+              const std::vector<int> &stagewiseSubjects_,
+              const std::vector<uint64_t> &seeds_,
+              std::vector<IterationResult> *results_)
+        : M(M_), kMax(kMax_), rdH0s(rdH0s_), allocs(allocs_), pis(pis_),
+          nullVariance(nullVariance_), stagewiseSubjects(stagewiseSubjects_),
+          seeds(seeds_), results(results_) {}
 
     void operator()(std::size_t begin, std::size_t end) {
       const size_t M1 = M + 1;
@@ -166,7 +162,7 @@ ListCpp rdsim_multiarm_cpp(
 
       for (size_t iter = begin; iter < end; ++iter) {
         boost::random::mt19937_64 rng_local(seeds[iter]);
-        IterationResult& out = (*results)[iter];
+        IterationResult &out = (*results)[iter];
         out.summary1Rows.clear();
         out.summary2Rows.clear();
         out.reserveForSummary1(kMax * M2);
@@ -174,7 +170,7 @@ ListCpp rdsim_multiarm_cpp(
 
         for (size_t k = 0; k < kMax; ++k) {
           const double stageSize = static_cast<double>(stagewiseSubjects[k]) /
-            (allocs[0] + allocs[M]);
+                                   (allocs[0] + allocs[M]);
 
           accruals[M1] = 0;
           events[M1] = 0;
@@ -223,14 +219,15 @@ ListCpp rdsim_multiarm_cpp(
             double vrd = 0.0;
             if (nullVariance) {
               const double r = allocs[m] / (allocs[m] + allocs[M]);
-              mr = remlRiskDiff(r, r * pis[m], 1.0 - r, (1.0 - r) * pis[M], rdH0s[m]);
+              mr = remlRiskDiff(r, r * pis[m], 1.0 - r, (1.0 - r) * pis[M],
+                                rdH0s[m]);
               const double pT = mr[0];
               const double pC = mr[1];
-              vrd = pT * (1.0 - pT) / accruals[m] +
-                pC * (1.0 - pC) / accruals[M];
+              vrd =
+                  pT * (1.0 - pT) / accruals[m] + pC * (1.0 - pC) / accruals[M];
             } else {
               vrd = phat[m] * (1.0 - phat[m]) / accruals[m] +
-                phat[M] * (1.0 - phat[M]) / accruals[M];
+                    phat[M] * (1.0 - phat[M]) / accruals[M];
             }
             const double z = (rd - rdH0s[m]) / std::sqrt(vrd);
             sr2.riskDiff = rd;
@@ -243,9 +240,8 @@ ListCpp rdsim_multiarm_cpp(
     } // operator()
   }; // SimWorker
 
-  SimWorker worker(
-      M, kMax, rdH0s, allocs, pis,
-      nullVariance, stagewiseSubjects, seeds, &results);
+  SimWorker worker(M, kMax, rdH0s, allocs, pis, nullVariance, stagewiseSubjects,
+                   seeds, &results);
 
   RcppParallel::parallelFor(0, maxIters, worker);
 
@@ -257,29 +253,47 @@ ListCpp rdsim_multiarm_cpp(
   }
 
   // prepare final containers (reserve capacities)
-  std::vector<int> sum1_iterNum; sum1_iterNum.reserve(ns1r);
-  std::vector<int> sum1_stopStage; sum1_stopStage.reserve(ns1r);
-  std::vector<int> sum1_stageNum; sum1_stageNum.reserve(ns1r);
-  std::vector<int> sum1_trtGrp; sum1_trtGrp.reserve(ns1r);
-  std::vector<int> sum1_accruals; sum1_accruals.reserve(ns1r);
-  std::vector<int> sum1_events; sum1_events.reserve(ns1r);
-  std::vector<double> sum1_phat; sum1_phat.reserve(ns1r);
+  std::vector<int> sum1_iterNum;
+  sum1_iterNum.reserve(ns1r);
+  std::vector<int> sum1_stopStage;
+  sum1_stopStage.reserve(ns1r);
+  std::vector<int> sum1_stageNum;
+  sum1_stageNum.reserve(ns1r);
+  std::vector<int> sum1_trtGrp;
+  sum1_trtGrp.reserve(ns1r);
+  std::vector<int> sum1_accruals;
+  sum1_accruals.reserve(ns1r);
+  std::vector<int> sum1_events;
+  sum1_events.reserve(ns1r);
+  std::vector<double> sum1_phat;
+  sum1_phat.reserve(ns1r);
 
-  std::vector<int> sum2_iterNum; sum2_iterNum.reserve(ns2r);
-  std::vector<int> sum2_stopStage; sum2_stopStage.reserve(ns2r);
-  std::vector<int> sum2_stageNum; sum2_stageNum.reserve(ns2r);
-  std::vector<int> sum2_actArm; sum2_actArm.reserve(ns2r);
-  std::vector<int> sum2_totAccruals; sum2_totAccruals.reserve(ns2r);
-  std::vector<int> sum2_totEvents; sum2_totEvents.reserve(ns2r);
-  std::vector<double> sum2_riskDiff; sum2_riskDiff.reserve(ns2r);
-  std::vector<double> sum2_vriskDiff; sum2_vriskDiff.reserve(ns2r);
-  std::vector<double> sum2_z; sum2_z.reserve(ns2r);
-  std::vector<unsigned char> sum2_reject; sum2_reject.reserve(ns2r);
-  std::vector<unsigned char> sum2_futility; sum2_futility.reserve(ns2r);
+  std::vector<int> sum2_iterNum;
+  sum2_iterNum.reserve(ns2r);
+  std::vector<int> sum2_stopStage;
+  sum2_stopStage.reserve(ns2r);
+  std::vector<int> sum2_stageNum;
+  sum2_stageNum.reserve(ns2r);
+  std::vector<int> sum2_actArm;
+  sum2_actArm.reserve(ns2r);
+  std::vector<int> sum2_totAccruals;
+  sum2_totAccruals.reserve(ns2r);
+  std::vector<int> sum2_totEvents;
+  sum2_totEvents.reserve(ns2r);
+  std::vector<double> sum2_riskDiff;
+  sum2_riskDiff.reserve(ns2r);
+  std::vector<double> sum2_vriskDiff;
+  sum2_vriskDiff.reserve(ns2r);
+  std::vector<double> sum2_z;
+  sum2_z.reserve(ns2r);
+  std::vector<unsigned char> sum2_reject;
+  sum2_reject.reserve(ns2r);
+  std::vector<unsigned char> sum2_futility;
+  sum2_futility.reserve(ns2r);
 
   for (size_t iter = 0; iter < maxIters; ++iter) {
-    const auto& s1rows = results[iter].summary1Rows;
-    for (const auto& r : s1rows) {
+    const auto &s1rows = results[iter].summary1Rows;
+    for (const auto &r : s1rows) {
       sum1_iterNum.push_back(r.iterNum);
       sum1_stopStage.push_back(0);
       sum1_stageNum.push_back(r.stageNum);
@@ -289,8 +303,8 @@ ListCpp rdsim_multiarm_cpp(
       sum1_phat.push_back(r.phat);
     }
 
-    const auto& s2rows = results[iter].summary2Rows;
-    for (const auto& r : s2rows) {
+    const auto &s2rows = results[iter].summary2Rows;
+    for (const auto &r : s2rows) {
       sum2_iterNum.push_back(r.iterNum);
       sum2_stopStage.push_back(0);
       sum2_stageNum.push_back(r.stageNum);
@@ -321,13 +335,13 @@ ListCpp rdsim_multiarm_cpp(
   FlatMatrix rejectBySet(kMax, ntests);
   FlatMatrix rejectByNum(kMax + 1, M + 1);
 
-  int* stop1 = sum1_stopStage.data();
-  const int* sum1_E = sum1_events.data();
-  const int* sum1_A = sum1_accruals.data();
-  int* stop2 = sum2_stopStage.data();
-  const double* zstat = sum2_z.data();
-  unsigned char* reject = sum2_reject.data();
-  unsigned char* futility = sum2_futility.data();
+  int *stop1 = sum1_stopStage.data();
+  const int *sum1_E = sum1_events.data();
+  const int *sum1_A = sum1_accruals.data();
+  int *stop2 = sum2_stopStage.data();
+  const double *zstat = sum2_z.data();
+  unsigned char *reject = sum2_reject.data();
+  unsigned char *futility = sum2_futility.data();
 
   for (size_t iter = 0; iter < niters; ++iter) {
     const size_t i1 = iter * rowsPerIter1;
@@ -343,11 +357,12 @@ ListCpp rdsim_multiarm_cpp(
       double cut = criticalValues(k, 0); // cutoff for level-M test
 
       std::unordered_set<size_t> I; // set of unrejected hypotheses
-      for (size_t m = 0; m < M; ++m) I.insert(m);
+      for (size_t m = 0; m < M; ++m)
+        I.insert(m);
 
       // check whether there is any arm that crosses the efficacy boundary
       bool anyreject = false;
-      for (auto it = I.begin(); it != I.end(); ) {
+      for (auto it = I.begin(); it != I.end();) {
         size_t m = *it;
         if (zstat[offset + m] > cut) {
           anyreject = true;
@@ -368,7 +383,7 @@ ListCpp rdsim_multiarm_cpp(
           anyreject = false;
           if (!I.empty()) {
             double cut2 = criticalValues(k, M - I.size());
-            for (auto it = I.begin(); it != I.end(); ) {
+            for (auto it = I.begin(); it != I.end();) {
               size_t m = *it;
               if (zstat[offset + m] > cut2) {
                 anyreject = true;
@@ -385,7 +400,6 @@ ListCpp rdsim_multiarm_cpp(
         break;
       }
 
-
       bool allFutile = false;
       if (k + 1 < kMax) {
         allFutile = true;
@@ -396,7 +410,7 @@ ListCpp rdsim_multiarm_cpp(
           }
         }
       } else {
-        allFutile = true; // final-stage futility if no active arm can be rejected
+        allFutile = true; // final-stage futility if no active arm is rejected
       }
 
       if (allFutile) {
@@ -408,10 +422,10 @@ ListCpp rdsim_multiarm_cpp(
         }
         break;
       }
-
     }
 
-    // record which hypotheses are rejected at the stopping stage for this iteration
+    // record which hypotheses are rejected at the stopping stage for this
+    // iteration
     const size_t offset = i2 + stop_k * M;
     std::vector<unsigned char> cc(M);
     for (size_t m = 0; m < M; ++m) {
@@ -428,7 +442,8 @@ ListCpp rdsim_multiarm_cpp(
 
     size_t value = 0;
     for (size_t m = 0; m < M; ++m) {
-      if (cc[m]) value |= (1u << m);
+      if (cc[m])
+        value |= (1u << m);
     }
     rejectBySet(stop_k, value) += 1;
 
@@ -469,7 +484,6 @@ ListCpp rdsim_multiarm_cpp(
       }
     }
   }
-
 
   // empirical cumulative rejection rates by stage and treatment
   for (size_t m = 0; m < M + 1; ++m) {
@@ -516,18 +530,19 @@ ListCpp rdsim_multiarm_cpp(
     std::string str;
     for (size_t m = 0; m < M; ++m) {
       if (s & (1u << m)) {
-        if (!str.empty()) str += ",";
+        if (!str.empty())
+          str += ",";
         str += std::to_string(m + 1);
       }
     }
-    if (str.empty()) str = "none";
+    if (str.empty())
+      str = "none";
     intersectHyp[s] = str;
   }
 
   DataFrameCpp rejectSetData;
   rejectSetData.push_back(intersectHyp, "intersectionHypotheses");
   rejectSetData.push_back(setSums, "rejectionProbability");
-
 
   FlatMatrix cumRejectByArm(kMax, M + 1);
   FlatMatrix cumFutilityByArm(kMax, M + 1);
@@ -556,7 +571,6 @@ ListCpp rdsim_multiarm_cpp(
       subjectsByArm(k, m) /= denom;
     }
   }
-
 
   ListCpp overview;
   overview.push_back(overallReject, "overallReject");
@@ -612,21 +626,17 @@ ListCpp rdsim_multiarm_cpp(
   return result;
 }
 
-
 // [[Rcpp::export]]
 Rcpp::List rdsim_multiarm_Rcpp(
-    const int M = 2,
-    const int kMax = 1,
+    const int M = 2, const int kMax = 1,
     const Rcpp::Nullable<Rcpp::NumericMatrix> criticalValues = R_NilValue,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds = R_NilValue,
-    const Rcpp::NumericVector& riskDiffH0s = 0,
-    const Rcpp::NumericVector& allocations = 1,
-    const Rcpp::NumericVector& pis = NA_REAL,
-    const bool nullVariance = true,
+    const Rcpp::NumericVector &riskDiffH0s = 0,
+    const Rcpp::NumericVector &allocations = 1,
+    const Rcpp::NumericVector &pis = NA_REAL, const bool nullVariance = true,
     const int n = NA_INTEGER,
-    const Rcpp::IntegerVector& plannedSubjects = NA_INTEGER,
-    const int maxNumberOfIterations = 1000,
-    const int seed = 0) {
+    const Rcpp::IntegerVector &plannedSubjects = NA_INTEGER,
+    const int maxNumberOfIterations = 1000, const int seed = 0) {
 
   FlatMatrix critValues;
   if (criticalValues.isNotNull()) {
@@ -643,7 +653,8 @@ Rcpp::List rdsim_multiarm_Rcpp(
   if (futilityBounds.isNotNull()) {
     futBounds = Rcpp::as<std::vector<double>>(futilityBounds);
     if (kMax > 1 && static_cast<int>(futBounds.size()) < kMax - 1) {
-      throw std::invalid_argument("futilityBounds must have length >= kMax - 1");
+      throw std::invalid_argument(
+          "futilityBounds must have length >= kMax - 1");
     }
   } else {
     futBounds = std::vector<double>(std::max(0, kMax - 1), -8.0);
@@ -652,11 +663,12 @@ Rcpp::List rdsim_multiarm_Rcpp(
   std::vector<double> rdH0s(riskDiffH0s.begin(), riskDiffH0s.end());
   std::vector<double> allocs(allocations.begin(), allocations.end());
   std::vector<double> ps(pis.begin(), pis.end());
-  std::vector<int> plannedSubjects_vec(plannedSubjects.begin(), plannedSubjects.end());
+  std::vector<int> plannedSubjects_vec(plannedSubjects.begin(),
+                                       plannedSubjects.end());
 
-  auto out = rdsim_multiarm_cpp(
-    M, kMax, critValues, futBounds, rdH0s, allocs, ps, nullVariance,
-    n, plannedSubjects_vec, maxNumberOfIterations, seed);
+  auto out = rdsim_multiarm_cpp(M, kMax, critValues, futBounds, rdH0s, allocs,
+                                ps, nullVariance, n, plannedSubjects_vec,
+                                maxNumberOfIterations, seed);
 
   thread_utils::drain_thread_warnings_to_R();
 

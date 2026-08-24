@@ -72,16 +72,15 @@ For a given treatment group \eqn{g} and calendar time \eqn{\tau},
 the number of patients having an event by calendar time \eqn{\tau} is
 calculated as \eqn{I_1 + I_2}, where
 \deqn{I_1 = \phi_g A(\tau - T_{\rm{fmax}}) P_g(T_{\rm{fmax}}),} and
-\deqn{I_2 = \phi_g \int_{\tau - T_{\rm{fmax}}}^{\tau} a(u) P_g(\tau - u) du,}
-where \eqn{\phi_g} is the probability of randomization to treatment group \eqn{g},
-\eqn{A(\tau - T_{\rm{fmax}})} is the number of patients enrolled by
-calendar time \eqn{\tau - T_{\rm{fmax}}},
-\eqn{P_g(T_{\rm{fmax}})} is the probability of having an event by
-the maximum follow-up time \eqn{T_{\rm{fmax}}} for a patient in
-treatment group \eqn{g} after enrollment,
-\eqn{a(u)} is the accrual intensity at calendar time \eqn{u},
-and \eqn{P_g(\tau - u)} is the probability of having an event by
-calendar time \eqn{\tau} for a patient in treatment group \eqn{g}
+\deqn{I_2 = \phi_g \int_{\tau - T_{\rm{fmax}}}^{\tau} a(u) P_g(\tau - u)
+du,} where \eqn{\phi_g} is the probability of randomization to treatment
+group \eqn{g}, \eqn{A(\tau - T_{\rm{fmax}})} is the number of patients
+enrolled by calendar time \eqn{\tau - T_{\rm{fmax}}},
+\eqn{P_g(T_{\rm{fmax}})} is the probability of having an event by the
+maximum follow-up time \eqn{T_{\rm{fmax}}} for a patient in treatment group
+\eqn{g} after enrollment, \eqn{a(u)} is the accrual intensity at calendar
+time \eqn{u}, and \eqn{P_g(\tau - u)} is the probability of having an event
+by calendar time \eqn{\tau} for a patient in treatment group \eqn{g}
 enrolled at calendar time \eqn{u}.
 }
 \examples{

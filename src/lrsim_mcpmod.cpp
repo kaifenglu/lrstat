@@ -6,19 +6,18 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdlib>
 #include <cstddef>
+#include <cstdlib>
 #include <numeric>
-#include <unordered_set>
-#include <unordered_map>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <Rcpp.h>
 #include <RcppParallel.h>
 #include <boost/random.hpp>
-
 
 using std::size_t;
 
@@ -42,9 +41,10 @@ ListCpp lrsim_mcpmod_cpp(
     const double plannedTime,
     const int maxNumberOfIterations,
     const int maxNumberOfRawDatasetsPerStage,
-    const int seed)
-{
-  if (M < 2) throw std::invalid_argument("M must be at least 2");
+    const int seed) {
+
+  if (M < 2)
+    throw std::invalid_argument("M must be at least 2");
 
   // decide planning mode
   bool useEvents;
@@ -57,13 +57,16 @@ ListCpp lrsim_mcpmod_cpp(
     if (plannedTime <= 0.0)
       throw std::invalid_argument("plannedTime must be positive");
   } else {
-    throw std::invalid_argument("Either plannedEvents or plannedTime must be given");
+    throw std::invalid_argument(
+        "Either plannedEvents or plannedTime must be given");
   }
 
   // validate other input parameters
   std::vector<double> hrH0s = expand1(hazardRatioH0s, M, "hazardRatioH0s");
-  if (std::any_of(hrH0s.begin(), hrH0s.end(), [](double v) { return v <= 0.0; }))
-    throw std::invalid_argument("All hazardRatioH0 parameters must be positive");
+  if (std::any_of(hrH0s.begin(), hrH0s.end(),
+                  [](double v) { return v <= 0.0; }))
+    throw std::invalid_argument(
+        "All hazardRatioH0 parameters must be positive");
   std::vector<double> allocs = expand1(allocations, M + 1, "allocations");
   if (std::any_of(allocs.begin(), allocs.end(), [](double v) { return v < 1; }))
     throw std::invalid_argument("All allocation parameters must be positive");
@@ -76,31 +79,38 @@ ListCpp lrsim_mcpmod_cpp(
   if (accrualIntensity.size() != accrualTime.size())
     throw std::invalid_argument("Invalid length for accrualIntensity");
   for (double v : accrualIntensity) {
-    if (v < 0.0) throw std::invalid_argument("accrualIntensity must be non-negative");
+    if (v < 0.0)
+      throw std::invalid_argument("accrualIntensity must be non-negative");
   }
   if (piecewiseSurvivalTime[0] != 0.0)
     throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
   if (any_nonincreasing(piecewiseSurvivalTime))
     throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
   for (double v : stratumFraction) {
-    if (v <= 0.0) throw std::invalid_argument("stratumFraction must be positive");
+    if (v <= 0.0)
+      throw std::invalid_argument("stratumFraction must be positive");
   }
-  double sumf = std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
+  double sumf =
+    std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
   if (std::fabs(sumf - 1.0) > 1e-12)
     throw std::invalid_argument("stratumFraction must sum to 1");
 
   for (size_t m = 0; m < M + 1; ++m) {
     std::string nm = std::string("lambdas[") + std::to_string(m) + "]";
-    if (!none_na(lambdas[m])) throw std::invalid_argument(nm + "must be provided");
+    if (!none_na(lambdas[m]))
+      throw std::invalid_argument(nm + "must be provided");
     for (double v : lambdas[m]) {
-      if (v < 0.0) throw std::invalid_argument(nm + "must be non-negative");
+      if (v < 0.0)
+        throw std::invalid_argument(nm + "must be non-negative");
     }
   }
   for (size_t m = 0; m < M + 1; ++m) {
     std::string nm = std::string("gammas[") + std::to_string(m) + "]";
-    if (!none_na(gammas[m])) throw std::invalid_argument(nm + "must be provided");
+    if (!none_na(gammas[m]))
+      throw std::invalid_argument(nm + "must be provided");
     for (double v : gammas[m]) {
-      if (v < 0.0) throw std::invalid_argument(nm + "must be non-negative");
+      if (v < 0.0)
+        throw std::invalid_argument(nm + "must be non-negative");
     }
   }
 
@@ -132,13 +142,17 @@ ListCpp lrsim_mcpmod_cpp(
 
   if (static_cast<int>(n) == INT_MIN)
     throw std::invalid_argument("n must be provided");
-  if (n <= 0) throw std::invalid_argument("n must be a positive integer");
+  if (n <= 0)
+    throw std::invalid_argument("n must be a positive integer");
   if (fixedFollowup && std::isnan(followupTime))
-    throw std::invalid_argument("followupTime must be provided for fixed follow-up");
+    throw std::invalid_argument(
+        "followupTime must be provided for fixed follow-up");
   if (fixedFollowup && followupTime <= 0.0)
-    throw std::invalid_argument("followupTime must be positive for fixed follow-up");
+    throw std::invalid_argument(
+        "followupTime must be positive for fixed follow-up");
   if (maxNumberOfIterations < 1)
-    throw std::invalid_argument("maxNumberOfIterations must be a positive integer");
+    throw std::invalid_argument(
+        "maxNumberOfIterations must be a positive integer");
   if (maxNumberOfRawDatasetsPerStage < 0)
     throw std::invalid_argument(
         "maxNumberOfRawDatasetsPerStage must be a non-negative integer");
@@ -157,13 +171,15 @@ ListCpp lrsim_mcpmod_cpp(
   FlatArray lambdasx(nintv, nstrata, M + 1);
   for (size_t m = 0; m < M + 1; ++m) {
     std::string nm = std::string("lambdas[") + std::to_string(m) + "]";
-    expand_stratified_to_slice(lambdas[m], lambdasx, m, nstrata, nintv, nm.c_str());
+    expand_stratified_to_slice(lambdas[m], lambdasx, m, nstrata, nintv,
+                               nm.c_str());
   }
 
   FlatArray gammasx(nintv, nstrata, M + 1);
   for (size_t m = 0; m < M + 1; ++m) {
     std::string nm = std::string("gammas[") + std::to_string(m) + "]";
-    expand_stratified_to_slice(gammas[m], gammasx, m, nstrata, nintv, nm.c_str());
+    expand_stratified_to_slice(gammas[m], gammasx, m, nstrata, nintv,
+                               nm.c_str());
   }
 
   // construct covariance matrix of log hazard ratio estimates under H0
@@ -178,11 +194,11 @@ ListCpp lrsim_mcpmod_cpp(
     S0(m, m) = 1.0 / p[m] + 1.0 / p[M];
   }
 
-
   // generate seeds for each iteration to ensure reproducibility
   std::vector<uint64_t> seeds(maxIters);
   boost::random::mt19937_64 master_rng(static_cast<uint64_t>(seed));
-  for (size_t iter = 0; iter < maxIters; ++iter) seeds[iter] = master_rng();
+  for (size_t iter = 0; iter < maxIters; ++iter)
+    seeds[iter] = master_rng();
 
   // One summary (stage-level) row produced by an iteration
   struct Summary1Row {
@@ -222,8 +238,12 @@ ListCpp lrsim_mcpmod_cpp(
     std::vector<Summary1Row> summary1Rows;
     std::vector<Summary2Row> summary2Rows;
     std::vector<RawDatasetRow> rawRows;
-    void reserveForSummary1(size_t approxRows) { summary1Rows.reserve(approxRows); }
-    void reserveForSummary2(size_t approxRows) { summary2Rows.reserve(approxRows); }
+    void reserveForSummary1(size_t approxRows) {
+      summary1Rows.reserve(approxRows);
+    }
+    void reserveForSummary2(size_t approxRows) {
+      summary2Rows.reserve(approxRows);
+    }
     void reserveForRaw(size_t approxRows) { rawRows.reserve(approxRows); }
   };
 
@@ -327,17 +347,21 @@ ListCpp lrsim_mcpmod_cpp(
       std::vector<int> events(M2), dropouts(M2), accruals(M2);
       std::vector<double> denom_per_stratum(nstrata);
       std::vector<double> cumF(nstrata);
-      std::partial_sum(stratumFraction.begin(), stratumFraction.end(), cumF.begin());
+      std::partial_sum(stratumFraction.begin(), stratumFraction.end(),
+                       cumF.begin());
 
-      std::vector<double> totalte; totalte.reserve(n);
-      std::vector<size_t> sub; sub.reserve(n);
+      std::vector<double> totalte;
+      totalte.reserve(n);
+      std::vector<size_t> sub;
+      sub.reserve(n);
 
       std::vector<double> init(1, NaN);
       std::vector<std::string> covariates(M);
       for (size_t m = 0; m < M; ++m) {
         covariates[m] = "arm_" + std::to_string(m + 1);
       }
-      std::vector<double> treated; treated.reserve(n);
+      std::vector<double> treated;
+      treated.reserve(n);
 
       std::vector<double> beta(M), betaH1(M);
       FlatMatrix vbeta(M, M), ibeta(M, M);
@@ -351,7 +375,8 @@ ListCpp lrsim_mcpmod_cpp(
       FlatMatrix cScH0(T, T);
       FlatMatrix vzH0(T, T);
 
-      const double sumAlloc = std::accumulate(allocs.begin(), allocs.end(), 0.0);
+      const double sumAlloc =
+        std::accumulate(allocs.begin(), allocs.end(), 0.0);
 
       for (size_t iter = begin; iter < end; ++iter) {
 
@@ -396,7 +421,8 @@ ListCpp lrsim_mcpmod_cpp(
           for (size_t m = 0; m < M1; ++m) {
             running += b[m] / denom_per_stratum[j];
             if (u < running) {
-              k = m; break;
+              k = m;
+              break;
             }
           }
           trtGrp[i] = static_cast<int>(k + 1);
@@ -427,17 +453,27 @@ ListCpp lrsim_mcpmod_cpp(
           double sv = survivalT[i], dr = dropoutT[i];
           if (fixedFollowup) {
             if (sv <= dr && sv <= fu) {
-              timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+              timeObs[i] = sv;
+              event[i] = 1;
+              dropEv[i] = 0;
             } else if (dr <= sv && dr <= fu) {
-              timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+              timeObs[i] = dr;
+              event[i] = 0;
+              dropEv[i] = 1;
             } else {
-              timeObs[i] = fu; event[i] = 0; dropEv[i] = 0;
+              timeObs[i] = fu;
+              event[i] = 0;
+              dropEv[i] = 0;
             }
           } else {
             if (sv <= dr) {
-              timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+              timeObs[i] = sv;
+              event[i] = 1;
+              dropEv[i] = 0;
             } else {
-              timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+              timeObs[i] = dr;
+              event[i] = 0;
+              dropEv[i] = 1;
             }
           }
           totalT[i] = arrivalT[i] + timeObs[i];
@@ -451,13 +487,14 @@ ListCpp lrsim_mcpmod_cpp(
           int nevents = 0; // all events across all arms for this iteration
           for (size_t i = 0; i < n; ++i) {
             if (event[i]) {
-              ++nevents; totalte.push_back(totalT[i]);
+              ++nevents;
+              totalte.push_back(totalT[i]);
             }
           }
           if (nevents == 0) {
             thread_utils::push_thread_warning(
-              std::string("No events for iteration ") + std::to_string(iter + 1) +
-                " skipping this iteration.");
+              std::string("No events for iteration ") +
+                std::to_string(iter + 1) + " skipping this iteration.");
             // leave out.summaryRows empty to signal skipped iteration
             out.summary1Rows.clear();
             out.summary2Rows.clear();
@@ -489,26 +526,43 @@ ListCpp lrsim_mcpmod_cpp(
           double ar = arrivalT[i], sv = survivalT[i], dr = dropoutT[i];
 
           if (ar > time) {
-            timeObs[i] = 0.0; event[i] = 0; dropEv[i] = 0; continue;
+            timeObs[i] = 0.0;
+            event[i] = 0;
+            dropEv[i] = 0;
+            continue;
           }
 
           if (fixedFollowup) {
             if (ar + sv <= time && sv <= dr && sv <= fu) {
-              timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+              timeObs[i] = sv;
+              event[i] = 1;
+              dropEv[i] = 0;
             } else if (ar + dr <= time && dr <= sv && dr <= fu) {
-              timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+              timeObs[i] = dr;
+              event[i] = 0;
+              dropEv[i] = 1;
             } else if (ar + fu <= time && fu <= sv && fu <= dr) {
-              timeObs[i] = fu; event[i] = 0; dropEv[i] = 0;
+              timeObs[i] = fu;
+              event[i] = 0;
+              dropEv[i] = 0;
             } else {
-              timeObs[i] = time - ar; event[i] = 0; dropEv[i] = 0;
+              timeObs[i] = time - ar;
+              event[i] = 0;
+              dropEv[i] = 0;
             }
           } else {
             if (ar + sv <= time && sv <= dr) {
-              timeObs[i] = sv; event[i] = 1; dropEv[i] = 0;
+              timeObs[i] = sv;
+              event[i] = 1;
+              dropEv[i] = 0;
             } else if (ar + dr <= time && dr <= sv) {
-              timeObs[i] = dr; event[i] = 0; dropEv[i] = 1;
+              timeObs[i] = dr;
+              event[i] = 0;
+              dropEv[i] = 1;
             } else {
-              timeObs[i] = time - ar; event[i] = 0; dropEv[i] = 0;
+              timeObs[i] = time - ar;
+              event[i] = 0;
+              dropEv[i] = 0;
             }
           }
 
@@ -535,7 +589,9 @@ ListCpp lrsim_mcpmod_cpp(
 
         // collect indices with positive observed time
         sub.clear();
-        for (size_t i = 0; i < n; ++i) if (timeObs[i] > 0.0) sub.push_back(i);
+        for (size_t i = 0; i < n; ++i) {
+          if (timeObs[i] > 0.0) sub.push_back(i);
+        }
 
         // compute stratified Cox for pairwise comparisons vs. control
         DataFrameCpp data_outcome;
@@ -555,9 +611,9 @@ ListCpp lrsim_mcpmod_cpp(
           data_outcome.push_back(treated, nm);
         }
 
-        ListCpp fit_outcome = phregcpp(
-          data_outcome, {"stratum"}, "time", "", "event",
-          covariates, "", "", "", "efron", init, 0, 0, 0, 0, 0, alpha);
+        ListCpp fit_outcome =
+          phregcpp(data_outcome, {"stratum"}, "time", "", "event", covariates,
+                   "", "", "", "efron", init, 0, 0, 0, 0, 0, alpha);
 
         DataFrameCpp parest = fit_outcome.get<DataFrameCpp>("parest");
         beta = parest.get<double>("beta");
@@ -573,13 +629,14 @@ ListCpp lrsim_mcpmod_cpp(
           temp = mat_vec_mult(S0, c[t2]);
           for (size_t t1 = 0; t1 < T; ++t1) {
             cScH0(t1, t2) = std::inner_product(c[t1].begin(), c[t1].end(),
-                temp.begin(), 0.0);
+                  temp.begin(), 0.0);
           }
         }
 
         for (size_t t2 = 0; t2 < T; ++t2) {
           for (size_t t1 = 0; t1 < T; ++t1) {
-            vzH0(t1, t2) = cScH0(t1, t2) / std::sqrt(cScH0(t1, t1) * cScH0(t2, t2));
+            vzH0(t1, t2) =
+              cScH0(t1, t2) / std::sqrt(cScH0(t1, t1) * cScH0(t2, t2));
           }
         }
 
@@ -587,20 +644,21 @@ ListCpp lrsim_mcpmod_cpp(
         double q = 1.0 - qmvnormcpp(1.0 - alpha, zero, vzH0);
 
         // construct the z test statistics
-        for (size_t m = 0; m < M; ++ m) {
+        for (size_t m = 0; m < M; ++m) {
           betaH1[m] = beta[m] - betaH0[m];
         }
 
         for (size_t t = 0; t < T; ++t) {
           auto temp = mat_vec_mult(vbeta, c[t]);
-          double denom = std::inner_product(c[t].begin(), c[t].end(),
-                                            temp.begin(), 0.0);
-          z[t] = std::inner_product(c[t].begin(), c[t].end(),
-                                    betaH1.begin(), 0.0) / std::sqrt(denom);
+          double denom =
+            std::inner_product(c[t].begin(), c[t].end(), temp.begin(), 0.0);
+          z[t] = std::inner_product(c[t].begin(), c[t].end(), betaH1.begin(),
+                                    0.0) /
+                                      std::sqrt(denom);
         }
 
-
-        int optModel = std::distance(z.begin(), std::max_element(z.begin(), z.end()));
+        int optModel =
+          std::distance(z.begin(), std::max_element(z.begin(), z.end()));
         double maxz = z[optModel];
         bool reject = (maxz >= q);
 
@@ -661,13 +719,10 @@ ListCpp lrsim_mcpmod_cpp(
   }; // SimWorker
 
   // run worker in parallel
-  SimWorker worker(
-      M, alpha, betaH0, allocs, accrualTime, accrualIntensity,
-      tau, stratumFraction, lambdasx, candidateBetas, gammasx,
-      n, fu, fixedFollowup, plannedEvents, plannedTime,
-      maxRawIters, seeds, useEvents, nintv, nstrata, T, S0,
-      &results
-  );
+  SimWorker worker(M, alpha, betaH0, allocs, accrualTime, accrualIntensity, tau,
+                   stratumFraction, lambdasx, candidateBetas, gammasx, n, fu,
+                   fixedFollowup, plannedEvents, plannedTime, maxRawIters,
+                   seeds, useEvents, nintv, nstrata, T, S0, &results);
 
   RcppParallel::parallelFor(0, maxIters, worker);
 
@@ -678,34 +733,54 @@ ListCpp lrsim_mcpmod_cpp(
     ns2r += results[iter].summary2Rows.size();
     nrr += results[iter].rawRows.size();
   }
-  if (ns1r == 0 || ns2r == 0) throw std::runtime_error(
-    "No iterations with observed events. Unable to produce output.");
+  if (ns1r == 0 || ns2r == 0)
+    throw std::runtime_error(
+        "No iterations with observed events. Unable to produce output.");
 
   // prepare final containers (reserve capacities)
-  std::vector<int> sum1_iterNum; sum1_iterNum.reserve(ns1r);
-  std::vector<unsigned char> sum1_evNotArch; sum1_evNotArch.reserve(ns1r);
-  std::vector<double> sum1_analysisT; sum1_analysisT.reserve(ns1r);
-  std::vector<int> sum1_trtGrp; sum1_trtGrp.reserve(ns1r);
-  std::vector<int> sum1_accruals; sum1_accruals.reserve(ns1r);
-  std::vector<int> sum1_events; sum1_events.reserve(ns1r);
-  std::vector<int> sum1_dropouts; sum1_dropouts.reserve(ns1r);
+  std::vector<int> sum1_iterNum;
+  sum1_iterNum.reserve(ns1r);
+  std::vector<unsigned char> sum1_evNotArch;
+  sum1_evNotArch.reserve(ns1r);
+  std::vector<double> sum1_analysisT;
+  sum1_analysisT.reserve(ns1r);
+  std::vector<int> sum1_trtGrp;
+  sum1_trtGrp.reserve(ns1r);
+  std::vector<int> sum1_accruals;
+  sum1_accruals.reserve(ns1r);
+  std::vector<int> sum1_events;
+  sum1_events.reserve(ns1r);
+  std::vector<int> sum1_dropouts;
+  sum1_dropouts.reserve(ns1r);
 
-  std::vector<unsigned char> sum2_reject; sum2_reject.reserve(ns2r);
-  std::vector<ListPtr> sumdata2; sumdata2.reserve(ns2r);
-
+  std::vector<unsigned char> sum2_reject;
+  sum2_reject.reserve(ns2r);
+  std::vector<ListPtr> sumdata2;
+  sumdata2.reserve(ns2r);
 
   // raw final containers
-  std::vector<int> raw_iterNum; raw_iterNum.reserve(nrr);
-  std::vector<double> raw_analysisT; raw_analysisT.reserve(nrr);
-  std::vector<int> raw_subjectId; raw_subjectId.reserve(nrr);
-  std::vector<double> raw_arrivalT; raw_arrivalT.reserve(nrr);
-  std::vector<int> raw_stratum; raw_stratum.reserve(nrr);
-  std::vector<int> raw_trtGrp; raw_trtGrp.reserve(nrr);
-  std::vector<double> raw_survivalT; raw_survivalT.reserve(nrr);
-  std::vector<double> raw_dropoutT; raw_dropoutT.reserve(nrr);
-  std::vector<double> raw_timeObs; raw_timeObs.reserve(nrr);
-  std::vector<unsigned char> raw_event; raw_event.reserve(nrr);
-  std::vector<unsigned char> raw_dropEv; raw_dropEv.reserve(nrr);
+  std::vector<int> raw_iterNum;
+  raw_iterNum.reserve(nrr);
+  std::vector<double> raw_analysisT;
+  raw_analysisT.reserve(nrr);
+  std::vector<int> raw_subjectId;
+  raw_subjectId.reserve(nrr);
+  std::vector<double> raw_arrivalT;
+  raw_arrivalT.reserve(nrr);
+  std::vector<int> raw_stratum;
+  raw_stratum.reserve(nrr);
+  std::vector<int> raw_trtGrp;
+  raw_trtGrp.reserve(nrr);
+  std::vector<double> raw_survivalT;
+  raw_survivalT.reserve(nrr);
+  std::vector<double> raw_dropoutT;
+  raw_dropoutT.reserve(nrr);
+  std::vector<double> raw_timeObs;
+  raw_timeObs.reserve(nrr);
+  std::vector<unsigned char> raw_event;
+  raw_event.reserve(nrr);
+  std::vector<unsigned char> raw_dropEv;
+  raw_dropEv.reserve(nrr);
 
   // flatten by iteration in order (preserves iteration order)
   for (size_t iter = 0; iter < maxIters; ++iter) {
@@ -785,7 +860,6 @@ ListCpp lrsim_mcpmod_cpp(
 
   ListCpp overview;
 
-
   FlatMatrix lambdaz(nstrata * nintv, M + 1);
   for (size_t m = 0; m < M + 1; ++m) {
     std::string name = std::string("lambdas[") + std::to_string(m) + "]";
@@ -795,8 +869,8 @@ ListCpp lrsim_mcpmod_cpp(
                 lambdaz.data_ptr() + (m + 1) * nstrata * nintv, v[0]);
     } else if (v.size() == nintv) {
       for (size_t s = 0; s < nstrata; ++s) {
-        std::copy(v.begin(), v.end(), lambdaz.data_ptr() +
-          m * nstrata * nintv + s * nintv);
+        std::copy(v.begin(), v.end(),
+                  lambdaz.data_ptr() + m * nstrata * nintv + s * nintv);
       }
     } else if (v.size() == nstrata * nintv) {
       std::copy(v.begin(), v.end(), lambdaz.data_ptr() + m * nstrata * nintv);
@@ -814,8 +888,8 @@ ListCpp lrsim_mcpmod_cpp(
                 gammaz.data_ptr() + (m + 1) * nstrata * nintv, v[0]);
     } else if (v.size() == nintv) {
       for (size_t s = 0; s < nstrata; ++s) {
-        std::copy(v.begin(), v.end(), gammaz.data_ptr() +
-          m * nstrata * nintv + s * nintv);
+        std::copy(v.begin(), v.end(),
+                  gammaz.data_ptr() + m * nstrata * nintv + s * nintv);
       }
     } else if (v.size() == nstrata * nintv) {
       std::copy(v.begin(), v.end(), gammaz.data_ptr() + m * nstrata * nintv);
@@ -823,7 +897,6 @@ ListCpp lrsim_mcpmod_cpp(
       throw std::invalid_argument(std::string("Invalid length for ") + name);
     }
   }
-
 
   overview.push_back(overallReject, "overallReject");
   overview.push_back(expEvents, "expectedNumberOfEvents");
@@ -847,7 +920,6 @@ ListCpp lrsim_mcpmod_cpp(
   overview.push_back(plannedEvents, "plannedEvents");
   overview.push_back(plannedTime, "plannedTime");
   overview.push_back(niters, "numberOfIterations");
-
 
   DataFrameCpp sumdata1;
   sumdata1.push_back(std::move(sum1_iterNum), "iterationNumber");
@@ -884,7 +956,6 @@ ListCpp lrsim_mcpmod_cpp(
 }
 
 
-
 // [[Rcpp::export]]
 Rcpp::List lrsim_mcpmod_Rcpp(
     const int M = 2,
@@ -896,7 +967,7 @@ Rcpp::List lrsim_mcpmod_Rcpp(
     const Rcpp::NumericVector& piecewiseSurvivalTime = 0,
     const Rcpp::NumericVector& stratumFraction = 1,
     const Rcpp::Nullable<Rcpp::List> lambdas = R_NilValue,
-    const Rcpp::Nullable<Rcpp::NumericMatrix> candidateHazardRatios = R_NilValue,
+    const Rcpp::Nullable<Rcpp::NumericMatrix> candidateHazardRatios= R_NilValue,
     const Rcpp::Nullable<Rcpp::List> gammas = R_NilValue,
     const int n = NA_INTEGER,
     const double followupTime = NA_REAL,
@@ -921,10 +992,12 @@ Rcpp::List lrsim_mcpmod_Rcpp(
   std::vector<double> hrH0s(hazardRatioH0s.begin(), hazardRatioH0s.end());
   std::vector<double> allocs(allocations.begin(), allocations.end());
   std::vector<double> accrualT(accrualTime.begin(), accrualTime.end());
-  std::vector<double> accrualInt(accrualIntensity.begin(), accrualIntensity.end());
+  std::vector<double> accrualInt(accrualIntensity.begin(),
+                                 accrualIntensity.end());
   std::vector<double> pwSurvT(piecewiseSurvivalTime.begin(),
                               piecewiseSurvivalTime.end());
-  std::vector<double> stratumFrac(stratumFraction.begin(), stratumFraction.end());
+  std::vector<double> stratumFrac(stratumFraction.begin(),
+                                  stratumFraction.end());
 
   const int arms = M + 1;
   size_t nintv = pwSurvT.size();
@@ -948,7 +1021,8 @@ Rcpp::List lrsim_mcpmod_Rcpp(
   std::vector<std::vector<double>> gammasVec(arms);
   if (gammas.isNull()) {
     // default: M+1 zero vectors (each length nintv)
-    for (int m = 0; m < arms; ++m) gammasVec[m] = std::vector<double>(nintv, 0.0);
+    for (int m = 0; m < arms; ++m)
+      gammasVec[m] = std::vector<double>(nintv, 0.0);
   } else {
     Rcpp::List gammasList(gammas);
     if (static_cast<int>(gammasList.size()) != arms) {
@@ -959,12 +1033,11 @@ Rcpp::List lrsim_mcpmod_Rcpp(
       gammasVec[m] = std::vector<double>(gamVec.begin(), gamVec.end());
     }
   }
-  auto out = lrsim_mcpmod_cpp(
-    M, alpha, hrH0s, allocs, accrualT, accrualInt, pwSurvT,
-    stratumFrac, lambdasVec, candHRs, gammasVec,
-    n, followupTime, fixedFollowup, plannedEvents, plannedTime,
-    maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed
-  );
+  auto out = lrsim_mcpmod_cpp(M, alpha, hrH0s, allocs, accrualT, accrualInt,
+                              pwSurvT, stratumFrac, lambdasVec, candHRs,
+                              gammasVec, n, followupTime, fixedFollowup,
+                              plannedEvents, plannedTime, maxNumberOfIterations,
+                              maxNumberOfRawDatasetsPerStage, seed);
 
   thread_utils::drain_thread_warnings_to_R();
 
@@ -973,5 +1046,3 @@ Rcpp::List lrsim_mcpmod_Rcpp(
 
   return result;
 }
-
-

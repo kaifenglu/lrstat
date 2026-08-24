@@ -24,9 +24,11 @@
 #' @param nthreads The number of threads to use in simulations (0 means
 #'   the default RcppParallel behavior).
 #'
-#' @return A list containing \code{inthyp_idx}, the indices of the stage 1
-#'   intersection hypotheses, \code{inthyp}, their indicator matrix, and
-#'   \code{pinter}, their local p-values.
+#' @return A list containing:
+#' * \code{inthyp_idx}: The 1-based indices of the stage 1 intersection
+#'   hypotheses represented in the output.
+#' * \code{inthyp}: Their intersection-hypothesis indicator matrix.
+#' * \code{pinter}: Their local p-values.
 #'
 #' @details
 #' Despite the stage-oriented parameter names, this function can also be used
@@ -58,14 +60,16 @@
 #'                  NA, NA, 1, 0.5,
 #'                  NA, NA, 0.5, 1),
 #'                nrow = 4, byrow = TRUE)
-#' fadjp(c(0.00045, 0.0952, 0.0225, 0.1104),
-#'       wgtmat, family, corr, 1:15, 1:4, wgtmat,
-#'       test = "dunnett", nthreads = 1)
+#' fPCStagewise(stg2_p = c(0.00045, 0.0952, 0.0225, 0.1104),
+#'              wgtmat = wgtmat, family = family, corr = corr,
+#'              stg1_inthyp_nr = 1:15, stg2_elemhyp = 1:4,
+#'              stg2_wgtmat = wgtmat, test = "dunnett",
+#'              nthreads = 1)
 #'
 #' @export
-fadjp <- function(stg2_p, wgtmat = NULL, family = NULL, corr = NULL,
-                  stg1_inthyp_nr, stg2_elemhyp, stg2_wgtmat = NULL,
-                  test = "dunnett", nthreads = 0) {
+fPCStagewise <- function(stg2_p, wgtmat = NULL, family = NULL, corr = NULL,
+                         stg1_inthyp_nr, stg2_elemhyp, stg2_wgtmat = NULL,
+                         test = "dunnett", nthreads = 0) {
 
   m <- if (!is.null(wgtmat)) {
     ncol(wgtmat$wgtmat)
@@ -102,22 +106,26 @@ fadjp <- function(stg2_p, wgtmat = NULL, family = NULL, corr = NULL,
     RcppParallel::setThreadOptions(min(nthreads, n_physical_cores))
   }
 
-  fadjpRcpp(stg2_p = stg2_p, wgtmat = wgtmat, family = family, corr = corr,
-            stg1_inthyp_nr = stg1_inthyp_nr,  stg2_elemhyp = stg2_elemhyp,
-            stg2_wgtmat = stg2_wgtmat, test = test)
+  fPCStagewiseRcpp(stg2_p = stg2_p, wgtmat = wgtmat, family = family,
+                   corr = corr, stg1_inthyp_nr = stg1_inthyp_nr,
+                   stg2_elemhyp = stg2_elemhyp,
+                   stg2_wgtmat = stg2_wgtmat, test = test)
 }
 
 
 #' @title Determine stage 1 rejections for adaptive multiple testing
 #' @description Determine the elementary hypotheses rejected at stage 1 and
 #'   the intersection hypotheses retained for stage 2.
-#' @param m Number of elementary hypotheses.
-#' @param stg1_loc_p A list returned by \code{fadjp}, containing the stage 1
-#'   intersection hypotheses and local p-values.
+#' @param stg1_loc_p A list returned by \code{fPCStagewise}, containing the
+#'   stage 1 intersection hypotheses and local p-values.
 #' @param alpha1 Stage 1 significance level.
-#' @return A list containing \code{stg1_elemhyp_r_idx}, the rejected
-#'   elementary hypotheses, \code{stg1_inthyp_nr_idx}, the unrejected
-#'   intersection hypotheses, and \code{inthyp}, their indicator matrix.
+#' @return A list containing:
+#' * \code{stg1_elemhyp_r_idx}: The 1-based indices of elementary hypotheses
+#'   rejected in stage 1.
+#' * \code{stg1_inthyp_nr_idx}: The 1-based indices of intersection
+#'   hypotheses not rejected in stage 1.
+#' * \code{inthyp}: The indicator matrix of those non-rejected intersection
+#'   hypotheses.
 #'
 #' @references
 #' Cyrus Mehta, Ajoy Mukhopadhyay, and Martin Posch. Graph Based, Adaptive,
@@ -141,33 +149,44 @@ fadjp <- function(stg2_p, wgtmat = NULL, family = NULL, corr = NULL,
 #'                  NA, NA, 1, 0.5,
 #'                  NA, NA, 0.5, 1),
 #'                nrow = 4, byrow = TRUE)
-#' stage1_local_pvalues <- fadjp(
-#'   c(0.00045, 0.0952, 0.0225, 0.1104),
-#'   wgtmat, family, corr,
-#'   1:15, 1:4, wgtmat)
-#' fPCStage1(4, stage1_local_pvalues,
-#'           errorSpent(0.5, 0.025, "sfOF"))
+#' stage1_local_pvalues <- fPCStagewise(
+#'   stg2_p = c(0.00045, 0.0952, 0.0225, 0.1104),
+#'   wgtmat = wgtmat, family = family, corr = corr,
+#'   stg1_inthyp_nr = 1:15, stg2_elemhyp = 1:4,
+#'   stg2_wgtmat = wgtmat, test = "dunnett",
+#'   nthreads = 1)
+#' fPCStage1(stg1_loc_p = stage1_local_pvalues,
+#'           alpha1 = errorSpent(0.5, 0.025, "sfOF"))
 #'
 #' @export
-fPCStage1 <- function(m, stg1_loc_p, alpha1) {
-  fPCStage1Rcpp(m = m, stg1_loc_p = stg1_loc_p, alpha1 = alpha1)
+fPCStage1 <- function(stg1_loc_p, alpha1) {
+  fPCStage1Rcpp(stg1_loc_p = stg1_loc_p, alpha1 = alpha1)
 }
 
 
 #' @title Determine stage 2 rejections using p-value combination
 #' @description Combine stage 1 and stage 2 local p-values and determine the
 #'   elementary hypotheses rejected after stage 2.
+#' @param stg1_loc_p A list returned by \code{fPCStagewise} for stage 1.
+#' @param stg2_loc_p A list returned by \code{fPCStagewise} for stage 2.
 #' @param stg1_elemhyp_r_idx Indices of the elementary hypotheses rejected at
 #'   stage 1.
 #' @param stg2_elemhyp_idx Indices of the elementary hypotheses tested at stage
 #'   2.
-#' @param stg1_loc_p A list returned by \code{fadjp} for stage 1.
-#' @param stg2_loc_p A list returned by \code{fadjp} for stage 2.
 #' @param alpha Overall significance level.
 #' @param info_frac Information fraction for stage 1.
-#' @return A list containing the combined local p-values and \code{rej_elem},
-#'   an integer vector indicating the elementary hypotheses rejected after
-#'   stage 2.
+#' @return A list containing:
+#' * \code{stg1_inthyp_nr_idx}: The 1-based indices of intersection
+#'   hypotheses retained from stage 1.
+#' * \code{stg2_elemhyp_idx}: The 1-based indices of elementary hypotheses
+#'   tested in stage 2.
+#' * \code{inthyp}: The indicator matrix of the stage 2 intersection
+#'   hypotheses.
+#' * \code{stg1_pinter}: The stage 1 local p-values.
+#' * \code{stg2_pinter}: The stage 2 local p-values.
+#' * \code{comb_pinter}: The combined local p-values.
+#' * \code{rej_elem}: A logical vector indicating the elementary hypotheses
+#'   rejected after stage 2.
 #'
 #' @references
 #' Cyrus Mehta, Ajoy Mukhopadhyay, and Martin Posch. Graph Based, Adaptive,
@@ -195,42 +214,56 @@ fPCStage1 <- function(m, stg1_loc_p, alpha1) {
 #' alpha <- 0.025
 #' alpha1 <- errorSpent(0.5, alpha, "sfOF")
 #' stage1_pvalues <- c(0.00045, 0.0952, 0.0225, 0.1104)
-#' stage1_loc_p <- fadjp(stage1_pvalues, wgtmat, family, corr,
-#'                       1:15, 1:4, wgtmat)
-#' stage1_rejections <- fPCStage1(4, stage1_loc_p, alpha1)
+#' stage1_loc_p <- fPCStagewise(
+#'   stg2_p = stage1_pvalues, wgtmat = wgtmat,
+#'   family = family, corr = corr,
+#'   stg1_inthyp_nr = 1:15, stg2_elemhyp = 1:4,
+#'   stg2_wgtmat = wgtmat, test = "dunnett",
+#'   nthreads = 1)
+#' stage1_rejections <- fPCStage1(stg1_loc_p, alpha1)
 #'
 #' adapted_graph <- updateGraph(initial_weights,
 #'                              transition_matrix,
 #'                              I = 1:4, j = 1)
 #' stage2_weight_matrix <- fwgtmat(
-#'   adapted_graph$w[adapted_graph$I],
-#'   adapted_graph$G[adapted_graph$I, adapted_graph$I])
+#'   w = adapted_graph$w[adapted_graph$I],
+#'   G = adapted_graph$G[adapted_graph$I, adapted_graph$I])
 #' stage2_pvalues <- c(0.1121, 0.0112, 0.1153)
-#' stage2_loc_p <- fadjp(stage2_pvalues, wgtmat, family, corr,
-#'                       stage1_rejections$stg1_inthyp_nr_idx,
-#'                       adapted_graph$I, stage2_weight_matrix)
-#' fPCrej(stage1_rejections$stg1_elemhyp_r_idx,
-#'        adapted_graph$I, stage1_loc_p,
-#'        stage2_loc_p, alpha, 0.5)
+#' stage2_loc_p <- fPCStagewise(
+#'   stg2_p = stage2_pvalues, wgtmat = wgtmat,
+#'   family = family, corr = corr,
+#'   stg1_inthyp_nr = stage1_rejections$stg1_inthyp_nr_idx,
+#'   stg2_elemhyp = adapted_graph$I,
+#'   stg2_wgtmat = stage2_weight_matrix,
+#'   test = "dunnett", nthreads = 1)
+#' fPCRej(stg1_loc_p = stage1_loc_p, stg2_loc_p = stage2_loc_p,
+#'        stg1_elemhyp_r_idx = stage1_rejections$stg1_elemhyp_r_idx,
+#'        stg2_elemhyp_idx = adapted_graph$I, alpha = alpha,
+#'        info_frac = 0.5)
 #'
 #' # Change weights for the elementary hypotheses.
 #' stage2_weight_matrix_reweighted <- fwgtmat(
 #'   w = c(0.5, 0.25, 0.25),
 #'   G = adapted_graph$G[adapted_graph$I, adapted_graph$I])
-#' stage2_loc_p_reweighted <- fadjp(
-#'   stage2_pvalues, wgtmat, family, corr,
-#'   stage1_rejections$stg1_inthyp_nr_idx, adapted_graph$I,
-#'   stage2_weight_matrix_reweighted)
-#' fPCrej(stage1_rejections$stg1_elemhyp_r_idx,
-#'        adapted_graph$I, stage1_loc_p,
-#'        stage2_loc_p_reweighted, alpha, 0.5)
+#' stage2_loc_p_reweighted <- fPCStagewise(
+#'   stg2_p = stage2_pvalues, wgtmat = wgtmat,
+#'   family = family, corr = corr,
+#'   stg1_inthyp_nr = stage1_rejections$stg1_inthyp_nr_idx,
+#'   stg2_elemhyp = adapted_graph$I,
+#'   stg2_wgtmat = stage2_weight_matrix_reweighted,
+#'   test = "dunnett", nthreads = 1)
+#' fPCRej(stg1_loc_p = stage1_loc_p,
+#'        stg2_loc_p = stage2_loc_p_reweighted,
+#'        stg1_elemhyp_r_idx = stage1_rejections$stg1_elemhyp_r_idx,
+#'        stg2_elemhyp_idx = adapted_graph$I,
+#'        alpha = alpha, info_frac = 0.5)
 #'
 #' @export
-fPCrej <- function(stg1_elemhyp_r_idx, stg2_elemhyp_idx, stg1_loc_p,
-                   stg2_loc_p, alpha, info_frac) {
-  fPCrejRcpp(stg1_elemhyp_r_idx = stg1_elemhyp_r_idx,
+fPCRej <- function(stg1_loc_p, stg2_loc_p, stg1_elemhyp_r_idx,
+                   stg2_elemhyp_idx, alpha, info_frac) {
+  fPCRejRcpp(stg1_loc_p = stg1_loc_p, stg2_loc_p = stg2_loc_p,
+             stg1_elemhyp_r_idx = stg1_elemhyp_r_idx,
              stg2_elemhyp_idx = stg2_elemhyp_idx,
-             stg1_loc_p = stg1_loc_p, stg2_loc_p = stg2_loc_p,
              alpha = alpha, info_frac = info_frac)
 }
 
@@ -238,7 +271,6 @@ fPCrej <- function(stg1_elemhyp_r_idx, stg2_elemhyp_idx, stg1_loc_p,
 #' @title Compute stage-wise bounds for multiple testing
 #' @description Compute stage-wise bounds for a two-stage multiple testing
 #' procedure.
-#' @param m Number of hypotheses
 #' @param wgtmat Weight matrix for the intersection hypotheses
 #' @param family Family matrix indicating which hypotheses belong to which
 #'   families. The correlation is known only for hypotheses belonging to the
@@ -251,8 +283,16 @@ fPCrej <- function(stg1_elemhyp_r_idx, stg2_elemhyp_idx, stg1_loc_p,
 #' @param nthreads The number of threads to use in simulations (0 means
 #'   the default RcppParallel behavior).
 #'
-#' @return A list containing the stage 1 and stage 2 bounds for the individual
-#'   hypotheses in each intersection hypothesis.
+#' @return A list containing:
+#' * \code{inthyp}: The indicator matrix of the intersection hypotheses.
+#' * \code{stg1_coef}: The stage 1 coefficient for each intersection
+#'   hypothesis.
+#' * \code{stg2_coef}: The stage 2 coefficient for each intersection
+#'   hypothesis.
+#' * \code{stg1_bnd}: The stage 1 bounds for the elementary hypotheses in
+#'   each intersection hypothesis.
+#' * \code{stg2_bnd}: The stage 2 bounds for the elementary hypotheses in
+#'   each intersection hypothesis.
 #'
 #' @references
 #' Cyrus Mehta, Ajoy Mukhopadhyay, and Martin Posch. Graph Based, Adaptive,
@@ -279,12 +319,13 @@ fPCrej <- function(stg1_elemhyp_r_idx, stg2_elemhyp_idx, stg1_loc_p,
 #'                nrow = 4, byrow = TRUE)
 #' alpha <- 0.025
 #' alpha1 <- errorSpent(0.5, alpha, "sfOF")
-#' fStageBound(4, wgtmat, family, corr, alpha, alpha1, 0.5,
-#'             nthreads = 1)
+#' fCERStageBound(wgtmat, family, corr, alpha,
+#'                alpha1, info_frac = 0.5, nthreads = 1)
 #'
 #' @export
-fStageBound <- function(m, wgtmat, family = NULL, corr = NULL, alpha, alpha1,
-                        info_frac, nthreads = 0) {
+fCERStageBound <- function(wgtmat, family = NULL, corr = NULL, alpha, alpha1,
+                           info_frac, nthreads = 0) {
+  m <- ncol(wgtmat$wgtmat)
   if (is.null(family)) {
     family <- matrix(1, 1, m)
   } else if (!is.matrix(family)) {
@@ -300,15 +341,14 @@ fStageBound <- function(m, wgtmat, family = NULL, corr = NULL, alpha, alpha1,
     RcppParallel::setThreadOptions(min(nthreads, n_physical_cores))
   }
 
-  x <- fStageBoundRcpp(m = m, wgtmat = wgtmat, family = family, corr = corr,
-                       alpha = alpha, alpha1 = alpha1, info_frac = info_frac)
+  x <- fCERStageBoundRcpp(wgtmat = wgtmat, family = family, corr = corr,
+                          alpha = alpha, alpha1 = alpha1, info_frac = info_frac)
   x
 }
 
 #' @title Compute conditional error rates
 #' @description Compute conditional error rates for the intersection hypotheses
 #'   after the first stage of a two-stage multiple testing procedure.
-#' @param m Number of hypotheses.
 #' @param wgtmat Weight matrix for the intersection hypotheses.
 #' @param family Family matrix indicating which hypotheses belong to which
 #'   families. If NULL, all hypotheses are assumed to belong to the same family.
@@ -322,8 +362,15 @@ fStageBound <- function(m, wgtmat, family = NULL, corr = NULL, alpha, alpha1,
 #' @param nthreads The number of threads to use in simulations (0 means
 #'   the default RcppParallel behavior).
 #'
-#' @return A list containing the conditional error rates and the hypotheses
-#'   rejected or not rejected at stage 1.
+#' @return A list containing:
+#' * \code{stg1_elemhyp_r_idx}: The 1-based indices of elementary hypotheses
+#'   rejected in stage 1.
+#' * \code{stg1_inthyp_nr_idx}: The 1-based indices of intersection
+#'   hypotheses not rejected in stage 1.
+#' * \code{inthyp}: The indicator matrix of those non-rejected intersection
+#'   hypotheses.
+#' * \code{CER}: The conditional error rate for each non-rejected
+#'   intersection hypothesis.
 #'
 #' @references
 #' Cyrus Mehta, Ajoy Mukhopadhyay, and Martin Posch. Graph Based, Adaptive,
@@ -348,16 +395,18 @@ fStageBound <- function(m, wgtmat, family = NULL, corr = NULL, alpha, alpha1,
 #'                  NA, NA, 1, 0.5,
 #'                  NA, NA, 0.5, 1),
 #'                nrow = 4, byrow = TRUE)
-#' bounds <- fStageBound(4, wgtmat, family, corr, 0.025,
-#'                       errorSpent(0.5, 0.025, "sfOF"),
-#'                       0.5, nthreads = 1)
-#' fCER(4, wgtmat, family, corr, 0.5, bounds$stg1_bnd,
-#'      bounds$stg2_bnd, c(0.00045, 0.0952, 0.0225, 0.1104),
-#'      nthreads = 1)
+#' bounds <- fCERStageBound(
+#'   wgtmat, family, corr, alpha = 0.025,
+#'   alpha1 = errorSpent(0.5, 0.025, "sfOF"),
+#'   info_frac = 0.5, nthreads = 1)
+#' fCERCer(stg1_p = c(0.00045, 0.0952, 0.0225, 0.1104),
+#'         wgtmat, family, corr, info_frac = 0.5,
+#'         bounds$stg1_bnd, bounds$stg2_bnd, nthreads = 1)
 #'
 #' @export
-fCER <- function(m, wgtmat, family = NULL, corr = NULL, info_frac, stg1_bnd,
-                 stg2_bnd, stg1_p, nthreads = 0) {
+fCERCer <- function(stg1_p, wgtmat, family = NULL, corr = NULL, info_frac,
+                    stg1_bnd, stg2_bnd, nthreads = 0) {
+  m <- ncol(wgtmat$wgtmat)
   if (is.null(family)) {
     family <- matrix(1, 1, m)
   } else if (!is.matrix(family)) {
@@ -373,16 +422,15 @@ fCER <- function(m, wgtmat, family = NULL, corr = NULL, info_frac, stg1_bnd,
     RcppParallel::setThreadOptions(min(nthreads, n_physical_cores))
   }
 
-  x <- fCERRcpp(m = m, wgtmat = wgtmat, family = family, corr = corr,
-                info_frac = info_frac, stg1_bnd = stg1_bnd,
-                stg2_bnd = stg2_bnd, stg1_p = stg1_p)
+  x <- fCERCerRcpp(stg1_p = stg1_p, wgtmat = wgtmat, family = family,
+                   corr = corr, info_frac = info_frac, stg1_bnd = stg1_bnd,
+                   stg2_bnd = stg2_bnd)
   x
 }
 
 #' @title Compute new stage-wise bounds after adaptation
 #' @description Compute new stage 2 bounds after an adaptation of the
 #'   hypotheses tested or their weights.
-#' @param m Number of hypotheses.
 #' @param wgtmat Weight matrix for the original intersection hypotheses.
 #' @param family Family matrix indicating which hypotheses belong to which
 #'   families. If NULL, all hypotheses are assumed to belong to the same family.
@@ -397,8 +445,13 @@ fCER <- function(m, wgtmat, family = NULL, corr = NULL, info_frac, stg1_bnd,
 #' @param nthreads The number of threads to use in simulations (0 means
 #'   the default RcppParallel behavior).
 #'
-#' @return A list containing the adapted intersection hypotheses and their new
-#'   stage 2 bounds.
+#' @return A list containing:
+#' * \code{inthyp}: The indicator matrix of the adapted intersection
+#'   hypotheses.
+#' * \code{stg2_coef_new}: The new stage 2 coefficient for each adapted
+#'   intersection hypothesis.
+#' * \code{stg2_bnd_new}: The new stage 2 bounds for the elementary hypotheses
+#'   in each adapted intersection hypothesis.
 #'
 #' @references
 #' Cyrus Mehta, Ajoy Mukhopadhyay, and Martin Posch. Graph Based, Adaptive,
@@ -424,23 +477,28 @@ fCER <- function(m, wgtmat, family = NULL, corr = NULL, info_frac, stg1_bnd,
 #'                  NA, NA, 0.5, 1),
 #'                nrow = 4, byrow = TRUE)
 #' stage1_pvalues <- c(0.00045, 0.0952, 0.0225, 0.1104)
-#' bounds <- fStageBound(4, wgtmat, family, corr, 0.025,
-#'                       errorSpent(0.5, 0.025, "sfOF"), 0.5)
-#' conditional_error_rates <- fCER(
-#'   4, wgtmat, family, corr, 0.5,
-#'   bounds$stg1_bnd, bounds$stg2_bnd, stage1_pvalues)
+#' bounds <- fCERStageBound(
+#'   wgtmat, family, corr, alpha = 0.025,
+#'   alpha1 = errorSpent(0.5, 0.025, "sfOF"),
+#'   info_frac = 0.5, nthreads = 1)
+#' conditional_error_rates <- fCERCer(
+#'   stage1_pvalues, wgtmat, family, corr, info_frac = 0.5,
+#'   bounds$stg1_bnd, bounds$stg2_bnd, nthreads = 1)
 #' stage2_weight_matrix <- fwgtmat(
 #'   w = c(0.5, 0.5),
 #'   G = matrix(c(0, 1, 1, 0), 2, 2, byrow = TRUE))
-#' fNewBound(4, wgtmat, family, corr, stage1_pvalues,
-#'           conditional_error_rates$stg1_inthyp_nr_idx,
-#'           conditional_error_rates$CER, c(2, 4),
-#'           stage2_weight_matrix, 0.4, nthreads = 1)
+#' fCERNewBound(stage1_pvalues, wgtmat, family, corr,
+#'              conditional_error_rates$stg1_inthyp_nr_idx,
+#'              conditional_error_rates$CER,
+#'              stg2_elemhyp_idx = c(2, 4),
+#'              stage2_weight_matrix, info_frac_new = 0.4,
+#'              nthreads = 1)
 #'
 #' @export
-fNewBound <- function(m, wgtmat, family = NULL, corr = NULL, stg1_p,
-                      stg1_inthyp_nr_idx, CER, stg2_elemhyp_idx,
-                      stg2_wgtmat, info_frac_new, nthreads = 0) {
+fCERNewBound <- function(stg1_p, wgtmat, family = NULL, corr = NULL,
+                         stg1_inthyp_nr_idx, CER, stg2_elemhyp_idx,
+                         stg2_wgtmat, info_frac_new, nthreads = 0) {
+  m <- ncol(wgtmat$wgtmat)
   if (is.null(family)) {
     family <- matrix(1, 1, m)
   } else if (!is.matrix(family)) {
@@ -456,10 +514,11 @@ fNewBound <- function(m, wgtmat, family = NULL, corr = NULL, stg1_p,
     RcppParallel::setThreadOptions(min(nthreads, n_physical_cores))
   }
 
-  x <- fNewBoundRcpp(m = m, wgtmat = wgtmat, family = family, corr = corr,
-                     stg1_p = stg1_p, stg1_inthyp_nr_idx = stg1_inthyp_nr_idx,
-                     CER = CER, stg2_elemhyp_idx = stg2_elemhyp_idx,
-                     stg2_wgtmat = stg2_wgtmat, info_frac_new = info_frac_new)
+  x <- fCERNewBoundRcpp(stg1_p = stg1_p, wgtmat = wgtmat, family = family,
+                        corr = corr, stg1_inthyp_nr_idx = stg1_inthyp_nr_idx,
+                        CER = CER, stg2_elemhyp_idx = stg2_elemhyp_idx,
+                        stg2_wgtmat = stg2_wgtmat,
+                        info_frac_new = info_frac_new)
   x
 }
 
@@ -469,12 +528,16 @@ fNewBound <- function(m, wgtmat, family = NULL, corr = NULL, stg1_p,
 #' @param stg1_elemhyp_r_idx Indices of the elementary hypotheses rejected
 #'   in stage 1.
 #' @param stg2_elemhyp_idx Indices of the elementary hypotheses in stage 2.
-#' @param stg2_inthyp_idx Indices of the intersection hypotheses in stage 2.
+#' @param stg2_inthyp Indicator matrix of the intersection hypotheses in stage
+#'   2.
 #' @param stg2_bnd_new New stage 2 bounds for the elementary hypotheses in each
 #'   intersection hypothesis.
 #' @param cum_p Cumulative p-values for the elementary hypotheses in stage 2.
-#' @return A logical vector indicating whether each individual hypothesis is
+#' @return A logical vector containing:
+#' * One value for each elementary hypothesis, indicating whether it is
 #'   rejected after stage 2.
+#' * Values are ordered by the elementary-hypothesis indices of the original
+#'   procedure.
 #'
 #' @references
 #' Cyrus Mehta, Ajoy Mukhopadhyay, and Martin Posch. Graph Based, Adaptive,
@@ -496,32 +559,40 @@ fNewBound <- function(m, wgtmat, family = NULL, corr = NULL, stg1_p,
 #' corr <- matrix(c(1, 0.5, NA, NA,
 #'                  0.5, 1, NA, NA,
 #'                  NA, NA, 1, 0.5,
-#'                  NA, NA, 0.5, 1), nrow = 4, byrow = TRUE)
+#'                  NA, NA, 0.5, 1),
+#'                nrow = 4, byrow = TRUE)
 #' stage1_pvalues <- c(0.00045, 0.0952, 0.0225, 0.1104)
-#' bounds <- fStageBound(4, wgtmat, family, corr, 0.025,
-#'                       errorSpent(0.5, 0.025, "sfOF"), 0.5)
-#' conditional_error_rates <- fCER(
-#'   4, wgtmat, family, corr, 0.5,
-#'   bounds$stg1_bnd, bounds$stg2_bnd, stage1_pvalues)
+#' bounds <- fCERStageBound(
+#'   wgtmat, family, corr, alpha = 0.025,
+#'   alpha1 = errorSpent(0.5, 0.025, "sfOF"),
+#'   info_frac = 0.5, nthreads = 1)
+#' conditional_error_rates <- fCERCer(
+#'   stage1_pvalues, wgtmat, family, corr, info_frac = 0.5,
+#'   bounds$stg1_bnd, bounds$stg2_bnd, nthreads = 1)
 #' stage2_weight_matrix <- fwgtmat(
 #'   w = c(0.5, 0.5),
 #'   G = matrix(c(0, 1, 1, 0), 2, 2, byrow = TRUE))
-#' adapted_bounds <- fNewBound(
-#'   4, wgtmat, family, corr, stage1_pvalues,
+#' adapted_bounds <- fCERNewBound(
+#'   stage1_pvalues, wgtmat, family, corr,
 #'   conditional_error_rates$stg1_inthyp_nr_idx,
 #'   conditional_error_rates$CER,
-#'   c(2, 4), stage2_weight_matrix, 0.4)
+#'   stg2_elemhyp_idx = c(2, 4), stage2_weight_matrix,
+#'   info_frac_new = 0.4, nthreads = 1)
 #' stage2_cumulative_pvalues <-
 #'   1 - pnorm(sqrt(0.4) * qnorm(1 - c(0.0952, 0.1104)) +
 #'               sqrt(1 - 0.4) * qnorm(1 - c(0.0299, 0.0586)))
-#' fCERrej(conditional_error_rates$stg1_elemhyp_r_idx, c(2, 4),
-#'         adapted_bounds$inthyp, adapted_bounds$stg2_bnd_new,
-#'         stage2_cumulative_pvalues)
+#' fCERRej(stage2_cumulative_pvalues,
+#'         conditional_error_rates$stg1_elemhyp_r_idx,
+#'         stg2_elemhyp_idx = c(2, 4),
+#'         adapted_bounds$inthyp, adapted_bounds$stg2_bnd_new)
 #'
 #' @export
-fCERrej <- function(stg1_elemhyp_r_idx, stg2_elemhyp_idx, stg2_inthyp_idx,
-                    stg2_bnd_new, cum_p) {
-  fCERrejRcpp(stg1_elemhyp_r_idx, stg2_elemhyp_idx, stg2_inthyp_idx,
-              stg2_bnd_new, cum_p)
+fCERRej <- function(cum_p, stg1_elemhyp_r_idx, stg2_elemhyp_idx,
+                    stg2_inthyp, stg2_bnd_new) {
+  fCERRejRcpp(cum_p = cum_p,
+              stg1_elemhyp_r_idx = stg1_elemhyp_r_idx,
+              stg2_elemhyp_idx = stg2_elemhyp_idx,
+              stg2_inthyp = stg2_inthyp,
+              stg2_bnd_new = stg2_bnd_new)
 }
 
