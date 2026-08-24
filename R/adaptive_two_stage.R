@@ -220,7 +220,7 @@ fPCStage1 <- function(stg1_loc_p, alpha1) {
 #'   stg1_inthyp_nr = 1:15, stg2_elemhyp = 1:4,
 #'   stg2_wgtmat = wgtmat, test = "dunnett",
 #'   nthreads = 1)
-#' stage1_rejections <- fPCStage1(stg1_loc_p, alpha1)
+#' stage1_rejections <- fPCStage1(stage1_loc_p, alpha1)
 #'
 #' adapted_graph <- updateGraph(initial_weights,
 #'                              transition_matrix,
