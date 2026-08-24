@@ -22,8 +22,8 @@ lrsim_bmTrtSel(
   safetyThreshold = 0,
   useUniformPrior = TRUE,
   methods = c("ctdunnett", "ctsimes", "ctpooled", "cer", "TSSSD.k", "TSSSD.uk",
-    "TSSSD.k.rank", "TSSSD.uk.rank", "TSSSD.k.ce", "TSSSD.uk.ce",
-    "TSSSD.k.rank.ce", "TSSSD.uk.rank.ce", "naive", "ph3only"),
+    "TSSSD.k.rank", "TSSSD.uk.rank", "TSSSD.k.ce", "TSSSD.uk.ce", "TSSSD.k.rank.ce",
+    "TSSSD.uk.rank.ce", "naive", "ph3only"),
   accrualRatePhase2 = NA_real_,
   accrualRatePhase3 = NA_real_,
   followupTimePhase2 = 0,
@@ -95,9 +95,9 @@ posterior used in dose selection.}
 for the confirmatory analysis. Any subset of \code{"ctdunnett"},
 \code{"ctsimes"}, \code{"ctpooled"}, \code{"cer"}, \code{"TSSSD.k"},
 \code{"TSSSD.uk"}, \code{"TSSSD.k.rank"}, \code{"TSSSD.uk.rank"},
-\code{"TSSSD.k.ce"}, \code{"TSSSD.uk.ce"}, \code{"TSSSD.k.rank.ce"},
-\code{"TSSSD.uk.rank.ce"}, \code{"naive"}, and \code{"ph3only"}.
-Restricting the set skips the
+\code{"TSSSD.k.ce"}, \code{"TSSSD.uk.ce"},
+\code{"TSSSD.k.rank.ce"}, \code{"TSSSD.uk.rank.ce"},
+\code{"naive"}, and \code{"ph3only"}. Restricting the set skips the
 corresponding computation entirely, which matters because the methods
 differ by orders of magnitude in cost.}
 
