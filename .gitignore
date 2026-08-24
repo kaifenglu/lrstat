@@ -6,6 +6,7 @@ lrstat.Rproj
 notes/
 docs/
 .vscode/
+.rlib/
 src/*.o
 src/*.so
 src/*.dll

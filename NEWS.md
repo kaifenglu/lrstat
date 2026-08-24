@@ -3,35 +3,16 @@
 * standardized C++ pointer/reference declaration style across src with a
   project-level `.clang-format` (80-column, 2-space indent, `type *name` and
   `type &name` alignment) and aligned headers/sources to that convention
-* fixed adaptive two-stage examples for `fCERNewBound` and `fCERRej` by
-  correcting the `fCERCer` call so `nthreads` is passed explicitly instead of
-  inadvertently passing a p-value vector positionally
 * excluded `.clang-format` from package build artifacts via `.Rbuildignore`
 
-* renamed and clarified the adaptive two-stage multiple-testing API: `fadjp` to
-  `fPCStagewise` for stage-wise local p-values used in p-value combination;
-  `fPCrej` to `fPCRej`; `fStageBound` to `fCERStageBound`; `fCER` to `fCERCer`;
-  `fNewBound` to `fCERNewBound`; and `fCERrej` to `fCERRej`. The corresponding
-  internal C++ functions were renamed consistently. `fPCStage1`,
-  `fCERStageBound`, `fCERCer`, and `fCERNewBound` now derive the number of
-  hypotheses from their matrix/list inputs, `fPCRej` takes the stage-wise
-  local-p-value lists first, `fCERCer` and `fCERNewBound` take stage 1 p-values
-  first, and `fCERRej` takes cumulative p-values first.
 * corrected conditional Type I error calculations in `adaptDesign`,
   `adaptDesign_multiarm`, `adaptDesign_seamless`, `getCP`, `getCP_multiarm`, and
   `getCP_seamless` to use normalized post-adaptation information rates
   consistently, including when the Muller and Schafer method is selected
-* fixed `fCERStageBound` to marginalize out unconstrained stage 1 dimensions
-  when `alpha1 = 0` instead of relying on `boost_qnorm`'s finite clamp at
-  probability 1, which had left the stage 2 boundary with a spurious dependence
-  on `info_frac`
 * added `finthyp` to construct the intersection-hypothesis indicator matrix for
   a given number of elementary hypotheses, matching the row order used by
   `fwgtmat` and `fDefaultWgtmat`, for use when migrating custom weight matrices
   to the new `fadjpbon`/`fadjpsim`/`fadjpdun` interfaces
-* renamed the `cJ1`/`cJ2`/`cJ2_new` output fields of
-  `fCERStageBound`/`fCERNewBound` to `stg1_coef`/`stg2_coef`/`stg2_coef_new` for
-  consistency with the `stg1_bnd`/`stg2_bnd`/`stg2_bnd_new` naming
 * reduced per-iteration buffer allocation in `fadjpsim`'s Simes p-value
   adjustment by reusing preallocated vectors instead of allocating new ones for
   each family block
