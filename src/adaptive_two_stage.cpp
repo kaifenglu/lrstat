@@ -20,8 +20,8 @@ using std::size_t;
 LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
                              const WeightMatrix &wgtmat,
                              const BoolMatrix &family, const FlatMatrix &corr,
-                             const std::vector<size_t> &stg1_inthyp_nr,
-                             const std::vector<size_t> &stg2_elemhyp,
+                             const std::vector<size_t> &stg1_inthyp_nr_idx,
+                             const std::vector<size_t> &stg2_elemhyp_idx,
                              const WeightMatrix &stg2_wgtmat,
                              const std::string &test) {
 
@@ -33,13 +33,13 @@ LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
 
   size_t nfams = family.nrow;
   size_t m = family.ncol;
-  for (size_t i : stg2_elemhyp) {
+  for (size_t i : stg2_elemhyp_idx) {
     if (i >= m) {
-      throw std::invalid_argument("stg2_elemhyp contains invalid indices");
+      throw std::invalid_argument("stg2_elemhyp_idx contains invalid indices");
     }
   }
 
-  size_t m2 = stg2_elemhyp.size();
+  size_t m2 = stg2_elemhyp_idx.size();
   size_t ntests2 = (1 << m2) - 1;
 
   std::vector<size_t> active_fams;
@@ -47,7 +47,7 @@ LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
   for (size_t h = 0; h < nfams; ++h) {
     bool has_hypothesis = false;
     for (size_t j2 = 0; j2 < m2; ++j2) {
-      if (family(h, stg2_elemhyp[j2]) != 0) {
+      if (family(h, stg2_elemhyp_idx[j2]) != 0) {
         has_hypothesis = true;
         break;
       }
@@ -60,14 +60,14 @@ LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
   BoolMatrix family2(nfams2, m2);
   for (size_t j2 = 0; j2 < m2; ++j2) {
     for (size_t h2 = 0; h2 < nfams2; ++h2) {
-      family2(h2, j2) = family(active_fams[h2], stg2_elemhyp[j2]);
+      family2(h2, j2) = family(active_fams[h2], stg2_elemhyp_idx[j2]);
     }
   }
 
   FlatMatrix corr2(m2, m2);
   for (size_t j = 0; j < m2; ++j) {
     for (size_t i = 0; i < m2; ++i) {
-      corr2(i, j) = corr(stg2_elemhyp[i], stg2_elemhyp[j]);
+      corr2(i, j) = corr(stg2_elemhyp_idx[i], stg2_elemhyp_idx[j]);
     }
   }
 
@@ -89,12 +89,12 @@ LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
         "test must be 'bonferroni', 'simes', or 'dunnett'");
   }
 
-  size_t s = stg1_inthyp_nr.size();
+  size_t s = stg1_inthyp_nr_idx.size();
   std::vector<size_t> inthyp_idx(s);
   IntMatrix inthyp2(s, m);
   std::vector<double> pinter(s);
   for (size_t index = 0; index < s; ++index) {
-    size_t i = stg1_inthyp_nr[index];
+    size_t i = stg1_inthyp_nr_idx[index];
     inthyp_idx[index] = i;
     for (size_t j = 0; j < m; ++j) {
       inthyp2(index, j) = wgtmat.inthyp(i, j);
@@ -103,7 +103,7 @@ LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
     // identify the corresponding index in the adjusted p-values for stage 2
     size_t stg2_index = 0;
     for (size_t j2 = 0; j2 < m2; ++j2) {
-      if (wgtmat.inthyp(i, stg2_elemhyp[j2])) {
+      if (wgtmat.inthyp(i, stg2_elemhyp_idx[j2])) {
         stg2_index |= (1 << (m2 - 1 - j2));
       }
     }
@@ -119,34 +119,36 @@ LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
 
 LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
                              const BoolMatrix &family, const FlatMatrix &corr,
-                             const std::vector<size_t> &stg1_inthyp_nr,
-                             const std::vector<size_t> &stg2_elemhyp,
+                             const std::vector<size_t> &stg1_inthyp_nr_idx,
+                             const std::vector<size_t> &stg2_elemhyp_idx,
                              const std::string &test) {
   return fPCStagewiseCpp(stg2_p, fDefaultWgtmatcpp(family.ncol), family, corr,
-                         stg1_inthyp_nr, stg2_elemhyp,
+                         stg1_inthyp_nr_idx, stg2_elemhyp_idx,
                          fDefaultWgtmatcpp(stg2_p.size()), test);
 }
 
 LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
                              const WeightMatrix &wgtmat,
-                             const std::vector<size_t> &stg1_inthyp_nr,
-                             const std::vector<size_t> &stg2_elemhyp,
+                             const std::vector<size_t> &stg1_inthyp_nr_idx,
+                             const std::vector<size_t> &stg2_elemhyp_idx,
                              const WeightMatrix &stg2_wgtmat,
                              const std::string &test) {
   const BoolMatrix family = fDefaultFamilycpp(wgtmat.inthyp.ncol);
   return fPCStagewiseCpp(stg2_p, wgtmat, family, fDefaultCorrcpp(family),
-                         stg1_inthyp_nr, stg2_elemhyp, stg2_wgtmat, test);
+                         stg1_inthyp_nr_idx, stg2_elemhyp_idx, stg2_wgtmat,
+                         test);
 }
 
 LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
                              const WeightMatrix &wgtmat,
                              const BoolMatrix &family,
-                             const std::vector<size_t> &stg1_inthyp_nr,
-                             const std::vector<size_t> &stg2_elemhyp,
+                             const std::vector<size_t> &stg1_inthyp_nr_idx,
+                             const std::vector<size_t> &stg2_elemhyp_idx,
                              const WeightMatrix &stg2_wgtmat,
                              const std::string &test) {
   return fPCStagewiseCpp(stg2_p, wgtmat, family, fDefaultCorrcpp(family),
-                         stg1_inthyp_nr, stg2_elemhyp, stg2_wgtmat, test);
+                         stg1_inthyp_nr_idx, stg2_elemhyp_idx, stg2_wgtmat,
+                         test);
 }
 
 // [[Rcpp::export]]
@@ -154,8 +156,8 @@ Rcpp::List fPCStagewiseRcpp(const std::vector<double> &stg2_p,
                             const Rcpp::Nullable<Rcpp::List> &wgtmat,
                             const Rcpp::Nullable<Rcpp::LogicalMatrix> &family,
                             const Rcpp::Nullable<Rcpp::NumericMatrix> &corr,
-                            const std::vector<int> &stg1_inthyp_nr,
-                            const std::vector<int> &stg2_elemhyp,
+                            const std::vector<int> &stg1_inthyp_nr_idx,
+                            const std::vector<int> &stg2_elemhyp_idx,
                             const Rcpp::Nullable<Rcpp::List> &stg2_wgtmat,
                             const std::string &test = "dunnett") {
   size_t m;
@@ -183,9 +185,9 @@ Rcpp::List fPCStagewiseRcpp(const std::vector<double> &stg2_p,
     Rcpp::NumericMatrix corr_matrix(corr.get());
     corr1 = flatmatrix_from_Rmatrix(corr_matrix);
   }
-  auto Jplus = validateConvertIdx(stg1_inthyp_nr, (size_t{1} << m) - 1,
-                                  "stg1_inthyp_nr");
-  auto I2 = validateConvertIdx(stg2_elemhyp, m, "stg2_elemhyp");
+  auto Jplus = validateConvertIdx(stg1_inthyp_nr_idx, (size_t{1} << m) - 1,
+                                  "stg1_inthyp_nr_idx");
+  auto I2 = validateConvertIdx(stg2_elemhyp_idx, m, "stg2_elemhyp_idx");
   WeightMatrix wgt_pair = fDefaultWgtmatcpp(m);
   if (!wgtmat.isNull()) {
     Rcpp::List wgtmat_list(wgtmat.get());

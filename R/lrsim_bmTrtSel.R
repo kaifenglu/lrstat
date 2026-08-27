@@ -54,10 +54,12 @@
 #'   posterior used in dose selection.
 #' @param methods A character vector naming the testing procedures to evaluate
 #'   for the confirmatory analysis. Any subset of \code{"ctdunnett"},
-#'   \code{"ctsimes"}, \code{"ctpooled"}, \code{"cer"}, \code{"TSSSD.k"},
-#'   \code{"TSSSD.uk"}, \code{"TSSSD.k.rank"}, \code{"TSSSD.uk.rank"},
-#'   \code{"TSSSD.k.ce"}, \code{"TSSSD.uk.ce"},
-#'   \code{"TSSSD.k.rank.ce"}, \code{"TSSSD.uk.rank.ce"},
+#'   \code{"ctsimes"}, \code{"ctpooled"}, \code{"cer"}, \code{"tsssd.k"},
+#'   \code{"tsssd.uk"}, \code{"tsssd.k.rank"},
+#'   \code{"tsssd.k.modrank"}, \code{"tsssd.uk.modrank"},
+#'   \code{"tsssd.k.ce"}, \code{"tsssd.uk.ce"},
+#'   \code{"tsssd.k.rank.ce"},
+#'   \code{"tsssd.k.modrank.ce"}, \code{"tsssd.uk.modrank.ce"},
 #'   \code{"naive"}, and \code{"ph3only"}. Restricting the set skips the
 #'   corresponding computation entirely, which matters because the methods
 #'   differ by orders of magnitude in cost.
@@ -69,6 +71,9 @@
 #'   0 when dose selection occurs immediately after the last phase II
 #'   enrollment.
 #' @param maxNumberOfIterations The number of simulated trials.
+#' @param maxNumberOfRawDatasets The number of initial simulation iterations
+#'   for which to retain subject-level raw data. Set to 0, the default, to skip
+#'   raw-data retention.
 #' @param seed The seed for the random number generator.
 #' @param nthreads The number of threads to use. The default, 0, leaves the
 #'   \code{RcppParallel} setting unchanged.
@@ -114,13 +119,19 @@
 #'   testing procedure with the inverse normal combination of stage 1 and
 #'   stage 2 p-values, using the Dunnett, Simes, and pooled log-rank local
 #'   tests respectively; \code{cer} for the conditional error rate method;
-#'   \code{TSSSD.k} and \code{TSSSD.uk} for the original two-stage seamless
-#'   design boundaries with known and unknown correlation; \code{TSSSD.k.rank}
-#'   and \code{TSSSD.uk.rank} for rank-adjusted versions of those boundaries;
-#'   \code{TSSSD.k.ce}, \code{TSSSD.uk.ce}, \code{TSSSD.k.rank.ce}, and
-#'   \code{TSSSD.uk.rank.ce} for conditional-error updates that start from
-#'   nominal boundaries based on \code{n1/(n1+n2)} and then update boundaries
-#'   using the observed stage 1 z-statistic and observed information fraction;
+#'   \code{tsssd.k} and \code{tsssd.uk} for the original two-stage seamless
+#'   design boundaries with known and unknown correlation; \code{tsssd.k.rank}
+#'   for the real rank-based boundaries; and
+#'   \code{tsssd.k.modrank} and \code{tsssd.uk.modrank} for modified
+#'   rank-based boundaries based on the effective number of more efficacious
+#'   doses;
+#'   \code{tsssd.k.ce}, \code{tsssd.uk.ce}, and \code{tsssd.k.rank.ce} for
+#'   conditional-error updates of the original and real rank-based boundaries;
+#'   and \code{tsssd.k.modrank.ce} and
+#'   \code{tsssd.uk.modrank.ce} for conditional-error updates of the modified
+#'   rank-based boundaries. These updates start from nominal boundaries based
+#'   on \code{n1/(n1+n2)} and then use the observed stage 1 z-statistic and
+#'   observed information fraction;
 #'   \code{naive} for the
 #'   unadjusted log-rank test on the combined stage 1 and stage 2 data; and
 #'   \code{ph3only} for the unadjusted log-rank test on the stage 2 data only.
@@ -129,6 +140,34 @@
 #'   rate, at the cost of discarding the stage 1 information. \code{naive}
 #'   reuses the selection data and is anticonservative; it is reported for
 #'   reference.
+#'
+#' * \code{sumdataBIN}: One row per iteration and phase II arm, containing
+#'   \code{iterationNumber}, \code{treatmentGroup}, \code{responses},
+#'   \code{toxicities}, and \code{selected}. Treatment group 0 is control;
+#'   its toxicity count is missing. These rows reproduce the dose-selection
+#'   operating characteristics.
+#'
+#' * \code{sumdataTTE}: One row per iteration and phase III sample size,
+#'   containing \code{iterationNumber}, \code{selectedDose},
+#'   \code{phase3SampleSize}, stage 1, stage 2, and total event counts, and
+#'   stage 1, stage 2, and cumulative log-rank Z statistics. It also has one
+#'   \code{reject.<method>} indicator column for every requested method. These
+#'   rows reproduce \code{ave.event} and the operating characteristics in
+#'   \code{byMethod}.
+#'
+#' * \code{rawdataBIN} (present when \code{maxNumberOfRawDatasets} is
+#'   positive): Subject-level phase II binary data with \code{iterationNumber},
+#'   \code{subjectId}, \code{treatmentGroup} (0 for control and 1 through
+#'   \code{M} for doses), \code{response}, and \code{toxicity}. Toxicity is
+#'   missing for the control arm because it is not simulated or used for dose
+#'   selection.
+#'
+#' * \code{rawdataTTE} (present when \code{maxNumberOfRawDatasets} is
+#'   positive): Subject-level time-to-event data with \code{iterationNumber},
+#'   \code{subjectId}, \code{phase}, \code{treatmentGroup},
+#'   \code{response}, \code{arrivalTime}, \code{survivalTime},
+#'   \code{timeUnderObservation}, and \code{event}. Phase 2 includes all
+#'   arms; phase 3 includes only the control arm and the selected dose.
 #'
 #' @details
 #' For each subject on a treatment arm, a bivariate latent normal vector
@@ -227,14 +266,17 @@ lrsim_bmTrtSel <- function(
     safetyThreshold = 0,
     useUniformPrior = TRUE,
     methods = c("ctdunnett", "ctsimes", "ctpooled", "cer",
-                "TSSSD.k", "TSSSD.uk", "TSSSD.k.rank", "TSSSD.uk.rank",
-                "TSSSD.k.ce", "TSSSD.uk.ce",
-                "TSSSD.k.rank.ce", "TSSSD.uk.rank.ce",
+                "tsssd.k", "tsssd.uk", "tsssd.k.rank",
+                "tsssd.k.modrank", "tsssd.uk.modrank",
+                "tsssd.k.ce", "tsssd.uk.ce",
+                "tsssd.k.rank.ce",
+                "tsssd.k.modrank.ce", "tsssd.uk.modrank.ce",
                 "naive", "ph3only"),
     accrualRatePhase2 = NA_real_,
     accrualRatePhase3 = NA_real_,
     followupTimePhase2 = 0,
     maxNumberOfIterations = 1000,
+    maxNumberOfRawDatasets = 0,
     seed = 0,
     nthreads = 0) {
 
@@ -243,6 +285,8 @@ lrsim_bmTrtSel <- function(
     n_physical_cores <- parallel::detectCores(logical = FALSE)
     RcppParallel::setThreadOptions(min(nthreads, n_physical_cores))
   }
+
+  methods <- tolower(methods)
 
   lrsim_bmTrtSel_Rcpp(
     phase2SampleSizePerArm = phase2SampleSizePerArm,
@@ -265,5 +309,6 @@ lrsim_bmTrtSel <- function(
     accrualRatePhase3 = accrualRatePhase3,
     followupTimePhase2 = followupTimePhase2,
     maxNumberOfIterations = maxNumberOfIterations,
+    maxNumberOfRawDatasets = maxNumberOfRawDatasets,
     seed = seed)
 }

@@ -607,3 +607,172 @@ testthat::test_that("lrsim empirical rejection converges near analytic target in
   testthat::expect_lt(abs(empirical - target), 0.08)
 })
 
+testthat::test_that("lrsim_bmTrtSel summary data reproduce operating characteristics", {
+  hazard_control <- c(log(2) / 12, log(2) / 24)
+  hazard_treatments <- rbind(c(0.75, 0.75), c(0.85, 0.85)) * hazard_control
+  sim <- lrsim_bmTrtSel(
+    phase2SampleSizePerArm = 20,
+    phase3SampleSizePerArmMin = 25,
+    phase3SampleSizePerArmMax = 27,
+    responseProbControl = 0.4,
+    responseProbTreatments = c(0.6, 0.5),
+    toxicityProbTreatments = c(0.1, 0.2),
+    corrEfficacyToxicity = 0,
+    hazardRateControl = hazard_control,
+    hazardRateTreatments = hazard_treatments,
+    studyDurationPhase3 = 24,
+    toxicityWeight = 0.25,
+    toxicityUpperLimit = 0.4,
+    efficacyThreshold = 0,
+    safetyThreshold = 0,
+    methods = c("ctdunnett", "naive", "ph3only"),
+    accrualRatePhase2 = 3,
+    accrualRatePhase3 = 6,
+    followupTimePhase2 = 3,
+    maxNumberOfIterations = 40,
+    seed = 123,
+    nthreads = 1
+  )
+
+  binary <- sim$sumdataBIN
+  survival <- sim$sumdataTTE
+  selected_binary <- binary[binary$treatmentGroup > 0, ]
+  selection_prob <- vapply(
+    seq_along(sim$selectionProb),
+    function(dose) mean(selected_binary$selected[selected_binary$treatmentGroup == dose]),
+    numeric(1)
+  )
+  testthat::expect_equal(selection_prob, sim$selectionProb)
+
+  average_events <- do.call(rbind, lapply(sim$n2, function(n2) {
+    rows <- survival[survival$phase3SampleSize == n2, ]
+    round(colMeans(rows[c("stage1Events", "stage2Events", "totalEvents")]))
+  }))
+  testthat::expect_equal(unname(average_events), unname(sim$ave.event))
+
+  for (method in sim$methods) {
+    reject_column <- paste0("reject.", method)
+    generalized_power <- vapply(sim$n2, function(n2) {
+      rows <- survival[survival$phase3SampleSize == n2, ]
+      mean(rows$selectedDose == sim$trueOBD & rows[[reject_column]] == 1L)
+    }, numeric(1))
+    probability_any <- vapply(sim$n2, function(n2) {
+      rows <- survival[survival$phase3SampleSize == n2, ]
+      mean(rows[[reject_column]])
+    }, numeric(1))
+    probability_each <- sapply(seq_along(sim$selectionProb), function(dose) {
+      vapply(sim$n2, function(n2) {
+        rows <- survival[survival$phase3SampleSize == n2, ]
+        selected <- rows$selectedDose == dose
+        if (!any(selected))
+          return(NaN)
+        mean(rows[[reject_column]][selected])
+      }, numeric(1))
+    })
+
+    expected <- sim$byMethod[[method]]
+    testthat::expect_equal(generalized_power, expected$gpower)
+    testthat::expect_equal(probability_any, expected$prob.rej.any)
+    testthat::expect_equal(probability_each, expected$prob.rej.each)
+  }
+
+  testthat::expect_equal(nrow(binary), sim$numberOfIterations * 3L)
+  testthat::expect_equal(nrow(survival), sim$numberOfIterations * length(sim$n2))
+  testthat::expect_true(all(is.na(binary$toxicities[binary$treatmentGroup == 0])))
+
+  no_selection <- lrsim_bmTrtSel(
+    phase2SampleSizePerArm = 10,
+    phase3SampleSizePerArmMin = 12,
+    phase3SampleSizePerArmMax = 13,
+    responseProbControl = 0.4,
+    responseProbTreatments = c(0.6, 0.5),
+    toxicityProbTreatments = c(0.1, 0.2),
+    corrEfficacyToxicity = 0,
+    hazardRateControl = hazard_control,
+    hazardRateTreatments = hazard_treatments,
+    studyDurationPhase3 = 12,
+    toxicityWeight = 0,
+    toxicityUpperLimit = 1e-12,
+    efficacyThreshold = 0,
+    safetyThreshold = 0.1,
+    methods = "ph3only",
+    accrualRatePhase2 = 3,
+    accrualRatePhase3 = 6,
+    maxNumberOfIterations = 10,
+    seed = 456,
+    nthreads = 1
+  )
+  no_selection_survival <- no_selection$sumdataTTE
+  testthat::expect_true(all(no_selection_survival$selectedDose == 0L))
+  testthat::expect_true(all(no_selection_survival$stage1Events == 0L))
+  testthat::expect_true(all(no_selection_survival$stage2Events == 0L))
+  testthat::expect_true(all(no_selection_survival$totalEvents == 0L))
+  testthat::expect_true(all(no_selection_survival$reject.ph3only == 0L))
+})
+
+testthat::test_that("lrsim_bmTrtSel uses lowercase method identifiers", {
+  hazard_control <- c(log(2) / 12, log(2) / 24)
+  sim <- lrsim_bmTrtSel(
+    phase2SampleSizePerArm = 10,
+    phase3SampleSizePerArmMin = 12,
+    phase3SampleSizePerArmMax = 12,
+    responseProbControl = 0.4,
+    responseProbTreatments = c(0.6, 0.5),
+    toxicityProbTreatments = c(0.1, 0.2),
+    corrEfficacyToxicity = 0,
+    hazardRateControl = hazard_control,
+    hazardRateTreatments = rbind(c(0.75, 0.75), c(0.85, 0.85)) * hazard_control,
+    studyDurationPhase3 = 12,
+    toxicityWeight = 0,
+    toxicityUpperLimit = 1,
+    methods = c("tsssd.k", "ph3only"),
+    accrualRatePhase2 = 3,
+    accrualRatePhase3 = 6,
+    maxNumberOfIterations = 5,
+    seed = 789,
+    nthreads = 1
+  )
+
+  testthat::expect_equal(sim$methods, c("tsssd.k", "ph3only"))
+  testthat::expect_named(sim$byMethod, c("tsssd.k", "ph3only"))
+  testthat::expect_true("reject.tsssd.k" %in% names(sim$sumdataTTE))
+  testthat::expect_match(
+    paste(capture.output(print(sim)), collapse = "\n"),
+    "TSSSD-K"
+  )
+})
+
+testthat::test_that("lrsim_bmTrtSel supports real rank-based TSSSD methods", {
+  hazard_control <- c(log(2) / 12, log(2) / 24)
+  methods <- c("tsssd.k.rank", "tsssd.k.rank.ce")
+  sim <- lrsim_bmTrtSel(
+    phase2SampleSizePerArm = 10,
+    phase3SampleSizePerArmMin = 12,
+    phase3SampleSizePerArmMax = 12,
+    responseProbControl = 0.4,
+    responseProbTreatments = c(0.6, 0.5),
+    toxicityProbTreatments = c(0.1, 0.2),
+    corrEfficacyToxicity = 0,
+    hazardRateControl = hazard_control,
+    hazardRateTreatments = rbind(c(0.75, 0.75), c(0.85, 0.85)) * hazard_control,
+    studyDurationPhase3 = 12,
+    toxicityWeight = 0,
+    toxicityUpperLimit = 1,
+    methods = methods,
+    accrualRatePhase2 = 3,
+    accrualRatePhase3 = 6,
+    maxNumberOfIterations = 5,
+    seed = 321,
+    nthreads = 1
+  )
+
+  testthat::expect_equal(sim$methods, methods)
+  testthat::expect_named(sim$byMethod, methods)
+  testthat::expect_true(all(paste0("reject.", methods) %in%
+                            names(sim$sumdataTTE)))
+  testthat::expect_match(
+    paste(capture.output(print(sim)), collapse = "\n"),
+    "TSSSD-K-Rank-CE"
+  )
+})
+

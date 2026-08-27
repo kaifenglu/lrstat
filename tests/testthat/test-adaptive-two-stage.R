@@ -42,7 +42,7 @@ testthat::test_that("fPCStagewise returns stage-wise local p-values", {
 
   default_corr_pvalues <- lrstat:::fPCStagewise(
     c(0.00045, 0.0952, 0.0225, 0.1104), wgtmat = setup$wgtmat,
-    family = setup$family, stg1_inthyp_nr = 1:15, stg2_elemhyp = 1:4,
+    family = setup$family, stg1_inthyp_nr_idx = 1:15, stg2_elemhyp_idx = 1:4,
     stg2_wgtmat = setup$wgtmat
   )
 

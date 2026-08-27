@@ -58,29 +58,29 @@ struct AdjustedBoundaries {
 LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
                              const WeightMatrix &wgtmat,
                              const BoolMatrix &family, const FlatMatrix &corr,
-                             const std::vector<size_t> &stg1_inthyp_nr,
-                             const std::vector<size_t> &stg2_elemhyp,
+                             const std::vector<size_t> &stg1_inthyp_nr_idx,
+                             const std::vector<size_t> &stg2_elemhyp_idx,
                              const WeightMatrix &stg2_wgtmat,
                              const std::string &test);
 
 LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
                              const BoolMatrix &family, const FlatMatrix &corr,
-                             const std::vector<size_t> &stg1_inthyp_nr,
-                             const std::vector<size_t> &stg2_elemhyp,
+                             const std::vector<size_t> &stg1_inthyp_nr_idx,
+                             const std::vector<size_t> &stg2_elemhyp_idx,
                              const std::string &test);
 
 LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
                              const WeightMatrix &wgtmat,
-                             const std::vector<size_t> &stg1_inthyp_nr,
-                             const std::vector<size_t> &stg2_elemhyp,
+                             const std::vector<size_t> &stg1_inthyp_nr_idx,
+                             const std::vector<size_t> &stg2_elemhyp_idx,
                              const WeightMatrix &stg2_wgtmat,
                              const std::string &test);
 
 LocalPValues fPCStagewiseCpp(const std::vector<double> &stg2_p,
                              const WeightMatrix &wgtmat,
                              const BoolMatrix &family,
-                             const std::vector<size_t> &stg1_inthyp_nr,
-                             const std::vector<size_t> &stg2_elemhyp,
+                             const std::vector<size_t> &stg1_inthyp_nr_idx,
+                             const std::vector<size_t> &stg2_elemhyp_idx,
                              const WeightMatrix &stg2_wgtmat,
                              const std::string &test);
 

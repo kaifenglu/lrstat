@@ -45,7 +45,7 @@ corr <- matrix(c(1, 0.5, NA, NA,
 stage1_local_pvalues <- fPCStagewise(
   stg2_p = c(0.00045, 0.0952, 0.0225, 0.1104),
   wgtmat = wgtmat, family = family, corr = corr,
-  stg1_inthyp_nr = 1:15, stg2_elemhyp = 1:4,
+  stg1_inthyp_nr_idx = 1:15, stg2_elemhyp_idx = 1:4,
   stg2_wgtmat = wgtmat, test = "dunnett",
   nthreads = 1)
 fPCStage1(stg1_loc_p = stage1_local_pvalues,

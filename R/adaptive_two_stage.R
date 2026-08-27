@@ -13,9 +13,9 @@
 #' @param corr Correlation matrix for the test statistics. If \code{NULL},
 #'   within-family correlations are 0.5 and between-family correlations are
 #'   missing.
-#' @param stg1_inthyp_nr Indices of the stage 1 intersection hypotheses that
+#' @param stg1_inthyp_nr_idx Indices of the stage 1 intersection hypotheses that
 #'   were not rejected.
-#' @param stg2_elemhyp Indices of the elementary hypotheses tested at stage 2.
+#' @param stg2_elemhyp_idx Indices of the elementary hypotheses tested at stage 2.
 #' @param stg2_wgtmat Weight matrix for the stage 2 intersection hypotheses.
 #'   If \code{NULL}, equal weights are assigned within each intersection
 #'   hypothesis.
@@ -33,8 +33,8 @@
 #' @details
 #' Despite the stage-oriented parameter names, this function can also be used
 #' to generate stage 1 local p-values. In that case, provide the complete set
-#' of intersection hypotheses in \code{stg1_inthyp_nr}, all elementary
-#' hypotheses in \code{stg2_elemhyp}, and the corresponding stage 1 p-values
+#' of intersection hypotheses in \code{stg1_inthyp_nr_idx}, all elementary
+#' hypotheses in \code{stg2_elemhyp_idx}, and the corresponding stage 1 p-values
 #' and weight matrix. The example illustrates this use.
 #'
 #' @references
@@ -62,13 +62,13 @@
 #'                nrow = 4, byrow = TRUE)
 #' fPCStagewise(stg2_p = c(0.00045, 0.0952, 0.0225, 0.1104),
 #'              wgtmat = wgtmat, family = family, corr = corr,
-#'              stg1_inthyp_nr = 1:15, stg2_elemhyp = 1:4,
+#'              stg1_inthyp_nr_idx = 1:15, stg2_elemhyp_idx = 1:4,
 #'              stg2_wgtmat = wgtmat, test = "dunnett",
 #'              nthreads = 1)
 #'
 #' @export
 fPCStagewise <- function(stg2_p, wgtmat = NULL, family = NULL, corr = NULL,
-                         stg1_inthyp_nr, stg2_elemhyp, stg2_wgtmat = NULL,
+                         stg1_inthyp_nr_idx, stg2_elemhyp_idx, stg2_wgtmat = NULL,
                          test = "dunnett", nthreads = 0) {
 
   m <- if (!is.null(wgtmat)) {
@@ -89,7 +89,7 @@ fPCStagewise <- function(stg2_p, wgtmat = NULL, family = NULL, corr = NULL,
     wgtmat <- fDefaultWgtmat(m)
   }
   if (is.null(stg2_wgtmat)) {
-    stg2_wgtmat <- fDefaultWgtmat(length(stg2_elemhyp))
+    stg2_wgtmat <- fDefaultWgtmat(length(stg2_elemhyp_idx))
   }
   if (is.null(corr)) {
     corr <- matrix(NA_real_, m, m)
@@ -107,8 +107,8 @@ fPCStagewise <- function(stg2_p, wgtmat = NULL, family = NULL, corr = NULL,
   }
 
   fPCStagewiseRcpp(stg2_p = stg2_p, wgtmat = wgtmat, family = family,
-                   corr = corr, stg1_inthyp_nr = stg1_inthyp_nr,
-                   stg2_elemhyp = stg2_elemhyp,
+                   corr = corr, stg1_inthyp_nr_idx = stg1_inthyp_nr_idx,
+                   stg2_elemhyp_idx = stg2_elemhyp_idx,
                    stg2_wgtmat = stg2_wgtmat, test = test)
 }
 
@@ -152,7 +152,7 @@ fPCStagewise <- function(stg2_p, wgtmat = NULL, family = NULL, corr = NULL,
 #' stage1_local_pvalues <- fPCStagewise(
 #'   stg2_p = c(0.00045, 0.0952, 0.0225, 0.1104),
 #'   wgtmat = wgtmat, family = family, corr = corr,
-#'   stg1_inthyp_nr = 1:15, stg2_elemhyp = 1:4,
+#'   stg1_inthyp_nr_idx = 1:15, stg2_elemhyp_idx = 1:4,
 #'   stg2_wgtmat = wgtmat, test = "dunnett",
 #'   nthreads = 1)
 #' fPCStage1(stg1_loc_p = stage1_local_pvalues,
@@ -217,7 +217,7 @@ fPCStage1 <- function(stg1_loc_p, alpha1) {
 #' stage1_loc_p <- fPCStagewise(
 #'   stg2_p = stage1_pvalues, wgtmat = wgtmat,
 #'   family = family, corr = corr,
-#'   stg1_inthyp_nr = 1:15, stg2_elemhyp = 1:4,
+#'   stg1_inthyp_nr_idx = 1:15, stg2_elemhyp_idx = 1:4,
 #'   stg2_wgtmat = wgtmat, test = "dunnett",
 #'   nthreads = 1)
 #' stage1_rejections <- fPCStage1(stage1_loc_p, alpha1)
@@ -232,8 +232,8 @@ fPCStage1 <- function(stg1_loc_p, alpha1) {
 #' stage2_loc_p <- fPCStagewise(
 #'   stg2_p = stage2_pvalues, wgtmat = wgtmat,
 #'   family = family, corr = corr,
-#'   stg1_inthyp_nr = stage1_rejections$stg1_inthyp_nr_idx,
-#'   stg2_elemhyp = adapted_graph$I,
+#'   stg1_inthyp_nr_idx = stage1_rejections$stg1_inthyp_nr_idx,
+#'   stg2_elemhyp_idx = adapted_graph$I,
 #'   stg2_wgtmat = stage2_weight_matrix,
 #'   test = "dunnett", nthreads = 1)
 #' fPCRej(stg1_loc_p = stage1_loc_p, stg2_loc_p = stage2_loc_p,
@@ -248,8 +248,8 @@ fPCStage1 <- function(stg1_loc_p, alpha1) {
 #' stage2_loc_p_reweighted <- fPCStagewise(
 #'   stg2_p = stage2_pvalues, wgtmat = wgtmat,
 #'   family = family, corr = corr,
-#'   stg1_inthyp_nr = stage1_rejections$stg1_inthyp_nr_idx,
-#'   stg2_elemhyp = adapted_graph$I,
+#'   stg1_inthyp_nr_idx = stage1_rejections$stg1_inthyp_nr_idx,
+#'   stg2_elemhyp_idx = adapted_graph$I,
 #'   stg2_wgtmat = stage2_weight_matrix_reweighted,
 #'   test = "dunnett", nthreads = 1)
 #' fPCRej(stg1_loc_p = stage1_loc_p,

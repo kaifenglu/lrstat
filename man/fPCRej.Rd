@@ -70,7 +70,7 @@ stage1_pvalues <- c(0.00045, 0.0952, 0.0225, 0.1104)
 stage1_loc_p <- fPCStagewise(
   stg2_p = stage1_pvalues, wgtmat = wgtmat,
   family = family, corr = corr,
-  stg1_inthyp_nr = 1:15, stg2_elemhyp = 1:4,
+  stg1_inthyp_nr_idx = 1:15, stg2_elemhyp_idx = 1:4,
   stg2_wgtmat = wgtmat, test = "dunnett",
   nthreads = 1)
 stage1_rejections <- fPCStage1(stage1_loc_p, alpha1)
@@ -85,8 +85,8 @@ stage2_pvalues <- c(0.1121, 0.0112, 0.1153)
 stage2_loc_p <- fPCStagewise(
   stg2_p = stage2_pvalues, wgtmat = wgtmat,
   family = family, corr = corr,
-  stg1_inthyp_nr = stage1_rejections$stg1_inthyp_nr_idx,
-  stg2_elemhyp = adapted_graph$I,
+  stg1_inthyp_nr_idx = stage1_rejections$stg1_inthyp_nr_idx,
+  stg2_elemhyp_idx = adapted_graph$I,
   stg2_wgtmat = stage2_weight_matrix,
   test = "dunnett", nthreads = 1)
 fPCRej(stg1_loc_p = stage1_loc_p, stg2_loc_p = stage2_loc_p,
@@ -101,8 +101,8 @@ stage2_weight_matrix_reweighted <- fwgtmat(
 stage2_loc_p_reweighted <- fPCStagewise(
   stg2_p = stage2_pvalues, wgtmat = wgtmat,
   family = family, corr = corr,
-  stg1_inthyp_nr = stage1_rejections$stg1_inthyp_nr_idx,
-  stg2_elemhyp = adapted_graph$I,
+  stg1_inthyp_nr_idx = stage1_rejections$stg1_inthyp_nr_idx,
+  stg2_elemhyp_idx = adapted_graph$I,
   stg2_wgtmat = stage2_weight_matrix_reweighted,
   test = "dunnett", nthreads = 1)
 fPCRej(stg1_loc_p = stage1_loc_p,

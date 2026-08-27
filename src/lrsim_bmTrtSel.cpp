@@ -1,7 +1,7 @@
 #include "adaptive_two_stage.h"
 #include "dataframe_list.h"
 #include "multiplicity.h"
-#include "seamless_design.h"
+#include "mvnormr.h"
 #include "survival_analysis.h"
 #include "thread_utils.h"
 #include "utilities.h"
@@ -140,23 +140,138 @@ enum : size_t {
   M_TSSSD_K,
   M_TSSSD_UK,
   M_TSSSD_K_RANK,
-  M_TSSSD_UK_RANK,
+  M_TSSSD_K_MODRANK,
+  M_TSSSD_UK_MODRANK,
   M_TSSSD_K_CE,
   M_TSSSD_UK_CE,
   M_TSSSD_K_RANK_CE,
-  M_TSSSD_UK_RANK_CE,
+  M_TSSSD_K_MODRANK_CE,
+  M_TSSSD_UK_MODRANK_CE,
   M_NAIVE,
   M_PH3ONLY,
   NMETHOD
 };
 
 const char *const METHOD_NAME[NMETHOD] = {
-    "ctdunnett", "ctsimes",      "ctpooled",      "cer",   "TSSSD.k",
-    "TSSSD.uk",  "TSSSD.k.rank", "TSSSD.uk.rank", "TSSSD.k.ce",
-    "TSSSD.uk.ce", "TSSSD.k.rank.ce", "TSSSD.uk.rank.ce", "naive",
-    "ph3only"};
+  "ctdunnett", "ctsimes",      "ctpooled",      "cer",   "tsssd.k",
+  "tsssd.uk", "tsssd.k.rank", "tsssd.k.modrank", "tsssd.uk.modrank",
+  "tsssd.k.ce", "tsssd.uk.ce", "tsssd.k.rank.ce", "tsssd.k.modrank.ce",
+  "tsssd.uk.modrank.ce",
+  "naive", "ph3only"};
 
 const double SINGLE_ARM_BOUND = boost_qnorm(1.0 - ALPHA_ONE_SIDED);
+
+// Final boundary after selecting the largest phase-2 Wald statistic, with no
+// phase-2 efficacy stopping. The selected-arm final statistics have an
+// equicorrelated multivariate normal distribution under the global null.
+double final_selection_boundary(size_t m, bool corr_known,
+                                double information_fraction) {
+  if (m == 1)
+    return SINGLE_ARM_BOUND;
+
+  const double phase2_corr = corr_known ? 0.5 : 0.0;
+  const double final_corr = 1.0 - (1.0 - phase2_corr) * information_fraction;
+  std::vector<double> lower(m, -POS_INF);
+  std::vector<double> upper(m);
+
+  if (m == 2) {
+    auto f = [&](double critical_value) {
+      std::fill(upper.begin(), upper.end(), critical_value);
+      return 1.0 - pbvnormcpp(lower, upper, final_corr) - ALPHA_ONE_SIDED;
+    };
+    return brent(f, 0.0, 8.0, 1e-6);
+  }
+
+  std::vector<double> mean(m, 0.0);
+  FlatMatrix sigma(m, m);
+  sigma.fill(final_corr);
+  for (size_t i = 0; i < m; ++i)
+    sigma(i, i) = 1.0;
+
+  auto f = [&](double critical_value) {
+    std::fill(upper.begin(), upper.end(), critical_value);
+    return 1.0 - pmvnormcpp(lower, upper, mean, sigma).prob - ALPHA_ONE_SIDED;
+  };
+  return brent(f, 0.0, 8.0, 1e-6);
+}
+
+// Final boundary after selecting the rankp0-th largest phase-2 statistic.
+double rank_selection_boundary(size_t m, size_t rankp0,
+                               double information_fraction) {
+  if (m == 1)
+    return SINGLE_ARM_BOUND;
+
+  const double phase2_corr = 0.5;
+  const double final_corr =
+      1.0 - (1.0 - phase2_corr) * information_fraction;
+  std::vector<double> lower(m);
+  std::vector<double> upper(m);
+  std::vector<double> mean(m, 0.0);
+  FlatMatrix sigma(m, m);
+  sigma.fill(final_corr);
+  for (size_t i = 0; i < m; ++i)
+    sigma(i, i) = 1.0;
+
+  auto f = [&](double critical_value) {
+    double probability = 0.0;
+    for (size_t i = rankp0; i <= m; ++i) {
+      for (size_t j = 0; j < m; ++j) {
+        lower[j] = j < i ? critical_value : -POS_INF;
+        upper[j] = j < i ? POS_INF : critical_value;
+      }
+
+      double combinations = 1.0;
+      for (size_t j = 1; j <= i; ++j)
+        combinations *= static_cast<double>(m - i + j) / j;
+      probability +=
+          combinations * pmvnormcpp(lower, upper, mean, sigma).prob;
+    }
+    return probability - ALPHA_ONE_SIDED;
+  };
+
+  return brent(f, 0.0, 8.0, 1e-6);
+}
+
+struct RawBinaryRow {
+  int iteration = 0;
+  int subject = 0;
+  int treatment = 0;
+  int response = 0;
+  int toxicity = NA_INTEGER;
+};
+
+struct RawTteRow {
+  int iteration = 0;
+  int subject = 0;
+  int phase = 0;
+  int treatment = 0;
+  int response = 0;
+  double arrival = 0.0;
+  double survival = 0.0;
+  double observed = 0.0;
+  int event = 0;
+};
+
+struct BinarySummaryRow {
+  int iteration = 0;
+  int treatment = 0;
+  int responses = 0;
+  int toxicities = NA_INTEGER;
+  int selected = 0;
+};
+
+struct TteSummaryRow {
+  int iteration = 0;
+  int selectedDose = 0;
+  int phase3SampleSize = 0;
+  int stage1Events = 0;
+  int stage2Events = 0;
+  int totalEvents = 0;
+  double stage1LogRankZ = NaN;
+  double stage2LogRankZ = NaN;
+  double cumulativeLogRankZ = NaN;
+  std::vector<int> reject;
+};
 
 // per-trial storage so that worker threads never touch shared state
 struct TrialResult {
@@ -164,6 +279,10 @@ struct TrialResult {
   std::vector<int> select;
   std::vector<IntMatrix> rej; // one ngrid by M matrix per requested method
   IntMatrix events;
+  std::vector<RawBinaryRow> rawBinary;
+  std::vector<RawTteRow> rawTte;
+  std::vector<BinarySummaryRow> binarySummary;
+  std::vector<TteSummaryRow> tteSummary;
 };
 
 // one-sided log-rank statistic, positive values favoring the treated group
@@ -198,6 +317,7 @@ struct SimWorker : public RcppParallel::Worker {
   const double acc_rate1;
   const double acc_rate2;
   const double T_ph2followup;
+  const size_t maxRawDatasets;
   const std::vector<uint64_t> &seeds;
   const std::vector<unsigned char> &use;
   const WeightMatrix &wgtmat;
@@ -214,7 +334,8 @@ struct SimWorker : public RcppParallel::Worker {
             double rho_, const std::vector<double> &the0_,
             const FlatMatrix &the1_, double T_max_, double w_, double phi_t_,
             double ce_, double ct_, double acc_rate1_, double acc_rate2_,
-            double T_ph2followup_, const std::vector<uint64_t> &seeds_,
+            double T_ph2followup_, size_t maxRawDatasets_,
+            const std::vector<uint64_t> &seeds_,
             const std::vector<unsigned char> &use_, const WeightMatrix &wgtmat_,
             const WeightMatrix &wgtmat1_, const BoolMatrix &family_,
             const FlatMatrix &corr_, const StageBoundaries &sb_,
@@ -222,7 +343,8 @@ struct SimWorker : public RcppParallel::Worker {
       : M(M_), n1(n1_), n2min(n2min_), n2max(n2max_), p0(p0_), pe(pe_), pt(pt_),
         rho(rho_), the0(the0_), the1(the1_), T_max(T_max_), w(w_),
         phi_t(phi_t_), ce(ce_), ct(ct_), acc_rate1(acc_rate1_),
-        acc_rate2(acc_rate2_), T_ph2followup(T_ph2followup_), seeds(seeds_),
+        acc_rate2(acc_rate2_), T_ph2followup(T_ph2followup_),
+        maxRawDatasets(maxRawDatasets_), seeds(seeds_),
         use(use_), wgtmat(wgtmat_), wgtmat1(wgtmat1_), family(family_),
         corr(corr_), sb(sb_), uniform_prior(uniform_prior_), results(results_) {
   }
@@ -232,12 +354,13 @@ struct SimWorker : public RcppParallel::Worker {
     const size_t narm = M + 1; // arm 0 is the control arm
     const size_t ngrid = n2max - n2min + 1;
     const size_t ntests = (static_cast<size_t>(1) << M) - 1;
-    const double NA_dbl = std::numeric_limits<double>::quiet_NaN();
     const double sqrt1mrho2 = std::sqrt(1.0 - rho * rho);
 
     // buffers reused across the iterations handled by this worker
     std::vector<std::vector<unsigned char>> shortv(
         narm, std::vector<unsigned char>(ntot));
+    std::vector<std::vector<unsigned char>> toxv(
+      narm, std::vector<unsigned char>(n1));
     std::vector<std::vector<double>> longv(narm, std::vector<double>(ntot));
     std::vector<std::vector<double>> accr(narm, std::vector<double>(ntot));
     std::vector<std::vector<double>> ytime(narm, std::vector<double>(ntot));
@@ -250,14 +373,13 @@ struct SimWorker : public RcppParallel::Worker {
     std::iota(allHyp.begin(), allHyp.end(), static_cast<size_t>(0));
 
     const std::vector<size_t> noStg1Rej;
-    const std::vector<unsigned char> effStopping = {0, 1};
-    const std::vector<double> emptyv;
 
     // Precompute nominal boundaries for CE-updated TSSSD methods.
     // These depend only on phase-2 and phase-3 sample sizes (n1, n2cur).
-    const bool needTsssdCe = use[M_TSSSD_K_CE] || use[M_TSSSD_UK_CE] ||
-                             use[M_TSSSD_K_RANK_CE] ||
-                             use[M_TSSSD_UK_RANK_CE];
+    const bool needTsssdCe =
+      use[M_TSSSD_K_CE] || use[M_TSSSD_UK_CE] ||
+      use[M_TSSSD_K_RANK_CE] || use[M_TSSSD_K_MODRANK_CE] ||
+      use[M_TSSSD_UK_MODRANK_CE];
     std::vector<double> tNominal(ngrid, 0.5);
     // Indexed by effective hypothesis count minus one:
     // [0] => mEff=1, [M-1] => mEff=M.
@@ -265,23 +387,25 @@ struct SimWorker : public RcppParallel::Worker {
       M, std::vector<double>(ngrid, SINGLE_ARM_BOUND));
     std::vector<std::vector<double>> tsssdUnknownNomByEff(
       M, std::vector<double>(ngrid, SINGLE_ARM_BOUND));
+    std::vector<std::vector<double>> tsssdKnownNomByRank(
+      M, std::vector<double>(ngrid, SINGLE_ARM_BOUND));
     if (needTsssdCe) {
       for (size_t n2i = 0; n2i < ngrid; ++n2i) {
         const size_t n2cur = n2min + n2i;
         const size_t nend = n1 + n2cur;
         const double tnom = static_cast<double>(n1) / static_cast<double>(nend);
         tNominal[n2i] = std::min(std::max(tnom, 1e-6), 1.0 - 1e-6);
-        const std::vector<double> infoRatesNominal{tNominal[n2i], 1.0};
         for (size_t mEff = 2; mEff <= M; ++mEff) {
           const size_t effIdx = mEff - 1;
           tsssdKnownNomByEff[effIdx][n2i] =
-              getBound_seamless_cpp(mEff, 1.0, true, 1, infoRatesNominal,
-                                    ALPHA_ONE_SIDED, "none", NA_dbl, emptyv,
-                                    emptyv, effStopping, 1)[1];
+              final_selection_boundary(mEff, true, tNominal[n2i]);
           tsssdUnknownNomByEff[effIdx][n2i] =
-              getBound_seamless_cpp(mEff, 1.0, false, 1, infoRatesNominal,
-                                    ALPHA_ONE_SIDED, "none", NA_dbl, emptyv,
-                                    emptyv, effStopping, 1)[1];
+              final_selection_boundary(mEff, false, tNominal[n2i]);
+        }
+        for (size_t rankp0 = 1; rankp0 <= M; ++rankp0) {
+          const size_t rankIdx = rankp0 - 1;
+          tsssdKnownNomByRank[rankIdx][n2i] =
+              rank_selection_boundary(M, rankp0, tNominal[n2i]);
         }
       }
     }
@@ -292,6 +416,7 @@ struct SimWorker : public RcppParallel::Worker {
         boost::random::normal_distribution<double> norm(0.0, 1.0);
 
         TrialResult &out = (*results)[iter];
+        const bool saveRaw = iter < maxRawDatasets;
         out.select.assign(M, 0);
         out.rej.assign(NMETHOD, IntMatrix());
         for (size_t m = 0; m < NMETHOD; ++m) {
@@ -315,7 +440,8 @@ struct SimWorker : public RcppParallel::Worker {
             // toxicity is only assessed for the phase 2 cohort
             if (a > 0 && i < n1) {
               double zT = rho * zE + sqrt1mrho2 * norm(rng);
-              if (zT <= qt)
+              toxv[a][i] = (zT <= qt) ? 1u : 0u;
+              if (toxv[a][i])
                 ntox += 1.0;
             }
 
@@ -372,9 +498,15 @@ struct SimWorker : public RcppParallel::Worker {
             break;
           }
         }
-        if (!selected) {
-          out.completed = true;
-          continue;
+        out.binarySummary.reserve(narm);
+        out.binarySummary.push_back(
+            {static_cast<int>(iter + 1), 0, static_cast<int>(x01), NA_INTEGER,
+             0});
+        for (size_t k = 0; k < M; ++k) {
+          out.binarySummary.push_back(
+              {static_cast<int>(iter + 1), static_cast<int>(k + 1),
+               static_cast<int>(xe1[k]), static_cast<int>(xt[k]),
+               out.select[k]});
         }
 
         // administrative censoring at the end of the study
@@ -394,7 +526,58 @@ struct SimWorker : public RcppParallel::Worker {
           }
         }
 
-        // log-rank statistic pooling the arms in trt against the control arm
+        if (saveRaw) {
+          out.rawBinary.reserve(narm * n1);
+          out.rawTte.reserve(narm * n1 + (selected ? 2 * n2max : 0));
+          for (size_t a = 0; a < narm; ++a) {
+            for (size_t i = 0; i < n1; ++i) {
+              const int subject = static_cast<int>(a * ntot + i + 1);
+              out.rawBinary.push_back(
+                  {static_cast<int>(iter + 1), subject, static_cast<int>(a),
+                   static_cast<int>(shortv[a][i]),
+                   a == 0 ? NA_INTEGER : static_cast<int>(toxv[a][i])});
+              out.rawTte.push_back(
+                  {static_cast<int>(iter + 1), subject, 2, static_cast<int>(a),
+                   static_cast<int>(shortv[a][i]), accr[a][i], longv[a][i],
+                   ytime[a][i], yevent[a][i]});
+            }
+          }
+          if (selected) {
+            for (size_t a : std::vector<size_t>{0, obd + 1}) {
+              for (size_t i = n1; i < ntot; ++i) {
+                out.rawTte.push_back(
+                    {static_cast<int>(iter + 1),
+                     static_cast<int>(a * ntot + i + 1), 3,
+                     static_cast<int>(a), static_cast<int>(shortv[a][i]),
+                     accr[a][i], longv[a][i], ytime[a][i], yevent[a][i]});
+              }
+            }
+          }
+        }
+
+        if (!selected) {
+          out.tteSummary.reserve(ngrid);
+          for (size_t n2i = 0; n2i < ngrid; ++n2i) {
+            out.tteSummary.push_back(
+                {static_cast<int>(iter + 1), 0,
+                 static_cast<int>(n2min + n2i), 0, 0, 0, NaN, NaN, NaN,
+                 std::vector<int>(NMETHOD, 0)});
+          }
+          out.completed = true;
+          continue;
+        }
+
+        // Compute a one-sided log-rank statistic by pooling treatment arms
+        // against control.
+        //
+        // trt: indices of treatment arms to pool together.
+        // lo:  lower index (inclusive) of subjects to include in the analysis.
+        // hi:  upper index (exclusive) of subjects to include in the analysis.
+        //
+        // Returns a one-sided log-rank z-statistic (positive values favor
+        // treated groups). The statistic pools the selected treatment arms
+        // (from trt) against the control arm (arm 0), using survival times
+        // and event indicators from subjects in range [lo, hi).
         auto zg = [&](const std::vector<size_t> &trt, size_t lo, size_t hi) {
           size_t sz = (trt.size() + 1) * (hi - lo);
           std::vector<double> tv;
@@ -462,14 +645,10 @@ struct SimWorker : public RcppParallel::Worker {
         }
         const std::vector<size_t> stg2_elemhyp{obd};
 
-        const bool needStg2 = use[M_CTDUNNETT] || use[M_CTSIMES] ||
-                              use[M_CTPOOLED] || use[M_PH3ONLY];
-        const bool needCum = use[M_NAIVE] || use[M_CER] || use[M_TSSSD_K] ||
-                             use[M_TSSSD_UK] || use[M_TSSSD_K_RANK] ||
-                             use[M_TSSSD_UK_RANK] || use[M_TSSSD_K_CE] ||
-                             use[M_TSSSD_UK_CE] || use[M_TSSSD_K_RANK_CE] ||
-                             use[M_TSSSD_UK_RANK_CE];
+        const bool needStg2 =
+          use[M_CTDUNNETT] || use[M_CTSIMES] || use[M_CTPOOLED];
 
+        out.tteSummary.reserve(ngrid);
         for (size_t n2i = 0; n2i < ngrid; ++n2i) {
           const size_t n2cur = n2min + n2i;
           const size_t nend = n1 + n2cur;
@@ -487,20 +666,17 @@ struct SimWorker : public RcppParallel::Worker {
           out.events(n2i, 2) = d1e + d2e;
 
           // stage 2 test restricted to the selected dose
-          double p2 = NA_dbl;
+          const double z2 = zg(arms, n1, nend);
+          double p2 = boost_pnorm(z2, 0.0, 1.0, false);
           LocalPValues stg2;
           if (needStg2) {
-            p2 = boost_pnorm(zg(arms, n1, nend), 0.0, 1.0, false);
             stg2 = LocalPValues{idxJ, inthypJ,
                                 std::vector<double>(idxJ.size(), p2)};
           }
 
           // test using the pooled stage 1 and stage 2 data
-          double p_cum = NA_dbl, zgn = NA_dbl;
-          if (needCum) {
-            zgn = zg(arms, 0, nend);
-            p_cum = boost_pnorm(zgn, 0.0, 1.0, false);
-          }
+          const double zgn = zg(arms, 0, nend);
+          double p_cum = boost_pnorm(zgn, 0.0, 1.0, false);
 
           const double info_frac =
               static_cast<double>(n1) / static_cast<double>(nend);
@@ -509,12 +685,11 @@ struct SimWorker : public RcppParallel::Worker {
                                             static_cast<double>(d1e + d2e)
                                       : 0.5;
           t1 = std::min(std::max(t1, 1e-6), 1.0 - 1e-6);
-          const std::vector<double> infoRates{t1, 1.0};
 
           const size_t rankp = static_cast<size_t>(
               std::count_if(stg1_p.begin(), stg1_p.end(),
                             [&](double p) { return p < stg1_p[obd]; }));
-              const double z1Selected = stg1_z[obd];
+          const double z1Selected = stg1_z[obd];
 
           auto combtest = [&](size_t m, const LocalPValues &stg1_loc_p) {
             PCStage2Result rej =
@@ -556,55 +731,51 @@ struct SimWorker : public RcppParallel::Worker {
               out.rej[M_CER](n2i, k) = rej_cer[k];
           }
 
-          const bool needFullTsssdK =
-              use[M_TSSSD_K] || (use[M_TSSSD_K_RANK] && rankp == 0);
+          const bool needFullTsssdK = use[M_TSSSD_K] ||
+                (use[M_TSSSD_K_MODRANK] && rankp == 0);
           const bool needFullTsssdUk =
-              use[M_TSSSD_UK] || (use[M_TSSSD_UK_RANK] && rankp == 0);
-          std::vector<double> bk, buk;
+              use[M_TSSSD_UK] || (use[M_TSSSD_UK_MODRANK] && rankp == 0);
           if (needFullTsssdK) {
-            bk = getBound_seamless_cpp(M, 1.0, true, 1, infoRates,
-                                       ALPHA_ONE_SIDED, "none", NA_dbl, emptyv,
-                                       emptyv, effStopping, 1);
-            if (use[M_TSSSD_K] && zgn > bk[1]) {
+            const double knownBound = final_selection_boundary(M, true, t1);
+            if (use[M_TSSSD_K] && zgn > knownBound) {
               out.rej[M_TSSSD_K](n2i, obd) = 1;
             }
-            if (use[M_TSSSD_K_RANK] && rankp == 0 && zgn > bk[1]) {
-              out.rej[M_TSSSD_K_RANK](n2i, obd) = 1;
+            if (use[M_TSSSD_K_MODRANK] && rankp == 0 && zgn > knownBound) {
+              out.rej[M_TSSSD_K_MODRANK](n2i, obd) = 1;
             }
           }
 
-          if (use[M_TSSSD_K_RANK] && rankp > 0) {
+          if (use[M_TSSSD_K_RANK]) {
             const double rankBound =
-                M - rankp == 1
-                    ? SINGLE_ARM_BOUND
-                    : getBound_seamless_cpp(M - rankp, 1.0, true, 1, infoRates,
-                                            ALPHA_ONE_SIDED, "none", NA_dbl,
-                                            emptyv, emptyv, effStopping, 1)[1];
+                rank_selection_boundary(M, rankp + 1, t1);
             if (zgn > rankBound)
               out.rej[M_TSSSD_K_RANK](n2i, obd) = 1;
+          }
+
+          if (use[M_TSSSD_K_MODRANK] && rankp > 0) {
+            const double rankBound = M - rankp == 1
+                           ? SINGLE_ARM_BOUND
+                           : final_selection_boundary(M - rankp, true, t1);
+            if (zgn > rankBound)
+              out.rej[M_TSSSD_K_MODRANK](n2i, obd) = 1;
           }
 
           if (needFullTsssdUk) {
-            buk = getBound_seamless_cpp(M, 1.0, false, 1, infoRates,
-                                        ALPHA_ONE_SIDED, "none", NA_dbl, emptyv,
-                                        emptyv, effStopping, 1);
-            if (use[M_TSSSD_UK] && zgn > buk[1]) {
+            const double unknownBound = final_selection_boundary(M, false, t1);
+            if (use[M_TSSSD_UK] && zgn > unknownBound) {
               out.rej[M_TSSSD_UK](n2i, obd) = 1;
             }
-            if (use[M_TSSSD_UK_RANK] && rankp == 0 && zgn > buk[1]) {
-              out.rej[M_TSSSD_UK_RANK](n2i, obd) = 1;
+            if (use[M_TSSSD_UK_MODRANK] && rankp == 0 && zgn > unknownBound) {
+              out.rej[M_TSSSD_UK_MODRANK](n2i, obd) = 1;
             }
           }
 
-          if (use[M_TSSSD_UK_RANK] && rankp > 0) {
-            const double rankBound =
-                M - rankp == 1
-                    ? SINGLE_ARM_BOUND
-                    : getBound_seamless_cpp(M - rankp, 1.0, false, 1, infoRates,
-                                            ALPHA_ONE_SIDED, "none", NA_dbl,
-                                            emptyv, emptyv, effStopping, 1)[1];
+          if (use[M_TSSSD_UK_MODRANK] && rankp > 0) {
+            const double rankBound = M - rankp == 1
+                           ? SINGLE_ARM_BOUND
+                           : final_selection_boundary(M - rankp, false, t1);
             if (zgn > rankBound)
-              out.rej[M_TSSSD_UK_RANK](n2i, obd) = 1;
+              out.rej[M_TSSSD_UK_MODRANK](n2i, obd) = 1;
           }
 
           if (needTsssdCe) {
@@ -633,18 +804,35 @@ struct SimWorker : public RcppParallel::Worker {
             const size_t effIdx = mEff - 1;
             if (use[M_TSSSD_K_RANK_CE]) {
               const double c2New =
-                  ceAdjustedBoundary(tsssdKnownNomByEff[effIdx][n2i]);
+                  ceAdjustedBoundary(tsssdKnownNomByRank[rankp][n2i]);
               if (zgn > c2New)
                 out.rej[M_TSSSD_K_RANK_CE](n2i, obd) = 1;
             }
 
-            if (use[M_TSSSD_UK_RANK_CE]) {
+            if (use[M_TSSSD_K_MODRANK_CE]) {
+              const double c2New =
+                  ceAdjustedBoundary(tsssdKnownNomByEff[effIdx][n2i]);
+              if (zgn > c2New)
+                out.rej[M_TSSSD_K_MODRANK_CE](n2i, obd) = 1;
+            }
+
+            if (use[M_TSSSD_UK_MODRANK_CE]) {
               const double c2New =
                   ceAdjustedBoundary(tsssdUnknownNomByEff[effIdx][n2i]);
               if (zgn > c2New)
-                out.rej[M_TSSSD_UK_RANK_CE](n2i, obd) = 1;
+                out.rej[M_TSSSD_UK_MODRANK_CE](n2i, obd) = 1;
             }
           }
+
+          std::vector<int> reject(NMETHOD, 0);
+          for (size_t m = 0; m < NMETHOD; ++m) {
+            if (use[m])
+              reject[m] = out.rej[m](n2i, obd);
+          }
+          out.tteSummary.push_back(
+              {static_cast<int>(iter + 1), static_cast<int>(obd + 1),
+               static_cast<int>(n2cur), d1e, d2e, d1e + d2e, stg1_z[obd], z2,
+               zgn, std::move(reject)});
         }
 
         out.completed = true;
@@ -667,7 +855,7 @@ ListCpp lrsim_bmTrtSel_cpp(
     const double w, const double phi_t, const double ce, const double ct,
     const bool uniform_prior, const double acc_rate1, const double acc_rate2,
     const double T_ph2followup, const std::vector<std::string> &methods,
-    const size_t ntrial, const int seed) {
+    const size_t ntrial, const size_t maxRawDatasets, const int seed) {
 
   if (M < 1)
     throw std::invalid_argument("M must be at least 1");
@@ -731,10 +919,13 @@ ListCpp lrsim_bmTrtSel_cpp(
   std::vector<unsigned char> use(NMETHOD, methods.empty() ? 1 : 0);
   for (const std::string &s : methods) {
     size_t m = 0;
-    while (m < NMETHOD && s != METHOD_NAME[m])
-      ++m;
+    for (; m < NMETHOD; ++m) {
+      if (s == METHOD_NAME[m])
+        break;
+    }
     if (m == NMETHOD)
-      throw std::invalid_argument("unknown method: " + s);
+      throw std::invalid_argument("unknown method: " + s +
+                                  "; use lowercase method names");
     use[m] = 1;
   }
 
@@ -778,8 +969,9 @@ ListCpp lrsim_bmTrtSel_cpp(
 
   std::vector<TrialResult> results(ntrial);
   SimWorker worker(M, n1, n2min, n2max, p0, pe, pt, rho, the0, the1, T_max, w,
-                   phi_t, ce, ct, acc_rate1, acc_rate2, T_ph2followup, seeds,
-                   use, wgtmat, wgtmat1, family, corr, sb, uniform_prior,
+                   phi_t, ce, ct, acc_rate1, acc_rate2, T_ph2followup,
+                   maxRawDatasets, seeds, use, wgtmat, wgtmat1, family, corr,
+                   sb, uniform_prior,
                    &results);
   RcppParallel::parallelFor(0, ntrial, worker);
 
@@ -793,9 +985,63 @@ ListCpp lrsim_bmTrtSel_cpp(
     rej_any[m].assign(ngrid, 0);
   }
   IntMatrix total_events(ngrid, 3);
+  std::vector<int> sumBinIter, sumBinTreatment, sumBinResponses,
+      sumBinToxicities, sumBinSelected;
+  std::vector<int> sumTteIter, sumTteSelectedDose, sumTtePhase3SampleSize,
+      sumTteStage1Events, sumTteStage2Events, sumTteTotalEvents;
+  std::vector<double> sumTteStage1Z, sumTteStage2Z, sumTteCumulativeZ;
+  std::vector<std::vector<int>> sumTteReject(NMETHOD);
+  std::vector<int> rawBinIter, rawBinSubject, rawBinTreatment, rawBinResponse,
+      rawBinToxicity;
+  std::vector<int> rawTteIter, rawTteSubject, rawTtePhase, rawTteTreatment,
+      rawTteResponse, rawTteEvent;
+  std::vector<double> rawTteArrival, rawTteSurvival, rawTteObserved;
 
   for (size_t iter = 0; iter < ntrial; ++iter) {
     const TrialResult &out = results[iter];
+    for (const BinarySummaryRow &row : out.binarySummary) {
+      sumBinIter.push_back(row.iteration);
+      sumBinTreatment.push_back(row.treatment);
+      sumBinResponses.push_back(row.responses);
+      sumBinToxicities.push_back(row.toxicities);
+      sumBinSelected.push_back(row.selected);
+    }
+    for (const TteSummaryRow &row : out.tteSummary) {
+      sumTteIter.push_back(row.iteration);
+      sumTteSelectedDose.push_back(row.selectedDose);
+      sumTtePhase3SampleSize.push_back(row.phase3SampleSize);
+      sumTteStage1Events.push_back(row.stage1Events);
+      sumTteStage2Events.push_back(row.stage2Events);
+      sumTteTotalEvents.push_back(row.totalEvents);
+      sumTteStage1Z.push_back(row.stage1LogRankZ);
+      sumTteStage2Z.push_back(row.stage2LogRankZ);
+      sumTteCumulativeZ.push_back(row.cumulativeLogRankZ);
+      for (size_t m = 0; m < NMETHOD; ++m) {
+        if (use[m])
+          sumTteReject[m].push_back(row.reject[m]);
+      }
+    }
+    if (maxRawDatasets > 0) {
+      for (const RawBinaryRow &row : out.rawBinary) {
+        rawBinIter.push_back(row.iteration);
+        rawBinSubject.push_back(row.subject);
+        rawBinTreatment.push_back(row.treatment);
+        rawBinResponse.push_back(row.response);
+        rawBinToxicity.push_back(row.toxicity);
+      }
+      for (const RawTteRow &row : out.rawTte) {
+        rawTteIter.push_back(row.iteration);
+        rawTteSubject.push_back(row.subject);
+        rawTtePhase.push_back(row.phase);
+        rawTteTreatment.push_back(row.treatment);
+        rawTteResponse.push_back(row.response);
+        rawTteArrival.push_back(row.arrival);
+        rawTteSurvival.push_back(row.survival);
+        rawTteObserved.push_back(row.observed);
+        rawTteEvent.push_back(row.event);
+      }
+    }
+
     if (!out.completed)
       continue;
 
@@ -822,7 +1068,6 @@ ListCpp lrsim_bmTrtSel_cpp(
   }
 
   const double dntrial = static_cast<double>(ntrial);
-  const double NA_dbl = std::numeric_limits<double>::quiet_NaN();
 
   std::vector<double> selectProb(ntr);
   for (size_t k = 0; k < ntr; ++k) {
@@ -856,7 +1101,7 @@ ListCpp lrsim_bmTrtSel_cpp(
       for (size_t k = 0; k < ntr; ++k) {
         prob_each(n2i, k) = (selectProb[k] > 0.0)
                                 ? rej_each(n2i, k) / dntrial / selectProb[k]
-                                : NA_dbl;
+                                : NaN;
       }
       prob_any[n2i] = rej_any[n2i] / dntrial;
     }
@@ -887,6 +1132,31 @@ ListCpp lrsim_bmTrtSel_cpp(
   }
 
   ListCpp result;
+  DataFrameCpp sumdataBIN;
+  sumdataBIN.push_back(std::move(sumBinIter), "iterationNumber");
+  sumdataBIN.push_back(std::move(sumBinTreatment), "treatmentGroup");
+  sumdataBIN.push_back(std::move(sumBinResponses), "responses");
+  sumdataBIN.push_back(std::move(sumBinToxicities), "toxicities");
+  sumdataBIN.push_back(std::move(sumBinSelected), "selected");
+
+  DataFrameCpp sumdataTTE;
+  sumdataTTE.push_back(std::move(sumTteIter), "iterationNumber");
+  sumdataTTE.push_back(std::move(sumTteSelectedDose), "selectedDose");
+  sumdataTTE.push_back(std::move(sumTtePhase3SampleSize),
+                        "phase3SampleSize");
+  sumdataTTE.push_back(std::move(sumTteStage1Events), "stage1Events");
+  sumdataTTE.push_back(std::move(sumTteStage2Events), "stage2Events");
+  sumdataTTE.push_back(std::move(sumTteTotalEvents), "totalEvents");
+  sumdataTTE.push_back(std::move(sumTteStage1Z), "stage1LogRankZ");
+  sumdataTTE.push_back(std::move(sumTteStage2Z), "stage2LogRankZ");
+  sumdataTTE.push_back(std::move(sumTteCumulativeZ), "cumulativeLogRankZ");
+  for (size_t m = 0; m < NMETHOD; ++m) {
+    if (use[m]) {
+      sumdataTTE.push_back(std::move(sumTteReject[m]),
+                            std::string("reject.") + METHOD_NAME[m]);
+    }
+  }
+
   result.push_back(n1, "n1");
   result.push_back(std::move(n2), "n2");
   result.push_back(ntrial, "numberOfIterations");
@@ -896,10 +1166,33 @@ ListCpp lrsim_bmTrtSel_cpp(
   result.push_back(std::move(ave_event), "ave.event");
   result.push_back(std::move(methodNames), "methods");
   result.push_back(std::move(byMethod), "byMethod");
+  result.push_back(std::move(sumdataBIN), "sumdataBIN");
+  result.push_back(std::move(sumdataTTE), "sumdataTTE");
+  if (maxRawDatasets > 0) {
+    DataFrameCpp rawBinary;
+    rawBinary.push_back(std::move(rawBinIter), "iterationNumber");
+    rawBinary.push_back(std::move(rawBinSubject), "subjectId");
+    rawBinary.push_back(std::move(rawBinTreatment), "treatmentGroup");
+    rawBinary.push_back(std::move(rawBinResponse), "response");
+    rawBinary.push_back(std::move(rawBinToxicity), "toxicity");
+
+    DataFrameCpp rawTte;
+    rawTte.push_back(std::move(rawTteIter), "iterationNumber");
+    rawTte.push_back(std::move(rawTteSubject), "subjectId");
+    rawTte.push_back(std::move(rawTtePhase), "phase");
+    rawTte.push_back(std::move(rawTteTreatment), "treatmentGroup");
+    rawTte.push_back(std::move(rawTteResponse), "response");
+    rawTte.push_back(std::move(rawTteArrival), "arrivalTime");
+    rawTte.push_back(std::move(rawTteSurvival), "survivalTime");
+    rawTte.push_back(std::move(rawTteObserved), "timeUnderObservation");
+    rawTte.push_back(std::move(rawTteEvent), "event");
+
+    result.push_back(std::move(rawBinary), "rawdataBIN");
+    result.push_back(std::move(rawTte), "rawdataTTE");
+  }
 
   return result;
 }
-
 // [[Rcpp::export]]
 Rcpp::List lrsim_bmTrtSel_Rcpp(
     const int phase2SampleSizePerArm = NA_INTEGER,
@@ -914,13 +1207,25 @@ Rcpp::List lrsim_bmTrtSel_Rcpp(
     const double studyDurationPhase3 = NA_REAL,
     const double toxicityWeight = NA_REAL,
     const double toxicityUpperLimit = NA_REAL,
-    const double efficacyThreshold = 0, const double safetyThreshold = 0,
+    const double efficacyThreshold = 0,
+    const double safetyThreshold = 0,
     const bool useUniformPrior = true,
     const Rcpp::Nullable<Rcpp::CharacterVector> methods = R_NilValue,
     const double accrualRatePhase2 = NA_REAL,
     const double accrualRatePhase3 = NA_REAL,
-    const double followupTimePhase2 = 0, const int maxNumberOfIterations = 1000,
+    const double followupTimePhase2 = 0,
+    const int maxNumberOfIterations = 1000,
+    const int maxNumberOfRawDatasets = 0,
     const int seed = 0) {
+
+  if (maxNumberOfRawDatasets < 0) {
+    throw std::invalid_argument(
+        "maxNumberOfRawDatasets must be a non-negative integer");
+  }
+  if (maxNumberOfRawDatasets > maxNumberOfIterations) {
+    throw std::invalid_argument(
+        "maxNumberOfRawDatasets cannot exceed maxNumberOfIterations");
+  }
 
   std::vector<double> pe(responseProbTreatments.begin(),
                          responseProbTreatments.end());
@@ -942,7 +1247,8 @@ Rcpp::List lrsim_bmTrtSel_Rcpp(
       pt, corrEfficacyToxicity, the0, the1, studyDurationPhase3, toxicityWeight,
       toxicityUpperLimit, efficacyThreshold, safetyThreshold, useUniformPrior,
       accrualRatePhase2, accrualRatePhase3, followupTimePhase2, methodVec,
-      static_cast<size_t>(maxNumberOfIterations), seed);
+      static_cast<size_t>(maxNumberOfIterations),
+      static_cast<size_t>(maxNumberOfRawDatasets), seed);
 
   thread_utils::drain_thread_warnings_to_R();
 

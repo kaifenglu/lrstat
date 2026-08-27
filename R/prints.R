@@ -4320,6 +4320,19 @@ print.lrsim_seamless <- function(x, ...) {
   invisible(x)
 }
 
+lrsim_bmTrtSel_method_labels <- function() {
+  c(ctdunnett = "CT-Dunnett", ctsimes = "CT-Simes",
+    ctpooled = "CT-Pooled", cer = "CER",
+    tsssd.k = "TSSSD-K", tsssd.uk = "TSSSD-UK",
+    tsssd.k.rank = "TSSSD-K-Rank",
+    tsssd.k.modrank = "TSSSD-K-Modified-Rank",
+    tsssd.uk.modrank = "TSSSD-UK-Modified-Rank",
+    tsssd.k.ce = "TSSSD-K-CE", tsssd.uk.ce = "TSSSD-UK-CE",
+    tsssd.k.rank.ce = "TSSSD-K-Rank-CE",
+    tsssd.k.modrank.ce = "TSSSD-K-Modified-Rank-CE",
+    tsssd.uk.modrank.ce = "TSSSD-UK-Modified-Rank-CE",
+    naive = "Naive", ph3only = "Ph3Only")
+}
 
 #' @title Print Simulation Results for Phase 2/3 Seamless Design with
 #'   Biomarker-Based Treatment Selection
@@ -4344,17 +4357,7 @@ print.lrsim_bmTrtSel <- function(x, ...) {
   ngrid <- length(n2)
 
   methods <- x$methods
-  known <- c(ctdunnett = "CT-Dunnett", ctsimes = "CT-Simes",
-             ctpooled = "CT-Pooled", cer = "CER",
-             TSSSD.k = "TSSSD-K", TSSSD.uk = "TSSSD-UK",
-             TSSSD.k.rank = "TSSSD-K-Rank",
-             TSSSD.uk.rank = "TSSSD-UK-Rank",
-             TSSSD.k.ce = "TSSSD-K-CE",
-             TSSSD.uk.ce = "TSSSD-UK-CE",
-             TSSSD.k.rank.ce = "TSSSD-K-Rank-CE",
-             TSSSD.uk.rank.ce = "TSSSD-UK-Rank-CE",
-             naive = "Naive", ph3only = "Ph3Only")
-  labels <- unname(known[methods])
+  labels <- unname(lrsim_bmTrtSel_method_labels()[methods])
 
   str1 <- "Phase 2/3 seamless design with biomarker-based treatment selection"
 

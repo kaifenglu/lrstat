@@ -1,3 +1,23 @@
+# lrstat 0.3.4
+
+* updated `lrsim_bmTrtSel` TSSSD rank-method calibration and boundary
+  calculations: added the known-correlation real rank-based method
+  (`tsssd.k.rank`) and its conditional-error counterpart. The existing
+  effective-multiplicity approximations are named `tsssd.k.modrank` and
+  `tsssd.uk.modrank`, with corresponding `*.modrank.ce` methods.
+* optimized selection-boundary calculations by making use of no efficacy
+  stopping in stage 1.
+* renamed the `fPCStagewise` input parameters `stg1_inthyp_nr` and
+  `stg2_elemhyp` to `stg1_inthyp_nr_idx` and `stg2_elemhyp_idx`, respectively,
+  to make their index semantics explicit and align them with the output names
+  and related adaptive-testing interfaces
+* standardized `lrsim_bmTrtSel` testing method identifiers to lowercase,
+  including inputs, returned `methods` and `byMethod` names, and
+  `sumdataTTE` rejection indicator columns
+* added `sumdataBIN` and `sumdataTTE` summary datasets to `lrsim_bmTrtSel`,
+  along with optional subject-level `rawdataBIN` and `rawdataTTE` datasets
+  controlled by `maxNumberOfRawDatasets`
+
 # lrstat 0.3.3
 
 * standardized C++ pointer/reference declaration style across src with a

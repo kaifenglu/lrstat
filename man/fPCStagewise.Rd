@@ -9,8 +9,8 @@ fPCStagewise(
   wgtmat = NULL,
   family = NULL,
   corr = NULL,
-  stg1_inthyp_nr,
-  stg2_elemhyp,
+  stg1_inthyp_nr_idx,
+  stg2_elemhyp_idx,
   stg2_wgtmat = NULL,
   test = "dunnett",
   nthreads = 0
@@ -31,10 +31,10 @@ same family. Defaults to one family containing all elementary hypotheses.}
 within-family correlations are 0.5 and between-family correlations are
 missing.}
 
-\item{stg1_inthyp_nr}{Indices of the stage 1 intersection hypotheses that
+\item{stg1_inthyp_nr_idx}{Indices of the stage 1 intersection hypotheses that
 were not rejected.}
 
-\item{stg2_elemhyp}{Indices of the elementary hypotheses tested at stage 2.}
+\item{stg2_elemhyp_idx}{Indices of the elementary hypotheses tested at stage 2.}
 
 \item{stg2_wgtmat}{Weight matrix for the stage 2 intersection hypotheses.
 If \code{NULL}, equal weights are assigned within each intersection
@@ -63,8 +63,8 @@ method.
 \details{
 Despite the stage-oriented parameter names, this function can also be used
 to generate stage 1 local p-values. In that case, provide the complete set
-of intersection hypotheses in \code{stg1_inthyp_nr}, all elementary
-hypotheses in \code{stg2_elemhyp}, and the corresponding stage 1 p-values
+of intersection hypotheses in \code{stg1_inthyp_nr_idx}, all elementary
+hypotheses in \code{stg2_elemhyp_idx}, and the corresponding stage 1 p-values
 and weight matrix. The example illustrates this use.
 }
 \examples{
@@ -85,7 +85,7 @@ corr <- matrix(c(1, 0.5, NA, NA,
                nrow = 4, byrow = TRUE)
 fPCStagewise(stg2_p = c(0.00045, 0.0952, 0.0225, 0.1104),
              wgtmat = wgtmat, family = family, corr = corr,
-             stg1_inthyp_nr = 1:15, stg2_elemhyp = 1:4,
+             stg1_inthyp_nr_idx = 1:15, stg2_elemhyp_idx = 1:4,
              stg2_wgtmat = wgtmat, test = "dunnett",
              nthreads = 1)
 
