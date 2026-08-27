@@ -4325,12 +4325,10 @@ lrsim_bmTrtSel_method_labels <- function() {
     ctpooled = "CT-Pooled", cer = "CER",
     tsssd.k = "TSSSD-K", tsssd.uk = "TSSSD-UK",
     tsssd.k.rank = "TSSSD-K-Rank",
-    tsssd.k.modrank = "TSSSD-K-Modified-Rank",
-    tsssd.uk.modrank = "TSSSD-UK-Modified-Rank",
+    tsssd.uk.rank = "TSSSD-UK-Rank",
     tsssd.k.ce = "TSSSD-K-CE", tsssd.uk.ce = "TSSSD-UK-CE",
     tsssd.k.rank.ce = "TSSSD-K-Rank-CE",
-    tsssd.k.modrank.ce = "TSSSD-K-Modified-Rank-CE",
-    tsssd.uk.modrank.ce = "TSSSD-UK-Modified-Rank-CE",
+    tsssd.uk.rank.ce = "TSSSD-UK-Rank-CE",
     naive = "Naive", ph3only = "Ph3Only")
 }
 

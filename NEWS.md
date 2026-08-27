@@ -1,10 +1,5 @@
 # lrstat 0.3.4
 
-* updated `lrsim_bmTrtSel` TSSSD rank-method calibration and boundary
-  calculations: added the known-correlation real rank-based method
-  (`tsssd.k.rank`) and its conditional-error counterpart. The existing
-  effective-multiplicity approximations are named `tsssd.k.modrank` and
-  `tsssd.uk.modrank`, with corresponding `*.modrank.ce` methods.
 * optimized selection-boundary calculations by making use of no efficacy
   stopping in stage 1.
 * renamed the `fPCStagewise` input parameters `stg1_inthyp_nr` and

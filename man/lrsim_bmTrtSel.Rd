@@ -22,8 +22,8 @@ lrsim_bmTrtSel(
   safetyThreshold = 0,
   useUniformPrior = TRUE,
   methods = c("ctdunnett", "ctsimes", "ctpooled", "cer", "tsssd.k", "tsssd.uk",
-    "tsssd.k.rank", "tsssd.k.modrank", "tsssd.uk.modrank", "tsssd.k.ce", "tsssd.uk.ce",
-    "tsssd.k.rank.ce", "tsssd.k.modrank.ce", "tsssd.uk.modrank.ce", "naive", "ph3only"),
+    "tsssd.k.rank", "tsssd.uk.rank", "tsssd.k.ce", "tsssd.uk.ce", "tsssd.k.rank.ce",
+    "tsssd.uk.rank.ce", "naive", "ph3only"),
   accrualRatePhase2 = NA_real_,
   accrualRatePhase3 = NA_real_,
   followupTimePhase2 = 0,
@@ -95,11 +95,9 @@ posterior used in dose selection.}
 \item{methods}{A character vector naming the testing procedures to evaluate
 for the confirmatory analysis. Any subset of \code{"ctdunnett"},
 \code{"ctsimes"}, \code{"ctpooled"}, \code{"cer"}, \code{"tsssd.k"},
-\code{"tsssd.uk"}, \code{"tsssd.k.rank"},
-\code{"tsssd.k.modrank"}, \code{"tsssd.uk.modrank"},
+\code{"tsssd.uk"}, \code{"tsssd.k.rank"}, \code{"tsssd.uk.rank"},
 \code{"tsssd.k.ce"}, \code{"tsssd.uk.ce"},
-\code{"tsssd.k.rank.ce"},
-\code{"tsssd.k.modrank.ce"}, \code{"tsssd.uk.modrank.ce"},
+\code{"tsssd.k.rank.ce"}, \code{"tsssd.uk.rank.ce"},
 \code{"naive"}, and \code{"ph3only"}. Restricting the set skips the
 corresponding computation entirely, which matters because the methods
 differ by orders of magnitude in cost.}
@@ -163,15 +161,11 @@ stage 2 p-values, using the Dunnett, Simes, and pooled log-rank local
 tests respectively; \code{cer} for the conditional error rate method;
 \code{tsssd.k} and \code{tsssd.uk} for the original two-stage seamless
 design boundaries with known and unknown correlation; \code{tsssd.k.rank}
-for the real rank-based boundaries; and
-\code{tsssd.k.modrank} and \code{tsssd.uk.modrank} for modified
-rank-based boundaries based on the effective number of more efficacious
-doses;
-\code{tsssd.k.ce}, \code{tsssd.uk.ce}, and \code{tsssd.k.rank.ce} for
-conditional-error updates of the original and real rank-based boundaries;
-and \code{tsssd.k.modrank.ce} and
-\code{tsssd.uk.modrank.ce} for conditional-error updates of the modified
-rank-based boundaries. These updates start from nominal boundaries based
+and \code{tsssd.uk.rank} for rank-based boundaries based on the effective
+number of more efficacious doses; and \code{tsssd.k.ce},
+\code{tsssd.uk.ce}, \code{tsssd.k.rank.ce}, and \code{tsssd.uk.rank.ce}
+for conditional-error updates of the original and rank-based boundaries.
+These updates start from nominal boundaries based
 on \code{n1/(n1+n2)} and then use the observed stage 1 z-statistic and
 observed information fraction;
 \code{naive} for the

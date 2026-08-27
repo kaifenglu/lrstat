@@ -742,9 +742,10 @@ testthat::test_that("lrsim_bmTrtSel uses lowercase method identifiers", {
   )
 })
 
-testthat::test_that("lrsim_bmTrtSel supports real rank-based TSSSD methods", {
+testthat::test_that("lrsim_bmTrtSel supports rank-based TSSSD methods", {
   hazard_control <- c(log(2) / 12, log(2) / 24)
-  methods <- c("tsssd.k.rank", "tsssd.k.rank.ce")
+  methods <- c("tsssd.k.rank", "tsssd.uk.rank", "tsssd.k.rank.ce",
+               "tsssd.uk.rank.ce")
   sim <- lrsim_bmTrtSel(
     phase2SampleSizePerArm = 10,
     phase3SampleSizePerArmMin = 12,

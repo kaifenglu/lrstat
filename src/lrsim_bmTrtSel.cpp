@@ -140,13 +140,11 @@ enum : size_t {
   M_TSSSD_K,
   M_TSSSD_UK,
   M_TSSSD_K_RANK,
-  M_TSSSD_K_MODRANK,
-  M_TSSSD_UK_MODRANK,
+  M_TSSSD_UK_RANK,
   M_TSSSD_K_CE,
   M_TSSSD_UK_CE,
   M_TSSSD_K_RANK_CE,
-  M_TSSSD_K_MODRANK_CE,
-  M_TSSSD_UK_MODRANK_CE,
+  M_TSSSD_UK_RANK_CE,
   M_NAIVE,
   M_PH3ONLY,
   NMETHOD
@@ -154,9 +152,8 @@ enum : size_t {
 
 const char *const METHOD_NAME[NMETHOD] = {
   "ctdunnett", "ctsimes",      "ctpooled",      "cer",   "tsssd.k",
-  "tsssd.uk", "tsssd.k.rank", "tsssd.k.modrank", "tsssd.uk.modrank",
-  "tsssd.k.ce", "tsssd.uk.ce", "tsssd.k.rank.ce", "tsssd.k.modrank.ce",
-  "tsssd.uk.modrank.ce",
+  "tsssd.uk", "tsssd.k.rank", "tsssd.uk.rank", "tsssd.k.ce",
+  "tsssd.uk.ce", "tsssd.k.rank.ce", "tsssd.uk.rank.ce",
   "naive", "ph3only"};
 
 const double SINGLE_ARM_BOUND = boost_qnorm(1.0 - ALPHA_ONE_SIDED);
@@ -192,43 +189,6 @@ double final_selection_boundary(size_t m, bool corr_known,
     std::fill(upper.begin(), upper.end(), critical_value);
     return 1.0 - pmvnormcpp(lower, upper, mean, sigma).prob - ALPHA_ONE_SIDED;
   };
-  return brent(f, 0.0, 8.0, 1e-6);
-}
-
-// Final boundary after selecting the rankp0-th largest phase-2 statistic.
-double rank_selection_boundary(size_t m, size_t rankp0,
-                               double information_fraction) {
-  if (m == 1)
-    return SINGLE_ARM_BOUND;
-
-  const double phase2_corr = 0.5;
-  const double final_corr =
-      1.0 - (1.0 - phase2_corr) * information_fraction;
-  std::vector<double> lower(m);
-  std::vector<double> upper(m);
-  std::vector<double> mean(m, 0.0);
-  FlatMatrix sigma(m, m);
-  sigma.fill(final_corr);
-  for (size_t i = 0; i < m; ++i)
-    sigma(i, i) = 1.0;
-
-  auto f = [&](double critical_value) {
-    double probability = 0.0;
-    for (size_t i = rankp0; i <= m; ++i) {
-      for (size_t j = 0; j < m; ++j) {
-        lower[j] = j < i ? critical_value : -POS_INF;
-        upper[j] = j < i ? POS_INF : critical_value;
-      }
-
-      double combinations = 1.0;
-      for (size_t j = 1; j <= i; ++j)
-        combinations *= static_cast<double>(m - i + j) / j;
-      probability +=
-          combinations * pmvnormcpp(lower, upper, mean, sigma).prob;
-    }
-    return probability - ALPHA_ONE_SIDED;
-  };
-
   return brent(f, 0.0, 8.0, 1e-6);
 }
 
@@ -378,16 +338,13 @@ struct SimWorker : public RcppParallel::Worker {
     // These depend only on phase-2 and phase-3 sample sizes (n1, n2cur).
     const bool needTsssdCe =
       use[M_TSSSD_K_CE] || use[M_TSSSD_UK_CE] ||
-      use[M_TSSSD_K_RANK_CE] || use[M_TSSSD_K_MODRANK_CE] ||
-      use[M_TSSSD_UK_MODRANK_CE];
+      use[M_TSSSD_K_RANK_CE] || use[M_TSSSD_UK_RANK_CE];
     std::vector<double> tNominal(ngrid, 0.5);
     // Indexed by effective hypothesis count minus one:
     // [0] => mEff=1, [M-1] => mEff=M.
     std::vector<std::vector<double>> tsssdKnownNomByEff(
       M, std::vector<double>(ngrid, SINGLE_ARM_BOUND));
     std::vector<std::vector<double>> tsssdUnknownNomByEff(
-      M, std::vector<double>(ngrid, SINGLE_ARM_BOUND));
-    std::vector<std::vector<double>> tsssdKnownNomByRank(
       M, std::vector<double>(ngrid, SINGLE_ARM_BOUND));
     if (needTsssdCe) {
       for (size_t n2i = 0; n2i < ngrid; ++n2i) {
@@ -401,11 +358,6 @@ struct SimWorker : public RcppParallel::Worker {
               final_selection_boundary(mEff, true, tNominal[n2i]);
           tsssdUnknownNomByEff[effIdx][n2i] =
               final_selection_boundary(mEff, false, tNominal[n2i]);
-        }
-        for (size_t rankp0 = 1; rankp0 <= M; ++rankp0) {
-          const size_t rankIdx = rankp0 - 1;
-          tsssdKnownNomByRank[rankIdx][n2i] =
-              rank_selection_boundary(M, rankp0, tNominal[n2i]);
         }
       }
     }
@@ -731,33 +683,26 @@ struct SimWorker : public RcppParallel::Worker {
               out.rej[M_CER](n2i, k) = rej_cer[k];
           }
 
-          const bool needFullTsssdK = use[M_TSSSD_K] ||
-                (use[M_TSSSD_K_MODRANK] && rankp == 0);
+              const bool needFullTsssdK = use[M_TSSSD_K] ||
+                (use[M_TSSSD_K_RANK] && rankp == 0);
           const bool needFullTsssdUk =
-              use[M_TSSSD_UK] || (use[M_TSSSD_UK_MODRANK] && rankp == 0);
+              use[M_TSSSD_UK] || (use[M_TSSSD_UK_RANK] && rankp == 0);
           if (needFullTsssdK) {
             const double knownBound = final_selection_boundary(M, true, t1);
             if (use[M_TSSSD_K] && zgn > knownBound) {
               out.rej[M_TSSSD_K](n2i, obd) = 1;
             }
-            if (use[M_TSSSD_K_MODRANK] && rankp == 0 && zgn > knownBound) {
-              out.rej[M_TSSSD_K_MODRANK](n2i, obd) = 1;
+            if (use[M_TSSSD_K_RANK] && rankp == 0 && zgn > knownBound) {
+              out.rej[M_TSSSD_K_RANK](n2i, obd) = 1;
             }
           }
 
-          if (use[M_TSSSD_K_RANK]) {
-            const double rankBound =
-                rank_selection_boundary(M, rankp + 1, t1);
-            if (zgn > rankBound)
-              out.rej[M_TSSSD_K_RANK](n2i, obd) = 1;
-          }
-
-          if (use[M_TSSSD_K_MODRANK] && rankp > 0) {
+          if (use[M_TSSSD_K_RANK] && rankp > 0) {
             const double rankBound = M - rankp == 1
                            ? SINGLE_ARM_BOUND
                            : final_selection_boundary(M - rankp, true, t1);
             if (zgn > rankBound)
-              out.rej[M_TSSSD_K_MODRANK](n2i, obd) = 1;
+              out.rej[M_TSSSD_K_RANK](n2i, obd) = 1;
           }
 
           if (needFullTsssdUk) {
@@ -765,17 +710,17 @@ struct SimWorker : public RcppParallel::Worker {
             if (use[M_TSSSD_UK] && zgn > unknownBound) {
               out.rej[M_TSSSD_UK](n2i, obd) = 1;
             }
-            if (use[M_TSSSD_UK_MODRANK] && rankp == 0 && zgn > unknownBound) {
-              out.rej[M_TSSSD_UK_MODRANK](n2i, obd) = 1;
+            if (use[M_TSSSD_UK_RANK] && rankp == 0 && zgn > unknownBound) {
+              out.rej[M_TSSSD_UK_RANK](n2i, obd) = 1;
             }
           }
 
-          if (use[M_TSSSD_UK_MODRANK] && rankp > 0) {
+          if (use[M_TSSSD_UK_RANK] && rankp > 0) {
             const double rankBound = M - rankp == 1
                            ? SINGLE_ARM_BOUND
                            : final_selection_boundary(M - rankp, false, t1);
             if (zgn > rankBound)
-              out.rej[M_TSSSD_UK_MODRANK](n2i, obd) = 1;
+              out.rej[M_TSSSD_UK_RANK](n2i, obd) = 1;
           }
 
           if (needTsssdCe) {
@@ -804,23 +749,16 @@ struct SimWorker : public RcppParallel::Worker {
             const size_t effIdx = mEff - 1;
             if (use[M_TSSSD_K_RANK_CE]) {
               const double c2New =
-                  ceAdjustedBoundary(tsssdKnownNomByRank[rankp][n2i]);
+                  ceAdjustedBoundary(tsssdKnownNomByEff[effIdx][n2i]);
               if (zgn > c2New)
                 out.rej[M_TSSSD_K_RANK_CE](n2i, obd) = 1;
             }
 
-            if (use[M_TSSSD_K_MODRANK_CE]) {
-              const double c2New =
-                  ceAdjustedBoundary(tsssdKnownNomByEff[effIdx][n2i]);
-              if (zgn > c2New)
-                out.rej[M_TSSSD_K_MODRANK_CE](n2i, obd) = 1;
-            }
-
-            if (use[M_TSSSD_UK_MODRANK_CE]) {
+            if (use[M_TSSSD_UK_RANK_CE]) {
               const double c2New =
                   ceAdjustedBoundary(tsssdUnknownNomByEff[effIdx][n2i]);
               if (zgn > c2New)
-                out.rej[M_TSSSD_UK_MODRANK_CE](n2i, obd) = 1;
+                out.rej[M_TSSSD_UK_RANK_CE](n2i, obd) = 1;
             }
           }
 
