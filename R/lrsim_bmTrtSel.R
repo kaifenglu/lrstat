@@ -53,8 +53,9 @@
 #'   default) or the Jeffreys Beta(0.5,0.5) prior for the beta-binomial
 #'   posterior used in dose selection.
 #' @param methods A character vector naming the testing procedures to evaluate
-#'   for the confirmatory analysis. Any subset of \code{"ctdunnett"},
-#'   \code{"ctsimes"}, \code{"ctpooled"}, \code{"cer"}, \code{"tsssd.k"},
+#'   for the confirmatory analysis. Any subset of \code{"ctbonferroni"},
+#'   \code{"ctdunnett"}, \code{"ctsimes"}, \code{"ctpooled"}, \code{"cer"},
+#'   \code{"tsssd.k"},
 #'   \code{"tsssd.uk"}, \code{"tsssd.k.rank"}, \code{"tsssd.uk.rank"},
 #'   \code{"tsssd.k.ce"}, \code{"tsssd.uk.ce"},
 #'   \code{"tsssd.k.rank.ce"}, \code{"tsssd.uk.rank.ce"},
@@ -113,10 +114,11 @@
 #'     probability of rejecting any null hypothesis.
 #'
 #'   The method names are
-#'   \code{ctdunnett}, \code{ctsimes}, and \code{ctpooled} for the closed
-#'   testing procedure with the inverse normal combination of stage 1 and
-#'   stage 2 p-values, using the Dunnett, Simes, and pooled log-rank local
-#'   tests respectively; \code{cer} for the conditional error rate method;
+#'   \code{ctbonferroni}, \code{ctdunnett}, \code{ctsimes}, and
+#'   \code{ctpooled} for the closed testing procedure with the inverse normal
+#'   combination of stage 1 and stage 2 p-values, using the Bonferroni,
+#'   Dunnett, Simes, and pooled log-rank local tests respectively; \code{cer}
+#'   for the conditional error rate method;
 #'   \code{tsssd.k} and \code{tsssd.uk} for the original two-stage seamless
 #'   design boundaries with known and unknown correlation; \code{tsssd.k.rank}
 #'   and \code{tsssd.uk.rank} for rank-based boundaries based on the effective
@@ -230,7 +232,7 @@
 #'   toxicityUpperLimit = 1,
 #'   efficacyThreshold = 0,
 #'   safetyThreshold = 0,
-#'   methods = c("ctdunnett", "ctsimes", "ctpooled",
+#'   methods = c("ctbonferroni", "ctdunnett", "ctsimes", "ctpooled",
 #'               "cer", "naive", "ph3only"),
 #'   accrualRatePhase2 = 3,
 #'   accrualRatePhase3 = 6,
@@ -259,7 +261,7 @@ lrsim_bmTrtSel <- function(
     efficacyThreshold = 0,
     safetyThreshold = 0,
     useUniformPrior = TRUE,
-    methods = c("ctdunnett", "ctsimes", "ctpooled", "cer",
+    methods = c("ctbonferroni", "ctdunnett", "ctsimes", "ctpooled", "cer",
                 "tsssd.k", "tsssd.uk", "tsssd.k.rank", "tsssd.uk.rank",
                 "tsssd.k.ce", "tsssd.uk.ce",
                 "tsssd.k.rank.ce", "tsssd.uk.rank.ce",

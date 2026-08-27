@@ -1,5 +1,7 @@
 # lrstat 0.3.4
 
+* added the Bonferroni p-value combination method `ctbonferroni` to
+  `lrsim_bmTrtSel`
 * optimized selection-boundary calculations by making use of no efficacy
   stopping in stage 1.
 * renamed the `fPCStagewise` input parameters `stg1_inthyp_nr` and

@@ -133,7 +133,8 @@ namespace {
 constexpr double ALPHA_ONE_SIDED = 0.025;
 
 enum : size_t {
-  M_CTDUNNETT = 0,
+  M_CTBONFERRONI = 0,
+  M_CTDUNNETT,
   M_CTSIMES,
   M_CTPOOLED,
   M_CER,
@@ -151,6 +152,7 @@ enum : size_t {
 };
 
 const char *const METHOD_NAME[NMETHOD] = {
+  "ctbonferroni",
   "ctdunnett", "ctsimes",      "ctpooled",      "cer",   "tsssd.k",
   "tsssd.uk", "tsssd.k.rank", "tsssd.uk.rank", "tsssd.k.ce",
   "tsssd.uk.ce", "tsssd.k.rank.ce", "tsssd.uk.rank.ce",
@@ -561,7 +563,11 @@ struct SimWorker : public RcppParallel::Worker {
           stg1_p[k] = boost_pnorm(stg1_z[k], 0.0, 1.0, false);
         }
 
-        LocalPValues dunnett1, simes1, pooled1;
+        LocalPValues bonferroni1, dunnett1, simes1, pooled1;
+        if (use[M_CTBONFERRONI]) {
+          bonferroni1 = fPCStagewiseCpp(stg1_p, wgtmat, family, corr, allInt,
+                                        allHyp, wgtmat, "bonferroni");
+        }
         if (use[M_CTDUNNETT]) {
           dunnett1 = fPCStagewiseCpp(stg1_p, wgtmat, family, corr, allInt,
                                      allHyp, wgtmat, "dunnett");
@@ -598,7 +604,8 @@ struct SimWorker : public RcppParallel::Worker {
         const std::vector<size_t> stg2_elemhyp{obd};
 
         const bool needStg2 =
-          use[M_CTDUNNETT] || use[M_CTSIMES] || use[M_CTPOOLED];
+          use[M_CTBONFERRONI] || use[M_CTDUNNETT] ||
+          use[M_CTSIMES] || use[M_CTPOOLED];
 
         out.tteSummary.reserve(ngrid);
         for (size_t n2i = 0; n2i < ngrid; ++n2i) {
@@ -651,6 +658,8 @@ struct SimWorker : public RcppParallel::Worker {
               out.rej[m](n2i, k) = rej.rej_elem[k];
           };
 
+          if (use[M_CTBONFERRONI])
+            combtest(M_CTBONFERRONI, bonferroni1);
           if (use[M_CTDUNNETT])
             combtest(M_CTDUNNETT, dunnett1);
           if (use[M_CTSIMES])
@@ -683,7 +692,7 @@ struct SimWorker : public RcppParallel::Worker {
               out.rej[M_CER](n2i, k) = rej_cer[k];
           }
 
-              const bool needFullTsssdK = use[M_TSSSD_K] ||
+          const bool needFullTsssdK = use[M_TSSSD_K] ||
                 (use[M_TSSSD_K_RANK] && rankp == 0);
           const bool needFullTsssdUk =
               use[M_TSSSD_UK] || (use[M_TSSSD_UK_RANK] && rankp == 0);

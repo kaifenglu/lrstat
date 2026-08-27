@@ -4321,7 +4321,8 @@ print.lrsim_seamless <- function(x, ...) {
 }
 
 lrsim_bmTrtSel_method_labels <- function() {
-  c(ctdunnett = "CT-Dunnett", ctsimes = "CT-Simes",
+  c(ctbonferroni = "CT-Bonferroni", ctdunnett = "CT-Dunnett",
+    ctsimes = "CT-Simes",
     ctpooled = "CT-Pooled", cer = "CER",
     tsssd.k = "TSSSD-K", tsssd.uk = "TSSSD-UK",
     tsssd.k.rank = "TSSSD-K-Rank",
