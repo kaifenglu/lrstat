@@ -1,0 +1,15 @@
+url: https://kaifenglu.github.io/lrstat/
+
+template:
+  params:
+    bootswatch: flatly
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search, github]
+  components:
+    github:
+      icon: fa-github
+      href: https://github.com/kaifenglu/lrstat
+      aria-label: GitHub
