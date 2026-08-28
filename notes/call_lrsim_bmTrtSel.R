@@ -113,7 +113,7 @@ run_scenario <- function(scenario, phase2SampleSizePerArm, seed,
     studyDurationPhase3 = 42.1, toxicityWeight = 0, toxicityUpperLimit = 1,
     efficacyThreshold = 0, safetyThreshold = 0,
     methods = c("ctbonferroni", "ctdunnett", "ctsimes", "ctpooled", "cer",
-          "tsssd.k", "tsssd.uk", "tsssd.k.rank", "tsssd.uk.rank",
+          # "tsssd.k", "tsssd.uk", "tsssd.k.rank", "tsssd.uk.rank",
           "tsssd.k.ce", "tsssd.uk.ce",
           "tsssd.k.rank.ce", "tsssd.uk.rank.ce",
           "naive", "ph3only"),
@@ -164,37 +164,39 @@ plot_one <- function(results) {
   ggplot(results, aes(n, prob, color = Method, shape = Method)) +
     geom_line(linewidth = 0.6) + geom_point(size = 1.2) +
     scale_color_manual(
-      values = c("CT-Bonferroni" = "#E69F00",
-             "CT-Dunnett" = "#D55E00",
-                 "CT-Simes" = "#0072B2",
-                 "CT-Pooled" = "#56B4E9",
-                 "CER" = "#009E73",
-                 "TSSSD-K" = "#CC79A7",
-                 "TSSSD-UK" = "#F0E442",
-                 "TSSSD-K-Rank" = "#E69F00",
-                 "TSSSD-UK-Rank" = "#44AA99",
-                 "TSSSD-K-CE" = "#AA3377",
-                 "TSSSD-UK-CE" = "#999933",
-                 "TSSSD-K-Rank-CE" = "#EE7733",
-                 "TSSSD-UK-Rank-CE" = "#117733",
-                 "Naive" = "#000000",
-                 "Ph3Only" = "#009E73")) +
+      values = c(  "CT-Bonferroni" = "#E69F00"
+                 , "CT-Dunnett" = "#0072B2"
+                 , "CT-Simes" = "#009E73"
+                 , "CT-Pooled" = "#D55E00"
+                 , "CER" = "#CC79A7"
+                 #, "TSSSD-K" = "#F0E442"
+                 #, "TSSSD-UK" = "#F0E442"
+                 #, "TSSSD-K-Rank" = "#882255"
+                 #, "TSSSD-UK-Rank" = "#44AA99"
+                 , "TSSSD-K-CE" = "#56B4E9"
+                 , "TSSSD-UK-CE" = "#CCAA00"
+                 , "TSSSD-K-Rank-CE" = "#332288"
+                 , "TSSSD-UK-Rank-CE" = "#88CCEE"
+                 , "Naive" = "#117733"
+                 , "Ph3Only" = "#AA4499"
+                 )) +
     scale_shape_manual(
-      values = c("CT-Bonferroni" = 13,
-             "CT-Dunnett" = 16,
-                 "CT-Simes" = 17,
-                 "CT-Pooled" = 15,
-                 "CER" = 4,
-                 "TSSSD-K" = 3,
-                 "TSSSD-UK" = 7,
-                 "TSSSD-K-Rank" = 8,
-                 "TSSSD-UK-Rank" = 5,
-                 "TSSSD-K-CE" = 9,
-                 "TSSSD-UK-CE" = 10,
-                 "TSSSD-K-Rank-CE" = 11,
-                 "TSSSD-UK-Rank-CE" = 14,
-                 "Naive" = 0,
-                 "Ph3Only" = 18)) +
+      values = c(  "CT-Bonferroni" = 16
+                 , "CT-Dunnett" = 17
+                 , "CT-Simes" = 15
+                 , "CT-Pooled" = 18
+                 , "CER" = 8
+                 #, "TSSSD-K" = 9
+                 #, "TSSSD-UK" = 10
+                 #, "TSSSD-K-Rank" = 11
+                 #, "TSSSD-UK-Rank" = 13
+                 , "TSSSD-K-CE" = 1
+                 , "TSSSD-UK-CE" = 2
+                 , "TSSSD-K-Rank-CE" = 5
+                 , "TSSSD-UK-Rank-CE" = 6
+                 , "Naive" = 3
+                 , "Ph3Only" = 4
+                 )) +
     labs(x = "Sample size per arm at Stage II (Phase III)",
          y = "Probability of rejecting any null hypothesis",
          title = scenario,
