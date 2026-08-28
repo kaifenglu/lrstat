@@ -754,7 +754,7 @@ AdjustedPValues fadjpduncpp(const FlatMatrix &p, const WeightMatrix &wgtmat,
         size_t k = J_h.size();
         if (k > 0) {
           double sumw = 0.0;
-          double q = 1.0;
+          double q = POS_INF;
           for (size_t j : J_h) {
             sumw += wgtmat.wgtmat(i, j);
             double ratio = p(iter, j) / wgtmat.wgtmat(i, j);

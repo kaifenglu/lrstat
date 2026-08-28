@@ -1,5 +1,9 @@
 # lrstat 0.3.4
 
+* corrected the minimum weighted p-value ratio initialization in
+  `fadjpduncpp` (used by `fadjpdun`) from `1.0` to positive infinity so that
+  ratios exceeding 1 are properly accounted for when computing intersection
+  p-values
 * added the Bonferroni p-value combination method `ctbonferroni` to
   `lrsim_bmTrtSel`
 * optimized selection-boundary calculations by making use of no efficacy
