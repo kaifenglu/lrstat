@@ -102,9 +102,12 @@ run_scenario <- function(scenario, phase2SampleSizePerArm, seed,
                     phase2SampleSizePerArm))
   }
   started_at <- Sys.time()
+  maxNumberOfIterations <- ifelse(tolower(scenario) == "null", 100000, 10000)
+
   sim <- lrsim_bmTrtSel(
     phase2SampleSizePerArm = phase2SampleSizePerArm,
-    phase3SampleSizePerArmMin = 113, phase3SampleSizePerArmMax = 163,
+    phase3SampleSizePerArmMin = 163 - phase2SampleSizePerArm,
+    phase3SampleSizePerArmMax = 163,
     responseProbControl = 0.4,
     responseProbTreatments = spec$responseProbTreatments,
     toxicityProbTreatments = c(0, 0), corrEfficacyToxicity = 0,
@@ -113,12 +116,13 @@ run_scenario <- function(scenario, phase2SampleSizePerArm, seed,
     studyDurationPhase3 = 42.1, toxicityWeight = 0, toxicityUpperLimit = 1,
     efficacyThreshold = 0, safetyThreshold = 0,
     methods = c("ctbonferroni", "ctdunnett", "ctsimes", "ctpooled", "cer",
-          # "tsssd.k", "tsssd.uk", "tsssd.k.rank", "tsssd.uk.rank",
+          # "tsssd.k", "tsssd.uk",
+          # "tsssd.k.rank", "tsssd.uk.rank",
           "tsssd.k.ce", "tsssd.uk.ce",
-          "tsssd.k.rank.ce", "tsssd.uk.rank.ce",
+          # "tsssd.k.rank.ce", "tsssd.uk.rank.ce",
           "naive", "ph3only"),
     accrualRatePhase2 = 3, accrualRatePhase3 = 6, followupTimePhase2 = 6,
-    maxNumberOfIterations = 10000, seed = seed,
+    maxNumberOfIterations = maxNumberOfIterations, seed = seed,
     nthreads = 10)
   if (progress) {
     message(sprintf("[%d/%d] Finished %s, Phase II n/arm = %d (%.1f minutes)",
@@ -175,8 +179,8 @@ plot_one <- function(results) {
                  #, "TSSSD-UK-Rank" = "#44AA99"
                  , "TSSSD-K-CE" = "#56B4E9"
                  , "TSSSD-UK-CE" = "#CCAA00"
-                 , "TSSSD-K-Rank-CE" = "#332288"
-                 , "TSSSD-UK-Rank-CE" = "#88CCEE"
+                 # , "TSSSD-K-Rank-CE" = "#332288"
+                 # , "TSSSD-UK-Rank-CE" = "#88CCEE"
                  , "Naive" = "#117733"
                  , "Ph3Only" = "#AA4499"
                  )) +
@@ -192,8 +196,8 @@ plot_one <- function(results) {
                  #, "TSSSD-UK-Rank" = 13
                  , "TSSSD-K-CE" = 1
                  , "TSSSD-UK-CE" = 2
-                 , "TSSSD-K-Rank-CE" = 5
-                 , "TSSSD-UK-Rank-CE" = 6
+                 # , "TSSSD-K-Rank-CE" = 5
+                 # , "TSSSD-UK-Rank-CE" = 6
                  , "Naive" = 3
                  , "Ph3Only" = 4
                  )) +

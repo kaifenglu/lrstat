@@ -1,3 +1,32 @@
+# Helper function to format spending strings
+# Reduces code duplication across multiple print methods
+.format_spending <- function(type, param, user_vec, label) {
+  type <- tolower(type)
+
+  if (type == "of") {
+    label_name <- "O'Brien-Fleming"
+  } else if (type == "p") {
+    label_name <- "Pocock"
+  } else if (type == "wt") {
+    label_name <- paste0("Wang-Tsiatis(Delta = ", param, ")")
+  } else if (type == "sfof") {
+    label_name <- "Lan-DeMets O'Brien-Fleming"
+  } else if (type == "sfp") {
+    label_name <- "Lan-DeMets Pocock"
+  } else if (type == "sfkd") {
+    label_name <- paste0("KD(rho = ", param, ")")
+  } else if (type == "sfhsd") {
+    label_name <- paste0("HSD(gamma = ", param, ")")
+  } else if (type == "user") {
+    label_name <- paste0("User defined(",
+                         paste(user_vec, collapse = ","), ")")
+  } else {
+    label_name <- "None"
+  }
+
+  paste0(label, " spending: ", label_name)
+}
+
 #' @title Print Group Sequential Design
 #' @description Prints the stopping boundaries and information inflation
 #' factor for group sequential design.
@@ -52,49 +81,14 @@ print.design <- function(x, ...) {
 
     bsf <- tolower(x$settings$typeBetaSpending)
     bsfpar <- round(x$settings$parameterBetaSpending, 3)
-    bsfuser <- round(x$settings$userBetaSpending, 4)
-
-    if (asf == "of") {
-      str6 <- paste0("Alpha spending: O'Brien-Fleming")
-    } else if (asf == "p") {
-      str6 <- paste0("Alpha spending: Pocock")
-    } else if (asf == "wt") {
-      str6 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
-    } else if (asf == "sfof") {
-      str6 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
-    } else if (asf == "sfp") {
-      str6 <- paste0("Alpha spending: Lan-DeMets Pocock")
-    } else if (asf == "sfkd") {
-      str6 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
-    } else if (asf == "sfhsd") {
-      str6 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
-    } else if (asf == "user") {
-      str6 <- paste0("Alpha spending: User defined(",
-                     paste(asfuser, collapse = ","), ")")
+    bsfuser <- if (!is.null(x$settings$userBetaSpending)) {
+      round(x$settings$userBetaSpending, 4)
     } else {
-      str6 <- "Alpha spending: None"
+      ""
     }
 
-    if (bsf == "of") {
-      str7 <- paste0("beta spending: O'Brien-Fleming")
-    } else if (bsf == "p") {
-      str7 <- paste0("beta spending: Pocock")
-    } else if (bsf == "wt") {
-      str7 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
-    } else if (bsf == "sfof") {
-      str7 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
-    } else if (bsf == "sfp") {
-      str7 <- paste0("beta spending: Lan-DeMets Pocock")
-    } else if (bsf == "sfkd") {
-      str7 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
-    } else if (bsf == "sfhsd") {
-      str7 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
-    } else if (bsf == "user") {
-      str7 <- paste0("beta spending: User defined(",
-                     paste(bsfuser, collapse = ","), ")")
-    } else {
-      str7 <- "beta spending: None"
-    }
+    str6 <- .format_spending(asf, asfpar, asfuser, "Alpha")
+    str7 <- .format_spending(bsf, bsfpar, bsfuser, "beta")
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
@@ -248,26 +242,7 @@ print.designEquiv <- function(x, ...) {
     asfpar <- round(x$settings$parameterAlphaSpending, 3)
     asfuser <- round(x$settings$userAlphaSpending, 4)
 
-    if (asf == "of") {
-      str6 <- paste0("Alpha spending: O'Brien-Fleming")
-    } else if (asf == "p") {
-      str6 <- paste0("Alpha spending: Pocock")
-    } else if (asf == "wt") {
-      str6 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
-    } else if (asf == "sfof") {
-      str6 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
-    } else if (asf == "sfp") {
-      str6 <- paste0("Alpha spending: Lan-DeMets Pocock")
-    } else if (asf == "sfkd") {
-      str6 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
-    } else if (asf == "sfhsd") {
-      str6 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
-    } else if (asf == "user") {
-      str6 <- paste0("Alpha spending: User defined(",
-                     paste(asfuser, collapse = ","), ")")
-    } else {
-      str6 <- "Alpha spending: None"
-    }
+    str6 <- .format_spending(asf, asfpar, asfuser, "Alpha")
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
@@ -597,49 +572,14 @@ print.lrpower <- function(x, ...) {
 
     bsf <- tolower(x$settings$typeBetaSpending)
     bsfpar <- round(x$settings$parameterBetaSpending, 3)
-
-    if (asf == "of") {
-      str10 <- paste0("Alpha spending: O'Brien-Fleming")
-    } else if (asf == "p") {
-      str10 <- paste0("Alpha spending: Pocock")
-    } else if (asf == "wt") {
-      str10 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
-    } else if (asf == "sfof") {
-      str10 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
-    } else if (asf == "sfp") {
-      str10 <- paste0("Alpha spending: Lan-DeMets Pocock")
-    } else if (asf == "sfkd") {
-      str10 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
-    } else if (asf == "sfhsd") {
-      str10 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
-    } else if (asf == "user") {
-      str10 <- paste0("Alpha spending: User defined(",
-                      paste(asfuser, collapse = ","), ")")
+    bsfuser <- if (!is.null(x$settings$userBetaSpending)) {
+      round(x$settings$userBetaSpending, 4)
     } else {
-      str10 <- "Alpha spending: None"
+      ""
     }
 
-    if (bsf == "of") {
-      str11 <- paste0("beta spending: O'Brien-Fleming")
-    } else if (bsf == "p") {
-      str11 <- paste0("beta spending: Pocock")
-    } else if (bsf == "wt") {
-      str11 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
-    } else if (bsf == "sfof") {
-      str11 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
-    } else if (bsf == "sfp") {
-      str11 <- paste0("beta spending: Lan-DeMets Pocock")
-    } else if (bsf == "sfkd") {
-      str11 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
-    } else if (bsf == "sfhsd") {
-      str11 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
-    } else if (bsf == "user") {
-      bsfuser <- round(x$settings$userBetaSpending, 4)
-      str11 <- paste0("beta spending: User defined(",
-                      paste(bsfuser, collapse = ","), ")")
-    } else {
-      str11 <- "beta spending: None"
-    }
+    str10 <- .format_spending(asf, asfpar, asfuser, "Alpha")
+    str11 <- .format_spending(bsf, bsfpar, bsfuser, "beta")
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
@@ -904,7 +844,7 @@ print.nbpower <- function(x, ...) {
                        collapse = " "), ", ",
                  "dispersion for control: ",
                  paste(round(x$settings$kappa2, 3),
-                       collase = " "))
+                       collapse = " "))
 
   str5 <- paste0("Overall power: ",
                  round(a$overallReject, 4), ", ",
@@ -980,47 +920,14 @@ print.nbpower <- function(x, ...) {
 
     bsf <- tolower(x$settings$typeBetaSpending)
     bsfpar <- round(x$settings$parameterBetaSpending, 3)
-
-    if (asf == "of") {
-      str14 <- paste0("Alpha spending: O'Brien-Fleming")
-    } else if (asf == "p") {
-      str14 <- paste0("Alpha spending: Pocock")
-    } else if (asf == "wt") {
-      str14 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
-    } else if (asf == "sfof") {
-      str14 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
-    } else if (asf == "sfp") {
-      str14 <- paste0("Alpha spending: Lan-DeMets Pocock")
-    } else if (asf == "sfkd") {
-      str14 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
-    } else if (asf == "sfhsd") {
-      str14 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
-    } else if (asf == "user") {
-      str14 <- paste0("Alpha spending: User defined(",
-                      paste(asfuser, collapse = ","), ")")
+    bsfuser <- if (!is.null(x$settings$userBetaSpending)) {
+      round(x$settings$userBetaSpending, 4)
     } else {
-      str14 <- "Alpha spending: None"
+      ""
     }
 
-    if (bsf == "of") {
-      str15 <- paste0("beta spending: O'Brien-Fleming")
-    } else if (bsf == "p") {
-      str15 <- paste0("beta spending: Pocock")
-    } else if (bsf == "wt") {
-      str15 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
-    } else if (bsf == "sfof") {
-      str15 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
-    } else if (bsf == "sfp") {
-      str15 <- paste0("beta spending: Lan-DeMets Pocock")
-    } else if (bsf == "sfkd") {
-      str15 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
-    } else if (bsf == "sfhsd") {
-      str15 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
-    } else if (bsf == "user") {
-      str15 <- paste0("beta spending: User defined")
-    } else {
-      str15 <- "beta spending: None"
-    }
+    str14 <- .format_spending(asf, asfpar, asfuser, "Alpha")
+    str15 <- .format_spending(bsf, bsfpar, bsfuser, "beta")
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
@@ -1279,26 +1186,7 @@ print.nbpowerequiv <- function(x, ...) {
     asfpar <- round(x$settings$parameterAlphaSpending, 3)
     asfuser <- round(x$settings$userAlphaSpending, 4)
 
-    if (asf == "of") {
-      str13 <- paste0("Alpha spending: O'Brien-Fleming")
-    } else if (asf == "p") {
-      str13 <- paste0("Alpha spending: Pocock")
-    } else if (asf == "wt") {
-      str13 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
-    } else if (asf == "sfof") {
-      str13 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
-    } else if (asf == "sfp") {
-      str13 <- paste0("Alpha spending: Lan-DeMets Pocock")
-    } else if (asf == "sfkd") {
-      str13 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
-    } else if (asf == "sfhsd") {
-      str13 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
-    } else if (asf == "user") {
-      str13 <- paste0("Alpha spending: User defined(",
-                      paste(asfuser, collapse = ","), ")")
-    } else {
-      str13 <- "Alpha spending: None"
-    }
+    str13 <- .format_spending(asf, asfpar, asfuser, "Alpha")
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
@@ -1535,47 +1423,14 @@ print.nbpower1s <- function(x, ...) {
 
     bsf <- tolower(x$settings$typeBetaSpending)
     bsfpar <- round(x$settings$parameterBetaSpending, 3)
-
-    if (asf == "of") {
-      str12 <- paste0("Alpha spending: O'Brien-Fleming")
-    } else if (asf == "p") {
-      str12 <- paste0("Alpha spending: Pocock")
-    } else if (asf == "wt") {
-      str12 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
-    } else if (asf == "sfof") {
-      str12 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
-    } else if (asf == "sfp") {
-      str12 <- paste0("Alpha spending: Lan-DeMets Pocock")
-    } else if (asf == "sfkd") {
-      str12 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
-    } else if (asf == "sfhsd") {
-      str12 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
-    } else if (asf == "user") {
-      str12 <- paste0("Alpha spending: User defined(",
-                      paste(asfuser, collapse = ","), ")")
+    bsfuser <- if (!is.null(x$settings$userBetaSpending)) {
+      round(x$settings$userBetaSpending, 4)
     } else {
-      str12 <- "Alpha spending: None"
+      ""
     }
 
-    if (bsf == "of") {
-      str13 <- paste0("beta spending: O'Brien-Fleming")
-    } else if (bsf == "p") {
-      str13 <- paste0("beta spending: Pocock")
-    } else if (bsf == "wt") {
-      str13 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
-    } else if (bsf == "sfof") {
-      str13 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
-    } else if (bsf == "sfp") {
-      str13 <- paste0("beta spending: Lan-DeMets Pocock")
-    } else if (bsf == "sfkd") {
-      str13 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
-    } else if (bsf == "sfhsd") {
-      str13 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
-    } else if (bsf == "user") {
-      str13 <- paste0("beta spending: User defined")
-    } else {
-      str13 <- "beta spending: None"
-    }
+    str12 <- .format_spending(asf, asfpar, asfuser, "Alpha")
+    str13 <- .format_spending(bsf, bsfpar, bsfuser, "beta")
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
@@ -1782,49 +1637,14 @@ print.kmpower <- function(x, ...) {
 
     bsf <- tolower(x$settings$typeBetaSpending)
     bsfpar <- round(x$settings$parameterBetaSpending, 3)
-
-    if (asf == "of") {
-      str11 <- paste0("Alpha spending: O'Brien-Fleming")
-    } else if (asf == "p") {
-      str11 <- paste0("Alpha spending: Pocock")
-    } else if (asf == "wt") {
-      str11 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
-    } else if (asf == "sfof") {
-      str11 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
-    } else if (asf == "sfp") {
-      str11 <- paste0("Alpha spending: Lan-DeMets Pocock")
-    } else if (asf == "sfkd") {
-      str11 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
-    } else if (asf == "sfhsd") {
-      str11 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
-    } else if (asf == "user") {
-      str11 <- paste0("Alpha spending: User defined(",
-                      paste(asfuser, collapse = ","), ")")
+    bsfuser <- if (!is.null(x$settings$userBetaSpending)) {
+      round(x$settings$userBetaSpending, 4)
     } else {
-      str11 <- "Alpha spending: None"
+      ""
     }
 
-    if (bsf == "of") {
-      str12 <- paste0("beta spending: O'Brien-Fleming")
-    } else if (bsf == "p") {
-      str12 <- paste0("beta spending: Pocock")
-    } else if (bsf == "wt") {
-      str12 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
-    } else if (bsf == "sfof") {
-      str12 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
-    } else if (bsf == "sfp") {
-      str12 <- paste0("beta spending: Lan-DeMets Pocock")
-    } else if (bsf == "sfkd") {
-      str12 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
-    } else if (bsf == "sfhsd") {
-      str12 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
-    } else if (bsf == "user") {
-      bsfuser <- round(x$settings$userBetaSpending, 4)
-      str12 <- paste0("beta spending: User defined(",
-                      paste(bsfuser, collapse = ","), ")")
-    } else {
-      str12 <- "beta spending: None"
-    }
+    str11 <- .format_spending(asf, asfpar, asfuser, "Alpha")
+    str12 <- .format_spending(bsf, bsfpar, bsfuser, "beta")
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
@@ -2033,47 +1853,14 @@ print.rmpower <- function(x, ...) {
 
     bsf <- tolower(x$settings$typeBetaSpending)
     bsfpar <- round(x$settings$parameterBetaSpending, 3)
-
-    if (asf == "of") {
-      str11 <- paste0("Alpha spending: O'Brien-Fleming")
-    } else if (asf == "p") {
-      str11 <- paste0("Alpha spending: Pocock")
-    } else if (asf == "wt") {
-      str11 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
-    } else if (asf == "sfof") {
-      str11 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
-    } else if (asf == "sfp") {
-      str11 <- paste0("Alpha spending: Lan-DeMets Pocock")
-    } else if (asf == "sfkd") {
-      str11 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
-    } else if (asf == "sfhsd") {
-      str11 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
-    } else if (asf == "user") {
-      str11 <- paste0("Alpha spending: User defined(",
-                      paste(asfuser, collapse = ","), ")")
+    bsfuser <- if (!is.null(x$settings$userBetaSpending)) {
+      round(x$settings$userBetaSpending, 4)
     } else {
-      str11 <- "Alpha spending: None"
+      ""
     }
 
-    if (bsf == "of") {
-      str12 <- paste0("beta spending: O'Brien-Fleming")
-    } else if (bsf == "p") {
-      str12 <- paste0("beta spending: Pocock")
-    } else if (bsf == "wt") {
-      str12 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
-    } else if (bsf == "sfof") {
-      str12 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
-    } else if (bsf == "sfp") {
-      str12 <- paste0("beta spending: Lan-DeMets Pocock")
-    } else if (bsf == "sfkd") {
-      str12 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
-    } else if (bsf == "sfhsd") {
-      str12 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
-    } else if (bsf == "user") {
-      str12 <- paste0("beta spending: User defined")
-    } else {
-      str12 <- "beta spending: None"
-    }
+    str11 <- .format_spending(asf, asfpar, asfuser, "Alpha")
+    str12 <- .format_spending(bsf, bsfpar, bsfuser, "beta")
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
@@ -2283,26 +2070,7 @@ print.kmpowerequiv <- function(x, ...) {
     asfpar <- round(x$settings$parameterAlphaSpending, 3)
     asfuser <- round(x$settings$userAlphaSpending, 4)
 
-    if (asf == "of") {
-      str11 <- paste0("Alpha spending: O'Brien-Fleming")
-    } else if (asf == "p") {
-      str11 <- paste0("Alpha spending: Pocock")
-    } else if (asf == "wt") {
-      str11 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
-    } else if (asf == "sfof") {
-      str11 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
-    } else if (asf == "sfp") {
-      str11 <- paste0("Alpha spending: Lan-DeMets Pocock")
-    } else if (asf == "sfkd") {
-      str11 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
-    } else if (asf == "sfhsd") {
-      str11 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
-    } else if (asf == "user") {
-      str11 <- paste0("Alpha spending: User defined(",
-                      paste(asfuser, collapse = ","), ")")
-    } else {
-      str11 <- "Alpha spending: None"
-    }
+    str11 <- .format_spending(asf, asfpar, asfuser, "Alpha")
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
@@ -2490,26 +2258,7 @@ print.rmpowerequiv <- function(x, ...) {
     asfpar <- round(x$settings$parameterAlphaSpending, 3)
     asfuser <- round(x$settings$userAlphaSpending, 4)
 
-    if (asf == "of") {
-      str11 <- paste0("Alpha spending: O'Brien-Fleming")
-    } else if (asf == "p") {
-      str11 <- paste0("Alpha spending: Pocock")
-    } else if (asf == "wt") {
-      str11 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
-    } else if (asf == "sfof") {
-      str11 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
-    } else if (asf == "sfp") {
-      str11 <- paste0("Alpha spending: Lan-DeMets Pocock")
-    } else if (asf == "sfkd") {
-      str11 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
-    } else if (asf == "sfhsd") {
-      str11 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
-    } else if (asf == "user") {
-      str11 <- paste0("Alpha spending: User defined(",
-                      paste(asfuser, collapse = ","), ")")
-    } else {
-      str11 <- "Alpha spending: None"
-    }
+    str11 <- .format_spending(asf, asfpar, asfuser, "Alpha")
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
@@ -2699,26 +2448,7 @@ print.lrpowerequiv <- function(x, ...) {
     asfpar <- round(x$settings$parameterAlphaSpending, 3)
     asfuser <- round(x$settings$userAlphaSpending, 4)
 
-    if (asf == "of") {
-      str11 <- paste0("Alpha spending: O'Brien-Fleming")
-    } else if (asf == "p") {
-      str11 <- paste0("Alpha spending: Pocock")
-    } else if (asf == "wt") {
-      str11 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
-    } else if (asf == "sfof") {
-      str11 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
-    } else if (asf == "sfp") {
-      str11 <- paste0("Alpha spending: Lan-DeMets Pocock")
-    } else if (asf == "sfkd") {
-      str11 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
-    } else if (asf == "sfhsd") {
-      str11 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
-    } else if (asf == "user") {
-      str11 <- paste0("Alpha spending: User defined(",
-                      paste(asfuser, collapse = ","), ")")
-    } else {
-      str11 <- "Alpha spending: None"
-    }
+    str11 <- .format_spending(asf, asfpar, asfuser, "Alpha")
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
@@ -2909,48 +2639,13 @@ print.kmpower1s <- function(x, ...) {
     bsf <- tolower(x$settings$typeBetaSpending)
     bsfpar <- round(x$settings$parameterBetaSpending, 3)
 
-    if (asf == "of") {
-      str10 <- paste0("Alpha spending: O'Brien-Fleming")
-    } else if (asf == "p") {
-      str10 <- paste0("Alpha spending: Pocock")
-    } else if (asf == "wt") {
-      str10 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
-    } else if (asf == "sfof") {
-      str10 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
-    } else if (asf == "sfp") {
-      str10 <- paste0("Alpha spending: Lan-DeMets Pocock")
-    } else if (asf == "sfkd") {
-      str10 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
-    } else if (asf == "sfhsd") {
-      str10 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
-    } else if (asf == "user") {
-      str10 <- paste0("Alpha spending: User defined(",
-                      paste(asfuser, collapse = ","), ")")
+    bsfuser <- if (!is.null(x$settings$userBetaSpending)) {
+      round(x$settings$userBetaSpending, 4)
     } else {
-      str10 <- "Alpha spending: None"
+      ""
     }
-
-    if (bsf == "of") {
-      str11 <- paste0("beta spending: O'Brien-Fleming")
-    } else if (bsf == "p") {
-      str11 <- paste0("beta spending: Pocock")
-    } else if (bsf == "wt") {
-      str11 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
-    } else if (bsf == "sfof") {
-      str11 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
-    } else if (bsf == "sfp") {
-      str11 <- paste0("beta spending: Lan-DeMets Pocock")
-    } else if (bsf == "sfkd") {
-      str11 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
-    } else if (bsf == "sfhsd") {
-      str11 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
-    } else if (bsf == "user") {
-      bsfuser <- round(x$settings$userBetaSpending, 4)
-      str11 <- paste0("beta spending: User defined(",
-                      paste(bsfuser, collapse = ","), ")")
-    } else {
-      str11 <- "beta spending: None"
-    }
+    str10 <- .format_spending(asf, asfpar, asfuser, "Alpha")
+    str11 <- .format_spending(bsf, bsfpar, bsfuser, "beta")
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
@@ -3160,46 +2855,14 @@ print.rmpower1s <- function(x, ...) {
     bsf <- tolower(x$settings$typeBetaSpending)
     bsfpar <- round(x$settings$parameterBetaSpending, 3)
 
-    if (asf == "of") {
-      str10 <- paste0("Alpha spending: O'Brien-Fleming")
-    } else if (asf == "p") {
-      str10 <- paste0("Alpha spending: Pocock")
-    } else if (asf == "wt") {
-      str10 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
-    } else if (asf == "sfof") {
-      str10 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
-    } else if (asf == "sfp") {
-      str10 <- paste0("Alpha spending: Lan-DeMets Pocock")
-    } else if (asf == "sfkd") {
-      str10 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
-    } else if (asf == "sfhsd") {
-      str10 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
-    } else if (asf == "user") {
-      str10 <- paste0("Alpha spending: User defined(",
-                      paste(asfuser, collapse = ","), ")")
+    bsfuser <- if (!is.null(x$settings$userBetaSpending)) {
+      round(x$settings$userBetaSpending, 4)
     } else {
-      str10 <- "Alpha spending: None"
+      ""
     }
 
-    if (bsf == "of") {
-      str11 <- paste0("beta spending: O'Brien-Fleming")
-    } else if (bsf == "p") {
-      str11 <- paste0("beta spending: Pocock")
-    } else if (bsf == "wt") {
-      str11 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
-    } else if (bsf == "sfof") {
-      str11 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
-    } else if (bsf == "sfp") {
-      str11 <- paste0("beta spending: Lan-DeMets Pocock")
-    } else if (bsf == "sfkd") {
-      str11 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
-    } else if (bsf == "sfhsd") {
-      str11 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
-    } else if (bsf == "user") {
-      str11 <- paste0("beta spending: User defined")
-    } else {
-      str11 <- "beta spending: None"
-    }
+    str10 <- .format_spending(asf, asfpar, asfuser, "Alpha")
+    str11 <- .format_spending(bsf, bsfpar, bsfuser, "beta")
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {
@@ -3707,49 +3370,14 @@ print.seamless <- function(x, ...) {
 
   bsf <- tolower(x$settings$typeBetaSpending)
   bsfpar <- round(x$settings$parameterBetaSpending, 3)
-  bsfuser <- round(x$settings$userBetaSpending, 4)
-
-  if (asf == "of") {
-    str12 <- paste0("Alpha spending: O'Brien-Fleming")
-  } else if (asf == "p") {
-    str12 <- paste0("Alpha spending: Pocock")
-  } else if (asf == "wt") {
-    str12 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
-  } else if (asf == "sfof") {
-    str12 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
-  } else if (asf == "sfp") {
-    str12 <- paste0("Alpha spending: Lan-DeMets Pocock")
-  } else if (asf == "sfkd") {
-    str12 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
-  } else if (asf == "sfhsd") {
-    str12 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
-  } else if (asf == "user") {
-    str12 <- paste0("Alpha spending: User defined(",
-                   paste(asfuser, collapse = ","), ")")
+  bsfuser <- if (!is.null(x$settings$userBetaSpending)) {
+    round(x$settings$userBetaSpending, 4)
   } else {
-    str12 <- "Alpha spending: None"
+    ""
   }
 
-  if (bsf == "of") {
-    str13 <- paste0("beta spending: O'Brien-Fleming")
-  } else if (bsf == "p") {
-    str13 <- paste0("beta spending: Pocock")
-  } else if (bsf == "wt") {
-    str13 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
-  } else if (bsf == "sfof") {
-    str13 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
-  } else if (bsf == "sfp") {
-    str13 <- paste0("beta spending: Lan-DeMets Pocock")
-  } else if (bsf == "sfkd") {
-    str13 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
-  } else if (bsf == "sfhsd") {
-    str13 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
-  } else if (bsf == "user") {
-    str13 <- paste0("beta spending: User defined(",
-                    paste(bsfuser, collapse = ","), ")")
-  } else {
-    str13 <- "beta spending: None"
-  }
+  str12 <- .format_spending(asf, asfpar, asfuser, "Alpha")
+  str13 <- .format_spending(bsf, bsfpar, bsfuser, "beta")
 
   if (!any(is.na(x$settings$spendingTime)) &&
       !all(x$settings$spendingTime == s$informationRates)) {
@@ -4581,49 +4209,14 @@ print.multiarm <- function(x, ...) {
 
     bsf <- tolower(x$settings$typeBetaSpending)
     bsfpar <- round(x$settings$parameterBetaSpending, 3)
-    bsfuser <- round(x$settings$userBetaSpending, 4)
-
-    if (asf == "of") {
-      str11 <- paste0("Alpha spending: O'Brien-Fleming")
-    } else if (asf == "p") {
-      str11 <- paste0("Alpha spending: Pocock")
-    } else if (asf == "wt") {
-      str11 <- paste0("Alpha spending: Wang-Tsiatis(Delta = ", asfpar, ")")
-    } else if (asf == "sfof") {
-      str11 <- paste0("Alpha spending: Lan-DeMets O'Brien-Fleming")
-    } else if (asf == "sfp") {
-      str11 <- paste0("Alpha spending: Lan-DeMets Pocock")
-    } else if (asf == "sfkd") {
-      str11 <- paste0("Alpha spending: KD(rho = ", asfpar, ")")
-    } else if (asf == "sfhsd") {
-      str11 <- paste0("Alpha spending: HSD(gamma = ", asfpar, ")")
-    } else if (asf == "user") {
-      str11 <- paste0("Alpha spending: User defined(",
-                     paste(asfuser, collapse = ","), ")")
+    bsfuser <- if (!is.null(x$settings$userBetaSpending)) {
+      round(x$settings$userBetaSpending, 4)
     } else {
-      str11 <- "Alpha spending: None"
+      ""
     }
 
-    if (bsf == "of") {
-      str12 <- paste0("beta spending: O'Brien-Fleming")
-    } else if (bsf == "p") {
-      str12 <- paste0("beta spending: Pocock")
-    } else if (bsf == "wt") {
-      str12 <- paste0("beta spending: Wang-Tsiatis(Delta = ", bsfpar, ")")
-    } else if (bsf == "sfof") {
-      str12 <- paste0("beta spending: Lan-DeMets O'Brien-Fleming")
-    } else if (bsf == "sfp") {
-      str12 <- paste0("beta spending: Lan-DeMets Pocock")
-    } else if (bsf == "sfkd") {
-      str12 <- paste0("beta spending: KD(rho = ", bsfpar, ")")
-    } else if (bsf == "sfhsd") {
-      str12 <- paste0("beta spending: HSD(gamma = ", bsfpar, ")")
-    } else if (bsf == "user") {
-      str12 <- paste0("beta spending: User defined(",
-                      paste(bsfuser, collapse = ","), ")")
-    } else {
-      str12 <- "beta spending: None"
-    }
+    str11 <- .format_spending(asf, asfpar, asfuser, "Alpha")
+    str12 <- .format_spending(bsf, bsfpar, bsfuser, "beta")
 
     if (!any(is.na(x$settings$spendingTime)) &&
         !all(x$settings$spendingTime == s$informationRates)) {

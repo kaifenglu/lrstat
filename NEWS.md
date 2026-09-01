@@ -18,6 +18,13 @@
 * added `sumdataBIN` and `sumdataTTE` summary datasets to `lrsim_bmTrtSel`,
   along with optional subject-level `rawdataBIN` and `rawdataTTE` datasets
   controlled by `maxNumberOfRawDatasets`
+* removed `mvtnorm` from `Suggests`
+* changed the default value of `corrEfficacyToxicity` in
+  `lrsim_bmTrtSel_cpp()` from `0.5` to `0`
+* corrected a `collapse` argument typo in `print.nbpower`
+* consolidated alpha- and beta-spending function formatting across print
+  methods through the shared `.format_spending()` helper, preserving the
+  existing printed output
 
 # lrstat 0.3.3
 

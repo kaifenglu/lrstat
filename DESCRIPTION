@@ -23,7 +23,6 @@ Suggests:
     tidyr (>= 1.3.0),
     knitr (>= 1.45),
     rmarkdown (>= 2.25),
-    mvtnorm (>= 1.1-3),
     survival (>= 3.5-7),
     shinyjs (>= 2.1.0),
     shinyFeedback (>= 0.4.0),

@@ -1148,7 +1148,7 @@ Rcpp::List lrsim_bmTrtSel_Rcpp(
     const double responseProbControl = NA_REAL,
     const Rcpp::NumericVector &responseProbTreatments = NA_REAL,
     const Rcpp::NumericVector &toxicityProbTreatments = NA_REAL,
-    const double corrEfficacyToxicity = 0.5,
+    const double corrEfficacyToxicity = 0,
     const Rcpp::NumericVector &hazardRateControl = NA_REAL,
     const Rcpp::NumericMatrix &hazardRateTreatments = Rcpp::NumericMatrix(),
     const double studyDurationPhase3 = NA_REAL,
