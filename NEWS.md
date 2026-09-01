@@ -1,5 +1,7 @@
 # lrstat 0.3.4
 
+* added `getNFromNeventsAndFollowup` and its C++ backend in `lrstat.cpp` for
+  accrual duration calculations under target-event and follow-up constraints
 * corrected the minimum weighted p-value ratio initialization in
   `fadjpduncpp` (used by `fadjpdun`) from `1.0` to positive infinity so that
   ratios exceeding 1 are properly accounted for when computing intersection

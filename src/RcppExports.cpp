@@ -1792,6 +1792,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// getNFromNeventsAndFollowup
+Rcpp::DataFrame getNFromNeventsAndFollowup(const double nevents, const double allocationRatioPlanned, const Rcpp::NumericVector& accrualTime, const Rcpp::NumericVector& accrualIntensity, const Rcpp::NumericVector& piecewiseSurvivalTime, const Rcpp::NumericVector& stratumFraction, const Rcpp::NumericVector& lambda1, const Rcpp::NumericVector& lambda2, const Rcpp::NumericVector& gamma1, const Rcpp::NumericVector& gamma2, const Rcpp::NumericVector& followupTime, const bool fixedFollowup);
+RcppExport SEXP _lrstat_getNFromNeventsAndFollowup(SEXP neventsSEXP, SEXP allocationRatioPlannedSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double >::type nevents(neventsSEXP);
+    Rcpp::traits::input_parameter< const double >::type allocationRatioPlanned(allocationRatioPlannedSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type accrualTime(accrualTimeSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type accrualIntensity(accrualIntensitySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type piecewiseSurvivalTime(piecewiseSurvivalTimeSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type stratumFraction(stratumFractionSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type lambda1(lambda1SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type lambda2(lambda2SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type gamma1(gamma1SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type gamma2(gamma2SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type followupTime(followupTimeSEXP);
+    Rcpp::traits::input_parameter< const bool >::type fixedFollowup(fixedFollowupSEXP);
+    rcpp_result_gen = Rcpp::wrap(getNFromNeventsAndFollowup(nevents, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, followupTime, fixedFollowup));
+    return rcpp_result_gen;
+END_RCPP
+}
 // lrpower
 Rcpp::List lrpower(const int kMax, const Rcpp::NumericVector& informationRates, const Rcpp::LogicalVector& efficacyStopping, const Rcpp::LogicalVector& futilityStopping, const Rcpp::Nullable<Rcpp::NumericVector> criticalValues, const double alpha, const std::string& typeAlphaSpending, const double parameterAlphaSpending, const Rcpp::NumericVector& userAlphaSpending, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::Nullable<Rcpp::NumericVector> futilityCP, const Rcpp::Nullable<Rcpp::NumericVector> futilityHR, const std::string& typeBetaSpending, const double parameterBetaSpending, const double hazardRatioH0, const double allocationRatioPlanned, const Rcpp::NumericVector& accrualTime, const Rcpp::NumericVector& accrualIntensity, const Rcpp::NumericVector& piecewiseSurvivalTime, const Rcpp::NumericVector& stratumFraction, const Rcpp::NumericVector& lambda1, const Rcpp::NumericVector& lambda2, const Rcpp::NumericVector& gamma1, const Rcpp::NumericVector& gamma2, const double accrualDuration, const double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const std::string& typeOfComputation, const Rcpp::NumericVector& spendingTime, const double studyDuration);
 RcppExport SEXP _lrstat_lrpower(SEXP kMaxSEXP, SEXP informationRatesSEXP, SEXP efficacyStoppingSEXP, SEXP futilityStoppingSEXP, SEXP criticalValuesSEXP, SEXP alphaSEXP, SEXP typeAlphaSpendingSEXP, SEXP parameterAlphaSpendingSEXP, SEXP userAlphaSpendingSEXP, SEXP futilityBoundsSEXP, SEXP futilityCPSEXP, SEXP futilityHRSEXP, SEXP typeBetaSpendingSEXP, SEXP parameterBetaSpendingSEXP, SEXP hazardRatioH0SEXP, SEXP allocationRatioPlannedSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP gamma1SEXP, SEXP gamma2SEXP, SEXP accrualDurationSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP typeOfComputationSEXP, SEXP spendingTimeSEXP, SEXP studyDurationSEXP) {
@@ -3836,6 +3858,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lrstat_lrstat", (DL_FUNC) &_lrstat_lrstat, 17},
     {"_lrstat_caltime", (DL_FUNC) &_lrstat_caltime, 13},
     {"_lrstat_getDurationFromNevents", (DL_FUNC) &_lrstat_getDurationFromNevents, 13},
+    {"_lrstat_getNFromNeventsAndFollowup", (DL_FUNC) &_lrstat_getNFromNeventsAndFollowup, 12},
     {"_lrstat_lrpower", (DL_FUNC) &_lrstat_lrpower, 32},
     {"_lrstat_getNeventsFromHazardRatio", (DL_FUNC) &_lrstat_getNeventsFromHazardRatio, 21},
     {"_lrstat_lrsamplesize", (DL_FUNC) &_lrstat_lrsamplesize, 34},

@@ -4019,6 +4019,62 @@ getDurationFromNevents <- function(nevents = NA_real_, allocationRatioPlanned = 
     .Call(`_lrstat_getDurationFromNevents`, nevents, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, followupTime, fixedFollowup, npoints)
 }
 
+#' @title Accrual Duration for Target Number of Events and Follow-up Time
+#'
+#' @description Obtains the accrual duration and sample size to reach the
+#' target number of events given follow-up time.
+#'
+#' @param nevents The target number of events.
+#' @inheritParams param_allocationRatioPlanned
+#' @inheritParams param_accrualTime
+#' @inheritParams param_accrualIntensity
+#' @inheritParams param_piecewiseSurvivalTime
+#' @inheritParams param_stratumFraction
+#' @inheritParams param_lambda1_stratified
+#' @inheritParams param_lambda2_stratified
+#' @inheritParams param_gamma1_stratified
+#' @inheritParams param_gamma2_stratified
+#' @param followupTime Follow-up time for the last enrolled subjects.
+#' Must be provided.
+#' @inheritParams param_fixedFollowup
+#'
+#' @return A data frame of the following variables:
+#'
+#' * \code{nevents}: The target number of events.
+#'
+#' * \code{fixedFollowup}: Whether a fixed follow-up design is used.
+#'
+#' * \code{accrualDuration}: The accrual duration.
+#'
+#' * \code{subjects}: The total number of subjects.
+#'
+#' * \code{followupTime}: The follow-up time for the last enrolled subject.
+#'
+#' * \code{studyDuration}: The study duration.
+#'
+#' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+#'
+#' @examples
+#' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
+#' # the end of 1 year.
+#'
+#' getNFromNeventsAndFollowup(
+#'   nevents = 80, allocationRatioPlanned = 1,
+#'   accrualTime = seq(0, 8),
+#'   accrualIntensity = 26/9*seq(1, 9),
+#'   piecewiseSurvivalTime = c(0, 6),
+#'   lambda1 = c(0.0533, 0.0309),
+#'   lambda2 = c(0.0533, 0.0533),
+#'   gamma1 = -log(1-0.05)/12,
+#'   gamma2 = -log(1-0.05)/12,
+#'   followupTime = 18,
+#'   fixedFollowup = FALSE)
+#'
+#' @export
+getNFromNeventsAndFollowup <- function(nevents = NA_real_, allocationRatioPlanned = 1, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambda1 = NA_real_, lambda2 = NA_real_, gamma1 = 0L, gamma2 = 0L, followupTime = NA_real_, fixedFollowup = FALSE) {
+    .Call(`_lrstat_getNFromNeventsAndFollowup`, nevents, allocationRatioPlanned, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambda1, lambda2, gamma1, gamma2, followupTime, fixedFollowup)
+}
+
 #' @title Log-Rank Test Power
 #' @description Estimates the power, stopping probabilities, and expected
 #' sample size in a two-group survival design.

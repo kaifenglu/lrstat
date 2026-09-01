@@ -1302,6 +1302,264 @@ Rcpp::DataFrame getDurationFromNevents(
   return Rcpp::wrap(df);
 }
 
+
+DataFrameCpp getNFromNeventsAndFollowupcpp(
+    const double nevents, const double allocationRatioPlanned,
+    const std::vector<double> &accrualTime,
+    const std::vector<double> &accrualIntensity,
+    const std::vector<double> &piecewiseSurvivalTime,
+    const std::vector<double> &stratumFraction,
+    const std::vector<double> &lambda1, const std::vector<double> &lambda2,
+    const std::vector<double> &gamma1, const std::vector<double> &gamma2,
+    const std::vector<double> &followupTime, const bool fixedFollowup) {
+
+  // Input validation
+  if (std::isnan(nevents))
+    throw std::invalid_argument("nevents must be provided");
+  if (nevents <= 0.0)
+    throw std::invalid_argument("nevents must be positive");
+
+  if (allocationRatioPlanned <= 0.0)
+    throw std::invalid_argument("allocationRatioPlanned must be positive");
+
+  if (accrualTime[0] != 0.0)
+    throw std::invalid_argument("accrualTime must start with 0");
+  if (any_nonincreasing(accrualTime))
+    throw std::invalid_argument("accrualTime should be increasing");
+
+  if (!none_na(accrualIntensity))
+    throw std::invalid_argument("accrualIntensity must be provided");
+  if (accrualIntensity.size() != accrualTime.size())
+    throw std::invalid_argument("Invalid length for accrualIntensity");
+  for (double v : accrualIntensity) {
+    if (v < 0.0)
+      throw std::invalid_argument("accrualIntensity must be non-negative");
+  }
+
+  if (piecewiseSurvivalTime[0] != 0.0)
+    throw std::invalid_argument("piecewiseSurvivalTime must start with 0");
+  if (any_nonincreasing(piecewiseSurvivalTime))
+    throw std::invalid_argument("piecewiseSurvivalTime should be increasing");
+
+  for (double v : stratumFraction) {
+    if (v <= 0.0)
+      throw std::invalid_argument("stratumFraction must be positive");
+  }
+  double sumf =
+      std::accumulate(stratumFraction.begin(), stratumFraction.end(), 0.0);
+  if (std::fabs(sumf - 1.0) > 1e-12)
+    throw std::invalid_argument("stratumFraction must sum to 1");
+
+  if (!none_na(lambda1))
+    throw std::invalid_argument("lambda1 must be provided");
+  if (!none_na(lambda2))
+    throw std::invalid_argument("lambda2 must be provided");
+
+  for (double v : lambda1) {
+    if (v < 0.0)
+      throw std::invalid_argument("lambda1 must be non-negative");
+  }
+  for (double v : lambda2) {
+    if (v < 0.0)
+      throw std::invalid_argument("lambda2 must be non-negative");
+  }
+  for (double v : gamma1) {
+    if (v < 0.0)
+      throw std::invalid_argument("gamma1 must be non-negative");
+  }
+  for (double v : gamma2) {
+    if (v < 0.0)
+      throw std::invalid_argument("gamma2 must be non-negative");
+  }
+
+  // expand stratified rates
+  size_t nstrata = stratumFraction.size();
+  size_t nintv = piecewiseSurvivalTime.size();
+  auto lambda1x = expand_stratified(lambda1, nstrata, nintv, "lambda1");
+  auto lambda2x = expand_stratified(lambda2, nstrata, nintv, "lambda2");
+  auto gamma1x = expand_stratified(gamma1, nstrata, nintv, "gamma1");
+  auto gamma2x = expand_stratified(gamma2, nstrata, nintv, "gamma2");
+
+  size_t npoints = followupTime.size();
+  if (fixedFollowup && npoints != 1) {
+    throw std::invalid_argument(
+        "followupTime must be a single value for fixed follow-up");
+  }
+
+  for (double v : followupTime) {
+    if (std::isnan(v))
+      throw std::invalid_argument("followupTime must be provided");
+    if (v < 0.0)
+      throw std::invalid_argument("followupTime must be non-negative");
+    if (fixedFollowup && v <= 0.0)
+      throw std::invalid_argument(
+        "followupTime must be positive for fixed follow-up");
+  }
+
+
+  // total predicted events at analysisTime, given accrualDuration and
+  // followupTime
+  auto total_events_at = [allocationRatioPlanned, accrualTime, accrualIntensity,
+                          piecewiseSurvivalTime, stratumFraction, lambda1x,
+                          lambda2x, gamma1x, gamma2x,
+                          fixedFollowup](double t, double accrdur,
+                                         double futime) -> double {
+    DataFrameCpp df = lrstat0cpp(
+        t, 1.0, allocationRatioPlanned, accrualTime, accrualIntensity,
+        piecewiseSurvivalTime, stratumFraction, lambda1x, lambda2x, gamma1x,
+        gamma2x, accrdur, futime, fixedFollowup, 0.0, 0.0, 1);
+    return extract_sum(df, "nevents");
+  };
+
+  // 1) find minimal accrualDuration t[0] such that with Tf1 we reach nevents
+  double Tf1 = fixedFollowup ? followupTime[0] : 1000.0;
+  // f1(accrD) = total_events_at(accrD + Tf1, accrD, Tf1) - nevents
+  auto f1 = [total_events_at, &Tf1, nevents](double accrdur) -> double {
+    return total_events_at(accrdur + Tf1, accrdur, Tf1) - nevents;
+  };
+
+  // bracket and find lower bound root for f1
+  double lower = 0.001, upper = 120.0;
+  double fl_val = f1(lower), fu_val = f1(upper);
+  int expand_iter = 0;
+  while (fl_val * fu_val > 0.0 && expand_iter < 60) {
+    lower = upper;
+    fl_val = fu_val;
+    upper *= 2.0;
+    fu_val = f1(upper);
+    ++expand_iter;
+  }
+  if (fl_val * fu_val > 0.0)
+    throw std::runtime_error(
+        "Unable to find a valid range for accrual duration to reach "
+        "the target number of events");
+
+  auto f1_for_brent = [f1, lower, upper, fl_val, fu_val](double x) -> double {
+    if (x == lower)
+      return fl_val;
+    if (x == upper)
+      return fu_val;
+    return f1(x);
+  };
+
+  double t0 = brent(f1_for_brent, lower, upper, 1e-6);
+
+  // 2) find maximal accrualDuration t[1] such that with Tf2 we reach nevents
+  double Tf2 = fixedFollowup ? followupTime[0] : 0.0;
+  auto f2 = [total_events_at, Tf2, nevents](double accrdur) -> double {
+    return total_events_at(accrdur, accrdur, Tf2) - nevents;
+  };
+
+  // bracket between t0 and previous upper (upper already >= necessary)
+  double t1 = brent(f2, t0, upper, 1e-6);
+
+  // find minimal accrualDuration such that with followupTime we reach nevents
+  std::vector<double> ta(npoints), subjects(npoints), ts(npoints);
+  for (size_t i = 0; i < npoints; ++i) {
+    Tf1 = followupTime[i];
+    ta[i] = brent(f1, t0, t1, 1e-6);
+    subjects[i] = accrual1(ta[i], accrualTime, accrualIntensity, 1000.0);
+    ts[i] = ta[i] + Tf1;
+  }
+
+  // Build DataFrameCpp result
+  DataFrameCpp out;
+
+  std::vector<double> nevents_vec(npoints, nevents);
+  out.push_back(nevents_vec, "nevents");
+  out.push_back(fixedFollowup, "fixedFollowup");
+  out.push_back(ta, "accrualDuration");
+  out.push_back(subjects, "subjects");
+  out.push_back(followupTime, "followupTime");
+  out.push_back(ts, "studyDuration");
+
+  return out;
+}
+
+//' @title Accrual Duration for Target Number of Events and Follow-up Time
+//'
+//' @description Obtains the accrual duration and sample size to reach the
+//' target number of events given follow-up time.
+//'
+//' @param nevents The target number of events.
+//' @inheritParams param_allocationRatioPlanned
+//' @inheritParams param_accrualTime
+//' @inheritParams param_accrualIntensity
+//' @inheritParams param_piecewiseSurvivalTime
+//' @inheritParams param_stratumFraction
+//' @inheritParams param_lambda1_stratified
+//' @inheritParams param_lambda2_stratified
+//' @inheritParams param_gamma1_stratified
+//' @inheritParams param_gamma2_stratified
+//' @param followupTime Follow-up time for the last enrolled subjects.
+//' Must be provided.
+//' @inheritParams param_fixedFollowup
+//'
+//' @return A data frame of the following variables:
+//'
+//' * \code{nevents}: The target number of events.
+//'
+//' * \code{fixedFollowup}: Whether a fixed follow-up design is used.
+//'
+//' * \code{accrualDuration}: The accrual duration.
+//'
+//' * \code{subjects}: The total number of subjects.
+//'
+//' * \code{followupTime}: The follow-up time for the last enrolled subject.
+//'
+//' * \code{studyDuration}: The study duration.
+//'
+//' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
+//'
+//' @examples
+//' # Piecewise accrual, piecewise exponential survivals, and 5% dropout by
+//' # the end of 1 year.
+//'
+//' getNFromNeventsAndFollowup(
+//'   nevents = 80, allocationRatioPlanned = 1,
+//'   accrualTime = seq(0, 8),
+//'   accrualIntensity = 26/9*seq(1, 9),
+//'   piecewiseSurvivalTime = c(0, 6),
+//'   lambda1 = c(0.0533, 0.0309),
+//'   lambda2 = c(0.0533, 0.0533),
+//'   gamma1 = -log(1-0.05)/12,
+//'   gamma2 = -log(1-0.05)/12,
+//'   followupTime = 18,
+//'   fixedFollowup = FALSE)
+//'
+//' @export
+// [[Rcpp::export]]
+Rcpp::DataFrame getNFromNeventsAndFollowup(
+    const double nevents = NA_REAL, const double allocationRatioPlanned = 1,
+    const Rcpp::NumericVector &accrualTime = 0,
+    const Rcpp::NumericVector &accrualIntensity = NA_REAL,
+    const Rcpp::NumericVector &piecewiseSurvivalTime = 0,
+    const Rcpp::NumericVector &stratumFraction = 1,
+    const Rcpp::NumericVector &lambda1 = NA_REAL,
+    const Rcpp::NumericVector &lambda2 = NA_REAL,
+    const Rcpp::NumericVector &gamma1 = 0,
+    const Rcpp::NumericVector &gamma2 = 0,
+    const Rcpp::NumericVector &followupTime = NA_REAL,
+    const bool fixedFollowup = false) {
+
+  auto accrualT = Rcpp::as<std::vector<double>>(accrualTime);
+  auto accrualInt = Rcpp::as<std::vector<double>>(accrualIntensity);
+  auto pwSurvT = Rcpp::as<std::vector<double>>(piecewiseSurvivalTime);
+  auto stratumFrac = Rcpp::as<std::vector<double>>(stratumFraction);
+  auto lam1 = Rcpp::as<std::vector<double>>(lambda1);
+  auto lam2 = Rcpp::as<std::vector<double>>(lambda2);
+  auto gam1 = Rcpp::as<std::vector<double>>(gamma1);
+  auto gam2 = Rcpp::as<std::vector<double>>(gamma2);
+  auto followupT = Rcpp::as<std::vector<double>>(followupTime);
+
+  auto df = getNFromNeventsAndFollowupcpp(
+      nevents, allocationRatioPlanned, accrualT, accrualInt, pwSurvT,
+      stratumFrac, lam1, lam2, gam1, gam2, followupT, fixedFollowup);
+
+  return Rcpp::wrap(df);
+}
+
+
 ListCpp lrpowercpp(
     const size_t kMax, const std::vector<double> &informationRates,
     const std::vector<unsigned char> &efficacyStopping,
