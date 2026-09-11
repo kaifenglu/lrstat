@@ -2,7 +2,8 @@
 % Please edit documentation in R/prints.R
 \name{print.rdsim_seamless}
 \alias{print.rdsim_seamless}
-\title{Print Simulation Results for Phase 2/3 Seamless Design for Risk Difference}
+\title{Print Simulation Results for Phase 2/3 Seamless Design for Risk
+Difference}
 \usage{
 \method{print}{rdsim_seamless}(x, ...)
 }
@@ -15,7 +16,8 @@
 A tabular printout of the summary statistics from simulation runs.
 }
 \description{
-Prints the summary statistics from simulation for risk difference.
+Prints the summary statistics from simulation for risk
+difference.
 }
 \author{
 Kaifeng Lu, \email{kaifenglu@gmail.com}

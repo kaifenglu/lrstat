@@ -3,53 +3,31 @@ library(ggplot2)
 
 method_labels <- lrstat:::lrsim_bmTrtSel_method_labels()
 
-dimnames <- list(c("High Dose", "Low Dose"),
-                 c("Nonresponders", "Responders"))
-
-control_hazards <- c(log(2) / 12, log(2) / 24)
+control_hazard <- log(2) / 15.5
 scenario_specs <- list(
   null = list(label = "Null",
               responseProbTreatments = c(0.4, 0.4),
-              hazardRateControl = control_hazards,
-              hazardRateTreatments = structure(
-                rbind(control_hazards, control_hazards),
-                dimnames = dimnames)),
+              hazardRateControl = control_hazard,
+              hazardRatioTreatments = c(1, 1)),
   dose_response = list(label = "Effective, dose-response",
                        responseProbTreatments = c(0.6, 0.5),
-                       hazardRateControl = control_hazards,
-                       hazardRateTreatments = structure(
-                         rbind(control_hazards * 0.75,
-                               control_hazards * 0.75),
-                         dimnames = dimnames)),
+                       hazardRateControl = control_hazard,
+                       hazardRatioTreatments = c(0.65, 0.70)),
   no_dose_response = list(label = "Effective, no dose-response",
                           responseProbTreatments = c(0.6, 0.6),
-                          hazardRateControl = control_hazards,
-                          hazardRateTreatments = structure(
-                            rbind(control_hazards * 0.75,
-                                  control_hazards * 0.75),
-                            dimnames = dimnames)),
+                          hazardRateControl = control_hazard,
+                          hazardRatioTreatments = c(0.65, 0.65)),
   one_effective = list(label = "One dose effective",
                        responseProbTreatments = c(0.6, 0.4),
-                       hazardRateControl = control_hazards,
-                       hazardRateTreatments = structure(
-                         rbind(control_hazards * 0.75,
-                               control_hazards),
-                         dimnames = dimnames)),
-  unequal_hr = list(label = "Unequal HRs",
-                    responseProbTreatments = c(0.6, 0.5),
-                    hazardRateControl = c(log(2) / 15, log(2) / 15),
-                    hazardRateTreatments = structure(
-                      rbind(c(log(2) / 15, log(2) / 15) * 0.70,
-                            c(log(2) / 15, log(2) / 15) * 0.66),
-                      dimnames = dimnames)),
-  nonresponder_effect = list(label = "Nonresponder effect",
-                             responseProbTreatments = c(0.6, 0.5),
-                             hazardRateControl = control_hazards,
-                             hazardRateTreatments = structure(
-                               rbind(c(log(2) / 24, log(2) / 24),
-                                     c(log(2) / 24, log(2) / 24)),
-                               dimnames = dimnames))
+           hazardRateControl = control_hazard,
+           hazardRatioTreatments = c(0.65, 1)),
+  null_pfs = list(label = "Null, PFS",
+                  responseProbTreatments = c(0.6, 0.5),
+                  hazardRateControl = control_hazard,
+                  hazardRatioTreatments = c(1, 1))
 )
+
+
 
 # Explicit (scenario, phase2SampleSizePerArm) combinations to run, rather
 # than expand.grid's full cross product. Edit these lists to add/remove
@@ -59,8 +37,7 @@ base_scenarios <- c("null", "dose_response", "no_dose_response",
 base_n2 <- 50
 sensitivity_specs <- list(
   list(scenario = c("null", "dose_response"), phase2SampleSizePerArm = 20),
-  list(scenario = c("unequal_hr", "nonresponder_effect"),
-       phase2SampleSizePerArm = 50)
+  list(scenario = c("null_pfs"), phase2SampleSizePerArm = 50)
 )
 
 make_design_grid <- function(base_scenarios, base_n2, sensitivity_specs) {
@@ -102,7 +79,8 @@ run_scenario <- function(scenario, phase2SampleSizePerArm, seed,
                     phase2SampleSizePerArm))
   }
   started_at <- Sys.time()
-  maxNumberOfIterations <- ifelse(tolower(scenario) == "null", 100000, 10000)
+  maxNumberOfIterations <- ifelse(grepl("null", tolower(scenario), fixed = TRUE),
+                                  100000, 10000)
 
   sim <- lrsim_bmTrtSel(
     phase2SampleSizePerArm = phase2SampleSizePerArm,
@@ -110,9 +88,11 @@ run_scenario <- function(scenario, phase2SampleSizePerArm, seed,
     phase3SampleSizePerArmMax = 163,
     responseProbControl = 0.4,
     responseProbTreatments = spec$responseProbTreatments,
-    toxicityProbTreatments = c(0, 0), corrEfficacyToxicity = 0,
+    toxicityProbTreatments = c(0, 0),
+    corrEfficacyToxicity = 0,
+    corrEfficacyTTE = 0.43,
     hazardRateControl = spec$hazardRateControl,
-    hazardRateTreatments = spec$hazardRateTreatments,
+    hazardRatioTreatments = spec$hazardRatioTreatments,
     studyDurationPhase3 = 42.1, toxicityWeight = 0, toxicityUpperLimit = 1,
     efficacyThreshold = 0, safetyThreshold = 0,
     methods = c("ctbonferroni", "ctdunnett", "ctsimes", "ctpooled", "cer",

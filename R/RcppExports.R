@@ -3767,8 +3767,8 @@ binary_tte_simRcpp <- function(kMax1 = 1L, kMax2 = 1L, riskDiffH0 = 0, hazardRat
     .Call(`_lrstat_binary_tte_simRcpp`, kMax1, kMax2, riskDiffH0, hazardRatioH0, allocation1, allocation2, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, globalOddsRatio, pi1, pi2, lambda1, lambda2, gamma1, gamma2, delta1, delta2, upper1, upper2, n, plannedTime, plannedEvents, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
 
-lrsim_bmTrtSel_Rcpp <- function(phase2SampleSizePerArm = NA_integer_, phase3SampleSizePerArmMin = NA_integer_, phase3SampleSizePerArmMax = NA_integer_, responseProbControl = NA_real_, responseProbTreatments = NA_real_, toxicityProbTreatments = NA_real_, corrEfficacyToxicity = 0, hazardRateControl = NA_real_, hazardRateTreatments = matrix(), studyDurationPhase3 = NA_real_, toxicityWeight = NA_real_, toxicityUpperLimit = NA_real_, efficacyThreshold = 0, safetyThreshold = 0, useUniformPrior = TRUE, methods = NULL, accrualRatePhase2 = NA_real_, accrualRatePhase3 = NA_real_, followupTimePhase2 = 0, maxNumberOfIterations = 1000L, maxNumberOfRawDatasets = 0L, seed = 0L) {
-    .Call(`_lrstat_lrsim_bmTrtSel_Rcpp`, phase2SampleSizePerArm, phase3SampleSizePerArmMin, phase3SampleSizePerArmMax, responseProbControl, responseProbTreatments, toxicityProbTreatments, corrEfficacyToxicity, hazardRateControl, hazardRateTreatments, studyDurationPhase3, toxicityWeight, toxicityUpperLimit, efficacyThreshold, safetyThreshold, useUniformPrior, methods, accrualRatePhase2, accrualRatePhase3, followupTimePhase2, maxNumberOfIterations, maxNumberOfRawDatasets, seed)
+lrsim_bmTrtSel_Rcpp <- function(phase2SampleSizePerArm = NA_integer_, phase3SampleSizePerArmMin = NA_integer_, phase3SampleSizePerArmMax = NA_integer_, responseProbControl = NA_real_, responseProbTreatments = NA_real_, toxicityProbTreatments = NA_real_, corrEfficacyToxicity = 0, corrEfficacyTTE = 0, hazardRateControl = NA_real_, hazardRatioTreatments = NA_real_, studyDurationPhase3 = NA_real_, toxicityWeight = NA_real_, toxicityUpperLimit = NA_real_, efficacyThreshold = 0, safetyThreshold = 0, useUniformPrior = TRUE, methods = NULL, accrualRatePhase2 = NA_real_, accrualRatePhase3 = NA_real_, followupTimePhase2 = 0, maxNumberOfIterations = 1000L, maxNumberOfRawDatasets = 0L, seed = 0L) {
+    .Call(`_lrstat_lrsim_bmTrtSel_Rcpp`, phase2SampleSizePerArm, phase3SampleSizePerArmMin, phase3SampleSizePerArmMax, responseProbControl, responseProbTreatments, toxicityProbTreatments, corrEfficacyToxicity, corrEfficacyTTE, hazardRateControl, hazardRatioTreatments, studyDurationPhase3, toxicityWeight, toxicityUpperLimit, efficacyThreshold, safetyThreshold, useUniformPrior, methods, accrualRatePhase2, accrualRatePhase3, followupTimePhase2, maxNumberOfIterations, maxNumberOfRawDatasets, seed)
 }
 
 lrsim_mcpmod_Rcpp <- function(M = 2L, alpha = 0.05, hazardRatioH0s = 1L, allocations = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambdas = NULL, candidateHazardRatios = NULL, gammas = NULL, n = NA_integer_, followupTime = NA_real_, fixedFollowup = FALSE, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = 0L) {
@@ -7815,7 +7815,6 @@ simonBayesAnalysis <- function(nstrata = NA_integer_, r = NA_real_, n = NA_real_
 #'   Defaults to 1000.
 #' @param maxNumberOfRawDatasets The number of raw datasets to extract.
 #' @param seed The seed to reproduce the simulation results.
-#'   The seed from the environment will be used if left unspecified,
 #'
 #' @return A list containing the following four components:
 #'

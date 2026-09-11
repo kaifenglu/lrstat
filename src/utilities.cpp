@@ -22,6 +22,8 @@
 #include <boost/math/distributions/students_t.hpp>
 #include <boost/math/quadrature/tanh_sinh.hpp>
 #include <boost/math/tools/minima.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/normal_distribution.hpp>
 
 using std::size_t;
 
@@ -2702,4 +2704,99 @@ std::vector<double> float_to_fraction(const double x,
   }
 
   return v;
+}
+
+// Lower-triangular Cholesky factor for multivariate normal sampling
+FlatMatrix cholesky_factor(const FlatMatrix &sigma) {
+  const size_t p = sigma.nrow;
+  if (sigma.ncol != p) {
+    throw std::invalid_argument("sigma must be a square matrix");
+  }
+  for (size_t col = 0; col < p; ++col) {
+    for (size_t row = 0; row < p; ++row) {
+      if (!std::isfinite(sigma(row, col))) {
+        throw std::invalid_argument("sigma must contain only finite values");
+      }
+      if (sigma(row, col) != sigma(col, row)) {
+        throw std::invalid_argument("sigma must be symmetric");
+      }
+    }
+    if (sigma(col, col) < 0.0) {
+      throw std::invalid_argument("sigma must have nonnegative variances");
+    }
+  }
+
+  FlatMatrix factor = sigma;
+  const int rank = cholesky2(factor, p, 1e-12);
+  if (rank < 0 ||
+      (rank == 0 && std::any_of(
+                        sigma.data.begin(), sigma.data.end(),
+                        [](double value) { return value != 0.0; }))) {
+    throw std::invalid_argument("sigma must be positive semidefinite");
+  }
+
+  for (size_t row = 0; row < p; ++row) {
+    factor(row, row) = std::sqrt(factor(row, row));
+    for (size_t col = 0; col < row; ++col) {
+      factor(row, col) *= factor(col, col);
+    }
+    for (size_t col = row + 1; col < p; ++col) {
+      factor(row, col) = 0.0;
+    }
+  }
+
+  return factor;
+}
+
+// Random multivariate normal samples from a precomputed lower Cholesky factor
+FlatMatrix rmvnorm_chol(size_t n, const std::vector<double> &mean,
+                        const FlatMatrix &factor,
+                        boost::random::mt19937_64 &rng) {
+  const size_t p = mean.size();
+  if (factor.nrow != p || factor.ncol != p) {
+    throw std::invalid_argument("factor must be a square matrix matching mean");
+  }
+  for (double value : mean) {
+    if (!std::isfinite(value)) {
+      throw std::invalid_argument("mean must contain only finite values");
+    }
+  }
+
+  boost::random::normal_distribution<double> norm(0.0, 1.0);
+
+  FlatMatrix result(n, p);
+  std::vector<double> z(p);
+  for (size_t i = 0; i < n; ++i) {
+    for (size_t j = 0; j < p; ++j) {
+      z[j] = norm(rng);
+    }
+
+    for (size_t j = 0; j < p; ++j) {
+      double value = mean[j];
+      for (size_t k = 0; k <= j; ++k) {
+        value += factor(j, k) * z[k];
+      }
+      result(i, j) = value;
+    }
+  }
+
+  return result;
+}
+
+FlatMatrix rmvnorm_chol(size_t n, const std::vector<double> &mean,
+                        const FlatMatrix &factor, int seed) {
+  boost::random::mt19937_64 rng(static_cast<uint64_t>(seed));
+  return rmvnorm_chol(n, mean, factor, rng);
+}
+
+FlatMatrix rmvnorm(size_t n, const std::vector<double> &mean,
+                   const FlatMatrix &sigma, boost::random::mt19937_64 &rng) {
+  FlatMatrix factor = cholesky_factor(sigma);
+  return rmvnorm_chol(n, mean, factor, rng);
+}
+
+FlatMatrix rmvnorm(size_t n, const std::vector<double> &mean,
+                   const FlatMatrix &sigma, int seed) {
+  boost::random::mt19937_64 rng(static_cast<uint64_t>(seed));
+  return rmvnorm(n, mean, sigma, rng);
 }

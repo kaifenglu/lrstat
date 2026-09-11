@@ -2,7 +2,8 @@
 % Please edit documentation in R/prints.R
 \name{print.rdsim_multiarm}
 \alias{print.rdsim_multiarm}
-\title{Print Simulation Results for Multi-Arm Multi-Stage Design for Risk Difference}
+\title{Print Simulation Results for Multi-Arm Multi-Stage Design for Risk
+Difference}
 \usage{
 \method{print}{rdsim_multiarm}(x, ...)
 }

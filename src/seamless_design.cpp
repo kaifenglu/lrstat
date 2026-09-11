@@ -133,7 +133,13 @@ ExitProbSeamless exitprob_seamless_cpp(const size_t M, const double r,
   std::vector<double> breaks_continue = {a[0], b[0]};
   std::vector<unsigned char> c(m1);
 
-  for (size_t m = 0; m < M; ++m) { // loop over the selected arm in phase 2
+  bool equalTheta = std::all_of(
+      theta.begin() + 1, theta.end(),
+      [&theta](const double value) { return value == theta[0]; });
+  size_t armsToEvaluate = equalTheta ? 1 : M;
+
+  for (size_t m = 0; m < armsToEvaluate;
+       ++m) { // loop over the selected arm in phase 2
     double mu = theta[m] * sqrtI0;
 
     // compute the conditional distribution of the Wald statistics for the
@@ -285,6 +291,21 @@ ExitProbSeamless exitprob_seamless_cpp(const size_t M, const double r,
       exitProbByArmLower(k + 1, m) = integrate3(hl, breaks_continue, 1e-4);
       exitProbUpper[k + 1] += exitProbByArmUpper(k + 1, m);
       exitProbLower[k + 1] += exitProbByArmLower(k + 1, m);
+    }
+  }
+
+  if (equalTheta) {
+    for (size_t m = 1; m < M; ++m) {
+      for (size_t k = 0; k < K + 1; ++k) {
+        exitProbByArmUpper(k, m) = exitProbByArmUpper(k, 0);
+        exitProbByArmLower(k, m) = exitProbByArmLower(k, 0);
+      }
+      selectionProb[m] = selectionProb[0];
+    }
+
+    for (size_t k = 0; k < K + 1; ++k) {
+      exitProbUpper[k] = M * exitProbByArmUpper(k, 0);
+      exitProbLower[k] = M * exitProbByArmLower(k, 0);
     }
   }
 

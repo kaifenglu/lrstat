@@ -6,10 +6,22 @@
   `fadjpduncpp` (used by `fadjpdun`) from `1.0` to positive infinity so that
   ratios exceeding 1 are properly accounted for when computing intersection
   p-values
+* added the `simulate` parameter to the `lrschoenfeld` function, and
+  added a half-count correction for extreme simulated powers
 * added the Bonferroni p-value combination method `ctbonferroni` to
   `lrsim_bmTrtSel`
+* added the familywise error rate `fwer` to the output of `lrsim_bmTrtSel`
+* changed long-term time-to-event endpoint generation in `lrsim_bmTrtSel`
+  from response-status-stratified hazards to a copula-based approach, with
+  the latent biomarker response variable correlated directly with the TTE
+  endpoint
+* optimized the CE variants in `lrsim_bmTrtSel` by precalculating the
+  sample size based nominal time stage boundaries once before data generation
 * optimized selection-boundary calculations by making use of no efficacy
   stopping in stage 1.
+* optimized `exitprob_seamless` under equal treatment effects by evaluating
+  the phase-2 selected-arm probabilities once and using arm symmetry for the
+  remaining arms
 * renamed the `fPCStagewise` input parameters `stg1_inthyp_nr` and
   `stg2_elemhyp` to `stg1_inthyp_nr_idx` and `stg2_elemhyp_idx`, respectively,
   to make their index semantics explicit and align them with the output names
@@ -20,6 +32,9 @@
 * added `sumdataBIN` and `sumdataTTE` summary datasets to `lrsim_bmTrtSel`,
   along with optional subject-level `rawdataBIN` and `rawdataTTE` datasets
   controlled by `maxNumberOfRawDatasets`
+* added `rmvnorm` and related multivariate-normal sampling helpers for drawing
+  correlated random vectors from a covariance matrix via Cholesky-based
+  generation and seeded overloads
 * removed `mvtnorm` from `Suggests`
 * changed the default value of `corrEfficacyToxicity` in
   `lrsim_bmTrtSel_cpp()` from `0.5` to `0`

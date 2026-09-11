@@ -224,10 +224,11 @@ pwexpcuts <- function(S, ..., tol = 0.0001) {
 
 #' @title Schoenfeld Method for Log-Rank Test Sample Size Calculation
 #' @description Obtains the sample size and study duration by calibrating
-#' the number of events calculated using the Schoenfeld formula
-#' under the proportional hazards assumption.
+#' the number of events calculated using the Schoenfeld formula under
+#' the proportional hazards assumption. The initial event target can be
+#' used directly or calibrated with simulation.
 #'
-#' @param beta Type II error. Defaults to 0.2.
+#' @param beta Type II error (one minus the target power). Defaults to 0.2.
 #' @inheritParams param_kMax
 #' @param informationRates The information rates in terms of number
 #'   of events for the conventional log-rank test and in terms of
@@ -266,21 +267,24 @@ pwexpcuts <- function(S, ..., tol = 0.0001) {
 #'   same as \code{informationRates}.
 #' @param rounding Whether to round up sample size and events.
 #'   Defaults to 1 for sample size rounding.
-#' @param calibrate Whether to use simulations to calibrate the number of
-#'   events calculated using the Schoenfeld formula.
+#' @param simulate Whether to use simulation to estimate empirical power
+#'   for the event target.
+#' @param calibrate Whether to use simulation to calibrate the number of
+#'   events calculated using the Schoenfeld formula. If \code{TRUE},
+#'   \code{simulate} is also treated as \code{TRUE}.
 #' @param maxNumberOfIterations The number of simulation iterations.
 #'   Defaults to 10000.
 #' @param maxNumberOfRawDatasetsPerStage The number of raw datasets per
 #'   stage to extract.
 #' @param seed The seed to reproduce the simulation results.
-#'   The seed from the environment will be used if left unspecified.
 #'
 #' @details
-#' This function calculates the sample size and study duration
-#' by calibrating the number of events estimated using the
-#' Schoenfeld formula under the proportional hazards assumption,
-#' particularly when the hazard ratio is far away from one and/or
-#' the allocation between groups is unequal.
+#' This function first calculates the required number of events using the
+#' group-sequential design and the Schoenfeld approximation. It then obtains
+#' the corresponding sample size and study duration from the accrual,
+#' event, and dropout assumptions. The optional simulation-based calibration
+#' is useful when the hazard ratio is far from one or the allocation is
+#' unequal, because the Schoenfeld approximation can then be inaccurate.
 #'
 #' For a fixed design, the Schoenfeld formula for the required
 #' number of events is
@@ -293,35 +297,49 @@ pwexpcuts <- function(S, ..., tol = 0.0001) {
 #' \eqn{\theta_0} and \eqn{\theta} are the log hazard ratios under
 #' the null and alternative hypotheses, respectively.
 #'
-#' The function first computes the number of events using the
-#' Schoenfeld formula. If \code{calibrate} is set to 1, the
-#' function uses simulations to calibrate the number of
-#' events, accounting for scenarios where the Schoenfeld formula
-#' may be inaccurate (e.g., when allocation is unequal or the hazard
-#' ratio is extreme).
-#'
-#' Let \eqn{D_{schoenfeld}} be the number of events calculated
-#' by the Schoenfeld formula, and \eqn{D_{calibrated}}
-#' be the calibrated number of events. The calibrated number of
-#' events is calculated as
-#' #' \deqn{D_{\text{calibrated}} =
+#' Let \eqn{D_{schoenfeld}} be the initial number of events calculated
+#' by the Schoenfeld formula, and \eqn{D_{calibrated}} be the calibrated
+#' number of events. A simulation estimates the empirical power
+#' \eqn{p_{schoenfeld}} at \eqn{D_{schoenfeld}}. The calibrated number
+#' of events is then calculated as
+#' \deqn{D_{\text{calibrated}} =
 #' \frac{\left\{\Phi^{-1}(1-\alpha) + \Phi^{-1}(1-\beta)\right\}^2}
-#' {\left\{\Phi^{-1}(1-\alpha) +
-#' \Phi^{-1}(1-\beta_{\text{schoenfeld}})\right\}^2}
+#' {\left\{\Phi^{-1}(1-\alpha) + \Phi^{-1}(p_{\text{schoenfeld}})\right\}^2}
 #' D_{\text{schoenfeld}}}
-#' where \eqn{\beta_{schoenfeld}} is the empirical type II error
-#' estimated via simulation.
+#' Here \eqn{p_{schoenfeld}} is the empirical rejection probability
+#' estimated by the first simulation. If \code{rounding = TRUE}, the
+#' calibrated total and cumulative stage event targets are rounded up or
+#' to the nearest integer as appropriate.
+#' A half-count correction is applied to the simulated rejection count if
+#' needed so that empirical power values of exactly 0 or 1 do not produce
+#' infinite normal quantiles.
 #'
-#' A second round of simulation is performed to obtain the
-#' empirical power using the calibrated number of events.
+#' A second simulation is performed to obtain empirical power using the
+#' calibrated number of events. With \code{simulate = FALSE}, only the
+#' analytical result is returned. With \code{simulate = TRUE} and
+#' \code{calibrate = FALSE}, the simulation uses the initial target.
+#' With \code{calibrate = TRUE}, the simulation uses the calibrated target.
 #'
-#' @return A list of two components:
+#' When \code{simulate = FALSE}, the function returns the number of events
+#' calculated using the Schoenfeld formula and the corresponding sample size
+#' and study duration without simulation results for the empirical power.
+#'
+#' When \code{simulate = TRUE}, the function returns the event target used
+#' for the simulation and the corresponding sample size and study duration
+#' along with simulation results for empirical power. The target is the
+#' Schoenfeld target when \code{calibrate = FALSE} and the calibrated target
+#' when \code{calibrate = TRUE}.
+#'
+#' @return A list of two components when \code{simulate = TRUE}:
 #'
 #' * \code{analyticalResults}: An S3 class \code{lrpower} object for
 #'   the asymptotic power.
 #'
 #' * \code{simulationResults}: An S3 class \code{lrsim} object for
 #'   the empirical power.
+#'
+#' A list of one component for \code{analyticalResults} when
+#' \code{simulate = FALSE}.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -334,7 +352,8 @@ pwexpcuts <- function(S, ..., tol = 0.0001) {
 #'   lambda2 = 1.9/12,
 #'   gamma1 = -log(1-0.1)/24, gamma2 = -log(1-0.1)/24,
 #'   fixedFollowup = FALSE, rounding = TRUE,
-#'   calibrate = FALSE, maxNumberOfIterations = 1000,
+#'   simulate = TRUE, calibrate = FALSE,
+#'   maxNumberOfIterations = 1000,
 #'   seed = 12345))
 #'
 #' (lr2 <- lrschoenfeld(
@@ -344,7 +363,8 @@ pwexpcuts <- function(S, ..., tol = 0.0001) {
 #'   lambda2 = 1.9/12,
 #'   gamma1 = -log(1-0.1)/24, gamma2 = -log(1-0.1)/24,
 #'   fixedFollowup = FALSE, rounding = TRUE,
-#'   calibrate = TRUE, maxNumberOfIterations = 1000,
+#'   simulate = TRUE, calibrate = TRUE,
+#'   maxNumberOfIterations = 1000,
 #'   seed = 12345))
 #'
 #' @export
@@ -380,7 +400,8 @@ lrschoenfeld <- function(
     fixedFollowup = FALSE,
     spendingTime = NA_real_,
     rounding = TRUE,
-    calibrate = TRUE,
+    simulate = FALSE,
+    calibrate = FALSE,
     maxNumberOfIterations = 10000L,
     maxNumberOfRawDatasetsPerStage = 0L,
     seed = NA_integer_) {
@@ -448,86 +469,18 @@ lrschoenfeld <- function(
     nsubjects <- lrp1$overallResults$numberOfSubjects
   }
 
-  # run a simulation to verify the analytic results
-  d <- lrp1$overallResults$numberOfEvents
-  plannedEvents <- floor(lrp1$byStageResults$numberOfEvents + 0.5)
-  informationRates <- lrp1$byStageResults$informationRates
-  allocation <- float_to_fraction(allocationRatioPlanned)
+  # force simulation to calibrate the number of events
+  if (calibrate) simulate = TRUE
 
-  lrs1 <- lrsim(
-    kMax, informationRates,
-    lrp1$byStageResults$efficacyBounds,
-    lrp1$byStageResults$futilityBounds,
-    hazardRatioH0, allocation[1], allocation[2],
-    accrualTime, accrualIntensity,
-    piecewiseSurvivalTime, stratumFraction,
-    lambda1, lambda2, gamma1, gamma2,
-    nsubjects, followupTime,
-    fixedFollowup, 0, 0,
-    plannedEvents, NA,
-    maxNumberOfIterations,
-    maxNumberOfRawDatasetsPerStage, seed)
-
-  if (calibrate) {
-    p <- lrs1$overview$overallReject
-
-    # calibrate number of events
-    d <- d*((qnorm(1-alpha) + qnorm(1-beta))/(qnorm(1-alpha) + qnorm(p)))^2
-    if (rounding) {
-      d <- ceiling(d - 1.0e-12)
-      nevents <- floor(d*informationRates + 0.5)
-      informationRates <- nevents/d
-    } else {
-      nevents <- d*informationRates
-    }
-
-    if (!fixedFollowup) { # fix accrual duration and find followup time
-      studyDuration <- caltime(
-        d, allocationRatioPlanned,
-        accrualTime, accrualIntensity,
-        piecewiseSurvivalTime, stratumFraction,
-        lambda1, lambda2, gamma1, gamma2,
-        accrualDuration, 1000, fixedFollowup)
-
-      followupTime <- studyDuration - accrualDuration
-    } else { # update accrual duration directly
-      durations <- getDurationFromNevents(
-        d, allocationRatioPlanned,
-        accrualTime, accrualIntensity,
-        piecewiseSurvivalTime, stratumFraction,
-        lambda1, lambda2, gamma1, gamma2,
-        followupTime, fixedFollowup, 2)
-
-      nsubjects <- ceiling(durations$subjects[1])
-
-      accrualDuration <- getAccrualDurationFromN(
-        nsubjects, accrualTime, accrualIntensity)
-
-      studyDuration <- caltime(
-        d, allocationRatioPlanned,
-        accrualTime, accrualIntensity,
-        piecewiseSurvivalTime, stratumFraction,
-        lambda1, lambda2, gamma1, gamma2,
-        accrualDuration, followupTime, fixedFollowup)
-    }
-
-    lrp1 <- lrpower(
-      kMax, informationRates,
-      efficacyStopping, futilityStopping,
-      criticalValues, alpha, typeAlphaSpending,
-      parameterAlphaSpending, userAlphaSpending,
-      futilityBounds, futilityCP, futilityHR,
-      typeBetaSpending, parameterBetaSpending,
-      hazardRatioH0, allocationRatioPlanned,
-      accrualTime, accrualIntensity,
-      piecewiseSurvivalTime, stratumFraction,
-      lambda1, lambda2, gamma1, gamma2,
-      accrualDuration, followupTime,
-      fixedFollowup, 0, 0, "schoenfeld",
-      spendingTime, studyDuration)
+  if (simulate) {
+    # run a simulation to verify the analytic results
+    d <- lrp1$overallResults$numberOfEvents
+    plannedEvents <- floor(lrp1$byStageResults$numberOfEvents + 0.5)
+    informationRates <- lrp1$byStageResults$informationRates
+    allocation <- float_to_fraction(allocationRatioPlanned)
 
     lrs1 <- lrsim(
-      kMax, lrp1$byStageResults$informationRates,
+      kMax, informationRates,
       lrp1$byStageResults$efficacyBounds,
       lrp1$byStageResults$futilityBounds,
       hazardRatioH0, allocation[1], allocation[2],
@@ -535,11 +488,92 @@ lrschoenfeld <- function(
       piecewiseSurvivalTime, stratumFraction,
       lambda1, lambda2, gamma1, gamma2,
       nsubjects, followupTime,
-      fixedFollowup, 0, 0, nevents, NA,
+      fixedFollowup, 0, 0,
+      plannedEvents, NA,
       maxNumberOfIterations,
       maxNumberOfRawDatasetsPerStage, seed)
-  }
 
-  list(analyticalResults = lrp1,
-       simulationResults = lrs1)
+    if (calibrate) {
+      p <- lrs1$overview$overallReject
+      if (p == 0 || p == 1) {
+        niterations <- lrs1$overview$numberOfIterations
+        p <- (p*niterations + 0.5)/(niterations + 1)
+      }
+      betaObserved <- 1 - p
+
+      # calibrate number of events
+            d <- d*((qnorm(1-alpha) + qnorm(1-beta)) /
+              (qnorm(1-alpha) + qnorm(1-betaObserved)))^2
+      if (rounding) {
+        d <- ceiling(d - 1.0e-12)
+        nevents <- floor(d*informationRates + 0.5)
+        informationRates <- nevents/d
+      } else {
+        nevents <- d*informationRates
+      }
+
+      if (!fixedFollowup) { # fix accrual duration and find followup time
+        studyDuration <- caltime(
+          d, allocationRatioPlanned,
+          accrualTime, accrualIntensity,
+          piecewiseSurvivalTime, stratumFraction,
+          lambda1, lambda2, gamma1, gamma2,
+          accrualDuration, 1000, fixedFollowup)
+
+        followupTime <- studyDuration - accrualDuration
+      } else { # update accrual duration directly
+        durations <- getDurationFromNevents(
+          d, allocationRatioPlanned,
+          accrualTime, accrualIntensity,
+          piecewiseSurvivalTime, stratumFraction,
+          lambda1, lambda2, gamma1, gamma2,
+          followupTime, fixedFollowup, 2)
+
+        nsubjects <- ceiling(durations$subjects[1])
+
+        accrualDuration <- getAccrualDurationFromN(
+          nsubjects, accrualTime, accrualIntensity)
+
+        studyDuration <- caltime(
+          d, allocationRatioPlanned,
+          accrualTime, accrualIntensity,
+          piecewiseSurvivalTime, stratumFraction,
+          lambda1, lambda2, gamma1, gamma2,
+          accrualDuration, followupTime, fixedFollowup)
+      }
+
+      lrp1 <- lrpower(
+        kMax, informationRates,
+        efficacyStopping, futilityStopping,
+        criticalValues, alpha, typeAlphaSpending,
+        parameterAlphaSpending, userAlphaSpending,
+        futilityBounds, futilityCP, futilityHR,
+        typeBetaSpending, parameterBetaSpending,
+        hazardRatioH0, allocationRatioPlanned,
+        accrualTime, accrualIntensity,
+        piecewiseSurvivalTime, stratumFraction,
+        lambda1, lambda2, gamma1, gamma2,
+        accrualDuration, followupTime,
+        fixedFollowup, 0, 0, "schoenfeld",
+        spendingTime, studyDuration)
+
+      lrs1 <- lrsim(
+        kMax, lrp1$byStageResults$informationRates,
+        lrp1$byStageResults$efficacyBounds,
+        lrp1$byStageResults$futilityBounds,
+        hazardRatioH0, allocation[1], allocation[2],
+        accrualTime, accrualIntensity,
+        piecewiseSurvivalTime, stratumFraction,
+        lambda1, lambda2, gamma1, gamma2,
+        nsubjects, followupTime,
+        fixedFollowup, 0, 0, nevents, NA,
+        maxNumberOfIterations,
+        maxNumberOfRawDatasetsPerStage, seed)
+    }
+
+    list(analyticalResults = lrp1,
+         simulationResults = lrs1)
+  } else {
+    list(analyticalResults = lrp1)
+  }
 }

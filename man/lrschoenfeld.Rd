@@ -35,14 +35,15 @@ lrschoenfeld(
   fixedFollowup = FALSE,
   spendingTime = NA_real_,
   rounding = TRUE,
-  calibrate = TRUE,
+  simulate = FALSE,
+  calibrate = FALSE,
   maxNumberOfIterations = 10000L,
   maxNumberOfRawDatasetsPerStage = 0L,
   seed = NA_integer_
 )
 }
 \arguments{
-\item{beta}{Type II error. Defaults to 0.2.}
+\item{beta}{Type II error (one minus the target power). Defaults to 0.2.}
 
 \item{kMax}{The maximum number of stages.}
 
@@ -159,8 +160,12 @@ same as \code{informationRates}.}
 \item{rounding}{Whether to round up sample size and events.
 Defaults to 1 for sample size rounding.}
 
-\item{calibrate}{Whether to use simulations to calibrate the number of
-events calculated using the Schoenfeld formula.}
+\item{simulate}{Whether to use simulation to estimate empirical power
+for the event target.}
+
+\item{calibrate}{Whether to use simulation to calibrate the number of
+events calculated using the Schoenfeld formula. If \code{TRUE},
+\code{simulate} is also treated as \code{TRUE}.}
 
 \item{maxNumberOfIterations}{The number of simulation iterations.
 Defaults to 10000.}
@@ -168,29 +173,33 @@ Defaults to 10000.}
 \item{maxNumberOfRawDatasetsPerStage}{The number of raw datasets per
 stage to extract.}
 
-\item{seed}{The seed to reproduce the simulation results.
-The seed from the environment will be used if left unspecified.}
+\item{seed}{The seed to reproduce the simulation results.}
 }
 \value{
-A list of two components:
+A list of two components when \code{simulate = TRUE}:
 \itemize{
 \item \code{analyticalResults}: An S3 class \code{lrpower} object for
 the asymptotic power.
 \item \code{simulationResults}: An S3 class \code{lrsim} object for
 the empirical power.
 }
+
+A list of one component for \code{analyticalResults} when
+\code{simulate = FALSE}.
 }
 \description{
 Obtains the sample size and study duration by calibrating
-the number of events calculated using the Schoenfeld formula
-under the proportional hazards assumption.
+the number of events calculated using the Schoenfeld formula under
+the proportional hazards assumption. The initial event target can be
+used directly or calibrated with simulation.
 }
 \details{
-This function calculates the sample size and study duration
-by calibrating the number of events estimated using the
-Schoenfeld formula under the proportional hazards assumption,
-particularly when the hazard ratio is far away from one and/or
-the allocation between groups is unequal.
+This function first calculates the required number of events using the
+group-sequential design and the Schoenfeld approximation. It then obtains
+the corresponding sample size and study duration from the accrual,
+event, and dropout assumptions. The optional simulation-based calibration
+is useful when the hazard ratio is far from one or the allocation is
+unequal, because the Schoenfeld approximation can then be inaccurate.
 
 For a fixed design, the Schoenfeld formula for the required
 number of events is
@@ -203,27 +212,38 @@ where \eqn{D} is the total number of events required,
 \eqn{\theta_0} and \eqn{\theta} are the log hazard ratios under
 the null and alternative hypotheses, respectively.
 
-The function first computes the number of events using the
-Schoenfeld formula. If \code{calibrate} is set to 1, the
-function uses simulations to calibrate the number of
-events, accounting for scenarios where the Schoenfeld formula
-may be inaccurate (e.g., when allocation is unequal or the hazard
-ratio is extreme).
-
-Let \eqn{D_{schoenfeld}} be the number of events calculated
-by the Schoenfeld formula, and \eqn{D_{calibrated}}
-be the calibrated number of events. The calibrated number of
-events is calculated as
-#' \deqn{D_{\text{calibrated}} =
+Let \eqn{D_{schoenfeld}} be the initial number of events calculated
+by the Schoenfeld formula, and \eqn{D_{calibrated}} be the calibrated
+number of events. A simulation estimates the empirical power
+\eqn{p_{schoenfeld}} at \eqn{D_{schoenfeld}}. The calibrated number
+of events is then calculated as
+\deqn{D_{\text{calibrated}} =
 \frac{\left\{\Phi^{-1}(1-\alpha) + \Phi^{-1}(1-\beta)\right\}^2}
-{\left\{\Phi^{-1}(1-\alpha) +
-\Phi^{-1}(1-\beta_{\text{schoenfeld}})\right\}^2}
+{\left\{\Phi^{-1}(1-\alpha) + \Phi^{-1}(p_{\text{schoenfeld}})\right\}^2}
 D_{\text{schoenfeld}}}
-where \eqn{\beta_{schoenfeld}} is the empirical type II error
-estimated via simulation.
+Here \eqn{p_{schoenfeld}} is the empirical rejection probability
+estimated by the first simulation. If \code{rounding = TRUE}, the
+calibrated total and cumulative stage event targets are rounded up or
+to the nearest integer as appropriate.
+A half-count correction is applied to the simulated rejection count if
+needed so that empirical power values of exactly 0 or 1 do not produce
+infinite normal quantiles.
 
-A second round of simulation is performed to obtain the
-empirical power using the calibrated number of events.
+A second simulation is performed to obtain empirical power using the
+calibrated number of events. With \code{simulate = FALSE}, only the
+analytical result is returned. With \code{simulate = TRUE} and
+\code{calibrate = FALSE}, the simulation uses the initial target.
+With \code{calibrate = TRUE}, the simulation uses the calibrated target.
+
+When \code{simulate = FALSE}, the function returns the number of events
+calculated using the Schoenfeld formula and the corresponding sample size
+and study duration without simulation results for the empirical power.
+
+When \code{simulate = TRUE}, the function returns the event target used
+for the simulation and the corresponding sample size and study duration
+along with simulation results for empirical power. The target is the
+Schoenfeld target when \code{calibrate = FALSE} and the calibrated target
+when \code{calibrate = TRUE}.
 }
 \examples{
 
@@ -234,7 +254,8 @@ empirical power using the calibrated number of events.
   lambda2 = 1.9/12,
   gamma1 = -log(1-0.1)/24, gamma2 = -log(1-0.1)/24,
   fixedFollowup = FALSE, rounding = TRUE,
-  calibrate = FALSE, maxNumberOfIterations = 1000,
+  simulate = TRUE, calibrate = FALSE,
+  maxNumberOfIterations = 1000,
   seed = 12345))
 
 (lr2 <- lrschoenfeld(
@@ -244,7 +265,8 @@ empirical power using the calibrated number of events.
   lambda2 = 1.9/12,
   gamma1 = -log(1-0.1)/24, gamma2 = -log(1-0.1)/24,
   fixedFollowup = FALSE, rounding = TRUE,
-  calibrate = TRUE, maxNumberOfIterations = 1000,
+  simulate = TRUE, calibrate = TRUE,
+  maxNumberOfIterations = 1000,
   seed = 12345))
 
 }

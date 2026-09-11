@@ -2,7 +2,8 @@
 % Please edit documentation in R/prints.R
 \name{print.lrsim_multiarm}
 \alias{print.lrsim_multiarm}
-\title{Print Simulation Results for Multi-Arm Multi-Stage Design for Logrank Test}
+\title{Print Simulation Results for Multi-Arm Multi-Stage Design for Logrank
+Test}
 \usage{
 \method{print}{lrsim_multiarm}(x, ...)
 }

@@ -608,8 +608,8 @@ testthat::test_that("lrsim empirical rejection converges near analytic target in
 })
 
 testthat::test_that("lrsim_bmTrtSel summary data reproduce operating characteristics", {
-  hazard_control <- c(log(2) / 12, log(2) / 24)
-  hazard_treatments <- rbind(c(0.75, 0.75), c(0.85, 0.85)) * hazard_control
+  hazard_control <- log(2) / 24
+  hazard_ratios <- c(0.75, 0.85)
   sim <- lrsim_bmTrtSel(
     phase2SampleSizePerArm = 20,
     phase3SampleSizePerArmMin = 25,
@@ -618,8 +618,9 @@ testthat::test_that("lrsim_bmTrtSel summary data reproduce operating characteris
     responseProbTreatments = c(0.6, 0.5),
     toxicityProbTreatments = c(0.1, 0.2),
     corrEfficacyToxicity = 0,
+    corrEfficacyTTE = 0,
     hazardRateControl = hazard_control,
-    hazardRateTreatments = hazard_treatments,
+    hazardRatioTreatments = hazard_ratios,
     studyDurationPhase3 = 24,
     toxicityWeight = 0.25,
     toxicityUpperLimit = 0.4,
@@ -674,6 +675,7 @@ testthat::test_that("lrsim_bmTrtSel summary data reproduce operating characteris
     testthat::expect_equal(generalized_power, expected$gpower)
     testthat::expect_equal(probability_any, expected$prob.rej.any)
     testthat::expect_equal(probability_each, expected$prob.rej.each)
+    testthat::expect_length(expected$fwer, length(sim$n2))
   }
 
   testthat::expect_equal(nrow(binary), sim$numberOfIterations * 3L)
@@ -688,8 +690,9 @@ testthat::test_that("lrsim_bmTrtSel summary data reproduce operating characteris
     responseProbTreatments = c(0.6, 0.5),
     toxicityProbTreatments = c(0.1, 0.2),
     corrEfficacyToxicity = 0,
+    corrEfficacyTTE = 0,
     hazardRateControl = hazard_control,
-    hazardRateTreatments = hazard_treatments,
+    hazardRatioTreatments = hazard_ratios,
     studyDurationPhase3 = 12,
     toxicityWeight = 0,
     toxicityUpperLimit = 1e-12,
@@ -711,7 +714,7 @@ testthat::test_that("lrsim_bmTrtSel summary data reproduce operating characteris
 })
 
 testthat::test_that("lrsim_bmTrtSel uses lowercase method identifiers", {
-  hazard_control <- c(log(2) / 12, log(2) / 24)
+  hazard_control <- log(2) / 24
   sim <- lrsim_bmTrtSel(
     phase2SampleSizePerArm = 10,
     phase3SampleSizePerArmMin = 12,
@@ -720,8 +723,9 @@ testthat::test_that("lrsim_bmTrtSel uses lowercase method identifiers", {
     responseProbTreatments = c(0.6, 0.5),
     toxicityProbTreatments = c(0.1, 0.2),
     corrEfficacyToxicity = 0,
+    corrEfficacyTTE = 0,
     hazardRateControl = hazard_control,
-    hazardRateTreatments = rbind(c(0.75, 0.75), c(0.85, 0.85)) * hazard_control,
+    hazardRatioTreatments = c(0.75, 0.85),
     studyDurationPhase3 = 12,
     toxicityWeight = 0,
     toxicityUpperLimit = 1,
@@ -743,7 +747,7 @@ testthat::test_that("lrsim_bmTrtSel uses lowercase method identifiers", {
 })
 
 testthat::test_that("lrsim_bmTrtSel supports rank-based TSSSD methods", {
-  hazard_control <- c(log(2) / 12, log(2) / 24)
+  hazard_control <- log(2) / 24
   methods <- c("tsssd.k.rank", "tsssd.uk.rank", "tsssd.k.rank.ce",
                "tsssd.uk.rank.ce")
   sim <- lrsim_bmTrtSel(
@@ -754,8 +758,9 @@ testthat::test_that("lrsim_bmTrtSel supports rank-based TSSSD methods", {
     responseProbTreatments = c(0.6, 0.5),
     toxicityProbTreatments = c(0.1, 0.2),
     corrEfficacyToxicity = 0,
+    corrEfficacyTTE = 0,
     hazardRateControl = hazard_control,
-    hazardRateTreatments = rbind(c(0.75, 0.75), c(0.85, 0.85)) * hazard_control,
+    hazardRatioTreatments = c(0.75, 0.85),
     studyDurationPhase3 = 12,
     toxicityWeight = 0,
     toxicityUpperLimit = 1,

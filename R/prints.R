@@ -3518,11 +3518,13 @@ print.adaptDesign_seamless <- function(x, ...) {
                  round(des1$maxInformation, 2))
 
   str9 <- paste0("Interim adaptation look in Phase 3: ", des1$L, ", ",
-                 "z-statistic value: ", paste(round(des1$zL, 3), collapse = ", "))
+                 "z-statistic value: ",
+                 paste(round(des1$zL, 3), collapse = ", "))
 
   str10 <- paste0("theta: ", round(des1$theta, 3))
 
-  str11 <- paste0("Conditional type I error: ", round(des1$conditionalAlpha, 4),
+  str11 <- paste0("Conditional type I error: ",
+                  round(des1$conditionalAlpha, 4),
                   ", conditional power: ", round(des1$conditionalPower, 3))
 
   str12 <- paste0("Muller & Schafer method for secondary trial: ",
@@ -3647,7 +3649,8 @@ print.adaptDesign_seamless <- function(x, ...) {
                  round(des3$maxInformation, 2))
 
   str6 <- paste0("Interim adaptation look in Phase 3: ", des3$L, ", ",
-                 "z-statistic value: ", paste(round(des3$zL, 3), collapse = ", "))
+                 "z-statistic value: ",
+                 paste(round(des3$zL, 3), collapse = ", "))
 
   df3a <- data.frame(x = rep("", 7))
   colnames(df3a) <- NULL
@@ -3691,8 +3694,10 @@ print.adaptDesign_seamless <- function(x, ...) {
 }
 
 
-#' @title Print Simulation Results for Phase 2/3 Seamless Design for Risk Difference
-#' @description Prints the summary statistics from simulation for risk difference.
+#' @title Print Simulation Results for Phase 2/3 Seamless Design for Risk
+#' Difference
+#' @description Prints the summary statistics from simulation for risk
+#' difference.
 #'
 #' @param x The rdsim_seamless object to print.
 #' @param ... Ensures that all arguments starting from "..." are named.
@@ -3814,7 +3819,8 @@ print.rdsim_seamless <- function(x, ...) {
 }
 
 
-#' @title Print Simulation Results for Phase 2/3 Seamless Design for Logrank Test
+#' @title Print Simulation Results for Phase 2/3 Seamless Design for Logrank
+#' Test
 #' @description Prints the summary statistics from simulation for logrank test.
 #'
 #' @param x The lrsim_seamless object to print.
@@ -4116,19 +4122,25 @@ print.lrsim_mcpmod <- function(x, ...) {
   labels <- c(paste("Active", seq_len(M)), "Control")
   df2 <- data.frame(
     treatmentGroup = labels,
-    accruals = as.numeric(tapply(s1$accruals[keep], s1$treatmentGroup[keep], mean)),
-    events = as.numeric(tapply(s1$events[keep], s1$treatmentGroup[keep], mean)),
-    dropouts = as.numeric(tapply(s1$dropouts[keep], s1$treatmentGroup[keep], mean))
+    accruals = as.numeric(tapply(s1$accruals[keep],
+                                 s1$treatmentGroup[keep], mean)),
+    events = as.numeric(tapply(s1$events[keep],
+                               s1$treatmentGroup[keep], mean)),
+    dropouts = as.numeric(tapply(s1$dropouts[keep],
+                                 s1$treatmentGroup[keep], mean))
   )
   df2[2:4] <- lapply(df2[2:4], formatC, format = "f", digits = 1)
   colnames(df2) <- c("Treatment", "Expected # subjects", "Expected # events",
                      "Expected # dropouts")
 
-  ev_not_achieved <- mean(as.numeric(s1$eventsNotAchieved[s1$treatmentGroup == (M + 2)]))
+  ev_not_achieved <- mean(as.numeric(
+    s1$eventsNotAchieved[s1$treatmentGroup == (M + 2)]))
   opt_model <- vapply(x$sumdata2, function(row) row$optimalModel, numeric(1))
   df3 <- data.frame(
-    metric = c("Event target not achieved", paste("Selected model", seq_len(T))),
-    probability = c(ev_not_achieved, tabulate(opt_model, nbins = T) / length(opt_model))
+    metric = c("Event target not achieved",
+               paste("Selected model", seq_len(T))),
+    probability = c(ev_not_achieved,
+                    tabulate(opt_model, nbins = T) / length(opt_model))
   )
   df3[2] <- lapply(df3[2], formatC, format = "f", digits = 4)
   colnames(df3) <- c("Metric", "Probability")
@@ -4359,9 +4371,11 @@ print.adaptDesign_multiarm <- function(x, ...) {
                  round(des1$maxInformation, 2))
   str7 <- paste0("Number of looks: ", des1$kMax)
   str8 <- paste0("Interim adaptation look: ", des1$L, ", ",
-                 "z-statistic value: ", paste(round(des1$zL, 3), collapse = ", "))
+                 "z-statistic value: ",
+                 paste(round(des1$zL, 3), collapse = ", "))
   str9 <- paste0("theta: ", paste(round(des1$theta, 3), collapse = ", "))
-  str10 <- paste0("Conditional type I error: ", round(des1$conditionalAlpha, 4),
+  str10 <- paste0("Conditional type I error: ",
+                  round(des1$conditionalAlpha, 4),
                   ", conditional power: ", round(des1$conditionalPower, 3))
   str11 <- paste0("Muller & Schafer method for secondary trial: ",
                   des1$MullerSchafer)
@@ -4405,7 +4419,8 @@ print.adaptDesign_multiarm <- function(x, ...) {
   str1 <- "Secondary trial:"
   str2 <- "Multi-arm multi-stage design"
   str3 <- paste0("Number of selected active arms: ", des2$M, ", ",
-                 "selected active arms: ", paste(des2$selected, collapse = ", "))
+                 "selected active arms: ",
+                 paste(des2$selected, collapse = ", "))
   str4 <- paste0("Randomization ratio of each active vs. control: ", des2$r)
   str5 <- paste0("Maximum information: ", round(des2$maxInformation, 2))
   str6 <- paste0("Overall power: ",
@@ -4452,10 +4467,12 @@ print.adaptDesign_multiarm <- function(x, ...) {
   str2 <- paste0("Adaptive multi-arm multi-stage design")
   str3 <- paste0("Number of active arms before adaptation: ", des3$M)
   str4 <- paste0("Number of selected active arms: ", des3$MNew, ", ",
-                 "selected active arms: ", paste(des3$selected, collapse = ", "))
+                 "selected active arms: ",
+                 paste(des3$selected, collapse = ", "))
   str5 <- paste0("Total number of looks: ", des3$kMax)
   str6 <- paste0("Interim adaptation look: ", des3$L, ", ",
-                 "z-statistic value: ", paste(round(des3$zL, 3), collapse = ", "))
+                 "z-statistic value: ",
+                 paste(round(des3$zL, 3), collapse = ", "))
 
   df3a <- data.frame(x = rep("", 7))
   colnames(df3a) <- NULL
@@ -4513,7 +4530,8 @@ print.adaptDesign_multiarm <- function(x, ...) {
 }
 
 
-#' @title Print Simulation Results for Multi-Arm Multi-Stage Design for Logrank Test
+#' @title Print Simulation Results for Multi-Arm Multi-Stage Design for Logrank
+#' Test
 #' @description Prints the summary statistics from simulation for logrank test.
 #'
 #' @param x The lrsim_multiarm object to print.
@@ -4647,7 +4665,8 @@ print.lrsim_multiarm <- function(x, ...) {
   invisible(x)
 }
 
-#' @title Print Simulation Results for Multi-Arm Multi-Stage Design for Risk Difference
+#' @title Print Simulation Results for Multi-Arm Multi-Stage Design for Risk
+#' Difference
 #' @description Prints the summary statistics from risk-difference simulation.
 #'
 #' @param x The rdsim_multiarm object to print.

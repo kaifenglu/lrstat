@@ -58,8 +58,7 @@ Defaults to 1000.}
 
 \item{maxNumberOfRawDatasets}{The number of raw datasets to extract.}
 
-\item{seed}{The seed to reproduce the simulation results.
-The seed from the environment will be used if left unspecified,}
+\item{seed}{The seed to reproduce the simulation results.}
 }
 \value{
 A list containing the following four components:

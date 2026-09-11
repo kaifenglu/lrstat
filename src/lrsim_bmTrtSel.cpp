@@ -268,9 +268,10 @@ struct SimWorker : public RcppParallel::Worker {
   const double p0;
   const std::vector<double> &pe;
   const std::vector<double> &pt;
-  const double rho;
-  const std::vector<double> &the0;
-  const FlatMatrix &the1;
+  const double rho_tox;
+  const double rho_eff;
+  const double hazardRateControl;
+  const std::vector<double> &hazardRatioTreatments;
   const double T_max;
   const double w;
   const double phi_t;
@@ -288,27 +289,41 @@ struct SimWorker : public RcppParallel::Worker {
   const FlatMatrix &corr;
   const StageBoundaries &sb;
   const bool uniform_prior;
+  const bool needTsssdCe;
+  const std::vector<double> &tNominal;
+  const std::vector<std::vector<double>> &tsssdKnownNomByEff;
+  const std::vector<std::vector<double>> &tsssdUnknownNomByEff;
 
   std::vector<TrialResult> *results;
 
   SimWorker(size_t M_, size_t n1_, size_t n2min_, size_t n2max_, double p0_,
             const std::vector<double> &pe_, const std::vector<double> &pt_,
-            double rho_, const std::vector<double> &the0_,
-            const FlatMatrix &the1_, double T_max_, double w_, double phi_t_,
+            double rho_tox_, double rho_eff_, double hazardRateControl_,
+            const std::vector<double> &hazardRatioTreatments_, double T_max_,
+            double w_, double phi_t_,
             double ce_, double ct_, double acc_rate1_, double acc_rate2_,
             double T_ph2followup_, size_t maxRawDatasets_,
             const std::vector<uint64_t> &seeds_,
             const std::vector<unsigned char> &use_, const WeightMatrix &wgtmat_,
             const WeightMatrix &wgtmat1_, const BoolMatrix &family_,
             const FlatMatrix &corr_, const StageBoundaries &sb_,
-            bool uniform_prior_, std::vector<TrialResult> *results_)
+            bool uniform_prior_, bool needTsssdCe_,
+            const std::vector<double> &tNominal_,
+            const std::vector<std::vector<double>> &tsssdKnownNomByEff_,
+            const std::vector<std::vector<double>> &tsssdUnknownNomByEff_,
+            std::vector<TrialResult> *results_)
       : M(M_), n1(n1_), n2min(n2min_), n2max(n2max_), p0(p0_), pe(pe_), pt(pt_),
-        rho(rho_), the0(the0_), the1(the1_), T_max(T_max_), w(w_),
+        rho_tox(rho_tox_), rho_eff(rho_eff_),
+        hazardRateControl(hazardRateControl_),
+        hazardRatioTreatments(hazardRatioTreatments_), T_max(T_max_), w(w_),
         phi_t(phi_t_), ce(ce_), ct(ct_), acc_rate1(acc_rate1_),
         acc_rate2(acc_rate2_), T_ph2followup(T_ph2followup_),
         maxRawDatasets(maxRawDatasets_), seeds(seeds_),
         use(use_), wgtmat(wgtmat_), wgtmat1(wgtmat1_), family(family_),
-        corr(corr_), sb(sb_), uniform_prior(uniform_prior_), results(results_) {
+        corr(corr_), sb(sb_), uniform_prior(uniform_prior_),
+        needTsssdCe(needTsssdCe_),
+        tNominal(tNominal_), tsssdKnownNomByEff(tsssdKnownNomByEff_),
+        tsssdUnknownNomByEff(tsssdUnknownNomByEff_), results(results_) {
   }
 
   void operator()(std::size_t begin, std::size_t end) {
@@ -316,7 +331,8 @@ struct SimWorker : public RcppParallel::Worker {
     const size_t narm = M + 1; // arm 0 is the control arm
     const size_t ngrid = n2max - n2min + 1;
     const size_t ntests = (static_cast<size_t>(1) << M) - 1;
-    const double sqrt1mrho2 = std::sqrt(1.0 - rho * rho);
+    const double sqrt1mrho_tox2 = std::sqrt(1.0 - rho_tox * rho_tox);
+    const double sqrt1mrho_eff2 = std::sqrt(1.0 - rho_eff * rho_eff);
 
     // buffers reused across the iterations handled by this worker
     std::vector<std::vector<unsigned char>> shortv(
@@ -336,33 +352,6 @@ struct SimWorker : public RcppParallel::Worker {
 
     const std::vector<size_t> noStg1Rej;
 
-    // Precompute nominal boundaries for CE-updated TSSSD methods.
-    // These depend only on phase-2 and phase-3 sample sizes (n1, n2cur).
-    const bool needTsssdCe =
-      use[M_TSSSD_K_CE] || use[M_TSSSD_UK_CE] ||
-      use[M_TSSSD_K_RANK_CE] || use[M_TSSSD_UK_RANK_CE];
-    std::vector<double> tNominal(ngrid, 0.5);
-    // Indexed by effective hypothesis count minus one:
-    // [0] => mEff=1, [M-1] => mEff=M.
-    std::vector<std::vector<double>> tsssdKnownNomByEff(
-      M, std::vector<double>(ngrid, SINGLE_ARM_BOUND));
-    std::vector<std::vector<double>> tsssdUnknownNomByEff(
-      M, std::vector<double>(ngrid, SINGLE_ARM_BOUND));
-    if (needTsssdCe) {
-      for (size_t n2i = 0; n2i < ngrid; ++n2i) {
-        const size_t n2cur = n2min + n2i;
-        const size_t nend = n1 + n2cur;
-        const double tnom = static_cast<double>(n1) / static_cast<double>(nend);
-        tNominal[n2i] = std::min(std::max(tnom, 1e-6), 1.0 - 1e-6);
-        for (size_t mEff = 2; mEff <= M; ++mEff) {
-          const size_t effIdx = mEff - 1;
-          tsssdKnownNomByEff[effIdx][n2i] =
-              final_selection_boundary(mEff, true, tNominal[n2i]);
-          tsssdUnknownNomByEff[effIdx][n2i] =
-              final_selection_boundary(mEff, false, tNominal[n2i]);
-        }
-      }
-    }
     for (size_t iter = begin; iter < end; ++iter) {
       try {
         boost::random::mt19937_64 rng(seeds[iter]);
@@ -379,28 +368,40 @@ struct SimWorker : public RcppParallel::Worker {
         }
         out.events.resize(ngrid, 3);
 
-        // binary efficacy and toxicity endpoints from a bivariate latent
-        // normal with correlation rho, and the long-term endpoint that the
-        // efficacy endpoint drives
+        // Copula-based generation: base variable zB drives the short-term
+        // biomarker endpoint and correlates with toxicity and
+        // time-to-event via latent variables zS and zE. Given zB, zS and zE
+        // are conditionally independent.
         for (size_t a = 0; a < narm; ++a) {
           double qe = boost_qnorm(a == 0 ? p0 : pe[a - 1]);
           double qt = (a == 0) ? 0.0 : boost_qnorm(pt[a - 1]);
           double ntox = 0.0;
           for (size_t i = 0; i < ntot; ++i) {
-            double zE = norm(rng);
-            unsigned char s = (zE <= qe) ? 1u : 0u;
+            // Base random variable zB drives the short-term biomarker
+            double zB = norm(rng);
+
+            // Short-term biomarker: driven by zB
+            unsigned char s = (zB <= qe) ? 1u : 0u;
             shortv[a][i] = s;
 
-            // toxicity is only assessed for the phase 2 cohort
+            // Toxicity: zS is correlated with zB via copula
             if (a > 0 && i < n1) {
-              double zT = rho * zE + sqrt1mrho2 * norm(rng);
-              toxv[a][i] = (zT <= qt) ? 1u : 0u;
+              double zS = rho_tox * zB + sqrt1mrho_tox2 * norm(rng);
+              toxv[a][i] = (zS <= qt) ? 1u : 0u;
               if (toxv[a][i])
                 ntox += 1.0;
             }
 
-            double rate = (a == 0 ? the0[s] : the1(a - 1, s));
-            longv[a][i] = -std::log(unif(rng)) / rate;
+            // Time-to-event: zE is correlated with zB via copula.
+            // longv = -log(Phi(zE)) / lambda where lambda depends on arm.
+            double zE = rho_eff * zB + sqrt1mrho_eff2 * norm(rng);
+            double phi_ze = boost_pnorm(zE, 0.0, 1.0, true);
+            // Ensure phi_ze is in (eps, 1-eps) to avoid log(0) or log(1)
+            phi_ze = std::max(std::min(phi_ze, 1.0 - 1e-10), 1e-10);
+            double rate = (a == 0) ? hazardRateControl
+                       : hazardRateControl *
+                         hazardRatioTreatments[a - 1];
+            longv[a][i] = -std::log(phi_ze) / rate;
           }
           if (a > 0)
             xt[a - 1] = ntox;
@@ -797,8 +798,10 @@ struct SimWorker : public RcppParallel::Worker {
 ListCpp lrsim_bmTrtSel_cpp(
     const size_t M, const size_t n1, const size_t n2min, const size_t n2max,
     const double p0, const std::vector<double> &pe,
-    const std::vector<double> &pt, const double rho,
-    const std::vector<double> the0, const FlatMatrix &the1, const double T_max,
+    const std::vector<double> &pt, const double rho_tox, const double rho_eff,
+    const double hazardRateControl,
+    const std::vector<double> &hazardRatioTreatments,
+    const double T_max,
     const double w, const double phi_t, const double ce, const double ct,
     const bool uniform_prior, const double acc_rate1, const double acc_rate2,
     const double T_ph2followup, const std::vector<std::string> &methods,
@@ -826,22 +829,19 @@ ListCpp lrsim_bmTrtSel_cpp(
     if (p < 0 || p >= 1)
       throw std::invalid_argument("pt must lie in [0, 1)");
   }
-  if (rho <= -1 || rho >= 1) {
-    throw std::invalid_argument("rho must lie in (-1, 1)");
+  if (rho_tox <= -1 || rho_tox >= 1) {
+    throw std::invalid_argument("rho_tox must lie in (-1, 1)");
   }
-  if (the0.size() != 2)
-    throw std::invalid_argument("the0 must have length 2");
-  if (the1.nrow != M || the1.ncol != 2)
-    throw std::invalid_argument("the1 must have dimensions M x 2");
-  for (double t : the0) {
-    if (t <= 0)
-      throw std::invalid_argument("the0 must be positive");
+  if (rho_eff <= -1 || rho_eff >= 1) {
+    throw std::invalid_argument("rho_eff must lie in (-1, 1)");
   }
-  for (size_t j = 0; j < 2; ++j) {
-    for (size_t i = 0; i < M; ++i) {
-      if (the1(i, j) <= 0)
-        throw std::invalid_argument("the1 must be positive");
-    }
+  if (hazardRateControl <= 0)
+    throw std::invalid_argument("hazardRateControl must be positive");
+  if (hazardRatioTreatments.size() != M)
+    throw std::invalid_argument("hazardRatioTreatments must have length M");
+  for (double h : hazardRatioTreatments) {
+    if (h <= 0)
+      throw std::invalid_argument("hazardRatioTreatments must be positive");
   }
   if (T_max <= 0)
     throw std::invalid_argument("T_max must be positive");
@@ -892,6 +892,11 @@ ListCpp lrsim_bmTrtSel_cpp(
       true_id = k;
   }
 
+  // The time-to-event null is defined by a treatment hazard ratio of one.
+  std::vector<unsigned char> true_null(ntr, 0);
+  for (size_t k = 0; k < ntr; ++k)
+    true_null[k] = (hazardRatioTreatments[k] == 1.0);
+
   // Equal weights within each intersection hypothesis.
   WeightMatrix wgtmat = fDefaultWgtmatcpp(ntr);
 
@@ -914,12 +919,38 @@ ListCpp lrsim_bmTrtSel_cpp(
   StageBoundaries sb =
       fCERStageBoundCpp(wgtmat, family, corr, ALPHA_ONE_SIDED, 0.0, 0.5);
 
+  const bool needTsssdCe =
+      use[M_TSSSD_K_CE] || use[M_TSSSD_UK_CE] ||
+      use[M_TSSSD_K_RANK_CE] || use[M_TSSSD_UK_RANK_CE];
+  std::vector<double> tNominal(ngrid, 0.5);
+  // Indexed by effective hypothesis count minus one.
+  std::vector<std::vector<double>> tsssdKnownNomByEff(
+      M, std::vector<double>(ngrid, SINGLE_ARM_BOUND));
+  std::vector<std::vector<double>> tsssdUnknownNomByEff(
+      M, std::vector<double>(ngrid, SINGLE_ARM_BOUND));
+  if (needTsssdCe) {
+    for (size_t n2i = 0; n2i < ngrid; ++n2i) {
+      const size_t n2cur = n2min + n2i;
+      const size_t nend = n1 + n2cur;
+      const double tnom = static_cast<double>(n1) / static_cast<double>(nend);
+      tNominal[n2i] = std::min(std::max(tnom, 1e-6), 1.0 - 1e-6);
+      for (size_t mEff = 2; mEff <= M; ++mEff) {
+        const size_t effIdx = mEff - 1;
+        tsssdKnownNomByEff[effIdx][n2i] =
+            final_selection_boundary(mEff, true, tNominal[n2i]);
+        tsssdUnknownNomByEff[effIdx][n2i] =
+            final_selection_boundary(mEff, false, tNominal[n2i]);
+      }
+    }
+  }
+
   std::vector<TrialResult> results(ntrial);
-  SimWorker worker(M, n1, n2min, n2max, p0, pe, pt, rho, the0, the1, T_max, w,
+  SimWorker worker(M, n1, n2min, n2max, p0, pe, pt, rho_tox, rho_eff,
+                   hazardRateControl, hazardRatioTreatments, T_max, w,
                    phi_t, ce, ct, acc_rate1, acc_rate2, T_ph2followup,
                    maxRawDatasets, seeds, use, wgtmat, wgtmat1, family, corr,
-                   sb, uniform_prior,
-                   &results);
+                   sb, uniform_prior, needTsssdCe, tNominal, tsssdKnownNomByEff,
+                   tsssdUnknownNomByEff, &results);
   RcppParallel::parallelFor(0, ntrial, worker);
 
   std::vector<int> select_count(ntr, 0);
@@ -1039,18 +1070,24 @@ ListCpp lrsim_bmTrtSel_cpp(
   auto summarize = [&](const IntMatrix &rej_each,
                        const std::vector<int> &rej_any,
                        std::vector<double> &gpower, FlatMatrix &prob_each,
-                       std::vector<double> &prob_any) {
+                       std::vector<double> &prob_any,
+                       std::vector<double> &fwer) {
     gpower.resize(ngrid);
     prob_each.resize(ngrid, ntr);
     prob_any.resize(ngrid);
+    fwer.resize(ngrid);
     for (size_t n2i = 0; n2i < ngrid; ++n2i) {
       gpower[n2i] = rej_each(n2i, true_id) / dntrial;
+      int true_null_rejections = 0;
       for (size_t k = 0; k < ntr; ++k) {
         prob_each(n2i, k) = (selectProb[k] > 0.0)
                                 ? rej_each(n2i, k) / dntrial / selectProb[k]
                                 : NaN;
+        if (true_null[k])
+          true_null_rejections += rej_each(n2i, k);
       }
       prob_any[n2i] = rej_any[n2i] / dntrial;
+      fwer[n2i] = true_null_rejections / dntrial;
     }
   };
 
@@ -1065,14 +1102,16 @@ ListCpp lrsim_bmTrtSel_cpp(
     if (!use[m])
       continue;
 
-    std::vector<double> gpower, prob_rej_any;
+    std::vector<double> gpower, prob_rej_any, fwer;
     FlatMatrix prob_rej_each;
-    summarize(rej_each[m], rej_any[m], gpower, prob_rej_each, prob_rej_any);
+    summarize(rej_each[m], rej_any[m], gpower, prob_rej_each, prob_rej_any,
+         fwer);
 
     ListCpp res;
     res.push_back(std::move(gpower), "gpower");
     res.push_back(std::move(prob_rej_each), "prob.rej.each");
     res.push_back(std::move(prob_rej_any), "prob.rej.any");
+    res.push_back(std::move(fwer), "fwer");
 
     methodNames.push_back(METHOD_NAME[m]);
     byMethod.push_back(std::move(res), METHOD_NAME[m]);
@@ -1149,8 +1188,9 @@ Rcpp::List lrsim_bmTrtSel_Rcpp(
     const Rcpp::NumericVector &responseProbTreatments = NA_REAL,
     const Rcpp::NumericVector &toxicityProbTreatments = NA_REAL,
     const double corrEfficacyToxicity = 0,
-    const Rcpp::NumericVector &hazardRateControl = NA_REAL,
-    const Rcpp::NumericMatrix &hazardRateTreatments = Rcpp::NumericMatrix(),
+    const double corrEfficacyTTE = 0,
+    const double hazardRateControl = NA_REAL,
+    const Rcpp::NumericVector &hazardRatioTreatments = NA_REAL,
     const double studyDurationPhase3 = NA_REAL,
     const double toxicityWeight = NA_REAL,
     const double toxicityUpperLimit = NA_REAL,
@@ -1178,8 +1218,8 @@ Rcpp::List lrsim_bmTrtSel_Rcpp(
                          responseProbTreatments.end());
   std::vector<double> pt(toxicityProbTreatments.begin(),
                          toxicityProbTreatments.end());
-  std::vector<double> the0(hazardRateControl.begin(), hazardRateControl.end());
-  FlatMatrix the1 = flatmatrix_from_Rmatrix(hazardRateTreatments);
+  std::vector<double> hazardRatioTreatments_vec(
+      hazardRatioTreatments.begin(), hazardRatioTreatments.end());
 
   std::vector<std::string> methodVec;
   if (methods.isNotNull()) {
@@ -1191,7 +1231,9 @@ Rcpp::List lrsim_bmTrtSel_Rcpp(
       pe.size(), static_cast<size_t>(phase2SampleSizePerArm),
       static_cast<size_t>(phase3SampleSizePerArmMin),
       static_cast<size_t>(phase3SampleSizePerArmMax), responseProbControl, pe,
-      pt, corrEfficacyToxicity, the0, the1, studyDurationPhase3, toxicityWeight,
+      pt, corrEfficacyToxicity, corrEfficacyTTE, hazardRateControl,
+      hazardRatioTreatments_vec,
+      studyDurationPhase3, toxicityWeight,
       toxicityUpperLimit, efficacyThreshold, safetyThreshold, useUniformPrior,
       accrualRatePhase2, accrualRatePhase3, followupTimePhase2, methodVec,
       static_cast<size_t>(maxNumberOfIterations),

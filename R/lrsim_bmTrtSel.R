@@ -3,10 +3,10 @@
 #' @description Simulates a two-stage seamless phase II/III trial in which
 #'   several doses are compared with a common control. At the end of phase II
 #'   a single dose is carried forward based on the posterior benefit-risk
-#'   tradeoff of a binary short-term efficacy endpoint and a binary toxicity
+#'   tradeoff of a binary short-term biomarker endpoint and a binary toxicity
 #'   endpoint. The confirmatory phase III analysis is performed on a
-#'   time-to-event long-term endpoint whose hazard depends on the short-term
-#'   response status, and the type I error rate is protected by a closed
+#'   time-to-event long-term endpoint linked to the biomarker through the
+#'   copula correlation, and the type I error rate is protected by a closed
 #'   testing procedure combined across the two stages.
 #'
 #' @param phase2SampleSizePerArm The number of subjects per arm enrolled in
@@ -24,17 +24,20 @@
 #'   investigation. Its length determines \code{M}.
 #' @param toxicityProbTreatments A vector of length \code{M} giving the
 #'   probability of toxicity for each dose under investigation.
-#' @param corrEfficacyToxicity The correlation between the bivariate latent
-#'   normal variables used to generate the binary efficacy and toxicity
-#'   endpoints. This is the correlation on the latent scale, not the
-#'   correlation of the observed binary endpoints. Use 0 for independent
-#'   endpoints.
-#' @param hazardRateControl A vector of length 2 giving the hazard rate of the
-#'   long-term endpoint in the control arm for short-term nonresponders and
-#'   responders, respectively.
-#' @param hazardRateTreatments An \code{M} by 2 matrix giving the hazard rate
-#'   of the long-term endpoint for each dose, with the first column for
-#'   short-term nonresponders and the second column for responders.
+#' @param corrEfficacyToxicity The correlation between the latent normal
+#'   variable for the toxicity endpoint and \eqn{z_B}, where \eqn{z_B} is the
+#'   latent normal variable that determines the short-term biomarker endpoint.
+#'   Use 0 for independent biomarker and toxicity endpoints.
+#' @param corrEfficacyTTE The correlation between the latent normal variable for
+#'   the long-term time-to-event endpoint and \eqn{z_B}. Use 0 for an
+#'   independent biomarker and long-term endpoint.
+#' @param hazardRateControl The overall hazard rate for the long-term
+#'   endpoint in the control arm. It must be positive.
+#' @param hazardRatioTreatments A vector of length \code{M} giving the hazard
+#'   ratio for each treatment relative to the control arm. The hazard rate in
+#'   treatment arm \code{k} is
+#'   \code{hazardRateControl * hazardRatioTreatments[k]}; values below 1
+#'   indicate effective treatments.
 #' @param studyDurationPhase3 The duration of phase III, measured from the
 #'   first phase III enrollment to the final analysis.
 #' @param toxicityWeight The weight placed on the posterior mean toxicity rate
@@ -113,6 +116,9 @@
 #'   - \code{prob.rej.any}: A vector of length \code{ngrid} giving the
 #'     probability of rejecting any null hypothesis.
 #'
+#'   - \code{fwer}: A vector of length \code{ngrid} giving the probability
+#'     of rejecting any true null hypothesis.
+#'
 #'   The method names are
 #'   \code{ctbonferroni}, \code{ctdunnett}, \code{ctsimes}, and
 #'   \code{ctpooled} for the closed testing procedure with the inverse normal
@@ -122,7 +128,7 @@
 #'   \code{tsssd.k} and \code{tsssd.uk} for the original two-stage seamless
 #'   design boundaries with known and unknown correlation; \code{tsssd.k.rank}
 #'   and \code{tsssd.uk.rank} for rank-based boundaries based on the effective
-#'   number of more efficacious doses; and \code{tsssd.k.ce},
+#'   number of less efficacious doses; and \code{tsssd.k.ce},
 #'   \code{tsssd.uk.ce}, \code{tsssd.k.rank.ce}, and \code{tsssd.uk.rank.ce}
 #'   for conditional-error updates of the original and rank-based boundaries.
 #'   These updates start from nominal boundaries based
@@ -166,24 +172,25 @@
 #'   arms; phase 3 includes only the control arm and the selected dose.
 #'
 #' @details
-#' For each subject on a treatment arm, a bivariate latent normal vector
-#' \eqn{(z_T, z_E)} with mean zero, unit variances, and correlation
-#' \code{corrEfficacyToxicity} is drawn. The binary toxicity and efficacy
-#' endpoints are obtained as \eqn{Y_T = I\{z_T \le \Phi^{-1}(p_T(d))\}} and
-#' \eqn{Y_E = I\{z_E \le \Phi^{-1}(p_E(d))\}}, so that the marginal
-#' probabilities are \eqn{p_T(d)} and \eqn{p_E(d)} while the two endpoints are
-#' correlated. The long-term endpoint is exponential with a rate determined by
-#' the realized short-term response status.
-#'
-#' Dose selection uses a beta-binomial model with independent priors, either
-#' uniform Beta(1,1) or Jeffreys Beta(0.5,0.5) depending on
-#' \code{useUniformPrior}. A dose enters the acceptable set when
-#' the posterior probability that its
-#' response rate exceeds that of the control is above \code{efficacyThreshold}
-#' and the posterior probability that its toxicity rate is below
-#' \code{toxicityUpperLimit} is above \code{safetyThreshold}. Among the
-#' acceptable doses, the one maximizing the posterior mean benefit-risk
-#' tradeoff is selected. When both thresholds are 0, all doses are acceptable.
+#' Data generation uses a copula-based approach. For each subject, a base
+#' random variable \eqn{z_B \sim N(0,1)} drives the short-term biomarker
+#' endpoint, \code{shortv}. Toxicity is generated from
+#' \eqn{z_S = \rho_{tox}z_B + \sqrt{1-\rho_{tox}^2}z_{S,indep}} and the
+#' toxicity indicator \code{toxv} is obtained by thresholding \eqn{z_S} at
+#' the specified toxicity probability. The long-term endpoint is generated
+#' from \eqn{z_E = \rho_{eff}z_B + \sqrt{1-\rho_{eff}^2}z_{E,indep}} as
+#' \eqn{v = -\log(\Phi(z_E))/\lambda}, where \eqn{\lambda =
+#' hazardRateControl} in the control arm and
+#' \eqn{\lambda = hazardRateControl \times hazardRatioTreatments[k]}
+#' in treatment arm \eqn{k}. Dose selection uses a beta-binomial model with
+#' independent priors, either uniform Beta(1,1) or Jeffreys Beta(0.5,0.5)
+#' depending on \code{useUniformPrior}. A dose enters the acceptable set when
+#' the posterior probability that its response rate exceeds that of the
+#' control is above \code{efficacyThreshold} and the posterior probability
+#' that its toxicity rate is below \code{toxicityUpperLimit} is above
+#' \code{safetyThreshold}. Among the acceptable doses, the one maximizing the
+#' posterior mean benefit-risk tradeoff is selected. When both thresholds are
+#' 0, all doses are acceptable.
 #'
 #' Phase III enrollment opens \code{followupTimePhase2} after the last phase
 #' II enrollment across all arms, and the final analysis occurs
@@ -207,15 +214,14 @@
 #'
 #' @examples
 #'
-#' # hazard rates in the nonresponse and response groups of the control arm
-#' the0 <- c(log(2)/12, log(2)/24)
+#' # Overall control-arm hazard rate for the long-term endpoint
+#' hazardRateControl <- log(2) / 15.5
 #'
 #' # response rates of the two doses under investigation
 #' pe <- c(0.6, 0.5)
 #'
-#' # hazard ratio versus control within each response group
-#' hr <- rbind(c(0.75, 0.75), c(0.75, 0.75))
-#' the1 <- t(sapply(1:2, function(k) hr[k,]*the0))
+#' # Hazard ratio versus control for each treatment
+#' hazardRatioTreatments <- c(0.65, 0.70)
 #'
 #' sim <- lrsim_bmTrtSel(
 #'   phase2SampleSizePerArm = 50,
@@ -225,8 +231,9 @@
 #'   responseProbTreatments = pe,
 #'   toxicityProbTreatments = c(0, 0),
 #'   corrEfficacyToxicity = 0,
-#'   hazardRateControl = the0,
-#'   hazardRateTreatments = the1,
+#'   corrEfficacyTTE = 0.43,
+#'   hazardRateControl = hazardRateControl,
+#'   hazardRatioTreatments = hazardRatioTreatments,
 #'   studyDurationPhase3 = 42.1,
 #'   toxicityWeight = 0,
 #'   toxicityUpperLimit = 1,
@@ -253,8 +260,9 @@ lrsim_bmTrtSel <- function(
     responseProbTreatments = NA_real_,
     toxicityProbTreatments = NA_real_,
     corrEfficacyToxicity = 0,
+    corrEfficacyTTE = 0,
     hazardRateControl = NA_real_,
-    hazardRateTreatments = matrix(),
+    hazardRatioTreatments = NA_real_,
     studyDurationPhase3 = NA_real_,
     toxicityWeight = NA_real_,
     toxicityUpperLimit = NA_real_,
@@ -290,8 +298,9 @@ lrsim_bmTrtSel <- function(
     responseProbTreatments = responseProbTreatments,
     toxicityProbTreatments = toxicityProbTreatments,
     corrEfficacyToxicity = corrEfficacyToxicity,
+    corrEfficacyTTE = corrEfficacyTTE,
     hazardRateControl = hazardRateControl,
-    hazardRateTreatments = hazardRateTreatments,
+    hazardRatioTreatments = hazardRatioTreatments,
     studyDurationPhase3 = studyDurationPhase3,
     toxicityWeight = toxicityWeight,
     toxicityUpperLimit = toxicityUpperLimit,

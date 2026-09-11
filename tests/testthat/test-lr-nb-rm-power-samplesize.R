@@ -65,7 +65,6 @@ testthat::test_that("LR equivalence and Schoenfeld outputs match documented exam
   testthat::expect_equal(lr_ss_eq$overallResults$numberOfSubjects, 420)
   testthat::expect_equal(round(lr_ss_eq$overallResults$accrualDuration, 5), 20.15385)
 
-  testthat::expect_named(lr_sch, c("analyticalResults", "simulationResults"))
   testthat::expect_equal(round(lr_sch$analyticalResults$overallResults$overallReject, 6), 0.908518)
   testthat::expect_equal(lr_sch$analyticalResults$overallResults$numberOfEvents, 30)
   testthat::expect_equal(lr_sch$analyticalResults$overallResults$numberOfSubjects, 78)

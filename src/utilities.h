@@ -20,8 +20,25 @@
 #include <vector>      // vector
 
 #include <Rcpp.h>
+#include <boost/random/mersenne_twister.hpp>
 
 struct FlatMatrix;
+
+// Returns a lower-triangular factor satisfying sigma = factor * factor^T.
+FlatMatrix cholesky_factor(const FlatMatrix &sigma);
+
+FlatMatrix rmvnorm_chol(std::size_t n, const std::vector<double> &mean,
+                        const FlatMatrix &factor,
+                        boost::random::mt19937_64 &rng);
+FlatMatrix rmvnorm_chol(std::size_t n, const std::vector<double> &mean,
+                        const FlatMatrix &factor, int seed);
+
+FlatMatrix rmvnorm(std::size_t n, const std::vector<double> &mean,
+                   const FlatMatrix &sigma,
+                   boost::random::mt19937_64 &rng);
+FlatMatrix rmvnorm(std::size_t n, const std::vector<double> &mean,
+                   const FlatMatrix &sigma, int seed);
+
 struct IntMatrix;
 struct SztMatrix;
 struct BoolMatrix;
