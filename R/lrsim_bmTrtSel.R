@@ -38,8 +38,15 @@
 #'   treatment arm \code{k} is
 #'   \code{hazardRateControl * hazardRatioTreatments[k]}; values below 1
 #'   indicate effective treatments.
+#' @param totalNumberOfEvents The target total number of long-term endpoint
+#'   events in the selected dose and control arms, including subjects enrolled
+#'   in phases II and III. It must be a positive integer no greater than the
+#'   combined sample size of those two arms at
+#'   \code{phase3SampleSizePerArmMin}. When provided, the final analysis is
+#'   event-driven and \code{studyDurationPhase3} is ignored.
 #' @param studyDurationPhase3 The duration of phase III, measured from the
-#'   first phase III enrollment to the final analysis.
+#'   opening of phase III enrollment to the final analysis. It must be provided
+#'   when \code{totalNumberOfEvents} is missing.
 #' @param toxicityWeight The weight placed on the posterior mean toxicity rate
 #'   in the benefit-risk tradeoff used for dose selection. Use 0 to select on
 #'   efficacy alone.
@@ -62,6 +69,7 @@
 #'   \code{"tsssd.uk"}, \code{"tsssd.k.rank"}, \code{"tsssd.uk.rank"},
 #'   \code{"tsssd.k.ce"}, \code{"tsssd.uk.ce"},
 #'   \code{"tsssd.k.rank.ce"}, \code{"tsssd.uk.rank.ce"},
+#'   \code{"bm.rank"}, \code{"pe.rank"},
 #'   \code{"naive"}, and \code{"ph3only"}. Restricting the set skips the
 #'   corresponding computation entirely, which matters because the methods
 #'   differ by orders of magnitude in cost.
@@ -85,8 +93,9 @@
 #'   number of stage 2 sample sizes examined, and let \code{M} denote the
 #'   number of doses. The list contains
 #'
-#' * \code{n1}, \code{n2}, \code{numberOfIterations}, \code{trueOBD}: The
-#'   design inputs echoed back, with \code{n2} the vector of stage 2 sample
+#' * \code{n1}, \code{n2}, \code{totalNumberOfEvents},
+#'   \code{studyDurationPhase3}, \code{numberOfIterations}, \code{trueOBD}:
+#'   The design inputs echoed back, with \code{n2} the vector of stage 2 sample
 #'   sizes examined.
 #'
 #' * \code{selectionProb}: A vector of length \code{M} giving the probability
@@ -116,6 +125,14 @@
 #'   - \code{prob.rej.any}: A vector of length \code{ngrid} giving the
 #'     probability of rejecting any null hypothesis.
 #'
+#'   - \code{disjunctive.power}: A vector of length \code{ngrid} giving the
+#'     probability of rejecting at least one true non-null hypothesis. It is
+#'     missing when all treatment hazard ratios equal 1.
+#'
+#'   - \code{conjunctive.power}: A vector of length \code{ngrid} giving the
+#'     probability of rejecting all true non-null hypotheses. It is missing
+#'     when all treatment hazard ratios equal 1.
+#'
 #'   - \code{fwer}: A vector of length \code{ngrid} giving the probability
 #'     of rejecting any true null hypothesis.
 #'
@@ -134,6 +151,11 @@
 #'   These updates start from nominal boundaries based
 #'   on \code{n1/(n1+n2)} and then use the observed stage 1 z-statistic and
 #'   observed information fraction;
+#'   \code{bm.rank} for the Biomarker rank-based Dunnett adjustment for unknown
+#'   biomarker-efficacy correlation in Wang et al. formula (3) for stage 1,
+#'   along with the p-value combination test at the end of stage 2;
+#'   \code{pe.rank} for the primary endpoint rank-based Dunnett adjustment for
+#'   stage 1, along with the p-value combination test at the end of stage 2;
 #'   \code{naive} for the
 #'   unadjusted log-rank test on the combined stage 1 and stage 2 data; and
 #'   \code{ph3only} for the unadjusted log-rank test on the stage 2 data only.
@@ -145,17 +167,20 @@
 #'
 #' * \code{sumdataBIN}: One row per iteration and phase II arm, containing
 #'   \code{iterationNumber}, \code{treatmentGroup}, \code{responses},
-#'   \code{toxicities}, and \code{selected}. Treatment group 0 is control;
-#'   its toxicity count is missing. These rows reproduce the dose-selection
-#'   operating characteristics.
+#'   \code{toxicities}, \code{zBiomarker}, and \code{selected}. Treatment
+#'   group 0 is control; its toxicity count and biomarker Z statistic are
+#'   missing. These rows reproduce the dose-selection operating
+#'   characteristics.
 #'
 #' * \code{sumdataTTE}: One row per iteration and phase III sample size,
 #'   containing \code{iterationNumber}, \code{selectedDose},
-#'   \code{phase3SampleSize}, stage 1, stage 2, and total event counts, and
-#'   stage 1, stage 2, and cumulative log-rank Z statistics. It also has one
-#'   \code{reject.<method>} indicator column for every requested method. These
-#'   rows reproduce \code{ave.event} and the operating characteristics in
-#'   \code{byMethod}.
+#'   \code{phase3SampleSize}, stage 1, stage 2, and total event counts,
+#'   stage 1, stage 2, and cumulative log-rank Z statistics for the selected
+#'   dose, as well as stage 1 log-rank Z statistics for all individual and
+#'   pooled dose groups (e.g., \code{stage1LogRankZ1}, \code{stage1LogRankZ2},
+#'   \code{stage1LogRankZ12}). It also has one \code{reject.<method>}
+#'   indicator column for every requested method. These rows reproduce
+#'   \code{ave.event} and the operating characteristics in \code{byMethod}.
 #'
 #' * \code{rawdataBIN} (present when \code{maxNumberOfRawDatasets} is
 #'   positive): Subject-level phase II binary data with \code{iterationNumber},
@@ -263,6 +288,7 @@ lrsim_bmTrtSel <- function(
     corrEfficacyTTE = 0,
     hazardRateControl = NA_real_,
     hazardRatioTreatments = NA_real_,
+    totalNumberOfEvents = NA_integer_,
     studyDurationPhase3 = NA_real_,
     toxicityWeight = NA_real_,
     toxicityUpperLimit = NA_real_,
@@ -273,6 +299,7 @@ lrsim_bmTrtSel <- function(
                 "tsssd.k", "tsssd.uk", "tsssd.k.rank", "tsssd.uk.rank",
                 "tsssd.k.ce", "tsssd.uk.ce",
                 "tsssd.k.rank.ce", "tsssd.uk.rank.ce",
+                "bm.rank", "pe.rank",
                 "naive", "ph3only"),
     accrualRatePhase2 = NA_real_,
     accrualRatePhase3 = NA_real_,
@@ -301,6 +328,7 @@ lrsim_bmTrtSel <- function(
     corrEfficacyTTE = corrEfficacyTTE,
     hazardRateControl = hazardRateControl,
     hazardRatioTreatments = hazardRatioTreatments,
+    totalNumberOfEvents = totalNumberOfEvents,
     studyDurationPhase3 = studyDurationPhase3,
     toxicityWeight = toxicityWeight,
     toxicityUpperLimit = toxicityUpperLimit,

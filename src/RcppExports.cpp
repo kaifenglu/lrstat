@@ -1577,8 +1577,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // lrsim_bmTrtSel_Rcpp
-Rcpp::List lrsim_bmTrtSel_Rcpp(const int phase2SampleSizePerArm, const int phase3SampleSizePerArmMin, const int phase3SampleSizePerArmMax, const double responseProbControl, const Rcpp::NumericVector& responseProbTreatments, const Rcpp::NumericVector& toxicityProbTreatments, const double corrEfficacyToxicity, const double corrEfficacyTTE, const double hazardRateControl, const Rcpp::NumericVector& hazardRatioTreatments, const double studyDurationPhase3, const double toxicityWeight, const double toxicityUpperLimit, const double efficacyThreshold, const double safetyThreshold, const bool useUniformPrior, const Rcpp::Nullable<Rcpp::CharacterVector> methods, const double accrualRatePhase2, const double accrualRatePhase3, const double followupTimePhase2, const int maxNumberOfIterations, const int maxNumberOfRawDatasets, const int seed);
-RcppExport SEXP _lrstat_lrsim_bmTrtSel_Rcpp(SEXP phase2SampleSizePerArmSEXP, SEXP phase3SampleSizePerArmMinSEXP, SEXP phase3SampleSizePerArmMaxSEXP, SEXP responseProbControlSEXP, SEXP responseProbTreatmentsSEXP, SEXP toxicityProbTreatmentsSEXP, SEXP corrEfficacyToxicitySEXP, SEXP corrEfficacyTTESEXP, SEXP hazardRateControlSEXP, SEXP hazardRatioTreatmentsSEXP, SEXP studyDurationPhase3SEXP, SEXP toxicityWeightSEXP, SEXP toxicityUpperLimitSEXP, SEXP efficacyThresholdSEXP, SEXP safetyThresholdSEXP, SEXP useUniformPriorSEXP, SEXP methodsSEXP, SEXP accrualRatePhase2SEXP, SEXP accrualRatePhase3SEXP, SEXP followupTimePhase2SEXP, SEXP maxNumberOfIterationsSEXP, SEXP maxNumberOfRawDatasetsSEXP, SEXP seedSEXP) {
+Rcpp::List lrsim_bmTrtSel_Rcpp(const int phase2SampleSizePerArm, const int phase3SampleSizePerArmMin, const int phase3SampleSizePerArmMax, const double responseProbControl, const Rcpp::NumericVector& responseProbTreatments, const Rcpp::NumericVector& toxicityProbTreatments, const double corrEfficacyToxicity, const double corrEfficacyTTE, const double hazardRateControl, const Rcpp::NumericVector& hazardRatioTreatments, const int totalNumberOfEvents, const double studyDurationPhase3, const double toxicityWeight, const double toxicityUpperLimit, const double efficacyThreshold, const double safetyThreshold, const bool useUniformPrior, const Rcpp::Nullable<Rcpp::CharacterVector> methods, const double accrualRatePhase2, const double accrualRatePhase3, const double followupTimePhase2, const int maxNumberOfIterations, const int maxNumberOfRawDatasets, const int seed);
+RcppExport SEXP _lrstat_lrsim_bmTrtSel_Rcpp(SEXP phase2SampleSizePerArmSEXP, SEXP phase3SampleSizePerArmMinSEXP, SEXP phase3SampleSizePerArmMaxSEXP, SEXP responseProbControlSEXP, SEXP responseProbTreatmentsSEXP, SEXP toxicityProbTreatmentsSEXP, SEXP corrEfficacyToxicitySEXP, SEXP corrEfficacyTTESEXP, SEXP hazardRateControlSEXP, SEXP hazardRatioTreatmentsSEXP, SEXP totalNumberOfEventsSEXP, SEXP studyDurationPhase3SEXP, SEXP toxicityWeightSEXP, SEXP toxicityUpperLimitSEXP, SEXP efficacyThresholdSEXP, SEXP safetyThresholdSEXP, SEXP useUniformPriorSEXP, SEXP methodsSEXP, SEXP accrualRatePhase2SEXP, SEXP accrualRatePhase3SEXP, SEXP followupTimePhase2SEXP, SEXP maxNumberOfIterationsSEXP, SEXP maxNumberOfRawDatasetsSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1592,6 +1592,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type corrEfficacyTTE(corrEfficacyTTESEXP);
     Rcpp::traits::input_parameter< const double >::type hazardRateControl(hazardRateControlSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type hazardRatioTreatments(hazardRatioTreatmentsSEXP);
+    Rcpp::traits::input_parameter< const int >::type totalNumberOfEvents(totalNumberOfEventsSEXP);
     Rcpp::traits::input_parameter< const double >::type studyDurationPhase3(studyDurationPhase3SEXP);
     Rcpp::traits::input_parameter< const double >::type toxicityWeight(toxicityWeightSEXP);
     Rcpp::traits::input_parameter< const double >::type toxicityUpperLimit(toxicityUpperLimitSEXP);
@@ -1605,7 +1606,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type maxNumberOfIterations(maxNumberOfIterationsSEXP);
     Rcpp::traits::input_parameter< const int >::type maxNumberOfRawDatasets(maxNumberOfRawDatasetsSEXP);
     Rcpp::traits::input_parameter< const int >::type seed(seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(lrsim_bmTrtSel_Rcpp(phase2SampleSizePerArm, phase3SampleSizePerArmMin, phase3SampleSizePerArmMax, responseProbControl, responseProbTreatments, toxicityProbTreatments, corrEfficacyToxicity, corrEfficacyTTE, hazardRateControl, hazardRatioTreatments, studyDurationPhase3, toxicityWeight, toxicityUpperLimit, efficacyThreshold, safetyThreshold, useUniformPrior, methods, accrualRatePhase2, accrualRatePhase3, followupTimePhase2, maxNumberOfIterations, maxNumberOfRawDatasets, seed));
+    rcpp_result_gen = Rcpp::wrap(lrsim_bmTrtSel_Rcpp(phase2SampleSizePerArm, phase3SampleSizePerArmMin, phase3SampleSizePerArmMax, responseProbControl, responseProbTreatments, toxicityProbTreatments, corrEfficacyToxicity, corrEfficacyTTE, hazardRateControl, hazardRatioTreatments, totalNumberOfEvents, studyDurationPhase3, toxicityWeight, toxicityUpperLimit, efficacyThreshold, safetyThreshold, useUniformPrior, methods, accrualRatePhase2, accrualRatePhase3, followupTimePhase2, maxNumberOfIterations, maxNumberOfRawDatasets, seed));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2541,6 +2542,28 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< uint64_t >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< bool >::type parallel(parallelSEXP);
     rcpp_result_gen = Rcpp::wrap(pmvnormRcpp(lower, upper, mean, sigma, n0, n_max, R, abseps, releps, seed, parallel));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pordmvnormRcpp
+Rcpp::List pordmvnormRcpp(double z, size_t r, const std::vector<double>& mean, const Rcpp::NumericMatrix& sigma, bool lower_tail, size_t n0, size_t n_max, size_t R, double abseps, double releps, uint64_t seed, bool parallel);
+RcppExport SEXP _lrstat_pordmvnormRcpp(SEXP zSEXP, SEXP rSEXP, SEXP meanSEXP, SEXP sigmaSEXP, SEXP lower_tailSEXP, SEXP n0SEXP, SEXP n_maxSEXP, SEXP RSEXP, SEXP absepsSEXP, SEXP relepsSEXP, SEXP seedSEXP, SEXP parallelSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type z(zSEXP);
+    Rcpp::traits::input_parameter< size_t >::type r(rSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< bool >::type lower_tail(lower_tailSEXP);
+    Rcpp::traits::input_parameter< size_t >::type n0(n0SEXP);
+    Rcpp::traits::input_parameter< size_t >::type n_max(n_maxSEXP);
+    Rcpp::traits::input_parameter< size_t >::type R(RSEXP);
+    Rcpp::traits::input_parameter< double >::type abseps(absepsSEXP);
+    Rcpp::traits::input_parameter< double >::type releps(relepsSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< bool >::type parallel(parallelSEXP);
+    rcpp_result_gen = Rcpp::wrap(pordmvnormRcpp(z, r, mean, sigma, lower_tail, n0, n_max, R, abseps, releps, seed, parallel));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -3851,7 +3874,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lrstat_lrsim2e3aRcpp", (DL_FUNC) &_lrstat_lrsim2e3aRcpp, 38},
     {"_lrstat_lrsimsubRcpp", (DL_FUNC) &_lrstat_lrsimsubRcpp, 30},
     {"_lrstat_binary_tte_simRcpp", (DL_FUNC) &_lrstat_binary_tte_simRcpp, 27},
-    {"_lrstat_lrsim_bmTrtSel_Rcpp", (DL_FUNC) &_lrstat_lrsim_bmTrtSel_Rcpp, 23},
+    {"_lrstat_lrsim_bmTrtSel_Rcpp", (DL_FUNC) &_lrstat_lrsim_bmTrtSel_Rcpp, 24},
     {"_lrstat_lrsim_mcpmod_Rcpp", (DL_FUNC) &_lrstat_lrsim_mcpmod_Rcpp, 19},
     {"_lrstat_lrsim_multiarm_Rcpp", (DL_FUNC) &_lrstat_lrsim_multiarm_Rcpp, 22},
     {"_lrstat_lrsim_seamless_Rcpp", (DL_FUNC) &_lrstat_lrsim_seamless_Rcpp, 23},
@@ -3897,6 +3920,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lrstat_fmodmixRcpp", (DL_FUNC) &_lrstat_fmodmixRcpp, 7},
     {"_lrstat_ftruncRcpp", (DL_FUNC) &_lrstat_ftruncRcpp, 3},
     {"_lrstat_pmvnormRcpp", (DL_FUNC) &_lrstat_pmvnormRcpp, 11},
+    {"_lrstat_pordmvnormRcpp", (DL_FUNC) &_lrstat_pordmvnormRcpp, 12},
     {"_lrstat_qmvnormRcpp", (DL_FUNC) &_lrstat_qmvnormRcpp, 10},
     {"_lrstat_nbstat", (DL_FUNC) &_lrstat_nbstat, 17},
     {"_lrstat_nbpower", (DL_FUNC) &_lrstat_nbpower, 32},

@@ -33,11 +33,12 @@ scenario_specs <- list(
 # than expand.grid's full cross product. Edit these lists to add/remove
 # scenarios or sample sizes for the base and sensitivity analyses.
 base_scenarios <- c("null", "dose_response", "no_dose_response",
-                    "one_effective")
+                    "one_effective", "null_pfs")
 base_n2 <- 50
 sensitivity_specs <- list(
-  list(scenario = c("null", "dose_response"), phase2SampleSizePerArm = 20),
-  list(scenario = c("null_pfs"), phase2SampleSizePerArm = 50)
+  list(scenario = c("null", "dose_response", "no_dose_response",
+                    "one_effective", "null_pfs"),
+       phase2SampleSizePerArm = 20)
 )
 
 make_design_grid <- function(base_scenarios, base_n2, sensitivity_specs) {
@@ -57,11 +58,14 @@ design_grid <- make_design_grid(base_scenarios, base_n2, sensitivity_specs)
 
 # --- Splitting the simulation grid across multiple machines ---------------
 # Usage:
-#   Rscript call_lrsim_bmTrtSel.R                 # run everything, plot (original behavior)
-#   Rscript call_lrsim_bmTrtSel.R run 1 2          # machine 1 of 2: runs its share, saves RDS
-#   Rscript call_lrsim_bmTrtSel.R run 2 2          # machine 2 of 2: runs its share, saves RDS
-#   Rscript call_lrsim_bmTrtSel.R combine 2        # after copying both RDS files to one folder,
-#                                                   # combine results and produce the plot
+# run everything, plot (original behavior)
+#   Rscript call_lrsim_bmTrtSel.R
+# machine 1 of 2: runs its share, saves RDS
+#   Rscript call_lrsim_bmTrtSel.R run 1 2
+# machine 2 of 2: runs its share, saves RDS
+#   Rscript call_lrsim_bmTrtSel.R run 2 2
+# combine results and produce the plot
+#   Rscript call_lrsim_bmTrtSel.R combine 2
 # Rows are assigned round-robin (row %% nparts) so each machine gets a mix of
 # scenarios/sample sizes rather than one machine getting all the slow ones.
 results_file <- function(part, nparts) {
@@ -79,7 +83,8 @@ run_scenario <- function(scenario, phase2SampleSizePerArm, seed,
                     phase2SampleSizePerArm))
   }
   started_at <- Sys.time()
-  maxNumberOfIterations <- ifelse(grepl("null", tolower(scenario), fixed = TRUE),
+  maxNumberOfIterations <- ifelse(grepl("null", tolower(scenario),
+                                        fixed = TRUE),
                                   100000, 10000)
 
   sim <- lrsim_bmTrtSel(
@@ -95,12 +100,11 @@ run_scenario <- function(scenario, phase2SampleSizePerArm, seed,
     hazardRatioTreatments = spec$hazardRatioTreatments,
     studyDurationPhase3 = 42.1, toxicityWeight = 0, toxicityUpperLimit = 1,
     efficacyThreshold = 0, safetyThreshold = 0,
-    methods = c("ctbonferroni", "ctdunnett", "ctsimes", "ctpooled", "cer",
-          # "tsssd.k", "tsssd.uk",
-          # "tsssd.k.rank", "tsssd.uk.rank",
-          "tsssd.k.ce", "tsssd.uk.ce",
-          # "tsssd.k.rank.ce", "tsssd.uk.rank.ce",
-          "naive", "ph3only"),
+    methods = c(
+      "ctbonferroni", "ctdunnett", "ctsimes", "ctpooled", "cer",
+      # "tsssd.k", "tsssd.uk", "tsssd.k.rank", "tsssd.uk.rank",
+      "tsssd.k.ce", "tsssd.uk.ce", "tsssd.k.rank.ce", "tsssd.uk.rank.ce",
+      "bm.rank", "pe.rank", "naive", "ph3only"),
     accrualRatePhase2 = 3, accrualRatePhase3 = 6, followupTimePhase2 = 6,
     maxNumberOfIterations = maxNumberOfIterations, seed = seed,
     nthreads = 10)
@@ -108,7 +112,8 @@ run_scenario <- function(scenario, phase2SampleSizePerArm, seed,
     message(sprintf("[%d/%d] Finished %s, Phase II n/arm = %d (%.1f minutes)",
                     scenario_index, scenario_total, spec$label,
                     phase2SampleSizePerArm,
-                    as.numeric(difftime(Sys.time(), started_at, units = "mins"))))
+                    as.numeric(difftime(Sys.time(), started_at,
+                                        units = "mins"))))
   }
   ndose <- length(sim$selectionProb)
   ngrid <- length(sim$n2)
@@ -134,7 +139,10 @@ run_scenario <- function(scenario, phase2SampleSizePerArm, seed,
       overview, selection_prob, method = method_id,
       Method = factor(method_labels[method_id], levels = unname(method_labels)),
       gpower = method$gpower, prob = method$prob.rej.any,
-      prob.rej.any = method$prob.rej.any, prob_rej_each,
+      prob.rej.any = method$prob.rej.any,
+      disjunctive.power = method$disjunctive.power,
+      conjunctive.power = method$conjunctive.power,
+      fwer = method$fwer, prob_rej_each,
       row.names = NULL, check.names = FALSE
     )
   })))
@@ -145,7 +153,11 @@ plot_one <- function(results) {
                            levels = unname(method_labels))
   scenario <- unique(results$Scenario)
   n2 <- unique(results$phase2SampleSizePerArm)
-  ggplot(results, aes(n, prob, color = Method, shape = Method)) +
+  null_case <- grepl("^Null", scenario)
+  results$plot.value <- if (null_case) results$fwer else results$disjunctive.power
+  y_label <- if (null_case) "Familywise Type I error" else "Disjunctive power"
+  ggplot(results, aes(x = .data$n, y = .data$plot.value,
+                      color = .data$Method, shape = .data$Method)) +
     geom_line(linewidth = 0.6) + geom_point(size = 1.2) +
     scale_color_manual(
       values = c(  "CT-Bonferroni" = "#E69F00"
@@ -153,14 +165,16 @@ plot_one <- function(results) {
                  , "CT-Simes" = "#009E73"
                  , "CT-Pooled" = "#D55E00"
                  , "CER" = "#CC79A7"
-                 #, "TSSSD-K" = "#F0E442"
-                 #, "TSSSD-UK" = "#F0E442"
-                 #, "TSSSD-K-Rank" = "#882255"
-                 #, "TSSSD-UK-Rank" = "#44AA99"
+                 # , "TSSSD-K" = "#F0E442"
+                 # , "TSSSD-UK" = "#F0E442"
+                 # , "TSSSD-K-Rank" = "#882255"
+                 # , "TSSSD-UK-Rank" = "#44AA99"
                  , "TSSSD-K-CE" = "#56B4E9"
                  , "TSSSD-UK-CE" = "#CCAA00"
-                 # , "TSSSD-K-Rank-CE" = "#332288"
-                 # , "TSSSD-UK-Rank-CE" = "#88CCEE"
+                 , "TSSSD-K-Rank-CE" = "#332288"
+                 , "TSSSD-UK-Rank-CE" = "#88CCEE"
+                 , "BM-Rank" = "#EE6677"
+                 , "PE-Rank" = "#999933"
                  , "Naive" = "#117733"
                  , "Ph3Only" = "#AA4499"
                  )) +
@@ -170,19 +184,21 @@ plot_one <- function(results) {
                  , "CT-Simes" = 15
                  , "CT-Pooled" = 18
                  , "CER" = 8
-                 #, "TSSSD-K" = 9
-                 #, "TSSSD-UK" = 10
-                 #, "TSSSD-K-Rank" = 11
-                 #, "TSSSD-UK-Rank" = 13
+                 # , "TSSSD-K" = 9
+                 # , "TSSSD-UK" = 10
+                 # , "TSSSD-K-Rank" = 11
+                 # , "TSSSD-UK-Rank" = 14
                  , "TSSSD-K-CE" = 1
                  , "TSSSD-UK-CE" = 2
-                 # , "TSSSD-K-Rank-CE" = 5
-                 # , "TSSSD-UK-Rank-CE" = 6
+                 , "TSSSD-K-Rank-CE" = 5
+                 , "TSSSD-UK-Rank-CE" = 6
+                 , "BM-Rank" = 7
+                 , "PE-Rank" = 0
                  , "Naive" = 3
                  , "Ph3Only" = 4
                  )) +
     labs(x = "Sample size per arm at Stage II (Phase III)",
-         y = "Probability of rejecting any null hypothesis",
+               y = y_label,
          title = scenario,
          subtitle = paste0("Phase II n/arm = ", n2)) +
     theme_bw(base_size = 13) +
@@ -251,7 +267,10 @@ if (mode == "combine") {
     save_plots_pdf(results)
   } else {
     message(sprintf(
-      "Part %d of %d done. Once all parts finish, copy all %s files into one folder and run: Rscript call_lrsim_bmTrtSel.R combine %d",
+      paste0(
+        "Part %d of %d done. Once all parts finish, copy all %s files into ",
+        "one folder and run: Rscript call_lrsim_bmTrtSel.R combine %d"
+      ),
       part, nparts, "results_part*_of_*.rds", nparts))
   }
 }

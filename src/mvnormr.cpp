@@ -456,6 +456,257 @@ bool is_compound_symmetry(const FlatMatrix &sigma) {
   return true;
 }
 
+bool get_nonnegative_compound_symmetry(const FlatMatrix &sigma,
+                                       double &diagonal, double &off_diag) {
+  size_t J = sigma.nrow;
+  if (sigma.ncol != J)
+    return false;
+  if (J == 0)
+    throw std::invalid_argument("sigma must be non-empty");
+
+  diagonal = sigma(0, 0);
+  off_diag = (J > 1 ? sigma(0, 1) : 0.0);
+  if (diagonal <= 0.0 || off_diag < 0.0 || off_diag > diagonal) {
+    return false;
+  }
+
+  for (size_t j = 0; j < J; ++j) {
+    if (sigma(j, j) != diagonal) {
+      return false;
+    }
+    for (size_t k = j + 1; k < J; ++k) {
+      if (sigma(j, k) != off_diag) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+// Return Pr(X >= q), where X is the sum of independent Bernoulli variables
+// with success probabilities p[0], ..., p[J - 1].
+double poisson_binomial_tail(const std::vector<double> &p, size_t q) {
+  const size_t J = p.size();
+  if (q == 0)
+    return 1.0;
+  if (q > J)
+    return 0.0;
+
+  std::vector<double> mass(J + 1, 0.0);
+  mass[0] = 1.0;
+  size_t n_done = 0;
+  for (double pj : p) {
+    // Update backward so mass[k - 1] still refers to the distribution before
+    // adding the current Bernoulli variable.
+    for (size_t k = n_done + 1; k > 0; --k) {
+      mass[k] = mass[k] * (1.0 - pj) + mass[k - 1] * pj;
+    }
+    mass[0] *= (1.0 - pj);
+    ++n_done;
+  }
+
+  double tail = 0.0;
+  for (size_t k = q; k <= J; ++k) {
+    tail += mass[k];
+  }
+  return std::min(std::max(tail, 0.0), 1.0);
+}
+
+// Return Pr(X >= q), where X follows Binomial(n, p).
+double binomial_tail(size_t n, size_t q, double p) {
+  if (q == 0)
+    return 1.0;
+  if (q > n || p <= 0.0)
+    return 0.0;
+  if (p >= 1.0)
+    return 1.0;
+
+  double tail = 0.0;
+  const double log_p = std::log(p);
+  const double log1m_p = std::log1p(-p);
+  for (size_t k = q; k <= n; ++k) {
+    double log_mass = std::lgamma(static_cast<double>(n) + 1.0) -
+                      std::lgamma(static_cast<double>(k) + 1.0) -
+                      std::lgamma(static_cast<double>(n - k) + 1.0) +
+                      static_cast<double>(k) * log_p +
+                      static_cast<double>(n - k) * log1m_p;
+    tail += std::exp(log_mass);
+  }
+  return std::min(std::max(tail, 0.0), 1.0);
+}
+
+bool has_equal_entries(const std::vector<double> &x) {
+  for (size_t j = 1; j < x.size(); ++j) {
+    if (x[j] != x[0]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+double pordmvnorm_compound_symmetry(double z, size_t r,
+                                    const std::vector<double> &mean,
+                                    double diagonal, double off_diag,
+                                    bool lower_tail) {
+  const size_t J = mean.size();
+  const size_t q = lower_tail ? r : J - r + 1;
+  const bool equal_means = has_equal_entries(mean);
+
+  if (J == 1) {
+    return boost_pnorm(z, mean[0], std::sqrt(diagonal), lower_tail);
+  }
+
+  if (off_diag == diagonal) {
+    if (equal_means) {
+      return boost_pnorm(z, mean[0], std::sqrt(off_diag), lower_tail);
+    }
+    std::vector<double> thresholds(J);
+    for (size_t j = 0; j < J; ++j) {
+      thresholds[j] = z - mean[j];
+    }
+    std::sort(thresholds.begin(), thresholds.end());
+    return boost_pnorm(thresholds[J - r], 0.0, std::sqrt(off_diag),
+                       lower_tail);
+  }
+
+  const double sigma_e = std::sqrt(diagonal - off_diag);
+  std::vector<double> p(J);
+  if (off_diag == 0.0) {
+    if (equal_means) {
+      double p0 = boost_pnorm(z, mean[0], sigma_e, lower_tail);
+      return binomial_tail(J, q, p0);
+    }
+    for (size_t j = 0; j < J; ++j) {
+      p[j] = boost_pnorm(z, mean[j], sigma_e, lower_tail);
+    }
+    return poisson_binomial_tail(p, q);
+  }
+
+  const double sigma_b = std::sqrt(off_diag);
+  if (equal_means) {
+    auto f = [&](double b) {
+      double p0 = boost_pnorm(z, mean[0] + b, sigma_e, lower_tail);
+      return binomial_tail(J, q, p0) * boost_dnorm(b, 0.0, sigma_b);
+    };
+
+    std::vector<double> breaks = {-8.0 * sigma_b, 0.0, 8.0 * sigma_b};
+    return integrate3(f, breaks, 1e-6);
+  }
+
+  auto f = [&](double b) {
+    for (size_t j = 0; j < J; ++j) {
+      p[j] = boost_pnorm(z, mean[j] + b, sigma_e, lower_tail);
+    }
+    return poisson_binomial_tail(p, q) * boost_dnorm(b, 0.0, sigma_b);
+  };
+
+  std::vector<double> breaks = {-8.0 * sigma_b, 0.0, 8.0 * sigma_b};
+  return integrate3(f, breaks, 1e-6);
+}
+
+double inclusion_exclusion_coef(size_t j, size_t q) {
+  double coef = std::exp(std::lgamma(static_cast<double>(j)) -
+                         std::lgamma(static_cast<double>(q)) -
+                         std::lgamma(static_cast<double>(j - q + 1)));
+  return ((j - q) % 2 == 0) ? coef : -coef;
+}
+
+// Advance idx to the next k-combination chosen from {0, ..., n - 1}, where
+// k = idx.size() and idx is stored in increasing lexicographic order.
+// Returns false when idx is already the final combination.
+bool next_combination(std::vector<size_t> &idx, size_t n) {
+  const size_t k = idx.size();
+  for (size_t i = k; i > 0; --i) {
+    const size_t pos = i - 1;
+    if (idx[pos] < n - k + pos) {
+      // Increment the rightmost index that can move, then reset the suffix to
+      // the smallest increasing continuation.
+      ++idx[pos];
+      for (size_t j = pos + 1; j < k; ++j) {
+        idx[j] = idx[j - 1] + 1;
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+PMVNResult pordmvnormcpp(double z, size_t r, const std::vector<double> &mean,
+                         const FlatMatrix &sigma, bool lower_tail, size_t n0,
+                         size_t n_max, size_t R, double abseps, double releps,
+                         uint64_t seed, bool parallel) {
+  const size_t J = mean.size();
+  if (J < 1)
+    throw std::invalid_argument("J must be >= 1");
+  if (r < 1 || r > J)
+    throw std::invalid_argument("r must be in {1, ..., J}");
+  if (sigma.nrow != J || sigma.ncol != J)
+    throw std::invalid_argument("sigma must be J x J");
+  if (R < 2)
+    throw std::invalid_argument("R must be >= 2");
+  if (n0 < 1)
+    throw std::invalid_argument("n0 must be >= 1");
+  if (n_max < n0)
+    throw std::invalid_argument("n_max must be >= n0");
+  if (abseps <= 0.0)
+    throw std::invalid_argument("abseps must be positive");
+  if (releps < 0.0)
+    throw std::invalid_argument("releps must be non-negative");
+
+  double diagonal = 0.0;
+  double off_diag = 0.0;
+  if (get_nonnegative_compound_symmetry(sigma, diagonal, off_diag)) {
+    double prob = pordmvnorm_compound_symmetry(z, r, mean, diagonal, off_diag,
+                                               lower_tail);
+    return PMVNResult{prob, "analytic", 0.0, 1};
+  }
+
+  const size_t q = lower_tail ? r : J - r + 1;
+  double prob = 0.0;
+  double compensation = 0.0;
+  double error = 0.0;
+  size_t nsamples = 0;
+  bool all_analytic = true;
+  size_t subset_counter = 0;
+
+  for (size_t j = q; j <= J; ++j) {
+    std::vector<size_t> idx(j);
+    std::iota(idx.begin(), idx.end(), 0);
+    const double coef = inclusion_exclusion_coef(j, q);
+
+    do {
+      std::vector<double> lower(
+        j, lower_tail ? -std::numeric_limits<double>::infinity() : z);
+      std::vector<double> upper(
+        j, lower_tail ? z : std::numeric_limits<double>::infinity());
+      std::vector<double> mean_j(j);
+      FlatMatrix sigma_j(j, j);
+      for (size_t a = 0; a < j; ++a) {
+        mean_j[a] = mean[idx[a]];
+        for (size_t b = 0; b < j; ++b) {
+          sigma_j(a, b) = sigma(idx[a], idx[b]);
+        }
+      }
+
+      PMVNResult term =
+          pmvnormcpp(lower, upper, mean_j, sigma_j, n0, n_max, R, abseps,
+                     releps, seed + subset_counter, parallel);
+      const double y = coef * term.prob - compensation;
+      const double t = prob + y;
+      compensation = (t - prob) - y;
+      prob = t;
+      error += std::fabs(coef) * term.error;
+      nsamples += term.nsamples;
+      all_analytic = all_analytic && term.method == "analytic";
+      ++subset_counter;
+    } while (next_combination(idx, J));
+  }
+
+  prob = std::min(std::max(prob, 0.0), 1.0);
+  return PMVNResult{prob, all_analytic ? "analytic" : "qmc", error, nsamples};
+}
+
 // Main entry point: validate inputs, permute/standardize, factorize, and
 // call adaptive routine.
 PMVNResult pmvnormcpp(const std::vector<double> &lower,
@@ -547,6 +798,22 @@ Rcpp::List pmvnormRcpp(const std::vector<double> &lower,
   auto sigma_fm = flatmatrix_from_Rmatrix(sigma);
   auto out = pmvnormcpp(lower, upper, mean, sigma_fm, n0, n_max, R, abseps,
                         releps, seed, parallel);
+  return Rcpp::List::create(
+      Rcpp::Named("prob") = out.prob, Rcpp::Named("method") = out.method,
+      Rcpp::Named("error") = out.error, Rcpp::Named("nsamples") = out.nsamples);
+}
+
+// [[Rcpp::export]]
+Rcpp::List pordmvnormRcpp(double z, size_t r, const std::vector<double> &mean,
+              const Rcpp::NumericMatrix &sigma,
+              bool lower_tail = true, size_t n0 = 1024,
+              size_t n_max = 16384, size_t R = 8,
+              double abseps = 1e-4, double releps = 0.0,
+              uint64_t seed = 314159, bool parallel = true) {
+
+  auto sigma_fm = flatmatrix_from_Rmatrix(sigma);
+  auto out = pordmvnormcpp(z, r, mean, sigma_fm, lower_tail, n0, n_max, R,
+               abseps, releps, seed, parallel);
   return Rcpp::List::create(
       Rcpp::Named("prob") = out.prob, Rcpp::Named("method") = out.method,
       Rcpp::Named("error") = out.error, Rcpp::Named("nsamples") = out.nsamples);

@@ -2,6 +2,8 @@
 ^renv\.lock$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+beone_logo.png
+beone_logo_mini.png
 notes
 ^data-raw$
 ^\.github$

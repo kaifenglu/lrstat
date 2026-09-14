@@ -53,6 +53,45 @@ testthat::test_that("q and p inversion holds within tolerance", {
 })
 
 
+testthat::test_that("normal order statistic distribution uses analytic identities", {
+  n <- 5
+  z <- 0.3
+  r <- 3
+  sigma_ind <- diag(n)
+  p_ind <- pordmvnormr(z = z, r = r, sigma = sigma_ind)
+  s_ind <- pordmvnormr(z = z, r = r, sigma = sigma_ind, lower.tail = FALSE)
+  p_binom <- sum(stats::dbinom(r:n, n, stats::pnorm(z)))
+  s_binom <- sum(stats::dbinom((n - r + 1):n, n,
+                               stats::pnorm(z, lower.tail = FALSE)))
+
+  testthat::expect_equal(as.numeric(p_ind), p_binom, tolerance = 1e-12)
+  testthat::expect_equal(as.numeric(s_ind), s_binom, tolerance = 1e-12)
+  testthat::expect_equal(attr(p_ind, "method"), "analytic")
+  testthat::expect_equal(attr(s_ind, "method"), "analytic")
+  testthat::expect_equal(attr(p_ind, "error"), 0)
+  testthat::expect_equal(attr(p_ind, "nsamples"), 1)
+
+  sigma_cs <- matrix(0.4, 3, 3)
+  diag(sigma_cs) <- 1
+  p_cs <- pordmvnormr(z = z, r = 2, sigma = sigma_cs, lower.tail = FALSE)
+  p2 <- pmvnormr(lower = rep(z, 2), upper = rep(Inf, 2),
+                 sigma = sigma_cs[1:2, 1:2])
+  p3 <- pmvnormr(lower = rep(z, 3), upper = rep(Inf, 3), sigma = sigma_cs)
+
+  testthat::expect_equal(as.numeric(p_cs), 3*as.numeric(p2) - 2*as.numeric(p3),
+                         tolerance = 1e-6)
+  testthat::expect_equal(attr(p_cs, "method"), "analytic")
+
+  testthat::expect_error(pordmvnormr(z = z, r = 0, sigma = sigma_ind),
+                         "r must be between")
+  testthat::expect_error(pordmvnormr(z = NA_real_, r = 1, sigma = sigma_ind),
+                         "z must be a numeric scalar")
+  testthat::expect_error(pordmvnormr(z = z, r = 1, sigma = sigma_ind,
+                                     lower.tail = NA),
+                         "lower.tail must be a logical scalar")
+})
+
+
 testthat::test_that("singular or near-singular covariance handling is validated", {
   sigma_sing <- matrix(c(1, 1, 1, 1), nrow = 2)
   p_sing <- pmvnormr(lower = c(-1, -1), upper = c(1, 1), sigma = sigma_sing,

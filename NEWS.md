@@ -1,5 +1,7 @@
 # lrstat 0.3.4
 
+* added bm_rank and pe_rank methods to lrsim_bmTrtSel for rank-based Dunnett
+  adjustment for dose selection in stage 1 in seamless phase 2/3 designs
 * added `getNFromNeventsAndFollowup` and its C++ backend in `lrstat.cpp` for
   accrual duration calculations under target-event and follow-up constraints
 * corrected the minimum weighted p-value ratio initialization in
@@ -11,6 +13,11 @@
 * added the Bonferroni p-value combination method `ctbonferroni` to
   `lrsim_bmTrtSel`
 * added the familywise error rate `fwer` to the output of `lrsim_bmTrtSel`
+* added disjunctive and conjunctive power to each `byMethod` result from
+  `lrsim_bmTrtSel` and to the `run_scenario` output data frame
+* added event-driven phase III analyses to `lrsim_bmTrtSel` through the
+  `totalNumberOfEvents` target, while retaining `studyDurationPhase3` for
+  fixed-duration analyses
 * changed long-term time-to-event endpoint generation in `lrsim_bmTrtSel`
   from response-status-stratified hazards to a copula-based approach, with
   the latent biomarker response variable correlated directly with the TTE
@@ -30,11 +37,18 @@
   including inputs, returned `methods` and `byMethod` names, and
   `sumdataTTE` rejection indicator columns
 * added `sumdataBIN` and `sumdataTTE` summary datasets to `lrsim_bmTrtSel`,
-  along with optional subject-level `rawdataBIN` and `rawdataTTE` datasets
-  controlled by `maxNumberOfRawDatasets`
+  including `zBiomarker` in `sumdataBIN` and all individual and pooled
+  stage 1 log-rank Z statistics in `sumdataTTE` to allow derivation of
+  rejection decisions for all methods, along with optional subject-level
+  `rawdataBIN` and `rawdataTTE` datasets controlled by `maxNumberOfRawDatasets`
 * added `rmvnorm` and related multivariate-normal sampling helpers for drawing
   correlated random vectors from a covariance matrix via Cholesky-based
   generation and seeded overloads
+* added `pordmvnormr` to compute lower- and upper-tail probabilities for order
+  statistics of multivariate normal random variables, with analytic shortcuts
+  for nonnegative compound-symmetry covariance structures and
+  inclusion-exclusion over reduced-dimensional orthant probabilities for
+  general covariance matrices
 * removed `mvtnorm` from `Suggests`
 * changed the default value of `corrEfficacyToxicity` in
   `lrsim_bmTrtSel_cpp()` from `0.5` to `0`

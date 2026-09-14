@@ -16,6 +16,7 @@ lrsim_bmTrtSel(
   corrEfficacyTTE = 0,
   hazardRateControl = NA_real_,
   hazardRatioTreatments = NA_real_,
+  totalNumberOfEvents = NA_integer_,
   studyDurationPhase3 = NA_real_,
   toxicityWeight = NA_real_,
   toxicityUpperLimit = NA_real_,
@@ -24,7 +25,7 @@ lrsim_bmTrtSel(
   useUniformPrior = TRUE,
   methods = c("ctbonferroni", "ctdunnett", "ctsimes", "ctpooled", "cer", "tsssd.k",
     "tsssd.uk", "tsssd.k.rank", "tsssd.uk.rank", "tsssd.k.ce", "tsssd.uk.ce",
-    "tsssd.k.rank.ce", "tsssd.uk.rank.ce", "naive", "ph3only"),
+    "tsssd.k.rank.ce", "tsssd.uk.rank.ce", "bm.rank", "pe.rank", "naive", "ph3only"),
   accrualRatePhase2 = NA_real_,
   accrualRatePhase3 = NA_real_,
   followupTimePhase2 = 0,
@@ -74,8 +75,16 @@ treatment arm \code{k} is
 \code{hazardRateControl * hazardRatioTreatments[k]}; values below 1
 indicate effective treatments.}
 
+\item{totalNumberOfEvents}{The target total number of long-term endpoint
+events in the selected dose and control arms, including subjects enrolled
+in phases II and III. It must be a positive integer no greater than the
+combined sample size of those two arms at
+\code{phase3SampleSizePerArmMin}. When provided, the final analysis is
+event-driven and \code{studyDurationPhase3} is ignored.}
+
 \item{studyDurationPhase3}{The duration of phase III, measured from the
-first phase III enrollment to the final analysis.}
+opening of phase III enrollment to the final analysis. It must be provided
+when \code{totalNumberOfEvents} is missing.}
 
 \item{toxicityWeight}{The weight placed on the posterior mean toxicity rate
 in the benefit-risk tradeoff used for dose selection. Use 0 to select on
@@ -104,6 +113,7 @@ for the confirmatory analysis. Any subset of \code{"ctbonferroni"},
 \code{"tsssd.uk"}, \code{"tsssd.k.rank"}, \code{"tsssd.uk.rank"},
 \code{"tsssd.k.ce"}, \code{"tsssd.uk.ce"},
 \code{"tsssd.k.rank.ce"}, \code{"tsssd.uk.rank.ce"},
+\code{"bm.rank"}, \code{"pe.rank"},
 \code{"naive"}, and \code{"ph3only"}. Restricting the set skips the
 corresponding computation entirely, which matters because the methods
 differ by orders of magnitude in cost.}
@@ -135,8 +145,9 @@ A list of operating characteristics. Let \code{ngrid} denote
 number of stage 2 sample sizes examined, and let \code{M} denote the
 number of doses. The list contains
 \itemize{
-\item \code{n1}, \code{n2}, \code{numberOfIterations}, \code{trueOBD}: The
-design inputs echoed back, with \code{n2} the vector of stage 2 sample
+\item \code{n1}, \code{n2}, \code{totalNumberOfEvents},
+\code{studyDurationPhase3}, \code{numberOfIterations}, \code{trueOBD}:
+The design inputs echoed back, with \code{n2} the vector of stage 2 sample
 sizes examined.
 \item \code{selectionProb}: A vector of length \code{M} giving the probability
 that each dose is selected at the end of phase II.
@@ -158,6 +169,12 @@ probability of rejecting the null hypothesis for each dose conditional
 on that dose being selected.
 \item \code{prob.rej.any}: A vector of length \code{ngrid} giving the
 probability of rejecting any null hypothesis.
+\item \code{disjunctive.power}: A vector of length \code{ngrid} giving the
+probability of rejecting at least one true non-null hypothesis. It is
+missing when all treatment hazard ratios equal 1.
+\item \code{conjunctive.power}: A vector of length \code{ngrid} giving the
+probability of rejecting all true non-null hypotheses. It is missing
+when all treatment hazard ratios equal 1.
 \item \code{fwer}: A vector of length \code{ngrid} giving the probability
 of rejecting any true null hypothesis.
 }
@@ -177,6 +194,11 @@ for conditional-error updates of the original and rank-based boundaries.
 These updates start from nominal boundaries based
 on \code{n1/(n1+n2)} and then use the observed stage 1 z-statistic and
 observed information fraction;
+\code{bm.rank} for the Biomarker rank-based Dunnett adjustment for unknown
+biomarker-efficacy correlation in Wang et al. formula (3) for stage 1,
+along with the p-value combination test at the end of stage 2;
+\code{pe.rank} for the primary endpoint rank-based Dunnett adjustment for
+stage 1, along with the p-value combination test at the end of stage 2;
 \code{naive} for the
 unadjusted log-rank test on the combined stage 1 and stage 2 data; and
 \code{ph3only} for the unadjusted log-rank test on the stage 2 data only.
@@ -187,16 +209,19 @@ reuses the selection data and is anticonservative; it is reported for
 reference.
 \item \code{sumdataBIN}: One row per iteration and phase II arm, containing
 \code{iterationNumber}, \code{treatmentGroup}, \code{responses},
-\code{toxicities}, and \code{selected}. Treatment group 0 is control;
-its toxicity count is missing. These rows reproduce the dose-selection
-operating characteristics.
+\code{toxicities}, \code{zBiomarker}, and \code{selected}. Treatment
+group 0 is control; its toxicity count and biomarker Z statistic are
+missing. These rows reproduce the dose-selection operating
+characteristics.
 \item \code{sumdataTTE}: One row per iteration and phase III sample size,
 containing \code{iterationNumber}, \code{selectedDose},
-\code{phase3SampleSize}, stage 1, stage 2, and total event counts, and
-stage 1, stage 2, and cumulative log-rank Z statistics. It also has one
-\code{reject.<method>} indicator column for every requested method. These
-rows reproduce \code{ave.event} and the operating characteristics in
-\code{byMethod}.
+\code{phase3SampleSize}, stage 1, stage 2, and total event counts,
+stage 1, stage 2, and cumulative log-rank Z statistics for the selected
+dose, as well as stage 1 log-rank Z statistics for all individual and
+pooled dose groups (e.g., \code{stage1LogRankZ1}, \code{stage1LogRankZ2},
+\code{stage1LogRankZ12}). It also has one \code{reject.<method>}
+indicator column for every requested method. These rows reproduce
+\code{ave.event} and the operating characteristics in \code{byMethod}.
 \item \code{rawdataBIN} (present when \code{maxNumberOfRawDatasets} is
 positive): Subject-level phase II binary data with \code{iterationNumber},
 \code{subjectId}, \code{treatmentGroup} (0 for control and 1 through

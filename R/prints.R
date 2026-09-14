@@ -3964,6 +3964,7 @@ lrsim_bmTrtSel_method_labels <- function() {
     tsssd.k.ce = "TSSSD-K-CE", tsssd.uk.ce = "TSSSD-UK-CE",
     tsssd.k.rank.ce = "TSSSD-K-Rank-CE",
     tsssd.uk.rank.ce = "TSSSD-UK-Rank-CE",
+    bm.rank = "BM-Rank", pe.rank = "PE-Rank",
     naive = "Naive", ph3only = "Ph3Only")
 }
 
@@ -4006,11 +4007,18 @@ print.lrsim_bmTrtSel <- function(x, ...) {
   str6 <- paste0("Sample size per arm in phase 3: ",
                  n2[1], " to ", n2[ngrid])
 
-  str7 <- paste0("Number of simulations: ", x$numberOfIterations)
+  if (is.na(x$totalNumberOfEvents)) {
+    str7 <- paste0("Phase 3 study duration: ", x$studyDurationPhase3)
+  } else {
+    str7 <- paste0("Target number of events at phase 3 analysis: ",
+                   x$totalNumberOfEvents)
+  }
 
-  df1 <- data.frame(x = rep("", 8))
+  str8 <- paste0("Number of simulations: ", x$numberOfIterations)
+
+  df1 <- data.frame(x = rep("", 9))
   colnames(df1) <- NULL
-  rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7, "")
+  rownames(df1) <- c(str1, str2, str3, str4, str5, str6, str7, str8, "")
 
   df2 <- t(data.frame(selectionProb = x$selectionProb))
   rownames(df2) <- "Selected at the end of phase 2"
@@ -4043,17 +4051,33 @@ print.lrsim_bmTrtSel <- function(x, ...) {
   colnames(df5) <- labels
   df5[] <- lapply(df5, formatC, format = "f", digits = 4)
 
+  # method comparison: disjunctive and conjunctive power
+  disjunctive_mat <- do.call(cbind, lapply(methods, function(m)
+    x$byMethod[[m]]$disjunctive.power))
+  conjunctive_mat <- do.call(cbind, lapply(methods, function(m)
+    x$byMethod[[m]]$conjunctive.power))
+  if (is.null(dim(disjunctive_mat))) {
+    disjunctive_mat <- matrix(disjunctive_mat, nrow = ngrid)
+    conjunctive_mat <- matrix(conjunctive_mat, nrow = ngrid)
+  }
+  df6 <- as.data.frame(disjunctive_mat)
+  df7 <- as.data.frame(conjunctive_mat)
+  rownames(df6) <- rownames(df7) <- paste("n2 =", n2)
+  colnames(df6) <- colnames(df7) <- labels
+  df6[] <- lapply(df6, formatC, format = "f", digits = 4)
+  df7[] <- lapply(df7, formatC, format = "f", digits = 4)
+
   # method comparison: rejection for each dose given that it was selected
-  df6 <- do.call(rbind, lapply(seq_along(methods), function(j) {
+  df8 <- do.call(rbind, lapply(seq_along(methods), function(j) {
     p <- x$byMethod[[methods[j]]]$prob.rej.each
     data.frame(method = rep(labels[j], ngrid), n2 = n2,
                matrix(p, nrow = ngrid, dimnames = list(NULL,
                  paste("Dose", seq_len(M), sep = " "))),
                check.names = FALSE)
   }))
-  j <- seq(3, ncol(df6))
-  df6[j] <- lapply(df6[j], formatC, format = "f", digits = 4)
-  colnames(df6)[1:2] <- c("Method", "n2")
+  j <- seq(3, ncol(df8))
+  df8[j] <- lapply(df8[j], formatC, format = "f", digits = 4)
+  colnames(df8)[1:2] <- c("Method", "n2")
 
   print(df1, ..., na.print = "", quote = FALSE)
   cat("Average number of events in the selected dose and the control arm\n")
@@ -4064,8 +4088,12 @@ print.lrsim_bmTrtSel <- function(x, ...) {
   print(df4, ..., na.print = "", quote = FALSE)
   cat("\nProbability of rejecting any dose\n")
   print(df5, ..., na.print = "", quote = FALSE)
+  cat("\nDisjunctive power\n")
+  print(df6, ..., na.print = "", quote = FALSE)
+  cat("\nConjunctive power\n")
+  print(df7, ..., na.print = "", quote = FALSE)
   cat("\nProbability of rejecting each dose given that it was selected\n")
-  print(df6, ..., na.print = "", quote = FALSE, row.names = FALSE)
+  print(df8, ..., na.print = "", quote = FALSE, row.names = FALSE)
   if ("naive" %in% methods) {
     cat("\nNaive does not control the familywise error rate because it reuses",
         "the stage 1 data used for selection;",

@@ -180,3 +180,11 @@ double qmvnormcpp(const double p, const std::vector<double> &mean,
                   std::size_t n_max = 16384, std::size_t R = 8,
                   double abseps = 1e-4, double releps = 0.0,
                   uint64_t seed = 314159, bool parallel = true);
+
+PMVNResult pordmvnormcpp(double z, std::size_t r,
+             const std::vector<double> &mean,
+             const FlatMatrix &sigma, bool lower_tail = true,
+             std::size_t n0 = 1024,
+             std::size_t n_max = 16384, std::size_t R = 8,
+             double abseps = 1e-4, double releps = 0.0,
+             uint64_t seed = 314159, bool parallel = true);

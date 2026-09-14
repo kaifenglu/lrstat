@@ -146,6 +146,8 @@ enum : size_t {
   M_TSSSD_UK_CE,
   M_TSSSD_K_RANK_CE,
   M_TSSSD_UK_RANK_CE,
+  M_BM_RANK,
+  M_PE_RANK,
   M_NAIVE,
   M_PH3ONLY,
   NMETHOD
@@ -156,6 +158,7 @@ const char *const METHOD_NAME[NMETHOD] = {
   "ctdunnett", "ctsimes",      "ctpooled",      "cer",   "tsssd.k",
   "tsssd.uk", "tsssd.k.rank", "tsssd.uk.rank", "tsssd.k.ce",
   "tsssd.uk.ce", "tsssd.k.rank.ce", "tsssd.uk.rank.ce",
+  "bm.rank", "pe.rank",
   "naive", "ph3only"};
 
 const double SINGLE_ARM_BOUND = boost_qnorm(1.0 - ALPHA_ONE_SIDED);
@@ -219,6 +222,7 @@ struct BinarySummaryRow {
   int treatment = 0;
   int responses = 0;
   int toxicities = NA_INTEGER;
+  double zBiomarker = NaN;
   int selected = 0;
 };
 
@@ -232,6 +236,7 @@ struct TteSummaryRow {
   double stage1LogRankZ = NaN;
   double stage2LogRankZ = NaN;
   double cumulativeLogRankZ = NaN;
+  std::vector<double> stage1PooledZ;
   std::vector<int> reject;
 };
 
@@ -272,6 +277,7 @@ struct SimWorker : public RcppParallel::Worker {
   const double rho_eff;
   const double hazardRateControl;
   const std::vector<double> &hazardRatioTreatments;
+  const size_t totalNumberOfEvents;
   const double T_max;
   const double w;
   const double phi_t;
@@ -299,9 +305,10 @@ struct SimWorker : public RcppParallel::Worker {
   SimWorker(size_t M_, size_t n1_, size_t n2min_, size_t n2max_, double p0_,
             const std::vector<double> &pe_, const std::vector<double> &pt_,
             double rho_tox_, double rho_eff_, double hazardRateControl_,
-            const std::vector<double> &hazardRatioTreatments_, double T_max_,
-            double w_, double phi_t_,
-            double ce_, double ct_, double acc_rate1_, double acc_rate2_,
+            const std::vector<double> &hazardRatioTreatments_,
+            size_t totalNumberOfEvents_, double T_max_, double w_,
+            double phi_t_, double ce_, double ct_, double acc_rate1_,
+            double acc_rate2_,
             double T_ph2followup_, size_t maxRawDatasets_,
             const std::vector<uint64_t> &seeds_,
             const std::vector<unsigned char> &use_, const WeightMatrix &wgtmat_,
@@ -315,7 +322,8 @@ struct SimWorker : public RcppParallel::Worker {
       : M(M_), n1(n1_), n2min(n2min_), n2max(n2max_), p0(p0_), pe(pe_), pt(pt_),
         rho_tox(rho_tox_), rho_eff(rho_eff_),
         hazardRateControl(hazardRateControl_),
-        hazardRatioTreatments(hazardRatioTreatments_), T_max(T_max_), w(w_),
+        hazardRatioTreatments(hazardRatioTreatments_),
+        totalNumberOfEvents(totalNumberOfEvents_), T_max(T_max_), w(w_),
         phi_t(phi_t_), ce(ce_), ct(ct_), acc_rate1(acc_rate1_),
         acc_rate2(acc_rate2_), T_ph2followup(T_ph2followup_),
         maxRawDatasets(maxRawDatasets_), seeds(seeds_),
@@ -345,6 +353,20 @@ struct SimWorker : public RcppParallel::Worker {
     std::vector<std::vector<int>> yevent(narm, std::vector<int>(ntot));
     std::vector<double> xt(M), xe1(M), narms(narm, static_cast<double>(n1));
     std::vector<double> stg1_p(M), stg1_z(M), pooled_p(ntests);
+    std::vector<double> B(M);
+    std::vector<std::vector<double>> rank_lower(M), rank_upper(M),
+        rank_mean(M);
+    std::vector<FlatMatrix> rank_sigma(M);
+    for (size_t eff = 1; eff <= M; ++eff) {
+      const size_t rank = eff - 1;
+      rank_lower[rank].assign(eff, -POS_INF);
+      rank_upper[rank].resize(eff);
+      rank_mean[rank].assign(eff, 0.0);
+      rank_sigma[rank].resize(eff, eff);
+      rank_sigma[rank].fill(0.5);
+      for (size_t i = 0; i < eff; ++i)
+        rank_sigma[rank](i, i) = 1.0;
+    }
 
     std::vector<size_t> allInt(ntests), allHyp(M);
     std::iota(allInt.begin(), allInt.end(), static_cast<size_t>(0));
@@ -441,6 +463,21 @@ struct SimWorker : public RcppParallel::Worker {
           xe1[k] = s;
         }
 
+        // phase 2 test statistics (standardized risk differences) for biomarker
+        for (size_t k = 0; k < M; ++k) {
+          double p0hat = x01 / n1;
+          double pkhat = xe1[k] / n1;
+          double se = std::sqrt(p0hat * (1.0 - p0hat) / n1 +
+                                pkhat * (1.0 - pkhat) / n1);
+          if (se == 0.0) {
+            p0hat = (x01 + 0.5) / (n1 + 1.0);
+            pkhat = (xe1[k] + 0.5) / (n1 + 1.0);
+            se = std::sqrt(p0hat * (1.0 - p0hat) / n1 +
+              pkhat * (1.0 - pkhat) / n1);
+          }
+          B[k] = (pkhat - p0hat) / se;
+        }
+
         out.select =
             get_decision(x01, xe1, xt, w, narms, phi_t, ce, ct, uniform_prior);
 
@@ -456,30 +493,55 @@ struct SimWorker : public RcppParallel::Worker {
         out.binarySummary.reserve(narm);
         out.binarySummary.push_back(
             {static_cast<int>(iter + 1), 0, static_cast<int>(x01), NA_INTEGER,
-             0});
+             NaN, 0});
         for (size_t k = 0; k < M; ++k) {
           out.binarySummary.push_back(
               {static_cast<int>(iter + 1), static_cast<int>(k + 1),
-               static_cast<int>(xe1[k]), static_cast<int>(xt[k]),
+               static_cast<int>(xe1[k]), static_cast<int>(xt[k]), B[k],
                out.select[k]});
         }
 
-        // administrative censoring at the end of the study
-        const double anal_time = ph3start + T_max;
-        for (size_t a = 0; a < narm; ++a) {
-          for (size_t i = 0; i < ntot; ++i) {
-            double fu = anal_time - accr[a][i];
-            if (fu < 0.0)
-              fu = 0.0;
-            if (longv[a][i] <= fu) {
-              ytime[a][i] = longv[a][i];
-              yevent[a][i] = 1;
-            } else {
-              ytime[a][i] = fu;
-              yevent[a][i] = 0;
+        auto analysis_time = [&](size_t nend) {
+          if (totalNumberOfEvents == 0)
+            return ph3start + T_max;
+
+          std::vector<double> event_times;
+          event_times.reserve(2 * nend);
+          for (size_t a : std::vector<size_t>{0, obd + 1}) {
+            for (size_t i = 0; i < nend; ++i)
+              event_times.push_back(accr[a][i] + longv[a][i]);
+          }
+          const size_t target = totalNumberOfEvents;
+          std::nth_element(event_times.begin(),
+                           event_times.begin() + target - 1,
+                           event_times.end());
+          return event_times[target - 1] + 1e-12;
+        };
+
+        auto set_observed_data = [&](double cutoff) {
+          for (size_t a = 0; a < narm; ++a) {
+            for (size_t i = 0; i < ntot; ++i) {
+              const double fu = std::max(cutoff - accr[a][i], 0.0);
+              if (longv[a][i] <= fu) {
+                ytime[a][i] = longv[a][i];
+                yevent[a][i] = 1;
+              } else {
+                ytime[a][i] = fu;
+                yevent[a][i] = 0;
+              }
             }
           }
-        }
+        };
+
+        // Raw TTE data use the final analysis for the largest sample size.
+        // If no dose is selected in an event-driven trial, follow-up stops at
+        // the phase 3 opening time because no confirmatory study proceeds.
+        const double raw_cutoff = selected
+                                      ? analysis_time(ntot)
+                   : (totalNumberOfEvents == 0
+                                             ? ph3start + T_max
+                                             : ph3start);
+        set_observed_data(raw_cutoff);
 
         if (saveRaw) {
           out.rawBinary.reserve(narm * n1);
@@ -512,11 +574,12 @@ struct SimWorker : public RcppParallel::Worker {
 
         if (!selected) {
           out.tteSummary.reserve(ngrid);
+          std::vector<double> nan_pooled(ntests, NaN);
           for (size_t n2i = 0; n2i < ngrid; ++n2i) {
             out.tteSummary.push_back(
                 {static_cast<int>(iter + 1), 0,
                  static_cast<int>(n2min + n2i), 0, 0, 0, NaN, NaN, NaN,
-                 std::vector<int>(NMETHOD, 0)});
+                 nan_pooled, std::vector<int>(NMETHOD, 0)});
           }
           out.completed = true;
           continue;
@@ -556,38 +619,10 @@ struct SimWorker : public RcppParallel::Worker {
           return logrank_zg(std::move(tv), std::move(ev), std::move(gv));
         };
 
-        // stage 1 one-sided p-values, one per dose
+        const size_t rankB = static_cast<size_t>(std::count_if(
+          B.begin(), B.end(), [&](double b) { return b < B[obd]; }));
+        const size_t effB = rankB + 1;
         std::vector<size_t> arms;
-        for (size_t k = 0; k < M; ++k) {
-          arms.assign(1, k + 1);
-          stg1_z[k] = zg(arms, 0, n1);
-          stg1_p[k] = boost_pnorm(stg1_z[k], 0.0, 1.0, false);
-        }
-
-        LocalPValues bonferroni1, dunnett1, simes1, pooled1;
-        if (use[M_CTBONFERRONI]) {
-          bonferroni1 = fPCStagewiseCpp(stg1_p, wgtmat, family, corr, allInt,
-                                        allHyp, wgtmat, "bonferroni");
-        }
-        if (use[M_CTDUNNETT]) {
-          dunnett1 = fPCStagewiseCpp(stg1_p, wgtmat, family, corr, allInt,
-                                     allHyp, wgtmat, "dunnett");
-        }
-        if (use[M_CTSIMES]) {
-          simes1 = fPCStagewiseCpp(stg1_p, wgtmat, family, corr, allInt, allHyp,
-                                   wgtmat, "simes");
-        }
-        if (use[M_CTPOOLED]) {
-          for (size_t i = 0; i < ntests; ++i) {
-            arms.clear();
-            for (size_t k = 0; k < M; ++k) {
-              if (wgtmat.inthyp(i, k))
-                arms.push_back(k + 1);
-            }
-            pooled_p[i] = boost_pnorm(zg(arms, 0, n1), 0.0, 1.0, false);
-          }
-          pooled1 = LocalPValues{allInt, wgtmat.inthyp, pooled_p};
-        }
 
         // only intersection hypotheses containing the selected dose can keep
         // that dose from being rejected
@@ -612,6 +647,70 @@ struct SimWorker : public RcppParallel::Worker {
         for (size_t n2i = 0; n2i < ngrid; ++n2i) {
           const size_t n2cur = n2min + n2i;
           const size_t nend = n1 + n2cur;
+          set_observed_data(analysis_time(nend));
+
+          // Stage 1 statistics use all follow-up available at this grid
+          // point's final analysis, so they must be recomputed when the
+          // event-driven analysis time changes with n2.
+          std::vector<double> stg1_pooled_z(ntests);
+          for (size_t i = 0; i < ntests; ++i) {
+            arms.clear();
+            for (size_t k = 0; k < M; ++k) {
+              if (wgtmat.inthyp(i, k))
+                arms.push_back(k + 1);
+            }
+            stg1_pooled_z[i] = zg(arms, 0, n1);
+            pooled_p[i] = boost_pnorm(stg1_pooled_z[i], 0.0, 1.0, false);
+          }
+          for (size_t k = 0; k < M; ++k) {
+            const size_t idx =
+                ntests - (static_cast<size_t>(1) << (M - 1 - k));
+            stg1_z[k] = stg1_pooled_z[idx];
+            stg1_p[k] = pooled_p[idx];
+          }
+
+          const size_t rankp = static_cast<size_t>(
+              std::count_if(stg1_p.begin(), stg1_p.end(),
+                            [&](double p) { return p < stg1_p[obd]; }));
+          const size_t effE = M - rankp;
+
+          double stg1_adj_p_bm_rank = NaN;
+          double stg1_adj_p_pe_rank = NaN;
+          if (use[M_BM_RANK]) {
+            const size_t rank = effB - 1;
+            std::fill(rank_upper[rank].begin(), rank_upper[rank].end(),
+                      stg1_z[obd]);
+            stg1_adj_p_bm_rank =
+                1.0 - pmvnormcpp(rank_lower[rank], rank_upper[rank],
+                                  rank_mean[rank], rank_sigma[rank])
+                          .prob;
+          }
+          if (use[M_PE_RANK]) {
+            const size_t rank = effE - 1;
+            std::fill(rank_upper[rank].begin(), rank_upper[rank].end(),
+                      stg1_z[obd]);
+            stg1_adj_p_pe_rank =
+                1.0 - pmvnormcpp(rank_lower[rank], rank_upper[rank],
+                                  rank_mean[rank], rank_sigma[rank])
+                          .prob;
+          }
+
+          LocalPValues bonferroni1, dunnett1, simes1, pooled1;
+          if (use[M_CTBONFERRONI]) {
+            bonferroni1 = fPCStagewiseCpp(stg1_p, wgtmat, family, corr, allInt,
+                                          allHyp, wgtmat, "bonferroni");
+          }
+          if (use[M_CTDUNNETT]) {
+            dunnett1 = fPCStagewiseCpp(stg1_p, wgtmat, family, corr, allInt,
+                                       allHyp, wgtmat, "dunnett");
+          }
+          if (use[M_CTSIMES]) {
+            simes1 = fPCStagewiseCpp(stg1_p, wgtmat, family, corr, allInt,
+                                     allHyp, wgtmat, "simes");
+          }
+          if (use[M_CTPOOLED])
+            pooled1 = LocalPValues{allInt, wgtmat.inthyp, pooled_p};
+
           arms.assign(1, obd + 1);
 
           int d1e = 0, d2e = 0;
@@ -646,9 +745,7 @@ struct SimWorker : public RcppParallel::Worker {
                                       : 0.5;
           t1 = std::min(std::max(t1, 1e-6), 1.0 - 1e-6);
 
-          const size_t rankp = static_cast<size_t>(
-              std::count_if(stg1_p.begin(), stg1_p.end(),
-                            [&](double p) { return p < stg1_p[obd]; }));
+
           const double z1Selected = stg1_z[obd];
 
           auto combtest = [&](size_t m, const LocalPValues &stg1_loc_p) {
@@ -772,6 +869,25 @@ struct SimWorker : public RcppParallel::Worker {
             }
           }
 
+          if (use[M_BM_RANK] || use[M_PE_RANK]) {
+            auto combp = [&](double p1, double p2, double info_frac) {
+              return 1.0 -
+                boost_pnorm(std::sqrt(info_frac) * boost_qnorm(1.0 - p1) +
+                std::sqrt(1.0 - info_frac) * boost_qnorm(1.0 - p2));
+            };
+
+            if (use[M_BM_RANK]) {
+              double p_bm_rank = combp(stg1_adj_p_bm_rank, p2, info_frac);
+              if (p_bm_rank < ALPHA_ONE_SIDED)
+                out.rej[M_BM_RANK](n2i, obd) = 1;
+            }
+            if (use[M_PE_RANK]) {
+              double p_pe_rank = combp(stg1_adj_p_pe_rank, p2, info_frac);
+              if (p_pe_rank < ALPHA_ONE_SIDED)
+                out.rej[M_PE_RANK](n2i, obd) = 1;
+            }
+          }
+
           std::vector<int> reject(NMETHOD, 0);
           for (size_t m = 0; m < NMETHOD; ++m) {
             if (use[m])
@@ -780,7 +896,7 @@ struct SimWorker : public RcppParallel::Worker {
           out.tteSummary.push_back(
               {static_cast<int>(iter + 1), static_cast<int>(obd + 1),
                static_cast<int>(n2cur), d1e, d2e, d1e + d2e, stg1_z[obd], z2,
-               zgn, std::move(reject)});
+               zgn, stg1_pooled_z, std::move(reject)});
         }
 
         out.completed = true;
@@ -801,7 +917,7 @@ ListCpp lrsim_bmTrtSel_cpp(
     const std::vector<double> &pt, const double rho_tox, const double rho_eff,
     const double hazardRateControl,
     const std::vector<double> &hazardRatioTreatments,
-    const double T_max,
+    const size_t totalNumberOfEvents, const double T_max,
     const double w, const double phi_t, const double ce, const double ct,
     const bool uniform_prior, const double acc_rate1, const double acc_rate2,
     const double T_ph2followup, const std::vector<std::string> &methods,
@@ -843,8 +959,17 @@ ListCpp lrsim_bmTrtSel_cpp(
     if (h <= 0)
       throw std::invalid_argument("hazardRatioTreatments must be positive");
   }
-  if (T_max <= 0)
-    throw std::invalid_argument("T_max must be positive");
+  const bool event_driven = totalNumberOfEvents > 0;
+  if (event_driven && totalNumberOfEvents > 2 * (n1 + n2min)) {
+    throw std::invalid_argument(
+        "totalNumberOfEvents cannot exceed the number of subjects in the "
+        "selected dose and control arms at the minimum phase 3 sample size");
+  }
+  if (!event_driven && (std::isnan(T_max) || T_max <= 0)) {
+    throw std::invalid_argument(
+        "studyDurationPhase3 must be positive when totalNumberOfEvents is "
+        "missing");
+  }
   if (w < 0)
     throw std::invalid_argument("w must be nonnegative");
   if (phi_t <= 0 || phi_t > 1)
@@ -894,8 +1019,11 @@ ListCpp lrsim_bmTrtSel_cpp(
 
   // The time-to-event null is defined by a treatment hazard ratio of one.
   std::vector<unsigned char> true_null(ntr, 0);
+  std::vector<unsigned char> true_nonnull(ntr, 0);
   for (size_t k = 0; k < ntr; ++k)
     true_null[k] = (hazardRatioTreatments[k] == 1.0);
+  for (size_t k = 0; k < ntr; ++k)
+    true_nonnull[k] = (hazardRatioTreatments[k] < 1.0);
 
   // Equal weights within each intersection hypothesis.
   WeightMatrix wgtmat = fDefaultWgtmatcpp(ntr);
@@ -946,28 +1074,36 @@ ListCpp lrsim_bmTrtSel_cpp(
 
   std::vector<TrialResult> results(ntrial);
   SimWorker worker(M, n1, n2min, n2max, p0, pe, pt, rho_tox, rho_eff,
-                   hazardRateControl, hazardRatioTreatments, T_max, w,
-                   phi_t, ce, ct, acc_rate1, acc_rate2, T_ph2followup,
-                   maxRawDatasets, seeds, use, wgtmat, wgtmat1, family, corr,
-                   sb, uniform_prior, needTsssdCe, tNominal, tsssdKnownNomByEff,
+                   hazardRateControl, hazardRatioTreatments,
+                   totalNumberOfEvents, T_max, w, phi_t, ce, ct, acc_rate1,
+                   acc_rate2, T_ph2followup, maxRawDatasets, seeds, use,
+                   wgtmat, wgtmat1, family, corr, sb, uniform_prior,
+                   needTsssdCe, tNominal, tsssdKnownNomByEff,
                    tsssdUnknownNomByEff, &results);
   RcppParallel::parallelFor(0, ntrial, worker);
 
   std::vector<int> select_count(ntr, 0);
   std::vector<IntMatrix> rej_each(NMETHOD);
   std::vector<std::vector<int>> rej_any(NMETHOD);
+  std::vector<std::vector<int>> rej_any_nonnull(NMETHOD);
+  std::vector<std::vector<int>> rej_all_nonnull(NMETHOD);
   for (size_t m = 0; m < NMETHOD; ++m) {
     if (!use[m])
       continue;
     rej_each[m].resize(ngrid, ntr);
+    rej_any_nonnull[m].resize(ngrid);
+    rej_all_nonnull[m].resize(ngrid);
     rej_any[m].assign(ngrid, 0);
   }
   IntMatrix total_events(ngrid, 3);
   std::vector<int> sumBinIter, sumBinTreatment, sumBinResponses,
       sumBinToxicities, sumBinSelected;
+  std::vector<double> sumBinZBiomarker;
   std::vector<int> sumTteIter, sumTteSelectedDose, sumTtePhase3SampleSize,
       sumTteStage1Events, sumTteStage2Events, sumTteTotalEvents;
   std::vector<double> sumTteStage1Z, sumTteStage2Z, sumTteCumulativeZ;
+  const size_t ntests = (static_cast<size_t>(1) << M) - 1;
+  std::vector<std::vector<double>> sumTteStage1PooledZ(ntests);
   std::vector<std::vector<int>> sumTteReject(NMETHOD);
   std::vector<int> rawBinIter, rawBinSubject, rawBinTreatment, rawBinResponse,
       rawBinToxicity;
@@ -982,6 +1118,7 @@ ListCpp lrsim_bmTrtSel_cpp(
       sumBinTreatment.push_back(row.treatment);
       sumBinResponses.push_back(row.responses);
       sumBinToxicities.push_back(row.toxicities);
+      sumBinZBiomarker.push_back(row.zBiomarker);
       sumBinSelected.push_back(row.selected);
     }
     for (const TteSummaryRow &row : out.tteSummary) {
@@ -994,6 +1131,9 @@ ListCpp lrsim_bmTrtSel_cpp(
       sumTteStage1Z.push_back(row.stage1LogRankZ);
       sumTteStage2Z.push_back(row.stage2LogRankZ);
       sumTteCumulativeZ.push_back(row.cumulativeLogRankZ);
+      for (size_t i = 0; i < ntests; ++i) {
+        sumTteStage1PooledZ[i].push_back(row.stage1PooledZ[i]);
+      }
       for (size_t m = 0; m < NMETHOD; ++m) {
         if (use[m])
           sumTteReject[m].push_back(row.reject[m]);
@@ -1030,12 +1170,22 @@ ListCpp lrsim_bmTrtSel_cpp(
       if (!use[m])
         continue;
       for (size_t n2i = 0; n2i < ngrid; ++n2i) {
+        bool any_nonnull_rejected = false;
+        bool all_nonnull_rejected = true;
         for (size_t k = 0; k < ntr; ++k) {
           rej_each[m](n2i, k) += out.rej[m](n2i, k);
           // only the selected dose enters phase 3, so at most one column is
           // nonzero and the row sum is the any-rejection indicator
           rej_any[m][n2i] += out.rej[m](n2i, k);
+          if (true_nonnull[k]) {
+            any_nonnull_rejected =
+                any_nonnull_rejected || out.rej[m](n2i, k) == 1;
+            all_nonnull_rejected =
+                all_nonnull_rejected && out.rej[m](n2i, k) == 1;
+          }
         }
+        rej_any_nonnull[m][n2i] += any_nonnull_rejected;
+        rej_all_nonnull[m][n2i] += all_nonnull_rejected;
       }
     }
 
@@ -1069,13 +1219,23 @@ ListCpp lrsim_bmTrtSel_cpp(
   // conditional on it being selected, and probability of rejecting any dose
   auto summarize = [&](const IntMatrix &rej_each,
                        const std::vector<int> &rej_any,
+                       const std::vector<int> &rej_any_nonnull,
+                       const std::vector<int> &rej_all_nonnull,
                        std::vector<double> &gpower, FlatMatrix &prob_each,
                        std::vector<double> &prob_any,
+                       std::vector<double> &disjunctive_power,
+                       std::vector<double> &conjunctive_power,
                        std::vector<double> &fwer) {
     gpower.resize(ngrid);
     prob_each.resize(ngrid, ntr);
     prob_any.resize(ngrid);
+    disjunctive_power.resize(ngrid);
+    conjunctive_power.resize(ngrid);
     fwer.resize(ngrid);
+    const bool has_nonnull = std::any_of(
+        true_nonnull.begin(), true_nonnull.end(), [](unsigned char x) {
+          return x;
+        });
     for (size_t n2i = 0; n2i < ngrid; ++n2i) {
       gpower[n2i] = rej_each(n2i, true_id) / dntrial;
       int true_null_rejections = 0;
@@ -1087,6 +1247,10 @@ ListCpp lrsim_bmTrtSel_cpp(
           true_null_rejections += rej_each(n2i, k);
       }
       prob_any[n2i] = rej_any[n2i] / dntrial;
+      disjunctive_power[n2i] =
+          has_nonnull ? rej_any_nonnull[n2i] / dntrial : NaN;
+      conjunctive_power[n2i] =
+          has_nonnull ? rej_all_nonnull[n2i] / dntrial : NaN;
       fwer[n2i] = true_null_rejections / dntrial;
     }
   };
@@ -1102,15 +1266,19 @@ ListCpp lrsim_bmTrtSel_cpp(
     if (!use[m])
       continue;
 
-    std::vector<double> gpower, prob_rej_any, fwer;
+    std::vector<double> gpower, prob_rej_any, disjunctive_power,
+      conjunctive_power, fwer;
     FlatMatrix prob_rej_each;
-    summarize(rej_each[m], rej_any[m], gpower, prob_rej_each, prob_rej_any,
-         fwer);
+    summarize(rej_each[m], rej_any[m], rej_any_nonnull[m],
+          rej_all_nonnull[m], gpower, prob_rej_each, prob_rej_any,
+          disjunctive_power, conjunctive_power, fwer);
 
     ListCpp res;
     res.push_back(std::move(gpower), "gpower");
     res.push_back(std::move(prob_rej_each), "prob.rej.each");
     res.push_back(std::move(prob_rej_any), "prob.rej.any");
+    res.push_back(std::move(disjunctive_power), "disjunctive.power");
+    res.push_back(std::move(conjunctive_power), "conjunctive.power");
     res.push_back(std::move(fwer), "fwer");
 
     methodNames.push_back(METHOD_NAME[m]);
@@ -1123,6 +1291,7 @@ ListCpp lrsim_bmTrtSel_cpp(
   sumdataBIN.push_back(std::move(sumBinTreatment), "treatmentGroup");
   sumdataBIN.push_back(std::move(sumBinResponses), "responses");
   sumdataBIN.push_back(std::move(sumBinToxicities), "toxicities");
+  sumdataBIN.push_back(std::move(sumBinZBiomarker), "zBiomarker");
   sumdataBIN.push_back(std::move(sumBinSelected), "selected");
 
   DataFrameCpp sumdataTTE;
@@ -1136,6 +1305,15 @@ ListCpp lrsim_bmTrtSel_cpp(
   sumdataTTE.push_back(std::move(sumTteStage1Z), "stage1LogRankZ");
   sumdataTTE.push_back(std::move(sumTteStage2Z), "stage2LogRankZ");
   sumdataTTE.push_back(std::move(sumTteCumulativeZ), "cumulativeLogRankZ");
+  for (size_t i = 0; i < ntests; ++i) {
+    std::string name = "stage1LogRankZ";
+    for (size_t k = 0; k < M; ++k) {
+      if (wgtmat.inthyp(i, k)) {
+        name += std::to_string(k + 1);
+      }
+    }
+    sumdataTTE.push_back(std::move(sumTteStage1PooledZ[i]), name);
+  }
   for (size_t m = 0; m < NMETHOD; ++m) {
     if (use[m]) {
       sumdataTTE.push_back(std::move(sumTteReject[m]),
@@ -1145,6 +1323,10 @@ ListCpp lrsim_bmTrtSel_cpp(
 
   result.push_back(n1, "n1");
   result.push_back(std::move(n2), "n2");
+  result.push_back(event_driven ? static_cast<int>(totalNumberOfEvents)
+                                : NA_INTEGER,
+                   "totalNumberOfEvents");
+  result.push_back(T_max, "studyDurationPhase3");
   result.push_back(ntrial, "numberOfIterations");
   result.push_back(true_id + 1, "trueOBD");
   result.push_back(std::move(selectProb), "selectionProb");
@@ -1191,6 +1373,7 @@ Rcpp::List lrsim_bmTrtSel_Rcpp(
     const double corrEfficacyTTE = 0,
     const double hazardRateControl = NA_REAL,
     const Rcpp::NumericVector &hazardRatioTreatments = NA_REAL,
+    const int totalNumberOfEvents = NA_INTEGER,
     const double studyDurationPhase3 = NA_REAL,
     const double toxicityWeight = NA_REAL,
     const double toxicityUpperLimit = NA_REAL,
@@ -1213,6 +1396,9 @@ Rcpp::List lrsim_bmTrtSel_Rcpp(
     throw std::invalid_argument(
         "maxNumberOfRawDatasets cannot exceed maxNumberOfIterations");
   }
+  if (totalNumberOfEvents != NA_INTEGER && totalNumberOfEvents <= 0) {
+    throw std::invalid_argument("totalNumberOfEvents must be positive");
+  }
 
   std::vector<double> pe(responseProbTreatments.begin(),
                          responseProbTreatments.end());
@@ -1220,6 +1406,10 @@ Rcpp::List lrsim_bmTrtSel_Rcpp(
                          toxicityProbTreatments.end());
   std::vector<double> hazardRatioTreatments_vec(
       hazardRatioTreatments.begin(), hazardRatioTreatments.end());
+  const size_t totalNumberOfEvents_value =
+      totalNumberOfEvents == NA_INTEGER
+          ? 0
+          : static_cast<size_t>(totalNumberOfEvents);
 
   std::vector<std::string> methodVec;
   if (methods.isNotNull()) {
@@ -1232,10 +1422,10 @@ Rcpp::List lrsim_bmTrtSel_Rcpp(
       static_cast<size_t>(phase3SampleSizePerArmMin),
       static_cast<size_t>(phase3SampleSizePerArmMax), responseProbControl, pe,
       pt, corrEfficacyToxicity, corrEfficacyTTE, hazardRateControl,
-      hazardRatioTreatments_vec,
-      studyDurationPhase3, toxicityWeight,
-      toxicityUpperLimit, efficacyThreshold, safetyThreshold, useUniformPrior,
-      accrualRatePhase2, accrualRatePhase3, followupTimePhase2, methodVec,
+      hazardRatioTreatments_vec, totalNumberOfEvents_value,
+      studyDurationPhase3, toxicityWeight, toxicityUpperLimit,
+      efficacyThreshold, safetyThreshold, useUniformPrior, accrualRatePhase2,
+      accrualRatePhase3, followupTimePhase2, methodVec,
       static_cast<size_t>(maxNumberOfIterations),
       static_cast<size_t>(maxNumberOfRawDatasets), seed);
 
