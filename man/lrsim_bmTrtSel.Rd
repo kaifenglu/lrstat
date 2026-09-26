@@ -3,7 +3,7 @@
 \name{lrsim_bmTrtSel}
 \alias{lrsim_bmTrtSel}
 \title{Simulation of a seamless phase II/III design with treatment
-selection based on a short-term endpoint}
+selection based on a short-term endpoint and toxicities}
 \usage{
 lrsim_bmTrtSel(
   phase2SampleSizePerArm = NA_integer_,

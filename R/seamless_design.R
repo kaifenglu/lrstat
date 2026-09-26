@@ -1,8 +1,8 @@
 #' @title Exit Probabilities for Phase 2/3 Seamless Design
 #' @description Computes the upper and lower exit probabilities for a phase
 #' 2/3 seamless design. In Phase 2, multiple active arms are compared
-#' against a common control arm. If the test statistic for the arm
-#' ranked \code{rankp0} at the end of Phase 2 crosses the
+#' against a common control arm. If the largest test statistic at the end
+#' of Phase 2 crosses the
 #' efficacy boundary, the trial stops early for efficacy; if it falls below
 #' the futility boundary, the trial stops early for futility. Otherwise,
 #' the arm is selected to proceed to Phase 3, where it is tested against
@@ -17,8 +17,7 @@
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 #'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-#'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
-#'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+#'   0 is used.
 #' @param K Number of sequential looks in Phase 3.
 #' @param b A vector of efficacy boundaries (length \eqn{K + 1}). The first
 #'   element is the efficacy boundary for the Phase-2 test statistic;
@@ -31,32 +30,26 @@
 #' @param I A vector of information levels (length \eqn{K + 1}) for any active
 #'   arm versus the common control. The first element is for Phase 2;
 #'   the remaining \eqn{K} elements are for the looks in Phase 3.
-#' @param rankp0 An integer between 1 and \code{M} specifying which ranked
-#'   Phase-2 arm is carried forward when the trial continues to Phase 3.
-#'   \code{rankp0 = 1} selects the largest Phase-2 Z-statistic,
-#'   \code{rankp0 = 2} selects the second largest, and so on.
 #' @param nthreads The number of threads to use (0 leaves the
 #'   RcppParallel setting unchanged).
 #'
 #' @details
 #' The function assumes a multivariate normal distribution for the Wald
 #' statistics. Among designs that continue beyond the Phase-2 analysis,
-#' the carried-forward arm is the one with rank \code{rankp0} based on the
-#' p-value of the Z-statistic at the end of Phase 2.
+#' the arm with the largest Z-statistic at the end of Phase 2 is carried
+#' forward.
 #'
 #' \strong{Decision Rules:}
 #'
-#' * \strong{Phase 2 efficacy stop}: reject if the Phase-2 test statistic
-#'   for the arm selected at rank \code{rankp0} satisfies
-#'   \eqn{Z_{[rankp0]}(I_0) \ge b_0}.
+#' * \strong{Phase 2 efficacy stop}: reject if the largest Phase-2 test
+#'   statistic satisfies \eqn{Z_{(M)}(I_0) \ge b_0}.
 #'
-#' * \strong{Phase 2 futility stop}: stop for futility if the Phase-2 test
-#'   statistic for the arm selected at rank \code{rankp0} satisfies
-#'   \eqn{Z_{[rankp0]}(I_0) \le a_0}.
+#' * \strong{Phase 2 futility stop}: stop for futility if the largest
+#'   Phase-2 test statistic satisfies \eqn{Z_{(M)}(I_0) \le a_0}.
 #'
 #' * \strong{Continue to Phase 3}: if
-#'   \eqn{a_0 < Z_{[rankp0]}(I_0) < b_0}, continue with the arm selected
-#'   at rank \code{rankp0} only.
+#'   \eqn{a_0 < Z_{(M)}(I_0) < b_0}, continue with the arm having the
+#'   largest Phase-2 test statistic.
 #'
 #' * \strong{Phase 3 efficacy stop}: at look \eqn{k}, reject if the selected
 #'   arm's Z-statistic exceeds the efficacy boundary and no earlier stop has
@@ -71,8 +64,7 @@
 #' * All active arms share the same information level in Phase 2.
 #'
 #' * Exactly one active arm is selected at the end of Phase 2 based on the
-#'   \code{rankp0}-th largest observed Z-statistic when the trial continues
-#'   to Phase 3.
+#'   largest observed Z-statistic when the trial continues to Phase 3.
 #'
 #' @return A list containing the following components:
 #'
@@ -88,14 +80,14 @@
 #'
 #' * \code{exitProbByArmUpper}: A \eqn{(K + 1) \times M} matrix. The
 #'   \eqn{(k, m)}-th entry gives the probability of stopping for efficacy at
-#'   look \eqn{k} given that arm \eqn{m} is selected at rank \code{rankp0}.
+#'   look \eqn{k} given that arm \eqn{m} is selected as the most promising.
 #'
 #' * \code{exitProbByArmLower}: A \eqn{(K + 1) \times M} matrix. The
 #'   \eqn{(k, m)}-th entry gives the probability of stopping for futility at
-#'   look \eqn{k} given that arm \eqn{m} is selected at rank \code{rankp0}.
+#'   look \eqn{k} given that arm \eqn{m} is selected as the most promising.
 #'
 #' * \code{selectionProb}: A vector of length \eqn{M} containing the
-#'   probability that each active arm is selected at rank \code{rankp0}.
+#'   probability that each active arm is selected as the most promising.
 #'
 #' @author Kaifeng Lu, \email{kaifenglu@@gmail.com}
 #'
@@ -139,19 +131,18 @@ exitprob_seamless <- function(M = NA_integer_,
                               b = NULL,
                               a = NULL,
                               I = NULL,
-                              rankp0 = 1L,
                               nthreads = 0) {
   if (nthreads > 0) {
     n_physical_cores <- parallel::detectCores(logical = FALSE)
     RcppParallel::setThreadOptions(min(nthreads, n_physical_cores))
   }
-    exitprob_seamless_Rcpp(M, r, theta, corr_known, K, b, a, I, rankp0)
+    exitprob_seamless_Rcpp(M, r, theta, corr_known, K, b, a, I)
 }
 
 
 #' @title Efficacy Boundaries for Phase 2/3 Seamless Design
 #' @description Calculates the efficacy stopping boundaries for a phase 2/3
-#' seamless design, accounting for rank-based treatment selection
+#' seamless design, accounting for selection of the most promising treatment
 #' at the end of Phase 2 and sequential testing in Phase 3.
 #'
 #' @param M Number of active treatment arms in Phase 2.
@@ -160,8 +151,7 @@ exitprob_seamless <- function(M = NA_integer_,
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 #'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-#'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
-#'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+#'   0 is used.
 #' @param k The index of the current look in Phase 3.
 #' @param informationRates A numeric vector of information rates up to the
 #'   current look. Values must be strictly increasing and \eqn{\le 1}.
@@ -173,21 +163,13 @@ exitprob_seamless <- function(M = NA_integer_,
 #'   error spending time at each analysis. Values must be strictly increasing
 #'   and \eqn{\le 1}. If omitted, defaults to \code{informationRates}.
 #' @inheritParams param_efficacyStopping
-#' @param rankp0 An integer between 1 and \code{M} specifying the rank of the
-#'   arm to be selected at the end of Phase 2 for the purpose of determining
-#'   the boundaries. For example, if \code{rankp0} is 1, the boundaries are
-#'   determined based on the arm with the largest Z-statistic at the end of
-#'   Phase 2; if \code{rankp0} is 2, the boundaries are determined based on the
-#'   arm with the second largest Z-statistic at the end of Phase 2, and
-#'   so on. The default is 1, which corresponds to the common practice of
-#'   determining boundaries based on the top-ranked arm at the end of Phase 2.
 #' @param nthreads The number of threads to use (0 leaves the
 #'   RcppParallel setting unchanged).
 #'
 #' @details
 #' The function determines critical values by solving for the boundary that
-#' satisfies the alpha-spending requirement, given the selection of the
-#' arm at rank \code{rankp0} at the end of Phase 2.
+#' satisfies the alpha-spending requirement, given selection of the arm with
+#' the largest Z-statistic at the end of Phase 2.
 #'
 #' If \code{typeAlphaSpending} is \code{"OF"}, \code{"P"}, \code{"WT"}, or
 #' \code{"none"}, then \code{informationRates}, \code{efficacyStopping},
@@ -225,7 +207,6 @@ getBound_seamless <- function(M = NA_integer_,
                               userAlphaSpending = NA_real_,
                               spendingTime = NA_real_,
                               efficacyStopping = NA_integer_,
-                              rankp0 = 1L,
                               nthreads = 0) {
   if (nthreads > 0) {
     n_physical_cores <- parallel::detectCores(logical = FALSE)
@@ -235,7 +216,7 @@ getBound_seamless <- function(M = NA_integer_,
                            alpha, typeAlphaSpending,
                            parameterAlphaSpending,
                            userAlphaSpending, spendingTime,
-                           efficacyStopping, rankp0)
+                           efficacyStopping)
 }
 
 
@@ -260,8 +241,7 @@ getBound_seamless <- function(M = NA_integer_,
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 #'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-#'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
-#'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+#'   0 is used.
 #'   This option is only used for critical value calculations; the
 #'   correlation is always derived from \eqn{r} for power calculations.
 #' @param K Number of sequential looks in Phase 3.
@@ -270,7 +250,7 @@ getBound_seamless <- function(M = NA_integer_,
 #' @inheritParams param_efficacyStopping
 #' @inheritParams param_futilityStopping
 #' @param criticalValues The upper boundaries on the Z-statistic scale
-#'   for the rank-selected arm in Phase 2 and the Z statistics for the
+#'   for the most promising arm in Phase 2 and the Z statistics for the
 #'   selected arm in Phase 3.
 #'   If missing, boundaries will be computed based on the specified alpha
 #'   spending function.
@@ -280,7 +260,7 @@ getBound_seamless <- function(M = NA_integer_,
 #' @inheritParams param_userAlphaSpending
 #' @param futilityBounds A numeric vector of length \eqn{K} specifying
 #'   futility boundaries on the Z scale at the end of Phase 2 for the
-#'   rank-selected arm and on the Z scale for the \eqn{K - 1} analyses
+#'   most promising arm and on the Z scale for the \eqn{K - 1} analyses
 #'   in Phase 3. The final analysis uses the efficacy boundary as the
 #'   futility boundary.
 #' @param futilityCP A numeric vector of length \eqn{K} specifying futility
@@ -293,10 +273,6 @@ getBound_seamless <- function(M = NA_integer_,
 #' @param spendingTime A numeric vector of length \eqn{K+1} specifying the
 #'   error spending time at each analysis. Values must be strictly increasing
 #'   and end at 1. If omitted, defaults to \code{informationRates}.
-#' @param rankp0 An integer between 1 and \code{M} specifying which ranked
-#'   Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
-#'   Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
-#'   so on.
 #' @param nthreads The number of threads to use (0 leaves the
 #'   RcppParallel setting unchanged).
 #'
@@ -312,7 +288,6 @@ getBound_seamless <- function(M = NA_integer_,
 #'     - \code{r}: Randomization ratio per active arm versus control in
 #'       Phase 2.
 #'     - \code{corr_known}: Whether the phase-2 correlation was assumed known.
-#'     - \code{rankp0}: The rank of the selected arm at the end of Phase 2.
 #'     - \code{K}: Number of looks in Phase 3.
 #'     - \code{information}: Maximum information for any active arm versus
 #'       control.
@@ -364,7 +339,7 @@ getBound_seamless <- function(M = NA_integer_,
 #'     - \code{powerByArm}: Probability of rejecting the null for each arm by
 #'       trial end.
 #'     - \code{condPowerByArm}: Conditional power for each arm given it was
-#'       selected at rank \code{rankp0} at the end of Phase 2.
+#'       selected as the most promising arm at the end of Phase 2.
 #'
 #' * \code{settings}: A list of input settings:
 #'     - \code{typeAlphaSpending}: Type of alpha spending function.
@@ -380,7 +355,7 @@ getBound_seamless <- function(M = NA_integer_,
 #' @details
 #' If \code{corr_known} is \code{FALSE}, critical boundaries are
 #' computed assuming independence among the Phase-2 Wald statistics
-#' (a conservative assumption when \code{rankp0 = 1}). Power calculations,
+#' (a conservative assumption). Power calculations,
 #' however, use the correlation implied by the randomization ratio \eqn{r}.
 #'
 #' Futility boundaries may be supplied directly on the Z scale, derived from
@@ -441,7 +416,6 @@ getDesign_seamless <- function(beta = NA_real_,
                                parameterBetaSpending = NA_real_,
                                userBetaSpending = NA_real_,
                                spendingTime = NA_real_,
-                               rankp0 = 1L,
                                nthreads = 0) {
   if (nthreads > 0) {
     n_physical_cores <- parallel::detectCores(logical = FALSE)
@@ -456,8 +430,7 @@ getDesign_seamless <- function(beta = NA_real_,
                             futilityCP, futilityTheta,
                             typeBetaSpending,
                             parameterBetaSpending,
-                            userBetaSpending, spendingTime,
-                            rankp0)
+                            userBetaSpending, spendingTime)
 }
 
 
@@ -483,8 +456,7 @@ getDesign_seamless <- function(beta = NA_real_,
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 #'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-#'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
-#'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+#'   0 is used.
 #'   This option is only used for critical value calculations.
 #' @param L The interim adaptation look in Phase 3.
 #' @param zL The z-test statistic at the interim adaptation look of
@@ -503,7 +475,7 @@ getDesign_seamless <- function(beta = NA_real_,
 #'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 #'   if left unspecified.
 #' @param criticalValues The upper boundaries on the z-test statistic
-#'   scale for the rank-selected arm in Phase 2 and the z-test statistics
+#'   scale for the most promising arm in Phase 2 and the z-test statistics
 #'   for the selected arm in Phase 3 for the primary trial. If missing,
 #'   boundaries will be computed based on the specified alpha spending function.
 #' @param alpha The significance level of the primary trial.
@@ -526,7 +498,7 @@ getDesign_seamless <- function(beta = NA_real_,
 #' @param userAlphaSpending The user-defined alpha spending for the
 #'   primary trial. Represents the cumulative alpha spent up to each stage.
 #' @param futilityBounds The lower boundaries on the z-test statistic scale
-#'   at the end of phase 2 for the rank-selected arm and on the z-test
+#'   at the end of phase 2 for the most promising arm and on the z-test
 #'   statistic scale in phase 3 for futility stopping for the primary trial.
 #'   Defaults to \code{rep(-8, kMax-1)} if left unspecified.
 #' @param futilityCP The conditional power-based futility bounds for the
@@ -584,10 +556,6 @@ getDesign_seamless <- function(beta = NA_real_,
 #' @param spendingTimeNew The error spending time of the secondary trial.
 #'   Defaults to missing, in which case it is assumed to be the same as
 #'   \code{informationRatesNew}.
-#' @param rankp0 An integer between 1 and \code{M} specifying which ranked
-#'   Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
-#'   Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
-#'   so on.
 #' @param nthreads The number of threads to use (0 leaves the
 #'   RcppParallel setting unchanged).
 #'
@@ -670,7 +638,6 @@ adaptDesign_seamless <- function(betaNew = NA_real_,
                                  parameterBetaSpendingNew = NA_real_,
                                  userBetaSpendingNew = NA_real_,
                                  spendingTimeNew = NA_real_,
-                                 rankp0 = 1L,
                                  nthreads = 0) {
   if (nthreads > 0) {
     n_physical_cores <- parallel::detectCores(logical = FALSE)
@@ -692,8 +659,7 @@ adaptDesign_seamless <- function(betaNew = NA_real_,
                               futilityBoundsInt, futilityCPInt,
                               futilityThetaInt, typeBetaSpendingNew,
                               parameterBetaSpendingNew,
-                              userBetaSpendingNew, spendingTimeNew,
-                              rankp0)
+                              userBetaSpendingNew, spendingTimeNew)
 }
 
 
@@ -711,8 +677,7 @@ adaptDesign_seamless <- function(betaNew = NA_real_,
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 #'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-#'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
-#'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+#'   0 is used.
 #'   This option is only used for critical value calculations.
 #' @param L The interim adaptation look in Phase 3.
 #' @param zL The z-test statistic at the interim adaptation look of
@@ -731,7 +696,7 @@ adaptDesign_seamless <- function(betaNew = NA_real_,
 #'   allowed at each stage of the primary trial. Defaults to true
 #'   if left unspecified.
 #' @param criticalValues The upper boundaries on the z-test statistic scale
-#'   for the rank-selected arm in Phase 2 and the z-test statistics for the
+#'   for the most promising arm in Phase 2 and the z-test statistics for the
 #'   selected arm in Phase 3 for the primary trial. If missing, boundaries
 #'   will be computed based on the specified alpha spending function.
 #' @param alpha The significance level of the primary trial.
@@ -754,7 +719,7 @@ adaptDesign_seamless <- function(betaNew = NA_real_,
 #' @param userAlphaSpending The user-defined alpha spending for the
 #'   primary trial. Represents the cumulative alpha spent up to each stage.
 #' @param futilityBounds The lower boundaries on the z-test statistic
-#'   scale for the rank-selected arm in Phase 2 and the z-test statistics
+#'   scale for the most promising arm in Phase 2 and the z-test statistics
 #'   for the selected arm in Phase 3 for the primary trial.
 #' @param futilityCP The conditional power-based futility bounds for the
 #'   primary trial.
@@ -807,10 +772,6 @@ adaptDesign_seamless <- function(betaNew = NA_real_,
 #' @param spendingTimeNew The error spending time of the secondary trial.
 #'   Defaults to missing, in which case it is assumed to be the same as
 #'   \code{informationRatesNew}.
-#' @param rankp0 An integer between 1 and \code{M} specifying which ranked
-#'   Phase-2 arm is carried forward when the trial continues to Phase 3.
-#'   \code{rankp0 = 1} selects the largest Phase-2 Z-statistic,
-#'   \code{rankp0 = 2} selects the second largest, and so on.
 #' @param nthreads The number of threads to use (0 leaves the
 #'   RcppParallel setting unchanged).
 #'
@@ -871,7 +832,6 @@ getCP_seamless <- function(INew = NA_real_,
                            typeBetaSpendingNew = "none",
                            parameterBetaSpendingNew = NA_real_,
                            spendingTimeNew = NA_real_,
-                           rankp0 = 1L,
                            nthreads = 0) {
   if (nthreads > 0) {
     n_physical_cores <- parallel::detectCores(logical = FALSE)
@@ -890,8 +850,7 @@ getCP_seamless <- function(INew = NA_real_,
                         parameterAlphaSpendingNew,
                         futilityBoundsInt, futilityCPInt,
                         futilityThetaInt, typeBetaSpendingNew,
-                        parameterBetaSpendingNew, spendingTimeNew,
-                        rankp0)
+                        parameterBetaSpendingNew, spendingTimeNew)
 }
 
 
@@ -906,8 +865,7 @@ getCP_seamless <- function(INew = NA_real_,
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 #'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-#'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
-#'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+#'   0 is used.
 #'   This option is only used for critical value calculations.
 #' @param L The termination look in Phase 3.
 #' @param zL The z-test statistic at the termination look.
@@ -918,7 +876,7 @@ getCP_seamless <- function(INew = NA_real_,
 #'   allowed at each stage up to look \code{L}.
 #'   Defaults to \code{TRUE} if left unspecified.
 #' @param criticalValues The upper boundaries on the z-test statistic
-#'   scale for the rank-selected arm in Phase 2 and the z-test statistics
+#'   scale for the most promising arm in Phase 2 and the z-test statistics
 #'   for the selected arm
 #'   in Phase 3 up to look \code{L}. If missing, boundaries will be
 #'   computed based on the specified alpha spending function.
@@ -938,10 +896,6 @@ getCP_seamless <- function(INew = NA_real_,
 #' @param spendingTime The error spending time up to look \code{L}.
 #'   Defaults to missing, in which case, it is the same as
 #'   \code{informationRates}.
-#' @param rankp0 An integer between 1 and \code{M} specifying which ranked
-#'   Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
-#'   Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
-#'   so on.
 #' @param nthreads The number of threads to use (0 leaves the
 #'   RcppParallel setting unchanged).
 #'
@@ -990,7 +944,6 @@ getCI_seamless <- function(M = NA_integer_,
                            typeAlphaSpending = "sfOF",
                            parameterAlphaSpending = NA_real_,
                            spendingTime = NA_real_,
-                           rankp0 = 1L,
                            nthreads = 0) {
   if (nthreads > 0) {
     n_physical_cores <- parallel::detectCores(logical = FALSE)
@@ -999,7 +952,7 @@ getCI_seamless <- function(M = NA_integer_,
   getCI_seamless_Rcpp(M, r, corr_known, L, zL, IMax, informationRates,
                       efficacyStopping, criticalValues, alpha,
                       typeAlphaSpending, parameterAlphaSpending,
-                      spendingTime, rankp0)
+                      spendingTime)
 }
 
 
@@ -1015,8 +968,7 @@ getCI_seamless <- function(M = NA_integer_,
 #' @param corr_known Logical. If \code{TRUE}, the correlation between Wald
 #'   statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 #'   as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-#'   0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
-#'   with the largest Phase-2 Z-statistic is selected for Phase 3).
+#'   0 is used.
 #'   This option is only used for critical value calculations.
 #' @param L The interim adaptation look in Phase 3.
 #' @param zL The z-test statistic at the interim adaptation look of
@@ -1030,7 +982,7 @@ getCI_seamless <- function(M = NA_integer_,
 #'   allowed at each stage of the primary trial. Defaults to \code{TRUE}
 #'   if left unspecified.
 #' @param criticalValues The upper boundaries on the z-test statistic
-#'   scale for the rank-selected arm in Phase 2 and the z-test statistics
+#'   scale for the most promising arm in Phase 2 and the z-test statistics
 #'   for the selected arm
 #'   in Phase 3 for the primary trial. If missing, boundaries
 #'   will be computed based on the specified alpha spending function.
@@ -1081,10 +1033,6 @@ getCI_seamless <- function(M = NA_integer_,
 #' @param spendingTimeNew The error spending time of the secondary trial.
 #'   Defaults to missing, in which case, it is
 #'   the same as \code{informationRatesNew}.
-#' @param rankp0 An integer between 1 and \code{M} specifying which ranked
-#'   Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
-#'   Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
-#'   so on.
 #' @param nthreads The number of threads to use (0 leaves the
 #'   RcppParallel setting unchanged).
 #'
@@ -1147,7 +1095,6 @@ getADCI_seamless <- function(M = NA_integer_,
                              typeAlphaSpendingNew = "sfOF",
                              parameterAlphaSpendingNew = NA_real_,
                              spendingTimeNew = NA_real_,
-                             rankp0 = 1L,
                              nthreads = 0) {
   if (nthreads > 0) {
     n_physical_cores <- parallel::detectCores(logical = FALSE)
@@ -1161,5 +1108,5 @@ getADCI_seamless <- function(M = NA_integer_,
                         informationRatesNew, efficacyStoppingNew,
                         typeAlphaSpendingNew,
                         parameterAlphaSpendingNew,
-                        spendingTimeNew, rankp0)
+                        spendingTimeNew)
 }

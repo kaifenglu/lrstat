@@ -13,7 +13,6 @@ exitprob_seamless(
   b = NULL,
   a = NULL,
   I = NULL,
-  rankp0 = 1L,
   nthreads = 0
 )
 }
@@ -29,8 +28,7 @@ effects for each active arm versus the common control.}
 \item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
 statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
-with the largest Phase-2 Z-statistic is selected for Phase 3).}
+0 is used.}
 
 \item{K}{Number of sequential looks in Phase 3.}
 
@@ -48,11 +46,6 @@ arm in Phase 3. If omitted, no futility stopping is applied.}
 arm versus the common control. The first element is for Phase 2;
 the remaining \eqn{K} elements are for the looks in Phase 3.}
 
-\item{rankp0}{An integer between 1 and \code{M} specifying which ranked
-Phase-2 arm is carried forward when the trial continues to Phase 3.
-\code{rankp0 = 1} selects the largest Phase-2 Z-statistic,
-\code{rankp0 = 2} selects the second largest, and so on.}
-
 \item{nthreads}{The number of threads to use (0 leaves the
 RcppParallel setting unchanged).}
 }
@@ -69,19 +62,19 @@ elements are the probabilities of stopping for futility at each look in
 Phase 3.
 \item \code{exitProbByArmUpper}: A \eqn{(K + 1) \times M} matrix. The
 \eqn{(k, m)}-th entry gives the probability of stopping for efficacy at
-look \eqn{k} given that arm \eqn{m} is selected at rank \code{rankp0}.
+look \eqn{k} given that arm \eqn{m} is selected as the most promising.
 \item \code{exitProbByArmLower}: A \eqn{(K + 1) \times M} matrix. The
 \eqn{(k, m)}-th entry gives the probability of stopping for futility at
-look \eqn{k} given that arm \eqn{m} is selected at rank \code{rankp0}.
+look \eqn{k} given that arm \eqn{m} is selected as the most promising.
 \item \code{selectionProb}: A vector of length \eqn{M} containing the
-probability that each active arm is selected at rank \code{rankp0}.
+probability that each active arm is selected as the most promising.
 }
 }
 \description{
 Computes the upper and lower exit probabilities for a phase
 2/3 seamless design. In Phase 2, multiple active arms are compared
-against a common control arm. If the test statistic for the arm
-ranked \code{rankp0} at the end of Phase 2 crosses the
+against a common control arm. If the largest test statistic at the end
+of Phase 2 crosses the
 efficacy boundary, the trial stops early for efficacy; if it falls below
 the futility boundary, the trial stops early for futility. Otherwise,
 the arm is selected to proceed to Phase 3, where it is tested against
@@ -91,20 +84,18 @@ lower stopping boundaries.
 \details{
 The function assumes a multivariate normal distribution for the Wald
 statistics. Among designs that continue beyond the Phase-2 analysis,
-the carried-forward arm is the one with rank \code{rankp0} based on the
-p-value of the Z-statistic at the end of Phase 2.
+the arm with the largest Z-statistic at the end of Phase 2 is carried
+forward.
 
 \strong{Decision Rules:}
 \itemize{
-\item \strong{Phase 2 efficacy stop}: reject if the Phase-2 test statistic
-for the arm selected at rank \code{rankp0} satisfies
-\eqn{Z_{[rankp0]}(I_0) \ge b_0}.
-\item \strong{Phase 2 futility stop}: stop for futility if the Phase-2 test
-statistic for the arm selected at rank \code{rankp0} satisfies
-\eqn{Z_{[rankp0]}(I_0) \le a_0}.
+\item \strong{Phase 2 efficacy stop}: reject if the largest Phase-2 test
+statistic satisfies \eqn{Z_{(M)}(I_0) \ge b_0}.
+\item \strong{Phase 2 futility stop}: stop for futility if the largest
+Phase-2 test statistic satisfies \eqn{Z_{(M)}(I_0) \le a_0}.
 \item \strong{Continue to Phase 3}: if
-\eqn{a_0 < Z_{[rankp0]}(I_0) < b_0}, continue with the arm selected
-at rank \code{rankp0} only.
+\eqn{a_0 < Z_{(M)}(I_0) < b_0}, continue with the arm having the
+largest Phase-2 test statistic.
 \item \strong{Phase 3 efficacy stop}: at look \eqn{k}, reject if the selected
 arm's Z-statistic exceeds the efficacy boundary and no earlier stop has
 occurred.
@@ -117,8 +108,7 @@ earlier stop has occurred.
 \itemize{
 \item All active arms share the same information level in Phase 2.
 \item Exactly one active arm is selected at the end of Phase 2 based on the
-\code{rankp0}-th largest observed Z-statistic when the trial continues
-to Phase 3.
+largest observed Z-statistic when the trial continues to Phase 3.
 }
 }
 \examples{

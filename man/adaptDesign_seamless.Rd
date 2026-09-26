@@ -41,7 +41,6 @@ adaptDesign_seamless(
   parameterBetaSpendingNew = NA_real_,
   userBetaSpendingNew = NA_real_,
   spendingTimeNew = NA_real_,
-  rankp0 = 1L,
   nthreads = 0
 )
 }
@@ -61,8 +60,7 @@ in Phase 2.}
 \item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
 statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
-with the largest Phase-2 Z-statistic is selected for Phase 3).
+0 is used.
 This option is only used for critical value calculations.}
 
 \item{L}{The interim adaptation look in Phase 3.}
@@ -90,7 +88,7 @@ allowed at each stage of the primary trial. Defaults to \code{TRUE}
 if left unspecified.}
 
 \item{criticalValues}{The upper boundaries on the z-test statistic
-scale for the rank-selected arm in Phase 2 and the z-test statistics
+scale for the most promising arm in Phase 2 and the z-test statistics
 for the selected arm in Phase 3 for the primary trial. If missing,
 boundaries will be computed based on the specified alpha spending function.}
 
@@ -118,7 +116,7 @@ for the primary trial. Corresponds to \eqn{\Delta} for \code{"WT"},
 primary trial. Represents the cumulative alpha spent up to each stage.}
 
 \item{futilityBounds}{The lower boundaries on the z-test statistic scale
-at the end of phase 2 for the rank-selected arm and on the z-test
+at the end of phase 2 for the most promising arm and on the z-test
 statistic scale in phase 3 for futility stopping for the primary trial.
 Defaults to \code{rep(-8, kMax-1)} if left unspecified.}
 
@@ -193,11 +191,6 @@ secondary trial.}
 \item{spendingTimeNew}{The error spending time of the secondary trial.
 Defaults to missing, in which case it is assumed to be the same as
 \code{informationRatesNew}.}
-
-\item{rankp0}{An integer between 1 and \code{M} specifying which ranked
-Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
-Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
-so on.}
 
 \item{nthreads}{The number of threads to use (0 leaves the
 RcppParallel setting unchanged).}

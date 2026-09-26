@@ -7,7 +7,6 @@
 lrsim_seamless(
   M = 2,
   K = 1,
-  rankp0 = 1,
   criticalValues = NA,
   futilityBounds = NULL,
   hazardRatioH0s = 1,
@@ -36,22 +35,17 @@ lrsim_seamless(
 
 \item{K}{Number of sequential looks in Phase 3.}
 
-\item{rankp0}{Integer rank in phase 2 used to select the active arm.
-\code{rankp0 = 1} selects the most efficacious arm by log-rank
-statistic, \code{rankp0 = 2} selects the second most efficacious arm,
-and so on.}
-
 \item{criticalValues}{Numeric vector of length \eqn{K + 1} giving the
 critical value for the Wald statistic at each look (Look 1 through
 Look \eqn{K + 1}). Decision rule:
 \itemize{
 \item At Look 1, compute the Wald statistic (which equals the negative of
 the logrank statistic) for each active arm versus the common control.
-If the \code{rankp0}-th largest test statistic
-exceeds the Look 1 critical value, stop for efficacy.
+If the largest test statistic exceeds the Look 1 critical value,
+stop for efficacy.
 \item If the Look 1 stopping rule is not met, select the active arm with the
-\code{rankp0}-th largest Wald statistic and continue with that arm
-only versus control at subsequent looks.
+largest Wald statistic and continue with that arm only versus control
+at subsequent looks.
 \item For each look \eqn{j = 2,\ldots,K+1}, compare the selected arm to
 control; if its Wald statistic exceeds the Look \eqn{j} critical
 value, stop for efficacy; otherwise continue.
@@ -149,7 +143,7 @@ An S3 object of class \code{"lrsim_seamless"} with these components:
 \item \code{overview}: A list summarizing trial-level results and settings:
 \itemize{
 \item \code{selectionProb}: Probability of selecting each active arm at
-the prespecified rank at the end of phase 2.
+the end of phase 2.
 \item \code{selectToStage2}: Probability of selecting each active arm
 to enter stage 2.
 \item \code{selectAnyToStage2}: Probability of selecting any active arm
@@ -188,7 +182,6 @@ at trial end.
 \item \code{rho1}, \code{rho2}: Fleming–Harrington weighting parameters used.
 \item \code{M}: Number of active arms in Phase 2.
 \item \code{K}: Number of sequential looks in Phase 3.
-\item \code{rankp0}: Prespecified rank used for phase-2 arm selection.
 }
 \item \code{sumdata1}: Data frame summarizing each iteration, stage, and
 treatment group:

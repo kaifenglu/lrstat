@@ -1,5 +1,12 @@
+# lrstat 0.3.5
+
+* added a small positive value to avoid zero time in survival_analysis.cpp
+
 # lrstat 0.3.4
 
+* removed the `rankp0` argument and output from the seamless design functions
+  and simulators, which now always select the most promising treatment at the
+  end of phase 2
 * added bm_rank and pe_rank methods to lrsim_bmTrtSel for rank-based Dunnett
   adjustment for dose selection in stage 1 in seamless phase 2/3 designs
 * added `getNFromNeventsAndFollowup` and its C++ backend in `lrstat.cpp` for

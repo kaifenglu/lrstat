@@ -19,7 +19,7 @@
 using std::size_t;
 
 // Parallel entry function
-ListCpp rdsim_seamless_cpp(const size_t M, const size_t K, const size_t rankp0,
+ListCpp rdsim_seamless_cpp(const size_t M, const size_t K,
                            const std::vector<double> &criticalValues,
                            const std::vector<double> &futilityBounds,
                            const std::vector<double> &riskDiffH0s,
@@ -32,9 +32,6 @@ ListCpp rdsim_seamless_cpp(const size_t M, const size_t K, const size_t rankp0,
     throw std::invalid_argument("M must be at least 1");
   if (M < 1)
     throw std::invalid_argument("M must be at least 1");
-  if (rankp0 < 1 || rankp0 > M) {
-    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
-  }
   if (K < 1)
     throw std::invalid_argument("K must be at least 1");
   size_t kMax = K + 1;
@@ -376,16 +373,13 @@ ListCpp rdsim_seamless_cpp(const size_t M, const size_t K, const size_t rankp0,
     const size_t i1 = iter * rowsPerIter1;
     const size_t i2 = iter * rowsPerIter2;
 
-    // choose rankp0-th arm by phase-2 z statistic (larger is better)
-    std::vector<std::pair<double, size_t>> ranked(M);
-    for (size_t m = 0; m < M; ++m) {
-      ranked[m] = std::make_pair(zstat[i2 + m], m);
+    // choose the most promising arm by phase-2 z statistic (larger is better)
+    size_t selected_arm = 0;
+    double max_z = zstat[i2];
+    for (size_t m = 1; m < M; ++m) {
+      double v = zstat[i2 + m];
+      if (v > max_z) { max_z = v; selected_arm = m; }
     }
-    std::stable_sort(
-        ranked.begin(), ranked.end(),
-        [](const std::pair<double, size_t> &a,
-           const std::pair<double, size_t> &b) { return a.first > b.first; });
-    size_t selected_arm = ranked[rankp0 - 1].second;
     selectionProb[selected_arm] += 1.0;
 
     for (size_t k = 0; k < kMax; ++k) {
@@ -414,16 +408,20 @@ ListCpp rdsim_seamless_cpp(const size_t M, const size_t K, const size_t rankp0,
 
     // stopping in phase 2
     const size_t phase2_offset = i2;
-    const double selectedZP2 = zstat[phase2_offset + selected_arm];
-    bool anyRejectP2 = (selectedZP2 > criticalValues[0]);
-    bool allFutileP2 = (selectedZP2 < futilityBounds[0]);
+    bool anyRejectP2 = false;
+    bool allFutileP2 = true;
+
+    for (size_t m = 0; m < M; ++m) {
+      double z = zstat[phase2_offset + m];
+      if (z > criticalValues[0]) anyRejectP2 = true;
+      if (z > futilityBounds[0]) allFutileP2 = false;
+    }
 
     if (anyRejectP2) {
       stop_k = 0;
       stoppedForEfficacy = true;
       rejectByArm(0, M) += 1;
-      for (size_t r = rankp0 - 1; r < M; ++r) {
-        const size_t m = ranked[r].second;
+      for (size_t m = 0; m < M; ++m) {
         size_t idx2 = i2 + m;
         if (zstat[idx2] > criticalValues[0]) {
           reject[idx2] = 1;
@@ -583,7 +581,6 @@ ListCpp rdsim_seamless_cpp(const size_t M, const size_t K, const size_t rankp0,
   overview.push_back(std::move(plannedSubjects), "plannedSubjects");
   overview.push_back(M, "M");
   overview.push_back(K, "K");
-  overview.push_back(rankp0, "rankp0");
 
   DataFrameCpp sumdata1;
   sumdata1.push_back(std::move(sum1_iterNum), "iterationNumber");
@@ -618,7 +615,7 @@ ListCpp rdsim_seamless_cpp(const size_t M, const size_t K, const size_t rankp0,
 
 // [[Rcpp::export]]
 Rcpp::List rdsim_seamless_Rcpp(
-    const int M = 2, const int K = 1, const int rankp0 = 1,
+  const int M = 2, const int K = 1,
     const Rcpp::NumericVector &criticalValues = NA_REAL,
     const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds = R_NilValue,
     const Rcpp::NumericVector &riskDiffH0s = 1,
@@ -647,7 +644,7 @@ Rcpp::List rdsim_seamless_Rcpp(
                                        plannedSubjects.end());
 
   auto out = rdsim_seamless_cpp(
-      M, K, static_cast<size_t>(rankp0), critValues, futBounds, rdH0s, allocs,
+      M, K, critValues, futBounds, rdH0s, allocs,
       ps, nullVariance, n, plannedSubjects_vec, maxNumberOfIterations, seed);
 
   thread_utils::drain_thread_warnings_to_R();

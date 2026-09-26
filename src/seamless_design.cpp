@@ -26,8 +26,7 @@ ExitProbSeamless exitprob_seamless_cpp(const size_t M, const double r,
                                        const bool corr_known, const size_t K,
                                        const std::vector<double> &b,
                                        const std::vector<double> &a,
-                                       const std::vector<double> &I,
-                                       const size_t rankp0) {
+                                       const std::vector<double> &I) {
 
   if (M < 1) {
     throw std::invalid_argument("M should be at least 1");
@@ -67,15 +66,6 @@ ExitProbSeamless exitprob_seamless_cpp(const size_t M, const double r,
   } else {
     Ivec.resize(K + 1);
     std::iota(Ivec.begin(), Ivec.end(), 1.0);
-  }
-
-  if (rankp0 < 1 || rankp0 > M) {
-    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
-  }
-  size_t rankZ0 = M - rankp0 + 1;
-
-  if (rankp0 > 1 && !corr_known) {
-    throw std::invalid_argument("corr_known must be true when rankp0 > 1");
   }
 
   double rho = corr_known ? r / (r + 1.0) : 0;
@@ -123,7 +113,7 @@ ExitProbSeamless exitprob_seamless_cpp(const size_t M, const double r,
 
   size_t m1 = (M > 1) ? M - 1 : 1;
   std::vector<double> mean(m1);
-  std::vector<double> lower(m1);
+  std::vector<double> lower(m1, -8.0);
   std::vector<double> upper(m1);
 
   // integration intervals for z0
@@ -131,7 +121,6 @@ ExitProbSeamless exitprob_seamless_cpp(const size_t M, const double r,
   std::vector<double> breaks_reject = {b[0], 8.0};
   std::vector<double> breaks_futility = {-8.0, a[0]};
   std::vector<double> breaks_continue = {a[0], b[0]};
-  std::vector<unsigned char> c(m1);
 
   bool equalTheta = std::all_of(
       theta.begin() + 1, theta.end(),
@@ -150,8 +139,8 @@ ExitProbSeamless exitprob_seamless_cpp(const size_t M, const double r,
     // reuse temporary buffers for mean/lower/upper
 
     // density contribution for arm m being selected at phase 2 value z0
-    auto f0 = [&theta, &sigma_m1, &mean, &lower, &upper, &c, M, m, mu, sqrtI0,
-               rho, rankZ0](double z0) -> double {
+    auto f0 = [&theta, &sigma_m1, &mean, &lower, &upper, M, m, mu, sqrtI0,
+               rho](double z0) -> double {
       if (M > 1) {
         // conditional mean vector for the M - 1 non-selected arms given arm m
         double delta0 = rho * (z0 - mu);
@@ -162,41 +151,9 @@ ExitProbSeamless exitprob_seamless_cpp(const size_t M, const double r,
           mean[j++] = theta[i] * sqrtI0 + delta0;
         }
 
-        if (rankZ0 == M) { // select the arm with the largest value at z0
-          std::fill_n(lower.data(), M - 1, -8.0);
-          std::fill_n(upper.data(), M - 1, z0);
-          PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
-          return out.prob * boost_dnorm(z0, mu, 1.0);
-        } else if (rankZ0 == 1) { // select the arm with the smallest value
-          std::fill_n(lower.data(), M - 1, z0);
-          std::fill_n(upper.data(), M - 1, 8.0);
-          PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
-          return out.prob * boost_dnorm(z0, mu, 1.0);
-        } else { // select the arm with the rankZ0-th smallest value at z0
-          // conditional probability of selecting arm m given arm m has value z0
-          double cp = 0.0;
-
-          // traverse all combinations of the rankZ0 - 1 arms below z0
-          std::fill(c.begin(), c.end(), 0);
-          for (size_t i = 0; i < rankZ0 - 1; ++i)
-            c[i] = 1;
-
-          do {
-            for (size_t i = 0; i < M - 1; ++i) {
-              if (c[i]) {
-                lower[i] = -8.0;
-                upper[i] = z0;
-              } else {
-                lower[i] = z0;
-                upper[i] = 8.0;
-              }
-            }
-            PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
-            cp += out.prob;
-          } while (std::prev_permutation(c.begin(), c.end()));
-
-          return cp * boost_dnorm(z0, mu, 1.0);
-        }
+        std::fill_n(upper.data(), M - 1, z0);
+        PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
+        return out.prob * boost_dnorm(z0, mu, 1.0);
       } else {
         return boost_dnorm(z0, mu, 1.0);
       }
@@ -319,14 +276,13 @@ ExitProbSeamless exitprob_seamless_cpp(const size_t M, const double r,
                                        const std::vector<double> &theta,
                                        const bool corr_known, const size_t K,
                                        const std::vector<double> &b,
-                                       const std::vector<double> &I,
-                                       const size_t rankp0) {
+                                       const std::vector<double> &I) {
 
   if (!none_na(b))
     throw std::invalid_argument("b must be provided");
   double amin = std::min(-8.0, *std::min_element(b.begin(), b.end()));
   std::vector<double> a(K + 1, amin);
-  return exitprob_seamless_cpp(M, r, theta, corr_known, K, b, a, I, rankp0);
+  return exitprob_seamless_cpp(M, r, theta, corr_known, K, b, a, I);
 }
 
 // [[Rcpp::export]]
@@ -334,8 +290,7 @@ Rcpp::List exitprob_seamless_Rcpp(const int M = NA_INTEGER, const double r = 1,
                                   const Rcpp::NumericVector &theta = NA_REAL,
                                   const bool corr_known = true,
                                   const int K = NA_INTEGER, SEXP b = R_NilValue,
-                                  SEXP a = R_NilValue, SEXP I = R_NilValue,
-                                  const int rankp0 = 1) {
+                                  SEXP a = R_NilValue, SEXP I = R_NilValue) {
 
   if (M == NA_INTEGER || M < 1) {
     throw std::invalid_argument("M must be a positive integer");
@@ -377,13 +332,8 @@ Rcpp::List exitprob_seamless_Rcpp(const int M = NA_INTEGER, const double r = 1,
     IVec.assign(Iv.begin(), Iv.end());
   }
 
-  if (rankp0 == NA_INTEGER || rankp0 < 1 || rankp0 > M) {
-    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
-  }
-  size_t rankp0_ = static_cast<size_t>(rankp0);
-
   auto result = exitprob_seamless_cpp(M_, r, thetaVec, corr_known, K_, bVec,
-                                      aVec, IVec, rankp0_);
+                                      aVec, IVec);
 
   ListCpp out;
   out.push_back(result.exitProbUpper, "exitProbUpper");
@@ -400,7 +350,7 @@ std::vector<double> getBound_seamless_cpp(
     const std::string &typeAlphaSpending, const double parameterAlphaSpending,
     const std::vector<double> &userAlphaSpending,
     const std::vector<double> &spendingTime,
-    const std::vector<unsigned char> &efficacyStopping, const size_t rankp0) {
+    const std::vector<unsigned char> &efficacyStopping) {
 
   if (M < 1) {
     throw std::invalid_argument("M should be at least 1");
@@ -514,15 +464,6 @@ std::vector<double> getBound_seamless_cpp(
     }
   }
 
-  if (rankp0 < 1 || rankp0 > M) {
-    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
-  }
-  size_t rankZ0 = M - rankp0 + 1; // convert rankp0 to rankZ
-
-  if (rankp0 > 1 && !corr_known) {
-    throw std::invalid_argument("corr_known must be true when rankp0 > 1");
-  }
-
   ExitProbSeamless probs;
   std::vector<double> criticalValues(kMax);
   std::vector<double> zero(M, 0.0);
@@ -534,7 +475,7 @@ std::vector<double> getBound_seamless_cpp(
     auto f = [&](double aval) -> double {
       criticalValues[kMax - 1] = aval;
       probs = exitprob_seamless_cpp(M, r, zero, corr_known, kMax - 1,
-                                    criticalValues, infoRates, rankp0);
+                                    criticalValues, infoRates);
       double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                    probs.exitProbUpper.end(), 0.0);
       return cpu - alpha;
@@ -568,7 +509,7 @@ std::vector<double> getBound_seamless_cpp(
       }
 
       probs = exitprob_seamless_cpp(M, r, zero, corr_known, kMax - 1, u,
-                                    infoRates, rankp0);
+                                    infoRates);
       double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                    probs.exitProbUpper.end(), 0.0);
       return cpu - alpha;
@@ -597,103 +538,12 @@ std::vector<double> getBound_seamless_cpp(
     else {
       double rho = corr_known ? r / (r + 1.0) : 0;
 
-      if (rankp0 == 1) {
-        FlatMatrix sigma(M, M);
-        sigma.fill(rho);
-        for (size_t i = 0; i < M; ++i) {
-          sigma(i, i) = 1.0;
-        }
-        criticalValues[0] = qmvnormcpp(1.0 - cumAlpha, zero, sigma);
-      } else {
-        // conditional covariance among non-selected arms in phase 2 given
-        // selected arm
-        FlatMatrix sigma_m1;
-        if (M > 1) {
-          sigma_m1.resize(M - 1, M - 1);
-          double diag = 1.0 - rho * rho;
-          double off = rho * (1.0 - rho);
-          for (size_t j = 0; j < M - 1; ++j) {
-            double *colptr = sigma_m1.data_ptr() + j * sigma_m1.nrow;
-            // fill column with off
-            std::fill_n(colptr, M - 1, off);
-            colptr[j] = diag;
-          }
-        }
-
-        size_t m1 = (M > 1) ? M - 1 : 1;
-        std::vector<double> mean(m1);
-        std::vector<double> lower(m1);
-        std::vector<double> upper(m1);
-        std::vector<double> breaks_reject = {8.0, 8.0};
-        std::vector<unsigned char> c(m1);
-
-        auto f = [&](double b0) { // lambda to compute cumulative upper exit
-          // probability - cumAlpha in phase 2
-          breaks_reject[0] = b0;
-          double exitProbUpperStage1 = 0.0;
-          for (size_t m = 0; m < M; ++m) { // loop over selected arm in phase 2
-
-            // density contribution for arm m being selected at phase 2 value z0
-            auto f0 = [&sigma_m1, &mean, &lower, &upper, &c, M, m, rho,
-                       rankZ0](double z0) -> double {
-              if (M > 1) {
-                // conditional mean vector for the M - 1 non-selected arms given
-                // arm m
-                size_t j = 0;
-                for (size_t i = 0; i < M; ++i) {
-                  if (i == m)
-                    continue;
-                  mean[j++] = rho * z0;
-                }
-
-                if (rankZ0 == M) { // select arm with the largest value at z0
-                  std::fill_n(lower.data(), M - 1, -8.0);
-                  std::fill_n(upper.data(), M - 1, z0);
-                  PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
-                  return out.prob * boost_dnorm(z0, 0.0, 1.0);
-                } else if (rankZ0 == 1) { // select arm with the smallest value
-                  std::fill_n(lower.data(), M - 1, z0);
-                  std::fill_n(upper.data(), M - 1, 8.0);
-                  PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
-                  return out.prob * boost_dnorm(z0, 0.0, 1.0);
-                } else { // select the arm with the rankZ0-th smallest value
-                  // conditional probability of selecting arm m given arm m
-                  double cp = 0.0;
-
-                  // enumerate all combinations of the rankZ0 - 1 arms below z0
-                  std::fill(c.begin(), c.end(), 0);
-                  for (size_t i = 0; i < rankZ0 - 1; ++i)
-                    c[i] = 1;
-
-                  do {
-                    for (size_t i = 0; i < M - 1; ++i) {
-                      if (c[i]) {
-                        lower[i] = -8.0;
-                        upper[i] = z0;
-                      } else {
-                        lower[i] = z0;
-                        upper[i] = 8.0;
-                      }
-                    }
-                    PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
-                    cp += out.prob;
-                  } while (std::prev_permutation(c.begin(), c.end()));
-
-                  return cp * boost_dnorm(z0, 0.0, 1.0);
-                }
-              } else {
-                return boost_dnorm(z0, 0.0, 1.0);
-              }
-            };
-
-            exitProbUpperStage1 += integrate3(f0, breaks_reject, 1e-4);
-          }
-
-          return exitProbUpperStage1 - cumAlpha;
-        };
-
-        criticalValues[0] = brent(f, 0.0, 8.0, 1e-6);
+      FlatMatrix sigma(M, M);
+      sigma.fill(rho);
+      for (size_t i = 0; i < M; ++i) {
+        sigma(i, i) = 1.0;
       }
+      criticalValues[0] = qmvnormcpp(1.0 - cumAlpha, zero, sigma);
     }
 
     // subsequent stages
@@ -715,7 +565,7 @@ std::vector<double> getBound_seamless_cpp(
         // set the last element to the current candidate critical value
         criticalValues[k1] = aval;
         probs = exitprob_seamless_cpp(M, r, zero, corr_known, k1,
-                                      criticalValues, infoRates, rankp0);
+                                      criticalValues, infoRates);
         double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                      probs.exitProbUpper.end(), 0.0);
         return cpu - cumAlpha;
@@ -751,8 +601,7 @@ getBound_seamless_Rcpp(const int M = NA_INTEGER, const double r = 1,
                        const double parameterAlphaSpending = NA_REAL,
                        const Rcpp::NumericVector &userAlphaSpending = NA_REAL,
                        const Rcpp::NumericVector &spendingTime = NA_REAL,
-                       const Rcpp::LogicalVector &efficacyStopping = NA_LOGICAL,
-                       const int rankp0 = 1) {
+                       const Rcpp::LogicalVector &efficacyStopping = NA_LOGICAL) {
 
   std::vector<double> infoRates(informationRates.begin(),
                                 informationRates.end());
@@ -764,7 +613,7 @@ getBound_seamless_Rcpp(const int M = NA_INTEGER, const double r = 1,
   auto result = getBound_seamless_cpp(
       static_cast<size_t>(M), r, corr_known, static_cast<size_t>(k), infoRates,
       alpha, typeAlphaSpending, parameterAlphaSpending, userAlpha, spendTime,
-      effStopping, static_cast<size_t>(rankp0));
+      effStopping);
 
   return Rcpp::wrap(result);
 }
@@ -775,7 +624,7 @@ GetPowerSeamless getPower_seamless(
     const double alpha, const size_t K, const std::vector<double> &critValues,
     const std::vector<double> &I, const std::string &bsf, const double bsfpar,
     const std::vector<double> &st,
-    const std::vector<unsigned char> &futStopping, const size_t rankp0) {
+    const std::vector<unsigned char> &futStopping) {
 
   if (M < 1) {
     throw std::invalid_argument("M should be at least 1");
@@ -803,9 +652,6 @@ GetPowerSeamless getPower_seamless(
   }
   if (futStopping.size() != K + 1) {
     throw std::invalid_argument("Invalid length for futStopping");
-  }
-  if (rankp0 < 1 || rankp0 > M) {
-    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
   }
   if (I[0] <= 0.0) {
     throw std::invalid_argument("I must be positive");
@@ -857,8 +703,6 @@ GetPowerSeamless getPower_seamless(
   std::vector<double> lower(m1);
   std::vector<double> upper(m1);
   std::vector<double> breaks_futility = {-8.0, -8.0};
-  size_t rankZ0 = M - rankp0 + 1;
-  std::vector<unsigned char> c(m1);
 
   ExitProbSeamless probs;
   std::vector<double> futBounds(K + 1, -8.0);
@@ -867,88 +711,15 @@ GetPowerSeamless getPower_seamless(
 
     double eps = 0.0, cumBeta = 0.0;
 
-    // stage 0: futility for the arm selected at rankp0 in phase 2
+    // stage 0: futility for the most promising arm in phase 2
     if (futStopping[0]) {
       cumBeta = errorSpentcpp(st[0], beta, bsf, bsfpar);
 
-      if (rankp0 == 1) {
-        PMVNResult out = pmvnormcpp(lo, hi, mu0, sigma0);
-        eps = out.prob - cumBeta;
-        if (eps < 0.0)
-          return -1.0;
-        futBounds[0] = qmvnormcpp(cumBeta, mu0, sigma0);
-      } else {
-        auto g = [&](double a0) -> double {
-          breaks_futility[1] = a0;
-          double exitProbLowerStage1 = 0.0;
-          for (size_t m = 0; m < M; ++m) { // loop over selected arm in phase 2
-            double mu = theta[m] * sqrtI0;
-
-            // density contribution for arm m being selected at phase 2 value z0
-            auto f0 = [&theta, &sigma_m1, &mean, &lower, &upper, &c, M, m, mu,
-                       sqrtI0, rho, rankZ0](double z0) -> double {
-              if (M > 1) {
-                // conditional means for the M - 1 non-selected arms given arm m
-                double delta0 = rho * (z0 - mu);
-                size_t j = 0;
-                for (size_t i = 0; i < M; ++i) {
-                  if (i == m)
-                    continue;
-                  mean[j++] = theta[i] * sqrtI0 + delta0;
-                }
-
-                if (rankZ0 == M) { // select arm with the largest value at z0
-                  std::fill_n(lower.data(), M - 1, -8.0);
-                  std::fill_n(upper.data(), M - 1, z0);
-                  PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
-                  return out.prob * boost_dnorm(z0, mu, 1.0);
-                } else if (rankZ0 == 1) { // select arm with the smallest value
-                  std::fill_n(lower.data(), M - 1, z0);
-                  std::fill_n(upper.data(), M - 1, 8.0);
-                  PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
-                  return out.prob * boost_dnorm(z0, mu, 1.0);
-                } else { // select the arm with the rankZ0-th smallest value
-                  // conditional probability of selecting arm m given arm m at
-                  // z0
-                  double cp = 0.0;
-
-                  // enumerate all combinations of the rankZ0 - 1 arms below z0
-                  std::fill(c.begin(), c.end(), 0);
-                  for (size_t i = 0; i < rankZ0 - 1; ++i)
-                    c[i] = 1;
-
-                  do {
-                    for (size_t i = 0; i < M - 1; ++i) {
-                      if (c[i]) {
-                        lower[i] = -8.0;
-                        upper[i] = z0;
-                      } else {
-                        lower[i] = z0;
-                        upper[i] = 8.0;
-                      }
-                    }
-                    PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
-                    cp += out.prob;
-                  } while (std::prev_permutation(c.begin(), c.end()));
-
-                  return cp * boost_dnorm(z0, mu, 1.0);
-                }
-              } else {
-                return boost_dnorm(z0, mu, 1.0);
-              }
-            };
-
-            exitProbLowerStage1 += integrate3(f0, breaks_futility, 1e-4);
-          }
-
-          return exitProbLowerStage1 - cumBeta;
-        };
-
-        eps = g(critValues[0]);
-        if (eps < 0.0)
-          return -1.0;
-        futBounds[0] = brent(g, -8.0, critValues[0], 1e-6);
-      }
+      PMVNResult out = pmvnormcpp(lo, hi, mu0, sigma0);
+      eps = out.prob - cumBeta;
+      if (eps < 0.0)
+        return -1.0;
+      futBounds[0] = qmvnormcpp(cumBeta, mu0, sigma0);      
     }
 
     // stages 1..K
@@ -961,7 +732,7 @@ GetPowerSeamless getPower_seamless(
       auto g = [&](double aval) -> double {
         futBounds[k] = aval;
         probs = exitprob_seamless_cpp(M, r, theta, true, k, critValues,
-                                      futBounds, I, rankp0);
+                                      futBounds, I);
         double cpl = std::accumulate(probs.exitProbLower.begin(),
                                      probs.exitProbLower.end(), 0.0);
         return cpl - cumBeta;
@@ -1010,7 +781,7 @@ GetPowerSeamless getPower_seamless(
     beta = brent(f_for_brent, 0.0001, 1.0 - alpha, 1e-6);
     futBounds[K] = critValues[K];
     probs = exitprob_seamless_cpp(M, r, theta, true, K, critValues, futBounds,
-                                  I, rankp0);
+                                  I);
   }
 
   return GetPowerSeamless{1.0 - beta, std::move(futBounds), std::move(probs)};
@@ -1030,7 +801,7 @@ ListCpp getDesign_seamless_cpp(
     const std::vector<double> &futilityTheta,
     const std::string &typeBetaSpending, const double parameterBetaSpending,
     const std::vector<double> &userBetaSpending,
-    const std::vector<double> &spendingTime, const size_t rankp0) {
+    const std::vector<double> &spendingTime) {
 
   // ----------- Input Validation ----------- //
   if (std::isnan(beta) && std::isnan(IMax)) {
@@ -1045,12 +816,6 @@ ListCpp getDesign_seamless_cpp(
   }
   if (M < 1) {
     throw std::invalid_argument("M must be at least 1");
-  }
-  if (rankp0 < 1 || rankp0 > M) {
-    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
-  }
-  if (rankp0 > 1 && !corr_known) {
-    throw std::invalid_argument("corr_known must be true when rankp0 > 1");
   }
   if (r <= 0.0) {
     throw std::invalid_argument("r must be positive");
@@ -1291,7 +1056,7 @@ ListCpp getDesign_seamless_cpp(
       auto f = [&](double aval) -> double {
         critValues[kMax - 1] = aval;
         probs = exitprob_seamless_cpp(M, r, zero, corr_known, K, critValues,
-                                      infoRates, rankp0);
+                                        infoRates);
         double cpu = std::accumulate(probs.exitProbUpper.begin(),
                                      probs.exitProbUpper.end(), 0.0);
         return cpu - alpha;
@@ -1301,12 +1066,12 @@ ListCpp getDesign_seamless_cpp(
     } else {
       critValues = getBound_seamless_cpp(
           M, r, corr_known, K, infoRates, alpha, asf, parameterAlphaSpending,
-          userAlphaSpending, spendTime, effStopping, rankp0);
+          userAlphaSpending, spendTime, effStopping);
     }
   }
 
   probs = exitprob_seamless_cpp(M, r, zero, corr_known, K, critValues,
-                                infoRates, rankp0);
+                                infoRates);
   std::vector<double> cumAlphaSpent(kMax);
   std::partial_sum(probs.exitProbUpper.begin(), probs.exitProbUpper.end(),
                    cumAlphaSpent.begin());
@@ -1392,8 +1157,6 @@ ListCpp getDesign_seamless_cpp(
     std::vector<double> lower(m1);
     std::vector<double> upper(m1);
     std::vector<double> breaks_futility = {-8.0, -8.0};
-    size_t rankZ0 = M - rankp0 + 1;
-    std::vector<unsigned char> c(m1);
 
     auto f = [&](double x) -> double {
       double maxInformation = sq(x / maxtheta);
@@ -1414,7 +1177,7 @@ ListCpp getDesign_seamless_cpp(
         }
 
         probs = exitprob_seamless_cpp(M, r, theta, true, K, critValues,
-                                      futBounds, information, rankp0);
+                                      futBounds, information);
         double overallReject = std::accumulate(probs.exitProbUpper.begin(),
                                                probs.exitProbUpper.end(), 0.0);
         return (1.0 - overallReject) - beta;
@@ -1423,98 +1186,21 @@ ListCpp getDesign_seamless_cpp(
 
         double eps = 0.0, cumBeta = 0.0;
 
-        // stage 0: futility for the arm selected at rankp0 in phase 2
+        // stage 0: futility for the most promising arm in phase 2
         if (futStopping[0]) {
           cumBeta = (bsf == "user") ? userBetaSpending[0]
                                     : errorSpentcpp(spendTime[0], beta, bsf,
                                                     parameterBetaSpending);
 
-          if (rankp0 == 1) {
-            for (size_t m = 0; m < M; ++m) {
-              mu0[m] = theta[m] * sqrtI0;
-            }
-
-            PMVNResult out = pmvnormcpp(lo, hi, mu0, sigma0);
-            eps = out.prob - cumBeta;
-            if (eps < 0.0)
-              return -1.0;
-            futBounds[0] = qmvnormcpp(cumBeta, mu0, sigma0);
-          } else {
-            auto g = [&](double a0) -> double {
-              breaks_futility[1] = a0;
-              double exitProbLowerStage1 = 0.0;
-              for (size_t m = 0; m < M; ++m) { // loop over selected arm
-                double mu = theta[m] * sqrtI0;
-
-                // density contribution for arm m being selected at phase 2
-                // value z0
-                auto f0 = [&theta, &sigma_m1, &mean, &lower, &upper, &c, M, m,
-                           mu, sqrtI0, rho, rankZ0](double z0) -> double {
-                  if (M > 1) {
-                    // conditional means for the M - 1 non-selected arms given
-                    // arm m
-                    double delta0 = rho * (z0 - mu);
-                    size_t j = 0;
-                    for (size_t i = 0; i < M; ++i) {
-                      if (i == m)
-                        continue;
-                      mean[j++] = theta[i] * sqrtI0 + delta0;
-                    }
-
-                    if (rankZ0 == M) { // select arm with largest value at z0
-                      std::fill_n(lower.data(), M - 1, -8.0);
-                      std::fill_n(upper.data(), M - 1, z0);
-                      PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
-                      return out.prob * boost_dnorm(z0, mu, 1.0);
-                    } else if (rankZ0 == 1) { // select arm with smallest value
-                      std::fill_n(lower.data(), M - 1, z0);
-                      std::fill_n(upper.data(), M - 1, 8.0);
-                      PMVNResult out = pmvnormcpp(lower, upper, mean, sigma_m1);
-                      return out.prob * boost_dnorm(z0, mu, 1.0);
-                    } else { // select the arm with the rankZ0-th smallest value
-                      // conditional probability of selecting arm m given arm m
-                      // at z0
-                      double cp = 0.0;
-
-                      // enumerate all combinations of the rankZ0 - 1 arms below
-                      // z0
-                      std::fill(c.begin(), c.end(), 0);
-                      for (size_t i = 0; i < rankZ0 - 1; ++i)
-                        c[i] = 1;
-
-                      do {
-                        for (size_t i = 0; i < M - 1; ++i) {
-                          if (c[i]) {
-                            lower[i] = -8.0;
-                            upper[i] = z0;
-                          } else {
-                            lower[i] = z0;
-                            upper[i] = 8.0;
-                          }
-                        }
-                        PMVNResult out =
-                            pmvnormcpp(lower, upper, mean, sigma_m1);
-                        cp += out.prob;
-                      } while (std::prev_permutation(c.begin(), c.end()));
-
-                      return cp * boost_dnorm(z0, mu, 1.0);
-                    }
-                  } else {
-                    return boost_dnorm(z0, mu, 1.0);
-                  }
-                };
-
-                exitProbLowerStage1 += integrate3(f0, breaks_futility, 1e-4);
-              }
-
-              return exitProbLowerStage1 - cumBeta;
-            };
-
-            eps = g(critValues[0]);
-            if (eps < 0.0)
-              return -1.0;
-            futBounds[0] = brent(g, -8.0, critValues[0], 1e-6);
+          for (size_t m = 0; m < M; ++m) {
+            mu0[m] = theta[m] * sqrtI0;
           }
+
+          PMVNResult out = pmvnormcpp(lo, hi, mu0, sigma0);
+          eps = out.prob - cumBeta;
+          if (eps < 0.0)
+            return -1.0;
+          futBounds[0] = qmvnormcpp(cumBeta, mu0, sigma0);          
         }
 
         // stages 1..K
@@ -1529,7 +1215,7 @@ ListCpp getDesign_seamless_cpp(
           auto g = [&](double aval) -> double {
             futBounds[k] = aval;
             probs = exitprob_seamless_cpp(M, r, theta, true, k, critValues,
-                                          futBounds, information, rankp0);
+                                          futBounds, information);
             double cpl = std::accumulate(probs.exitProbLower.begin(),
                                          probs.exitProbLower.end(), 0.0);
             return cpl - cumBeta;
@@ -1563,7 +1249,7 @@ ListCpp getDesign_seamless_cpp(
     IMax1 = sq(drift / maxtheta);
     futBounds[kMax - 1] = critValues[kMax - 1];
     probs = exitprob_seamless_cpp(M, r, theta, true, K, critValues, futBounds,
-                                  information, rankp0);
+                                  information);
   } else {
     for (size_t i = 0; i < kMax; ++i)
       information[i] = infoRates[i] * IMax1;
@@ -1575,11 +1261,11 @@ ListCpp getDesign_seamless_cpp(
       }
       futBounds[kMax - 1] = critValues[kMax - 1];
       probs = exitprob_seamless_cpp(M, r, theta, true, K, critValues, futBounds,
-                                    information, rankp0);
+                                    information);
     } else {
       auto out = getPower_seamless(M, r, theta, alpha1, K, critValues,
                                    information, bsf, parameterBetaSpending,
-                                   spendTime, futStopping, rankp0);
+                                   spendTime, futStopping);
       futBounds = out.futilityBounds;
       probs = out.probs;
     }
@@ -1625,7 +1311,7 @@ ListCpp getDesign_seamless_cpp(
       ptotal.begin(), ptotal.end(), informationOverall.begin(), 0.0);
 
   auto probsH0 = exitprob_seamless_cpp(M, r, zero, true, K, critValues,
-                                       futBounds, infoRates, rankp0);
+                                       futBounds, infoRates);
   auto puH0 = probsH0.exitProbUpper;
   auto plH0 = probsH0.exitProbLower;
 
@@ -1677,7 +1363,6 @@ ListCpp getDesign_seamless_cpp(
   overallResults.push_back(M, "M");
   overallResults.push_back(r, "r");
   overallResults.push_back(corr_known, "corr_known");
-  overallResults.push_back(rankp0, "rankp0");
   overallResults.push_back(K, "K");
   overallResults.push_back(IMax1, "information");
   overallResults.push_back(expectedInformationH1, "expectedInformationH1");
@@ -1751,7 +1436,7 @@ Rcpp::List getDesign_seamless_Rcpp(
     const std::string &typeBetaSpending = "none",
     const double parameterBetaSpending = NA_REAL,
     const Rcpp::NumericVector &userBetaSpending = NA_REAL,
-    const Rcpp::NumericVector &spendingTime = NA_REAL, const int rankp0 = 1) {
+    const Rcpp::NumericVector &spendingTime = NA_REAL) {
 
   std::vector<double> thetaVec(theta.begin(), theta.end());
   std::vector<double> infoRates(informationRates.begin(),
@@ -1794,7 +1479,7 @@ Rcpp::List getDesign_seamless_Rcpp(
       static_cast<size_t>(K), infoRates, effStopping, futStopping, critValues,
       alpha, typeAlphaSpending, parameterAlphaSpending, userAlpha, futBounds,
       futCP, futTheta, typeBetaSpending, parameterBetaSpending, userBeta,
-      spendTime, static_cast<size_t>(rankp0));
+      spendTime);
 
   Rcpp::List result = Rcpp::wrap(cpp_result);
   result.attr("class") = "seamless";
@@ -1826,7 +1511,7 @@ ListCpp adaptDesign_seamless_cpp(
     const std::string &typeBetaSpendingNew,
     const double parameterBetaSpendingNew,
     const std::vector<double> &userBetaSpendingNew,
-    const std::vector<double> &spendingTimeNew, const size_t rankp0) {
+    const std::vector<double> &spendingTimeNew) {
 
   // ----------- Start of Input Validation ----------- //
   if (std::isnan(betaNew) && std::isnan(INew)) {
@@ -1843,12 +1528,6 @@ ListCpp adaptDesign_seamless_cpp(
 
   if (M < 1)
     throw std::invalid_argument("M must be at least 1");
-  if (rankp0 < 1 || rankp0 > M) {
-    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
-  }
-  if (rankp0 > 1 && !corr_known) {
-    throw std::invalid_argument("corr_known must be true when rankp0 > 1");
-  }
   if (r <= 0.0)
     throw std::invalid_argument("r must be positive");
   if (std::isnan(zL))
@@ -2237,7 +1916,7 @@ ListCpp adaptDesign_seamless_cpp(
       auto f = [&](double aval) -> double {
         critValues[kMax - 1] = aval;
         probss = exitprob_seamless_cpp(M, r, zero, corr_known, K, critValues,
-                                       infoRates, rankp0);
+                                       infoRates);
         double cpu = std::accumulate(probss.exitProbUpper.begin(),
                                      probss.exitProbUpper.end(), 0.0);
         return cpu - alpha;
@@ -2247,7 +1926,7 @@ ListCpp adaptDesign_seamless_cpp(
     } else {
       critValues = getBound_seamless_cpp(
           M, r, corr_known, K, infoRates, alpha, asf, parameterAlphaSpending,
-          userAlphaSpending, spendTime, effStopping, rankp0);
+          userAlphaSpending, spendTime, effStopping);
     }
   } else {
     for (size_t i = 0; i < kMax - 1; ++i) {
@@ -2255,7 +1934,7 @@ ListCpp adaptDesign_seamless_cpp(
         critValues[i] = 8.0;
     }
     probss = exitprob_seamless_cpp(M, r, zero, corr_known, K, critValues,
-                                   infoRates, rankp0);
+                                   infoRates);
     alpha1 = std::accumulate(probss.exitProbUpper.begin(),
                              probss.exitProbUpper.end(), 0.0);
   }
@@ -2640,7 +2319,6 @@ ListCpp adaptDesign_seamless_cpp(
   des1.push_back(M, "M");
   des1.push_back(r, "r");
   des1.push_back(corr_known, "corr_known");
-  des1.push_back(rankp0, "rankp0");
   des1.push_back(K, "K");
   des1.push_back(L, "L");
   des1.push_back(zL, "zL");
@@ -2679,7 +2357,6 @@ ListCpp adaptDesign_seamless_cpp(
   des3.push_back(M, "M");
   des3.push_back(r, "r");
   des3.push_back(corr_known, "corr_known");
-  des3.push_back(rankp0, "rankp0");
   des3.push_back(K, "K");
   des3.push_back(L, "L");
   des3.push_back(zL, "zL");
@@ -2727,8 +2404,7 @@ Rcpp::List adaptDesign_seamless_Rcpp(
     const std::string &typeBetaSpendingNew = "none",
     const double parameterBetaSpendingNew = NA_REAL,
     const Rcpp::NumericVector &userBetaSpendingNew = NA_REAL,
-    const Rcpp::NumericVector &spendingTimeNew = NA_REAL,
-    const int rankp0 = 1) {
+    const Rcpp::NumericVector &spendingTimeNew = NA_REAL) {
 
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
   auto effStopping = convertLogicalVector(efficacyStopping);
@@ -2793,8 +2469,7 @@ Rcpp::List adaptDesign_seamless_Rcpp(
       MullerSchafer, static_cast<size_t>(kNew), infoRatesNew, effStoppingNew,
       futStoppingNew, typeAlphaSpendingNew, parameterAlphaSpendingNew,
       futBoundsInt, futCPInt, futThetaInt, typeBetaSpendingNew,
-      parameterBetaSpendingNew, userBetaNew, spendTimeNew,
-      static_cast<size_t>(rankp0));
+      parameterBetaSpendingNew, userBetaNew, spendTimeNew);
 
   Rcpp::List result = Rcpp::wrap(cpp_result);
   result.attr("class") = "adaptDesign_seamless";

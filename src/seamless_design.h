@@ -24,15 +24,13 @@ ExitProbSeamless exitprob_seamless_cpp(const size_t M, const double r,
                                        const bool corr_known, const size_t K,
                                        const std::vector<double> &b,
                                        const std::vector<double> &a,
-                                       const std::vector<double> &I,
-                                       const size_t rankp0 = 1);
+                                       const std::vector<double> &I);
 
 ExitProbSeamless exitprob_seamless_cpp(const size_t M, const double r,
                                        const std::vector<double> &theta,
                                        const bool corr_known, const size_t K,
                                        const std::vector<double> &b,
-                                       const std::vector<double> &I,
-                                       const size_t rankp0 = 1);
+                                       const std::vector<double> &I);
 
 std::vector<double> getBound_seamless_cpp(
     const size_t M, const double r, const bool corr_known, const size_t k,
@@ -40,8 +38,7 @@ std::vector<double> getBound_seamless_cpp(
     const std::string &typeAlphaSpending, const double parameterAlphaSpending,
     const std::vector<double> &userAlphaSpending,
     const std::vector<double> &spendingTime,
-    const std::vector<unsigned char> &efficacyStopping,
-    const size_t rankp0 = 1);
+    const std::vector<unsigned char> &efficacyStopping);
 
 struct GetPowerSeamless {
   double power;
@@ -54,7 +51,7 @@ GetPowerSeamless getPower_seamless(
     const double alpha, const size_t K, const std::vector<double> &critValues,
     const std::vector<double> &I, const std::string &bsf, const double bsfpar,
     const std::vector<double> &st,
-    const std::vector<unsigned char> &futStopping, const size_t rankp0 = 1);
+    const std::vector<unsigned char> &futStopping);
 
 ListCpp getDesign_seamless_cpp(
     const double beta, const double IMax, const std::vector<double> &theta,
@@ -70,7 +67,7 @@ ListCpp getDesign_seamless_cpp(
     const std::vector<double> &futilityTheta,
     const std::string &typeBetaSpending, const double parameterBetaSpending,
     const std::vector<double> &userBetaSpending,
-    const std::vector<double> &spendingTime, const size_t rankp0 = 1);
+    const std::vector<double> &spendingTime);
 
 ListCpp adaptDesign_seamless_cpp(
     double betaNew, double INew, const size_t M, const double r,
@@ -97,4 +94,4 @@ ListCpp adaptDesign_seamless_cpp(
     const std::string &typeBetaSpendingNew,
     const double parameterBetaSpendingNew,
     const std::vector<double> &userBetaSpendingNew,
-    const std::vector<double> &spendingTimeNew, const size_t rankp0 = 1);
+    const std::vector<double> &spendingTimeNew);

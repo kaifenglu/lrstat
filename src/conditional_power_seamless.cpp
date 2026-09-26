@@ -40,7 +40,7 @@ std::vector<double> getCP_seamless_cpp(
     const std::vector<double> &futilityThetaInt,
     const std::string &typeBetaSpendingNew,
     const double parameterBetaSpendingNew,
-    const std::vector<double> &spendingTimeNew, const size_t rankp0) {
+    const std::vector<double> &spendingTimeNew) {
 
   // Basic validations
   if (std::isnan(INew))
@@ -50,12 +50,6 @@ std::vector<double> getCP_seamless_cpp(
 
   if (M < 1)
     throw std::invalid_argument("M must be at least 1");
-  if (rankp0 < 1 || rankp0 > M) {
-    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
-  }
-  if (rankp0 > 1 && !corr_known) {
-    throw std::invalid_argument("corr_known must be true when rankp0 > 1");
-  }
   if (r <= 0.0)
     throw std::invalid_argument("r must be positive");
   if (L < 1)
@@ -402,7 +396,7 @@ std::vector<double> getCP_seamless_cpp(
       auto f = [&](double aval) -> double {
         critValues[kMax - 1] = aval;
         probss = exitprob_seamless_cpp(M, r, zero, corr_known, K, critValues,
-                                       infoRates, rankp0);
+                                       infoRates);
         double cpu = std::accumulate(probss.exitProbUpper.begin(),
                                      probss.exitProbUpper.end(), 0.0);
         return cpu - alpha;
@@ -412,7 +406,7 @@ std::vector<double> getCP_seamless_cpp(
     } else {
       critValues = getBound_seamless_cpp(
           M, r, corr_known, K, infoRates, alpha, asf, parameterAlphaSpending,
-          userAlphaSpending, spendTime, effStopping, rankp0);
+          userAlphaSpending, spendTime, effStopping);
     }
   } else {
     for (size_t i = 0; i < kMax; ++i) {
@@ -476,8 +470,9 @@ std::vector<double> getCP_seamless_cpp(
     r1[i] = infoRates[L] / infoRates[i + L + 1];
     if (!effStoppingNew[i])
       b1[i] = 8.0;
-    b1[i] = (critValues[i + L + 1] - std::sqrt(r1[i]) * zL) /
-            std::sqrt(1.0 - r1[i]);
+    else 
+      b1[i] = (critValues[i + L + 1] - std::sqrt(r1[i]) * zL) /
+              std::sqrt(1.0 - r1[i]);
   }
 
   // conditional type I error
@@ -489,8 +484,8 @@ std::vector<double> getCP_seamless_cpp(
   for (size_t i = 0; i < k1; ++i) {
     if (!futStoppingNew[i])
       a1[i] = -8.0;
-    a1[i] =
-        (futBounds[i + L + 1] - std::sqrt(r1[i]) * zL) / std::sqrt(1.0 - r1[i]);
+    else a1[i] =
+      (futBounds[i + L + 1] - std::sqrt(r1[i]) * zL) / std::sqrt(1.0 - r1[i]);
   }
 
   std::vector<double> I1(k1);
@@ -646,8 +641,7 @@ Rcpp::NumericVector getCP_seamless_Rcpp(
     const Rcpp::Nullable<Rcpp::NumericVector> futilityThetaInt = R_NilValue,
     const std::string &typeBetaSpendingNew = "none",
     const double parameterBetaSpendingNew = NA_REAL,
-    const Rcpp::NumericVector &spendingTimeNew = NA_REAL,
-    const int rankp0 = 1) {
+    const Rcpp::NumericVector &spendingTimeNew = NA_REAL) {
 
   auto infoRates = Rcpp::as<std::vector<double>>(informationRates);
   auto effStopping = convertLogicalVector(efficacyStopping);
@@ -710,8 +704,8 @@ Rcpp::NumericVector getCP_seamless_Rcpp(
       futBounds, futCP, futTheta, spendTime, MullerSchafer,
       static_cast<size_t>(kNew), infoRatesNew, effStoppingNew, futStoppingNew,
       typeAlphaSpendingNew, parameterAlphaSpendingNew, futBoundsInt, futCPInt,
-      futThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew, spendTimeNew,
-      static_cast<size_t>(rankp0));
+      futThetaInt, typeBetaSpendingNew, parameterBetaSpendingNew,
+      spendTimeNew);
 
   return Rcpp::wrap(result);
 }

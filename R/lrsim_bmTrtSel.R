@@ -1,5 +1,5 @@
 #' @title Simulation of a seamless phase II/III design with treatment
-#'   selection based on a short-term endpoint
+#'   selection based on a short-term endpoint and toxicities
 #' @description Simulates a two-stage seamless phase II/III trial in which
 #'   several doses are compared with a common control. At the end of phase II
 #'   a single dose is carried forward based on the posterior benefit-risk

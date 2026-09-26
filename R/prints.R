@@ -3339,7 +3339,7 @@ print.seamless <- function(x, ...) {
 
   str3 <- paste0("Number of active arms in phase 2: ", a$M)
 
-  str4 <- paste0("Selected phase-2 rank carried forward: ", a$rankp0)
+  str4 <- "Most promising phase-2 arm carried forward"
 
   str5 <- paste0("Randomization ratio of each active vs. control: ", a$r)
 
@@ -3465,7 +3465,7 @@ print.seamless <- function(x, ...) {
 
   df3 <- t(t)
   rownames(df3) <- c("Treatment effect (theta)",
-                     paste0("Selected at phase-2 rank ", a$rankp0),
+                     "Selected as most promising phase-2 arm",
                      "Power",
                      "Conditional power")
   colnames(df3) <- paste("Arm", seq_len(ncol(df3)), sep=" ")
@@ -3505,7 +3505,7 @@ print.adaptDesign_seamless <- function(x, ...) {
 
   str3 <- paste0("Number of active arms in phase 2: ", des1$M)
 
-  str4 <- paste0("Selected phase-2 rank carried forward: ", des1$rankp0)
+  str4 <- "Most promising phase-2 arm carried forward"
 
   str5 <- paste0("Randomization ratio of each active vs. control: ", des1$r)
 
@@ -3643,7 +3643,7 @@ print.adaptDesign_seamless <- function(x, ...) {
 
   str2 <- "Adaptive Phase 2/3 seamless design"
 
-  str3 <- paste0("Selected phase-2 rank carried forward: ", des3$rankp0)
+  str3 <- "Most promising phase-2 arm carried forward"
   str4 <- paste0("Total number of looks in Phase 3: ", des3$kMax - 1)
   str5 <- paste0("Maximum information for pairwise comparion: ",
                  round(des3$maxInformation, 2))
@@ -3728,7 +3728,7 @@ print.rdsim_seamless <- function(x, ...) {
 
   str4 <- paste0("Number of looks in phase 3: ", a$K)
 
-  str5 <- paste0("Selected rank in phase 2: ", a$rankp0)
+  str5 <- "Most promising phase-2 arm selected"
 
   str6 <- paste0("Expected # events: ",
                  round(a$expectedNumberOfEvents, 1))
@@ -3756,7 +3756,7 @@ print.rdsim_seamless <- function(x, ...) {
   colnames(df1b) <- paste("Stage", seq_len(ncol(df1b)), sep = " ")
 
   df2a <- t(data.frame(selectionProb = a$selectionProb))
-  rownames(df2a) <- "Selected at prespecified rank in phase 2"
+  rownames(df2a) <- "Selected as most promising in phase 2"
   colnames(df2a) <- paste("Arm", seq_len(ncol(df2a)), sep = " ")
 
   df2a2 <- t(data.frame(selectToStage2 = a$selectToStage2))
@@ -3857,7 +3857,7 @@ print.lrsim_seamless <- function(x, ...) {
 
   str4 <- paste0("Number of looks in phase 3: ", a$K)
 
-  str5 <- paste0("Selected rank in phase 2: ", a$rankp0)
+  str5 <- "Most promising phase-2 arm selected"
 
   str6 <- paste0("Expected # events: ",
                  round(a$expectedNumberOfEvents, 1))
@@ -3890,7 +3890,7 @@ print.lrsim_seamless <- function(x, ...) {
   colnames(df1b) <- paste("Stage", seq_len(ncol(df1b)), sep=" ")
 
   df2a <- t(data.frame(selectionProb = a$selectionProb))
-  rownames(df2a) <- "Selected at prespecified rank in phase 2"
+  rownames(df2a) <- "Selected as most promising in phase 2"
   colnames(df2a) <- paste("Arm", seq_len(ncol(df2a)), sep=" ")
 
   df2a2 <- t(data.frame(selectToStage2 = a$selectToStage2))

@@ -25,7 +25,7 @@ using std::size_t;
 double f_pvalue_seamless(const double theta, const size_t M, const double r,
                          const bool corr_known, const size_t L, const double zL,
                          const std::vector<double> &b,
-                         const std::vector<double> &I, const size_t rankp0) {
+                         const std::vector<double> &I) {
 
   // Build the components required by exitprobcpp:
   // upper vector: first L components from b, last component = zL
@@ -35,7 +35,7 @@ double f_pvalue_seamless(const double theta, const size_t M, const double r,
   upper[L] = zL;
 
   std::vector<double> mu(M, theta);
-  auto probs = exitprob_seamless_cpp(M, r, mu, corr_known, L, upper, I, rankp0);
+  auto probs = exitprob_seamless_cpp(M, r, mu, corr_known, L, upper, I);
   double sum_up = std::accumulate(probs.exitProbUpper.begin(),
                                   probs.exitProbUpper.end(), 0.0);
   return sum_up;
@@ -50,17 +50,11 @@ DataFrameCpp getCI_seamless_cpp(
     const std::vector<unsigned char> &efficacyStopping,
     const std::vector<double> &criticalValues, const double alpha,
     const std::string &typeAlphaSpending, const double parameterAlphaSpending,
-    const std::vector<double> &spendingTime, const size_t rankp0) {
+    const std::vector<double> &spendingTime) {
 
   // Basic argument checks
   if (M < 1)
     throw std::invalid_argument("M should be at least 1");
-  if (rankp0 < 1 || rankp0 > M) {
-    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
-  }
-  if (rankp0 > 1 && !corr_known) {
-    throw std::invalid_argument("corr_known must be true when rankp0 > 1");
-  }
   if (r <= 0.0)
     throw std::invalid_argument("r should be positive");
   if (L <= 0)
@@ -159,7 +153,7 @@ DataFrameCpp getCI_seamless_cpp(
   } else {
     b = getBound_seamless_cpp(M, r, corr_known, L, informationRates, alpha, asf,
                               parameterAlphaSpending, std::vector<double>{},
-                              spendTime, effStopping, rankp0);
+                              spendTime, effStopping);
   }
 
   // Build full information vector I = IMax * informationRates
@@ -168,7 +162,7 @@ DataFrameCpp getCI_seamless_cpp(
     I[i] = IMax * informationRates[i];
 
   // p-value at theta = 0
-  double pvalue = f_pvalue_seamless(0.0, M, r, corr_known, L, zL, b, I, rankp0);
+  double pvalue = f_pvalue_seamless(0.0, M, r, corr_known, L, zL, b, I);
 
   double cilevel = 1.0 - 2.0 * alpha;
 
@@ -180,16 +174,15 @@ DataFrameCpp getCI_seamless_cpp(
 
   // median-unbiased estimate thetahat: solve f_pvalue(theta) - 0.5 = 0
   auto f_med = [&](double theta) -> double {
-    return f_pvalue_seamless(theta, M, r, corr_known, L, zL, b, I, rankp0) -
-           0.5;
+    return f_pvalue_seamless(theta, M, r, corr_known, L, zL, b, I) - 0.5;
   };
   double thetahat = brent(f_med, left, right, tol);
 
   // lower bound: solve f_pvalue(theta) - (1-cilevel)/2 = 0, in [left, thetahat]
   double target_lower = (1.0 - cilevel) / 2.0;
   auto f_lower = [&](double theta) -> double {
-    return f_pvalue_seamless(theta, M, r, corr_known, L, zL, b, I, rankp0) -
-           target_lower;
+        return f_pvalue_seamless(theta, M, r, corr_known, L, zL, b, I) -
+          target_lower;
   };
   double lower = brent(f_lower, left, thetahat, tol);
 
@@ -197,7 +190,7 @@ DataFrameCpp getCI_seamless_cpp(
   // right]
   double target_upper = (1.0 + cilevel) / 2.0;
   auto f_upper = [&](double theta) -> double {
-    return f_pvalue_seamless(theta, 1, r, corr_known, L, zL, b, I, 1) -
+    return f_pvalue_seamless(theta, 1, r, corr_known, L, zL, b, I) -
            target_upper;
   };
   double upper = brent(f_upper, thetahat, right, tol);
@@ -223,7 +216,7 @@ Rcpp::DataFrame getCI_seamless_Rcpp(
     const Rcpp::NumericVector &criticalValues = NA_REAL,
     const double alpha = 0.025, const std::string &typeAlphaSpending = "sfOF",
     const double parameterAlphaSpending = NA_REAL,
-    const Rcpp::NumericVector &spendingTime = NA_REAL, const int rankp0 = 1) {
+    const Rcpp::NumericVector &spendingTime = NA_REAL) {
 
   std::vector<double> infoRates(informationRates.begin(),
                                 informationRates.end());
@@ -234,7 +227,7 @@ Rcpp::DataFrame getCI_seamless_Rcpp(
   auto result = getCI_seamless_cpp(
       static_cast<size_t>(M), r, corr_known, static_cast<size_t>(L), zL, IMax,
       infoRates, effStopping, critValues, alpha, typeAlphaSpending,
-      parameterAlphaSpending, spendTime, static_cast<size_t>(rankp0));
+      parameterAlphaSpending, spendTime);
   return Rcpp::wrap(result);
 }
 
@@ -306,11 +299,10 @@ double f_bwpvalue_seamless(const double theta, const size_t M, const double r,
                            const std::vector<double> &b,
                            const std::vector<double> &I, const size_t L2,
                            const double zL2, const std::vector<double> &b2,
-                           const std::vector<double> &I2, const size_t rankp0) {
+                           const std::vector<double> &I2) {
 
   auto bw = f_bwimage_seamless(theta, K, L, zL, b, I, L2, zL2, b2, I2);
-  return f_pvalue_seamless(theta, M, r, corr_known, bw.first, bw.second, b, I,
-                           rankp0);
+  return f_pvalue_seamless(theta, M, r, corr_known, bw.first, bw.second, b, I);
 }
 
 // Helper to compute confidence interval after the end of an adaptive trial
@@ -327,17 +319,11 @@ DataFrameCpp getADCI_seamless_cpp(
     const std::vector<unsigned char> &efficacyStoppingNew,
     const std::string &typeAlphaSpendingNew,
     const double parameterAlphaSpendingNew,
-    const std::vector<double> &spendingTimeNew, const size_t rankp0) {
+    const std::vector<double> &spendingTimeNew) {
 
   // Input validation and defaults
   if (M < 1)
     throw std::invalid_argument("M should be at least 1");
-  if (rankp0 < 1 || rankp0 > M) {
-    throw std::invalid_argument("rankp0 must be an integer between 1 and M");
-  }
-  if (rankp0 > 1 && !corr_known) {
-    throw std::invalid_argument("corr_known must be true when rankp0 > 1");
-  }
   if (r <= 0.0)
     throw std::invalid_argument("r should be positive");
   if (L <= 0)
@@ -528,13 +514,13 @@ DataFrameCpp getADCI_seamless_cpp(
     b = criticalValues;
     std::vector<double> zero(M, 0.0);
     auto probs = exitprob_seamless_cpp(M, r, zero, corr_known, K, b,
-                                       informationRates, rankp0);
+                                       informationRates);
     alpha1 = std::accumulate(probs.exitProbUpper.begin(),
                              probs.exitProbUpper.end(), 0.0);
   } else {
     b = getBound_seamless_cpp(M, r, corr_known, K, infoRates, alpha, asf,
                               parameterAlphaSpending, std::vector<double>{},
-                              spendTime, effStopping, rankp0);
+                              spendTime, effStopping);
     alpha1 = alpha;
   }
 
@@ -585,7 +571,7 @@ DataFrameCpp getADCI_seamless_cpp(
   double zL2 = (zLc * std::sqrt(I[L] + I2[L2 - 1]) - zL * std::sqrt(I[L])) /
                std::sqrt(I2[L2 - 1]);
   double pvalue = f_bwpvalue_seamless(0.0, M, r, corr_known, K, L, zL, b, I, L2,
-                                      zL2, b2, I2, rankp0);
+                                      zL2, b2, I2);
 
   // interval brackets and root-finding to obtain thetahat, lower, upper
   double sqrtIL = std::sqrt(I[L]);
@@ -595,7 +581,7 @@ DataFrameCpp getADCI_seamless_cpp(
 
   auto f_med = [&](double theta) -> double {
     return f_bwpvalue_seamless(theta, M, r, corr_known, K, L, zL, b, I, L2, zL2,
-                               b2, I2, rankp0) -
+                               b2, I2) -
            0.5;
   };
   double thetahat = brent(f_med, left, right, tol);
@@ -603,7 +589,7 @@ DataFrameCpp getADCI_seamless_cpp(
   double target_lower = (1.0 - cilevel) / 2.0;
   auto f_low = [&](double theta) -> double {
     return f_bwpvalue_seamless(theta, M, r, corr_known, K, L, zL, b, I, L2, zL2,
-                               b2, I2, rankp0) -
+                               b2, I2) -
            target_lower;
   };
   double lower = brent(f_low, left, thetahat, tol);
@@ -611,7 +597,7 @@ DataFrameCpp getADCI_seamless_cpp(
   double target_upper = (1.0 + cilevel) / 2.0;
   auto f_high = [&](double theta) -> double {
     return f_bwpvalue_seamless(theta, M, r, corr_known, K, L, zL, b, I, L2, zL2,
-                               b2, I2, rankp0) -
+                               b2, I2) -
            target_upper;
   };
   double upper = brent(f_high, thetahat, right, tol);
@@ -642,8 +628,7 @@ Rcpp::DataFrame getADCI_seamless_Rcpp(
     const Rcpp::LogicalVector &efficacyStoppingNew = NA_LOGICAL,
     const std::string &typeAlphaSpendingNew = "sfOF",
     const double parameterAlphaSpendingNew = NA_REAL,
-    const Rcpp::NumericVector &spendingTimeNew = NA_REAL,
-    const int rankp0 = 1) {
+    const Rcpp::NumericVector &spendingTimeNew = NA_REAL) {
 
   std::vector<double> infoRates(informationRates.begin(),
                                 informationRates.end());
@@ -661,7 +646,6 @@ Rcpp::DataFrame getADCI_seamless_Rcpp(
       static_cast<size_t>(K), infoRates, effStopping, critValues, alpha,
       typeAlphaSpending, parameterAlphaSpending, spendTime, MullerSchafer,
       static_cast<size_t>(Lc), zLc, INew, infoRatesNew, effStoppingNew,
-      typeAlphaSpendingNew, parameterAlphaSpendingNew, spendTimeNew,
-      static_cast<size_t>(rankp0));
+      typeAlphaSpendingNew, parameterAlphaSpendingNew, spendTimeNew);
   return Rcpp::wrap(result);
 }

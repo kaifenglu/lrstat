@@ -19,7 +19,6 @@ getCI_seamless(
   typeAlphaSpending = "sfOF",
   parameterAlphaSpending = NA_real_,
   spendingTime = NA_real_,
-  rankp0 = 1L,
   nthreads = 0
 )
 }
@@ -32,8 +31,7 @@ in Phase 2.}
 \item{corr_known}{Logical. If \code{TRUE}, the correlation between Wald
 statistics in Phase 2 is derived from the randomization ratio \eqn{r}
 as \eqn{r / (r + 1)}. If \code{FALSE}, a conservative correlation of
-0 is used, which is only valid when \code{rankp0 = 1} (i.e., the arm
-with the largest Phase-2 Z-statistic is selected for Phase 3).
+0 is used.
 This option is only used for critical value calculations.}
 
 \item{L}{The termination look in Phase 3.}
@@ -50,7 +48,7 @@ allowed at each stage up to look \code{L}.
 Defaults to \code{TRUE} if left unspecified.}
 
 \item{criticalValues}{The upper boundaries on the z-test statistic
-scale for the rank-selected arm in Phase 2 and the z-test statistics
+scale for the most promising arm in Phase 2 and the z-test statistics
 for the selected arm
 in Phase 3 up to look \code{L}. If missing, boundaries will be
 computed based on the specified alpha spending function.}
@@ -76,11 +74,6 @@ and \eqn{\gamma} for \code{"sfHSD"}.}
 \item{spendingTime}{The error spending time up to look \code{L}.
 Defaults to missing, in which case, it is the same as
 \code{informationRates}.}
-
-\item{rankp0}{An integer between 1 and \code{M} specifying which ranked
-Phase-2 arm is carried forward. \code{rankp0 = 1} selects the largest
-Phase-2 Z-statistic, \code{rankp0 = 2} selects the second largest, and
-so on.}
 
 \item{nthreads}{The number of threads to use (0 leaves the
 RcppParallel setting unchanged).}
