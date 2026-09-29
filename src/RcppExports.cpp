@@ -1668,6 +1668,27 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// lrsim_pkTrtSel_Rcpp
+Rcpp::List lrsim_pkTrtSel_Rcpp(const Rcpp::NumericVector& medianSurvival, const Rcpp::NumericVector& meanExposure, const double exposureSD, const double corrSurvivalExposure, const int interimPatients, const double interimFollowup, const int totalPatients, const double finalAnalysisTime, const std::string& selectionRule, const int maxNumberOfIterations, const int seed);
+RcppExport SEXP _lrstat_lrsim_pkTrtSel_Rcpp(SEXP medianSurvivalSEXP, SEXP meanExposureSEXP, SEXP exposureSDSEXP, SEXP corrSurvivalExposureSEXP, SEXP interimPatientsSEXP, SEXP interimFollowupSEXP, SEXP totalPatientsSEXP, SEXP finalAnalysisTimeSEXP, SEXP selectionRuleSEXP, SEXP maxNumberOfIterationsSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type medianSurvival(medianSurvivalSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type meanExposure(meanExposureSEXP);
+    Rcpp::traits::input_parameter< const double >::type exposureSD(exposureSDSEXP);
+    Rcpp::traits::input_parameter< const double >::type corrSurvivalExposure(corrSurvivalExposureSEXP);
+    Rcpp::traits::input_parameter< const int >::type interimPatients(interimPatientsSEXP);
+    Rcpp::traits::input_parameter< const double >::type interimFollowup(interimFollowupSEXP);
+    Rcpp::traits::input_parameter< const int >::type totalPatients(totalPatientsSEXP);
+    Rcpp::traits::input_parameter< const double >::type finalAnalysisTime(finalAnalysisTimeSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type selectionRule(selectionRuleSEXP);
+    Rcpp::traits::input_parameter< const int >::type maxNumberOfIterations(maxNumberOfIterationsSEXP);
+    Rcpp::traits::input_parameter< const int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(lrsim_pkTrtSel_Rcpp(medianSurvival, meanExposure, exposureSD, corrSurvivalExposure, interimPatients, interimFollowup, totalPatients, finalAnalysisTime, selectionRule, maxNumberOfIterations, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
 // lrsim_seamless_Rcpp
 Rcpp::List lrsim_seamless_Rcpp(const int M, const int K, const Rcpp::NumericVector& criticalValues, const Rcpp::Nullable<Rcpp::NumericVector> futilityBounds, const Rcpp::NumericVector& hazardRatioH0s, const Rcpp::NumericVector& allocations, const Rcpp::NumericVector& accrualTime, const Rcpp::NumericVector& accrualIntensity, const Rcpp::NumericVector& piecewiseSurvivalTime, const Rcpp::NumericVector& stratumFraction, const Rcpp::Nullable<Rcpp::List> lambdas, const Rcpp::Nullable<Rcpp::List> gammas, const int n, const double followupTime, const bool fixedFollowup, const double rho1, const double rho2, const Rcpp::IntegerVector& plannedEvents, const Rcpp::NumericVector& plannedTime, const int maxNumberOfIterations, const int maxNumberOfRawDatasetsPerStage, const int seed);
 RcppExport SEXP _lrstat_lrsim_seamless_Rcpp(SEXP MSEXP, SEXP KSEXP, SEXP criticalValuesSEXP, SEXP futilityBoundsSEXP, SEXP hazardRatioH0sSEXP, SEXP allocationsSEXP, SEXP accrualTimeSEXP, SEXP accrualIntensitySEXP, SEXP piecewiseSurvivalTimeSEXP, SEXP stratumFractionSEXP, SEXP lambdasSEXP, SEXP gammasSEXP, SEXP nSEXP, SEXP followupTimeSEXP, SEXP fixedFollowupSEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP plannedEventsSEXP, SEXP plannedTimeSEXP, SEXP maxNumberOfIterationsSEXP, SEXP maxNumberOfRawDatasetsPerStageSEXP, SEXP seedSEXP) {
@@ -3868,6 +3889,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lrstat_lrsim_bmTrtSel_Rcpp", (DL_FUNC) &_lrstat_lrsim_bmTrtSel_Rcpp, 24},
     {"_lrstat_lrsim_mcpmod_Rcpp", (DL_FUNC) &_lrstat_lrsim_mcpmod_Rcpp, 19},
     {"_lrstat_lrsim_multiarm_Rcpp", (DL_FUNC) &_lrstat_lrsim_multiarm_Rcpp, 22},
+    {"_lrstat_lrsim_pkTrtSel_Rcpp", (DL_FUNC) &_lrstat_lrsim_pkTrtSel_Rcpp, 11},
     {"_lrstat_lrsim_seamless_Rcpp", (DL_FUNC) &_lrstat_lrsim_seamless_Rcpp, 22},
     {"_lrstat_kmsurv", (DL_FUNC) &_lrstat_kmsurv, 7},
     {"_lrstat_lrstat", (DL_FUNC) &_lrstat_lrstat, 17},

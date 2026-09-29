@@ -3779,6 +3779,10 @@ lrsim_multiarm_Rcpp <- function(M = 2L, kMax = 1L, criticalValues = NULL, futili
     .Call(`_lrstat_lrsim_multiarm_Rcpp`, M, kMax, criticalValues, futilityBounds, hazardRatioH0s, allocations, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambdas, gammas, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
 
+lrsim_pkTrtSel_Rcpp <- function(medianSurvival, meanExposure, exposureSD, corrSurvivalExposure, interimPatients, interimFollowup, totalPatients, finalAnalysisTime, selectionRule, maxNumberOfIterations, seed) {
+    .Call(`_lrstat_lrsim_pkTrtSel_Rcpp`, medianSurvival, meanExposure, exposureSD, corrSurvivalExposure, interimPatients, interimFollowup, totalPatients, finalAnalysisTime, selectionRule, maxNumberOfIterations, seed)
+}
+
 lrsim_seamless_Rcpp <- function(M = 2L, K = 1L, criticalValues = NA_real_, futilityBounds = NULL, hazardRatioH0s = 1L, allocations = 1L, accrualTime = 0L, accrualIntensity = NA_real_, piecewiseSurvivalTime = 0L, stratumFraction = 1L, lambdas = NULL, gammas = NULL, n = NA_integer_, followupTime = NA_real_, fixedFollowup = FALSE, rho1 = 0, rho2 = 0, plannedEvents = NA_integer_, plannedTime = NA_real_, maxNumberOfIterations = 1000L, maxNumberOfRawDatasetsPerStage = 0L, seed = 0L) {
     .Call(`_lrstat_lrsim_seamless_Rcpp`, M, K, criticalValues, futilityBounds, hazardRatioH0s, allocations, accrualTime, accrualIntensity, piecewiseSurvivalTime, stratumFraction, lambdas, gammas, n, followupTime, fixedFollowup, rho1, rho2, plannedEvents, plannedTime, maxNumberOfIterations, maxNumberOfRawDatasetsPerStage, seed)
 }
