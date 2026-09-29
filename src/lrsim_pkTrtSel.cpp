@@ -42,6 +42,7 @@ struct Subject {
   double arrival = 0.0;
   double survival = 0.0;
   double exposure = NaN;
+  int patientStage = 0;
 };
 
 struct LogrankStat {
@@ -97,7 +98,7 @@ double combination_p(double p1, double p2, double w1, double w2) {
 }
 
 LogrankStat logrank_stat(const std::vector<Subject> &subjects, int treatment,
-                         double cutoff, int stage) {
+                         double cutoff, int stage, bool patientWise = false) {
   struct Observation {
     double time;
     int event;
@@ -109,8 +110,12 @@ LogrankStat logrank_stat(const std::vector<Subject> &subjects, int treatment,
   for (const Subject &subject : subjects) {
     if (subject.arm != 0 && subject.arm != treatment)
       continue;
-    if (stage != 0 && subject.stage != stage)
-      continue;
+    if (stage != 0) {
+      const int subjectStage =
+          patientWise ? subject.patientStage : subject.stage;
+      if (subjectStage != stage)
+        continue;
+    }
     if (subject.arrival >= cutoff)
       continue;
     const double followup = cutoff - subject.arrival;
@@ -170,11 +175,13 @@ LogrankStat logrank_stat(const std::vector<Subject> &subjects, int treatment,
   return result;
 }
 
-int count_events(const std::vector<Subject> &subjects, double cutoff,
-                 int stage) {
+int count_events(const std::vector<Subject> &subjects, double cutoff, int stage,
+                 bool patientWise = false) {
   return static_cast<int>(std::count_if(
       subjects.begin(), subjects.end(), [&](const Subject &subject) {
-        return (stage == 0 || subject.stage == stage) &&
+        const int subjectStage =
+            patientWise ? subject.patientStage : subject.stage;
+        return (stage == 0 || subjectStage == stage) &&
                subject.arrival + subject.survival <= cutoff;
       }));
 }
@@ -266,6 +273,7 @@ struct SimWorker : public RcppParallel::Worker {
           Subject subject;
           subject.arm = arm;
           subject.stage = index < stage1Patients ? 1 : 2;
+          subject.patientStage = arrivals[index] < interimTime ? 1 : 2;
           subject.arrival = arrivals[index];
           subject.survival = -std::log(1.0 - survivalUniform) / rate;
           if (arm > 0) {
@@ -301,7 +309,7 @@ struct SimWorker : public RcppParallel::Worker {
               std::log(2.0) / medianSurvival[arm == 0 ? 2 : arm - 1];
           threeArmSubjects.push_back({arm, 2, arrivals[index],
                                       -std::log(1.0 - survivalUniform) / rate,
-                                      NaN});
+                                      NaN, 2});
         }
         const LogrankStat threeArmHigh =
             logrank_stat(threeArmSubjects, 1, finalAnalysisTime, 0);
@@ -333,7 +341,7 @@ struct SimWorker : public RcppParallel::Worker {
                 std::log(2.0) / medianSurvival[arm == 0 ? 2 : arm - 1];
             trialSubjects.push_back({arm, 2, arrivals[index],
                                      -std::log(1.0 - survivalUniform) / rate,
-                                     NaN});
+                                     NaN, 2});
           }
         };
 
@@ -361,11 +369,11 @@ struct SimWorker : public RcppParallel::Worker {
         const LogrankStat finalSelected =
             logrank_stat(subjects, result.selected, finalAnalysisTime, 0);
         const LogrankStat finalStage2Selected =
-            logrank_stat(subjects, result.selected, finalAnalysisTime, 2);
+            logrank_stat(subjects, result.selected, finalAnalysisTime, 2, true);
         const LogrankStat finalStage1High =
-            logrank_stat(subjects, 1, finalAnalysisTime, 1);
+            logrank_stat(subjects, 1, finalAnalysisTime, 1, true);
         const LogrankStat finalStage1Low =
-            logrank_stat(subjects, 2, finalAnalysisTime, 1);
+            logrank_stat(subjects, 2, finalAnalysisTime, 1, true);
 
         const double interimPHigh = boost_pnorm(interimHigh.z());
         const double interimPLow = boost_pnorm(interimLow.z());
@@ -399,7 +407,8 @@ struct SimWorker : public RcppParallel::Worker {
         result.followupEvents1 = count_events(subjects, interimTime, 1);
         result.followupEvents2 =
             std::max(0, finalSelected.events - interimSelected.events);
-        result.patientEvents1 = count_events(subjects, finalAnalysisTime, 1);
+        result.patientEvents1 =
+            count_events(subjects, finalAnalysisTime, 1, true);
         result.patientEvents2 = finalStage2Selected.events;
         const int correctArm = medianSurvival[0] > medianSurvival[1] ? 1 : 2;
         result.correct = result.selected == correctArm;

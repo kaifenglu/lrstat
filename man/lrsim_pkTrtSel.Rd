@@ -33,9 +33,9 @@ time and log exposure.}
 \item{interimPatients}{Number of patients in the stage-1 cohort. The interim
 analysis occurs after the last of these patients has at least
 \code{interimFollowup} months of follow-up. Accrual continues in all three arms
-until that analysis; these additional recruits belong to stage 2 and are
-excluded from interim OS statistics, but their available exposure data
-contribute to exposure-based treatment selection.}
+until that analysis. These additional recruits are excluded from interim
+OS statistics but contribute exposure data to treatment selection. For
+patient-wise testing, they belong to the pre-selection patient cohort.}
 
 \item{interimFollowup}{Minimum follow-up in months at the interim analysis.}
 
@@ -80,7 +80,9 @@ patients use 1:1 allocation to control and the selected regimen. Exposure is log
 parameterized by the supplied arithmetic mean and standard deviation, and
 is joined to exponential survival through a Gaussian copula. Combination
 weights are estimated from the average simulated event counts as described
-in the article.
+in the article. The patient-wise procedure splits patients at the interim
+decision time, so all patients enrolled before selection, including
+overrun patients, contribute to its first-stage statistics.
 }
 \examples{
 sim <- lrsim_pkTrtSel(maxNumberOfIterations = 20, seed = 314159,
